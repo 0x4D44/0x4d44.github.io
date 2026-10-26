@@ -1,0 +1,83 @@
+{
+ "didYouKnow": [
+  "The Glasgow Subway opened on 14 December 1896, making it the third-oldest underground metro in the world after London (1863) and Budapest (1896).",
+  "It is one of the very few railways with a 4 ft (1,219 mm) gauge, and its 11 ft (3.4 m) tunnels are smaller than London's deep tubes.",
+  "The Subway was cable-hauled until 1935 - a steam engine between West Street and Shields Road drove endless cables, one per direction.",
+  "On opening day a car carrying 60 passengers was hit by another beneath the Clyde; four were injured and the line was shut until 19 January 1897.",
+  "The circle is 10.5 km (6.5 miles) long and has never been extended - the only metro never to grow.",
+  "The line passes under the Clyde twice and the River Kelvin once; the Clyde crossings were driven under compressed air with gradients of about 1 in 18 and 1 in 20.",
+  "The shallowest point of the circle is only about 7 ft (2 m) below the surface, between Kinning Park and Cessnock; the deepest, near Hillhead, is about 155 ft (47 m).",
+  "Stations were laid out at the summit of roughly a 1 in 40 grade, so trains climb into each platform and drop out of it.",
+  "Until the 1977-80 rebuild, trains were lifted by crane onto the rails at Govan; Broomloan Depot now has a ramp to the tunnels.",
+  "Nicknames: the 'Clockwork Orange' (orange 1980s livery) and, before that, the 'Shoogly Train'.",
+  "In 1977 cracks in the roof of Govan Cross station closed the whole system eight days early.",
+  "St Enoch's red sandstone Flemish Renaissance building (James Miller, 1896) was lifted onto a concrete platform while the station beneath it was rebuilt.",
+  "Merkland Street station is the system's only 'ghost station' - drivers pass through the humped, wider tunnel where it used to be.",
+  "A German bomb damaged both tunnels near Merkland Street on 18 September 1940.",
+  "The new Stadler trains are 4-car, 39 m long and ready for driverless operation, entering service on 11 December 2023.",
+  "The 'Subcrawl' is a pub crawl with one drink at each of the 15 stations.",
+  "Cessnock's entrance is in a tenement basement beside a Greek Thomson building, and it still has its pre-1977 signage.",
+  "Kelvinbridge is the deepest station and its pumps run continuously against seepage from the River Kelvin."
+ ],
+ "glossary": [
+  {
+   "term": "Outer Circle",
+   "definition": "The clockwise running line (outer tube)."
+  },
+  {
+   "term": "Inner Circle",
+   "definition": "The anticlockwise running line (inner tube)."
+  },
+  {
+   "term": "Island platform",
+   "definition": "One platform between the two tracks, serving both."
+  },
+  {
+   "term": "Side platform",
+   "definition": "A platform on the outside of each track."
+  },
+  {
+   "term": "Gripper car",
+   "definition": "A cable-era car with a clutch that gripped the moving cable between the rails."
+  },
+  {
+   "term": "Third rail",
+   "definition": "A live 600 V DC conductor rail beside the running rails (since 1935)."
+  },
+  {
+   "term": "Shoogly",
+   "definition": "Scots for shaky - the old trains were nicknamed the Shoogly Train."
+  },
+  {
+   "term": "SPT",
+   "definition": "Strathclyde Partnership for Transport, the Subway's owner and operator."
+  },
+  {
+   "term": "Cut and cover",
+   "definition": "Tunnelling by digging a trench along a street and roofing it over."
+  },
+  {
+   "term": "CBTC",
+   "definition": "Communications-based train control, being installed for driverless operation."
+  }
+ ],
+ "numbers": {
+  "lengthKm": 10.5,
+  "stations": 15,
+  "tunnelDiameterM": 3.35,
+  "gaugeMm": 1219,
+  "maxSpeedKmh": 58,
+  "boardings2019Million": 12.7,
+  "boardingsPerStation": {
+   "buchanan-street": 2.48,
+   "hillhead": 1.86,
+   "st-enoch": 1.91,
+   "govan": 0.93,
+   "kelvinbridge": 0.94,
+   "partick": 0.97,
+   "west-street": 0.097,
+   "note": "millions, mixed years 2013-2024 (see research notes)"
+  }
+ },
+ "perStation": {}
+}

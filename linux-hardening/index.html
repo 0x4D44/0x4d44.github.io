@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Locked Room</title>
+<meta name="description" content="A detailed explainer on hardening Linux workloads: seccomp, Landlock, cgroups, capabilities, containers, eBPF, gVisor, Firecracker, cut-down kernels, unikernels and language choice.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="hardening.css">
+</head>
+<body>
+<header class="mast">0x4D44 Almanac &middot; Security &middot; Linux</header>
+<main>
+
+<h1>The Locked Room</h1>
+<p class="dek">How to run code you do not fully trust on a Linux machine, and what each lock on the door actually stops. A tour from a single <code>prctl</code> call to a Firecracker microVM, with the kernel's own limits kept in view throughout.</p>
+
+<div class="callout"><b class="t">If you read one thing</b>
+<p>Run untrusted code with several locks, because each lock stops different attacks. Use a non-root user with no capabilities, <code>no_new_privs</code>, a seccomp allowlist (a list of the syscalls you permit), Landlock for files, and cgroup limits for memory and process count. If the code is hostile, put it behind a stronger boundary: gVisor or a microVM such as Firecracker. For untrusted code, set <code>JAIL_REQUIRE_ABI=6</code> in the launcher so it refuses old kernels. Section 16 shows <code>no_new_privs</code>, Landlock, rlimits and a no-fork seccomp filter in one small program (it does not drop the user or capabilities). Section 18 lets you score your own setup.</p>
+<p class="cap" style="margin:6px 0 0">Tested on a 6.18 kernel with older installed headers (the syscall count comes from kernel 6.18 tables), and checked against public documentation on 26 October 2026. Kernel facts change: confirm version numbers for your own kernel.</p></div>
+
+<details><summary>Short glossary of terms used before they are explained</summary>
+<ul>
+<li><strong>EPERM, EAGAIN, ENOSYS:</strong> error codes a syscall returns: "not permitted", "try again" and "no such syscall".</li>
+<li><strong>tmpfs:</strong> a filesystem that lives in memory. <strong>O_PATH:</strong> a way to open a path without reading it. <strong>pivot_root:</strong> the call that swaps a process's root directory.</li>
+<li><strong>JIT:</strong> code that a program compiles while it runs. <strong>FFI:</strong> a foreign function interface, where one language calls another. <strong>RSS:</strong> the memory a process holds in RAM.</li>
+<li><strong>DoS:</strong> denial of service, making a system unusable. <strong>SBOM:</strong> a software bill of materials, the list of parts in a build.</li>
+<li><strong>SMT:</strong> simultaneous multithreading (hyper-threading). <strong>BTF:</strong> compact type information the kernel keeps for eBPF. <strong>TSYNC:</strong> a flag that applies a seccomp filter to every thread.</li>
+</ul></details>
+<div class="stats">
+  <div class="stat"><b>~370</b><span>syscalls on x86-64 (6.x kernels; numbering has gaps, so the highest number is higher): the kernel's entry points, before ioctls (device-control system calls), netlink (the kernel socket family for network configuration), /proc and drivers</span></div>
+  <div class="stat"><b>3 syscalls</b><span>is all Landlock needs to let an unprivileged process fence itself in</span></div>
+  <div class="stat"><b>1 kernel</b><span>shared by every ordinary container on the host. A kernel bug reaches all of them</span></div>
+  <div class="stat"><b>~125 ms</b><span>Firecracker's documented time to boot a microVM to init</span></div>
+</div>
+
+<nav class="toc" aria-label="Contents">
+<h4>Contents</h4>
+<ol>
+  <li><a href="#threat">The shared-kernel problem</a></li>
+  <li><a href="#toolbox">The toolbox at a glance</a></li>
+  <li><a href="#seccomp">seccomp: the syscall allowlist</a></li>
+  <li><a href="#landlock">Landlock: the filesystem fence</a></li>
+  <li><a href="#limits">Resource limits: rlimits and cgroups</a></li>
+  <li><a href="#nofork">Forbidding fork</a></li>
+  <li><a href="#privs">Privileges, capabilities and namespaces</a></li>
+  <li><a href="#containers">Hardening containers</a></li>
+  <li><a href="#lsm">Mandatory access control and the other LSMs</a></li>
+  <li><a href="#ebpf">eBPF: surface, enforcer and sensor</a></li>
+  <li><a href="#sandboxes">Sandbox launchers</a></li>
+  <li><a href="#vm">A different kernel: gVisor, Kata, Firecracker</a></li>
+  <li><a href="#cutdown">Cut-down Linux and unikernels</a></li>
+  <li><a href="#language">Language choice and dependency diet</a></li>
+  <li><a href="#spectrum">The isolation spectrum</a></li>
+  <li><a href="#recipe">Putting it together: a launch sequence</a></li>
+  <li><a href="#cases">What would have stopped it</a></li>
+  <li><a href="#audit">Audit checklist</a></li>
+  <li><a href="#review">How this page was reviewed</a></li>
+  <li><a href="#sources">Where to read more</a></li>
+</ol>
+</nav>
+
+<h2 id="threat"><small>01 &middot; Threat model</small>The shared-kernel problem</h2>
+<p>A normal Linux container behaves differently from a small virtual machine. It is an ordinary process, or a tree of processes, that the kernel has been told to show a limited view of the system. Namespaces give it a private view of mounts, PIDs (process IDs) and the network, and cgroups cap how much it may use. Capabilities and an LSM (Linux Security Module) narrow what it may do. But every one of its system calls still lands in the <strong>same kernel</strong> that runs the host and every other tenant. A single memory-corruption bug in any reachable kernel path turns "root in the container" into "root on the machine".</p>
+<p>That framing explains the whole field, which comes down to four goals. You make fewer kernel paths reachable and constrain each reachable path more tightly. You also limit the damage if the process is subverted anyway. When the stakes justify it, you put a <em>different kernel</em> or a hypervisor (software that runs virtual machines) between the workload and the host.</p>
+
+<div class="stack" aria-label="Layers of a hardened Linux workload">
+  <div class="layer"><b>Language</b><span>Memory-safe code and a small dependency tree: fewer bugs to exploit in the first place (section 14).</span></div>
+  <div class="layer"><b>Rlimits / cgroups</b><span>Bound CPU, memory, processes, I/O, so a bug cannot become a denial of service.</span></div>
+  <div class="layer"><b>seccomp</b><span>Allowlist of syscalls (and some arguments): shrinks the kernel attack surface the process can touch.</span></div>
+  <div class="layer"><b>Landlock / LSM</b><span>Which files, sockets and objects the allowed syscalls may act on.</span></div>
+  <div class="layer"><b>Capabilities</b><span>Slice up root; drop everything the workload does not need. Set <code>no_new_privs</code>.</span></div>
+  <div class="layer"><b>Namespaces</b><span>What the process can <em>see</em>: its own mounts, PIDs, network, users. Not a security boundary alone.</span></div>
+  <div class="layer k"><b>Host kernel</b><span>Shared. Every layer above exists because of this one. A kernel bug can bypass all of them.</span></div>
+  <div class="layer h"><b>Hypervisor</b><span>Optional: a guest kernel (Kata, Firecracker) or a user-space kernel (gVisor) so the host kernel is no longer directly exposed.</span></div>
+</div>
+
+<h3>Design principles that recur</h3>
+<ul>
+  <li><strong>Default deny:</strong> an allowlist fails closed when a new syscall, flag or kernel feature appears; a denylist fails open.</li>
+  <li><strong>Least privilege, applied late:</strong> do the privileged setup (open sockets, read config, create cgroups), then restrict, then run untrusted work. Restrictions only tighten: seccomp filters and Landlock rulesets can only be added to, never removed.</li>
+  <li><strong>Defence in depth, with independent failure modes:</strong> a seccomp filter and a Landlock ruleset fail for different reasons, so if one has a hole, the other may still hold.</li>
+  <li><strong>Remove code as well as restricting it:</strong> a syscall that is compiled out cannot be reached by a filter bug; a dependency never added cannot be compromised.</li>
+  <li><strong>Assume the sandbox is the last line of defence.</strong> It limits the damage from a bug you did not find. You still have to fix the bugs you know about.</li>
+</ul>
+
+<div class="callout warn"><b class="t">What this page does not cover</b>
+<p>This page leaves out network-level controls (firewalls, service meshes), identity and secrets management, and Windows or macOS sandboxing, and it does not replace patching. Several of the worst container escapes were plain kernel or runtime bugs that no policy would have blocked (section 17).</p></div>
+
+<h2 id="toolbox"><small>02 &middot; Overview</small>The toolbox at a glance</h2>
+<p>Linux has no single sandbox; container runtimes and sandboxing tools combine independent mechanisms that were added over twenty years.</p>
+<div class="scroll"><table>
+<thead><tr><th>Mechanism</th><th>Restricts</th><th>Unprivileged?</th><th>Since</th><th>Main limit</th></tr></thead>
+<tbody>
+<tr><td class="n">Namespaces</td><td class="w">What the process can <em>see</em>: mounts, PIDs, net, IPC, UTS, users, cgroups, time</td><td>user ns yes; others need it or CAP_SYS_ADMIN</td><td>2.4.19 (mount) to 5.6 (time)</td><td class="w">They change what a process sees. They do not wall it off, because the kernel is shared; user namespaces also <em>expose</em> more kernel code to unprivileged users.</td></tr>
+<tr><td class="n">Capabilities</td><td class="w">Splits root into about forty privileges</td><td>drop: yes</td><td>2.2</td><td class="w">Coarse; <code>CAP_SYS_ADMIN</code> covers so many operations that it is nearly equal to root.</td></tr>
+<tr><td class="n">no_new_privs</td><td class="w">Stops <code>execve</code> from gaining privilege (setuid, file caps, LSM transitions)</td><td>yes</td><td>3.5</td><td class="w">One bit. Prerequisite for unprivileged seccomp and Landlock.</td></tr>
+<tr><td class="n">seccomp-bpf</td><td class="w">Which syscalls, and (numeric) arguments</td><td>yes (with no_new_privs)</td><td>3.5</td><td class="w">Cannot dereference pointers, so cannot judge paths or structs; <code>clone3</code> flags are invisible.</td></tr>
+<tr><td class="n">Landlock</td><td class="w">Filesystem access, TCP bind/connect, abstract-socket and signal scope</td><td>yes</td><td>5.13</td><td class="w">Young and incomplete; coverage grows with each ABI (application binary interface) version. Does not constrain already-open file descriptors.</td></tr>
+<tr><td class="n">cgroups v2</td><td class="w">CPU, memory, PIDs, I/O, devices (via eBPF), hugetlb</td><td>via delegation</td><td>4.5 (v2)</td><td class="w">Limits consumption, not capability. No network-bandwidth controller.</td></tr>
+<tr><td class="n">rlimits</td><td class="w">Per-process caps: files, address space, CPU time, file size, core</td><td>lower: yes</td><td>ancient</td><td class="w"><code>RLIMIT_NPROC</code> counts per real UID, not per sandbox.</td></tr>
+<tr><td class="n">SELinux / AppArmor</td><td class="w">Admin-written policy on files, sockets, IPC, capabilities</td><td>no (policy is the admin's)</td><td>2.6</td><td class="w">Policy complexity; AppArmor is path-based, SELinux is label-based.</td></tr>
+<tr><td class="n">eBPF (LSM, cgroup, tracing)</td><td class="w">Programmable enforcement and observability</td><td>privileged</td><td>BPF LSM 5.7</td><td class="w">A large attack surface of its own (the verifier and JIT).</td></tr>
+<tr><td class="n">Virtualization</td><td class="w">Everything: a separate guest kernel</td><td>needs <code>/dev/kvm</code></td><td>2.6.20 (KVM)</td><td class="w">Hypervisor/VMM bugs and CPU side channels; costs memory and startup time.</td></tr>
+</tbody></table></div>
+
+<h2 id="seccomp"><small>03 &middot; Syscall filtering</small>seccomp: the syscall allowlist</h2>
+<p class="cap" style="margin:0 0 12px">Reference: <a href="https://man7.org/linux/man-pages/man2/seccomp.2.html">seccomp(2)</a> and the kernel's Seccomp BPF documentation</p>
+<p>Every interaction between a process and the kernel goes through a system call. The <strong>seccomp</strong> ("secure computing") feature lets a process install a filter that the kernel runs on <em>every syscall entry</em>, before the syscall does anything. The filter is a small <strong>classic BPF</strong> program (BPF stands for Berkeley Packet Filter). It is not eBPF (extended BPF): it has no maps, no helpers, no loops and no pointers, and it inspects a fixed record to return a verdict.</p>
+
+<h3>What the filter sees</h3>
+<pre><code>struct seccomp_data {
+    int   nr;                      // syscall number
+    __u32 arch;                    // AUDIT_ARCH_* (which ABI)
+    __u64 instruction_pointer;
+    __u64 args[6];                 // raw register values, never dereferenced
+};</code></pre>
+<p>The filter sees only those fields, so it can say "<code>openat</code> is allowed" or "<code>socket</code>'s first argument must be <code>AF_UNIX</code>". It <strong>cannot</strong> say "<code>openat</code> may open only under /data". The path is a pointer into user memory, which the filter cannot read, and reading it would be racy anyway (see below). That job belongs to Landlock or an LSM.</p>
+
+<h3>Verdicts and precedence</h3>
+<p>Filters stack, children inherit them, and they survive <code>execve</code>, so if several filters are installed, all of them run and the <strong>most restrictive result wins</strong>:</p>
+<div class="scroll"><table>
+<thead><tr><th>Priority</th><th>Action</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td>1 (strictest)</td><td class="n"><code>KILL_PROCESS</code></td><td>Kills the whole thread group with SIGSYS (4.14+). Use for "this should never happen".</td></tr>
+<tr><td>2</td><td class="n"><code>KILL_THREAD</code></td><td>Kills the calling thread only. A surviving process in a half-dead state is rarely what you want.</td></tr>
+<tr><td>3</td><td class="n"><code>TRAP</code></td><td>Delivers a catchable SIGSYS; used for emulation and debugging.</td></tr>
+<tr><td>4</td><td class="n"><code>ERRNO</code></td><td>Syscall fails with a chosen errno (typically <code>EPERM</code> or <code>ENOSYS</code>). Lets programs degrade gracefully.</td></tr>
+<tr><td>5</td><td class="n"><code>USER_NOTIF</code></td><td>Suspends the caller and asks a supervisor process (5.0+). Flexible: runtimes use it to let a supervisor perform <code>mknod</code> or <code>mount</code> on a workload's behalf. See the warning below.</td></tr>
+<tr><td>6</td><td class="n"><code>TRACE</code></td><td>Notifies a ptrace tracer.</td></tr>
+<tr><td>7</td><td class="n"><code>LOG</code></td><td>Allows the call but logs it (4.14+). The tool for building a profile safely.</td></tr>
+<tr><td>8 (weakest)</td><td class="n"><code>ALLOW</code></td><td>Proceeds.</td></tr>
+</tbody></table></div>
+
+<div class="widget" id="w-seccomp">
+  <h4>Try it: stacked filters</h4>
+  <p>Two filters are installed, one by the container runtime and one by the application. Pick what each returns for the same syscall and see what the kernel does.</p>
+  <div class="row">
+    <label>Runtime filter: <select id="sc-a"></select></label>
+    <label>Application filter: <select id="sc-b"></select></label>
+  </div>
+  <div class="out" id="sc-out" role="status" aria-live="polite"></div>
+</div>
+
+<h3>The five ways seccomp policies go wrong</h3>
+<ol>
+  <li><strong>Forgetting the architecture:</strong> a filter that checks syscall <em>numbers</em> without checking <code>arch</code> can be bypassed through another ABI: 32-bit <code>int 0x80</code> on x86-64 uses a different numbering. On x86-64 the <strong>x32</strong> ABI sets bit 30 (<code>0x40000000</code>) in the number. Always check <code>arch</code> first and kill on a mismatch; reject numbers with the x32 bit. libseccomp does this for you.</li>
+  <li><strong>Denylisting:</strong> blocking "dangerous" calls fails open the day Linux adds a new one (<code>io_uring_*</code>, <code>clone3</code>, <code>pidfd_*</code>, <code>landlock_*</code>, <code>mount_setattr</code> were all new within a few years), so start from allow-nothing.</li>
+  <li><strong>Trying to judge pointers:</strong> suppose a <code>USER_NOTIF</code> or ptrace supervisor reads a path from the tracee's memory and then lets the call proceed. That has a time-of-check/time-of-use (TOCTOU) race, because another thread can rewrite the buffer between the check and the use. The kernel documentation is explicit that <code>SECCOMP_USER_NOTIF_FLAG_CONTINUE</code> must not be used to implement a security policy.</li>
+  <li><strong><code>clone3</code> and friends.</strong> <code>clone3</code> passes its flags in a struct in memory, so a filter cannot see them. The usual fix is to return <code>ENOSYS</code>, which makes glibc fall back to <code>clone</code>, whose flags <em>are</em> in a register and can be filtered, and container runtimes do exactly this.</li>
+  <li><strong>Operations that are not syscalls.</strong> <strong>io_uring</strong> lets a process queue reads, writes, connects and more through shared rings. The kernel runs these operations without going through the syscall path, so a syscall filter never sees them. Block <code>io_uring_setup</code>/<code>enter</code>/<code>register</code>, or set the sysctl <code>kernel.io_uring_disabled</code> (6.6+: 0 allow, 1 only a configured group, 2 disable for all). Google has <a href="https://security.googleblog.com/2023/06/learnings-from-kctf-vrps-42-linux.html">reported</a> that most of the kernel exploits submitted to its kCTF bug-bounty program in 2022 targeted io_uring. It restricted the interface on several of its own platforms.</li>
+</ol>
+
+<h3>What to deny even in a permissive profile</h3>
+<p>Docker's default profile is an allowlist of a few hundred syscalls. Its <a href="https://docs.docker.com/engine/security/seccomp/">documentation</a> says it blocks around 44 out of 300+, although several of the allowed syscalls work only when the matching capability is present. A tighter application profile typically also removes:</p>
+<div class="scroll"><table>
+<thead><tr><th>Group</th><th>Syscalls</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td class="n">Kernel code</td><td class="w"><code>init_module</code>, <code>finit_module</code>, <code>delete_module</code>, <code>kexec_load</code>, <code>kexec_file_load</code></td><td>Load arbitrary kernel code.</td></tr>
+<tr><td class="n">Mount and root</td><td class="w"><code>mount</code>, <code>umount2</code>, <code>pivot_root</code>, <code>move_mount</code>, <code>open_tree</code>, <code>fsopen</code>, <code>fsconfig</code>, <code>fsmount</code>, <code>mount_setattr</code></td><td>Rearrange the filesystem; a repeat source of kernel bugs (<a href="https://nvd.nist.gov/vuln/detail/CVE-2022-0185">CVE-2022-0185</a> was in <code>fsconfig</code>).</td></tr>
+<tr><td class="n">Namespaces</td><td class="w"><code>unshare</code>, <code>setns</code>, <code>clone</code> with <code>CLONE_NEW*</code></td><td>Gaining a new user namespace exposes a lot of root-only kernel code to attackers.</td></tr>
+<tr><td class="n">Tracing and introspection</td><td class="w"><code>ptrace</code>, <code>process_vm_readv/writev</code>, <code>perf_event_open</code>, <code>bpf</code>, <code>kcmp</code></td><td>Read or write other processes' memory; info leaks; the BPF verifier surface.</td></tr>
+<tr><td class="n">Memory tricks</td><td class="w"><code>userfaultfd</code>, <code>mbind</code>, <code>move_pages</code>, <code>set_mempolicy</code></td><td>Race-widening primitives for exploits.</td></tr>
+<tr><td class="n">Keys and handles</td><td class="w"><code>add_key</code>, <code>request_key</code>, <code>keyctl</code>, <code>open_by_handle_at</code></td><td>The kernel keyring is shared across containers; <code>open_by_handle_at</code> enabled the 2014 "Shocker" escape.</td></tr>
+<tr><td class="n">Hardware and system</td><td class="w"><code>iopl</code>, <code>ioperm</code>, <code>modify_ldt</code>, <code>reboot</code>, <code>swapon</code>, <code>swapoff</code>, <code>acct</code>, <code>settimeofday</code>, <code>clock_settime</code></td><td>No reason for a workload to touch these.</td></tr>
+<tr><td class="n">io_uring</td><td class="w"><code>io_uring_setup</code>, <code>io_uring_enter</code>, <code>io_uring_register</code></td><td>Large, fast-moving attack surface that bypasses syscall filtering (above).</td></tr>
+</tbody></table></div>
+
+<h3>Building a profile you can trust</h3>
+<ol>
+  <li><strong>Record, then restrict:</strong> run the workload under realistic load. Put the filter in <code>LOG</code> mode (<code>SECCOMP_RET_LOG</code> writes to the audit log), or use <code>strace -f -c</code>, or count syscalls with bpftrace:
+<pre><code>bpftrace -e 'tracepoint:raw_syscalls:sys_enter /comm == "myapp"/ { @[args-&gt;id] = count(); }'</code></pre></li>
+  <li><strong>Cover the unhappy paths:</strong> startup, shutdown, error handling, log rotation, DNS failures and signal handling all call syscalls that the happy path never does. A profile built from one test run often causes production <code>SIGSYS</code> crashes.</li>
+  <li><strong>Prefer <code>ERRNO</code> in production for optional calls, <code>KILL_PROCESS</code> for never-legitimate ones.</strong> Libraries probe for features and handle <code>ENOSYS</code>/<code>EPERM</code> gracefully; they do not handle being killed.</li>
+  <li><strong>Re-record on every runtime change:</strong> a new libc, a new Go or Rust release, or a new library can start using different syscalls (<code>clone3</code>, <code>faccessat2</code>, <code>statx</code>, <code>rseq</code>).</li>
+  <li><strong>Go and the JVM need extra care</strong>, because Go starts many threads and uses <code>clone</code> with several flags, <code>sigaltstack</code>, <code>futex</code>, <code>epoll</code> and <code>madvise</code>. A filter that forbids <code>clone</code> therefore breaks it. Record the profile with a real build and allow thread-style <code>clone</code> only. The JVM also maps writable-and-executable memory for its JIT, so it cannot run with <code>MemoryDenyWriteExecute</code>. It reads <code>/proc/self</code> and <code>/sys/fs/cgroup</code> at start-up, so test both under load and after launch.</li>
+  <li><strong>Tooling:</strong> libseccomp (C, with Python/Go/Rust bindings), the Rust <code>seccompiler</code> crate (written for Firecracker), systemd's named syscall sets (<code>systemd-analyze syscall-filter</code>). In Kubernetes, the Security Profiles Operator can record profiles.</li>
+</ol>
+
+<div class="callout"><b class="t">seccomp is not "eBPF seccomp"</b>
+<p>seccomp uses <em>classic</em> BPF, a deliberately tiny instruction set the kernel can verify trivially. Extending seccomp to eBPF has been proposed several times but has not been merged. Everything in section 10 about eBPF's verifier and JIT does not apply to seccomp filters.</p></div>
+
+<h2 id="landlock"><small>04 &middot; Filesystem and network fencing</small>Landlock: the filesystem fence</h2>
+<p class="cap" style="margin:0 0 12px">Reference: <a href="https://docs.kernel.org/userspace-api/landlock.html">Landlock userspace API</a></p>
+<p>seccomp decides <em>which</em> calls you may make, and <strong>Landlock</strong> decides <em>what they may touch</em>. It is a Linux Security Module with one unusual property: <strong>any unprivileged process can restrict itself</strong>. It needs no root, no admin-written policy and no setuid helper. An application can say "from now on I may read /usr and write only to /var/app/scratch". The kernel then enforces that on it and all its descendants, forever.</p>
+
+<h3>The three syscalls</h3>
+<ol>
+  <li><code>landlock_create_ruleset()</code>: declare which access rights this ruleset <em>handles</em>. Anything handled is denied unless a rule allows it; anything <em>not</em> handled is left alone.</li>
+  <li><code>landlock_add_rule()</code>: allow specific rights beneath a directory (an <code>O_PATH</code> file descriptor), or on a single file, or (ABI 4+) on a TCP port.</li>
+  <li><code>landlock_restrict_self()</code>: enforce the ruleset, which requires <code>no_new_privs</code> (or <code>CAP_SYS_ADMIN</code>) and cannot be undone.</li>
+</ol>
+<p>The call sequence is in the complete example in section 16, which was compiled and run for this page.</p>
+
+<h3>Access rights by ABI version</h3>
+<p>Landlock grows by <em>ABI version</em>, and a program asks the kernel which version it supports. The program then masks out the rights the kernel does not know about ("best-effort" mode), so old kernels give weaker sandboxing rather than failing.</p>
+<div class="scroll"><table>
+<thead><tr><th>ABI</th><th>Kernel</th><th>Adds</th></tr></thead>
+<tbody>
+<tr><td class="n">1</td><td>5.13</td><td>Filesystem: <code>EXECUTE</code>, <code>WRITE_FILE</code>, <code>READ_FILE</code>, <code>READ_DIR</code>, <code>REMOVE_DIR</code>, <code>REMOVE_FILE</code>, <code>MAKE_CHAR/DIR/REG/SOCK/FIFO/BLOCK/SYM</code></td></tr>
+<tr><td class="n">2</td><td>5.19</td><td><code>REFER</code>: linking or renaming across directories (closes a rename-based escape)</td></tr>
+<tr><td class="n">3</td><td>6.2</td><td><code>TRUNCATE</code></td></tr>
+<tr><td class="n">4</td><td>6.7</td><td>Network: <code>BIND_TCP</code>, <code>CONNECT_TCP</code> (by port number)</td></tr>
+<tr><td class="n">5</td><td>6.10</td><td><code>IOCTL_DEV</code>: ioctl on device files</td></tr>
+<tr><td class="n">6</td><td>6.12</td><td>Scoping: <code>SCOPE_ABSTRACT_UNIX_SOCKET</code> and <code>SCOPE_SIGNAL</code> (cannot reach processes outside the domain)</td></tr>
+<tr><td class="n">7</td><td>6.15</td><td>Audit logging of denials and the log flags on <code>restrict_self</code></td></tr>
+<tr><td class="n">8</td><td>around 7.0 (<a href="https://kernsec.org/pipermail/linux-security-module-archive/2026-March/056508.html">docs patch</a>; exact release not confirmed here)</td><td><code>LANDLOCK_RESTRICT_SELF_TSYNC</code>: apply the ruleset to <em>all</em> threads of the process. Without it, <code>landlock_restrict_self</code> restricts only the calling thread (and its future children), so call it before creating threads or use the flag.</td></tr>
+<tr><td class="n">9</td><td>not confirmed released</td><td><code>LANDLOCK_ACCESS_FS_RESOLVE_UNIX</code>: restrict connecting to <em>pathname</em> Unix sockets. A <a href="https://kernsec.org/pipermail/linux-security-module-archive/2026-March/056560.html">patch series</a> documents it as ABI 9. We could not confirm a release number. Check <code>Documentation/userspace-api/landlock.rst</code> for your kernel.</td></tr>
+</tbody></table></div>
+
+<h3>Semantics worth internalising</h3>
+<ul>
+  <li><strong>Within one ruleset, rules union:</strong> an access is allowed if a rule on the file or <em>any ancestor directory</em> grants that right.</li>
+  <li><strong>Across stacked rulesets, rules intersect:</strong> each <code>restrict_self</code> adds a layer (up to 16); an access must be allowed by <em>every</em> layer. A child can narrow the policy it inherited but never widen it.</li>
+  <li><strong>Not retroactive:</strong> file descriptors opened <em>before</em> <code>restrict_self</code> keep working. That is a feature (open what you need, then lock down) and a hazard (do not leak a directory fd into the sandbox).</li>
+  <li><strong>Mount topology is frozen:</strong> a Landlocked process cannot mount, unmount or <code>pivot_root</code>.</li>
+  <li><strong>Gaps:</strong> the original ABIs (application binary interface versions) have no right for <code>chmod</code>, <code>chown</code>, <code>stat</code> or <code>utime</code>-style metadata operations. The network side covers TCP only, not UDP or raw sockets. <strong>Landlock does not mediate connecting to a <em>pathname</em> Unix socket at all on ABIs 1 to 8</strong>, whatever filesystem rules you wrote. For example, <code>connect()</code> to <code>/var/run/docker.sock</code> or a D-Bus or systemd socket succeeds if the file's own permissions allow it. ABI 6 scoping covers only <em>abstract</em> sockets, and a proposed ABI 9 right (see the table) targets this. Until then, deny <code>socket(AF_UNIX)</code> in seccomp, or run in a mount namespace where such sockets do not exist. Pair Landlock with seccomp to cover what it does not.</li>
+  <li><strong>It must be on:</strong> check <code>cat /sys/kernel/security/lsm</code> for <code>landlock</code> (kernel built with <code>CONFIG_SECURITY_LANDLOCK</code>, and listed in <code>lsm=</code>), so probe the ABI at runtime instead of assuming.</li>
+</ul>
+
+<div class="widget" id="w-landlock">
+  <h4>Try it: a Landlock ruleset</h4>
+  <p>Layer 1 is the policy a launcher installed, and you can optionally add a layer 2 that a plugin applied to itself later. Then test an operation against a path.</p>
+  <div class="row">
+    <label>Preset:
+      <select id="ll-preset">
+        <option value="ro">Layer 1: read-only system, scratch dir writable</option>
+        <option value="web">Layer 1: web app (reads /srv/app, writes /var/log/app)</option>
+        <option value="open">Layer 1: sloppy (grants / read, write, create; not execute)</option>
+      </select></label>
+    <label><input type="checkbox" id="ll-l2"> add layer 2 (narrows to read-only <code>/usr</code>)</label>
+  </div>
+  <div class="row">
+    <label>Operation:
+      <select id="ll-op">
+        <option value="R">read a file / list a directory</option>
+        <option value="W">write to a file</option>
+        <option value="X">execute</option>
+        <option value="C">create / delete / rename</option>
+      </select></label>
+    <label>Path: <select id="ll-path"></select></label>
+  </div>
+  <div class="tree" id="ll-rules"></div>
+  <div class="out" id="ll-out" role="status" aria-live="polite"></div>
+  <p class="cap" style="margin:8px 0 0">Simplified model: "create / delete / rename" stands for several real rights: <code>MAKE_*</code>, <code>REMOVE_*</code> and <code>REFER</code> (for cross-directory moves). A real layer only restricts the rights it declares as handled.</p>
+</div>
+
+<h2 id="limits"><small>05 &middot; Denial of service</small>Resource limits: rlimits and cgroups</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://docs.kernel.org/admin-guide/cgroup-v2.html">Control Group v2</a> &middot; <a href="https://man7.org/linux/man-pages/man2/getrlimit.2.html">getrlimit(2)</a></p>
+<p>Capability limits stop a process doing what it should not; resource limits stop it doing too much of what it may. Without them, one runaway or hostile workload can starve a host: memory exhaustion, a fork bomb, a full disk, a saturated disk queue.</p>
+
+<h3>rlimits: per-process, inherited, low cost</h3>
+<div class="scroll"><table>
+<thead><tr><th>Limit</th><th>Controls</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td class="n"><code>RLIMIT_NPROC</code></td><td class="w">Processes/threads for a <strong>real UID</strong></td><td class="w">Checked at <code>fork</code> and <code>clone</code>, and at <code>execve</code> after a UID change. Counted across <em>all</em> of that UID's processes, not per sandbox, and not enforced against root or holders of <code>CAP_SYS_RESOURCE</code>/<code>CAP_SYS_ADMIN</code>. Dangerous to use alone (see the next section).</td></tr>
+<tr><td class="n"><code>RLIMIT_AS</code></td><td class="w">Virtual address space</td><td class="w">A blunt memory cap; breaks runtimes that reserve large virtual ranges (Go, JVM, sanitizers). There is no enforced RSS limit: use cgroups.</td></tr>
+<tr><td class="n"><code>RLIMIT_CPU</code></td><td class="w">CPU seconds</td><td class="w">SIGXCPU at the soft limit, SIGKILL at the hard limit.</td></tr>
+<tr><td class="n"><code>RLIMIT_FSIZE</code></td><td class="w">Largest file a process may create</td><td class="w">SIGXFSZ on excess.</td></tr>
+<tr><td class="n"><code>RLIMIT_NOFILE</code></td><td class="w">Open file descriptors</td><td class="w">Cap it low; also limits socket count.</td></tr>
+<tr><td class="n"><code>RLIMIT_CORE</code></td><td class="w">Core dump size</td><td class="w">Set to 0: dumps leak secrets and memory layout.</td></tr>
+<tr><td class="n"><code>RLIMIT_MEMLOCK</code>, <code>RLIMIT_MSGQUEUE</code>, <code>RLIMIT_SIGPENDING</code></td><td class="w">Locked memory, POSIX queues, queued signals</td><td class="w">Kernel-memory consumers worth bounding.</td></tr>
+</tbody></table></div>
+
+<h3>cgroups v2: per-group, hierarchical, enforced</h3>
+<p>Control groups put a set of processes in a tree and apply limits to the whole subtree. The v2 interface is a single unified hierarchy under <code>/sys/fs/cgroup</code>.</p>
+<div class="scroll"><table>
+<thead><tr><th>File</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td class="n"><code>pids.max</code></td><td class="w">Maximum tasks (<em>threads count</em>). <code>fork</code>/<code>clone</code> fails with <code>EAGAIN</code> at the limit. The standard fork-bomb defence.</td></tr>
+<tr><td class="n"><code>memory.max</code></td><td class="w">Hard memory limit (anonymous, page cache, kernel memory attributed to the group). Exceeding it triggers reclaim and then the OOM killer inside the group.</td></tr>
+<tr><td class="n"><code>memory.high</code></td><td class="w">Soft limit: throttles and reclaims aggressively without killing.</td></tr>
+<tr><td class="n"><code>memory.swap.max</code></td><td class="w">Swap cap. Set to 0 to keep secrets and pressure out of swap.</td></tr>
+<tr><td class="n"><code>memory.oom.group</code></td><td class="w">On OOM, kill the whole group instead of one process, leaving no half-alive workload.</td></tr>
+<tr><td class="n"><code>cpu.max</code></td><td class="w"><code>"quota period"</code>, e.g. <code>50000 100000</code> is half a CPU. <code>cpu.weight</code> is the proportional-share alternative.</td></tr>
+<tr><td class="n"><code>io.max</code></td><td class="w">Per-device <code>rbps</code>, <code>wbps</code>, <code>riops</code>, <code>wiops</code>.</td></tr>
+<tr><td class="n"><code>cpuset.cpus</code></td><td class="w">Pin to specific CPUs (also used to separate tenants onto different cores).</td></tr>
+<tr><td class="n"><code>cgroup.kill</code></td><td class="w">Write <code>1</code> to kill every process in the subtree atomically (5.14+). The clean way to stop a fork bomb that is spawning faster than you can <code>kill</code>.</td></tr>
+<tr><td class="n"><code>cgroup.freeze</code></td><td class="w">Freeze the subtree (5.2+) for inspection.</td></tr>
+</tbody></table></div>
+<p>Device access in v2 is governed by a BPF program of type <code>CGROUP_DEVICE</code> attached by the runtime, not by a file. Delegation to unprivileged users goes through systemd (<code>Delegate=yes</code>); note the "no internal processes" rule: a cgroup with controllers enabled for children cannot itself contain processes.</p>
+<pre><code># one-off, via systemd (works rootless with a user manager)
+systemd-run --user --scope \
+  -p MemoryMax=256M -p MemorySwapMax=0 -p TasksMax=64 -p CPUQuota=50% \
+  -p IOWriteBandwidthMax="/dev/nvme0n1 10M" \
+  ./untrusted
+
+# by hand (as root, cgroup v2). Only valid at the root cgroup of a host where systemd does not
+# manage cgroups (a minimal VM). On a systemd host use systemd-run above. Inside a container
+# that already holds processes the write below fails with EBUSY (see the no-internal-processes rule). The controllers must be enabled for children first,
+# or pids.max and memory.max do not exist in the new group:
+echo "+pids +memory +cpu" &gt; /sys/fs/cgroup/cgroup.subtree_control
+mkdir /sys/fs/cgroup/jail
+echo 64    &gt; /sys/fs/cgroup/jail/pids.max
+echo 256M  &gt; /sys/fs/cgroup/jail/memory.max
+echo 0     &gt; /sys/fs/cgroup/jail/memory.swap.max
+echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the workload from it</code></pre>
+<p>The <code>systemd-run --user</code> line needs the user manager to have the <code>memory</code>, <code>pids</code>, <code>cpu</code> and <code>io</code> controllers delegated. Many distributions do not do this by default for user sessions, so check <code>cat /sys/fs/cgroup/user.slice/user-$UID.slice/user@$UID.service/cgroup.controllers</code>.</p>
+<h3>A time limit</h3>
+<p>No rlimit bounds wall-clock time, and <code>RLIMIT_CPU</code> counts CPU seconds only, so a process that sleeps or waits on a pipe never trips it. Run a watchdog outside the sandbox: start the job in its own cgroup, set a timer, and when it fires write <code>1</code> to <code>cgroup.kill</code>. With systemd, set <code>RuntimeMaxSec=</code> on the unit. Without either, <code>timeout --kill-after=5 30 ./job</code> is the minimum, but it signals only the command it started. On GNU coreutils 9.4 we saw background children keep running after the timeout fired. To stop everything, write 1 to <code>cgroup.kill</code> or set <code>RuntimeMaxSec</code> on a systemd unit.</p>
+<div class="callout warn"><b class="t">What limits do not cover</b>
+<p>No cgroup controller shapes network bandwidth, so use <code>tc</code> or eBPF-based tools. Disk <em>space</em> needs filesystem quotas (XFS project quotas, a size-limited <code>tmpfs</code>) and inode limits. Shared kernel resources such as the dentry cache or kernel keyrings can still be a cross-tenant side channel. Memory limits also do not stop a cache- or timing-based side channel.</p></div>
+
+<h2 id="nofork"><small>06 &middot; Process creation</small>Forbidding fork</h2>
+<p>"No forking" sounds like one switch, although it is at least five different mechanisms with different guarantees. You can "create a process" with <code>fork</code>, <code>vfork</code>, <code>clone</code> or <code>clone3</code>, and indirectly through <code>execve</code> chains and helper daemons.</p>
+<div class="scroll"><table>
+<thead><tr><th>Method</th><th>What it blocks</th><th>Gaps and gotchas</th></tr></thead>
+<tbody>
+<tr><td class="n">seccomp: deny <code>fork</code>, <code>vfork</code>; <code>clone</code> unless <code>CLONE_THREAD</code>; <code>clone3</code> &rarr; <code>ENOSYS</code></td><td class="w">All new processes, while still allowing threads. The most precise option; the example in section 16 does exactly this and was tested.</td><td class="w">On ARM64 there is no <code>fork</code>/<code>vfork</code>, only <code>clone</code>. 32-bit and x32 ABIs have their own numbers. <code>clone3</code> must be answered with <code>ENOSYS</code>, and the C library must fall back to <code>clone</code>. glibc 2.34 and later does this, because it tries <code>clone3</code> first. Test any other runtime you ship.</td></tr>
+<tr><td class="n">cgroup <code>pids.max</code></td><td class="w">Total tasks in the subtree. Set to 1 for a single-threaded process, or a small number for a thread pool.</td><td class="w"><strong>Threads count too.</strong> A process can still create children until it reaches the cap. Great against fork bombs, not against a single malicious <code>exec</code>.</td></tr>
+<tr><td class="n"><code>RLIMIT_NPROC</code></td><td class="w">Process creation by a UID that has reached the limit.</td><td class="w">Per real UID, not per sandbox. Ineffective for root and <code>CAP_SYS_RESOURCE</code>. Setting it low can break <em>other</em> processes of the same UID. Use a dedicated UID per sandbox, or do not rely on it.</td></tr>
+<tr><td class="n">Companion control: deny <code>execve</code>/<code>execveat</code></td><td class="w">Running any <em>new program</em>. It does not stop <code>fork</code> itself, but a forked child can only run code already in the process image.</td><td class="w">The filter must be installed after the final <code>exec</code> of the real workload, so the workload installs it on itself (or a supervisor notifies it). Use it together with a no-fork rule, not instead of one.</td></tr>
+<tr><td class="n">BPF LSM <code>task_alloc</code> hook</td><td class="w">Process creation, for tasks in a given cgroup, enforced in the kernel after flags are resolved (section 10).</td><td class="w">Needs a kernel with BPF LSM enabled and privileged setup.</td></tr>
+<tr><td class="n">Structural: single-process OS</td><td class="w">Unikernels like Nanos have no <code>fork</code> at all: a guest is one process (section 13).</td><td class="w">You cannot forget to install the filter, but you take on the OS's other trade-offs.</td></tr>
+</tbody></table></div>
+
+<div class="widget" id="w-fork">
+  <h4>Try it: a fork bomb under different limits</h4>
+  <p>Each live process forks once per round (the doubling that defines a fork bomb). Pick a defence and watch how far it spreads in 16 rounds.</p>
+  <div class="row">
+    <label>Defence:
+      <select id="fk-mode">
+        <option value="none">None</option>
+        <option value="nproc">RLIMIT_NPROC (per UID, shared with other processes)</option>
+        <option value="pids">cgroup pids.max</option>
+        <option value="seccomp">seccomp: deny fork, vfork, non-thread clone</option>
+      </select></label>
+    <label id="fk-lim-wrap">Limit: <input type="number" id="fk-lim" value="64" min="1" max="65536" style="width:6em"></label>
+    <label id="fk-other-wrap">Other processes of the same UID: <input type="number" id="fk-other" value="40" min="0" max="65536" style="width:6em"></label>
+  </div>
+  <div class="bars" id="fk-bars"></div>
+  <div class="out" id="fk-out" role="status" aria-live="polite"></div>
+</div>
+
+<h2 id="privs"><small>07 &middot; Privilege</small>Privileges, capabilities and namespaces</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://man7.org/linux/man-pages/man7/capabilities.7.html">capabilities(7)</a> &middot; <a href="https://docs.kernel.org/admin-guide/sysctl/kernel.html">kernel sysctls</a> &middot; <a href="https://docs.docker.com/engine/security/">Docker security</a></p>
+
+<h3>Capabilities: slicing up root</h3>
+<p>Since Linux 2.2, "root" is a bundle of about forty separate capabilities. A hardened workload runs as an unprivileged UID (user ID) <em>and</em> has an empty capability set (<code>--cap-drop=ALL</code>). It adds back only what it can justify, which is commonly nothing, or <code>NET_BIND_SERVICE</code> to bind port 80. Be wary of:</p>
+<ul>
+  <li><code>CAP_SYS_ADMIN</code>: the broadest capability, which covers mount, namespaces, many ioctls, BPF and cgroup manipulation, so granting it to a container largely voids the sandbox.</li>
+  <li><code>CAP_NET_RAW</code>: raw sockets and packet crafting, which Docker grants by default; most services do not need it (and it has enabled ARP and DNS spoofing between containers on a bridge).</li>
+  <li><code>CAP_SYS_PTRACE</code>, <code>CAP_DAC_READ_SEARCH</code>, <code>CAP_SYS_MODULE</code>, <code>CAP_SYS_RAWIO</code>, <code>CAP_BPF</code>/<code>CAP_PERFMON</code>: direct routes to other processes' memory, arbitrary files or kernel code.</li>
+</ul>
+<p>Docker's default set has 14 capabilities: <code>CHOWN</code>, <code>DAC_OVERRIDE</code>, <code>FSETID</code>, <code>FOWNER</code>, <code>MKNOD</code>, <code>NET_RAW</code>, <code>SETGID</code>, <code>SETUID</code>, <code>SETFCAP</code>, <code>SETPCAP</code>, <code>NET_BIND_SERVICE</code>, <code>SYS_CHROOT</code>, <code>KILL</code>, <code>AUDIT_WRITE</code>. Docker chose this list for compatibility, so a hardened service can usually drop more.</p>
+
+<h3>no_new_privs: privileges can only shrink</h3>
+<p><code>prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)</code> promises that <code>execve</code> will never grant more privilege than the caller already has. The kernel ignores setuid and setgid bits, file capabilities and automatic LSM domain transitions. It is inherited and cannot be unset, and it also lets an <em>unprivileged</em> process install a seccomp filter or a Landlock ruleset safely. Without it, the sandbox could be used to trick a setuid program, because the filter might make a privileged binary misbehave. Containers set it with <code>--security-opt no-new-privileges</code> / <code>allowPrivilegeEscalation: false</code>.</p>
+
+<h4>Other one-way switches worth knowing</h4>
+<ul>
+  <li><code>PR_SET_MDWE</code> (6.3+): refuse to create memory that is both writable and executable, or to make writable memory executable later. It is the process-level equivalent of systemd's <code>MemoryDenyWriteExecute</code>, and it breaks JITs.</li>
+  <li><em>securebits</em> (<code>PR_SET_SECUREBITS</code> with <code>SECBIT_NOROOT</code> and the <code>_LOCKED</code> variants): stop UID 0 from automatically regaining capabilities on exec.</li>
+  <li><code>hidepid=2</code> on <code>/proc</code>: hide other users' processes from <code>ps</code> and <code>/proc</code> (a PID namespace does this more thoroughly).</li>
+  <li><code>memfd_create</code> with <code>MFD_NOEXEC_SEAL</code> (6.3+): memory files that can never be executed, closing a route that fileless malware uses.</li>
+</ul>
+
+<h3>User namespaces: useful, and a larger attack surface</h3>
+<p>A user namespace maps UID 0 inside to an unprivileged UID outside. It is how <em>rootless</em> containers work: root in the container has no authority over the host. But it also lets any unprivileged process obtain a full capability set <em>inside its own namespace</em>. That exposes large amounts of root-only kernel code to an attacker: netfilter, filesystem mounting and the network stack. Many local-privilege-escalation bugs were reachable by unprivileged users <em>via</em> that door, such as the <code>nf_tables</code> flaw <a href="https://nvd.nist.gov/vuln/detail/CVE-2024-1086">CVE-2024-1086</a>. Some also have other routes, for example for processes that already hold <code>CAP_NET_ADMIN</code>.</p>
+<ul>
+  <li><strong>Do use</strong> user namespaces to <em>remove</em> host root from the container. Examples are rootless Docker/Podman, Kubernetes <code>hostUsers: false</code> and Docker's <code>--userns-remap</code>. A runtime or container escape then lands as an unprivileged host user.</li>
+  <li><strong>Do not allow</strong> sandboxed code itself to create new user namespaces unless it needs to. Deny <code>unshare</code>/<code>clone(CLONE_NEWUSER)</code> with seccomp, and where you do not need the feature, set <code>user.max_user_namespaces=0</code>. Some distributions have their own alternatives, such as Debian's <code>kernel.unprivileged_userns_clone</code> and Ubuntu 24.04's AppArmor restriction on unprivileged user namespaces.</li>
+</ul>
+
+<h3>The other namespaces</h3>
+<div class="scroll"><table>
+<thead><tr><th>Namespace</th><th>Isolates</th><th>Hardening note</th></tr></thead>
+<tbody>
+<tr><td class="n">mount</td><td class="w">The filesystem tree</td><td class="w">Use <code>pivot_root</code> (not <code>chroot</code>, which is escapable with <code>CAP_SYS_CHROOT</code>); make mounts private; mount the root read-only; <code>nosuid,nodev,noexec</code> on data volumes.</td></tr>
+<tr><td class="n">pid</td><td class="w">The process table</td><td class="w">Hides other processes and makes the first process PID 1 (it must reap zombies; use an init such as <code>tini</code>).</td></tr>
+<tr><td class="n">net</td><td class="w">Interfaces, routes, sockets</td><td class="w">An empty net namespace (<code>--network none</code>) leaves the workload no network interface to use, which is the strictest network policy you can set.</td></tr>
+<tr><td class="n">ipc / uts</td><td class="w">SysV and POSIX IPC; hostname</td><td class="w">Low cost; always unshare.</td></tr>
+<tr><td class="n">cgroup</td><td class="w">The view of the cgroup tree (prefer cgroup v2 on hosts: v1 has no safe delegation)</td><td class="w">Hides the host cgroup layout from the workload.</td></tr>
+<tr><td class="n">time</td><td class="w">Boot and monotonic clock offsets</td><td class="w">Rarely a security control.</td></tr>
+</tbody></table></div>
+
+<h3>Kernel sysctls worth setting on the host</h3>
+<div class="scroll"><table>
+<thead><tr><th>Sysctl</th><th>Setting</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td class="n"><code>kernel.unprivileged_bpf_disabled</code></td><td><code>1</code> (or <code>2</code>)</td><td class="w">Unprivileged eBPF is a long-running source of privilege-escalation bugs.</td></tr>
+<tr><td class="n"><code>net.core.bpf_jit_harden</code></td><td><code>2</code></td><td class="w">Blinds constants in JIT output, hampering JIT spraying.</td></tr>
+<tr><td class="n"><code>kernel.kptr_restrict</code></td><td><code>2</code></td><td class="w">Hides kernel pointers from /proc (denies exploit info leaks).</td></tr>
+<tr><td class="n"><code>kernel.dmesg_restrict</code></td><td><code>1</code></td><td class="w">Stops unprivileged reading of the kernel log.</td></tr>
+<tr><td class="n"><code>kernel.perf_event_paranoid</code></td><td>upstream maximum is <code>2</code>; Debian patches add <code>3</code> and Ubuntu <code>4</code> (deny all unprivileged use)</td><td class="w">Perf is a large attack surface and a side-channel tool.</td></tr>
+<tr><td class="n"><code>kernel.yama.ptrace_scope</code></td><td><code>1</code> or higher</td><td class="w">Only descendants may be ptraced.</td></tr>
+<tr><td class="n"><code>kernel.io_uring_disabled</code></td><td><code>2</code> if unused</td><td class="w">6.6+. Removes a whole interface.</td></tr>
+<tr><td class="n"><code>kernel.kexec_load_disabled</code>, <code>kernel.modules_disabled</code></td><td><code>1</code></td><td class="w">One-way switches: after boot, no new kernel or modules.</td></tr>
+<tr><td class="n"><code>vm.unprivileged_userfaultfd</code></td><td><code>0</code></td><td class="w">Race-widening primitive for kernel exploits.</td></tr>
+<tr><td class="n"><code>fs.protected_symlinks/hardlinks/fifos/regular</code></td><td><code>1</code> / <code>1</code> / <code>2</code> / <code>2</code></td><td class="w">Blocks classic /tmp races.</td></tr>
+<tr><td class="n"><code>fs.suid_dumpable</code></td><td><code>0</code></td><td class="w">No dumps of privileged processes.</td></tr>
+<tr><td class="n"><code>dev.tty.legacy_tiocsti</code></td><td><code>0</code></td><td class="w">6.2+. <code>TIOCSTI</code> injects keystrokes into a terminal: a sandbox escape for programs run from a shell (see <code>bwrap --new-session</code>).</td></tr>
+</tbody></table></div>
+
+<h2 id="containers"><small>08 &middot; Docker, Podman, Kubernetes</small>Hardening containers</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://docs.docker.com/engine/security/seccomp/">Docker seccomp</a> &middot; <a href="https://kubernetes.io/docs/concepts/security/pod-security-standards/">Pod Security Standards</a> &middot; <a href="https://kubernetes.io/docs/tutorials/security/seccomp/">Kubernetes seccomp tutorial</a></p>
+<p>A container runtime (runc, crun) is mostly a launcher. It performs the steps above in the right order from a JSON config, which follows the OCI (Open Container Initiative) runtime spec. Defaults are tuned for <em>compatibility</em>, so hardening is the work of removing what your workload does not need.</p>
+
+<h3>Things that void the sandbox</h3>
+<ul>
+  <li><code>--privileged</code>: all capabilities, all devices, no seccomp, no AppArmor, so it is not a container in any meaningful security sense.</li>
+  <li>Mounting <code>/var/run/docker.sock</code>: whoever can talk to it can start a privileged container: root on the host, by design.</li>
+  <li><code>--pid=host</code>, <code>--net=host</code>, <code>--ipc=host</code>, host-path bind mounts of <code>/</code>, <code>/proc</code>, <code>/sys</code> or <code>/etc</code>; <code>--device</code> of raw disks; <code>--cap-add SYS_ADMIN</code>; <code>--security-opt seccomp=unconfined</code>.</li>
+  <li>Running as root inside, with the runtime itself running as root on the host. A runtime bug then yields host root: see <a href="https://nvd.nist.gov/vuln/detail/CVE-2019-5736">CVE-2019-5736</a> and <a href="https://nvd.nist.gov/vuln/detail/CVE-2024-21626">CVE-2024-21626</a> in section 17.</li>
+</ul>
+
+<h3>A hardened <code>docker run</code></h3>
+<pre><code>docker run --rm \
+  --user 65532:65532 \
+  --read-only --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges \
+  --security-opt seccomp=./profile.json \
+  --pids-limit=64 --memory=256m --memory-swap=256m --cpus=0.5 \
+  --ulimit nofile=256:256 --ulimit core=0 \
+  --network=none --ipc=none \
+  registry.example/app@sha256:…</code></pre>
+<p><strong>Getting <code>profile.json</code>:</strong> start from <a href="https://github.com/moby/profiles/blob/main/seccomp/default.json">Docker's default profile</a> and remove what your workload never calls. To record what it does call, run it under load with the <code>SCMP_ACT_LOG</code> action and read the audit log. In Kubernetes, the <a href="https://github.com/kubernetes-sigs/security-profiles-operator">Security Profiles Operator</a> can record a profile for you. Treat a recorded profile as a starting point, and read it before you trust it.</p>
+
+<div class="widget" id="w-docker">
+  <h4>Try it: build the command, see what each flag buys</h4>
+  <div class="chk" id="dk-flags"></div>
+  <div class="out" id="dk-out" role="status" aria-live="polite"></div>
+</div>
+
+<h3>Kubernetes</h3>
+<p>The same controls appear as a <code>securityContext</code>. The <strong>Pod Security Standards</strong> define three levels (<em>privileged</em>, <em>baseline</em>, <em>restricted</em>), enforced per namespace by the built-in Pod Security admission controller, so aim for <em>restricted</em>.</p>
+<pre><code>apiVersion: v1
+kind: Pod
+metadata: { name: app }
+spec:
+  automountServiceAccountToken: false
+  hostUsers: false                      # user namespace: container root is unprivileged on the host
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    seccompProfile: { type: RuntimeDefault }
+  containers:
+  - name: app
+    image: registry.example/app@sha256:…
+    securityContext:
+      allowPrivilegeEscalation: false   # sets no_new_privs
+      readOnlyRootFilesystem: true
+      capabilities: { drop: ["ALL"] }
+    resources:
+      requests: { cpu: 100m, memory: 128Mi }
+      limits:   { cpu: 500m, memory: 256Mi }
+    volumeMounts: [{ name: tmp, mountPath: /tmp }]
+  volumes: [{ name: tmp, emptyDir: { medium: Memory, sizeLimit: 64Mi } }]</code></pre>
+<ul>
+  <li><code>seccompProfile: RuntimeDefault</code> is <strong>not</strong> applied by default unless the kubelet runs with <code>--seccomp-default</code> (stable since 1.27). Set it explicitly, because a pod with no seccomp profile otherwise runs <code>Unconfined</code>.</li>
+  <li>Pod limits become cgroup limits. A per-pod <code>pids.max</code> comes from the kubelet's <code>podPidsLimit</code> (or the runtime's own default, for example the one CRI-O ships), so set it explicitly rather than trusting a default.</li>
+  <li>An <code>emptyDir</code> cannot be mounted <code>noexec</code>. If you need that, mount a dedicated volume with mount options through your storage class, or keep the workload on a read-only root with no writable executable path. The audit checklist asks for it as a goal.</li>
+  <li>A <code>medium: Memory</code> <code>emptyDir</code> counts against the container's memory limit, and its <code>sizeLimit</code> caps it. A disk-backed <code>emptyDir</code> needs <code>resources.limits["ephemeral-storage"]</code> instead. Also set a pids limit (see the kubelet bullet above), which this example omits.</li>
+  <li>To send untrusted pods to gVisor or Kata, set <code>runtimeClassName: gvisor</code> in the pod spec, after your cluster admin has defined that RuntimeClass.</li>
+  <li><code>hostUsers: false</code> (user namespaces for pods) needs a supporting runtime and kernel; check your cluster version's status.</li>
+  <li>Add <code>NetworkPolicy</code> default-deny egress and ingress, and use a RuntimeClass (above) to route untrusted pods to gVisor or Kata (section 12).</li>
+  <li>The OCI runtime spec has no Landlock field at the time of writing. So apply Landlock inside the workload, which restricts itself, or from an entrypoint wrapper.</li>
+  <li>Runtimes also <strong>mask</strong> sensitive procfs/sysfs paths (<code>maskedPaths</code>, such as <code>/proc/kcore</code> and <code>/proc/sched_debug</code>) and mount others read-only (<code>readonlyPaths</code>, such as <code>/proc/sys</code>). Do not disable this with <code>--security-opt systempaths=unconfined</code> or a Kubernetes <code>procMount: Unmasked</code>; several recent runc escapes were races in exactly this masking logic (section 17).</li>
+</ul>
+
+<h3>Rootless and minimal</h3>
+<ul>
+  <li><strong>Rootless Docker/Podman</strong>: the daemon and containers run as an unprivileged user with a user namespace, using <code>slirp4netns</code>/<code>pasta</code> for networking, so a runtime escape lands as that user.</li>
+  <li><strong>Minimal images</strong>: <code>scratch</code> or "distroless" images that hold the application binary, CA (certificate authority) certificates and nothing else. They have no shell, no package manager and no <code>curl</code> for an attacker to reuse, and you should pin them by digest rather than by tag.</li>
+  <li><strong>Immutable hosts</strong>: container-focused operating systems ship a small read-only root and an update mechanism instead of a package manager. Examples are Flatcar, Bottlerocket, Talos and Fedora CoreOS (section 13).</li>
+</ul>
+
+<h2 id="lsm"><small>09 &middot; Policy modules</small>Mandatory access control and the other LSMs</h2>
+<p>Linux Security Modules hook into the kernel at the point of each access decision. One <em>major</em> LSM (SELinux or AppArmor, usually) supplies a full policy, and several <em>minor</em> ones can stack alongside it.</p>
+<div class="scroll"><table>
+<thead><tr><th>LSM</th><th>Model</th><th>Use in hardening</th></tr></thead>
+<tbody>
+<tr><td class="n">SELinux</td><td class="w">Label-based type enforcement; every process and object carries a label; policy says which types may do what. Multi-Category Security (MCS) labels separate containers from each other.</td><td class="w">Enforcing mode with the container policy (<code>container_t</code>) is the strongest MAC option on RHEL-family systems. Strong, and complex to write policy for.</td></tr>
+<tr><td class="n">AppArmor</td><td class="w">Path-based profiles per program.</td><td class="w">Docker's <code>docker-default</code> profile; Kubernetes has a first-class <code>appArmorProfile</code> field (GA in 1.30). Easier to write, weaker against path tricks (renames, bind mounts).</td></tr>
+<tr><td class="n">Landlock</td><td class="w">Self-imposed, unprivileged, stackable.</td><td class="w">The application fences itself in (section 4).</td></tr>
+<tr><td class="n">Yama</td><td class="w">Restricts ptrace.</td><td class="w">Stops one process spying on another's memory.</td></tr>
+<tr><td class="n">Lockdown</td><td class="w">Separates "root" from "kernel": blocks <code>/dev/mem</code>, unsigned modules, kexec, etc.</td><td class="w">A separate setting (<code>lockdown=integrity</code> or <code>confidentiality</code>). Secure Boot can turn it on automatically on some distributions.</td></tr>
+<tr><td class="n">LoadPin, IPE</td><td class="w">Constrain loading of modules and firmware, or executable provenance, to trusted media or signatures.</td><td class="w">Appliance and immutable-OS hardening.</td></tr>
+<tr><td class="n">SafeSetID</td><td class="w">Restricts which UIDs a process may switch to.</td><td class="w">Fine-grained alternative to granting <code>CAP_SETUID</code>.</td></tr>
+<tr><td class="n">BPF LSM</td><td class="w">Programmable hooks (section 10).</td><td class="w">Custom enforcement without writing a kernel module.</td></tr>
+</tbody></table></div>
+<p>The practical relationship with the rest of the stack: <strong>seccomp</strong> narrows which kernel entry points exist for the process. An <strong>LSM</strong> or <strong>Landlock</strong> narrows what the remaining entry points can touch. An admin-managed MAC (mandatory access control, such as SELinux or AppArmor) protects against a workload whose own author did not sandbox it. Landlock protects against bugs in code whose author <em>did</em>.</p>
+
+<h2 id="ebpf"><small>10 &middot; Programmable kernel</small>eBPF: surface, enforcer and sensor</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://docs.kernel.org/bpf/prog_lsm.html">BPF LSM</a> &middot; <a href="https://docs.kernel.org/admin-guide/sysctl/kernel.html">unprivileged_bpf_disabled</a> &middot; <a href="https://tetragon.io/">Tetragon</a></p>
+<p>eBPF lets privileged users load small verified programs into the running kernel, and it matters to hardening in three opposite ways.</p>
+
+<h3>1. As attack surface</h3>
+<p>The eBPF verifier is a large static analyser and the JIT compiles its output to native code. Bugs in either have repeatedly produced local privilege escalation (for example <a href="https://nvd.nist.gov/vuln/detail/CVE-2021-3490">CVE-2021-3490</a> and <a href="https://nvd.nist.gov/vuln/detail/CVE-2022-23222">CVE-2022-23222</a>). So:</p>
+<ul>
+  <li>Set <code>kernel.unprivileged_bpf_disabled</code> to <code>1</code> (locked off until reboot) or <code>2</code> (disabled, admin may change it).</li>
+  <li>Set <code>net.core.bpf_jit_harden=2</code>.</li>
+  <li>Deny the <code>bpf</code> syscall to workloads by seccomp, and do not give them <code>CAP_BPF</code>, <code>CAP_PERFMON</code> or <code>CAP_SYS_ADMIN</code>.</li>
+  <li>Where eBPF is unused, compile it out (<code>CONFIG_BPF_SYSCALL=n</code>).</li>
+</ul>
+
+<h3>2. As an enforcer</h3>
+<ul>
+  <li><strong>BPF LSM</strong> (5.7, <code>CONFIG_BPF_LSM</code> and <code>lsm=…,bpf</code>): attach a program to any LSM hook; return a negative errno to deny. Because LSM hooks run <em>after</em> the kernel has copied and resolved its arguments, they avoid the time-of-check/time-of-use races that plague tracing-based enforcement. A sketch (not compiled here) that denies process creation, but not thread creation, for one cgroup:
+<pre><code>SEC("lsm/task_alloc")
+int BPF_PROG(deny_fork, struct task_struct *task, unsigned long clone_flags)
+{
+    const unsigned long CLONE_THREAD = 0x00010000;
+    if (bpf_get_current_cgroup_id() == jail_cgroup_id &amp;&amp; !(clone_flags &amp; CLONE_THREAD))
+        return -1;   /* -EPERM */
+    return 0;
+}</code></pre></li>
+  <li><strong>cgroup BPF</strong>: <code>cgroup/connect4</code>, <code>cgroup/sock_create</code> and friends give per-container egress policy; the <code>CGROUP_DEVICE</code> program is how v2 enforces device access.</li>
+  <li><strong>Practicalities</strong>: BPF LSM programs are normally built with libbpf against the kernel's BTF (BPF Type Format, <code>CONFIG_DEBUG_INFO_BTF</code>). They are loaded as CO-RE (compile once, run everywhere) objects and attached with <code>bpftool prog loadall … autoattach</code>. They also need the <code>bpf</code> LSM in the boot-time <code>lsm=</code> list.</li>
+  <li><strong>Network</strong>: XDP and tc programs (as used by Cilium) enforce Kubernetes network policy in the data path.</li>
+</ul>
+
+<h3>3. As a sensor, and sometimes an enforcer</h3>
+<ul>
+  <li><strong>Falco</strong> and <strong>Tracee</strong> watch syscalls and kernel events and raise alerts on rule matches: detection, mostly after the fact.</li>
+  <li><strong>Tetragon</strong> (Cilium) can enforce in-kernel: a <code>TracingPolicy</code> can send <code>SIGKILL</code> to the offender or override a call's return value. <strong>KubeArmor</strong> enforces through LSMs.</li>
+  <li><strong>The TOCTOU caveat:</strong> monitors that hook syscall entry (tracepoints, kprobes) see the user-space arguments <em>before</em> the kernel copies them. A second thread can change them afterwards, so what was checked is not what the kernel acts on. Prefer enforcing at LSM hooks, and treat syscall-entry hooks as detection.</li>
+</ul>
+<div class="callout"><b class="t">Which to pick</b>
+<p>Use seccomp for "this process never needs that syscall". Use Landlock for "this process only needs those files". Use BPF LSM or Tetragon for fleet-wide policy you want to change without touching the application. Use detection tooling (Falco) to learn when any of it is being tested.</p></div>
+
+<h2 id="sandboxes"><small>11 &middot; Ready-made launchers</small>Sandbox launchers</h2>
+<p>Most people should not write a launcher from raw syscalls, because these tools already assemble the layers.</p>
+<div class="scroll"><table>
+<thead><tr><th>Tool</th><th>What it is</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td class="n">bubblewrap (<code>bwrap</code>)</td><td class="w">Unprivileged namespace sandbox; the engine behind Flatpak.</td><td class="w">Builds a fresh filesystem view from explicit bind mounts and accepts a pre-compiled seccomp BPF. Use <code>--new-session</code> to defeat <code>TIOCSTI</code> injection, <code>--die-with-parent</code> to avoid orphans.</td></tr>
+<tr><td class="n">nsjail</td><td class="w">Namespaces, rlimits, cgroups and seccomp in one binary.</td><td class="w">Policies via its Kafel language; built for CTFs and untrusted-code services; has a hard wall-clock limit.</td></tr>
+<tr><td class="n">minijail</td><td class="w">Google's launcher (ChromeOS, Android).</td><td class="w">Library and CLI; seccomp policy files.</td></tr>
+<tr><td class="n">Firejail</td><td class="w">Desktop-app sandboxing with many profiles.</td><td class="w">Convenient, but installed setuid-root, so it is itself privileged attack surface; prefer unprivileged tools where possible.</td></tr>
+<tr><td class="n">systemd service sandboxing</td><td class="w">Directives in a unit file.</td><td class="w">Strong payoff for services you already run. Measure with <code>systemd-analyze security</code>.</td></tr>
+<tr><td class="n">Chromium sandbox</td><td class="w">Multi-process: a privileged <em>broker</em> and sandboxed renderers (namespaces and seccomp-bpf).</td><td class="w">The canonical example of <em>privilege separation</em>: untrusted parsing happens in a process that can only ask the broker for specific things.</td></tr>
+</tbody></table></div>
+
+<h3>bubblewrap, minimal</h3>
+<pre><code>bwrap --unshare-all --die-with-parent --new-session \
+      --ro-bind /usr /usr --symlink usr/lib /lib --symlink usr/lib64 /lib64 --symlink usr/bin /bin \
+      --proc /proc --dev /dev --tmpfs /tmp \
+      --bind "$PWD/work" /work --chdir /work \
+      --seccomp 3 3&lt;profile.bpf \
+      ./untrusted</code></pre>
+
+<h3>systemd: a hardened service unit</h3>
+<pre><code>[Service]
+DynamicUser=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictNamespaces=yes
+# Add AF_NETLINK to the next line if the app calls getifaddrs.
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictSUIDSGID=yes
+RestrictRealtime=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+UMask=0077
+MemoryMax=256M
+TasksMax=64
+LimitNOFILE=256
+LimitNPROC=64
+# For a batch job, also set RuntimeMaxSec=3600 (a long-running service would be killed hourly).
+LimitCORE=0</code></pre>
+<p><code>MemoryDenyWriteExecute=yes</code> breaks JIT-compiling runtimes (Node, JVM, .NET, PyPy); drop it for those. <code>DynamicUser=yes</code> gives the service a temporary UID that no other service shares. That makes <code>RLIMIT_NPROC</code>, which counts per UID, a real limit for that service.</p>
+
+<h2 id="vm"><small>12 &middot; Changing the boundary</small>A different kernel: gVisor, Kata, Firecracker</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/design.md">Firecracker design</a> &middot; <a href="https://github.com/firecracker-microvm/firecracker/blob/main/docs/jailer.md">Firecracker jailer</a> &middot; <a href="https://gvisor.dev/docs/architecture_guide/security/">gVisor security model</a> &middot; <a href="https://katacontainers.io/">Kata Containers</a></p>
+<p>Everything so far shrinks and polices access to the <em>host</em> kernel, while the next tier stops sharing it in one of two ways. You can put a <strong>user-space kernel</strong> in between (gVisor), or give the workload its <strong>own guest kernel</strong> behind a hypervisor, as Kata, Firecracker and ordinary VMs do.</p>
+
+<h3>gVisor</h3>
+<p>gVisor's <strong>Sentry</strong> is a Linux-compatible kernel written in Go that runs as an ordinary unprivileged process. The application's syscalls are intercepted (by default through a seccomp-based "systrap" platform; a KVM platform also exists, and older releases offered a ptrace platform) and <em>implemented by the Sentry</em>. The Sentry itself is confined by seccomp to a small fraction of host syscalls. A kernel bug the application tries to exploit is a bug in Sentry's Go code, in user space, rather than in the host kernel.</p>
+<ul>
+  <li><strong>Strengths:</strong> it has a far smaller host-kernel surface than a plain container. It is written mostly in Go, a memory-safe language (with some <code>unsafe</code> and assembly). It starts in container-like time (hundreds of milliseconds, not VM boot time). It is OCI-compatible as the <code>runsc</code> runtime, and RuntimeClass is easy to use in Kubernetes.</li>
+  <li><strong>Costs:</strong> syscall-heavy and I/O-heavy workloads are slower; not every syscall, <code>/proc</code> file or ioctl is implemented, so some software fails; networking uses a user-space stack.</li>
+</ul>
+
+<h3>Kata Containers</h3>
+<p>Kata runs each pod inside a <strong>lightweight VM</strong> with its own guest kernel, while presenting the standard container interface (containerd shim v2, <code>RuntimeClass</code>). It can use QEMU, Cloud Hypervisor or Firecracker as the hypervisor. The workload sees a normal container; the host sees a VM.</p>
+
+<h3>Firecracker and microVMs</h3>
+<p><strong><a href="https://github.com/firecracker-microvm/firecracker">Firecracker</a></strong> is an open-source virtual machine monitor from AWS (it runs Lambda and Fargate) written in Rust on top of KVM. Its design is itself a hardening lesson: <em>delete what you do not need</em>.</p>
+<ul>
+  <li><strong>Minimal device model:</strong> no BIOS, no USB, no GPU, no legacy emulation, and (by default) no PCI bus: devices sit on a simple MMIO (memory-mapped I/O) transport. Roughly, it offers virtio network, block and vsock devices, a serial console, a minimal keyboard controller for reset and a balloon. Newer versions add a few more, such as memory hot-plug and persistent-memory devices, and recent releases also offer an optional virtio-PCI transport. Check the current device matrix in the Firecracker docs before relying on a specific list. Historically the biggest source of hypervisor escapes has been emulated hardware (for example VENOM, <a href="https://nvd.nist.gov/vuln/detail/CVE-2015-3456">CVE-2015-3456</a>, in QEMU's virtual floppy controller).</li>
+  <li><strong>Fast and small:</strong> the project's <a href="https://www.usenix.org/conference/nsdi20/presentation/agache">NSDI 2020 paper</a> and README give these targets. A microVM boots to <code>init</code> in about 125 ms and adds under 5 MiB of VMM (virtual machine monitor) memory overhead. So a VM per request or per function becomes affordable.</li>
+  <li><strong>A VMM that is itself sandboxed:</strong> the <em>jailer</em> puts the Firecracker process in a chroot (a changed filesystem root) with its own namespaces and cgroups. It drops privileges and applies a seccomp filter that differs per thread type (API, VMM and vCPU threads), so it uses every layer described on this page.</li>
+  <li><strong>Rate limiters</strong> on network and block devices bound how much a noisy guest can hurt its neighbours.</li>
+  <li><strong>vsock</strong> gives host-guest communication without a network, but it is still host attack surface: the host-side code that parses what the guest sends has had bugs. The same applies to virtio-fs and any other shared-folder device, which hand the guest a path into the host file system. Share as little as you can, read-only where possible.</li>
+  <li><strong>Snapshots</strong> allow millisecond starts by resuming a saved memory image, but cloned snapshots duplicate guest state, including random-number-generator state. Entropy must be refreshed on resume (for example through the VM Generation ID mechanism) or two guests may generate identical "random" values.</li>
+</ul>
+<pre><code># boot args typical of a Firecracker guest
+console=ttyS0 reboot=k panic=1 pci=off nomodules   # pci=off matches the default MMIO transport
+# the guest's init can be the workload itself: no shell, no sshd
+init=/app</code></pre>
+<p>Similar projects: <strong>Cloud Hypervisor</strong> (Rust, Intel/Linux Foundation), <strong>crosvm</strong> (ChromeOS), <strong>libkrun</strong>, and QEMU's stripped <code>microvm</code> machine type. In crosvm, each virtual device runs in its own minijail-sandboxed process, and libkrun is a VMM as a library. Podman's <code>krun</code> runtime uses it to run an OCI container inside a microVM.</p>
+
+<h3>The costs</h3>
+<ul>
+  <li><strong>A VM is a stronger boundary, but it is not a proof of safety.</strong> Hypervisor and VMM escapes exist, but the argument for a VM is that its interface is much narrower. It has a few dozen device-emulation paths and VM exits, instead of about 370 syscalls plus every driver, filesystem and network protocol.</li>
+  <li><strong>Hardware side channels cross VMs:</strong> Spectre-class, L1TF and MDS attacks work across a hypervisor, so multi-tenant hosts use microcode updates, disabled SMT or core scheduling, and per-tenant host pinning.</li>
+  <li><strong>Overhead:</strong> each guest costs a kernel's worth of memory and loses page-cache sharing with the host, and memory ballooning and dax/virtio-fs help only partly.</li>
+  <li><strong>Confidential VMs</strong> (AMD SEV-SNP, Intel TDX) encrypt guest memory, so even a compromised host or hypervisor cannot read it. They protect the guest from the host, which is the opposite direction to everything else on this page. They do not remove the need to harden the guest.</li>
+  <li><strong>KVM is itself kernel code:</strong> the host kernel still processes VM exits, so the attack surface shrinks but does not vanish.</li>
+</ul>
+
+<h3>WebAssembly as a sandbox</h3>
+<p>A Wasm (WebAssembly) module runs in a runtime (Wasmtime, WasmEdge, V8), and the runtime enforces memory isolation by construction. The module reaches the outside world only through <strong>capabilities</strong> the host passes in, such as WASI (WebAssembly System Interface) preopened directories and sockets. There is no ambient authority to remove: the default is nothing. The runtime is native code and can have bugs, so serious deployments run the runtime inside seccomp and Landlock, which is the same layering one level up.</p>
+
+<h2 id="cutdown"><small>13 &middot; Subtraction</small>Cut-down Linux and unikernels</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project/Recommended_Settings">KSPP recommended settings</a> &middot; <a href="https://github.com/a13xp0p0v/kernel-hardening-checker">kernel-hardening-checker</a></p>
+<p>The most reliable way to prevent exploitation of code is not to have the code. Every compiled-in driver, filesystem, network protocol and syscall is attack surface for <em>every</em> local user. A guest kernel in a microVM is a particularly good place to subtract aggressively, because it only has to support one workload.</p>
+
+<h3>Building a minimal kernel</h3>
+<ol>
+  <li><strong>Start from nothing.</strong> <code>make tinyconfig</code> (or <code>allnoconfig</code>) and add only what boots and runs the workload. Or start from a distribution config and trim with <code>make localmodconfig</code> / <code>localyesconfig</code>, which keeps only modules currently loaded on a reference machine.</li>
+  <li><strong>Remove loadable modules</strong> (<code>CONFIG_MODULES=n</code>) for a fixed-function appliance: no module-autoload attack surface, no <code>modprobe</code> tricks, and the module-loading syscalls vanish.</li>
+  <li><strong>Remove syscall families you will not use:</strong> under <code>CONFIG_EXPERT</code> many are individually switchable.</li>
+  <li><strong>Turn on the self-protection options</strong> the kernel offers (list below).</li>
+  <li><strong>Check your work</strong> with <code>kernel-hardening-checker</code>, which compares a config and command line against KSPP and other recommendations.</li>
+</ol>
+
+<div class="scroll"><table>
+<thead><tr><th>Remove (<code>=n</code>) <span class="tag">guest kernel only</span></th><th>Why</th></tr></thead>
+<tbody>
+<tr><td class="w"><code>CONFIG_BPF_SYSCALL</code>, <code>CONFIG_IO_URING</code>, <code>CONFIG_USERFAULTFD</code>, <code>CONFIG_PERF_EVENTS</code></td><td class="w">Interfaces that have produced many kernel exploits in recent years. Google's <a href="https://security.googleblog.com/2023/06/learnings-from-kctf-vrps-42-linux.html">kCTF VRP write-up</a> reports that io_uring featured in many of the exploits it paid for.</td></tr>
+<tr><td class="w"><code>CONFIG_COMPAT</code>, <code>CONFIG_X86_X32_ABI</code></td><td class="w">Removes the 32-bit and x32 syscall ABIs: the alternative-ABI filter bypass vanishes. It also breaks every 32-bit binary, so check your userland first.</td></tr>
+<tr><td class="w"><code>CONFIG_USER_NS</code>, <code>CONFIG_NET_NS</code> (inside a guest that does not run containers)</td><td class="w">Removes the namespace-based privilege amplification.</td></tr>
+<tr><td class="w"><code>CONFIG_KEXEC</code>, <code>CONFIG_DEVMEM</code>, <code>CONFIG_PROC_KCORE</code>, <code>CONFIG_LEGACY_PTYS</code>, <code>CONFIG_X86_IOPL_IOPERM</code>, <code>CONFIG_MODIFY_LDT_SYSCALL</code></td><td class="w">Direct memory, console and descriptor-table access nobody needs.</td></tr>
+<tr><td class="w"><code>CONFIG_FHANDLE</code>, <code>CONFIG_SYSVIPC</code>, <code>CONFIG_KCMP</code>, <code>CONFIG_NETFILTER</code> and unused protocol families</td><td class="w">Each removes a family of syscalls or a long history of bugs (<code>open_by_handle_at</code>, SysV IPC, <code>nf_tables</code>).</td></tr>
+<tr><td class="w">Unused filesystems and drivers</td><td class="w">Filesystem parsers of untrusted images have been a long-standing bug source.</td></tr>
+</tbody></table></div>
+<div class="scroll"><table>
+<thead><tr><th>Enable (<code>=y</code>)</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td class="w"><code>CONFIG_SECCOMP</code>, <code>CONFIG_SECCOMP_FILTER</code>, <code>CONFIG_SECURITY_LANDLOCK</code>, <code>CONFIG_SECURITY_LOCKDOWN_LSM</code>, <code>CONFIG_SECURITY_YAMA</code></td><td class="w">Keep the sandbox primitives themselves.</td></tr>
+<tr><td class="w"><code>CONFIG_RANDOMIZE_BASE</code>, <code>CONFIG_RANDOMIZE_MEMORY</code>, <code>CONFIG_STRICT_KERNEL_RWX</code>, <code>CONFIG_VMAP_STACK</code>, <code>CONFIG_STACKPROTECTOR_STRONG</code></td><td class="w">KASLR (randomised kernel addresses), W^X for kernel memory, guard pages, stack canaries.</td></tr>
+<tr><td class="w"><code>CONFIG_HARDENED_USERCOPY</code>, <code>CONFIG_FORTIFY_SOURCE</code>, <code>CONFIG_LIST_HARDENED</code>, <code>CONFIG_BUG_ON_DATA_CORRUPTION</code></td><td class="w">Bounds and integrity checks that turn corruption into a clean oops.</td></tr>
+<tr><td class="w"><code>CONFIG_SLAB_FREELIST_RANDOM</code>, <code>CONFIG_SLAB_FREELIST_HARDENED</code>, <code>CONFIG_RANDOM_KMALLOC_CACHES</code>, <code>CONFIG_INIT_ON_ALLOC_DEFAULT_ON</code>, <code>CONFIG_INIT_STACK_ALL_ZERO</code></td><td class="w">Make heap exploitation less reliable and uninitialised-memory leaks harmless.</td></tr>
+<tr><td class="w"><code>CONFIG_CFI_CLANG</code> (named <code>CONFIG_CFI</code> in newer kernels), <code>CONFIG_SHADOW_CALL_STACK</code> (arm64), <code>CONFIG_RANDSTRUCT_FULL</code> (clang/gcc plugin, per-build)</td><td class="w">Control-flow integrity and struct layout randomisation: costs performance or reproducibility, buys real exploit friction.</td></tr>
+<tr><td class="w"><code>CONFIG_MODULE_SIG_FORCE</code> (if modules are kept)</td><td class="w">Only signed modules load.</td></tr>
+</tbody></table></div>
+<p>Matching boot parameters cost little: <code>slab_nomerge init_on_alloc=1 init_on_free=1 page_alloc.shuffle=1 randomize_kstack_offset=on vsyscall=none debugfs=off module.sig_enforce=1 lockdown=integrity</code>. Add <code>mitigations=auto,nosmt</code> on multi-tenant hosts willing to give up SMT for side-channel protection.</p>
+
+<h3>Cut-down userland</h3>
+<ul>
+  <li><strong>Static, single-binary workloads:</strong> run a statically linked Rust or Go binary (or musl-linked C) as <code>/init</code> of a microVM. There is no shell, no package manager, no sshd and no libc to patch separately. An attacker with code execution has little to pivot with.</li>
+  <li><strong>Container-optimised hosts:</strong> <em>Flatcar</em> and <em>Fedora CoreOS</em> are immutable and auto-updating. <em>Bottlerocket</em> (from AWS) is Rust-heavy, with SELinux enforcing, a read-only root and no default shell. <em>Talos Linux</em> has no SSH or shell at all and is managed by an API, and Google's <em>Container-Optimized OS</em> is another.</li>
+  <li><strong>Small distributions:</strong> Alpine (musl, BusyBox), Wolfi/Chainguard images (built for minimal CVE exposure), Nix-built minimal closures, Buildroot and Yocto for embedded images.</li>
+</ul>
+
+<h3>Unikernels: the library operating system</h3>
+<p>A <strong>unikernel</strong> compiles an application together with only the operating-system components it uses into a single bootable image that runs directly on a hypervisor. There is no separate kernel and user space, no shell, usually no user accounts, and often <strong>no <code>fork</code> at all</strong>: structurally one process.</p>
+<div class="scroll"><table>
+<thead><tr><th>Project</th><th>Approach</th></tr></thead>
+<tbody>
+<tr><td class="n">Unikraft</td><td class="w">Modular library OS with Linux-compatible binary mode; targets KVM/Xen/Firecracker; very fast boot.</td></tr>
+<tr><td class="n">Nanos (NanoVMs)</td><td class="w">Runs an unmodified Linux ELF in a single-process guest; deliberately no <code>fork</code>, no multi-user, no shell.</td></tr>
+<tr><td class="n">OSv</td><td class="w">Single-address-space guest, aimed at the JVM and other managed runtimes.</td></tr>
+<tr><td class="n">MirageOS</td><td class="w">OCaml: the entire stack, TCP/IP included, is type-safe library code.</td></tr>
+<tr><td class="n">Hermit</td><td class="w">Rust unikernel.</td></tr>
+<tr><td class="n">IncludeOS</td><td class="w">C++ unikernel for network services.</td></tr>
+</tbody></table></div>
+<p><strong>Why it helps:</strong> a tiny code base; no <code>/bin/sh</code> for an exploit payload to run; no process creation; nothing to configure wrongly. <strong>Limits:</strong></p>
+<ul>
+  <li><strong>One address space:</strong> there is no privilege separation <em>inside</em> the guest: a memory bug in any library is a compromise of the whole guest. The isolation unit is the VM, so the hypervisor is your only boundary.</li>
+  <li><strong>Exploit mitigations vary and have often lagged Linux</strong> (ASLR, stack protectors, W^X, guard pages): check each project.</li>
+  <li><strong>Debugging, observability and patching</strong> are harder; you rebuild and redeploy the image.</li>
+  <li><strong>Seccomp, Landlock and LSMs do not exist in the guest</strong>; there is nothing inside to enforce them. The policy is the set of things the image does not contain.</li>
+</ul>
+<p>Putting it together: take a unikernel or tiny-init static binary and run it in a Firecracker microVM. Launch it with a jailer that gives the VMM a seccomp filter and cgroup limits. This is the "minimal everything" corner of the design space, at the right-hand end of section 15.</p>
+
+<h2 id="language"><small>14 &middot; Choosing the code</small>Language choice and dependency diet</h2>
+<p class="cap" style="margin:0 0 12px">References: <a href="https://rustsec.org/">RustSec</a> &middot; <a href="https://github.com/EmbarkStudios/cargo-deny">cargo-deny</a> &middot; <a href="https://mozilla.github.io/cargo-vet/">cargo-vet</a> &middot; <a href="https://rlbox.dev/">RLBox</a></p>
+<p>All the sandboxing above assumes the workload will eventually be subverted. The other half of the strategy is making that less likely. Do this by making whole classes of bug impossible to express and by shrinking the amount of code you trust.</p>
+
+<h3>Memory safety removes the biggest class</h3>
+<p>Microsoft (<a href="https://msrc.microsoft.com/blog/2019/07/we-need-a-safer-systems-programming-language/">MSRC, 2019</a>) and the Chromium project (<a href="https://www.chromium.org/Home/chromium-security/memory-safety/">memory safety</a>) have each reported that roughly 70% of their serious security bugs were memory-safety issues. These include use-after-free, buffer overflow and out-of-bounds read. Google's Android team <a href="https://security.googleblog.com/2024/09/eliminating-memory-safety-vulnerabilities-Android.html">reported</a> that the share of memory-safety vulnerabilities fell sharply as new code moved to Rust, and the vulnerabilities that remain are mostly in <em>new</em> memory-unsafe code. Memory-safe languages remove that class by construction in safe code:</p>
+<div class="scroll"><table>
+<thead><tr><th>Language family</th><th>What it prevents</th><th>What remains</th></tr></thead>
+<tbody>
+<tr><td class="n">Rust</td><td class="w">Spatial and temporal memory errors and data races in safe code, with no garbage collector or heavyweight runtime; static binaries are easy.</td><td class="w"><code>unsafe</code> blocks, FFI to C, logic bugs, panics (DoS), integer overflow in release builds, a huge dependency graph.</td></tr>
+<tr><td class="n">Go</td><td class="w">Memory errors in safe code; static binaries; a comprehensive standard library that reduces dependency need.</td><td class="w"><code>unsafe</code> and <code>cgo</code>; data races can corrupt memory; nil panics; a large runtime.</td></tr>
+<tr><td class="n">Managed (Java, C#, Python, JS)</td><td class="w">Memory errors in the managed code.</td><td class="w">A large native runtime and JIT (itself a classic exploit target), reflection and deserialization bugs, big dependency trees.</td></tr>
+<tr><td class="n">Ada/SPARK, OCaml, Zig (partly)</td><td class="w">Strong typing and, for SPARK, proof of absence of runtime errors; Zig adds safety checks in some build modes.</td><td class="w">Smaller ecosystems; Zig is not a memory-safe language (its safe build modes only catch some errors at run time).</td></tr>
+<tr><td class="n">WebAssembly (target)</td><td class="w">Contains the effect of memory bugs within the module's own linear memory.</td><td class="w">A bug still corrupts that module's own data; the runtime is native code.</td></tr>
+<tr><td class="n">C/C++ with hardening</td><td class="w">Mitigations only: they raise the cost, not remove the bug.</td><td class="w">The whole class, in the process's own memory.</td></tr>
+</tbody></table></div>
+
+<div class="callout warn"><b class="t">A language does not replace a sandbox</b>
+<p>Rust prevents a buffer overflow but does not stop a path-traversal bug, a command injection, a logic flaw or a malicious dependency from reading <code>~/.ssh/id_ed25519</code>. A <em>crate is not a security boundary</em>. Every dependency runs with the full authority of the process, including <code>build.rs</code> scripts and procedural macros at build time. That is why you need both language safety and process sandboxing.</p></div>
+
+<h3>Shrinking the attack surface inside a Rust program</h3>
+<ol>
+  <li><strong>Forbid your own <code>unsafe</code>:</strong> put <code>#![forbid(unsafe_code)]</code> at the top of crates that do not need it, and quarantine necessary <code>unsafe</code> in one small, heavily tested module. Enable <code>unsafe_op_in_unsafe_fn</code> and clippy's <code>undocumented_unsafe_blocks</code>.</li>
+  <li><strong>Measure the dependency graph:</strong> <code>cargo tree</code> lists it, <code>cargo tree -d</code> shows duplicates, and <code>cargo tree -e features -i &lt;crate&gt;</code> explains <em>why</em> a crate is pulled in. Run <code>cargo geiger</code> to count <code>unsafe</code> in your tree. A few dozen vetted crates is a different risk from a few hundred.</li>
+  <li><strong>Turn features off:</strong> most large crates default to many features, each pulling more crates: <code>tokio = { version = "1", default-features = false, features = ["rt", "net"] }</code>. Likewise prefer the standard library, or a small single-purpose crate, to a framework for one function.</li>
+  <li><strong>Prune the unused.</strong> <code>cargo machete</code> (or <code>cargo udeps</code>) finds declared-but-unused dependencies.</li>
+  <li><strong>Prefer pure Rust to C bindings</strong> where mature. For example, <code>rustls</code> instead of a binding to OpenSSL removes OpenSSL's large C protocol code, its certificate-parsing code and its CVE stream from the process. There is one caveat. The crypto back ends of rustls, <code>ring</code> and <code>aws-lc-rs</code>, still contain C and assembly primitives. The win is a much smaller C footprint, not zero C. Every <code>*-sys</code> crate is C attack surface despite its Rust name.</li>
+  <li><strong>Audit, don't just trust.</strong>
+    <ul>
+      <li><code>cargo audit</code> checks the lockfile against the RustSec advisory database (known-vulnerable and unmaintained crates).</li>
+      <li><code>cargo deny</code> enforces policy in CI: allowed licences, banned crates, allowed registries and sources, duplicate-version limits, advisories.</li>
+      <li><code>cargo vet</code> records that a human reviewed a specific crate version, and can import audits published by organisations you trust, so review effort is shared.</li>
+      <li><code>cargo crev</code> is a web-of-trust code-review system, but few people publish reviews with it, so you may find none for your dependencies.</li>
+    </ul></li>
+  <li><strong>Make builds reproducible and pinned:</strong> commit <code>Cargo.lock</code>; build with <code>--locked</code>; consider <code>cargo vendor</code> so a build needs no network and what you reviewed is what you compile. Check lockfile diffs in code review, since a new transitive dependency appears there first. Beware typosquats (look-alike package names) and compromised maintainers. The 2022 <code>rustdecimal</code> crate impersonated <code>rust_decimal</code>, and the 2024 xz backdoor (<a href="https://nvd.nist.gov/vuln/detail/CVE-2024-3094">CVE-2024-3094</a>) was a <em>build-time</em> script injection, the same risk class as <code>build.rs</code>.</li>
+  <li><strong>Treat build scripts and proc macros as code execution:</strong> review <code>build.rs</code> in new dependencies. Build in a sandbox without secrets or network, such as a throwaway container or microVM with your own launcher from section 16.</li>
+  <li><strong>Prefer provenance:</strong> where your registry supports it, publish and consume crates built by CI (continuous integration) with <em>Trusted Publishing</em>. This uses short-lived OIDC (OpenID Connect) credentials instead of long-lived API tokens. Enable 2FA (two-factor authentication) for maintainers, and have <code>cargo vet</code> record <em>policy</em> rather than a one-off review: which audits you trust and which exemptions you carry.</li>
+  <li><strong>Embed an SBOM.</strong> <code>cargo auditable</code> stores the dependency list in the binary so scanners can tell later what is deployed.</li>
+  <li><strong>Fail closed at run time:</strong> in the release profile, set <code>panic = "abort"</code> (no unwinding surprises; pair with a supervisor that restarts). Set <code>overflow-checks = true</code> so arithmetic overflow becomes a panic rather than a silent wrap. Use <code>lto</code> (link-time optimisation) and <code>codegen-units = 1</code> for dead-code elimination. Use <code>cargo clippy</code> lints against <code>unwrap</code>/<code>expect</code>/indexing in request paths, and fuzz parsers with <code>cargo fuzz</code>. Run <code>cargo miri</code> over code that contains <code>unsafe</code>.</li>
+  <li><strong>Pass capabilities, not paths:</strong> libraries such as <code>cap-std</code> make filesystem access go through an explicit directory handle, so a function that was never handed <code>/etc</code> cannot open it. This is the in-process analogue of Landlock.</li>
+  <li><strong>Sandbox the Rust process itself:</strong> the <code>landlock</code> crate wraps the three syscalls with best-effort ABI handling; <code>seccompiler</code> compiles a filter in-process; <code>caps</code>/<code>rustix</code> expose capabilities and <code>prctl</code> safely.</li>
+  <li><strong>Sandbox the library as well as the process.</strong> When one dependency is the risk (a C codec, a parser), isolate it. <em>RLBox</em> with <code>wasm2c</code>, as Firefox does, compiles the library to WebAssembly and then to C that can only touch its own linear memory. So a bug in it cannot read the rest of the process. The cheaper cousin is running that one dependency in a helper process (next item).</li>
+  <li><strong>Split by process, not by crate:</strong> if one part parses untrusted input such as images, archives or documents, run it as a separate, more tightly sandboxed child. The child talks to the main process over a pipe or socket, the way Chromium's renderers and OpenSSH's privilege-separated child do. A bug in the parser then compromises a process that has no network, no files and no secrets.</li>
+</ol>
+<pre><code># Cargo.toml (release profile and dependency hygiene)
+[profile.release]
+panic = "abort"
+overflow-checks = true
+lto = true
+codegen-units = 1
+strip = true
+
+[dependencies]
+tokio = { version = "1", default-features = false, features = ["rt", "net", "io-util"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+# deny.toml (cargo-deny)
+[advisories]
+yanked = "deny"
+[bans]
+multiple-versions = "warn"
+deny = [{ crate = "openssl-sys" }]
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"</code></pre>
+<pre><code>cargo build --release --locked
+cargo audit
+cargo deny check
+cargo vet            # after a one-off "cargo vet init"
+cargo geiger</code></pre>
+
+<h3>Hardening C and C++ when you cannot move</h3>
+<ul>
+  <li>Compile with <code>-fstack-protector-strong -D_FORTIFY_SOURCE=3 -fPIE -pie -Wl,-z,relro,-z,now -fcf-protection</code> and <code>-ftrivial-auto-var-init=zero</code> (clang 16 and later, GCC 12 and later). For C++, enable the standard library's checks: <code>-D_GLIBCXX_ASSERTIONS</code> for libstdc++, and <code>_LIBCPP_HARDENING_MODE</code> for libc++. Caveats: <code>_FORTIFY_SOURCE=3</code> needs glibc 2.34+ and GCC 12+ (or recent clang). <code>-fcf-protection</code> is x86 only (arm64 uses <code>-mbranch-protection=standard</code>).</li>
+  <li>Use a hardened allocator (<code>scudo</code>, GrapheneOS's <code>hardened_malloc</code>) and run tests under AddressSanitizer/UBSan and a fuzzer.</li>
+  <li>Isolate the parsers: the sandbox launchers of section 11 are the main tool.</li>
+</ul>
+
+<h2 id="spectrum"><small>15 &middot; Choosing</small>The isolation spectrum</h2>
+<p>Stronger isolation costs more in startup time, memory and compatibility. Pick the weakest boundary that survives your threat model, and <em>stack</em> the low-cost layers regardless.</p>
+<div class="spectrum">
+  <div class="spec s1"><b>Process + seccomp + Landlock</b><i>Shares kernel. Almost free. Needs cooperation of the code or a launcher.</i></div>
+  <div class="spec s2"><b>Hardened container</b><i>Shares kernel. Caps dropped, seccomp, LSM, read-only root, limits.</i></div>
+  <div class="spec s3"><b>Rootless / userns container</b><i>Shares kernel, but runtime and root are unprivileged on the host.</i></div>
+  <div class="spec s4"><b>gVisor</b><i>User-space kernel. Small host surface. Slower syscalls, imperfect compatibility.</i></div>
+  <div class="spec s5"><b>MicroVM (Firecracker, Kata)</b><i>Own guest kernel. Narrow hypervisor interface. ~125 ms starts.</i></div>
+  <div class="spec s5"><b>Unikernel in microVM</b><i>No shell, no fork, tiny image. VM is the only boundary.</i></div>
+</div>
+<div class="axis"><span>&larr; cheaper, weaker boundary</span><span>costlier, stronger boundary &rarr;</span></div>
+<div class="scroll"><table>
+<thead><tr><th>Option</th><th>Host kernel exposed</th><th>Cold start</th><th>Overhead</th><th>Compatibility</th><th>Typical fit</th></tr></thead>
+<tbody>
+<tr><td class="n">Process + seccomp/Landlock</td><td>Filtered syscalls only</td><td>None</td><td>~0</td><td>App must tolerate denials</td><td class="w">Parsers, plugins, build steps, a CLI protecting itself</td></tr>
+<tr><td class="n">Hardened container</td><td>Filtered syscalls</td><td>~100s of ms</td><td>Low</td><td>High</td><td class="w">Your own services, trusted-ish code</td></tr>
+<tr><td class="n">Rootless container</td><td>Filtered syscalls, user-ns surface</td><td>~100s of ms</td><td>Low (some network cost)</td><td>High</td><td class="w">Developer machines, CI</td></tr>
+<tr><td class="n">gVisor</td><td>Small, via Sentry</td><td>~100s of ms</td><td>Medium on syscall/I-O heavy loads</td><td>Good, with gaps</td><td class="w">Multi-tenant SaaS code execution</td></tr>
+<tr><td class="n">Kata / Firecracker microVM</td><td>Hypervisor interface only</td><td>~125 ms+</td><td>Medium (guest kernel memory)</td><td>Near full Linux</td><td class="w">Untrusted code, serverless, CI of third-party code</td></tr>
+<tr><td class="n">Full VM</td><td>Hypervisor interface only</td><td>Seconds</td><td>High</td><td>Full</td><td class="w">Different OS, strong tenant separation</td></tr>
+<tr><td class="n">Unikernel (in a VM)</td><td>Hypervisor interface only</td><td>~10s ms</td><td>Very low</td><td>Low to medium</td><td class="w">Fixed-function network services</td></tr>
+<tr><td class="n">Wasm runtime (plus process sandbox)</td><td>Whatever the host process leaves</td><td>~ms</td><td>Low</td><td>Needs a Wasm target</td><td class="w">Plugins, edge functions</td></tr>
+</tbody></table></div>
+<p>The numbers are orders of magnitude, not benchmarks; measure your own workload.</p>
+
+<h2 id="recipe"><small>16 &middot; Synthesis</small>Putting it together: a launch sequence</h2>
+<p>Order matters because no restriction can be undone, and later steps need the rights earlier steps would take away.</p>
+<ol>
+  <li><strong>Set up while privileged:</strong> open sockets, files and devices the workload needs; create the cgroup and set <code>pids.max</code>, <code>memory.max</code>, <code>cpu.max</code>.</li>
+  <li><strong>Isolate the view:</strong> create new user, mount, pid, net, ipc, uts and cgroup namespaces. Use <code>pivot_root</code> to move into a minimal, read-only root, and mount a small <code>tmpfs</code> for scratch with <code>nosuid,nodev,noexec</code>.</li>
+  <li><strong>Drop privilege:</strong> switch to an unprivileged UID/GID; clear every capability set (permitted, effective, inheritable, bounding, ambient).</li>
+  <li><strong>Set <code>no_new_privs</code></strong> and rlimits (<code>NOFILE</code>, <code>CORE=0</code>, <code>FSIZE</code>, ...).</li>
+  <li><strong>Apply Landlock</strong> (Landlock uses its own three syscalls. <code>jail.c</code> does not block them, but an allowlist filter would, so apply Landlock <em>before</em> such a filter).</li>
+  <li><strong>Apply seccomp last</strong> (so the filter does not have to allow everything earlier steps used), with <code>TSYNC</code> if the process is already multi-threaded.</li>
+  <li><strong><code>execve</code> the workload</strong>, since Landlock domains and seccomp filters survive exec.</li>
+</ol>
+<p>The program below does steps 4 to 7 for real, and in order it:</p>
+<ul>
+<li>sets an rlimit (resource limit) on open files and turns off core dumps, and closes inherited file descriptors;</li>
+<li>sets <code>no_new_privs</code>;</li>
+<li>adds a Landlock ruleset: read and execute under system directories only, no TCP, and (on ABI 6 and later) no signals or abstract Unix sockets to processes outside the sandbox;</li>
+<li>adds a seccomp filter that checks the architecture, rejects x32, forbids <code>fork</code>, <code>vfork</code> and non-thread <code>clone</code>, and answers <code>clone3</code> with <code>ENOSYS</code>;</li>
+<li>runs the workload with <code>execve</code> and a clean environment (only <code>PATH</code>), so secrets and <code>LD_*</code> variables do not leak in.</li>
+</ul>
+<p>The launcher refuses to run if Landlock is missing. By default it still runs on an older Landlock ABI, with TCP open below ABI 4 and signals unscoped below ABI 6. For untrusted code, set <code>JAIL_REQUIRE_ABI=6</code> so it refuses to run unless the kernel can enforce everything shown. Run it as an unprivileged user, not as root. Building it needs kernel headers from 5.13 or later, and the filter compiles on x86-64 only.</p>
+<p>It deliberately does not call <code>PR_SET_DUMPABLE</code>. <code>execve</code> resets that flag for an ordinary binary, so setting it first protects nothing.</p>
+<p>We built and ran it for this page on a 6.18 kernel (x86-64):</p>
+<ul>
+<li><code>echo</code> ran, a shell inside it failed with "Cannot fork", and a thread started but <code>fork()</code> failed.</li>
+<li>A write to <code>/tmp</code> failed with "Permission denied", and <code>/proc</code> became unreadable.</li>
+<li>A TCP connect failed with "Permission denied". A signal to a process outside the sandbox failed with "Operation not permitted".</li>
+<li>A binary outside the allowed directories failed at <code>execve</code>.</li>
+</ul>
+<p>The sandbox is tight on purpose. <code>/proc</code> and most of <code>/dev</code> are not readable, so <code>ls /</code> and any program that reads <code>/proc/self</code> will fail. The program grants only <code>/dev/null</code> (read and write) and <code>/dev/urandom</code> (read), and a real profile adds exactly what the workload needs. Its seccomp filter is also a <em>denylist</em> for process creation, which is acceptable for one narrow rule but not a replacement for the allowlist that section 3 recommends. The calls to deny next are <code>unshare</code>, <code>setns</code>, <code>bpf</code> and <code>socket</code> with <code>AF_UNIX</code>.</p>
+<p>Grab the source as <a href="jail.c">jail.c</a>.</p>
+<div class="scroll" style="border:0;background:none"><pre><code>// jail.c - minimal "no fork, read-only filesystem" launcher. A demonstration, not a profile.
+// Refuses to run if Landlock or seccomp cannot be installed. By default an older Landlock ABI
+// is accepted (no TCP rules below ABI 4, no scoping below ABI 6): set JAIL_REQUIRE_ABI=6 for untrusted code.
+// Run it as an unprivileged user.
+// Build: gcc -O2 -Wall -o jail jail.c      Run: ./jail /bin/echo hello
+#define _GNU_SOURCE
+#include &lt;errno.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;sched.h&gt;
+#include &lt;linux/audit.h&gt;
+#include &lt;linux/filter.h&gt;
+#include &lt;linux/landlock.h&gt;
+#include &lt;linux/seccomp.h&gt;
+#include &lt;stddef.h&gt;
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;sys/prctl.h&gt;
+#include &lt;sys/resource.h&gt;
+#include &lt;sys/syscall.h&gt;
+#include &lt;unistd.h&gt;
+
+#if !defined(__x86_64__)
+#error "the seccomp filter below is x86-64 only; other architectures need their own arch check and syscall numbers"
+#endif
+#ifndef AUDIT_ARCH_X86_64
+#define AUDIT_ARCH_X86_64 0xC000003E
+#endif
+
+/* Our own copy of the attribute struct and the rights added after ABI 1, so the build does not
+   depend on how new the installed kernel headers are (older headers lack the "scoped" field). */
+#define LL_FS_REFER      (1ULL &lt;&lt; 13)   /* ABI 2 */
+#define LL_FS_TRUNCATE   (1ULL &lt;&lt; 14)   /* ABI 3 */
+#define LL_FS_IOCTL_DEV  (1ULL &lt;&lt; 15)   /* ABI 5 */
+#define LL_NET_BIND_TCP    (1ULL &lt;&lt; 0)  /* ABI 4 */
+#define LL_NET_CONNECT_TCP (1ULL &lt;&lt; 1)
+struct ll_attr { __u64 handled_access_fs, handled_access_net, scoped; };
+#define LL_SCOPE_ABSTRACT_UNIX_SOCKET (1ULL &lt;&lt; 0)
+#define LL_SCOPE_SIGNAL               (1ULL &lt;&lt; 1)
+
+static void die(const char *m) { perror(m); exit(1); }
+
+/* ---- Landlock: read+exec under /usr /bin /lib /lib64 /etc, nothing else ---- */
+static int landlock(void) {
+    struct ll_attr ra = { 0 };
+    int abi = syscall(SYS_landlock_create_ruleset, NULL, 0, LANDLOCK_CREATE_RULESET_VERSION);
+    if (abi &lt; 1) { fprintf(stderr, "landlock unavailable (%d)\n", abi); return -1; }
+    /* Landlock must be present. To insist on a minimum ABI (4 = TCP rules,
+       6 = signal and abstract-socket scoping), set JAIL_REQUIRE_ABI=N. */
+    const char *req = getenv("JAIL_REQUIRE_ABI");
+    if (req) {
+        char *end; long need = strtol(req, &amp;end, 10);
+        if (*req == 0 || *end || need &lt; 1 || need &gt; 99) { fprintf(stderr, "bad JAIL_REQUIRE_ABI\n"); return -1; }
+        if (abi &lt; need) { fprintf(stderr, "landlock ABI %d &lt; required %ld\n", abi, need); return -1; }
+    }
+    fprintf(stderr, "landlock ABI %d\n", abi);
+    __u64 ro = LANDLOCK_ACCESS_FS_EXECUTE | LANDLOCK_ACCESS_FS_READ_FILE | LANDLOCK_ACCESS_FS_READ_DIR;
+    __u64 all = ro | LANDLOCK_ACCESS_FS_WRITE_FILE | LANDLOCK_ACCESS_FS_REMOVE_DIR |
+        LANDLOCK_ACCESS_FS_REMOVE_FILE | LANDLOCK_ACCESS_FS_MAKE_CHAR | LANDLOCK_ACCESS_FS_MAKE_DIR |
+        LANDLOCK_ACCESS_FS_MAKE_REG | LANDLOCK_ACCESS_FS_MAKE_SOCK | LANDLOCK_ACCESS_FS_MAKE_FIFO |
+        LANDLOCK_ACCESS_FS_MAKE_BLOCK | LANDLOCK_ACCESS_FS_MAKE_SYM;
+    if (abi &gt;= 2) all |= LL_FS_REFER;
+    if (abi &gt;= 3) all |= LL_FS_TRUNCATE;
+    if (abi &gt;= 5) all |= LL_FS_IOCTL_DEV;   /* no ioctl on device files opened later */
+    ra.handled_access_fs = all;             /* handle everything =&gt; deny everything by default */
+    /* ABI 4+: handle TCP bind/connect and add no rules =&gt; no TCP at all. */
+    if (abi &gt;= 4) ra.handled_access_net = LL_NET_BIND_TCP | LL_NET_CONNECT_TCP;
+    /* ABI 6+: no abstract Unix sockets, and no signals to processes outside this domain. */
+    if (abi &gt;= 6) ra.scoped = LL_SCOPE_ABSTRACT_UNIX_SOCKET | LL_SCOPE_SIGNAL;
+    /* Pass only the fields this kernel knows: it rejects non-zero bytes beyond its own struct size (E2BIG). */
+    size_t sz = abi &gt;= 6 ? sizeof ra : abi &gt;= 4 ? offsetof(struct ll_attr, scoped) : offsetof(struct ll_attr, handled_access_net);
+    int rs = syscall(SYS_landlock_create_ruleset, &amp;ra, sz, 0);
+    if (rs &lt; 0) die("landlock_create_ruleset");
+    /* /etc is granted wholesale for the demo; a real profile lists single files. */
+    const char *dirs[] = { "/usr", "/bin", "/lib", "/lib64", "/etc" };
+    for (unsigned i = 0; i &lt; sizeof dirs / sizeof *dirs; i++) {
+        struct landlock_path_beneath_attr pb = { .allowed_access = ro };
+        pb.parent_fd = open(dirs[i], O_PATH | O_CLOEXEC);
+        if (pb.parent_fd &lt; 0) continue;     /* path absent on this distro: skip */
+        if (syscall(SYS_landlock_add_rule, rs, LANDLOCK_RULE_PATH_BENEATH, &amp;pb, 0)) die("add_rule");
+        close(pb.parent_fd);
+    }
+    /* Single devices that ordinary programs expect: shell redirects, randomness. */
+    static const struct { const char *path; int write; } devs[] = { { "/dev/null", 1 }, { "/dev/urandom", 0 } };
+    for (unsigned i = 0; i &lt; sizeof devs / sizeof *devs; i++) {
+        struct landlock_path_beneath_attr pb = { .allowed_access = LANDLOCK_ACCESS_FS_READ_FILE };
+        if (devs[i].write) pb.allowed_access |= LANDLOCK_ACCESS_FS_WRITE_FILE | (all &amp; LL_FS_TRUNCATE);
+        pb.parent_fd = open(devs[i].path, O_PATH | O_CLOEXEC);
+        if (pb.parent_fd &lt; 0) continue;
+        if (syscall(SYS_landlock_add_rule, rs, LANDLOCK_RULE_PATH_BENEATH, &amp;pb, 0)) die("add_rule dev");
+        close(pb.parent_fd);
+    }
+    if (syscall(SYS_landlock_restrict_self, rs, 0)) die("landlock_restrict_self");
+    close(rs);
+    return 0;
+}
+
+/* ---- seccomp: arch check, then DENY the process-creating calls ----------- */
+#define OFF(f) offsetof(struct seccomp_data, f)
+static void seccomp_nofork(void) {
+    struct sock_filter f[] = {
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, OFF(arch)),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, AUDIT_ARCH_X86_64, 1, 0),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),          /* wrong ABI */
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, OFF(nr)),
+        BPF_JUMP(BPF_JMP | BPF_JGE | BPF_K, 0x40000000, 0, 1),        /* x32 bit set */
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_KILL_PROCESS),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_fork, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_vfork, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_clone3, 0, 1),        /* args are in memory: cannot inspect */
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | ENOSYS),        /* ENOSYS =&gt; libc falls back to clone */
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, SYS_clone, 0, 3),
+        BPF_STMT(BPF_LD | BPF_W | BPF_ABS, OFF(args[0])),             /* low 32 bits of flags */
+        BPF_JUMP(BPF_JMP | BPF_JSET | BPF_K, CLONE_THREAD, 1, 0),     /* thread: allow */
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ERRNO | EPERM),
+        BPF_STMT(BPF_RET | BPF_K, SECCOMP_RET_ALLOW),
+    };
+    struct sock_fprog p = { .len = sizeof f / sizeof *f, .filter = f };
+    if (syscall(SYS_seccomp, SECCOMP_SET_MODE_FILTER, SECCOMP_FILTER_FLAG_TSYNC, &amp;p)) die("seccomp");
+}
+
+int main(int argc, char **argv) {
+    if (argc &lt; 2) { fprintf(stderr, "usage: %s prog [args]\n", argv[0]); return 2; }
+    struct rlimit nofile = { 64, 64 }, core = { 0, 0 };
+    if (setrlimit(RLIMIT_NOFILE, &amp;nofile) || setrlimit(RLIMIT_CORE, &amp;core)) die("setrlimit");
+    /* Close every inherited descriptor above stderr: Landlock does not revoke fds
+       that are already open, so a leaked directory fd would be a hole in the fence. */
+    if (syscall(SYS_close_range, 3, ~0U, 0)) die("close_range");
+    if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) die("no_new_privs");
+    if (landlock() &lt; 0) return 1;           /* refuse to run */
+    seccomp_nofork();                       /* dies on failure */
+    /* Note: /proc and /dev are not granted, so the child cannot read /proc/self either. */
+    /* Run with a clean environment so secrets and LD_* variables do not leak in. */
+    char *env[] = { "PATH=/usr/bin:/bin", NULL };
+    execve(argv[1], argv + 1, env);         /* exec is still allowed: it replaces, not creates */
+    die("execve");
+}
+</code></pre></div>
+<div class="callout warn"><b class="t">What this launcher does NOT stop</b>
+<ul>
+<li><strong>Unix sockets:</strong> it does not block <code>connect()</code> to pathname sockets. A process that can reach <code>systemd --user</code>, D-Bus or <code>dockerd</code> can ask that service to start a process for it. Fix: deny <code>socket(AF_UNIX)</code> in seccomp, or hide those sockets with a mount namespace.</li>
+<li><strong>Network beyond TCP:</strong> TCP is blocked on ABI 4 and later, but UDP, raw and netlink sockets are not. Filter the <code>socket</code> arguments, or use a network namespace.</li>
+<li><strong>Same-user neighbours:</strong> Landlock denies <code>ptrace</code> of processes outside the sandbox on every ABI, and on ABI 6 and later its scoping also blocks signals and abstract sockets to them. We tested both. Yama and a PID namespace add a second layer. Set <code>dev.tty.legacy_tiocsti=0</code> (kernel 6.2 and later) and use <code>setsid</code> to stop keystroke injection through a shared terminal.</li>
+<li><strong><code>execve</code> is allowed:</strong> anything in the readable directories can run, including a shell or an interpreter.</li>
+<li><strong>The <code>/etc</code> grant is too wide:</strong> a real profile names the exact files the workload needs.</li>
+<li><strong>No time limit:</strong> a busy loop runs forever, so add a watchdog (section 5).</li>
+</ul></div>
+
+<div class="callout warn"><b class="t">Where this example stops</b>
+<p>It is x86-64 only and omits steps 1 to 3, because it relies on the caller to be unprivileged. It grants <code>/etc</code> wholesale (list single files in real use) and lets every syscall except process creation through. This is a deliberately small demonstration, not a production profile, and a real allowlist, built as in section 3, is much tighter. With libseccomp you would write <code>seccomp_init(SCMP_ACT_ERRNO(EPERM))</code>, add allowed rules, and get arch handling for free.</p></div>
+
+<h2 id="cases"><small>17 &middot; Case studies</small>What would have stopped it</h2>
+<p>Real vulnerabilities, and which layer would have helped. No single layer is best, because different layers stop different failures, and some failures get past all of them.</p>
+<div class="scroll"><table>
+<thead><tr><th>Bug</th><th>What it was</th><th>What would have stopped or contained it</th></tr></thead>
+<tbody>
+<tr><td class="n">Dirty COW<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2016-5195">CVE-2016-5195</a></td><td class="w">A race in copy-on-write handling let any local user write to read-only memory mappings, including root-owned files.</td><td class="w">Only patching, or a VM boundary (the compromise would stay inside the guest). The attack uses ordinary calls (<code>madvise</code>, writes to <code>/proc/self/mem</code>); a seccomp allowlist could remove some paths but not generally.</td></tr>
+<tr><td class="n">Shocker<br>(2014)</td><td class="w">A container used <code>open_by_handle_at</code> to open host files by inode handle.</td><td class="w">Dropping <code>CAP_DAC_READ_SEARCH</code> (Docker now does) and denying the syscall in seccomp.</td></tr>
+<tr><td class="n">runc /proc/self/exe<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2019-5736">CVE-2019-5736</a></td><td class="w">A malicious container process overwrote the host's runc binary through a procfs link.</td><td class="w">Patched runc (copies itself into a sealed memfd); user namespaces / rootless (the host binary is not writable by the mapped user); SELinux confinement.</td></tr>
+<tr><td class="n">fsconfig overflow<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-0185">CVE-2022-0185</a></td><td class="w">A heap overflow in the filesystem-context API, reachable with <code>CAP_SYS_ADMIN</code> inside a user namespace.</td><td class="w">Docker's default seccomp profile (blocks <code>unshare</code> and the mount family without <code>CAP_SYS_ADMIN</code>); disabling unprivileged user namespaces; a profile-less Kubernetes pod was exposed.</td></tr>
+<tr><td class="n">release_agent<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-0492">CVE-2022-0492</a></td><td class="w">Cgroup v1 <code>release_agent</code> let a process with <code>CAP_SYS_ADMIN</code> in a user namespace run a program as host root.</td><td class="w">Default seccomp and AppArmor/SELinux profiles; cgroup v2 has no <code>release_agent</code>.</td></tr>
+<tr><td class="n">Dirty Pipe<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2022-0847">CVE-2022-0847</a></td><td class="w">A pipe-buffer flag bug let an unprivileged process overwrite page-cache pages of read-only files (kernel 5.8 and later).</td><td class="w">Patching, or a VM. The public exploit used <code>splice</code>, so a profile that denied it would have broken that exploit, but the bug is reachable by other means.</td></tr>
+<tr><td class="n">Leaky Vessels<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-21626">CVE-2024-21626</a></td><td class="w">A file descriptor into the host cgroup directory leaked into the container, allowing a path escape through the working directory.</td><td class="w">Patched runc. A runtime bug that none of the in-container policies would see; a VM boundary or rootless runtime limits the result.</td></tr>
+<tr><td class="n">nf_tables<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-1086">CVE-2024-1086</a></td><td class="w">A use-after-free in netfilter, reachable through unprivileged user namespaces; exploited for root and listed as exploited in the wild.</td><td class="w">Denying new user namespaces; seccomp that blocks the netlink families; not loading <code>nf_tables</code> at all; a kernel without netfilter (section 13).</td></tr>
+<tr><td class="n">io_uring bugs<br>(a recurring class)</td><td class="w">Many local privilege escalations in a fast-moving interface that bypasses syscall filters.</td><td class="w">Seccomp denial of <code>io_uring_*</code>, <code>kernel.io_uring_disabled=2</code>, <code>CONFIG_IO_URING=n</code>.</td></tr>
+<tr><td class="n">NVIDIA Container Toolkit<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-0132">CVE-2024-0132</a>, <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-23266">CVE-2025-23266</a></td><td class="w">Container-escape flaws in the GPU container integration: a file-system TOCTOU (time-of-check to time-of-use race), and later an <code>LD_PRELOAD</code> injection through an OCI hook run on the host.</td><td class="w">Patched toolkit. Host-side runtime <em>hooks</em> run outside the container's policy, so seccomp and capability drops inside it cannot help. If you pass a GPU through to a microVM, the device and its driver become part of the attack surface, so check what the guest can reach.</td></tr>
+<tr><td class="n">runc masked-path races<br>(<a href="https://nvd.nist.gov/vuln/detail/CVE-2025-31133">CVE-2025-31133</a>, <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-52565">CVE-2025-52565</a>, <a href="https://nvd.nist.gov/vuln/detail/CVE-2025-52881">CVE-2025-52881</a>)</td><td class="w">Races and bind-mount tricks in how runc masks and protects procfs paths allowed a container to write to host-sensitive files.</td><td class="w">Patched runc; user namespaces (rootless) and an enforcing LSM; not running untrusted images with custom mount configurations. Another reminder that the runtime is attack surface.</td></tr>
+<tr><td class="n">xz backdoor<br><a href="https://nvd.nist.gov/vuln/detail/CVE-2024-3094">CVE-2024-3094</a></td><td class="w">A maintainer-level compromise injected a backdoor through release tarballs and build scripts into a library that sshd loaded on some distributions.</td><td class="w">Dependency diet; building from the source repo rather than release tarballs; reproducible builds; and a sandbox on sshd (systemd units with hardening reduce what a backdoor can reach). Not preventable by the language.</td></tr>
+</tbody></table></div>
+<p><strong>The pattern:</strong> you mitigate runtime bugs and kernel memory bugs only by patching or by a harder boundary. You remove capability-gated bugs by dropping capabilities, using seccomp and denying user namespaces. You address supply-chain compromises with a smaller trusted base and by sandboxing what you did trust.</p>
+
+<h3 id="testing">Test the sandbox</h3>
+<p>Before you rely on a setup, try to break out of it. Run <code>amicontained</code> inside a container to list its capabilities, seccomp mode and namespaces. Use <code>kube-bench</code> to check a Kubernetes node against the CIS benchmark, and try the escapes in section 17 against your own profile. Check that <code>fork</code>, <code>socket</code> and a write outside the allowed paths fail the way you expect, and that the failure is the one you chose (<code>EPERM</code>, not a crash). Container image signing, for example with <code>cosign</code>, shows who built an image. <code>cargo vet</code> records who reviewed a crate. Neither proves the code is safe.</p>
+
+<h2 id="audit"><small>18 &middot; Self-assessment</small>Audit checklist</h2>
+<p>Tick what is true for your workload, and mark an item <em>n/a</em> if your threat model does not need it (it then leaves the total). The score is weighted by how much each control narrows what a compromised process can do; it is a prompt for gaps, not a certification. Your choices are saved in this browser only.</p>
+<div class="widget" id="w-audit">
+  <div class="score" id="au-score" role="status" aria-live="polite" aria-label="Audit score">0%</div>
+  <div class="meter"><div id="au-meter" style="width:0"></div></div>
+  <p id="au-excl"></p>
+  <div id="au-groups"></div>
+  <div class="row"><button id="au-reset" class="alt">Reset</button></div>
+</div>
+
+<h2 id="review"><small>19 &middot; Method</small>How this page was reviewed</h2>
+<p>We hand each version of this page to an independent AI reviewer and instruct it to be adversarial. It checks claims against documentation and by running code, hunts for errors and omissions, and scores against a written rubric. The bar is a weighted score above 9.0 with no criterion below 8. <strong>This version has not reached it:</strong> the latest round scored 8.5, and we keep revising and re-reviewing. You can find the rubric, the scoring rules and the round-by-round log, including rounds that fell short, on a <a href="review.html">separate review page</a>. An AI review is a useful filter, not a substitute for an expert human audit of anything you depend on.</p>
+
+<h2 id="sources"><small>20 &middot; Further reading</small>Where to read more</h2>
+<ul>
+  <li>Linux kernel documentation: <em>Seccomp BPF</em>, <em>Landlock: unprivileged access control</em>, <em>Control Group v2</em>, <em>Linux Security Modules</em>, <em>The Linux kernel's self-protection project (KSPP)</em>, <em>BPF LSM</em>.</li>
+  <li>Man pages: <code>seccomp(2)</code>, <code>seccomp_unotify(2)</code>, <code>landlock(7)</code>, <code>capabilities(7)</code>, <code>namespaces(7)</code>, <code>user_namespaces(7)</code>, <code>cgroups(7)</code>, <code>prctl(2)</code> (<code>PR_SET_NO_NEW_PRIVS</code>), <code>systemd.exec(5)</code>.</li>
+  <li>Docker documentation: <em>Seccomp security profiles for Docker</em> and <em>Runtime privilege and Linux capabilities</em>. Kubernetes: <em>Pod Security Standards</em>, <em>Restrict a Container's Syscalls with seccomp</em>, <em>User Namespaces</em>.</li>
+  <li>OCI runtime specification (Linux section), the Landlock project site (landlock.io) and its Rust crate.</li>
+  <li>Firecracker: design document, jailer documentation, and the NSDI 2020 paper <em>Firecracker: Lightweight Virtualization for Serverless Applications</em>. gVisor: <em>Security Model</em>. Kata Containers architecture documentation.</li>
+  <li>Rust: <em>The Rustonomicon</em>; RustSec advisory database; the manuals of <code>cargo-deny</code>, <code>cargo-vet</code>, <code>cargo-audit</code>, <code>cargo-geiger</code>, <code>cargo-auditable</code>.</li>
+  <li>Landlock tooling for non-programmers: the <code>landlock-restrict</code> command from the Landlock project and wrappers such as <code>landrun</code> fence an existing program from a shell. Kernel hardening: <code>kernel-hardening-checker</code> (a13xp0p0v) and the KSPP's recommended settings.</li>
+  <li>The NIST SP 800-190 <em>Application Container Security Guide</em> and the CIS Docker and Kubernetes benchmarks for audit checklists.</li>
+</ul>
+
+<footer>Kernel version numbers and defaults change; verify against the documentation for your kernel and runtime before relying on a figure. Illustrative sketches are marked; the C example in section 16 was compiled and its quoted behaviours observed on one kernel (6.18, x86-64). The widgets above are simplified models, written to teach the rules, and are not a substitute for testing a real policy.</footer>
+
+</main>
+<script src="hardening.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

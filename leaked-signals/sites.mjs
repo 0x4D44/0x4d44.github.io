@@ -17,7 +17,7 @@ export const SITES = [
   T("ie-dublin", "Dublin - Kippure", "IE", 53.116, -6.340, 1961.99, 50, 400, 20, { analogOff: 2012.9 }),
   // --- Germany, France, Benelux, Alps
   T("de-berlin", "Berlin - Witzleben/Fernsehturm", "DE", 52.503, 13.277, 1935.2, 8, 800, 40, { gaps: [[1944.8, 1952.9]], analogOff: 2003.6 }),
-  T("de-hamburg", "Hamburg", "DE", 53.559, 9.984, 1952.0, 40, 500, 30, { analogOff: 2005.0 }),
+  T("de-hamburg", "Hamburg", "DE", 53.559, 9.984, 1952.95, 40, 500, 30, { analogOff: 2005.0 }),
   T("de-munich", "Munich", "DE", 48.137, 11.575, 1953.85, 40, 500, 30, { analogOff: 2008.5 }),
   T("fr-paris", "Paris - Eiffel Tower", "FR", 48.858, 2.295, 1935.5, 30, 800, 35, { gaps: [[1940.4, 1943.2]], h: 330, analogOff: 2011.9 }),
   T("nl-hilversum", "Hilversum", "NL", 52.229, 5.167, 1951.8, 25, 500, 25, { analogOff: 2006.9 }),
