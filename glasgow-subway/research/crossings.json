@@ -1,0 +1,35 @@
+{
+ "clyde-central": {
+  "name": "River Clyde (Glasgow Bridge reach, St Enoch to Bridge Street)",
+  "x": 847.426,
+  "z": 531.162,
+  "lat": 55.85522,
+  "lon": -4.256436,
+  "widthM": 122,
+  "source": "OSM waterway/riverbank polygon intersections with the OSM Subway ways",
+  "bedY": -3.0,
+  "clearanceBelowBedM": 2.4
+ },
+ "clyde-govan": {
+  "name": "River Clyde (Govan to Partick)",
+  "x": -2643.895,
+  "z": -639.359,
+  "lat": 55.865753,
+  "lon": -4.312319,
+  "widthM": 119,
+  "source": "OSM waterway/riverbank polygon intersections with the OSM Subway ways",
+  "bedY": -3.0,
+  "clearanceBelowBedM": 2.4
+ },
+ "kelvin": {
+  "name": "River Kelvin (Hillhead to Kelvinbridge)",
+  "x": -710.19,
+  "z": -1588.333,
+  "lat": 55.874292,
+  "lon": -4.281368,
+  "widthM": 22,
+  "source": "OSM waterway/riverbank polygon intersections with the OSM Subway ways",
+  "bedY": 11.0,
+  "clearanceBelowBedM": 4.0
+ }
+}

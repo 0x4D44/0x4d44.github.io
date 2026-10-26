@@ -35,7 +35,7 @@ const NOW_YEAR = qs.has("t") ? +qs.get("t") : C.yearFromJd(C.jdFromUnixMs(Date.n
 const T_MIN = 1934.9, T_MAX = Math.floor(NOW_YEAR) + 100;
 const S = {
   T: NOW_YEAR, logR: 2.1, yaw: 0.7, pitch: 0.38, size: 1.7, gain: 0.55, phys: false,
-  stars: true, labels: true, grid: true, solo: null, hl: null, star: null, rx: "fast", tsys: 300, tier: "picture",
+  stars: true, labels: true, grid: true, solo: null, hl: null, star: null, rx: "fast", tsys: 1000, tier: "picture",
   playing: false, speed: 1, tab: "explore", driftSite: null,
 };
 const STARS = window.LEAK_STARS;
@@ -47,6 +47,12 @@ for (let i = 0; i < STARS.n; i++) {
 const starSize = v => (v == null ? 2.4 : Math.max(2.4, Math.min(8, 6.2 - 0.45 * v)));
 const NAMED = Object.keys(STARS.names).map(Number).sort((a, b) => ((STARS.v[a] ?? 99) - (STARS.v[b] ?? 99)) || STARS.ly[a] - STARS.ly[b]);
 const starByName = n => { for (const k in STARS.names) if (STARS.names[k] === n) return +k; return null; };
+function findStar(q) {
+  q = q.trim().toLowerCase(); if (!q) return null;
+  const ks = Object.keys(STARS.names);
+  const k = ks.find(k => STARS.names[k].toLowerCase() === q) ?? ks.find(k => STARS.names[k].toLowerCase().startsWith(q)) ?? ks.find(k => STARS.names[k].toLowerCase().includes(q));
+  return k == null ? null : +k;
+}
 
 // colours per country
 const CC_COL = { GB: [1, .71, .33], US: [.35, .84, 1], DE: [1, .42, .6], FR: [.56, .62, 1], RU: [1, .36, .3], JP: [1, .5, .85], AU: [.5, 1, .55], IT: [.5, .9, .4], ES: [1, .85, .3], CA: [.85, .55, 1], BR: [.2, 1, .6], IN: [1, .6, .2], CN: [1, .25, .25] };
@@ -102,12 +108,12 @@ function needsRebuild() {
 function rebuild() {
   if (!R) return;
   const t0 = performance.now();
-  const W = Math.min(Math.max(wantWindow() * 1.15, 0.0008), Math.max(EDGE(), 0.0008));
+  const W = Math.min(Math.max(wantWindow() * 1.6, 0.0008), Math.max(EDGE(), 0.0008));
   const fine = W < 0.02, mid = W < 3;
   const az = fine ? 110 : mid ? 80 : 56;
   const nSrc = Math.max(1, ALL_SOURCES.filter(x => x.kind !== "radar" && sourceFilter(x) && C.erpW(x, S.T) > 0).length);
-  const rings = clamp(Math.round(300000 / (nSrc * az * 0.6)), 150, 1400);   // fewer sources -> finer time resolution
-  field = buildField(jdOf(), W, { rings, az, filter: sourceFilter });
+  const rings = clamp(Math.round(300000 / (nSrc * az * 0.6)), 100, 1400);   // fewer sources -> finer time resolution
+  field = buildField(jdOf(), W, { rings, az, filter: sourceFilter, beacons: !S.solo || S.solo.has("BEACON") });
   fieldKey = soloKey();
   R.setField(field);
   lastBuildMs = performance.now() - t0;
@@ -140,7 +146,7 @@ function updateHeard(force) {
   for (let i = 0; i < STARS.n; i++) {
     st[2 * i] = starSize(STARS.v[i]);
     const ly = STARS.ly[i];
-    if (ly > EDGE()) continue;
+    if (ly > EDGE_SEL()) continue;
     const jdE = jdT - ly * C.DAYS_PER_YEAR;
     const g = C.gmstDeg(jdE) - STARS.ra[i], cg = Math.cos(g * C.D2R), sg = Math.sin(g * C.D2R);
     const sd = Math.sin(STARS.dec[i] * C.D2R), cd = Math.cos(STARS.dec[i] * C.D2R);
@@ -176,12 +182,14 @@ new ResizeObserver(resize).observe(stage);
 const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
 const zoomGain = () => 1 - 0.8 * sstep(-1.0, 2.1, S.logR);     // fewer photons per point once thousands overlap
 const zoomSize = () => 2.6 - 1.7 * sstep(-3.6, -0.5, S.logR);  // each ray is a visible dot at AU scales
-let listenT = 0, listenAt = 0;
+let listenT = 0, listenAt = 0, lastWheel = -1e9;
 function frame() {
   if (R && !tourSeeking && needsRebuild()) {
     clearTimeout(rebuildTimer);
-    const dragging = ptr.down;
-    if (!field || !dragging) rebuild();
+    const busy = ptr.down || performance.now() - lastWheel < 160;   // keep the old field while the user is mid-gesture
+    if (!field) rebuild();
+    else if (busy) rebuildTimer = setTimeout(() => { dirty = true; }, 180);
+    else rebuild();
   }
   ensureHighlight();
   if (R) updateHeard(false);
@@ -327,7 +335,7 @@ function limitRefs() {
   }
   return [];
 }
-const starName = i => STARS.names[i] || `Star ${i} (${STARS.ra[i].toFixed(1)}°, ${STARS.dec[i].toFixed(1)}°)`;
+const starName = i => STARS.names[i] || `Unnamed star at RA ${(STARS.ra[i] / 15).toFixed(1)}h, Dec ${STARS.dec[i].toFixed(0)}°`;
 
 let _hlNoteKey = null;
 function updateHlNote() {
@@ -350,7 +358,8 @@ function updateHud() {
     `<br>${S.stars && starsInside() > 0 ? `${heardCount} of ${STARS.stars_in || starsInside()} stars inside the bubble are in a fan right now` : ""}`;
 }
 let _inside = 0, _insideT = -1;
-function starsInside() { if (Math.abs(S.T - _insideT) > 0.01) { _insideT = S.T; const e = EDGE(); _inside = 0; for (let i = 0; i < STARS.n; i++) if (STARS.ly[i] <= e) _inside++; } return _inside; }
+let _insideKey = "";
+function starsInside() { if (Math.abs(S.T - _insideT) > 0.01 || _insideKey !== soloKey()) { _insideT = S.T; _insideKey = soloKey(); const e = EDGE_SEL(); _inside = 0; for (let i = 0; i < STARS.n; i++) if (STARS.ly[i] <= e) _inside++; } return _inside; }
 
 // ---------- input ----------
 const ptr = { down: false, x: 0, y: 0, moved: 0, pts: new Map(), pinch: 0 };
@@ -380,7 +389,7 @@ const up = e => {
   if (!ptr.pts.size) { ptr.down = false; if (wasClick) pickAt(e.clientX, e.clientY); }
 };
 stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
-stage.addEventListener("wheel", e => { e.preventDefault(); stopTour(); S.logR = clamp(S.logR + e.deltaY * 0.0012, -4.7, 3); syncDock(); dirty = true; }, { passive: false });
+stage.addEventListener("wheel", e => { e.preventDefault(); lastWheel = performance.now(); stopTour(); S.logR = clamp(S.logR + e.deltaY * 0.0012, -4.7, 3); syncDock(); dirty = true; }, { passive: false });
 stage.tabIndex = 0;
 stage.addEventListener("keydown", e => {
   const k = e.key;
@@ -400,7 +409,7 @@ function pickAt(cx, cy) {
     const d = (q[0] - x) ** 2 + (q[1] - y) ** 2;
     if (d < bd) { bd = d; best = i; }
   }
-  if (best >= 0) selectStar(best, { switchTab: true });
+  if (best >= 0) selectStar(best, { switchTab: true, noFocus: true });
 }
 
 // ---------- dock ----------
@@ -456,7 +465,8 @@ function stepAnim(now) {
 
 // ---------- selection ----------
 function selectStar(i, o = {}) {
-  S.star = i; lastHeardT = -1; dirty = true;
+  hideHint(); S.star = i;
+  if (!o.noFocus && STARS.ly[i] > 10 ** S.logR * 1.3) focusStar(i);   // bring an off-screen star into view lastHeardT = -1; dirty = true;
   if (o.switchTab) setTab("listen");
   renderListen(true);
 }
@@ -480,7 +490,7 @@ function buildPanel() {
   renderAnatomy();
 }
 function setTab(id, focus) {
-  S.tab = id;
+  S.tab = id; hideHint();
   $$("#tabs button").forEach(b => { const on = b.dataset.tab === id; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
   $$(".tabbody").forEach(b => b.hidden = b.id !== "body-" + id);
   if (id === "listen") renderListen(true);
@@ -542,7 +552,7 @@ function updateKpi() {
 function sourceRows(i, jdT) {
   const ly = STARS.ly[i], jdE = jdT - ly * C.DAYS_PER_YEAR, rows = [];
   for (const s of ALL_SOURCES) {
-    if (s.kind === "radar") continue;
+    if (s.kind === "radar" || !sourceFilter(s)) continue;
     const r = C.receptionFrom(s, jdE, STARS.ra[i], STARS.dec[i]);
     if (r.blocked) continue;
     if (r.el > 3) continue;
@@ -570,14 +580,15 @@ function renderListen(full) {
     <h2>Pick a listener</h2>
     <div class="field"><label for="starSearch">Star</label><input id="starSearch" type="search" list="starlist" placeholder="Sirius, Tau Ceti, Vega…" autocomplete="off"></div>
     <datalist id="starlist">${NAMED.slice(0, 600).map(k => `<option value="${esc(STARS.names[k])}"></option>`).join("")}</datalist>
+    <p class="faint" id="starMsg" role="status"></p>
     <div class="chips" id="quickStars">${["Proxima Centauri", "Sirius", "Tau Ceti", "Vega", "Epsilon Eridani", "Altair", "Fomalhaut", "Arcturus", "Pollux", "Barnard's Star"].map(n => starByName(n) != null ? `<button class="chip" type="button" data-star="${starByName(n)}">${esc(n)}</button>` : "").join("")}</div>
     <p class="faint">Or click any star in the view.</p>
     <div id="listenBody"></div>`;
-    $("#starSearch").onchange = e => { const k = starByName(e.target.value.trim()); if (k != null) { selectStar(k); focusStar(k); } };
+    $("#starSearch").onchange = e => { const k = findStar(e.target.value), m = $("#starMsg"); if (k != null) { m.textContent = ""; selectStar(k); focusStar(k); } else if (e.target.value.trim()) m.textContent = `No star called "${e.target.value.trim()}" in the catalogue of named stars within 100 light-years (Polaris and Betelgeuse are farther out).`; };
     $("#quickStars").onclick = e => { const b = e.target.closest("[data-star]"); if (b) { selectStar(+b.dataset.star); focusStar(+b.dataset.star); } };
   }
   const body = $("#listenBody");
-  if (i == null) { body.innerHTML = `<div class="note">No star selected. Pick one above to see what it is hearing and when.</div>`; return; }
+  if (i == null) { body.innerHTML = `<div class="note">No star selected. Pick one above, or click a star in the view, to see which of our broadcasts it can hear and when. Stars hear us in short windows twice a day, so many have nothing aimed at them at any one moment.</div>`; return; }
   const jdT = jdOf(), ly = STARS.ly[i], jdE = jdT - ly * C.DAYS_PER_YEAR;
   const rows = sourceRows(i, jdT);
   const rx = C.RECEIVERS.find(r => r.id === S.rx), tier = C.TIERS.find(t => t.id === S.tier);
@@ -587,12 +598,12 @@ function renderListen(full) {
   const strongest = topNow[0];
   let verdict = "";
   if (!inside) verdict = `<div class="verdict">The bubble has not reached ${esc(starName(i))} yet. It is ${fmtLy(ly)} light-years out, and television began ${fmtLy(S.T - FIRST_TV)} years ago, so the first broadcasts arrive in <b>${(FIRST_TV + ly).toFixed(0)}</b>.</div>`;
-  else if (!strongest) verdict = `<div class="verdict">Right now nothing is aimed at ${esc(starName(i))}. On Earth, the broadcasts it would hear are the ones sent in <b>${C.fmtUTC(jdE, false)}</b>, when no transmitter that was on air had it near its horizon.</div>`;
+  else if (!strongest) verdict = `<div class="verdict">Right now nothing is aimed at ${esc(starName(i))}. On Earth, the broadcasts it would hear are the ones sent in <b>${C.fmtUTC(jdE, false)}</b>, when no transmitter that was on air had it near its horizon.${S.solo ? " (Only the countries you have selected are counted.)" : ""}</div>`;
   else {
-    const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
+    const eirp = strongest.w, analog = C.isAnalogue(strongest.s, C.yearFromJd(jdE)), cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys).filter(id => analog || id !== "carrier");
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
-    const can = cleared.includes(S.tier);
-    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish manages out to <b>${fmtDist(range)}</b> from a transmitter of that power${can ? "" : ", and this star is " + fmtDist(ly) + " away"}. Goals it would clear at this distance: ${cleared.length ? cleared.map(id => (C.TIERS.find(t => t.id === id) || { name: id }).name.toLowerCase()).join(", ") : "none"}.</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
+    const can = cleared.includes(S.tier), noCarrier = !analog && S.tier === "carrier";
+    verdict = `<div class="verdict ${can ? "good" : "bad"}">In principle, with <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish manages out to <b>${fmtDist(range)}</b> from a transmitter of that power${can ? "" : ", and this star is " + fmtDist(ly) + " away"}. Goals it would clear at this distance: ${cleared.length ? cleared.map(id => (C.TIERS.find(t => t.id === id) || { name: id }).name.toLowerCase()).join(", ") : "none"}.${noCarrier ? " This transmitter had gone digital by then, so there is no steady carrier tone to find." : ""}</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
@@ -614,7 +625,7 @@ function renderListen(full) {
   <div class="field"><label for="rxSel">Receiver</label><select id="rxSel">${C.RECEIVERS.map(r => `<option value="${r.id}"${r.id === S.rx ? " selected" : ""}>${esc(r.name)}</option>`).join("")}</select></div>
   <div class="field"><label for="tierSel">Goal</label><select id="tierSel">${C.TIERS.map(t => `<option value="${t.id}"${t.id === S.tier ? " selected" : ""}>${esc(t.name)}</option>`).join("")}</select></div>
   <canvas class="chart" id="rangeCv" width="560" height="210"></canvas>
-  <p class="faint">Horizontal range at which each receiver clears SNR for a 1 MW transmitter (system noise ${S.tsys} K, VHF sky). Dashed line: this star. Inverse-square law and kTB noise only; no atmosphere, no interference.</p>`;
+  <p class="faint">Horizontal range at which each receiver clears SNR for a 1 MW transmitter (system noise ${S.tsys.toLocaleString()} K, about the galactic sky at 100 MHz). Dashed line: this star. Inverse-square law and kTB noise only; no atmosphere, no interference.</p>`;
   $("#rxSel").onchange = e => { S.rx = e.target.value; renderListen(); };
   $("#tierSel").onchange = e => { S.tier = e.target.value; renderListen(); };
   drawStrip(i, jdT, rows);
@@ -634,7 +645,7 @@ function drawStrip(i, jdT, rows) {
   cv.height = Math.max(120, top + rowH * shown.length + 6);
   const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
-  const x0 = 170, x1 = Wd - 10;
+  const x0 = 170, x1 = Wd - 28;
   c.fillStyle = css("--dim"); c.textAlign = "center";
   for (let h = 0; h <= 24; h += 6) { const x = x0 + (h / 24) * (x1 - x0); c.fillText(h === 0 ? "now" : `+${h}h`, x, 12); c.strokeStyle = css("--line"); c.beginPath(); c.moveTo(x, 16); c.lineTo(x, Hd - 2); c.stroke(); }
   let row = 0;
@@ -654,7 +665,7 @@ function drawDrift(i, jdT, rows) {
   const ly = STARS.ly[i];
   const cand = ALL_SOURCES.filter(s => s.kind !== "radar" && C.erpW(s, C.yearFromJd(jdT - ly * C.DAYS_PER_YEAR)) > 0 && Math.abs(STARS.dec[i]) <= 90 - Math.abs(s.lat) + 3);
   if (!S.driftSite || !cand.find(s => s.id === S.driftSite)) S.driftSite = (cand.find(s => s.id === "gb-london") || cand[0] || {}).id;
-  sel.innerHTML = cand.map(s => `<option value="${s.id}"${s.id === S.driftSite ? " selected" : ""}>${esc(s.name)}</option>`).join("") || `<option>none: this star is circumpolar for every site</option>`;
+  sel.innerHTML = cand.map(s => `<option value="${s.id}"${s.id === S.driftSite ? " selected" : ""}>${esc(s.name)}</option>`).join("") || `<option>none: no site ever has this star on its horizon</option>`;
   sel.onchange = e => { S.driftSite = e.target.value; drawDrift(i, jdT, rows); };
   const cv = $("#driftCv"), c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
@@ -685,7 +696,7 @@ function drawRanges(ly) {
   const x0 = 250, x1 = Wd - 10, lo = -6, hi = 5; // log10 ly
   const X = v => x0 + ((Math.log10(v) - lo) / (hi - lo)) * (x1 - x0);
   c.strokeStyle = css("--line"); c.fillStyle = css("--dim"); c.textAlign = "center";
-  for (let e = lo; e <= hi; e += 1) { const x = x0 + ((e - lo) / (hi - lo)) * (x1 - x0); c.beginPath(); c.moveTo(x, 4); c.lineTo(x, Hd - 22); c.stroke(); if (e % 2 === 0 || e === hi) c.fillText(e === 0 ? "1 ly" : e === -5 ? "1 AU" : `10^${e}`, x, Hd - 8); }
+  for (let e = lo; e <= hi; e += 1) { const x = x0 + ((e - lo) / (hi - lo)) * (x1 - x0); c.beginPath(); c.moveTo(x, 4); c.lineTo(x, Hd - 22); c.stroke(); if (e % 2 === 0 || e === hi) c.fillText(e === 0 ? "1 ly" : `10^${e}`, x, Hd - 8); }
   const rowH = (Hd - 28) / C.RECEIVERS.length;
   C.RECEIVERS.forEach((r, k) => {
     const y = 4 + k * rowH, rg = C.rangeLy(1e6, r.area, tier, S.tsys), xr = clamp(X(rg), x0, x1);
@@ -702,7 +713,11 @@ function renderBroadcasts() {
   el.innerHTML = `<h2>Chase a programme</h2>
   <p>Pick a broadcast to light its wavefront and see which stars lay in its fan. The shell is as thick as the programme is long in light-time (a 2-hour show is a shell 2 light-hours deep). Seen from outside, a mast sends power in every compass direction at once, so one instant is a full ring; the Earth turns while the show airs, so the ring smears into a belt that never leaves ±(90° − latitude) of the celestial equator. Stray dots toward the poles are the 2% of energy that leaks upward.</p>
   <div class="list" id="bList">${[...BROADCASTS].sort((x, y) => x.start < y.start ? -1 : 1).map(b => `<button class="item" type="button" data-b="${b.id}"><div class="t">${esc(b.title)}<span class="tag ${b.status === "missing" ? "missing" : b.status === "live" ? "live" : "ok"}">${b.status === "missing" ? "wiped" : b.status === "live" ? "never recorded" : "survives"}</span></div><div class="m">${b.start.slice(0, 10)} &middot; ${esc(siteById[b.site].name)}</div></button>`).join("")}</div>
-  <div id="bDetail"></div>`;
+  <div id="bDetail"></div>
+  <h2>Messages sent on purpose</h2>
+  <p>Unlike the leaked programmes, these were aimed at a particular star. They travel as a narrow beam, so a single ray rather than a fan.</p>
+  <div class="list" id="msgList">${BEACONS.map(m => { const y = m.date[0] + (m.date[1] - 0.5) / 12, s = beaconSite(m); return `<button class="item" type="button" data-m="${m.id}"><div class="t">${esc(m.name)}<span class="tag ok">${esc(m.targetName)}</span></div><div class="m">sent ${m.date[0]} from ${esc(s.name)} &middot; ${fmtLy(m.targetLy)} ly &middot; arrives about <b>${Math.round(y + m.targetLy).toLocaleString()}</b></div><div class="m">${esc(m.blurb)}</div></button>`; }).join("")}</div>`;
+  $("#msgList").onclick = e => { const b = e.target.closest("[data-m]"); if (!b) return; const m = BEACONS.find(x => x.id === b.dataset.m), d = C.radec2vec(m.ra, m.dec), age = (jdOf() - beaconJd(m)) / C.DAYS_PER_YEAR; if (age > 0) animateTo({ logR: Math.log10(Math.max(age * 1.4, 1e-4)), yaw: Math.atan2(d[1], d[0]) + Math.PI + 0.45, pitch: clamp(-Math.asin(d[2]) + 0.25, -1.4, 1.4) }); else animateTo({ T: Math.min(T_MAX, m.date[0] + 1) }); };
   $("#bList").onclick = e => { const b = e.target.closest("[data-b]"); if (b) { if (b.dataset.b === S.hl) clearBroadcast(); else selectBroadcast(b.dataset.b); } };
 }
 const listenerCache = {};
@@ -710,7 +725,7 @@ function clearBroadcast() {
   S.hl = null; hlId = null; dirty = true; $$("#bList .item").forEach(b => b.classList.remove("sel")); const d = $("#bDetail"); if (d) d.innerHTML = ""; _hlNoteKey = null; updateHlNote();
 }
 function selectBroadcast(id, fly = true) {
-  S.hl = id; hlId = null; dirty = true;
+  hideHint(); S.hl = id; hlId = null; dirty = true;
   $$("#bList .item").forEach(b => b.classList.toggle("sel", b.dataset.b === id));
   const b = BROADCASTS.find(x => x.id === id), t0 = C.jdFromUnixMs(Date.parse(b.start));
   const age = (jdOf() - t0) / C.DAYS_PER_YEAR, src = siteById[b.site];
@@ -782,17 +797,17 @@ function renderAbout() {
   <p><b>Emission.</b> For every transmitter and every moment, a mast sends power along its horizon: all azimuths, elevations from just below the geometric horizon (a mast sees a bit over the curve, the "dip") up through a lobe a few degrees wide (Gaussian, σ = 4°), plus a 2% share of rays scattered isotropically upward at low intensity (sidelobes). The direction in space of each ray is fixed by Earth's actual orientation at that second (sidereal time) and the mast's latitude and longitude.</p>
   <p><b>Propagation.</b> A ray never changes direction. A piece sent <i>a</i> years ago is exactly <i>a</i> light-years from where Earth was then; Earth's own 1 AU orbit is included so the innermost spirals are offset correctly.</p>
   <p><b>Hearing.</b> A star at declination δ hears a mast at latitude φ only when the star is within the lobe of its horizon, which can only happen if |δ| ≤ 90° − |φ| (+ the lobe's few degrees). That gives the band structure, the twice-daily rising/setting windows, and a 3 min 56 s daily drift.</p>
-  <p><b>Link budget.</b> Flux = P/(4πd²), noise = kTB, with SNR thresholds of 10 (carrier in 1 Hz, sound in 20 kHz) or 100 (5.5 MHz vision). System noise 300 K (galactic background at VHF). No atmosphere, interference or intervening medium.</p>
+  <p><b>Link budget.</b> Flux = P/(4πd²), noise = kTB, with SNR thresholds of 10 (carrier in 1 Hz, sound in 20 kHz) or 100 (5.5 MHz vision). System noise 1,000 K (the galactic sky alone is roughly 60&middot;&lambda;<sup>2.55</sup> K, about 900 K at 100 MHz; UHF is quieter, 50 MHz noisier). No atmosphere, interference or intervening medium.</p>
   <details><summary>What is approximate or invented</summary>
     <ul>
       <li>Transmitter powers are order-of-magnitude (tens of kW in the 1930s growing to megawatts); start dates are recalled public-service dates; some countries have several masts but one is modelled.</li>
       <li>Short-wave and AM radio are mostly reflected by the ionosphere and are not drawn. Only VHF/UHF television (one representative mast per city) and two planetary radars are modelled; FM, air-traffic and military radar are not.</li>
       <li>The overlay guide circles (bubble edge, first-TV ring, beams-end circles) are centred on the Sun-centred origin; the wavefront dots themselves are centred on Earth's actual position, a difference you only see at AU zoom.</li>
-      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is a sub-degree error, smaller than the beam window. Wavefront radii are measured from Earth's position at the moment of emission, so the picture includes the orbit; the quoted arrival dates ignore the Sun-Earth offset of up to 8 light-minutes. Dates after today extrapolate: stations are assumed to stay on air.</li>
+      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is an error of about one degree for 1936 emissions, comparable to the beam window. Wavefront radii are measured from Earth's position at the moment of emission, so the picture includes the orbit; the quoted arrival dates ignore the Sun-Earth offset of up to 8 light-minutes. Dates after today extrapolate: stations are assumed to stay on air.</li>
       <li>Each mast's power is a fleet average (peak power times a time-of-day activity factor), and effective radiated power is treated as isotropic equivalent.</li>
       <li>After the digital switch-over a transmitter is modelled at 8% of its analogue power and its signal is noise-like.</li>
       <li>Radar runs are random draws of the real pattern (planets near the ecliptic, a few per cent duty), not a log of actual observations. Arecibo Message and the other deliberate beams use the target's transit as the time of day.</li>
-      <li>Star positions are Simbad J2000 with parallax signal-to-noise above 8 (10,157 distinct stars). Proper motion is ignored (under 0.5% of a star's distance over 90 years, even for Barnard's Star).</li>
+      <li>Star positions are Simbad J2000 with parallax signal-to-noise above 8 (10,157 catalogue entries; binary components are listed separately). Proper motion is ignored (under 0.5% of a star's distance over 90 years, even for Barnard's Star).</li>
       <li>Programme times are the best known UT times, some approximate by a quarter-hour.</li>
     </ul></details>
   <details><summary>Further reading</summary>
@@ -836,14 +851,18 @@ function applyTour(t) {
   if (st.cap) { cap.textContent = st.cap; cap.classList.add("on"); } else cap.classList.remove("on");
   dirty = true; syncDock();
 }
+let preTour = null;
 function startTour() {
+  preTour = { solo: S.solo, hl: S.hl, star: S.star };
   S.playing = false; hideHint(); tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
 }
 function stopTour() {
   if (!tourPlaying) return;
+  if (preTour) { S.solo = preTour.solo; S.hl = preTour.hl; S.star = preTour.star; hlId = null; lastHeardT = -1; $$("#ccChips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cc === "*" ? !S.solo : !!(S.solo && S.solo.has(c.dataset.cc)))); preTour = null; }
   tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
-const hintEl = $("#hint"), hideHint = () => { hintEl.hidden = true; };
+const hintEl = $("#hint");
+function hideHint() { hintEl.hidden = true; }
 hintEl.onclick = () => { hideHint(); startTour(); };
 stage.addEventListener("pointerdown", hideHint, { once: true }); setTimeout(hideHint, 20000);
 $("#btnTour").onclick = () => { hideHint(); tourPlaying ? stopTour() : startTour(); };
