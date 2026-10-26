@@ -83,7 +83,7 @@ try {
   // walk with real key presses toward the stairs: face the ramp (+z), hold W
   const walk = await ev(p, () => {
     const s = __sim, w = s.walker(), inf = s.station().info; const out = {};
-    w.place(inf.xcP, inf.PL - 2.2, Math.PI); s.setLook(Math.PI, 0); // facing +z (towards the ramp)
+    w.place(inf.rc, inf.PL - 2.2, Math.PI); s.setLook(Math.PI, 0); // facing +z (towards the ramp)
     s.key('w', true); const t0 = { x: w.x, z: w.z }; for (let i = 0; i < 80; i++) s.tick(0.1); out.afterPlatform = { x: w.x, z: w.z, y: w.y };
     for (let i = 0; i < 160; i++) s.tick(0.1); out.afterRamp = { x: w.x, z: w.z, y: w.y }; out.Hc = inf.Hc; out.zc0 = inf.zc0;
     s.key('w', false); return out;
@@ -91,9 +91,9 @@ try {
   ok('walker is carried/climbs the ramp to the concourse', walk.afterRamp.y > walk.Hc - 0.6 || walk.afterRamp.z > walk.zc0 - 1, JSON.stringify(walk.afterRamp));
   await shot(p, '07_ramp_or_concourse');
   // concourse + info panels
-  await ev(p, () => { const s = __sim, i = s.station().info; s.walker().place(i.xcP, i.zc0 + 3, Math.PI); s.setLook(Math.PI, 0.02); s.walker().y = i.Hc; });
+  await ev(p, () => { const s = __sim, i = s.station().info; s.walker().place(i.rc, i.zc0 + 3, Math.PI); s.setLook(Math.PI, 0.02); s.walker().y = i.Hc; });
   await shot(p, '08_concourse');
-  await ev(p, () => { const s = __sim, i = s.station().info; s.walker().place(i.xcP + 5, i.zc0 + 10, Math.PI / 2 * -1); s.setLook(-Math.PI / 2, 0.02); s.walker().y = i.Hc; });
+  await ev(p, () => { const s = __sim, i = s.station().info; s.walker().place(i.rc + 5, i.zc0 + 10, Math.PI / 2 * -1); s.setLook(-Math.PI / 2, 0.02); s.walker().y = i.Hc; });
   await shot(p, '09_concourse_panel');
   // collision: cannot walk off the platform edge onto the track
   const edge = await ev(p, () => {
@@ -166,6 +166,27 @@ try {
   p = await open(browser, 'mode=ride&station=kelvinhall');
   await ev(p, () => __sim.ff(10, 0.1)); await shot(p, '20_ride_start');
   ok('ride mode runs on ATO', (await ev(p, () => __sim.state())).mode === 'ride');
+  const fovR = await ev(p, () => { const c = __sim.sim.camera; return { v: c.fov, a: c.aspect }; });
+  ok('ride/walk field of view is wide (>= 85 deg vertical at 16:9)', fovR.v >= 85, JSON.stringify(fovR));
+  // walk the whole 4-car train from the rear cab to the front cab
+  const trainWalk = await ev(p, () => {
+    const s = __sim, sim = s.sim, w = s.walker(); const half = sim.trainLen / 2 - 2.5;
+    w.place(0, half - 0.5, 0); s.setLook(0, 0); const z0 = w.z; const seen = new Set();
+    s.key('w', true); for (let i = 0; i < 400; i++) { s.tick(0.1); seen.add(sim.trainView.carAt(w.z)); } s.key('w', false);
+    s.key('Shift', true); w.place(0, -half + 0.5, Math.PI); s.setLook(Math.PI, 0); s.key('w', true); for (let i = 0; i < 200; i++) s.tick(0.1); s.key('w', false); s.key('Shift', false);
+    return { z0, zEnd: w.z, back: w.z, cars: seen.size, half, ncars: sim.trainView.cars.length };
+  });
+  ok('can walk the full length of the train through every car', trainWalk.zEnd < -trainWalk.half + 1 && trainWalk.cars === trainWalk.ncars, JSON.stringify(trainWalk));
+  ok('and sprint back to the rear', (await ev(p, () => __sim.walker().z)) > trainWalk.half - 1.5);
+  await p.close();
+  // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
+  p = await open(browser, 'mode=drive&station=buchanan-street');
+  for (const line of ['outer', 'inner']) {
+    await ev(p, (l) => __sim.go({ mode: 'drive', station: 'buchanan-street', line: l }), line);
+    const bad = [];
+    for (let i = 0; i < 15; i++) { const r = await ev(p, (k) => __sim.sweep(k, { step: 1.0, range: 70 }), i); if (r.hits.length) bad.push(`${r.station}(${r.island ? 'island' : 'side'}):${r.hits.length}x ${r.hits[0].mesh}@${r.hits[0].pt.join(',')}`); }
+    ok(`swept train volume intersects no solid station mesh - ${line} circle, all 15 stations`, bad.length === 0, bad.slice(0, 3).join(' | '));
+  }
   await p.close();
   p = await open(browser, 'mode=explore&station=hillhead&diff=easy');
   await shot(p, '21_explore_hillhead');
@@ -186,6 +207,8 @@ try {
   await ev(p, () => __sim.ff(3, 0.1)); await shot(p, '23_mobile_explore');
   const ov2 = await ev(p, () => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
   ok('mobile explore: no horizontal scroll', ov2.sw - ov2.cw <= 1);
+  const fovM = await ev(p, () => { const c = __sim.sim.camera; return 2 * Math.atan(Math.tan(c.fov * Math.PI / 360) * c.aspect) * 180 / Math.PI; });
+  ok('portrait: horizontal FOV stays wide (>= 80 deg)', fovM >= 80, 'hfov=' + fovM.toFixed(0));
   const joy = await ev(p, () => getComputedStyle(document.querySelector('.gs-joy')).display);
   ok('touch joystick shown in walk modes', joy === 'block');
   await p.close();

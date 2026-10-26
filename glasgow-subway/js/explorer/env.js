@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { lerp } from './util.js';
 
 export const PRESETS = {
-  day:   { top: '#4f8fd0', mid: '#a9c9e6', hor: '#dfe9ef', fog: '#c9d9e4', fogD: 0.00015, sun: '#fff0d8', sunI: 2.6, sunEl: 48, sunAz: 215, hemiS: '#cfe3ff', hemiG: '#5b5a50', hemiI: 1.0, exp: 1.0, glow: 0.35, stars: 0, emis: 0 },
-  dusk:  { top: '#24305f', mid: '#8a5a7a', hor: '#f29a58', fog: '#b5806f', fogD: 0.00014, sun: '#ff9250', sunI: 2.0, sunEl: 9, sunAz: 250, hemiS: '#a99bd0', hemiG: '#3b2d32', hemiI: 0.75, exp: 1.0, glow: 0.55, stars: 0.35, emis: 0.25 },
-  night: { top: '#02040b', mid: '#0a1428', hor: '#17284a', fog: '#0a1426', fogD: 0.00016, sun: '#7f9bd8', sunI: 0.5, sunEl: 35, sunAz: 140, hemiS: '#3a4a7a', hemiG: '#11131c', hemiI: 0.55, exp: 1.1, glow: 0.9, stars: 1, emis: 0.6 },
+  day:   { top: '#2570d0', mid: '#5fa8ec', hor: '#b9dcf7', fog: '#b9dcf7', fogD: 0.000035, sun: '#fff4e0', sunI: 3.4, sunEl: 52, sunAz: 215, hemiS: '#bcd9ff', hemiG: '#6b6a58', hemiI: 0.95, exp: 1.0, glow: 0.35, stars: 0, emis: 0 },
+  dusk:  { top: '#24305f', mid: '#8a5a7a', hor: '#f29a58', fog: '#b5806f', fogD: 0.00007, sun: '#ff9250', sunI: 2.0, sunEl: 9, sunAz: 250, hemiS: '#a99bd0', hemiG: '#3b2d32', hemiI: 0.75, exp: 1.0, glow: 0.55, stars: 0.35, emis: 0.25 },
+  night: { top: '#02040b', mid: '#0a1428', hor: '#17284a', fog: '#0a1426', fogD: 0.00009, sun: '#7f9bd8', sunI: 0.5, sunEl: 35, sunAz: 140, hemiS: '#3a4a7a', hemiG: '#11131c', hemiI: 0.55, exp: 1.1, glow: 0.9, stars: 1, emis: 0.6 },
 };
 
 const DARK = { top: new THREE.Color('#05070b'), mid: new THREE.Color('#0b1018'), hor: new THREE.Color('#141b26') };

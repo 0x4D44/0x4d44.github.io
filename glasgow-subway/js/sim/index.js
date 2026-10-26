@@ -246,19 +246,11 @@ class Sim {
   }
 
   _setupTrainWalker() {
-    const w = this.walker; const obs = [];
-    const half = this.trainLen / 2 - 2.5;
-    const gaps = this.doorZ.map((z) => [z - 0.85, z + 0.85]).sort((a, b) => a[0] - b[0]);
-    let z0 = -half; const segs = [];
-    for (const [a, b] of gaps) { if (a > z0 + 0.3) segs.push([z0, a]); z0 = Math.max(z0, b); }
-    if (z0 < half) segs.push([z0, half]);
-    for (const [a, b] of segs) for (const sx of [-1, 1]) {
-      if (b - a < 0.5) continue;
-      // keep a 0.5 m gangway gap at car joints is unnecessary (open gangways)
-      obs.push({ x0: sx > 0 ? 0.62 : -1.1, x1: sx > 0 ? 1.1 : -0.62, z0: a, z1: b, y: PY });
-    }
-    w.setWorld([{ kind: 'flat', x0: -0.98, x1: 0.98, z0: -half, z1: half, y: PY, name: 'saloon' }], obs);
-    w.heightFn = null; w.eye = 1.5; w.radius = 0.22;
+    // Whole 4-car train is one walkable corridor (open gangways). Generous aisle, door recesses, no seat colliders.
+    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.72, x1: 0.72, z0: -half, z1: half, y: PY, name: 'aisle' }];
+    for (const z of this.doorZ) zones.push({ kind: 'flat', x0: -1.12, x1: 1.12, z0: z - 0.75, z1: z + 0.75, y: PY, name: 'door' });
+    w.setWorld(zones, []);
+    w.heightFn = null; w.eye = 1.5; w.radius = 0.2;
     this.ctxKind = 'train';
   }
 
@@ -512,7 +504,7 @@ class Sim {
       if (!this.context) {
         // facts caption
         for (const p of (v.anchors.panels || [])) if (Math.abs(w.z - p.z) < 3.2 && Math.abs(w.x - p.x) < 4 && w.y < inf.PY + 0.5) { msg = `<b>${p.title}</b> ${p.body.slice(0, 160)}`; break; }
-        if (!msg) for (const p of (v.anchors.conPanels || [])) if (w.y > inf.Hc - 0.5 && Math.abs(w.z - (p.z + 4.8)) < 3.5 && w.x > inf.xcP + 4) { msg = p.body.slice(0, 160); break; }
+        if (!msg) for (const p of (v.anchors.conPanels || [])) if (w.y > inf.Hc - 0.5 && Math.abs(w.z - (p.z + 4.8)) < 3.5 && w.x > inf.rc + 4) { msg = p.body.slice(0, 160); break; }
       }
       if (!msg) { const sh = this.shuttle; if (sh.state === 'wait') msg = `Next train in ${fmtTime(sh.timer)}`; else if (sh.state === 'arriving') msg = `Train approaching ${fmtDist(Math.max(0, svc.distToStop))}`; }
     } else if (this.mode === 'ride') {
@@ -578,10 +570,10 @@ class Sim {
     // passenger streams during dwell
     if (sh.state === 'dwell' && svc.doorsOpen && !sh.streamed && this.activeStation) {
       sh.streamed = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl();
-      const door = this.doorZ.slice(); const ramp = { x: inf.xcP, z: inf.zE - 0.5 };
+      const door = this.doorZ.slice(); const ramp = { x: inf.rc, z: inf.zE - 0.5 };
       const nAl = Math.min(10, Math.round(svc.pax.onboard * 0.12)), nBo = Math.min(10, Math.round(v.crowdN * 0.35));
-      for (let i = 0; i < nAl; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.xe + inf.S * 0.4, z: zc + dz }, { x: inf.xcP, z: inf.zE - 0.5 }, 1, inf.PY, inf.PY, 0.4); }
-      for (let i = 0; i < nBo; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.xcP, z: zc + dz + (Math.random() - 0.5) * 3 }, { x: inf.xe + inf.S * 0.3, z: zc + dz }, 1, inf.PY, inf.PY, 0.6); }
+      for (let i = 0; i < nAl; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.xe + inf.S * 0.4, z: zc + dz }, { x: inf.rc, z: inf.zE - 0.5 }, 1, inf.PY, inf.PY, 0.4); }
+      for (let i = 0; i < nBo; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.rc, z: zc + dz + (Math.random() - 0.5) * 3 }, { x: inf.xe + inf.S * 0.3, z: zc + dz }, 1, inf.PY, inf.PY, 0.6); }
     }
     if (sh.state !== 'dwell') sh.streamed = false;
   }
@@ -591,7 +583,7 @@ class Sim {
   _resize() {
     const r = this.renderer, c = this.canvas;
     const w = c.clientWidth || innerWidth, h = c.clientHeight || innerHeight;
-    if (this.camera) { this.camera.aspect = w / h; this.camera.fov = w / h < 0.8 ? 82 : 70; this.camera.updateProjectionMatrix(); }
+    if (this.camera) { this.camera.aspect = w / h; this._applyFov(); }
     r.setSize(w, h, false);
   }
   frame(now) {
@@ -605,7 +597,17 @@ class Sim {
     } catch (e) { console.error('[sim] frame error', e); this.errors.push(String(e && e.stack || e)); if (this.errors.length > 5) this.renderer.setAnimationLoop(null); }
   }
 
+  /** Vertical FOV by mode, widened for portrait so the horizontal FOV stays wide. */
+  _applyFov() {
+    const cam = this.camera, drive = this.mode === 'drive', base = drive ? 78 : 92, asp = cam.aspect || 1.6;
+    const href = 2 * Math.atan(Math.tan(base * Math.PI / 360) * 16 / 9);
+    let v = asp >= 16 / 9 ? base : 2 * Math.atan(Math.tan(href / 2) / asp) * 180 / Math.PI;
+    v = Math.min(v, drive ? 100 : 112);
+    if (Math.abs(cam.fov - v) > 0.01) { cam.fov = v; cam.updateProjectionMatrix(); }
+  }
+
   sync(dt) {
+    this._applyFov();
     const THREE = this.THREE, svc = this.svc, tr = svc.train, cam = this.camera, track = this.track;
     const underground = this.mode !== 'street';
     if (underground) {
@@ -613,7 +615,7 @@ class Sim {
       this.trainView.place(track, tr.s);
       const d = svc.doors; this.trainView.setDoors(d.L, d.R);
       if (this.mode === 'explore') { if (this._tw !== 'x') { this.tunnel.setWindow(60, 45); this._tw = 'x'; } this.tunnel.update(track, track.stops[this.exploreIdx].sc); }
-      else { if (this._tw !== 'd') { this.tunnel.setWindow(75, 22); this._tw = 'd'; } this.tunnel.update(track, tr.s - this.trainLen / 2); }
+      else { if (this._tw !== 'd') { this.tunnel.setWindow(75, 22); this._tw = 'd'; } this.tunnel.update(track, this.mode === 'ride' ? tr.s - (this.walker.z - this.trainView.zMin) : tr.s - 1.8); }
       for (const v of this.stationViews.values()) v.update(this.time);
       this.crowd.update(dt, this.time, (x, z, y) => y);
       this._signal(svc);
@@ -698,6 +700,50 @@ class Sim {
     }
   }
 
+  // ------------------------------------------------------------------ test: train swept volume vs solid station meshes
+  /** Moves the real train model along the track through station i and ray-casts every cross-section hull point
+   *  between consecutive poses against the station's meshes. Returns { hits: [{s, mesh, point}], poses, samples }. */
+  sweepStation(i, o = {}) {
+    const THREE = this.THREE, tv = this.trainView, track = this.track, stop = track.stops[i];
+    const view = this._ensureStation(i); view.group.updateMatrixWorld(true);
+    if (!this._sweepPts) {
+      // hull of the train cross-section from exterior mesh vertices
+      const pts = [], v = new THREE.Vector3();
+      tv.root.traverse((m) => { if (m.isMesh && /exterior|cab$/.test(m.name || (m.parent && m.parent.name) || '')) { const p = m.geometry.attributes.position; for (let k = 0; k < p.count; k += 3) { v.fromBufferAttribute(p, k); pts.push([v.x, v.y]); } } });
+      // convex hull (monotone chain) on (x,y)
+      pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const cross = (o2, a, b) => (a[0] - o2[0]) * (b[1] - o2[1]) - (a[1] - o2[1]) * (b[0] - o2[0]);
+      const lo = []; for (const p of pts) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+      const up = []; for (let k = pts.length - 1; k >= 0; k--) { const p = pts[k]; while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+      const hull = lo.slice(0, -1).concat(up.slice(0, -1));
+      this._sweepHull = hull;
+      const zs = [tv.zMin + 0.05, tv.zMax - 0.05];
+      const stride = Math.max(1, Math.ceil(hull.length / 28));
+      this._sweepPts = []; for (const z of zs) hull.forEach((h, k) => { if (k % stride === 0) this._sweepPts.push(new THREE.Vector3(h[0], h[1], z)); });
+    }
+    const meshes = []; view.group.traverse((m) => { if (m.isMesh && !m.isInstancedMesh) meshes.push(m); });
+    const rc = new THREE.Raycaster(); rc.firstHitOnly = true;
+    const step = o.step || 1.0, range = o.range || 70;
+    const prev = [], hits = []; const wv = new THREE.Vector3(), dv = new THREE.Vector3();
+    let poses = 0;
+    for (let d = -range; d <= range; d += step) {
+      const sF = stop.sc + this.trainLen / 2 + d;   // front chainage
+      tv.place(track, sF);
+      const cur = this._sweepPts.map((p) => { const ci = tv.carAt(p.z); const car = tv.cars[ci]; return wv.set(p.x, p.y, p.z - tv.carInfo[ci].zc).applyMatrix4(car.matrix).clone(); });
+      if (prev.length) {
+        for (let k = 0; k < cur.length; k++) {
+          dv.subVectors(cur[k], prev[k]); const len = dv.length(); if (len < 1e-6) continue; dv.normalize();
+          rc.set(prev[k], dv); rc.near = 0; rc.far = len + 0.02;
+          const h = rc.intersectObjects(meshes, false);
+          if (h.length) hits.push({ s: +(sF - stop.s).toFixed(1), mesh: (h[0].object.name || h[0].object.geometry.type) + (h[0].object.userData.tag ? ':' + h[0].object.userData.tag : ''), pt: view.group.worldToLocal(h[0].point.clone()).toArray().map((x) => +x.toFixed(2)), from: this._sweepPts[k].toArray().map((x) => +x.toFixed(2)) });
+        }
+      }
+      for (let k = 0; k < cur.length; k++) prev[k] = cur[k];
+      poses++;
+    }
+    return { hits, poses, samples: this._sweepPts.length, station: view.station.name, side: view.info.S, island: view.info.island };
+  }
+
   // ------------------------------------------------------------------ misc
   getState() {
     const svc = this.svc; if (!svc) return {};
@@ -719,6 +765,7 @@ class Sim {
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),
       timeScale: (k) => { this.timeScale = k; },
       quality: () => this.quality,
+      sweep: (i, opts) => this.sweepStation(i, opts),
       loop: (on) => { if (on) this.renderer.setAnimationLoop((t) => this.frame(t)); else this.renderer.setAnimationLoop(null); },
       stats: () => ({ calls: this.renderer.info.render.calls, tris: this.renderer.info.render.triangles, geos: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures }),
     };

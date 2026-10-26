@@ -40,13 +40,13 @@ def add_track(m, cx, y0, y1, pads=(0.0,), conductor=True):
 
 def ring_shell(m, y0, y1, lining, ribs=True):
     pts = arc(R, PHI0, PHI1, 56)
-    m.strip_y(pts, y0, y1, lining)
+    m.strip_y(pts, y0, y1, lining, toward=(0.0, ZC), uv=(1.0, 1.0))
     # floor slab (flat top) and invert
     m.quad((-R * math.cos(PHI0), y0, FLOOR_Z), (R * math.cos(PHI0), y0, FLOOR_Z), (R * math.cos(PHI0), y1, FLOOR_Z), (-R * math.cos(PHI0), y1, FLOOR_Z), 'concrete_dark')
     if ribs:
         # circumferential flange at the y0 end (inward 0.05)
         inner = arc(R - 0.05, PHI0, PHI1, 56); outer = pts
-        m.strip_y(inner, y0, y0 + 0.03, 'cast_iron')
+        m.strip_y(inner, y0, y0 + 0.03, 'cast_iron', toward=(0.0, ZC))
         for i in range(len(inner) - 1):
             m.quad((inner[i][0], y0 + 0.03, inner[i][1]), (inner[i + 1][0], y0 + 0.03, inner[i + 1][1]),
                    (outer[i + 1][0], y0 + 0.03, outer[i + 1][1]), (outer[i][0], y0 + 0.03, outer[i][1]), 'cast_iron')
@@ -88,8 +88,8 @@ def build_ring(lining, lamp):
 def build_segment():
     reset()
     root = group('tunnel_segment_root')
-    specs = [('seg_plain', 'concrete_lining', False, 0.0), ('seg_lamp', 'concrete_lining', True, 0.0),
-             ('seg_iron', 'cast_iron', False, 0.0), ('seg_iron_lamp', 'cast_iron', True, 0.0)]
+    specs = [('seg_plain', 'ring_concrete', False, 0.0), ('seg_lamp', 'ring_concrete', True, 0.0),
+             ('seg_iron', 'ring_iron', False, 0.0), ('seg_iron_lamp', 'ring_iron', True, 0.0)]
     for name, lining, lamp, _ in specs:
         o = build_ring(lining, lamp).to_obj(name, parent=root)
     # anchor empties for runtime point lights (relative to ring centre)
@@ -118,8 +118,8 @@ def build_vault(kind, rib=False, endcap=False):
     # wall tile (to z=2.3 cream with orange band), arch painted
     if not endcap:
         wall = [(-half, FLOOR_Z), (-half, 2.3)]
-        m.strip_y(wall, y0, y1, 'tile_cream'); m.strip_y([(half, 2.3), (half, FLOOR_Z)], y0, y1, 'tile_cream')
-        m.strip_y(prof[1:-1], y0, y1, 'panel_ceiling')
+        m.strip_y(wall, y0, y1, 'tile_cream', toward=(0.0, 1.5)); m.strip_y([(half, 2.3), (half, FLOOR_Z)], y0, y1, 'tile_cream', toward=(0.0, 1.5))
+        m.strip_y(prof[1:-1], y0, y1, 'panel_ceiling', toward=(0.0, 1.5))
         # orange tile band along walls
         for sg in (-1, 1):
             m.box((sg * (half - 0.01), 0, 1.45), (0.03, VL, 0.30), 'tile_orange')
@@ -153,13 +153,29 @@ def build_vault(kind, rib=False, endcap=False):
         if rib:
             # structural arch rib band (cast-iron look) proud of the ceiling
             rb = [(x * 0.995, z - 0.06) for x, z in prof[1:-1]]
-            m.strip_y(rb, -0.12, 0.12, 'cast_iron')
+            m.strip_y(rb, -0.12, 0.12, 'cast_iron', toward=(0.0, 1.5))
             outer = prof[1:-1]
             for i in range(len(rb) - 1):
                 for yy in (-0.12, 0.12):
                     m.quad((rb[i][0], yy, rb[i][1]), (rb[i + 1][0], yy, rb[i + 1][1]), (outer[i + 1][0], yy, outer[i + 1][1]), (outer[i][0], yy, outer[i][1]), 'cast_iron')
-    else:
-        # END CAP: wall across the vault at y=0 with circular bore openings for each track
+    elif endcap == 'open':
+        # OPEN tunnel mouth: only a 0.3 m structural frame around the vault profile + a central pier between the two tracks.
+        inner = vault_profile(half - 0.3, spring - 0.0, crown - 0.3)
+        for yy, n in ((-0.2, 1), (0.2, -1)):
+            for i in range(len(prof) - 1):
+                if i == 0 or i == len(prof) - 2: pass
+                f = m.quad((prof[i][0], yy, prof[i][1]), (prof[i + 1][0], yy, prof[i + 1][1]), (inner[i + 1][0], yy, inner[i + 1][1]), (inner[i][0], yy, inner[i][1]), 'concrete_lining')
+                if f.normal.y * n < 0: f.normal_flip()
+                f[m.fx] = 1
+        m.strip_y(inner[1:-1], -0.2, 0.2, 'concrete_dark', toward=(0.0, 1.5))
+        pier = 1.35 if kind == 'island' else 0.6
+        m.bbox((-pier, -0.2, FLOOR_Z), (pier, 0.2, 4.9), 'tile_cream')
+        m.quad((-half, -0.2, FLOOR_Z), (half, -0.2, FLOOR_Z), (half, 0.2, FLOOR_Z), (-half, 0.2, FLOOR_Z), 'concrete_dark')
+        if kind == 'island':
+            m.bbox((-pw, -0.2, FLOOR_Z), (pw, 0.2, 0.695 - 0.02), 'platform_stone')
+            m.bbox((-pw + 0.02, -0.2, 0.675), (pw - 0.02, 0.2, 0.695), 'platform_floor')
+    elif endcap == 'bore':
+        # BORE WALL (optional): wall across the vault at y=0 with circular bore openings; only valid if the tracks are exactly at the documented x offsets
         import bmesh as bm_
         bm = m.bm
         outline = [bm.verts.new((x, 0.0, z)) for x, z in prof]
@@ -175,7 +191,7 @@ def build_vault(kind, rib=False, endcap=False):
         # bore lining reveal (short tunnel stub 0.3 m) and track
         for tx in tracks:
             pts = arc(R, 0, 2 * math.pi, 36, cx=tx)
-            m.strip_y(pts, 0.0, 0.3, 'concrete_lining')
+            m.strip_y(pts, 0.0, 0.3, 'concrete_lining', toward=(tx, ZC))
         # platform end ramp is placed by station kit; add end floor
         m.quad((-half, 0, FLOOR_Z), (half, 0, FLOOR_Z), (half, VL, FLOOR_Z), (-half, VL, FLOOR_Z), 'concrete_dark')
     return m
@@ -187,8 +203,10 @@ def build_station_vault():
     build_vault('island', rib=True).to_obj('vault_island_rib', parent=root)
     build_vault('side').to_obj('vault_side', parent=root)
     build_vault('side', rib=True).to_obj('vault_side_rib', parent=root)
-    build_vault('island', endcap=True).to_obj('vault_island_end', parent=root)
-    build_vault('side', endcap=True).to_obj('vault_side_end', parent=root)
+    build_vault('island', endcap='open').to_obj('vault_island_end', parent=root)
+    build_vault('side', endcap='open').to_obj('vault_side_end', parent=root)
+    build_vault('island', endcap='bore').to_obj('vault_island_borewall', parent=root)
+    build_vault('side', endcap='bore').to_obj('vault_side_borewall', parent=root)
     # anchor empties for platform lights
     return root
 

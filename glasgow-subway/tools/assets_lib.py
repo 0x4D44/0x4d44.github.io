@@ -24,7 +24,7 @@ PALETTE = {
     'livery_grey':     ('#4b4f55', 0.2, 0.5, None, 0, 1, None),
     'livery_white':    ('#e9e6df', 0.0, 0.4, None, 0, 1, None),
     'roundel_blue':    ('#1b3f8f', 0.0, 0.4, None, 0, 1, None),
-    'glass_window':    ('#1c2b36', 0.0, 0.05, None, 0, 0.38, None),
+    'glass_window':    ('#2a3d4a', 0.0, 0.05, None, 0, 0.30, None),
     'glass_clear':     ('#a8c4d0', 0.0, 0.05, None, 0, 0.25, None),
     'headlight':       ('#fffbe8', 0.0, 0.2, '#fff6d8', 12, 1, None),
     'taillight':       ('#aa0000', 0.0, 0.3, '#ff1010', 6, 1, None),
@@ -37,11 +37,12 @@ PALETTE = {
     'rubber_black':    ('#141414', 0.0, 0.8, None, 0, 1, None),
     'plastic_grey':    ('#6d7076', 0.0, 0.55, None, 0, 1, None),
     'plastic_black':   ('#1b1c1e', 0.0, 0.5, None, 0, 1, None),
-    'seat_fabric':     ('#d4571a', 0.0, 0.9, None, 0, 1, None),
-    'seat_fabric_dk':  ('#3b3e46', 0.0, 0.9, None, 0, 1, None),
-    'floor_grey':      ('#55585d', 0.0, 0.8, None, 0, 1, None),
+    'seat_fabric':     ('#d4571a', 0.0, 0.9, None, 0, 1, 'moquette'),
+    'seat_fabric_dk':  ('#3b3e46', 0.0, 0.9, None, 0, 1, 'moquette'),
+    'floor_grey':      ('#55585d', 0.0, 0.8, None, 0, 1, 'rubber'),
+    'interior_panel':  ('#d6d4cb', 0.0, 0.65, None, 0, 1, 'paint'),
     'interior_wall':   ('#d9d6cc', 0.0, 0.6, None, 0, 1, None),
-    'interior_ceiling':('#eeeae0', 0.0, 0.6, None, 0, 1, None),
+    'interior_ceiling':('#eeeae0', 0.0, 0.6, None, 0, 1, 'ceiling_panel'),
     'pole_yellow':     ('#e8b50c', 0.3, 0.4, None, 0, 1, None),
     'screen_off':      ('#07090b', 0.0, 0.2, '#0b2030', 0.6, 1, None),
     'screen_blank':    ('#ffffff', 0.0, 0.3, '#ffffff', 1.0, 1, 'blank'),
@@ -49,6 +50,30 @@ PALETTE = {
     'button_red':      ('#d11c1c', 0.0, 0.4, '#d11c1c', 1.5, 1, None),
     'button_amber':    ('#f0a000', 0.0, 0.4, '#f0a000', 1.5, 1, None),
     # tunnel / station
+    'escalator_tread': ('#9a9ca0', 0.6, 0.5, None, 0, 1, 'grooves'),
+    'ring_concrete':   ('#ffffff', 0.0, 0.92, None, 0, 1, 'ring_concrete'),
+    'ring_iron':       ('#ffffff', 0.5, 0.7, None, 0, 1, 'ring_iron'),
+    'sign_roundel':    ('#ffffff', 0.0, 0.45, None, 0, 1, 'roundel'),
+    'sign_name_board': ('#ffffff', 0.0, 0.4, 'tex', 0.55, 1, 'name_board'),
+    'sign_safety':     ('#ffffff', 0.0, 0.45, 'tex', 0.2, 1, 'safety_atlas'),
+    'advert_atlas':    ('#ffffff', 0.0, 0.35, 'tex', 0.25, 1, 'adverts'),
+    'route_map_panel': ('#ffffff', 0.0, 0.4, 'tex', 0.25, 1, 'route_map'),
+    'moquette_orange': ('#ee6a1c', 0.0, 0.95, None, 0, 1, 'moquette'),
+    'moquette_navy':   ('#2a3f7a', 0.0, 0.95, None, 0, 1, 'moquette'),
+    'moquette_grey':   ('#5b5f68', 0.0, 0.95, None, 0, 1, 'moquette'),
+    'tile_green':      ('#4f8a5e', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_blue':       ('#4a78b8', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_grey':       ('#9aa0a6', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_yellow':     ('#e6c64a', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_red':        ('#b8453a', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_black':      ('#2a2c30', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_navy':       ('#243a78', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tilebond_cream':  ('#e6dcc0', 0.0, 0.42, None, 0, 1, 'tile_brick'),
+    'tilebond_white':  ('#f2efe6', 0.0, 0.42, None, 0, 1, 'tile_brick'),
+    'tilebond_orange': ('#e8661a', 0.0, 0.42, None, 0, 1, 'tile_brick'),
+    'tilebond_green':  ('#4f8a5e', 0.0, 0.42, None, 0, 1, 'tile_brick'),
+    'tilebond_blue':   ('#4a78b8', 0.0, 0.42, None, 0, 1, 'tile_brick'),
+    'tilebond_brown':  ('#6b4a30', 0.0, 0.42, None, 0, 1, 'tile_brick'),
     'cast_iron':       ('#4a4743', 0.6, 0.65, None, 0, 1, 'iron'),
     'concrete_lining': ('#8a877f', 0.0, 0.9, None, 0, 1, 'concrete'),
     'concrete_dark':   ('#4f4d49', 0.0, 0.95, None, 0, 1, 'concrete'),
@@ -58,12 +83,12 @@ PALETTE = {
     'platform_floor':  ('#9a968c', 0.0, 0.7, None, 0, 1, 'flags'),
     'tactile_yellow':  ('#e9c200', 0.0, 0.6, None, 0, 1, 'tactile'),
     'edge_white':      ('#e8e8e0', 0.0, 0.6, None, 0, 1, None),
-    'tile_cream':      ('#e6dcc0', 0.0, 0.25, None, 0, 1, 'tile'),
-    'tile_orange':     ('#e8661a', 0.0, 0.25, None, 0, 1, 'tile'),
+    'tile_cream':      ('#e6dcc0', 0.0, 0.42, None, 0, 1, 'tile'),
+    'tile_orange':     ('#e8661a', 0.0, 0.42, None, 0, 1, 'tile'),
     'tile_brown':      ('#6b4a30', 0.0, 0.3, None, 0, 1, 'tile'),
-    'tile_white':      ('#f2efe6', 0.0, 0.25, None, 0, 1, 'tile'),
-    'panel_ceiling':   ('#cfcdc6', 0.0, 0.7, None, 0, 1, None),
-    'paint_cream':     ('#d9cfae', 0.0, 0.75, None, 0, 1, None),
+    'tile_white':      ('#f2efe6', 0.0, 0.42, None, 0, 1, 'tile'),
+    'panel_ceiling':   ('#cfcdc6', 0.0, 0.7, None, 0, 1, 'plaster'),
+    'paint_cream':     ('#d9cfae', 0.0, 0.75, None, 0, 1, 'paint'),
     'paint_green':     ('#2f5a45', 0.0, 0.6, None, 0, 1, None),
     'sign_blank':      ('#ffffff', 0.0, 0.5, '#ffffff', 0.35, 1, 'blank'),
     'sign_orange':     ('#e8661a', 0.0, 0.45, '#e8661a', 0.6, 1, None),
@@ -72,7 +97,7 @@ PALETTE = {
     'sign_green':      ('#0f8a3c', 0.0, 0.45, '#0f8a3c', 0.5, 1, None),
     'sign_red':        ('#c4161c', 0.0, 0.45, None, 0, 1, None),
     'sign_yellow':     ('#f2c200', 0.0, 0.45, None, 0, 1, None),
-    'wood_bench':      ('#8a5a2e', 0.0, 0.6, None, 0, 1, None),
+    'wood_bench':      ('#8a5a2e', 0.0, 0.6, None, 0, 1, 'wood'),
     'brick_red':       ('#8a3f2c', 0.0, 0.9, None, 0, 1, 'brick'),
     'sandstone':       ('#c7a574', 0.0, 0.9, None, 0, 1, 'concrete'),
     'roof_slate':      ('#4b5360', 0.0, 0.8, None, 0, 1, None),
@@ -97,51 +122,27 @@ PALETTE = {
 }
 
 _matcache = {}
-_texcache = {}
 
-def png_bytes(w, h, px):
-    raw = b''.join(b'\x00' + bytes(px[y * w * 4:(y + 1) * w * 4]) for y in range(h))
-    def ch(t, d):
-        c = struct.pack('>I', len(d)) + t + d
-        return c + struct.pack('>I', zlib.crc32(t + d) & 0xffffffff)
-    return b'\x89PNG\r\n\x1a\n' + ch(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 6, 0, 0, 0)) + ch(b'IDAT', zlib.compress(raw, 9)) + ch(b'IEND', b'')
-
-def make_tex(key):
-    """Small procedural greyscale-ish detail textures (multiplied with base colour)."""
-    if key in _texcache: return _texcache[key]
-    import random
-    rnd = random.Random(hash(key) & 0xffff)
-    S = 128; px = bytearray(S * S * 4)
-    def put(x, y, v):
-        i = (y * S + x) * 4; px[i] = px[i+1] = px[i+2] = max(0, min(255, int(v))); px[i+3] = 255
-    for y in range(S):
-        for x in range(S):
-            v = 255
-            if key == 'tile':          # 16 x 16 tile grid over 128px = glossy tiles w/ grout (0.15 m tile if 1uv=1.2m)
-                tx, ty = x % 16, y % 16
-                v = 215 if (tx == 0 or ty == 0) else 245 + (hash((x // 16, y // 16)) % 10) - 5
-                if tx in (1,) or ty in (1,): v = 255
-            elif key == 'concrete':
-                v = 215 + rnd.random() * 40
-            elif key == 'iron':
-                v = 200 + rnd.random() * 30
-            elif key == 'flags':       # paving flags 4x4 across
-                tx, ty = x % 32, y % 32
-                v = 190 if (tx == 0 or ty == 0) else 232 + rnd.random() * 20
-            elif key == 'tactile':     # raised dots grid
-                tx, ty = x % 16, y % 16
-                d = (tx - 8) ** 2 + (ty - 8) ** 2
-                v = 255 if d < 20 else 170
-            elif key == 'brick':
-                row = y // 8; off = 8 if row % 2 else 0
-                v = 170 if (y % 8 == 0 or (x + off) % 16 == 0) else 225 + rnd.random() * 30
-            elif key == 'blank':
-                v = 255
-            put(x, y, v)
-    path = os.path.join(SCRATCH, f'tex_{key}.png')
-    open(path, 'wb').write(png_bytes(S, S, px))
-    img = bpy.data.images.load(path); img.pack(); img.name = f'tex_{key}'
-    _texcache[key] = img
+_TEXMAP = {   # palette texture key -> (albedo key, normal key or None, normal strength)
+    'tile': ('tile', 'n_tile', 0.6), 'tile_brick': ('tile_brick', 'n_tile_brick', 0.6), 'flags': ('flags', 'n_flags', 0.8),
+    'tactile': ('tactile', 'n_tactile', 1.0), 'concrete': ('concrete', 'n_concrete', 0.7), 'brick': ('brick', 'n_brick', 1.0),
+    'iron': ('iron', None, 0), 'plaster': ('plaster', None, 0), 'wood': ('wood', None, 0), 'paint': ('paint', None, 0),
+    'rubber': ('rubber', 'n_rubber', 0.8), 'moquette': ('moquette', 'n_moquette', 0.8), 'ceiling_panel': ('ceiling_panel', None, 0),
+    'ring_concrete': ('ring_concrete', 'n_ring_concrete', 1.0), 'ring_iron': ('ring_iron', 'n_ring_iron', 1.0),
+    'roundel': ('roundel', None, 0), 'name_board': ('name_board', None, 0), 'safety_atlas': ('safety_atlas', None, 0),
+    'adverts': ('adverts', None, 0), 'route_map': ('route_map', None, 0),
+    'grooves': ('grooves', 'n_grooves', 1.0),
+    'blank': (None, None, 0),
+}
+_imgcache = {}
+def load_img(key, data=False):
+    import assets_tex
+    t = assets_tex.build_all()
+    if key in _imgcache: return _imgcache[key]
+    img = bpy.data.images.load(t[key]); img.name = key
+    if data: img.colorspace_settings.name = 'Non-Color'
+    img.pack()
+    _imgcache[key] = img
     return img
 
 def mat(name):
@@ -152,30 +153,51 @@ def mat(name):
     bs.inputs['Base Color'].default_value = hexc(hx)
     bs.inputs['Metallic'].default_value = metal
     bs.inputs['Roughness'].default_value = rough
-    if em:
+    if em and not (tex and _TEXMAP[tex][0] and em == 'tex'):
         bs.inputs['Emission Color'].default_value = hexc(em); bs.inputs['Emission Strength'].default_value = es
     if alpha < 1:
         bs.inputs['Alpha'].default_value = alpha
-        m.blend_method = 'BLEND' if hasattr(m, 'blend_method') else None
-    if tex:
-        t = nt.nodes.new('ShaderNodeTexImage'); t.image = make_tex(tex); t.interpolation = 'Linear'
-        mix = nt.nodes.new('ShaderNodeMix'); mix.data_type = 'RGBA'; mix.blend_type = 'MULTIPLY'
-        mix.inputs['Factor'].default_value = 1.0
-        mix.inputs['A'].default_value = hexc(hx)
-        nt.links.new(t.outputs['Color'], mix.inputs['B'])
-        nt.links.new(mix.outputs['Result'], bs.inputs['Base Color'])
+        try: m.surface_render_method = 'BLENDED'
+        except Exception: pass
+        try: m.blend_method = 'BLEND'
+        except Exception: pass
+    if tex and _TEXMAP[tex][0]:
+        ak, nk, ns = _TEXMAP[tex]
+        t = nt.nodes.new('ShaderNodeTexImage'); t.image = load_img(ak); t.interpolation = 'Linear'
+        if hx.lower() in ('#ffffff',):
+            nt.links.new(t.outputs['Color'], bs.inputs['Base Color'])
+        else:
+            mix = nt.nodes.new('ShaderNodeMix'); mix.data_type = 'RGBA'; mix.blend_type = 'MULTIPLY'
+            mix.inputs['Factor'].default_value = 1.0
+            mix.inputs['A'].default_value = hexc(hx)
+            nt.links.new(t.outputs['Color'], mix.inputs['B'])
+            nt.links.new(mix.outputs['Result'], bs.inputs['Base Color'])
+        if em == 'tex':
+            nt.links.new(t.outputs['Color'], bs.inputs['Emission Color']); bs.inputs['Emission Strength'].default_value = es
+        if alpha < 1 or tex == 'roundel':
+            nt.links.new(t.outputs['Alpha'], bs.inputs['Alpha'])
+            try: m.surface_render_method = 'BLENDED'
+            except Exception: pass
+            try: m.blend_method = 'BLEND'
+            except Exception: pass
+        if nk:
+            tn = nt.nodes.new('ShaderNodeTexImage'); tn.image = load_img(nk, True)
+            nm_ = nt.nodes.new('ShaderNodeNormalMap'); nm_.inputs['Strength'].default_value = ns
+            nt.links.new(tn.outputs['Color'], nm_.inputs['Color']); nt.links.new(nm_.outputs['Normal'], bs.inputs['Normal'])
     _matcache[name] = m
     return m
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    _matcache.clear(); _texcache.clear()
+    _matcache.clear(); _imgcache.clear()
 
 # ---------------------------------------------------------------- mesh builder
 class M:
     """Accumulates geometry into one bmesh; each call takes a material name."""
     def __init__(self):
         self.bm = bmesh.new(); self.mats = []
+        self.cuv = self.bm.faces.layers.int.new('cuv')   # 1 = custom UVs (skip auto_uv)
+        self.fx = self.bm.faces.layers.int.new('fx')      # 1 = explicit orientation, excluded from recalc
     def _mi(self, name):
         if name not in self.mats: self.mats.append(name)
         return self.mats.index(name)
@@ -204,12 +226,14 @@ class M:
     def quad(self, p0, p1, p2, p3, m):
         vs = [self.bm.verts.new(Vector(p)) for p in (p0, p1, p2, p3)]
         f = self.bm.faces.new(vs); self._tag([f], m); return f
-    def quad_uv(self, p0, p1, p2, p3, m):
-        """Quad with UV (0,0)-(1,1) across its corners p0=BL p1=BR p2=TR p3=TL (for runtime canvas textures)."""
+    def quad_uv(self, p0, p1, p2, p3, m, rect=(0.0, 0.0, 1.0, 1.0)):
+        """Quad with UV across its corners p0=BL p1=BR p2=TR p3=TL (for runtime canvas textures / atlas cells).
+        rect=(u0,v0,u1,v1) selects a sub-rectangle (v=1 is the TOP of the image).  U is reversed internally so text reads correctly seen from the face front."""
         f = self.quad(p0, p1, p2, p3, m)
         uvl = self.bm.loops.layers.uv.verify()
-        for l, uv in zip(f.loops, ((1, 0), (0, 0), (0, 1), (1, 1))): l[uvl].uv = uv   # u reversed so text reads correctly seen from the face front
-        f.tag = True
+        u0, v0, u1, v1 = rect
+        for l, uv in zip(f.loops, ((u1, v0), (u0, v0), (u0, v1), (u1, v1))): l[uvl].uv = uv
+        f[self.cuv] = 1
         return f
     def poly(self, pts, m):
         vs = [self.bm.verts.new(Vector(p)) for p in pts]
@@ -235,20 +259,38 @@ class M:
         if cap:
             fs.append(self.bm.faces.new(a)); fs.append(self.bm.faces.new(b[::-1]))
         self._tag(fs, m)
-    def strip_y(self, prof, y0, y1, m, closed=False, flip=False):
-        """Open (or closed) extruded polyline surface (no caps), profile (x,z)."""
+    def strip_y(self, prof, y0, y1, m, closed=False, flip=False, toward=None, away=None, uv=None):
+        """Open (or closed) extruded polyline surface (no caps), profile (x,z).
+        toward=(x,z): normals point toward that point; away=(x,z): normals point away. uv=(umul,vmul): u = normalised arc length, v = along y."""
         n = len(prof); fs = []
         a = [self.bm.verts.new((x, y0, z)) for x, z in prof]
         b = [self.bm.verts.new((x, y1, z)) for x, z in prof]
         rng = n if closed else n - 1
+        lens = [0.0]
+        for i in range(1, n): lens.append(lens[-1] + math.hypot(prof[i][0] - prof[i - 1][0], prof[i][1] - prof[i - 1][1]))
+        tot = lens[-1] or 1.0
         for i in range(rng):
             j = (i + 1) % n
             q = (a[i], a[j], b[j], b[i])
-            fs.append(self.bm.faces.new(q[::-1] if flip else q))
+            f = self.bm.faces.new(q[::-1] if flip else q)
+            ref = toward or away
+            if ref is not None:
+                cx = (prof[i][0] + prof[j][0]) / 2; cz = (prof[i][1] + prof[j][1]) / 2
+                d = (ref[0] - cx) * f.normal.x + (ref[1] - cz) * f.normal.z
+                if (toward is not None and d < 0) or (away is not None and d > 0): f.normal_flip()
+                f[self.fx] = 1
+            if uv:
+                uvl = self.bm.loops.layers.uv.verify()
+                for l in f.loops:
+                    vi = l.vert
+                    k = a.index(vi) if vi in a else b.index(vi)
+                    l[uvl].uv = (lens[k] / tot * uv[0], (0.0 if vi in a else 1.0) * uv[1])
+                f[self.cuv] = 1
+            fs.append(f)
         self._tag(fs, m)
     def to_obj(self, name, parent=None, loc=(0, 0, 0), uv=True, smooth=False, collection=None):
         bm = self.bm
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if not f[self.fx]])
         if uv: auto_uv(bm)
         me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free()
         for mn in self.mats: me.materials.append(mat(mn))
@@ -262,8 +304,9 @@ class M:
 
 def auto_uv(bm, scale=1.0):
     uvl = bm.loops.layers.uv.verify()
+    cu = bm.faces.layers.int.get('cuv')
     for f in bm.faces:
-        if f.tag: continue
+        if cu is not None and f[cu]: continue
         n = f.normal; ax = max(range(3), key=lambda i: abs(n[i]))
         for l in f.loops:
             p = l.vert.co

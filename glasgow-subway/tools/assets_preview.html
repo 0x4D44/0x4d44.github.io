@@ -33,6 +33,7 @@ let pending = files.length;
 files.forEach((fn) => new GLTFLoader().load('/models/' + fn, (g) => {
   g.scene.traverse((o) => {
     info.nodes.push(o.name);
+    if (q.get('nonorm') && o.isMesh) { (Array.isArray(o.material) ? o.material : [o.material]).forEach((mm) => { mm.normalMap = null; mm.needsUpdate = true; }); }
     if (q.get('tex') && o.isMesh && ['sign_blank', 'screen_blank'].includes(o.material.name)) { const c = document.createElement('canvas'); c.width = 512; c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#123'; x.fillRect(0, 0, 512, 256); x.fillStyle = '#fff'; x.font = 'bold 120px sans-serif'; x.fillText('Govan 1', 20, 150); const t = new THREE.CanvasTexture(c); t.flipY = false; t.colorSpace = THREE.SRGBColorSpace; o.material = o.material.clone(); o.material.map = t; o.material.emissiveMap = t; o.material.color.set(0xffffff); }
     if (hide.some((h) => o.name.startsWith(h))) o.visible = false;
     if (o.isMesh) { const i = o.geometry.index; info.tris += (i ? i.count : o.geometry.attributes.position.count) / 3; }
