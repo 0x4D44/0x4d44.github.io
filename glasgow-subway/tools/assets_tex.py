@@ -47,7 +47,9 @@ def save(name, arr, alpha=False, q=90):
     if alpha:
         p = os.path.join(TEX, name + '.png'); img.save(p, optimize=True)
     else:
-        p = os.path.join(TEX, name + '.jpg'); img.convert('RGB').save(p, quality=q, subsampling=0 if name.startswith('n_') else 2)
+        if name.startswith('n_') and img.size[0] >= 512 and not name.startswith('n_ring'):
+            img = img.resize((img.size[0] // 2, img.size[1] // 2), Image.LANCZOS)
+        p = os.path.join(TEX, name + '.jpg'); img.convert('RGB').save(p, quality=(78 if name.startswith('n_') else q), subsampling=0 if name.startswith('n_') else 2)
     return p
 
 def grey3(a):
@@ -213,6 +215,13 @@ def tex_ceiling_panel(n=256, seed=12):
     alb += pnoise(n, n, 6, seed, 3) * 0.03
     return save('ceiling_panel', grey3(alb))
 
+def fitfont(draw, s, maxw, size, bold=True):
+    while size > 10:
+        f = font(size, bold)
+        if draw.textlength(s, font=f) <= maxw: return f
+        size -= 4
+    return font(10, bold)
+
 def _txt(draw, xy, s, f, fill, anchor='mm'):
     draw.text(xy, s, font=f, fill=fill, anchor=anchor)
 
@@ -237,7 +246,7 @@ def name_board_img(text='STATION', w=1024, h=192, roundel=True):
     x0 = 20
     if roundel:
         r = roundel_img(150); im.paste(r, (18, 14), r); x0 = 190
-    _txt(d, (x0 + (w - x0) / 2, (h - 22) / 2 + 4), text, font(110), (255, 255, 255))
+    _txt(d, (x0 + (w - x0) / 2, (h - 22) / 2 + 4), text, fitfont(d, text, (w - x0) * 0.92, 110), (255, 255, 255))
     return im
 
 def tex_name_board():
@@ -279,7 +288,8 @@ def tex_adverts():
         d.rectangle((x, y, x + 255, y + 70), fill=bg)
         _txt(d, (x + 128, y + 36), heads[i], font(34 if len(heads[i]) < 9 else 26), fg)
         d.rectangle((x + 4, y + 4, x + 251, y + 251), outline=(255, 255, 255), width=3)
-    p = os.path.join(TEX, 'adverts.jpg'); im.save(p, quality=88); return p
+    im = im.resize((512, 512), Image.LANCZOS)
+    p = os.path.join(TEX, 'adverts.jpg'); im.save(p, quality=86); return p
 
 STATIONS = ['Buchanan Street', 'St Enoch', 'Bridge Street', 'West Street', 'Shields Road', 'Kinning Park', 'Cessnock', 'Ibrox', 'Govan', 'Partick', 'Kelvinhall', 'Hillhead', 'Kelvinbridge', "St George's Cross", 'Cowcaddens']
 
@@ -447,7 +457,7 @@ def band_img(text, bg, fg=(255, 255, 255), w=1024, h=128, reps=2):
     im = Image.new('RGB', (w, h), bg); d = ImageDraw.Draw(im)
     d.rectangle((0, 0, w, 5), fill=(255, 255, 255)); d.rectangle((0, h - 5, w, h), fill=(255, 255, 255))
     for k in range(reps):
-        _txt(d, (w * (k + 0.5) / reps, h / 2), text.upper(), font(int(h * 0.55)), fg)
+        _txt(d, (w * (k + 0.5) / reps, h / 2), text.upper(), fitfont(d, text.upper(), w / reps * 0.86, int(h * 0.62)), fg)
     return im
 
 def station_name_textures(sid, name, outer_bg=(240, 90, 26), inner_bg=(59, 64, 72), board=(22, 38, 92)):
