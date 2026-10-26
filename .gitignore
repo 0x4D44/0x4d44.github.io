@@ -12,6 +12,3 @@ mos-6502/tests/vendor/
 
 # be-ready video build scratch
 be-ready/.video-work/
-
-# private audio derived from third-party recordings (see sulzer-12lda28/js/audio.js)
-sulzer-12lda28/samples/
