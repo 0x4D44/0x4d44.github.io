@@ -42,7 +42,7 @@ h3{font-size:1.05rem}
 .cab .ctl label{display:block;font-size:.8rem;color:var(--dim);margin-bottom:2px}
 .cab .ctl label b{color:var(--accent);font-family:ui-monospace,Consolas,monospace;margin-left:6px}
 .cab input[type=range]{width:100%;accent-color:var(--accent)}
-.marks{display:flex;justify-content:space-between;font:600 .68rem ui-monospace,Consolas,monospace;color:var(--dim);padding:0 4px;margin-top:-2px}
+.marks{position:relative;height:1.1em;font:600 .68rem ui-monospace,Consolas,monospace;color:var(--dim);margin:-2px 8px 0}.marks span{position:absolute;transform:translateX(-50%)}
 .gauge{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:4px 12px;text-align:right;min-width:78px}
 .gauge span{display:block;font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em}
 .gauge b{font:700 1.3rem ui-monospace,Consolas,monospace}
@@ -145,5 +145,7 @@ main{max-width:1240px;margin:0 auto;padding:0 var(--gut)}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 .transcript{margin:14px 0 0;max-width:68rem}.transcript summary{cursor:pointer;color:var(--accent)}.transcript h4{margin:1em 0 .2em}.transcript p{margin:0;color:var(--dim)}
-@media (max-width:900px){.cab{position:static}html{scroll-padding-top:70px}}
-@media (pointer:coarse){.viewbar button,.partlist button,.topnav nav a{min-height:40px}.snd select,.cab select{min-height:40px}}
+@media (max-width:900px){.cab{position:static}html{scroll-padding-top:70px}.mini:not([hidden]){display:flex}}
+.mini{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;align-items:center;gap:12px;padding:8px var(--gut);background:color-mix(in srgb,var(--panel) 96%,transparent);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+.mini input{flex:1;min-width:0;accent-color:var(--accent);min-height:32px}.mini b{font:600 .8rem ui-monospace,Consolas,monospace;min-width:5.5em;text-align:right}.mini .btn{min-height:44px}
+@media (pointer:coarse){.viewbar button,.partlist button,.topnav nav a,.btn,select,.transcript summary,.sources a{min-height:40px}.snd select,.cab select{min-height:40px}input[type=range]{min-height:32px}input[type=checkbox]{width:22px;height:22px}}

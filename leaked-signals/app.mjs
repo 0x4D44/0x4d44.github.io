@@ -12,6 +12,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmtLy = x => x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x >= 0.1 ? x.toFixed(2) : x >= 0.001 ? x.toFixed(4) : x.toExponential(1);
+const fmtEdge = x => (x > 0 ? fmtLy(x) : "0");
 function fmtDist(ly) {
   const au = ly * 63241.077;
   if (ly >= 0.1) return `${fmtLy(ly)} ly`;
@@ -175,6 +176,7 @@ new ResizeObserver(resize).observe(stage);
 const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
 const zoomGain = () => 1 - 0.8 * sstep(-1.0, 2.1, S.logR);     // fewer photons per point once thousands overlap
 const zoomSize = () => 2.6 - 1.7 * sstep(-3.6, -0.5, S.logR);  // each ray is a visible dot at AU scales
+let listenT = 0, listenAt = 0;
 function frame() {
   if (R && !tourSeeking && needsRebuild()) {
     clearTimeout(rebuildTimer);
@@ -183,10 +185,11 @@ function frame() {
   }
   ensureHighlight();
   if (R) updateHeard(false);
+  if (S.tab === "listen" && S.star != null && Math.abs(S.T - listenT) > 0.0005 && performance.now() - listenAt > 600 && !ptr.down) { listenT = S.T; listenAt = performance.now(); renderListen(); }
   const cam = camera();
   if (R) {
     R.draw({
-      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain(), phys: S.phys ? 1 : 0, r0: 12,
+      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain() * tourBoost, phys: S.phys ? 1 : 0, r0: 12,
       rmax: 1e9, stars: S.stars, dim: S.hl ? 0.12 : 1,
       hlDT: hlField ? (jdOf() - hlField.jdRef) / C.DAYS_PER_YEAR : null,
     });
@@ -211,6 +214,8 @@ function circle3(centre, axisU, axisV, rad, n, dash) {
 }
 function label(text, x, y, color = "#cfd9ee", align = "left", size = 12) {
   octx.font = `${size}px ui-monospace,Menlo,Consolas,monospace`;
+  const tw = octx.measureText(text).width; // keep labels on the stage
+  if (align === "left" && x + tw > W - 4) x = Math.max(4, W - 4 - tw);
   octx.textAlign = align; octx.lineWidth = 3; octx.strokeStyle = "rgba(3,5,10,.85)"; octx.strokeText(text, x, y);
   octx.fillStyle = color; octx.fillText(text, x, y);
 }
@@ -327,17 +332,20 @@ const starName = i => STARS.names[i] || `Star ${i} (${STARS.ra[i].toFixed(1)}°,
 let _hlNoteKey = null;
 function updateHlNote() {
   const el = $("#hlNote"); if (!el) return;
-  const key = S.hl || "";
+  let live = false;
+  if (S.hl) { const hb = BROADCASTS.find(x => x.id === S.hl); live = jdOf() > C.jdFromUnixMs(Date.parse(hb.start)); }
+  const key = (S.hl || "") + (live ? "+" : "-");
   if (key === _hlNoteKey) return; _hlNoteKey = key;
-  if (!S.hl) { el.hidden = true; return; }
-  const b = BROADCASTS.find(x => x.id === S.hl), src = siteById[b.site], lat = src.lat;
-  el.innerHTML = `<b>${esc(b.title)}</b><br>Each ring is one instant of the broadcast: a mast sends in every direction along its horizon, so one instant is a full 360° circle, tilted by the latitude (${lat.toFixed(1)}°). The Earth turned ${(b.mins * 0.25068).toFixed(0)}° while it aired, so the circle swung from <b class="s">blue</b> (start) to <b class="e">magenta</b> (end). The signal fills the belt between them, within about ±${(90 - Math.abs(lat)).toFixed(0)}° of the equator; a few stray dots higher up are sidelobe leakage.`;
+  if (!S.hl || !live) { el.hidden = true; return; }
+  const b = BROADCASTS.find(x => x.id === S.hl), src = siteById[b.src || b.site], lat = src.lat;
+  el.innerHTML = `<button type="button" id="hlClose" aria-label="Clear broadcast highlight" style="float:right;background:none;border:0;color:inherit;font-size:16px;cursor:pointer;padding:0 0 0 8px">&times;</button><b>${esc(b.title)}</b><br>Each ring is one instant of the broadcast.<span class="more"> A mast sends in every direction along its horizon, so one instant is a full 360° circle, whose pole points at declination ${lat.toFixed(1)}° (the mast's latitude). The Earth turned ${(b.mins * 0.25068).toFixed(0)}° while it aired, so the circle swung from <b class="s">blue</b> (start) to <b class="e">magenta</b> (end). The signal fills the belt between them, within about ±${(90 - Math.abs(lat)).toFixed(0)}° of the equator; a few stray dots higher up are sidelobe leakage.</span>`;
   el.hidden = false;
+  $("#hlClose").onclick = clearBroadcast;
 }
 function updateHud() {
   updateHlNote();
   const edge = EDGE_SEL(), jd = jdOf();
-  $("#hud").innerHTML = `<b>${C.fmtUTC(jd, false)}</b> &nbsp; bubble radius <b>${fmtLy(edge)} ly</b><br>` +
+  $("#hud").innerHTML = `<b>${C.fmtUTC(jd, false)}</b> &nbsp; bubble radius <b>${fmtEdge(edge)} ly</b><br>` +
     `view ${fmtDist(R_VIEW())} &nbsp; ${field ? (field.n / 1000).toFixed(0) + "k wavefront points" : ""}` +
     `<br>${S.stars && starsInside() > 0 ? `${heardCount} of ${STARS.stars_in || starsInside()} stars inside the bubble are in a fan right now` : ""}`;
 }
@@ -417,7 +425,7 @@ function buildDock() {
   $("#rSlider").oninput = e => { stopTour(); S.logR = +e.target.value; dirty = true; syncDock(); };
   $("#spd").onchange = e => { S.speed = SPEEDS[+e.target.value][1]; };
   S.speed = 1;
-  $("#nowBtn").onclick = () => { stopTour(); S.T = NOW_YEAR; dirty = true; syncDock(); };
+  $("#nowBtn").onclick = () => { stopTour(); S.T = NOW_YEAR; dirty = true; syncDock(); renderListen(); };
   $$("[data-scale]").forEach(b => b.onclick = () => { stopTour(); animateTo({ logR: +b.dataset.scale }); });
 }
 function syncDock() {
@@ -489,6 +497,9 @@ function renderExplore() {
   <h2>Whose signals</h2>
   <div class="chips" id="ccChips"></div>
   <p class="faint" style="margin-top:6px">Pick one or more. Choose a single country to see where its beams end on the sky.</p>
+  <h2>Listen as a star</h2>
+  <div class="chips" id="exStars">${["Proxima Centauri", "Sirius", "Tau Ceti", "Vega", "Barnard's Star"].map(n => starByName(n) != null ? `<button class="chip" type="button" data-star="${starByName(n)}">${esc(n)}</button>` : "").join("")}</div>
+  <p class="faint" style="margin-top:6px">Opens the Listen tab: which of our broadcasts that star can hear, and when.</p>
   <h2>Look</h2>
   <div class="field"><label for="sSize">Point size</label><input type="range" id="sSize" min="0.8" max="4" step="0.1" value="${S.size}"></div>
   <div class="field"><label for="sGain">Brightness</label><input type="range" id="sGain" min="0.1" max="3" step="0.05" value="${S.gain}"></div>
@@ -503,6 +514,7 @@ function renderExplore() {
     <p>At the very closest zoom you can see individual fans leaving, about two minutes of airtime apart. Zoom out and they overlap into the spiral, then into a bubble.</p>
   </details>
   <p class="faint">${ALL_SOURCES.length} sources (${SITES.length} TV sites, ${RADARS.length} radars) &middot; ${STARS.n.toLocaleString()} stars within 100 ly &middot; <span id="buildMs"></span></p>`;
+  $("#exStars").onclick = e => { const b = e.target.closest("[data-star]"); if (b) { selectStar(+b.dataset.star); focusStar(+b.dataset.star); setTab("listen"); } };
   const chips = $("#ccChips");
   chips.innerHTML = `<button class="chip" type="button" data-cc="*" aria-pressed="true">All</button>` + ccList().map(({ cc }) =>
     `<button class="chip" type="button" data-cc="${cc}" aria-pressed="false"><span class="dot" style="background:${cssCol(cc)}"></span>${cc}</button>`).join("") +
@@ -580,7 +592,7 @@ function renderListen(full) {
     const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
     const can = cleared.includes(S.tier);
-    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish only manages out to <b>${fmtDist(range)}</b>. Cleared here: ${cleared.length ? cleared.join(", ") : "no other source on the list"}.</div><p class="dim">Idealised: the full geometric area of each dish is assumed to work at VHF/UHF with perfect efficiency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
+    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish manages out to <b>${fmtDist(range)}</b> from a transmitter of that power${can ? "" : ", and this star is " + fmtDist(ly) + " away"}. Goals it would clear at this distance: ${cleared.length ? cleared.map(id => (C.TIERS.find(t => t.id === id) || { name: id }).name.toLowerCase()).join(", ") : "none"}.</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
@@ -592,16 +604,16 @@ function renderListen(full) {
   ${verdict}
   ${tbl}
   <h2>Reception windows</h2>
-  <canvas class="chart" id="stripCv" width="760" height="${Math.max(120, 28 + 22 * Math.min(8, ALL_SOURCES.length))}"></canvas>
+  <canvas class="chart" id="stripCv" width="560" height="${Math.max(120, 28 + 22 * Math.min(8, ALL_SOURCES.length))}"></canvas>
   <p class="faint">Each bar is a period in the next 24 hours when ${esc(starName(i))} sits within 3° of a transmitter's horizon. Bars repeat about every 24 h less 4 minutes: a rising or setting star.</p>
   <h2>The 4-minute drift</h2>
   <div class="field"><label for="driftSel">Site</label><select id="driftSel"></select></div>
-  <canvas class="chart" id="driftCv" width="760" height="260"></canvas>
+  <canvas class="chart" id="driftCv" width="560" height="260"></canvas>
   <p class="faint">Time of day (UT, vertical) at which this star hears the site, over the next year. The schedule slips 3 min 56 s earlier each day, so over a year it samples every slot.</p>
   <h2>Could they actually watch?</h2>
   <div class="field"><label for="rxSel">Receiver</label><select id="rxSel">${C.RECEIVERS.map(r => `<option value="${r.id}"${r.id === S.rx ? " selected" : ""}>${esc(r.name)}</option>`).join("")}</select></div>
   <div class="field"><label for="tierSel">Goal</label><select id="tierSel">${C.TIERS.map(t => `<option value="${t.id}"${t.id === S.tier ? " selected" : ""}>${esc(t.name)}</option>`).join("")}</select></div>
-  <canvas class="chart" id="rangeCv" width="760" height="210"></canvas>
+  <canvas class="chart" id="rangeCv" width="560" height="210"></canvas>
   <p class="faint">Horizontal range at which each receiver clears SNR for a 1 MW transmitter (system noise ${S.tsys} K, VHF sky). Dashed line: this star. Inverse-square law and kTB noise only; no atmosphere, no interference.</p>`;
   $("#rxSel").onchange = e => { S.rx = e.target.value; renderListen(); };
   $("#tierSel").onchange = e => { S.tier = e.target.value; renderListen(); };
@@ -609,24 +621,26 @@ function renderListen(full) {
   drawDrift(i, jdT, rows);
   drawRanges(ly);
 }
-function chartCtx(cv) { const c = cv.getContext("2d"); c.font = "11px ui-monospace,Menlo,monospace"; return c; }
+function chartCtx(cv) { const c = cv.getContext("2d"); c.font = "15px ui-monospace,Menlo,monospace"; return c; }
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function drawStrip(i, jdT, rows) {
-  const cv = $("#stripCv"); if (!cv) return; const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
-  c.clearRect(0, 0, Wd, Hd);
+  const cv = $("#stripCv"); if (!cv) return;
   const ly = STARS.ly[i], jdE0 = jdT - ly * C.DAYS_PER_YEAR;
   const list = ALL_SOURCES.filter(s => s.kind !== "radar" && C.erpW(s, C.yearFromJd(jdE0)) > 0);
-  const x0 = 150, x1 = Wd - 10, top = 22, rowH = 22;
+  const top = 22, rowH = 22;
+  const res = list.map(s => ({ s, w: C.visibilityWindows(s.lat, s.lon, STARS.ra[i], STARS.dec[i], jdE0, jdE0 + 1, -C.horizonDip(s.h || 300), 3).filter(k => C.onAirW(s, (k.t0 + k.t1) / 2) > 0) })).filter(r => r.w.length);
+  res.sort((a, b) => b.w.length - a.w.length || a.s.lat - b.s.lat);
+  const shown = res.slice(0, 8);
+  cv.height = Math.max(120, top + rowH * shown.length + 6);
+  const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
+  c.clearRect(0, 0, Wd, Hd);
+  const x0 = 170, x1 = Wd - 10;
   c.fillStyle = css("--dim"); c.textAlign = "center";
   for (let h = 0; h <= 24; h += 6) { const x = x0 + (h / 24) * (x1 - x0); c.fillText(h === 0 ? "now" : `+${h}h`, x, 12); c.strokeStyle = css("--line"); c.beginPath(); c.moveTo(x, 16); c.lineTo(x, Hd - 2); c.stroke(); }
   let row = 0;
-  const res = list.map(s => ({ s, w: C.visibilityWindows(s.lat, s.lon, STARS.ra[i], STARS.dec[i], jdE0, jdE0 + 1, -C.horizonDip(s.h || 300), 3) })).filter(r => r.w.length);
-  res.sort((a, b) => b.w.length - a.w.length || a.s.lat - b.s.lat);
-  const shown = res.slice(0, Math.floor((Hd - top) / rowH));
-  cv.height = Math.max(cv.height, top + rowH * shown.length + 6);
   for (const r of shown) {
     const y = top + row * rowH;
-    c.fillStyle = cssCol(r.s.cc); c.textAlign = "left"; c.fillText(r.s.name.slice(0, 22), 6, y + 14);
+    c.fillStyle = cssCol(r.s.cc); c.textAlign = "left"; c.fillText(r.s.name.slice(0, 17), 6, y + 14);
     for (const w of r.w) {
       const a = x0 + clamp((w.t0 - jdE0), 0, 1) * (x1 - x0), b = x0 + clamp((w.t1 - jdE0), 0, 1) * (x1 - x0);
       c.globalAlpha = 0.9; c.fillRect(a, y + 3, Math.max(2, b - a), 14); c.globalAlpha = 1;
@@ -644,7 +658,8 @@ function drawDrift(i, jdT, rows) {
   sel.onchange = e => { S.driftSite = e.target.value; drawDrift(i, jdT, rows); };
   const cv = $("#driftCv"), c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
-  const s = siteById[S.driftSite]; if (!s) return;
+  const s = siteById[S.driftSite];
+  if (!s) { c.fillStyle = css("--dim"); c.textAlign = "left"; c.fillText("No transmitter ever has this star on its horizon.", 10, 40); c.fillText("It is circumpolar or never rises for every site.", 10, 62); return; }
   const x0 = 40, x1 = Wd - 10, y0 = 10, y1 = Hd - 24;
   c.strokeStyle = css("--line"); c.fillStyle = css("--dim"); c.textAlign = "right";
   for (let h = 0; h <= 24; h += 6) { const y = y1 - (h / 24) * (y1 - y0); c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke(); c.fillText(String(h).padStart(2, "0") + "h", x0 - 4, y + 4); }
@@ -667,7 +682,7 @@ function drawRanges(ly) {
   const cv = $("#rangeCv"); if (!cv) return; const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
   const tier = C.TIERS.find(t => t.id === S.tier);
-  const x0 = 190, x1 = Wd - 10, lo = -6, hi = 5; // log10 ly
+  const x0 = 250, x1 = Wd - 10, lo = -6, hi = 5; // log10 ly
   const X = v => x0 + ((Math.log10(v) - lo) / (hi - lo)) * (x1 - x0);
   c.strokeStyle = css("--line"); c.fillStyle = css("--dim"); c.textAlign = "center";
   for (let e = lo; e <= hi; e += 1) { const x = x0 + ((e - lo) / (hi - lo)) * (x1 - x0); c.beginPath(); c.moveTo(x, 4); c.lineTo(x, Hd - 22); c.stroke(); if (e % 2 === 0 || e === hi) c.fillText(e === 0 ? "1 ly" : e === -5 ? "1 AU" : `10^${e}`, x, Hd - 8); }
@@ -686,11 +701,14 @@ function renderBroadcasts() {
   const el = $("#body-broadcasts");
   el.innerHTML = `<h2>Chase a programme</h2>
   <p>Pick a broadcast to light its wavefront and see which stars lay in its fan. The shell is as thick as the programme is long in light-time (a 2-hour show is a shell 2 light-hours deep). Seen from outside, a mast sends power in every compass direction at once, so one instant is a full ring; the Earth turns while the show airs, so the ring smears into a belt that never leaves ±(90° − latitude) of the celestial equator. Stray dots toward the poles are the 2% of energy that leaks upward.</p>
-  <div class="list" id="bList">${BROADCASTS.map(b => `<button class="item" type="button" data-b="${b.id}"><div class="t">${esc(b.title)}<span class="tag ${b.status === "missing" ? "missing" : b.status === "live" ? "live" : "ok"}">${b.status === "missing" ? "wiped" : b.status === "live" ? "never recorded" : "survives"}</span></div><div class="m">${b.start.slice(0, 10)} &middot; ${esc(siteById[b.site].name)}</div></button>`).join("")}</div>
+  <div class="list" id="bList">${[...BROADCASTS].sort((x, y) => x.start < y.start ? -1 : 1).map(b => `<button class="item" type="button" data-b="${b.id}"><div class="t">${esc(b.title)}<span class="tag ${b.status === "missing" ? "missing" : b.status === "live" ? "live" : "ok"}">${b.status === "missing" ? "wiped" : b.status === "live" ? "never recorded" : "survives"}</span></div><div class="m">${b.start.slice(0, 10)} &middot; ${esc(siteById[b.site].name)}</div></button>`).join("")}</div>
   <div id="bDetail"></div>`;
-  $("#bList").onclick = e => { const b = e.target.closest("[data-b]"); if (b) selectBroadcast(b.dataset.b); };
+  $("#bList").onclick = e => { const b = e.target.closest("[data-b]"); if (b) { if (b.dataset.b === S.hl) clearBroadcast(); else selectBroadcast(b.dataset.b); } };
 }
 const listenerCache = {};
+function clearBroadcast() {
+  S.hl = null; hlId = null; dirty = true; $$("#bList .item").forEach(b => b.classList.remove("sel")); const d = $("#bDetail"); if (d) d.innerHTML = ""; _hlNoteKey = null; updateHlNote();
+}
 function selectBroadcast(id, fly = true) {
   S.hl = id; hlId = null; dirty = true;
   $$("#bList .item").forEach(b => b.classList.toggle("sel", b.dataset.b === id));
@@ -769,6 +787,7 @@ function renderAbout() {
     <ul>
       <li>Transmitter powers are order-of-magnitude (tens of kW in the 1930s growing to megawatts); start dates are recalled public-service dates; some countries have several masts but one is modelled.</li>
       <li>Short-wave and AM radio are mostly reflected by the ionosphere and are not drawn. Only VHF/UHF television (one representative mast per city) and two planetary radars are modelled; FM, air-traffic and military radar are not.</li>
+      <li>The overlay guide circles (bubble edge, first-TV ring, beams-end circles) are centred on the Sun-centred origin; the wavefront dots themselves are centred on Earth's actual position, a difference you only see at AU zoom.</li>
       <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is a sub-degree error, smaller than the beam window. Wavefront radii are measured from Earth's position at the moment of emission, so the picture includes the orbit; the quoted arrival dates ignore the Sun-Earth offset of up to 8 light-minutes. Dates after today extrapolate: stations are assumed to stay on air.</li>
       <li>Each mast's power is a fleet average (peak power times a time-of-day activity factor), and effective radiated power is treated as isotropic equivalent.</li>
       <li>After the digital switch-over a transmitter is modelled at 8% of its analogue power and its signal is noise-like.</li>
@@ -782,7 +801,7 @@ function renderAbout() {
 }
 
 // ---------- tour (also driven by the video renderer) ----------
-let tourSeeking = false, tourPlaying = false, tourT = 0, tourStart = 0;
+let tourBoost = 1, tourSeeking = false, tourPlaying = false, tourT = 0, tourStart = 0;
 function tourState(t) {
   t = clamp(t, 0, TOUR_LEN);
   let a = TOUR_KEYS[0], b = TOUR_KEYS[TOUR_KEYS.length - 1];
@@ -801,13 +820,13 @@ function tourState(t) {
   let dy = ob.yaw - oa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
   const st = {
     logR: L(a.logR, b.logR), yaw: oa.yaw + dy * e + (a.spin || 0) * (t - a.t), pitch: L(oa.pitch, ob.pitch),
-    T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap,
+    T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap, boost: a.boost || 1,
   };
   return st;
 }
 function applyTour(t) {
   const st = tourState(t);
-  S.logR = st.logR; S.yaw = st.yaw; S.pitch = st.pitch; S.T = st.T;
+  S.logR = st.logR; S.yaw = st.yaw; S.pitch = st.pitch; S.T = st.T; tourBoost = st.boost;
   const sk = st.solo ? st.solo.join(",") : "*";
   if (sk !== soloKey()) { S.solo = st.solo ? new Set(st.solo) : null; $$("#ccChips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cc === "*" ? !S.solo : !!(S.solo && S.solo.has(c.dataset.cc)))); }
   if (st.hl !== S.hl) { S.hl = st.hl || null; hlId = null; }
@@ -818,20 +837,23 @@ function applyTour(t) {
   dirty = true; syncDock();
 }
 function startTour() {
-  S.playing = false; tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
+  S.playing = false; hideHint(); tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
 }
 function stopTour() {
   if (!tourPlaying) return;
-  tourPlaying = false; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
+  tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
-$("#btnTour").onclick = () => (tourPlaying ? stopTour() : startTour());
+const hintEl = $("#hint"), hideHint = () => { hintEl.hidden = true; };
+hintEl.onclick = () => { hideHint(); startTour(); };
+stage.addEventListener("pointerdown", hideHint, { once: true }); setTimeout(hideHint, 20000);
+$("#btnTour").onclick = () => { hideHint(); tourPlaying ? stopTour() : startTour(); };
 
 // deterministic API for the video renderer & tests
 window.__leak = {
   seek(t) { tourSeeking = true; applyTour(t); if (R && needsRebuild()) rebuild(); frame(); tourSeeking = false; },
   tourLength: TOUR_LEN,
   state: S, info: () => ({ n: field ? field.n : 0, windowLy: field ? field.windowLy : 0, heard: heardCount, glOk: !!R, buildMs: lastBuildMs }),
-  set(o) { Object.assign(S, o); if (!Number.isFinite(S.T)) S.T = NOW_YEAR; S.T = clamp(S.T, T_MIN - 1, T_MAX); S.logR = clamp(Number.isFinite(S.logR) ? S.logR : 2, -4.7, 3); lastHeardT = -1; dirty = true; syncDock(); frame(); },
+  set(o) { Object.assign(S, o); if (!Number.isFinite(S.T)) S.T = NOW_YEAR; S.T = clamp(S.T, T_MIN, T_MAX); S.logR = clamp(Number.isFinite(S.logR) ? S.logR : 2, -4.7, 3); lastHeardT = -1; dirty = true; syncDock(); frame(); },
   selectBroadcast, selectStar, setTab, rebuild: () => { rebuild(); frame(); }, draw: frame,
   stars: STARS, core: C,
 };
