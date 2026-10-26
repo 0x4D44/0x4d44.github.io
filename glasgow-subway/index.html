@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glasgow Subway Explorer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="An interactive 3D x-ray of Glasgow's 1896 Subway: twin tunnels, 15 stations, the Clyde crossing - and a driver's cab.">
+<meta name="theme-color" content="#14161a">
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="css/app.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="stage"><canvas id="gl" aria-label="Interactive 3D map of central Glasgow and the Subway tunnels beneath it. Drag to orbit, scroll to zoom, W A S D to move."></canvas></div>
+<div id="labels"></div>
+
+<header id="topbar">
+  <div class="brand"><svg class="roundel" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="#ff7a1f" stroke-width="5"/><rect x="2" y="16" width="36" height="8" fill="#ece7df"/></svg><h1>Glasgow <span>Subway</span></h1></div>
+  <div class="actions" role="toolbar" aria-label="Main actions"></div>
+</header>
+
+<aside id="dock-left" class="dock" aria-label="Stations and history"><div class="tabs"></div><div class="dock-body"></div><button class="collapse" type="button" aria-label="Collapse panel" aria-expanded="true"></button></aside>
+<aside id="dock-right" class="dock" aria-label="Station details and view settings"><div class="tabs"></div><div class="dock-body"></div><button class="collapse" type="button" aria-label="Collapse panel" aria-expanded="true"></button></aside>
+<section id="drawer" hidden aria-label="Long section"><div class="dbody"></div></section>
+<aside id="sheet" data-state="peek" aria-label="Panels"><button class="grab" type="button" aria-label="Expand or collapse panel" aria-expanded="false"><i></i></button><div class="tabs"></div><div class="dock-body"></div></aside>
+
+<div id="gauge" hidden role="status"></div>
+<div id="xraybar">
+  <button id="xraytoggle" type="button" aria-pressed="false" title="Toggle x-ray (X)"><span class="half" aria-hidden="true"></span> X-ray</button>
+  <span class="lbl">Streets</span><input id="xrayrange" type="range" min="0" max="100" value="0" aria-label="X-ray: fade the ground and buildings to reveal the tunnels"><span class="lbl">Tunnels</span>
+</div>
+<div id="minimap"><canvas aria-label="Plan map of the loop; click to move the view"></canvas><button id="compass" type="button" aria-label="Reset to north up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L17 14 L12 11.5 L7 14 Z" fill="#ff7a1f"/><path d="M12 22 L7 14 L12 11.5 L17 14 Z" fill="#8b857a"/></svg><b>N</b></button></div>
+<div id="caption" hidden role="status" aria-live="polite"></div>
+<div id="tip" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="simHud" hidden></div>
+<dialog id="simdlg" aria-label="Start the simulator"></dialog>
+
+<div id="loading" role="status">
+  <svg class="roundel big" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="15" fill="none" stroke="#ff7a1f" stroke-width="5"/><rect x="2" y="16" width="36" height="8" fill="#ece7df"/></svg>
+  <h2>Glasgow Subway</h2><p>The Clockwork Orange, seen from above and below</p>
+  <div id="loadbar"><i></i></div><p id="loadmsg">Starting up</p>
+</div>
+<div id="nogl" hidden role="alert"><h2>3D graphics are not available</h2><p>This explorer needs WebGL. Try a recent version of Chrome, Edge, Firefox or Safari, and make sure hardware acceleration is enabled.</p></div>
+<noscript><p style="position:fixed;inset:0;display:grid;place-items:center;background:#14161a;color:#ece7df;font:16px system-ui">This explorer needs JavaScript.</p></noscript>
+<script type="module" src="js/main.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
