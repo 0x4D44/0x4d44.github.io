@@ -1,0 +1,25 @@
+<!doctype html><meta charset=utf-8><title>city view</title>
+<style>html,body{margin:0;background:#9bb}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {loadTerrain, groundHeight} from '../js/shared/terrain.js';
+const q=new URLSearchParams(location.search);
+const cam=(q.get('cam')||'0,900,0,0,0,-1').split(',').map(Number); // x,y,z, tx,ty,tz
+const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);document.body.appendChild(r.domElement);
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xa9c4d6);sc.fog=new THREE.Fog(0xa9c4d6,+(q.get('fog')||3000),+(q.get('fog')||3000)*3);
+sc.add(new THREE.HemisphereLight(0xdfeaff,0x6a6a55,1.4));const sun=new THREE.DirectionalLight(0xfff0d8,2.6);sun.position.set(-600,900,400);sc.add(sun);
+const c=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,1,12000);c.position.set(cam[0],cam[1],cam[2]);c.lookAt(cam[3],cam[4],cam[5]);
+const hide=(q.get('hide')||'').split(',').filter(Boolean);
+window.__done=false;window.__log=[];
+await loadTerrain('../data/terrain.json');
+const man=await (await fetch('../data/city/manifest.json')).json();
+const L=new GLTFLoader();let n=0,tri=0;
+const only=q.get('near')?q.get('near').split(',').map(Number):null; const rad=+(q.get('rad')||1500);
+await Promise.all(man.chunks.filter(ch=>!only||Math.hypot((ch.minX+ch.maxX)/2-only[0],(ch.minZ+ch.maxZ)/2-only[1])<rad).map(ch=>new Promise(res=>L.load('../data/city/'+ch.file,g=>{
+  g.scene.traverse(o=>{if(hide.some(h=>o.name.startsWith(h)))o.visible=false; if(o.isMesh)tri+=(o.geometry.index?o.geometry.index.count:0)/3;});
+  sc.add(g.scene);n++;res()},undefined,e=>{window.__log.push(String(e));res()}))));
+window.__info={chunks:n,tris:tri,gh:groundHeight(1050,-100)};
+r.render(sc,c);window.__done=true;
+</script>

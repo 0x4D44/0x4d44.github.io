@@ -28,6 +28,7 @@ const T = {
   // misc
   spinSpeedKeep: 0.35, spinDecay: 2.0, spinTurns: 2,
   stuckRespawn: 4.5,
+  gravity: 32, airEps: 0.05, maxAir: 4, slopeSpeed: 0.5, slopeMin: 0.95, slopeMax: 1.04, snapJump: 1.5,
 };
 
 const TWO_PI = Math.PI * 2;
@@ -190,6 +191,9 @@ export class Kart {
     this.ghost = false;    // true: skipped by Kart.collide
     this.s = 0; this.lateral = 0;   // last known track coordinates
 
+    this.mesh.rotation.order = "YXZ";
+    this.grounded = true; this.airTime = 0;
+    this._by = 0; this._vyb = 0; this._prevGround = 0; this._snapY = true; this._sp = 0; this._sr = 0; this._fwdSlope = 0;
     this._listeners = new Map();
     this._loc = null; this._hint = undefined; this._lastGoodS = 0;
     this._driftArm = 0; this._prevDrift = false; this._driftVis = 0; this._level = 0;
@@ -204,13 +208,14 @@ export class Kart {
   _emit(name, a, b) { const l = this._listeners.get(name); if (l) for (let i = 0; i < l.length; i++) l[i](a, b); }
 
   // ------------------------------------------------ actions
-  placeAt(pos, heading) {
-    this.position.set(pos.x, 0, pos.z); this.heading = heading;
+  placeAt(pos, heading, hintS) {
+    this.position.set(pos.x, pos.y || 0, pos.z); this._snapY = true; this._by = this.position.y; this._vyb = 0; this.grounded = true; this.airTime = 0;
+    this._sp = 0; this._sr = 0; this._fwdSlope = 0; this.heading = heading;
     this.velocity.set(0, 0, 0); this.speed = 0; this.slip = 0;
     this.drifting = false; this.driftDir = 0; this.driftCharge = 0; this._level = 0; this._driftVis = 0; this._hop = -1;
     this.boostTime = 0; this.boostStrength = 0; this.spinTime = 0; this._spinVis = 0;
     this.steerAmount = 0; this.rev = 0; this.stuckTime = 0; this.onWall = false;
-    this._loc = null; this._hint = undefined; this._padLatch = false; this._roll = 0; this._pitch = 0;
+    this._loc = null; this._hint = hintS; this._padLatch = false; this._roll = 0; this._pitch = 0;
     this._syncMesh(0);
   }
 
@@ -240,8 +245,7 @@ export class Kart {
     const lat = clamp(this.lateral || 0, -half, half);
     const px = sm.pos.x + sm.right.x * lat, pz = sm.pos.z + sm.right.z * lat;
     const h = Math.atan2(sm.tangent.x, sm.tangent.z);
-    this.placeAt({ x: px, z: pz }, h);
-    this._hint = s;
+    this.placeAt({ x: px, y: sm.pos.y || 0, z: pz }, h, s);
   }
 
   _cancelDrift(award) {
@@ -282,6 +286,7 @@ export class Kart {
       this._loc = track.locate(this.position, this._hint);
       this._hint = this._loc.s;
     }
+    if (this._snapY) { this._snapY = false; this._groundY(this._loc, 0, true); }
     const loc = this._loc;
     this.surface = loc.surface; this.offRoad = loc.surface === "grass";
     this.s = loc.s; this.lateral = loc.lateral;
@@ -328,6 +333,7 @@ export class Kart {
     if (boosting) mult = Math.max(mult, 0.9);
     let top = this.maxSpeed * this.speedScale * mult * (1 + T.boostTopGain * this.boostStrength);
     if (this.drifting && !boosting) top *= T.driftTopMul;
+    top *= clamp(1 - this._fwdSlope * T.slopeSpeed, T.slopeMin, T.slopeMax);
     const A = this.accelBase * this.speedScale;
     const thr = boosting && live ? 1 : throttle;
 
@@ -412,6 +418,7 @@ export class Kart {
     this.s = nl.s; this.lateral = nl.lateral;
     const wd = nl.wallDist - this.radius;
     if (Math.abs(nl.lateral) > wd) this._wall(track, nl, wd, dt);
+    this._vertical(dt, nl, track);
 
     // ---- stuck detection
     if (!this.locked && !spinning && (inp.throttle > 0.5 || inp.brake > 0.5) && Math.abs(this.speed) < 1.5) this.stuckTime += dt;
@@ -419,6 +426,44 @@ export class Kart {
     if (this.stuckTime > T.stuckRespawn) this.respawn(track);
 
     this._syncMesh(dt);
+  }
+
+  _groundY(loc, dt, snap) {
+    const gy = loc.y || 0;
+    if (snap || Math.abs(gy - this._prevGround) > T.snapJump) {
+      this._prevGround = gy; this.position.y = gy; this._by = gy; this._vyb = 0; this.grounded = true; this.airTime = 0;
+      return gy;
+    }
+    return gy;
+  }
+
+  // Height: ground-locked, with ballistic airtime when the road falls away faster than gravity.
+  _vertical(dt, loc, track) {
+    const gy = this._groundY(loc, dt, false);
+    const gvy = clamp((gy - this._prevGround) / dt, -25, 25);
+    this._prevGround = gy;
+    this._vyb -= T.gravity * dt; this._by += this._vyb * dt;
+    if (this._by <= gy) {
+      if (this.airTime > 0.12) this._emit("land", this.airTime);
+      this.airTime = 0; this.grounded = true;
+      this._by = gy; this._vyb = gvy;
+    } else {
+      if (this._by - gy > T.maxAir) { this._by = gy + T.maxAir; this._vyb = Math.min(this._vyb, 0); }
+      if (this._by - gy > T.airEps) { this.grounded = false; this.airTime += dt; }
+    }
+    this.position.y = this._by;
+    // surface orientation
+    let tp = 0, tr = 0;
+    const sm = track.sample(loc.s), n = sm.normal;
+    if (n && n.y > 0.2) {
+      const fx = Math.sin(this.heading), fz = Math.cos(this.heading);
+      const fs = -(n.x * fx + n.z * fz) / n.y, rs = -(n.x * -fz + n.z * fx) / n.y;
+      this._fwdSlope = fs;
+      tp = -Math.atan(fs); tr = -Math.atan(rs);
+    } else this._fwdSlope = 0;
+    if (!this.grounded) { tp = -Math.atan(this._vyb / Math.max(8, Math.abs(this.speed))) * 0.8; tr *= 0.3; }
+    const k = Math.min(1, 14 * dt);
+    this._sp += (tp - this._sp) * k; this._sr += (tr - this._sr) * k;
   }
 
   _wall(track, loc, wd, dt) {
@@ -460,7 +505,7 @@ export class Kart {
   _syncMesh(dt) {
     const m = this.mesh, body = this._body;
     m.position.copy(this.position);
-    m.rotation.y = this.heading;
+    m.rotation.set(this._sp, this.heading, this._sr);
     const sf = clamp(Math.abs(this.speed) / this.maxSpeed, 0, 1.2);
     this._driftVis += ((this.drifting ? 1 : 0) - this._driftVis) * Math.min(1, 10 * Math.max(dt, 0.001));
     let yawOff = -this.driftDir * 0.32 * this._driftVis;
@@ -502,7 +547,7 @@ export class Kart {
     for (let i = 0; i < n; i++) {
       const a = karts[i]; if (a.ghost) continue;
       for (let j = i + 1; j < n; j++) {
-        const b = karts[j]; if (b.ghost) continue;
+        const b = karts[j]; if (b.ghost || Math.abs(a.position.y - b.position.y) > 2.5) continue;
         let dx = a.position.x - b.position.x, dz = a.position.z - b.position.z;
         const rr = a.radius + b.radius;
         const d2 = dx * dx + dz * dz;

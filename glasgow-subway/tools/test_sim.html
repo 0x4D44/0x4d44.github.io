@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glasgow Subway - Sim test harness</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;font:14px system-ui,sans-serif;color:#eee}
+#stage{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0;pointer-events:none}</style>
+<script type="importmap">{"imports":{"three":"../vendor/three/build/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
+</head><body>
+<div id="stage"><canvas id="c"></canvas><div id="hud"></div></div>
+<script type="module">
+import * as THREE from 'three';
+import * as terrain from '../js/shared/terrain.js';
+import { startSim, simAvailable } from '../js/sim/index.js';
+const q = new URLSearchParams(location.search);
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: q.get('aa') !== '0', powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, +(q.get('pr') || 2)));
+renderer.setSize(innerWidth, innerHeight, false);
+addEventListener('resize', () => renderer.setSize(innerWidth, innerHeight, false));
+let subway;
+try { subway = await (await fetch('../data/subway.json')).json(); } catch (e) { console.warn('subway.json missing, using fixture'); subway = (await import('../js/sim/fixture.mjs')).makeFixture(); }
+try { await terrain.loadTerrain(); } catch (e) { console.warn('terrain missing'); }
+window.__ctx = { THREE, renderer, canvas, container: document.getElementById('hud'), subway, terrain, startStation: q.get('station') || undefined, line: q.get('line') || 'outer', mode: q.get('mode') || undefined, difficulty: q.get('diff') || undefined, quality: q.get('q') || undefined, assetBase: '../', onExit() { console.log('[harness] onExit'); } };
+window.__sim = null;
+window.__simReady = startSim(window.__ctx).then((h) => { window.__handle = h; return h; }).catch((e) => { console.error('startSim failed', e); throw e; });
+</script></body></html>

@@ -1979,6 +1979,19 @@ window.ESSAYS = [
     tags: ["simulation", "engineering", "rail"],
     real: true,
   },
+  {
+    slug: "glasgow-subway",
+    title: "Under Glasgow",
+    tagline: "The Glasgow Subway as a 3D explorer: fly over a model of central Glasgow, fade the streets away to see both 1896 tunnels run beneath the Clyde, then climb into the cab and drive the Clockwork Orange yourself, or step off at any of the fifteen stations and walk around.",
+    url: "https://0x4d44.github.io/glasgow-subway/",
+    illustration: "ill-subway",
+    date: "2026-10-26T04:00:00",
+    year: 1896,
+    readingMin: 14,
+    words: 3023,
+    tags: ["simulation", "rail", "history", "engineering"],
+    real: true,
+  },
 ];
 
 // Filter vocabulary, split into two axes for the grouped filter row:
@@ -2075,7 +2088,7 @@ window.COLLECTIONS = [
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
     slugs: ["class-55", "class-47", "sulzer-12lda28", "azuma", "ecml", "ecml-timeline", "br1955",
       "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
-      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
+      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth", "glasgow-subway"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
     slugs: ["f1gp-internals", "mos-6502", "winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "chasing-dosbox-x", "mddosem-win16",
