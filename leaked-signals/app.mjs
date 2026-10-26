@@ -102,11 +102,11 @@ function needsRebuild() {
 function rebuild() {
   if (!R) return;
   const t0 = performance.now();
-  const W = Math.min(Math.max(wantWindow() * 1.15, 0.0008), Math.max(EDGE(), 0.0008));
+  const W = Math.min(Math.max(wantWindow() * 1.6, 0.0008), Math.max(EDGE(), 0.0008));
   const fine = W < 0.02, mid = W < 3;
   const az = fine ? 110 : mid ? 80 : 56;
   const nSrc = Math.max(1, ALL_SOURCES.filter(x => x.kind !== "radar" && sourceFilter(x) && C.erpW(x, S.T) > 0).length);
-  const rings = clamp(Math.round(300000 / (nSrc * az * 0.6)), 150, 1400);   // fewer sources -> finer time resolution
+  const rings = clamp(Math.round(300000 / (nSrc * az * 0.6)), 100, 1400);   // fewer sources -> finer time resolution
   field = buildField(jdOf(), W, { rings, az, filter: sourceFilter });
   fieldKey = soloKey();
   R.setField(field);
@@ -176,12 +176,14 @@ new ResizeObserver(resize).observe(stage);
 const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
 const zoomGain = () => 1 - 0.8 * sstep(-1.0, 2.1, S.logR);     // fewer photons per point once thousands overlap
 const zoomSize = () => 2.6 - 1.7 * sstep(-3.6, -0.5, S.logR);  // each ray is a visible dot at AU scales
-let listenT = 0, listenAt = 0;
+let listenT = 0, listenAt = 0, lastWheel = -1e9;
 function frame() {
   if (R && !tourSeeking && needsRebuild()) {
     clearTimeout(rebuildTimer);
-    const dragging = ptr.down;
-    if (!field || !dragging) rebuild();
+    const busy = ptr.down || performance.now() - lastWheel < 160;   // keep the old field while the user is mid-gesture
+    if (!field) rebuild();
+    else if (busy) rebuildTimer = setTimeout(() => { dirty = true; }, 180);
+    else rebuild();
   }
   ensureHighlight();
   if (R) updateHeard(false);
@@ -380,7 +382,7 @@ const up = e => {
   if (!ptr.pts.size) { ptr.down = false; if (wasClick) pickAt(e.clientX, e.clientY); }
 };
 stage.addEventListener("pointerup", up); stage.addEventListener("pointercancel", up);
-stage.addEventListener("wheel", e => { e.preventDefault(); stopTour(); S.logR = clamp(S.logR + e.deltaY * 0.0012, -4.7, 3); syncDock(); dirty = true; }, { passive: false });
+stage.addEventListener("wheel", e => { e.preventDefault(); lastWheel = performance.now(); stopTour(); S.logR = clamp(S.logR + e.deltaY * 0.0012, -4.7, 3); syncDock(); dirty = true; }, { passive: false });
 stage.tabIndex = 0;
 stage.addEventListener("keydown", e => {
   const k = e.key;
