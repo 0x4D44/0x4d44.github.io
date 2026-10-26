@@ -1,0 +1,11 @@
+# NOTES-A4 (explorer)
+- Entry: index.html -> js/main.js -> js/explorer/{app,city,underground,rig,ui,tour,longsection,labels,env,data}.js. No build step.
+- Fallbacks: missing subway.json / terrain.json / city manifest -> procedural placeholders (js/explorer/placeholder.js); console.info lists them.
+- Tunnels are drawn with a distance-dependent radius boost (shader) so they stay visible when zoomed out; true size when close.
+- X-ray = per-layer opacity (cloned materials per chunk), tubes/trains/arrows only render when x-ray > 2%.
+- Trains: stop-and-go timetable (~24 min/circuit, 25 s dwell) from track.stops; speed selector in the View tab.
+- Sim: lazy dynamic import of js/sim/index.js; modes drive|ride|walk. Explorer pauses while sim is active.
+- URL hash: #station=<id>&view=tx,ty,tz,dist,polar,azim&xray=0..1&light=day|dusk|night&ex=1..8
+- Test: node tools/test_explorer.mjs [outDir] (ONLY=desktop|mobile). window.__explorer exposes ready/state/flyToStation/setXray/...
+- Quality tier auto: low on touch/narrow, saved in localStorage 'gsx.quality'. AA applies on reload.
+- Known gaps: no follow-train camera; the label layer is DOM (no occlusion by terrain).
