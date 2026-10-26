@@ -1,0 +1,34 @@
+{
+ "id": "govan",
+ "name": "Govan",
+ "type": "side",
+ "hallHalfLength": 27.0,
+ "platformHalfLength": 22.5,
+ "trackX": [
+  -2.755,
+  2.755
+ ],
+ "platforms": [
+  [
+   -8.0,
+   -4.0
+  ],
+  [
+   4.0,
+   8.0
+  ]
+ ],
+ "platformTopY": 0.695,
+ "hallHalfWidthLeftRight": [
+  8.0,
+  8.0
+ ],
+ "ceilingY": 4.095,
+ "coved": false,
+ "outerBandSide": "+x",
+ "innerBandSide": "-x",
+ "borePortRadius": 1.675,
+ "boreAxisY": 1.225,
+ "gapToTrainM": 0.09,
+ "psd": true
+}

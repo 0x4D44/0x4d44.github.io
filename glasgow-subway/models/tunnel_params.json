@@ -1,0 +1,26 @@
+{
+ "bore": {
+  "innerRadius": 1.675,
+  "innerDiameter": 3.35,
+  "axisYAboveRailHead": 1.225,
+  "invertYAboveRailHead": -0.44999999999999996,
+  "crownYAboveRailHead": 2.9000000000000004
+ },
+ "track": {
+  "gaugeMm": 1220,
+  "runningFaceHalfX": 0.61,
+  "conductorRailX": 0.92,
+  "slabTopY": -0.18,
+  "railHeadY": 0
+ },
+ "ring": {
+  "lengthM": 0.61
+ },
+ "trainEnvelope": {
+  "halfWidth": 1.155,
+  "roofApexY": 2.642,
+  "floorY": 0.695,
+  "minClearanceToLiningM": 0.258
+ },
+ "note": "x across, y above rail head; same frame as tunnel_segment.glb / train.glb"
+}

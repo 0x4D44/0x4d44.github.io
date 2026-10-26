@@ -12,7 +12,7 @@ export function zoneHeight(z, x, zz) {
 const inZone = (z, x, zz, m = 0) => x >= z.x0 - m && x <= z.x1 + m && zz >= z.z0 - m && zz <= z.z1 + m;
 
 export class Walker {
-  constructor() { this.eye = EYE; this.radius = RADIUS; this.x = 0; this.z = 0; this.y = 0; this.yaw = 0; this.pitch = 0; this.zones = []; this.obstacles = []; this.bob = 0; this.vx = 0; this.vz = 0; this.speed = 0; this.onPush = 0; this.sprint = false; this.vy = 0; }
+  constructor() { this.headroomFn = null; this.minHead = 1.45; this.eye = EYE; this.radius = RADIUS; this.x = 0; this.z = 0; this.y = 0; this.yaw = 0; this.pitch = 0; this.zones = []; this.obstacles = []; this.bob = 0; this.vx = 0; this.vz = 0; this.speed = 0; this.onPush = 0; this.sprint = false; this.vy = 0; }
   setWorld(zones, obstacles) { this.zones = zones; this.obstacles = obstacles; }
   place(x, z, yaw = this.yaw) { this.x = x; this.z = z; this.yaw = yaw; this.y = this.heightAt(x, z, 1e9); }
   heightAt(x, z, nearY) {
@@ -48,6 +48,7 @@ export class Walker {
     const tryMove = (nx, nz) => {
       const h = this.heightAt(nx, nz, this.y);
       if (h == null || this.blocked(nx, nz, h)) return false;
+      if (this.headroomFn && this.headroomFn(nx, nz) < this.minHead) return false;
       this.x = nx; this.z = nz; this.tgtY = h; return true;
     };
     if (!tryMove(this.x + mx, this.z + mz)) {
@@ -59,5 +60,5 @@ export class Walker {
     this.speed = moved;
     this.bob += moved * dt * 4.2;
   }
-  eyeY() { return this.y + this.eye + Math.sin(this.bob) * 0.025 * Math.min(1, this.speed / 1.5); }
+  eyeY() { let e = this.eye; if (this.headroomFn) e = Math.min(e, this.headroomFn(this.x, this.z) - 0.14); return this.y + e + Math.sin(this.bob) * 0.02 * Math.min(1, this.speed / 1.5); }
 }
