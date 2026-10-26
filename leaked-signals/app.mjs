@@ -176,6 +176,7 @@ new ResizeObserver(resize).observe(stage);
 const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
 const zoomGain = () => 1 - 0.8 * sstep(-1.0, 2.1, S.logR);     // fewer photons per point once thousands overlap
 const zoomSize = () => 2.6 - 1.7 * sstep(-3.6, -0.5, S.logR);  // each ray is a visible dot at AU scales
+let listenT = 0, listenAt = 0;
 function frame() {
   if (R && !tourSeeking && needsRebuild()) {
     clearTimeout(rebuildTimer);
@@ -184,10 +185,11 @@ function frame() {
   }
   ensureHighlight();
   if (R) updateHeard(false);
+  if (S.tab === "listen" && S.star != null && Math.abs(S.T - listenT) > 0.0005 && performance.now() - listenAt > 600 && !ptr.down) { listenT = S.T; listenAt = performance.now(); renderListen(); }
   const cam = camera();
   if (R) {
     R.draw({
-      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain(), phys: S.phys ? 1 : 0, r0: 12,
+      vp: VP, dT: field ? (jdOf() - field.jdRef) / C.DAYS_PER_YEAR : 0, dpr: DPR, size: S.size * zoomSize(), gain: S.gain * zoomGain() * tourBoost, phys: S.phys ? 1 : 0, r0: 12,
       rmax: 1e9, stars: S.stars, dim: S.hl ? 0.12 : 1,
       hlDT: hlField ? (jdOf() - hlField.jdRef) / C.DAYS_PER_YEAR : null,
     });
@@ -423,7 +425,7 @@ function buildDock() {
   $("#rSlider").oninput = e => { stopTour(); S.logR = +e.target.value; dirty = true; syncDock(); };
   $("#spd").onchange = e => { S.speed = SPEEDS[+e.target.value][1]; };
   S.speed = 1;
-  $("#nowBtn").onclick = () => { stopTour(); S.T = NOW_YEAR; dirty = true; syncDock(); };
+  $("#nowBtn").onclick = () => { stopTour(); S.T = NOW_YEAR; dirty = true; syncDock(); renderListen(); };
   $$("[data-scale]").forEach(b => b.onclick = () => { stopTour(); animateTo({ logR: +b.dataset.scale }); });
 }
 function syncDock() {
@@ -495,6 +497,9 @@ function renderExplore() {
   <h2>Whose signals</h2>
   <div class="chips" id="ccChips"></div>
   <p class="faint" style="margin-top:6px">Pick one or more. Choose a single country to see where its beams end on the sky.</p>
+  <h2>Listen as a star</h2>
+  <div class="chips" id="exStars">${["Proxima Centauri", "Sirius", "Tau Ceti", "Vega", "Barnard's Star"].map(n => starByName(n) != null ? `<button class="chip" type="button" data-star="${starByName(n)}">${esc(n)}</button>` : "").join("")}</div>
+  <p class="faint" style="margin-top:6px">Opens the Listen tab: which of our broadcasts that star can hear, and when.</p>
   <h2>Look</h2>
   <div class="field"><label for="sSize">Point size</label><input type="range" id="sSize" min="0.8" max="4" step="0.1" value="${S.size}"></div>
   <div class="field"><label for="sGain">Brightness</label><input type="range" id="sGain" min="0.1" max="3" step="0.05" value="${S.gain}"></div>
@@ -509,6 +514,7 @@ function renderExplore() {
     <p>At the very closest zoom you can see individual fans leaving, about two minutes of airtime apart. Zoom out and they overlap into the spiral, then into a bubble.</p>
   </details>
   <p class="faint">${ALL_SOURCES.length} sources (${SITES.length} TV sites, ${RADARS.length} radars) &middot; ${STARS.n.toLocaleString()} stars within 100 ly &middot; <span id="buildMs"></span></p>`;
+  $("#exStars").onclick = e => { const b = e.target.closest("[data-star]"); if (b) { selectStar(+b.dataset.star); focusStar(+b.dataset.star); setTab("listen"); } };
   const chips = $("#ccChips");
   chips.innerHTML = `<button class="chip" type="button" data-cc="*" aria-pressed="true">All</button>` + ccList().map(({ cc }) =>
     `<button class="chip" type="button" data-cc="${cc}" aria-pressed="false"><span class="dot" style="background:${cssCol(cc)}"></span>${cc}</button>`).join("") +
@@ -586,7 +592,7 @@ function renderListen(full) {
     const eirp = strongest.w, cleared = C.tiersClearedAt(eirp, ly, rx.area, S.tsys);
     const range = C.rangeLy(eirp, rx.area, tier, S.tsys);
     const can = cleared.includes(S.tier);
-    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish only manages out to <b>${fmtDist(range)}</b>. Cleared here: ${cleared.length ? cleared.join(", ") : "no other source on the list"}.</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
+    verdict = `<div class="verdict ${can ? "good" : "bad"}">With <b>${esc(rx.name)}</b>, ${esc(starName(i))} ${can ? "could" : "could not"} make out the <b>${esc(tier.name.toLowerCase())}</b> from ${esc(strongest.s.name)}: the mast radiates ${(eirp / 1e3).toFixed(eirp < 1e5 ? 1 : 0)} kW toward it, a ${tier.name.toLowerCase()} needs SNR≥${tier.snr} in ${tier.bw >= 1e6 ? (tier.bw / 1e6).toFixed(1) + " MHz" : tier.bw >= 1e3 ? (tier.bw / 1e3).toFixed(0) + " kHz" : tier.bw + " Hz"}, which that dish manages out to <b>${fmtDist(range)}</b> from a transmitter of that power${can ? "" : ", and this star is " + fmtDist(ly) + " away"}. Goals it would clear at this distance: ${cleared.length ? cleared.map(id => (C.TIERS.find(t => t.id === id) || { name: id }).name.toLowerCase()).join(", ") : "none"}.</div><p class="dim">Idealised: each dish's listed effective area is assumed to work at VHF/UHF as at its design frequency, and radiated power is treated as isotropic-equivalent (a real mast adds about 2 dB). Real instruments of this size are not built for these frequencies, so read the ranges as upper bounds.</p>`;
   }
   const tbl = topNow.length ? `<table><thead><tr><th>Source</th><th>El°</th><th>Sent (local)</th><th></th></tr></thead><tbody>${topNow.map(r => {
     const p = matchProgramme(r.s, r.jdE), lh = C.localHour(r.jdE, r.s.lon), hh = Math.floor(lh), mm = Math.floor((lh - hh) * 60);
@@ -618,18 +624,20 @@ function renderListen(full) {
 function chartCtx(cv) { const c = cv.getContext("2d"); c.font = "15px ui-monospace,Menlo,monospace"; return c; }
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 function drawStrip(i, jdT, rows) {
-  const cv = $("#stripCv"); if (!cv) return; const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
-  c.clearRect(0, 0, Wd, Hd);
+  const cv = $("#stripCv"); if (!cv) return;
   const ly = STARS.ly[i], jdE0 = jdT - ly * C.DAYS_PER_YEAR;
   const list = ALL_SOURCES.filter(s => s.kind !== "radar" && C.erpW(s, C.yearFromJd(jdE0)) > 0);
-  const x0 = 170, x1 = Wd - 10, top = 22, rowH = 22;
+  const top = 22, rowH = 22;
+  const res = list.map(s => ({ s, w: C.visibilityWindows(s.lat, s.lon, STARS.ra[i], STARS.dec[i], jdE0, jdE0 + 1, -C.horizonDip(s.h || 300), 3).filter(k => C.onAirW(s, (k.t0 + k.t1) / 2) > 0) })).filter(r => r.w.length);
+  res.sort((a, b) => b.w.length - a.w.length || a.s.lat - b.s.lat);
+  const shown = res.slice(0, 8);
+  cv.height = Math.max(120, top + rowH * shown.length + 6);
+  const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
+  c.clearRect(0, 0, Wd, Hd);
+  const x0 = 170, x1 = Wd - 10;
   c.fillStyle = css("--dim"); c.textAlign = "center";
   for (let h = 0; h <= 24; h += 6) { const x = x0 + (h / 24) * (x1 - x0); c.fillText(h === 0 ? "now" : `+${h}h`, x, 12); c.strokeStyle = css("--line"); c.beginPath(); c.moveTo(x, 16); c.lineTo(x, Hd - 2); c.stroke(); }
   let row = 0;
-  const res = list.map(s => ({ s, w: C.visibilityWindows(s.lat, s.lon, STARS.ra[i], STARS.dec[i], jdE0, jdE0 + 1, -C.horizonDip(s.h || 300), 3) })).filter(r => r.w.length);
-  res.sort((a, b) => b.w.length - a.w.length || a.s.lat - b.s.lat);
-  const shown = res.slice(0, Math.floor((Hd - top) / rowH));
-  cv.height = Math.max(cv.height, top + rowH * shown.length + 6); c.font = "15px ui-monospace,Menlo,monospace";
   for (const r of shown) {
     const y = top + row * rowH;
     c.fillStyle = cssCol(r.s.cc); c.textAlign = "left"; c.fillText(r.s.name.slice(0, 17), 6, y + 14);
@@ -650,7 +658,8 @@ function drawDrift(i, jdT, rows) {
   sel.onchange = e => { S.driftSite = e.target.value; drawDrift(i, jdT, rows); };
   const cv = $("#driftCv"), c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
-  const s = siteById[S.driftSite]; if (!s) return;
+  const s = siteById[S.driftSite];
+  if (!s) { c.fillStyle = css("--dim"); c.textAlign = "left"; c.fillText("No transmitter ever has this star on its horizon.", 10, 40); c.fillText("It is circumpolar or never rises for every site.", 10, 62); return; }
   const x0 = 40, x1 = Wd - 10, y0 = 10, y1 = Hd - 24;
   c.strokeStyle = css("--line"); c.fillStyle = css("--dim"); c.textAlign = "right";
   for (let h = 0; h <= 24; h += 6) { const y = y1 - (h / 24) * (y1 - y0); c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke(); c.fillText(String(h).padStart(2, "0") + "h", x0 - 4, y + 4); }
@@ -792,7 +801,7 @@ function renderAbout() {
 }
 
 // ---------- tour (also driven by the video renderer) ----------
-let tourSeeking = false, tourPlaying = false, tourT = 0, tourStart = 0;
+let tourBoost = 1, tourSeeking = false, tourPlaying = false, tourT = 0, tourStart = 0;
 function tourState(t) {
   t = clamp(t, 0, TOUR_LEN);
   let a = TOUR_KEYS[0], b = TOUR_KEYS[TOUR_KEYS.length - 1];
@@ -811,13 +820,13 @@ function tourState(t) {
   let dy = ob.yaw - oa.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
   const st = {
     logR: L(a.logR, b.logR), yaw: oa.yaw + dy * e + (a.spin || 0) * (t - a.t), pitch: L(oa.pitch, ob.pitch),
-    T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap,
+    T: L(a.T ?? nowY, b.T ?? nowY), solo: a.solo, hl: a.hl, star: a.star, cap: a.cap, boost: a.boost || 1,
   };
   return st;
 }
 function applyTour(t) {
   const st = tourState(t);
-  S.logR = st.logR; S.yaw = st.yaw; S.pitch = st.pitch; S.T = st.T;
+  S.logR = st.logR; S.yaw = st.yaw; S.pitch = st.pitch; S.T = st.T; tourBoost = st.boost;
   const sk = st.solo ? st.solo.join(",") : "*";
   if (sk !== soloKey()) { S.solo = st.solo ? new Set(st.solo) : null; $$("#ccChips .chip").forEach(c => c.setAttribute("aria-pressed", c.dataset.cc === "*" ? !S.solo : !!(S.solo && S.solo.has(c.dataset.cc)))); }
   if (st.hl !== S.hl) { S.hl = st.hl || null; hlId = null; }
@@ -828,13 +837,16 @@ function applyTour(t) {
   dirty = true; syncDock();
 }
 function startTour() {
-  S.playing = false; tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
+  S.playing = false; hideHint(); tourPlaying = true; tourStart = performance.now(); $("#btnTour").textContent = "❚❚ Stop tour"; applyTour(0);
 }
 function stopTour() {
   if (!tourPlaying) return;
-  tourPlaying = false; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
+  tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
-$("#btnTour").onclick = () => (tourPlaying ? stopTour() : startTour());
+const hintEl = $("#hint"), hideHint = () => { hintEl.hidden = true; };
+hintEl.onclick = () => { hideHint(); startTour(); };
+stage.addEventListener("pointerdown", hideHint, { once: true }); setTimeout(hideHint, 20000);
+$("#btnTour").onclick = () => { hideHint(); tourPlaying ? stopTour() : startTour(); };
 
 // deterministic API for the video renderer & tests
 window.__leak = {
