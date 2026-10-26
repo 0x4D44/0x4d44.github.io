@@ -117,3 +117,29 @@ test("retarded time: 90 ly away you see 1936 now", () => {
   const te = T - 90 * C.DAYS_PER_YEAR;
   assert.ok(Math.abs(C.yearFromJd(te) - 1936.81) < 1e-9);
 });
+
+import { buildField, STRIDE } from "../field.mjs";
+import { TOUR_KEYS, TOUR_LEN } from "../tour.mjs";
+import { ALL_SOURCES } from "../sites.mjs";
+
+test("buildField: rays are unit vectors, ages within the window, and the build is fast", () => {
+  const jd = C.jdFromYear(2026.8), W = 20, t0 = performance.now();
+  const f = buildField(jd, W, { rings: 80, az: 40 });
+  const ms = performance.now() - t0;
+  assert.ok(f.n > 10000 && f.data.length === f.n * STRIDE);
+  for (let i = 0; i < f.n; i += 997) {
+    const o = i * STRIDE, kind = f.data[o + 9];
+    if (kind === 0) assert.ok(Math.abs(Math.hypot(f.data[o + 3], f.data[o + 4], f.data[o + 5]) - 1) < 1e-4, "ray not unit length");
+    assert.ok(f.data[o + 6] >= 0 && f.data[o + 6] <= W + 1e-6, "age outside window: " + f.data[o + 6]);
+  }
+  assert.ok(ms < 1500, "build too slow: " + ms.toFixed(0) + " ms");
+});
+test("buildField: country filter only keeps that country and can drop beacons", () => {
+  const f = buildField(C.jdFromYear(2026.8), 50, { rings: 30, az: 16, filter: s => s.cc === "GB", beacons: false });
+  const gb = new Set(ALL_SOURCES.map((s, i) => [s, i]).filter(([s]) => s.cc === "GB").map(([, i]) => i));
+  for (let i = 0; i < f.n; i++) assert.ok(gb.has(f.data[i * STRIDE + 7]), "non-GB source leaked in");
+});
+test("tour keyframes are monotonic and end at TOUR_LEN", () => {
+  for (let i = 1; i < TOUR_KEYS.length; i++) assert.ok(TOUR_KEYS[i].t > TOUR_KEYS[i - 1].t);
+  assert.equal(TOUR_KEYS[TOUR_KEYS.length - 1].t, TOUR_LEN);
+});
