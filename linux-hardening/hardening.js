@@ -115,6 +115,7 @@
       else if (O >= L) msg = "<span class=\"verdict bad\">The UID is already at its limit (" + O + " of " + L + ").</span> The sandbox cannot fork, but neither can any other process of that UID: collateral damage. RLIMIT_NPROC is per real UID, not per sandbox.";
       else msg = "<span class=\"verdict bad\">Capped at " + n + "</span>, but only because the UID's total is bounded at " + L + ". The bomb has used up all " + (L - O) + " remaining slots, so <em>every other process of that UID</em> now fails to fork too. Root and CAP_SYS_RESOURCE would not be limited at all.";
       out.className = "out " + (m === "seccomp" || m === "pids" ? "ok" : "bad");
+      if (+lim.value > 65536 || +lim.value < 1) msg += " <em>(The limit box accepts 1 to 65,536; your value was adjusted to " + L.toLocaleString() + ".)</em>";
       out.innerHTML = msg;
     }
     mode.onchange = lim.oninput = other.oninput = run; run();
@@ -134,7 +135,7 @@
       ["mem", "--memory=256m --memory-swap=256m", true, "memory.max with no swap: an allocation bomb is OOM-killed inside the container."],
       ["cpu", "--cpus=0.5", true, "cpu.max quota: a spinning workload cannot starve neighbours."],
       ["ulim", "--ulimit nofile=256:256 --ulimit core=0", true, "Bounded descriptors; no core dumps leaking memory."],
-      ["net", "--network=none", true, "Empty network namespace: no exfiltration channel and no lateral movement. Use a default-deny policy if it needs the network."],
+      ["net", "--network=none", true, "Empty network namespace: no network interface for the workload to use, so it cannot send data out over the network or reach other hosts. Use a default-deny policy if it needs the network."],
       ["ipc", "--ipc=none", true, "No shared-memory or IPC with the host."],
       ["gv", "--runtime=runsc", false, "gVisor: syscalls are handled by a user-space kernel, so the host kernel is no longer directly exposed (requires gVisor installed)."]
     ];
