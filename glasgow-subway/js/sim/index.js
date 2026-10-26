@@ -611,7 +611,7 @@ class Sim {
     const cam = this.camera, drive = this.mode === 'drive', base = drive ? 78 : 92, asp = cam.aspect || 1.6;
     const href = 2 * Math.atan(Math.tan(base * Math.PI / 360) * 16 / 9);
     let v = asp >= 16 / 9 ? base : 2 * Math.atan(Math.tan(href / 2) / asp) * 180 / Math.PI;
-    v = Math.min(v, drive ? 100 : 112);
+    v = Math.min(v, drive ? 105 : 116);
     if (Math.abs(cam.fov - v) > 0.01) { cam.fov = v; cam.updateProjectionMatrix(); }
   }
 

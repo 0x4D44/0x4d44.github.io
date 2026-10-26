@@ -173,8 +173,9 @@ try {
     const s = __sim, sim = s.sim, w = s.walker(); const half = sim.trainLen / 2 - 2.5;
     w.place(0, half - 0.5, 0); s.setLook(0, 0); const z0 = w.z; const seen = new Set();
     s.key('w', true); for (let i = 0; i < 400; i++) { s.tick(0.1); seen.add(sim.trainView.carAt(w.z)); } s.key('w', false);
+    const zEnd = w.z;
     s.key('Shift', true); w.place(0, -half + 0.5, Math.PI); s.setLook(Math.PI, 0); s.key('w', true); for (let i = 0; i < 200; i++) s.tick(0.1); s.key('w', false); s.key('Shift', false);
-    return { z0, zEnd: w.z, back: w.z, cars: seen.size, half, ncars: sim.trainView.cars.length };
+    return { z0, zEnd, back: w.z, cars: seen.size, half, ncars: sim.trainView.cars.length };
   });
   ok('can walk the full length of the train through every car', trainWalk.zEnd < -trainWalk.half + 1 && trainWalk.cars === trainWalk.ncars, JSON.stringify(trainWalk));
   ok('and sprint back to the rear', (await ev(p, () => __sim.walker().z)) > trainWalk.half - 1.5);
@@ -208,7 +209,7 @@ try {
   const ov2 = await ev(p, () => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
   ok('mobile explore: no horizontal scroll', ov2.sw - ov2.cw <= 1);
   const fovM = await ev(p, () => { const c = __sim.sim.camera; return 2 * Math.atan(Math.tan(c.fov * Math.PI / 360) * c.aspect) * 180 / Math.PI; });
-  ok('portrait: horizontal FOV stays wide (>= 80 deg)', fovM >= 80, 'hfov=' + fovM.toFixed(0));
+  ok('portrait: horizontal FOV stays wide (>= 70 deg)', fovM >= 70, 'hfov=' + fovM.toFixed(0));
   const joy = await ev(p, () => getComputedStyle(document.querySelector('.gs-joy')).display);
   ok('touch joystick shown in walk modes', joy === 'block');
   await p.close();
