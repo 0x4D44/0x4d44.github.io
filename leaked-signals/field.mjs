@@ -31,7 +31,7 @@ export function buildField(jdNow, windowLy, opts = {}) {
     const startJd = C.jdFromYear(src.start), endJd = src.end != null ? C.jdFromYear(src.end) : Infinity;
     const lo = Math.max(jdNow - winDays, startJd), hi = Math.min(jdNow, endJd);
     if (hi <= lo) return;
-    const rnd = C.mulberry32(C.hashStr(src.id) ^ seed);
+    const rnd = C.mulberry32(C.hashStr(src.id) ^ seed), dip = C.horizonDip(src.h || 300);
     if (src.kind === "radar") { radarRuns(src, si, lo, hi, jdNow, rnd, push, Math.max(8, Math.round(rings * 0.35))); return; }
     for (let k = 0; k < rings; k++) {
       const jd = lo + ((k + rnd()) / rings) * (hi - lo);
@@ -41,10 +41,15 @@ export function buildField(jdNow, windowLy, opts = {}) {
       const eh = C.earthHelio(jd), o = [eh[0] * C.AU_LY, eh[1] * C.AU_LY, eh[2] * C.AU_LY];
       const age = (jdNow - jd) / C.DAYS_PER_YEAR, b = brightness(w);
       const off = rnd();
+      if (len + az * STRIDE > buf.length) { let n2 = buf.length * 2; while (len + az * STRIDE > n2) n2 *= 2; const nb = new Float32Array(n2); nb.set(buf); buf = nb; }
+      const { e, n, z } = fr;
       for (let j = 0; j < az; j++) {
         const th = ((j + off) / az) * 2 * Math.PI;
-        const el = C.sampleElevation(rnd, src);
-        push(o, C.fanDirection(fr, th, el), age, si, b * Math.max(0.05, Math.sqrt(C.elevGain(el))), KIND.tv);
+        const el = C.sampleElevation(rnd, src, dip);
+        const er = el * C.D2R, ce = Math.cos(er), se = Math.sin(er), ct = Math.cos(th) * ce, st = Math.sin(th) * ce;
+        buf[len] = o[0]; buf[len + 1] = o[1]; buf[len + 2] = o[2];
+        buf[len + 3] = ct * e[0] + st * n[0] + se * z[0]; buf[len + 4] = ct * e[1] + st * n[1] + se * z[1]; buf[len + 5] = ct * e[2] + st * n[2] + se * z[2];
+        buf[len + 6] = age; buf[len + 7] = si; buf[len + 8] = b * Math.max(0.05, Math.sqrt(C.elevGain(el))); buf[len + 9] = KIND.tv; len += STRIDE;
       }
     }
   });
