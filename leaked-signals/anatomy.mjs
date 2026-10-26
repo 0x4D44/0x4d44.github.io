@@ -48,11 +48,11 @@ export function drawAnatomy(cv, a, col) {
   if (a.day) for (let h = 0; h < 24; h += 1) { if (Math.abs(h - a.hour) < 0.01) continue; circ(sph(h * 15 * D2R, lat), Math.PI / 2, col.line, 1); }
   // current fan: horizon great circle, with beam thickness
   circ(zen, Math.PI / 2, col.amber, 3);
-  if (a.soft > 0) { circ(zen, Math.PI / 2 + a.soft * D2R, col.amber, 1, [4, 3]); circ(zen, Math.PI / 2 - 0.5 * D2R, col.amber, 1, [4, 3]); }
+  if (a.soft > 0) { circ(zen, Math.PI / 2 - a.soft * D2R, col.amber, 1, [4, 3]); circ(zen, Math.PI / 2 - 0.5 * D2R, col.amber, 1, [4, 3]); }
   // zenith point and the mast
   const z = P(zen);
   c.fillStyle = col.cyan; c.beginPath(); c.arc(z[0], z[1], 9, 0, 7); c.fill(); c.fillStyle = col.ink; c.fillText("mast zenith", z[0] + 8, z[1] - 6);
   const lo = Math.max(-90, -(90 - Math.abs(a.lat))).toFixed(0), hi = Math.min(90, 90 - Math.abs(a.lat)).toFixed(0);
-  return `At latitude <b>${a.lat}°</b> the fan can only ever point at declinations between <b>${lo}°</b> and <b>+${hi}°</b> (plus a degree or two of beam). `
+  return `At latitude <b>${a.lat}°</b> the fan can only ever point at declinations between <b>${lo}°</b> and <b>+${hi}°</b> (plus several degrees of beam width and a faint scatter of sidelobes beyond). `
     + `Right now the mast's zenith is at RA ${a.hour.toFixed(1)}h, Dec ${a.lat}°, so the fan is the amber circle. Over 24 sidereal hours it sweeps the whole band between the white dotted circles.`;
 }

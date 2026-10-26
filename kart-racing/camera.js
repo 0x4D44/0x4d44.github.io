@@ -22,6 +22,7 @@ export class ChaseCamera {
     this._orbitAngle = 0;
     this._hooked = new WeakSet();
     this._t = 0;
+    this._track = null; this._camHint = undefined; this._ly = 0;
   }
 
   setTarget(kart) {
@@ -40,12 +41,13 @@ export class ChaseCamera {
 
   snap() {
     const k = this.target; if (!k) return;
-    this.yaw = k.heading; this.backBlend = this.back ? 1 : 0;
+    this.yaw = k.heading; this.backBlend = this.back ? 1 : 0; this._camHint = undefined; this._ly = k.position.y;
     this._place(0, true);
   }
 
-  update(dt) {
+  update(dt, track) {
     const k = this.target; if (!k) return;
+    this._track = track || this._track;
     dt = Math.min(dt, 0.1);
     this._t += dt;
     // yaw lag: lazier while drifting, so the kart visibly slides across the view
@@ -69,16 +71,29 @@ export class ChaseCamera {
     const sy = Math.sin(yaw), cy = Math.cos(yaw);
     const tx = k.position.x - sy * dist + cy * side;
     const tz = k.position.z - cy * dist - sy * side;
-    const ty = M.height * (1 - 0.1 * sf) + 0.0;
+    const ty = k.position.y + M.height * (1 - 0.1 * sf);
     if (snap) this._pos.set(tx, ty, tz);
     else {
       const f = 1 - Math.exp(-14 * dt);
-      this._pos.x += (tx - this._pos.x) * f; this._pos.y += (ty - this._pos.y) * f; this._pos.z += (tz - this._pos.z) * f;
+      this._pos.x += (tx - this._pos.x) * f; this._pos.z += (tz - this._pos.z) * f;
+      this._pos.y += (ty - this._pos.y) * (1 - Math.exp(-9 * dt));
     }
     // look target ahead of the kart (blend between heading and camera yaw)
     const lookYaw = this.yaw + Math.PI * this.backBlend;
     const lx = k.position.x + Math.sin(lookYaw) * M.look, lz = k.position.z + Math.cos(lookYaw) * M.look;
-    this._look.set(lx, M.lookH, lz);
+    // look slightly along the slope the kart is on
+    this._ly += ((k.position.y + M.lookH + Math.tan(-(k._sp || 0)) * M.look * 0.7) - this._ly) * (snap ? 1 : 1 - Math.exp(-10 * dt));
+    this._look.set(lx, this._ly, lz);
+    // never sink into the road on crests/dips
+    const tr = this._track;
+    if (tr && !snap) {
+      const hint = this._camHint !== undefined ? this._camHint : (k.s !== undefined ? k.s : undefined);
+      const l = tr.locate(this._pos, hint);
+      if (l) {
+        this._camHint = l.s;
+        if (typeof l.y === "number" && Math.abs(l.s - (k.s || 0)) < 60 && Math.abs(l.y - k.position.y) < 12) this._pos.y = Math.max(this._pos.y, l.y + 1.4);
+      }
+    }
 
     cam.position.copy(this._pos);
     if (this.shake > 0.001) {

@@ -166,7 +166,7 @@ html, body { margin: 0; padding: 0; overflow: hidden; }
 .ak-how { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 28px; }
 .ak-how h4 { margin: 0 0 8px; font-size: 14px; color: var(--cyan); letter-spacing: .22em; }
 .ak-keys { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; align-items: center; }
-.ak-keys kbd { display: inline-block; min-width: 26px; padding: 3px 8px; text-align: center; border-radius: 4px; background: #1b2a62; border: 1px solid #3a4f9e; border-bottom-width: 3px; font: 800 12px var(--body); color: #fff; margin-right: 3px; }
+.ak-keys kbd { display: inline-block; min-width: 30px; min-height: 28px; line-height: 18px; padding: 3px 8px; text-align: center; border-radius: 4px; background: #1b2a62; border: 1px solid #3a4f9e; border-bottom-width: 3px; font: 800 12px var(--body); color: #fff; margin-right: 3px; }
 .ak-keys span.d { color: var(--mute); }
 .ak-items { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
 .ak-item { display: flex; gap: 10px; align-items: center; font-size: 13px; line-height: 1.25; }

@@ -134,7 +134,7 @@ export class ItemSystem {
   _buildBoxes() {
     const list = this.track.itemBoxes || [];
     this.boxes = list.map((b, i) => ({
-      x: b.pos.x, y: 1.25, z: b.pos.z, active: true, timer: 0, i, s: b.s,
+      x: b.pos.x, y: b.pos.y ?? 1.25, z: b.pos.z, active: true, timer: 0, i, s: b.s,
     }));
     const n = Math.max(1, this.boxes.length);
     this.boxMesh = new THREE.InstancedMesh(this.boxGeo, this.boxMat, n);
@@ -235,7 +235,7 @@ export class ItemSystem {
           const k = karts[j];
           if (k.item || k.race?.finished || this._rolls.has(k)) continue;
           const dx = k.position.x - b.x, dz = k.position.z - b.z;
-          if (dx * dx + dz * dz < BOX_PICK_R * BOX_PICK_R) {
+          if (dx * dx + dz * dz < BOX_PICK_R * BOX_PICK_R && Math.abs(k.position.y - b.y) < 4) {
             b.active = false; b.timer = BOX_RESPAWN;
             this._rolls.set(k, { t: 0, dur: ROLL_TIME });
             this._p.set(b.x, b.y, b.z);
@@ -304,8 +304,14 @@ export class ItemSystem {
     return true;
   }
 
+  // road surface height under (pos.x, pos.z), using the owner's s as hint so bridges resolve correctly
+  _roadY(pos, hintS, lift) {
+    const loc = this.track.locate(pos, hintS);
+    return (loc && loc.y != null ? loc.y : 0) + lift;
+  }
+
   _flame(kart) {
-    this._p.set(kart.position.x, 0.6, kart.position.z);
+    this._p.set(kart.position.x, kart.position.y + 0.6, kart.position.z);
     this.effects?.burst?.(this._p, "boost", { kart, heading: kart.heading });
   }
 
@@ -320,7 +326,8 @@ export class ItemSystem {
     const tip = new THREE.Mesh(this.bananaTipGeo, this.bananaTipMat);
     tip.position.set(0.55, 0.2, 0);
     mesh.add(tip);
-    mesh.position.set(kart.position.x - fx * d, 0.12, kart.position.z - fz * d);
+    mesh.position.set(kart.position.x - fx * d, kart.position.y + 0.12, kart.position.z - fz * d);
+    mesh.position.y = this._roadY(mesh.position, kart.s, 0.12);
     mesh.rotation.y = this.rng() * 6.28;
     this.root.add(mesh);
     if (this.hazards.length >= MAX_BANANAS) { const old = this.hazards.shift(); this._removeMesh(old.mesh); }
@@ -354,7 +361,7 @@ export class ItemSystem {
     const fx = Math.sin(h), fz = Math.cos(h);
     const mesh = this._makeShell("green");
     const d = (kart.radius || 1.3) + 1.4;
-    mesh.position.set(kart.position.x + fx * d, 0.7, kart.position.z + fz * d);
+    mesh.position.set(kart.position.x + fx * d, kart.position.y + 0.7, kart.position.z + fz * d);
     this.root.add(mesh);
     this.projectiles.push({
       type: "green", mesh, position: mesh.position, owner: kart, age: 0, bounces: 0, s: undefined,
@@ -368,7 +375,7 @@ export class ItemSystem {
     const fx = Math.sin(kart.heading), fz = Math.cos(kart.heading);
     const mesh = this._makeShell("homing");
     const d = (kart.radius || 1.3) + 1.4;
-    mesh.position.set(kart.position.x + fx * d, 0.7, kart.position.z + fz * d);
+    mesh.position.set(kart.position.x + fx * d, kart.position.y + 0.7, kart.position.z + fz * d);
     this.root.add(mesh);
     this.projectiles.push({
       type: "homing", mesh, position: mesh.position, owner: kart, age: 0, bounces: 0, s: undefined,
@@ -398,10 +405,10 @@ export class ItemSystem {
 
   _shock(kart) {
     const myPlace = kart.race?.place ?? 99;
-    this._p.set(kart.position.x, 1, kart.position.z);
+    this._p.set(kart.position.x, kart.position.y + 1, kart.position.z);
     this.effects?.burst?.(this._p, "shock", { kart });
     this.audio?.play?.("shock", { kart });
-    this._spawnRing(kart.position.x, kart.position.z);
+    this._spawnRing(kart.position.x, kart.position.z, kart.position.y);
     for (const k of this.karts) {
       if (k === kart) continue;
       const ahead = (k.race?.place ?? 0) < myPlace;
@@ -410,14 +417,14 @@ export class ItemSystem {
     this._emit("shock", kart);
   }
 
-  _spawnRing(x, z) {
+  _spawnRing(x, z, y = 0) {
     const mat = new THREE.MeshBasicMaterial({
       color: 0x9fe8ff, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending,
       depthWrite: false, side: THREE.DoubleSide,
     });
     const mesh = new THREE.Mesh(this.shockGeo, mat);
     mesh.rotation.x = -Math.PI / 2;
-    mesh.position.set(x, 0.5, z);
+    mesh.position.set(x, y + 0.5, z);
     mesh.scale.setScalar(1);
     this.root.add(mesh);
     this._rings.push({ mesh, age: 0 });
@@ -440,7 +447,7 @@ export class ItemSystem {
   _hit(kart, source, spin) {
     if (kart.shield > 0) {
       kart.shield = 0;
-      this._p.set(kart.position.x, 1, kart.position.z);
+      this._p.set(kart.position.x, kart.position.y + 1, kart.position.z);
       this.effects?.burst?.(this._p, "shieldpop", { kart });
       this.audio?.play?.("shield", { kart, pop: true });
       this._emit("block", kart, source);
@@ -448,7 +455,7 @@ export class ItemSystem {
     }
     if (kart.spinTime > 0.2) return false;
     kart.spinOut?.(spin);
-    this._p.set(kart.position.x, 1, kart.position.z);
+    this._p.set(kart.position.x, kart.position.y + 1, kart.position.z);
     this.effects?.burst?.(this._p, "hit", { kart });
     this.audio?.play?.(source === "banana" ? "banana" : "hit", { kart });
     this._emit("hit", kart, source);
@@ -467,7 +474,7 @@ export class ItemSystem {
         if (k === h.owner && h.age < BANANA_ARM) continue;
         const dx = k.position.x - hp.x, dz = k.position.z - hp.z;
         const r = BANANA_R + (k.radius || 1.3) * 0.4;
-        if (dx * dx + dz * dz < r * r) {
+        if (dx * dx + dz * dz < r * r && Math.abs(k.position.y - hp.y) < 2.5) {
           if (k.spinTime > 0.2 && !(k.shield > 0)) continue;
           this._hit(k, "banana", SPIN_BANANA);
           this._removeMesh(h.mesh);
@@ -496,7 +503,7 @@ export class ItemSystem {
           if (k === p.owner && p.age < 0.35) continue;
           const dx = k.position.x - p.position.x, dz = k.position.z - p.position.z;
           const r = (k.radius || 1.3) + SHELL_HIT_R;
-          if (dx * dx + dz * dz < r * r) {
+          if (dx * dx + dz * dz < r * r && Math.abs(k.position.y - p.position.y) < 2.5) {
             this._hit(k, p.type, SPIN_SHELL);
             dead = true;
             break;
@@ -520,6 +527,7 @@ export class ItemSystem {
     if (p.age > GREEN_LIFE) return true;
     const loc = tr.locate(p.position, p.s);
     p.s = loc.s;
+    if (loc.y != null) p.position.y = loc.y + 0.7;
     const lim = loc.wallDist - 0.7;
     if (Math.abs(loc.lateral) > lim) {
       const smp = tr.sample(loc.s);
@@ -547,6 +555,7 @@ export class ItemSystem {
     if (p.age > HOMING_LIFE) return true;
     const loc = tr.locate(p.position, p.s);
     p.s = loc.s;
+    if (loc.y != null) p.position.y = loc.y + 0.7;
     let tx, tz;
     const t = p.target;
     let direct = false;

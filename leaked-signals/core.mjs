@@ -219,8 +219,7 @@ export const hashStr = s => { let h = 2166136261; for (let i = 0; i < s.length; 
 export function gauss(rnd) { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 
 /** Sample an emission elevation (deg) from the mast lobe (98%) or the isotropic-ish leak floor (2%). */
-export function sampleElevation(rnd, site) {
-  const dip = horizonDip(site.h || 300);
+export function sampleElevation(rnd, site, dip = horizonDip(site.h || 300)) {
   if (rnd() < 0.02) {
     const lo = Math.sin(-dip * D2R);
     return Math.asin(lo + rnd() * (1 - lo)) * R2D;

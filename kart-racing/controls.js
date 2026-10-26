@@ -25,8 +25,17 @@ const CSS = `
 }
 `;
 
-const GAME_KEYS = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space", "ShiftLeft", "ShiftRight", "KeyW", "KeyA", "KeyS", "KeyD",
-  "KeyE", "ControlLeft", "ControlRight", "Enter", "KeyX", "KeyC", "Backspace"]);
+const KEYS = {
+  accel: ["KeyA", "ArrowUp"], brake: ["KeyZ", "ArrowDown"], left: ["Comma", "ArrowLeft"], right: ["Period", "ArrowRight"],
+  drift: ["Space", "ShiftLeft", "ShiftRight"], item: ["Enter", "NumpadEnter", "KeyE", "KeyX", "ControlLeft", "ControlRight"],
+  back: ["KeyC", "Backspace"],
+};
+const GAME_KEYS = new Set(Object.values(KEYS).flat());
+const ITEM_KEYS = new Set(KEYS.item);
+export const KEYMAP_HELP = {
+  accelerate: "A", brake: "Z", left: ",", right: ".", drift: "Space", item: "Enter", lookBack: "C", pause: "Esc / P",
+  alt: "Arrow keys also steer, accelerate and brake",
+};
 
 export class Controls {
   constructor(domRoot, canvas) {
@@ -126,7 +135,7 @@ export class Controls {
       this.device = "keyboard";
       if (this.touchMode === "auto" && this._touchSeen && !this._coarse) { this._touchSeen = false; this._applyTouchVisibility(); }
       if (!this.enabled) return;
-      if (!this._keys.has(c) && (c === "KeyE" || c === "ControlLeft" || c === "ControlRight" || c === "Enter" || c === "KeyX")) this._item = true;
+      if (!this._keys.has(c) && ITEM_KEYS.has(c)) this._item = true;
       this._keys.add(c);
     };
     this._onKeyUp = (e) => { this._keys.delete(e.code); };
@@ -191,12 +200,12 @@ export class Controls {
     if (!this.enabled) { this._item = false; return o; }
 
     const k = this._keys;
-    const left = k.has("ArrowLeft") || k.has("KeyA"), right = k.has("ArrowRight") || k.has("KeyD");
-    o.steer = (right ? 1 : 0) - (left ? 1 : 0);
-    o.throttle = (k.has("ArrowUp") || k.has("KeyW")) ? 1 : 0;
-    o.brake = (k.has("ArrowDown") || k.has("KeyS")) ? 1 : 0;
-    o.drift = k.has("Space") || k.has("ShiftLeft") || k.has("ShiftRight");
-    o.lookBack = k.has("KeyC") || k.has("Backspace");
+    const any = (list) => { for (const c of list) if (k.has(c)) return true; return false; };
+    o.steer = (any(KEYS.right) ? 1 : 0) - (any(KEYS.left) ? 1 : 0);
+    o.throttle = any(KEYS.accel) ? 1 : 0;
+    o.brake = any(KEYS.brake) ? 1 : 0;
+    o.drift = any(KEYS.drift);
+    o.lookBack = any(KEYS.back);
 
     this._readPad(o);
 
