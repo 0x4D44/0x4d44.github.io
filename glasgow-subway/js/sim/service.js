@@ -380,7 +380,7 @@ export class Service {
     return {
       t: this.t, v: tr.v, kmh: tr.v / KMH, limitKmh: this.track.limit(tr.s) / KMH, safeKmh: this.track.safeSpeed(tr.s) / KMH,
       lever: this.lever, ato: this.ato, phase: this.phase, doors: this.doors, doorsClosed: this.doorsClosed,
-      nextName: this.station.name, nextIdx: this.idx, distToStop: this.distToStop, signalGreen: this.signalGreen,
+      nextName: (this.phase === 'depart' ? (this.stationById.get(this.stops[(this.idx + 1) % this.stops.length].station) || this.station) : this.station).name, nextIdx: this.idx, distToStop: this.distToStop, signalGreen: this.signalGreen,
       brakeBar: tr.brakePressureBar, traction: tr.tractionAct, accel: tr.a, platSide: this.platSide,
       dwellLeft: Math.max(0, st.dwellS - this.dwellT), pax: this.pax, vigil: this.vigil, assist: this.assistActive,
       grade: this.track.gradient(tr.s) * 100, eb: tr.ebLatched, tractionCut: tr.tractionCut, score: this.score, over: this.overBy,

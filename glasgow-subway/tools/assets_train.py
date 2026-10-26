@@ -268,7 +268,7 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P):
     # brake handle (right of controller)
     cab.cyl(P(-0.15, 5.86, 1.33), 0.07, 0.06, 'steel_dark', seg=12)
     cab.cyl(P(-0.15, 5.86, 1.42), 0.014, 0.16, 'steel_bright', seg=8)
-    cab.box(P(-0.15, 5.86, 1.52), (0.12, 0.03, 0.03), 'button_red')
+    cab.box(P(-0.15, 5.86, 1.52), (0.09, 0.025, 0.025), 'steel_dark')
     # door buttons
     for i, (xx, mm) in enumerate(((0.12, 'button_green'), (0.22, 'button_green'), (0.32, 'button_red'), (0.42, 'button_amber'))):
         cab.cyl(P(xx, 5.84, 1.325), 0.025, 0.02, mm, seg=12)

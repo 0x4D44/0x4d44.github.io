@@ -51,7 +51,7 @@ export class TunnelView {
     // tube (inner surface), axis y=1.2, along z in [-L/2, L/2]
     for (let i = 0; i < n; i++) {
       const a0 = (i / n) * Math.PI * 2, a1 = ((i + 1) / n) * Math.PI * 2;
-      const c = [0.30, 0.31, 0.33];
+      const c = [0.46, 0.45, 0.43];
       const v = [[Math.cos(a0) * R, 1.2 + Math.sin(a0) * R, -L / 2], [Math.cos(a1) * R, 1.2 + Math.sin(a1) * R, -L / 2], [Math.cos(a1) * R, 1.2 + Math.sin(a1) * R, L / 2], [Math.cos(a0) * R, 1.2 + Math.sin(a0) * R, L / 2]];
       const nx = -Math.cos((a0 + a1) / 2), ny = -Math.sin((a0 + a1) / 2);
       const k = v.map((q) => push(q[0], q[1], q[2], nx, ny, 0, c));

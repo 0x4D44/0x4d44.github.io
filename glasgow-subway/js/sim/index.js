@@ -14,6 +14,7 @@ import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
+import { peopleVariants } from './kit.js';
 
 export function simAvailable() {
   try { return typeof WebGLRenderingContext !== 'undefined' && typeof document !== 'undefined'; } catch (e) { return false; }
@@ -49,12 +50,12 @@ class Sim {
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     this.GLTFLoader = GLTFLoader;
     this.saved = { clear: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha(), tm: r.toneMapping, exp: r.toneMappingExposure };
-    const [trainTpl, tunTpl, kitTpl, kioskTpl] = await Promise.all([
+    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl] = await Promise.all([
       loadTrainTemplate(THREE, GLTFLoader, this.url('models/train.glb')),
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
-      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'),
+      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._opt('models/people.glb'),
     ]);
-    this.kit = kitTpl; this.kioskTpl = kioskTpl;
+    this.kit = kitTpl; this.kioskTpl = kioskTpl; this.peopleVariants = peopleVariants(THREE, peopleTpl);
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
@@ -111,7 +112,7 @@ class Sim {
     let rec = this.tracks[line];
     if (!rec) {
       const maxPlat = Math.max(...this.stations.map((s) => (s.platform && s.platform.lengthM) || 45), 45);
-      const track = new Track(this.subway.tracks[line], { trainLen: this.trainLen, ignoreCentre: true, maxKmh: this.stock.maxKmh, platformLen: maxPlat, latAccel: 1.15 });
+      const track = new Track(this.subway.tracks[line], { trainLen: this.trainLen, ignoreCentre: false, maxKmh: this.stock.maxKmh, platformLen: maxPlat, latAccel: 1.15 });
       const rt = baselineRunTimes(track, this.stock, this.stations);
       const dw = track.stops.map((s) => s.dwellS);
       const schedule = buildSchedule(rt, dw, 1.06, 0);
@@ -175,7 +176,7 @@ class Sim {
     const idx2 = this.track.stops.findIndex((s) => s.station === this.sel.station);
     this.svc = this._newService(Math.max(0, idx2), { ato: mode !== 'drive', autoDoors: mode !== 'drive' });
     const svc = this.svc;
-    this.shuttle.state = 'none'; this.crowd.clear();
+    this.shuttle.state = 'none'; this.crowd.clear(); this.crowdFor = null;
     this.tunnel.reset(); this.annDone = false;
     this.trainView.root.visible = true;
     if (mode === 'drive') {
@@ -327,7 +328,7 @@ class Sim {
     const si = this.stationIdx.get(stop.station); const station = this.stations[si];
     const tmp = new Service({ track: this.track, stock: this.stock, stations: this.stations, startIdx: stopIdx, placeAtStop: false, lineKey: this.line });
     const side = tmp.sideOf[stopIdx];
-    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si });
+    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit });
     placeStation(THREE, v, stop); v.stopIdx = stopIdx; v.station = station;
     this._decorateStation(v);
     this.scene.add(v.group); this.stationViews.set(stopIdx, v);
@@ -636,11 +637,12 @@ class Sim {
     // HUD
     this._computeContext();
     const info = svc.info();
-    let title = 'Next: ' + svc.station.name, distText = svc.phase === 'station' ? '' : fmtDist(Math.max(0, svc.distToStop)), sub = '';
+    const upNext = svc.phase === 'depart' ? (svc.stationById.get(svc.stops[(svc.idx + 1) % svc.stops.length].station) || svc.station) : svc.station;
+    let title = 'Next: ' + upNext.name, distText = svc.phase === 'station' ? '' : svc.phase === 'depart' ? '' : fmtDist(Math.max(0, svc.distToStop)), sub = '';
     if (this.mode === 'drive') {
       sub = svc.phase === 'station' ? (svc.doorsClosed ? (svc.signalGreen ? 'Signal clear - depart' : `Dwell ${Math.ceil(info.dwellLeft)} s`) : 'Doors open') : `${this.line === 'outer' ? 'Outer' : 'Inner'} circle - ${svc.diff.label}`;
       if (svc.phase === 'station') title = 'At: ' + svc.station.name;
-    } else if (this.mode === 'ride') { title = svc.phase === 'station' ? 'At: ' + svc.station.name : 'Next: ' + svc.station.name; sub = this.alightNext ? 'Getting off here' : 'Press N to get off at the next stop'; }
+    } else if (this.mode === 'ride') { title = svc.phase === 'station' ? 'At: ' + svc.station.name : 'Next: ' + upNext.name; sub = this.alightNext ? 'Getting off here' : 'Press N to get off at the next stop'; }
     else if (this.mode === 'explore') { title = this.activeStation ? this.activeStation.station.name : ''; sub = this.shuttle.state === 'wait' ? `Next train ${fmtTime(this.shuttle.timer)}` : (this.shuttle.state === 'arriving' ? 'Train arriving' : this.shuttle.state === 'dwell' ? 'Train at platform' : ''); distText = ''; }
     else if (this.mode === 'street') { title = 'Street level'; sub = ''; distText = ''; }
     let late = null;

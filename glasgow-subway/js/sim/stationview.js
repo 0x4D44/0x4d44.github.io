@@ -5,6 +5,7 @@
 // Also returns walker zones / obstacles (in x_l, z_l) and interaction anchors.
 import { GeoBuilder, canvasTex, tileTexture, nameSignTexture, infoPanelTexture, styleFor, drawRoundel, wrapText } from './gfx.js';
 import { hashStr, mulberry32, clamp } from './util.js';
+import { kitParts, instanceKit, placeMatrix } from './kit.js';
 
 export const PY = 0.695;           // platform surface above rail head
 export const EDGE = 1.5;          // track centre to platform edge
@@ -24,6 +25,9 @@ export function stationFacts(st) {
 
 export function buildStation(THREE, o) {
   const { station: st, stop, side: S, lineKey, trainLen, idx } = o;
+  const kit = o.kit || null;
+  const K = { pillar: kitParts(THREE, kit, 'pillar_round'), bench: kitParts(THREE, kit, 'bench_platform'), gate: kitParts(THREE, kit, 'fare_gate'), tm: kitParts(THREE, kit, 'ticket_machine'), bin: kitParts(THREE, kit, 'bin_litter'), clock: kitParts(THREE, kit, 'clock_platform') };
+  const KM = { pillar: [], bench: [], gate: [], tm: [], bin: [], clock: [] };
   const style = styleFor(st, idx);
   const seed = hashStr(st.id); const rng = mulberry32(seed);
   const type = (st.platform && st.platform.type) || 'island';
@@ -143,7 +147,7 @@ export function buildStation(THREE, o) {
   // ------------ columns (island centreline) and benches
   const columns = [];
   if (island) for (let z = -PL + 4; z <= PL - 9; z += 7) {
-    Bv.box(xcP - 0.22, PY, z - 0.22, xcP + 0.22, ceilY(xcP), z + 0.22, col(style.dado).map((v) => v * 0.9), 1);
+    if (K.pillar) KM.pillar.push(placeMatrix(THREE, xcP, PY, z, 0, 1, (ceilY(xcP) - PY) / 4.6, 1)); else Bv.box(xcP - 0.22, PY, z - 0.22, xcP + 0.22, ceilY(xcP), z + 0.22, col(style.dado).map((v) => v * 0.9), 1);
     Bl.box(xcP - 0.25, PY + 1.2, z - 0.25, xcP + 0.25, PY + 1.32, z + 0.25, cTrim, 1);
     obstacles.push({ x0: xcP - 0.3, x1: xcP + 0.3, z0: z - 0.3, z1: z + 0.3, y: PY });
     columns.push(z);
@@ -153,12 +157,13 @@ export function buildStation(THREE, o) {
     const bx = island ? xcP + S * 0.0 : xo - S * 0.35;
     const bz = island ? z + 3.5 : z;
     if (island && bz > PL - 4.5) continue;
-    Bv.box(bx - 0.28, PY + 0.42, bz - 1.0, bx + 0.28, PY + 0.5, bz + 1.0, [0.55, 0.38, 0.2], 1);
-    Bv.box(bx - 0.25, PY, bz - 0.9, bx + 0.25, PY + 0.42, bz - 0.8, [0.2, 0.2, 0.22], 1); Bv.box(bx - 0.25, PY, bz + 0.8, bx + 0.25, PY + 0.42, bz + 0.9, [0.2, 0.2, 0.22], 1);
+    if (K.bench) KM.bench.push(placeMatrix(THREE, bx, PY, bz, S * Math.PI / 2)); else { Bv.box(bx - 0.28, PY + 0.42, bz - 1.0, bx + 0.28, PY + 0.5, bz + 1.0, [0.55, 0.38, 0.2], 1);
+    Bv.box(bx - 0.25, PY, bz - 0.9, bx + 0.25, PY + 0.42, bz - 0.8, [0.2, 0.2, 0.22], 1); Bv.box(bx - 0.25, PY, bz + 0.8, bx + 0.25, PY + 0.42, bz + 0.9, [0.2, 0.2, 0.22], 1); }
+    if (K.bin) KM.bin.push(placeMatrix(THREE, bx + (island ? 0 : -S * 0.1), PY, bz + 1.5, 0));
     obstacles.push({ x0: bx - 0.35, x1: bx + 0.35, z0: bz - 1.05, z1: bz + 1.05, y: PY });
     benchZs.push([bx, bz]);
   }
-  // wall-side (non-island) back wall at xb is the platform wall: tiles already.
+  if (K.clock) { KM.clock.push(placeMatrix(THREE, xb - S * 0.08, 2.5, 1, S * Math.PI / 2)); KM.clock.push(placeMatrix(THREE, xb - S * 0.08, 2.5, 13, S * Math.PI / 2)); }
 
   // ------------ signs (name) along the platform walls and over the track wall
   const nameTex = nameSignTexture(THREE, st.name, style, { sub: lineKey === 'outer' ? 'Outer circle - clockwise' : 'Inner circle - anticlockwise' });
@@ -267,13 +272,14 @@ export function buildStation(THREE, o) {
   Bv.box(cx + 3.5, Hc, gz - 0.2, cxb, Hc + 1.0, gz + 0.2, [0.35, 0.37, 0.4], 1); obstacles.push({ x0: cx + 3.5, x1: cxb, z0: gz - 0.25, z1: gz + 0.25, y: Hc });
   for (let i = 0; i <= gateLanes.length; i++) {
     const gx = i === 0 ? cx - 3.2 : i === gateLanes.length ? cx + 3.2 : cx + (gateLanes[i - 1] + gateLanes[i]) / 2;
-    Bv.box(gx - 0.12, Hc, gz - 0.55, gx + 0.12, Hc + 1.0, gz + 0.55, [0.3, 0.32, 0.36], 1); Bl.box(gx - 0.1, Hc + 1.0, gz - 0.4, gx + 0.1, Hc + 1.04, gz + 0.4, cAcc, 1);
+    if (!K.gate) { Bv.box(gx - 0.12, Hc, gz - 0.55, gx + 0.12, Hc + 1.0, gz + 0.55, [0.3, 0.32, 0.36], 1); Bl.box(gx - 0.1, Hc + 1.0, gz - 0.4, gx + 0.1, Hc + 1.04, gz + 0.4, cAcc, 1); }
     obstacles.push({ x0: gx - 0.14, x1: gx + 0.14, z0: gz - 0.6, z1: gz + 0.6, y: Hc });
   }
+  if (K.gate) for (const gl of gateLanes) KM.gate.push(placeMatrix(THREE, cx + gl, Hc, gz, 0));
   // ticket machines + info boards along side walls
   const tm = [];
   for (let i = 0; i < 3; i++) {
-    const z = cz0 + 11 + i * 2.6, x = cxa + 0.45; Bv.box(x - 0.4, Hc, z - 0.45, x + 0.4, Hc + 1.7, z + 0.45, [0.2, 0.22, 0.28], 1); Bl.box(x + 0.4, Hc + 1.1, z - 0.3, x + 0.42, Hc + 1.5, z + 0.3, cAcc, 1);
+    const z = cz0 + 11 + i * 2.6, x = cxa + 0.45; if (K.tm) KM.tm.push(placeMatrix(THREE, x, Hc, z, -Math.PI / 2)); else { Bv.box(x - 0.4, Hc, z - 0.45, x + 0.4, Hc + 1.7, z + 0.45, [0.2, 0.22, 0.28], 1); Bl.box(x + 0.4, Hc + 1.1, z - 0.3, x + 0.42, Hc + 1.5, z + 0.3, cAcc, 1); }
     obstacles.push({ x0: x - 0.45, x1: x + 0.45, z0: z - 0.5, z1: z + 0.5, y: Hc }); tm.push({ x, z });
   }
   // shop kiosk
@@ -334,6 +340,8 @@ export function buildStation(THREE, o) {
   anchors.rampTop = { x: rc, z: rampZ1 };
   anchors.ceilY = ceilY; anchors.Hc = Hc; anchors.Hs = Hs;
 
+  // ------------ kit instances (station_kit.glb)
+  for (const k of Object.keys(K)) if (K[k]) instanceKit(THREE, K[k], KM[k], group);
   // ------------ build meshes
   const mk = (B, mat, name) => { if (!B.count) return; const m = new THREE.Mesh(B.build(THREE), mat); m.name = name; group.add(m); return m; };
   mk(Bt, mTile, 'dado'); mk(Bu, mUpper, 'upper'); mk(Bf, mFloor, 'floor'); mk(Bv, mVC, 'misc'); mk(Bl, mVC, 'trim');
