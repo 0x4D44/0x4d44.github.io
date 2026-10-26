@@ -329,7 +329,7 @@ function limitRefs() {
   }
   return [];
 }
-const starName = i => STARS.names[i] || `Star ${i} (${STARS.ra[i].toFixed(1)}°, ${STARS.dec[i].toFixed(1)}°)`;
+const starName = i => STARS.names[i] || `Unnamed star at RA ${(STARS.ra[i] / 15).toFixed(1)}h, Dec ${STARS.dec[i].toFixed(0)}°`;
 
 let _hlNoteKey = null;
 function updateHlNote() {
@@ -458,7 +458,7 @@ function stepAnim(now) {
 
 // ---------- selection ----------
 function selectStar(i, o = {}) {
-  S.star = i; lastHeardT = -1; dirty = true;
+  hideHint(); S.star = i; lastHeardT = -1; dirty = true;
   if (o.switchTab) setTab("listen");
   renderListen(true);
 }
@@ -482,7 +482,7 @@ function buildPanel() {
   renderAnatomy();
 }
 function setTab(id, focus) {
-  S.tab = id;
+  S.tab = id; hideHint();
   $$("#tabs button").forEach(b => { const on = b.dataset.tab === id; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
   $$(".tabbody").forEach(b => b.hidden = b.id !== "body-" + id);
   if (id === "listen") renderListen(true);
@@ -716,7 +716,7 @@ function clearBroadcast() {
   S.hl = null; hlId = null; dirty = true; $$("#bList .item").forEach(b => b.classList.remove("sel")); const d = $("#bDetail"); if (d) d.innerHTML = ""; _hlNoteKey = null; updateHlNote();
 }
 function selectBroadcast(id, fly = true) {
-  S.hl = id; hlId = null; dirty = true;
+  hideHint(); S.hl = id; hlId = null; dirty = true;
   $$("#bList .item").forEach(b => b.classList.toggle("sel", b.dataset.b === id));
   const b = BROADCASTS.find(x => x.id === id), t0 = C.jdFromUnixMs(Date.parse(b.start));
   const age = (jdOf() - t0) / C.DAYS_PER_YEAR, src = siteById[b.site];
@@ -849,7 +849,8 @@ function stopTour() {
   if (!tourPlaying) return;
   tourPlaying = false; tourBoost = 1; dirty = true; $("#btnTour").innerHTML = "&#9654; Guided tour"; $("#caption").classList.remove("on");
 }
-const hintEl = $("#hint"), hideHint = () => { hintEl.hidden = true; };
+const hintEl = $("#hint");
+function hideHint() { hintEl.hidden = true; }
 hintEl.onclick = () => { hideHint(); startTour(); };
 stage.addEventListener("pointerdown", hideHint, { once: true }); setTimeout(hideHint, 20000);
 $("#btnTour").onclick = () => { hideHint(); tourPlaying ? stopTour() : startTour(); };
