@@ -426,11 +426,11 @@ export function createTrack(id) {
   const padTex = padTexture();
 
   // ---- materials
-  const mRoad = own(new THREE.MeshStandardMaterial({ map: roadTex, roughness: def.theme === "neon" ? 0.42 : 0.92, metalness: def.theme === "neon" ? 0.25 : 0.0 }));
+  const mRoad = own(new THREE.MeshStandardMaterial({ polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2, map: roadTex, roughness: def.theme === "neon" ? 0.42 : 0.92, metalness: def.theme === "neon" ? 0.25 : 0.0 }));
   const mKerb = own(def.theme === "neon" ? new THREE.MeshBasicMaterial({ map: kerbTex }) : new THREE.MeshLambertMaterial({ map: kerbTex }));
   const mWall = own(def.theme === "neon" ? new THREE.MeshLambertMaterial({ map: wallTex, emissive: 0x303a66, emissiveMap: wallTex, side: THREE.DoubleSide, vertexColors: true }) : new THREE.MeshLambertMaterial({ map: wallTex, side: THREE.DoubleSide, vertexColors: true }));
   const shTex = groundTexture(theme.shoulderCol, 10); shTex.repeat.set(1, 1);
-  const mShoulder = own(new THREE.MeshLambertMaterial({ map: shTex }));
+  const mShoulder = own(new THREE.MeshLambertMaterial({ map: shTex, polygonOffset: true, polygonOffsetFactor: -0.5, polygonOffsetUnits: -1 }));
   const mPad = own(new THREE.MeshBasicMaterial({ map: padTex, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
 
   // ---- road, kerbs, shoulders, walls
@@ -514,16 +514,19 @@ function buildTerrain(track) {
   const fbm = (x, z) => vnoise(x / 95, z / 95) * 0.62 + vnoise(x / 41, z / 41) * 0.28 + vnoise(x / 17, z / 17) * 0.10 - 0.5;
   const amp = def.theme === "snow" ? 20 : def.theme === "sunset" ? 13 : 1.6;
 
+  const D0 = wallDist + 2.5, BL = 30;
   // coarse samples for the large-scale height field
   const cs = []; for (let i = 0; i < N; i += 8) cs.push([px[i], pz[i], py[i]]);
   const bg = (x, z) => {
-    let sw = 0, sy = 0, dm = 1e18;
-    for (let k = 0; k < cs.length; k++) { const c = cs[k], dx = x - c[0], dz = z - c[1], d2 = dx * dx + dz * dz; if (d2 < dm) dm = d2; const w = Math.exp(-d2 / (150 * 150)); sw += w; sy += w * c[2]; }
+    let sw = 0, sy = 0, dm = 1e18, ynear = 0;
+    for (let k = 0; k < cs.length; k++) { const c = cs[k], dx = x - c[0], dz = z - c[1], d2 = dx * dx + dz * dz; if (d2 < dm) { dm = d2; ynear = c[2]; } const w = Math.exp(-d2 / (150 * 150)); sw += w; sy += w * c[2]; }
     const dmin = Math.sqrt(dm), idw = sw > 1e-7 ? sy / sw : 0;
     const env = 1 - sm(130, 330, dmin);
-    return env * (idw + amp * 2 * fbm(x, z) * sm(34, 120, dmin));
+    const v = env * (idw + amp * 2 * fbm(x, z) * sm(34, 120, dmin));
+    // slope limit: terrain may rise/fall at most ~42% away from the nearest road height (cuts are terraced, never solid peaks)
+    const lim = 0.42 * Math.max(0, dmin - D0 - 6);
+    return ynear + Math.max(-lim, Math.min(lim, v - ynear));
   };
-  const D0 = wallDist + 2.5, BL = 30;
   const corr = (x, z, out) => {
     let wmax = 0, sw = 0, sy = 0; const cx = Math.floor(x / CELL), cz = Math.floor(z / CELL);
     for (let a = -2; a <= 2; a++) for (let c = -2; c <= 2; c++) {
@@ -1061,10 +1064,26 @@ function sceneSnow(track, X, K) {
   for (let k = 0; k < 4; k++) { const a = at(-30 + k * 6, X.grandstand.side * -(wallDist + 7 + (k % 2) * 3)); sm.push({ x: a.x, z: a.z, ry: a.h + Math.PI, sx: R(0.8, 1.2) }); }
   instanced(snowman, lam({ vertexColors: true }), sm, "snowmen");
 
-  // distant snowy mountains (instanced pyramids with caps)
-  const mg = bake([part(new THREE.ConeGeometry(1, 1, 7), mat(0, 0.5, 0), 0x8fa3b8), part(new THREE.ConeGeometry(0.6, 0.6, 7), mat(0, 0.7, 0), 0xffffff)]);
-  const mts = ringAround(34, 470, 640).map((m) => ({ x: m.x, z: m.z, y: -4, sx: R(110, 240), sy: R(130, 300), sz: R(110, 240), ry: rng() * 6, c: pick([0xffffff, 0xe6eef7, 0xcfdcea]) }));
-  instanced(mg, lam({ vertexColors: true }), mts, "mountains");
+  // distant snowy mountains: ONE cone per mountain (snow line via vertex colours, no overlapping cap mesh -> no z-fighting)
+  const mgeo = new THREE.ConeGeometry(1, 1, 8, 6, true).translate(0, 0.5, 0);
+  { const pa = mgeo.attributes.position, cl = new Float32Array(pa.count * 3), rk = new THREE.Color(0x7d8fa3), sn = new THREE.Color(0xf4f8fc), t = new THREE.Color();
+    for (let i = 0; i < pa.count; i++) {
+      const y = pa.getY(i), j = 0.06 * Math.sin(i * 12.9898) * (1 - y);
+      pa.setXYZ(i, pa.getX(i) * (1 + j), y, pa.getZ(i) * (1 + j));
+      t.copy(rk).lerp(sn, Math.min(1, Math.max(0, (y - 0.5) / 0.18))); cl[i * 3] = t.r; cl[i * 3 + 1] = t.g; cl[i * 3 + 2] = t.b;
+    }
+    mgeo.setAttribute("color", new THREE.BufferAttribute(cl, 3)); mgeo.computeVertexNormals(); }
+  const minTrackDist = (x, z) => { let d = 1e9; for (let i = 0; i < N; i += 2) { const dd = Math.hypot(x - C.px[i], z - C.pz[i]); if (dd < d) d = dd; } return d; };
+  const mts = [];
+  for (let k = 0; k < 30; k++) {
+    const a = (k / 30) * TAU + R(-0.08, 0.08), sx = R(90, 170), sy = R(120, 230), sz = sx * R(0.8, 1.2);
+    for (let r = 420; r < 1100; r += 25) {
+      const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+      if (minTrackDist(x, z) > Math.max(sx, sz) * 1.15 + wallDist + 90 && !inLake(x, z)) { mts.push({ x, z, y: -6, sx, sy, sz, ry: rng() * 6, c: pick([0xffffff, 0xeef4fa, 0xdce6f0]) }); break; }
+    }
+  }
+  X.mountains = mts;
+  instanced(mgeo, lam({ vertexColors: true, flatShading: true, side: THREE.DoubleSide }), mts, "mountains");
 
   // snowfall
   const n = 2200, pos = new Float32Array(n * 3), sz = new Float32Array(n);

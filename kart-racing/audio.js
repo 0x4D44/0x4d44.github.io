@@ -108,7 +108,7 @@ export class GameAudio {
     const s = (p, x) => p.setTargetAtTime(x, t, 0.02);
     s(this.master.gain, this.vol.volume);
     s(this.sfxBus.gain, this.vol.sfx);
-    s(this.engineBus.gain, this.vol.sfx * 0.9);
+    s(this.engineBus.gain, this.vol.sfx * 0.6);
     s(this.uiBus.gain, this.vol.sfx);
     s(this.musicBus.gain, this.vol.music * 0.7);
   }
