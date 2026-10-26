@@ -13,14 +13,15 @@
 <main>
 
 <h1>The Locked Room</h1>
-<p class="dek">How to run code you do not fully trust on a Linux machine, and what each lock on the door actually stops. A tour from a single <code>prctl</code> call to a Firecracker microVM, with the kernel's own limits kept in view throughout.</p>
+<p class="dek">How to run code you do not fully trust on a Linux machine, and what each control stops. It runs from a single system call (<code>prctl</code>) to a Firecracker microVM, and it states the limits of each control.</p>
 
 <div class="callout"><b class="t">If you read one thing</b>
 <p>Run untrusted code with several locks, because each lock stops different attacks. Use a non-root user with no capabilities, <code>no_new_privs</code>, a seccomp allowlist (a list of the syscalls you permit), Landlock for files, and cgroup limits for memory and process count. If the code is hostile, put it behind a stronger boundary: gVisor or a microVM such as Firecracker. For untrusted code, set <code>JAIL_REQUIRE_ABI=6</code> in the launcher so it refuses old kernels. Section 16 shows <code>no_new_privs</code>, Landlock, rlimits and a no-fork seccomp filter in one small program (it does not drop the user or capabilities). Section 18 lets you score your own setup.</p>
-<p class="cap" style="margin:6px 0 0">Tested on a 6.18 kernel with older installed headers (the syscall count comes from kernel 6.18 tables), and checked from memory of the public documentation on 26 October 2026. We could not reach the documentation sites while writing. Kernel facts change: confirm version numbers for your own kernel.</p></div>
+<p class="cap" style="margin:6px 0 0">Tested on a 6.18 kernel with older installed headers (the syscall count comes from kernel 6.18 tables), and checked from memory of the public documentation on 26 October 2026. We could not reach the documentation sites while writing. Kernel facts change: confirm version numbers for your own kernel. <strong>What we tested:</strong> the <code>jail.c</code> behaviours, the Landlock ptrace and scoping results, the pathname Unix socket gap, and the widgets. <strong>From memory, not rechecked:</strong> the Landlock ABI 8 and 9 releases, gVisor start-up times, the Firecracker device list and overhead figures, and the Docker default-seccomp share.</p></div>
 
 <details><summary>Short glossary of terms used before they are explained</summary>
 <ul>
+<li><strong>Syscall:</strong> a request from a program to the kernel. <strong>cgroup:</strong> a kernel group of processes with shared resource limits. <strong>Namespace:</strong> a private view of one system resource, such as processes or the network. <strong>Capability:</strong> one slice of root's powers. <strong>LSM:</strong> Linux Security Module, a framework for rules such as AppArmor and SELinux. <strong>no_new_privs:</strong> a flag that stops a process gaining privilege through <code>execve</code>.</li>
 <li><strong>CVE:</strong> a public identifier for a known security flaw. <strong>OOM:</strong> out of memory. <strong>EBUSY:</strong> "resource busy". <strong>SIGSYS:</strong> the signal a blocked syscall can raise. <strong>KVM:</strong> the kernel feature that runs virtual machines. <strong>virtio, vsock:</strong> virtual devices that guests and hosts use to talk. <strong>ELF:</strong> the Linux program file format.</li>
 <li><strong>EPERM, EAGAIN, ENOSYS:</strong> error codes a syscall returns: "not permitted", "try again" and "no such syscall".</li>
 <li><strong>tmpfs:</strong> a filesystem that lives in memory. <strong>O_PATH:</strong> a way to open a path without reading it. <strong>pivot_root:</strong> the call that swaps a process's root directory.</li>
@@ -63,7 +64,7 @@
 
 <h2 id="threat"><small>01 &middot; Threat model</small>The shared-kernel problem</h2>
 <p>A normal Linux container behaves differently from a small virtual machine. It is an ordinary process, or a tree of processes, that the kernel has been told to show a limited view of the system. Namespaces give it a private view of mounts, PIDs (process IDs) and the network, and cgroups cap how much it may use. Capabilities and an LSM (Linux Security Module) narrow what it may do. But every one of its system calls still lands in the <strong>same kernel</strong> that runs the host and every other tenant. A single memory-corruption bug in any reachable kernel path turns "root in the container" into "root on the machine".</p>
-<p>That framing explains the whole field, which comes down to four goals. You make fewer kernel paths reachable and constrain each reachable path more tightly. You also limit the damage if the process is subverted anyway. When the stakes justify it, you put a <em>different kernel</em> or a hypervisor (software that runs virtual machines) between the workload and the host.</p>
+<p>That view splits the field into four goals. You make fewer kernel paths reachable and constrain each reachable path more tightly. You also limit the damage if the process is subverted anyway. When the stakes justify it, you put a <em>different kernel</em> or a hypervisor (software that runs virtual machines) between the workload and the host.</p>
 
 <div class="stack" aria-label="Layers of a hardened Linux workload">
   <div class="layer"><b>Language</b><span>Memory-safe code and a small dependency tree: fewer bugs to exploit in the first place (section 14).</span></div>
@@ -369,7 +370,7 @@ echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the w
 <tbody>
 <tr><td class="n">mount</td><td class="w">The filesystem tree</td><td class="w">Use <code>pivot_root</code> (not <code>chroot</code>, which is escapable with <code>CAP_SYS_CHROOT</code>); make mounts private; mount the root read-only; <code>nosuid,nodev,noexec</code> on data volumes.</td></tr>
 <tr><td class="n">pid</td><td class="w">The process table</td><td class="w">Hides other processes and makes the first process PID 1 (it must reap zombies; use an init such as <code>tini</code>).</td></tr>
-<tr><td class="n">net</td><td class="w">Interfaces, routes, sockets</td><td class="w">An empty net namespace (<code>--network none</code>) leaves the workload no network interface to use, which is the strictest network policy you can set.</td></tr>
+<tr><td class="n">net</td><td class="w">Interfaces, routes, sockets</td><td class="w">An empty net namespace (<code>--network none</code>) leaves the workload only a loopback interface, which reaches nothing outside the container, which is the strictest network policy you can set.</td></tr>
 <tr><td class="n">ipc / uts</td><td class="w">SysV and POSIX IPC; hostname</td><td class="w">Low cost; always unshare.</td></tr>
 <tr><td class="n">cgroup</td><td class="w">The view of the cgroup tree (prefer cgroup v2 on hosts: v1 has no safe delegation)</td><td class="w">Hides the host cgroup layout from the workload.</td></tr>
 <tr><td class="n">time</td><td class="w">Boot and monotonic clock offsets</td><td class="w">Rarely a security control.</td></tr>
@@ -399,7 +400,7 @@ echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the w
 
 <h3>Things that void the sandbox</h3>
 <ul>
-  <li><code>--privileged</code>: all capabilities, all devices, no seccomp, no AppArmor, so it is not a container in any meaningful security sense.</li>
+  <li><code>--privileged</code>: all capabilities, all devices, no seccomp, no AppArmor, so it gives you almost none of a container's protection.</li>
   <li>Mounting <code>/var/run/docker.sock</code>: whoever can talk to it can start a privileged container: root on the host, by design.</li>
   <li><code>--pid=host</code>, <code>--net=host</code>, <code>--ipc=host</code>, host-path bind mounts of <code>/</code>, <code>/proc</code>, <code>/sys</code> or <code>/etc</code>; <code>--device</code> of raw disks; <code>--cap-add SYS_ADMIN</code>; <code>--security-opt seccomp=unconfined</code>.</li>
   <li>Running as root inside, with the runtime itself running as root on the host. A runtime bug then yields host root: see <a href="https://nvd.nist.gov/vuln/detail/CVE-2019-5736">CVE-2019-5736</a> and <a href="https://nvd.nist.gov/vuln/detail/CVE-2024-21626">CVE-2024-21626</a> in section 17.</li>
@@ -1010,7 +1011,7 @@ int main(int argc, char **argv) {
 </div>
 
 <h2 id="review"><small>19 &middot; Method</small>How this page was reviewed</h2>
-<p>We hand each version of this page to an independent AI reviewer and instruct it to be adversarial. It checks claims against documentation and by running code, hunts for errors and omissions, and scores against a written rubric. The bar is a weighted score above 9.0 with no criterion below 8. <strong>This version has not reached it:</strong> the latest round scored 8.6, and we keep revising and re-reviewing. You can find the rubric, the scoring rules and the round-by-round log, including rounds that fell short, on a <a href="review.html">separate review page</a>. An AI review is a useful filter. For anything you depend on, you still need an expert human audit.</p>
+<p>We hand each version of this page to an independent AI reviewer and instruct it to be adversarial. It checks claims against documentation and by running code, hunts for errors and omissions, and scores against a written rubric. The bar is a weighted score above 9.0 with no criterion below 8. <strong>This version has not reached it:</strong> the latest round scored 8.5, and we keep revising and re-reviewing. You can find the rubric, the scoring rules and the round-by-round log, including rounds that fell short, on a <a href="review.html">separate review page</a>. An AI review is a useful filter. For anything you depend on, you still need an expert human audit.</p>
 
 <h2 id="sources"><small>20 &middot; Further reading</small>Where to read more</h2>
 <ul>
