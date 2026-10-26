@@ -75,8 +75,8 @@
         why.push("layer " + (i + 1) + " allows via " + esc(g));
       }
       out.className = "out ok";
-      out.innerHTML = "<span class=\"verdict ok\">ALLOWED</span> " + RIGHT[r] + " " + esc(p) + ": " + why.join("; ") + (layers.length > 1 ? " (stacked layers must all agree)." : ".") +
-        "<br>Note: Landlock only constrains access; ordinary file permissions and other checks still apply afterwards.";
+      out.innerHTML = "<span class=\"verdict ok\">ALLOWED BY LANDLOCK</span> " + RIGHT[r] + " " + esc(p) + ": " + why.join("; ") + (layers.length > 1 ? " (stacked layers must all agree)." : ".") +
+        "<br><strong>Landlock only narrows access.</strong> Ordinary file permissions still apply, so the real call can still fail (for example a root-only file read by a normal user).";
     }
     preset.onchange = l2.onchange = op.onchange = pathSel.onchange = run; run();
   })();
@@ -87,7 +87,7 @@
     if (!mode) return;
     var ROUNDS = 16;
     function run() {
-      var m = mode.value, L = Math.max(1, +lim.value || 1), O = Math.max(0, +other.value || 0);
+      var m = mode.value, L = Math.min(65536, Math.max(1, +lim.value || 1)), O = Math.max(0, +other.value || 0);
       $("fk-lim-wrap").style.display = m === "none" || m === "seccomp" ? "none" : "";
       $("fk-other-wrap").style.display = m === "nproc" ? "" : "none";
       var cap = Infinity;
@@ -110,6 +110,7 @@
       var msg;
       if (m === "none") msg = "<span class=\"verdict bad\">" + n.toLocaleString() + " processes after " + ROUNDS + " rounds</span>, and doubling. The process table, memory and scheduler are exhausted and the host stops responding.";
       else if (m === "seccomp") msg = "<span class=\"verdict ok\">1 process.</span> <code>fork</code> returns -1 (EPERM). Threads are still allowed, so a multi-threaded program works; a fork bomb never starts.";
+      else if ((m === "pids" || m === "nproc") && hit < 0) msg = "<span class=\"verdict ok\">Limit not hit</span> within " + ROUNDS + " rounds: the bomb reached " + n.toLocaleString() + " processes and the limit is " + cap.toLocaleString() + ". Lower the limit to see it bite.";
       else if (m === "pids") msg = "<span class=\"verdict ok\">Capped at " + n + " tasks</span> from round " + hit + ". <code>fork</code> fails with EAGAIN inside the cgroup; the host and other cgroups are untouched. Threads count toward the cap, and the workload can still fork up to the limit.";
       else if (O >= L) msg = "<span class=\"verdict bad\">The UID is already at its limit (" + O + " of " + L + ").</span> The sandbox cannot fork, but neither can any other process of that UID: collateral damage. RLIMIT_NPROC is per real UID, not per sandbox.";
       else msg = "<span class=\"verdict bad\">Capped at " + n + "</span>, but only because the UID's total is bounded at " + L + ". The bomb has used up all " + (L - O) + " remaining slots, so <em>every other process of that UID</em> now fails to fork too. Root and CAP_SYS_RESOURCE would not be limited at all.";
