@@ -89,7 +89,6 @@ int main(int argc, char **argv) {
     /* Close every inherited descriptor above stderr: Landlock does not revoke fds
        that are already open, so a leaked directory fd would be a hole in the fence. */
     if (syscall(SYS_close_range, 3, ~0U, 0)) die("close_range");
-    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)) die("dumpable");   /* no ptrace/proc-mem by same-UID peers */
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) die("no_new_privs");
     if (landlock() < 0) return 1;           /* fail closed */
     seccomp_nofork();                       /* dies on failure */
