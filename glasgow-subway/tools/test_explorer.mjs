@@ -41,7 +41,12 @@ async function run(name, vp, mobile) {
   await page.evaluate(() => { window.__explorer.setLight('night', true); window.__explorer.setXray(0.7); window.__explorer.app.selectStation(null); window.__explorer.setView(window.__explorer.app.heroView); }); await page.waitForTimeout(500); await shot('5-night');
   await page.evaluate(() => { window.__explorer.setLight('day', true); window.__explorer.toggleProfile(true); }); await shot('6-profile'); await noOverflow('profile');
   await page.evaluate(() => { window.__explorer.ui.showPane('view'); window.__explorer.ui.showPane('line'); }); await shot('7-line');
-  await page.evaluate(() => window.__explorer.startTour()); await page.waitForTimeout(6000); await shot('8-tour'); await page.evaluate(() => window.__explorer.stopTour());
+  await page.evaluate(() => window.__explorer.startTour()); await page.waitForTimeout(3000);
+  if (mobile) {
+    const m = await page.evaluate(() => { const c = document.querySelector('#caption').getBoundingClientRect(); const sh = document.querySelector('#sheet'); return { capTop: c.top, vh: innerHeight, sheetShown: getComputedStyle(sh).display !== 'none' }; });
+    check(m.capTop / m.vh >= 0.6 && !m.sheetShown, `${name} map share during tour >= 60% (caption top ${(m.capTop / m.vh * 100).toFixed(0)}%, sheet hidden=${!m.sheetShown})`);
+  }
+  await shot('8-tour'); await page.evaluate(() => window.__explorer.stopTour());
   await noOverflow('end');
   check(errs.length === 0, `${name} no console errors` + (errs.length ? '\n  ' + errs.slice(0, 8).join('\n  ') : ''));
   await ctx.close();
@@ -55,12 +60,21 @@ async function hashTest() {
   check(st.sel === 'ibrox' && st.xray === 1 && st.light === 'night' && st.exag === 2, 'hash state restored ' + JSON.stringify(st));
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   check(await page.evaluate(() => window.__explorer.state.selected) === null, 'Escape deselects');
+  const subs = await page.evaluate(() => [...document.querySelectorAll('#dock-left .sti .nm i')].map((e) => e.textContent));
+  check(subs.length === 15 && subs.every((t) => t.length > 8 && t !== 'Bus'), 'station list subtitles are meaningful one-liners ' + JSON.stringify(subs.slice(0, 3)));
+  const fg = await page.evaluate(() => { const e = window.__explorer; e.setLight('day', true); const d = e.app.farGround.material.color.getHex(); e.setLight('night', true); return { day: d, night: e.app.farGround.material.color.getHex() }; });
+  const lum = (c) => ((c >> 16) & 255) + ((c >> 8) & 255) + (c & 255);
+  check(lum(fg.night) < lum(fg.day) * 0.5, 'far ground is dimmed at night ' + JSON.stringify(fg));
+  await page.evaluate(() => { location.hash = '#view=0,0,0,999999,5,0'; window.__explorer.app.applyHash(); });
+  const vw = await page.evaluate(() => window.__explorer.rig.getView());
+  check(vw.dist <= 6500.5 && vw.polar <= 1.53, 'hash view is clamped ' + JSON.stringify({ d: vw.dist, p: vw.polar }));
   check(errs.length === 0, 'hash page no console errors ' + errs.join('|')); await ctx.close();
 }
 try {
   const only = process.env.ONLY;
   if (!only || only === 'desktop') await run('desktop', { width: 1440, height: 900 }, false);
   if (!only || only === 'mobile') await run('mobile', { width: 390, height: 844 }, true);
+  if (!only || only === 'landscape') await run('landscape', { width: 844, height: 390 }, true);
   if (!only || only === 'hash') await hashTest();
 } catch (e) { console.error(e); fails++; }
 await browser.close(); server.close();

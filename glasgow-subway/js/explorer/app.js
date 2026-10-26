@@ -56,8 +56,12 @@ export class App {
     // marker used by the long-section chart
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false })); this.marker.renderOrder = 20; this.marker.visible = false; this.env.scene.add(this.marker);
     this.env.listeners.push(() => this.city.applyAll());
-    const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#6f7a68', roughness: 1 }));
+    const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7d9b78' }));
     fg.position.set(this.centre.x, 1.5, this.centre.z); fg.renderOrder = 1; this.farGround = fg; this.env.scene.add(fg);
+    // the far ground is unlit (MeshBasicMaterial): tint it with the lighting preset so it is not bright green at dusk / night
+    const fgBase = new THREE.Color('#7d9b78'), fgTmp = new THREE.Color();
+    const tintFar = (c) => { const k = clamp((c.sunI * 0.25 + c.hemiI * 0.4) / 1.23, 0, 1); fg.material.color.copy(fgBase).multiplyScalar(k * k).lerp(fgTmp.copy(c.fog), 0.25 * (1 - k)); };
+    this.env.listeners.push(tintFar); tintFar(this.env.cur);
     progress(0.86, 'Placing the stations');
     // initial view
     this.heroView = this.makeHero(); this.rig.setView(this.heroView);
@@ -75,15 +79,21 @@ export class App {
     this.labels.clear('xing');
     for (const c of this.ug.crossings) this.labels.add({ id: 'x-' + c.name, kind: 'xing', text: 'Under the Clyde', pos: () => (this.state.xray > 0.3 ? c.pos.clone().setY(c.pos.y) : c.surface), priority: 0 });
   }
+  /** Close, crisp default view: ~2 km out at a ~45 degree pitch, centred on the loop. */
   makeHero() {
     const c = this.centre.clone(); c.y = this.ground(c.x, c.z);
+    const narrow = innerWidth / innerHeight < 0.8;
+    return { target: c, dist: narrow ? 2500 : 2800, polar: narrow ? 0.78 : 0.9, azim: 0 };
+  }
+  /** Whole loop in frame (used by the tour and the Home button's long press). */
+  makeWide() {
+    const c = this.centre.clone(); c.y = this.ground(c.x, c.z);
     const cs = getComputedStyle(document.documentElement); const lw = parseFloat(cs.getPropertyValue('--lw')) || 0, rw = parseFloat(cs.getPropertyValue('--rw')) || 0;
-    const W = Math.max(300, innerWidth - lw - rw - 40), H = Math.max(300, innerHeight - (innerWidth < 900 ? 330 : 160)); const aspect = W / H; const cam = this.env.camera;
-    const vf = (innerWidth / innerHeight < 0.8 ? 62 : 48) * Math.PI / 180; const tv = Math.tan(vf / 2);
-    const polar = innerWidth / innerHeight < 0.8 ? 0.7 : 0.92; const xs = this.stations.map((s) => s.x), zs = this.stations.map((s) => s.z);
-    const halfX = (Math.max(...xs) - Math.min(...xs)) / 2 + 250, halfZ = ((Math.max(...zs) - Math.min(...zs)) / 2 + 250) * Math.cos(Math.PI / 2 - polar) / 1.0 + 80;
-    const hp = innerHeight; const dist = Math.max(1800, Math.max(halfX * hp / (tv * W), halfZ * hp / (tv * H)) * 1.22);
-    return { target: c, dist, polar, azim: -0.42 * 0 };
+    const W = Math.max(300, innerWidth - lw - rw - 40), H = Math.max(300, innerHeight - (innerWidth < 900 ? 330 : 160));
+    const tv = Math.tan(((innerWidth / innerHeight < 0.8 ? 62 : 48) * Math.PI / 180) / 2); const polar = innerWidth / innerHeight < 0.8 ? 0.7 : 0.92;
+    const xs = this.stations.map((s) => s.x), zs = this.stations.map((s) => s.z);
+    const halfX = (Math.max(...xs) - Math.min(...xs)) / 2 + 250, halfZ = ((Math.max(...zs) - Math.min(...zs)) / 2 + 250) * Math.sin(polar) + 80;
+    return { target: c, dist: Math.max(1800, Math.max(halfX * innerHeight / (tv * W), halfZ * innerHeight / (tv * H)) * 1.22), polar, azim: 0 };
   }
   resize() {
     const p = this.canvas.parentElement; const w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight);
@@ -122,7 +132,7 @@ export class App {
   stationView(id, { xray = this.state.xray, dist, angle = 0.65 } = {}) {
     const f = this.ug.focus(id, xray > 0.5); if (!f) return null;
     const p = f.point.clone(); if (xray > 0.5) p.y += 2;
-    return { target: p, dist: dist ?? (xray > 0.5 ? 150 : 260), polar: xray > 0.5 ? 1.0 : 0.95, azim: -THREE.MathUtils.degToRad(f.heading) + angle };
+    return { target: p, dist: dist ?? (xray > 0.5 ? 150 : 300), polar: xray > 0.5 ? 1.0 : 1.08, azim: -THREE.MathUtils.degToRad(f.heading) + angle };
   }
   hero(dur = 2.6) { return this.rig.flyTo(this.heroView, dur); }
   flyToView(v, dur) { return this.rig.flyTo(v, dur); }
@@ -191,7 +201,7 @@ export class App {
     if (o.light && ['day', 'dusk', 'night'].includes(o.light)) this.setLight(o.light);
     if (o.ex) this.setExaggeration(clamp(parseFloat(o.ex) || 1, 1, 8));
     if (o.xray != null) { this.setXray(clamp(parseFloat(o.xray) || 0, 0, 1)); }
-    if (o.view) { const a = o.view.split(',').map(Number); if (a.length >= 6 && a.every(Number.isFinite)) this.rig.setView({ target: new THREE.Vector3(a[0], a[1], a[2]), dist: a[3], polar: a[4], azim: a[5] }); }
+    if (o.view) { const a = o.view.split(',').map(Number); if (a.length >= 6 && a.every(Number.isFinite)) this.rig.setView({ target: new THREE.Vector3(a[0], a[1], a[2]), dist: clamp(a[3], 18, 6500), polar: clamp(a[4], 0.02, 1.52), azim: a[5] }); }
     if (o.station && this.byId.has(o.station)) { this.selectStation(o.station, { fly: !o.view, quiet: false }); if (!o.view) { const v = this.stationView(o.station); if (v) this.rig.setView(v); } }
     return o;
   }
@@ -238,6 +248,7 @@ export class App {
     const onExit = () => { if (exited) return; exited = true; this.exitSim(); };
     try {
       this.sim = await mod.startSim({ THREE, renderer: this.env.renderer, canvas: this.canvas, container: hud, subway: this.subway, terrain: this.terrainMod, startStation: station || this.state.selected || this.stations[0].id, line, mode, onExit, assetBase: './' });
+      if (exited) { try { this.sim?.dispose?.(); } catch (e) { console.warn(e); } this.sim = null; }
     } catch (e) { console.warn('sim failed', e); this.emit('toast', 'The simulator failed to start.'); onExit(); }
   }
   exitSim() {
