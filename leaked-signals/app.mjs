@@ -107,7 +107,7 @@ function rebuild() {
   const az = fine ? 110 : mid ? 80 : 56;
   const nSrc = Math.max(1, ALL_SOURCES.filter(x => x.kind !== "radar" && sourceFilter(x) && C.erpW(x, S.T) > 0).length);
   const rings = clamp(Math.round(300000 / (nSrc * az * 0.6)), 100, 1400);   // fewer sources -> finer time resolution
-  field = buildField(jdOf(), W, { rings, az, filter: sourceFilter });
+  field = buildField(jdOf(), W, { rings, az, filter: sourceFilter, beacons: !S.solo || S.solo.has("BEACON") });
   fieldKey = soloKey();
   R.setField(field);
   lastBuildMs = performance.now() - t0;
@@ -704,7 +704,11 @@ function renderBroadcasts() {
   el.innerHTML = `<h2>Chase a programme</h2>
   <p>Pick a broadcast to light its wavefront and see which stars lay in its fan. The shell is as thick as the programme is long in light-time (a 2-hour show is a shell 2 light-hours deep). Seen from outside, a mast sends power in every compass direction at once, so one instant is a full ring; the Earth turns while the show airs, so the ring smears into a belt that never leaves ±(90° − latitude) of the celestial equator. Stray dots toward the poles are the 2% of energy that leaks upward.</p>
   <div class="list" id="bList">${[...BROADCASTS].sort((x, y) => x.start < y.start ? -1 : 1).map(b => `<button class="item" type="button" data-b="${b.id}"><div class="t">${esc(b.title)}<span class="tag ${b.status === "missing" ? "missing" : b.status === "live" ? "live" : "ok"}">${b.status === "missing" ? "wiped" : b.status === "live" ? "never recorded" : "survives"}</span></div><div class="m">${b.start.slice(0, 10)} &middot; ${esc(siteById[b.site].name)}</div></button>`).join("")}</div>
-  <div id="bDetail"></div>`;
+  <div id="bDetail"></div>
+  <h2>Messages sent on purpose</h2>
+  <p>Unlike the leaked programmes, these were aimed at a particular star. They travel as a narrow beam, so a single ray rather than a fan.</p>
+  <div class="list" id="msgList">${BEACONS.map(m => { const y = m.date[0] + (m.date[1] - 0.5) / 12, s = beaconSite(m); return `<button class="item" type="button" data-m="${m.id}"><div class="t">${esc(m.name)}<span class="tag ok">${esc(m.targetName)}</span></div><div class="m">sent ${m.date[0]} from ${esc(s.name)} &middot; ${fmtLy(m.targetLy)} ly &middot; arrives about <b>${Math.round(y + m.targetLy).toLocaleString()}</b></div><div class="m">${esc(m.blurb)}</div></button>`; }).join("")}</div>`;
+  $("#msgList").onclick = e => { const b = e.target.closest("[data-m]"); if (!b) return; const m = BEACONS.find(x => x.id === b.dataset.m), d = C.radec2vec(m.ra, m.dec), age = (jdOf() - beaconJd(m)) / C.DAYS_PER_YEAR; if (age > 0) animateTo({ logR: Math.log10(Math.max(age * 1.4, 1e-4)), yaw: Math.atan2(d[1], d[0]) + Math.PI + 0.45, pitch: clamp(-Math.asin(d[2]) + 0.25, -1.4, 1.4) }); };
   $("#bList").onclick = e => { const b = e.target.closest("[data-b]"); if (b) { if (b.dataset.b === S.hl) clearBroadcast(); else selectBroadcast(b.dataset.b); } };
 }
 const listenerCache = {};
@@ -790,11 +794,11 @@ function renderAbout() {
       <li>Transmitter powers are order-of-magnitude (tens of kW in the 1930s growing to megawatts); start dates are recalled public-service dates; some countries have several masts but one is modelled.</li>
       <li>Short-wave and AM radio are mostly reflected by the ionosphere and are not drawn. Only VHF/UHF television (one representative mast per city) and two planetary radars are modelled; FM, air-traffic and military radar are not.</li>
       <li>The overlay guide circles (bubble edge, first-TV ring, beams-end circles) are centred on the Sun-centred origin; the wavefront dots themselves are centred on Earth's actual position, a difference you only see at AU zoom.</li>
-      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is a sub-degree error, smaller than the beam window. Wavefront radii are measured from Earth's position at the moment of emission, so the picture includes the orbit; the quoted arrival dates ignore the Sun-Earth offset of up to 8 light-minutes. Dates after today extrapolate: stations are assumed to stay on air.</li>
+      <li>Sky coordinates mix J2000 star positions with of-date Earth orientation; ignoring precession is an error of about one degree for 1936 emissions, comparable to the beam window. Wavefront radii are measured from Earth's position at the moment of emission, so the picture includes the orbit; the quoted arrival dates ignore the Sun-Earth offset of up to 8 light-minutes. Dates after today extrapolate: stations are assumed to stay on air.</li>
       <li>Each mast's power is a fleet average (peak power times a time-of-day activity factor), and effective radiated power is treated as isotropic equivalent.</li>
       <li>After the digital switch-over a transmitter is modelled at 8% of its analogue power and its signal is noise-like.</li>
       <li>Radar runs are random draws of the real pattern (planets near the ecliptic, a few per cent duty), not a log of actual observations. Arecibo Message and the other deliberate beams use the target's transit as the time of day.</li>
-      <li>Star positions are Simbad J2000 with parallax signal-to-noise above 8 (10,157 distinct stars). Proper motion is ignored (under 0.5% of a star's distance over 90 years, even for Barnard's Star).</li>
+      <li>Star positions are Simbad J2000 with parallax signal-to-noise above 8 (10,157 catalogue entries; binary components are listed separately). Proper motion is ignored (under 0.5% of a star's distance over 90 years, even for Barnard's Star).</li>
       <li>Programme times are the best known UT times, some approximate by a quarter-hour.</li>
     </ul></details>
   <details><summary>Further reading</summary>
