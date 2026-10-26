@@ -67,6 +67,85 @@ function add(parent, geometry, material, x, y, z, sx = 1, sy = 1, sz = 1) {
   return m;
 }
 
+// ---------------------------------------------------------------- driver rig
+const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _e = new THREE.Vector3(), _d = new THREE.Vector3(), _p = new THREE.Vector3();
+const _q = new THREE.Quaternion(), _qs = new THREE.Quaternion(), _Y = new THREE.Vector3(0, 1, 0), _Z = new THREE.Vector3(0, 0, 1);
+const _zrot = new THREE.Quaternion();
+
+function buildDriverRig(body, { paint, trim, dark, box, sph }) {
+  const glove = mat(0x222428, { rough: 0.7 });
+  const limb = geo("limb", () => new THREE.CylinderGeometry(0.075, 0.065, 1, 7));
+  const AXIS = new THREE.Vector3(0, Math.cos(0.62), -Math.sin(0.62));       // column axis, inclined ~35deg, pointing back toward the driver
+  const HUB = new THREE.Vector3(0, 1.0, 0.5);
+  const BASE = HUB.clone().addScaledVector(AXIS, -0.42);
+  const WQ = new THREE.Quaternion().setFromUnitVectors(_Z, AXIS).multiply(new THREE.Quaternion().setFromAxisAngle(_Z, Math.PI)); // local +y = wheel top, local +x = driver's right
+
+  // column
+  const col = new THREE.Mesh(geo("col", () => new THREE.CylinderGeometry(0.045, 0.06, 1, 8)), dark);
+  col.position.copy(BASE).addScaledVector(AXIS, 0.21); col.scale.y = 0.42; col.quaternion.setFromUnitVectors(_Y, AXIS); body.add(col);
+  // wheel (ring + hub + 12 o'clock marker), spins about its own normal
+  const wheel = new THREE.Group(); wheel.name = "steerwheel"; wheel.position.copy(HUB); wheel.quaternion.copy(WQ); body.add(wheel);
+  const spin = new THREE.Group(); wheel.add(spin);
+  spin.add(new THREE.Mesh(geo("ring", () => new THREE.TorusGeometry(0.2, 0.034, 6, 16)), dark));
+  const hubM = new THREE.Mesh(geo("whub", () => new THREE.CylinderGeometry(0.06, 0.06, 0.05, 8)), trim); hubM.rotation.x = Math.PI / 2; spin.add(hubM);
+  const bar = new THREE.Mesh(box, dark); bar.scale.set(0.38, 0.035, 0.03); spin.add(bar);
+  const mark = new THREE.Mesh(box, trim); mark.scale.set(0.05, 0.07, 0.045); mark.position.set(0, 0.2, 0); spin.add(mark);
+
+  // torso + head on a hip pivot so they can lean
+  const HIP = new THREE.Vector3(0, 0.72, -0.12);
+  const driver = new THREE.Group(); driver.name = "driver"; driver.position.copy(HIP); body.add(driver);
+  const lp = (x, y, z) => [x - HIP.x, y - HIP.y, z - HIP.z];
+  const torso = new THREE.Mesh(box, trim); torso.position.set(...lp(0, 0.93, -0.12)); torso.scale.set(0.52, 0.5, 0.34); driver.add(torso);
+  for (const sx of [-1, 1]) { const pad = new THREE.Mesh(sph, trim); pad.position.set(...lp(sx * 0.31, 1.13, -0.12)); pad.scale.setScalar(0.13); driver.add(pad); }
+  const head = new THREE.Group(); head.position.set(...lp(0, 1.27, -0.1)); driver.add(head);
+  const helmet = new THREE.Mesh(sph, paint); helmet.name = "helmet"; helmet.position.y = 0.1; helmet.scale.set(0.31, 0.31, 0.33); head.add(helmet);
+  const visor = new THREE.Mesh(box, mat(0x0b1020, { rough: 0.1, metal: 0.6 })); visor.position.set(0, 0.12, 0.25); visor.scale.set(0.46, 0.15, 0.2); head.add(visor);
+  const stripe = new THREE.Mesh(box, trim); stripe.position.set(0, 0.395, -0.02); stripe.scale.set(0.07, 0.03, 0.36); head.add(stripe);
+  for (const m of [torso, helmet, visor, stripe, col, hubM, bar, mark]) m.castShadow = true;
+
+  // arms: upper, fore, elbow, hand per side
+  const L1 = 0.36, L2 = 0.38;
+  const arms = [-1, 1].map((side) => {   // side +1 = driver's right (world -x)
+    const mk = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = true; body.add(o); return o; };
+    return { side, upper: mk(limb, trim), fore: mk(limb, glove === null ? trim : trim), elbow: mk(sph, trim), hand: mk(sph, glove) };
+  });
+  for (const a of arms) { a.elbow.scale.setScalar(0.085); a.hand.scale.setScalar(0.1); }
+
+  const place = (m, from, to, r) => {
+    _d.subVectors(to, from); const len = _d.length() || 1e-3;
+    m.position.copy(from).addScaledVector(_d, 0.5); m.scale.set(1, len, 1); m.quaternion.setFromUnitVectors(_Y, _d.multiplyScalar(1 / len));
+  };
+
+  function setSteer(st) {
+    const lean = st * 0.1;
+    driver.rotation.z = lean; driver.rotation.y = -st * 0.08;
+    head.rotation.y = -st * 0.4; head.rotation.z = lean * 0.6;
+    const spinA = -st * Math.PI / 2;
+    spin.rotation.z = spinA;
+    const cs = Math.cos(spinA), sn = Math.sin(spinA);
+    const cl = Math.cos(lean), sl = Math.sin(lean);
+    for (const a of arms) {
+      // shoulder in body space, after the torso lean (rotation about the hip, z axis)
+      const sx = a.side * -0.31 - HIP.x, sy = 1.1 - HIP.y;
+      _v.set(HIP.x + sx * cl - sy * sl, HIP.y + sx * sl + sy * cl, -0.12);
+      // grip at ~10 / 2 o'clock on the rim, rotated by the wheel spin
+      const gx = a.side * 0.188, gy = 0.07;
+      _w.set(gx * cs - gy * sn, gx * sn + gy * cs, 0).applyQuaternion(WQ).add(HUB);
+      // two-bone IK
+      _d.subVectors(_w, _v); let dist = _d.length(); const maxR = (L1 + L2) * 0.985;
+      if (dist > maxR) { _w.copy(_v).addScaledVector(_d, maxR / dist); dist = maxR; }
+      _d.normalize();
+      const aa = (L1 * L1 - L2 * L2 + dist * dist) / (2 * dist), h = Math.sqrt(Math.max(0, L1 * L1 - aa * aa));
+      _p.set(a.side * -0.7, -0.75, -0.15);                   // elbow hint: down and out
+      _p.addScaledVector(_d, -_p.dot(_d)).normalize();
+      _e.copy(_v).addScaledVector(_d, aa).addScaledVector(_p, h);
+      place(a.upper, _v, _e); place(a.fore, _e, _w);
+      a.elbow.position.copy(_e); a.hand.position.copy(_w);
+    }
+  }
+  return { spin, driver, setSteer };
+}
+
 export function buildKartMesh(color = 0xe63946, accent = 0xffffff) {
   const root = new THREE.Group();
   root.name = "kart";
@@ -101,29 +180,19 @@ export function buildKartMesh(color = 0xe63946, accent = 0xffffff) {
   add(body, box, trim, 0, 0.26, 1.95, 1.9, 0.07, 0.38);
   for (const sx of [-1, 1]) add(body, box, paint, sx * 0.95, 0.34, 1.95, 0.06, 0.24, 0.42);
   // rear wing
-  add(body, box, trim, 0, 1.18, -1.25, 1.7, 0.07, 0.42);
+  add(body, box, trim, 0, 0.98, -1.3, 1.7, 0.07, 0.4);
   for (const sx of [-1, 1]) {
-    add(body, box, dark, sx * 0.4, 0.92, -1.2, 0.07, 0.5, 0.1);
-    add(body, box, paint, sx * 0.86, 1.1, -1.25, 0.05, 0.3, 0.46);
+    add(body, box, dark, sx * 0.4, 0.78, -1.25, 0.07, 0.4, 0.1);
+    add(body, box, paint, sx * 0.86, 0.95, -1.3, 0.05, 0.3, 0.44);
   }
   // exhausts
   for (const sx of [-1, 1]) {
     const e = add(body, geo("exh", () => new THREE.CylinderGeometry(0.1, 0.13, 0.5, 8)), steel, sx * 0.32, 0.55, -1.45);
     e.rotation.x = Math.PI / 2;
   }
-  // seat + driver
+  // seat + driver (articulated: torso/head pivots, 2-bone IK arms onto a tilted steering wheel)
   add(body, box, dark, 0, 0.78, -0.35, 0.8, 0.5, 0.2);
-  const driver = new THREE.Group(); driver.name = "driver"; body.add(driver);
-  add(driver, box, trim, 0, 0.88, -0.05, 0.6, 0.5, 0.42);                 // torso (suit in accent)
-  for (const sx of [-1, 1]) {
-    const arm = add(driver, geo("arm", () => new THREE.CylinderGeometry(0.08, 0.08, 0.6, 6)), trim, sx * 0.34, 0.98, 0.28);
-    arm.rotation.x = Math.PI / 2 - 0.35;
-  }
-  const helmet = add(driver, sph, paint, 0, 1.36, -0.05, 0.31, 0.31, 0.33); helmet.name = "helmet";
-  add(driver, box, mat(0x0b1020, { rough: 0.1, metal: 0.6 }), 0, 1.38, 0.2, 0.46, 0.15, 0.2);       // visor
-  add(driver, box, trim, 0, 1.64, -0.05, 0.07, 0.04, 0.5);                                           // helmet stripe
-  const wheelCol = new THREE.Group(); wheelCol.name = "steerwheel"; wheelCol.position.set(0, 0.95, 0.38); wheelCol.rotation.x = -0.9; body.add(wheelCol);
-  const rim = new THREE.Mesh(geo("rim", () => new THREE.TorusGeometry(0.17, 0.035, 6, 14)), dark); wheelCol.add(rim);
+  const rig = buildDriverRig(body, { paint, trim, dark, box, sph });
   // lights
   for (const sx of [-1, 1]) {
     add(body, box, mat(0xfff6c8, { emissive: 0xffe9a0, rough: 0.2 }), sx * 0.42, 0.5, 1.62, 0.22, 0.1, 0.06);
@@ -153,7 +222,8 @@ export function buildKartMesh(color = 0xe63946, accent = 0xffffff) {
   sh.rotation.x = -Math.PI / 2; sh.position.y = 0.03; sh.name = "shadow"; sh.renderOrder = 1;
   root.add(sh);
 
-  root.userData = { body, wheels, steerwheel: wheelCol, driver, shadow: sh };
+  root.userData = { body, wheels, steerwheel: rig.spin, driver: rig.driver, shadow: sh, setSteer: rig.setSteer };
+  rig.setSteer(0);
   return root;
 }
 
@@ -172,7 +242,7 @@ export class Kart {
 
     this.mesh = buildKartMesh(color, accent);
     this._body = this.mesh.userData.body; this._wheels = this.mesh.userData.wheels;
-    this._steerWheel = this.mesh.userData.steerwheel; this._shadow = this.mesh.userData.shadow;
+    this._shadow = this.mesh.userData.shadow;
 
     this.position = new THREE.Vector3(); this.velocity = new THREE.Vector3();
     this.heading = 0; this.speed = 0;
@@ -538,7 +608,7 @@ export class Kart {
       if (w.userData.front) w.rotation.y = st;
       w.userData.spin.rotation.x = this._wheelRot;
     }
-    this._steerWheel.rotation.z = this.steerAmount * 1.2;
+    this.mesh.userData.setSteer(this.steerAmount);
   }
 
   // ------------------------------------------------ kart-kart collisions
