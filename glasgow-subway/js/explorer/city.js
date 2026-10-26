@@ -29,6 +29,25 @@ export class City {
       this.root.add(g); this.register(g, { appear: 1 }); this.total = 1; this.loaded = 1; this.placeholder = true; this.hasTerrain = true;
       this.applyAll(); return;
     }
+    try { // coarse whole-area underlay so nothing beyond the loaded chunks looks empty
+      const ov = await this.gltf.loadAsync(new URL('data/city/overview.glb', this.base).href);
+      ov.scene.name = 'overview'; ov.scene.position.y = -14; this.root.add(ov.scene); this.overview = { appear: 1, hidden: false, overview: true };
+      this.register(ov.scene, this.overview);
+      // The overview's merged building masses are taller than the detailed chunks, so they would hide them
+      // (a huge flat grey slab with triangular holes). Cut a hole around the camera target; chunks fill it.
+      this.holeU = { value: new THREE.Vector3(0, 0, 0) };
+      for (const r of this.recs) if (r.chunk === this.overview) for (const m of r.mats) {
+        m.polygonOffset = true; m.polygonOffsetFactor = 4; m.polygonOffsetUnits = 4;
+        if (r.layer === 'buildings') {
+          m.onBeforeCompile = (sh) => {
+            sh.uniforms.uHole = this.holeU;
+            sh.vertexShader = 'varying vec3 vOvWP;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+            sh.fragmentShader = 'varying vec3 vOvWP; uniform vec3 uHole;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n if (uHole.z > 0.0 && dot(vOvWP.xz - uHole.xy, vOvWP.xz - uHole.xy) < uHole.z) discard;');
+          };
+          m.customProgramCacheKey = () => 'ovhole'; m.needsUpdate = true;
+        }
+      }
+    } catch (e) { this.overview = null; }
     this.chunks = this.manifest.chunks.map((c) => ({ ...c, cx: (c.minX + c.maxX) / 2, cz: (c.minZ + c.maxZ) / 2, state: 'idle', appear: 0, group: null }));
     this.total = this.chunks.length;
   }
@@ -53,7 +72,7 @@ export class City {
   factor(layer) { return lerp(1, XRAY_MIN[layer] ?? 0.2, this.xray); }
   applyRec(r) {
     const f = this.factor(r.layer) * r.chunk.appear;
-    const vis = this.layerOn[r.layer] !== false && f > 0.012;
+    const vis = this.layerOn[r.layer] !== false && f > 0.012 && !r.chunk.hidden;
     r.obj.visible = vis; if (!vis) return;
     const night = this.env.emis;
     for (const m of r.mats) {
@@ -72,12 +91,14 @@ export class City {
   update(dt, target) {
     if (this.manifest) {
       const lim = this.quality.chunkRadius;
+      if (this.holeU) { const r = Math.min(lim * 0.8, 3000); this.holeU.value.set(target.x, target.z, r * r); }
       let n = 0;
       for (const c of this.chunks) {
         c.dist = Math.hypot(c.cx - target.x, c.cz - target.z);
         if (c.state === 'idle' && c.dist < lim) n++;
         else if (c.state === 'loaded' && lim < Infinity && c.dist > lim * 1.9) this.unload(c);
       }
+      if (this.overview && !this.overview.hidden && lim === Infinity && !n && this.active === 0 && this.loaded + this.failed >= this.total) { this.overview.hidden = true; this.applyAll(); }
       if (n && this.active < this.quality.chunkParallel) {
         const cand = this.chunks.filter((c) => c.state === 'idle' && c.dist < lim).sort((a, b) => a.dist - b.dist);
         for (const c of cand) { if (this.active >= this.quality.chunkParallel) break; this.load(c); }
@@ -114,6 +135,19 @@ export class City {
     return new Promise((res) => {
       const t0 = performance.now();
       const chk = () => { const elig = this.chunks.filter((c) => c.dist < this.quality.chunkRadius).length || this.total; if (!this.manifest || this.loaded + this.failed >= Math.min(n, elig) || performance.now() - t0 > timeoutMs) res(); else setTimeout(chk, 100); };
+      chk();
+    });
+  }
+  /** Resolves once every chunk whose centre lies within `radius` m of `target` has loaded (or failed). */
+  whenNearLoaded(target, radius = 750, timeoutMs = 40000) {
+    return new Promise((res) => {
+      const t0 = performance.now();
+      const chk = () => {
+        if (!this.manifest) return res();
+        this.update(0.016, target);
+        const near = this.chunks.filter((c) => Math.hypot(c.cx - target.x, c.cz - target.z) < radius);
+        if (near.every((c) => c.state === 'loaded' || c.state === 'failed') || performance.now() - t0 > timeoutMs) res(); else setTimeout(chk, 120);
+      };
       chk();
     });
   }

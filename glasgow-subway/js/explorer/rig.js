@@ -8,7 +8,7 @@ export class Rig {
     this.camera = camera; this.dom = dom; this.ground = ground;
     const c = this.controls = new OrbitControls(camera, dom);
     c.enableDamping = true; c.dampingFactor = 0.09; c.screenSpacePanning = false; c.zoomToCursor = true;
-    c.minDistance = 18; c.maxDistance = 9000; c.maxPolarAngle = THREE.MathUtils.degToRad(87); c.minPolarAngle = 0.02;
+    c.minDistance = 18; c.maxDistance = 6500; c.maxPolarAngle = THREE.MathUtils.degToRad(87); c.minPolarAngle = 0.02;
     c.rotateSpeed = 0.7; c.panSpeed = 1.0; c.zoomSpeed = 0.9;
     c.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     c.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };

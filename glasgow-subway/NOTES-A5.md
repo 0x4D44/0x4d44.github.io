@@ -16,3 +16,5 @@ Decisions
 - Other line's train in island stations is not simulated (other bore is a dark stub).
 - Street scene uses data/city chunks if manifest exists, else procedural tenements + entrance_kiosk.glb.
 - Keys: W/S lever, X emergency, Space vigilance, O/P doors, ,/. side, A ATO, R reverse, E interact, N alight next, H help, M mute, Esc menu, L score log.
+
+Reviewer 1 fixes: full-height gangway apertures (AP_TOP 2.38) so a standing eye sees/walks end to end; cab windscreen enlarged (opaque header bar + desk z-fight removed); island vault end pier has a ramp opening (lintel only); far tunnel tube textured with ring_concrete; dispose now frees materials/textures (was leaking ~27 textures per start/dispose); blur clears stuck keys; low tier trims near tunnel rings. Regression tests in tools/test_sim.mjs (gangway sightline, ramp not walled).

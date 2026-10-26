@@ -26,17 +26,18 @@ def build_kiosk():
     for sx in (-1, 1): m.box((sx * (W_ / 2 - 0.1), cy, 1.55), (0.03, D_ - 0.2, 2.5), 'glass_clear')   # side glass
     m.to_obj('shelter_glass', parent=root)
     m = M()    # lit fascia sign: blank faces front (+Y) with roundel
-    m.quad_uv((-W_ / 2 + 0.6, cy + D_ / 2 + 0.355, H_ + 0.02), (W_ / 2 - 0.1, cy + D_ / 2 + 0.355, H_ + 0.02), (W_ / 2 - 0.1, cy + D_ / 2 + 0.355, H_ + 0.22), (-W_ / 2 + 0.6, cy + D_ / 2 + 0.355, H_ + 0.22), 'sign_blank')
-    roundel(m, (-W_ / 2 + 0.3, cy + D_ / 2 + 0.36, H_ + 0.12), 0.11)
+    yb = cy + D_ / 2 + 0.2
+    m.box((0, yb - 0.03, H_ + 0.62), (3.3, 0.06, 0.64), 'steel_dark')
+    m.quad_uv((-1.62, yb + 0.002, H_ + 0.32), (1.62, yb + 0.002, H_ + 0.32), (1.62, yb + 0.002, H_ + 0.92), (-1.62, yb + 0.002, H_ + 0.92), 'sign_name_board')
     m.to_obj('sign_fascia', parent=root)
     # ---- free standing roundel pylon (SPT roundel) 4.5 m
     m = M(); px, py = 3.3, 1.2
     m.box((px, py, 2.0), (0.22, 0.22, 4.0), 'steel_dark')
-    m.cyl((px, py, 4.35), 0.5, 0.14, 'sign_orange', axis='y', seg=32); m.cyl((px, py + 0.08, 4.35), 0.40, 0.04, 'sign_white', axis='y', seg=32)
-    m.box((px, py + 0.11, 4.35), (1.05, 0.04, 0.16), 'sign_blue')
-    m.cyl((px, py - 0.08, 4.35), 0.4, 0.04, 'sign_white', axis='y', seg=32); m.box((px, py - 0.11, 4.35), (1.05, 0.04, 0.16), 'sign_blue')
+    m.cyl((px, py, 4.35), 0.5, 0.14, 'sign_orange', axis='y', seg=32)
+    roundel(m, (px, py + 0.07, 4.35), 0.5)
+    roundel(m, (px, py - 0.07, 4.35), 0.5)
     m.box((px, py, 3.6), (0.8, 0.12, 0.3), 'sign_orange')
-    m.quad_uv((px - 0.38, py + 0.065, 3.46), (px + 0.38, py + 0.065, 3.46), (px + 0.38, py + 0.065, 3.74), (px - 0.38, py + 0.065, 3.74), 'sign_blank')
+    m.quad_uv((px - 0.38, py + 0.065, 3.46), (px + 0.38, py + 0.065, 3.46), (px + 0.38, py + 0.065, 3.74), (px - 0.38, py + 0.065, 3.74), 'sign_name_board')
     m.to_obj('pylon_roundel', parent=root)
     # ---- stair opening : well with steps descending in +Y direction -> toward -Z.  stairs run along y from 0.6 to 3.2, down to -2.4
     m = M(); n = 14; rise = 2.4 / n; tread = 0.28; x0 = 0.0
@@ -144,8 +145,7 @@ def build_portal():
     for i in range(6):
         m.box((-SW / 2 + 2 + i * 7.2, SY0 + 5, RISE + 0.6), (0.8, 0.8, 1.2), 'steel_dark')
     m.box((0, SY0 + SL + 0.2, RISE + 6.0), (1.6, 0.2, 1.0), 'sign_orange')
-    roundel(m, (0, SY0 - 0.28, RISE + 5.7 + 0.0), 0.0 + 0.0 + 0.7)
-    m.quad_uv((-3.5, SY0 - 0.32, RISE + 6.0), (3.5, SY0 - 0.32, RISE + 6.0), (3.5, SY0 - 0.32, RISE + 6.9), (-3.5, SY0 - 0.32, RISE + 6.9), 'sign_blank')
+    m.quad_uv((-3.5, SY0 - 0.32, RISE + 6.0), (3.5, SY0 - 0.32, RISE + 6.0), (3.5, SY0 - 0.32, RISE + 6.9), (-3.5, SY0 - 0.32, RISE + 6.9), 'sign_name_board')
     m.to_obj('depot_details', parent=root)
     empty('portal_mouth', loc=(0, 0, 0), parent=root, kind='ARROWS', size=1.0)
     empty('depot_entry_L', loc=(-4.0, SY0, RISE), parent=root)
