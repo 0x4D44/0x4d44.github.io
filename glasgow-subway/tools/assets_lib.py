@@ -60,6 +60,7 @@ PALETTE = {
     'button_amber':    ('#f0a000', 0.0, 0.4, '#f0a000', 1.5, 1, None),
     # tunnel / station
     'escalator_tread': ('#9a9ca0', 0.6, 0.5, None, 0, 1, 'grooves'),
+    'brick_dark':      ('#7a5a4a', 0.0, 0.9, None, 0, 1, 'brick'),
     'ring_concrete':   ('#ffffff', 0.0, 0.92, None, 0, 1, 'ring_concrete'),
     'ring_iron':       ('#ffffff', 0.5, 0.7, None, 0, 1, 'ring_iron'),
     'sign_roundel':    ('#ffffff', 0.0, 0.45, None, 0, 1, 'roundel'),
@@ -227,6 +228,12 @@ class M:
         rot = {'z': Matrix.Identity(4), 'x': Matrix.Rotation(math.pi/2, 4, 'Y'), 'y': Matrix.Rotation(-math.pi/2, 4, 'X')}[axis]
         mx = Matrix.Translation(Vector(c)) @ rot
         res = bmesh.ops.create_cone(self.bm, cap_ends=True, cap_tris=False, segments=seg, radius1=r, radius2=(r if r2 is None else r2), depth=h, matrix=mx)
+        self._tag({f for v in res['verts'] for f in v.link_faces}, m)
+    def cyl_between(self, p0, p1, r, m, seg=8):
+        a = Vector(p0); b = Vector(p1); d = b - a; l = d.length
+        q = Vector((0, 0, 1)).rotation_difference(d)
+        mx = Matrix.Translation((a + b) / 2) @ q.to_matrix().to_4x4()
+        res = bmesh.ops.create_cone(self.bm, cap_ends=True, cap_tris=False, segments=seg, radius1=r, radius2=r, depth=l, matrix=mx)
         self._tag({f for v in res['verts'] for f in v.link_faces}, m)
     def sphere(self, c, r, m, sx=1, sy=1, sz=1, seg=10):
         mx = Matrix.Translation(Vector(c)) @ Matrix.Diagonal(Vector((sx, sy, sz, 1)))

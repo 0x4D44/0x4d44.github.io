@@ -92,6 +92,13 @@ def build_segment():
              ('seg_iron', 'ring_iron', False, 0.0), ('seg_iron_lamp', 'ring_iron', True, 0.0)]
     for name, lining, lamp, _ in specs:
         o = build_ring(lining, lamp).to_obj(name, parent=root)
+    # tunnel MOUTH: concrete ring + dark brick header collar (3 courses) around the bore at the +Z... (Blender -Y) end; rotate 180 deg about Y for the other end
+    mm = build_ring('ring_concrete', False); y0 = -RING / 2
+    o1 = arc(R, PHI0, PHI1, 56); o2 = arc(R + 0.45, PHI0, PHI1, 56)
+    for i in range(56):
+        f = mm.quad((o1[i][0], y0, o1[i][1]), (o1[i + 1][0], y0, o1[i + 1][1]), (o2[i + 1][0], y0, o2[i + 1][1]), (o2[i][0], y0, o2[i][1]), 'brick_dark')
+    mm.box((0, y0 + 0.0, -0.20), (2 * (R + 0.45) * math.cos(PHI0) + 0.4, 0.0001, 0.0001), 'brick_dark')
+    mm.to_obj('seg_mouth', parent=root)
     # anchor empties for runtime point lights (relative to ring centre)
     empty('light_anchor', loc=(1.40, 0.0, 2.1), parent=root)
     return root
