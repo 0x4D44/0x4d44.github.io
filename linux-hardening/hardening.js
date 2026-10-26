@@ -46,7 +46,7 @@
     var LAYER2 = [["/usr", "RX"]];
     var RIGHT = { R: "read", W: "write", X: "execute", C: "create/delete" };
     PATHS.forEach(function (p) { pathSel.add(new Option(p, p)); });
-    pathSel.value = "/etc/shadow";
+    pathSel.value = "/home/user/.ssh/id_ed25519";
     function under(rule, p) { return rule === "/" || p === rule || p.indexOf(rule + "/") === 0; }
     function layerAllows(rules, p, r) {
       for (var i = 0; i < rules.length; i++) {
@@ -111,7 +111,7 @@
       if (m === "none") msg = "<span class=\"verdict bad\">" + n.toLocaleString() + " processes after " + ROUNDS + " rounds</span>, and doubling. The process table, memory and scheduler are exhausted and the host stops responding.";
       else if (m === "seccomp") msg = "<span class=\"verdict ok\">1 process.</span> <code>fork</code> returns -1 (EPERM). Threads are still allowed, so a multi-threaded program works; a fork bomb never starts.";
       else if ((m === "pids" || m === "nproc") && hit < 0) msg = "<span class=\"verdict ok\">Limit not hit</span> within " + ROUNDS + " rounds: the bomb reached " + n.toLocaleString() + " processes and the limit is " + cap.toLocaleString() + ". Lower the limit to see it bite.";
-      else if (m === "pids") msg = "<span class=\"verdict ok\">Capped at " + n + " tasks</span> from round " + hit + ". <code>fork</code> fails with EAGAIN inside the cgroup; the host and other cgroups are untouched. Threads count toward the cap, and the workload can still fork up to the limit.";
+      else if (m === "pids") msg = "<span class=\"verdict ok\">Capped at " + n + (n === 1 ? " task" : " tasks") + "</span> from round " + hit + ". <code>fork</code> fails with EAGAIN inside the cgroup; the host and other cgroups are untouched. Threads count toward the cap, and the workload can still fork up to the limit.";
       else if (O >= L) msg = "<span class=\"verdict bad\">The UID is already at its limit (" + O + " of " + L + ").</span> The sandbox cannot fork, but neither can any other process of that UID: collateral damage. RLIMIT_NPROC is per real UID, not per sandbox.";
       else msg = "<span class=\"verdict bad\">Capped at " + n + "</span>, but only because the UID's total is bounded at " + L + ". The bomb has used up all " + (L - O) + " remaining slots, so <em>every other process of that UID</em> now fails to fork too. Root and CAP_SYS_RESOURCE would not be limited at all.";
       out.className = "out " + (m === "seccomp" || m === "pids" ? "ok" : "bad");
@@ -187,11 +187,13 @@
         ["Service-account tokens and cloud metadata not reachable unless needed", 2]]],
       ["Boundary and host", [
         ["Code you do not trust runs behind gVisor or a microVM (Kata, Firecracker), not a plain shared-kernel container (mark n/a for your own trusted services)", 4],
-        ["Host kernel patched; unprivileged BPF off, kptr_restrict, yama ptrace set", 3],
+        ["Host kernel is patched and supported", 1],
+        ["Unprivileged BPF is off (kernel.unprivileged_bpf_disabled=1 or 2)", 1],
+        ["kernel.kptr_restrict and kernel.yama.ptrace_scope are set", 1],
         ["Unused kernel features disabled (io_uring, unprivileged user namespaces, modules)", 2],
         ["Runtime detection or enforcement in place (Falco, Tetragon, audit logs)", 1]]]
     ];
-    var KEY = "hardening.audit.v3", state = {};
+    var KEY = "hardening.audit.v4", state = {};
     try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
     G.forEach(function (g, gi) {
       var h = document.createElement("h4"); h.textContent = g[0]; root.appendChild(h);
