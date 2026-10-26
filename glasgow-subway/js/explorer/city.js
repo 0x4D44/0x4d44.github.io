@@ -29,6 +29,12 @@ export class City {
       this.root.add(g); this.register(g, { appear: 1 }); this.total = 1; this.loaded = 1; this.placeholder = true; this.hasTerrain = true;
       this.applyAll(); return;
     }
+    try { // coarse whole-area underlay so nothing beyond the loaded chunks looks empty
+      const ov = await this.gltf.loadAsync(new URL('data/city/overview.glb', this.base).href);
+      ov.scene.name = 'overview'; ov.scene.position.y = -14; this.root.add(ov.scene); this.overview = { appear: 1, hidden: false, overview: true };
+      this.register(ov.scene, this.overview);
+      for (const r of this.recs) if (r.chunk === this.overview) for (const m of r.mats) { m.polygonOffset = true; m.polygonOffsetFactor = 4; m.polygonOffsetUnits = 4; }
+    } catch (e) { this.overview = null; }
     this.chunks = this.manifest.chunks.map((c) => ({ ...c, cx: (c.minX + c.maxX) / 2, cz: (c.minZ + c.maxZ) / 2, state: 'idle', appear: 0, group: null }));
     this.total = this.chunks.length;
   }
@@ -53,7 +59,7 @@ export class City {
   factor(layer) { return lerp(1, XRAY_MIN[layer] ?? 0.2, this.xray); }
   applyRec(r) {
     const f = this.factor(r.layer) * r.chunk.appear;
-    const vis = this.layerOn[r.layer] !== false && f > 0.012;
+    const vis = this.layerOn[r.layer] !== false && f > 0.012 && !r.chunk.hidden;
     r.obj.visible = vis; if (!vis) return;
     const night = this.env.emis;
     for (const m of r.mats) {
@@ -78,6 +84,7 @@ export class City {
         if (c.state === 'idle' && c.dist < lim) n++;
         else if (c.state === 'loaded' && lim < Infinity && c.dist > lim * 1.9) this.unload(c);
       }
+      if (this.overview && !this.overview.hidden && lim === Infinity && !n && this.active === 0 && this.loaded + this.failed >= this.total) { this.overview.hidden = true; this.applyAll(); }
       if (n && this.active < this.quality.chunkParallel) {
         const cand = this.chunks.filter((c) => c.state === 'idle' && c.dist < lim).sort((a, b) => a.dist - b.dist);
         for (const c of cand) { if (this.active >= this.quality.chunkParallel) break; this.load(c); }

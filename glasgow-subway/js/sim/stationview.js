@@ -23,6 +23,12 @@ export function stationFacts(st) {
   return f.filter(Boolean);
 }
 
+/** Half length of the station room (platform + open end frames); index.js uses it to hide tunnel rings inside the station. */
+export function stationHalfLength(st, trainLen, useVault = true) {
+  const PL = Math.max(st.platform && st.platform.lengthM || 45, trainLen + 6) / 2;
+  return useVault ? Math.ceil(PL / 0.6) * 0.6 + 0.5 : PL + END_PAD;
+}
+
 export function buildStation(THREE, o) {
   const { station: st, stop, side: S, lineKey, trainLen, idx } = o;
   const kit = o.kit || null;
@@ -31,118 +37,132 @@ export function buildStation(THREE, o) {
   const style = styleFor(st, idx);
   const seed = hashStr(st.id); const rng = mulberry32(seed);
   const type = (st.platform && st.platform.type) || 'island';
-  const island = type === 'island';
-  const PL = Math.max(st.platform && st.platform.lengthM || 45, trainLen + 6) / 2;
-  const W = clamp((st.platform && st.platform.widthM || 5) * 0.85, 3.8, 5.6);
-  const xe = S * EDGE;                       // platform edge
-  const xo = S * (EDGE + W);                 // platform outer edge (island: edge of second track gap)
-  const otherTrackX = S * (EDGE + W + EDGE); // island: other line's track
-  const xa = -S * 2.9;                       // room edge on own-track side
-  const xb = island ? S * (EDGE + W + EDGE + 2.9) : S * (EDGE + W + 0.15);
+  const island = type === 'island' || type === 'split';
+  // ---- textured A3 vault (models/tunnel_station_vault.glb): sections instanced along the platform
+  const vname = island ? 'vault_island' : 'vault_side';
+  const VP = { sec: kitParts(THREE, o.vault, vname), rib: kitParts(THREE, o.vault, vname + '_rib'), end: kitParts(THREE, o.vault, vname + '_end') };
+  const useVault = !!(VP.sec && VP.end);
+  const PLraw = Math.max(st.platform && st.platform.lengthM || 45, trainLen + 6) / 2;
+  const PL = useVault ? Math.ceil(PLraw / 0.6) * 0.6 : PLraw;
+  let W, xe, xo, otherTrackX, xa, xb, vaultT = 0;
+  if (useVault) {
+    // vault origin = station centreline; own track must land on local x=0
+    vaultT = island ? S * 3.25 : -S * 1.95;
+    if (island) { xe = S * 1.25; xo = S * 5.25; otherTrackX = S * 6.5; xa = vaultT - S * 5.25; xb = vaultT + S * 5.25; }
+    else { xe = S * 1.3; xo = S * 3.95; otherTrackX = -S * 3.9; xa = vaultT - S * 5.9; xb = vaultT + S * 5.9; }
+    W = Math.abs(xo - xe);
+    if (S < 0) { const t = xa; xa = xb; xb = t; }   // xa = wall on the own-track (non-platform) side, xb = far wall
+    xa = S > 0 ? Math.min(vaultT - (island ? 5.25 : 5.9), vaultT + (island ? 5.25 : 5.9)) : Math.max(vaultT - (island ? 5.25 : 5.9), vaultT + (island ? 5.25 : 5.9));
+    xb = S > 0 ? Math.max(vaultT - (island ? 5.25 : 5.9), vaultT + (island ? 5.25 : 5.9)) : Math.min(vaultT - (island ? 5.25 : 5.9), vaultT + (island ? 5.25 : 5.9));
+  } else {
+    W = clamp((st.platform && st.platform.widthM || 5) * 0.85, 4.4, 5.8);
+    xe = S * EDGE; xo = S * (EDGE + W); otherTrackX = S * (EDGE + W + EDGE);
+    xa = -S * 2.9; xb = island ? S * (EDGE + W + EDGE + 2.9) : S * (EDGE + W + 0.15);
+  }
   const xmin = Math.min(xa, xb), xmax = Math.max(xa, xb), xc0 = (xmin + xmax) / 2, hw = (xmax - xmin) / 2;
-  const zE = PL + END_PAD;                   // room half-length
+  const zE = useVault ? PL + 0.2 : PL + END_PAD;                   // room half-length
   const wallH = 3.1, archH = island ? 2.5 : 2.3;
-  const ceilY = (x) => wallH + archH * Math.sqrt(Math.max(0, 1 - ((x - xc0) / hw) ** 2));
-  const xcP = S * (EDGE + W / 2);            // platform centreline
+  const ceilY = useVault ? (() => 5.0) : (x) => wallH + archH * Math.sqrt(Math.max(0, 1 - ((x - xc0) / hw) ** 2));
+  const xcP = (xe + xo) / 2;                 // platform centreline
+  const rampW = useVault ? (island ? 2.8 : 2.0) : 3.5;
+  const rcx = useVault ? (island ? xcP : S * 2.95) : S * Math.max(EDGE + W / 2, 1.68 + 0.5 + 3.5 / 2); // ramp/concourse axis: clear of the bore holes
   const depth = st.depth || 10;
   const Hc = clamp(depth * 0.55, 5.2, 8.5);  // concourse floor
   const Hs = Math.max(Hc + 3.2, depth);      // street level (relative)
-  const rampW = 4.2, rampZ0 = zE, slope = 0.56, Lr = (Hc - PY) / slope, rampZ1 = rampZ0 + Lr;
+  const rampZ0 = zE + (useVault ? 0.3 : 0), slope = 0.56, Lr = (Hc - PY) / slope, rampZ1 = rampZ0 + Lr;
   const zc0 = rampZ1, conL = 22, conW = 9;   // concourse half width conW
   const exitZ0 = zc0 + conL, Ls = (Hs - Hc) / 0.52, exitZ1 = exitZ0 + Ls;
 
   const group = new THREE.Group(); group.name = 'station_' + st.id;
-  const zones = [], obstacles = [], anchors = {}, anim = [], lights = [];
+  const zones = [], obstacles = [], anchors = {}, anim = [], lights = [], ownMats = [];
 
-  // ------------ materials
-  const mTile = new THREE.MeshLambertMaterial({ map: tileTexture(THREE, style.dado, '#cfc8b4', 8, seed), side: THREE.DoubleSide });
-  const mUpper = new THREE.MeshLambertMaterial({ map: tileTexture(THREE, style.upper, '#d8d2c0', 8, seed + 1), side: THREE.DoubleSide });
+  // ------------ materials (textured vault tiles tinted per station when available; canvas fallback otherwise)
+  const vmat = (name) => { if (!useVault) return null; let m = null; for (const arr of [VP.sec, VP.end]) for (const p of arr) { const mm = Array.isArray(p.mat) ? p.mat : [p.mat]; for (const x of mm) if (x.name === name) m = x; } return m; };
+  const tinted = (name, hex) => { const m = vmat(name); if (!m) return null; const c = m.clone(); c.color = new THREE.Color(hex); c.side = THREE.DoubleSide; ownMats.push(c); return c; };
+  const mTile = tinted('tile_orange', style.dado) || new THREE.MeshLambertMaterial({ map: tileTexture(THREE, style.dado, '#cfc8b4', 8, seed), side: THREE.DoubleSide });
+  const mUpper = tinted('tile_cream', style.upper) || new THREE.MeshLambertMaterial({ map: tileTexture(THREE, style.upper, '#d8d2c0', 8, seed + 1), side: THREE.DoubleSide });
   const stoneTex = canvasTex(THREE, 256, 256, (g, w, h) => { g.fillStyle = '#6f6f72'; g.fillRect(0, 0, w, h); const r = mulberry32(5); for (let i = 0; i < 2500; i++) { const v = 90 + r() * 60; g.fillStyle = `rgb(${v},${v},${v + 4})`; g.fillRect(r() * w, r() * h, 2, 2); } g.strokeStyle = 'rgba(0,0,0,.25)'; g.strokeRect(0, 0, w, h); g.beginPath(); g.moveTo(w / 2, 0); g.lineTo(w / 2, h); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke(); }, { repeat: true });
-  const mFloor = new THREE.MeshLambertMaterial({ map: stoneTex, side: THREE.DoubleSide });
-  const mConFloor = new THREE.MeshLambertMaterial({ map: stoneTex, color: 0xcbb99a, side: THREE.DoubleSide });
+  const mFloor = (() => { const m = vmat('platform_floor'); if (m) { const c = m.clone(); c.side = THREE.DoubleSide; ownMats.push(c); return c; } return new THREE.MeshLambertMaterial({ map: stoneTex, side: THREE.DoubleSide }); })();
+  const fu = useVault ? 1 : 1 / 2.4;           // floor uv per metre
   const mVC = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
   const mLamp = new THREE.MeshBasicMaterial({ color: 0xfff1c8 });
   const mStep = (() => { const t = canvasTex(THREE, 64, 64, (g, w, h) => { g.fillStyle = '#9aa0a6'; g.fillRect(0, 0, w, h); g.fillStyle = '#4a4f55'; for (let i = 0; i < 4; i++) g.fillRect(0, i * 16 + 11, w, 5); }, { repeat: true }); return new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide }); })();
-  const stoneRep = (x, y) => { stoneTex.repeat.set(x, y); };
   const col = (hex) => { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; };
   const cDado = col(style.dado), cTrim = col(style.trim), cAcc = col(style.accent);
   const Bt = new GeoBuilder(), Bu = new GeoBuilder(), Bf = new GeoBuilder(), Bc = new GeoBuilder(), Bv = new GeoBuilder(), Bl = new GeoBuilder(), Bs = new GeoBuilder();
-  const tileU = 1 / 1.2;
-
-  // ------------ platform room
-  // floor of pit (track bed) and platform
-  Bv.box(xmin, -0.5, -zE, xmax, -0.2, zE, [0.12, 0.12, 0.13], 2);
+  const tileU = useVault ? 1 : 1 / 1.2;
   const pxa = Math.min(xe, xo), pxb = Math.max(xe, xo);
-  Bf.quad([pxa, PY, zE], [pxb, PY, zE], [pxb, PY, -zE], [pxa, PY, -zE], [0, 0, (pxb - pxa) / 2.4, (2 * zE) / 2.4], [1, 1, 1]);
-  Bv.box(Math.min(xe, xe - S * 0.08), -0.2, -zE, Math.max(xe, xe - S * 0.08) + (S > 0 ? 0 : 0), PY, zE, [0.55, 0.55, 0.55], 1); // platform face
-  // fix: face slab sits inside the platform edge
-  // tactile yellow strip
   const ty0 = Math.min(xe, xe + S * 0.55), ty1 = Math.max(xe, xe + S * 0.55);
-  Bl.quad([ty0, PY + 0.012, zE], [ty1, PY + 0.012, zE], [ty1, PY + 0.012, -zE], [ty0, PY + 0.012, -zE], [0, 0, 1, 1], [1, 1, 1]);
-  // rails
-  const rails = (tx, len) => {
-    for (const dx of [-0.61, 0.61]) Bv.box(tx + dx - 0.04, 0, -len, tx + dx + 0.04, 0.13, len, [0.5, 0.5, 0.52], 1);
-    Bv.box(tx + 0.9, 0.0, -len, tx + 1.0, 0.16, len, [0.35, 0.28, 0.2], 1);
-    for (let z = -len; z < len; z += 0.75) Bv.box(tx - 0.95, -0.2, z, tx + 0.95, -0.08, z + 0.2, [0.22, 0.2, 0.18], 1);
-  };
-  rails(0, zE); if (island) rails(otherTrackX, zE);
-  // walls
   const wallQuad = (x, zA, zB, y0, y1, B, c, tx) => { B.quad([x, y0, zA], [x, y0, zB], [x, y1, zB], [x, y1, zA], [0, y0 * tx, Math.abs(zB - zA) * tx, y1 * tx], c); };
-  const dadoH = 2.2;
-  // own-track side wall (x = xa) and far wall
-  for (const [x, flip] of [[xa, 0], [xb, 1]]) {
-    wallQuad(x, -zE, zE, -0.2, dadoH, Bt, [1, 1, 1], tileU);
-    wallQuad(x, -zE, zE, dadoH, wallH, Bu, [1, 1, 1], tileU);
-    // trim band
-    const dir = x > xc0 ? -1 : 1;
-    Bl.box(x - (dir > 0 ? 0 : 0.05), dadoH, -zE, x + dir * 0.05 + (dir > 0 ? 0.05 : 0), dadoH + 0.12, zE, cTrim, 1);
-  }
-  // vault surface (upper tile) across the room
-  const NS = 18;
-  for (let i = 0; i < NS; i++) {
-    const x0 = xmin + (xmax - xmin) * i / NS, x1 = xmin + (xmax - xmin) * (i + 1) / NS;
-    Bu.quad([x0, ceilY(x0), zE], [x1, ceilY(x1), zE], [x1, ceilY(x1), -zE], [x0, ceilY(x0), -zE], [x0 * tileU, 0, x1 * tileU, 2 * zE * tileU], [0.95, 0.95, 0.9]);
-  }
-  // wall/ceiling arc between wallH level: arch springs from wallH, so walls go up to wallH. (already)
-  // accent ribs every 6 m
-  for (let z = -PL; z <= PL + 0.1; z += 6) {
-    for (let i = 0; i < NS; i++) {
-      const x0 = xmin + (xmax - xmin) * i / NS, x1 = xmin + (xmax - xmin) * (i + 1) / NS;
-      Bl.quad([x0, ceilY(x0) - 0.04, z + 0.16], [x1, ceilY(x1) - 0.04, z + 0.16], [x1, ceilY(x1) - 0.04, z - 0.16], [x0, ceilY(x0) - 0.04, z - 0.16], [0, 0, 1, 1], cTrim);
-    }
-    // lamp boxes
-    for (const lx of [xc0 - hw * 0.45, xc0 + hw * 0.45]) Bs.box(lx - 0.35, ceilY(lx) - 0.14, z - 0.9, lx + 0.35, ceilY(lx) - 0.04, z + 0.9, [1, 1, 1], 1);
-  }
-  // end walls with bore holes (and ramp opening at +z)
+  // end wall with round bore holes (and, at +z, the ramp opening). Holes never overlap (earcut would fail).
   const endWall = (zz, withRamp) => {
     const shp = new THREE.Shape();
-    shp.moveTo(xmin, -0.5); shp.lineTo(xmax, -0.5);
-    const seg = 24; for (let i = 0; i <= seg; i++) { const x = xmax - (xmax - xmin) * i / seg; shp.lineTo(x, ceilY(x)); }
-    shp.lineTo(xmin, -0.5);
+    shp.moveTo(xmin, -1.1); shp.lineTo(xmax, -1.1);
+    const seg = 24; for (let i = 0; i <= seg; i++) { const x = xmax - (xmax - xmin) * i / seg; shp.lineTo(x, useVault ? 4.9 + 0.1 * Math.cos((x - xc0) / hw * Math.PI / 2) * 0 - 0.9 * Math.pow(Math.abs((x - xc0) / hw), 4) : ceilY(x)); }
+    shp.lineTo(xmin, -1.1);
     const holes = [];
     const circ = (cx, cy, r) => { const h = new THREE.Path(); for (let i = 0; i <= 28; i++) { const a = -i / 28 * Math.PI * 2; const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r; if (i) h.lineTo(px, py); else h.moveTo(px, py); } return h; };
-    holes.push(circ(0, 1.2, 1.68)); if (island) holes.push(circ(otherTrackX, 1.2, 1.68));
+    holes.push(circ(0, 1.2, 1.72)); holes.push(circ(otherTrackX, 1.2, 1.72));
     if (withRamp) {
-      const h = new THREE.Path(); const a = xcP - rampW / 2 + 0.1, b = xcP + rampW / 2 - 0.1;
+      const h = new THREE.Path(); const a = rcx - rampW / 2 + 0.05, b = rcx + rampW / 2 - 0.05;
       h.moveTo(a, PY); h.lineTo(a, PY + 2.7); h.lineTo(b, PY + 2.7); h.lineTo(b, PY); h.lineTo(a, PY); holes.push(h);
     }
     shp.holes = holes;
     const geo = new THREE.ShapeGeometry(shp, 8);
     const pos = geo.attributes.position, uv = geo.attributes.uv;
     for (let i = 0; i < pos.count; i++) { uv.setXY(i, pos.getX(i) * tileU, pos.getY(i) * tileU); pos.setZ(i, zz); }
-    const m = new THREE.Mesh(geo, mUpper); group.add(m);
+    const m = new THREE.Mesh(geo, mUpper); m.userData.tag = 'endwall' + (zz > 0 ? '+' : '-'); group.add(m);
   };
-  endWall(-zE, false); endWall(zE, true);
-  // bore stub beyond the end walls (dark tube) so that holes do not show void
   const stubMat = new THREE.MeshLambertMaterial({ color: 0x2b2d30, side: THREE.BackSide });
-  const stubs = [0].concat(island ? [otherTrackX] : []);
-  for (const tx of stubs) for (const dz of [-1, 1]) {
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(1.68, 1.68, 40, 16, 1, true), stubMat);
-    cyl.rotation.x = Math.PI / 2; cyl.position.set(tx, 1.2, dz * (zE + 20)); group.add(cyl);
-    if (tx !== 0) { const t = new GeoBuilder(); t.box(tx - 1, -0.3, dz * (zE), tx + 1, -0.1, dz * (zE + 40), [0.15, 0.15, 0.15], 1); group.add(new THREE.Mesh(t.build(THREE), mVC)); }
+  const addStub = (tx, zStart) => { for (const dz of [-1, 1]) {
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(1.76, 1.76, 10, 24, 1, true), stubMat);
+    cyl.rotation.x = Math.PI / 2; cyl.position.set(tx, 1.2, dz * (zStart + 5)); cyl.userData.tag = 'stub'; group.add(cyl);
+    const t = new GeoBuilder(); t.box(tx - 1, -0.3, dz * zStart, tx + 1, -0.1, dz * (zStart + 10), [0.15, 0.15, 0.15], 1); group.add(new THREE.Mesh(t.build(THREE), mVC)); } };
+
+  // ------------ platform room
+  if (useVault) {
+    const n = Math.round((2 * PL) / 1.2), secM = [], ribM = [], endM = [];
+    for (let k = 0; k < n; k++) { const z = -PL + 0.6 + k * 1.2; (VP.rib && k % 5 === 2 ? ribM : secM).push(placeMatrix(THREE, vaultT, 0, z, 0)); }
+    endM.push(placeMatrix(THREE, vaultT, 0, PL, 0), placeMatrix(THREE, vaultT, 0, -PL, Math.PI));
+    const vopts = { material: (m) => { const arr = Array.isArray(m) ? m : [m]; const out = arr.map((x) => /^tile_(cream|white)$/.test(x.name) ? (tinted(x.name, style.upper) || x) : /^tile_(orange|brown)$/.test(x.name) ? (tinted(x.name, x.name === 'tile_orange' ? style.dado : style.trim) || x) : x); return Array.isArray(m) ? out : out[0]; } };
+    for (const [parts, mats] of [[VP.sec, secM], [VP.rib || VP.sec, ribM], [VP.end, endM]]) instanceKit(THREE, parts, mats, group, vopts).forEach((im) => { im.userData.shared = true; });
+    endWall(-zE - 0.05, false); endWall(zE + 0.05, true);
+    addStub(otherTrackX, zE + 0.05);
+  } else {
+    // floor of pit (track bed) and platform
+    Bv.box(xmin, -0.5, -zE, xmax, -0.2, zE, [0.12, 0.12, 0.13], 2);
+    Bf.quad([pxa, PY, zE], [pxb, PY, zE], [pxb, PY, -zE], [pxa, PY, -zE], [0, 0, (pxb - pxa) / 2.4, (2 * zE) / 2.4], [1, 1, 1]);
+    Bv.box(Math.min(xe, xe - S * 0.08), -0.2, -zE, Math.max(xe, xe - S * 0.08), PY, zE, [0.55, 0.55, 0.55], 1); // platform face
+    Bl.quad([ty0, PY + 0.012, zE], [ty1, PY + 0.012, zE], [ty1, PY + 0.012, -zE], [ty0, PY + 0.012, -zE], [0, 0, 1, 1], [1, 1, 1]);
+    const rails = (tx, len) => {
+      for (const dx of [-0.61, 0.61]) Bv.box(tx + dx - 0.04, 0, -len, tx + dx + 0.04, 0.13, len, [0.5, 0.5, 0.52], 1);
+      Bv.box(tx + 0.9, 0.0, -len, tx + 1.0, 0.16, len, [0.35, 0.28, 0.2], 1);
+      for (let z = -len; z < len; z += 0.75) Bv.box(tx - 0.95, -0.2, z, tx + 0.95, -0.08, z + 0.2, [0.22, 0.2, 0.18], 1);
+    };
+    rails(0, zE); if (island) rails(otherTrackX, zE);
+    const dadoH = 2.2;
+    for (const [x, flip] of [[xa, 0], [xb, 1]]) {
+      wallQuad(x, -zE, zE, -0.2, dadoH, Bt, [1, 1, 1], tileU);
+      wallQuad(x, -zE, zE, dadoH, wallH, Bu, [1, 1, 1], tileU);
+      const dir = x > xc0 ? -1 : 1;
+      Bl.box(x - (dir > 0 ? 0 : 0.05), dadoH, -zE, x + dir * 0.05 + (dir > 0 ? 0.05 : 0), dadoH + 0.12, zE, cTrim, 1);
+    }
+    const NS = 18;
+    for (let i = 0; i < NS; i++) {
+      const x0 = xmin + (xmax - xmin) * i / NS, x1 = xmin + (xmax - xmin) * (i + 1) / NS;
+      Bu.quad([x0, ceilY(x0), zE], [x1, ceilY(x1), zE], [x1, ceilY(x1), -zE], [x0, ceilY(x0), -zE], [x0 * tileU, 0, x1 * tileU, 2 * zE * tileU], [0.95, 0.95, 0.9]);
+    }
+    for (let z = -PL; z <= PL + 0.1; z += 6) {
+      for (let i = 0; i < NS; i++) {
+        const x0 = xmin + (xmax - xmin) * i / NS, x1 = xmin + (xmax - xmin) * (i + 1) / NS;
+        Bl.quad([x0, ceilY(x0) - 0.04, z + 0.16], [x1, ceilY(x1) - 0.04, z + 0.16], [x1, ceilY(x1) - 0.04, z - 0.16], [x0, ceilY(x0) - 0.04, z - 0.16], [0, 0, 1, 1], cTrim);
+      }
+      for (const lx of [xc0 - hw * 0.45, xc0 + hw * 0.45]) Bs.box(lx - 0.35, ceilY(lx) - 0.14, z - 0.9, lx + 0.35, ceilY(lx) - 0.04, z + 0.9, [1, 1, 1], 1);
+    }
+    endWall(-zE, false); endWall(zE, true);
+    if (island) addStub(otherTrackX, zE);
+    Bv.box(pxa, PY, -PL - 0.1, pxb, PY + 1.0, -PL, [0.3, 0.33, 0.36], 1);  // platform end barrier
   }
-  // platform end barriers (front end, -z)
-  Bv.box(pxa, PY, -PL - 0.1, pxb, PY + 1.0, -PL, [0.3, 0.33, 0.36], 1);
 
   // ------------ columns (island centreline) and benches
   const columns = [];
@@ -203,10 +223,10 @@ export function buildStation(THREE, o) {
   addLight(xc0, wallH + 1, -PL * 0.5); addLight(xc0, wallH + 1, PL * 0.5);
 
   // ------------ ramp (escalators + stairs)
-  const rc = xcP; const lanes = [
-    { x0: rc - rampW / 2, x1: rc - rampW / 2 + 1.15, kind: 'up' },
-    { x0: rc - rampW / 2 + 1.3, x1: rc + rampW / 2 - 1.3, kind: 'stairs' },
-    { x0: rc + rampW / 2 - 1.15, x1: rc + rampW / 2, kind: 'down' },
+  const rc = rcx; const lanes = [
+    { x0: rc - rampW / 2, x1: rc - rampW / 2 + 1.0, kind: 'up' },
+    { x0: rc - rampW / 2 + 1.15, x1: rc + rampW / 2 - 1.15, kind: 'stairs' },
+    { x0: rc + rampW / 2 - 1.0, x1: rc + rampW / 2, kind: 'down' },
   ];
   const incl = Math.atan(slope), rl = Math.hypot(Lr, Hc - PY);
   // ramp tunnel: walls & ceiling & floor
@@ -355,7 +375,7 @@ export function buildStation(THREE, o) {
 
   // ---- platform side-view collider zones for people
   const info = {
-    PL, W, xe, xo, island, S, otherTrackX, xcP, zE, rampZ0, rampZ1, zc0, cz1: exitZ0, exitZ1, Hc, Hs, PY, style, benches: benchZs, columns,
+    PL, W, xe, xo, island, S, otherTrackX, xcP, rc: rcx, zE, rampZ0, rampZ1, zc0, cz1: exitZ0, exitZ1, Hc, Hs, PY, style, benches: benchZs, columns,
   };
   const update = (t) => { for (const e of escMeshes) e.mat.map.offset.y = (-t * 0.9 * e.dir) % 1; };
   const dispose = () => {

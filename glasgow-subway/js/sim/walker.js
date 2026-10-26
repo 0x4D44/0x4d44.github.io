@@ -35,7 +35,7 @@ export class Walker {
   }
   /** forward/strafe in [-1,1]; yaw 0 faces local -z. */
   update(dt, fwd, strafe) {
-    const sp = (this.sprint ? 2.7 : 1.55);
+    const sp = (this.sprint ? 3.8 : 2.0);
     const sy = Math.sin(this.yaw), cy = Math.cos(this.yaw);
     // forward vector (local frame): yaw=0 -> (0,-1)
     let dx = (-sy * fwd + cy * strafe), dz = (-cy * fwd - sy * strafe);

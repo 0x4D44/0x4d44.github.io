@@ -45,7 +45,7 @@ export class TunnelView {
     this.setWindow(this.ahead, this.behind);
   }
   _buildFar() {
-    const THREE = this.THREE, L = FAR_LEN, R = 1.7, n = 14;
+    const THREE = this.THREE, L = FAR_LEN, R = 1.78, n = 18;
     const pos = [], nor = [], col = [], idx = [];
     const push = (x, y, z, nx, ny, nz, c) => { pos.push(x, y, z); nor.push(nx, ny, nz); col.push(c[0], c[1], c[2]); return pos.length / 3 - 1; };
     // tube (inner surface), axis y=1.2, along z in [-L/2, L/2]
