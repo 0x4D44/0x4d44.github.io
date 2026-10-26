@@ -18,8 +18,12 @@ function brightness(w) { return Math.max(0.4, Math.min(1, (Math.log10(Math.max(w
 export function buildField(jdNow, windowLy, opts = {}) {
   const rings = opts.rings ?? 140, az = opts.az ?? 64, seed = opts.seed ?? 1;
   const filter = opts.filter || (() => true);
-  const out = [];
-  const push = (o, d, age, src, inten, kind) => out.push(o[0], o[1], o[2], d[0], d[1], d[2], age, src, inten, kind);
+  let buf = new Float32Array(STRIDE * 65536), len = 0;
+  const push = (o, d, age, src, inten, kind) => {
+    if (len + STRIDE > buf.length) { const nb = new Float32Array(buf.length * 2); nb.set(buf); buf = nb; }
+    buf[len] = o[0]; buf[len + 1] = o[1]; buf[len + 2] = o[2]; buf[len + 3] = d[0]; buf[len + 4] = d[1]; buf[len + 5] = d[2];
+    buf[len + 6] = age; buf[len + 7] = src; buf[len + 8] = inten; buf[len + 9] = kind; len += STRIDE;
+  };
   const winDays = windowLy * C.DAYS_PER_YEAR;
 
   ALL_SOURCES.forEach((src, si) => {
@@ -53,7 +57,7 @@ export function buildField(jdNow, windowLy, opts = {}) {
     const n = 40;
     for (let i = 0; i < n; i++) push(o, d, (jdNow - (jd + (i / n) * b.mins / 1440)) / C.DAYS_PER_YEAR, -1, 1, KIND.beacon);
   }
-  return { n: out.length / STRIDE, data: new Float32Array(out), jdRef: jdNow, windowLy };
+  return { n: len / STRIDE, data: buf.slice(0, len), jdRef: jdNow, windowLy };
 }
 
 export const beaconSite = b => (typeof b.site === "string" ? siteById[b.site] : b.site);
