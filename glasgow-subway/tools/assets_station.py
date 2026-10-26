@@ -10,22 +10,26 @@ PLAT_H = 0.695
 def item(root, name, m, **kw):
     return m.to_obj(name, parent=root, **kw)
 
-def signboard(m, c, w, h, face_mat, frame_mat='sign_orange', thick=0.04, double=True, yaw_front=True):
+def signboard(m, c, w, h, face_mat, frame_mat='sign_orange', thick=0.04, double=True, yaw_front=True, rect=(0.0, 0.0, 1.0, 1.0)):
     """Flat board centred c (x,y,z) facing +/-Y with blank-UV faces on both sides."""
     x, y, z = c
     m.box(c, (w, thick, h), frame_mat)
     f = thick / 2 + 0.002
     m.quad_uv((x - w / 2 + 0.03, y + f, z - h / 2 + 0.03), (x + w / 2 - 0.03, y + f, z - h / 2 + 0.03),
-             (x + w / 2 - 0.03, y + f, z + h / 2 - 0.03), (x - w / 2 + 0.03, y + f, z + h / 2 - 0.03), face_mat)
+             (x + w / 2 - 0.03, y + f, z + h / 2 - 0.03), (x - w / 2 + 0.03, y + f, z + h / 2 - 0.03), face_mat, rect)
     if double:
         m.quad_uv((x + w / 2 - 0.03, y - f, z - h / 2 + 0.03), (x - w / 2 + 0.03, y - f, z - h / 2 + 0.03),
-                 (x - w / 2 + 0.03, y - f, z + h / 2 - 0.03), (x + w / 2 - 0.03, y - f, z + h / 2 - 0.03), face_mat)
+                 (x - w / 2 + 0.03, y - f, z + h / 2 - 0.03), (x + w / 2 - 0.03, y - f, z + h / 2 - 0.03), face_mat, rect)
 
 def roundel(m, c, r, axis_y_dir=1):
+    """Textured SPT roundel (alpha PNG) as a flat quad facing +Y (back side too)."""
     x, y, z = c
-    m.cyl((x, y, z), r, 0.02, 'sign_orange', axis='y', seg=28)
-    m.cyl((x, y + axis_y_dir * 0.012, z), r * 0.78, 0.012, 'sign_white', axis='y', seg=28)
-    m.box((x, y + axis_y_dir * 0.022, z), (r * 2.15, 0.012, r * 0.30), 'sign_blue')
+    m.quad_uv((x - r, y + 0.012, z - r), (x + r, y + 0.012, z - r), (x + r, y + 0.012, z + r), (x - r, y + 0.012, z + r), 'sign_roundel')
+    m.quad_uv((x + r, y - 0.012, z - r), (x - r, y - 0.012, z - r), (x - r, y - 0.012, z + r), (x + r, y - 0.012, z + r), 'sign_roundel')
+
+def atlas_rect(i, cols=4, rows=2):
+    c, r = i % cols, i // cols
+    return (c / cols, 1 - (r + 1) / rows, (c + 1) / cols, 1 - r / rows)
 
 def build_kit():
     reset()
@@ -45,11 +49,10 @@ def build_kit():
     m.box((0, 0, -0.1), (3.0, 0.05, 0.05), 'steel_dark') if False else None
     for sx in (-1.2, 1.2):
         m.cyl((sx, 0, 0.3), 0.012, 0.6, 'steel_dark', seg=6)
-    signboard(m, (0, 0, -0.275), 3.0, 0.55, 'sign_blank', 'sign_orange')
+    signboard(m, (0, 0, -0.275), 3.0, 0.55, 'sign_name_board', 'sign_orange')
     item(root, 'sign_name_hanging', m)
     m = M()   # wall-mounted name board 3.0 x 0.6 with roundel to left; origin = centre, flat against wall (face toward -Y... faces +Y)
-    signboard(m, (0, 0, 0), 3.0, 0.6, 'sign_blank', 'sign_orange', double=False)
-    roundel(m, (-1.75, 0.0, 0.0), 0.28)
+    signboard(m, (0, 0, 0), 3.0, 0.6, 'sign_name_board', 'sign_orange', double=False)
     item(root, 'sign_name_wall', m)
     m = M()
     roundel(m, (0, 0, 0), 0.5)
@@ -76,11 +79,16 @@ def build_kit():
     m.quad_uv((-0.5, 0.032, -0.15), (0.5, 0.032, -0.15), (0.5, 0.032, 0.15), (-0.5, 0.032, 0.15), 'screen_blank')
     item(root, 'info_screen', m)
     # ------------------------------------------------ safety signs  (0.45 x 0.30, faces +Y)
-    for nm, face in (('exit', 'sign_green'), ('no_smoking', 'sign_white'), ('mind_gap', 'sign_yellow'), ('danger_electric', 'sign_yellow'),
-                     ('emergency_stop', 'sign_red'), ('help_point', 'sign_blue'), ('cctv', 'sign_blue'), ('first_aid', 'sign_green'),
-                     ('way_out', 'sign_green'), ('stand_back', 'sign_yellow')):
-        m = M(); signboard(m, (0, 0, 0), 0.45, 0.30, face, 'steel_dark', thick=0.025, double=False)
+    for nm, cell in (('exit', 0), ('no_smoking', 1), ('mind_gap', 2), ('danger_electric', 3), ('emergency_stop', 7), ('help_point', 4),
+                     ('cctv', 5), ('first_aid', 6), ('way_out', 0), ('stand_back', 7)):
+        m = M(); signboard(m, (0, 0, 0), 0.45, 0.45, 'sign_safety', 'steel_dark', thick=0.025, double=False, rect=atlas_rect(cell))
         item(root, f'safety_{nm}', m)
+    # advert panels (0.9 x 1.3 poster frames, portrait; atlas cell 4x4)
+    for nm, cell in (('a', 0), ('b', 5), ('c', 10), ('d', 15), ('e', 3), ('f', 12)):
+        m = M(); signboard(m, (0, 0, 0), 0.9, 1.3, 'advert_atlas', 'steel_dark', thick=0.04, double=False, rect=atlas_rect(cell, 4, 4))
+        item(root, f'advert_panel_{nm}', m)
+    m = M(); signboard(m, (0, 0, 0), 1.6, 0.2, 'route_map_panel', 'steel_dark', thick=0.02, double=False)
+    item(root, 'sign_route_map', m)
     m = M()   # floor 'MIND THE GAP' strip decal 4 x 0.3
     m.quad_uv((-2, -0.15, 0.001), (2, -0.15, 0.001), (2, 0.15, 0.001), (-2, 0.15, 0.001), 'sign_yellow')
     item(root, 'decal_mind_gap_floor', m, uv=True)
@@ -146,7 +154,7 @@ def build_kit():
     item(root, 'escalator_static', m, uv=True).parent = eg
     for i in range(nst):
         sm = M()
-        sm.box((0, 0, -0.02), (1.0, pitch_h, 0.035), 'steel_dark')
+        sm.box((0, 0, -0.02), (1.0, pitch_h, 0.035), 'escalator_tread')
         sm.box((0, pitch_h / 2 - 0.02, -0.02 - pitch_v / 2), (1.0, 0.02, pitch_v), 'steel_bright')
         for k in range(5):
             sm.box((-0.4 + k * 0.2, 0, 0.0), (0.012, pitch_h * 0.9, 0.012), 'plastic_black')
