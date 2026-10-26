@@ -31,7 +31,7 @@ async function open(browser, query, opts = {}) {
   await p.evaluate(() => __sim.loop(false)); // time is driven explicitly (swiftshader frames are slow)
   return p;
 }
-const shot = async (p, name) => { await p.evaluate(() => window.__sim.render()); await p.waitForTimeout(100); await p.screenshot({ path: path.join(SHOTS, name + '.png') }); };
+const shot = async (p, name) => { await p.evaluate(() => window.__sim.render()); await p.waitForTimeout(100); await p.screenshot({ path: path.join(SHOTS, name + '.png'), timeout: 180000 }); };
 const ev = (p, fn, a) => p.evaluate(fn, a);
 
 const browser = await chromium.launch(launch);
