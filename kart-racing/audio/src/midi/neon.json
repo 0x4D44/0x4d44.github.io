@@ -1,0 +1,98 @@
+{
+ "id": "neon",
+ "bpm": 124,
+ "introBars": 4,
+ "bodyBars": 40,
+ "tailBars": 4,
+ "secPerBar": 1.935483870967742,
+ "introSec": 7.741935483870968,
+ "bodySec": 77.41935483870968,
+ "stems": [
+  "base",
+  "extra",
+  "boost",
+  "lead"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "arp|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "arp"
+  },
+  "pad|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "pad"
+  },
+  "bass|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "bass"
+  },
+  "stabs|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "stabs"
+  },
+  "gtr|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "gtr"
+  },
+  "saw|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "saw"
+  },
+  "gtrR|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "gtrR"
+  },
+  "stc|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "stc"
+  },
+  "syn|boost": {
+   "ch": 2,
+   "stem": "boost",
+   "part": "syn"
+  },
+  "gtrR|boost": {
+   "ch": 3,
+   "stem": "boost",
+   "part": "gtrR"
+  },
+  "lead|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "lead"
+  },
+  "lead_dbl|boost": {
+   "ch": 4,
+   "stem": "boost",
+   "part": "lead"
+  },
+  "stc|extra": {
+   "ch": 2,
+   "stem": "extra",
+   "part": "stc"
+  },
+  "pn|extra": {
+   "ch": 3,
+   "stem": "extra",
+   "part": "pn"
+  },
+  "violin|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "violin"
+  }
+ }
+}

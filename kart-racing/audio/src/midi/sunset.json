@@ -1,0 +1,88 @@
+{
+ "id": "sunset",
+ "bpm": 116,
+ "introBars": 4,
+ "bodyBars": 40,
+ "tailBars": 4,
+ "secPerBar": 2.0689655172413794,
+ "introSec": 8.275862068965518,
+ "bodySec": 82.75862068965517,
+ "stems": [
+  "base",
+  "extra",
+  "boost",
+  "lead"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "gtr|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "gtr"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "bass|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "bass"
+  },
+  "keys|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "keys"
+  },
+  "hornm|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "hornm"
+  },
+  "trumpet|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "trumpet"
+  },
+  "trumpet_dbl|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "trumpet"
+  },
+  "pad|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "pad"
+  },
+  "sax|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "sax"
+  },
+  "pad|base": {
+   "ch": 3,
+   "stem": "base",
+   "part": "pad"
+  },
+  "bassS|base": {
+   "ch": 4,
+   "stem": "base",
+   "part": "bassS"
+  },
+  "horns|boost": {
+   "ch": 2,
+   "stem": "boost",
+   "part": "horns"
+  },
+  "flute|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "flute"
+  }
+ }
+}
