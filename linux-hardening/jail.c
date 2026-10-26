@@ -1,4 +1,5 @@
-// jail.c - minimal "no fork, read-only filesystem, tiny syscall set" launcher.
+// jail.c - minimal "no fork, read-only filesystem" launcher. A demonstration, not a profile.
+// Fails CLOSED: if Landlock or seccomp cannot be installed, the program is not run.
 // Build: gcc -O2 -Wall -o jail jail.c      Run: ./jail /bin/echo hello
 #define _GNU_SOURCE
 #include <errno.h>
@@ -41,6 +42,7 @@ static int landlock(void) {
     ra.handled_access_fs = all;             /* handle everything => deny everything by default */
     int rs = syscall(SYS_landlock_create_ruleset, &ra, sizeof ra, 0);
     if (rs < 0) die("landlock_create_ruleset");
+    /* /etc is granted wholesale for the demo; a real profile lists single files. */
     const char *dirs[] = { "/usr", "/bin", "/lib", "/lib64", "/etc" };
     for (unsigned i = 0; i < sizeof dirs / sizeof *dirs; i++) {
         struct landlock_path_beneath_attr pb = { .allowed_access = ro };
@@ -82,12 +84,16 @@ static void seccomp_nofork(void) {
 
 int main(int argc, char **argv) {
     if (argc < 2) { fprintf(stderr, "usage: %s prog [args]\n", argv[0]); return 2; }
-    struct rlimit nofile = { 64, 64 }, core = { 0, 0 }, nproc = { 0, 0 };
-    setrlimit(RLIMIT_NOFILE, &nofile); setrlimit(RLIMIT_CORE, &core);
-    (void)nproc;
+    struct rlimit nofile = { 64, 64 }, core = { 0, 0 };
+    if (setrlimit(RLIMIT_NOFILE, &nofile) || setrlimit(RLIMIT_CORE, &core)) die("setrlimit");
+    /* Close every inherited descriptor above stderr: Landlock does not revoke fds
+       that are already open, so a leaked directory fd would be a hole in the fence. */
+    if (syscall(SYS_close_range, 3, ~0U, 0)) die("close_range");
+    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)) die("dumpable");   /* no ptrace/proc-mem by same-UID peers */
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) die("no_new_privs");
-    landlock();
-    seccomp_nofork();
+    if (landlock() < 0) return 1;           /* fail closed */
+    seccomp_nofork();                       /* dies on failure */
+    /* Note: /proc and /dev are not granted, so the child cannot read /proc/self either. */
     execv(argv[1], argv + 1);               /* exec is still allowed: it replaces, not creates */
     die("execv");
 }

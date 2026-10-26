@@ -41,7 +41,7 @@
     var PRESETS = {
       ro: [["/usr", "RX"], ["/etc", "R"], ["/tmp/scratch", "RWC"]],
       web: [["/usr", "RX"], ["/etc", "R"], ["/srv/app", "R"], ["/var/log/app", "WC"]],
-      open: [["/", "RW"]]
+      open: [["/", "RWC"]]
     };
     var LAYER2 = [["/usr", "RX"]];
     var RIGHT = { R: "read", W: "write", X: "execute", C: "create/delete" };
