@@ -54,7 +54,7 @@ export function buildField(jdNow, windowLy, opts = {}) {
     }
   });
   // deliberate messages
-  for (const b of BEACONS) {
+  if (opts.beacons !== false) for (const b of BEACONS) {
     const s = beaconSite(b);
     const jd = beaconJd(b, s);
     if (jd > jdNow || jd < jdNow - winDays) continue;
