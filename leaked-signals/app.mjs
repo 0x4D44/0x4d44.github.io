@@ -409,7 +409,7 @@ function pickAt(cx, cy) {
     const d = (q[0] - x) ** 2 + (q[1] - y) ** 2;
     if (d < bd) { bd = d; best = i; }
   }
-  if (best >= 0) selectStar(best, { switchTab: true });
+  if (best >= 0) selectStar(best, { switchTab: true, noFocus: true });
 }
 
 // ---------- dock ----------
@@ -465,7 +465,8 @@ function stepAnim(now) {
 
 // ---------- selection ----------
 function selectStar(i, o = {}) {
-  hideHint(); S.star = i; lastHeardT = -1; dirty = true;
+  hideHint(); S.star = i;
+  if (!o.noFocus && STARS.ly[i] > 10 ** S.logR * 1.3) focusStar(i);   // bring an off-screen star into view lastHeardT = -1; dirty = true;
   if (o.switchTab) setTab("listen");
   renderListen(true);
 }
@@ -587,7 +588,7 @@ function renderListen(full) {
     $("#quickStars").onclick = e => { const b = e.target.closest("[data-star]"); if (b) { selectStar(+b.dataset.star); focusStar(+b.dataset.star); } };
   }
   const body = $("#listenBody");
-  if (i == null) { body.innerHTML = `<div class="note">No star selected. Pick one above to see what it is hearing and when.</div>`; return; }
+  if (i == null) { body.innerHTML = `<div class="note">No star selected. Pick one above, or click a star in the view, to see which of our broadcasts it can hear and when. Stars hear us in short windows twice a day, so many have nothing aimed at them at any one moment.</div>`; return; }
   const jdT = jdOf(), ly = STARS.ly[i], jdE = jdT - ly * C.DAYS_PER_YEAR;
   const rows = sourceRows(i, jdT);
   const rx = C.RECEIVERS.find(r => r.id === S.rx), tier = C.TIERS.find(t => t.id === S.tier);
@@ -644,7 +645,7 @@ function drawStrip(i, jdT, rows) {
   cv.height = Math.max(120, top + rowH * shown.length + 6);
   const c = chartCtx(cv), Wd = cv.width, Hd = cv.height;
   c.clearRect(0, 0, Wd, Hd);
-  const x0 = 170, x1 = Wd - 10;
+  const x0 = 170, x1 = Wd - 28;
   c.fillStyle = css("--dim"); c.textAlign = "center";
   for (let h = 0; h <= 24; h += 6) { const x = x0 + (h / 24) * (x1 - x0); c.fillText(h === 0 ? "now" : `+${h}h`, x, 12); c.strokeStyle = css("--line"); c.beginPath(); c.moveTo(x, 16); c.lineTo(x, Hd - 2); c.stroke(); }
   let row = 0;
