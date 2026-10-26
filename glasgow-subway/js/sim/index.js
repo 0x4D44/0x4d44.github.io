@@ -386,6 +386,7 @@ class Sim {
     const canvas = this.canvas;
     this._kd = (e) => this._key(e, true); this._ku = (e) => this._key(e, false);
     addEventListener('keydown', this._kd, true); addEventListener('keyup', this._ku, true);
+    addEventListener('blur', this._blur = () => { this.keys.clear(); });   // no stuck movement keys after alt-tab
     let drag = null;
     this._pd = (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} this.audio.start();
       if (e.pointerType === 'mouse' && this.mode !== 'drive' && !this._modalOpen) { try { canvas.requestPointerLock && canvas.requestPointerLock(); } catch (_) {} } };
@@ -783,12 +784,20 @@ class Sim {
   dispose() {
     if (this.disposed) return; this.disposed = true;
     this.renderer.setAnimationLoop(null);
-    removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize);
+    removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
     const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu);
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}
     this.audio.dispose(); this.hud.dispose();
     for (const v of this.stationViews.values()) v.dispose();
-    this.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+    // geometries AND materials/textures (GLB maps, canvas textures) - otherwise every start/dispose cycle leaks ~27 GPU textures
+    const texKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap', 'bumpMap', 'lightMap'];
+    this.scene.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.isInstancedMesh && o.dispose) o.dispose();
+      const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      for (const m of ms) { for (const k of texKeys) if (m[k] && m[k].dispose) m[k].dispose(); m.dispose(); }
+    });
+    for (const t of [this.tms && this.tms.tex, this.tms && this.tms.tex2]) if (t) t.dispose();
     if (this.street) this.street.dispose();
     const r = this.renderer, s = this.saved; try { if (this.savedPR) r.setPixelRatio(this.savedPR); } catch (e) {} if (s) { r.setClearColor(s.clear, s.alpha); r.toneMapping = s.tm; r.toneMappingExposure = s.exp; }
     if (window.__sim && window.__sim.sim === this) delete window.__sim;

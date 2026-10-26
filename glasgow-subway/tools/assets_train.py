@@ -88,16 +88,21 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     ext.box(P(0, (ROOFEND - HALF) / 2, 2.625), (0.55, ROOFEND + HALF - 0.5, 0.012), 'panel_ceiling')      # lighter grey roof panel strip
     # ------------------------------------------------------------ end walls with the open gangway aperture + bellows
     AP_W = 1.5
+    AP_TOP = 2.38                                  # gangway aperture is full height (a standing eye at ~2.2 m must fit)
+    arch = lambda x: 1.95 + 0.67 * math.sqrt(max(0.0, 1 - (x / W) ** 2))
+    xs_in = [0.55, 0.3, 0.0, -0.3, -0.55]
     for e in ((-1,) if has_cab else (-1, 1)):
         ye = e * (HALF - 0.03)
         for sgx in (-1, 1):
             ext.box(P(sgx * ((AP_W / 2 + W) / 2), ye, (UF + 2.0) / 2), (W - AP_W / 2, 0.06, 2.0 - UF), 'livery_white')
-            sal.cyl(P(sgx * (AP_W / 2 - 0.06), e * (HALF - 0.12), (FLOOR + 2.05) / 2), 0.02, 2.05 - FLOOR, CFG['pole_mat'], seg=8)   # orange poles each side of the gangway
-        ext.box(P(0, ye, 2.05), (2 * W, 0.06, 0.2), 'livery_white')
+            sal.cyl(P(sgx * (AP_W / 2 - 0.06), e * (HALF - 0.12), (FLOOR + AP_TOP - 0.1) / 2), 0.02, AP_TOP - 0.1 - FLOOR, CFG['pole_mat'], seg=8)   # orange poles each side of the gangway
+            xa = AP_W / 2; xb = [sgx * x for x in (1.1, 1.0, 0.9)]
+            sliver = [(sgx * xa, 1.95), (sgx * W, 1.95)] + [(x, arch(x)) for x in xb] + [(sgx * xa, arch(xa))]
+            f = ext.poly([P(x, ye, z) for x, z in sliver], 'livery_white'); f[ext.fx] = 1
+        head = [(-AP_W / 2, AP_TOP), (AP_W / 2, AP_TOP), (AP_W / 2, arch(AP_W / 2))] + [(x, arch(x)) for x in xs_in] + [(-AP_W / 2, arch(AP_W / 2))]
+        f = ext.poly([P(x, ye, z) for x, z in head], 'livery_white'); f[ext.fx] = 1
         ext.box(P(0, ye, (UF + FLOOR) / 2), (AP_W, 0.06, FLOOR - UF), 'skirt_black')
-        f = ext.poly([P(x, e * HALF, z) for x, z in FULL_ROOF], 'livery_white'); f[ext.fx] = 1
-        if f.normal.y * s * e < 0: f.normal_flip()
-        bell = [(-0.78, FLOOR - 0.02), (0.78, FLOOR - 0.02), (0.78, 2.0), (0.5, 2.2), (-0.5, 2.2), (-0.78, 2.0)]
+        bell = [(-0.78, FLOOR - 0.02), (0.78, FLOOR - 0.02), (0.78, 2.2), (0.55, AP_TOP), (-0.55, AP_TOP), (-0.78, 2.2)]
         ya, yb = sorted((yc + s * e * HALF, yc + s * e * (HALF + GAP / 2 + 0.01)))
         ext.strip_y(bell, ya, yb, 'rubber_black', closed=True)
         ya, yb = sorted((yc + s * e * (HALF - 0.1), yc + s * e * (HALF + GAP / 2 + 0.05)))
@@ -229,8 +234,8 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y):
     def Y(t): return HALF - t                    # car-local y at distance t behind the nose tip
     X0 = 0.86
     NOSE_Y = Y(0.03)
-    ZG0, ZG1 = 0.70, 2.05                        # black glazing panel (front)
-    ZW0 = 1.55                                   # windscreen (transparent) starts here; below it is opaque black glass
+    ZG0, ZG1 = 0.70, 2.30                        # black glazing panel (front)
+    ZW0 = 1.50                                   # windscreen (transparent) starts here; below it is opaque black glass
     cab.box(P(0, (CAB_Y + NOSE_Y) / 2, FLOOR - 0.02), (2 * W - 0.24, NOSE_Y - CAB_Y, 0.04), 'floor_dark')
     for sg in (-1, 1):
         xs = sg * (W - SKIN / 2); xl = sg * (W - 0.12 + LIN / 2)
@@ -268,7 +273,7 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y):
         ext.box(P(xx, NOSE_Y + 0.004, 1.35), (0.02, 0.01, 1.22), 'steel_dark')
     # roof front: loft from the roof profile at t=0.85 to the header at t=0.30
     ringA = FULL_ROOF
-    ringB = [(0.80 * x, ZG1 + (z - 1.95) * 0.55) for x, z in ringA]
+    ringB = [(0.80 * x, ZG1 + (z - 1.95) * 0.37) for x, z in ringA]
     n = len(ringA)
     a = [ext.bm.verts.new(P(x, Y(0.85), z)) for x, z in ringA]; b = [ext.bm.verts.new(P(x, Y(0.30), z)) for x, z in ringB]
     fs = []
@@ -300,7 +305,7 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y):
     # ---------------- cab interior: ceiling, desk, controls, driver's seat (slightly left of centre)
     cab.strip_y(CEIL, *sorted((yc + s * CAB_Y, yc + s * Y(0.60))), 'interior_ceiling', toward=(0.0, 1.5))
     DZ = FLOOR + 0.80
-    cab.box(P(0, Y(0.75), (FLOOR + DZ) / 2), (1.9, 0.62, DZ - FLOOR), 'plastic_black')
+    cab.box(P(0, Y(0.75), (FLOOR + DZ - 0.012) / 2), (1.9, 0.62, DZ - 0.012 - FLOOR), 'plastic_black')   # 12 mm under the grey top (no z-fight)
     cab.poly([P(-0.95, Y(1.06), DZ), P(0.95, Y(1.06), DZ), P(0.95, Y(0.44), DZ - 0.06), P(-0.95, Y(0.44), DZ - 0.06)], 'plastic_grey')
     cab.cyl(P(-0.58, Y(0.90), DZ + 0.03), 0.075, 0.06, 'steel_dark', seg=14)                 # master controller
     cab.cyl(P(-0.58, Y(0.90), DZ + 0.13), 0.016, 0.16, 'steel_bright', seg=8)
@@ -315,7 +320,7 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y):
     cab.box(P(0.84, Y(0.82), DZ - 0.01), (0.08, 0.14, 0.05), 'plastic_black')
     for i in range(6):
         cab.cyl(P(-0.86 + i * 0.05, Y(0.82), DZ - 0.02), 0.012, 0.01, ('button_green', 'button_amber', 'button_red')[i % 3], seg=8)
-    cab.box(P(0, Y(0.45), 2.12), (1.7, 0.2, 0.025), 'plastic_black')
+    # (no header bar: the windscreen is open to the roof loft so the driver sees the road ahead)
     DX = -0.28 * s          # driver seat slightly LEFT of the centre line (rear cab: +X)
     cab.cyl(P(DX, Y(1.55), FLOOR + 0.2), 0.05, 0.3, 'steel_dark', seg=8)
     cab.box(P(DX, Y(1.55), FLOOR + 0.43), (0.46, 0.46, 0.08), 'plastic_dark')

@@ -48,7 +48,7 @@ export class City {
       if (!o.isMesh && !o.isLine && !o.isPoints) return;
       const layer = this.layerOf(o); this.layersSeen.add(layer); if (layer === 'terrain') this.hasTerrain = true;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
-      const cloned = mats.map((m) => { const c = m.clone(); c.userData.base = { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, emissive: m.emissive ? m.emissive.clone() : null }; c.userData.layer = layer; return c; });
+      const cloned = mats.map((m) => { const c = m.clone(); if (/^mat_(roof|wall_plain)$/.test(m.name) && c.color) c.color.multiplyScalar(1.22); /* lift the dull slate roofs / sheds so the centre reads as sunlit */ c.userData.base = { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, emissive: m.emissive ? m.emissive.clone() : null }; c.userData.layer = layer; return c; });
       o.material = Array.isArray(o.material) ? cloned : cloned[0];
       o.userData.layer = layer; o.userData.chunk = chunk;
       o.renderOrder = layer === 'terrain' ? 2 : layer === 'water' ? 3 : layer === 'roads' || layer === 'green' ? 3 : 4;

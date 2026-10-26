@@ -58,6 +58,10 @@ export class App {
     this.env.listeners.push(() => this.city.applyAll());
     const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7d9b78' }));
     fg.position.set(this.centre.x, 1.5, this.centre.z); fg.renderOrder = 1; this.farGround = fg; this.env.scene.add(fg);
+    // the far ground is unlit (MeshBasicMaterial): tint it with the lighting preset so it is not bright green at dusk / night
+    const fgBase = new THREE.Color('#7d9b78'), fgTmp = new THREE.Color();
+    const tintFar = (c) => { const k = clamp((c.sunI * 0.25 + c.hemiI * 0.4) / 1.23, 0, 1); fg.material.color.copy(fgBase).multiplyScalar(k * k).lerp(fgTmp.copy(c.fog), 0.25 * (1 - k)); };
+    this.env.listeners.push(tintFar); tintFar(this.env.cur);
     progress(0.86, 'Placing the stations');
     // initial view
     this.heroView = this.makeHero(); this.rig.setView(this.heroView);
@@ -197,7 +201,7 @@ export class App {
     if (o.light && ['day', 'dusk', 'night'].includes(o.light)) this.setLight(o.light);
     if (o.ex) this.setExaggeration(clamp(parseFloat(o.ex) || 1, 1, 8));
     if (o.xray != null) { this.setXray(clamp(parseFloat(o.xray) || 0, 0, 1)); }
-    if (o.view) { const a = o.view.split(',').map(Number); if (a.length >= 6 && a.every(Number.isFinite)) this.rig.setView({ target: new THREE.Vector3(a[0], a[1], a[2]), dist: a[3], polar: a[4], azim: a[5] }); }
+    if (o.view) { const a = o.view.split(',').map(Number); if (a.length >= 6 && a.every(Number.isFinite)) this.rig.setView({ target: new THREE.Vector3(a[0], a[1], a[2]), dist: clamp(a[3], 18, 6500), polar: clamp(a[4], 0.02, 1.52), azim: a[5] }); }
     if (o.station && this.byId.has(o.station)) { this.selectStation(o.station, { fly: !o.view, quiet: false }); if (!o.view) { const v = this.stationView(o.station); if (v) this.rig.setView(v); } }
     return o;
   }
@@ -244,6 +248,7 @@ export class App {
     const onExit = () => { if (exited) return; exited = true; this.exitSim(); };
     try {
       this.sim = await mod.startSim({ THREE, renderer: this.env.renderer, canvas: this.canvas, container: hud, subway: this.subway, terrain: this.terrainMod, startStation: station || this.state.selected || this.stations[0].id, line, mode, onExit, assetBase: './' });
+      if (exited) { try { this.sim?.dispose?.(); } catch (e) { console.warn(e); } this.sim = null; }
     } catch (e) { console.warn('sim failed', e); this.emit('toast', 'The simulator failed to start.'); onExit(); }
   }
   exitSim() {
