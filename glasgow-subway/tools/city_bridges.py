@@ -112,7 +112,7 @@ def build_cluster(c, TR, W, step, Bdeck, Brail, Bstruct, Brails):
         for i in range(len(z) - 2, -1, -1): z[i] = max(z[i], z[i + 1] - slope * 2.0)
         z = _smooth(z, 2)
         if wat.any() and Ltot > 100: z = z + 1.2 * np.sin(np.pi * f)
-    if c.get('debug'): print('Z', name, np.round(S[::10]), np.round(z[::10],1), 'g', np.round(gmax[::10],1), 'wat', wat[::10].astype(int), g0, g1)
+    if c.get('debug'): print('Z', name, S[::10].round().tolist(), z[::10].round(1).tolist(), 'g', gmax[::10].round(1).tolist(), 'wat', wat[::10].astype(int).tolist(), g0, g1)
     zfun = lambda x, y: np.interp((x - cx) * ax + (y - cy) * ay, S, z)
     struct = c["struct"] or ("beam")
     over_w = bool(wat.any())
