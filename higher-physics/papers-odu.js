@@ -183,7 +183,7 @@
         style: "Context question · v–t graph and equations of motion",
         figure: figTram,
         stem:
-          "<p>A tram runs on a straight, level track through a city centre. The graph shows how its velocity changes during a journey between two stops. The mass of the tram, with passengers, is 1.8 × 10<sup>4</sup> kg.</p>",
+          "<p>A tram runs on a straight, level track through a city centre. The graph shows how its velocity changes during a journey between two stops.</p>",
         parts: [
           {
             label: "(a)", type: "num", marks: 1, a: 1.5, tol: 0, sf: 2, unit: "m s⁻²",
@@ -267,7 +267,7 @@
             q: "The ball hits the floor at 5.9 m s⁻¹ but leaves it at only 4.9 m s⁻¹. Explain why the speed of the ball is smaller after the bounce.",
             points: [
               { desc: "Some kinetic energy is transferred to heat / sound (or deformation) in the bounce, so energy is lost from the ball", all: [near("energy|ke|e_?k|kinetic", "lost|transferred|transformed|converted|changed|dissipated|wasted|turned|becomes?|given|gets|goes", 5), "heat|sound|thermal|deform|internal|noise"], win: 90 },
-              { desc: "So the ball has less kinetic energy after the bounce and leaves with a lower speed", all: [near("less|lower|smaller|reduced|decreased|fewer", "kinetic|speed|velocity|ke\\b|e_?k\\b", 2), "bounce|after|rebound|leaves|leaving|floor|afterwards|collision|collid\\w*|impact|hits?|hitting|strikes?"], win: 60 },
+              { desc: "So the ball has less kinetic energy after the bounce and leaves with a lower speed", all: [near("less|lower|smaller|reduced|decreased|fewer", "kinetic|speed|velocity|ke\\b|e_?k\\b", 2), "bounce|after|rebound|leaves|leaving|floor|afterwards|collision|collid\\w*|impact|hits?|hitting|strikes?|ball|it leaves"], win: 90, not: ["\\b(?:gains?|gained|gets|receives?|picks? up)\\W+(?:\\w+\\W+){0,2}(?:kinetic energy|energy)\\b", "\\b(?:more|higher|greater|bigger|larger|increased?)\\W+(?:\\w+\\W+){0,2}(?:kinetic|speed|velocity|ke\\b|e_?k\\b)", "\\b(?:before|during|on the way (?:down|to)|falling|dropped|hits? the floor)\\W+(?:\\w+\\W+){0,3}(?:less|lower|smaller)"] },
             ],
             sample: "During the bounce some of the ball's kinetic energy is transferred into heat and sound, so energy is lost from the ball. It therefore has less kinetic energy after the bounce and leaves the floor with a lower speed.",
             model: "<ul><li>Some kinetic energy is changed to heat and sound (or the ball and floor are deformed) in the collision, so energy is lost (1)</li><li>The ball is left with less kinetic energy, so it moves off with a smaller speed (1)</li></ul><p>A bare &ldquo;the ball loses energy&rdquo; earns the first mark only if it says where the energy goes.</p>",

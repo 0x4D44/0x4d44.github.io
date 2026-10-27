@@ -6,6 +6,9 @@
   /* near(a, b, n): regex source matching a and b in either order with at most n words between them,
      so a shuffled pile of the right words does not satisfy it. */
   const near = (a, b, n) => { const g = "\\W+(?:\\w+\\W+){0," + (n == null ? 3 : n) + "}"; return "\\b(?:" + a + ")\\b" + g + "\\b(?:" + b + ")\\b|\\b(?:" + b + ")\\b" + g + "\\b(?:" + a + ")\\b"; };
+  /* nearT(a, b, n): like near, but the words between may not include a clause break ("so", "because", "therefore", "but"...),
+     so "resistance rises, so the current falls" cannot pair "resistance" with "falls". */
+  const nearT = (a, b, n) => { const g = "\\W+(?:(?!(?:so|because|therefore|thus|hence|but|then|whereas|while|which)\\b)\\w+\\W+){0," + (n == null ? 3 : n) + "}"; return "\\b(?:" + a + ")\\b" + g + "\\b(?:" + b + ")\\b|\\b(?:" + b + ")\\b" + g + "\\b(?:" + a + ")\\b"; };
   /* Words meaning "gets bigger" / "gets smaller". */
   const UP = "increas\\w*|rises?|rising|larger|bigger|greater|higher|goes up|grows?|more";
   const DOWN = "decreas\\w*|lower\\w*|smaller|less|reduc\\w*|drops?|dropping|falls?|falling|dips?|fewer|diminish\\w*";
@@ -165,7 +168,7 @@
             q: "Calculate the random uncertainty in the mean time.",
             steps: [
               { desc: "Relationship: (maximum − minimum) ÷ number of readings, with the values substituted", rel: ["(?:max|largest|highest|biggest)\\w*-(?:min|smallest|lowest)\\w*\\)?[/÷]\\(?(?:5|n|no|number|the number)", "0\\.69-0\\.62\\)?[/÷]\\(?5", "0\\.07[/÷]5", "range[/÷]\\(?(?:5|n|no|number)"] },
-              { desc: "Random uncertainty with unit: 0.014 s", ans: 0.014, sf: 2, unit: "s" },
+              { desc: "Random uncertainty with unit: 0.014 s (0.01 s accepted)", ans: 0.014, alts: [0.01], sf: 2, unit: "s" },
             ],
             sample: "random uncertainty = (max − min)/number of readings\n= (0.69 − 0.62)/5\n= 0.014 s",
             model: "<ul><li>random uncertainty = (max. value − min. value) ÷ number of values = (0.69 − 0.62) ÷ 5 (1)</li><li>= 0.014 s (1)</li></ul><p>Accept 0.01 s. Dividing by 2 or by 4 instead of the number of readings is the commonest slip.</p>",
@@ -175,7 +178,7 @@
             q: "Calculate the percentage uncertainty in the mean time.",
             steps: [
               { desc: "Relationship: percentage uncertainty = (uncertainty ÷ mean value) × 100, with values", rel: ["\\(?0\\.01\\d*\\)?[/÷]0\\.65", "uncertainty[/÷]\\(?(?:mean|value|reading|measurement|time)", "[/÷]\\(?(?:mean|value|reading|0\\.65)\\)?x100"] },
-              { desc: "Percentage uncertainty: 2.2 %", ans: 2.153846, sf: 2, unit: ["%", "percent", "per cent"] },
+              { desc: "Percentage uncertainty: 2.2 %", ans: 2.153846, alts: [1.538462], sf: 1, unit: ["%", "percent", "per cent"] },
             ],
             sample: "percentage uncertainty = (uncertainty/mean value) × 100\n= (0.014/0.65) × 100\n= 2.2 %",
             model: "<ul><li>% uncertainty = (absolute uncertainty ÷ value) × 100 = (0.014 ÷ 0.65) × 100 (1)</li><li>= 2.2 % (1)</li></ul><p>(Follow-through from your answer to (b): 0.01 s gives 1.5 %.) The percentage sign is the unit.</p>",
@@ -190,7 +193,7 @@
               "The uncertainty is 0.50 %, because the height is the quantity that is measured with a ruler.",
               "The time dominates: its percentage uncertainty (2.2 %) is much greater than the height's (0.50 %).",
             ],
-            why: "Compare <em>percentage</em> uncertainties, never the absolute values in different units (m against s). The largest percentage uncertainty, 2.2 % in the time, is a good estimate of the percentage uncertainty in the final result: g = 2h/t² = 9.5 m s⁻² with an uncertainty of about 2.2 %, i.e. (9.5 ± 0.2) m s⁻². To improve the experiment, improve the timing (for example electronic timing with a light gate), not the height measurement.",
+            why: "Compare <em>percentage</em> uncertainties, never the absolute values in different units (m against s). The largest percentage uncertainty, 2.2 % in the time, is a good estimate of the percentage uncertainty in the final result: g = 2h/t² = 9.5 m s⁻². Because g depends on t², the 2.2 % uncertainty in the time counts twice (about 4.3 %), so the uncertainty in g is roughly 4 to 5 %, i.e. about (9.5 ± 0.5) m s⁻². To improve the experiment, improve the timing (for example electronic timing with a light gate), not the height measurement.",
           },
         ],
       },
@@ -202,7 +205,7 @@
         stem:
           "<p>A student measures the resistance of a filament lamp. The p.d. across the lamp is read from a digital voltmeter as <strong>5.84 V</strong> (uncertainty ± 1 in the last digit, i.e. ± 0.01 V). The current is read from an analogue ammeter whose smallest division is 0.01 A: the reading is <strong>0.250 A</strong>, with a scale-reading uncertainty of ± half a division, i.e. ± 0.005 A.</p>",
         parts: [
-          { label: "(a)", type: "num", marks: 1, a: 0.171233, sf: 2, tol: 0, unit: "%", shown: "0.17", q: "Calculate the percentage uncertainty in the voltmeter reading.", why: "0.01 ÷ 5.84 × 100 = <strong>0.17 %</strong>." },
+          { label: "(a)", type: "num", marks: 1, a: 0.171233, sf: 1, tol: 0, unit: "%", shown: "0.17", q: "Calculate the percentage uncertainty in the voltmeter reading.", why: "0.01 ÷ 5.84 × 100 = <strong>0.17 %</strong>." },
           { label: "(b)", type: "num", marks: 1, a: 2.0, sf: 2, tol: 0, unit: "%", shown: "2.0", q: "Calculate the percentage uncertainty in the ammeter reading.", why: "0.005 ÷ 0.250 × 100 = <strong>2.0 %</strong>. Half of the smallest division, 0.01 A, is 0.005 A." },
           {
             label: "(c)", type: "calc", marks: 3,
@@ -210,7 +213,7 @@
             steps: [
               { desc: "Relationship: V = IR (or R = V/I)", rel: ["v=ir", "r=v[/÷]i", "i=v[/÷]r", "r=5\\.84[/÷]0?\\.25", "5\\.84=0?\\.25x?r"] },
               { desc: "Correct substitution of 5.84 V and 0.250 A", nums: [5.84, 0.25] },
-              { desc: "Resistance with unit: 23.4 Ω", ans: 23.36, sf: 3, unit: ["ω", "ohm", "ohms"] },
+              { desc: "Resistance with unit: 23.4 Ω", ans: 23.36, sf: 2, unit: ["ω", "ohm", "ohms"] },
             ],
             sample: "V = IR\n5.84 = 0.250 × R\nR = 5.84/0.250\nR = 23.4 Ω",
             model: "<ul><li>V = IR (1)</li><li>5.84 = 0.250 × R (1)</li><li>R = 23.4 Ω (1)</li></ul><p>Accept 23, 23.36. The unit is required for the final mark.</p>",
@@ -251,13 +254,13 @@
             points: [
               { desc: "The total resistance of the circuit falls, so the current from the battery increases", group: "a",
                 not: [negFor(DOWN + "|" + UP)],
-                any: [near("(?:total|overall|circuit|combined|effective)\\W+resistance", DOWN, 5), near("current", "increas\\w*|rises?|larger|bigger|greater|higher|goes up|more|grows?", 4)] },
+                any: [nearT("(?:total|overall|circuit|combined|effective)\\W+resistance", DOWN, 5), nearT("current", "increas\\w*|rises?|larger|bigger|greater|higher|goes up|more|grows?", 4)] },
               { desc: "More lost volts (Ir) across the internal resistance", group: "b",
                 not: [negFor(UP)],
-                any: [near("lost volts|\\bir\\b|internal resistance|p\\.?d\\.? across (?:the )?(?:internal|source|battery|cell)", UP, 7)] },
+                any: [nearT("lost volts|\\bir\\b|internal resistance|p\\.?d\\.? across (?:the )?(?:internal|source|battery|cell)", UP, 7)] },
               { desc: "So the terminal p.d. (the p.d. across the lamp) falls and the lamp is dimmer", group: "c",
                 not: [negFor(DOWN)],
-                any: [near("terminal|t\\.?p\\.?d|(?:p\\.?d\\.?|voltage|potential difference) (?:across|of|at) (?:the )?(?:lamp|bulb|headlamp|light|battery|supply|source|cell|terminals)|(?:lamp|bulb|headlamp)'?s? (?:p\\.?d\\.?|voltage|potential difference)", DOWN, 6)] },
+                any: [nearT("terminal|t\\.?p\\.?d|(?:p\\.?d\\.?|voltage|potential difference) (?:across|of|at) (?:the )?(?:lamp|bulb|headlamp|light|battery|supply|source|cell|terminals)|(?:lamp|bulb|headlamp)'?s? (?:p\\.?d\\.?|voltage|potential difference)", DOWN, 6)] },
             ],
             sample: "The heater is in parallel with the lamp, so the total resistance of the circuit is lower and the current drawn from the battery is larger. The lost volts, Ir, across the internal resistance of the battery are therefore larger. By E = V + Ir the terminal p.d. is lower, so the p.d. across the lamp is lower and the lamp is dimmer.",
             model: "<p>Open-ended: three separate points, 1 mark each.</p><ul><li>Adding the heater in parallel decreases the total resistance, so the current drawn from the battery increases (1)</li><li>The lost volts, Ir, across the internal resistance increase (1)</li><li>E = V + Ir, so the terminal p.d., which is also the p.d. across the lamp, decreases and the lamp is dimmer (1)</li></ul><p>The EMF of the battery is constant; the internal resistance is constant. It is the lost volts that change. &quot;The heater takes some of the current from the lamp&quot; is not an explanation: in parallel the lamp keeps its own branch, and its current falls only because the p.d. across it falls.</p>",
@@ -316,14 +319,14 @@
           "<p>A student shines light of different frequencies on a clean metal surface in a vacuum tube and measures the maximum kinetic energy <em>E</em><sub>k</sub> of the electrons that are emitted. The graph shows her results and the line of best fit.</p>",
         figure: figPE,
         parts: [
-          { label: "(a)", type: "num", marks: 1, a: 5.0e14, alts: [500], unitAlts: ["THz"], sf: 2, tol: 0, rel: 0.06, unit: "Hz", shown: "5.0 × 10¹⁴", q: "Use the graph to find the threshold frequency of the metal.", why: "No electrons are emitted when E<sub>k</sub> = 0, so the threshold frequency is where the line meets the frequency axis: <strong>5.0 × 10¹⁴ Hz</strong>. Remember the axis is in units of 10¹⁴ Hz. Accept 4.7 to 5.3 × 10¹⁴ Hz, or the same value in terahertz (500 THz): 1 THz = 10¹² Hz." },
+          { label: "(a)", type: "num", marks: 1, a: 5.0e14, alts: [500], unitAlts: ["THz"], sf: 2, tol: 0, rel: 0.06, unit: "Hz", shown: "5.0 × 10¹⁴", q: "Use the graph to find the threshold frequency of the metal. Give your answer in hertz, including the power of ten (the frequency axis is labelled in units of 10¹⁴ Hz).", why: "No electrons are emitted when E<sub>k</sub> = 0, so the threshold frequency is where the line meets the frequency axis: <strong>5.0 × 10¹⁴ Hz</strong>. Remember the axis is in units of 10¹⁴ Hz. Accept 4.7 to 5.3 × 10¹⁴ Hz, or the same value in terahertz (500 THz): 1 THz = 10¹² Hz." },
           {
             label: "(b)", type: "calc", marks: 3,
             q: "Use the graph to determine a value for the Planck constant.",
             steps: [
               { desc: "Relationship: E_k = hf − hf₀, so h is the gradient (rise ÷ run)", rel: ["ek=hf-hf0", "gradient=", "slope=", "h=(?:gradient|slope)", "(?:gradient|slope)=h", "rise[/÷]run", "\\(?y2-y1\\)?[/÷]\\(?x2-x1", "h=\\(?e"] },
               { desc: "Two points on the line used, with the powers of ten", nums: [[0.663e-19, 1.326e-19, 1.989e-19, 2.652e-19, 3.315e-19, 0.663, 1.326, 1.989, 2.652, 3.315, 0.69e-19, 1.30e-19, 1.99e-19, 2.62e-19, 3.35e-19, 0.69, 1.30, 1.99, 2.62, 3.35], [6.0e14, 7.0e14, 8.0e14, 9.0e14, 10.0e14, 5.0e14, 6.0, 7.0, 8.0, 9.0, 10.0, 5.0]] },
-              { desc: "h with unit: 6.6 × 10⁻³⁴ J s", ans: 6.63e-34, sf: 2, rel2: 0.045, unit: ["j s", "j hz-1", "j/hz", "kg m2 s-1"] },
+              { desc: "h with unit: 6.6 × 10⁻³⁴ J s", ans: 6.65e-34, sf: 2, abs: 0.25e-34, unit: ["j s", "j hz-1", "j/hz", "kg m2 s-1"] },
             ],
             sample: "E_k = hf − hf₀, so the gradient of the graph is h\ngradient = (3.3 × 10⁻¹⁹ − 0)/(10.0 × 10¹⁴ − 5.0 × 10¹⁴)\nh = 6.6 × 10⁻³⁴ J s",
             model: "<ul><li>E<sub>k</sub> = hf − hf<sub>0</sub>, so h = gradient of the graph (1)</li><li>gradient = (3.3 × 10⁻¹⁹ − 0) ÷ (10.0 × 10¹⁴ − 5.0 × 10¹⁴), with the powers of ten included (1)</li><li>h = 6.6 × 10⁻³⁴ J s (1)</li></ul><p>Accept 6.4 to 6.9 × 10⁻³⁴. J Hz⁻¹ is the same unit as J s. Forgetting the 10⁻¹⁹ and 10¹⁴ on the axes gives 0.66, which is out by a factor of 10³³: always carry the powers of ten shown on the axis labels into the calculation.</p>",
@@ -336,10 +339,10 @@
               { desc: "Light arrives as packets (photons) and the energy of each is E = hf, set by the frequency", group: "a",
                 any: ["\\be ?= ?hf\\b", "\\bhf\\b", "\\bphotons?\\W+(?:\\w+\\W+){0,6}energy\\W+(?:\\w+\\W+){0,8}frequency", "\\benergy\\W+(?:\\w+\\W+){0,6}photons?\\W+(?:\\w+\\W+){0,8}frequency", "\\bfrequency\\W+(?:\\w+\\W+){0,8}(?:determines?|decides?|sets?|gives?)\\W+(?:\\w+\\W+){0,4}energy", "\\bfrequency\\W+(?:\\w+\\W+){0,6}(?:below|less than|lower than|under)\\W+(?:\\w+\\W+){0,3}(?:threshold|f0)"] },
               { desc: "Each photon has less energy than the work function, so it cannot free an electron", group: "b", negOK: true,
-                not: [negFor("less|lower|smaller|below|insufficient|too|lacks?|greater|larger|bigger|higher|more"), "\\b(?:do|does|can|will|would)\\s+(?:have|has|carry|carries|give|gives|provide)\\s+(?:\\w+\\s+)?(?:enough|sufficient)", "(?<!not )(?<!n't )\\b(?:has|have)\\s+(?:more|greater|enough|sufficient)\\s+(?:\\w+\\s+)?energy"],
+                not: [negFor("less|lower|smaller|below|insufficient|too|lacks?"), "(?:\\bnot|n't)\\W+(?:\\w+\\W+){0,1}(?:greater|larger|bigger|higher|more)\\W+(?:\\w+\\W+){0,3}than\\W+(?:the\\W+)?(?:work function|threshold|hf0)", "\\b(?:do|does|can|will|would)\\s+(?:have|has|carry|carries|give|gives|provide)\\s+(?:\\w+\\s+)?(?:enough|sufficient)", "(?<!not )(?<!n't )\\b(?:has|have)\\s+(?:more|greater|enough|sufficient)\\s+(?:\\w+\\s+)?energy"],
                 any: ["\\b(?:not|insufficient|inadequate|isn't|aren't|doesn't|don't)\\W+(?:\\w+\\W+){0,3}(?:enough|sufficient)\\W+(?:\\w+\\W+){0,2}energy", "\\benergy\\W+(?:\\w+\\W+){0,4}(?:not|isn't|insufficient)\\W+(?:\\w+\\W+){0,2}(?:enough|sufficient|great|large|big|high)", "\\b(?:photons?|energy|hf)\\W+(?:\\w+\\W+){0,12}(?:less|lower|smaller|below|insufficient|too (?:little|low|small)|lacks?)\\W+(?:\\w+\\W+){0,10}(?:work function|threshold|escape|leave|free|remov\\w*|emit\\w*|releas\\w*|overcome|hf0|surface)", "\\b(?:work function|threshold|hf0)\\W+(?:\\w+\\W+){0,12}(?:greater|larger|bigger|higher|more|exceeds?)\\W+(?:\\w+\\W+){0,6}(?:photon|energy)", "\\b(?:too little|insufficient|not enough|less than)\\W+(?:\\w+\\W+){0,3}energy\\W+(?:\\w+\\W+){0,12}(?:escape|leave|free|remov\\w*|work function|surface)"] },
-              { desc: "A brighter beam gives more photons, not photons of greater energy", group: "c",
-                not: ["\\b(?:number of photons|photons?)\\W+(?:\\w+\\W+){0,2}(?:is|are|do|does|will)\\W+not\\W+(?:\\w+\\W+){0,1}(?:increas\\w*|rise|chang\\w*|get more|more|produc\\w*)\\b", negFor("same|unchanged|constant|still|more|larger|greater|increas\\w*")],
+              { desc: "A brighter beam gives more photons, not photons of greater energy", group: "c", negOK: true,
+                not: ["\\b(?:number of photons|photons?)\\W+(?:\\w+\\W+){0,2}(?:is|are|do|does|will)\\W+not\\W+(?:\\w+\\W+){0,1}(?:increas\\w*|rise|chang\\w*|get more|more|produc\\w*)\\b", negFor("same|unchanged|constant|still"), "(?:\\bnot|n't|\\bno)\\W+(?:\\w+\\W+){0,2}(?:more|larger|greater|bigger|increas\\w*|extra)\\W+(?:\\w+\\W+){0,1}photons\\b", "(?<!(?:\\bnot|n't|\\bno|\\bnor)\\W+(?:\\w+\\W+){0,1})\\b(?:more|greater|larger|bigger|higher)\\W+(?:\\w+\\W+){0,1}energy\\W+(?:\\w+\\W+){0,2}(?:per|each|every|for each)\\W+(?:\\w+\\W+){0,1}photon(?!s)\\b", "(?<!(?:\\bnot|n't|\\bno|\\bnor)\\W+(?:\\w+\\W+){0,3})\\bphotons?\\W+(?:\\w+\\W+){0,3}(?:have|has|carr\\w+|with)\\W+(?:\\w+\\W+){0,1}(?:more|greater|larger|bigger|higher)\\W+energy"],
                 any: ["\\b(?:more|greater|larger|bigger|increased|increasing|extra|higher)\\W+(?:\\w+\\W+){0,2}photons\\b", "\\b(?:number|amount) of photons\\W+(?:\\w+\\W+){0,4}(?:" + UP + ")\\b", "\\b(?:each|every|individual|single) photon\\W+(?:\\w+\\W+){0,8}(?:same|unchanged|constant|still)", "\\b(?:same|unchanged|constant)\\W+(?:\\w+\\W+){0,3}(?:photon energy|energy of (?:each|the|every|a) photon)"],
                 all: ["\\b(?:same|unchanged|constant|still|identical)\\W+(?:\\w+\\W+){0,3}energy|\\benergy\\W+(?:\\w+\\W+){0,5}(?:same|unchanged|constant|still|identical)|\\b(?:not|n't|no|never|nor)\\W+(?:\\w+\\W+){0,3}(?:greater|more|higher|larger|bigger|increas\\w*|extra)\\W+(?:\\w+\\W+){0,2}energy|(?:won't|wouldn't|doesn't|does not|do not|will not|cannot|can't|didn't|did not)\\W+(?:\\w+\\W+){0,2}(?:help|free|release|emit|eject|work|matter|change|make)"], win: 200 },
             ],
@@ -429,8 +432,8 @@
                 not: [negFor("move\\w*|further|farther|increas\\w*|longer|greater|larger|bigger|extend\\w*")],
                 any: [near("distance|screen", "increas\\w*|longer|further|farther|greater|larger|bigger|move\\w*|away|extend\\w*", 6), "\\b(?:between|across)\\W+(?:the )?(?:\\w+\\W+){0,1}(?:first|1st|two|both)\\W+(?:\\w+\\W+){0,2}(?:orders?|maxima|spots|fringes|dots)", "\\bboth sides\\b|\\beither side\\b", "\\b(?:second|2nd|higher|third|3rd)\\W+(?:\\w+\\W+){0,1}order", "\\bmore lines\\b|\\bfiner grating\\b|\\bhigher number of lines\\b"] },
               { desc: "The measured length (or angle) is bigger, so the same ± 1 mm is a smaller percentage (fraction) of it", group: "b", win: 140,
-                not: [negFor("smaller|less|lower|larger|bigger|greater|longer|increas\\w*")],
-                all: ["\\b(?:percentage|%|per ?cent|fraction|proportion|relative|ratio|smaller part|smaller portion|same (?:absolute )?(?:uncertainty|error)|same 1 ?mm|1 ?mm)", "\\b(?:larger|bigger|greater|longer|increas\\w*|wider|further)\\W+(?:\\w+\\W+){0,6}(?:distance|separation|angle|reading|measurement|value|length|spacing|x)\\b|\\b(?:both|two|either)\\W+(?:\\w+\\W+){0,4}(?:orders?|maxima|sides?|spots)\\b|\\b(?:further|farther|more|wider|greater)\\W+apart\\b|\\bspread\\w*\\W+(?:out|further|wider)|\\b(?:distance|separation|angle|reading|measurement|value|length|spacing)\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|longer|increas\\w*|wider)\\b"] },
+                not: [negFor("smaller|less|lower|larger|bigger|greater|longer|increas\\w*"), "\\b(?:percentage|%|fractional|relative|per ?cent)\\W+(?:uncertainty|error)\\W+(?:\\w+\\W+){0,2}(?:larger|bigger|greater|higher|increas\\w*|more|rises?|grows?)", "\\b(?:larger|bigger|greater|higher|more)\\W+(?:\\w+\\W+){0,1}(?:percentage|%|fractional|relative|per ?cent)\\W+(?:uncertainty|error)"],
+                all: ["\\b(?:percentage|%|per ?cent|fraction|proportion|relative|ratio|smaller part|smaller portion|same (?:absolute )?(?:uncertainty|error)|same 1 ?mm|1 ?mm)", "\\b(?:larger|bigger|greater|longer|increas\\w*|wider|further)\\W+(?:\\w+\\W+){0,6}(?:distance|separation|angle|reading|measurement|value|length|spacing|x)s?\\b|\\b(?:both|two|either)\\W+(?:\\w+\\W+){0,4}(?:orders?|maxima|sides?|spots)\\b|\\b(?:further|farther|more|wider|greater)\\W+apart\\b|\\bspread\\w*\\W+(?:out|further|wider)|\\b(?:distance|separation|angle|reading|measurement|value|length|spacing)s?\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|longer|increas\\w*|wider)\\b"] },
             ],
             sample: "The screen should be moved further from the grating. The distance on the screen between the maxima is then larger, so the same 1 mm reading uncertainty is a smaller percentage of the measured distance.",
             model: "<ul><li>Increase the distance from the grating to the screen (or measure the distance between the two first-order maxima and halve it, or use a higher order, or a grating with more lines per mm) (1)</li><li>The length measured on the screen is larger but the scale-reading uncertainty (± 1 mm) is the same, so it is a smaller percentage of the reading (1)</li></ul><p>&quot;Repeat and take a mean&quot; reduces random uncertainty but does not answer a question about the scale-reading uncertainty of the length measurement.</p>",
@@ -468,7 +471,7 @@
             sample: "d = vt\n1.50 = v × 4.4 × 10⁻³\nv = 1.50/(4.4 × 10⁻³)\nv = 3.4 × 10² m s⁻¹",
             model: "<ul><li>d = vt (1)</li><li>1.50 = v × 4.4 × 10⁻³ (the time converted from ms to s) (1)</li><li>v = 3.4 × 10² m s⁻¹ (341 m s⁻¹) (1)</li></ul><p>Leaving the time as 4.4 gives 0.34 m s⁻¹, which is out by a factor of 1000.</p>",
           },
-          { label: "(c)", type: "num", marks: 1, a: 2.2727, sf: 2, tol: 0, unit: "%", shown: "2.3", q: "Calculate the percentage uncertainty in the time.", why: "0.1 ÷ 4.4 × 100 = <strong>2.3 %</strong>. For comparison the distance is uncertain by only 0.001 ÷ 1.50 × 100 = 0.07 %, so the timing dominates the uncertainty in the speed." },
+          { label: "(c)", type: "num", marks: 1, a: 2.2727, sf: 1, tol: 0, unit: "%", shown: "2.3", q: "Calculate the percentage uncertainty in the time.", why: "0.1 ÷ 4.4 × 100 = <strong>2.3 %</strong>. For comparison the distance is uncertain by only 0.001 ÷ 1.50 × 100 = 0.07 %, so the timing dominates the uncertainty in the speed." },
           {
             label: "(d)", type: "mcq", marks: 1, a: 0,
             q: "Which change would reduce the percentage uncertainty in the calculated speed the most?",
@@ -519,14 +522,14 @@
           "<p>A student charges an initially uncharged capacitor from a source that supplies 40 µA throughout the experiment. She reads the potential difference V across the capacitor every 10 s with a digital voltmeter. Her results lie on a straight line through the origin.</p>" +
           tbl(["t / s", "10", "20", "30", "40", "50"], [["V / V", "0.85", "1.70", "2.55", "3.40", "4.26"]]),
         parts: [
-          { label: "(a)", type: "num", marks: 1, a: 0.0851, sf: 2, tol: 0.002, unit: "V s⁻¹", shown: "0.085", q: "Determine the gradient of the graph of V against t, in V s⁻¹.", why: "gradient = (4.26 − 0.85) ÷ (50 − 10) = <strong>0.085 V s⁻¹</strong>. Using the origin and the last point gives 4.26 ÷ 50 = 0.085 V s⁻¹ as well. Accept 0.083 to 0.087." },
+          { label: "(a)", type: "num", marks: 1, a: 0.085, sf: 2, tol: 0.002, unit: "V s⁻¹", shown: "0.085", q: "Determine the gradient of the graph of V against t, in V s⁻¹.", why: "gradient = (4.26 − 0.85) ÷ (50 − 10) = <strong>0.085 V s⁻¹</strong>. Using the origin and the last point gives 4.26 ÷ 50 = 0.085 V s⁻¹ as well. Accept 0.083 to 0.087." },
           {
             label: "(b)", type: "calc", marks: 3,
             q: "The gradient of the graph is equal to I/C. Use the gradient to calculate the capacitance of the capacitor.",
             steps: [
               { desc: "Relationship: C = I ÷ gradient (from V = Q/C and Q = It)", rel: ["c=i[/÷](?:gradient|slope|m)", "c=q[/÷]v", "q=it", "gradient=i[/÷]c", "slope=i[/÷]c", "c=it[/÷]v", "v=it[/÷]c", "i[/÷]c=(?:gradient|slope|0\\.08)", "c=4(?:0|x10\\^-?5|e-5)[/÷]"] },
               { desc: "Substitution: 40 µA (4.0 × 10⁻⁵ A) and the gradient 0.085 V s⁻¹", nums: [[4e-5, 40], [0.085, 0.0851, 0.0853, 0.0848, 0.85, 1.7, 2.55, 3.4, 4.26]], tol: 0.01, not: ["(?:gradient|slope)[/÷]i", "0\\.08\\d*[/÷]\\(?(?:4\\.?0?x10\\^-?5|4\\.?0?e-5|40x10\\^-?6|40e-6)"] },
-              { desc: "Capacitance with unit: 4.7 × 10⁻⁴ F (470 µF)", ans: 4.706e-4, sf: 2, rel2: 0.03, unit: ["f", "farad", "farads"] },
+              { desc: "Capacitance with unit: 4.7 × 10⁻⁴ F (470 µF)", ans: 4.75e-4, sf: 2, abs: 0.15e-4, unit: ["f", "farad", "farads"] },
             ],
             sample: "C = I/gradient\nC = 40 × 10⁻⁶ / 0.085\nC = 4.7 × 10⁻⁴ F",
             model: "<ul><li>gradient = I/C, so C = I ÷ gradient (1)</li><li>C = 40 × 10⁻⁶ ÷ 0.085 (the prefix µ is 10⁻⁶) (1)</li><li>C = 4.7 × 10⁻⁴ F (= 470 µF) (1)</li></ul><p>Accept 4.6 to 4.9 × 10⁻⁴ F, and the answer in microfarads. Forgetting the µ gives 470 F, a million times too big. The gradient comes from Q = It and V = Q/C: V = (I/C)t.</p>",
@@ -569,12 +572,12 @@
             steps: [
               { desc: "Relationship: v = fλ, so λ = v × (1/f) and the gradient is the speed v", rel: ["v=f(?:λ|lambda)", "(?:λ|lambda)=v[/÷]f", "f=v[/÷](?:λ|lambda)", "(?:gradient|slope)=v", "v=(?:gradient|slope)", "(?:λ|lambda)=v(?:x|\\*)?\\(?1[/÷]f", "(?:gradient|slope)=\\(?\\d"] },
               { desc: "Gradient from two widely spaced points on the line (units of 10⁻³ s converted)", nums: [[0.34, 0.68, 0.85, 1.02, 0.17, 0.425, 0.51, 0.21, 0.43, 0.84], [1.0, 2.0, 2.5, 3.0, 0.5, 1.25, 1.5, 0.001, 0.002, 0.0025, 0.003, 0.0005, 0.00125, 0.0015, 400, 500, 800, 1000, 1600, 2000]] },
-              { desc: "Speed with unit: 3.4 × 10² m s⁻¹", ans: 340, sf: 2, abs: 15, unit: ["m s-1", "m/s"] },
+              { desc: "Speed with unit: 3.4 × 10² m s⁻¹", ans: 340, sf: 2, abs: 10, unit: ["m s-1", "m/s"] },
             ],
             sample: "gradient = v\ngradient = (0.68 − 0)/(2.0 × 10⁻³ − 0)\nv = 3.4 × 10² m s⁻¹",
             model: "<ul><li>v = fλ, so λ = v × (1/f) and the gradient of the graph is the speed v (1)</li><li>gradient = (0.68 − 0) ÷ (2.0 × 10⁻³ − 0), with the x axis converted from units of 10⁻³ s (1)</li><li>v = 3.4 × 10² m s⁻¹ (1)</li></ul><p>Accept 3.3 to 3.5 × 10² m s⁻¹. Forgetting the 10⁻³ on the axis gives 0.34 m s⁻¹, which is out by a factor of 1000. The data sheet value is 3.40 × 10² m s⁻¹.</p>",
           },
-          { label: "(b)", type: "num", marks: 1, a: 0.425, sf: 2, tol: 0.02, unit: "m", shown: "0.43", q: "Use the graph to find the wavelength of the sound when the frequency is 800 Hz.", why: "f = 800 Hz gives 1/f = 1.25 × 10⁻³ s. The line reads <strong>0.43 m</strong> at 1.25 on the horizontal axis (check: 340 ÷ 800 = 0.425 m). Accept 0.41 to 0.45." },
+          { label: "(b)", type: "num", marks: 1, a: 0.43, sf: 2, tol: 0.02, unit: "m", shown: "0.43", q: "Use the graph to find the wavelength of the sound when the frequency is 800 Hz.", why: "f = 800 Hz gives 1/f = 1.25 × 10⁻³ s. The line reads <strong>0.43 m</strong> at 1.25 on the horizontal axis (check: 340 ÷ 800 = 0.425 m). Accept 0.41 to 0.45." },
           {
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "Explain why the student plots λ against 1/f rather than λ against f.",

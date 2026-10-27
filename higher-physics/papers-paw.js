@@ -8,6 +8,12 @@
   /* NOT(x): a negator shortly before x ("not enough", "no longer increases"), for `not` vetoes. */
   const NOT = (x) => "\\b(?:not|never|no|n't|cannot|without)\\W+(?:\\w+\\W+){0,3}(?:" + x + ")";
   const LAM = "(?:λ|lambda)";
+  /* paw-07(a): role reversals. "red ... high frequency / more energy than the work function" and "UV ... low frequency / less energy"
+     must veto the points that would otherwise be satisfied by the same words with the colours swapped. Gaps are spaces-only words, so a
+     comma, "but", "than" or a negative stops the chain and a correct "red has less ... whereas UV has more" is untouched. */
+  const GAP = (n) => "(?:(?!(?:not|never|cannot|less|lower|below|too|insufficient|fewer|only|little|low|than|uv|ultraviolet|red|while|whereas|but|and|so|which|compared)\\b)\\w+ ){0," + n + "}";
+  const RED_HIGH = "\\bred " + GAP(5) + "(?:high|higher|greater|more|large|larger|bigger|above|enough|sufficient|exceed\\w*) " + GAP(2) + "(?:frequency|energy|energies|work function|threshold)";
+  const UV_LOW = "\\b(?:uv|ultraviolet) " + GAP(6) + "(?:low|lower|less|smaller|fewer|little|insufficient|below)(?: \\w+){0,2} (?:frequency|energy|energies|work function|threshold)";
   const X = "[x*]?";
   /* paw-01(c): "the magnetic field accelerates", "magnetic field is for accelerating" (and the electric/bend mirror) in one clause,
      plus the passive "accelerating is done by the magnetic field"; used as vetoes so a swapped answer earns nothing. */
@@ -259,9 +265,9 @@
           "<p>Uranium-238 decays through a series of nuclei. Part of the series is shown. The letters A and Z stand for the mass number and the atomic number.</p>",
         figure: fig03,
         parts: [
-          { label: "(a)(i)", type: "num", marks: 1, a: 234, tol: 0, sf: 3, unit: "", q: "State the mass number of the thorium nucleus.", why: "An alpha particle is ⁴₂He, so the mass number falls by 4 and the atomic number by 2: 238 − 4 = <strong>234</strong>, and 92 − 2 = 90, which matches the diagram." },
+          { label: "(a)(i)", type: "num", marks: 1, a: 234, tol: 0, rel: 0, sf: 3, unit: "", q: "State the mass number of the thorium nucleus.", why: "An alpha particle is ⁴₂He, so the mass number falls by 4 and the atomic number by 2: 238 − 4 = <strong>234</strong>, and 92 − 2 = 90, which matches the diagram." },
           { label: "(ii)", type: "num", marks: 1, a: 91, tol: 0, sf: 2, unit: "", q: "State the atomic number of the protactinium nucleus.", why: "In beta decay a neutron changes into a proton, so the atomic number rises by 1 and the mass number is unchanged: 90 + 1 = <strong>91</strong>." },
-          { label: "(iii)", type: "num", marks: 1, a: 142, tol: 0, sf: 3, unit: "neutrons", q: "The final uranium nucleus has a mass number of 234. How many neutrons does it contain?", why: "Neutrons = mass number − atomic number = 234 − 92 = <strong>142</strong>." },
+          { label: "(iii)", type: "num", marks: 1, a: 142, tol: 0, rel: 0, sf: 3, unit: "neutrons", q: "The final uranium nucleus has a mass number of 234. How many neutrons does it contain?", why: "Neutrons = mass number − atomic number = 234 − 92 = <strong>142</strong>." },
           {
             label: "(b)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "Describe what happens inside the thorium nucleus when it undergoes beta decay.",
@@ -311,7 +317,7 @@
               { desc: "Mass lost = 3.20 × 10⁻²⁸ kg (mass before − mass after, including all three neutrons)", nums: [3.2e-28] },
               { desc: "E = mc²", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"] },
               { desc: "Substitution: 3.20 × 10⁻²⁸ × (3.00 × 10⁸)² (c must be squared)", rel: C_SQ, nums: [3.2e-28] },
-              { desc: "E = 2.88 × 10⁻¹¹ J", ans: 2.88e-11, sf: 3, unit: ["j", "joules", "joule"] },
+              { desc: "E = 2.88 × 10⁻¹¹ J", ans: 2.88e-11, sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "Mass before = 3.9030 × 10⁻²⁵ + 1.675 × 10⁻²⁷ = 3.91975 × 10⁻²⁵ kg\nMass after = 2.3398 × 10⁻²⁵ + 1.5265 × 10⁻²⁵ + 3 × 1.675 × 10⁻²⁷ = 3.91655 × 10⁻²⁵ kg\nMass lost = 3.20 × 10⁻²⁸ kg\nE = mc²\nE = 3.20 × 10⁻²⁸ × (3.00 × 10⁸)²\nE = 2.88 × 10⁻¹¹ J",
             model: "<ul><li>Mass of reactants − mass of products = 3.20 × 10⁻²⁸ kg (1) (the incoming neutron counts on the left and all <em>three</em> neutrons on the right)</li><li>E = mc² (1)</li><li>E = 3.20 × 10⁻²⁸ × (3.00 × 10⁸)² (1)</li><li>E = 2.88 × 10⁻¹¹ J (1)</li></ul><p>Forgetting the three product neutrons gives a mass &quot;lost&quot; of 3.1 × 10⁻²⁷ kg, ten times too large. Do not round the masses before subtracting.</p>",
@@ -381,7 +387,7 @@
           "<p>A student measures the maximum kinetic energy of the photoelectrons emitted from a clean metal plate for light of different frequencies. The results are plotted on the graph.</p>",
         figure: fig06,
         parts: [
-          { label: "(a)", type: "num", marks: 1, a: 4.6e14, tol: 1e13, sf: 2, unit: "Hz", shown: "4.6 × 10¹⁴", q: "Use the graph to find the threshold frequency of the metal.", why: "The threshold frequency is where the line meets the frequency axis, the lowest frequency that produces any photoelectrons: <strong>4.6 × 10¹⁴ Hz</strong>. Remember the axis is in units of 10¹⁴ Hz." },
+          { label: "(a)", type: "num", marks: 1, a: 4.6e14, tol: 1e13, sf: 2, unit: "Hz", shown: "4.6 × 10¹⁴", q: "Use the graph to find the threshold frequency of the metal. Give your answer in hertz (Hz), including the power of ten.", why: "The threshold frequency is where the line meets the frequency axis, the lowest frequency that produces any photoelectrons: <strong>4.6 × 10¹⁴ Hz</strong>. Remember the axis is in units of 10¹⁴ Hz." },
           {
             label: "(b)", type: "calc", marks: 3, rows: 5,
             q: "Calculate the work function of the metal.",
@@ -437,9 +443,9 @@
                 all: [near("photons?|quanta|quantum|packets?", "hf|h ?x ?f|frequency|frequencies", 8)] },
               { desc: "Each red photon has too little energy: it is below the work function (frequency below the threshold), so no electrons are released however many photons arrive",
                 any: [near("less|lower|smaller|below|insufficient|too little|not enough|too low|isn'?t enough|too small|doesn'?t have", "work function|threshold|hf0|hf₀|enough energy|free|release|remove|emit\\w*|knock", 9)],
-                not: ["(?:not|n't)\\s+(?:\\w+\\s+){0,1}(?:less|lower|smaller|below|insufficient)"] },
+                not: ["(?:not|n't)\\s+(?:\\w+\\s+){0,1}(?:less|lower|smaller|below|insufficient)", UV_LOW, RED_HIGH] },
               { desc: "Each ultraviolet photon has a higher frequency, so its energy is greater than the work function, and it can release an electron",
-                not: ["(?:uv|ultraviolet)\\s+(?:\\w+\\s+){0,4}(?:not|n't)\\s+(?:\\w+\\s+){0,2}(?:greater|higher|more|enough|exceed\\w*|sufficient|above|bigger|larger)"],
+                not: [UV_LOW, RED_HIGH, "(?:uv|ultraviolet)\\s+(?:\\w+\\s+){0,4}(?:not|n't)\\s+(?:\\w+\\s+){0,2}(?:greater|higher|more|enough|exceed\\w*|sufficient|above|bigger|larger)"],
                 any: [near("photon|energy|energies|frequency", "(?:greater|more|higher|exceed\\w*|above|at least|equal|larger|bigger)\\W+(?:\\w+\\W+){0,4}(?:work function|threshold|needed|required|minimum|hf0|hf₀)", 6), "(?:uv|ultraviolet)\\W+(?:\\w+\\W+){0,4}(?:enough|sufficient|more|greater|higher|exceed\\w*)\\W+(?:\\w+\\W+){0,1}(?:energy|frequency|work function|threshold)"] },
             ],
             sample: "Light is made of photons, and the energy of each photon is E = hf, so it depends only on the frequency. Each red photon has less energy than the work function of zinc, so it cannot release an electron, and a brighter lamp just sends more photons that each still have too little energy. An ultraviolet photon has a higher frequency, so its energy is greater than the work function and it releases an electron at once.",
@@ -475,7 +481,7 @@
               { desc: "E₂ − E₁ = hf (and v = fλ), or λ = hc/E", rel: ["e[₂2]-e[₁1]=hf", "e=hf", "=hf\\b", "f=e/h", "hf=", LAM + "=hc/e", "e=hc/" + LAM, "hc/e", "e=h" + X + "c/" + LAM, LAM + "=h" + X + "c/"] },
               { desc: "Photon energy = 3.09 × 10⁻¹⁹ J", nums: [3.09e-19] },
               { desc: "f = E/h = 4.66 × 10¹⁴ Hz (or, by the other route, hc/E with the values substituted)", rel: [E14, EH, HCE, HC, SUBHC] },
-              { desc: "λ = v/f = 6.44 × 10⁻⁷ m (644 nm)", ans: 6.4369e-7, alts: [643.69], sf: 3, unit: ["m", "nm", "metres", "metre", "nanometres"] },
+              { desc: "λ = v/f = 6.44 × 10⁻⁷ m (644 nm)", ans: 6.4369e-7, alts: [643.69], sf: 2, unit: ["m", "nm", "metres", "metre", "nanometres"] },
             ],
             sample: "E₂ − E₁ = hf\n−4.11 × 10⁻¹⁹ − (−7.20 × 10⁻¹⁹) = 3.09 × 10⁻¹⁹ J\nf = E/h = 3.09 × 10⁻¹⁹ / 6.63 × 10⁻³⁴ = 4.66 × 10¹⁴ Hz\nv = fλ so λ = 3.00 × 10⁸ / 4.66 × 10¹⁴\nλ = 6.44 × 10⁻⁷ m",
             model: "<ul><li>E₂ − E₁ = hf (1)</li><li>(−4.11 − (−7.20)) × 10⁻¹⁹ = 3.09 × 10⁻¹⁹ J (1)</li><li>f = 3.09 × 10⁻¹⁹ ÷ 6.63 × 10⁻³⁴ = 4.66 × 10¹⁴ Hz (1)</li><li>λ = c/f = 6.44 × 10⁻⁷ m (644 nm) (1)</li></ul><p>The energies are negative, so always subtract the lower level from the higher; a negative answer is a sign error. Accept 644 nm.</p>",
@@ -540,7 +546,7 @@
             steps: [
               { desc: "E = hf (or E = hc/λ)", rel: REL_EHF.concat(["e=hc/", "=hc/", "e=h" + X + "c/" + LAM, "hc/" + LAM]) },
               { desc: "f = v/λ = 6.17 × 10¹⁴ Hz (or the values put into hc/λ)", rel: ["6\\.(?:1\\d*|2\\d*)(?:x10\\^?14|e14)", "\\(?6\\.63(?:x10\\^?-34|e-34)\\)?x\\(?3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/\\(?(?:486|4\\.86)"] },
-              { desc: "E = 4.09 × 10⁻¹⁹ J", ans: 4.0926e-19, sf: 3, unit: ["j", "joules", "joule"] },
+              { desc: "E = 4.09 × 10⁻¹⁹ J", ans: 4.0926e-19, sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "v = fλ so f = 3.00 × 10⁸ / 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz\nE = hf\nE = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴\nE = 4.09 × 10⁻¹⁹ J",
             model: "<ul><li>E = hf (1)</li><li>f = 3.00 × 10⁸ ÷ 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz (1)</li><li>E = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴ = 4.09 × 10⁻¹⁹ J (1)</li></ul><p>Convert nm to m: 486 nm = 486 × 10⁻⁹ m.</p>",
@@ -752,9 +758,9 @@
             label: "(b)", type: "calc", marks: 3, rows: 6,
             q: "Calculate the wavelength of the light in the glass. Take the refractive index of the glass as 1.50.",
             steps: [
-              { desc: "n = λ₁/λ₂ (sin θ₁/sin θ₂ = λ₁/λ₂)", rel: ["n=" + LAM + "[₁1]/" + LAM + "[₂2]", LAM + "[₁1]/" + LAM + "[₂2]=n", LAM + "[₂2]=" + LAM + "[₁1]/n", "n=" + LAM + "air/", "n=650/", "1\\.5=650"] },
+              { desc: "n = λ₁/λ₂ (sin θ₁/sin θ₂ = λ₁/λ₂)", rel: ["n=" + LAM + "[₁1]/" + LAM + "[₂2]", LAM + "[₁1]/" + LAM + "[₂2]=n", LAM + "[₂2]=" + LAM + "[₁1]/n", "n=" + LAM + "air/", "n=650/", "1\\.5=650", "650/1\\.5", "650/n", LAM + "[₂2]?(?:glass)?=" + LAM + "[₁1]?(?:air)?/n"] },
               { desc: "Substitution: 1.50 = 650 / λ₂", nums: [1.5, 650] },
-              { desc: "λ₂ = 433 nm", ans: 433.33, alts: [4.3333e-7], sf: 3, unit: ["nm", "m", "nanometres", "metres", "metre"] },
+              { desc: "λ₂ = 433 nm", ans: 433.33, alts: [4.3333e-7], sf: 2, unit: ["nm", "m", "nanometres", "metres", "metre"] },
             ],
             sample: "n = λ₁ / λ₂\n1.50 = 650 / λ₂\nλ₂ = 433 nm",
             model: "<ul><li>n = λ₁/λ₂ (1)</li><li>1.50 = 650 / λ₂ (1)</li><li>λ₂ = 433 nm (4.33 × 10⁻⁷ m) (1)</li></ul><p>The wavelength falls because the light slows down.</p>",
@@ -778,9 +784,9 @@
             label: "(a)", type: "calc", marks: 3, rows: 5,
             q: "Calculate the critical angle for a diamond-to-air boundary. The refractive index of diamond is on the data sheet.",
             steps: [
-              { desc: "sin θc = 1/n", rel: ["sin(?:θc|thetac|θ_c|c)=1/n", "sin(?:θc|thetac|θ_c)=1/2\\.42", "n=1/sin", "sin(?:θc|thetac)=1/", "sinc=1/n"] },
+              { desc: "sin θc = 1/n", rel: ["sin\\(?(?:θ|theta)?_?c\\)?=1/(?:n|2\\.42|0\\.4|d)", "n=1/sin", "1/(?:n|2\\.42)=sin\\(?(?:θ|theta)?_?c"] },
               { desc: "Substitution: sin θc = 1/2.42 (= 0.413)", nums: [[2.42, 0.4132]], not: ["(?<![a-z])tan(?:θ|\\^|\\(|-1)", "(?<![a-z])cos(?:θ|\\(|\\^)"] },
-              { desc: "θc = 24.4°", ans: 24.4075, abs: 0.2, sf: 3, unit: ["°", "degrees", "deg"] },
+              { desc: "θc = 24.4°", ans: 24.4075, abs: 0.2, sf: 2, unit: ["°", "degrees", "deg"] },
             ],
             sample: "sin θc = 1/n\nsin θc = 1/2.42 = 0.413\nθc = 24.4°",
             model: "<ul><li>sin θc = 1/n (1)</li><li>sin θc = 1/2.42 (1)</li><li>θc = 24.4° (1)</li></ul><p>The critical angle is the angle of incidence that gives an angle of refraction of 90°. The refractive index 2.42 for diamond is on the data sheet. Accept 24°.</p>",
