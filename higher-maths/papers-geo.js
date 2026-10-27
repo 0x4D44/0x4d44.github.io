@@ -477,14 +477,14 @@
           },
           {
             label: "(c)", q: "Calculate the length of the frigate's course inside the radar range. Give your answer to 1 decimal place, in kilometres.", type: "num", marks: 2,
-            a: 19.3, tol: 0.05, unit: "km",
+            a: 19.3, alts: [19.2], tol: 0.05, unit: "km",
             partial: [{ a: 17.2, marks: 1, note: "Horizontal distance only: the course slopes, so multiply by sqrt(1.25)." }],
             reject: ["17.2", "296.96"], show: R`19.3\ \text{km}`,
             why: R`<p>&bull;1 the $x$-coordinates differ by $\sqrt{296.96}=17.23$, and $y$ changes by half of that along the course.</p><p>&bull;2 length $=\sqrt{17.23^2+8.62^2}=17.23\times\sqrt{1.25}=19.3$ km.</p>`
           },
           {
             label: "(d)", q: "For how many minutes is the frigate inside the radar range? Give your answer to the nearest minute.", type: "num", marks: 1,
-            a: 48, tol: 0.5, unit: "minutes", reject: ["0.8", "80"], show: "48",
+            a: 48, tol: 0, unit: "minutes", reject: ["0.8", "80"], show: "48",
             why: R`<p>&bull;1 time $=\dfrac{19.27}{24}\ \text{h}=0.803\ \text{h}\approx48$ minutes.</p>`
           }
         ]
