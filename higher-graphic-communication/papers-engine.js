@@ -107,7 +107,7 @@
     let got = Math.min(part.marks, pts.reduce((a, p) => a + (p.hit ? p.marks : 0), 0));
     if (list === "half") got = Math.min(got, Math.floor(part.marks / 2));
     // a mark needs some writing behind it: about four words each at the very least
-    got = Math.min(got, Math.floor(w / 4));
+    got = Math.min(got, Math.max(Math.floor(w / 4), w >= minWords ? 1 : 0));
     const out = { got, of: part.marks, points: pts };
     if (list) out.note = "Your answer reads like a list of key words. Write it as sentences; the marker gives little or no credit for a bare list.";
     return out;
