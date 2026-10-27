@@ -67,7 +67,8 @@
   const CONJ = W("and or but so because since as if then than while whereas although though unless whether when where"), OBJ = W("it them him her us me you this these those");
   const PRON = W("it they he she we you i there");
   const grammatical = (a, b) =>
-    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b));
+    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) || (SUBJ.has(a) && AUX.has(b)) || (AUX.has(a) && (DETS.has(b) || PREP.has(b)))
+    || (PREP.has(a) && (DETS.has(b) || OBJ.has(b))) || ((OBJ.has(a) || PRON.has(a)) && PREP.has(b)) || (CONJ.has(a) && (DETS.has(b) || PRON.has(b) || SUBJ.has(b)));
 
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
@@ -120,6 +121,7 @@
     return longest >= 10 ? "half" : null;
   }
 
+  HCP._listLike = listLike;
   function scoreText(part, ans) {
     const text = HCP.norm(ans);
     const minWords = Math.min(part.minWords == null ? 3 : part.minWords, 5);
@@ -185,7 +187,7 @@
       if (!missing.length) out.got = of;
       else { out.got = of > 1 ? Math.floor(of / 2) : 0; out.note = "The result is right, but the query does not do what the question asked in the way it asked (" + part.mustDesc + "). A hard-wired answer earns little."; }
     } else if (same && part.ordered) {
-      out.got = of > 1 ? of - 1 : 0; out.note = "The right rows, but not in the order asked for.";
+      out.got = missing.length ? (of > 1 ? Math.floor(of / 2) : 0) : of > 1 ? of - 1 : 0; out.note = "The right rows, but not in the order asked for.";
     } else {
       // right rows with the columns in a different order or with extra/missing columns is not a match; say what differs
       out.note = got.rows.length !== exp.rows.length ? `Your query returned ${got.rows.length} row${got.rows.length === 1 ? "" : "s"}; the model query returns ${exp.rows.length}.` : "The same number of rows, but not the same values or columns.";
