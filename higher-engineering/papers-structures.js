@@ -8,6 +8,12 @@
   /* near(a, b, n): regex source matching a and b in either order with at most n words between them. */
   const near = (a, b, n) => { const g = "\\W+(?:\\w+\\W+){0," + (n == null ? 3 : n) + "}"; return "\\b(?:" + a + ")\\b" + g + "\\b(?:" + b + ")\\b|\\b(?:" + b + ")\\b" + g + "\\b(?:" + a + ")\\b"; };
 
+  /* G(n): up to n whole words separated by single spaces, so a comma or full stop ends the stretch (clause-bounded). */
+  const G = (n) => "(?:[\\w'-]+ ){0," + n + "}";
+
+  /* Claims that turn the comparison round: cast iron stronger in tension, or its compressive figure read as a tensile one. */
+  const WD = String.raw`\bcast(?: iron)?(?:'s)? ${G(8)}(?:stronger|higher|greater|better|more) ${G(5)}(?:in )?(?:tension|tensile|pulling|pull|stretch\w*)\b|\bcast(?: iron)?(?:'s)? ${G(8)}(?:6\d0|900|600)\b ${G(3)}(?:(?!compress)[\w'-]+ ){0,4}(?:in )?(?:tension|tensile)\b|\b(?:tension|tensile)\b ${G(3)}(?:strength|stress)? ?${G(3)}(?:of|for|in) cast(?: iron)? ${G(3)}(?:is|are) ${G(3)}(?:6\d0|900|600|higher|greater|stronger)`;
+
   /* ---------- small SVG kit (cream paper, drawing-office style) ---------- */
   const INK = "#2b2418", BLUE = "#1f5f8b", RED = "#b3261e", GREY = "#8a8070", FILL = "#e9dfc8", GRID = "#d9cfb6";
   const fig = (w, h, label, body) =>
@@ -140,7 +146,7 @@
     s += T(X(3.0) + 8, Y(320) - 10, "P", { b: 1, a: "start", c: RED });
     s += T(x0 + 230, y0 + 40, "strain (× 10⁻³)", { b: 1 });
     s += `<text transform="translate(26 ${y0 - 150}) rotate(-90)" text-anchor="middle" font-weight="700">stress (N/mm²)</text>`;
-    s += T(X(0.3), Y(380), "mild-steel-like specimen, first part of the test", { a: "start", s: 12, c: GREY });
+    s += T(X(0.3), Y(380), "ductile metal specimen, first part of the test", { a: "start", s: 12, c: GREY });
     return fig(540, 385, "Stress-strain graph for a metal specimen. Stress in newtons per square millimetre is on the vertical axis from 0 to 400 and strain in units of 10 to the minus 3 is on the horizontal axis from 0 to 4. The line is straight from the origin to 300 at a strain of 1.5, then runs level at 300 up to a strain of 2.5, then rises slowly and curves over to about 350 at a strain of 4. At point P, at a strain of 3.0 and a stress of 320, the specimen is unloaded along a dashed straight line that reaches zero stress at a strain of 1.4.", s);
   })();
 
@@ -511,10 +517,13 @@
             q: "A heavily loaded steel cable snaps. Explain why the broken ends can whip back with great force.",
             points: [
               { desc: "The stretched cable has strain energy stored in it (elastic energy, the area under the force-extension graph)",
-                not: [R`(?<!elastic )(?<!strain )(?<!elastic strain )\b(?:potential|gravitational|height|high up|heat|thermal|chemical)\W+(?:energy)?`],
+                not: [R`(?<!elastic )(?<!strain )(?<!elastic strain )\b(?:potential|gravitational|height|high up|heat|thermal|chemical)\W+(?:energy)?`,
+                  R`\b(?:no|zero|without|little|isn't|not|n't|never)\W+(?:(?!but|whereas|while|however)\w+\W+){0,3}(?:strain|elastic|stor\w*|energy|stretch\w*)`],
                 any: [near(R`energy`, R`stor\w*|held|hold\w*|contain\w*|has|have|had|built up|saved|bank\w*|keeps?|kept`, 5),
                   R`\b(?:strain|elastic)\W+(?:\w+\W+){0,1}energy`] },
               { desc: "When it breaks that energy is released all at once (turned into kinetic energy of the ends), so they move suddenly and fast",
+                not: [R`(?<!elastic )(?<!strain )(?<!elastic strain )\b(?:potential|gravitational|height|high up|heat|thermal|chemical)\W+(?:energy)?`,
+                  R`\b(?:no|zero|without|little|isn't|not|n't|never)\W+(?:(?!but|whereas|while|however)\w+\W+){0,3}(?:strain|elastic|stor\w*|energy|stretch\w*)`],
                 all: [R`\benergy\b`, R`\b(?:releas\w*|let(?:s)? go|given (?:back|out)|gives? out|converted|changed|changes|transferred|turn\w* into|becomes?|goes? into|transform\w*|freed|escap\w*|discharg\w*)\b`, R`\b(?:kinetic|movement|motion|speed|sudden\w*|all at once|at once|quickly|instantly|instant|fast|violent\w*|whip\w*|snap\w*|fly\w*|flies)\b`] },
             ],
             sample: "A stretched cable stores a large amount of elastic strain energy. When the cable snaps, that energy is released all at once and changed into kinetic energy of the broken ends, so they whip back very fast and with great force.",
@@ -614,28 +623,34 @@
             points: [
               { desc: "Strength in tension with evidence: mild steel's ultimate tensile stress (430 N/mm²) is much higher than cast iron's (120 to 160 N/mm²)", group: "uts", negOK: true,
                 all: [R`\b4\W?3\W?0\b`, R`\b1[26]0\b`, R`\b(?:higher|greater|more|larger|bigger|stronger|compared|against|whereas|versus|vs|times|only|nearly|almost|about|roughly|maximum|twice|double|triple)\b`],
-                not: [R`\bcast(?: iron)?\W+(?:(?!but|whereas|while|however)\w+\W+){0,6}(?:higher|greater|stronger|better|more|larger|bigger)\W+(?:\w+\W+){0,3}than\W+(?:\w+\W+){0,1}(?:mild|steel)`, R`\b(?:mild|steel)\W+(?:(?!but|whereas|while|however)\w+\W+){0,6}(?:lower|weaker|less|smaller)\W+(?:\w+\W+){0,3}than\W+(?:\w+\W+){0,1}cast`] },
+                not: [WD, R`\bcast(?: iron)?\W+(?:(?!but|whereas|while|however)\w+\W+){0,6}(?:higher|greater|stronger|better|more|larger|bigger)\W+(?:\w+\W+){0,3}than\W+(?:\w+\W+){0,1}(?:mild|steel)`, R`\b(?:mild|steel)\W+(?:(?!but|whereas|while|however)\w+\W+){0,6}(?:lower|weaker|less|smaller)\W+(?:\w+\W+){0,3}than\W+(?:\w+\W+){0,1}cast`] },
               { desc: "Strength in tension: mild steel is stronger in tension than cast iron (cast iron is weak in tension)", group: "uts", negOK: true,
-                not: [R`\bcast(?: iron)?\W+(?:\w+\W+){0,3}(?:is|are|has|have)\W+(?:\w+\W+){0,3}(?:stronger|higher|greater|better)\W+(?:\w+\W+){0,4}(?:in )?tens\w*`, R`\b(?:steel|mild)\W+(?:\w+\W+){0,3}(?:is|are|has|have)\W+(?:\w+\W+){0,3}(?:weaker|lower|less|worse)\W+(?:\w+\W+){0,4}(?:in )?tens\w*`],
+                not: [WD, R`\bcast(?: iron)?\W+(?:\w+\W+){0,3}(?:is|are|has|have)\W+(?:\w+\W+){0,3}(?:stronger|higher|greater|better)\W+(?:\w+\W+){0,4}(?:in )?tens\w*`, R`\b(?:steel|mild)\W+(?:\w+\W+){0,3}(?:is|are|has|have)\W+(?:\w+\W+){0,3}(?:weaker|lower|less|worse)\W+(?:\w+\W+){0,4}(?:in )?tens\w*`],
                 any: [R`\b(?:two|three|four|2|3|4|double|twice|triple)\W+(?:times\W+)?(?:\w+\W+){0,5}cast`,
                   R`\b(?:steel|mild)\W+(?:\w+\W+){0,6}(?:stronger|higher|greater|better|more|larger|bigger)\W+(?:\w+\W+){0,5}(?:tens\w*|pull\w*|stretch\w*)`,
                   R`\b(?:steel|mild)\W+(?:\w+\W+){0,4}(?:ultimate|tens\w*|breaking)\W+(?:\w+\W+){0,4}(?:higher|greater|larger|bigger|stronger)\b`,
+                  R`\b(?:tensile|tension|ultimate)\W+(?:strength|stress)?\W*(?:\w+\W+){0,4}(?:higher|greater|larger|bigger|stronger|better)\W+(?:\w+\W+){0,2}than\W+(?:\w+\W+){0,2}cast`,
                   R`\bcast(?: iron)?\W+(?:\w+\W+){0,6}(?:weak\w*|lower|less|poor\w*|worse|smaller)\W+(?:\w+\W+){0,6}(?:tens\w*|pull\w*|stretch\w*)`,
                   R`\b(?:weak\w*|lower|less|poor\w*|worse)\W+(?:\w+\W+){0,3}(?:in )?(?:tens\w*)\W+(?:\w+\W+){0,6}cast`] },
               { desc: "Cast iron is brittle: it breaks suddenly with little or no warning (no plastic deformation, and no yield stress in the table)", negOK: true,
-                not: [R`\bcast(?: iron)?\W+(?:(?!but|whereas|while|however|steel|mild)\w+\W+){0,6}(?:is|are)\W+(?:(?!but|whereas|while|however|steel|mild)\w+\W+){0,6}(?:not\W+(?:\w+\W+){0,1}brittle|ductile|tough)`, R`\b(?:steel|mild)\W+(?:\w+\W+){0,3}(?:is|are)\W+(?:\w+\W+){0,2}brittle`],
+                not: [WD, R`\bcast(?: iron)?(?:'s)? ${G(6)}(?:is|are) ${G(6)}(?:not ${G(1)}brittle|ductile|tough)`, R`\b(?:steel|mild) ${G(3)}(?:is|are) ${G(2)}brittle`],
                 any: [R`\bbrittle\w*`,
                   near(R`snap\w*|fractur\w*|break\w*|shatter\w*|crack\w*|fail\w*|burst\w*`, R`sudden\w*|abrupt\w*|instant\w*|without (?:any )?warning|no warning|no sign|snaps`, 4),
                   R`\b(?:without|no|little|zero|gives? no|with no)\W+(?:\w+\W+){0,1}(?:warning|plastic\w*|stretch\w*|yield\w*|deform\w*)`] },
               { desc: "Mild steel is ductile: it yields and stretches before it breaks, giving a warning, so failure is not sudden", negOK: true,
-                not: [R`\b(?:steel|mild)\W+(?:\w+\W+){0,3}(?:is|are)\W+(?:\w+\W+){0,2}brittle`, R`\bcast(?: iron)?\W+(?:(?!but|whereas|while|however|steel|mild)\w+\W+){0,6}(?:is|are)\W+(?:(?!but|whereas|while|however|steel|mild)\w+\W+){0,6}ductile`],
+                not: [WD, R`\b(?:steel|mild) ${G(3)}(?:is|are) ${G(2)}brittle`, R`\bcast(?: iron)?(?:'s)? ${G(6)}(?:is|are) ${G(6)}(?:ductile|tough)`,
+                  R`\b(?:steel|mild)(?:'s)? ${G(5)}(?:has|have|gives?|shows?|is|are|does|doesn't|did|with) ${G(1)}(?:no|not|n't|never|without|little|zero) ${G(2)}(?:ductile|yield\w*|stretch\w*|plastic\w*|deform\w*|warning)\b`],
                 any: [near(R`steel|mild`, R`ductile|yield\w*|plastic\w*|stretch\w*|deform\w*|tough|warning|bend\w*|sag\w*`, 6),
+                  R`\bductile\b`,
+                  R`\b(?:ductile|yield\w*|stretch\w*|plastic\w*|deform\w*|sags?|bends?)\W+(?:\w+\W+){0,6}(?:warning|before (?:it )?(?:break|snap|fail|fractur)\w*|first)`,
                   near(R`ductile|yield\w*|plastic\w*|stretch\w*|warning`, R`before|first|then|gives?|gave|allow\w*`, 5)] },
-              { desc: "Consequence for the job: with its higher strength, steel can carry the 30 kN load with a larger factor of safety or a smaller section; cast iron is strong in compression (600 to 900) but unsuitable for a tension member",
-                not: [R`\bcast(?: iron)?\W+(?:(?!not|n't|but|than|column|struts?|compress|pier|pillar)\w+\W+){0,8}(?:best|better|good|suitable|ideal|right|should be used|use)\W+(?:(?!not|n't|but|than|column|compress)\w+\W+){0,4}(?:hanger|tension|gantry|choice|material)`],
+              { desc: "Consequence for the job: with its higher strength, steel can carry the 30 kN load with a larger factor of safety or a smaller section; cast iron is strong in compression (600 to 900) but unsuitable for a tension member", negOK: true,
+                not: [WD, R`\bcast(?: iron)?\W+(?:(?!not|n't|but|than|column|struts?|compress|pier|pillar)\w+\W+){0,8}(?:best|better|good|suitable|ideal|right|should be used|use)\W+(?:(?!not|n't|but|than|column|compress)\w+\W+){0,4}(?:hanger|tension|gantry|choice|material)`],
                 any: [near(R`factor of safety|safety factor|safely`, R`steel|mild|load|30|hanger|gantry|tens\w*|carry|hold|support`, 6),
-                  near(R`smaller|thinner|slimmer|less material|lighter|cheaper`, R`steel|mild|section|area|diameter|hanger|rod|bar`, 6),
-                  R`\bcast(?: iron)?\W+(?:\w+\W+){0,8}(?:compress\w*|squash\w*|squeez\w*|crush\w*|columns?|struts?|pillars?|piers?)\W+(?:\w+\W+){0,12}(?:weak\w*|poor\w*|tension|tensile|unsuitable|but|whereas|not|pull\w*)`, R`\bcast(?: iron)?\W+(?:\w+\W+){0,14}(?:weak\w*|poor\w*)\W+(?:\w+\W+){0,14}(?:compress\w*|squash\w*|squeez\w*|crush\w*)`, R`\b(?:weak\w*|poor\w*|tension|tensile|unsuitable|pull\w*)\W+(?:\w+\W+){0,8}cast(?: iron)?\W+(?:\w+\W+){0,8}(?:compress\w*|squash\w*|squeez\w*|crush\w*|columns?|struts?|pillars?|piers?)`,
+                  near(R`smaller|thinner|slimmer|less material|lighter`, R`steel|mild|section|area|diameter|hanger|rod|bar`, 6),
+                  R`\bcast(?: iron)?\W+(?:\w+\W+){0,12}(?:compress\w*|squash\w*|squeez\w*|crush\w*|columns?|struts?|pillars?|piers?)\W+(?:\w+\W+){0,12}(?:weak\w*|poor\w*|tension|tensile|unsuitable|but|whereas|not|pull\w*|hanger|gantry)`, R`\bcast(?: iron)?\W+(?:\w+\W+){0,14}(?:weak\w*|poor\w*)\W+(?:\w+\W+){0,14}(?:compress\w*|squash\w*|squeez\w*|crush\w*)`, R`\b(?:weak\w*|poor\w*|tension|tensile|unsuitable|pull\w*)\W+(?:\w+\W+){0,8}cast(?: iron)?\W+(?:\w+\W+){0,8}(?:compress\w*|squash\w*|squeez\w*|crush\w*|columns?|struts?|pillars?|piers?)`,
+                  R`\b(?:600|900|6\d0)\W+(?:\w+\W+){0,6}(?:only|just)\W+(?:\w+\W+){0,3}compress\w*`,
+                  R`\bcast(?: iron)?\W+(?:\w+\W+){0,10}(?:only|just)\W+(?:\w+\W+){0,3}(?:in |under |for )?compress\w*`,
                   R`\b(?:could|would|might|may|will|can)\W+(?:\w+\W+){0,3}(?:snap|break|fail|fracture)\W+(?:\w+\W+){0,6}(?:load|30|weight|gantry|lamp|hanger)`,
                   near(R`unsuitable|not suitable|unsafe|dangerous|risky|poor choice|wrong choice|inappropriate|not a good|bad choice`, R`cast|tension|tensile|hanger|pull`, 6)] },
             ],
@@ -655,10 +670,11 @@
             points: [
               { desc: "Without the diagonal a four-sided pin-jointed frame can change shape (fold flat, distort, collapse) under a sideways load", negOK: true,
                 not: [R`\btriang\w*\W+(?:\w+\W+){0,6}(?:collaps\w*|fold\w*|weak\w*|flimsy|unstable)`,
-                  R`\b(?:not|n't|never|nor|cannot|can't|no)\W+(?:(?!but|whereas|while)\w+\W+){0,3}(?:collaps\w*|fold\w*|deform\w*|distort\w*|rack\w*|flatten\w*|flop\w*|buckl\w*|wobbl\w*|swing\w*|sway\w*|mov\w*|chang\w*|flex\w*|lop-?sided|parallelogram)`,
+                  R`\b(?:not|n't|never|nor|cannot|can't|no)\W+(?:(?!but|whereas|while)\w+\W+){0,3}(?:collaps\w*|fold\w*|deform\w*|distort\w*|rack\w*|flatten\w*|flop\w*|buckl\w*|wobbl\w*|swing\w*|sway\w*|flex\w*|lop-?sided|parallelogram)`,
                   R`\b(?:diagonal|brace|bracing)\W+(?:\w+\W+){0,3}(?:(?:not|isn't|aren't|is un\w+)\W+(?:\w+\W+){0,2}(?:needed|required|necessary|essential|useful)|unnecessary|redundant|pointless|superfluous)`,
                   R`\b(?:no need|not need\w*|doesn't need|does not need|don't need|do not need|needn't|not required|isn't required|unnecessary|redundant|not necessary|isn't necessary|not essential|isn't needed|not needed)\b`,
-                  R`\b(?:frame|square|shape|it|structure)\W+(?:\w+\W+){0,3}(?:is|are|would be|will be|stays|remains|already)\W+(?:\w+\W+){0,2}(?:rigid|stiff|stable|strong enough|solid)\b`,
+                  R`\b(?:frame|square|shape|structure)\W+(?:\w+\W+){0,3}(?:already|still|naturally|anyway|by itself|on its own|remains|stays)\W+(?:\w+\W+){0,2}(?:rigid|stiff|stable|strong enough|solid)\b`,
+                  R`\bframe\W+(?:with|has|having|made)\W+(?:\w+\W+){0,4}(?:is|are)\W+(?:(?!not\b|n't)\w+\W+){0,2}(?:rigid|stiff|stable)\b`,
                   R`\b(?:pin|pins|pinned|joints?)\W+(?:(?!not\b|n't|never|no\b|aren't|isn't)\w+\W+){0,4}(?:rigid|stiff|stable|hold\w* (?:it|the frame|the shape))`,
                   R`\b(?:square|rectangle|four[- ]sided)\W+(?:\w+\W+){0,3}(?:is|are)\W+(?:(?!not\b|n't)\w+\W+){0,2}(?:rigid|stiff|stable|strong)`],
                 any: [R`\b(?:collaps\w*|fold\w*|deform\w*|distort\w*|rack\w*|flatten\w*|flop\w*|buckl\w*|wobbl\w*|swing\w*|sway\w*|parallelogram|rhomb\w*|unstable|flex\w*|lop-?sided|skew\w*|lean\w*|squash\w*)\b`,
@@ -668,14 +684,16 @@
                 all: [R`\btriang\w*`, R`\b(?:rigid|stiff|stable|strong|keeps?|holds?|retains?|fixed|locks?|locked|solid|sound|cannot|can't|unable)\b`],
                 not: [R`\btriang\w*\W+(?:\w+\W+){0,4}(?:weak\w*|unstable|flimsy|collaps\w*|fold\w*)`, R`\b(?:triang\w*|diagonal|brace)\W+(?:\w+\W+){0,3}(?:is|are|isn't|aren't)\W+(?:not|never)\W+(?:\w+\W+){0,1}(?:rigid|stiff|stable|strong)`, R`\b(?:diagonal|brace|bracing)\W+(?:\w+\W+){0,3}(?:(?:not|isn't|aren't|is un\w+)\W+(?:\w+\W+){0,2}(?:needed|required|necessary|essential|useful)|unnecessary|redundant|pointless|superfluous)`,
                   R`\b(?:no need|not need\w*|doesn't need|does not need|don't need|do not need|needn't|not required|isn't required|unnecessary|redundant|not necessary|isn't necessary|not essential|isn't needed|not needed)\b`,
-                  R`\b(?:frame|square|shape|it|structure)\W+(?:\w+\W+){0,3}(?:is|are|would be|will be|stays|remains|already)\W+(?:\w+\W+){0,2}(?:rigid|stiff|stable|strong enough|solid)\b`,
+                  R`\b(?:frame|square|shape|structure)\W+(?:\w+\W+){0,3}(?:already|still|naturally|anyway|by itself|on its own|remains|stays)\W+(?:\w+\W+){0,2}(?:rigid|stiff|stable|strong enough|solid)\b`,
+                  R`\bframe\W+(?:with|has|having|made)\W+(?:\w+\W+){0,4}(?:is|are)\W+(?:(?!not\b|n't)\w+\W+){0,2}(?:rigid|stiff|stable)\b`,
                   R`\b(?:pin|pins|pinned|joints?)\W+(?:(?!not\b|n't|never|no\b|aren't|isn't)\w+\W+){0,4}(?:rigid|stiff|stable|hold\w* (?:it|the frame|the shape))`,
                   R`\b(?:square|rectangle|four[- ]sided)\W+(?:\w+\W+){0,3}(?:is|are)\W+(?:(?!not\b|n't)\w+\W+){0,2}(?:rigid|stiff|stable|strong)`] },
               { desc: "The diagonal braces the frame so that it is rigid", negOK: true, group: "tri",
                 all: [R`\b(?:diagonal|brace|bracing|braced|extra member|cross[- ]?member)\b`, R`\b(?:rigid|stiff|stable|stiffen\w*|stabili[sz]\w*)\b`, R`\b(?:without|otherwise|if|would|could|can|may|prevent\w*|stop\w*|keep\w*|hold\w*|make\w*|makes|ensure\w*|needed|needs|required|so that|so it|so the|stops)\b`],
                 not: [R`\b(?:triang\w*|diagonal|brace)\W+(?:\w+\W+){0,3}(?:is|are|isn't|aren't)\W+(?:not|never)\W+(?:\w+\W+){0,1}(?:rigid|stiff|stable|strong)`, R`\b(?:diagonal|brace|bracing)\W+(?:\w+\W+){0,3}(?:(?:not|isn't|aren't|is un\w+)\W+(?:\w+\W+){0,2}(?:needed|required|necessary|essential|useful)|unnecessary|redundant|pointless|superfluous)`,
                   R`\b(?:no need|not need\w*|doesn't need|does not need|don't need|do not need|needn't|not required|isn't required|unnecessary|redundant|not necessary|isn't necessary|not essential|isn't needed|not needed)\b`,
-                  R`\b(?:frame|square|shape|it|structure)\W+(?:\w+\W+){0,3}(?:is|are|would be|will be|stays|remains|already)\W+(?:\w+\W+){0,2}(?:rigid|stiff|stable|strong enough|solid)\b`,
+                  R`\b(?:frame|square|shape|structure)\W+(?:\w+\W+){0,3}(?:already|still|naturally|anyway|by itself|on its own|remains|stays)\W+(?:\w+\W+){0,2}(?:rigid|stiff|stable|strong enough|solid)\b`,
+                  R`\bframe\W+(?:with|has|having|made)\W+(?:\w+\W+){0,4}(?:is|are)\W+(?:(?!not\b|n't)\w+\W+){0,2}(?:rigid|stiff|stable)\b`,
                   R`\b(?:pin|pins|pinned|joints?)\W+(?:(?!not\b|n't|never|no\b|aren't|isn't)\w+\W+){0,4}(?:rigid|stiff|stable|hold\w* (?:it|the frame|the shape))`,
                   R`\b(?:square|rectangle|four[- ]sided)\W+(?:\w+\W+){0,3}(?:is|are)\W+(?:(?!not\b|n't)\w+\W+){0,2}(?:rigid|stiff|stable|strong)`] },
             ],

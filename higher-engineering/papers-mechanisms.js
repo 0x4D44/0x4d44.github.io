@@ -316,33 +316,53 @@
   /* mechanisms-10(c): the rod takes up area on the instroke */
   {
     const SM = R`(?:smaller|less|reduced|lower|decreased|weaker)`;
+    const FORM = R`(?:\bf\s*=\s*p\s*(?:x|\*|times)?\s*a\b|\bforce\s*(?:=|is|equals)\s*pressure\s*(?:x|\*|times|multiplied by)\s*area|\bpressure\s*(?:x|times|\*|multiplied by)\s*area)`;
+    const BIG = R`(?:bigger|larger|greater|higher|more|stronger|increas\w*)`;
+    const WRONGDIR = [
+      R`\b(?:makes?|making|gives?|giving|adds?|adding|increases?|increasing|means?)\s+(?:the\s+|a\s+|an\s+)?(?:\w+\s+){0,2}(?:area|surface|face)\s+(?:bigger|larger|greater|more|increase\w*)`,
+      R`\brod\b${K(40)}\b(?:makes?|making|increas\w*|adds?|adding|enlarg\w*)\s+(?:the\s+|an?\s+)?(?:\w+\s+){0,2}(?:area|surface|face)`,
+      R`\b(?:in-?\s?strok\w*|rod end|rod side|annul\w*)\s+(?:force|area)\s+(?:is|are)\s+(?:\w+\s+){0,2}${BIG}`,
+      R`\b(?:out-?\s?strok\w*|cap end|full)\s+(?:force|area)\s+(?:is|are)\s+(?:\w+\s+){0,2}${SM}`,
+      R`\b(?:out-?\s?strok\w*|cap end)\b${K(40)}\b(?:force|area)\b${K(10)}\b${SM}\s+than`,
+    ];
     TXT.annulus = {
       points: [
         {
           desc: "The piston rod takes up part of the piston face on the rod side, so the area the air pushes on (the annulus) is smaller on the instroke",
           group: "rod",
+          not: WRONGDIR,
           any: [
             R`\brod\b${K(40)}\b(?:take[sn]?\s+up|takes? away|occupies|occupying|reduces?|reducing|covers?|covering|blocks?|blocking|removes?|removing|uses?\s+up|in the way|obstruct\w*|fills?|part of|some of)\b${K(40)}\b(?:area|face|surface|space|side)`,
             R`\bannul\w*`,
+            R`\b(?:covered|blocked|taken up|used up|occupied|filled|reduced|obstructed)\s+by\s+(?:the\s+)?(?:piston\s+)?rod`,
+            R`\b(?:because of|due to|caused by|owing to|thanks to|as a result of|since there is a|with the)\s+(?:the\s+)?(?:piston\s+)?rod\b${K(60)}\b(?:area|face|surface)`,
+            R`\bring\b${K(15)}\b(?:of\s+)?(?:area|air)\b`,
+            R`\b(?:ring|donut|doughnut|band|crescent|hollow)\b${K(25)}\b(?:round|around|about|surrounding|outside|beside)\b${K(15)}\brod`,
             R`\b(?:area|surface|face)\b${K(40)}\b${SM}\b${K(40)}\b(?:rod|instroke|in-?\s?stroke|rod end|rod side)`,
             R`\b(?:rod end|rod side|instroke|in-?\s?stroke)\b${K(40)}\b(?:area|face|surface)\b${K(30)}\b${SM}`,
             R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b${K(40)}\b(?:rod|instroke|in-?\s?stroke)`,
             R`\b(?:area of|space taken by|room taken by)\s+(?:the\s+)?rod\b`,
+            R`\b(?:rod|piston rod)\b${K(30)}\b(?:is|are|sits?|being)\s+(?:on|in|at)\s+(?:the\s+)?(?:same|that|rod|this)\s+side\b${K(40)}\b${SM}`,
           ],
         },
         {
           desc: "Force = pressure x area, so the same pressure on a smaller area gives a smaller force",
           group: "fpa",
+          not: WRONGDIR,
+          all: [FORM, R`\b${SM}\b`, R`\barea\b`],
+          win: 200,
+        },
+        {
+          desc: "Force = pressure x area, so the same pressure on a smaller area gives a smaller force",
+          group: "fpa",
+          not: WRONGDIR,
           any: [
-            R`\bf\s*=\s*p\s*(?:x|\*|times)?\s*a\b`,
-            R`\bforce\s*(?:=|is|equals)\s*pressure\s*(?:x|\*|times|multiplied by)\s*area`,
-            R`\bpressure\s*(?:x|times|\*|multiplied by)\s*area`,
-            R`\b${SM}\s+(?:effective\s+|working\s+)?area\b${K(50)}\b${SM}\s+(?:\w+\s+){0,2}force`,
-            R`\bforce\b${K(40)}\b(?:proportional|depends?|dependent)\b${K(30)}\barea`,
+            R`\b${SM}\s+(?:effective\s+|working\s+|piston\s+)?area\b${K(50)}\b${SM}\s+(?:\w+\s+){0,2}force`,
             R`\barea\b${K(40)}\b${SM}\b${K(50)}\bforce\b${K(30)}\b${SM}`,
-            R`\b(?:same|equal|constant)\s+pressure\b${K(60)}\b${SM}\s+(?:\w+\s+){0,2}force`,
-            R`\b(?:reduc\w*|decreas\w*|cuts?|lower\w*)\s+(?:the\s+)?(?:\w+\s+){0,2}area\b${K(70)}\b(?:force)\b`,
-            R`\b(?:same|equal|constant)\s+pressure\b${K(60)}\bforce\b${K(25)}\b${SM}`,
+            R`\b(?:same|equal|constant)\s+pressure\b${K(60)}\b${SM}\s+(?:\w+\s+){0,2}area\b${K(50)}\bforce`,
+            R`\b(?:same|equal|constant)\s+pressure\b${K(60)}\barea\b${K(40)}\b${SM}\b${K(40)}\bforce`,
+            R`\b(?:reduc\w*|decreas\w*|cuts?|lower\w*)\s+(?:the\s+)?(?:\w+\s+){0,2}area\b${K(70)}\b(?:force)\b${K(25)}\b${SM}`,
+            R`\bforce\b${K(40)}\b(?:proportional|depends?|dependent)\b${K(30)}\barea\b${K(60)}\b${SM}`,
           ],
         },
       ],
@@ -357,34 +377,52 @@
     const SREF = R`(?:s|valve s|button|push-?\s?button|3/2|three[- ]port)`;
     const CHG = R`(?:changes?\s+(?:its\s+)?(?:state|position)|changed\s+(?:state|position)|switch(?:es|ed)?|shifts?|shifted|flips?|actuat\w*|operat\w*|moves?\s+(?:over|across)|reverses)`;
     const VREF = R`(?:v|valve v|5/2|five[- ]port)`;
+    const PRESS = R`(?:press\w*|push\w*|depress\w*|actuat\w*|operat\w*|activat\w*|trigger\w*|hold\w*|held)`;
+    const REL = R`(?:releas\w*|let(?:s|ting)?\s+go|lets go|removed|no longer (?:pressed|held|operated)|stops? being (?:pressed|held)|taken off|unpress\w*|stops? pressing|let go)`;
+    const RET = R`(?:spring|return\w*|reset\w*|revert\w*|snaps? back|springs? back|flips? back|switch(?:es)? back|(?:changes?|goes?|moves?) back|back (?:to|into) (?:its |their |the )?(?:original|rest|normal|first|starting))`;
+    const IN2 = R`(?:in-?\s?strok(?:es|ed|ing)?|retract\w*|(?:moves?|goes?|comes?|pulls?|pulled|travels?)\s+(?:back\s+)?in\b|(?:piston|cylinder|rod|ram|c)\s+(?:then\s+|also\s+)?(?:returns?|goes?\s+back|comes?\s+back|moves?\s+back)|withdraws?|(?:door|oven)\s+(?:closes|shuts))`;
+    const VALVEY = R`(?:spring|pilot|signal|exhaust\w*|vent\w*|valve|\bv\b|\bs\b|\b14\b|\b12\b|rod end|port)`;
+    const OUTW = R`(?:out-?\s?strok(?:es|e)\b|extends?\b|goes? (?:out|forward)|moves? (?:out|forward)|pushes? out|advances?)`;
+    const ENDS = R`(?:exhaust\w*|vent\w*|remov\w*|cuts? off|stops?|release\w*|loses?|drops?|isolat\w*|blocks?|bleed\w*)`;
     TXT.simple = {
       points: [
         {
           desc: "Pressing the push-button: the 3/2 valve S actuates and air (a signal) goes to pilot port 14 of valve V",
+          not: [R`\b${PRESS}${C(REL, 50)}\b${ENDS}\b${K(25)}(?:pilot|signal|14)`],
           all: [near(ACT, SREF, 5), R`(?:pilot|\b14\b)`],
           win: 140,
         },
         {
           desc: "The 5/2 valve V changes state, air goes to the cap end and the piston outstrokes",
           group: "v",
+          not: [
+            R`\b${REL}${K(60)}\b(?:supplies|supplied|sends|gives|applies|provides|admits|puts)\s+(?:\w+\s+){0,3}(?:pilot|14|signal)`,
+            R`\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
+            R`\b${REL}${K(60)}\b${OUTW}`,
+          ],
           all: [near(CHG, VREF, 6), OUT],
           win: 160,
         },
         {
           desc: "The 5/2 valve V changes state, air goes to the cap end and the piston outstrokes",
           group: "v",
+          not: [
+            R`\b${REL}${K(60)}\b(?:supplies|supplied|sends|gives|applies|provides|admits|puts)\s+(?:\w+\s+){0,3}(?:pilot|14|signal)`,
+            R`\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
+            R`\b${REL}${K(60)}\bcap\b${K(60)}\b${OUTW}`,
+          ],
           all: [R`\bcap\b(?:\s+end)?`, OUT],
           win: 120,
         },
         {
           desc: "On release S returns (spring), the pilot signal goes, V returns and the piston instrokes",
-          all: [R`(?:releas\w*|let(?:s|ting)?\s+go|lets go|removed|no longer (?:pressed|held|operated)|stops? being (?:pressed|held)|taken off|unpress\w*|stops? pressing)`,
-            R`(?:spring|return\w*|reset\w*|revert\w*|back (?:to|into) (?:its |their |the )?(?:original|rest|normal|first|starting)|goes? back|moves? back|changes? back)`, IN],
+          not: [R`\b${REL}${K(40)}\b${OUTW}`],
+          all: [R`${REL}`, R`${RET}`, IN2, R`${VALVEY}`],
           win: 200,
         },
       ],
       sample: "When push-button S is pressed, the 3/2 valve actuates and air is supplied to pilot port 14 of valve V. The 5/2 valve V changes state, so air is supplied to the cap end of cylinder C and the piston outstrokes, opening the door. When S is released it returns under spring force, the pilot signal is removed and V returns, so air is supplied to the rod end and the piston instrokes.",
-      model: R`<ul><li>S (3/2 valve) actuates when pressed and supplies air to pilot port 14 of V (1)</li><li>V (5/2 valve) changes state: air is supplied to the cap end, the rod end exhausts, and the piston outstrokes (1)</li><li>When S is released it returns (spring), the pilot signal is exhausted and V returns (spring), so air goes to the rod end and the piston instrokes (1)</li></ul><p>Use the exact words: a 3/2 valve <em>actuates</em>, a 5/2 valve <em>changes state</em>, a piston <em>outstrokes</em> or <em>instrokes</em>. Do not accept &quot;the valve opens&quot; or &quot;the cylinder goes forward&quot; as the only description.</p>`,
+      model: R`<ul><li>S (3/2 valve) actuates when pressed and supplies air to pilot port 14 of V (1)</li><li>V (5/2 valve) changes state: air is supplied to the cap end, the rod end exhausts, and the piston outstrokes (1)</li><li>When S is released it returns (spring), the pilot signal is exhausted and V returns (spring), so air goes to the rod end and the piston instrokes (1)</li></ul><p>Use the exact words: a 3/2 valve <em>actuates</em>, a 5/2 valve <em>changes state</em>, a piston <em>outstrokes</em> or <em>instrokes</em>. Do not accept &quot;the valve opens&quot; or &quot;the cylinder goes forward&quot; as the only description, and do not accept the two halves swapped (pressing S withdrawing the signal, releasing it supplying pilot 14).</p>`,
     };
   }
 
@@ -393,18 +431,19 @@
     const who = (l) => R`(?:(?:cylinder|piston|ram|rod)\s+${l}\b${K(25)}|\b${l}\s+(?:then\s+|now\s+|also\s+|to\s+|will\s+|can\s+|starts?\s+to\s+|begins?\s+to\s+|starts?\s+|begins?\s+)?)`;
     const OUT2 = R`(?:${OUT}|\bout\b)`;
     /* a result for cylinder l: words (piston A outstrokes) or the shorthand l+ / l- */
-    const outX = (l) => R`(?:${who(l)}${OUT2}|\b${l}\s?\+(?![\w+]))`;
-    const inX = (l) => R`(?:${who(l)}${IN}|\b${l}\s?[-\u2212](?![\w-]))`;
+    const outS = (l) => R`\b${l}\s?\+(?![\w+])`;
+    const inS = (l) => R`\b${l}\s?[-\u2212](?![\w-])`;
     const veto = (sig) => R`${sig}${K(14)}\b(?:not|never|n't)\b`;
     /* a signal and its result, in either order, with no other signal named in between (sentences may run on) */
     const S = (stop, n) => R`(?:(?!${stop})[\s\S]){0,${n}}`;
-    const step = (sig, stop, res) => [R`${sig}${S(stop, 170)}${res}`, R`${res}${S(stop, 170)}${sig}`];
+    /* words may come before or after the signal; the shorthand (A+, B-) only after it, as "a1 ... B+", so the question's own "A+ B+ A- B-" cannot match */
+    const step = (sig, stop, res, short) => [R`${sig}${S(stop, 170)}${res}`, R`${res}${S(stop, 170)}${sig}`, R`${sig}${S(stop, 110)}${short}`];
     TXT.seq = {
       points: [
-        { desc: "START is pressed (with b0 pressed): pilot 14 of valve A, which changes state, and piston A outstrokes", not: [veto(R`\bstart\b`)], any: step(R`\bstart\b`, R`\ba\s?[01]\b|\bb\s?1\b`, outX("a")) },
-        { desc: "Piston A actuates a1, which supplies pilot 14 of valve B, so B changes state and piston B outstrokes", not: [veto(R`\ba\s?1\b`)], any: step(R`\ba\s?1\b`, R`\bstart\b|\ba\s?0\b|\bb\s?[01]\b`, outX("b")) },
-        { desc: "Piston B actuates b1, which supplies pilot 12 of valve A, so A changes state and piston A instrokes", not: [veto(R`\bb\s?1\b`)], any: step(R`\bb\s?1\b`, R`\bstart\b|\ba\s?[01]\b|\bb\s?0\b`, inX("a")) },
-        { desc: "Piston A actuates a0, which supplies pilot 12 of valve B, so B changes state and piston B instrokes", not: [veto(R`\ba\s?0\b`)], any: step(R`\ba\s?0\b`, R`\bstart\b|\ba\s?1\b|\bb\s?[01]\b`, inX("b")) },
+        { desc: "START is pressed (with b0 pressed): pilot 14 of valve A, which changes state, and piston A outstrokes", not: [veto(R`\bstart\b`)], any: step(R`\bstart\b`, R`\ba\s?[01]\b|\bb\s?1\b`, who("a") + OUT2, outS("a")) },
+        { desc: "Piston A actuates a1, which supplies pilot 14 of valve B, so B changes state and piston B outstrokes", not: [veto(R`\ba\s?1\b`)], any: step(R`\ba\s?1\b`, R`\bstart\b|\ba\s?0\b|\bb\s?[01]\b`, who("b") + OUT2, outS("b")) },
+        { desc: "Piston B actuates b1, which supplies pilot 12 of valve A, so A changes state and piston A instrokes", not: [veto(R`\bb\s?1\b`)], any: step(R`\bb\s?1\b`, R`\bstart\b|\ba\s?[01]\b|\bb\s?0\b`, who("a") + IN, inS("a")) },
+        { desc: "Piston A actuates a0, which supplies pilot 12 of valve B, so B changes state and piston B instrokes", not: [veto(R`\ba\s?0\b`)], any: step(R`\ba\s?0\b`, R`\bstart\b|\ba\s?1\b|\bb\s?[01]\b`, who("b") + IN, inS("b")) },
       ],
       sample: "When START is pressed, with b0 already pressed, air is supplied to pilot 14 of valve A. Valve A changes state and piston A outstrokes. At the end of its stroke a1 is actuated by piston A and supplies pilot 14 of valve B, so valve B changes state and piston B outstrokes. Then b1 is actuated by piston B, which supplies pilot 12 of valve A, so valve A changes state and piston A instrokes. Finally a0 is actuated by piston A, which supplies pilot 12 of valve B, so valve B changes state and piston B instrokes.",
       model: R`<ul><li>START is pressed (b0 is already pressed), so air reaches pilot 14 of valve A; valve A changes state and piston A outstrokes (1)</li><li>Piston A actuates limit valve a1, which supplies pilot 14 of valve B; valve B changes state and piston B outstrokes (1)</li><li>Piston B actuates b1, which supplies pilot 12 of valve A; valve A changes state and piston A instrokes (1)</li><li>Piston A actuates a0, which supplies pilot 12 of valve B; valve B changes state and piston B instrokes (1); the cycle then waits for START</li></ul><p>Each step needs its limit valve and its result. Writing only &quot;A+ then B+ then A− then B−&quot; repeats the question and earns nothing. Say <em>actuates</em> for the limit valves, <em>changes state</em> for the 5/2 valves, <em>outstrokes</em> or <em>instrokes</em> for the pistons.</p>`,
@@ -498,8 +537,8 @@
             R`\bchains?\b${C("belt", 20)}\b(?:not|isn't|is not|never)\s+(?:a\s+)?(?:positive|exact|accurate|precise)`,
             NOCH,
             R`\bchains?\b${C(R`belt|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b|${GOOD}`, 40)}\b${RBAD}`,
-            R`\bchains?\b${C("belt", 25)}\b(?:does ?n'?t|doesn't|do not|never|cannot|can't|not)\s+slip\w*${K(30)}\b(?:vary|varies|varying|inaccura\w*|lag\w*|lose|loses|lost|change\w*|drops?|uneven|out of (?:step|time|sync))`,
-            R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`, 30)}\b${GOOD}\s+(?:\w+\s+){0,1}(?:ratio|speed|drive|transmission)`,
+            R`\bchains?\b${C("belt", 25)}\b(?:does ?n'?t|doesn't|do not|never|cannot|can't|not)\s+slip\w*${C(R`belt|${GOOD}|exact|accura|precise`, 30)}\b(?:vary|varies|varying|inaccura\w*|lag\w*|lose|loses|lost|change\w*|drops?|uneven|out of (?:step|time|sync))`,
+            R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b|${RBAD}`, 30)}\b${GOOD}\s+(?:\w+\s+){0,1}(?:ratio|speed|drive|transmission)`,
             R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`, 25)}\bslips?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b|${RBAD}|jam|overload|protect`, 30)}\b${GOOD}\b`,
             BNOSLIP,
           ],
@@ -534,7 +573,7 @@
     const CL = (n) => R`(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bwhile\b|\bwhereas\b|\bthat\b)[^.;,]){0,${n}}`;
     const NEGV = R`(?:cannot|can't|can not|can\s+never|unable to|(?:does|do|did|will|would|could|should)\s?n'?o?t|doesn't|don't|won't|not|never|fails? to|no\s+(?:ability|way|power|capacity)\s+to)`;
     const GIVE = R`(?:cope|allow|tolerat|accommodat|accept|deal|handle|take|compensat|stand|permit|adjust|manage|put up|work|function|operate)`;
-    const AB = R`(?:absorb|damp|cushion|soak|reduc|smooth|isolat|protect|cope|deal|handle|tolerat|withstand|accommodat|prevent|stop|take up|dissipat|lessen|minimi[sz]e)`;
+    const AB = R`(?:absorb|damp|cushion|soak|reduc|smooth|isolat|protect|cope|deal|handle|tolerat|withstand|accommodat|prevent|stop|tak(?:e|es|ing)\s+up|dissipat|lessen|minimi[sz]e)`;
     const SHK = R`(?:shocks?|vibrat\w*|jerks?|jolts?|judder\w*|sudden\s+(?:load|start|stop|torque|jerk)s?|surg\w+|snatch\w*)`;
     const TRANS = R`(?:transmits|passes|sends|carries|(?:will|would|can|could|just|simply|also|still|directly|fully|all)\s+(?:also\s+)?(?:transmit|pass|send|carry))`;
     TXT.flex = {
@@ -550,7 +589,7 @@
             R`\bmisalign\w*${K(15)}\b(?:is|are|would be|will be)\s+(?:a\s+|an\s+)?(?:problem|issue|not (?:allowed|possible|tolerated|accepted)|impossible|bad)`,
             R`\bwithout\s+(?:any\s+)?(?:allowance|tolerance|provision|room|flexibility)\b${K(25)}misalign`,
           ],
-          any: [R`\bmisalign\w*`, R`\bnot\s+(?:\w+\s+){0,2}(?:perfectly\s+)?(?:aligned|lined up|in line)`, R`\b(?:slight|small|minor|little|tiny)\s+(?:\w+\s+){0,1}(?:error|errors|offset|difference|gap|misfit|movement)`, R`\bout of (?:line|alignment|true)`],
+          any: [R`\bmisalign\w*`, R`\bnot\s+(?:\w+\s+){0,2}(?:perfectly\s+)?(?:aligned|lined up|in line)`, R`\b(?:slight|small|minor|little|tiny)\s+(?:\w+\s+){0,1}(?:error|errors|offset|difference|gap|misfit|movement)`, R`\bout of (?:line|alignment|true)`, R`\boff[- ]cent\w*|\boff[- ]line\b|\bnot\s+(?:\w+\s+){0,2}(?:central|concentric|straight|true|exactly (?:aligned|in line))`],
         },
         {
           desc: "It absorbs shock loads and vibration (for example when the conveyor starts)",
@@ -600,7 +639,7 @@
     const IMM = R`(?:immediate\w*|instant\w*|straight\s?away|right\s+away|at\s+once|straight\s+off|suddenly|abrupt\w*)`;
     /* "does not slip" only counts against the answer when it never says the plates slip at first */
     const NOSLIP = R`^(?![\s\S]*\b(?:at first|initially|to begin|to start|begin\w*|start\w*|first|then|until|once|when|after|eventually|finally|before)\b)[\s\S]*\b(?:does ?n'?t|do not|never|cannot|can't|won't|will not|not|no)\s+(?:\w+\s+){0,2}${SLIP}`;
-    const EASY = R`(?:gradual\w*|gentl\w*|smooth\w*|progress\w*|slowly|soft\w*|eased?|builds? up|picks? up|tak(?:es|ing|e)\s+up|slow\w*)`;
+    const EASY = R`(?:gradual\w*|gentl\w*|smooth\w*|progress\w*|slowly|soft\w*|eas(?:e|es|ed|ing)\b|builds? up|picks? up|tak(?:es|ing|e)\s+up|slow\w*)`;
     const MOTORFIRST = R`\bmotor\b${K(40)}\b(?:speed\w*|reach\w*|gets?|gain\w*|build\w*|attain\w*|accelerat\w*)\b${K(50)}\b(?:before|until|while)\b`;
     TXT.clutch = {
       points: [
@@ -626,8 +665,14 @@
             R`\b(?:engage\w*|grip\w*|connect\w*)${Cc(R`\bthen\b|\buntil\b`, 25)}\b${IMM}`,
             NOSLIP,
           ],
-          any: [R`\block\w*`, R`\b(?:same|equal|matching|matched)\s+(?:\w+\s+){0,1}(?:speed|rate)`, R`\bstops?\s+slipping`, R`\bno\s+(?:more\s+)?slip\w*`, R`\b(?:fully|firmly|tightly|completely)\s+(?:engage\w*|grip\w*|clamp\w*|press\w*|driven|drives?)`, R`\b(?:engage\w*|grip\w*|clamp\w*)\s+(?:fully|firmly|tightly|completely)`, R`\bspeeds?\s+(?:\w+\s+){0,2}(?:match\w*|equal|same)`, R`\bmatch\w*\s+(?:the\s+)?speeds?`, R`\bcatch(?:es)?\s+up`, R`\b(?:turn|rotat|spin|move|run)\w*\s+together`,
-            R`\bmotor\b${K(40)}\b(?:reach\w*|get|gets|gain\w*|attain\w*)\b${K(30)}\b(?:running|full|operating|working|normal|its)\s+speed`, R`\bbefore\b${K(40)}\b(?:fully|completely|full)\s+(?:driven|loaded|load|engaged|connected|drive)`],
+          any: [R`\block\w*`, R`\b(?:same|equal|matching|matched)\s+(?:\w+\s+){0,1}(?:speed|rate)`, R`\bstops?\s+slipping`, R`\bno\s+(?:more\s+)?slip\w*`, R`\b(?:fully|firmly|tightly|completely)\s+(?:engage\w*|grip\w*|clamp\w*|press\w*|driven|drives?)`, R`\b(?:engage\w*|grip\w*|clamp\w*)\s+(?:fully|firmly|tightly|completely)`, R`\bspeeds?\s+(?:\w+\s+){0,2}(?:match\w*|equal|same)`, R`\bmatch\w*\s+(?:the\s+)?speeds?`, R`\bcatch(?:es)?\s+up`, R`\b(?:turn|rotat|spin|move|run)\w*\s+together`, R`\bas one\b|\b(?:pressed|squeezed|clamped|held|pushed|joined|forced)\s+together`
+          ],
+        },
+        {
+          desc: "When both plates reach the same speed they lock together and the drive passes through (or the motor reaches speed before the conveyor is fully driven)",
+          group: "lock", not: [NOSLIP],
+          all: [R`\b${SLIP}`, R`\bmotor\b${K(40)}\b(?:reach\w*|get|gets|gain\w*|attain\w*)\b${K(30)}\b(?:running|full|operating|working|normal|its)\s+speed|\bbefore\b${K(40)}\b(?:fully|completely|full)\s+(?:driven|loaded|load|engaged|connected|drive)`],
+          win: 150,
         },
       ],
       sample: "The friction plates slip against each other at first, so the load is taken up gradually and the conveyor starts smoothly. When both plates reach the same speed they lock together and the drive passes through without slip.",
@@ -698,19 +743,19 @@
         figure: figSymbols(),
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 1,
-            q: R`Which valve is a limit valve, operated by a roller that is tripped by the piston rod at the end of its stroke?`,
-            opts: ["Valve A", "Valve B", "Valve C", "Valve D"],
-            why: R`Valve B has a roller on one side and a spring on the other: it is a 3/2 roller limit valve. Valve A is also a 3/2 valve, but it is operated by a push-button. C and D are 5/2 valves, which control a cylinder.`,
+            label: "(a)", type: "multi", marks: 2, a: [1, 3],
+            q: R`Choose <strong>two</strong> correct statements about the valves in the figure.`,
+            opts: [
+              "Valve A is a limit valve, tripped by the piston rod",
+              "Valve B has a roller, so it can be a limit valve tripped by the piston rod",
+              "Valve C has memory, so it stays where the last signal left it",
+              "Valve D has memory, because it has a pilot at each end and no spring",
+              "Valves A and D are both three-port two-position valves",
+            ],
+            why: R`Valve B has a roller on one side and a spring on the other: it is a 3/2 roller limit valve. Valve D has a pilot signal at each end and no spring, so nothing pushes it back and it stays where the last pilot signal left it. Valve A is operated by a push-button, not a roller, so it is not a limit valve. Valve C has a spring, so it returns when the signal goes. Valve D has five ports, so it is a 5/2 valve, not a 3/2 valve.`,
           },
           {
-            label: "(b)", type: "mcq", marks: 1, a: 0,
-            q: R`Which valve has <strong>memory</strong>, so that it stays in the position it was last switched to when the signal goes away?`,
-            opts: ["Valve D", "Valve A", "Valve C", "Valve B"],
-            why: R`Valve D has a pilot signal at each end and no spring, so nothing pushes it back: it stays where the last pilot signal left it. Valves A, B and C each have a spring that returns them when the signal is removed.`,
-          },
-          {
-            label: "(c)", type: "mcq", marks: 1, a: 1,
+            label: "(b)", type: "mcq", marks: 1, a: 1,
             q: R`In its rest position, which ports of valve C are joined?`,
             opts: ["1 to 4, and 2 to 3", "1 to 2, and 4 to 5", "1 to 2 only, with port 4 blocked", "3 to 5, with all the other ports blocked"],
             why: R`At rest the spring holds the valve in the state shown by the box beside the port connections (the right-hand box, next to the spring). That box joins supply 1 to outlet 2 and outlet 4 to exhaust 5. The left-hand box (1 to 4 and 2 to 3) is the state when pilot 14 is applied.`,
