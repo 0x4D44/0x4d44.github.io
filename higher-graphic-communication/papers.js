@@ -13,6 +13,10 @@
   /* results[qid] = [marks earned per part, or null while unmarked] */
   let results = {};
   try { results = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { results = {}; }
+  const AKEY = "hg-papers-ans.v1";
+  let answers = {};
+  try { answers = JSON.parse(localStorage.getItem(AKEY) || "{}") || {}; } catch (e) { answers = {}; }
+  const saveAns = () => { try { localStorage.setItem(AKEY, JSON.stringify(answers)); } catch (e) { /* this visit only */ } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(results)); } catch (e) { /* private mode: this visit only */ } };
 
   const qMarks = HGP.partsMarks;
@@ -46,7 +50,7 @@
     const fb = el("div", { class: "pp-fb", "aria-live": "polite" });
     const markBtn = el("button", { class: "btn small primary", type: "button" }, "Mark my answer");
     const againBtn = el("button", { class: "btn small", type: "button", hidden: true }, "↺ Try again");
-    let getAns, lock, ready;
+    let getAns, lock, ready, setAns;
 
     if (part.type === "mcq" || part.type === "multi") {
       const multi = part.type === "multi";
@@ -68,6 +72,7 @@
         x.lab.classList.toggle("wrong", x.c.checked && !should);
       });
       box._clear = () => ctrls.forEach((x) => { x.c.checked = false; x.lab.classList.remove("right", "wrong"); });
+      setAns = (a) => ctrls.forEach((x, i) => (x.c.checked = multi ? Array.isArray(a) && a.includes(i) : a === i));
       ctrls.forEach((x) => x.c.addEventListener("change", () => (markBtn.disabled = !ready())));
     } else if (part.type === "num") {
       const inp = el("input", { type: "text", inputmode: "decimal", autocomplete: "off", class: "pp-num", "aria-label": `Answer for ${part.label || "this part"}`, id: `${id}-n` });
@@ -76,6 +81,7 @@
       ready = () => inp.value.trim() !== "";
       lock = (on) => (inp.disabled = on);
       box._clear = () => (inp.value = "");
+      setAns = (a) => (inp.value = String(a));
       inp.addEventListener("input", () => (markBtn.disabled = !ready()));
       inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && ready()) { e.preventDefault(); markBtn.click(); } });
     } else if (part.type === "match") {
@@ -95,6 +101,7 @@
         if (bad) s.parentElement.append(el("span", { class: "pp-wrongnote" }, "✘ not this one; the right pairs are listed below"));
       });
       box._clear = () => sels.forEach((s) => { s.value = "-1"; s.classList.remove("wrong"); s.removeAttribute("aria-invalid"); s.parentElement.querySelectorAll(".pp-wrongnote").forEach((n) => n.remove()); });
+      setAns = (a) => sels.forEach((s, i) => (s.value = String(Array.isArray(a) ? a[i] : -1)));
       sels.forEach((s) => s.addEventListener("change", () => (markBtn.disabled = !ready())));
     } else {
       const rows = part.rows || Math.min(9, 2 + part.marks);
@@ -104,15 +111,19 @@
       ready = () => ta.value.trim().length > 0;
       lock = (on) => (ta.readOnly = on);
       box._clear = () => (ta.value = "");
+      setAns = (a) => (ta.value = String(a));
       ta.addEventListener("input", () => (markBtn.disabled = !ready()));
     }
     markBtn.disabled = true;
 
+    // answers are kept beside the marks, so a marked part comes back marked after a reload
+    const akey = q.id + "." + pi;
     const setResult = (got) => { (results[q.id] = results[q.id] || q.parts.map(() => null))[pi] = got; save(); onChange(); };
 
     markBtn.addEventListener("click", () => {
       if (!ready()) return;
       const ans = getAns();
+      answers[akey] = ans; saveAns();
       const r = HGP.scorePart(part, ans);
       lock(true);
       markBtn.hidden = true; againBtn.hidden = false;
@@ -168,6 +179,12 @@
       const f = input.querySelector("input,textarea,select"); if (f) f.focus();
     });
     box.append(input, el("div", { class: "btn-row" }, markBtn, againBtn), fb);
+    // restore: only when the stored answer still marks to the stored result (a hand-corrected mark is not replayed)
+    const had = (results[q.id] || [])[pi];
+    if (had != null && answers[akey] != null && HGP.scorePart(part, answers[akey]).got === had) {
+      setAns(answers[akey]); markBtn.disabled = false; markBtn.click();
+      const h = fb.querySelector(".pp-score"); if (h) h.blur();
+    }
     return box;
   }
 
@@ -292,7 +309,7 @@
     const reset = el("button", { class: "btn small danger", type: "button" }, "Clear my scores");
     reset.addEventListener("click", () => {
       if (!confirm("Clear every past-paper score stored on this device?")) return;
-      results = {}; save(); location.reload();
+      results = {}; answers = {}; save(); saveAns(); location.reload();
     });
     const paint = () => {
       body.textContent = "";
