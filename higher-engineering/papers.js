@@ -223,7 +223,7 @@
       q.style ? el("p", { class: "pp-style" }, q.style) : null,
       el("div", { class: "pp-stem", html: q.stem }));
     if (q.figure) {
-      const fig = el("figure", { class: "diagram diagram-scroll pp-fig", role: "group", "aria-label": "Figure for question " + n, html: scopeIds(q.figure, ns) });
+      const fig = el("figure", { class: "diagram diagram-scroll pp-fig", role: "group", "aria-label": "Figure for question " + n, html: scopeIds(q.figure, ns + "-" + q.id) });
       card.append(fig);
       // only a figure that really scrolls sideways needs to be a keyboard tab stop
       const hint = el("p", { class: "pp-hint pp-fighint", hidden: "" }, "Swipe the figure sideways to see all of it.");
