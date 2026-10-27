@@ -11,10 +11,9 @@
   /* Lower-case, tidy punctuation, and fold the symbols candidates type for the same thing. */
   const SUP = { "⁰": "0", "¹": "1", "²": "2", "³": "3", "⁴": "4", "⁵": "5", "⁶": "6", "⁷": "7", "⁸": "8", "⁹": "9" };
   const supRun = (m) => "^" + m.replace(/⁻/g, "-").replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]/g, (c) => SUP[c]);
-  HPP.norm = function (s) {
-    return String(s == null ? "" : s)
-      .replace(/⁻?[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, supRun)
-      .toLowerCase()
+  HPP.norm = function (s, keepCase) {
+    const t = String(s == null ? "" : s).replace(/⁻?[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, supRun);
+    return (keepCase ? t : t.toLowerCase())
       .replace(/[‘’“”]/g, "'")
       .replace(/[–—−]/g, "-")
       .replace(/[×·]/g, "x")
@@ -142,14 +141,16 @@
   /* ---- numbers and units ----
      Every number in an answer, scientific notation included ("3.0 x 10^8", "3.0×10⁸", "3e8"). Exponents of units
      ("m s-1", "kg m-3") are stripped first so they are not read as answers. Returns [{ v, i, end }]. */
-  function plain(s) {
-    return HPP.norm(s)
+  function plain(s, keepCase) {
+    return (keepCase ? HPP.norm(s, true) : HPP.norm(s))
       .replace(/(\d),(?=\d{3}\b)/g, "$1")
       .replace(/(\d) (?=\d{3}\b)/g, "$1")
       .replace(/(\d),(\d{1,2})\b/g, "$1.$2");
   }
   HPP.numbers = function (str) {
     let t = plain(str);
+    // same text with its capitals (J, Hz, N) so a unit can be read exactly; lower-casing never changes the length
+    const keep = plain(str, true);
     const out = [];
     const re = /(?<![\d.])(-?(?:\d+(?:\.\d+)?|\.\d+))(?:\s*(?:x|\*)\s*10\s*\^?\s*\(?([-+]?\d+)\)?|e([-+]?\d+)(?!\w))?/g;
     let m;
@@ -160,7 +161,7 @@
       let v = parseFloat(m[1]);
       const e = m[2] != null ? m[2] : m[3];
       if (e != null) v = v * Math.pow(10, parseInt(e, 10));
-      if (isFinite(v)) out.push({ v, i: m.index, end: m.index + m[0].length, text: t });
+      if (isFinite(v)) out.push({ v, i: m.index, end: m.index + m[0].length, text: keep });
     }
     return out;
   };
@@ -195,9 +196,12 @@
     const parts = t.split("/");
     const map = {};
     const add = (str, sign) => {
-      const re = /(kg|Hz|Wb|mol|rad|deg|[A-Za-zΩ])(-?\d+)?/g;
+      const re = /(kg|hz|wb|mol|rad|deg|[A-Za-zΩ])(-?\d+)?/gi;
       let m;
-      while ((m = re.exec(str))) map[m[1]] = (map[m[1]] || 0) + sign * (m[2] != null ? parseInt(m[2], 10) : 1);
+      while ((m = re.exec(str))) {
+        const name = m[1].length > 1 ? ({ hz: "Hz", wb: "Wb" }[m[1].toLowerCase()] || m[1].toLowerCase()) : m[1];
+        map[name] = (map[name] || 0) + sign * (m[2] != null ? parseInt(m[2], 10) : 1);
+      }
     };
     add(parts[0], 1);
     parts.slice(1).forEach((p) => add(p, -1));
@@ -208,11 +212,13 @@
     const rest = n.text.slice(n.end).replace(/^\s*(?:\^|\()?\s*/, "");
     return rest.split(/[,;=()\n]|(?<=\S)\.(?:\s|$)/)[0].slice(0, 16).trim();
   }
+  const lowKey = (k) => k.toLowerCase().split(" ").sort().join(" ");
   HPP.unitOk = function (n, units) {
     const written = unitAfter(n);
     if (!written) return false;
     const key = HPP.unitKey(written);
-    return [].concat(units).some((u) => HPP.unitKey(u) === key);
+    // a unit written in lower case by the bank ("j", "hz") is matched without regard to case
+    return [].concat(units).some((u) => HPP.unitKey(u) === key || (u === u.toLowerCase() && lowKey(HPP.unitKey(u)) === lowKey(key)));
   };
 
   /* A calculation is marked in steps, as SQA do: the relationship, the substitution, the answer with its unit.

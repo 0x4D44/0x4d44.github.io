@@ -81,7 +81,7 @@ window.ESSAYS = [
   {
     slug: "higher-physics",
     title: "Higher Physics: Shot, Spark & Starlight",
-    tagline: "A complete, interactive guide to Higher Physics for the 2026–27 exam: motion to the Big Bang, quarks to refraction, AC to LEDs, plus uncertainties, the assignment and a mock drill. The Blockhaven Air Cadets return to HMS Redstone; cannon, minecarts and redstone carry 35 interactive simulations. Vanilla JavaScript and canvas.",
+    tagline: "A complete, interactive guide to Higher Physics for the 2026–27 exam: motion to the Big Bang, quarks to refraction, AC to LEDs, plus uncertainties, the assignment and a mock drill, and an auto-marked past-paper deck with a timed mock. The Blockhaven Air Cadets return to HMS Redstone; cannon, minecarts and redstone carry 35 interactive simulations. Vanilla JavaScript and canvas.",
     url: "https://0x4d44.github.io/higher-physics/",
     illustration: "ill-higher-physics",
     date: "2026-10-12T22:00:00",

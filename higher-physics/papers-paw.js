@@ -13,7 +13,7 @@
   const REL_EK = ["ek=(?:½|1/2|0\\.5)" + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", "(?:½|1/2|0\\.5)" + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", "mv\\^?2/2", "2ek/m", "v=sqrt"];
   const REL_VFL = ["[vc]=f" + LAM, "f=[vc]/" + LAM, LAM + "=[vc]/f", "f=3(?:\\.0+)?x10\\^?8/", "f=\\(?3"];
   const REL_EHF = ["e=hf", "=hf\\b", "f=e/h", "hf=e"];
-  const REL_DSIN = ["dsin(?:θ|theta)=m" + LAM, "dsin(?:θ|theta)=" + "(?:\\d|\\()", "sin(?:θ|theta)=m" + LAM + "/d", "m" + LAM + "=dsin", "(?:θ|theta)=sin\\^?-1", "sin\\^?-1\\(?m"];
+  const REL_DSIN = ["dsin\\(?(?:θ|theta)\\)?=m" + LAM, "dsin\\(?(?:θ|theta)\\)?=(?:\\d|\\()", "sin\\(?(?:θ|theta)\\)?=m" + LAM + "/d", "m" + LAM + "=dsin", "(?:θ|theta)=sin\\^?-1", "sin\\^?-1\\(?m"];
 
   /* ---------------------------------------------------------------- figures ---------------------------------------------------------------- */
   const INK = "#222", BLUE = "#1c3b66", RED = "#b3261e", FILL = "#e8eef7", PINK = "#f6d5d2";
@@ -720,7 +720,7 @@
             steps: [
               { desc: "n = sin θ₁/sin θ₂ (angles measured from the normal)", rel: ["n=sin(?:θ|theta)[₁1i]/sin(?:θ|theta)[₂2r]", "n=sin\\(?\\d+°?\\)?/sin", "sin(?:θ|theta)[₁1i]/sin(?:θ|theta)[₂2r]=n", "n=sini/sinr", "n=sin[₁1]/sin[₂2]"] },
               { desc: "Substitution using θ₁ = 55° (not 35°) and θ₂ = 33°", nums: [[55, 0.819], [33, 0.545]] },
-              { desc: "n = c/v (refractive index 1.50 found)", rel: ["n=c/v", "v=c/n", "n=3(?:\\.0+)?x10\\^?8/v", "v=3(?:\\.0+)?x10\\^?8/"] },
+              { desc: "n = c/v (refractive index 1.50 found)", rel: ["n=c/v", "v=c/n", "n=3(?:\\.0+)?x10\\^?8/v", "v=3(?:\\.0+)?x10\\^?8/", "v=3e8/"] },
               { desc: "v = 2.0 × 10⁸ m s⁻¹", ans: 1.99464e8, alts: [2.0e8], sf: 2, unit: "m s-1" },
             ],
             sample: "θ₁ = 90 − 35 = 55°\nn = sin θ₁ / sin θ₂ = sin 55° / sin 33° = 0.819 / 0.545 = 1.50\nn = c / v\nv = 3.00 × 10⁸ / 1.50\nv = 2.0 × 10⁸ m s⁻¹",

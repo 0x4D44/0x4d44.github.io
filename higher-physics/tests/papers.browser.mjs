@@ -1,10 +1,10 @@
 // Browser smoke test for papers.html: tabs, answering, auto-marking, the scoreboard and the phone layout.
-// Needs a static server on the repo root:  python3 -m http.server 8000   then   node higher-graphic-communication/tests/papers.browser.mjs
+// Needs a static server on the repo root:  python3 -m http.server 8000   then   node higher-physics/tests/papers.browser.mjs
 import { createRequire } from "node:module";
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH || "playwright");
 import assert from "node:assert/strict";
 
-const BASE = process.env.BASE || "http://localhost:8000/higher-graphic-communication/papers.html";
+const BASE = process.env.BASE || "http://localhost:8000/higher-physics/papers.html";
 const browser = await chromium.launch();
 let failed = 0;
 const step = async (name, fn) => { try { await fn(); console.log("ok  ", name); } catch (e) { failed++; console.log("FAIL", name, "\n    ", e.message.split("\n")[0]); } };
@@ -21,7 +21,7 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
   await step(`${w}: seven tabs, first selected, nothing scrolls sideways`, async () => {
     assert.equal(await page.locator(".pp-tabs [role=tab]").count(), 7);
     assert.equal(await page.locator('.pp-tabs [aria-selected="true"]').count(), 1);
-    for (const t of ["dtp", "cad", "interp", "std", "tech", "mock", "score"]) {
+    for (const t of ["s1", "odu", "paw", "ele", "skills", "mock", "score"]) {
       await page.click(`#pp-tab-${t}`);
       const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       assert.ok(over <= 1, `${t}: ${over}px sideways overflow`);
@@ -30,16 +30,16 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
   });
 
   await step(`${w}: arrow keys move between tabs`, async () => {
-    await page.click("#pp-tab-dtp");
+    await page.click("#pp-tab-s1");
     await page.keyboard.press("ArrowRight");
-    assert.equal(await page.getAttribute("#pp-tab-cad", "aria-selected"), "true");
+    assert.equal(await page.getAttribute("#pp-tab-odu", "aria-selected"), "true");
     await page.keyboard.press("End");
     assert.equal(await page.getAttribute("#pp-tab-score", "aria-selected"), "true");
   });
 
   await step(`${w}: a multiple-choice part marks right and wrong`, async () => {
-    await page.click("#pp-tab-dtp");
-    const part = page.locator("#pp-panel-dtp .pp-part:has(.pp-opts)").first();
+    await page.click("#pp-tab-s1");
+    const part = page.locator("#pp-panel-s1 .pp-part:has(.pp-opts)").first();
     await part.locator("input").first().check();
     await part.getByRole("button", { name: "Mark my answer" }).click();
     assert.ok(await part.locator(".pp-score").isVisible());
@@ -49,8 +49,9 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
   });
 
   await step(`${w}: a written part can be marked and corrected by hand`, async () => {
-    const part = page.locator("#pp-panel-dtp .pp-part:has(textarea)").first();
-    await part.locator("textarea").fill("I think it looks nice and the colours are good");
+    await page.click("#pp-tab-paw");
+    const part = page.locator("#pp-panel-paw .pp-part:has(textarea)").first();
+    await part.locator("textarea").fill("I think it is quite heavy and moves fast");
     await part.getByRole("button", { name: "Mark my answer" }).click();
     assert.match(await part.locator(".pp-score").innerText(), /\/ \d+ mark/);
     const boxes = part.locator(".pp-points input");
@@ -81,13 +82,13 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
   });
 
   await step(`${w}: a marked part comes back marked, with its answer, after a reload`, async () => {
-    await page.click("#pp-tab-dtp");
-    const part = page.locator("#pp-panel-dtp .pp-part:has(.pp-opts)").first();
+    await page.click("#pp-tab-s1");
+    const part = page.locator("#pp-panel-s1 .pp-part:has(.pp-opts)").first();
     await part.locator("input").first().check();
     await part.getByRole("button", { name: "Mark my answer" }).click();
     await page.reload();
     await page.waitForSelector(".pp-tabs [role=tab]");
-    const again = page.locator("#pp-panel-dtp .pp-part:has(.pp-opts)").first();
+    const again = page.locator("#pp-panel-s1 .pp-part:has(.pp-opts)").first();
     assert.ok(await again.locator(".pp-score").count() >= 1, "marked again");
     assert.ok(await again.locator("input:checked").count() >= 1, "keeps the chosen option");
   });
