@@ -42,7 +42,7 @@ window.ESSAYS = [
   {
     slug: "higher-graphic-communication",
     title: "Higher Graphic Communication: Planes, Plans & Pennants",
-    tagline: "A complete, interactive guide to Higher Graphic Communication: drawing standards and projection, geometric forms and pictorials, CAD, design and DTP, digital technology, the assignment and the exam. Plus a Past papers deck: 60 original, auto-marked exam-style questions and a timed mock. HMS Vellum's Plan Room and Air Cadets carry the diagrams. Vanilla JavaScript, canvas and SVG.",
+    tagline: "An interactive guide to Higher Graphic Communication: drawing standards, projection, pictorials, CAD, DTP, digital technology, the assignment and the exam. Plus a Past papers deck of 60 original, auto-marked questions and a timed mock. HMS Vellum's Plan Room carries the diagrams. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-graphic-communication/",
     illustration: "ill-higher-graphics",
     date: "2026-10-19T20:00:00",
