@@ -319,7 +319,7 @@
           {
             label: "(d)", type: "mcq", marks: 1, a: 1,
             q: "Which statement explains why energy is released in the fission?",
-            opts: ["The products have more mass than the reactants, and the extra mass is destroyed", "The products have less total mass than the reactants, and the lost mass is converted to energy", "The neutrons are created from energy supplied by the reactor", "Nucleons are destroyed and their charge becomes energy", "The number of neutrons decreases during the reaction"],
+            opts: ["The products have more mass than the reactants, and the extra mass that is left over is destroyed as the nuclei split apart", "The products have less total mass than the reactants, and the lost mass is converted to energy", "The extra neutrons are created from energy supplied by the reactor, and this supplied energy is what is then given out again", "Some of the nucleons are destroyed in the reaction and their electric charge is what becomes the energy released", "The number of neutrons decreases during the reaction, and the neutrons that disappear are turned into energy"],
             why: "The total mass of the products is slightly <strong>less</strong> than the mass of the reactants, and the mass lost appears as energy, E = mc². The number of nucleons is unchanged (236 before and after), and the number of neutrons actually increases from 1 to 3.",
           },
         ],
@@ -332,9 +332,9 @@
           "<p>Fusion research aims to build a reactor in which light nuclei join together. One possible reaction is</p><p style=\"text-align:center\">²₁H + ³₂He → ⁴₂He + ¹₁p</p><p>The masses are: deuterium nucleus 3.344 × 10⁻²⁷ kg, helium-3 nucleus 5.008 × 10⁻²⁷ kg, helium-4 nucleus 6.645 × 10⁻²⁷ kg, proton 1.673 × 10⁻²⁷ kg.</p>",
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 1,
+            label: "(a)", type: "mcq", marks: 1, a: 4,
             q: "Which statement describes nuclear fusion?",
-            opts: ["A heavy nucleus splits into two smaller nuclei and releases neutrons", "Two light nuclei join to form a heavier nucleus and release energy", "A nucleus emits an alpha particle and becomes a different element", "A neutron in a nucleus changes into a proton", "A particle and its antiparticle destroy each other"],
+            opts: ["A heavy nucleus splits into two smaller nuclei and releases neutrons", "A nucleus emits an alpha particle and becomes a different element", "A neutron in a nucleus changes into a proton", "A particle and its antiparticle destroy each other", "Two light nuclei join to form a heavier nucleus and release energy"],
             why: "Fusion is two <strong>light nuclei joining</strong> to make a heavier one, with a loss of mass that appears as energy. Splitting a heavy nucleus is fission, emitting an alpha particle is alpha decay, a neutron becoming a proton is beta decay, and a particle and antiparticle meeting is annihilation.",
           },
           {
@@ -515,9 +515,9 @@
           "<p>An astronomer uses a spectrometer to study light from a star. The spectrum is continuous but crossed by dark lines at the wavelengths below.</p><table class=\"pp-table\"><tbody><tr><th>Dark line</th><th>1</th><th>2</th><th>3</th><th>4</th></tr><tr><td>Wavelength / nm</td><td>434</td><td>486</td><td>589</td><td>656</td></tr></tbody></table>",
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 1,
+            label: "(a)", type: "mcq", marks: 1, a: 2,
             q: "Use the spectral lines on the data sheet to decide which elements are present in the star's atmosphere.",
-            opts: ["Hydrogen only", "Hydrogen and sodium", "Sodium and cadmium", "Hydrogen and cadmium", "Hydrogen, sodium and cadmium"],
+            opts: ["Hydrogen only", "Sodium and cadmium", "Hydrogen and sodium", "Hydrogen and cadmium", "Hydrogen, sodium and cadmium"],
             why: "656, 486 and 434 nm are all hydrogen lines and 589 nm is the sodium line, so hydrogen and sodium are present. Cadmium's lines are at 644, 509 and 480 nm, none of which is in the star's spectrum (480 is close to 486 but they are different lines).",
           },
           {
@@ -538,17 +538,17 @@
             label: "(c)", type: "calc", marks: 3, rows: 5,
             q: "Calculate the energy of a photon absorbed to produce dark line 2, of wavelength 486 nm.",
             steps: [
-              { desc: "E = hf", rel: REL_EHF },
-              { desc: "f = v/λ = 6.17 × 10¹⁴ Hz", nums: [6.17e14] },
+              { desc: "E = hf (or E = hc/λ)", rel: REL_EHF.concat(["e=hc/", "=hc/", "e=h" + X + "c/" + LAM, "hc/" + LAM]) },
+              { desc: "f = v/λ = 6.17 × 10¹⁴ Hz (or the values put into hc/λ)", rel: ["6\\.(?:1\\d*|2\\d*)(?:x10\\^?14|e14)", "\\(?6\\.63(?:x10\\^?-34|e-34)\\)?x\\(?3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/\\(?(?:486|4\\.86)"] },
               { desc: "E = 4.09 × 10⁻¹⁹ J", ans: 4.0926e-19, sf: 3, unit: ["j", "joules", "joule"] },
             ],
             sample: "v = fλ so f = 3.00 × 10⁸ / 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz\nE = hf\nE = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴\nE = 4.09 × 10⁻¹⁹ J",
             model: "<ul><li>E = hf (1)</li><li>f = 3.00 × 10⁸ ÷ 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz (1)</li><li>E = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴ = 4.09 × 10⁻¹⁹ J (1)</li></ul><p>Convert nm to m: 486 nm = 486 × 10⁻⁹ m.</p>",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 1,
+            label: "(d)", type: "mcq", marks: 1, a: 0,
             q: "A sodium lamp is viewed through a diffraction grating. What is seen?",
-            opts: ["A continuous spectrum of all the colours", "A bright yellow line on a dark background", "A dark line crossing a continuous spectrum", "Bright red, green and blue lines", "Several bright lines in the ultraviolet only"],
+            opts: ["A bright yellow line on a dark background", "A continuous spectrum of all the colours", "A dark line crossing a continuous spectrum", "Bright red, green and blue lines", "Several bright lines in the ultraviolet only"],
             why: "A hot, low-pressure sodium gas emits a <strong>line emission</strong> spectrum: a bright yellow line (589 nm) on a dark background. A continuous spectrum comes from a hot solid and a dark line on a continuous background is an absorption spectrum. Red, green and blue lines would be cadmium.",
           },
         ],
@@ -597,9 +597,9 @@
             model: "<ul><li>Maxima (loud): waves arrive in phase; path difference = mλ; constructive interference (1)</li><li>Minima (quiet): waves arrive out of phase (crest meets trough); path difference = (m + ½)λ; destructive interference (1)</li></ul><p>Walking along the line changes the path difference, so the pupil passes alternately through maxima and minima.</p>",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 1,
+            label: "(d)", type: "mcq", marks: 1, a: 3,
             q: "The frequency from the signal generator is now doubled. What does the pupil hear at P?",
-            opts: ["A minimum, because the path difference is now 3λ", "A maximum, because the path difference is now 3λ", "A minimum, because the wavelength has halved", "A maximum, because the speed of sound has doubled", "The same minimum as before, because the path difference has not changed"],
+            opts: ["A minimum, because the path difference is now 3λ", "A minimum, because the wavelength has halved", "A maximum, because the speed of sound has doubled", "A maximum, because the path difference is now 3λ", "The same minimum as before, because the path difference has not changed"],
             why: "Doubling f halves λ to 0.25 m. The path difference is still 0.75 m, which is now 3λ, a whole number of wavelengths, so the waves arrive in phase: a <strong>maximum</strong>. The speed of sound does not change. The path difference does not change, but its size in wavelengths does.",
           },
         ],
@@ -630,8 +630,8 @@
             q: "The grating is replaced by one with 200 lines per millimetre. State what happens to the spacing of the maxima on the screen, and explain your answer.",
             points: [
               { desc: "The maxima move closer together (the angles are smaller)",
-                not: ["(?:further|farther|wider|more spread|spread\\w* out|apart)\\W+(?:\\w+\\W+){0,3}(?:maxima|orders|angles?|spots)", "(?:maxima|orders|angles?|spots)\\W+(?:\\w+\\W+){0,4}(?:further|farther|wider|bigger|larger|increas\\w*|apart)"],
-                any: ["(?:maxima|orders?|spots?|fringes?|lines|pattern|spectra)\\W+(?:\\w+\\W+){0,4}(?:closer|nearer|squashed|compressed|narrower|squeezed)", "(?:angles?|θ|spacing|separation|distances?)\\W+(?:\\w+\\W+){0,4}(?:smaller|decreas\\w*|reduc\\w*|less|shorter)", "(?:closer|nearer)\\W+(?:together|to)"] },
+                not: ["(?:further|farther|wider|more spread|spread\\w* out|apart)\\s+(?:\\w+\\s+){0,3}(?:maxima|orders|angles?|spots)", "(?:maxima|orders|angles?|spots)\\s+(?:(?!(?:not|never)\\b|n't)[a-z']+\\s+){0,4}(?:further|farther|wider|bigger|larger|increas\\w*|apart)"],
+                any: ["(?:maxima|orders?|spots?|fringes?|lines|pattern|spectra)\\W+(?:\\w+\\W+){0,4}(?:closer|nearer|squashed|compressed|narrower|squeezed)", "\\b(?:move|moves|get|gets|come|comes|are|is|become|becomes|be)\\s+(?:\\w+\\s+){0,1}(?:closer|nearer|together)", "(?:angles?|θ|spacing|separation|distances?)\\W+(?:\\w+\\W+){0,4}(?:smaller|decreas\\w*|reduc\\w*|less|shorter)", "(?:closer|nearer)\\W+(?:together|to)"] },
               { desc: "Because the grating spacing d is larger, so sin θ = mλ/d is smaller",
                 any: ["\\bd\\b\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)", "(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)\\W+(?:\\w+\\W+){0,3}(?:slit |grating )?(?:spacing|separation|d\\b|distance between)", "(?:slits?|lines)\\W+(?:\\w+\\W+){0,5}(?:further|farther|apart|wider|bigger spacing)", "(?:spacing|separation|\\bd)\\W+(?:\\w+\\W+){0,2}(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)"] },
             ],
@@ -654,7 +654,7 @@
             label: "(e)", type: "text", marks: 1, rows: 3, minWords: 1,
             q: "The original 400 lines per millimetre grating is used again, but with violet light of shorter wavelength than the red. State what happens to the angle of the first-order maximum.",
             points: [{ desc: "The angle is smaller (the maximum is nearer the centre), because sin θ = mλ/d and λ is smaller", negOK: true,
-              not: ["(?<!\\bnot )(?<!n't )(?<!\\bno )(?:larger|bigger|greater|increas\\w*|further|wider|same|unchanged)", "(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:smaller|decreas\\w*|reduc\\w*|less|nearer|closer|lower)"],
+              not: ["(?:^|[.;!?,]\\s*)(?:(?!\\b(?:not|never|no)\\b|n't)[^.;!?,])*?\\b(?:larger|bigger|greater|increas\\w*|further|wider|same|unchanged)\\b", "(?:not|n't)\\s+(?:\\w+\\s+){0,1}(?:smaller|decreas\\w*|reduc\\w*|less|nearer|closer|lower)"],
               any: ["(?:smaller|decreas\\w*|reduc\\w*|less|nearer|closer|lower)"] }],
             sample: "The angle is smaller, so the maximum is closer to the centre.",
             model: "<p>The angle is smaller (1), since sin θ = mλ/d and λ is smaller. Red light is deviated more than violet, the opposite of a prism.</p>",
@@ -684,7 +684,7 @@
             label: "(b)", type: "calc", marks: 3, rows: 6,
             q: "Use the reading at 0.40 m to calculate the irradiance at a distance of 0.90 m from the lamp.",
             steps: [
-              { desc: "I₁d₁² = I₂d₂² (or I = k/d²)", rel: ["i[₁1]d[₁1]\\^?2=i[₂2]d[₂2]\\^?2", "i=k/d\\^?2", "i[₂2]=i[₁1]d[₁1]\\^?2/d[₂2]\\^?2", "i[₁1]/i[₂2]=\\(?d[₂2]/d[₁1]\\)?\\^?2", "k=id\\^?2", "i[₂2]=\\(?i[₁1]"] },
+              { desc: "I₁d₁² = I₂d₂² (or I = k/d²)", rel: ["i[₁1]d[₁1]\\^?2=i[₂2]d[₂2]\\^?2", "i=k/d\\^?2", "i[₂2]=i[₁1]d[₁1]\\^?2/d[₂2]\\^?2", "i[₁1]/i[₂2]=\\(?d[₂2]/d[₁1]\\)?\\^?2", "k=id\\^?2", "i[₂2]=\\(?i[₁1]", "i[₂2]/i[₁1]=\\(?d[₁1]/d[₂2]\\)?\\^?2", "i[∝~α]1/d", "proportionalto1/d", "i[₂2]=\\(?3\\.25\\)?x\\(?0?\\.40?/0?\\.90?\\)\\^?2", "i[₂2]=\\(?3\\.25\\)?/\\(?0?\\.90?/0?\\.40?\\)\\^?2"] },
               { desc: "Substitution: 3.25 × 0.40² = I₂ × 0.90²", nums: [3.25, 0.4, 0.9] },
               { desc: "I₂ = 0.64 W m⁻²", ans: 0.642, sf: 2, unit: ["w m-2", "w/m2", "watts per square metre"] },
             ],
@@ -705,12 +705,12 @@
             model: "<ul><li>The graph is a straight line that passes through the origin (1)</li><li>So I is directly proportional to 1/d², that is, I ∝ 1/d² (inverse square law) (1)</li></ul><p>Finish the argument with the relationship stated. The gradient of the line is k, from I = k/d² (about 0.52 W).</p>",
           },
           {
-            label: "(d)", type: "text", marks: 1, rows: 3, minWords: 4,
+            label: "(d)", type: "text", marks: 1, rows: 3, minWords: 2,
             q: "Suggest one change to the method that would make the results more reliable.",
             points: [
               { desc: "Repeat each reading (and take an average), or take readings at more distances",
                 not: ["darken\\w*", "dark room"],
-                any: [near("repeat\\w*|more|extra|several|multiple|three|average\\w*|mean|again", "readings?|measurements?|results?|trials?|distances?|data|average|times", 5)] },
+                any: [near("repeat\\w*|more|extra|several|multiple|three|average\\w*|mean|again", "readings?|measurements?|results?|trials?|distances?|data|average|times|experiment|investigation|test", 5), "\\b(?:do|run|carry out|perform|take|repeat|measure)\\s+(?:\\w+\\s+){0,3}(?:again|twice|three times|several times|more than once)\\b", "\\b(?:repeat|average)\\b"] },
             ],
             sample: "Repeat each reading and take an average of them.",
             model: "<p>Repeat the readings at each distance and take an average (1). Accept readings at more distances, or measuring from the lamp filament. The room is already darkened, so &quot;darken the room&quot; earns nothing.</p>",
@@ -740,7 +740,7 @@
             label: "(a)", type: "calc", marks: 4, rows: 8,
             q: "Calculate the speed of the light in the glass.",
             steps: [
-              { desc: "n = sin θ₁/sin θ₂ (angles measured from the normal)", rel: ["n=sin(?:θ|theta)[₁1i]/sin(?:θ|theta)[₂2r]", "n=sin\\(?\\d+°?\\)?/sin", "sin(?:θ|theta)[₁1i]/sin(?:θ|theta)[₂2r]=n", "n=sini/sinr", "n=sin[₁1]/sin[₂2]"] },
+              { desc: "n = sin θ₁/sin θ₂ (angles measured from the normal)", rel: ["n=sin(?:θ|theta)[₁1i]/sin(?:θ|theta)[₂2r]", "n=sin\\(?\\d+°?\\)?/sin", "sin(?:θ|theta)[₁1i]/sin(?:θ|theta)[₂2r]=n", "n=sini/sinr", "n=sin[₁1]/sin[₂2]", "sin\\(?\\d+°?\\)?/sin\\(?\\d+"] },
               { desc: "Substitution using θ₁ = 55° (not 35°) and θ₂ = 33°", nums: [[55, 0.819], [33, 0.545]] },
               { desc: "n = c/v (refractive index 1.50 found)", rel: ["n=c/v", "v=c/n", "n=3(?:\\.0+)?x10\\^?8/v", "v=3(?:\\.0+)?x10\\^?8/", "v=3e8/"] },
               { desc: "v = 2.0 × 10⁸ m s⁻¹", ans: 1.99464e8, alts: [2.0e8], sf: 2, unit: "m s-1" },
@@ -760,9 +760,9 @@
             model: "<ul><li>n = λ₁/λ₂ (1)</li><li>1.50 = 650 / λ₂ (1)</li><li>λ₂ = 433 nm (4.33 × 10⁻⁷ m) (1)</li></ul><p>The wavelength falls because the light slows down.</p>",
           },
           {
-            label: "(c)", type: "mcq", marks: 1, a: 2,
+            label: "(c)", type: "mcq", marks: 1, a: 4,
             q: "What happens to the frequency of the light as it enters the glass?",
-            opts: ["It increases", "It decreases in proportion to the speed", "It stays the same", "It falls to zero", "It halves"],
+            opts: ["It increases", "It decreases in proportion to the speed", "It falls to zero", "It halves", "It stays the same"],
             why: "The frequency is fixed by the source and the same number of waves per second leave the air as enter the glass, so the frequency is <strong>unchanged</strong>. Since v = fλ, the speed and the wavelength fall together.",
           },
         ],
@@ -779,7 +779,7 @@
             q: "Calculate the critical angle for a diamond-to-air boundary. The refractive index of diamond is on the data sheet.",
             steps: [
               { desc: "sin θc = 1/n", rel: ["sin(?:θc|thetac|θ_c|c)=1/n", "sin(?:θc|thetac|θ_c)=1/2\\.42", "n=1/sin", "sin(?:θc|thetac)=1/", "sinc=1/n"] },
-              { desc: "Substitution: sin θc = 1/2.42", nums: [2.42] },
+              { desc: "Substitution: sin θc = 1/2.42 (= 0.413)", nums: [[2.42, 0.4132]], not: ["(?<![a-z])tan(?:θ|\\^|\\(|-1)", "(?<![a-z])cos(?:θ|\\(|\\^)"] },
               { desc: "θc = 24.4°", ans: 24.4075, abs: 0.2, sf: 3, unit: ["°", "degrees", "deg"] },
             ],
             sample: "sin θc = 1/n\nsin θc = 1/2.42 = 0.413\nθc = 24.4°",
