@@ -136,7 +136,7 @@
   const AV_RISES = "\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power)\\W+(?:\\w+\\W+){0,2}(?:rise\\w*|increas\\w*|goes up|go up|gets? (?:higher|bigger|larger))\\W+(?:\\w+\\W+){0,4}(?:when|as|because|if|since)\\W+(?:\\w+\\W+){0,4}(?:duty|pulse|on.?time)\\W+(?:\\w+\\W+){0,4}(?:reduc\\w*|lower\\w*|fall\\w*|decreas\\w*|smaller|less|cut)";
 
   /* digital-11(c): the wrong claim that PWM (the transistor) is the one that wastes the power */
-  const PWM_WASTES = "\\b(?:pwm|transistor|switching)\\W+(?:(?:(?!\\b(?:not|never|little|less|no|hardly|almost|barely|fewer|minimal|negligible|tiny|small|only|very|lower|than)\\b|n't)\\w+\\W+)){0,4}(?:wastes?|loses|dissipates|gets hot|heats(?: up)?|uses more)\\b";
+  const PWM_WASTES = "\\b(?:pwm|transistor|switching)\\W+(?:(?:(?!\\b(?:not|never|little|less|no|hardly|almost|barely|fewer|minimal|negligible|tiny|small|only|very|lower|than)\\b|n't)\\w+\\W+)){0,4}(?:wastes?|loses|dissipates|gets hot|heats(?: up)?|uses more)\\b(?!\\W+(?:\\w+\\W+){0,2}(?:less|little|hardly|fewer|no|nothing|almost|barely|minimal|negligible)\\b)";
 
   /* digital-12(d): the reversed claim that in1 = 1 closes the vent */
   const IN1_REV = "\\b(?:in1|input 1|input one)\\W+(?:is |= ?|equals |has |gets )?(?:1|high)\\b\\W+(?:\\w+\\W+){0,4}?(?:closed?|shut|closes)\\b";
@@ -180,14 +180,15 @@
             minWords: 10,
             points: [
               { desc: "A digital signal has only two levels, so the receiver only has to decide high or low and a small amount of noise leaves that decision unchanged", group: "d",
-                not: ["\\bdigital\\W+(?:\\w+\\W+){0,6}(?:more|worse|badly)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted)", DIG_WORSE, "\\banalogue\\W+(?:\\w+\\W+){0,4}(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?)", "\\bdigital\\W+(?:\\w+\\W+){0,4}(?:any|every|all|infinite|continuous\\w*)\\W+(?:\\w+\\W+){0,2}(?:values?|levels?|voltages?)"],
+                not: ["\\bdigital\\W+(?:\\w+\\W+){0,6}(?:more|worse|badly)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted)", DIG_WORSE, "\\banalogue\\W+(?:\\w+\\W+){0,4}(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?)", "\\bdigital\\W+(?:\\w+\\W+){0,4}(?:any|every|all|infinite|continuous\\w*)\\W+(?:\\w+\\W+){0,2}(?:values?|levels?|voltages?)", "\\b(?:noise|interference)(?:\\s+\\w+){0,3}\\s+(?:removed|filtered|cleaned|rejected|eliminated|cancell?ed)(?:\\s+\\w+){0,3}\\s+(?:from|in|on)(?:\\s+\\w+){0,1}\\s+analogue"],
                 any: [
                   "\\b(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2|binary)\\W+(?:\\w+\\W+){0,2}(?:levels?|values?|states?|voltages?)",
                   "\\b(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?|voltages?)\\b",
                   "\\b(?:decide|decides|decision|distinguish\\w*|tell|judge|choose|chooses|determine|recogni[sz]e|detect|detects)\\W+(?:\\w+\\W+){0,8}(?:high|low|on|off|0|1|zero|one|nearer)\\b",
                   "\\b(?:noise|interference|wobbles?|distortion|errors?)\\W+(?:\\w+\\W+){0,6}(?:ignored|rejected|removed|cleaned|filtered|tolerated|does ?n'?t matter|does not matter|makes no difference|ignore)",
                   "\\b(?:still|easily|clearly)\\W+(?:\\w+\\W+){0,2}(?:recogni[sz]\\w*|read|detect\\w*|identif\\w*|understood)",
-                  "\\b(?:either|always|only)\\W+(?:\\w+\\W+){0,3}(?:on|high|1)\\W+or\\W+(?:\\w+\\W+){0,2}(?:off|low|0)\\b",
+                  "\\b(?:either|always|only|just|simply)\\W+(?:\\w+\\W+){0,3}(?:on|high|1)\\W+or\\W+(?:\\w+\\W+){0,2}(?:off|low|0)\\b",
+                  "\\b(?:ignor\\w*|disregard\\w*)\\W+(?:\\w+\\W+){0,4}(?:noise|interference|distortion)",
                 ] },
               { desc: "Noise added to an analogue signal changes its value (which carries the information), so the message is distorted", group: "a",
                 not: [DIG_WORSE],
@@ -455,13 +456,13 @@
               { desc: "It keeps repeating: reads or checks the sensor over and over in a loop",
                 all: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always (?:checking|reading|monitoring|testing)|goes? back|going back|returns? to|returning to|back to (?:read|the start|the top|the beginning)|reads?\\W+(?:\\w+\\W+){0,2}again)\\b", "\\b(?:read\\w*|check\\w*|monitor\\w*|test\\w*|measur\\w*|compar\\w*|look\\w*|scan\\w*|poll\\w*)\\b"] },
               { desc: "The fan is switched on (out1 = 1) when an1 is above 153 (the temperature is above 60 °C)",
-                not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:on|start\\w*|run\\w*|switch\\w* on|turn\\w* on|work\\w*)\\b", "\\b(?:off|stops?|0)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:above|over|greater|higher|hotter|>)", "(?:above|over|greater|more than|higher|hotter|>)(?:(?!\\b(?:on|runs?|starts?|otherwise|else|below|under|lower)\\b)[^.;]){0,40}\\b(?:off|stops?|switch\\w* off|turn\\w* off)\\b"],
+                not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:on|start\\w*|run\\w*|switch\\w* on|turn\\w* on|work\\w*)\\b", "\\b(?:off|stops?|0)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:above|over|greater|higher|hotter|>)", "(?<!\\b(?:on|runs?|starts?)\\W+(?:if|when|once|as soon as)\\W+(?:\\w+\\W+){0,4})(?:above|over|greater|more than|higher|hotter|>)(?:(?!\\b(?:on|runs?|starts?|otherwise|else|below|under|lower)\\b)[^.;]){0,40}\\b(?:off|stops?|switch\\w* off|turn\\w* off)\\b"],
                 negOK: true, all: ["\\bfan\\b"], any: [
                   "(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high|rises? (?:above|over|past))[^.;!?]{0,60}(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|start\\w*|run\\w*|switch\\w* on|turn\\w* on)\\b",
                   "\\b(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|starts?|runs?|switch\\w* on|switched on|turn\\w* on|turned on)[^.;!?]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)",
                 ] },
               { desc: "The fan is switched off (out1 = 0) when an1 is not above 153 (the temperature is lower)",
-                not: ["(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)(?:(?!\\b(?:otherwise|else|if not|but|whereas|while|not|on|runs?|starts?|below|under|less|lower|cooler|colder)\\b|n't|<)[^.;]){0,60}\\b(?:off|stops?|switch\\w* off|turn\\w* off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0)\\b", "\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:off|stop\\w*|switch\\w* off|turn\\w* off)\\b", "\\b(?:on|runs?|starts?)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:below|under|less|lower|cooler|colder|<)", "(?:below|under|less|lower|cooler|colder|<)(?:(?!\\b(?:off|stops?|otherwise|else|above|over|greater)\\b)[^.;]){0,40}\\b(?:on|runs?|starts?|switch\\w* on|turn\\w* on)\\b"],
+                not: ["(?<!\\b(?:on|runs?|starts?)\\W+(?:if|when|once|as soon as)\\W+(?:\\w+\\W+){0,4})(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)(?:(?!\\b(?:otherwise|else|if not|but|whereas|while|not|on|runs?|starts?|below|under|less|lower|cooler|colder)\\b|n't|<)[^.;]){0,60}\\b(?:off|stops?|switch\\w* off|turn\\w* off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0)\\b", "\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:off|stop\\w*|switch\\w* off|turn\\w* off)\\b", "\\b(?:on|runs?|starts?)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:below|under|less|lower|cooler|colder|<)", "(?:below|under|less|lower|cooler|colder|<)(?:(?!\\b(?:off|stops?|otherwise|else|above|over|greater)\\b)[^.;]){0,40}\\b(?:on|runs?|starts?|switch\\w* on|turn\\w* on)\\b"],
                 negOK: true, all: ["\\bfan\\b"], any: [
                   "(?:otherwise|else|if not|below|less|lower|under|cooler|colder|<|153 or less|not (?:above|over|greater|hot))[^.;!?]{0,60}(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stop\\w*|switch\\w* off|turn\\w* off)\\b",
                   "\\b(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stops?|switch\\w* off|switched off|turn\\w* off|turned off)[^.;!?]{0,60}(?:otherwise|else|if not|below|less|lower|under|cooler|colder)",
