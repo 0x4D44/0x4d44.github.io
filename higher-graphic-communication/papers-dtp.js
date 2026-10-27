@@ -3,6 +3,11 @@
   "use strict";
   const B = (window.HGP_BANK = window.HGP_BANK || {});
 
+  /* shared "effect on the viewer" pattern for explain-type marking points */
+  const EFF = "stand(s|ing)? out|stood out|noticed|noticeable|prominent|obvious|eye.?catching|(catch|grab|attract|draw|drew|caught)\\w*\\W+(\\w+\\W+){0,2}(eye|attention)|(eye|attention)\\W+(\\w+\\W+){0,3}(drawn|goes|go|pulled|attracted|caught)|drawn (to|first)|focal|(seen|read|noticed) first|(first|immediately)\\W+(\\w+\\W+){0,2}(see|notice|read)";
+  /* a linking word: real explanations say "so", "which", "because"; a list of terms does not */
+  const CONN = "\\b(so|because|which|means|meaning|therefore|this|it|they|makes?|allows?|lets?|gives?)\\b";
+
   /* ---- small figure helpers (palette: ink, aubergine, magenta, yellow, cyan, paper, grey) ---- */
   const INK = "#1d1a14", AUB = "#2a1740", MAG = "#d4147a", YEL = "#f7d117", CYA = "#00a3d9", PAP = "#fffaf0", GRY = "#cbbd9b";
   const lab = (x, y, t) =>
@@ -16,11 +21,11 @@
     `<svg viewBox="0 0 420 252" role="img" aria-label="A two-page magazine spread with six lettered features. A is a short line of text, Sailing News, repeated at the top of the left page. B is a large enlarged letter T opening the first paragraph. F is the narrow gap between the two text columns on the left page. E is the page number 12 in the bottom outer corner. D is a line of small italic text directly under the photograph on the right page. C is a short enlarged quotation between two magenta lines.">` +
     rect(10, 14, 195, 222, PAP, `stroke="${INK}" stroke-width="1.5"`) + rect(215, 14, 195, 222, PAP, `stroke="${INK}" stroke-width="1.5"`) +
     `<text x="22" y="34" font-size="11" font-weight="700" fill="#52308a" letter-spacing="1">SAILING NEWS</text>` + lab(130, 30, "A") +
-    `<text x="22" y="68" font-size="24" font-weight="700" fill="${INK}">Race day</text>` +
-    `<text x="22" y="118" font-size="34" font-weight="700" fill="${MAG}">T</text>` + lab(58, 84, "B") +
+    `<text x="22" y="62" font-size="24" font-weight="700" fill="${INK}">Race day</text>` +
+    `<text x="22" y="118" font-size="34" font-weight="700" fill="${MAG}">T</text>` + lab(32, 80, "B") +
     lines(48, 98, [50, 50, 50], 10) + lines(22, 130, [76, 76, 76, 76, 76, 76, 76, 40], 10) +
-    lines(114, 98, [76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 40], 10) +
-    `<path d="M105 190 V210" stroke="${INK}" stroke-width="1.2"/>` + lab(105, 212, "F") +
+    lines(114, 98, [76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 40], 10) +
+    `<path d="M105 186 V204" stroke="${INK}" stroke-width="1.2"/>` + lab(105, 214, "F") +
     `<text x="22" y="230" font-size="12" font-weight="700" fill="${INK}">12</text>` + lab(52, 226, "E") +
     rect(227, 40, 171, 72, "#cfe3ee") + rect(227, 90, 171, 22, "#4f7f98") +
     `<path d="M280 90 L340 90 L332 100 L288 100 Z" fill="#3b2a1a"/><path d="M310 90 V56" stroke="#3b2a1a" stroke-width="2"/><path d="M310 58 L330 86 L310 86 Z" fill="#fffaf0" stroke="#3b2a1a" stroke-width=".8"/>` +
@@ -153,18 +158,19 @@
 
   /* Figure 12: two drafts of a leaflet page */
   const figDrafts =
-    `<svg viewBox="0 0 440 250" role="img" aria-label="Two drafts of the same leaflet page side by side. In Draft A the heading, photograph, caption, price circle and Book now button are scattered at different positions with no common edge and the caption is far below the photograph. In Draft B the heading, photograph, caption and body text all start on one left edge, the caption sits directly beneath the photograph, the price and button are grouped together, and there is a wide empty area on the right.">` +
+    `<svg viewBox="0 0 440 250" role="img" aria-label="Two drafts of the same leaflet page side by side. In Draft A the heading, photograph, caption, price circle and Book now button are scattered at different positions with no common edge and the caption is far below the photograph. In Draft B the heading, photograph, caption and body text all start on one left edge, the caption sits directly beneath the photograph, the price and button are grouped together, and there is a wide empty column on the right, labelled E.">` +
     `<text x="110" y="14" font-size="13" font-weight="700" fill="${INK}" text-anchor="middle">Draft A</text><text x="330" y="14" font-size="13" font-weight="700" fill="${INK}" text-anchor="middle">Draft B</text>` +
     rect(10, 22, 200, 222, PAP, `stroke="${INK}" stroke-width="1.5"`) + rect(230, 22, 200, 222, PAP, `stroke="${INK}" stroke-width="1.5"`) +
     rect(36, 36, 90, 10, AUB) + rect(84, 62, 82, 52, "#cfe3ee") + `<circle cx="176" cy="148" r="17" fill="${MAG}"/>` + rect(20, 122, 54, 18, YEL) + lines(30, 208, [80], 10) + lines(100, 150, [70, 70, 70, 40], 10) +
-    rect(242, 36, 90, 10, AUB) + lab(366, 41, "A") + rect(242, 56, 100, 62, "#cfe3ee") + lab(366, 87, "B") + lines(242, 124, [76], 10, "#8a7f66") + lab(366, 128, "C") +
-    lines(242, 146, [140, 140, 140, 90], 11) + `<circle cx="258" cy="212" r="17" fill="${MAG}"/>` + rect(284, 202, 56, 20, YEL) + lab(366, 212, "D") + lab(406, 150, "E") +
+    rect(242, 36, 70, 10, AUB) + lab(338, 41, "A") + rect(242, 56, 80, 56, "#cfe3ee") + lab(338, 84, "B") + lines(242, 118, [60], 10, "#8a7f66") + lab(338, 122, "C") +
+    lines(242, 140, [80, 80, 80, 80, 50], 11) + `<circle cx="256" cy="214" r="14" fill="${MAG}"/>` + rect(278, 205, 46, 18, YEL) + lab(338, 214, "D") +
+    rect(356, 36, 64, 196, "none", `stroke="${GRY}" stroke-width="1.5" stroke-dasharray="5 4"`) + lab(388, 134, "E") +
     `</svg>`;
 
   /* ---- the questions ---- */
   B.dtp = {
     intro:
-      "Twelve scenario questions on <b>DTP features, design elements and principles</b> (65 marks, in the 20 to 30 mark area of the paper): magazine pages, posters, leaflets, a cover, a programme and a web banner. About half the marks are written answers (identify, describe, explain), the rest are matching, multiple-choice and short calculations. Most questions have a layout to read, so name it, place it and say what it does.",
+      "Twelve scenario questions on <b>DTP features, design elements and principles</b> (67 marks, in the 20 to 30 mark area of the paper): magazine pages, posters, leaflets, a cover, a programme and a web banner. About half the marks are written answers (identify, describe, explain, compare), the rest are matching, multiple-choice and short calculations. Most questions have a layout to read, so name it, place it and say what it does.",
     questions: [
       {
         id: "dtp-01",
@@ -186,23 +192,23 @@
             type: "text", label: "(a)", marks: 2, rows: 4,
             q: "Explain how emphasis has been created on the date and time.",
             points: [
-              { desc: "Yellow (accent) panel or background behind the date, so it stands out / is noticed first", group: "p1", any: ["yellow.{0,50}(panel|box|band|background|block|accent|text|writing|colour).{0,110}(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?)", "(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?).{0,80}yellow.{0,30}(panel|box|band|background|block|accent)"] },
-              { desc: "Date and time in bold or large capitals, so it stands out / is read easily", group: "p2", all: ["(date|time).{0,60}(bold|large|big|capital|size)|(bold|large|big|capital).{0,60}(date|time)", "(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?|read)"] },
-              { desc: "Dark text on a light panel contrasts strongly, so it is clear / stands out", group: "p3", all: ["(navy|dark|aubergine|purple).{0,80}(yellow|light|bright)|(yellow|light|bright).{0,80}(navy|dark|aubergine|purple)", "contrast", "(stand|stood|notice|eye|attention|first|catch|clear|read)"] },
-              { desc: "Only large yellow area / nothing else the same colour, so the eye is drawn to it", group: "p4", any: ["(only|single|one|different|unlike).{0,30}yellow.{0,70}(stand|stood|notice|eye|attention|first|catch|draws?)", "yellow.{0,40}(only|single|unlike|different).{0,70}(stand|stood|notice|eye|attention|first|catch|draws?)"] },
+              { desc: "Yellow (accent) panel or background behind the date, so it stands out / is noticed first", group: "p1", win: 60, all: ["yellow\\W+(\\w+\\W+){0,1}(panel|box|band|background|block|strip|patch|area|shape)|(panel|box|band|background|block|strip|patch)\\W+(\\w+\\W+){0,1}yellow", EFF] },
+              { desc: "Date and time in bold or large capitals, so it stands out / is read first", group: "p2", win: 70, all: ["(bold|large|big|capital|upper ?case|bigger|larger)\\w*\\W+(\\w+\\W+){0,2}(capital|letter|text|writing|print)\\w*|(date|time)\\W+(\\w+\\W+){0,3}(bold|large|big|capital|upper ?case|bigger|larger)", EFF] },
+              { desc: "Dark text on a light panel contrasts strongly, so it is clear / stands out", group: "p3", win: 90, all: ["(dark|navy|aubergine|purple|black)\\W+(\\w+\\W+){0,4}(on|against)\\W+(\\w+\\W+){0,2}(yellow|light|bright)|(yellow|light|bright)\\W+(\\w+\\W+){0,3}(behind|under|beneath|with)\\W+(\\w+\\W+){0,2}(dark|navy|aubergine|purple|black)", "contrast\\w*\\W+(\\w+\\W+){0,6}(strong|high|great|sharp|clear|stand|read)|(strong|high|great|sharp|good)\\W+(\\w+\\W+){0,2}contrast"] },
+              { desc: "Only large yellow area / nothing else the same colour, so the eye is drawn to it", group: "p4", win: 70, all: ["(only|single|sole|unlike|nothing else|no other)\\W+(\\w+\\W+){0,4}(yellow|that colour|same colour|colour)", EFF] },
             ],
-            sample: "The date and time are in bold navy capitals on a bright yellow panel. The yellow is the only large block of that colour on the poster, so the viewer's eye is drawn to it and they notice when the open evening is.",
+            sample: "The date and time are in bold navy capitals on a bright yellow panel, which makes them stand out. The yellow is the only large block of that colour on the poster, so the viewer's eye is drawn to it and they notice when the open evening is.",
             model: "<ul><li>A feature (cause) linked to its effect on the viewer, 1 mark each, any 2: yellow accent panel behind the date so it stands out (1); the date and time are in bold or larger capitals so they are read first (1); dark text on a bright yellow panel gives strong contrast so it is clear from a distance (1); it is the only large yellow area so the eye is drawn to it (1).</li></ul><p>Not enough: &ldquo;it draws attention&rdquo; (effect only); &ldquo;the date is yellow&rdquo; (feature only); &ldquo;emphasis is created by colour&rdquo; (the principle is not its own effect).</p>",
           },
           {
             type: "text", label: "(b)", marks: 2, rows: 4,
             q: "Describe how rhythm has been created in the poster.",
             points: [
-              { desc: "A row of identical pennants repeated at equal spacing across the top", all: ["(pennant|flag|triangle)", "(repeat|equal|even|regular|same|row|identical|matching)"] },
-              { desc: "Three circles/badges (FLY, BUILD, LEAD) the same size and equally spaced", all: ["(circle|badge|roundel|button|fly|build|lead)", "(repeat|equal|even|regular|same|row|three|matching|identical)"] },
-              { desc: "Matching labels or headings in the same style repeated at regular intervals", all: ["(fly|build|lead|label|heading|word)", "(same|match|identical|repeat|equal|even).{0,40}(font|style|colour|size|white|spaced|interval)"] },
+              { desc: "A row of identical pennants repeated at equal spacing across the top", win: 70, all: ["(identical|same|matching|repeated|repeating|row of|series of|line of)\\W+(\\w+\\W+){0,2}(pennants?|flags?|triangles?)|(pennants?|flags?|triangles?)\\W+(\\w+\\W+){0,3}(repeated|identical|same|in a row)", "(spac|interval|gap|equally|evenly|regularly)"] },
+              { desc: "Three circles/badges (FLY, BUILD, LEAD) the same size and equally spaced", win: 70, all: ["(identical|same|matching|repeated|equal|three|row of)\\W+(\\w+\\W+){0,2}(circles?|circular|badges?|roundels?|buttons?)|(circles?|badges?|roundels?|buttons?)\\W+(\\w+\\W+){0,4}(same size|equal size|identical|repeated|the same)", "(spac|interval|gap|equally|evenly|regularly)"] },
+              { desc: "Matching labels or headings in the same style repeated at regular intervals", win: 40, all: ["(fly|build|lead|labels?|headings?)", "(same|match|identical|repeat)\\w*\\W+(\\w+\\W+){0,2}(font|style|colour|size|white|interval)"] },
             ],
-            sample: "A row of six identical magenta pennants is repeated at equal spacing along the top of the poster. Three circular badges, FLY, BUILD and LEAD, are the same size and are evenly spaced across the middle.",
+            sample: "A row of six identical magenta pennants is repeated at equal spacing along the top of the poster. Three circular badges are the same size and evenly spaced across the middle, labelled FLY, BUILD and LEAD.",
             model: "<ul><li>The pennants are repeated at equal spacing in a row below the title (1).</li><li>The three badges are the same size, repeated at equal intervals across the page (1).</li></ul><p>Also acceptable: the matching white labels inside the badges. A bare &ldquo;repetition&rdquo; or &ldquo;there is a pattern&rdquo; is a list word, not a description: say what is repeated and where.</p>",
           },
           { type: "mcq", label: "(c)", marks: 1, q: "The aircraft photograph is far larger than any other item, so the eye starts there. Which design principle is this?", opts: ["Proximity", "Dominance", "Rhythm", "White space"], a: 1, why: "One item clearly more important than the rest, usually the largest, is dominance: it gives the eye an obvious starting point." },
@@ -219,11 +225,11 @@
             type: "text", label: "(b)", marks: 3, rows: 5,
             q: "Describe the grid structure of the leaflet page.",
             points: [
-              { desc: "The page has three (equal) columns", all: ["(three|3).{0,20}column|column.{0,20}(three|3)"] },
-              { desc: "The title spans all three columns", all: ["(title|heading|headline|banner|summer fair)", "(span|across|all three|full width|whole width|all the columns|all columns|every column)"] },
-              { desc: "The photograph spans two columns (the first two)", all: ["(image|photo|picture|photograph)", "(two|2).{0,30}column|column.{0,20}(one and two|1 and 2)"] },
-              { desc: "The pull quote is in the third column / text is in single columns", any: ["(pull ?quote|quote).{0,50}(third|one|single|last|right|3).{0,15}column", "(text|body).{0,60}(each|one|single|separate|its own).{0,20}column"] },
-              { desc: "Items line up with the column edges / equal gutters between columns", all: ["(align|line up|lines up|lined up|edges? (sit|are|line|match))", "(column|grid|gutter)"] },
+              { desc: "The page has three (equal) columns", any: ["\\b(three|3)\\b( equal| narrow| even)? columns?", "columns? (is |are |of )?(three|3)\\b"] },
+              { desc: "The title spans all three columns", any: ["(title|heading|headline|banner)\\W+(\\w+\\W+){0,4}(spans?|across|stretch\\w*|covers?|runs?|goes)\\W+(\\w+\\W+){0,3}(all|three|3|whole|full)", "(spans?|across)\\W+(\\w+\\W+){0,2}(all|three|3|whole|full)( three)?( columns?| width)?\\W+(\\w+\\W+){0,3}(title|heading|headline|banner)", "(title|heading|headline|banner)\\W+(\\w+\\W+){0,4}(full|whole) (width|page)"] },
+              { desc: "The photograph spans two columns (the first two)", any: ["(image|photo\\w*|picture)\\W+(\\w+\\W+){0,4}(spans?|across|covers?|takes? up|fills?|occupies|is|over|in|wide)\\W+(\\w+\\W+){0,3}(two|2)\\b( columns?| wide)", "(two|2) columns?\\W+(\\w+\\W+){0,4}(image|photo\\w*|picture)"] },
+              { desc: "The pull quote is in the third column / text is in single columns", any: ["(pull ?quote|quote)\\W+(\\w+\\W+){0,4}(third|3rd|last|right|final|single|one)( hand)?\\W+(\\w+\\W+){0,1}column", "(third|3rd|last|right|final)( hand)? column\\W+(\\w+\\W+){0,4}(pull ?quote|quote)", "(body )?(text|writing)\\W+(\\w+\\W+){0,4}(each|one|single|separate|its own|three)\\W+(\\w+\\W+){0,1}columns?"] },
+              { desc: "Items line up with the column edges / equal gutters between columns", win: 50, all: ["(align|line[sd]? up|lined up|edges? (sit|are|line|match)|snap)", "(column|grid|gutter)"] },
             ],
             sample: "The page uses a three-column grid with gutters between the columns. The title spans all three columns and the photograph spans the first two columns. The pull quote sits in the third column and the edges of the items line up with the column edges.",
             model: "<ul><li>Number of columns: three equal columns, with gutters between and margins round the edge (1).</li><li>The title spans all three columns (1).</li><li>The photograph spans two columns while the pull quote sits in the third (1).</li><li>The body text runs in a single column each; every edge lines up on a column edge (1).</li></ul><p>Any 3. The 2025 course report called grid structure &ldquo;particularly demanding&rdquo;: name the columns, what spans them, and what lines up. &ldquo;It uses a grid&rdquo; earns nothing.</p>",
@@ -252,9 +258,9 @@
             type: "text", label: "(b)", marks: 2, rows: 4,
             q: "The printer asks for the background to be printed out to the edge of area C. Explain why.",
             points: [
-              { desc: "Cutting/trimming is never perfectly accurate (the cut may be slightly out)", any: ["(cut|cutting|trim|trimming|guillotine|blade).{0,40}(never|not|isn't).{0,25}(accurate|exact|perfect|precise)", "(never|not).{0,25}(accurate|exact|perfect|precise).{0,30}(cut|trim|guillotine)", "(guillotine|cut|blade|trim).{0,50}(inaccura|drift|slip|shift|slightly (out|off|wrong)|a (little|bit|hair) (out|off|wrong))", "(slightly|a little|a bit) (out|off).{0,30}(line|cut|trim)"] },
-              { desc: "So no thin white (unprinted) edge shows", any: ["(white|unprinted|blank).{0,15}(edge|border|gap|sliver)", "(edge|border|sliver|gap).{0,15}(white|unprinted|blank)", "(edge|border).{0,25}(left )?(unprinted|without (colour|ink|print))"] },
-              { desc: "The cut still lands on printed colour", any: ["(cut|trim|guillotine).{0,30}(still )?(lands?|falls?|cuts?).{0,25}(colour|navy|ink|print)"] },
+              { desc: "Cutting/trimming is never perfectly accurate (the cut may be slightly out)", any: ["(cut|cutting|trim|trimming|trimmed|guillotine|blade|cutter|machine)\\w*\\W+(\\w+\\W+){0,6}(never|not|isn't|aren't|can't|cannot|doesn't|won't|may not|might not|unlikely|hard to|difficult to)\\W+(\\w+\\W+){0,3}(accura|exact|perfect|precis|straight|line up|on the line|right on|spot on)", "(never|not|can't|cannot|hard to|difficult to|impossible to)\\W+(\\w+\\W+){0,3}(accura|exact|perfect|precis)\\w*\\W+(\\w+\\W+){0,4}(cut|trim|guillotine)", "(cut|trim|guillotine|blade|cutter|machine|paper)\\w*\\W+(\\w+\\W+){0,6}(inaccura|imprecis|drift|slip|shift|move[sd]?|wander|slightly (out|off|wrong)|a (little|bit|hair|fraction) (out|off|wrong|over|either)|out of place|off the line|miss|wrong place|error|mistake)", "(error|mistake|margin of error|tolerance)\\W+(\\w+\\W+){0,4}(cut|trim|guillotine)", "(slightly|a little|a bit|fraction)\\W+(\\w+\\W+){0,2}(out|off|over|past|inside|short)\\W+(\\w+\\W+){0,4}(line|cut|trim|edge)", "(cut|trim)\\w*\\W+(\\w+\\W+){0,3}(a little|slightly|a bit|a millimetre|1 ?mm)\\W+(\\w+\\W+){0,3}(out|off|wrong|either side)"] },
+              { desc: "So no thin white (unprinted) edge shows", any: ["(white|unprinted|blank|bare|uncoloured|paper)\\W+(\\w+\\W+){0,1}(edge|border|gap|sliver|strip|line|stripe|band|margin|bit|patch)", "(edge|border|sliver|gap|strip|line|band)\\W+(\\w+\\W+){0,2}(of |in )?(white|unprinted|blank|bare|paper)", "(no|without|avoids?|prevents?|stops?)\\W+(\\w+\\W+){0,2}(unprinted|blank|bare|uncoloured|white)", "(colour|ink|print)\\W+(\\w+\\W+){0,3}(not|doesn't|didn't|wouldn't|would not|won't)\\W+(\\w+\\W+){0,2}(reach|go|extend|stop|cover)"] },
+              { desc: "The cut still lands on printed colour", any: ["(cut|trim|guillotine)\\w*\\W+(\\w+\\W+){0,4}(still )?(lands?|falls?|cuts?)\\W+(\\w+\\W+){0,3}(colour|navy|ink|print)"] },
             ],
             sample: "The guillotine never cuts exactly on the trim line, it can be a little out. With the navy carried on past the line, the cut still lands on printed colour so there is no thin white edge on the finished poster.",
             model: "<ul><li>Trimming is never perfectly accurate, so the cut may land a little either side of the trim line (1).</li><li>With the colour carried past the line (bleed, commonly 3 mm) no unprinted white edge is left (1).</li></ul><p>Do not award for &ldquo;so it looks good&rdquo; or &ldquo;to line up the colours&rdquo; (that is the purpose of registration marks).</p>",
@@ -273,8 +279,8 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain why the leaflet version of the artwork should be set up in CMYK.",
             points: [
-              { desc: "Printing presses use cyan, magenta, yellow and black inks only", any: ["(press|printer|printing|inks?).{0,80}(cyan|magenta|four (colour )?inks|4 inks|four colours?)", "(cyan|magenta|four (colour )?inks|4 inks).{0,80}(press|printer|printing|print)"] },
-              { desc: "Some bright RGB colours cannot be printed and come out duller, so CMYK shows the true result", any: ["(bright|vivid|rgb|screen).{0,40}(cannot|can't|can not|not be|unable).{0,25}(print|made|mixed|reproduc)", "(duller|dull|muted|different).{0,40}(printed|when print|on paper|in print)", "(outside|out of|beyond).{0,15}(the )?(gamut|range|cmyk)"] },
+              { desc: "Printing presses use cyan, magenta, yellow and black inks only", win: 70, all: ["(print|press|inks?)", "(four|4)( |-)(colour|ink)|(cyan|magenta|yellow|black|key)\\W+(\\w+\\W+){0,2}(cyan|magenta|yellow|black|key)\\W+(\\w+\\W+){0,2}(cyan|magenta|yellow|black|key)"] },
+              { desc: "Some bright RGB colours cannot be printed and come out duller, so CMYK shows the true result", win: 60, all: ["(bright|vivid|rgb|screen|neon|saturated|monitor)", "(cannot|can't|can not|not be|unable to|won't|impossible to|aren't|isn't)\\W+(\\w+\\W+){0,2}(print|reproduc|made|mixed|match)|(duller|dull|muted|flat|flatter|paler|less vivid|less bright)\\W+(\\w+\\W+){0,3}(print|paper|result|ink)|(print|paper|printed)\\W+(\\w+\\W+){0,3}(duller|dull|muted|flat|flatter|paler|less vivid|less bright)|(outside|out of|beyond|smaller)\\W+(\\w+\\W+){0,2}(gamut|range)"] },
             ],
             sample: "A printing press only lays down four inks, cyan, magenta, yellow and black, so every colour has to be made from those. Some bright screen colours cannot be printed with them and would come out duller, so working in CMYK shows what the printed result will really look like.",
             model: "<ul><li>The press prints with cyan, magenta, yellow and black (key) inks, so every colour must be made from them (1).</li><li>Some bright RGB colours are outside this smaller gamut and would print duller than on screen; working in CMYK from the start gives a true preview (1).</li></ul>",
@@ -293,22 +299,34 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain why these font choices suit the invitation.",
             points: [
-              { desc: "The script title looks like elegant handwriting, so it feels formal or celebratory", all: ["script", "(elegant|handwriting|handwritten|formal|celebrat|decorative|personal|flowing|calligraph|special|occasion)"] },
-              { desc: "The serif details are traditional / easy to read, so guests can read the information", all: ["serif", "(easy to read|readable|clear|traditional|formal|legible|small text)"] },
-              { desc: "The two fonts contrast, so the title and details are easy to tell apart", all: ["(contrast|different|tell apart|distinguish|stand out|separate)", "(title|heading|details|fonts)"] },
+              { desc: "The script title looks like elegant handwriting, so it feels formal or celebratory", any: ["script\\W+(\\w+\\W+){0,2}(look\\w*|is|are|feels?|gives?|suggests?|resembles?|like|makes?|suits?|fits?|has)\\W+(\\w+\\W+){0,3}(elegant|handwriting|handwritten|formal|celebrat\\w*|decorative|personal|flowing|calligraph\\w*|special|occasion|fancy|sophisticated|classy|party)", "(elegant|handwriting|handwritten|formal|celebrat\\w*|decorative|flowing|calligraph\\w*|fancy|sophisticated|classy)\\W+(\\w+\\W+){0,3}script"] },
+              { desc: "The serif details are traditional / easy to read, so guests can read the information", any: ["serif\\W+(\\w+\\W+){0,2}(look\\w*|is|are|feels?|gives?|suits?|fits?|has|being)\\W+(\\w+\\W+){0,3}(easy to read|easily read|readable|clear|clearly|traditional|formal|legible)", "(easy to read|easily read|readable|clear|clearly|traditional|legible)\\W+(\\w+\\W+){0,3}serif"] },
+              { desc: "The two fonts contrast, so the title and details are easy to tell apart", any: ["(two|both|the) fonts?\\W+(\\w+\\W+){0,3}(contrast|different)", "(contrast|different|distinct)\\w*\\W+(\\w+\\W+){0,2}(fonts?|styles?|typefaces?)", "(title|heading)\\W+(\\w+\\W+){0,4}(stands? out|tell apart|distinguish\\w*|separate)", "(tell|told)\\W+(\\w+\\W+){0,3}apart"] },
             ],
-            sample: "The script title looks like elegant handwriting, so the invitation feels formal and special. The serif font for the details is traditional and easy to read, so guests can find the time and place clearly.",
+            sample: "The script title looks like elegant handwriting, so the invitation feels formal and special. The serif font is traditional and easy to read, so guests can find the time and place clearly.",
             model: "<ul><li>Script resembles elegant handwriting, so the title feels formal and celebratory (1).</li><li>Serif is traditional and easy to read, so the details are clear (1).</li><li>The two fonts contrast, so the title and details are easily told apart (1).</li></ul><p>Any 2. Each mark needs the font feature and its effect in the context of a dinner invitation.</p>",
           },
           {
             type: "text", label: "(d)", marks: 2, rows: 4,
             q: "The RSVP line (D) is set in reverse text. Explain why reverse text suits this line.",
             points: [
-              { desc: "Light text on a dark background gives strong contrast, so it stands out / catches attention", all: ["(white|light|pale).{0,50}(dark|navy|aubergine|purple|black)|(dark|navy|aubergine|purple|black).{0,50}(white|light|pale)", "(contrast|stand|attention|noticed|eye|catch)"] },
-              { desc: "It is best for short text, because long passages are tiring to read", all: ["\\bshort\\b|few words|brief|small amount|one line", "(tiring|tire|tired|hard to read|difficult to read|strain|exhausting)"] },
+              { desc: "Light text on a dark background gives strong contrast, so it stands out / catches attention", win: 70, all: ["(white|light|pale)\\W+(\\w+\\W+){0,3}(on|against)\\W+(\\w+\\W+){0,2}(dark|navy|aubergine|purple|black)|(dark|navy|aubergine|purple|black)\\W+(\\w+\\W+){0,3}(behind|beneath|under|with|and)\\W+(\\w+\\W+){0,2}(white|light|pale)", "(contrast|stand|attention|notice|eye|catch|clear|visible)"] },
+              { desc: "It is best for short text, because long passages are tiring to read", win: 80, all: ["\\b(short|few words|brief|small amounts?|one line|little text)\\b", "(long|lots of|large amounts?|big blocks?|paragraphs?|passages?|body text|a lot)\\W+(\\w+\\W+){0,4}(tiring|tire|tired|hard|difficult|strain|exhausting|harder|tricky|uncomfortable)"] },
             ],
             sample: "The white text on the dark strip contrasts strongly, so the RSVP line stands out and guests notice it. Reverse text is best for short pieces of text, because long passages of it are tiring to read, and this line is only a few words.",
             model: "<ul><li>Light text on a dark background contrasts strongly, so the line stands out and is noticed (1).</li><li>It works for short text; long passages in reverse are tiring to read, and the RSVP line is only a few words (1).</li></ul>",
+          },
+          {
+            type: "text", label: "(e)", marks: 2, rows: 4,
+            q: "Compare left justification with full justification for the paragraph of event details.",
+            points: [
+              { desc: "Full justification gives straight edges on both sides, so the block looks neat and formal", group: "full", win: 60, all: ["(fully justified|full justification|both (sides|edges|margins)|straight (edges|sides) (on|at) (both|each|either))", "(neat|tidy|formal|clean|smart|block)"] },
+              { desc: "Full justification can leave uneven gaps between words (rivers of white space)", group: "full", win: 90, all: ["(fully justified|full justification|justified|both (sides|edges))", "(uneven|large|big|wide|irregular|varying|stretched|odd)\\W+(\\w+\\W+){0,2}(spac\\w*|gaps?)|rivers?"] },
+              { desc: "Left justification keeps the spacing between words even / is easier to read", group: "left", win: 100, all: ["\\bleft", "(even|equal|regular|consistent|same|natural)\\W+(\\w+\\W+){0,2}(spac\\w*|gaps?)|(spac\\w*|gaps?)\\W+(\\w+\\W+){0,3}(even|equal|regular|consistent)|easier to read|easy to read|readab\\w*"] },
+              { desc: "Left justification leaves a ragged right edge, so it looks less formal / more informal", group: "left", win: 100, all: ["\\bleft", "ragged|uneven (right|edge)|jagged"] },
+            ],
+            sample: "Fully justified text has straight edges on both sides, so the block looks neat and formal, but it can leave uneven gaps between words. Left justified text keeps the spacing between words even and is easier to read, although the right edge is ragged.",
+            model: "<ul><li>Full justification: both edges are straight, so the block looks neat and formal; but the software stretches the word spaces, which can leave uneven gaps or rivers of white space (1).</li><li>Left justification: the spacing between words stays even and the text is easy to read; the right edge is ragged, so it looks less formal (1).</li></ul><p>A comparison needs a point about each type. Describing only one of them earns one mark at most.</p>",
           },
         ],
       },
@@ -334,9 +352,9 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain two benefits of using a master page for the 24-page programme.",
             points: [
-              { desc: "Items are set up once and appear on every page, which saves time", all: ["(once|one time|single time|automatic|every page|each page|all (the )?pages)", "(time|quick|faster|effort|easier|repeat|re-?typ|copy|save)"] },
-              { desc: "Items are in exactly the same position on every page, so the programme is consistent", all: ["(same|identical|consistent|consistency|uniform|exact)", "(position|place|look|every page|each page|all pages|pages|layout)"] },
-              { desc: "Changing the master updates every page at once", all: ["(change|edit|alter|update)", "(master)", "(all|every|each).{0,30}(page|pages)"] },
+              { desc: "Items are set up once and appear on every page, which saves time", win: 90, all: ["(once|one time|single time|automatic\\w*)\\W+(\\w+\\W+){0,6}(every|each|all)\\W+(\\w+\\W+){0,2}pages?|(every|each|all)\\W+(\\w+\\W+){0,2}pages?\\W+(\\w+\\W+){0,4}(automatic\\w*|once|straight away)|appears? (on|in) (every|each|all)", "(so|which|this|that|it|meaning|means|and)\\W+(\\w+\\W+){0,1}(saves?|saving|quicker|faster|less time|less work|less effort)|(makes?|make) (\\w+ ){0,2}(quick|fast|easy|easier)|(no need|don't need|doesn't need|without having|not have) to (re-?(type|do|create|place)|copy|do it|add)|(instead of|rather than)\\W+(\\w+\\W+){0,6}(each|every|individual\\w*|one by one|manually)"] },
+              { desc: "Items are in exactly the same position on every page, so the programme is consistent", win: 90, all: ["(in|at|on|to) (\\w+ ){0,2}(same|identical|exact)( \\w+){0,2} (position|place|spot|location)|(look|layout|design|appearance)\\W+(\\w+\\W+){0,2}(same|identical|consistent|uniform)\\w*", "(so|which|making|makes|means|giving|gives|this|looks?|appears?)\\W+(\\w+\\W+){0,3}(consistent|consistency|uniform\\w*|unified|professional|neat|tidy|identical|the same|alike)"] },
+              { desc: "Changing the master updates every page at once", win: 60, all: ["(change|edit|alter|update|amend|correct|fix)", "master", "(all|every|each)\\W+(\\w+\\W+){0,3}pages?|automatic", CONN] },
             ],
             sample: "The header, footer and page numbers only have to be set up once on the master page and then appear on every page automatically, which saves time. They are in exactly the same position on every page, so the programme looks consistent.",
             model: "<ul><li>Repeating items are placed once and appear on every page automatically, saving time (1).</li><li>They sit in the identical position on each page, giving consistency/unity (1).</li><li>Editing the master updates every page at once (1).</li></ul><p>Any 2, each as a feature linked to its effect.</p>",
@@ -354,11 +372,11 @@
             type: "text", label: "(b)", marks: 2, rows: 5,
             q: "Explain two ways in which colour has been used effectively on the leaflet cover.",
             points: [
-              { desc: "The neighbouring warm colours give harmony, so the cover looks unified", all: ["(next to each other|neighbour|neighbor|beside|adjacent|analogous|similar colours|same part of the colour wheel|close together)", "(harmon|unif|together|belong|pleasing|cohesive|consistent|go well|match)"] },
-              { desc: "The blue circle is an accent/contrasting colour against the warm bands, so the price stands out", all: ["(blue|cyan|ticket|price).{0,70}(accent|contrast|complement|opposite|only cool|only blue|different colour)|(accent|contrast|complement|opposite).{0,70}(blue|cyan|ticket|price)", "(stand|stood|attention|noticed|eye|first|catch|draw)"] },
-              { desc: "Warm colours feel energetic/sunny, suiting a summer fair", any: ["(warm|yellow|orange|red).{0,50}(energetic|exciting|friendly|sunny|lively|vibrant|cheerful|festive|cheery|hot)"] },
+              { desc: "The neighbouring warm colours give harmony, so the cover looks unified", win: 60, all: ["(next to each other|neighbou?r|beside|adjacent|analogous|similar colours|same part of the colour wheel|close together|warm colours)", "(harmon|unif|belong|pleasing|cohesive|consistent|go well|go together|match|blend)"] },
+              { desc: "The blue circle is an accent/contrasting colour against the warm bands, so the price stands out", win: 60, all: ["(blue|cyan|ticket|price|circle)\\W+(\\w+\\W+){0,4}(accent|contrast\\w*|complement\\w*|opposite|only cool|only blue|different colour)|(accent|contrast\\w*|complement\\w*|opposite)\\W+(\\w+\\W+){0,3}(blue|cyan|ticket|price|circle)", "(accent|contrast\\w*|complement\\w*|opposite|only cool|only blue|different colour)\\W+(\\w+\\W+){0,8}(stand|stood|attention|notice|eye|catch|draw)"] },
+              { desc: "Warm colours feel energetic/sunny, suiting a summer fair", win: 35, all: ["(warm|yellow|orange|red)", "(energetic|exciting|friendly|sunny|lively|vibrant|cheerful|festive|cheery|hot|fun|bright and)"] },
             ],
-            sample: "The yellow, orange and red-orange are next to each other on the colour wheel, so they go together and the cover looks unified. The blue circle is the only cool colour, a contrasting accent against the warm bands, so the ticket price stands out and is noticed first.",
+            sample: "The yellow, orange and red-orange are next to each other on the colour wheel, so they go together and the cover looks unified. The blue circle is a contrasting accent against the warm bands, so the ticket price stands out and is noticed first.",
             model: "<ul><li>Analogous warm colours sit next to each other on the wheel, so there is harmony and the cover looks unified (1).</li><li>The cool blue circle contrasts with the warm bands as an accent, so the price stands out (1).</li><li>The warm colours feel sunny and energetic, suiting a summer fair (1).</li></ul><p>Any 2. Name the colour term, point to where it is used, and give the effect.</p>",
           },
           { type: "match", label: "(c)", marks: 3, q: "Match each colour term to its meaning.", pairs: [["Tint", "A colour with white added, so it is lighter"], ["Shade", "A colour with black added, so it is darker"], ["Advancing colour", "A warm colour that seems to come towards the viewer"]] },
@@ -374,9 +392,9 @@
             type: "text", label: "(a)", marks: 2, rows: 4,
             q: "Describe how cropping has been used on the photograph of the pilot (A).",
             points: [
-              { desc: "Cut/cropped round the outline of the figure, removing the whole background", any: ["(cut|cropp?ed|trimm?ed|removed?).{0,70}(round|around|along|follow|outline).{0,30}(outline|edge|shape|figure|person|pilot|body)", "(whole|all|entire|complete).{0,15}background.{0,40}(removed|cut|gone|deleted)|(removed|cut|deleted).{0,15}(all|whole|the|entire).{0,15}background"] },
-              { desc: "So the figure sits directly on the cover / overlaps the masthead (full crop)", any: ["\\b(overlaps?|overlapping|over|in front of|on top of)\\b.{0,40}(masthead|title|heading|logo)", "\\b(sits|placed|stands?|put)\\b.{0,30}\\b(directly|straight|right)\\b.{0,20}(page|cover|background)"] },
-              { desc: "So text can wrap closely round its shape", all: ["text", "(wrap|flow|follow|round|around)"] },
+              { desc: "Cut/cropped round the outline of the figure, removing the whole background", any: ["(cut|crop|trim|remov|delet|eras)\\w*\\W+(\\w+\\W+){0,2}(round|around|along|follow\\w*|outline)", "(whole|all|entire|complete)\\W+(\\w+\\W+){0,2}background", "(background|backdrop)\\W+(\\w+\\W+){0,2}(removed|cut|gone|deleted|erased)"] },
+              { desc: "So the figure sits directly on the cover / overlaps the masthead (full crop)", any: ["(overlaps?|overlapping|in front of|on top of)\\W+(\\w+\\W+){0,3}(masthead|title|heading|logo)", "(sits?|stands?|placed|put)\\W+(\\w+\\W+){0,2}(straight|directly|right)\\W+(\\w+\\W+){0,2}(on|onto)\\W+(\\w+\\W+){0,2}(cover|page|background)"] },
+              { desc: "So text can wrap closely round its shape", any: ["text\\W+(\\w+\\W+){0,4}(wrap|flow|follow|curve|go round|goes around)", "(wrap|flow)\\w*\\W+(\\w+\\W+){0,3}text"] },
             ],
             sample: "The pilot has been cut out round the outline of the body so that the whole background is removed. That lets the figure sit straight on the cover and overlap the masthead.",
             model: "<ul><li>Full cropping: the photograph is cut precisely round the outline of the pilot, removing all of the background (1).</li><li>So the pilot sits directly on the cover colour and overlaps the masthead / text can wrap around the outline (1).</li></ul><p>&ldquo;Crop to shape&rdquo; alone was not accepted in marking; say what was removed and why.</p>",
@@ -385,8 +403,8 @@
             type: "text", label: "(b)", marks: 2, rows: 4,
             q: "Explain why text wrap has been used for the lines of text labelled B.",
             points: [
-              { desc: "The text follows/flows round the outline of the pilot", all: ["(text|words|lines)", "(follows?|flows?|wraps?|runs?|curves?|goes?|moves?|fits?|shortens?).{0,50}(round|around|outline|shape|edge|contour|curve)"] },
-              { desc: "So the text is not hidden behind the figure and no space is wasted / looks neatly joined to the image", any: ["(not|never|without|avoid).{0,30}(hidden|covered|behind|overlap|cut|obscur|lost)", "(no|without|avoid).{0,20}(gap|wasted|empty|white)", "(closer|tight|neat|integrated|part of|joined|linked|together).{0,40}(image|figure|pilot|cover|layout)"] },
+              { desc: "The text follows/flows round the outline of the pilot", win: 50, all: ["(text|words|lines)", "(follows?|flows?|wraps?|runs?|curves?|goes?|moves?|fits?|shortens?)\\W+(\\w+\\W+){0,3}(round|around|outline|shape|edge|contour|curve)"] },
+              { desc: "So the text is not hidden behind the figure and no space is wasted / looks neatly joined to the image", any: ["(not|never|without|avoid\\w*|n't)\\W+(\\w+\\W+){0,2}(hidden|covered|obscur\\w*|overlap\\w*|cut off)", "(no|without|avoid\\w*)\\W+(\\w+\\W+){0,1}(gap|wasted|empty)", "(neatly|tightly|integrated)\\W+(\\w+\\W+){0,2}(joined|linked|fitted|fitting|together)"] },
             ],
             sample: "The lines of text flow round the outline of the pilot's shoulder, getting shorter as they go. This means the text is not hidden behind the figure and there is no empty gap, so the text and picture look neatly joined together.",
             model: "<ul><li>The text follows the outline of the cropped pilot, with line lengths changing to fit its shape (1).</li><li>So the words are not covered by the figure and no space is wasted, and the text and picture look joined as one design (1).</li></ul>",
@@ -406,8 +424,8 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain why the logo should be supplied as a vector file for the 2 m banner.",
             points: [
-              { desc: "Vector is stored as points, curves and instructions rather than pixels, so it scales up without losing quality (no pixelation/blur)", all: ["(point|curve|line|math|instruction|coordinates|not (made of )?pixels|rather than pixels|instead of pixels|redrawn)", "(scale|enlarge|resiz|bigger|larger|any size|stretch|zoom)", "(pixel|blur|jag|sharp|quality|crisp|clear)"] },
-              { desc: "The file is small / supports transparency, so it is easy to send or sits cleanly on any colour", all: ["(small|tiny|light|low).{0,20}(file|size)|(file|size).{0,15}small|transparen", "(email|send|upload|load|quick|fast|download|store|space|background|sit|any colour)"] },
+              { desc: "Vector is stored as points, curves and instructions rather than pixels, so it scales up without losing quality (no pixelation/blur)", win: 90, all: ["(points?|curves?|math\\w*|instructions?|coordinates|paths?|not (made of )?pixels|rather than pixels|instead of pixels|redrawn|shapes)", "(enlarg|scal|resiz|bigger|larger|big|stretch|zoom)\\w*\\W+(\\w+\\W+){0,12}(without|stay|stays|no|never|keep|keeps|not|doesn't|don't)", "(pixel|blur|jag|sharp|quality|crisp|clear)"] },
+              { desc: "The file is small / supports transparency, so it is easy to send or sits cleanly on any colour", win: 60, all: ["(small|tiny|light|low|compact)\\W+(\\w+\\W+){0,2}(files?|sizes?)|(files?|sizes?)\\W+(\\w+\\W+){0,2}(small|tiny|compact)|transparen", "(email|send|upload|load|quick|fast|download|store|space|background|sit|any colour|printer)"] },
             ],
             sample: "A vector logo is stored as points and curves rather than pixels, so it can be enlarged to the size of the 2 m banner and stay sharp, with no blurring. The file is also small, so it is quick to email to the printer.",
             model: "<ul><li>Vector images are stored as points, curves and instructions, not pixels, so they can be scaled up to 2 m without becoming pixelated or blurred (1).</li><li>The file is small (and can have a transparent background), so it is easy to send and sits cleanly on any colour (1).</li></ul>",
@@ -435,9 +453,9 @@
             type: "text", label: "(b)", marks: 2, rows: 4,
             q: "Describe how balance has been achieved in the poster.",
             points: [
-              { desc: "It is asymmetrical (informal) balance", all: ["(asymmetr|informal|not symmetrical|unequal|uneven)"] },
-              { desc: "One large dark photograph on one side is balanced by smaller panels on the other", all: ["(large|big|dark|heavy).{0,60}(image|photo|picture)", "(two|2|several|smaller|small).{0,60}(panel|box|item|image|block)"] },
-              { desc: "The visual weight is spread evenly, so the poster does not look lopsided", all: ["(weight|lopsided|stable|even|equal)", "(page|layout|poster|sides?|left|right)"] },
+              { desc: "It is asymmetrical (informal) balance", any: ["(asymmetr\\w*|informal)\\W+(\\w+\\W+){0,1}balanc", "balanc\\w*\\W+(\\w+\\W+){0,2}(asymmetr|informal)", "not (a )?(symmetr|mirror)"] },
+              { desc: "One large dark photograph on one side is balanced by smaller panels on the other", win: 70, all: ["(large|big|heavy|dark|bigger|largest)\\W+(\\w+\\W+){0,3}(image|photo\\w*|picture)", "(smaller|small|two|2|several|lighter|light)\\W+(\\w+\\W+){0,3}(panels?|boxes|items?|images?|blocks?|shapes)"] },
+              { desc: "The visual weight is spread evenly, so the poster does not look lopsided", any: ["(visual )?weight\\W+(\\w+\\W+){0,2}(spread|evenly|equally|balanced|shared|distributed)", "(spread|even\\w*|equal\\w*|distributed)\\W+(\\w+\\W+){0,2}weight", "(not|n't)\\W+(look\\w*\\W+){0,2}(lopsided|top heavy|one-sided|unbalanced)"] },
             ],
             sample: "It is asymmetrical balance. The large dark photograph on the left is balanced by the two smaller panels on the right, so the visual weight is spread out and the poster does not look lopsided.",
             model: "<ul><li>Asymmetrical (informal) balance, not a mirror image (1).</li><li>The large dark photograph on the left is balanced by two smaller panels on the right (1).</li><li>The weights even out, so the layout feels stable, not lopsided (1).</li></ul><p>Any 2.</p>",
@@ -454,8 +472,8 @@
             type: "text", label: "(a)", marks: 2, rows: 4,
             q: "Explain how proximity has been used in Draft B.",
             points: [
-              { desc: "The caption (C) is placed directly beneath the photograph (B), so they are read as a pair", all: ["(caption|label|words|text).{0,70}(close|next to|beside|under|below|beneath|directly|near)|(close|under|below|beneath|near|directly).{0,50}(photo|image|picture)", "(read|seen|see|understood|group|grouped|link|linked|belong|go together|pair|together|connected|clear which)"] },
-              { desc: "The price and button (D) are grouped together, so they are seen as one related item", all: ["(price|button|book)", "(close|together|next to|beside|group|grouped|near)", "(read|seen|see|related|belong|one|pair|connected|clear)"] },
+              { desc: "The caption (C) is placed directly beneath the photograph (B), so they are read as a pair", win: 90, all: ["(caption|label|words|text)\\W+(\\w+\\W+){0,6}(under|below|beneath|next to|beside|close to|near)\\W+(\\w+\\W+){0,2}(photo\\w*|image|picture)", "(pair|together|group\\w*|belongs?|linked?|connected|related|go together|which picture|clear which)"] },
+              { desc: "The price and button (D) are grouped together, so they are seen as one related item", win: 70, all: ["(price|circle|button|book)\\W+(\\w+\\W+){0,3}(grouped|together|close|next to|beside|near)|(grouped|together)\\W+(\\w+\\W+){0,3}(price|button)", "(one|single)\\W+(\\w+\\W+){0,2}(item|group|unit|block|piece|thing)|(read|seen|see|viewed|treated)\\W+(\\w+\\W+){0,2}(as|together)|related|belong|connected|pair"] },
             ],
             sample: "The caption is placed directly beneath the photograph, so the reader sees the two as a pair and knows which picture the caption belongs to. The price and the button are grouped together too, so they are read as one related item.",
             model: "<ul><li>The caption sits directly under the photograph, so the two are read as a pair (1).</li><li>The price circle and the button are close together, so they are seen as one group of related information (1).</li></ul><p>Each mark needs the placement (cause) and what it does for the reader (effect). In Draft A the caption is far from the photograph, so it is unclear which picture it describes.</p>",
@@ -464,8 +482,8 @@
             type: "text", label: "(b)", marks: 2, rows: 4,
             q: "Explain how alignment has improved the look of Draft B.",
             points: [
-              { desc: "The heading, photograph, caption and text all start on the same left edge", all: ["(heading|title|photo|image|picture|caption|text|items|everything|edges?)", "(same|common|one|single|straight|shared).{0,30}(left|edge|line|margin|vertical)|left.{0,30}(edge|line|aligned)"] },
-              { desc: "So the page looks neat, organised and professional / is easy to follow", all: ["(neat|tidy|organised|organized|ordered|professional|follow|clean|careful|deliberate|planned|structure)"] },
+              { desc: "The heading, photograph, caption and text all start on the same left edge", win: 50, not: ["column"], all: ["(heading|title|photo\\w*|image|picture|caption|text|items|everything)", "(same|common|shared|single|one|straight)\\W+(\\w+\\W+){0,2}(left|edge|margin|vertical)|(align\\w*|line[sd]? up)\\W+(\\w+\\W+){0,3}(left|edge|margin)|left\\W+(\\w+\\W+){0,1}(edge|aligned)"] },
+              { desc: "So the page looks neat, organised and professional / is easy to follow", any: ["(look\\w*|appears?|feels?|seems?|makes? it)\\W+(\\w+\\W+){0,2}\\b(neat|tidy|organi[sz]ed|ordered|professional|clean|planned|structured|careful|deliberate)\\b", "(easy|easier|simple)\\W+(\\w+\\W+){0,3}follow", "(eye|reader)\\W+(\\w+\\W+){0,3}follow"] },
             ],
             sample: "The heading, the photograph, the caption and the body text all start on the same left edge. This makes the page look neat and organised, and the eye can follow it easily down the page.",
             model: "<ul><li>The heading, photograph, caption and text share one straight left edge (1).</li><li>So the page looks neat, organised and professional, and is easy to follow, unlike the scattered Draft A (1).</li></ul>",
