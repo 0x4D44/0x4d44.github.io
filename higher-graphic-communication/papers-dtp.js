@@ -68,8 +68,8 @@
     rect(60, 60, 180, 180, "none", `stroke="#fff" stroke-width="1.5" stroke-dasharray="6 4"`) +
     `<g stroke="${INK}" stroke-width="1.2" fill="none"><path d="M60 14 V34 M240 14 V34 M60 266 V286 M240 266 V286 M14 60 H34 M14 240 H34 M266 60 H286 M266 240 H286"/>` +
     `<circle cx="150" cy="24" r="8"/><path d="M150 13 V35 M139 24 H161"/><circle cx="24" cy="150" r="8"/><path d="M24 139 V161 M13 150 H35"/></g>` +
-    lab(88, 24, "A") + lab(52, 24 + 126, "").replace(/<g>.*<\/g>/, "") + lab(186, 24, "B") + `<path d="M178 24 H160" stroke="${INK}" stroke-width="1"/>` +
-    `<path d="M50 150 H42" stroke="${INK}" stroke-width="0"/>` + lab(274, 150, "C") + `<path d="M265 150 H252" stroke="${INK}" stroke-width="1.2"/><path d="M252 150 L257 146 M252 150 L257 154" stroke="${INK}" stroke-width="1.2"/>` +
+    lab(88, 24, "A") + lab(186, 24, "B") + `<path d="M178 24 H160" stroke="${INK}" stroke-width="1"/>` +
+    lab(274, 150, "C") + `<path d="M265 150 H252" stroke="${INK}" stroke-width="1.2"/><path d="M252 150 L257 146 M252 150 L257 154" stroke="${INK}" stroke-width="1.2"/>` +
     `</svg>`;
 
   /* Figure 5: web banner */
@@ -82,11 +82,11 @@
 
   /* Figure 6: dinner invitation */
   const figInvite =
-    `<svg viewBox="0 0 300 336" role="img" aria-label="A dinner invitation card. The title Regatta Dinner is large, italic and centred at the top. Below it, labelled B, is a paragraph of four lines whose left edges line up and whose right edges are uneven. Labelled C is a list of three numbered items in which the first line of each item starts at the left and the later line is indented to the right. At the foot, labelled D, is a dark aubergine strip carrying the words RSVP BY 1 MAY in white.">` +
+    `<svg viewBox="0 0 300 336" role="img" aria-label="A dinner invitation card. The title Regatta Dinner is large, italic and centred at the top. Below it, labelled B, is a paragraph of four lines whose left edges line up and whose right edges are uneven. Labelled C is a list of three items in which the first line of each item starts at the left and the later line is indented to the right. At the foot, labelled D, is a dark aubergine strip carrying the words RSVP BY 1 MAY in white.">` +
     rect(10, 10, 280, 316, PAP, `stroke="${INK}" stroke-width="1.5"`) +
     `<text x="150" y="62" font-size="29" font-weight="700" font-style="italic" fill="${MAG}" text-anchor="middle">Regatta Dinner</text>` +
     lines(30, 92, [226, 198, 232, 164], 12) + lab(274, 106, "B") +
-    [0, 1, 2].map((i) => `<text x="30" y="${176 + i * 28}" font-size="11" font-weight="700" fill="${INK}">${i + 1}.</text>` + rect(46, 170 + i * 28, 190, 4, GRY) + rect(46, 179 + i * 28, 120, 4, GRY)).join("").replace(/x="46" y="(\d+)" width="190"/g, 'x="46" y="$1" width="190"') +
+    [0, 1, 2].map((i) => rect(30, 170 + i * 28, 206, 4, GRY) + rect(48, 179 + i * 28, 120, 4, GRY)).join("") +
     lab(274, 198, "C") + rect(40, 268, 220, 36, AUB) +
     `<text x="150" y="292" font-size="15" font-weight="700" fill="#fff" text-anchor="middle">RSVP BY 1 MAY</text>` + lab(276, 286, "D") +
     `</svg>`;
@@ -99,7 +99,7 @@
     rect(28, 56, 244, 96, "#cfe3ee") + rect(28, 120, 244, 32, "#4f7f98") + `<path d="M90 122 L170 122 L160 134 L100 134 Z" fill="#3b2a1a"/><path d="M130 122 V82" stroke="#3b2a1a" stroke-width="2"/><path d="M130 84 L156 118 L130 118 Z" fill="#fffaf0" stroke="#3b2a1a" stroke-width=".8"/>` + lab(252, 72, "C") +
     `<text x="28" y="168" font-size="11" font-style="italic" fill="${INK}">The fleet leaves the dock at dawn</text>` + lab(252, 164, "E") +
     lines(28, 184, [118, 118, 118, 118, 118, 118, 118, 70], 11) +
-    `<path d="M164 188 H272 M164 262 H272" stroke="${MAG}" stroke-width="2"/><g font-size="13" font-style="italic" fill="${INK}" text-anchor="middle"><text x="218" y="214">&#8220;The tide waits</text><text x="218" y="232">for nobody.&#8221;</text></g>` + lab(176, 204, "D") +
+    `<path d="M164 188 H272 M164 262 H272" stroke="${MAG}" stroke-width="2"/><g font-size="13" font-style="italic" fill="${INK}" text-anchor="middle"><text x="218" y="214">&#8220;The tide waits</text><text x="218" y="232">for nobody.&#8221;</text></g>` + lab(262, 280, "D") +
     `<text x="272" y="314" font-size="13" font-weight="700" fill="${INK}" text-anchor="end">3</text>` + lab(246, 309, "B") +
     `</svg>`;
 
@@ -121,7 +121,7 @@
     `<text x="18" y="84" font-size="72" font-weight="700" fill="${AUB}" letter-spacing="4">SAIL</text>` +
     `<circle cx="196" cy="100" r="27" fill="#52308a" stroke="#fffaf0" stroke-width="2"/><path d="M128 280 Q128 140 196 128 Q262 140 262 280 Z" fill="#52308a" stroke="#fffaf0" stroke-width="2"/>` +
     lab(280, 150, "A") + coverLines + lab(52, 130, "B") +
-    rect(20, 296, 260, 64, "#fffaf0", `opacity=".6"`) + `<text x="150" y="336" font-size="22" font-weight="700" fill="${AUB}" text-anchor="middle">WIN A FLIGHT</text>` + lab(268, 292, "C") +
+    rect(20, 296, 260, 64, "#fffaf0", `opacity=".6"`) + `<text x="150" y="336" font-size="22" font-weight="700" fill="${AUB}" text-anchor="middle">WIN A FLIGHT</text>` + lab(36, 328, "C") +
     `<circle cx="252" cy="262" r="26" fill="${INK}" opacity=".35"/><circle cx="247" cy="257" r="26" fill="${MAG}"/><text x="247" y="262" font-size="14" font-weight="700" fill="#fff" text-anchor="middle">NEW</text>` + lab(284, 236, "D") +
     `</svg>`;
 
@@ -186,10 +186,10 @@
             type: "text", label: "(a)", marks: 2, rows: 4,
             q: "Explain how emphasis has been created on the date and time.",
             points: [
-              { desc: "Yellow (accent) panel or background behind the date, so it stands out / is noticed first", group: "p1", all: ["yellow", "(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?)"] },
+              { desc: "Yellow (accent) panel or background behind the date, so it stands out / is noticed first", group: "p1", any: ["yellow.{0,50}(panel|box|band|background|block|accent|text|writing|colour).{0,110}(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?)", "(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?).{0,80}yellow.{0,30}(panel|box|band|background|block|accent)"] },
               { desc: "Date and time in bold or large capitals, so it stands out / is read easily", group: "p2", all: ["(date|time).{0,60}(bold|large|big|capital|size)|(bold|large|big|capital).{0,60}(date|time)", "(stand|stood|notice|eye|attention|first|catch|prominent|obvious|draws?|read)"] },
               { desc: "Dark text on a light panel contrasts strongly, so it is clear / stands out", group: "p3", all: ["(navy|dark|aubergine|purple).{0,80}(yellow|light|bright)|(yellow|light|bright).{0,80}(navy|dark|aubergine|purple)", "contrast", "(stand|stood|notice|eye|attention|first|catch|clear|read)"] },
-              { desc: "Only large yellow area / nothing else the same colour, so the eye is drawn to it", group: "p4", all: ["(only|single|one|different|unlike|rest of)", "yellow", "(stand|stood|notice|eye|attention|first|catch|draws?)"] },
+              { desc: "Only large yellow area / nothing else the same colour, so the eye is drawn to it", group: "p4", any: ["(only|single|one|different|unlike).{0,30}yellow.{0,70}(stand|stood|notice|eye|attention|first|catch|draws?)", "yellow.{0,40}(only|single|unlike|different).{0,70}(stand|stood|notice|eye|attention|first|catch|draws?)"] },
             ],
             sample: "The date and time are in bold navy capitals on a bright yellow panel. The yellow is the only large block of that colour on the poster, so the viewer's eye is drawn to it and they notice when the open evening is.",
             model: "<ul><li>A feature (cause) linked to its effect on the viewer, 1 mark each, any 2: yellow accent panel behind the date so it stands out (1); the date and time are in bold or larger capitals so they are read first (1); dark text on a bright yellow panel gives strong contrast so it is clear from a distance (1); it is the only large yellow area so the eye is drawn to it (1).</li></ul><p>Not enough: &ldquo;it draws attention&rdquo; (effect only); &ldquo;the date is yellow&rdquo; (feature only); &ldquo;emphasis is created by colour&rdquo; (the principle is not its own effect).</p>",
@@ -252,9 +252,9 @@
             type: "text", label: "(b)", marks: 2, rows: 4,
             q: "The printer asks for the background to be printed out to the edge of area C. Explain why.",
             points: [
-              { desc: "Cutting/trimming is never perfectly accurate (the cut may be slightly out)", any: ["(cut|trim|guillotine|blade).{0,70}(accurate|exact|perfect|precise|drift|slip|shift|out|off|move|slightly|inaccura|line)", "(inaccura|not (perfect|exact|accurate|precise)|slightly (out|off)).{0,50}(cut|trim|guillotine)"] },
-              { desc: "So no thin white (unprinted) edge shows", any: ["(white|unprinted|blank|paper).{0,30}(edge|border|line|gap|sliver|strip|margin|show|appear)", "(edge|border|strip).{0,20}(white|unprinted|blank)"] },
-              { desc: "The cut still lands on printed colour", any: ["(cut|trim).{0,40}(still|lands?|falls?|on|into).{0,30}(colour|navy|ink|print|background)"] },
+              { desc: "Cutting/trimming is never perfectly accurate (the cut may be slightly out)", any: ["(cut|cutting|trim|trimming|guillotine|blade).{0,40}(never|not|isn't).{0,25}(accurate|exact|perfect|precise)", "(never|not).{0,25}(accurate|exact|perfect|precise).{0,30}(cut|trim|guillotine)", "(guillotine|cut|blade|trim).{0,50}(inaccura|drift|slip|shift|slightly (out|off|wrong)|a (little|bit|hair) (out|off|wrong))", "(slightly|a little|a bit) (out|off).{0,30}(line|cut|trim)"] },
+              { desc: "So no thin white (unprinted) edge shows", any: ["(white|unprinted|blank).{0,15}(edge|border|gap|sliver)", "(edge|border|sliver|gap).{0,15}(white|unprinted|blank)", "(edge|border).{0,25}(left )?(unprinted|without (colour|ink|print))"] },
+              { desc: "The cut still lands on printed colour", any: ["(cut|trim|guillotine).{0,30}(still )?(lands?|falls?|cuts?).{0,25}(colour|navy|ink|print)"] },
             ],
             sample: "The guillotine never cuts exactly on the trim line, it can be a little out. With the navy carried on past the line, the cut still lands on printed colour so there is no thin white edge on the finished poster.",
             model: "<ul><li>Trimming is never perfectly accurate, so the cut may land a little either side of the trim line (1).</li><li>With the colour carried past the line (bleed, commonly 3 mm) no unprinted white edge is left (1).</li></ul><p>Do not award for &ldquo;so it looks good&rdquo; or &ldquo;to line up the colours&rdquo; (that is the purpose of registration marks).</p>",
@@ -273,8 +273,8 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain why the leaflet version of the artwork should be set up in CMYK.",
             points: [
-              { desc: "Printing presses use cyan, magenta, yellow and black inks only", all: ["(press|printer|printing|inks?)", "(cyan|magenta|four (colour )?inks|4 inks|four colour|four colours|black ink|process colour)"] },
-              { desc: "Some bright RGB colours cannot be printed and come out duller, so CMYK shows the true result", all: ["(bright|vivid|rgb|screen|some colours)", "(cannot|can't|not be|outside|unable|duller|dull|different|change|gamut)", "(print|ink|press|gamut|result|preview)"] },
+              { desc: "Printing presses use cyan, magenta, yellow and black inks only", any: ["(press|printer|printing|inks?).{0,80}(cyan|magenta|four (colour )?inks|4 inks|four colours?)", "(cyan|magenta|four (colour )?inks|4 inks).{0,80}(press|printer|printing|print)"] },
+              { desc: "Some bright RGB colours cannot be printed and come out duller, so CMYK shows the true result", any: ["(bright|vivid|rgb|screen).{0,40}(cannot|can't|can not|not be|unable).{0,25}(print|made|mixed|reproduc)", "(duller|dull|muted|different).{0,40}(printed|when print|on paper|in print)", "(outside|out of|beyond).{0,15}(the )?(gamut|range|cmyk)"] },
             ],
             sample: "A printing press only lays down four inks, cyan, magenta, yellow and black, so every colour has to be made from those. Some bright screen colours cannot be printed with them and would come out duller, so working in CMYK shows what the printed result will really look like.",
             model: "<ul><li>The press prints with cyan, magenta, yellow and black (key) inks, so every colour must be made from them (1).</li><li>Some bright RGB colours are outside this smaller gamut and would print duller than on screen; working in CMYK from the start gives a true preview (1).</li></ul>",
@@ -304,8 +304,8 @@
             type: "text", label: "(d)", marks: 2, rows: 4,
             q: "The RSVP line (D) is set in reverse text. Explain why reverse text suits this line.",
             points: [
-              { desc: "Light text on a dark background gives strong contrast, so it stands out / catches attention", all: ["(light|white|pale)", "(dark|navy|aubergine|purple|background)", "(contrast|stand|stands out|attention|noticed|eye|catch|clear)"] },
-              { desc: "It is best for short text, because long passages are tiring to read", all: ["(short|few words|brief|small amount|one line)", "(long|lots|passage|paragraph|tiring|hard|difficult|tire|strain)"] },
+              { desc: "Light text on a dark background gives strong contrast, so it stands out / catches attention", all: ["(white|light|pale).{0,50}(dark|navy|aubergine|purple|black)|(dark|navy|aubergine|purple|black).{0,50}(white|light|pale)", "(contrast|stand|attention|noticed|eye|catch)"] },
+              { desc: "It is best for short text, because long passages are tiring to read", all: ["\\bshort\\b|few words|brief|small amount|one line", "(tiring|tire|tired|hard to read|difficult to read|strain|exhausting)"] },
             ],
             sample: "The white text on the dark strip contrasts strongly, so the RSVP line stands out and guests notice it. Reverse text is best for short pieces of text, because long passages of it are tiring to read, and this line is only a few words.",
             model: "<ul><li>Light text on a dark background contrasts strongly, so the line stands out and is noticed (1).</li><li>It works for short text; long passages in reverse are tiring to read, and the RSVP line is only a few words (1).</li></ul>",
@@ -355,8 +355,8 @@
             q: "Explain two ways in which colour has been used effectively on the leaflet cover.",
             points: [
               { desc: "The neighbouring warm colours give harmony, so the cover looks unified", all: ["(next to each other|neighbour|neighbor|beside|adjacent|analogous|similar colours|same part of the colour wheel|close together)", "(harmon|unif|together|belong|pleasing|cohesive|consistent|go well|match)"] },
-              { desc: "The blue circle is an accent/contrasting colour against the warm bands, so the price stands out", all: ["(blue|circle|ticket|price)", "(accent|contrast|complement|opposite|differ|only (cool|blue)|different colour)", "(stand|stood|attention|noticed|eye|first|catch|draw)"] },
-              { desc: "Warm colours feel energetic/sunny, suiting a summer fair", all: ["(warm|yellow|orange|red)", "(energetic|exciting|friendly|sunny|summer|lively|vibrant|cheerful|fun|hot|festive|bold|cheery)"] },
+              { desc: "The blue circle is an accent/contrasting colour against the warm bands, so the price stands out", all: ["(blue|cyan|ticket|price).{0,70}(accent|contrast|complement|opposite|only cool|only blue|different colour)|(accent|contrast|complement|opposite).{0,70}(blue|cyan|ticket|price)", "(stand|stood|attention|noticed|eye|first|catch|draw)"] },
+              { desc: "Warm colours feel energetic/sunny, suiting a summer fair", any: ["(warm|yellow|orange|red).{0,50}(energetic|exciting|friendly|sunny|lively|vibrant|cheerful|festive|cheery|hot)"] },
             ],
             sample: "The yellow, orange and red-orange are next to each other on the colour wheel, so they go together and the cover looks unified. The blue circle is the only cool colour, a contrasting accent against the warm bands, so the ticket price stands out and is noticed first.",
             model: "<ul><li>Analogous warm colours sit next to each other on the wheel, so there is harmony and the cover looks unified (1).</li><li>The cool blue circle contrasts with the warm bands as an accent, so the price stands out (1).</li><li>The warm colours feel sunny and energetic, suiting a summer fair (1).</li></ul><p>Any 2. Name the colour term, point to where it is used, and give the effect.</p>",
@@ -375,7 +375,7 @@
             q: "Describe how cropping has been used on the photograph of the pilot (A).",
             points: [
               { desc: "Cut/cropped round the outline of the figure, removing the whole background", any: ["(cut|cropp?ed|trimm?ed|removed?).{0,70}(round|around|along|follow|outline).{0,30}(outline|edge|shape|figure|person|pilot|body)", "(whole|all|entire|complete).{0,15}background.{0,40}(removed|cut|gone|deleted)|(removed|cut|deleted).{0,15}(all|whole|the|entire).{0,15}background"] },
-              { desc: "So the figure sits directly on the cover / overlaps the masthead (full crop)", any: ["(overlap|over|in front of|on top of).{0,40}(masthead|title|heading|logo|sail)", "(sits|placed|stands?|put).{0,40}(directly|straight|right|on).{0,30}(page|cover|background)", "(full(y)? crop|full cropping)"] },
+              { desc: "So the figure sits directly on the cover / overlaps the masthead (full crop)", any: ["\\b(overlaps?|overlapping|over|in front of|on top of)\\b.{0,40}(masthead|title|heading|logo)", "\\b(sits|placed|stands?|put)\\b.{0,30}\\b(directly|straight|right)\\b.{0,20}(page|cover|background)"] },
               { desc: "So text can wrap closely round its shape", all: ["text", "(wrap|flow|follow|round|around)"] },
             ],
             sample: "The pilot has been cut out round the outline of the body so that the whole background is removed. That lets the figure sit straight on the cover and overlap the masthead.",
