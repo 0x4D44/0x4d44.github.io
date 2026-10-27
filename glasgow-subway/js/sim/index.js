@@ -9,7 +9,7 @@ import { loadTrainTemplate, TrainView } from './trainview.js';
 import { loadTunnelTemplate, TunnelView } from './tunnelview.js';
 import { buildStation, placeStation, stationHalfLength, PY } from './stationview.js';
 import { Walker } from './walker.js';
-import { Crowd } from './people.js';
+import { Crowd, AnimCrowd } from './people.js';
 import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
@@ -54,14 +54,15 @@ class Sim {
     const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl, vaultTpl] = await Promise.all([
       loadTrainTemplate(THREE, GLTFLoader, this.url('models/train.glb')),
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
-      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._opt('models/people.glb'), this._opt('models/tunnel_station_vault.glb'),
+      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._optG('models/people.glb'), this._opt('models/tunnel_station_vault.glb'),
     ]);
     this.hallIndex = await this._json('models/stations_index.json');
     const looksJ = await this._json('data/station_looks.json');
     this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
     this.walkable = await this._json('models/train_walkable.json');
     this.halls = new Map(); this.hallLoading = new Map(); this.hallFailed = new Set(); this.entrances = new Map();
-    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleVariants = peopleVariants(THREE, peopleTpl);
+    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleGltf = peopleTpl; this.peopleVariants = null;
+    try { const SU = await import('three/addons/utils/SkeletonUtils.js'); this.SU = SU; } catch (e) { console.warn('[sim] SkeletonUtils unavailable', e && e.message); this.SU = null; }
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
@@ -78,7 +79,10 @@ class Sim {
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
-    this.crowd = new Crowd(THREE, this.quality === 'low' ? 28 : 110, this.peopleVariants); this.scene.add(this.crowd.group);
+    { const lowQ = this.quality === 'low'; const ok = this.SU && this.peopleGltf && this.peopleGltf.animations && this.peopleGltf.animations.length;
+      this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 22 : 60, this.quality) : new Crowd(THREE, lowQ ? 28 : 110, null);
+      this.saloon = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 8 : 20, this.quality) : null; this.saloonDone = false;
+      this.scene.add(this.crowd.group); }
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
     this.audio = new SimAudio();
@@ -111,6 +115,25 @@ class Sim {
 
   async _json(path) { try { const r = await fetch(this.url(path)); return r.ok ? await r.json() : null; } catch (e) { return null; } }
 
+  async _optG(path) {
+    try { return await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); } catch (e) { console.warn('[sim] optional model missing', path); return null; }
+  }
+  /** Seated / standing passengers riding in the saloons (ride + explore only; parented to the car groups so they move with the train). */
+  _populateSaloon() {
+    const sc = this.saloon, tv = this.trainView; this.saloonDone = true; if (!sc || !sc.hasAnim) return;
+    const rng = mulberry32(5), PYf = PY;
+    tv.cars.forEach((car, ci) => {
+      const info = tv.carInfo[ci], doors = tv.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1);
+      const zA = ci === 0 ? -info.len / 2 + 2.2 : -info.len / 2 + 0.9, zB = ci === tv.cars.length - 1 ? info.len / 2 - 2.2 : info.len / 2 - 0.9;
+      const slots = [];
+      for (let z = zA; z <= zB; z += 0.55) for (const sx of [-1, 1]) {
+        if (doors.some((d) => Math.abs(z - d) < 1.0)) continue;
+        if (rng() < (this.quality === 'low' ? 0.2 : 0.3)) slots.push({ x: sx * 0.8, y: PYf, z, yaw: -sx * Math.PI / 2, mode: 'sit' });
+      }
+      const standing = []; for (let k = 0; k < 2; k++) { const z = zA + rng() * (zB - zA); if (!doors.some((d) => Math.abs(z - d) < 1.2)) standing.push({ x: (rng() < 0.5 ? -1 : 1) * 0.62, y: PYf, z, yaw: rng() * 6.28, mode: 'idle' }); }
+      sc.seat(car, slots.slice(0, Math.ceil(sc.max / tv.cars.length)).concat(standing));
+    });
+  }
   async _opt(path) {
     try { const g = await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); return g.scene; } catch (e) { console.warn('[sim] optional model missing', path); return null; }
   }
@@ -695,7 +718,8 @@ class Sim {
         const lv = v.group.userData.psdLeaves;
         if (lv && lv.length) { const open = svc.phase === 'station' && svc.idx === v.stopIdx && (svc.doors.L > 0.04 || svc.doors.R > 0.04); for (const m of lv) m.visible = !open; }
       }
-      this.crowd.update(dt, this.time, (x, z, y) => y);
+      this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position);
+      if (this.saloon) { const sv = this.mode === 'ride' || this.mode === 'explore'; this.saloon.setEnabled(sv); if (sv) { if (!this.saloonDone) this._populateSaloon(); this.saloon.update(dt, this.time, null, this.camera.position); } }
       this._signal(svc);
       this.tms.update(dt, svc.info(), this.mode);
       // lights

@@ -112,23 +112,23 @@ export class TrainView {
     box(2.2, 0.08, 0.12, 0, 2.21, zf, trim);                                        // header
     for (const sx of [-1, 1]) box(0.13, 0.9, 0.12, sx * 1.035, 1.75, zf, trim);     // outer pillars
     const pil = std(0xd9d9d4, { emissive: 0x303030 });
-    for (const px of [-0.3, 0.3]) box(0.06, 0.9, 0.08, px, 1.75, zf + 0.02, pil);   // centre evacuation door frame: three bays, driver on the left
+    for (const px of [-0.3, 0.3]) box(0.04, 0.9, 0.06, px, 1.75, zf + 0.02, pil);   // centre evacuation door frame: three bays, driver on the left
     box(2.18, 0.03, zr - zf, 0, 0.7, (zf + zr) / 2, std(0x2a2c30));                  // floor
     // desk: low (top ~0.7 m above the floor at the front), slopes down toward the driver, 0.3 m behind the glass
     box(2.0, 0.04, 0.46, 0, 1.4, -19.1, desk, 0.2);
     box(2.0, 0.7, 0.44, 0, 1.02, -19.12, desk);
     // TMS screen on the desk in front of the driver (x -0.42), angled up toward him, + a small secondary speed display
-    const scr = new THREE.Group(); scr.position.set(-0.42, 1.42, -19.2 - zc); scr.rotation.x = -0.75; g.add(scr);
+    const scr = new THREE.Group(); scr.position.set(-0.84, 1.42, -19.2 - zc); scr.rotation.x = -0.75; scr.rotation.y = 0.35; g.add(scr);
     const bz = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.2, 0.025), trim); bz.position.set(0, 0.1, -0.01); scr.add(bz);
     const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28 * 320 / 512), new THREE.MeshBasicMaterial({ map: texTms, toneMapped: false })); sp.position.set(0, 0.1, 0.004); scr.add(sp);
-    const s2 = new THREE.Group(); s2.position.set(-0.05, 1.41, -19.2 - zc); s2.rotation.x = -0.75; g.add(s2);
+    const s2 = new THREE.Group(); s2.position.set(-0.55, 1.41, -19.2 - zc); s2.rotation.x = -0.75; g.add(s2);
     const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.12, 0.02), trim); b2.position.set(0, 0.07, -0.008); s2.add(b2);
     const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15 * 170 / 256), new THREE.MeshBasicMaterial({ map: texSpeedo, toneMapped: false })); p2.position.set(0, 0.07, 0.003); s2.add(p2);
     for (const pl of [sp, p2]) { const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); }   // the TMS canvas textures use flipY=false
     // master controller on the driver's left: dark base, short lever, small dark grip (non-emissive)
     const cyl = (r, h, x, y, z, m) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), m); c.position.set(x, y, z - zc); g.add(c); return c; };
-    cyl(0.045, 0.04, -0.82, 1.4, -19.0, trim); cyl(0.011, 0.12, -0.82, 1.47, -19.0, trim);
-    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 8), std(0x15161a)); grip.position.set(-0.82, 1.54, -19.0 - zc); g.add(grip);
+    cyl(0.045, 0.04, 0.5, 1.4, -19.0, trim); cyl(0.011, 0.12, 0.5, 1.47, -19.0, trim);
+    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 8), std(0x15161a)); grip.position.set(0.5, 1.54, -19.0 - zc); g.add(grip);
     // door buttons (dull, only slightly emissive)
     [[0x2d7a46, 0.12], [0x9a6a1c, 0.08], [0x8c2b2b, 0.08]].forEach(([c, e], i) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.012, 12), std(c, { emissive: c, emissiveIntensity: e })); b.position.set(0.22 + i * 0.07, 1.4, -19.1 - zc); b.rotation.x = 0.2; g.add(b); });
     this.cabKit = g; F.add(g);
@@ -146,7 +146,7 @@ export class TrainView {
   setDriveCab(on) {
     on = !!on && !!this.cabKit; if (this._driveCab === on) return; this._driveCab = on;
     if (this.cabKit) this.cabKit.visible = on;
-    for (const nm of ['car_0_exterior', 'car_0_glass', 'car_0_cab', 'car_0_saloon']) { const n = this.byName[nm]; if (n) n.visible = !on; }
+    for (const nm of ['car_0_exterior', 'car_0_glass', 'car_0_cab', 'car_0_saloon', 'cab_dest']) { const n = this.byName[nm]; if (n) n.visible = !on; }
     for (const n of [this.cabScreen, this.cabSpeedo]) if (n) n.visible = !on;
     this._cullT0 = 0;
   }
