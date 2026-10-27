@@ -3,6 +3,13 @@
   "use strict";
   const B = (window.HCP_BANK = window.HCP_BANK || {});
   const R = String.raw;
+  /* Pattern helpers: a run of up to n words (so a concept and its relation have to sit in one stretch of writing),
+     optionally refusing to cross certain words. */
+  const WD = (n) => `(?:\\w+\\W+){0,${n}}`;
+  const WX = (n, stop) => `(?:(?!(?:${stop})\\b)\\w+\\W+){0,${n}}`;
+  const NA = (n) => WX(n, "and|or");
+  const LOOP = R`\b(for\s+(each\s+|every\s+)?\w+\s+(in|from)\s+\w+|for\s*\(|for\s+\w+\s*(=|<-|:=|from)|while\s+\w+\s*(<|<=|!=|>|>=)|loop\w*\s+(through|over)\s+\w+|repeat\s+(for|until|\d+)|(loop|repeat)\w*\s+(each|every)\s+\w+)`;
+  const ITER = "iterative|waterfall|predictive", AGI = "agile|sprints?|scrum";
 
   /* ---- figure: structure diagram with data flow (sdd-03) ---- */
   const INK = "#1d1a14", PAPER = "#fffaf0", BLUE = "#12284a";
@@ -68,11 +75,15 @@
             model: "<ul><li>Iterative: a separate testing phase after implementation. (1)</li><li>Agile: testing takes place during each sprint, with no separate testing phase. (1)</li></ul><p>Both sides must be about the same heading (testing), linked by a connective such as <i>whereas</i>.</p>",
             points: [
               { desc: "Iterative: testing is a separate phase after implementation", any: [
-                R`(iterative|waterfall)\W+(?:\w+\W+){0,7}(after|separate|own (phase|stage)|end of)`,
-                R`(after|separate|own phase|own stage|at the end).{0,80}(iterative|waterfall)`] },
+                R`(iterative|waterfall|predictive)\W+${WX(10, AGI)}test\w*\W+${WX(8, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final)`,
+                R`(iterative|waterfall|predictive)\W+${WX(10, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final)\W+${WX(8, AGI)}test\w*`,
+                R`(after|separate|at the end|end of|own (phase|stage)|once|last|final)\W+${WX(6, AGI + "|" + ITER)}(in|for|with|using)\W+(an? |the )?(iterative|waterfall|predictive)`] },
               { desc: "Agile: testing happens during every sprint / throughout", any: [
-                R`(agile|sprints?)\W+(?:\w+\W+){0,7}(during|every|each|throughout|alongside|continu\w+|as it goes|all the time)`,
-                R`(during|every|each|throughout|alongside|continu\w+).{0,60}(sprints?|agile)`] },
+                R`(agile|sprints?|scrum)\W+${WX(10, ITER + "|separate")}test\w*\W+${WX(8, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)`,
+                R`(agile|sprints?|scrum)\W+${WX(10, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)\W+${WX(8, ITER + "|separate")}test\w*`,
+                R`(each|every)\W+(sprints?|iterations?)\W+${WX(4, "and|or")}(is|are|gets?)\W+(\w+\W+)?tested`,
+                R`test\w*\W+${WX(6, ITER + "|separate")}(during|in|every|each|throughout)\W+${WX(3, "and")}(sprints?|iterations?)`],
+                not: [R`(iterative|waterfall|predictive)\W+${WX(4, "agile")}test\w*\W+${WX(4, "agile")}(during|every|each|throughout|in)\W+${WX(3, "and")}(sprints?|iterations?)`] },
             ],
           },
           {
@@ -83,11 +94,14 @@
             model: "<ul><li>Agile is adaptive / copes with changing requirements: short sprints let features be added or altered quickly. (1)</li><li>The client is involved throughout: a working piece is shown after every sprint and the feedback shapes the next one. (1)</li></ul><p>The link to the company's changing needs is what earns the marks, not just \"agile is faster\".</p>",
             points: [
               { desc: "Adaptive: changes to requirements are absorbed quickly", any: [
-                R`(adapt\w*|flexib\w*|cope\w*|respond\w*|react\w*|accommodat\w*|absorb\w*|incorporat\w*|handle\w*|deal\w* with|quick\w*|easy|easier|easily)\W+(?:\w+\W+){0,10}(chang\w*|requirement\w*|feedback|new feature\w*|alter\w*|amend\w*)`,
-                R`(chang\w*|requirement\w*).{0,60}(adapt\w*|flexib\w*|cope\w*|quick\w*|easy|easier|easily|each sprint|next sprint)`] },
+                R`(adapt\w*|flexib\w*|cope\w*|respond\w*|react\w*|accommodat\w*|absorb\w*|incorporat\w*|handle\w*|deal\w* with|welcom\w*|allow\w*|lets?|permit\w*|support\w*|easy|easier|easily|quickly)\W+${NA(10)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
+                R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|done|incorporated|included|changed|easy|easier|easily|quick\w*)`,
+                R`(chang\w*|requirement\w*)\W+${NA(5)}(adapt\w*|flexib\w*|cope\w*|accommodat\w*)`] },
               { desc: "Client involved throughout: sees working versions and gives feedback each sprint", any: [
-                R`(client|customer|users?|they)\W+(?:\w+\W+){0,12}(throughout|each sprint|every sprint|after each|regular\w*|constant\w*|frequent\w*|continual\w*|working (version|piece|prototype|software))`,
-                R`(feedback|involved|working (version|piece|prototype)).{0,60}(each|every|after|throughout|regular\w*|constant\w*)\W+(?:\w+\W+){0,2}sprints?`] },
+                R`(client|customer|users?|islanders?|company|stakeholders?|passengers?|they|them)s?\W+${NA(12)}(feedback|try|trying|test\w*|see|sees|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)\W+${NA(10)}(each|every|after|throughout|regular\w*|constant\w*|frequent\w*|continual\w*|early|sprints?|versions?|prototypes?|working|iterations?|releases?|increments?|demos?)`,
+                R`feedback\W+${NA(10)}(next|each|every|following|later|after|new|future|updated|improved)\W+(\w+\W+)?(sprints?|versions?|iterations?|releases?|prototypes?|builds?|cycles?)`,
+                R`(each|every|after)\W+(\w+\W+)?(sprints?|iterations?|cycles?)\W+${NA(10)}(working|prototype|version|product|demo|release|increment|software|piece)\W+${NA(10)}(feedback|try|see|review|test|comment|suggest|shown|show|use)\w*`,
+                R`(working|early)\W+(version|prototype|piece|product|software|build|release|increment|demo)s?\W+${NA(8)}(feedback|try|see|review|comment|suggest|shown|show)\w*`] },
             ],
           },
         ],
@@ -145,8 +159,8 @@
             sample: "IN: days(), hotPos and frostDays. The days array gives the name and hotPos says which day is the hottest, and frostDays holds the number of frost days.",
             model: "<ul><li>days() and hotPos: the name is looked up in days() at position hotPos. (1)</li><li>frostDays: the count to be displayed. (1)</li></ul><p>temps() is not needed by this step, so including it earns no mark: only pass in what a step uses.</p>",
             points: [
-              { desc: "days() and hotPos are passed in", all: [R`\bdays\b`, R`(hot\s?pos|position|index)`], win: 120 },
-              { desc: "frostDays is passed in, and nothing unnecessary", any: [R`frost\w*`, R`\bcount\w*`], not: [R`\btemps\b`] },
+              { desc: "days() and hotPos are passed in, with a reason (look up the name of the hottest day)", all: [R`\bdays\b`, R`hot\s?pos|position of the hottest|index of the hottest|hottest (day.s )?(position|index)`, R`(name|hottest|which|element|look\w*|find|identif\w*|locate|tells?|says?|gives?|shows?|because|needed|used|so that|display\w*)`], win: 160, not: [R`\btemps\b`] },
+              { desc: "frostDays is passed in, and nothing unnecessary", any: [R`frost\s?days?\b`, R`frost\s?count`], not: [R`\btemps\b`] },
             ],
           },
           {
@@ -157,8 +171,16 @@
             sample: "hotPos should not be passed into step 3. Counting frost days only needs temps(), so hotPos is an unnecessary extra parameter that the step never uses.",
             model: "<ul><li>hotPos is passed IN to step 3. (1)</li><li>The step does not use it: counting frost days only needs temps(), so it is an unnecessary parameter that makes the code less efficient. (1)</li></ul>",
             points: [
-              { desc: "Identifies hotPos as the wrong item", all: [R`hot\s?pos`] },
-              { desc: "Explains it is not used / unnecessary", negOK: true, all: [R`(unnecessar\w*|extra|surplus|redundant|not (used|needed|required|necessary)|never (use|need)\w*|does ?n.t (use|need)|do not (use|need)|does not (use|need)|isn.t (used|needed)|no need)`, R`(temps|frost|count\w*|step 3|hot\s?pos|parameter)`], win: 110 },
+              { desc: "Identifies hotPos as the wrong item", negOK: true, any: [
+                R`hot\s?pos\W+${WD(5)}(shouldn.t|should not|does ?n.t|do not|don.t|not|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error|unused|remov\w*|delet\w*|take\w* (it )?out)`,
+                R`(remov\w*|delet\w*|take out|drop|get rid of|without|shouldn.t (have|be)|should not (have|be)|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error)\W+${WD(4)}hot\s?pos`],
+                not: [R`should be (passed|sent|given|input)|(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`] },
+              { desc: "Explains it is not used / unnecessary", negOK: true, any: [
+                R`(hot\s?pos|it|this|parameter|value|data|item|variable|extra)\W+${WD(4)}(is|are|was|be|being)\W+${WD(2)}(unnecessar\w*|extra|surplus|redundant|not (used|needed|required|necessary)|never (used|needed)|pointless|useless|irrelevant|wasted|unused)`,
+                R`(step 3|step three|counting|the step|the sub-?program|it|frost\w*)\W+${WD(3)}(never|does ?n.t|does not|do not|don.t|doesn.t|not|no)\W+(use|need|require)\w*\W+${WD(3)}(hot\s?pos|it|this|parameter|value|position)`,
+                R`(unnecessar\w*|extra|surplus|redundant|pointless|unused)\W+(parameters?|data|items?|values?|variables?|arguments?|inputs?)`,
+                R`(no need|no use|not needed|not necessary|not required|isn.t needed|isn.t used|not used)\W+${WD(3)}(for|to|by|in)\W+${WD(3)}(step 3|step three|counting|frost\w*|this step|hot\s?pos)`],
+                not: [R`(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`] },
             ],
           },
           {
@@ -168,10 +190,13 @@
             sample: "SET frostDays TO 0\nFOR EACH temp FROM temps DO\n   IF temp < 0 THEN\n      SET frostDays TO frostDays + 1\n   END IF\nEND FOR\nRETURN frostDays",
             model: "<pre>SET frostDays TO 0\nFOR EACH temp FROM temps DO\n   IF temp &lt; 0 THEN\n      SET frostDays TO frostDays + 1\n   END IF\nEND FOR</pre><ul><li>Count initialised to 0. (1)</li><li>A fixed loop over every temperature. (1)</li><li>A selection testing the temperature is below 0. (1)</li><li>Adds 1 to the count when it is. (1)</li></ul>",
             points: [
-              { desc: "Initialises the count to 0", any: [R`\w+\s*(=|:=)\s*0(?![\d.])`, R`\bto\s+0(?![\d.])`, R`\binitiali[sz]\w*.{0,30}\b(0|zero)\b`] },
-              { desc: "A loop over every temperature", any: [R`\b(for\s+(each\s+|every\s+)?\w+\s+(in|from)\b|for\s*\(|for\s+\w+\s*(=|<|:=)|while\s+\w+\s*(<|<=|!=|=)|loop\w*\s+(through|over|from|for each|for every)|repeat\s+(for|until|\d|7|6|24|25)|(loop|repeat)\w*\s+(each|every))`] },
-              { desc: "Selection: temperature below 0", all: [R`\b(if|when|elif)\b`, R`(<\s*0\b|less than 0|below 0|< ?zero|below zero|less than zero)`], win: 70 },
-              { desc: "Adds 1 to the count", any: [R`\w+\s*(=|:=|to)\s*\w+\s*\+\s*1\b`, R`\+=\s*1\b`, R`\+\+`, R`\b(add|plus|increment)\w*\s*(1|one)?\b`] },
+              { desc: "Initialises the count to 0", any: [R`\w+\s*(=|:=|<-)\s*0(?![\d.])`, R`\bset\s+\w+\s+to\s+(0|zero)\b`, R`\binitiali[sz]\w*.{0,30}\b(0|zero)\b`] },
+              { desc: "A loop over every temperature", any: [LOOP] },
+              { desc: "Selection: temperature below 0", any: [
+                R`\b(if|when|elif|case)\b.{0,50}(<\s*0(?![\d.])|less than (0|zero)\b|below (0|zero)\b|< ?zero|freezing)`,
+                R`\b(if|when|elif)\b.{0,30}\b0\s*>\s*\w+`,
+                R`(<\s*0(?![\d.])|less than (0|zero)\b|below (0|zero)\b)\s*(then|:|\{|\)\s*\{?)`] },
+              { desc: "Adds 1 to the count", any: [R`(\w+)\s*(=|:=|<-|\bto)\s*\1\s*\+\s*1\b`, R`\w+\s*\+=\s*1\b`, R`\w+\s*\+\+|\+\+\s*\w+`, R`\b(add|plus|increment|increase)\w*\s+(1|one)\b`, R`\b(add|increment|increase)\w*\s+${WD(2)}(count|frostdays|frost|total|counter)\b`] },
             ],
           },
         ],
@@ -191,8 +216,13 @@
             sample: "A wireframe is a simple sketch of the layout of one screen, showing the position of each item. It shows where every input box and output area will appear, with labels saying which is which.",
             model: "<ul><li>A simple sketch / plan of the layout of one screen: where each item goes. (1)</li><li>It shows the inputs, outputs and buttons (what the user enters and where results appear), not colours or finished content. (1)</li></ul>",
             points: [
-              { desc: "A sketch of the layout / position of items on a screen", any: [R`\b(sketch|layout|plan|picture|drawing|diagram|outline|arrangement|design)\b\W+(?:\w+\W+){0,5}(screen|page|interface)`] },
-              { desc: "Shows the inputs and outputs (boxes, buttons, results)", any: [R`where\W+(?:\w+\W+){0,4}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data)`, R`(shows?|includes?|contains?|labels?|marks?|identif\w*)\W+(?:\w+\W+){0,4}(input\w*|output\w*|buttons?)`] },
+              { desc: "A sketch of the layout / position of items on a screen", any: [
+                R`(sketch|layout|plan|picture|drawing|diagram|outline|design|blueprint|mock-?up|skeleton|template)\W+${WD(3)}(of|for|showing|shows|that shows|which shows)\W+${WD(3)}(screen|page|interface|app|display|window|user interface)`,
+                R`(layout|arrangement|positions?|placement|where (things|items|everything|each|the)\w*)\W+${WD(3)}(of|on|for|in)\W+${WD(3)}(screen|page|interface|app|display)`,
+                R`(what|how)\W+${WD(3)}(screen|page|interface|app|it)\W+${WD(3)}(look\w*|appear\w*|be laid out|be arranged)`] },
+              { desc: "Shows the inputs and outputs (boxes, buttons, results)", any: [
+                R`where\W+${NA(4)}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data|labels?|text|everything|things|elements?|components?)\W+${NA(4)}(go|goes|be|are|is|will|placed|positioned|appear|shown|displayed|located|put|sit|sits|can be)`,
+                R`(shows?|includes?|contains?|labels?|marks?|identif\w*|displays?|has|with|positions?|places?|indicates?)\W+${NA(4)}(input\w*|output\w*|buttons?|boxes|fields?|prompts?)`] },
             ],
           },
           {
@@ -202,8 +232,13 @@
             sample: "The labels tell the user what to put in each box, so nobody is unsure which information goes where. The format hint shows the date format wanted, so the user types it correctly and the program does not reject it.",
             model: "<ul><li>Labels: the user knows what information to put in each box. (1)</li><li>Format hint: shows the layout of the date expected, so fewer wrong or rejected entries. (1)</li></ul>",
             points: [
-              { desc: "Labels tell the user what to put in each box", all: [R`label\w*`, R`(what|which|where).{0,40}(enter\w*|type\w*|put|input\w*|data|information|go|box)|(clear|obvious|understand\w*|know\w*|identif\w*|tell\w*)`], win: 140 },
-              { desc: "The hint shows the format needed, so fewer errors", all: [R`(hint|format|dd/mm|example|layout of the date)`, R`(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|know\w*|enter\w*|type\w*|expect\w*|wanted|needed)`], win: 160 },
+              { desc: "Labels tell the user what to put in each box", all: [R`label\w*`, R`(what|which|where)\W+${NA(4)}(box|field|input|enter|type|put|write|data|information|goes|go|to type)|(clear|obvious)\W+${NA(5)}(what|which|box|field|enter|type)`], win: 140,
+                not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`] },
+              { desc: "The hint shows the format needed, so fewer errors", any: [
+                R`(so|means?|which|helps?|ensur\w+|avoid\w*|prevent\w*|stop\w*|reduc\w*|therefore)\W+${NA(8)}(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly|accepted|enter\w*|type\w*|know\w*)\W+${NA(8)}(format|date|dd|hint|layout|way)`,
+                R`(hint|format|dd/mm/yyyy|dd/mm|example)\W+${NA(6)}(tells?|shows?|says?|lets?|reminds?|indicates?|gives?)\W+${NA(8)}(format|how|what|way|date|type|enter|layout)`,
+                R`(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly)\W+${NA(8)}(format|date|dd)\W+${NA(8)}(hint|format|dd/mm)`],
+                not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`] },
             ],
           },
           {
@@ -245,8 +280,14 @@
             sample: "The tester compares the actual result the program produces with the expected one. This shows whether each test has passed or failed, so any error in the program can be spotted.",
             model: "<ul><li>So the actual output can be compared with what should have happened. (1)</li><li>So the tester can tell whether the test passed or failed and so identify errors. (1)</li></ul>",
             points: [
-                            { desc: "Compare the actual result with the expected result", any: [R`(compar\w*|check\w*|match\w*|against)\W+(?:\w+\W+){0,5}(actual|real|program.?s|produced|displayed|given|gets)`, R`(actual|real|produced|displayed)\W+(?:\w+\W+){0,5}(compar\w*|against|match\w*)`] },
-                            { desc: "To tell whether the test passed or failed / find errors", any: [R`(tell|know|show\w*|identif\w*|spot\w*|find\w*|detect\w*|decid\w*|see|prove\w*)\W+(?:\w+\W+){0,6}(pass\w*|fail\w*|error\w*|fault\w*|wrong|incorrect|bugs?)`] },
+                            { desc: "Compare the actual result with the expected result", any: [
+                R`(actual|real|produced|output|result|program.?s|gets|given|displayed)\w*\W+${NA(6)}(with|to|against|versus|vs|matches?|same as|equals?|differs?|different from|should)\W+${NA(4)}(expected|predicted|supposed|correct|planned|should)`,
+                R`(expected|predicted|planned)\W+${NA(6)}(with|to|against|and|versus|vs|matches?)\W+${NA(4)}(actual|real|produced|output|result|program)`,
+                R`(check|see|know|find out|tell|make sure|ensure|decide|whether)\W+${NA(5)}(output|result|answer|program)\w*\W+${NA(4)}(is|are|matches?|same|what|equals?)\W+${NA(4)}(expected|should|correct|right|supposed|predicted)`] },
+              { desc: "To tell whether the test passed or failed / find errors", any: [
+                R`(tell|know|show\w*|identif\w*|spot\w*|find\w*|detect\w*|decid\w*|see|prove\w*|determin\w*|check\w*)\W+${NA(6)}(pass\w*|fail\w*|error\w*|fault\w*|wrong|incorrect|bugs?)`,
+                R`(if|when|whether)\W+${NA(6)}(same|match\w*|differ\w*|different)\W+${NA(8)}(pass\w*|fail\w*|error\w*|fault\w*|wrong|work\w*)`,
+                R`(test|it)\W+${NA(3)}(pass\w*|fail\w*)`] },
             ],
           },
           {
@@ -256,9 +297,14 @@
             sample: "16 and 70 are the lowest and highest ages in the allowed range, so they test the boundaries. If the condition uses > instead of >= the program would wrongly reject a valid age such as 16.",
             model: "<ul><li>They are the boundaries of the valid range (lowest and highest allowed), so they are extreme data. (1)</li><li>They reveal a logic error in the comparison, e.g. &gt; used instead of &gt;=, so that a valid age is wrongly rejected. (1)</li></ul>",
             points: [
-              { desc: "They are the boundaries / extremes of the range", all: [R`(boundar\w*|edge\w*|extreme\w*|lowest|highest|smallest|largest|minimum|maximum|limits?|top|bottom)`, R`(range|valid|allowed|accepted|age)`], win: 120 },
+              { desc: "They are the boundaries / extremes of the range", any: [
+                R`(boundar\w*|edges?|extremes?|limits?|ends?)\W+${NA(4)}(of|to|in|on)\W+${NA(3)}(range|valid|allowed|accepted|ages?|data|values?)`,
+                R`(lowest|highest|smallest|largest|minimum|maximum|top|bottom|first|last|youngest|oldest|min|max)\W+${NA(4)}(valid|allowed|accepted|possible|legal|ages?|range|values?|number|input)`,
+                R`(on|at|right on|just inside|inside|exactly on)\W+(the )?(edges?|boundar\w*|limits?|extremes?)`,
+                R`(are|is|called|count as|classed as|these are)\W+${NA(2)}(extremes?|boundar\w*)\W*(data|values?|ages?|cases?|tests?)?`],
+                not: [R`(middle|typical|ordinary|centre|center|average|normal data)`] },
               { desc: "They reveal a wrong comparison (> instead of >=) that rejects a valid age", any: [
-                R`(>=|<=|> |< |greater than|less than|operator|off.by.one|comparison)\W+(?:\w+\W+){0,30}(wrong\w*|reject\w*|error|mistake|fail\w*|incorrect\w*|logic)`,
+                R`(>=|<=|>|<|greater than|less than|operator|off.by.one|comparison|condition)\W+${NA(10)}(wrong\w*|reject\w*|refus\w*|error|mistake|fail\w*|incorrect\w*|logic|miss\w*)`,
                 R`wrongly (reject|refus|turn)\w*`, R`reject\w*\s+(a |an |the )?(valid|correct|legal|allowed|acceptable|good)`,
                 R`(valid|legal|correct|acceptable).{0,25}(is|are|gets?|being|be|would be|will be) (wrongly )?(reject|refus)\w*`] },
             ],
@@ -282,9 +328,13 @@
             sample: "It is a logic error, because the program runs but gives the wrong total. The loop must start from 0 instead of 1 so that the first score is included.",
             model: "<ul><li>Logic error (the program runs but gives the wrong answer). (1)</li><li>Change the start of the loop (line 3) to FROM 0 so position 0 is included. (1)</li></ul>",
             points: [
-              { desc: "Logic error", all: [R`logic`] },
+              { desc: "Logic error", any: [R`logic(al)?\W+(error|mistake|fault|bug|problem)`, R`(error|mistake|fault|bug|problem)\W+${NA(3)}(is|was|as)\W+(a |an )?logic`, R`(type|kind) of error\W+${NA(3)}logic`, R`^\W*logic\W*$`] },
               { desc: "Start the loop at 0 so the first score is included", any: [
-                R`(start|begin)\w*\W+(?:\w+\W+){0,4}(\b0\b|zero|first)`, R`from (0|zero)`, R`(change|alter)\w*\W+(?:\w+\W+){0,5}(1 to 0|to (0|zero))`] },
+                R`(start|begin|go|run|count)\w*\W+${WD(2)}(from|at|with|on)\W+${WD(1)}(0|zero|first|index 0|position 0|the beginning)\b`,
+                R`\bfrom\s+(0|zero)\b`, R`(change|alter|amend|edit)\w*\W+${WD(5)}(1 to 0|to (0|zero))\b`,
+                R`\b(0|zero)\W+(not|instead of|rather than)\W+(1|one)\b`,
+                R`(first|scores?\s*[\[(]0[\])]|position 0|index 0|element 0)\W+${NA(6)}(is|are|gets|can be|will be|would be)\W+${WD(2)}(included|checked|counted|added|processed|used|looked at|tested)`,
+                R`(include|check|use|count|process|look at|read|test)(s|ed)?\b\W+${WD(4)}(scores?\s*[\[(]0[\])]|first (score|element|item|value|position)|position 0|index 0|element 0)`] },
             ],
           },
           {
@@ -319,8 +369,16 @@
             sample: "A breakpoint is a marker set on a line of code, and the program pauses when it reaches that line. The programmer can then inspect the values of the variables at that point to see whether they are correct.",
             model: "<ul><li>A marker on a particular line; execution pauses just before that line runs. (1)</li><li>So the programmer can inspect/check the variables or state of the program at that point. (1)</li></ul>",
             points: [
-              { desc: "A marker on a line where the program pauses", all: [R`\b(lines?|statements?|points?|places?|positions?|instructions?)\b`, R`\b(paus\w*|stop\w*|halt\w*|suspend\w*)`], win: 100 },
-              { desc: "Used to inspect variables / check the state at that point", all: [R`(inspect\w*|examin\w*|check\w*|see|view\w*|look\w*|read\w*|test\w*)`, R`(variables?|values?|state|data)`], win: 70 },
+              { desc: "A marker on a line where the program pauses", any: [
+                R`(paus\w*|stop\w*|halt\w*|suspend\w*|freez\w*)\W+${WD(4)}(at|on|when|before|after|until|once|as soon as)\W+${WD(4)}(line|lines|statement|point|place|position|instruction|step|reach\w*|hits?|gets to|arrives)`,
+                R`(line|statement|point|place|position|instruction)\W+${WD(4)}(where|at which|in which|and)\W+${WD(3)}(paus\w*|stop\w*|halt\w*|suspend\w*)`,
+                R`(program|execution|it|code|running|run)\W+${WD(2)}(paus\w*|stop\w*|halt\w*|suspend\w*)\W+${WD(4)}(at|on|when|there|here|before)\b`,
+                R`(marker|mark\w*|flag|set|place\w*|put|point)\W+${WD(3)}(on|at|in|beside|next to)\W+${WD(3)}(line|statement|code|instruction|point)\w*\W+${WD(8)}(paus\w*|stop\w*|halt\w*|suspend\w*)`],
+                not: [R`crash\w*|error message`] },
+              { desc: "Used to inspect variables / check the state at that point", any: [
+                R`(inspect\w*|examin\w*|check\w*|see|view\w*|look\w*|read\w*|monitor\w*|watch\w*|find out|test\w*)\W+${NA(5)}(variables?|values?|state|data|contents)`,
+                R`(find|locate|identif\w*|track down|spot|debug|fix|work out)\w*\W+${NA(5)}(errors?|bugs?|faults?|mistakes?|problems?|wrong)`,
+                R`step\w*\W+(through|over|into|line by line)`] },
             ],
           },
           {
@@ -330,8 +388,13 @@
             sample: "A trace table records the value of each variable after every step of a dry run, with a column for each variable. The programmer can then see where a value first goes wrong or differs from what was expected.",
             model: "<ul><li>It records the value of every variable at each step (a column per variable, a row per step). (1)</li><li>Comparing with the values expected shows the step where a value first becomes wrong, which locates the error. (1)</li></ul>",
             points: [
-              { desc: "Records the value of each variable at each step", all: [R`(record\w*|show\w*|track\w*|list\w*|stor\w*|keep\w*|writ\w*|column\w*|row\w*|follow\w*)`, R`(variables?|values?)`], win: 90 },
-              { desc: "Shows where a value first goes wrong", all: [R`(where|when|which (line|step)|point|first|see\w*|spot\w*)`, R`(wrong|incorrect|unexpected|differ\w*|error|goes? wrong|not what|change\w*)`], win: 100 },
+              { desc: "Records the value of each variable at each step", all: [
+                R`(record\w*|show\w*|track\w*|list\w*|stor\w*|keep\w*|writ\w*|log\w*|note\w*|follow\w*|display\w*|hold\w*|has|contains?)\W+${NA(6)}(variables?|values?)`,
+                R`(each|every|after|per|at)\W+${WD(2)}(step|line|statement|instruction|iteration|loop|change|time|row|stage|pass|variable)|\b(columns?|rows?)\b`], win: 100 },
+              { desc: "Shows where a value first goes wrong", any: [
+                R`(where|when|point at which|the (line|step|row|point))\W+${NA(6)}(goes|go|went|becomes|become|turns|starts|is|are|first)\W+${NA(3)}(wrong|incorrect|unexpected|different|not what|not as)`,
+                R`(compar\w*|match\w*|check\w*)\W+${NA(4)}(with|to|against|what)\W+${NA(4)}(expected|should|correct|predicted)\W+${NA(10)}(differ\w*|wrong|where|first|error|spot|find|show|different)`,
+                R`(differs?|different|wrong|incorrect|unexpected)\W+${NA(4)}(from|to|than)\W+${NA(3)}(expected|what (it|they|was|should))`] },
             ],
           },
         ],
@@ -361,9 +424,16 @@
             model: "<ul><li>Judgement: it is <b>not</b> fit for purpose, because not every requirement is met. (1)</li><li>R1 and R2 are met, with evidence from tests 1 and 2. (1)</li><li>R3 is not met: test 3 gave 5 instead of 4 (a team on exactly 10 points is counted because of &lt;=). (1)</li></ul><p>Do not drift into robustness (crashes, bad input): the question is about the specification.</p>",
             points: [
               { desc: "Judges it is not fit for purpose (not every requirement is met)", negOK: true, any: [
-                R`not (fully |completely |entirely |yet )?(fit|meeting|met|meet)|(does ?n.t|does not|doesn.t|fails? to|failed to|never) (fully |completely |entirely )?(meet|satisf|fulfil|match)|only (partly|partially|two|2)|not (all|every)|isn.t (fully )?fit`] },
-              { desc: "R1 and R2 are met, with evidence from tests 1 and 2", all: [R`(r1|requirement 1|test 1|tests 1)\W+(?:\w+\W+){0,6}(r2|requirement 2|test 2|2)`, R`(met|meet|work\w*|pass\w*|correct\w*|success\w*|satisf\w*|fulfil\w*)`], win: 60 },
-              { desc: "R3 is not met: test 3 counted wrongly", all: [R`(r3|requirement 3|test 3|counting|count\w*)`, R`(wrong\w*|incorrect\w*|inaccura\w*|error|fault\w*|too many|one too|extra|5 (instead|rather)|five (instead|rather)|bug)`], win: 120 },
+                R`not (fully |completely |entirely |yet |quite )?(fit|meeting|met|meet)|(does ?n.t|does not|doesn.t|fails? to|failed to|never) (fully |completely |entirely )?(meet|satisf|fulfil|match)|only (partly|partially|two|2)|not (all|every)\W+${WD(2)}(requirements?|specification|brief|tests?|r\d)|isn.t (fully )?fit|(partly|partially|mostly|almost|nearly) (fit|met|meets|meet)|(does ?n.t|does not|doesn.t) (do|achieve|deliver|carry out|perform|cover) (everything|all|every)`],
+                not: [R`\\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\\w+|fulfil\\w*)\\W+(every|all)\\W+(the )?(requirements?|specification|brief)`] },
+              { desc: "R1 and R2 are met, with evidence from tests 1 and 2", all: [R`(r1|requirement 1|test 1|tests 1)\W+${WD(6)}(r2|requirement 2|test 2|2)`, R`(met|meet|work\w*|pass\w*|correct\w*|success\w*|satisf\w*|fulfil\w*)`], win: 60,
+                not: [R`\\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\\w+|fulfil\\w*)\\W+(every|all)\\W+(the )?(requirements?|specification|brief)`, R`(r3|requirement 3|test 3|all (three|3))\W+${WD(3)}(all )?(met|works?|worked|passes|passed|correct|successful)\b`, R`(?<!not )(?<!n.t )\b(every|all)\W+(of the )?(the )?(requirements?|tests?)\W+${WD(3)}(worked|passed|met|work|pass|correct|as expected|satisfied)`] },
+              { desc: "R3 is not met: test 3 counted wrongly", any: [
+                R`(r3|requirement 3|test 3|requirement three)\W+${NA(8)}(wrong\w*|incorrect\w*|inaccura\w*|fail\w*|not (met|working|correct|right|satisfied|achieved|fulfilled)|too many|one too|extra|error|fault|bug|isn.t (met|working|correct|right)|5 (instead|rather|not)|five (instead|rather|not))`,
+                R`(5|five)\W+(instead|rather)\W+${WD(2)}(4|four)`,
+                R`(counts?|counted|displays?|displayed|shows?|showed|outputs?|gives?|gave)\W+${WD(4)}(too many|one (too many|more|extra)|an extra)`,
+                R`(<=|less than or equal|<= 10)\W+${WD(10)}(wrong|should|instead|error|too many|extra|counts?)`],
+                not: [R`(r3|requirement 3|test 3)\W+${WD(2)}(is |was |were |are )?(met|works?|worked|passes|passed|correct|successful|fine)\b`] },
             ],
           },
           {
@@ -389,10 +459,19 @@
             sample: "Use meaningful variable names such as passCount instead of t and scores instead of a. Add comments to explain what the loop does. Indent the lines inside the loop and the IF so the structure is clear.",
             model: "<p>Any three, each applied to this code:</p><ul><li>Meaningful variable names, e.g. passCount for t, scores for a. (1)</li><li>Internal commentary explaining what the loop and selection do. (1)</li><li>Indentation of the loop body and the IF body. (1)</li><li>White space (blank lines) between sections, or a named constant instead of 50. (1)</li></ul>",
             points: [
-                            { desc: "Meaningful variable names", any: [R`(meaningful|descriptive|sensible|appropriate|clear|better|informative|proper)\s+(\w+\s+)?(variable\s+)?(names?|identifiers?)`, R`renam\w+\W+(?:\w+\W+){0,4}(variables?|identifiers?|t\b|a\b)`] },
-                            { desc: "Comments / internal commentary", any: [R`(comments?|commentary|annotat\w*)\W+(?:\w+\W+){0,8}(explain\w*|describ\w*|say\w*|state\w*|what|why|purpose|document\w*|how)`, R`(explain\w*|describ\w*|document\w*)\W+(?:\w+\W+){0,6}(comments?|commentary)`] },
-                            { desc: "Indentation", any: [R`indent\w*\W+(?:\w+\W+){0,8}(loop|if|selection|lines?|code|body|inside|structure|block)`, R`(loop|if|lines?|body|inside|structure|block)\W+(?:\w+\W+){0,4}indent`] },
-              { desc: "White space or a named constant", any: [R`white\s?space`, R`blank lines?`, R`spacing`, R`(named )?constant`] },
+                            { desc: "Meaningful variable names", any: [
+                R`(meaningful|descriptive|sensible|appropriate|clear|clearer|better|informative|proper|longer|full)\s+(\w+\s+)?(variable\s+)?(names?|identifiers?)`,
+                R`renam\w+\W+${WD(4)}(variables?|identifiers?|t\b|a\b)`,
+                R`(names?|identifiers?)\W+${WD(4)}(describ\w*|say|show|explain|mean|indicate|tell|reflect)`] },
+              { desc: "Comments / internal commentary", any: [
+                R`(comments?|commentary|annotat\w*)\W+${WD(8)}(explain\w*|describ\w*|say\w*|state\w*|what|why|purpose|document\w*|how)`,
+                R`(explain\w*|describ\w*|document\w*)\W+${WD(6)}(comments?|commentary)`,
+                R`(add|put|include|write|insert|adding|with|use)\w*\W+${WD(3)}(comments?|commentary)\b`] },
+              { desc: "Indentation", any: [
+                R`indent\w*\W+${WD(8)}(loop|if|selection|lines?|code|body|inside|structure|block)`,
+                R`(loop|if|lines?|body|inside|structure|block)\W+${WD(4)}indent`,
+                R`(use|add|put|apply|with|proper|correct|consistent|good)\W+${WD(2)}indent\w*`] },
+              { desc: "White space or a named constant", any: [R`white\s?space`, R`blank lines?`, R`(add|use|put|leave|insert|include|with)\w*\W+${WD(2)}(spacing|gaps?|line breaks?)`, R`(named|use|declare|a|the|as a) constants?\b`] },
             ],
           },
           {
@@ -404,11 +483,16 @@
             model: "<ul><li>Reusable: the same code can be called with a different pass mark or array, so no duplicate copies. (1)</li><li>A change is needed in only one place / each sub-program can be changed or tested separately without affecting the rest. (1)</li></ul>",
             points: [
               { desc: "Reusable with different values: no duplicated code", negOK: true, any: [
-                R`(different|another|any|other|each|every|several|new).{0,50}(mark|value|array|subject|test|class|threshold|data)`,
-                R`reus\w+`, R`called?.{0,30}(again|more than once|several times|twice|different)`, R`(no|avoid\w*|without|not).{0,20}(duplicat\w*|repeat\w*|cop(y|ies|ied))`] },
+                R`(with|for|using|call\w*|pass\w*)\W+${WD(3)}(different|another|any|other|new|various)\W+${WD(3)}(marks?|values?|arrays?|subjects?|tests?|classes|class|thresholds?|data|inputs?|parameters?|arguments?)`,
+                R`reus\w+|re-us\w+`, R`called?\W+${WD(4)}(again|more than once|several times|twice|many times|repeatedly|over and over|different)`,
+                R`(no|avoid\w*|without|not)\W+${WD(3)}(duplicat\w*|repeat\w*|cop(y|ies|ied)|rewrit\w*|writ\w+ (it )?again)`,
+                R`not (have|need) to (copy|rewrite|repeat|write)`],
+                not: [R`(not|never|cannot|can.t|n.t|no)\W+${WD(2)}(reus\w*|re-us\w*)`, R`(faster|quicker|less memory|uses less|runs faster)`] },
               { desc: "A change is made in one place / sub-programs independent", negOK: true, any: [
-                R`(change|edit|alter|updat|amend|fix|modif)\w*.{0,70}(one place|only (one|the)|single|just (one|the)|in the function|without (affecting|changing|breaking)|separately|independent\w*|not affect|rest of)`,
-                R`(each|every|the) (sub-?program|module|function|part)s?.{0,50}(separately|independent\w*|on (its|their) own|alone)`] },
+                R`(change|edit|alter|updat|amend|fix|modif)\w*\W+${WD(6)}(one place|only (one|the)|single|just (one|the)|in the function|without (affecting|changing|breaking)|separately|independent\w*|not affect|rest of)`,
+                R`(each|every|the) (sub-?program|module|function|part)s?\W+${WD(6)}(separately|independent\w*|on (its|their) own|alone)`,
+                R`(only|just) (needs?|has|have) to be (changed|edited|updated|made|fixed)`, R`(fix|change|update)\w*\W+${WD(4)}(once|one time)\b`],
+                not: [R`(faster|quicker|less memory|uses less|runs faster)`] },
             ],
           },
           {
@@ -434,8 +518,14 @@
             sample: "find_cheapest  IN: price()  OUT: cheapPos\ncount_cheap  IN: price()  OUT: count",
             model: "<ul><li>find_cheapest: IN price(); OUT cheapPos (the position). (1)</li><li>count_cheap: IN price(); OUT count. (1)</li></ul><p>No other parameters: neither step needs the item names, so passing them in would be an unnecessary parameter.</p>",
             points: [
-              { desc: "find_cheapest: IN price(), OUT a position", all: [R`find.?cheapest`, R`in\w*:?\s*price`, R`out\w*:?\s*(cheap\w*pos|position|pos\b|index|cheapest|min\w*)`], win: 80, not: [R`\bitems?\s*\(`] },
-              { desc: "count_cheap: IN price(), OUT a count", all: [R`count.?cheap\w*`, R`in\w*:?\s*price`, R`out\w*:?\s*(count|total|number|how many|num)`], win: 80 },
+              { desc: "find_cheapest: IN price(), OUT a position", any: [
+                R`find.?cheapest\W+(in\w*\W+)?price\w*\W+(and\W+)?out\w*\W*(?!\w*(count|total|num))(cheap\w*|position|pos\b|\w*pos\b|index|min\w*|lowest\w*)`,
+                R`find.?cheapest\W*\(\W*price\w*\W*\)\W*(->|=>|→|returns?|gives?|outputs?|out)\W*(?!\w*(count|total|num))(cheap\w*|position|pos\b|\w*pos\b|index|min\w*|lowest\w*)`,
+                R`in\w*:?\W*price\w*\W+out\w*:?\W*(position|cheap\w*|pos\b|index)\W+(for|of|from|in)\W+find.?cheapest`], not: [R`\bitems?\s*\(`] },
+              { desc: "count_cheap: IN price(), OUT a count", any: [
+                R`count.?cheap\w*\W+(in\w*\W+)?price\w*\W+(and\W+)?out\w*\W*(\w*count\w*|\w*total\w*|number\w*|num\w*|how ?many)`,
+                R`count.?cheap\w*\W*\(\W*price\w*\W*\)\W*(->|=>|→|returns?|gives?|outputs?|out)\W*(\w*count\w*|\w*total\w*|number\w*|num\w*|how ?many)`,
+                R`in\w*:?\W*price\w*\W+out\w*:?\W*(\w*count\w*|\w*total\w*|number\w*|num\w*|how ?many)\W+(for|of|from|in)\W+count.?cheap`] },
             ],
           },
           {
@@ -445,10 +535,10 @@
             sample: "1 SET cheapPos TO 0\n2 FOR i FROM 1 TO 24 DO\n3    IF price[i] < price[cheapPos] THEN\n4       SET cheapPos TO i\n5    END IF\n6 END FOR",
             model: "<pre>1 SET cheapPos TO 0\n2 FOR i FROM 1 TO 24 DO\n3    IF price[i] &lt; price[cheapPos] THEN\n4       SET cheapPos TO i\n5    END IF\n6 END FOR</pre><ul><li>Initialise the position to the first item (0), not a guessed price. (1)</li><li>A loop over the remaining items. (1)</li><li>A selection comparing this price with the cheapest so far, using &lt;. (1)</li><li>Update the position (not the price) to the current one. (1)</li></ul>",
             points: [
-              { desc: "Starts with the first item as the cheapest", any: [R`(\w*(pos|min|cheap|best|low|index)\w*)\s*(=|:=|to)\s*(0\b|1\b|price\s*[\[(]\s*[01]\s*[\])]|first)`, R`(first|1st).{0,40}(cheap\w*|lowest|minimum|smallest)`] },
-              { desc: "A loop over the other items", any: [R`\b(for\s+(each\s+|every\s+)?\w+\s+(in|from)\b|for\s*\(|for\s+\w+\s*(=|<|:=)|while\s+\w+\s*(<|<=|!=|=)|loop\w*\s+(through|over|from|for each|for every)|repeat\s+(for|until|\d|7|6|24|25)|(loop|repeat)\w*\s+(each|every))`] },
-              { desc: "Compares the price with the cheapest so far (<)", all: [R`\b(if|when|elif)\b`, R`(<|less than|lower than|cheaper than|smaller than)`], win: 90 },
-              { desc: "Updates the cheapest position to the current one", all: [R`(<|less than|lower than|cheaper|smaller)`, R`\w*(pos|min|cheap|best|low|index)\w*\s*(=|:=|\bto\b)\s*(i\b|j\b|k\b|index\b|position\b|this\b|current\b|count\b)`], win: 140 },
+              { desc: "Starts with the first item as the cheapest", any: [R`(\w*(pos|min|cheap|best|low|index)\w*)\s*(=|:=|<-|\bto)\s*(0\b|1\b|price\s*[\[(]\s*[01]\s*[\])]|first)`, R`(first|1st)\W+${WD(5)}(cheap\w*|lowest|minimum|smallest)`] },
+              { desc: "A loop over the other items", any: [LOOP] },
+              { desc: "Compares the price with the cheapest so far (<)", any: [R`\b(if|when|elif)\b.{0,50}(<|less than|lower than|cheaper than|smaller than)`] },
+              { desc: "Updates the cheapest position to the current one", any: [R`(<|less than|lower than|cheaper|smaller)\W.{0,80}\w*(pos|min|cheap|best|low|index)\w*\s*(=|:=|<-|\bto\b)\s*(i\b|j\b|k\b|index\b|position\b|this\b|current\b|count\b)`] },
             ],
           },
           {
@@ -458,10 +548,10 @@
             sample: "Extreme test data: 1 or 40. Exceptional test data: 41, which should be rejected.",
             model: "<ul><li>Extreme: 1 or 40 (the boundaries of the valid range). (1)</li><li>Exceptional: any invalid price, e.g. 0, 41, -5, 12.5 or a word such as \"cheap\". (1)</li></ul>",
             points: [
-              { desc: "Extreme: 1 or 40", any: [R`extreme\W+(?:\w+\W+){0,6}\b(1|40)\b`, R`\b(1|40)\b\W+(?:\w+\W+){0,4}(is|are|as|for) extreme`] },
+              { desc: "Extreme: 1 or 40", any: [R`extreme\W+(?:[a-z]\w*\W+){0,6}\b(1|40)\b`, R`\b(1|40)\b\W+(?:[a-z]\w*\W+){0,4}(is|are|as|for) extreme`] },
               { desc: "Exceptional: an invalid price such as 0, 41, a negative, a decimal or text", any: [
-                R`exceptional\W+(?:\w+\W+){0,6}(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|abc|negative|decimal|banana)`,
-                R`(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|negative|decimal)\W+(?:\w+\W+){0,4}(is|are|as|for) exceptional`] },
+                R`exceptional\W+(?:[a-z]\w*\W+){0,6}(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|abc|negative|decimal|banana)`,
+                R`(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|negative|decimal)\W+(?:[a-z]\w*\W+){0,4}(is|are|as|for) exceptional`] },
             ],
           },
         ],

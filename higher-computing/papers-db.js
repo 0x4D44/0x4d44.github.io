@@ -3,6 +3,11 @@
   "use strict";
   const B = (window.HCP_BANK = window.HCP_BANK || {});
   const R = String.raw;
+  /* G(n): up to n characters of the same sentence that contain no negator, so a marking pattern can join a concept to its
+     relation ("many-to-many ... resolved") without matching "is NOT resolved". A dot inside table.field does not end it. */
+  /* NB: placed at the start of a pattern, refuses a match that a negator sits just before ("does not give two ..."). */
+  const NB = String.raw`(?<!(?:\bnot|n't|\bnever|\bwithout|\bno|\bcannot|\bcan't)\s+(?:\w+\s+){0,3})`;
+  const G = (n) => `(?:(?!\\b(?:not|never|no|without|none)\\b|n't)(?:[^.]|\\.(?=[a-z]))){0,${n}}`;
 
   /* ---- small SVG helpers: entity-relationship boxes with crow's feet, and a query design table ---- */
   const INK = "#1d2433", ACC = "#1f5f8b", PAPER = "#fbfaf6", FILL = "#eef3f8";
@@ -88,9 +93,9 @@
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "Reception staff say: &ldquo;I need to see what each member has paid altogether.&rdquo; Write this as a functional requirement. [2]",
             points: [
-              { desc: "Written as a query to display/show/list something", all: [R`\bquer(y|ies)\b`, R`display|show|list|output|find|select|retriev|report`], win: 80 },
-              { desc: "Uses the sum/total of the members' payments", all: [R`\b(sum|total)\w*`, R`payment|amount|paid|fees?|money`], win: 80 },
-              { desc: "For each member (grouped by member)", any: [R`group(ed|ing)? by`, R`for each (member|person)`, R`per member`, R`by member`, R`every member`, R`grouped`] }
+              { desc: "Written as a query/system process that displays or lists something", any: [R`\bquer(y|ies)\b${G(60)}\b(display\w*|show\w*|list\w*|output\w*|find\w*|select\w*|retriev\w*|report\w*|produc\w*|return\w*)`, R`\b(system|database|program|app|software)\b${G(40)}\b(must|should|shall|will|needs? to|has to)\b${G(30)}\b(display|show|list|output|report|calculate|work out|produce|find|retrieve)`] },
+              { desc: "Uses the sum/total of the members' payments", all: [R`\b(sum|total\w*|add\w* (up|together))\b`, R`\b(payments?|amounts?|paid|fees?|money|subscriptions?)\b`], win: 60 },
+              { desc: "For each member (grouped by member)", any: [R`\bgroup\w* by\b${G(15)}\bmembers?\b`, R`\b(sum|total\w*)\b${G(50)}\b(for|per|of|by) (each|every) (member|person)`, R`\b(each|every) (member|person)\b${G(40)}\b(sum|total\w*)\b`, R`\bper member\b`, R`\bgroup\w* by (the )?(member|person)`] }
             ],
             sample: "A query to display each member's name and the sum of all their payments, grouped by member.",
             model: `<p>A functional requirement is a process or data the system must provide, so use the pattern <b>&ldquo;a query to display&hellip;&rdquo;</b>. (1) a query to display the member (name/ID) with (1) the sum/total of their payments, (1) for each member / grouped by member. Any 2. Restating &ldquo;the receptionist wants to see&hellip;&rdquo; is the end-user requirement again and earns nothing.</p>`
@@ -115,9 +120,9 @@
             label: "(b)", type: "text", marks: 3, rows: 4,
             q: "Explain how a relational database designer deals with this relationship. [3]",
             points: [
-              { desc: "This (many-to-many) relationship cannot be implemented directly, so it is resolved", negOK: true, any: [R`many.to.many[^.]{0,80}(resolv|remov|split|break|broken|replac|dealt with|deal with)\w*`, R`many.to.many[^.]{0,80}(cannot|can.?t|not|unable|impossible|isn.?t|won.?t)[^.]{0,40}(directly|implement|represent|stored|work|possible)`, R`(cannot|can.?t|not|unable|impossible)[^.]{0,40}(directly|implement|represent)[^.]{0,80}many.to.many`] },
-              { desc: "A new linking entity/table is added between Pupil and Team", all: [R`(new|extra|third|additional|link\w*|junction|intermediate|middle)[^.]{0,30}(entity|table)`, R`between|links?|connect|joins?|sits|in the middle`], win: 80 },
-              { desc: "It turns the relationship into two one-to-many relationships", any: [R`two (one.to.many|1:m|1:many|one to many)`, R`(one.to.many|1:m)[^.]{0,60}(and|both|each|two)[^.]{0,30}(one.to.many|1:m|sides|ends)`, R`split\w*[^.]{0,40}(into )?(two|2)[^.]{0,20}(one|1)`] }
+              { desc: "The many-to-many relationship cannot be implemented directly, so it is resolved", negOK: true, any: [R`${NB}\bmany.to.many\b( relationships?)?${G(30)}\b(is|are|can be|has to be|have to be|must be|needs to be|should be|gets?|was|were|be)\b${G(30)}\b(resolv\w*|remov\w*|split\w*|break\w*|broken|replac\w*|dealt with|separat\w*|eliminat\w*)`, R`\bmany.to.many\b[^.]{0,80}\b(cannot|can.?t|unable to|impossible to|not possible to|isn.?t possible to|won.?t work)\b${G(40)}\b(directly|implement\w*|represent\w*|stored|work|possible)`, R`${NB}\b(resolv\w*|remov\w*|split\w*|break\w*|replac\w*|get rid of|deal with)\b${G(25)}\b(the|a|any) (many.to.many|m:n|many to many)`] },
+              { desc: "A new linking (associative/junction/intermediate) entity or table is added between Pupil and Team", negOK: true, any: [R`${NB}\b(a|an|the|another|new|extra|third|additional)\s+(\w+\s+){0,3}?(link\w*|junction|intermediate|associative|bridg\w*|joining|composite)\b${G(25)}\b(entity|table)\b${G(70)}\b(between|connect\w*|links?|joins?|sits?|pupils?|teams?)\b`, R`${NB}\b(add\w*|insert\w*|creat\w*|introduc\w*|put in|include\w*|use)\b${G(40)}\b(link\w*|junction|intermediate|associative|bridg\w*|joining|composite|third)\b${G(25)}\b(entity|table)\b`, R`${NB}\b(a|an|the) (new|extra|additional|third) (entity|table)\b${G(30)}\bbetween\b`] },
+              { desc: "It turns the relationship into two one-to-many relationships", negOK: true, any: [R`${NB}\btwo\s+(one.to.many|1:m|1:n|one to many)\b`, R`${NB}\b(one.to.many|1:m)\b${G(80)}\b(and|both|each|two|second|another|other)\b${G(40)}\b(one.to.many|1:m|sides?|ends?)\b`, R`${NB}\bsplit\w*${G(40)}\b(two|2)\b${G(30)}\b(one|1)\b`, R`${NB}\b(each|both)( of)? (pupil|team)\b${G(40)}\b(one.to.many|1:m)\b`, R`${NB}\b(one.to.many|1:m)\b${G(40)}\b(with|to)\b${G(5)}\b(it|the (new|link\w*|junction|intermediate|associative)\b)`] }
             ],
             sample: "The many-to-many relationship is resolved when a new linking entity, such as Selection, is added between Pupil and Team. The result is two one-to-many relationships, one from Pupil and one from Team.",
             model: `<p>(1) A many-to-many relationship cannot be implemented directly. (1) A new (linking) entity is added between Pupil and Team. (1) This resolves it into <b>two one-to-many relationships</b> (Pupil to the new entity, and Team to the new entity). The 2025 report says only a few candidates could explain this: use the words &ldquo;removes/resolves the many-to-many relationship&rdquo;.</p>`
@@ -127,7 +132,7 @@
             q: "The new entity has a compound key. Name the attributes that make up the key and explain why neither attribute is enough on its own. [2]",
             points: [
               { desc: "pupilID and teamCode", all: [R`pupil.?id`, R`team.?code`], win: 90 },
-              { desc: "Each value repeats (a pupil is in several teams, a team has several pupils) but the pair is unique", any: [R`repeat\w*|duplicat\w*|appears? (more than once|several|many|again)|not unique|isn.?t unique|same (value|pupil|team)`, R`(neither|alone|on its own|by itself|individually)[^.]{0,80}(unique|identif|repeat|duplicate|more than once|several|many)`, R`(together|combin\w+|both)[^.]{0,60}(unique|identif)`] }
+              { desc: "Each value repeats (a pupil is in several teams, a team has several pupils) but the pair is unique", any: [R`\b(neither|alone|on its own|by itself|individually|each one|either one)\b${G(80)}\b(unique|identif\w*|repeat\w*|duplicate\w*|more than once|several|many|again)`, R`\b(together|combin\w+|both|pair|compound|combination)\b${G(60)}\b(unique|identif\w*)`, R`\b(unique|identif\w*)\b${G(40)}\b(together|combin\w+|as a pair|both|pair)\b`, R`\b(repeat\w*|duplicat\w*|appears? (more than once|several times|many times|again)|same (pupil|team))\b${G(100)}\b(but|so|however|only|together|combin\w+|pair)\b${G(60)}\b(unique|identif\w*)`, R`\b(many|several|more than one|multiple)\b${G(70)}\b(isn.?t|wouldn.?t|couldn.?t|can.?t|cannot|not)\b ?(be )?unique`] }
             ],
             sample: "pupilID and teamCode. A pupil can play for several teams and a team has many pupils, so each value repeats in the table, but the pair of values together is unique.",
             model: `<p>(1) pupilID and teamCode (each is the primary key of its own entity and a foreign key here). (1) Neither is unique alone: a pupil appears once for every team they play for, and a team once for every pupil; the <b>combination</b> identifies exactly one row.</p>`
@@ -154,8 +159,8 @@
 INSERT INTO Crossing VALUES (1,'Oban to Craignure','2026-06-01',38,160,0),(2,'Ullapool to Stornoway','2026-06-01',52,210,15),(3,'Largs to Cumbrae','2026-06-01',20,95,5),(4,'Oban to Craignure','2026-06-02',44,175,22),(5,'Ardrossan to Brodick','2026-06-02',31,140,22),(6,'Largs to Cumbrae','2026-06-02',18,80,15),(7,'Ullapool to Stornoway','2026-06-03',60,240,40),(8,'Ardrossan to Brodick','2026-06-03',27,120,8),(9,'Oban to Craignure','2026-06-03',35,150,15),(10,'Largs to Cumbrae','2026-06-03',22,101,0);`,
             solution: "SELECT route, sailDate, delayMins FROM Crossing WHERE delayMins >= 15 ORDER BY delayMins DESC, route ASC;",
             ordered: true,
-            must: [R`delaymins\s*(>=\s*15|>\s*14)|15\s*<=\s*delaymins`, R`order by`],
-            mustDesc: "a WHERE criterion on delayMins and an ORDER BY",
+            must: [R`where[^;]*(delaymins\s*(>=\s*15|>\s*14|between\s+15\s+and)|(15\s*<=|14\s*<)\s*(\w+\.)?delaymins|not\s*\(?\s*delaymins\s*(<\s*15|<=\s*14))`, R`order by`],
+            mustDesc: "a WHERE criterion that tests delayMins against 15, and an ORDER BY",
             model: `<p>(1) the three fields from Crossing; (1) <code>WHERE delayMins &gt;= 15</code>; (1) <code>ORDER BY delayMins DESC, route</code> (a second sort field breaks ties). Using <code>&gt; 15</code> drops the three crossings delayed by exactly 15 minutes.</p><pre>SELECT route, sailDate, delayMins
 FROM Crossing
 WHERE delayMins &gt;= 15
@@ -165,8 +170,8 @@ ORDER BY delayMins DESC, route ASC;</pre>`
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "The requirement says &ldquo;delayed by at least 15 minutes&rdquo;. A trainee writes <code>WHERE delayMins &gt; 15</code> instead. Explain why this is wrong and how it should be corrected. [2]",
             points: [
-              { desc: "A delay of exactly 15 minutes is left out (should be included)", any: [R`(exactly 15|equals? 15|equal to 15|a delay of 15|15 (minutes )?exactly|boundary)[^.]{0,80}(exclud|miss|left out|omit|ignor|drops?|not (be )?(included|shown|displayed|selected)|won.?t|wouldn.?t)`, R`(exclud|miss|leave|left out|omit|ignor|drops?)\w*[^.]{0,80}(exactly 15|equals? 15|equal to 15|a delay of 15|15 (minutes )?exactly|boundary)`] },
-              { desc: "Use >= (greater than or equal to) 15", any: [R`>=`, R`≥`, R`greater than or equal`, R`(test|use|include)[^.]{0,40}(exactly 15|boundary)`] }
+              { desc: "A delay of exactly 15 minutes is left out (should be included)", negOK: true, any: [R`${NB}\b(exactly|precisely|equal\w*|boundary)\b${G(40)}\b15\b${G(60)}\b(exclud\w*|miss\w*|left out|leaves? out|omit\w*|ignor\w*|drops?|dropped|overlook\w*|not (be )?(included|shown|displayed|selected|returned|counted|picked up))`, R`${NB}\b(it|this|that|which|so|because|as|would|will|does|is|are|be|being|using|the|a|an|test|condition|operator|sign|symbol)\b${G(30)}\b(exclud\w*|miss\w*|left out|leaves? out|omit\w*|ignor\w*|drops?|dropped|overlook\w*)\b${G(60)}\b(exactly|precisely|equal\w*|boundary|15 (min\w* )?(itself|exactly|precisely|on the dot))`, R`${NB}\b15\b ?(min\w* )?(itself|exactly|precisely)\b${G(30)}\b(exclud\w*|miss\w*|left out|omit\w*|ignor\w*|dropped|overlook\w*)`, R`${NB}>\s?15\b${G(60)}\b(exclud\w*|miss\w*|leaves? out|omit\w*|ignor\w*|drops?|overlook\w*)\b${G(40)}\b(15|fifteen|boundary|exactly|equal\w*)`, R`\b(does ?n.t|do ?n.t|will not|would not|wouldn.t) (include|count|show|select|return)\b${G(40)}\b(15|fifteen|exactly|equal\w*)`] },
+              { desc: "Use >= (greater than or equal to) 15", any: [R`>=`, R`≥`, R`\bgreater than or equal`, R`>\s?14\b`, R`\b(test|use|include)\b${G(40)}\b(exactly 15|the boundary)`] }
             ],
             sample: "A crossing delayed by exactly 15 minutes would be left out by the > 15 test, although it meets the requirement. The condition should be >= 15, greater than or equal to.",
             model: `<p>(1) <code>&gt;</code> excludes crossings delayed by exactly 15 minutes, which the requirement says must be shown. (1) Use <code>&gt;= 15</code>. The 2025 report: candidates used &gt; where the task said &ldquo;at least&rdquo;; it looked right with the given data but fails if the data changes. Test with a value on the boundary.</p>`
@@ -186,8 +191,8 @@ ORDER BY delayMins DESC, route ASC;</pre>`
 INSERT INTO Book VALUES (1,'Treasure Island','R L Stevenson','Adventure',292,1883),(2,'The Island of Doctor Moreau','H G Wells','Science fiction',160,1896),(3,'Island Nights','A Burns','Fiction',310,2000),(4,'Isle of the Dead','M Hall','Crime',254,2011),(5,'The Lost Island','S Park','Adventure',340,2016),(6,'Kidnapped','R L Stevenson','Adventure',256,1886),(7,'Islands in the Stream','E Hemingway','Fiction',448,1970),(8,'Island of Secrets','L Grant','Crime',280,2019),(9,'The Silent Harbour','P Reid','Crime',301,2015),(10,'Hebridean Island Hopping','K Munro','Travel',190,2018),(11,'The Island Garden','J Boyd','Gardening',224,2012);`,
             solution: "SELECT title, author FROM Book WHERE title LIKE '%Island%' AND yearPublished >= 2000 ORDER BY title;",
             ordered: true,
-            must: [R`like\s*['"]%island%['"]`, R`order by`],
-            mustDesc: "LIKE with % wildcards either side of Island, and an ORDER BY",
+            must: [R`like\s*['"]%island%['"]`, R`yearpublished\s*(>=\s*2000|>\s*1999|between\s+2000)|(2000\s*<=|1999\s*<)\s*(\w+\.)?yearpublished|not\s*\(?\s*yearpublished\s*(<\s*2000|<=\s*1999)`, R`order by`],
+            mustDesc: "LIKE with % wildcards either side of Island, the year test (2000 or later) and an ORDER BY",
             model: `<p>(1) title and author; (1) <code>title LIKE "%Island%"</code> (the word may be at the start, middle or end, so % goes at both ends) AND <code>yearPublished &gt;= 2000</code> (a 2000 book is included); (1) <code>ORDER BY title</code>. Wildcards only work with LIKE, never <code>=</code>.</p><pre>SELECT title, author
 FROM Book
 WHERE title LIKE "%Island%"
@@ -218,7 +223,7 @@ CREATE TABLE Donation(donationID INTEGER PRIMARY KEY, campaignID INTEGER, donor 
 INSERT INTO Donation VALUES (1,1,'A Walker',20),(2,1,'B Munro',50),(3,2,'C Ellis',10),(4,3,'D Shah',25),(5,3,'E Gray',15),(6,1,'F Scott',30),(7,3,'G Hill',40),(8,2,'H Reid',5),(9,2,'I Cole',15),(10,1,'J Nair',10),(11,3,'K Orr',20);`,
             solution: "SELECT campaignName, SUM(amount) AS [Total Raised] FROM Campaign, Donation WHERE Campaign.campaignID = Donation.campaignID GROUP BY campaignName ORDER BY SUM(amount) DESC;",
             ordered: true,
-            must: [R`sum\s*\(`, R`group by`, R`campaignid\s*=`],
+            must: [R`sum\s*\(`, R`group by`, R`campaignid\s*=\s*\w+\.?campaignid|using\s*\(\s*campaignid|natural join`, R`order by`],
             mustDesc: "SUM, a join on campaignID and a GROUP BY",
             model: `<p>(1) campaignName and <code>SUM(amount) AS [Total Raised]</code>; (1) the join <code>Campaign.campaignID = Donation.campaignID</code> (without it every donation is paired with every campaign, so each total is 240); (1) <code>GROUP BY campaignName</code> (without it one total for the whole table); (1) <code>ORDER BY SUM(amount) DESC</code>.</p><pre>SELECT campaignName, SUM(amount) AS [Total Raised]
 FROM Campaign, Donation
@@ -245,15 +250,15 @@ ORDER BY SUM(amount) DESC;</pre>`
             label: "(a)", type: "sql", marks: 4,
             q: "Write an SQL query to display the firstname, surname and shipName of every cadet posted in the role <b>Signals</b> to a ship whose homePort is <b>Leith</b>. Sort the output by surname, then by firstname. [4]",
             schema: `CREATE TABLE Cadet(cadetID TEXT PRIMARY KEY, firstname TEXT, surname TEXT, rank TEXT);
-INSERT INTO Cadet VALUES ('C101','Callum','Reid','Cpl'),('C102','Zara','Munro','Cadet'),('C103','Hamish','Reid','Sgt'),('C104','Mhairi','Campbell','Cadet'),('C105','Isla','Grant','Cpl'),('C106','Ewan','MacLeod','Cadet'),('C107','Nina','Shah','Cadet');
+INSERT INTO Cadet VALUES ('C101','Hamish','Reid','Sgt'),('C102','Zara','Munro','Cadet'),('C103','Callum','Reid','Cpl'),('C104','Mhairi','Campbell','Cadet'),('C105','Isla','Grant','Cpl'),('C106','Ewan','MacLeod','Cadet'),('C107','Nina','Shah','Cadet');
 CREATE TABLE Ship(shipCode TEXT PRIMARY KEY, shipName TEXT, homePort TEXT);
 INSERT INTO Ship VALUES ('RED','HMS Redstone','Leith'),('LAP','HMS Lapwing','Portsmouth'),('OBS','HMS Observer','Leith'),('FAL','HMS Falcon','Chatham');
 CREATE TABLE Posting(cadetID TEXT, shipCode TEXT, startDate TEXT, role TEXT, PRIMARY KEY(cadetID, shipCode));
-INSERT INTO Posting VALUES ('C101','RED','2026-07-04','Signals'),('C104','RED','2026-07-04','Navigation'),('C104','LAP','2026-08-15','Signals'),('C102','OBS','2026-07-11','Signals'),('C103','OBS','2026-07-11','Gunnery'),('C105','FAL','2026-08-01','Signals'),('C106','RED','2026-07-04','Signals'),('C107','LAP','2026-08-15','Rigging'),('C101','LAP','2026-08-15','Gunnery');`,
+INSERT INTO Posting VALUES ('C101','RED','2026-07-04','Signals'),('C104','RED','2026-07-04','Navigation'),('C104','LAP','2026-08-15','Signals'),('C102','OBS','2026-07-11','Signals'),('C103','OBS','2026-07-11','Signals'),('C105','FAL','2026-08-01','Gunnery'),('C106','RED','2026-07-04','Signals'),('C107','LAP','2026-08-15','Rigging'),('C101','LAP','2026-08-15','Gunnery');`,
             solution: "SELECT firstname, surname, shipName FROM Cadet, Posting, Ship WHERE Cadet.cadetID = Posting.cadetID AND Posting.shipCode = Ship.shipCode AND role = 'Signals' AND homePort = 'Leith' ORDER BY surname, firstname;",
             ordered: true,
-            must: [R`cadetid\s*=`, R`shipcode\s*=`, R`order by`],
-            mustDesc: "both join conditions (cadetID and shipCode) and an ORDER BY",
+            must: [R`(cadetid\s*=\s*\w+\.?cadetid|using\s*\(\s*cadetid|natural join)`, R`(shipcode\s*=\s*\w+\.?shipcode|using\s*\(\s*shipcode|natural join)`, R`role\s*=\s*['"]signals['"]|['"]signals['"]\s*=\s*role`, R`homeport\s*=\s*['"]leith['"]|['"]leith['"]\s*=\s*homeport`, R`order by`],
+            mustDesc: "both join conditions (cadetID and shipCode), the Signals and Leith criteria, and an ORDER BY",
             model: `<p>(1) the three fields; (1) three tables in FROM with <b>two</b> join conditions, <code>Cadet.cadetID = Posting.cadetID</code> and <code>Posting.shipCode = Ship.shipCode</code>; (1) both criteria joined with AND; (1) <code>ORDER BY surname, firstname</code>.</p><pre>SELECT firstname, surname, shipName
 FROM Cadet, Posting, Ship
 WHERE Cadet.cadetID = Posting.cadetID
@@ -285,8 +290,8 @@ CREATE TABLE OrderLine(lineID INTEGER PRIMARY KEY, productID INTEGER, qty INTEGE
 INSERT INTO OrderLine VALUES (1,1,10),(2,2,4),(3,1,6),(4,3,12),(5,2,3),(6,4,2),(7,3,5),(8,1,4),(9,2,2);`,
             solution: "SELECT productName, SUM(qty * price) AS Income FROM Product, OrderLine WHERE Product.productID = OrderLine.productID GROUP BY productName ORDER BY SUM(qty * price) DESC;",
             ordered: true,
-            must: [R`sum\s*\(`, R`group by`],
-            mustDesc: "SUM of a calculation, with a GROUP BY",
+            must: [R`sum\s*\(`, R`group by`, R`productid\s*=\s*\w+\.?productid|using\s*\(\s*productid|natural join`, R`order by`],
+            mustDesc: "SUM of a calculation, a join on productID and a GROUP BY",
             model: `<p>(1) <code>SUM(qty * price) AS Income</code>: the calculation is combined with the aggregate (SUM(qty) * price also works); (1) the join on productID; (1) <code>GROUP BY productName</code> so there is one total per product; (1) sort by the income, highest first. A query with <code>qty * price</code> but no SUM and GROUP BY lists nine separate lines instead of four totals.</p><pre>SELECT productName, SUM(qty * price) AS Income
 FROM Product, OrderLine
 WHERE Product.productID = OrderLine.productID
@@ -315,8 +320,8 @@ ORDER BY SUM(qty * price) DESC;</pre>`
 INSERT INTO Member VALUES ('M01','Aisha','Standard',120,34),('M02','Ben','Standard',60,20),('M03','Carys','Gold',300,41),('M04','Dev','Standard',45,19),('M05','Eilidh','Student',80,25),('M06','Finn','Standard',200,27),('M07','Grace','Gold',150,12),('M08','Hari','Standard',10,3);`,
             solution: "UPDATE Member SET membershipType = 'Gold', points = points + 50 WHERE membershipType = 'Standard' AND visits >= 20;",
             check: "SELECT memberID, membershipType, points FROM Member ORDER BY memberID;",
-            must: [R`update\s+member`, R`points\s*=\s*(points\s*\+\s*50|50\s*\+\s*points)`, R`where`],
-            mustDesc: "UPDATE with SET points = points + 50 and a WHERE clause",
+            must: [R`update\s+member`, R`points\s*=\s*(points\s*\+\s*50|50\s*\+\s*points)`, R`where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*visits\s*(<\s*20|<=\s*19))`, R`where[^;]*membershiptype\s*=\s*['"]standard['"]`],
+            mustDesc: "UPDATE with SET points = points + 50 and a WHERE clause that tests both membershipType and visits",
             model: `<p>(1) <code>SET membershipType = "Gold"</code>; (1) <code>points = points + 50</code> (increment the existing value, not <code>points = 50</code>); (1) <code>WHERE membershipType = "Standard" AND visits &gt;= 20</code>. Without WHERE every row changes, and <code>&gt; 20</code> would miss Ben, who has exactly 20.</p><pre>UPDATE Member
 SET membershipType = "Gold", points = points + 50
 WHERE membershipType = "Standard"
@@ -345,8 +350,8 @@ CREATE TABLE Booking(memberID TEXT, sessionCode TEXT, bookedOn TEXT, PRIMARY KEY
 INSERT INTO Booking VALUES ('M01','YG1','2026-02-14'),('M02','SP2','2026-02-28'),('M03','YG1','2026-03-01'),('M01','ZU1','2026-03-05'),('M05','PI3','2026-02-20'),('M06','SP2','2026-03-01'),('M07','ZU1','2026-03-10'),('M04','PI3','2026-01-30');`,
             solution: "INSERT INTO Session (sessionCode, className, dayName, startTime, spaces) VALUES ('YG7', 'Yoga', 'Tuesday', '18:30', 12);",
             check: "SELECT * FROM Session ORDER BY sessionCode;",
-            must: [R`insert into session`, R`values`],
-            mustDesc: "INSERT INTO Session ... VALUES",
+            must: [R`insert into session`, R`values`, R`(?<![\w'"])12(?![\w'"])`],
+            mustDesc: "INSERT INTO Session ... VALUES, with the number 12 not in quotes",
             model: `<p>(1) <code>INSERT INTO Session</code> naming the table (and fields); (1) <code>VALUES</code> in the same order, text in quotes, the number 12 without quotes.</p><pre>INSERT INTO Session (sessionCode, className, dayName, startTime, spaces)
 VALUES ("YG7", "Yoga", "Tuesday", "18:30", 12);</pre>`
           },
@@ -359,8 +364,8 @@ CREATE TABLE Booking(memberID TEXT, sessionCode TEXT, bookedOn TEXT, PRIMARY KEY
 INSERT INTO Booking VALUES ('M01','YG1','2026-02-14'),('M02','SP2','2026-02-28'),('M03','YG1','2026-03-01'),('M01','ZU1','2026-03-05'),('M05','PI3','2026-02-20'),('M06','SP2','2026-03-01'),('M07','ZU1','2026-03-10'),('M04','PI3','2026-01-30');`,
             solution: "DELETE FROM Booking WHERE bookedOn < '2026-03-01';",
             check: "SELECT memberID, sessionCode FROM Booking ORDER BY memberID, sessionCode;",
-            must: [R`delete from booking`, R`where[^;]*bookedon`],
-            mustDesc: "DELETE FROM Booking with a WHERE clause on bookedOn",
+            must: [R`delete from booking`, R`where[^;]*(bookedon\s*(<=?|between)|['"]2026-03-01['"]\s*>\s*bookedon|not\s*\(?\s*bookedon\s*>=)`],
+            mustDesc: "DELETE FROM Booking with a WHERE clause that tests bookedOn against a date",
             model: `<p>(1) <code>DELETE FROM Booking</code>; (1) <code>WHERE bookedOn &lt; "2026-03-01"</code>. Bookings made on 1 March stay, so <code>&lt;=</code> is wrong. With no WHERE the whole table is emptied.</p><pre>DELETE FROM Booking
 WHERE bookedOn &lt; "2026-03-01";</pre>`
           },
@@ -368,10 +373,10 @@ WHERE bookedOn &lt; "2026-03-01";</pre>`
             label: "(c)", type: "text", marks: 2, rows: 3,
             q: "The database enforces referential integrity between Session and Booking. Explain how this affects an attempt to add a booking for session ZZ9, which does not exist in Session. [2]",
             points: [
-              { desc: "A foreign key value must match an existing primary key in the other table", all: [R`primary key`, R`match|exist|appear|correspond|link|refer|already|present|found`], win: 90 },
-              { desc: "So the booking is rejected / no orphan record is created", any: [R`reject`, R`refus`, R`prevent`, R`\bstop`, R`not (be )?(allowed|added|accepted|possible|saved|stored)`, R`cannot be (added|saved|stored|created|entered)`, R`\berror\b`, R`orphan`] }
+              { desc: "A foreign key value must match an existing primary key in the other table", negOK: true, any: [R`${NB}\bforeign key\b${G(70)}\b(has to|have to|must|needs? to|should|can only|only (allowed|valid|accepted)|is only valid)\b${G(40)}\b(match\w*|exist\w*|appear\w*|be (in|found|present)|correspond\w*|refer\w*|link\w*)`, R`${NB}\b(primary key|session table|session ?code)\b${G(60)}\b(has to|have to|must|needs? to|should|already)\b${G(30)}\b(exist|be (in|there|present|created)|match)`, R`${NB}\b(must|has to|have to|needs? to|should)\s+(match\w*|exist\w*|correspond\w*|appear\w*)\b${G(40)}\b(an? |the )?(existing |valid )?primary key\b`, R`\b(as|because|since)\b${G(20)}\b(zz9|it|that session|the session|that code)\b${G(15)}\b(is |does |do )?(n.t|not)\s+(in|exist\w*|found|present|valid|there|listed|a (valid )?session)`] },
+              { desc: "So the booking is rejected / no orphan record is created", negOK: true, not: [R`\b(not|n.t|never)\s+(be\s+|been\s+)?(reject\w*|refus\w*|prevent\w*|stopp?\w*|block\w*|error)`, R`\bno (error|problem)`, R`\b(fine|allowed|accepted|added|saved) (anyway|regardless)`, R`\banyway\b`], any: [R`${NB}\b(booking|record|row|entry|insert\w*|it|database|dbms|system|addition)\b${G(50)}\b(reject\w*|refus\w*|prevent\w*|stop\w*|block\w*|disallow\w*|denied|error)`, R`${NB}\b(reject\w*|refus\w*|prevent\w*|stop\w*|block\w*|disallow\w*|error)\b${G(40)}\b(booking|record|row|entry|it|insert\w*|addition)\b`, R`\b(booking|record|row|entry|it)\b ?(would |will |can )?(not|n.t|never) (be )?(allowed|added|accepted|saved|stored|created|inserted|possible|entered)`, R`\bcannot be (added|saved|stored|created|entered|inserted)\b`, R`${NB}\borphan\w*\b${G(40)}\b(prevent\w*|stop\w*|avoid\w*|none|created)\b`, R`${NB}\b(prevent\w*|stop\w*|avoid\w*)\b${G(40)}\borphan`] }
             ],
-            sample: "Every foreign key value in Booking must match an existing primary key value in Session. There is no session ZZ9, so the booking is rejected and no orphan record is created.",
+            sample: "Every foreign key value in Booking has to match an existing primary key value in Session. There is no session ZZ9, so the booking is rejected and no orphan record is created.",
             model: `<p>(1) Referential integrity means every foreign key value (Booking.sessionCode) must match a primary key value that exists in the linked table (Session.sessionCode). (1) Because ZZ9 matches no session the booking is <b>rejected</b>, so there are no orphan bookings. It is not one of the four validation checks: it is enforced by the relationship itself.</p>`
           }
         ]
@@ -409,7 +414,7 @@ CREATE TABLE Player(playerID TEXT PRIMARY KEY, playerName TEXT, teamID INTEGER, 
 INSERT INTO Player VALUES ('P001','Amy',1,14),('P002','Beth',1,10),('P003','Cara',2,22),('P004','Dina',3,9),('P005','Elle',2,10),('P006','Fay',1,25),('P007','Gia',3,31),('P008','Hana',4,6),('P009','Ivy',2,3),('P010','Jo',3,10),('P011','Kim',3,11),('P012','Lou',4,8);`,
             solution: "SELECT teamName, COUNT(*) FROM Team, Player WHERE Team.teamID = Player.teamID AND goals >= 10 GROUP BY teamName;",
             ordered: false,
-            must: [R`teamid\s*=`, R`group by`, R`goals\s*(>=\s*10|>\s*9)`],
+            must: [R`teamid\s*=\s*\w+\.?teamid|using\s*\(\s*teamid|natural join`, R`group by`, R`count\s*\(`, R`goals\s*(>=\s*10|>\s*9|between\s+10)|(10\s*<=|9\s*<)\s*(\w+\.)?goals|not\s*\(?\s*goals\s*(<\s*10|<=\s*9)`],
             mustDesc: "the join on teamID, goals at least 10, and GROUP BY",
             model: `<p>Error 1 (1): the join condition between the tables is missing, so every player is paired with every team; add <code>Team.teamID = Player.teamID</code>. Error 2 (1): <code>&gt; 10</code> leaves out players with exactly 10 goals; use <code>&gt;= 10</code>. (1) the rest of the statement still correct. &ldquo;Missing join&rdquo; on its own is too vague: say <i>which</i> join.</p><pre>SELECT teamName, COUNT(*)
 FROM Team, Player
@@ -435,8 +440,8 @@ CREATE TABLE Pupil(pupilID TEXT PRIMARY KEY, forename TEXT, houseID INTEGER, yea
 INSERT INTO Pupil VALUES ('A01','Rory',1,1,30),('A02','Sana',1,4,22),('A03','Tom',1,5,17),('A04','Una',2,4,25),('A05','Vik',2,6,10),('A06','Wren',2,3,40),('A07','Xan',3,4,14),('A08','Yara',3,5,21),('A09','Zed',3,2,35),('A10','Abi',1,4,13),('A11','Bo',4,3,50),('A12','Cleo',2,5,20);`,
             solution: "SELECT houseName, ROUND(AVG(merits), 1) AS [Average merits] FROM House, Pupil WHERE House.houseID = Pupil.houseID AND yearGroup >= 4 GROUP BY houseName ORDER BY AVG(merits) DESC;",
             ordered: true,
-            must: [R`avg\s*\(`, R`group by`, R`houseid\s*=`],
-            mustDesc: "AVG, the join on houseID and a GROUP BY",
+            must: [R`avg\s*\(`, R`group by`, R`houseid\s*=\s*\w+\.?houseid|using\s*\(\s*houseid|natural join`, R`yeargroup\s*(>=\s*4|>\s*3|between\s+4)|(4\s*<=|3\s*<)\s*(\w+\.)?yeargroup|not\s*\(?\s*yeargroup\s*(<\s*4|<=\s*3)`],
+            mustDesc: "AVG, the join on houseID, the year-group test and a GROUP BY",
             model: `<p>(1) <code>ROUND(AVG(merits), 1) AS [Average merits]</code> with houseName; (1) the join <code>House.houseID = Pupil.houseID</code>; (1) <code>yearGroup &gt;= 4</code> (not <code>&gt; 4</code>, which drops S4); (1) <code>GROUP BY houseName</code> and <code>ORDER BY AVG(merits) DESC</code>. The design gives the criteria and grouping; the joins are implied by listing two tables and must be written in the WHERE clause.</p><pre>SELECT houseName, ROUND(AVG(merits), 1) AS [Average merits]
 FROM House, Pupil
 WHERE House.houseID = Pupil.houseID
@@ -474,19 +479,19 @@ ORDER BY surname;</pre>
             label: "(a)", type: "text", marks: 3, rows: 4,
             q: "Explain why the output is inaccurate and state the exact change that fixes the query. [3]",
             points: [
-              { desc: "Each cadet/posting is paired with every Leith ship (too many rows, wrong ships)", negOK: true, all: [R`(every|each|all)[^.]{0,40}(ship|row|posting|cadet)`, R`pair\w*|match\w*|combin\w*|multipl\w*|repeat\w*|duplicat\w*|too many|extra|cartesian`], win: 100 },
-              { desc: "The join between Posting and Ship is missing (named specifically)", any: [R`posting\.shipcode\s*=\s*ship\.shipcode`, R`ship\.shipcode\s*=\s*posting\.shipcode`, R`(join|link|relationship|condition)[^.]{0,60}(posting|ship)[^.]{0,40}(and|to|with|between)[^.]{0,20}(ship|posting)`] },
-              { desc: "Add that condition (on shipCode) to the WHERE clause with AND", any: [R`\band\b[^.]{0,5}(posting|ship)\.shipcode\s*=`, R`\b(add|include|put|insert|need|must have|should have)\w*[^.]{0,80}shipcode`] }
+              { desc: "Each cadet/posting is paired with every Leith ship (too many rows, wrong ships)", negOK: true, any: [R`${NB}\b(every|each|all)( the)?( leith)? (ships?|postings?|cadets?|rows?|records?)\b${G(50)}\b(paired|matched|combined|joined|linked|multipl\w+|crossed|repeated)`, R`${NB}\b(paired|matched|combined|joined|linked|multipl\w+|crossed)\b${G(30)}\b(with|to|against|by)\b${G(20)}\b(every|each|all)\b`, R`\bcartesian\b`, R`\bcross (join|product)\b`] },
+              { desc: "The join between Posting and Ship is missing (named specifically)", negOK: true, any: [R`\b(no|missing|lacks?|without|forgot\w*|left out|omit\w*|absent)\b${G(40)}\b(join|link|condition|relationship|connection|match\w*)\b${G(50)}\b(posting|ship)`, R`${NB}\b(join|link|condition|relationship|connection)\b${G(50)}\b(posting|ship)\b${G(25)}\b(and|to|with)\b${G(15)}\b(ship|posting)\b${G(30)}\b(missing|absent|left out|omitted|forgotten|not (there|included|present|written|in))`, R`\b(posting|ship)\b${G(30)}\b(and|to|with)\b${G(15)}\b(ship|posting)\b${G(40)}\b(are |is |were )?(not|n.t|never)\b${G(20)}\b(joined|linked|connected|related|matched)`] },
+              { desc: "Add that condition (on shipCode) to the WHERE clause with AND", negOK: true, any: [R`${NB}\b(add\w*|include\w*|put|insert\w*|need\w*|must|should|write|type)\b${G(60)}\b(posting\.?\s*shipcode\s*=\s*ship\.?\s*shipcode|ship\.?\s*shipcode\s*=\s*posting\.?\s*shipcode)`, R`${NB}\b(where|and)\s+(posting|ship)\.shipcode\s*=\s*(ship|posting)\.shipcode`, R`${NB}\b(add\w*|include\w*|need\w*)\b${G(40)}\b(join|condition|link)\b${G(30)}\b(posting|ship)\b${G(20)}\b(and|to|with)\b${G(15)}\b(ship|posting)\b${G(30)}\bshipcode`] }
             ],
-            sample: "The join between Posting and Ship is missing, so every posting is paired with every ship from Leith, which gives too many rows and the wrong ships. The fix is to add AND Posting.shipCode = Ship.shipCode to the WHERE clause.",
+            sample: "The join between Posting and Ship is missing, so every posting is paired with every ship from Leith, which gives repeated rows and extra ships. The fix is to add AND Posting.shipCode = Ship.shipCode to the WHERE clause.",
             model: `<p>(1) No condition links Posting to Ship, so each cadet's posting is paired with <b>every</b> Leith ship (rows are repeated and ships are wrong). (1) The missing join is between Posting and Ship on shipCode. (1) Fix: add <code>AND Posting.shipCode = Ship.shipCode</code> to the WHERE clause. The 2025 report: answers such as &ldquo;missing join&rdquo; or &ldquo;missing table&rdquo; were not specific enough, so name the fields.</p>`
           },
           {
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "The officer also asks for the total training cost of each posting. The tables above store only the fields listed. Explain why the database is not fit for this purpose and what change is needed. [2]",
             points: [
-              { desc: "No cost/price field is stored, so cost cannot be worked out", any: [R`\b(no|nothing|missing|lacks?|without|doesn.?t (have|hold|store|contain)|(isn.?t|not) (a |any )?(stored|held|recorded))\b[^.]{0,40}(cost|price|rate|charge|fee)`, R`(cost|price|rate|charge|fee)\w*[^.]{0,40}(missing|not (stored|held|recorded|included)|isn.?t (stored|held|recorded))`, R`(can.?t|cannot|unable|impossible)[^.]{0,30}(work|calculat|find)[^.]{0,30}(cost|price|charge)`] },
-              { desc: "A cost attribute (field) must be added, e.g. to Ship or Posting", all: [R`\b(add|include|create|new|extra)\w*`, R`field|attribute|column`, R`cost|price|rate|charge|fee`], win: 90 }
+              { desc: "No cost/price field is stored, so cost cannot be worked out", negOK: true, not: [R`\bnot\s+no\b`, R`\b(is|are|does|do)\s+not\s+(lack|miss)`, R`\b(is|are) (fully |perfectly |entirely )?fit for purpose`, R`\bis (stored|held|recorded|kept) in\b`], any: [R`\b(no|not any|none|nothing|missing|lacks?|lacking|without|absent)\b ?${G(45)}\b(cost|price|rate|charge|fee)\w*`, R`\b(cost|price|rate|charge|fee)\w*\b${G(45)}\b(missing|absent|not (stored|held|recorded|included|kept|there|available|in any|in the)|isn.t (stored|held|recorded|there|included)|doesn.t exist)`, R`\b(can.t|cannot|unable to|impossible to|not possible to|no way to|isn.t possible to)\b${G(30)}\b(work out|calculate|find|get|determine|compute)\b${G(30)}\b(cost|price|charge|total)`] },
+              { desc: "A cost attribute (field) must be added, e.g. to Ship or Posting", negOK: true, not: [R`\b(not|n.t|never)\s+(need|have|be\s+(added|included|created|stored))`, R`\bno\b[^.]{0,30}\b(needs?|needed|to be added|required|necessary)\b`, R`\bno need\b`, R`\b(is|are) (fully |perfectly |entirely )?fit for purpose`], all: [R`${NB}\b(add\w*|include\w*|creat\w*|new|extra|stor\w*|needs? (a|to))\b`, R`\b(field|attribute|column)\b`, R`\b(cost|price|rate|charge|fee)\b`], win: 70 }
             ],
             sample: "There is no cost field in any table, so the total cost is impossible to work out. A cost attribute, such as a daily cost, would need to be added to the Ship table.",
             model: `<p>Fitness for purpose means meeting <i>every</i> requirement. (1) Say which requirement fails and why: none of the tables holds a cost (or rate) value, so total cost cannot be calculated. (1) What is needed: add a cost attribute, for example a daily cost in Ship, which could then be multiplied by nights in a computed field. &ldquo;It is not robust&rdquo; answers the wrong question.</p>`
@@ -495,8 +500,8 @@ ORDER BY surname;</pre>
             label: "(c)", type: "text", marks: 2, rows: 3,
             q: "Describe how a tester could check that a DELETE statement removes only the rows it was meant to remove. [2]",
             points: [
-              { desc: "Run a SELECT with the same WHERE clause first to see which rows match", all: [R`select`, R`same[^.]{0,30}(where|condition|criteria)|where (clause|condition)`], win: 100 },
-              { desc: "After the DELETE, compare the remaining rows/counts with the expected result", any: [R`(compare|check|count|inspect|look at|view|display)[^.]{0,80}(remain\w*|left|after|before|expected|whole table|table)`, R`(expected|remain\w*)[^.]{0,60}(rows|records|output|result)`] }
+              { desc: "Run a SELECT with the same WHERE clause first to see which rows match", any: [R`\b(run|write|do|use|try|perform|first|start with|check with)\b${G(40)}\b(a |the )?select\b${G(80)}\b(where (clause|condition|criteri\w+|statement)|same (where|condition|criteria|filter|rows|query))`, R`\bselect\b${G(50)}\b(rows?|records?)\b${G(40)}\b(match\w*|meet\w*|satisf\w*|affected|targeted)\b${G(40)}\b(where (clause|condition|criteri\w+)|same (where|condition|criteria))`, R`\b(same|identical)\b${G(20)}\b(where|condition|criteria|filter)\b${G(60)}\bselect\b`, R`\b(run|write|do|use|try|perform|first|start with|check with)\b${G(40)}\b(a |the )?select\b${G(80)}\bbefore\b${G(30)}\bdelet\w*`] },
+              { desc: "After the DELETE, check the rows that remain (and that the right ones have gone) against the expected result", any: [R`\b(check\w*|compar\w*|view\w*|inspect\w*|look\w*|run\w*|select\w*|display\w*|count\w*|see\w*|verify\w*|confirm\w*)\b${G(70)}\b(remain\w*|left|still (there|in|present|exist\w*)|other (rows|records)|rest of|been (removed|deleted)|untouched|unaffected|expected|before and after|has gone|have gone|no longer)`, R`\b(table|rows|records|count)\b${G(40)}\b(before|after)\b${G(50)}\b(delet\w*|run|statement)`, R`\bcompar\w*\b${G(40)}\b(with|to|against)\b${G(40)}\b(expected|original|before|what)`] }
             ],
             sample: "First run a SELECT with the same WHERE clause to see which rows match. After the DELETE, check the rows remaining in the table against the expected result.",
             model: `<p>(1) Before deleting, run a SELECT with the <b>same WHERE clause</b> and look at the rows it returns: those are the rows the DELETE will remove. (1) After running the DELETE, view the table and compare the remaining rows (or the row count before and after) with the output worked out by hand in advance. Test on boundary values too.</p>`

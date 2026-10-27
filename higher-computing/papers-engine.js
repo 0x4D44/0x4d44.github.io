@@ -81,7 +81,7 @@
     if (func / toks.length < 0.14) return "zero";
     // "I think that days and hot pos and frost and count": key words glued with "and", no verb or preposition anywhere
     const glue = new Set(["and", "or", "i", "that", "the", "a", "an", "it", "this", "think", "also", "then"]);
-    if (toks.length >= 8 && toks.filter((t) => t === "and" || t === "or").length >= 3 && funcToks.filter((t) => !glue.has(t)).length <= Math.floor(toks.length / 14)) return "zero";
+    if (toks.length >= 8 && (() => { const n = toks.filter((t) => t === "and" || t === "or").length; return n >= 5 || (n >= 3 && !/,/.test(text)); })() && funcToks.filter((t) => !glue.has(t)).length <= Math.floor(toks.length / 14)) return "zero";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
@@ -93,7 +93,7 @@
       if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that"))) bad++;
     }
     // a clause that stops on "the", "of", "to", "and"... is a shuffled sentence, not a written one
-    const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|is|are|that|in|on|at)\s*[.,;:!?]/g) || []).length;
+    const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|that)\s*[.,;:!?]/g) || []).length;
     bad += dangle;
     if (bad >= 2 && bad * 14 >= toks.length) return "zero";
     // two function words side by side ("of the", "so that") come in a few familiar pairs; shuffled prose
@@ -209,13 +209,14 @@
         let raw = String(ans).toLowerCase().trim();
         if (/\b(or|not|isn't|wrong|incorrect|maybe|perhaps|either|neither)\b|n't\b/.test(raw)) return { got: 0, of };
         const WORDS = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, sixteen: 16, twenty: 20 };
-        raw = raw.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|sixteen|twenty)\b/g, (w) => WORDS[w]);
+        raw = raw.replace(/(\d)\s*to the power( of)?\s*(\d)/g, "$1^$3").replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|sixteen|twenty)\b(?!'s)/g, (w) => WORDS[w]);
         raw = raw.replace(/^[01](?:[\s_]?[01])*$/, (m) => m.replace(/[\s_]/g, ""));   // 1101 1010 / 1101_1010
         raw = raw.replace(/(\d(?:\.\d+)?)\s*(thousand|million|billion)\b/g, (m, n, w) => String(parseFloat(n) * { thousand: 1e3, million: 1e6, billion: 1e9 }[w]));
         raw = raw.replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
           .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
           .replace(/(\d) (?=\d{3}\b)/g, "$1")                          // 2 880 000
           .replace(/(\d),(\d{1,2})\b/g, "$1.$2");                      // 9,6
+        if (!raw.includes("=") && /\d\s+\d/.test(raw)) return { got: 0, of };   // a bare run of numbers ("0 26") is not an answer
         if (raw.includes("=")) raw = raw.slice(raw.lastIndexOf("=") + 1);
         raw = raw.replace(/[−–—]/g, "-").replace(/×/g, "x");
         // a plain sum / product / power ("150 + 20 + 4", "3.2 x 10^9", "2^8", "3.2e9") is worked out; subtraction is left alone
