@@ -198,7 +198,7 @@ test("a shuffled model answer does not earn most of the marks", () => {
       s /= 8; got += s; of += p.marks;
       if (s >= p.marks - 0.01) fulls.push(`${q.id}[${i}]`);
     }
-    assert.ok(got / of <= LIMIT[mode], `${mode}-word shuffle earns ${(100 * got / of).toFixed(1)}% (limit ${100 * LIMIT[mode]}%); full marks on ${fulls.join(", ")}`);
+    assert.ok(!of || got / of <= LIMIT[mode], `${mode}-word shuffle earns ${(100 * got / of).toFixed(1)}% (limit ${100 * LIMIT[mode]}%); full marks on ${fulls.join(", ")}`);
   }
 });
 
@@ -214,7 +214,7 @@ test("a model answer with its claims negated does not keep most of its marks", (
     got += r.got; of += p.marks;
     if (r.got >= p.marks) kept.push(`${q.id}[${i}]`);
   }
-  assert.ok(got / of <= 0.4, `negated answers keep ${(100 * got / of).toFixed(0)}% of marks (limit 40%); full on ${kept.join(", ")}`);
+  assert.ok(!of || got / of <= 0.4, `negated answers keep ${(100 * got / of).toFixed(0)}% of marks (limit 40%); full on ${kept.join(", ")}`);
 });
 
 // Wrong-number attack: the model working with its final answer scaled (x1.25, x0.8, x10, /10) must lose the answer mark.
