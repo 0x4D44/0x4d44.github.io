@@ -43,7 +43,7 @@
     if (opts && opts.negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?]|\bbut\b|\bhowever\b/).pop()))) return false;
+      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?,]|\bbut\b|\bhowever\b|\bso\b|\bwhereas\b/).pop()))) return false;
     }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
@@ -221,6 +221,24 @@
     return [].concat(units).some((u) => HPP.unitKey(u) === key || (u === u.toLowerCase() && lowKey(HPP.unitKey(u)) === lowKey(key)));
   };
 
+  /* SI prefixes: "333 mA" for an ampere answer, "0.34 km s-1" for m s-1. Returns the factor that turns the written
+     number into the expected unit (1 when the unit is written exactly, null when it is wrong or missing). */
+  const PREFIX = { p: 1e-12, n: 1e-9, "µ": 1e-6, "μ": 1e-6, u: 1e-6, m: 1e-3, c: 1e-2, k: 1e3, M: 1e6, G: 1e9, T: 1e12 };
+  HPP.unitScale = function (n, units) {
+    const written = unitAfter(n);
+    if (!written) return null;
+    if (HPP.unitOk(n, units)) return 1;
+    for (const u of [].concat(units)) {
+      const uk = HPP.unitKey(u);
+      const f = PREFIX[written[0]];
+      if (f == null || written.length < 2) continue;
+      const rest = HPP.unitKey(written.slice(1));
+      if (rest === uk || (u === u.toLowerCase() && lowKey(rest) === lowKey(uk))) return f;
+    }
+    return null;
+  };
+  const isPrefixAlt = (a, b) => { if (!a || !b) return false; const r = Math.abs(Math.log10(Math.abs(b / a))); return r > 0.5 && Math.abs(r / 3 - Math.round(r / 3)) < 0.02; };
+
   /* A calculation is marked in steps, as SQA do: the relationship, the substitution, the answer with its unit.
      step = { desc, marks?, rel?: [regex over the compacted working], nums?: [number | [alternatives]], ans?: number, alts?: [numbers],
               sf?, rel2?, abs?, unit?: "m s-1" | [..], signed? }
@@ -240,8 +258,11 @@
         if (ok && st.not && st.not.some((r) => new RegExp(r, "i").test(flat))) ok = false;
         if (ok && st.nums) ok = st.nums.every((want) => [].concat(want).some((w) => nums.some((n) => HPP.closeTo(n.v, w, { rel: st.tol == null ? 0.005 : st.tol, signed: false }))));
         if (ok && st.ans != null) {
-          ok = !!fin && [st.ans].concat(st.alts || []).some((a) => HPP.closeTo(fin.v, a, { sf: st.sf, rel: st.rel2, abs: st.abs, signed: st.signed }));
-          if (ok && st.unit) ok = HPP.unitOk(fin, st.unit);
+          const sc = fin && st.unit ? HPP.unitScale(fin, st.unit) : 1;
+          const v = fin ? fin.v * (sc == null ? 1 : sc) : 0;
+          const tg = [st.ans].concat(sc === 1 || sc == null ? st.alts || [] : (st.alts || []).filter((a) => !isPrefixAlt(st.ans, a)));
+          ok = !!fin && tg.some((a) => HPP.closeTo(v, a, { sf: st.sf, rel: st.rel2, abs: st.abs, signed: st.signed }));
+          if (ok && st.unit) ok = sc != null;
         }
         pts[i].hit = ok;
       });
@@ -251,7 +272,7 @@
     const got = Math.min(part.marks, pts.reduce((a, p) => a + (p.hit ? p.marks : 0), 0));
     const out = { got, of: part.marks, points: pts };
     const last = part.steps.find((st) => st.ans != null);
-    if (last && last.unit && fin && HPP.closeTo(fin.v, last.ans, { sf: last.sf, rel: last.rel2, abs: last.abs, signed: last.signed }) && !HPP.unitOk(fin, last.unit))
+    if (last && last.unit && fin && HPP.closeTo(fin.v, last.ans, { sf: last.sf, rel: last.rel2, abs: last.abs, signed: last.signed }) && HPP.unitScale(fin, last.unit) == null)
       out.note = "The number looks right, but the unit is missing or wrong, and a final answer without its correct unit does not earn the mark.";
     return out;
   }
@@ -271,11 +292,18 @@
         const n = HPP.finalNumber(String(ans));
         if (!n) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
-        const hit = targets.some((t) => HPP.closeTo(n.v, t, { sf: part.sf, abs: part.tol, rel: part.rel, signed: part.signed }));
-        // the box takes a number, but a unit typed after it must be the right one ("1.5 kg" is not 1.5 m s-1)
-        if (hit && part.unit && unitAfter(n) && HPP.unitKey(part.unit) && !HPP.unitOk(n, [part.unit].concat(part.unitAlts || [])))
-          return { got: 0, of, note: "The number looks right, but the unit you wrote is not the one the quantity is measured in." };
-        return { got: hit ? of : 0, of };
+        const cmp = (v, ts) => ts.some((t) => HPP.closeTo(v, t, { sf: part.sf, abs: part.tol, rel: part.rel, signed: part.signed }));
+        const wrongUnit = { got: 0, of, note: "The number may be right, but the unit you wrote is not the one the quantity is measured in (or its prefix changes the size)." };
+        // the unit is printed beside the box, so a bare number is read in that unit; a unit you add must be right, prefix and all
+        if (part.unit && HPP.unitKey(part.unit) && unitAfter(n)) {
+          const f = HPP.unitScale(n, part.unit);
+          if (f != null) return { got: cmp(n.v * f, [part.a].concat(f === 1 ? (part.alts || []).filter((a) => !isPrefixAlt(part.a, a)) : [])) ? of : 0, of };
+          // a listed alternative unit ("mV") goes with its own listed value
+          const g = (part.unitAlts || []).length ? HPP.unitScale(n, part.unitAlts) : null;
+          if (g === 1) return { got: cmp(n.v, (part.alts || []).filter((a) => isPrefixAlt(part.a, a))) ? of : 0, of };
+          return wrongUnit;
+        }
+        return { got: cmp(n.v, [part.a].concat((part.alts || []).filter((a) => !isPrefixAlt(part.a, a)))) ? of : 0, of };
       }
       case "match": {
         const picked = Array.isArray(ans) ? ans : [];
