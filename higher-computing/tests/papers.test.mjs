@@ -172,7 +172,12 @@ test("the engine's own rules", () => {
   assert.equal(HCP.scorePart({ type: "num", marks: 1, a: 25, tol: 0.5 }, "25.4 mm").got, 1);
   assert.equal(HCP.scorePart({ type: "num", marks: 1, a: 25, tol: 0.5 }, "26").got, 0);
   assert.equal(HCP.scorePart({ type: "multi", marks: 2, a: [0, 1], opts: [1, 2, 3, 4, 5] }, [0, 2]).got, 0, "a wrong pick cancels a right one");
-  assert.equal(HCP.norm("Ø40 × 2"), "diameter 40 x 2");
+  assert.equal(HCP.norm("Ten × Two"), "ten x two");
+  assert.equal(HCP.scorePart({ type: "num", marks: 1, a: -5, tol: 0 }, "-5").got, 1, "negative answers");
+  assert.equal(HCP.scorePart({ type: "num", marks: 1, a: -5, tol: 0 }, "−5").got, 1, "unicode minus");
+  assert.equal(HCP.scorePart({ type: "num", marks: 1, a: -5, tol: 0 }, "5").got, 0, "sign matters");
+  assert.equal(HCP.scorePart({ type: "num", marks: 1, a: 7, tol: 0 }, "12 - 5").got, 0, "subtraction is not a sign (reads the last number)");
+  assert.equal(HCP.scorePart({ type: "num", marks: 1, a: 7, tol: 0 }, "12 - 5 = 7").got, 1);
 });
 
 // Word-salad attack: shuffle the words of the model answer (all words, then content words only).
