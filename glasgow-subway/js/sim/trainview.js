@@ -118,12 +118,12 @@ export class TrainView {
         pos.push(A[0], A[1], z0 - zc, B[0], B[1], z0 - zc, B[0], B[1], z1 - zc, A[0], A[1], z1 - zc); uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(n, n + 1, n + 2, n, n + 2, n + 3); n += 4; }
       const ge = new THREE.BufferGeometry(); ge.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); ge.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); ge.setIndex(idx); ge.computeVertexNormals(); return add(new THREE.Mesh(ge, mat)); };
     const w0 = ey.z - 0.62, w1 = ey.z + 0.30;                                   // left side window z range
-    const inWin = (i) => prof[i][0] < 0 && prof[i][1] >= 1.22 && prof[i + 1][1] <= 2.02 && prof[i][1] < 2.02 && prof[i + 1][0] <= 0;
+    const inWin = (i) => { const l = prof[i][0] <= 0 && prof[i + 1][0] <= 0, r = prof[i][0] >= 0 && prof[i + 1][0] >= 0; const y0 = Math.min(prof[i][1], prof[i + 1][1]), y1 = Math.max(prof[i][1], prof[i + 1][1]); return (l || r) && y0 >= 1.2 && y1 <= 2.03 && Math.abs(prof[i][0]) > 0.9; };
     const lowSeg = (my) => my < 1.30, hiSeg = (my) => my >= 1.30;
     strip(zf, zr, wallM, lowSeg); strip(zf, w0, ceilM, hiSeg); strip(w0, w1, ceilM, hiSeg, inWin); strip(w1, zr, ceilM, hiSeg);
     // window frame bars
     const bar = (a, b, r, m) => { const d = new THREE.Vector3().subVectors(b, a), L = d.length(); const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 6), m); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return add(c); };
-    { const ids = []; for (let i = 0; i < prof.length - 1; i++) if (inWin(i)) ids.push(i);
+    for (const side of [-1, 1]) { const ids = []; for (let i = 0; i < prof.length - 1; i++) if (inWin(i) && Math.sign(prof[i][0] + prof[i + 1][0]) === side) ids.push(i);
       const pts = ids.map((i) => prof[i]).concat([prof[ids[ids.length - 1] + 1]]);
       for (const zz of [w0, w1]) for (let k = 0; k < pts.length - 1; k++) bar(new THREE.Vector3(pts[k][0], pts[k][1], zz - zc), new THREE.Vector3(pts[k + 1][0], pts[k + 1][1], zz - zc), 0.022, blackM);
       for (const p of [pts[0], pts[pts.length - 1]]) bar(new THREE.Vector3(p[0], p[1], w0 - zc), new THREE.Vector3(p[0], p[1], w1 - zc), 0.022, blackM); }
@@ -149,13 +149,13 @@ export class TrainView {
     const screen = (x, u, w, h, tx, ratio) => { const gr = new THREE.Group(); gr.position.set(x, deskY(u) + h * 0.45, zf + u - zc); const bz = new THREE.Mesh(new THREE.BoxGeometry(w + 0.03, h + 0.03, 0.03), blackM); bz.position.z = -0.016; gr.add(bz);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tx, toneMapped: false })); pl.position.z = 0.002; gr.add(pl);
       const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); add(gr); gr.lookAt(eyeV.x, eyeV.y - 0.12, eyeV.z - zc); return gr; };
-    screen(-0.80, 0.22, 0.34, 0.34 * 320 / 512, texTms);
+    screen(-0.92, 0.22, 0.34, 0.34 * 320 / 512, texTms);
     // controls on the driver's right: master controller (traction) and brake handle, door buttons, emergency mushroom
     const cyl = (r, h, x, y, z, m, rx = 0) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), m); c.position.set(x, y, z - zc); c.rotation.x = rx; return add(c); };
     const steel = std(0xb9bdc2, { metalness: 0.6, roughness: 0.35 }), redM = std(0xb02020, { emissive: 0x300808 }), grip = std(0x101113);
-    const handle = (x, u, cap) => { const y0 = deskY(u); cyl(0.055, 0.04, x, y0 + 0.02, zf + u, deskM); cyl(0.010, 0.17, x, y0 + 0.10, zf + u - 0.03, steel, 0.35); const k = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.04, 0.10), cap); k.position.set(x, y0 + 0.19, zf + u - 0.065 - zc); k.rotation.x = 0.35; add(k); };
+    const handle = (x, u, cap) => { const y0 = deskY(u); cyl(0.055, 0.04, x, y0 + 0.02, zf + u, deskM); cyl(0.010, 0.17, x, y0 + 0.10, zf + u, steel); const k = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.035, 0.07), cap); k.position.set(x, y0 + 0.195, zf + u - zc); add(k); };
     handle(-0.20, 0.40, grip);      // master controller
-    handle(-0.64, 0.40, redM);      // brake handle
+    handle(-0.56, 0.40, redM);      // brake handle
     [[0x2d9a55], [0x2d9a55], [0xc98a1c], [0xd8d8d0], [0x2c6fb0]].forEach(([c], i) => { const b = cyl(0.016, 0.012, -0.40 + i * 0.075, deskY(0.47) + 0.006, zf + 0.47, std(c, { emissive: c, emissiveIntensity: 0.12 }), 0.4); });
     cyl(0.032, 0.05, 0.05, deskY(0.34) + 0.025, zf + 0.34, redM);
     // driver's seat (seen when looking round) and side-wall furniture
