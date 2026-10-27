@@ -9,6 +9,8 @@
   const WX = (n, stop) => `(?:(?!(?:${stop})\\b)\\w+\\W+){0,${n}}`;
   const NA = (n) => WX(n, "and|or");
   const LOOP = R`\b(for\s+(each\s+|every\s+)?\w+\s+(in|from)\s+\w+|for\s*\(|for\s+\w+\s*(=|<-|:=|from)|while\s+\w+\s*(<|<=|!=|>|>=)|loop\w*\s+(through|over)\s+\w+|repeat\s+(for|until|\d+)|(loop|repeat)\w*\s+(each|every)\s+\w+)`;
+  /* optional tail that swallows a trailing "without the colours" so the engine's negation look-ahead does not read it as a negated claim */
+  const TAIL = R`(?:\W+(?:(?:and|but)\W+)?(?:without|not|no|minus|excluding|rather than|instead of)\W+(?:\w+\W+){0,6}\w+)?`;
   const ITER = "iterative|waterfall|predictive", AGI = "agile|sprints?|scrum";
 
   /* ---- figure: structure diagram with data flow (sdd-03) ---- */
@@ -77,7 +79,7 @@
               { desc: "Iterative: testing is a separate phase after implementation", any: [
                 R`(iterative|waterfall|predictive)\W+${WX(10, AGI)}test\w*\W+${WX(8, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final)`,
                 R`(iterative|waterfall|predictive)\W+${WX(10, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final)\W+${WX(8, AGI)}test\w*`,
-                R`(after|separate|at the end|end of|own (phase|stage)|once|last|final)\W+${WX(6, AGI + "|" + ITER)}(in|for|with|using)\W+(an? |the )?(iterative|waterfall|predictive)`] },
+                R`(after|separate|at the end|end of|own (phase|stage)|once|last|final)\W+${WX(6, AGI + "|" + ITER + "|whereas|while|but|however|unlike|compared|and")}(in|for|with|using)\W+(an? |the )?(iterative|waterfall|predictive)`] },
               { desc: "Agile: testing happens during every sprint / throughout", any: [
                 R`(agile|sprints?|scrum)\W+${WX(10, ITER + "|separate")}test\w*\W+${WX(8, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)`,
                 R`(agile|sprints?|scrum)\W+${WX(10, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)\W+${WX(8, ITER + "|separate")}test\w*`,
@@ -95,12 +97,15 @@
             points: [
               { desc: "Adaptive: changes to requirements are absorbed quickly", any: [
                 R`(adapt\w*|flexib\w*|cope\w*|respond\w*|react\w*|accommodat\w*|absorb\w*|incorporat\w*|handle\w*|deal\w* with|welcom\w*)\W+${NA(6)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
+                R`(team|agile|it|they|developers?|process)\W+${NA(2)}(adapt\w*|respond\w*|react\w*|cope\w*|adjust\w*)\W+${NA(3)}(quick\w*|fast|easily|rapid\w*|well|readily)`,
+                R`(quick\w*|easily|rapid\w*|readily)\W+(adapt\w*|respond\w*|react\w*|adjust\w*|cope\w*)\b`,
                 R`(allow\w*|lets?|permits?)\W+${NA(3)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
                 R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|incorporated|included|easy|easier|easily|quick\w*)`] },
               { desc: "Client involved throughout: sees working versions and gives feedback each sprint", any: [
                 R`(client|customer|users?|islanders?|company|stakeholders?|passengers?|they|them)s?\W+${NA(12)}(feedback|try|trying|test\w*|see|sees|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)\W+${NA(10)}(each|every|after|throughout|regular\w*|constant\w*|frequent\w*|continual\w*|sprints?)`,
                 R`(client|customer|users?|islanders?|stakeholders?|they)s?\W+${NA(4)}(regular\w*|frequent\w*|constant\w*|continual\w*|early)\W+${NA(4)}(feedback|try|test\w*|see|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)`,
-                R`(client|customer|users?|islanders?|stakeholders?)s?\W+${NA(3)}(see|try|test|view|review|use|get|receive)\w*\W+${NA(3)}(prototypes?|versions?|working \w+|demos?|builds?|releases?|increments?)\W+${WD(5)}(feedback|comments?|suggest\w*)`,
+                R`(client|customer|users?|islanders?|stakeholders?)s?\W+${NA(3)}(see|try|test|view|review|use|get|receive)\w*\W+${NA(3)}(prototypes?|versions?|working \w+|demos?|builds?|releases?|increments?)\W+${WX(10, "or|but|however|whereas|not")}(feedback|comments?|suggest\w*)`,
+                R`(prototypes?|versions?|working \w+|demos?|builds?|releases?|increments?)\W+${NA(10)}(client|customer|users?|islanders?|stakeholders?)s?.?s?\W+${NA(3)}(feedback|comments?|suggest\w*)`,
                 R`feedback\W+${NA(10)}(next|each|every|following|later|after|new|future|updated|improved)\W+(\w+\W+)?(sprints?|versions?|iterations?|releases?|prototypes?|builds?|cycles?)`,
                 R`(each|every|after)\W+(\w+\W+)?(sprints?|iterations?|cycles?)\W+${NA(10)}(working|prototype|version|product|demo|release|increment|software|piece)\W+${NA(10)}(feedback|try|see|review|test|comment|suggest|shown|show|use)\w*`,
                 R`(working|early)\W+(version|prototype|piece|product|software|build|release|increment|demo)s?\W+${NA(8)}(feedback|try|see|review|comment|suggest|shown|show)\w*`] },
@@ -132,9 +137,15 @@
             sample: "Inputs: the name and number of books of each pupil, read from the file, and the number chosen by the librarian typed at the keyboard. Process: compare the books of each pupil with the chosen number and count the pupils who reach it. Outputs: display the names of those pupils and display how many there are.",
             model: "<ul><li>Inputs: pupil names and books read from loans.csv, plus the librarian's chosen number from the keyboard. (1)</li><li>Processes: compare each pupil's books with the chosen number; count the pupils who qualify. (1)</li><li>Outputs: the names of the qualifying pupils and the count of them. (1)</li></ul><p>Check every input is listed: 2025 candidates often missed one.</p>",
             points: [
-              { desc: "Inputs: file data (names, books) and the chosen number from the keyboard", all: [R`(read\w*|from (the )?(file|loans)|in the file|names? and (the )?(number of )?books)`, R`(typed|types|keyboard|enters?|entered|chosen|chooses|from the (librarian|user)|by the (librarian|user))`], win: 220 },
-              { desc: "Processes: compare each pupil's books with the chosen number; count", all: [R`(compar\w*|check\w*|test\w*|decid\w*|>=|at least|greater|more than|reach\w*)`, R`\bcount\w*|add\w* (1|one)|total\w*`], win: 200 },
-              { desc: "Outputs: names displayed and the number of pupils", all: [R`(display\w*|show\w*|print\w*|outputs?:)`, R`(names?|pupils)`, R`(how many|number of pupils|count|total)`], win: 220 },
+              { desc: "Inputs: file data (names, books) and the chosen number from the keyboard", all: [
+                R`read\w*\W+${WX(3, "and|or")}(in |from |out of )?(the |a )?(\w+\W+)?(file|loans|csv)|from\W+(the |a )?(\w+\W+)?(file|loans|csv)|(file|loans|csv)\W+${WX(3, "and|or")}(is |are )?(read|input|loaded|opened)|names?\W+and\W+(the )?(number of )?books\W+(of|for|from|in)`,
+                R`(at|on|using|from|via|through)\W+(the |a )?keyboard|(typed|types|typing|keyed|entered|enters?|inputs?|chosen|chooses|selected|selects|gives?|given|sets?)\W+${WX(4, "and|or")}(by|at|on|using|from|via|with|through)\W+(the )?(librarian|user|keyboard)|(librarian|user)\W+${NA(3)}(types?|enters?|chooses?|selects?|inputs?|gives?|keys?|sets?)\W+${NA(4)}(number|value|target|amount|figure|minimum|threshold|limit)|(number|value|target|amount|figure|minimum|threshold|limit)\W+${NA(4)}(the )?(librarian|user)\W+${NA(2)}(types?|enters?|chooses?|selects?|inputs?|gives?|sets?)\b`], win: 220 },
+              { desc: "Processes: compare each pupil's books with the chosen number; count", all: [
+                R`(compar\w*|check\w*|test\w*|see\w*|decid\w*|work\w* out|find\w*)\W+${NA(8)}(books?|loans?|pupils?|borrowed|read|counts?)\W+${WX(8, "and")}(with|to|against|reach\w*|at least|>=|meets?|exceeds?|enough|greater|more than|equal|above|over|higher|bigger|larger)\W+${NA(5)}(chosen|selected|number|target|librarian|limit|minimum|threshold|value|figure)|(books?|loans?)\W+${NA(6)}(>=|>|greater than|more than|at least|reach\w*|equal\w*|meets?)\W+${NA(5)}(chosen|selected|number|target|librarian|limit|minimum|threshold|value|figure)|(pupils?|those)\W+${NA(3)}(who|whose|with)\W+${NA(6)}(>=|>|greater|more than|at least|reach\w*|equal\w*|meets?|enough)`,
+                R`\bcount\w*\W+${NA(6)}(pupils?|those|them|who|how many|matches|ones|number|it|each|qualif\w*)|add\w*\W+(1|one)\W+${NA(3)}(to\W+)?(the |a )?(\w+\W+)?(count|counter|total|number|tally)|(keep\w*|work\w* out|calculat\w*|find\w*)\W+${NA(3)}(a |the |running )?(count|total|tally)|total\w*\W+${NA(3)}(pupils?|those|them)|(incre\w+|add\w*)\W+${NA(3)}(a |the )?(count|counter|total|tally)`], win: 200 },
+              { desc: "Outputs: names displayed and the number of pupils", all: [
+                R`(display\w*|show\w*|print\w*|outputs?|report\w*|writ\w+)\W+${NA(4)}(the |all |each )?(\w+\W+)?(names?|pupils?)|list\w*\W+${NA(3)}(the )?names|(names?|pupils?)\W+${NA(4)}(is |are |will be |get |gets )?(displayed|shown|printed|output|listed|reported)|outputs?:\W+${NA(6)}(names?|pupils?)`,
+                R`(display\w*|show\w*|print\w*|outputs?|report\w*|writ\w+)\W+${WD(6)}(how many|number of|count|total|tally)|(how many|number of pupils|the count|the total|the tally)\W+${NA(6)}(is |are |will be )?(displayed|shown|printed|output|reported)|how many\W+${NA(5)}(there are|pupils|qualif\w*|reach\w*)|outputs?:\W+${WD(10)}(how many|number of|count|total)`], win: 220 },
             ],
           },
         ],
@@ -161,8 +172,19 @@
             sample: "IN: days(), hotPos and frostDays. The days array gives the name and hotPos says which day is the hottest, and frostDays holds the number of frost days.",
             model: "<ul><li>days() and hotPos: the name is looked up in days() at position hotPos. (1)</li><li>frostDays: the count to be displayed. (1)</li></ul><p>temps() is not needed by this step, so including it earns no mark: only pass in what a step uses.</p>",
             points: [
-              { desc: "days() and hotPos are passed in, with a reason (look up the name of the hottest day)", all: [R`\bdays\b`, R`hot\s?pos|position of the hottest|index of the hottest|hottest (day.s )?(position|index)`, R`(name|hottest|which|element|look\w*|find|identif\w*|locate|tells?|says?|gives?|shows?|because|needed|used|so that|display\w*)`], win: 160, not: [R`\btemps\b`] },
-              { desc: "frostDays is passed in, and nothing unnecessary", any: [R`frost\s?days?\b`, R`frost\s?count`], not: [R`\btemps\b`] },
+              { desc: "days() and hotPos are passed in, with a reason (look up the name of the hottest day)", any: [
+                R`days\b\W+${WX(4, "and|or")}(gives?|holds?|stores?|contains?|provides?|has|supplies|needed|used|for|to)\W+${WX(4, "and|or")}(the )?(name|names|day|hottest|which)\w*\W+${WD(14)}hot\s?pos`,
+                R`hot\s?pos\W+${WX(4, "and|or")}(says?|tells?|gives?|shows?|is|identif\w*|holds?|stores?|points?|marks?|finds?|means?)\W+${WX(5, "and|or")}(which|where|the position|the index|hottest|position|index)\w*\W+${WD(14)}days\b`,
+                R`(name|look\w*|find|get|use|index|pick\w*|select\w*)\W+${WX(6, "and|or")}days\W*(\(\))?\W+${WX(4, "and|or")}(at|with|using|by|from)\W+${WX(2, "and|or")}(position\W+)?(of\W+)?hot\s?pos`,
+                R`days\W*(\(\))?\W+and\W+hot\s?pos\W+${WX(8, "frost")}(needed|used|required|to (find|display|show|get|look|work|identify|print|output)\w*|so|because|are passed)`,
+                R`hot\s?pos\W*\W+and\W+days\W*(\(\))?\W+${WX(8, "frost")}(needed|used|required|to (find|display|show|get|look|work|identify|print|output)\w*|so|because|are passed)`],
+                not: [R`\btemps\b`] },
+              { desc: "frostDays is passed in, and nothing unnecessary", any: [
+                R`frost\s?(days?|count)\W+${WX(5, "and|or")}(holds?|is|are|gives?|stores?|contains?|has|counts?|needed|used|shows?|tells?|for|so|because|to|to be|can be|will be|displayed|shown|output|reports?)\W+${WX(4, "and|or")}(the )?(number|count|total|how many|displayed|shown|output|printed|reported|needed)`,
+                R`(number|count|total|how many)\W+${WX(5, "and|or")}(of\W+)?(frost|freezing|days)\W+${WX(4, "and|or")}(is |are )?(in |from |stored in |held in |given by |shown by |passed in )?frost\s?(days?|count)`,
+                R`(display\w*|show\w*|print\w*|output\w*|report\w*)\W+${WX(4, "and|or")}(the )?(number|count|total|how many)\W+${WX(5, "and|or")}frost\s?(days?|count)`,
+                R`frost\s?(days?|count)\W+${WX(3, "and|or")}(so|because|which)\W+${WX(5, "and|or")}(display\w*|show\w*|print\w*|output\w*|report\w*)`],
+                not: [R`\btemps\b`] },
             ],
           },
           {
@@ -223,9 +245,9 @@
                 R`(layout|arrangement|positions?|placement|where (things|items|everything|each|the)\w*)\W+${WD(3)}(of|on|for|in)\W+${WD(3)}(screen|page|interface|app|display)`,
                 R`(what|how)\W+${WD(3)}(screen|page|interface|app|it)\W+${WD(3)}(look\w*|appear\w*|be laid out|be arranged)`] },
               { desc: "Shows the inputs and outputs (boxes, buttons, results)", any: [
-                R`where\W+${WD(5)}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data|labels?|text|everything|things|elements?|components?)\W+${WD(5)}(go|goes|be|are|is|will|placed|positioned|appear|shown|displayed|located|put|sit|sits|can be)`,
-                R`(position\w*|placement|layout|arrangement)\W+${NA(3)}(of|for)\W+${NA(3)}(input\w*|output\w*|buttons?|boxes|fields?|labels?|items?|elements?|text)`,
-                R`(shows?|includes?|contains?|labels?|marks?|identif\w*|displays?|indicates?|lays? out|arranges?)\W+${NA(4)}(input\w*|output\w*|buttons?|boxes|fields?|prompts?)`] },
+                R`where\W+${WD(5)}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data|labels?|text|everything|things|elements?|components?)\W+${WD(5)}(go|goes|be|are|is|will|placed|positioned|appear|shown|displayed|located|put|sit|sits|can be)${TAIL}`,
+                R`(position\w*|placement|layout|arrangement)\W+${NA(3)}(of|for)\W+${NA(3)}(input\w*|output\w*|buttons?|boxes|fields?|labels?|items?|elements?|text)${TAIL}`,
+                R`(shows?|includes?|contains?|labels?|marks?|identif\w*|displays?|indicates?|lays? out|arranges?)\W+${NA(4)}(input\w*|output\w*|buttons?|boxes|fields?|prompts?)${TAIL}`] },
             ],
           },
           {
@@ -284,14 +306,18 @@
             sample: "The tester compares the actual result the program produces with the expected one. This shows whether each test has passed or failed, so any error in the program can be spotted.",
             model: "<ul><li>So the actual output can be compared with what should have happened. (1)</li><li>So the tester can tell whether the test passed or failed and so identify errors. (1)</li></ul>",
             points: [
-                            { desc: "Compare the actual result with the expected result", any: [
-                R`(actual|real|produced|output|result|program.?s|gets|given|displayed)\w*\W+${NA(6)}(with|to|against|versus|vs|matches?|same as|equals?|differs?|different from|should)\W+${NA(4)}(expected|predicted|supposed|correct|planned|should)`,
-                R`(expected|predicted|planned)\W+${NA(6)}(with|to|against|and|versus|vs|matches?)\W+${NA(4)}(actual|real|produced|output|result|program)`,
-                R`(check|see|know|find out|tell|make sure|ensure|decide|whether)\W+${NA(5)}(output|result|answer|program)\w*\W+${NA(4)}(is|are|matches?|same|what|equals?)\W+${NA(4)}(expected|should|correct|right|supposed|predicted)`] },
-              { desc: "To tell whether the test passed or failed / find errors", any: [
-                R`(tell|know|show\w*|identif\w*|spot\w*|find\w*|detect\w*|decid\w*|see|prove\w*|determin\w*|check\w*)\W+${NA(6)}(pass\w*|fail\w*|error\w*|fault\w*|wrong|incorrect|bugs?)`,
-                R`(if|when|whether)\W+${NA(6)}(same|match\w*|differ\w*|different)\W+${NA(8)}(pass\w*|fail\w*|error\w*|fault\w*|wrong|work\w*)`,
-                R`(test|it)\W+${NA(3)}(pass\w*|fail\w*)`] },
+              { desc: "Compare the actual result with the expected result", any: [
+                R`(actual|real|produced|output|result|program.?s|gets|given|displayed)\w*\W+${NA(6)}(with|to|against|versus|vs|matches?|same as|equals?|differs?|different from|should)\W+${NA(3)}(expected|predicted|supposed|correct|planned|should)`,
+                R`(expected|predicted|planned)\W+${NA(6)}(with|to|against|and|versus|vs|matches?)\W+${NA(3)}(actual|real|produced|output|result|program)`,
+                R`(check|see|know|find out|tell|make sure|ensure|decide|whether)\W+${NA(5)}(output|result|answer|program)\w*\W+${NA(4)}(is|are|matches?|same|what|equals?)\W+${NA(4)}(expected|should|supposed|predicted)`,
+                R`(compar\w*|check\w*|match\w*)\W+${NA(6)}(with|to|against|versus|vs)\W+${NA(6)}(actual\w*|real|produced|gave|gives|given|outputs?|displayed|what the program)`,
+                R`(compar\w*|check\w*|match\w*)\W+${NA(6)}(with|to|against|versus|vs)\W+${NA(4)}(expected|predicted|planned|what (it|the \w+) (should|was supposed|ought))`] },
+              { desc: "To tell whether the test passed or failed / find errors", negOK: true, any: [
+                R`(tell|know|show\w*|identif\w*|spot\w*|find\w*|detect\w*|decid\w*|see|prove\w*|determin\w*|check\w*|reveal\w*|indicat\w*)\W+${NA(6)}(pass\w*|fail\w*|error\w*|fault\w*|wrong|incorrect|bugs?|mistakes?)`,
+                R`(if|when|whether)\W+${NA(4)}(same|match\w*|differ\w*|different)\W+${NA(5)}(pass\w*|fail\w*|error\w*|fault\w*|wrong|work\w*)`,
+                R`(mismatch\w*|difference|differ\w*|not match\w*)\W+${NA(4)}(shows?|means?|indicates?|tells?|reveals?|signals?)\W+${NA(3)}(an? )?(error|fault|fail\w*|wrong|bug)`,
+                R`(test|tests|it|program)\W+${NA(1)}(passed|failed|pass|fail)\b`],
+                not: [R`^(?![\s\S]*\b(without|missing|lacks?|lacking|unless)\b)[\s\S]*(?:\b(?:never|not|cannot|neither|nor|unable)|n't)\W+${WD(3)}(show|tell|let|help|identif|find|spot|detect|know|decid|prove|determin|see|reveal|indicat|pass|fail|mean)\w*`, R`\bnot not\b`] },
             ],
           },
           {
@@ -302,16 +328,19 @@
             model: "<ul><li>They are the boundaries of the valid range (lowest and highest allowed), so they are extreme data. (1)</li><li>They reveal a logic error in the comparison, e.g. &gt; used instead of &gt;=, so that a valid age is wrongly rejected. (1)</li></ul>",
             points: [
               { desc: "They are the boundaries / extremes of the range", negOK: true, any: [
-                R`(boundar\w*|edges?|extremes?|limits?|ends?)\W+${NA(4)}(of|to|in|on)\W+${NA(3)}(range|valid|allowed|accepted|ages?|data|values?)`,
-                R`(lowest|highest|smallest|largest|minimum|maximum|top|bottom|first|last|youngest|oldest|min|max)\W+${NA(2)}(valid|allowed|accepted|possible|legal|ages?|range|values?|number|input)`,
+                R`(boundar\w*|edges?|extremes?|limits?|ends?)\W+${NA(2)}(of|to|in|on)\W+${NA(2)}(range|valid|allowed|accepted|ages?|data|values?)`,
+                R`(lowest|highest|smallest|largest|minimum|maximum|top|bottom|first|last|youngest|oldest|min|max)[\s-]+${WX(1, "as|the|a|an|of|to|in|on|and|or|so|is|are|they|it|if").replace(/\\W\+/g, "[\\s-]+")}(valid|allowed|accepted|possible|legal|ages?|range|values?|number|input)`,
                 R`(on|at|right on|just inside|inside|exactly on)\W+(the )?(edges?|boundar\w*|limits?|extremes?)`,
                 R`(are|is|called|count as|classed as|these are)\W+${NA(2)}(extremes?|boundar\w*)\W*(data|values?|ages?|cases?|tests?)?`],
-                not: [R`(middle|typical|ordinary|centre|center|average|normal data)`, R`\bnot\W+(?:(the|a|really|just|only)\W+){0,2}(lowest|highest|smallest|largest|boundar|extreme|edge|limit|minimum|maximum)`, R`\bnot not\b`] },
+                not: [R`(middle|typical|ordinary|centre|center|average|normal data)`, R`\bnot\W+(?:(the|a|really|just|only)\W+){0,2}(lowest|highest|smallest|largest|boundar|extreme|edge|limit|minimum|maximum)`, R`(?:\bnot|n't|\bnever|\bnor|\bneither)\W+${WD(3)}(the |a )?(lowest|highest|smallest|largest|boundar\w*|extreme\w*|edge\w*|limit\w*|minimum|maximum|ends?)`, R`\bnot not\b`] },
               { desc: "They reveal a wrong comparison (> instead of >=) that rejects a valid age", negOK: true, any: [
-                R`(>=|<=|>|<|greater than|less than|operator|off.by.one|comparison|condition)\W+${NA(10)}(wrong\w*|reject\w*|refus\w*|error|mistake|fail\w*|incorrect\w*|logic|miss\w*)`,
+                R`(>=|<=|>|<|greater than|less than|operators?|off.by.one|comparison|conditions?)\W+(?:(is|are|was|were|has|have|been|be|being)\W+)(?:(a|an|the|really|clearly|just|simply)\W+){0,2}(wrong\w*|incorrect\w*|mistake\w*|error\w*|bug\w*|off.by.one)`,
+                R`(>=|<=|>|<|greater than|less than|operators?|comparison|conditions?)\W+(?:(is|are|would|will|might|may|could|can)\W+)?(rejects?|refuses?|fails?|misses?|excludes?)\W+${NA(2)}(an? |the )?(valid|legal|allowed|correct|acceptable|good|16|70|age)`,
+                R`(>=|<=|>|<)\W+${NA(3)}(written|used|coded|typed|put|entered)\W+${NA(1)}(as|instead of|rather than)\W+(>=|<=|>|<|greater|less)`,
+                R`(check\w*|test\w*|ensur\w*|verif\w*|prov\w*|confirm\w*|show\w*)\W+${NA(3)}(comparison|operators?|conditions?|relational|>=|<=)\W+${NA(3)}(is|are|has been|have been|been|was)\W+${NA(1)}(right|correct\w*|proper\w*|accurate\w*|written|used|coded|wrong\w*)`,
                 R`wrongly (reject|refus|turn)\w*`, R`reject\w*\s+(a |an |the )?(valid|correct|legal|allowed|acceptable|good)`,
-                R`(valid|legal|correct|acceptable).{0,25}(is|are|gets?|being|be|would be|will be) (wrongly )?(reject|refus)\w*`],
-                not: [R`(not|never|n.t)\W+(\w+\W+)?(reject|refus|turn)`, R`\bnot not\b`] },
+                R`(valid|legal|correct|acceptable)[^.;!?]{0,25}(is|are|gets?|being|be|would be|will be) (wrongly )?(reject|refus)\w*`],
+                not: [R`(not|never|n.t)\W+(\w+\W+)?(reject|refus|turn)`, R`(not|never|n't)\W+${WD(2)}(check|test|show|ensure|verif|prove|confirm|reveal|find|spot|detect)\w*`, R`\bnot not\b`] },
             ],
           },
         ],
@@ -333,9 +362,9 @@
             sample: "It is a logic error, because the program runs but gives the wrong total. The loop must start from 0 instead of 1 so that the first score is included.",
             model: "<ul><li>Logic error (the program runs but gives the wrong answer). (1)</li><li>Change the start of the loop (line 3) to FROM 0 so position 0 is included. (1)</li></ul>",
             points: [
-              { desc: "Logic error", any: [R`logic(al)?\W+(error|mistake|fault|bug|problem)`, R`(error|mistake|fault|bug|problem)\W+${NA(3)}(is|was|as)\W+(a |an )?logic`, R`(type|kind) of error\W+${NA(3)}logic`, R`^\W*logic\W*$`] },
+              { desc: "Logic error", any: [R`logic(al)?\W+(error|mistake|fault|bug|problem)(?:\W+(?:because|as|since|where|which|so|and|but)\W+${WD(7)}(?:wrong\w*|incorrect\w*|inaccurate\w*))?`, R`(error|mistake|fault|bug|problem)\W+${NA(3)}(is|was|as)\W+(a |an )?logic`, R`(type|kind) of error\W+${NA(3)}logic`, R`^\W*logic\W*$`] },
               { desc: "Start the loop at 0 so the first score is included", any: [
-                R`(start|begin|go|run|count)\w*\W+${WD(2)}(from|at|with|on)\W+${WD(1)}(0|zero|first|index 0|position 0|the beginning)\b`,
+                R`(start|begin|go|run|count)\w*\W+${WD(2)}(from|at|with|on)\W+${WD(1)}(0|zero|first|index 0|position 0|the beginning)\b(?:\W+(?:not|instead of|rather than)\W+(?:1|one)\b)?`,
                 R`\bfrom\s+(0|zero)\b`, R`(change|alter|amend|edit)\w*\W+${WD(5)}(1 to 0|to (0|zero))\b`,
                 R`\b(0|zero)\W+(not|instead of|rather than)\W+(1|one)\b`,
                 R`(first|scores?\s*[\[(]0[\])]|position 0|index 0|element 0)\W+${NA(6)}(is|are|gets|can be|will be|would be)\W+${WD(2)}(included|checked|counted|added|processed|used|looked at|tested)`,
@@ -395,7 +424,7 @@
             points: [
               { desc: "Records the value of each variable at each step", all: [
                 R`(record\w*|show\w*|track\w*|list\w*|stor\w*|keep\w*|writ\w*|log\w*|note\w*|follow\w*|display\w*|hold\w*|has|contains?)\W+${NA(6)}(variables?|values?)`,
-                R`(each|every|after|per|at)\W+${WD(2)}(step|line|statement|instruction|iteration|loop|change|time|row|stage|pass|variable)|\b(columns?|rows?)\b`], win: 100 },
+                R`(each|every|after|per|at)\W+${WD(2)}(step|line|statement|instruction|iteration|loop|change|time|row|stage|pass|variable)|\b(a|each|every|one)\W+(columns?|rows?)\W+(for|per|each|of)\b`], win: 100 },
               { desc: "Shows where a value first goes wrong", any: [
                 R`(where|when|point at which|the (line|step|row|point))\W+${NA(6)}(goes|go|went|becomes|become|turns|starts|is|are|first)\W+${NA(3)}(wrong|incorrect|unexpected|different|not what|not as)`,
                 R`(compar\w*|match\w*|check\w*)\W+${NA(4)}(with|to|against|what)\W+${NA(4)}(expected|should|correct|predicted)\W+${NA(10)}(differ\w*|wrong|where|first|error|spot|find|show|different)`,
@@ -430,15 +459,16 @@
             points: [
               { desc: "Judges it is not fit for purpose (not every requirement is met)", negOK: true, any: [
                 R`not (fully |completely |entirely |yet |quite )?(fit|meeting|met|meet)|(does ?n.t|does not|doesn.t|fails? to|failed to|never) (fully |completely |entirely )?(meet|satisf|fulfil|match)|only (partly|partially|two|2)|not (all|every)\W+${WD(2)}(requirements?|specification|brief|tests?|r\d)|isn.t (fully )?fit|(partly|partially|mostly|almost|nearly) (fit|met|meets|meet)|(does ?n.t|does not|doesn.t) (do|achieve|deliver|carry out|perform|cover) (everything|all|every)`],
-                not: [R`\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\w+|fulfil\w*)\W+(every|all)\W+(the )?(requirements?|specification|brief)`, R`\bnot not\b`] },
-              { desc: "R1 and R2 are met, with evidence from tests 1 and 2", all: [R`(r1|requirement 1|test 1|tests 1)\W+${WD(6)}(r2|requirement 2|test 2|2)`, R`(met|meet|work\w*|pass\w*|correct\w*|success\w*|satisf\w*|fulfil\w*)`], win: 60,
-                not: [R`\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\w+|fulfil\w*)\W+(every|all)\W+(the )?(requirements?|specification|brief)`, R`(r3|requirement 3|test 3|all (three|3))\W+${WD(3)}(all )?(met|works?|worked|passes|passed|correct|successful)\b`, R`(r1|r2|requirement 1|requirement 2|test 1|test 2|tests 1)\W+${WX(6, "r3|requirement 3|test 3|but|however|whereas")}(not|isn.t|aren.t|never)\W+(met|work\w*|pass\w*|correct|success\w*|satisf\w*|fulfil\w*)`, R`(?<!not )(?<!n.t )\b(every|all)\W+(of the )?(the )?(requirements?|tests?)\W+${WD(3)}(worked|passed|met|work|pass|correct|as expected|satisfied)`] },
+                not: [R`\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(?<!to )(?<!must )(?<!should )(?<!needs )(meets?|satisf\w+|fulfil\w*)\W+(every|all)\W+(the )?(requirements?|specification|brief)`, R`\bnot not\b`] },
+              { desc: "R1 and R2 are met, with evidence from tests 1 and 2", all: [R`(r1|requirements? 1|tests? 1)\W+${WD(6)}(r2|requirements? 2|tests? 2|2)`, R`(met|meet|work\w*|pass\w*|correct\w*|success\w*|satisf\w*|fulfil\w*)`], win: 60,
+                not: [R`\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(?<!to )(?<!must )(?<!should )(?<!needs )(meets?|satisf\w+|fulfil\w*)\W+(every|all)\W+(the )?(requirements?|specification|brief)`, R`(r3|requirement 3|test 3|all (three|3))\W+${WX(3, "not|n.t|isn|aren|never|fail\\w*|but|and|although")}(all )?(met|works?|worked|passes|passed|correct|successful)\b`, R`(r1|r2|requirement 1|requirement 2|test 1|test 2|tests 1)\W+${WX(6, "r3|requirement 3|test 3|but|however|whereas")}(not|isn.t|aren.t|never)\W+(met|work\w*|pass\w*|correct|success\w*|satisf\w*|fulfil\w*)`, R`(?<!not )(?<!n.t )\b(every|all)\W+(of the )?(the )?(requirements?|tests?)\W+${WD(3)}(worked|passed|met|work|pass|correct|as expected|satisfied)`] },
               { desc: "R3 is not met: test 3 counted wrongly", any: [
                 R`(r3|requirement 3|test 3|requirement three)\W+${NA(8)}(wrong\w*|incorrect\w*|inaccura\w*|fail\w*|not (met|working|correct|right|satisfied|achieved|fulfilled)|too many|one too|extra|error|fault|bug|isn.t (met|working|correct|right)|5 (instead|rather|not)|five (instead|rather|not))`,
                 R`(5|five)\W+(instead|rather)\W+${WD(2)}(4|four)`,
+                R`(r3|requirement 3|requirement three|test 3)\W+(?:(?:do|does|did|is|was|are|were)(?:n.t| not)|never)\b(?:\W+${WD(8)}(?:not|instead|rather)\W+\w+)?`,
                 R`(counts?|counted|displays?|displayed|shows?|showed|outputs?|gives?|gave)\W+${WD(4)}(too many|one (too many|more|extra)|an extra)`,
                 R`(<=|less than or equal|<= 10)\W+${WD(10)}(wrong|should|instead|error|too many|extra|counts?)`],
-                not: [R`(r3|requirement 3|test 3)\W+${WD(2)}(is |was |were |are )?(met|works?|worked|passes|passed|correct|successful|fine)\b`, R`\bnot\W+(wrong|incorrect|a problem|faulty|an error)`] },
+                not: [R`(r3|requirement 3|test 3)\W+${WX(2, "not|n.t|isn|aren|never|fail\\w*|but|and|although")}(is |was |were |are )?(met|works?|worked|passes|passed|correct|successful|fine)\b`, R`\bnot\W+(wrong|incorrect|a problem|faulty|an error)`] },
             ],
           },
           {
@@ -540,7 +570,7 @@
             sample: "1 SET cheapPos TO 0\n2 FOR i FROM 1 TO 24 DO\n3    IF price[i] < price[cheapPos] THEN\n4       SET cheapPos TO i\n5    END IF\n6 END FOR",
             model: "<pre>1 SET cheapPos TO 0\n2 FOR i FROM 1 TO 24 DO\n3    IF price[i] &lt; price[cheapPos] THEN\n4       SET cheapPos TO i\n5    END IF\n6 END FOR</pre><ul><li>Initialise the position to the first item (0), not a guessed price. (1)</li><li>A loop over the remaining items. (1)</li><li>A selection comparing this price with the cheapest so far, using &lt;. (1)</li><li>Update the position (not the price) to the current one. (1)</li></ul>",
             points: [
-              { desc: "Starts with the first item as the cheapest", any: [R`(\w*(pos|min|cheap|best|low|index)\w*)\s*(=|:=|<-|\bto)\s*(0\b|1\b|price\s*[\[(]\s*[01]\s*[\])]|first)`, R`(first|1st)\W+${WD(5)}(cheap\w*|lowest|minimum|smallest)`] },
+              { desc: "Starts with the first item as the cheapest", any: [R`(\w*(pos|min|cheap|best|low|index)\w*)\s*(=|:=|<-|\bto)\s*(0\b|1\b|price\s*[\[(]\s*[01]\s*[\])]|first)`, R`(first|1st)\W+${WD(5)}(cheap\w*|lowest|minimum|smallest)`, R`\w*(pos|min|cheap|best|low|index)\w*\W+(starts?|begins?|is set|is initiali[sz]ed|initiali[sz]ed)\w*\W+(at|to|as|with|from)\W+(0|1|zero|the first)\b`] },
               { desc: "A loop over the other items", any: [LOOP] },
               { desc: "Compares the price with the cheapest so far (<)", any: [R`\b(if|when|elif)\b\W*[\w\[\]().]+\s*<\s*[\w\[\]().]+`, R`\b(if|when|elif)\b.{0,40}(less than|lower than|cheaper than|smaller than)`] },
               { desc: "Updates the cheapest position to the current one", any: [R`(<|less than|lower than|cheaper|smaller)\W.{0,80}\w*(pos|min|cheap|best|low|index)\w*\s*(=|:=|<-|\bto\b)\s*(i\b|j\b|k\b|index\b|position\b|this\b|current\b|count\b)`] },
@@ -553,10 +583,10 @@
             sample: "Extreme test data: 1 or 40. Exceptional test data: 41, which should be rejected.",
             model: "<ul><li>Extreme: 1 or 40 (the boundaries of the valid range). (1)</li><li>Exceptional: any invalid price, e.g. 0, 41, -5, 12.5 or a word such as \"cheap\". (1)</li></ul>",
             points: [
-              { desc: "Extreme: 1 or 40", any: [R`extreme\W+(?:[a-z]\w*\W+){0,6}\b(1|40)\b`, R`\b(1|40)\b\W+(?:[a-z]\w*\W+){0,4}(is|are|as|for) extreme`] },
+              { desc: "Extreme: 1 or 40", any: [R`extreme[\s:,(-]+(?:[a-z]\w*[\s:,(]+){0,5}\b(1|40)\b`, R`\b(1|40)\b[\s,)]+(?:[a-z]\w*[\s,]+){0,4}(is|are|as|for) extreme`] },
               { desc: "Exceptional: an invalid price such as 0, 41, a negative, a decimal or text", any: [
-                R`exceptional\W+(?:[a-z]\w*\W+){0,6}(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|abc|negative|decimal|banana)`,
-                R`(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|negative|decimal)\W+(?:[a-z]\w*\W+){0,4}(is|are|as|for) exceptional`] },
+                R`exceptional[\s:,(-]+(?:[a-z]\w*[\s:,(]+){0,5}(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|abc|negative|decimal|banana)`,
+                R`(\b0\b|\b4[1-9]\b|\b[5-9]\d\b|\b\d{3,}\b|-\s?\d+|\d+\.\d+|letters?|text|words?|negative|decimal)[\s,)]+(?:[a-z]\w*[\s,]+){0,4}(is|are|as|for) exceptional`] },
             ],
           },
         ],
