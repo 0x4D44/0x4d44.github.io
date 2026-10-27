@@ -65,7 +65,7 @@
   const CONJ = W("and or but so because since as if then than while whereas although though unless whether when where"), OBJ = W("it them him her us me you this these those");
   const PRON = W("it they he she we you i there");
   const grammatical = (a, b) =>
-    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b));
+    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) || (CONJ.has(a) && PRON.has(b)) || (a === "if" && b === "not");
 
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
@@ -104,7 +104,7 @@
     }
     if (altMax >= 24) return "zero";
     // padding a pile of key words with the same "the/is/and" over and over is not a sentence
-    if (func >= 8 && new Set(funcToks).size < 4) return "zero";
+    if (func >= 12 && new Set(funcToks).size < 4) return "zero";
     let longest = 0;
     text.split(/[.,;:!?()]+/).forEach((seg) => {
       let run = 0;
@@ -118,7 +118,9 @@
     const minWords = Math.min(part.minWords == null ? 3 : part.minWords, 5);
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: false, group: pt.group }));
     const w = words(text);
-    const list = listLike(text);
+    // a capital letter standing alone ("valve A", "B-") names a component, not the article "a"
+    const ident = HEP.norm(String(ans).replace(/\bA(?=[+-])/g, "\u0001").replace(/(^|[.!?:;]\s*)A\b/g, "$1\u0002").replace(/\b[A-Z]\b/g, "x1").replace(/[\u0001\u0002]/g, "A"));
+    const list = listLike(ident);
     const opts = { negCheck: !NEG.test(HEP.norm(part.sample || "")) };
     if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => { pts[i].hit = HEP.pointHit(pt, text, opts); });
     // points sharing a group are alternatives: only the best-scoring one in a group counts
@@ -152,6 +154,7 @@
         let raw = String(ans).toLowerCase().replace(/[\u2212\u2013\u2014]/g, "-")
           .replace(/10([-\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, (m, sg, d) => "10^" + (sg ? "-" : "") + [...d].map((c) => SUP[c]).join(""))
           .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
+          .replace(/\b(?:rad|rev|mm|cm|km|m)?\s*(?:s|min)\s*\^?\s*-\s*1\b/g, " ")      // unit tails: m s-1, rad s^-1, rev min-1
           .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
           .replace(/(\d) (?=\d{3}\b)/g, "$1")                          // 2 880 000
           .replace(/(\d),(\d{1,2})\b/g, "$1.$2");                      // 9,6
@@ -159,8 +162,17 @@
         raw = raw.replace(/(\d(?:\.\d+)?)\s*(?:x|\*|\u00d7)\s*10\s*\^?\s*(\(?-?\d+\)?)/g, (m, a, e) => a + "e" + e.replace(/[()]/g, ""))
           .replace(/(\d)\s*e\s*(-?\d)/g, "$1e$2");
         const nums = raw.match(/(?:(?<![\w.)])-)?(?:\d+(?:\.\d+)?|\.\d+)(?:e-?\d+)?/g);
-        const v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
+        let v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
         if (!isFinite(v)) return { got: 0, of };
+        // a prefix typed on the unit ("0.003 A" for a part wanted in mA) is converted, so a missed prefix cannot pass for right
+        const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
+        const UNIT = /^([GMkm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|Hz|m|Pa)$/;
+        const au = String(ans).match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
+        const am = au && au[1].match(UNIT);
+        if (am && eu) {
+          const base = (b) => (/^(\u03a9|\u2126|ohms?)$/.test(b) ? "ohm" : b);
+          if (base(am[2]) === base(eu[2])) v = v * PF[am[1]] / PF[eu[1]];
+        }
         const targets = [part.a].concat(part.alts || []);
         const tol = part.tol == null ? 0 : part.tol;
         const within = (t) => Math.abs(v - t) <= tol + 1e-9 || (part.rtol != null && Math.abs(v - t) <= part.rtol * Math.abs(t) + 1e-12);

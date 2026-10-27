@@ -65,7 +65,7 @@
       const xm = (x0 + x1) / 2;
       return `<path d="M${x0},${ya} C${xm},${ya} ${xm},${yc} ${x1},${yc} L${x1},${yd} C${xm},${yd} ${xm},${yb} ${x0},${yb} Z" fill="${fill}" stroke="${INK}" stroke-width="1.5"/>`;
     };
-    return svg(560, 200, "Sankey style energy flow diagram for an electric motor drawn to scale. A wide band on the left is the 2500 watt electrical input. Two narrow bands curve upwards and away, one labelled friction 300 watts and one labelled heating of the windings 450 watts. The remaining wide band continues to the right as the useful mechanical output, marked with a question mark.",
+    return svg(640, 200, "Sankey style energy flow diagram for an electric motor drawn to scale. A wide band on the left is the 2500 watt electrical input. Two narrow bands curve upwards and away, one labelled friction 300 watts and one labelled heating of the windings 450 watts. The remaining wide band continues to the right as the useful mechanical output, marked with a question mark.",
       `<rect x="30" y="70" width="120" height="100" fill="${BLUE}" stroke="${INK}" stroke-width="1.5"/>` +
       band(150, 70, 82, 440, 22, 34, OCHRE) + band(150, 82, 100, 440, 60, 78, OCHRE) +
       `<rect x="150" y="100" width="290" height="70" fill="${GREEN}" stroke="${INK}" stroke-width="1.5"/>` +
