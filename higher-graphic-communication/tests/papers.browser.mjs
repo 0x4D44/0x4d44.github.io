@@ -82,12 +82,14 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
 
   await step(`${w}: a marked part comes back marked, with its answer, after a reload`, async () => {
     await page.click("#pp-tab-dtp");
-    const n = await page.locator("#pp-panel-dtp .pp-score").count();
-    assert.ok(n >= 2);
+    const part = page.locator("#pp-panel-dtp .pp-part:has(.pp-opts)").first();
+    await part.locator("input").first().check();
+    await part.getByRole("button", { name: "Mark my answer" }).click();
     await page.reload();
     await page.waitForSelector(".pp-tabs [role=tab]");
-    assert.equal(await page.locator("#pp-panel-dtp .pp-score").count(), n);
-    assert.match(await page.locator("#pp-panel-dtp .pp-part:has(textarea) textarea").first().inputValue(), /nice/);
+    const again = page.locator("#pp-panel-dtp .pp-part:has(.pp-opts)").first();
+    assert.ok(await again.locator(".pp-score").count() >= 1, "marked again");
+    assert.ok(await again.locator("input:checked").count() >= 1, "keeps the chosen option");
   });
 
   await step(`${w}: no page errors`, async () => assert.deepEqual(errors, []));
