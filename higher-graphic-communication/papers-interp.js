@@ -100,9 +100,9 @@
     // elevations (scale 1.2: 72 x 36)
     o += T(250, 22, "Elevations, looking in direction F", { a: "start", b: 1 });
     o += rect(250, 34, 72, 36, THICK(PAPER)) + ln(274, 34, 274, 70, DASH) + ln(298, 34, 298, 70, DASH) + mark(286, 90, "A");
-    o += P("M350 34 H374 V51.3 H398 V34 H422 V70 H350 Z", THICK(PAPER)) + mark(386, 90, "B");
-    o += P("M250 118 H322 V154 H298 V136.7 H274 V154 H250 Z", THICK(PAPER)) + mark(286, 174, "C");
-    o += P("M350 135.3 H374 V118 H422 V154 H350 Z", THICK(PAPER)) + mark(386, 174, "D");
+    o += P("M350 34 H374 V48.4 H398 V34 H422 V70 H350 Z", THICK(PAPER)) + mark(386, 90, "B");
+    o += P("M250 118 H322 V154 H298 V139.6 H274 V154 H250 Z", THICK(PAPER)) + mark(286, 174, "C");
+    o += P("M350 132.4 H374 V118 H422 V154 H350 Z", THICK(PAPER)) + mark(386, 174, "D");
     // plans (72 x 48)
     o += T(20, 222, "Plans, looking down", { a: "start", b: 1 });
     o += rect(20, 232, 72, 48, THICK(PAPER)) + ln(20, 256, 92, 256, THICK()) + ln(20, 268, 92, 268, THICK()) + mark(56, 298, "A");
@@ -140,7 +140,7 @@
     let o = P(`M${ax} ${ay} L${n1(ax - ex)} ${n1(ay + ey)} A${r} ${r} 0 0 0 ${n1(ax + ex)} ${n1(ay + ey)} Z`, THICK(PAPER));
     o += P(`M${ax - 22} ${n1(ay + 22 * Math.tan(a))} A25 25 0 0 0 ${ax + 22} ${n1(ay + 22 * Math.tan(a))}`, THIN());
     o += T(ax, ay + 84, "120°", { size: 13 });
-    o += T(ax - ex / 2 - 14, ay + ey / 2 + 2, "60", { size: 13 });
+    o += T(ax - ex / 2 - 22, ay + ey / 2 - 8, "60", { size: 13 });
     return svg(460, 176, "A flat net shaped as a sector of a circle, 120 degrees at the top apex, with two straight edges each marked 60 and a curved edge along the bottom.", o);
   })();
 
@@ -176,7 +176,7 @@
     o += rect(130, 181, 40, 128, THICK()) + ln(150, 172, 150, 318, CHAIN);
     o += T(150, 330, "SECTION A–A", { b: 1 });
     // parts list
-    o += rect(262, 24, 186, 78, THIN(PAPER)) + T(272, 44, "Item 1  Housing", { a: "start" }) + T(272, 66, "Item 2  Bush: Ø30 outside, Ø20 bore", { a: "start", size: 11 }) + T(272, 88, "Item 3  Shaft: Ø20", { a: "start" });
+    o += rect(250, 24, 204, 78, THIN(PAPER)) + T(260, 46, "Item 1  Housing", { a: "start" }) + T(260, 68, "Item 2  Bush: Ø30 outside, Ø20 bore", { a: "start", size: 11 }) + T(260, 90, "Item 3  Shaft: Ø20", { a: "start" });
     // balloons
     o += circ(205, 235, 2, `fill="${INK}"`) + ln(205, 235, 245, 235) + mark(255, 235, "1");
     o += circ(175, 262, 2, `fill="${INK}"`) + ln(175, 262, 245, 262) + mark(255, 262, "2");
@@ -192,13 +192,13 @@
     o += rect(110, 110, 120, 60, THICK(SH1)) + T(170, 145, "Boathouse", { size: 13 });
     o += ln(110, 100, 110, 76) + ln(230, 100, 230, 76) + dim(110, 80, 230, 80, "48 mm on the drawing", 170, 72);
     // A existing tree: circle with a dot
-    o += circ(60, 110, 14, THICK()) + circ(54, 104, 2, `fill="${INK}"`) + mark(88, 110, "A");
+    o += circ(60, 110, 14, THICK()) + circ(54, 104, 2, `fill="${INK}"`) + mark(92, 110, "A");
     // B existing tree to be removed: dotted circle with a dot
-    o += circ(60, 240, 14, sty(1.8, "none", "2 3.5")) + circ(65, 235, 2, `fill="${INK}"`) + mark(88, 240, "B");
+    o += circ(60, 240, 14, sty(1.8, "none", "2 3.5")) + circ(65, 235, 2, `fill="${INK}"`) + mark(92, 240, "B");
     // C proposed tree: circle with a plus
-    o += circ(284, 240, 14, THICK()) + ln(284, 231, 284, 249) + ln(275, 240, 293, 240) + mark(256, 240, "C");
+    o += circ(284, 240, 14, THICK()) + ln(284, 231, 284, 249) + ln(275, 240, 293, 240) + mark(250, 240, "C");
     // D north point: circle with an upward arrow
-    o += circ(284, 112, 15, THICK()) + ln(284, 124, 284, 101) + P("M284 99 L276 111 M284 99 L292 111", THICK()) + mark(256, 112, "D");
+    o += circ(284, 112, 15, THICK()) + ln(284, 124, 284, 101) + P("M284 99 L276 111 M284 99 L292 111", THICK()) + mark(250, 112, "D");
     o += T(345, 40, "Scale 1:200", { a: "start", b: 1 });
     o += T(345, 66, "Lines 10, 15", { a: "start", size: 11 }) + T(345, 82, "and 20 are", { a: "start", size: 11 }) + T(345, 98, "ground heights", { a: "start", size: 11 }) + T(345, 114, "in metres.", { a: "start", size: 11 });
     return svg(460, 326, "A site plan at scale 1 to 200 with a dashed plot boundary, a boathouse rectangle with a dimension of 48 millimetres on the drawing, three contour lines marked 10, 15 and 20, and four symbols labelled A to D: a circle with a dot, a dotted circle with a dot, a circle with a plus sign and a circle with an upward arrow.", o);
