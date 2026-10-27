@@ -322,7 +322,7 @@
   }
   function mockPanel() {
     const panel = el("div");
-    panel.append(el("p", { class: "pp-intro", html: "A half-length paper drawn at random from the four banks in roughly the proportions of the real papers. The real course has two papers: <b>Paper 1 (non-calculator, 55 marks, 75 minutes)</b> and <b>Paper 2 (calculator, 65 marks, 90 minutes)</b>. Pick one, start the clock, work on paper if you want a true rehearsal, then enter and mark your answers. Marks from a mock also count on the scoreboard." }));
+    panel.append(el("p", { class: "pp-intro", html: "A half-length paper drawn at random from the four banks in roughly the proportions of the real papers. The real course has two papers, one non-calculator and one calculator. Pick one, start the clock, work on paper if you want a true rehearsal, then enter and mark your answers. Marks from a mock also count on the scoreboard." }));
     const which = el("div", { class: "pp-seg", role: "group", "aria-label": "Which paper" });
     const timers = {};
     const out = el("div");

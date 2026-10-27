@@ -386,8 +386,8 @@
           { label: "(a)", q: R`Show that $\dfrac{\sin2x}{1+\cos2x}=\tan x$. Write your reasoning in a few lines.`, type: "text", marks: 3, minWords: 6,
             points: [
               { desc: "use sin 2x = 2 sin x cos x", any: [R`sin\s*2\s*x\s*=\s*2\s*sin`, R`2\s*sin\s*\(?x\)?\s*\*?\s*cos`] },
-              { desc: "use cos 2x = 2cos^2 x - 1 so that 1 + cos 2x = 2cos^2 x", any: [R`2\s*cos\s*\^?\s*2\s*\(?x`, R`2\s*cos\^2`, R`1\s*\+\s*cos\s*2\s*x\s*=\s*2`] },
-              { desc: "cancel to sin x / cos x = tan x", any: [R`sin\s*\(?x\)?\s*/\s*cos`, R`=\s*tan`, R`cancel`] }
+              { desc: "use cos 2x = 2cos^2 x - 1 so that 1 + cos 2x = 2cos^2 x", not: [R`cos\s*2\s*x\s*=\s*2\s*cos\s*\^?\s*2\s*\(?x\)?\s*\+`], any: [R`2\s*cos\s*\^?\s*2\s*\(?x`, R`2\s*cos\^2`, R`1\s*\+\s*cos\s*2\s*x\s*=\s*2`] },
+              { desc: "cancel to sin x / cos x = tan x", any: [R`sin\s*\(?x\)?\s*/\s*cos`, R`tan\s*\(?x\)?\s*=\s*sin`] }
             ],
             sample: "sin2x = 2 sin x cos x and cos2x = 2cos^2 x - 1, so 1 + cos2x = 2cos^2 x. Then the fraction is 2 sin x cos x / 2cos^2 x, and cancelling gives sin x / cos x = tan x.",
             why: R`<p>&bull;1 $\sin2x=2\sin x\cos x$</p><p>&bull;2 $1+\cos2x=1+2\cos^2x-1=2\cos^2x$</p><p>&bull;3 $\dfrac{2\sin x\cos x}{2\cos^2x}=\dfrac{\sin x}{\cos x}=\tan x$.</p>` },

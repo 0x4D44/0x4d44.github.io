@@ -158,8 +158,11 @@
     const t = HMP.tidy(s);
     return t.includes("=") ? t.slice(t.lastIndexOf("=") + 1).trim() : t;
   }
+  const UNIT = "(?:units?|cm|mm|km|metres?|meters?|centimetres?|millimetres?|kilometres?|m|s|secs?|seconds?|ms|mh|mph|kg|mg|milligrams?|g|grams?|tonnes?|t|knots?|u|h|hrs?|hours?|years?|days?|minutes?|mins?|deg|degrees?|°\\s?c|℃|c)";
+  const UNIT_RE = new RegExp("(?:square |sq\\.? |cubic )?" + UNIT + "(?:\\s*[/·]\\s*" + UNIT + "|\\s+" + UNIT + ")?(?:\\s*\\^?\\s*\\{?\\s*[-−]?\\s*\\d\\}?)?(?:\\s*per\\s+\\w+)?\\s*$", "i");
   function stripUnits(t) {
-    return t.replace(/(?:square |sq\.? )?(?:units?|cm|mm|km|metres?|meters?|m|s|secs?|seconds?|ms|mph|kg|mg|g|tonnes?|knots?|cubic cm|cm\^?3|°?\s?c|degrees|hours?|hrs?|years?|days?|minutes?|mins?)(?:\^?\s*[23])?\s*(?:per\s+\w+|\/\s*\w+)?\s*$/g, "").trim();
+    let u = t.replace(/\s*\([^)]*\)\s*$/, "").replace(/[.\s]+$/, "");
+    return u.replace(UNIT_RE, "").trim();
   }
   function numFrom(s, vars) {
     let t = rhs(s);
@@ -241,7 +244,7 @@
   }
 
   /* "echo the question" guard: a number or expression still to be evaluated is not an answer */
-  const FN = /\b(?:sin|cos|tan|asin|acos|atan|arcsin|arccos|arctan|ln|log|exp)\b/i;
+  const FN = /\b(?:sin|cos|tan|asin|acos|atan|arcsin|arccos|arctan|ln|log)\b/i;
   function echoGuard(f, s) {
     if (!/^(?:num|expr|set|vec)$/.test(f.type)) return null;
     const t = HMP.tidy(s).replace(/\s+/g, "");
@@ -265,7 +268,10 @@
         if (!isFinite(v)) throw new Error("that does not come to a number");
         const keys = [f.a].concat(f.alts || []).map((a) => (typeof a === "number" ? a : HMP.evalNum(a)));
         if (keys.some((k) => close(v, k, f.tol))) return { got: marks };
-        const h = (f.partial || []).find((p) => close(v, typeof p.a === "number" ? p.a : HMP.evalNum(p.a), f.tol));
+        const h = (f.partial || []).find((p) => {
+          const k = typeof p.a === "number" ? p.a : HMP.evalNum(p.a);
+          return close(v, k, p.tol != null ? p.tol : Math.min(f.tol == null ? 1e-6 : f.tol, 0.01 * Math.max(0.1, Math.abs(k))));
+        });
         return h ? { got: Math.min(h.marks, marks), note: h.note, method: true } : { got: 0 };
       }
       case "expr": {
@@ -274,7 +280,7 @@
         const key = HMP.compile(f.a, vars);
         const wrap = (fn) => (v) => fn(f.plusC ? Object.assign({ c: 0 }, v) : v);
         if (sameFn(wrap(g), key, vars, { plusC: f.plusC, positive: f.positive })) {
-          if (f.plusC && marks > 1 && !/[+-]\s*c\s*$/i.test(HMP.tidy(s).replace(/\s+/g, ""))) return { got: marks - 1, note: "The integral is right, but the constant of integration is missing: add + c (SQA withholds a mark)." };
+          if (f.plusC && marks > 1 && !/(?:^|[+-])c(?=$|[+-])/i.test(HMP.tidy(s).replace(/\s+/g, ""))) return { got: marks - 1, note: "The integral is right, but the constant of integration is missing: add + c (SQA withholds a mark)." };
           return { got: marks };
         }
         const h = (f.partial || []).find((p) => sameFn(wrap(g), HMP.compile(p.a, vars), vars, { plusC: f.plusC, positive: f.positive }));
@@ -334,7 +340,7 @@
     const seen = new Set();
     pts.forEach((p) => { if (p.group && p.hit) { if (seen.has(p.group)) p.hit = false; else seen.add(p.group); } });
     let got = Math.min(part.marks, pts.reduce((a, p) => a + (p.hit ? p.marks : 0), 0));
-    got = Math.min(got, Math.max(Math.floor(w / 4), w >= min ? 1 : 0));   // a mark needs some writing behind it
+    got = Math.min(got, Math.max(Math.floor(w / 2), w >= min ? 1 : 0));   // a mark needs some writing behind it
     return { got, of: part.marks, points: pts };
   }
 
