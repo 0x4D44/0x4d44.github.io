@@ -80,6 +80,16 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
     assert.ok(await part.locator(".pp-score").isVisible());
   });
 
+  await step(`${w}: a marked part comes back marked, with its answer, after a reload`, async () => {
+    await page.click("#pp-tab-dtp");
+    const n = await page.locator("#pp-panel-dtp .pp-score").count();
+    assert.ok(n >= 2);
+    await page.reload();
+    await page.waitForSelector(".pp-tabs [role=tab]");
+    assert.equal(await page.locator("#pp-panel-dtp .pp-score").count(), n);
+    assert.match(await page.locator("#pp-panel-dtp .pp-part:has(textarea) textarea").first().inputValue(), /nice/);
+  });
+
   await step(`${w}: no page errors`, async () => assert.deepEqual(errors, []));
   await ctx.close();
 }
