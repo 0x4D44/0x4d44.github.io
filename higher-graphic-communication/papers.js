@@ -179,11 +179,23 @@
       const f = input.querySelector("input,textarea,select"); if (f) f.focus();
     });
     box.append(input, el("div", { class: "btn-row" }, markBtn, againBtn), fb);
-    // restore: only when the stored answer still marks to the stored result (a hand-corrected mark is not replayed)
+    // restore: put the stored answer back and mark it; a mark the candidate corrected by hand is re-applied by ticking points to match
     const had = (results[q.id] || [])[pi];
-    if (had != null && answers[akey] != null && HGP.scorePart(part, answers[akey]).got === had) {
+    if (had != null && answers[akey] != null) {
       setAns(answers[akey]); markBtn.disabled = false; markBtn.click();
       const h = fb.querySelector(".pp-score"); if (h) h.blur();
+      if (HGP.scorePart(part, answers[akey]).got !== had) {
+        const boxes = [...fb.querySelectorAll('input[type="checkbox"]')];
+        if (part.type === "text") {
+          let sum = 0;
+          const marks = boxes.map((b, i) => (part.points[i] && part.points[i].marks != null ? part.points[i].marks : 1));
+          boxes.forEach((b, i) => { b.checked = sum + marks[i] <= had; if (b.checked) sum += marks[i]; });
+          if (boxes.length) boxes[0].dispatchEvent(new Event("change", { bubbles: true }));
+        } else if (boxes.length) {
+          boxes[0].checked = had >= part.marks;
+          boxes[0].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }
     }
     return box;
   }
