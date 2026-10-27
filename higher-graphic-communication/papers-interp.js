@@ -221,8 +221,14 @@
     return svg(460, 290, "A circular flange with its plan above its elevation. The plan shows an outer circle labelled diameter 90, a central bore labelled diameter 30 plus 0.2 minus 0.1, and four holes of diameter 10 centred on a thin chain circle labelled PCD 70. The elevation below shows the disc with the bore and holes as dashed lines.", o);
   })();
 
+  const W3 = "(?:\\W+\\w+){0,3}\\W+"; /* up to three words between two patterns */
+  const W5 = "(?:\\W+\\w+){0,5}\\W+", W7 = "(?:\\W+\\w+){0,7}\\W+";
+  /* word lists for the north-point marking point (interp-08 b) */
+  const SUNX2 = "sun|sunlight|sunshine|daylight|shade|shadows?|wind|winds|weather|solar|light";
+  const ROOMX = "windows?|rooms?|buildings?|houses?|boathouse|entrance|garden|layout|living areas?|doors?";
+
   B.interp = {
-    intro: "Interpretation of graphic items is the biggest swing area of the paper (12 to 30 of the 90 marks). This bank has ten questions worth 52 marks: naming pictorial and orthographic views, reading sizes and lines from third-angle views, matching views to a pictorial, recognising forms and nets, reading a section, a site plan and a dimensioned flange, and explaining why a drawing type suits a job. Most have a drawing: read it, trace features between views, and give cause and effect when asked to explain.",
+    intro: "Interpretation of graphic items is the biggest swing area of the paper (12 to 30 of the 90 marks). This bank has eleven questions worth 56 marks: naming pictorial and orthographic views, reading sizes and lines from third-angle views, matching views to a pictorial, recognising forms and nets, reading a section, a site plan and a dimensioned flange, explaining why a drawing type suits a job, and comparing two pictorial methods. Most have a drawing: read it, trace features between views, and give cause and effect when asked to explain.",
     questions: [
       {
         id: "interp-01",
@@ -257,8 +263,8 @@
             label: "(c)", type: "text", marks: 2, rows: 3,
             q: "Explain why the hole in the block is drawn differently in view Q from the way it is drawn in view P.",
             points: [
-              { desc: "Cause: the hole is inside the material, so it cannot be seen from the front", any: ["(inside|within|behind).{0,30}(block|material|metal|front|surface)", "(cannot|can'?t|not) (be )?(see|seen|visible).{0,25}(front|view|outside|surface)", "hidden (from|by|behind)"] },
-              { desc: "Effect: it is drawn as thin dashed lines (hidden detail)", any: ["dash", "hidden detail", "hidden line", "broken line"] },
+              { desc: "Cause: the hole is inside the material, so it cannot be seen from the front", any: ["(cannot|can'?t|can not|couldn'?t|not|isn'?t|aren'?t|unable to|won'?t) (be )?(see|seen|visible)", "hidden (from|by|behind|inside|within|under|beneath)", "out of (sight|view)", "(inside|within|behind|under|beneath) (the|a|its) (block|material|metal|front|surface|part|object)"] },
+              { desc: "Effect: it is drawn as thin dashed lines (hidden detail)", any: ["dash(ed|es)? (thin )?(lines?|detail)", "(thin|broken) dash", "hidden (detail|lines?)", "broken lines?", "(drawn|shown|represented|appears?|are|is|as) (as |with |by |using )?(a |some )?(thin )?dash(ed|es)"] },
             ],
             sample: "In view Q the hole is inside the block and cannot be seen from the front, so its edges are drawn as thin dashed lines (hidden detail) to show that they are there. In view P you look straight down into it.",
             model: mi("The hole is inside the material / behind the front face, so it cannot be seen from the front (cause) (1)", "…so its edges are shown as hidden detail, thin dashed lines (effect) (1)") + "<p>Seen from above in view P the hole is a visible circle, so it is drawn in thick outline.</p>",
@@ -267,8 +273,8 @@
             label: "(d)", type: "text", marks: 2, rows: 3,
             q: "State what the solid line K in view P represents and how the same feature appears in view R.",
             points: [
-              { desc: "K is the edge where the taller part meets the lower part: a change in height", any: ["\\bstep", "change (in|of) (height|level)", "different (height|level)s?", "taller", "higher", "upper (block|part|section)", "raised", "two (heights|levels)", "edge between"] },
-              { desc: "In R it is a solid horizontal line 15 mm up from the base", any: ["horizontal (solid |thick )?line", "15 ?(mm)? (high|up|above|from the (bottom|base))", "line .{0,25}\\b15\\b", "across the (view|end)"] },
+              { desc: "K is the edge where the taller part meets the lower part: a change in height", win: 60, any: ["change (in|of) (the )?(height|level)", "step (in|down|up|between|change)", "(a|the) step\\b", "(two|different) (heights|levels)", "(where|when) the (taller|higher|upper|raised|bigger|thicker).{0,35}(meets?|joins?|ends?|drops?|steps?)", "(meets?|joins?) the (top of the )?(lower|shorter|thinner|smaller)", "(taller|higher|upper|raised) (part|section|level|block) (and|meets?|joins?|to) (the )?(lower|shorter)"] },
+              { desc: "In R it is a solid horizontal line 15 mm up from the base", win: 50, any: ["(solid|thick|continuous|horizontal) (solid |thick |horizontal )?line.{0,40}\\b15\\b", "\\b15 ?(mm)? (high|up|above|from the (bottom|base)).{0,30}\\bline", "\\bline.{0,25}\\b15 ?(mm)? (high|up|above|from|off)", "\\b15 ?(mm)? (high|up|above|from the (bottom|base)).{0,40}(solid|thick|horizontal|continuous)"] },
             ],
             sample: "Line K is the edge where the taller part of the block meets the top of the lower part, so it marks a change in height. In view R the same edge is a solid horizontal line 15 mm above the base.",
             model: mi("K is the edge where the higher part of the block meets the top of the lower step: a change in height (1)", "In view R it is the solid horizontal line 15 mm above the bottom edge (1)") + "<p>A face that is seen edge-on, or an edge where surfaces meet, is a line; the same edge must line up between the views.</p>",
@@ -288,8 +294,8 @@
             label: "(d)", type: "text", marks: 2, rows: 3,
             q: "Describe how the slot would appear in the end elevation viewed from the right.",
             points: [
-              { desc: "The outline is a plain rectangle (40 wide, 30 high): no notch", any: ["^(?!.*notch).*rectangle", "no notch", "without (a )?notch", "plain"] },
-              { desc: "The slot floor is a thin dashed (hidden detail) line across the view, 12 mm below the top (18 mm above the base)", all: ["dash|hidden"], any: ["across", "full (width|depth)", "\\b12 ?(mm)? (below|down|from the top)", "\\b18 ?(mm)? (above|up|from the (base|bottom))", "floor", "horizontal"] },
+              { desc: "The outline is a plain rectangle (40 wide, 30 high): no notch", any: ["(no|without|not (a|any)) (a )?(notch|cut|gap|step|dip)", "(plain|simple|complete|full|solid|whole|ordinary) rectangle", "(just|only|simply) a rectangle", "outline (is|looks like|would be) (a )?(rectangle|square)"] },
+              { desc: "The slot floor is a thin dashed (hidden detail) line across the view, 12 mm below the top (18 mm above the base)", win: 60, any: ["(dash(ed|es)?|hidden) (thin |detail |lines? )*(line|detail).{0,50}(across|floor|12|18|slot)", "(across|floor|\\b12|\\b18).{0,50}(dash(ed|es)?|hidden) (thin |detail |lines? )*(line|detail)", "(floor|bottom) of the slot.{0,40}(dash|hidden)", "(dash(ed|es)?|hidden).{0,40}(floor|bottom) of the slot"] },
             ],
             sample: "The end elevation is a plain rectangle 40 wide and 30 high with no notch. A thin dashed hidden detail line runs right across it, 12 mm below the top, to show the floor of the slot.",
             model: mi("The outline is a plain rectangle, 40 wide by 30 high, as the slot runs through to both ends (1)", "The slot is hidden inside the block from this side, so its floor is a thin dashed line (hidden detail) running across the view, 12 below the top / 18 above the base (1)"),
@@ -311,8 +317,8 @@
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "Explain why the plan of component B shows two circles, one inside the other.",
             points: [
-              { desc: "Cause: the cone has been cut parallel to its base, so the top is a smaller circle", any: ["smaller (circle|top|end|face|one)", "top (face|surface|end)? (is|are) (a )?(smaller|narrower)", "cut (off )?(parallel|by a plane)", "parallel to (the|its) base", "narrower (at the )?top"] },
-              { desc: "Effect: seen from above, the small top circle sits inside the larger base circle", all: ["(from above|looking down|looking from above|viewed from above|top view)", "(larger|bigger|wider|big|large|base|bottom)"] },
+              { desc: "Cause: the cone has been cut parallel to its base, so the top is a smaller circle", win: 60, any: ["cut (off )?(parallel|by a plane|across|flat|straight)", "parallel to (the|its) base", "(top|end|face|point|tip) (is|are|becomes?|has become|has been)( a| made)? (smaller|narrower|cut|chopped|sliced|removed|flat)", "(top|end|face) (circle )?(is|are) smaller", "narrower (at )?(the )?top", "(chopped|sliced|cut|removed|taken) (off )?(the )?(top|point|tip)", "(point|tip|top) (is |has been |was )?(cut|chopped|removed|sliced) off"] },
+              { desc: "Effect: seen from above, the small top circle sits inside the larger base circle", win: 70, any: ["(from above|looking down|top view|seen from above|viewed from above|plan view|looking from above).{0,60}(inside|within|in the middle|centre|inner|concentric)", "(smaller|small|top) (circle|one).{0,30}(inside|within|in the middle|sits in|sits on)", "(inside|within|in the middle of) the (larger|bigger|big|large|base|lower|bottom|outer|wider)"] },
             ],
             sample: "The cone has been cut off parallel to its base, so the top is a smaller circle. Looking down from above you see this small circle sitting inside the larger circle of the base.",
             model: mi("The cone is cut by a plane parallel to its base, so the new top face is a smaller circle (cause) (1)", "…and seen from above the small top circle lies inside the larger base circle (effect) (1)") + "<p>This is why a frustum has a trapezium elevation and a two-circle plan.</p>",
@@ -331,8 +337,8 @@
             label: "(c)", type: "text", marks: 2, rows: 3,
             q: "Explain why the length of the curved edge of the net must equal the circumference of the cone's base.",
             points: [
-              { desc: "Cause: when the sector is rolled up, the curved edge goes round to form the rim of the base", all: ["(roll|curl|fold|bend|wrap|join)", "(rim|edge of the base|round the base|around the base|base circle|circular base|forms? the base|becomes? the base|goes round)"] },
-              { desc: "Effect: otherwise the edges would overlap or leave a gap, so the cone would not close or fit its base", any: ["gap", "overlap", "(not|n'?t) (fit|close|meet|join|match|line up)", "too (short|long|big|small|loose)"] },
+              { desc: "Cause: when the sector is rolled up, the curved edge goes round to form the rim of the base", win: 70, any: ["(roll|curl|wrap|bend|fold)(ed|s|ing)? (it )?(up|round|around|into).{0,60}(rim|edge of the base|base|circle)", "curved edge.{0,40}(forms?|becomes?|goes round|wraps? round|makes?|is|goes around).{0,30}(base|rim|circle|circumference)", "(forms?|becomes?|makes?|is) the (rim|circumference|edge|outline|outside) of the (base|cone|circle)", "(goes|wraps|runs|curls) (right )?(round|around) the (base|bottom|rim|circle)"] },
+              { desc: "Effect: otherwise the edges would overlap or leave a gap, so the cone would not close or fit its base", win: 70, all: ["(too|if it (was|were|is)) (long|short|big|small|loose)|(otherwise|or else|or there would|if (not|they (are|were) not|it (is|was) not))|(longer|shorter) than|longer or shorter|not (the same|equal)|(wrong|different) (length|size)", "(gap|overlap|(not|n'?t|never) (fit|close|meet|join|match|line up|reach))"] },
             ],
             sample: "When the net is rolled up, the curved edge wraps round to form the rim of the base. If it were longer or shorter than the circumference the edges would overlap or leave a gap and the cone would not close.",
             model: mi("Rolled up, the curved edge forms the rim (circumference) of the circular base (cause) (1)", "…so if it were too long or too short the edges would overlap or leave a gap and the cone would not close / fit its base (effect) (1)"),
@@ -351,8 +357,8 @@
             label: "(c)", type: "text", marks: 2, rows: 3,
             q: "Explain why every line on a development must be drawn at its true length.",
             points: [
-              { desc: "Cause: the net is cut out and folded up / joined to make the solid", any: ["cut (out|from)", "fold(ed|ing)? (up|into)", "(will|be|is|are) (cut|folded|joined)", "made (up )?into", "assembled", "joined (together|up)"] },
-              { desc: "Effect: a shortened line would make a face too small so the edges would not meet or fit", all: ["(short|small|foreshorten|wrong size|wrong length|too long|too big)", "(fit|close|meet|match|line up|gap|overlap|join)"] },
+              { desc: "Cause: the net is cut out and folded up / joined to make the solid", win: 60, any: ["cut out.{0,30}fold", "fold(ed|s|ing)? (it )?(up|into|to make|to form)", "(is|be|will be|are|gets?) (cut|folded|joined|glued|assembled|made up)", "made (up )?into", "(build|make|form|create)s? the (solid|prism|shape|3d|model|object)", "assembled", "joined (together|up)"] },
+              { desc: "Effect: a shortened line would make a face too small so the edges would not meet or fit", win: 70, all: ["(too (short|small|long|big)|foreshorten|wrong (size|length)|(shorter|longer|smaller) than)", "(gap|overlap|(not|n'?t|never) (fit|close|meet|match|line up|join|reach))"] },
             ],
             sample: "The net is cut out and folded up into the solid, so a foreshortened line would be too short and the edges would not meet or fit together.",
             model: mi("The net is cut out and folded / joined to make the solid, so each edge must be its real size (cause) (1)", "…a foreshortened (too short) line would leave faces too small, so edges would not meet and the solid would not fit together (effect) (1)"),
@@ -370,8 +376,8 @@
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "Explain why the hatching on item 1 runs in the opposite direction to the hatching on item 2.",
             points: [
-              { desc: "Cause: they are two different, touching parts", any: ["(separate|different|two|adjacent|neighbouring|touching|next to each other).{0,20}(part|component)", "(part|component)s? (that )?(touch|are next to)"] },
-              { desc: "Effect: the reader can tell them apart / see where one ends and the next begins", all: ["(tell|distinguish|distinct|differentiate|clear|obvious|identify)", "(boundary|between|apart|each part|separate|where one (part )?ends|two parts|which)"] },
+              { desc: "Cause: they are two different, touching parts", win: 60, any: ["(separate|different|two|adjacent|neighbouring|touching|next to each other) (parts|components|items|pieces|materials)", "(parts|components|items|pieces) (that |which )?(touch|are (next|side|joined|fitted|in contact))", "(touch|touching|meet|next to) (each other|one another|the other)"] },
+              { desc: "Effect: the reader can tell them apart / see where one ends and the next begins", win: 60, any: ["tell (them|the parts?|the items?|the two|these|one) (apart|from)", "(distinguish|differentiate|separate)s? (between )?(the |them|these|one)", "(see|know|show|shows|find|tell)s? (clearly )?where (one|the one|item|part|the first).{0,25}(ends?|begins?|stops?|starts?)", "(boundary|boundaries|edge|line) between (the |them|item|part|two)", "(clear|obvious|easy|easier|helps?|shows?) (to see )?(which|where|that they are (different|separate))"] },
             ],
             sample: "They are two different parts that touch, so hatching them in opposite directions makes it clear where one part ends and the other begins, so the reader can tell them apart.",
             model: mi("Item 1 and item 2 are different parts that touch (cause) (1)", "…opposite hatching makes the boundary between them clear, so the reader can tell the parts apart (effect) (1)"),
@@ -401,8 +407,8 @@
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "Explain why a site plan includes a north point.",
             points: [
-              { desc: "Cause: it shows which way north is / which way the building and plot face", any: ["which way (is )?north", "orient", "direction of north", "which (way|direction|side) .{0,20}(faces?|facing)", "(shows?|tells?|indicates?) .{0,25}(direction|where north)"] },
-              { desc: "Effect: so the sun, light or weather can be allowed for when positioning windows, rooms or the building", any: ["\\bsun", "daylight", "shade", "shadow", "wind", "weather", "prevailing", "position(ing)? (the )?(windows|rooms|building|house|entrance)", "solar"] },
+              { desc: "Cause: it shows which way north is / which way the building and plot face", win: 60, not: ["way up", "upside", "\\bscale\\b", "measure", "front door"], any: ["which (way|direction) (is |the )?north", "where north (is|lies)", "direction (of|to) north", "(points?|pointing|facing|towards?) (to |towards? |at )?north", "north (is|lies|points?)", "orientat(e|ed|ion).{0,30}(north|plot|site|building|house|boathouse)", "which (way|direction|side) (of )?(the )?(building|plot|site|house|boathouse|it) (is )?(faces?|facing|points?)", "compass (direction|point)"] },
+              { desc: "Effect: so the sun, light or weather can be allowed for when positioning windows, rooms or the building", win: 70, not: ["way up", "upside", "\\bscale\\b"], any: ["(" + ROOMX + ")\\W+(to |that |which |can |will |could |and )*(get|catch|receive|have|let in|benefit from|avoid|shelter from|face|take|use|make use of|maximi[sz]e|capture|are|is)\\w* (the |some |more |plenty of |enough |lots of |lots of )?(" + SUNX2 + ")", "(position|place|orient|design|put|build|locate|face|plan|arrange|point)\\w* (the |its |their |any |all )?(" + ROOMX + ")( \\w+){0,3} (to|so|for|away|towards?|facing|where)( \\w+){0,4} (" + SUNX2 + ")", "(" + ROOMX + ")( \\w+){0,4} (placed|positioned|orientated|oriented|built|located|put|designed|laid out|arranged|sited)( \\w+){0,3} (to|so|for|away|towards?|facing)( \\w+){0,4} (" + SUNX2 + ")", "(" + SUNX2 + ")( \\w+){0,4} (affect|hit|reach|shine|come|enter|strike|fall|blow|shelter)\\w*( \\w+){0,4} (" + ROOMX + ")", "(" + SUNX2 + ") (when|while|as|if) (positioning|placing|orientating|orienting|designing|planning|building)"] },
             ],
             sample: "It shows which way north is, so the reader knows which way the building faces. The architect can then place windows and rooms to get the sunlight.",
             model: mi("It shows which way north is, so the reader knows how the plot / building is orientated (cause) (1)", "…so the designer or builder can take account of sunlight, shade or wind when positioning rooms, windows or the building (effect) (1)"),
@@ -428,8 +434,8 @@
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "Explain why a planometric view is suitable for showing the layout of furniture in a room.",
             points: [
-              { desc: "Cause: the plan (floor) is drawn at its true shape, so it can be turned and the heights added upwards", any: ["plan.{0,40}(true shape|true size|true|not distorted|unchanged|accurate)", "(floor|room).{0,25}(true shape|true size)", "true shape of (the )?(plan|floor)", "(floor|plan) (is|stays|remains) (the same|true|accurate)", "(turned|rotated)"] },
-              { desc: "Effect: quick and easy to draw, with the positions and sizes of the furniture on the floor correct", all: ["(quick|easy|easier|simpler|faster|fast|accurate|measure|scale|distances|positions)", "(draw|furniture|layout|measure|position|sizes?|dimensions?)"] },
+              { desc: "Cause: the plan (floor) is drawn at its true shape, so it can be turned and the heights added upwards", win: 50, any: ["(plan|floor|room|layout).{0,40}(true shape|true size|not distorted|undistorted|same shape|unchanged)", "true shape (of|for) the (plan|floor|room|layout)", "(plan|floor|layout) (can be |is |gets |are |simply )?(turned|rotated|traced)", "(turn|rotate|trace)(d|s|ing)? the (plan|floor|layout|room)", "(floor|plan|layout) (is |stays |remains )?(not (stretched|changed|distorted))"] },
+              { desc: "Effect: quick and easy to draw, with the positions and sizes of the furniture on the floor correct", win: 60, any: ["(quick|quickly|easy|easier|simple|simpler|fast|faster|straightforward|less work) (to |and )?(draw|construct|produce|create|do|plot|make|set up)", "(draw|draws|produce|construct|create|make|made|done)n? (it |them )?(quickly|easily|fast|faster|simply)", "furniture.{0,30}(correct|true|accurate|right|exact|proper|same) (positions?|places?|sizes?|distances?|spacing)", "(positions?|distances?|sizes?|layout|measurements?|spacing).{0,25}(stay|remain|are|is|kept|still|can be|be).{0,15}(accurate|correct|true|to scale|exact|right)"] },
             ],
             sample: "The plan of the room is drawn at its true shape, so the floor layout can be turned and the heights added upwards, which makes it quick to draw with the furniture in the correct positions.",
             model: mi("In planometric the plan is drawn at true shape (turned to 45°/45° or 30°/60°), with heights added vertically (cause) (1)", "…so a floor plan is quick and easy to turn into a view, and the furniture positions and distances on the floor stay accurate (effect) (1)"),
@@ -449,11 +455,31 @@
             label: "(d)", type: "text", marks: 2, rows: 3,
             q: "The bore receives a shaft. Decide which of the course's two labels, F or NF, suits its dimension, and give a reason.",
             points: [
-              { desc: "Functional", any: ["(?<!non-?)(?<!non )functional", "^\\s*f\\b", "\\b(is|it's|label|labelled|marked) f\\b"] },
-              { desc: "Reason: it is essential to the shaft fitting and the part working", any: ["(?<!not )(?<!n't )essential", "needs? to fit", "must fit", "has to fit", "fits? (the|a|its) shaft", "shaft.{0,30}(fit|work|turn|run)", "(fit|work).{0,30}(properly|correctly|together)", "tight tolerance"] },
+              { desc: "Functional", any: ["^\\s*\\W*(functional|f)\\b", "\\b(is|be|as|labelled|labeled|marked|called|classed|classified|label|dimension|choose|answer|would|should|it'?s|f or) (a |an |as |the |be |is )*(?<!non-?)(?<!non )(functional|f)\\b(?!\\w)", "(?<!non-?)(?<!non )functional (dimension|\\(f\\)|f\\b)"] },
+              { desc: "Reason: it is essential to the shaft fitting and the part working", win: 40, any: ["(?<!not )(?<!n't )(essential|critical|vital|crucial|necessary) (to|for) ((the|how|what|making) )*(shaft|fit|part|bore|function|it|working|work)", "(has|have|needs?|must|need|got) to (fit|work|function)", "(for|so) the (part|flange|shaft|bore) (to |can )?(fit|work|function)", "shaft (fits?|works?|turns?|runs?|rotates?) (properly|correctly|smoothly|well|freely|snugly|tightly)", "fit(s|ting)? (the |a |its )?shaft (properly|correctly|closely|tightly|snugly|exactly|well)", "tight(ly)? (tolerance|fit)"] },
             ],
-            sample: "It is functional, because the bore has to fit the shaft correctly for the part to work.",
+            sample: "It is functional (F), because the bore receives the shaft and has to fit it closely, so a tight tolerance is needed for the part to work properly and the shaft is not left to wobble about.",
             model: mi("Functional (F) (1)", "It is essential to the function of the part: the bore must fit the shaft, so it needs a tight tolerance (1)") + "<p>A non-functional dimension, such as an overall length that does not affect fit, can have a looser tolerance.</p>",
+          },
+        ],
+      },
+      {
+        id: "interp-11",
+        style: "Short-answer question · compare two pictorial methods",
+        stem: "<p>The Plan Room must show a client the layout of a new chart room. The designer is deciding between an isometric drawing and a planometric drawing of the room, both drawn from the same floor plan.</p>",
+        parts: [
+          {
+            label: "(a)", type: "text", marks: 4, rows: 6,
+            q: "Compare an isometric drawing with a planometric drawing of the chart room. (4 marks, any 4 comparisons)",
+            points: [
+              { desc: "Plan shape: in planometric the plan keeps its true shape (circles stay circles), whereas in isometric no face is true shape and circles become ellipses", win: 120, all: ["(plan|floor|planometric)" + W3 + "true (shape|size)|true (shape|size) (of|for) the (plan|floor)", "circles?" + W3 + "(becomes?|turns?|look|appears?|are|is|as)(\\W+\\w+){0,2}\\W+ellips|ellips(es|e)?" + W3 + "(instead|not|rather)|no (face|side|surface)s?(\\W+\\w+){0,2}\\W+true (shape|size)|(isometric|iso)" + W3 + "(distort|no true)"], group: "shape" },
+              { desc: "Axes: isometric has both horizontal axes at 30\u00b0 (all three axes 120\u00b0 apart), whereas planometric turns the plan to 45\u00b0/45\u00b0 or 30\u00b0/60\u00b0", win: 130, all: ["isometric" + W7 + "(\\b30 ?(\u00b0|degrees?)|\\b30\\b)|\\b30 ?(\u00b0|degrees?)" + W3 + "(to the horizontal|each side|isometric)|120 ?(\u00b0|degrees?) apart", "planometric" + W5 + "(45|30 ?(\u00b0|degrees?)? ?(and|/|or) ?60)|(45|30 ?(\u00b0|degrees?)? ?(and|/|or) ?60)" + W3 + "planometric|plan (is |can be )?(turned|rotated)(\\W+\\w+){0,3}\\W+(45|30)"], group: "axes" },
+              { desc: "Similarity: in both, vertical lines are drawn vertical and heights are measured full size (or both show three faces at once)", win: 60, all: ["(lines?|edges?|axes|faces|sides|drawings?|views?|methods?|pictorials?|ways)"], any: ["both( \\w+){0,4} (vertical|heights?|upright|three (faces|sides)|3d|three.dimensional)", "(vertical|heights?|upright)( lines| edges)?( \\w+){0,3} (in|for) both", "(vertical|heights?|upright)( lines| edges)?( \\w+){0,3} (the same|same)( \\w+){0,3} (in|for)? ?(both|each)"] },
+              { desc: "Use: planometric is quick for a room layout because the floor plan can be traced and turned, whereas isometric means redrawing the plan at 30\u00b0", win: 150, all: ["(floor |room )?plan (can be |is |simply |just |easily |can simply be )*(traced|turned|rotated|copied)|(trace|turn|rotate|copy)\\w* (the (floor |room )?plan|it|them)|quick(er)? (to|for)(\\W+\\w+){0,3}\\W+(room|layout|interior|floor)", "(redraw|re-draw)(n|ing|s)?\\b|draw (it |the plan )?again|more work|\\bharder|slower|takes longer|(cannot|can'?t|not) (be )?(simply )?(trace|copi)"], group: "use" },
+              { desc: "Appearance: planometric looks stretched upwards (verticals may be shortened), whereas isometric looks more balanced / natural", win: 120, all: ["planometric" + W3 + "(stretch|tall|taller|distort|elongat)|(stretch|tall|taller|distort|elongat)\\w*" + W3 + "planometric", "isometric" + W3 + "(balanc|natural|realistic|even|equal)|(balanc|natural|realistic|even|equal)\\w*" + W3 + "isometric"] },
+            ],
+            sample: "In an isometric drawing both horizontal axes are drawn at 30\u00b0 so no face is true shape and a circle on the floor becomes an ellipse, whereas in a planometric drawing the plan keeps its true shape so a circle in the plan stays a circle. Planometric turns the plan to 45\u00b0 and 45\u00b0, but isometric has all three axes 120\u00b0 apart. In both drawings the vertical lines are drawn vertical. Planometric is quick for a room layout because the floor plan can simply be traced and turned, while isometric means redrawing the plan at 30\u00b0.",
+            model: mi("Plan shape: planometric keeps the plan at true shape (circles stay circles), but isometric has no true-shape face and circles become ellipses (1)", "Axes: isometric uses 30\u00b0 on both horizontal axes (all axes 120\u00b0 apart), but planometric turns the plan to 45\u00b0/45\u00b0 or 30\u00b0/60\u00b0 (1)", "Similarity: in both, vertical lines stay vertical / heights are drawn full size, and both show three faces in one view (1)", "Use: planometric is quick for an interior because the floor plan can be traced and turned, but isometric means redrawing the plan at 30\u00b0 (1)", "Appearance: planometric tends to look stretched upwards (some illustrators shorten the verticals), but isometric looks more balanced (1)") + "<p>A comparison must give both sides, for example with <em>whereas</em>, <em>but</em> or <em>both</em>.</p>",
           },
         ],
       },

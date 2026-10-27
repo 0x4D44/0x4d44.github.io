@@ -83,14 +83,14 @@
     tag(330, 30, "Z") + txt(372, 70, "Ø16 ± 0.05", 18));
 
   /* ---- Q6: third-angle layout ---- */
-  const fig6 = svg(340, 270,
+  const fig6 = svg(340, 190,
     "A notched block in third-angle layout. View X is drawn above view Y. View Z is drawn to the right of view Y. Y shows the front of the block with a rectangular notch cut from the top right. X shows the top with a vertical line where the notch begins. Z shows a rectangle with a horizontal line halfway down. Thin projection lines join the views.",
-    `<polygon points="60,170 140,170 140,200 180,200 180,230 60,230" fill="none" stroke="${INK}" stroke-width="2.2"/>` +
+    `<g transform="translate(0,-82)">` + `<polygon points="60,170 140,170 140,200 180,200 180,230 60,230" fill="none" stroke="${INK}" stroke-width="2.2"/>` +
     rect(60, 100, 120, 50) + ln(140, 100, 140, 150, 2.2) +
     rect(200, 170, 50, 60) + ln(200, 200, 250, 200, 2.2) +
     ln(60, 150, 60, 170, 1) + ln(140, 150, 140, 170, 1) + ln(180, 150, 180, 170, 1) +
     ln(180, 170, 200, 170, 1) + ln(180, 200, 200, 200, 1) + ln(180, 230, 200, 230, 1) +
-    tag(28, 125, "X") + tag(28, 200, "Y") + tag(280, 200, "Z"));
+    tag(28, 125, "X") + tag(28, 200, "Y") + tag(280, 200, "Z") + `</g>`);
 
   /* ---- Q7: projection symbols ---- */
   const cone = (ox, oy, flip) => {
@@ -102,7 +102,7 @@
   };
   const fig7 = svg(420, 150,
     "Three projection symbols, each in a box. Symbol A shows a truncated cone elevation on the left with two concentric circles on its right. Symbol B shows two concentric circles on the left with the truncated cone elevation on its right. Symbol C shows only two concentric circles.",
-    rect(10, 10, 126, 100, 1.5) + cone(36, 35, true) + tag(73, 130, "A") +
+    rect(10, 10, 126, 100, 1.5) + cone(30, 35, true) + tag(73, 130, "A") +
     rect(147, 10, 126, 100, 1.5) + `<g>${(function () {
       const ox = 205, oy = 35, cy = oy + 25;
       return `<polygon points="${ox},${oy + 10} ${ox + 56},${oy - 4} ${ox + 56},${oy + 54} ${ox},${oy + 40}" fill="none" stroke="${INK}" stroke-width="2"/>` +
@@ -155,7 +155,7 @@
     tag(65, 142, "A") + tag(180, 142, "B") + tag(325, 142, "C"));
 
   B.std = {
-    intro: "Drawing standards, protocols and conventions: line types, dimensioning and tolerances, third-angle projection and its symbol, hatching in sections, scales, title blocks and the BSI symbols. The 2025 course report called the questions on identifying and applying standard symbols “very poorly attempted”, so about a third of the marks here are symbol and convention recall. Ten questions, 42 marks; the written answers are marked against points like the real marking instructions.",
+    intro: "Drawing standards, protocols and conventions: line types, dimensioning and tolerances, third-angle projection and its symbol, hatching and types of section, scales, title blocks, parts lists, manual versus CAD and the BSI symbols. The 2025 course report called the questions on identifying and applying standard symbols “very poorly attempted”, so about a third of the marks here are symbol and convention recall. Twelve questions, 50 marks; the written answers are marked against points like the real marking instructions.",
     questions: [
       /* ------------------------------------------------------------ 01 */
       {
@@ -169,12 +169,12 @@
           { label: "(b)", type: "text", marks: 2, rows: 4,
             q: "Everyone who draws for the shipyard uses these same line types. Explain two reasons why drawings follow an agreed drawing standard. [2]",
             points: [
-              { desc: "Everyone trained in the standard reads each line the same way (cause) so the drawing is not misread and mistakes in making are avoided (effect)",
-                all: ["(same (way|meaning)|agreed|everyone|everybody|anyone|anybody|any ?one|universal|consistent|shared|common)", "(misread|misinterpret|misunderst|mistake|error|confus|wrong|exactly|correctly|ambigu|one (possible )?(reading|meaning))"] },
-              { desc: "The drawing can be passed to another firm, country or worker (cause) who can make from it without asking the designer what it means (effect)",
-                all: ["(different|other|another|any) (firms?|compan\\w*|countr\\w*|manufactur\\w*|builders?|draughts\\w*|workshops?|sites?|offices?|people|users?)", "(read|use|understand|follow|work from|interpret|make|build|without)"] },
-              { desc: "Fewer notes or explanations are needed on the drawing (cause), saving time and cost (effect)",
-                all: ["(no need|not need|fewer|less|without) .{0,30}(notes|explain|explanation|labels?)", "(time|cost|quick|cheap|money|save)"] },
+              { desc: "Everyone trained in the standard reads each line the same way (cause) so the drawing is not misread and mistakes in making are avoided (effect)", win: 140,
+                all: ["((same|agreed|shared|common|universal|consistent|standard\\w*|international) (\\w+ ){0,2}(way|meaning|rules?|symbols?|conventions?|lines?|style|format|understanding)|(everyone|everybody|anyone|anybody|all (draughts\\w*|designers|engineers|workers|people|makers))( \\w+){0,4} (understand|read|interpret|know|follow|see)|understood by (everyone|anyone|all)|(read|interpret|understand)\\w* (it |them |the drawings? )?(in )?(the same|exactly|correctly|identically))", "(misread|misinterpret|misunderst|mistake|errors?\\b|confus|wrong|exactly|correctly|ambigu|one (possible )?(reading|meaning)|clear|unclear)"] },
+              { desc: "The drawing can be passed to another firm, country or worker (cause) who can make from it without asking the designer what it means (effect)", win: 120,
+                all: ["((different|other|another|any|foreign|overseas) (\\w+ )?(firms?|compan\\w*|countr\\w*|manufactur\\w*|builders?|draughts\\w*|workshops?|sites?|offices?|people|users?|workers?|makers?)|(across|between|around|in) (the )?(world|countries|companies|firms)|international\\w*)", "(read|use|understand|follow|work from|interpret|make|build|manufactur)\\w*( \\w+){0,6} (it|them|the (drawing|part|plate)|without|from|exactly)|without (asking|needing|contacting|explanation|having)"] },
+              { desc: "Fewer notes or explanations are needed on the drawing (cause), saving time and cost (effect)", win: 90,
+                all: ["(no need|not need|fewer|less|without|don.t need) (\\w+ ){0,3}(notes|explain|explanation|labels?|words|writing|text)", "(time|cost|quick|cheap|money|save)"] },
             ],
             sample: "Everyone trained in the standard reads each line type in the same way, so a hidden edge or a centre line cannot be misread and mistakes in making are avoided. A drawing can also be sent to another country, where the makers can build from it without asking the designer.",
             model: "<ul><li>Agreed meaning: a trained reader interprets each line the same way, so the drawing is not misread and the part is made as intended (1)</li><li>Sharing: any firm or country can read and make from it without further explanation from the designer (1)</li><li>Also acceptable: fewer written notes are needed, saving time and cost (1)</li></ul><p>Give a cause and its effect; “it is the rules” earns nothing.</p>" },
@@ -193,9 +193,12 @@
           { label: "(b)", type: "text", marks: 2, rows: 4,
             q: "Describe two ways in which the hatching on housing P and cover Q follows the drawing conventions. [2]",
             points: [
-              { desc: "Thin lines at 45°, evenly spaced", all: ["(thin|fine)|(45|forty)", "(even|equal|regular|same spacing|spaced)|45"], any: ["45", "\\bthin\\b.{0,25}(even|equal|regular|spaced)"] },
-              { desc: "Both areas of the housing (one part) are hatched the same way (same direction and spacing)", all: ["(housing|both (areas|parts|sides)|upper and lower|top and bottom|one (part|component)|same part)", "(same|identical|matching|consistent|similar)"] },
-              { desc: "The cover is hatched in the opposite direction (or different spacing) so the two parts are clearly distinguished", all: ["(cover|different parts?|separate parts?|adjacent|neighbouring|next to)", "(opposite|other (way|direction)|different (direction|angle|spacing)|reverse|differently)"] },
+              { desc: "Thin lines at 45°, evenly spaced", win: 60,
+                any: ["(thin|fine)\\w* (\\w+ ){0,4}(\\b45\\b|forty.?five)", "(\\b45\\b|forty.?five)(\\W+\\w+){0,4}\\W+(thin|fine|even\\w*|equal\\w*|regular\\w*|spaced|spacing)", "(even\\w*|equal\\w*|regular\\w*) (spaced|apart)(\\W+\\w+){0,4}\\W+(\\b45\\b|forty.?five)"] },
+              { desc: "Both areas of the housing (one part) are hatched the same way (same direction and spacing)", win: 90,
+                all: ["(housing|both (areas|parts|sides|halves)|upper and lower|top and bottom|one (part|component)|same part)", "((same|identical|matching|consistent|similar)\\w* (\\w+ ){0,1}(direction|angle|way|spacing|hatch\\w*|lines|pattern)|hatched (\\w+ ){0,2}(the same|identically|alike))"] },
+              { desc: "The cover is hatched in the opposite direction (or different spacing) so the two parts are clearly distinguished", win: 90,
+                all: ["(cover|other part|second part|adjacent|neighbouring|next to|separate|different parts?|two parts?)", "((opposite|different|reverse|other|contrary|alternate)\\w* (\\w+ ){0,1}(direction|angle|way|spacing|slope|pattern)|(hatch\\w*|lines|drawn|done|slop\\w*) (\\w+ ){0,3}(opposite|differently|in reverse)|opposite (to|of))"] },
             ],
             sample: "The hatching is done with thin lines at 45 degrees, evenly spaced. The cover is hatched in the opposite direction to the housing so you can tell the two parts apart, and the upper and lower areas of the housing are hatched the same way.",
             model: "<ul><li>Thin lines at 45°, evenly spaced (1)</li><li>Both areas of one part (the housing) hatched the same direction and spacing (1)</li><li>Adjacent part (cover) hatched in the opposite direction or at a different spacing, so the boundary is obvious (1)</li></ul><p>Any 2.</p>" },
@@ -211,9 +214,10 @@
           { label: "(a)", type: "text", marks: 3, rows: 6,
             q: "For each of the mistakes A, B and C, state what is wrong. [3]",
             points: [
-              { desc: "A: the extension lines start on the outline instead of leaving a small gap", any: ["\\bgap\\b", "\\btouch", "no (space|gap)", "too close", "directly (on|against)", "against the (outline|plate|object|edge)", "start(s|ing)? (on|at) the (outline|plate|edge)"] },
-              { desc: "B: the hole is dimensioned to hidden detail (dashed lines) instead of the view where it is seen as an outline", any: ["(dimension\\w*|measur\\w*|sized?|extension)\\b.{0,35}\\b(hidden|dashed)", "\\b(hidden|dashed).{0,35}\\b(dimension\\w*|measur\\w*|sized?|extension|taken|used)"] },
-              { desc: "C: the overall width 220 is dimensioned twice (a size must be dimensioned once)", any: ["(dimension\\w*|size|width|220|measure\\w*)\\b.{0,30}\\b(twice|two times|more than once|repeated|duplicat\\w*|redundan\\w*)", "\\b(repeated|duplicate|redundant|repeat)\\b", "already (given|shown|dimensioned|stated)", "dimensioned (two|2) times"] },
+              { desc: "A: the extension lines start on the outline instead of leaving a small gap",
+                any: ["(extension|projection|dimension|these|the) lines? (\\w+ ){0,4}(touch\\w*|start\\w* (on|at|from)|begin\\w*|meet\\w*|hit|against|directly|close)", "touch\\w* (\\w+ ){0,3}(the )?(outline|object|plate|edge|shape|part)", "\\b(no|without a|missing|not (a|any)|lack of a?) (small |visible )?(gap|space)", "\\bgap (\\w+ ){0,2}(between|from|to|before|missing|needed|required)", "(leave|left|leaving|need|needs|should have|must have|add) (a )?(small |short )?(gap|space)"] },
+              { desc: "B: the hole is dimensioned to hidden detail (dashed lines) instead of the view where it is seen as an outline", any: ["(dimension\\w*|measur\\w*|sized?|taken|used|extension lines?)( \\w+){0,3} (from|to|off|on|using|with|at|against)? ?(the |its |two )?(hidden|dashed)", "(hidden|dashed) (\\w+ ){0,2}(lines?|detail|edges?|features?|parts?) (\\w+ ){0,2}(is |are |being |has been |were |was )?(dimension\\w*|measur\\w*|used|sized)", "(hidden|dashed) (\\w+ ){0,2}(dimension\\w*|measur\\w*)"] },
+              { desc: "C: the overall width 220 is dimensioned twice (a size must be dimensioned once)", any: ["(dimension\\w*|measure\\w*|shown|given|stated|labelled|included|written|put|marked) (\\w+ ){0,1}(twice|two times|more than once|again|2 times)", "(repeated|duplicate\\w*|redundant|repeats?) (\\w+ ){0,2}(dimension\\w*|size|width|220|measure\\w*)", "(size|width|220|dimensions?) (\\w+ ){0,2}(is |are |has been |was )?(repeated|duplicated|redundant|unnecessary)", "already (been )?(given|shown|dimensioned|stated)"] },
             ],
             sample: "A: the extension lines touch the outline, there should be a small gap. B: the hole is dimensioned to the dashed hidden lines, but it should be dimensioned where it shows as a circle. C: the 220 width is dimensioned twice, which is repeated and not needed.",
             model: "<ul><li>A: extension lines touch the outline; leave a small gap (1)</li><li>B: dimensioning to hidden detail; dimension the hole where it is seen as an outline (the circle in the plan) (1)</li><li>C: the same size given twice; each feature is dimensioned once only (1)</li></ul>" },
@@ -236,11 +240,16 @@
           { label: "(c)", type: "text", marks: 2, rows: 4,
             q: "Compare chain dimensioning with parallel dimensioning. [2]",
             points: [
-              { desc: "Chain: each size runs from one feature to the next, so errors add up (accumulate)", group: "chain", all: ["chain", "(accumulat|add up|build up|adds up|pile|mount|cumulat|grow|compound)"] },
-              { desc: "Chain: each size runs end to end from the previous feature to the next", group: "chain", all: ["chain", "(next|previous|neighbour|end to end|one after|each (feature|hole)|hole to)"] },
-              { desc: "Parallel: every size is taken from the same datum (one edge), so errors do not build up", all: ["parallel", "(datum|same (edge|line|point|face|start)|one (edge|line|point|face|start)|common (edge|start))"] },
-              { desc: "Parallel: each size is independent, so the error in one does not affect the others", all: ["(independent|not (affect|add|accumulat|build)|does not (add|accumulat)|do not (add|accumulat)|no (build|accumulat|error))", "parallel|datum|from the same|one (edge|datum)"] },
-              { desc: "Both use linear dimensions to locate several features along one direction", all: ["both", "(linear|dimension|locate|position|features|sizes)"] },
+              { desc: "Chain: each size runs from one feature to the next, so errors add up (accumulate)", group: "chain", win: 90, not: ["chain\\w*[^.;]{0,60}(?<!not )(?<!n.t )(from|to|on) (the |a |one )?(same|common|single|one) (datum|edge|point|face|line|start)", "parallel\\w*[^.;]{0,60}\\b(errors?|tolerances?) (add|accumulat|build up|pile)"],
+                all: ["chain(?:,|:| (?:dimension\\w*|method|system|type|style|one|way))[^.;]{0,90}(accumulat|add(s|ed)? up|build(s)? up|cumulat|compound|(errors?|tolerances?|mistakes?|inaccura\\w*) (add|grow|mount|pile|increase)|adds? together)|(accumulat|add(s|ed)? up|build(s)? up|cumulat|compound)[^.;]{0,50}chain\\b"] },
+              { desc: "Chain: each size runs end to end from the previous feature to the next", group: "chain", win: 90, not: ["chain\\w*[^.;]{0,60}(?<!not )(?<!n.t )(from|to|on) (the |a |one )?(same|common|single|one) (datum|edge|point|face|line|start)"],
+                all: ["chain(?:,|:| (?:dimension\\w*|method|system|type|style|one|way))[^.;]{0,70}(next|previous|neighbour\\w*|end to end|one after|each (feature|hole)|hole to|one to another|from one \\w+ to)"] },
+              { desc: "Parallel: every size is taken from the same datum (one edge), so errors do not build up", win: 90,
+                all: ["parallel(?:,|:| (?:dimension\\w*|method|system|type|style|one|way))[^.;]{0,90}(datum|same (edge|line|point|face|start)|one (edge|line|point|face|start)|common (edge|start|point)|single (edge|point))|(datum|same (edge|line|point|face)|common (edge|start))[^.;]{0,50}parallel\\b"] },
+              { desc: "Parallel: each size is independent, so the error in one does not affect the others", win: 90,
+                all: ["parallel(?:,|:| (?:dimension\\w*|method|system|type|style|one|way))[^.;]{0,90}(independent\\w*|(do|does) not (affect|add|accumulat|build)|not (affected|cumulative)|no (build|accumulat)|errors? (do|does) not)|(independent\\w*|(do|does) not (affect|add|accumulat|build))[^.;]{0,40}parallel"] },
+              { desc: "Both use dimensions to locate several features along one direction", win: 60,
+                all: ["\\bboth\\b (\\w+ ){0,6}(locate|position|show|give|use|measure|dimension)"] },
             ],
             sample: "In chain dimensioning each size goes from one feature to the next, so the errors add up along the chain. In parallel dimensioning every size is measured from the same datum edge, so the errors do not build up.",
             model: "<ul><li>Chain: each dimension runs from the previous feature, so tolerance errors accumulate (1)</li><li>Parallel: all dimensions are measured from one datum, so each is independent and errors do not accumulate (1)</li><li>Also acceptable: both locate features along one direction; chain shows the distance between neighbouring features clearly (1)</li></ul><p>Name both sides: a statement about only one method is not a comparison.</p>" },
@@ -260,9 +269,13 @@
           { label: "(c)", type: "text", marks: 2, rows: 4,
             q: "Explain why a functional dimension is usually given a stricter tolerance than a non-functional dimension. [2]",
             points: [
-              { desc: "A functional size decides whether the parts fit and work, so it must be controlled closely (small tolerance)", all: ["\\b(fit|fits|work|works|operate|operates|assemble|assembly|mate|mates|perform|performs)\\b", "(close|tight|small|narrow|precise|accurate|control|exact)"] },
-              { desc: "A non-functional size does not affect how the part works, so a larger tolerance is acceptable", all: ["(non.?functional|not (essential|important|needed|critical)|does ?n.t (matter|affect)|less important|not affect)", "(larger|bigger|wider|looser|greater|more|relaxed|cheaper|easier)"] },
-              { desc: "Tight tolerances cost more (more careful machining, inspection, rejects), so they are used only where needed", all: ["(cost|expensive|money|time|slow|reject|inspect)", "(tight|small|narrow|close|precise|accurate)"] },
+              { desc: "A functional size decides whether the parts fit and work, so it must be controlled closely (small tolerance)", win: 140,
+                not: ["(?<!non.)(?<!non)(?<!not )(?<!not.)functional (\\w+ ){0,3}(have|has|get|gets|needs?|require\\w*|use|uses|given|are given) (a |an )?(much |far )?(larger|bigger|wider|looser|greater)", "non.?functional (\\w+ ){0,3}(have|has|need|needs|require\\w*|get) (a |an )?(much |far )?(tighter|smaller|stricter|narrower)", "(tight\\w*|strict\\w*|small\\w*|narrow\\w*|precis\\w*) (tolerances?|limits) (\\w+ ){0,3}(is|are|makes?|being) (\\w+ ){0,2}(cheaper|quicker|faster|easier|cost less)", "(?<!non.)(?<!non)(?<!not )(?<!not.)functional[^.;]{0,70}\\b(larger|bigger|wider|looser|greater|more|big|large) (tolerance|limits?|margin|variation|allowance|leeway)", "(larger|bigger|wider|looser|greater|more|big|large) (tolerance|limits?|margin|variation|leeway) (is |are )?(needed |required |given |allowed )?(for|on|in) (the )?(functional|important)", "(?<!non.)(?<!non)(?<!not )(?<!not.)functional[^.;]{0,40}\\b(cheaper|easier|less important|not important|do(es)? ?n.t matter)"],
+                all: ["((fit|fits|fitting|work|works|working|operate|operates|assemble|assembly|mate|mates|perform|performs)\\b)", "((tight\\w*|small\\w*|narrow\\w*|strict\\w*|close\\w*|precis\\w*|accura\\w*|exact\\w*|fine|controlled) (\\w+ ){0,1}(tolerances?|limits?|margins?|variation|control|measure\\w*)|(tolerances?|limits?|margins?|variation)s? (\\w+ ){0,3}(tight|small|narrow|strict|close|precis|accura|exact)|(made|machined|manufactured|produced|controlled|kept|cut) (\\w+ ){0,2}(precisely|accurately|exactly|closely|tightly)|(must|have to|has to|need to|needs to|should) be (\\w+ ){0,1}(precise|accurate|exact))"] },
+              { desc: "A non-functional size does not affect how the part works, so a larger tolerance is acceptable", win: 120, not: ["(?<!non.)(?<!non)(?<!not )(?<!not.)functional (\\w+ ){0,3}(have|has|get|gets|needs?|require\\w*|use|uses|given|are given) (a |an )?(much |far )?(larger|bigger|wider|looser|greater)", "non.?functional (\\w+ ){0,3}(have|has|need|needs|require\\w*|get) (a |an )?(much |far )?(tighter|smaller|stricter|narrower)", "(tight\\w*|strict\\w*|small\\w*|narrow\\w*|precis\\w*) (tolerances?|limits) (\\w+ ){0,3}(is|are|makes?|being) (\\w+ ){0,2}(cheaper|quicker|faster|easier|cost less)"],
+                all: ["(non.?functional|not (essential|important|needed|critical|vital)|(does|do) ?n.t (matter|affect)|does not (matter|affect)|less important|matter\\w* less|less (relevant|critical|significant|vital)|isn.t (essential|important)|not (relevant|significant)|not affect\\w*|unimportant)", "((larger|bigger|wider|looser|greater|more|relaxed|big|large) (\\w+ ){0,1}(tolerances?|limits?|margins?|variation|leeway|range|allowance)|(tolerances?|limits?) (\\w+ ){0,2}(larger|bigger|wider|looser|greater|relaxed)|(vary|varies|differ|be out) (\\w+ ){0,2}(more|a bit|slightly|a little)|less (precise|accurate|exact|strict|tight))"] },
+              { desc: "Tight tolerances cost more (more careful machining, inspection, rejects), so they are used only where needed", win: 90, not: ["(?<!non.)(?<!non)(?<!not )(?<!not.)functional (\\w+ ){0,3}(have|has|get|gets|needs?|require\\w*|use|uses|given|are given) (a |an )?(much |far )?(larger|bigger|wider|looser|greater)", "non.?functional (\\w+ ){0,3}(have|has|need|needs|require\\w*|get) (a |an )?(much |far )?(tighter|smaller|stricter|narrower)", "(tight\\w*|strict\\w*|small\\w*|narrow\\w*|precis\\w*) (tolerances?|limits) (\\w+ ){0,3}(is|are|makes?|being) (\\w+ ){0,2}(cheaper|quicker|faster|easier|cost less)"],
+                all: ["((tight\\w*|small\\w*|narrow\\w*|precis\\w*|accura\\w*|strict\\w*|close\\w*) (tolerances?|limits|machining|manufactur\\w*|work|parts?|fits?)[^.;]{0,60}(cost\\w*|expensive|slow\\w*|time|reject\\w*|scrap|inspect\\w*|waste)|(cost\\w*|expensive|take longer|more time|slower|more rejects)[^.;]{0,50}(tight\\w*|small\\w*|narrow\\w*|precis\\w*|accura\\w*|strict\\w*|close\\w*) (tolerances?|limits|machining|work|parts?))"] },
             ],
             sample: "A functional size decides whether the parts fit together and work, so it has to be kept within a tight tolerance. A non-functional size does not affect how the part works, so it can have a looser tolerance, which is cheaper and quicker to make.",
             model: "<ul><li>Functional sizes decide whether parts fit and work, so they need a small tolerance (1)</li><li>Non-functional sizes are not essential to the function, so a larger tolerance is acceptable and the part is cheaper to make (1)</li><li>Also acceptable: tight tolerances cost more in machining, inspection and rejects, so they are used only where needed (1)</li></ul>" },
@@ -299,8 +312,10 @@
           { label: "(b)", type: "text", marks: 2, rows: 4,
             q: "Explain why the projection symbol is put on a production drawing. [2]",
             points: [
-              { desc: "It tells the reader which projection system (third angle or first angle) the views use", all: ["(symbol|it) .{0,40}(tell|show|state|indicat|identif|say)|(tell|show|state|indicat|identif|say|know|which|what) .{0,40}(system|angle)", "(first|third|1st|3rd).{0,6}angle|system|projection"] },
-              { desc: "So the views are read in the right places (otherwise the plan and end elevation would be misread/mixed up)", all: ["(misread|mistake|wrong|error|confus|mix|misunderst|correctly|right (way|place|position)|properly|so (that )?(the )?(reader|person|they|you|makers?|manufactur\\w*)|not know)", "(view|plan|elevation|drawing|position|place|side)"] },
+              { desc: "It tells the reader which projection system (third angle or first angle) the views use", win: 80,
+                any: ["(tell|show|state|indicat|identif|say|know|let|explain|confirm)\\w*( \\w+){0,6} (which|what|if|whether)( \\w+){0,4} (system|angle|projection|method|layout)", "(whether|if|which)( \\w+){0,5} (first|third|1st|3rd)[ -]angle", "(first|third|1st|3rd)[ -]angle( \\w+){0,6} (or|not|rather than)", "(shows|states|means|tells \\w+) (\\w+ ){0,3}(is|are|in|uses?) (\\w+ ){0,2}(third|3rd)[ -]angle"] },
+              { desc: "So the views are read in the right places (otherwise the plan and end elevation would be misread/mixed up)", win: 80,
+                any: ["(views?|plan|elevations?|drawing|it|them)( \\w+){0,2} (misread|mis.?interpret\\w*|misunderst\\w*|mixed up|confused|read (\\w+ ){0,2}(wrong\\w*|incorrect\\w*))", "(misread\\w*|mis.?interpret\\w*|misunderst\\w*|mix\\w* up|confus\\w*)( \\w+){0,2} (views?|plan|elevations?|drawing)", "read( \\w+){0,2} (wrong\\w*|incorrect\\w*)"] },
             ],
             sample: "The symbol tells the reader whether the drawing is in first angle or third angle. Without it the views could be read the wrong way round, so the plan or end elevation might be misread and the part made wrongly.",
             model: "<ul><li>The symbol states which projection system the drawing uses (third angle, not first angle) (1)</li><li>so the reader knows where each view should be and does not misread the views, which would cause errors in manufacture (1)</li></ul>" },
@@ -330,10 +345,12 @@
           { label: "(b)", type: "text", marks: 2, rows: 4,
             q: "Window B swings open from one edge. Explain how its symbol shows which edge it swings from. [2]",
             points: [
-              { desc: "The two lines meet in a point (converge)", all: ["(lines?|diagonals?|strokes?)", "(meet|join|converge|come together|point|apex|touch)"] },
-              { desc: "at the top edge (middle of the top), which is the hinged side", all: ["\\btop\\b", "(hinge|hinged|pivot|attached|fixed)"] },
+              { desc: "The two lines meet in a point (converge)", win: 80,
+                any: ["(lines?|diagonals?|strokes?)( \\w+){0,3} (meets?|join\\w*|converg\\w*|come together|come to|touch\\w*)", "(meet|join|converge)\\w*( \\w+){0,1} (a |the |at a )?(point|apex)"] },
+              { desc: "at the top edge (middle of the top), which is the hinged side", win: 80,
+                any: ["(hinge\\w*|pivot\\w*|swing\\w*|attached|opens? from)( \\w+){0,7} (top|upper)", "top.?(hung|hinged)", "hung (from|at) the top", "(top|upper)( \\w+){0,3} (is |are )?(the )?(hinge|hinged|pivot|where (it|the window) (swings|is attached|opens))"] },
             ],
-            sample: "The two lines of the symbol meet at a point in the middle of the top edge, and the meeting point is the hinged side, like the fold of a book.",
+            sample: "The two lines of the symbol meet at a point in the middle of the top edge, so the top is the hinged side, like the fold of a book.",
             model: "<ul><li>The two lines of the symbol meet at a point (1)</li><li>at the middle of the side that is hinged: here the top (1)</li></ul><p>The lines always meet at the hinge, so a side-hung window meets at the side and a bottom-hung one at the bottom.</p>" },
         ],
       },
@@ -348,6 +365,45 @@
             pairs: [["A", "How the size of the drawing compares with the real object"], ["B", "When the drawing was made"], ["C", "The unit of the sizes, so that mm need not be written after each one"]] },
           { label: "(b)", type: "num", marks: 1, unit: "mm", a: 425, tol: 0, q: "A bracket measures 85 mm on the drawing, which is drawn at the scale in box A. Calculate the real length of the bracket.",
             why: "The scale is 1:5, so real size = drawn size × 5 = 85 × 5 = 425 mm. Dimensions always state the real size, whatever the scale." },
+        ],
+      },
+      /* ------------------------------------------------------------ 11 */
+      {
+        id: "std-11",
+        style: "Scenario question · compare",
+        stem: "<p>The shipyard design office is deciding whether its draughtspeople should produce the plans for a new gun-carriage by manual drawing or on a CAD system. The drawings will be revised several times after client meetings and some copies will go to a workshop abroad.</p>",
+        parts: [
+          { label: "(a)", type: "text", marks: 4, rows: 8,
+            q: "Compare manual drawing with CAD for producing these plans. Make a point about each method. [4]",
+            points: [
+              { desc: "Changes: a manual drawing has to be redrawn or rubbed out, whereas a CAD model is edited once and the linked views update", win: 170,
+                all: ["(manual\\w*|by hand|hand.?drawn|hand.?drawing|pencil|paper|sketch\\w*|drawing board)(\\W+\\w+){0,7}\\W+(redraw\\w*|start\\w* (again|over)|rub\\w*|erase\\w*|draw\\w* (it |them )?again)|(redraw\\w*|rubb?ing out|erasing)(\\W+\\w+){0,5}\\W+(manual\\w*|by hand|hand|paper|pencil)", "(cad|computer|electronic|software|digital)\\w*(\\W+\\w+){0,5}\\W+(edit\\w*|chang\\w*|updat\\w*|automatic\\w*|linked|once|quick\\w*|easier|easily|alter\\w*|amend\\w*)"] },
+              { desc: "Speed of ideas: a manual sketch is quick with no software or power, whereas CAD takes longer to set up or learn", win: 170,
+                all: ["(manual\\w*|by hand|hand.?drawn|hand.?drawing|pencil|paper|sketch\\w*|drawing board)(\\W+\\w+){0,5}\\W+(quick\\w*|fast\\w*|seconds|no (software|power|computer)|simple|simpler|straight ?away)", "(cad|computer|electronic|software|digital)\\w*(\\W+\\w+){0,5}\\W+(slow\\w*|longer|training|learn\\w*|set ?up|open\\w*|power|complex\\w*)"] },
+              { desc: "Accuracy: CAD gives accurate, consistent standard lines every time, whereas manual accuracy depends on the skill of the person", win: 170,
+                all: ["(manual\\w*|by hand|hand.?drawn|hand.?drawing|pencil|paper|sketch\\w*|drawing board)(\\W+\\w+){0,5}\\W+(skill\\w*|steady|neat\\w*|inaccura\\w*|errors?|depends?|variable|vary|varies|mistakes?|less (accurate|precise|consistent))|(skill\\w*|inaccura\\w*|less (accurate|precise|consistent))(\\W+\\w+){0,5}\\W+(manual\\w*|by hand|hand|pencil)", "(cad|computer|electronic|software|digital)\\w*(\\W+\\w+){0,5}\\W+(accura\\w*|precis\\w*|exact\\w*|consistent\\w*|standards?|repeat\\w*|same every)|(accura\\w*|precis\\w*|exact\\w*|consistent\\w*)(\\W+\\w+){0,6}\\W+(cad|computer|electronic|software|digital)"] },
+              { desc: "Sharing: a CAD file can be emailed, stored or sent to a machine, whereas a manual drawing has to be scanned or photocopied", win: 170,
+                all: ["(manual\\w*|by hand|hand.?drawn|hand.?drawing|pencil|paper|sketch\\w*|drawing board)(\\W+\\w+){0,5}\\W+(scan\\w*|photocop\\w*|copies|copied|posted|post|physical|carried)|(scan\\w*|photocop\\w*)(\\W+\\w+){0,5}\\W+(manual\\w*|by hand|hand|paper|pencil)", "(cad|computer|electronic|digital|files?)\\w*(\\W+\\w+){0,5}\\W+(email\\w*|e-mail\\w*|share\\w*|cloud|cop(y|ied|ies)|stor\\w*|send\\w*|sent|machines?|cnc|manufactur\\w*|online|internet)"] },
+              { desc: "Cost: CAD needs expensive software, hardware and training, whereas manual drawing needs only cheap equipment", win: 170,
+                all: ["(manual\\w*|by hand|hand.?drawn|hand.?drawing|pencil|paper|sketch\\w*|drawing board)(\\W+\\w+){0,5}\\W+(cheap\\w*|inexpensive|low cost|affordable|no (software|training)|portable)", "(cad|computer|electronic|software|digital)\\w*(\\W+\\w+){0,5}\\W+(expensive|cost\\w*|money|training|licen[cs]e\\w*|hardware)"] },
+              { desc: "Realism: CAD can render a 3D model with materials and lighting, whereas a manual drawing is flat or slow to render by hand", win: 170,
+                all: ["(manual\\w*|by hand|hand.?drawn|hand.?drawing|pencil|paper|sketch\\w*|drawing board)(\\W+\\w+){0,5}\\W+(flat|2d|two.?dimensional|slow\\w*|time.consuming|takes? (a )?(long|time|ages)|harder|difficult|skill)", "(cad|computer|electronic|software|digital)\\w*(\\W+\\w+){0,5}\\W+(render\\w*|realistic|3d|three.?dimensional|materials?|lighting|shad\\w*)"] },
+            ],
+            sample: "With manual drawing a change means the sheet has to be redrawn by hand, whereas with CAD the model is edited once and the linked views update automatically. A manual sketch is quick and needs no software or power, but CAD takes longer to set up and learn. CAD gives accurate lines that follow the standard every time, while the accuracy of a manual drawing depends on the skill of the person. A CAD file can be emailed to the workshop abroad, but a paper drawing has to be scanned or photocopied.",
+            model: "<ul><li>Changes: manual drawings must be redrawn, whereas a CAD model is edited once and the linked views update (1)</li><li>Idea speed: a manual sketch is quick and needs no software or power, whereas CAD takes time to set up and learn (1)</li><li>Accuracy: CAD lines are accurate and meet the standard every time, whereas manual accuracy depends on the person&rsquo;s skill (1)</li><li>Sharing: a CAD file can be emailed, stored or sent to a machine, whereas manual copies must be scanned or photocopied (1)</li><li>Also acceptable: cost (CAD software, hardware and training cost money, manual equipment is cheap); realism (CAD renders 3D models with materials and lighting) (1)</li></ul><p>Any 4. Each mark needs <em>both</em> methods, linked by &ldquo;whereas&rdquo;, &ldquo;but&rdquo; or &ldquo;while&rdquo;: a point about only one method is not a comparison.</p>" },
+        ],
+      },
+      /* ------------------------------------------------------------ 12 */
+      {
+        id: "std-12",
+        style: "Short question · identify and state",
+        stem: "<p>The sheave assembly for the deck crew is drawn with several sectional views, and a parts list numbers every component.</p>",
+        parts: [
+          { label: "(a)", type: "match", q: "Match each type of section to its description.", marks: 3,
+            pairs: [["Part section", "Only a local area is cut away, with an irregular freehand thin break line round it"], ["Revolved section", "The cross-section of an arm or rib is turned through 90° and drawn on the view itself"], ["Stepped section", "The cutting plane changes direction in steps, but the section is drawn as one flat plane"]] },
+          { label: "(b)", type: "mcq", marks: 1, q: "The assembly contains two identical washers. How are they shown in the parts list?",
+            opts: ["Each washer is given its own item number", "Both washers share one item number, with a quantity of 2", "Washers are left out because they are standard parts", "Only one washer is numbered and the other is hatched"], a: 1,
+            why: "Identical parts carry one item number and a quantity. The storekeeper orders from the parts list, so two numbers would suggest two different parts." },
         ],
       },
     ],
