@@ -182,11 +182,13 @@
     if (y === 0) return Math.abs(x) < 1e-12;
     const rel = o.rel == null ? 0.006 : o.rel;
     if (y !== 0 && Math.abs(x - y) / Math.abs(y) <= rel + 1e-12) return true;
-    if (o.sf) for (let k = Math.max(1, o.sf - 1); k <= o.sf + 2; k++) if (Math.abs(x - sfRound(y, k)) <= 1e-9 * Math.abs(y)) return true;
+    if (o.sf) for (let k = Math.max(1, o.sf); k <= o.sf + 2; k++) if (Math.abs(x - sfRound(y, k)) <= 1e-9 * Math.abs(y)) return true;
     return false;
   };
   /* Units: "m s-1", "m/s", "ms^-1", "m s⁻¹" are all one unit. Reduced to a map of symbol -> power, order ignored. */
+  const unitWords = (u) => String(u).replace(/\bkilo\s*/gi, "k").replace(/\bmilli\s*/gi, "m").replace(/\bmicro\s*/gi, "µ").replace(/\bmega\s*/gi, "M").replace(/\bnano\s*/gi, "n").replace(/\s*ohms?\b/gi, "Ω");
   HPP.unitKey = function (u) {
+    u = unitWords(u);
     let t = String(u == null ? "" : u)
       .replace(/⁻?[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g, supRun)
       .replace(/[–—−]/g, "-").replace(/[µμ]/g, "u")
@@ -225,7 +227,7 @@
      number into the expected unit (1 when the unit is written exactly, null when it is wrong or missing). */
   const PREFIX = { p: 1e-12, n: 1e-9, "µ": 1e-6, "μ": 1e-6, u: 1e-6, m: 1e-3, c: 1e-2, k: 1e3, M: 1e6, G: 1e9, T: 1e12 };
   HPP.unitScale = function (n, units) {
-    const written = unitAfter(n);
+    const written = unitWords(unitAfter(n));
     if (!written) return null;
     if (HPP.unitOk(n, units)) return 1;
     for (const u of [].concat(units)) {
