@@ -56,24 +56,25 @@
     if (part.type === "mcq" || part.type === "multi") {
       const multi = part.type === "multi";
       const fs = el("fieldset", { class: "pp-opts" }, el("legend", { class: "sr-only" }, `Options for ${part.label || "this part"}${multi ? ": choose " + part.a.length : ""}`));
-      const ctrls = part.opts.map((o, oi) => {
+      const ctrls = shuffle(part.opts.map((_, i) => i)).map((oi) => {
+        const o = part.opts[oi];
         const c = el("input", { type: multi ? "checkbox" : "radio", name: id, value: oi, id: `${id}-o${oi}` });
         const lab = el("label", { class: "pp-opt", for: `${id}-o${oi}` }, c, el("span", { html: o }));
         fs.append(lab);
-        return { c, lab };
+        return { c, lab, oi };
       });
       input.append(fs);
       if (multi) fs.querySelector("legend").after(el("p", { class: "pp-hint" }, `Choose ${part.a.length}.`));
       getAns = () => (multi ? ctrls.filter((x) => x.c.checked).map((x) => +x.c.value) : (ctrls.findIndex((x) => x.c.checked)));
       ready = () => (multi ? getAns().length > 0 : getAns() >= 0);
       lock = (on) => ctrls.forEach((x) => (x.c.disabled = on));
-      box._reveal = () => ctrls.forEach((x, i) => {
-        const should = multi ? part.a.includes(i) : part.a === i;
+      box._reveal = () => ctrls.forEach((x) => {
+        const should = multi ? part.a.includes(x.oi) : part.a === x.oi;
         x.lab.classList.toggle("right", should);
         x.lab.classList.toggle("wrong", x.c.checked && !should);
       });
       box._clear = () => ctrls.forEach((x) => { x.c.checked = false; x.lab.classList.remove("right", "wrong"); });
-      setAns = (a) => ctrls.forEach((x, i) => (x.c.checked = multi ? Array.isArray(a) && a.includes(i) : a === i));
+      setAns = (a) => ctrls.forEach((x) => (x.c.checked = multi ? Array.isArray(a) && a.includes(x.oi) : a === x.oi));
       ctrls.forEach((x) => x.c.addEventListener("change", () => (markBtn.disabled = !ready())));
     } else if (part.type === "num") {
       const inp = el("input", { type: "text", inputmode: "decimal", autocomplete: "off", class: "pp-num", "aria-label": `Answer for ${part.label || "this part"}`, id: `${id}-n` });
