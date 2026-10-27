@@ -96,9 +96,10 @@
 
   /* Figure 6: dinner invitation */
   const figInvite =
-    `<svg viewBox="0 0 300 336" role="img" aria-label="A dinner invitation card. The title Regatta Dinner is large, italic and centred at the top. Below it, labelled B, is a paragraph of four lines whose left edges line up and whose right edges are uneven. Labelled C is a list of three items in which the first line of each item starts at the left and the later line is indented to the right. At the foot, labelled D, is a dark aubergine strip carrying the words RSVP BY 1 MAY in white.">` +
+    `<svg viewBox="0 0 300 336" role="img" aria-label="A dinner invitation card. The title Regatta Dinner is large, centred at the top and set in a flowing script style, with a curly flourish under it. Below it, labelled B, is a paragraph of four lines whose left edges line up and whose right edges are uneven. Labelled C is a list of three items in which the first line of each item starts at the left and the later line is indented to the right. At the foot, labelled D, is a dark aubergine strip carrying the words RSVP BY 1 MAY in white.">` +
     rect(10, 10, 280, 316, PAP, `stroke="${INK}" stroke-width="1.5"`) +
-    `<text x="150" y="62" font-size="29" font-weight="700" font-style="italic" fill="${MAG}" text-anchor="middle">Regatta Dinner</text>` +
+    `<text x="150" y="62" font-size="31" font-style="italic" font-family="'Snell Roundhand','Brush Script MT','Apple Chancery','Segoe Script',cursive" fill="${MAG}" text-anchor="middle">Regatta Dinner</text>` +
+    `<path d="M70 72 Q110 82 150 72 T230 72" fill="none" stroke="${MAG}" stroke-width="1.6" stroke-linecap="round"/>` +
     lines(30, 92, [226, 198, 232, 164], 12) + lab(274, 106, "B") +
     [0, 1, 2].map((i) => rect(30, 170 + i * 28, 206, 4, GRY) + rect(48, 179 + i * 28, 120, 4, GRY)).join("") +
     lab(274, 198, "C") + rect(40, 268, 220, 36, AUB) +
@@ -152,16 +153,16 @@
     `</svg>`;
 
   /* Figure 11: poster with numbered hotspots */
-  const planks = [0, 1, 2, 3, 4, 5].map((i) => `<path d="M200 ${112 + i * 14} H310" stroke="#8a6a3a" stroke-width="1.2"/>`).join("");
+  const planks = [0, 1, 2, 3, 4, 5].map((i) => `<path d="M200 ${112 + i * 14} H290" stroke="#8a6a3a" stroke-width="1.2"/>`).join("");
   const figHot =
     `<svg viewBox="0 0 320 370" role="img" aria-label="A summer fair poster with four numbered hotspots. Hotspot 1 is a pale pink panel behind the dark red title. Hotspot 2 is a thick wavy magenta line under the title panel. Hotspot 3 is a panel on the right filled with a pattern of wooden planks. Hotspot 4 is a yellow circle containing the word FREE. A large dark photograph fills the left side and two smaller panels sit on the right, one of planks and one pale with text.">` +
     rect(4, 4, 312, 362, PAP, `stroke="${INK}" stroke-width="1.5"`) + rect(14, 14, 292, 62, "#f6c6dc") +
     `<text x="160" y="56" font-size="30" font-weight="700" fill="#8a0f4c" text-anchor="middle">SUMMER FAIR</text>` + lab(290, 30, "1") +
-    `<path d="M14 86 Q40 76 66 86 T118 86 T170 86 T222 86 T274 86 T306 86" fill="none" stroke="${MAG}" stroke-width="3.5"/>` + lab(292, 84, "2") +
+    `<path d="M14 86 Q40 76 66 86 T118 86 T170 86 T222 86 T274 86" fill="none" stroke="${MAG}" stroke-width="3.5"/>` + lab(296, 91, "2") +
     rect(14, 100, 176, 196, AUB) + `<path d="M14 250 Q60 232 100 250 T190 250 V296 H14 Z" fill="#52308a"/><path d="M80 250 L120 250 L112 262 L88 262 Z" fill="#fffaf0"/><path d="M100 250 V190" stroke="#fffaf0" stroke-width="2.5"/><path d="M102 192 L130 244 L102 244 Z" fill="#fffaf0"/>` +
-    `<circle cx="150" cy="134" r="24" fill="${YEL}"/><text x="150" y="139" font-size="13" font-weight="700" fill="${INK}" text-anchor="middle">FREE</text>` + lab(172, 112, "4") +
-    rect(200, 100, 106, 92, "#c9a26a") + planks + lab(290, 116, "3") +
-    rect(200, 204, 106, 92, "#fff3b0") + lines(210, 218, [86, 86, 86, 60], 12, "#a39883") +
+    `<circle cx="150" cy="134" r="24" fill="${YEL}"/><text x="150" y="139" font-size="13" font-weight="700" fill="${INK}" text-anchor="middle">FREE</text>` + lab(180, 110, "4") +
+    rect(200, 100, 90, 92, "#c9a26a") + planks + lab(304, 116, "3") +
+    rect(200, 204, 90, 92, "#fff3b0") + lines(210, 218, [70, 70, 70, 48], 12, "#a39883") +
     `<text x="160" y="330" font-size="13" font-weight="700" fill="${AUB}" text-anchor="middle">Saturday 21 June &#183; Blockhaven Dock</text>` +
     `</svg>`;
 
@@ -218,17 +219,6 @@
               { desc: "Matching labels or headings in the same style repeated at regular intervals", win: 40, all: ["(fly|build|lead|labels?|headings?)", "(same|match|identical|repeat)\\w*\\W+(\\w+\\W+){0,2}(font|style|colour|size|white|interval)"] },
             ],
             sample: "A row of six identical magenta pennants is repeated at equal spacing along the top of the poster. Three circular badges are the same size and are evenly spaced across the middle, labelled FLY, BUILD and LEAD.",
-            model: "<ul><li>The pennants are repeated at equal spacing in a row below the title (1).</li><li>The three badges are the same size, repeated at equal intervals across the page (1).</li></ul><p>Also acceptable: the matching white labels inside the badges. A bare &ldquo;repetition&rdquo; or &ldquo;there is a pattern&rdquo; is a list word, not a description: say what is repeated and where.</p>",
-          },
-          {
-            type: "text", label: "(b)", marks: 2, rows: 4,
-            q: "Describe how rhythm has been created in the poster.",
-            points: [
-              { desc: "A row of identical pennants repeated at equal spacing across the top", win: 70, all: ["(identical|same|matching|repeated|repeating|row of|series of|line of)\\W+(\\w+\\W+){0,2}(pennants?|flags?|triangles?)|(pennants?|flags?|triangles?)\\W+(\\w+\\W+){0,3}(repeated|identical|same|in a row)", "(spac|interval|gap|equally|evenly|regularly)"] },
-              { desc: "Three circles/badges (FLY, BUILD, LEAD) the same size and equally spaced", win: 70, all: ["(identical|same|matching|repeated|equal|three|row of)\\W+(\\w+\\W+){0,2}(circles?|circular|badges?|roundels?|buttons?)|(circles?|badges?|roundels?|buttons?)\\W+(\\w+\\W+){0,4}(same size|equal size|identical|repeated|the same)", "(spac|interval|gap|equally|evenly|regularly)"] },
-              { desc: "Matching labels or headings in the same style repeated at regular intervals", win: 40, all: ["(fly|build|lead|labels?|headings?)", "(same|match|identical|repeat)\\w*\\W+(\\w+\\W+){0,2}(font|style|colour|size|white|interval)"] },
-            ],
-            sample: "A row of six identical magenta pennants is repeated at equal spacing along the top of the poster. Three circular badges are the same size and evenly spaced across the middle, labelled FLY, BUILD and LEAD.",
             model: "<ul><li>The pennants are repeated at equal spacing in a row below the title (1).</li><li>The three badges are the same size, repeated at equal intervals across the page (1).</li></ul><p>Also acceptable: the matching white labels inside the badges. A bare &ldquo;repetition&rdquo; or &ldquo;there is a pattern&rdquo; is a list word, not a description: say what is repeated and where.</p>",
           },
           { type: "mcq", label: "(c)", marks: 1, q: "The aircraft photograph is far larger than any other item, so the eye starts there. Which design principle is this?", opts: ["Proximity", "Dominance", "Rhythm", "White space"], a: 1, why: "One item clearly more important than the rest, usually the largest, is dominance: it gives the eye an obvious starting point." },
@@ -333,7 +323,7 @@
             points: [
               { desc: "Light text on a dark background gives strong contrast, so it stands out / catches attention", win: 70, all: ["(white|light|pale|bright)\\W+(\\w+\\W+){0,3}(on|against)\\W+(\\w+\\W+){0,2}(dark|navy|aubergine|purple|black)|(dark|navy|aubergine|purple|black)\\W+(\\w+\\W+){0,3}(behind|beneath|under|with|and)\\W+(\\w+\\W+){0,2}(white|light|pale)", "(contrast|stand|attention|notice|eye|catch|grab|clear|visible|pops?)"] },
               { desc: "It suits short text, because long passages of reverse text are tiring to read", group: "g2", win: 90, any: ["\\b(short|few words|brief|a few|one line|little text|small amounts?)\\b\\W+(\\w+\\W+){0,12}(tiring|tire\\w*|strain\\w*|hard\\w* to read|difficult to read|uncomfortable|exhausting|(not|n't) (tiring|hard|difficult|a strain))", "(best|only|better|suits?|ideal|works?|good|fine)\\W+(\\w+\\W+){0,3}(for|with|on)\\W+(\\w+\\W+){0,2}(short|few words|brief|small amounts?)"] },
-              { desc: "Long passages of reverse text are tiring or hard to read", group: "g2", win: 80, not: ["(not|n't|never)\\W+(\\w+\\W+){0,2}(hard|difficult|tiring|tire|strain)", "easier"], all: ["(long|lots of|large amounts?|big blocks?|paragraphs?|passages?|body text|a lot)\\W+(\\w+\\W+){0,6}(tiring|tire|tired|hard|difficult|strain|exhausting|harder|tricky|uncomfortable)\\w*"] },
+              { desc: "Long passages of reverse text are tiring or hard to read", group: "g2", win: 80, not: ["(not|n't|never)\\W+(\\w+\\W+){0,2}(hard|difficult|tiring|tire|strain)", "easier"], any: ["(long|lots of|large amounts?|big blocks?|paragraphs?|passages?|body text|a lot)\\W+(\\w+\\W+){0,6}(tiring|tire|tired|hard|difficult|strain|exhausting|harder|tricky|uncomfortable)\\w*", "(tiring|tire|tired|hard|difficult|strain|exhausting|harder|tricky|uncomfortable)\\w*( to read)?\\W+(\\w+\\W+){0,4}(long|lots of|large amounts?|big blocks?|paragraphs?|passages?|body text|a lot)"] },
             ],
             sample: "White text on the dark strip has strong contrast, so the RSVP line is eye-catching and guests notice it. Reverse text is best for short pieces of text, because long passages of it are tiring to read, and this line is only a few words.",
             model: "<ul><li>Light text on a dark background contrasts strongly, so the line stands out and is noticed (1).</li><li>It works for short text; long passages in reverse are tiring to read, and the RSVP line is only a few words (1).</li></ul>",
@@ -374,9 +364,9 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain two benefits of using a master page for the 24-page programme.",
             points: [
-              { desc: "Items are set up once and appear on every page, which saves time", win: 90, all: ["(once|one time|single time|automatic\\w*)\\W+(\\w+\\W+){0,6}(every|each|all)\\W+(\\w+\\W+){0,2}pages?|(every|each|all)\\W+(\\w+\\W+){0,2}pages?\\W+(\\w+\\W+){0,4}(automatic\\w*|once|straight away)|appears? (on|in) (every|each|all)", "(so|which|this|that|it|meaning|means|and)\\W+(\\w+\\W+){0,1}(saves?|saving|quicker|faster|less time|less work|less effort)|(makes?|make) (\\w+ ){0,2}(quick|fast|easy|easier)|(no need|don't need|doesn't need|without having|not have) to (re-?(type|do|create|place)|copy|do it|add)|(instead of|rather than)\\W+(\\w+\\W+){0,6}(each|every|individual\\w*|one by one|manually)"] },
+              { desc: "Items are set up once and appear on every page, which saves time", win: 150, all: ["(once|one time|single time|automatic\\w*)\\W+(\\w+\\W+){0,6}(every|each|all)\\W+(\\w+\\W+){0,2}pages?|(every|each|all)\\W+(\\w+\\W+){0,2}pages?\\W+(\\w+\\W+){0,4}(automatic\\w*|once|straight away)|appears? (on|in) (every|each|all)", "(so|which|this|that|it|meaning|means|and)\\W+(\\w+\\W+){0,1}(saves?|saving|quicker|faster|less time|less work|less effort)|(makes?|make) (\\w+ ){0,2}(quick|fast|easy|easier)|(no need|don't need|doesn't need|without having|not have) to (re-?(type|do|create|place)|copy|do it|add)|(instead of|rather than)\\W+(\\w+\\W+){0,10}(each|every|individual\\w*|one by one|manually)"] },
               { desc: "Items are in exactly the same position on every page, so the programme is consistent", win: 90, all: ["(in|at|on|to) (\\w+ ){0,2}(same|identical|exact)( \\w+){0,2} (position|place|spot|location)|(look|layout|design|appearance)\\W+(\\w+\\W+){0,2}(same|identical|consistent|uniform)\\w*", "(so|which|making|makes|means|giving|gives|this|looks?|appears?)\\W+(\\w+\\W+){0,3}(consistent|consistency|uniform\\w*|unified|professional|neat|tidy|identical|the same|alike)"] },
-              { desc: "Changing the master updates every page at once", win: 60, all: ["(change|edit|alter|update|amend|correct|fix)", "master", "(all|every|each)\\W+(\\w+\\W+){0,3}pages?|automatic", CONN] },
+              { desc: "Changing the master updates every page at once", win: 90, all: ["(change|edit|alter|update|amend|correct|fix)\\w*", "master", "(all|every|each)\\W+(\\w+\\W+){0,3}pages?|automatic\\w*|at once"] },
             ],
             sample: "The header, footer and page numbers only have to be set up once on the master page and then appear on every page automatically, which saves time. They are in exactly the same position on every page, so the programme looks consistent.",
             model: "<ul><li>Repeating items are placed once and appear on every page automatically, saving time (1).</li><li>They sit in the identical position on each page, giving consistency/unity (1).</li><li>Editing the master updates every page at once (1).</li></ul><p>Any 2, each as a feature linked to its effect.</p>",
@@ -415,7 +405,7 @@
             q: "Describe how cropping has been used on the photograph of the pilot (A).",
             points: [
               { desc: "Cut/cropped round the outline of the figure, removing the whole background", any: ["(cut|crop|trim|remov|delet|eras)\\w*\\W+(\\w+\\W+){0,2}(round|around|along|follow\\w*|outline)", "(whole|all|entire|complete)\\W+(\\w+\\W+){0,2}background", "(background|backdrop)\\W+(\\w+\\W+){0,2}(removed|cut|gone|deleted|erased)", "(remov|delet|eras|cut|cutting)\\w*\\W+(\\w+\\W+){0,2}(background|backdrop|surroundings)", "cut.?out"] },
-              { desc: "So the figure sits directly on the cover / overlaps the masthead (full crop)", any: ["(overlaps?|overlapping|in front of|on top of)\\W+(\\w+\\W+){0,3}(masthead|title|heading|logo)", "(sits?|stands?|placed|put)\\W+(\\w+\\W+){0,2}(straight|directly|right)\\W+(\\w+\\W+){0,2}(on|onto)\\W+(\\w+\\W+){0,2}(cover|page|background)", "(over|across|onto|into)\\W+(\\w+\\W+){0,2}(masthead|title|sail)\\b", "(head|figure|pilot)\\W+(\\w+\\W+){0,4}(over|in front|on top)\\W+(\\w+\\W+){0,3}(masthead|title|sail)"] },
+              { desc: "So the figure sits directly on the cover / overlaps the masthead (full crop)", any: ["(overlaps?|overlapping|in front of|on top of)\\W+(\\w+\\W+){0,3}(masthead|title|heading|logo)", "(sits?|stands?|placed|put)\\W+(\\w+\\W+){0,2}(straight|directly|right)\\W+(\\w+\\W+){0,2}(on|onto)\\W+(\\w+\\W+){0,2}(cover|page|background)", "\\b(over|across|onto|into)\\W+(\\w+\\W+){0,2}(masthead|title|sail)\\b", "(head|figure|pilot)\\W+(\\w+\\W+){0,4}(over|in front|on top)\\W+(\\w+\\W+){0,3}(masthead|title|sail)"] },
               { desc: "So text can wrap closely round its shape", any: ["text\\W+(\\w+\\W+){0,4}(wrap|flow|follow|curve|go round|goes around)", "(wrap|flow)\\w*\\W+(\\w+\\W+){0,3}text"] },
             ],
             sample: "The pilot has been cut out round the outline of the body so that the whole background is removed. That lets the figure sit straight on the cover and overlap the masthead.",
@@ -426,7 +416,7 @@
             q: "Explain why text wrap has been used for the lines of text labelled B.",
             points: [
               { desc: "The text follows/flows round the outline of the pilot", any: ["(text|words|lines)\\W+(\\w+\\W+){0,6}(follows?|flows?|wrap\\w*|runs?|curves?|goes?|moves?|fits?|shortens?|shaped|hugs?)\\W+(\\w+\\W+){0,3}(round|around|outline|shape|edge|contour|curve)", AF("text|words|lines", 6, "(follows?|flows?|wrap\\w*|runs?|curves?|goes?|moves?|fits?|shortens?|shaped|hugs?)\\W+(\\w+\\W+){0,3}(round|around|outline|shape|edge|contour|curve)")] },
-              { desc: "So the text stays clear of the figure and no space is wasted / looks neatly joined to the image", any: ["(not|never|without|avoid\\w*|n't)\\W+(\\w+\\W+){0,2}(hidden|covered|obscur\\w*|overlap\\w*|cut off)", "(no|without|avoid\\w*)\\W+(\\w+\\W+){0,1}(gap|wasted|empty)", "(neatly|tightly|closely|snugly|integrated)\\W+(\\w+\\W+){0,2}(joined|linked|fitted|fitting|together|connected)", "(stay|stays|stop|stops|keep|keeps|kept)\\w*\\W+(\\w+\\W+){0,3}(clear of|away from|off|outside)\\W+(\\w+\\W+){0,2}(pilot|figure|image|shape|picture|photo)", AF("text|words|lines", 8, "(hidden|covered|obscured|overlapped)\\W+(\\w+\\W+){0,3}(behind|by|under)|neatly joined|joined together|snugly|closely")] },
+              { desc: "So the text stays clear of the figure and no space is wasted / looks neatly joined to the image", negOK: true, any: ["(not|never|without|avoid\\w*|n't)\\W+(\\w+\\W+){0,2}(hidden|covered|obscur\\w*|overlap\\w*|cut off)", "(no|without|avoid\\w*)\\W+(\\w+\\W+){0,1}(gap|wasted|empty)", "(neatly|tightly|closely|snugly|integrated)\\W+(\\w+\\W+){0,2}(joined|linked|fitted|fitting|together|connected)", "(stay|stays|stop|stops|keep|keeps|kept)\\w*\\W+(\\w+\\W+){0,3}(clear of|away from|off|outside)\\W+(\\w+\\W+){0,2}(pilot|figure|image|shape|picture|photo)", "(not|n't|never|without)\\W+(\\w+\\W+){0,3}(go|goes|run|runs|sit|sits|spill|spills|overlap)\\w*\\W+(\\w+\\W+){0,2}(under|behind|over|on top of|across|into)\\W+(\\w+\\W+){0,2}(pilot|figure|image|photo|picture|shape)"] },
             ],
             sample: "The lines of text are wrapped round the outline of the pilot's shoulder, getting shorter as they go. This avoids the text being hidden behind the figure and leaves no empty gap, so the text and picture look neatly joined together.",
             model: "<ul><li>The text follows the outline of the cropped pilot, with line lengths changing to fit its shape (1).</li><li>So the words stay clear of the figure and no space is wasted, and the text and picture look joined as one design (1).</li></ul>",
@@ -446,7 +436,7 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain why the logo should be supplied as a vector file for the 2 m banner.",
             points: [
-              { desc: "Vector is stored as points, curves and instructions rather than pixels, so it scales up without losing quality (no pixelation/blur)", win: 90, all: ["(points?|curves?|math\\w*|instructions?|coordinates|paths?|not (made of )?pixels|rather than pixels|instead of pixels|redrawn|recalculated|shapes|lines and)", "(enlarg|scal|resiz|bigger|larger|big|stretch|zoom|blow\\w* (it )?up|make it (bigger|larger)|increas|expand|2 ?m|banner|any size)\\w*\\W+(\\w+\\W+){0,12}(without|stay|stays|no|never|keep|keeps|not|doesn't|don't|still|remains?|looks?)", "(pixel|blur|jag|sharp|quality|crisp|clear|smooth|clean|detail)"] },
+              { desc: "Vector is stored as points, curves and instructions rather than pixels, so it scales up without losing quality (no pixelation/blur)", negOK: true, win: 90, all: ["(points?|curves?|math\\w*|equations?|formulae?|formulas?|instructions?|coordinates|paths?|not (made of )?pixels|rather than pixels|instead of pixels|redrawn|recalculated|shapes|lines and)", "(enlarg|scal|resiz|bigger|larger|big|stretch|zoom|blow\\w* (it )?up|make it (bigger|larger)|increas|expand|2 ?m|banner|any size)\\w*\\W+(\\w+\\W+){0,12}(without|stay|stays|no|never|keep|keeps|not|doesn't|don't|still|remains?|looks?)", "(pixel|blur|jag|sharp|quality|crisp|clear|smooth|clean|detail)"] },
               { desc: "The file is small / supports transparency, so it is easy to send or sits cleanly on any colour", win: 60, all: ["(small|tiny|light|low|compact)\\W+(\\w+\\W+){0,2}(files?|sizes?)|(files?|sizes?)\\W+(\\w+\\W+){0,2}(small|tiny|compact)|transparen", "(email|send|upload|load|quick|fast|download|store|space|background|sit|any colour|printer|share|easy)"] },
             ],
             sample: "A vector logo is stored as points and curves rather than pixels, so it can be enlarged to the size of the 2 m banner and stay sharp, with no blurring. The file is also small, so it is quick to email to the printer.",

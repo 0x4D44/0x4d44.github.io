@@ -40,7 +40,7 @@
     if (opts && opts.negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - 34), a + 1)))) return false;
+      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - 34), a + 1).split(/[.;!?]/).pop()))) return false;
     }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
