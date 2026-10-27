@@ -474,7 +474,7 @@ ORDER BY surname;</pre>
             label: "(a)", type: "text", marks: 3, rows: 4,
             q: "Explain why the output is inaccurate and state the exact change that fixes the query. [3]",
             points: [
-              { desc: "Each cadet/posting is paired with every Leith ship (too many rows, wrong ships)", all: [R`(every|each|all)[^.]{0,40}(ship|row|posting|cadet)`, R`pair\w*|match\w*|combin\w*|multipl\w*|repeat\w*|duplicat\w*|too many|extra|cartesian`], win: 100 },
+              { desc: "Each cadet/posting is paired with every Leith ship (too many rows, wrong ships)", negOK: true, all: [R`(every|each|all)[^.]{0,40}(ship|row|posting|cadet)`, R`pair\w*|match\w*|combin\w*|multipl\w*|repeat\w*|duplicat\w*|too many|extra|cartesian`], win: 100 },
               { desc: "The join between Posting and Ship is missing (named specifically)", any: [R`posting\.shipcode\s*=\s*ship\.shipcode`, R`ship\.shipcode\s*=\s*posting\.shipcode`, R`(join|link|relationship|condition)[^.]{0,60}(posting|ship)[^.]{0,40}(and|to|with|between)[^.]{0,20}(ship|posting)`] },
               { desc: "Add that condition (on shipCode) to the WHERE clause with AND", any: [R`\band\b[^.]{0,5}(posting|ship)\.shipcode\s*=`, R`\b(add|include|put|insert|need|must have|should have)\w*[^.]{0,80}shipcode`] }
             ],

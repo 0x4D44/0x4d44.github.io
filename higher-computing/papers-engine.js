@@ -70,6 +70,8 @@
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
   function listLike(text) {
+    // hyphenated compounds are one word ("one-to-many", "read-only"), and "IN:" / "OUT:" / "A:" labels are not prose words
+    text = text.replace(/([a-z0-9])-(?=[a-z0-9])/g, "$1").replace(/\b(?:in|out|a|q|ans)\s*:/g, " ");
     const toks = text.match(/[a-z0-9']+/g) || [];
     if (toks.length < 4) return null;
     const funcToks = toks.filter((t) => FUNC.has(t));
