@@ -3,6 +3,43 @@
   "use strict";
   const B = (window.HEP_BANK = window.HEP_BANK || {});
   const R = String.raw;
+  /* "...but this is not necessary", "does not matter", "do not have to cope with wind": a claim that the thing is unneeded */
+  const UNNEEDED = [
+    R`\b(?:not|never|no|\w+n't)\s+(?:\w+\s+){0,3}(?:necessar\w*|matter\w*|important|relevant|needed|a\s+factor|bother\w*|(?:need|have|has)\s+to\s+(?:\w+\s+){0,2}(?:survey\w*|check\w*|investigat\w*|design\w*|calculat\w*|plan\w*|resist\w*|withstand\w*|cope|carry|support\w*|survive|bear|worry|consider\w*|stand))\b`,
+    R`\b(?:unnecessary|irrelevant|pointless)\b|\bno\s+(?:\w+\s+)?need\b`,
+  ];
+  /* "...but nothing goes wrong if they do not": a claim that skipping the thing is harmless */
+  const HARMLESS = UNNEEDED.concat([
+    R`\bnothing\b[^.;]{0,30}\b(?:wrong|bad|happen\w*|goes|go|serious)\b`,
+    R`\b(?:fine|okay|ok|safe|no\s+(?:\w+\s+)?(?:problems?|harm|issues?|difference))\b[^.;]{0,30}\bif\s+(?:they|the|there|it|we)\s+(?:\w+\s+){0,2}(?:do\s+not|don'?t|doesn'?t|does\s+not|never|fail|forget|did\s+not|didn'?t)`,
+    R`\bif\s+(?:they|the|there|it|we)\s+(?:\w+\s+){0,2}(?:do\s+not|don'?t|doesn'?t|does\s+not|never|fail|forget|did\s+not|didn'?t)\b[^.;]{0,50}\b(?:fine|okay|nothing|no\s+(?:\w+\s+)?(?:problems?|harm|issues?|difference))`,
+    R`\bnothing\s+(?:is\s+)?(?:wrong|bad)\b`,
+  ]);
+
+  const BEN_ENV = [R`\b(?:no|zero|without|less|fewer|lower|reduc\w*|cut\w*|eliminat\w*|remov\w*|avoid\w*|cleaner)\b[^.;]{0,25}\b(?:exhaust\w*|emission\w*|fumes?|carbon|co2|pollut\w*|nitrogen|nox|particulate\w*|greenhouse|air)`, R`\bair\s+(?:quality|pollution)\b[^.;]{0,25}\b(?:better|improv\w*|cleaner)`, R`\b(?:exhaust|tail-?pipe)\s+(?:emissions?|fumes?)\s+(?:are|is)\s+(?:zero|removed|cut|lower|reduced)`];
+  const BEN_SOC = [R`\bquiet\w*`, R`\b(?:less|lower|reduc\w*)\s+(?:\w+\s+){0,2}(?:noise|vibration|smell)`, R`\bnoise\b[^.;]{0,20}\b(?:reduc\w*|lower|less|down)`, R`\b(?:health\w*|asthma|breath\w*|respirat\w*|pleasant\w*)\b`];
+  const BEN_ECO = [R`\b(?:running|fuel|operating|servicing|maintenance|energy)\s+(?:costs?|bills?)\b[^.;]{0,25}\b(?:lower|less|cheaper|reduc\w*|fall\w*|drop\w*|saving|smaller|cut)`, R`\b(?:lower|less|cheaper|reduc\w*|cut|sav\w*)\s+(?:\w+\s+){0,2}(?:running|fuel|operating|servicing|maintenance|energy)\s+(?:costs?|bills?)`, R`\bcheaper\s+to\s+(?:run|operate|maintain|service|fuel)`, R`\bfewer\s+moving\s+parts`, R`\b(?:less|cheaper|lower)\s+(?:\w+\s+){0,1}(?:maintenance|servicing)\b`];
+  const DRAW_ECO = [R`\b(?:high|expensive|large|big|huge|great|costly|steep)\s+(?:\w+\s+){0,2}(?:costs?|price|purchase|investment|capital|up-?front|initial)`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )\b(?:costs?|expensive|prices?|pricey)\b[^.;]{0,30}\b(?:high\w*|expensive|greater|steep|extra|buy|purchase|install\w*|buses|charg\w*|infrastructure)`, R`\bcharg\w*\s+(?:points?|stations?|infrastructure|equipment|depots?)\b[^.;]{0,40}\b(?:high\w*|expens\w*|invest\w*|costly|cost\s+(?:a\s+lot|more|too|millions?)|costs\s+(?:a\s+lot|more|too|millions?))`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )\b(?:cost\w*|expensive|invest\w*)\b[^.;]{0,40}\bcharg\w*`, R`\bup-?front\b`];
+  const DRAW_ENV = [R`\bbatter\w*\b[^.;]{0,60}\b(?:mining|mined|mine|extract\w*|lithium|cobalt|raw\s+materials?|rare|manufactur\w*|energy\s+to\s+make|recycl\w*|dispos\w*|landfill|waste|end\s+of\s+(?:its\s+|their\s+)?life|toxic|pollut\w*)`, R`\b(?:mining|mined|lithium|cobalt|recycl\w*|dispos\w*|landfill)\b[^.;]{0,60}\bbatter\w*`, R`\b(?:electricity|grid|power)\b[^.;]{0,60}\b(?:fossil|coal|gas|non-?renewable|burn\w*|power\s+stations?)`];
+  const DRAW_SOC = [R`\brange\b[^.;]{0,40}\b(?:limit\w*|short\w*|less|lower|reduc\w*|restrict\w*|problem|issue)`, R`\b(?:limit\w*|short\w*|restrict\w*)\s+(?:\w+\s+){0,2}range\b`, R`\bcharg\w*\b[^.;]{0,40}\b(?:takes?|long|hours|slow|delay\w*|disrupt\w*|out\s+of\s+service|off\s+the\s+road)`, R`\b(?:jobs?|drivers?|mechanics?|workers?)\b[^.;]{0,40}\b(?:lost|loss|los[et]|redundan\w*|retrain\w*|at\s+risk|threat\w*)`, R`\b(?:break\s?downs?|run\s+out\s+of|flat\s+batter\w*)\b`];
+  /* Impacts: benefits and drawbacks are marked as two separate pools of up to two marks each, so a one-sided answer
+     cannot score more than 2/4. Mark 1 of a side is any one creditable point; mark 2 is two different ones. */
+  /* the pair test bypasses the engine's negation check, so each half refuses a match that follows "not", "never" or "n't" */
+  const alt = (arr) => "(?<!(?:\\bnot|\\bnever|n't|\\bno\\s+longer)\\s+(?:\\w+\\s+){0,3})(?:" + arr.join("|") + ")";
+  const pairOf = (sets) => {
+    const out = [];
+    for (let i = 0; i < sets.length; i++) for (let j = i + 1; j < sets.length; j++) out.push("^(?=[\\s\\S]*?" + alt(sets[i]) + ")(?=[\\s\\S]*?" + alt(sets[j]) + ")");
+    return out;
+  };
+  const sidePoints = () => {
+    const ben = [BEN_ENV, BEN_SOC, BEN_ECO], drw = [DRAW_ECO, DRAW_ENV, DRAW_SOC];
+    return [
+      { desc: "Benefit 1 (environmental, social or economic): e.g. no exhaust and cleaner air, quieter streets, or lower running and maintenance costs", any: [].concat(...ben) },
+      { desc: "Benefit 2: a second, different benefit of the three kinds", any: pairOf(ben) },
+      { desc: "Drawback 1 (economic, environmental or social): e.g. high purchase cost, battery materials and the grid electricity, or limited range and charging time", any: [].concat(...drw) },
+      { desc: "Drawback 2: a second, different drawback of the three kinds", any: pairOf(drw) },
+    ];
+  };
 
   /* ---- figure helpers ---- */
   const INK = "#1d1a14", PAPER = "#fffaf0", GREY = "#cbbd9b", BLUE = "#3b5f8a", RED = "#b3402d", GREEN = "#4f7d3a", OCHRE = "#c98a2b";
@@ -110,7 +147,7 @@
           {
             label: "(b)", type: "num", marks: 1, a: 1.75, tol: 0.005, unit: "mW",
             q: R`Calculate the power taken by the sensor, in mW. Use $P = VI$.`,
-            why: R`$P = VI$ (1) $= 5.0\times 350\times10^{-6} = 1.75\times10^{-3}$ W $= \mathbf{1.75\ mW}$. Forgetting to convert µA to A gives 1750, which is 10<sup>6</sup> times too big.`,
+            why: R`$P = VI$ (1) $= 5.0\times 350\times10^{-6} = 1.75\times10^{-3}$ W $= \mathbf{1.75\ mW}$. Forgetting to convert µA to A gives 1750, which is 1000 times too big for an answer in mW.`,
           },
         ],
       },
@@ -192,8 +229,8 @@
           {
             label: "(b)", type: "mcq", marks: 1, a: 2,
             q: "Which pair gives the temperatures at which the thermostat switches the heater on and off?",
-            opts: [R`$17.2\ ^\circ$C on and $22.8\ ^\circ$C off`, R`$22\ ^\circ$C on and $18\ ^\circ$C off`, R`$18\ ^\circ$C on and $22\ ^\circ$C off`, R`$16\ ^\circ$C on and $24\ ^\circ$C off`],
-            why: "The red ON dots are at 18 °C and the blue OFF dots at 22 °C. The temperatures 17.2 °C and 22.8 °C are where the temperature turns round, after the overshoot; they are not the switching points. Swapping on and off would heat the cabin when it is already warm.",
+            opts: [R`$17\ ^\circ$C on and $23\ ^\circ$C off`, R`$22\ ^\circ$C on and $18\ ^\circ$C off`, R`$18\ ^\circ$C on and $22\ ^\circ$C off`, R`$16\ ^\circ$C on and $24\ ^\circ$C off`],
+            why: "The red ON dots are at 18 °C and the blue OFF dots at 22 °C. Reading the curve, the temperature dips to about 17 °C and peaks at about 23 °C (just over 23.1 °C at the top and 17.0 °C at the bottom of the first cycle); these are where the temperature turns round after the overshoot, not the switching points. Swapping on and off would heat the cabin when it is already warm.",
           },
           {
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
@@ -301,7 +338,7 @@
             why: R`$E_p = mgh$ (1) $= 4.0\times10^6\times 9.8\times 120 = 4.704\times10^9\ \text{J} = \mathbf{4.70\ GJ}$.`,
           },
           {
-            label: "(b)", type: "num", marks: 2, a: 1.3067, tol: 0.005, unit: "MW",
+            label: "(b)", type: "num", marks: 2, a: 1.3067, tol: 0.005, rtol: 0.011, unit: "MW",
             q: "Calculate the average power given up by the falling water, in MW. The time is 1.0 hour.",
             why: R`$P = \dfrac{E}{t}$ (1) $= \dfrac{4.704\times10^9}{3600} = 1.307\times10^6\ \text{W} = \mathbf{1.31\ MW}$ (1). The time must be 3600 s, not 1.0 or 60.`,
           },
@@ -334,7 +371,7 @@
             why: R`$E_k = \tfrac{1}{2}mv^2$ (1) $= 0.5\times1200\times25^2 = 375\,000\ \text{J} = \mathbf{375\ kJ}$. Forgetting to square the speed gives 15 kJ.`,
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 337.5, tol: 0.5, unit: "kJ",
+            label: "(b)", type: "num", marks: 1, a: 337.5, tol: 0.5, rtol: 0.011, unit: "kJ",
             q: "Calculate the energy absorbed by the discs and pads, in kJ.",
             why: R`$0.90\times375 = \mathbf{337.5\ kJ}$ (1) (about 338 kJ).`,
           },
@@ -375,24 +412,28 @@
             q: "Describe <strong>two</strong> roles of a civil engineer in the design phase of this project. For each role say how, or why, it is done.",
             points: [
               { desc: "Role 1: designs or sizes the foundations or support structure of each turbine",
-                any: [R`\b(?:design\w*|calculat\w*|siz\w*|specif\w*|choos\w*|select\w*|plan\w*|determin\w*|work\w*\s+out)\b[^.;]{0,50}\b(?:foundations?|towers?|piles?|monopiles?|jackets?|supports?|support\s+structures?|structures?|bases?|moorings?|anchor\w*)`, R`\bfoundations?\b[^.;]{0,30}\b(?:design\w*|siz\w*|calculat\w*)`] },
+                not: [R`\b(?:not|never|no\s+longer|\w+n't)\s+(?:\w+\s+){0,2}(?:design\w*|calculat\w*|siz\w*)\b[^.;]{0,40}\b(?:foundations?|towers?|piles?|supports?)`].concat(UNNEEDED),
+                any: [R`\b(?:design\w*|calculat\w*|siz\w*|specif\w*|choos\w*|select\w*|plan\w*|determin\w*|work\w*\s+out)\b[^.;]{0,50}\b(?:foundations?|towers?|piles?|monopiles?|jackets?|supports?|support\s+structures?|tower\s+structures?|moorings?|anchor\w*)`, R`\b(?:foundations?|towers?|piles?|monopiles?|jackets?|tower\s+supports?|support\s+structures?)\b[^.;]{0,40}\b(?:design\w*|siz\w*|calculat\w*|specif\w*|plan\w*)`] },
               { desc: "How or why for that role: the foundation must resist the wind, wave and turbine loads so it does not fall over or fail",
-                all: [R`\b(?:loads?|forces?|wind|waves?|storms?|weight|stress\w*|currents?|tides?|pressure)\b`, R`\b(?:strong|stable|stability|topple\w*|collaps\w*|fall\w*|withstand\w*|resist\w*|support\w*|carry|carries|safe\w*|hold\w*|survive\w*|cope\w*|bear\w*|tip\w*|fail\w*|overturn\w*|sink\w*|snap\w*)`], win: 100, negOK: true, not: [R`\b(?:not|never|n't)\s+(?:\w+\s+){0,1}(?:strong|stable|safe)\b`] },
+                all: [R`\b(?:loads?|forces?|wind|waves?|storms?|weight|stress\w*|currents?|tides?|pressure)\b`, R`\b(?:strong|stable|stability|topple\w*|collaps\w*|fall\w*|withstand\w*|resist\w*|support\w*|carry|carries|safe\w*|hold\w*|survive\w*|cope\w*|bear\w*|tip\w*|fail\w*|overturn\w*|sink\w*|snap\w*)`], win: 100, negOK: true, not: [R`\b(?:not|never|n't)\s+(?:\w+\s+){0,1}(?:strong|stable|safe)\b`].concat(UNNEEDED) },
               { desc: "Role 2: surveys the seabed or ground, or designs the cable route or access",
+                not: UNNEEDED,
                 any: [R`\b(?:survey\w*|investigat\w*|test\w*|sampl\w*|assess\w*|analys\w*|check\w*|map\w*|examin\w*|stud(?:y|ies|ying)|inspect\w*|explor\w*)\b[^.;]{0,40}\b(?:sea-?bed|sea\s?floor|ground|soil|rock|sand|clay|geolog\w*|site|sediment\w*)`, R`\b(?:design\w*|plan\w*|choos\w*|select\w*|decid\w*|rout\w*)\b[^.;]{0,40}\b(?:cables?|cable\s+routes?|trench\w*|access|platforms?|ladders?|boat\s+landings?|harbours?|ports?|roads?|jett\w*|installation)\b`, R`\b(?:plan\w*|design\w*|decid\w*)\b[^.;]{0,30}\b(?:how|where)\b[^.;]{0,40}\b(?:install\w*|lift\w*|transport\w*|build\w*|construct\w*|position\w*|locat\w*|place\w*)`, R`\b(?:decid\w*|choos\w*|select\w*|find\w*)\b[^.;]{0,30}\b(?:positions?|locations?|where)\b[^.;]{0,40}\b(?:turbines?|towers?)`] },
               { desc: "How or why for that role: e.g. the seabed type decides the foundation, or the cable route avoids damage",
-                all: [R`\b(?:sea-?bed|sea\s?floor|ground|soil|rock|sand|clay|geolog\w*|cables?|routes?|access|platforms?|install\w*|lift\w*)\b`, R`\b(?:so\s+that|so\s+the|so\s+they|so\s+it|because|to\s+(?:choose|decide|select|find|determine|check|make\s+sure|ensure|avoid|see|know|identify|protect|prevent|stop|keep)|in\s+order\s+to|which\s+(?:shows|tells|decides|determines|means|lets|allows|helps)|ensur\w*|determin\w*|decid\w*|avoid\w*|protect\w*|prevent\w*|depend\w*|suitable|right\s+type|damag\w*)`], win: 80, negOK: true },
+                all: [R`\b(?:sea-?bed|sea\s?floor|ground|soil|rock|sand|clay|geolog\w*|cables?|routes?|access|platforms?|install\w*|lift\w*)\b`, R`\b(?:so\s+that|so\s+the|so\s+they|so\s+it|because|to\s+(?:choose|decide|select|find|determine|check|make\s+sure|ensure|avoid|see|know|identify|protect|prevent|stop|keep)|in\s+order\s+to|which\s+(?:shows|tells|decides|determines|means|lets|allows|helps)|ensur\w*|determin\w*|decid\w*|avoid\w*|protect\w*|prevent\w*|depend\w*|suitable|right\s+type|damag\w*)`], win: 80, negOK: true, not: UNNEEDED },
             ],
             sample: "A civil engineer designs the foundations that support each turbine tower. They calculate the wind and wave forces on the structure so that the foundation is strong enough to stop the turbine falling over in a storm. A second role is to survey the seabed where the turbines will stand. This shows whether the ground is rock or sand, so that the engineer can choose the right type of foundation for each position.",
-            model: "<ul><li>Role 1: designs / sizes the foundations or tower structure for each turbine (1)</li><li>How / why: calculates the wind, wave and weight loads so that the foundation is strong and stable and does not topple or fail (1)</li><li>Role 2: surveys the seabed (ground investigation), or designs the cable route, access platform or installation method (1)</li><li>How / why: the seabed type decides which foundation is suitable, or the route is chosen to protect the cables and allow safe access (1)</li></ul><p>Two means two different roles: the same role in different words earns one role mark at most. A job title alone (&quot;designs the structure&quot;) earns nothing. Do not accept tasks from other phases such as building or testing.</p>",
+            model: "<ul><li>Role 1: designs / sizes the foundations or tower structure for each turbine (1)</li><li>How / why: calculates the wind, wave and weight loads so that the foundation is strong and stable and does not topple or fail (1)</li><li>Role 2: surveys the seabed (ground investigation), or designs the cable route, access platform or installation method (1)</li><li>How / why: the seabed type decides which foundation is suitable, or the route is chosen to protect the cables and allow safe access (1)</li></ul><p>Two means two different roles: the same role in different words earns one role mark at most. A bare job title (&quot;designs the structure&quot;) earns nothing: the foundations or tower, or the seabed survey, cable route or access, must be named. A role the answer says is unnecessary earns nothing. Do not accept tasks from other phases such as building or testing.</p>",
           },
           {
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 10,
             q: "Explain why good communication between the civil engineers and the electrical engineers is important on this project.",
             points: [
               { desc: "They must share information that the other discipline needs, such as cable positions, weights or changes",
+                not: HARMLESS,
                 any: [R`\b(?:tell\w*|told|inform\w*|shar\w*|pass\w*|agree\w*|discuss\w*|explain\w*|notify\w*|updat\w*|talk\w*|ask\w*|know\w*)\b[^.;]{0,70}\b(?:cable\w*|duct\w*|weights?|sizes?|loads?|positions?|locations?|changes?|requirements?|drawings?|specification\w*|details?|plans?|where|what)\b`, R`\b(?:cable\w*|duct\w*|weights?|sizes?|loads?|positions?|locations?|changes?|requirements?|details?)\b[^.;]{0,50}\b(?:tell\w*|told|inform\w*|shar\w*|pass\w*|agree\w*|discuss\w*|notif\w*|updat\w*|known|communicat\w*)`, R`\bcommunicat\w*\b[^.;]{0,40}\b(?:other|another|each\s+other)\b`] },
               { desc: "Otherwise mistakes happen: parts do not fit, work is redone, causing delay, cost or an unsafe structure",
+                not: HARMLESS,
                 any: [R`\b(?:mistakes?|errors?|clash\w*|redo\w*|re-?work\w*|re-?built|re-?design\w*|delay\w*|extra\s+cost|costly|cost\w*|expensive|wasted?|unsafe|danger\w*|fail\w*|collaps\w*|not\s+fit|won'?t\s+fit|wrong|misalign\w*|don'?t\s+match|do\s+not\s+match|not\s+match|incompatible|problems?|overrun\w*)`] },
             ],
             sample: "The electrical engineers need to tell the civil engineers where the cables enter each foundation, so that ducts can be built in the right place. If they do not share this information there will be mistakes, parts will not fit and the work has to be redone, which causes delay and extra cost.",
@@ -420,23 +461,10 @@
           },
           {
             label: "(b)", type: "text", marks: 4, rows: 9, minWords: 30,
-            q: "Discuss the impacts of making this change. Your answer should include benefits and drawbacks.",
-            points: [
-              { desc: "Benefit (environmental): no exhaust, so lower emissions or cleaner air in the city",
-                any: [R`\b(?:no|zero|without|less|fewer|lower|reduc\w*|cut\w*|eliminat\w*|remov\w*|avoid\w*|cleaner)\b[^.;]{0,25}\b(?:exhaust\w*|emission\w*|fumes?|carbon|co2|pollut\w*|nitrogen|nox|particulate\w*|greenhouse|air)`, R`\bair\s+(?:quality|pollution)\b[^.;]{0,25}\b(?:better|improv\w*|cleaner)`, R`\b(?:exhaust|tail-?pipe)\s+(?:emissions?|fumes?)\s+(?:are|is)\s+(?:zero|removed|cut|lower|reduced)`] },
-              { desc: "Benefit (social): quieter, or healthier air for residents",
-                any: [R`\bquiet\w*`, R`\b(?:less|lower|reduc\w*)\s+(?:\w+\s+){0,2}(?:noise|vibration|smell)`, R`\bnoise\b[^.;]{0,20}\b(?:reduc\w*|lower|less|down)`, R`\b(?:health\w*|asthma|breath\w*|respirat\w*|pleasant\w*)\b`] },
-              { desc: "Benefit (economic): lower running and maintenance costs",
-                any: [R`\b(?:running|fuel|operating|servicing|maintenance|energy)\s+(?:costs?|bills?)\b[^.;]{0,25}\b(?:lower|less|cheaper|reduc\w*|fall\w*|drop\w*|saving|smaller|cut)`, R`\b(?:lower|less|cheaper|reduc\w*|cut|sav\w*)\s+(?:\w+\s+){0,2}(?:running|fuel|operating|servicing|maintenance|energy)\s+(?:costs?|bills?)`, R`\bcheaper\s+to\s+(?:run|operate|maintain|service|fuel)`, R`\bfewer\s+moving\s+parts`, R`\b(?:less|cheaper|lower)\s+(?:\w+\s+){0,1}(?:maintenance|servicing)\b`] },
-              { desc: "Drawback (economic): high purchase and charging-equipment cost",
-                any: [R`\b(?:high|expensive|large|big|huge|great|costly|steep)\s+(?:\w+\s+){0,2}(?:costs?|price|purchase|investment|capital|up-?front|initial)`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )\b(?:costs?|expensive|prices?|pricey)\b[^.;]{0,30}\b(?:high\w*|expensive|greater|steep|extra|buy|purchase|install\w*|buses|charg\w*|infrastructure)`, R`\bcharg\w*\s+(?:points?|stations?|infrastructure|equipment|depots?)\b[^.;]{0,40}\b(?:cost\w*|expens\w*|invest\w*)`, R`\b(?:cost\w*|expensive|invest\w*)\b[^.;]{0,40}\bcharg\w*`, R`\bup-?front\b`] },
-              { desc: "Drawback (environmental): battery materials are mined and made with energy, need recycling, or the electricity may come from fossil fuels",
-                any: [R`\bbatter\w*\b[^.;]{0,60}\b(?:mining|mined|mine|extract\w*|lithium|cobalt|raw\s+materials?|rare|manufactur\w*|energy\s+to\s+make|recycl\w*|dispos\w*|landfill|waste|end\s+of\s+(?:its\s+|their\s+)?life|toxic|pollut\w*)`, R`\b(?:mining|mined|lithium|cobalt|recycl\w*|dispos\w*|landfill)\b[^.;]{0,60}\bbatter\w*`, R`\b(?:electricity|grid|power)\b[^.;]{0,60}\b(?:fossil|coal|gas|non-?renewable|burn\w*|power\s+stations?)`] },
-              { desc: "Drawback (social): limited range, long charging time, or loss of jobs",
-                any: [R`\brange\b[^.;]{0,40}\b(?:limit\w*|short\w*|less|lower|reduc\w*|restrict\w*|problem|issue)`, R`\b(?:limit\w*|short\w*|restrict\w*)\s+(?:\w+\s+){0,2}range\b`, R`\bcharg\w*\b[^.;]{0,40}\b(?:takes?|long|hours|slow|delay\w*|disrupt\w*|out\s+of\s+service|off\s+the\s+road)`, R`\b(?:jobs?|drivers?|mechanics?|workers?)\b[^.;]{0,40}\b(?:lost|loss|los[et]|redundan\w*|retrain\w*|at\s+risk|threat\w*)`, R`\b(?:break\s?downs?|run\s+out\s+of|flat\s+batter\w*)\b`] },
-            ],
+            q: "Discuss the impacts of making this change. Your answer should include benefits and drawbacks; up to two marks are available for each side.",
+            points: sidePoints(),
             sample: "The electric buses have no exhaust, so there are fewer emissions and the air in the city is cleaner. They are also much quieter for residents. The running costs are lower because electricity is cheaper than diesel and there are fewer moving parts to service. However, the buses and the charging points are very expensive to buy, and the batteries need mined materials and have to be recycled at the end of their life.",
-            model: "<ul><li>Environmental benefit: no exhaust emissions in the city, so cleaner air and less carbon dioxide (1)</li><li>Social benefit: quieter streets and healthier air for residents (1)</li><li>Economic benefit: lower fuel and servicing costs, with fewer moving parts (1)</li><li>Economic drawback: high purchase cost of buses and charging equipment (1)</li><li>Environmental drawback: batteries need mined materials and energy to make, must be recycled, and the grid electricity may come from fossil fuels (1)</li><li>Social drawback: limited range, charging time, or loss of engine-related jobs (1)</li></ul><p>Any <strong>four</strong> creditable points, but at least one benefit and one drawback are needed for full marks. Each point needs a reason, not a slogan such as &quot;it is greener&quot;.</p>",
+            model: "<ul><li>Environmental benefit: no exhaust emissions in the city, so cleaner air and less carbon dioxide (1)</li><li>Social benefit: quieter streets and healthier air for residents (1)</li><li>Economic benefit: lower fuel and servicing costs, with fewer moving parts (1)</li><li>Economic drawback: high purchase cost of buses and charging equipment (1)</li><li>Environmental drawback: batteries need mined materials and energy to make, must be recycled, and the grid electricity may come from fossil fuels (1)</li><li>Social drawback: limited range, charging time, or loss of engine-related jobs (1)</li></ul><p>Up to <strong>two</strong> marks for benefits and up to <strong>two</strong> for drawbacks, so an answer with benefits only (or drawbacks only) scores at most 2 out of 4: the marker needs at least one of each side for more than 2 marks. Two different kinds of benefit (environmental, social, economic) earn both benefit marks; likewise for drawbacks. Each point needs a reason, not a slogan such as &quot;it is greener&quot;.</p>",
           },
         ],
       },
@@ -451,9 +479,9 @@
             why: R`At a constant speed the lifting force equals the weight, $F = mg$ (1) $= 240\times9.8 = \mathbf{2352\ N}$ (about 2350 N). The mass in kg is not a force.`,
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 823.2, tol: 0.7, unit: "W",
+            label: "(b)", type: "num", marks: 1, a: 823.2, alts: [824.04], tol: 0.7, rtol: 0.011, unit: "W",
             q: "Calculate the useful output power of the hoist, in W.",
-            why: R`$P = Fv$ (1) $= 2352\times0.35 = \mathbf{823\ W}$. Using the mass instead of the force gives 84.`,
+            why: R`$P = Fv$ (1) $= 2352\times0.35 = \mathbf{823\ W}$ (824 W if $g = 9.81$ N kg$^{-1}$ is used, which is also accepted). Using the mass instead of the force gives 84.`,
           },
           {
             label: "(c)", type: "num", marks: 2, a: 1327.7, tol: 3, unit: "W",
@@ -461,7 +489,7 @@
             why: R`$\eta = \dfrac{P_{out}}{P_{in}}$, so $P_{in} = \dfrac{P_{out}}{\eta}$ (1) $= \dfrac{823.2}{0.62} = \mathbf{1330\ W}$ (1) (1328 W before rounding). Multiplying by 0.62 instead of dividing gives 510 W, less than the output, which is impossible.`,
           },
           {
-            label: "(d)", type: "num", marks: 2, a: 5.773, tol: 0.012, unit: "A",
+            label: "(d)", type: "num", marks: 2, a: 5.773, tol: 0.012, rtol: 0.011, unit: "A",
             q: "Calculate the current taken from the 230 V supply, in A.",
             why: R`$P = VI$, so $I = \dfrac{P}{V}$ (1) $= \dfrac{1327.7}{230} = \mathbf{5.77\ A}$ (1). The input power, not the output power, is the power drawn from the supply.`,
           },
@@ -504,7 +532,7 @@
         stem: "<p>A motor delivers a steady output power of 0.75 kW for 15 minutes.</p>",
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 675, tol: 0.5, unit: "kJ",
+            label: "(a)", type: "num", marks: 2, a: 675, tol: 0.5, rtol: 0.011, unit: "kJ",
             q: "Calculate the energy delivered, in kJ.",
             why: R`$E = Pt$ (1) $= 750\times(15\times60) = 750\times900 = 675\,000\ \text{J} = \mathbf{675\ kJ}$ (1). Convert both the kilowatts and the minutes first.`,
           },
@@ -527,7 +555,7 @@
             why: R`$E_p = mgh$ (1) $= 0.50\times9.8\times45 = \mathbf{220.5\ J}$ (about 221 J).`,
           },
           {
-            label: "(b)", type: "num", marks: 2, a: 29.7, tol: 0.06, unit: "m s⁻¹",
+            label: "(b)", type: "num", marks: 2, a: 29.7, tol: 0.06, rtol: 0.011, unit: "m s⁻¹",
             q: "Calculate the speed of the parcel as it reaches the ground, in m s⁻¹.",
             why: R`All the lost $E_p$ becomes $E_k$ (1): $\tfrac12mv^2 = 220.5$, so $v = \sqrt{\dfrac{2\times220.5}{0.50}} = \mathbf{29.7\ m\,s^{-1}}$ (1). Leaving out the square root gives 882, and leaving out the half gives 21.0.`,
           },
@@ -539,7 +567,7 @@
         stem: "<p>An immersion heater of power 8.0 kW is switched on for 1.0 hour to heat 120 kg of water in a tank from 12 °C to 60 °C. The specific heat capacity of water is 4180 J kg<sup>−1</sup> K<sup>−1</sup>. The heater is connected to a 230 V supply.</p>",
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 24.08, tol: 0.04, unit: "MJ",
+            label: "(a)", type: "num", marks: 2, a: 24.08, tol: 0.04, rtol: 0.011, unit: "MJ",
             q: R`Calculate the heat energy gained by the water, in MJ ($1\ \text{MJ} = 10^6$ J).`,
             why: R`$\Delta T = 60 - 12 = 48$ K. $E_h = cm\Delta T$ (1) $= 4180\times120\times48 = 2.408\times10^7\ \text{J} = \mathbf{24.1\ MJ}$ (1). Using 60 instead of the temperature <em>change</em> gives 30.1 MJ.`,
           },
@@ -549,7 +577,7 @@
             why: R`electrical energy supplied $E = Pt = 8000\times3600 = 2.88\times10^7$ J (1). $\eta = \dfrac{E_{out}}{E_{in}} = \dfrac{2.408\times10^7}{2.88\times10^7} = \mathbf{0.836}$ (1). The energy in kWh or MJ must be in the same unit for both.`,
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 34.8, tol: 0.05, unit: "A",
+            label: "(c)", type: "num", marks: 1, a: 34.8, tol: 0.05, rtol: 0.011, unit: "A",
             q: "Calculate the current taken by the heater, in A.",
             why: R`$P = VI$, so $I = \dfrac{P}{V} = \dfrac{8000}{230} = \mathbf{34.8\ A}$ (1).`,
           },
