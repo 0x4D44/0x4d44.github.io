@@ -60,7 +60,7 @@
       `<path d="M ${lx + 38} ${cy} A 38 38 0 0 0 ${f1(lx + 38 * Math.cos((35 * Math.PI) / 180))} ${f1(cy + 38 * Math.sin((35 * Math.PI) / 180))}" fill="none" stroke="${GREY}" stroke-width="1.6"/>` +
       `<path d="M ${qx - 30} ${cy} A 30 30 0 0 1 ${f1(qx - 30 * Math.cos((60 * Math.PI) / 180))} ${f1(cy + 30 * Math.sin((60 * Math.PI) / 180))}" fill="none" stroke="${GREY}" stroke-width="1.6"/>` +
       T(lx + 70, cy + 17, "35°", { s: 12 }) + T(qx - 40, cy + 38, "60°", { s: 12 }) +
-      T((lx + rx) / 2 - 16, (cy + ry) / 2 - 6, "rope A", { b: 1, c: BLUE }) + T((qx + rx) / 2 + 32, (cy + ry) / 2 + 12, "rope B", { b: 1, c: BLUE }) + T(rx + 18, ry + 22, "ring", { a: "start", s: 12, c: GREY }));
+      T((lx + rx) / 2 + 30, (cy + ry) / 2 - 18, "rope A", { b: 1, c: BLUE }) + T((qx + rx) / 2 + 32, (cy + ry) / 2 + 12, "rope B", { b: 1, c: BLUE }) + T(rx + 18, ry + 22, "ring", { a: "start", s: 12, c: GREY }));
   })();
 
   /* st-04: beam with a part-length UDL and a point load */
@@ -103,7 +103,7 @@
     [A, C, E, Bj, D].forEach((p) => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="5.5" fill="${FILL}" stroke="${INK}" stroke-width="2"/>`; });
     s += hinge(A[0], A[1] + 6) + roller(E[0], E[1] + 6);
     s += arrow(Bj[0], Bj[1] - 62, Bj[0], Bj[1] - 6, BLUE, 3) + T(Bj[0] + 8, Bj[1] - 46, "24 kN", { b: 1, c: BLUE, a: "start" });
-    s += T(A[0] - 10, A[1] - 8, "A", { b: 1, a: "end" }) + T(Bj[0] - 10, Bj[1] + 20, "B", { b: 1, a: "end" }) + T(C[0], C[1] - 12, "C", { b: 1 }) + T(D[0] + 10, D[1] + 20, "D", { b: 1, a: "start" }) + T(E[0] + 10, E[1] - 8, "E", { b: 1, a: "start" });
+    s += T(A[0] - 10, A[1] - 8, "A", { b: 1, a: "end" }) + T(Bj[0] - 12, Bj[1] - 8, "B", { b: 1, a: "end" }) + T(C[0], C[1] - 12, "C", { b: 1 }) + T(D[0] + 12, D[1] - 8, "D", { b: 1, a: "start" }) + T(E[0] + 10, E[1] - 8, "E", { b: 1, a: "start" });
     s += `<path d="M ${A[0] + 28} ${A[1]} A 28 28 0 0 0 ${f1(A[0] + 28 * Math.cos(Math.PI / 3))} ${f1(A[1] - 28 * Math.sin(Math.PI / 3))}" fill="none" stroke="${GREY}" stroke-width="1.5"/>` + T(A[0] + 38, A[1] - 8, "60°", { s: 12, a: "start" });
     s += dimH(A[0], E[0], 292, "6 m (members AC, CE 3 m each)");
     return fig(500, 312, "A pin-jointed Warren truss ABCDE. Joints A, C and E lie on the bottom chord, 3 metres apart. Joints B and D lie on the top chord. Every member is 3 metres long, so every triangle is equilateral and the inclined members are at 60 degrees. The truss is hinged at A and rests on a roller at E. A 24 kilonewton load acts downwards at joint B.", s);
@@ -116,17 +116,17 @@
     for (let y = cy - 36; y < ay + 40; y += 12) s += L(ax - 14, y, ax - 24, y + 8, GREY, 1.4);
     s += `<rect x="${ax}" y="${ay - 7}" width="${2.4 * k}" height="14" fill="${FILL}" stroke="${INK}" stroke-width="2"/>`;
     s += L(bx, ay - 7, ax - 2, cy, INK, 3) + dot(ax, ay, 5) + dot(ax, cy, 5) + dot(bx, ay, 4.5);
-    s += arrow(dx, ay + 8, dx, ay + 72, BLUE, 3) + T(dx + 8, ay + 62, "W = 18 kN", { b: 1, c: BLUE, a: "start" });
+    s += arrow(dx, ay + 8, dx, ay + 72, BLUE, 3) + T(dx + 10, ay + 46, "W = 18 kN", { b: 1, c: BLUE, a: "start" });
     s += T(ax + 14, ay - 14, "A", { b: 1, a: "start" }) + T(ax + 14, cy - 6, "C", { b: 1, a: "start" }) + T(bx + 6, ay - 12, "B", { b: 1, a: "start" });
     s += T((ax + bx) / 2 + 24, cy + 62, "tie BC", { b: 1, c: RED });
     s += `<path d="M ${bx - 46} ${ay - 7} A 46 46 0 0 0 ${f1(bx - 46 * Math.cos((35 * Math.PI) / 180))} ${f1(ay - 7 - 46 * Math.sin((35 * Math.PI) / 180))}" fill="none" stroke="${GREY}" stroke-width="1.6"/>` + T(bx - 66, ay - 20, "35°", { s: 12 });
-    s += dimH(ax, dx, 335, "1.5 m") + dimH(dx, bx, 335, "0.9 m") + T(ax - 36, ay - 6, "wall", { s: 12, c: GREY, a: "end" });
-    return fig(440, 360, "A jib crane. A horizontal steel jib AB, 2.4 metres long, is pinned to a vertical wall at A. A tie BC runs from the end of the jib B up to the wall at C, making 35 degrees with the jib. A load W of 18 kilonewtons hangs from the jib 1.5 metres from A.", s);
+    s += dimH(ax, dx, 392, "1.5 m") + dimH(dx, bx, 392, "0.9 m") + T(ax - 36, ay - 6, "wall", { s: 12, c: GREY, a: "end" });
+    return fig(440, 412, "A jib crane. A horizontal steel jib AB, 2.4 metres long, is pinned to a vertical wall at A. A tie BC runs from the end of the jib B up to the wall at C, making 35 degrees with the jib. A load W of 18 kilonewtons hangs from the jib 1.5 metres from A.", s);
   })();
 
   /* st-09: stress-strain graph, drawn to scale (x: 0 to 4.0 x10^-3, y: 0 to 400 N/mm2) */
   const figCurve = (() => {
-    const x0 = 80, y0 = 330, kx = 115, ky = 0.75; // px per unit of strain (x10^-3) and per N/mm2
+    const x0 = 70, y0 = 330, kx = 112, ky = 0.75; // px per unit of strain (x10^-3) and per N/mm2
     const X = (e) => x0 + e * kx, Y = (sg) => y0 - sg * ky;
     const f = (e) => 300 + 50.8 * (1 - Math.exp(-(e - 2.5) / 1.0));
     let s = "";
@@ -160,7 +160,7 @@
   /* ---------- the bank ---------- */
   B.structures = {
     intro:
-      "<p>Structures and materials, <strong>23 to 39 marks</strong> of the 110 on the real paper, and a quarter of them are written. Fourteen questions, about 90 marks: forces, moments and beam reactions; pin-jointed frames by the method of joints; free-body diagrams; the tensile test, stress, strain, factor of safety, strain energy and strain gauges; and choosing a material. About two thirds of the marks are calculations. <strong>Show the formula, the substitution and the unit</strong>, keep full calculator values until the last line, and give the <strong>nature</strong> (tension or compression) as well as the size of every frame member. The written answers need a <strong>property, evidence from the Data Booklet or the graph, and the consequence for the job</strong>.</p>",
+      "<p>Structures and materials, <strong>23 to 39 marks</strong> of the 110 on the real paper, and a good share of them are written. Fourteen questions, about 95 marks: forces, moments and beam reactions; pin-jointed frames by the method of joints; free-body diagrams; the tensile test, stress, strain, factor of safety, strain energy and strain gauges; and choosing a material. More than half of the marks are calculations. <strong>Show the formula, the substitution and the unit</strong>, keep full calculator values until the last line, and give the <strong>nature</strong> (tension or compression) as well as the size of every frame member. The written answers need a <strong>property, evidence from the Data Booklet or the graph, and the consequence for the job</strong>.</p>",
     questions: [
       {
         id: "structures-01",
@@ -224,15 +224,10 @@
           {
             label: "(a)", type: "num", marks: 3, a: 22.6, tol: 0.06, unit: "kN",
             q: "Calculate the tension in rope A.",
-            why: R`For the ring: $\Sigma F_h = 0$: $T_A\cos35^\circ = T_B\cos60^\circ$ (1)<br>$\Sigma F_v = 0$: $T_A\sin35^\circ + T_B\sin60^\circ = 45$ (1)<br>Substituting $T_B = T_A\cos35^\circ/\cos60^\circ = 1.638\,T_A$ gives $T_A(0.5736 + 1.4186) = 45$, so $T_A = 22.6\ \text{kN}$ (1). Keep every digit until the end: $T_B$ is 37.0 kN.`,
+            why: R`For the ring: $\Sigma F_h = 0$: $T_A\cos35^\circ = T_B\cos60^\circ$ (1)<br>$\Sigma F_v = 0$: $T_A\sin35^\circ + T_B\sin60^\circ = 45$ (1)<br>Substituting $T_B = T_A\cos35^\circ/\cos60^\circ = 1.638\,T_A$ gives $T_A(0.5736 + 1.4186) = 45$, so $T_A = 22.6\ \text{kN}$ (1). Keep every digit until the end ($T_B$ works out at 37.0 kN).`,
           },
           {
-            label: "(b)", type: "num", marks: 2, a: 37.0, tol: 0.1, unit: "kN",
-            q: "Calculate the tension in rope B.",
-            why: R`From the equations in (a), $T_B = \dfrac{45}{\sin60^\circ + \cos60^\circ\tan35^\circ}$ (1)<br>$T_B = \dfrac{45}{0.8660 + 0.3501} = 37.0\ \text{kN}$ (1). Check: $22.59\sin35^\circ + 37.00\sin60^\circ = 12.96 + 32.04 = 45.0$ kN.`,
-          },
-          {
-            label: "(c)", type: "text", marks: 2, rows: 4, minWords: 12,
+            label: "(b)", type: "text", marks: 2, rows: 4, minWords: 12,
             q: "A cadet says: &quot;Each rope holds half of the 45 kN, so each tension is 22.5 kN.&quot; Explain why the cadet's reasoning does not work for this ring.",
             points: [
               { desc: "Only the vertical component of each rope's pull supports the weight (the vertical components add up to 45 kN)",
@@ -296,6 +291,23 @@
             label: "(c)", type: "num", marks: 2, a: 47.3, tol: 0.2, unit: "° above the horizontal",
             q: "Calculate the angle the reaction at A makes with the horizontal.",
             why: R`$\tan\theta = \dfrac{A_y}{A_x}$ (1)<br>$\tan\theta = \dfrac{21.65}{20.0}$, so $\theta = 47.3^\circ$ above the horizontal (1), pointing up and away from B (the hinge pushes back against the load's pull towards B). Dividing the other way gives 42.7°.`,
+          },
+          {
+            label: "(d)", type: "text", marks: 2, rows: 4, minWords: 12,
+            q: "The roller at B rests on a level surface. Explain why the roller can give no horizontal reaction, and say what this means for the horizontal force needed from the hinge at A.",
+            points: [
+              { desc: "A roller can only push at right angles to the surface it rolls on (straight up on level ground); it is free to roll, so it cannot resist a sideways force", negOK: true,
+                not: [R`\broller\W+(?:\w+\W+){0,8}(?:gives?|provides?|supplies|has|exerts?|can give|can provide)\W+(?:a |the |some |both )?(?:horizontal|sideways)`],
+                any: [R`\b(?:right[- ]angles?|perpendicular|normal|90)\W+(?:\w+\W+){0,3}(?:surface|ground|floor|it rolls|to it)`,
+                  R`\b(?:free|able)\W+to\W+(?:\w+\W+){0,1}(?:roll|move|slide|run)`, R`\b(?:frictionless|smooth|no friction|without friction)\b`,
+                  R`\bonly\W+(?:\w+\W+){0,2}(?:push\w*|act\w*|exert\w*|give\w*|provid\w*|supports?)\W+(?:\w+\W+){0,3}(?:up|upwards?|vertical\w*|straight up|perpendicular)`] },
+              { desc: "So the hinge has to provide the whole of the horizontal force, equal and opposite to the horizontal load", negOK: false,
+                not: [R`\b(?:hinge|pin)\W+(?:\w+\W+){0,4}only\W+(?:\w+\W+){0,4}(?:vertical|upward\w*|up)\b`, R`\b(?:hinge|pin)\W+(?:\w+\W+){0,3}(?:shares?|share)\b`],
+                any: [near(R`hinge|pin|a`, R`all|whole|entire|total|only|alone|solely|balanc\w*|equal\w*|provid\w*|supplies|supply|takes?|carr(?:y|ies)`, 5)],
+                all: [R`\bhinge|\bpin\b|\bsupport at a\b`, R`\b(?:all|whole|entire|total|only|alone|solely|balanc\w*|equal\w*|provid\w*|supplies|supply|takes?|carr(?:y|ies))\b`] },
+            ],
+            sample: "A roller can only push at right angles to the surface it rolls on, which is straight up on level ground, because it is free to roll along the surface. So the roller supplies only an upward force, and the hinge at A has to provide the whole of the horizontal force that balances the horizontal part of the load.",
+            model: "<ul><li>A roller is free to roll along the surface, so it can only push at right angles to the surface, which is vertically upwards on a level surface (1)</li><li>The hinge at A must therefore provide all of the horizontal force, equal and opposite to the horizontal component of the load (1)</li></ul><p>Also acceptable: &quot;the roller has no friction&quot;. Do not accept &quot;the roller is not attached&quot; alone, or &quot;the hinge shares the horizontal force with the roller&quot;.</p>",
           },
         ],
       },
@@ -361,6 +373,20 @@
             q: "Calculate the tension in the tie BC.",
             why: R`Moments about A (the pin's reactions have no moment about A): $T\sin35^\circ\times2.4 = 18\times1.5$ (1)<br>The component of the tie at right angles to the jib is $T\sin35^\circ$ (1)<br>$T = \dfrac{27}{2.4\sin35^\circ} = 19.6\ \text{kN}$ (1). Using cosine gives 13.7 kN; forgetting the load's 1.5 m and using 2.4 m gives 25.9 kN.`,
           },
+          {
+            label: "(c)", type: "text", marks: 2, rows: 4, minWords: 12,
+            q: "The tie BC could be made of steel wire rope. Explain why a wire rope is suitable for the tie BC, but would not be suitable for the jib AB.",
+            points: [
+              { desc: "The tie is pulled (in tension) and a wire rope is strong when it is pulled",
+                any: [near(R`ropes?|wires?|cables?|chains?`, R`pull\w*|tens\w*|stretch\w*|strong|stretched`, 6), R`\btie\W+(?:\w+\W+){0,4}(?:pulled|stretched|in tension|tension)`, R`\bin tension\b`] },
+              { desc: "The jib has to resist squashing and bending (compression); a rope goes slack, sags or buckles when pushed or bent, so it cannot hold the jib straight",
+                not: [R`\btie\W+(?:\w+\W+){0,4}compress\w*`, R`\bjib\W+(?:\w+\W+){0,4}(?:in )?(?:tension|tensile)`],
+                any: [near(R`ropes?|wires?|cables?`, R`slack|limp|floppy|buckl\w*|sag\w*|bend\w*|bendy|flexible|collaps\w*|crumpl\w*|fold\w*|droop\w*|compress\w*|squash\w*|push\w*|push(?:ed)?`, 8),
+                  near(R`jib`, R`compress\w*|squash\w*|bend\w*|bending|rigid|stiff|straight|push\w*`, 8)] },
+            ],
+            sample: "The tie is being pulled, so it is in tension, and a wire rope is very strong when it is pulled. The jib has to resist bending and being squashed, but a rope goes slack and sags when it is pushed, so it would be unable to hold the jib straight.",
+            model: "<ul><li>The tie BC is in tension (it is pulled) and a wire rope is strong in tension (1)</li><li>The jib is in compression and bending (it is pushed and sagged): a rope is flexible and goes slack, sags or buckles, so it cannot hold its shape (1)</li></ul><p>Also acceptable: a rope cannot resist a push or bending. Do not accept &quot;a rope is too weak&quot; alone or &quot;the rope is too light&quot;.</p>",
+          },
         ],
       },
       {
@@ -409,7 +435,7 @@
                 any: [R`\bproportional\b`, R`\bhooke\w*`, R`\bstraight(?: |-)(?:line|part|section|portion|region)\b`, R`\blinear(?:ly)?\b`,
                   R`\bspr(?:ings?|ing) back\b`, R`\b(?:returns?|goes back|go back|regains?|recovers?)\W+(?:\w+\W+){0,3}(?:original|starting|normal|first)\W+(?:\w+\W+){0,1}(?:length|shape|size)`, R`\belastic\b(?!\W+limit\W+is\W+(?:passed|exceeded))`] },
               { desc: "It yields at about 300 N/mm²: the strain increases a lot with hardly any extra stress, so the graph levels off",
-                any: [near(R`yield\w*`, R`level\w*|flat|plateau|horizontal|constant|same stress|stops? rising|no (?:extra|more|further|increase)|little|hardly|barely|almost|large|big|lot|sudden\w*|jump\w*|give\w*|stretch\w*|extends?|extension|strain`, 9),
+                any: [near(R`yield\w*`, R`level\w*|flat|plateau|horizontal|constant|same stress|same force|same load|stops? rising|no (?:extra|more|further|increase)|little|hardly|barely|almost no|without|a lot|lots|large|big|sudden\w*|jump\w*`, 9),
                   near(R`stretch\w*|extends?|extension|elongat\w*|strain`, R`(?:without|with|while)\W+(?:\w+\W+){0,3}(?:increase\w*|extra|more|further|rise|rising|change)\W+(?:\w+\W+){0,2}(?:stress|force|load)`, 6)],
                 not: [R`\byield\w*\W+(?:\w+\W+){0,5}(?:\bproportional\b|\bstraight line\b)`] },
               { desc: "Past yield the deformation is plastic (permanent); the stress rises again as the metal strain hardens", negOK: true,
@@ -453,6 +479,20 @@
             opts: ["It doubles", "It halves", "It does not change", "It becomes four times as large"],
             why: "In the elastic region the extension is proportional to the force, so doubling the force doubles $x$ as well. $E_s = \\tfrac12Fx$ then rises by $2\\times2 = 4$. It is not doubled.",
           },
+          {
+            label: "(e)", type: "text", marks: 2, rows: 4, minWords: 12,
+            q: "A heavily loaded steel cable snaps. Explain why the broken ends can whip back with great force.",
+            points: [
+              { desc: "The stretched cable has strain energy stored in it (elastic energy, the area under the force-extension graph)",
+                not: [R`(?<!elastic )(?<!strain )(?<!elastic strain )\b(?:potential|gravitational|height|high up|heat|thermal|chemical)\W+(?:energy)?`],
+                any: [near(R`energy`, R`stor\w*|held|hold\w*|contain\w*|has|have|had|built up|saved|bank\w*|keeps?|kept`, 5),
+                  R`\b(?:strain|elastic)\W+(?:\w+\W+){0,1}energy`] },
+              { desc: "When it breaks that energy is released all at once (turned into kinetic energy of the ends), so they move suddenly and fast",
+                all: [R`\benergy\b`, R`\b(?:releas\w*|let(?:s)? go|given (?:back|out)|gives? out|converted|changed|changes|transferred|turn\w* into|becomes?|goes? into|transform\w*|freed|escap\w*|discharg\w*)\b`, R`\b(?:kinetic|movement|motion|speed|sudden\w*|all at once|at once|quickly|instantly|instant|fast|violent\w*|whip\w*|snap\w*|fly\w*|flies)\b`] },
+            ],
+            sample: "A stretched cable stores a large amount of elastic strain energy. When the cable snaps, that energy is released all at once and changed into kinetic energy of the broken ends, so they whip back very fast and with great force.",
+            model: "<ul><li>The loaded cable is stretched, so it has strain energy stored in it (1)</li><li>When it breaks that energy is released suddenly and is turned into kinetic energy of the ends, which move fast (1)</li></ul><p>Also acceptable: $E_s = \\tfrac12Fx$ quoted with the idea that a large force and a large extension store a lot of energy. Do not accept &quot;the cable is under pressure&quot;, &quot;tension&quot; alone, or &quot;it has potential energy because it is high up&quot;.</p>",
+          },
         ],
       },
       {
@@ -486,7 +526,7 @@
       {
         id: "structures-12",
         style: "Section 2 · context question · strain gauges",
-        stem: "<p>A strain gauge is glued to a mild steel stay on a harbour crane. The gauge has a resistance of 350 Ω at rest and a gauge factor of 2.1. It forms a potential divider with a fixed 350 Ω resistor across a 10 V supply, as shown. When the stay is loaded, the gauge strain is $6.0\\times10^{-4}$. The Young's modulus of mild steel is 196 kN/mm².</p>",
+        stem: "<p>A strain gauge is glued to a mild steel stay on a harbour crane. The gauge has a resistance of 350 Ω at rest and a gauge factor of 2.1. It forms a potential divider with a fixed 350 Ω resistor across a 10 V supply, as shown. When the stay is loaded, the gauge strain is $6.0\\times10^{-4}$.</p>",
         figure: figGauge,
         parts: [
           {
@@ -500,12 +540,7 @@
             why: R`The gauge is the lower resistor: $V_{out} = 10\times\dfrac{350.441}{350 + 350.441}$ (1)<br>$V_{out} = 5.00315\ \text{V}$, so the change is $5.00315 - 5.000 = 3.15\ \text{mV}$ (1). The change is only a few millivolts, which is why the output is amplified. Quoting 5.003 V as the change loses the mark.`,
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 117.6, tol: 0.2, unit: "N/mm²",
-            q: "Calculate the stress in the stay.",
-            why: R`$\sigma = E\varepsilon = 196\,000\times6.0\times10^{-4} = 117.6\ \text{N/mm}^2$ (1), using $E = 196\ \text{kN/mm}^2 = 196\,000\ \text{N/mm}^2$.`,
-          },
-          {
-            label: "(d)", type: "text", marks: 2, rows: 4, minWords: 10,
+            label: "(c)", type: "text", marks: 2, rows: 4, minWords: 10,
             q: "In a better design, the fixed resistor is replaced by a dummy gauge. Explain why a dummy gauge is used.",
             points: [
               { desc: "The dummy gauge is identical but unstrained (not carrying the load, not stuck to the loaded stay)", negOK: true,
