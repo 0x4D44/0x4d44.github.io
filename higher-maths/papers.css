@@ -87,3 +87,4 @@
 .pp-fig svg { max-width: 100%; height: auto; min-width: 0; }
 .pp-fig { overflow-x: auto; }
 .pp-q .katex-display { overflow-x: auto; overflow-y: hidden; }
+.exam-timer[hidden], .pp-err[hidden], .pp-fighint[hidden] { display: none; }

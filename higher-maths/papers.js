@@ -374,7 +374,7 @@
           el("th", { scope: "row" }, a.name),
           el("td", null, `${t.qDone} / ${t.qs}`),
           el("td", null, t.markedOf ? `${fmt(t.got)} / ${t.markedOf}` : "—"),
-          el("td", null, t.markedOf ? el("span", { class: "pp-bar", role: "img", "aria-label": pct(t.got, t.markedOf) + " per cent" }, el("i", { style: `width:${pct(t.got, t.markedOf)}%` }), el("b", null, pct(t.got, t.markedOf) + "%")) : "—"))))));
+          el("td", null, t.markedOf ? el("span", { class: "pp-bar", role: "img", "aria-label": pct(t.got, t.markedOf) + " per cent" }, el("i", { style: `width:${pct(t.got, t.markedOf)}%` }), el("b", null, pct(t.got, t.markedOf) + "%")) : "—")))))));
       let verdict = "Mark some questions in the area tabs and your results will gather here.";
       if (M) {
         const p = pct(G, M);
