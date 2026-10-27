@@ -68,6 +68,17 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
     assert.ok(await page.locator("#pp-panel-mock .timer-face").count() === 1);
   });
 
+  await step(`${w}: the mock paper's options are its own (no ids shared with the area tabs)`, async () => {
+    const ids = await page.evaluate(() => { const a = [...document.querySelectorAll("[id]")].map((e) => e.id); return a.length - new Set(a).size; });
+    assert.equal(ids, 0, "duplicate ids");
+    await page.click("#pp-tab-mock");
+    const part = page.locator("#pp-panel-mock .pp-part:has(.pp-opts)").first();
+    await part.locator(".pp-opt").first().click();
+    assert.equal(await part.getByRole("button", { name: "Mark my answer" }).isEnabled(), true);
+    await part.getByRole("button", { name: "Mark my answer" }).click();
+    assert.ok(await part.locator(".pp-score").isVisible());
+  });
+
   await step(`${w}: no page errors`, async () => assert.deepEqual(errors, []));
   await ctx.close();
 }

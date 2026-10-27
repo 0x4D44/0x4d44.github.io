@@ -25,7 +25,8 @@
 .pp-style { font-size: .8rem; color: var(--muted); margin: 0 0 .5em; font-style: italic; }
 .pp-stem > :first-child { margin-top: 0; }
 .pp-fig { margin: .8em 0; }
-.pp-fig svg { max-width: 460px; }
+.pp-fig { overflow-x: auto; }
+.pp-fig svg { min-width: 480px; max-width: 560px; }
 
 .pp-part { margin: 1em 0 0; padding-top: .8em; border-top: 1px dashed var(--line); }
 .pp-part:first-of-type { border-top: 0; padding-top: 0; }
@@ -42,7 +43,7 @@
 .pp-num { width: 9em; max-width: 60%; font: inherit; padding: 6px 8px; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
 .pp-unit { margin-left: 6px; color: var(--ink-2); }
 .pp-opts { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; min-width: 0; }
-.pp-opt { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; cursor: pointer; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; overflow-wrap: anywhere; }
+.pp-opt { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding: 8px 10px; cursor: pointer; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; overflow-wrap: anywhere; }
 .pp-opt:hover { border-color: var(--sky); }
 .pp-opt input { margin-top: 3px; flex: none; }
 .pp-opt.right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 16%, var(--paper)); }
@@ -50,10 +51,12 @@
 .pp-opt.right::after { content: "✔ correct"; margin-left: auto; padding-left: 8px; font-size: .8rem; font-weight: 700; color: var(--grass); white-space: nowrap; }
 .pp-opt.wrong::after { content: "✘ your answer"; margin-left: auto; padding-left: 8px; font-size: .8rem; font-weight: 700; color: var(--redstone); white-space: nowrap; }
 .pp-hint { font-size: .85rem; color: var(--muted); margin: .3em 0; }
+.pp-wrongnote { grid-column: 1 / -1; }
 .pp-match { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; align-items: center; margin: 6px 0; }
 .pp-match select { width: 100%; min-width: 0; font: inherit; font-size: .9rem; padding: 6px; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
 .pp-match select.wrong { border-color: var(--redstone); }
-@media (max-width: 560px) { .pp-match { grid-template-columns: minmax(0, 1fr); gap: 3px; margin: 10px 0; } .pp-opt.right::after, .pp-opt.wrong::after { display: none; } }
+.pp-match select.wrong + .pp-wrongnote, .pp-wrongnote { color: var(--redstone); font-size: .8rem; font-weight: 700; }
+@media (max-width: 560px) { .pp-match { grid-template-columns: minmax(0, 1fr); gap: 3px; margin: 10px 0; } .pp-opt.right::after, .pp-opt.wrong::after { flex-basis: 100%; margin-left: 0; padding-left: 26px; } }
 
 .pp-fb:empty { display: none; }
 .pp-fb { margin: 6px 0 0; padding: 8px 10px; background: var(--paper-2); border-radius: 2px; font-size: .93rem; }
