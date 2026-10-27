@@ -46,10 +46,10 @@
 
   // a comparison needs both sides: side A, a contrast word, side B (either way round), or each side tied to its own file name
   const cmp = (sa, sb) => {
-    const M = "(?:whereas|while|whilst|but|unlike|compared|however|in contrast|on the other hand|rather than|instead of|;|\\\\band\\\\b)";
+    const M = "(?:whereas|while|whilst|but|unlike|compared|however|in contrast|on the other hand|rather than|instead of|;|\\band\\b)";
     return [
       `(?:${sa})[^.]{0,60}${M}[^.]{0,60}(?:${sb})`, `(?:${sb})[^.]{0,60}${M}[^.]{0,60}(?:${sa})`,
-      `\\\\bstep\\\\b[\\\\s\\\\S]{0,70}(?:${sa})[\\\\s\\\\S]{0,90}\\\\b3ds\\\\b[\\\\s\\\\S]{0,70}(?:${sb})`, `\\\\b3ds\\\\b[\\\\s\\\\S]{0,70}(?:${sb})[\\\\s\\\\S]{0,90}\\\\bstep\\\\b[\\\\s\\\\S]{0,70}(?:${sa})`];
+      `\\bstep\\b[\\s\\S]{0,70}(?:${sa})[\\s\\S]{0,90}\\b3ds\\b[\\s\\S]{0,70}(?:${sb})`, `\\b3ds\\b[\\s\\S]{0,70}(?:${sb})[\\s\\S]{0,90}\\bstep\\b[\\s\\S]{0,70}(?:${sa})`];
   };
 
   /* ---------- Figure 1: bollard elevation ---------- */
@@ -298,12 +298,12 @@
             q: "A Ø6 mounting hole must also pass through one sloping side of the duct. Explain why this hole should be cut after the hollowing edit and not before it.",
             points: [
               { desc: "Cause: the shell puts a wall of the set thickness round every face, including the faces of a hole already cut", any: [
-                "(?:shell|hollow)\\w*" + GAP(40) + "(?:wall|thickness|skin|tube|lining)" + GAP(25) + "(?:round|around|surround\\w*|inside|in)\\s+(?:the\\s+|each\\s+|every\\s+|that\\s+|this\\s+)?(?:\\w+\\s+)?(?:hole|opening|edge)",
+                "(?:shell|hollow)\\w*" + GAP(40) + "(?:wall|thickness|skin|tube|lining)" + GAP(25) + "(?:round|around|surround\\w*|inside|in)\\s+(?:\\w+\\s+){0,3}(?:hole|opening|edge)",
                 "(?:shell|hollow)\\w*" + GAP(40) + "(?:every|each|all)\\s+(?:\\w+\\s+)?(?:face|edge|surface)s?" + GAP(25) + "(?:hole|opening)",
                 "(?:shell|hollow)\\w*" + GAP(25) + "(?:hole|opening)" + GAP(25) + "(?:wall|thickness|tube|lining|skin|sleeve)",
                 "(?:hole|opening)" + GAP(30) + "(?:wall|thickness|tube|lining|skin|sleeve)" + GAP(25) + "(?:shell|hollow)"],
                 not: ["(?:should|must|need to|needs to|better to|best to|has to)\\s+(?:be\\s+)?(?:cut|made|added|done|drilled|put)\\w*\\s+(?:it\\s+)?(?:first|before)", "(?:cut|made|done) (?:after|later)[^.]{0,30}(?:shell|hollow)\\w* (?:would |will )?(?:remove|delete|lose|ignore)"] },
-              { desc: "Effect: the hole would be lined/blocked by a small tube inside the duct, not a clean hole through the wall", all: ["(?:small|little|thin|narrow|extra|separate)\\s+(?:\\w+\\s+)?(?:tube|sleeve|lining|collar)|\\b(?:tube|sleeve|collar)\\s+(?:inside|in|round|around)|(?:end(?:s|ed)? up|becomes?|turns? into|is|be|get|gets|would be|will be)\\s+(?:\\w+\\s+){0,2}(?:blocked|sealed|closed|narrowed|clogged|lined)|(?:not|isn't|wouldn't be|no longer)\\s+(?:be\\s+)?(?:a\\s+)?(?:clean|clear|open|through)|smaller\\s+hole|hole\\s+(?:is |would be |will be )?(?:smaller|narrower)", "(?:hole|opening)"], win: 90,
+              { desc: "Effect: the hole would be lined/blocked by a small tube inside the duct, not a clean hole through the wall", all: ["(?:small|little|thin|narrow|extra|separate)\\s+(?:\\w+\\s+)?(?:tube|sleeve|lining|collar)|\\b(?:tube|sleeve|collar)\\s+(?:inside|in|round|around)|(?:end(?:s|ed)? up|becomes?|turns? into|is|be|get|gets|would be|will be)\\s+(?:\\w+\\s+){0,2}(?:blocked|sealed|closed|narrowed|clogged|lined)|(?:not|isn't|wouldn't be|no longer)\\s+(?:be\\s+)?(?:a\\s+)?(?:clean|clear|open|through)|narrower|smaller\\s+hole|hole\\s+(?:is |would be |will be )?(?:smaller|narrower)", "(?:hole|opening)"], win: 90,
                 not: ["(?:remove|delete|erase|ignore|lose|lost|fill|cover)[sd]?\\s+(?:the |that |your )?(?:hole|opening)", "(?:hole|opening)\\s+(?:would |will )?(?:be |get )?(?:removed|deleted|lost|erased|ignored|disappear)"] },
             ],
             sample: "If the hole were cut first, the shell would build a wall of the set thickness round the hole as well, so the hole would end up inside a little tube and blocked off, instead of being a clean opening through the thin wall.",
@@ -375,7 +375,7 @@
             points: [
               { desc: "Cause: the drawing is associative (linked to the model file, not a separate copy)", any: ["associative\\W+(?:\\w+\\W+){0,6}(?:linked|link|connected|model|file)", "(?:linked|connected|attached|tied)\\s+(?:\\w+\\s+){0,2}(?:to|with)\\s+(?:\\w+\\s+){0,2}(?:model|file|3d)", "not\\s+(?:just\\s+)?(?:a\\s+)?(?:separate|copy|copies)", "(?:is|are)\\s+(?:a\\s+)?references?\\s+(?:to|of)", "(?:depends?|dependent)\\s+on\\s+(?:the\\s+)?model", "same (?:model )?file"],
                 not: ["not\\s+associative", "isn't\\s+associative", "non.?associative", "(?:is|are)\\s+a\\s+(?:separate\\s+)?copy"] },
-              { desc: "Effect: the views and dimensions update/rebuild automatically, without being redrawn", any: ["(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow)\\w*\\W+(?:\\w+\\W+){0,2}(?:automatic\\w*|without|instantly|straight away|itself|at once|by itself|on its own)", "(?:automatic\\w*|instantly|straight away)\\W+(?:\\w+\\W+){0,2}(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow)"] },
+              { desc: "Effect: the views and dimensions update/rebuild automatically, without being redrawn", any: ["(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow)\\w*\\W+(?:\\w+\\W+){0,4}(?:automatic\\w*|without|instantly|straight away|itself|at once|by itself|on its own)", "(?:automatic\\w*|instantly|straight away)\\W+(?:\\w+\\W+){0,2}(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow)"] },
             ],
             sample: "The drawing is associative, which means it is linked to the model file and is not a separate copy. So when the model is changed, the drawing updates automatically without anyone having to redraw it.",
             model: "<ul><li>Cause: the drawing is associative, linked to the model file rather than a copy (1)</li><li>Effect: its views and dimensions update automatically when the model changes (1)</li></ul><p>\"The drawing updates\" alone is only the effect: it earns one mark at most.</p>" },
@@ -512,10 +512,10 @@
             q: "Describe how the housing could be modelled using 3D CAD software. Give the sizes you would use at each step.",
             points: [
               { desc: "Sketches the 90 × 60 rectangle on the base plane and extrudes it 50", all: ["\\b90\\b\\W+(?:\\w+\\W+){0,5}\\b60\\b|\\b60\\b\\W+(?:\\w+\\W+){0,5}\\b90\\b", "extrud\\w*\\W+(?:\\w+\\W+){0,5}\\b50\\b|\\b50\\b\\W+(?:\\w+\\W+){0,4}extrud|(?:height|depth|high|tall|up)\\W+(?:of\\W+|to\\W+)?50\\b"], win: 120 },
-              { desc: "Fillet of radius 5 on the four vertical edges (before the shell)", all: ["fillet|round(?:ed|ing)? (?:off )?(?:the )?(?:vertical|corner|edge)", R(5)], win: 60 },
+              { desc: "Fillet of radius 5 on the four vertical edges (before the shell)", all: ["fillet|round(?:ed|ing)? (?:off )?(?:the )?(?:\\w+ )?(?:vertical|corner|edge)", "(?:" + R(5) + "|\\b5\\s*(?:mm\\s*)?fillets?\\b|fillets?\\s*(?:of\\s*|=|:)?5\\b)"], win: 60 },
               { desc: "Shell, thickness 3, removing the bottom face", all: ["shell\\w*", "(?:(?:thickness|wall|walls)\\s*(?:of\\s*|=|:|is\\s*)?3\\b|\\b3\\s*(?:mm\\s*)?(?:thick|wall|thickness))", "(?:bottom|underside|base|lower|open)"], win: 70 },
-              { desc: "Sketches a Ø30 circle centred on the front face", all: [VERB + "\\w*", D(30), "(?:front|face)"], win: 60 },
-              { desc: "Sketches one Ø4 circle on the PCD of 44 round the opening", all: [VERB + "\\w*", D(4), "\\b(?:44|22)\\b"], win: 60 },
+              { desc: "Sketches a Ø30 circle centred on the front face", all: ["(?:circle|opening|hole)", D(30), "(?:front|face)"], win: 60 },
+              { desc: "Sketches one Ø4 circle on the PCD of 44 round the opening", all: ["(?:circle|hole)", D(4), "\\b(?:44|22)\\b"], win: 60 },
               { desc: "Radial array of the small circle: six instances, 60° apart, about the opening's axis", all: ["(?:radial|circular|polar|rotational)\\W+(?:\\w+\\W+){0,3}(?:array|pattern)|(?:array|pattern)\\w*\\W+(?:\\w+\\W+){0,3}(?:radial|circular|polar)|\\b60\\s*(?:°|degrees?)\\W+(?:\\w+\\W+){0,3}(?:apart|between|spacing|intervals?|each)|(?:angle|spacing)\\W+(?:\\w+\\W+){0,3}60", "\\b(?:6|six)\\b"], win: 80 },
               { desc: "Extrude subtract (cut) the circles through the front wall", all: ["(?:extrud\\w*\\W+(?:\\w+\\W+){0,2}(?:subtract|cut)|(?:cut|subtract)\\W*extrud\\w*|(?:cut|subtract)\\w*\\W+(?:\\w+\\W+){0,5}through|through all)", "(?:wall|front|circles?|holes?|openings?)"], win: 60 },
             ],
@@ -533,7 +533,7 @@
             points: [
               { desc: "Geometry: STEP holds an accurate solid, whereas 3DS is a polygon mesh of small flat facets", any: cmp("solids?|accurate|precise|exact|true", "mesh\\w*|polygons?|facets?|triangles?") },
               { desc: "Purpose: STEP is for engineering and exchange between CAD packages, whereas 3DS is for rendering, animation and games", any: cmp("engineering|exchange|manufactur\\w*|supplier|any cad|other cad|different cad|cad packages?|neutral", "render\\w*|animat\\w*|visuali[sz]\\w*|games?|studio|film") },
-              { desc: "Extra data: 3DS carries materials, textures or lights, whereas STEP brings in only the finished shape", any: cmp("only (?:the )?(?:finished )?shape|just (?:the )?(?:finished )?shape|finished shape|no (?:materials?|textures?)|without (?:materials?|textures?)|(?:tree|sketch\\w*|constraints?) (?:is |are )?lost", "materials?|textures?|lights?|cameras?") },
+              { desc: "Extra data: 3DS carries materials, textures or lights, whereas STEP brings in only the finished shape", any: cmp("only (?:has |have |holds? |contains? |includes? |carries |brings? (?:in )?|keeps? |stores? |gives? )?(?:the )?(?:finished |final )?(?:shape|geometry|solid)|just (?:the )?(?:finished )?shape|just (?:the )?(?:finished )?shape|finished shape|no (?:materials?|textures?)|without (?:materials?|textures?)|(?:tree|sketch\\w*|constraints?) (?:is |are )?lost", "materials?|textures?|lights?|cameras?") },
             ],
             sample: "A STEP file holds an accurate solid model, whereas a 3DS file is a polygon mesh made of many small flat facets. STEP is used to send models to any CAD package for engineering, while 3DS is used for rendering, animation and games. A 3DS file also carries materials, textures and lights, but a STEP file brings in only the finished shape.",
             model: "<ul><li>Geometry: STEP is an accurate solid, 3DS a polygon mesh of flat facets (1)</li><li>Purpose: STEP exchanges accurate models between CAD packages for engineering and manufacture, 3DS is for visualisation, rendering, animation and games (1)</li><li>Extra data: 3DS carries materials, textures, lights and cameras, STEP only the finished shape (the modelling tree is lost) (1)</li></ul><p>Any 3 points. A compare answer needs both sides of each point: \"3DS is a mesh\" on its own is half a point, and describing only one file earns nothing for the comparison.</p>" },

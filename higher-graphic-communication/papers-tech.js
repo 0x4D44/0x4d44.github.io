@@ -43,10 +43,10 @@
             minWords: 8,
             points: [
               { desc: "Lossless keeps every pixel, so no detail or quality is lost each time it is saved", group: "ll",
-                any: ["\\b(?:every|each|all)\\W+(?:the\\W+)?pixels?\\b", "\\b(?:keeps?|retains?|preserves?|restores?|maintains?)\\W+(?:\\w+\\W+){0,1}(?:detail|quality)", "without\\W+(?:\\w+\\W+){0,1}(?:loss|losing|lose|degrad\\w*)", "(?:does ?n'?t|does not|will not|won'?t|never)\\W+(?:\\w+\\W+){0,1}(?:lose|degrade|lower|reduce|damage)", "no\\W+(?:\\w+\\W+){0,1}(?:detail|quality|data|information)\\W+(?:\\w+\\W+){0,2}(?:lost|discarded|removed)", "(?:detail|quality)\\W+(?:\\w+\\W+){0,2}(?:is|are|stays?|remains?)\\W+(?:\\w+\\W+){0,1}(?:kept|retained|preserved|intact|same|unchanged)"] },
+                any: ["\\b(?:keeps?|retains?|preserves?|restores?|maintains?|stores?|holds?|remembers?)\\W+(?:\\w+\\W+){0,3}(?:pixels?|details?|quality)", "\\bwithout\\W+(?:\\w+\\W+){0,1}(?:loss|losing|lose|degrad\\w*)", "\\b(?:does ?n'?t|does not|will not|won'?t|never)\\W+(?:\\w+\\W+){0,1}(?:lose|degrade|lower|reduce|damage)", "\\b(?:no|none of the|nothing)\\W+(?:\\w+\\W+){0,2}(?:detail|quality|data|information|pixels?)\\W+(?:is|are|gets?|being|was|will be)\\W+(?:\\w+\\W+){0,1}(?:lost|discarded|removed|thrown)", "\\b(?:detail|quality|pixels?)\\W+(?:is|are|stays?|remains?)\\W+(?:\\w+\\W+){0,1}(?:kept|retained|preserved|intact|same|unchanged)"] },
               { desc: "A JPEG throws detail away, so it gets worse each time it is re-saved (blocky edges on a logo)", group: "jp",
-                all: [near("jpe?g|lossy|jpegs", "lose\\w*|lost|throw\\w*|discard\\w*|drops?|degrad\\w*|worse|blurr?\\w*|blocky|blockiness|artefacts?|artifacts?|smear\\w*|damag\\w*", 1),
-                  near("each|every|repeated\\w*|many|again|several", "times?|edits?|saves?|saving|re-?sav\\w*", 1)], win: 90 },
+                win: 110,
+                all: ["\\b(?:jpe?gs?|lossy)\\b", "\\b(?:lose\\w*|losing|throw\\w*|discard\\w*|drops?|dropping|degrad\\w*|damag\\w*|smear\\w*|blurs?|remov\\w*|delet\\w*|destroy\\w*|reduc\\w*|(?:gets?|getting|becomes?|goes|going)\\W+(?:\\w+\\W+){0,1}(?:worse|blocky|blurr?y|blurred|pixelated|fuzzy)|(?:is|are|gets?|being)\\W+(?:\\w+\\W+){0,1}(?:lost|thrown|discarded|removed|deleted))\\b", "again and again|over and over|repeated\\w*|time after time|\\b(?:each|every|many|several|multiple)\\W+(?:\\w+\\W+){0,1}(?:times?|edits?|saves?|saving|re-?sav\\w*)|(?:saved?|edited|opened)\\W+(?:\\w+\\W+){0,2}(?:again|repeatedly|more than once|twice)"] },
             ],
             sample: "A PNG keeps every pixel exactly as it was, so none of the quality is lost however many times the studio edits and saves the logo. A JPEG throws away some detail each time it is saved, so the edges of the logo would go blocky and blurred.",
             model: "<ul><li>Lossless compression restores every pixel exactly, so no detail is lost however often the file is saved (1)</li><li>A JPEG is lossy: it discards detail, so each re-save makes the logo worse, with blocky or smeared edges (1)</li></ul><p>Also acceptable: edited many times therefore the losses build up (cause and effect). A bare &quot;it is higher quality&quot; or &quot;the file is bigger&quot; earns nothing.</p>",
@@ -74,7 +74,7 @@
             minWords: 6,
             points: [
               { desc: "STEP is neutral, so almost any CAD package can open it, including the manufacturer's different software", group: "a",
-                all: [near("neutral|universal|compatible|common|standard|open", "formats?|files?", 1), near("open\\w*|read|import\\w*|view|use|load\\w*|work\\w*", "any|most|almost|many|every|all|other|different|rival|manufacturer", 3)] },
+                any: [near("neutral|universal|compatible|common|standard|open", "formats?|files?", 1) + "|" + near("open\\w*|read|import\\w*|view|use|load\\w*|work\\w*", "any|most|almost|many|every|all|other|different|rival|manufacturer", 3), near("open\\w*|read|import\\w*|view|work\\w*|compatible", "(?:any|most|almost|many|every|all|lots of|different|other|various|rival|several)\\W+(?:\\w+\\W+){0,2}(?:cad|software|programs?|packages?|applications?|systems?)", 2)] },
               { desc: "A native file may not open in the manufacturer's different package", group: "a",
                 all: ["native|own (cad|software|package|format)|studio'?s? (cad|software|package|format)", "(not|cannot|can'?t|unable|won'?t|may not|might not|wouldn'?t).{0,25}(open|read|import|use)"] },
             ],
