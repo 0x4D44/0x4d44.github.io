@@ -75,6 +75,13 @@
     pts: ht.map((p) => [p[0], p[1]]), line: [[0, 0.06], [0.6, 3.0]],
     alt: "Graph of height h in metres against time squared in square seconds for a falling ball, with five plotted crosses close to a straight line of best fit. The line meets the height axis at 0.06 metres and passes through the point 0.50 seconds squared, 2.51 metres.",
   });
+  const wf = [[0.5, 0.17], [0.625, 0.21], [1.0, 0.34], [1.25, 0.43], [2.0, 0.68], [2.5, 0.84]];
+  const figWF = graph({
+    x0: 0, x1: 3.0, y0: 0, y1: 1.0, xl: "1/f / 10⁻³ s", yl: "λ / m",
+    xt: ticks(0, 3.0, 0.5, (v) => v.toFixed(1)), yt: ticks(0, 1.0, 0.1, (v) => v.toFixed(1)),
+    pts: wf, line: [[0, 0], [3.0, 1.02]],
+    alt: "Graph of wavelength lambda in metres against one over frequency in units of ten to the minus three seconds for sound in air, with six plotted crosses close to a straight line of best fit that passes through the origin and through the point 2.0, 0.68.",
+  });
   const figGrating = '<svg role="img" aria-label="Plan view of a laser beam passing straight through a diffraction grating onto a screen 2.00 metres away. The central maximum lies straight ahead and the first-order maxima are on either side, each at angle theta to the straight-through direction." viewBox="0 0 520 230" width="520" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="12">' +
     '<defs><marker id="a" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#222"/></marker></defs>' +
     '<rect x="14" y="98" width="52" height="34" rx="3" fill="#dfe6f2" stroke="#1c3b66" stroke-width="1.5"/><text x="40" y="119" text-anchor="middle" fill="#222">laser</text>' +
@@ -91,7 +98,7 @@
 
   B.skills = {
     intro:
-      "Experiments, uncertainties and data analysis are worth <strong>a large share of every paper</strong>, and most of the marks are for method rather than recall: choosing the right measurements, finding a percentage uncertainty, drawing a gradient from a graph and reading what it means. Ten questions, 72 marks, drawn from all three areas, including four 3-mark open-ended questions. Marks are earned by <strong>separate points</strong>: a relationship, a substitution, an answer <em>with its unit</em>; or a cause and then its effect.",
+      "Experiments, uncertainties and data analysis are worth <strong>a large share of every paper</strong>, and most of the marks are for method rather than recall: choosing the right measurements, finding a percentage uncertainty, drawing a gradient from a graph and reading what it means. Twelve questions, 86 marks, drawn from all three areas, including four 3-mark open-ended questions. Marks are earned by <strong>separate points</strong>: a relationship, a substitution, an answer <em>with its unit</em>; or a cause and then its effect.",
     questions: [
       /* ------------------------------------------------------------ 01 */
       {
@@ -293,7 +300,7 @@
                 any: ["\\bstraight\\b", "\\blinear\\b"] },
               { desc: "which passes through the origin, so I is directly proportional to 1/d²", group: "b",
                 not: ["\\b(?:is|are|forms?|makes?|shows?|gives?|has|looks? like)\\W+(?:an?\\W+)?(?:\\w+\\W+)?curv\\w*", "\\b(?:not|n't|never|without)\\W+(?:\\w+\\W+){0,3}(?:through|passes|pass|origin|proportional)"],
-                any: ["\\b(?:through|passes|passing|goes|go|cuts|crosses|starts|starting|begins|intercepts?)\\W+(?:\\w+\\W+){0,3}(?:origin|zero|\\(?0 ?, ?0\\)?)", "\\bdirect(?:ly)?\\W+proportion\\w*", "(?<!inverse)(?<!inversely)\\bproportional\\W+to\\W+(?:\\w+\\W+){0,1}(?:1 ?/ ?d|one over d|the inverse)", "\\b(?:zero|0)\\W+(?:y-?)?intercept\\b", "\\bpasses? through 0\\b"] },
+                any: ["\\b(?:through|passes|passing|goes|go|cuts|crosses|starts|starting|begins|intercepts?)\\W+(?:\\w+\\W+){0,3}(?:origin|zero|\\(?0 ?, ?0\\)?)", "\\bdirect(?:ly)?\\W+proportion\\w*\\W+(?:\\w+\\W+){0,4}(?:1 ?/ ?d|1 over d|one over d|inverse)", "(?<!inverse)(?<!inversely)\\bproportional\\W+to\\W+(?:\\w+\\W+){0,1}(?:1 ?/ ?d|one over d|the inverse)", "\\b(?:zero|0)\\W+(?:y-?)?intercept\\b", "\\bpasses? through 0\\b"] },
             ],
             sample: "The graph of I against 1/d² is a straight line, and the line goes through the origin, so the irradiance is directly proportional to 1/d², which is the inverse square law.",
             model: "<ul><li>The graph is a straight line (1)</li><li>that passes through the origin, so I is directly proportional to 1/d² (1)</li></ul><p>A straight line that did <em>not</em> pass through the origin would show a linear relationship but not direct proportionality. Do not force the line through the origin: a best-fit line is drawn to fit the points, and passing through the origin is a result to be observed, not a starting point. Saying the graph is a curve, or that I is inversely proportional to d, does not describe this graph.</p>",
@@ -315,7 +322,7 @@
             q: "Use the graph to determine a value for the Planck constant.",
             steps: [
               { desc: "Relationship: E_k = hf − hf₀, so h is the gradient (rise ÷ run)", rel: ["ek=hf-hf0", "gradient=", "slope=", "h=(?:gradient|slope)", "(?:gradient|slope)=h", "rise[/÷]run", "\\(?y2-y1\\)?[/÷]\\(?x2-x1", "h=\\(?e"] },
-              { desc: "Two points on the line used, with the powers of ten", nums: [[0.663e-19, 1.326e-19, 1.989e-19, 2.652e-19, 3.315e-19, 0.663, 1.326, 1.989, 2.652, 3.315], [6.0e14, 7.0e14, 8.0e14, 9.0e14, 10.0e14, 5.0e14, 6.0, 7.0, 8.0, 9.0, 10.0, 5.0]] },
+              { desc: "Two points on the line used, with the powers of ten", nums: [[0.663e-19, 1.326e-19, 1.989e-19, 2.652e-19, 3.315e-19, 0.663, 1.326, 1.989, 2.652, 3.315, 0.69e-19, 1.30e-19, 1.99e-19, 2.62e-19, 3.35e-19, 0.69, 1.30, 1.99, 2.62, 3.35], [6.0e14, 7.0e14, 8.0e14, 9.0e14, 10.0e14, 5.0e14, 6.0, 7.0, 8.0, 9.0, 10.0, 5.0]] },
               { desc: "h with unit: 6.6 × 10⁻³⁴ J s", ans: 6.63e-34, sf: 2, rel2: 0.045, unit: ["j s", "j hz-1", "j/hz", "kg m2 s-1"] },
             ],
             sample: "E_k = hf − hf₀, so the gradient of the graph is h\ngradient = (3.3 × 10⁻¹⁹ − 0)/(10.0 × 10¹⁴ − 5.0 × 10¹⁴)\nh = 6.6 × 10⁻³⁴ J s",
@@ -499,6 +506,93 @@
             label: "(c)", type: "match", marks: 3,
             q: "Match each prefix to the power of ten it stands for.",
             pairs: [["nano (n)", "10⁻⁹"], ["micro (µ)", "10⁻⁶"], ["giga (G)", "10⁹"]],
+          },
+        ],
+      },
+
+      /* ------------------------------------------------------------ 11 */
+      {
+        id: "skills-11",
+        style: "Data analysis · charging a capacitor with a constant current",
+        stem:
+          "<p>A student charges an initially uncharged capacitor from a source that supplies 40 µA throughout the experiment. She reads the potential difference V across the capacitor every 10 s with a digital voltmeter. Her results lie on a straight line through the origin.</p>" +
+          tbl(["t / s", "10", "20", "30", "40", "50"], [["V / V", "0.85", "1.70", "2.55", "3.40", "4.26"]]),
+        parts: [
+          { label: "(a)", type: "num", marks: 1, a: 0.0851, sf: 2, tol: 0.002, unit: "V s⁻¹", shown: "0.085", q: "Determine the gradient of the graph of V against t, in V s⁻¹.", why: "gradient = (4.26 − 0.85) ÷ (50 − 10) = <strong>0.085 V s⁻¹</strong>. Using the origin and the last point gives 4.26 ÷ 50 = 0.085 V s⁻¹ as well. Accept 0.083 to 0.087." },
+          {
+            label: "(b)", type: "calc", marks: 3,
+            q: "The gradient of the graph is equal to I/C. Use the gradient to calculate the capacitance of the capacitor.",
+            steps: [
+              { desc: "Relationship: C = I ÷ gradient (from V = Q/C and Q = It)", rel: ["c=i[/÷](?:gradient|slope|m)", "c=q[/÷]v", "q=it", "gradient=i[/÷]c", "slope=i[/÷]c", "c=it[/÷]v", "v=it[/÷]c", "i[/÷]c=(?:gradient|slope|0\\.08)", "c=4(?:0|x10\\^-?5|e-5)[/÷]"] },
+              { desc: "Substitution: 40 µA (4.0 × 10⁻⁵ A) and the gradient 0.085 V s⁻¹", nums: [[4e-5, 40], [0.085, 0.0851, 0.0853, 0.0848, 0.85, 1.7, 2.55, 3.4, 4.26]], tol: 0.01, not: ["(?:gradient|slope)[/÷]i", "0\\.08\\d*[/÷]\\(?(?:4\\.?0?x10\\^-?5|4\\.?0?e-5|40x10\\^-?6|40e-6)"] },
+              { desc: "Capacitance with unit: 4.7 × 10⁻⁴ F (470 µF)", ans: 4.706e-4, alts: [470.6, 470, 471], sf: 2, rel2: 0.03, unit: ["f", "uf"], not: ["(?<![0-9.])4[67]\\d(?:\\.\\d+)?f\\.?$", "x10\\^-?\\d+uf\\.?$"] },
+            ],
+            sample: "C = I/gradient\nC = 40 × 10⁻⁶ / 0.085\nC = 4.7 × 10⁻⁴ F",
+            model: "<ul><li>gradient = I/C, so C = I ÷ gradient (1)</li><li>C = 40 × 10⁻⁶ ÷ 0.085 (the prefix µ is 10⁻⁶) (1)</li><li>C = 4.7 × 10⁻⁴ F (= 470 µF) (1)</li></ul><p>Accept 4.6 to 4.9 × 10⁻⁴ F, and the answer in microfarads. Forgetting the µ gives 470 F, a million times too big. The gradient comes from Q = It and V = Q/C: V = (I/C)t.</p>",
+          },
+          {
+            label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
+            q: "Explain why the graph of V against t is a straight line.",
+            points: [
+              { desc: "The current is constant, so the charge stored increases at a steady rate (Q = It, charge proportional to time)",
+                not: [negFor("constant|steady|proportional|same|fixed", 2)],
+                any: [near("current", "constant|steady|fixed|same", 3), "\\b(?:charge|q)\\W+(?:\\w+\\W+){0,6}(?:proportional|steady|constant|same rate|uniform|linear)", "\\bq ?= ?it\\b"] },
+              { desc: "The capacitance is constant, so the p.d. is directly proportional to the charge (V = Q/C) and so to the time",
+                not: [negFor("constant|proportional|same|fixed", 2)],
+                any: [near("capacitance|c", "constant|same|fixed|does not change|stays", 4), "\\bv ?= ?q ?/ ?c\\b", "\\b(?:p\\.?d\\.?|voltage|potential difference|v)\\W+(?:\\w+\\W+){0,5}proportional\\W+(?:\\w+\\W+){0,3}(?:charge|q)\\b"] },
+            ],
+            sample: "The current is constant, so the charge stored increases at a steady rate, because Q = It. The capacitance is constant, so the p.d. is directly proportional to the charge (V = Q/C), and therefore to the time.",
+            model: "<ul><li>The current is constant, so the charge on the capacitor increases at a steady rate: Q = It, so Q is proportional to t (1)</li><li>The capacitance does not change, so V = Q/C means the p.d. is proportional to the charge, and so to the time (1)</li></ul><p>Both steps are needed: a constant current gives charge proportional to time, and a fixed capacitance links the p.d. to the charge.</p>",
+          },
+          {
+            label: "(d)", type: "mcq", marks: 1, a: 2,
+            q: "The experiment is repeated. Which change would give a graph with a <strong>greater</strong> gradient?",
+            opts: ["Using a capacitor of larger capacitance", "Using a smaller constant current", "Using a capacitor of smaller capacitance", "Reading the p.d. at shorter time intervals", "Charging the capacitor for a longer time"],
+            why: "The gradient is I/C, so it is increased by a larger current or a smaller capacitance (C). A larger capacitance (A) or a smaller current (B) reduces it. Shorter reading intervals (D) and a longer charging time (E) only change how many points are plotted along the same line.",
+          },
+        ],
+      },
+
+      /* ------------------------------------------------------------ 12 */
+      {
+        id: "skills-12",
+        style: "Graph question · wavelength and frequency of sound in air",
+        stem:
+          "<p>A student measures the wavelength λ of sound waves in air for several frequencies <em>f</em> from a signal generator, using a loudspeaker, a microphone and an oscilloscope. She plots a graph of λ against 1/<em>f</em>, with the line of best fit.</p>" +
+          tbl(["f / Hz", "2000", "1600", "1000", "800", "500", "400"], [["λ / m", "0.17", "0.21", "0.34", "0.43", "0.68", "0.84"]]),
+        figure: figWF,
+        parts: [
+          {
+            label: "(a)", type: "calc", marks: 3,
+            q: "Use the graph to determine the speed of sound in air, in m s⁻¹.",
+            steps: [
+              { desc: "Relationship: v = fλ, so λ = v × (1/f) and the gradient is the speed v", rel: ["v=f(?:λ|lambda)", "(?:λ|lambda)=v[/÷]f", "f=v[/÷](?:λ|lambda)", "(?:gradient|slope)=v", "v=(?:gradient|slope)", "(?:λ|lambda)=v(?:x|\\*)?\\(?1[/÷]f"] },
+              { desc: "Gradient from two widely spaced points on the line (units of 10⁻³ s converted)", nums: [[0.34, 0.68, 0.85, 1.02, 0.17, 0.425, 0.51], [1.0, 2.0, 2.5, 3.0, 0.5, 1.25, 1.5, 0.001, 0.002, 0.0025, 0.003, 0.0005, 0.00125, 0.0015]] },
+              { desc: "Speed with unit: 3.4 × 10² m s⁻¹", ans: 340, sf: 2, abs: 15, unit: ["m s-1", "m/s"] },
+            ],
+            sample: "gradient = v\ngradient = (0.68 − 0)/(2.0 × 10⁻³ − 0)\nv = 3.4 × 10² m s⁻¹",
+            model: "<ul><li>v = fλ, so λ = v × (1/f) and the gradient of the graph is the speed v (1)</li><li>gradient = (0.68 − 0) ÷ (2.0 × 10⁻³ − 0), with the x axis converted from units of 10⁻³ s (1)</li><li>v = 3.4 × 10² m s⁻¹ (1)</li></ul><p>Accept 3.3 to 3.5 × 10² m s⁻¹. Forgetting the 10⁻³ on the axis gives 0.34 m s⁻¹, which is out by a factor of 1000. The data sheet value is 3.40 × 10² m s⁻¹.</p>",
+          },
+          { label: "(b)", type: "num", marks: 1, a: 0.425, sf: 2, tol: 0.02, unit: "m", shown: "0.43", q: "Use the graph to find the wavelength of the sound when the frequency is 800 Hz.", why: "f = 800 Hz gives 1/f = 1.25 × 10⁻³ s. The line reads <strong>0.43 m</strong> at 1.25 on the horizontal axis (check: 340 ÷ 800 = 0.425 m). Accept 0.41 to 0.45." },
+          {
+            label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
+            q: "Explain why the student plots λ against 1/f rather than λ against f.",
+            points: [
+              { desc: "λ is directly proportional to 1/f (λ = v/f), so the graph is a straight line",
+                not: [negFor("straight|linear|proportional", 2), "(?:against|vs\\.?|versus|and)\\W+(?:the )?(?:frequency|f)\\W+(?:\\w+\\W+){0,4}(?:straight|linear)"],
+                any: [near("straight|linear", "line|graph", 2) + "|\\bstraight\\b|\\blinear\\b", "\\bdirectly proportional\\b", "\\bλ ?= ?v ?/ ?f\\b", "\\blambda ?= ?v ?/ ?f\\b"] },
+              { desc: "The gradient of the straight line is the speed of the sound",
+                not: [negFor("gradient|slope|speed|velocity", 2)],
+                any: [near("gradient|slope", "speed|velocity|v", 8)] },
+            ],
+            sample: "A graph of λ against 1/f is a straight line, because λ is directly proportional to 1/f. The gradient of the line is then equal to the speed of the sound.",
+            model: "<ul><li>v = fλ, so λ = v/f: λ is directly proportional to 1/f, giving a straight line (through the origin), which is easy to draw and to judge by eye (1)</li><li>The gradient of the straight line is equal to the speed v (1)</li></ul><p>A graph of λ against f is a curve (a hyperbola): its gradient changes and does not give the speed directly.</p>",
+          },
+          {
+            label: "(d)", type: "mcq", marks: 1, a: 3,
+            q: "Which of the following would reduce the random uncertainty in the wavelength measured at one frequency?",
+            opts: ["Using a louder sound", "Using a higher frequency", "Measuring the distance across one wavelength with a longer ruler", "Measuring the distance across ten wavelengths and dividing by ten", "Taking the readings in a larger room"],
+            why: "Measuring across ten wavelengths and dividing by ten makes the fixed reading uncertainty a much smaller percentage of the distance measured. Loudness (A) and room size (E) do not change how well the distance is read, a higher frequency (B) gives shorter wavelengths and so a larger percentage uncertainty, and a longer ruler (C) does not help when only one wavelength is measured.",
           },
         ],
       },

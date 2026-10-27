@@ -80,7 +80,7 @@
     let b = ln(120, 40, 360, 40) + ln(120, 160, 360, 160) + ln(120, 40, 120, 160) + ln(290, 40, 290, 160) + ln(360, 40, 360, 160);
     b += resistor(200, 40) + cell(120, 100, true) + lamp(290, 100) + lamp(360, 100) + dot(290, 40) + dot(290, 160);
     b += tx(200, 22, "R₁ = 8.0 Ω") + tx(98, 104, "12 V", { a: "end" });
-    b += tx(290, 124, "lamp X", { s: 11 }) + tx(290, 138, "12 Ω", { s: 11 }) + tx(360, 124, "lamp Y", { s: 11 }) + tx(360, 138, "6.0 Ω", { s: 11 });
+    b += tx(278, 124, "lamp X", { s: 11, a: "end" }) + tx(278, 138, "12 Ω", { s: 11, a: "end" }) + tx(372, 124, "lamp Y", { s: 11, a: "start" }) + tx(372, 138, "6.0 Ω", { s: 11, a: "start" });
     return svg(480, 190, "Circuit diagram. A 12 V cell is connected in series with a fixed resistor R1 of 8.0 ohms. The resistor is joined to two branches in parallel: one branch holds lamp X of resistance 12 ohms and the other holds lamp Y of resistance 6.0 ohms. The branches rejoin and return to the cell.", b);
   })();
 
