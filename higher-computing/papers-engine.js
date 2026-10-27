@@ -202,7 +202,9 @@
           .replace(/(\d) (?=\d{3}\b)/g, "$1")                          // 2 880 000
           .replace(/(\d),(\d{1,2})\b/g, "$1.$2");                      // 9,6
         if (raw.includes("=")) raw = raw.slice(raw.lastIndexOf("=") + 1);
-        const nums = raw.match(/\d+(?:\.\d+)?|\.\d+/g);
+        raw = raw.replace(/[−–—]/g, "-");
+        // a minus counts as a sign only when it is not a subtraction ("12 - 5" reads as 5, "-5" and "= -5" as -5)
+        const nums = raw.match(/(?<![\d.)])-?\d+(?:\.\d+)?|(?<![\d.)])-?\.\d+|\d+(?:\.\d+)?|\.\d+/g);
         const v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
         if (!isFinite(v)) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
