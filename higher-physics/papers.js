@@ -289,7 +289,7 @@
   }
   function mockPanel() {
     const panel = el("div");
-    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 10 multiple-choice marks, then 17 marks of Universe, 17 of Particles and Waves, 16 of Electricity and 6 of experiments and open-ended questions. At the real pace of about 68 seconds a mark, 66 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers. Marks from the mock also count on the scoreboard." }));
+    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 10 multiple-choice marks, then 17 marks of Universe, 17 of Particles and Waves, 16 of Electricity and 6 of experiments and open-ended questions. At the real pace of about 68 seconds a mark, 66 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers. Marks from the mock also count on the scoreboard, and a part you have already marked in an area tab shows as marked here too (use Try again to redo it)." }));
     panel.append(el("div", { class: "exam-timer", "data-minutes": "75", "data-label": "Mock clock" }));
     const out = el("div");
     const total = el("p", { class: "pp-sum", "aria-live": "polite" });
