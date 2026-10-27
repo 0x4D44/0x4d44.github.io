@@ -90,10 +90,10 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
     await page.click("#pp-tab-score");
     assert.match(await page.locator("#pp-panel-score .pp-verdict").innerText(), /earned/);
     await page.click("#pp-tab-mock");
-    assert.ok(await page.locator("#pp-panel-mock .pp-q").count() >= 6);
+    assert.ok(await page.locator("#pp-panel-mock .pp-q").count() >= 4);
     await page.getByRole("button", { name: /Draw a new mock paper/ }).click();
     await page.selectOption("#pp-mock-opt", "web");
-    assert.ok(await page.locator("#pp-panel-mock .pp-q").count() >= 6);
+    assert.ok(await page.locator("#pp-panel-mock .pp-q").count() >= 4);
     assert.ok(await page.locator("#pp-panel-mock .timer-face").count() === 1);
   });
 

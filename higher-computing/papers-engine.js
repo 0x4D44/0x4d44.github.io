@@ -128,8 +128,12 @@
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: false, group: pt.group }));
     const w = words(text);
     const list = listLike(text);
-    const opts = { negCheck: !NEG.test(HCP.norm(part.sample || "")) };
-    if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => { pts[i].hit = HCP.pointHit(pt, text, opts); });
+    const sampleText = HCP.norm(part.sample || "");
+    if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => {
+      // the negation check runs on every point whose own model wording survives it (the sample must still earn the mark)
+      if (pt._nc === undefined) pt._nc = !HCP.pointHit(pt, sampleText, { negCheck: true }) && HCP.pointHit(pt, sampleText, null) ? false : true;
+      pts[i].hit = HCP.pointHit(pt, text, { negCheck: pt._nc });
+    });
     // points sharing a group are alternatives: only the best-scoring one in a group counts
     const seen = new Map();
     pts.forEach((p) => {
@@ -181,7 +185,9 @@
     // comments are not queries, and a SELECT of bare literals ("select 'x' union all select 'y'") is hard-wiring
     const text = HCP.norm(sql.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/--[^\n]*/g, " "));
     const missing = (part.must || []).filter((m) => !rx(m).test(text));
-    if (!part.dml && /\bselect\s+(?:distinct\s+)?(?:'[^']*'|"[^"]*"|-?\d)|\bvalues\s*\(/.test(text)) missing.push("literal rows");
+    const IN_LIST = /\bin\s*\(\s*(?:'[^']*'|"[^"]*"|-?\d)/;
+    const hardWired = (!part.dml && /\bselect\s+(?:distinct\s+)?(?:'[^']*'|"[^"]*"|-?\d)|\bvalues\s*\(/.test(text)) || (!part.allowIn && IN_LIST.test(text));
+    if (hardWired) { out.note = "That query hard-wires values taken from the data instead of working them out, so it earns no marks. Use the column conditions the question describes."; out.missing = ["hard-wired"]; return out; }
     out.missing = missing;
     if (same && (inOrder || !part.ordered)) {
       if (!missing.length) out.got = of;
@@ -222,6 +228,13 @@
         if (raw.includes("=")) raw = raw.slice(raw.lastIndexOf("=") + 1);
         raw = raw.replace(/[−–—]/g, "-").replace(/×/g, "x");
         // a plain sum / product / power ("150 + 20 + 4", "3.2 x 10^9", "2^8", "3.2e9") is worked out; subtraction is left alone
+        // units: the one printed beside the box may be typed or left off, but a different one is a wrong answer
+        const uw = raw.match(/\d\s*(bits?|bytes?|kilobytes?|megabytes?|gigabytes?|kb|mb|gb|tb|pixels?|px|em|rem|cm|mm|km|%|hz|khz|mhz|ghz)\b|\d\s*(%)/);
+        if (uw) {
+          const norm1 = (u) => String(u || "").toLowerCase().replace(/s$/, "").replace(/^kilobyte$/, "kb").replace(/^megabyte$/, "mb").replace(/^gigabyte$/, "gb").replace(/^pixel$/, "px").replace(/^byte$/, "b");
+          const typed = norm1(uw[1] || uw[2]);
+          if (part.unit ? norm1(part.unit) !== typed : /^(bit|b|kb|mb|gb|tb|px|%|hz|khz|mhz|ghz)$/.test(typed)) return { got: 0, of };
+        }
         let v = NaN;
         const expr = raw.replace(/\s*(x|\*)\s*/g, "*").replace(/\^/g, "**").replace(/\s+/g, "").replace(/[a-z%]+$/, "");
         if (/^[\d.]+(?:e\d+)?(?:(?:\*\*?|[+\/])[\d.]+(?:e\d+)?)+$|^[\d.]+e\d+$/.test(expr)) { try { v = Function('"use strict";return (' + expr + ")")(); } catch (e) { v = NaN; } }
@@ -237,7 +250,7 @@
         if (part.bits && digitsTyped && digitsTyped.length !== part.bits) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
         const tol = part.tol == null ? 0 : part.tol;
-        return { got: targets.some((t) => Math.abs(v - t) <= tol + 1e-9 + Math.abs(t) * 1e-12) ? of : 0, of };
+        return { got: targets.some((t) => Math.abs(v - t) <= tol + 1e-9) ? of : 0, of };
       }
       case "match": {
         const picked = Array.isArray(ans) ? ans : [];
