@@ -347,7 +347,7 @@
         figure: figVI,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 4.5, sf: 2, tol: 0, unit: "V", shown: "4.5",
+            label: "(a)", type: "num", marks: 1, a: 4.5, sf: 2, tol: 0.1, unit: "V", shown: "4.5",
             q: "State the EMF of the cell.",
             why: "When <em>I</em> = 0 there are no lost volts, so the terminal p.d. equals the EMF: the intercept on the vertical axis, <strong>4.5 V</strong>.",
           },
@@ -357,7 +357,7 @@
             steps: [
               { desc: "Relationship: r = −gradient (E = V + Ir, so V = E − rI)", rel: ["gradient", "slope", "e=v\\+ir", "v=e-ir", "r=\\(?e-v\\)?/i", "r=e/i", "e=i\\(r\\+r\\)", "v=-ir\\+e", "y=mx\\+c", "y2-y1"] },
               { desc: "Values taken from the graph, e.g. (0, 4.5 V) and (3.0 A, 0)", nums: [[4.5, 3.0, 1.5]] },
-              { desc: "Internal resistance 1.5 Ω (a positive value: r = −gradient)", ans: 1.5, sf: 2, unit: "Ω", signed: true },
+              { desc: "Internal resistance 1.5 Ω (a positive value: r = −gradient)", ans: 1.5, sf: 2, abs: 0.1, unit: "Ω", signed: true },
             ],
             sample: "gradient = (0 − 4.5)/(3.0 − 0) = −1.5\nr = −gradient = 1.5 Ω",
             model: "<ul><li>r = −gradient, or E = V + Ir (1)</li><li>Correct substitution of values from the line, e.g. (0 − 4.5)/(3.0 − 0), or E = 4.5 V, short-circuit current 3.0 A (1)</li><li>r = 1.5 Ω (1)</li></ul><p>The gradient is <em>negative</em>; r is its magnitude. Accept any pair of points read correctly from the line. Equivalent route: short-circuit current I = E/r, so r = 4.5/3.0.</p>",
@@ -650,10 +650,13 @@
             q: "Explain, in terms of electrons and the energy bands, how the LED gives out light when it is connected as shown.",
             points: [
               { desc: "The cell connected this way is forward bias: it reduces the electric field in the junction and electrons move from the n-type to the p-type (across the junction in the conduction band)",
+                not: ["\\bp(?:-|\\s)?(?:type|side|region|material)?\\W+(?:\\w+\\W+){0,4}(?:to|towards|into)\\W+(?:the\\W+)?n(?:-|\\s)?(?:type|side|region|material)", "\\bp\\W*(?:to|->)\\W*n\\b", "\\babsorb\\w*"],
                 all: ["electrons?", "junction|n-type|p-type|across|cross\\w*|n side|p side", "forward|reduc\\w*|move\\w*|flow\\w*|pass\\w*|cross\\w*"] },
               { desc: "Electrons fall from the conduction band into the valence band (combining with holes)",
+                not: ["^(?![\\s\\S]*\\b(?:fall|falls|falling|fell|drop|drops|dropping|recombin\\w*|come down|comes down|go down|goes down)\\b)[\\s\\S]*\\b(?:jump|move|go|goes|rise|rises|climb|promot|excit|gain)\\w*\\W+(?:\\w+\\W+){0,2}up\\b", "^(?![\\s\\S]*\\b(?:fall|falls|falling|fell|drop|drops|dropping|recombin\\w*|come down|comes down|go down|goes down)\\b)[\\s\\S]*\\bfrom\\W+(?:the\\W+)?valence\\W+(?:band\\W+)?(?:\\w+\\W+){0,2}(?:to|into|up to)\\W+(?:the\\W+)?conduction", "\\babsorb\\w*"],
                 all: [near("fall\\w*|drop\\w*|jump\\w*|move\\w*|go(?:es)? down|combin\\w*|recombin\\w*|fill\\w*|lose energy", "valence band|holes?", 6), "conduction band|conduction"] },
               { desc: "The energy released is emitted as photons (of light)",
+                not: ["\\babsorb\\w*\\W+(?:\\w+\\W+){0,3}photons?", "\\bphotons?\\W+(?:\\w+\\W+){0,3}(?:are |is |were |get |gets )?absorb"],
                 any: [near("photons?", "emit\\w*|releas\\w*|given (?:off|out)|radiat\\w*|produc\\w*|gives? out|gives? off|energy", 6), near("energy", "emitted|released|given (?:off|out)|lost as|converted|radiated", 5) + "|" + near("energy", "photon|photons", 6)] },
             ],
             sample: "The junction is forward biased, so the electric field in the junction is reduced and electrons move across from the n-type to the p-type material. The electrons then fall from the conduction band into the valence band, combining with holes. The energy they lose is given out as photons of light.",
