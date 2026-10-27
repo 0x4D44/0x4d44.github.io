@@ -333,12 +333,12 @@
         label: "(a)", q: String.raw`Find the values of $n$ and $a$. Give $a$ correct to $3$ significant figures.`, type: "fields", marks: 4,
         fields: [
           { label: "$n$", type: "num", a: 1.5, tol: 1e-6, marks: 2, show: "1.5", reject: ["1.2", "0.8"] },
-          { label: "$a$", type: "num", a: 15.8, tol: 0.06, marks: 2, show: "15.8", reject: ["1.2", "16.5", "1.5"] }
+          { label: "$a$", type: "num", a: 15.8, tol: 0.05, marks: 2, show: "15.8", reject: ["1.2", "16.5", "1.5"] }
         ],
         why: String.raw`<p>&bull;1 $\log_{10}F=n\log_{10}v+\log_{10}a$, so $n$ is the gradient: $\dfrac{2.7-1.5}{1.0-0.2}=1.5$</p><p>&bull;2 intercept: $1.5=1.5(0.2)+c$, so $\log_{10}a=1.2$</p><p>&bull;3 $a=10^{1.2}$</p><p>&bull;4 $a=15.8$ (3 s.f.).</p><p>Commonly seen: giving the intercept $1.2$ as $a$ itself.</p>`
       },
       {
-        label: "(b)", q: String.raw`Use the law to estimate the daily fuel use, in tonnes, at a speed of $12$ knots. Give your answer to the nearest tonne.`, type: "num", marks: 2, a: 659, tol: 2, show: "659", unit: "tonnes", reject: ["18", "1.2", "190"],
+        label: "(b)", q: String.raw`Use the law to estimate the daily fuel use, in tonnes, at a speed of $12$ knots. Give your answer to the nearest tonne.`, type: "num", marks: 2, a: 659, alts: [657], tol: 0.5, show: "659", unit: "tonnes", reject: ["18", "1.2", "190"],
         why: String.raw`<p>&bull;1 $F=15.85\times12^{1.5}$ (using $a=10^{1.2}$ unrounded)</p><p>&bull;2 $F\approx659$ tonnes.</p>`
       }
     ]
@@ -359,8 +359,8 @@
         why: String.raw`<p>&bull;1 $\log_{10}N=t\log_{10}b+\log_{10}a$; the intercept is $\log_{10}a=0.7$</p><p>&bull;2 $a=10^{0.7}=5.01$</p><p>&bull;3 gradient $=\dfrac{2.2-0.7}{5}=0.3=\log_{10}b$</p><p>&bull;4 $b=10^{0.3}=2.00$ (3 s.f.).</p>`
       },
       {
-        label: "(b)", q: String.raw`Predict the number of bacteria after $8$ hours, to the nearest $10$.`, type: "num", marks: 2, a: 1260, tol: 5, show: "1260", reject: ["16", "256", "5.01"],
-        partial: [{ a: 1283, marks: 1, note: "Correct model, but you used rounded values of a and b; use the unrounded values (or 10^(0.3t+0.7))." }],
+        label: "(b)", q: String.raw`Predict the number of bacteria after $8$ hours, to the nearest $10$.`, type: "num", marks: 2, a: 1260, alts: [1280], tol: 1.5, show: "1260", reject: ["16", "256", "5.01"],
+        partial: [{ a: 1283, marks: 1, note: "Close, but check your rounding of a and b earlier on; the unrounded model 10^(0.3t+0.7) gives 1260." }],
         why: String.raw`<p>&bull;1 $\log_{10}N=0.3(8)+0.7=3.1$, or $N=5.012\times1.995^8$</p><p>&bull;2 $N=10^{3.1}\approx1259$, which is $1260$ to the nearest $10$.</p>`
       }
     ]

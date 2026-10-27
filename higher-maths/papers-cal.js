@@ -157,7 +157,7 @@
           why: R`<p>&bull;1 differentiate and set to zero: $f'(x)=6x^2-18x+12=0$</p><p>&bull;2 factorise: $6(x-1)(x-2)=0$, so $x=1$ or $x=2$.</p>`,
         },
         {
-          label: "(b)", q: R`Determine the coordinates of the local maximum, justifying that it is a maximum using a table of signs. Type the point as $(x,y)$.`,
+          label: "(b)", q: R`Determine the coordinates of the local maximum of $f$ (a table of signs shows which stationary point it is). Type the point as $(x,y)$.`,
           type: "vec", marks: 2, a: [1, 5], show: R`(1,5)`,
           reject: ["(2,4)", "(1,3)", "(5,1)"],
           why: R`<p>&bull;1 table of signs for $f'(x)=6(x-1)(x-2)$: $f'\gt0$ for $x\lt1$, $f'\lt0$ for $1\lt x\lt2$, $f'\gt0$ for $x\gt2$. Gradient goes $+\to 0\to-$ at $x=1$, so it is a local maximum.</p><p>&bull;2 $f(1)=2-9+12=5$, so the maximum is $(1,5)$. (At $x=2$: $f(2)=16-36+24=4$, a local minimum at $(2,4)$.)</p>`,

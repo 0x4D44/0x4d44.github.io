@@ -118,7 +118,7 @@
               { label: "$c$", type: "num", a: 1, marks: 1, show: "1", reject: ["2", "3"] }
             ],
             why: R`<p>&bull;1 use $\cos2x=2\cos^2x-1$.</p><p>&bull;2 $\cos2x+3\cos x+2=2\cos^2x+3\cos x+1$, so $a=2$ and $c=1$.</p><p>Commonly seen: $\cos2x=1-2\cos^2x$ (wrong way round).</p>` },
-          { label: "(b)", q: R`Hence solve $\cos2x+3\cos x+2=0$ for $0\leq x\leq2\pi$.`, type: "set", marks: 3, a: ["2*pi/3", "pi", "4*pi/3"], show: R`x=\dfrac{2\pi}{3},\ \pi,\ \dfrac{4\pi}{3}`, tol: 1e-6,
+          { label: "(b)", q: R`Hence solve $\cos2x+3\cos x+2=0$ for $0\leq x\leq2\pi$. Give exact values.`, type: "set", marks: 3, a: ["2*pi/3", "pi", "4*pi/3"], show: R`x=\dfrac{2\pi}{3},\ \pi,\ \dfrac{4\pi}{3}`, tol: 1e-6,
             reject: ["pi/3, pi, 5pi/3", "2pi/3, 4pi/3"],
             why: R`<p>&bull;1 factorise: $2\cos^2x+3\cos x+1=(2\cos x+1)(\cos x+1)=0$</p><p>&bull;2 $\cos x=-\tfrac12$ gives $x=\dfrac{2\pi}{3},\dfrac{4\pi}{3}$</p><p>&bull;3 $\cos x=-1$ gives $x=\pi$.</p><p>Commonly seen: $\cos x=-1$ forgotten.</p>` }
         ]
@@ -149,7 +149,7 @@
               { label: R`$\alpha$ (radians)`, type: "num", a: "pi/3", marks: 2, show: R`\dfrac{\pi}{3}`, accept: ["1.0472"], tol: 1e-3, reject: ["pi/6", "60"] }
             ],
             why: R`<p>&bull;1 expand $k\cos(x-\alpha)=k\cos x\cos\alpha+k\sin x\sin\alpha$ and equate: $k\cos\alpha=1$, $k\sin\alpha=\sqrt3$; so $k=\sqrt{1+3}=2$</p><p>&bull;2 $\tan\alpha=\sqrt3$ (both $\cos\alpha$ and $\sin\alpha$ positive)</p><p>&bull;3 $\alpha=\dfrac{\pi}{3}$.</p><p>Commonly seen: $\tan\alpha=\dfrac{1}{\sqrt3}$ (ratio inverted) giving $\dfrac{\pi}{6}$.</p>` },
-          { label: "(b)", q: R`Hence solve $\cos x+\sqrt3\sin x=\sqrt3$ for $0\leq x<2\pi$.`, type: "set", marks: 2, a: ["pi/6", "pi/2"], show: R`x=\dfrac{\pi}{6},\ \dfrac{\pi}{2}`,
+          { label: "(b)", q: R`Hence solve $\cos x+\sqrt3\sin x=\sqrt3$ for $0\leq x<2\pi$. Give exact values.`, type: "set", marks: 2, a: ["pi/6", "pi/2"], show: R`x=\dfrac{\pi}{6},\ \dfrac{\pi}{2}`,
             reject: ["pi/6, 5pi/6", "pi/3, 2pi/3"],
             why: R`<p>&bull;1 $2\cos\!\left(x-\dfrac{\pi}{3}\right)=\sqrt3$, so $\cos\!\left(x-\dfrac{\pi}{3}\right)=\dfrac{\sqrt3}{2}$, giving $x-\dfrac{\pi}{3}=\pm\dfrac{\pi}{6}$ (also $\dfrac{11\pi}{6}$)</p><p>&bull;2 $x=\dfrac{\pi}{3}+\dfrac{\pi}{6}=\dfrac{\pi}{2}$ and $x=\dfrac{\pi}{3}-\dfrac{\pi}{6}=\dfrac{\pi}{6}$ (the value $x=\dfrac{\pi}{3}+\dfrac{11\pi}{6}$ is outside the interval).</p>` },
           { label: "(c)", q: R`State the maximum value of $5+\cos x+\sqrt3\sin x$ and the value of $x$ in the interval $0\leq x<2\pi$ at which it occurs.`, type: "fields", marks: 2,
@@ -185,14 +185,14 @@
         stem: R`The diagram shows part of the graph of $y=a\cos bx+c$ for $0\leq x\leq\pi$. The graph has a maximum at $(0,3)$, a minimum at $\left(\dfrac{\pi}{2},-1\right)$ and its next maximum at $(\pi,3)$.`,
         figure: fig8,
         parts: [
-          { label: "(a)", q: R`State the values of $a$, $b$ and $c$.`, type: "fields", marks: 3,
+          { label: "(a)", q: R`State the values of $a$, $b$ and $c$, where $a$ and $b$ are positive.`, type: "fields", marks: 3,
             fields: [
               { label: "$a$", type: "num", a: 2, marks: 1, show: "2", reject: ["4", "-2"] },
               { label: "$b$", type: "num", a: 2, marks: 1, show: "2", reject: ["1", "pi"] },
               { label: "$c$", type: "num", a: 1, marks: 1, show: "1", reject: ["3", "-1"] }
             ],
             why: R`<p>&bull;1 amplitude $a=\dfrac{3-(-1)}{2}=2$</p><p>&bull;2 one full cycle takes $\pi$, so the period $\dfrac{2\pi}{b}=\pi$ and $b=2$</p><p>&bull;3 the midline is $y=\dfrac{3+(-1)}{2}=1$, so $c=1$.</p>` },
-          { label: "(b)", q: R`Hence solve $a\cos bx+c=0$ for $0\leq x\leq\pi$.`, type: "set", marks: 2, a: ["pi/3", "2*pi/3"], show: R`x=\dfrac{\pi}{3},\ \dfrac{2\pi}{3}`, reject: ["pi/6, 5pi/6", "pi/3, 4pi/3"],
+          { label: "(b)", q: R`Hence solve $a\cos bx+c=0$ for $0\leq x\leq\pi$. Give exact values.`, type: "set", marks: 2, a: ["pi/3", "2*pi/3"], show: R`x=\dfrac{\pi}{3},\ \dfrac{2\pi}{3}`, reject: ["pi/6, 5pi/6", "pi/3, 4pi/3"],
             why: R`<p>&bull;1 $2\cos2x+1=0$, so $\cos2x=-\tfrac12$ and $2x=\dfrac{2\pi}{3},\dfrac{4\pi}{3}$ (in $0\leq2x\leq2\pi$)</p><p>&bull;2 $x=\dfrac{\pi}{3},\dfrac{2\pi}{3}$.</p>` }
         ]
       },
@@ -245,7 +245,7 @@
             reject: ["sqrt(3)", "-sqrt(3)/3"],
             partial: [{ a: "sqrt(3)", marks: 1, note: "the two sides were divided the wrong way round" }],
             why: R`<p>&bull;1 $\sin x\cos\dfrac{\pi}{6}+\cos x\sin\dfrac{\pi}{6}=\cos x$, i.e. $\dfrac{\sqrt3}{2}\sin x+\dfrac12\cos x=\cos x$, so $\dfrac{\sqrt3}{2}\sin x=\dfrac12\cos x$</p><p>&bull;2 divide by $\dfrac{\sqrt3}{2}\cos x$: $\tan x=\dfrac{1}{\sqrt3}$.</p>` },
-          { label: "(b)", q: R`Hence solve the equation for $0\leq x\leq2\pi$.`, type: "set", marks: 2, a: ["pi/6", "7*pi/6"], show: R`x=\dfrac{\pi}{6},\ \dfrac{7\pi}{6}`, reject: ["pi/6, 5pi/6", "pi/3, 4pi/3"],
+          { label: "(b)", q: R`Hence solve the equation for $0\leq x\leq2\pi$. Give exact values.`, type: "set", marks: 2, a: ["pi/6", "7*pi/6"], show: R`x=\dfrac{\pi}{6},\ \dfrac{7\pi}{6}`, reject: ["pi/6, 5pi/6", "pi/3, 4pi/3"],
             why: R`<p>&bull;1 $\tan x=\dfrac{1}{\sqrt3}$ gives the first quadrant solution $x=\dfrac{\pi}{6}$</p><p>&bull;2 tangent has period $\pi$, so $x=\dfrac{\pi}{6}+\pi=\dfrac{7\pi}{6}$.</p>` }
         ]
       },
@@ -261,7 +261,7 @@
               { label: R`$\alpha$`, type: "num", a: 23.2, tol: 0.05, marks: 2, show: R`23.2`, reject: ["66.8", "113.2"] }
             ],
             why: R`<p>&bull;1 expand $k\sin(x-\alpha)=k\sin x\cos\alpha-k\cos x\sin\alpha$ and compare: $k\cos\alpha=7$, $k\sin\alpha=3$; $k=\sqrt{7^2+3^2}=\sqrt{58}=7.6$</p><p>&bull;2 $\tan\alpha=\dfrac37$</p><p>&bull;3 $\alpha=23.2^\circ$.</p><p>Commonly seen: $\tan\alpha=\dfrac73$, giving $66.8^\circ$.</p>` },
-          { label: "(b)", q: R`Hence solve $7\sin x^\circ-3\cos x^\circ=4$ for $0\leq x<360$. Give your answers correct to $1$ decimal place.`, type: "set", marks: 2, a: [54.9, 171.5], tol: 0.05, show: R`x=54.9,\ 171.5`, reject: ["54.9, 125.1", "31.7, 148.3"],
+          { label: "(b)", q: R`Hence solve $7\sin x^\circ-3\cos x^\circ=4$ for $0\leq x<360$. Give your answers correct to $1$ decimal place.`, type: "set", marks: 2, a: [54.9, 171.5], tol: 0.1, show: R`x=54.9,\ 171.5`, reject: ["54.9, 125.1", "31.7, 148.3"],
             why: R`<p>&bull;1 $\sqrt{58}\sin(x-23.2)^\circ=4$, so $\sin(x-23.2)^\circ=0.525\ldots$, giving $x-23.2=31.7$ or $148.3$</p><p>&bull;2 $x=54.9$ or $x=171.5$.</p>` }
         ]
       },
@@ -296,7 +296,7 @@
         parts: [
           { q: R`Solve $4\sin(2x-0.5)=3$ for $0\leq x\leq2\pi$. Give your answers correct to $2$ decimal places.`, type: "set", marks: 4, a: [0.67, 1.4, 3.82, 4.54], tol: 0.005,
             show: R`x=0.67,\ 1.40,\ 3.82,\ 4.54`, reject: ["0.67, 1.40", "13.4, 54.9"],
-            why: R`<p>&bull;1 $\sin(2x-0.5)=0.75$; the calculator gives $2x-0.5=0.848$</p><p>&bull;2 the other angle in $[0,2\pi]$ is $\pi-0.848=2.293$; the range for $2x-0.5$ is $-0.5$ to $12.08$, so add $2\pi$ to both: $7.131$ and $8.577$</p><p>&bull;3 add $0.5$ and halve: $x=\dfrac{0.5+0.848}{2}=0.674$ and $x=\dfrac{0.5+2.293}{2}=1.397$</p><p>&bull;4 and from the second pair $x=3.816$ and $x=4.538$: $x=0.67,\ 1.40,\ 3.82,\ 4.54$.</p>` }
+            why: R`<p>&bull;1 $\sin(2x-0.5)=0.75$; the calculator gives $2x-0.5=0.848$</p><p>&bull;2 the other angle in $[0,2\pi]$ is $\pi-0.848=2.293$; the range for $2x-0.5$ is $-0.5$ to $12.07$, so add $2\pi$ to both: $7.131$ and $8.577$</p><p>&bull;3 add $0.5$ and halve: $x=\dfrac{0.5+0.848}{2}=0.674$ and $x=\dfrac{0.5+2.293}{2}=1.397$</p><p>&bull;4 and from the second pair $x=3.816$ and $x=4.538$: $x=0.67,\ 1.40,\ 3.82,\ 4.54$.</p>` }
         ]
       },
       /* ---------- 15 ---------- */
@@ -326,7 +326,7 @@
       {
         id: "trig-16", calc: true,
         style: "Paper 2 style · calculator · a tidal depth model in radians",
-        stem: R`The depth, $d$ metres, of water at a quay $t$ hours after high tide is modelled by $$d(t)=7+3\sin\!\left(\dfrac{\pi t}{6}\right),\qquad 0\leq t\leq12,$$ where the angle is in radians. A cargo vessel can only unload when the depth exceeds $9.1$ metres.`,
+        stem: R`The depth, $d$ metres, of water at a quay $t$ hours after the tide is at mid-level and rising is modelled by $$d(t)=7+3\sin\!\left(\dfrac{\pi t}{6}\right),\qquad 0\leq t\leq12,$$ where the angle is in radians. A cargo vessel can only unload when the depth exceeds $9.1$ metres.`,
         parts: [
           { label: "(a)", q: R`State the maximum depth, the minimum depth and the period of the tide (in hours).`, type: "fields", marks: 3,
             fields: [
@@ -347,7 +347,7 @@
         style: "Paper 2 style · calculator · double angle, then a quadratic in cos x (degrees)",
         stem: R`Consider the equation $5\cos2x^\circ+4\cos x^\circ+3=0$ for $0\leq x<360$.`,
         parts: [
-          { label: "(a)", q: R`The equation can be written in the form $5\cos^2x^\circ+b\cos x^\circ+c=0$. State the values of $b$ and $c$.`, type: "fields", marks: 2,
+          { label: "(a)", q: R`Dividing through by $2$, the equation can be written in the form $5\cos^2x^\circ+b\cos x^\circ+c=0$. State the values of $b$ and $c$.`, type: "fields", marks: 2,
             fields: [
               { label: "$b$", type: "num", a: 2, marks: 1, show: "2", reject: ["4", "-2"] },
               { label: "$c$", type: "num", a: -1, marks: 1, show: "-1", reject: ["1", "-2"] }
@@ -370,10 +370,10 @@
               { label: R`$\alpha$`, type: "num", a: 0.64, tol: 0.005, marks: 2, show: "0.64", reject: ["0.93", "36.87"] }
             ],
             why: R`<p>&bull;1 $k\cos\alpha=4$, $k\sin\alpha=3$, so $k=\sqrt{16+9}=5$</p><p>&bull;2 $\tan\alpha=\dfrac34$</p><p>&bull;3 $\alpha=0.64$ (radians).</p><p>Commonly seen: $\tan\alpha=\dfrac43$, giving $0.93$.</p>` },
-          { label: "(b)", q: R`Find the first time at which the displacement is greatest. Give your answer in seconds correct to $2$ decimal places.`, type: "num", marks: 2, a: 0.46, tol: 0.005, unit: "s", show: "0.46", reject: ["0.93", "44.4"],
+          { label: "(b)", q: R`Find the first time at which the displacement is greatest. Give your answer in seconds correct to $2$ decimal places.`, type: "num", marks: 2, a: 0.46, alts: [0.47], tol: 0.005, unit: "s", show: "0.46", reject: ["0.93", "44.4"],
             partial: [{ a: 0.93, marks: 1, note: "$2t+\\alpha=\\tfrac{\\pi}{2}$ solved but $t$ was not halved" }],
             why: R`<p>&bull;1 the displacement is greatest when $\sin(2t+0.64)=1$, i.e. $2t+0.64=\dfrac{\pi}{2}$ (first occurrence)</p><p>&bull;2 $t=\dfrac{1.5708-0.6435}{2}=0.46$ seconds.</p>` },
-          { label: "(c)", q: R`Find the first time at which the displacement is $2$ centimetres. Give your answer in seconds correct to $2$ decimal places.`, type: "num", marks: 2, a: 1.04, tol: 0.005, unit: "s", show: "1.04", reject: ["0.67", "-0.12"],
+          { label: "(c)", q: R`Find the first time at which the displacement is $2$ centimetres. Give your answer in seconds correct to $2$ decimal places.`, type: "num", marks: 2, a: 1.04, alts: [1.05], tol: 0.005, unit: "s", show: "1.04", reject: ["0.67", "-0.12"],
             why: R`<p>&bull;1 $5\sin(2t+0.6435)=2$, so $\sin(2t+0.6435)=0.4$; $2t+0.6435=0.411$ is too small ($t<0$), so use $\pi-0.411=2.730$</p><p>&bull;2 $t=\dfrac{2.730-0.6435}{2}=1.04$ seconds.</p>` }
         ]
       }
