@@ -83,7 +83,7 @@
     let bad = 0;
     for (let i = 1; i < toks.length; i++) {
       const p = toks[i - 1], t = toks[i];
-      if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that"))) bad++;
+      if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that") && !(p === "and" && (t === "so" || t === "then")) && !(p === "but" && t === "then") && !(p === "so" && t === "then"))) bad++;
     }
     // a clause that stops on "the", "of", "to", "and"... is a shuffled sentence, not a written one
     const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|is|are|that|in|on|at)\s*[.,;:!?]/g) || []).length;
