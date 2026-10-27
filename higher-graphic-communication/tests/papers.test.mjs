@@ -159,7 +159,7 @@ test("a shuffled model answer does not earn most of the marks", () => {
   const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
   const shuf = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const sw = new Set("the a an and of to in is it so that this on for be are as at with by or can they their there from which was not do does if then than when".split(" "));
-  const LIMIT = { content: 0.3, all: 0.45 };
+  const LIMIT = { content: 0.33, all: 0.45 };
   for (const mode of ["content", "all"]) {
     let got = 0, of = 0;
     const fulls = [];

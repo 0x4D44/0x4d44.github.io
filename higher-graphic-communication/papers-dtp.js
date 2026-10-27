@@ -14,6 +14,8 @@
   const AFC = (ctx, y) => "(?<=" + ctx + ")(?:" + y + ")";
   const FULLCTX = "(?<!left[ -])(?:full(?:y)?[ -]justif\\w*|justified|justify)(?:(?!left)[^.;]){0,70}";
   const LEFTCTX = "\\bleft(?:[ -]?(?:justif\\w*|align\\w*|hand))?(?:(?!full|justif)[^.;]){0,80}";
+  const FULLCTX2 = FULLCTX.replace("{0,70}", "{0,140}");
+  const LEFTCTX2 = LEFTCTX.replace("{0,80}", "{0,150}");
   const SPACED = "(spac|interval|gap|equally|\\bevenly\\b|regularly|\\bequal\\b|same distance|apart)";
   const Y1 = "yellow\\W+(\\w+\\W+){0,1}(panel|box|band|background|block|strip|patch|area|shape|rectangle|banner|bar|label|highlight\\w*|oblong)|(panel|box|band|background|block|strip|patch|rectangle|banner|bar|highlight\\w*)\\W+(\\w+\\W+){0,2}yellow|highlight\\w*\\W+(\\w+\\W+){0,4}yellow";
 
@@ -202,8 +204,8 @@
             type: "text", label: "(a)", marks: 2, rows: 4,
             q: "Explain how emphasis has been created on the date and time.",
             points: [
-              { desc: "Yellow (accent) panel or background behind the date, so it stands out / is noticed first", group: "p1", win: 60, all: [Y1, EFF] },
-              { desc: "Date and time in bold or large capitals, so it stands out / is read first", group: "p2", win: 70, all: ["\\b(bold|large|big|bigger|larger|huge|capitals?|upper ?case|block letters)\\b", "\\b(date|time|text|writing|lettering|letters|words|numbers|font|print)\\b", EFF] },
+              { desc: "Yellow (accent) panel or background behind the date, so it stands out / is noticed first", group: "p1", win: 110, all: [Y1, EFF] },
+              { desc: "Date and time in bold or large capitals, so it stands out / is read first", group: "p2", win: 130, all: ["\\b(bold|large|big|bigger|larger|huge|capitals?|upper ?case|block letters)\\b", "\\b(date|time|text|writing|lettering|letters|words|numbers|font|print)\\b", EFF] },
               { desc: "Dark text on a light panel contrasts strongly, so it is clear / stands out", group: "p3", win: 90, all: ["(dark|navy|aubergine|purple|black)\\W+(\\w+\\W+){0,4}(on|against)\\W+(\\w+\\W+){0,2}(yellow|light|bright)|(yellow|light|bright)\\W+(\\w+\\W+){0,3}(behind|under|beneath|with)\\W+(\\w+\\W+){0,2}(dark|navy|aubergine|purple|black)", "contrast\\w*|stand\\w* out against|easy to read|readable|legible"] },
               { desc: "Only large yellow area / different from everything else, so the eye is drawn to it", group: "p4", win: 70, all: ["(only|single|sole|unlike|nothing else|no other)\\W+(\\w+\\W+){0,4}(yellow|that colour|same colour|colour)|(different|unlike|differs)\\W+(\\w+\\W+){0,3}(rest|everything|other)", EFF] },
             ],
@@ -333,9 +335,9 @@
             q: "Compare left justification with full justification for the paragraph of event details.",
             points: [
               { desc: "Full justification gives straight edges on both sides, so the block looks neat and formal", group: "full", any: [AFC(FULLCTX, "straight|neat|tidy|clean|formal|smart|professional|block|both (sides|edges|margins)|even edges|flush|square")] },
-              { desc: "Full justification can leave uneven gaps between words (rivers of white space)", group: "full", any: [AFC(FULLCTX, "(uneven|large|big|wide|irregular|varying|stretched|odd|awkward)\\W+(\\w+\\W+){0,2}(spac\\w*|gaps?)|rivers?|gaps? (between|in) (the )?words|stretch\\w* (the )?(words|spaces|spacing)|(spaces|gaps|spacing) (can be|may be|get|gets|become|becomes) (uneven|large|big|wide|stretched)")] },
+              { desc: "Full justification can leave uneven gaps between words (rivers of white space)", group: "full", any: [AFC(FULLCTX2, "(uneven|large|big|wide|irregular|varying|stretched|odd|awkward)\\W+(\\w+\\W+){0,2}(spac\\w*|gaps?)|rivers?|gaps? (between|in) (the )?words|stretch\\w* (the )?(words|spaces|spacing)|(spaces|gaps|spacing) (can be|may be|get|gets|become|becomes) (uneven|large|big|wide|stretched)")] },
               { desc: "Left justification keeps the spacing between words even / is easier to read", group: "left", any: [AFC(LEFTCTX, "(even|equal|regular|consistent|same|natural|normal|uniform)\\W+(\\w+\\W+){0,2}(spac\\w*|gaps?)|(spac\\w*|gaps?)\\W+(\\w+\\W+){0,3}(even|equal|regular|consistent|the same|uniform)|easier to read|easy to read|readab\\w*|more natural")] },
-              { desc: "Left justification leaves a ragged right edge, so it looks less formal / more informal", group: "left", any: [AFC(LEFTCTX, "ragged|jagged|uneven\\W+(\\w+\\W+){0,2}(right|edge)|right\\W+(\\w+\\W+){0,3}(ragged|uneven|jagged)|less formal|informal|casual")] },
+              { desc: "Left justification leaves a ragged right edge, so it looks less formal / more informal", group: "left", any: [AFC(LEFTCTX2, "ragged|jagged|uneven\\W+(\\w+\\W+){0,2}(right|edge)|(right|edge)\\W+(\\w+\\W+){0,3}(ragged|uneven|jagged|(not|isn.t) (straight|even|neat|flat|aligned))|less formal|informal|casual")] },
             ],
             sample: "Fully justified text has straight edges on both sides, so the block looks neat and formal, but it can leave uneven gaps between words. Left justified text keeps the spacing between words even and is easier to read, although the right edge is ragged.",
             model: "<ul><li>Full justification: both edges are straight, so the block looks neat and formal; but the software stretches the word spaces, which can leave uneven gaps or rivers of white space (1).</li><li>Left justification: the spacing between words stays even and the text is easy to read; the right edge is ragged, so it looks less formal (1).</li></ul><p>A comparison needs a point about each type, given to the right type. Describing only one of them earns one mark at most.</p>",
@@ -364,7 +366,8 @@
             type: "text", label: "(c)", marks: 2, rows: 4,
             q: "Explain two benefits of using a master page for the 24-page programme.",
             points: [
-              { desc: "Items are set up once and appear on every page, which saves time", win: 150, all: ["(once|one time|single time|automatic\\w*)\\W+(\\w+\\W+){0,6}(every|each|all)\\W+(\\w+\\W+){0,2}pages?|(every|each|all)\\W+(\\w+\\W+){0,2}pages?\\W+(\\w+\\W+){0,4}(automatic\\w*|once|straight away)|appears? (on|in) (every|each|all)", "(so|which|this|that|it|meaning|means|and)\\W+(\\w+\\W+){0,1}(saves?|saving|quicker|faster|less time|less work|less effort)|(makes?|make) (\\w+ ){0,2}(quick|fast|easy|easier)|(no need|don't need|doesn't need|without having|not have) to (re-?(type|do|create|place)|copy|do it|add)|(instead of|rather than)\\W+(\\w+\\W+){0,10}(each|every|individual\\w*|one by one|manually)"] },
+              { desc: "Items are set up once and appear on every page, which saves time", group: "ben1", win: 150, all: ["(once|one time|single time|automatic\\w*)\\W+(\\w+\\W+){0,6}(every|each|all)\\W+(\\w+\\W+){0,2}pages?|(every|each|all)\\W+(\\w+\\W+){0,2}pages?\\W+(\\w+\\W+){0,4}(automatic\\w*|once|straight away)|appears? (on|in) (every|each|all)", "(so|which|this|that|it|meaning|means|and)\\W+(\\w+\\W+){0,1}(saves?|saving|quicker|faster|less time|less work|less effort)|(makes?|make) (\\w+ ){0,2}(quick|fast|easy|easier)|(no need|don't need|doesn't need|without having|not have) to (re-?(type|do|create|place)|copy|do it|add)|(instead of|rather than)\\W+(\\w+\\W+){0,10}(each|every|individual\\w*|one by one|manually)"] },
+              { desc: "Set up once (not repeated page by page), which saves time", group: "ben1", win: 90, all: ["\\b(once|one time|single time|just one)\\b", "saves?|saving|quicker|faster|less time|less work|less effort|quick|fast|efficien\\w*"] },
               { desc: "Items are in exactly the same position on every page, so the programme is consistent", win: 90, all: ["(in|at|on|to) (\\w+ ){0,2}(same|identical|exact)( \\w+){0,2} (position|place|spot|location)|(look|layout|design|appearance)\\W+(\\w+\\W+){0,2}(same|identical|consistent|uniform)\\w*", "(so|which|making|makes|means|giving|gives|this|looks?|appears?)\\W+(\\w+\\W+){0,3}(consistent|consistency|uniform\\w*|unified|professional|neat|tidy|identical|the same|alike)"] },
               { desc: "Changing the master updates every page at once", win: 90, all: ["(change|edit|alter|update|amend|correct|fix)\\w*", "master", "(all|every|each)\\W+(\\w+\\W+){0,3}pages?|automatic\\w*|at once"] },
             ],
