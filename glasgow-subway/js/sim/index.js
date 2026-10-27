@@ -14,6 +14,7 @@ import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
+import { layoutFor, loadGLB, disposeTemplate, lookHints, HALL_FULL } from './hall.js';
 import { peopleVariants } from './kit.js';
 
 export function simAvailable() {
@@ -55,6 +56,11 @@ class Sim {
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
       this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._opt('models/people.glb'), this._opt('models/tunnel_station_vault.glb'),
     ]);
+    this.hallIndex = await this._json('models/stations_index.json');
+    const looksJ = await this._json('data/station_looks.json');
+    this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
+    this.walkable = await this._json('models/train_walkable.json');
+    this.halls = new Map(); this.hallLoading = new Map(); this.hallFailed = new Set(); this.entrances = new Map();
     this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleVariants = peopleVariants(THREE, peopleTpl);
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
@@ -66,8 +72,9 @@ class Sim {
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene, { quality: this.quality });
     this.trainView = new TrainView(THREE, trainTpl.scene, {});
     this.scene.add(this.trainView.root);
+    this.trainView.computeHeadroom(PY); if (this.walkable) this.trainView.setWalkable(this.walkable);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
-    this.tms = new Tms(THREE); this.tms.attach(this.trainView);
+    this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2);
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
@@ -102,6 +109,8 @@ class Sim {
     } catch (e) { return 'high'; }
   }
 
+  async _json(path) { try { const r = await fetch(this.url(path)); return r.ok ? await r.json() : null; } catch (e) { return null; } }
+
   async _opt(path) {
     try { const g = await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); return g.scene; } catch (e) { console.warn('[sim] optional model missing', path); return null; }
   }
@@ -112,7 +121,7 @@ class Sim {
     let rec = this.tracks[line];
     if (!rec) {
       const maxPlat = Math.max(...this.stations.map((s) => (s.platform && s.platform.lengthM) || 45), 45);
-      const track = new Track(this.subway.tracks[line], { trainLen: this.trainLen, ignoreCentre: false, maxKmh: this.stock.maxKmh, platformLen: maxPlat, latAccel: 1.15 });
+      const track = new Track(this.subway.tracks[line], { trainLen: this.trainLen, ignoreCentre: true, maxKmh: this.stock.maxKmh, platformLen: maxPlat, latAccel: 1.15 });
       const rt = baselineRunTimes(track, this.stock, this.stations);
       const dw = track.stops.map((s) => s.dwellS);
       const schedule = buildSchedule(rt, dw, 1.06, 0);
@@ -125,7 +134,7 @@ class Sim {
     // tunnel skip spans
     const spans = this.track.stops.map((st) => {
       const stn = this.stations[this.stationIdx.get(st.station)] || {};
-      const half = stationHalfLength(stn, this.trainLen, !!this.vaultTpl) + 0.02;
+      const half = this.hallIndex && this.hallIndex.stations[st.station] ? HALL_FULL : stationHalfLength(stn, this.trainLen, !!this.vaultTpl) + 0.02;
       return [wrapL(st.sc - half, this.track.length), wrapL(st.sc - half, this.track.length) + 2 * half];
     });
     this.tunnel.setSkips(spans); this.tunnel.track = null;
@@ -139,6 +148,9 @@ class Sim {
       platformLen: 45, schedule: this.schedule, ato: !!opts.ato, autoDoors: !!opts.autoDoors, seed: 7 + idx,
     });
     svc.t0 = svc.t - this.schedule.arr[idx];
+    // hall layouts: choose hall orientation per stop so the platform side matches the data, then let that side drive the door rules
+    this.layouts = this.track.stops.map((st, i) => { const info = this.hallIndex && this.hallIndex.stations[st.station]; return info ? layoutFor(info, this.line, svc.sideOf[i]) : null; });
+    this.layouts.forEach((l, i) => { if (l) svc.sideOf[i] = l.S; });
     svc.on((t, d) => this._onSvc(t, d));
     return svc;
   }
@@ -178,6 +190,7 @@ class Sim {
     const svc = this.svc;
     this.shuttle.state = 'none'; this.crowd.clear(); this.crowdFor = null;
     this.tunnel.reset(); this.annDone = false;
+    { const i0 = Math.max(0, idx2); await this._prepare(i0); await this._prepare((i0 + 1) % this.track.stops.length); }
     this.trainView.root.visible = true;
     if (mode === 'drive') {
       svc.dwellT = Math.max(0, svc.stop.dwellS - 10); svc.ato = false;
@@ -222,7 +235,7 @@ class Sim {
 
   _setupStationWalker(view, fromRide) {
     const w = this.walker, inf = view.info;
-    w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.eye = 1.62; w.radius = 0.3;
+    w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.eye = 1.62; w.radius = 0.3; w.headroomFn = null;
     this.activeStation = view;
     if (fromRide) {
       const doorZ = this._nearestDoorZ();
@@ -247,10 +260,10 @@ class Sim {
 
   _setupTrainWalker() {
     // Whole 4-car train is one walkable corridor (open gangways). Generous aisle, door recesses, no seat colliders.
-    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.62, x1: 0.62, z0: -half, z1: half, y: PY, name: 'aisle' }];
+    const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.5, x1: 0.5, z0: -half, z1: half, y: PY, name: 'aisle' }];
     for (const z of this.doorZ) zones.push({ kind: 'flat', x0: -1.12, x1: 1.12, z0: z - 0.75, z1: z + 0.75, y: PY, name: 'door' });
     w.setWorld(zones, []);
-    w.heightFn = null; w.eye = 1.5; w.radius = 0.2;
+    w.heightFn = null; w.eye = 1.6; w.radius = 0.2; w.headroomFn = (x) => this.trainView.headroomAt(x); w.minHead = 1.5;
     this.ctxKind = 'train';
   }
 
@@ -260,11 +273,12 @@ class Sim {
     const stn = this.stations[this.stationIdx.get(this.track.stops[this.exploreIdx].station)];
     const ents = (stn.entrances || []).filter((e) => e.kind === 'street' || e.kind === 'station-building' || true);
     const ent = ents.length ? ents.reduce((a, b) => (Math.hypot(a.x - stn.x, a.z - stn.z) <= Math.hypot(b.x - stn.x, b.z - stn.z) ? a : b)) : { x: stn.x, z: stn.z };
-    try { this.street = await buildStreet(this.THREE, { entrance: ent, station: stn, terrain: this.terrain, GLTFLoader: this.GLTFLoader, kioskTpl: this.kioskTpl, base: this.base }); } catch (e) { console.error('street failed', e); this.street = null; }
+    const entTpl = await this._loadEntrance(stn.id);
+    try { this.street = await buildStreet(this.THREE, { entrance: ent, station: stn, terrain: this.terrain, GLTFLoader: this.GLTFLoader, kioskTpl: entTpl || this.kioskTpl, newEntrance: !!entTpl, base: this.base }); } catch (e) { console.error('street failed', e); this.street = null; }
     if (!this.street) { this.hud.setFade(false); this.fadeLock = false; return; }
     this.mode = 'street'; this.ctxKind = 'street'; this.hud.setMode('street');
     const w = this.walker, st = this.street;
-    w.setWorld([], []); w.heightFn = (x, z) => (Math.hypot(x - st.center.x, z - st.center.z) < st.radius ? st.ground(x, z) : null); w.eye = 1.65; w.radius = 0.3;
+    w.headroomFn = null; w.setWorld([], []); w.heightFn = (x, z) => (Math.hypot(x - st.center.x, z - st.center.z) < st.radius ? st.ground(x, z) : null); w.eye = 1.65; w.radius = 0.3;
     w.place(st.spawn.x, st.spawn.z, st.spawn.yaw); w.y = st.spawn.y;
     this.look.pitch = 0;
     this.hud.toast(`Street level: ${stn.name}. Walk back to the stairwell to descend.`, 'info', 5);
@@ -280,6 +294,25 @@ class Sim {
     this._setupStationWalker(view, false);
     const a = view.anchors.exit; this.walker.place(a.x, a.z, 0); this.walker.yaw = 0; this.walker.y = a.y;
     this.hud.setFade(false); this.fadeLock = false;
+  }
+
+  async _loadEntrance(id) {
+    if (this.entrances.has(id)) return this.entrances.get(id);
+    const info = this.hallIndex && this.hallIndex.stations[id]; if (!info || !info.entrance) return null;
+    let tpl = null; try { tpl = await loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + info.entrance)); } catch (e) { console.warn('[sim] entrance missing', id); }
+    this.entrances.set(id, tpl); return tpl;
+  }
+  async _teleport(fn) {
+    if (this.fadeLock) return; this.fadeLock = true; this.hud.setFade(true);
+    await new Promise((r) => setTimeout(r, 420)); try { fn(); } finally { this.hud.setFade(false); this.fadeLock = false; }
+  }
+  _toAccess(pt) {
+    const v = this.activeStation, inf = v.info; this._lastPortal = pt;
+    return this._teleport(() => { const w = this.walker; w.place(inf.rc, inf.rampZ0 + 1.2, Math.PI); w.y = inf.PY; this.look.yaw = Math.PI; this.look.pitch = 0; });
+  }
+  _toPlatform() {
+    const v = this.activeStation, inf = v.info, pt = this._lastPortal || (v.anchors.portals || [])[0] || { x: inf.xcP, z: 0 };
+    return this._teleport(() => { const w = this.walker; const px = (inf.xe + inf.xo) / 2; w.place(px, Math.max(-20, Math.min(20, pt.z - Math.sign(pt.z || 1) * 1.8)), 0); w.y = inf.PY; this.look.yaw = 0; this.look.pitch = 0; });
   }
 
   _boardTrain() {
@@ -298,7 +331,7 @@ class Sim {
     this.mode = 'explore'; this.ctxKind = 'station'; this.hud.setMode('explore');
     this.exploreIdx = idx; this.shuttle.idx = idx; this.shuttle.state = 'dwell'; this.shuttle.streamed = false; this.scene.fog.density = 0.006;
     const view = this._ensureStation(idx, true);
-    this.walker.heightFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.62; this.walker.radius = 0.3; this.activeStation = view;
+    this.walker.heightFn = null; this.walker.headroomFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.62; this.walker.radius = 0.3; this.activeStation = view;
     const inf = view.info;
     this.walker.place(inf.xe + inf.S * 0.9, this._trainCentreZl() + doorZ, -inf.S * Math.PI / 2); this.look.yaw = this.walker.yaw; this.look.pitch = 0;
     this.svc.schedule = null; this.svc.ato = true; this.svc.autoDoors = true;
@@ -313,14 +346,37 @@ class Sim {
   }
 
   // ------------------------------------------------------------------ stations in scene
+  /** loads (once) the hall GLB for a station; resolves to the template or null */
+  _loadHall(id) {
+    if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
+    if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
+    if (this.hallLoading.has(id)) return this.hallLoading.get(id);
+    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+      .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
+    this.hallLoading.set(id, p); return p;
+  }
+  _evictHalls(keep) {
+    const inUse = new Set([keep, ...[...this.stationViews.values()].map((v) => v.station.id)]);
+    const ids = [...this.halls.keys()].filter((id) => !inUse.has(id));
+    while (this.halls.size > 5 && ids.length) { const id = ids.shift(); disposeTemplate(this.halls.get(id).tpl); this.halls.delete(id); }
+  }
+  async _prepare(stopIdx) {
+    const id = this.track.stops[stopIdx].station; await this._loadHall(id); return this._ensureStation(stopIdx, true);
+  }
   _ensureStation(stopIdx, force = false) {
     let v = this.stationViews.get(stopIdx);
     if (v) return v;
     const THREE = this.THREE, stop = this.track.stops[stopIdx];
     const si = this.stationIdx.get(stop.station); const station = this.stations[si];
-    const tmp = new Service({ track: this.track, stock: this.stock, stations: this.stations, startIdx: stopIdx, placeAtStop: false, lineKey: this.line });
-    const side = tmp.sideOf[stopIdx];
-    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl, low: this.quality === 'low' });
+    const lay = this.layouts && this.layouts[stopIdx];
+    let hall = null;
+    if (lay && this.hallIndex && !this.hallFailed.has(stop.station)) {
+      const ent = this.halls.get(stop.station);
+      if (ent) hall = { tpl: ent.tpl, layout: lay, info: this.hallIndex.stations[stop.station], hints: lookHints(this.looks.get(stop.station)) };
+      else if (!force) { this._loadHall(stop.station); return null; }
+    }
+    const side = lay ? lay.S : this.svc.sideOf[stopIdx];
+    v = buildStation(THREE, { station, stop, side, lineKey: this.line, trainLen: this.trainLen, idx: si, kit: this.kit, vault: this.vaultTpl, low: this.quality === 'low', hall });
     placeStation(THREE, v, stop); v.stopIdx = stopIdx; v.station = station;
     this._decorateStation(v);
     this.scene.add(v.group); this.stationViews.set(stopIdx, v);
@@ -335,7 +391,8 @@ class Sim {
     // keep clear of the platform edge strip
     const edge = 1.0; const lo = Math.min(inf.xe, inf.xo), hi = Math.max(inf.xe, inf.xo);
     v.crowdRect.x0 = inf.S > 0 ? inf.xe + edge : inf.xo + 0.4; v.crowdRect.x1 = inf.S > 0 ? inf.xo - 0.4 : inf.xe - edge;
-    v.crowdN = n;
+    v.crowdN = Math.round(n * (v.info.hall && this.looks ? lookHints(this.looks.get(v.station.id)).crowd : 1));
+    if (v.info.hall) { const pl = v.anchors.hallPlat.find((q) => q.x0 === Math.min(inf.xe, inf.xo) || Math.abs((inf.S > 0 ? q.x0 : q.x1) - inf.xe) < 0.05) || v.anchors.hallPlat[0]; v.crowdRect = { x0: pl.x0 + 0.6, x1: pl.x1 - 0.6, z0: -20, z1: 20 }; if (inf.S > 0) v.crowdRect.x0 = pl.x0 + 1.0; else v.crowdRect.x1 = pl.x1 - 1.0; }
     // kit pieces (benches etc.) are procedural; kit used for the signal head
   }
 
@@ -492,6 +549,8 @@ class Sim {
     if (!c) return;
     if (c.kind === 'board') this._boardTrain();
     else if (c.kind === 'street') this.enterStreet();
+    else if (c.kind === 'portal') this._toAccess(c.pt);
+    else if (c.kind === 'platform') this._toPlatform();
     else if (c.kind === 'descend') this.leaveStreet();
     else if (c.kind === 'cab') this._takeCab();
     else if (c.kind === 'alight') this._alight();
@@ -508,6 +567,11 @@ class Sim {
         const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - (zc + dz)) < 1.6);
         if (nearEdge && nearDoor) { this.context = { kind: 'board' }; msg = '<kbd>E</kbd> Board the train'; }
         else if (nearEdge) msg = 'Walk to a door to board';
+      }
+      if (inf.hall && !this.context) {
+        for (const pt of (v.anchors.portals || [])) if (Math.hypot(w.x - pt.x, w.z - pt.z) < 1.7 && w.y < inf.PY + 0.5) { this.context = { kind: 'portal', pt }; msg = '<kbd>E</kbd> Take the stairs up to the ticket hall'; break; }
+        const ad = v.anchors.accessDoor;
+        if (!this.context && ad && w.y < inf.PY + 0.6 && Math.hypot(w.x - ad.x, w.z - ad.z) < 1.8 && w.z < inf.rampZ0 + 2.4) { this.context = { kind: 'platform' }; msg = '<kbd>E</kbd> Go back down to the platform'; }
       }
       const a = v.anchors.exit;
       if (!this.context && Math.hypot(w.x - a.x, w.z - a.z) < 2.2 && w.y > a.y - 0.6) { this.context = { kind: 'street' }; msg = '<kbd>E</kbd> Go outside to the street'; }
@@ -526,7 +590,7 @@ class Sim {
       } else if (this.alightNext) msg = `Getting off at ${svc.station.name}`;
     } else if (this.mode === 'street') {
       const st = this.street; if (Math.hypot(w.x - st.stair.x, w.z - st.stair.z) < 4.2) { this.context = { kind: 'descend' }; msg = '<kbd>E</kbd> Take the stairs down to the platform'; }
-      else msg = 'Walk to the orange entrance to go back underground';
+      else msg = 'Walk back to the station entrance to go underground';
     }
     if (this.mode === 'drive' && svc.phase === 'station' && svc.doorsOpen && svc.train.v < 0.1) { this.context = { kind: 'stepout' }; msg = '<kbd>E</kbd> Step out onto the platform'; }
     this.hud.prompt(msg);
@@ -622,11 +686,15 @@ class Sim {
     const underground = this.mode !== 'street';
     if (underground) {
       this._mgrT = (this._mgrT || 0) - dt; if (this._mgrT <= 0) { this._mgrT = 0.4; this._manageStations(); }
-      this.trainView.place(track, tr.s);
+      this.trainView.place(track, tr.s); this.trainView.setDriveCab(this.mode === 'drive');
       const d = svc.doors; this.trainView.setDoors(d.L, d.R);
       if (this.mode === 'explore') { if (this._tw !== 'x') { this.tunnel.setWindow(60, 45); this._tw = 'x'; } this.tunnel.update(track, track.stops[this.exploreIdx].sc); }
       else { if (this._tw !== 'd') { this.tunnel.setWindow(75, 22); this._tw = 'd'; } this.tunnel.update(track, this.mode === 'ride' ? tr.s - (this.walker.z - this.trainView.zMin) : tr.s - 1.8); }
-      for (const v of this.stationViews.values()) v.update(this.time);
+      for (const v of this.stationViews.values()) {
+        v.update(this.time);
+        const lv = v.group.userData.psdLeaves;
+        if (lv && lv.length) { const open = svc.phase === 'station' && svc.idx === v.stopIdx && (svc.doors.L > 0.04 || svc.doors.R > 0.04); for (const m of lv) m.visible = !open; }
+      }
       this.crowd.update(dt, this.time, (x, z, y) => y);
       this._signal(svc);
       this.tms.update(dt, svc.info(), this.mode);
@@ -755,6 +823,36 @@ class Sim {
     return { hits, poses, samples: this._sweepPts.length, station: view.station.name, side: view.info.S, island: view.info.island };
   }
 
+  /** Sweeps the train through the n tightest curves of the current line against the tunnel lining meshes. */
+  sweepCurves(n = 8, o = {}) {
+    const THREE = this.THREE, tv = this.trainView, track = this.track, L = track.length;
+    if (!this._sweepPts) this.sweepStation(0, { range: 1 });
+    // pick the n tightest-curvature spots (at least 150 m apart), outside station spans
+    const cands = []; for (let s = 0; s < L; s += 4) cands.push([s, Math.abs(track.curvature(s))]);
+    cands.sort((a, b) => b[1] - a[1]);
+    const picks = []; for (const [s, k] of cands) { if (picks.length >= n) break; if (this.tunnel._skipped(s, L)) continue; if (picks.every((p) => Math.abs(((p.s - s + L / 2) % L + L) % L - L / 2) > 150)) picks.push({ s, k }); }
+    const rc = new THREE.Raycaster(); rc.firstHitOnly = true;
+    const out = [], wv = new THREE.Vector3(), dv = new THREE.Vector3();
+    for (const pk of picks) {
+      const hits = []; let prev = null, worst = 0;
+      for (let d = -22; d <= 22; d += o.step || 1.5) {
+        const sF = pk.s + tv.length / 2 + d;
+        tv.place(track, sF); this.tunnel.reset(); this.tunnel.update(track, sF - 1.8);
+        this.tunnel.group.updateMatrixWorld(true);
+        const meshes = []; this.tunnel.group.traverse((m) => { if (m.isMesh) meshes.push(m); });
+        const cur = this._sweepPts.map((p) => { const ci = tv.carAt(p.z); return wv.set(p.x, p.y, p.z - tv.carInfo[ci].zc).applyMatrix4(tv.cars[ci].matrix).clone(); });
+        if (prev) for (let k = 0; k < cur.length; k++) {
+          dv.subVectors(cur[k], prev[k]); const len = dv.length(); if (len < 1e-6) continue; dv.normalize();
+          rc.set(prev[k], dv); rc.near = 0; rc.far = len + 0.02;
+          const h = rc.intersectObjects(meshes, false); if (h.length) hits.push({ d, k, mesh: h[0].object.name || h[0].object.geometry.type });
+        }
+        prev = cur;
+      }
+      out.push({ s: +pk.s.toFixed(0), R: +(1 / Math.max(pk.k, 1e-6)).toFixed(0), hits: hits.length, first: hits[0] });
+    }
+    return out;
+  }
+
   // ------------------------------------------------------------------ misc
   getState() {
     const svc = this.svc; if (!svc) return {};
@@ -770,13 +868,16 @@ class Sim {
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
-      stationView: (i) => this._ensureStation(i), render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
+      stationView: async (i) => this._prepare(i), render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
       setLook: (y, p) => { this.look.yaw = y; this.look.pitch = p; },
       enterStreet: () => this.enterStreet(), leaveStreet: () => this.leaveStreet(), alight: () => this._alight(), board: () => this._boardTrain(), takeCab: () => this._takeCab(),
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),
       timeScale: (k) => { this.timeScale = k; },
       quality: () => this.quality,
-      sweep: (i, opts) => this.sweepStation(i, opts),
+      headroom: () => this.trainView.headroom,
+      sweep: async (i, opts) => { await this._prepare(i); return this.sweepStation(i, opts); },
+      portal: () => this._toAccess((this.activeStation.anchors.portals || [])[0]), platform: () => this._toPlatform(),
+      sweepCurves: async (n, opts) => { await this._prepare(0); return this.sweepCurves(n, opts); },
       loop: (on) => { if (on) this.renderer.setAnimationLoop((t) => this.frame(t)); else this.renderer.setAnimationLoop(null); },
       stats: () => ({ calls: this.renderer.info.render.calls, tris: this.renderer.info.render.triangles, geos: this.renderer.info.memory.geometries, textures: this.renderer.info.memory.textures }),
     };

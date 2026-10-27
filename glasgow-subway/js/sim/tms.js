@@ -7,7 +7,7 @@ export class Tms {
     this.tex = new THREE.CanvasTexture(this.canvas); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.flipY = false;
     this.c2 = document.createElement('canvas'); this.c2.width = 256; this.c2.height = 170;
     this.g2 = this.c2.getContext('2d'); this.tex2 = new THREE.CanvasTexture(this.c2); this.tex2.colorSpace = THREE.SRGBColorSpace; this.tex2.flipY = false;
-    this.acc = 0;
+    this.acc = 1;   // draw on the first update
   }
   attach(trainView) {
     const THREE = this.THREE;

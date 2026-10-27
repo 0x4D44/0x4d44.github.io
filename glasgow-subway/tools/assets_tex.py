@@ -47,7 +47,9 @@ def save(name, arr, alpha=False, q=90):
     if alpha:
         p = os.path.join(TEX, name + '.png'); img.save(p, optimize=True)
     else:
-        p = os.path.join(TEX, name + '.jpg'); img.convert('RGB').save(p, quality=q, subsampling=0 if name.startswith('n_') else 2)
+        if name.startswith('n_') and img.size[0] >= 512 and not name.startswith('n_ring'):
+            img = img.resize((img.size[0] // 2, img.size[1] // 2), Image.LANCZOS)
+        p = os.path.join(TEX, name + '.jpg'); img.convert('RGB').save(p, quality=(78 if name.startswith('n_') else q), subsampling=0 if name.startswith('n_') else 2)
     return p
 
 def grey3(a):
@@ -213,6 +215,13 @@ def tex_ceiling_panel(n=256, seed=12):
     alb += pnoise(n, n, 6, seed, 3) * 0.03
     return save('ceiling_panel', grey3(alb))
 
+def fitfont(draw, s, maxw, size, bold=True):
+    while size > 10:
+        f = font(size, bold)
+        if draw.textlength(s, font=f) <= maxw: return f
+        size -= 4
+    return font(10, bold)
+
 def _txt(draw, xy, s, f, fill, anchor='mm'):
     draw.text(xy, s, font=f, fill=fill, anchor=anchor)
 
@@ -237,7 +246,7 @@ def name_board_img(text='STATION', w=1024, h=192, roundel=True):
     x0 = 20
     if roundel:
         r = roundel_img(150); im.paste(r, (18, 14), r); x0 = 190
-    _txt(d, (x0 + (w - x0) / 2, (h - 22) / 2 + 4), text, font(110), (255, 255, 255))
+    _txt(d, (x0 + (w - x0) / 2, (h - 22) / 2 + 4), text, fitfont(d, text, (w - x0) * 0.92, 110), (255, 255, 255))
     return im
 
 def tex_name_board():
@@ -279,7 +288,8 @@ def tex_adverts():
         d.rectangle((x, y, x + 255, y + 70), fill=bg)
         _txt(d, (x + 128, y + 36), heads[i], font(34 if len(heads[i]) < 9 else 26), fg)
         d.rectangle((x + 4, y + 4, x + 251, y + 251), outline=(255, 255, 255), width=3)
-    p = os.path.join(TEX, 'adverts.jpg'); im.save(p, quality=88); return p
+    im = im.resize((512, 512), Image.LANCZOS)
+    p = os.path.join(TEX, 'adverts.jpg'); im.save(p, quality=86); return p
 
 STATIONS = ['Buchanan Street', 'St Enoch', 'Bridge Street', 'West Street', 'Shields Road', 'Kinning Park', 'Cessnock', 'Ibrox', 'Govan', 'Partick', 'Kelvinhall', 'Hillhead', 'Kelvinbridge', "St George's Cross", 'Cowcaddens']
 
@@ -353,6 +363,113 @@ def tex_grooves(n=256):
     h = np.where(g, 1.0, 0.0)
     return save('grooves', grey3(alb)), save('n_grooves', normalmap(h, 2.0, 0.8))
 
+def tex_enamel(n=512, seed=40):
+    """Ribbed enamel vault panel: u across one 0.65 m panel, v along the vault (tileable).  Greyscale, tint by material colour."""
+    ys, xs = np.mgrid[0:n, 0:n]
+    u = xs / n
+    seam = (np.minimum(u, 1 - u) * n < 3)
+    curve = 0.93 + 0.07 * np.cos((u - 0.5) * np.pi * 0.9)
+    alb = curve + pnoise(n, n, 5, seed, 3) * 0.015
+    alb = np.where(seam, 0.55, alb)
+    h = np.where(seam, 0.0, 0.5 + 0.5 * curve)
+    return save('enamel', grey3(alb)), save('n_enamel', normalmap(h, 2.0, 1.2))
+
+def tex_lozenge(n=256):
+    ys, xs = np.mgrid[0:n, 0:n]
+    c = 32
+    cx, cy = (xs % c) - c / 2, (ys % c) - c / 2
+    lz = np.clip(1 - (np.abs(cx) / 11 + np.abs(cy) / 7), 0, None)
+    alb = 0.65 + 0.35 * np.clip(lz * 2, 0, 1)
+    return save('lozenge', grey3(alb)), save('n_lozenge', normalmap(np.sqrt(lz), 4.0))
+
+def tex_timber(n=256, seed=41):
+    ys, xs = np.mgrid[0:n, 0:n]
+    slat = ((xs % 32) < 5)
+    g = np.sin(ys * 0.05 + pnoise(n, n, 3, seed, 2) * 6) * 0.5 + 0.5
+    alb = 0.55 + g * 0.2 + pnoise(n, n, 18, seed, 3) * 0.04
+    img = np.stack([alb, alb * 0.82, alb * 0.6], -1)
+    img[slat] *= 0.3
+    return save('timber', img)
+
+def tex_danger(w=1024, h=64):
+    im = Image.new('RGB', (w, h), (36, 36, 38)); d = ImageDraw.Draw(im)
+    for k in range(2):
+        _txt(d, (w * (0.25 + 0.5 * k), h / 2), 'DANGER  4  LIVE RAIL  4', font(34), (232, 190, 20))
+    p = os.path.join(TEX, 'danger.jpg'); im.save(p, quality=90); return p
+
+def tex_mesh(n=128):
+    a = np.zeros((n, n, 4), np.uint8)
+    a[..., :3] = 20
+    ys, xs = np.mgrid[0:n, 0:n]
+    line = ((xs % 16) < 2) | ((ys % 16) < 2)
+    a[..., 3] = np.where(line, 255, 0)
+    p = os.path.join(TEX, 'mesh.png'); Image.fromarray(a).save(p, optimize=True); return p
+
+def art_img(kind, w=1024, h=256, seed=50):
+    rng = np.random.default_rng(seed)
+    im = Image.new('RGB', (w, h), (30, 40, 70)); d = ImageDraw.Draw(im)
+    if kind == 'hillhead':        # Alasdair Gray style: colourful West End scene - sky bands, towers, trees, figures (procedural homage)
+        for i in range(h):
+            t = i / h; d.line((0, i, w, i), fill=(int(40 + 140 * t), int(90 + 90 * t), int(150 + 40 * (1 - t))))
+        for i in range(14):
+            x = int(rng.integers(0, w)); bw = int(rng.integers(40, 110)); bh = int(rng.integers(70, 190))
+            col = [(196, 120, 70), (214, 160, 90), (170, 90, 60), (225, 190, 120)][i % 4]
+            d.rectangle((x, h - bh, x + bw, h), fill=col)
+            for wy in range(h - bh + 10, h - 10, 22):
+                for wx in range(x + 8, x + bw - 8, 18): d.rectangle((wx, wy, wx + 8, wy + 12), fill=(250, 235, 160))
+        d.polygon([(560, h), (600, 30), (640, h)], fill=(120, 100, 110)); d.rectangle((585, 20, 615, 70), fill=(150, 120, 110))   # university tower
+        for i in range(20):
+            x = int(rng.integers(0, w)); d.ellipse((x - 25, h - 80, x + 25, h - 20), fill=(40, int(120 + rng.integers(0, 80)), 60))
+        for i in range(9):
+            x = int(rng.integers(20, w - 20)); d.ellipse((x - 8, h - 70, x + 8, h - 54), fill=(240, 200, 170)); d.rectangle((x - 9, h - 54, x + 9, h - 20), fill=[(200, 40, 40), (40, 80, 180), (240, 190, 40)][i % 3])
+    elif kind == 'govan':         # shipyard cranes and hulls
+        for i in range(h):
+            t = i / h; d.line((0, i, w, i), fill=(int(230 - 60 * t), int(150 - 40 * t), int(90 + 30 * t)))
+        d.rectangle((0, h - 60, w, h), fill=(30, 50, 90))
+        for x0 in (120, 420, 760):
+            d.rectangle((x0, 60, x0 + 10, h - 60), fill=(25, 25, 30)); d.rectangle((x0 - 90, 60, x0 + 140, 72), fill=(25, 25, 30)); d.line((x0 + 5, 60, x0 + 135, 72), fill=(25, 25, 30), width=3)
+        d.polygon([(200, h - 60), (360, h - 60), (390, h - 110), (180, h - 110)], fill=(170, 40, 40))
+        d.polygon([(540, h - 60), (760, h - 60), (800, h - 120), (520, h - 120)], fill=(40, 70, 150))
+        d.rectangle((600, h - 160, 700, h - 120), fill=(230, 230, 230))
+    elif kind == 'partick':       # trains, river and bridge arches
+        for i in range(h):
+            d.line((0, i, w, i), fill=(int(180 - 90 * i / h), int(205 - 70 * i / h), int(230 - 40 * i / h)))
+        for k in range(6):
+            x = 40 + k * 170; d.arc((x, 90, x + 160, 250), 180, 360, fill=(70, 50, 40), width=14)
+        d.rectangle((0, 90, w, 100), fill=(70, 50, 40))
+        d.rectangle((120, 62, 360, 88), fill=(232, 102, 26)); d.rectangle((370, 62, 610, 88), fill=(232, 102, 26))
+        d.rectangle((0, 226, w, h), fill=(40, 90, 120))
+    else:                         # kelvinhall: museum towers + organ pipes
+        for i in range(h):
+            d.line((0, i, w, i), fill=(int(120 + 60 * i / h), int(60 + 30 * i / h), int(50 + 20 * i / h)))
+        for k in range(18):
+            x = 40 + k * 52; d.rectangle((x, 60 + (k % 5) * 12, x + 20, 220), fill=(214, 190, 150))
+        d.polygon([(780, 220), (800, 40), (830, 40), (850, 220)], fill=(160, 70, 50)); d.polygon([(900, 220), (920, 70), (950, 70), (970, 220)], fill=(160, 70, 50))
+    return im
+
+def tex_art():
+    out = {}
+    for i, k in enumerate(('hillhead', 'govan', 'partick', 'kelvinhall')):
+        p = os.path.join(TEX, f'art_{k}.jpg'); art_img(k, seed=50 + i).save(p, quality=88); out[f'art_{k}'] = p
+    return out
+
+def band_img(text, bg, fg=(255, 255, 255), w=1024, h=128, reps=2):
+    im = Image.new('RGB', (w, h), bg); d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, w, 5), fill=(255, 255, 255)); d.rectangle((0, h - 5, w, h), fill=(255, 255, 255))
+    for k in range(reps):
+        _txt(d, (w * (k + 0.5) / reps, h / 2), text.upper(), fitfont(d, text.upper(), w / reps * 0.86, int(h * 0.62)), fg)
+    return im
+
+def station_name_textures(sid, name, outer_bg=(240, 90, 26), inner_bg=(59, 64, 72), board=(22, 38, 92)):
+    out = {}
+    p = os.path.join(TEX, f'band_outer_{sid}.jpg'); band_img(name, outer_bg).save(p, quality=90); out['band_outer'] = p
+    p = os.path.join(TEX, f'band_inner_{sid}.jpg'); band_img(name, inner_bg).save(p, quality=90); out['band_inner'] = p
+    p = os.path.join(TEX, f'board_{sid}.jpg'); name_board_img(name.upper(), 1024, 192, True).save(p, quality=90); out['board'] = p
+    for k, bg in (('inner', inner_bg), ('outer', outer_bg)):
+        im = Image.new('RGB', (512, 128), bg); d = ImageDraw.Draw(im); _txt(d, (256, 64), k.upper(), font(80), (255, 255, 255))
+        p = os.path.join(TEX, f'dir_{k}.jpg'); im.save(p, quality=90); out['dir_' + k] = p
+    return out
+
 _done = {}
 def build_all():
     if _done: return _done
@@ -371,6 +488,8 @@ def build_all():
     t['adverts'] = tex_adverts(); t['route_map'] = tex_route_map()
     t['ring_concrete'], t['n_ring_concrete'] = tex_ring('concrete')
     t['ring_iron'], t['n_ring_iron'] = tex_ring('iron', seed=31)
+    t['enamel'], t['n_enamel'] = tex_enamel(); t['lozenge'], t['n_lozenge'] = tex_lozenge(); t['timber'] = tex_timber()
+    t['danger'] = tex_danger(); t['mesh'] = tex_mesh(); t.update(tex_art())
     _done.update(t)
     return t
 
