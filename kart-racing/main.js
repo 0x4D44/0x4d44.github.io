@@ -347,6 +347,7 @@ class Game {
     this.chase.snap();
 
     this.audio.startMusic(track.def.theme || track.id);
+    this.audio.setListener(this.player);
     this.audio.startEngine();
     this.ui.hideLoading?.();
     this.ui.hideTitle?.();
@@ -514,6 +515,7 @@ class Game {
       results.cupStandings = standings;
     }
     this.lastResults = results;
+    this.audio.startMusic("results");
     this.setState("results");
     this.ui.hideHUD?.();
     this.audio.stopEngine();
@@ -650,11 +652,24 @@ class Game {
   }
 
   _audioFrame() {
-    const p = this.player;
+    const p = this.player, au = this.audio;
     const frac = Math.min(1.3, Math.abs(p.speed) / p.maxSpeed);
-    const rev = p.locked ? 0.15 + (p.rev || 0) * 0.5 : frac;
+    const rev = p.locked ? 0.12 + (p.rev || 0) * 0.45 : frac;
     const drift = p.drifting ? Math.max(1, Math.floor(p.driftCharge)) : 0;
-    this.audio.updateEngine(rev, p.boostTime > 0, drift);
+    au.updateEngine(rev, p.boostTime > 0, drift, !!p.offRoad && !p.locked);
+    const r = this.race;
+    au.setMusicIntensity(r && r.state === "racing" ? Math.min(1, 0.35 + (p.race.lap >= r.laps ? 0.3 : 0) + (p.boostTime > 0 ? 0.2 : 0) + (p.race.place <= 2 ? 0.1 : 0)) : 0.3);
+    // positional engines (nearest bots), ~20 Hz
+    if ((this.frame & 1) === 0) {
+      const rx = -Math.cos(p.heading), rz = Math.sin(p.heading);
+      const list = [];
+      for (const k of this.karts) {
+        if (k === p) continue;
+        const dx = k.position.x - p.position.x, dz = k.position.z - p.position.z, d = Math.hypot(dx, dz);
+        list.push({ id: k.id, dist: d, pan: (dx * rx + dz * rz) / Math.max(6, d), speedFrac: Math.abs(k.speed) / k.maxSpeed });
+      }
+      au.updateOthers(list);
+    }
   }
 
   _pushHUD(force, dt = 0) {
@@ -665,6 +680,7 @@ class Game {
     if (!race || !p || !this.ui.updateHUD) return;
     const r = p.race;
     const rolling = items.isRolling(p);
+    if (rolling && (this._rollTick = (this._rollTick || 0) + 1) % 2 === 0) this.audio.play("item-roll", { i: this._rollTick });
     const standings = race.standings();
     const showMap = this.settings ? this.settings.minimap !== false : true;
     const t = race.track;

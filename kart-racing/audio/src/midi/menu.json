@@ -1,0 +1,78 @@
+{
+ "id": "menu",
+ "bpm": 116,
+ "introBars": 0,
+ "bodyBars": 32,
+ "tailBars": 4,
+ "secPerBar": 2.0689655172413794,
+ "introSec": 0,
+ "bodySec": 66.20689655172414,
+ "stems": [
+  "base",
+  "lead",
+  "extra",
+  "boost"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "bass|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "bass"
+  },
+  "piano|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "piano"
+  },
+  "glock|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "glock"
+  },
+  "pad|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "pad"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "fan|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "fan"
+  },
+  "trumpet|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "trumpet"
+  },
+  "pizz|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "pizz"
+  },
+  "horns|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "horns"
+  },
+  "glockA|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "glockA"
+  },
+  "violin|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "violin"
+  }
+ }
+}

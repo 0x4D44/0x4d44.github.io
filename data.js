@@ -41,8 +41,8 @@ window.ESSAYS = [
   },
   {
     slug: "higher-graphic-communication",
-    title: "Planes, Plans & Pennants",
-    tagline: "A complete, interactive guide to Higher Graphic Communication: drawing standards and projection, geometric forms and pictorials, CAD, design and DTP, digital technology, the assignment and the exam. HMS Vellum's Plan Room, Minecraft blocks and Air Cadets carry the diagrams and animated widgets. Vanilla JavaScript, canvas and SVG.",
+    title: "Higher Graphic Communication: Planes, Plans & Pennants",
+    tagline: "An interactive guide to Higher Graphic Communication: drawing standards, projection, pictorials, CAD, DTP, digital technology, the assignment and the exam. Plus a Past papers deck of 60 original, auto-marked questions and a timed mock. HMS Vellum's Plan Room carries the diagrams. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-graphic-communication/",
     illustration: "ill-higher-graphics",
     date: "2026-10-19T20:00:00",
@@ -54,7 +54,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-maths",
-    title: "Chart, Compass & Calculus",
+    title: "Higher Maths: Chart, Compass & Calculus",
     tagline: "A complete, interactive guide to Scotland's Higher Mathematics: polynomials to the wave function, 3D vectors to areas between curves, plus exam technique and two timed mini-papers. The Blockhaven Air Cadets join the block-built frigate HMS Lodestone, where cannon, compasses and cuboids carry 33 live widgets. Vanilla JavaScript, canvas and self-hosted KaTeX.",
     url: "https://0x4d44.github.io/higher-maths/",
     illustration: "ill-higher-maths",
@@ -67,7 +67,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-engineering",
-    title: "Rivets, Relays & Rigging",
+    title: "Higher Engineering: Rivets, Relays & Rigging",
     tagline: "A complete, interactive guide to Higher Engineering Science: systems and control, analogue and digital electronics, drives and pneumatics, structures and materials, and the exam and assignment. HMS Ratchet, redstone relays and Air Cadet engineers carry over 60 interactive simulations. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-engineering/",
     illustration: "ill-higher-engineering",
@@ -80,7 +80,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-physics",
-    title: "Shot, Spark & Starlight",
+    title: "Higher Physics: Shot, Spark & Starlight",
     tagline: "A complete, interactive guide to Higher Physics for the 2026–27 exam: motion to the Big Bang, quarks to refraction, AC to LEDs, plus uncertainties, the assignment and a mock drill. The Blockhaven Air Cadets return to HMS Redstone; cannon, minecarts and redstone carry 35 interactive simulations. Vanilla JavaScript and canvas.",
     url: "https://0x4d44.github.io/higher-physics/",
     illustration: "ill-higher-physics",
@@ -93,7 +93,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-computing",
-    title: "Blocks, Wings & Broadsides",
+    title: "Higher Computing: Blocks, Wings & Broadsides",
     tagline: "A complete, interactive revision guide to SQA Higher Computing Science: all four areas, worked exam technique and a mock paper. Minecraft blocks, RAF Air Cadets and Napoleonic ships of the line carry the examples; live SQL, stepping algorithms and narrated video explainers do the teaching. Vanilla JavaScript, sql.js, Piper TTS.",
     url: "https://0x4d44.github.io/higher-computing/",
     illustration: "ill-higher-computing",
@@ -130,7 +130,7 @@ window.ESSAYS = [
   },
   {
     slug: "conformers",
-    title: "Conformers",
+    title: "Organic Chemistry: Conformers",
     tagline: "A six-chapter interactive guide to conformations for first-year organic chemistry: Newman projections, staggered and eclipsed butane, ring strain, the cyclohexane chair, the ring flip and A-values. Every molecule is drawn live from real geometry and can be spun, twisted and flipped. Includes a six-minute gouache-painted, narrated video. Canvas, SVG and vanilla JavaScript.",
     url: "https://0x4d44.github.io/conformers/",
     illustration: "ill-chair",
@@ -195,8 +195,8 @@ window.ESSAYS = [
   },
   {
     slug: "meiosis",
-    title: "Meiosis \u2014 One of Each",
-    tagline: "An illustrated, interactive guide to meiosis for Scottish S6 Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript \u2014 no build step.",
+    title: "Advanced Higher Biology: Meiosis \u2014 One of Each",
+    tagline: "An illustrated, interactive guide to meiosis for Scottish Advanced Higher Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript \u2014 no build step.",
     url: "https://0x4d44.github.io/meiosis/",
     illustration: "ill-dna",
     date: "2026-09-23T00:01:00+01:00",
@@ -1942,7 +1942,7 @@ window.ESSAYS = [
   },
   {
     slug: "edinburgh-biosci",
-    title: "First Year, Decoded",
+    title: "Edinburgh Biosciences: First Year, Decoded",
     tagline: "A first-year survival guide to Biological Sciences at the University of Edinburgh.",
     url: "https://0x4d44.github.io/edinburgh-biosci/",
     illustration: "ill-dna",
@@ -2005,6 +2005,19 @@ window.ESSAYS = [
     tags: ["simulation", "rail", "history", "engineering"],
     real: true,
   },
+  {
+    slug: "glasgow-subway-trains",
+    title: "Under Glasgow: The Trains",
+    tagline: "Four generations of Glasgow Subway rolling stock compared, from the 1896 cable gripper cars to the 2020s Stadler sets: traction, braking, the 600 V DC power system and its substations, and an interactive lap model of what a train draws.",
+    url: "https://0x4d44.github.io/glasgow-subway-trains/",
+    illustration: "ill-motor",
+    date: "2026-10-26T22:00:00",
+    year: 1896,
+    readingMin: 20,
+    words: 5400,
+    tags: ["rail", "engineering", "history"],
+    real: true,
+  },
 ];
 
 // Filter vocabulary, split into two axes for the grouped filter row:
@@ -2048,6 +2061,10 @@ window.COLLECTIONS = [
   { id: "language", name: "Learn a Language", icon: "ill-kotoba",
     blurb: "Japanese and Spanish, taught properly.",
     slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis"] },
+  { id: "education", name: "Education", icon: "ill-higher-maths",
+    blurb: "Interactive study guides for Scottish Highers and Advanced Highers and first-year university courses — revise it, then play with it.",
+    slugs: ["higher-maths", "higher-physics", "higher-engineering", "higher-computing", "higher-graphic-communication", "meiosis",
+      "conformers", "edinburgh-biosci"] },
   { id: "health", name: "Health & Fitness", icon: "ill-run",
     blurb: "Keeping moving — on the road, at sea and in the hotel gym.",
     slugs: ["social-situations", "polymyalgia", "morning-run", "shipshape"] },
@@ -2101,7 +2118,7 @@ window.COLLECTIONS = [
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
     slugs: ["class-55", "class-47", "sulzer-12lda28", "azuma", "ecml", "ecml-timeline", "br1955",
       "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
-      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth", "glasgow-subway"] },
+      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth", "glasgow-subway", "glasgow-subway-trains"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
     slugs: ["f1gp-internals", "mos-6502", "winrisk", "triangle-engine", "x86-evolution", "win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "chasing-dosbox-x", "mddosem-win16",

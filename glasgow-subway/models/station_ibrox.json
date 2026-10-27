@@ -1,0 +1,34 @@
+{
+ "id": "ibrox",
+ "name": "Ibrox",
+ "type": "side",
+ "hallHalfLength": 27.0,
+ "platformHalfLength": 22.5,
+ "trackX": [
+  -2.255,
+  2.255
+ ],
+ "platforms": [
+  [
+   -7.0,
+   -3.5
+  ],
+  [
+   3.5,
+   7.0
+  ]
+ ],
+ "platformTopY": 0.695,
+ "hallHalfWidthLeftRight": [
+  7.0,
+  7.0
+ ],
+ "ceilingY": 3.9949999999999997,
+ "coved": false,
+ "outerBandSide": "+x",
+ "innerBandSide": "-x",
+ "borePortRadius": 1.675,
+ "boreAxisY": 1.225,
+ "gapToTrainM": 0.09,
+ "psd": true
+}

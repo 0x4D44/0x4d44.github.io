@@ -1,0 +1,34 @@
+{
+ "id": "buchanan-street",
+ "name": "Buchanan Street",
+ "type": "split",
+ "hallHalfLength": 27.0,
+ "platformHalfLength": 22.5,
+ "trackX": [
+  -2.845,
+  2.845
+ ],
+ "platforms": [
+  [
+   -1.6,
+   1.6
+  ],
+  [
+   4.09,
+   7.45
+  ]
+ ],
+ "platformTopY": 0.695,
+ "hallHalfWidthLeftRight": [
+  4.25,
+  7.45
+ ],
+ "ceilingY": 3.795,
+ "coved": false,
+ "outerBandSide": "+x",
+ "innerBandSide": "-x",
+ "borePortRadius": 1.675,
+ "boreAxisY": 1.225,
+ "gapToTrainM": 0.09,
+ "psd": false
+}
