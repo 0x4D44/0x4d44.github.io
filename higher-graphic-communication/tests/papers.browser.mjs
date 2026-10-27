@@ -1,6 +1,7 @@
 // Browser smoke test for papers.html: tabs, answering, auto-marking, the scoreboard and the phone layout.
 // Needs a static server on the repo root:  python3 -m http.server 8000   then   node higher-graphic-communication/tests/papers.browser.mjs
-import { chromium } from "playwright";
+import { createRequire } from "node:module";
+const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH || "playwright");
 import assert from "node:assert/strict";
 
 const BASE = process.env.BASE || "http://localhost:8000/higher-graphic-communication/papers.html";
