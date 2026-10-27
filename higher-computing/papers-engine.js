@@ -76,7 +76,7 @@
     // hyphenated compounds are one word ("one-to-many", "read-only"), and "IN:" / "OUT:" / "A:" labels are not prose words
     text = text.replace(/([a-z0-9])-(?=[a-z0-9])/g, "$1").replace(/\b(?:in|out|a|q|ans)\s*:/g, " ");
     const toks = text.match(/[a-z0-9']+/g) || [];
-    if (toks.length < 4) return null;
+    if (toks.length < 6) return null;
     const funcToks = toks.filter((t) => FUNC.has(t));
     const func = funcToks.length;
     if (func / toks.length < 0.14) return "zero";
@@ -94,7 +94,7 @@
       if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that"))) bad++;
     }
     // a clause that stops on "the", "of", "to", "and"... is a shuffled sentence, not a written one
-    const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|that)\s*[.,;:!?]/g) || []).length;
+    const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|with|for|by|its|their|that)\s*[.,;:!?]/g) || []).length;
     bad += dangle;
     if (bad >= 2 && bad * 14 >= toks.length) return "zero";
     // two function words side by side ("of the", "so that") come in a few familiar pairs; shuffled prose
