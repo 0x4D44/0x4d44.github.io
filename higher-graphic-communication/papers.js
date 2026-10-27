@@ -192,7 +192,14 @@
         badge),
       q.style ? el("p", { class: "pp-style" }, q.style) : null,
       el("div", { class: "pp-stem", html: q.stem }));
-    if (q.figure) card.append(el("figure", { class: "diagram diagram-scroll pp-fig", tabindex: "0", role: "group", "aria-label": "Figure for question " + n + " (scrolls sideways on narrow screens)", html: scopeIds(q.figure, ns) }));
+    if (q.figure) {
+      const fig = el("figure", { class: "diagram diagram-scroll pp-fig", role: "group", "aria-label": "Figure for question " + n, html: scopeIds(q.figure, ns) });
+      card.append(fig);
+      // only a figure that really scrolls sideways needs to be a keyboard tab stop
+      const fit = () => { if (fig.scrollWidth > fig.clientWidth + 1) fig.setAttribute("tabindex", "0"); else fig.removeAttribute("tabindex"); };
+      requestAnimationFrame(fit);
+      window.addEventListener("resize", fit);
+    }
     const paint = () => {
       const r = results[q.id] || [];
       const got = r.reduce((a, x) => a + (x || 0), 0);

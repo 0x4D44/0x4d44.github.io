@@ -24,7 +24,7 @@
   /* leader line with a single arrowhead on the feature end */
   const leader = (x1, y1, x2, y2) => { const d = Math.hypot(x2 - x1, y2 - y1); return ln(x1, y1, x2, y2) + head(x2, y2, (x2 - x1) / d, (y2 - y1) / d); };
   const mark = (x, y, l) => circ(x, y, 10, THIN(PAPER)) + T(x, y + 4.5, l, { b: 1 });
-  const svg = (w, h, label, body) => `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}">${body}</svg>`;
+  const svg = (w, h, label, body) => `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${label}"><rect width="${w}" height="${h}" fill="${PAPER}"/>${body}</svg>`;
   const mi = (...pts) => "<ul>" + pts.map((p) => `<li>${p}</li>`).join("") + "</ul>";
 
   /* ---- Q01: four pictorial methods ---- */
