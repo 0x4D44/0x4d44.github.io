@@ -264,14 +264,14 @@
             q: "A cadet says: &quot;Each rope holds half of the 45 kN, so each tension is 22.5 kN.&quot; Explain why the cadet's reasoning does not work for this ring.",
             points: [
               { desc: "Only the vertical component of each rope's pull supports the weight (the vertical components add up to 45 kN)", negOK: true,
-                all: [R`\b(?:vertical\w*|upward\w*|upwards|lifting)\b`, R`\b(?:components?|parts?|bits?|portions?|pulls?|forces?|shares?)\b`, R`\b(?:holds?|holding|supports?|supporting|carr(?:y|ies|ying)|lift\w*|balanc\w*|resist\w*|tak(?:es?|ing)|add\w*|sum|total|bear\w*)\b`],
+                all: [R`\b(?:vertical\w*|upward\w*|upwards|lifting)\b`, R`\b(?:components?|parts?|bits?|portions?|pulls?|forces?|shares?)\b`, R`\b(?:holds?|holding|supports?|supporting|carr(?:y|ies|ying)|lift\w*|balanc\w*\W+(?:the\W+)?(?:weight|load|generator|45)|resist\w*|tak(?:es?|ing)|add\w*|sum|total|bear\w*)\b`],
                 not: [R`\bhorizontal\w*\W+(?:components?|parts?|bits?|portions?|pulls?|forces?|shares?)?\W*(?:(?!vertical|upward|but|whereas|while|cancel)\w+\W+){0,3}(?:holds?|holding|supports?|supporting|carr(?:y|ies|ying)|lift\w*|tak(?:es?|ing)|add(?: up)?(?: to)?|sum|total|equals?)\W+(?:\w+\W+){0,4}(?:weight|generator|load|45)`,
                   R`\bvertical\w*\W+(?:components?|parts?|bits?|pulls?|forces?)\W+(?:\w+\W+){0,3}(?:cancel\w*|balanc\w*\W+each|(?:are|is)\W+(?:equal and )?opposite)`,
                   R`\bvertical\w*\W+(?:\w+\W+){0,4}(?:do(?:es)? not|don't|doesn't|isn't|aren't|is not|are not|cannot|can't|never)\W+(?:\w+\W+){0,3}(?:hold\w*|support\w*|carr\w*|lift\w*|tak\w*|add\w*|bear\w*)`,
                   R`\bvertical\w*\W+(?:\w+\W+){0,4}(?:are|is)\W+(?:\w+\W+){0,1}(?:useless|wasted|irrelevant|unimportant|zero|nothing)`,
                   R`\bonly\W+(?:the )?(?:horizontal|sideways)\b`] },
               { desc: "Each rope also pulls sideways; these sideways pulls only balance each other and do no lifting", group: "side", negOK: true, win: 70,
-                all: [R`\b(?:sideways|horizontal\w*|across|outwards?|inwards?|along the ceiling)\b`, R`\b(?:cancel\w*|balanc\w*|oppos\w*|wast\w*|no use|useless|pointless|against (?:each|one) other|equal and|no lifting|nothing (?:to do )?with|no(?:t)? (?:help\w*|lift\w*|support\w*|hold\w*)|(?:do|does)(?: not|n't|es no)\W+(?:\w+\W+){0,2}(?:lift\w*|support\w*|hold\w*|help\w*))`],
+                all: [R`\b(?:sideways|horizontal\w*|across|outwards?|inwards?|along the ceiling)\b`, R`\b(?:cancel\w*|balanc\w*\W+(?:\w+\W+){0,1}(?:each other|one another|out|the other)|oppos\w*|wast\w*|no use|useless|pointless|against (?:each|one) other|equal and|no lifting|nothing (?:to do )?with|no(?:t)? (?:help\w*|lift\w*|support\w*|hold\w*)|(?:do|does)(?: not|n't|es no)\W+(?:\w+\W+){0,2}(?:lift\w*|support\w*|hold\w*|help\w*))`],
                 not: [R`\bvertical\w*\W+(?:components?|parts?|bits?|pulls?|forces?)\W+(?:\w+\W+){0,3}(?:cancel\w*|balanc\w*\W+each|(?:are|is)\W+(?:equal and )?opposite)`,
                   R`\bhorizontal\w*\W+(?:components?|parts?|bits?|portions?|pulls?|forces?|shares?)?\W*(?:(?!vertical|upward|but|whereas|while|cancel)\w+\W+){0,3}(?:holds?|holding|supports?|supporting|carr(?:y|ies|ying)|tak(?:es?|ing)|add(?: up)?(?: to)?|sum|total|equals?)\W+(?:\w+\W+){0,4}(?:weight|generator|load|45)`,
                   R`\b(?:no|zero|without)\W+(?:\w+\W+){0,1}(?:sideways|horizontal\w*)`,
@@ -404,7 +404,7 @@
           {
             label: "(d)", type: "num", marks: 3, a: 6.93, alts: [-6.93], tol: 0.02, rtol: 0.01, unit: "kN",
             q: "Joint B has member AB (20.8 kN, in compression) and the 24 kN load acting on it. Calculate the size of the force in member BD.",
-            why: R`AB is in compression, so it pushes on B up and to the right: components $20.78\cos60^\circ = 10.39$ kN horizontally and $20.78\sin60^\circ = 18.0$ kN vertically (1). Assume BC and BD are in tension.<br>$\Sigma F_v = 0$: $18.0 - 24 - F_{BC}\sin60^\circ = 0$, so $F_{BC} = -6.93$ kN (1)<br>$\Sigma F_h = 0$: $10.39 + F_{BC}\cos60^\circ + F_{BD} = 0$, so $F_{BD} = -10.39 + 3.46 = -6.93$ kN, a size of $6.93\ \text{kN}$ (1).`,
+            why: R`AB is in compression, so it pushes on B up and to the right: components $20.78\cos60^\circ = 10.39$ kN horizontally and $20.78\sin60^\circ = 18.0$ kN vertically (1). Assume BC and BD are in tension.<br>$\Sigma F_v = 0$: $18.0 - 24 - F_{BC}\sin60^\circ = 0$, so $F_{BC} = -6.93$ kN (1)<br>$\Sigma F_h = 0$: $10.39 + F_{BC}\cos60^\circ + F_{BD} = 0$, so $F_{BD} = -10.39 + 3.46 = -6.93$ kN, a size of $6.93\ \text{kN}$ (1). Common slips: leaving out the 18.0 kN that AB pushes up on joint B gives $F_{BC} = -27.7$ kN and a wrong $F_{BD}$ of 3.46 kN; swapping sin and cos on AB gives $F_{BD} = -10.1$ kN; treating AB as a tension gives $F_{BC} = -48.5$ kN.`,
           },
           {
             label: "(e)", type: "mcq", marks: 1, a: 0,
@@ -511,7 +511,7 @@
           {
             label: "(a)", type: "num", marks: 1, a: 300, tol: 8, unit: "N/mm²",
             q: "Read from the graph the stress at which the specimen yields.",
-            why: "Yield is the point where the strain increases a lot with no extra stress, the level part of the curve. It is at $300\\ \\text{N/mm}^2$ (1).",
+            why: "Yield is the point where the strain increases a lot with no extra stress, the level part of the curve. It is at $300\\ \\text{N/mm}^2$ (1). Common slips: reading 1.5, the strain at which the curve first goes level, instead of the stress; or reading 320 at P (or about 350 at the end of the curve), which are points after yield, where the stress has risen again.",
           },
           {
             label: "(b)", type: "num", marks: 2, a: 200, tol: 10, unit: "kN/mm²",
@@ -532,8 +532,8 @@
                   R`\b(?:never|doesn't|does not|did not|won't|no)\W+yield\w*\b(?!\W+(?:\w+\W+){0,1}(?:until|before|up to|below|at first))`, R`\byield\w*\W+(?:does not|doesn't|did not|is not|isn't)\W+(?:happen|occur|take place)`,
                   R`\b(?:starts?|begins?)\W+(?:\w+\W+){0,1}curved\b`, R`\bcurved\W+(?:\w+\W+){0,2}(?:at|in)\W+(?:the )?(?:start|beginning|first)`, R`\b(?:not|isn't|never)\W+(?:a )?straight\b`, R`\bnon-?linear\b`,
                   R`\b(?:not|isn't|never)\W+(?:\w+\W+){0,1}(?:proportional|elastic)\b(?!\W+(?:\w+\W+){0,6}(?:after|beyond|past|once|when|then|later))`],
-                any: [R`\bproportional\b`, R`\bin proportion\b`, R`\belastically\b`, R`\bhooke\w*`, R`\bstraight(?: |-)(?:line|part|section|portion|region)\b`, R`\blinear(?:ly)?\b`,
-                  R`\bspr(?:ings?|ing) back\b`, R`\b(?:returns?|goes back|go back|regains?|recovers?)\W+(?:\w+\W+){0,3}(?:original|starting|normal|first)\W+(?:\w+\W+){0,1}(?:length|shape|size)`, R`\belastic\b(?!\W+limit\W+is\W+(?:passed|exceeded))`] },
+                any: [R`\bproportional (?:to|with)\b`, R`\b(?:stress|force|load) (?:is |was |being )?(?:\w+ )?proportional\b`, R`\bproportional\b(?= (?:and|so|because|up|until|at|for|in|as)\b)`, R`\bin proportion\b`, R`\belastically\b`, R`\bhooke\w*`, R`\bstraight(?: |-)(?:line|part|section|portion|region)\b`, R`\blinear(?:ly)? (?:relationship|region|part|section|graph|line|behaviou?r|until|up|at|to|for|and|so|because)\b`,
+                  R`\bspr(?:ings?|ing) back\b`, R`\b(?:returns?|goes back|go back|regains?|recovers?)\W+(?:\w+\W+){0,3}(?:original|starting|normal|first)\W+(?:\w+\W+){0,1}(?:length|shape|size)`, R`\belastic (?:region|part|section|behaviou?r|deformation|stage|range|zone|phase|line|limit|so|because|until|up to|at the start|at first|initially|when|if|and (?:returns?|springs?|goes))\b(?!\W+limit\W+is\W+(?:passed|exceeded))`, R`(?<!\bthere )\b(?:is|are|remains?|behaves?|stays?|starts?|begins?|being|acts?) (?:\w+ )?elastic\b(?! and (?:there|the)\b)`] },
               { desc: "It yields at about 300 N/mm²: the strain increases a lot with hardly any extra stress, so the graph levels off",
                 any: [near(R`yield\w*`, R`level\w*|flat|plateau|horizontal|constant|same stress|same force|same load|stops? rising|no (?:extra|more|further|increase)|little|hardly|barely|almost no|without|a lot|lots|large|big|sudden\w*|jump\w*`, 9),
                   near(R`stretch\w*|extends?|extension|elongat\w*|strain`, R`(?:without|with|while)\W+(?:\w+\W+){0,3}(?:increase\w*|extra|more|further|rise|rising|change)\W+(?:\w+\W+){0,2}(?:stress|force|load)`, 6)],
@@ -544,15 +544,15 @@
                   R`\b(?:never|not|isn't|no longer)\W+(?:\w+\W+){0,1}yield`,
                   R`\belastic\w*\W+(?:\w+\W+){0,3}(?:which is|that is|and is|so it is|it is)\W+permanent`, R`\b(?:after|beyond|past)\W+(?:that|this|yield\w*|300)[^.]{0,40}\b(?:is|are|becomes?)\W+(?:\w+\W+){0,1}elastic\b`,
                   R`\b(?:no|not|without|never|nothing)\W+(?:\w+\W+){0,1}(?:plastic\w*|permanent\w*|deform\w*)`, R`\b(?:fully|completely|entirely|totally)\W+elastic\W+(?:\w+\W+){0,4}(?:p\b|end|whole|all)`],
-                any: [R`\bplastic\w*`, R`\bharden\w*`, R`\bwork[- ]harden\w*`, R`\bpermanent(?:ly)?\W+(?:\w+\W+){0,2}(?:deform\w*|stretch\w*|extend\w*|longer|chang\w*|elongat\w*|damag\w*|extension)`,
+                any: [R`\bplastic(?:ally)? (?:region|deformation|behaviou?r|stage|range|zone|phase|part|section|strain|and|so|because|which|therefore|i\.e|meaning|means)\b`, R`(?<!\bthere )\b(?:is|are|becomes?|goes|turns?|now|deform\w*|behaves?|permanently|enters?|into|reaches) (?:\w+ )?plastic(?:ally)?\b(?! and (?:there|the)\b)`, R`\b(?:strain|work)[- ]harden\w*`, R`\b(?:it|metal|steel|specimen|material) harden\w*`, R`\bpermanent(?:ly)?\W+(?:\w+\W+){0,2}(?:deform\w*|stretch\w*|extend\w*|longer|chang\w*|elongat\w*|damag\w*|extension)`,
                   R`\b(?:stress|force|load)\W+(?:\w+\W+){0,2}(?:rises?|increases?|goes up|climbs?)\W+(?:\w+\W+){0,2}again`,
                   R`\b(?:extension|deformation|stretch\w*|strain|change|elongation|length)\W+(?:\w+\W+){0,3}permanent`, R`\bno longer (?:elastic|spring\w*|return\w*)`,
                   R`\b(?:not|n't)\W+(?:spring|return|go|come)\w*\W+back\b`] },
               { desc: "When unloaded the graph falls along a line parallel to the original straight line and ends at a strain that is not zero: the specimen is left permanently stretched (permanent set)", negOK: true,
                 not: [R`\b(?:not|isn't|never|no)\W+(?:\w+\W+){0,1}(?:parallel|permanent\w*)`, R`\b(?:returns?|goes|go|comes?|back)\W+(?:\w+\W+){0,2}(?:to|at) (?:the )?(?:origin|zero)\b(?!\W+(?:\w+\W+){0,12}(?:parallel|permanent|left|remain))`,
                   R`\b(?:ends?|finish\w*|reaches|reach|returns?|goes|comes|crosses|passes|back)\W+(?:\w+\W+){0,3}(?:to |at |through |on )?(?:the )?(?:origin|zero (?:strain|extension))\b(?!\W+(?:\w+\W+){0,12}(?:parallel|permanent|left|remain))`],
-                any: [near(R`parallel`, R`elastic|original|initial|first|start|straight|loading|steep\w*|slope|gradient|line|same`, 8),
-                  R`\bpermanent set\b`, R`\bunload\w* ${K(4)}parallel`, R`\b(?:unload\w*|load (?:is |was )?(?:removed|taken off|released)|removing the load|released|taken off|removed)\W+(?:\w+\W+){0,8}(?:permanent|remains?|left|still)`, R`\bleft (?:\w+\W+){0,3}(?:permanently|longer|stretched|extended)`,
+                any: [R`\bparallel (?:to|with|line|lines)\b`, R`\b(?:runs?|falls?|goes|drops?|comes|returns?|travels?|moves?|is|are|line|dashed)\W+(?:\w+\W+){0,2}parallel\b`,
+                  R`\bpermanent set\b`, R`\bpermanent (?:strain|extension|stretch|elongation)\b`, R`\bunload\w* ${K(4)}parallel`, R`\b(?:unload\w*|load (?:is |was )?(?:removed|taken off|released)|removing the load|released|taken off|removed)\W+(?:\w+\W+){0,8}(?:permanent|remains?|left|still)`, R`\bleft (?:\w+\W+){0,3}(?:permanently|longer|stretched|extended)`,
                   R`\b(?:strain|extension|length)\W+(?:\w+\W+){0,4}(?:left|remains?|remaining|stays?|leftover|still)\b`] },
             ],
             sample: "At the start the graph is a straight line through the origin, so the stress is proportional to the strain and the specimen is elastic: it would spring back to its original length if the load were removed. At about 300 N/mm² the metal yields, and the strain increases a lot with hardly any extra stress, so the curve goes flat. After that the deformation is plastic, which is permanent, and the stress rises again as the metal strain hardens. When the load is removed from P, the graph falls along a line parallel to the original elastic line and ends at a strain of about 1.4 x 10^-3, so the specimen is left permanently stretched.",
@@ -698,7 +698,7 @@
               ["Malleable", "Can be hammered or rolled into thin sheets without cracking"],
               ["Stiff", "Changes length very little under load: a high Young's modulus"],
             ],
-          },
+            why: "<ul><li><strong>Ductile</strong>: stretches a long way and can be drawn into a wire, with a large plastic extension before it breaks (mild steel) (1)</li><li><strong>Brittle</strong>: breaks suddenly with little or no plastic deformation, so there is no warning (cast iron) (1)</li><li><strong>Malleable</strong>: can be hammered or rolled into sheets without cracking. It is about being squashed or shaped, where ductile is about being pulled out (1)</li><li><strong>Stiff</strong>: a high Young's modulus, so little change in length under load. Stiff is not the same as strong (1)</li></ul>",          },
           {
             label: "(b)", type: "text", marks: 4, rows: 8, minWords: 25,
             q: "Using the table, justify the choice of mild steel rather than cast iron for the hanger.",
@@ -802,8 +802,11 @@
   /* The same padding in other shapes: six or more single words separated by commas, and three short sentences
      that open with the same two or three words ("The question mentions ..."). */
   const COMMAS = String.raw`(?:\b[a-z']+, ){6,}`;
+  const COPLIST = String.raw`(?:\b[a-z']+ (?:is|are) [a-z']+ and (?:the |a |an |there |it )?){4,}`;
+  const THENLIST = String.raw`(?:\b[a-z']+ (?:then|or) ){3,}`;
+  const NOGLUE = String.raw`^(?=(?:\S+ ){11})(?:(?!\b(?:the|a|an|and|of|to|in|is|it|so|that|this|on|for|be|are|as|at|with|by|or|can|they|their|there|from|which|was|not|do|does|if|then|than|when|its)\b)[\s\S])*$`;
   const REPEAT = String.raw`(?:^|[.!?] )((?:[a-z']+ ){2,3})[^.!?]{0,40}[.!?] \1[^.!?]{0,40}[.!?] \1`;
   B.structures.questions.forEach((q) => q.parts.forEach((p) => {
-    if (p.type === "text") p.points.forEach((pt) => { pt.not = (pt.not || []).concat(LISTY, COMMAS, REPEAT); });
+    if (p.type === "text") p.points.forEach((pt) => { pt.not = (pt.not || []).concat(LISTY, COMMAS, REPEAT, COPLIST, THENLIST, NOGLUE); });
   }));
 })();

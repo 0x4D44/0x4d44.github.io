@@ -606,7 +606,7 @@
           desc: "It copes with a small misalignment between the motor shaft and the gearbox shaft",
           group: "mis", negOK: true,
           not: [
-            R`\brigid\b${C(NEGS, 40)}\b${GIVE}\w*${K(25)}misalign`,
+            R`\brigid\b${Cc(R`${NEGS}|\bunlike\b|\bwhereas\b|\bbut\b|\bwhile\b|\bthan\b|\bflexible\b`, 45)}\b${GIVE}\w*${K(25)}misalign`,
             R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}misalign`,
             R`\b${NEGV}\b${CL(30)}\b${GIVE}\w*${K(30)}misalign`,
             R`\bno\s+(?:\w+\s+)?(?:allowance|tolerance|provision|room|give|flexibility|movement|play|compensation|capacity)\b${K(25)}misalign`,
@@ -619,7 +619,7 @@
           desc: "It absorbs shock loads and vibration (for example when the conveyor starts)",
           group: "shock", negOK: true,
           not: [
-            R`\brigid\b${C(NEGS, 30)}\b(?:absorb\w*|damp\w*|cushion\w*)`,
+            R`\brigid\b${Cc(R`${NEGS}|\bunlike\b|\bwhereas\b|\bbut\b|\bwhile\b|\bthan\b|\bflexible\b`, 60)}\b(?:absorb\w*|damp\w*|cushion\w*)`,
             R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}(?:absorb\w*|damp\w*|cushion\w*)`,
             R`\b${NEGV}\b${CL(30)}\b${AB}\w*${K(25)}\b${SHK}`,
             R`\b${NEGV}\b${CL(20)}\b(?:absorb|damp|cushion|soak)\w*`,
@@ -1081,7 +1081,7 @@
         stem: R`<p>A conveyor on the lower deck is driven by an electric motor through a worm and wheel gearbox. A friction clutch lets the motor reach its running speed before the conveyor takes up the load.</p>`,
         parts: [
           {
-            label: "(a)", type: "text", marks: 2, rows: 4, minWords: 8,
+            label: "(a)", type: "text", marks: 2, rows: 4, minWords: 3,
             q: R`Give <strong>two</strong> reasons why a flexible coupling, rather than a rigid one, is used between the motor and the gearbox.`,
             points: TXT.flex.points,
             sample: TXT.flex.sample,
