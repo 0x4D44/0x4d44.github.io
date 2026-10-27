@@ -68,7 +68,7 @@ window.ESSAYS = [
   {
     slug: "higher-engineering",
     title: "Higher Engineering: Rivets, Relays & Rigging",
-    tagline: "A complete, interactive guide to Higher Engineering Science: systems and control, analogue and digital electronics, drives and pneumatics, structures and materials, and the exam and assignment. HMS Ratchet, redstone relays and Air Cadet engineers carry over 60 interactive simulations. Vanilla JavaScript, canvas and SVG.",
+    tagline: "A complete, interactive guide to Higher Engineering Science: systems and control, analogue and digital electronics, drives and pneumatics, structures, the exam and assignment. Plus a Past papers deck: original, auto-marked exam-style questions and a timed mock. HMS Ratchet and Air Cadet engineers carry over 60 simulations. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-engineering/",
     illustration: "ill-higher-engineering",
     date: "2026-10-16T18:00:00",
