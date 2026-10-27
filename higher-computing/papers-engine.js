@@ -32,7 +32,8 @@
   /* Negation: when the part's model answer says nothing negative, a negator just before a matched phrase
      turns the claim round ("STEP is not neutral"), so that point is not awarded. Parts whose model answer
      itself uses negatives (`opts.negOK`) skip the check. */
-  const NEG = /\b(not|never|cannot|no longer|isn't|aren't|doesn't|don't|won't|can't|wouldn't|couldn't|shouldn't|didn't)\b|n't\b/;
+  const NEG = /\b(not|never|cannot|no longer|without|wrong|incorrect|false|untrue|opposite|unlike|neither|nor|unable|fail|fails|failed|isn't|aren't|doesn't|don't|won't|can't|wouldn't|couldn't|shouldn't|didn't)\b|n't\b/;
+  const SPLIT = /[.;!?]|\bbut\b|\bhowever\b|\bwhereas\b/;
   HCP.pointHit = function (pt, text, opts) {
     const all = pt.all || [], any = pt.any || [], not = pt.not || [];
     if (!all.length && !any.length) return false;
@@ -41,7 +42,8 @@
     if (opts && opts.negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?]|\bbut\b|\bhowever\b/).pop()))) return false;
+      if (spans.some(([a, z]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(SPLIT).pop())
+        || NEG.test(text.slice(z, z + 28).split(SPLIT)[0]))) return false;
     }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
@@ -77,6 +79,9 @@
     const funcToks = toks.filter((t) => FUNC.has(t));
     const func = funcToks.length;
     if (func / toks.length < 0.14) return "zero";
+    // "I think that days and hot pos and frost and count": key words glued with "and", no verb or preposition anywhere
+    const glue = new Set(["and", "or", "i", "that", "the", "a", "an", "it", "this", "think", "also", "then"]);
+    if (toks.length >= 8 && toks.filter((t) => t === "and" || t === "or").length >= 3 && funcToks.filter((t) => !glue.has(t)).length <= Math.floor(toks.length / 14)) return "zero";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
@@ -171,8 +176,10 @@
     const same = got.rows.length === exp.rows.length && got.rows.every((r) => r.length === exp.rows[0].length || !exp.rows.length)
       && JSON.stringify(sortedKeys(got.rows, rowKey)) === JSON.stringify(sortedKeys(exp.rows, rowKey));
     const inOrder = same && got.rows.every((r, i) => rowKey(r) === rowKey(exp.rows[i]));
-    const text = HCP.norm(sql);
+    // comments are not queries, and a SELECT of bare literals ("select 'x' union all select 'y'") is hard-wiring
+    const text = HCP.norm(sql.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/--[^\n]*/g, " "));
     const missing = (part.must || []).filter((m) => !rx(m).test(text));
+    if (!part.dml && /\bselect\s+(?:distinct\s+)?(?:'[^']*'|"[^"]*"|-?\d)|\bvalues\s*\(/.test(text)) missing.push("literal rows");
     out.missing = missing;
     if (same && (inOrder || !part.ordered)) {
       if (!missing.length) out.got = of;
@@ -197,21 +204,37 @@
         return { got: Math.max(0, Math.min(of, right - wrong)), of };
       }
       case "num": {
-        // the last number in the answer counts, so working ("5 x 300 = 1500") and units ("12 mm") are fine
-        let raw = String(ans).toLowerCase()
-          .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
+        // the last number in the answer counts, so working ("5 x 300 = 1500") and units ("12 mm") are fine;
+        // a hedge ("186 or 198", "it is not 198") counts for nothing
+        let raw = String(ans).toLowerCase().trim();
+        if (/\b(or|not|isn't|wrong|incorrect|maybe|perhaps|either|neither)\b|n't\b/.test(raw)) return { got: 0, of };
+        const WORDS = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, sixteen: 16, twenty: 20 };
+        raw = raw.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|sixteen|twenty)\b/g, (w) => WORDS[w]);
+        raw = raw.replace(/^[01](?:[\s_]?[01])*$/, (m) => m.replace(/[\s_]/g, ""));   // 1101 1010 / 1101_1010
+        raw = raw.replace(/(\d(?:\.\d+)?)\s*(thousand|million|billion)\b/g, (m, n, w) => String(parseFloat(n) * { thousand: 1e3, million: 1e6, billion: 1e9 }[w]));
+        raw = raw.replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
           .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
           .replace(/(\d) (?=\d{3}\b)/g, "$1")                          // 2 880 000
           .replace(/(\d),(\d{1,2})\b/g, "$1.$2");                      // 9,6
         if (raw.includes("=")) raw = raw.slice(raw.lastIndexOf("=") + 1);
-        raw = raw.replace(/[−–—]/g, "-");
-        // a minus counts as a sign only when it is not a subtraction ("12 - 5" reads as 5, "-5" and "= -5" as -5)
-        const nums = raw.match(/(?<![\d.)])-?\d+(?:\.\d+)?|(?<![\d.)])-?\.\d+|\d+(?:\.\d+)?|\.\d+/g);
-        const v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
+        raw = raw.replace(/[−–—]/g, "-").replace(/×/g, "x");
+        // a plain sum / product / power ("150 + 20 + 4", "3.2 x 10^9", "2^8", "3.2e9") is worked out; subtraction is left alone
+        let v = NaN;
+        const expr = raw.replace(/\s*(x|\*)\s*/g, "*").replace(/\^/g, "**").replace(/\s+/g, "").replace(/[a-z%]+$/, "");
+        if (/^[\d.]+(?:e\d+)?(?:(?:\*\*?|[+\/])[\d.]+(?:e\d+)?)+$|^[\d.]+e\d+$/.test(expr)) { try { v = Function('"use strict";return (' + expr + ")")(); } catch (e) { v = NaN; } }
+        let digitsTyped = "";
+        if (!isFinite(v)) {
+          // a minus counts as a sign only when it is not a subtraction ("12 - 5" reads as 5, "-5" and "= -5" as -5)
+          const nums = raw.match(/(?<![\d.)])-?\d+(?:\.\d+)?|(?<![\d.)])-?\.\d+|\d+(?:\.\d+)?|\.\d+/g);
+          v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
+          digitsTyped = nums ? nums[nums.length - 1].replace(/^-/, "") : "";
+        }
         if (!isFinite(v)) return { got: 0, of };
+        // a binary answer has to be the right width ("00000100", not "0100")
+        if (part.bits && digitsTyped && digitsTyped.length !== part.bits) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
         const tol = part.tol == null ? 0 : part.tol;
-        return { got: targets.some((t) => Math.abs(v - t) <= tol + 1e-9) ? of : 0, of };
+        return { got: targets.some((t) => Math.abs(v - t) <= tol + 1e-9 + Math.abs(t) * 1e-12) ? of : 0, of };
       }
       case "match": {
         const picked = Array.isArray(ans) ? ans : [];
@@ -230,7 +253,7 @@
     switch (part.type) {
       case "mcq": return part.a;
       case "multi": return part.a.slice();
-      case "num": return part.a;
+      case "num": return part.bits ? String(part.a).padStart(part.bits, "0") : part.a;
       case "match": return part.pairs.map((_, i) => i);
       case "text": case "code": return part.sample;
       case "sql": return part.solution;
