@@ -531,7 +531,7 @@
         figure: fig12,
         parts: [
           { label: "(a)", type: "mcq", marks: 1, q: "What shape does the cut face have in the plan?", opts: ["An ellipse", "A circle", "A rectangle", "A straight line"], a: 1, why: "The sides of the cylinder are vertical, so from above every point of the cut edge still lies on the circle of the cylinder. The plan of the cut face is a circle." },
-          { label: "(b)", type: "mcq", marks: 1, q: "What is the true shape of the cut face?", opts: ["A circle", "A rectangle", "An ellipse", "A semicircle"], a: 2, why: "A cylinder cut at an angle to its axis has an elliptical section. Only an auxiliary view, looking straight at the sloping face, shows that true shape." },
+          { label: "(b)", type: "mcq", marks: 1, q: "What is the true shape of the cut face?", opts: ["A circle", "A rectangle", "An ellipse", "A semicircle"], a: 2, why: "A cylinder cut at an angle to its axis has an elliptical section. An auxiliary view of the sloping face is needed to draw it." },
           { label: "(c)", type: "num", marks: 1, a: 30, tol: 0, unit: "mm", q: "State the length of the minor axis of the true shape.", why: "Across the cut the width is unchanged: it comes straight from the plan, where it is the diameter of the cylinder, 30 mm." },
           { label: "(d)", type: "num", marks: 1, a: 60, tol: 0, unit: "mm", q: "Calculate the length of the major axis of the true shape.", why: "Along the cut the length is the cut line in the elevation, seen at its true length because the plane is at 90° to the elevation. Major axis = diameter ÷ cos (angle of the cut to the horizontal) = 30 ÷ cos 60° = 30 ÷ 0.5 = 60 mm." },
           {
@@ -573,7 +573,7 @@
             q: "A second, smaller pipe passes through a large one and its line of intersection is plotted using twelve generators. Explain why twelve are used rather than two or three.",
             points: [
               { desc: "Cause: twelve give enough points, including the top, bottom, front and back where the curve turns", win: 100,
-                any: ["(top|bottom|front|back|sides?|turning|key|important|extreme)( \\w+){0,6} (points?|positions?|places?|where the curve (turns|changes|bends))", "where the curve (turns|changes|bends|is widest|reaches)", "enough (points|generators|positions|plotted)", "(more|many|plenty of|lots of|several|twelve|12) (more )?(points|generators|positions|plotted)"] },
+                any: ["(top|bottom|front|back|sides?|turning|key|important|extreme)( \\w+){0,6} (points?|positions?|places?|where the curve (turns|changes|bends))", "where the curve (turns|changes|bends|is widest|reaches)", "enough (points|generators|positions|plotted)", "(more|many|plenty of|lots of|several) (more )?(points|positions)"] },
               { desc: "Effect: so the curve can be drawn smoothly and accurately instead of guessed", win: 100, negOK: true,
                 not: ["\\b" + NA + " (?:\\w+ ){0,2}(?:drawn|plotted|found|accurate|smooth|exact|precise|correct)"],
                 any: ["accura", "smooth", "guess", "exact", "precise", "properly", "shape of the (curve|line)", "correct (curve|shape|line)", "true (curve|shape)"] },
