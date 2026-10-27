@@ -175,3 +175,18 @@ test("a shuffled model answer does not earn most of the marks", () => {
     assert.ok(got / of <= LIMIT[mode], `${mode}-word shuffle earns ${(100 * got / of).toFixed(1)}% (limit ${100 * LIMIT[mode]}%); full marks on ${fulls.join(", ")}`);
   }
 });
+
+// Negation attack: put "not" after every is/are/can/does... in a model answer. Saying the opposite must not earn the marks.
+test("a model answer with its claims negated does not keep most of its marks", () => {
+  let got = 0, of = 0;
+  const kept = [];
+  for (const { q, p, i } of parts) {
+    if (p.type !== "text") continue;
+    const t = p.sample.replace(/\b(is|are|can|will|does|do|has|have|would|should)\b/gi, "$1 not");
+    if (t === p.sample) continue;
+    const r = HGP.scorePart(p, t);
+    got += r.got; of += p.marks;
+    if (r.got >= p.marks) kept.push(`${q.id}[${i}]`);
+  }
+  assert.ok(got / of <= 0.4, `negated answers keep ${(100 * got / of).toFixed(0)}% of marks (limit 40%); full on ${kept.join(", ")}`);
+});

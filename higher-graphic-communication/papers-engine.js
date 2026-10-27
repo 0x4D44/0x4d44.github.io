@@ -28,11 +28,20 @@
      pattern matches if `any` is given, and no `not` pattern matches. Patterns are matched against the
      normalised answer. */
   const WIN = 160;
-  HGP.pointHit = function (pt, text) {
+  /* Negation: when the part's model answer says nothing negative, a negator just before a matched phrase
+     turns the claim round ("STEP is not neutral"), so that point is not awarded. Parts whose model answer
+     itself uses negatives (`opts.negOK`) skip the check. */
+  const NEG = /\b(not|never|cannot|no longer|isn't|aren't|doesn't|don't|won't|can't|wouldn't|couldn't|shouldn't|didn't)\b|n't\b/;
+  HGP.pointHit = function (pt, text, opts) {
     const all = pt.all || [], any = pt.any || [], not = pt.not || [];
     if (!all.length && !any.length) return false;
     if (not.some((p) => rx(p).test(text))) return false;
     if (any.length && !any.some((p) => rx(p).test(text))) return false;
+    if (opts && opts.negCheck && !pt.negOK) {
+      const spans = [];
+      all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
+      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - 34), a + 1)))) return false;
+    }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
     const win = pt.win || WIN;
@@ -50,9 +59,13 @@
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
   function listLike(text) {
     const toks = text.match(/[a-z0-9']+/g) || [];
-    if (toks.length < 8) return null;
-    const func = toks.filter((t) => FUNC.has(t)).length;
+    if (toks.length < 4) return null;
+    const funcToks = toks.filter((t) => FUNC.has(t));
+    const func = funcToks.length;
     if (func / toks.length < 0.14) return "zero";
+    if (toks.length < 8) return null;
+    // padding a pile of key words with the same "the/is/and" over and over is not a sentence
+    if (func >= 6 && new Set(funcToks).size < 4) return "zero";
     let run = 0, longest = 0;
     toks.forEach((t) => { if (FUNC.has(t)) run = 0; else { run++; if (run > longest) longest = run; } });
     return longest >= 10 ? "half" : null;
@@ -60,11 +73,12 @@
 
   function scoreText(part, ans) {
     const text = HGP.norm(ans);
-    const minWords = part.minWords == null ? 3 : part.minWords;
+    const minWords = Math.min(part.minWords == null ? 3 : part.minWords, 5);
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: false, group: pt.group }));
     const w = words(text);
     const list = listLike(text);
-    if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => { pts[i].hit = HGP.pointHit(pt, text); });
+    const opts = { negCheck: !NEG.test(HGP.norm(part.sample || "")) };
+    if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => { pts[i].hit = HGP.pointHit(pt, text, opts); });
     // points sharing a group are alternatives: only the best-scoring one in a group counts
     const seen = new Map();
     pts.forEach((p) => {
@@ -92,7 +106,13 @@
       }
       case "num": {
         // the last number in the answer counts, so working ("5 x 300 = 1500") and units ("12 mm") are fine
-        const nums = String(ans).replace(/(\d),(?=\d{3}\b)/g, "$1").match(/\d+(?:\.\d+)?|\.\d+/g);
+        let raw = String(ans).toLowerCase()
+          .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
+          .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
+          .replace(/(\d) (?=\d{3}\b)/g, "$1")                          // 2 880 000
+          .replace(/(\d),(\d{1,2})\b/g, "$1.$2");                      // 9,6
+        if (raw.includes("=")) raw = raw.slice(raw.lastIndexOf("=") + 1);
+        const nums = raw.match(/\d+(?:\.\d+)?|\.\d+/g);
         const v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
         if (!isFinite(v)) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
