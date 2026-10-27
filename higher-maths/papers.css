@@ -1,0 +1,89 @@
+/* Past papers: the answer panel. All selectors are prefixed pp-. */
+.pp-layout { grid-template-columns: minmax(0, 1fr); }
+.pp-layout #main > * { max-width: var(--wrap); }
+#pp-app { max-width: var(--wrap); margin: 1.2em 0; }
+
+.pp-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0 0 8px; border-bottom: 3px solid var(--navy-2); }
+.pp-tabs [role="tab"] {
+  font: 600 .92rem var(--font-pixel); padding: 9px 13px; min-height: 40px; cursor: pointer;
+  color: var(--ink); background: var(--paper-2); border: 2px solid var(--line); border-radius: 3px;
+}
+.pp-tabs [role="tab"]:hover { border-color: var(--navy-2); }
+.pp-tabs [role="tab"][aria-selected="true"] { background: var(--navy-2); border-color: var(--navy-2); color: #fff; }
+.pp-panel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.pp-intro { color: var(--ink-2); margin: .4em 0; }
+.pp-sum { font-size: .92rem; font-weight: 700; color: var(--ink); margin: .4em 0 1em; }
+
+.pp-q { margin: 1.6em 0; padding: 4px 14px 12px; background: var(--card); border: 2px solid var(--line); border-left: 8px solid var(--navy-2); border-radius: var(--radius); }
+.pp-qhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.pp-qhead h3 { margin: .6em 0 .2em; }
+.pp-qtag { font: 400 .85rem var(--font-body); color: var(--muted); }
+.pp-badge { font: 700 .85rem var(--font-body); padding: 2px 9px; border: 2px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink-2); white-space: nowrap; }
+.pp-badge.full { border-color: var(--grass); color: var(--grass); }
+.pp-badge.part { border-color: var(--gold); color: var(--gold); }
+.pp-badge.low { border-color: var(--redstone); color: var(--redstone); }
+.pp-style { font-size: .8rem; color: var(--muted); margin: 0 0 .5em; font-style: italic; }
+.pp-stem > :first-child { margin-top: 0; }
+.pp-fig { margin: .8em 0; }
+.pp-fig { overflow-x: auto; }
+.pp-fig svg { min-width: 480px; max-width: 560px; background: #fffaf0; border-radius: 2px; }
+
+.pp-part { margin: 1em 0 0; padding-top: .8em; border-top: 1px dashed var(--line); }
+.pp-part:first-of-type { border-top: 0; padding-top: 0; }
+.pp-pq { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-weight: 700; }
+.pp-pq > span:nth-child(2) { flex: 1 1 260px; min-width: 0; }
+.pp-plabel { color: var(--ink); font-family: var(--font-pixel); }
+.pp-marks { font-weight: 400; font-size: .85rem; color: var(--muted); }
+.pp-input { margin: 6px 0; }
+.pp-input textarea {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: .97rem; line-height: 1.45; padding: 8px 10px;
+  color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 2px; resize: vertical;
+}
+.pp-input textarea:focus-visible, .pp-num:focus-visible, .pp-match select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.pp-num { width: 9em; max-width: 60%; font: inherit; padding: 6px 8px; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
+.pp-unit { margin-left: 6px; color: var(--ink-2); }
+.pp-opts { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; min-width: 0; }
+.pp-opt { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; padding: 8px 10px; cursor: pointer; background: var(--paper); border: 2px solid var(--line); border-radius: 2px; overflow-wrap: anywhere; }
+.pp-opt:hover { border-color: var(--sky); }
+.pp-opt input { margin-top: 3px; flex: none; }
+.pp-opt.right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 16%, var(--paper)); }
+.pp-opt.wrong { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 12%, var(--paper)); }
+.pp-opt.right::after { content: "✔ correct"; margin-left: auto; padding-left: 8px; font-size: .8rem; font-weight: 700; color: var(--grass); white-space: nowrap; }
+.pp-opt.wrong::after { content: "✘ your answer"; margin-left: auto; padding-left: 8px; font-size: .8rem; font-weight: 700; color: var(--redstone); white-space: nowrap; }
+.pp-hint { font-size: .85rem; color: var(--muted); margin: .3em 0; }
+.pp-wrongnote { grid-column: 1 / -1; }
+.pp-match { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 8px; align-items: center; margin: 6px 0; }
+.pp-match select { width: 100%; min-width: 0; font: inherit; font-size: .9rem; padding: 6px; color: var(--ink); background: var(--paper); border: 2px solid var(--line); border-radius: 2px; }
+.pp-match select.wrong { border-color: var(--redstone); }
+.pp-match select.wrong + .pp-wrongnote, .pp-wrongnote { color: var(--redstone); font-size: .8rem; font-weight: 700; }
+@media (max-width: 560px) { .pp-match { grid-template-columns: minmax(0, 1fr); gap: 3px; margin: 10px 0; } .pp-opt.right::after, .pp-opt.wrong::after { flex-basis: 100%; margin-left: 0; padding-left: 26px; } }
+
+.pp-fb:empty { display: none; }
+.pp-fb { margin: 6px 0 0; padding: 8px 10px; background: var(--paper-2); border-radius: 2px; font-size: .93rem; }
+.pp-score { font: 700 1rem var(--font-pixel); margin: 0 0 4px; }
+.pp-score.full { color: var(--grass); } .pp-score.part { color: var(--gold); } .pp-score.none { color: var(--redstone); }
+.pp-points { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 4px; }
+.pp-points label { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; }
+.pp-points input { margin-top: 4px; flex: none; }
+.pp-pm { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.pp-model { margin: 8px 0 0; }
+
+.pp-bar { display: inline-flex; align-items: center; gap: 8px; min-width: 7em; }
+.pp-bar i { display: block; height: 10px; min-width: 2px; background: var(--navy-2); border-radius: 1px; }
+.pp-bar b { font-size: .85rem; }
+.pp-verdict { font-weight: 700; }
+
+/* maths-specific inputs */
+.pp-math { font-family: var(--font-mono); font-size: .95rem; max-width: 100%; }
+.pp-num.right { border-color: var(--grass); background: color-mix(in srgb, var(--grass) 14%, var(--paper)); }
+.pp-num.wrong { border-color: var(--redstone); background: color-mix(in srgb, var(--redstone) 10%, var(--paper)); }
+.pp-field { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; margin: 8px 0; }
+.pp-flabel { min-width: 5em; font-weight: 700; }
+.pp-err { margin: 6px 0; padding: 6px 10px; color: var(--redstone); border-left: 4px solid var(--redstone); background: var(--paper-2); font-size: .9rem; font-weight: 700; }
+.pp-points li.ok::marker { color: var(--grass); } .pp-points li.no::marker { color: var(--redstone); }
+.pp-seg { display: flex; flex-wrap: wrap; gap: 6px; margin: .6em 0; }
+.pp-seg [aria-pressed="true"] { background: var(--navy-2); border-color: var(--navy-2); color: #fff; }
+.pp-howto code { font-family: var(--font-mono); font-size: .88em; background: var(--paper-2); padding: 1px 5px; border-radius: 2px; }
+.pp-fig svg { max-width: 100%; height: auto; min-width: 0; }
+.pp-fig { overflow-x: auto; }
+.pp-q .katex-display { overflow-x: auto; overflow-y: hidden; }
