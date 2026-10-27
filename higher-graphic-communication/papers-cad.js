@@ -24,7 +24,7 @@
   /* ---------- helpers for the marking patterns ---------- */
   const f1 = (n) => String(n);
   // "Ø n" as a diameter (after the marker folds Ø to the word diameter), or the matching radius
-  const D = (n) => `(?:diameter\\s*(?:of\\s*)?${f1(n)}\\b|\\b${f1(n)}\\s*(?:mm\\s*)?(?:diameter|across)|\\bradius\\s*(?:of\\s*)?${f1(n / 2)}\\b|\\br\\s*${f1(n / 2)}\\b|\\b${f1(n / 2)}\\s*(?:mm\\s*)?radius|\\b${f1(n)}\\s*(?:mm\\s*)?(?:circles?|wire|rod|round|holes?|dia)\\b)`;
+  const D = (n) => `(?:diameter\\s*(?:of\\s*)?${f1(n)}\\b|\\b${f1(n)}\\s*(?:mm\\s*)?(?:in\\s+)?(?:diameter|across)|\\bradius\\s*(?:of\\s*)?${f1(n / 2)}\\b|\\br\\s*${f1(n / 2)}\\b|\\b${f1(n / 2)}\\s*(?:mm\\s*)?radius|\\b${f1(n)}\\s*(?:mm\\s*)?(?:circles?|wire|rod|round|holes?|dia)\\b)`;
   const R = (n) => `(?:\\br\\s*${n}\\b|\\bradius\\s*(?:of\\s*)?${n}\\b|\\b${n}\\s*(?:mm\\s*)?radius)`;
   // a label and two numbers in one sentence, either way round (keeps a pile of unrelated numbers from scoring)
   const near = (label, a, b) => [
@@ -233,8 +233,8 @@
         figure: figSpring,
         parts: [
           { label: "(a)", type: "num", marks: 1, unit: "mm", a: 105, tol: 0,
-            q: "Calculate the overall length of the spring.",
-            why: "Overall length = pitch × number of revolutions = 15 × 7 = 105 mm." },
+            q: "Calculate the length of the helix path along the axis (the distance it advances over all of its revolutions).",
+            why: "Length along the axis = pitch × number of revolutions = 15 × 7 = 105 mm. The wire diameter is not added: the path is measured along the axis, between the centres of the first and last coils." },
           { label: "(b)", type: "num", marks: 1, a: 8, tol: 0,
             q: "A second spring has a pitch of 12 and an overall length of 96. How many revolutions does it have?",
             why: "Revolutions = overall length ÷ pitch = 96 ÷ 12 = 8. The three settings are linked, so any two give the third." },
@@ -244,8 +244,8 @@
           { label: "(d)", type: "text", marks: 3, rows: 5,
             q: "Describe how the spring in the figure could be modelled using 3D CAD software.",
             points: [
-              { desc: "Sketches the wire profile as a Ø5 circle with its centre 22 from the axis", all: ["(?:sketch|draw|creat)\\w*", "(?:circle|profile)", D(5), "(?:\\b22\\s*(?:mm\\s*)?(?:from|away|off|out|offset|apart|to the)|(?:offset|distance|dimension|centre|center)\\s*(?:of\\s*|=|:|is\\s*)?22\\b)"], win: 130 },
-              { desc: "Uses the helix command with the profile and the axis", all: ["helix\\w*\\W+(?:\\w+\\W+){0,5}(?:profile|circle|sketch|wire)|(?:profile|circle|wire)\\W+(?:\\w+\\W+){0,4}helix", "(?:axis|centre ?line|center ?line|vertical)"], win: 60 },
+              { desc: "Sketches the wire profile as a Ø5 circle with its centre 22 from the axis", all: ["(?:sketch|draw|creat|put|plac|mak|position|set)\\w*", "(?:circle|profile)", D(5), "(?:\\b22\\s*(?:mm\\s*)?(?:from|away|off|out|offset|apart|to the)|(?:offset|distance|dimension|centre|center)\\s*(?:of\\s*|=|:|is\\s*)?22\\b)"], win: 130 },
+              { desc: "Uses the helix command with the profile and the axis", all: ["helix\\w*\\W+(?:\\w+\\W+){0,12}(?:profile|circle|sketch|wire)|(?:profile|circle|wire)\\W+(?:\\w+\\W+){0,8}helix", "(?:axis|centre ?line|center ?line|vertical)"], win: 110 },
               { desc: "Gives any two of: pitch 15, 7 revolutions, overall length 105", any: two(
                 "pitch\\s*(?:of|=|:|is)?\\s*15\\b|\\b15\\s*(?:mm\\s*)?pitch",
                 "\\b7\\s*(?:complete\\s*|full\\s*)?(?:revolutions?|turns?|coils?|rotations?)|(?:revolutions?|turns?|coils?)\\s*(?:of|=|:|is)?\\s*7\\b",
@@ -287,10 +287,10 @@
           { label: "(a)", type: "text", marks: 4, rows: 7,
             q: "Describe how the duct could be modelled using 3D CAD software.",
             points: [
-              { desc: "Sketches the 100 square on the base plane", all: ["(?:sketch|draw|creat)\\w*\\W+(?:\\w+\\W+){0,4}(?:square|100\\s*(?:x|by)\\s*100)", "\\b100\\b"], win: 40 },
+              { desc: "Sketches the 100 square on the base plane", all: ["(?:sketch|draw|creat)\\w*\\W+(?:\\w+\\W+){0,4}(?:square|100\\s*(?:x|by)\\s*100)|\\b100\\W+(?:\\w+\\W+){0,2}square\\W+(?:\\w+\\W+){0,2}(?:sketch|profile)", "\\b100\\b"], win: 40 },
               { desc: "Work plane parallel to the square, offset 80", all: ["(?:work ?plane|\\bplane\\b)", "(?:\\b80\\s*(?:mm\\s*)?(?:above|offset|higher|up|away|from|over|apart|high)|(?:offset|distance|height|above)\\s*(?:of\\s*|=|:|is\\s*|by\\s*)?80\\b)"], win: 50 },
               { desc: "Sketches a Ø40 circle on that plane", all: ["circle", D(40)], win: 40 },
-              { desc: "Loft between the square and the circle", all: ["loft\\w*\\W+(?:\\w+\\W+){0,3}(?:between|from|through|join\\w*|connect\\w*|across|blend\\w*|to)", "(?:square|profile|sketch)", "(?:circle|round|spout|profile|sketch)"], win: 60 },
+              { desc: "Loft between the square and the circle", all: ["loft\\w*\\W+(?:\\w+\\W+){0,3}(?:between|from|through|join\\w*|connect\\w*|across|blend\\w*|to)|loft\\w*\\W+(?:\\w+\\W+){0,6}(?:square|profile|sketch)", "(?:square|profile|sketch)", "(?:circle|round|spout|profile|sketch)"], win: 60 },
               { desc: "Shell, wall thickness 3, removing the top and bottom faces", all: ["shell\\w*", "(?:(?:thickness|wall|walls)\\s*(?:of\\s*|=|:|is\\s*)?3\\b|\\b3\\s*(?:mm\\s*)?(?:thick|wall|thickness))", "(?:top and bottom|bottom and top|both (?:end|face)s?|each end|two (?:end|face)s?|open (?:at )?both|(?:end|face)s? (?:removed|open)|remov\\w*\\W+(?:\\w+\\W+){0,3}(?:top|bottom|face|end)s?)"], win: 80 },
             ],
             sample: "On the XY plane I would sketch a 100 by 100 square. I would make a work plane parallel to it and offset 80 above. On that plane I would sketch a circle of diameter 40 centred over the square. Then I would loft between the square and the circle. Last I would shell the loft with a wall thickness of 3, removing the top and bottom faces so it would be open at both ends.",
@@ -326,7 +326,7 @@
           { label: "(c)", type: "text", marks: 2, rows: 4,
             q: "The designer is told not to use a radial array. Describe how the five holes could be positioned and cut instead.",
             points: [
-              { desc: "Sketches the Ø8 circles with their centres on the 90 PCD (45 from the centre)", all: ["(?:circle|hole)", D(8), "\\b(?:90|45)\\b"], win: 60 },
+              { desc: "Sketches the Ø8 circles with their centres on the 90 PCD (45 from the centre)", all: ["(?:circle|hole)", D(8), "\\b(?:90|45)\\b(?!\\s*(?:°|degrees?))"], win: 60 },
               { desc: "Gives the angle between neighbouring holes as 50°", any: ["\\b50\\s*(?:°|degrees?)", "(?:angle|spacing)\\s+(?:of\\s+|between\\s+(?:\\w+\\s+){1,3}(?:is|as|of)\\s+)?50\\b", "\\b50\\s+(?:apart|between|each)"] },
               { desc: "Extrude subtract (cut) the circles through the disc", all: ["(?:extrud\\w*\\s+(?:a\\s+)?(?:subtract|cut)|cut\\W+extrud|\\bcut\\b" + GAP(20) + "through|subtract\\w*\\W+(?:\\w+\\W+){0,3}(?:circles?|holes?))", "(?:disc|flange|plate|through)"], win: 50 },
             ],
@@ -374,11 +374,12 @@
           { label: "(b)", type: "text", marks: 2, rows: 4,
             q: "Explain why the production drawing made earlier from this model shows the larger hole too.",
             points: [
-              { desc: "Cause: the drawing is associative (linked to the model file, not a separate copy)", any: ["associative\\W+(?:\\w+\\W+){0,6}(?:linked|link|connected|model|file)", "(?:linked|connected|attached|tied)\\s+(?:\\w+\\s+){0,2}(?:to|with)\\s+(?:\\w+\\s+){0,2}(?:model|file|3d)", "not\\s+(?:just\\s+)?(?:a\\s+)?(?:separate|copy|copies)", "(?:is|are)\\s+(?:a\\s+)?references?\\s+(?:to|of)", "(?:depends?|dependent)\\s+on\\s+(?:the\\s+)?model", "same (?:model )?file"],
-                not: ["not\\s+associative", "isn't\\s+associative", "non.?associative", "(?:is|are)\\s+a\\s+(?:separate\\s+)?copy"] },
-              { desc: "Effect: the views and dimensions update/rebuild automatically, without being redrawn", any: ["(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow)\\w*\\W+(?:\\w+\\W+){0,4}(?:automatic\\w*|without|instantly|straight away|itself|at once|by itself|by themselves|themselves|on their own|on its own|all by)", "(?:automatic\\w*|instantly|straight away)\\W+(?:\\w+\\W+){0,2}(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow)"] },
+              { desc: "Cause: the drawing is associative (linked to the model file, not a separate copy)", any: ["associative\\W+(?:\\w+\\W+){0,6}(?:linked|link|connected|model|file)", "(?:linked|connected|attached|tied|joined)\\s+(?:\\w+\\s+){0,2}(?:to|with)\\s+(?:\\w+\\s+){0,2}(?:model|file|3d|it\\b)", "live\\s+link", "(?:generated|created|produced|taken|made)\\s+(?:directly\\s+)?from\\s+(?:the\\s+)?(?:3d\\s+)?model\\W+(?:\\w+\\W+){0,6}(?:stay|remain|keep|connected|linked)", "not\\s+(?:just\\s+)?(?:a\\s+)?(?:separate|copy|copies)", "(?:is|are)\\s+(?:a\\s+)?references?\\s+(?:to|of)", "(?:depends?|dependent)\\s+on\\s+(?:the\\s+)?model", "same (?:model )?file"],
+                not: ["not\\s+associative", "isn't\\s+associative", "non.?associative", "(?:is|are)\\s+a\\s+(?:separate\\s+)?copy", "(?:\\bnot|n't|\\bno|\\bnever|\\bun)\\s*(?:\\w+\\s+){0,2}(?:linked?|links?|connect\\w*|associat\\w*|attached|tied)\\b", "(?:drawing|views?)\\s+(?:is|are|was|were|gets?|has been|have been)\\s+(?:changed|edited|altered|modified|updated|amended)", "(?:when|if|once|after)\\s+(?:the\\s+|a\\s+)?(?:drawing|views?)\\s+(?:is\\s+|are\\s+)?(?:chang|edit|alter|modif|updat|amend)\\w*"] },
+              { desc: "Effect: the views and dimensions update/rebuild automatically, without being redrawn", negOK: true, any: ["(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow|chang|adjust|alter)\\w*\\W+(?:\\w+\\W+){0,4}(?:automatic\\w*|without|instantly|straight away|itself|at once|by itself|by themselves|themselves|on their own|on its own|all by)", "(?:automatic\\w*|instantly|straight away)\\W+(?:\\w+\\W+){0,2}(?:update|rebuild|regenerat|redraw|recalculat|refresh|reflect|follow|chang)", "(?:drawing|views?)\\W+(?:\\w+\\W+){0,2}(?:follows?|updates?|changes?|reflects?)\\W+(?:\\w+\\W+){0,3}(?:it|the model|the change)\\b(?:\\W+(?:\\w+\\W+){0,3}(?:straight away|at once|immediately|automatic\\w*))?"],
+                not: ["(?:\\bnot|n't|\\bnever|no longer)\\s+(?:\\w+\\s+){0,2}(?:update|rebuild|regenerat|chang|refresh|reflect|follow)\\w*", "(?:\\bno|\\bnever|without any)\\s+(?:\\w+\\s+){0,1}(?:update|change|link)\\w*", "\\b(?:nothing|none)\\s+(?:\\w+\\s+){0,2}(?:updat|chang|rebuil|regenerat|refresh)\\w*", "(?:when|if|once|after)\\s+(?:the\\s+|a\\s+)?(?:drawing|views?)\\s+(?:is\\s+|are\\s+|gets\\s+)?(?:chang|edit|alter|modif|updat|amend)\\w*", "model\\s+(?:also\\s+|then\\s+)?(?:updates?|changes?|rebuilds?|follows?)\\s+(?:itself|automatic\\w*|too|as well)", "(?:drawing|views?)\\s+(?:updates?|changes?|edits?|alters?|drives?|controls?)\\s+(?:the\\s+)?model"] },
             ],
-            sample: "The drawing is associative, which means it is linked to the model file and is not a separate copy. So when the model is changed, the drawing updates automatically without anyone having to redraw it.",
+            sample: "The drawing is associative, which means it is linked to the model file instead of being a separate copy. So when the model is changed, the drawing updates automatically without anyone having to redraw it.",
             model: "<ul><li>Cause: the drawing is associative, linked to the model file rather than a copy (1)</li><li>Effect: its views and dimensions update automatically when the model changes (1)</li></ul><p>\"The drawing updates\" alone is only the effect: it earns one mark at most.</p>" },
           { label: "(c)", type: "mcq", marks: 1, q: "What would suppressing Extrude subtract3 do?",
             opts: ["Delete the hole from the tree for good", "Turn the hole into a Ø25 hole", "Remove the fillets from the corners only", "Rebuild the plate without the hole, and let it be switched back on later"], a: 3,
@@ -427,11 +428,13 @@
                 "(?:neutral|common|universal|international|standard|generic|open)\\W+(?:\\w+\\W+){0,3}(?:format|file|type)" + GAP(70) + "(?:any|all|every|most|many|different|other|various|whichever|whatever|several|lots of|a range of)",
                 "(?:open|read|import|use|support|work|run)\\w*\\W+(?:\\w+\\W+){0,4}(?:any|all|every|most|many|different|other|various|whichever|whatever)\\W+(?:\\w+\\W+){0,2}(?:cad|package|software|program|system|application)",
                 "(?:any|all|every|most|many|different|other|various|whichever|whatever)\\W+(?:\\w+\\W+){0,2}(?:cad\\W+)?(?:package|software|program|system|application)s?\\W+(?:\\w+\\W+){0,6}(?:open|read|import|use|support|work)",
-                "(?:neutral|common|universal|international|standard|generic)\\W+(?:\\w+\\W+){0,3}(?:format|file|type)\\W+(?:\\w+\\W+){0,6}(?:open|read|import|use|support)\\w*\\W+(?:\\w+\\W+){0,4}(?:by|in|with|on)\\W+(?:\\w+\\W+){0,2}(?:cad|package|software|program|system|application)s?"] },
+                "(?:neutral|common|universal|international|standard|generic)\\W+(?:\\w+\\W+){0,3}(?:format|file|type)\\W+(?:\\w+\\W+){0,6}(?:open|read|import|use|support)\\w*\\W+(?:\\w+\\W+){0,4}(?:by|in|with|on)\\W+(?:\\w+\\W+){0,2}(?:cad|package|software|program|system|application)s?"],
+                not: ["(?:native|own|shipyard's)\\W+(?:\\w+\\W+){0,4}(?:is|are|as)\\W+(?:\\w+\\W+){0,2}(?:neutral|common|universal|standard|open)\\b", "\\bstep\\W+(?:\\w+\\W+){0,3}(?:only|just)\\W+(?:\\w+\\W+){0,3}(?:shipyard|own|native|same)", "\\bstep\\W+(?:\\w+\\W+){0,2}(?:is|are)\\W+(?:\\w+\\W+){0,1}(?:mesh|polygon)", "\\bstep\\W+(?:\\w+\\W+){0,2}(?:is|are)\\W+not\\W+(?:\\w+\\W+){0,1}(?:needed|necessary|required)"] },
               { desc: "Effect: the supplier can open and use the model in their own (different) software", any: [
                 "(?:open|use|read|import|view|work with|access|edit|load)\\w*" + GAP(45) + "(?:different|other|own|another|whichever|whatever|their|any)\\W+(?:\\w+\\W+){0,2}(?:package|software|program|system|application)",
                 "(?:different|other|own|another|their|whichever|whatever|any)\\W+(?:\\w+\\W+){0,2}(?:package|software|program|system|application)" + GAP(60) + "(?:open|use|read|import|view|work|access)",
-                "(?:supplier|firm|company|manufacturer)\\W+(?:\\w+\\W+){0,3}(?:can|could|will be able to|is able to|are able to|able to)\\W+(?:\\w+\\W+){0,3}(?:open|read|import|view|load)"] },
+                "(?:supplier|firm|company|manufacturer)\\W+(?:\\w+\\W+){0,3}(?:can|could|will be able to|is able to|are able to|able to)\\W+(?:\\w+\\W+){0,3}(?:open|read|import|view|load)"],
+                not: ["(?:supplier|firm|company|manufacturer)\\W+(?:\\w+\\W+){0,2}(?:cannot|can't|can not|unable|couldn't|won't be able|will not be able)", "(?:native|own|shipyard's)\\W+(?:\\w+\\W+){0,4}(?:is|are|as)\\W+(?:\\w+\\W+){0,2}(?:neutral|common|universal|standard|open)\\b", "\\bstep\\W+(?:\\w+\\W+){0,3}(?:only|just)\\W+(?:\\w+\\W+){0,3}(?:shipyard|own|native|same)", "\\bstep\\W+(?:\\w+\\W+){0,2}(?:is|are)\\W+(?:\\w+\\W+){0,1}(?:mesh|polygon)"] },
             ],
             sample: "STEP is a neutral format that most CAD packages can import, so the supplier would be able to open and use the winch model in their own software even though it is different from the one the shipyard uses.",
             model: "<ul><li>Cause: STEP is a neutral (common) format that any CAD package can open (1)</li><li>Effect: so the supplier can open and use the model in a different package from the shipyard's (1)</li></ul><p>\"It is a common format\" alone is too vague to earn the cause: say that any package can open it. The price of a neutral file is that the modelling tree is normally lost.</p>" },
@@ -451,17 +454,17 @@
             points: [
               { desc: "Light source: placed above and to one side, giving highlights on the bin and shade on its far side", any: [
                 "(?:\\b|spot|flood)(?:lights?|lighting|lamp)(?:\\s+sources?)?\\s+(?:\\w+\\s+){0,4}(?:above|beside|side|top|left|right|angle|direction|position|placed|from)",
-                "(?:place|position|put|move|angle|set|add|use)\\w*\\W+(?:\\w+\\W+){0,4}(?:\\b|spot|flood)(?:lights?|lamp)\\b",
-                "(?:\\b|spot|flood)light\\w*\\W+(?:\\w+\\W+){0,8}(?:highlights?|shad(?:e|ing|ows?))"] },
+                "(?:place|position|put|move|angle|set|add|use|include|apply|need|fit)\\w*\\W+(?:\\w+\\W+){0,4}(?:\\b|spot|flood)(?:lights?|lamps?|lighting)\\b",
+                "(?:\\b|spot|flood)light\\w*\\W+(?:\\w+\\W+){0,8}(?:highlights?|shad(?:e|ing|ows?))"], not: ["(?:remov|delet|without|turn(?:ing)? off|switch(?:ing)? off|get(?:ting)? rid of|\\bno|\\bnot|disable)\\w*\\W+(?:\\w+\\W+){0,3}(?:lights?|lighting|shadows?|lamps?|materials?|textures?|reflect\\w*|environment)"] },
               { desc: "Materials: giving the bin a plastic or metal finish (colour, shine or texture)", any: [
                 "material\\w*\\W+(?:\\w+\\W+){0,2}(?:plastic|metal|steel|colou?r|shin\\w*|glossy|matt|texture|rough|paint|finish)",
                 "(?:plastic|metal|steel|glossy|matt|rubber|shiny)\\s+(?:\\w+\\s+)?material",
-                "(?:give|apply|add|assign|use|set)\\w*\\W+(?:\\w+\\W+){0,2}(?:material|texture|colou?r|finish)"] },
+                "(?:give|apply|add|assign|use|set)\\w*\\W+(?:\\w+\\W+){0,2}(?:material|texture|colou?r|finish)"], not: ["(?:remov|delet|without|turn(?:ing)? off|switch(?:ing)? off|get(?:ting)? rid of|\\bno|\\bnot|disable)\\w*\\W+(?:\\w+\\W+){0,3}(?:lights?|lighting|shadows?|lamps?|materials?|textures?|reflect\\w*|environment)"] },
               { desc: "Reflections: the shiny bin mirrors the floor and walls around it", any: [
                 "reflect\\w*" + GAP(50) + "(?:floor|wall|surround|surface|environment|mirror|shin|metal|scene)",
-                "(?:shin\\w*|metal|glossy|polished)" + GAP(40) + "reflect"] },
+                "(?:shin\\w*|metal|glossy|polished)" + GAP(40) + "reflect"], not: ["(?:remov|delet|without|turn(?:ing)? off|switch(?:ing)? off|get(?:ting)? rid of|\\bno|\\bnot|disable)\\w*\\W+(?:\\w+\\W+){0,3}(?:lights?|lighting|shadows?|lamps?|materials?|textures?|reflect\\w*|environment)"] },
               { desc: "Shade/shadow: a cast shadow on the floor under the bin showing it rests there", any: [
-                "cast\\w*\\W+(?:a\\W+)?shadow", "shadow\\w*" + GAP(30) + "(?:floor|ground|under|beneath)", "(?:floor|ground|under|beneath)" + GAP(30) + "shadow"] },
+                "cast\\w*\\W+(?:a\\W+)?shadow", "shadow\\w*" + GAP(30) + "(?:floor|ground|under|beneath)", "(?:floor|ground|under|beneath)" + GAP(30) + "shadow"], not: ["(?:remov|delet|without|turn(?:ing)? off|switch(?:ing)? off|get(?:ting)? rid of|\\bno|\\bnot|disable)\\w*\\W+(?:\\w+\\W+){0,3}(?:lights?|lighting|shadows?|lamps?|materials?|textures?|reflect\\w*|environment)"] },
               { desc: "Sited environment: a setting such as a room or quayside around the bin", any: [
                 "(?:environment|setting|room|background|surroundings|context)" + GAP(40) + "(?:place|put|add|surround|inside|within|around)",
                 "(?:place|put|add|surround|inside|within|around)\\w*" + GAP(40) + "(?:environment|setting|room|background|surroundings|context)"] },
@@ -538,7 +541,7 @@
               { desc: "Purpose: STEP is for engineering and exchange between CAD packages, whereas 3DS is for rendering, animation and games", ...cmp("engineer\\w*|exchang\\w*|manufactur\\w*|supplier|any cad|other cad|different cad|cad|neutral|shar\\w*|cnc|3d print\\w*|dimensions?|measur\\w*|production", "render\\w*|animat\\w*|visuali[sz]\\w*|games?|gaming|studio|films?|movies?|video|graphics", "engineer\\w*|manufactur\\w*|supplier", "render\\w*|animat\\w*|games?|films?") },
               { desc: "Extra data: 3DS carries materials, textures or lights, whereas STEP brings in only the finished shape", negOK: true, any: [
                 "\\b3ds\\b[\\s\\S]{0,80}?(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)[\\s\\S]{0,110}?\\bstep\\b[\\s\\S]{0,60}?(?:only|just|no |not |without|cannot|can't|doesn't|does not|lost|loses|finished shape|final shape|geometry|shape)",
-                "\\bstep\\b[\\s\\S]{0,60}?(?:only|just|no |not |without|cannot|can't|doesn't|does not|lost|loses|finished shape|final shape)[\\s\\S]{0,110}?\\b3ds\\b[\\s\\S]{0,80}?(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)"],
+                "\\bstep\\b[\\s\\S]{0,130}?(?:only|just|no |not |without|cannot|can't|doesn't|does not|lost|loses|finished shape|final shape)[\\s\\S]{0,110}?\\b3ds\\b[\\s\\S]{0,80}?(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)"],
                 not: ["\\bstep\\b\\W+(?:(?!cannot|can|not|no|without|doesn|does|isn|t\\b)\\w+\\W+){0,4}(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)", "\\b3ds\\b[^.]{0,25}(?:\\bnot\\b|n't|\\bno\\b|without|never|cannot)[^.]{0,25}(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)"] },
             ],
             sample: "A STEP file holds an accurate solid model, whereas a 3DS file is a polygon mesh made of many small flat facets. STEP can be used to share models between CAD packages for engineering, while 3DS is used for rendering, animation and games. A 3DS file also does carry materials, textures and lights, but a STEP file will bring in only the finished shape.",
@@ -560,11 +563,14 @@
             q: "Explain why the sketch should be fully constrained before the designer starts to edit its dimensions.",
             points: [
               { desc: "Cause: the constraints fix the relationships and sizes of the geometry, so it can only change when a dimension is changed", any: [
-                "constrain\\w*" + GAP(60) + "(?:fix|lock|hold|keep|stay|define|control|set)\\w*",
+                "(?<!un)(?<!under)constrain\\w*" + GAP(60) + "(?:fix|lock|hold|keep|stay|define|control|set|cannot|can't|can only|free to|unable to|prevent|restrict|stop)\\w*",
+                "(?:fix|lock|hold|defin|control|pin)\\w*" + GAP(50) + "(?<!un)(?<!under)constrain\\w*",
+                "(?<!un)(?<!under)constrain\\w*" + GAP(40) + "(?:every|each|all)" + GAP(30) + "(?:relationship|geometry|line|edge|part)",
                 "(?:fully|completely|totally)\\W+(?:\\w+\\W+){0,1}(?:constrained|defined)" + GAP(80) + "(?:only|just)\\s+(?:\\w+\\s+){0,3}(?:change|move|alter|edit)\\w*"] },
               { desc: "Effect: when it is edited, the lines stay parallel, holes stay centred and corners stay square, so the design intent is kept", group: "eff", any: [
                 "(?:stay|remain|keep|hold)\\w*\\W+(?:\\w+\\W+){0,5}(?:parallel|centre|center|centred|centered|square|perpendicular|tangent|concentric|in place|in position|shape|90|intent)",
-                "design intent"] },
+                "design intent"],
+                not: ["intent\\W+(?:\\w+\\W+){0,2}(?:lost|broken|ruined|destroyed|gone)", "(?:lose|loses|lost|break|breaks|ruin|ruins)\\W+(?:\\w+\\W+){0,2}design intent"] },
               { desc: "Effect: otherwise the sketch twists or distorts when edited, so holes drift off centre or corners are no longer square", group: "eff", negOK: true, any: [
                 "(?:otherwise|without|unconstrained|not constrained|no constraints)" + GAP(80) + "(?:distort|twist|warp|drift|move|out of shape|wrong|lose|change shape)\\w*",
                 "(?:distort|twist|warp|drift)\\w*" + GAP(60) + "(?:edit|chang|resiz|dimension)\\w*"] },
