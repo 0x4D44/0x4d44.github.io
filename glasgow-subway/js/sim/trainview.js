@@ -100,37 +100,74 @@ export class TrainView {
     if (this.cabKit) return;
     const THREE = this.THREE, g = new THREE.Group(); g.name = 'cabKit'; g.visible = false;
     const zc = this.carInfo[0].zc, F = this.cars[0];
+    if (this.cabEye) this.cabEye.position.z += 0.09;      // driver sits closer to the glass (0.88 m)
+    this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : this.eyeLocal;
+    const ey = this.eyeLocal;
     const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, ...o });
-    const lining = std(0x4a4e56, { emissive: 0x15171a }), wall = std(0x3c4048, { emissive: 0x101214 }), desk = std(0x2b2f35, { emissive: 0x0c0d0f }), trim = std(0x1b1d21);
-    const box = (w, h, d, x, y, z, m, rx = 0) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z - zc); b.rotation.x = rx; g.add(b); return b; };
-    const zf = -19.62, zr = -17.85;                       // glazing plane (A3 rev 6: eye 1.0 m behind the glass) / rear partition
-    box(2.2, 0.05, zr - zf + 0.2, 0, 2.275, (zf + zr) / 2, lining);                 // roof
-    box(0.05, 1.6, zr - zf, -1.1, 1.49, (zf + zr) / 2 - 0.05, wall);               // side walls
-    box(0.05, 1.6, zr - zf, 1.1, 1.49, (zf + zr) / 2 - 0.05, wall);
-    box(2.2, 1.6, 0.05, 0, 1.49, zr, wall);                                         // rear partition
-    box(2.2, 0.61, 0.06, 0, 0.995, zf, wall);                                       // nose panel below the glass (glass y 1.30-2.18)
-    box(2.2, 0.08, 0.12, 0, 2.21, zf, trim);                                        // header
-    for (const sx of [-1, 1]) box(0.13, 0.9, 0.12, sx * 1.035, 1.75, zf, trim);     // outer pillars
-    const pil = std(0xd9d9d4, { emissive: 0x303030 });
-    for (const px of [-0.3, 0.3]) box(0.04, 0.9, 0.06, px, 1.75, zf + 0.02, pil);   // centre evacuation door frame: three bays, driver on the left
-    box(2.18, 0.03, zr - zf, 0, 0.7, (zf + zr) / 2, std(0x2a2c30));                  // floor
-    // desk: low (top ~0.7 m above the floor at the front), slopes down toward the driver, 0.3 m behind the glass
-    box(2.0, 0.04, 0.46, 0, 1.4, -19.1, desk, 0.2);
-    box(2.0, 0.7, 0.44, 0, 1.02, -19.12, desk);
-    // TMS screen on the desk in front of the driver (x -0.42), angled up toward him, + a small secondary speed display
-    const scr = new THREE.Group(); scr.position.set(-0.84, 1.42, -19.2 - zc); scr.rotation.x = -0.75; scr.rotation.y = 0.18; g.add(scr);
-    const bz = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.2, 0.025), trim); bz.position.set(0, 0.1, -0.01); scr.add(bz);
-    const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28 * 320 / 512), new THREE.MeshBasicMaterial({ map: texTms, toneMapped: false })); sp.position.set(0, 0.1, 0.004); scr.add(sp);
-    const s2 = new THREE.Group(); s2.position.set(-0.55, 1.41, -19.2 - zc); s2.rotation.x = -0.75; g.add(s2);
-    const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.12, 0.02), trim); b2.position.set(0, 0.07, -0.008); s2.add(b2);
-    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15 * 170 / 256), new THREE.MeshBasicMaterial({ map: texSpeedo, toneMapped: false })); p2.position.set(0, 0.07, 0.003); s2.add(p2);
-    for (const pl of [sp, p2]) { const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); }   // the TMS canvas textures use flipY=false
-    // master controller on the driver's left: dark base, short lever, small dark grip (non-emissive)
-    const cyl = (r, h, x, y, z, m) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), m); c.position.set(x, y, z - zc); g.add(c); return c; };
-    cyl(0.045, 0.04, 0.5, 1.4, -19.0, trim); cyl(0.011, 0.12, 0.5, 1.47, -19.0, trim);
-    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 8), std(0x15161a)); grip.position.set(0.5, 1.54, -19.0 - zc); g.add(grip);
-    // door buttons (dull, only slightly emissive)
-    [[0x2d7a46, 0.12], [0x9a6a1c, 0.08], [0x8c2b2b, 0.08]].forEach(([c, e], i) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.012, 12), std(c, { emissive: c, emissiveIntensity: e })); b.position.set(0.22 + i * 0.07, 1.4, -19.1 - zc); b.rotation.x = 0.2; g.add(b); });
+    // procedural panel textures (seams) so the lining does not read as a flat slab
+    const tex = (base, seam, nx, ny) => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = base; x.fillRect(0, 0, 128, 128); x.strokeStyle = seam; x.lineWidth = 3; x.strokeRect(1, 1, 126, 126); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(nx, ny); return t; };
+    const ceilM = std(0xffffff, { map: tex('#c9ccd0', '#8e9296', 6, 2), emissive: 0x303234 });
+    const wallM = std(0xffffff, { map: tex('#4a5058', '#2a2d31', 4, 1), emissive: 0x141517 });
+    const blackM = std(0x0b0c0e, { roughness: 0.6 }), deskM = std(0x282c32, { emissive: 0x08090a }), deskTop = std(0x32363c, { emissive: 0x0b0c0d, roughness: 0.55 });
+    const R = 1.085, YC = 1.487, FL = 0.695, zf = -19.62, zr = -17.85;
+    const add = (o) => { g.add(o); return o; };
+    const prof = []; prof.push([-R, FL], [-R, YC]); for (let i = 1; i < 24; i++) { const a = Math.PI - Math.PI * i / 24; prof.push([R * Math.cos(a), YC + R * Math.sin(a)]); } prof.push([R, YC], [R, FL]);
+    // tube strip between z0..z1; skip(i) drops profile segment i (side window opening)
+    const strip = (z0, z1, mat, pick, skip) => { const pos = [], uv = [], idx = []; let n = 0;
+      for (let i = 0; i < prof.length - 1; i++) { if (skip && skip(i)) continue; const A = prof[i], B = prof[i + 1], my = (A[1] + B[1]) / 2; if (pick && !pick(my)) continue;
+        pos.push(A[0], A[1], z0 - zc, B[0], B[1], z0 - zc, B[0], B[1], z1 - zc, A[0], A[1], z1 - zc); uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(n, n + 1, n + 2, n, n + 2, n + 3); n += 4; }
+      const ge = new THREE.BufferGeometry(); ge.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); ge.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); ge.setIndex(idx); ge.computeVertexNormals(); return add(new THREE.Mesh(ge, mat)); };
+    const w0 = ey.z - 0.62, w1 = ey.z + 0.30;                                   // left side window z range
+    const inWin = (i) => prof[i][0] < 0 && prof[i][1] >= 1.22 && prof[i + 1][1] <= 2.02 && prof[i][1] < 2.02 && prof[i + 1][0] <= 0;
+    const lowSeg = (my) => my < 1.30, hiSeg = (my) => my >= 1.30;
+    strip(zf, zr, wallM, lowSeg); strip(zf, w0, ceilM, hiSeg); strip(w0, w1, ceilM, hiSeg, inWin); strip(w1, zr, ceilM, hiSeg);
+    // window frame bars
+    const bar = (a, b, r, m) => { const d = new THREE.Vector3().subVectors(b, a), L = d.length(); const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 6), m); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return add(c); };
+    { const ids = []; for (let i = 0; i < prof.length - 1; i++) if (inWin(i)) ids.push(i);
+      const pts = ids.map((i) => prof[i]).concat([prof[ids[ids.length - 1] + 1]]);
+      for (const zz of [w0, w1]) for (let k = 0; k < pts.length - 1; k++) bar(new THREE.Vector3(pts[k][0], pts[k][1], zz - zc), new THREE.Vector3(pts[k + 1][0], pts[k + 1][1], zz - zc), 0.022, blackM);
+      for (const p of [pts[0], pts[pts.length - 1]]) bar(new THREE.Vector3(p[0], p[1], w0 - zc), new THREE.Vector3(p[0], p[1], w1 - zc), 0.022, blackM); }
+    // front wall with three windscreen bays (driver / centre evacuation door / right); frames are the black wall between them
+    { const sh = new THREE.Shape(); sh.moveTo(prof[0][0], prof[0][1]); for (const p of prof) sh.lineTo(p[0], p[1]);
+      const arch = (x) => Math.abs(x) >= R ? FL : YC + Math.sqrt(R * R - x * x);
+      for (const [xa, xb] of [[-0.97, -0.32], [-0.255, 0.255], [0.32, 0.97]]) { const top = (x) => Math.min(2.42, arch(x) - 0.045); const h = new THREE.Path(); h.moveTo(xa, 1.40); h.lineTo(xb, 1.40); h.lineTo(xb, top(xb)); h.lineTo(xa, top(xa)); h.lineTo(xa, 1.40); sh.holes.push(h); }
+      const fm = new THREE.Mesh(new THREE.ShapeGeometry(sh), blackM); fm.position.z = zf - zc; add(fm);
+      // central door: thin grey handle strip + hinge line
+      const hd = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.2, 0.012), std(0x8a8f95)); hd.position.set(0.215, 1.62, zf + 0.02 - zc); add(hd); }
+    // rear partition (solid, with a small door window) and floor
+    { const sh = new THREE.Shape(); sh.moveTo(prof[0][0], prof[0][1]); for (const p of prof) sh.lineTo(p[0], p[1]);
+      const h = new THREE.Path(); h.moveTo(-0.55, 1.5); h.lineTo(-0.15, 1.5); h.lineTo(-0.15, 2.05); h.lineTo(-0.55, 2.05); h.lineTo(-0.55, 1.5); sh.holes.push(h);
+      const pm = new THREE.Mesh(new THREE.ShapeGeometry(sh), wallM); pm.position.z = zr - zc; add(pm); }
+    { const fl = new THREE.Mesh(new THREE.PlaneGeometry(2 * R, zr - zf), std(0x23262a)); fl.rotation.x = -Math.PI / 2; fl.position.set(0, FL + 0.01, (zf + zr) / 2 - zc); add(fl); }
+    // desk: extruded side profile (z, y): cowl at the glass, sloping down toward the driver
+    { const sh = new THREE.Shape(); const P = [[0.02, FL], [0.02, 1.50], [0.28, 1.50], [0.58, 1.37], [0.60, 1.34], [0.60, FL]]; sh.moveTo(zf + P[0][0], P[0][1]); for (const p of P) sh.lineTo(zf + p[0], p[1]);
+      const ge = new THREE.ExtrudeGeometry(sh, { depth: 2 * R - 0.02, bevelEnabled: false }); ge.rotateY(-Math.PI / 2); ge.translate(R - 0.01, 0, -zc);
+      add(new THREE.Mesh(ge, deskM)); const top = new THREE.Mesh(new THREE.BoxGeometry(2 * R - 0.04, 0.012, 0.32), deskTop); top.position.set(0, 1.434, zf + 0.44 - zc); top.rotation.x = Math.atan2(0.13, 0.30) * -1; add(top); }
+    const deskY = (u) => 1.50 - Math.max(0, u - 0.28) * (0.13 / 0.30);    // desk top height at u metres behind the glass
+    // TMS screens: bezel + display, turned toward the driver's eye
+    const eyeV = new THREE.Vector3(ey.x, ey.y, ey.z);
+    const screen = (x, u, w, h, tx, ratio) => { const gr = new THREE.Group(); gr.position.set(x, deskY(u) + h * 0.45, zf + u - zc); const bz = new THREE.Mesh(new THREE.BoxGeometry(w + 0.03, h + 0.03, 0.03), blackM); bz.position.z = -0.016; gr.add(bz);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tx, toneMapped: false })); pl.position.z = 0.002; gr.add(pl);
+      const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); add(gr); gr.lookAt(eyeV.x, eyeV.y - 0.12, eyeV.z - zc); return gr; };
+    screen(-0.80, 0.22, 0.34, 0.34 * 320 / 512, texTms);
+    // controls on the driver's right: master controller (traction) and brake handle, door buttons, emergency mushroom
+    const cyl = (r, h, x, y, z, m, rx = 0) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), m); c.position.set(x, y, z - zc); c.rotation.x = rx; return add(c); };
+    const steel = std(0xb9bdc2, { metalness: 0.6, roughness: 0.35 }), redM = std(0xb02020, { emissive: 0x300808 }), grip = std(0x101113);
+    const handle = (x, u, cap) => { const y0 = deskY(u); cyl(0.055, 0.04, x, y0 + 0.02, zf + u, deskM); cyl(0.010, 0.17, x, y0 + 0.10, zf + u - 0.03, steel, 0.35); const k = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.04, 0.10), cap); k.position.set(x, y0 + 0.19, zf + u - 0.065 - zc); k.rotation.x = 0.35; add(k); };
+    handle(-0.20, 0.40, grip);      // master controller
+    handle(-0.64, 0.40, redM);      // brake handle
+    [[0x2d9a55], [0x2d9a55], [0xc98a1c], [0xd8d8d0], [0x2c6fb0]].forEach(([c], i) => { const b = cyl(0.016, 0.012, -0.40 + i * 0.075, deskY(0.47) + 0.006, zf + 0.47, std(c, { emissive: c, emissiveIntensity: 0.12 }), 0.4); });
+    cyl(0.032, 0.05, 0.05, deskY(0.34) + 0.025, zf + 0.34, redM);
+    // driver's seat (seen when looking round) and side-wall furniture
+    { const sm = std(0x1d2024), sx = ey.x, sz = ey.z + 0.28; const cu = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.09, 0.46), sm); cu.position.set(sx, FL + 0.45, sz - zc); add(cu);
+      const bk = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.60, 0.09), sm); bk.position.set(sx, FL + 0.82, sz + 0.24 - zc); bk.rotation.x = -0.12; add(bk);
+      const hr = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.17, 0.08), sm); hr.position.set(sx, FL + 1.22, sz + 0.27 - zc); add(hr);
+      cyl(0.04, 0.45, sx, FL + 0.22, sz, std(0x777b80)); }
+    { const pa = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.22, 0.17), std(0x16181b)); pa.position.set(-R + 0.02, 1.55, ey.z + 0.55 - zc); add(pa);
+      const ex = cyl(0.05, 0.3, R - 0.07, 1.05, zr - 0.15, redM); ex.position.y = 1.0;
+      bar(new THREE.Vector3(R - 0.06, 1.2, zf + 0.9 - zc), new THREE.Vector3(R - 0.06, 1.2, zr - 0.4 - zc), 0.013, steel); }
+    // ceiling LED strip
+    { const led = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.012, 1.0), new THREE.MeshBasicMaterial({ color: 0xf4f6ff })); led.position.set(0, YC + R - 0.015, (zf + zr) / 2 - zc); add(led); }
     this.cabKit = g; F.add(g);
     this.setDest('INNER CIRCLE');
   }
