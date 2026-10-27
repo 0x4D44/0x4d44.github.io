@@ -57,7 +57,7 @@ export class App {
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false })); this.marker.renderOrder = 20; this.marker.visible = false; this.env.scene.add(this.marker);
     this.env.listeners.push(() => this.city.applyAll());
     const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7d9b78' }));
-    fg.position.set(this.centre.x, 1.5, this.centre.z); fg.renderOrder = 1; this.farGround = fg; this.env.scene.add(fg);
+    fg.position.set(this.centre.x, -1, this.centre.z); fg.renderOrder = 1; fg.material.polygonOffset = true; fg.material.polygonOffsetFactor = 8; fg.material.polygonOffsetUnits = 16; this.farGround = fg; this.env.scene.add(fg);
     // the far ground is unlit (MeshBasicMaterial): tint it with the lighting preset so it is not bright green at dusk / night
     const fgBase = new THREE.Color('#7d9b78'), fgTmp = new THREE.Color();
     const tintFar = (c) => { const k = clamp((c.sunI * 0.25 + c.hemiI * 0.4) / 1.23, 0, 1); fg.material.color.copy(fgBase).multiplyScalar(k * k).lerp(fgTmp.copy(c.fog), 0.25 * (1 - k)); };
@@ -223,7 +223,11 @@ export class App {
     if (this.paused) return;
     const dt = Math.min(0.1, (now - this.last) / 1000); this.last = now;
     if (Math.abs(this.xrayTarget - this.state.xray) > 1e-4 && this.xrayAnim) { const k = 1 - Math.pow(0.0005, dt); this.applyXray(Math.abs(this.xrayTarget - this.state.xray) < 0.003 ? this.xrayTarget : this.state.xray + (this.xrayTarget - this.state.xray) * k); }
-    this.rig.update(dt); const moved = this.rig.controls.target.distanceToSquared(this._lt || (this._lt = new THREE.Vector3())) > 0.01 || Math.abs(this.rig.distance - (this._ld || 0)) > 0.01;
+    this.rig.update(dt);
+    { // depth precision scales with the near plane: keep it proportional to how far out we are so layers don't z-fight
+      const cam = this.env.camera, nt = clamp(this.rig.distance * 0.02, 2, 300);
+      if (Math.abs(nt - cam.near) > cam.near * 0.05) { cam.near = nt; cam.updateProjectionMatrix(); }
+    } const moved = this.rig.controls.target.distanceToSquared(this._lt || (this._lt = new THREE.Vector3())) > 0.01 || Math.abs(this.rig.distance - (this._ld || 0)) > 0.01;
     if (moved) { this._lt.copy(this.rig.controls.target); this._ld = this.rig.distance; this.onHashSave(); }
     this.env.update(dt, this.rig.target); this.city.update(dt, this.rig.target);
     this.ug.update(dt, this.env.camera, this.rig.distance);
