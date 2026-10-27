@@ -2062,7 +2062,7 @@ window.COLLECTIONS = [
     blurb: "Japanese and Spanish, taught properly.",
     slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis"] },
   { id: "education", name: "Education", icon: "ill-higher-maths",
-    blurb: "Study guides for Scottish Higher subjects and first-year university courses — revise it, then play with it.",
+    blurb: "Interactive study guides for Scottish Highers and Advanced Highers and first-year university courses — revise it, then play with it.",
     slugs: ["higher-maths", "higher-physics", "higher-engineering", "higher-computing", "higher-graphic-communication", "meiosis",
       "conformers", "edinburgh-biosci"] },
   { id: "health", name: "Health & Fitness", icon: "ill-run",
