@@ -350,7 +350,7 @@
     }
     draw.addEventListener("click", build);
     window.addEventListener("hmp-change", paint);
-    panel.append(which, Object.values(timers), el("div", { class: "btn-row" }, draw), total, out);
+    panel.append(which, ...Object.values(timers), el("div", { class: "btn-row" }, draw), total, out);
     build();
     return panel;
   }
