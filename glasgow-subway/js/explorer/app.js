@@ -233,7 +233,7 @@ export class App {
       if (Math.abs(nt - cam.near) > cam.near * 0.12) { cam.near = nt; cam.updateProjectionMatrix(); }
     } const moved = this.rig.controls.target.distanceToSquared(this._lt || (this._lt = new THREE.Vector3())) > 0.01 || Math.abs(this.rig.distance - (this._ld || 0)) > 0.01;
     if (moved) { this._lt.copy(this.rig.controls.target); this._ld = this.rig.distance; this.onHashSave(); }
-    this.env.update(dt, this.rig.target); this.city.update(dt, this.rig.target);
+    this.env.update(dt, this.rig.target); this.city.update(dt, this.rig.target, this.env.camera.position);
     this.ug.update(dt, this.env.camera, this.rig.distance);
     if (this.ug.stationsG.visible) this.doHover();
     this.labels.update(this.w, this.h, this.state.selected, this.state.hovered, this.rig.distance);
