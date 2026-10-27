@@ -6,7 +6,7 @@
   /* near(a, b, n): regex source matching a and b in either order with at most n words between them. */
   const near = (a, b, n) => { const g = "\\W+(?:\\w+\\W+){0," + (n == null ? 3 : n) + "}"; return "\\b(?:" + a + ")\\b" + g + "\\b(?:" + b + ")\\b|\\b(?:" + b + ")\\b" + g + "\\b(?:" + a + ")\\b"; };
   const INC = "increas\\w*|rises?|rising|goes up|go up|grows?|greater|larger|bigger|higher|(?:gets?|becomes?) (?:bigger|larger|higher|greater)";
-  const DEC = "decreas\\w*|falls?|falling|drops?|dropping|reduc\\w*|goes down|go down|smaller|lower|less|(?:gets?|becomes?) (?:smaller|lower)";
+  const DEC = "decreas\\w*|falls?|falling|drops?|dropping|reduc\\w*|goes down|go down|smaller|lower\\w*|less|(?:gets?|becomes?) (?:smaller|lower)";
   const PD = "p\\.?d\\.?|voltage|potential difference|volts";
   const HALF = "(?:½|1/2|0\\.5)";
   /* relationship patterns (tested against the working with all spaces removed) */
@@ -16,7 +16,7 @@
   const DIVIDER = [
     "v[a-z_0-9]*=\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, "v[a-z_0-9]*=\\(?" + VNUM + "/" + VNUM + "\\)?x" + VNUM,
     "v[a-z_0-9]*/v[a-z_0-9]*=" + VNUM + "/" + VNUM, "i=[0-9.]+/[0-9.]+",
-    "\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, VNUM + "x\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM, "v[a-z_0-9]*=" + VNUM + "x\\(?" + VNUM + "/",
+    "\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, VNUM + "x\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM, VNUM + "x\\(?" + VNUM + "/" + VNUM, "v[a-z_0-9]*=" + VNUM + "x\\(?" + VNUM + "/",
     "v[a-z_0-9]*=\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM,
   ].concat(OHM);
   /* unit-prefix alternatives: the scaled number written with the plain unit (333 A for 333 mA) is vetoed */
@@ -178,7 +178,7 @@
         figure: figScope,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 6, alts: [6000], sf: 2, tol: 0, unit: "V", shown: "6.0",
+            label: "(a)", type: "num", marks: 1, a: 6, alts: [6000], unitAlts: ["mV"], sf: 2, tol: 0, unit: "V", shown: "6.0",
             q: "State the peak voltage of the supply.",
             why: "The peak is 3.0 divisions above the centre line, so V<sub>peak</sub> = 3.0 div × 2.0 V/div = <strong>6.0 V</strong>. Count from the <em>centre</em> line, not from the bottom of the wave.",
           },
@@ -194,7 +194,7 @@
             model: "<ul><li>Period from the trace, 5.0 div × 2.0 ms/div = 10 ms (or 0.010 s) (1)</li><li>f = 1/T (1)</li><li>f = 1/0.010 = 100 Hz, with the final line written (1)</li></ul><p>In a &ldquo;show that&rdquo; question the marks are for showing <em>where the period came from</em>, so write the division count and the timebase. The frequency of 100 Hz must appear as a final line; the given answer alone earns nothing.</p>",
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 6 / Math.SQRT2, alts: [6000 / Math.SQRT2], sf: 2, tol: 0, unit: "V", shown: "4.2",
+            label: "(c)", type: "num", marks: 1, a: 6 / Math.SQRT2, alts: [6000 / Math.SQRT2], unitAlts: ["mV"], sf: 2, tol: 0, unit: "V", shown: "4.2",
             q: "Calculate the r.m.s. voltage of the supply.",
             why: "V<sub>rms</sub> = V<sub>peak</sub>/√2 = 6.0/√2 = <strong>4.2 V</strong>. A common slip is to quote 6.0 V (the peak) or to <em>multiply</em> by √2 (giving 8.5 V): the r.m.s. value is always <em>smaller</em> than the peak.",
           },
@@ -303,7 +303,7 @@
             steps: [
               { desc: "Potential divider relationship, e.g. V₁ = R₁/(R₁ + R₂) × V_S, or V₁/V₂ = R₁/R₂, or V = IR",
                 rel: DIVIDER },
-              { desc: "Correct substitution: 18 (kΩ), 2.0 (kΩ) and 9.0 V", nums: [[18, 18000], [2, 2000, 20], 9] },
+              { desc: "Correct substitution: 18 (kΩ), 2.0 (kΩ) and 9.0 V", nums: [[18, 18000], [2, 2000, 20, 20000], 9] },
               { desc: "Voltmeter reading 8.1 V", ans: 8.1, sf: 2, unit: ["v", "volts", "volt"] },
             ],
             sample: "V_LDR = R_LDR/(R_LDR + R) × V_S\nV_LDR = 18/(18 + 2.0) × 9.0\nV_LDR = 8.1 V",
@@ -454,7 +454,7 @@
             model: "<ul><li>Q = It (1)</li><li>Q = 40 × 10<sup>−6</sup> × 50 = 2.0 × 10<sup>−3</sup> C (read t = 50 s and V = 4.0 V from the graph) (1)</li><li>C = Q/V = 2.0 × 10<sup>−3</sup>/4.0 (1)</li><li>C = 5.0 × 10<sup>−4</sup> F (500 µF) (1)</li></ul><p>Convert the microamps: 40 µA is 40 × 10<sup>−6</sup> A. Leaving it as 40 gives an answer 10<sup>6</sup> times too big.</p>",
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 0.004, alts: [4], sf: 2, tol: 0, unit: "J", shown: "4.0 × 10⁻³",
+            label: "(b)", type: "num", marks: 1, a: 0.004, alts: [4], unitAlts: ["mJ"], sf: 2, tol: 0, unit: "J", shown: "4.0 × 10⁻³",
             q: "Calculate the energy stored in the capacitor at 50 s.",
             why: "E = ½QV = ½ × 2.0 × 10<sup>−3</sup> × 4.0 = <strong>4.0 × 10<sup>−3</sup> J</strong>; equivalently ½CV² = ½ × 5.0 × 10<sup>−4</sup> × 4.0². Do not use QV, which is twice the stored energy.",
           },
@@ -492,7 +492,7 @@
         figure: figDischarge,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 680e-6 * 9, alts: [6.12], sf: 2, tol: 0, unit: "C", shown: "6.1 × 10⁻³",
+            label: "(a)", type: "num", marks: 1, a: 680e-6 * 9, alts: [6.12], unitAlts: ["mC"], sf: 2, tol: 0, unit: "C", shown: "6.1 × 10⁻³",
             q: "Calculate the charge stored on the capacitor when it is fully charged.",
             why: "Q = CV = 680 × 10<sup>−6</sup> × 9.0 = 6.12 × 10<sup>−3</sup> C, so <strong>6.1 × 10<sup>−3</sup> C</strong>. Convert microfarads: 680 µF = 680 × 10<sup>−6</sup> F.",
           },
@@ -511,7 +511,7 @@
             model: "<ul><li>The current is greatest at the start, I = V<sub>C</sub>/R = 9.0/450 = 0.020 A (1)</li><li>As the capacitor discharges its p.d. falls, so the current (V<sub>C</sub>/R) falls (1)</li><li>The current falls to zero, quickly at first and then more slowly (1)</li></ul><p>The current in R is in the opposite direction to the charging current. No current ever passes <em>through</em> the insulator between the plates; the current is in the wires as charge leaves the plates.</p>",
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 0.02, alts: [20], sf: 2, tol: 0, unit: "A", shown: "2.0 × 10⁻²",
+            label: "(c)", type: "num", marks: 1, a: 0.02, alts: [20], unitAlts: ["mA"], sf: 2, tol: 0, unit: "A", shown: "2.0 × 10⁻²",
             q: "Calculate the initial current in R just after S is moved to position 2.",
             why: "At the start the capacitor still has its full 9.0 V across it, so I = V/R = 9.0/450 = <strong>0.020 A</strong>.",
           },
@@ -774,7 +774,7 @@
         figure: figThermistor,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 3, alts: [3000], sf: 2, tol: 0.2, unit: "kΩ", shown: "3.0",
+            label: "(a)", type: "num", marks: 1, a: 3, alts: [3000], unitAlts: ["Ω", "ohm", "ohms", "kohm", "kohms"], sf: 2, tol: 0.2, unit: "kΩ", shown: "3.0",
             q: "State the resistance of the thermistor at 40 °C.",
             why: "Read from the graph: at 40 °C the curve is at <strong>3.0 kΩ</strong>. Keep the unit in kΩ and use kΩ in later calculations.",
           },
@@ -784,7 +784,7 @@
             steps: [
               { desc: "Potential divider relationship, e.g. V₁ = R₁/(R₁ + R₂) × V_S, or V₁/V₂ = R₁/R₂, or V = IR",
                 rel: DIVIDER },
-              { desc: "Substitution: 2.0 (kΩ), 3.0 (kΩ) and 6.0 V", nums: [[2, 2000], [3, 3000, 5], 6] },
+              { desc: "Substitution: 2.0 (kΩ), 3.0 (kΩ) and 6.0 V", nums: [[2, 2000], [3, 3000, 5, 5000], 6] },
               { desc: "Voltmeter reading 2.4 V", ans: 2.4, sf: 2, unit: ["v", "volts", "volt"] },
             ],
             sample: "V_R = R/(R + R_T) × V_S\nV_R = 2.0/(2.0 + 3.0) × 6.0\nV_R = 2.4 V",
@@ -795,9 +795,9 @@
             q: "Explain why the voltmeter reading changes as the temperature of the greenhouse rises.",
             points: [
               { desc: "As the temperature rises, the resistance of the thermistor decreases",
-                all: ["thermistor|temperature", near("resistance|r|r_t|rt", DEC + "|down", 5)] },
+                all: ["thermistor|temperature|hot\\w*|warm\\w*|heat\\w*", near("resistance|r|r_t|rt", DEC + "|down", 6)] },
               { desc: "so the fixed resistor takes a larger share of the supply p.d., and the p.d. across it (the reading) increases",
-                all: [near("fixed|resistor|voltmeter|reading|reads?|share|proportion|ratio", INC + "|more", 6), "share|proportion|ratio|larger p\\.?d\\.?|more of|bigger|greater|reading|reads|voltmeter|across"] },
+                all: [near("fixed|resistor|voltmeter|reading|reads?|share|proportion|fraction|ratio", INC + "|more", 6), "share|proportion|fraction|ratio|(?:larger|bigger|greater|higher|more) (?:p\\.?d\\.?|voltage|potential)|more of|current|across|v ?= ?ir"] },
             ],
             sample: "As the temperature rises the resistance of the thermistor decreases. The thermistor then takes a smaller share of the 6.0 V, so the fixed resistor takes a larger share and the p.d. across it, which the voltmeter reads, increases.",
             model: "<ul><li>The thermistor's resistance decreases as the temperature rises (1)</li><li>The thermistor's share of the supply p.d. falls, so the p.d. across the fixed resistor (the voltmeter reading) increases, because the two p.d.s add to 6.0 V (1)</li></ul><p>At 40 °C the reading is 2.4 V; at 70 °C, where the thermistor is 1.0 kΩ, it is 4.0 V.</p>",
@@ -837,7 +837,7 @@
             why: "Curve Q reaches the <em>same</em> final p.d. (6.0 V, the supply) but more slowly. A <strong>larger resistance</strong> gives a smaller charging current, so charge builds up more slowly. The resistance changes the time, not the final p.d.",
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 0.01, alts: [10], sf: 2, tol: 0, unit: "A", shown: "1.0 × 10⁻²",
+            label: "(b)", type: "num", marks: 1, a: 0.01, alts: [10], unitAlts: ["mA"], sf: 2, tol: 0, unit: "A", shown: "1.0 × 10⁻²",
             q: "Calculate the initial charging current for curve P.",
             why: "At the start the capacitor has no p.d., so all 6.0 V is across the resistor: I = V/R = 6.0/600 = <strong>0.010 A</strong>.",
           },

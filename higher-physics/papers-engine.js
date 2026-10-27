@@ -144,7 +144,7 @@
   function plain(s, keepCase) {
     return (keepCase ? HPP.norm(s, true) : HPP.norm(s))
       .replace(/(\d),(?=\d{3}\b)/g, "$1")
-      .replace(/(\d) (?=\d{3}\b)/g, "$1")
+      .replace(/(?<![\d.])(\d{1,3}) (?=\d{3}\b)/g, "$1")
       .replace(/(\d),(\d{1,2})\b/g, "$1.$2");
   }
   HPP.numbers = function (str) {

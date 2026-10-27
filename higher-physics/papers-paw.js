@@ -37,7 +37,7 @@
     for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) b += tx(34 + i * 60, 40 + j * 38, "×", { size: 20, fill: BLUE, anchor: "middle" });
     b += `<circle cx="60" cy="97" r="11" fill="${PINK}" stroke="${RED}" stroke-width="1.6"/>` + tx(60, 102, "+", { anchor: "middle", bold: true, fill: RED });
     b += ah(74, 97, 150, 97, INK) + tx(112, 90, "v", { anchor: "middle" }) + tx(36, 129, "proton", { size: 12 });
-    b += tx(190, 176, "Magnetic field directed into the page (×)", { size: 12, fill: BLUE });
+    b += tx(190, 174, "Magnetic field directed into the page (×)", { size: 12, fill: BLUE, anchor: "middle" });
     return svg(380, 190, "A proton, shown as a circle with a plus sign, moves to the right across the page at velocity v. The region is filled with crosses showing a uniform magnetic field directed into the page.", b);
   })();
 
@@ -67,8 +67,8 @@
     b += ln(gx(4.6), gy(0), gx(11.5), gy(E(11.5)), BLUE, 2.2);
     [5.5, 7, 8.5, 10].forEach((f) => { b += `<circle cx="${gx(f).toFixed(1)}" cy="${gy(E(f)).toFixed(1)}" r="3.6" fill="${RED}"/>`; });
     b += tx(X0 + 6 * XS, Y0 + 40, "frequency of the light / 10¹⁴ Hz", { anchor: "middle" });
-    b += tx(16, 150, "maximum kinetic energy of photoelectrons / 10⁻¹⁹ J", { anchor: "middle", rot: -90, size: 12 });
-    return svg(520, 300, "A graph of the maximum kinetic energy of the photoelectrons, in units of 10 to the minus 19 joules from 0 to 5, against the frequency of the light, in units of 10 to the 14 hertz from 0 to 12. A straight line starts on the frequency axis at 4.6 and rises to about 4.6 at a frequency of 11.5. Four measured points lie on the line.", b);
+    b += tx(16, 146, "maximum kinetic energy / 10⁻¹⁹ J", { anchor: "middle", rot: -90, size: 12 });
+    return svg(520, 320, "A graph of the maximum kinetic energy of the photoelectrons, in units of 10 to the minus 19 joules from 0 to 5, against the frequency of the light, in units of 10 to the 14 hertz from 0 to 12. A straight line starts on the frequency axis at 4.6 and rises to about 4.6 at a frequency of 11.5. Four measured points lie on the line.", b);
   })();
 
   /* q08: energy levels of an atom; transitions P, Q, R, S, W */
@@ -124,9 +124,9 @@
     for (let v = 2; v <= 16; v += 2) b += ln(X0, gy(v), X0 + 30 * XS, gy(v), "#ddd", 0.7);
     b += ln(gx(0), gy(0), gx(30), gy(15.6), BLUE, 2.2);
     [0.6, 0.5, 0.4, 0.3, 0.2].forEach((d) => { b += `<circle cx="${gx(1 / (d * d)).toFixed(1)}" cy="${gy(0.52 / (d * d)).toFixed(1)}" r="3.8" fill="${RED}"/>`; });
-    b += tx(X0 + 15 * XS, Y0 + 40, "1/d² / m⁻²", { anchor: "middle" });
+    b += tx(X0 + 15 * XS, Y0 + 38, "1/d² / m⁻²", { anchor: "middle" });
     b += tx(16, 135, "irradiance I / W m⁻²", { anchor: "middle", rot: -90, size: 12 });
-    return svg(520, 285, "A graph of irradiance in watts per square metre, from 0 to 16, against one over distance squared in reciprocal square metres, from 0 to 30. Five plotted points, at about 2.8, 4.0, 6.3, 11.1 and 25.0 on the horizontal axis, lie on a straight line that passes through the origin and rises to about 15.6 at 30.", b);
+    return svg(520, 300, "A graph of irradiance in watts per square metre, from 0 to 16, against one over distance squared in reciprocal square metres, from 0 to 30. Five plotted points, at about 2.8, 4.0, 6.3, 11.1 and 25.0 on the horizontal axis, lie on a straight line that passes through the origin and rises to about 15.6 at 30.", b);
   })();
 
   /* q13: ray into a glass block; the marked angle is with the SURFACE */

@@ -76,14 +76,15 @@
     alt: "Graph of height h in metres against time squared in square seconds for a falling ball, with five plotted crosses close to a straight line of best fit. The line meets the height axis at 0.06 metres and passes through the point 0.50 seconds squared, 2.51 metres.",
   });
   const figGrating = '<svg role="img" aria-label="Plan view of a laser beam passing straight through a diffraction grating onto a screen 2.00 metres away. The central maximum lies straight ahead and the first-order maxima are on either side, each at angle theta to the straight-through direction." viewBox="0 0 520 230" width="520" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="12">' +
+    '<defs><marker id="a" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#222"/></marker></defs>' +
     '<rect x="14" y="98" width="52" height="34" rx="3" fill="#dfe6f2" stroke="#1c3b66" stroke-width="1.5"/><text x="40" y="119" text-anchor="middle" fill="#222">laser</text>' +
-    '<line x1="66" y1="115" x2="470" y2="115" stroke="#b3261e" stroke-width="1.8"/>' +
-    '<line x1="180" y1="70" x2="180" y2="160" stroke="#222" stroke-width="3"/><text x="180" y="64" text-anchor="middle" fill="#222">grating</text>' +
-    '<line x1="180" y1="115" x2="470" y2="48" stroke="#b3261e" stroke-width="1.4"/><line x1="180" y1="115" x2="470" y2="182" stroke="#b3261e" stroke-width="1.4"/>' +
-    '<line x1="470" y1="20" x2="470" y2="210" stroke="#222" stroke-width="3"/><text x="470" y="14" text-anchor="middle" fill="#222">screen</text>' +
-    '<path d="M240 115 A60 60 0 0 0 232 90" fill="none" stroke="#222"/><text x="248" y="104" fill="#222">θ</text>' +
-    '<text x="478" y="119" fill="#222">central maximum</text><text x="478" y="52" fill="#222">first order</text><text x="478" y="186" fill="#222">first order</text>' +
-    '<line x1="180" y1="206" x2="470" y2="206" stroke="#222" marker-start="url(#a)" marker-end="url(#a)"/><text x="325" y="222" text-anchor="middle" fill="#222">2.00 m</text></svg>';
+    '<line x1="66" y1="115" x2="400" y2="115" stroke="#b3261e" stroke-width="1.8"/>' +
+    '<line x1="150" y1="70" x2="150" y2="160" stroke="#222" stroke-width="3"/><text x="150" y="64" text-anchor="middle" fill="#222">grating</text>' +
+    '<line x1="150" y1="115" x2="400" y2="60" stroke="#b3261e" stroke-width="1.4"/><line x1="150" y1="115" x2="400" y2="170" stroke="#b3261e" stroke-width="1.4"/>' +
+    '<line x1="400" y1="20" x2="400" y2="210" stroke="#222" stroke-width="3"/><text x="400" y="14" text-anchor="middle" fill="#222">screen</text>' +
+    '<path d="M210 115 A60 60 0 0 0 208.7 102.2" fill="none" stroke="#222"/><text x="222" y="112" fill="#222">θ</text>' +
+    '<text x="408" y="119" fill="#222">central maximum</text><text x="408" y="64" fill="#222">first order</text><text x="408" y="174" fill="#222">first order</text>' +
+    '<line x1="150" y1="206" x2="400" y2="206" stroke="#222" marker-start="url(#a)" marker-end="url(#a)"/><text x="275" y="222" text-anchor="middle" fill="#222">2.00 m</text></svg>';
 
   const tbl = (head, rows) => '<div class="table-wrap"><table><thead><tr>' + head.map((h) => '<th class="num">' + h + "</th>").join("") + "</tr></thead><tbody>" +
     rows.map((r) => "<tr>" + r.map((c) => '<td class="num">' + c + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>";
@@ -278,22 +279,24 @@
             steps: [
               { desc: "Relationship: gradient = rise ÷ run (or k = Id² from I = k/d²)", rel: ["gradient=", "slope=", "rise[/÷]run", "\\(?y2-y1\\)?[/÷]\\(?x2-x1", "(?:δ|∆)y[/÷](?:δ|∆)x", "k=id\\^?2", "i=k[/÷]d\\^?2", "(?:gradient|slope)=k"] },
               { desc: "Two points on the line used, far apart", nums: [[0.3, 0.6, 0.9, 1.2, 1.8, 2.4, 3.0, 3.6, 4.2, 4.8], [0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]] },
-              { desc: "Gradient with unit: 1.2 W", ans: 1.2, sf: 2, abs: 0.06, unit: ["w", "w m-2 / m-2"] },
+              { desc: "Gradient with unit: 1.2 W", ans: 1.2, sf: 2, abs: 0.1, unit: ["w", "w m-2 / m-2"] },
             ],
             sample: "gradient = rise/run\ngradient = (4.8 − 0)/(4.0 − 0)\ngradient = 1.2 W",
-            model: "<ul><li>gradient = rise ÷ run (1)</li><li>= (4.8 − 0) ÷ (4.0 − 0) using two widely spaced points on the line (1)</li><li>= 1.2 W (the unit is (W m⁻²) ÷ (m⁻²) = W) (1)</li></ul><p>Accept 1.1 to 1.3 W. The gradient is the constant <em>k</em> in I = k/d². Don't forget the unit: the powers of ten and units on the axes are a common place to lose a mark.</p>",
+            model: "<ul><li>gradient = rise ÷ run (1)</li><li>= (4.8 − 0) ÷ (4.0 − 0) using two widely spaced points on the line (1)</li><li>= 1.2 W (the unit is (W m⁻²) ÷ (m⁻²) = W) (1)</li></ul><p>Accept 1.1 to 1.3 W (the ends of the range are included). The gradient is the constant <em>k</em> in I = k/d². Don't forget the unit: the powers of ten and units on the axes are a common place to lose a mark.</p>",
           },
           {
-            label: "(c)", type: "text", marks: 2, rows: 3, minWords: 8,
+            label: "(c)", type: "text", marks: 2, rows: 3, minWords: 2,
             q: "The student concludes that her results support the inverse square law, I = k/d². Explain how the graph supports this conclusion.",
             points: [
               { desc: "The graph is a straight line", group: "a",
-                any: ["\\bstraight\\b", "\\blinear\\b", "\\bline of best fit\\W+(?:\\w+\\W+){0,3}straight"] },
+                not: ["\\b(?:is|are|forms?|makes?|shows?|gives?|has|looks? like)\\W+(?:an?\\W+)?(?:\\w+\\W+)?curv\\w*", "\\bnot\\W+(?:\\w+\\W+){0,2}(?:straight|linear)"],
+                any: ["\\bstraight\\b", "\\blinear\\b"] },
               { desc: "which passes through the origin, so I is directly proportional to 1/d²", group: "b",
-                any: ["\\b(?:through|passes|passing|goes|go|cuts|crosses|starts|starting|intercepts?)\\W+(?:\\w+\\W+){0,3}(?:origin|zero|\\(?0 ?, ?0\\)?)", "\\b(?:directly )?proportional\\b", "\\borigin\\b"] },
+                not: ["\\b(?:is|are|forms?|makes?|shows?|gives?|has|looks? like)\\W+(?:an?\\W+)?(?:\\w+\\W+)?curv\\w*", "\\b(?:not|n't|never|without)\\W+(?:\\w+\\W+){0,3}(?:through|passes|pass|origin|proportional)"],
+                any: ["\\b(?:through|passes|passing|goes|go|cuts|crosses|starts|starting|begins|intercepts?)\\W+(?:\\w+\\W+){0,3}(?:origin|zero|\\(?0 ?, ?0\\)?)", "\\bdirect(?:ly)?\\W+proportion\\w*", "(?<!inverse)(?<!inversely)\\bproportional\\W+to\\W+(?:\\w+\\W+){0,1}(?:1 ?/ ?d|one over d|the inverse)", "\\b(?:zero|0)\\W+(?:y-?)?intercept\\b", "\\bpasses? through 0\\b"] },
             ],
             sample: "The graph of I against 1/d² is a straight line, and the line goes through the origin, so the irradiance is directly proportional to 1/d², which is the inverse square law.",
-            model: "<ul><li>The graph is a straight line (1)</li><li>that passes through the origin, so I is directly proportional to 1/d² (1)</li></ul><p>A straight line that did <em>not</em> pass through the origin would show a linear relationship but not direct proportionality. Many candidates in recent papers forced the line through the origin and then claimed a systematic uncertainty: a best-fit line is drawn to fit the points, and the origin is a result, not a starting point.</p>",
+            model: "<ul><li>The graph is a straight line (1)</li><li>that passes through the origin, so I is directly proportional to 1/d² (1)</li></ul><p>A straight line that did <em>not</em> pass through the origin would show a linear relationship but not direct proportionality. Do not force the line through the origin: a best-fit line is drawn to fit the points, and passing through the origin is a result to be observed, not a starting point. Saying the graph is a curve, or that I is inversely proportional to d, does not describe this graph.</p>",
           },
         ],
       },
@@ -306,17 +309,17 @@
           "<p>A student shines light of different frequencies on a clean metal surface in a vacuum tube and measures the maximum kinetic energy <em>E</em><sub>k</sub> of the electrons that are emitted. The graph shows her results and the line of best fit.</p>",
         figure: figPE,
         parts: [
-          { label: "(a)", type: "num", marks: 1, a: 5.0e14, sf: 2, tol: 0.3e14, unit: "Hz", shown: "5.0 × 10¹⁴", q: "Use the graph to find the threshold frequency of the metal.", why: "No electrons are emitted when E<sub>k</sub> = 0, so the threshold frequency is where the line meets the frequency axis: <strong>5.0 × 10¹⁴ Hz</strong>. Remember the axis is in units of 10¹⁴ Hz." },
+          { label: "(a)", type: "num", marks: 1, a: 5.0e14, alts: [500], unitAlts: ["THz"], sf: 2, tol: 0, rel: 0.06, unit: "Hz", shown: "5.0 × 10¹⁴", q: "Use the graph to find the threshold frequency of the metal.", why: "No electrons are emitted when E<sub>k</sub> = 0, so the threshold frequency is where the line meets the frequency axis: <strong>5.0 × 10¹⁴ Hz</strong>. Remember the axis is in units of 10¹⁴ Hz. Accept 4.7 to 5.3 × 10¹⁴ Hz, or the same value in terahertz (500 THz): 1 THz = 10¹² Hz." },
           {
             label: "(b)", type: "calc", marks: 3,
             q: "Use the graph to determine a value for the Planck constant.",
             steps: [
               { desc: "Relationship: E_k = hf − hf₀, so h is the gradient (rise ÷ run)", rel: ["ek=hf-hf0", "gradient=", "slope=", "h=(?:gradient|slope)", "(?:gradient|slope)=h", "rise[/÷]run", "\\(?y2-y1\\)?[/÷]\\(?x2-x1", "h=\\(?e"] },
               { desc: "Two points on the line used, with the powers of ten", nums: [[0.663e-19, 1.326e-19, 1.989e-19, 2.652e-19, 3.315e-19, 0.663, 1.326, 1.989, 2.652, 3.315], [6.0e14, 7.0e14, 8.0e14, 9.0e14, 10.0e14, 5.0e14, 6.0, 7.0, 8.0, 9.0, 10.0, 5.0]] },
-              { desc: "h with unit: 6.6 × 10⁻³⁴ J s", ans: 6.63e-34, sf: 2, rel2: 0.04, unit: ["j s", "j hz-1", "j/hz", "kg m2 s-1"] },
+              { desc: "h with unit: 6.6 × 10⁻³⁴ J s", ans: 6.63e-34, sf: 2, rel2: 0.045, unit: ["j s", "j hz-1", "j/hz", "kg m2 s-1"] },
             ],
             sample: "E_k = hf − hf₀, so the gradient of the graph is h\ngradient = (3.3 × 10⁻¹⁹ − 0)/(10.0 × 10¹⁴ − 5.0 × 10¹⁴)\nh = 6.6 × 10⁻³⁴ J s",
-            model: "<ul><li>E<sub>k</sub> = hf − hf<sub>0</sub>, so h = gradient of the graph (1)</li><li>gradient = (3.3 × 10⁻¹⁹ − 0) ÷ (10.0 × 10¹⁴ − 5.0 × 10¹⁴), with the powers of ten included (1)</li><li>h = 6.6 × 10⁻³⁴ J s (1)</li></ul><p>Accept 6.4 to 6.9 × 10⁻³⁴. J Hz⁻¹ is the same unit as J s. Forgetting the 10⁻¹⁹ and 10¹⁴ on the axes gives 0.66: markers report that many candidates ignored the power of ten on the axis.</p>",
+            model: "<ul><li>E<sub>k</sub> = hf − hf<sub>0</sub>, so h = gradient of the graph (1)</li><li>gradient = (3.3 × 10⁻¹⁹ − 0) ÷ (10.0 × 10¹⁴ − 5.0 × 10¹⁴), with the powers of ten included (1)</li><li>h = 6.6 × 10⁻³⁴ J s (1)</li></ul><p>Accept 6.4 to 6.9 × 10⁻³⁴. J Hz⁻¹ is the same unit as J s. Forgetting the 10⁻¹⁹ and 10¹⁴ on the axes gives 0.66, which is out by a factor of 10³³: always carry the powers of ten shown on the axis labels into the calculation.</p>",
           },
           { label: "(c)", type: "num", marks: 1, a: 3.315e-19, sf: 2, tol: 0, unit: "J", shown: "3.3 × 10⁻¹⁹", q: "Calculate the work function of the metal.", why: "The work function is hf<sub>0</sub> = 6.63 × 10⁻³⁴ × 5.0 × 10¹⁴ = <strong>3.3 × 10⁻¹⁹ J</strong>. (It is also minus the intercept of the line on the E<sub>k</sub> axis if the line is extended back.)" },
           {
@@ -397,7 +400,7 @@
         style: "Experiment question · wavelength of a laser with a diffraction grating",
         stem:
           "<p>A student determines the wavelength of a green laser. The beam passes through a diffraction grating with <strong>400 lines per millimetre</strong>, and a pattern of maxima is seen on a screen 2.00 m from the grating. She measures the angle θ between the central maximum and the first-order maximum as <strong>12.3°</strong>. The distance on the screen is measured with a metre rule that reads to ± 1 mm.</p>",
-        figure: figGrating.replace("<svg ", "<svg ").replace('<line x1="180" y1="206"', '<defs><marker id="a" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="#222"/></marker></defs><line x1="180" y1="206"'),
+        figure: figGrating,
         parts: [
           {
             label: "(a)", type: "calc", marks: 3,
