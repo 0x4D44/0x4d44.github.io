@@ -22,9 +22,11 @@
     m: ["m", "metres", "metre", "meters", "meter"], s: ["s", "seconds", "second", "sec", "secs"],
     n: ["n", "newtons", "newton"], j: ["j", "joules", "joule"],
   };
+  /* "metres per second" is 17 characters and the marker reads only 16 after the number, so offer the clipped forms. */
+  const MPS = ["m s-1", "m/s", "m per s"].concat(["metres per second", "meters per second", "metre per second", "meter per second"].map((u) => u.slice(0, 16)));
   const withDir = (bases) => {
     const out = [];
-    bases.forEach((u) => { out.push(u); ["right", "to the right", "rightwards", "to the east", "forward", "forwards", "in the forward direction", "to the left", "left", "leftwards"].forEach((d) => out.push((u + " " + d).slice(0, 16).trim())); });
+    bases.forEach((u) => { out.push(u); ["right", "to the right", "rightwards", "to the east", "forward", "forwards", "in the forward direction"].forEach((d) => out.push((u + " " + d).slice(0, 16).trim())); });
     return out;
   };
 
@@ -234,16 +236,16 @@
           "<p>A ball of mass 0.058 kg is dropped from rest on to a hard floor. A motion sensor records its velocity. The graph shows the velocity against time for the first two bounces, taking <strong>upwards as positive</strong>. The ball hits the floor at 0.60 s and reaches the top of its first rebound at 1.10 s.</p>",
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 3,
+            label: "(a)", type: "mcq", marks: 1, a: 4,
             q: "The three sloping lines on the graph are parallel. Which statement explains this?",
             opts: [
-              "The ball has the same mass throughout",
-              "The ball has the same kinetic energy at the start of each flight",
-              "The ball has the same speed at the start of each flight",
+              "The ball has the same mass throughout, so it takes the same time to fall each time",
+              "The ball has the same kinetic energy at the start of each flight, since it bounces up from the floor every time",
+              "The ball has the same speed at the start of each flight, because it leaves the same floor every time",
+              "The ball reaches the same height after every bounce, because it leaves the same floor each time",
               "The ball has the same acceleration, because only gravity acts on it between the bounces",
-              "The ball has the same displacement in each flight",
             ],
-            why: "The gradient of a v–t graph is the acceleration. While the ball is in the air the only force on it is its weight, so the acceleration is −9.8 m s⁻² every time, and the lines have the same gradient. The starting speeds of the flights are different (5.9, 4.9 and 3.9 m s⁻¹ in magnitude), so options B and C are wrong.",
+            why: "The gradient of a v–t graph is the acceleration. While the ball is in the air the only force on it is its weight, so the acceleration is −9.8 m s⁻² every time, and the lines have the same gradient. The starting speeds of the flights are different (5.9, 4.9 and 3.9 m s⁻¹ in magnitude), so options B and C are wrong. The times of flight differ too (option A) and the rebound heights differ (option D).",
           },
           {
             label: "(b)", type: "calc", marks: 3,
@@ -261,7 +263,7 @@
             q: "The ball hits the floor at 5.9 m s⁻¹ but leaves it at only 4.9 m s⁻¹. Explain why the speed of the ball is smaller after the bounce.",
             points: [
               { desc: "Some kinetic energy is transferred to heat / sound (or deformation) in the bounce, so energy is lost from the ball", all: [near("energy|ke|e_?k|kinetic", "lost|transferred|transformed|converted|changed|dissipated|wasted|turned|becomes?|given|gets|goes", 8), "heat|sound|thermal|deform|internal|noise"], win: 200 },
-              { desc: "So the ball has less kinetic energy after the bounce and leaves with a lower speed", all: [near("less|lower|smaller|reduced|decreased|fewer", "kinetic|speed|velocity|ke\\b|e_?k\\b", 3), "bounce|after|rebound|leaves|leaving|floor|afterwards"], win: 120 },
+              { desc: "So the ball has less kinetic energy after the bounce and leaves with a lower speed", all: [near("less|lower|smaller|reduced|decreased|fewer", "kinetic|speed|velocity|ke\\b|e_?k\\b", 3), "bounce|after|rebound|leaves|leaving|floor|afterwards|collision|collid\\w*|impact|hits?|hitting|strikes?"], win: 120 },
             ],
             sample: "During the bounce some of the ball's kinetic energy is transferred into heat and sound, so energy is lost from the ball. It therefore has less kinetic energy after the bounce and leaves the floor with a lower speed.",
             model: "<ul><li>Some kinetic energy is changed to heat and sound (or the ball and floor are deformed) in the collision, so energy is lost (1)</li><li>The ball is left with less kinetic energy, so it moves off with a smaller speed (1)</li></ul><p>A bare &ldquo;the ball loses energy&rdquo; earns the first mark only if it says where the energy goes.</p>",
@@ -311,8 +313,8 @@
             label: "(d)", type: "text", marks: 3, rows: 8, minWords: 15,
             q: "A second rider, whose mass is twice as large, leaves the same ramp horizontally at 20 m s⁻¹. Use your knowledge of physics to comment on the flight of the second rider compared with the first.",
             points: [
-              { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)], negOK: true, not: ["\\bnot (?:\\w+ ){0,2}(?:the )?(?:same|equal|identical)", "\\bdifferent\\b", "\\b(?:shorter|longer|less|more) time"].concat(FALLFAST) },
-              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("accelerat\\w*|\\bg\\b|9\\.8|gravity", "same|independent|constant|all (?:masses|objects)|any mass|every mass|equally", 8)], negOK: true, not: ["heav\\w*[^.]{0,30}(?:faster|sooner|quicker)"].concat(FALLFAST) },
+              { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)], not: ["\\bnot (?:\\w+ ){0,5}(?:the )?(?:same|equal|identical)", "\\bnot independent", "\\bdifferent\\b", "\\b(?:shorter|longer|less|more) time"].concat(FALLFAST) },
+              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("accelerat\\w*|\\bg\\b|9\\.8|gravity", "same|independent|constant|all (?:masses|objects)|any mass|every mass|equally", 8)], not: ["heav\\w*[^.]{0,30}(?:faster|sooner|quicker)", "\\bnot (?:\\w+ ){0,4}(?:the )?(?:same|irrelevant|independent)"].concat(FALLFAST) },
               { desc: "He travels further horizontally, because d = vt with a larger horizontal speed (about 31 m)", any: [near("further|farther|greater (?:distance|range)|larger (?:distance|range)|more distance|longer (?:distance|range)", "horizontal\\w*|speed|velocity|20|faster|d ?= ?v|31", 10), near("20", "31", 12), near("distance|range", "greater|larger|bigger|longer", 3)], not: FALLFAST },
             ],
             sample: "The horizontal and vertical motions are independent, so the second rider is in the air for the same time as the first, about 1.6 s. Gravity gives the same acceleration of 9.8 m s⁻² to any mass, so the extra mass makes no difference to the fall of 12 m. His horizontal velocity is constant but larger, so using d = vt he lands further away, at about 31 m.",
@@ -348,23 +350,23 @@
             label: "(c)", type: "text", marks: 2, rows: 5, minWords: 10,
             q: "Describe how the horizontal and the vertical components of the ball's velocity change from the moment it is kicked until just before it lands.",
             points: [
-              { desc: "The horizontal component is constant (no horizontal force)", any: [near("horizontal\\w*", "constant|same|unchanged|stays|remains|uniform|doesn'?t change|does not change|not change", 6)] },
-              { desc: "The vertical component decreases to zero at the top, then increases downwards (constant acceleration of 9.8 m s⁻² downwards)", all: [near("vertical\\w*", "decreas\\w*|reduc\\w*|slow\\w*|smaller|less|falls?|lower", 10), "zero|\\b0\\b|top|highest|maximum|stops"], win: 220 },
+              { desc: "The horizontal component is constant (no horizontal force)", any: ["horizontal\\w*\\W+(?:\\w+\\W+){0,6}(?:constant|same|unchanged|stays|remains|uniform|doesn'?t change|does not change|not change)", "(?:constant|unchanged|uniform)\\W+(?:\\w+\\W+){0,2}horizontal"], not: ["horizontal\\w*\\W+(?:\\w+\\W+){0,2}(?:decreas|increas|slows|reduc|accelerat|speeds)"] },
+              { desc: "The vertical component decreases to zero at the top, then increases downwards (constant acceleration of 9.8 m s⁻² downwards)", all: ["vertical\\w*\\W+(?:\\w+\\W+){0,10}(?:decreas\\w*|reduc\\w*|slow\\w*|smaller|less|falls?|lower|drops?)", "zero|\\b0\\b|top|highest|maximum|stops"], win: 220, not: ["vertical\\w*\\W+(?:\\w+\\W+){0,2}(?:constant|unchanged|uniform|stays the same|remains the same)\\b"] },
             ],
             sample: "The horizontal component stays constant throughout the flight because there is no horizontal force. The vertical component decreases steadily as the ball rises, is zero at the highest point, and then increases in the downward direction as the ball falls.",
             model: "<ul><li>Horizontal component constant (1)</li><li>Vertical component decreases uniformly to zero at the top, then increases in the opposite (downward) direction, because of the constant acceleration of 9.8 m s⁻² downwards (1)</li></ul>",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 1,
+            label: "(d)", type: "mcq", marks: 1, a: 0,
             q: "Which row gives the velocity and acceleration of the ball at the highest point of its flight?",
             opts: [
-              "Velocity zero; acceleration 9.8 m s⁻² downwards",
               "Velocity 17.8 m s⁻¹ horizontally; acceleration 9.8 m s⁻² downwards",
+              "Velocity zero; acceleration 9.8 m s⁻² downwards",
               "Velocity 17.8 m s⁻¹ horizontally; acceleration zero",
               "Velocity zero; acceleration zero",
               "Velocity 21 m s⁻¹ at 32°; acceleration 9.8 m s⁻² downwards",
             ],
-            why: "At the top only the <em>vertical</em> component is zero; the horizontal component is still 17.8 m s⁻¹. Gravity still acts, so the acceleration is 9.8 m s⁻² downwards. Options A and D treat the whole velocity as zero; option C says gravity switches off.",
+            why: "At the top only the <em>vertical</em> component is zero; the horizontal component is still 17.8 m s⁻¹. Gravity still acts, so the acceleration is 9.8 m s⁻² downwards. Options B and D treat the whole velocity as zero; option C says gravity switches off; option E gives the launch velocity, which is not the velocity at the top.",
           },
         ],
       },

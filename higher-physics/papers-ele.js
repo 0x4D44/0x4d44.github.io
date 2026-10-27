@@ -19,8 +19,10 @@
     "\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, VNUM + "x\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM, VNUM + "x\\(?" + VNUM + "/" + VNUM, "v[a-z_0-9]*=" + VNUM + "x\\(?" + VNUM + "/",
     "v[a-z_0-9]*=\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM,
   ].concat(OHM);
-  /* unit-prefix alternatives: the scaled number written with the plain unit (333 A for 333 mA) is vetoed */
-  const bareScaled = (digits, unit) => "(?<![0-9.])" + digits + "(?:" + unit + ")\\.?$";
+  /* direction-aware "rises": subject followed (within n words, none of them a decrease word) by an increase word.
+     The engine scales SI prefixes itself, so no prefix-style alternatives are listed on num/calc answers. */
+  const DECW = "decreas|fall|drop|reduc|lower|smaller|less|down|declin";
+  const UP = (subj, n) => "\\b(?:" + subj + ")\\b(?:\\W+(?!(?:" + DECW + ")\\w*)\\w+){0," + (n == null ? 4 : n) + "}\\W+\\b(?:" + INC + ")\\b|\\b(?:increas\\w*|rises?|rise|growth)\\W+(?:in|of)\\W+(?:the\\W+)?(?:\\w+\\W+){0,2}(?:" + subj + ")\\b";
 
   /* ---------- small SVG kit ---------- */
   const INK = "#222", BLU = "#1c3b66", RED = "#b3261e", FILL = "#dbe6f5", GRID = "#d4d4d4";
@@ -135,9 +137,9 @@
     b += tx(185, 70, "p-type") + tx(295, 70, "n-type");
     [[150, 100], [175, 125], [205, 105], [215, 135], [160, 140]].forEach((p) => { b += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="5" fill="#fff" stroke="' + RED + '" stroke-width="1.5"/>'; });
     [[265, 105], [290, 130], [320, 100], [330, 135], [275, 140]].forEach((p) => { b += dot(p[0], p[1], 5, BLU); });
-    b += ln(185, 80, 185, 30) + ln(185, 30, 295, 30) + ln(295, 30, 295, 80) + resistor(240, 30) + tx(240, 14, "R");
-    b += ln(185, 150, 185, 200) + ln(185, 200, 295, 200) + ln(295, 200, 295, 150) + cell(240, 200, false);
-    b += tx(160, 196, "+", { s: 14, b: true, f: RED });
+    b += ln(150, 80, 150, 30) + ln(150, 30, 330, 30) + ln(330, 30, 330, 80) + resistor(240, 30) + tx(240, 14, "R");
+    b += ln(150, 150, 150, 200) + ln(150, 200, 330, 200) + ln(330, 200, 330, 150) + cell(240, 200, false);
+    b += tx(164, 192, "+", { s: 14, b: true, f: RED });
     b += tx(120, 118, "holes", { a: "end", s: 11, f: RED }) + tx(360, 118, "free electrons", { a: "start", s: 11, f: BLU });
     return svg(500, 225, "Diagram of a p-n junction. A p-type block containing holes, drawn as open circles, is joined to an n-type block containing free electrons, drawn as filled dots. The p-type side is connected through a resistor and the n-type side is connected through a cell, with the positive terminal of the cell joined to the p-type side.", b);
   })();
@@ -178,7 +180,7 @@
         figure: figScope,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 6, alts: [6000], unitAlts: ["mV"], sf: 2, tol: 0, unit: "V", shown: "6.0",
+            label: "(a)", type: "num", marks: 1, a: 6, sf: 2, tol: 0, unit: "V", shown: "6.0",
             q: "State the peak voltage of the supply.",
             why: "The peak is 3.0 divisions above the centre line, so V<sub>peak</sub> = 3.0 div × 2.0 V/div = <strong>6.0 V</strong>. Count from the <em>centre</em> line, not from the bottom of the wave.",
           },
@@ -188,27 +190,27 @@
             steps: [
               { desc: "Period from the trace: one cycle is 5.0 div, so T = 5.0 × 2.0 ms = 10 ms", nums: [[10, 0.01]] },
               { desc: "Relationship: f = 1/T", rel: ["f=1/t", "f=1/period", "frequency=1/", "t=1/f", "f=1/0?\\.01", "f=1/10"] },
-              { desc: "Final line: f = 100 Hz", ans: 100, alts: [0.1], sf: 2, unit: ["hz", "hertz", "khz"], not: [bareScaled("0?\\.10*", "hz|hertz")] },
+              { desc: "Final line: f = 100 Hz", ans: 100, sf: 2, unit: ["hz", "hertz"] },
             ],
             sample: "One cycle spans 5.0 div, so T = 5.0 × 2.0 ms = 10 ms = 0.010 s\nf = 1/T\nf = 1/0.010 = 100 Hz",
             model: "<ul><li>Period from the trace, 5.0 div × 2.0 ms/div = 10 ms (or 0.010 s) (1)</li><li>f = 1/T (1)</li><li>f = 1/0.010 = 100 Hz, with the final line written (1)</li></ul><p>In a &ldquo;show that&rdquo; question the marks are for showing <em>where the period came from</em>, so write the division count and the timebase. The frequency of 100 Hz must appear as a final line; the given answer alone earns nothing.</p>",
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 6 / Math.SQRT2, alts: [6000 / Math.SQRT2], unitAlts: ["mV"], sf: 2, tol: 0, unit: "V", shown: "4.2",
+            label: "(c)", type: "num", marks: 1, a: 6 / Math.SQRT2, sf: 2, tol: 0, unit: "V", shown: "4.2",
             q: "Calculate the r.m.s. voltage of the supply.",
             why: "V<sub>rms</sub> = V<sub>peak</sub>/√2 = 6.0/√2 = <strong>4.2 V</strong>. A common slip is to quote 6.0 V (the peak) or to <em>multiply</em> by √2 (giving 8.5 V): the r.m.s. value is always <em>smaller</em> than the peak.",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 1,
+            label: "(d)", type: "mcq", marks: 1, a: 4,
             q: "The timebase is changed to <strong>1.0 ms/div</strong>. The Y-gain is not changed. Which description of the new trace is correct?",
             opts: [
               "Twice as many complete waves, with the same peak height",
-              "Half as many complete waves, with the same peak height",
+              "Twice as many waves, each twice as tall",
               "The same number of waves, each twice as tall",
               "Half as many waves, each half as tall",
-              "Twice as many waves, each twice as tall",
+              "Half as many complete waves, with the same peak height",
             ],
-            why: "The signal is unchanged: its period is still 10 ms. At 1.0 ms/div one cycle now needs 10 divisions instead of 5, so the screen shows <strong>half as many waves</strong>. The timebase only stretches the time axis, so the height (set by the Y-gain, unchanged) stays the same. Options C, D and E wrongly change the height.",
+            why: "The signal is unchanged: its period is still 10 ms. At 1.0 ms/div one cycle now needs 10 divisions instead of 5, so the screen shows <strong>half as many waves</strong>. The timebase only stretches the time axis, so the height (set by the Y-gain, unchanged) stays the same. Option A has the number of waves the wrong way round, and options B, C and D wrongly change the height.",
           },
           {
             label: "(e)", type: "multi", marks: 2, a: [0, 3],
@@ -250,7 +252,7 @@
               { desc: "Relationship: V = IR", rel: OHM },
               { desc: "Total current from the supply: I = 12/12 = 1.0 A", nums: [1.0] },
               { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [4.0] },
-              { desc: "Current in lamp X = 0.33 A (333 mA is also accepted)", ans: 1 / 3, alts: [1000 / 3], sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere", "mA", "ma", "milliamps", "milliamp"], not: [bareScaled("3[0-9]{2}(?:\\.[0-9]+)?", "amps?|amperes?|a")] },
+              { desc: "Current in lamp X = 0.33 A (333 mA is also accepted)", ans: 1 / 3, sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere"] },
             ],
             sample: "V = IR\nI(total) = V/R = 12/12 = 1.0 A\np.d. across R₁ = 1.0 × 8.0 = 8.0 V, so p.d. across the lamps = 12 − 8.0 = 4.0 V\nI(X) = V/R = 4.0/12 = 0.33 A",
             model: "<ul><li>V = IR (1)</li><li>Total current = 12/12 = 1.0 A (use the answer to (a); ecf) (1)</li><li>p.d. across the lamps = 12 − (1.0 × 8.0) = 4.0 V (1)</li><li>I = 4.0/12 = 0.33 A (1)</li></ul><p>Equally acceptable: the current divides in the ratio of the <em>inverse</em> resistances, I<sub>X</sub> = 1.0 × 6.0/(6.0 + 12) = 0.33 A. A frequent error is to use the full 12 V across lamp X, which ignores the p.d. lost across R<sub>1</sub>.</p>",
@@ -269,8 +271,8 @@
                   "\\b(?:bigger|larger|greater|higher|increased|more)\\W+(?:\\w+\\W+){0,2}(?:share|proportion|fraction)",
                   "(?:" + PD + ")\\W+(?:\\w+\\W+){0,4}(?:across|over|on)\\W+(?:\\w+\\W+){0,2}(?:x|lamp x|it)\\W+(?:\\w+\\W+){0,3}(?:" + INC + ")",
                   near("(?:total|overall|circuit|supply)\\W+(?:\\w+\\W+){0,2}current", DEC, 4)] },
-              { desc: "Lamp X becomes brighter", not: ["dimmer", "less bright", "\\bdim\\b", "same brightness", "stays? the same", "no change"],
-                any: [near("x|lamp|bulb|it", "brighter|more bright|glows? more|shines? more", 5), near("brightness", "increas\\w*|rises?|greater|higher", 4)] },
+              { desc: "Lamp X becomes brighter", not: ["(?<!not )(?<!n't )dimmer", "less bright", "(?<!not )(?<!n't )\\bdim\\b", "same brightness", "stays? the same", "no change", "(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:brighter|bright|more bright)"],
+                any: ["\\bbrighter\\b|\\bmore bright\\b|glows? more|shines? more", near("brightness", "increas\\w*|rises?|greater|higher", 4)] },
             ],
             sample: "With lamp Y removed, the resistance of the parallel section increases, so lamp X takes a larger share of the 12 V and the p.d. across it increases. Lamp X therefore becomes brighter.",
             model: "<ul><li>Removing Y raises the resistance of the parallel section (and of the circuit): X gets a larger share of the supply p.d. / the p.d. across X increases (1)</li><li>so the current in X increases and X is brighter (1)</li></ul><p>Check: with Y removed R<sub>T</sub> = 8.0 + 12 = 20 Ω, I = 0.60 A and the p.d. across X is 7.2 V, up from 4.0 V. The total current actually <em>falls</em> (1.0 A to 0.60 A), but the current in X <em>rises</em> (0.33 A to 0.60 A). &ldquo;X is dimmer because there is less current&rdquo; confuses the supply current with the current in X, and earns nothing.</p>",
@@ -314,9 +316,10 @@
             q: "The voltmeter reading is used to switch on the lamp. Explain why the voltmeter reading changes as the daylight fades.",
             points: [
               { desc: "The resistance of the LDR increases as the light level falls", not: ["\\bnot\\b.{0,30}(?:increas|rise)"],
-                all: ["ldr|light|dark|dusk|night", near("resistance|r", INC, 5)] },
+                all: [UP("resistance|ldr", 5)] },
               { desc: "The LDR takes a larger share of the 9.0 V, so the p.d. across the LDR (voltmeter reading) increases",
-                all: ["ldr|voltmeter|reading|share|darker|dark", near(PD + "|reading|share|proportion|reads?", INC + "|more", 4)] },
+                not: ["resistance\\W+(?:\\w+\\W+){0,3}(?:" + DECW + ")\\w*", "(?:" + DECW + ")\\w*\\W+(?:in\\W+)?(?:the\\W+)?(?:ldr\\W+)?resistance"],
+                all: [near(PD + "|reading|share|proportion|reads?", INC + "|more", 4)] },
             ],
             sample: "As the daylight fades the resistance of the LDR increases. The LDR then takes a larger share of the 9.0 V supply, so the p.d. across it, and the voltmeter reading, increases.",
             model: "<ul><li>The resistance of the LDR increases when the light level falls (1)</li><li>The LDR takes a larger share of the supply p.d. (V<sub>1</sub>/V<sub>2</sub> = R<sub>1</sub>/R<sub>2</sub>), so the voltmeter reading increases (1)</li></ul><p>Both marks need the chain resistance, then share of the p.d. A bare &ldquo;it gets darker so the reading goes up&rdquo; is the observation, not the explanation. In the dark the reading is 8.1 V, in daylight 1.8 V.</p>",
@@ -354,7 +357,7 @@
             steps: [
               { desc: "Relationship: r = −gradient (E = V + Ir, so V = E − rI)", rel: ["gradient", "slope", "e=v\\+ir", "v=e-ir", "r=\\(?e-v\\)?/i", "r=e/i", "e=i\\(r\\+r\\)", "v=-ir\\+e", "y=mx\\+c", "y2-y1"] },
               { desc: "Values taken from the graph, e.g. (0, 4.5 V) and (3.0 A, 0)", nums: [[4.5, 3.0, 1.5]] },
-              { desc: "Internal resistance 1.5 Ω", ans: 1.5, sf: 2, unit: "Ω" },
+              { desc: "Internal resistance 1.5 Ω (a positive value: r = −gradient)", ans: 1.5, sf: 2, unit: "Ω", signed: true },
             ],
             sample: "gradient = (0 − 4.5)/(3.0 − 0) = −1.5\nr = −gradient = 1.5 Ω",
             model: "<ul><li>r = −gradient, or E = V + Ir (1)</li><li>Correct substitution of values from the line, e.g. (0 − 4.5)/(3.0 − 0), or E = 4.5 V, short-circuit current 3.0 A (1)</li><li>r = 1.5 Ω (1)</li></ul><p>The gradient is <em>negative</em>; r is its magnitude. Accept any pair of points read correctly from the line. Equivalent route: short-circuit current I = E/r, so r = 4.5/3.0.</p>",
@@ -426,9 +429,9 @@
             why: "Short circuit: all of the EMF is across the internal resistance, so I = E/r = 12.4/0.040 = <strong>310 A</strong> (3.1 × 10² A).",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 2,
+            label: "(d)", type: "mcq", marks: 1, a: 0,
             q: "A voltmeter of very high resistance is connected across the battery terminals with nothing else connected to the battery. What does it read?",
-            opts: ["0 V", "6.4 V", "12.4 V", "310 V", "6.2 V"],
+            opts: ["12.4 V", "0 V", "6.4 V", "310 V", "6.2 V"],
             why: "With no other component there is a negligible current, so there are no lost volts and the terminal p.d. equals the <strong>EMF, 12.4 V</strong>. 0 V would be the reading for a short circuit.",
           },
         ],
@@ -445,16 +448,16 @@
             label: "(a)", type: "calc", marks: 4,
             q: "Calculate the capacitance of the capacitor.",
             steps: [
-              { desc: "Relationship: Q = It", rel: ["q=it", "i=q/t", "t=q/i", "q=ixt"] },
-              { desc: "Charge Q = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C", nums: [0.002] },
-              { desc: "Relationship C = Q/V with V = 4.0 V", rel: ["c=q/v", "v=q/c", "q=cv", "c=[0-9.x^\\-]+[/÷]4(?:\\.0)?(?![0-9])"], nums: [4.0] },
-              { desc: "Capacitance 5.0 × 10⁻⁴ F (500 µF is also accepted)", ans: 5e-4, alts: [500, 0.5], sf: 2, unit: ["f", "µf", "mf", "farads", "farad", "microfarads", "microfarad"], not: [bareScaled("(?:500(?:\\.0+)?|0?\\.5(?:0+)?)", "f|farads?")] },
+              { desc: "Relationship: Q = It", rel: ["q=it", "i=q/t", "t=q/i", "q=ixt", "q=[0-9.]+(?:x10\\^?-?[0-9]+)?[a-z]*x[0-9.]+"] },
+              { desc: "Charge Q = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C (2000 µC or 2.0 mC also accepted)", rel: ["(?<![0-9.])2(?:\\.0*)?(?:x10\\^?-3|e-3)(?![0-9])", "(?<![0-9.])0?\\.0*2(?![0-9])", "(?<![0-9.])2000(?:\\.0*)?uc", "(?<![0-9.])2(?:\\.0*)?mc"] },
+              { desc: "Relationship C = Q/V with V = 4.0 V", rel: ["c=q/v", "v=q/c", "q=cv", "c=[0-9.x^\\-e]+[a-z]*[/÷]4(?:\\.0)?(?![0-9])"], nums: [4.0] },
+              { desc: "Capacitance 5.0 × 10⁻⁴ F (500 µF is also accepted)", ans: 5e-4, sf: 2, unit: ["f", "farads", "farad"] },
             ],
             sample: "Q = It = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C\nC = Q/V = 2.0 × 10⁻³ / 4.0\nC = 5.0 × 10⁻⁴ F",
             model: "<ul><li>Q = It (1)</li><li>Q = 40 × 10<sup>−6</sup> × 50 = 2.0 × 10<sup>−3</sup> C (read t = 50 s and V = 4.0 V from the graph) (1)</li><li>C = Q/V = 2.0 × 10<sup>−3</sup>/4.0 (1)</li><li>C = 5.0 × 10<sup>−4</sup> F (500 µF) (1)</li></ul><p>Convert the microamps: 40 µA is 40 × 10<sup>−6</sup> A. Leaving it as 40 gives an answer 10<sup>6</sup> times too big.</p>",
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 0.004, alts: [4], unitAlts: ["mJ"], sf: 2, tol: 0, unit: "J", shown: "4.0 × 10⁻³",
+            label: "(b)", type: "num", marks: 1, a: 0.004, sf: 2, tol: 0, unit: "J", shown: "4.0 × 10⁻³",
             q: "Calculate the energy stored in the capacitor at 50 s.",
             why: "E = ½QV = ½ × 2.0 × 10<sup>−3</sup> × 4.0 = <strong>4.0 × 10<sup>−3</sup> J</strong>; equivalently ½CV² = ½ × 5.0 × 10<sup>−4</sup> × 4.0². Do not use QV, which is twice the stored energy.",
           },
@@ -465,9 +468,12 @@
               { desc: "As the capacitor charges, the p.d. across the capacitor increases, so the p.d. across the resistor decreases",
                 any: [near("(?:" + PD + ")\\W+(?:\\w+\\W+){0,4}(?:across|over|on)\\W+(?:\\w+\\W+){0,2}(?:resistor|variable resistor|r)", DEC, 5),
                   near("(?:" + PD + ")\\W+(?:\\w+\\W+){0,4}(?:across|over|of|on)\\W+(?:\\w+\\W+){0,2}(?:capacitor)", INC, 5),
+                  "capacitor\\W+(?:" + PD + ")\\W+(?:\\w+\\W+){0,3}(?:" + INC + ")",
+                  "(?:" + PD + ")\\W+(?:\\w+\\W+){0,2}(?:" + INC + ")\\W+(?:\\w+\\W+){0,3}capacitor",
                   "supply\\W+(?:\\w+\\W+){0,3}(?:" + PD + ")\\W+(?:\\w+\\W+){0,6}(?:shared|split)"] },
               { desc: "The resistance must be decreased so that I = V/R stays constant",
-                all: [near("resistance|resistor|\\br\\b", "decreas\\w*|reduc\\w*|lower\\w*|smaller|turned down|less|decrease", 6), near("current|i", "constant|steady|maintain\\w*|keep\\w*|kept|stays?|remain\\w*|same", 5)] },
+                not: ["(?:increas\\w*|rais\\w*|greater|larger|bigger|higher)\\W+(?:\\w+\\W+){0,3}(?:resistance|resistor)", "(?:resistance|resistor)\\W+(?:\\w+\\W+){0,2}(?:must|has to|should|needs? to|to)\\W+(?:be\\W+)?(?:increas|rais)"],
+                all: [near("resistance|resistor|\\br\\b", "decreas\\w*|reduc\\w*|lower\\w*|smaller|turned down|less|decrease", 6), "current|\\bi\\b|constant|steady|maintain\\w*|keep\\w*|kept|stays?|remain\\w*|same|v ?= ?ir|" + PD] },
             ],
             sample: "As the capacitor charges, the p.d. across the capacitor increases, so the p.d. across the resistor decreases. The resistance of the variable resistor must therefore be reduced so that the current, I = V/R, stays constant.",
             model: "<ul><li>The p.d. across the capacitor increases as it charges, so the p.d. across the series resistor (V<sub>S</sub> − V<sub>C</sub>) decreases (1)</li><li>The resistance must be reduced so that I = V/R is kept constant (1)</li></ul><p>If R were left alone the current would fall, and the p.d.–time graph would curve over instead of being a straight line.</p>",
@@ -492,7 +498,7 @@
         figure: figDischarge,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 680e-6 * 9, alts: [6.12], unitAlts: ["mC"], sf: 2, tol: 0, unit: "C", shown: "6.1 × 10⁻³",
+            label: "(a)", type: "num", marks: 1, a: 680e-6 * 9, sf: 2, tol: 0, unit: "C", shown: "6.1 × 10⁻³",
             q: "Calculate the charge stored on the capacitor when it is fully charged.",
             why: "Q = CV = 680 × 10<sup>−6</sup> × 9.0 = 6.12 × 10<sup>−3</sup> C, so <strong>6.1 × 10<sup>−3</sup> C</strong>. Convert microfarads: 680 µF = 680 × 10<sup>−6</sup> F.",
           },
@@ -500,18 +506,18 @@
             label: "(b)", type: "text", marks: 3, minWords: 14, rows: 6,
             q: "Describe and explain how the current in R changes from the moment S is moved to position 2 until the capacitor has lost all its charge.",
             points: [
-              { desc: "The current is greatest at the start (the capacitor is at full p.d., so I = V/R is largest)", not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:largest|greatest|maximum|biggest|highest)"],
-                all: [near("current|highest|greatest|largest|maximum", "largest|greatest|maximum|biggest|highest|0\\.02", 4), "start|begin\\w*|first|initial\\w*|immediate\\w*|moment|at once"] },
-              { desc: "As charge leaves, the p.d. across the capacitor falls, so the current falls",
-                all: [near(PD, DEC, 6), near("current", DEC, 6) + "|(?:decreas\\w*|falls?|drops?) as (?:the )?(?:capacitor|charge) (?:discharges|loses|leaves|flows)"] },
-              { desc: "The current falls to zero (quickly at first, then more slowly) when the capacitor is fully discharged",
-                any: [near("zero|stops|nothing|no current|reaches 0", "current", 5), near("zero|stops|reaches 0", "discharged|no charge|empty|flat|fully|all (?:its )?charge", 8), "(?:quickly|rapidly|fast)\\W+(?:\\w+\\W+){0,3}(?:at first)", "exponential"] },
+              { desc: "The current is greatest at the start (the capacitor is at full p.d., so I = V/R is largest)", not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:large|largest|greatest|maximum|biggest|highest|big|high)", "(?<!not\\s)(?<!n't\\s)\\bconstant\\b", "stays? the same", "\\bsteady\\b"],
+                all: ["largest|greatest|maximum|biggest|highest|large|big|high|0\\.02", "start|begin\\w*|first|initial\\w*|immediate\\w*|moment|at once"] },
+              { desc: "As charge leaves, the p.d. across the capacitor falls, so the current falls", not: ["(?<!not\\s)(?<!n't\\s)\\bconstant\\b", "stays? the same", "\\bsteady\\b"],
+                all: [near(PD + "|charge|capacitor", DEC + "|lost|leaves|leaving|flows? off|discharg\\w*", 8), near("current", DEC, 12) + "|(?:then|so|and|too|also)\\W+(?:\\w+\\W+){0,1}(?:falls?|decreas\\w*|drops?|gets? smaller|reduc\\w*)"] },
+              { desc: "The current falls to zero (quickly at first, then more slowly) when the capacitor is fully discharged", not: ["(?<!not\\s)(?<!n't\\s)\\bconstant\\b", "stays? the same", "\\bsteady\\b", "current\\W+(?:\\w+\\W+){0,3}(?:increas|rises?|grows?)"],
+                any: ["(?:to|reaches?|reaching|becomes?|until it is|eventually)\\W+(?:\\w+\\W+){0,1}zero", "zero\\W+(?:\\w+\\W+){0,3}current", "no current", near("zero|reaches 0", "discharged|no charge|empty|flat|fully|all (?:its )?charge", 8), "(?:quickly|rapidly|fast)\\W+(?:\\w+\\W+){0,3}(?:at first)", "exponential"] },
             ],
             sample: "At the start the current is largest, because the capacitor has its full p.d. and I = V/R. As charge flows off the plates the p.d. across the capacitor falls, so the current falls too. It drops quickly at first and then more slowly, and reaches zero when the capacitor is completely discharged.",
             model: "<ul><li>The current is greatest at the start, I = V<sub>C</sub>/R = 9.0/450 = 0.020 A (1)</li><li>As the capacitor discharges its p.d. falls, so the current (V<sub>C</sub>/R) falls (1)</li><li>The current falls to zero, quickly at first and then more slowly (1)</li></ul><p>The current in R is in the opposite direction to the charging current. No current ever passes <em>through</em> the insulator between the plates; the current is in the wires as charge leaves the plates.</p>",
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 0.02, alts: [20], unitAlts: ["mA"], sf: 2, tol: 0, unit: "A", shown: "2.0 × 10⁻²",
+            label: "(c)", type: "num", marks: 1, a: 0.02, sf: 2, tol: 0, unit: "A", shown: "2.0 × 10⁻²",
             q: "Calculate the initial current in R just after S is moved to position 2.",
             why: "At the start the capacitor still has its full 9.0 V across it, so I = V/R = 9.0/450 = <strong>0.020 A</strong>.",
           },
@@ -551,7 +557,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the average current in the flash lamp during the 1.5 ms discharge.",
             steps: [
-              { desc: "Relationship: Q = It (I = Q/t)", rel: ["i=q/t", "q=it", "t=q/i", "q=ixt", "i=\\(?cv\\)?/t"] },
+              { desc: "Relationship: Q = It (I = Q/t)", rel: ["i=q/t", "q=it", "t=q/i", "q=ixt", "i=\\(?cv\\)?/t", "i=[0-9.]+(?:x10\\^?-?[0-9]+)?[a-z]*/[0-9.]"] },
               { desc: "Charge Q = CV = 3.6 × 10⁻² C and t = 1.5 × 10⁻³ s", nums: [0.036, [1.5e-3, 1.5]] },
               { desc: "Current 24 A", ans: 24, sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere"] },
             ],
@@ -596,9 +602,11 @@
             q: "The temperature of material Z is increased. Explain why its electrical conductivity increases.",
             points: [
               { desc: "More electrons gain enough energy to cross the (small) gap from the valence band to the conduction band",
-                all: ["temperature|thermal|heat\\w*|hotter|warm\\w*", "energy|valence|band", "gap|cross\\w*|jump\\w*|promot\\w*|excit\\w*|move\\w* (?:up )?(?:in)?to the conduction|reach\\w*|conduction"] },
+                not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,3}(?:need|require)", "vibrat", "collid|collision"],
+                all: ["energy|enough|valence", "gap|cross\\w*|jump\\w*|promot\\w*|excit\\w*|move\\w* (?:up )?(?:in)?to the conduction|reach\\w*|conduction", "more|enough|gain\\w*|gives?|extra|increas\\w*|greater|higher|thermal|heat\\w*|temperature|hotter|warm\\w*"] },
               { desc: "So there are more free charge carriers (electrons in the conduction band, and holes) to carry current",
-                all: [near("more|increas\\w*|greater|larger|higher|extra", "carriers?|free electrons|electrons|holes|charges?", 5), "conductivity|conducts?\\b|resistance|carry|carries|current"] },
+                not: ["(?:conductivity|conduction|current|conducts?)\\W+(?:\\w+\\W+){0,3}(?:" + DEC + ")", "vibrat", "collid|collision", "block"],
+                all: [near("more|increas\\w*|greater|larger|higher|extra", "carriers?|free electrons|electrons|holes|charges?", 5)] },
             ],
             sample: "At a higher temperature more electrons gain enough energy to cross the small gap from the valence band into the conduction band. There are then more free electrons, and holes, available to carry charge, so the conductivity is greater.",
             model: "<ul><li>At the higher temperature more electrons gain enough energy to cross the gap between the valence band and the conduction band (1)</li><li>There are more charge carriers (free electrons in the conduction band, and holes in the valence band), so the conductivity is greater / the resistance is less (1)</li></ul><p>Z has a <em>small</em> gap, so thermal energy at room temperature already lifts some electrons across. This is opposite to a metal, whose resistance rises with temperature.</p>",
@@ -673,16 +681,16 @@
           "<p>A railway footbridge has a display made from red and blue LEDs, powered by a roof-mounted solar panel. The red and the blue LEDs are made from different semiconductor materials.</p>",
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 3,
+            label: "(a)", type: "mcq", marks: 1, a: 1,
             q: "The blue LED needs a larger forward p.d. than the red LED to operate. Which statement explains this?",
             opts: [
               "Blue light has a lower frequency, so each electron needs less energy.",
-              "The blue LED has a smaller band gap than the red LED.",
-              "Blue photons have less energy, so more electrons are needed.",
               "The blue LED has a larger band gap, so it emits higher-energy photons.",
+              "Blue photons have less energy, so more electrons are needed.",
+              "The blue LED has a smaller band gap than the red LED.",
               "The blue LED has a larger wavelength, so the junction is wider.",
             ],
-            why: "Blue light has a higher frequency than red, so E = hf is larger. A bigger photon energy needs a <strong>bigger band gap</strong>, and a larger forward p.d. to give the electrons that energy. Options A, B, C and E all swap the relationship round.",
+            why: "Blue light has a higher frequency than red, so E = hf is larger. A bigger photon energy needs a <strong>bigger band gap</strong>, and a larger forward p.d. to give the electrons that energy. Options A, C, D and E all swap the relationship round.",
           },
           {
             label: "(b)", type: "text", marks: 2, minWords: 10,
@@ -774,7 +782,7 @@
         figure: figThermistor,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 3, alts: [3000], unitAlts: ["Ω", "ohm", "ohms", "kohm", "kohms"], sf: 2, tol: 0.2, unit: "kΩ", shown: "3.0",
+            label: "(a)", type: "num", marks: 1, a: 3, alts: [3000], unitAlts: ["Ω", "ohm", "ohms"], sf: 2, tol: 0.2, unit: "kΩ", shown: "3.0",
             q: "State the resistance of the thermistor at 40 °C.",
             why: "Read from the graph: at 40 °C the curve is at <strong>3.0 kΩ</strong>. Keep the unit in kΩ and use kΩ in later calculations.",
           },
@@ -797,7 +805,7 @@
               { desc: "As the temperature rises, the resistance of the thermistor decreases",
                 all: ["thermistor|temperature|hot\\w*|warm\\w*|heat\\w*", near("resistance|r|r_t|rt", DEC + "|down", 6)] },
               { desc: "so the fixed resistor takes a larger share of the supply p.d., and the p.d. across it (the reading) increases",
-                all: [near("fixed|resistor|voltmeter|reading|reads?|share|proportion|fraction|ratio", INC + "|more", 6), "share|proportion|fraction|ratio|(?:larger|bigger|greater|higher|more) (?:p\\.?d\\.?|voltage|potential)|more of|current|across|v ?= ?ir"] },
+                all: [near("fixed|resistor|voltmeter|reading|reads?|share|proportion|fraction|ratio", INC + "|more", 6), "share|proportion|fraction|ratio|(?:larger|bigger|greater|higher|more) (?:p\\.?d\\.?|voltage|potential)|more of|current|across|v ?= ?ir|" + PD] },
             ],
             sample: "As the temperature rises the resistance of the thermistor decreases. The thermistor then takes a smaller share of the 6.0 V, so the fixed resistor takes a larger share and the p.d. across it, which the voltmeter reads, increases.",
             model: "<ul><li>The thermistor's resistance decreases as the temperature rises (1)</li><li>The thermistor's share of the supply p.d. falls, so the p.d. across the fixed resistor (the voltmeter reading) increases, because the two p.d.s add to 6.0 V (1)</li></ul><p>At 40 °C the reading is 2.4 V; at 70 °C, where the thermistor is 1.0 kΩ, it is 4.0 V.</p>",
@@ -825,19 +833,19 @@
         figure: figCharge,
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 1,
+            label: "(a)", type: "mcq", marks: 1, a: 4,
             q: "Which statement about the resistor used to obtain curve Q is correct?",
             opts: [
               "It has a smaller resistance, so the current is smaller.",
-              "It has a larger resistance, so the current is smaller.",
+              "It has the same resistance, because the final p.d. is the same.",
               "It has a larger resistance, so the final p.d. is smaller.",
               "It has a smaller resistance, so the final p.d. is larger.",
-              "It has the same resistance, because the final p.d. is the same.",
+              "It has a larger resistance, so the current is smaller.",
             ],
             why: "Curve Q reaches the <em>same</em> final p.d. (6.0 V, the supply) but more slowly. A <strong>larger resistance</strong> gives a smaller charging current, so charge builds up more slowly. The resistance changes the time, not the final p.d.",
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 0.01, alts: [10], unitAlts: ["mA"], sf: 2, tol: 0, unit: "A", shown: "1.0 × 10⁻²",
+            label: "(b)", type: "num", marks: 1, a: 0.01, sf: 2, tol: 0, unit: "A", shown: "1.0 × 10⁻²",
             q: "Calculate the initial charging current for curve P.",
             why: "At the start the capacitor has no p.d., so all 6.0 V is across the resistor: I = V/R = 6.0/600 = <strong>0.010 A</strong>.",
           },
@@ -861,7 +869,7 @@
               { desc: "The final p.d. is unchanged: it equals the supply p.d. of 6.0 V", not: ["not\\W+(?:also\\W+)?(?:the\\W+)?(?:same|unchanged|constant)", "not\\W+(?:\\w+\\W+){0,1}equal", "(?:final|ends?)\\W+(?:\\w+\\W+){0,4}(?:p\\.?d\\.?|voltage)\\W+(?:\\w+\\W+){0,3}(?:smaller|larger|bigger|greater|higher|lower|less|increas|decreas)"],
                 all: [near("final|ends?|fully charged|eventually|finally|\\(ii\\)", PD + "|same|unchanged|6", 8), "same|unchanged|no change|not change|supply|6\\.0|6 v|equal|unaffected|not affected"] },
               { desc: "It takes longer to charge, because more charge must flow to reach the same p.d. (Q = CV)", not: ["not\\W+(?:\\w+\\W+){0,1}(?:to )?flow"],
-                all: ["longer|slower|more time|slowly", "more charge|larger charge|greater charge|bigger charge|more electrons|q ?= ?cv|charge"] },
+                all: ["longer|slower|more time|slowly|takes more", "more charge|larger charge|greater charge|bigger charge|more electrons|q ?= ?cv|charge|capacitance|stores? more|more energy|bigger capacitor|larger capacitor"] },
             ],
             sample: "The initial current is the same, because the capacitor starts uncharged so all of the supply p.d. is across the resistor and I = V/R stays the same. The final p.d. across the capacitor is also unchanged, since it still equals the 6.0 V supply. The capacitor takes longer to charge, because more charge has to flow to reach the same p.d.",
             model: "<ul><li>The initial current is unchanged (the capacitor starts with zero p.d., so I = V/R = 0.010 A as before) (1)</li><li>The final p.d. is unchanged: it reaches the supply p.d., 6.0 V (1)</li><li>It takes longer to charge, since more charge (Q = CV) must flow to reach the same p.d., at the same starting current (1)</li></ul><p>The graph for the larger capacitor starts with the same gradient-related current but climbs more slowly towards the same 6.0 V.</p>",

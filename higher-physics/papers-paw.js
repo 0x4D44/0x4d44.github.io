@@ -9,6 +9,16 @@
   const NOT = (x) => "\\b(?:not|never|no|n't|cannot|without)\\W+(?:\\w+\\W+){0,3}(?:" + x + ")";
   const LAM = "(?:λ|lambda)";
   const X = "[x*]?";
+  /* paw-01(c): "the magnetic field accelerates", "magnetic field is for accelerating" (and the electric/bend mirror) in one clause,
+     plus the passive "accelerating is done by the magnetic field"; used as vetoes so a swapped answer earns nothing. */
+  /* paw-02(c): a clause that says the beta energies were all the SAME (and has no "not"/"rather than" in front of it) */
+  const SAME_E = "(?:^|[.;!?]\\s*)(?:(?!\\b(?:not|never|rather|than|instead|unlike|wasn't|weren't)\\b|n't)[^.;!?])*?\\b(?:had|have|has|with|all|every|each|were|was|at)\\b[^.;!?]{0,24}?\\b(?:same|equal|identical|fixed|single|one)\\s+(?:\\w+\\s+)?energ";
+  /* c squared written out: (3.00 x 10^8)^2, (3e8)2, 9 x 10^16, 3e8 x 3e8 (for the E = mc^2 substitution marks) */
+  const C_SQ = ["3(?:\\.0+)?x10\\^?8\\)?\\^?2", "3(?:\\.0+)?e8\\)?\\^?2", "\\d(?:\\.\\d+)?x10\\^?16", "\\d(?:\\.\\d+)?e16", "3(?:\\.0+)?x10\\^?8\\)?x\\(?3(?:\\.0+)?x10\\^?8", "3(?:\\.0+)?e8\\)?x\\(?3(?:\\.0+)?e8", "9(?:\\.0+)?x10\\^?16"];
+  const FLD = (w) => "(?:" + w + ")(?:\\s+fields?)?\\s+(?:(?:is|are|does|do|will|can|only)\\s+)?(?:(?:for|used|to|the one|responsible for|what|that|job of)\\s+){0,2}";
+  const MAG_DOES = FLD("magnetic|\\bb"), ELEC_DOES = FLD("electric|\\be");
+  const ACC_BY_MAG = "(?:accelerat|speed)\\w*(?:\\s+\\w+){0,4}\\s+(?:by|from|using|with|via|through)\\s+(?:the\\s+)?(?:magnetic|b\\b)";
+  const BEND_BY_ELEC = "(?:bend|steer|deflect|curv|turn|guid)\\w*(?:\\s+\\w+){0,4}\\s+(?:by|from|using|with|via|through)\\s+(?:the\\s+)?(?:electric|e\\b)";
   /* ---- regex families for calc relationships (matched against the compacted, lower-case working) ---- */
   const HALF = "\\(?(?:½|1/2|0\\.5)\\)?";
   const REL_EK = ["ek=" + HALF + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", HALF + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", HALF + X + "\\(?1\\.67\\d*(?:e-27|x10\\^?-27)\\)?" + X + "\\(?v\\)?\\^?2", "mv\\^?2/2", "2ek/m", "v=sqrt", "v\\^?2=2"];
@@ -179,10 +189,10 @@
             q: "Describe the job done by the electric field and the job done by the magnetic field in a ring accelerator like this one.",
             points: [
               { desc: "The electric field accelerates the protons (increases their speed or kinetic energy)",
-                not: ["(?:magnetic|\\bb)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:accelerat|speed|energi)", "(?:electric|\\be)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:bend|steer|deflect|curv|circle|turn)"],
+                not: [MAG_DOES + "(?:accelerat|speed|energi)", ACC_BY_MAG, ELEC_DOES + "(?:bend|steer|deflect|curv|circle|turn|guid)", BEND_BY_ELEC],
                 any: [near("electric(?:\\W+fields?)?|\\be[- ]fields?", "accelerat\\w*|speed\\w*|energi[sz]\\w*|energy|faster|work|kinetic", 6)] },
               { desc: "The magnetic field bends (steers or deflects) the beam into a circular path",
-                not: ["(?:electric|\\be)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:bend|steer|deflect|curv|circle|turn)", "(?:magnetic|\\bb)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:accelerat|speed)"],
+                not: [ELEC_DOES + "(?:bend|steer|deflect|curv|circle|turn|guid)", BEND_BY_ELEC, MAG_DOES + "(?:accelerat|speed)", ACC_BY_MAG],
                 any: [near("magnetic(?:\\W+fields?)?|\\bb[- ]fields?", "bend\\w*|steer\\w*|deflect\\w*|curv\\w*|circular|circle|turn\\w*|focus\\w*|guid\\w*|direction|path", 14)] },
             ],
             sample: "The electric field accelerates the protons, giving them speed and kinetic energy each time they cross it. The magnetic field exerts a force at right angles to their motion, which bends the beam into a circular path round the ring.",
@@ -219,10 +229,11 @@
             q: "In the early twentieth century physicists measured the energies of the beta particles emitted in beta decay. Describe what the measurements showed, and state the conclusion that was drawn from them.",
             points: [
               { desc: "The beta particles (electrons) were emitted with a range of energies, not one fixed energy, so some energy seemed to be missing",
-                not: ["\\b(?:all|every|each)\\W+(?:\\w+\\W+){0,4}(?:same|equal|identical|fixed|single)\\W+(?:\\w+\\W+){0,1}energ"],
-                any: [near("range|spread|variety|continuous|different|varying|variable|various|all sorts", "energi\\w*", 6)] },
+                not: [SAME_E],
+                any: [near("range|spread|variety|continuous|different|varying|variable|various|varied|all sorts|wide|lots of|many", "energ\\w*", 6), "(?:not|n't)\\s+(?:all\\s+)?(?:have|had|with|the|of)\\s+(?:the\\s+)?(?:same|equal|identical|fixed|single)\\s+(?:\\w+\\s+)?energ", "(?:energy|energies)\\s+(?:\\w+\\s+){0,3}(?:missing|lost|unaccounted|disappear\\w*|short)", "(?:missing|lost|unaccounted)\\s+(?:\\w+\\s+)?energy"] },
               { desc: "Conclusion: a further, almost undetectable, neutral particle (the neutrino) is emitted and carries away the missing energy",
-                any: [near("neutrinos?|anti-?neutrinos?|third|another|new|extra|undetected|undetectable", "particles?|neutrinos?|exists?|proposed|predict\\w*|evidence", 8)] ,
+                not: [SAME_E],
+                any: [near("neutrinos?|anti-?neutrinos?|third|another|new|extra|undetected|undetectable", "particles?|neutrinos?|exists?|proposed|predict\\w*|evidence|carr\\w*|emit\\w*|idea|suggest\\w*|postulat\\w*|hypothes\\w*|share\\w*|tak(?:es?|ing)|took|accounts?|explain\\w*", 8), "neutrinos?\\s+(?:\\w+\\s+){0,6}(?:energy|energies|missing)"] ,
                 all: ["neutrinos?|anti-?neutrinos?|(?:new|another|third|extra|undetect\\w*|neutral) particle"] },
             ],
             sample: "The beta electrons came out with a range of energies instead of one fixed energy, so energy seemed to be missing from each decay. This was the first evidence for the neutrino, a neutral particle that is emitted as well and carries away the missing energy.",
@@ -286,7 +297,7 @@
             q: "Explain how a chain reaction is sustained in the reactor.",
             points: [
               { desc: "Each fission releases (more than one) neutrons",
-                any: [near("neutrons?", "releas\\w*|emit\\w*|given (?:off|out)|comes? out|ejected|spare|extra|several|more than one", 6)] },
+                any: [near("neutrons?", "releas\\w*|emit\\w*|given (?:off|out)|comes? out|ejected|spare|extra|several|more than one|produc\\w*|creat\\w*|generat\\w*|giv\\w*|yield\\w*|result\\w*|free\\w*|fires? out|thrown|throws?", 6), "neutrons?\\s+(?:\\w+\\s+){0,2}(?:from|by|of)\\s+(?:the\\s+)?(?:one|each|a|the|every|this|first|previous|that)\\s+(?:\\w+\\s+)?(?:fission|reaction|split|decay)"] },
               { desc: "These neutrons are absorbed by other uranium nuclei and cause further fissions",
                 all: [near("neutrons?", "absorb\\w*|hit\\w*|strik\\w*|collid\\w*|trigger\\w*|caus\\w*|induc\\w*|split\\w*|captur\\w*|bombard\\w*|start\\w*|lead\\w*", 7), near("another|other|further|more|next|new|nearby|surrounding|neighbouring|additional|subsequent|again", "nucle\\w*|fission\\w*|atoms?|uranium|u-?235|reactions?", 5)] },
             ],
@@ -299,7 +310,7 @@
             steps: [
               { desc: "Mass lost = 3.20 × 10⁻²⁸ kg (mass before − mass after, including all three neutrons)", nums: [3.2e-28] },
               { desc: "E = mc²", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"] },
-              { desc: "Substitution: 3.20 × 10⁻²⁸ × (3.00 × 10⁸)²", nums: [3.2e-28, 3e8] },
+              { desc: "Substitution: 3.20 × 10⁻²⁸ × (3.00 × 10⁸)² (c must be squared)", rel: C_SQ, nums: [3.2e-28] },
               { desc: "E = 2.88 × 10⁻¹¹ J", ans: 2.88e-11, sf: 3, unit: ["j", "joules", "joule"] },
             ],
             sample: "Mass before = 3.9030 × 10⁻²⁵ + 1.675 × 10⁻²⁷ = 3.91975 × 10⁻²⁵ kg\nMass after = 2.3398 × 10⁻²⁵ + 1.5265 × 10⁻²⁵ + 3 × 1.675 × 10⁻²⁷ = 3.91655 × 10⁻²⁵ kg\nMass lost = 3.20 × 10⁻²⁸ kg\nE = mc²\nE = 3.20 × 10⁻²⁸ × (3.00 × 10⁸)²\nE = 2.88 × 10⁻¹¹ J",
@@ -343,7 +354,7 @@
             q: "Show that the energy released in one fusion reaction is about 3.1 × 10⁻¹² J.",
             steps: [
               { desc: "Mass lost = 3.4 × 10⁻²⁹ kg (8.352 × 10⁻²⁷ − 8.318 × 10⁻²⁷)", nums: [3.4e-29] },
-              { desc: "E = mc², with c = 3.00 × 10⁸ m s⁻¹", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"], nums: [3e8] },
+              { desc: "E = mc², with c = 3.00 × 10⁸ m s⁻¹", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"], nums: [[3e8, 9e16, 8.99e16]] },
               { desc: "E = 3.06 × 10⁻¹² J, which rounds to 3.1 × 10⁻¹² J", ans: 3.06e-12, sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "Mass before = 3.344 × 10⁻²⁷ + 5.008 × 10⁻²⁷ = 8.352 × 10⁻²⁷ kg\nMass after = 6.645 × 10⁻²⁷ + 1.673 × 10⁻²⁷ = 8.318 × 10⁻²⁷ kg\nMass lost = 3.4 × 10⁻²⁹ kg\nE = mc² = 3.4 × 10⁻²⁹ × (3.00 × 10⁸)²\nE = 3.06 × 10⁻¹² J = 3.1 × 10⁻¹² J",
@@ -354,7 +365,7 @@
             q: "In a proposed power plant there are 1.2 × 10²⁰ of these fusion reactions every second. Calculate the power released.",
             steps: [
               { desc: "P = E/t", rel: ["p=e/t", "e=pt", "p=\\(?e\\)?/\\(?t"] },
-              { desc: "Energy released in one second = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J", nums: [[3.672e8, 3.72e8]] },
+              { desc: "Energy released in one second = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J", nums: [1.2e20, [3.06e-12, 3.1e-12]] },
               { desc: "P = 3.7 × 10⁸ W", ans: 3.672e8, alts: [3.72e8], sf: 2, unit: ["w", "watts", "watt", "j s-1"] },
             ],
             sample: "P = E/t\nE = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J in 1 s\nP = 3.67 × 10⁸ / 1 = 3.7 × 10⁸ W",
@@ -386,7 +397,7 @@
             label: "(c)", type: "calc", marks: 4, rows: 7,
             q: "Light of wavelength 250 nm is shone on the plate. Calculate the maximum kinetic energy of a photoelectron.",
             steps: [
-              { desc: "v = fλ (or f = v/λ) with v = 3.00 × 10⁸ m s⁻¹ and λ = 2.50 × 10⁻⁷ m", rel: REL_VFL, nums: [2.5e-7] },
+              { desc: "v = fλ (or f = v/λ), with the wavelength converted to metres", rel: REL_VFL },
               { desc: "f = 1.2 × 10¹⁵ Hz", nums: [1.2e15] },
               { desc: "E<sub>k</sub> = hf − hf₀", rel: ["ek=hf-", "ek=e-w", "hf-hf0", "hf-w", "ek=hf-hf"] },
               { desc: "E<sub>k</sub> = 4.9 × 10⁻¹⁹ J (5.0 × 10⁻¹⁹ J if the rounded work function from (b) is used)", ans: 4.9062e-19, alts: [4.956e-19], sf: 2, unit: ["j", "joules", "joule"] },
@@ -422,13 +433,13 @@
             q: "Explain these observations in terms of the particle model of light.",
             points: [
               { desc: "Light is a stream of photons; the energy of each photon, E = hf, depends only on the frequency",
-                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,3}(?:photons?|quanta|packets?)", "(?:not|n't)\\W+(?:\\w+\\W+){0,2}(?:hf|h ?x ?f)"],
+                not: ["(?:not|n't)\\s+(?:\\w+\\s+){0,3}(?:photons?|quanta|packets?)", "(?:not|n't)\\s+(?:\\w+\\s+){0,2}(?:hf|h ?x ?f)"],
                 all: [near("photons?|quanta|quantum|packets?", "hf|h ?x ?f|frequency|frequencies", 8)] },
               { desc: "Each red photon has too little energy: it is below the work function (frequency below the threshold), so no electrons are released however many photons arrive",
                 any: [near("less|lower|smaller|below|insufficient|too little|not enough|too low|isn'?t enough|too small|doesn'?t have", "work function|threshold|hf0|hf₀|enough energy|free|release|remove|emit\\w*|knock", 9)],
-                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:less|lower|smaller|below|insufficient)"] },
+                not: ["(?:not|n't)\\s+(?:\\w+\\s+){0,1}(?:less|lower|smaller|below|insufficient)"] },
               { desc: "Each ultraviolet photon has a higher frequency, so its energy is greater than the work function, and it can release an electron",
-                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,2}(?:greater|higher|more|enough|exceed\\w*|sufficient|above|bigger|larger)"],
+                not: ["(?:uv|ultraviolet)\\s+(?:\\w+\\s+){0,4}(?:not|n't)\\s+(?:\\w+\\s+){0,2}(?:greater|higher|more|enough|exceed\\w*|sufficient|above|bigger|larger)"],
                 any: [near("photon|energy|energies|frequency", "(?:greater|more|higher|exceed\\w*|above|at least|equal|larger|bigger)\\W+(?:\\w+\\W+){0,4}(?:work function|threshold|needed|required|minimum|hf0|hf₀)", 6), "(?:uv|ultraviolet)\\W+(?:\\w+\\W+){0,4}(?:enough|sufficient|more|greater|higher|exceed\\w*)\\W+(?:\\w+\\W+){0,1}(?:energy|frequency|work function|threshold)"] },
             ],
             sample: "Light is made of photons, and the energy of each photon is E = hf, so it depends only on the frequency. Each red photon has less energy than the work function of zinc, so it cannot release an electron, and a brighter lamp just sends more photons that each still have too little energy. An ultraviolet photon has a higher frequency, so its energy is greater than the work function and it releases an electron at once.",
