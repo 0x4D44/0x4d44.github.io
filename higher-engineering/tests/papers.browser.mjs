@@ -82,12 +82,14 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
 
   await step(`${w}: a marked part comes back marked, with its answer, after a reload`, async () => {
     await page.click("#pp-tab-systems");
-    const part = page.locator("#pp-panel-systems .pp-part:has(.pp-opts)").first();
+    // the mock step above may already have marked a systems part: take one that is still open
+    const part = page.locator("#pp-panel-systems .pp-part:has(.pp-opts):not(:has(.pp-score:visible))").first();
+    const pid = await part.getAttribute("id");
     await part.locator("input").first().check();
     await part.getByRole("button", { name: "Mark my answer" }).click();
     await page.reload();
     await page.waitForSelector(".pp-tabs [role=tab]");
-    const again = page.locator("#pp-panel-systems .pp-part:has(.pp-opts)").first();
+    const again = pid ? page.locator("#" + pid) : page.locator("#pp-panel-systems .pp-part:has(.pp-opts)").first();
     assert.ok(await again.locator(".pp-score").count() >= 1, "marked again");
     assert.ok(await again.locator("input:checked").count() >= 1, "keeps the chosen option");
   });
