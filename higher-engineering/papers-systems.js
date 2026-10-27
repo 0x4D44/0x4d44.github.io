@@ -5,23 +5,23 @@
   const R = String.raw;
   /* "...but this is not necessary", "does not matter", "do not have to cope with wind": a claim that the thing is unneeded */
   const UNNEEDED = [
-    R`\b(?:not|never|no|\w+n't)\s+(?:\w+\s+){0,3}(?:necessar\w*|matter\w*|important|relevant|needed|a\s+factor|bother\w*|(?:need|have|has)\s+to\s+(?:\w+\s+){0,2}(?:survey\w*|check\w*|investigat\w*|design\w*|calculat\w*|plan\w*|resist\w*|withstand\w*|cope|carry|support\w*|survive|bear|worry|consider\w*|stand))\b`,
+    R`\b(?:not|never|no|\w+n't)\s+(?:\w+\s+){0,3}(?:necessar\w*|matter\w*|important|relevant|needed|a\s+factor|bother\w*|(?:need|have|has)\s+to\s+(?:\w+\s+){0,2}(?:survey\w*|check\w*|tell\w*|shar\w*|communicat\w*|talk\w*|speak\w*|inform\w*|discuss\w*|know\w*|agree\w*|liais\w*|coordinat\w*|consult\w*|investigat\w*|design\w*|calculat\w*|plan\w*|resist\w*|withstand\w*|cope|carry|support\w*|survive|bear|worry|consider\w*|stand))\b`,
     R`\b(?:unnecessary|irrelevant|pointless)\b|\bno\s+(?:\w+\s+)?need\b`,
   ];
   /* "...but nothing goes wrong if they do not": a claim that skipping the thing is harmless */
   const HARMLESS = UNNEEDED.concat([
-    R`\bnothing\b[^.;]{0,30}\b(?:wrong|bad|happen\w*|goes|go|serious)\b`,
+    R`\bnothing\s+(?:\w+\s+){0,1}(?:go(?:es)?\s+wrong|happen\w*|serious)\b|\bnothing\s+bad\b`,
     R`\b(?:fine|okay|ok|safe|no\s+(?:\w+\s+)?(?:problems?|harm|issues?|difference))\b[^.;]{0,30}\bif\s+(?:they|the|there|it|we)\s+(?:\w+\s+){0,2}(?:do\s+not|don'?t|doesn'?t|does\s+not|never|fail|forget|did\s+not|didn'?t)`,
     R`\bif\s+(?:they|the|there|it|we)\s+(?:\w+\s+){0,2}(?:do\s+not|don'?t|doesn'?t|does\s+not|never|fail|forget|did\s+not|didn'?t)\b[^.;]{0,50}\b(?:fine|okay|nothing|no\s+(?:\w+\s+)?(?:problems?|harm|issues?|difference))`,
     R`\bnothing\s+(?:is\s+)?(?:wrong|bad)\b`,
   ]);
 
-  const BEN_ENV = [R`\b(?:no|zero|without|less|fewer|lower|reduc\w*|cut\w*|eliminat\w*|remov\w*|avoid\w*|cleaner)\b[^.;]{0,25}\b(?:exhaust\w*|emission\w*|fumes?|carbon|co2|pollut\w*|nitrogen|nox|particulate\w*|greenhouse|air)`, R`\bair\s+(?:quality|pollution)\b[^.;]{0,25}\b(?:better|improv\w*|cleaner)`, R`\b(?:exhaust|tail-?pipe)\s+(?:emissions?|fumes?)\s+(?:are|is)\s+(?:zero|removed|cut|lower|reduced)`];
+  const BEN_ENV = [R`\b(?:not|never|n't|won't)\s+(?:\w+\s+){0,1}(?:pollut\w*|produc\w*\s+(?:any\s+)?(?:exhaust|emissions?|fumes?|pollution|co2|carbon)|emit\w*|giv\w*\s+out\s+(?:any\s+)?(?:fumes?|exhaust|emissions?))`, R`\b(?:no|zero|without|less|fewer|lower|reduc\w*|cut\w*|eliminat\w*|remov\w*|avoid\w*|cleaner)\b[^.;]{0,25}\b(?:exhaust\w*|emission\w*|fumes?|carbon|co2|pollut\w*|nitrogen|nox|particulate\w*|greenhouse|air)`, R`\bair\s+(?:quality|pollution)\b[^.;]{0,25}\b(?:better|improv\w*|cleaner)`, R`\b(?:exhaust|tail-?pipe)\s+(?:emissions?|fumes?)\s+(?:are|is)\s+(?:zero|removed|cut|lower|reduced)`];
   const BEN_SOC = [R`\bquiet\w*`, R`\b(?:less|lower|reduc\w*)\s+(?:\w+\s+){0,2}(?:noise|vibration|smell)`, R`\bnoise\b[^.;]{0,20}\b(?:reduc\w*|lower|less|down)`, R`\b(?:health\w*|asthma|breath\w*|respirat\w*|pleasant\w*)\b`];
   const BEN_ECO = [R`\b(?:running|fuel|operating|servicing|maintenance|energy)\s+(?:costs?|bills?)\b[^.;]{0,25}\b(?:lower|less|cheaper|reduc\w*|fall\w*|drop\w*|saving|smaller|cut)`, R`\b(?:lower|less|cheaper|reduc\w*|cut|sav\w*)\s+(?:\w+\s+){0,2}(?:running|fuel|operating|servicing|maintenance|energy)\s+(?:costs?|bills?)`, R`\bcheaper\s+to\s+(?:run|operate|maintain|service|fuel)`, R`\bfewer\s+moving\s+parts`, R`\b(?:less|cheaper|lower)\s+(?:\w+\s+){0,1}(?:maintenance|servicing)\b`];
-  const DRAW_ECO = [R`\b(?:high|expensive|large|big|huge|great|costly|steep)\s+(?:\w+\s+){0,2}(?:costs?|price|purchase|investment|capital|up-?front|initial)`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )\b(?:costs?|expensive|prices?|pricey)\b[^.;]{0,30}\b(?:high\w*|expensive|greater|steep|extra|buy|purchase|install\w*|buses|charg\w*|infrastructure)`, R`\bcharg\w*\s+(?:points?|stations?|infrastructure|equipment|depots?)\b[^.;]{0,40}\b(?:high\w*|expens\w*|invest\w*|costly|cost\s+(?:a\s+lot|more|too|millions?)|costs\s+(?:a\s+lot|more|too|millions?))`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )\b(?:cost\w*|expensive|invest\w*)\b[^.;]{0,40}\bcharg\w*`, R`\bup-?front\b`];
+  const DRAW_ECO = [R`\b(?:high|expensive|large|big|huge|great|costly|steep)\s+(?:\w+\s+){0,2}(?:costs?|price|purchase|investment|capital|up-?front|initial)`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )\b(?:costs?|expensive|prices?|pricey)\b(?!\s+(?:\w+\s+){0,2}(?:not|never|n't|no)\b)[^.;]{0,30}\b(?:high\w*|expensive|greater|steep|extra|buy|purchase|install\w*|buses|charg\w*|infrastructure)`, R`\bcharg\w*\s+(?:points?|stations?|infrastructure|equipment|depots?)\b[^.;]{0,40}\b(?:high\w*|expens\w*|invest\w*|costly|cost\s+(?:a\s+lot|more|too|millions?)|costs\s+(?:a\s+lot|more|too|millions?))`, R`(?<!lower )(?<!less )(?<!cheaper )(?<!running )(?<!fuel )(?<!servicing )(?<!maintenance )(?<!operating )(?<!energy )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )(?<!reduced )(?<!reduces )(?<!reduce )(?<!cut )(?<!saves )(?<!saving )(?<!save )\b(?:cost\w*|expensive|invest\w*)\b[^.;]{0,40}\bcharg\w*`, R`\bup-?front\b`];
   const DRAW_ENV = [R`\bbatter\w*\b[^.;]{0,60}\b(?:mining|mined|mine|extract\w*|lithium|cobalt|raw\s+materials?|rare|manufactur\w*|energy\s+to\s+make|recycl\w*|dispos\w*|landfill|waste|end\s+of\s+(?:its\s+|their\s+)?life|toxic|pollut\w*)`, R`\b(?:mining|mined|lithium|cobalt|recycl\w*|dispos\w*|landfill)\b[^.;]{0,60}\bbatter\w*`, R`\b(?:electricity|grid|power)\b[^.;]{0,60}\b(?:fossil|coal|gas|non-?renewable|burn\w*|power\s+stations?)`];
-  const DRAW_SOC = [R`\brange\b[^.;]{0,40}\b(?:limit\w*|short\w*|less|lower|reduc\w*|restrict\w*|problem|issue)`, R`\b(?:limit\w*|short\w*|restrict\w*)\s+(?:\w+\s+){0,2}range\b`, R`\bcharg\w*\b[^.;]{0,40}\b(?:takes?|long|hours|slow|delay\w*|disrupt\w*|out\s+of\s+service|off\s+the\s+road)`, R`\b(?:jobs?|drivers?|mechanics?|workers?)\b[^.;]{0,40}\b(?:lost|loss|los[et]|redundan\w*|retrain\w*|at\s+risk|threat\w*)`, R`\b(?:break\s?downs?|run\s+out\s+of|flat\s+batter\w*)\b`];
+  const DRAW_SOC = [R`\brange\b(?!\s+(?:\w+\s+){0,2}(?:not|never|n't|no)\b)[^.;]{0,40}\b(?:limit\w*|short\w*|less|lower|reduc\w*|restrict\w*|problem|issue)`, R`\b(?:limit\w*|short\w*|restrict\w*)\s+(?:\w+\s+){0,2}range\b`, R`\bcharg\w*\b(?!\s+(?:\w+\s+){0,2}(?:not|never|n't|no)\b)[^.;]{0,40}\b(?:takes?|long|hours|slow|delay\w*|disrupt\w*|out\s+of\s+service|off\s+the\s+road)`, R`\b(?:jobs?|drivers?|mechanics?|workers?)\b[^.;]{0,40}\b(?:lost|loss|los[et]|redundan\w*|retrain\w*|at\s+risk|threat\w*)`, R`\b(?:break\s?downs?|run\s+out\s+of|flat\s+batter\w*)\b`];
   /* Impacts: benefits and drawbacks are marked as two separate pools of up to two marks each, so a one-sided answer
      cannot score more than 2/4. Mark 1 of a side is any one creditable point; mark 2 is two different ones. */
   /* the pair test bypasses the engine's negation check, so each half refuses a match that follows "not", "never" or "n't" */
@@ -34,9 +34,9 @@
   const sidePoints = () => {
     const ben = [BEN_ENV, BEN_SOC, BEN_ECO], drw = [DRAW_ECO, DRAW_ENV, DRAW_SOC];
     return [
-      { desc: "Benefit 1 (environmental, social or economic): e.g. no exhaust and cleaner air, quieter streets, or lower running and maintenance costs", any: [].concat(...ben) },
+      { desc: "Benefit 1 (environmental, social or economic): e.g. no exhaust and cleaner air, quieter streets, or lower running and maintenance costs", negOK: true, any: [alt([].concat(...ben))] },
       { desc: "Benefit 2: a second, different benefit of the three kinds", any: pairOf(ben) },
-      { desc: "Drawback 1 (economic, environmental or social): e.g. high purchase cost, battery materials and the grid electricity, or limited range and charging time", any: [].concat(...drw) },
+      { desc: "Drawback 1 (economic, environmental or social): e.g. high purchase cost, battery materials and the grid electricity, or limited range and charging time", negOK: true, any: [alt([].concat(...drw))] },
       { desc: "Drawback 2: a second, different drawback of the three kinds", any: pairOf(drw) },
     ];
   };
@@ -130,6 +130,7 @@
               ["Mechanical engineer", "Chooses the gears, shafts and motor that raise the lifting span"],
               ["Software engineer", "Writes the program that decides when the span lifts and lowers"],
             ],
+            why: "Each discipline owns a different part of the problem. The civil engineer deals with the structure (piers, deck, loads), the mechanical engineer with moving parts (gears, shafts, motor) and the software engineer with the control program. The electrical engineer, who is not asked about here, would supply the power and wiring.",
           },
         ],
       },
@@ -145,7 +146,7 @@
             why: R`Micro means $10^{-6}$, so $350\ \mu\text{A} = 350\times10^{-6}$ A $= 3.5\times10^{-4}$ A $= 0.35$ mA. 350 mA is 1000 times too big, $3.5\times10^{-3}$ A is 10 times too big, and $350\times10^{-9}$ A is 350 nA, 1000 times too small.`,
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 1.75, tol: 0.005, unit: "mW",
+            label: "(b)", type: "num", marks: 1, a: 1.75, tol: 0.005, rtol: 0.03, unit: "mW",
             q: R`Calculate the power taken by the sensor, in mW. Use $P = VI$.`,
             why: R`$P = VI$ (1) $= 5.0\times 350\times10^{-6} = 1.75\times10^{-3}$ W $= \mathbf{1.75\ mW}$. Forgetting to convert µA to A gives 1750, which is 1000 times too big for an answer in mW.`,
           },
@@ -166,6 +167,7 @@
               ["Block C", "Turns the controller's signal into heat (the actuator)"],
               ["Block E", "Measures the air temperature and feeds it back (the sensor)"],
             ],
+            why: "Follow the signal round the loop. Block A has the minus sign: it subtracts the measured value from the wanted value to give the error (the comparator). The error goes to block B, the controller, which decides the drive needed. Block C, the actuator, turns that drive into heat. Block E sits in the feedback path and measures the output, so it is the sensor. Block D is the process (the greenhouse air) that the cold draught disturbs.",
           },
           {
             label: "(b)", type: "mcq", marks: 1, a: 1,
@@ -206,9 +208,10 @@
             points: [
               { desc: "The steady error becomes smaller (it is halved)", group: "e",
                 any: [R`\b(?:error|offset)\b[^.;,]{0,32}\b(?:halv\w*|half|smaller|lower|less|reduc\w*|decreas\w*|shrink\w*|fall\w*|drops?|improv\w*)`, R`\b(?:halv\w*|half|smaller|lower|less|reduc\w*|decreas\w*|shrink\w*)\b[^.;,]{0,25}\b(?:error|offset)\b`, R`\b(?:error|offset)\b[^.;,]{0,25}\b(?:is|are|becomes?|gets?|goes|go)\b[^.;,]{0,10}\b(?:1\.25|1 ?\.25)`],
-                not: [R`\b(?:not|never|n't)\s+(?:\w+\s+){0,2}(?:smaller|halv\w*|lower|less|reduc\w*|decreas\w*)\b`, R`\b(?:error|offset)\b[^.;,]{0,30}\b(?:doubl\w*|bigger|larger|greater|increas\w*|grow\w*|rises?|higher|worse|unchanged|same)`, R`\b(?:error|offset)\b[^.;,]{0,12}\b(?:more)\b`] },
-              { desc: "Disadvantage: the output overshoots, oscillates or becomes unstable",
-                any: [R`\b(?:overshoot\w*|oscillat\w*|hunt\w*|unstable|instab\w*|over-?react\w*|over-?correct\w*|over-?compensat\w*|swing\w*|wobbl\w*|fluctuat\w*|cycl\w*)`] },
+                not: [R`\b(?:not|never|n't)\s+(?:\w+\s+){0,2}(?:smaller|halv\w*|lower|less|reduc\w*|decreas\w*|fall\w*|drop\w*|shrink\w*|improv\w*|better)\b`, R`\b(?:error|offset)\b[^.;,]{0,30}\b(?:doubl\w*|bigger|larger|greater|increas\w*|grow\w*|rises?|higher|worse|unchanged|same)`, R`\b(?:error|offset)\b[^.;,]{0,12}\b(?:more)\b`] },
+              { desc: "Disadvantage: the output overshoots, oscillates or becomes unstable", negOK: true,
+                not: [R`\b(?:no|not|never|without|n't|cannot)\s+(?:\w+\s+){0,2}(?:overshoot\w*|oscillat\w*|hunt\w*|unstable|instab\w*|over-?react\w*|over-?correct\w*|swing\w*|wobbl\w*|fluctuat\w*|cycl\w*)`, R`\b(?:more|very|much|perfectly|completely)\s+stable\b`],
+                any: [R`\b(?:overshoot\w*|oscillat\w*|hunt\w*|unstable|instab\w*|over-?react\w*|over-?correct\w*|over-?compensat\w*|swing\w*|wobbl\w*|fluctuat\w*|cycl\w*)`, R`\bless\s+stable\b|\bstability\s+(?:is\s+|gets\s+|becomes\s+)?(?:reduc\w*|lost|worse|poor\w*)\b|\b(?:loses?|losing)\s+(?:its\s+)?stability\b`] },
             ],
             sample: "The steady error is halved, because the heater now responds more strongly to each degree of error. A disadvantage is that the temperature may overshoot the wanted value and then oscillate about it.",
             model: "<ul><li>The steady error gets smaller: it is halved, from 2.5 °C to 1.25 °C (1)</li><li>Disadvantage: the higher gain makes the system over-react, so the temperature overshoots and may oscillate or become unstable (1)</li></ul><p>Also acceptable: the heater switches on and off more violently; wear on the actuator. &quot;The error is zero&quot; or &quot;the error doubles&quot; earns nothing: a proportional controller always leaves some offset.</p>",
@@ -224,7 +227,7 @@
           {
             label: "(a)", type: "num", marks: 1, a: 30, tol: 0.5, unit: "min",
             q: "Use the graph to find the time for one complete cycle of switching, in minutes.",
-            why: "One cycle is the time between one switch-on and the next: the heater switches on at 0 min and again at <strong>30 min</strong> (1). Reading to 60 min would give two cycles.",
+            why: "One cycle is the time between one switch-on and the next: the heater switches on at 0 min and again at <strong>30 min</strong> (1). Slips: 12 min is only switch-on to switch-off, and 60 min is the whole graph, which holds two cycles.",
           },
           {
             label: "(b)", type: "mcq", marks: 1, a: 2,
@@ -236,12 +239,12 @@
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "Explain why the temperature carries on rising for a few minutes after the heater has switched off.",
             points: [
-              { desc: "The heater and its surroundings are still hot, so heat continues to flow into the air",
-                not: [R`\b(?:not|no\s+longer|never|isn'?t|aren'?t)\s+(?:\w+\s+){0,2}(?:hot|warm|giving|releasing)\b`],
-                any: [R`\b(?:heater|element|radiator|pipes?|bars?|fire|stove)\b[^.;]{0,30}\b(?:(?:is|are|stays?|remains?|keeps?|was)\s+(?:\w+\s+){0,2}(?:hot|warm|heat\w*)|still\s+(?:\w+\s+){0,2}(?:hot|warm|heat\w*|giv\w*|releas\w*|emit\w*|radiat\w*))`, R`\b(?:still|continues? to|keeps?|carries on|goes on)\s+(?:\w+\s+){0,2}(?:giv\w*|releas\w*|transfer\w*|emit\w*|radiat\w*|warm\w*|heat\w*|pass\w*|put\w*|send\w*)\b[^.;]{0,25}\b(?:heat|energy|warmth|out|air|room|cabin)`, R`\b(?:stored|remaining|left-?over|residual|latent)\s+(?:heat|thermal|energy)`, R`\bheat\b[^.;]{0,25}\b(?:stored|left)\b`, R`\bthermal\s+(?:mass|inertia|lag)`] },
-              { desc: "There is a delay (time lag) before the air and sensor respond, so the controller reacts late",
-                not: [R`\b(?:no|without|zero)\s+(?:\w+\s+){0,1}(?:delay\w*|lag)\b`],
-                any: [R`\b(?:delay\w*|lag\w*|inertia)\b`, R`\b(?:takes?|taking|needs?)\s+(?:a\s+)?(?:some\s+|a little\s+|a\s+)?(?:time|while|longer|minutes)\b[^.;]{0,40}\b(?:temperature|air|sensor|warm|heat|respond|react|change|cool|spread|circulat\w*|reach\w*)`, R`\b(?:slow\w*|gradual\w*)\b[^.;]{0,20}\b(?:respon\w*|react\w*|change\w*|warm\w*|spread\w*)`, R`\b(?:not|isn'?t|doesn'?t|does not)\s+(?:\w+\s+){0,2}(?:instant\w*|immediate\w*|at once)`] },
+              { desc: "The heater and its surroundings are still hot, so heat continues to flow into the air", negOK: true,
+                not: [R`\b(?:not|no\s+longer|never|isn'?t|aren'?t|doesn'?t|does\s+not|stops?|stopped)\s+(?:\w+\s+){0,2}(?:hot|warm|giving|releasing|radiat\w*|emitting|heating|heat)\b`, R`\b(?:cold|cool|cooled|cools)\s+(?:\w+\s+){0,2}(?:when|as|once|after)\s+(?:it|the\s+\w+)\s+(?:\w+\s+){0,1}(?:switch\w*|turn\w*)\s+off`],
+                any: [R`\b(?:heater|element|radiator|pipes?|bars?|fire|stove)\b[^.;]{0,30}\b(?:(?:is|are|stays?|remains?|keeps?|was)\s+(?:\w+\s+){0,2}(?:hot|warm|heat\w*)|still\s+(?:\w+\s+){0,2}(?:hot|warm|heat\w*|giv\w*|releas\w*|emit\w*|radiat\w*))`, R`\b(?:still|continues? to|keeps?|carries on|goes on)\s+(?:\w+\s+){0,2}(?:giv\w*|releas\w*|transfer\w*|emit\w*|radiat\w*|warm\w*|heat\w*|pass\w*|put\w*|send\w*)\b[^.;]{0,25}\b(?:heat|energy|warmth|out|air|room|cabin)`, R`\b(?:stored|remaining|left-?over|residual|latent)\s+(?:heat|thermal|energy)`, R`\bheat\b[^.;]{0,25}\b(?:stored|left)\b`, R`\bthermal\s+(?:mass|inertia|lag)`, R`\bheat\b[^.;]{0,20}\b(?:already|still|remaining|left)\b[^.;]{0,20}\b(?:in|inside|within|held)\b`, R`\bheat\b[^.;]{0,30}\b(?:pass\w*|flow\w*|transfer\w*|move\w*|escap\w*|spread\w*)\b[^.;]{0,25}\b(?:into|to)\b[^.;]{0,10}\b(?:air|room|cabin|surrounding\w*)`] },
+              { desc: "There is a delay (time lag) before the air and sensor respond, so the controller reacts late", negOK: true,
+                not: [R`\b(?:no|without|zero|hardly\s+any)\s+(?:\w+\s+){0,1}(?:delay\w*|lag)\b`, R`(?<!\bnot\s)(?<!n't\s)(?<!\bnever\s)\b(?:stops?|stopped|switch\w*\s+off|cool\w*|fall\w*|go\w*\s+cold)\s+(?:\w+\s+){0,2}(?:instantly|immediately|straight\s+away|at\s+once)\b`],
+                any: [R`\b(?:delay\w*|lag\w*|inertia)\b`, R`\b(?:takes?|taking|needs?)\s+(?:a\s+)?(?:some\s+|a little\s+|a\s+)?(?:time|while|longer|minutes)\b[^.;]{0,40}\b(?:temperature|air|sensor|warm|heat|respond|react|change|cool|spread|circulat\w*|reach\w*)`, R`\b(?:slow\w*|gradual\w*)\b[^.;]{0,20}\b(?:respon\w*|react\w*|change\w*|warm\w*|spread\w*)`, R`\b(?:not|isn'?t|doesn'?t|does not)\s+(?:\w+\s+){0,2}(?:instant\w*|immediate\w*|at once|straight\s+away)`, R`\b(?:sensor|thermostat|controller|air|reading|reads?|reacts?|responds?)\b[^.;]{0,30}\b(?:late|slowly|slow\s+to\s+\w+|a\s+while|some\s+time|after\s+a\s+(?:delay|while|time))\b`] },
             ],
             sample: "The heater element is still hot when it switches off, so it carries on giving out heat to the air. The air and the sensor also take time to respond, so there is a delay before the temperature starts to fall.",
             model: "<ul><li>The heater (element, pipes) is still hot after it switches off, so it keeps transferring heat to the cabin air (1)</li><li>There is a time lag or delay: it takes time for heat to spread and for the sensor to respond, so the controller reacts late and the temperature overshoots the upper limit (1)</li></ul><p>Do not accept &quot;the thermostat is broken&quot; or a repeat of the question (&quot;it overshoots&quot;) with no reason.</p>",
@@ -250,7 +253,8 @@
             label: "(d)", type: "text", marks: 1, rows: 2, minWords: 3,
             q: "State one advantage of this type of control.",
             points: [
-              { desc: "It is simple, cheap or robust",
+              { desc: "It is simple, cheap or robust", negOK: true,
+                not: [R`\b(?:not|isn'?t|aren'?t|never|hardly|n't)\s+(?:\w+\s+){0,1}(?:simpl\w*|cheap\w*|inexpensive|low[- ]cost|easy|easier|straightforward|robust|reliable|basic|uncomplicated)\b`, R`(?<!\bnot\s)(?<!n't\s)(?<!\bnot\s(?:very|too|that|so|particularly)\s)(?<!\bno\s)(?<!\bnever\s)\b(?:complex|complicated|expensive|costly|difficult)\b(?!\s+(?:parts|components|circuits?|electronics|controller|equipment|sensors?))`],
                 any: [R`\b(?:simpl\w*|cheap\w*|inexpensive|low[- ]cost|easy|easier|straightforward|robust|reliable|basic|uncomplicated)\b`, R`\bfew(?:er)?\s+(?:parts|components)\b`] },
             ],
             sample: "It is simple and cheap, because the controller only has to switch the heater on and off.",
@@ -280,13 +284,16 @@
             q: "Explain how the system could be changed to closed loop, and why the changed system would work better.",
             points: [
               { desc: "A sensor (such as a soil moisture sensor) measures the actual wetness, the output",
-                any: [R`\b(?:moisture|humidity|wetness|water|damp\w*|wet|soil)\s+(?:sensor|probe|detector|transducer|meter|gauge)s?\b`, R`\bsensors?\b[^.;]{0,60}\b(?:measur\w*|detect\w*|monitor\w*|senses?|read\w*|check\w*|tell\w*|report\w*|sens\w*)\b[^.;]{0,40}\b(?:moisture|wet\w*|damp\w*|dry\w*|water|soil|output|level)`, R`\b(?:measur\w*|detect\w*|monitor\w*|sens\w*|check\w*)\b[^.;]{0,35}\b(?:moisture|wetness|dampness|dryness|how (?:wet|dry|moist)|soil|output)`] },
+                not: [R`\b(?:remov\w*|delet\w*|get\s+rid|take\s+away|eliminat\w*|without|scrap\w*|drop\w*)\b[^.;]{0,25}\b(?:sensor|feed\w*[ -]?back|comparator)`],
+                any: [R`\b(?:add\w*|fit\w*|install\w*|put\w*|plac\w*|insert\w*|includ\w*|use\w*|using|attach\w*|need\w*|with|has|have|provid\w*|introduc\w*|bury|buried)\b[^.;]{0,25}\b(?:moisture|humidity|wetness|water|damp\w*|wet|soil|rain)\s+(?:sensor|probe|detector|transducer|meter|gauge)s?\b`, R`\b(?:moisture|humidity|wetness|water|damp\w*|wet|soil)\s+(?:sensor|probe|detector|transducer|meter|gauge)s?\b[^.;]{0,25}\b(?:measur\w*|detect\w*|monitor\w*|senses?|read\w*|check\w*|tell\w*|report\w*|sens\w*|send\w*|feeds?|fed|signals?|in\s+the\s+(?:soil|garden|bed|ground))\b`, R`\bsensors?\b[^.;]{0,60}\b(?:measur\w*|detect\w*|monitor\w*|senses?|read\w*|check\w*|tell\w*|report\w*|sens\w*)\b[^.;]{0,40}\b(?:moisture|wet\w*|damp\w*|dry\w*|water|soil|output|level)`, R`\b(?:measur\w*|detect\w*|monitor\w*|sens\w*|check\w*)\b[^.;]{0,35}\b(?:moisture|wetness|dampness|dryness|how (?:wet|dry|moist)|soil|output)`] },
               { desc: "The measured value is fed back to the controller / comparator",
-                any: [R`\bfeed\w*[ -]?back\b`, R`\bfeeds?\s+(?:it\s+|this\s+|that\s+|the\s+\w+\s+|its\s+\w+\s+)?back\b`, R`\bfed\s+(?:it\s+|this\s+|that\s+|the\s+\w+\s+)?back\b`, R`\b(?:sent|sends|send|passed|passes|returned|returns|goes|go)\s+(?:it\s+|this\s+|the\s+\w+\s+|its\s+\w+\s+)?back\b`, R`\bback\s+to\s+(?:the\s+)?(?:controller|input|comparator|timer|start|beginning)\b`, R`\b(?:feedback|return)\s+(?:path|loop|signal|line)\b`] },
+                not: [R`\b(?:remov\w*|delet\w*|get\s+rid|take\s+away|eliminat\w*|without|scrap\w*|drop\w*)\b[^.;]{0,25}\b(?:sensor|feed\w*[ -]?back|comparator)`],
+                any: [R`\bfeed\w*[ -]?back\s+(?:to|into|from|loop|path|signal|so|which|that|is|means|tells|lets|allows)\b`, R`\bfeed\w*[ -]?back\s+(?:goes|go|passes|travels|returns|comes|is\s+sent|is\s+given|signals?)\s+(?:back\s+)?(?:to|into)\b`, R`\b(?:with|has|have|use\w*|using|add\w*|provid\w*|includ\w*|give\w*|need\w*|get\w*|sends?|sent)\s+(?:\w+\s+){0,2}feed\w*[ -]?back\b`, R`\bfeeds?\s+(?:it\s+|this\s+|that\s+|the\s+\w+\s+|its\s+\w+\s+)?back\b`, R`\bfed\s+(?:it\s+|this\s+|that\s+|the\s+\w+\s+)?back\b`, R`\b(?:sent|sends|send|passed|passes|returned|returns|goes|go)\s+(?:it\s+|this\s+|the\s+\w+\s+|its\s+\w+\s+)?back\b`, R`\bback\s+to\s+(?:the\s+)?(?:controller|input|comparator|timer|start|beginning)\b`, R`\b(?:feedback|return)\s+(?:path|loop|signal|line)\s+(?:to|from|so|which|that|is)\b`] },
               { desc: "A comparator subtracts the measured value from the desired value to give an error",
-                any: [R`\bcompar\w*`, R`\berror\b`, R`\bsubtract\w*`, R`\bdifference\s+between\b`] },
+                not: [R`\b(?:remov\w*|delet\w*|get\s+rid|take\s+away|eliminat\w*|without|scrap\w*|drop\w*)\b[^.;]{0,25}\b(?:sensor|feed\w*[ -]?back|comparator)`],
+                any: [R`\b(?:subtract\w*|compar(?:e|es|ed|ing)|work\w*\s+out|calculat\w*|finds?|found|giv\w*|produc\w*|generat\w*|check\w*)\b[^.;]{0,40}\b(?:desired|wanted|required|target|set|actual|measured|reference|real|ideal|difference|error)\b`, R`\bcomparator\s+(?:then\s+|also\s+)?(?:subtract\w*|compar(?:e|es)|work\w*|calculat\w*|find\w*|giv\w*|produc\w*|generat\w*|check\w*|output\w*|send\w*|see\w*|decid\w*|measur\w*)`, R`\b(?:giv\w*|produc\w*|generat\w*|creat\w*|mak\w*|find\w*|work\w*\s+out|calculat\w*|get\w*)\s+(?:\w+\s+){0,2}error\b`, R`\berror\s+(?:signal|between|=|which|that|then)\b`, R`\bdifference\s+between\b[^.;]{0,40}\b(?:desired|wanted|required|target|set|actual|measured|reference|real|ideal)\b`] },
               { desc: "So the valve opens only when needed: the system corrects for rain and hot weather and avoids flooding or drying",
-                any: [R`\b(?:only|just)\b[^.;]{0,30}\b(?:water\w*|turn\w*\s+on|switch\w*\s+on|open\w*|come\w*\s+on|runs?)\b[^.;]{0,30}\b(?:when|if)\b`, R`\b(?:correct\w*|compensat\w*|adjust\w*|respond\w*|react\w*|adapt\w*|cop\w*|allow\w*\s+for|account\w*\s+for)\b[^.;]{0,60}\b(?:rain\w*|weather|disturbanc\w*|hot|sun\w*|conditions|changes?|drought|dry\s+spells?)`, R`\b(?:stop\w*|turn\w*\s+off|switch\w*\s+off|shut\w*|close\w*)\b[^.;]{0,35}\b(?:when|once|if|enough|wet|moist|damp)\b`, R`\b(?:right|correct|exact|enough|required|needed|suitable)\s+(?:amount|level|quantity)\s+of\s+water`, R`\b(?:water\w*|turn\w*\s+on|switch\w*\s+on|open\w*|runs?)\s+(?:\w+\s+){0,2}only\s+(?:when|if)\b`, R`\b(?:no|less|avoid\w*|prevent\w*|stop\w*|reduc\w*)\s+(?:\w+\s+){0,2}(?:wast\w*|flood\w*|waterlog\w*)`, R`\bif\b[^.;]{0,40}\b(?:dry|wet)\b[^.;]{0,40}\b(?:open\w*|water\w*|turn\w*\s+on|switch\w*\s+on)`, R`\bno\s+(?:more\s+)?(?:flood\w*|waterlog\w*|dry\w*)`] },
+                any: [R`\b(?:only|just)\b[^.;]{0,30}\b(?:water\w*|turn\w*\s+on|switch\w*\s+on|open\w*|come\w*\s+on|runs?)\b[^.;]{0,30}\b(?:when|if)\b`, R`\b(?:correct\w*|compensat\w*|adjust\w*|respond\w*|react\w*|adapt\w*|cop\w*|allow\w*\s+for|account\w*\s+for)\b[^.;]{0,60}\b(?:rain\w*|weather|disturbanc\w*|hot|sun\w*|drought|dry\s+spells?|(?:weather|soil|garden|moisture|wet\w*|dry\w*)\s+(?:conditions|changes)|changes\s+in\s+(?:the\s+)?(?:weather|soil|moisture))`, R`\b(?:valve|water\w*|sprinklers?|irrigat\w*|system|it)\b[^.;]{0,30}\b(?:open\w*|turn\w*\s+on|switch\w*\s+on|comes?\s+on|runs?|stay\w*\s+(?:shut|closed|off)|clos\w*|shut\w*|turn\w*\s+off|switch\w*\s+off|stop\w*)\b[^.;]{0,25}\b(?:only|when|if|once|unless)\b`, R`\b(?:right|correct|exact|enough|required|needed|suitable)\s+(?:amount|level|quantity)\s+of\s+water`, R`\b(?:water\w*|turn\w*\s+on|switch\w*\s+on|open\w*|runs?)\s+(?:\w+\s+){0,2}only\s+(?:when|if)\b`, R`\b(?:no|less|avoid\w*|prevent\w*|stop\w*|reduc\w*)\s+(?:\w+\s+){0,2}(?:wast\w*|flood\w*|waterlog\w*)`, R`\bif\b[^.;]{0,40}\b(?:dry|wet)\b[^.;]{0,40}\b(?:open\w*|water\w*|turn\w*\s+on|switch\w*\s+on)`, R`\bno\s+(?:more\s+)?(?:flood\w*|waterlog\w*|dry\w*)`] },
             ],
             sample: "A moisture sensor is added to the garden bed to measure how wet the soil is, and its signal is fed back to the controller. A comparator subtracts the measured moisture from the desired moisture to give an error. The valve is then opened only when the soil is too dry and closed when it is wet enough, so the system corrects for rain and hot weather instead of watering the same amount every day.",
             model: "<ul><li>A sensor (for example a soil moisture sensor) measures the actual output, the wetness of the soil (1)</li><li>Its signal is fed back to the controller / comparator, forming a closed loop (1)</li><li>A comparator subtracts the measured value from the desired value to give an error that the controller acts on (1)</li><li>The valve opens only when the soil is too dry and closes when wet enough, so the system corrects for rain and hot weather (disturbances) and avoids flooding or drying (1)</li></ul><p>Do not accept &quot;use a better timer&quot; (still open loop) or &quot;a sensor&quot; with no output named. &quot;It uses less water&quot; without the reason is worth nothing on its own.</p>",
@@ -300,14 +307,14 @@
         figure: sankeyFig(),
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 1750, tol: 1, unit: "W",
+            label: "(a)", type: "num", marks: 1, a: 1750, tol: 1, rtol: 0.03, unit: "W",
             q: "Calculate the useful output power of the motor, in W.",
-            why: R`The bands balance: $P_{in} = P_{useful} + P_{wasted}$, so $P_{useful} = 2500 - 300 - 450 = \mathbf{1750\ W}$ (1).`,
+            why: R`The bands balance: $P_{in} = P_{useful} + P_{wasted}$, so $P_{useful} = 2500 - 300 - 450 = \mathbf{1750\ W}$ (1). Slips: taking off only one loss gives 2200 W or 2050 W, and adding the losses gives 3250 W.`,
           },
           {
             label: "(b)", type: "num", marks: 2, a: 0.7, tol: 0.005, unit: "(no unit)",
             q: R`Calculate the efficiency of the motor. Give your answer as a decimal, not a percentage.`,
-            why: R`$\eta = \dfrac{P_{out}}{P_{in}}$ (1) $= \dfrac{1750}{2500} = \mathbf{0.70}$ (1). Efficiency has no unit. If you worked in percent, 70 % is the same answer.`,
+            why: R`$\eta = \dfrac{P_{out}}{P_{in}}$ (1) $= \dfrac{1750}{2500} = \mathbf{0.70}$ (1). Efficiency has no unit. If you worked in percent, 70 % is the same answer. Slips: inverting the fraction gives 1.43, and using the wasted power gives 0.30.`,
           },
           {
             label: "(c)", type: "num", marks: 2, a: 360, tol: 0.5, unit: "kJ",
@@ -366,7 +373,7 @@
         stem: "<p>A car of mass 1200 kg travelling at 25 m s<sup>−1</sup> brakes to rest. The brake discs and pads have a total mass of 6.0 kg of steel, with specific heat capacity 450 J kg<sup>−1</sup> K<sup>−1</sup>. The discs and pads absorb 90 % of the kinetic energy of the car.</p>",
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 375, tol: 0.5, unit: "kJ",
+            label: "(a)", type: "num", marks: 1, a: 375, tol: 0.5, rtol: 0.014, unit: "kJ",
             q: "Calculate the kinetic energy of the car before braking, in kJ.",
             why: R`$E_k = \tfrac{1}{2}mv^2$ (1) $= 0.5\times1200\times25^2 = 375\,000\ \text{J} = \mathbf{375\ kJ}$. Forgetting to square the speed gives 15 kJ.`,
           },
@@ -376,7 +383,7 @@
             why: R`$0.90\times375 = \mathbf{337.5\ kJ}$ (1) (about 338 kJ).`,
           },
           {
-            label: "(c)", type: "num", marks: 2, a: 125, tol: 0.6, unit: "K",
+            label: "(c)", type: "num", marks: 2, a: 125, tol: 0.6, rtol: 0.04, unit: "K",
             q: "Calculate the temperature rise of the discs and pads, in K.",
             why: R`$E_h = cm\Delta T$, so $\Delta T = \dfrac{E_h}{cm}$ (1) $= \dfrac{337\,500}{450\times6.0} = \mathbf{125\ K}$ (1). Using the 1200 kg of the car instead of the 6.0 kg of steel gives 0.63 K.`,
           },
@@ -406,6 +413,7 @@
               ["Test", "Measuring the output of a finished turbine and comparing it with the specification"],
               ["Evaluate and maintain", "Inspecting the blades and servicing the gearboxes after a year of operation"],
             ],
+            why: "Design is where loads are calculated and materials chosen, before anything is built. Test compares a finished product with its specification. Evaluate and maintain comes last, when the product is in use: inspection, servicing and judging how well it has met the need.",
           },
           {
             label: "(b)", type: "text", marks: 4, rows: 8, minWords: 25,
@@ -431,7 +439,7 @@
             points: [
               { desc: "They must share information that the other discipline needs, such as cable positions, weights or changes",
                 not: HARMLESS,
-                any: [R`\b(?:tell\w*|told|inform\w*|shar\w*|pass\w*|agree\w*|discuss\w*|explain\w*|notify\w*|updat\w*|talk\w*|ask\w*|know\w*)\b[^.;]{0,70}\b(?:cable\w*|duct\w*|weights?|sizes?|loads?|positions?|locations?|changes?|requirements?|drawings?|specification\w*|details?|plans?|where|what)\b`, R`\b(?:cable\w*|duct\w*|weights?|sizes?|loads?|positions?|locations?|changes?|requirements?|details?)\b[^.;]{0,50}\b(?:tell\w*|told|inform\w*|shar\w*|pass\w*|agree\w*|discuss\w*|notif\w*|updat\w*|known|communicat\w*)`, R`\bcommunicat\w*\b[^.;]{0,40}\b(?:other|another|each\s+other)\b`] },
+                any: [R`\b(?:tell\w*|told|inform\w*|shar\w*|pass\w*|agree\w*|discuss\w*|explain\w*|notify\w*|updat\w*|talk\w*|ask\w*|know\w*|need\w*|requir\w*|rely|relies|depend\w*|coordinat\w*|collaborat\w*)\b[^.;]{0,70}\b(?:cable\w*|duct\w*|weights?|sizes?|loads?|positions?|locations?|changes?|requirements?|drawings?|specification\w*|details?|plans?|where|what)\b`, R`\b(?:cable\w*|duct\w*|weights?|sizes?|loads?|positions?|locations?|changes?|requirements?|details?)\b[^.;]{0,50}\b(?:tell\w*|told|inform\w*|shar\w*|pass\w*|agree\w*|discuss\w*|notif\w*|updat\w*|known|communicat\w*)`, R`\bcommunicat\w*\b[^.;]{0,40}\b(?:other|another|each\s+other)\b`] },
               { desc: "Otherwise mistakes happen: parts do not fit, work is redone, causing delay, cost or an unsafe structure",
                 not: HARMLESS,
                 any: [R`\b(?:mistakes?|errors?|clash\w*|redo\w*|re-?work\w*|re-?built|re-?design\w*|delay\w*|extra\s+cost|costly|cost\w*|expensive|wasted?|unsafe|danger\w*|fail\w*|collaps\w*|not\s+fit|won'?t\s+fit|wrong|misalign\w*|don'?t\s+match|do\s+not\s+match|not\s+match|incompatible|problems?|overrun\w*)`] },
@@ -474,7 +482,7 @@
         stem: "<p>An electric hoist lifts a load of mass 240 kg vertically at a constant speed of 0.35 m s<sup>−1</sup>. The hoist is connected to a 230 V supply and has an overall efficiency of 62 %.</p>",
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 2352, tol: 2.5, unit: "N",
+            label: "(a)", type: "num", marks: 1, a: 2352, tol: 2.5, rtol: 0.021, unit: "N",
             q: "Calculate the force needed to lift the load at a constant speed, in N.",
             why: R`At a constant speed the lifting force equals the weight, $F = mg$ (1) $= 240\times9.8 = \mathbf{2352\ N}$ (about 2350 N). The mass in kg is not a force.`,
           },
@@ -484,7 +492,7 @@
             why: R`$P = Fv$ (1) $= 2352\times0.35 = \mathbf{823\ W}$ (824 W if $g = 9.81$ N kg$^{-1}$ is used, which is also accepted). Using the mass instead of the force gives 84.`,
           },
           {
-            label: "(c)", type: "num", marks: 2, a: 1327.7, tol: 3, unit: "W",
+            label: "(c)", type: "num", marks: 2, a: 1327.7, tol: 3, rtol: 0.022, unit: "W",
             q: "Calculate the input power to the hoist, in W.",
             why: R`$\eta = \dfrac{P_{out}}{P_{in}}$, so $P_{in} = \dfrac{P_{out}}{\eta}$ (1) $= \dfrac{823.2}{0.62} = \mathbf{1330\ W}$ (1) (1328 W before rounding). Multiplying by 0.62 instead of dividing gives 510 W, less than the output, which is impossible.`,
           },
@@ -579,7 +587,7 @@
           {
             label: "(c)", type: "num", marks: 1, a: 34.8, tol: 0.05, rtol: 0.011, unit: "A",
             q: "Calculate the current taken by the heater, in A.",
-            why: R`$P = VI$, so $I = \dfrac{P}{V} = \dfrac{8000}{230} = \mathbf{34.8\ A}$ (1).`,
+            why: R`$P = VI$, so $I = \dfrac{P}{V} = \dfrac{8000}{230} = \mathbf{34.8\ A}$ (1). Slips: using 8.0 (kW) as watts gives 0.035 A, and inverting the formula gives 0.0288.`,
           },
         ],
       },

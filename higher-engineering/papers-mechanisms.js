@@ -11,6 +11,8 @@
   const Cc = (stop, n) => R`(?:(?!${stop})[^.;,]){0,${n}}`;
   /* K(n): up to n characters of one clause */
   const K = (n) => R`[^.;]{0,${n}}`;
+  /* KC(n): like K but a comma also ends the span, so a comma list cannot satisfy a relation */
+  const KC = (n) => R`[^.;,]{0,${n}}`;
   /* near(a, b, n): a and b in either order with at most n words between them */
   const near = (a, b, n) => { const g = R`\W+(?:\w+\W+){0,${n == null ? 3 : n}}`; return R`\b(?:${a})\b${g}\b(?:${b})\b|\b(?:${b})\b${g}\b(?:${a})\b`; };
   /* an outstroke or an instroke, in the words candidates use */
@@ -204,7 +206,7 @@
     const V = valve({ x: 288, y: 118, S, t: "52", L: "pilot", R: "spring", lblL: "14", num: true });
     const Sv = valve({ x: 96, y: 176, S, t: "32", L: "push", R: "spring", num: true });
     const bus = 252, p1 = Sv.P["1"], p2 = Sv.P["2"], v1 = V.P["1"];
-    return svg(480, 276, "Pneumatic circuit. A compressed air supply feeds a three-port two-position push-button valve S with spring return, and a five-port two-position valve V that has a pilot port 14 on its left and a spring on its right. The outlet of S is connected by a dashed pilot line to port 14 of V. Valve V feeds a double-acting cylinder C, with outlet 4 to the cap end and outlet 2 to the rod end. The cylinder is drawn instroked.",
+    return svg(480, 292, "Pneumatic circuit. A compressed air supply feeds a three-port two-position push-button valve S with spring return, and a five-port two-position valve V that has a pilot port 14 on its left and a spring on its right. The outlet of S is connected by a dashed pilot line to port 14 of V. Valve V feeds a double-acting cylinder C, with outlet 4 to the cap end and outlet 2 to the rod end. The cylinder is drawn instroked.",
       cyl.g + V.g + Sv.g +
       pl([[V.P["4"].x, V.P["4"].y], [V.P["4"].x, 88], [cyl.cap.x, 88], [cyl.cap.x, cyl.cap.y]]) +
       pl([[V.P["2"].x, V.P["2"].y], [V.P["2"].x, 80], [cyl.rod.x, 80], [cyl.rod.x, cyl.rod.y]]) +
@@ -281,7 +283,9 @@
       points: [
         {
           desc: "The output (drum) speed is lower than the motor speed: the train reduces the speed",
+          negOK: true,
           not: [
+            R`(?:\bnot|n't|\bnever|\bcannot)\s+(?!only\b)(?:\w+\s+){0,2}(?:${RED}|slower)\b`,
             R`\b(?:speed|rpm)\b${C(R`torque|force|reduc|lower|slow|decreas|drop|less|smaller|but|and|while|whereas`, 18)}\b(?:increas\w*|rais\w*|higher|greater|faster|boost\w*|bigger|larger)\b`,
             R`\b(?:increas\w*|rais\w*|boost\w*|speeds?\s+up|sped\s+up|faster)\b${C(R`torque|force|reduc|lower|slow|decreas|drop|less|smaller|but|and|while|whereas`, 18)}\b(?:speed|rpm)\b`,
             R`\b(?:turns?|runs?|rotates?|spins?|goes?)\s+(?:much |a lot |far |a bit |even )?(?:faster|quicker|more quickly)\b`,
@@ -291,15 +295,18 @@
             R`\b${SPD}\b${C(R`torque|force|increas|higher|greater|faster|raise`, 30)}\b(?:reduc(?:e|es|ed|ing)|lower(?:s|ed|ing)?|decreas\w*|drops?|dropped|falls?|fell|slower|less|smaller)\b`,
             R`\b(?:turns?|runs?|rotates?|spins?|goes?|moves?)\s+(?:much |a lot |far |a bit |more )?(?:slower|more slowly|slowly)\b`,
             R`\bslow(?:s|ed|ing)?\b(?:\s+\w+){0,3}\s+down\b`,
+            R`\b(?:speed|rpm)\s+(?:down|lower)\b`,
             R`\b(?:lower|slower|reduced|decreased)\s+(?:\w+\s+){0,2}(?:speed|rpm|rev/min)\b`,
             R`\breduction\s+(?:in|of)\s+(?:the\s+)?(?:\w+\s+)?(?:speed|rpm)\b`,
           ],
         },
         {
           desc: "The torque at the drum is greater than at the motor: the train increases the torque",
+          negOK: true,
           not: [
+            R`(?:\bnot|n't|\bnever|\bcannot|\bno)\s+(?!only\b)(?:\w+\s+){0,2}(?:increas\w*|rais\w*|boost\w*|multipl\w*|more|greater|higher|bigger|larger)\b${C(R`speed|rpm`, 25)}\b${TRQ}\b`,
             R`\b(?:torque|turning (?:force|effect)|twisting (?:force|effect))\b${Cc(R`increas|rais|more|greater|higher|bigger|larger|gain|boost|stronger|speed|rpm|but|and|while|so\b|because|which|gearbox|gears?\b|train`, 25)}\b(?:reduc\w*|lower\w*|decreas\w*|drop\w*|less|smaller|weaker|falls?|fewer)`,
-            R`\b(?:reduc(?:e|es|ed|ing)|lower(?:s|ed|ing)?|decreas\w*|cuts?|drops?)\b${Cc(R`speed|rpm|increas|rais|more|greater|higher|bigger|larger|gain|boost|but|and|while|so\b|because|which`, 25)}\b(?:torque|turning (?:force|effect)|twisting (?:force|effect))`,
+            R`(?<!\b(?:speed|rpm|revs)\s)\b(?:reduc(?:e|es|ed|ing)|lower(?:s|ed|ing)?|decreas\w*|cuts?|drops?)\b${Cc(R`speed|rpm|increas|rais|more|greater|higher|bigger|larger|gain|boost|but|and|while|so\b|because|which`, 25)}\b(?:torque|turning (?:force|effect)|twisting (?:force|effect))`,
           ],
           any: [
             R`\b${RAISE}\b${C(R`speed|rpm|reduc|lower|slow|decreas|drop|less|smaller|fewer|${NEGS}`, 30)}\b${TRQ}\b`,
@@ -324,23 +331,28 @@
       R`\b(?:in-?\s?strok\w*|rod end|rod side|annul\w*)\s+(?:force|area)\s+(?:is|are)\s+(?:\w+\s+){0,2}${BIG}`,
       R`\b(?:out-?\s?strok\w*|cap end|full)\s+(?:force|area)\s+(?:is|are)\s+(?:\w+\s+){0,2}${SM}`,
       R`\b(?:out-?\s?strok\w*|cap end)\b${K(40)}\b(?:force|area)\b${K(10)}\b${SM}\s+than`,
+      R`\b(?:in-?\s?strok\w*|rod end|rod side|annul\w*)\b${K(40)}\b(?:is|are)\s+(?:\w+\s+){0,2}${BIG}\s+than`,
+      R`\b${BIG}\s+than\s+(?:the\s+)?(?:\w+\s+){0,1}(?:out-?\s?strok\w*|cap end|full)\b`,
     ];
     TXT.annulus = {
       points: [
         {
           desc: "The piston rod takes up part of the piston face on the rod side, so the area the air pushes on (the annulus) is smaller on the instroke",
           group: "rod",
-          not: WRONGDIR,
+          not: WRONGDIR.concat([
+            R`\brod\b${C(R`not|n't|never|\bno\b|in-?\s?strok|rod end|rod side`, 45)}\b(?:reduc\w*|tak\w+|remov\w*|cover\w*|block\w*)\b${C(R`not|n't|never|\bno\b|in-?\s?strok|rod end|rod side`, 40)}\b(?:area|face)\b${C(R`in-?\s?strok|rod end`, 20)}\bon\s+(?:the\s+)?(?:out-?\s?strok\w*|cap end)`,
+          ]),
           any: [
             R`\brod\b${K(40)}\b(?:take[sn]?\s+up|takes? away|occupies|occupying|reduces?|reducing|covers?|covering|blocks?|blocking|removes?|removing|uses?\s+up|in the way|obstruct\w*|fills?|part of|some of)\b${K(40)}\b(?:area|face|surface|space|side)`,
-            R`\bannul\w*`,
-            R`\b(?:covered|blocked|taken up|used up|occupied|filled|reduced|obstructed)\s+by\s+(?:the\s+)?(?:piston\s+)?rod`,
+            R`\b(?:on|onto|over|against|only|acts?|the|an?|is|called|using|uses?)\s+(?:\w+\s+){0,1}annul\w*`,
+            R`\brod\b${K(15)}\b(?:is\s+not|isn't|n't)\s+(?:in the way|taking|covering|blocking|obstruct\w*|there|present)`,
+            R`\b(?:covered|blocked|taken(?:\s+up)?|used up|occupied|filled|reduced|obstructed)\s+by\s+(?:the\s+)?(?:piston\s+)?rod`,
             R`\b(?:because of|due to|caused by|owing to|thanks to|as a result of|since there is a|with the)\s+(?:the\s+)?(?:piston\s+)?rod\b${K(60)}\b(?:area|face|surface)`,
             R`\bring\b${K(15)}\b(?:of\s+)?(?:area|air)\b`,
             R`\b(?:ring|donut|doughnut|band|crescent|hollow)\b${K(25)}\b(?:round|around|about|surrounding|outside|beside)\b${K(15)}\brod`,
-            R`\b(?:area|surface|face)\b${K(40)}\b${SM}\b${K(40)}\b(?:rod|instroke|in-?\s?stroke|rod end|rod side)`,
-            R`\b(?:rod end|rod side|instroke|in-?\s?stroke)\b${K(40)}\b(?:area|face|surface)\b${K(30)}\b${SM}`,
-            R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b${K(40)}\b(?:rod|instroke|in-?\s?stroke)`,
+            R`\b(?:area|surface|face)\b${KC(40)}\b${SM}\b${KC(40)}\b(?:rod|instroke|in-?\s?stroke|rod end|rod side)`,
+            R`\b(?:rod end|rod side|instroke|in-?\s?stroke)\b${KC(40)}\b(?:area|face|surface)\b${KC(30)}\b${SM}`,
+            R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b${KC(40)}\b(?:rod|instroke|in-?\s?stroke)`,
             R`\b(?:area of|space taken by|room taken by)\s+(?:the\s+)?rod\b`,
             R`\b(?:rod|piston rod)\b${K(30)}\b(?:is|are|sits?|being)\s+(?:on|in|at)\s+(?:the\s+)?(?:same|that|rod|this)\s+side\b${K(40)}\b${SM}`,
           ],
@@ -363,6 +375,10 @@
             R`\b(?:same|equal|constant)\s+pressure\b${K(60)}\barea\b${K(40)}\b${SM}\b${K(40)}\bforce`,
             R`\b(?:reduc\w*|decreas\w*|cuts?|lower\w*)\s+(?:the\s+)?(?:\w+\s+){0,2}area\b${K(70)}\b(?:force)\b${K(25)}\b${SM}`,
             R`\bforce\b${K(40)}\b(?:proportional|depends?|dependent)\b${K(30)}\barea\b${K(60)}\b${SM}`,
+            R`\barea\b${K(60)}\b${SM}\b${K(85)}\b${SM}\s+(?:\w+\s+){0,2}force\b`,
+            R`\b(?:takes?|taking|took|removes?|removing|uses?|using|reduces?|reducing|covers?|blocks?)\b${K(40)}\barea\b${K(50)}\bforce\b${K(30)}\b${SM}`,
+            R`\b(?:out-?\s?strok\w*|cap end|full|whole)\b${K(90)}\barea\b${K(90)}\b${BIG}\s+(?:\w+\s+){0,2}force\b`,
+            R`\b(?:greater|bigger|larger|more)\s+(?:\w+\s+){0,2}area\b${K(80)}\b(?:out-?\s?strok\w*|cap end)\b${K(90)}\bpressure\b${K(40)}\b${BIG}\s+(?:\w+\s+){0,2}force\b`,
           ],
         },
       ],
@@ -377,18 +393,20 @@
     const SREF = R`(?:s|valve s|button|push-?\s?button|3/2|three[- ]port)`;
     const CHG = R`(?:changes?\s+(?:its\s+)?(?:state|position)|changed\s+(?:state|position)|switch(?:es|ed)?|shifts?|shifted|flips?|actuat\w*|operat\w*|moves?\s+(?:over|across)|reverses)`;
     const VREF = R`(?:v|valve v|5/2|five[- ]port)`;
-    const PRESS = R`(?:press\w*|push\w*|depress\w*|actuat\w*|operat\w*|activat\w*|trigger\w*|hold\w*|held)`;
+    const PRESS = R`(?:press\w*|push(?:es|ed|ing)?\b(?!\s+(?:it|them|this|back)\b)|depress\w*|actuat\w*|operat\w*|activat\w*|trigger\w*|hold\w*|held)`;
     const REL = R`(?:releas\w*|let(?:s|ting)?\s+go|lets go|removed|no longer (?:pressed|held|operated)|stops? being (?:pressed|held)|taken off|unpress\w*|stops? pressing|let go)`;
     const RET = R`(?:spring|return\w*|reset\w*|revert\w*|snaps? back|springs? back|flips? back|switch(?:es)? back|(?:changes?|goes?|moves?) back|back (?:to|into) (?:its |their |the )?(?:original|rest|normal|first|starting))`;
     const IN2 = R`(?:in-?\s?strok(?:es|ed|ing)?|retract\w*|(?:moves?|goes?|comes?|pulls?|pulled|travels?)\s+(?:back\s+)?in\b|(?:piston|cylinder|rod|ram|c)\s+(?:then\s+|also\s+)?(?:returns?|goes?\s+back|comes?\s+back|moves?\s+back)|withdraws?|(?:door|oven)\s+(?:closes|shuts))`;
     const VALVEY = R`(?:spring|pilot|signal|exhaust\w*|vent\w*|valve|\bv\b|\bs\b|\b14\b|\b12\b|rod end|port)`;
     const OUTW = R`(?:out-?\s?strok(?:es|e)\b|extends?\b|goes? (?:out|forward)|moves? (?:out|forward)|pushes? out|advances?)`;
     const ENDS = R`(?:exhaust\w*|vent\w*|remov\w*|cuts? off|stops?|release\w*|loses?|drops?|isolat\w*|blocks?|bleed\w*)`;
+    const NOPIL = R`\bnothing\s+(?:happens|changes)|\bno\s+(?:pilot|signal)|\b(?:not|never|n't)\s+(?:\w+\s+){0,1}(?:change|shift|switch|flip|operate|actuate)`;
+    const CAP = R`(?:air|pressure|flows?|suppl\w*|goes|go|gets?|enters?|reach\w*|sent|to|into|fills?|admitted)\s+(?:\w+\s+){0,2}(?:the\s+)?cap\b(?:\s+end)?`;
     TXT.simple = {
       points: [
         {
           desc: "Pressing the push-button: the 3/2 valve S actuates and air (a signal) goes to pilot port 14 of valve V",
-          not: [R`\b${PRESS}${C(REL, 50)}\b${ENDS}\b${K(25)}(?:pilot|signal|14)`],
+          not: [R`\b${PRESS}${C(REL, 50)}\b${ENDS}\b${K(25)}(?:pilot|signal|14)`, NOPIL],
           all: [near(ACT, SREF, 5), R`(?:pilot|\b14\b)`],
           win: 140,
         },
@@ -396,28 +414,30 @@
           desc: "The 5/2 valve V changes state, air goes to the cap end and the piston outstrokes",
           group: "v",
           not: [
+            NOPIL,
             R`\b${REL}${K(60)}\b(?:supplies|supplied|sends|gives|applies|provides|admits|puts)\s+(?:\w+\s+){0,3}(?:pilot|14|signal)`,
             R`\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
             R`\b${REL}${K(60)}\b${OUTW}`,
           ],
-          all: [near(CHG, VREF, 6), OUT],
+          all: [R`${near(CHG, VREF, 6)}|\bchang\w+\s+(?:the\s+)?(?:v|valve v)\b`, OUT],
           win: 160,
         },
         {
           desc: "The 5/2 valve V changes state, air goes to the cap end and the piston outstrokes",
           group: "v",
           not: [
+            NOPIL,
             R`\b${REL}${K(60)}\b(?:supplies|supplied|sends|gives|applies|provides|admits|puts)\s+(?:\w+\s+){0,3}(?:pilot|14|signal)`,
             R`\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
             R`\b${REL}${K(60)}\bcap\b${K(60)}\b${OUTW}`,
           ],
-          all: [R`\bcap\b(?:\s+end)?`, OUT],
+          all: [CAP, OUT],
           win: 120,
         },
         {
           desc: "On release S returns (spring), the pilot signal goes, V returns and the piston instrokes",
-          not: [R`\b${REL}${K(40)}\b${OUTW}`],
-          all: [R`${REL}`, R`${RET}`, IN2, R`${VALVEY}`],
+          not: [R`\b${REL}${K(160)}\b${OUTW}`],
+          all: [R`${REL}`, R`${RET}`, R`\b${REL}[^;]{0,260}\b${IN2}`, R`${VALVEY}`],
           win: 200,
         },
       ],
@@ -472,7 +492,7 @@
           all: [
             R`(?:contacts?|parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
             R`(?:stay\w*|remain\w*|keep\w*|continu\w*|maintain\w*|holds?|still|even after|even though|although)`,
-            R`(?:energi[sz]\w*|\bon\b|live|current|power\w*|flow\w*|supplied)`,
+            R`(?:energi[sz]\w*|\bon\b|live|current|power\w*|flow\w*|supplied|holds?\s+(?:itself\s+)?in\b|stays?\s+(?:in|closed|latched)\b|latched|pulled in)`,
             R`(?:parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
           ],
           win: 170,
@@ -554,7 +574,11 @@
         {
           desc: "A belt is quieter, cheaper or lighter; or a chain carries more torque and lasts longer (a chain is noisy and stretches)",
           group: "other",
-          not: [R`\bchains?\b(?:\s+drive)?\s+(?:is|are)\s+(?:the\s+|a\s+)?(?:better|best|superior|preferable|ideal|good|great)${K(30)}\b(?:because|as|since|so)\b${K(20)}\b(?:it|they)\s+(?:is|are)\s+(?:\w+\s+){0,2}(?:nois\w*|loud|heav\w*|expensive|costly|rattl\w*|stretch\w*)`],
+          negOK: true,
+          not: [
+            R`\bbelts?\b${C("chain", 40)}(?:\bnot|n't|\bnever)\s+(?:\w+\s+){0,2}(?:quiet\w*|silent|smooth\w*|cheap\w*|light\w*|simpl\w*)`,
+            R`\bchains?\b${C("belt", 40)}(?:\bnot|n't|\bnever)\s+(?:\w+\s+){0,2}(?:nois\w*|loud|rattl\w*|stretch\w*|wear\w*|heav\w*|expensive|costly|stronger|robust|durable)`,
+            R`\bchains?\b(?:\s+drive)?\s+(?:is|are)\s+(?:the\s+|a\s+)?(?:better|best|superior|preferable|ideal|good|great)${K(30)}\b(?:because|as|since|so)\b${K(20)}\b(?:it|they)\s+(?:is|are)\s+(?:\w+\s+){0,2}(?:nois\w*|loud|heav\w*|expensive|costly|rattl\w*|stretch\w*)`],
           any: [
             R`\bbelts?\b${C("chain", 70)}\b(?:quiet\w*|silent|less noisy|smooth\w*|cheap\w*|light\w*|simpl\w*)`,
             R`\bchains?\b${C("belt", 40)}\b(?:nois\w*|loud|rattl\w*|stretch\w*|wear\w*|heav\w*|expensive|costly)`,
@@ -708,12 +732,12 @@
         stem: R`<p>A hoist lifts a load that hangs from a rope wound on a drum of <strong>diameter 320 mm</strong>. The tension in the rope is <strong>3.6 kN</strong>.</p>`,
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 576, tol: 0.5, unit: "N m",
+            label: "(a)", type: "num", marks: 2, a: 576, tol: 0.5, rtol: 0.01, unit: "N m",
             q: R`Calculate the torque the drum shaft must supply to hold the load, in N m.`,
             why: R`<p>$r = d \div 2 = 0.320 \div 2 = 0.160\ \text{m}$ (1)</p><p>$T = Fr = 3600 \times 0.160$</p><p>$T = 576\ \text{N m}$ (1)</p><p>Using the diameter instead of the radius doubles the answer to 1152 N m.</p>`,
           },
           {
-            label: "(b)", type: "num", marks: 2, a: 0.754, tol: 0.002, unit: "m s⁻¹",
+            label: "(b)", type: "num", marks: 2, a: 0.754, tol: 0.002, rtol: 0.01, unit: "m s⁻¹",
             q: R`The drum turns at <strong>45 rev/min</strong>. Calculate the speed of the rope, in m s⁻¹.`,
             why: R`<p>$n = 45 \div 60 = 0.75\ \text{rev s}^{-1}$ (1)</p><p>$v = \pi d n = \pi \times 0.320 \times 0.75$</p><p>$v = 0.754\ \text{m s}^{-1}$ (1)</p><p>Each turn pays out one circumference, $C = \pi d$, of rope. Leaving the speed in rev/min gives 45 m s⁻¹, sixty times too big.</p>`,
           },
@@ -733,6 +757,7 @@
               ["Clutch", "Connects and disconnects the drive, slipping briefly as it takes up the load"],
               ["Brake", "Uses friction to change the kinetic energy of the machine into heat"],
             ],
+            why: "A flexible coupling joins shafts that are not perfectly in line and cushions shock. A thrust bearing takes the axial load that a plain bearing cannot. A clutch connects and disconnects the drive, and slips for a moment as the load is taken up. A brake does not transmit power: it uses friction to turn kinetic energy into heat and so slows the machine.",
           },
         ],
       },
@@ -769,14 +794,14 @@
         figure: figIdler(),
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 4, tol: 0.01, unit: "",
-            q: R`Calculate the velocity ratio of the gear train.`,
-            why: R`$\text{VR} = \dfrac{\text{teeth on driven gear C}}{\text{teeth on driver gear A}} = \dfrac{80}{20} = 4$ (1). Only the first and last gears count: the idler's teeth cancel.`,
+            label: "(a)", type: "num", marks: 1, a: 4, alts: [1], tol: 0.01, unit: "",
+            q: R`Calculate the velocity ratio of the gear train, $\text{VR} = \dfrac{\text{teeth on driven gear}}{\text{teeth on driver gear}}$. Give it as a single number.`,
+            why: R`$\text{VR} = \dfrac{\text{teeth on driven gear C}}{\text{teeth on driver gear A}} = \dfrac{80}{20} = 4$ (1), which is a 4 : 1 reduction (typing 4 : 1 is accepted). Only the first and last gears count: the idler's teeth cancel. Slips: inverting the fraction gives 0.25, and counting the idler as the driven gear gives $30/20 = 1.5$ or $80/30 = 2.67$.`,
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 450, tol: 0.5, unit: "rev/min",
+            label: "(b)", type: "num", marks: 1, a: 450, alts: [7.5], tol: 0.5, unit: "rev/min",
             q: R`Calculate the speed of gear C, in rev/min.`,
-            why: R`$n_{out} = \dfrac{n_{in}}{\text{VR}} = \dfrac{1800}{4} = 450\ \text{rev/min}$ (1). Or from the Data Booklet: input speed × input size = output speed × output size, so $1800 \times 20 = n \times 80$.`,
+            why: R`$n_{out} = \dfrac{n_{in}}{\text{VR}} = \dfrac{1800}{4} = 450\ \text{rev/min}$ (1) (the same as 7.5 rev s$^{-1}$, which is also accepted). Or from the Data Booklet: input speed × input size = output speed × output size, so $1800 \times 20 = n \times 80$. Multiplying by the ratio instead of dividing gives 7200 rev/min, which would be faster than the motor.`,
           },
           {
             label: "(c)", type: "mcq", marks: 1, a: 1,
@@ -840,7 +865,7 @@
           {
             label: "(b)", type: "num", marks: 1, a: 1.99, tol: 0.02, unit: "s",
             q: R`Calculate the time the door takes to open, in seconds.`,
-            why: R`$t = \dfrac{\text{distance}}{v} = \dfrac{0.600}{0.3016} = 1.99\ \text{s}$ (1). The 600 mm becomes 0.600 m first.`,
+            why: R`$t = \dfrac{\text{distance}}{v} = \dfrac{0.600}{0.3016} = 1.99\ \text{s}$ (1). The 600 mm becomes 0.600 m first: dividing 600 by 0.302 gives 1990, which is not in seconds.`,
           },
           {
             label: "(c)", type: "num", marks: 2, a: 20, tol: 0.05, unit: "mm s⁻¹",
@@ -855,7 +880,7 @@
         stem: R`<p>A car of mass <strong>1400 kg</strong> brakes to a stop from <strong>25 m s⁻¹</strong>. The brake discs are made of steel, with a specific heat capacity of <strong>490 J kg⁻¹ K⁻¹</strong>.</p>`,
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 437.5, tol: 0.5, unit: "kJ",
+            label: "(a)", type: "num", marks: 2, a: 437.5, tol: 0.5, rtol: 0.01, unit: "kJ",
             q: R`Calculate the kinetic energy of the car before braking, in kJ.`,
             why: R`<p>$E_k = \tfrac{1}{2}mv^2 = \tfrac{1}{2} \times 1400 \times 25^2$ (1)</p><p>$E_k = 437\,500\ \text{J} = 437.5\ \text{kJ}$ (1)</p><p>Forgetting to square the speed, or the half, gives 17.5 kJ or 875 kJ.</p>`,
           },
@@ -879,17 +904,17 @@
         figure: figCompound(),
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 12, tol: 0.01, unit: "",
+            label: "(a)", type: "num", marks: 2, a: 12, alts: [1], tol: 0.01, unit: "",
             q: R`Calculate the velocity ratio of the gear train.`,
-            why: R`<p>$\text{VR} = \dfrac{64}{16} \times \dfrac{54}{18}$ (1)</p><p>$\text{VR} = 4 \times 3 = 12$ (1)</p><p>The velocity ratios of the two meshes multiply; they are not added.</p>`,
+            why: R`<p>$\text{VR} = \dfrac{64}{16} \times \dfrac{54}{18}$ (1)</p><p>$\text{VR} = 4 \times 3 = 12$ (1)</p><p>The velocity ratios of the two meshes multiply; they are not added (adding gives 7). A ratio typed as 12 : 1 is accepted.</p>`,
           },
           {
             label: "(b)", type: "num", marks: 1, a: 120, tol: 0.5, unit: "rev/min",
             q: R`Calculate the speed of the output shaft, in rev/min.`,
-            why: R`$n_{out} = 1440 \div 12 = 120\ \text{rev/min}$ (1)`,
+            why: R`$n_{out} = 1440 \div 12 = 120\ \text{rev/min}$ (1). Slips: multiplying instead of dividing gives 17 280 rev/min, and using only one mesh gives 360 or 480 rev/min.`,
           },
           {
-            label: "(c)", type: "num", marks: 3, a: 154, tol: 0.7, unit: "N m",
+            label: "(c)", type: "num", marks: 3, a: 154, tol: 0.7, rtol: 0.028, unit: "N m",
             q: R`Using the velocity ratio from part (a), calculate the torque on the output shaft, in N m.`,
             why: R`<p>$n_{in} = 1440 \div 60 = 24\ \text{rev s}^{-1}$, so $T_{in} = \dfrac{P}{2\pi n} = \dfrac{2200}{2\pi \times 24} = 14.6\ \text{N m}$ (1)</p><p>$T_{out} = T_{in} \times \text{VR} \times \eta = 14.59 \times 12 \times 0.88$ (1)</p><p>$T_{out} = 154\ \text{N m}$ (1)</p><p>Check: the output power is $0.88 \times 2200 = 1936\ \text{W}$ and $2\pi \times 2 \times 154 = 1936\ \text{W}$. Putting the speed in rev/min into $P = 2\pi nT$ makes $T$ sixty times too small.</p>`,
           },
@@ -923,7 +948,7 @@
             model: TXT.annulus.model,
           },
           {
-            label: "(d)", type: "num", marks: 2, a: 56.4, tol: 0.1, unit: "mm",
+            label: "(d)", type: "num", marks: 2, a: 56.4, tol: 0.1, rtol: 0.01, unit: "mm",
             q: R`A different jig needs a force of <strong>1.5 kN</strong> on the outstroke from air at <strong>6.0 bar</strong> (1 bar = $10^5$ Pa). Calculate the smallest bore that will do, in mm.`,
             why: R`<p>$A = \dfrac{F}{P} = \dfrac{1500}{6.0 \times 10^5} = 2.5 \times 10^{-3}\ \text{m}^2$ (1)</p><p>$A = \dfrac{\pi d^2}{4}$, so $d = \sqrt{\dfrac{4A}{\pi}} = \sqrt{\dfrac{4 \times 2.5 \times 10^{-3}}{\pi}} = 0.0564\ \text{m} = 56.4\ \text{mm}$ (1)</p><p>Taking this as the radius gives 28.2 mm, which is half the right answer.</p>`,
           },
@@ -970,6 +995,7 @@
               ["Pilot 12 of valve A", "Limit valve b1"],
               ["Pilot 12 of valve B", "Limit valve a0"],
             ],
+            why: "Follow the sequence A+ B+ A- B-. START with b0 pressed starts A+ through pilot 14 of A. A outstroked presses a1, which gives pilot 14 of B (B+). B outstroked presses b1, which gives pilot 12 of A (A-). A back at rest presses a0, which gives pilot 12 of B (B-). Each limit valve is pressed only at the end of the stroke it signals.",
           },
           {
             label: "(b)", type: "text", marks: 4, rows: 9, minWords: 25,

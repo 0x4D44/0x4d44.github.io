@@ -114,7 +114,8 @@
 
   /* ---------- Figure: greenhouse vent block diagram (dig-12) ---------- */
   const figVent = (() => {
-    const nor = gate("NOR", 118, 30);
+    /* generic gate box: the symbol would give away part (a) */
+    const nor = { s: `<rect x="118" y="30" width="52" height="40" ${style}/>` + tx(144, 55, "?", "middle", 'font-weight="bold"'), ins: [[118, 40], [118, 60]], out: [170, 50] };
     let b = "";
     b += tx(26, 45, "R", "end", 'font-weight="bold"') + wire([[34, 40], nor.ins[0]]);
     b += tx(26, 65, "W", "end", 'font-weight="bold"') + wire([[34, 60], nor.ins[1]]);
@@ -126,11 +127,11 @@
     b += tx(262, 64, "in1", "start", 'font-size="13"') + tx(262, 144, "an1", "start", 'font-size="13"') + tx(378, 104, "out1", "end", 'font-size="13"');
     b += `<rect x="50" y="128" width="120" height="44" ${style}/>` + tx(110, 148, "Temperature") + tx(110, 164, "sensor");
     b += `<rect x="426" y="78" width="60" height="44" ${style}/>` + tx(456, 97, "Vent") + tx(456, 113, "motor");
-    return svg(494, 190, "Block diagram of a greenhouse vent controller. Rain sensor R and wind sensor W feed a NOR gate whose output goes to input in1 of a microcontroller. A temperature sensor feeds analogue input an1. Output out1 of the microcontroller drives the vent motor.", b);
+    return svg(494, 190, "Block diagram of a greenhouse vent controller. Rain sensor R and wind sensor W feed an unlabelled logic gate (a box marked ?) whose output goes to input in1 of a microcontroller. A temperature sensor feeds analogue input an1. Output out1 of the microcontroller drives the vent motor.", b);
   })();
 
   /* digital-01(b): the wrong claim that a digital signal suffers more from noise */
-  const DIG_WORSE = "\\bdigital(?:(?!\\banalogue\\b|\\bless\\b|\\bwhereas\\b|\\bwhile\\b|\\bbut\\b|\\bunlike\\b|\\bnot\\b|n't)[^.;]){0,100}?(?:\\b(?:more|worse|badly|bigger|greater)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted|changed|problem)|\\baffected\\W+(?:more|worse|badly)\\b)";
+  const DIG_WORSE = "\\bdigital(?:(?!\\banalogue\\b|\\bless\\b|\\bwhereas\\b|\\bwhile\\b|\\bbut\\b|\\bunlike\\b|\\bnot\\b|n't)[^.;]){0,100}?(?:\\b(?:more|worse|badly|bigger|greater)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted|changed|problem)|\\baffected\\W+(?:more|worse|badly)\\b|\\b(?:more|worse|greater|bigger)\\W+than\\W+(?:an?\\W+|the\\W+)?analogue)";
 
   /* digital-10(f): the wrong claim that the average voltage rises when the duty cycle is cut */
   const AV_RISES = "\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power)\\W+(?:\\w+\\W+){0,2}(?:rise\\w*|increas\\w*|goes up|go up|gets? (?:higher|bigger|larger))\\W+(?:\\w+\\W+){0,4}(?:when|as|because|if|since)\\W+(?:\\w+\\W+){0,4}(?:duty|pulse|on.?time)\\W+(?:\\w+\\W+){0,4}(?:reduc\\w*|lower\\w*|fall\\w*|decreas\\w*|smaller|less|cut)";
@@ -146,9 +147,23 @@
   const GATE4 = "(?:g4|gate 4|gate four|last|final|4th|fourth|right(?:-hand)?|output gate)";
   const OUTV = "(?:output|outputs|give|gives|go|goes|become|becomes|are|is|=|make|makes|produce|produces)";
   const FILL = "(?:both|each|also|then|now|all|of|them|they|it|will|be|a|an|the|output|outputs|go|goes|are|is|become|becomes|to|equal|equals)";
+  /* digital-09(d): the test must be of the amended program, not the original */
+  const ORIG_PROG = "\\b(?:original|old|unamended|unchanged|as written|faulty|first|current|existing)\\W+(?:\\w+\\W+){0,1}(?:program|version|code)\\b";
+
+  /* digital-06(c): the wrong claim that G2/G3 (P and R) output 0, or that G4 has both inputs at 0 */
+  const MID_ZERO = ["\\b(?:p|r)\\W+(?:(?:and|&)\\W+(?:p|r)\\W+)?(?:(?:is|are|=|equals|goes|becomes|gives|give|will be|now|also|then|both)\\W+){0,2}(?:0|zero|low)\\b", "\\b(?:g2|g3|gate 2|gate 3|gates 2|gate two|gate three)\\b(?:\\W+(?:and|&)\\W+(?:g3|gate 3|gate three|3))?\\W+(?:\\w+\\W+){0,1}?(?:output|outputs|give|gives|=|is|are)\\W+(?:\\w+\\W+){0,1}?(?:0|zero|low)\\b", "\\b" + GATE4 + "\\b[^.;]{0,50}?\\bboth\\W+(?:\\w+\\W+){0,2}(?:inputs?|its|their)\\W+(?:\\w+\\W+){0,2}(?:0|zero|low)\\b"];
   const P1 = "\\bp\\W+(?:(?:is|are|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b";
   const R1 = "\\br\\W+(?:(?:is|are|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b";
 
+  /* digital-08(b): the two branches of the fan flowchart */
+  const FAN_ON = [
+                  "(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high|rises? (?:above|over|past))[^.;!?]{0,60}(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|start\\w*|run\\w*|switch\\w* on|turn\\w* on)\\b",
+                  "\\b(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|starts?|runs?|switch\\w* on|switched on|turn\\w* on|turned on)[^.;!?]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)",
+  ];
+  const FAN_OFF = [
+                  "(?:otherwise|else|if not|below|less|lower|under|cooler|colder|<|153 or less|not (?:above|over|greater|hot))[^.;!?]{0,60}(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stop\\w*|switch\\w* off|turn\\w* off)\\b",
+                  "\\b(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stops?|switch\\w* off|switched off|turn\\w* off|turned off)[^.;!?]{0,60}(?:otherwise|else|if not|below|less|lower|under|cooler|colder|<|153 or less|not (?:above|over|greater|higher|more|hot)|if (?:it|that|this|the temperature|an1|the reading)(?: is|'s)? ?(?:not|n't)|if it isn't)",
+  ];
   /* ---------- text-answer building blocks ---------- */
   const NEGW = "not|never|does ?n'?t|do ?n'?t|isn'?t|aren'?t|won'?t|wasn'?t|didn'?t|wouldn'?t";
 
@@ -180,11 +195,11 @@
             minWords: 10,
             points: [
               { desc: "A digital signal has only two levels, so the receiver only has to decide high or low and a small amount of noise leaves that decision unchanged", group: "d",
-                not: ["\\bdigital\\W+(?:\\w+\\W+){0,6}(?:more|worse|badly)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted)", DIG_WORSE, "\\banalogue\\W+(?:\\w+\\W+){0,4}(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?)", "\\bdigital\\W+(?:\\w+\\W+){0,4}(?:any|every|all|infinite|continuous\\w*)\\W+(?:\\w+\\W+){0,2}(?:values?|levels?|voltages?)", "\\b(?:noise|interference)(?:\\s+\\w+){0,3}\\s+(?:removed|filtered|cleaned|rejected|eliminated|cancell?ed)(?:\\s+\\w+){0,3}\\s+(?:from|in|on)(?:\\s+\\w+){0,1}\\s+analogue"],
+                not: ["\\bdigital\\W+(?:\\w+\\W+){0,6}(?:more|worse|badly)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted)", DIG_WORSE, "\\banalogue\\W+(?:\\w+\\W+){0,4}(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?)", "\\bdigital\\W+(?:\\w+\\W+){0,4}(?:any|every|all|infinite|continuous\\w*)\\W+(?:\\w+\\W+){0,2}(?:values?|levels?|voltages?)", "\\b(?:noise|interference)(?:\\s+(?!cannot\\b|can't\\b|not\\b|never\\b|isn't\\b|won't\\b)\\w+){0,3}\\s+(?:removed|filtered|cleaned|rejected|eliminated|cancell?ed)(?:\\s+(?!cannot\\b|can't\\b|not\\b|never\\b|isn't\\b|won't\\b)\\w+){0,3}\\s+(?:from|in|on)(?:\\s+\\w+){0,1}\\s+analogue"],
                 any: [
                   "\\b(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2|binary)\\W+(?:\\w+\\W+){0,2}(?:levels?|values?|states?|voltages?)",
                   "\\b(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?|voltages?)\\b",
-                  "\\b(?:decide|decides|decision|distinguish\\w*|tell|judge|choose|chooses|determine|recogni[sz]e|detect|detects)\\W+(?:\\w+\\W+){0,8}(?:high|low|on|off|0|1|zero|one|nearer)\\b",
+                  "\\b(?:decid\\w*|decision|distinguish\\w*|tell|judge|choose|chooses|determine|recogni[sz]e|detect|detects)\\W+(?:\\w+\\W+){0,8}(?:high|low|on|off|0|1|zero|one|nearer)\\b",
                   "\\b(?:noise|interference|wobbles?|distortion|errors?)\\W+(?:\\w+\\W+){0,6}(?:ignored|rejected|removed|cleaned|filtered|tolerated|does ?n'?t matter|does not matter|makes no difference|ignore)",
                   "\\b(?:still|easily|clearly)\\W+(?:\\w+\\W+){0,2}(?:recogni[sz]\\w*|read|detect\\w*|identif\\w*|understood)",
                   "\\b(?:either|always|only|just|simply)\\W+(?:\\w+\\W+){0,3}(?:on|high|1)\\W+or\\W+(?:\\w+\\W+){0,2}(?:off|low|0)\\b",
@@ -193,6 +208,7 @@
               { desc: "Noise added to an analogue signal changes its value (which carries the information), so the message is distorted", group: "a",
                 not: [DIG_WORSE],
                 any: [
+                  "\\b(?:removed|ignored|filtered|cleaned|rejected|eliminated|cancell?ed)\\W+(?:\\w+\\W+){0,8}\\bdigital\\W+(?:\\w+\\W+){0,14}\\bbut\\W+(?:\\w+\\W+){0,1}(?:not|cannot|can't|never)\\W+(?:\\w+\\W+){0,5}analogue",
                   "\\banalogue\\W+(?:\\w+\\W+){0,12}(?:distort\\w*|corrupt\\w*|chang\\w*|alter\\w*|degrad\\w*|inaccura\\w*|errors?|wrong|incorrect|noisy|wobbl\\w*|fuzz\\w*|interfer\\w*|picks? up|pick\\w* up|inherit\\w*)",
                   "\\b(?:noise|interference)\\W+(?:\\w+\\W+){0,8}(?:changes?|alters?|distort\\w*|corrupt\\w*|adds?|added|becomes?|part of|mixed|errors?|wrong|picked|permanent\\w*)\\W+(?:\\w+\\W+){0,6}(?:analogue|signal|voltage|value|information|message|reading)",
                   "\\b(?:analogue|signal|voltage|value|information|message|reading)\\W+(?:\\w+\\W+){0,6}(?:changes?|altered|distorted|corrupted|damaged|errors?)\\W+(?:\\w+\\W+){0,6}(?:noise|interference)",
@@ -248,7 +264,7 @@
             q: "Choose the <strong>three</strong> input combinations that make $Q = 1$.",
             opts: ["A = 1, B = 0, C = 1, D = 0", "A = 0, B = 0, C = 1, D = 0", "A = 1, B = 1, C = 1, D = 1", "A = 0, B = 1, C = 0, D = 1", "A = 1, B = 1, C = 1, D = 0", "A = 1, B = 0, C = 1, D = 1"],
             a: [1, 2, 5],
-            why: R`Test each: option 2 (0010) has $A = B = 0$, so the NOR gives 1 and $Q = 1$. Option 3 (1111) has $C = D = 1$, so the AND gives 1. Option 6 (1011) also has $C = D = 1$. Options 1, 4 and 5 have a 1 on A or B, so the NOR gives 0, and the AND has a 0 input (C and D are not both 1), so $Q = 0$.`,
+            why: R`Test each combination. A = 0, B = 0, C = 1, D = 0 has $A = B = 0$, so the NOR gives 1 and $Q = 1$. A = 1, B = 1, C = 1, D = 1 has $C = D = 1$, so the AND gives 1. A = 1, B = 0, C = 1, D = 1 also has $C = D = 1$. The other three combinations (A = 1, B = 0, C = 1, D = 0; A = 0, B = 1, C = 0, D = 1; A = 1, B = 1, C = 1, D = 0) have a 1 on A or B, so the NOR gives 0, and C and D are not both 1, so the AND gives 0 and $Q = 0$.`,
           },
           {
             label: "(c)", type: "num", marks: 1, a: 7, tol: 0, unit: "rows",
@@ -382,7 +398,7 @@
                   "\\b(?:one input|an input|input)\\W+(?:\\w+\\W+){0,4}(?:0|low|zero)\\W+(?:\\w+\\W+){0,6}(?:output|outputs|gives|so)\\W+(?:\\w+\\W+){0,2}(?:1|high|one)\\b",
                 ] },
               { desc: "G4 has both inputs at 1, so Q is 0",
-                not: ["\\bq\\W+(?:(?:is|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b"],
+                not: ["\\bq\\W+(?:(?:is|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b", ...MID_ZERO],
                 any: [
                   "\\b" + GATE4 + "\\b[^.;]{0,50}?\\b(?:both|two)\\W+(?:\\w+\\W+){0,3}(?:1|high|one|1s|ones)\\b",
                   "\\b" + GATE4 + "\\b[^.;]{0,50}?\\b(?:output|outputs|gives?|giving|q)\\b\\W+(?:(?:is|=|equals|goes|becomes|will be|now|also|then|a)\\W+){0,2}(?:0|zero|low)\\b",
@@ -455,18 +471,9 @@
             points: [
               { desc: "It keeps repeating: reads or checks the sensor over and over in a loop",
                 all: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always (?:checking|reading|monitoring|testing)|goes? back|going back|returns? to|returning to|back to (?:read|the start|the top|the beginning)|reads?\\W+(?:\\w+\\W+){0,2}again)\\b", "\\b(?:read\\w*|check\\w*|monitor\\w*|test\\w*|measur\\w*|compar\\w*|look\\w*|scan\\w*|poll\\w*)\\b"] },
-              { desc: "The fan is switched on (out1 = 1) when an1 is above 153 (the temperature is above 60 °C)",
-                not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:on|start\\w*|run\\w*|switch\\w* on|turn\\w* on|work\\w*)\\b", "\\b(?:off|stops?|0)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:above|over|greater|higher|hotter|>)", "(?<!\\b(?:on|runs?|starts?)\\W+(?:if|when|once|as soon as)\\W+(?:\\w+\\W+){0,4})(?:above|over|greater|more than|higher|hotter|>)(?:(?!\\b(?:on|runs?|starts?|otherwise|else|below|under|lower)\\b)[^.;]){0,40}\\b(?:off|stops?|switch\\w* off|turn\\w* off)\\b"],
-                negOK: true, all: ["\\bfan\\b"], any: [
-                  "(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high|rises? (?:above|over|past))[^.;!?]{0,60}(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|start\\w*|run\\w*|switch\\w* on|turn\\w* on)\\b",
-                  "\\b(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|starts?|runs?|switch\\w* on|switched on|turn\\w* on|turned on)[^.;!?]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)",
-                ] },
-              { desc: "The fan is switched off (out1 = 0) when an1 is not above 153 (the temperature is lower)",
-                not: ["(?<!\\b(?:on|runs?|starts?)\\W+(?:if|when|once|as soon as)\\W+(?:\\w+\\W+){0,4})(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)(?:(?!\\b(?:otherwise|else|if not|but|whereas|while|not|on|runs?|starts?|below|under|less|lower|cooler|colder)\\b|n't|<)[^.;]){0,60}\\b(?:off|stops?|switch\\w* off|turn\\w* off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0)\\b", "\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:off|stop\\w*|switch\\w* off|turn\\w* off)\\b", "\\b(?:on|runs?|starts?)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:below|under|less|lower|cooler|colder|<)", "(?:below|under|less|lower|cooler|colder|<)(?:(?!\\b(?:off|stops?|otherwise|else|above|over|greater)\\b)[^.;]){0,40}\\b(?:on|runs?|starts?|switch\\w* on|turn\\w* on)\\b"],
-                negOK: true, all: ["\\bfan\\b"], any: [
-                  "(?:otherwise|else|if not|below|less|lower|under|cooler|colder|<|153 or less|not (?:above|over|greater|hot))[^.;!?]{0,60}(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stop\\w*|switch\\w* off|turn\\w* off)\\b",
-                  "\\b(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stops?|switch\\w* off|switched off|turn\\w* off|turned off)[^.;!?]{0,60}(?:otherwise|else|if not|below|less|lower|under|cooler|colder)",
-                ] },
+              { desc: "The fan is switched on (out1 = 1) when an1 is above 153 (60 °C) and switched off (out1 = 0) otherwise: both branches are needed",
+                not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:on|start\\w*|run\\w*|switch\\w* on|turn\\w* on|work\\w*)\\b", "\\b(?:off|stops?|0)\\W+(?:when|if|once|as soon as)\\W+(?:(?!not\\b|n't)\\w+\\W+){0,3}(?:above|over|greater|higher|hotter|>)", "(?<!(?:\\bnot|n't)\\W+)(?<!\\b(?:on|runs?|starts?)\\W+(?:if|when|once|as soon as)\\W+(?:\\w+\\W+){0,4})(?:above|over|greater|more than|higher|hotter|>)(?:(?!\\b(?:on|runs?|starts?|otherwise|else|below|under|lower)\\b)[^.;]){0,40}\\b(?:off|stops?|switch\\w* off|turn\\w* off)\\b", "(?<!(?:\\bnot|n't)\\W+)(?<!\\b(?:on|runs?|starts?)\\W+(?:if|when|once|as soon as)\\W+(?:\\w+\\W+){0,4})(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)(?:(?!\\b(?:otherwise|else|if not|but|whereas|while|not|on|runs?|starts?|below|under|less|lower|cooler|colder)\\b|n't|<)[^.;]){0,60}\\b(?:off|stops?|switch\\w* off|turn\\w* off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0)\\b", "\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:off|stop\\w*|switch\\w* off|turn\\w* off)\\b", "\\b(?:on|runs?|starts?)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:below|under|less|lower|cooler|colder|<)", "(?:below|under|less|lower|cooler|colder|<)(?:(?!\\b(?:off|stops?|otherwise|else|above|over|greater)\\b)[^.;]){0,40}\\b(?:on|runs?|starts?|switch\\w* on|turn\\w* on)\\b"],
+                negOK: true, win: 400, all: ["\\b(?:fan|out1|output 1)\\b", "(?:" + FAN_ON.join("|") + ")", "(?:" + FAN_OFF.join("|") + ")"] },
             ],
             sample: "The program loops continuously, reading the sensor on an1 each time round. When an1 is greater than 153 the fan is switched on, with out1 set to 1. When an1 is 153 or less the fan is switched off, with out1 set to 0.",
             model: "<ul><li>The program loops continuously, reading (or checking) the sensor on an1 each time round (1)</li><li>If an1 is greater than 153 (above 60 °C) the fan is switched on, out1 = 1; otherwise (153 or below) the fan is switched off, out1 = 0 (1)</li></ul><p>Both branches are needed for the second mark. Do not accept &quot;it turns the fan on&quot; with no condition.</p>",
@@ -524,10 +531,11 @@
             minWords: 8,
             points: [
               { desc: "Run the amended program (on the microcontroller or a simulator) and watch the lamp",
-                all: ["\\b(?:run|runs|running|simulat\\w*|upload\\w*|download\\w*|load\\w*|execut\\w*|try|trial|switch\\w* (?:it )?on|power\\w*|start\\w*|operat\\w*)\\b", "\\b(?:watch\\w*|observ\\w*|see|saw|seeing|look\\w*|count\\w*|record\\w*|monitor\\w*|check\\w*|time\\w*|video\\w*|note)\\b"] },
+                not: [ORIG_PROG],
+                all: ["\\b(?:hand.?trace|dry.?run|trace table|trace (?:the|through|it)|step through|walk through|work through|run|runs|running|simulat\\w*|upload\\w*|download\\w*|load\\w*|execut\\w*|try|trial|switch\\w* (?:it )?on|power\\w*|start\\w*|operat\\w*)\\b", "\\b(?:watch\\w*|observ\\w*|see|saw|seeing|look\\w*|count\\w*|record\\w*|monitor\\w*|check\\w*|time\\w*|video\\w*|note|show\\w*|table)\\b"] },
               { desc: "Expected result: four flashes of 0.5 s on and 0.5 s off, then the lamp stays off, and the observed result matches",
-                win: 200,
-                all: ["\\b(?:count\\w*|expect\\w*|observ\\w*|see|saw|seeing|watch\\w*|check\\w*|record\\w*|find\\w*|should|exactly|match\\w*)\\b", "\\b(?:4|four)\\b", "\\b(?:flash\\w*|blink\\w*|times|pulses?|on)\\b"] },
+                win: 200, not: [ORIG_PROG],
+                all: ["\\b(?:count\\w*|expect\\w*|observ\\w*|see|saw|seeing|watch\\w*|check\\w*|record\\w*|find\\w*|should|exactly|match\\w*|shows?|showed|showing|stops? at)\\b", "\\b(?:4|four)\\b", "\\b(?:flash\\w*|blink\\w*|times|pulses?|on)\\b"] },
             ],
             sample: "Run the amended program on the microcontroller and watch the lamp. Count the flashes: there should be exactly four, and then the lamp should stay off.",
             model: "<ul><li>Run the amended program (on the board or in a simulator) and watch the lamp (1)</li><li>State the expected result and compare: four flashes, each 0.5 s on and 0.5 s off, then the lamp stays off; the observed result must match (1)</li></ul><p>&quot;It worked&quot; with no input, expected output and observed output earns nothing. Also acceptable: timing the run with a stopwatch and expecting 4 s.</p>",
@@ -613,16 +621,16 @@
             minWords: 20,
             points: [
               { desc: "The series resistor wastes power as heat, because the voltage the motor does not use is dropped across it",
-                not: ["\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,6}(?:either|fully|completely)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", PWM_WASTES, "\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:more|very|highly|so)\\W+(?:\\w+\\W+){0,2}efficient", "\\bresistors?\\W+(?:\\w+\\W+){0,4}(?:waste\\w*|loses?|dissipat\\w*|heats?)\\W+(?:\\w+\\W+){0,1}(?:less|little|no|nothing|fewer)", "\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:not|n't|never)\\W+(?:\\w+\\W+){0,2}(?:waste\\w*|hot|heat\\w*)"],
-                any: ["\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,10}(?:waste\\w*|heats?|heating|hot|dissipat\\w*|lost|loses|loss|burns?)", "\\b(?:waste\\w*|heats?|heating|dissipat\\w*|wasted|lost|loss)\\W+(?:\\w+\\W+){0,10}(?:resistors?|series)", "\\bresistors?\\W+(?:\\w+\\W+){0,6}(?:takes?|drops?|uses?|absorbs?)\\W+(?:\\w+\\W+){0,6}(?:voltage|volts?|power|energy)"] },
+                not: ["\\b(?:resistors?|series)[\\s,]+(?:\\w+[\\s,]+){0,6}(?:either|fully|completely)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", PWM_WASTES, "\\bresistors?[\\s,]+(?:\\w+[\\s,]+){0,3}(?:more|very|highly|so)\\W+(?:\\w+\\W+){0,2}efficient", "\\bresistors?[\\s,]+(?:\\w+[\\s,]+){0,4}(?:waste\\w*|loses?|dissipat\\w*|heats?)\\W+(?:\\w+\\W+){0,1}(?:less|little|no|nothing|fewer)", "\\bresistors?[\\s,]+(?:\\w+[\\s,]+){0,3}(?:not|n't|never)\\W+(?:\\w+\\W+){0,2}(?:waste\\w*|hot|heat\\w*)"],
+                any: ["\\b(?:resistors?|series)[\\s,]+(?:\\w+[\\s,]+){0,10}(?:waste\\w*|heats?|heating|hot|dissipat\\w*|lost|loses|loss|burns?)", "\\b(?:waste\\w*|heats?|heating|dissipat\\w*|wasted|lost|loss)\\W+(?:\\w+\\W+){0,6}(?:resistors?|series)", "\\bresistors?[\\s,]+(?:\\w+[\\s,]+){0,6}(?:takes?|drops?|uses?|absorbs?)\\W+(?:\\w+\\W+){0,6}(?:voltage|volts?|power|energy)"] },
               { desc: "With PWM the transistor is either fully on or fully off, so very little power is lost in it",
-                not: ["\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,6}(?:either|fully|completely)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", PWM_WASTES],
-                any: ["\\b(?:fully|completely|either)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", "\\b(?:on|off)\\W+(?:or|and)\\W+(?:\\w+\\W+){0,2}(?:fully\\W+)?(?:off|on)\\b", "\\b(?:switch\\w*|transistor)\\W+(?:\\w+\\W+){0,6}(?:little|almost no|hardly any|very little|minimal|negligible|small)\\W+(?:\\w+\\W+){0,3}(?:power|heat|energy|loss|voltage)", "\\b(?:little|almost no|hardly any|very little|minimal|negligible)\\W+(?:\\w+\\W+){0,3}(?:power|heat|energy)\\W+(?:\\w+\\W+){0,5}(?:transistor|switch\\w*|pwm)"] },
+                not: ["\\b(?:resistors?|series)[\\s,]+(?:\\w+[\\s,]+){0,6}(?:either|fully|completely)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", PWM_WASTES],
+                any: ["\\b(?:fully|completely|either)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", "\\b(?:transistor|switch)\\W+(?:\\w+\\W+){0,4}(?:saturat\\w*|cut.?off)\\b", "\\b(?:on|off)\\W+(?:or|and)\\W+(?:\\w+\\W+){0,2}(?:fully\\W+)?(?:off|on)\\b", "\\b(?:switch\\w*|transistor)\\W+(?:\\w+\\W+){0,6}(?:little|almost no|hardly any|very little|minimal|negligible|small)\\W+(?:\\w+\\W+){0,3}(?:power|heat|energy|loss|voltage)", "\\b(?:little|almost no|hardly any|very little|minimal|negligible)\\W+(?:\\w+\\W+){0,3}(?:power|heat|energy)\\W+(?:\\w+\\W+){0,5}(?:transistor|switch\\w*|pwm)"] },
               { desc: "The duty cycle is changed to vary the average voltage across the motor, which sets its speed",
                 any: ["\\b(?:duty|pulse width|on ?time|mark)\\W+(?:\\w+\\W+){0,8}(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power)", "\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?)\\W+(?:\\w+\\W+){0,8}(?:duty|pulse|on ?time|speed|change[sd]?|varied|controlled|set)", "\\b(?:changing|varying|altering|adjusting|increasing|reducing|raising|lowering)\\W+(?:\\w+\\W+){0,2}(?:the )?(?:duty|pulse width|on ?time)\\W+(?:\\w+\\W+){0,8}(?:speed|voltage|slower|faster)"] },
               { desc: "So most of the battery power reaches the motor: more efficient, less heat and a longer battery life",
-                not: ["\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:more|very|highly)\\W+(?:\\w+\\W+){0,2}efficient", "\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,6}(?:better|best|less|least|fewer)", "\\bresistors?\\W+(?:\\w+\\W+){0,6}(?:power|energy|heat|loss)\\W+(?:\\w+\\W+){0,2}(?:less|lower)"],
-                any: ["\\b(?:pwm|it|this|transistor|switching|method)\\W+(?:\\w+\\W+){0,6}(?:more|very|highly|much more)\\W+(?:\\w+\\W+){0,2}efficient", "\\bmore efficient", "\\b(?:efficiency)\\W+(?:\\w+\\W+){0,4}(?:higher|better|greater|improved|increased)", "\\b(?:battery|cell|batteries)\\W+(?:\\w+\\W+){0,5}(?:lasts?|last longer|longer)", "\\b(?:longer)\\W+(?:\\w+\\W+){0,2}battery", "\\b(?:most|more|all|nearly all|almost all)\\W+(?:\\w+\\W+){0,4}(?:power|energy)\\W+(?:\\w+\\W+){0,6}(?:reaches|goes to|delivered to|used by|used in|is used|to the motor|in the motor)", "\\b(?:less|little|fewer)\\W+(?:\\w+\\W+){0,3}(?:power|energy)\\W+(?:\\w+\\W+){0,3}(?:wasted|lost)", "\\b(?:cooler|runs? cool|stays? cool|less heat|doesn'?t get hot)", "\\b(?:runs?|lasts?|working|operat\\w*)\\W+(?:\\w+\\W+){0,2}longer\\b", "\\bused\\W+(?:\\w+\\W+){0,1}(?:better|more (?:efficiently|effectively)|efficiently)", "\\bbetter use\\b"] },
+                not: ["\\bresistors?[\\s,]+(?:\\w+[\\s,]+){0,3}(?:more|very|highly)\\W+(?:\\w+\\W+){0,2}efficient", "\\b(?:resistors?|series)[\\s,]+(?:\\w+[\\s,]+){0,6}(?:better|best|less|least|fewer)", "\\bresistors?[\\s,]+(?:\\w+[\\s,]+){0,6}(?:power|energy|heat|loss)\\W+(?:\\w+\\W+){0,2}(?:less|lower)"],
+                any: ["\\b(?:pwm|it|this|transistor|switching|method)\\W+(?:\\w+\\W+){0,6}(?:more|very|highly|much more)\\W+(?:\\w+\\W+){0,2}efficient", "\\bmore efficient", "\\b(?:efficiency)\\W+(?:\\w+\\W+){0,4}(?:higher|better|greater|improved|increased)", "\\b(?:battery|cell|batteries)\\W+(?:\\w+\\W+){0,3}(?:lasts?|last longer|longer)", "\\b(?:longer)\\W+(?:\\w+\\W+){0,2}battery", "\\b(?:most|more|all|nearly all|almost all)\\W+(?:\\w+\\W+){0,4}(?:power|energy)\\W+(?:\\w+\\W+){0,6}(?:reaches|goes to|delivered to|used by|used in|is used|to the motor|in the motor)", "\\b(?:less|little|fewer)\\W+(?:\\w+\\W+){0,3}(?:power|energy)\\W+(?:\\w+\\W+){0,3}(?:wasted|lost)", "\\b(?:cooler|runs? cool|stays? cool|less heat|doesn'?t get hot)", "\\b(?:runs?|lasts?|working|operat\\w*)\\W+(?:\\w+\\W+){0,2}longer\\b", "\\bused\\W+(?:\\w+\\W+){0,1}(?:better|more (?:efficiently|effectively)|efficiently)", "\\bbetter use\\b"] },
             ],
             sample: "The series resistor wastes power as heat, because the extra voltage is dropped across it. With PWM the transistor is either fully on or fully off, so very little power is lost in it. The duty cycle is changed to vary the average voltage across the motor, which sets its speed, so most of the battery power reaches the motor and the battery lasts longer.",
             model: "<ul><li>A series resistor wastes power as heat: the unused voltage is dropped across it and $P = VI$ is lost (1)</li><li>With PWM the transistor is fully on or fully off, so very little power is lost in it (1)</li><li>The duty cycle is varied to change the average voltage across the motor, and so its speed (1)</li><li>So most of the power reaches the motor: PWM is more efficient, cooler and the battery lasts longer (1)</li></ul><p>Four different points are needed. Do not accept &quot;PWM is more efficient&quot; with no reason as more than the last mark; &quot;PWM is cheaper&quot; or &quot;faster&quot; earns nothing.</p>",
@@ -668,12 +676,11 @@
               { desc: "It repeats continuously, going back to main each time",
                 any: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always (?:checking|reading|monitoring|testing)|round and round|goes? back (?:to )?(?:main|the start|the top|the beginning)|returns? to (?:main|the start|the top|the beginning)|back to (?:main|the start|the top))\\b"] },
               { desc: "If in1 = 0 (rain or wind) the vent is closed (out1 = 0) whatever the temperature",
-                win: 200, negOK: true,
-                not: ["\\b(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:closed?|shut|close)\\b", "\\bin1\\W+(?:is |= ?|equals )?1\\b\\W+(?:\\w+\\W+){0,6}(?:closed?|shut)\\W+(?:\\w+\\W+){0,4}(?:whatever|regardless|no matter)"],
+                win: 80, negOK: true,
+                not: ["\\b(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:closed?|shut|close)\\b", "\\bin1\\W+(?:is |= ?|equals )?(?:0|low)\\b\\W+(?:(?!closed?\\b|shut|closes|otherwise|else|\\bif\\b|when|\\b1\\b)\\w+\\W+){0,6}(?:opens?|opened)\\b", "\\bin1\\W+(?:is |= ?|equals )?1\\b\\W+(?:\\w+\\W+){0,6}(?:closed?|shut)\\W+(?:\\w+\\W+){0,4}(?:whatever|regardless|no matter)"],
                 all: [
-                  "\\b(?:in1|input 1|input one|logic|gate|nor|enable\\w*|first test|first)\\W+(?:\\w+\\W+){0,3}(?:0|low|off|zero|false)\\b|\\b(?:rain\\w*|wind\\w*|raining|windy|not allowed)\\b",
-                  "\\b(?:closed?|shut|closes|out1 (?:is )?(?:set )?(?:to |= ?)?0)\\b",
-                  "\\b(?:whatever|regardless|whichever|no matter|even if|even when|any temperature|ignores?|before|override\\w*|priority|however|never opens?)\\b",
+                  "\\b(?:(?:in1|input 1|input one|logic|gate|nor|enable\\w*|first test|first)\\W+(?:\\w+\\W+){0,3}(?:0|low|off|zero|false)\\b|\\b(?:rain\\w*|wind\\w*|raining|windy|not allowed)\\b)\\W+(?:\\w+\\W+){0,6}(?:\\b(?:closed?|shut|closes)\\b|out1 (?:is )?(?:set )?(?:to |= ?)?0\\b)|(?:\\b(?:closed?|shut|closes)\\b|out1 (?:is )?(?:set )?(?:to |= ?)?0\\b)\\W+(?:\\w+\\W+){0,6}(?:(?:in1|input 1|input one|logic|gate|nor|enable\\w*|first test|first)\\W+(?:\\w+\\W+){0,3}(?:0|low|off|zero|false)\\b|\\b(?:rain\\w*|wind\\w*|raining|windy|not allowed)\\b)",
+                  "\\b(?:whatever|regardless|whichever|no matter|even if|even when|any temperature|ignores?|before|override\\w*|priority|however|never opens?|otherwise|else|sends?|goes? to|jumps?|skips?|branch\\w*|first(?:ly)?\\W+(?:\\w+\\W+){0,3}(?:in1|input 1|input one|logic|gate|rain|wind)|(?:in1|input 1|input one)\\W+(?:\\w+\\W+){0,6}(?:is )?tested first)\\b",
                 ] },
               { desc: "If in1 = 1 and an1 is above 153 (above 24 °C) the vent opens, out1 = 1",
                 not: [IN1_REV, "(?:below|under|less than|lower|cooler|colder|<)(?:(?!\\b(?:clos\\w*|shut|not|otherwise|else|above|over)\\b)[^.;]){0,40}\\b(?:opens?|opened)\\b"],
@@ -684,9 +691,9 @@
                   "\\bout1\\W+(?:is |= ?|equals |to |set to )?1\\b[^.;]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)",
                 ] },
               { desc: "Otherwise (not above 153) the vent stays closed, out1 = 0",
-                win: 200,
+                win: 40,
                 not: [IN1_REV],
-                any: ["\\b(?:otherwise|else|if not|below|less than|lower|under|cooler|colder|153 or (?:less|below|under|lower)|not (?:above|over|greater|hot))\\W+(?:\\w+\\W+){0,10}(?:closed?|shut|0|off)\\b", "\\b(?:closed?|shut|out1 (?:is )?(?:set )?(?:to |= ?)?0)\\W+(?:\\w+\\W+){0,10}(?:otherwise|else|if not|below|less than|lower|under|cooler|colder)"] },
+                any: ["\\b(?:otherwise|(?:every|any|all) other (?:case|situation|condition|time)s?|else|if not|below|less than|lower|under|cooler|colder|153 or (?:less|below|under|lower)|not (?:above|over|greater|hot))\\W+(?:\\w+\\W+){0,5}(?:closed?|shut|0|off)\\b", "\\b(?:closed?|shut|out1 (?:is )?(?:set )?(?:to |= ?)?0)\\W+(?:\\w+\\W+){0,5}(?:otherwise|else|if not|below|less than|lower|under|cooler|colder)"] },
             ],
             sample: "The program loops continuously, going back to main each time. If in1 is 0 because of rain or wind, the vent is closed with out1 equal to 0 whatever the temperature is. If in1 is 1 and the temperature is above 24 degrees, because an1 is greater than 153, the vent opens by setting out1 to 1. Otherwise, if it is cooler than that, the vent is closed.",
             model: "<ul><li>The program repeats continuously (a loop back to main) (1)</li><li>If in1 = 0 (rain or strong wind) the vent is closed, out1 = 0, whatever the temperature (1)</li><li>If in1 = 1 and an1 &gt; 153 (above 24 °C) the vent opens, out1 = 1 (1)</li><li>Otherwise (in1 = 1 but the temperature is 24 °C or below) the vent is closed, out1 = 0 (1)</li></ul><p>Use of pin names and the values 153 or 24 °C is expected for full marks. Do not accept an answer that says the temperature is tested first.</p>",
@@ -736,7 +743,7 @@
           {
             label: "(a)", type: "num", marks: 1, a: 3, tol: 0, unit: "gates",
             q: "How many NAND gates are needed?",
-            why: R`Swapping each gate gives NANDs followed by NOTs, and an OR becomes a NAND with a NOT on each input. The NOT after each AND and the NOT before the OR sit in series on one wire, so each pair cancels (double inversion). What is left is $\overline{\overline{A\cdot B}\cdot\overline{C\cdot D}} = A\cdot B + C\cdot D$: <strong>3 gates</strong>. Five or six gates is the answer before the double inversions are cancelled.`,
+            why: R`Swapping each gate gives NANDs followed by NOTs, and an OR becomes a NAND with a NOT on each input. The NOT after each AND and the NOT before the OR sit in series on one wire, so each pair cancels (double inversion). What is left is $\overline{\overline{A\cdot B}\cdot\overline{C\cdot D}} = A\cdot B + C\cdot D$: <strong>3 gates</strong>. Seven gates is the count before the double inversions are cancelled: two NANDs and two NOTs for the ANDs, then a NAND and two NOTs for the OR.`,
           },
           {
             label: "(b)", type: "num", marks: 1, a: 1, tol: 0, unit: "IC",
@@ -758,4 +765,13 @@
       },
     ],
   };
+
+  /* Off-topic guard: a pile of unrelated model answers pasted into one box must not pass. Words that belong to
+     other questions never appear in a sound answer to these ones, so they void every marking point. */
+  const guard = (id, label, src) => {
+    const part = B.digital.questions.find((q) => q.id === id).parts.find((x) => x.label === label);
+    part.points.forEach((pt) => { pt.not = (pt.not || []).concat(src); });
+  };
+  guard("digital-11", "(c)", "\\b(?:thermistor|ldr|mosfet|comparator|op.?amp|relay|nand|nor|solenoid|vent|flash\\w*|an1|in1|hfe)\\b");
+  guard("digital-12", "(d)", "\\b(?:pwm|duty|thermistor|ldr|mosfet|comparator|op.?amp|relay|nand|solenoid|flash\\w*|battery|bjt)\\b");
 })();

@@ -219,21 +219,25 @@
   /* the wrong claim that the transistor, relay or heater ends up off */
   const OFF_CLAIM = R`(?:heater|relay|transistor|coil)\W+(?:(?:is|are|stays?|remains?|gets?|goes?|switch\w*|turn\w*|be|being|will be|would be|all)\W+){1,3}off\b`;
   /* the wrong claim "the resistance falls/is lower" (not "more resistance at lower temperatures") */
-  const RES_FALLS = R`resistance${C(UPSTOP + R`|\bas\b|when|if|\bat\b|\bin\b|\bwith\b`, 25)}(?:fall\w*|drop\w*|decreas\w*|reduc\w*|go(?:es)? down|dips?|(?:is|becomes|gets|goes|will be|would be)\W+(?:\w+\W+){0,1}(?:lower|less|smaller|down))`;
+  const RES_FALLS = R`resistance${C(UPSTOP + R`|\bas\b|when|if|\bat\b|\bin\b|\bwith\b`, 25)}(?:fall\w*|drop\w*|decreas\w*|reduc\w*|go(?:es)? down|dips?)|resistance(?:\W+(?:of|in)\W+(?:the\W+)?\w+(?:\W+\w+)?)?\W+(?:is|becomes|gets|goes|will be|would be)\W+(?:\w+\W+){0,1}(?:lower|less|smaller|down)`;
 
 
   /* analogue-04(b): the diode is wrongly blamed for the spike or the damage */
   const DIODE_SPIKE = R`diode${C(R`\bnot\b|n't|never|stops?|prevents?|protects?|avoids?|limits?|reduces?|absorbs?`, 40)}(?:causes?|creates?|produces?|generates?|induces?)\W+(?:\w+\W+){0,3}(?:voltage|spike|surge|emf|e\.m\.f)`;
+  /* analogue-05(d): a broken lamp or transistor is not the reason */
+  const BROKEN = R`\b(?:broken|faulty|blown|burnt out|burned out|dead|short.?circuit\w*)\b`;
+  const DIODE_ON = R`diode${C(NEG, 60)}(?:conduct\w*|carr(?:y|ies|ied))${C(NEG, 40)}(?:when|while|as long as|once)\W+(?:the\W+)?(?:transistor|relay|coil|circuit)\W+(?:\w+\W+){0,1}(?:on|conducting|switched on|turned on|operating|energi[sz]ed|working)\b`;
   const DIODE_HARM = R`diode${C(R`\bnot\b|n't|never|stops?|prevents?|protects?|avoids?|saves?`, 40)}(?:damages?|destroys?|breaks?|blows?|burns?|ruins?|harms?|overheats?)\b`;
   /* analogue-08(a): BJT and MOSFET properties swapped round */
   const SWAP_BJT = [
-    R`(?:bjt|bipolar)${C(R`mosfet|fet\b|` + VS, 70)}(?:(?:very|extremely|really|much)\W+)?(?:high|large|huge|infinite)\W+(?:input\W+)?(?:resistance|impedance)`,
+    R`(?:bjt|bipolar)${C(R`mosfet|fet\b|` + VS, 70)}(?:(?:very|extremely|really|much)\W+)?(?:high|large|huge|infinite)\W+input\W+(?:resistance|impedance)`,
     R`(?:bjt|bipolar)${C(R`mosfet|fet\b|\bnot\b|n't|never|\bno\b|` + VS, 60)}voltage.?(?:operated|controlled|driven)`,
     R`(?:bjt|bipolar)${C(R`mosfet|fet\b|\bnot\b|n't|never|` + VS, 70)}(?:draws?|takes?|needs?|requires?|uses?)\W+(?:\w+\W+){0,2}(?:negligible|hardly any|almost no|virtually no|practically no|very little|tiny|zero|no)\W+current`,
   ];
   const SWAP_MOS = [
     R`(?:mosfets?|fets?|gate)${C(R`bjt|bipolar|\bnot\b|n't|never|\bno\b|` + VS, 70)}(?:draws?|takes?|needs?|requires?|uses?|has)\W+(?:\w+\W+){0,3}(?:base current|large current|continuous current|base resistor|low input resistance)`,
     R`(?:mosfets?|fets?)${C(R`bjt|bipolar|\bnot\b|n't|never|` + VS, 60)}current.?(?:operated|controlled|driven)`,
+    R`(?:mosfets?|fets?|gate)${C(R`bjt|bipolar|\bnot\b|n't|never|\bno\b|` + VS, 50)}(?:loads?|loading|pulls?|drags?)\W+(?:\w+\W+){0,3}(?:divider|sensor|ldr|voltage)`,
   ];
 
   B.analogue = {
@@ -320,6 +324,7 @@
                 any: [
                   R`(?:\bv ?_?out\b|output(?: voltage)?|voltage (?:across|over|at|on) (?:the )?(?:fixed )?(?:resistor|r\b)|voltage (?:across|over|at) (?:the )?output)${C(R`temperature|hotter|heat|warm|\bas\b|when|if|` + NEG, 60)}${UP}`,
                   R`(?:fixed )?resistor${C(NEG + R`|thermistor`, 40)}${UP}\W+(?:\w+\W+){0,2}(?:share|proportion|voltage|part|fraction)`,
+                  R`(?:larger|greater|bigger|higher|increased)\W+(?:\w+\W+){0,1}(?:output(?: voltage)?|\bv ?_?out\b)`,
                   R`thermistor${C(NEG, 40)}(?:smaller|less|lower|reduced)\W+(?:\w+\W+){0,2}(?:share|proportion|voltage|part|fraction)`,
                 ] },
             ],
@@ -351,9 +356,10 @@
             q: R`Explain why diode D<sub>1</sub> is connected across the relay coil.`,
             points: [
               { desc: "The coil is inductive: when the current is switched off the collapsing magnetic field produces a large voltage spike",
-                not: [DIODE_SPIKE],
+                not: [DIODE_SPIKE, DIODE_ON],
                 all: [R`(?:spike\w*|surge\w*|(?:large|high|big|huge|sudden|reverse|back|induced|extra|excess\w*)\W+(?:\w+\W+){0,2}(?:voltage|emf|e\.m\.f\.?)|back.?emf|voltage (?:peak|pulse)|overvoltage)`, R`(?:coil|inductive|inductor|inductance|magnetic|field|relay|solenoid|motor|winding)`] },
               { desc: "The diode conducts / gives the current a path so the spike is limited",
+                not: [DIODE_ON, R`coil\W+(?:gets?|receives?|has|sees|is given)\W+(?:\w+\W+){0,1}(?:less|lower|reduced)`],
                 any: [
                   R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|dissipat\w*|bypass\w*|divert\w*|dump\w*|shunt\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 50)}(?:spike|surge|back.?emf|energy|voltage|induced|collaps\w*|stored|path|route|loop|field)`,
                   R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|bypass\w*|divert\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 30)}current${C(NEG, 40)}(?:round|around|back|coil|loop|path|circulat\w*)`,
@@ -362,13 +368,13 @@
                   R`(?:current|spike|surge|voltage|energy)${C(NEG, 40)}(?:flows?|goes?|passes?|circulat\w*|travels?|is carried|is conducted|is absorbed)${C(NEG, 30)}(?:through|round|via|into|in) (?:the )?diode`,
                 ] },
               { desc: "This protects the transistor from damage",
-                not: [DIODE_HARM, DIODE_SPIKE],
+                not: [DIODE_HARM, DIODE_SPIKE, DIODE_ON, R`diode\W+(?:\w+\W+){0,4}(?:to|so as to)\W+(?:make|cause|create|produce|generate|allow)\W+(?:\w+\W+){0,2}(?:this|that|it|the (?:spike|damage|surge))`, R`protect\w*\W+(?:the\W+)?(?:relay|coil|solenoid)(?:\W+\w+){0,2}\W+from\W+(?:the\W+)?(?:transistor|switch|bjt)`],
                 any: [
                   R`(?:transistor|circuit|component|electronics|switch|chip)${C(R`\bnot\b|n't|never`, 40)}(?:not|n't|never)\W+(?:\w+\W+){0,1}(?:damag\w*|destroy\w*|harm\w*|blown|burn\w*|burnt|fail\w*)`,
                   R`protect\w*${C(NEG, 60)}(?:transistor|circuit|component|electronics|switch|chip|driver|device)`,
                   R`(?:transistor|circuit|component|electronics|switch|chip)${C(NEG, 60)}(?:protected|safe|saved|shielded|undamaged)`,
                   R`(?:stop\w*|prevent\w*|avoid\w*|save\w*)${C(NEG, 40)}(?:damag\w*|destroy\w*|blow\w*|burn\w*|harm\w*)`,
-                  R`(?:damag\w*|destroy\w*|blow\w*|burn\w*|fail\w*)${C(NEG, 50)}transistor`,
+                  R`(?:would|could|might|may|can|otherwise|without|if)\W+(?:\w+\W+){0,8}(?:damag\w*|destroy\w*|blow\w*|burn\w*|fail\w*)${C(NEG, 50)}transistor`,
                 ] },
             ],
             sample: "The relay coil is inductive, so when the transistor switches off the collapsing magnetic field produces a large voltage spike. The diode conducts this current round the coil, so the transistor is protected from damage.",
@@ -406,16 +412,18 @@
             why: R`<p>$h_{FE} = \dfrac{I_C}{I_B}$, so $I_B = \dfrac{I_C}{h_{FE}} = \dfrac{300}{120} = 2.5\ \text{mA}$ (1).</p>`,
           },
           {
-            label: "(c)", type: "num", marks: 2, a: 1720, tol: 5, unit: "Ω",
+            label: "(c)", type: "num", marks: 2, a: 1720, tol: 5, rtol: 0.015, unit: "Ω",
             q: R`Calculate the <strong>largest</strong> value of base resistor $R_B$ that will light the lamp fully. Give your answer in $\Omega$. (Use $I_B = 2.5\ \text{mA}$ if you did not find it.)`,
             why: R`<p>The base resistor is in series with the base-emitter junction, which has 0.7 V across it: $V_{RB} = V_{in} - V_{BE} = 5.0 - 0.7 = 4.3$ V (1).</p><p>$R_B = \dfrac{V_{RB}}{I_B} = \dfrac{4.3}{2.5 \times 10^{-3}} = 1720\ \Omega$ (1).</p><p>Slip: $\dfrac{5.0}{2.5 \times 10^{-3}} = 2000\ \Omega$ forgets the 0.7 V. A smaller standard value such as $1.5\ \text{k}\Omega$ would be chosen in practice.</p>`,
           },
           {
-            label: "(d)", type: "text", marks: 2, rows: 4, minWords: 8,
+            label: "(d)", type: "text", marks: 2, rows: 4, minWords: 4,
             q: R`A $1.0\ \text{k}\Omega$ base resistor is fitted instead. This gives $h_{FE}I_B = 516\ \text{mA}$. Explain why the lamp current stays at 300 mA however large the base current becomes.`,
             points: [
               { desc: "The lamp (load) and supply limit the collector current to V/R; it cannot rise above 300 mA", negOK: true,
+                not: [BROKEN, R`\b5(?:\.0)? ?v\b\W+(?:\w+\W+){0,2}(?:supply|signal|input)\W+(?:\w+\W+){0,3}(?:limit\w*|set\w*|restrict\w*)`],
                 any: [
+                  R`(?:limit\w*|restrict\w*|cap\w*)\W+(?:\w+\W+){0,4}current\W+(?:is|are|will be|comes? from)\W+(?:\w+\W+){0,2}(?:the\W+)?(?:lamp|load|bulb|supply|12 ?v|resistance)`,
                   R`(?:lamp|load|bulb|resistance of the lamp)${C(NEG, 60)}(?:limit\w*|restrict\w*|set\w*|determin\w*|maximum|\bmax\b|control\w*|cap\w*|fix\w*|only (?:pass|allow|let|draw|take)\w*)`,
                   R`(?:supply|12 ?v)${C(NEG, 60)}(?:limit\w*|restrict\w*|set\w*|determin\w*|maximum|\bmax\b|cap\w*)${C(NEG, 40)}current`,
                   R`current${C(NEG, 50)}(?:limit\w*|restrict\w*|capped|set|determined|fixed|governed)${C(NEG, 30)}(?:by|to)${C(NEG, 30)}(?:lamp|load|bulb|supply|12 ?v|resistance)`,
@@ -424,6 +432,7 @@
                   R`(?:maximum|largest|most|highest)\W+(?:\w+\W+){0,4}(?:lamp|load|bulb)\W+(?:\w+\W+){0,2}(?:take|draw|pass|carry|allow|let|accept|handle)`,
                 ] },
               { desc: "The transistor is saturated (fully on, V_CE small); the extra base current is wasted",
+                not: [BROKEN],
                 any: [R`(?:transistor|\bbjt\b|\bit\b|this)${C(NEG, 40)}saturat\w*`, R`saturat\w*${C(NEG, 30)}transistor`, R`\bsaturat(?:ed|ion)\b`, R`fully (?:switched |turned )?on`, R`(?:fully|completely) (?:open|conducting|switched)`, R`\bv ?ce\b${C(NEG, 40)}(?:small|low|zero|almost|nearly|0\b|few tenths|tiny)`, R`extra (?:base )?current${C(NEG, 40)}(?:wasted|no (?:effect|difference))`, R`(?:closed|on) switch`] },
             ],
             sample: "The lamp and the 12 V supply limit the collector current to 300 mA, so any extra base current has no further effect. The transistor is saturated: it is fully on, with only a small voltage across it.",
@@ -444,7 +453,7 @@
         stem: R`<p>A heating element of resistance $68\ \Omega$ in a model greenhouse is in the collector circuit of an npn transistor with $h_{FE} = 150$. The supply is 9.0 V. A $39\ \text{k}\Omega$ base resistor is connected directly to the 9.0 V supply. Take $V_{BE} = 0.7$ V. The transistor is in its active region (not saturated). Keep full calculator values until the end.</p>`,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 213, tol: 0.5, unit: "µA",
+            label: "(a)", type: "num", marks: 1, a: 213, tol: 0.5, rtol: 0.015, unit: "µA",
             q: R`Calculate the base current, in $\mu\text{A}$.`,
             why: R`<p>$V_{RB} = 9.0 - 0.7 = 8.3$ V, so $I_B = \dfrac{8.3}{39\,000} = 2.13 \times 10^{-4}\ \text{A} = 213\ \mu\text{A}$ (1).</p><p>Slip: $\dfrac{9.0}{39\,000} = 231\ \mu\text{A}$ forgets the 0.7 V.</p>`,
           },
@@ -503,9 +512,10 @@
             q: R`State what is meant by the threshold voltage of an n-channel enhancement MOSFET.`,
             points: [
               { desc: "The minimum gate-source voltage at which the MOSFET begins to conduct",
-                not: [R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`, R`(?:stops?|ceases?|no longer)\W+(?:\w+\W+){0,2}(?:conduct\w*)`, R`(?:supply|load|solenoid|drain)\W+(?:\w+\W+){0,2}(?:voltage|volts?)`],
+                not: [R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`, R`(?:stops?|ceases?|no longer|prevent\w*|blocks?|unable to|cannot|can't)\W+(?:\w+\W+){0,3}(?:conduct\w*|current)`, R`which\W+(?:\w+\W+){0,1}(?:turns?|switch\w*)\W+(?:\w+\W+){0,1}off`, R`(?:supply|load|solenoid|drain)\W+(?:\w+\W+){0,2}(?:voltage|volts?)`,
+                  R`all the time|\balways\b|permanent\w*|constantly`, R`(?:minimum|least|lowest|smallest)\W+(?:\w+\W+){0,1}(?:current|power|resistance|capacitance|charge)\b`, R`\bgate\W+(?:current|resistance|capacitance|power)\b`],
                 win: 140,
-                all: [R`(?:\bgate\b|\bv_?gs\b|gate.?source|gate to source)`,
+                all: [R`(?:\bv_?gs\b|gate.?source|gate to source|between (?:the )?gate|\bgate\W+(?:\w+\W+){0,3}(?:voltage|volts?|potential)|(?:voltage|volts?|potential)\W+(?:\w+\W+){0,8}\bgate\b)`,
                   R`(?:conduct\w*|(?:turn\w*|switch\w*|swing\w*|come\w*)\W+(?:\w+\W+){0,2}on\b|begin\w*|start\w*|open\w*|form\w*|channel|current\W+(?:\w+\W+){0,2}(?:flow\w*|start\w*|begin\w*)|drain current|about to)`] },
             ],
             sample: "The threshold voltage is the minimum gate-source voltage at which the MOSFET starts to conduct.",
@@ -541,6 +551,7 @@
                 any: [
                   R`(?:not|n't|never|no|without|avoid\w*|prevent\w*|stop\w*)\W+(?:\w+\W+){0,3}(?:load\w*|draw\w*|tak\w*|pull\w*|drain\w*|affect\w*|alter\w*|chang\w*|reduc\w*|lower\w*|upset\w*|disturb\w*|interfer\w*|drag\w*)\W+(?:\w+\W+){0,6}(?:divider|sensor|ldr|input|voltage|signal|circuit|resistor|source|output|it\b)`,
                   R`(?:keep\w*|maintain\w*)\W+(?:its|the)\W+(?:\w+\W+){0,1}(?:voltage|output)\b(?!\W+(?:low|down))`,
+                  R`(?:divider|sensor|ldr)${C(R`bjt|bipolar|base|` + VS, 50)}(?:not|n't)\W+(?:have|need)\W+to\W+(?:provid\w*|suppl\w*|giv\w*)\W+(?:\w+\W+){0,2}current`,
                   R`(?:divider|sensor|ldr|input voltage|sensor voltage|voltage)${C(R`bjt|bipolar|base`, 50)}(?:unaffected|unchanged|undisturbed|(?:stay|stays|remain|remains|remained|kept|keeps|keep|stayed)\W+(?:\w+\W+){0,3}(?:same|constant|steady|correct|accurate|unchanged|designed|intended|stable))`,
                   R`(?:divider|sensor|voltage|signal|input)${C(R`bjt|bipolar|base`, 40)}(?:is|are|will be|would be|gets?|being|was)\W+(?:not|never)\W+(?:\w+\W+){0,1}(?:reduc\w*|lower\w*|affect\w*|chang\w*|alter\w*|load\w*|pull\w*|drop\w*|disturb\w*)`,
                   R`(?:divider|sensor|ldr)\W+(?:\w+\W+){0,2}(?:isn't|aren't|is not|are not|wasn't)\W+(?:\w+\W+){0,1}(?:loaded|affected|pulled|overloaded|disturbed)`,
@@ -559,11 +570,15 @@
                 any: [
                   R`(?:base current|bjt|bipolar)${C(NEG + R`|mosfet|` + VS, 70)}(?:load\w*|pull\w*|draw\w*|tak\w*|drain\w*|reduc\w*|lower\w*|affect\w*|alter\w*|chang\w*|drop\w*|sag\w*|steal\w*|wast\w*)${C(NEG + R`|mosfet`, 50)}(?:divider|sensor|ldr|voltage|signal|input|resistor)`,
                   R`(?:could|would|will|can)\W+(?:\w+\W+){0,2}(?:not|n't)\W+(?:\w+\W+){0,3}(?:supply|provide|deliver|give|pass|get)\W+(?:\w+\W+){0,3}(?:enough|sufficient)`,
+                  R`(?:cannot|can't|can not|won't|wouldn't|couldn't|unable to)\W+(?:\w+\W+){0,3}(?:supply|provide|deliver|give|pass|get)\W+(?:\w+\W+){0,3}(?:enough|sufficient)`,
                   R`(?:pull\w*|dragg?\w*)\W+(?:\w+\W+){0,3}(?:voltage|output|divider)\W+(?:\w+\W+){0,2}down`,
                   R`(?:drawn|taken|pulled|drained|stolen|sucked)${C(NEG + R`|mosfet`, 30)}(?:from|out of|off|through)${C(NEG + R`|mosfet`, 30)}(?:divider|sensor|ldr)`,
                   R`(?:not enough|insufficient|too (?:little|small|low|weak)|only (?:a )?(?:tiny|small|few|very small))${C(NEG + R`|mosfet`, 30)}current${C(NEG + R`|mosfet`, 70)}(?:switch|drive|operate|turn|solenoid|base|transistor|bjt)`,
                   R`(?:mosfets?|fets?)${C(R`bjt|bipolar|` + VS, 60)}(?:less|lower|little|low|small|smaller|reduced|minimal)\W+(?:\w+\W+){0,2}(?:power|heat|energy|resistance|loss|losses)`,
                   R`(?:mosfets?|fets?)${C(R`bjt|bipolar|` + VS, 60)}(?:wastes?|loses?|dissipates?|generates?|produces?)\W+(?:\w+\W+){0,2}less`,
+                  R`(?:wast\w*|los[es]\w*|dissipat\w*|generat\w*|produc\w*|mak\w*|giv\w*)\W+(?:\w+\W+){0,1}(?:less|lower|little|smaller|reduced)\W+(?:\w+\W+){0,1}(?:power|heat|energy|loss)\W+(?:\w+\W+){0,3}than\W+(?:a\W+|the\W+)?(?:bjt|bipolar|npn)`,
+                  R`(?:bjt|bipolar)${C(R`mosfet|` + VS, 40)}(?:wastes?|loses?|dissipates?|generates?|produces?|gets?|makes?)\W+(?:\w+\W+){0,1}(?:more|extra|greater)\W+(?:\w+\W+){0,1}(?:power|heat|energy)`,
+                  R`current${C(NEG + R`|mosfet`, 60)}(?:far |much |way |much too |way too |far too )?too\W+(?:small|little|low|weak|tiny)\W+(?:\w+\W+){0,6}(?:switch|drive|operate|turn|solenoid|valve|1\.2)`,
                   R`(?:mosfets?|fets?)${C(R`bjt|bipolar|` + VS, 60)}(?:runs?|stays?|remains?)\W+(?:\w+\W+){0,1}cooler`,
                 ] },
             ],
@@ -604,7 +619,10 @@
                 not: [R`\b(?:can|could|will|does) (?:\w+ )?(?:go|swing|exceed|rise|reach|output)\W+(?:\w+\W+){0,2}(?:beyond|past|above|below|outside|more than)`],
                 any: [
                   R`(?:cannot|can't|can not|unable to|won't|will not|never|not able to|doesn't|does not)\W+(?:\w+\W+){0,5}(?:beyond|past|above|below|exceed\w*|outside|more negative than|more than|lower than|greater than|larger than|bigger than|further than|go (?:beyond|past)|swing)\W+(?:\w+\W+){0,4}(?:supply|rails?|vcc|12)`,
-                  R`(?:limit\w*|restrict\w*|clip\w*|capped|held|set|constrain\w*|determin\w*)${C(NEG, 40)}(?:by|to|at)${C(NEG, 30)}(?:supply|rails?|vcc|12|power)`,
+                  R`(?:limit\w*|restrict\w*|capped|constrain\w*)${C(NEG, 40)}(?:by|to|at)${C(NEG, 30)}(?:supply|rails?|vcc|12|power)`,
+                  R`(?:clip\w*|held|set|determin\w*)${C(NEG, 40)}\bby${C(NEG, 30)}(?:supply|rails?|vcc|power)`,
+                  R`(?<!(?:cannot|can't|not|never|n't)\W+(?:\w+\W+){0,3})(?:beyond|past|exceed\w*|outside|more negative than|more than|lower than|greater than|larger than|higher than|below|above)\W+(?:the\W+)?(?:\w+\W+){0,2}(?:supply|rails?|vcc)`,
+                  R`(?:saturat\w*|clip\w*)\W+at\W+(?:the\W+)?(?:\w+\W+){0,1}(?:supply|rail)`,
                   R`(?:supply|rails?|vcc|12 ?v|power supply)${C(NEG, 40)}(?:limit\w*|restrict\w*|set\w*|determin\w*|maximum|\bmax\b|cap\w*)`,
                   R`(?:output|it)${C(R`\bnot\b`, 40)}(?:cannot|can't|can not|unable|won't|never)\W+(?:\w+\W+){0,5}(?:more|further|greater|larger|bigger|higher|lower|exceed|negative)\W+(?:\w+\W+){0,6}(?:supply|rails?|vcc|12)`,
                   R`(?:can only|only)\W+(?:\w+\W+){0,3}(?:swing|go|reach|move|be)\W+(?:\w+\W+){0,4}(?:between|up to|as (?:far|low|high) as|within)\W+(?:\w+\W+){0,3}(?:supply|rails?|vcc|12)`,
@@ -615,7 +633,7 @@
                 ] },
               { desc: "The output saturates (clips) at -12 V", negOK: true,
                 win: 70,
-                not: [R`(?:output|\bv_?o\b)\W+(?:\w+\W+){0,3}(?:\+\s?12|plus 12|positive 12)`],
+                not: [R`(?:output|\bv_?o\b)\W+(?:\w+\W+){0,1}(?:is|=|of|will be|would be|goes to|reaches|saturat\w* at|clips? at|stuck at)\W+(?:\w+\W+){0,1}(?:\+\s?12|plus 12|positive 12)`],
                 all: [R`(?:[-−]\s?12(?:\.0)?\b|minus 12|negative 12|12(?:\.0)? ?(?:v|volts?) negative|12(?:\.0)? ?(?:v|volts?) below)`, R`(?:output|\bv_?o\b|saturat\w*|clip\w*|stuck|stops?|reach\w*|lowest|most negative|as far as|flat\w*|actual|final|limit\w*)`] },
             ],
             sample: "The output voltage is limited by the supply. It has to stay between the two rails, so the amplifier saturates and the output clips at -12 V.",
@@ -711,7 +729,7 @@
                 ] },
               { desc: "When V_i falls below V_ref the comparator output goes positive (high, +9 V)",
                 not: [R`(?:above|greater than|higher than|more than|exceeds?)\W+(?:\w+\W+){0,3}(?:\bv_?ref\b|reference)${C(R`\.`, 50)}(?:positive|high\b|switch\w* on|9 ?v)`],
-                all: [R`(?:comparator|op.?amp|output)`, R`(?:(?:below|less than|lower than|under|smaller than)\W+(?:\w+\W+){0,4}(?:\bv_?ref\b|reference|3(?:\.0)? ?v)|(?:\bv_?i\b|input)\W+(?:\w+\W+){0,6}(?:less|lower|smaller|below|under))`, R`(?:positive|high\b|9(?:\.0)? ?v|\+ ?9|saturat\w*)`] },
+                all: [R`(?:comparator|op.?amp|output)`, R`(?:\bv_?i\b ?(?:<|≤|&lt;|\blt\b) ?(?:\bv_?ref\b|3(?:\.0)? ?v)|(?:below|less than|lower than|under|smaller than)\W+(?:\w+\W+){0,4}(?:\bv_?ref\b|reference|3(?:\.0)? ?v)|(?:\bv_?i\b|input)\W+(?:\w+\W+){0,6}(?:less|lower|smaller|below|under))`, R`(?:positive|high\b|9(?:\.0)? ?v|\+ ?9|saturat\w*)`] },
               { desc: "The transistor switches on (base current), the relay operates and the heater is switched on",
                 not: [OFF_CLAIM],
                 all: [R`(?:transistor|base current)${C(R`\bnot\b|n't|never|\boff\b`, 70)}(?:(?:switch\w*|turn\w*|swing\w*|come\w*)\W+(?:\w+\W+){0,1}on\b|\bon\b|conduct\w*|saturat\w*|start\w*|current)`, R`(?:relay|coil|contacts?|heater)${C(R`\bnot\b|n't|never|\boff\b`, 70)}(?:\bon\b|operat\w*|clos\w*|energi[sz]\w*|(?:switch\w*|turn\w*|come\w*)\W+(?:\w+\W+){0,1}on\b|work\w*|run\w*|start\w*|activat\w*|heat\w*|warm\w*|pull\w*)`] },
@@ -808,7 +826,7 @@
             q: R`Explain why a voltage follower is placed between the divider and the motor-driver stage.`,
             points: [
               { desc: "The follower has a very high input resistance / draws almost no current from the divider", negOK: true,
-                not: [R`\bmosfet|\bgate\b|\bbjt\b|bipolar`, DRIVER_HIGH],
+                not: [R`\bmosfet|\bgate\b|\bbjt\b|bipolar`, DRIVER_HIGH, R`(?:low|small|tiny)\W+input\W+(?:resistance|impedance)`],
                 any: [
                   R`(?:very |extremely |really )?(?:high|large|infinite|huge)\W+input\W+(?:resistance|impedance)`,
                   R`(?:draw\w*|tak\w*|need\w*|requir\w*|us\w*|pull\w*)\W+(?:\w+\W+){0,2}(?:(?:almost|virtually|practically|hardly|next to) (?:no|any)|negligible|very little|tiny|no)\W+(?:\w+\W+){0,1}current`,
@@ -816,21 +834,24 @@
                 ] },
               { desc: "So the divider is not loaded: its output voltage is unaffected",
                 negOK: true,
-                not: [R`\bmosfet|\bgate\b|\bbjt\b|bipolar`, DRIVER_HIGH],
+                not: [R`\bmosfet|\bgate\b|\bbjt\b|bipolar`, DRIVER_HIGH, R`(?:low|small|tiny)\W+input\W+(?:resistance|impedance)`],
                 any: [
                   R`(?:\d(?:\.\d+)?\s?v|voltage|output|signal)\W+(?:\w+\W+){0,1}(?:is|are|stays?|remains?|would be|will be)\W+(?:not|never)\W+(?:\w+\W+){0,1}(?:changed|affected|altered|reduced|lowered|pulled|disturbed|dropped)`,
-                  R`(?:not|n't|never|no|without|avoid\w*|prevent\w*|stop\w*)\W+(?:\w+\W+){0,3}(?:load\w*|affect\w*|alter\w*|chang\w*|reduc\w*|lower\w*|pull\w*|disturb\w*|drag\w*|sag\w*|upset\w*)\W+(?:\w+\W+){0,6}(?:divider|sensor|ldr|voltage|signal|input|source)`,
+                  R`(?:not|n't|never|no|without|avoid\w*|prevent\w*|stop\w*)\W+(?:\w+\W+){0,5}(?:load\w*|draw\w*|tak\w*|affect\w*|alter\w*|chang\w*|reduc\w*|lower\w*|pull\w*|disturb\w*|drag\w*|sag\w*|upset\w*)\W+(?:\w+\W+){0,6}(?:divider|sensor|ldr|voltage|signal|input|source)`,
                   R`(?:divider|sensor|voltage|signal|input)${C(NEG, 50)}(?:unaffected|unchanged|undisturbed|stays?\W+(?:\w+\W+){0,2}(?:same|constant|steady|correct|accurate)|remains?\W+(?:\w+\W+){0,2}(?:same|constant|steady|correct|accurate))`,
                   R`(?:divider|sensor)\W+(?:\w+\W+){0,2}(?:is|are)\W+not\W+(?:\w+\W+){0,1}(?:loaded|affected|pulled|overloaded|disturbed)`,
                   R`(?:voltage|output)\W+(?:\w+\W+){0,1}(?:is|are|isn't|aren't)\W+(?:not\W+|never\W+)?(?:\w+\W+){0,1}(?:reduc\w*|lower\w*|affect\w*|chang\w*|alter\w*|pull\w*|drop\w*|disturb\w*)`,
+                  R`(?:stop\w*|prevent\w*|avoid\w*|keeps?)\W+(?:\w+\W+){0,3}(?:divider|sensor|ldr)\W+(?:\w+\W+){0,2}(?:being|from being|getting)\W+(?:\w+\W+){0,1}(?:loaded|affected|pulled|overloaded|disturbed)`,
                   R`(?:buffer\w*|isolat\w*)${C(NEG, 50)}(?:divider|sensor|load|circuit|source)`,
                 ] },
               { desc: "The follower's output can supply the larger current needed by the motor-driver stage",
                 negOK: true,
-                not: [R`(?:cannot|can't|can not|unable to|not able to|does ?n't|does not|won't|will not)\W+(?:\w+\W+){0,2}(?:supply|provide|deliver|drive|give)`],
+                not: [R`(?:follower|buffer|op.?amp|output)${C(R`divider|sensor|\bbut\b|however`, 30)}(?:cannot|can't|can not|unable to|not able to|does ?n't|does not|won't|will not)\W+(?:\w+\W+){0,2}(?:supply|provide|deliver|drive|give)`],
                 any: [
                   R`(?:output|follower|op.?amp|buffer|\bit\b)${C(NEG, 60)}(?:supplies|supply|provides?|provide|deliver\w*|drive\w*|give\w*|sourc\w*)\W+(?:\w+\W+){0,4}(?:current|load|motor|driver|power)`,
                   R`(?:low|small)\W+output\W+(?:resistance|impedance)`,
+                  R`(?:supplies|provides|delivers|gives|sources)\W+(?:the\W+)?(?:\w+\W+){0,2}(?:current|power)\W+itself`,
+                  R`\b(?:and|then|so)\W+(?:\w+\W+){0,1}(?:supplies|provides|delivers)\W+(?:the\W+)?(?:\w+\W+){0,2}current`,
                 ] },
             ],
             sample: "The follower has a very high input resistance, so it draws almost no current from the divider and the divider's output voltage is unaffected. Its output can then supply the larger current needed by the motor-driver stage.",
@@ -856,6 +877,8 @@
                 any: [
                   R`voltage${C(R`resistor|` + DOWNSTOP + R`|` + NEG + R`|\bbut\b`, 40)}(?:across|over|at|on)${C(R`resistor|` + DOWNSTOP, 25)}(?:the )?(?:ldr|base|transistor)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`\bldr\b${C(NEG, 40)}(?:bigger|larger|greater|more)\W+(?:\w+\W+){0,2}(?:share|proportion|voltage|part|fraction)`,
+                  R`\bldr\b${C(DOWNSTOP + R`|` + NEG, 40)}(?:share|proportion|fraction)\W+(?:\w+\W+){0,4}${UP}`,
+                  R`\bldr\b${C(NEG, 80)}voltage\W+(?:\w+\W+){0,2}(?:across|over|on|at)\W+(?:it|them)\b${C(DOWNSTOP + R`|` + NEG, 20)}${UP}`,
                   R`(?:base voltage|\bv_?be\b|voltage at the base|base-emitter voltage|\bv ?ldr\b)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}voltage\W+(?:\w+\W+){0,3}(?:ldr|base)`,
                   R`\bldr\b${C(NEG, 60)}(?:increas\w*|rais\w*|gain\w*|tak\w*)\W+(?:\w+\W+){0,2}(?:share|proportion|fraction)`,
@@ -864,7 +887,7 @@
                 all: [R`(?:0\.7|\bv_?be\b|base.?emitter|threshold|turn.?on voltage)`, R`(?:base current|conduct\w*|turn\w* on|switch\w* on|starts?|begins?|flows?)`] },
               { desc: "A collector current flows through the lamp and the lamp comes on",
                 not: [R`\bused\W+(?:\w+\W+){0,4}(?:lamps?|bulbs?|lights?)\b`],
-                any: [R`(?:lamp|bulb)${C(NEG, 50)}(?:come\w* on|switch\w* on|turn\w* on|illuminat\w*|glow\w*|\blit\b|\bon\b|lights? up|is lit)`, R`collector current${C(NEG, 50)}(?:lamp|bulb)`, R`(?:current|it)${C(NEG, 30)}(?:flows?|passes?)${C(NEG, 30)}(?:through|in) (?:the )?(?:lamp|bulb)`] },
+                any: [R`(?:lamp|bulb)${C(NEG, 50)}(?:come\w* on|switch\w* on|turn\w* on|illuminat\w*|glow\w*|\blit\b|\bon\b|lights? up|is lit)`, R`collector${C(NEG, 60)}(?:lamp|bulb)`, R`(?:current|it)${C(NEG, 30)}(?:flows?|passes?)${C(NEG, 30)}(?:through|in) (?:the )?(?:lamp|bulb)`, R`(?:lamp|bulb)${C(NEG, 30)}\blights?\b`, R`\blight\w*\W+(?:up\W+)?(?:the\W+)?(?:lamp|bulb)`] },
             ],
             sample: "As it gets dark the resistance of the LDR increases, so the LDR takes a bigger share of the supply and the voltage across it, at the base, rises. When this reaches about 0.7 V a base current flows and the transistor starts to conduct. A collector current then flows through the lamp, so the lamp comes on.",
             model: R`<p>A chain from cause to result, one device per step:</p><ul><li>As it gets darker the resistance of the LDR increases (1)</li><li>so the LDR takes a larger share of the supply: the voltage across the LDR (the base voltage) rises (1)</li><li>when this reaches about 0.7 V ($V_{BE}$) a base current flows and the transistor turns on (1)</li><li>a collector current flows through the lamp, so the lamp lights (1)</li></ul><p>Do not accept "the voltage changes" or "the LDR lets the transistor on" with no direction or quantity. Also acceptable: "the voltage across $R$ falls" for the second mark if it is linked to the LDR voltage rising.</p>`,
@@ -873,4 +896,12 @@
       },
     ],
   };
+
+  /* Off-topic guard: a pile of unrelated model answers pasted into one box must not pass. Words that belong to
+     other questions never appear in a sound answer to this one, so they void every marking point. */
+  (() => {
+    const part = B.analogue.questions.find((q) => q.id === "analogue-08").parts.find((x) => x.label === "(a)");
+    const off = R`\b(?:thermistor|comparator|relay|nand|pwm|duty|op.?amp|inverting|an1|in1|out1|vent|flash\w*)\b`;
+    part.points.forEach((pt) => { pt.not = (pt.not || []).concat(off); });
+  })();
 })();
