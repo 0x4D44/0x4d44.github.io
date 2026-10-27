@@ -9,7 +9,7 @@ import vm from "node:vm";
 
 const PROJECT = resolve(import.meta.dirname, "..");
 const ROOT = resolve(PROJECT, "..");
-const PAGES = ["index.html", "standards.html", "forms.html", "cad.html", "dtp.html", "tech.html", "assignment.html", "exam.html"];
+const PAGES = ["index.html", "standards.html", "forms.html", "cad.html", "dtp.html", "tech.html", "assignment.html", "exam.html", "papers.html"];
 const WIDGET_PAGES = PAGES.filter((p) => p !== "index.html").map((p) => [p, p.replace(".html", ".js")]);
 const html = Object.fromEntries(await Promise.all(PAGES.map(async (p) => [p, await readFile(resolve(PROJECT, p), "utf8")])));
 const read = (p) => readFile(resolve(PROJECT, p), "utf8");
