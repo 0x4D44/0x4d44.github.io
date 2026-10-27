@@ -7,8 +7,8 @@
   const near = (a, b, n) => { const g = "\\W+(?:\\w+\\W+){0," + (n == null ? 3 : n) + "}"; return "\\b(?:" + a + ")\\b" + g + "\\b(?:" + b + ")\\b|\\b(?:" + b + ")\\b" + g + "\\b(?:" + a + ")\\b"; };
 
   /* Frequently used relationship patterns (tested against the working with whitespace removed, lower-case). */
-  const FMA = ["f\\w{0,12}=mx?a", "a=f\\w{0,12}/m", "m=f\\w{0,12}/a", "\\w{0,3}=mx?a\\b"];
-  const EK = ["(?:e_?k|ke|e_?kinetic)=(?:1/2|0?\\.5|½|\\(1/2\\))x?\\(?m", "(?:e_?k|ke)=m?\\(?v\\)?\\^?2x?(?:1/2|0\\.5)", "(?:e_?k|ke)=mv\\^?2/2"];
+  const FMA = ["f\\w{0,12}=mx?a", "a=f\\w{0,12}/m", "m=f\\w{0,12}/a", "\\w{0,3}=mx?a\\b", "\\d+(?:\\.\\d+)?=\\d+(?:\\.\\d+)?x?a\\b", "a=\\d+(?:\\.\\d+)?/\\d"];
+  const EK = ["(?:e_?k|ke|e_?kinetic)=(?:1/2|0?\\.5|½|\\(1/2\\))x?\\(?m", "(?:e_?k|ke)=m?\\(?v\\)?\\^?2x?(?:1/2|0\\.5)", "(?:e_?k|ke)=mv\\^?2/2", "(?:e_?k|ke)\\w{0,10}=(?:1/2|0?\\.5|½)x?\\(?m", "(?:e_?k|ke)\\w{0,10}=(?:1/2|0?\\.5)x\\d+\\.?\\d*x\\d+\\.?\\d*\\^2", "(?:e_?k|ke)\\w{0,10}=\\d+\\.?\\d*x\\d+\\.?\\d*\\^2/2"];
   const EP = ["(?:e_?p|pe|e_?pot|e_?gp)=mgh", "mgh"];
   const DVT = ["[ds]=v\\u0304?x?t", "[ds]=u\\w{0,2}x?t", "v\\u0304?=[ds]/t", "t=[ds]/v", "[ds]=vx?t"];
   const SUVAT_S = ["s=ut\\+(?:1/2|0?\\.5|½)x?a?x?t", "s=ut\\+\\(1/2\\)", "s=(?:1/2|0?\\.5|½)x?a?x?t\\^?2", "s=(?:1/2|0?\\.5|½)\\(u\\+v\\)t", "v\\^2=u\\^2\\+2as"];
@@ -170,7 +170,7 @@
             q: "Calculate the total displacement of the tram during the 26 s journey.",
             steps: [
               { desc: "Displacement is the area under the v–t graph (or a correct equation, e.g. s = v̄t)", rel: ["area", "[ds]=v\\u0304?x?t", "½x", "1/2x", "0\\.5x", "½\\(", "1/2\\("] },
-              { desc: "Correct areas or lengths: 48 m, 144 m and 36 m (or a trapezium with parallel sides 26 s and 12 s)", nums: [[48, 38, 19]] },
+              { desc: "Correct areas or lengths: 48 m, 144 m and 36 m (or a trapezium with parallel sides 26 s and 12 s)", rel: ["(?<![\\d.])48(?![\\d])", "\\(26\\+12\\)|\\(12\\+26\\)", "26\\+12|12\\+26", "(?<![\\d.])19(?!\\d)", "(?<![\\d.])38(?!\\d)"] },
               { desc: "Final answer 228 m with unit", ans: 228, sf: 2, unit: "m" },
             ],
             sample: "displacement = area under the v-t graph\narea = ½ × 8 × 12 + 12 × 12 + ½ × 6 × 12\n= 48 + 144 + 36\ns = 228 m",
@@ -319,7 +319,7 @@
             steps: [
               { desc: "Uses an equation of motion for the vertical motion to find the time (e.g. v = u + at with v = 0 at the top)", rel: [...VUAT, ...SUVAT_S] },
               { desc: "Total time of flight 2.27 s (twice the time to the top, 1.14 s)", nums: [[2.27, 2.3, 2.271, 2.28]] },
-              { desc: "Uses d = vt for the horizontal motion, with the horizontal speed 17.8 m s⁻¹", rel: DVT, nums: [[17.8, 17.81, 18]] },
+              { desc: "Uses d = vt for the horizontal motion, with the horizontal speed 17.8 m s⁻¹", rel: [...DVT, "[ds]=\\d[\\d.]*x\\d"], nums: [[17.8, 17.81, 18]] },
               { desc: "Final answer 40 m with unit", ans: 40.4457, sf: 2, alts: [41], unit: "m" },
             ],
             sample: "Vertical: u_v = 21 sin 32° = 11.13 m s⁻¹, v = 0 at the top\nv = u + at\n0 = 11.13 − 9.8t\nt = 1.14 s to the top\ntotal time = 2 × 1.14 = 2.27 s\nHorizontal: u_h = 21 cos 32° = 17.81 m s⁻¹\nd = vt = 17.81 × 2.27\nd = 40 m",
