@@ -9,6 +9,9 @@ import { placeholderCityData } from './placeholder.js';
 const LAYER_RE = /^(terrain|buildings?|roads?|water|green|rail|landmarks?)/i;
 const LAYER_ALIAS = { building: 'buildings', road: 'roads', landmark: 'landmarks' };
 // x-ray end-state opacity per layer (x = 1)
+// Draped layers sit a few cm above the terrain; at distance the depth buffer can't resolve that and they z-fight.
+// Negative polygon offsets scale with the local depth resolution, so each layer reliably wins over the one beneath it.
+const LAYER_OFFSET = { green: [-1, -2], water: [-2, -4], roads: [-3, -6], rail: [-4, -8] };
 const XRAY_MIN = { terrain: 0.13, buildings: 0.07, landmarks: 0.12, roads: 0.28, green: 0.18, water: 0.42, rail: 0.3 };
 
 export class City {
@@ -33,23 +36,40 @@ export class City {
       const ov = await this.gltf.loadAsync(new URL('data/city/overview.glb', this.base).href);
       ov.scene.name = 'overview'; ov.scene.position.y = -14; this.root.add(ov.scene); this.overview = { appear: 1, hidden: false, overview: true };
       this.register(ov.scene, this.overview);
-      // The overview's merged building masses are taller than the detailed chunks, so they would hide them
-      // (a huge flat grey slab with triangular holes). Cut a hole around the camera target; chunks fill it.
-      this.holeU = { value: new THREE.Vector3(0, 0, 0) };
+      // The overview's merged building masses are taller than the detailed chunks, so they would hide them.
+      // Cut them out exactly where a detailed chunk has loaded (a coarse grid mask), so nothing goes blank while
+      // chunks stream in and nothing moves when the camera does.
+      this.buildMask();
       for (const r of this.recs) if (r.chunk === this.overview) for (const m of r.mats) {
         m.polygonOffset = true; m.polygonOffsetFactor = 4; m.polygonOffsetUnits = 4;
         if (r.layer === 'buildings') {
           m.onBeforeCompile = (sh) => {
-            sh.uniforms.uHole = this.holeU;
+            sh.uniforms.uMask = this.maskU.tex; sh.uniforms.uMaskO = this.maskU.o;
             sh.vertexShader = 'varying vec3 vOvWP;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-            sh.fragmentShader = 'varying vec3 vOvWP; uniform vec3 uHole;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n if (uHole.z > 0.0 && dot(vOvWP.xz - uHole.xy, vOvWP.xz - uHole.xy) < uHole.z) discard;');
+            sh.fragmentShader = 'varying vec3 vOvWP; uniform sampler2D uMask; uniform vec4 uMaskO;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n if (texture2D(uMask, (vOvWP.xz - uMaskO.xy) * uMaskO.zw).r > 0.5) discard;');
           };
-          m.customProgramCacheKey = () => 'ovhole'; m.needsUpdate = true;
+          m.customProgramCacheKey = () => 'ovmask'; m.needsUpdate = true;
         }
       }
     } catch (e) { this.overview = null; }
     this.chunks = this.manifest.chunks.map((c) => ({ ...c, cx: (c.minX + c.maxX) / 2, cz: (c.minZ + c.maxZ) / 2, state: 'idle', appear: 0, group: null }));
     this.total = this.chunks.length;
+  }
+  buildMask() {
+    const cs = this.manifest.chunks; if (!cs.length) return;
+    const cell = cs[0].maxX - cs[0].minX;
+    const x0 = Math.min(...cs.map((c) => c.minX)), z0 = Math.min(...cs.map((c) => c.minZ));
+    const W = Math.ceil((Math.max(...cs.map((c) => c.maxX)) - x0) / cell), H = Math.ceil((Math.max(...cs.map((c) => c.maxZ)) - z0) / cell);
+    this.mask = { x0, z0, cell, W, H, data: new Uint8Array(W * H) };
+    const tex = new THREE.DataTexture(this.mask.data, W, H, THREE.RedFormat, THREE.UnsignedByteType);
+    tex.minFilter = tex.magFilter = THREE.NearestFilter; tex.needsUpdate = true;
+    this.maskU = { tex: { value: tex }, o: { value: new THREE.Vector4(x0, z0, 1 / (W * cell), 1 / (H * cell)) } };
+  }
+  setMask(c, on) {
+    const m = this.mask; if (!m) return;
+    const i = Math.round((c.minX - m.x0) / m.cell), j = Math.round((c.minZ - m.z0) / m.cell);
+    if (i < 0 || j < 0 || i >= m.W || j >= m.H) return;
+    m.data[j * m.W + i] = on ? 255 : 0; this.maskU.tex.value.needsUpdate = true;
   }
   layerOf(obj) {
     for (let o = obj; o; o = o.parent) { const m = LAYER_RE.exec(o.name || ''); if (m) { const k = m[1].toLowerCase(); return LAYER_ALIAS[k] || k; } }
@@ -62,6 +82,8 @@ export class City {
       const layer = this.layerOf(o); this.layersSeen.add(layer); if (layer === 'terrain') this.hasTerrain = true;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       const cloned = mats.map((m) => { const c = m.clone(); c.userData.base = { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, emissive: m.emissive ? m.emissive.clone() : null }; c.userData.layer = layer; return c; });
+      const po = LAYER_OFFSET[layer];
+      if (po) for (const c of cloned) { c.polygonOffset = true; c.polygonOffsetFactor = po[0]; c.polygonOffsetUnits = po[1]; }
       o.material = Array.isArray(o.material) ? cloned : cloned[0];
       o.userData.layer = layer; o.userData.chunk = chunk;
       o.renderOrder = layer === 'terrain' ? 2 : layer === 'water' ? 3 : layer === 'roads' || layer === 'green' ? 3 : 4;
@@ -91,7 +113,6 @@ export class City {
   update(dt, target) {
     if (this.manifest) {
       const lim = this.quality.chunkRadius;
-      if (this.holeU) { const r = Math.min(lim * 0.8, 3000); this.holeU.value.set(target.x, target.z, r * r); }
       let n = 0;
       for (const c of this.chunks) {
         c.dist = Math.hypot(c.cx - target.x, c.cz - target.z);
@@ -118,7 +139,7 @@ export class City {
       const gltf = await this.gltf.loadAsync(new URL('data/city/' + c.file, this.base).href);
       if (c.state !== 'loading') { this.disposeObj(gltf.scene); return; }
       c.group = gltf.scene; c.group.name = c.file; this.root.add(c.group); this.register(c.group, c);
-      c.state = 'loaded'; c.appear = 0; this.fading.add(c);
+      c.state = 'loaded'; c.appear = 1; this.setMask(c, true);
       for (const r of this.recs) if (r.chunk === c) this.applyRec(r);
       this.loaded++;
     } catch (e) { c.state = 'failed'; this.failed++; console.warn('chunk failed', c.file, e.message); }
@@ -127,7 +148,7 @@ export class City {
   }
   unload(c) {
     if (!c.group) return; this.root.remove(c.group); this.disposeObj(c.group);
-    this.recs = this.recs.filter((r) => r.chunk !== c); c.group = null; c.state = 'idle'; c.appear = 0; this.loaded--;
+    this.recs = this.recs.filter((r) => r.chunk !== c); c.group = null; c.state = 'idle'; c.appear = 0; this.loaded--; this.setMask(c, false);
   }
   disposeObj(o) { o.traverse((x) => { x.geometry?.dispose?.(); const m = x.material; if (m) (Array.isArray(m) ? m : [m]).forEach((q) => { for (const k in q) if (q[k]?.isTexture) q[k].dispose(); q.dispose(); }); }); }
   /** Resolves once at least `n` chunks (or all) are loaded. */
