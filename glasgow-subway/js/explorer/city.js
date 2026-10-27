@@ -12,7 +12,7 @@ const LAYER_ALIAS = { building: 'buildings', road: 'roads', landmark: 'landmarks
 // Draped layers sit a few cm above the terrain; at distance the depth buffer can't resolve that and they z-fight.
 // Units-only negative polygon offsets (a few depth quanta; NO slope factor - at grazing angles a slope factor shoves layers metres
 // through bridge decks and each other, which flickers). The real fix for far-field fighting is the larger near plane (app.js).
-const LAYER_OFFSET = {};
+const LAYER_OFFSET = { green: [0, -1], water: [0, -2], roads: [0, -3], rail: [0, -4] };
 const XRAY_MIN = { terrain: 0.13, buildings: 0.07, landmarks: 0.12, roads: 0.28, green: 0.18, water: 0.42, rail: 0.3 };
 
 export class City {

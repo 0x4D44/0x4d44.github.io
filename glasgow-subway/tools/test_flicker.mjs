@@ -78,7 +78,13 @@ async function measure(name, site, dist, polar) {
     a.paused = false; return { count, total: w * h, pct: (count / (w * h)) * 100, img, map, near: cam.near };
   }, { site, dist, polar, N: 8, radPx: +arg('jitter', 0.1), SD: +arg('sd', 10), GR: +arg('gr', 14) });
   const save = (suffix, data) => fs.writeFileSync(path.join(out, `${name}-${suffix}.png`), Buffer.from(data.split(',')[1], 'base64'));
-  save('img', r.img); save('flicker', r.map); return r;
+  save('img', r.img); save('flicker', r.map);
+  if (arg('probe', null)) { // --probe x,y : list the surfaces under canvas pixel (x,y) (from the top-left) to identify which layers are fighting there
+    const [px, py] = String(arg('probe')).split(',').map(Number);
+    console.log('  probe', JSON.stringify(await page.evaluate(([px, py, W, H]) => { const a = window.__explorer.app; a.paused = true; const V2 = a.pointer ? null : null; const v = { x: (px / W) * 2 - 1, y: -(py / H) * 2 + 1 }; a.ray.setFromCamera(v, a.env.camera); a.env.camera.updateMatrixWorld(true); a.city.root.updateMatrixWorld(true);
+      const hits = a.ray.intersectObjects(a.city.root.children, true).slice(0, 8); a.paused = false; return hits.map((h) => ({ d: +h.distance.toFixed(2), y: +h.point.y.toFixed(2), layer: h.object.userData.layer, name: h.object.name, mat: h.object.material?.name })); }, [px, py, W, H])));
+  }
+  return r;
 }
 
 let fails = 0; const rows = [];
