@@ -274,7 +274,9 @@
       let total = 0;
       AREAS.forEach((a) => {
         let sum = 0;
-        shuffle(((BANK[a.id] && BANK[a.id].questions) || []).slice()).forEach((q) => {
+        // questions not yet marked come first, so a new paper is mostly fresh
+        const untouched = (q) => !(results[q.id] || []).some((x) => x != null);
+        shuffle(((BANK[a.id] && BANK[a.id].questions) || []).slice()).sort((x, y) => untouched(y) - untouched(x)).forEach((q) => {
           const m = qMarks(q);
           if (sum + m <= MOCK_TARGET[a.id] + 1 && sum < MOCK_TARGET[a.id]) { picked.push({ q, a: a.id }); sum += m; }
         });
@@ -366,7 +368,11 @@
     const list = el("div", { role: "tablist", class: "pp-tabs", "aria-label": "Past-paper practice" });
     const panels = el("div");
     const btns = [], pans = [];
+    const sig = () => JSON.stringify([results, answers]);
+    const built = [];
     const show = (i, focus) => {
+      // marks given on the mock tab must show on the area tab: rebuild an area panel whose data has moved on
+      if (i < AREAS.length && built[i] !== sig() && pans[i]) { pans[i].textContent = ""; pans[i].append(tabs[i].build()); if (HE.math) HE.math(pans[i]); built[i] = sig(); }
       btns.forEach((b, k) => { b.setAttribute("aria-selected", k === i ? "true" : "false"); b.tabIndex = k === i ? 0 : -1; });
       pans.forEach((p, k) => {
         p.hidden = k !== i;
@@ -389,7 +395,7 @@
       list.append(b); btns.push(b);
       const p = el("div", { role: "tabpanel", id: "pp-panel-" + t.id, "aria-labelledby": "pp-tab-" + t.id, class: "pp-panel", hidden: true, tabindex: "0" });
       p.append(t.build()); if (HE.math) HE.math(p);   // built up front: the mock paper's clock is wired by common.js on DOMContentLoaded
-      panels.append(p); pans.push(p);
+      panels.append(p); pans.push(p); built.push(sig());
     });
     host.append(list, panels);
     const want = tabs.findIndex((t) => "#" + t.id === location.hash);
