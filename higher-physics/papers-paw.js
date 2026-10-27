@@ -10,9 +10,14 @@
   const LAM = "(?:λ|lambda)";
   const X = "[x*]?";
   /* ---- regex families for calc relationships (matched against the compacted, lower-case working) ---- */
-  const REL_EK = ["ek=(?:½|1/2|0\\.5)" + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", "(?:½|1/2|0\\.5)" + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", "mv\\^?2/2", "2ek/m", "v=sqrt"];
+  const HALF = "\\(?(?:½|1/2|0\\.5)\\)?";
+  const REL_EK = ["ek=" + HALF + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", HALF + X + "\\(?m\\)?" + X + "\\(?v\\)?\\^?2", HALF + X + "\\(?1\\.67\\d*(?:e-27|x10\\^?-27)\\)?" + X + "\\(?v\\)?\\^?2", "mv\\^?2/2", "2ek/m", "v=sqrt", "v\\^?2=2"];
   const REL_VFL = ["[vc]=f" + LAM, "f=[vc]/" + LAM, LAM + "=[vc]/f", "f=3(?:\\.0+)?x10\\^?8/", "f=\\(?3"];
   const REL_EHF = ["e=hf", "=hf\\b", "f=e/h", "hf=e"];
+  /* paw-08(a): the middle mark for either route, f = E/h or the values put into hc/E */
+  const E14 = "4\\.6\\d{0,2}(?:x10\\^?14|e14)", EH = "\\(?3\\.09" + "(?:x10\\^?-19|e-19)\\)?/\\(?6\\.63(?:x10\\^?-34|e-34)";
+  const HCE = "\\(?6\\.63(?:x10\\^?-34|e-34)x3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/\\(?3\\.09(?:x10\\^?-19|e-19)", HC = "1\\.9\\d*(?:x10\\^?-25|e-25)";
+  const SUBHC = "3\\.09(?:x10\\^?-19|e-19)=\\(?6\\.63(?:x10\\^?-34|e-34)x3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/" + LAM;
   const REL_DSIN = ["dsin\\(?(?:θ|theta)\\)?=m" + LAM, "dsin\\(?(?:θ|theta)\\)?=(?:\\d|\\()", "sin\\(?(?:θ|theta)\\)?=m" + LAM + "/d", "m" + LAM + "=dsin", "(?:θ|theta)=sin\\^?-1", "sin\\^?-1\\(?m"];
 
   /* ---------------------------------------------------------------- figures ---------------------------------------------------------------- */
@@ -174,11 +179,11 @@
             q: "Describe the job done by the electric field and the job done by the magnetic field in a ring accelerator like this one.",
             points: [
               { desc: "The electric field accelerates the protons (increases their speed or kinetic energy)",
-                not: ["magnetic(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:accelerat|speed|energi)", "electric(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:bend|steer|deflect|curv|circle|turn)"],
-                any: [near("electric(?:\\W+fields?)?", "accelerat\\w*|speed\\w*|energi[sz]\\w*|faster|work|kinetic", 6)] },
+                not: ["(?:magnetic|\\bb)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:accelerat|speed|energi)", "(?:electric|\\be)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:bend|steer|deflect|curv|circle|turn)"],
+                any: [near("electric(?:\\W+fields?)?|\\be[- ]fields?", "accelerat\\w*|speed\\w*|energi[sz]\\w*|energy|faster|work|kinetic", 6)] },
               { desc: "The magnetic field bends (steers or deflects) the beam into a circular path",
-                not: ["electric(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:bend|steer|deflect|curv|circle|turn)", "magnetic(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:accelerat|speed)"],
-                any: [near("magnetic(?:\\W+fields?)?", "bend\\w*|steer\\w*|deflect\\w*|curv\\w*|circular|circle|turn\\w*|focus\\w*|guid\\w*", 14)] },
+                not: ["(?:electric|\\be)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:bend|steer|deflect|curv|circle|turn)", "(?:magnetic|\\bb)(?:\\W+fields?)?\\W+(?:\\w+\\W+){0,1}(?:accelerat|speed)"],
+                any: [near("magnetic(?:\\W+fields?)?|\\bb[- ]fields?", "bend\\w*|steer\\w*|deflect\\w*|curv\\w*|circular|circle|turn\\w*|focus\\w*|guid\\w*|direction|path", 14)] },
             ],
             sample: "The electric field accelerates the protons, giving them speed and kinetic energy each time they cross it. The magnetic field exerts a force at right angles to their motion, which bends the beam into a circular path round the ring.",
             model: "<ul><li>The electric field accelerates the charged particles (increases speed / kinetic energy) (1)</li><li>The magnetic field bends / steers / deflects the beam into a circular path (1)</li></ul><p>Do not award the mark if the jobs are swapped (a magnetic field cannot change the speed of a charge, because the force is always at right angles to its motion). As the protons gain energy the magnetic field has to be made stronger to hold the same path.</p>",
@@ -214,7 +219,8 @@
             q: "In the early twentieth century physicists measured the energies of the beta particles emitted in beta decay. Describe what the measurements showed, and state the conclusion that was drawn from them.",
             points: [
               { desc: "The beta particles (electrons) were emitted with a range of energies, not one fixed energy, so some energy seemed to be missing",
-                any: [near("range|spread|variety|continuous|different|varying|variable|various|all sorts", "energi\\w*", 6), near("energy|energies", "missing|lost|unaccounted|disappear\\w*|vanish\\w*|carried (?:away|off)|taken|extra", 6)] },
+                not: ["\\b(?:all|every|each)\\W+(?:\\w+\\W+){0,4}(?:same|equal|identical|fixed|single)\\W+(?:\\w+\\W+){0,1}energ"],
+                any: [near("range|spread|variety|continuous|different|varying|variable|various|all sorts", "energi\\w*", 6)] },
               { desc: "Conclusion: a further, almost undetectable, neutral particle (the neutrino) is emitted and carries away the missing energy",
                 any: [near("neutrinos?|anti-?neutrinos?|third|another|new|extra|undetected|undetectable", "particles?|neutrinos?|exists?|proposed|predict\\w*|evidence", 8)] ,
                 all: ["neutrinos?|anti-?neutrinos?|(?:new|another|third|extra|undetect\\w*|neutral) particle"] },
@@ -294,7 +300,7 @@
               { desc: "Mass lost = 3.20 × 10⁻²⁸ kg (mass before − mass after, including all three neutrons)", nums: [3.2e-28] },
               { desc: "E = mc²", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"] },
               { desc: "Substitution: 3.20 × 10⁻²⁸ × (3.00 × 10⁸)²", nums: [3.2e-28, 3e8] },
-              { desc: "E = 2.88 × 10⁻¹¹ J", ans: 2.88e-11, sf: 3, unit: "j" },
+              { desc: "E = 2.88 × 10⁻¹¹ J", ans: 2.88e-11, sf: 3, unit: ["j", "joules", "joule"] },
             ],
             sample: "Mass before = 3.9030 × 10⁻²⁵ + 1.675 × 10⁻²⁷ = 3.91975 × 10⁻²⁵ kg\nMass after = 2.3398 × 10⁻²⁵ + 1.5265 × 10⁻²⁵ + 3 × 1.675 × 10⁻²⁷ = 3.91655 × 10⁻²⁵ kg\nMass lost = 3.20 × 10⁻²⁸ kg\nE = mc²\nE = 3.20 × 10⁻²⁸ × (3.00 × 10⁸)²\nE = 2.88 × 10⁻¹¹ J",
             model: "<ul><li>Mass of reactants − mass of products = 3.20 × 10⁻²⁸ kg (1) (the incoming neutron counts on the left and all <em>three</em> neutrons on the right)</li><li>E = mc² (1)</li><li>E = 3.20 × 10⁻²⁸ × (3.00 × 10⁸)² (1)</li><li>E = 2.88 × 10⁻¹¹ J (1)</li></ul><p>Forgetting the three product neutrons gives a mass &quot;lost&quot; of 3.1 × 10⁻²⁷ kg, ten times too large. Do not round the masses before subtracting.</p>",
@@ -338,7 +344,7 @@
             steps: [
               { desc: "Mass lost = 3.4 × 10⁻²⁹ kg (8.352 × 10⁻²⁷ − 8.318 × 10⁻²⁷)", nums: [3.4e-29] },
               { desc: "E = mc², with c = 3.00 × 10⁸ m s⁻¹", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"], nums: [3e8] },
-              { desc: "E = 3.06 × 10⁻¹² J, which rounds to 3.1 × 10⁻¹² J", ans: 3.06e-12, sf: 2, unit: "j" },
+              { desc: "E = 3.06 × 10⁻¹² J, which rounds to 3.1 × 10⁻¹² J", ans: 3.06e-12, sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "Mass before = 3.344 × 10⁻²⁷ + 5.008 × 10⁻²⁷ = 8.352 × 10⁻²⁷ kg\nMass after = 6.645 × 10⁻²⁷ + 1.673 × 10⁻²⁷ = 8.318 × 10⁻²⁷ kg\nMass lost = 3.4 × 10⁻²⁹ kg\nE = mc² = 3.4 × 10⁻²⁹ × (3.00 × 10⁸)²\nE = 3.06 × 10⁻¹² J = 3.1 × 10⁻¹² J",
             model: "<ul><li>Mass lost = 8.352 × 10⁻²⁷ − 8.318 × 10⁻²⁷ = 3.4 × 10⁻²⁹ kg (1)</li><li>E = mc² = 3.4 × 10⁻²⁹ × (3.00 × 10⁸)² (1)</li><li>E = 3.06 × 10⁻¹² J, so about 3.1 × 10⁻¹² J (1)</li></ul><p>In a &quot;show that&quot; the unrounded value (3.06 × 10⁻¹² J) or more significant figures than the given answer must appear.</p>",
@@ -349,7 +355,7 @@
             steps: [
               { desc: "P = E/t", rel: ["p=e/t", "e=pt", "p=\\(?e\\)?/\\(?t"] },
               { desc: "Energy released in one second = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J", nums: [[3.672e8, 3.72e8]] },
-              { desc: "P = 3.7 × 10⁸ W", ans: 3.672e8, alts: [3.72e8], sf: 2, unit: ["w", "j s-1"] },
+              { desc: "P = 3.7 × 10⁸ W", ans: 3.672e8, alts: [3.72e8], sf: 2, unit: ["w", "watts", "watt", "j s-1"] },
             ],
             sample: "P = E/t\nE = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J in 1 s\nP = 3.67 × 10⁸ / 1 = 3.7 × 10⁸ W",
             model: "<ul><li>P = E/t (1)</li><li>Energy per second = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J (1)</li><li>P = 3.7 × 10⁸ W (1)</li></ul><p>Use the energy per reaction found in (c); 3.1 × 10⁻¹² J gives 3.7 × 10⁸ W as well.</p>",
@@ -371,7 +377,7 @@
             steps: [
               { desc: "Work function = hf₀ (E = hf)", rel: ["=hf", "hf0", "hf₀"] },
               { desc: "Substitution: 6.63 × 10⁻³⁴ × 4.6 × 10¹⁴", nums: [6.63e-34, 4.6e14] },
-              { desc: "Work function = 3.0 × 10⁻¹⁹ J", ans: 3.0498e-19, sf: 2, unit: "j" },
+              { desc: "Work function = 3.0 × 10⁻¹⁹ J", ans: 3.0498e-19, sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "work function = hf₀\nW = 6.63 × 10⁻³⁴ × 4.6 × 10¹⁴\nW = 3.0 × 10⁻¹⁹ J",
             model: "<ul><li>Work function = hf₀ (1)</li><li>6.63 × 10⁻³⁴ × 4.6 × 10¹⁴ (1)</li><li>3.0 × 10⁻¹⁹ J (1)</li></ul><p>The work function is the minimum energy a photon needs to cause photoemission, so it is the photon energy at the threshold frequency.</p>",
@@ -383,10 +389,10 @@
               { desc: "v = fλ (or f = v/λ) with v = 3.00 × 10⁸ m s⁻¹ and λ = 2.50 × 10⁻⁷ m", rel: REL_VFL, nums: [2.5e-7] },
               { desc: "f = 1.2 × 10¹⁵ Hz", nums: [1.2e15] },
               { desc: "E<sub>k</sub> = hf − hf₀", rel: ["ek=hf-", "ek=e-w", "hf-hf0", "hf-w", "ek=hf-hf"] },
-              { desc: "E<sub>k</sub> = 4.9 × 10⁻¹⁹ J", ans: 4.9062e-19, sf: 2, unit: "j" },
+              { desc: "E<sub>k</sub> = 4.9 × 10⁻¹⁹ J (5.0 × 10⁻¹⁹ J if the rounded work function from (b) is used)", ans: 4.9062e-19, alts: [4.956e-19], sf: 2, unit: ["j", "joules", "joule"] },
             ],
-            sample: "v = fλ\n3.00 × 10⁸ = f × 250 × 10⁻⁹\nf = 1.2 × 10¹⁵ Hz\nEk = hf − hf₀ = 6.63 × 10⁻³⁴ × 1.2 × 10¹⁵ − 3.0 × 10⁻¹⁹\nEk = 4.9 × 10⁻¹⁹ J",
-            model: "<ul><li>v = fλ with the wavelength converted to metres (1)</li><li>f = 1.2 × 10¹⁵ Hz (1)</li><li>E<sub>k</sub> = hf − hf₀ (1)</li><li>E<sub>k</sub> = 4.9 × 10⁻¹⁹ J (1)</li></ul><p>Photon energy 7.96 × 10⁻¹⁹ J minus the work function 3.05 × 10⁻¹⁹ J. Using the rounded 3.0 × 10⁻¹⁹ J from (b) gives 5.0 × 10⁻¹⁹ J, which is accepted (ecf).</p>",
+            sample: "v = fλ\n3.00 × 10⁸ = f × 250 × 10⁻⁹\nf = 1.2 × 10¹⁵ Hz\nEk = hf − hf₀ = 6.63 × 10⁻³⁴ × 1.2 × 10¹⁵ − 3.0 × 10⁻¹⁹\nEk = 5.0 × 10⁻¹⁹ J",
+            model: "<ul><li>v = fλ with the wavelength converted to metres (1)</li><li>f = 1.2 × 10¹⁵ Hz (1)</li><li>E<sub>k</sub> = hf − hf₀ (1)</li><li>E<sub>k</sub> = 5.0 × 10⁻¹⁹ J (1)</li></ul><p>Photon energy 7.956 × 10⁻¹⁹ J minus the work function. With the rounded 3.0 × 10⁻¹⁹ J from (b) the answer is 4.96 × 10⁻¹⁹, which is 5.0 × 10⁻¹⁹ J; with the unrounded 3.05 × 10⁻¹⁹ J it is 4.9 × 10⁻¹⁹ J. Both are accepted.</p>",
           },
           {
             label: "(d)", type: "text", marks: 2, rows: 4, minWords: 8,
@@ -395,8 +401,9 @@
               { desc: "(i) More photoelectrons per second, because there are more photons per second (each photon frees one electron)",
                 not: [NOT("(?:more|increas\\w*|greater|doubl\\w*)\\W+(?:\\w+\\W+){0,3}(?:photo)?electrons?"), "(?:photo)?electrons?\\W+(?:\\w+\\W+){0,6}(?:faster|more kinetic|more energy|greater energy|higher energy)", "electrons?\\W+(?:\\w+\\W+){0,2}(?:not|never)\\b"],
                 any: ["(?:more|greater|larger|extra|twice|double[ds]?|increased?)\\W+(?:\\w+\\W+){0,2}(?:photo)?electrons?\\W+(?:\\w+\\W+){0,4}(?:emit\\w*|releas\\w*|freed|per|each|every|ejected|leav\\w*)", "(?:number|amount|rate)\\W+of\\W+(?:photo)?electrons?\\W+(?:\\w+\\W+){0,5}(?:increas\\w*|doubl\\w*|rises?|greater|higher|goes up)", "(?:photo)?electrons?\\W+(?:\\w+\\W+){0,6}(?:per|each|every)\\W+second\\W+(?:\\w+\\W+){0,3}(?:increas\\w*|doubl\\w*|rises?|goes up)", "(?:more|extra|greater|twice as many)\\W+(?:photo)?electrons"] },
-              { desc: "(ii) The maximum kinetic energy is unchanged, because each photon still has the same energy hf",
-                any: ["(?:kinetic energy|energy|speed|ke|e_?k)\\W+(?:\\w+\\W+){0,6}(?:unchanged|same|constant|no change|not change\\w*|doesn'?t change|stays?|remains?|independent|unaffected)", "(?:unchanged|same|constant|no change|unaffected)\\W+(?:\\w+\\W+){0,4}(?:kinetic energy|energy|speed|ke)"] },
+              { desc: "(ii) The maximum kinetic energy is unchanged, because each photon still has the same energy hf", negOK: true,
+                not: ["\\b(?:not|never|n't|isn't|won't)\\W+(?:\\w+\\W+){0,1}(?:stay|remain|same|constant|unchanged|equal)", "(?:kinetic energy|energy|\\bke\\b|e_?k)\\W+(?:\\w+\\W+){0,1}(?:doubl\\w*|increas\\w*|rises?|risen|greater|higher|twice|halv\\w*|decreas\\w*|reduc\\w*|goes up|go up)"],
+                any: ["(?:kinetic energy|energy|\\bke\\b|e_?k)\\W+(?:\\w+\\W+){0,5}(?:unchanged|same|constant|no change|not change\\w*|doesn'?t change|stays?|remains?|independent|unaffected)", "(?:unchanged|same|constant|no change|unaffected)\\W+(?:\\w+\\W+){0,1}(?:maximum |max )?(?:kinetic energy|energy|\\bke\\b)", "(?:kinetic energy|energy|\\bke\\b)\\W+(?:\\w+\\W+){0,2}(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:increas\\w*|chang\\w*|rise|vary|alter\\w*|affect\\w*|depend\\w*)"] },
             ],
             sample: "More photoelectrons are emitted each second, because doubling the irradiance means there are twice as many photons per second and each photon frees one electron. The maximum kinetic energy stays the same, because each photon still has the energy hf, which depends only on the frequency.",
             model: "<ul><li>(i) The number of photoelectrons per second increases (doubles), because more photons arrive per second (1)</li><li>(ii) The maximum kinetic energy is unchanged, because the energy of each photon (hf) depends only on frequency, which has not changed (1)</li></ul><p>Brighter light gives more photons, not bigger ones. To increase the maximum kinetic energy, increase the frequency.</p>",
@@ -415,11 +422,14 @@
             q: "Explain these observations in terms of the particle model of light.",
             points: [
               { desc: "Light is a stream of photons; the energy of each photon, E = hf, depends only on the frequency",
+                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,3}(?:photons?|quanta|packets?)", "(?:not|n't)\\W+(?:\\w+\\W+){0,2}(?:hf|h ?x ?f)"],
                 all: [near("photons?|quanta|quantum|packets?", "hf|h ?x ?f|frequency|frequencies", 8)] },
               { desc: "Each red photon has too little energy: it is below the work function (frequency below the threshold), so no electrons are released however many photons arrive",
-                any: [near("less|lower|smaller|below|insufficient|too little|not enough|too low|isn'?t enough|too small|doesn'?t have", "work function|threshold|hf0|hf₀|enough energy|free|release|remove|emit\\w*|knock", 9)] },
+                any: [near("less|lower|smaller|below|insufficient|too little|not enough|too low|isn'?t enough|too small|doesn'?t have", "work function|threshold|hf0|hf₀|enough energy|free|release|remove|emit\\w*|knock", 9)],
+                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:less|lower|smaller|below|insufficient)"] },
               { desc: "Each ultraviolet photon has a higher frequency, so its energy is greater than the work function, and it can release an electron",
-                any: [near("photon|energy|energies|frequency", "(?:greater|more|higher|exceed\\w*|above|at least|equal|larger|bigger)\\W+(?:\\w+\\W+){0,4}(?:work function|threshold|needed|required|minimum|hf0|hf₀)", 6), near("uv|ultraviolet", "(?:greater|more|higher|enough|sufficient|exceed\\w*)\\W+(?:\\w+\\W+){0,4}(?:energy|frequency|work function|threshold)", 6)] },
+                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,2}(?:greater|higher|more|enough|exceed\\w*|sufficient|above|bigger|larger)"],
+                any: [near("photon|energy|energies|frequency", "(?:greater|more|higher|exceed\\w*|above|at least|equal|larger|bigger)\\W+(?:\\w+\\W+){0,4}(?:work function|threshold|needed|required|minimum|hf0|hf₀)", 6), "(?:uv|ultraviolet)\\W+(?:\\w+\\W+){0,4}(?:enough|sufficient|more|greater|higher|exceed\\w*)\\W+(?:\\w+\\W+){0,1}(?:energy|frequency|work function|threshold)"] },
             ],
             sample: "Light is made of photons, and the energy of each photon is E = hf, so it depends only on the frequency. Each red photon has less energy than the work function of zinc, so it cannot release an electron, and a brighter lamp just sends more photons that each still have too little energy. An ultraviolet photon has a higher frequency, so its energy is greater than the work function and it releases an electron at once.",
             model: "<ul><li>Light arrives in photons (packets), each with energy E = hf; the energy depends on the frequency (1)</li><li>Red photons have less energy than the work function (the frequency is below the threshold), so no photoelectrons, however many photons (irradiance) (1)</li><li>Ultraviolet photons have a higher frequency, so each has energy greater than the work function and releases an electron; the excess is kinetic energy (1)</li></ul><p>Each photon gives its energy to <em>one</em> electron, so photons cannot combine their energy. A wave model would predict that a bright enough red lamp should work, which is why this is evidence for the particle model.</p>",
@@ -451,10 +461,10 @@
             label: "(a)", type: "calc", marks: 4, rows: 7,
             q: "Calculate the wavelength of the radiation emitted in transition W.",
             steps: [
-              { desc: "E₂ − E₁ = hf", rel: ["e[₂2]-e[₁1]=hf", "e=hf", "=hf\\b", "f=e/h", "hf="] },
+              { desc: "E₂ − E₁ = hf (and v = fλ), or λ = hc/E", rel: ["e[₂2]-e[₁1]=hf", "e=hf", "=hf\\b", "f=e/h", "hf=", LAM + "=hc/e", "e=hc/" + LAM, "hc/e", "e=h" + X + "c/" + LAM, LAM + "=h" + X + "c/"] },
               { desc: "Photon energy = 3.09 × 10⁻¹⁹ J", nums: [3.09e-19] },
-              { desc: "f = 4.66 × 10¹⁴ Hz (from f = E/h)", nums: [4.66e14] },
-              { desc: "λ = v/f = 6.44 × 10⁻⁷ m (644 nm)", ans: 6.4369e-7, alts: [643.69], sf: 3, unit: ["m", "nm"] },
+              { desc: "f = E/h = 4.66 × 10¹⁴ Hz (or, by the other route, hc/E with the values substituted)", rel: [E14, EH, HCE, HC, SUBHC] },
+              { desc: "λ = v/f = 6.44 × 10⁻⁷ m (644 nm)", ans: 6.4369e-7, alts: [643.69], sf: 3, unit: ["m", "nm", "metres", "metre", "nanometres"] },
             ],
             sample: "E₂ − E₁ = hf\n−4.11 × 10⁻¹⁹ − (−7.20 × 10⁻¹⁹) = 3.09 × 10⁻¹⁹ J\nf = E/h = 3.09 × 10⁻¹⁹ / 6.63 × 10⁻³⁴ = 4.66 × 10¹⁴ Hz\nv = fλ so λ = 3.00 × 10⁸ / 4.66 × 10¹⁴\nλ = 6.44 × 10⁻⁷ m",
             model: "<ul><li>E₂ − E₁ = hf (1)</li><li>(−4.11 − (−7.20)) × 10⁻¹⁹ = 3.09 × 10⁻¹⁹ J (1)</li><li>f = 3.09 × 10⁻¹⁹ ÷ 6.63 × 10⁻³⁴ = 4.66 × 10¹⁴ Hz (1)</li><li>λ = c/f = 6.44 × 10⁻⁷ m (644 nm) (1)</li></ul><p>The energies are negative, so always subtract the lower level from the higher; a negative answer is a sign error. Accept 644 nm.</p>",
@@ -519,7 +529,7 @@
             steps: [
               { desc: "E = hf", rel: REL_EHF },
               { desc: "f = v/λ = 6.17 × 10¹⁴ Hz", nums: [6.17e14] },
-              { desc: "E = 4.09 × 10⁻¹⁹ J", ans: 4.0926e-19, sf: 3, unit: "j" },
+              { desc: "E = 4.09 × 10⁻¹⁹ J", ans: 4.0926e-19, sf: 3, unit: ["j", "joules", "joule"] },
             ],
             sample: "v = fλ so f = 3.00 × 10⁸ / 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz\nE = hf\nE = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴\nE = 4.09 × 10⁻¹⁹ J",
             model: "<ul><li>E = hf (1)</li><li>f = 3.00 × 10⁸ ÷ 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz (1)</li><li>E = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴ = 4.09 × 10⁻¹⁹ J (1)</li></ul><p>Convert nm to m: 486 nm = 486 × 10⁻⁹ m.</p>",
@@ -556,7 +566,7 @@
               { desc: "Path difference = 6.15 − 5.40 = 0.75 m, so 0.75 = 1.5λ", nums: [0.75] },
               { desc: "λ = 0.50 m", nums: [0.5] },
               { desc: "v = fλ (or f = v/λ) with v = 3.40 × 10² m s⁻¹", rel: REL_VFL.slice(0, 5).concat(["f=340/", "f=3\\.4"]), nums: [340] },
-              { desc: "f = 6.8 × 10² Hz", ans: 680, sf: 2, unit: "hz" },
+              { desc: "f = 6.8 × 10² Hz", ans: 680, sf: 2, unit: ["hz", "hertz", "s-1"] },
             ],
             sample: "path difference = (m + ½)λ, m = 1\n6.15 − 5.40 = 0.75 m = 1.5λ\nλ = 0.50 m\nv = fλ\n340 = f × 0.50\nf = 6.8 × 10² Hz",
             model: "<ul><li>Path difference = (m + ½)λ (1)</li><li>6.15 − 5.40 = 0.75 m and 0.75 = 1.5λ (1)</li><li>λ = 0.50 m (1)</li><li>v = fλ, with 3.40 × 10² = f × 0.50 (1)</li><li>f = 6.8 × 10² Hz (1)</li></ul><p>The first minimum has m = 0 (half a wavelength), so the <em>second</em> has m = 1. Using m = 2 gives 1130 Hz, which loses the intermediate and answer marks (path difference 0.75 = 2.5λ is only valid for the third minimum).</p>",
@@ -612,7 +622,7 @@
                 not: ["(?:further|farther|wider|more spread|spread\\w* out|apart)\\W+(?:\\w+\\W+){0,3}(?:maxima|orders|angles?|spots)", "(?:maxima|orders|angles?|spots)\\W+(?:\\w+\\W+){0,4}(?:further|farther|wider|bigger|larger|increas\\w*|apart)"],
                 any: ["(?:maxima|orders?|spots?|fringes?|lines|pattern|spectra)\\W+(?:\\w+\\W+){0,4}(?:closer|nearer|squashed|compressed|narrower|squeezed)", "(?:angles?|θ|spacing|separation|distances?)\\W+(?:\\w+\\W+){0,4}(?:smaller|decreas\\w*|reduc\\w*|less|shorter)", "(?:closer|nearer)\\W+(?:together|to)"] },
               { desc: "Because the grating spacing d is larger, so sin θ = mλ/d is smaller",
-                any: ["\\bd\\b\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)", "(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)\\W+(?:\\w+\\W+){0,3}(?:slit |grating )?(?:spacing|separation|d\\b|distance between)", "(?:slits?|lines)\\W+(?:\\w+\\W+){0,5}(?:further|farther|apart|wider|bigger spacing)"] },
+                any: ["\\bd\\b\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)", "(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)\\W+(?:\\w+\\W+){0,3}(?:slit |grating )?(?:spacing|separation|d\\b|distance between)", "(?:slits?|lines)\\W+(?:\\w+\\W+){0,5}(?:further|farther|apart|wider|bigger spacing)", "(?:spacing|separation|\\bd)\\W+(?:\\w+\\W+){0,2}(?:larger|bigger|greater|increas\\w*|doubl\\w*|twice)"] },
             ],
             sample: "The maxima move closer together, because the grating with fewer lines per millimetre has a larger slit spacing d, so sin θ = mλ/d is smaller for each order and the angles are smaller.",
             model: "<ul><li>The maxima are closer together / angles are smaller (1)</li><li>The slit spacing d is larger (twice as large: 5.0 × 10⁻⁶ m), so θ is smaller for the same order, since sin θ = mλ/d (1)</li></ul><p>A common error is to say that fewer lines per millimetre means the lines are closer together. It is the opposite: the lines are further apart.</p>",
@@ -630,10 +640,10 @@
             model: "<ul><li>Path difference is zero for all wavelengths (1)</li><li>All colours arrive in phase (constructive interference) and combine to make white (1)</li></ul><p>In the higher orders, sin θ = mλ/d, so each colour has a different angle and the light is spread into a spectrum, with red deviated more than violet.</p>",
           },
           {
-            label: "(e)", type: "text", marks: 1, rows: 3, minWords: 4,
+            label: "(e)", type: "text", marks: 1, rows: 3, minWords: 1,
             q: "The original 400 lines per millimetre grating is used again, but with violet light of shorter wavelength than the red. State what happens to the angle of the first-order maximum.",
-            points: [{ desc: "The angle is smaller (the maximum is nearer the centre), because sin θ = mλ/d and λ is smaller",
-              not: ["(?:larger|bigger|greater|increas\\w*|further|wider|same|unchanged)"],
+            points: [{ desc: "The angle is smaller (the maximum is nearer the centre), because sin θ = mλ/d and λ is smaller", negOK: true,
+              not: ["(?<!\\bnot )(?<!n't )(?<!\\bno )(?:larger|bigger|greater|increas\\w*|further|wider|same|unchanged)", "(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:smaller|decreas\\w*|reduc\\w*|less|nearer|closer|lower)"],
               any: ["(?:smaller|decreas\\w*|reduc\\w*|less|nearer|closer|lower)"] }],
             sample: "The angle is smaller, so the maximum is closer to the centre.",
             model: "<p>The angle is smaller (1), since sin θ = mλ/d and λ is smaller. Red light is deviated more than violet, the opposite of a prism.</p>",
@@ -654,7 +664,7 @@
             steps: [
               { desc: "I = P/A", rel: ["i=p/a", "p=ia", "p=i" + X + "a", "p=a" + X + "i"] },
               { desc: "Substitution: P = 3.25 × 1.5 × 10⁻⁴ (area converted to m²)", nums: [3.25, 1.5e-4] },
-              { desc: "P = 4.9 × 10⁻⁴ W", ans: 4.875e-4, sf: 2, unit: ["w", "j s-1"] },
+              { desc: "P = 4.9 × 10⁻⁴ W", ans: 4.875e-4, sf: 2, unit: ["w", "watts", "watt", "j s-1"] },
             ],
             sample: "I = P/A\nP = IA = 3.25 × 1.5 × 10⁻⁴\nP = 4.9 × 10⁻⁴ W",
             model: "<ul><li>I = P/A (1)</li><li>P = 3.25 × 1.5 × 10⁻⁴ (1): 1.5 cm² = 1.5 × 10⁻⁴ m², not 1.5 × 10⁻² m²</li><li>P = 4.9 × 10⁻⁴ W (1)</li></ul>",
@@ -665,7 +675,7 @@
             steps: [
               { desc: "I₁d₁² = I₂d₂² (or I = k/d²)", rel: ["i[₁1]d[₁1]\\^?2=i[₂2]d[₂2]\\^?2", "i=k/d\\^?2", "i[₂2]=i[₁1]d[₁1]\\^?2/d[₂2]\\^?2", "i[₁1]/i[₂2]=\\(?d[₂2]/d[₁1]\\)?\\^?2", "k=id\\^?2", "i[₂2]=\\(?i[₁1]"] },
               { desc: "Substitution: 3.25 × 0.40² = I₂ × 0.90²", nums: [3.25, 0.4, 0.9] },
-              { desc: "I₂ = 0.64 W m⁻²", ans: 0.642, sf: 2, unit: ["w m-2", "w/m2"] },
+              { desc: "I₂ = 0.64 W m⁻²", ans: 0.642, sf: 2, unit: ["w m-2", "w/m2", "watts per square metre"] },
             ],
             sample: "I₁d₁² = I₂d₂²\n3.25 × 0.40² = I₂ × 0.90²\nI₂ = 0.64 W m⁻²",
             model: "<ul><li>I₁d₁² = I₂d₂² (1)</li><li>3.25 × 0.40² = I₂ × 0.90² (1)</li><li>I₂ = 0.64 W m⁻² (1)</li></ul><p>Moving 2.25 times as far away cuts the irradiance by 2.25² = 5.06. Check: 3.25 ÷ 5.06 = 0.64.</p>",
@@ -699,6 +709,7 @@
             q: "The lamp is replaced by a laser. Explain why the inverse square law does not apply to the light from a laser.",
             points: [
               { desc: "The laser beam is (almost) parallel and hardly spreads out, so the area it covers stays the same (it is not a point source)",
+                not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,2}(?:parallel|narrow|collimated)"],
                 any: ["(?:laser|beam)\\W+(?:\\w+\\W+){0,6}(?:parallel|narrow|collimated|hardly spreads?|little spread|barely spreads?|doesn'?t spread|does not spread|not spread\\w*|doesn'?t diverge|does not diverge|not diverg\\w*|same (?:area|width|size))", "(?:parallel|collimated|doesn'?t spread|does not spread|not spread out|little spread|hardly spreads?|barely spreads?|no spreading)", "not a point source"] },
             ],
             sample: "A laser beam is almost parallel and hardly spreads out, so the power is not spread over a larger area as the distance increases.",
@@ -732,7 +743,7 @@
             steps: [
               { desc: "n = λ₁/λ₂ (sin θ₁/sin θ₂ = λ₁/λ₂)", rel: ["n=" + LAM + "[₁1]/" + LAM + "[₂2]", LAM + "[₁1]/" + LAM + "[₂2]=n", LAM + "[₂2]=" + LAM + "[₁1]/n", "n=" + LAM + "air/", "n=650/", "1\\.5=650"] },
               { desc: "Substitution: 1.50 = 650 / λ₂", nums: [1.5, 650] },
-              { desc: "λ₂ = 433 nm", ans: 433.33, alts: [4.3333e-7], sf: 3, unit: ["nm", "m"] },
+              { desc: "λ₂ = 433 nm", ans: 433.33, alts: [4.3333e-7], sf: 3, unit: ["nm", "m", "nanometres", "metres", "metre"] },
             ],
             sample: "n = λ₁ / λ₂\n1.50 = 650 / λ₂\nλ₂ = 433 nm",
             model: "<ul><li>n = λ₁/λ₂ (1)</li><li>1.50 = 650 / λ₂ (1)</li><li>λ₂ = 433 nm (4.33 × 10⁻⁷ m) (1)</li></ul><p>The wavelength falls because the light slows down.</p>",
