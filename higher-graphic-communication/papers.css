@@ -26,7 +26,7 @@
 .pp-stem > :first-child { margin-top: 0; }
 .pp-fig { margin: .8em 0; }
 .pp-fig { overflow-x: auto; }
-.pp-fig svg { min-width: 480px; max-width: 560px; }
+.pp-fig svg { min-width: 480px; max-width: 560px; background: #fffaf0; border-radius: 2px; }
 
 .pp-part { margin: 1em 0 0; padding-top: .8em; border-top: 1px dashed var(--line); }
 .pp-part:first-of-type { border-top: 0; padding-top: 0; }
