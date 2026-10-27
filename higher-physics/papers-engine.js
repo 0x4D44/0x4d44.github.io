@@ -271,7 +271,11 @@
         const n = HPP.finalNumber(String(ans));
         if (!n) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
-        return { got: targets.some((t) => HPP.closeTo(n.v, t, { sf: part.sf, abs: part.tol, rel: part.rel, signed: part.signed })) ? of : 0, of };
+        const hit = targets.some((t) => HPP.closeTo(n.v, t, { sf: part.sf, abs: part.tol, rel: part.rel, signed: part.signed }));
+        // the box takes a number, but a unit typed after it must be the right one ("1.5 kg" is not 1.5 m s-1)
+        if (hit && part.unit && unitAfter(n) && HPP.unitKey(part.unit) && !HPP.unitOk(n, [part.unit].concat(part.unitAlts || [])))
+          return { got: 0, of, note: "The number looks right, but the unit you wrote is not the one the quantity is measured in." };
+        return { got: hit ? of : 0, of };
       }
       case "match": {
         const picked = Array.isArray(ans) ? ans : [];

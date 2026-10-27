@@ -217,7 +217,7 @@
     const badge = el("span", { class: "pp-badge" });
     const card = el("article", { class: "pp-q", id: `${ns}-${q.id}`, "aria-labelledby": `${ns}-${q.id}-h` },
       el("header", { class: "pp-qhead" },
-        el("h3", { id: `${ns}-${q.id}-h` }, `Question ${n}`, el("span", { class: "pp-qtag" }, ` · ${area.short} · ${total} marks`)),
+        el("h3", { id: `${ns}-${q.id}-h` }, `Question ${n}`, el("span", { class: "pp-qtag" }, ` · ${area.short}`)),
         badge),
       q.style ? el("p", { class: "pp-style" }, q.style) : null,
       el("div", { class: "pp-stem", html: q.stem }));
@@ -241,7 +241,7 @@
       const got = r.reduce((a, x) => a + (x || 0), 0);
       const done = q.parts.every((_, i) => r[i] != null);
       const some = r.some((x) => x != null);
-      badge.textContent = done ? `${fmt(got)} / ${total}` : some ? `${fmt(got)} so far` : `${total} marks`;
+      badge.textContent = done ? `${fmt(got)} / ${total}` : some ? `${fmt(got)} so far` : `${total} mark${total > 1 ? "s" : ""}`;
       badge.className = "pp-badge" + (done ? (got === total ? " full" : got >= total / 2 ? " part" : " low") : "");
     };
     q.parts.forEach((p, pi) => card.append(renderPart(q, p, pi, () => { paint(); window.dispatchEvent(new Event("hpp-change")); }, ns)));
@@ -268,7 +268,7 @@
   /* ---- mock paper ---- */
   const MOCK_TARGET = { s1: 10, odu: 17, paw: 17, ele: 16, skills: 6 };
   function drawMock() {
-    // draw until the paper lands on 65 marks, in roughly the real proportions
+    // draw until the paper lands on 66 marks, in roughly the real proportions
     let best = null, bestGap = 1e9;
     for (let n = 0; n < 300; n++) {
       const picked = [];
@@ -289,7 +289,7 @@
   }
   function mockPanel() {
     const panel = el("div");
-    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 10 multiple-choice marks, then 17 marks of Universe, 17 of Particles and Waves, 16 of Electricity and 6 of experiments and open-ended questions. At the real pace of about 69 seconds a mark, 65 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers. Marks from the mock also count on the scoreboard." }));
+    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 10 multiple-choice marks, then 17 marks of Universe, 17 of Particles and Waves, 16 of Electricity and 6 of experiments and open-ended questions. At the real pace of about 68 seconds a mark, 66 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers. Marks from the mock also count on the scoreboard." }));
     panel.append(el("div", { class: "exam-timer", "data-minutes": "75", "data-label": "Mock clock" }));
     const out = el("div");
     const total = el("p", { class: "pp-sum", "aria-live": "polite" });
