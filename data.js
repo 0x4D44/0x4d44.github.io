@@ -41,7 +41,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-graphic-communication",
-    title: "Planes, Plans & Pennants",
+    title: "Higher Graphic Communication: Planes, Plans & Pennants",
     tagline: "A complete, interactive guide to Higher Graphic Communication: drawing standards and projection, geometric forms and pictorials, CAD, design and DTP, digital technology, the assignment and the exam. HMS Vellum's Plan Room, Minecraft blocks and Air Cadets carry the diagrams and animated widgets. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-graphic-communication/",
     illustration: "ill-higher-graphics",
@@ -54,7 +54,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-maths",
-    title: "Chart, Compass & Calculus",
+    title: "Higher Maths: Chart, Compass & Calculus",
     tagline: "A complete, interactive guide to Scotland's Higher Mathematics: polynomials to the wave function, 3D vectors to areas between curves, plus exam technique and two timed mini-papers. The Blockhaven Air Cadets join the block-built frigate HMS Lodestone, where cannon, compasses and cuboids carry 33 live widgets. Vanilla JavaScript, canvas and self-hosted KaTeX.",
     url: "https://0x4d44.github.io/higher-maths/",
     illustration: "ill-higher-maths",
@@ -67,7 +67,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-engineering",
-    title: "Rivets, Relays & Rigging",
+    title: "Higher Engineering: Rivets, Relays & Rigging",
     tagline: "A complete, interactive guide to Higher Engineering Science: systems and control, analogue and digital electronics, drives and pneumatics, structures and materials, and the exam and assignment. HMS Ratchet, redstone relays and Air Cadet engineers carry over 60 interactive simulations. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-engineering/",
     illustration: "ill-higher-engineering",
@@ -80,7 +80,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-physics",
-    title: "Shot, Spark & Starlight",
+    title: "Higher Physics: Shot, Spark & Starlight",
     tagline: "A complete, interactive guide to Higher Physics for the 2026–27 exam: motion to the Big Bang, quarks to refraction, AC to LEDs, plus uncertainties, the assignment and a mock drill. The Blockhaven Air Cadets return to HMS Redstone; cannon, minecarts and redstone carry 35 interactive simulations. Vanilla JavaScript and canvas.",
     url: "https://0x4d44.github.io/higher-physics/",
     illustration: "ill-higher-physics",
@@ -93,7 +93,7 @@ window.ESSAYS = [
   },
   {
     slug: "higher-computing",
-    title: "Blocks, Wings & Broadsides",
+    title: "Higher Computing: Blocks, Wings & Broadsides",
     tagline: "A complete, interactive revision guide to SQA Higher Computing Science: all four areas, worked exam technique and a mock paper. Minecraft blocks, RAF Air Cadets and Napoleonic ships of the line carry the examples; live SQL, stepping algorithms and narrated video explainers do the teaching. Vanilla JavaScript, sql.js, Piper TTS.",
     url: "https://0x4d44.github.io/higher-computing/",
     illustration: "ill-higher-computing",
@@ -130,7 +130,7 @@ window.ESSAYS = [
   },
   {
     slug: "conformers",
-    title: "Conformers",
+    title: "Organic Chemistry: Conformers",
     tagline: "A six-chapter interactive guide to conformations for first-year organic chemistry: Newman projections, staggered and eclipsed butane, ring strain, the cyclohexane chair, the ring flip and A-values. Every molecule is drawn live from real geometry and can be spun, twisted and flipped. Includes a six-minute gouache-painted, narrated video. Canvas, SVG and vanilla JavaScript.",
     url: "https://0x4d44.github.io/conformers/",
     illustration: "ill-chair",
@@ -195,7 +195,7 @@ window.ESSAYS = [
   },
   {
     slug: "meiosis",
-    title: "Meiosis \u2014 One of Each",
+    title: "S6 Biology: Meiosis \u2014 One of Each",
     tagline: "An illustrated, interactive guide to meiosis for Scottish S6 Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript \u2014 no build step.",
     url: "https://0x4d44.github.io/meiosis/",
     illustration: "ill-dna",
@@ -1942,7 +1942,7 @@ window.ESSAYS = [
   },
   {
     slug: "edinburgh-biosci",
-    title: "First Year, Decoded",
+    title: "Edinburgh Biosciences: First Year, Decoded",
     tagline: "A first-year survival guide to Biological Sciences at the University of Edinburgh.",
     url: "https://0x4d44.github.io/edinburgh-biosci/",
     illustration: "ill-dna",
