@@ -99,7 +99,7 @@
     lab(155, 34, "R<tspan font-size=\"10\" dy=\"3\">1</tspan><tspan dy=\"-3\"> = 1.2 kΩ</tspan>") +
     lab(250, 120, "R<tspan font-size=\"10\" dy=\"3\">2</tspan>", "end") + lab(250, 136, "3.0 kΩ", "end") +
     lab(360, 120, "R<tspan font-size=\"10\" dy=\"3\">3</tspan>", "start") + lab(360, 136, "6.0 kΩ", "start") +
-    lab(44, 124, "9.6 V", "end") + txt(75, 44, "+", { size: 15, bold: true }) +
+    lab(44, 124, "9.6 V", "end") + txt(44, 66, "+", { size: 16, bold: true }) +
     cur(82, 50, "r", null) + lab(82, 38, "I") + cur(316, 118, "d", null) + lab(304, 122, "I<tspan font-size=\"10\" dy=\"3\">3</tspan>", "end"));
 
   /* ---- fig 3: thermistor divider ---- */
@@ -190,19 +190,34 @@
 
 
 
+
+  /* ---- fig 16: LDR dusk switch ---- */
+  const ldrV = (x, y1, y2) => {
+    const c = (y1 + y2) / 2;
+    return rV(x, y1, y2) + `<circle cx="${x}" cy="${c}" r="26" fill="none" stroke="${INK}" stroke-width="1.8"/>` +
+      line(x - 44, c - 34, x - 24, c - 16, 1.8, BLUE) + head(x - 24, c - 16, "r", BLUE).replace("M", "M") +
+      line(x - 50, c - 14, x - 30, c + 4, 1.8, BLUE) + head(x - 30, c + 4, "r", BLUE);
+  };
+  FIG.dusk = svg(360, 280, "Circuit diagram: a 9.0 volt supply across a series pair, a fixed resistor R above a light-dependent resistor, LDR, below. The junction between them goes to the base of an npn transistor. A lamp is connected between the positive rail and the collector, and the emitter goes to 0 volts.",
+    rail(30, 320, 28, "+9.0 V") + wire([90, 28], [90, 52]) + rV(90, 52, 122) + wire([90, 122], [90, 140]) + dot(90, 140) + wire([90, 140], [90, 162]) + ldrV(90, 162, 232) + wire([90, 232], [90, 252]) +
+    rail(30, 320, 252, "0 V") +
+    wire([90, 140], [138, 140]) + npn(178, 140) + wire([190, 180], [190, 252]) +
+    wire([190, 28], [190, 56]) + lampV(190, 56, 100) + wire([190, 100], [190, 116]) +
+    lab(66, 92, "R", "end") + lab(128, 205, "LDR", "start"));
+
   /* ---- marker helpers: clause-bounded (tempered) regex source strings, built with String.raw ---- */
   const C = (stop, n) => R`(?:(?!${stop})[^.;]){0,${n}}`;   /* up to n characters of one clause that never run into `stop` */
   const NEG = R`\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`;
-  const UP = R`(?:ris(?:es|e|ing|en)|increas\w*|goes? up|going up|went up|climb\w*|grow\w*|higher|bigger|larger|greater)`;
-  const DOWN = R`(?:fall\w*|drop\w*|decreas\w*|lower\w*|reduc\w*|smaller|less\b|dip\w*|declin\w*|goes? down|going down|went down|diminish\w*)`;
-  const UPSTOP = R`ris(?:es|e|ing)|increas|goes? up|higher|bigger|larger|greater|climb|grow`;
-  const DOWNSTOP = R`fall|drop|decreas|lower|reduc|smaller|\bless\b|goes? down`;
+  const UP = R`(?:ris(?:es|e|ing|en)|increas\w*|go(?:es)? up|going up|went up|climb\w*|grow\w*|higher|bigger|larger|greater)`;
+  const DOWN = R`(?:fall\w*|drop\w*|decreas\w*|lower\w*|reduc\w*|smaller|less\b|dip\w*|declin\w*|go(?:es)? down|going down|went down|diminish\w*)`;
+  const UPSTOP = R`ris(?:es|e|ing)|increas|go(?:es)? up|higher|bigger|larger|greater|climb|grow`;
+  const DOWNSTOP = R`fall|drop|decreas|lower|reduc|smaller|\bless\b|go(?:es)? down`;
   const NB = R`(?<!not )(?<!n't )(?<!never )(?<!isnt )(?<!cannot )`;
   const VS = R`whereas|while|\bbut\b|unlike|\bthan\b|compared|however|rather`;
 
   B.analogue = {
     intro:
-      "<p>Analogue electronics is the heaviest and hardest block of the paper, <strong>20 to 35 of the 110 marks</strong>, and the course reports say candidates lose marks on rearranging the divider formula, on the voltage across the base resistor and the solenoid, and on written descriptions that name no quantity and no direction. Fifteen questions, 79 marks: dividers and sensors, diodes and relays, the BJT and the MOSFET, op-amps, and a whole-system controller. About half the marks are calculations (keep full calculator values, use the units asked for); the written answers want a <strong>cause, a direction and a physical result</strong>.</p>",
+      "<p>Analogue electronics is the heaviest and hardest block of the paper, <strong>20 to 35 of the 110 marks</strong>, and the course reports say candidates lose marks on rearranging the divider formula, on the voltage across the base resistor and the solenoid, and on written descriptions that name no quantity and no direction. Sixteen questions, 83 marks: dividers and sensors, diodes and relays, the BJT and the MOSFET, op-amps, and a whole-system controller. About half the marks are calculations (keep full calculator values, use the units asked for); the written answers want a <strong>cause, a direction and a physical result</strong>.</p>",
     questions: [
       /* ================= 01 series and parallel ================= */
       {
@@ -277,7 +292,7 @@
             q: R`Explain what happens to $V_{out}$ as the temperature rises above 30 °C.`,
             points: [
               { desc: "The thermistor's resistance falls as the temperature rises",
-                not: [R`resistance${C(R`falls?|drop|decreas|lower|reduc|smaller|\bless\b|\bas\b|when|if|\bso\b|goes? down`, 30)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|goes up|climb\w*|grow\w*)`],
+                not: [R`fixed\W+resist\w*\W+(?:\w+\W+){0,2}${DOWN}`, R`resistance${C(R`falls?|drop|decreas|lower|reduc|smaller|\bless\b|\bas\b|when|if|\bso\b|go(?:es)? down`, 30)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|go(?:es)? up|climb\w*|grow\w*)`],
                 any: [R`resistance${C(UPSTOP + R`|\bas\b|when|if|` + NEG, 45)}${DOWN}`, R`${DOWN}${C(R`resistor`, 14)}resistance`, R`(?:less|lower|smaller|reduced)\W+(?:\w+\W+){0,1}resistance`] },
               { desc: "So the thermistor takes a smaller share of the supply and the voltage across R (Vout) rises", negOK: true,
                 not: [R`(?:\bv ?out\b|output(?: voltage)?)\W+(?:\w+\W+){0,3}${DOWN}`],
@@ -464,7 +479,8 @@
             points: [
               { desc: "The minimum gate-source voltage at which the MOSFET begins to conduct",
                 not: [R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`],
-                any: [R`(?:minimum|lowest|least|smallest|at least|just enough|point at which|value at which|level at which|voltage (?:at|where|when) which|voltage (?:at|where|when))${C(R`maximum|fully|full|completely`, 70)}(?:conduct\w*|(?:turn\w*|switch\w*)\W+(?:\w+\W+){0,2}on\b|begin\w*|start\w*|open\w*|form\w*|channel|current\W+(?:\w+\W+){0,2}(?:flow\w*|start\w*|begin\w*))`] },
+                any: [R`(?:minimum|lowest|least|smallest|at least|just enough|point at which|value at which|level at which|voltage (?:at|where|when) which|voltage (?:at|where|when))${C(R`maximum|fully|full|completely`, 70)}(?:conduct\w*|(?:turn\w*|switch\w*)\W+(?:\w+\W+){0,2}on\b|begin\w*|start\w*|open\w*|form\w*|channel|current\W+(?:\w+\W+){0,2}(?:flow\w*|start\w*|begin\w*))`,
+                  R`(?:voltage|vgs|v_?gs)\W+(?:\w+\W+){0,3}(?:needed|required|necessary)\W+(?:\w+\W+){0,3}(?:turn|switch)\w*\W+(?:\w+\W+){0,2}on\b`] },
             ],
             sample: "The threshold voltage is the minimum gate-source voltage at which the MOSFET starts to conduct.",
             model: R`<ul><li>The minimum / lowest gate-source voltage ($V_{GS}$) at which the MOSFET just begins to conduct (the channel forms and a drain current starts to flow) (1)</li></ul><p>Do not accept "the voltage at which it is fully on": at the threshold the MOSFET is only starting to conduct.</p>`,
@@ -564,8 +580,8 @@
                   R`(?:output|it)${C(R`\bnot\b`, 40)}(?:cannot|can't|can not|unable|won't|never)\W+(?:\w+\W+){0,5}(?:more|further|greater|larger|bigger|higher|lower|exceed|negative)\W+(?:\w+\W+){0,6}(?:supply|rails?|vcc|12)`,
                   R`(?:can only|only)\W+(?:\w+\W+){0,3}(?:swing|go|reach|move|be)\W+(?:\w+\W+){0,4}(?:between|up to|as (?:far|low|high) as|within)\W+(?:\w+\W+){0,3}(?:supply|rails?|vcc|12)`,
                 ] },
-              { desc: "The output saturates (clips) at -12 V",
-                all: [R`(?:[-−]\s?12(?:\.0)?\b|minus 12|negative 12|12(?:\.0)? ?(?:v|volts?) negative|12(?:\.0)? ?(?:v|volts?) below)`, R`(?:saturat\w*|clip\w*|stuck|stops?|reach\w*|lowest|most negative|as far as|flat\w*)`] },
+              { desc: "The output saturates (clips) at -12 V", negOK: true,
+                all: [R`(?:[-−]\s?12(?:\.0)?\b|minus 12|negative 12|12(?:\.0)? ?(?:v|volts?) negative|12(?:\.0)? ?(?:v|volts?) below)`, R`${NB}(?:saturat\w*|clip\w*|stuck|stops?|reach\w*|lowest|most negative|as far as|flat\w*)`] },
             ],
             sample: "The output voltage is limited by the supply. It has to stay between the two rails, so the amplifier saturates and the output clips at -12 V.",
             model: R`<ul><li>The output of an op-amp cannot go beyond the supply rails ($\pm 12$ V); the formula only says what it <em>would</em> be with an unlimited supply (1)</li><li>the output saturates (clips) at $-12$ V (1)</li></ul><p>The sign is required for the second mark: $12$ V alone, or $+12$ V, is not accepted.</p>`,
@@ -610,9 +626,10 @@
         figure: FIG.controller,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 3.0, tol: 0.02, unit: "V",
-            q: R`Calculate $V_{ref}$.`,
-            why: R`<p>$V_{ref} = V_s \times \dfrac{R_4}{R_3 + R_4} = 9.0 \times \dfrac{10}{20 + 10} = 3.0$ V (1).</p>`,
+            label: "(a)", type: "mcq", marks: 1, a: 3,
+            q: R`What is the reference voltage $V_{ref}$ set by $R_3$ and $R_4$?`,
+            opts: [R`$4.5\ \text{V}$`, R`$6.0\ \text{V}$`, R`$1.5\ \text{V}$`, R`$3.0\ \text{V}$`],
+            why: R`<p>$V_{ref} = V_s \times \dfrac{R_4}{R_3 + R_4} = 9.0 \times \dfrac{10}{20 + 10} = 3.0$ V (1). $6.0$ V is the voltage across $R_3$ (the upper resistor); $4.5$ V is what equal resistors would give.</p>`,
           },
           {
             label: "(b)", type: "num", marks: 2, a: 10, tol: 0.05, unit: "kΩ",
@@ -646,7 +663,7 @@
             points: [
               { desc: "The thermistor's resistance increases as the temperature falls",
                 not: [R`resistance${C(UPSTOP + R`|\bas\b|when|if`, 25)}${DOWN}`],
-                any: [R`resistance${C(DOWNSTOP + R`|\bas\b|when|if|` + NEG, 60)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|goes up|climb\w*|grow\w*)`, R`(?:increase|rise|growth)\W+(?:in|of)\W+(?:the\W+)?(?:thermistor\W+)?resistance`, R`(?:higher|bigger|larger|greater)\W+resistance`, R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}resistance`] },
+                any: [R`resistance${C(DOWNSTOP + R`|\bas\b|when|if|` + NEG, 60)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|go(?:es)? up|climb\w*|grow\w*)`, R`(?:increase|rise|growth)\W+(?:in|of)\W+(?:the\W+)?(?:thermistor\W+)?resistance`, R`(?:higher|bigger|larger|greater)\W+resistance`, R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}resistance`] },
               { desc: "So V_i (the voltage across R / at the inverting input) falls",
                 any: [
                   R`(?:\bv_?i\b)${C(UPSTOP + R`|` + NEG, 40)}${DOWN}`,
@@ -662,7 +679,7 @@
               { desc: "The transistor switches on (base current), the relay operates and the heater is switched on",
                 all: [R`(?:transistor|base current)${C(R`\bnot\b|n't|never`, 70)}(?:switch\w*|turn\w*|\bon\b|conduct\w*|saturat\w*|start\w*|current)`, R`(?:relay|coil|contacts?|heater)${C(R`\bnot\b|n't|never`, 70)}(?:\bon\b|operat\w*|clos\w*|energi[sz]\w*|switch\w*|turn\w*|work\w*|run\w*|start\w*|activat\w*|heat\w*|warm\w*|pull\w*)`] },
             ],
-            sample: "As the temperature falls the resistance of the thermistor increases, so the thermistor takes a bigger share of the supply and the voltage Vi across R falls. When Vi is below Vref the comparator output is positive, at 9 V. A base current then flows, so the transistor is switched on, the relay is operated and the heater is switched on.",
+            sample: "As the temperature falls the resistance of the thermistor is higher, so the thermistor has a bigger share of the supply and the voltage Vi across R is lower. When Vi is below Vref the comparator output is positive, at 9 V. A base current then flows, so the transistor is switched on, the relay is operated and the heater is switched on.",
             model: R`<p>A cause-and-effect chain, one device at a time, with directions:</p><ul><li>The (NTC) thermistor's resistance increases as the temperature falls (1)</li><li>so $V_i$, the voltage across $R$ at the inverting input, falls (1)</li><li>when $V_i$ falls below $V_{ref}$ (3.0 V, at 10 °C) the comparator output goes positive / saturates at +9.0 V (1)</li><li>a base current flows, the transistor switches on, the relay coil is energised and the contacts close, so the heater comes on (1)</li></ul><p>Do not accept "the voltage changes" or "it compares the voltages" with no direction. The comparator rule is the Data Booklet's: $V_i \lt V_{ref}$ gives a positive output.</p>`,
           },
         ],
@@ -723,14 +740,15 @@
             why: R`<p>$h_{FE} = \dfrac{I_C}{I_B} = \dfrac{45}{0.30} = 150$ (1). It is a ratio of two currents, so it has no unit.</p>`,
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 45.3, tol: 0.02, unit: "mA",
-            q: R`Calculate the emitter current $I_E$, in mA.`,
-            why: R`<p>The base and collector currents both leave through the emitter: $I_E = I_C + I_B = 45 + 0.30 = 45.3\ \text{mA}$ (1).</p>`,
+            label: "(b)", type: "mcq", marks: 1, a: 0,
+            q: R`What is the emitter current $I_E$?`,
+            opts: [R`$45.3\ \text{mA}$`, R`$44.7\ \text{mA}$`, R`$45\ \text{mA}$`, R`$0.30\ \text{mA}$`],
+            why: R`<p>The base and collector currents both leave through the emitter: $I_E = I_C + I_B = 45 + 0.30 = 45.3\ \text{mA}$ (1). $44.7$ mA subtracts the base current; $45$ mA ignores it; $0.30$ mA is only the base current.</p>`,
           },
           {
-            label: "(c)", type: "mcq", marks: 1, a: 0,
+            label: "(c)", type: "mcq", marks: 1, a: 1,
             q: R`In another circuit the base-emitter voltage of the transistor is only $0.4\ \text{V}$. In which region is the transistor operating?`,
-            opts: ["Cut-off (off)", "Active (amplifying)", "Saturation (fully on)", "Reverse breakdown"],
+            opts: ["Active (amplifying)", "Cut-off (off)", "Saturation (fully on)", "Reverse breakdown"],
             why: R`<p>Below about 0.7 V no base current flows, so no collector current flows: the transistor is in cut-off and acts as an open switch. In the active region $V_{BE} \approx 0.7$ V and $I_C = h_{FE}I_B$; in saturation the load limits $I_C$.</p>`,
           },
         ],
@@ -743,9 +761,10 @@
         stem: R`<p>A sensor divider made from two $100\ \text{k}\Omega$ resistors gives an output of 2.7 V. This is connected to the input of a voltage follower. The output of the follower feeds a motor-driver stage that draws a much larger current than the divider could supply.</p>`,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 2.7, tol: 0.01, unit: "V",
-            q: R`State the output voltage of the voltage follower.`,
-            why: R`<p>A voltage follower has a gain of exactly 1: $V_o = V_i = 2.7$ V (1).</p>`,
+            label: "(a)", type: "mcq", marks: 1, a: 0,
+            q: R`What is the output voltage of the voltage follower?`,
+            opts: [R`$2.7\ \text{V}$`, R`$0\ \text{V}$`, R`$1.35\ \text{V}$`, R`$5.4\ \text{V}$`],
+            why: R`<p>A voltage follower has a gain of exactly 1: $V_o = V_i = 2.7$ V (1). It does not amplify (5.4 V would be a gain of 2) and it does not halve the voltage.</p>`,
           },
           {
             label: "(b)", type: "text", marks: 2, rows: 4, minWords: 8,
@@ -776,6 +795,37 @@
             ],
             sample: "The follower has a very high input resistance, so it draws almost no current from the divider and the divider's output voltage is unaffected. Its output can then supply the larger current needed by the motor-driver stage.",
             model: R`<ul><li>The follower has a very high input resistance, so it draws (almost) no current from the divider (1)</li><li>so the divider is not loaded and its output voltage stays as designed (1)</li><li>the follower's output can supply the larger current the motor-driver stage needs (1)</li></ul><p>Any two of these three ideas earn the two marks. Do not accept "it amplifies the voltage": the gain is exactly 1.</p>`,
+          },
+        ],
+      },
+      /* ================= 16 dusk lamp (extended, 4 marks) ================= */
+      {
+        id: "analogue-16",
+        style: "Section 2 · extended response · describe how a circuit operates",
+        stem: R`<p>A garden lamp is to operate automatically at dusk. A fixed resistor $R$ and a light-dependent resistor (LDR) form a voltage divider across a 9.0 V supply. The voltage across the LDR is applied to the base of an npn transistor, and the lamp is in the collector circuit, as shown.</p>`,
+        figure: FIG.dusk,
+        parts: [
+          {
+            label: "(a)", type: "text", marks: 4, rows: 8, minWords: 20,
+            q: R`Describe how the circuit operates as it gets dark.`,
+            points: [
+              { desc: "The LDR's resistance increases as the light level falls",
+                not: [R`resistance${C(UPSTOP + R`|\bas\b|when|if`, 25)}${DOWN}`],
+                any: [R`resistance${C(DOWNSTOP + R`|\bas\b|when|if|` + NEG, 60)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|go(?:es)? up|climb\w*|grow\w*)`, R`(?:increase|rise|growth)\W+(?:in|of)\W+(?:the\W+)?(?:ldr\W+)?resistance`, R`(?:higher|bigger|larger|greater|high|large)\W+(?:\w+\W+){0,1}resistance`, R`resistance\W+(?:\w+\W+){0,2}(?:is|becomes|gets)\W+(?:very\W+)?(?:high|large|big)`, R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}resistance`] },
+              { desc: "So the LDR takes a bigger share of the supply: the voltage across the LDR (at the base) rises",
+                any: [
+                  R`voltage${C(R`resistor|` + DOWNSTOP + R`|` + NEG + R`|\bbut\b`, 40)}(?:across|over|at|on)${C(R`resistor|` + DOWNSTOP, 25)}(?:the )?(?:ldr|base|transistor)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
+                  R`\bldr\b${C(NEG, 40)}(?:bigger|larger|greater|more)\W+(?:\w+\W+){0,2}(?:share|proportion|voltage|part|fraction)`,
+                  R`(?:base voltage|\bv_?be\b|voltage at the base|base-emitter voltage|\bv ?ldr\b)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
+                  R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}voltage\W+(?:\w+\W+){0,3}(?:ldr|base)`,
+                ] },
+              { desc: "When this reaches about 0.7 V a base current flows and the transistor starts to conduct",
+                all: [R`(?:0\.7|\bv_?be\b|base.?emitter|threshold|turn.?on voltage)`, R`(?:base current|conduct\w*|turn\w* on|switch\w* on|starts?|begins?|flows?)`] },
+              { desc: "A collector current flows through the lamp and the lamp comes on",
+                any: [R`(?:lamp|bulb)${C(NEG, 50)}(?:come\w* on|switch\w* on|turn\w* on|illuminat\w*|glow\w*|\blit\b|\bon\b|lights? up|is lit)`, R`collector current${C(NEG, 50)}(?:lamp|bulb)`, R`(?:current|it)${C(NEG, 30)}(?:flows?|passes?)${C(NEG, 30)}(?:through|in) (?:the )?(?:lamp|bulb)`] },
+            ],
+            sample: "As it gets dark the resistance of the LDR increases, so the LDR takes a bigger share of the supply and the voltage across it, at the base, rises. When this reaches about 0.7 V a base current flows and the transistor starts to conduct. A collector current then flows through the lamp, so the lamp comes on.",
+            model: R`<p>A chain from cause to result, one device per step:</p><ul><li>As it gets darker the resistance of the LDR increases (1)</li><li>so the LDR takes a larger share of the supply: the voltage across the LDR (the base voltage) rises (1)</li><li>when this reaches about 0.7 V ($V_{BE}$) a base current flows and the transistor turns on (1)</li><li>a collector current flows through the lamp, so the lamp lights (1)</li></ul><p>Do not accept "the voltage changes" or "the LDR lets the transistor on" with no direction or quantity. Also acceptable: "the voltage across $R$ falls" for the second mark if it is linked to the LDR voltage rising.</p>`,
           },
         ],
       },
