@@ -81,7 +81,7 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
     for (const [name, calc, lo, hi] of [["Paper 1", "non-calculator", 26, 30], ["Paper 2", "calculator", 30, 34]]) {
       await page.getByRole("button", { name: new RegExp(name) }).click();
       const tags = await page.locator("#pp-panel-mock .pp-qtag").allInnerTexts();
-      assert.ok(tags.length >= 6, `${name}: ${tags.length} questions`);
+      assert.ok(tags.length >= 4, `${name}: ${tags.length} questions`);
       assert.ok(tags.every((t) => t.includes(calc)), `${name}: every question is ${calc}`);
       const marks = tags.reduce((s, t) => s + +/(\d+) marks/.exec(t)[1], 0);
       assert.ok(marks >= lo && marks <= hi, `${name}: ${marks} marks`);

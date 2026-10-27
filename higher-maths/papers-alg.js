@@ -99,11 +99,11 @@
       },
       {
         label: "(b)", q: String.raw`Rationalise the denominator of $\dfrac{12}{3+\sqrt3}$ and give the answer as an exact value.`, type: "num", marks: 2, a: "6-2sqrt(3)", show: String.raw`6-2\sqrt3`,
-        accept: ["6 - 2sqrt3"], reject: ["6+2sqrt(3)", "12(3-sqrt(3))"],
+        accept: ["6 - 2sqrt3"], forbid: ["/\\(?[^=]*sqrt"], forbidNote: "The denominator should be rationalised: no surd left below a fraction line.", reject: ["6+2sqrt(3)", "12(3-sqrt(3))"],
         why: String.raw`<p>&bull;1 multiply top and bottom by the conjugate: $\dfrac{12(3-\sqrt3)}{(3+\sqrt3)(3-\sqrt3)}=\dfrac{12(3-\sqrt3)}{6}$</p><p>&bull;2 simplify: $2(3-\sqrt3)=6-2\sqrt3$.</p>`
       },
       {
-        label: "(c)", q: String.raw`Evaluate $27^{\frac23}\times4^{-\frac12}$.`, type: "num", marks: 2, a: "9/2", show: String.raw`\tfrac92`, accept: ["4.5"], reject: ["18", "9", "3/2"],
+        label: "(c)", q: String.raw`Evaluate $27^{\frac23}\times4^{-\frac12}$.`, type: "num", marks: 2, a: "9/2", forbid: ["\\^\\(?-?\\d+/\\d"], show: String.raw`\tfrac92`, accept: ["4.5"], reject: ["18", "9", "3/2"],
         why: String.raw`<p>&bull;1 evaluate each power: $27^{2/3}=(\sqrt[3]{27})^2=9$ and $4^{-1/2}=\tfrac1{\sqrt4}=\tfrac12$</p><p>&bull;2 multiply: $9\times\tfrac12=\tfrac92$.</p>`
       }
     ]
@@ -439,8 +439,31 @@
     ]
   });
 
+  Q.push({
+    id: "alg-19", calc: false,
+    style: "Paper 1 style · non-calculator · show that, then use it",
+    stem: String.raw`<p>A polynomial is given by $f(x)=x^3-3x^2-4x+12$.</p>`,
+    parts: [
+      {
+        label: "(a)", q: String.raw`Show that $(x-2)$ is a factor of $f(x)$. Write your reasoning in a sentence or two.`, type: "text", marks: 2, minWords: 4,
+        points: [
+          { desc: "evaluate f(2) (or divide synthetically) and obtain 0", any: [String.raw`f\(2\)\s*=\s*0`, String.raw`remainder[^.;]{0,25}(?:\b0\b|zero)`, String.raw`8\s*-\s*12\s*-\s*8\s*\+\s*12`, String.raw`=\s*0[^.;]{0,30}x\s*=\s*2|x\s*=\s*2[^.;]{0,30}=\s*0`] },
+          { desc: "conclude with the factor theorem", any: [String.raw`factor theorem`, String.raw`so[^.;]{0,25}is a factor`, String.raw`therefore[^.;]{0,25}factor`, String.raw`hence[^.;]{0,25}factor`] }
+        ],
+        sample: "f(2) = 8 - 12 - 8 + 12 = 0, so by the factor theorem (x-2) is a factor.",
+        why: String.raw`<p>&bull;1 $f(2)=8-12-8+12=0$ (or synthetic division with remainder $0$)</p><p>&bull;2 the remainder is zero, so by the factor theorem $(x-2)$ is a factor.</p>`
+      },
+      {
+        label: "(b)", q: String.raw`Hence solve $f(x)=0$. Give the three roots separated by commas.`, type: "set", marks: 3, a: [-2, 2, 3], show: String.raw`x=-2,\ 2,\ 3`, reject: ["2", "-3, 2, 4", "2, 3"],
+        why: String.raw`<p>&bull;1 divide: $f(x)=(x-2)(x^2-x-6)$</p><p>&bull;2 factorise: $(x-2)(x-3)(x+2)$</p><p>&bull;3 roots $x=-2,\ 2,\ 3$.</p>`
+      }
+    ]
+  });
+
   B.alg = {
-    intro: String.raw`Polynomials, quadratics, indices and logs, functions and graphs, and sequences. Twelve questions are non-calculator (factor theorem, surds, completing the square, transformations) and six are calculator (log graphs, exponential models and a recurrence in context).`,
+    intro: String.raw`Polynomials, quadratics, indices and logs, functions and graphs, and sequences. Thirteen questions are non-calculator (factor theorem, surds, completing the square, transformations) and six are calculator (log graphs, exponential models and a recurrence in context).`,
     questions: Q
   };
+  /* non-calculator questions first, as on the real papers */
+  { const q = (window.HMP_BANK.alg || {}).questions; if (q) q.sort((a, b) => (a.calc ? 1 : 0) - (b.calc ? 1 : 0)); }
 })();
