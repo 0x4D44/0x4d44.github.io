@@ -10,8 +10,9 @@ const LAYER_RE = /^(terrain|buildings?|roads?|water|green|rail|landmarks?)/i;
 const LAYER_ALIAS = { building: 'buildings', road: 'roads', landmark: 'landmarks' };
 // x-ray end-state opacity per layer (x = 1)
 // Draped layers sit a few cm above the terrain; at distance the depth buffer can't resolve that and they z-fight.
-// Negative polygon offsets scale with the local depth resolution, so each layer reliably wins over the one beneath it.
-const LAYER_OFFSET = { green: [-1, -2], water: [-2, -4], roads: [-3, -6], rail: [-4, -8] };
+// Units-only negative polygon offsets (a few depth quanta; NO slope factor - at grazing angles a slope factor shoves layers metres
+// through bridge decks and each other, which flickers). The real fix for far-field fighting is the larger near plane (app.js).
+const LAYER_OFFSET = {};
 const XRAY_MIN = { terrain: 0.13, buildings: 0.07, landmarks: 0.12, roads: 0.28, green: 0.18, water: 0.42, rail: 0.3 };
 
 export class City {
@@ -83,7 +84,7 @@ export class City {
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       const cloned = mats.map((m) => { const c = m.clone(); c.userData.base = { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, emissive: m.emissive ? m.emissive.clone() : null }; c.userData.layer = layer; return c; });
       for (const c of cloned) { // crisp texture sampling at grazing angles (facades, roads)
-        for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap']) if (c[k]) c[k].anisotropy = 8;
+        for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap']) if (c[k]) c[k].anisotropy = 1;
         if (layer === 'water' && c.roughness < 0.8) { c.roughness = 0.85; c.metalness = 0; c.userData.base.rough = 0.85; } // flat water + glossy sun = whole river flashing
       }
       const po = LAYER_OFFSET[layer];

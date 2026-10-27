@@ -111,7 +111,8 @@ export class AnimCrowd {
     this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 42 : 80;
     this.chars = [];
     const scene = gltf.scene;
-    for (const n of scene.children) {
+    const holder = scene.getObjectByName('people') || scene;
+    for (const n of holder.children) {
       const m = /^person_(.+)$/.exec(n.name); if (!m) continue;
       const clips = {}; for (const c of CLIPS) { const a = gltf.animations.find((x) => x.name === m[1] + '__' + c); if (a) clips[c] = a; }
       if (clips.idle) this.chars.push({ id: m[1], node: n, clips, kid: /boy|girl|teen/.test(m[1]), staff: /staff/.test(m[1]) });
