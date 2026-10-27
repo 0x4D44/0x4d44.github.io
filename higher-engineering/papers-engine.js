@@ -80,7 +80,10 @@
     const func = funcToks.length;
     // numbers and one-letter labels (a trace such as "G1: inputs 1 and 1, output X = 0") do not dilute the function-word ratio
     const wordy = toks.filter((t) => !/^\d+$/.test(t) && !/^[a-z]\d?$/.test(t) || FUNC.has(t)).length;
-    if (func / Math.max(1, wordy) < 0.14) return (text.match(/[,;]/g) || []).length >= 3 && func >= 1 ? "half" : "zero";
+    if (func / Math.max(1, wordy) < 0.14) {
+      if ((text.match(/=/g) || []).length >= 3) return null;       // a worked trace ("X = A NAND B = 0. P = ...") is not a pile of key words
+      return (text.match(/[,;]/g) || []).length >= 3 && func >= 1 ? "half" : "zero";
+    }
     // a run of "and the"-joined nouns with no verb, auxiliary or linking word is a list, however it is punctuated
     const joins = (text.match(/\b(and|or)\b/g) || []).length;
     if (joins >= 3 && (!toks.some((t) => AUXV.has(t)) || (joins >= 4 && joins * 7 >= toks.length))) return "half";
