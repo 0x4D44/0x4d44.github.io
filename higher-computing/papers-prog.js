@@ -217,7 +217,7 @@
             q: "The final line, SEND bonus TO DISPLAY, causes an error. Explain why. [2]",
             points: [
               { desc: "bonus is a local variable, declared inside the procedure", all: [R`local`, R`(inside|within|only|procedure|sub-?program|addscore|declared)`], win: 140 },
-              { desc: "so it cannot be seen / does not exist in the main program", any: [R`(cannot|can't|isn't|not)[^]{0,40}(seen|used|accessed|accessible|visible|found|exist\w*|recogni[sz]ed|defined|declared)`, R`(out of scope|no longer exist\w*|only exists? (while|when|inside|in)|undefined)`] },
+              { desc: "so it cannot be seen / does not exist in the main program", any: [R`(cannot|can't|isn't|not)[^]{0,40}(seen|used|accessed|accessible|visible|found|exist\w*|recogni[sz]ed|defined|declared)`, R`(out of scope|no longer exist\w*|only exists? (while|when|inside|in)|undefined)`] , negOK: true },
             ],
             sample: "bonus is a local variable that is declared inside the addScore procedure, so it only exists while the procedure runs. In the main program it is out of scope, so using it there causes an error.",
             model: "<p>(1) bonus is declared inside the procedure, so it is a local variable; (1) a local variable exists only while the sub-program runs and is not visible (out of scope) in the main program, so the last line fails with an error.</p>",
@@ -337,7 +337,7 @@
             q: "Explain why it is more efficient to use a loop that quits early, rather than one that always checks all five names. [2]",
             points: [
               { desc: "the search ends as soon as the name is found", any: [R`(stop\w*|exit\w*|end\w*|finish\w*|break\w*|quit\w*)[^]{0,40}(as soon as|once|when|immediately|after)[^]{0,30}(found|match\w*|find\w*|locat\w*)`, R`(as soon as|once|when|immediately)[^]{0,30}(found|match\w*|locat\w*|it finds)[^]{0,50}(stop\w*|exit\w*|end\w*|finish\w*|break\w*|quit\w*)`] },
-              { desc: "so the remaining items are skipped, saving time (especially for a long array)", any: [R`(rest|remaining|other|skipp\w+|further|unnecessar\w+|pointless\w*|needless\w*|wast\w+)[^]{0,40}(items|names|elements|array|checks?|comparisons?|loops?|repeats?|checking)`, R`(saves?|saving|less|faster|quicker)[^]{0,20}(time|processing)`] },
+              { desc: "so the remaining items are skipped, saving time (especially for a long array)", any: [R`(rest|remaining|other|skipp\w+|further|unnecessar\w+|pointless\w*|needless\w*|wast\w+)[^]{0,40}(items|names|elements|array|checks?|comparisons?|loops?|repeats?|checking)`, R`(saves?|saving|less|faster|quicker)[^]{0,20}(time|processing)`] , negOK: true },
             ],
             sample: "The loop stops as soon as the name is found. The remaining names in the array are skipped, which saves time, especially when the array is very long.",
             model: "<p>(1) The loop ends as soon as the item is found (conditional loop); (1) the rest of the array is not checked, so fewer comparisons and less time are used. A fixed loop would carry on to the end regardless.</p>",
