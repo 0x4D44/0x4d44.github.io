@@ -373,7 +373,7 @@
                 any: ["\\b(?:all|every|each)\\W+(?:\\w+\\W+){0,3}(?:readings?|measurements?|heights?|values?|h)\\W+(?:\\w+\\W+){0,8}(?:too (?:large|big|small|high|low|great|long|short)|larger|bigger|smaller|greater|higher|lower|wrong|offset|shifted|same amount|constant|out by)", "\\b(?:measured|measuring|starting|started|taken|read|measure)\\W+(?:\\w+\\W+){0,2}from the (?:wrong|top|bottom|centre|center|edge|base|middle|end)", "\\b(?:wrong|incorrect)\\W+(?:\\w+\\W+){0,1}(?:start|starting|release|zero|point|place|position|reference|height)", "\\b(?:h|height|distance|length)\\W+(?:was|is|were|has been|measured|had)\\W+(?:\\w+\\W+){0,5}(?:wrong|too (?:large|big|small|long|short|high|low)|always|constant|offset)", "\\bnot (?:been )?measured (?:from|to) the (?:right|correct)", "\\bswitch\\W+(?:\\w+\\W+){0,8}(?:below|above|lower|higher|further|closer|wrongly|misplaced)"] },
             ],
             sample: "This is a systematic uncertainty. Every height reading is too large by the same 0.06 m, because the height is measured from the wrong point on the ball.",
-            model: "<ul><li>Systematic uncertainty (1)</li><li>Every height is out by the same amount, e.g. h was measured from the bottom of the ball but the ball was released from its top, or the trapdoor was lower than the position the height was measured to; or a timing delay that is the same for every drop (1)</li></ul><p>Random uncertainties scatter the points about the line; they do not shift the whole line. The line has not been forced through the origin: it is drawn where the points lie, and the shift of 0.06 m is real evidence of a systematic effect.</p>",
+            model: "<ul><li>Systematic uncertainty (1)</li><li>Every height is out by the same amount, e.g. h was measured from the bottom of the ball but the ball was released from its top, or the trapdoor was lower than the position the height was measured to; or the ball was not released exactly at the height that was measured (1)</li></ul><p>A timing delay is <em>not</em> a valid cause here: a delay adds a fixed time to every reading, which would change the shape of the h against t² graph rather than shift it up the h axis. Random uncertainties scatter the points about the line; they do not shift the whole line. The line has not been forced through the origin: it is drawn where the points lie, and the shift of 0.06 m is real evidence of a systematic effect.</p>",
           },
           {
             label: "(c)", type: "text", marks: 3, rows: 6, minWords: 14,
@@ -484,7 +484,7 @@
             steps: [
               { desc: "Relationship: C = Q/V", rel: ["c=q[/÷]v", "q=cv", "v=q[/÷]c"] },
               { desc: "Substitution with the charge converted to coulombs: 28.8 × 10⁻⁶ C and 6.0 V", nums: [[2.88e-5, 28.8], 6.0] },
-              { desc: "Capacitance with unit: 4.8 × 10⁻⁶ F", ans: 4.8e-6, sf: 2, unit: "f" },
+              { desc: "Capacitance with unit: 4.8 × 10⁻⁶ F (or 4.8 µF)", ans: 4.8e-6, alts: [4.8], sf: 2, unit: ["f", "uf"], not: ["(?<![0-9.])4\\.8(?:0*)f\\.?$"] },
             ],
             sample: "C = Q/V\nC = 28.8 × 10⁻⁶ / 6.0\nC = 4.8 × 10⁻⁶ F",
             model: "<ul><li>C = Q/V (1)</li><li>C = 28.8 × 10⁻⁶ ÷ 6.0 (the prefix µ means 10⁻⁶) (1)</li><li>C = 4.8 × 10⁻⁶ F (1)</li></ul><p>The answer is 4.8 µF. Forgetting that µ is 10⁻⁶ gives 4.8 F, a million times too big.</p>",
