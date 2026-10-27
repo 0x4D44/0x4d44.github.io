@@ -30,6 +30,10 @@
     return out;
   };
 
+  /* Q05(a): the unbalanced force and the total mass, written as a sum or already added up */
+  const SUB5A_F = "(?:2800|3500-400-300|3500-300-400|3500-\\(?(?:400\\+300|300\\+400)\\)?)";
+  const SUB5A_M = "(?:2000|\\(?(?:1200\\+800|800\\+1200)\\)?)";
+
   /* ---- figure helpers ---- */
   const T = (x, y, s, o) => '<text x="' + x + '" y="' + y + '"' + (o ? " " + o : "") + ">" + s + "</text>";
   const open = (w, h, label) => '<svg role="img" aria-label="' + label + '" viewBox="0 0 ' + w + " " + h + '" width="' + w + '" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="12" fill="#222"><rect width="' + w + '" height="' + h + '" fill="#fff"/>';
@@ -350,8 +354,8 @@
             label: "(c)", type: "text", marks: 2, rows: 5, minWords: 10,
             q: "Describe how the horizontal and the vertical components of the ball's velocity change from the moment it is kicked until just before it lands.",
             points: [
-              { desc: "The horizontal component is constant (no horizontal force)", any: ["horizontal\\w*\\W+(?:\\w+\\W+){0,6}(?:constant|same|unchanged|stays|remains|uniform|doesn'?t change|does not change|not change)", "(?:constant|unchanged|uniform)\\W+(?:\\w+\\W+){0,2}horizontal"], not: ["horizontal\\w*\\W+(?:\\w+\\W+){0,2}(?:decreas|increas|slows|reduc|accelerat|speeds)"] },
-              { desc: "The vertical component decreases to zero at the top, then increases downwards (constant acceleration of 9.8 m s⁻² downwards)", all: ["vertical\\w*\\W+(?:\\w+\\W+){0,10}(?:decreas\\w*|reduc\\w*|slow\\w*|smaller|less|falls?|lower|drops?)", "zero|\\b0\\b|top|highest|maximum|stops"], win: 220, not: ["vertical\\w*\\W+(?:\\w+\\W+){0,2}(?:constant|unchanged|uniform|stays the same|remains the same)\\b"] },
+              { desc: "The horizontal component is constant (no horizontal force)", any: ["horizontal\\w*\\W+(?:\\w+\\W+){0,6}(?:constant|same|unchanged|stays|remains|uniform|doesn'?t change|does not change|not change)", "(?:constant|unchanged|uniform)\\W+(?:\\w+\\W+){0,2}horizontal"], not: ["horizontal\\w*(?: \\w+){0,2} (?:decreas|increas|slows|reduc|accelerat|speeds)"] },
+              { desc: "The vertical component decreases to zero at the top, then increases downwards (constant acceleration of 9.8 m s⁻² downwards)", all: ["vertical\\w*\\W+(?:\\w+\\W+){0,10}(?:decreas\\w*|reduc\\w*|slow\\w*|smaller|less|falls?|lower|drops?)", "zero|\\b0\\b|top|highest|maximum|stops"], win: 220, not: ["vertical\\w*(?: \\w+){0,2} (?:constant|unchanged|uniform|stays the same|remains the same)\\b"] },
             ],
             sample: "The horizontal component stays constant throughout the flight because there is no horizontal force. The vertical component decreases steadily as the ball rises, is zero at the highest point, and then increases in the downward direction as the ball falls.",
             model: "<ul><li>Horizontal component constant (1)</li><li>Vertical component decreases uniformly to zero at the top, then increases in the opposite (downward) direction, because of the constant acceleration of 9.8 m s⁻² downwards (1)</li></ul>",
@@ -383,7 +387,7 @@
             q: "Calculate the acceleration of the car and caravan.",
             steps: [
               { desc: "Uses F = ma with the unbalanced (resultant) force", rel: FMA },
-              { desc: "Substitution: unbalanced force 2800 N (3500 − 400 − 300) and total mass 2000 kg", nums: [2800, 2000] },
+              { desc: "Substitution: unbalanced force 2800 N (3500 − 400 − 300) and total mass 2000 kg (1200 + 800)", rel: [SUB5A_F + "\\)?=\\(?" + SUB5A_M + "\\)?x?a", "a=\\(?" + SUB5A_F + "\\)?/\\(?" + SUB5A_M + "\\)?", "(?<![\\d.])" + SUB5A_F + "/\\(?" + SUB5A_M + "\\)?", "\\(?" + SUB5A_M + "\\)?x?a=" + SUB5A_F] },
               { desc: "Final answer 1.4 m s⁻² with unit", ans: 1.4, sf: 2, unit: withDir(["m s-2", "m/s2", "m/s^2"]) },
             ],
             sample: "unbalanced force = 3500 − 400 − 300 = 2800 N\nF = ma\n2800 = 2000 × a\na = 1.4 m s⁻²",
@@ -404,23 +408,23 @@
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "The tow bar pulls the caravan forwards with the tension force. State the size and direction of the force that forms a Newton's third law pair with this force, and say what object it acts on.",
             points: [
-              { desc: "The pair force has the same size, 1420 N (about 1.4 × 10³ N)", any: ["\\b14[0-9]0 ?n\\b", "1\\.4(?:2)? ?x ?10\\^3"] },
-              { desc: "It acts backwards (opposite direction) on the car", all: ["\\b(?:backwards?|rearwards?|opposite|towards the (?:rear|back)|to the left|against the motion|behind)\\b", "\\b(?:car|vehicle|tow ?bar|front)\\b"], win: 120 },
+              { desc: "The pair force has the same size, 1420 N (about 1.4 × 10³ N)", any: ["\\b14[0-9]0 ?n\\b", "1\\.4(?:2)? ?x ?10\\^3", "\\b(?:same|equal)\\W+(?:\\w+\\W+){0,2}(?:size|magnitude)", "\\bequal (?:to|and opposite)", "\\bsame as the (?:tension|force)"] },
+              { desc: "It acts backwards (opposite direction) on the tow bar (or on the car, if the tow bar is treated as part of the car)", all: ["\\b(?:backwards?|rearwards?|opposite|towards the (?:rear|back)|to the left|against the motion|behind)\\b", "\\b(?:car|vehicle|tow ?bar|front)\\b"], win: 120 },
             ],
-            sample: "The pair is a force of 1420 N, the same size as the tension, acting backwards on the car. It is equal in size and opposite in direction.",
-            model: "<ul><li>Equal in size: 1420 N (about 1.4 × 10³ N) (1)</li><li>Opposite direction (backwards), acting on the car / tow bar (1)</li></ul><p>A third-law pair acts on <em>different</em> objects. It is not the friction force on the caravan: that is a different force on the same object.</p>",
+            sample: "The pair is a force of 1420 N, the same size as the tension, acting backwards on the tow bar (or on the car, if the tow bar is treated as part of the car). It is equal in size and opposite in direction.",
+            model: "<ul><li>Equal in size: 1420 N (about 1.4 × 10³ N) (1)</li><li>Opposite direction (backwards), acting on the tow bar &ndash; or on the car if the tow bar is treated as part of the car (1)</li></ul><p>A third-law pair acts on <em>different</em> objects. It is not the friction force on the caravan: that is a different force on the same object.</p>",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 1,
+            label: "(d)", type: "mcq", marks: 1, a: 3,
             q: "Later the car and caravan travel along the level road at a constant speed of 25 m s⁻¹. Which statement is correct?",
             opts: [
-              "The engine force is greater than the total friction force",
+              "The engine force is greater than the total friction force, otherwise the car could not keep moving",
+              "There is no friction acting on the vehicles, because the speed is constant",
+              "The resultant force is forwards and constant, because the car is moving forwards",
               "The engine force is equal to the total friction force, so the resultant force is zero",
-              "There is no friction acting, because the speed is constant",
-              "The resultant force is forwards and constant",
-              "The tension in the tow bar is zero",
+              "The tension in the tow bar is zero, because the car and caravan move at the same speed",
             ],
-            why: "Constant velocity means zero acceleration, so by Newton's first law the forces are balanced: engine force = total friction (including air resistance). Friction does not vanish at constant speed (option C), and the tow bar still has to balance the caravan's friction (option E).",
+            why: "Constant velocity means zero acceleration, so by Newton's first law the forces are balanced: engine force = total friction (including air resistance). Friction does not vanish at constant speed (option B), a moving object needs no resultant force to keep moving (options A and C), and the tow bar still has to balance the caravan's friction (option E).",
           },
         ],
       },
@@ -432,40 +436,40 @@
           "<p>In a warehouse a 40 kg crate is pulled up a rough ramp by a rope parallel to the ramp. The ramp is at 25° to the horizontal. The friction force on the crate is 60 N. The crate accelerates up the ramp at 0.50 m s<sup>−2</sup>.</p>",
         parts: [
           {
-            label: "(a)", type: "mcq", marks: 1, a: 3,
+            label: "(a)", type: "mcq", marks: 1, a: 1,
             q: "Which row lists <strong>all</strong> the forces, and only the forces, acting on the crate as it is pulled up the ramp?",
             opts: [
               "Tension up the slope; weight; friction down the slope",
+              "Tension up the slope; weight; normal reaction at right angles to the ramp; friction down the slope",
               "Tension up the slope; weight; normal reaction; friction down the slope; a force up the slope because the crate is moving up",
               "Tension up the slope; weight; normal reaction; friction down the slope; mg cos 25° pressing into the ramp, as well as the weight",
-              "Tension up the slope; weight; normal reaction at right angles to the ramp; friction down the slope",
               "Tension up the slope; weight; normal reaction; friction down the slope; the unbalanced force of 20 N (ma) up the slope",
             ],
-            why: "Four forces act on the crate: tension, weight, normal reaction and friction (opposing the motion, so down the slope), which is option D. Option A leaves out the normal reaction. There is no &ldquo;force of motion&rdquo; (option B): an object moving up the slope does not need a force in that direction to keep moving. The components mg sin θ and mg cos θ (option C) are parts of the weight, not extra forces, and the unbalanced force ma (option E) is the <em>result</em> of the forces acting, not another force.",
+            why: "Four forces act on the crate: tension, weight, normal reaction and friction (opposing the motion, so down the slope), which is option B. Option A leaves out the normal reaction. There is no &ldquo;force of motion&rdquo; (option C): an object moving up the slope does not need a force in that direction to keep moving. The components mg sin θ and mg cos θ (option D) are parts of the weight, not extra forces, and the unbalanced force ma (option E) is the <em>result</em> of the forces acting, not another force.",
           },
           {
             label: "(b)", type: "calc", marks: 4,
             q: "Calculate the tension in the rope.",
             steps: [
-              { desc: "Uses F = ma with the unbalanced force along the slope", rel: FMA },
+              { desc: "Uses F = ma with the unbalanced force along the slope", rel: [...FMA, "=40x0?\\.50?(?![\\d.])", "(?:unbalanced|resultant|net)\\w*=20"] },
               { desc: "Component of the weight down the slope: mg sin 25° = 166 N", nums: [[166, 165.7, 170]] },
-              { desc: "Substitution: T − 166 − 60 = 40 × 0.50", nums: [60, [0.5, 20]] },
+              { desc: "Substitution: T − 166 − 60 = 40 × 0.50", rel: ["166", "165\\.\\d", "mgsin", "sin25"], nums: [60, [0.5, 20]] },
               { desc: "Final answer 2.5 × 10² N (246 N) with unit", ans: 245.67, sf: 2, unit: U.n },
             ],
             sample: "component of weight down the slope = mg sin θ = 40 × 9.8 × sin 25° = 166 N\nF = ma\nT − 166 − 60 = 40 × 0.50\nT = 20 + 166 + 60\nT = 246 N",
             model: "<ul><li>F = ma along the slope (1)</li><li>mg sin 25° = 40 × 9.8 × sin 25° = 166 N (1)</li><li>T − 166 − 60 = 40 × 0.50 (1)</li><li>T = 2.5 × 10² N (246 N) (1)</li></ul><p>Both friction and the weight component act down the slope when the crate moves <em>up</em>, so they add. Subtracting the friction (T = 126 N) is a common error.</p>",
           },
           {
-            label: "(c)", type: "mcq", marks: 1, a: 2,
+            label: "(c)", type: "mcq", marks: 1, a: 3,
             q: "The rope snaps while the crate is still moving up the ramp. What is the acceleration of the crate immediately afterwards?",
             opts: [
               "2.6 m s⁻² down the slope",
               "4.1 m s⁻² down the slope",
-              "5.6 m s⁻² down the slope",
               "5.6 m s⁻² up the slope",
+              "5.6 m s⁻² down the slope",
               "9.8 m s⁻² down the slope",
             ],
-            why: "The crate is still moving up, so friction still acts <em>down</em> the slope along with mg sin θ: F = 166 + 60 = 226 N, and a = 226/40 = 5.6 m s⁻² down the slope (the crate is slowing). Option A subtracts the friction; option B ignores it; option D gives the wrong direction (acceleration is in the direction of the resultant force); option E forgets the slope.",
+            why: "The crate is still moving up, so friction still acts <em>down</em> the slope along with mg sin θ: F = 166 + 60 = 226 N, and a = 226/40 = 5.6 m s⁻² down the slope (the crate is slowing). Option A subtracts the friction; option B ignores it; option C gives the wrong direction (acceleration is in the direction of the resultant force); option E forgets the slope.",
           },
         ],
       },
@@ -481,8 +485,8 @@
             label: "(a)", type: "text", marks: 2, rows: 4, minWords: 10,
             q: "State the law of conservation of linear momentum.",
             points: [
-              { desc: "The total momentum before a collision (or explosion) is equal to the total momentum after it", all: ["total\\W+(?:\\w+\\W+){0,2}momentum|momentum\\W+(?:\\w+\\W+){0,4}(?:of|in) the (?:system|colliding|whole|objects|two)|sum of (?:the )?momenta|sum of (?:the )?momentum", "before|initial", "after|final", "equal|same|constant|conserved|unchanged|equals"], win: 220 },
-              { desc: "…in the absence of external forces (provided no unbalanced / external force acts)", any: [near("no|without|absence|absent|unless|isolated|closed|zero|free from|free of", "external|outside|unbalanced|resultant|net", 5)] },
+              { desc: "The total momentum before a collision (or explosion) is equal to the total momentum after it", all: ["total\\W+(?:\\w+\\W+){0,2}momentum|momentum\\W+(?:\\w+\\W+){0,4}(?:of|in) the (?:system|colliding|whole|objects|two)|sum of (?:the )?momenta|sum of (?:the )?momentum", "before|initial", "after|final", "equal|same|constant|conserved|unchanged|equals|="], win: 220 },
+              { desc: "…in the absence of external forces (provided no unbalanced / external force acts)", any: [near("no|without|absence|absent|unless|isolated|closed|zero|free from|free of", "external|outside|unbalanced|resultant|net", 5), "\\b(?:isolated|closed)\\W+(?:\\w+\\W+){0,2}system"] },
             ],
             sample: "The total momentum before a collision is equal to the total momentum after the collision, as long as there are no external forces acting on the system.",
             model: "<ul><li>The total momentum before a collision/explosion equals the total momentum after it (1)</li><li>in the absence of external forces (1)</li></ul><p>Both <em>total</em> momentum and the absence of external forces are needed: leaving either out loses a mark.</p>",
@@ -533,15 +537,15 @@
           "<p>A hockey player strikes a stationary ball of mass 0.18 kg. The graph shows how the force of the stick on the ball varies with time during the contact, which lasts for 8.0 ms.</p>",
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 3.6, tol: 0, sf: 2, unit: "N s",
-            q: "Calculate the impulse on the ball.",
+            label: "(a)", type: "num", marks: 1, a: 3.6, tol: 0, sf: 2, unit: "",
+            q: "Calculate the impulse on the ball, in N s (equivalently kg m s⁻¹). Enter the number only.",
             why: "Impulse = area under the force–time graph = ½ × base × height = ½ × 0.0080 s × 900 N = <strong>3.6 N s</strong>. (Convert ms to s: 8.0 ms = 0.0080 s.)",
           },
           {
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the speed of the ball as it leaves the stick.",
             steps: [
-              { desc: "Uses Ft = mv − mu (impulse = change in momentum)", rel: ["ft=mv-mu", "ft=mv\\b", "mv-mu", "impulse=mv", "impulse=change", "δp=", "impulse=δ", "ft=m\\(v-u\\)", "ft=mδv", "ft=δp", "ft=m\\(?v", "v=\\(?ft\\)?/m", "v=\\(?i\\)?/m", "v=impulse/m", "mv=ft", "mv=i\\b", "mv=impulse", "p=ft", "δp=ft", "v=\\(?mv-mu\\)?/m"] },
+              { desc: "Uses Ft = mv − mu (impulse = change in momentum)", rel: ["ft=mv-mu", "ft=mv\\b", "mv-mu", "impulse=mv", "impulse=change", "δp=", "impulse=δ", "ft=m\\(v-u\\)", "ft=mδv", "ft=δp", "ft=m\\(?v", "v=\\(?ft\\)?/m", "v=\\(?i\\)?/m", "v=impulse/m", "mv=ft", "mv=i\\b", "mv=impulse", "p=ft", "δp=ft", "v=\\(?mv-mu\\)?/m", "p=mv", "v=p/m", "m=p/v", "impulse", "v=3\\.6/0\\.18"] },
               { desc: "Substitution: 3.6 = 0.18 × v − 0", nums: [3.6, 0.18] },
               { desc: "Final answer 20 m s⁻¹ with unit", ans: 20, sf: 2, unit: "m s-1" },
             ],
@@ -554,7 +558,8 @@
             points: [
               { desc: "The ball has the same change in momentum (impulse) whichever way she catches it", any: [near("same|equal|fixed|constant|unchanged", "momentum|impulse", 6)] },
               { desc: "Moving her hands with the ball increases the time over which the ball is brought to rest", any: [near("increas\\w*|longer|extend\\w*|greater|lengthen\\w*|more|extra", "(?:stopping |contact |collision |catching )?(?:time|duration)", 4), "takes? longer"] },
-              { desc: "Since Ft = mv − mu, the same impulse over a longer time means a smaller average force on her hands", any: [near("force", "smaller|less|reduc\\w*|lower|decreas\\w*|minimi[sz]\\w*|weaker", 6)] },
+              { desc: "Since Ft = mv − mu, the same impulse over a longer time means a smaller average force on her hands", all: [near("force", "smaller|less|reduc\\w*|lower|decreas\\w*|minimi[sz]\\w*|weaker", 6), "(?:longer|increas\\w*|greater|extend\\w*|lengthen\\w*|more|extra)\\W+(?:\\w+\\W+){0,3}(?:time|duration)|(?:time|duration)\\W+(?:\\w+\\W+){0,4}(?:longer|increas\\w*|greater|extend\\w*|lengthen\\w*)|takes? longer"], win: 220,
+                not: ["(?:shorter|less|smaller|reduc\\w*|decreas\\w*|lower\\w*)\\W+(?:(?!because|so|and|as|since|but|which|that|while|when)\\w+\\W+){0,2}(?:time|duration)\\b", "(?:reduc\\w*|decreas\\w*|lower\\w*|smaller|less)\\W+(?:(?!because|so|and|as|since|but|which|that|while|when)\\w+\\W+){0,2}(?:impulse|momentum)", "(?:impulse|momentum)\\W+(?:\\w+\\W+){0,3}(?:is|are|gets?|becomes?)\\W+(?:\\w+\\W+){0,1}(?:reduc\\w*|decreas\\w*|lower\\w*|smaller|less)", "(?:time|duration)\\W+(?:\\w+\\W+){0,2}shorter"] },
             ],
             sample: "The ball has the same change in momentum, and so the same impulse, however she catches it. By moving her hands with the ball she increases the time it takes to stop. Since Ft = mv − mu, the same impulse over a longer time gives a smaller average force on her hands, so she is less likely to be hurt.",
             model: "<p>Any three of (1 each):</p><ul><li>The change in momentum (impulse) of the ball is the same</li><li>Her hands moving back increases the stopping/contact time</li><li>Ft = mv − mu, so for the same Ft a longer t gives a smaller average force F</li><li>Smaller force on her hands, so less chance of injury</li></ul><p>The same idea explains airbags, crumple zones and soft landing mats. The impulse is not reduced, only the force.</p>",
@@ -577,9 +582,9 @@
             label: "(b)", type: "calc", marks: 4,
             q: "Calculate the average friction force acting on the carriage as it travels from the top to the lowest point.",
             steps: [
-              { desc: "Uses E_p = mgh and E_k = ½mv² (energy lost = E_p lost − E_k gained)", rel: [...EP, ...EK, "329280|3\\.29x10\\^5"] },
-              { desc: "Energy lost to friction 8.9 × 10⁴ J (89280 J)", nums: [[89280, 89300, 89000, 8.9e4, 9e4]] },
-              { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "=fd\\b", "=fx160", "=160xf", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160", "workdone=forcex?distance", "[we]\\w{0,2}=fxd", "w=f.{0,3}d", "f=e\\w{0,2}/d", "f=\\(?e\\w{0,2}\\)?/\\(?d"], nums: [160] },
+              { desc: "Uses E_p = mgh and E_k = ½mv² (energy lost = E_p lost − E_k gained)", rel: [...EP, ...EK, "329280|3\\.29x10\\^5", "e_?p-e_?k", "e_?p=e_?k\\+", "e_?l(?:ost)?=e_?p-", "½mv\\^?2", "1/2mv\\^?2", "0\\.5mv\\^?2"] },
+              { desc: "Energy lost to friction 8.9 × 10⁴ J (89280 J), or both energies subtracted in one line", rel: ["89280", "89300", "8\\.9\\d*x10\\^4", "89000", "9x10\\^4", "329\\d{3}-24\\d{4}", "3\\.29\\d*x10\\^5-2\\.4\\d*x10\\^5", "24\\d{4}-329\\d{3}", "mgh-½mv", "mgh-1/2mv", "mgh-0\\.5mv"] },
+              { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "=fd\\b", "=fx160", "=160xf", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160", "workdone=forcex?distance", "[we]\\w{0,2}=fxd", "w=f.{0,3}d", "f=e\\w{0,2}/d", "f=\\(?e\\w{0,2}\\)?/\\(?d", "\\(?329\\d{3}-24\\d{4}\\)?/160", "f=\\(?mgh-", "f=\\(?e_?p-e_?k\\)?/"], nums: [160] },
               { desc: "Final answer 5.6 × 10² N (558 N) with unit", ans: 558, sf: 2, unit: U.n },
             ],
             sample: "E_p = mgh = 1200 × 9.8 × 28 = 329280 J\nE_k = ½mv² = ½ × 1200 × 20² = 240000 J\nenergy lost = 329280 − 240000 = 89280 J\nE_w = Fd\n89280 = F × 160\nF = 558 N",
@@ -630,22 +635,22 @@
             label: "(c)", type: "text", marks: 3, rows: 8, minWords: 15,
             q: "A news website says: &ldquo;Astronauts in orbit float because there is no gravity in space.&rdquo; Use your knowledge of physics to comment on this statement.",
             points: [
-              { desc: "Gravity still acts at orbital height: the pull is only a little weaker (F = Gm₁m₂/r²)", any: [near("still|continues?|remains?|nearly|almost|slightly|only a little|reduced|weaker|a bit", "gravity|gravitational|weight|force of gravity|pull|attraction", 6), "\\b(?:there is|there'?s|there still is)\\b\\W+(?:\\w+\\W+){0,2}\\bgravity", near("gravity|gravitational (?:force|field|pull)", "acts?|acting|exists?|present|provides?", 4)], not: ["\\b(?:too far|far enough|far away from|beyond|outside)\\b[^.]{0,40}gravity", "\\bno gravity\\b", "\\bzero gravity\\b", "\\bgravity (?:is|has) (?:zero|gone)", "\\b(?:out of|escape[sd]?) (?:the |earth'?s )?gravity", "\\bwithout gravity", "\\bgravity (?:does ?n'?t|does not|isn'?t|is not) (?:act|exist|work|affect)"] },
-              { desc: "The astronaut and the craft are both in free fall, falling with the same acceleration, so there is no contact force between them (apparent weightlessness)", any: [near("free[- ]?fall|falling|fall\\w*", "together|same|craft|station|satellite|spacecraft|orbit", 8), "same acceleration", near("no|zero|nothing", "contact force|reaction force|normal force|force from the floor|pushing", 6)] },
-              { desc: "They are moving sideways so fast that they keep missing the Earth: they fall around it (an orbit)", any: [near("sideways|horizontal\\w*|tangential|orbital|forward|speed|velocity", "round|around|miss\\w*|curve\\w*|never (?:land|hit)|keeps? (?:on )?falling", 10), "falls? (?:around|round)", "orbit\\w* (?:is|means|are)\\W+(?:\\w+\\W+){0,3}(?:fall\\w*|free ?fall)"] },
+              { desc: "Gravity still acts at orbital height: the pull is only a little weaker (F = Gm₁m₂/r²)", any: [near("still|continues?|remains?|nearly|almost|slightly|only a little|reduced|weaker|a bit", "gravity|gravitational|weight|force of gravity|pull|attraction", 6), "\\b(?:there is|there'?s|there still is)\\b\\W+(?:\\w+\\W+){0,2}\\bgravity", near("gravity|gravitational (?:force|field|pull)", "acts?|acting|exists?|present|provides?", 4)], not: ["\\b(?:too far|far enough|far away from|beyond|outside)\\b[^.]{0,40}gravity", "\\bno gravity\\b", "\\bzero gravity\\b", "\\bgravity (?:is|has) (?:zero|gone)", "\\b(?:out of|escape[sd]?) (?:the |earth'?s )?gravity", "\\bwithout gravity", "\\bgravity (?:does ?n'?t|does not|isn'?t|is not) (?:act|exist|work|affect)", "\\b(?:weaker|less|smaller|reduced|lower)\\W+(?:\\w+\\W+){0,3}(?:so|therefore|which|and|that)\\W+(?:\\w+\\W+){0,3}(?:float\\w*|weightless\\w*)", "\\b(?:float\\w*|weightless\\w*)\\W+(?:\\w+\\W+){0,4}because\\W+(?:\\w+\\W+){0,5}(?:weaker|less|smaller|reduced|lower)"] },
+              { desc: "The astronaut and the craft are both in free fall, falling with the same acceleration, so there is no contact force between them (apparent weightlessness)", any: [near("free[- ]?fall|falling|fall\\w*", "together|same|craft|station|satellite|spacecraft|orbit", 8), "same acceleration", near("no|zero|nothing", "contact force|reaction force|normal force|force from the floor|pushing", 6), near("free[- ]?fall|falling", "weightless\\w*|float\\w*|apparent", 5)] },
+              { desc: "They are moving sideways so fast that they keep missing the Earth: they fall around it (an orbit)", any: [near("sideways|horizontal\\w*|tangential|orbital|forward|speed|velocity", "round|around|miss\\w*|curve\\w*|never (?:land|hit)|keeps? (?:on )?falling", 10), "fall(?:s|ing)? (?:around|round)", "orbit\\w* (?:is|means|are)\\W+(?:\\w+\\W+){0,3}(?:fall\\w*|free ?fall)"] },
             ],
             sample: "The statement is wrong because gravity still acts on the astronauts at that height: the force is only a little weaker than at the surface, as F = Gm₁m₂/r² falls only slightly when r increases a bit. The astronauts and the spacecraft are both in free fall, falling with the same acceleration, so the floor exerts no push on them and they appear weightless. They have a large sideways speed, so as they fall they keep missing the Earth and go around it in an orbit.",
             model: "<p>Any three of (1 each):</p><ul><li>Gravity still acts: at 8.0 × 10⁵ m up the pull is about 79% of its value at the surface (F ∝ 1/r²)</li><li>Gravity is the only force: the astronaut and the spacecraft fall with the same acceleration (free fall), so there is no contact force between them and the astronaut feels weightless</li><li>The satellite has a large velocity at right angles to the pull of gravity, so it keeps falling around the Earth without ever reaching it: that is an orbit</li></ul><p>&ldquo;No gravity in space&rdquo; is a misconception; 0 for a response built on it.</p>",
           },
           {
-            label: "(d)", type: "mcq", marks: 1, a: 1,
+            label: "(d)", type: "mcq", marks: 1, a: 4,
             q: "What is the force exerted by the satellite on the Earth?",
             opts: [
-              "Zero, because the Earth's mass is so much larger",
-              "6.6 × 10³ N, directed towards the satellite",
+              "Zero, because the Earth's mass is so much larger than the mass of the satellite",
+              "Much smaller than 6.6 × 10³ N, because the mass of the satellite is small",
+              "Much larger than 6.6 × 10³ N, because the mass of the Earth is large",
               "6.6 × 10³ N, directed away from the satellite",
-              "Much smaller than 6.6 × 10³ N, because the satellite's mass is small",
-              "Much larger than 6.6 × 10³ N, because the Earth's mass is large",
+              "6.6 × 10³ N, directed towards the satellite",
             ],
             why: "Newton's third law: the two gravitational forces are equal in size and opposite in direction. The Earth pulls the satellite with 6.6 kN towards the Earth, and the satellite pulls the Earth with 6.6 kN towards the satellite. The Earth accelerates by a tiny amount only because its mass is so large (a = F/m).",
           },
@@ -691,10 +696,10 @@
             label: "(d)", type: "text", marks: 2, rows: 5, minWords: 12,
             q: "Muons created high in the atmosphere have a lifetime of 2.2 µs in their own frame of reference. They travel at 0.995c towards the ground, yet many survive to be detected at ground level. Explain this observation, from the point of view of an observer on the Earth.",
             points: [
-              { desc: "For the Earth observer the muon's lifetime is longer than 2.2 µs because of time dilation (moving clocks run slowly)", any: [near("time|lifetime|life|clock", "longer|dilat\\w*|stretch\\w*|extended|slower|slow|increas\\w*", 8)] },
+              { desc: "For the Earth observer the muon's lifetime is longer than 2.2 µs because of time dilation (moving clocks run slowly)", any: [near("time|lifetime|life|clock", "longer|dilat\\w*|stretch\\w*|extended|slower|slow|increas\\w*", 8)], not: ["dilat\\w*\\W+(?:\\w+\\W+){0,2}(?:does|do|did|is|are)\\W*(?:not|n'?t)\\b", "\\bno (?:time )?dilation", "(?:not|n'?t)\\W+(?:\\w+\\W+){0,2}dilat"] },
               { desc: "…so the muons travel further/for longer before decaying and a large fraction reach the ground", any: [near("further|farther|more distance|greater distance|enough time|longer distance|long enough", "ground|earth|surface|detect\\w*|reach\\w*|surviv\\w*|arriv\\w*", 8), "\\b(?:more|enough|greater|larger)\\b\\W+(?:\\w+\\W+){0,2}muons?\\b\\W+(?:\\w+\\W+){0,3}(?:surviv\\w*|reach\\w*|arriv\\w*)"] },
             ],
-            sample: "Because the muons are moving at almost the speed of light, time dilation means that the Earth observer measures their lifetime to be much longer than 2.2 µs. This gives them enough time to travel much further before decaying, so many of them reach the ground.",
+            sample: "The muons are travelling at almost the speed of light, so the lifetime that the Earth observer measures is increased by time dilation. It is much longer than 2.2 µs. The muons are therefore able to travel much further before they decay, so many of them reach the ground.",
             model: "<ul><li>Time dilation: the moving muon's clock runs slowly, so the lifetime measured on Earth is longer than 2.2 µs (1)</li><li>The muons therefore travel further before decaying, so a large number reach the ground (1)</li></ul><p>Alternative from the muon's frame: the distance to the ground is length-contracted, so the journey takes less than the muon lifetime (1 + 1).</p>",
           },
         ],
@@ -727,10 +732,10 @@
             label: "(c)", type: "calc", marks: 4,
             q: "A police car emits a note of frequency 900 Hz. A stationary observer, ahead of the police car, hears a note of frequency 960 Hz as the police car approaches. Calculate the speed of the police car.",
             steps: [
-              { desc: "Uses f_o = f_s × v/(v ± v_s), choosing v − v_s for an approaching source", rel: ["f.{0,3}o.{0,2}=f.{0,3}s.{0,2}x?\\(?v/", "f.{0,3}o.{0,2}=f.{0,3}s", "f.{0,3}o.{0,2}=\\(?f.{0,3}s", "fo=fs", "960\\(340-\\w+\\)=", "340-v\\w{0,2}=", "v\\w{0,2}=340-"] },
+              { desc: "Uses f_o = f_s × v/(v ± v_s), choosing v − v_s for an approaching source", rel: ["f.{0,3}o.{0,2}=f.{0,3}s.{0,2}x?\\(?v/", "f.{0,3}o.{0,2}=f.{0,3}s", "f.{0,3}o.{0,2}=\\(?f.{0,3}s", "fo=fs", "960\\(340-\\w+\\)=", "340-v\\w{0,2}=", "v\\w{0,2}=340-", "v\\w{0,2}=\\(?v\\)?x?\\(?1-f\\w{0,2}/f\\w{0,2}\\)", "v\\w{0,2}=340x?\\(?1-", "v\\w{0,2}=v\\(1-"] },
               { desc: "Substitution: 960 = 900 × 340/(340 − v_s)", nums: [960, 900, 340] },
-              { desc: "Rearranges: 340 − v_s = 318.75 (or equivalent, e.g. 960(340 − v_s) = 306 000)", nums: [[318.75, 318.8, 319, 306000, 20400, 326400, 1.067, 1.0667, 1.07, 0.0625, 0.9375]] },
-              { desc: "Final answer 21 m s⁻¹ with unit", ans: 21.25, sf: 2, unit: "m s-1" },
+              { desc: "Rearranges: 340 − v_s = 318.75 (or equivalent, e.g. 960(340 − v_s) = 306 000, or v_s = 340(1 − 900/960))", rel: ["340-v\\w{0,2}=\\(?\\d", "v\\w{0,2}=340-\\d", "v\\w{0,2}=340x?\\(?1-", "\\(1-900/960\\)", "1-900/960", "900/960", "960/900", "960\\(340-", "960x340-960", "326400", "306000", "20400", "318\\.75", "318\\.8", "(?<![\\d.])319(?![\\d.])", "0\\.9375", "0\\.0625", "1\\.0667"] },
+              { desc: "Final answer 21 m s⁻¹ with unit", ans: 21.25, sf: 2, unit: MPS },
             ],
             sample: "f_o = f_s × v/(v − v_s) (approaching)\n960 = 900 × 340/(340 − v_s)\n340 − v_s = 900 × 340/960 = 318.75\nv_s = 340 − 318.75\nv_s = 21 m s⁻¹",
             model: "<ul><li>f<sub>o</sub> = f<sub>s</sub>(v/(v − v<sub>s</sub>)) (1)</li><li>960 = 900 × 340/(340 − v<sub>s</sub>) (1)</li><li>340 − v<sub>s</sub> = 318.75 (1)</li><li>v<sub>s</sub> = 21 m s⁻¹ (1)</li></ul><p>Using v + v<sub>s</sub> (the receding formula) gives a negative speed; check that the observed frequency is higher, so the source is approaching and the denominator is smaller.</p>",
@@ -778,9 +783,9 @@
             label: "(c)", type: "calc", marks: 4,
             q: "Calculate the distance to the galaxy.",
             steps: [
-              { desc: "Uses z = v/c (or v = zc) to find the recessional velocity", rel: ["z=v/c", "v=zx?c", "v=cx?z"] },
-              { desc: "Recessional velocity 1.4 × 10⁷ m s⁻¹ (1.37 × 10⁷)", nums: [[1.372e7, 1.37e7, 1.4e7, 1.38e7, 1.371e7]] },
-              { desc: "Uses v = H₀d", rel: ["v=h[_₀0]?x?d", "d=v/h[_₀0]?", "d=v/h", "v=hd"] },
+              { desc: "Uses z = v/c (or v = zc) to find the recessional velocity", rel: ["z=v/c", "v=zx?c", "v=cx?z", "d=zx?c/h", "d=cx?z/h", "d=\\(?zx?c\\)?/h", "v=\\(?z\\)?x?\\(?c\\)?"] },
+              { desc: "Recessional velocity 1.4 × 10⁷ m s⁻¹ (1.37 × 10⁷), or z × c written out", rel: ["1\\.3\\d*x10\\^7", "1\\.4x10\\^7", "1\\.37\\d*e7", "13[67]\\d{5}", "0\\.04\\d*x3(?:\\.0*)?x10\\^8", "3(?:\\.0*)?x10\\^8x0\\.04\\d*", "0\\.04\\d*x3e8", "3e8x0\\.04\\d*", "30/656x3", "3x10\\^8x\\(?30/656"] },
+              { desc: "Uses v = H₀d", rel: ["v=h[_₀0]?x?d", "d=v/h[_₀0]?", "d=v/h", "v=hd", "d=zx?c/h", "d=cx?z/h", "/\\(?2\\.3x10\\^-18", "2\\.3x10\\^-18x?d"] },
               { desc: "Final answer 6.0 × 10²⁴ m with unit", ans: 5.965e24, sf: 2, unit: U.m },
             ],
             sample: "z = v/c\n0.0457 = v / 3.00 × 10⁸\nv = 1.37 × 10⁷ m s⁻¹\nv = H₀d\n1.37 × 10⁷ = 2.3 × 10⁻¹⁸ × d\nd = 6.0 × 10²⁴ m",
@@ -788,9 +793,9 @@
           },
           {
             label: "(d)", type: "num", marks: 1, a: 4.34783e17, tol: 0, sf: 2, unit: "s",
-            q: "Use the Hubble constant H₀ = 2.3 × 10⁻¹⁸ s⁻¹ to estimate the age of the Universe, in seconds.",
+            q: "Running the expansion backwards, the age of the Universe can be estimated as t = 1/H₀. Use the Hubble constant H₀ = 2.3 × 10⁻¹⁸ s⁻¹ to estimate the age of the Universe, in seconds.",
             shown: "4.3 × 10¹⁷",
-            why: "Running the expansion backwards, t = 1/H₀ = 1/(2.3 × 10⁻¹⁸) = <strong>4.3 × 10¹⁷ s</strong> (about 14 billion years).",
+            why: "Running the expansion backwards (a galaxy at distance d moving at v = H₀d left &ldquo;here&rdquo; a time t = d/v = 1/H₀ ago), t = 1/H₀ = 1/(2.3 × 10⁻¹⁸) = <strong>4.3 × 10¹⁷ s</strong> (about 14 billion years).",
           },
           {
             label: "(e)", type: "text", marks: 2, rows: 5, minWords: 12,
@@ -828,14 +833,13 @@
           },
           {
             label: "(b)", type: "text", marks: 2, rows: 4, minWords: 8,
-            q: "State <strong>two</strong> pieces of evidence for the Big Bang theory, other than the redshift of galaxies.",
+            q: "State <strong>two</strong> pieces of evidence for the Big Bang theory, other than the redshift of galaxies and the darkness of the night sky.",
             points: [
               { desc: "The cosmic microwave background radiation", any: ["cosmic microwave|\\bcmbr?\\b|microwave background|microwave radiation|background radiation"] },
               { desc: "The abundance of hydrogen and helium (about 75% and 25%) matches the predictions", any: [near("abundance|proportion|amount|percentage|ratio|quantity|amounts|relative|makes? up|mostly|75|25", "hydrogen|helium", 8), near("hydrogen", "helium", 6)] },
-              { desc: "The darkness of the night sky (Olbers' paradox)", any: [near("(?:night )?sky|night", "dark|black|dim", 5), "olbers"] },
             ],
             sample: "One piece of evidence is the cosmic microwave background radiation. Another is the abundance of hydrogen and helium in the Universe.",
-            model: "<p>Any two of (1 each):</p><ul><li>The cosmic microwave background (faint microwaves from all directions, about 2.7 K)</li><li>The abundance of hydrogen (about three-quarters) and helium (about one-quarter) matches the Big Bang prediction</li><li>The darkness of the night sky (a finite age and expanding Universe)</li></ul>",
+            model: "<p>Any two of (1 each):</p><ul><li>The cosmic microwave background (faint microwaves from all directions, about 2.7 K)</li><li>The abundance of hydrogen (about three-quarters) and helium (about one-quarter) matches the Big Bang prediction</li></ul><p>Only these two are available, because the redshift of galaxies and the darkness of the night sky are excluded by the question. Naming the same piece of evidence twice earns one mark only.</p>",
           },
           {
             label: "(c)", type: "match", marks: 3,
