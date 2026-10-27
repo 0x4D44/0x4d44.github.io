@@ -188,7 +188,7 @@
         label: "(c)", q: String.raw`A second sequence is defined by $v_{n+1}=1.2v_n-3$. Explain why this sequence has no limit.`, type: "text", marks: 2, minWords: 3,
         points: [
           { desc: "the multiplier is 1.2, which is greater than 1 (outside -1 to 1)", any: [String.raw`1\.2[^.;]{0,50}(?:greater|bigger|larger|more|exceed|above|>)`, String.raw`(?:greater|bigger|larger|more|exceed|above|>)[^.;]{0,25}\b1\b`, String.raw`outside[^.;]{0,25}-?1`, String.raw`(?:not|isn't)[^.;]{0,25}between[^.;]{0,25}-?1`] },
-          { desc: "so the terms diverge / grow without settling, hence no limit", any: [String.raw`diverg`, String.raw`grow`, String.raw`increas`, String.raw`(?:no|not|won't|doesn't)[^.;]{0,20}(?:limit|converge|settle|exist)`, String.raw`infin`] }
+          { desc: "so the terms diverge / grow without settling, hence no limit", not: [String.raw`(?:grow|get|become)\w*\s+(?:much\s+)?smaller|decreas|shrink|will converge|it converges|does converge`], any: [String.raw`diverg`, String.raw`grow`, String.raw`increas`, String.raw`(?:no|not|won't|doesn't)[^.;]{0,20}(?:limit|converge|settle|exist)`, String.raw`infin`] }
         ],
         sample: "The multiplier 1.2 is greater than 1 (not between -1 and 1), so the terms keep growing and diverge: there is no limit.",
         why: String.raw`<p>&bull;1 a limit exists only if $-1\lt a\lt1$ in $v_{n+1}=av_n+b$; here $a=1.2$, which is outside that range</p><p>&bull;2 so the terms diverge (they do not settle), hence there is no limit.</p><p>Commonly seen: &ldquo;it goes up&rdquo; with no mention of the multiplier.</p>`
@@ -359,7 +359,7 @@
         why: String.raw`<p>&bull;1 $\log_{10}N=t\log_{10}b+\log_{10}a$; the intercept is $\log_{10}a=0.7$</p><p>&bull;2 $a=10^{0.7}=5.01$</p><p>&bull;3 gradient $=\dfrac{2.2-0.7}{5}=0.3=\log_{10}b$</p><p>&bull;4 $b=10^{0.3}=2.00$ (3 s.f.).</p>`
       },
       {
-        label: "(b)", q: String.raw`Predict the number of bacteria after $8$ hours, to the nearest $10$.`, type: "num", marks: 2, a: 1260, alts: [1280], tol: 1.5, show: "1260", reject: ["16", "256", "5.01"],
+        label: "(b)", q: String.raw`Predict the number of bacteria after $8$ hours, to the nearest $10$.`, type: "num", marks: 2, a: 1260, alts: [1280], tol: 0.5, show: "1260", reject: ["16", "256", "5.01"],
         partial: [{ a: 1283, marks: 1, note: "Close, but check your rounding of a and b earlier on; the unrounded model 10^(0.3t+0.7) gives 1260." }],
         why: String.raw`<p>&bull;1 $\log_{10}N=0.3(8)+0.7=3.1$, or $N=5.012\times1.995^8$</p><p>&bull;2 $N=10^{3.1}\approx1259$, which is $1260$ to the nearest $10$.</p>`
       }
