@@ -195,7 +195,7 @@ window.ESSAYS = [
   },
   {
     slug: "meiosis",
-    title: "S6 Biology: Meiosis \u2014 One of Each",
+    title: "Advanced Higher Biology: Meiosis \u2014 One of Each",
     tagline: "An illustrated, interactive guide to meiosis for Scottish S6 Biology. Follow the same chromosomes through both divisions, move a crossover, turn bivalents and diagnose segregation errors. Original SVG and vanilla JavaScript \u2014 no build step.",
     url: "https://0x4d44.github.io/meiosis/",
     illustration: "ill-dna",
