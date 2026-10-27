@@ -9,7 +9,7 @@ import { loadTrainTemplate, TrainView } from './trainview.js';
 import { loadTunnelTemplate, TunnelView } from './tunnelview.js';
 import { buildStation, placeStation, stationHalfLength, PY } from './stationview.js';
 import { Walker } from './walker.js';
-import { Crowd } from './people.js';
+import { Crowd, AnimCrowd } from './people.js';
 import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
@@ -51,21 +51,22 @@ class Sim {
     const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
     this.GLTFLoader = GLTFLoader;
     this.saved = { clear: r.getClearColor(new THREE.Color()), alpha: r.getClearAlpha(), tm: r.toneMapping, exp: r.toneMappingExposure };
-    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl, vaultTpl] = await Promise.all([
+    const [trainTpl, tunTpl, kitTpl, kioskTpl, peopleTpl, vaultTpl, sigWallTpl, boardsTpl] = await Promise.all([
       loadTrainTemplate(THREE, GLTFLoader, this.url('models/train.glb')),
       loadTunnelTemplate(THREE, GLTFLoader, this.url('models/tunnel_segment.glb')),
-      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._opt('models/people.glb'), this._opt('models/tunnel_station_vault.glb'),
+      this._opt('models/station_kit.glb'), this._opt('models/entrance_kiosk.glb'), this._optG('models/people.glb'), this._opt('models/tunnel_station_vault.glb'), this._opt('models/signal_wall.glb'), this._opt('models/signal_boards.glb'),
     ]);
     this.hallIndex = await this._json('models/stations_index.json');
     const looksJ = await this._json('data/station_looks.json');
     this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
     this.walkable = await this._json('models/train_walkable.json');
     this.halls = new Map(); this.hallLoading = new Map(); this.hallFailed = new Set(); this.entrances = new Map();
-    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleVariants = peopleVariants(THREE, peopleTpl);
+    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleGltf = peopleTpl; this.peopleVariants = null; this.sigWallTpl = sigWallTpl; this.boardsTpl = boardsTpl;
+    try { const SU = await import('three/addons/utils/SkeletonUtils.js'); this.SU = SU; } catch (e) { console.warn('[sim] SkeletonUtils unavailable', e && e.message); this.SU = null; }
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
-    this.scene.add(new THREE.AmbientLight(0x8a7a66, 2.6));
+    this.ambient = new THREE.AmbientLight(0x8a7a66, 2.6); this.scene.add(this.ambient);
     this.quality = this._detectQuality();
     this.savedPR = r.getPixelRatio();
     try { r.setPixelRatio(this.quality === 'low' ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2)); } catch (e) {}
@@ -74,11 +75,14 @@ class Sim {
     this.scene.add(this.trainView.root);
     this.trainView.computeHeadroom(PY); if (this.walkable) this.trainView.setWalkable(this.walkable);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
-    this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2);
+    this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2); this.trainView.setDest(this.line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
-    this.crowd = new Crowd(THREE, this.quality === 'low' ? 28 : 110, this.peopleVariants); this.scene.add(this.crowd.group);
+    { const lowQ = this.quality === 'low'; const ok = this.SU && this.peopleGltf && this.peopleGltf.animations && this.peopleGltf.animations.length;
+      this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 22 : 60, this.quality) : new Crowd(THREE, lowQ ? 28 : 110, null);
+      this.saloon = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 8 : 20, this.quality) : null; this.saloonDone = false;
+      this.scene.add(this.crowd.group); }
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
     this.audio = new SimAudio();
@@ -111,13 +115,32 @@ class Sim {
 
   async _json(path) { try { const r = await fetch(this.url(path)); return r.ok ? await r.json() : null; } catch (e) { return null; } }
 
+  async _optG(path) {
+    try { return await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); } catch (e) { console.warn('[sim] optional model missing', path); return null; }
+  }
+  /** Seated / standing passengers riding in the saloons (ride + explore only; parented to the car groups so they move with the train). */
+  _populateSaloon() {
+    const sc = this.saloon, tv = this.trainView; this.saloonDone = true; if (!sc || !sc.hasAnim) return;
+    const rng = mulberry32(5), PYf = PY;
+    tv.cars.forEach((car, ci) => {
+      const info = tv.carInfo[ci], doors = tv.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1);
+      const zA = ci === 0 ? -info.len / 2 + 2.2 : -info.len / 2 + 0.9, zB = ci === tv.cars.length - 1 ? info.len / 2 - 2.2 : info.len / 2 - 0.9;
+      const slots = [];
+      for (let z = zA; z <= zB; z += 0.55) for (const sx of [-1, 1]) {
+        if (doors.some((d) => Math.abs(z - d) < 1.0)) continue;
+        if (rng() < (this.quality === 'low' ? 0.2 : 0.3)) slots.push({ x: sx * 0.8, y: PYf, z, yaw: sx * Math.PI / 2, mode: 'sit' });
+      }
+      const standing = []; for (let k = 0; k < 2; k++) { const z = zA + rng() * (zB - zA); if (!doors.some((d) => Math.abs(z - d) < 1.2)) standing.push({ x: (rng() < 0.5 ? -1 : 1) * 0.62, y: PYf, z, yaw: rng() * 6.28, mode: 'idle' }); }
+      sc.seat(car, slots.slice(0, Math.ceil(sc.max / tv.cars.length)).concat(standing));
+    });
+  }
   async _opt(path) {
     try { const g = await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); return g.scene; } catch (e) { console.warn('[sim] optional model missing', path); return null; }
   }
 
   // ------------------------------------------------------------------ line / service setup
   setupLine(line, startIdx = 0) {
-    this.line = line;
+    this.line = line; if (this.trainView) this.trainView.setDest(line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     let rec = this.tracks[line];
     if (!rec) {
       const maxPlat = Math.max(...this.stations.map((s) => (s.platform && s.platform.lengthM) || 45), 45);
@@ -420,6 +443,15 @@ class Sim {
 
   _makeSignal() {
     const THREE = this.THREE, g = new THREE.Group();
+    if (this.sigWallTpl) {   // A3 rev 6: wall-mounted two-aspect signal (lamp_red / lamp_green own emissive materials, lenses face +Z)
+      const c = this.sigWallTpl.clone(true); g.add(c); const lamps = {};
+      c.traverse((o) => { if (o.isMesh && /^lamp_(red|green)$/.test(o.name)) { o.material = o.material.clone(); lamps[o.name] = o.material; } });
+      const setLamp = (m, on, hex) => { if (!m) return; m.color.setHex(0x060606); m.map = null; if (m.emissive) m.emissive.setHex(on ? hex : 0x000000); m.emissiveIntensity = on ? 1.1 : 0; m.needsUpdate = true; m.toneMapped = true; };
+      this.sigSet = (green) => { setLamp(lamps.lamp_red, !green, 0xff2a14); setLamp(lamps.lamp_green, green, 0x25ff62); };
+      this.sigSet(false); this.sigWall = true;
+      if (this.boardsTpl) { const b = this.boardsTpl.getObjectByName('board_speed'); if (b) { this.speedBoard = b.clone(true); this.speedBoard.visible = false; this.scene.add(this.speedBoard); } }
+      return { group: g };
+    }
     const head = this.kit && this.kit.getObjectByName('signal_head');
     if (head) {
       const c = head.clone(true); g.add(c);
@@ -695,7 +727,8 @@ class Sim {
         const lv = v.group.userData.psdLeaves;
         if (lv && lv.length) { const open = svc.phase === 'station' && svc.idx === v.stopIdx && (svc.doors.L > 0.04 || svc.doors.R > 0.04); for (const m of lv) m.visible = !open; }
       }
-      this.crowd.update(dt, this.time, (x, z, y) => y);
+      this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position);
+      if (this.saloon) { const sv = this.mode === 'ride' || this.mode === 'explore'; this.saloon.setEnabled(sv); if (sv) { if (!this.saloonDone) this._populateSaloon(); this.saloon.update(dt, this.time, null, this.camera.position); } }
       this._signal(svc);
       this.tms.update(dt, svc.info(), this.mode);
       // lights
@@ -704,6 +737,9 @@ class Sim {
       this.headlight.position.copy(front).add(new THREE.Vector3(0, -0.6, 0)).addScaledVector(fwd, 12);
       this.headlight.target.position.copy(front).addScaledVector(fwd, 40);
       this.headlight.intensity = this.mode === 'explore' && !this.trainView.root.visible ? 0 : 160;
+      // running tunnels are unlit: dim ambient between stations, full level inside / near a hall (smooth ramp)
+      { let f = 1; if (this.mode !== 'explore') { let md = 1e9; const L = track.length, sN = tr.s; for (const st of track.stops) { let d = Math.abs(sN - st.sc); d = Math.min(d, L - d); if (d < md) md = d; } f = Math.min(1, Math.max(0, (68 - md) / 30)); f = f * f * (3 - 2 * f); }
+        const a = 0.35 + (2.6 - 0.35) * f; this.ambient.intensity += (a - this.ambient.intensity) * Math.min(1, dt * 4 + (dt === 0 ? 1 : 0)); }
       this.cabLight.position.copy(front).add(new THREE.Vector3(0, 0.4, 0)).addScaledVector(fwd, -0.2);
       this._lightPool();
       this._camera(front, q, dt);
@@ -745,12 +781,15 @@ class Sim {
   _signal(svc) {
     const g = this.sigMesh.group, tr = this.track;
     const d = svc.sigU - svc.train.s; const show = d > -30 && d < 280 && this.mode !== 'explore';
-    g.visible = show; if (!show) return;
+    g.visible = show;
+    const sb = this.speedBoard;
+    if (sb) { const ub = svc.targetU - 130, db = ub - svc.train.s; const sh = db > -20 && db < 260 && this.mode !== 'explore' && svc.phase === 'run'; sb.visible = sh;
+      if (sh) { const p = tr.pose(ub, this._sp2 || (this._sp2 = {})); sb.position.set(p.x - p.tz * 1.32, p.y - 0.18, p.z + p.tx * 1.32); sb.rotation.y = Math.atan2(-p.tx, -p.tz); } }
+    if (!show) return;
     const p = tr.pose(svc.sigU, this._sp || (this._sp = {}));
     const rx = -p.tz, rz = p.tx; // right
-    g.position.set(p.x + rx * 1.75, p.y - 0.1, p.z + rz * 1.75);
-    g.rotation.y = Math.atan2(-p.tx, -p.tz) + Math.PI;
-    const green = svc.signalGreen && svc.phase !== 'run';
+    g.scale.setScalar(1.6); if (this.sigWall) { g.position.set(p.x + rx * 1.3, p.y + 1.95, p.z + rz * 1.3); g.rotation.y = Math.atan2(-p.tx, -p.tz); }
+    else { g.position.set(p.x + rx * 1.75, p.y - 0.1, p.z + rz * 1.75); g.rotation.y = Math.atan2(-p.tx, -p.tz) + Math.PI; }
     this.sigSet(!!svc.signalGreen);
   }
 
@@ -758,20 +797,25 @@ class Sim {
     const THREE = this.THREE, cam = this.camera, svc = this.svc, tr = svc.train;
     const e = this._e || (this._e = new THREE.Euler()), ql = this._ql || (this._ql = new THREE.Quaternion());
     if (this.mode === 'drive') {
-      this.bobT += tr.v * dt;
-      const vib = Math.min(1, tr.v / 10);
-      const sway = this.track.curvature(tr.s) * tr.v * tr.v * 0.02;
-      const off = new THREE.Vector3(Math.sin(this.bobT * 1.9) * 0.004 * vib + sway, Math.sin(this.bobT * 4.1) * 0.006 * vib + Math.sin(this.time * 31) * 0.0015 * vib, 0).applyQuaternion(q);
+      // low-frequency sway only (0.3-1.5 Hz, small, scales with speed); body lean on curves is low-passed. No high-frequency head jitter.
+      const T = this.time, f = Math.min(1, tr.v / 12), TP = Math.PI * 2, cur = this.track.curvature(tr.s);
+      const lt = Math.max(-0.016, Math.min(0.016, cur * tr.v * tr.v * 0.02));
+      this._lean = (this._lean || 0) + (lt - (this._lean || 0)) * Math.min(1, dt * 1.2);
+      const sw = (this.quality === 'low' ? 0.8 : 1) * f;
+      const lat = sw * (0.0045 * Math.sin(TP * 0.55 * T + 0.7) + 0.002 * Math.sin(TP * 1.3 * T)) + this._lean * 0.25;
+      const vert = sw * (0.0028 * Math.sin(TP * 0.85 * T + 2.1) + 0.0012 * Math.sin(TP * 1.45 * T + 0.4));
+      const rollA = sw * (0.0022 * Math.sin(TP * 0.45 * T) + 0.0011 * Math.sin(TP * 1.1 * T + 1.3)) - this._lean * 0.5;
+      const off = new THREE.Vector3(lat, vert, 0).applyQuaternion(q);
       cam.position.copy(front).add(off);
-      e.set(this.look.pitch, this.look.yaw, 0, 'YXZ'); ql.setFromEuler(e); cam.quaternion.copy(q).multiply(ql);
+      e.set(this.look.pitch, this.look.yaw, rollA, 'YXZ'); ql.setFromEuler(e); cam.quaternion.copy(q).multiply(ql);
     } else if (this.mode === 'ride') {
       const w = this.walker, ci = this.trainView.carAt(w.z), car = this.trainView.cars[ci], info = this.trainView.carInfo[ci];
       const local = new THREE.Vector3(w.x, w.eyeY(), w.z - info.zc);
       cam.position.copy(local).applyMatrix4(car.matrix);
       const cq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(car.matrix));
       e.set(this.look.pitch, w.yaw, 0, 'YXZ'); ql.setFromEuler(e); cam.quaternion.copy(cq).multiply(ql);
-      // rumble
-      cam.position.y += Math.sin(this.time * 37) * 0.002 * Math.min(1, tr.v / 8);
+      // gentle low-frequency sway only (rumble is audio-only)
+      cam.position.y += Math.sin(this.time * 5.3) * 0.0015 * Math.min(1, tr.v / 10);
     } else if (this.mode === 'explore') {
       const w = this.walker, g = this.activeStation.group;
       const p = new THREE.Vector3(w.x, w.eyeY(), w.z); g.localToWorld(p); cam.position.copy(p);
@@ -868,7 +912,10 @@ class Sim {
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
-      stationView: async (i) => this._prepare(i), render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
+      stationView: async (i) => this._prepare(i),
+      railExt: async (i) => { const v = await this._prepare(i); if (!v) return null; v.group.updateMatrixWorld(true); const T = this.THREE, b = new T.Box3(), a = new T.Box3(), p = new T.Vector3(); let z0 = 1e9, z1 = -1e9;
+        v.group.traverse((m) => { if (m.isMesh && m.material && /^rail_steel/.test(m.material.name || '')) { m.geometry.computeBoundingBox(); a.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); for (const zz of [a.min.z, a.max.z]) for (const xx of [a.min.x, a.max.x]) for (const yy of [a.min.y, a.max.y]) { p.set(xx, yy, zz); v.group.worldToLocal(p); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); } } });
+        return { z0, z1, skipHalf: HALL_FULL }; }, render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
       setLook: (y, p) => { this.look.yaw = y; this.look.pitch = p; },
       enterStreet: () => this.enterStreet(), leaveStreet: () => this.leaveStreet(), alight: () => this._alight(), board: () => this._boardTrain(), takeCab: () => this._takeCab(),
       setLine: (l) => this.go({ mode: this.mode, line: l, station: this.sel.station }),

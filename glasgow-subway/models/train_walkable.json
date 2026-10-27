@@ -57,6 +57,24 @@
   "archApexY": 2.1,
   "halfWidth": 0.65
  },
+ "cab": {
+  "eyeFront": [
+   -0.42,
+   1.845,
+   -18.655
+  ],
+  "eyeRear": [
+   0.42,
+   1.845,
+   18.655
+  ],
+  "eyeToGlassM": 1.0,
+  "deskTopY": 1.495,
+  "deskFrontToGlassM": 0.3,
+  "driverSide": "left of centre door (x=-0.42 front cab, +0.42 rear cab)",
+  "partitionDistanceFromNoseM": 1.8,
+  "glazing": "three bays (driver / centre evacuation door / right), glass y from 1.30 to 2.18, black frame, amber LED destination display node cab_dest"
+ },
  "cars": [
   {
    "index": 0,

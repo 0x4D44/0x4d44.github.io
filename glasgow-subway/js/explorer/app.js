@@ -8,7 +8,7 @@ import { Labels } from './labels.js';
 import { clamp, debounce, store } from './util.js';
 
 export const QUALITY = {
-  low:  { aa: false, pixelRatio: 1, tubeSegs: 10, tubeStep: 14, trains: 4, arrows: 1, chunkRadius: 3800, chunkParallel: 2, fog: 1.2 },
+  low:  { aa: true, pixelRatio: 1, tubeSegs: 10, tubeStep: 14, trains: 4, arrows: 1, chunkRadius: 3800, chunkParallel: 2, fog: 1.2 },
   med:  { aa: true, pixelRatio: 1.25, tubeSegs: 14, tubeStep: 9, trains: 6, arrows: 1, chunkRadius: 5000, chunkParallel: 3, fog: 1 },
   high: { aa: true, pixelRatio: 2, tubeSegs: 22, tubeStep: 6, trains: 8, arrows: 1, chunkRadius: Infinity, chunkParallel: 4, fog: 0.85 },
 };
@@ -57,7 +57,7 @@ export class App {
     this.marker = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.9, depthTest: false })); this.marker.renderOrder = 20; this.marker.visible = false; this.env.scene.add(this.marker);
     this.env.listeners.push(() => this.city.applyAll());
     const fg = new THREE.Mesh(new THREE.PlaneGeometry(80000, 80000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7d9b78' }));
-    fg.position.set(this.centre.x, 1.5, this.centre.z); fg.renderOrder = 1; this.farGround = fg; this.env.scene.add(fg);
+    fg.position.set(this.centre.x, -1, this.centre.z); fg.renderOrder = 1; fg.material.polygonOffset = true; fg.material.polygonOffsetFactor = 8; fg.material.polygonOffsetUnits = 16; this.farGround = fg; this.env.scene.add(fg);
     // the far ground is unlit (MeshBasicMaterial): tint it with the lighting preset so it is not bright green at dusk / night
     const fgBase = new THREE.Color('#7d9b78'), fgTmp = new THREE.Color();
     const tintFar = (c) => { const k = clamp((c.sunI * 0.25 + c.hemiI * 0.4) / 1.23, 0, 1); fg.material.color.copy(fgBase).multiplyScalar(k * k).lerp(fgTmp.copy(c.fog), 0.25 * (1 - k)); };
@@ -223,9 +223,17 @@ export class App {
     if (this.paused) return;
     const dt = Math.min(0.1, (now - this.last) / 1000); this.last = now;
     if (Math.abs(this.xrayTarget - this.state.xray) > 1e-4 && this.xrayAnim) { const k = 1 - Math.pow(0.0005, dt); this.applyXray(Math.abs(this.xrayTarget - this.state.xray) < 0.003 ? this.xrayTarget : this.state.xray + (this.xrayTarget - this.state.xray) * k); }
-    this.rig.update(dt); const moved = this.rig.controls.target.distanceToSquared(this._lt || (this._lt = new THREE.Vector3())) > 0.01 || Math.abs(this.rig.distance - (this._ld || 0)) > 0.01;
+    this.rig.update(dt);
+    { // depth precision scales with the near plane: keep it proportional to how far out we are so layers don't z-fight
+      // Depth quantum ~ z^2 / (near * 2^24): the further out the camera is, the larger the near plane can be. Use both the orbit
+      // distance and the camera's height above the ground (nothing can be closer than that minus ~120 m of tower height).
+      const cam = this.env.camera, cp = cam.position, tg = this.rig.target;
+      const hgt = cp.y - Math.max(this.ground(cp.x, cp.z), this.ground(tg.x, tg.z));
+      const nt = this.nearOverride ?? clamp(Math.max(this.rig.distance * 0.02, 0.28 * (hgt - 120)), 2, 700); // nearOverride: test hook
+      if (Math.abs(nt - cam.near) > cam.near * 0.12) { cam.near = nt; cam.updateProjectionMatrix(); }
+    } const moved = this.rig.controls.target.distanceToSquared(this._lt || (this._lt = new THREE.Vector3())) > 0.01 || Math.abs(this.rig.distance - (this._ld || 0)) > 0.01;
     if (moved) { this._lt.copy(this.rig.controls.target); this._ld = this.rig.distance; this.onHashSave(); }
-    this.env.update(dt, this.rig.target); this.city.update(dt, this.rig.target);
+    this.env.update(dt, this.rig.target); this.city.update(dt, this.rig.target, this.env.camera.position);
     this.ug.update(dt, this.env.camera, this.rig.distance);
     if (this.ug.stationsG.visible) this.doHover();
     this.labels.update(this.w, this.h, this.state.selected, this.state.hovered, this.rig.distance);
