@@ -53,7 +53,7 @@
   /* Function words: real sentences are full of them, lists of key words are not. */
   const FUNC = new Set(("a an the and or but so because since as if then than that this these those it its they them their he she his her we you i " +
     "is are was were be been being am do does did has have had will would can could should may might must not no to of in on at by for with from into onto " +
-    "up down out over under about which who what when where while also both each every all any some more most less only just very too same other another " +
+    "which who what when where while also very too " +
     "there here too one two so thus therefore however otherwise instead rather between through around after before during across against within without upon per until via whether whereas although though unless whose whom like").split(" "));
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
