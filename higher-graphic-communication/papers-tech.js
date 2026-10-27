@@ -536,15 +536,17 @@
   /* tech-01(d): repeated saving, and negated "PNG compresses without losing anything" */
   { const P = TP("tech-01", 3).points;
     const REP = "|re-?sav\\w*|\\bresav\\w*|number of times|\\bgradually\\b|over time|builds? up|\\bafter\\W+(?:\\w+\\W+){0,2}(?:few|couple|several|many|lots)\\W+(?:\\w+\\W+){0,1}(?:edits?|saves?|saving)|\\b(?:every|each)\\W+(?:\\w+\\W+){0,1}(?:re-?sav\\w*|save|edit)|as often as|every single";
-    P[1].all[2] += REP;
+    P[1].all[2] += REP; P[1].win = 120;
     P[1].all[1] += "|\\bgo(?:es)? down\\b|\\bgets? (?:lower|worse|poorer)\\b|\\bdecreas\\w*|\\bdecline\\w*|\\bdeteriorat\\w*|\\bdegrad\\w*|\\bartefacts?\\b|\\bartifacts?\\b";
     [P[0], P[1]].forEach((p) => {
       p.not = p.not.slice();
       p.not[3] = "\\bpngs?\\W+(?:also |still |always |will |would |can |actually )?(?:throws?|loses?|discards?|degrades?|damages?|compresses|blurs?)\\b(?!\\W+(?:\\w+\\W+){0,3}(?:nothing|no|none|any|without)\\b)";
       p.not[7] = "\\bjpe?gs?\\W+(?:\\w+\\W+){0,3}(?:not|n'?t|never|no)\\b(?!\\W+like\\b)\\W+(?:\\w+\\W+){0,3}(?:lose|lost|loss|degrad\\w*|discard\\w*|throw\\w*|damag\\w*|worse|blur\\w*|blocky|pixelated)";
       p.not.push("\\bvector\\b|\\bscal(?:e|ed|able|ing)\\b");
+      p.not.push("\\buses lossless compression,? rather than as a jpeg");
     });
     P[0].any = P[0].any.concat([
+      "\\blossless\\b[^.]{0,80}\\bwithout\\b[^.]{0,40}\\b(?:worse|loss|losing|degrad\\w*|blurr\\w*|damag\\w*)",
       "\\b(?:quality|detail|sharpness|resolution|pixels?|clarity|image|logo)\\W+(?:\\w+\\W+){0,3}(?:not|n'?t|never)\\W+(?:\\w+\\W+){0,2}(?:drop\\w*|fall\\w*|suffer\\w*|go down|decreas\\w*|declin\\w*|get lower|affected)",
       "\\b(?:do(?:es)?|did) no harm\\b|\\bno harm\\b|\\bevery pixel\\b|\\ball (?:the )?(?:pixels?|detail|data|information)\\b|\\bnothing (?:is |gets |being )?(?:removed|lost|thrown|discarded|taken)\\b|\\bnone of the (?:quality|detail|data|information)\\b|\\bstays? (?:sharp|crisp|perfect)|\\bnever (?:degrades?|deteriorates?|gets? worse)|\\b(?:perfect|unchanged|identical)\\b"]);
   }
@@ -557,7 +559,7 @@
       "\\bstep\\b[^.]{0,80}?(?:neutral|universal\\w*|standard|independent|non-?proprietary|compatible|interoperab\\w*|exchange\\w*)[^.]{0,80}?" + DIFF + "\\W+(?:\\w+\\W+){0,3}" + SW,
       "(?:neutral|universal\\w*|standard|independent|non-?proprietary|open)\\W+(?:\\w+\\W+){0,6}(?:so|which means|meaning|therefore|that)\\W+(?:\\w+\\W+){0,6}(?:manufacturer|they|firm|company|gdansk)\\W+(?:\\w+\\W+){0,3}(?:can|could|will|able)\\W+(?:\\w+\\W+){0,3}(?:open|read|use|import)",
       "\\bstep\\b\\W+(?:\\w+\\W+){0,8}(?:exchang\\w*|shar\\w*|transfer\\w*|swap\\w*)\\W+(?:\\w+\\W+){0,6}(?:between|across|among)\\W+(?:\\w+\\W+){0,3}" + DIFF + "\\W+(?:\\w+\\W+){0,2}" + SW,
-      "\\bstep\\b[^.]{0,40}(?:not|n'?t)\\W+(?:\\w+\\W+){0,3}(?:tied|specific|limited|locked|restricted|dependent)\\W+(?:\\w+\\W+){0,3}(?:to\\W+)?(?:one|a single|any|particular|specific|make|brand)|" + SW + "[- ]independent|independent of (?:the )?" + SW + "|\\b(?:isn'?t|is not|not)\\W+(?:\\w+\\W+){0,2}(?:tied|specific|limited|locked)\\W+(?:\\w+\\W+){0,2}(?:to\\W+)?(?:one|a single|any|particular|a)\\W+(?:\\w+\\W+){0,2}(?:make|brand|software|package|program)",
+      "\\bstep\\b[^.]{0,40}(?:not|n'?t)\\W+(?:\\w+\\W+){0,3}(?:tied|specific|limited|locked|restricted|dependent|linked|attached|bound|connected)\\W+(?:\\w+\\W+){0,3}(?:to\\W+)?(?:one|a single|any|particular|specific|make|brand)|" + SW + "[- ]independent|independent of (?:the )?" + SW + "|\\b(?:isn'?t|is not|not)\\W+(?:\\w+\\W+){0,2}(?:tied|specific|limited|locked)\\W+(?:\\w+\\W+){0,2}(?:to\\W+)?(?:one|a single|any|particular|a)\\W+(?:\\w+\\W+){0,2}(?:make|brand|software|package|program)",
       "\\bstep\\b\\W+(?:\\w+\\W+){0,5}(?:can be|is|are)\\W+(?:\\w+\\W+){0,2}(?:read|opened|imported|understood|supported)\\W+(?:\\w+\\W+){0,4}(?:by|in|with)\\W+(?:\\w+\\W+){0,3}" + DIFF,
       "(?:neutral|universal|standard|common)\\W+(?:\\w+\\W+){0,3}step\\W+(?:\\w+\\W+){0,8}(?:they|manufacturer)\\W+(?:\\w+\\W+){0,2}(?:can|could|will)\\W+(?:\\w+\\W+){0,2}(?:open|read|use)",
       "\\bdifferent\\W+(?:cad\\W+)?(?:systems?|packages?|programs?|software)\\W+(?:\\w+\\W+){0,3}(?:share|read|open|use|import)",
@@ -580,13 +582,13 @@
   { more("tech-04", 1, 0, [
       "\\b(?:saying|showing|telling|describing|indicating)\\W+(?:\\w+\\W+){0,3}(?:what|which)\\b",
       "\\b(?:replace|rename|change)\\w*\\W+(?:\\w+\\W+){0,6}(?:img_?\\d+|new drawing|poster)",
-      "\\bdescri(?:be|bes|bing|ption)\\W+(?:of\\W+)?(?:\\w+\\W+){0,6}(?:photo|project|content|drawing|file|job|inside)",
+      "\\bdescri(?:bes|bing|ption)\\W+(?:of\\W+)?(?:\\w+\\W+){0,6}(?:photo|project|content|drawing|file|job|inside)",
       "\\b(?:naming|named|name)\\w*\\W+(?:\\w+\\W+){0,3}(?:after|with|using)\\W+(?:\\w+\\W+){0,3}(?:project|job|client|item|stage|content)",
       "\\b(?:include|add|put)\\w*\\W+(?:\\w+\\W+){0,3}(?:job|project|client|stage|item|content)",
       "\\bwhat the (?:file|drawing|photo|document|image)\\W+(?:is|shows|contains)\\b",
       "\\b(?:meaningful|descriptive|clear|informative)\\W+(?:\\w+\\W+){0,2}(?:names?|file ?names?)|\\bnames?\\W+(?:\\w+\\W+){0,3}(?:descriptive|meaningful|informative)"]);
     more("tech-04", 1, 1, [
-      "\\b(?:numbered|numbering|incrementing|increasing|rising|sequential|ascending)\\W+(?:\\w+\\W+){0,2}(?:versions?|v\\d+|numbers?)|\\bnumber\\w*\\W+(?:the\\W+)?versions?|versions?\\W+(?:\\w+\\W+){0,3}(?:increase\\w*|rise|rising|go(?:es)? up|increment\\w*|in order|numbered|ascending)|\\bv0?\\d\\b\\W+(?:\\w+\\W+){0,6}v0?\\d|\\bversion numbers?\\b"]);
+      "\\b(?:numbered|numbering|incrementing|increasing|rising|sequential|ascending)\\W+(?:\\w+\\W+){0,2}(?:versions?|v\\d+|numbers?)|\\bnumber\\w*\\W+(?:the\\W+)?versions?|versions?\\W+(?:\\w+\\W+){0,3}(?:increase\\w*|rise|rising|go(?:es)? up|increment\\w*|in order|numbered|ascending)|\\bv0?\\d\\b\\W+(?:\\w+\\W+){0,6}v0?\\d|\\bversion numbers?\\b|\\b(?:add|put|use|include|end with|append)\\w*\\W+(?:\\w+\\W+){0,3}\\bv0?\\d+\\b"]);
     more("tech-04", 1, 2, [
       "\\b(?:agree\\w*|standard|same|consistent|common|set|fixed|uniform|one)\\W+(?:\\w+\\W+){0,3}(?:pattern|convention|format|structure|system|order|scheme|rules?|way|naming)",
       "\\b(?:pattern|convention|structure|format|scheme)\\W+(?:\\w+\\W+){0,5}(?:every|all|each)\\W+(?:\\w+\\W+){0,1}(?:file|name)",
@@ -606,7 +608,7 @@
     P[0].any = P[0].any.concat([
       "\\b(?:blurr\\w*|pixel\\w*|blocky|rubbish|poor|bad|jagged|fuzzy|grainy|unusable|useless)\\W+(?:\\w+\\W+){0,8}(?:print\\w*|enlarg\\w*|large|big|blown|blow\\w*)",
       "\\b(?:print\\w*|enlarg\\w*|blown up|blow\\w*)\\W+(?:\\w+\\W+){0,8}(?:blurr\\w*|pixel\\w*|blocky|fuzzy|rubbish|poor|bad|jagged|grainy)",
-      "\\b(?:stolen|copied|copy|copies|preview\\w*|saved|downloaded|thief)\\W+(?:\\w+\\W+){0,6}(?:poor|low|bad|blurry|small|blocky)\\W+(?:\\w+\\W+){0,2}(?:quality|resolution)|\\b(?:poor|low|bad)\\W+(?:quality|resolution)\\W+(?:\\w+\\W+){0,6}(?:stolen|copy|copies|copied|saved|downloaded|preview)",
+      "\\b(?:stolen|copied|copy|copies|preview\\w*|saved|downloaded|thief)\\W+(?:\\w+\\W+){0,6}(?:poor|low|bad|blurry|small|blocky)\\W+(?:\\w+\\W+){0,2}(?:quality|resolution)|\\b(?:poor|low|bad)\\W+(?:quality|resolution)\\W+(?:\\w+\\W+){0,6}(?:stolen|copy|copies|copied|saved|downloaded)",
       "\\b(?:too|so)\\W+(?:poor|low|small|bad)\\W+(?:\\w+\\W+){0,3}(?:use|useful|print\\w*)|\\b(?:of|is)\\W+(?:\\w+\\W+){0,2}(?:no|little|any) use\\b",
       "\\b(?:isn'?t|is not|not|n'?t)\\W+(?:\\w+\\W+){0,2}(?:good|big|large|sharp|high)\\W+enough\\W+(?:\\w+\\W+){0,2}(?:to\\W+)?(?:print|enlarg|use)",
       "\\b(?:low|small|poor)\\W+(?:\\w+\\W+){0,1}(?:resolution|res|ppi|quality)\\W+(?:\\w+\\W+){0,8}(?:poor|bad|worthless|blurry|blocky|pixelated|no good|no use|useless)"], true);
@@ -615,7 +617,196 @@
       "\\b(?:buyers?|customers?|people|they|you)\\W+(?:\\w+\\W+){0,2}(?:pay|buy|purchas\\w*)\\W+(?:\\w+\\W+){0,6}(?:original|full|high|good|real|proper|file|version|photo|picture|image)",
       "\\b(?:copying|copied|steal\\w*|stolen|taking|using)\\W+(?:\\w+\\W+){0,4}(?:without pay\\w*|for nothing|without permission)",
       "\\b(?:only available|only given|only sent|only received|only get|only gets)\\W+(?:\\w+\\W+){0,4}(?:after|when|once)\\W+(?:\\w+\\W+){0,3}(?:pay\\w*|buy\\w*|purchas\\w*|order\\w*)",
-      "\\b(?:doesn'?t|does not|won'?t|will not|not|n'?t)\\W+(?:\\w+\\W+){0,3}(?:lose|losing)\\W+(?:\\w+\\W+){0,3}(?:sales?|money|income|earnings)|\\b(?:sales?|income|earnings)\\W+(?:\\w+\\W+){0,3}(?:safe|protected|kept)"], true);
+      "\\b(?:doesn'?t|does not|won'?t|will not|not|n'?t)\\W+(?:\\w+\\W+){0,3}(?:lose|losing|lost)\\W+(?:\\w+\\W+){0,3}(?:sales?|money|income|earnings)|\\b(?:sales?|income|earnings)\\W+(?:\\w+\\W+){0,3}(?:safe|protected|kept)"], true);
     P[1].not[1] = P[1].not[1].replace("stops?|stopped|stopping|", "stops?|stopped|stopping|protect\\w*|") ;
-    P[4].negOK = true; }
+    P[4].negOK = true;
+    const NOT0 = "\\b(?:no need|not need|don'?t need|do not need|doesn'?t need|never)\\W+(?:\\w+\\W+){0,3}(?:pay|paid|paying|buy|buying|purchas\\w*|licen[cs]e)|\\b(?:customers?|buyers?|people|they|anyone|nobody|no ?one|users?)\\W+(?:\\w+\\W+){0,1}(?:not|n'?t|never)\\W+(?:\\w+\\W+){0,2}(?:pay|buy|purchas\\w*)";
+    P[1].not[0] = NOT0; P[4].not[0] = NOT0;
+    P[1].not[1] = P[1].not[1].replace("{0,4})\\bfor free", "{0,7})\\bfor free");
+    P[0].not[2] = "(?<!(?:no ?one|nobody|no-one|not|n'?t|never|cannot|\\bno)\\W+(?:\\w+\\W+){0,1})\\b(?:can|could|will|would)\\W+(?:\\w+\\W+){0,2}(?:print\\w*|enlarg\\w*|blow\\w*)\\W+(?:\\w+\\W+){0,3}(?:fine|well|perfectly|clearly|sharp\\w*|without (?:a )?problem)";
+    P[2].not[0] = P[0].not[2];
+    P[0].any.push("\\bprint\\w*\\W+(?:\\w+\\W+){0,2}(?:badly|poorly|terribl\\w*|horribl\\w*)|\\b(?:look|looks|come out|comes out)\\W+(?:\\w+\\W+){0,2}(?:bad|rubbish|poor)");
+    P[1].any.push("\\bget\\w*\\W+(?:\\w+\\W+){0,4}only\\W+(?:after|when|once)\\W+(?:\\w+\\W+){0,2}(?:pay\\w*|buy\\w*)|\\bafter\\W+(?:pay\\w*|buying|purchas\\w*)\\b"); }
+
+  /* tech-05(c): scrambled + can only be read with the key, phrased many ways */
+  { const P = TP("tech-05", 2).points;
+    P[0].all[0] += "|\\bcode\\b|\\brubbish\\b|\\brandom\\b|\\bgarbled\\b|\\bdecrypt\\w*|\\bdecod\\w*|\\bsecret\\b|\\bcipher\\w*|\\bcoded\\b";
+    P[0].all[1] += "|\\b(?:need\\w*|require\\w*|has to have|have to have|must have|holds?|with|using|use|uses)\\W+(?:\\w+\\W+){0,4}(?:key|password|decrypt\\w*)\\b|\\b(?:read|opened?|decod\\w*|decrypt\\w*|unlock\\w*|understood|translated|turned back)\\W+(?:\\w+\\W+){0,8}(?:key|password)\\b|\\b(?:cannot|can'?t|unable)\\W+(?:\\w+\\W+){0,3}(?:be )?(?:opened?|read|decod\\w*|decrypt\\w*|understood)\\b|\\bmeaningless\\b|\\bnonsense\\b|\\bonly\\W+(?:\\w+\\W+){0,6}(?:read|opened?|decod\\w*|decrypt\\w*|see)\\b";
+    P[0].not[1] = "(?<!(?:who|that|anyone|someone|person|nobody|no ?one|only)\\W+(?:\\w+\\W+){0,1})\\b(?:can|could|will|able to|would)\\W+(?:easily |simply |still )?(?:read|open|understand|view|see|use)\\b(?!\\W+(?:\\w+\\W+){0,6}(?:key|password|decrypt))"; }
+
+  /* tech-06(b): why a 3D scanner suits the job */
+  { const P = TP("tech-06", 1).points;
+    const MEAS = "(?:captur\\w*|measur\\w*|scann\\w*|records?|record\\w*|gets?|copies|copy|digitis\\w*|picks? up|reads?)";
+    const ACC = "(?:accura\\w*|exact\\w*|precis\\w*|detail\\w*|automatic\\w*|quick\\w*|fast\\w*|minutes|seconds|thousands|millions|every (?:point|curve|detail)|whole surface|all (?:the )?(?:detail|curves?|points))";
+    const SHAPE = "(?:shape|surface|spokes?|carv\\w*|curv\\w*|wheel|geometry|contours?|detail\\w*|dimensions?|intricate|complex|irregular|organic|free-?form)";
+    const NOTSCAN = "\\b(?:scann?ers?|scans?|it)\\W+(?:\\w+\\W+){0,1}(?:prints?|printed|machines?|cuts?|builds?)\\W+(?:\\w+\\W+){0,3}(?:wheel|model|it|replacement)\\b";
+    P.forEach((p) => { p.not = (p.not || []).concat([NOTSCAN]); });
+    add("tech-06", 1, { desc: "It measures the surface shape accurately and quickly with no hand measuring", group: "s1", negOK: true, win: 150, any: [
+      "\\b" + MEAS + "\\W+(?:\\w+\\W+){0,8}\\b" + SHAPE + "\\b\\W+(?:\\w+\\W+){0,8}\\b" + ACC + "\\b",
+      "\\b" + MEAS + "\\W+(?:\\w+\\W+){0,6}\\b" + ACC + "\\b\\W+(?:\\w+\\W+){0,8}\\b" + SHAPE + "\\b",
+      "\\b(?:measur\\w*|dimension\\w*|draw\\w*|model\\w*)\\W+(?:\\w+\\W+){0,6}(?:by hand|manual\\w*)\\W+(?:\\w+\\W+){0,6}(?:slow|time|ages|inaccura\\w*|difficult|impossible|hard|tedious|long|laborious|fiddly)",
+      "\\b(?:by hand|manual\\w*)\\W+(?:\\w+\\W+){0,3}(?:measur\\w*|dimension\\w*|draw\\w*)\\W+(?:\\w+\\W+){0,6}(?:slow|time|ages|inaccura\\w*|difficult|impossible|hard|tedious|long|laborious|fiddly)",
+      "\\b(?:saving|saves|save|saved|less)\\W+(?:\\w+\\W+){0,3}time\\W+(?:\\w+\\W+){0,4}(?:measur\\w*|dimension\\w*|draw\\w*)",
+      "\\b(?:do(?:es)? not|doesn'?t|don'?t|no need to|not have to|without)\\W+(?:\\w+\\W+){0,2}(?:measur\\w*|dimension\\w*)\\W+(?:\\w+\\W+){0,3}(?:by hand|manual\\w*|spokes?|curves?|shapes?|carv\\w*)",
+      "\\b(?:can'?t|cannot|could not|couldn'?t|hard to|difficult to)\\W+(?:\\w+\\W+){0,2}(?:be )?(?:dimension\\w*|measur\\w*)\\W+(?:\\w+\\W+){0,6}(?:so|scann\\w*|therefore)"] });
+    add("tech-06", 1, { desc: "The scan data/model goes into CAD so a matching replacement can be made", group: "s2", win: 150, any: [
+      "\\b(?:cad|model|mesh|point cloud|data|digital|3d)\\W+(?:\\w+\\W+){0,8}(?:cad|machin\\w*|print\\w*|replacement|new wheel|copy|replica|reproduc\\w*|duplicat\\w*|recreat\\w*|exact (?:copy|match))",
+      "\\b(?:replacement|replica|copy|new wheel|exact match|matching)\\W+(?:\\w+\\W+){0,8}(?:cad|model|mesh|point cloud|digital data)",
+      "\\bdigital (?:model|copy|version|record)\\b",
+      "\\b(?:scan|scanner|scanning)\\W+(?:\\w+\\W+){0,5}(?:produc\\w*|creat\\w*|mak\\w*|gives?|generat\\w*)\\W+(?:\\w+\\W+){0,3}(?:model|mesh|point cloud|digital)"] });
+    add("tech-06", 1, { desc: "It copes with a complex carved shape that is hard to draw or measure", group: "s3", win: 150, any: [
+      "\\b(?:complex|complicated|intricate|irregular|organic|free-?form|carved|curved|curves|detailed|awkward|ornate)\\W+(?:\\w+\\W+){0,8}(?:difficult|hard|impossible|tricky|time-?consuming|laborious|ages|slow|can'?t|cannot|inaccura\\w*|not easy)",
+      "\\b(?:difficult|hard|impossible|tricky|time-?consuming|laborious|slow|not easy)\\W+(?:\\w+\\W+){0,6}(?:to )?(?:draw|model|measur\\w*|dimension\\w*|create|recreate|reproduce|copy)\\W+(?:\\w+\\W+){0,8}(?:complex|complicated|intricate|irregular|organic|free-?form|carved|curved|curves|spokes?|shape|surface)",
+      "\\b(?:no|without|don'?t have|do not have|missing)\\W+(?:\\w+\\W+){0,2}(?:drawings?|plans?)\\W+(?:\\w+\\W+){0,8}(?:scann\\w*|captur\\w*|measur\\w*)",
+      "\\b(?:no need to|not have to|avoids? having to|instead of|rather than)\\W+(?:\\w+\\W+){0,2}(?:draw\\w*|model\\w*)\\W+(?:\\w+\\W+){0,4}(?:from (?:scratch|nothing)|the wheel)"] }); }
+
+  /* tech-07(a): cost, training, power loss */
+  { const P = TP("tech-07", 0).points;
+    P[0].all[0] = P[0].all[0].replace(/\{0,3\}/g, "{0,6}");
+    P[2].win = 70; P[6].win = 70;
+    P[7].any = ["\\blearning curve\\b", "\\b(?:hard|difficult|complex|complicated|tricky|steep)\\W+(?:\\w+\\W+){0,3}(?:to learn|to master)\\b"];
+    P[3].any = P[3].any.concat(["\\bpower\\W+(?:\\w+\\W+){0,2}(?:off|out|down|lost|fails?|failure|cuts?|loss)\\b", "\\b(?:lose|lost|destroy\\w*|corrupt\\w*|wipe\\w*)\\W+(?:\\w+\\W+){0,3}(?:work|files?|data|progress|drawings?)\\b", "\\b(?:no|without|lose|loses|lost)\\W+(?:\\w+\\W+){0,1}(?:power|electricity)\\W+(?:\\w+\\W+){0,6}(?:cannot|can'?t|unable|nobody|no ?one|stops?|work)"]);
+    P[3].negOK = true;
+    add("tech-07", 0, { desc: "Cost: software licences or subscriptions and powerful computers are expensive", group: "l1", negOK: true, not: P[0].not.slice(), any: [
+      "\\b(?:costly|expensive|pricey)\\W+(?:\\w+\\W+){0,3}(?:to )?(?:buy|purchas\\w*|update|upgrad\\w*|maintain|run|set up|licen[cs]e|install\\w*|start)",
+      "\\b(?:costs?|expense|price|prices|fees?)\\W+(?:\\w+\\W+){0,4}(?:of|for)\\W+(?:\\w+\\W+){0,3}(?:buy\\w*|software|equipment|hardware|licen[cs]\\w*|computers?|updat\\w*|upgrad\\w*|maintain\\w*|cad)",
+      "\\b(?:money|pay\\w*|spend\\w*|spent|buy\\w*|purchas\\w*)\\W+(?:\\w+\\W+){0,6}(?:licen[cs]\\w*|software|computers?|hardware|equipment|subscriptions?)",
+      "\\b(?:licen[cs]\\w*|software|equipment|hardware|computers?|subscriptions?)\\W+(?:\\w+\\W+){0,7}(?:expens\\w*|costly|pricey|costs? (?:a lot|too much|\\w+ money)|too much)",
+      "\\bcosts?\\W+(?:\\w+\\W+){0,3}(?:software|equipment|hardware|licen[cs]\\w*|computers?)"] });
+    add("tech-07", 0, { desc: "Training: the staff need time to learn CAD, which delays work or costs money", group: "l2", negOK: true, win: 90, all: [
+      "\\b(?:train\\w*|learn\\w*|get(?:ting)? used to|familiar\\w*|get to grips|master\\w*)\\b",
+      "\\b(?:time|weeks|months|cost\\w*|money|pay|expens\\w*|delay\\w*|slow\\w*|takes? (?:a )?(?:while|long)|long|spend\\w*|days|wast\\w*)\\b"],
+      not: P[1].not.slice() }); }
+
+  /* tech-07(b): sketching - cheap/no software, quick, portable */
+  { const P = TP("tech-07", 1).points;
+    P[0].any = P[0].any.concat([
+      "\\b(?:no|without|don'?t need|doesn'?t need|do not need|does not need|not need|need no|nothing)\\W+(?:\\w+\\W+){0,3}(?:software|licen[cs]\\w*|training|computers?|equipment|power|electric\\w*|expensive)",
+      "\\b(?:cost\\w*|cheap\\w*|free|inexpensive|low[- ]cost|money|afford\\w*|penny|pennies|nothing)\\b[^.;!?]{0,50}\\b(?:pencils?|paper|sketch\\w*|pens?|freehand)\\b",
+      "\\b(?:pencils?|paper|sketch\\w*|pens?|freehand)\\b[^.;!?]{0,50}\\b(?:cost\\w*|cheap\\w*|free|inexpensive|low[- ]cost|afford\\w*|penny|pennies|nothing)\\b"]);
+    P[1].any = P[1].any.concat([
+      "\\b(?:in )?(?:seconds|moments|a minute|minutes|no time)\\b",
+      "\\bas soon as\\b|\\bstraight away\\b|\\bright away\\b|\\bimmediate\\w*|\\binstant\\w*|\\bon the spot\\b",
+      "\\b(?:quick\\w*|fast\\w*|rapid\\w*|speed\\w*|saves? (?:a lot of )?time)\\W+(?:\\w+\\W+){0,8}(?:than|compared|rather than|instead of|unlike)\\W+(?:\\w+\\W+){0,6}(?:cad|model\\w*|software|computer|screen)",
+      "\\b(?:sketch\\w*|drawing|pencil|paper|hand)\\W+(?:\\w+\\W+){0,6}(?:quick\\w*|fast\\w*|rapid\\w*|speed\\w*|many ideas|lots of ideas)"]);
+    P[1].not = P[1].not.slice(0, 2).concat([P[1].not[2]]);
+    P[2].any = P[2].any.concat([
+      "\\bsite visits?\\b", "\\bon (?:a |the )?(?:train|bus|plane|move|road)\\b", "\\btake (?:it|them) (?:with|anywhere|out)", "\\b(?:away from|out of|outside)\\W+(?:\\w+\\W+){0,1}(?:the )?(?:office|desk|studio)",
+      "\\bany ?time (?:and|or) any ?(?:where|place)", "\\bnot (?:tied|limited|restricted|stuck)\\W+(?:\\w+\\W+){0,3}(?:desk|office|computer|studio)", "\\bin (?:a )?(?:caf[eé]|pub|park|car|field)\\b"]); }
+
+  /* tech-08(b): working from home */
+  { const P = TP("tech-08", 1).points;
+    const TR = "(?:travel\\w*|commut\\w*|journeys?|petrol|fuel|fares?|parking|transport|getting to (?:work|the office)|going to (?:work|the office))";
+    P[0].any = P[0].any.concat([
+      "\\b(?:not|n'?t|no need to|no longer|without|avoid\\w*|never)\\W+(?:\\w+\\W+){0,3}" + TR + "\\b",
+      "\\b" + TR + "\\W+(?:\\w+\\W+){0,6}(?:time|costs?|money|saved|sav\\w*|less|cheaper|expens\\w*|hours)\\b",
+      "\\b(?:time|money|hours|costs?)\\W+(?:\\w+\\W+){0,6}" + TR + "\\b"]);
+    P[1].any = P[1].any.concat(["\\b(?:not|n'?t|no need to|no longer|without|avoid\\w*|never|cuts? out|cutting out)\\W+(?:\\w+\\W+){0,3}(?:spend\\w*|waste\\w*|pay\\w*)?\\W*(?:\\w+\\W+){0,2}" + TR + "\\b"]);
+    const R2 = [
+      "\\b(?:flexib\\w*|choose|choos\\w*|pick\\w*|set|arrang\\w*|organi[sz]\\w*|decid\\w*|control\\w*|adjust\\w*|vary\\w*|freedom)\\W+(?:\\w+\\W+){0,5}(?:hours?|schedules?|times?|days?|shifts?|work\\w*|when)\\b",
+      "\\bwork\\w*\\W+(?:\\w+\\W+){0,3}(?:whenever|when it suits|at times? that suit\\w*|at a time that suit\\w*|when they want|when they like|when suits)",
+      "\\b(?:start|work|finish)\\w*\\W+(?:earlier|later|early|late|at night|in the evenings?|in the mornings?)\\b",
+      "\\bmost productive\\b|\\btime of day\\b",
+      "\\bfit\\w*\\W+(?:in )?(?:with|around)\\W+(?:\\w+\\W+){0,3}(?:life|family|childcare|children|home|kids|school)\\b",
+      "\\b(?:picking up|school run|childcare|look(?:ing)? after)\\b",
+      "\\bwhen (?:to|they|he|she|you) (?:work|start|finish)\\b"];
+    add("tech-08", 1, { desc: "Flexible hours that fit around family and other commitments", group: "r2", win: 120, negOK: true, any: R2 });
+    more("tech-08", 1, 4, [
+      "\\b(?:live|living|lives|move|moving|relocat\\w*|house)\\W+(?:\\w+\\W+){0,6}(?:anywhere|far|rural|remote|away|another|different|cheaper|quieter|abroad|wherever|elsewhere|further|countryside|island)\\b",
+      "\\b(?:not|n'?t|without|no need to)\\W+(?:\\w+\\W+){0,3}(?:move house|relocat\\w*|move to|live (?:near|close|in))",
+      "\\banother (?:city|town|country|region)\\b",
+      "\\b(?:company|firm|employer|office)\\W+(?:\\w+\\W+){0,6}(?:another|different|distant|far|hundreds|miles)\\b"], true); }
+
+  /* tech-09(a): why CAD + 3D printing suit a one-off prosthetic cover */
+  { const P = TP("tech-09", 0).points;
+    P[2].any = P[2].any.concat([
+      "\\b(?:no|without|avoid\\w*|don'?t need|doesn'?t need|does not need|do not need|not need|eliminat\\w*|cuts? out|cutting out)\\W+(?:\\w+\\W+){0,4}(?:tool\\w*|mou?lds?|jigs?|dies?|set-?up|setting up|production line|factory|machine\\w*|special|expensive)",
+      "\\b(?:single|one-?off|one|individual|just one|small number|each|custom|bespoke|only one)\\W+(?:\\w+\\W+){0,8}(?:cheap\\w*|cost-?effective|affordable|economical|viable|easily|no extra cost|worthwhile|no more|no problem|doesn'?t matter)",
+      "\\b(?:mou?lds?|tool\\w*|tooling|jigs?)\\W+(?:\\w+\\W+){0,6}(?:costly|expensive|too|cost\\w*|not needed|unnecessary|no need|isn'?t needed)"]);
+    P[3].any = P[3].any.concat([
+      "\\b(?:prototype\\w*|tests?|trials?|checks?|redone|print\\w* again|printed again)\\W+(?:\\w+\\W+){0,8}(?:hours?|short time|same day|overnight|minutes|soon|speed\\w*|swift\\w*|in a day|rapid\\w*|quick\\w*|fast\\w*)"]); }
+
+  /* ---- round 3 fixes ---- */
+  { // tech-05/2
+    const P = TP("tech-05", 2).points;
+    P[0].not[1] = "(?<!(?:who|that|anyone|someone|person|nobody|no ?one|only|need\\w*|require\\w*|unless|without|until|key|password)\\W+(?:\\w+\\W+){0,6})\\b(?:can|could|will|able to|would)\\W+(?:easily |simply |still )?(?:read|open|understand)\\b(?!\\W+(?:\\w+\\W+){0,6}(?:key|password|decrypt))";
+  }
+  { // tech-06/1
+    const P = TP("tech-06", 1).points;
+    const s2 = P[P.length - 2], s3 = P[P.length - 1];
+    s2.negOK = true; s3.negOK = true;
+    s2.any[0] = s2.any[0].replace("(?:cad|model|mesh|point cloud|data|digital|3d)", "(?:cad|model|mesh|point cloud|data|digital model)");
+    s3.any[0] = s3.any[0].replace("{0,8}(?:difficult|hard", "{0,12}(?:difficult|hard");
+  }
+  { // tech-08/1
+    const P = TP("tech-08", 1).points;
+    const TR = "(?:travel\\w*|commut\\w*|journeys?|petrol|fuel|fares?|parking|transport|get(?:ting)? to (?:the |their )?(?:office|work)|going to (?:work|the office))";
+    const NEG = "(?:not|no|never|without|avoid\\w*|don'?t|doesn'?t|didn'?t|won'?t|wouldn'?t|isn'?t|aren'?t|can'?t|cannot|no need to|no longer|cuts? out|cutting out)";
+    P[0].any.push("\\b" + NEG + "\\W+(?:\\w+\\W+){0,8}" + TR + "\\b");
+    P[1].any.push("\\b" + NEG + "\\W+(?:\\w+\\W+){0,8}" + TR + "\\b");
+    const r2 = P[P.length - 1];
+    r2.any.push(
+      "\\b(?:hours?|schedules?|times?|days?)\\W+(?:\\w+\\W+){0,3}(?:flexib\\w*|adjustable|chosen|their own|own choice|up to them)",
+      "\\bbalance between (?:work|home)\\b",
+      "\\bfit\\w*\\W+(?:\\w+\\W+){0,4}(?:around|in with)\\W+(?:\\w+\\W+){0,3}(?:life|family|childcare|children|home|kids|school|commitments|responsibilities|needs|other)\\b");
+  }
+  { // tech-09/0
+    const P = TP("tech-09", 0).points;
+    P[0].all[1] += "|\\bperson\\b|\\bindividual\\w*|\\bpatient\\w*|\\beach\\b|\\bevery\\b|\\bcustomi[sz]\\w*|\\bone-?off\\b|\\bbespoke\\b|\\bexact\\b|\\bfits?\\b";
+    P[1].any.push(
+      "\\b(?:quick\\w*|easy|easily|simple|simply|fast|rapid\\w*)\\W+(?:edit\\w*|chang\\w*|amend\\w*|alter\\w*|modif\\w*|adjust\\w*|updat\\w*|tweak\\w*)",
+      "\\b(?:edit\\w*|chang\\w*|amend\\w*|alter\\w*|modif\\w*|adjust\\w*|updat\\w*|tweak\\w*)\\W+(?:\\w+\\W+){0,6}(?:quick\\w*|easil\\w*|simpl\\w*|fast)\\b",
+      "\\b(?:modif\\w*|edit\\w*|chang\\w*|adjust\\w*|alter\\w*|amend\\w*|adapt\\w*|tweak\\w*)\\W+(?:\\w+\\W+){0,4}(?:existing|original|same|current|saved|stored)\\W+(?:\\w+\\W+){0,2}(?:model|design|file|drawing)",
+      "\\binstead of (?:starting|redrawing|redesigning|drawing|beginning)",
+      "\\b(?:don'?t|doesn'?t|no need to|not have to|without)\\W+(?:\\w+\\W+){0,3}(?:start|redraw|redesign|begin|draw)\\W+(?:\\w+\\W+){0,3}(?:again|scratch|new|over|from)");
+    P[1].negOK = true;
+    const pre = "(?<!(?:not|n't|no|never|without)\\W+(?:\\w+\\W+){0,2})";
+    P[2].not[0] = pre + P[2].not[0];
+    P[2].any.push("\\b(?:doesn'?t|does not|no)\\W+(?:\\w+\\W+){0,2}matter\\W+(?:\\w+\\W+){0,6}(?:one|single|only|once)\\b");
+  }
+  { // tech-07/1
+    const P = TP("tech-07", 1).points;
+    P[0].not.push("\\bcad\\W+(?:\\w+\\W+){0,3}(?:slow|expensive|costly)\\b");
+    P[0].not[1] = "\\b(?:sketch\\w*|pencils?|paper|freehand|hand)\\W+(?:\\w+\\W+){0,4}(?:is|are|can be|very|quite|rather|too)\\W+(?:\\w+\\W+){0,1}(?:expensive|costly)\\b";
+    P[0].any.push(
+      "\\b(?:no|without)\\W+(?:\\w+\\W+){0,5}(?:software|licen[cs]\\w*|training|computers?|power)\\b",
+      "\\b(?:doesn'?t|does not|don'?t|do not|not)\\W+(?:\\w+\\W+){0,1}(?:require|use|need)\\W+(?:\\w+\\W+){0,3}(?:power|electric\\w*|software|computers?|training|licen[cs]\\w*)",
+      "\\bfree of\\W+(?:the )?(?:cost|charge)\\b|\\bcost of (?:the )?software\\b");
+    P[1].any.push("\\bsav\\w*\\W+(?:\\w+\\W+){0,2}time\\b");
+    P[1].not[1] = "\\b(?:cad|computers?|software)\\b[^.;!?]{0,30}\\b(?:quick\\w*|fast\\w*)";
+    P[1].any.push("\\b(?:quick|fast|rapid)\\w*\\W+to\\W+(?:do|draw|make|produce|create|sketch|capture|record)\\b");
+    P[1].not.push("\\b(?:cad|computers?|software)\\W+(?:\\w+\\W+){0,3}sav\\w*\\W+(?:\\w+\\W+){0,2}time");
+  }
+
+  /* ---- negation vetoes (tests/papers.test.mjs negation attack) ---- */
+  const vet = (id, i, idx, list) => TP(id, i).points.forEach((pt, k) => { if (!idx || idx.includes(k)) pt.not = (pt.not || []).concat(list); });
+  vet("tech-02", 1, null, [
+    "\\bstep\\W+(?:\\w+\\W+){0,2}(?:is|are|was)\\W+not\\W+(?:a |an |the )?(?:neutral|universal|standard|open|compatible)",
+    "\\b(?:every|any|all|most|nearly all|many)\\W+(?:\\w+\\W+){0,3}(?:package|software|program|system|cad)s?\\W+(?:can not|cannot|can'?t|can never|won'?t|will not|unable)"]);
+  vet("tech-03", 1, [2, 3, 4], [
+    "\\b(?:is|are|was|were)\\W+not\\W+(?:\\w+\\W+){0,2}(?:kept )?(?:apart|separate|independent)\\b",
+    "\\bwould not still\\b"]);
+  vet("tech-06", 1, null, [
+    "\\b(?:are|is|was|were|be)\\W+not\\W+(?:\\w+\\W+){0,1}(?:captured|measured|recorded|scanned)\\b",
+    "\\b(?:can not|cannot|can'?t|could not|couldn'?t|won'?t|will not|unable to)\\W+(?:\\w+\\W+){0,6}(?:turned|brought|imported|converted|machined|matched?|made)\\b"]);
+  vet("tech-08", 1, null, [
+    "\\bnot no\\b",
+    "\\b(?:can not|cannot|can'?t|could not|won'?t|will not)\\W+(?:also |then )?(?:\\w+\\W+){0,3}(?:work|choose|flexib\\w*|fit|organi[sz]e|arrange)\\b"]);
+  vet("tech-09", 0, null, [
+    "\\b(?:can not|cannot|can'?t|unable to|not able to)\\W+(?:\\w+\\W+){0,2}(?:be )?(?:edited|adjusted|changed|altered|modified|amended|edit|adjust|change|alter|modify|amend)\\b",
+    "\\b(?:can not|cannot|can'?t|unable to|not able to)\\W+(?:\\w+\\W+){0,2}(?:be )?(?:printed|made|produced)\\b"]);
+
+  /* ---- regression-row fixes ---- */
+  { const P = TP("tech-02", 1).points; P[4].negOK = true; }
+  { const P = TP("tech-03", 1).points;
+    P[1].any[0] = P[1].any[0].replace("delet\\w*|", "");
+    P[1].any[1] = P[1].any[1].replace("|deleted", "");
+    P[1].any[11] = P[1].any[11].replace("(?:gone|lost|deleted)", "(?:gone|lost)");
+    add("tech-03", 1, { desc: "A separate back-up (such as an off-site copy) that sync cannot change", group: "s", negOK: true, not: P[3].not.slice(), any: [
+      "\\bback-?ups?\\W+(?:\\w+\\W+){0,4}(?:kept|stored|held|is|are)\\W+(?:\\w+\\W+){0,2}(?:separate\\w*|apart|elsewhere|off-?site|away|independent\\w*)",
+      "\\b(?:keep|store|hold)\\w*\\W+(?:a |the )?(?:proper |real |separate )?back-?ups?\\W+(?:\\w+\\W+){0,3}(?:separate\\w*|apart|elsewhere|off-?site|away|independent\\w*)"] }); }
+  { const P = TP("tech-07", 1).points;
+    P[1].not[1] = "(?<!(?:no|without|n't|not)\\W+(?:\\w+\\W+){0,0})\\b(?:cad|computers?|software)\\b[^.;!?]{0,30}\\b(?:quick\\w*|fast\\w*)"; }
+
+  B.tech.questions.forEach((q) => q.parts.forEach((pt) => { if (pt.type === "text") noList(pt.points); }));
 })();
