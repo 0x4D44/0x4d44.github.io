@@ -102,6 +102,9 @@ def build_hall(cfg, out_json):
         pwid = cfg['pw']; ph = pwid / 2; tx = ph + GAPW + HALF_TRAIN
         HWL = cfg['width'] / 2; HWR = HWL + 3.2
         tracks = [-tx, tx]; plats = [(-ph, ph), (tx + HALF_TRAIN + GAPW, HWR)]
+    need = tx + BORE_R + 0.5           # the bore circle + brick collar must fit inside the hall outline at the end wall
+    if t == 'island': HWL = HWR = max(HWL, need)
+    elif t == 'split': HWL = max(HWL, need)
     soffit_z = PH + cfg['vh']
     spring = 2.3
     coved = cfg['coved']
@@ -135,6 +138,15 @@ def build_hall(cfg, out_json):
     def ellipse(cx, cz, a, b, t0, t1, n=14):
         return [(cx + a * math.cos(math.radians(t0 + (t1 - t0) * i / n)), cz + b * math.sin(math.radians(t0 + (t1 - t0) * i / n))) for i in range(n + 1)]
     shell = M(); trim = M(); signs = M(); furn = M(); lights = M(); mouths = M(); psdm = M(); art = M()
+    def ceil_z(x):
+        if coved:
+            ax = abs(x)
+            if ax <= 1.6 or (t == 'split' and x > 0): return soffit_z
+            HWs = HWL if x < 0 else HWR
+            u = min(1.0, (ax - 1.6) / max(0.01, HWs - 1.6))
+            return spring + (soffit_z - spring) * math.sqrt(max(0.0, 1 - u * u))
+        cxx = (HWR - HWL) / 2; aa = (HWL + HWR) / 2
+        return 2.9 + (soffit_z - 2.9) * math.sqrt(max(0.0, 1 - ((x - cxx) / aa) ** 2))
     if coved:
         sx0 = 1.6
         # left: wall to spring, then quarter ellipse up to (-1.6, soffit)
@@ -160,12 +172,15 @@ def build_hall(cfg, out_json):
             wall_line(shell, [(-sx0, soffit_z), (HWR, soffit_z)], soffit_mat, toward=(0, 1.2))
             wall_line(shell, [(HWR, soffit_z), (HWR, FZ)], wall_tile, toward=(0, 1.2))
     else:
-        cz = soffit_z
+        spring_b = 2.9
+        cx_ = (HWR - HWL) / 2; a_ = (HWL + HWR) / 2; b_ = soffit_z - spring_b
+        arch = ellipse(cx_, spring_b, a_, b_, 180, 0, 32)          # from (-HWL, spring) over the crown to (HWR, spring)
         wall_line(shell, [(-HWL, FZ), (-HWL, 2.45)], dado_mat, toward=(0, 1.2))
-        wall_line(shell, [(-HWL, 2.45), (-HWL, cz)], wall_tile, toward=(0, 1.2))
-        wall_line(shell, [(HWR, cz), (HWR, 2.45)], wall_tile, toward=(0, 1.2))
+        wall_line(shell, [(-HWL, 2.45), (-HWL, spring_b)], wall_tile, toward=(0, 1.2))
+        wall_line(shell, [(HWR, spring_b), (HWR, 2.45)], wall_tile, toward=(0, 1.2))
         wall_line(shell, [(HWR, 2.45), (HWR, FZ)], dado_mat, toward=(0, 1.2))
-        wall_line(shell, [(-HWL, cz), (HWR, cz)], soffit_mat, toward=(0, 1.2))
+        alen = sum(math.hypot(arch[i + 1][0] - arch[i][0], arch[i + 1][1] - arch[i][1]) for i in range(len(arch) - 1))
+        shell.strip_y(arch, -HL, HL, soffit_mat, toward=(cx_, 1.2), uv=(alen / 1.0, HL * 2 / 1.0))
     # floor between walls + platforms
     shell.quad((-HWL, -HL, FZ), (HWR, -HL, FZ), (HWR, HL, FZ), (-HWL, HL, FZ), 'concrete_dark')
     # ------------------------------------------------ platforms
@@ -198,26 +213,27 @@ def build_hall(cfg, out_json):
         f = quad_wall(trim, e + d * 0.003, -PL, PL, 0.12, 0.34, 'stencil_danger', -d, (0, 0, PL * 2 / 7.0, 1))
     # ------------------------------------------------ tracks
     for tx_ in tracks:
-        add_track(shell, tx_, -HL, HL, pads=tuple(-HL + 1.2 + 2.4 * i for i in range(int(2 * HL / 2.4))))
+        add_track(shell, tx_, -(HL + 6.2), HL + 6.2, pads=tuple(-(HL + 6.0) + 1.2 + 2.4 * i for i in range(int(2 * (HL + 6.0) / 2.4))))
     # ------------------------------------------------ wall name bands (white text on orange = outer side (+x), charcoal = inner side (-x))
-    band_z0, band_z1 = ((1.45, 1.95) if coved else (2.75, 3.25))
-    quad_wall(trim, -HWL + 0.004, -PL, PL, band_z0, band_z1, f'bandmat_inner_{sid_}', 1, (0, 0, PL * 2 / 12.0, 1))
-    quad_wall(trim, HWR - 0.004, -PL, PL, band_z0, band_z1, f'bandmat_outer_{sid_}', -1, (0, 0, PL * 2 / 12.0, 1))
+    band_z0, band_z1 = ((1.45, 1.95) if coved else (1.9, 2.4))
+    BL = 18.0     # band spans 3 whole 12 m repeats (+-18 m) so no name is ever cut off at the ends
+    quad_wall(trim, -HWL + 0.004, -BL, BL, band_z0, band_z1, f'bandmat_inner_{sid_}', 1, (0, 0, 3.0, 1))
+    quad_wall(trim, HWR - 0.004, -BL, BL, band_z0, band_z1, f'bandmat_outer_{sid_}', -1, (0, 0, 3.0, 1))
     # tile band highlights (accent line)
     # ------------------------------------------------ columns
     col_ys = [-18, -12, -6, 0, 6, 12, 18]
     if cfg['pillars'] and t != 'island':
         for y in col_ys:
             if sid == 'partick':
-                furn.cyl((0, y, 2.2), 0.32, 4.4, mv('col_partick', 'tile_black', '#4a4d52', rough=0.15, tex='tile'), seg=8)
+                furn.cyl((0, y, (soffit_z + FZ) / 2), 0.32, soffit_z - FZ, mv('col_partick', 'tile_black', '#4a4d52', rough=0.15, tex='tile'), seg=8)
                 furn.cyl((0, y, 1.5), 0.325, 0.25, mv('col_partick_band', 'sign_orange', '#f0601a'), seg=8)
                 furn.cyl((0, y, 0.12), 0.34, 0.24, mv('col_partick_base', 'plastic_grey', '#6c8a96'), seg=8)
             else:
-                furn.cyl((0, y, 2.2), 0.30, 4.4, mv('col_black', 'tile_black', cfg['vault2_hex'], rough=0.12, tex='tile'), seg=16)
+                furn.cyl((0, y, (soffit_z + FZ) / 2), 0.30, soffit_z - FZ, mv('col_black', 'tile_black', cfg['vault2_hex'], rough=0.12, tex='tile'), seg=16)
                 furn.cyl((0, y, 0.1), 0.34, 0.2, 'steel_dark', seg=16)
     elif t == 'side' or t == 'split':
         for y in col_ys:
-            if t == 'side': furn.box((0, y, 2.2), (0.5, 0.5, 4.4), wall_tile)
+            if t == 'side': furn.box((0, y, (soffit_z + FZ) / 2), (0.5, 0.5, soffit_z - FZ), wall_tile)
     # fence between the tracks at side stations
     if t == 'side':
         for sgn in (-1, 1):
@@ -256,12 +272,12 @@ def build_hall(cfg, out_json):
         for y in (-12.0, 12.0):
             quad_wall(signs, hw_ + sgx * 0.012, y - 0.8, y + 0.8, wz0 + 0.5 if not coved else wz0 + 0.3, wz0 + 0.72 if not coved else wz0 + 0.52, 'route_map_panel', sgx, (0, 0, 1, 1))
     # hanging name boards (3.0 x 0.55) along the platform centre line(s)
-    hang_z = (soffit_z - 0.55 - 0.15)
     for (xa, xb) in plats:
         xc = (xa + xb) / 2
+        sof_here = ceil_z(xc); hang_z = sof_here - 0.55 - 0.15
         for y in (-12, 12):
             signs.box((xc, y, hang_z + 0.4), (0.02, 0.02, 0.7), 'steel_dark') if False else None
-            signs.cyl((xc, y, (hang_z + soffit_z) / 2 + 0.3), 0.012, soffit_z - hang_z - 0.5, 'steel_dark', seg=6)
+            signs.cyl((xc, y, (hang_z + sof_here) / 2 + 0.3), 0.012, sof_here - hang_z - 0.5, 'steel_dark', seg=6)
             for sy, sf in ((0.03, -1), (-0.03, 1)):
                 pass
             # board is long axis along X? boards face along the platform (readable from the platform): normal along Y
@@ -276,8 +292,9 @@ def build_hall(cfg, out_json):
     # direction signs 'Inner | Outer' hanging near the platform ends
     for (xa, xb) in plats:
         xc = (xa + xb) / 2
+        sof_here = ceil_z(xc); hang_z = sof_here - 0.55 - 0.15
         for y in (-19, 19):
-            signs.cyl((xc, y, (hang_z + soffit_z) / 2 + 0.2), 0.012, soffit_z - hang_z - 0.3, 'steel_dark', seg=6)
+            signs.cyl((xc, y, (hang_z + sof_here) / 2 + 0.2), 0.012, sof_here - hang_z - 0.3, 'steel_dark', seg=6)
             for xo, mname in ((-0.45, 'dirsign_inner'), (0.45, 'dirsign_outer')):
                 signs.box((xc + xo, y, hang_z + 0.2), (0.88, 0.04, 0.34), 'steel_dark')
                 q = signs.quad_uv((xc + xo - 0.43, y + 0.025, hang_z + 0.04), (xc + xo + 0.43, y + 0.025, hang_z + 0.04), (xc + xo + 0.43, y + 0.025, hang_z + 0.36), (xc + xo - 0.43, y + 0.025, hang_z + 0.36), mname)
@@ -303,14 +320,14 @@ def build_hall(cfg, out_json):
     anchors = []
     for xx in lx:
         for y in range(-24, 25, 3):
-            lights.box((xx, y, soffit_z - 0.03), (0.16, 2.1, 0.03), 'strip_light')
+            lights.box((xx, y, ceil_z(xx) - 0.03), (0.16, 2.1, 0.03), 'strip_light')
             if cfg['soffit'] == 'metal' or t != 'island':
                 for yy in (y - 1.2, y + 1.2):
-                    lights.cyl((xx + 0.7 if xx == 0 else xx * 0.8, yy, soffit_z - 0.02), 0.07, 0.02, 'lamp_warm', seg=10)
+                    lights.cyl((xx + 0.7 if xx == 0 else xx * 0.8, yy, ceil_z(xx + 0.7 if xx == 0 else xx * 0.8) - 0.02), 0.07, 0.02, 'lamp_warm', seg=10)
         anchors.append(xx)
     for k, y in enumerate(range(-21, 22, 7)):
         for xx in (anchors[:1] if len(anchors) == 1 else (anchors[0], anchors[-1])):
-            empty(f'light_{k}_{0 if xx == anchors[0] else 1}', loc=(xx, y, soffit_z - 0.35), parent=root)
+            empty(f'light_{k}_{0 if xx == anchors[0] else 1}', loc=(xx, y, ceil_z(xx) - 0.35), parent=root)
     # ------------------------------------------------ end walls with tunnel mouths (dark brick header rings); circular bores at the track positions
     for sgy in (-1, 1):
         bm_ = mouths.bm
@@ -324,11 +341,11 @@ def build_hall(cfg, out_json):
             if t == 'island': outline = [(-HWL, FZ)] + left_cove + right_cove + [(HWR, FZ)]
             else: outline = [(-HWL, FZ)] + left_cove + [(HWR, soffit_z), (HWR, FZ)]
         else:
-            outline = [(-HWL, FZ), (-HWL, soffit_z), (HWR, soffit_z), (HWR, FZ)]
+            outline = [(-HWL, FZ)] + arch + [(HWR, FZ)]
         ov = [bm_.verts.new((x, yy, z)) for x, z in outline]
         ed = [bm_.edges.new((ov[i], ov[(i + 1) % len(ov)])) for i in range(len(ov))]
         for tx_ in tracks:
-            hv = [bm_.verts.new((tx_ + BORE_R * math.cos(2 * math.pi * i / 40), yy, ZC + BORE_R * math.sin(2 * math.pi * i / 40))) for i in range(40)]
+            hv = [bm_.verts.new((tx_ + (BORE_R + 0.3) * math.cos(2 * math.pi * i / 40), yy, ZC + (BORE_R + 0.3) * math.sin(2 * math.pi * i / 40))) for i in range(40)]
             ed += [bm_.edges.new((hv[i], hv[(i + 1) % 40])) for i in range(40)]
         import bmesh as bmm
         res = bmm.ops.triangle_fill(bm_, use_beauty=True, edges=ed)
@@ -336,18 +353,27 @@ def build_hall(cfg, out_json):
             if isinstance(f, bmm.types.BMFace):
                 f.material_index = mouths._mi(wall_tile); f[mouths.fx] = 1
                 if f.normal.y * sgy > 0: f.normal_flip()      # face the hall interior
+        from assets_tunnel import PHI0, PHI1, arc as tarc
         for tx_ in tracks:
-            # brick header rings (3 courses, 0.45 m) standing proud of the wall + bore stub
-            o1 = [(tx_ + BORE_R * math.cos(math.radians(a)), ZC + BORE_R * math.sin(math.radians(a))) for a in range(0, 361, 10)]
-            o2 = [(tx_ + (BORE_R + 0.45) * math.cos(math.radians(a)), ZC + (BORE_R + 0.45) * math.sin(math.radians(a))) for a in range(0, 361, 10)]
-            for i in range(len(o1) - 1):
-                f = mouths.quad((o1[i][0], yy - sgy * 0.02, o1[i][1]), (o1[i + 1][0], yy - sgy * 0.02, o1[i + 1][1]), (o2[i + 1][0], yy - sgy * 0.02, o2[i + 1][1]), (o2[i][0], yy - sgy * 0.02, o2[i][1]), brick_mat)
+            # smooth brick-lined FLARE from the hall opening (R+0.3) down to the bore (R) over 1.4 m, then the bore stub (concrete ring lining) to y=HL+6.2
+            Lf = 1.4
+            c1 = [(tx_ + (BORE_R + 0.3) * math.cos(math.radians(a)), ZC + (BORE_R + 0.3) * math.sin(math.radians(a))) for a in range(0, 361, 10)]
+            c2 = [(tx_ + BORE_R * math.cos(math.radians(a)), ZC + BORE_R * math.sin(math.radians(a))) for a in range(0, 361, 10)]
+            for i in range(len(c1) - 1):
+                f = mouths.quad((c1[i][0], yy, c1[i][1]), (c1[i + 1][0], yy, c1[i + 1][1]), (c2[i + 1][0], yy + sgy * Lf, c2[i + 1][1]), (c2[i][0], yy + sgy * Lf, c2[i][1]), brick_mat)
                 f[mouths.fx] = 1
-                if f.normal.y * sgy > 0: f.normal_flip()
-            ya, yb = sorted((yy, yy + sgy * 3.0))
-            mouths.strip_y([(tx_ + BORE_R * math.cos(math.radians(a)), ZC + BORE_R * math.sin(math.radians(a))) for a in range(0, 361, 10)], ya, yb, 'ring_concrete', toward=(tx_, ZC), uv=(1.0, 1.0)) if False else None
-            ya, yb = sorted((yy, yy + sgy * 3.0))
-            mouths.strip_y([(tx_ + BORE_R * math.cos(math.radians(a)), ZC + BORE_R * math.sin(math.radians(a))) for a in range(0, 361, 10)], ya, yb, 'concrete_dark', toward=(tx_, ZC))
+                cxm = (c1[i][0] + c1[i + 1][0]) / 2 - tx_; czm = (c1[i][1] + c1[i + 1][1]) / 2 - ZC
+                if f.normal.x * cxm + f.normal.z * czm > 0: f.normal_flip()          # face the bore axis
+            ya, yb = sorted((yy + sgy * Lf, yy + sgy * (HL + 6.2 - HL)))
+            ya, yb = sorted((yy + sgy * Lf, yy + sgy * 6.2))
+            stub = tarc(BORE_R, PHI0, PHI1, 56, cx=tx_)
+            mouths.strip_y(stub, ya, yb, 'ring_concrete', toward=(tx_, ZC), uv=(1.0, (yb - ya) / 0.61))
+            xr = BORE_R * math.cos(PHI0)
+            f = mouths.quad((tx_ - xr, ya, FZ), (tx_ + xr, ya, FZ), (tx_ + xr, yb, FZ), (tx_ - xr, yb, FZ), 'concrete_dark'); f[mouths.fx] = 1
+            if f.normal.z < 0: f.normal_flip()
+            # floor under the flare
+            f = mouths.quad((tx_ - xr, min(yy, yy + sgy * Lf), FZ), (tx_ + xr, min(yy, yy + sgy * Lf), FZ), (tx_ + xr, max(yy, yy + sgy * Lf), FZ), (tx_ - xr, max(yy, yy + sgy * Lf), FZ), 'concrete_dark'); f[mouths.fx] = 1
+            if f.normal.z < 0: f.normal_flip()
     # ------------------------------------------------ platform screen doors (Govan, Partick, Ibrox): white frame, glass, orange leaves at the train door positions
     if cfg['psd']:
         walk = json.load(open(os.path.join(OUT, 'train_walkable.json')))

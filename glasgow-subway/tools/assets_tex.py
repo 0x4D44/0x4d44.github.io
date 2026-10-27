@@ -470,6 +470,27 @@ def station_name_textures(sid, name, outer_bg=(240, 90, 26), inner_bg=(59, 64, 7
         p = os.path.join(TEX, f'dir_{k}.jpg'); im.save(p, quality=90); out['dir_' + k] = p
     return out
 
+def tex_dest(w=512, h=96):
+    im = Image.new('RGB', (w, h), (8, 6, 2)); d = ImageDraw.Draw(im)
+    _txt(d, (w / 2, h / 2), 'SUBWAY', fitfont(d, 'SUBWAY', w * 0.8, 70), (255, 176, 0))
+    p = os.path.join(TEX, 'dest.jpg'); im.save(p, quality=90); return p
+
+def tex_signal_boards():
+    out = {}
+    def save_im(name, im): p = os.path.join(TEX, name + '.jpg'); im.save(p, quality=90); out[name] = p
+    im = Image.new('RGB', (512, 256), (190, 24, 28)); d = ImageDraw.Draw(im); d.rectangle((8, 8, 503, 247), outline=(255, 255, 255), width=8)
+    _txt(d, (256, 100), 'TRAIN', font(90), (255, 255, 255)); _txt(d, (256, 180), 'STOP', font(90), (255, 255, 255)); save_im('board_trainstop', im)
+    im = Image.new('RGB', (512, 256), (245, 196, 0)); d = ImageDraw.Draw(im)
+    for k in range(-8, 18):
+        d.polygon([(k * 40, 0), (k * 40 + 20, 0), (k * 40 + 20 - 80, 40), (k * 40 - 80, 40)], fill=(20, 20, 20)); d.polygon([(k * 40, 216), (k * 40 + 20, 216), (k * 40 + 20 - 80, 256), (k * 40 - 80, 256)], fill=(20, 20, 20))
+    _txt(d, (256, 118), 'STOP HERE', fitfont(d, 'STOP HERE', 420, 80), (20, 20, 20)); d.polygon([(40, 170), (110, 170), (110, 150), (150, 190), (110, 230), (110, 210), (40, 210)], fill=(20, 20, 20)) if False else None
+    save_im('board_station', im)
+    im = Image.new('RGB', (256, 256), (250, 250, 250)); d = ImageDraw.Draw(im); d.ellipse((6, 6, 249, 249), outline=(200, 20, 24), width=22)
+    _txt(d, (128, 128), '25', font(110), (20, 20, 20)); save_im('board_speed', im)
+    im = Image.new('RGB', (256, 128), (240, 240, 235)); d = ImageDraw.Draw(im); d.rectangle((4, 4, 251, 123), outline=(30, 30, 30), width=4)
+    _txt(d, (128, 44), 'DATUM', font(40), (30, 30, 30)); _txt(d, (128, 92), 'CH 1840', font(36), (30, 30, 30)); save_im('plate_datum', im)
+    return out
+
 _done = {}
 def build_all():
     if _done: return _done
@@ -489,7 +510,7 @@ def build_all():
     t['ring_concrete'], t['n_ring_concrete'] = tex_ring('concrete')
     t['ring_iron'], t['n_ring_iron'] = tex_ring('iron', seed=31)
     t['enamel'], t['n_enamel'] = tex_enamel(); t['lozenge'], t['n_lozenge'] = tex_lozenge(); t['timber'] = tex_timber()
-    t['danger'] = tex_danger(); t['mesh'] = tex_mesh(); t.update(tex_art())
+    t.update(tex_signal_boards()); t['dest'] = tex_dest(); t['danger'] = tex_danger(); t['mesh'] = tex_mesh(); t.update(tex_art())
     _done.update(t)
     return t
 
