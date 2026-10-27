@@ -70,7 +70,8 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
 
   await step(`${w}: the mock paper's options are its own (no ids shared with the area tabs)`, async () => {
     const ids = await page.evaluate(() => { const a = [...document.querySelectorAll("[id]")].map((e) => e.id); return a.length - new Set(a).size; });
-    assert.equal(ids, 0, "duplicate ids");
+    const dup = await page.evaluate(() => { const m = {}; document.querySelectorAll("[id]").forEach((e) => (m[e.id] = (m[e.id] || 0) + 1)); return Object.entries(m).filter(([, v]) => v > 1).map(([k]) => k).slice(0, 5); });
+    assert.equal(ids, 0, "duplicate ids: " + dup.join(", "));
     await page.click("#pp-tab-mock");
     const part = page.locator("#pp-panel-mock .pp-part:has(.pp-opts)").first();
     await part.locator(".pp-opt").first().click();

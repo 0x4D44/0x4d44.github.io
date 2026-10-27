@@ -171,6 +171,16 @@
     return box;
   }
 
+  /* A figure's own ids (hatch patterns, markers) are made unique per panel, so the mock paper can show
+     a question that an area tab also holds without two elements sharing an id. */
+  function scopeIds(svg, ns) {
+    const ids = [...svg.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+    return ids.reduce((out, id) => out
+      .split(`id="${id}"`).join(`id="${ns}-${id}"`)
+      .split(`url(#${id})`).join(`url(#${ns}-${id})`)
+      .split(`href="#${id}"`).join(`href="#${ns}-${id}"`), svg);
+  }
+
   /* ---- a whole question ---- */
   function renderQuestion(q, areaId, n, ns) {
     const area = AREAS.find((a) => a.id === areaId);
@@ -182,7 +192,7 @@
         badge),
       q.style ? el("p", { class: "pp-style" }, q.style) : null,
       el("div", { class: "pp-stem", html: q.stem }));
-    if (q.figure) card.append(el("figure", { class: "diagram diagram-scroll pp-fig", html: q.figure }));
+    if (q.figure) card.append(el("figure", { class: "diagram diagram-scroll pp-fig", html: scopeIds(q.figure, ns) }));
     const paint = () => {
       const r = results[q.id] || [];
       const got = r.reduce((a, x) => a + (x || 0), 0);
