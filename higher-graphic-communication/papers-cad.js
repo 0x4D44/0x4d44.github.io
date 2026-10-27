@@ -29,7 +29,8 @@
   // a label and two numbers in one sentence, either way round (keeps a pile of unrelated numbers from scoring)
   const near = (label, a, b) => [
     `(?:${label})[^.]{0,70}(?:${a})[^.]{0,70}(?:${b})`, `(?:${label})[^.]{0,70}(?:${b})[^.]{0,70}(?:${a})`,
-    `(?:${a})[^.]{0,70}(?:${b})[^.]{0,70}(?:${label})`, `(?:${b})[^.]{0,70}(?:${a})[^.]{0,70}(?:${label})`];
+    `(?:${a})[^.]{0,70}(?:${b})[^.]{0,70}(?:${label})`, `(?:${b})[^.]{0,70}(?:${a})[^.]{0,70}(?:${label})`,
+    `(?:${a})[^.]{0,70}(?:${label})[^.]{0,70}(?:${b})`, `(?:${b})[^.]{0,70}(?:${label})[^.]{0,70}(?:${a})`];
   // any two of three settings, in either order
   const two = (a, b, c) => {
     const o = [];
@@ -141,7 +142,7 @@
     `<rect x="36" y="80" width="16" height="60" fill="${AUB}" fill-opacity="0.35" stroke-width="1.8"/>` +
     `<rect x="52" y="95" width="198" height="30" fill="${AUB}" fill-opacity="0.35" stroke-width="1.8"/>` +
     `<path d="M98.5 70 V150 M163.5 70 V150" stroke="${MAG}" stroke-width="2"/>` +
-    ln(130, 50, 130, 52, "") + tx(87, 32, "cheek plate") + tx(175, 32, "cheek plate") +
+    tx(87, 32, "cheek plate") + tx(175, 32, "cheek plate") +
     tx(131, 190, "pulley") + tx(258, 108, "pin Ø10", "start") + tx(258, 124, "head on the left", "start") +
     tx(190, 216, "Magenta marks: 1.5 gap each side of the pulley"));
 
@@ -168,16 +169,15 @@
     s += ln(cx - 50, cyy, cx + 50, cyy, `stroke-width="1" ${cl}`) + ln(cx, cyy - 50, cx, cyy + 50, `stroke-width="1" ${cl}`);
     s += ln(cx - 85.5, fy - 4, cx - 85.5, fy - 26) + ln(cx + 85.5, fy - 4, cx + 85.5, fy - 26) + hdim(cx - 85.5, cx + 85.5, fy - 20, "90", fy - 25);
     s += ln(cx + 90, fy, cx + 128, fy) + ln(cx + 90, fy + 95, cx + 128, fy + 95) + vdim(cx + 120, fy, fy + 95, "50", 1);
-    s += tx(cx + 100, cyy - 22, "Ø30 opening", "start").replace(/x="[\d.]+"/, `x="${cx + 36}"`) ;
-    s += tx(cx + 100, cyy + 28, "6 × Ø4 on PCD 44", "start").replace(/x="[\d.]+"/, `x="${cx + 36}"`);
+    s += tx(cx, fy + 118, "Ø30 opening; 6 × Ø4 holes on PCD 44");
     s += tx(34, 24, "Front elevation", "start");
     // plan: 90 x 60 with R5 corners, walls 3
-    const py = 178;
+    const py = 192;
     s += `<rect x="${cx - 85.5}" y="${py}" width="171" height="114" rx="9.5" fill="${GREY}" fill-opacity="0.4" stroke-width="2"/>`;
     s += `<rect x="${cx - 79.8}" y="${py + 5.7}" width="159.6" height="102.6" rx="4" stroke-width="1.2" ${dash}/>`;
     s += ln(cx + 90, py, cx + 128, py) + ln(cx + 90, py + 114, cx + 128, py + 114) + vdim(cx + 120, py, py + 114, "60", 1);
-    s += tx(34, py - 8, "Plan", "start") + tx(cx - 79, py + 60, "R5 corners; walls 3 thick; open below", "start").replace(/x="[\d.-]+"/, `x="${cx - 75}"`);
-    return svg(400, 312, "Front elevation and plan of a signal-lamp housing 90 wide, 50 high and 60 deep. The front has a central opening of diameter 30 ringed by six holes of diameter 4 on a pitch circle diameter of 44. The plan shows rounded corners of radius 5 and walls 3 thick.", s);
+    s += tx(34, py - 8, "Plan", "start") + tx(cx, py + 132, "R5 corners; walls 3 thick; open below");
+    return svg(400, 336, "Front elevation and plan of a signal-lamp housing 90 wide, 50 high and 60 deep. The front has a central opening of diameter 30 ringed by six holes of diameter 4 on a pitch circle diameter of 44. The plan shows rounded corners of radius 5 and walls 3 thick.", s);
   })();
 
   /* ---------- the bank ---------- */
@@ -301,8 +301,8 @@
             q: "The designer is told not to use a radial array. Describe how the five holes could be positioned and cut instead.",
             points: [
               { desc: "Sketches the Ø8 circles with their centres on the 90 PCD (45 from the centre)", all: ["(circle|hole)", D(8), "\\b(90|45)\\b"] },
-              { desc: "Gives the angle between neighbouring holes as 50°", all: ["\\b50\\b", "(degrees?|°|apart|between|angle|each|neighbour|spaced|gap)"] },
-              { desc: "Extrude subtract (cut) the circles through the disc", all: ["(extrude subtract|extrude cut|extrud\\w* (a |the )?cut|subtract)", "(through|disc|plate|flange|all)"] },
+              { desc: "Gives the angle between neighbouring holes as 50°", any: ["\\b50\\s*(°|degrees?)", "\\b(angle|between|apart|spaced|gap)\\b[^.]{0,40}\\b50\\b", "\\b50\\b[^.]{0,20}(apart|between|each)"] },
+              { desc: "Extrude subtract (cut) the circles through the disc", all: ["(extrude subtract|extrude cut|extrud\\w* (a |the )?cut|subtract)", "(disc|flange|plate)"] },
             ],
             sample: "I would sketch five circles of diameter 8, each with its centre on the pitch circle of diameter 90, and give the angle between neighbouring holes as 50 degrees. Then I would extrude subtract the circles through the flange.",
             model: "<ul><li>Ø8 circles with centres on the PCD Ø90 (45 from the centre) (1)</li><li>50° between neighbouring holes, set by dimension (1)</li><li>Extrude subtract through the disc (1)</li></ul><p>Any 2 from 3. If a question says \"do not use radial array\", the angle between copies must be given.</p>" },
@@ -398,7 +398,7 @@
               { desc: "Effect: the supplier can open and use the model in their own (different) software", all: ["\\b(open|use|read|import|view|work with|access)", "(different|other|own|another|whichever|whatever) (cad )?(package|software|program|system|application)"] },
             ],
             sample: "STEP is a neutral format that most CAD packages can import, so the supplier is able to open and use the winch model in their own software even though it is different from the one the shipyard uses.",
-            model: "<ul><li>Cause: STEP is a neutral (common) format that any CAD package can open (1)</li><li>Effect: so the supplier can open and use the model in a different package from the shipyard's (1)</li></ul><p>\"It is a common format\" alone earns one mark. The price of a neutral file is that the modelling tree is normally lost.</p>" },
+            model: "<ul><li>Cause: STEP is a neutral (common) format that any CAD package can open (1)</li><li>Effect: so the supplier can open and use the model in a different package from the shipyard's (1)</li></ul><p>\"It is a common format\" alone is too vague to earn the cause: say that any package can open it. The price of a neutral file is that the modelling tree is normally lost.</p>" },
         ],
       },
       {
@@ -417,7 +417,7 @@
               { desc: "Materials: giving the bin a plastic or metal finish (colour, shine or texture)", all: ["material", "(plastic|metal|steel|colour|color|shin|glossy|matt|texture|rough|paint|finish)"] },
               { desc: "Reflections: the shiny bin mirrors the floor and walls around it", all: ["reflect", "(floor|wall|surround|shiny|metal|surface|environment|mirror|shin)"] },
               { desc: "Shade/shadow: a cast shadow on the floor under the bin showing it rests there", all: ["shadow", "(floor|ground|under|cast|beneath|rest|sit|stand)"] },
-              { desc: "Sited environment: a setting such as a room or quayside around the bin", all: ["(environment|setting|room|quayside|background|surroundings|context)", "(bin|place|put|add|set|sit|realistic)"] },
+              { desc: "Sited environment: a setting such as a room or quayside around the bin", all: ["(environment|setting|room|background|surroundings|context)", "(place|put|add|surround|inside|within|around)"] },
             ],
             sample: "A light source could be placed above and to one side of the bin, so it has a bright highlight on top and shade on the far side. The bin could also be given a plastic material with a colour and a little shine, so it looks like a real bin and not a flat shape.",
             model: "<ul><li>Light source, placed to give highlights and shade on the bin (1)</li><li>Materials, e.g. glossy green plastic or galvanised steel (1)</li><li>Reflections of the floor and walls in a shiny surface (1)</li><li>A cast shadow on the floor (1)</li><li>A sited environment round the bin (1)</li></ul><p>Any 2. A bare word such as \"lighting\" or \"materials\" earns nothing: say what it does to the bin.</p>" },
