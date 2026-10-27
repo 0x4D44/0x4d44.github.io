@@ -82,8 +82,11 @@
     if (altMax >= 24) return "zero";
     // padding a pile of key words with the same "the/is/and" over and over is not a sentence
     if (func >= 8 && new Set(funcToks).size < 4) return "zero";
-    let run = 0, longest = 0;
-    toks.forEach((t) => { if (FUNC.has(t)) run = 0; else { run++; if (run > longest) longest = run; } });
+    let longest = 0;
+    text.split(/[.,;:!?()]+/).forEach((seg) => {
+      let run = 0;
+      (seg.match(/[a-z0-9']+/g) || []).forEach((t) => { if (FUNC.has(t)) run = 0; else { run++; if (run > longest) longest = run; } });
+    });
     return longest >= 10 ? "half" : null;
   }
 
