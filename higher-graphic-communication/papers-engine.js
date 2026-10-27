@@ -27,7 +27,7 @@
      characters, so a cause and its effect must be in the same stretch of writing), at least one `any`
      pattern matches if `any` is given, and no `not` pattern matches. Patterns are matched against the
      normalised answer. */
-  const WIN = 220;
+  const WIN = 160;
   HGP.pointHit = function (pt, text) {
     const all = pt.all || [], any = pt.any || [], not = pt.not || [];
     if (!all.length && !any.length) return false;

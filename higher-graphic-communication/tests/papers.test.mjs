@@ -151,3 +151,27 @@ test("the engine's own rules", () => {
   assert.equal(HGP.scorePart({ type: "multi", marks: 2, a: [0, 1], opts: [1, 2, 3, 4, 5] }, [0, 2]).got, 0, "a wrong pick cancels a right one");
   assert.equal(HGP.norm("Ø40 × 2"), "diameter 40 x 2");
 });
+
+// Word-salad attack: shuffle the words of the model answer (all words, then content words only).
+// A student who knows the key words but cannot write the answer must not collect the marks.
+test("a shuffled model answer does not earn most of the marks", () => {
+  let seed = 777;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  const shuf = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const sw = new Set("the a an and of to in is it so that this on for be are as at with by or can they their there from which was not do does if then than when".split(" "));
+  const LIMIT = { content: 0.3, all: 0.45 };
+  for (const mode of ["content", "all"]) {
+    let got = 0, of = 0;
+    const fulls = [];
+    for (const { q, p, i } of parts) {
+      if (p.type !== "text" || p.marks < 2) continue;
+      let w = HGP.norm(p.sample).split(" ");
+      if (mode === "content") w = w.filter((x) => !sw.has(x));
+      let s = 0;
+      for (let t = 0; t < 8; t++) s += HGP.scorePart(p, shuf(w).join(" ")).got;
+      s /= 8; got += s; of += p.marks;
+      if (s >= p.marks - 0.01) fulls.push(`${q.id}[${i}]`);
+    }
+    assert.ok(got / of <= LIMIT[mode], `${mode}-word shuffle earns ${(100 * got / of).toFixed(1)}% (limit ${100 * LIMIT[mode]}%); full marks on ${fulls.join(", ")}`);
+  }
+});
