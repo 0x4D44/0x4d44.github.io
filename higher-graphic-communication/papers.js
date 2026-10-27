@@ -192,7 +192,7 @@
         badge),
       q.style ? el("p", { class: "pp-style" }, q.style) : null,
       el("div", { class: "pp-stem", html: q.stem }));
-    if (q.figure) card.append(el("figure", { class: "diagram diagram-scroll pp-fig", html: scopeIds(q.figure, ns) }));
+    if (q.figure) card.append(el("figure", { class: "diagram diagram-scroll pp-fig", tabindex: "0", role: "group", "aria-label": "Figure for question " + n + " (scrolls sideways on narrow screens)", html: scopeIds(q.figure, ns) }));
     const paint = () => {
       const r = results[q.id] || [];
       const got = r.reduce((a, x) => a + (x || 0), 0);
@@ -246,7 +246,7 @@
   }
   function mockPanel() {
     const panel = el("div");
-    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 11 marks of DTP, 11 of CAD, 10 of interpretation, 8 of standards and 5 of digital technology. At the real pace of 1 minute 40 seconds a mark, 45 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers. Marks from the mock also count on the scoreboard." }));
+    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 12 marks of DTP, 11 of CAD, 11 of interpretation, 6 of standards and 5 of digital technology. At the real pace of 1 minute 40 seconds a mark, 45 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers. Marks from the mock also count on the scoreboard." }));
     panel.append(el("div", { class: "exam-timer", "data-minutes": "75", "data-label": "Mock clock" }));
     const out = el("div");
     const total = el("p", { class: "pp-sum", "aria-live": "polite" });

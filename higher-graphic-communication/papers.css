@@ -12,7 +12,7 @@
 .pp-tabs [role="tab"][aria-selected="true"] { background: var(--navy-2); border-color: var(--navy-2); color: #fff; }
 .pp-panel:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .pp-intro { color: var(--ink-2); margin: .4em 0; }
-.pp-sum { font-size: .92rem; font-weight: 700; color: var(--navy-2); margin: .4em 0 1em; }
+.pp-sum { font-size: .92rem; font-weight: 700; color: var(--ink); margin: .4em 0 1em; }
 
 .pp-q { margin: 1.6em 0; padding: 4px 14px 12px; background: var(--card); border: 2px solid var(--line); border-left: 8px solid var(--navy-2); border-radius: var(--radius); }
 .pp-qhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
@@ -32,7 +32,7 @@
 .pp-part:first-of-type { border-top: 0; padding-top: 0; }
 .pp-pq { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; font-weight: 700; }
 .pp-pq > span:nth-child(2) { flex: 1 1 260px; min-width: 0; }
-.pp-plabel { color: var(--navy-2); font-family: var(--font-pixel); }
+.pp-plabel { color: var(--ink); font-family: var(--font-pixel); }
 .pp-marks { font-weight: 400; font-size: .85rem; color: var(--muted); }
 .pp-input { margin: 6px 0; }
 .pp-input textarea {
