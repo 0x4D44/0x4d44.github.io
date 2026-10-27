@@ -14,6 +14,7 @@
     R`\b(?:fine|okay|ok|safe|no\s+(?:\w+\s+)?(?:problems?|harm|issues?|difference))\b[^.;]{0,30}\bif\s+(?:they|the|there|it|we)\s+(?:\w+\s+){0,2}(?:do\s+not|don'?t|doesn'?t|does\s+not|never|fail|forget|did\s+not|didn'?t)`,
     R`\bif\s+(?:they|the|there|it|we)\s+(?:\w+\s+){0,2}(?:do\s+not|don'?t|doesn'?t|does\s+not|never|fail|forget|did\s+not|didn'?t)\b[^.;]{0,50}\b(?:fine|okay|nothing|no\s+(?:\w+\s+)?(?:problems?|harm|issues?|difference))`,
     R`\bnothing\s+(?:is\s+)?(?:wrong|bad)\b`,
+    R`(?:\bnot|n't|\bnever)\s+(?:\w+\s+){0,1}(?:be\s+)?(?:any\s+)?(?:mistakes?|errors?|clash\w*|problems?|delays?|issues?|redo\w*)\b|\bnot\s+not\b`,
   ]);
 
   const BEN_ENV = [R`\b(?:not|never|n't|won't)\s+(?:\w+\s+){0,1}(?:pollut\w*|produc\w*\s+(?:any\s+)?(?:exhaust|emissions?|fumes?|pollution|co2|carbon)|emit\w*|giv\w*\s+out\s+(?:any\s+)?(?:fumes?|exhaust|emissions?))`, R`\b(?:no|zero|without|less|fewer|lower|reduc\w*|cut\w*|eliminat\w*|remov\w*|avoid\w*|cleaner)\b[^.;]{0,25}\b(?:exhaust\w*|emission\w*|fumes?|carbon|co2|pollut\w*|nitrogen|nox|particulate\w*|greenhouse|air)`, R`\bair\s+(?:quality|pollution)\b[^.;]{0,25}\b(?:better|improv\w*|cleaner)`, R`\b(?:exhaust|tail-?pipe)\s+(?:emissions?|fumes?)\s+(?:are|is)\s+(?:zero|removed|cut|lower|reduced)`];
@@ -326,7 +327,7 @@
             q: "State what happens to the wasted energy.",
             points: [
               { desc: "It is transferred to the surroundings as heat (thermal energy), where it is no longer useful", negOK: true,
-                not: [R`\b(?:not|isn'?t|never)\s+(?:\w+\s+){0,2}(?:as\s+|into\s+|to\s+)?(?:heat|thermal)\b`],
+                not: [R`\b(?:not|isn'?t|never)\s+(?:\w+\s+){0,2}(?:as\s+|into\s+|to\s+)?(?:heat|thermal)\b`, R`(?:\bnot|n't|\bnever)\s+(?:\w+\s+){0,1}(?:transfer\w*|convert\w*|chang\w*|turn\w*|releas\w*|dissipat\w*|emit\w*|becom\w*|goes|go|given|escap\w*|spread)\b`],
                 any: [R`\b(?:heat\w*|thermal|warm\w*|hot)\b`] },
             ],
             sample: "The wasted energy is transferred to the surroundings as heat, so it is no longer useful.",
@@ -392,7 +393,7 @@
             q: "State what happens to the other 10 % of the kinetic energy.",
             points: [
               { desc: "It becomes heat or sound in the tyres, road, air and other surroundings", negOK: true,
-                not: [R`\b(?:not|isn'?t|never)\s+(?:\w+\s+){0,2}(?:as\s+|into\s+|to\s+)?(?:heat|thermal|sound|noise)\b`],
+                not: [R`\b(?:not|isn'?t|never)\s+(?:\w+\s+){0,2}(?:as\s+|into\s+|to\s+)?(?:heat|thermal|sound|noise)\b`, R`(?:\bnot|n't|\bnever)\s+(?:\w+\s+){0,1}(?:transfer\w*|convert\w*|chang\w*|turn\w*|releas\w*|dissipat\w*|emit\w*|becom\w*|goes|go|given|escap\w*|spread)\b`],
                 any: [R`\b(?:becomes?|turn(?:ed|s)?|chang(?:ed|es)|convert(?:ed|s)|transfer(?:red|s)?|goes|go|lost|wasted|releas(?:ed|es)|giv(?:en|es)|dissipat(?:ed|es)|escap(?:es?|ed)|ends?\s+up|spread|shared|dumped|emitted)\b[^.;]{0,40}\b(?:heat\w*|thermal|warm\w*|sound|noise|surroundings|environment|tyres?|road|air|atmosphere)\b`, R`\b(?:heat|thermal|sound|noise)\s+(?:energy\s+)?(?:in|to|from|into)\b[^.;]{0,25}\b(?:tyres?|road|air|surroundings|environment)\b`, R`\b(?:heats?|heating|warms?|warming)\b[^.;]{0,20}\b(?:tyres?|road|air|surroundings)\b`, R`\b(?:as|into)\s+(?:\w+\s+){0,1}(?:heat|sound|noise)\b`] },
             ],
             sample: "The other 10 % is transferred to the surroundings, as heat in the tyres, road and air and as sound.",
