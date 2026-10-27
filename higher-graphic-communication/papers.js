@@ -223,7 +223,7 @@
   }
 
   /* ---- mock paper ---- */
-  const MOCK_TARGET = { dtp: 11, cad: 11, interp: 10, std: 8, tech: 5 };
+  const MOCK_TARGET = { dtp: 12, cad: 11, interp: 11, std: 6, tech: 5 };
   function drawMock() {
     // draw until the paper lands on 44-46 marks, in roughly the real proportions
     let best = null, bestGap = 1e9;
