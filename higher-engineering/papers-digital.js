@@ -129,6 +129,18 @@
     return svg(494, 190, "Block diagram of a greenhouse vent controller. Rain sensor R and wind sensor W feed a NOR gate whose output goes to input in1 of a microcontroller. A temperature sensor feeds analogue input an1. Output out1 of the microcontroller drives the vent motor.", b);
   })();
 
+  /* digital-01(b): the wrong claim that a digital signal suffers more from noise */
+  const DIG_WORSE = "\\bdigital(?:(?!\\banalogue\\b|\\bless\\b|\\bwhereas\\b|\\bwhile\\b|\\bbut\\b|\\bunlike\\b|\\bnot\\b|n't)[^.;]){0,100}?(?:\\b(?:more|worse|badly|bigger|greater)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted|changed|problem)|\\baffected\\W+(?:more|worse|badly)\\b)";
+
+  /* digital-10(f): the wrong claim that the average voltage rises when the duty cycle is cut */
+  const AV_RISES = "\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power)\\W+(?:\\w+\\W+){0,2}(?:rise\\w*|increas\\w*|goes up|go up|gets? (?:higher|bigger|larger))\\W+(?:\\w+\\W+){0,4}(?:when|as|because|if|since)\\W+(?:\\w+\\W+){0,4}(?:duty|pulse|on.?time)\\W+(?:\\w+\\W+){0,4}(?:reduc\\w*|lower\\w*|fall\\w*|decreas\\w*|smaller|less|cut)";
+
+  /* digital-11(c): the wrong claim that PWM (the transistor) is the one that wastes the power */
+  const PWM_WASTES = "\\b(?:pwm|transistor|switching)\\W+(?:(?:(?!\\b(?:not|never|little|less|no|hardly|almost|barely|fewer|minimal|negligible|tiny|small|only|very|lower|than)\\b|n't)\\w+\\W+)){0,4}(?:wastes?|loses|dissipates|gets hot|heats(?: up)?|uses more)\\b";
+
+  /* digital-12(d): the reversed claim that in1 = 1 closes the vent */
+  const IN1_REV = "\\b(?:in1|input 1|input one)\\W+(?:is |= ?|equals |has |gets )?(?:1|high)\\b\\W+(?:\\w+\\W+){0,4}?(?:closed?|shut|closes)\\b";
+
   /* digital-06(c): building blocks for the per-gate trace patterns */
   const NAND_G1 = "\\b(?:g1|gate 1|gate one|first|1st|left|top left|first nand|first gate)\\b";
   const GATE4 = "(?:g4|gate 4|gate four|last|final|4th|fourth|right(?:-hand)?|output gate)";
@@ -156,9 +168,9 @@
             q: "Which of these is an <strong>analogue</strong> signal?",
             opts: [
               "The door switch output, which is 0 V when open and 5 V when closed",
-              "The sensor voltage, which can take any value between 0 V and 5 V as the water warms",
-              "A lamp that is either lit or dark",
-              "The output of a logic gate, which is either high or low",
+              "The sensor voltage, which can take any value from 0 V to 5 V",
+              "A lamp indicator that is either lit or dark, never in between",
+              "The output of a logic gate, which is always either high or low",
             ],
             why: "An analogue signal can take any value in a range, like the smoothly changing sensor voltage. The other three each have only two possible states, so they are digital.",
           },
@@ -168,7 +180,7 @@
             minWords: 10,
             points: [
               { desc: "A digital signal has only two levels, so the receiver only has to decide high or low and a small amount of noise leaves that decision unchanged", group: "d",
-                not: ["\\bdigital\\W+(?:\\w+\\W+){0,6}(?:more|worse|badly)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted)", "\\banalogue\\W+(?:\\w+\\W+){0,4}(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?)", "\\bdigital\\W+(?:\\w+\\W+){0,4}(?:any|every|all|infinite|continuous\\w*)\\W+(?:\\w+\\W+){0,2}(?:values?|levels?|voltages?)"],
+                not: ["\\bdigital\\W+(?:\\w+\\W+){0,6}(?:more|worse|badly)\\W+(?:\\w+\\W+){0,2}(?:affected|distorted|noisy|corrupted)", DIG_WORSE, "\\banalogue\\W+(?:\\w+\\W+){0,4}(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?)", "\\bdigital\\W+(?:\\w+\\W+){0,4}(?:any|every|all|infinite|continuous\\w*)\\W+(?:\\w+\\W+){0,2}(?:values?|levels?|voltages?)"],
                 any: [
                   "\\b(?:only|just)\\W+(?:\\w+\\W+){0,2}(?:two|2|binary)\\W+(?:\\w+\\W+){0,2}(?:levels?|values?|states?|voltages?)",
                   "\\b(?:two|2)\\W+(?:\\w+\\W+){0,1}(?:levels?|values?|states?|voltages?)\\b",
@@ -178,8 +190,9 @@
                   "\\b(?:either|always|only)\\W+(?:\\w+\\W+){0,3}(?:on|high|1)\\W+or\\W+(?:\\w+\\W+){0,2}(?:off|low|0)\\b",
                 ] },
               { desc: "Noise added to an analogue signal changes its value (which carries the information), so the message is distorted", group: "a",
+                not: [DIG_WORSE],
                 any: [
-                  "\\banalogue\\W+(?:\\w+\\W+){0,12}(?:distort\\w*|corrupt\\w*|alter\\w*|degrad\\w*|inaccura\\w*|errors?|wrong|incorrect|noisy|wobbl\\w*|fuzz\\w*|interfer\\w*|picks? up|pick\\w* up|inherit\\w*)",
+                  "\\banalogue\\W+(?:\\w+\\W+){0,12}(?:distort\\w*|corrupt\\w*|chang\\w*|alter\\w*|degrad\\w*|inaccura\\w*|errors?|wrong|incorrect|noisy|wobbl\\w*|fuzz\\w*|interfer\\w*|picks? up|pick\\w* up|inherit\\w*)",
                   "\\b(?:noise|interference)\\W+(?:\\w+\\W+){0,8}(?:changes?|alters?|distort\\w*|corrupt\\w*|adds?|added|becomes?|part of|mixed|errors?|wrong|picked|permanent\\w*)\\W+(?:\\w+\\W+){0,6}(?:analogue|signal|voltage|value|information|message|reading)",
                   "\\b(?:analogue|signal|voltage|value|information|message|reading)\\W+(?:\\w+\\W+){0,6}(?:changes?|altered|distorted|corrupted|damaged|errors?)\\W+(?:\\w+\\W+){0,6}(?:noise|interference)",
                 ] },
@@ -318,9 +331,9 @@
             q: "One of the three gates on the 74HC10 is spare. The designer wants to use it as a NOT gate. What should be done?",
             opts: [
               "Leave two of its inputs unconnected and use the third",
-              "Join all three of its inputs together and use that as the input",
-              "Connect two of its inputs to 0 V and use the third",
-              "A 3-input gate cannot be used as a NOT gate",
+              "Join all three inputs together and use them as one input",
+              "Connect two of its inputs to 0 V and use the third as the input",
+              "A 3-input gate can never be used as a NOT gate whatever is done",
             ],
             why: R`With all inputs joined, a NAND gives $\overline{A \cdot A \cdot A} = \overline{A}$, which is a NOT. Unconnected inputs float and give unreliable behaviour. Inputs held at 0 V make the output 1 whatever the third input does.`,
           },
@@ -404,7 +417,7 @@
             why: R`$V = \dfrac{102}{255} \times 5.00$ (1) $= 0.4 \times 5.00 = $ <strong>2.00 V</strong> (1).`,
           },
           {
-            label: "(d)", type: "num", marks: 2, a: 19.6078, tol: 0.06, unit: "mV",
+            label: "(d)", type: "num", marks: 2, a: 19.6078, tol: 0.06, alts: [20], unit: "mV",
             q: "What is the smallest change in the sensor voltage that can change the reading by one step? Give your answer in millivolts (mV).",
             why: R`One step $= \dfrac{5.00\ \text{V}}{255}$ (1) $= 0.0196\ \text{V} = $ <strong>19.6 mV</strong> (1). Dividing by 256 is a slip: the 255 steps span the full 5 V.`,
           },
@@ -413,9 +426,9 @@
             q: "The 8-bit ADC is replaced by a 10-bit ADC on the same 0 V to 5 V range. What is the effect?",
             opts: [
               "Each step is smaller, so the voltage is measured more precisely",
-              "The ADC can now measure voltages up to 10 V",
-              "The readings now run from 0 to 511",
-              "The ADC converts a number into a voltage instead",
+              "The ADC can now measure voltages as high as 10 V instead of only 5 V",
+              "The readings now run from 0 up to 511 instead of 0 to 255",
+              "The ADC now converts a number from the program into a voltage",
             ],
             why: R`A 10-bit ADC has $2^{10} = 1024$ readings (0 to 1023) over the same 5 V, so each step is about 4.9 mV instead of 19.6 mV. The voltage range is set by the supply, not the bits, and an ADC always converts a voltage to a number.`,
           },
@@ -440,7 +453,7 @@
             minWords: 10,
             points: [
               { desc: "It keeps repeating: reads or checks the sensor over and over in a loop",
-                all: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always)\\b", "\\b(?:read\\w*|check\\w*|monitor\\w*|test\\w*|measur\\w*|compar\\w*|look\\w*|scan\\w*|poll\\w*)\\b"] },
+                all: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always (?:checking|reading|monitoring|testing)|goes? back|going back|returns? to|returning to|back to (?:read|the start|the top|the beginning)|reads?\\W+(?:\\w+\\W+){0,2}again)\\b", "\\b(?:read\\w*|check\\w*|monitor\\w*|test\\w*|measur\\w*|compar\\w*|look\\w*|scan\\w*|poll\\w*)\\b"] },
               { desc: "The fan is switched on (out1 = 1) when an1 is above 153 (the temperature is above 60 °C)",
                 not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:on|start\\w*|run\\w*|switch\\w* on|turn\\w* on|work\\w*)\\b", "\\b(?:off|stops?|0)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:above|over|greater|higher|hotter|>)", "(?:above|over|greater|more than|higher|hotter|>)(?:(?!\\b(?:on|runs?|starts?|otherwise|else|below|under|lower)\\b)[^.;]){0,40}\\b(?:off|stops?|switch\\w* off|turn\\w* off)\\b"],
                 negOK: true, all: ["\\bfan\\b"], any: [
@@ -448,7 +461,7 @@
                   "\\b(?:on|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}1|starts?|runs?|switch\\w* on|switched on|turn\\w* on|turned on)[^.;!?]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)",
                 ] },
               { desc: "The fan is switched off (out1 = 0) when an1 is not above 153 (the temperature is lower)",
-                not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:off|stop\\w*|switch\\w* off|turn\\w* off)\\b", "\\b(?:on|runs?|starts?)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:below|under|less|lower|cooler|colder|<)", "(?:below|under|less|lower|cooler|colder|<)(?:(?!\\b(?:off|stops?|otherwise|else|above|over|greater)\\b)[^.;]){0,40}\\b(?:on|runs?|starts?|switch\\w* on|turn\\w* on)\\b"],
+                not: ["(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)(?:(?!\\b(?:otherwise|else|if not|but|whereas|while|not|on|runs?|starts?|below|under|less|lower|cooler|colder)\\b|n't|<)[^.;]){0,60}\\b(?:off|stops?|switch\\w* off|turn\\w* off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0)\\b", "\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:off|stop\\w*|switch\\w* off|turn\\w* off)\\b", "\\b(?:on|runs?|starts?)\\W+(?:when|if|once|as soon as)\\W+(?:\\w+\\W+){0,3}(?:below|under|less|lower|cooler|colder|<)", "(?:below|under|less|lower|cooler|colder|<)(?:(?!\\b(?:off|stops?|otherwise|else|above|over|greater)\\b)[^.;]){0,40}\\b(?:on|runs?|starts?|switch\\w* on|turn\\w* on)\\b"],
                 negOK: true, all: ["\\bfan\\b"], any: [
                   "(?:otherwise|else|if not|below|less|lower|under|cooler|colder|<|153 or less|not (?:above|over|greater|hot))[^.;!?]{0,60}(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stop\\w*|switch\\w* off|turn\\w* off)\\b",
                   "\\b(?:off|(?:out1|output 1)\\W+(?:\\w+\\W+){0,2}0|stops?|switch\\w* off|switched off|turn\\w* off|turned off)[^.;!?]{0,60}(?:otherwise|else|if not|below|less|lower|under|cooler|colder)",
@@ -461,10 +474,10 @@
             label: "(c)", type: "mcq", marks: 1, a: 2,
             q: "The arrow that returns to the box <em>Read an1</em> is removed from the flowchart. What would the program then do?",
             opts: [
-              "Keep the fan on for ever",
-              "Run the loop twice and then stop",
-              "Read the sensor once, set the fan, and then stop, so it would never respond to later changes",
-              "Switch the fan off whatever the temperature",
+              "Keep the fan switched on for ever, whatever the temperature reads",
+              "Run the loop twice and then stop with the fan in its last state",
+              "Read the sensor once, set the fan and stop, ignoring changes",
+              "Switch the fan off for good, whatever the temperature reads",
             ],
             why: "Without the return arrow the flow reaches the end of the chart and the program stops. The fan would stay in whatever state it was set to, however the temperature changed afterwards. A control program needs its loop to go on watching the inputs.",
           },
@@ -497,10 +510,10 @@
             label: "(c)", type: "mcq", marks: 1, a: 1,
             q: "Which change makes the program meet the specification?",
             opts: [
-              "Change the first wait to 0.4 s",
+              "Change the first wait to 0.4 s and the second wait to 0.6 s",
               "Change the test <code>n &lt;= 4</code> to <code>n &lt; 4</code>",
-              "Change <code>goto main</code> to <code>goto end</code>",
-              "Move <code>n = 0</code> to just after <code>main:</code>",
+              "Change <code>goto main</code> to <code>goto end</code> in the last line",
+              "Move <code>n = 0</code> to just after the label <code>main:</code>",
             ],
             why: R`With $n < 4$ the test fails after pass 4 ($n = 4$), so there are exactly four flashes. Changing a delay does not change the count. Jumping to <code>end</code> would stop after one flash. Moving <code>n = 0</code> into the loop resets the counter every pass, so the program never stops.`,
           },
@@ -553,9 +566,9 @@
             q: "The frequency is raised to 20 kHz with the duty cycle left at 75 %. What happens to the average voltage across the motor?",
             opts: [
               "It rises, because there are more pulses every second",
-              "It falls, because each pulse is shorter",
-              "It becomes 12 V",
-              "It stays at 9.0 V, because the duty cycle has not changed",
+              "It falls, because each pulse is now much shorter than before",
+              "It becomes 12 V, because the pulses merge into one steady level",
+              "It stays at 9.0 V, as the duty cycle is unchanged",
             ],
             why: R`The average voltage depends on the duty cycle and the supply, $V_{avg} = D \times V_s$, not on the frequency. Each pulse is shorter but there are proportionally more of them, so the fraction of time on is still 75 %.`,
           },
@@ -565,9 +578,10 @@
             minWords: 10,
             points: [
               { desc: "The average voltage across the motor falls (as the duty cycle falls)",
-                any: ["\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,3}(?:voltage|volts?|power|current)\\W+(?:\\w+\\W+){0,4}(?:fall\\w*|drop\\w*|decreas\\w*|reduc\\w*|lower\\w*|smaller|less|goes down|gets lower)", "\\b(?:voltage|volts?)\\W+(?:\\w+\\W+){0,5}(?:fall\\w*|drop\\w*|decreas\\w*|reduc\\w*|lower\\w*|smaller|less|goes down)\\W+(?:\\w+\\W+){0,6}(?:average|motor)", "\\b(?:less|lower|smaller|reduced)\\W+(?:\\w+\\W+){0,2}(?:average|mean)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?)"] },
+                not: ["\\b(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:fall\\w*|drop\\w*|decreas\\w*|reduc\\w*|lower\\w*|go down|slow\\w*|chang\\w*)", AV_RISES],
+                any: ["\\b(?:lowers?|reduces?|decreases?|cuts?|drops?|lessens?)\\W+(?:\\w+\\W+){0,1}(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power)", "\\b(?:less|lower|reduced|smaller)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power|energy)\\W+(?:\\w+\\W+){0,3}(?:on average|on the average|averaged)", "\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,3}(?:voltage|volts?|power|current)\\W+(?:\\w+\\W+){0,4}(?:fall\\w*|drop\\w*|decreas\\w*|reduc\\w*|lower\\w*|smaller|less|goes down|gets lower)", "\\b(?:voltage|volts?)\\W+(?:\\w+\\W+){0,5}(?:fall\\w*|drop\\w*|decreas\\w*|reduc\\w*|lower\\w*|smaller|less|goes down)\\W+(?:\\w+\\W+){0,6}(?:average|motor)", "\\b(?:less|lower|smaller|reduced)\\W+(?:\\w+\\W+){0,2}(?:average|mean)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?)"] },
               { desc: "So less current and torque flow, and the motor slows down",
-                not: ["\\bmotor\\W+(?:\\w+\\W+){0,4}(?:speeds? up|faster|accelerat\\w*|increas\\w*)"],
+                not: [AV_RISES, "\\bmotor\\W+(?:\\w+\\W+){0,4}(?:speeds? up|faster|accelerat\\w*|increas\\w*)"],
                 any: ["\\b(?:slows?|slower|slowing|decelerat\\w*|speed\\W+(?:\\w+\\W+){0,3}(?:falls?|drops?|decreases?|reduces?|lower\\w*|goes down)|spins? (?:more )?slowly|turns? (?:more )?slowly|runs? (?:more )?slowly)\\b", "\\b(?:less|lower|reduced|smaller)\\W+(?:\\w+\\W+){0,2}(?:speed|rpm|revs)"] },
             ],
             sample: "A lower duty cycle makes the average voltage across the motor fall. Less current flows and less torque is produced, so the motor slows down.",
@@ -588,7 +602,7 @@
             why: R`The resistor has $9.0 - 6.0 = 3.0$ V across it (1). $P = VI = 3.0 \times 0.80 = $ <strong>2.4 W</strong> (1).`,
           },
           {
-            label: "(b)", type: "num", marks: 2, a: 66.6667, tol: 0.08, unit: "%",
+            label: "(b)", type: "num", marks: 2, a: 66.6667, tol: 0.08, alts: [67], unit: "%",
             q: "Calculate the percentage of the power taken from the battery that reaches the motor in the cadet's circuit.",
             why: R`Power from the battery $= 9.0 \times 0.80 = 7.2$ W. Power in the motor $= 6.0 \times 0.80 = 4.8$ W (1). $\text{efficiency} = \dfrac{4.8}{7.2} \times 100 = $ <strong>66.7 %</strong> (1).`,
           },
@@ -598,15 +612,16 @@
             minWords: 20,
             points: [
               { desc: "The series resistor wastes power as heat, because the voltage the motor does not use is dropped across it",
-                not: ["\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:more|very|highly|so)\\W+(?:\\w+\\W+){0,2}efficient", "\\bresistors?\\W+(?:\\w+\\W+){0,4}(?:waste\\w*|loses?|dissipat\\w*|heats?)\\W+(?:\\w+\\W+){0,1}(?:less|little|no|nothing|fewer)", "\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:not|n't|never)\\W+(?:\\w+\\W+){0,2}(?:waste\\w*|hot|heat\\w*)"],
+                not: ["\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,6}(?:either|fully|completely)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", PWM_WASTES, "\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:more|very|highly|so)\\W+(?:\\w+\\W+){0,2}efficient", "\\bresistors?\\W+(?:\\w+\\W+){0,4}(?:waste\\w*|loses?|dissipat\\w*|heats?)\\W+(?:\\w+\\W+){0,1}(?:less|little|no|nothing|fewer)", "\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:not|n't|never)\\W+(?:\\w+\\W+){0,2}(?:waste\\w*|hot|heat\\w*)"],
                 any: ["\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,10}(?:waste\\w*|heats?|heating|hot|dissipat\\w*|lost|loses|loss|burns?)", "\\b(?:waste\\w*|heats?|heating|dissipat\\w*|wasted|lost|loss)\\W+(?:\\w+\\W+){0,10}(?:resistors?|series)", "\\bresistors?\\W+(?:\\w+\\W+){0,6}(?:takes?|drops?|uses?|absorbs?)\\W+(?:\\w+\\W+){0,6}(?:voltage|volts?|power|energy)"] },
               { desc: "With PWM the transistor is either fully on or fully off, so very little power is lost in it",
+                not: ["\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,6}(?:either|fully|completely)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", PWM_WASTES],
                 any: ["\\b(?:fully|completely|either)\\W+(?:\\w+\\W+){0,2}(?:on|off)\\b", "\\b(?:on|off)\\W+(?:or|and)\\W+(?:\\w+\\W+){0,2}(?:fully\\W+)?(?:off|on)\\b", "\\b(?:switch\\w*|transistor)\\W+(?:\\w+\\W+){0,6}(?:little|almost no|hardly any|very little|minimal|negligible|small)\\W+(?:\\w+\\W+){0,3}(?:power|heat|energy|loss|voltage)", "\\b(?:little|almost no|hardly any|very little|minimal|negligible)\\W+(?:\\w+\\W+){0,3}(?:power|heat|energy)\\W+(?:\\w+\\W+){0,5}(?:transistor|switch\\w*|pwm)"] },
               { desc: "The duty cycle is changed to vary the average voltage across the motor, which sets its speed",
                 any: ["\\b(?:duty|pulse width|on ?time|mark)\\W+(?:\\w+\\W+){0,8}(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?|power)", "\\b(?:average|mean|effective)\\W+(?:\\w+\\W+){0,2}(?:voltage|volts?)\\W+(?:\\w+\\W+){0,8}(?:duty|pulse|on ?time|speed|change[sd]?|varied|controlled|set)", "\\b(?:changing|varying|altering|adjusting|increasing|reducing|raising|lowering)\\W+(?:\\w+\\W+){0,2}(?:the )?(?:duty|pulse width|on ?time)\\W+(?:\\w+\\W+){0,8}(?:speed|voltage|slower|faster)"] },
               { desc: "So most of the battery power reaches the motor: more efficient, less heat and a longer battery life",
                 not: ["\\bresistors?\\W+(?:\\w+\\W+){0,3}(?:more|very|highly)\\W+(?:\\w+\\W+){0,2}efficient", "\\b(?:resistors?|series)\\W+(?:\\w+\\W+){0,6}(?:better|best|less|least|fewer)", "\\bresistors?\\W+(?:\\w+\\W+){0,6}(?:power|energy|heat|loss)\\W+(?:\\w+\\W+){0,2}(?:less|lower)"],
-                any: ["\\b(?:pwm|it|this|transistor|switching|method)\\W+(?:\\w+\\W+){0,6}(?:more|very|highly|much more)\\W+(?:\\w+\\W+){0,2}efficient", "\\bmore efficient", "\\b(?:efficiency)\\W+(?:\\w+\\W+){0,4}(?:higher|better|greater|improved|increased)", "\\b(?:battery|cell|batteries)\\W+(?:\\w+\\W+){0,5}(?:lasts?|last longer|longer)", "\\b(?:longer)\\W+(?:\\w+\\W+){0,2}battery", "\\b(?:most|more|all|nearly all|almost all)\\W+(?:\\w+\\W+){0,4}(?:power|energy)\\W+(?:\\w+\\W+){0,6}(?:reaches|goes to|delivered to|used by|used in|is used|to the motor|in the motor)", "\\b(?:less|little|fewer)\\W+(?:\\w+\\W+){0,3}(?:power|energy)\\W+(?:\\w+\\W+){0,3}(?:wasted|lost)", "\\b(?:cooler|runs? cool|stays? cool|less heat|doesn'?t get hot)"] },
+                any: ["\\b(?:pwm|it|this|transistor|switching|method)\\W+(?:\\w+\\W+){0,6}(?:more|very|highly|much more)\\W+(?:\\w+\\W+){0,2}efficient", "\\bmore efficient", "\\b(?:efficiency)\\W+(?:\\w+\\W+){0,4}(?:higher|better|greater|improved|increased)", "\\b(?:battery|cell|batteries)\\W+(?:\\w+\\W+){0,5}(?:lasts?|last longer|longer)", "\\b(?:longer)\\W+(?:\\w+\\W+){0,2}battery", "\\b(?:most|more|all|nearly all|almost all)\\W+(?:\\w+\\W+){0,4}(?:power|energy)\\W+(?:\\w+\\W+){0,6}(?:reaches|goes to|delivered to|used by|used in|is used|to the motor|in the motor)", "\\b(?:less|little|fewer)\\W+(?:\\w+\\W+){0,3}(?:power|energy)\\W+(?:\\w+\\W+){0,3}(?:wasted|lost)", "\\b(?:cooler|runs? cool|stays? cool|less heat|doesn'?t get hot)", "\\b(?:runs?|lasts?|working|operat\\w*)\\W+(?:\\w+\\W+){0,2}longer\\b", "\\bused\\W+(?:\\w+\\W+){0,1}(?:better|more (?:efficiently|effectively)|efficiently)", "\\bbetter use\\b"] },
             ],
             sample: "The series resistor wastes power as heat, because the extra voltage is dropped across it. With PWM the transistor is either fully on or fully off, so very little power is lost in it. The duty cycle is changed to vary the average voltage across the motor, which sets its speed, so most of the battery power reaches the motor and the battery lasts longer.",
             model: "<ul><li>A series resistor wastes power as heat: the unused voltage is dropped across it and $P = VI$ is lost (1)</li><li>With PWM the transistor is fully on or fully off, so very little power is lost in it (1)</li><li>The duty cycle is varied to change the average voltage across the motor, and so its speed (1)</li><li>So most of the power reaches the motor: PWM is more efficient, cooler and the battery lasts longer (1)</li></ul><p>Four different points are needed. Do not accept &quot;PWM is more efficient&quot; with no reason as more than the last mark; &quot;PWM is cheaper&quot; or &quot;faster&quot; earns nothing.</p>",
@@ -637,10 +652,10 @@
             label: "(c)", type: "mcq", marks: 1, a: 1,
             q: "It is raining, so in1 = 0, and the temperature is high, with an1 = 200. What is the state of out1?",
             opts: [
-              "out1 = 1, because an1 is above 153",
-              "out1 = 0, because in1 = 0 sends the program to <code>closed</code> before the temperature is tested",
-              "out1 flashes on and off",
-              "The program stops, so out1 does not change",
+              "out1 = 1, because an1 = 200 is above 153 so the temperature decides",
+              "out1 = 0, because in1 = 0 sends the program to <code>closed</code>",
+              "out1 flashes on and off every time the program goes round the loop",
+              "The program stops at the first test, so out1 does not change at all",
             ],
             why: "The first test is on in1. With in1 = 0 the program jumps to <code>closed</code> and sets out1 = 0, whatever the temperature. The logic gate has the final say, which is how the rain and wind sensors stop the vent opening. The program loops back to <code>main</code>, so it never stops.",
           },
@@ -650,17 +665,17 @@
             minWords: 20,
             points: [
               { desc: "It repeats continuously, going back to main each time",
-                any: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always|round and round|goes? back (?:to )?(?:main|the start|the top|the beginning)|returns? to (?:main|the start|the top|the beginning)|back to (?:main|the start|the top))\\b"] },
+                any: ["\\b(?:repeat\\w*|continu\\w*|loop\\w*|over and over|again and again|keeps? (?:on )?(?:checking|reading|monitoring|testing|going)|constantly|all the time|forever|for ever|always (?:checking|reading|monitoring|testing)|round and round|goes? back (?:to )?(?:main|the start|the top|the beginning)|returns? to (?:main|the start|the top|the beginning)|back to (?:main|the start|the top))\\b"] },
               { desc: "If in1 = 0 (rain or wind) the vent is closed (out1 = 0) whatever the temperature",
-                win: 200,
-                not: ["\\bin1\\W+(?:is |= ?|equals )?1\\b\\W+(?:\\w+\\W+){0,6}(?:closed?|shut)\\W+(?:\\w+\\W+){0,4}(?:whatever|regardless|no matter)"],
+                win: 200, negOK: true,
+                not: ["\\b(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:closed?|shut|close)\\b", "\\bin1\\W+(?:is |= ?|equals )?1\\b\\W+(?:\\w+\\W+){0,6}(?:closed?|shut)\\W+(?:\\w+\\W+){0,4}(?:whatever|regardless|no matter)"],
                 all: [
                   "\\b(?:in1|input 1|input one|logic|gate|nor|enable\\w*|first test|first)\\W+(?:\\w+\\W+){0,3}(?:0|low|off|zero|false)\\b|\\b(?:rain\\w*|wind\\w*|raining|windy|not allowed)\\b",
                   "\\b(?:closed?|shut|closes|out1 (?:is )?(?:set )?(?:to |= ?)?0)\\b",
                   "\\b(?:whatever|regardless|whichever|no matter|even if|even when|any temperature|ignores?|before|override\\w*|priority|however|never opens?)\\b",
                 ] },
               { desc: "If in1 = 1 and an1 is above 153 (above 24 °C) the vent opens, out1 = 1",
-                not: ["(?:below|under|less than|lower|cooler|colder|<)(?:(?!\\b(?:clos\\w*|shut|not|otherwise|else|above|over)\\b)[^.;]){0,40}\\b(?:opens?|opened)\\b"],
+                not: [IN1_REV, "(?:below|under|less than|lower|cooler|colder|<)(?:(?!\\b(?:clos\\w*|shut|not|otherwise|else|above|over)\\b)[^.;]){0,40}\\b(?:opens?|opened)\\b"],
                 any: [
                   "(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high|warm\\w*)[^.;]{0,60}\\b(?:opens?|opened|raises?)\\b",
                   "(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high|warm\\w*)[^.;]{0,60}\\bout1\\W+(?:is |= ?|equals |to |set to )?1\\b",
@@ -669,6 +684,7 @@
                 ] },
               { desc: "Otherwise (not above 153) the vent stays closed, out1 = 0",
                 win: 200,
+                not: [IN1_REV],
                 any: ["\\b(?:otherwise|else|if not|below|less than|lower|under|cooler|colder|153 or (?:less|below|under|lower)|not (?:above|over|greater|hot))\\W+(?:\\w+\\W+){0,10}(?:closed?|shut|0|off)\\b", "\\b(?:closed?|shut|out1 (?:is )?(?:set )?(?:to |= ?)?0)\\W+(?:\\w+\\W+){0,10}(?:otherwise|else|if not|below|less than|lower|under|cooler|colder)"] },
             ],
             sample: "The program loops continuously, going back to main each time. If in1 is 0 because of rain or wind, the vent is closed with out1 equal to 0 whatever the temperature is. If in1 is 1 and the temperature is above 24 degrees, because an1 is greater than 153, the vent opens by setting out1 to 1. Otherwise, if it is cooler than that, the vent is closed.",
@@ -700,10 +716,10 @@
             label: "(b)", type: "mcq", marks: 1, a: 2,
             q: "What does the analogue-to-digital converter (ADC) of a microcontroller do?",
             opts: [
-              "It turns a number from the program into a voltage",
-              "It amplifies a weak signal from a sensor",
-              "It turns a sensor voltage into a number that the program can use",
-              "It stores the program when the power is off",
+              "It turns a number from the program into an output voltage",
+              "It amplifies a weak signal from a sensor so it can be read",
+              "It turns a sensor voltage into a number for the program",
+              "It stores the program so that it is kept when the power is off",
             ],
             why: "The ADC converts an input voltage into a number (for example 0 to 255 for 0 V to 5 V). Turning a number into a voltage is a digital-to-analogue converter, and amplifying is the job of an amplifier.",
           },

@@ -86,7 +86,7 @@
       if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that") && !(p === "and" && (t === "so" || t === "then")) && !(p === "but" && t === "then") && !(p === "so" && t === "then"))) bad++;
     }
     // a clause that stops on "the", "of", "to", "and"... is a shuffled sentence, not a written one
-    const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|is|are|that|in|on|at)\s*[.,;:!?]/g) || []).length;
+    const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|is|are|that|in|on|at)\s*[.;:!?]|\b(the|an|of|to|and|or|but|so|because|if|its|their|is|are|that)\s*,/g) || []).length;
     bad += dangle;
     if (bad >= 2 && bad * 14 >= toks.length) return "zero";
     // two function words side by side ("of the", "so that") come in a few familiar pairs; shuffled prose
