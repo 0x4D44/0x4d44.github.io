@@ -148,7 +148,6 @@
       fb.append(head);
       if (r.note) fb.append(el("p", { class: "pp-hint" }, r.note));
       if (part.type === "sql") {
-        if (r.note) fb.append(el("p", { class: "pp-hint" }, r.note));
         const tbl = (res) => el("div", { class: "pp-sqlout table-wrap" }, el("table", null, el("thead", null, el("tr", null, res.cols.map((c) => el("th", { scope: "col" }, c)))), el("tbody", null, res.rows.slice(0, 40).map((row) => el("tr", null, row.map((v) => el("td", null, v == null ? "NULL" : String(v))))))));
         if (r.actual && !r.actual.error) fb.append(el("p", { class: "pp-sqlcap" }, `Your result (${r.actual.rows.length} row${r.actual.rows.length === 1 ? "" : "s"})`), tbl(r.actual));
         if (r.expected && r.got < part.marks) fb.append(el("p", { class: "pp-sqlcap" }, `Expected result (${r.expected.rows.length} row${r.expected.rows.length === 1 ? "" : "s"})`), tbl(r.expected));
