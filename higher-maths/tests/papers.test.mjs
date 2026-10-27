@@ -5,7 +5,6 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import vm from "node:vm";
-import { createRequire } from "node:module";
 
 const PROJECT = resolve(import.meta.dirname, "..");
 const AREAS = process.env.HMP_AREAS ? process.env.HMP_AREAS.split(",") : ["alg", "geo", "trig", "cal"];
@@ -17,7 +16,12 @@ vm.createContext(sandbox);
 for (const f of ["papers-engine.js", ...AREAS.map((a) => `papers-${a}.js`)])
   vm.runInContext(await readFile(resolve(PROJECT, f), "utf8"), sandbox, { filename: f });
 const { HMP, HMP_BANK } = sandbox.window;
-const katex = createRequire(import.meta.url)(resolve(PROJECT, "vendor/katex/katex.min.js"));
+// the repo root is "type": "module", so require() of the UMD bundle fails: run it in its own context instead
+const kbox = { module: { exports: {} }, console };
+kbox.exports = kbox.module.exports;
+vm.createContext(kbox);
+vm.runInContext(await readFile(resolve(PROJECT, "vendor/katex/katex.min.js"), "utf8"), kbox);
+const katex = kbox.module.exports.renderToString ? kbox.module.exports : kbox.katex;
 const strip = (h) => String(h).replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/g, " ");
 
 const all = AREAS.flatMap((a) => HMP_BANK[a].questions.map((q) => ({ area: a, q })));
