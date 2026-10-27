@@ -98,3 +98,6 @@ html:has(.pp-tabs):has(.exam-timer.running) { scroll-padding-top: 190px; }
 .exam-timer.done .timer-face { color: var(--redstone); }
 .pp-opt-pick { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
 @media (max-width: 560px) { .exam-timer { gap: 6px 8px; padding: 8px 10px; } .exam-timer .timer-label { font-size: .85rem; } .exam-timer .timer-face { font-size: 1.2rem; } }
+
+/* wide stem tables scroll in their own box rather than widening the page */
+.pp-stem table { display: block; max-width: 100%; overflow-x: auto; }
