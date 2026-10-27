@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Past papers · Blocks, Wings &amp; Broadsides</title>
+<meta name="description" content="Past-paper practice for Higher Computing Science: a bank of original questions in the style of recent question papers across software design, programming, computer systems, database and web, each with an answer panel, automatic marking (SQL is run for real), a half-length mock paper and a scoreboard.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="papers.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2312284a'/%3E%3Crect x='3' y='3' width='10' height='10' fill='%23fff'/%3E%3Crect x='5' y='5' width='6' height='6' fill='%23b3261e'/%3E%3C/svg%3E">
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+<script src="papers-engine.js"></script>
+<script src="papers-sql.js"></script>
+<script src="papers-sdd.js"></script>
+<script src="papers-prog.js"></script>
+<script src="papers-cs.js"></script>
+<script src="papers-db.js"></script>
+<script src="papers-web.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Blocks, Wings and Broadsides — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="8" height="16" fill="#1c5fb3"/><rect x="0" y="4" width="16" height="8" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="4" y="2" width="8" height="12" fill="#fff"/><rect x="2" y="4" width="12" height="8" fill="#fff"/><rect x="5" y="4" width="6" height="8" fill="#c8102e"/><rect x="4" y="5" width="8" height="6" fill="#c8102e"/><rect x="7" y="5" width="2" height="6" fill="#e0b23a"/><rect x="5" y="9" width="6" height="1" fill="#e0b23a"/><rect x="6" y="6" width="4" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Blocks, Wings &amp; Broadsides</span><span class="brand-sub">Higher Computing Science · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="software.html">Software</a></li>
+        <li><a href="systems.html">Systems</a></li>
+        <li><a href="database.html">Database</a></li>
+        <li><a href="web.html">Web</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+        <li><a href="papers.html">Past papers</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout pp-layout">
+<main id="main">
+<div class="prose">
+<p class="kicker">The quarterdeck · past-paper practice</p>
+<h1>Past papers: the quarterdeck</h1>
+<p class="lede">The Exam drill taught you how a question paper is marked. This deck lets you sit questions and be marked. Pick an area, write or choose your answers, press <b>Mark my answer</b>, and the page scores you against a marking scheme point by point, shows the model answer, and keeps your running totals. SQL answers are <b>run on a real database</b> and the result compared with the model query's. When you are ready, draw a half-length mock paper and run the clock.</p>
+<div class="callout exam"><div class="callout-title">Read this first: original questions, not the real papers</div><p>Every question here was written for this site, in the style of the recent Higher Computing Science question papers: the same areas in roughly the same proportions, the same command words (state, describe, explain, compare, write, trace), the same habit of setting a scenario and asking several short parts, and the same reference language for code. None is copied from a past paper, and none predicts what will be asked. The real papers and their marking instructions are free on the Qualifications Scotland past-papers page for course X816 76, and you should work through those as well.</p><p>The automatic marker looks for the key ideas and key words in each marking point, the way a marker scans for them. It is a practice aid, not an examiner: it can miss a good answer put in unusual words, so after every written or code answer you can tick the points you did make. The marking guidance is this site's, written in the style of past marking instructions.</p></div>
+<div class="callout tip"><div class="callout-title">How to use the marks</div><p>Mark each question with the model answer beside you, not from memory. A part of 2 marks wants two separate, developed points. For <i>explain</i>, give the cause and the effect, and refer to the context in the question. Be strict: if you made the idea but not the key word, ask whether a marker reading only your words would give the mark.</p></div>
+</div>
+<div id="pp-app"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="exam.html">← Exam drill</a>
+  <a class="btn primary" href="index.html#ranks">Back to the briefing: check your rank →</a>
+</nav>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the SQA Higher Computing Science course specification (version 3.0, valid from session 2023–24) and the 2025 course report. On 1 February 2026 Qualifications Scotland replaced SQA as Scotland's awarding body; the published course documents remain current. This is an independent revision aid, not official material, and every practice question here is original. SQL practice uses <a href="https://sql.js.org/">sql.js</a> (SQLite compiled to WebAssembly, MIT licence). 1805 (Blockhaven) Squadron and <em>HMS Redstone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang.</p>
+  </div>
+</footer>
+<script defer src="papers.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

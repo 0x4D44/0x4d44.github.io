@@ -94,7 +94,7 @@ window.ESSAYS = [
   {
     slug: "higher-computing",
     title: "Higher Computing: Blocks, Wings & Broadsides",
-    tagline: "A complete, interactive revision guide to SQA Higher Computing Science: all four areas, worked exam technique and a mock paper. Minecraft blocks, RAF Air Cadets and Napoleonic ships of the line carry the examples; live SQL, stepping algorithms and narrated video explainers do the teaching. Vanilla JavaScript, sql.js, Piper TTS.",
+    tagline: "A complete, interactive revision guide to SQA Higher Computing Science: all four areas, exam technique, and a Past papers deck of original, auto-marked questions with live-run SQL and a timed mock. Minecraft blocks, Air Cadets and Napoleonic ships carry the examples. Vanilla JavaScript, sql.js, Piper TTS.",
     url: "https://0x4d44.github.io/higher-computing/",
     illustration: "ill-higher-computing",
     date: "2026-10-11T22:00:00",
