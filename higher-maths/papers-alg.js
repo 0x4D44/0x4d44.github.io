@@ -448,7 +448,7 @@
         label: "(a)", q: String.raw`Show that $(x-2)$ is a factor of $f(x)$. Write your reasoning in a sentence or two.`, type: "text", marks: 2, minWords: 4,
         points: [
           { desc: "evaluate f(2) (or divide synthetically) and obtain 0", any: [String.raw`f\(2\)\s*=\s*0`, String.raw`remainder[^.;]{0,25}(?:\b0\b|zero)`, String.raw`8\s*-\s*12\s*-\s*8\s*\+\s*12`, String.raw`=\s*0[^.;]{0,30}x\s*=\s*2|x\s*=\s*2[^.;]{0,30}=\s*0`] },
-          { desc: "conclude with the factor theorem", any: [String.raw`factor theorem`, String.raw`so[^.;]{0,25}is a factor`, String.raw`therefore[^.;]{0,25}factor`, String.raw`hence[^.;]{0,25}factor`] }
+          { desc: "conclude with the factor theorem", not: [String.raw`\(\s*x\s*\+`, String.raw`x\s*\+\s*\d+\s+is a factor`], any: [String.raw`factor theorem`, String.raw`so[^.;]{0,25}is a factor`, String.raw`therefore[^.;]{0,25}factor`, String.raw`hence[^.;]{0,25}factor`] }
         ],
         sample: "f(2) = 8 - 12 - 8 + 12 = 0, so by the factor theorem (x-2) is a factor.",
         why: String.raw`<p>&bull;1 $f(2)=8-12-8+12=0$ (or synthetic division with remainder $0$)</p><p>&bull;2 the remainder is zero, so by the factor theorem $(x-2)$ is a factor.</p>`

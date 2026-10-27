@@ -244,7 +244,7 @@
   }
 
   /* "echo the question" guard: a number or expression still to be evaluated is not an answer */
-  const FN = /\b(?:sin|cos|tan|asin|acos|atan|arcsin|arccos|arctan|ln|log)\b/i;
+  const FN = /(?:sin|cos|tan|asin|acos|atan|arcsin|arccos|arctan|ln|log)/i;
   function echoGuard(f, s) {
     if (!/^(?:num|expr|set|vec)$/.test(f.type)) return null;
     const t = HMP.tidy(s).replace(/\s+/g, "");
@@ -323,7 +323,7 @@
     if (negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push(m.index); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some((a) => NEG.test(text.slice(Math.max(0, a - 70), a + 1).split(/[.;!?,:)]|\bbut\b|\bhowever\b|\bso\b/).pop()))) return false;
+      if (spans.some((a) => NEG.test(text.slice(Math.max(0, a - 70), a + 1).split(/[.;!?,:)]|\bbut\b|\bhowever\b|\bso\b|\bbecause\b|\bsince\b|\bas\b/).pop()))) return false;
     }
     if (!all.length) return true;
     const win = pt.win || WIN;
