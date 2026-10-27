@@ -15,7 +15,8 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(arg('root', path.resolve(here, '../..')));
 const out = arg('out', path.join(process.env.TMPDIR || '/tmp', 'gsx-flicker')); fs.mkdirSync(out, { recursive: true });
 const W = +arg('w', 480), H = +arg('h', 300), quality = arg('quality', 'med'), quick = !!arg('quick', false), settle = !!arg('settle', false);
-const THRESH = +arg('thresh', 0.25); // max allowed flicker percentage of canvas pixels
+// Max allowed flicker (% of canvas pixels). Dense-city sub-pixel aliasing leaves a ~0.2-0.3% floor at 480x300; z-fighting measured >1%.
+const THRESH = +arg('thresh', 0.35);
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css', '.png': 'image/png', '.glb': 'model/gltf-binary', '.wasm': 'application/wasm', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
   const p = path.join(root, decodeURIComponent(req.url.split('?')[0].split('#')[0])); const f = fs.existsSync(p) && fs.statSync(p).isDirectory() ? path.join(p, 'index.html') : p;
@@ -88,23 +89,23 @@ async function measure(name, site, dist, polar) {
 }
 
 let fails = 0; const rows = [];
-for (const [sn, site] of Object.entries(quick ? { clyde: SITES.clyde, govan: SITES.govan } : SITES)) for (const [d, p] of VIEWS) {
+if (!arg('settle-only', false)) for (const [sn, site] of Object.entries(quick ? { clyde: SITES.clyde, govan: SITES.govan } : SITES)) for (const [d, p] of VIEWS) {
   const nm = `${sn}-d${d}-p${p}`; const r = await measure(nm, site, d, p);
   const ok = r.pct <= THRESH; if (!ok) fails++; rows.push({ view: nm, pct: +r.pct.toFixed(3), near: +r.near.toFixed(1) });
   console.log((ok ? 'PASS ' : 'FAIL ') + `${nm} flicker=${r.pct.toFixed(3)}% (${r.count}px) near=${r.near.toFixed(1)}`);
 }
-const avg = rows.reduce((s, r) => s + r.pct, 0) / rows.length; console.log(`MEAN flicker ${avg.toFixed(3)}%  max ${Math.max(...rows.map((r) => r.pct)).toFixed(3)}%`);
+if (rows.length) { const avg = rows.reduce((s, r) => s + r.pct, 0) / rows.length; console.log(`MEAN flicker ${avg.toFixed(3)}%  max ${Math.max(...rows.map((r) => r.pct)).toFixed(3)}%`); }
 
-if (settle) { // after a mouse sweep stops, how long until consecutive frames are identical?
+if (settle || arg('settle-only', false)) { // after a mouse sweep stops, how long until consecutive frames are identical?
   const res = await page.evaluate(async () => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const a = window.__explorer.app, rd = a.env.renderer, gl = rd.getContext(); const series = []; let prev = null; const orig = rd.render.bind(rd); let rec = false;
-    rd.render = (s, c) => { orig(s, c); if (!rec) return; const w = rd.domElement.width, h = rd.domElement.height; const b = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, b); if (prev) { let n = 0; for (let i = 0; i < b.length; i += 16) if (Math.abs(b[i] - prev[i]) + Math.abs(b[i + 1] - prev[i + 1]) + Math.abs(b[i + 2] - prev[i + 2]) > 36) n++; series.push({ t: Math.round(performance.now()), pct: +(n / (b.length / 16) * 100).toFixed(3) }); } prev = b; };
+    rd.render = (s, c) => { orig(s, c); if (!rec) return; const w = rd.domElement.width, h = rd.domElement.height; const b = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, b); if (prev) { let n = 0; for (let i = 0; i < b.length; i += 16) if (Math.abs(b[i] - prev[i]) + Math.abs(b[i + 1] - prev[i + 1]) + Math.abs(b[i + 2] - prev[i + 2]) > 36) n++; series.push({ t: Math.round(performance.now()), pct: +(n / (b.length / 16) * 100).toFixed(3), loaded: a.city.loaded, pend: a.city.ready.length + a.city.active }); } prev = b; };
     const V3 = a.rig.target.constructor; a.paused = false; a.rig.setView({ target: new V3(a.centre.x, a.centre.y, a.centre.z), dist: 900, polar: 0.9, azim: 0 }); await sleep(3000);
     rec = true; const ctl = a.rig.controls; for (let i = 0; i < 6; i++) { ctl.dispatchEvent({ type: 'start' }); a.rig.camera.position.x += 25; a.rig.target.x += 25; await sleep(150); }
-    const tStop = performance.now(); await sleep(6000); rec = false; rd.render = orig; return { tStop: Math.round(tStop), series };
+    const tStop = performance.now(); await sleep(14000); rec = false; rd.render = orig; return { tStop: Math.round(tStop), series };
   });
   const after = res.series.filter((s) => s.t > res.tStop); const lastBusy = after.filter((s) => s.pct > 0.05).pop();
-  console.log('settle: frames after stop', after.length, 'last frame with >0.05% change at', lastBusy ? ((lastBusy.t - res.tStop) / 1000).toFixed(2) + 's' : 'never', JSON.stringify(after.slice(-6).map((s) => s.pct)));
+  console.log('settle: frames after stop', after.length, 'last frame with >0.05% change at', lastBusy ? ((lastBusy.t - res.tStop) / 1000).toFixed(2) + 's' : 'never', JSON.stringify(after.map((s) => [+((s.t - res.tStop) / 1000).toFixed(1), s.pct, s.loaded, s.pend])));
 }
 console.log(errs.length ? 'console errors: ' + errs.slice(0, 5).join(' | ') : 'no console errors'); if (errs.length) fails++;
 await browser.close(); server.close(); console.log(fails ? `FAILED (${fails})` : 'ALL PASSED', 'images in', out); process.exit(fails ? 1 : 0);

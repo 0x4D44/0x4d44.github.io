@@ -115,7 +115,19 @@ export class City {
   setLayer(name, on) { this.layerOn[name] = on; this.applyAll(); }
   get terrainMeshes() { return this.recs.filter((r) => r.layer === 'terrain').map((r) => r.obj); }
 
-  update(dt, target) {
+  /** Distance LOD for the finest detail: rail ballast/sleepers are sub-pixel beyond ~200 m and their per-triangle lighting shimmers,
+   *  so far rail chunks swap to one unlit flat ballast colour (no contrast between sleeper/ballast = nothing to shimmer). */
+  updateLod(cam) {
+    for (const r of this.recs) {
+      if (r.layer !== 'rail' || !(r.chunk.cx > -1e9) || !r.obj.isMesh) continue; const c = r.chunk;
+      const dx = Math.max(c.minX - cam.x, 0, cam.x - c.maxX), dz = Math.max(c.minZ - cam.z, 0, cam.z - c.maxZ), d = Math.hypot(dx, dz, Math.max(0, cam.y - 25));
+      const far = r.far ? d > 180 : d > 240; if (far === !!r.far) continue; r.far = far;
+      if (!r.farMat) { const m = new THREE.MeshBasicMaterial({ color: '#66625b' }); m.userData = { base: { opacity: 1, transparent: false, depthWrite: true }, layer: 'rail' }; m.polygonOffset = true; m.polygonOffsetUnits = -4; r.farMat = m; r.nearMat = r.obj.material; r.mats.push(m); }
+      r.obj.material = far ? r.farMat : r.nearMat; this.applyRec(r);
+    }
+  }
+  update(dt, target, cam) {
+    if (cam && (this._lodN = (this._lodN || 0) + 1) % 8 === 1) this.updateLod(cam);
     if (this.ready.length) this.attach(this.ready.shift());
     if (this.manifest) {
       const lim = this.quality.chunkRadius;
