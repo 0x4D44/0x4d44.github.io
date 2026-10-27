@@ -211,7 +211,7 @@
       tick = setInterval(() => { show(); if (!remaining()) { stop(); show(); toast("Time's up: pens down for Section 1."); } }, 250);
     });
     reset.addEventListener("click", () => { stop(); leftMs = totalMs; go.textContent = "▶ Start timer"; show(); });
-    box.append(HP.el("span", { class: "timer-label" }, "Section 1 clock"), face, go, reset);
+    box.append(HP.el("span", { class: "timer-label" }, box.getAttribute("data-label") || "Section 1 clock"), face, go, reset);
     show();
   }
 
