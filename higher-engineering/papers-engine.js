@@ -176,6 +176,7 @@
         let raw = clean.toLowerCase().replace(/[\u2212\u2013\u2014]/g, "-")
           .replace(/10([-\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, (m, sg, d) => "10^" + (sg ? "-" : "") + [...d].map((c) => SUP[c]).join(""))
           .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
+          .replace(/\ba\s*\/\s*v\b/g, " ")
           .replace(/\ba\s*\/?\s*v\s*\^?\s*\{?-\s*1\}?\b/g, " ")
           .replace(/\b(?:rad|rev|mm|cm|km|m)?\s*(?:s|min)\s*\^?\s*-\s*1\b/g, " ")      // unit tails: m s-1, rad s^-1, rev min-1
           .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
@@ -188,8 +189,16 @@
         let v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
         if (!isFinite(v)) return { got: 0, of };
         // a prefix typed on the unit ("0.003 A" for a part wanted in mA) is converted, so a missed prefix cannot pass for right
-        const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
-        const UNIT = /^([GMkm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|S|Hz|m|Pa)$/;
+        const VEL = (t) => {      // "mm/s", "m s-1", "m per min" -> metres per second, else null
+          const m = String(t).replace(/\u207b\u00b9/g, "-1").replace(/\u2212/g, "-").match(/\b(km|cm|mm|m)\s*(?:(?:\/|per\s+)\s*(s|min)|\s*(s|min)\s*\^?\s*-\s*1)\s*[.)]?\s*$/i);
+          return m ? { km: 1000, m: 1, cm: 0.01, mm: 0.001 }[m[1].toLowerCase()] / ({ s: 1, min: 60 }[(m[2] || m[3]).toLowerCase()]) : null;
+        };
+        const va = VEL(clean), ve = VEL(part.unit || "");
+        if (va && ve) v = v * va / ve;
+        if (/rad\s*\.?\s*$/i.test(clean) && /^\u00b0/.test(String(part.unit || ""))) return { got: 0, of };      // radians typed for a degrees part
+        if (/\bN\//.test(String(part.unit || "")) && /(?:^|[\d\s])[kM]?N\s*\.?\s*$/.test(clean)) return { got: 0, of };      // a bare force for a stress
+        const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, c: 1e-2, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
+        const UNIT = /^([GMkcm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|S|Hz|m|Pa)$/;
         const au = clean.match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
         const nm = String(part.unit || "") === "N m" && String(ans).match(/([GMkm])?N\s*[.\u00b7*]?\s*m\s*$/);      // torque: "0.576 kNm"
         if (nm) v = v * PF[nm[1] || ""];
