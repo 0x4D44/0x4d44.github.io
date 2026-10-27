@@ -582,4 +582,130 @@
       },
     ],
   };
+  /* ---- Hardening pass: wider paraphrase, negative phrasings, and vetoes for swapped or stuffed answers. ----
+     These helpers only add alternatives to the points above; they never remove a requirement. */
+  const QP = (id, i) => B.cad.questions.find((q) => q.id === id).parts[i];
+  /* more(): extra `any` alternatives on a point that is `any`-only. */
+  const more = (id, i, k, any, negOK) => { const pt = QP(id, i).points[k]; pt.any = (pt.any || []).concat(any); if (negOK) pt.negOK = true; };
+  /* alt(): another way to say the j-th required half of an `all` point. */
+  const alt = (id, i, k, j, src) => { QP(id, i).points[k].all[j] += "|" + src; };
+  /* add(): a further acceptable point (give it the same `group` as the idea it repeats). */
+  const add = (id, i, pt) => QP(id, i).points.push(pt);
+  const win = (id, i, k, n) => { QP(id, i).points[k].win = n; };
+  const AXIS = "(?:axis|axes|cent(?:re|er) ?lines?|common axis)";
+
+  /* cad-01(b): the half profile may be "put" or "drawn"; radii may be given as "60 out from the axis" */
+  alt("cad-01", 1, 0, 0, "(?:put|plac|position|mak|start|begin|use)\\w*\\W+(?:\\w+\\W+){0,6}(?:half|profile|cross.?section|outline)");
+  win("cad-01", 1, 0, 110);
+  alt("cad-01", 1, 1, 0, "\\b60\\s*(?:mm\\s*)?(?:wide|out|over|away|from (?:the )?(?:axis|centre|center|centre ?line))");
+  alt("cad-01", 1, 2, 0, "\\b30\\s*(?:mm\\s*)?(?:wide|out|over|away|from (?:the )?(?:axis|centre|center|centre ?line))");
+  alt("cad-01", 1, 3, 0, "\\b45\\s*(?:mm\\s*)?(?:wide|out|over|away|from (?:the )?(?:axis|centre|center|centre ?line))");
+  more("cad-01", 1, 4, [
+    "(?:revolv|rotat|spin|turn)\\w*[^.]{0,50}(?:360|(?:full|complete|whole|entire)\\s+(?:turn|revolution|circle|rotation)|all the way|(?:round|around|about)\\s+(?:the\\s+|its\\s+|that\\s+|this\\s+)?" + AXIS + ")",
+    "(?:revolve|revolved)[^.]{0,30}(?:all the way|fully|completely)",
+  ]);
+
+  /* cad-02(d): coil / helical sweep are other names for the helix command; "helix it" needs no verb */
+  more("cad-02", 3, 1, [
+    "(?:use|using|used|apply|applying|run|running|insert|inserting|select|choose|add|adding|make|making|activate|click|pick|picking)\\W+(?:\\w+\\W+){0,3}(?:coil|helical|helix)",
+    "(?:coil|helical|spiral)\\w*\\W+(?:\\w+\\W+){0,2}(?:command|tool|feature|function|option|icon|button|sweep)",
+    "\\bhelix\\w*\\W+(?:\\w+\\W+){0,4}(?:around|about|round|along)\\W+(?:\\w+\\W+){0,2}" + AXIS,
+  ]);
+
+  /* cad-04(a): the loft and the shell, however they are worded; sizes still have to be right */
+  alt("cad-04", 0, 0, 0, "\\bsquare\\b\\W+(?:\\w+\\W+){0,5}100|\\b100\\W+(?:\\w+\\W+){0,5}square|\\b100\\s*(?:mm\\s*)?(?:x|by)\\s*100");
+  alt("cad-04", 0, 1, 1, "\\b(?:offset|distance|height|above)\\W+(?:\\w+\\W+){0,2}80(?!\\d)|(?:\\b80|^80)\\s*(?:mm)?\\s*(?:above|up|higher|over)");
+  alt("cad-04", 0, 0, 1, "100(?=\\s*mm)");
+  alt("cad-04", 0, 3, 0, "\\bloft\\w*");
+  win("cad-04", 0, 3, 120);
+  alt("cad-04", 0, 4, 1, "\\bshell\\w*\\W+(?:\\w+\\W+){0,3}\\b3\\b");
+
+  /* cad-04(b): the tube round the hole, in the words students use for it */
+  more("cad-04", 1, 0, [
+    "(?:shell|hollow)\\w*[^.]{0,80}(?:hole|opening)[^.]{0,80}(?:wall|thickness|tube|lining|skin|sleeve|pipe)",
+    "(?:hole|opening)[^.]{0,60}(?:wall|thickness|tube|lining|skin|sleeve|pipe)[^.]{0,60}(?:shell|hollow)",
+    "(?:shell|hollow)\\w*[^.]{0,60}(?:every|each|all)\\s+(?:\\w+\\s+)?(?:face|edge|surface|side)s?",
+  ]);
+  { const e = QP("cad-04", 1).points[1];
+    e.negOK = true;
+    e.all[0] += "|\\b(?:tube|sleeve|collar|lining|pipe)\\s+(?:\\w+\\s+){0,2}(?:forms?|formed|appears?|grows?|is (?:made|created|left|added))|instead of (?:a )?(?:\\w+ )?(?:clean|plain|simple|proper|open) (?:hole|opening)|(?:lined|lining) with (?:a )?(?:\\w+ )?(?:tube|pipe|sleeve|wall)|(?:small|little|thin|narrow|extra|separate)\\s+(?:\\w+\\s+)?(?:pipe|cylinder|ring|rim|lip)";
+    e.not = e.not.concat(["(?:hole|opening)\\s+(?:is|are|was|would be)\\s+(?:\\w+\\s+)?(?:smaller|narrower)\\s+than\\s+(?:the\\s+)?(?:duct|part|model|spout|square|circle|side)",
+      "(?:not|n't|never)\\s+(?:be\\s+|get\\s+|become\\s+)?(?:\\w+\\s+)?(?:blocked|sealed|closed|narrowed|clogged|lined)"]); }
+
+  /* cad-07(b): "associative" is the keyword, but the effect has many wordings */
+  more("cad-07", 1, 1, [
+    "(?:reflect|carr(?:y|ied)|flow|pass|propagat|appl(?:y|ied)|feed|fed)\\w*\\W+(?:\\w+\\W+){0,6}(?:drawing|views?|dimensions?)\\W+(?:\\w+\\W+){0,6}(?:automatic\\w*|instantly|straight away|immediately|at once|as soon as|when (?:it is |they are )?(?:rebuilt|regenerated))",
+    "(?:drawing|views?|dimensions?)\\W+(?:\\w+\\W+){0,8}(?:automatic\\w*|instantly|straight away|immediately|at once)",
+    "(?:as soon as|immediately|straight away|at once|instantly)\\W+(?:\\w+\\W+){0,6}(?:reflect|updat|rebuil|regenerat|chang|refresh)\\w*",
+    "(?:no need|not need|don'?t need|do not need|don'?t have|do not have|without|avoid\\w*|saves?|saving)\\W+(?:\\w+\\W+){0,4}(?:redraw\\w*|re-?draw\\w*|redo\\w*)",
+  ]);
+  QP("cad-07", 1).points[1].negOK = true;
+
+  /* cad-08(a): "axis constraint", "align the axes" and "common axis" are centre-axis in other words */
+  const AXC = "\\baxis (?:constraint|mate|alignment)|\\b(?:align|aligned|aligns|aligning|line[sd]? up|lined up|lining up)\\w*\\W+(?:\\w+\\W+){0,6}(?:axis|axes|cent(?:re|er) ?lines?|common axis)|\\bcommon axis|\\bsame axis|\\b(?:axis|axes)\\W+(?:\\w+\\W+){0,3}(?:align\\w*|line[sd]? up)";
+  alt("cad-08", 0, 0, 0, AXC);
+  alt("cad-08", 0, 1, 0, AXC);
+
+  /* cad-09(b): the cause was matched by the verb "open the file" and the swap "STEP only opens in the shipyard's own software" was not vetoed */
+  { const c = QP("cad-09", 1).points[0];
+    c.any[0] = "(?:neutral|universal|international|standard|generic)\\W+(?:\\w+\\W+){0,3}(?:format|file|type)|\\bopen (?:standard|format|file format|file type)";
+    c.any[1] = c.any[1].replace("|generic|open)", "|generic)");
+    const e = QP("cad-09", 1).points[1];
+    e.any.push("\\b(?:they|them|it|supplier|firm|company|manufacturer)\\b\\W+(?:\\w+\\W+){0,2}(?:can|could|will be able to|is able to|are able to|able to|should be able to)\\W+(?:\\w+\\W+){0,3}(?:open|read|import|view|load|use|access)");
+    [c, e].forEach((pt) => { pt.not = pt.not.map((n) => n.replace("(?:only|just)\\W+(?:\\w+\\W+){0,3}", "(?:only|just)\\W+(?:\\w+\\W+){0,6}")); }); }
+
+  /* cad-10(b): shadows */
+  more("cad-10", 1, 3, [
+    "\\b(?:add|adds|adding|include|put in|use|turn on|enable|apply|cast|casts|casting|create|have|show|showing)\\W+(?:\\w+\\W+){0,3}(?:shadows?)\\b",
+    "shadow\\w*[^.]{0,60}(?:floor|ground|under|beneath|below)",
+  ]);
+
+  /* cad-11(b): the advantages, however a candidate words them (nothing here rewards "faster" on its own) */
+  more("cad-11", 1, 0, [
+    "(?:chang|edit|alter|amend|modif|adjust|resiz)\\w*\\W+(?:\\w+\\W+){0,8}(?:once|one (?:dimension|thing|place|value|number|go|edit)|one-?off|single (?:change|edit|dimension))\\W+(?:\\w+\\W+){0,8}(?:updat\\w*|rebuild\\w*|regenerat\\w*|follow\\w*|automatic\\w*|everything|all|every)",
+    "(?:once|one (?:dimension|thing|place|value|number|go|edit)|one-?off|single (?:change|edit|dimension))\\W+(?:\\w+\\W+){0,8}(?:chang|edit|alter|amend|modif|adjust|resiz)\\w*\\W+(?:\\w+\\W+){0,8}(?:updat\\w*|rebuild\\w*|regenerat\\w*|follow\\w*|automatic\\w*|everything|all|every)",
+    "(?:chang\\w*|edit\\w*|alter\\w*|modif\\w*)\\W+(?:\\w+\\W+){0,6}(?:updat\\w*|rebuild\\w*|regenerat\\w*|automatic\\w*)",
+    "(?:no need|not need|don'?t need|do not need|don'?t have|do not have|without|avoid\\w*|saves?|saving)\\W+(?:\\w+\\W+){0,4}(?:redraw\\w*|re-?draw\\w*|redo\\w*)",
+  ], true);
+  more("cad-11", 1, 1, [
+    "\\b(?:all|every|many|different|several|multiple|various|each)\\W+(?:\\w+\\W+){0,2}(?:views?|drawings?|sections?|renders?|pictorials?|elevations?|plans?)\\W+(?:\\w+\\W+){0,8}(?:from|of|made from|taken from|produced|generated|created|come|comes|derived)\\W+(?:\\w+\\W+){0,4}(?:one|single|same|the|a|3d)\\W+(?:3d\\W+)?model",
+    "(?:generate|produce|create|get|obtain|make|extract|derive)\\w*\\W+(?:\\w+\\W+){0,4}(?:views?|drawings?|sections?|renders?|elevations?)\\W+(?:\\w+\\W+){0,8}(?:from|out of|using)\\W+(?:\\w+\\W+){0,3}model",
+  ]);
+  more("cad-11", 1, 2, [
+    "(?:mistakes?|errors?|problems?|faults?|clashes?|interference|collisions?)\\W+(?:\\w+\\W+){0,6}(?:found|spotted|caught|detected|picked up|identified|seen|noticed|solved|fixed|checked)\\W+(?:\\w+\\W+){0,4}(?:early|sooner|before|virtually|on screen|on the screen|in the model)",
+    "(?:found|spotted|caught|detected|picked up|identified|seen|noticed|solved|fixed|checked)\\W+(?:\\w+\\W+){0,4}(?:early|sooner)",
+    "(?:test\\w*|simulat\\w*|check\\w*|try\\w*)\\W+(?:\\w+\\W+){0,6}(?:virtual\\w*|on screen|on the computer|digitally|in the model|without building|before (?:it is |they are )?built)",
+  ]);
+  more("cad-11", 1, 3, [
+    "(?:cnc|3d print\\w*|laser cut\\w*|machines?)\\W+(?:\\w+\\W+){0,6}(?:straight|directly|direct|from the (?:model|file))",
+    "(?:straight|directly|direct)\\W+(?:\\w+\\W+){0,4}(?:to|into)\\W+(?:\\w+\\W+){0,3}(?:cnc|3d print\\w*|laser|machines?)",
+  ]);
+  more("cad-11", 1, 4, [
+    "(?:measur\\w*|dimensions?)\\W+(?:\\w+\\W+){0,6}(?:directly|straight|from the model|on screen|off the model)",
+  ]);
+
+  /* cad-12(a) */
+  alt("cad-12", 0, 0, 1, "extrud\\w*\\W+(?:\\w+\\W+){0,9}\\b50\\b");
+  alt("cad-12", 0, 2, 1, "\\bshell\\w*\\W+(?:\\w+\\W+){0,3}\\b3\\b");
+  alt("cad-12", 0, 3, 0, "\\bdiameter\\b");
+  alt("cad-12", 0, 4, 0, "\\bdiameter\\b");
+  alt("cad-12", 0, 5, 0, "(?:array|pattern)\\w*\\W+(?:\\w+\\W+){0,7}(?:radial|circular|polar|rotational|round|around|about)|(?:radial|circular|polar|rotational)\\W+(?:\\w+\\W+){0,3}(?:array|pattern|copy|copies|repeat)\\w*|\\b60\\s*(?:°|degrees?)");
+
+  /* cad-13(a): a 3DS statement about materials, textures or lights carries the third mark even when STEP is only implied */
+  more("cad-13", 0, 2, [
+    "\\b3ds\\b\\W+(?:\\w+\\W+){0,10}(?:includes?|carr(?:y|ies)|holds?|stores?|keeps?|supports?|contains?|has|have|with|saves?)\\W+(?:\\w+\\W+){0,3}(?:materials?|textures?|lights?|lighting|cameras?)",
+  ]);
+
+  /* cad-14(b) */
+  more("cad-14", 1, 0, [
+    "constrain\\w*[^.]{0,60}(?:relationships?|geometry|shape)[^.]{0,30}(?:kept|keep|keeps|stay|maintained|held|preserved|retained)",
+    "(?:stops?|prevents?|prevented|preventing|stopping)\\W+(?:\\w+\\W+){0,3}(?:sketch|geometry|shape|lines?|it)\\W+(?:\\w+\\W+){0,3}(?:moving|moves|move|distort\\w*|twist\\w*|shift\\w*|changing|falling apart|dragged|dragging)",
+    "(?:cannot|can'?t|can not|unable to|won'?t)\\W+(?:\\w+\\W+){0,3}(?:be dragged|dragged|be moved|moved|drag|move)",
+  ], true);
+  more("cad-14", 1, 2, [
+    "(?:if|when|unless)[^.]{0,60}(?:free|loose|unconstrained|not (?:fully )?constrained|not fixed|not locked)[^.]{0,80}(?:distort|twist|warp|drift|move|shift|change shape|wrong|out of shape)\\w*",
+    "(?:edit|chang|resiz|dimension|alter)\\w*[^.]{0,60}(?:distort|twist|warp|drift|move|shift|fall apart|stretch|squash)\\w*",
+  ]);
+  { const i = QP("cad-14", 1).points[1];
+    i.not = i.not.map((n) => n.replace("intent\\W+(?:\\w+\\W+){0,2}(?:lost", "intent\\W+(?:(?!not|n't|never)\\w+\\W+){0,2}(?:lost")); }
 })();
