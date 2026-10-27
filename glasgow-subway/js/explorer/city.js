@@ -20,7 +20,7 @@ export class City {
     this.root = new THREE.Group(); this.root.name = 'city'; scene.add(this.root);
     this.recs = []; this.chunks = []; this.xray = 0; this.nightGlow = 0;
     this.layerOn = { terrain: true, buildings: true, landmarks: true, roads: true, water: true, green: true, rail: true };
-    this.queue = []; this.active = 0; this.loaded = 0; this.total = 0; this.failed = 0; this.fading = new Set();
+    this.queue = []; this.ready = []; this.active = 0; this.loaded = 0; this.total = 0; this.failed = 0; this.fading = new Set();
     this.hasTerrain = false; this.layersSeen = new Set();
     this.gltf = new GLTFLoader();
     const draco = new DRACOLoader(); draco.setDecoderPath(new URL('vendor/three/examples/jsm/libs/draco/gltf/', base).href); draco.setDecoderConfig({ type: 'wasm' });
@@ -82,6 +82,10 @@ export class City {
       const layer = this.layerOf(o); this.layersSeen.add(layer); if (layer === 'terrain') this.hasTerrain = true;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       const cloned = mats.map((m) => { const c = m.clone(); c.userData.base = { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, emissive: m.emissive ? m.emissive.clone() : null }; c.userData.layer = layer; return c; });
+      for (const c of cloned) { // crisp texture sampling at grazing angles (facades, roads)
+        for (const k of ['map', 'normalMap', 'roughnessMap', 'emissiveMap']) if (c[k]) c[k].anisotropy = 8;
+        if (layer === 'water' && c.roughness < 0.8) { c.roughness = 0.85; c.metalness = 0; c.userData.base.rough = 0.85; } // flat water + glossy sun = whole river flashing
+      }
       const po = LAYER_OFFSET[layer];
       if (po) for (const c of cloned) { c.polygonOffset = true; c.polygonOffsetFactor = po[0]; c.polygonOffsetUnits = po[1]; }
       o.material = Array.isArray(o.material) ? cloned : cloned[0];
@@ -111,6 +115,7 @@ export class City {
   get terrainMeshes() { return this.recs.filter((r) => r.layer === 'terrain').map((r) => r.obj); }
 
   update(dt, target) {
+    if (this.ready.length) this.attach(this.ready.shift());
     if (this.manifest) {
       const lim = this.quality.chunkRadius;
       let n = 0;
@@ -137,14 +142,16 @@ export class City {
     c.state = 'loading'; this.active++;
     try {
       const gltf = await this.gltf.loadAsync(new URL('data/city/' + c.file, this.base).href);
-      if (c.state !== 'loading') { this.disposeObj(gltf.scene); return; }
-      c.group = gltf.scene; c.group.name = c.file; this.root.add(c.group); this.register(c.group, c);
-      c.state = 'loaded'; c.appear = 1; this.setMask(c, true);
-      for (const r of this.recs) if (r.chunk === c) this.applyRec(r);
-      this.loaded++;
-    } catch (e) { c.state = 'failed'; this.failed++; console.warn('chunk failed', c.file, e.message); }
+      this.ready.push({ c, gltf }); // attached one per frame (see update) so streaming never causes a frame-time spike
+    } catch (e) { c.state = 'failed'; this.failed++; this.active--; console.warn('chunk failed', c.file, e.message); this.onProgress?.(this.loaded + this.failed, this.total); }
+  }
+  attach({ c, gltf }) {
     this.active--;
-    this.onProgress?.(this.loaded + this.failed, this.total);
+    if (c.state !== 'loading') { this.disposeObj(gltf.scene); return; }
+    c.group = gltf.scene; c.group.name = c.file; this.root.add(c.group); this.register(c.group, c);
+    c.state = 'loaded'; c.appear = 1; this.setMask(c, true);
+    for (const r of this.recs) if (r.chunk === c) this.applyRec(r);
+    this.loaded++; this.onProgress?.(this.loaded + this.failed, this.total);
   }
   unload(c) {
     if (!c.group) return; this.root.remove(c.group); this.disposeObj(c.group);

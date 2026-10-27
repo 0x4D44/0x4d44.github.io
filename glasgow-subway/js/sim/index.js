@@ -65,7 +65,7 @@ class Sim {
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
     this.camera = new THREE.PerspectiveCamera(70, 1, 0.05, 600);
-    this.scene.add(new THREE.AmbientLight(0x8a7a66, 2.6));
+    this.ambient = new THREE.AmbientLight(0x8a7a66, 2.6); this.scene.add(this.ambient);
     this.quality = this._detectQuality();
     this.savedPR = r.getPixelRatio();
     try { r.setPixelRatio(this.quality === 'low' ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2)); } catch (e) {}
@@ -74,7 +74,7 @@ class Sim {
     this.scene.add(this.trainView.root);
     this.trainView.computeHeadroom(PY); if (this.walkable) this.trainView.setWalkable(this.walkable);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
-    this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2);
+    this.tms = new Tms(THREE); this.tms.attach(this.trainView); this.trainView.buildCab(this.tms.tex, this.tms.tex2); this.trainView.setDest(this.line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     this.headlight = new THREE.SpotLight(0xfff2d0, 160, 90, 0.7, 0.6, 1.1); this.scene.add(this.headlight, this.headlight.target);
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
@@ -117,7 +117,7 @@ class Sim {
 
   // ------------------------------------------------------------------ line / service setup
   setupLine(line, startIdx = 0) {
-    this.line = line;
+    this.line = line; if (this.trainView) this.trainView.setDest(line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
     let rec = this.tracks[line];
     if (!rec) {
       const maxPlat = Math.max(...this.stations.map((s) => (s.platform && s.platform.lengthM) || 45), 45);
@@ -704,6 +704,9 @@ class Sim {
       this.headlight.position.copy(front).add(new THREE.Vector3(0, -0.6, 0)).addScaledVector(fwd, 12);
       this.headlight.target.position.copy(front).addScaledVector(fwd, 40);
       this.headlight.intensity = this.mode === 'explore' && !this.trainView.root.visible ? 0 : 160;
+      // running tunnels are unlit: dim ambient between stations, full level inside / near a hall (smooth ramp)
+      { let f = 1; if (this.mode !== 'explore') { let md = 1e9; const L = track.length, sN = tr.s; for (const st of track.stops) { let d = Math.abs(sN - st.sc); d = Math.min(d, L - d); if (d < md) md = d; } f = Math.min(1, Math.max(0, (68 - md) / 30)); f = f * f * (3 - 2 * f); }
+        const a = 0.35 + (2.6 - 0.35) * f; this.ambient.intensity += (a - this.ambient.intensity) * Math.min(1, dt * 4 + (dt === 0 ? 1 : 0)); }
       this.cabLight.position.copy(front).add(new THREE.Vector3(0, 0.4, 0)).addScaledVector(fwd, -0.2);
       this._lightPool();
       this._camera(front, q, dt);
@@ -758,20 +761,25 @@ class Sim {
     const THREE = this.THREE, cam = this.camera, svc = this.svc, tr = svc.train;
     const e = this._e || (this._e = new THREE.Euler()), ql = this._ql || (this._ql = new THREE.Quaternion());
     if (this.mode === 'drive') {
-      this.bobT += tr.v * dt;
-      const vib = Math.min(1, tr.v / 10);
-      const sway = this.track.curvature(tr.s) * tr.v * tr.v * 0.02;
-      const off = new THREE.Vector3(Math.sin(this.bobT * 1.9) * 0.004 * vib + sway, Math.sin(this.bobT * 4.1) * 0.006 * vib + Math.sin(this.time * 31) * 0.0015 * vib, 0).applyQuaternion(q);
+      // low-frequency sway only (0.3-1.5 Hz, small, scales with speed); body lean on curves is low-passed. No high-frequency head jitter.
+      const T = this.time, f = Math.min(1, tr.v / 12), TP = Math.PI * 2, cur = this.track.curvature(tr.s);
+      const lt = Math.max(-0.016, Math.min(0.016, cur * tr.v * tr.v * 0.02));
+      this._lean = (this._lean || 0) + (lt - (this._lean || 0)) * Math.min(1, dt * 1.2);
+      const sw = (this.quality === 'low' ? 0.8 : 1) * f;
+      const lat = sw * (0.0045 * Math.sin(TP * 0.55 * T + 0.7) + 0.002 * Math.sin(TP * 1.3 * T)) + this._lean * 0.25;
+      const vert = sw * (0.0028 * Math.sin(TP * 0.85 * T + 2.1) + 0.0012 * Math.sin(TP * 1.45 * T + 0.4));
+      const rollA = sw * (0.0022 * Math.sin(TP * 0.45 * T) + 0.0011 * Math.sin(TP * 1.1 * T + 1.3)) - this._lean * 0.5;
+      const off = new THREE.Vector3(lat, vert, 0).applyQuaternion(q);
       cam.position.copy(front).add(off);
-      e.set(this.look.pitch, this.look.yaw, 0, 'YXZ'); ql.setFromEuler(e); cam.quaternion.copy(q).multiply(ql);
+      e.set(this.look.pitch, this.look.yaw, rollA, 'YXZ'); ql.setFromEuler(e); cam.quaternion.copy(q).multiply(ql);
     } else if (this.mode === 'ride') {
       const w = this.walker, ci = this.trainView.carAt(w.z), car = this.trainView.cars[ci], info = this.trainView.carInfo[ci];
       const local = new THREE.Vector3(w.x, w.eyeY(), w.z - info.zc);
       cam.position.copy(local).applyMatrix4(car.matrix);
       const cq = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().extractRotation(car.matrix));
       e.set(this.look.pitch, w.yaw, 0, 'YXZ'); ql.setFromEuler(e); cam.quaternion.copy(cq).multiply(ql);
-      // rumble
-      cam.position.y += Math.sin(this.time * 37) * 0.002 * Math.min(1, tr.v / 8);
+      // gentle low-frequency sway only (rumble is audio-only)
+      cam.position.y += Math.sin(this.time * 5.3) * 0.0015 * Math.min(1, tr.v / 10);
     } else if (this.mode === 'explore') {
       const w = this.walker, g = this.activeStation.group;
       const p = new THREE.Vector3(w.x, w.eyeY(), w.z); g.localToWorld(p); cam.position.copy(p);
