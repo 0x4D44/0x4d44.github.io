@@ -96,9 +96,11 @@
               { desc: "Adaptive: changes to requirements are absorbed quickly", any: [
                 R`(adapt\w*|flexib\w*|cope\w*|respond\w*|react\w*|accommodat\w*|absorb\w*|incorporat\w*|handle\w*|deal\w* with|welcom\w*)\W+${NA(6)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
                 R`(allow\w*|lets?|permits?)\W+${NA(3)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
-                R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|done|incorporated|included|changed|easy|easier|easily|quick\w*)`] },
+                R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|incorporated|included|easy|easier|easily|quick\w*)`] },
               { desc: "Client involved throughout: sees working versions and gives feedback each sprint", any: [
-                R`(client|customer|users?|islanders?|company|stakeholders?|passengers?|they|them)s?\W+${NA(12)}(feedback|try|trying|test\w*|see|sees|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)\W+${NA(10)}(each|every|after|throughout|regular\w*|constant\w*|frequent\w*|continual\w*|early|sprints?|versions?|prototypes?|working|iterations?|releases?|increments?|demos?)`,
+                R`(client|customer|users?|islanders?|company|stakeholders?|passengers?|they|them)s?\W+${NA(12)}(feedback|try|trying|test\w*|see|sees|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)\W+${NA(10)}(each|every|after|throughout|regular\w*|constant\w*|frequent\w*|continual\w*|sprints?)`,
+                R`(client|customer|users?|islanders?|stakeholders?|they)s?\W+${NA(4)}(regular\w*|frequent\w*|constant\w*|continual\w*|early)\W+${NA(4)}(feedback|try|test\w*|see|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)`,
+                R`(client|customer|users?|islanders?|stakeholders?)s?\W+${NA(3)}(see|try|test|view|review|use|get|receive)\w*\W+${NA(3)}(prototypes?|versions?|working \w+|demos?|builds?|releases?|increments?)\W+${WD(5)}(feedback|comments?|suggest\w*)`,
                 R`feedback\W+${NA(10)}(next|each|every|following|later|after|new|future|updated|improved)\W+(\w+\W+)?(sprints?|versions?|iterations?|releases?|prototypes?|builds?|cycles?)`,
                 R`(each|every|after)\W+(\w+\W+)?(sprints?|iterations?|cycles?)\W+${NA(10)}(working|prototype|version|product|demo|release|increment|software|piece)\W+${NA(10)}(feedback|try|see|review|test|comment|suggest|shown|show|use)\w*`,
                 R`(working|early)\W+(version|prototype|piece|product|software|build|release|increment|demo)s?\W+${NA(8)}(feedback|try|see|review|comment|suggest|shown|show)\w*`] },
@@ -172,7 +174,7 @@
             model: "<ul><li>hotPos is passed IN to step 3. (1)</li><li>The step does not use it: counting frost days only needs temps(), so it is an unnecessary parameter that makes the code less efficient. (1)</li></ul>",
             points: [
               { desc: "Identifies hotPos as the wrong item", negOK: true, any: [
-                R`hot\s?pos\W+${WD(5)}(shouldn.t|should not|does ?n.t|do not|don.t|not|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error|unused|remov\w*|delet\w*|take\w* (it )?out)`,
+                R`hot\s?pos\W+${WD(5)}(shouldn.t|should not|does ?n.t|do not|don.t|not|never|isn.t|aren.t|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error|unused|remov\w*|delet\w*|take\w* (it )?out)`,
                 R`(remov\w*|delet\w*|take out|drop|get rid of|without|shouldn.t (have|be)|should not (have|be)|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error)\W+${WD(4)}hot\s?pos`],
                 not: [R`should be (passed|sent|given|input)|(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`, R`\bnot not\b`] },
               { desc: "Explains it is not used / unnecessary", negOK: true, any: [
@@ -221,7 +223,8 @@
                 R`(layout|arrangement|positions?|placement|where (things|items|everything|each|the)\w*)\W+${WD(3)}(of|on|for|in)\W+${WD(3)}(screen|page|interface|app|display)`,
                 R`(what|how)\W+${WD(3)}(screen|page|interface|app|it)\W+${WD(3)}(look\w*|appear\w*|be laid out|be arranged)`] },
               { desc: "Shows the inputs and outputs (boxes, buttons, results)", any: [
-                R`where\W+${NA(4)}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data|labels?|text|everything|things|elements?|components?)\W+${NA(4)}(go|goes|be|are|is|will|placed|positioned|appear|shown|displayed|located|put|sit|sits|can be)`,
+                R`where\W+${WD(5)}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data|labels?|text|everything|things|elements?|components?)\W+${WD(5)}(go|goes|be|are|is|will|placed|positioned|appear|shown|displayed|located|put|sit|sits|can be)`,
+                R`(position\w*|placement|layout|arrangement)\W+${NA(3)}(of|for)\W+${NA(3)}(input\w*|output\w*|buttons?|boxes|fields?|labels?|items?|elements?|text)`,
                 R`(shows?|includes?|contains?|labels?|marks?|identif\w*|displays?|indicates?|lays? out|arranges?)\W+${NA(4)}(input\w*|output\w*|buttons?|boxes|fields?|prompts?)`] },
             ],
           },
@@ -236,6 +239,7 @@
                 not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`, R`\bnot not\b|\b(do|does|did|can|will|would|could|is|are)(n.t| not)\W+(\w+\W+)?(tell|show|say|help|let|remind|indicate|prevent|stop|ensure|avoid|reduce|mean)\w*`] },
               { desc: "The hint shows the format needed, so fewer errors", any: [
                 R`(so|means?|which|helps?|ensur\w+|avoid\w*|prevent\w*|stop\w*|reduc\w*|therefore)\W+${NA(8)}(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly|accepted|enter\w*|type\w*|know\w*)\W+${NA(8)}(format|date|dd|hint|layout|way)`,
+                R`(hint|format|example|dd/mm/yyyy|dd/mm)\W+${NA(8)}(means?|so|helps?|ensur\w+|stops?|prevent\w*|avoid\w*)\W+${NA(8)}(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly|entered|typed)`,
                 R`(hint|format|dd/mm/yyyy|dd/mm|example)\W+${NA(6)}(tells?|shows?|says?|lets?|reminds?|indicates?|gives?)\W+${NA(8)}(format|how|what|way|date|type|enter|layout)`,
                 R`(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly)\W+${NA(8)}(format|date|dd)\W+${NA(8)}(hint|format|dd/mm)`],
                 not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`, R`\bnot not\b|\b(do|does|did|can|will|would|could|is|are)(n.t| not)\W+(\w+\W+)?(tell|show|say|help|let|remind|indicate|prevent|stop|ensure|avoid|reduce|mean)\w*`] },
@@ -297,16 +301,17 @@
             sample: "16 and 70 are the lowest and highest ages in the allowed range, so they test the boundaries. If the condition uses > instead of >= the program would wrongly reject a valid age such as 16.",
             model: "<ul><li>They are the boundaries of the valid range (lowest and highest allowed), so they are extreme data. (1)</li><li>They reveal a logic error in the comparison, e.g. &gt; used instead of &gt;=, so that a valid age is wrongly rejected. (1)</li></ul>",
             points: [
-              { desc: "They are the boundaries / extremes of the range", any: [
+              { desc: "They are the boundaries / extremes of the range", negOK: true, any: [
                 R`(boundar\w*|edges?|extremes?|limits?|ends?)\W+${NA(4)}(of|to|in|on)\W+${NA(3)}(range|valid|allowed|accepted|ages?|data|values?)`,
-                R`(lowest|highest|smallest|largest|minimum|maximum|top|bottom|first|last|youngest|oldest|min|max)\W+${NA(4)}(valid|allowed|accepted|possible|legal|ages?|range|values?|number|input)`,
+                R`(lowest|highest|smallest|largest|minimum|maximum|top|bottom|first|last|youngest|oldest|min|max)\W+${NA(2)}(valid|allowed|accepted|possible|legal|ages?|range|values?|number|input)`,
                 R`(on|at|right on|just inside|inside|exactly on)\W+(the )?(edges?|boundar\w*|limits?|extremes?)`,
                 R`(are|is|called|count as|classed as|these are)\W+${NA(2)}(extremes?|boundar\w*)\W*(data|values?|ages?|cases?|tests?)?`],
-                not: [R`(middle|typical|ordinary|centre|center|average|normal data)`] },
-              { desc: "They reveal a wrong comparison (> instead of >=) that rejects a valid age", any: [
+                not: [R`(middle|typical|ordinary|centre|center|average|normal data)`, R`\bnot\W+(?:(the|a|really|just|only)\W+){0,2}(lowest|highest|smallest|largest|boundar|extreme|edge|limit|minimum|maximum)`, R`\bnot not\b`] },
+              { desc: "They reveal a wrong comparison (> instead of >=) that rejects a valid age", negOK: true, any: [
                 R`(>=|<=|>|<|greater than|less than|operator|off.by.one|comparison|condition)\W+${NA(10)}(wrong\w*|reject\w*|refus\w*|error|mistake|fail\w*|incorrect\w*|logic|miss\w*)`,
                 R`wrongly (reject|refus|turn)\w*`, R`reject\w*\s+(a |an |the )?(valid|correct|legal|allowed|acceptable|good)`,
-                R`(valid|legal|correct|acceptable).{0,25}(is|are|gets?|being|be|would be|will be) (wrongly )?(reject|refus)\w*`] },
+                R`(valid|legal|correct|acceptable).{0,25}(is|are|gets?|being|be|would be|will be) (wrongly )?(reject|refus)\w*`],
+                not: [R`(not|never|n.t)\W+(\w+\W+)?(reject|refus|turn)`, R`\bnot not\b`] },
             ],
           },
         ],
@@ -484,12 +489,12 @@
             points: [
               { desc: "Reusable with different values: no duplicated code", negOK: true, any: [
                 R`(with|for|using|call\w*|pass\w*)\W+${WD(3)}(different|another|any|other|new|various)\W+${WD(3)}(marks?|values?|arrays?|subjects?|tests?|classes|class|thresholds?|data|inputs?|parameters?|arguments?)`,
-                R`(function|code|sub-?program|module|procedure|it|they)\W+${WD(4)}re-?us\w+`, R`\b(can|could|may|be|is|are|easily|become|makes? it)\W+(\w+\W+)?re-?us(ed|able|e)\b|re-?usable\b`, R`(can|could|may|be|is|are|gets?)\W+${WD(2)}called\W+${WD(4)}(again|more than once|several times|twice|many times|repeatedly|over and over|with different)`,
+                R`(function|code|sub-?program|module|procedure|it|they)\W+${WD(4)}re-?us\w+`, R`\b(can|could|may|be|is|are|easily|become|makes? it)\W+(\w+\W+)?re-?us(ed|able|e)\b|\b(code|function|it|they|sub-?program)\W+(is|are|becomes?|be)\W+(\w+\W+)?re-?usable\b|\bmore re-?usable\b|re-?usable (code|function|sub-?program|module)`, R`(can|could|may|be|is|are|gets?)\W+${WD(2)}called\W+${WD(4)}(again|more than once|several times|twice|many times|repeatedly|over and over|with different)`,
                 R`(no|avoid\w*|without|not)\W+${WD(3)}(duplicat\w*|repeat\w*|cop(y|ies|ied)|rewrit\w*|writ\w+ (it )?again)`,
                 R`not (have|need) to (copy|rewrite|repeat|write)`],
                 not: [R`(not|never|cannot|can.t|n.t|no)\W+${WD(2)}(reus\w*|re-us\w*)`, R`(faster|quicker|less memory|uses less|runs faster)`] },
               { desc: "A change is made in one place / sub-programs independent", negOK: true, any: [
-                R`(change|edit|alter|updat|amend|fix|modif)\w*\W+${WD(6)}(one place|only (one|the)|single|just (one|the)|in the function|without (affecting|changing|breaking)|separately|independent\w*|not affect|rest of)`,
+                R`(change|edit|alter|updat|amend|fix|modif)\w*\W+${NA(6)}(one place|only (one|the)|single|just (one|the)|in the function|without (affecting|changing|breaking)|separately|independent\w*|not affect|rest of)`,
                 R`(each|every|the) (sub-?program|module|function|part)s?\W+${WD(6)}(separately|independent\w*|on (its|their) own|alone)`,
                 R`(only|just) (needs?|has|have) to be (changed|edited|updated|made|fixed)`, R`(fix|change|update)\w*\W+${WD(4)}(once|one time)\b`],
                 not: [R`(faster|quicker|less memory|uses less|runs faster)`] },
@@ -559,7 +564,9 @@
     ],
   };
 
-  /* A claim turned round ("is not", "does not") earns nothing, unless the model answer itself needs a negative. */
+  /* A claim turned round ("is not", "does not") earns nothing, unless the model answer itself needs a negative.
+     (The engine's own negation check switches itself off for a part whose model answer contains a word such as
+     "wrong", so this guard stays.) */
   const TURNED = R`\b(is|are|can|will|does|do|has|have|would|should) not\b`;
   B.sdd.questions.forEach((q) => q.parts.forEach((p) => {
     if (p.type !== "text" || /\bnot\b|n't/i.test(p.sample)) return;
