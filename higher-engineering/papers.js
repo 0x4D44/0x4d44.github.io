@@ -45,7 +45,8 @@
     const id = `${ns}-${q.id}-${pi}`;
     const box = el("div", { class: "pp-part" });
     const label = part.label ? el("span", { class: "pp-plabel" }, part.label) : null;
-    box.append(el("div", { class: "pp-pq" }, label, el("span", { html: part.q }), el("span", { class: "pp-marks" }, `(${part.marks} mark${part.marks > 1 ? "s" : ""})`)));
+    const pq = el("div", { class: "pp-pq", id: `${id}-q` },  label, el("span", { html: part.q }), el("span", { class: "pp-marks" }, `(${part.marks} mark${part.marks > 1 ? "s" : ""})`));
+    box.append(pq);
     const input = el("div", { class: "pp-input" });
     const fb = el("div", { class: "pp-fb", "aria-live": "polite" });
     const markBtn = el("button", { class: "btn small primary", type: "button" }, "Mark my answer");
@@ -54,7 +55,7 @@
 
     if (part.type === "mcq" || part.type === "multi") {
       const multi = part.type === "multi";
-      const fs = el("fieldset", { class: "pp-opts" }, el("legend", { class: "sr-only" }, `Options for ${part.label || "this part"}${multi ? ": choose " + part.a.length : ""}`));
+      const fs = el("fieldset", { class: "pp-opts", "aria-describedby": `${id}-q` }, el("legend", { class: "sr-only" }, `Options for ${part.label || "this part"}${multi ? ": choose " + part.a.length : ""}`));
       const ctrls = part.opts.map((o, oi) => {
         const c = el("input", { type: multi ? "checkbox" : "radio", name: id, value: oi, id: `${id}-o${oi}` });
         const lab = el("label", { class: "pp-opt", for: `${id}-o${oi}` }, c, el("span", { html: o }));
@@ -226,12 +227,9 @@
       const fig = el("figure", { class: "diagram diagram-scroll pp-fig", role: "group", "aria-label": "Figure for question " + n, html: scopeIds(q.figure, ns + "-" + q.id) });
       card.append(fig);
       // only a figure that really scrolls sideways needs to be a keyboard tab stop
-      const hint = el("p", { class: "pp-hint pp-fighint", hidden: "" }, "Swipe the figure sideways to see all of it.");
-      card.append(hint);
       const fit = () => {
         const wide = fig.scrollWidth > fig.clientWidth + 1;
         if (wide) fig.setAttribute("tabindex", "0"); else fig.removeAttribute("tabindex");
-        hint.hidden = !wide;
       };
       requestAnimationFrame(fit);
       // a figure in a hidden tab has no width yet; the observer fires when its tab opens or the window changes
@@ -267,7 +265,7 @@
   }
 
   /* ---- mock paper ---- */
-  const MOCK_TARGET = { systems: 11, analogue: 14, digital: 11, mechanisms: 11, structures: 8 };
+  const MOCK_TARGET = { systems: 7, analogue: 14, digital: 10, mechanisms: 9, structures: 15 };
   function drawMock() {
     // draw until the paper lands on 54-56 marks, in roughly the real proportions
     let best = null, bestGap = 1e9;
@@ -290,7 +288,7 @@
   }
   function mockPanel() {
     const panel = el("div");
-    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 11 marks of systems and energy, 14 of analogue electronics, 11 of digital, 11 of drives and pneumatics and 8 of structures. At the real pace of 1.36 minutes a mark, 55 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers, with the Data Booklet open beside you. Marks from the mock also count on the scoreboard." }));
+    panel.append(el("p", { class: "pp-intro", html: "A half-length mixed paper, drawn at random from the five banks in roughly the proportions of the real paper: about 7 marks of systems and energy, 14 of analogue electronics, 10 of digital, 9 of drives and pneumatics and 15 of structures and materials, each inside half of the specification range for its area. At the real pace of 1.36 minutes a mark, 55 marks is <b>75 minutes</b>. Start the clock, answer on paper if you want a true rehearsal, then enter and mark your answers, with the Data Booklet open beside you. Marks from the mock also count on the scoreboard." }));
     panel.append(el("div", { class: "exam-timer", "data-minutes": "75", "data-label": "Mock clock" }));
     const out = el("div");
     const total = el("p", { class: "pp-sum", "aria-live": "polite" });
@@ -346,7 +344,7 @@
       if (M) {
         const band = HEP.GRADES.find((g) => G / M >= g[1]);
         verdict = `Overall you have earned ${fmt(G)} of the ${M} marks you have attempted: ${p}%. ` +
-          (band ? `In 2026 a grade ${band[0]} needed ${Math.round(band[1] * 100)}% of the 160-mark course (question paper and assignment together), so this is at or above that percentage.` : "That is below the 2026 grade-D percentage (48%).") +
+          (band ? `In 2026 a grade ${band[0]} needed ${Math.round(band[1] * 100)}% of the 160-mark course (question paper and assignment together), so this is at or above that percentage. Your real grade comes from one total of 160 marks, with the 50-mark assignment included, so this is not a predicted grade.` : "That is below the 2026 grade-D percentage (47.5%).") +
           " Treat it as a rough guide only: practice questions are not the real paper, you may have chosen the easy ones, and your grade also depends on the 50-mark assignment and the real Data Booklet.";
       }
       body.append(el("p", { class: "pp-verdict" }, verdict));

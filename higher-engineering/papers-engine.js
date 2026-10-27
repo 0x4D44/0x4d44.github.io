@@ -190,12 +190,12 @@
 
   HEP.partsMarks = (q) => q.parts.reduce((a, p) => a + p.marks, 0);
   HEP.AREAS = [
-    { id: "systems", name: "Systems, energy & the engineer's world", short: "Systems & energy", lo: 8, hi: 24 },
+    { id: "systems", name: "Systems, energy & the engineer's world", short: "Systems & energy", lo: 10, hi: 17 },
     { id: "analogue", name: "Analogue electronics", short: "Analogue", lo: 20, hi: 35 },
-    { id: "digital", name: "Digital & programmable electronics", short: "Digital", lo: 15, hi: 30 },
-    { id: "mechanisms", name: "Drives, mechanisms & pneumatics", short: "Drives & pneumatics", lo: 15, hi: 30 },
-    { id: "structures", name: "Structures & materials", short: "Structures", lo: 10, hi: 25 },
+    { id: "digital", name: "Digital & programmable electronics", short: "Digital", lo: 15, hi: 25 },
+    { id: "mechanisms", name: "Drives, mechanisms & pneumatics", short: "Drives & pneumatics", lo: 10, hi: 20 },
+    { id: "structures", name: "Structures & materials", short: "Structures", lo: 23, hi: 39 },
   ];
   /* The 2026 minimum marks for each grade as a share of the 160-mark course (question paper plus assignment; 117, 103, 90 and 76 marks). */
-  HEP.GRADES = [["A", 0.73], ["B", 0.64], ["C", 0.56], ["D", 0.48]];
+  HEP.GRADES = [["A", 117 / 160], ["B", 103 / 160], ["C", 90 / 160], ["D", 76 / 160]];
 })();
