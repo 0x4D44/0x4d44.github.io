@@ -8,8 +8,19 @@
   /* a few shared pattern fragments (normalised answers are lower case with whitespace collapsed to single spaces) */
   const INPUT = R`(receive|input\s*\(|readline|prompt\s*\(|scanner|read\s*\(|cin\s*>>)`;
   const OUT = R`(send|print|console\.log|display|alert|write|return)`;
-  const FUNC2 = R`(function|def|procedure|sub)\s+\w+\s*\([^)]*,[^)]*\)`;
-
+  const FUNC2 = R`((function|def|procedure|sub)\s+\w+\s*\([^)]*,[^)]*\)|\w+\s*=\s*(function\s*)?\(\s*\w+\s*,\s*\w+\s*\)\s*(=>|\{)|lambda\s+\w+\s*,\s*\w+)`;
+  /* prog-04: the range 0 to 150, as the INVALID test (loop condition) and as the VALID test (flag / until / break) */
+  const LT0 = R`(<\s*0|<=\s*-1)`, GT150 = R`(>\s*150|>=\s*151)`;
+  const INV = R`(\w+\s*${LT0}\)?\s*(or|\|\|)\s*\(?\s*\w+\s*${GT150}|\w+\s*${GT150}\)?\s*(or|\|\|)\s*\(?\s*\w+\s*${LT0})`;
+  const VAL = R`(\w+\s*>=\s*0\)?\s*(and|&&)\s*\(?\s*\w+\s*<=\s*150|\w+\s*<=\s*150\)?\s*(and|&&)\s*\(?\s*\w+\s*>=\s*0|0\s*<=\s*\w+\s*<=\s*150|\w+\s*>\s*-1\s*(and|&&)\s*\w+\s*<\s*151)`;
+  /* prog-10: "the item at this index equals the target" */
+  const CMP10 = R`(\w+\s*\[\s*\w+\s*\]\s*={1,3}\s*\w+|\w+\s*={1,3}\s*\w+\s*\[\s*\w+\s*\]|\bif\s+\w+\s+in\s+\w+|\bif\s*\(?\s*\w+\s*={1,3}\s*\w+)`;
+  const FIRST3 = R`(\[\s*0?\s*:\s*3\s*\]|(left|substring|substr|slice|mid)\s*\([^)]*\))`;
+  /* prog-09: book.genre equals the parameter (not a literal, not "not equal"); or a one-line counting comprehension */
+  const CMP9 = R`(\.genre\s*(\.\w+\(\))?\s*={1,3}\s*(?!["'])\w+|\w+\s*={1,3}\s*\w+\.genre|\.genre\s*\)?\s*\.?equals|\[\s*["']genre["']\s*\]\s*={1,3}\s*(?!["'])\w+)`;
+  const COMPR9 = R`((len|sum)\s*\(\s*[\[(]?[^]{0,50}\bfor\s+\w+\s+in\s+\w+[^]{0,30}\bif\b[^]{0,40}\.genre\s*={1,3}|filter\s*\([^]{0,60}\.genre\s*={1,3}[^]{0,40}\)\s*\.length)`;
+  const FLAG = R`\w*(valid|ok|good|correct|accept\w*|done|finished)\w*`;
+  const LOOP04 = R`(while\s*\(?\s*(${INV}|(not|!)\s*\(?\s*\(?\s*${VAL}|(not|!)\s*\(?\s*\w+\s*in\s*range|${FLAG}\s*(=|==|===|is)\s*(false|0|no)\b|(not|!)\s*${FLAG}\b|\w+\s*==?\s*false)|until\s*\(?\s*(${VAL}|${FLAG}\s*(=|==|===|is)?\s*(true|1|yes)?\b)|while\s*\(?\s*(true|1)\b[^]{0,260}(break|return))`;
   B.prog = {
     intro:
       "<p>Programming is the implementation side of Software design and development, and the biggest block of marks in the real paper (SDD fills about 41 to 45 of the 55 marks in Section 1, and most of that is reading, tracing, completing and writing code). Code appears in SQA reference language; you may answer in Python, JavaScript or reference language, and the marks are for the logic, not the syntax. The 2025 course report's commonest slips are targeted here: describing what the lines do instead of what they achieve <em>in the context</em>; unnecessary parameters; two near-identical sub-programs instead of one with a parameter called twice; describing the code to change when the question asked what code to <em>add</em>; and <code>=</code> against <code>==</code> or <code>&gt;</code> against <code>&gt;=</code> in a condition. Work every trace by hand before you check it.</p>",
@@ -64,8 +75,8 @@
             label: "(a)", type: "text", marks: 2,
             q: "Describe one weakness of using parallel arrays to store this data. [2]",
             points: [
-              { desc: "the arrays must be kept in step / the same index must refer to the same book", any: [R`(in step|line up|lined up|out of step|out of line|same (index|position|subscript)|match(ed)? up|stay\w* (together|in step|aligned)|keep\w* (them )?(in step|together|aligned)|synchron)`] },
-              { desc: "e.g. sorting or deleting in one array only gives a book the wrong author or loans", all: [R`(sort\w*|delet\w*|remov\w*|insert\w*|forget\w*|update\w*|swap\w*|chang\w*)`, R`(wrong|mismatch\w*|incorrect|out of (step|line)|belong\w* to|mixed|muddl\w*|corrupt\w*|no longer (match|line)|different (book|author))`], win: 140 },
+              { desc: "the arrays must be kept in step / the same index must refer to the same book", negOK: true, not: [R`(not|never|n't)\s+(\w+\s+)?(need|have|required|important|matter|problem)`, R`\b(have|has|does|do|is|are|can)\s+not\s+(\w+\s+)?(to\s+)?(be\s+)?(kept|in step)`], all: [R`(in step|lin(e|es|ed) up|out of step|out of line|same (index|position|subscript)|match(ed|es)? up|stay\w* (together|in step|aligned)|keep\w* (them )?(in step|together|aligned)|synchron)`, R`(arrays?|index\w*|indices|data|lists?|position|book|title|author|loans|them|they|each other)`], win: 90 },
+              { desc: "e.g. sorting or deleting in one array only gives a book the wrong author or loans", negOK: true, not: [R`\b(is|are|does|do)\s+not\s+(\w+\s+)?(sorted|deleted|removed|changed|updated|inserted)`], all: [R`(sort\w*|delet\w*|remov\w*|insert\w*|forget\w*|update\w*|swap\w*|chang\w*)`, R`(wrong|mismatch\w*|incorrect|out of (step|line)|belong\w* to|mixed|muddl\w*|corrupt\w*|no longer (match|line|lines)|different (book|author)|matched with|(doesn't|does not|do not|don't|won't|will not|wouldn't|would not|stop\w*)\s+(\w+\s+)?(line|match|correspond|belong))`, R`(arrays?|index\w*|indices|title|author|loans|book|data|item|one of|others)`], win: 140 },
             ],
             sample: "The three arrays have to be kept in step by the programmer, so if one array is sorted or an item is deleted from only one of them, the same index stops matching and a title ends up with the wrong author or loans.",
             model: "<p>Any 2: (1) the arrays are separate and must be kept in step (the same index refers to the same book); (1) a change made to one array only (sorting, deleting, inserting) leaves the others out of line, so data about different books gets mixed up.</p>",
@@ -112,15 +123,12 @@
             q: "Write code that asks the user for a wind speed and keeps asking until a valid value is entered. Display a message each time an invalid value is rejected. [4]",
             points: [
               { desc: "the wind speed is read from the keyboard", any: [INPUT] },
-              { desc: "a conditional loop that repeats while the value is out of range", any: [
-                R`(while|until)[^]{0,60}(<\s*0|<=\s*-1|>\s*150|>=\s*151|<=\s*150|>=\s*0)`,
-                R`while\s+(true|1)\b[^]{0,200}break`] },
-              { desc: "both ends of the range tested correctly (below 0 OR above 150)", any: [
-                R`(<\s*0|<=\s*-1)\s*(or|\|\|)\s*\w+\s*(>\s*150|>=\s*151)`,
-                R`(>\s*150|>=\s*151)\s*(or|\|\|)\s*\w+\s*(<\s*0|<=\s*-1)`,
-                R`(not|until|break)[^]{0,30}(0\s*<=\s*\w+\s*<=\s*150|>=\s*0\s*(and|&&)[^]{0,20}<=\s*150|<=\s*150\s*(and|&&)[^]{0,20}>=\s*0)`] },
-              { desc: "an error message displayed inside the loop", all: [R`(while|until)`, R`(send|print|console\.log|alert|display|write)\s*\(?\s*["']`], win: 260 },
-              { desc: "the user is asked again inside the loop (re-input)", any: [R`(while|until)[^]{0,200}${INPUT}`] },
+              { desc: "a conditional loop that repeats while the value is INVALID (below 0 or above 150), or until it is valid", any: [LOOP04] },
+              { desc: "both ends of the range tested correctly (below 0 OR above 150, or the valid range with AND)", any: [
+                R`${INV}`,
+                R`(if|elif|until|unless|not|!)\s*\(?\s*\(?\s*${VAL}`] },
+              { desc: "an error message displayed inside the loop", all: [LOOP04, R`(send|print|console\.log|alert|display|write)\s*\(?\s*f?["']`], win: 260 },
+              { desc: "the user is asked again inside the loop (re-input)", any: [R`${LOOP04}[^]{0,220}${INPUT}`, R`\b(repeat|do)\b[^]{0,160}${INPUT}[^]{0,260}\b(until|while)\b`] },
             ],
             sample: 'RECEIVE speed FROM (INTEGER) KEYBOARD\nWHILE speed < 0 OR speed > 150 DO\n   SEND "Invalid, enter 0 to 150" TO DISPLAY\n   RECEIVE speed FROM (INTEGER) KEYBOARD\nEND WHILE',
             model: "<p>(1) value read before the loop; (1) conditional loop (WHILE, or REPEAT ... UNTIL); (1) condition correct at both ends, with OR (&lt; 0 or &gt; 150), or the equivalent AND with UNTIL; (1) message inside the loop and the value asked for again inside the loop. A <code>while True</code> loop with a <code>break</code> when the value is in range is accepted.</p>" + pre('RECEIVE speed FROM (INTEGER) KEYBOARD\nWHILE speed < 0 OR speed > 150 DO\n   SEND "Invalid, enter 0 to 150" TO DISPLAY\n   RECEIVE speed FROM (INTEGER) KEYBOARD\nEND WHILE'),
@@ -129,8 +137,13 @@
             label: "(b)", type: "text", marks: 2,
             q: "Explain why a conditional loop, rather than a fixed loop, is used here. [2]",
             points: [
-              { desc: "the number of repeats is not known in advance (depends on how many invalid entries)", all: [R`(unknown|not known|don'?t know|do not know|no way of knowing|depends|varies|different|any number|unpredictable|cannot (tell|predict))`, R`(times|repeat\w*|attempts|entries|iterations|goes|loops?|wrong)`], win: 120 },
-              { desc: "it keeps repeating until a valid value is entered", any: [R`(until|as long as|while|keeps? (asking|repeating|going))[^]{0,70}(valid|correct|acceptable|within|range|right)`, R`(stops?|ends?|exits?)[^]{0,40}(valid|correct|acceptable|within|range|right)`] },
+              { desc: "the number of repeats is not known in advance (depends on how many invalid entries)", negOK: true, not: [R`\b(we|you|it|they)\s+know\s+(how|the)`, R`(is|are)\s+(already\s+)?known`, R`\bnot\s+(\w+\s+)?(unknown|unpredictable)`], any: [
+                R`(number of|how many|amount of)\s+(\w+\s+){0,5}(times|repeat\w*|attempts|entries|iterations|goes|loops?|wrong\w*|tries|inputs?)\b[^]{0,50}(unknown|not known|isn't known|unpredictable|vary|varies|varied|depends|different|can't be (known|predicted)|cannot be (known|predicted))`,
+                R`(unknown|unpredictable|not known|don'?t know|do not know|no way of knowing|can't (tell|predict)|cannot (tell|predict))[^]{0,40}(number of|how many|how often|how long|how much)`,
+                R`(depends?|vary|varies)\s+(on\s+)?(how|the user|the number|whether|what)`,
+                R`any number of (times|attempts|goes|tries|repeats|loops)`,
+                R`(once|one go|first (time|go|try|attempt)|one attempt)\s+(\w+\s+){0,3}(or|and)\s+(\w+\s+){0,3}(many|several|more|lots|multiple|repeated)`] },
+              { desc: "it keeps repeating until a valid value is entered", negOK: true, not: [R`\b(has|have|do|does|will|can)\s+not\s+(to\s+)?(keep|repeat|stop|continue|go)`, R`\b(is|are)\s+not\s+(\w+\s+)?(entered|valid|correct)`], any: [R`(until|as long as|while|keeps? (asking|repeating|going))[^]{0,70}(valid|correct|acceptable|within|range|right)`, R`(stops?|ends?|exits?)[^]{0,40}(valid|correct|acceptable|within|range|right)`] },
             ],
             sample: "The number of times the user will type an invalid speed is unknown in advance, so the loop has to keep repeating until a valid value is entered. A fixed loop would repeat a set number of times whatever was typed.",
             model: "<p>(1) The number of repetitions is not known beforehand (the user might be right first time or wrong several times); (1) a conditional loop repeats until the condition is met, i.e. until a valid value is entered, whereas a fixed loop runs a set number of times.</p>",
@@ -164,8 +177,8 @@
             label: "(c)", type: "text", marks: 2,
             q: "Explain why each line read from the file has to be converted before it is added to the total. [2]",
             points: [
-              { desc: "everything read from a file arrives as text (a string)", any: [R`(string|characters|\bas text\b|\bis text\b|\bare text\b|text value)`] },
-              { desc: "adding text joins it together instead of adding the numbers (or gives an error)", any: [R`(join\w*|concatenat\w*|stick\w*|glue\w*|append\w*|side by side|error|wrong|crash\w*|not add)`] },
+              { desc: "everything read from a file arrives as text (a string)", negOK: true, any: [R`(\b(is|are|as|comes?|came|arrives?|arrived|returned|read|stored|treated|held|saved|be)\b|'s)\s+(in\s+)?(as\s+)?(an?\s+)?(string|strings|text|characters)\b`, R`(string|strings|text|characters)\s*,?\s+(not|rather than|instead of)\s+(a\s+|any\s+)?(number|numbers|real|float|integer|numeric)`, R`(gives?|gave|get|gets|returns?|provides?|reads?)\s+(you\s+|us\s+|back\s+)?(it\s+)?(as\s+)?(an?\s+)?(text|strings?|characters)\b`, R`(\bis|\bare|'s|\bwas)\s+not\s+(a\s+)?(number|numeric|real)`] },
+              { desc: "adding text joins it together instead of adding the numbers (or gives an error)", negOK: true, not: [R`\b(would|will|does|do|can|is|are)\s+not\s+(be\s+)?(\w+\s+)?(joined|concatenat\w*|added|wrong|incorrect|stuck|glued|appended)`], any: [R`(join\w*|concatenat\w*|stick\w*|glue\w*|append\w*|chain\w*|put\w* together)[^]{0,40}(instead of|rather than|not add\w*|not sum\w*|together|on the end|end to end|side by side|as (text|strings?)|\bto each other)`, R`(concatenat\w*|join\w*|stick\w*|glue\w*)\s+(\w+\s+){0,4}(and|but|so)\s+(does\s+)?not\s+(add|sum|calculat\w*|work)`, R`(instead|rather) than (add\w*|sum\w*|calculat\w*|doing (the )?(maths?|arithmetic))`, R`(would|will|could|may|might|can)\s+(\w+\s+){0,2}(error|crash\w*|fail\w*)|(type\s?error|an error)|(cannot|can't|can not|won't|wouldn't)\s+(\w+\s+){0,3}(add\w*|\+|sum|calculat\w*|arithmetic|maths?)`, R`(total|answer|result|sum)\s+(would|will|be)\s+(be\s+)?(wrong|incorrect)`] },
             ],
             sample: "A value read from a file arrives as a string. If it was added without converting it, the text would be joined together (4.5 and 0 would make 4.50) rather than the numbers being added, so the total would be wrong.",
             model: "<p>(1) Data read from a file is a string (text); (1) adding strings concatenates them instead of doing arithmetic, so the total would be wrong or the program would crash. Converting with float()/REAL() gives a number first.</p>",
@@ -195,8 +208,8 @@
             label: "(c)", type: "text", marks: 2,
             q: "The programmer made the percentage a parameter instead of writing 15 inside the function. Explain why this is good practice. [2]",
             points: [
-              { desc: "the function can be called with different percentages / any rate", any: [R`(different|various|any|other|changed|several|another|varying)\s+(\w+\s+)?(percent\w*|rates?|discounts?|amounts?|values?|offers?|sales?)`, R`(vary|varies|change|changes)[^]{0,30}(percent\w*|rate|discount|amount)`] },
-              { desc: "one function is reused, with no near-identical copies to write", any: [R`(reuse\w*|re-use\w*|one function|same function|same code|single function|near.identical|duplicat\w*|copies|copy|several functions|separate functions|lots of functions|write (it|the code|another|a new))`] },
+              { desc: "the function can be called with different percentages / any rate", any: [R`(different|various|any|other|changed|several|another|varying)\s+(\w+\s+)?(percent\w*|rates?|discounts?|amounts?|values?|offers?|sales?)`, R`(vary|varies|varied|change|changes|changed)\s+(the\s+|its\s+|a\s+|each\s+)?(percent\w*|rate|discount)`, R`(percent\w*|discount)\s+(\w+\s+){0,3}(can|could|may)\s+(be\s+)?(chang\w*|differ\w*|vary|varied|set)`] },
+              { desc: "one function is reused, with no near-identical copies to write", negOK: true, any: [R`(reus\w*|re-us\w*)\s+(the\s+|that\s+|same\s+|a\s+)?(\w+\s+)?(function|code|sub-?program|procedure)`, R`(function|code|sub-?program|procedure)\s+(\w+\s+){0,2}(can be|is|be)\s+(re-?us\w*|used (again|many times|more than once|for))`, R`(not|no|without|avoids?|instead of)\s+(\w+\s+){0,2}(duplicat\w*|repeat\w*|copies|copying)`, R`(one|same|single)\s+(function|sub-?program|procedure|code)`, R`(no need|don't need|do not need|not need|without)\s+(to\s+)?(\w+\s+){0,3}(write|writing|create|creating|make|making|copy|copies|duplicat\w*|rewrit\w*|repeat\w*)`, R`(near.)?identical (functions?|code|copies)`, R`(several|many|lots of|separate|multiple|another)\s+(\w+\s+)?(functions?|sub-?programs?|procedures?|copies|versions)`, R`(duplicat\w*|repeat\w*)[^]{0,15}code`] },
             ],
             sample: "With a percent parameter the same function can be called with different discounts, such as 10, 15 or 20. The code is reused, so there is no need to write several near identical functions.",
             model: "<p>(1) The function can be called with different discount values (10%, 15%, 20% ...); (1) one function is reused instead of writing several near-identical functions, which is shorter and easier to maintain. A 2025 course report point.</p>",
@@ -216,8 +229,8 @@
             label: "(b)", type: "text", marks: 2,
             q: "The final line, SEND bonus TO DISPLAY, causes an error. Explain why. [2]",
             points: [
-              { desc: "bonus is a local variable, declared inside the procedure", all: [R`local`, R`(inside|within|only|procedure|sub-?program|addscore|declared)`], win: 140 },
-              { desc: "so it cannot be seen / does not exist in the main program", any: [R`(cannot|can't|isn't|not)[^]{0,40}(seen|used|accessed|accessible|visible|found|exist\w*|recogni[sz]ed|defined|declared)`, R`(out of scope|no longer exist\w*|only exists? (while|when|inside|in)|undefined)`] , negOK: true },
+              { desc: "bonus is a local variable, declared inside the procedure", negOK: true, not: [R`(not|n't)\s+(a\s+)?local`], any: [R`\blocal(ly)?\b[^]{0,50}(procedure|sub-?program|addscore|inside|within|function)`, R`(procedure|sub-?program|addscore|inside|within|function)[^]{0,50}\blocal\b`, R`declared\s+(\w+\s+)?(inside|within|in)\s+(the\s+)?(procedure|sub-?program|addscore|function)`] },
+              { desc: "so it cannot be seen / does not exist in the main program", negOK: true, any: [R`(out of scope|undefined|not defined|no longer exist\w*|doesn't exist|does not exist|only exists? (while|when|inside|in|within))`, R`(cannot|can't|isn't|not|never|unable)\s+(\w+\s+){0,3}(seen|used|accessed|accessible|visible|found|recogni[sz]ed|reached|referred)[^]{0,50}(main|outside|program|elsewhere|global|rest|after|other|where)`] },
             ],
             sample: "bonus is a local variable that is declared inside the addScore procedure, so it only exists while the procedure runs. In the main program it is out of scope, so using it there causes an error.",
             model: "<p>(1) bonus is declared inside the procedure, so it is a local variable; (1) a local variable exists only while the sub-program runs and is not visible (out of scope) in the main program, so the last line fails with an error.</p>",
@@ -240,8 +253,12 @@
             label: "(d)", type: "text", marks: 2,
             q: "The programmer plans to rewrite addScore as a function that is passed the current total and returns the new total, instead of changing the global variable. Explain why this is better practice. [2]",
             points: [
-              { desc: "a global can be changed by any line / any sub-program, so errors are hard to trace", all: [R`(any (line|part|sub-?program|procedure|code)|anywhere|other (parts?|code|sub-?programs?|procedures?)|everywhere)`, R`(chang\w*|alter\w*|modif\w*|overwr\w*|affect\w*|trace|track|find)`], win: 140 },
-              { desc: "inputs and outputs are clear, so the sub-program can be tested alone and reused", any: [R`(test\w*|reus\w*|re-us\w*|independent\w*|self-contained|stand\w* alone|debug\w*|clear (inputs|data flow)|inputs and outputs|predictable)`] },
+              { desc: "a global can be changed by any line / any sub-program, or the function does not rely on a global, so errors are hard to trace", negOK: true, not: [R`\b(can|could)\s+not\s+(be\s+)?(\w+\s+)?(chang\w*|alter\w*|modif\w*|overwr\w*|affect\w*)`, R`\b(is|are)\s+not\s+(\w+\s+)?(hard|difficult)`], any: [
+                R`(any|every|other|anywhere|everywhere|all)\s+(\w+\s+){0,3}(line|part|code|sub-?programs?|procedures?|functions?|where)[^]{0,60}(chang\w*|alter\w*|modif\w*|overwr\w*|affect\w*|interfer\w*)`,
+                R`(chang\w*|alter\w*|modif\w*|overwr\w*|affect\w*|interfer\w*)[^]{0,50}(anywhere|everywhere|by any|from any|other (parts?|code|sub-?programs?|procedures?|functions?))`,
+                R`(not|n't|without|no longer)\s+(\w+\s+){0,2}(rely|relies|depend\w*|use|using|need\w*|touch\w*|change|changing|alter\w*)[^]{0,20}global`,
+                R`global[^]{0,60}(unexpected|side[- ]effects?|overwr\w*|accident\w*|hard to (trace|track|find|debug)|difficult to (trace|track|find|debug))`, R`(side[- ]effects?|unexpected|accident\w*)[^]{0,40}global`] },
+              { desc: "inputs and outputs are clear, so the sub-program can be tested alone and reused", not: [R`\b(is|are|can|could|does|do|will)\s+not\s+(be\s+)?(\w+\s+)?(clear|tested|reused|reusable|independent|predictable)`], any: [R`(test\w*|reus\w*|re-us\w*|debug\w*|portable)[^]{0,40}(independent\w*|alone|separate\w*|own|elsewhere|other (programs?|projects?)|different programs?|easier|easy)`, R`(independent\w*|alone|separate\w*|easier|easy|can be|could be|to)[^]{0,40}(test\w*|reus\w*|re-us\w*|debug\w*)`, R`(self-contained|stand\w* alone|clear (inputs|data flow)|inputs and outputs|predictable)`] },
             ],
             sample: "A global variable can be changed by any line of the program, so a wrong value is hard to trace back. With a parameter and a returned value the function's inputs and outputs are clear, so it can be tested on its own and reused.",
             model: "<p>(1) A global can be changed from anywhere in the program, which makes errors hard to find; (1) with parameters and a returned value the sub-program has clear inputs and outputs, so it can be tested separately and reused in other programs.</p>",
@@ -262,7 +279,7 @@
             q: "Describe what this code achieves in the context of the league. [2]",
             points: [
               { desc: "finds the team with the highest number of goals scored", all: [R`\b(most|highest|top|maximum|largest|greatest|biggest|best)\b`, R`(goals|scored|scorer|scoring)`], win: 80 },
-              { desc: "by finding its position (index), then displaying that team's name", any: [R`(position|location|\bwhere\b|which (team|club)|name of the (team|club)|that (team|club)|the (team|club) (with|that|who)|index (of|where|number))`] },
+              { desc: "by finding its position (index), then displaying that team's name", any: [R`(display\w*|show\w*|print\w*|output\w*|sends?|gives?|tells?|says?|reports?)\s+(\w+\s+){0,4}(name|team|club|leader)`, R`(position|index|location)\s+(\w+\s+){0,3}(of|for)\s+(\w+\s+){0,2}(team|club|one|highest|top|leader|most|goals)`, R`(stor\w+|keeps?|remembers?|records?|saves?|finds?)\s+(\w+\s+){0,4}(position|index|location)`] },
             ],
             sample: "It finds the team that has scored the highest number of goals in the league. It works out the position of that team in the arrays and displays the name of that team.",
             model: "<p>(1) Finds the team with the most goals (the top scorer); (1) by storing the position of the highest goals value and using it to display that team's name. Answers that only say 'it loops and compares' earn nothing: refer to the context (2025 course report).</p>",
@@ -290,7 +307,7 @@
         style: "Write code · count occurrences with an array of records",
         stem:
           "<p>A library stores its 8 books in an array of records called <code>books</code>.</p>" +
-          pre('RECORD Book IS {STRING title, STRING genre}\nDECLARE books AS ARRAY OF Book INITIALLY [ Book("", "", 0) ] * 8') +
+          pre('RECORD Book IS {STRING title, STRING genre}\nDECLARE books AS ARRAY OF Book INITIALLY [ Book("", "") ] * 8') +
           "<table><tr><th>index</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr><tr><th>genre</th><td>Crime</td><td>Fantasy</td><td>Crime</td><td>History</td><td>Crime</td><td>Fantasy</td><td>Poetry</td><td>Crime</td></tr></table>",
         parts: [
           {
@@ -298,14 +315,13 @@
             q: "Write a function that is passed the array of books and a genre, and returns how many books are of that genre. [5]",
             points: [
               { desc: "a function with the array and the genre as parameters", any: [FUNC2] },
-              { desc: "a counter starting at zero", any: [R`\w+\s*(=|to|initially)\s*0\b`] },
-              { desc: "a loop through every book", any: [R`(for|while)[^]{0,60}(length|len|range|books|each|\b[78]\b)`] },
-              { desc: "the book's genre compared with the genre parameter", any: [R`\.genre\s*={1,3}\s*\w+`, R`\w+\s*={1,3}\s*\w+\.genre`, R`\.genre\s*\)?\s*\.?equals`] },
-              { desc: "the counter increased by 1, inside the selection", all: [R`\.genre\s*={1,3}|={1,3}\s*\w+\.genre`, R`(\w+)\s*(=|to)\s*\1\s*\+\s*1|\+=\s*1|\w+\+\+`], win: 140 },
-              { desc: "the count is returned", any: [R`return\s+\w+`] },
+              { desc: "a loop through every book", any: [R`(for|while)\s*\(?[^]{0,60}(length|len|range|books|each|\b[78]\b)`, R`for\s+(each\s+)?\w+\s+(in|of|from)\b`, COMPR9] },
+              { desc: "the book's genre compared (equal) with the genre parameter", any: [CMP9] },
+              { desc: "a counter starting at 0 and increased by 1 inside the selection", any: [R`(\w+)\s*(=|to|initially)\s*0\b[^]{0,260}${CMP9}[^]{0,140}(\1\s*(=|to)\s*\1\s*\+\s*1|\1\s*\+=\s*1|\1\s*\+\+|\+\+\s*\1)`, COMPR9] },
+              { desc: "the count of matching books is returned", any: [R`${CMP9}[^]{0,300}return\s+(?!\d)[a-z_]\w*`, R`return\s+(?!\d)[a-z_]\w*[^]{0,300}${CMP9}`] },
             ],
             sample: 'FUNCTION countGenre(ARRAY OF Book books, STRING genre) RETURNS INTEGER\n   DECLARE count INITIALLY 0\n   FOR index FROM 0 TO length(books) - 1 DO\n      IF books[index].genre = genre THEN\n         SET count TO count + 1\n      END IF\n   END FOR\n   RETURN count\nEND FUNCTION',
-            model: "<p>(1) function with books and genre as parameters; (1) counter set to 0; (1) fixed loop over all books (every book must be checked); (1) compare each book's genre with the parameter; (1) add 1 inside the IF; (1) return count. Any five. Using one function with a genre parameter, not a different function for each genre, is the efficient solution.</p>" + pre('FUNCTION countGenre(ARRAY OF Book books, STRING genre) RETURNS INTEGER\n   DECLARE count INITIALLY 0\n   FOR index FROM 0 TO length(books) - 1 DO\n      IF books[index].genre = genre THEN\n         SET count TO count + 1\n      END IF\n   END FOR\n   RETURN count\nEND FUNCTION'),
+            model: "<p>(1) function with books and genre as parameters; (1) fixed loop over all books (every book must be checked); (1) compare each book's genre with the parameter; (1) counter set to 0 before the loop and increased by 1 inside the IF; (1) return the count (a variable, not a typed-in number). Using one function with a genre parameter, not a different function for each genre, is the efficient solution.</p>" + pre('FUNCTION countGenre(ARRAY OF Book books, STRING genre) RETURNS INTEGER\n   DECLARE count INITIALLY 0\n   FOR index FROM 0 TO length(books) - 1 DO\n      IF books[index].genre = genre THEN\n         SET count TO count + 1\n      END IF\n   END FOR\n   RETURN count\nEND FUNCTION'),
           },
           { label: "(b)", type: "num", marks: 1, q: "State the value returned by the call countGenre(books, \"Crime\") using the data in the table. [1]", a: 4, tol: 0, why: "Crime is at indexes 0, 2, 4 and 7, so the count is 4." },
         ],
@@ -322,11 +338,11 @@
             q: "Write a function that is passed the array and a name to look for. It must return the index where the name is found, or -1 if the name is not in the array. [5]",
             points: [
               { desc: "a function with two parameters (array and target name)", any: [FUNC2] },
-              { desc: "the 'not found' result of -1 is set up or returned", any: [R`return\s+(-1|none|false)`, R`\w+\s*(=|to|initially)\s*-1`] },
+              { desc: "the 'not found' result of -1 is set up or returned (after the search, not inside the match)", not: [R`${CMP10}(?:(?!return)[^]){0,40}return\s+(-1|none|false)`], any: [R`return\s+(-1|none|false)`, R`\w+\s*(=|to|initially)\s*-1`] },
               { desc: "a loop that goes through the array (limited by its length)", any: [R`(for|while)[^]{0,60}(len|length|range|names|\b[45]\b)`] },
-              { desc: "each name compared with the target", any: [R`names?\s*\[\s*\w+\s*\]\s*={1,3}\s*\w+`, R`\w+\s*={1,3}\s*names?\s*\[\s*\w+\s*\]`, R`if\s+\w+\s+in\s+names`] },
-              { desc: "the index is stored (or returned) when found", any: [R`(set\s+)?\w+\s*(to|=)\s*(index|i|idx|pos|n)\b`, R`return\s+(index|i|idx|pos\w*|n)\b`] },
-              { desc: "the loop stops once the name is found (conditional loop, break or early return)", any: [R`(not\s+\w*found|\w*found\s*={1,3}\s*(false|0)|!\s*\w*found|break|return\s+(index|i|idx|pos\w*))`] },
+              { desc: "each name compared with the target (equals, not 'not equal')", any: [CMP10] },
+              { desc: "the index is stored (or returned) when the name IS found", any: [R`${CMP10}(?:(?!return)[^]){0,60}(return\s+(\w*(index|pos|idx)\w*|[ijkn])\b|(set\s+)?\w+\s*(to|=)\s*(index|i|idx|pos|j|k|n)\b)`] },
+              { desc: "the loop stops once the name is found (conditional loop, break or early return of the index)", any: [R`${CMP10}(?:(?!return)[^]){0,60}(break|return\s+(\w*(index|pos|idx)\w*|[ijkn])\b)`, R`while[^]{0,60}(not\s+\w*found|!\s*\w*found|\w*found\s*={1,3}\s*(false|0)|(and|&&)\s*\w+\s*={1,3}\s*-1)`] },
             ],
             sample: 'FUNCTION findName(ARRAY OF STRING names, STRING target) RETURNS INTEGER\n   DECLARE position INITIALLY -1\n   DECLARE index INITIALLY 0\n   WHILE index < length(names) AND position = -1 DO\n      IF names[index] = target THEN\n         SET position TO index\n      END IF\n      SET index TO index + 1\n   END WHILE\n   RETURN position\nEND FUNCTION',
             model: "<p>Any 5 of 6: (1) function with the array and target as parameters; (1) -1 as the 'not found' value; (1) loop limited by the array length; (1) compare each name with the target; (1) store/return the index when found; (1) stop searching once found (conditional loop using a found flag, or break/early return). The sample uses a WHILE loop whose condition fails once the position is set.</p>" + pre('FUNCTION findName(ARRAY OF STRING names, STRING target) RETURNS INTEGER\n   DECLARE position INITIALLY -1\n   DECLARE index INITIALLY 0\n   WHILE index < length(names) AND position = -1 DO\n      IF names[index] = target THEN\n         SET position TO index\n      END IF\n      SET index TO index + 1\n   END WHILE\n   RETURN position\nEND FUNCTION'),
@@ -336,8 +352,8 @@
             label: "(c)", type: "text", marks: 2,
             q: "Explain why it is more efficient to use a loop that quits early, rather than one that always checks all five names. [2]",
             points: [
-              { desc: "the search ends as soon as the name is found", any: [R`(stop\w*|exit\w*|end\w*|finish\w*|break\w*|quit\w*)[^]{0,40}(as soon as|once|when|immediately|after)[^]{0,30}(found|match\w*|find\w*|locat\w*)`, R`(as soon as|once|when|immediately)[^]{0,30}(found|match\w*|locat\w*|it finds)[^]{0,50}(stop\w*|exit\w*|end\w*|finish\w*|break\w*|quit\w*)`] },
-              { desc: "so the remaining items are skipped, saving time (especially for a long array)", any: [R`(rest|remaining|other|skipp\w+|further|unnecessar\w+|pointless\w*|needless\w*|wast\w+)[^]{0,40}(items|names|elements|array|checks?|comparisons?|loops?|repeats?|checking)`, R`(saves?|saving|less|faster|quicker)[^]{0,20}(time|processing)`] , negOK: true },
+              { desc: "the search ends as soon as the name is found", negOK: true, not: [R`(not|n't|never)\s+(\w+\s+)?(stop|end|exit|quit|finish|break)`, R`(as soon as|once|immediately)\s+(\w+\s+){0,3}(is|are)\s+not\s+(found|located|matched)`], any: [R`(stop\w*|exit\w*|end\w*|finish\w*|break\w*|quit\w*|leav\w*|terminat\w*)[^]{0,40}(as soon as|once|when|immediately|after|if)[^]{0,30}(found|match\w*|find\w*|locat\w*|there)`, R`(as soon as|once|when|immediately|if)[^]{0,30}(found|match\w*|locat\w*|it finds)[^]{0,50}(stop\w*|exit\w*|end\w*|finish\w*|break\w*|quit\w*|leav\w*|terminat\w*)`] },
+              { desc: "so the remaining items are skipped, saving time (especially for a long array)", negOK: true, not: [R`\b(is|are)\s+not\s+(\w+\s+)?(skipped|ignored)`], any: [R`(rest|remaining|other|skipp\w+|further|unnecessar\w+|pointless\w*|needless\w*|wast\w+)[^]{0,40}(items|names|elements|array|checks?|comparisons?|loops?|repeats?|checking)`, R`(saves?|saving|less|faster|quicker)[^]{0,20}(time|processing)`] },
             ],
             sample: "The loop stops as soon as the name is found. The remaining names in the array are skipped, which saves time, especially when the array is very long.",
             model: "<p>(1) The loop ends as soon as the item is found (conditional loop); (1) the rest of the array is not checked, so fewer comparisons and less time are used. A fixed loop would carry on to the end regardless.</p>",
@@ -381,7 +397,7 @@
             label: "(d)", type: "text", marks: 2,
             q: "Describe how a breakpoint set on line 5 would help find the error in the average. [2]",
             points: [
-              { desc: "the program runs at full speed then pauses when it reaches line 5", any: [R`(pause\w*|stop\w*|halt\w*|freez\w*)[^]{0,80}(line|reach\w*|before|at that|this point)`, R`(reach\w*|at|hits?)\s+(line|the breakpoint)[^]{0,60}(pause\w*|stop\w*|halt\w*|freez\w*)`] },
+              { desc: "the program runs at full speed then pauses when it reaches line 5", any: [R`(pause\w*|stop\w*|halt\w*|freez\w*)\s+(\w+\s+){0,3}(at|on|when|before|once)\s+(\w+\s+){0,3}(line|reach\w*|this point|that point|the breakpoint|it)`, R`(reach\w*|hits?|gets? to|arrives? at)\s+(\w+\s+){0,2}(line|breakpoint|it)[^]{0,60}(pause\w*|stop\w*|halt\w*|freez\w*)`] },
               { desc: "the programmer can then inspect the value of total (or the variables)", any: [R`(inspect\w*|check\w*|look\w* at|view\w*|see\w*|examin\w*|read\w*|show\w*)[^]{0,60}(total|value|variables?)`] },
             ],
             sample: "The program runs until it reaches line 5 and then pauses. The programmer can then look at the value of total and the other variables and check that they are right before the average is worked out.",
@@ -416,8 +432,8 @@
             label: "(b)", type: "text", marks: 2,
             q: "Explain why the file must be closed when the procedure has finished writing. [2]",
             points: [
-              { desc: "closing makes sure all the data is saved (buffered data written out)", any: [R`(buffer\w*|flush\w*|all the (data|lines|records|text|contents)|(sav\w+|written|stored)[^]{0,25}(disk|properly|fully|completely|permanent\w*))`] },
-              { desc: "and frees the file so other programs can use it (or avoids loss/corruption)", any: [R`(free\w*|releas\w*|available|other (programs?|users?|processes)|lock\w*|corrupt\w*|lost\b|loss)`] },
+              { desc: "closing makes sure all the data is saved (buffered data written out)", negOK: true, not: [R`(makes? sure|ensures?)[^.]{0,40}\bnot\b`, R`all\s+(of\s+)?the\s+(data|lines|records|text|contents)\s+(is|are)\s+not`], any: [R`(buffer\w*|flush\w*)[^]{0,60}(written|saved|stored|disk|file|lost|empty|out)`, R`(written|saved|stored|disk|file|lost)[^]{0,60}(buffer\w*|flush\w*)`, R`all (of )?the (data|lines|records|text|contents)[^]{0,40}(sav\w+|written|stored)`, R`(sav\w+|written|stored)[^]{0,25}(to )?(disk|properly|fully|completely|permanent\w*)`, R`(data|lines|records|text|changes)[^]{0,40}\b(lost|missing|incomplete|not (be )?(saved|written|stored))`] },
+              { desc: "and frees the file so other programs can use it (or avoids loss/corruption)", negOK: true, not: [R`(frees?|releases?)\s+(the\s+)?file\s+so\s+(that\s+)?[^.]{0,30}\bcan\s+not`, R`nothing\s+(is|was)\s+not`], any: [R`(free\w*|releas\w*|unlock\w*|available)[^]{0,40}(file|other|programs?|users?|processes)`, R`(other (programs?|users?|processes))[^]{0,40}(open\w*|use|access\w*|read\w*|write|writing|blocked|locked)`, R`(file|data)[^]{0,30}(lock\w*|corrupt\w*|lost\b|loss)|(lock\w*|corrupt\w*|data (is |being |could be |may be )?lost|loss of data|lose (the |some )?data)`] },
             ],
             sample: "Closing the file makes sure that all the data is saved to the disk. It also frees the file so that other programs can open it, and nothing is lost or corrupted.",
             model: "<p>(1) Closing saves any data still held in the buffer, so the whole file is written; (1) it releases the file for other programs and avoids data loss or corruption.</p>",
@@ -438,9 +454,9 @@
             label: "(d)", type: "code", marks: 3,
             q: "A passenger code is made from the first 3 letters of the passenger's surname followed by the number of letters in the surname, so \"MacLeod\" gives \"Mac7\". Write code to take a surname that is already stored in a variable called surname, and display the code. [3]",
             points: [
-              { desc: "the first three characters extracted", any: [R`\[\s*0?\s*:\s*3\s*\]`, R`(left|substring|substr|slice|mid)\s*\(`] },
+              { desc: "the first three characters extracted", any: [FIRST3] },
               { desc: "the length of the surname found", any: [R`(len|length)\s*\(`, R`\.length`] },
-              { desc: "the two parts joined and displayed", all: [R`\b(send|print|console\.log|return|alert|document\.write)\b`, R`(&|\+|,\s*\w|\{|concat)`], win: 160 },
+              { desc: "first three letters THEN the length joined (in that order) and displayed", all: [R`\b(send|print|console\.log|return|alert|document\.write)\b`, R`(${FIRST3}[^]{0,40}(&|\+|,|\{|\}|concat|\|\|)[^]{0,25}\b(len|length)\b|(?<v>\w+)\s*(=|to)\s*(\w+)?${FIRST3}[^]{0,80}\k<v>\s*(&|\+|,|concat)\s*(str\s*\(\s*)?\(?\s*(len|length)\b|(?<a>\w+)\s*(=|to)\s*(\w+)?${FIRST3}[^]{0,100}(?<b>\w+)\s*(=|to)\s*(str\s*\(\s*)?(len|length)\s*\([^]{0,100}\k<a>\s*(&|\+|,)\s*(str\s*\(\s*)?\k<b>)`], win: 220 },
             ],
             sample: 'SET code TO left(surname, 3) & length(surname)\nSEND code TO DISPLAY',
             model: "<p>(1) first three letters, e.g. <code>surname[0:3]</code> or <code>left(surname, 3)</code>; (1) length of the surname with a length/len function; (1) joined together (concatenated, converting the number if the language needs it) and displayed. Python: <code>print(surname[0:3] + str(len(surname)))</code>.</p>" + pre('SET code TO left(surname, 3) & length(surname)\nSEND code TO DISPLAY'),
@@ -462,7 +478,7 @@
             q: "Describe what this code does, in the context of the cinema. [2]",
             points: [
               { desc: "counts (how many) seats that meet a condition, with the offer", all: [R`(count\w*|how many|number of|total\w*|tally|works out)`, R`(seat|ticket)`], win: 120 },
-              { desc: "by checking every seat in every row; the condition is row + seat being even", any: [R`\b(every|each|all)\s+(the\s+)?(seat|row)s?\b`, R`\b(even|divisible by 2|multiple of 2|remainder (of )?0)\b`] },
+              { desc: "by checking every seat in every row; the condition is row + seat being even", any: [R`\b(every|each|all|whole)\s+(the\s+)?(seat|row)s?\b`, R`(row|seat)[^]{0,30}\b(even|divisible by 2|multiple of 2|remainder (of )?0)\b`, R`\b(even|divisible by 2|multiple of 2)\b[^]{0,30}(row|seat|sum|total|add)`] },
             ],
             sample: "It counts how many seats on the screen get the offer. It checks every seat in every row, and a seat counts when its row number plus its seat number is even.",
             model: "<p>(1) Counts the number of seats (out of 12) that qualify for the offer; (1) by going through every seat in every row and testing whether row + seat is even. 'It has two loops and an IF' with no reference to seats scores nothing.</p>",
@@ -533,7 +549,7 @@
             q: "Describe what the function findTopPos achieves in the context of the flying log. [2]",
             points: [
               { desc: "finds the cadet who has flown the most hours", all: [R`\b(most|highest|top|maximum|largest|greatest|biggest)\b`, R`\b(hours|flown|flying|flight time)\b`], win: 80 },
-              { desc: "and returns the position (index) of that cadet in the array", any: [R`\b(returns?|returned|gives?|sends?|passes?|outputs?)\s+(back\s+)?(the\s+|its\s+|that\s+)?(position|index|location)\b`, R`\b(position|index|location)\b[^]{0,30}\b(of|for)\b[^]{0,20}\b(that|the|this)\s+(cadet|one|person|pupil)`] },
+              { desc: "and returns the position (index) of that cadet in the array", any: [R`\b(returns?|returned|gives?|sends?|passes?|outputs?|gives back|hands back)\s+(\w+\s+){0,2}(position|index|location|subscript)\b`, R`\b(position|index|location)\b[^]{0,30}\b(of|for)\b[^]{0,20}\b(that|the|this)\s+(cadet|one|person|pupil|member)`] },
             ],
             sample: "It finds the cadet who has flown the most hours. The function returns the position of that cadet in the array of cadets.",
             model: "<p>(1) Finds the cadet with the highest flying hours (the maximum); (1) returns the position (index) of that cadet, not the hours themselves.</p>",
