@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Locked Room</title>
-<meta name="description" content="A detailed explainer on hardening Linux workloads: seccomp, Landlock, cgroups, capabilities, containers, eBPF, gVisor, Firecracker, cut-down kernels, unikernels and language choice.">
+<meta name="description" content="A detailed explainer on hardening Linux workloads: seccomp, Landlock, resource limits, no-fork launchers, containers, eBPF and monitoring, gVisor, Firecracker, cut-down kernels, unikernels, and Rust with fewer dependencies.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="hardening.css">
 </head>
@@ -17,7 +17,7 @@
 
 <div class="callout"><b class="t">If you read one thing</b>
 <p>Run untrusted code with several locks, because each lock stops different attacks. Use a non-root user with no capabilities, <code>no_new_privs</code>, a seccomp allowlist (a list of the syscalls you permit), Landlock for files, and cgroup limits for memory and process count. If the code is hostile, put it behind a stronger boundary: gVisor or a microVM such as Firecracker. For untrusted code, set <code>JAIL_REQUIRE_ABI=6</code> in the launcher so it refuses old kernels. Section 16 shows <code>no_new_privs</code>, Landlock, rlimits and a no-fork seccomp filter in one small program (it does not drop the user or capabilities). Section 18 lets you score your own setup.</p>
-<p class="cap" style="margin:6px 0 0">Tested on a 6.18 kernel with older installed headers (the syscall count comes from kernel 6.18 tables), and checked against the Linux source and its Landlock documentation (mainline and tags v7.0 to v7.2), Firecracker's <code>SPECIFICATION.md</code> (the 125 ms and 5 MiB targets) and the Tetragon documentation (its <code>Sigkill</code> and <code>Override</code> actions), on 27 October 2026. The rest was checked from memory. Kernel facts change: confirm version numbers for your own kernel. <strong>What we tested:</strong> the <code>jail.c</code> behaviours, the Landlock ptrace and scoping results, the pathname Unix socket gap, and the widgets. <strong>From memory, not rechecked:</strong> gVisor start-up times, the Firecracker device list and overhead figures, and the Docker default-seccomp share.</p></div>
+<p class="cap" style="margin:6px 0 0">Tested on a 6.18 kernel with older installed headers (the syscall count comes from kernel 6.18 tables), and checked against the Linux source and its Landlock documentation (mainline commit 83f32c77, a 7.3 development tree, and the tags v7.0 to v7.2 fetched from it), Firecracker's <code>SPECIFICATION.md</code> (the 125 ms and 5 MiB targets) and the Tetragon documentation (its <code>Sigkill</code> and <code>Override</code> actions), on 27 October 2026. The rest was checked from memory. Kernel facts change: confirm version numbers for your own kernel. <strong>What we tested:</strong> the <code>jail.c</code> behaviours, the Landlock ptrace and scoping results, the pathname Unix socket gap, and the widgets. <strong>From memory, not rechecked:</strong> gVisor start-up times, the Firecracker device list and overhead figures, and the Docker default-seccomp share.</p></div>
 
 <details><summary>Short glossary of terms used before they are explained</summary>
 <ul>
@@ -150,7 +150,7 @@
   <li><strong>Denylisting:</strong> blocking "dangerous" calls fails open the day Linux adds a new one (<code>io_uring_*</code>, <code>clone3</code>, <code>pidfd_*</code>, <code>landlock_*</code>, <code>mount_setattr</code> were all new within a few years), so start from allow-nothing.</li>
   <li><strong>Trying to judge pointers:</strong> suppose a <code>USER_NOTIF</code> or ptrace supervisor reads a path from the tracee's memory and then lets the call proceed. That has a time-of-check/time-of-use (TOCTOU) race, because another thread can rewrite the buffer between the check and the use. The kernel documentation is explicit that <code>SECCOMP_USER_NOTIF_FLAG_CONTINUE</code> must not be used to implement a security policy.</li>
   <li><strong><code>clone3</code> and friends.</strong> <code>clone3</code> passes its flags in a struct in memory, so a filter cannot see them. The usual fix is to return <code>ENOSYS</code>, which makes glibc fall back to <code>clone</code>, whose flags <em>are</em> in a register and can be filtered, and container runtimes do exactly this.</li>
-  <li><strong>Operations that are not syscalls.</strong> <strong>io_uring</strong> lets a process queue reads, writes, connects and more through shared rings. The kernel runs these operations without going through the syscall path, so a syscall filter never sees them. Block <code>io_uring_setup</code>/<code>enter</code>/<code>register</code>, or set the sysctl <code>kernel.io_uring_disabled</code> (6.6+: 0 allow, 1 only a configured group, 2 disable for all). Google has <a href="https://security.googleblog.com/2023/06/learnings-from-kctf-vrps-42-linux.html">reported</a> that most of the kernel exploits submitted to its kCTF bug-bounty program in 2022 targeted io_uring. It restricted the interface on several of its own platforms.</li>
+  <li><strong>Operations that are not syscalls.</strong> <strong>io_uring</strong> lets a process queue reads, writes, connects and more through shared rings. The kernel runs these operations without going through the syscall path, so a syscall filter never sees them. Block <code>io_uring_setup</code>/<code>enter</code>/<code>register</code>, or set the sysctl <code>kernel.io_uring_disabled</code> (6.6+: 0 allow, 1 only a configured group or processes with <code>CAP_SYS_ADMIN</code>, 2 disable for all). Google has <a href="https://security.googleblog.com/2023/06/learnings-from-kctf-vrps-42-linux.html">reported</a> that most of the kernel exploits submitted to its kCTF bug-bounty program in 2022 targeted io_uring. It restricted the interface on several of its own platforms.</li>
 </ol>
 
 <h3>What to deny even in a permissive profile</h3>
@@ -301,7 +301,7 @@ echo 0     &gt; /sys/fs/cgroup/jail/memory.swap.max
 echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the workload from it</code></pre>
 <p>The <code>systemd-run --user</code> line needs the user manager to have the <code>memory</code>, <code>pids</code>, <code>cpu</code> and <code>io</code> controllers delegated. Many distributions do not do this by default for user sessions, so check <code>cat /sys/fs/cgroup/user.slice/user-$UID.slice/user@$UID.service/cgroup.controllers</code>.</p>
 <h3>A time limit</h3>
-<p>No rlimit bounds wall-clock time, and <code>RLIMIT_CPU</code> counts CPU seconds only, so a process that sleeps or waits on a pipe never trips it. Run a watchdog outside the sandbox: start the job in its own cgroup, set a timer, and when it fires write <code>1</code> to <code>cgroup.kill</code>. With systemd, set <code>RuntimeMaxSec=</code> on the unit. Without either, <code>timeout --kill-after=5 30 ./job</code> is the minimum, but it signals only the command it started. On GNU coreutils 9.4 we saw background children keep running after the timeout fired, and a child that starts a new session will always escape it. To stop everything, write 1 to <code>cgroup.kill</code> or set <code>RuntimeMaxSec</code> on a systemd unit.</p>
+<p>No rlimit bounds wall-clock time, and <code>RLIMIT_CPU</code> counts CPU seconds only, so a process that sleeps or waits on a pipe never trips it. Run a watchdog outside the sandbox: start the job in its own cgroup, set a timer, and when it fires write <code>1</code> to <code>cgroup.kill</code>. With systemd, set <code>RuntimeMaxSec=</code> on the unit. Without either, <code>timeout --kill-after=5 30 ./job</code> is the minimum, but it signals the whole process group. We tested this: background children of the command died with it. A child that calls <code>setsid</code>, or one that ignores <code>SIGTERM</code>, survives. To stop everything, write 1 to <code>cgroup.kill</code> or set <code>RuntimeMaxSec</code> on a systemd unit.</p>
 <div class="callout warn"><b class="t">What limits do not cover</b>
 <p>No cgroup controller shapes network bandwidth, so use <code>tc</code> or eBPF-based tools. Disk <em>space</em> needs filesystem quotas (XFS project quotas, a size-limited <code>tmpfs</code>) and inode limits. Shared kernel resources such as the dentry cache or kernel keyrings can still be a cross-tenant side channel. Memory limits also do not stop a cache- or timing-based side channel.</p></div>
 
@@ -310,7 +310,7 @@ echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the w
 <div class="scroll"><table>
 <thead><tr><th>Method</th><th>What it blocks</th><th>Gaps and gotchas</th></tr></thead>
 <tbody>
-<tr><td class="n">seccomp: deny <code>fork</code>, <code>vfork</code>; <code>clone</code> unless <code>CLONE_THREAD</code>; <code>clone3</code> &rarr; <code>ENOSYS</code></td><td class="w">All new processes, while still allowing threads. The most precise option; the example in section 16 does exactly this and was tested.</td><td class="w">On ARM64 there is no <code>fork</code>/<code>vfork</code>, only <code>clone</code>. 32-bit and x32 ABIs have their own numbers. <code>clone3</code> must be answered with <code>ENOSYS</code>, and the C library must fall back to <code>clone</code>. glibc 2.34 and later does this, because it tries <code>clone3</code> first. Test any other runtime you ship.</td></tr>
+<tr><td class="n">seccomp: deny <code>fork</code>, <code>vfork</code>; <code>clone</code> unless <code>CLONE_THREAD</code>; <code>clone3</code> &rarr; <code>ENOSYS</code></td><td class="w">All new processes, while still allowing threads. The most precise option; the example in section 16 does exactly this and was tested.</td><td class="w">On ARM64 there is no <code>fork</code>/<code>vfork</code>, only <code>clone</code>. 32-bit and x32 ABIs have their own numbers. <code>clone3</code> must be answered with <code>ENOSYS</code>, and the C library must fall back to <code>clone</code>. glibc 2.34 and later does this (musl and Go call <code>clone</code> directly, so they never hit the problem), because it tries <code>clone3</code> first. Test any other runtime you ship.</td></tr>
 <tr><td class="n">cgroup <code>pids.max</code></td><td class="w">Total tasks in the subtree. Set to 1 for a single-threaded process, or a small number for a thread pool.</td><td class="w"><strong>Threads count too.</strong> A process can still create children until it reaches the cap. It stops fork bombs. It does nothing about one malicious <code>exec</code>.</td></tr>
 <tr><td class="n"><code>RLIMIT_NPROC</code></td><td class="w">Process creation by a UID that has reached the limit.</td><td class="w">Per real UID, not per sandbox. Ineffective for root and <code>CAP_SYS_RESOURCE</code>. Setting it low can break <em>other</em> processes of the same UID. Use a dedicated UID per sandbox, or do not rely on it.</td></tr>
 <tr><td class="n">Companion control: deny <code>execve</code>/<code>execveat</code></td><td class="w">Running any <em>new program</em>. It does not stop <code>fork</code> itself, but a forked child can only run code already in the process image.</td><td class="w">The filter must be installed after the final <code>exec</code> of the real workload, so the workload installs it on itself (or a supervisor notifies it). Use it together with a no-fork rule, not instead of one.</td></tr>
@@ -372,7 +372,7 @@ echo $$    &gt; /sys/fs/cgroup/jail/cgroup.procs   # moves THIS shell; run the w
 <tbody>
 <tr><td class="n">mount</td><td class="w">The filesystem tree</td><td class="w">Use <code>pivot_root</code> (not <code>chroot</code>, which is escapable with <code>CAP_SYS_CHROOT</code>); make mounts private; mount the root read-only; <code>nosuid,nodev,noexec</code> on data volumes.</td></tr>
 <tr><td class="n">pid</td><td class="w">The process table</td><td class="w">Hides other processes and makes the first process PID 1 (it must reap zombies; use an init such as <code>tini</code>).</td></tr>
-<tr><td class="n">net</td><td class="w">Interfaces, routes, sockets</td><td class="w">An empty net namespace (<code>--network none</code>) leaves the workload only a loopback interface, which reaches nothing outside the container, which is the strictest network policy you can set.</td></tr>
+<tr><td class="n">net</td><td class="w">Interfaces, routes, sockets</td><td class="w">An empty net namespace (<code>--network none</code>) leaves the workload only a loopback interface, which starts down and reaches nothing outside the container. It is the strictest network policy you can set.</td></tr>
 <tr><td class="n">ipc / uts</td><td class="w">SysV and POSIX IPC; hostname</td><td class="w">Low cost; always unshare.</td></tr>
 <tr><td class="n">cgroup</td><td class="w">The view of the cgroup tree (prefer cgroup v2 on hosts: v1 has no safe delegation)</td><td class="w">Hides the host cgroup layout from the workload.</td></tr>
 <tr><td class="n">time</td><td class="w">Boot and monotonic clock offsets</td><td class="w">Rarely a security control.</td></tr>
@@ -512,7 +512,7 @@ int BPF_PROG(deny_fork, struct task_struct *task, unsigned long clone_flags)
 }</code></pre></li>
   <li><strong>cgroup BPF</strong>: <code>cgroup/connect4</code>, <code>cgroup/sock_create</code> and friends give per-container egress policy; the <code>CGROUP_DEVICE</code> program is how v2 enforces device access.</li>
   <li><strong>Practicalities</strong>: BPF LSM programs are normally built with libbpf against the kernel's BTF (BPF Type Format, <code>CONFIG_DEBUG_INFO_BTF</code>). You build them as CO-RE (compile once, run everywhere) objects. A CO-RE object adapts at load time to the kernel it runs on, so one build works across kernel versions. You attach them with <code>bpftool prog loadall … autoattach</code>. The <code>bpf</code> LSM must also appear in the boot-time <code>lsm=</code> list.</li>
-  <li><strong>Network</strong>: Cilium uses XDP and tc programs to enforce Kubernetes network policy. XDP (eXpress Data Path) runs a program as a packet arrives at the network driver. The tc (traffic control) tool is the Linux packet scheduler, which can run a program on packets as they enter or leave an interface. Both act on the packet path itself, so the policy applies before the packet reaches the workload.</li>
+  <li><strong>Network</strong>: Cilium uses tc and socket-level programs for Kubernetes network policy, and XDP for fast load balancing and early packet drops. XDP (eXpress Data Path) runs a program as a packet arrives at the network driver. The tc (traffic control) tool is the Linux packet scheduler, which can run a program on packets as they enter or leave an interface. Both act on the packet path itself, so the policy applies before the packet reaches the workload.</li>
 </ul>
 
 <h3>3. As a sensor, and sometimes an enforcer</h3>
@@ -521,6 +521,25 @@ int BPF_PROG(deny_fork, struct task_struct *task, unsigned long clone_flags)
   <li><strong>Tetragon</strong> (Cilium) can enforce in-kernel: a <code>TracingPolicy</code> can send <code>SIGKILL</code> to the offender or override a call's return value. <strong>KubeArmor</strong> enforces through LSMs.</li>
   <li><strong>The TOCTOU caveat:</strong> monitors that hook syscall entry (tracepoints, kprobes) see the user-space arguments <em>before</em> the kernel copies them. A second thread can change them afterwards, so what was checked is not what the kernel acts on. Prefer enforcing at LSM hooks, and treat syscall-entry hooks as detection.</li>
 </ul>
+<h4>Worked example: Tetragon kills a namespace escape attempt</h4>
+<p>This policy hooks <code>setns</code>, the call that <code>nsenter</code> uses to enter another namespace. The first kind of policy only reports. Adding the <code>matchActions</code> block makes Tetragon send <code>SIGKILL</code> to the caller. We adapted it from Tetragon's own documentation and did not run it here. Test it on a non-production node first, because it will kill legitimate tools that call <code>setns</code>.</p>
+<pre><code>apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: "deny-setns"
+spec:
+  kprobes:
+  - call: "sys_setns"
+    syscall: true
+    args:
+    - index: 0
+      type: "int"
+    - index: 1
+      type: "int"
+    selectors:
+    - matchActions:
+      - action: Sigkill
+</code></pre>
 <div class="callout"><b class="t">Which to pick</b>
 <p>Use seccomp for "this process never needs that syscall". Use Landlock for "this process only needs those files". Use BPF LSM or Tetragon for fleet-wide policy you want to change without touching the application. Use detection tooling (Falco) to learn when any of it is being tested.</p></div>
 
@@ -616,7 +635,7 @@ init=/app</code></pre>
 
 <h3>The costs</h3>
 <ul>
-  <li><strong>A VM is a stronger boundary, but it cannot guarantee safety.</strong> Escapes from the hypervisor and the VMM (virtual machine monitor) do exist. We still prefer a VM because its interface is much smaller. The guest can reach only a few emulated devices and VM exits (the points where the guest hands control to the host). A container, by contrast, can reach about 370 syscalls plus every driver, filesystem and network protocol.</li>
+  <li><strong>A VM is a stronger boundary, but it cannot guarantee safety.</strong> Escapes from the hypervisor and the VMM (virtual machine monitor) do exist. We still prefer a VM because its interface is much smaller. The guest can reach only a few emulated devices and VM exits (the points where the guest hands control to the host). A container, by contrast, can reach a few hundred syscalls (even after Docker's default filter) plus every driver, filesystem and network protocol.</li>
   <li><strong>Hardware side channels cross VMs:</strong> Spectre-class, L1TF and MDS attacks work across a hypervisor, so multi-tenant hosts use microcode updates, disabled SMT or core scheduling, and per-tenant host pinning.</li>
   <li><strong>Overhead:</strong> each guest costs a kernel's worth of memory and loses page-cache sharing with the host, and memory ballooning and dax/virtio-fs help only partly.</li>
   <li><strong>Confidential VMs</strong> (AMD SEV-SNP, Intel TDX) encrypt guest memory, so even a compromised host or hypervisor cannot read it. They protect the guest from the host, which is the opposite direction to everything else on this page. They do not remove the need to harden the guest.</li>
@@ -664,7 +683,7 @@ init=/app</code></pre>
 <h3>Cut-down userland</h3>
 <ul>
   <li><strong>Static, single-binary workloads:</strong> run a statically linked Rust or Go binary (or musl-linked C) as <code>/init</code> of a microVM. There is no shell, no package manager, no sshd and no libc to patch separately. An attacker with code execution has little to pivot with.</li>
-  <li><strong>Container-optimised hosts:</strong> <em>Flatcar</em> and <em>Fedora CoreOS</em> are immutable and auto-updating. <em>Bottlerocket</em> (from AWS) is Rust-heavy, with SELinux enforcing, a read-only root and no default shell. <em>Talos Linux</em> has no SSH or shell at all and is managed by an API, and Google's <em>Container-Optimized OS</em> is another.</li>
+  <li><strong>Container-optimised hosts:</strong> <em>Flatcar</em> and <em>Fedora CoreOS</em> are immutable and auto-updating. <em>Bottlerocket</em> (from AWS) is Rust-heavy, with SELinux enforcing, a read-only root and no shell on the host (an admin container provides one). <em>Talos Linux</em> has no SSH or shell at all and is managed by an API, and Google's <em>Container-Optimized OS</em> is another.</li>
   <li><strong>Small distributions:</strong> Alpine (musl, BusyBox), Wolfi/Chainguard images (built for minimal CVE exposure), Nix-built minimal closures, Buildroot and Yocto for embedded images.</li>
 </ul>
 
@@ -1013,7 +1032,7 @@ int main(int argc, char **argv) {
 </div>
 
 <h2 id="review"><small>19 &middot; Method</small>How this page was reviewed</h2>
-<p>We hand each version of this page to an independent AI reviewer and instruct it to be adversarial. It checks claims against documentation and by running code, hunts for errors and omissions, and scores against a written rubric. The bar is a weighted score above 9.0 with no criterion below 8. <strong>This version has not reached it:</strong> the latest round scored 8.5, and we keep revising and re-reviewing. You can find the rubric, the scoring rules and the round-by-round log, including rounds that fell short, on a <a href="review.html">separate review page</a>. An AI review is a useful filter. For anything you depend on, you still need an expert human audit.</p>
+<p>We hand each version of this page to an independent AI reviewer and instruct it to be adversarial. It checks claims against documentation and by running code, hunts for errors and omissions, and scores against a written rubric. The bar is a weighted score above 9.0 with no criterion below 8. <strong>This version has not reached it:</strong> the latest round scored 8.4, and we keep revising and re-reviewing. You can find the rubric, the scoring rules and the round-by-round log, including rounds that fell short, on a <a href="review.html">separate review page</a>. An AI review is a useful filter. For anything you depend on, you still need an expert human audit.</p>
 
 <h2 id="sources"><small>20 &middot; Further reading</small>Where to read more</h2>
 <ul>
