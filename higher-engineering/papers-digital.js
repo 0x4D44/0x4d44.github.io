@@ -129,6 +129,14 @@
     return svg(494, 190, "Block diagram of a greenhouse vent controller. Rain sensor R and wind sensor W feed a NOR gate whose output goes to input in1 of a microcontroller. A temperature sensor feeds analogue input an1. Output out1 of the microcontroller drives the vent motor.", b);
   })();
 
+  /* digital-06(c): building blocks for the per-gate trace patterns */
+  const NAND_G1 = "\\b(?:g1|gate 1|gate one|first|1st|left|top left|first nand|first gate)\\b";
+  const GATE4 = "(?:g4|gate 4|gate four|last|final|4th|fourth|right(?:-hand)?|output gate)";
+  const OUTV = "(?:output|outputs|give|gives|go|goes|become|becomes|are|is|=|make|makes|produce|produces)";
+  const FILL = "(?:both|each|also|then|now|all|of|them|they|it|will|be|a|an|the|output|outputs|go|goes|are|is|become|becomes|to|equal|equals)";
+  const P1 = "\\bp\\W+(?:(?:is|are|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b";
+  const R1 = "\\br\\W+(?:(?:is|are|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b";
+
   /* ---------- text-answer building blocks ---------- */
   const NEGW = "not|never|does ?n'?t|do ?n'?t|isn'?t|aren'?t|won'?t|wasn'?t|didn'?t|wouldn'?t";
 
@@ -344,23 +352,26 @@
             minWords: 14,
             points: [
               { desc: "G1 has both inputs at 1, so its output X is 0",
-                not: ["\\bx\\W+(?:is|=|equals|becomes|goes|gives)?\\W*(?:high|1|one)\\b"],
+                not: ["\\bx\\W+(?:(?:is|=|equals|goes|becomes|gives|now)\\W+){0,2}(?:high|1|one)\\b", NAND_G1 + "[^.;]{0,50}?\\b(?:gives?|outputs?)\\W+(?:(?:a|an|the)\\W+)?(?:1|high|one)\\b"],
                 any: [
-                  "\\bx\\W+(?:\\w+\\W+){0,4}(?:0|zero|low)\\b",
-                  "\\b(?:g1|gate 1|gate one|first|1st|left|first nand|top left)\\W+(?:\\w+\\W+){0,10}(?:0|zero|low)\\b",
-                  "\\b(?:g1|gate 1|gate one|first|1st|left)\\W+(?:\\w+\\W+){0,12}(?:both|two)\\W+(?:\\w+\\W+){0,3}(?:1|high|one)\\b",
+                  "\\bx\\b[^.;]{0,24}?\\b(?:0|zero|low)\\b",
+                  NAND_G1 + "[^.;]{0,60}?\\b(?:0|zero|low)\\b",
+                  NAND_G1 + "[^.;]{0,50}?\\b(?:both|two)\\W+(?:\\w+\\W+){0,3}(?:1|high|one|1s|ones)\\b",
                 ] },
               { desc: "G2 and G3 each have an input at 0 (from X), so both outputs P and R are 1",
                 any: [
-                  "\\b(?:p|g2|gate 2)\\W+(?:and|&)\\W+(?:r|g3|gate 3)\\W+(?:(?:are|is|both|output|outputs|gives|give|go|goes|become|becomes|equal|equals|will be|will|then|also|each|now|all|they|it|so|=)\\W+){0,4}(?:1|high|one)\\b",
-                  "\\b(?:p|g2|gate 2)\\W+(?:(?:are|is|both|output|outputs|gives|give|go|goes|become|becomes|equal|equals|will be|will|then|also|each|now|all|they|it|so|=)\\W+){0,4}(?:1|high|one)\\b[^;.]{0,40}\\b(?:r|g3|gate 3)\\W+(?:(?:are|is|both|output|outputs|gives|give|go|goes|become|becomes|equal|equals|will be|will|then|also|each|now|all|they|it|so|=)\\W+){0,4}(?:1|high|one)\\b",
-                  "\\b(?:middle|second and third|2nd and 3rd|other two|both)\\W+(?:\\w+\\W+){0,4}(?:gates?|nands?)\\b[^.;]{0,40}\\b(?:output|outputs|gives|give|go|goes|become|becomes|are|is|=)\\W+(?:both\\W+)?(?:1|high|one)\\b",
+                  P1 + "[\\s\\S]{0,100}?" + R1,
+                  R1 + "[\\s\\S]{0,100}?" + P1,
+                  "\\b(?:p|g2|gate 2|gate two)\\W+(?:and|&)\\W+(?:r|g3|gate 3|gate three)\\b[^.;]{0,60}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
+                  "\\b(?:top and bottom|upper and lower|second and third|2nd and 3rd|middle|other two|remaining two|two middle|both of the others)\\W+(?:\\w+\\W+){0,4}?(?:gates?|nands?)?\\b[^.;]{0,40}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
+                  "\\b(?:g2|gate 2|gate two)\\W+(?:(?:output|outputs|gives?|is|=|goes|will output|now|also|then)\\W+){1,2}(?:1|high|one)\\b[\\s\\S]{0,100}?\\b(?:g3|gate 3|gate three)\\W+(?:(?:output|outputs|gives?|is|=|goes|will output|now|also|then)\\W+){1,2}(?:1|high|one)\\b",
                   "\\b(?:one input|an input|input)\\W+(?:\\w+\\W+){0,4}(?:0|low|zero)\\W+(?:\\w+\\W+){0,6}(?:output|outputs|gives|so)\\W+(?:\\w+\\W+){0,2}(?:1|high|one)\\b",
                 ] },
               { desc: "G4 has both inputs at 1, so Q is 0",
+                not: ["\\bq\\W+(?:(?:is|=|equals|goes|becomes|gives|will be|now|also|then)\\W+){0,2}(?:1|high|one)\\b"],
                 any: [
-                  "\\b(?:g4|gate 4|gate four|last|final|4th|fourth|right(?:-hand)?|output gate)\\W+(?:\\w+\\W+){0,8}(?:both|two)\\W+(?:\\w+\\W+){0,3}(?:1|high|one)\\b",
-                  "\\b(?:g4|gate 4|gate four|last|final|4th|fourth|right(?:-hand)?|output gate)\\W+(?:\\w+\\W+){0,10}(?:0|zero|low)\\b",
+                  "\\b" + GATE4 + "\\b[^.;]{0,50}?\\b(?:both|two)\\W+(?:\\w+\\W+){0,3}(?:1|high|one|1s|ones)\\b",
+                  "\\b" + GATE4 + "\\b[^.;]{0,50}?\\b(?:output|outputs|gives?|giving|q)\\b\\W+(?:(?:is|=|equals|goes|becomes|will be|now|also|then|a)\\W+){0,2}(?:0|zero|low)\\b",
                   "\\bp\\W+(?:and|&)\\W+r\\W+(?:\\w+\\W+){0,6}(?:both|1|high)\\W+(?:\\w+\\W+){0,10}(?:q|output)\\W+(?:\\w+\\W+){0,3}(?:0|zero|low)\\b",
                   "\\bq\\W+(?:\\w+\\W+){0,3}(?:0|zero|low)\\W+(?:\\w+\\W+){0,3}(?:because|since|as)\\W+(?:\\w+\\W+){0,8}(?:both|p|r)\\W+(?:\\w+\\W+){0,8}(?:1|high|one)\\b",
                 ] },

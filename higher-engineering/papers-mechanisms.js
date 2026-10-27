@@ -392,16 +392,19 @@
   {
     const who = (l) => R`(?:(?:cylinder|piston|ram|rod)\s+${l}\b${K(25)}|\b${l}\s+(?:then\s+|now\s+|also\s+|to\s+|will\s+|can\s+|starts?\s+to\s+|begins?\s+to\s+|starts?\s+|begins?\s+)?)`;
     const OUT2 = R`(?:${OUT}|\bout\b)`;
+    /* a result for cylinder l: words (piston A outstrokes) or the shorthand l+ / l- */
+    const outX = (l) => R`(?:${who(l)}${OUT2}|\b${l}\s?\+(?![\w+]))`;
+    const inX = (l) => R`(?:${who(l)}${IN}|\b${l}\s?[-\u2212](?![\w-]))`;
     const veto = (sig) => R`${sig}${K(14)}\b(?:not|never|n't)\b`;
     /* a signal and its result, in either order, with no other signal named in between (sentences may run on) */
     const S = (stop, n) => R`(?:(?!${stop})[\s\S]){0,${n}}`;
     const step = (sig, stop, res) => [R`${sig}${S(stop, 170)}${res}`, R`${res}${S(stop, 170)}${sig}`];
     TXT.seq = {
       points: [
-        { desc: "START is pressed (with b0 pressed): pilot 14 of valve A, which changes state, and piston A outstrokes", not: [veto(R`\bstart\b`)], any: step(R`\bstart\b`, R`\ba\s?[01]\b|\bb\s?1\b`, R`${who("a")}${OUT2}`) },
-        { desc: "Piston A actuates a1, which supplies pilot 14 of valve B, so B changes state and piston B outstrokes", not: [veto(R`\ba\s?1\b`)], any: step(R`\ba\s?1\b`, R`\bstart\b|\ba\s?0\b|\bb\s?[01]\b`, R`${who("b")}${OUT2}`) },
-        { desc: "Piston B actuates b1, which supplies pilot 12 of valve A, so A changes state and piston A instrokes", not: [veto(R`\bb\s?1\b`)], any: step(R`\bb\s?1\b`, R`\bstart\b|\ba\s?[01]\b|\bb\s?0\b`, R`${who("a")}${IN}`) },
-        { desc: "Piston A actuates a0, which supplies pilot 12 of valve B, so B changes state and piston B instrokes", not: [veto(R`\ba\s?0\b`)], any: step(R`\ba\s?0\b`, R`\bstart\b|\ba\s?1\b|\bb\s?[01]\b`, R`${who("b")}${IN}`) },
+        { desc: "START is pressed (with b0 pressed): pilot 14 of valve A, which changes state, and piston A outstrokes", not: [veto(R`\bstart\b`)], any: step(R`\bstart\b`, R`\ba\s?[01]\b|\bb\s?1\b`, outX("a")) },
+        { desc: "Piston A actuates a1, which supplies pilot 14 of valve B, so B changes state and piston B outstrokes", not: [veto(R`\ba\s?1\b`)], any: step(R`\ba\s?1\b`, R`\bstart\b|\ba\s?0\b|\bb\s?[01]\b`, outX("b")) },
+        { desc: "Piston B actuates b1, which supplies pilot 12 of valve A, so A changes state and piston A instrokes", not: [veto(R`\bb\s?1\b`)], any: step(R`\bb\s?1\b`, R`\bstart\b|\ba\s?[01]\b|\bb\s?0\b`, inX("a")) },
+        { desc: "Piston A actuates a0, which supplies pilot 12 of valve B, so B changes state and piston B instrokes", not: [veto(R`\ba\s?0\b`)], any: step(R`\ba\s?0\b`, R`\bstart\b|\ba\s?1\b|\bb\s?[01]\b`, inX("b")) },
       ],
       sample: "When START is pressed, with b0 already pressed, air is supplied to pilot 14 of valve A. Valve A changes state and piston A outstrokes. At the end of its stroke a1 is actuated by piston A and supplies pilot 14 of valve B, so valve B changes state and piston B outstrokes. Then b1 is actuated by piston B, which supplies pilot 12 of valve A, so valve A changes state and piston A instrokes. Finally a0 is actuated by piston A, which supplies pilot 12 of valve B, so valve B changes state and piston B instrokes.",
       model: R`<ul><li>START is pressed (b0 is already pressed), so air reaches pilot 14 of valve A; valve A changes state and piston A outstrokes (1)</li><li>Piston A actuates limit valve a1, which supplies pilot 14 of valve B; valve B changes state and piston B outstrokes (1)</li><li>Piston B actuates b1, which supplies pilot 12 of valve A; valve A changes state and piston A instrokes (1)</li><li>Piston A actuates a0, which supplies pilot 12 of valve B; valve B changes state and piston B instrokes (1); the cycle then waits for START</li></ul><p>Each step needs its limit valve and its result. Writing only &quot;A+ then B+ then A− then B−&quot; repeats the question and earns nothing. Say <em>actuates</em> for the limit valves, <em>changes state</em> for the 5/2 valves, <em>outstrokes</em> or <em>instrokes</em> for the pistons.</p>`,
@@ -445,15 +448,26 @@
   {
     const BS = R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bcannot\b|\bno\b`, 24)}\bslip`;
     const JAMW = R`(?:jam\w*|overload\w*|stuck|stall\w*|seiz\w*|protect\w*|safety|damag\w*|block\w*|snag\w*|too (?:much|heavy|stiff)|stiff|struggl\w*|overheat\w*|burn\w*)`;
+    const BNOSLIP = R`\bbelts?\b${C("chain", 22)}\b(?:does ?n'?t|doesn't|do not|never|cannot|can't|won't|will not|not)\s+(?:\w+\s+){0,2}slip`;
+    const RBAD = R`(?:vary|varies|varying|inaccura\w*|inexact|imprecise|not\s+(?:exact|accurate|precise|constant|fixed|positive|steady)|isn't\s+(?:exact|accurate|precise|constant|fixed)|lag\w*|lost|loses|lose|out of (?:step|time|sync|phase)|changes?|drops?|falls?|reduced|slower|uneven|unreliable|not\s+the\s+same)`;
+    const GOOD = R`(?:exact|accurate|precise|constant|fixed|positive|correct|steady|synchron\w*)`;
+    const NOCH = R`\bchains?\b${C(R`belt|\bnot\b|n't|\bnever\b|\bcannot\b|\bno\b`, 25)}\bslip`;
     const NOILCH = R`\bchains?\b${C("belt", 40)}\b(?:no|not|without|doesn'?t|does not|don'?t|never)\s+(?:\w+\s+){0,3}(?:oil\w*|lubricat\w*|grease\w*|lubricant)`;
     TXT.drive = {
       points: [
         {
           desc: "A belt slips if the mixer jams or overloads, which protects the motor and drive (a chain would stall or break)",
           group: "slipjam", negOK: true,
-          not: [R`\bchains?\b${C(R`belt|\bnot\b|n't|\bnever\b|\bcannot\b|\bno\b`, 25)}\bslip`],
+          not: [NOCH, BNOSLIP],
           all: [BS, JAMW],
           win: 140,
+        },
+        {
+          desc: "A belt slips if the mixer jams or overloads, which protects the motor and drive (a chain would stall or break)",
+          group: "slipjam", negOK: true,
+          not: [NOCH, BNOSLIP, R`\bnot\s+slip`],
+          all: [R`\bslips?\b|\bslipped\b|\bslipping\b|\bslide`, JAMW, R`\bbelts?\b`],
+          win: 90,
         },
         {
           desc: "A belt slips if the mixer jams or overloads, which protects the motor and drive (a chain would stall or break)",
@@ -480,22 +494,32 @@
           desc: "A chain does not slip, so the speed ratio is exact; a belt can slip, so its ratio is not exact",
           group: "ratio",
           negOK: true,
-          not: [R`\bchains?\b${C("belt", 20)}\b(?:not|isn't|is not|never)\s+(?:a\s+)?(?:positive|exact|accurate|precise)`, R`\bchains?\b${C(R`belt|\bnot\b|n't|\bnever\b|\bcannot\b|\bno\b`, 25)}\bslip`],
+          not: [
+            R`\bchains?\b${C("belt", 20)}\b(?:not|isn't|is not|never)\s+(?:a\s+)?(?:positive|exact|accurate|precise)`,
+            NOCH,
+            R`\bchains?\b${C(R`belt|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b|${GOOD}`, 40)}\b${RBAD}`,
+            R`\bchains?\b${C("belt", 25)}\b(?:does ?n'?t|doesn't|do not|never|cannot|can't|not)\s+slip\w*${K(30)}\b(?:vary|varies|varying|inaccura\w*|lag\w*|lose|loses|lost|change\w*|drops?|uneven|out of (?:step|time|sync))`,
+            R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`, 30)}\b${GOOD}\s+(?:\w+\s+){0,1}(?:ratio|speed|drive|transmission)`,
+            R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`, 25)}\bslips?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b|${RBAD}|jam|overload|protect`, 30)}\b${GOOD}\b`,
+            BNOSLIP,
+          ],
           any: [
             R`\bchains?\b${C("belt", 30)}\b(?:positive|synchron\w*)`,
-            R`\bchains?\b${C("belt", 40)}\b(?:exact|accurate|precise|constant|fixed|correct)\s+(?:\w+\s+){0,1}(?:ratio|speed)`,
+            R`\bchains?\b${C("belt", 40)}\b${GOOD}\s+(?:\w+\s+){0,1}(?:ratio|speed)`,
             R`\bchains?\b${C("belt", 30)}\b(?:does ?n'?t|doesn't|do ?n'?t|cannot|can't|never|will not|won't|would not|does not|do not|can not|no)\s+slip`,
-            R`\b(?:exact|accurate|precise|constant|fixed)\s+(?:\w+\s+){0,1}(?:speed\s+)?ratio\b${C("belt", 50)}\bchains?\b`,
-            R`\bbelts?\b${C("chain", 25)}\bslip\w*${C(R`chain|jam|overload|protect`, 50)}\b(?:speed|ratio|vary|varies|varying|inaccura\w*|exact|precise|timing|lag\w*|change\w*)`,
+            R`\b${GOOD}\s+(?:\w+\s+){0,1}(?:speed\s+)?ratio\b${C("belt", 50)}\bchains?\b`,
+            R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`, 25)}\bslip\w*${C(R`chain|jam|overload|protect|${GOOD}`, 50)}\b(?:speed|ratio|${RBAD})`,
+            R`\bbelts?\b${C("chain", 40)}\b(?:inexact|not\s+(?:exact|accurate|precise|positive)|inaccura\w*|imprecise)`,
           ],
         },
         {
           desc: "A belt is quieter, cheaper or lighter; or a chain carries more torque and lasts longer (a chain is noisy and stretches)",
           group: "other",
+          not: [R`\bchains?\b(?:\s+drive)?\s+(?:is|are)\s+(?:the\s+|a\s+)?(?:better|best|superior|preferable|ideal|good|great)${K(30)}\b(?:because|as|since|so)\b${K(20)}\b(?:it|they)\s+(?:is|are)\s+(?:\w+\s+){0,2}(?:nois\w*|loud|heav\w*|expensive|costly|rattl\w*|stretch\w*)`],
           any: [
             R`\bbelts?\b${C("chain", 70)}\b(?:quiet\w*|silent|less noisy|smooth\w*|cheap\w*|light\w*|simpl\w*)`,
             R`\bchains?\b${C("belt", 40)}\b(?:nois\w*|loud|rattl\w*|stretch\w*|wear\w*|heav\w*|expensive|costly)`,
-            R`\bchains?\b${C("belt", 40)}\b(?:strong\w*|robust|durable|(?:higher|greater|more|larger|bigger)\s+(?:torque|power|load)|(?:carr\w+|transmit\w*|handl\w*)\s+(?:\w+\s+){0,2}(?:torque|power|load))`,
+            R`\bchains?\b${C("belt", 40)}\b(?:stronger|more\s+(?:robust|durable)|longer[- ]lasting|lasts?\s+longer|(?:higher|greater|more|larger|bigger)\s+(?:torque|power|load)|(?:carr\w+|transmit\w*|handl\w*)\s+(?:\w+\s+){0,2}(?:torque|power|load))`,
           ],
         },
       ],
@@ -505,34 +529,65 @@
   }
 
   /* mechanisms-15: flexible coupling, thrust bearing, clutch */
-  TXT.flex = {
-    points: [
-      {
-        desc: "It copes with a small misalignment between the motor shaft and the gearbox shaft",
-        group: "mis", negOK: true,
-        not: [
-          R`\brigid\b${C(NEGS, 40)}\b(?:allow|tolerat|cope|accommodat|absorb|take|handle|deal)\w*${K(25)}misalign`,
-          R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}misalign`,
-        ],
-        any: [R`\bmisalign\w*`, R`\bnot\s+(?:\w+\s+){0,2}(?:perfectly\s+)?(?:aligned|lined up|in line)`, R`\b(?:slight|small|minor|little|tiny)\s+(?:\w+\s+){0,1}(?:error|errors|offset|difference|gap|misfit|movement)`, R`\bout of (?:line|alignment|true)`],
-      },
-      {
-        desc: "It absorbs shock loads and vibration (for example when the conveyor starts)",
-        group: "shock", negOK: true,
-        not: [R`\brigid\b${C(NEGS, 30)}\b(?:absorb\w*|damp\w*|cushion\w*)`, R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}(?:absorb\w*|damp\w*|cushion\w*)`],
-        any: [R`\bshocks?\b`, R`\bvibrat\w*`, R`\bdamp\w*`, R`\bcushion\w*`, R`\bsudden\s+(?:load|start|stop|torque|jerk)`, R`\babsorb\w*`],
-      },
-    ],
-    sample: "A flexible coupling allows for small misalignment between the motor shaft and the gearbox shaft, and it absorbs shock loads and vibration when the conveyor starts.",
-    model: R`<ul><li>It allows for (small) misalignment between the two shafts (1)</li><li>It absorbs shock loads or vibration, so the motor and gearbox are not damaged (1)</li></ul><p>Also acceptable: it protects the bearings from side loads, and it copes with small changes in shaft position as the machine warms up. Do not accept &quot;it joins the shafts&quot; (a rigid coupling does that too) or &quot;it is cheaper&quot;.</p>`,
-  };
+  {
+    /* up to n characters of one clause that does not turn to a new idea (and, but, so, which...) */
+    const CL = (n) => R`(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bwhile\b|\bwhereas\b|\bthat\b)[^.;,]){0,${n}}`;
+    const NEGV = R`(?:cannot|can't|can not|can\s+never|unable to|(?:does|do|did|will|would|could|should)\s?n'?o?t|doesn't|don't|won't|not|never|fails? to|no\s+(?:ability|way|power|capacity)\s+to)`;
+    const GIVE = R`(?:cope|allow|tolerat|accommodat|accept|deal|handle|take|compensat|stand|permit|adjust|manage|put up|work|function|operate)`;
+    const AB = R`(?:absorb|damp|cushion|soak|reduc|smooth|isolat|protect|cope|deal|handle|tolerat|withstand|accommodat|prevent|stop|take up|dissipat|lessen|minimi[sz]e)`;
+    const SHK = R`(?:shocks?|vibrat\w*|jerks?|jolts?|judder\w*|sudden\s+(?:load|start|stop|torque|jerk)s?|surg\w+|snatch\w*)`;
+    const TRANS = R`(?:transmits|passes|sends|carries|(?:will|would|can|could|just|simply|also|still|directly|fully|all)\s+(?:also\s+)?(?:transmit|pass|send|carry))`;
+    TXT.flex = {
+      points: [
+        {
+          desc: "It copes with a small misalignment between the motor shaft and the gearbox shaft",
+          group: "mis", negOK: true,
+          not: [
+            R`\brigid\b${C(NEGS, 40)}\b${GIVE}\w*${K(25)}misalign`,
+            R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}misalign`,
+            R`\b${NEGV}\b${CL(30)}\b${GIVE}\w*${K(30)}misalign`,
+            R`\bno\s+(?:\w+\s+)?(?:allowance|tolerance|provision|room|give|flexibility|movement|play|compensation|capacity)\b${K(25)}misalign`,
+            R`\bmisalign\w*${K(15)}\b(?:is|are|would be|will be)\s+(?:a\s+|an\s+)?(?:problem|issue|not (?:allowed|possible|tolerated|accepted)|impossible|bad)`,
+            R`\bwithout\s+(?:any\s+)?(?:allowance|tolerance|provision|room|flexibility)\b${K(25)}misalign`,
+          ],
+          any: [R`\bmisalign\w*`, R`\bnot\s+(?:\w+\s+){0,2}(?:perfectly\s+)?(?:aligned|lined up|in line)`, R`\b(?:slight|small|minor|little|tiny)\s+(?:\w+\s+){0,1}(?:error|errors|offset|difference|gap|misfit|movement)`, R`\bout of (?:line|alignment|true)`],
+        },
+        {
+          desc: "It absorbs shock loads and vibration (for example when the conveyor starts)",
+          group: "shock", negOK: true,
+          not: [
+            R`\brigid\b${C(NEGS, 30)}\b(?:absorb\w*|damp\w*|cushion\w*)`,
+            R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}(?:absorb\w*|damp\w*|cushion\w*)`,
+            R`\b${NEGV}\b${CL(30)}\b${AB}\w*${K(25)}\b${SHK}`,
+            R`\b${NEGV}\b${CL(20)}\b(?:absorb|damp|cushion|soak)\w*`,
+            R`\b${TRANS}\s+(?:on\s+|across\s+)?(?:all\s+|any\s+|the\s+|every\s+|most\s+of\s+the\s+|these\s+|those\s+|its\s+)*(?:\w+\s+)?${SHK}`,
+            R`\b${SHK}${K(30)}\b(?:is|are)\s+(?:all\s+|then\s+|just\s+|simply\s+|fully\s+)?(?:transmitted|passed|sent|carried)`,
+          ],
+          any: [
+            R`\b${AB}\w*${K(40)}\b${SHK}`,
+            R`\b${SHK}\w*\b${K(30)}\b(?:absorb|damp|cushion|soak|reduc|smooth|protect|isolat)\w*`,
+            R`\b(?:shock|vibration)[- ]?(?:absorb|damp|proof|resist)\w*`,
+            R`\bprotect\w*\s+(?:the\s+)?(?:motor|gearbox|gears?|bearings?|shafts?|machine)`,
+            R`\bsoft(?:en)?s?\s+(?:the\s+)?(?:start|load|shock)`,
+            R`\babsorb\w*\s+(?:the\s+)?(?:\w+\s+){0,2}(?:load|force|impact|movement)`,
+          ],
+        },
+      ],
+      sample: "A flexible coupling allows for small misalignment between the motor shaft and the gearbox shaft, and it absorbs shock loads and vibration when the conveyor starts.",
+      model: R`<ul><li>It allows for (small) misalignment between the two shafts (1)</li><li>It absorbs shock loads or vibration, so the motor and gearbox are not damaged (1)</li></ul><p>Also acceptable: it protects the bearings from side loads, and it copes with small changes in shaft position as the machine warms up. Do not accept &quot;it joins the shafts&quot; (a rigid coupling does that too) or &quot;it is cheaper&quot;, or a claim that a flexible coupling cannot cope with misalignment or passes shocks on to the gearbox.</p>`,
+    };
+  }
   TXT.thrust = {
     points: [
       {
         desc: "The worm pushes along its own shaft, so there is an axial (end) load that the thrust bearing carries",
         all: [
-          R`\b(?:axial|axially|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|end\s*(?:load|thrust|force)|thrust\s+(?:load|force)|sideways|lengthways|longways|parallel\s+to\s+(?:the\s+)?(?:shaft|axis))`,
+          R`\b(?:axial|axially|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|end\s*(?:load|thrust|force)|thrust\s+(?:load|force)|lengthways|longways|parallel\s+to\s+(?:the\s+)?(?:shaft|axis))`,
           R`\b(?:carr\w*|support\w*|take[sn]?|taking|withstand\w*|resist\w*|absorb\w*|handl\w*|cop(?:e|es|ing)|stop\w*|prevent\w*|hold\w*|against|deal\w*|bear\w*)\b`,
+        ],
+        not: [
+          R`(?:\bno\b|\bnot\b(?!\s+only)|n't|\bnever\b|\bcannot\b|\bwithout\b|\bnor\b|\bneither\b)(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bthat\b)[^.;,]){0,40}\b(?:axial|axially|along|end\s*(?:load|thrust|force)|thrust|lengthways|longways|parallel)`,
+          R`\b(?:axial|end\s*(?:load|thrust|force)|thrust\s+(?:load|force))\b(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b)[^.;,]){0,25}\b(?:not|never|cannot|can't|unable)\s+(?:be\s+)?(?:carr|support|take|withstand|resist|handl|bear|stop)\w*`,
         ],
         win: 110,
       },
@@ -540,30 +595,45 @@
     sample: "The teeth of the worm push it along its own shaft, and the thrust bearing carries this axial load.",
     model: R`<ul><li>The worm pushes sideways along its own shaft (an axial or thrust load), and the thrust bearing is designed to carry a load along the shaft (1)</li></ul><p>Do not accept &quot;to reduce friction&quot; on its own, or a radial load: a radial bearing carries loads across the shaft.</p>`,
   };
-  TXT.clutch = {
-    points: [
-      {
-        desc: "The friction plates slip at first, so the load is taken up gradually (no jerk)",
-        group: "slip",
-        all: [R`\bslip\w*`, R`(?:gradual\w*|gentl\w*|smooth\w*|progress\w*|slowly|soft\w*|eased|ease\b|builds? up|picks? up|takes? up|slow\w*)`],
-        win: 130,
-      },
-      {
-        desc: "The friction plates slip at first, so the load is taken up gradually (no jerk)",
-        group: "slip", negOK: true,
-        all: [R`\bslip\w*`, R`(?:without|no|avoid\w*|prevent\w*|stops?)\s+(?:a\s+|any\s+)?(?:sudden\s+)?(?:jerk\w*|shock\w*|snatch\w*|lurch\w*|jolt\w*)`],
-        win: 130,
-      },
-      {
-        desc: "When both plates reach the same speed they lock together and the drive passes through",
-        group: "lock", negOK: true,
-        not: [R`(?:does ?n'?t|doesn't|does not|never|cannot|can't|won't|will not)\s+(?:\w+\s+){0,2}lock`],
-        any: [R`\block\w*`, R`\b(?:same|equal|matching|matched)\s+(?:\w+\s+){0,1}(?:speed|rate)`, R`\bstops?\s+slipping`, R`\bno\s+(?:more\s+)?slip\w*`, R`\b(?:fully|firmly|tightly|completely)\s+(?:engage\w*|grip\w*|clamp\w*|press\w*)`, R`\b(?:engage\w*|grip\w*|clamp\w*)\s+(?:fully|firmly|tightly|completely)`, R`\bspeeds?\s+(?:\w+\s+){0,2}(?:match\w*|equal|same)`, R`\bmatch\w*\s+(?:the\s+)?speeds?`, R`\bcatch(?:es)?\s+up`],
-      },
-    ],
-    sample: "The friction plates slip against each other at first, so the load is taken up gradually and the conveyor starts smoothly. When both plates reach the same speed they lock together and the drive passes through without slip.",
-    model: R`<ul><li>The clutch plates slip at first (friction between the plates), so the conveyor is brought up to speed gradually and smoothly, with no jerk (1)</li><li>When the two plates reach the same speed they lock together, and the full drive passes through (1)</li></ul><p>Also acceptable: the slip lets the motor reach its running speed before it takes the load. Do not accept &quot;it connects the motor to the conveyor&quot; with no mention of slip or gradual starting.</p>`,
-  };
+  {
+    const SLIP = R`(?:slip\w*|slid\w*|skid\w*|slither\w*)`;
+    const IMM = R`(?:immediate\w*|instant\w*|straight\s?away|right\s+away|at\s+once|straight\s+off|suddenly|abrupt\w*)`;
+    /* "does not slip" only counts against the answer when it never says the plates slip at first */
+    const NOSLIP = R`^(?![\s\S]*\b(?:at first|initially|to begin|to start|begin\w*|start\w*|first|then|until|once|when|after|eventually|finally|before)\b)[\s\S]*\b(?:does ?n'?t|do not|never|cannot|can't|won't|will not|not|no)\s+(?:\w+\s+){0,2}${SLIP}`;
+    const EASY = R`(?:gradual\w*|gentl\w*|smooth\w*|progress\w*|slowly|soft\w*|eased?|builds? up|picks? up|tak(?:es|ing|e)\s+up|slow\w*)`;
+    const MOTORFIRST = R`\bmotor\b${K(40)}\b(?:speed\w*|reach\w*|gets?|gain\w*|build\w*|attain\w*|accelerat\w*)\b${K(50)}\b(?:before|until|while)\b`;
+    TXT.clutch = {
+      points: [
+        {
+          desc: "The friction plates slip at first, so the load is taken up gradually (no jerk)",
+          group: "slip", not: [NOSLIP],
+          all: [R`\b${SLIP}`, R`(?:${EASY}|${MOTORFIRST}|\bbefore\b${K(40)}\b(?:load|conveyor|driven|drive)\w*)`],
+          win: 150,
+        },
+        {
+          desc: "The friction plates slip at first, so the load is taken up gradually (no jerk)",
+          group: "slip", negOK: true, not: [NOSLIP],
+          all: [R`\b${SLIP}`, R`(?:without|no|avoid\w*|prevent\w*|stops?)\s+(?:a\s+|any\s+)?(?:sudden\s+)?(?:jerk\w*|shock\w*|snatch\w*|lurch\w*|jolt\w*)`],
+          win: 130,
+        },
+        {
+          desc: "When both plates reach the same speed they lock together and the drive passes through (or the motor reaches speed before the conveyor is fully driven)",
+          group: "lock", negOK: true,
+          not: [
+            R`(?:does ?n'?t|doesn't|does not|never|cannot|can't|won't|will not)\s+(?:\w+\s+){0,2}lock`,
+            R`\block\w*${Cc(R`\bthen\b|\buntil\b`, 40)}\b${IMM}`,
+            R`\b${IMM}${Cc(R`\bthen\b|\buntil\b`, 40)}\block\w*`,
+            R`\b(?:engage\w*|grip\w*|connect\w*)${Cc(R`\bthen\b|\buntil\b`, 25)}\b${IMM}`,
+            NOSLIP,
+          ],
+          any: [R`\block\w*`, R`\b(?:same|equal|matching|matched)\s+(?:\w+\s+){0,1}(?:speed|rate)`, R`\bstops?\s+slipping`, R`\bno\s+(?:more\s+)?slip\w*`, R`\b(?:fully|firmly|tightly|completely)\s+(?:engage\w*|grip\w*|clamp\w*|press\w*|driven|drives?)`, R`\b(?:engage\w*|grip\w*|clamp\w*)\s+(?:fully|firmly|tightly|completely)`, R`\bspeeds?\s+(?:\w+\s+){0,2}(?:match\w*|equal|same)`, R`\bmatch\w*\s+(?:the\s+)?speeds?`, R`\bcatch(?:es)?\s+up`, R`\b(?:turn|rotat|spin|move|run)\w*\s+together`,
+            R`\bmotor\b${K(40)}\b(?:reach\w*|get|gets|gain\w*|attain\w*)\b${K(30)}\b(?:running|full|operating|working|normal|its)\s+speed`, R`\bbefore\b${K(40)}\b(?:fully|completely|full)\s+(?:driven|loaded|load|engaged|connected|drive)`],
+        },
+      ],
+      sample: "The friction plates slip against each other at first, so the load is taken up gradually and the conveyor starts smoothly. When both plates reach the same speed they lock together and the drive passes through without slip.",
+      model: R`<ul><li>The clutch plates slip at first (friction between the plates), so the conveyor is brought up to speed gradually and smoothly, with no jerk (1)</li><li>When the two plates reach the same speed they lock together, and the full drive passes through (1)</li></ul><p>Also acceptable: &quot;the clutch slips while taking up the load, so the motor reaches its running speed before the conveyor is fully driven&quot; (1 for the slip taking up the load gradually, 1 for the motor reaching speed before the full drive). Do not accept &quot;it connects the motor to the conveyor&quot; with no mention of slip or gradual starting, or plates that lock together at once with no slip.</p>`,
+    };
+  }
 
   B.mechanisms = {
     intro:
@@ -670,7 +740,7 @@
             why: R`Each pair of meshing gears reverses the direction of rotation. A to B reverses it and B to C reverses it again, so C turns the same way as A: clockwise. The idler only decides the direction, not the ratio, and it does not lock anything.`,
           },
           {
-            label: "(d)", type: "num", marks: 2, a: 22.1, tol: 0.05, unit: "N m",
+            label: "(d)", type: "num", marks: 2, a: 22.08, tol: 0.5, unit: "N m",
             q: R`Calculate the output torque of the gear train, in N m.`,
             why: R`<p>$T_{out} = T_{in} \times \text{VR} \times \eta$ (1)</p><p>$T_{out} = 6.0 \times 4 \times 0.92 = 22.1\ \text{N m}$ (1)</p><p>An ideal train would give 24 N m; the 8% loss takes off the rest.</p>`,
           },
@@ -740,7 +810,7 @@
         stem: R`<p>A car of mass <strong>1400 kg</strong> brakes to a stop from <strong>25 m s⁻¹</strong>. The brake discs are made of steel, with a specific heat capacity of <strong>490 J kg⁻¹ K⁻¹</strong>.</p>`,
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 437.5, tol: 0.1, unit: "kJ",
+            label: "(a)", type: "num", marks: 2, a: 437.5, tol: 0.5, unit: "kJ",
             q: R`Calculate the kinetic energy of the car before braking, in kJ.`,
             why: R`<p>$E_k = \tfrac{1}{2}mv^2 = \tfrac{1}{2} \times 1400 \times 25^2$ (1)</p><p>$E_k = 437\,500\ \text{J} = 437.5\ \text{kJ}$ (1)</p><p>Forgetting to square the speed, or the half, gives 17.5 kJ or 875 kJ.</p>`,
           },
