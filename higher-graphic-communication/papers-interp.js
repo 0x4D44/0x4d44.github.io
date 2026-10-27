@@ -221,8 +221,36 @@
     return svg(460, 290, "A circular flange with its plan above its elevation. The plan shows an outer circle labelled diameter 90, a central bore labelled diameter 30 plus 0.2 minus 0.1, and four holes of diameter 10 centred on a thin chain circle labelled PCD 70. The elevation below shows the disc with the bore and holes as dashed lines.", o);
   })();
 
+  /* ---- Q12: a cylinder cut at 60 degrees: plan and elevation ---- */
+  const fig12 = (() => {
+    const k = 2.2, x0 = 117, x1 = x0 + 30 * k, cx = (x0 + x1) / 2, yb = 290, yl = 230, yr = yl - 30 * k * Math.sqrt(3);
+    let o = circ(cx, 60, 15 * k, THICK(PAPER)) + ln(cx - 42, 60, cx + 42, 60, CHAIN) + ln(cx, 12, cx, 108, CHAIN);
+    o += ln(x0, 60, x0, yl, THIN()) + ln(x1, 60, x1, yr, THIN());
+    o += P(`M${x0} ${yl} L${x1} ${n1(yr)} V${yb} H${x0} Z`, THICK(PAPER)) + ln(cx, 106, cx, 298, CHAIN);
+    o += ln(x0, yl, x0 + 52, yl, THIN());
+    o += P(`M${x0 + 30} ${yl} A30 30 0 0 0 ${n1(x0 + 15)} ${n1(yl - 26)}`, THIN()) + T(x0 + 38, yl - 8, "60°", { a: "start", size: 12 });
+    o += leader(212, 48, cx + 23.3, 36.7) + T(216, 52, "Ø30", { a: "start" });
+    o += leader(222, 112, 168, 134) + T(226, 112, "Cut line (the cut face seen edge-on)", { a: "start", size: 12 });
+    o += T(6, 64, "Plan", { a: "start" }) + T(6, 262, "Elevation", { a: "start" });
+    return svg(460, 306, "Third-angle plan above elevation of an upright cylinder of diameter 30. The plan is a circle. The elevation is a rectangle whose top is cut by a sloping straight line at 60 degrees to the horizontal, labelled as the cut line.", o);
+  })();
+
+  /* ---- Q13: two equal pipes meeting, elevation ---- */
+  const fig13 = (() => {
+    let o = P("M90 30 H150 V80 H320 V140 H150 V200 H90 Z", THICK(PAPER));
+    o += ln(150, 80, 120, 110, THICK()) + ln(150, 140, 120, 110, THICK());
+    o += ln(120, 22, 120, 208, CHAIN) + ln(112, 110, 330, 110, CHAIN);
+    o += ln(90, 204, 90, 228) + ln(150, 204, 150, 228) + dim(90, 224, 150, 224, "Ø40", 120, 244);
+    o += ln(320, 80, 346, 80) + ln(320, 140, 346, 140) + dim(342, 80, 342, 140, "Ø40", 372, 114);
+    o += leader(212, 52, 138, 92) + mark(222, 46, "K");
+    o += T(6, 24, "Elevation", { a: "start" });
+    return svg(460, 254, "Elevation of an upright pipe with a branch pipe of the same diameter 40 joined to it from the right, both centre lines crossing. A line labelled K marks where the two pipes meet.", o);
+  })();
+
   /* up to three plain words (no punctuation, none that say "unchanged") after a negator */
   const ND = "(?:(?!distort|stretch|chang|warp|skew|squash)\\w+ ){0,3}";
+  /* a negated auxiliary: "would not", "wouldn't", "won't", "cannot", "can't", "never" ... */
+  const NA = "(?:(?:would|could|should|does|did|do|is|are|was|were|has|have|had|must)(?: not|n't)|will not|won't|can not|cannot|can't|never)";
   const W3 = "(?:\\W+\\w+){0,3}\\W+"; /* up to three words between two patterns */
   const W5 = "(?:\\W+\\w+){0,5}\\W+", W7 = "(?:\\W+\\w+){0,7}\\W+";
   /* word lists for the north-point marking point (interp-08 b) */
@@ -230,7 +258,7 @@
   const ROOMX = "windows?|rooms?|buildings?|houses?|boathouse|entrance|garden|layout|living areas?|doors?";
 
   B.interp = {
-    intro: "Interpretation of graphic items is the biggest swing area of the paper (12 to 30 of the 90 marks). This bank has eleven questions worth 56 marks: naming pictorial and orthographic views, reading sizes and lines from third-angle views, matching views to a pictorial, recognising forms and nets, reading a section, a site plan and a dimensioned flange, explaining why a drawing type suits a job, and comparing two pictorial methods. Most have a drawing: read it, trace features between views, and give cause and effect when asked to explain.",
+    intro: "Interpretation of graphic items is the biggest swing area of the paper (12 to 30 of the 90 marks). This bank has thirteen questions worth 68 marks: naming pictorial and orthographic views, reading sizes and lines from third-angle views, matching views to a pictorial, recognising forms and nets, reading a section, a site plan and a dimensioned flange, finding the true shape of a cut face, the line where two pipes meet, explaining why a drawing type suits a job, and comparing two pictorial methods. Most have a drawing: read it, trace features between views, and give cause and effect when asked to explain.",
     questions: [
       {
         id: "interp-01",
@@ -347,7 +375,7 @@
                 not: ["(?:\\bdoes|\\bdo|\\bdid|\\bwill|\\bcan|\\bis|\\bare|\\b)(?: not|n't|never) (?:\\w+ ){0,2}(?:wrap|roll|curl|go|goes|form|make|become)\\b", "(?:\\bnot|\\bnever|n't) (?:be |been )?(?:rolled|wrapped|curled|folded)"],
                 any: ["(roll|curl|wrap|bend|fold)(ed|s|ing)? (it )?(up|round|around|into).{0,60}(rim|edge of the base|base|circle|bottom)", "curved edge.{0,40}(forms?|becomes?|goes|wraps?|makes?|is|runs|joins).{0,30}(base|rim|circle|circumference|bottom)", "(forms?|becomes?|makes?|is) the (rim|circumference|edge|outline|outside) of the (base|cone|circle)", "(to )?(make|form|become|create) (up )?(the |a )?(circle|base|bottom|rim|round)", "(goes|wraps|runs|curls|fits|reaches|goes) (all the way |right )?(round|around) (the |its )?(base|bottom|rim|circle|cone)?", "(same|equal) (length )?(as|to) the (distance|way) (all the way )?(round|around)"] },
               { desc: "Effect: otherwise the edges would overlap or leave a gap, so the cone would not close or fit its base", win: 70, negOK: true,
-                not: ["\\b(?:would|will|could|do|does|did|can)(?: not|n't|never) (?:\\w+ ){0,2}(?:overlap|leave|gap|be (?:a )?(?:gap|overlap))", "(?:\\bnot|\\bnever|n't) (?:(?:be|have|leave|make|cause|create) )?(?:a |an |any )?(?:gap|overlap)\\w*\\b(?! or)"],
+                not: ["\\b" + NA + " (?:\\w+ ){0,2}(?:overlap|leave|gap|be (?:a )?(?:gap|overlap))", "(?:\\bnot|\\bnever|n't) (?:(?:be|have|leave|make|cause|create) )?(?:a |an |any )?(?:gap|overlap)\\w*\\b(?! or)"],
                 any: ["\\b(gap|gaps|overlap|overlaps|overlapping)\\b", "(not|n't|never) (properly |quite |fully |neatly )?(close|fit|meet|join|match|line up|reach|go together)", "(too|be|is|was|were) (long|short|big|small|loose)\\b.{0,50}\\b(open|loose|baggy|wrong|fit)"] },
             ],
             sample: "When the net is rolled up, the curved edge wraps round to form the rim of the base. If it were longer or shorter than the circumference the edges would overlap or leave a gap, so the cone would stay open.",
@@ -368,10 +396,10 @@
             q: "Explain why every line on a development must be drawn at its true length.",
             points: [
               { desc: "Cause: the net is cut out and folded up / joined to make the solid", win: 60,
-                any: ["cut (it |them |the net |the shape )?out", "\\bfold(ed|s|ing)?\\b", "(is|be|will be|are|gets?) (cut|folded|joined|glued|assembled|made up)", "made (up )?into", "(build|make|form|create)s? (up )?the (solid|prism|shape|3d|model|object)", "assembl(ed|e|ing)", "joined (together|up)", "put together"] },
+                any: ["cut (it |them |the net |the shape )?out", "\\bfold(ed|s|ing)? (it |them |the net |the shape )?(up|into|to|together|and)", "(is|be|will be|are|gets?) (cut|folded|joined|glued|assembled|made up)", "made (up )?into", "(build|make|form|create)s? (up )?the (solid|prism|shape|3d|model|object)", "assembl(ed|e|ing)", "joined (together|up)", "put together"] },
               { desc: "Effect: a shortened line would make a face too small so the edges would not meet or fit", win: 70, negOK: true,
-                not: ["\\b(?:would|will|could|do|does|is|are|can)(?: not|n't|never) (?:(?:be|look|make|have|leave) )?(?:a |an |any )?(?:too )?(?:short|small|long|big|wrong|different|foreshorten|distort|gap|overlap)", "(?:\\bnot|\\bnever|n't) (?:(?:be|leave|make|have|create|cause|produce|look) )?(?:a |an |any )?(?:too )?(?:short|small|long|big|wrong|different|foreshorten|distort|gap|overlap)"],
-                any: ["(too (short|small|long|big)|foreshorten|wrong (size|length)|incorrect (size|length)|different (size|length)|(shorter|longer|smaller|bigger) than|\\b(shorter|longer|smaller|bigger)\\b).{0,80}(gap|overlap|(not|n'?t) (properly |quite |fully )?(fit|close|meet|match|line up|join|reach|assemble|come together|go together|form|work))", "(gap|overlap|(not|n'?t) (properly |quite |fully )?(fit|close|meet|match|line up|join|reach|assemble|come together|go together|form|work)).{0,80}(too (short|small|long|big)|foreshorten|wrong (size|length)|incorrect (size|length)|different (size|length)|(shorter|longer|smaller|bigger) than)"] },
+                not: ["\\b" + NA + " (?:(?:be|look|make|have|leave) )?(?:a |an |any )?(?:too )?(?:short|small|long|big|wrong|different|foreshorten|distort|gap|overlap)", "(?:\\bnot|\\bnever|n't) (?:(?:be|leave|make|have|create|cause|produce|look) )?(?:a |an |any )?(?:too )?(?:short|small|long|big|wrong|different|foreshorten|distort|gap|overlap)"],
+                any: ["(too (short|small|long|big)|foreshorten|wrong (size|length)|incorrect (size|length)|different (size|length)|(shorter|longer|smaller|bigger) than).{0,50}(gap|overlap|(not|n'?t) (properly |quite |fully )?(fit|close|meet|match|line up|join|reach|assemble|come together|go together|form|work))", "(gap|overlap|(not|n'?t) (properly |quite |fully )?(fit|close|meet|match|line up|join|reach|assemble|come together|go together|form|work)).{0,50}(too (short|small|long|big)|foreshorten|wrong (size|length)|incorrect (size|length)|different (size|length)|(shorter|longer|smaller|bigger) than)"] },
             ],
             sample: "The net is cut out and folded up into the solid, so a foreshortened line would make a face too small and the edges would leave a gap.",
             model: mi("The net is cut out and folded / joined to make the solid, so each edge must be its real size (cause) (1)", "…a foreshortened (too short) line would leave faces too small, so edges would not meet and the solid would not fit together (effect) (1)"),
@@ -494,6 +522,66 @@
             sample: "In an isometric drawing both horizontal axes are drawn at 30\u00b0 so no face is true shape and a circle on the floor becomes an ellipse, whereas in a planometric drawing the plan keeps its true shape so a circle in the plan stays a circle. Planometric turns the plan to 45\u00b0 and 45\u00b0, but isometric has all three axes 120\u00b0 apart. In both drawings the vertical lines are drawn vertical. Planometric is quick for a room layout because the floor plan can simply be traced and turned, while isometric means redrawing the plan at 30\u00b0.",
             model: mi("Plan shape: planometric keeps the plan at true shape (circles stay circles), but isometric has no true-shape face and circles become ellipses (1)", "Axes: isometric uses 30\u00b0 on both horizontal axes (all axes 120\u00b0 apart), but planometric turns the plan to 45\u00b0/45\u00b0 or 30\u00b0/60\u00b0 (1)", "Similarity: in both, vertical lines stay vertical / heights are drawn full size, and both show three faces in one view (1)", "Use: planometric is quick for an interior because the floor plan can be traced and turned, but isometric means redrawing the plan at 30\u00b0 (1)", "Appearance: planometric tends to look stretched upwards (some illustrators shorten the verticals), but isometric looks more balanced (1)") + "<p>A comparison must give both sides, for example with <em>whereas</em>, <em>but</em> or <em>both</em>.</p>",
           },
+        ],
+      },
+      {
+        id: "interp-12",
+        style: "Scenario question · true shape and the auxiliary view",
+        stem: "<p>The mast stub of a model ship is a cylinder of diameter 30 mm that stands upright. Its top is cut by a plane at 60° to the horizontal. The plane is at 90° to the elevation, so the elevation shows the cut as a single sloping line. Plan and elevation are in third-angle projection.</p>",
+        figure: fig12,
+        parts: [
+          { label: "(a)", type: "mcq", marks: 1, q: "What shape does the cut face have in the plan?", opts: ["An ellipse", "A circle", "A rectangle", "A straight line"], a: 1, why: "The sides of the cylinder are vertical, so from above every point of the cut edge still lies on the circle of the cylinder. The plan of the cut face is a circle." },
+          { label: "(b)", type: "mcq", marks: 1, q: "What is the true shape of the cut face?", opts: ["A circle", "A rectangle", "An ellipse", "A semicircle"], a: 2, why: "A cylinder cut at an angle to its axis has an elliptical section. Only an auxiliary view, looking straight at the sloping face, shows that true shape." },
+          { label: "(c)", type: "num", marks: 1, a: 30, tol: 0, unit: "mm", q: "State the length of the minor axis of the true shape.", why: "Across the cut the width is unchanged: it comes straight from the plan, where it is the diameter of the cylinder, 30 mm." },
+          { label: "(d)", type: "num", marks: 1, a: 60, tol: 0, unit: "mm", q: "Calculate the length of the major axis of the true shape.", why: "Along the cut the length is the cut line in the elevation, seen at its true length because the plane is at 90° to the elevation. Major axis = diameter ÷ cos (angle of the cut to the horizontal) = 30 ÷ cos 60° = 30 ÷ 0.5 = 60 mm." },
+          {
+            label: "(e)", type: "text", marks: 2, rows: 3,
+            q: "Explain why the auxiliary view of the cut face is projected at right angles to the cut line.",
+            points: [
+              { desc: "Cause: it makes you look straight at (square-on to) the sloping face", win: 100,
+                any: ["(look|looking|view|viewing|see|seeing|seen|face|facing)\\w* (it |the face |the surface |the cut face |at the face |at it )?(straight|square|directly|head)[- ]?(on|at)", "square[- ]?on", "face[- ]?on", "perpendicular", "parallel to the (new |auxiliary )?(view|picture plane|viewing plane|plane of the view|line of sight)", "(straight|directly|square) (at|onto|towards) the (face|surface|cut)", "(looks?|looking|views?|viewing) (straight|directly|square)"] },
+              { desc: "Effect: so the face is seen at its true shape / size, not foreshortened or slanted", win: 100, negOK: true,
+                not: ["\\b(?:is|are|was|were|be|being) ?(?:not|never)\\b", "\\b(?:is|are)n't\\b"],
+                any: ["true (shape|size)", "(real|actual|full|proper|correct|exact) (shape|size)", "foreshorten", "distort", "slant", "squash", "squeez", "skew", "(wrong|incorrect|different|inaccurate) (shape|size)"] },
+            ],
+            sample: "Projecting square to the cut line means you look straight at the face, so it is seen at its true shape. At any other angle it would look slanted and foreshortened.",
+            model: mi("Projecting at 90° to the cut line means you are looking straight at (square-on to) the sloping face (cause) (1)", "…so it is seen at its true shape and size; at any other angle it would look slanted and foreshortened (effect) (1)") + "<p>Also acceptable: the face is parallel to the new picture plane, so lengths on it are true lengths.</p>",
+          },
+        ],
+      },
+      {
+        id: "interp-13",
+        style: "Scenario question · interpenetration of pipes",
+        stem: "<p>A pipe fitter is making a pipe junction for a ship's ventilation system. An upright pipe and a branch pipe are cut from tube and welded together along the line where they meet. The elevation of the junction is shown. Sizes are in mm.</p>",
+        figure: fig13,
+        parts: [
+          { label: "(a)", type: "mcq", marks: 1, q: "What is the name for the line K, where the surfaces of the two pipes meet?", opts: ["Fold line", "Generator", "Line of interpenetration", "Datum"], a: 2, why: "Where one solid passes into or through another, the surfaces meet along a line of intersection, also called the line of interpenetration. It is the edge the fitter cuts and welds along." },
+          {
+            label: "(b)", type: "text", marks: 2, rows: 3,
+            q: "The line where two cylinders meet is normally a curve, but K is drawn differently. Explain why.",
+            points: [
+              { desc: "Cause: the two pipes are the same diameter and their axes meet", win: 120,
+                all: ["(same|equal|identical|matching)( \\w+)? (diameters?|size|width|thickness)|(diameters?|pipes?|cylinders?|they)( are| is| have| has)?( the)? (same|equal|identical)", "(axes|axis|centre ?lines?|centers?|centres?|middle)( of (both|the)( \\w+)?)?( \\w+){0,2} (meet|cross|intersect|line up|align|join|coincide)|meet (at|in|on) (a |the )?(point|centre|middle|centreline)"] },
+              { desc: "Effect: so the line of intersection is seen as straight (diagonal) lines in the elevation", win: 100,
+                any: ["straight", "diagonal", "mitre", "\\bv[- ]?shape", "angled lines?"] },
+            ],
+            sample: "The two pipes have equal diameters and their axes meet, so in the elevation the line of intersection is seen as straight diagonal lines.",
+            model: mi("The two cylinders are the same diameter and their axes meet (cause) (1)", "…so in the elevation the curve is seen as straight lines (effect) (1)") + "<p>If the diameters differed, or the axes did not meet, the line would be a curve that has to be plotted.</p>",
+          },
+          {
+            label: "(c)", type: "text", marks: 2, rows: 3,
+            q: "A second, smaller pipe passes through a large one and its line of intersection is plotted using twelve generators. Explain why twelve are used rather than two or three.",
+            points: [
+              { desc: "Cause: twelve give enough points, including the top, bottom, front and back where the curve turns", win: 100,
+                any: ["(top|bottom|front|back|sides?|turning|key|important|extreme)( \\w+){0,6} (points?|positions?|places?|where the curve (turns|changes|bends))", "where the curve (turns|changes|bends|is widest|reaches)", "enough (points|generators|positions|plotted)", "(more|many|plenty of|lots of|several|twelve|12) (more )?(points|generators|positions|plotted)"] },
+              { desc: "Effect: so the curve can be drawn smoothly and accurately instead of guessed", win: 100, negOK: true,
+                not: ["\\b" + NA + " (?:\\w+ ){0,2}(?:drawn|plotted|found|accurate|smooth|exact|precise|correct)"],
+                any: ["accura", "smooth", "guess", "exact", "precise", "properly", "shape of the (curve|line)", "correct (curve|shape|line)", "true (curve|shape)"] },
+            ],
+            sample: "Twelve generators give points at the top, bottom, front and back, where the curve turns, so the curve can be drawn accurately instead of guessing its shape.",
+            model: mi("Twelve generators give enough points, including the top, bottom, front and back of the smaller pipe where the curve turns (cause) (1)", "…so the curve can be drawn accurately through plotted points instead of being guessed (effect) (1)") + "<p>Fewer generators leave gaps, and the shape of the curve, and any part of it that goes hidden, would be guesswork.</p>",
+          },
+          { label: "(d)", type: "mcq", marks: 1, q: "A cylinder meets a flat face that is seen edge-on in the elevation. How does their line of intersection appear in that view?", opts: ["An ellipse", "A circle", "A smooth curve", "A straight line"], a: 3, why: "A cylinder meeting a flat face meets it in a curve (part of an ellipse), unless you see the face edge-on, when the line of intersection is a straight line." },
         ],
       },
     ],

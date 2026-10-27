@@ -201,7 +201,7 @@
 
   /* ---------- the bank ---------- */
   B.cad = {
-    intro: "Computer-aided design techniques are worth 20 to 30 of the 90 marks. This bank is 68 marks: modelling features with sized steps (revolve, extrude, loft, helix, extrude along a path), edits and Booleans, the modelling tree, 3D constraints, file types (including a compare question), libraries and rendering. About 60% of the marks are written \"describe how to model\" answers, so check that every step you write names a plane or face, a feature and its sizes.",
+    intro: "Computer-aided design techniques are worth 20 to 30 of the 90 marks. This bank is 73 marks: modelling features with sized steps (revolve, extrude, loft, helix, extrude along a path), edits and Booleans, 2D sketch constraints, the modelling tree, 3D constraints, file types (including a compare question), libraries and rendering. About 60% of the marks are written \"describe how to model\" answers, so check that every step you write names a plane or face, a feature and its sizes.",
     questions: [
       {
         id: "cad-01",
@@ -271,7 +271,7 @@
               { desc: "Ø12 circle profile centred on the end of the path", all: ["(?:circle|profile)", D(12), "(?:centre|center|centred|centered|end of|start of|on the path|on the route|on the end)"], win: 50 },
               { desc: "Extrude along the path (sweep)", any: ["\\bsweep", "extrude\\w*\\s+(?:it |the \\w+ |that \\w+ |this \\w+ |them |the \\w+ \\w+ )?along", "along\\s+(?:the |a |that |this )?(?:\\w+ )?(?:path|route)"] },
             ],
-            sample: "First I sketch the path on the XZ plane as one sketch: a vertical line 90, a tangent arc of radius 30 and a horizontal line 70. Then I make a work plane perpendicular to the path at the bottom end and sketch a circle of diameter 12 centred on the end of the path. Finally I extrude the circle along the path.",
+            sample: "First I would sketch the path on the XZ plane as one sketch: a vertical line 90, a tangent arc of radius 30 and a horizontal line 70. Then I would make a work plane perpendicular to the path at the bottom end and I would sketch a circle of diameter 12 centred on the end of the path. Finally I would extrude the circle along the path.",
             model: "<ul><li>Path sketched on a plane (1)</li><li>Straights 90 and 70 (1)</li><li>Tangent arc R30 (1)</li><li>Work plane perpendicular to the path at an end (1)</li><li>Ø12 circle centred on the end of the path (1)</li><li>Extrude along the path (sweep) (1)</li></ul><p>Any 4 from 6. Dimension every straight and every bend: a path with a missing length or radius loses those marks.</p>" },
           { label: "(b)", type: "multi", marks: 2, q: "Which <strong>two</strong> of these are modelled most simply by extrude along a path?",
             opts: ["A wheel hub, round about its centre", "A curved water pipe", "A funnel from a square top to a round spout", "A handrail that follows a curved wall", "A coil spring"], a: [1, 3],
@@ -293,7 +293,7 @@
               { desc: "Loft between the square and the circle", all: ["loft\\w*\\W+(?:\\w+\\W+){0,3}(?:between|from|through|join\\w*|connect\\w*|across|blend\\w*|to)", "(?:square|profile|sketch)", "(?:circle|round|spout|profile|sketch)"], win: 60 },
               { desc: "Shell, wall thickness 3, removing the top and bottom faces", all: ["shell\\w*", "(?:(?:thickness|wall|walls)\\s*(?:of\\s*|=|:|is\\s*)?3\\b|\\b3\\s*(?:mm\\s*)?(?:thick|wall|thickness))", "(?:top and bottom|bottom and top|both (?:end|face)s?|each end|two (?:end|face)s?|open (?:at )?both|(?:end|face)s? (?:removed|open)|remov\\w*\\W+(?:\\w+\\W+){0,3}(?:top|bottom|face|end)s?)"], win: 80 },
             ],
-            sample: "On the XY plane I sketch a 100 by 100 square. I make a work plane parallel to it and offset 80 above. On that plane I sketch a circle of diameter 40 centred over the square. Then I loft between the square and the circle. Last I shell the loft with a wall thickness of 3, removing the top and bottom faces so it is open at both ends.",
+            sample: "On the XY plane I would sketch a 100 by 100 square. I would make a work plane parallel to it and offset 80 above. On that plane I would sketch a circle of diameter 40 centred over the square. Then I would loft between the square and the circle. Last I would shell the loft with a wall thickness of 3, removing the top and bottom faces so it would be open at both ends.",
             model: "<ul><li>100 square sketched on the base plane (1)</li><li>Work plane parallel, offset 80 (1)</li><li>Ø40 circle sketched on it, centred over the square (1)</li><li>Loft between the two profiles (1)</li><li>Shell, thickness 3, top and bottom faces removed (1)</li></ul><p>Any 4 from 5.</p>" },
           { label: "(b)", type: "text", marks: 2, rows: 4,
             q: "A Ø6 mounting hole must also pass through one sloping side of the duct. Explain why this hole should be cut after the hollowing edit and not before it.",
@@ -399,7 +399,7 @@
               { desc: "Offset of 1.5 between the face of the pulley and the face of a cheek plate", all: ["offset\\w*" + GAP(80) + "1\\.5|1\\.5\\s*(?:mm\\s*)?offset|offset\\w*" + GAP(40) + "(?:gap|clearance)", "(?:pulley|cheek|face|plate)"], win: 90 },
               { desc: "Mate the underside of the pin's head with the outer face of a cheek plate", all: ["(?:mate[ds]?|align\\w*|flush)\\W+(?:\\w+\\W+){0,6}head|head\\W+(?:\\w+\\W+){0,6}(?:mate[ds]?|align\\w*|flush)", "(?:cheek|plate|outer|outside)"], win: 70 },
             ],
-            sample: "Centre axis the pin with the holes in both cheek plates. Centre axis the hole in the pulley with the pin. Then offset the face of the pulley from the face of the cheek plate by 1.5, to give the clearance. Last, mate the underside of the pin's head with the outside face of the cheek plate.",
+            sample: "I would centre axis the pin with the holes in both cheek plates. I would centre axis the hole in the pulley with the pin. Then I would offset the face of the pulley from the face of the cheek plate by 1.5, to give the clearance. Last, I would mate the underside of the pin's head with the outside face of the cheek plate.",
             model: "<ul><li>Centre axis: pin with the cheek-plate holes (1)</li><li>Centre axis: pulley hole with the pin (1)</li><li>Offset 1.5: pulley face to cheek-plate face (1)</li><li>Mate: pin head to the outer face of a cheek plate (1)</li></ul><p>Any 3 from 4. Name the constraint, then the two features it joins, then any distance or angle.</p>" },
           { label: "(b)", type: "match", marks: 3, q: "Match each 3D constraint to what it does.",
             pairs: [
@@ -522,7 +522,7 @@
               { desc: "Radial array of the small circle: six instances, 60° apart, about the opening's axis", all: ["(?:radial|circular|polar|rotational)\\W+(?:\\w+\\W+){0,3}(?:array|pattern)|(?:array|pattern)\\w*\\W+(?:\\w+\\W+){0,3}(?:radial|circular|polar)|\\b60\\s*(?:°|degrees?)\\W+(?:\\w+\\W+){0,3}(?:apart|between|spacing|intervals?|each)|(?:angle|spacing)\\W+(?:\\w+\\W+){0,3}60", "\\b(?:6|six)\\b"], win: 80 },
               { desc: "Extrude subtract (cut) the circles through the front wall", all: ["(?:extrud\\w*\\W+(?:\\w+\\W+){0,2}(?:subtract|cut)|(?:cut|subtract)\\W*extrud\\w*|(?:cut|subtract)\\w*\\W+(?:\\w+\\W+){0,5}through|through all)", "(?:wall|front|circles?|holes?|openings?)"], win: 60 },
             ],
-            sample: "On the XY plane I sketch a 90 by 60 rectangle and extrude it 50. I add a fillet of radius 5 to the four vertical edges. Then I shell it with a wall thickness of 3, removing the bottom face. On the front face I sketch a circle of diameter 30 in the centre, and a circle of diameter 4 on a PCD of 44 round it. I radial array the small circle six times, 60 degrees apart, about the centre of the opening. Then I extrude subtract all the circles through the front wall.",
+            sample: "On the XY plane I would sketch a 90 by 60 rectangle and extrude it 50. I would add a fillet of radius 5 to the four vertical edges. Then I would shell it with a wall thickness of 3, removing the bottom face. On the front face I would sketch a circle of diameter 30 in the centre, and a circle of diameter 4 on a PCD of 44 round it. I would radial array the small circle six times, 60 degrees apart, about the centre of the opening. Then I would extrude subtract all the circles through the front wall.",
             model: "<ul><li>90 × 60 rectangle on the base plane, extruded 50 (1)</li><li>Fillet R5 on the four vertical edges (1)</li><li>Shell, thickness 3, removing the bottom face (1)</li><li>Ø30 circle centred on the front face (1)</li><li>Ø4 circle on the PCD 44 (1)</li><li>Radial array: 6 instances, 60° apart, about the opening's axis (1)</li><li>Extrude subtract the circles through the wall (1)</li></ul><p>Any 6 from 7. Shell before the holes, or the shell builds a tube round each one. If a radial array is not used, the angle between holes (60°) must be given. A step with a command but no plane, face or size loses its mark.</p>" },
         ],
       },
@@ -541,8 +541,36 @@
                 "\\bstep\\b[\\s\\S]{0,60}?(?:only|just|no |not |without|cannot|can't|doesn't|does not|lost|loses|finished shape|final shape)[\\s\\S]{0,110}?\\b3ds\\b[\\s\\S]{0,80}?(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)"],
                 not: ["\\bstep\\b\\W+(?:(?!cannot|can|not|no|without|doesn|does|isn|t\\b)\\w+\\W+){0,4}(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)", "\\b3ds\\b[^.]{0,25}(?:\\bnot\\b|n't|\\bno\\b|without|never|cannot)[^.]{0,25}(?:materials?|textures?|lights?|lighting|cameras?|colou?rs?)"] },
             ],
-            sample: "A STEP file holds an accurate solid model, whereas a 3DS file is a polygon mesh made of many small flat facets. STEP can be used to send models to any CAD package for engineering, while 3DS is used for rendering, animation and games. A 3DS file also does carry materials, textures and lights, but a STEP file will bring in only the finished shape.",
+            sample: "A STEP file holds an accurate solid model, whereas a 3DS file is a polygon mesh made of many small flat facets. STEP can be used to share models between CAD packages for engineering, while 3DS is used for rendering, animation and games. A 3DS file also does carry materials, textures and lights, but a STEP file will bring in only the finished shape.",
             model: "<ul><li>Geometry: STEP is an accurate solid, 3DS a polygon mesh of flat facets (1)</li><li>Purpose: STEP exchanges accurate models between CAD packages for engineering and manufacture, 3DS is for visualisation, rendering, animation and games (1)</li><li>Extra data: 3DS carries materials, textures, lights and cameras, STEP only the finished shape (the modelling tree is lost) (1)</li></ul><p>Any 3 points. A compare answer needs both sides of each point: \"3DS is a mesh\" on its own is half a point, and describing only one file earns nothing for the comparison.</p>" },
+        ],
+      },
+      {
+        id: "cad-14",
+        style: "Short question set · match 2D constraints and explain",
+        stem: "<p>A cleat plate for the quayside is to be modelled. Its flat sketch has a long straight edge, a second edge at right angles to it, a rounded end that blends smoothly into the straight edge, and a bolt hole on the same centre as a larger recess round it. The designer wants the sketch fully constrained before it is extruded.</p>",
+        parts: [
+          { label: "(a)", type: "match", marks: 3, q: "Match each 2D constraint to the job it does in the cleat plate sketch.",
+            pairs: [
+              ["Perpendicular", "Keeps the second edge at 90° to the long edge"],
+              ["Tangent", "Makes the rounded end touch the straight edge without crossing it"],
+              ["Concentric", "Makes the bolt hole and the recess share one centre"],
+            ] },
+          { label: "(b)", type: "text", marks: 2, rows: 4,
+            q: "Explain why the sketch should be fully constrained before the designer starts to edit its dimensions.",
+            points: [
+              { desc: "Cause: the constraints fix the relationships and sizes of the geometry, so it can only change when a dimension is changed", any: [
+                "constrain\\w*" + GAP(60) + "(?:fix|lock|hold|keep|stay|define|control|set)\\w*",
+                "(?:fully|completely|totally)\\W+(?:\\w+\\W+){0,1}(?:constrained|defined)" + GAP(80) + "(?:only|just)\\s+(?:\\w+\\s+){0,3}(?:change|move|alter|edit)\\w*"] },
+              { desc: "Effect: when it is edited, the lines stay parallel, holes stay centred and corners stay square, so the design intent is kept", group: "eff", any: [
+                "(?:stay|remain|keep|hold)\\w*\\W+(?:\\w+\\W+){0,5}(?:parallel|centre|center|centred|centered|square|perpendicular|tangent|concentric|in place|in position|shape|90|intent)",
+                "design intent"] },
+              { desc: "Effect: otherwise the sketch twists or distorts when edited, so holes drift off centre or corners are no longer square", group: "eff", negOK: true, any: [
+                "(?:otherwise|without|unconstrained|not constrained|no constraints)" + GAP(80) + "(?:distort|twist|warp|drift|move|out of shape|wrong|lose|change shape)\\w*",
+                "(?:distort|twist|warp|drift)\\w*" + GAP(60) + "(?:edit|chang|resiz|dimension)\\w*"] },
+            ],
+            sample: "Constraints fix the geometry in place, so a fully constrained sketch can only change when a dimension is changed. When the plate is edited its edges would stay parallel and the hole would stay on the centre line, so the design intent is kept.",
+            model: "<ul><li>Cause: constraints fix the geometry and its relationships, so it can only change through a dimension (1)</li><li>Effect: when edited, lines stay parallel, holes stay centred and corners stay square: the design intent is kept (1)</li></ul><p>Also acceptable for the effect: without constraints the sketch twists out of shape as soon as one line is edited, so holes drift off centre and a square corner stops being 90°. \"It looks neater\" earns nothing.</p>" },
         ],
       },
     ],
