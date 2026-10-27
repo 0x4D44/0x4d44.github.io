@@ -257,7 +257,7 @@
   const W3 = "(?:\\W+\\w+){0,3}\\W+"; /* up to three words between two patterns */
   const W5 = "(?:\\W+\\w+){0,5}\\W+", W7 = "(?:\\W+\\w+){0,7}\\W+";
   /* word lists for the north-point marking point (interp-08 b) */
-  const SUNX2 = "\\bsun\\b|\\bsunlight\\b|\\bsunshine\\b|\\bsunset\\b|\\bsunrise\\b|\\bdaylight\\b|\\bshade\\b|\\bshadows?\\b|\\bwinds?\\b|\\bweather\\b|\\bsolar\\b|\\blight\\b";
+  const SUNX2 = "\\bsun\\b|\\bsunlight\\b|\\bsunshine\\b|\\bsunn\\w+|\\bsunlit\\b|\\bsunset\\b|\\bsunrise\\b|\\bdaylight\\b|\\bshade\\b|\\bshadows?\\b|\\bwinds?\\b|\\bweather\\b|\\bsolar\\b|\\blight\\b";
   const ROOMX = "windows?|rooms?|buildings?|houses?|boathouse|entrance|garden|layout|living areas?|doors?";
 
   B.interp = {
