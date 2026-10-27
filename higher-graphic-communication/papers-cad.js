@@ -708,4 +708,199 @@
   ]);
   { const i = QP("cad-14", 1).points[1];
     i.not = i.not.map((n) => n.replace("intent\\W+(?:\\w+\\W+){0,2}(?:lost", "intent\\W+(?:(?!not|n't|never)\\w+\\W+){0,2}(?:lost")); }
+  /* ---- Hardening, part 2: synonym gaps and swap vetoes, checked against hand-written student answers. ---- */
+  const FILL = "(?:(?:of|is|as|to|at|be|set|a|the|about|value|number|distance|=|:)\\W+){0,3}";
+
+  /* cad-01(b): "radius is 30", "base 60 by 15", "neck 30 and 85" and a list of radii followed by a list of heights */
+  { const P = QP("cad-01", 1).points;
+    [["base", 1, 60, 15, "base|bottom|foot|first (?:step|part|section)", 120], ["neck", 2, 30, 85, "neck|middle|stem|second (?:step|part|section)", 60], ["head", 3, 45, 110, "head|top|cap|third (?:step|part|section)", 90]].forEach(([nm, k, r, h, lab, d]) => {
+      P[k].group = nm; P[k].win = 110;
+      P[k].all[0] += "|\\b(?:radius|rad|r)\\W+(?:(?:is|of|=|:|about|to|a)\\W+){0,2}" + r + "\\b|\\bdiameter\\W+(?:(?:is|of|=|:)\\W+)?" + d + "\\b";
+      P.push({ desc: P[k].desc, group: nm, any: ["\\b(?:" + lab + ")\\W+(?:\\w+\\W+){0,4}" + r + "\\b\\W+(?:\\w+\\W+){0,3}" + h + "\\b", "\\b" + r + "\\s*(?:mm\\s*)?(?:x|by)\\s*" + h + "\\b"] });
+      P.push({ desc: P[k].desc, group: nm, all: ["\\bradi\\w*\\W+(?:\\w+\\W+){0,3}60\\W+(?:\\w+\\W+){0,3}30\\W+(?:\\w+\\W+){0,3}45\\b", "\\bheights?\\W+(?:\\w+\\W+){0,3}15\\W+(?:\\w+\\W+){0,3}85\\W+(?:\\w+\\W+){0,3}110\\b"], win: 200 });
+    }); }
+  alt("cad-01", 1, 0, 0, "(?:half|profile|cross.?section|outline)\\W+(?:\\w+\\W+){0,8}(?:sketch|draw|creat|plac|put)\\w*");
+
+  /* cad-02(d) */
+  { const p = QP("cad-02", 3).points;
+    p[0].all[0] += "|\\b(?:circle|circular|profile)\\b";
+    p[0].all[2] += "|diameter\\W+(?:of\\W+)?five|five\\W+(?:mm\\W+)?diameter";
+    p[0].all[3] += "|twenty.?two\\W+(?:mm\\W+)?(?:from|away|off|out)";
+    const PITCH = "pitch\\W+" + FILL + "15\\b(?!\\s*(?:revolutions?|turns?|coils?))|\\b15\\W+(?:mm\\W+)?(?:for|as|=)\\W+(?:the\\W+)?pitch|\\b15\\s*(?:mm\\s*)?pitch";
+    const REVS = "\\b(?:revolutions?|turns?|coils?|rotations?|loops?)\\W+" + FILL + "(?:7|seven)\\b|\\b(?:7|seven)\\W+(?:\\w+\\W+)?(?:revolutions?|turns?|coils?|rotations?|loops?)\\b|\\b(?:7|seven)\\W+(?:for|as|=)\\W+(?:the\\W+)?(?:number of\\W+)?(?:revolutions?|turns?)";
+    const LEN = "(?:height|length|overall|tall|high)\\W+" + FILL + "105\\b|\\b105\\W+(?:mm\\W+)?(?:for|as|=)\\W+(?:the\\W+)?(?:length|height|overall)|\\b105\\s*(?:mm\\s*)?(?:high|tall|long|height|length|overall)";
+    // a bare "helix is the command" or a pile of nouns round the word helix earns nothing: the helix has to be used on the profile or axis
+    p[1].any = [p[1].any[0], p[1].any[4], p[1].any[5], p[1].any[6],
+      "\\bhelix\\w*\\W+(?:\\w+\\W+){0,3}(?:with|using|on|from|round|around|about|along)\\W+(?:\\w+\\W+){0,3}(?:profile|circle|sketch|wire|axis)",
+      "(?:profile|circle|wire|sketch)\\W+(?:\\w+\\W+){0,3}(?:with|into|using|to|as)\\W+(?:a\\W+|the\\W+)?helix\\w*|(?:helix(?:ed)?|coil)\\W+(?:the|that|this|it)\\W+(?:circle|profile|sketch)",
+      "\\b(?:then|next|finally|after that)\\W+(?:i\\W+)?(?:(?:would|will|could)\\W+)?(?:use\\W+)?(?:the\\W+)?helix\\b",
+      "\\bhelix\\w*\\W+(?:command\\W+|tool\\W+|feature\\W+)(?:\\w+\\W+){0,2}(?:used|applied|selected|chosen|run|picked)\\b",
+      "\\bhelix\\w*\\W+(?:command\\W+|tool\\W+)?(?:\\w+\\W+){0,6}(?:choos|select|pick|click)\\w*\\W+(?:\\w+\\W+){0,3}(?:profile|circle|sketch|wire|axis)"];
+    p[0].all[1] += "|\\b(?:circular|section)\\b";
+    p[2].any = two(PITCH, REVS, LEN); }
+
+  /* cad-03(a): the straights are path lengths, not the sides of a rectangle */
+  QP("cad-03", 0).points[1].not = ["\\brectangles?\\b|\\bextrud\\w*\\W+(?:it\\W+)?straight"];
+
+  /* cad-04(a): a swapped square/circle size earns neither sketch mark */
+  { const P = QP("cad-04", 0).points;
+    const SWAPSQ = ["\\bcircle\\W+(?:(?:of|with|at|is|=|diameter)\\W+){0,3}100\\b", "\\bsquare\\W+(?:(?:of|with|at|is|=|side|sides)\\W+){0,3}40\\b"];
+    P[0].all[0] += "|\\b100\\W+(?:\\w+\\W+)?square|\\bsquare\\W+(?:\\w+\\W+){0,2}100\\b";
+    P[0].not = (P[0].not || []).concat(SWAPSQ, ["\\b100\\s*(?:mm\\s*)?(?:diameter|dia)\\b"]);
+    P[2].not = (P[2].not || []).concat(SWAPSQ); }
+
+  /* cad-04(b): shell gives a wall to every face, including an existing hole's; the hole then sits inside a tube */
+  { const H = "(?:holes?|openings?|cut-?outs?)", W = "(?:walls?|thickness|skin|tube|pipe|sleeve|collar|ring|lining|lined|rim|lip|material|layer)";
+    const C = [
+      W + "\\W+(?:\\w+\\W+){0,4}(?:round|around|surround\\w*|about|inside|along|on|onto|into|for|to|at|of)\\W+(?:(?:the|that|an?|its|every|each|all|existing|earlier|already|previous|pre-?cut)\\W+){0,3}(?:\\w+\\W+){0,2}" + H,
+      H + "\\W+(?:\\w+\\W+){0,4}(?:gets?|got|would get|will get|has|have|given|receives?|ends up with|is given|is lined|is surrounded|is thickened|becomes?)\\W+(?:\\w+\\W+){0,3}" + W,
+      "(?:shell|hollow)\\w*\\W+(?:\\w+\\W+){0,12}(?:every|each|all|any|other|also)\\W+(?:\\w+\\W+){0,2}(?:faces?|surfaces?|edges?)\\W+(?:\\w+\\W+){0,8}" + H,
+      H + "(?:'s|s')?\\W+(?:\\w+\\W+){0,2}(?:faces?|surfaces?|sides?|insides?)\\W+(?:\\w+\\W+){0,10}(?:shell|hollow|wall|thick)",
+      "(?:shell|hollow)\\w*\\W+(?:\\w+\\W+){0,10}" + H + "\\W+(?:\\w+\\W+){0,3}(?:too|as well|also)",
+      W + "\\W+(?:\\w+\\W+){0,4}(?:round|around|surround\\w*)\\W+(?:it|them|that)\\b",
+      "(?:make|makes|making|turn|turns|turning|create|creates|form|forms|forming|leave|leaves|leaving|produce|produces|wrap|wraps|wrapping|line|lines|lining|become|becomes|surround\\w*)\\W+(?:\\w+\\W+){0,3}" + H + "\\W+(?:\\w+\\W+){0,5}" + W,
+    ];
+    const c = QP("cad-04", 1).points[0];
+    c.all = ["\\b(?:shell|hollow)\\w*", H, C.join("|")]; delete c.any; c.win = 170; c.negOK = true;
+    c.not = c.not.concat(["\\bshell\\w*\\W+(?:\\w+\\W+){0,3}(?:not|n't|never)\\W+(?:\\w+\\W+){0,3}(?:add|put|make|give|build|creat|wrap|thick|hollow|go|touch|affect|change|alter)", "\\b(?:no|without)\\W+(?:\\w+\\W+){0,1}(?:walls?|tube|pipe|sleeve|collar|lining)\\W+(?:\\w+\\W+){0,4}(?:holes?|openings?)"]);
+    const e = QP("cad-04", 1).points[1];
+    e.all[0] += "|\\b(?:tube|pipe|sleeve|collar|plug)\\b|(?:not|n't|never)\\W+(?:\\w+\\W+){0,2}(?:clean|clear|plain|simple|proper|neat|straight|open)\\W+(?:\\w+\\W+){0,1}(?:holes?|openings?)|\\b(?:instead of|rather than)\\W+(?:a\\W+|an\\W+|the\\W+)?(?:\\w+\\W+)?(?:clean|plain|simple|proper|neat|straight)\\W+(?:holes?|openings?)|\\bblock\\w*"; }
+
+  /* cad-05(c): holes sketched singly on the PCD, 50 degrees apart, then cut */
+  { const P = QP("cad-05", 2).points; P[0].win = 110; P[2].win = 80; }
+
+  /* cad-07(a): "history tree", "feature tree", a step in the next sentence, and "get back into" the sketch */
+  { const V = "(?:select|click|open|find|choose|locate|pick|double|edit|go (?:back )?(?:to|into|in)|get (?:back )?(?:to|into)|return|expand|use|navigate|right)\\w*";
+    const T = "(?:tree|browser|history|manager|feature list|model list)";
+    const P = QP("cad-07", 0).points;
+    P[0].any = P[0].any.concat([
+      T + "[\\s\\S]{0,60}" + V + "[\\s\\S]{0,40}(?:sketch|feature|extrude|circle|hole|cut)",
+      V + "[\\s\\S]{0,60}(?:sketch|feature|circle|hole|extrude|cut)[\\s\\S]{0,50}(?:in|from|on|using|through|via|of)\\s+(?:the\\s+|your\\s+)?(?:\\w+\\s+){0,2}" + T,
+      "(?:hole|sketch|feature)[^.]{0,30}(?:in|from|on|using|through|via|of)\\s+(?:the\\s+|your\\s+)?(?:\\w+\\s+){0,2}" + T]);
+    P[1].any[0] = P[1].any[0].replace("{0,45}\\b25\\b", "{0,80}\\b25\\b"); }
+
+  /* cad-07(b): the drawing is associated with the model (any wording of "linked"), and the change then reaches it without redrawing */
+  { const P = QP("cad-07", 1).points;
+    P[0].any = [
+      "\\bassociat\\w*\\W+(?:\\w+\\W+){0,8}(?:drawing|views?|model|3d)|(?:drawing|views?|model|3d)\\W+(?:\\w+\\W+){0,8}\\bassociat\\w*",
+      "(?:drawing|views?|dimensions?|it)\\W+(?:\\w+\\W+){0,6}(?:linked|connected|attached|tied|joined|related)\\W+(?:\\w+\\W+){0,3}(?:model|3d|file|each other|one another|together)",
+      "(?:model|3d)\\W+(?:\\w+\\W+){0,6}(?:and|to|with)\\W+(?:the\\W+)?(?:drawing|views?)\\W+(?:\\w+\\W+){0,4}(?:are|is)\\W+(?:linked|connected|attached|tied|joined)",
+      "(?:linked|connected|tied|attached)\\W+(?:\\w+\\W+){0,3}(?:model|3d)\\b",
+      "\\bassociat\\w*\\W+(?:\\w+\\W+){0,12}(?:change|updat|reflect|rebuil|follow)",
+      P[0].any[2], P[0].any[3], P[0].any[4], P[0].any[5], P[0].any[6]];
+    P[0].negOK = true;
+    P[0].any.push("\\b(?:two|both)\\W+(?:files|things|parts)\\W+(?:\\w+\\W+){0,2}(?:are|is)\\W+(?:linked|connected|associat\\w*)");
+    P[0].not = [P[0].not[0], P[0].not[1], P[0].not[2], P[0].not[3], P[0].not[4], P[0].not[6],
+      "(?:drawing|views?)\\W+(?:\\w+\\W+){0,2}(?:is|are|was|were|gets?|has been|have been)\\W+(?:changed|edited|altered|modified|amended)\\b",
+      "\\bassociat\\w*\\W+(?:\\w+\\W+){0,2}(?:is|means?)\\W+(?:\\w+\\W+){0,3}(?:solid|same|related|mesh|association)", "\\bsame folder\\b|\\bsame as\\W+(?:the\\W+)?model\\b"];
+    P[1].any = P[1].any.concat([
+      "(?:model|hole|part|3d|file)\\W+(?:\\w+\\W+){0,8}(?:chang|edit|alter|modif|updat|amend|made bigger|enlarg)\\w*\\W+(?:\\w+\\W+){0,8}(?:drawing|views?|dimensions?)\\W+(?:\\w+\\W+){0,6}(?:chang|updat|follow|rebuil|regenerat|refresh|reflect|match|show|pick)\\w*",
+      "(?:changes?|edits?|alterations?|modifications?)\\W+(?:\\w+\\W+){0,4}(?:model|hole|part)\\W+(?:\\w+\\W+){0,6}(?:passed|carried|fed|flow\\w*|reflected|picked up|shown|appear\\w*|appl\\w*)\\W+(?:\\w+\\W+){0,3}(?:drawing|views?)",
+      "(?:drawing|views?|dimensions?)\\W+(?:\\w+\\W+){0,3}(?:is|are|was|were|gets?)\\W+(?:\\w+\\W+){0,1}(?:updat|refresh|rebuil|regenerat|reflect)\\w*\\W+(?:\\w+\\W+){0,6}(?:whenever|when|every time|as soon as|if|once)",
+      "(?:updat|refresh|rebuil|regenerat|adjust)\\w*\\W+(?:\\w+\\W+){0,4}(?:drawing|views?|dimensions?)\\W+(?:\\w+\\W+){0,4}(?:whenever|when|every time|as soon as|if|once|after)",
+      "\\bno\\W+(?:re-?draw\\w*|redo\\w*|need to re-?draw)",
+      "(?:change|edit)\\W+(?:\\w+\\W+){0,6}(?:passes|passed|carried|carries|goes|go|flows?|feeds?)\\W+(?:\\w+\\W+){0,3}(?:into|to|onto|through)\\W+(?:\\w+\\W+){0,3}(?:drawing|views?|dimensions?)",
+      "(?:drawing|views?)\\W+(?:\\w+\\W+){0,2}(?:also|too|as well)\\W+(?:\\w+\\W+){0,2}(?:chang|updat|rebuil|regenerat)\\w*|(?:chang|updat|rebuil|regenerat)\\w*\\W+(?:\\w+\\W+){0,3}(?:drawing|views?)\\W+(?:\\w+\\W+){0,2}(?:too|as well)"]);
+    P[1].not = P[1].not.concat(["\\bnot\\W+(?:\\w+\\W+){0,2}(?:automatic\\w*|update\\w*)", "\\bbut\\W+(?:it|they)\\W+(?:does ?n'?t|do ?n'?t|does not|do not|won'?t|cannot|can'?t)"]); }
+
+  /* cad-08(a): constrain the axis of the pin to the axes of the holes; offset belongs to the pulley face, not the pin head */
+  { const P = QP("cad-08", 0).points;
+    const AX2 = "|\\b(?:axis|axes)\\W+(?:\\w+\\W+){0,7}(?:axis|axes)\\b";
+    P[0].all[0] += AX2; P[1].all[0] += AX2;
+    [P[0], P[1]].forEach((p) => { p.not = ["cent(?:re|er)[ -]?axis\\W+(?:the\\W+)?(?:underside|face|side|head)"]; });
+    P[2].all[1] = "(?:pulley|wheel|sheave|roller|gear)";
+    P[2].not = ["offset\\w*\\W+(?:\\w+\\W+){0,4}head", "1\\.5\\W+(?:\\w+\\W+){0,3}(?:pin|holes?)\\b"]; }
+
+  /* cad-09(b): neutral format, any package opens it; the swap vetoes stay inside one clause */
+  { const P = QP("cad-09", 1).points;
+    const OWN = "(?:native|own|shipyard's)\\s+(?:(?!while|whereas|but|and|step)[\\w']+\\s+){0,4}(?:is|are|as)\\s+(?:\\w+\\s+){0,2}(?:neutral|common|universal|standard|open)\\b";
+    const SW = ["\\bnative\\s+(?:\\w+\\s+){0,5}(?:in|with|by)\\s+(?:any|all|every|most)\\b", "\\bbut\\s+not\\s+(?:a\\s+|the\\s+)?step\\b", "\\bbrowsers?\\b", "\\bstep\\W+(?:\\w+\\W+){0,3}(?:cannot|can'?t|unable|can not)\\W+(?:\\w+\\W+){0,3}(?:open|read|import)"];
+    P[1].not[0] = "(?<!(?:native|own|shipyard's|their)[^.;]{0,60})(?:supplier|firm|company|manufacturer)\\s+(?:(?!software|cad|package|program|system)\\w+\\s+){0,2}(?:cannot|can't|can not|unable|couldn't|won't be able|will not be able)";
+    P[0].not[0] = OWN; P[1].not[1] = OWN; P[0].negOK = true; P[1].negOK = true;
+    P[0].not = P[0].not.concat(SW); P[1].not = P[1].not.concat(SW);
+    P[0].any = P[0].any.concat([
+      "(?:compatible|supported|understood|readable|recogni[sz]ed)\\W+(?:\\w+\\W+){0,3}(?:with|by|in|across)\\W+(?:\\w+\\W+){0,3}(?:most|many|all|any|every|lots of|different|other|various|several|nearly all|almost all)",
+      "\\b(?:not|n'?t|independent of)\\W+(?:\\w+\\W+){0,4}(?:specific|tied|limited|locked|restricted|dependent)\\W+(?:\\w+\\W+){0,3}(?:to|on)\\W+(?:\\w+\\W+){0,2}(?:one|a single|any|particular|specific)",
+      "(?:software|program|package|cad)[- ]independent|non-?proprietary|vendor[- ]neutral",
+      "(?:lots of|many|most|all|any|every|different|other|several|various)\\W+(?:\\w+\\W+){0,3}(?:cad\\W+)?(?:packages?|software|programs?|systems?)\\W+(?:\\w+\\W+){0,6}(?:can|could|will)\\W+(?:\\w+\\W+){0,2}(?:read|open|import|use|understand)"]);
+    P[1].any = P[1].any.concat([
+      "(?:everyone|everybody|anyone|all (?:firms|companies|suppliers)|other (?:firms|companies)|the (?:other|receiving) (?:firm|company|side)|whoever|machines?)\\W+(?:\\w+\\W+){0,3}(?:can|could|will be able to|able to)\\W+(?:\\w+\\W+){0,3}(?:open|read|import|use|view)",
+      "(?:model|file|it)\\W+(?:\\w+\\W+){0,3}(?:can|could|will)\\W+(?:be\\W+)?(?:opened|read|imported|used|viewed|shared)\\W+(?:\\w+\\W+){0,6}(?:by|in|with|on)",
+      "(?:opened|imported|read|used)\\W+(?:\\w+\\W+){0,4}(?:in|by|with|on)\\W+(?:\\w+\\W+){0,3}(?:their|own|different|other|any|another)",
+      "(?:supplier|firm|company|manufacturer|they|machines?)\\W+(?:\\w+\\W+){0,3}(?:can|could|will be able to|able to)\\W+(?:\\w+\\W+){0,3}(?:open|read|import)",
+      "\\b(?:so|and|therefore|then)\\W+(?:they|the supplier|the firm|the manufacturer|the company)\\W+can\\b(?!\\W+not)"]); }
+
+  /* cad-12(a): swapped rectangle sides / extrusion height */
+  QP("cad-12", 0).points[0].not = ["\\b(?:50|60)\\s*(?:mm\\s*)?(?:by|x)\\s*(?:50|60)\\b", "extrud\\w*\\W+(?:\\w+\\W+){0,2}90\\b"];
+
+  /* cad-10(b): materials, lights, shadows, reflections, setting in a student's own words */
+  { const P = QP("cad-10", 1).points;
+    P[0].not = P[0].not.concat(["\\blots of\\W+(?:\\w+\\W+){0,2}(?:and|,)\\W+lots of\\b"]);
+    P[1].any = P[1].any.concat([
+      "material\\w*\\W+(?:\\w+\\W+){0,5}(?:plastic|metal|steel|colou?r|shin\\w*|glossy|matt|texture|rough|paint|finish)",
+      "(?:realistic|real|right|correct|suitable)\\W+(?:\\w+\\W+){0,1}(?:texture|colou?r|finish|material)|texture\\w*\\W+(?:and\\W+)?colou?r|colou?r\\W+(?:and\\W+)?(?:texture|gloss\\w*|shin\\w*)",
+      "(?:rubber|plastic|metal|steel|wood|chrome|galvani[sz]ed)\\W+(?:\\w+\\W+)?(?:texture|finish|surface|material)",
+      "(?:surface|shiny|glossy|metal\\w*|plastic|polished)\\W+(?:finish|texture|surface)|finish\\W+(?:\\w+\\W+){0,4}(?:metal|plastic|shin\\w*|gloss\\w*|polished)"]);
+    P[4].any = P[4].any.concat([
+      "(?:in|within|inside)\\W+(?:a|an|the)\\W+(?:\\w+\\W+){0,2}(?:scene|setting|room|environment|store|quayside|workshop)",
+      "(?:floor|ground|walls?|background)\\W+(?:\\w+\\W+){0,4}(?:round|around|behind|beneath|under)\\W+(?:it|the bin)|(?:add|include|put)\\w*\\W+(?:\\w+\\W+){0,3}(?:a|the)\\W+(?:floor|ground|background|scene)"]);
+    QP("cad-10", 1).points.forEach((pt) => { pt.not = (pt.not || []).concat(["\\b3ds\\b|\\bstep\\b"]); }); }
+
+  /* cad-11(b) */
+  { const P = QP("cad-11", 1).points;
+    P[0].any = P[0].any.concat([
+      "(?:easier|quick\\w*|faster|easy|simple|fast)\\W+(?:to\\W+)?(?:\\w+\\W+){0,2}(?:change|modify|edit|alter|update|amend|make changes)",
+      "(?:changes?|modifications?|edits?|editing|alterations?)\\W+(?:\\w+\\W+){0,8}(?:follow\\w*|carried (?:through|over)|flow\\w*|show\\w*|appl\\w*|propagat\\w*|updat\\w*)\\W+(?:\\w+\\W+){0,4}(?:all|every|views?|drawings?|everywhere|through|themselves|automatic\\w*)",
+      "(?:without|no need|rather than|instead of|not (?:have|need) to)\\W+(?:\\w+\\W+){0,4}(?:redraw\\w*|re-draw\\w*|starting (?:again|over)|start again|redo)",
+      "(?:only|just)\\W+(?:\\w+\\W+){0,4}(?:model|dimension|one thing|one place)\\W+(?:\\w+\\W+){0,3}(?:needs?|has to|have to)\\W+(?:\\w+\\W+){0,2}(?:chang|edit|alter|updat)",
+      "(?:changed?|edit\\w*|alter\\w*)\\W+(?:\\w+\\W+){0,10}(?:updates?|rebuilds?|follow\\w*|flows?)\\W+(?:\\w+\\W+){0,4}(?:everywhere|every view|all (?:the )?views|by themselves|automatic\\w*)"], true);
+    P[1].any = P[1].any.concat([
+      "(?:one|single|same)\\W+(?:3d\\W+)?model\\W+(?:\\w+\\W+){0,8}(?:plans?|elevations?|images?|pictures?)",
+      "(?:views?|drawings?|plans|elevations|sections)\\W+(?:\\w+\\W+){0,6}(?:come|comes|made|produced|generated|created|obtained|taken)\\W+(?:\\w+\\W+){0,4}(?:automatic\\w*|from (?:it|the model|one|a single|the 3d))",
+      "(?:no need to|not need to|don't need to|without)\\W+(?:\\w+\\W+){0,2}draw\\w*\\W+(?:\\w+\\W+){0,3}(?:view|again|separate)",
+      "(?:rotat\\w*|view\\w*|look\\w*|see\\w*)\\W+(?:\\w+\\W+){0,6}(?:any|every|all)\\W+(?:\\w+\\W+){0,2}(?:direction|angle|side)|sections?\\W+(?:can be\\W+)?(?:taken|cut|made)",
+      "(?:photo-?realistic|realistic|rendered|3d)\\W+(?:render\\w*|images?|pictures?|visuali[sz]\\w*|views?)|render\\w*\\W+(?:\\w+\\W+){0,6}(?:client|customer|presentation|show|sell)"]);
+    P[2].any = P[2].any.concat([
+      "(?:assembl\\w*|test\\w*|check\\w*)\\W+(?:\\w+\\W+){0,6}(?:fit\\b|fits\\b|fitting|clash\\w*|interfer\\w*|work(?:s|ing)? together)",
+      "(?:fit|clash\\w*|interfer\\w*)\\W+(?:\\w+\\W+){0,6}(?:on screen|on the computer|in the model|virtual\\w*|digital\\w*)",
+      "(?:simulat\\w*|test\\w*)\\W+(?:\\w+\\W+){0,4}(?:parts?|model|design|assembl\\w*)"]);
+    P[3].any = P[3].any.concat([
+      "(?:sent|send|share\\w*|email\\w*)\\W+(?:\\w+\\W+){0,6}(?:internet|online|electronic\\w*|email|shipyard|boat-?builder|builder|client|manufacturer|anywhere|immediate\\w*)",
+      "(?:use\\w*|make|made|print\\w*|send|sent|export\\w*|go|goes|going|feed|fed|output)\\W+(?:\\w+\\W+){0,6}(?:cnc|3d print\\w*|laser cut\\w*)"]);
+    P[4].any = P[4].any.concat([
+      "accura\\w*[^.]{0,40}(?:tolerance|small|precise|exact)|(?:exact|precise|accurate)\\W+(?:\\w+\\W+){0,3}(?:dimensions?|sizes?|measurements?)",
+      "(?:dimensions?|sizes?|measurements?)\\W+(?:\\w+\\W+){0,4}(?:are|is)\\W+(?:\\w+\\W+){0,2}(?:exact|precise|accurate)"]); }
+
+  /* cad-13(a): a negation about 3DS ("dimensions aren't exact") must not veto the STEP geometry mark; and 3DS carries the extra data in a longer clause */
+  { const P = QP("cad-13", 0).points;
+    P[0].not[2] = "(?<!\\b3ds\\b(?:(?!\\bstep\\b)[^.]){0,60})" + P[0].not[2];
+    P[2].any = P[2].any.concat(["\\b3ds\\b[^.]{0,140}?\\b(?:include[sd]?|carr(?:y|ies)|carried|brings?|holds?|stores?|contains?|has|have|saves?|supports?|with|keeps?)\\b\\W+(?:\\w+\\W+){0,4}(?:materials?|textures?|lights?|lighting|cameras?)"]);
+    P[2].any.push("\\b3ds\\b\\W+(?:such as|like|e\\.g\\.?|including|namely)\\W+(?:\\w+\\W+){0,3}(?:materials?|textures?|lights?)", "extra\\W+(?:\\w+\\W+){0,3}3ds");
+    P[2].not = P[2].not.concat(["\\bstep\\b[^.]{0,40}\\b(?:includes?|carr(?:y|ies)|holds?|stores?|contains?|has|have|keeps?)\\b\\W+(?:\\w+\\W+){0,3}(?:materials?|textures?|lights?|lighting|cameras?)(?![^.]{0,60}\\b3ds\\b)(?<!\\b3ds\\b[^.]{0,200})"]); }
+
+  /* cad-14(b) */
+  { const P = QP("cad-14", 1).points;
+    P[0].not = (P[0].not || []).concat(["constrained\\W+(?:\\w+\\W+){0,3}(?:means?|is|are)\\W+(?:\\w+\\W+){0,3}(?:no\\b|colou?r|same|all the lines)", "(?:cannot|can't|can not|unable to|won't let you)\\W+(?:be\\W+)?(?:edited|changed)\\b(?!\\W+(?:by|except|unless|accident|without|only))", "\\bsame colou?r"]);
+    P[0].any = P[0].any.concat([
+      "(?:held|fixed|locked|defined|controlled)\\W+(?:\\w+\\W+){0,3}(?:in place|in position|by (?:the )?constraints?|by dimensions?)|constraints?\\W+(?:\\w+\\W+){0,3}(?:hold|keep|lock|fix|define|control|stop|prevent|maintain|preserve)",
+      "(?:only|just)\\W+(?:\\w+\\W+){0,4}(?:changed?|altered?|edited?|move\\w*)\\W+(?:\\w+\\W+){0,3}(?:by|with|via|through|when)\\W+(?:\\w+\\W+){0,2}dimensions?|can\\W+only\\W+(?:\\w+\\W+){0,3}dimensions?",
+      "constraints?\\W+(?:\\w+\\W+){0,3}in place|(?:no|without)\\W+(?:\\w+\\W+){0,2}(?:loose|free)\\W+(?:geometry|lines?|elements?)|\\bwith\\W+(?:the\\W+)?(?:constraints|them|all (?:the )?constraints)\\W+(?:\\w+\\W+){0,4}(?:stays?|remain\\w*|keeps?|fixed|held|locked)",
+      "constraints?\\W+(?:\\w+\\W+){0,3}(?:define|decide|set)\\W+(?:\\w+\\W+){0,4}(?:relate|relationship|connected|linked)"], true);
+    P[1].negOK = true; P[2].negOK = true;
+    P[1].not = (P[1].not || []).concat(["\\b(?:no|not|n't|never)\\W+(?:\\w+\\W+){0,2}(?:stay|remain|keep|hold|maintain|preserve)"]);
+    P[1].any = P[1].any.concat([
+      "(?:keeps?|kept|maintain\\w*|preserv\\w*|retain\\w*|protect\\w*)\\W+(?:\\w+\\W+){0,4}(?:relationships?|shape|intent|geometry|proportions|intended)",
+      "(?:relationships?|shape|intent|geometry)\\W+(?:\\w+\\W+){0,3}(?:kept|keeps|maintained|preserved|retained|intact|correct)",
+      "(?:updates?|adjusts?|changes?|responds?|behaves?|follows?|edits?)\\W+(?:\\w+\\W+){0,3}(?:properly|correctly|predictabl\\w*|as (?:intended|expected)|in a controlled)|predictabl\\w*",
+      "(?:remains?|stays?|remain)\\W+(?:\\w+\\W+){0,3}(?:correct|right|intact|central|centred|centered|square|symmetrical|smooth|straight|90|tangent|concentric|parallel)",
+      "(?:doesn'?t|does not|won'?t|will not|can'?t|cannot)\\W+(?:\\w+\\W+){0,2}(?:distort|deform|twist|warp|drift|move about|go out of shape)",
+      "(?:no|nothing)\\W+(?:\\w+\\W+){0,2}(?:float\\w*|twist\\w*|distort\\w*|drift\\w*)"]);
+    P[2].any = P[2].any.concat([
+      "(?:without|if (?:it|the sketch) (?:is|was|were|wasn'?t|isn'?t) not|if not|if it (?:is|was|were) not|unless)\\W+(?:\\w+\\W+){0,6}(?:distort\\w*|twist\\w*|warp\\w*|drift\\w*|deform\\w*|out of shape|move|shift|change shape)",
+      "(?:distort\\w*|twist\\w*|warp\\w*|deform\\w*|go out of shape|out of shape|unexpected ways?)"]); }
+
+  /* every pile of short comma-separated words ("hole, shell, wall, tube, ...") is a list of key words, not an answer */
+  const COMMAS = "(?:,\\s*[a-z' -]{1,22}){6,}";
+  const noList = (P) => P.forEach((pt) => { pt.not = (pt.not || []).concat([COMMAS]); });
+  B.cad.questions.forEach((q) => q.parts.forEach((pt) => { if (pt.type === "text") noList(pt.points); }));
 })();

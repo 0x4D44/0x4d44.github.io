@@ -528,4 +528,94 @@
   /* tech-09(a) */
   TP("tech-09", 0).points[0].negOK = true;
   alt("tech-09", 0, 0, 1, "\\b(?:fit\\w*|suit\\w*|adjust\\w*|adapt\\w*|custom\\w*|person\\w*|tailor\\w*|match\\w*)\\W+(?:\\w+\\W+){0,4}\\b(?:patients?|customers?|limbs?|person|user|client)\\b|\\b(?:next|new|another|different|every|each|any|individual)\\W+(?:\\w+\\W+){0,1}(?:patients?|customers?|limbs?|person|user)\\b");
+  /* ---- Hardening, part 2: synonym gaps and swap vetoes, checked against hand-written student answers. ---- */
+
+  const noList = (P) => P.forEach((pt) => { pt.not = (pt.not || []).concat(["(?:,\\s*[a-z' -]{1,22}){6,}"]); });
+  const nonEmpty = (a) => a || [];
+
+  /* tech-01(d): repeated saving, and negated "PNG compresses without losing anything" */
+  { const P = TP("tech-01", 3).points;
+    const REP = "|re-?sav\\w*|\\bresav\\w*|number of times|\\bgradually\\b|over time|builds? up|\\bafter\\W+(?:\\w+\\W+){0,2}(?:few|couple|several|many|lots)\\W+(?:\\w+\\W+){0,1}(?:edits?|saves?|saving)|\\b(?:every|each)\\W+(?:\\w+\\W+){0,1}(?:re-?sav\\w*|save|edit)|as often as|every single";
+    P[1].all[2] += REP;
+    P[1].all[1] += "|\\bgo(?:es)? down\\b|\\bgets? (?:lower|worse|poorer)\\b|\\bdecreas\\w*|\\bdecline\\w*|\\bdeteriorat\\w*|\\bdegrad\\w*|\\bartefacts?\\b|\\bartifacts?\\b";
+    [P[0], P[1]].forEach((p) => {
+      p.not = p.not.slice();
+      p.not[3] = "\\bpngs?\\W+(?:also |still |always |will |would |can |actually )?(?:throws?|loses?|discards?|degrades?|damages?|compresses|blurs?)\\b(?!\\W+(?:\\w+\\W+){0,3}(?:nothing|no|none|any|without)\\b)";
+      p.not[7] = "\\bjpe?gs?\\W+(?:\\w+\\W+){0,3}(?:not|n'?t|never|no)\\b(?!\\W+like\\b)\\W+(?:\\w+\\W+){0,3}(?:lose|lost|loss|degrad\\w*|discard\\w*|throw\\w*|damag\\w*|worse|blur\\w*|blocky|pixelated)";
+      p.not.push("\\bvector\\b|\\bscal(?:e|ed|able|ing)\\b");
+    });
+    P[0].any = P[0].any.concat([
+      "\\b(?:quality|detail|sharpness|resolution|pixels?|clarity|image|logo)\\W+(?:\\w+\\W+){0,3}(?:not|n'?t|never)\\W+(?:\\w+\\W+){0,2}(?:drop\\w*|fall\\w*|suffer\\w*|go down|decreas\\w*|declin\\w*|get lower|affected)",
+      "\\b(?:do(?:es)?|did) no harm\\b|\\bno harm\\b|\\bevery pixel\\b|\\ball (?:the )?(?:pixels?|detail|data|information)\\b|\\bnothing (?:is |gets |being )?(?:removed|lost|thrown|discarded|taken)\\b|\\bnone of the (?:quality|detail|data|information)\\b|\\bstays? (?:sharp|crisp|perfect)|\\bnever (?:degrades?|deteriorates?|gets? worse)|\\b(?:perfect|unchanged|identical)\\b"]);
+  }
+
+  /* tech-02(b): neutral format phrased many ways */
+  { const NATIVE_WRONG = ["\\bstep\\W+(?:\\w+\\W+){0,3}(?:cannot|can'?t|unable|won'?t)\\W+(?:\\w+\\W+){0,3}(?:open|read|import)", "\\bnative\\W+(?:\\w+\\W+){0,4}(?:is|are)\\W+(?:\\w+\\W+){0,2}(?:universal|neutral|compatible|open standard)", "\\bstep\\W+(?:\\w+\\W+){0,3}(?:only|just)\\W+(?:\\w+\\W+){0,3}(?:studio|own|this|one)\\b", "\\bstep\\W+(?:is|are)\\W+(?:\\w+\\W+){0,3}native\\W+(?:\\w+\\W+){0,3}(?:manufacturer|their|gdansk)"];
+    const DIFF = "(?:different|any|other|rival|many|various|every|all|most|several|whichever|whatever|another|multiple|lots of|nearly all|almost all)";
+    const SW = "(?:software|cad|packages?|programs?|systems?|makes?|brands?|applications?)";
+    add("tech-02", 1, { desc: "STEP is neutral, so almost any CAD package can open it, including the manufacturer's different software", group: "a", negOK: true, any: [
+      "\\bstep\\b[^.]{0,80}?(?:neutral|universal\\w*|standard|independent|non-?proprietary|compatible|interoperab\\w*|exchange\\w*)[^.]{0,80}?" + DIFF + "\\W+(?:\\w+\\W+){0,3}" + SW,
+      "(?:neutral|universal\\w*|standard|independent|non-?proprietary|open)\\W+(?:\\w+\\W+){0,6}(?:so|which means|meaning|therefore|that)\\W+(?:\\w+\\W+){0,6}(?:manufacturer|they|firm|company|gdansk)\\W+(?:\\w+\\W+){0,3}(?:can|could|will|able)\\W+(?:\\w+\\W+){0,3}(?:open|read|use|import)",
+      "\\bstep\\b\\W+(?:\\w+\\W+){0,8}(?:exchang\\w*|shar\\w*|transfer\\w*|swap\\w*)\\W+(?:\\w+\\W+){0,6}(?:between|across|among)\\W+(?:\\w+\\W+){0,3}" + DIFF + "\\W+(?:\\w+\\W+){0,2}" + SW,
+      "\\bstep\\b[^.]{0,40}(?:not|n'?t)\\W+(?:\\w+\\W+){0,3}(?:tied|specific|limited|locked|restricted|dependent)\\W+(?:\\w+\\W+){0,3}(?:to\\W+)?(?:one|a single|any|particular|specific|make|brand)|" + SW + "[- ]independent|independent of (?:the )?" + SW + "|\\b(?:isn'?t|is not|not)\\W+(?:\\w+\\W+){0,2}(?:tied|specific|limited|locked)\\W+(?:\\w+\\W+){0,2}(?:to\\W+)?(?:one|a single|any|particular|a)\\W+(?:\\w+\\W+){0,2}(?:make|brand|software|package|program)",
+      "\\bstep\\b\\W+(?:\\w+\\W+){0,5}(?:can be|is|are)\\W+(?:\\w+\\W+){0,2}(?:read|opened|imported|understood|supported)\\W+(?:\\w+\\W+){0,4}(?:by|in|with)\\W+(?:\\w+\\W+){0,3}" + DIFF,
+      "(?:neutral|universal|standard|common)\\W+(?:\\w+\\W+){0,3}step\\W+(?:\\w+\\W+){0,8}(?:they|manufacturer)\\W+(?:\\w+\\W+){0,2}(?:can|could|will)\\W+(?:\\w+\\W+){0,2}(?:open|read|use)",
+      "\\bdifferent\\W+(?:cad\\W+)?(?:systems?|packages?|programs?|software)\\W+(?:\\w+\\W+){0,3}(?:share|read|open|use|import)",
+      "\\bstep\\b[^.]{0,60}(?:whichever|whatever|regardless of which|no matter which)\\W+(?:\\w+\\W+){0,3}" + SW,
+      "\\bstep\\b[^.]{0,30}(?:supported|accepted|recogni[sz]ed|understood|read)\\W+(?:\\w+\\W+){0,3}by\\W+(?:\\w+\\W+){0,2}(?:nearly|almost|most|all|every|many)"],
+      not: NATIVE_WRONG.concat(["\\b(?:native|studio'?s own|own format)\\W+(?:\\w+\\W+){0,4}(?:works|opens?|compatible)\\W+(?:\\w+\\W+){0,4}(?:any|all|every|most|many)"]) }); }
+
+  /* tech-03(b): cause words that stay close to "copied to everyone's devices", effect "nobody has a clean copy" */
+  { const P = TP("tech-03", 1).points;
+    P[0].all[1] = P[0].all[1].replace("(?:copi(?:ed|es)|copy|", "(?:copi(?:ed|es)|copy|puts?|pushe?s?|does the same|also happens|") ;
+    P[1].any = P[1].any.concat([
+      "\\b(?:nobody|no ?one|none of (?:them|the devices))\\W+(?:\\w+\\W+){0,3}(?:has|have|keeps?|holds?|left)\\W+(?:\\w+\\W+){0,3}(?:copy|copies|version|file|drawings?|it)",
+      "\\b(?:no|not any)\\W+(?:\\w+\\W+){0,2}(?:clean|good|safe|untouched|original|intact|spare|old|earlier|previous)\\W+(?:copy|copies|version|file)",
+      "\\b(?:lose|lost|loses|losing)\\W+(?:\\w+\\W+){0,3}(?:everything|all (?:of )?(?:it|the|their)|the (?:work|drawings|files|data|lot)|block c)",
+      "\\b(?:gone|lost|deleted)\\W+(?:\\w+\\W+){0,3}(?:everywhere|from (?:all|every)|on (?:all|every))",
+      "\\bwould be (?:gone|lost)\\b|\\bcould (?:be lost|lose)\\b|\\bwill be (?:gone|lost)\\b"]);
+    P[3].negOK = true; }
+
+  /* tech-04(b): file-name improvements */
+  { more("tech-04", 1, 0, [
+      "\\b(?:saying|showing|telling|describing|indicating)\\W+(?:\\w+\\W+){0,3}(?:what|which)\\b",
+      "\\b(?:replace|rename|change)\\w*\\W+(?:\\w+\\W+){0,6}(?:img_?\\d+|new drawing|poster)",
+      "\\bdescri(?:be|bes|bing|ption)\\W+(?:of\\W+)?(?:\\w+\\W+){0,6}(?:photo|project|content|drawing|file|job|inside)",
+      "\\b(?:naming|named|name)\\w*\\W+(?:\\w+\\W+){0,3}(?:after|with|using)\\W+(?:\\w+\\W+){0,3}(?:project|job|client|item|stage|content)",
+      "\\b(?:include|add|put)\\w*\\W+(?:\\w+\\W+){0,3}(?:job|project|client|stage|item|content)",
+      "\\bwhat the (?:file|drawing|photo|document|image)\\W+(?:is|shows|contains)\\b",
+      "\\b(?:meaningful|descriptive|clear|informative)\\W+(?:\\w+\\W+){0,2}(?:names?|file ?names?)|\\bnames?\\W+(?:\\w+\\W+){0,3}(?:descriptive|meaningful|informative)"]);
+    more("tech-04", 1, 1, [
+      "\\b(?:numbered|numbering|incrementing|increasing|rising|sequential|ascending)\\W+(?:\\w+\\W+){0,2}(?:versions?|v\\d+|numbers?)|\\bnumber\\w*\\W+(?:the\\W+)?versions?|versions?\\W+(?:\\w+\\W+){0,3}(?:increase\\w*|rise|rising|go(?:es)? up|increment\\w*|in order|numbered|ascending)|\\bv0?\\d\\b\\W+(?:\\w+\\W+){0,6}v0?\\d|\\bversion numbers?\\b"]);
+    more("tech-04", 1, 2, [
+      "\\b(?:agree\\w*|standard|same|consistent|common|set|fixed|uniform|one)\\W+(?:\\w+\\W+){0,3}(?:pattern|convention|format|structure|system|order|scheme|rules?|way|naming)",
+      "\\b(?:pattern|convention|structure|format|scheme)\\W+(?:\\w+\\W+){0,5}(?:every|all|each)\\W+(?:\\w+\\W+){0,1}(?:file|name)",
+      "\\b[a-z]+[_-][a-z]+[_-][a-z]+[_-]\\w+\\b|\\bjob\\W+(?:then\\W+)?item\\W+(?:then\\W+)?(?:stage|date)",
+      "\\b(?:every|all|each)\\W+(?:file|name)s?\\W+(?:\\w+\\W+){0,4}(?:same|consistent|pattern|format|structure)",
+      "\\balways\\W+(?:\\w+\\W+){0,6}\\bthen\\b"]);
+    more("tech-04", 1, 3, [
+      "\\byear\\W+(?:first|then|month)|\\byear\\W+month\\W+day|\\byyyy",
+      "\\bdates?\\W+(?:\\w+\\W+){0,8}(?:year[- ]first|sort|chronolog\\w*|date order|in order|ordered|list)",
+      "\\b(?:sort|list|order)\\w*\\W+(?:\\w+\\W+){0,4}(?:by )?date|chronolog\\w*"]);
+    more("tech-04", 1, 4, [
+      "\\bno\\W+(?:\\w+\\W+){0,1}(?:spaces|brackets|symbols|special)",
+      "\\b(?:drop|remove|take out)\\W+(?:\\w+\\W+){0,3}(?:brackets|spaces|symbols)"]); }
+
+  /* tech-05(b): why low-resolution previews help the photographer */
+  { const P = TP("tech-05", 1).points;
+    P[0].any = P[0].any.concat([
+      "\\b(?:blurr\\w*|pixel\\w*|blocky|rubbish|poor|bad|jagged|fuzzy|grainy|unusable|useless)\\W+(?:\\w+\\W+){0,8}(?:print\\w*|enlarg\\w*|large|big|blown|blow\\w*)",
+      "\\b(?:print\\w*|enlarg\\w*|blown up|blow\\w*)\\W+(?:\\w+\\W+){0,8}(?:blurr\\w*|pixel\\w*|blocky|fuzzy|rubbish|poor|bad|jagged|grainy)",
+      "\\b(?:stolen|copied|copy|copies|preview\\w*|saved|downloaded|thief)\\W+(?:\\w+\\W+){0,6}(?:poor|low|bad|blurry|small|blocky)\\W+(?:\\w+\\W+){0,2}(?:quality|resolution)|\\b(?:poor|low|bad)\\W+(?:quality|resolution)\\W+(?:\\w+\\W+){0,6}(?:stolen|copy|copies|copied|saved|downloaded|preview)",
+      "\\b(?:too|so)\\W+(?:poor|low|small|bad)\\W+(?:\\w+\\W+){0,3}(?:use|useful|print\\w*)|\\b(?:of|is)\\W+(?:\\w+\\W+){0,2}(?:no|little|any) use\\b",
+      "\\b(?:isn'?t|is not|not|n'?t)\\W+(?:\\w+\\W+){0,2}(?:good|big|large|sharp|high)\\W+enough\\W+(?:\\w+\\W+){0,2}(?:to\\W+)?(?:print|enlarg|use)",
+      "\\b(?:low|small|poor)\\W+(?:\\w+\\W+){0,1}(?:resolution|res|ppi|quality)\\W+(?:\\w+\\W+){0,8}(?:poor|bad|worthless|blurry|blocky|pixelated|no good|no use|useless)"], true);
+    P[1].any = P[1].any.concat([
+      "\\b(?:have to|has to|must|need to|needs to|needed to|got to|will need to|would have to)\\W+(?:\\w+\\W+){0,2}(?:pay|buy|purchas\\w*)\\b",
+      "\\b(?:buyers?|customers?|people|they|you)\\W+(?:\\w+\\W+){0,2}(?:pay|buy|purchas\\w*)\\W+(?:\\w+\\W+){0,6}(?:original|full|high|good|real|proper|file|version|photo|picture|image)",
+      "\\b(?:copying|copied|steal\\w*|stolen|taking|using)\\W+(?:\\w+\\W+){0,4}(?:without pay\\w*|for nothing|without permission)",
+      "\\b(?:only available|only given|only sent|only received|only get|only gets)\\W+(?:\\w+\\W+){0,4}(?:after|when|once)\\W+(?:\\w+\\W+){0,3}(?:pay\\w*|buy\\w*|purchas\\w*|order\\w*)",
+      "\\b(?:doesn'?t|does not|won'?t|will not|not|n'?t)\\W+(?:\\w+\\W+){0,3}(?:lose|losing)\\W+(?:\\w+\\W+){0,3}(?:sales?|money|income|earnings)|\\b(?:sales?|income|earnings)\\W+(?:\\w+\\W+){0,3}(?:safe|protected|kept)"], true);
+    P[1].not[1] = P[1].not[1].replace("stops?|stopped|stopping|", "stops?|stopped|stopping|protect\\w*|") ;
+    P[4].negOK = true; }
 })();
