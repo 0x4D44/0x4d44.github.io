@@ -7,7 +7,7 @@
   const near = (a, b, n) => { const g = "\\W+(?:\\w+\\W+){0," + (n == null ? 3 : n) + "}"; return "\\b(?:" + a + ")\\b" + g + "\\b(?:" + b + ")\\b|\\b(?:" + b + ")\\b" + g + "\\b(?:" + a + ")\\b"; };
 
   /* Frequently used relationship patterns (tested against the working with whitespace removed, lower-case). */
-  const FMA = ["f\\w{0,12}=mx?a", "a=f\\w{0,12}/m", "m=f\\w{0,12}/a", "\\w{0,3}=mx?a\\b", "\\d+(?:\\.\\d+)?=\\d+(?:\\.\\d+)?x?a\\b", "a=\\d+(?:\\.\\d+)?/\\d"];
+  const FMA = ["f\\w{0,12}=mx?a", "a=f\\w{0,12}/m", "m=f\\w{0,12}/a", "\\w{0,3}=mx?a\\b", "\\d+(?:\\.\\d+)?=\\d+(?:\\.\\d+)?x?a", "a=\\d+(?:\\.\\d+)?/\\d"];
   const EK = ["(?:e_?k|ke|e_?kinetic)=(?:1/2|0?\\.5|½|\\(1/2\\))x?\\(?m", "(?:e_?k|ke)=m?\\(?v\\)?\\^?2x?(?:1/2|0\\.5)", "(?:e_?k|ke)=mv\\^?2/2", "(?:e_?k|ke)\\w{0,10}=(?:1/2|0?\\.5|½)x?\\(?m", "(?:e_?k|ke)\\w{0,10}=(?:1/2|0?\\.5)x\\d+\\.?\\d*x\\d+\\.?\\d*\\^2", "(?:e_?k|ke)\\w{0,10}=\\d+\\.?\\d*x\\d+\\.?\\d*\\^2/2"];
   const EP = ["(?:e_?p|pe|e_?pot|e_?gp)=mgh", "mgh"];
   const DVT = ["[ds]=v\\u0304?x?t", "[ds]=u\\w{0,2}x?t", "v\\u0304?=[ds]/t", "t=[ds]/v", "[ds]=vx?t"];
@@ -251,7 +251,7 @@
             label: "(d)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "Describe the acceleration of the ball (i) while it is in the air and (ii) during the bounce, as shown by the graph.",
             points: [
-              { desc: "In the air: constant acceleration of 9.8 m s⁻² downwards (gradient −9.8)", any: [near("acceleration|gradient", "9\\.8|constant|same|uniform|steady", 6), "free fall"] },
+              { desc: "In the air: constant acceleration of 9.8 m s⁻² downwards (gradient −9.8)", any: [near("acceleration|gradient", "9\\.8|constant|same|uniform|steady", 6), near("constant|9\\.8|steady|uniform", "downwards?|down\\b|gravity", 5), "free fall"] },
               { desc: "During the bounce: a very large acceleration upwards, for a very short time (near-vertical line)", any: [near("bounce|floor|impact|contact|hits|collision|vertical", "large|big|huge|high|spike|upward|up\\b|greater|bigger|sharp|steep|very", 8)] },
             ],
             sample: "While the ball is in the air its acceleration is constant at 9.8 m s⁻² downwards, because the graph has a constant negative gradient. During the bounce the line is almost vertical, so the ball has a very large acceleration upwards for a very short time.",
@@ -292,9 +292,9 @@
             label: "(d)", type: "text", marks: 3, rows: 8, minWords: 15,
             q: "A second rider, whose mass is twice as large, leaves the same ramp horizontally at 20 m s⁻¹. Use your knowledge of physics to comment on the flight of the second rider compared with the first.",
             points: [
-              { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)] },
-              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("acceleration|\\bg\\b|9\\.8", "same|independent|constant|all (?:masses|objects)|any mass", 8)] },
-              { desc: "He travels further horizontally, because d = vt with a larger horizontal speed (about 31 m)", any: [near("further|farther|greater (?:distance|range)|larger (?:distance|range)|more distance|longer (?:distance|range)", "horizontal\\w*|speed|velocity|20|faster|d ?= ?v|31", 10), near("20", "31", 12)] },
+              { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)], negOK: true, not: ["\\bnot (?:\\w+ ){0,2}(?:the )?(?:same|equal|identical)", "\\bdifferent\\b", "\\b(?:shorter|longer|less|more) time"] },
+              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("acceleration|\\bg\\b|9\\.8", "same|independent|constant|all (?:masses|objects)|any mass", 8)], negOK: true, not: ["heav\\w*[^.]{0,30}(?:faster|sooner|quicker)"] },
+              { desc: "He travels further horizontally, because d = vt with a larger horizontal speed (about 31 m)", any: [near("further|farther|greater (?:distance|range)|larger (?:distance|range)|more distance|longer (?:distance|range)", "horizontal\\w*|speed|velocity|20|faster|d ?= ?v|31", 10), near("20", "31", 12), near("distance|range", "greater|larger|bigger|longer", 3)] },
             ],
             sample: "The horizontal and vertical motions are independent, so the second rider is in the air for the same time as the first, about 1.6 s. Gravity gives the same acceleration of 9.8 m s⁻² to any mass, so the extra mass makes no difference to the fall of 12 m. His horizontal velocity is constant but larger, so using d = vt he lands further away, at about 31 m.",
             model: "<p>Any three of (1 each):</p><ul><li>Vertical and horizontal motions are independent: the vertical motion (u = 0, s = 12 m) is unchanged, so the time in the air is the same, 1.6 s</li><li>The acceleration due to gravity does not depend on mass (F = mg and F = ma, so a = g), so the mass of the rider is irrelevant to the time of fall</li><li>The horizontal velocity is constant (no horizontal force) and larger, so he travels further: d = vt = 20 × 1.565 = 31 m</li></ul><p>A heavier rider does <em>not</em> fall faster. Without air resistance mass has no effect on the flight.</p>",
@@ -317,7 +317,7 @@
             label: "(b)", type: "calc", marks: 4,
             q: "Calculate the horizontal distance travelled by the ball before it lands.",
             steps: [
-              { desc: "Uses an equation of motion for the vertical motion to find the time (e.g. v = u + at with v = 0 at the top)", rel: [...VUAT, ...SUVAT_S] },
+              { desc: "Uses an equation of motion for the vertical motion to find the time (e.g. v = u + at with v = 0 at the top)", rel: [...VUAT, ...SUVAT_S, "(?:1/2|0?\\.5)x?9\\.8x?t\\^?2", "0=11\\.\\d*t-"] },
               { desc: "Total time of flight 2.27 s (twice the time to the top, 1.14 s)", nums: [[2.27, 2.3, 2.271, 2.28]] },
               { desc: "Uses d = vt for the horizontal motion, with the horizontal speed 17.8 m s⁻¹", rel: [...DVT, "[ds]=\\d[\\d.]*x\\d"], nums: [[17.8, 17.81, 18]] },
               { desc: "Final answer 40 m with unit", ans: 40.4457, sf: 2, alts: [41], unit: "m" },
@@ -329,8 +329,8 @@
             label: "(c)", type: "text", marks: 2, rows: 5, minWords: 10,
             q: "Describe how the horizontal and the vertical components of the ball's velocity change from the moment it is kicked until just before it lands.",
             points: [
-              { desc: "The horizontal component is constant (no horizontal force)", any: [near("horizontal", "constant|same|unchanged|stays|remains|uniform|doesn'?t change|does not change|not change", 6)] },
-              { desc: "The vertical component decreases to zero at the top, then increases downwards (constant acceleration of 9.8 m s⁻² downwards)", all: [near("vertical", "decreas\\w*|reduc\\w*|slow\\w*|smaller|less|falls?|lower", 10), "zero|\\b0\\b|top|highest|maximum|stops"], win: 220 },
+              { desc: "The horizontal component is constant (no horizontal force)", any: [near("horizontal\\w*", "constant|same|unchanged|stays|remains|uniform|doesn'?t change|does not change|not change", 6)] },
+              { desc: "The vertical component decreases to zero at the top, then increases downwards (constant acceleration of 9.8 m s⁻² downwards)", all: [near("vertical\\w*", "decreas\\w*|reduc\\w*|slow\\w*|smaller|less|falls?|lower", 10), "zero|\\b0\\b|top|highest|maximum|stops"], win: 220 },
             ],
             sample: "The horizontal component stays constant throughout the flight because there is no horizontal force. The vertical component decreases steadily as the ball rises, is zero at the highest point, and then increases in the downward direction as the ball falls.",
             model: "<ul><li>Horizontal component constant (1)</li><li>Vertical component decreases uniformly to zero at the top, then increases in the opposite (downward) direction, because of the constant acceleration of 9.8 m s⁻² downwards (1)</li></ul>",
@@ -372,7 +372,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the tension in the tow bar.",
             steps: [
-              { desc: "Uses F = ma on the caravan alone (or the car alone)", rel: FMA },
+              { desc: "Uses F = ma on the caravan alone (or the car alone)", rel: [...FMA, "t-\\d+=\\d+x?[\\d.]+", "\\d+-t=\\d+x?[\\d.]+"] },
               { desc: "Substitution: T − 300 = 800 × 1.4 (or 3500 − 400 − T = 1200 × 1.4)", nums: [[800, 1200], [300, 400]] },
               { desc: "Final answer 1.4 × 10³ N (1420 N) with unit", ans: 1420, sf: 2, unit: "n" },
             ],
@@ -432,7 +432,7 @@
             steps: [
               { desc: "Uses F = ma with the unbalanced force along the slope", rel: FMA },
               { desc: "Component of the weight down the slope: mg sin 25° = 166 N", nums: [[166, 165.7, 170]] },
-              { desc: "Substitution: T − 166 − 60 = 40 × 0.50", nums: [60, 0.5, 40] },
+              { desc: "Substitution: T − 166 − 60 = 40 × 0.50", nums: [60, [0.5, 20]] },
               { desc: "Final answer 2.5 × 10² N (246 N) with unit", ans: 245.67, sf: 2, unit: "n" },
             ],
             sample: "component of weight down the slope = mg sin θ = 40 × 9.8 × sin 25° = 166 N\nF = ma\nT − 166 − 60 = 40 × 0.50\nT = 20 + 166 + 60\nT = 246 N",
@@ -474,8 +474,8 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the velocity of the trolleys immediately after they stick together.",
             steps: [
-              { desc: "Conservation of momentum: total momentum before = total momentum after", rel: ["momentum(?:before)?=(?:total)?momentum", "pbefore=pafter", "m\\w{0,2}u\\w{0,2}\\+m\\w{0,2}u\\w{0,2}=", "m\\w{0,2}v\\w{0,2}\\+m\\w{0,2}v\\w{0,2}=", "mu\\+mu=\\(?m\\+m\\)?v"] },
-              { desc: "Substitution with a correct sign for B: 0.60 × 2.0 + 0.45 × (−1.0) = 1.05 v", nums: [0.6, 0.45, 2] },
+              { desc: "Conservation of momentum: total momentum before = total momentum after", rel: ["momentum(?:before)?=(?:total)?momentum", "momentumbefore.{0,40}=.{0,14}momentumafter", "=\\(?\\d+(?:\\.\\d+)?\\+\\d+(?:\\.\\d+)?\\)?x?v", "pbefore=pafter", "m\\w{0,2}u\\w{0,2}\\+m\\w{0,2}u\\w{0,2}=", "m\\w{0,2}v\\w{0,2}\\+m\\w{0,2}v\\w{0,2}=", "mu\\+mu=\\(?m\\+m\\)?v"] },
+              { desc: "Substitution with a correct sign for B: 0.60 × 2.0 + 0.45 × (−1.0) = 1.05 v", nums: [[0.6, 1.2, 0.75], [0.45, 0.9]] },
               { desc: "Final answer 0.71 m s⁻¹ with unit (to the right)", ans: 0.714286, sf: 2, unit: "m s-1" },
             ],
             sample: "Take right as positive.\ntotal momentum before = total momentum after\nm_A u_A + m_B u_B = (m_A + m_B)v\n(0.60 × 2.0) + (0.45 × −1.0) = 1.05 × v\n0.75 = 1.05v\nv = 0.71 m s⁻¹",
@@ -560,9 +560,9 @@
             label: "(b)", type: "calc", marks: 4,
             q: "Calculate the average friction force acting on the carriage as it travels from the top to the lowest point.",
             steps: [
-              { desc: "Uses E_p = mgh and E_k = ½mv² (energy lost = E_p lost − E_k gained)", rel: [...EP, ...EK] },
+              { desc: "Uses E_p = mgh and E_k = ½mv² (energy lost = E_p lost − E_k gained)", rel: [...EP, ...EK, "329280|3\\.29x10\\^5"] },
               { desc: "Energy lost to friction 8.9 × 10⁴ J (89280 J)", nums: [[89280, 89300, 89000, 8.9e4, 9e4]] },
-              { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160"], nums: [160] },
+              { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "=fd\\b", "=fx160", "=160xf", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160"], nums: [160] },
               { desc: "Final answer 5.6 × 10² N (558 N) with unit", ans: 558, sf: 2, unit: "n" },
             ],
             sample: "E_p = mgh = 1200 × 9.8 × 28 = 329280 J\nE_k = ½mv² = ½ × 1200 × 20² = 240000 J\nenergy lost = 329280 − 240000 = 89280 J\nE_w = Fd\n89280 = F × 160\nF = 558 N",
@@ -596,7 +596,7 @@
             label: "(a)", type: "calc", marks: 4,
             q: "Calculate the gravitational force between the Earth and the satellite.",
             steps: [
-              { desc: "Uses F = Gm₁m₂/r²", rel: ["f=g(?:x)?m[\\w₁₂]{0,2}x?m[\\w₁₂]{0,2}\\)?/\\(?r\\^?2", "f=g\\(?m", "f=g(?:x)?\\(?m"] },
+              { desc: "Uses F = Gm₁m₂/r²", rel: ["f=g(?:x)?m[\\w₁₂]{0,2}x?m[\\w₁₂]{0,2}\\)?/\\(?r\\^?2", "f=g\\(?m", "f=g(?:x)?\\(?m", "f=\\(?6\\.67"] },
               { desc: "Distance between centres: r = 6.4 × 10⁶ + 8.0 × 10⁵ = 7.2 × 10⁶ m", nums: [[7.2e6, 7200000, 7.2e3]] },
               { desc: "Substitution of G, the two masses (and r)", nums: [6.67e-11, 6.0e24, 850] },
               { desc: "Final answer 6.6 × 10³ N with unit", ans: 6561.92, sf: 2, unit: "n" },
@@ -613,7 +613,7 @@
             label: "(c)", type: "text", marks: 3, rows: 8, minWords: 15,
             q: "A news website says: &ldquo;Astronauts in orbit float because there is no gravity in space.&rdquo; Use your knowledge of physics to comment on this statement.",
             points: [
-              { desc: "Gravity still acts at orbital height: the pull is only a little weaker (F = Gm₁m₂/r²)", any: [near("still|continues?|remains?|nearly|almost|slightly|only a little|reduced|weaker|a bit", "gravity|gravitational|weight|force of gravity|pull|attraction", 6)], not: ["\\bno gravity\\b", "\\bzero gravity\\b", "\\bgravity (?:is|has) (?:zero|gone)", "\\b(?:out of|escape[sd]?) (?:the |earth'?s )?gravity", "\\bwithout gravity", "\\bgravity (?:does ?n'?t|does not|isn'?t|is not) (?:act|exist|work|affect)"] },
+              { desc: "Gravity still acts at orbital height: the pull is only a little weaker (F = Gm₁m₂/r²)", any: [near("still|continues?|remains?|nearly|almost|slightly|only a little|reduced|weaker|a bit", "gravity|gravitational|weight|force of gravity|pull|attraction", 6), "\\b(?:there is|there'?s|there still is)\\b\\W+(?:\\w+\\W+){0,2}\\bgravity", near("gravity|gravitational (?:force|field|pull)", "acts?|acting|exists?|present|provides?", 4)], not: ["\\b(?:too far|far enough|far away from|beyond|outside)\\b[^.]{0,40}gravity", "\\bno gravity\\b", "\\bzero gravity\\b", "\\bgravity (?:is|has) (?:zero|gone)", "\\b(?:out of|escape[sd]?) (?:the |earth'?s )?gravity", "\\bwithout gravity", "\\bgravity (?:does ?n'?t|does not|isn'?t|is not) (?:act|exist|work|affect)"] },
               { desc: "The astronaut and the craft are both in free fall, falling with the same acceleration, so there is no contact force between them (apparent weightlessness)", any: [near("free[- ]?fall|falling|fall\\w*", "together|same|craft|station|satellite|spacecraft|orbit", 8), "same acceleration", near("no|zero|nothing", "contact force|reaction force|normal force|force from the floor|pushing", 6)] },
               { desc: "They are moving sideways so fast that they keep missing the Earth: they fall around it (an orbit)", any: [near("sideways|horizontal\\w*|tangential|orbital|forward|speed|velocity", "round|around|miss\\w*|curve\\w*|never (?:land|hit)|keeps? (?:on )?falling", 10), "falls? (?:around|round)", "orbit\\w* (?:is|means|are)\\W+(?:\\w+\\W+){0,3}(?:fall\\w*|free ?fall)"] },
             ],
@@ -658,8 +658,8 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the time between passing the beacons as measured by an observer on the Earth.",
             steps: [
-              { desc: "Uses t′ = t / √(1 − (v/c)²)", rel: ["t.{0,2}=\\(?t\\)?/\\(?sqrt\\(?1-", "t.{0,2}=\\(?t\\)?/\\(?sqrt", "t.{0,2}=t/\\(?sqrt", "t.{0,2}=tx?\\(?1-"] },
-              { desc: "Substitution: 3.0 and v = 0.90c (v/c = 0.90, or 2.7 × 10⁸ with 3.00 × 10⁸)", nums: [3, [0.9, 2.7e8]] },
+              { desc: "Uses t′ = t / √(1 − (v/c)²)", rel: ["t.{0,2}=\\(?t\\)?/\\(?sqrt\\(?1-", "t.{0,2}=\\(?t\\)?/\\(?sqrt", "t.{0,2}=t/\\(?sqrt", "t.{0,2}=tx?\\(?1-", "t.{0,2}=\\(?3(?:\\.0)?\\)?x?/\\(?sqrt", "t.{0,2}=\\(?3(?:\\.0)?\\)?/\\(?0\\.4"] },
+              { desc: "Substitution: 3.0 and v = 0.90c (v/c = 0.90, or 2.7 × 10⁸ with 3.00 × 10⁸)", nums: [3, [0.9, 2.7e8, 0.436, 0.44]] },
               { desc: "Final answer 6.9 hours with unit", ans: 6.88247, sf: 2, unit: ["h", "hours", "hour", "hr", "hrs"] },
             ],
             sample: "t′ = t / √(1 − (v/c)²)\nt′ = 3.0 / √(1 − 0.90²)\nt′ = 3.0 / 0.436\nt′ = 6.9 hours",
@@ -675,7 +675,7 @@
             q: "Muons created high in the atmosphere have a lifetime of 2.2 µs in their own frame of reference. They travel at 0.995c towards the ground, yet many survive to be detected at ground level. Explain this observation, from the point of view of an observer on the Earth.",
             points: [
               { desc: "For the Earth observer the muon's lifetime is longer than 2.2 µs because of time dilation (moving clocks run slowly)", any: [near("time|lifetime|life|clock", "longer|dilat\\w*|stretch\\w*|extended|slower|slow|increas\\w*", 8)] },
-              { desc: "…so the muons travel further/for longer before decaying and a large fraction reach the ground", any: [near("further|farther|more distance|greater distance|enough time|longer distance|long enough", "ground|earth|surface|detect\\w*|reach\\w*|surviv\\w*|arriv\\w*", 8)] },
+              { desc: "…so the muons travel further/for longer before decaying and a large fraction reach the ground", any: [near("further|farther|more distance|greater distance|enough time|longer distance|long enough", "ground|earth|surface|detect\\w*|reach\\w*|surviv\\w*|arriv\\w*", 8), "\\b(?:more|enough|greater|larger)\\b\\W+(?:\\w+\\W+){0,2}muons?\\b\\W+(?:\\w+\\W+){0,3}(?:surviv\\w*|reach\\w*|arriv\\w*)"] },
             ],
             sample: "Because the muons are moving at almost the speed of light, time dilation means that the Earth observer measures their lifetime to be much longer than 2.2 µs. This gives them enough time to travel much further before decaying, so many of them reach the ground.",
             model: "<ul><li>Time dilation: the moving muon's clock runs slowly, so the lifetime measured on Earth is longer than 2.2 µs (1)</li><li>The muons therefore travel further before decaying, so a large number reach the ground (1)</li></ul><p>Alternative from the muon's frame: the distance to the ground is length-contracted, so the journey takes less than the muon lifetime (1 + 1).</p>",
@@ -710,9 +710,9 @@
             label: "(c)", type: "calc", marks: 4,
             q: "A police car emits a note of frequency 900 Hz. A stationary observer, ahead of the police car, hears a note of frequency 960 Hz as the police car approaches. Calculate the speed of the police car.",
             steps: [
-              { desc: "Uses f_o = f_s × v/(v ± v_s), choosing v − v_s for an approaching source", rel: ["f.{0,3}o.{0,2}=f.{0,3}s.{0,2}x?\\(?v/", "f.{0,3}o.{0,2}=f.{0,3}s", "f.{0,3}o.{0,2}=\\(?f.{0,3}s", "fo=fs"] },
+              { desc: "Uses f_o = f_s × v/(v ± v_s), choosing v − v_s for an approaching source", rel: ["f.{0,3}o.{0,2}=f.{0,3}s.{0,2}x?\\(?v/", "f.{0,3}o.{0,2}=f.{0,3}s", "f.{0,3}o.{0,2}=\\(?f.{0,3}s", "fo=fs", "960\\(340-\\w+\\)=", "340-v\\w{0,2}=", "v\\w{0,2}=340-"] },
               { desc: "Substitution: 960 = 900 × 340/(340 − v_s)", nums: [960, 900, 340] },
-              { desc: "Rearranges: 340 − v_s = 318.75 (or equivalent, e.g. 960(340 − v_s) = 306 000)", nums: [[318.75, 318.8, 319, 306000, 20400, 326400]] },
+              { desc: "Rearranges: 340 − v_s = 318.75 (or equivalent, e.g. 960(340 − v_s) = 306 000)", nums: [[318.75, 318.8, 319, 306000, 20400, 326400, 1.067, 1.0667, 1.07]] },
               { desc: "Final answer 21 m s⁻¹ with unit", ans: 21.25, sf: 2, unit: "m s-1" },
             ],
             sample: "f_o = f_s × v/(v − v_s) (approaching)\n960 = 900 × 340/(340 − v_s)\n340 − v_s = 900 × 340/960 = 318.75\nv_s = 340 − 318.75\nv_s = 21 m s⁻¹",
@@ -833,7 +833,7 @@
             label: "(d)", type: "text", marks: 3, rows: 8, minWords: 15,
             q: "Astronomers measure the orbital speeds of stars in a spiral galaxy. The speeds do not fall as expected for stars far from the centre of the galaxy but stay high. Use your knowledge of physics to comment on what this suggests about the matter in the galaxy.",
             points: [
-              { desc: "Gravity from the visible matter alone would give lower orbital speeds at large distances: the stars orbit faster than expected", any: [near("faster|higher|greater|quicker", "expected|predicted|than|visible|calculated", 8), near("visible|stars|luminous", "not enough|insufficient|too little|less", 8)] },
+              { desc: "Gravity from the visible matter alone would give lower orbital speeds at large distances: the stars orbit faster than expected", any: [near("faster|higher|greater|quicker", "expected|predicted|than|visible|calculated", 8), near("visible|stars|luminous", "not enough|insufficient|too little|less", 8), near("visible|luminous|can see|expect\\w*|predict\\w*|calculat\\w*|should|would", "lower|slower|slowly|smaller|reduced", 10)] },
               { desc: "More gravitational force (more mass) is needed to hold the stars in orbit, so the galaxy contains more mass than we can see", any: [near("more|extra|additional|greater|unseen|hidden|invisible|missing|undetected", "mass|matter|gravity|gravitational", 5)] },
               { desc: "This unseen matter is dark matter: it exerts gravity but does not emit (or absorb) light we can detect", any: ["dark matter"] },
             ],
