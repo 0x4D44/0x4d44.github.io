@@ -82,7 +82,8 @@
     const wordy = toks.filter((t) => !/^\d+$/.test(t) && !/^[a-z]\d?$/.test(t) || FUNC.has(t)).length;
     if (func / Math.max(1, wordy) < 0.14) return (text.match(/[,;]/g) || []).length >= 3 && func >= 1 ? "half" : "zero";
     // a run of "and the"-joined nouns with no verb, auxiliary or linking word is a list, however it is punctuated
-    if ((text.match(/\b(and|or)\b/g) || []).length >= 3 && !toks.some((t) => AUXV.has(t))) return "half";
+    const joins = (text.match(/\b(and|or)\b/g) || []).length;
+    if (joins >= 3 && (!toks.some((t) => AUXV.has(t)) || (joins >= 4 && joins * 7 >= toks.length))) return "half";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
