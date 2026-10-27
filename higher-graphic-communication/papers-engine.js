@@ -64,6 +64,22 @@
     const func = funcToks.length;
     if (func / toks.length < 0.14) return "zero";
     if (toks.length < 8) return null;
+    // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
+    const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
+    const NOUNLESS = new Set(["and", "or", "but", "is", "are", "was", "were", "be", "so", "because", "of", "to", "it", "in", "on", "for", "by", "with", "from", "at", "as", "if", "then", "than", "not", "the", "a", "an", "will", "can", "does", "do", "has", "have"]);
+    const JOINT = new Set(["and", "or", "but", "so", "because", "if", "then", "than"]);
+    let bad = 0;
+    for (let i = 1; i < toks.length; i++) {
+      const p = toks[i - 1], t = toks[i];
+      if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that"))) bad++;
+    }
+    if (bad >= 2 && bad * 14 >= toks.length) return "zero";
+    // key words strictly alternating with filler words, run after run, is padding rather than prose
+    let alt = 1, altMax = 1;
+    for (let i = 1; i < toks.length; i++) {
+      if (FUNC.has(toks[i]) !== FUNC.has(toks[i - 1])) { alt++; if (alt > altMax) altMax = alt; } else alt = 1;
+    }
+    if (altMax >= 24) return "zero";
     // padding a pile of key words with the same "the/is/and" over and over is not a sentence
     if (func >= 8 && new Set(funcToks).size < 4) return "zero";
     let run = 0, longest = 0;
