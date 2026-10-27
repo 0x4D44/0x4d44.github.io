@@ -196,9 +196,16 @@
       const fig = el("figure", { class: "diagram diagram-scroll pp-fig", role: "group", "aria-label": "Figure for question " + n, html: scopeIds(q.figure, ns) });
       card.append(fig);
       // only a figure that really scrolls sideways needs to be a keyboard tab stop
-      const fit = () => { if (fig.scrollWidth > fig.clientWidth + 1) fig.setAttribute("tabindex", "0"); else fig.removeAttribute("tabindex"); };
+      const hint = el("p", { class: "pp-hint pp-fighint", hidden: "" }, "Swipe the figure sideways to see all of it.");
+      card.append(hint);
+      const fit = () => {
+        const wide = fig.scrollWidth > fig.clientWidth + 1;
+        if (wide) fig.setAttribute("tabindex", "0"); else fig.removeAttribute("tabindex");
+        hint.hidden = !wide;
+      };
       requestAnimationFrame(fit);
-      window.addEventListener("resize", fit);
+      // a figure in a hidden tab has no width yet; the observer fires when its tab opens or the window changes
+      if (window.ResizeObserver) new ResizeObserver(fit).observe(fig); else window.addEventListener("resize", fit);
     }
     const paint = () => {
       const r = results[q.id] || [];
