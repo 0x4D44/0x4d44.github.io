@@ -495,7 +495,7 @@ export class UI {
 
   /* ----- how to play ----- */
   _openHow() {
-    const keys = [["A", "Accelerate"], ["Z", "Brake / reverse"], [", / .", "Steer left / right (or Arrow keys)"], ["Space", "Hold to drift; release for a mini-turbo"], ["Enter", "Use item"], ["C", "Look behind"], ["Esc / P", "Pause"]];
+    const keys = [["A", "Accelerate"], ["Z", "Brake / reverse"], [", / .", "Steer left / right (or Arrow keys)"], ["Enter", "Hold to drift; release for a mini-turbo"], ["Space", "Use item"], ["C", "Look behind"], ["Esc / P", "Pause"]];
     const touch = [["Left pad", "Steer (throttle is automatic)"], ["DRIFT", "Hold while turning"], ["ITEM", "Use your item"], ["BRAKE", "Brake / reverse"]];
     const pad = [["Stick / D-pad", "Steer"], ["RT / A", "Accelerate"], ["LT / B", "Brake"], ["RB or LB", "Drift"], ["X / Y", "Use item"], ["Start", "Pause"]];
     const row = (a) => a.map(([k, d]) => `<div>${k.split(" / ").map((x) => `<kbd>${esc(x)}</kbd>`).join("")}</div><span class="d">${esc(d)}</span>`).join("");

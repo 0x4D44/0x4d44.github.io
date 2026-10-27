@@ -27,13 +27,13 @@ const CSS = `
 
 const KEYS = {
   accel: ["KeyA", "ArrowUp"], brake: ["KeyZ", "ArrowDown"], left: ["Comma", "ArrowLeft"], right: ["Period", "ArrowRight"],
-  drift: ["Space", "ShiftLeft", "ShiftRight"], item: ["Enter", "NumpadEnter", "KeyE", "KeyX", "ControlLeft", "ControlRight"],
+  drift: ["Enter", "NumpadEnter", "ShiftLeft", "ShiftRight"], item: ["Space", "KeyE", "KeyX", "ControlLeft", "ControlRight"],
   back: ["KeyC", "Backspace"],
 };
 const GAME_KEYS = new Set(Object.values(KEYS).flat());
 const ITEM_KEYS = new Set(KEYS.item);
 export const KEYMAP_HELP = {
-  accelerate: "A", brake: "Z", left: ",", right: ".", drift: "Space", item: "Enter", lookBack: "C", pause: "Esc / P",
+  accelerate: "A", brake: "Z", left: ",", right: ".", drift: "Enter", item: "Space", lookBack: "C", pause: "Esc / P",
   alt: "Arrow keys also steer, accelerate and brake",
 };
 
