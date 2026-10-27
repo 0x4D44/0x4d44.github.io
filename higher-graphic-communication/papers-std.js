@@ -84,7 +84,7 @@
 
   /* ---- Q6: third-angle layout ---- */
   const fig6 = svg(340, 270,
-    "A notched block in third-angle layout. View X is drawn above view Y. View Z is drawn to the right of view Y. Y shows the front of the block with a rectangular notch cut from the top right. X shows the top with a vertical line where the notch begins. Z shows a rectangle with a horizontal line two thirds of the way down. Thin projection lines join the views.",
+    "A notched block in third-angle layout. View X is drawn above view Y. View Z is drawn to the right of view Y. Y shows the front of the block with a rectangular notch cut from the top right. X shows the top with a vertical line where the notch begins. Z shows a rectangle with a horizontal line halfway down. Thin projection lines join the views.",
     `<polygon points="60,170 140,170 140,200 180,200 180,230 60,230" fill="none" stroke="${INK}" stroke-width="2.2"/>` +
     rect(60, 100, 120, 50) + ln(140, 100, 140, 150, 2.2) +
     rect(200, 170, 50, 60) + ln(200, 200, 250, 200, 2.2) +
