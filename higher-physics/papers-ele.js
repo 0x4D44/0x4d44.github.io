@@ -12,6 +12,15 @@
   /* relationship patterns (tested against the working with all spaces removed) */
   const OHM = ["v=ir", "v=ixr", "v=rxi", "i=v/r", "r=v/i"];
   const VNUM = "[a-z_0-9.₀-₉]+";
+  /* potential-divider relationships, with or without a left-hand side (tested against the compacted working) */
+  const DIVIDER = [
+    "v[a-z_0-9]*=\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, "v[a-z_0-9]*=\\(?" + VNUM + "/" + VNUM + "\\)?x" + VNUM,
+    "v[a-z_0-9]*/v[a-z_0-9]*=" + VNUM + "/" + VNUM, "i=[0-9.]+/[0-9.]+",
+    "\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, VNUM + "x\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM, "v[a-z_0-9]*=" + VNUM + "x\\(?" + VNUM + "/",
+    "v[a-z_0-9]*=\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM,
+  ].concat(OHM);
+  /* unit-prefix alternatives: the scaled number written with the plain unit (333 A for 333 mA) is vetoed */
+  const bareScaled = (digits, unit) => "(?<![0-9.])" + digits + "(?:" + unit + ")\\.?$";
 
   /* ---------- small SVG kit ---------- */
   const INK = "#222", BLU = "#1c3b66", RED = "#b3261e", FILL = "#dbe6f5", GRID = "#d4d4d4";
@@ -40,7 +49,7 @@
     for (let v = 0; v <= o.xmax + 1e-9; v += o.xs) { g += (v > 0 ? ln(fx(v), fy(0), fx(v), fy(o.ymax), { c: GRID, w: 0.8 }) : "") + ln(fx(v), fy(0), fx(v), fy(0) + 5) + tx(fx(v), fy(0) + 19, +v.toFixed(3), { s: 11 }); }
     for (let v = 0; v <= o.ymax + 1e-9; v += o.ys) { g += (v > 0 ? ln(fx(0), fy(v), fx(o.xmax), fy(v), { c: GRID, w: 0.8 }) : "") + ln(fx(0) - 5, fy(v), fx(0), fy(v)) + tx(fx(0) - 9, fy(v) + 4, +v.toFixed(3), { s: 11, a: "end" }); }
     g += ln(fx(0), fy(0), fx(o.xmax), fy(0), { w: 1.8 }) + ln(fx(0), fy(0), fx(0), fy(o.ymax), { w: 1.8 });
-    g += tx((fx(0) + fx(o.xmax)) / 2, o.h - 8, o.xl, { s: 12 }) + tx(15, (fy(0) + fy(o.ymax)) / 2, o.yl, { s: 12, r: -90 });
+    g += tx((fx(0) + fx(o.xmax)) / 2, o.h - 8, o.xl, { s: 12 }) + tx(o.yx == null ? 15 : o.yx, (fy(0) + fy(o.ymax)) / 2, o.yl, { s: 12, r: -90 });
     return { g, fx, fy };
   }
   /* smooth curve through knots (Catmull-Rom to cubic Bezier) */
@@ -134,13 +143,14 @@
   })();
 
   const figThermistor = (() => {
-    let b = ln(40, 40, 130, 40) + ln(40, 225, 205, 225) + ln(40, 40, 40, 225) + ln(130, 40, 130, 225) + ln(130, 130, 205, 130) + ln(205, 130, 205, 225);
-    b += cell(40, 130, true) + resistor(130, 80, true) + resistor(130, 180, true) + meter(205, 180, "V") + dot(130, 130) + dot(130, 225);
+    let c = ln(40, 40, 130, 40) + ln(40, 225, 205, 225) + ln(40, 40, 40, 225) + ln(130, 40, 130, 225) + ln(130, 130, 205, 130) + ln(205, 130, 205, 225);
+    c += cell(40, 130, true) + resistor(130, 80, true) + resistor(130, 180, true) + meter(205, 180, "V") + dot(130, 130) + dot(130, 225);
     // thermistor: diagonal line through the resistor
-    b += ln(112, 104, 148, 56, { w: 1.6 }) + ln(112, 104, 104, 104, { w: 1.6 });
-    b += tx(120, 84, "thermistor", { a: "end", s: 11 }).replace('x="120"', 'x="116"') + tx(116, 184, "R = 2.0 kΩ", { a: "end", s: 11 }) + tx(20, 134, "6.0 V", { a: "end", s: 11 }).replace('x="20"', 'x="22"');
+    c += ln(112, 104, 148, 56, { w: 1.6 }) + ln(112, 104, 104, 104, { w: 1.6 });
+    c += tx(120, 84, "thermistor", { a: "end", s: 11 }).replace('x="120"', 'x="116"') + tx(116, 184, "R = 2.0 kΩ", { a: "end", s: 11 }) + tx(20, 134, "6.0 V", { a: "end", s: 11 }).replace('x="20"', 'x="22"');
     // graph
-    const a = axes({ w: 520, h: 270, l: 318, r: 14, t: 24, b: 52, xmax: 80, ymax: 8, xs: 10, ys: 1, xl: "temperature / °C", yl: "thermistor resistance / kΩ" });
+    let b = '<g transform="translate(36,0)">' + c + "</g>";
+    const a = axes({ w: 520, h: 270, l: 318, r: 14, t: 24, b: 52, yx: 288, xmax: 80, ymax: 8, xs: 10, ys: 1, xl: "temperature / °C", yl: "thermistor resistance / kΩ" });
     b += a.g;
     const k = [[15, 7.5], [20, 6.0], [30, 4.0], [40, 3.0], [50, 2.0], [60, 1.5], [70, 1.0], [80, 0.8]].map((p) => [a.fx(p[0]), a.fy(p[1])]);
     b += smooth(k, BLU, 2.4);
@@ -168,7 +178,7 @@
         figure: figScope,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 6, sf: 2, tol: 0, unit: "V", shown: "6.0",
+            label: "(a)", type: "num", marks: 1, a: 6, alts: [6000], sf: 2, tol: 0, unit: "V", shown: "6.0",
             q: "State the peak voltage of the supply.",
             why: "The peak is 3.0 divisions above the centre line, so V<sub>peak</sub> = 3.0 div × 2.0 V/div = <strong>6.0 V</strong>. Count from the <em>centre</em> line, not from the bottom of the wave.",
           },
@@ -178,13 +188,13 @@
             steps: [
               { desc: "Period from the trace: one cycle is 5.0 div, so T = 5.0 × 2.0 ms = 10 ms", nums: [[10, 0.01]] },
               { desc: "Relationship: f = 1/T", rel: ["f=1/t", "f=1/period", "frequency=1/", "t=1/f", "f=1/0?\\.01", "f=1/10"] },
-              { desc: "Final line: f = 100 Hz", ans: 100, sf: 2, unit: ["hz", "hertz"] },
+              { desc: "Final line: f = 100 Hz", ans: 100, alts: [0.1], sf: 2, unit: ["hz", "hertz", "khz"], not: [bareScaled("0?\\.10*", "hz|hertz")] },
             ],
             sample: "One cycle spans 5.0 div, so T = 5.0 × 2.0 ms = 10 ms = 0.010 s\nf = 1/T\nf = 1/0.010 = 100 Hz",
-            model: "<ul><li>Period from the trace, 5.0 div × 2.0 ms/div = 10 ms (or 0.010 s) (1)</li><li>f = 1/T (1)</li><li>f = 1/0.010 = 100 Hz, with the final line written (1)</li></ul><p>The course report notes that candidates lose marks in a &ldquo;show that&rdquo; for not showing <em>where the period came from</em>. Write the division count and the timebase. The frequency of 100 Hz must appear as a final line; the given answer alone earns nothing.</p>",
+            model: "<ul><li>Period from the trace, 5.0 div × 2.0 ms/div = 10 ms (or 0.010 s) (1)</li><li>f = 1/T (1)</li><li>f = 1/0.010 = 100 Hz, with the final line written (1)</li></ul><p>In a &ldquo;show that&rdquo; question the marks are for showing <em>where the period came from</em>, so write the division count and the timebase. The frequency of 100 Hz must appear as a final line; the given answer alone earns nothing.</p>",
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 6 / Math.SQRT2, sf: 2, tol: 0, unit: "V", shown: "4.2",
+            label: "(c)", type: "num", marks: 1, a: 6 / Math.SQRT2, alts: [6000 / Math.SQRT2], sf: 2, tol: 0, unit: "V", shown: "4.2",
             q: "Calculate the r.m.s. voltage of the supply.",
             why: "V<sub>rms</sub> = V<sub>peak</sub>/√2 = 6.0/√2 = <strong>4.2 V</strong>. A common slip is to quote 6.0 V (the peak) or to <em>multiply</em> by √2 (giving 8.5 V): the r.m.s. value is always <em>smaller</em> than the peak.",
           },
@@ -240,7 +250,7 @@
               { desc: "Relationship: V = IR", rel: OHM },
               { desc: "Total current from the supply: I = 12/12 = 1.0 A", nums: [1.0] },
               { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [4.0] },
-              { desc: "Current in lamp X = 0.33 A", ans: 1 / 3, sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere"] },
+              { desc: "Current in lamp X = 0.33 A (333 mA is also accepted)", ans: 1 / 3, alts: [1000 / 3], sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere", "mA", "ma", "milliamps", "milliamp"], not: [bareScaled("3[0-9]{2}(?:\\.[0-9]+)?", "amps?|amperes?|a")] },
             ],
             sample: "V = IR\nI(total) = V/R = 12/12 = 1.0 A\np.d. across R₁ = 1.0 × 8.0 = 8.0 V, so p.d. across the lamps = 12 − 8.0 = 4.0 V\nI(X) = V/R = 4.0/12 = 0.33 A",
             model: "<ul><li>V = IR (1)</li><li>Total current = 12/12 = 1.0 A (use the answer to (a); ecf) (1)</li><li>p.d. across the lamps = 12 − (1.0 × 8.0) = 4.0 V (1)</li><li>I = 4.0/12 = 0.33 A (1)</li></ul><p>Equally acceptable: the current divides in the ratio of the <em>inverse</em> resistances, I<sub>X</sub> = 1.0 × 6.0/(6.0 + 12) = 0.33 A. A frequent error is to use the full 12 V across lamp X, which ignores the p.d. lost across R<sub>1</sub>.</p>",
@@ -292,7 +302,7 @@
             q: "Calculate the voltmeter reading when the LDR is in darkness.",
             steps: [
               { desc: "Potential divider relationship, e.g. V₁ = R₁/(R₁ + R₂) × V_S, or V₁/V₂ = R₁/R₂, or V = IR",
-                rel: ["v[a-z_0-9]*=\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, "v[a-z_0-9]*=\\(?" + VNUM + "/" + VNUM + "\\)?x" + VNUM, "v[a-z_0-9]*/v[a-z_0-9]*=" + VNUM + "/" + VNUM, "i=[0-9.]+/[0-9.]+"].concat(OHM) },
+                rel: DIVIDER },
               { desc: "Correct substitution: 18 (kΩ), 2.0 (kΩ) and 9.0 V", nums: [[18, 18000], [2, 2000, 20], 9] },
               { desc: "Voltmeter reading 8.1 V", ans: 8.1, sf: 2, unit: ["v", "volts", "volt"] },
             ],
@@ -335,8 +345,8 @@
         parts: [
           {
             label: "(a)", type: "num", marks: 1, a: 4.5, sf: 2, tol: 0, unit: "V", shown: "4.5",
-            q: "State the e.m.f. of the cell.",
-            why: "When <em>I</em> = 0 there are no lost volts, so the terminal p.d. equals the e.m.f.: the intercept on the vertical axis, <strong>4.5 V</strong>.",
+            q: "State the EMF of the cell.",
+            why: "When <em>I</em> = 0 there are no lost volts, so the terminal p.d. equals the EMF: the intercept on the vertical axis, <strong>4.5 V</strong>.",
           },
           {
             label: "(b)", type: "calc", marks: 3,
@@ -363,18 +373,18 @@
           },
           {
             label: "(d)", type: "text", marks: 3, minWords: 12, rows: 6,
-            q: "Describe the circuit she used, how she obtained the data, and how the graph is used to find the e.m.f. and the internal resistance of the cell.",
+            q: "Describe the circuit she used, how she obtained the data, and how the graph is used to find the EMF and the internal resistance of the cell.",
             points: [
               { desc: "Circuit: ammeter in series with the cell and variable resistor; voltmeter connected across the terminals of the cell",
                 all: [near("ammeter", "series|in line|with the (?:cell|resistor)|round the circuit", 8), near("voltmeter", "across|parallel|terminals?|over", 8)] },
               { desc: "Change the variable resistor to give a range of currents, recording V and I each time",
                 all: [near("vary|varying|change|changing|adjust\\w*|alter\\w*|different|several|range|repeat\\w*", "variable resistor|resistance|rheostat|resistors|currents?|readings?|values|settings", 6), "record\\w*|reading|measure\\w*|note|results|table|read"] },
-              { desc: "Plot V against I; the y-intercept is the e.m.f. and the gradient is −r (r = −gradient)", not: ["(?:not|n't)\\W+(?:the\\W+)?(?:e\\.?m\\.?f|emf)"],
+              { desc: "Plot V against I; the y-intercept is the EMF and the gradient is −r (r = −gradient)", not: ["(?:not|n't)\\W+(?:the\\W+)?(?:e\\.?m\\.?f|emf)"],
                 all: ["(?:graph|plot\\w*|draw\\w*)\\W+(?:\\w+\\W+){0,6}(?:v|voltage|t\\.?p\\.?d\\.?|p\\.?d\\.?|potential difference|terminal)\\W+(?:\\w+\\W+){0,4}(?:against|vs\\.?|versus|and|on|with)\\W+(?:\\w+\\W+){0,3}(?:i|current)|\\b(?:v|voltage|p\\.?d\\.?|t\\.?p\\.?d\\.?)\\W+(?:against|vs\\.?|versus)\\W+(?:\\w+\\W+){0,2}(?:i|current)|\\bv\\W{0,3}i\\W+graph|graph of v\\b",
                   near("intercept|where it crosses|where it cuts|where it meets", "e\\.?m\\.?f\\.?|\\be\\b|emf", 6) + "|" + near("gradient|slope", "internal resistance|\\br\\b|resistance", 6)] },
             ],
-            sample: "Connect an ammeter in series with the cell and a variable resistor, and connect a voltmeter across the terminals of the cell. Change the variable resistor to give a range of currents and record the voltmeter and ammeter readings each time. Plot a graph of V against I: the y-intercept is the e.m.f. and the gradient is minus the internal resistance, so r is the negative of the gradient.",
-            model: "<ul><li>Circuit: the ammeter in series with the cell and variable resistor; the voltmeter across the cell terminals (1)</li><li>Adjust the variable resistor to obtain a range of values of <em>V</em> and <em>I</em>; record each pair (1)</li><li>Plot <em>V</em> (y-axis) against <em>I</em> (x-axis): y-intercept = e.m.f., gradient = −<em>r</em> (1)</li></ul><p>Switching off between readings (so the cell does not warm up) is good practice but not required. From the 2025 report: for this method the resistance of the connecting wires is <em>not</em> a correction to make, since V and I are measured directly at the cell.</p>",
+            sample: "Connect an ammeter in series with the cell and a variable resistor, and connect a voltmeter across the terminals of the cell. Change the variable resistor to give a range of currents and record the voltmeter and ammeter readings each time. Plot a graph of V against I: the y-intercept is the EMF and the gradient is minus the internal resistance, so r is the negative of the gradient.",
+            model: "<ul><li>Circuit: the ammeter in series with the cell and variable resistor; the voltmeter across the cell terminals (1)</li><li>Adjust the variable resistor to obtain a range of values of <em>V</em> and <em>I</em>; record each pair (1)</li><li>Plot <em>V</em> (y-axis) against <em>I</em> (x-axis): y-intercept = EMF, gradient = −<em>r</em> (1)</li></ul><p>Switching off between readings (so the cell does not warm up) is good practice but not required. The resistance of the connecting wires is not a correction to make in this method, since V and I are measured directly at the cell.</p>",
           },
         ],
       },
@@ -383,7 +393,7 @@
         id: "ele-05",
         style: "Context question · car battery, lost volts and short circuit",
         stem:
-          "<p>A car battery has an e.m.f. of <strong>12.4 V</strong> and an internal resistance of <strong>0.040 Ω</strong>. The headlamps are connected directly across the battery terminals. When the driver operates the starter motor, the battery supplies a current of <strong>150 A</strong> in total.</p>",
+          "<p>A car battery has an EMF of <strong>12.4 V</strong> and an internal resistance of <strong>0.040 Ω</strong>. The headlamps are connected directly across the battery terminals. When the driver operates the starter motor, the battery supplies a current of <strong>150 A</strong> in total.</p>",
         parts: [
           {
             label: "(a)", type: "text", marks: 2, minWords: 8,
@@ -397,7 +407,7 @@
                 all: ["lost volts|internal resistance|\\bir\\b|t\\.?p\\.?d\\.?|terminal"] },
             ],
             sample: "The starter motor draws a very large current from the battery. This increases the lost volts across the internal resistance of the battery, so the terminal p.d. across the headlamps falls and they are dimmer.",
-            model: "<ul><li>The starter motor draws a large current from the battery (1)</li><li>so the lost volts (Ir) across the internal resistance increase, and the terminal p.d. across the lamps decreases (1)</li></ul><p>E = V + Ir: E is fixed, so when I rises V must fall. A bare &ldquo;the starter uses up the power&rdquo; earns nothing. Do not accept &ldquo;the battery runs out&rdquo;: the battery's e.m.f. does not change.</p>",
+            model: "<ul><li>The starter motor draws a large current from the battery (1)</li><li>so the lost volts (Ir) across the internal resistance increase, and the terminal p.d. across the lamps decreases (1)</li></ul><p>E = V + Ir: E is fixed, so when I rises V must fall. A bare &ldquo;the starter uses up the power&rdquo; earns nothing. Do not accept &ldquo;the battery runs out&rdquo;: the battery's EMF does not change.</p>",
           },
           {
             label: "(b)", type: "calc", marks: 3,
@@ -408,18 +418,18 @@
               { desc: "Terminal p.d. 6.4 V", ans: 6.4, sf: 2, unit: ["v", "volts", "volt"] },
             ],
             sample: "E = V + Ir\n12.4 = V + (150 × 0.040)\nV = 12.4 − 6.0 = 6.4 V",
-            model: "<ul><li>E = V + Ir (1)</li><li>12.4 = V + (150 × 0.040) (1)</li><li>V = 6.4 V (1)</li></ul><p>The lost volts are Ir = 6.0 V, about half the e.m.f. Giving 6.0 V (the lost volts) as the answer is the commonest error.</p>",
+            model: "<ul><li>E = V + Ir (1)</li><li>12.4 = V + (150 × 0.040) (1)</li><li>V = 6.4 V (1)</li></ul><p>The lost volts are Ir = 6.0 V, about half the EMF Giving 6.0 V (the lost volts) as the answer is the commonest error.</p>",
           },
           {
             label: "(c)", type: "num", marks: 1, a: 310, sf: 3, tol: 0, unit: "A", shown: "3.1 × 10²",
             q: "The battery terminals are accidentally joined by a thick copper bar of negligible resistance. Calculate the current in the bar.",
-            why: "Short circuit: all of the e.m.f. is across the internal resistance, so I = E/r = 12.4/0.040 = <strong>310 A</strong> (3.1 × 10² A).",
+            why: "Short circuit: all of the EMF is across the internal resistance, so I = E/r = 12.4/0.040 = <strong>310 A</strong> (3.1 × 10² A).",
           },
           {
             label: "(d)", type: "mcq", marks: 1, a: 2,
             q: "A voltmeter of very high resistance is connected across the battery terminals with nothing else connected to the battery. What does it read?",
             opts: ["0 V", "6.4 V", "12.4 V", "310 V", "6.2 V"],
-            why: "With no other component there is a negligible current, so there are no lost volts and the terminal p.d. equals the <strong>e.m.f., 12.4 V</strong>. 0 V would be the reading for a short circuit.",
+            why: "With no other component there is a negligible current, so there are no lost volts and the terminal p.d. equals the <strong>EMF, 12.4 V</strong>. 0 V would be the reading for a short circuit.",
           },
         ],
       },
@@ -438,13 +448,13 @@
               { desc: "Relationship: Q = It", rel: ["q=it", "i=q/t", "t=q/i", "q=ixt"] },
               { desc: "Charge Q = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C", nums: [0.002] },
               { desc: "Relationship C = Q/V with V = 4.0 V", rel: ["c=q/v", "v=q/c", "q=cv", "c=[0-9.x^\\-]+[/÷]4(?:\\.0)?(?![0-9])"], nums: [4.0] },
-              { desc: "Capacitance 5.0 × 10⁻⁴ F", ans: 5e-4, alts: [500], sf: 2, unit: ["f", "µf", "farads", "farad"] },
+              { desc: "Capacitance 5.0 × 10⁻⁴ F (500 µF is also accepted)", ans: 5e-4, alts: [500, 0.5], sf: 2, unit: ["f", "µf", "mf", "farads", "farad", "microfarads", "microfarad"], not: [bareScaled("(?:500(?:\\.0+)?|0?\\.5(?:0+)?)", "f|farads?")] },
             ],
             sample: "Q = It = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C\nC = Q/V = 2.0 × 10⁻³ / 4.0\nC = 5.0 × 10⁻⁴ F",
             model: "<ul><li>Q = It (1)</li><li>Q = 40 × 10<sup>−6</sup> × 50 = 2.0 × 10<sup>−3</sup> C (read t = 50 s and V = 4.0 V from the graph) (1)</li><li>C = Q/V = 2.0 × 10<sup>−3</sup>/4.0 (1)</li><li>C = 5.0 × 10<sup>−4</sup> F (500 µF) (1)</li></ul><p>Convert the microamps: 40 µA is 40 × 10<sup>−6</sup> A. Leaving it as 40 gives an answer 10<sup>6</sup> times too big.</p>",
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 0.004, sf: 2, tol: 0, unit: "J", shown: "4.0 × 10⁻³",
+            label: "(b)", type: "num", marks: 1, a: 0.004, alts: [4], sf: 2, tol: 0, unit: "J", shown: "4.0 × 10⁻³",
             q: "Calculate the energy stored in the capacitor at 50 s.",
             why: "E = ½QV = ½ × 2.0 × 10<sup>−3</sup> × 4.0 = <strong>4.0 × 10<sup>−3</sup> J</strong>; equivalently ½CV² = ½ × 5.0 × 10<sup>−4</sup> × 4.0². Do not use QV, which is twice the stored energy.",
           },
@@ -482,7 +492,7 @@
         figure: figDischarge,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 680e-6 * 9, sf: 2, tol: 0, unit: "C", shown: "6.1 × 10⁻³",
+            label: "(a)", type: "num", marks: 1, a: 680e-6 * 9, alts: [6.12], sf: 2, tol: 0, unit: "C", shown: "6.1 × 10⁻³",
             q: "Calculate the charge stored on the capacitor when it is fully charged.",
             why: "Q = CV = 680 × 10<sup>−6</sup> × 9.0 = 6.12 × 10<sup>−3</sup> C, so <strong>6.1 × 10<sup>−3</sup> C</strong>. Convert microfarads: 680 µF = 680 × 10<sup>−6</sup> F.",
           },
@@ -501,7 +511,7 @@
             model: "<ul><li>The current is greatest at the start, I = V<sub>C</sub>/R = 9.0/450 = 0.020 A (1)</li><li>As the capacitor discharges its p.d. falls, so the current (V<sub>C</sub>/R) falls (1)</li><li>The current falls to zero, quickly at first and then more slowly (1)</li></ul><p>The current in R is in the opposite direction to the charging current. No current ever passes <em>through</em> the insulator between the plates; the current is in the wires as charge leaves the plates.</p>",
           },
           {
-            label: "(c)", type: "num", marks: 1, a: 0.02, sf: 2, tol: 0, unit: "A", shown: "2.0 × 10⁻²",
+            label: "(c)", type: "num", marks: 1, a: 0.02, alts: [20], sf: 2, tol: 0, unit: "A", shown: "2.0 × 10⁻²",
             q: "Calculate the initial current in R just after S is moved to position 2.",
             why: "At the start the capacitor still has its full 9.0 V across it, so I = V/R = 9.0/450 = <strong>0.020 A</strong>.",
           },
@@ -645,13 +655,13 @@
             label: "(c)", type: "calc", marks: 4,
             q: "Calculate the energy of each photon emitted by the LED.",
             steps: [
-              { desc: "Relationship for frequency: v = fλ (or f = v/λ, or c = fλ)", rel: ["v=fλ", "f=v/λ", "c=fλ", "f=c/λ", "v=flambda", "f=v/lambda", "f=c/lambda", "v=f\\*λ", "c=f\\*lambda", "v=fx"] },
-              { desc: "Frequency f = 4.8 × 10¹⁴ Hz", nums: [4.8e14] },
-              { desc: "Relationship E = hf with h = 6.63 × 10⁻³⁴ J s", rel: ["e=hf", "e=hxf", "e=h\\*f", "e=6\\.63"], nums: [6.63e-34] },
+              { desc: "Relationship for frequency: v = fλ (or c = fλ, f = c/λ); or the combined E = hc/λ", rel: ["v=fλ", "f=v/λ", "c=fλ", "f=c/λ", "v=flambda", "f=v/lambda", "f=c/lambda", "v=f\\*λ", "c=f\\*lambda", "v=fx", "e=hc/", "e=hxc/", "e=\\(hxc\\)/", "e=h\\*c/"] },
+              { desc: "Frequency f = 4.8 × 10¹⁴ Hz; or, by the combined route, 6.63 × 10⁻³⁴, 3.00 × 10⁸ and 625 × 10⁻⁹ substituted into E = hc/λ", rel: ["4\\.8x10\\^?14", "4\\.80?e14", "480thz", "(?=.*6\\.63(?:x10\\^?-34|e-34))(?=.*3(?:\\.0+)?(?:x10\\^?8|e8))(?=.*(?:625|6\\.25))"] },
+              { desc: "Relationship E = hf with h = 6.63 × 10⁻³⁴ J s (or E = hc/λ with the data substituted)", rel: ["e=hf", "e=hxf", "e=h\\*f", "e=6\\.63", "e=hc/", "e=hxc/", "e=\\(hxc\\)/", "e=h\\*c/"], nums: [6.63e-34] },
               { desc: "Photon energy 3.18 × 10⁻¹⁹ J", ans: 3.1824e-19, sf: 3, unit: ["j", "joules", "joule"] },
             ],
             sample: "v = fλ\nf = v/λ = 3.00 × 10⁸ / 625 × 10⁻⁹ = 4.8 × 10¹⁴ Hz\nE = hf = 6.63 × 10⁻³⁴ × 4.8 × 10¹⁴\nE = 3.18 × 10⁻¹⁹ J",
-            model: "<ul><li>v = fλ (c = fλ) (1)</li><li>f = 3.00 × 10<sup>8</sup>/625 × 10<sup>−9</sup> = 4.8 × 10<sup>14</sup> Hz (1)</li><li>E = hf with h = 6.63 × 10<sup>−34</sup> (1)</li><li>E = 3.18 × 10<sup>−19</sup> J (1)</li></ul><p>This energy is approximately the band gap of the semiconductor. Convert nm to metres (625 nm = 625 × 10<sup>−9</sup> m); leaving it as 625 gives a frequency of 4.8 × 10<sup>6</sup> Hz.</p>",
+            model: "<ul><li>v = fλ (c = fλ) (1)</li><li>f = 3.00 × 10<sup>8</sup>/625 × 10<sup>−9</sup> = 4.8 × 10<sup>14</sup> Hz (1)</li><li>E = hf with h = 6.63 × 10<sup>−34</sup> (1)</li><li>E = 3.18 × 10<sup>−19</sup> J (1)</li></ul><p>Alternative route, full marks: E = hc/λ (this earns the first and third marks together), then E = 6.63 × 10<sup>−34</sup> × 3.00 × 10<sup>8</sup> / 625 × 10<sup>−9</sup> (second mark), E = 3.18 × 10<sup>−19</sup> J (fourth mark). This energy is approximately the band gap of the semiconductor. Convert nm to metres (625 nm = 625 × 10<sup>−9</sup> m); leaving it as 625 gives a frequency of 4.8 × 10<sup>6</sup> Hz.</p>",
           },
         ],
       },
@@ -764,7 +774,7 @@
         figure: figThermistor,
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 3, sf: 2, tol: 0.2, unit: "kΩ", shown: "3.0",
+            label: "(a)", type: "num", marks: 1, a: 3, alts: [3000], sf: 2, tol: 0.2, unit: "kΩ", shown: "3.0",
             q: "State the resistance of the thermistor at 40 °C.",
             why: "Read from the graph: at 40 °C the curve is at <strong>3.0 kΩ</strong>. Keep the unit in kΩ and use kΩ in later calculations.",
           },
@@ -773,7 +783,7 @@
             q: "Calculate the voltmeter reading at 40 °C.",
             steps: [
               { desc: "Potential divider relationship, e.g. V₁ = R₁/(R₁ + R₂) × V_S, or V₁/V₂ = R₁/R₂, or V = IR",
-                rel: ["v[a-z_0-9]*=\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, "v[a-z_0-9]*=\\(?" + VNUM + "/" + VNUM + "\\)?x" + VNUM, "v[a-z_0-9]*/v[a-z_0-9]*=" + VNUM + "/" + VNUM, "i=[0-9.]+/[0-9.]+"].concat(OHM) },
+                rel: DIVIDER },
               { desc: "Substitution: 2.0 (kΩ), 3.0 (kΩ) and 6.0 V", nums: [[2, 2000], [3, 3000, 5], 6] },
               { desc: "Voltmeter reading 2.4 V", ans: 2.4, sf: 2, unit: ["v", "volts", "volt"] },
             ],
@@ -827,7 +837,7 @@
             why: "Curve Q reaches the <em>same</em> final p.d. (6.0 V, the supply) but more slowly. A <strong>larger resistance</strong> gives a smaller charging current, so charge builds up more slowly. The resistance changes the time, not the final p.d.",
           },
           {
-            label: "(b)", type: "num", marks: 1, a: 0.01, sf: 2, tol: 0, unit: "A", shown: "1.0 × 10⁻²",
+            label: "(b)", type: "num", marks: 1, a: 0.01, alts: [10], sf: 2, tol: 0, unit: "A", shown: "1.0 × 10⁻²",
             q: "Calculate the initial charging current for curve P.",
             why: "At the start the capacitor has no p.d., so all 6.0 V is across the resistor: I = V/R = 6.0/600 = <strong>0.010 A</strong>.",
           },

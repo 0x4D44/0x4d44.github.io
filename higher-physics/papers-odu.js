@@ -12,7 +12,21 @@
   const EP = ["(?:e_?p|pe|e_?pot|e_?gp)=mgh", "mgh"];
   const DVT = ["[ds]=v\\u0304?x?t", "[ds]=u\\w{0,2}x?t", "v\\u0304?=[ds]/t", "t=[ds]/v", "[ds]=vx?t"];
   const SUVAT_S = ["s=ut\\+(?:1/2|0?\\.5|½)x?a?x?t", "s=ut\\+\\(1/2\\)", "s=(?:1/2|0?\\.5|½)x?a?x?t\\^?2", "s=(?:1/2|0?\\.5|½)\\(u\\+v\\)t", "v\\^2=u\\^2\\+2as"];
+  /* "heavier rider falls faster / lands sooner": wrong physics that must not earn credit anywhere in a 'mass and projectile' answer */
+  const FALLFAST = ["\\b(?:heav\\w*|mass\\w*|weigh\\w*|bigger|larger|more massive)\\b\\W+(?:\\w+\\W+){0,6}(?:falls?|fall(?:s|ing)?|drops?|lands?|reach\\w*|hits?|arriv\\w*|descend\\w*)\\W+(?:\\w+\\W+){0,3}(?:faster|sooner|quicker|earlier|more quickly)", "\\b(?:falls?|lands?|drops?|reach\\w*|hits?|arriv\\w*)\\W+(?:\\w+\\W+){0,2}(?:faster|sooner|quicker|earlier|more quickly)\\b", "\\b(?:shorter|less|smaller|reduced)\\W+(?:\\w+\\W+){0,2}(?:time|flight|duration)", "\\b(?:longer|more|greater|bigger|larger)\\W+(?:\\w+\\W+){0,1}(?:time|duration) in the air", "\\bdifferent (?:\\w+ )?(?:time|flight|duration)", "\\b(?:heav\\w*|mass\\w*)\\W+(?:\\w+\\W+){0,3}(?:further|farther|greater (?:distance|range))", "\\b(?:falls?|lands?)\\W+(?:\\w+\\W+){0,3}(?:sooner|earlier)", "\\bacceleration\\W+(?:\\w+\\W+){0,5}(?:greater|larger|bigger|higher)\\W+(?:\\w+\\W+){0,4}(?:heav\\w*|mass\\w*)"];
   const VUAT = ["v=u\\+at", "a=\\(?v-u\\)?/t", "t=\\(?v-u\\)?/a", "v-u=at", "t=v/g", "t=u/g"];
+
+  /* The marker reads the unit as the (up to) 16 characters after the final number, so "0.71 m s-1 to the right" would
+     be read as "m s-1 to the rig". Offer the unit with the commonest direction words so that wording is not penalised. */
+  const U = {
+    m: ["m", "metres", "metre", "meters", "meter"], s: ["s", "seconds", "second", "sec", "secs"],
+    n: ["n", "newtons", "newton"], j: ["j", "joules", "joule"],
+  };
+  const withDir = (bases) => {
+    const out = [];
+    bases.forEach((u) => { out.push(u); ["right", "to the right", "rightwards", "to the east", "forward", "forwards", "in the forward direction", "to the left", "left", "leftwards"].forEach((d) => out.push((u + " " + d).slice(0, 16).trim())); });
+    return out;
+  };
 
   /* ---- figure helpers ---- */
   const T = (x, y, s, o) => '<text x="' + x + '" y="' + y + '"' + (o ? " " + o : "") + ">" + s + "</text>";
@@ -51,7 +65,7 @@
   /* Q02 figure: bouncing ball v-t graph (up positive) */
   const figBall = chart({
     label: "Velocity against time graph for a ball dropped on to a floor, up taken as positive. The velocity falls in a straight line from 0 at 0 s to minus 5.9 metres per second at 0.60 s, jumps to plus 4.9 metres per second, falls in a straight line through zero at 1.10 s to minus 4.9 at 1.60 s, then jumps to plus 3.9 and falls to zero at 2.0 s.",
-    x0: 0, x1: 2, xs: 0.2, xd: 1, y0: -6, y1: 6, ys: 2, xl: "t / s", yl: "v / m s⁻¹",
+    x0: 0, x1: 2, xs: 0.2, xd: 1, y0: -8, y1: 6, ys: 2, xl: "t / s", yl: "v / m s⁻¹",
     lines: [{ pts: [[0, 0], [0.6, -5.88], [0.6, 4.9], [1.6, -4.9], [1.6, 3.92], [2.0, 0]] }],
     extra: (px, py) => T(px(0.63), py(-5.88) + 4, "−5.9", 'fill="#1c3b66"') + T(px(0.63), py(4.9) + 4, "+4.9", 'fill="#1c3b66"') + T(px(1.1) + 6, py(0) - 6, "1.10 s", 'fill="#1c3b66"'),
   });
@@ -74,12 +88,15 @@
     label: "Graph of intensity of radiation against wavelength for two stars, P and Q. Both curves rise to a single peak and then fall. Curve Q is higher than curve P at every wavelength and peaks at about 480 nanometres. Curve P peaks at a longer wavelength, about 720 nanometres.",
     x0: 200, x1: 2000, xs: 200, xd: 0, y0: 0, y1: 1.2, ys: 0.2, yd: 1, xl: "wavelength / nm", yl: "intensity (relative units)",
     lines: [{ pts: curveHot, stroke: "#b3261e" }, { pts: curveCool, stroke: "#1c3b66" }],
-    extra: (px, py) => T(px(560), py(1.0) - 4, "Q", 'fill="#b3261e" font-weight="bold"') + T(px(820), py(0.5) - 6, "P", 'fill="#1c3b66" font-weight="bold"'),
+    extra: (px, py) => {
+      const at = (arr, l) => arr[Math.round((l - 200) / 20)][1];
+      return T(px(560) + 8, py(at(curveHot, 560)) - 6, "Q", 'fill="#b3261e" font-weight="bold" font-size="14"') + T(px(900), py(at(curveCool, 900)) - 10, "P", 'fill="#1c3b66" font-weight="bold" font-size="14"');
+    },
   });
 
   /* Q03 figure: horizontal launch off a ramp */
   const figJump = (() => {
-    const w = 520, h = 250, x0 = 70, y0 = 60, sc = 15, H = 12 * sc, D = 23.47 * sc;
+    const w = 520, h = 290, x0 = 70, y0 = 60, sc = 15, H = 12 * sc, D = 23.47 * sc;
     let s = open(w, h, "Diagram of a motorcyclist leaving the end of a horizontal ramp at 15 metres per second. The end of the ramp is 12 metres above the surface of a lake. A dashed curved path falls from the ramp end to the water, a horizontal distance marked d, which is unknown.");
     s += '<rect x="10" y="' + y0 + '" width="' + (x0 - 10) + '" height="' + H + '" fill="#e8dcc6" stroke="#222"/>';
     s += '<rect x="' + x0 + '" y="' + (y0 + H) + '" width="' + (w - x0 - 10) + '" height="' + (h - y0 - H - 8) + '" fill="#cfe3f3" stroke="#222"/>';
@@ -88,8 +105,10 @@
     s += '<polyline fill="none" stroke="#1c3b66" stroke-width="2" stroke-dasharray="6 4" points="' + pts.join(" ") + '"/>';
     s += arrow(x0 + 4, y0 - 14, x0 + 64, y0 - 14, "#b3261e") + T(x0 + 70, y0 - 10, "15 m s⁻¹", 'fill="#b3261e"');
     s += '<circle cx="' + x0 + '" cy="' + y0 + '" r="5" fill="#222"/>';
-    s += '<line x1="30" y1="' + y0 + '" x2="30" y2="' + (y0 + H) + '" stroke="#222"/>' + arrow(30, y0, 30, y0 + 1, "#222", 1) + T(36, y0 + H / 2 + 4, "12 m");
-    s += '<line x1="' + x0 + '" y1="' + (y0 + H + 14) + '" x2="' + (x0 + D) + '" y2="' + (y0 + H + 14) + '" stroke="#222" stroke-dasharray="3 3"/>' + T(x0 + D / 2, y0 + H + 30, "d = ?", 'text-anchor="middle"');
+    s += '<line x1="30" y1="' + y0 + '" x2="30" y2="' + (y0 + H) + '" stroke="#222"/>' + arrow(30, y0 + H / 2, 30, y0 + 1, "#222", 1.2) + arrow(30, y0 + H / 2, 30, y0 + H - 1, "#222", 1.2) + T(36, y0 + H / 2 + 4, "12 m");
+    const yd = y0 + H + 20;
+    s += '<line x1="' + x0 + '" y1="' + (y0 + H) + '" x2="' + x0 + '" y2="' + (yd + 5) + '" stroke="#222" stroke-dasharray="2 3"/><line x1="' + (x0 + D) + '" y1="' + (y0 + H) + '" x2="' + (x0 + D) + '" y2="' + (yd + 5) + '" stroke="#222" stroke-dasharray="2 3"/>';
+    s += arrow(x0 + D / 2, yd, x0 + 1, yd, "#222", 1.2) + arrow(x0 + D / 2, yd, x0 + D - 1, yd, "#222", 1.2) + T(x0 + D / 2, yd + 18, "d", 'text-anchor="middle" font-style="italic" font-size="14"');
     return s + "</svg>";
   })();
 
@@ -99,7 +118,7 @@
     let s = open(w, h, "Diagram of a car pulling a caravan along a level road, travelling to the right. The engine force on the car is 3500 newtons to the right. Friction on the car is 400 newtons to the left and friction on the caravan is 300 newtons to the left. A tow bar connects the car to the caravan. The mass of the car is 1200 kilograms and of the caravan 800 kilograms.");
     s += '<line x1="10" y1="140" x2="510" y2="140" stroke="#222" stroke-width="2"/>';
     s += '<rect x="40" y="80" width="150" height="52" rx="6" fill="#e6edf7" stroke="#222"/><circle cx="70" cy="136" r="9" fill="#fff" stroke="#222"/><circle cx="165" cy="136" r="9" fill="#fff" stroke="#222"/>' + T(115, 111, "caravan", 'text-anchor="middle"') + T(115, 126, "800 kg", 'text-anchor="middle"');
-    s += '<line x1="190" y1="112" x2="225" y2="112" stroke="#222" stroke-width="3"/>' + T(207, 100, "tow bar", 'text-anchor="middle" font-size="11"');
+    s += '<line x1="190" y1="112" x2="225" y2="112" stroke="#222" stroke-width="3"/>' + '<line x1="207" y1="115" x2="207" y2="156" stroke="#222" stroke-width="0.8"/>' + T(207, 172, "tow bar", 'text-anchor="middle" font-size="12"');
     s += '<rect x="225" y="80" width="150" height="52" rx="6" fill="#f3e6e4" stroke="#222"/><circle cx="255" cy="136" r="9" fill="#fff" stroke="#222"/><circle cx="350" cy="136" r="9" fill="#fff" stroke="#222"/>' + T(300, 111, "car", 'text-anchor="middle"') + T(300, 126, "1200 kg", 'text-anchor="middle"');
     s += arrow(375, 100, 470, 100, "#b3261e") + T(472, 96, "3500 N", 'fill="#b3261e"');
     s += arrow(225, 60, 160, 60, "#1c3b66") + T(150, 52, "400 N", 'fill="#1c3b66" text-anchor="end"');
@@ -121,10 +140,10 @@
 
   /* Q12 figure: wavefronts from a moving source */
   const figDoppler = (() => {
-    const w = 520, h = 230, cy = 115, vT = 30, sT = 12, nowx = 330;
+    const w = 520, h = 250, cy = 120, vT = 22, sT = 13, nowx = 330;
     let s = open(w, h, "Diagram of circular wavefronts emitted at equal time intervals by an ambulance siren moving to the right. The circles are bunched close together in front of the ambulance, on the right, and spread further apart behind it, on the left. Observer X stands ahead of the ambulance and observer Y stands behind it.");
     for (let k = 1; k <= 5; k++) s += '<circle cx="' + (nowx - k * sT) + '" cy="' + cy + '" r="' + k * vT + '" fill="none" stroke="#1c3b66" stroke-width="1.6"/>';
-    s += '<rect x="' + (nowx - 14) + '" y="' + (cy - 9) + '" width="28" height="18" rx="3" fill="#b3261e"/>' + arrow(nowx + 16, cy, nowx + 52, cy, "#b3261e") + T(nowx + 14, cy + 32, "ambulance", 'fill="#b3261e"');
+    s += '<rect x="' + (nowx - 14) + '" y="' + (cy - 9) + '" width="28" height="18" rx="3" fill="#b3261e"/>' + arrow(nowx + 16, cy, nowx + 56, cy, "#b3261e") + T(nowx + 62, cy + 4, "ambulance", 'fill="#b3261e"');
     s += '<circle cx="' + (nowx + 160) + '" cy="' + cy + '" r="5" fill="#222"/>' + T(nowx + 160, cy - 12, "X", 'text-anchor="middle" font-weight="bold"');
     s += '<circle cx="28" cy="' + cy + '" r="5" fill="#222"/>' + T(28, cy - 12, "Y", 'text-anchor="middle" font-weight="bold"');
     return s + "</svg>";
@@ -169,9 +188,9 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the total displacement of the tram during the 26 s journey.",
             steps: [
-              { desc: "Displacement is the area under the v–t graph (or a correct equation, e.g. s = v̄t)", rel: ["area", "[ds]=v\\u0304?x?t", "½x", "1/2x", "0\\.5x", "½\\(", "1/2\\("] },
-              { desc: "Correct areas or lengths: 48 m, 144 m and 36 m (or a trapezium with parallel sides 26 s and 12 s)", rel: ["(?<![\\d.])48(?![\\d])", "\\(26\\+12\\)|\\(12\\+26\\)", "26\\+12|12\\+26", "(?<![\\d.])19(?!\\d)", "(?<![\\d.])38(?!\\d)"] },
-              { desc: "Final answer 228 m with unit", ans: 228, sf: 2, unit: "m" },
+              { desc: "Displacement is the area under the v–t graph (or s = v̄t with the average velocity, used on each section)", rel: ["area", "trapez", "av\\w*(?:velocity|speed)", "mean(?:velocity|speed)", "[ds]=v\\u0304t", "[ds]=v_?(?:av\\w*|mean)x?t", "[ds]=\\(?[uv]\\+[uv]\\)?/2x?t", "[ds]=\\(?[uv]\\+[uv]\\)?x?t/2", "(?:½|1/2|0\\.5)x?\\(?(?:(?:8|6|12)x(?:8|6|12)|2?6\\+12|12\\+26)", "\\(?(?:26\\+12|12\\+26)\\)?/2", "(?:8|6|12)x(?:8|6|12)x?(?:½|1/2|0\\.5)", "[ds]=\\(?[uv]\\+[uv]\\)?/2"], not: ["12x26", "26x12", "312"] },
+              { desc: "Correct areas or lengths: 48 m, 144 m and 36 m (or a trapezium with parallel sides 26 s and 12 s)", rel: ["(?<![\\d.])48(?![\\d])", "(?:8|6|12)x(?:8|6|12)", "(?<![\\d.])144(?!\\d)", "\\(26\\+12\\)|\\(12\\+26\\)", "26\\+12|12\\+26", "(?<![\\d.])19(?!\\d)", "(?<![\\d.])38(?!\\d)"] },
+              { desc: "Final answer 228 m with unit", ans: 228, sf: 2, unit: U.m },
             ],
             sample: "displacement = area under the v-t graph\narea = ½ × 8 × 12 + 12 × 12 + ½ × 6 × 12\n= 48 + 144 + 36\ns = 228 m",
             model:
@@ -187,7 +206,7 @@
               "A line sloping up, then a horizontal line, then a line sloping down (the same shape as the v–t graph)",
               "+1.5 m s⁻² for 8 s, then +12 m s⁻² for 12 s, then −2.0 m s⁻² for 6 s",
             ],
-            why: "Each straight section of the v–t graph has a constant gradient, so the a–t graph is three horizontal lines: +12/8 = +1.5 m s⁻², then 0 (constant velocity), then (0 − 12)/6 = −2.0 m s⁻². The tram is slowing down, so the last value is negative. Option 3 is the common mistake: reading the shape of the v–t graph instead of its gradient (the 2025 report noted this slip).",
+            why: "Each straight section of the v–t graph has a constant gradient, so the a–t graph is three horizontal lines: +12/8 = +1.5 m s⁻², then 0 (constant velocity), then (0 − 12)/6 = −2.0 m s⁻². The tram is slowing down, so the last value is negative. Option D is the common mistake: reading the shape of the v–t graph instead of its gradient.",
           },
           {
             label: "(d)", type: "num", marks: 1, a: 21.2132, tol: 0, sf: 2, unit: "m s⁻¹",
@@ -224,7 +243,7 @@
               "The ball has the same acceleration, because only gravity acts on it between the bounces",
               "The ball has the same displacement in each flight",
             ],
-            why: "The gradient of a v–t graph is the acceleration. While the ball is in the air the only force on it is its weight, so the acceleration is −9.8 m s⁻² every time, and the lines have the same gradient. The starting speeds of the flights are different (5.9, 4.9 and 3.9 m s⁻¹ in magnitude), so options 1 and 2 are wrong.",
+            why: "The gradient of a v–t graph is the acceleration. While the ball is in the air the only force on it is its weight, so the acceleration is −9.8 m s⁻² every time, and the lines have the same gradient. The starting speeds of the flights are different (5.9, 4.9 and 3.9 m s⁻¹ in magnitude), so options B and C are wrong.",
           },
           {
             label: "(b)", type: "calc", marks: 3,
@@ -232,7 +251,7 @@
             steps: [
               { desc: "Height = area under the graph between 0.60 s and 1.10 s (or a correct equation of motion)", rel: ["area", "[ds]=v\\u0304?x?t", "½x", "1/2x", "0\\.5x", "v\\^2=u\\^2\\+2as", "s=ut\\+", "s=½\\(", "s=1/2\\("] },
               { desc: "Substitution: 4.9 m s⁻¹ with 0.50 s (or with a = −9.8 m s⁻²)", nums: [4.9, [0.5, 9.8, 19.6]] },
-              { desc: "Final answer 1.2 m with unit", ans: 1.225, sf: 2, unit: "m" },
+              { desc: "Final answer 1.2 m with unit", ans: 1.225, sf: 2, unit: U.m },
             ],
             sample: "height = area under the v-t graph (triangle)\nh = ½ × 0.50 × 4.9\nh = 1.2 m",
             model: "<ul><li>Height = area of the triangle above the axis between 0.60 s and 1.10 s (1)</li><li>½ × 0.50 × 4.9 (1)</li><li>1.2 m (1)</li></ul><p>Equally acceptable: v² = u² + 2as with 0 = 4.9² + 2(−9.8)s, giving s = 1.2 m. The area <em>below</em> the axis (after the top) is the fall back to the floor, and the time base is 0.50 s, not 1.10 s.</p>",
@@ -271,9 +290,9 @@
             label: "(a)", type: "calc", marks: 3,
             q: "Calculate the time taken for the rider to reach the water.",
             steps: [
-              { desc: "Uses s = ut + ½at² (or v² = u² + 2as) for the vertical motion", rel: SUVAT_S },
+              { desc: "Uses s = ut + ½at² (or v² = u² + 2as) for the vertical motion", rel: [...SUVAT_S, "[dhs]=(?:1/2|0?\\.5|½)x?\\(?[ag]\\)?x?t\\^?2", "t=sqrt\\(?2x?s/a", "t\\^2=2x?s/a", "t=sqrt\\(?2x?12", "t\\^?2=2x?12", "12=(?:0\\+)?(?:1/2|0?\\.5|½)x?9\\.8", "v\\^2=0\\+2x?9\\.8x?12"] },
               { desc: "Substitution: s = 12 m, u = 0, a = 9.8 m s⁻²", nums: [12, 9.8] },
-              { desc: "Final answer 1.6 s with unit", ans: 1.5649, sf: 2, unit: "s" },
+              { desc: "Final answer 1.6 s with unit", ans: 1.5649, sf: 2, unit: U.s },
             ],
             sample: "Vertical motion: u = 0, a = 9.8 m s-2, s = 12 m\ns = ut + 1/2 at^2\n12 = 0 + 1/2 x 9.8 x t^2\nt^2 = 2.449\nt = 1.56 s",
             model: "<ul><li>s = ut + ½at² (1)</li><li>12 = 0 + ½ × 9.8 × t² (1)</li><li>t = 1.6 s (1)</li></ul><p>The 15 m s⁻¹ has no part in the vertical motion: the initial <em>vertical</em> velocity is zero. Using v² = u² + 2as to find v = 15.3 m s⁻¹ and then v = u + at is also full marks.</p>",
@@ -292,9 +311,9 @@
             label: "(d)", type: "text", marks: 3, rows: 8, minWords: 15,
             q: "A second rider, whose mass is twice as large, leaves the same ramp horizontally at 20 m s⁻¹. Use your knowledge of physics to comment on the flight of the second rider compared with the first.",
             points: [
-              { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)], negOK: true, not: ["\\bnot (?:\\w+ ){0,2}(?:the )?(?:same|equal|identical)", "\\bdifferent\\b", "\\b(?:shorter|longer|less|more) time"] },
-              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("acceleration|\\bg\\b|9\\.8", "same|independent|constant|all (?:masses|objects)|any mass", 8)], negOK: true, not: ["heav\\w*[^.]{0,30}(?:faster|sooner|quicker)"] },
-              { desc: "He travels further horizontally, because d = vt with a larger horizontal speed (about 31 m)", any: [near("further|farther|greater (?:distance|range)|larger (?:distance|range)|more distance|longer (?:distance|range)", "horizontal\\w*|speed|velocity|20|faster|d ?= ?v|31", 10), near("20", "31", 12), near("distance|range", "greater|larger|bigger|longer", 3)] },
+              { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)], negOK: true, not: ["\\bnot (?:\\w+ ){0,2}(?:the )?(?:same|equal|identical)", "\\bdifferent\\b", "\\b(?:shorter|longer|less|more) time"].concat(FALLFAST) },
+              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("accelerat\\w*|\\bg\\b|9\\.8|gravity", "same|independent|constant|all (?:masses|objects)|any mass|every mass|equally", 8)], negOK: true, not: ["heav\\w*[^.]{0,30}(?:faster|sooner|quicker)"].concat(FALLFAST) },
+              { desc: "He travels further horizontally, because d = vt with a larger horizontal speed (about 31 m)", any: [near("further|farther|greater (?:distance|range)|larger (?:distance|range)|more distance|longer (?:distance|range)", "horizontal\\w*|speed|velocity|20|faster|d ?= ?v|31", 10), near("20", "31", 12), near("distance|range", "greater|larger|bigger|longer", 3)], not: FALLFAST },
             ],
             sample: "The horizontal and vertical motions are independent, so the second rider is in the air for the same time as the first, about 1.6 s. Gravity gives the same acceleration of 9.8 m s⁻² to any mass, so the extra mass makes no difference to the fall of 12 m. His horizontal velocity is constant but larger, so using d = vt he lands further away, at about 31 m.",
             model: "<p>Any three of (1 each):</p><ul><li>Vertical and horizontal motions are independent: the vertical motion (u = 0, s = 12 m) is unchanged, so the time in the air is the same, 1.6 s</li><li>The acceleration due to gravity does not depend on mass (F = mg and F = ma, so a = g), so the mass of the rider is irrelevant to the time of fall</li><li>The horizontal velocity is constant (no horizontal force) and larger, so he travels further: d = vt = 20 × 1.565 = 31 m</li></ul><p>A heavier rider does <em>not</em> fall faster. Without air resistance mass has no effect on the flight.</p>",
@@ -320,7 +339,7 @@
               { desc: "Uses an equation of motion for the vertical motion to find the time (e.g. v = u + at with v = 0 at the top)", rel: [...VUAT, ...SUVAT_S, "(?:1/2|0?\\.5)x?9\\.8x?t\\^?2", "0=11\\.\\d*t-"] },
               { desc: "Total time of flight 2.27 s (twice the time to the top, 1.14 s)", nums: [[2.27, 2.3, 2.271, 2.28]] },
               { desc: "Uses d = vt for the horizontal motion, with the horizontal speed 17.8 m s⁻¹", rel: [...DVT, "[ds]=\\d[\\d.]*x\\d"], nums: [[17.8, 17.81, 18]] },
-              { desc: "Final answer 40 m with unit", ans: 40.4457, sf: 2, alts: [41], unit: "m" },
+              { desc: "Final answer 40 m with unit", ans: 40.4457, sf: 2, alts: [41], unit: U.m },
             ],
             sample: "Vertical: u_v = 21 sin 32° = 11.13 m s⁻¹, v = 0 at the top\nv = u + at\n0 = 11.13 − 9.8t\nt = 1.14 s to the top\ntotal time = 2 × 1.14 = 2.27 s\nHorizontal: u_h = 21 cos 32° = 17.81 m s⁻¹\nd = vt = 17.81 × 2.27\nd = 40 m",
             model: "<ul><li>v = u + at (or s = ut + ½at²) applied to the vertical motion (1)</li><li>Time to the top 1.14 s, so total time 2.27 s (the ball lands at the launch height) (1)</li><li>d = v̄t = 17.8 × 2.27 (1)</li><li>40 m (1)</li></ul><p>Accept 41 m if the time is rounded to 2.3 s part-way through. A very common error is to use 21 m s⁻¹ as the horizontal speed or to forget to double the time.</p>",
@@ -345,7 +364,7 @@
               "Velocity zero; acceleration zero",
               "Velocity 21 m s⁻¹ at 32°; acceleration 9.8 m s⁻² downwards",
             ],
-            why: "At the top only the <em>vertical</em> component is zero; the horizontal component is still 17.8 m s⁻¹. Gravity still acts, so the acceleration is 9.8 m s⁻² downwards. Options 0 and 3 treat the whole velocity as zero; option 2 says gravity switches off.",
+            why: "At the top only the <em>vertical</em> component is zero; the horizontal component is still 17.8 m s⁻¹. Gravity still acts, so the acceleration is 9.8 m s⁻² downwards. Options A and D treat the whole velocity as zero; option C says gravity switches off.",
           },
         ],
       },
@@ -363,7 +382,7 @@
             steps: [
               { desc: "Uses F = ma with the unbalanced (resultant) force", rel: FMA },
               { desc: "Substitution: unbalanced force 2800 N (3500 − 400 − 300) and total mass 2000 kg", nums: [2800, 2000] },
-              { desc: "Final answer 1.4 m s⁻² with unit", ans: 1.4, sf: 2, unit: "m s-2" },
+              { desc: "Final answer 1.4 m s⁻² with unit", ans: 1.4, sf: 2, unit: withDir(["m s-2", "m/s2", "m/s^2"]) },
             ],
             sample: "unbalanced force = 3500 − 400 − 300 = 2800 N\nF = ma\n2800 = 2000 × a\na = 1.4 m s⁻²",
             model: "<ul><li>F = ma (1)</li><li>(3500 − 400 − 300) = (1200 + 800) × a, or 2800 = 2000a (1)</li><li>a = 1.4 m s⁻² (1)</li></ul><p>The force in F = ma is the <em>unbalanced</em> force. Using 3500 N on its own gives 1.75 m s⁻²: 0 for the substitution mark.</p>",
@@ -374,7 +393,7 @@
             steps: [
               { desc: "Uses F = ma on the caravan alone (or the car alone)", rel: [...FMA, "t-\\d+=\\d+x?[\\d.]+", "\\d+-t=\\d+x?[\\d.]+"] },
               { desc: "Substitution: T − 300 = 800 × 1.4 (or 3500 − 400 − T = 1200 × 1.4)", nums: [[800, 1200], [300, 400]] },
-              { desc: "Final answer 1.4 × 10³ N (1420 N) with unit", ans: 1420, sf: 2, unit: "n" },
+              { desc: "Final answer 1.4 × 10³ N (1420 N) with unit", ans: 1420, sf: 2, unit: U.n },
             ],
             sample: "Consider the caravan: F = ma\nT − 300 = 800 × 1.4\nT = 1120 + 300\nT = 1420 N",
             model: "<ul><li>F = ma applied to one vehicle (1)</li><li>T − 300 = 800 × 1.4 (or 3500 − 400 − T = 1200 × 1.4) (1)</li><li>T = 1.4 × 10³ N (1420 N) (1)</li></ul><p>Check with the car: 3500 − 400 − 1420 = 1680 N = 1200 × 1.4. The tension is the same on both because it is a Newton's third law pair.</p>",
@@ -399,7 +418,7 @@
               "The resultant force is forwards and constant",
               "The tension in the tow bar is zero",
             ],
-            why: "Constant velocity means zero acceleration, so by Newton's first law the forces are balanced: engine force = total friction (including air resistance). Friction does not vanish at constant speed (option 2), and the tow bar still has to balance the caravan's friction (option 4).",
+            why: "Constant velocity means zero acceleration, so by Newton's first law the forces are balanced: engine force = total friction (including air resistance). Friction does not vanish at constant speed (option C), and the tow bar still has to balance the caravan's friction (option E).",
           },
         ],
       },
@@ -411,20 +430,16 @@
           "<p>In a warehouse a 40 kg crate is pulled up a rough ramp by a rope parallel to the ramp. The ramp is at 25° to the horizontal. The friction force on the crate is 60 N. The crate accelerates up the ramp at 0.50 m s<sup>−2</sup>.</p>",
         parts: [
           {
-            label: "(a)", type: "multi", marks: 4,
-            q: "Which <strong>four</strong> of the following are forces acting on the crate as it is pulled up the ramp?",
+            label: "(a)", type: "mcq", marks: 1, a: 3,
+            q: "Which row lists <strong>all</strong> the forces, and only the forces, acting on the crate as it is pulled up the ramp?",
             opts: [
-              "The tension in the rope, directed up the slope",
-              "The weight of the crate, directed vertically downwards",
-              "The normal reaction of the ramp, at right angles to the surface of the ramp",
-              "The friction force, directed down the slope",
-              "A force directed up the slope, because the crate is moving up the slope",
-              "A separate force of mg cos 25° pressing into the ramp, in addition to the weight",
-              "The force of the crate on the ramp, directed into the ramp",
-              "The unbalanced force of 20 N (ma), directed up the slope, as an extra force on the crate",
+              "Tension up the slope; weight; friction down the slope",
+              "Tension up the slope; weight; normal reaction; friction down the slope; a force up the slope because the crate is moving up",
+              "Tension up the slope; weight; normal reaction; friction down the slope; mg cos 25° pressing into the ramp, as well as the weight",
+              "Tension up the slope; weight; normal reaction at right angles to the ramp; friction down the slope",
+              "Tension up the slope; weight; normal reaction; friction down the slope; the unbalanced force of 20 N (ma) up the slope",
             ],
-            a: [0, 1, 2, 3],
-            why: "Four forces act on the crate: tension, weight, normal reaction and friction (opposing the motion, so down the slope). There is no &ldquo;force of motion&rdquo;: an object moving up the slope does not need a force in that direction to keep moving. The components mg sin θ and mg cos θ are parts of the weight, not extra forces.",
+            why: "Four forces act on the crate: tension, weight, normal reaction and friction (opposing the motion, so down the slope), which is option D. Option A leaves out the normal reaction. There is no &ldquo;force of motion&rdquo; (option B): an object moving up the slope does not need a force in that direction to keep moving. The components mg sin θ and mg cos θ (option C) are parts of the weight, not extra forces, and the unbalanced force ma (option E) is the <em>result</em> of the forces acting, not another force.",
           },
           {
             label: "(b)", type: "calc", marks: 4,
@@ -433,10 +448,10 @@
               { desc: "Uses F = ma with the unbalanced force along the slope", rel: FMA },
               { desc: "Component of the weight down the slope: mg sin 25° = 166 N", nums: [[166, 165.7, 170]] },
               { desc: "Substitution: T − 166 − 60 = 40 × 0.50", nums: [60, [0.5, 20]] },
-              { desc: "Final answer 2.5 × 10² N (246 N) with unit", ans: 245.67, sf: 2, unit: "n" },
+              { desc: "Final answer 2.5 × 10² N (246 N) with unit", ans: 245.67, sf: 2, unit: U.n },
             ],
             sample: "component of weight down the slope = mg sin θ = 40 × 9.8 × sin 25° = 166 N\nF = ma\nT − 166 − 60 = 40 × 0.50\nT = 20 + 166 + 60\nT = 246 N",
-            model: "<ul><li>F = ma along the slope (1)</li><li>mg sin 25° = 40 × 9.8 × sin 25° = 166 N (1)</li><li>T − 166 − 60 = 40 × 0.50 (1)</li><li>T = 2.5 × 10² N (246 N) (1)</li></ul><p>Both friction and the weight component act down the slope when the crate moves <em>up</em>, so they add. Subtracting the friction (T = 126 N) is the error the 2025 report picked out.</p>",
+            model: "<ul><li>F = ma along the slope (1)</li><li>mg sin 25° = 40 × 9.8 × sin 25° = 166 N (1)</li><li>T − 166 − 60 = 40 × 0.50 (1)</li><li>T = 2.5 × 10² N (246 N) (1)</li></ul><p>Both friction and the weight component act down the slope when the crate moves <em>up</em>, so they add. Subtracting the friction (T = 126 N) is a common error.</p>",
           },
           {
             label: "(c)", type: "mcq", marks: 1, a: 2,
@@ -448,7 +463,7 @@
               "5.6 m s⁻² up the slope",
               "9.8 m s⁻² down the slope",
             ],
-            why: "The crate is still moving up, so friction still acts <em>down</em> the slope along with mg sin θ: F = 166 + 60 = 226 N, and a = 226/40 = 5.6 m s⁻² down the slope (the crate is slowing). Option 0 subtracts the friction; option 1 ignores it; option 3 gives the wrong direction (acceleration is in the direction of the resultant force); option 4 forgets the slope.",
+            why: "The crate is still moving up, so friction still acts <em>down</em> the slope along with mg sin θ: F = 166 + 60 = 226 N, and a = 226/40 = 5.6 m s⁻² down the slope (the crate is slowing). Option A subtracts the friction; option B ignores it; option D gives the wrong direction (acceleration is in the direction of the resultant force); option E forgets the slope.",
           },
         ],
       },
@@ -468,7 +483,7 @@
               { desc: "…in the absence of external forces (provided no unbalanced / external force acts)", any: [near("no|without|absence|absent|unless|isolated|closed|zero|free from|free of", "external|outside|unbalanced|resultant|net", 5)] },
             ],
             sample: "The total momentum before a collision is equal to the total momentum after the collision, as long as there are no external forces acting on the system.",
-            model: "<ul><li>The total momentum before a collision/explosion equals the total momentum after it (1)</li><li>in the absence of external forces (1)</li></ul><p>The 2025 report: many candidates omitted <em>total</em> or the absence of external forces. Both are needed.</p>",
+            model: "<ul><li>The total momentum before a collision/explosion equals the total momentum after it (1)</li><li>in the absence of external forces (1)</li></ul><p>Both <em>total</em> momentum and the absence of external forces are needed: leaving either out loses a mark.</p>",
           },
           {
             label: "(b)", type: "calc", marks: 3,
@@ -476,7 +491,7 @@
             steps: [
               { desc: "Conservation of momentum: total momentum before = total momentum after", rel: ["momentum(?:before)?=(?:total)?momentum", "momentumbefore.{0,40}=.{0,14}momentumafter", "=\\(?\\d+(?:\\.\\d+)?\\+\\d+(?:\\.\\d+)?\\)?x?v", "pbefore=pafter", "m\\w{0,2}u\\w{0,2}\\+m\\w{0,2}u\\w{0,2}=", "m\\w{0,2}v\\w{0,2}\\+m\\w{0,2}v\\w{0,2}=", "mu\\+mu=\\(?m\\+m\\)?v"] },
               { desc: "Substitution with a correct sign for B: 0.60 × 2.0 + 0.45 × (−1.0) = 1.05 v", nums: [[0.6, 1.2, 0.75], [0.45, 0.9]] },
-              { desc: "Final answer 0.71 m s⁻¹ with unit (to the right)", ans: 0.714286, sf: 2, unit: "m s-1" },
+              { desc: "Final answer 0.71 m s⁻¹ with unit (to the right)", ans: 0.714286, sf: 2, unit: withDir(["m s-1", "m/s"]) },
             ],
             sample: "Take right as positive.\ntotal momentum before = total momentum after\nm_A u_A + m_B u_B = (m_A + m_B)v\n(0.60 × 2.0) + (0.45 × −1.0) = 1.05 × v\n0.75 = 1.05v\nv = 0.71 m s⁻¹",
             model: "<ul><li>m<sub>A</sub>u<sub>A</sub> + m<sub>B</sub>u<sub>B</sub> = (m<sub>A</sub> + m<sub>B</sub>)v (1)</li><li>(0.60 × 2.0) + (0.45 × −1.0) = 1.05v (1)</li><li>v = 0.71 m s⁻¹ (to the right) (1)</li></ul><p>Forgetting that B's velocity is negative gives 1.9 m s⁻¹. State the direction: right.</p>",
@@ -487,14 +502,14 @@
             steps: [
               { desc: "Uses E_k = ½mv²", rel: EK },
               { desc: "Total E_k before 1.4 J (1.425 J) and after 0.27 J (0.268 J)", nums: [[1.425, 1.43, 1.4], [0.268, 0.27, 0.265, 0.2679]] },
-              { desc: "Final answer 1.2 J (1.16 J lost) with unit", ans: 1.157, sf: 2, unit: "j" },
+              { desc: "Final answer 1.2 J (1.16 J lost) with unit", ans: 1.157, sf: 2, unit: U.j },
             ],
             sample: "E_k = ½mv²\nE_k before = ½ × 0.60 × 2.0² + ½ × 0.45 × 1.0² = 1.425 J\nE_k after = ½ × 1.05 × 0.714² = 0.268 J\nenergy lost = 1.425 − 0.268 = 1.2 J",
             model: "<ul><li>E<sub>k</sub> = ½mv² (1)</li><li>E<sub>k</sub> before = 1.425 J; E<sub>k</sub> after = 0.268 J (1)</li><li>Energy lost = 1.2 J (1.16 J) (1)</li></ul><p>The total kinetic energy has decreased (it is converted to heat and sound), so the collision is <strong>inelastic</strong>. In an elastic collision the total kinetic energy would be unchanged. Momentum is conserved in both cases.</p>",
           },
           {
             label: "(d)", type: "multi", marks: 2,
-            q: "The two trolleys are now separate and at rest, touching, with a compressed spring between them. The spring is released, pushing the trolleys apart (an explosion). Select the <strong>two</strong> correct statements.",
+            q: "In a second, separate experiment, the two trolleys are at rest and touching, with a compressed spring between them. The spring is released, pushing the trolleys apart (an explosion). Select the <strong>two</strong> correct statements.",
             opts: [
               "The total momentum of the trolleys after the explosion is zero",
               "The total kinetic energy of the trolleys increases, because energy stored in the spring is transferred to kinetic energy",
@@ -524,7 +539,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the speed of the ball as it leaves the stick.",
             steps: [
-              { desc: "Uses Ft = mv − mu (impulse = change in momentum)", rel: ["ft=mv-mu", "ft=mv\\b", "mv-mu", "impulse=mv", "impulse=change", "δp=", "impulse=δ"] },
+              { desc: "Uses Ft = mv − mu (impulse = change in momentum)", rel: ["ft=mv-mu", "ft=mv\\b", "mv-mu", "impulse=mv", "impulse=change", "δp=", "impulse=δ", "ft=m\\(v-u\\)", "ft=mδv", "ft=δp", "ft=m\\(?v", "v=\\(?ft\\)?/m", "v=\\(?i\\)?/m", "v=impulse/m", "mv=ft", "mv=i\\b", "mv=impulse", "p=ft", "δp=ft", "v=\\(?mv-mu\\)?/m"] },
               { desc: "Substitution: 3.6 = 0.18 × v − 0", nums: [3.6, 0.18] },
               { desc: "Final answer 20 m s⁻¹ with unit", ans: 20, sf: 2, unit: "m s-1" },
             ],
@@ -562,8 +577,8 @@
             steps: [
               { desc: "Uses E_p = mgh and E_k = ½mv² (energy lost = E_p lost − E_k gained)", rel: [...EP, ...EK, "329280|3\\.29x10\\^5"] },
               { desc: "Energy lost to friction 8.9 × 10⁴ J (89280 J)", nums: [[89280, 89300, 89000, 8.9e4, 9e4]] },
-              { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "=fd\\b", "=fx160", "=160xf", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160"], nums: [160] },
-              { desc: "Final answer 5.6 × 10² N (558 N) with unit", ans: 558, sf: 2, unit: "n" },
+              { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "=fd\\b", "=fx160", "=160xf", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160", "workdone=forcex?distance", "[we]\\w{0,2}=fxd", "w=f.{0,3}d", "f=e\\w{0,2}/d", "f=\\(?e\\w{0,2}\\)?/\\(?d"], nums: [160] },
+              { desc: "Final answer 5.6 × 10² N (558 N) with unit", ans: 558, sf: 2, unit: U.n },
             ],
             sample: "E_p = mgh = 1200 × 9.8 × 28 = 329280 J\nE_k = ½mv² = ½ × 1200 × 20² = 240000 J\nenergy lost = 329280 − 240000 = 89280 J\nE_w = Fd\n89280 = F × 160\nF = 558 N",
             model: "<ul><li>E<sub>p</sub> = mgh and E<sub>k</sub> = ½mv² used (1)</li><li>Energy lost to friction = 329280 − 240000 = 8.9 × 10⁴ J (1)</li><li>E<sub>w</sub> = Fd: 89280 = F × 160 (1)</li><li>F = 5.6 × 10² N (558 N) (1)</li></ul><p>The energy lost is the work done against friction, which becomes heat (and sound). Conservation of energy: E<sub>p</sub> at the top = E<sub>k</sub> at the bottom + work against friction.</p>",
@@ -596,10 +611,10 @@
             label: "(a)", type: "calc", marks: 4,
             q: "Calculate the gravitational force between the Earth and the satellite.",
             steps: [
-              { desc: "Uses F = Gm₁m₂/r²", rel: ["f=g(?:x)?m[\\w₁₂]{0,2}x?m[\\w₁₂]{0,2}\\)?/\\(?r\\^?2", "f=g\\(?m", "f=g(?:x)?\\(?m", "f=\\(?6\\.67"] },
+              { desc: "Uses F = Gm₁m₂/r²", rel: ["f=g(?:x)?m[\\w₁₂]{0,2}x?m[\\w₁₂]{0,2}\\)?/\\(?r\\^?2", "f=g\\(?m", "f=g(?:x)?\\(?m", "f=\\(?6\\.67", "f=\\(?g\\(?x?m", "f=\\(?gx?m", "f=\\(?g"] },
               { desc: "Distance between centres: r = 6.4 × 10⁶ + 8.0 × 10⁵ = 7.2 × 10⁶ m", nums: [[7.2e6, 7200000, 7.2e3]] },
               { desc: "Substitution of G, the two masses (and r)", nums: [6.67e-11, 6.0e24, 850] },
-              { desc: "Final answer 6.6 × 10³ N with unit", ans: 6561.92, sf: 2, unit: "n" },
+              { desc: "Final answer 6.6 × 10³ N with unit", ans: 6561.92, sf: 2, unit: U.n },
             ],
             sample: "r = 6.4 × 10⁶ + 8.0 × 10⁵ = 7.2 × 10⁶ m\nF = Gm₁m₂/r²\nF = 6.67 × 10⁻¹¹ × 6.0 × 10²⁴ × 850 / (7.2 × 10⁶)²\nF = 6.6 × 10³ N",
             model: "<ul><li>F = Gm₁m₂/r² (1)</li><li>r = 6.4 × 10⁶ + 8.0 × 10⁵ = 7.2 × 10⁶ m: the distance is between the <em>centres</em> (1)</li><li>F = 6.67 × 10⁻¹¹ × 6.0 × 10²⁴ × 850 / (7.2 × 10⁶)² (1)</li><li>F = 6.6 × 10³ N (1)</li></ul><p>Using 8.0 × 10⁵ m (the height) or 6.4 × 10⁶ m (the radius) for r is the usual error.</p>",
@@ -704,7 +719,7 @@
               { desc: "More wavefronts arrive at X each second, so the frequency is higher", group: "p2", any: ["(?:more|greater number of)\\W+(?:\\w+\\W+){0,3}(?:waves?|wavefronts?|crests?)\\W+(?:\\w+\\W+){0,6}(?:per|each|every|in)\\W+(?:\\w+\\W+){0,2}second"] },
             ],
             sample: "Between emitting one wavefront and the next, the ambulance moves towards X, so the wavefronts in front of it are bunched closer together and the wavelength is shorter. The speed of sound is the same, so more wavefronts reach X every second and the frequency heard is higher.",
-            model: "<ul><li>The source moves towards X between emitting wavefronts, so the wavefronts are closer together in front of it: the wavelength is shorter (1)</li><li>The wave speed is unchanged (v = fλ), so a shorter wavelength means a higher frequency: more wavefronts per second reach X (1)</li></ul><p>The 2025 report: a labelled diagram made answers clearer. The sound waves do not travel faster; it is the source that moves.</p>",
+            model: "<ul><li>The source moves towards X between emitting wavefronts, so the wavefronts are closer together in front of it: the wavelength is shorter (1)</li><li>The wave speed is unchanged (v = fλ), so a shorter wavelength means a higher frequency: more wavefronts per second reach X (1)</li></ul><p>A labelled sketch of the wavefronts makes an answer like this clearer. The sound waves do not travel faster; it is the source that moves.</p>",
           },
           {
             label: "(c)", type: "calc", marks: 4,
@@ -712,7 +727,7 @@
             steps: [
               { desc: "Uses f_o = f_s × v/(v ± v_s), choosing v − v_s for an approaching source", rel: ["f.{0,3}o.{0,2}=f.{0,3}s.{0,2}x?\\(?v/", "f.{0,3}o.{0,2}=f.{0,3}s", "f.{0,3}o.{0,2}=\\(?f.{0,3}s", "fo=fs", "960\\(340-\\w+\\)=", "340-v\\w{0,2}=", "v\\w{0,2}=340-"] },
               { desc: "Substitution: 960 = 900 × 340/(340 − v_s)", nums: [960, 900, 340] },
-              { desc: "Rearranges: 340 − v_s = 318.75 (or equivalent, e.g. 960(340 − v_s) = 306 000)", nums: [[318.75, 318.8, 319, 306000, 20400, 326400, 1.067, 1.0667, 1.07]] },
+              { desc: "Rearranges: 340 − v_s = 318.75 (or equivalent, e.g. 960(340 − v_s) = 306 000)", nums: [[318.75, 318.8, 319, 306000, 20400, 326400, 1.067, 1.0667, 1.07, 0.0625, 0.9375]] },
               { desc: "Final answer 21 m s⁻¹ with unit", ans: 21.25, sf: 2, unit: "m s-1" },
             ],
             sample: "f_o = f_s × v/(v − v_s) (approaching)\n960 = 900 × 340/(340 − v_s)\n340 − v_s = 900 × 340/960 = 318.75\nv_s = 340 − 318.75\nv_s = 21 m s⁻¹",
@@ -764,7 +779,7 @@
               { desc: "Uses z = v/c (or v = zc) to find the recessional velocity", rel: ["z=v/c", "v=zx?c", "v=cx?z"] },
               { desc: "Recessional velocity 1.4 × 10⁷ m s⁻¹ (1.37 × 10⁷)", nums: [[1.372e7, 1.37e7, 1.4e7, 1.38e7, 1.371e7]] },
               { desc: "Uses v = H₀d", rel: ["v=h[_₀0]?x?d", "d=v/h[_₀0]?", "d=v/h", "v=hd"] },
-              { desc: "Final answer 6.0 × 10²⁴ m with unit", ans: 5.965e24, sf: 2, unit: "m" },
+              { desc: "Final answer 6.0 × 10²⁴ m with unit", ans: 5.965e24, sf: 2, unit: U.m },
             ],
             sample: "z = v/c\n0.0457 = v / 3.00 × 10⁸\nv = 1.37 × 10⁷ m s⁻¹\nv = H₀d\n1.37 × 10⁷ = 2.3 × 10⁻¹⁸ × d\nd = 6.0 × 10²⁴ m",
             model: "<ul><li>z = v/c (1)</li><li>v = 0.0457 × 3.00 × 10⁸ = 1.4 × 10⁷ m s⁻¹ (1)</li><li>v = H₀d (1)</li><li>d = 1.37 × 10⁷ ÷ 2.3 × 10⁻¹⁸ = 6.0 × 10²⁴ m (1)</li></ul><p>Carry the unrounded z. H₀ is on the data sheet, 2.3 × 10⁻¹⁸ s⁻¹; with this unit d comes out in metres, with v in m s⁻¹.</p>",
