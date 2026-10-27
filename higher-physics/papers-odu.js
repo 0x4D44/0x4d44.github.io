@@ -199,7 +199,7 @@
             q: "A passenger standing in the tram leans forward as the tram brakes at the end of the journey. Explain, in terms of Newton's laws, why this happens.",
             points: [
               { desc: "The passenger's body has no unbalanced force on it (Newton's first law / inertia), so it keeps moving at the same velocity", all: ["\\b(?:first law|inertia|no (?:unbalanced |resultant |net |horizontal )?force|keeps? (?:on )?moving|continues? (?:to |on )?(?:move|moving|travel)|constant velocity|same velocity|same speed|tends? to keep)\\b"], not: ["\\bno (?:force|forces) (?:on|acts?|acting)\\W+(?:\\w+\\W+){0,3}(?:tram|train)\\b"] },
-              { desc: "The tram (floor, feet) slows down, so the passenger moves forward relative to it", any: [near("feet|floor|shoes|legs|friction|lower|tram|vehicle|train", "slows?|slowed|slowing|decelerat\\w*|stops?|stopped", 6)] },
+              { desc: "The tram (floor, feet) slows down, so the passenger moves forward relative to it", any: [near("feet|floor|shoes|legs|friction|lower|tram|vehicle|train", "slows?|slowed|slowing|decelerat\\w*", 6)] },
             ],
             sample: "By Newton's first law the passenger's body keeps moving forwards at the same velocity because there is no unbalanced force acting on it. The floor and the tram slow down, so the passenger moves forward relative to the tram and appears to lean forward.",
             model: "<ul><li>The upper body has no (unbalanced) force acting on it, so by Newton's first law (inertia) it continues at the same velocity (1)</li><li>The tram and the passenger's feet slow down (by friction), so the passenger moves/leans forward relative to the tram (1)</li></ul><p>&ldquo;A force pushes the passenger forward&rdquo; is wrong: there is no forward force, only the lack of a backward one on the body.</p>",
@@ -242,7 +242,7 @@
             q: "The ball hits the floor at 5.9 m s⁻¹ but leaves it at only 4.9 m s⁻¹. Explain why the speed of the ball is smaller after the bounce.",
             points: [
               { desc: "Some kinetic energy is transferred to heat / sound (or deformation) in the bounce, so energy is lost from the ball", all: [near("energy|ke|e_?k|kinetic", "lost|transferred|transformed|converted|changed|dissipated|wasted|turned|becomes?|given|gets|goes", 8), "heat|sound|thermal|deform|internal|noise"], win: 200 },
-              { desc: "So the ball has less kinetic energy after the bounce and leaves with a lower speed", any: [near("less|lower|smaller|reduced|decreased|fewer", "kinetic|speed|velocity|ke\\b|e_?k\\b", 3)] },
+              { desc: "So the ball has less kinetic energy after the bounce and leaves with a lower speed", all: [near("less|lower|smaller|reduced|decreased|fewer", "kinetic|speed|velocity|ke\\b|e_?k\\b", 3), "bounce|after|rebound|leaves|leaving|floor|afterwards"], win: 120 },
             ],
             sample: "During the bounce some of the ball's kinetic energy is transferred into heat and sound, so energy is lost from the ball. It therefore has less kinetic energy after the bounce and leaves the floor with a lower speed.",
             model: "<ul><li>Some kinetic energy is changed to heat and sound (or the ball and floor are deformed) in the collision, so energy is lost (1)</li><li>The ball is left with less kinetic energy, so it moves off with a smaller speed (1)</li></ul><p>A bare &ldquo;the ball loses energy&rdquo; earns the first mark only if it says where the energy goes.</p>",
@@ -275,7 +275,7 @@
               { desc: "Substitution: s = 12 m, u = 0, a = 9.8 m s⁻²", nums: [12, 9.8] },
               { desc: "Final answer 1.6 s with unit", ans: 1.5649, sf: 2, unit: "s" },
             ],
-            sample: "Vertical motion: u = 0, a = 9.8 m s⁻², s = 12 m\ns = ut + ½at²\n12 = 0 + ½ × 9.8 × t²\nt² = 2.449\nt = 1.6 s",
+            sample: "Vertical motion: u = 0, a = 9.8 m s-2, s = 12 m\ns = ut + 1/2 at^2\n12 = 0 + 1/2 x 9.8 x t^2\nt^2 = 2.449\nt = 1.56 s",
             model: "<ul><li>s = ut + ½at² (1)</li><li>12 = 0 + ½ × 9.8 × t² (1)</li><li>t = 1.6 s (1)</li></ul><p>The 15 m s⁻¹ has no part in the vertical motion: the initial <em>vertical</em> velocity is zero. Using v² = u² + 2as to find v = 15.3 m s⁻¹ and then v = u + at is also full marks.</p>",
           },
           {
@@ -293,7 +293,7 @@
             q: "A second rider, whose mass is twice as large, leaves the same ramp horizontally at 20 m s⁻¹. Use your knowledge of physics to comment on the flight of the second rider compared with the first.",
             points: [
               { desc: "The vertical and horizontal motions are independent, so the time in the air is the same (about 1.6 s)", any: [near("same|equal|identical|unchanged", "time|flight|long|duration", 5), near("independent|separate|unaffected|no effect|doesn'?t affect|does not affect", "vertical|horizontal|motion|time|fall", 8)] },
-              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 8), near("acceleration|g\\b|9\\.8", "same|independent|constant|all (?:masses|objects)|any mass", 8)] },
+              { desc: "The acceleration due to gravity is the same for any mass, so the heavier rider falls the 12 m in the same time (mass makes no difference)", any: [near("mass|heav\\w*|weight", "same|no (?:difference|effect)|independent|doesn'?t (?:matter|affect|change)|does not (?:matter|affect|change)|irrelevant|unaffected", 3), near("acceleration|\\bg\\b|9\\.8", "same|independent|constant|all (?:masses|objects)|any mass", 8)] },
               { desc: "He travels further horizontally, because d = vt with a larger horizontal speed (about 31 m)", any: [near("further|farther|greater (?:distance|range)|larger (?:distance|range)|more distance|longer (?:distance|range)", "horizontal\\w*|speed|velocity|20|faster|d ?= ?v|31", 10), near("20", "31", 12)] },
             ],
             sample: "The horizontal and vertical motions are independent, so the second rider is in the air for the same time as the first, about 1.6 s. Gravity gives the same acceleration of 9.8 m s⁻² to any mass, so the extra mass makes no difference to the fall of 12 m. His horizontal velocity is constant but larger, so using d = vt he lands further away, at about 31 m.",
@@ -561,17 +561,17 @@
             q: "Calculate the average friction force acting on the carriage as it travels from the top to the lowest point.",
             steps: [
               { desc: "Uses E_p = mgh and E_k = ½mv² (energy lost = E_p lost − E_k gained)", rel: [...EP, ...EK] },
-              { desc: "Energy lost to friction 8.9 × 10⁴ J (89 280 J)", nums: [[89280, 89300, 89000, 8.9e4, 9e4]] },
+              { desc: "Energy lost to friction 8.9 × 10⁴ J (89280 J)", nums: [[89280, 89300, 89000, 8.9e4, 9e4]] },
               { desc: "Uses E_w = Fd with d = 160 m", rel: ["e_?w=fd", "w=fd", "e=fd", "f=e_?w?/d", "f=w/d", "d=e/f", "f=\\d+\\.?\\d*/160"], nums: [160] },
               { desc: "Final answer 5.6 × 10² N (558 N) with unit", ans: 558, sf: 2, unit: "n" },
             ],
-            sample: "E_p = mgh = 1200 × 9.8 × 28 = 329 280 J\nE_k = ½mv² = ½ × 1200 × 20² = 240 000 J\nenergy lost = 329 280 − 240 000 = 89 280 J\nE_w = Fd\n89 280 = F × 160\nF = 558 N",
-            model: "<ul><li>E<sub>p</sub> = mgh and E<sub>k</sub> = ½mv² used (1)</li><li>Energy lost to friction = 329 280 − 240 000 = 8.9 × 10⁴ J (1)</li><li>E<sub>w</sub> = Fd: 89 280 = F × 160 (1)</li><li>F = 5.6 × 10² N (558 N) (1)</li></ul><p>The energy lost is the work done against friction, which becomes heat (and sound). Conservation of energy: E<sub>p</sub> at the top = E<sub>k</sub> at the bottom + work against friction.</p>",
+            sample: "E_p = mgh = 1200 × 9.8 × 28 = 329280 J\nE_k = ½mv² = ½ × 1200 × 20² = 240000 J\nenergy lost = 329280 − 240000 = 89280 J\nE_w = Fd\n89280 = F × 160\nF = 558 N",
+            model: "<ul><li>E<sub>p</sub> = mgh and E<sub>k</sub> = ½mv² used (1)</li><li>Energy lost to friction = 329280 − 240000 = 8.9 × 10⁴ J (1)</li><li>E<sub>w</sub> = Fd: 89280 = F × 160 (1)</li><li>F = 5.6 × 10² N (558 N) (1)</li></ul><p>The energy lost is the work done against friction, which becomes heat (and sound). Conservation of energy: E<sub>p</sub> at the top = E<sub>k</sub> at the bottom + work against friction.</p>",
           },
           {
             label: "(c)", type: "num", marks: 1, a: 8232, tol: 0, sf: 2, unit: "W",
             q: "A motor pulls the carriage back to the top of the hill at a steady speed in 40 s. Calculate the useful power output of the motor. (Ignore friction on the way up.)",
-            why: "At a steady speed the motor's work equals the gain in gravitational potential energy: E = mgh = 329 280 J. P = E/t = 329 280 ÷ 40 = 8232 W, so <strong>8.2 × 10³ W</strong>.",
+            why: "At a steady speed the motor's work equals the gain in gravitational potential energy: E = mgh = 329280 J. P = E/t = 329280 ÷ 40 = 8232 W, so <strong>8.2 × 10³ W</strong>.",
           },
           {
             label: "(d)", type: "text", marks: 2, rows: 4, minWords: 8,
@@ -617,7 +617,7 @@
               { desc: "The astronaut and the craft are both in free fall, falling with the same acceleration, so there is no contact force between them (apparent weightlessness)", any: [near("free[- ]?fall|falling|fall\\w*", "together|same|craft|station|satellite|spacecraft|orbit", 8), "same acceleration", near("no|zero|nothing", "contact force|reaction force|normal force|force from the floor|pushing", 6)] },
               { desc: "They are moving sideways so fast that they keep missing the Earth: they fall around it (an orbit)", any: [near("sideways|horizontal\\w*|tangential|orbital|forward|speed|velocity", "round|around|miss\\w*|curve\\w*|never (?:land|hit)|keeps? (?:on )?falling", 10), "falls? (?:around|round)", "orbit\\w* (?:is|means|are)\\W+(?:\\w+\\W+){0,3}(?:fall\\w*|free ?fall)"] },
             ],
-            sample: "The statement is wrong because gravity still acts on the astronauts at that height: the force is only a little weaker than at the surface, as F = Gm₁m₂/r² falls only slightly when r increases a bit. The astronauts and the spacecraft are both in free fall, falling with the same acceleration, so the floor does not push on them and they appear weightless. They have a large sideways speed, so as they fall they keep missing the Earth and go around it in an orbit.",
+            sample: "The statement is wrong because gravity still acts on the astronauts at that height: the force is only a little weaker than at the surface, as F = Gm₁m₂/r² falls only slightly when r increases a bit. The astronauts and the spacecraft are both in free fall, falling with the same acceleration, so the floor exerts no push on them and they appear weightless. They have a large sideways speed, so as they fall they keep missing the Earth and go around it in an orbit.",
             model: "<p>Any three of (1 each):</p><ul><li>Gravity still acts: at 8.0 × 10⁵ m up the pull is about 79% of its value at the surface (F ∝ 1/r²)</li><li>Gravity is the only force: the astronaut and the spacecraft fall with the same acceleration (free fall), so there is no contact force between them and the astronaut feels weightless</li><li>The satellite has a large velocity at right angles to the pull of gravity, so it keeps falling around the Earth without ever reaching it: that is an orbit</li></ul><p>&ldquo;No gravity in space&rdquo; is a misconception; 0 for a response built on it.</p>",
           },
           {
@@ -763,7 +763,7 @@
             steps: [
               { desc: "Uses z = v/c (or v = zc) to find the recessional velocity", rel: ["z=v/c", "v=zx?c", "v=cx?z"] },
               { desc: "Recessional velocity 1.4 × 10⁷ m s⁻¹ (1.37 × 10⁷)", nums: [[1.372e7, 1.37e7, 1.4e7, 1.38e7, 1.371e7]] },
-              { desc: "Uses v = H₀d", rel: ["v=h_?0x?d", "d=v/h_?0", "d=v/h", "v=hd"] },
+              { desc: "Uses v = H₀d", rel: ["v=h[_₀0]?x?d", "d=v/h[_₀0]?", "d=v/h", "v=hd"] },
               { desc: "Final answer 6.0 × 10²⁴ m with unit", ans: 5.965e24, sf: 2, unit: "m" },
             ],
             sample: "z = v/c\n0.0457 = v / 3.00 × 10⁸\nv = 1.37 × 10⁷ m s⁻¹\nv = H₀d\n1.37 × 10⁷ = 2.3 × 10⁻¹⁸ × d\nd = 6.0 × 10²⁴ m",
@@ -780,9 +780,9 @@
             q: "A student says: &ldquo;Nearly all galaxies are moving away from us, so the Earth must be at the centre of the Universe.&rdquo; Use your knowledge of physics to comment on this statement.",
             points: [
               { desc: "Space itself is expanding, carrying the galaxies apart (all galaxies move away from each other)", any: [near("space|universe", "expand\\w*|stretch\\w*|growing", 6), near("galax\\w*", "apart|away from each other|away from one another|away from every|moving away from all", 8)] },
-              { desc: "An observer in any galaxy would see the others receding in the same way, so there is no centre and the Earth is not special", any: [near("any|every|each|all", "galaxy|galaxies|observer|point|place|position|planet", 6), "no (?:centre|center)|no (?:special|central|preferred) (?:place|point|position)|nowhere is the (?:centre|center)|not (?:at )?the (?:centre|center)|not special"], win: 220 },
+              { desc: "An observer in any galaxy would see the others receding in the same way, so there is no centre and the Earth is not special", any: [near("any|every|each", "galaxy|galaxies|observer|point|place|position|planet", 6), "no (?:centre|center)|no (?:special|central|preferred) (?:place|point|position)|nowhere is the (?:centre|center)|not (?:at )?the (?:centre|center)|not special"], win: 220 },
             ],
-            sample: "The whole of space is expanding, so the galaxies are carried away from each other. An observer in any other galaxy would see the other galaxies moving away from them in just the same way, so there is no centre and the Earth is not in a special place.",
+            sample: "The whole of space is expanding, so the galaxies are carried away from each other. An observer in any other galaxy would see the other galaxies moving away from them in just the same way, so there is no centre and the Earth is in no special place.",
             model: "<ul><li>The Universe/space itself is expanding, so all galaxies are moving away from each other (1)</li><li>Every observer, in any galaxy, would see the same pattern (speed proportional to distance, v = H₀d), so there is no centre, and the Earth's position is not special (1)</li></ul>",
           },
         ],

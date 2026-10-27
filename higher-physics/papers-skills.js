@@ -90,7 +90,7 @@
 
   B.skills = {
     intro:
-      "Experiments, uncertainties and data analysis are worth <strong>a large share of every paper</strong>, and most of the marks are for method rather than recall: choosing the right measurements, finding a percentage uncertainty, drawing a gradient from a graph and reading what it means. Ten questions, 71 marks, drawn from all three areas, including four 3-mark open-ended questions. Marks are earned by <strong>separate points</strong>: a relationship, a substitution, an answer <em>with its unit</em>; or a cause and then its effect.",
+      "Experiments, uncertainties and data analysis are worth <strong>a large share of every paper</strong>, and most of the marks are for method rather than recall: choosing the right measurements, finding a percentage uncertainty, drawing a gradient from a graph and reading what it means. Ten questions, 72 marks, drawn from all three areas, including four 3-mark open-ended questions. Marks are earned by <strong>separate points</strong>: a relationship, a substitution, an answer <em>with its unit</em>; or a cause and then its effect.",
     questions: [
       /* ------------------------------------------------------------ 01 */
       {
@@ -131,10 +131,10 @@
                 not: ["\\b(?:decreas\\w*|reduc\\w*|shorten\\w*|shorter|less)\\W+(?:\\w+\\W+){0,2}(?:time|duration)\\b", negFor("long\\w*|increas\\w*|extend\\w*|greater|more|extra|lengthen\\w*")],
                 any: [near("long\\w*|increas\\w*|extend\\w*|greater|more|extra|lengthen\\w*|slower", "time|duration|period", 8), near("longer", "stop\\w*|rest|slow\\w*|collision|crash|impact", 5)] },
               { desc: "The change in momentum is the same (with or without the crumple zone)", group: "b", negOK: true,
-                not: [negFor("same|equal|constant|unchanged|identical|fixed|unaffected"), "\\bmomentum\\W+(?:\\w+\\W+){0,3}(?:is|gets|will be|are)\\W+(?:\\w+\\W+){0,1}(?:reduced|decreased|smaller|less|lower)"],
+                not: [negFor("same|equal|constant|unchanged|identical|fixed|unaffected"), "\\bmomentum\\s+(?:\\w+\\s+){0,2}(?:is|gets|will be|are)\\s+(?:\\w+\\W+){0,1}(?:reduced|decreased|smaller|less|lower)"],
                 any: [near("momentum|impulse|mv", "same|equal|constant|unchanged|identical|fixed|unaffected", 8), "\\bmomentum\\W+(?:\\w+\\W+){0,6}(?:does ?n'?t|do ?n'?t|will not|won'?t)\\W+(?:\\w+\\W+){0,1}change"] },
               { desc: "So (Ft = mv − mu) the average force on the passenger is smaller", group: "c",
-                not: ["\\bforces?\\W+(?:\\w+\\W+){0,3}(?:larger|bigger|greater|increas\\w*|more)\\b", negFor("smaller|less|lower|reduc\\w*|decreas\\w*|minimi[sz]\\w*")],
+                not: ["\\bforces?\\W+(?:\\w+\\W+){0,3}(?:larger|bigger|greater|increas\\w*|more)\\b", "\\b(?:more|larger|bigger|greater|higher)\\W+(?:\\w+\\W+){0,1}forces?\\b", negFor("smaller|less|lower|reduc\\w*|decreas\\w*|minimi[sz]\\w*")],
                 any: [near("forces?", "smaller|less|lower|reduc\\w*|decreas\\w*|minimi[sz]\\w*", 6)] },
             ],
             sample: "The crumple zone collapses slowly, so the collision lasts longer and the time over which the dummy stops is increased. The change in momentum of the dummy is the same with or without the crumple zone, so by Ft = mv − mu the average force on the dummy is smaller, and there is less injury.",
@@ -381,8 +381,8 @@
                 any: ["\\b(?:gravity|gravitational|weight|pull of the earth|earth'?s pull)\\W+(?:\\w+\\W+){0,6}(?:still|acts?|exists?|present|strong|almost|nearly|close|about 9\\d|90)", "\\b(?:still|almost|nearly|about)\\W+(?:\\w+\\W+){0,4}(?:gravity|gravitational|weight)"] },
               { desc: "The astronauts and the station are in free fall, accelerating towards the Earth at the same rate (gravity gives the centripetal acceleration of the orbit)", group: "b",
                 all: ["\\bfree[- ]?fall\\w*|\\bfall(?:ing|s)?\\b|\\baccelerat\\w+\\W+(?:\\w+\\W+){0,3}(?:towards|to|toward)\\W+(?:\\w+\\W+){0,2}(?:earth|centre|center)", "\\btogether\\b|\\bsame (?:rate|acceleration)|\\bboth\\b|\\bstation and|\\bastronauts? and (?:the )?(?:station|craft|spacecraft|iss)|\\baround (?:the )?earth|\\borbit\\w*|\\btowards (?:the )?earth"], win: 120 },
-              { desc: "Nothing pushes up on them (no reaction/contact force from the floor), so they feel no weight", group: "c",
-                not: ["\\b(?:nothing|no|zero)\\W+(?:\\w+\\W+){0,3}(?:is|are|does|do)\\s+not\\b", "\\b(?:is|are|does|do)\\s+not\\W+(?:\\w+\\W+){0,1}(?:pushing|pushes|push|support\\w*|exert\\w*)"],
+              { desc: "Nothing pushes up on them (no reaction/contact force from the floor), so they feel no weight", group: "c", negOK: true,
+                not: ["\\b(?:nothing|no|zero)\\W+(?:\\w+\\W+){0,3}(?:is|are|does|do)\\s+not\\b"],
                 any: ["\\b(?:no|nothing|zero)\\W+(?:\\w+\\W+){0,3}(?:reaction|contact force|normal force|push\\w*|support\\w*)", "\\b(?:reaction|contact|normal|supporting|support)\\W+(?:\\w+\\W+){0,2}force\\W+(?:\\w+\\W+){0,4}(?:zero|none|no|absent)", "\\bnothing (?:pushes|to push|supports|is pushing)", "\\b(?:feel|feels|feeling|experience|experiences)\\W+(?:\\w+\\W+){0,2}(?:no|zero) (?:weight|force|push)", "\\b(?:floor|station|surface)\\W+(?:\\w+\\W+){0,4}(?:pushes?|exerts?|provides?)\\W+(?:\\w+\\W+){0,3}(?:no|zero)"] },
             ],
             sample: "Gravity is still acting on the astronauts, and the pull is nearly as strong as at the surface. The astronauts and the station are in free fall together, accelerating towards the Earth at the same rate as they move around it. Nothing is pushing up on the astronauts from the floor, so they feel no weight and float.",
@@ -419,7 +419,7 @@
                 any: [near("distance|screen", "increas\\w*|longer|further|farther|greater|larger|bigger|move\\w*|away|extend\\w*", 6), "\\b(?:between|across)\\W+(?:the )?(?:\\w+\\W+){0,1}(?:first|1st|two|both)\\W+(?:\\w+\\W+){0,2}(?:orders?|maxima|spots|fringes|dots)", "\\bboth sides\\b|\\beither side\\b", "\\b(?:second|2nd|higher|third|3rd)\\W+(?:\\w+\\W+){0,1}order", "\\bmore lines\\b|\\bfiner grating\\b|\\bhigher number of lines\\b"] },
               { desc: "The measured length (or angle) is bigger, so the same ± 1 mm is a smaller percentage (fraction) of it", group: "b", win: 140,
                 not: [negFor("smaller|less|lower|larger|bigger|greater|longer|increas\\w*")],
-                all: ["\\b(?:percentage|%|per ?cent|fraction|proportion|relative|ratio|smaller part|smaller portion|same (?:absolute )?(?:uncertainty|error)|same 1 ?mm|1 ?mm)", "\\b(?:larger|bigger|greater|longer|increas\\w*|wider|further)\\W+(?:\\w+\\W+){0,6}(?:distance|separation|angle|reading|measurement|value|length|spacing|x)\\b|\\b(?:distance|separation|angle|reading|measurement|value|length|spacing)\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|longer|increas\\w*|wider)\\b"] },
+                all: ["\\b(?:percentage|%|per ?cent|fraction|proportion|relative|ratio|smaller part|smaller portion|same (?:absolute )?(?:uncertainty|error)|same 1 ?mm|1 ?mm)", "\\b(?:larger|bigger|greater|longer|increas\\w*|wider|further)\\W+(?:\\w+\\W+){0,6}(?:distance|separation|angle|reading|measurement|value|length|spacing|x)\\b|\\b(?:further|farther|more|wider|greater)\\W+apart\\b|\\bspread\\w*\\W+(?:out|further|wider)|\\b(?:distance|separation|angle|reading|measurement|value|length|spacing)\\W+(?:\\w+\\W+){0,6}(?:larger|bigger|greater|longer|increas\\w*|wider)\\b"] },
             ],
             sample: "The screen should be moved further from the grating. The distance on the screen between the maxima is then larger, so the same 1 mm reading uncertainty is a smaller percentage of the measured distance.",
             model: "<ul><li>Increase the distance from the grating to the screen (or measure the distance between the two first-order maxima and halve it, or use a higher order, or a grating with more lines per mm) (1)</li><li>The length measured on the screen is larger but the scale-reading uncertainty (± 1 mm) is the same, so it is a smaller percentage of the reading (1)</li></ul><p>&quot;Repeat and take a mean&quot; reduces random uncertainty but does not answer a question about the scale-reading uncertainty of the length measurement.</p>",

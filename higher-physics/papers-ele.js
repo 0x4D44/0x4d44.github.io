@@ -11,7 +11,7 @@
   const HALF = "(?:½|1/2|0\\.5)";
   /* relationship patterns (tested against the working with all spaces removed) */
   const OHM = ["v=ir", "v=ixr", "v=rxi", "i=v/r", "r=v/i"];
-  const VNUM = "[a-z_0-9.]+";
+  const VNUM = "[a-z_0-9.₀-₉]+";
 
   /* ---------- small SVG kit ---------- */
   const INK = "#222", BLU = "#1c3b66", RED = "#b3261e", FILL = "#dbe6f5", GRID = "#d4d4d4";
@@ -178,7 +178,7 @@
             steps: [
               { desc: "Period from the trace: one cycle is 5.0 div, so T = 5.0 × 2.0 ms = 10 ms", nums: [[10, 0.01]] },
               { desc: "Relationship: f = 1/T", rel: ["f=1/t", "f=1/period", "frequency=1/", "t=1/f", "f=1/0?\\.01", "f=1/10"] },
-              { desc: "Final line: f = 100 Hz", ans: 100, sf: 2, unit: "Hz" },
+              { desc: "Final line: f = 100 Hz", ans: 100, sf: 2, unit: "hz" },
             ],
             sample: "One cycle spans 5.0 div, so T = 5.0 × 2.0 ms = 10 ms = 0.010 s\nf = 1/T\nf = 1/0.010 = 100 Hz",
             model: "<ul><li>Period from the trace, 5.0 div × 2.0 ms/div = 10 ms (or 0.010 s) (1)</li><li>f = 1/T (1)</li><li>f = 1/0.010 = 100 Hz, with the final line written (1)</li></ul><p>The course report notes that candidates lose marks in a &ldquo;show that&rdquo; for not showing <em>where the period came from</em>. Write the division count and the timebase. The frequency of 100 Hz must appear as a final line; the given answer alone earns nothing.</p>",
@@ -226,7 +226,7 @@
             label: "(a)", type: "calc", marks: 3,
             q: "Calculate the total resistance of the circuit.",
             steps: [
-              { desc: "Relationship for resistors in parallel: 1/R = 1/R₁ + 1/R₂", rel: ["1/r[a-z_0-9]*=1/" + VNUM + "\\+1/" + VNUM, "r[a-z_0-9]*=\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM + "\\)?"] },
+              { desc: "Relationship for resistors in parallel: 1/R = 1/R₁ + 1/R₂", rel: ["1/r[a-z_0-9₀-₉]*=1/" + VNUM + "\\+1/" + VNUM, "r[a-z_0-9]*=\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM + "\\)?"] },
               { desc: "Resistance of the parallel pair = 4.0 Ω", nums: [4.0] },
               { desc: "Total resistance 12 Ω (with unit)", ans: 12, sf: 2, unit: "Ω" },
             ],
@@ -240,7 +240,7 @@
               { desc: "Relationship: V = IR", rel: OHM },
               { desc: "Total current from the supply: I = 12/12 = 1.0 A", nums: [1.0] },
               { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [4.0] },
-              { desc: "Current in lamp X = 0.33 A", ans: 1 / 3, sf: 2, unit: "A" },
+              { desc: "Current in lamp X = 0.33 A", ans: 1 / 3, sf: 2, unit: "a" },
             ],
             sample: "V = IR\nI(total) = V/R = 12/12 = 1.0 A\np.d. across R₁ = 1.0 × 8.0 = 8.0 V, so p.d. across the lamps = 12 − 8.0 = 4.0 V\nI(X) = V/R = 4.0/12 = 0.33 A",
             model: "<ul><li>V = IR (1)</li><li>Total current = 12/12 = 1.0 A (use the answer to (a); ecf) (1)</li><li>p.d. across the lamps = 12 − (1.0 × 8.0) = 4.0 V (1)</li><li>I = 4.0/12 = 0.33 A (1)</li></ul><p>Equally acceptable: the current divides in the ratio of the <em>inverse</em> resistances, I<sub>X</sub> = 1.0 × 6.0/(6.0 + 12) = 0.33 A. A frequent error is to use the full 12 V across lamp X, which ignores the p.d. lost across R<sub>1</sub>.</p>",
@@ -294,7 +294,7 @@
               { desc: "Potential divider relationship, e.g. V₁ = R₁/(R₁ + R₂) × V_S, or V₁/V₂ = R₁/R₂, or V = IR",
                 rel: ["v[a-z_0-9]*=\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, "v[a-z_0-9]*=\\(?" + VNUM + "/" + VNUM + "\\)?x" + VNUM, "v[a-z_0-9]*/v[a-z_0-9]*=" + VNUM + "/" + VNUM].concat(OHM) },
               { desc: "Correct substitution: 18 (kΩ), 2.0 (kΩ) and 9.0 V", nums: [[18, 18000], [2, 2000], 9] },
-              { desc: "Voltmeter reading 8.1 V", ans: 8.1, sf: 2, unit: "V" },
+              { desc: "Voltmeter reading 8.1 V", ans: 8.1, sf: 2, unit: "v" },
             ],
             sample: "V_LDR = R_LDR/(R_LDR + R) × V_S\nV_LDR = 18/(18 + 2.0) × 9.0\nV_LDR = 8.1 V",
             model: "<ul><li>V<sub>1</sub> = (R<sub>1</sub>/(R<sub>1</sub> + R<sub>2</sub>)) V<sub>S</sub> (1)</li><li>18/(18 + 2.0) × 9.0 (kΩ may be used for both resistances, they only need the same unit) (1)</li><li>8.1 V (1)</li></ul><p>Alternative: V<sub>LDR</sub>/V<sub>R</sub> = 18/2.0 with V<sub>LDR</sub> + V<sub>R</sub> = 9.0 V gives 8.1 V and 0.90 V; or the series current I = 9.0/20 000 = 4.5 × 10<sup>−4</sup> A and V = IR = 8.1 V.</p>",
@@ -330,7 +330,7 @@
         id: "ele-04",
         style: "Experiment question · EMF, internal resistance and a V–I graph",
         stem:
-          "<p>A student investigates a cell. She connects a variable resistor and an ammeter in series with the cell, and a voltmeter across the terminals of the cell. She records the terminal potential difference <em>V</em> for a range of currents <em>I</em> and plots the graph shown.</p>",
+          "<p>A student investigates a cell. She obtains pairs of values of the terminal potential difference <em>V</em> and the current <em>I</em>, and plots the graph shown.</p>",
         figure: figVI,
         parts: [
           {
@@ -356,20 +356,20 @@
               { desc: "Relationship: E = I(R + r) or E = V + Ir",
                 rel: ["e=i\\(r\\+r\\)", "i=e/\\(?r\\+r\\)?", "e=v\\+ir", "i=e/\\(?[0-9.]+\\+[0-9.]+\\)?", "4\\.5=i\\([0-9.]+\\+[0-9.]+\\)", "v=e-ir", "e=ir\\+ir", "lostvolts=ir", "lostv=ir"] },
               { desc: "Substitution using E = 4.5 V, R = 3.0 Ω and r = 1.5 Ω", nums: [4.5, 3.0, 1.5] },
-              { desc: "Lost volts 1.5 V", ans: 1.5, sf: 2, unit: "V" },
+              { desc: "Lost volts 1.5 V", ans: 1.5, sf: 2, unit: "v" },
             ],
             sample: "E = I(R + r)\n4.5 = I × (3.0 + 1.5)\nI = 1.0 A\nlost volts = Ir = 1.0 × 1.5 = 1.5 V",
             model: "<ul><li>E = I(R + r) (1)</li><li>4.5 = I × (3.0 + 1.5), so I = 1.0 A (1)</li><li>lost volts = Ir = 1.0 × 1.5 = 1.5 V (1)</li></ul><p>Alternative: V = IR = 3.0 V across the resistor, so lost volts = E − V = 4.5 − 3.0 = 1.5 V. The unit is the volt: the lost volts are a p.d. (1.5 V), even though the number matches the internal resistance (1.5 Ω).</p>",
           },
           {
             label: "(d)", type: "text", marks: 3, minWords: 12, rows: 6,
-            q: "Describe how the student would obtain the readings, and how the graph is used to find the e.m.f. and the internal resistance of the cell.",
+            q: "Describe the circuit she used, how she obtained the data, and how the graph is used to find the e.m.f. and the internal resistance of the cell.",
             points: [
               { desc: "Circuit: ammeter in series with the cell and variable resistor; voltmeter connected across the terminals of the cell",
                 all: [near("ammeter", "series|in line|with the (?:cell|resistor)|round the circuit", 8), near("voltmeter", "across|parallel|terminals?|over", 8)] },
               { desc: "Change the variable resistor to give a range of currents, recording V and I each time",
                 all: [near("vary|varying|change|changing|adjust\\w*|alter\\w*|different|several|range|repeat\\w*", "variable resistor|resistance|rheostat|resistors|currents?|readings?|values|settings", 6), "record\\w*|reading|measure\\w*|note|results|table|read"] },
-              { desc: "Plot V against I; the y-intercept is the e.m.f. and the gradient is −r (r = −gradient)",
+              { desc: "Plot V against I; the y-intercept is the e.m.f. and the gradient is −r (r = −gradient)", not: ["(?:not|n't)\\W+(?:the\\W+)?(?:e\\.?m\\.?f|emf)"],
                 all: ["(?:graph|plot\\w*|draw\\w*)\\W+(?:\\w+\\W+){0,6}(?:v|voltage|t\\.?p\\.?d\\.?|p\\.?d\\.?|potential difference|terminal)\\W+(?:\\w+\\W+){0,4}(?:against|vs\\.?|versus|and|on|with)\\W+(?:\\w+\\W+){0,3}(?:i|current)|\\b(?:v|voltage|p\\.?d\\.?|t\\.?p\\.?d\\.?)\\W+(?:against|vs\\.?|versus)\\W+(?:\\w+\\W+){0,2}(?:i|current)",
                   near("intercept|where it crosses|where it cuts|where it meets", "e\\.?m\\.?f\\.?|\\be\\b|emf", 6) + "|" + near("gradient|slope", "internal resistance|\\br\\b|resistance", 6)] },
             ],
@@ -390,8 +390,8 @@
             q: "The headlamps become dimmer while the starter motor is operating. Explain why.",
             points: [
               { desc: "The starter motor draws a large current from the battery (the current in the battery increases)",
-                all: ["starter|motor|battery|supply", near("current", "large|big|high|increas\\w*|greater|larger|bigger|draws?|heavy|150", 5)] },
-              { desc: "More p.d. is lost across the internal resistance (more lost volts), so the terminal p.d. across the lamps falls",
+                all: ["starter|motor", near("current", "large|big|high|increas\\w*|greater|larger|bigger|draws?|heavy", 5)] },
+              { desc: "More p.d. is lost across the internal resistance (more lost volts), so the terminal p.d. across the lamps falls", not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:dimmer|dim)"],
                 any: [near("lost volts|internal resistance|\\bir\\b", "more|increas\\w*|greater|larger|bigger|higher|lost|lose|loses|drop\\w*|across", 6) + "|" + near("lost volts", "increas\\w*|greater|larger|bigger|higher", 6),
                   near("t\\.?p\\.?d\\.?|terminal|" + PD + "|lamps?|headlamps?", DEC, 6)],
                 all: ["lost volts|internal resistance|\\bir\\b|t\\.?p\\.?d\\.?|terminal"] },
@@ -405,7 +405,7 @@
             steps: [
               { desc: "Relationship: E = V + Ir", rel: ["e=v\\+ir", "v=e-ir", "v=e-\\(?ixr", "lostvolts=ir", "lostv=ir", "e=ir\\+v"] },
               { desc: "Substitution: 12.4, 150 and 0.040 (lost volts 6.0 V)", nums: [12.4, 150, 0.04] },
-              { desc: "Terminal p.d. 6.4 V", ans: 6.4, sf: 2, unit: "V" },
+              { desc: "Terminal p.d. 6.4 V", ans: 6.4, sf: 2, unit: "v" },
             ],
             sample: "E = V + Ir\n12.4 = V + (150 × 0.040)\nV = 12.4 − 6.0 = 6.4 V",
             model: "<ul><li>E = V + Ir (1)</li><li>12.4 = V + (150 × 0.040) (1)</li><li>V = 6.4 V (1)</li></ul><p>The lost volts are Ir = 6.0 V, about half the e.m.f. Giving 6.0 V (the lost volts) as the answer is the commonest error.</p>",
@@ -438,7 +438,7 @@
               { desc: "Relationship: Q = It", rel: ["q=it", "i=q/t", "t=q/i", "q=ixt"] },
               { desc: "Charge Q = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C", nums: [0.002] },
               { desc: "Relationship C = Q/V with V = 4.0 V", rel: ["c=q/v", "v=q/c", "q=cv"], nums: [4.0] },
-              { desc: "Capacitance 5.0 × 10⁻⁴ F", ans: 5e-4, alts: [500], sf: 2, unit: ["F", "µF"] },
+              { desc: "Capacitance 5.0 × 10⁻⁴ F", ans: 5e-4, alts: [500], sf: 2, unit: ["f", "µf"] },
             ],
             sample: "Q = It = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C\nC = Q/V = 2.0 × 10⁻³ / 4.0\nC = 5.0 × 10⁻⁴ F",
             model: "<ul><li>Q = It (1)</li><li>Q = 40 × 10<sup>−6</sup> × 50 = 2.0 × 10<sup>−3</sup> C (read t = 50 s and V = 4.0 V from the graph) (1)</li><li>C = Q/V = 2.0 × 10<sup>−3</sup>/4.0 (1)</li><li>C = 5.0 × 10<sup>−4</sup> F (500 µF) (1)</li></ul><p>Convert the microamps: 40 µA is 40 × 10<sup>−6</sup> A. Leaving it as 40 gives an answer 10<sup>6</sup> times too big.</p>",
@@ -490,12 +490,12 @@
             label: "(b)", type: "text", marks: 3, minWords: 14, rows: 6,
             q: "Describe and explain how the current in R changes from the moment S is moved to position 2 until the capacitor has lost all its charge.",
             points: [
-              { desc: "The current is greatest at the start (the capacitor is at full p.d., so I = V/R is largest)",
-                all: [near("current", "largest|greatest|maximum|biggest|highest|high|large|big|0\\.02", 6), "start|begin\\w*|first|initial\\w*|immediate\\w*|moment|at once"] },
+              { desc: "The current is greatest at the start (the capacitor is at full p.d., so I = V/R is largest)", not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:largest|greatest|maximum|biggest|highest)"],
+                all: [near("current", "largest|greatest|maximum|biggest|highest|0\\.02", 4), "start|begin\\w*|first|initial\\w*|immediate\\w*|moment|at once"] },
               { desc: "As charge leaves, the p.d. across the capacitor falls, so the current falls",
                 all: [near(PD, DEC, 6), near("current", DEC, 6)] },
               { desc: "The current falls to zero (quickly at first, then more slowly) when the capacitor is fully discharged",
-                any: [near("zero|stops|nothing|no current|reaches 0", "current|capacitor|discharged|eventually|finally|end", 6), "(?:quickly|rapidly|fast)\\W+(?:\\w+\\W+){0,3}(?:first|start|begin\\w*)", "slow\\w*\\W+(?:\\w+\\W+){0,6}(?:later|then|end|eventually)", "exponential"] },
+                any: [near("zero|stops|nothing|no current|reaches 0", "current", 5), "(?:quickly|rapidly|fast)\\W+(?:\\w+\\W+){0,3}(?:at first)", "exponential"] },
             ],
             sample: "At the start the current is largest, because the capacitor has its full p.d. and I = V/R. As charge flows off the plates the p.d. across the capacitor falls, so the current falls too. It drops quickly at first and then more slowly, and reaches zero when the capacitor is completely discharged.",
             model: "<ul><li>The current is greatest at the start, I = V<sub>C</sub>/R = 9.0/450 = 0.020 A (1)</li><li>As the capacitor discharges its p.d. falls, so the current (V<sub>C</sub>/R) falls (1)</li><li>The current falls to zero, quickly at first and then more slowly (1)</li></ul><p>The current in R is in the opposite direction to the charging current. No current ever passes <em>through</em> the insulator between the plates; the current is in the wires as charge leaves the plates.</p>",
@@ -509,7 +509,7 @@
             label: "(d)", type: "text", marks: 2, minWords: 10,
             q: "Resistor R is replaced by a resistor of larger resistance, and the capacitor is again charged to 9.0 V. Explain what happens to the initial current and why the capacitor takes longer to discharge.",
             points: [
-              { desc: "The initial current is smaller, since I = V/R with the same p.d. and a larger R",
+              { desc: "The initial current is smaller, since I = V/R with the same p.d. and a larger R", not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:smaller|lower|less|reduc\\w*|decreas\\w*|fall\\w*|halved|weaker)"],
                 all: [near("current|i\\b", "smaller|lower|less|reduc\\w*|decreas\\w*|falls?|halved|weaker", 5)] },
               { desc: "Charge flows off the capacitor more slowly (the rate of flow of charge is smaller), so its p.d. falls more slowly",
                 any: [near("charge|electrons", "slow\\w*|more gradual\\w*|less quickly|more time", 8), near("rate", "smaller|lower|slower|reduc\\w*", 4)] },
@@ -532,7 +532,7 @@
             steps: [
               { desc: "Relationship: E = ½CV² (or ½QV, ½Q²/C)", rel: ["e[a-z_]*=\\(?" + HALF, "e[a-z_]*=q\\^?2/\\(?2c", "e[a-z_]*=\\(?c?x?v\\^2/2"] },
               { desc: "Substitution: ½ × 120 × 10⁻⁶ × 300²", nums: [[1.2e-4, 120], 300] },
-              { desc: "Energy 5.4 J", ans: 5.4, sf: 2, unit: "J" },
+              { desc: "Energy 5.4 J", ans: 5.4, sf: 2, unit: "j" },
             ],
             sample: "E = ½CV²\nE = ½ × 120 × 10⁻⁶ × 300²\nE = 5.4 J",
             model: "<ul><li>E = ½CV² (1)</li><li>E = ½ × 120 × 10<sup>−6</sup> × 300<sup>2</sup> (1)</li><li>E = 5.4 J (1)</li></ul><p>Alternative: Q = CV = 3.6 × 10<sup>−2</sup> C, then E = ½QV = ½ × 3.6 × 10<sup>−2</sup> × 300 = 5.4 J. Forgetting to square V, or to convert 120 µF, are the usual errors.</p>",
@@ -543,7 +543,7 @@
             steps: [
               { desc: "Relationship: Q = It (I = Q/t)", rel: ["i=q/t", "q=it", "t=q/i", "q=ixt"] },
               { desc: "Charge Q = CV = 3.6 × 10⁻² C and t = 1.5 × 10⁻³ s", nums: [0.036, [1.5e-3, 1.5]] },
-              { desc: "Current 24 A", ans: 24, sf: 2, unit: "A" },
+              { desc: "Current 24 A", ans: 24, sf: 2, unit: "a" },
             ],
             sample: "Q = CV = 120 × 10⁻⁶ × 300 = 3.6 × 10⁻² C\nI = Q/t = 3.6 × 10⁻² / 1.5 × 10⁻³\nI = 24 A",
             model: "<ul><li>Q = CV and Q = It (I = Q/t) (1)</li><li>Q = 120 × 10<sup>−6</sup> × 300 = 3.6 × 10<sup>−2</sup> C; t = 1.5 × 10<sup>−3</sup> s (1)</li><li>I = 24 A (1)</li></ul>",
@@ -586,9 +586,9 @@
             q: "The temperature of material Z is increased. Explain why its electrical conductivity increases.",
             points: [
               { desc: "More electrons gain enough energy to cross the (small) gap from the valence band to the conduction band",
-                all: ["electrons?", near("energy", "gain\\w*|get|gets|receive\\w*|enough|more|extra|sufficient", 6), "gap|cross\\w*|jump\\w*|promot\\w*|excit\\w*|move\\w* (?:up )?(?:in)?to the conduction|reach\\w*|conduction"] },
+                all: ["temperature|thermal|heat\\w*|hotter|warm\\w*", near("energy", "gain\\w*|get|gets|receive\\w*|enough|more|extra|sufficient", 6), "gap|cross\\w*|jump\\w*|promot\\w*|excit\\w*|move\\w* (?:up )?(?:in)?to the conduction|reach\\w*|conduction"] },
               { desc: "So there are more free charge carriers (electrons in the conduction band, and holes) to carry current",
-                all: [near("more|increas\\w*|greater|larger|higher|extra", "carriers?|free electrons|electrons|holes|charges?", 5), "conduction band|free|carriers?|holes|current|conduct\\w*"] },
+                all: [near("more|increas\\w*|greater|larger|higher|extra", "carriers?|free electrons|electrons|holes|charges?", 5), "conductivity|conducts?\\b|resistance|carry|carries|current"] },
             ],
             sample: "At a higher temperature more electrons gain enough energy to cross the small gap from the valence band into the conduction band. There are then more free electrons, and holes, available to carry charge, so the conductivity is greater.",
             model: "<ul><li>At the higher temperature more electrons gain enough energy to cross the gap between the valence band and the conduction band (1)</li><li>There are more charge carriers (free electrons in the conduction band, and holes in the valence band), so the conductivity is greater / the resistance is less (1)</li></ul><p>Z has a <em>small</em> gap, so thermal energy at room temperature already lifts some electrons across. This is opposite to a metal, whose resistance rises with temperature.</p>",
@@ -619,9 +619,9 @@
             label: "(a)", type: "text", marks: 2, minWords: 10,
             q: "Explain how a semiconductor is made p-type, and what the majority charge carriers are.",
             points: [
-              { desc: "Impurity atoms with one fewer outer electron than the semiconductor atoms are added (doping)",
+              { desc: "Impurity atoms with one fewer outer electron than the semiconductor atoms are added (doping)", not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:one )?(?:fewer|less)"],
                 all: ["impurit\\w*|dop\\w*|atoms?", near("fewer|less|one less|one fewer|three|3|lacks?|short of|missing", "electrons?|outer|valence", 5)] },
-              { desc: "This leaves holes in the valence band, which act as the positive majority charge carriers",
+              { desc: "This leaves holes in the valence band, which act as the positive majority charge carriers", not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:one )?(?:fewer|less)"],
                 all: ["holes?", "positive|majority|carriers?|valence"] },
             ],
             sample: "A p-type semiconductor is made by adding impurity atoms that have one fewer outer electron than the atoms of the semiconductor. This leaves gaps, called holes, in the valence band, and the holes act as positive charge carriers.",
@@ -648,7 +648,7 @@
               { desc: "Relationship for frequency: v = fλ (or f = v/λ, or c = fλ)", rel: ["v=fλ", "f=v/λ", "c=fλ", "f=c/λ", "v=flambda", "f=v/lambda", "f=c/lambda", "v=f\\*λ", "c=f\\*lambda", "v=fx"] },
               { desc: "Frequency f = 4.8 × 10¹⁴ Hz", nums: [4.8e14] },
               { desc: "Relationship E = hf with h = 6.63 × 10⁻³⁴ J s", rel: ["e=hf", "e=hxf", "e=h\\*f", "e=6\\.63"], nums: [6.63e-34] },
-              { desc: "Photon energy 3.18 × 10⁻¹⁹ J", ans: 3.1824e-19, sf: 3, unit: "J" },
+              { desc: "Photon energy 3.18 × 10⁻¹⁹ J", ans: 3.1824e-19, sf: 3, unit: "j" },
             ],
             sample: "v = fλ\nf = v/λ = 3.00 × 10⁸ / 625 × 10⁻⁹ = 4.8 × 10¹⁴ Hz\nE = hf = 6.63 × 10⁻³⁴ × 4.8 × 10¹⁴\nE = 3.18 × 10⁻¹⁹ J",
             model: "<ul><li>v = fλ (c = fλ) (1)</li><li>f = 3.00 × 10<sup>8</sup>/625 × 10<sup>−9</sup> = 4.8 × 10<sup>14</sup> Hz (1)</li><li>E = hf with h = 6.63 × 10<sup>−34</sup> (1)</li><li>E = 3.18 × 10<sup>−19</sup> J (1)</li></ul><p>This energy is approximately the band gap of the semiconductor. Convert nm to metres (625 nm = 625 × 10<sup>−9</sup> m); leaving it as 625 gives a frequency of 4.8 × 10<sup>6</sup> Hz.</p>",
@@ -679,9 +679,9 @@
             q: "Explain how a potential difference is produced across a solar cell when light shines on it.",
             points: [
               { desc: "Absorbed photons give electrons enough energy to move from the valence band to the conduction band (producing electron-hole pairs)",
-                all: [near("photons?|light", "absorb\\w*|hit\\w*|strike\\w*|strikes|arrive|enter\\w*|shine\\w*|energy", 6), near("electrons?", "valence|conduction|energy|excit\\w*|freed|free|release\\w*|promot\\w*", 6), "conduction band|conduction"] },
+                all: [near("photons?|light", "absorb\\w*|hit\\w*|strike\\w*|arrive|shine\\w*|shining", 6), near("electrons?", "valence|conduction|energy|excit\\w*|freed|free|release\\w*|promot\\w*", 6), "conduction band|conduction"] },
               { desc: "The electric field in the junction pushes the electrons to the n-type side (and the holes to the p-type side), so a p.d. develops across the cell",
-                all: [near("field|junction|depletion", "push\\w*|force\\w*|sweep\\w*|separat\\w*|drives?|driven|move\\w*|attract\\w*", 6), "n-type|n side|p-type|p side|opposite|across|between|terminals?|p\\.?d\\.?|voltage"] },
+                all: [near("field|junction|depletion", "push\\w*|force\\w*|sweep\\w*|separat\\w*|drives?|driven|attract\\w*", 6), "n-type|n side|p-type|p side|opposite|across|between|terminals?|p\\.?d\\.?|voltage"] },
             ],
             sample: "Photons of light are absorbed in the junction and give electrons enough energy to move from the valence band to the conduction band. The electric field in the junction then pushes the electrons to the n-type side and the holes to the p-type side, so a potential difference is produced across the cell.",
             model: "<ul><li>Photons are absorbed and give electrons enough energy to move from the valence band to the conduction band (1)</li><li>The electric field across the junction separates the charges (electrons to the n-type, holes to the p-type), so a p.d. is produced between the layers (1)</li></ul><p>This is the photovoltaic effect. It needs no external supply: the cell is a source, not a forward-biased device.</p>",
@@ -692,7 +692,7 @@
             steps: [
               { desc: "Relationship: P = IV", rel: ["p=iv", "p=ixv", "p=vi", "p=vxi", "p=i\\^2r", "p=v\\^2/r"] },
               { desc: "Substitution: 3.2 × 15", nums: [3.2, 15] },
-              { desc: "Power 48 W", ans: 48, sf: 2, unit: "W" },
+              { desc: "Power 48 W", ans: 48, sf: 2, unit: "w" },
             ],
             sample: "P = IV\nP = 3.2 × 15\nP = 48 W",
             model: "<ul><li>P = IV (1)</li><li>P = 3.2 × 15 (1)</li><li>P = 48 W (1)</li></ul>",
@@ -775,14 +775,14 @@
               { desc: "Potential divider relationship, e.g. V₁ = R₁/(R₁ + R₂) × V_S, or V₁/V₂ = R₁/R₂, or V = IR",
                 rel: ["v[a-z_0-9]*=\\(?" + VNUM + "/\\(?" + VNUM + "\\+" + VNUM + "\\)?\\)?x" + VNUM, "v[a-z_0-9]*=\\(?" + VNUM + "/" + VNUM + "\\)?x" + VNUM, "v[a-z_0-9]*/v[a-z_0-9]*=" + VNUM + "/" + VNUM].concat(OHM) },
               { desc: "Substitution: 2.0 (kΩ), 3.0 (kΩ) and 6.0 V", nums: [[2, 2000], [3, 3000], 6] },
-              { desc: "Voltmeter reading 2.4 V", ans: 2.4, sf: 2, unit: "V" },
+              { desc: "Voltmeter reading 2.4 V", ans: 2.4, sf: 2, unit: "v" },
             ],
             sample: "V_R = R/(R + R_T) × V_S\nV_R = 2.0/(2.0 + 3.0) × 6.0\nV_R = 2.4 V",
             model: "<ul><li>V<sub>1</sub> = (R<sub>1</sub>/(R<sub>1</sub> + R<sub>2</sub>)) V<sub>S</sub> (1)</li><li>2.0/(2.0 + 3.0) × 6.0 (1)</li><li>2.4 V (1)</li></ul><p>The voltmeter is across the <em>fixed</em> resistor, so the numerator is 2.0, not 3.0 (that would give the thermistor's p.d., 3.6 V). Alternative: I = 6.0/5000 = 1.2 mA, V = 1.2 mA × 2.0 kΩ = 2.4 V.</p>",
           },
           {
             label: "(c)", type: "text", marks: 2, minWords: 10,
-            q: "Explain why the voltmeter reading increases as the temperature of the greenhouse rises.",
+            q: "Explain why the voltmeter reading changes as the temperature of the greenhouse rises.",
             points: [
               { desc: "As the temperature rises, the resistance of the thermistor decreases",
                 all: ["thermistor|temperature", near("resistance", DEC, 5)] },
@@ -837,7 +837,7 @@
             steps: [
               { desc: "Relationship: E = ½CV² (or ½QV)", rel: ["e[a-z_]*=\\(?" + HALF, "e[a-z_]*=q\\^?2/\\(?2c"] },
               { desc: "Substitution: ½ × 2000 × 10⁻⁶ × 6.0²", nums: [[2e-3, 2000], 6] },
-              { desc: "Energy 3.6 × 10⁻² J", ans: 0.036, sf: 2, unit: "J" },
+              { desc: "Energy 3.6 × 10⁻² J", ans: 0.036, sf: 2, unit: "j" },
             ],
             sample: "E = ½CV²\nE = ½ × 2000 × 10⁻⁶ × 6.0²\nE = 3.6 × 10⁻² J",
             model: "<ul><li>E = ½CV² (1)</li><li>E = ½ × 2000 × 10<sup>−6</sup> × 6.0<sup>2</sup> (1)</li><li>E = 3.6 × 10<sup>−2</sup> J (1)</li></ul><p>The fully charged capacitor has the supply p.d. of 6.0 V. Alternatively Q = CV = 1.2 × 10<sup>−2</sup> C and E = ½QV.</p>",
@@ -846,14 +846,14 @@
             label: "(d)", type: "text", marks: 3, minWords: 14, rows: 6,
             q: "The experiment is repeated with the original 600 Ω resistor but a capacitor of larger capacitance. Describe and explain the effect on (i) the initial current, (ii) the final p.d. across the capacitor, and (iii) the time taken to charge.",
             points: [
-              { desc: "The initial current is unchanged, because the capacitor starts uncharged so I = V/R is the same",
+              { desc: "The initial current is unchanged, because the capacitor starts uncharged so I = V/R is the same", not: ["not\\W+(?:also\\W+)?(?:the\\W+)?(?:same|unchanged|constant)"],
                 all: [near("initial|starting|start|first|beginning", "current", 6), "same|unchanged|no change|not change|constant|doesn't change|does not change|unaffected|not affected|equal"] },
-              { desc: "The final p.d. is unchanged: it equals the supply p.d. of 6.0 V",
+              { desc: "The final p.d. is unchanged: it equals the supply p.d. of 6.0 V", not: ["not\\W+(?:also\\W+)?(?:the\\W+)?(?:same|unchanged|constant)", "not\\W+(?:\\w+\\W+){0,1}equal"],
                 all: [near("final|end|fully charged|eventually|finally", PD, 8), "same|unchanged|no change|not change|supply|6\\.0|6 v|equal|unaffected|not affected"] },
-              { desc: "It takes longer to charge, because more charge must flow to reach the same p.d. (Q = CV)",
+              { desc: "It takes longer to charge, because more charge must flow to reach the same p.d. (Q = CV)", not: ["not\\W+(?:\\w+\\W+){0,1}(?:to )?flow"],
                 all: ["longer|slower|more time|slowly", "more charge|larger charge|greater charge|bigger charge|more electrons|q ?= ?cv|charge"] },
             ],
-            sample: "The initial current is the same, because the capacitor starts uncharged so all of the supply p.d. is across the resistor and I = V/R does not change. The final p.d. across the capacitor is also unchanged, since it still equals the 6.0 V supply. The capacitor takes longer to charge, because more charge has to flow to reach the same p.d.",
+            sample: "The initial current is the same, because the capacitor starts uncharged so all of the supply p.d. is across the resistor and I = V/R stays the same. The final p.d. across the capacitor is also unchanged, since it still equals the 6.0 V supply. The capacitor takes longer to charge, because more charge has to flow to reach the same p.d.",
             model: "<ul><li>The initial current is unchanged (the capacitor starts with zero p.d., so I = V/R = 0.010 A as before) (1)</li><li>The final p.d. is unchanged: it reaches the supply p.d., 6.0 V (1)</li><li>It takes longer to charge, since more charge (Q = CV) must flow to reach the same p.d., at the same starting current (1)</li></ul><p>The graph for the larger capacitor starts with the same gradient-related current but climbs more slowly towards the same 6.0 V.</p>",
           },
         ],
