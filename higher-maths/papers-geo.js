@@ -95,7 +95,7 @@
   })();
 
   BANK.geo = {
-    intro: "Straight lines, circles and three-dimensional vectors, in the pattern of recent SQA papers. Twelve questions are non-calculator (exact values, surds and fractions) and six are calculator (angles and lengths to one decimal place).",
+    intro: "Straight lines, circles and three-dimensional vectors, in the pattern of recent SQA papers. Thirteen questions are non-calculator (exact values, surds and fractions) and six are calculator (angles and lengths to one decimal place).",
     questions: [
       /* ---------------------------------------------------------------- 01 */
       {
@@ -602,7 +602,31 @@
             why: R`<p>&bull;1 $\overrightarrow{VE}=\tfrac14\overrightarrow{VD}=\tfrac14(-3,3,-8)=\left(-\tfrac34,\tfrac34,-2\right)$.</p><p>&bull;2 $\mathbf e=\mathbf v+\overrightarrow{VE}=(2.25,\ 3.75,\ 6)$.</p><p>Commonly seen: using $\tfrac34$ (the ratio the wrong way round).</p>`
           }
         ]
+      },
+      /* ---------------------------------------------------------------- 19 (non-calc, show that) */
+      {
+        id: "geo-19", calc: false,
+        style: "Paper 1 style · non-calculator · a line and a circle: show that, then find",
+        stem: R`A circle has equation $x^2+y^2=2$ and a line has equation $y=x+2$.`,
+        parts: [
+          {
+            label: "(a)", q: "Show that the line is a tangent to the circle. Write your reasoning in a sentence or two.", type: "text", marks: 3, minWords: 4,
+            points: [
+              { desc: "substitute y = x + 2 to reach a quadratic (2x^2 + 4x + 2 = 0 or (x+1)^2 = 0)", any: [R`2x\^?2\s*\+\s*4x\s*\+\s*2`, R`x\^?2\s*\+\s*2x\s*\+\s*1`, R`\(x\s*\+\s*1\)\^?2`] },
+              { desc: "discriminant is zero / a repeated root", any: [R`discriminant[^.;]{0,25}(?:\b0\b|zero)`, R`b\^?2\s*-\s*4ac\s*=\s*0`, R`repeated`, R`equal roots`, R`16\s*-\s*16`] },
+              { desc: "so there is exactly one point of contact: a tangent", any: [R`tangent`, R`one (?:point|solution|root)`, R`touch`] }
+            ],
+            sample: "Substituting gives 2x^2 + 4x + 2 = 0, so (x+1)^2 = 0. The discriminant is 0 (a repeated root), so the line touches the circle at one point: it is a tangent.",
+            why: R`<p>&bull;1 $x^2+(x+2)^2=2$ gives $2x^2+4x+2=0$, i.e. $x^2+2x+1=0$</p><p>&bull;2 discriminant $b^2-4ac=4-4=0$, a repeated root</p><p>&bull;3 one point of contact only, so the line is a tangent.</p>`
+          },
+          {
+            label: "(b)", q: "Find the point of contact. Type it as $(x,y)$.", type: "vec", marks: 2, a: [-1, 1], show: R`(-1,\,1)`, reject: ["(1,-1)", "(1,3)", "(-1,-1)"],
+            why: R`<p>&bull;1 $(x+1)^2=0$ gives $x=-1$</p><p>&bull;2 $y=-1+2=1$, so the point of contact is $(-1,1)$.</p>`
+          }
+        ]
       }
     ]
   };
+  /* non-calculator questions first, as on the real papers */
+  { const q = (window.HMP_BANK.geo || {}).questions; if (q) q.sort((a, b) => (a.calc ? 1 : 0) - (b.calc ? 1 : 0)); }
 })();

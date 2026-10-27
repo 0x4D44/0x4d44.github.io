@@ -159,7 +159,7 @@
     return t.includes("=") ? t.slice(t.lastIndexOf("=") + 1).trim() : t;
   }
   function stripUnits(t) {
-    return t.replace(/(?:square |sq\.? )?(?:units?|cm|mm|km|metres?|meters?|m|s|secs?|seconds?|ms|mph|kg|hours?|hrs?|years?|days?|minutes?|mins?)(?:\^?\s*[23])?\s*(?:per\s+\w+|\/\s*\w+)?\s*$/g, "").trim();
+    return t.replace(/(?:square |sq\.? )?(?:units?|cm|mm|km|metres?|meters?|m|s|secs?|seconds?|ms|mph|kg|mg|g|tonnes?|knots?|cubic cm|cm\^?3|°?\s?c|degrees|hours?|hrs?|years?|days?|minutes?|mins?)(?:\^?\s*[23])?\s*(?:per\s+\w+|\/\s*\w+)?\s*$/g, "").trim();
   }
   function numFrom(s, vars) {
     let t = rhs(s);
@@ -240,11 +240,25 @@
     return parts.map((x) => numFrom(x.replace(/^[\s(]+|[\s)]+$/g, ""), [])({}));
   }
 
+  /* "echo the question" guard: a number or expression still to be evaluated is not an answer */
+  const FN = /\b(?:sin|cos|tan|asin|acos|atan|arcsin|arccos|arctan|ln|log|exp)\b/i;
+  function echoGuard(f, s) {
+    if (!/^(?:num|expr|set|vec)$/.test(f.type)) return null;
+    const t = HMP.tidy(s).replace(/\s+/g, "");
+    if (FN.test(t) && !FN.test(JSON.stringify([f.a, f.alts, f.accept, f.sample])))
+      return "Give a simplified value, not a calculation still to be done.";
+    if ((f.forbid || []).some((p) => new RegExp(p, "i").test(t)))
+      return f.forbidNote || "Simplify it fully: give the exact value, not a restatement of the question.";
+    return null;
+  }
+
   /* one input, one verdict: { ok, got, note } */
   function scoreOne(f, ans) {
     const marks = f.marks;
     const s = String(ans == null ? "" : ans);
     if (!s.trim()) return { got: 0, empty: true };
+    const echoed = echoGuard(f, s);
+    if (echoed) return { got: 0, note: echoed };
     switch (f.type) {
       case "num": {
         const v = numFrom(s, [])({});
@@ -259,7 +273,10 @@
         const g = numFrom(s, allowed);
         const key = HMP.compile(f.a, vars);
         const wrap = (fn) => (v) => fn(f.plusC ? Object.assign({ c: 0 }, v) : v);
-        if (sameFn(wrap(g), key, vars, { plusC: f.plusC, positive: f.positive })) return { got: marks };
+        if (sameFn(wrap(g), key, vars, { plusC: f.plusC, positive: f.positive })) {
+          if (f.plusC && marks > 1 && !/[+-]\s*c\s*$/i.test(HMP.tidy(s).replace(/\s+/g, ""))) return { got: marks - 1, note: "The integral is right, but the constant of integration is missing: add + c (SQA withholds a mark)." };
+          return { got: marks };
+        }
         const h = (f.partial || []).find((p) => sameFn(wrap(g), HMP.compile(p.a, vars), vars, { plusC: f.plusC, positive: f.positive }));
         return h ? { got: Math.min(h.marks, marks), note: h.note, method: true } : { got: 0 };
       }
@@ -300,7 +317,7 @@
     if (negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push(m.index); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some((a) => NEG.test(text.slice(Math.max(0, a - 70), a + 1).split(/[.;!?]|\bbut\b|\bhowever\b/).pop()))) return false;
+      if (spans.some((a) => NEG.test(text.slice(Math.max(0, a - 70), a + 1).split(/[.;!?,:)]|\bbut\b|\bhowever\b|\bso\b/).pop()))) return false;
     }
     if (!all.length) return true;
     const win = pt.win || WIN;
@@ -312,7 +329,7 @@
     const text = HMP.norm(ans);
     const w = (text.match(/[a-z0-9]+/g) || []).length;
     const min = part.minWords == null ? 3 : Math.min(part.minWords, 5);
-    const neg = !NEG.test(HMP.norm(part.sample || ""));
+    const neg = true;
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: w >= min && HMP.pointHit(pt, text, neg), group: pt.group }));
     const seen = new Set();
     pts.forEach((p) => { if (p.group && p.hit) { if (seen.has(p.group)) p.hit = false; else seen.add(p.group); } });

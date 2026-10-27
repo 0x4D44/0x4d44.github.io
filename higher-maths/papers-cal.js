@@ -82,7 +82,7 @@
       text(170, 218, "18 cm") + text(170, 120, "card") +
       line(85, 208, 255, 208, INK, 1) + line(85, 204, 85, 212, INK, 1) + line(255, 204, 255, 212, INK, 1));
 
-  const intro = R`Differentiation, tangents and stationary points, optimisation, integration and areas, and motion in a straight line. Questions 1&ndash;12 are non-calculator (Paper 1 style, exact values); questions 13&ndash;18 are calculator (Paper 2 style: rounding, models, optimisation).`;
+  const intro = R`Differentiation, tangents and stationary points, optimisation, integration and areas, and motion in a straight line. Questions 1&ndash;13 are non-calculator (Paper 1 style, exact values); questions 14&ndash;19 are calculator (Paper 2 style: rounding, models, optimisation).`;
 
   const questions = [
     /* ---------------- 01 ---------------- */
@@ -198,12 +198,12 @@
     {
       id: "cal-06", calc: false,
       style: "Paper 1 style · non-calculator · indefinite integrals",
-      stem: R`<p>Find each indefinite integral. Leave out the constant of integration if you like; it is not marked.</p>`,
+      stem: R`<p>Find each indefinite integral. Remember the constant of integration: one mark in each part depends on it.</p>`,
       parts: [
         {
           label: "(a)", q: R`$\displaystyle\int\left(6\sqrt{x}-\dfrac{2}{x^{2}}\right)dx$, where $x\gt 0$.`,
           type: "expr", marks: 2, vars: ["x"], plusC: true, positive: true,
-          a: "4x^(3/2)+2/x", show: R`4x^{\frac32}+\dfrac{2}{x}+c`,
+          a: "4x^(3/2)+2/x", sample: "4x^(3/2)+2/x+c", show: R`4x^{\frac32}+\dfrac{2}{x}+c`,
           reject: ["4x^(3/2)-2/x", "9x^(3/2)+2/x", "3x^(-1/2)+4/x^3"],
           partial: [{ a: "4x^(3/2)-2/x", marks: 1, note: "a sign slip on the second term" }],
           why: R`<p>&bull;1 $\int6x^{\frac12}dx=6\times\dfrac{x^{3/2}}{3/2}=4x^{\frac32}$</p><p>&bull;2 $\int-2x^{-2}dx=-2\times\dfrac{x^{-1}}{-1}=2x^{-1}$. Answer $4x^{\frac32}+\dfrac2x+c$.</p>`,
@@ -211,7 +211,7 @@
         {
           label: "(b)", q: R`$\displaystyle\int(3x+1)^4\,dx$`,
           type: "expr", marks: 2, vars: ["x"], plusC: true,
-          a: "(3x+1)^5/15", show: R`\dfrac{(3x+1)^5}{15}+c`,
+          a: "(3x+1)^5/15", sample: "(3x+1)^5/15+c", show: R`\dfrac{(3x+1)^5}{15}+c`,
           reject: ["(3x+1)^5/5", "(3x+1)^5", "12(3x+1)^3"],
           partial: [{ a: "(3x+1)^5/5", marks: 1, note: "forgot to divide by the coefficient 3" }],
           why: R`<p>&bull;1 raise the power by one: $(3x+1)^5$ divided by the new power $5$</p><p>&bull;2 divide also by the derivative of the bracket, $3$: $\dfrac{(3x+1)^5}{15}+c$.</p>`,
@@ -548,14 +548,38 @@
         },
         {
           label: "(b)", q: R`Calculate the area $A$, correct to 1 decimal place. (Use the exact or unrounded roots on your calculator.)`,
-          type: "num", marks: 4, a: 31.6, tol: 0.05, show: R`31.6`, unit: "square units",
+          type: "num", marks: 4, a: 31.6, tol: 0.01, show: R`31.6`, unit: "square units",
           reject: ["-31.6", "11.8", "63.2"],
           partial: [{ a: -31.6, marks: 3, note: "curve minus line, so the area comes out negative" }],
           why: R`<p>&bull;1 area $=\displaystyle\int(\text{line}-\text{curve})\,dx$, with $(12-x)-(x^2-6x+10)=2+5x-x^2$</p><p>&bull;2 integrate: $2x+\dfrac{5x^2}{2}-\dfrac{x^3}{3}$</p><p>&bull;3 limits $x=-0.372\ldots$ and $x=5.372\ldots$</p><p>&bull;4 $A=31.6$ square units.</p>`,
         },
       ],
     },
+    /* ---------------- 19 (non-calc, show that) ---------------- */
+    {
+      id: "cal-19", calc: false,
+      style: "Paper 1 style · non-calculator · show that a function is always increasing",
+      stem: R`<p>A function is given by $f(x)=x^3-3x^2+6x+1$.</p>`,
+      parts: [
+        {
+          label: "(a)", q: R`Show that $f$ is always increasing. Write your reasoning in a few lines.`, type: "text", marks: 3, minWords: 6,
+          points: [
+            { desc: "differentiate: f'(x) = 3x^2 - 6x + 6", any: [R`3\s*x\s*\^?2\s*-\s*6\s*x\s*\+\s*6`] },
+            { desc: "complete the square, 3((x-1)^2+1), or show the discriminant is negative", any: [R`\(x\s*-\s*1\)\s*\^?2`, R`discriminant[^.;]{0,30}(?:negative|<\s*0|-\s*\d+)`, R`b\^?2\s*-\s*4ac[^.;]{0,20}(?:<|-)`, R`36\s*-\s*72`, R`-\s*36`] },
+            { desc: "so f'(x) > 0 for all x, so f is always increasing", any: [R`>\s*0`, R`positive`, R`always increasing`] }
+          ],
+          sample: "f'(x) = 3x^2 - 6x + 6 = 3((x-1)^2 + 1). A square is never negative, so f'(x) > 0 for all x and f is always increasing.",
+          why: R`<p>&bull;1 $f'(x)=3x^2-6x+6$</p><p>&bull;2 $f'(x)=3\left[(x-1)^2+1\right]$ (or the discriminant is $36-72=-36\lt0$)</p><p>&bull;3 $(x-1)^2\geq0$, so $f'(x)\geq3\gt0$ for every $x$: $f$ is always increasing.</p>`,
+        },
+        {
+          label: "(b)", q: R`Find the smallest value of the gradient of the curve $y=f(x)$.`, type: "num", marks: 1, a: 3, show: "3", reject: ["6", "0", "1"],
+          why: R`<p>&bull;1 $f'(x)=3(x-1)^2+3$ has its smallest value $3$ when $x=1$.</p>`,
+        },
+      ],
+    },
   ];
 
   B.cal = { intro, questions };
+  /* non-calculator questions first, as on the real papers */
+  { const q = (window.HMP_BANK.cal || {}).questions; if (q) q.sort((a, b) => (a.calc ? 1 : 0) - (b.calc ? 1 : 0)); }
 })();

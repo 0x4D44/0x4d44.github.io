@@ -56,7 +56,7 @@
     txt(34, 136, "O", "end") + txt(gx15(180), 136, "180") + txt(gx15(360) + 2, 136, "360") + txt(324, 112, "x", "end") + txt(48, 16, "y", "start"));
 
   B.trig = {
-    intro: R`Trigonometry in radians and degrees: exact values, compound and double angle formulae, trigonometric equations, the wave function $a\cos x+b\sin x$ and graphs of trig functions. Questions 1 to 11 are non-calculator (Paper 1 style, 50 marks); questions 12 to 18 are calculator (Paper 2 style, 42 marks), where a model or an equation needs a calculator in the stated mode.`,
+    intro: R`Trigonometry in radians and degrees: exact values, compound and double angle formulae, trigonometric equations, the wave function $a\cos x+b\sin x$ and graphs of trig functions. Questions 1 to 12 are non-calculator (Paper 1 style, 55 marks); questions 13 to 19 are calculator (Paper 2 style, 42 marks), where a model or an equation needs a calculator in the stated mode.`,
     questions: [
       /* ---------- 01 ---------- */
       {
@@ -226,7 +226,7 @@
         style: "Paper 1 style · non-calculator · double angle formula, then integration (calculus link)",
         stem: R`In this question $x$ is in radians.`,
         parts: [
-          { label: "(a)", q: R`Use $\cos2x=2\cos^2x-1$ to write $\cos^2x$ in terms of $\cos2x$.`, type: "expr", marks: 1, a: "(1+cos(2x))/2", show: R`\tfrac12(1+\cos2x)`,
+          { label: "(a)", q: R`Use $\cos2x=2\cos^2x-1$ to write $\cos^2x$ in terms of $\cos2x$.`, type: "expr", marks: 1, a: "(1+cos(2x))/2", forbid: ["cos\\^\\(?2", "cos\\(x\\)\\^\\(?2", "cos\\(x\\)\\*cos\\(x\\)", "cosx\\^2"], forbidNote: "Write cos^2 x in terms of cos 2x; do not just restate cos^2 x.", show: R`\tfrac12(1+\cos2x)`,
             reject: ["(1-cos(2x))/2", "2cos(2x)+1"],
             why: R`<p>&bull;1 rearrange $2\cos^2x=1+\cos2x$, so $\cos^2x=\tfrac12(1+\cos2x)$.</p>` },
           { label: "(b)", q: R`Hence find the exact value of $\displaystyle\int_0^{\pi/6}\cos^2x\,dx$.`, type: "num", marks: 3, a: "pi/12+sqrt(3)/8", show: R`\dfrac{\pi}{12}+\dfrac{\sqrt3}{8}`,
@@ -376,7 +376,27 @@
           { label: "(c)", q: R`Find the first time at which the displacement is $2$ centimetres. Give your answer in seconds correct to $2$ decimal places.`, type: "num", marks: 2, a: 1.04, alts: [1.05], tol: 0.005, unit: "s", show: "1.04", reject: ["0.67", "-0.12"],
             why: R`<p>&bull;1 $5\sin(2t+0.6435)=2$, so $\sin(2t+0.6435)=0.4$; $2t+0.6435=0.411$ is too small ($t<0$), so use $\pi-0.411=2.730$</p><p>&bull;2 $t=\dfrac{2.730-0.6435}{2}=1.04$ seconds.</p>` }
         ]
+      },
+      /* ---------- 19 (non-calc, show that) ---------- */
+      {
+        id: "trig-19", calc: false,
+        style: "Paper 1 style · non-calculator · show that an identity, then use it",
+        stem: R`Consider the expression $\dfrac{\sin2x}{1+\cos2x}$.`,
+        parts: [
+          { label: "(a)", q: R`Show that $\dfrac{\sin2x}{1+\cos2x}=\tan x$. Write your reasoning in a few lines.`, type: "text", marks: 3, minWords: 6,
+            points: [
+              { desc: "use sin 2x = 2 sin x cos x", any: [R`sin\s*2\s*x\s*=\s*2\s*sin`, R`2\s*sin\s*\(?x\)?\s*\*?\s*cos`] },
+              { desc: "use cos 2x = 2cos^2 x - 1 so that 1 + cos 2x = 2cos^2 x", any: [R`2\s*cos\s*\^?\s*2\s*\(?x`, R`2\s*cos\^2`, R`1\s*\+\s*cos\s*2\s*x\s*=\s*2`] },
+              { desc: "cancel to sin x / cos x = tan x", any: [R`sin\s*\(?x\)?\s*/\s*cos`, R`=\s*tan`, R`cancel`] }
+            ],
+            sample: "sin2x = 2 sin x cos x and cos2x = 2cos^2 x - 1, so 1 + cos2x = 2cos^2 x. Then the fraction is 2 sin x cos x / 2cos^2 x, and cancelling gives sin x / cos x = tan x.",
+            why: R`<p>&bull;1 $\sin2x=2\sin x\cos x$</p><p>&bull;2 $1+\cos2x=1+2\cos^2x-1=2\cos^2x$</p><p>&bull;3 $\dfrac{2\sin x\cos x}{2\cos^2x}=\dfrac{\sin x}{\cos x}=\tan x$.</p>` },
+          { label: "(b)", q: R`Hence find the exact value of $\tan\dfrac{\pi}{12}$. Hint: take $x=\dfrac{\pi}{12}$ and use the values for $\dfrac{\pi}{6}$.`, type: "num", marks: 2, a: "2-sqrt(3)", forbid: ["/\\(?[^=]*sqrt"], forbidNote: "Rationalise the denominator.", show: R`2-\sqrt3`, reject: ["2+sqrt(3)", "1/(2+sqrt(3))", "sqrt(3)/3"],
+            why: R`<p>&bull;1 $\tan\dfrac{\pi}{12}=\dfrac{\sin\frac{\pi}{6}}{1+\cos\frac{\pi}{6}}=\dfrac{\frac12}{1+\frac{\sqrt3}{2}}=\dfrac{1}{2+\sqrt3}$</p><p>&bull;2 rationalise: $\dfrac{2-\sqrt3}{4-3}=2-\sqrt3$.</p>` }
+        ]
       }
     ]
   };
+  /* non-calculator questions first, as on the real papers */
+  { const q = (window.HMP_BANK.trig || {}).questions; if (q) q.sort((a, b) => (a.calc ? 1 : 0) - (b.calc ? 1 : 0)); }
 })();

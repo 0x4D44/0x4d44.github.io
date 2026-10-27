@@ -138,7 +138,9 @@
       ta.addEventListener("input", refresh);
     } else {
       const inp = textField(part, `${id}-n`, refresh);
-      input.append(inp, part.unit ? el("span", { class: "pp-unit" }, part.unit) : null, el("p", { class: "pp-hint" }, "Type " + (HINTS[part.type] || HINTS.num) + "."));
+      input.append(inp);
+      if (part.unit) input.append(el("span", { class: "pp-unit" }, part.unit));
+      input.append(el("p", { class: "pp-hint" }, "Type " + (HINTS[part.type] || HINTS.num) + "."));
       getAns = () => inp.value;
       ready = () => inp.value.trim() !== "";
       lock = (on) => (inp.readOnly = on);
@@ -379,7 +381,7 @@
       if (M) {
         const p = pct(G, M);
         verdict = `Overall you have earned ${fmt(G)} of the ${M} marks you have attempted: ${p}%. ` +
-          (p >= 70 ? "That is the sort of share an A candidate earns." : p >= 50 ? "That is in the range where a C or a B is within reach." : p >= 40 ? "That is around the edge of a pass: find the weakest area below and drill it." : "That is below the pass mark: go back to the decks and work the topics again.") +
+          (p >= 72 ? "That is roughly the share an A needs (boundaries move every year)." : p >= 50 ? "That is in the range where a C or a B is within reach." : p >= 40 ? "That is around the edge of a pass: find the weakest area below and drill it." : "That is below the pass mark: go back to the decks and work the topics again.") +
           " Treat it as a rough guide only: grade boundaries move every year, practice questions are not the real papers, and you may have chosen the easy ones.";
       }
       body.append(el("p", { class: "pp-verdict" }, verdict));
