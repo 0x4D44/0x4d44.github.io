@@ -37,8 +37,8 @@
   }
 
   /* ---- one part of a question ---- */
-  function renderPart(q, part, pi, onChange) {
-    const id = `${q.id}-${pi}`;
+  function renderPart(q, part, pi, onChange, ns) {
+    const id = `${ns}-${q.id}-${pi}`;
     const box = el("div", { class: "pp-part" });
     const label = part.label ? el("span", { class: "pp-plabel" }, part.label) : null;
     box.append(el("div", { class: "pp-pq" }, label, el("span", { html: part.q }), el("span", { class: "pp-marks" }, `(${part.marks} mark${part.marks > 1 ? "s" : ""})`)));
@@ -88,8 +88,13 @@
       getAns = () => sels.map((s) => +s.value);
       ready = () => sels.every((s) => +s.value >= 0);
       lock = (on) => sels.forEach((s) => (s.disabled = on));
-      box._reveal = () => sels.forEach((s, i) => s.classList.toggle("wrong", +s.value !== i));
-      box._clear = () => sels.forEach((s) => { s.value = "-1"; s.classList.remove("wrong"); });
+      box._reveal = () => sels.forEach((s, i) => {
+        const bad = +s.value !== i;
+        s.classList.toggle("wrong", bad);
+        s.setAttribute("aria-invalid", bad ? "true" : "false");
+        if (bad) s.parentElement.append(el("span", { class: "pp-wrongnote" }, "✘ not this one; the right pairs are listed below"));
+      });
+      box._clear = () => sels.forEach((s) => { s.value = "-1"; s.classList.remove("wrong"); s.removeAttribute("aria-invalid"); s.parentElement.querySelectorAll(".pp-wrongnote").forEach((n) => n.remove()); });
       sels.forEach((s) => s.addEventListener("change", () => (markBtn.disabled = !ready())));
     } else {
       const rows = part.rows || Math.min(9, 2 + part.marks);
@@ -119,7 +124,9 @@
         head.textContent = `${fmt(got)} / ${part.marks} mark${part.marks > 1 ? "s" : ""}` + (got === part.marks ? " ✔" : "");
       };
       paint(r.got);
+      head.tabIndex = -1;
       fb.append(head);
+      if (r.note) fb.append(el("p", { class: "pp-hint" }, r.note));
       if (part.type === "text") {
         const note = el("p", { class: "pp-hint" }, "The marker looks for the key ideas and key words, so a good answer in unusual words can be missed. Tick any point you did make; untick any it gave you by mistake.");
         const ul = el("ul", { class: "pp-points" });
@@ -141,12 +148,17 @@
         fb.append(note, ul);
       } else if (part.type === "num") {
         fb.append(el("p", null, `Answer: `, el("b", null, `${part.a}${part.unit ? " " + part.unit : ""}`), part.tol ? ` (within ±${part.tol})` : ""));
+        // the marker reads the last number you typed; if your answer was right in other words or units, say so
+        const eq = el("input", { type: "checkbox", id: `${id}-eq`, checked: r.got === part.marks ? true : null });
+        eq.addEventListener("change", () => { const g = eq.checked ? part.marks : 0; paint(g); setResult(g); });
+        fb.append(el("p", { class: "pp-hint" }, el("label", { for: `${id}-eq` }, eq, " My answer was right (for example in other units or different wording)")));
       } else if (part.type === "match") {
         fb.append(el("ul", { class: "pp-points" }, part.pairs.map((pr) => el("li", { html: `<b>${pr[0]}</b>: ${pr[1]}` }))));
       }
       const why = part.why || part.model;
       if (why) fb.append(el("div", { class: "callout model pp-model" }, el("div", { class: "callout-title" }, part.type === "text" ? "Model answer and marking guidance" : "Why"), el("div", { html: why })));
       setResult(r.got);
+      head.focus({ preventScroll: true });
     });
     againBtn.addEventListener("click", () => {
       lock(false); box._clear(); fb.textContent = "";
@@ -160,17 +172,17 @@
   }
 
   /* ---- a whole question ---- */
-  function renderQuestion(q, areaId, n) {
+  function renderQuestion(q, areaId, n, ns) {
     const area = AREAS.find((a) => a.id === areaId);
     const total = qMarks(q);
     const badge = el("span", { class: "pp-badge" });
-    const card = el("article", { class: "pp-q", id: q.id, "aria-labelledby": q.id + "-h" },
+    const card = el("article", { class: "pp-q", id: `${ns}-${q.id}`, "aria-labelledby": `${ns}-${q.id}-h` },
       el("header", { class: "pp-qhead" },
-        el("h3", { id: q.id + "-h" }, `Question ${n}`, el("span", { class: "pp-qtag" }, ` · ${area.short} · ${total} marks`)),
+        el("h3", { id: `${ns}-${q.id}-h` }, `Question ${n}`, el("span", { class: "pp-qtag" }, ` · ${area.short} · ${total} marks`)),
         badge),
       q.style ? el("p", { class: "pp-style" }, q.style) : null,
       el("div", { class: "pp-stem", html: q.stem }));
-    if (q.figure) card.append(el("figure", { class: "diagram pp-fig", html: q.figure }));
+    if (q.figure) card.append(el("figure", { class: "diagram diagram-scroll pp-fig", html: q.figure }));
     const paint = () => {
       const r = results[q.id] || [];
       const got = r.reduce((a, x) => a + (x || 0), 0);
@@ -179,7 +191,7 @@
       badge.textContent = done ? `${fmt(got)} / ${total}` : some ? `${fmt(got)} so far` : `${total} marks`;
       badge.className = "pp-badge" + (done ? (got === total ? " full" : got >= total / 2 ? " part" : " low") : "");
     };
-    q.parts.forEach((p, pi) => card.append(renderPart(q, p, pi, () => { paint(); window.dispatchEvent(new Event("hgp-change")); })));
+    q.parts.forEach((p, pi) => card.append(renderPart(q, p, pi, () => { paint(); window.dispatchEvent(new Event("hgp-change")); }, ns)));
     paint();
     return card;
   }
@@ -195,7 +207,7 @@
     };
     window.addEventListener("hgp-change", paint);
     panel.append(el("p", { class: "pp-intro", html: bank.intro || "" }), sum);
-    bank.questions.forEach((q, i) => panel.append(renderQuestion(q, a.id, i + 1)));
+    bank.questions.forEach((q, i) => panel.append(renderQuestion(q, a.id, i + 1, a.id)));
     paint();
     return panel;
   }
@@ -203,15 +215,24 @@
   /* ---- mock paper ---- */
   const MOCK_TARGET = { dtp: 11, cad: 11, interp: 10, std: 8, tech: 5 };
   function drawMock() {
-    const picked = [];
-    AREAS.forEach((a) => {
-      let sum = 0;
-      shuffle(((BANK[a.id] && BANK[a.id].questions) || []).slice()).forEach((q) => {
-        const m = qMarks(q);
-        if (sum + m <= MOCK_TARGET[a.id] + 1 && sum < MOCK_TARGET[a.id]) { picked.push({ q, a: a.id }); sum += m; }
+    // draw until the paper lands on 44-46 marks, in roughly the real proportions
+    let best = null, bestGap = 1e9;
+    for (let n = 0; n < 300; n++) {
+      const picked = [];
+      let total = 0;
+      AREAS.forEach((a) => {
+        let sum = 0;
+        shuffle(((BANK[a.id] && BANK[a.id].questions) || []).slice()).forEach((q) => {
+          const m = qMarks(q);
+          if (sum + m <= MOCK_TARGET[a.id] + 1 && sum < MOCK_TARGET[a.id]) { picked.push({ q, a: a.id }); sum += m; }
+        });
+        total += sum;
       });
-    });
-    return picked;
+      const gap = Math.abs(total - 45);
+      if (gap < bestGap) { best = picked; bestGap = gap; }
+      if (gap === 0) break;
+    }
+    return best || [];
   }
   function mockPanel() {
     const panel = el("div");
@@ -230,7 +251,7 @@
     const build = () => {
       out.textContent = "";
       cur = drawMock();
-      cur.forEach((x, i) => out.append(renderQuestion(x.q, x.a, i + 1)));
+      cur.forEach((x, i) => out.append(renderQuestion(x.q, x.a, i + 1, "mock")));
       paint();
     };
     draw.addEventListener("click", build);

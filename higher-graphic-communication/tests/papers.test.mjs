@@ -143,8 +143,8 @@ test("no marking point is satisfied by the question text itself", () => {
 
 test("the engine's own rules", () => {
   const part = { type: "text", marks: 2, points: [{ desc: "a", any: ["cat"] }, { desc: "b", any: ["dog"] }, { desc: "c", any: ["cow"], group: "g" }, { desc: "d", any: ["cow"], group: "g" }] };
-  assert.equal(HGP.scorePart(part, "the cat and the dog").got, 2);
-  assert.equal(HGP.scorePart(part, "cat cow cow").got, 2, "grouped alternatives count once");
+  assert.equal(HGP.scorePart(part, "the cat is here and the dog is there too").got, 2);
+  assert.equal(HGP.scorePart(part, "the cat saw a cow and the cow ran").got, 2, "grouped alternatives count once");
   assert.equal(HGP.scorePart(part, "cat").got, 0, "below the word minimum nothing is awarded");
   assert.equal(HGP.scorePart({ type: "num", marks: 1, a: 25, tol: 0.5 }, "25.4 mm").got, 1);
   assert.equal(HGP.scorePart({ type: "num", marks: 1, a: 25, tol: 0.5 }, "26").got, 0);

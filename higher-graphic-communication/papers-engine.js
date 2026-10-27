@@ -23,27 +23,61 @@
   const words = (s) => (s.match(/[a-z0-9]+/g) || []).length;
   const rx = (src) => new RegExp(src, "i");
 
-  /* A marking point holds when every `all` pattern matches and, if `any` is given, at least one of those does.
-     Patterns are matched against the normalised answer. */
+  /* A marking point holds when every `all` pattern matches (and they sit close together, within `win`
+     characters, so a cause and its effect must be in the same stretch of writing), at least one `any`
+     pattern matches if `any` is given, and no `not` pattern matches. Patterns are matched against the
+     normalised answer. */
+  const WIN = 220;
   HGP.pointHit = function (pt, text) {
-    const all = pt.all || [], any = pt.any || [];
+    const all = pt.all || [], any = pt.any || [], not = pt.not || [];
     if (!all.length && !any.length) return false;
-    return all.every((p) => rx(p).test(text)) && (!any.length || any.some((p) => rx(p).test(text)));
+    if (not.some((p) => rx(p).test(text))) return false;
+    if (any.length && !any.some((p) => rx(p).test(text))) return false;
+    if (!all.length) return true;
+    // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
+    const win = pt.win || WIN;
+    const where = all.map((p) => { const g = new RegExp(rx(p).source, "gi"); const ix = []; let m; while ((m = g.exec(text))) { ix.push(m.index); if (m[0] === "") g.lastIndex++; } return ix; });
+    if (where.some((ix) => !ix.length)) return false;
+    return where[0].some((a) => where.every((ix) => ix.some((b) => Math.abs(a - b) <= win)));
   };
+
+  /* Function words: real sentences are full of them, lists of key words are not. */
+  const FUNC = new Set(("a an the and or but so because since as if then than that this these those it its they them their he she his her we you i " +
+    "is are was were be been being am do does did has have had will would can could should may might must not no to of in on at by for with from into onto " +
+    "up down out over under about which who what when where while also both each every all any some more most less only just very too same other another " +
+    "there here too one two so thus therefore however otherwise instead rather").split(" "));
+  /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
+     unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
+  function listLike(text) {
+    const toks = text.match(/[a-z0-9']+/g) || [];
+    if (toks.length < 8) return null;
+    const func = toks.filter((t) => FUNC.has(t)).length;
+    if (func / toks.length < 0.14) return "zero";
+    let run = 0, longest = 0;
+    toks.forEach((t) => { if (FUNC.has(t)) run = 0; else { run++; if (run > longest) longest = run; } });
+    return longest >= 10 ? "half" : null;
+  }
 
   function scoreText(part, ans) {
     const text = HGP.norm(ans);
     const minWords = part.minWords == null ? 3 : part.minWords;
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: false, group: pt.group }));
-    if (words(text) >= minWords) part.points.forEach((pt, i) => { pts[i].hit = HGP.pointHit(pt, text); });
+    const w = words(text);
+    const list = listLike(text);
+    if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => { pts[i].hit = HGP.pointHit(pt, text); });
     // points sharing a group are alternatives: only the best-scoring one in a group counts
     const seen = new Map();
     pts.forEach((p) => {
       if (!p.group || !p.hit) return;
       if (seen.has(p.group)) p.hit = false; else seen.set(p.group, p);
     });
-    const got = Math.min(part.marks, pts.reduce((a, p) => a + (p.hit ? p.marks : 0), 0));
-    return { got, of: part.marks, points: pts };
+    let got = Math.min(part.marks, pts.reduce((a, p) => a + (p.hit ? p.marks : 0), 0));
+    if (list === "half") got = Math.min(got, Math.floor(part.marks / 2));
+    // a mark needs some writing behind it: about four words each at the very least
+    got = Math.min(got, Math.floor(w / 4));
+    const out = { got, of: part.marks, points: pts };
+    if (list) out.note = "Your answer reads like a list of key words. Write it as sentences; the marker gives little or no credit for a bare list.";
+    return out;
   }
 
   HGP.scorePart = function (part, ans) {
@@ -57,7 +91,9 @@
         return { got: Math.max(0, Math.min(of, right - wrong)), of };
       }
       case "num": {
-        const v = parseFloat(String(ans).replace(/,/g, "").replace(/[^0-9eE.+-]/g, ""));
+        // the last number in the answer counts, so working ("5 x 300 = 1500") and units ("12 mm") are fine
+        const nums = String(ans).replace(/(\d),(?=\d{3}\b)/g, "$1").match(/\d+(?:\.\d+)?|\.\d+/g);
+        const v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
         if (!isFinite(v)) return { got: 0, of };
         const targets = [part.a].concat(part.alts || []);
         const tol = part.tol == null ? 0 : part.tol;
