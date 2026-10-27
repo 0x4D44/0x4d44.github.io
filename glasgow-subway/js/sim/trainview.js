@@ -103,34 +103,44 @@ export class TrainView {
     const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, ...o });
     const lining = std(0x4a4e56, { emissive: 0x15171a }), wall = std(0x3c4048, { emissive: 0x101214 }), desk = std(0x2b2f35, { emissive: 0x0c0d0f }), trim = std(0x1b1d21);
     const box = (w, h, d, x, y, z, m, rx = 0) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z - zc); b.rotation.x = rx; g.add(b); return b; };
-    const zf = -19.55, zr = -17.85;                       // windscreen plane / rear partition
+    const zf = -19.62, zr = -17.85;                       // glazing plane (A3 rev 6: eye 1.0 m behind the glass) / rear partition
     box(2.2, 0.05, zr - zf + 0.2, 0, 2.275, (zf + zr) / 2, lining);                 // roof
-    box(0.05, 1.6, zr - zf, -1.1, 1.49, (zf + zr) / 2 - 0.05, wall);               // side walls (solid below/above the side window below)
+    box(0.05, 1.6, zr - zf, -1.1, 1.49, (zf + zr) / 2 - 0.05, wall);               // side walls
     box(0.05, 1.6, zr - zf, 1.1, 1.49, (zf + zr) / 2 - 0.05, wall);
     box(2.2, 1.6, 0.05, 0, 1.49, zr, wall);                                         // rear partition
-    box(2.2, 0.62, 0.06, 0, 0.99, zf, wall);                                        // nose below the windscreen
-    box(2.2, 0.07, 0.12, 0, 2.215, zf, trim);                                         // slim header
-    for (const sx of [-1, 1]) box(0.13, 1.0, 0.12, sx * 1.035, 1.75, zf, trim);      // A pillars (windscreen opening is ~1.97 m wide)
+    box(2.2, 0.61, 0.06, 0, 0.995, zf, wall);                                       // nose panel below the glass (glass y 1.30-2.18)
+    box(2.2, 0.08, 0.12, 0, 2.21, zf, trim);                                        // header
+    for (const sx of [-1, 1]) box(0.13, 0.9, 0.12, sx * 1.035, 1.75, zf, trim);     // outer pillars
+    const pil = std(0xd9d9d4, { emissive: 0x303030 });
+    for (const px of [-0.3, 0.3]) box(0.06, 0.9, 0.08, px, 1.75, zf + 0.02, pil);   // centre evacuation door frame: three bays, driver on the left
     box(2.18, 0.03, zr - zf, 0, 0.7, (zf + zr) / 2, std(0x2a2c30));                  // floor
-    // desk: low, top slopes down toward the driver
-    box(1.7, 0.04, 0.62, 0, 1.19, -19.2, desk, 0.22);
-    box(1.7, 0.5, 0.6, 0, 0.94, -19.22, desk);
-    box(0.1, 0.5, 0.42, -0.95, 1.0, -19.05, trim); box(0.1, 0.5, 0.42, 0.95, 1.0, -19.05, trim);
-    // TMS screen on the desk (angled up toward the driver) + secondary speed display
-    const scr = new THREE.Group(); scr.position.set(-0.72, 1.24, -19.14 - zc); scr.rotation.x = -0.6; g.add(scr);
-    const bz = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.25, 0.03), trim); bz.position.set(0, 0.12, -0.012); scr.add(bz);
-    const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.35 * 320 / 512), new THREE.MeshBasicMaterial({ map: texTms, toneMapped: false })); sp.position.set(0, 0.12, 0.006); scr.add(sp);
-    const s2 = new THREE.Group(); s2.position.set(0.34, 1.21, -19.12 - zc); s2.rotation.x = -0.6; g.add(s2);
-    const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.17, 0.025), trim); b2.position.set(0, 0.09, -0.01); s2.add(b2);
-    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.21 * 170 / 256), new THREE.MeshBasicMaterial({ map: texSpeedo, toneMapped: false })); p2.position.set(0, 0.09, 0.004); s2.add(p2);
-    // master controller: dark base, short lever, small dark grip (non-emissive)
-    const cyl = (r, h, x, y, z, m) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), m); c.position.set(x, y, z - zc); g.add(c); return c; };
-    cyl(0.05, 0.04, -0.05, 1.17, -18.88, trim); cyl(0.012, 0.13, -0.05, 1.24, -18.88, trim);
-    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.026, 12, 8), std(0x15161a)); grip.position.set(-0.05, 1.32, -18.88 - zc); g.add(grip);
-    // door buttons (dull, only slightly emissive)
-    [[0x2d7a46, 0.12], [0x9a6a1c, 0.08], [0x8c2b2b, 0.08]].forEach(([c, e], i) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 12), std(c, { emissive: c, emissiveIntensity: e })); b.position.set(0.62 + i * 0.07, 1.19, -19.05 - zc); b.rotation.x = 0.25; g.add(b); });
+    // desk: low (top ~0.7 m above the floor at the front), slopes down toward the driver, 0.3 m behind the glass
+    box(2.0, 0.04, 0.46, 0, 1.4, -19.1, desk, 0.2);
+    box(2.0, 0.7, 0.44, 0, 1.02, -19.12, desk);
+    // TMS screen on the desk in front of the driver (x -0.42), angled up toward him, + a small secondary speed display
+    const scr = new THREE.Group(); scr.position.set(-0.42, 1.42, -19.2 - zc); scr.rotation.x = -0.75; g.add(scr);
+    const bz = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.2, 0.025), trim); bz.position.set(0, 0.1, -0.01); scr.add(bz);
+    const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28 * 320 / 512), new THREE.MeshBasicMaterial({ map: texTms, toneMapped: false })); sp.position.set(0, 0.1, 0.004); scr.add(sp);
+    const s2 = new THREE.Group(); s2.position.set(-0.05, 1.41, -19.2 - zc); s2.rotation.x = -0.75; g.add(s2);
+    const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.12, 0.02), trim); b2.position.set(0, 0.07, -0.008); s2.add(b2);
+    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.15, 0.15 * 170 / 256), new THREE.MeshBasicMaterial({ map: texSpeedo, toneMapped: false })); p2.position.set(0, 0.07, 0.003); s2.add(p2);
     for (const pl of [sp, p2]) { const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); }   // the TMS canvas textures use flipY=false
+    // master controller on the driver's left: dark base, short lever, small dark grip (non-emissive)
+    const cyl = (r, h, x, y, z, m) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), m); c.position.set(x, y, z - zc); g.add(c); return c; };
+    cyl(0.045, 0.04, -0.82, 1.4, -19.0, trim); cyl(0.011, 0.12, -0.82, 1.47, -19.0, trim);
+    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 8), std(0x15161a)); grip.position.set(-0.82, 1.54, -19.0 - zc); g.add(grip);
+    // door buttons (dull, only slightly emissive)
+    [[0x2d7a46, 0.12], [0x9a6a1c, 0.08], [0x8c2b2b, 0.08]].forEach(([c, e], i) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.012, 12), std(c, { emissive: c, emissiveIntensity: e })); b.position.set(0.22 + i * 0.07, 1.4, -19.1 - zc); b.rotation.x = 0.2; g.add(b); });
     this.cabKit = g; F.add(g);
+    this.setDest('INNER CIRCLE');
+  }
+  /** Paints the amber LED destination display above the cab glazing (cab_dest / cab_dest_rear, UV 0..1, flipY=false). */
+  setDest(text) {
+    const THREE = this.THREE; if (this._destText === text) return; this._destText = text;
+    const nodes = [this.byName.cab_dest, this.byName.cab_dest_rear].filter(Boolean); if (!nodes.length) return;
+    if (!this._destCanvas) { const c = document.createElement('canvas'); c.width = 512; c.height = 68; this._destCanvas = c; this._destTex = new THREE.CanvasTexture(c); this._destTex.colorSpace = THREE.SRGBColorSpace; this._destTex.flipY = false;
+      for (const n of nodes) n.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.map = this._destTex; o.material.emissiveMap = this._destTex; o.material.emissive.set(0xffffff); o.material.needsUpdate = true; } }); }
+    const g = this._destCanvas.getContext('2d'); g.fillStyle = '#120900'; g.fillRect(0, 0, 512, 68); g.fillStyle = '#ffb02e'; g.font = '700 40px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 36); this._destTex.needsUpdate = true;
   }
   /** Drive mode swaps A3's cab shell for the procedural cab (see buildCab). */
   setDriveCab(on) {

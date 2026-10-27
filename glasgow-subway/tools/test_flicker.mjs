@@ -64,14 +64,14 @@ async function measure(name, site, dist, polar) {
     for (let y = 1; y < h - 1; y++) for (let x = 1; x < w - 1; x++) {
       const i = y * w + x; let g = 0; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) g = Math.max(g, Math.abs(mean[i + dy * w + dx] - mean[i]));
       const sky = frames[0][i * 4 + 2] > 150 && frames[0][i * 4] < 190 && y > h * 0.5 ? 0 : 1; land += 1;
-      if (sd[i] > 12 && g < 22) { flag[i] = 1; count++; }
+      if (sd[i] > 14 && g < 22) { flag[i] = 1; count++; }
     }
     // images (flip vertically)
     const mk = (fn) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g2 = c.getContext('2d'); const im = g2.createImageData(w, h); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const s = ((h - 1 - y) * w + x), d = (y * w + x) * 4; fn(s, im.data, d); } g2.putImageData(im, 0, 0); return c.toDataURL('image/png'); };
     const img = mk((s, o, d) => { o[d] = frames[0][s * 4]; o[d + 1] = frames[0][s * 4 + 1]; o[d + 2] = frames[0][s * 4 + 2]; o[d + 3] = 255; });
     const map = mk((s, o, d) => { const v = mean[s]; o[d] = flag[s] ? 255 : v * 0.5; o[d + 1] = flag[s] ? 0 : v * 0.5; o[d + 2] = flag[s] ? 0 : v * 0.5; o[d + 3] = 255; });
     a.paused = false; return { count, total: w * h, pct: (count / (w * h)) * 100, img, map, near: cam.near };
-  }, { site, dist, polar, N: 8, radPx: 0.3 });
+  }, { site, dist, polar, N: 8, radPx: 0.1 });
   const save = (suffix, data) => fs.writeFileSync(path.join(out, `${name}-${suffix}.png`), Buffer.from(data.split(',')[1], 'base64'));
   save('img', r.img); save('flicker', r.map); return r;
 }

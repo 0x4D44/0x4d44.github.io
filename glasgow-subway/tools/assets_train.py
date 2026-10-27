@@ -322,78 +322,96 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
             if f.normal.x * cx + f.normal.z * (cz - 1.4) < 0: f.normal_flip()
             fs.append(f)
     ext._tag(fs, 'livery_white')
-    # nose face with a windscreen-shaped hole (so the driver can see out)
+    # nose face with THREE glazing bays (driver left / centre evacuation door / right) - per research/drive-realism.md
     sxN, szN = rings[-1][1], rings[-1][2]
     def zs(zo): return Z0 + (zo - Z0) * szN
-    def hw(zo): return sxN * hp_x(zo) - 0.10
+    def hw(zo): return sxN * hp_x(zo) - 0.07
     import bmesh as bm_
     ov = [bmx.verts.new(P(x * sxN, Y(0.03), Z0 + (z - Z0) * szN)) for x, z in base]
     ed = [bmx.edges.new((ov[i], ov[(i + 1) % len(ov)])) for i in range(len(ov))]
-    wz0, wz1 = 1.55, 2.05
-    wp = [(-hw(wz0), zs(wz0)), (hw(wz0), zs(wz0)), (hw(wz1), zs(wz1)), (-hw(wz1), zs(wz1))]
-    hv = [bmx.verts.new(P(x, Y(0.03), z)) for x, z in wp]
-    ed += [bmx.edges.new((hv[i], hv[(i + 1) % 4])) for i in range(4)]
+    GZ0, GZ1 = 1.30, 2.18            # glazing from just above the black lower panel to near the roof line (bigger windscreen)
+    PIL_ = 0.045                      # half-width of the white pillars between the bays
+    bays = [(-1.0, -0.30 - PIL_), (-0.30 + PIL_, 0.30 - PIL_), (0.30 + PIL_, 1.0)]     # x extents (outer limits clipped to hw(z))
+    def bay_poly(xa, xb):
+        pa0 = max(xa, -hw(GZ0)); pb0 = min(xb, hw(GZ0)); pa1 = max(xa, -hw(GZ1)); pb1 = min(xb, hw(GZ1))
+        return [(pa0, zs(GZ0)), (pb0, zs(GZ0)), (pb1, zs(GZ1)), (pa1, zs(GZ1))]
+    bay_polys = [bay_poly(xa, xb) for xa, xb in bays]
+    for bp in bay_polys:
+        hv = [bmx.verts.new(P(x, Y(0.03), z)) for x, z in bp]
+        ed += [bmx.edges.new((hv[i], hv[(i + 1) % 4])) for i in range(4)]
     res = bm_.ops.triangle_fill(bmx, use_beauty=True, edges=ed)
     for f in res['geom']:
         if isinstance(f, bm_.types.BMFace):
             f.material_index = ext._mi('livery_white'); f[ext.fx] = 1
             if f.normal.y * s < 0: f.normal_flip()
-    # black glazing panel on the nose face (z 0.72..2.05): opaque lower part + transparent windscreen
-    def panel(z0o, z1o, mat, dy=0.006, nstep=5):
+    # transparent glass in each bay + thin black frames; opaque black lower nose panel with the roundel
+    for bp in bay_polys:
+        f = gls.quad(*[P(x, NOSE_Y + 0.002, z) for x, z in bp], 'glass_window'); f[gls.fx] = 1
+        if f.normal.y * s < 0: f.normal_flip()
+        xs_ = [x for x, _ in bp]
+        for (xa_, za_), (xb_, zb_) in zip(bp, bp[1:] + bp[:1]):
+            ext.cyl_between(P(xa_, NOSE_Y + 0.006, za_), P(xb_, NOSE_Y + 0.006, zb_), 0.012, 'glass_black', seg=4)
+    def panel(z0o, z1o, mat, dy=0.006, nstep=4):
         zl = [z0o + (z1o - z0o) * i / nstep for i in range(nstep + 1)]
         for i in range(nstep):
             a_, b_ = zl[i], zl[i + 1]
             f = ext.quad(P(-hw(a_), NOSE_Y + dy, zs(a_)), P(hw(a_), NOSE_Y + dy, zs(a_)), P(hw(b_), NOSE_Y + dy, zs(b_)), P(-hw(b_), NOSE_Y + dy, zs(b_)), mat)
             f[ext.fx] = 1
             if f.normal.y * s < 0: f.normal_flip()
-    panel(0.72, 1.55, 'glass_black')
-    gpan = M()
-    for i in range(4):
-        a_ = 1.55 + (2.05 - 1.55) * i / 4; b_ = 1.55 + (2.05 - 1.55) * (i + 1) / 4
-        f = gls.quad(P(-hw(a_), NOSE_Y + 0.006, zs(a_)), P(hw(a_), NOSE_Y + 0.006, zs(a_)), P(hw(b_), NOSE_Y + 0.006, zs(b_)), P(-hw(b_), NOSE_Y + 0.006, zs(b_)), 'glass_window')
-        f[gls.fx] = 1
-        if f.normal.y * s < 0: f.normal_flip()
-    # evacuation door outline
-    for xx in (-0.40, 0.40):
-        ext.box(P(xx, NOSE_Y + 0.008, zs(1.38)), (0.02, 0.008, (zs(2.0) - zs(0.74))), 'steel_dark')
-    for zz in (0.74, 2.0):
-        ext.box(P(0, NOSE_Y + 0.008, zs(zz)), (0.82, 0.008, 0.02), 'steel_dark')
+    panel(0.72, GZ0, 'glass_black')
+    # centre evacuation door handle strip + hinge line
+    ext.box(P(0.20, NOSE_Y + 0.008, zs(1.0)), (0.02, 0.008, 0.18), 'steel_bright')
+    # amber LED destination display above the glazing: separate node, UV 0..1 (runtime canvas)
+    dsz0, dsz1 = zs(GZ1) + 0.035, zs(GZ1) + 0.17
+    dsm = M()
+    wd = hw(GZ1 + 0.1) * 0.9
+    f = dsm.quad(P(-wd, NOSE_Y + 0.008, dsz0), P(wd, NOSE_Y + 0.008, dsz0), P(wd, NOSE_Y + 0.008, dsz1), P(-wd, NOSE_Y + 0.008, dsz1), 'dest_amber')
+    uvl = dsm.bm.loops.layers.uv.verify()
+    ls = list(f.loops)
+    for l, uv in zip(ls, ((1, 0), (0, 0), (0, 1), (1, 1))): l[uvl].uv = uv
+    f[dsm.cuv] = 1; f[dsm.fx] = 1
+    if f.normal.y * s < 0: f.normal_flip()
+    dsm.to_obj('cab_dest' if s > 0 else 'cab_dest_rear', parent=car, uv=False)
     front = s > 0
     lm = 'headlight' if front else 'taillight'
     for sg in (-1, 1):
-        ext.box(P(sg * 0.62, NOSE_Y + 0.010, zs(1.35)), (0.035, 0.012, 0.85), lm)
+        ext.box(P(sg * 0.86, NOSE_Y + 0.010, zs(1.0)), (0.03, 0.012, 0.55), lm)
         for r in range(4):
             for c in range(2):
-                ext.cyl(P(sg * (0.58 + c * 0.04), NOSE_Y + 0.010, zs(0.8 + r * 0.04)), 0.011, 0.012, lm, axis='y', seg=8)
+                ext.cyl(P(sg * (0.80 + c * 0.04), NOSE_Y + 0.010, zs(0.76 + r * 0.04)), 0.011, 0.012, lm, axis='y', seg=8)
     nm = 'headlight' if front else 'taillight'
-    empty(f'{nm}_L', loc=P(-0.62 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.35)), parent=car)
-    empty(f'{nm}_R', loc=P(0.62 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.35)), parent=car)
-    q = ext.quad_uv(P(-0.17, NOSE_Y + 0.012, zs(0.66)), P(0.17, NOSE_Y + 0.012, zs(0.66)), P(0.17, NOSE_Y + 0.012, zs(1.04)), P(-0.17, NOSE_Y + 0.012, zs(1.04)), 'sign_roundel')
+    empty(f'{nm}_L', loc=P(-0.86 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.0)), parent=car)
+    empty(f'{nm}_R', loc=P(0.86 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.0)), parent=car)
+    q = ext.quad_uv(P(-0.17, NOSE_Y + 0.012, zs(0.74)), P(0.17, NOSE_Y + 0.012, zs(0.74)), P(0.17, NOSE_Y + 0.012, zs(1.12)), P(-0.17, NOSE_Y + 0.012, zs(1.12)), 'sign_roundel')
     q[ext.fx] = 1
     if q.normal.y * s < 0: q.normal_flip()
     ext.box(P(0, NOSE_Y + 0.08, 0.56), (0.3, 0.26, 0.16), 'steel_dark')
     ext.box(P(0, NOSE_Y - 0.0, 0.52), (1.4, 0.1, 0.1), 'steel_dark')
-    # ---- cab interior (compact): ceiling, desk, controls, seat (slightly left of centre)
-    cab.strip_y(CEIL, *ysort(CAB_Y, Y(0.5)), 'interior_ceiling', toward=AX)
-    DZ = FLOOR + 0.80
-    cab.box(P(0, Y(0.55), (FLOOR + DZ) / 2), (1.5, 0.5, DZ - FLOOR), 'plastic_black')
-    cab.poly([P(-0.75, Y(0.80), DZ), P(0.75, Y(0.80), DZ), P(0.75, Y(0.30), DZ - 0.06), P(-0.75, Y(0.30), DZ - 0.06)], 'plastic_grey')
-    cab.cyl(P(-0.50, Y(0.66), DZ + 0.03), 0.07, 0.06, 'steel_dark', seg=14)
-    cab.cyl(P(-0.50, Y(0.66), DZ + 0.12), 0.015, 0.15, 'steel_bright', seg=8)
-    cab.box(P(-0.50, Y(0.69), DZ + 0.20), (0.04, 0.11, 0.04), 'plastic_black')
-    cab.cyl(P(-0.30, Y(0.66), DZ + 0.03), 0.06, 0.06, 'steel_dark', seg=14)
-    cab.cyl(P(-0.30, Y(0.66), DZ + 0.11), 0.013, 0.13, 'steel_bright', seg=8)
-    cab.box(P(-0.30, Y(0.66), DZ + 0.18), (0.11, 0.03, 0.03), 'button_red')
-    for xx, mm in ((0.14, 'button_green'), (0.24, 'button_green'), (0.34, 'button_red'), (0.44, 'button_amber')):
-        cab.cyl(P(xx, Y(0.62), DZ - 0.02), 0.022, 0.02, mm, seg=12)
-    cab.cyl(P(0.62, Y(0.62), DZ - 0.01), 0.035, 0.05, 'button_red', seg=14)
-    cab.box(P(0, Y(0.35), 2.20), (1.3, 0.16, 0.02), 'plastic_black')
-    DX = -0.28 * s
-    cab.cyl(P(DX, Y(1.32), FLOOR + 0.2), 0.05, 0.3, 'steel_dark', seg=8)
-    cab.box(P(DX, Y(1.32), FLOOR + 0.42), (0.44, 0.44, 0.08), 'plastic_dark')
-    cab.box(P(DX, Y(1.55), FLOOR + 0.76), (0.42, 0.08, 0.52), 'plastic_dark')
-    cab.box(P(DX, Y(1.57), FLOOR + 1.08), (0.28, 0.07, 0.2), 'plastic_dark')
-    cab.box(P(0, Y(1.0), 2.52), (0.2, 0.6, 0.01), 'strip_light')
+    # ---- cab interior (compact): ceiling, desk (just behind the glass), controls, seat; driver LEFT of the centre door, eyes ~1.0 m back
+    cab.strip_y(CEIL, *ysort(CAB_Y, Y(0.45)), 'interior_ceiling', toward=AX)
+    DZ = FLOOR + 0.80                                    # desk top 0.80 m above the floor
+    DX = -0.42 * s                                        # driver offset (rear cab: mirrored)
+    cab.box(P(0, Y(0.52), (FLOOR + DZ) / 2), (1.76, 0.40, DZ - FLOOR), 'plastic_black')            # desk body hard against the nose
+    cab.poly([P(-0.88, Y(0.74), DZ + 0.0), P(0.88, Y(0.74), DZ + 0.0), P(0.88, Y(0.32), DZ - 0.05), P(-0.88, Y(0.32), DZ - 0.05)], 'plastic_grey')
+    cab.box(P(0, Y(0.33), DZ + 0.02), (1.76, 0.05, 0.05), 'plastic_black')                          # dash lip under the glass
+    mc = DX - 0.28; br = DX - 0.05
+    cab.cyl(P(mc, Y(0.60), DZ + 0.03), 0.065, 0.06, 'steel_dark', seg=14)                          # master controller
+    cab.cyl(P(mc, Y(0.60), DZ + 0.11), 0.015, 0.14, 'steel_bright', seg=8)
+    cab.box(P(mc, Y(0.63), DZ + 0.19), (0.04, 0.11, 0.04), 'plastic_black')
+    cab.cyl(P(br, Y(0.60), DZ + 0.03), 0.055, 0.06, 'steel_dark', seg=14)                          # brake handle
+    cab.cyl(P(br, Y(0.60), DZ + 0.10), 0.013, 0.12, 'steel_bright', seg=8)
+    cab.box(P(br, Y(0.60), DZ + 0.17), (0.10, 0.03, 0.03), 'button_red')
+    for dxx, mm in ((0.20, 'button_green'), (0.29, 'button_green'), (0.38, 'button_red'), (0.47, 'button_amber')):
+        cab.cyl(P(DX + dxx + 0.35, Y(0.56), DZ - 0.03), 0.022, 0.02, mm, seg=12)
+    cab.cyl(P(0.72, Y(0.56), DZ - 0.02), 0.035, 0.05, 'button_red', seg=14)
+    cab.box(P(0, Y(1.2), 2.12), (0.0001, 0.0001, 0.0001), 'plastic_black') if False else None
+    # driver's seat: cushion centre t=0.98, back t=1.18 (eyes ~1.0 m behind the glass)
+    cab.cyl(P(DX, Y(0.98), FLOOR + 0.2), 0.05, 0.3, 'steel_dark', seg=8)
+    cab.box(P(DX, Y(0.98), FLOOR + 0.42), (0.44, 0.44, 0.08), 'plastic_dark')
+    cab.box(P(DX, Y(1.18), FLOOR + 0.76), (0.42, 0.08, 0.52), 'plastic_dark')
+    cab.box(P(DX, Y(1.20), FLOOR + 1.08), (0.28, 0.07, 0.2), 'plastic_dark')
+    for sxs in (-0.24, 0.24): cab.box(P(DX + sxs, Y(0.98), FLOOR + 0.55), (0.04, 0.34, 0.04), 'steel_dark')   # armrests
+    cab.box(P(0, Y(0.9), 2.5), (0.2, 0.6, 0.01), 'strip_light')
     sfx = '' if idx == 0 else '_rear'
     def screen(name, c_t, c_x, c_z, w, h, tilt):
         sm = M(); hw_, hh = w / 2, h / 2
@@ -404,10 +422,10 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
         for l, uv in zip(f.loops, ((0, 0), (1, 0), (1, 1), (0, 1))): l[uvl].uv = uv
         f[sm.cuv] = 1; f[sm.fx] = 1
         return sm.to_obj(name, parent=car, uv=False)
-    screen(f'cab_screen{sfx}', 0.52, -0.08, DZ + 0.14, 0.36, 0.22, math.radians(25))
-    screen(f'cab_speedo{sfx}', 0.55, 0.30, DZ + 0.12, 0.18, 0.12, math.radians(25))
-    empty('cab_eye' if s > 0 else 'cab_eye_rear', loc=P(DX, Y(1.22), FLOOR + 1.15), parent=car, kind='SPHERE', size=0.08)
-    empty('cab_light' if s > 0 else 'cab_light_rear', loc=P(0, Y(1.0), 2.48), parent=car)
+    screen(f'cab_screen{sfx}', 0.56, DX + 0.10, DZ + 0.14, 0.34, 0.20, math.radians(55))
+    screen(f'cab_speedo{sfx}', 0.58, DX + 0.40, DZ + 0.12, 0.17, 0.11, math.radians(55))
+    empty('cab_eye' if s > 0 else 'cab_eye_rear', loc=P(DX, Y(1.0), FLOOR + 1.15), parent=car, kind='SPHERE', size=0.08)
+    empty('cab_light' if s > 0 else 'cab_light_rear', loc=P(0, Y(0.9), 2.46), parent=car)
 
 def layout():
     total = sum(CAR_LENS) + GAP * (len(CAR_LENS) - 1)
@@ -468,6 +486,7 @@ def build_train():
         headroomVsX=prof, headroomFormula='h(x) = 1.487 + sqrt(1.085^2 - x^2) - 0.695 for |x|<=1.085  (ceiling y minus floor)',
         minStandingHeadroom=1.75, minStandingNote='an adult of 1.75 m can only stand where headroomVsX >= 1.80 i.e. |x| <= 0.35; head-bump zone otherwise',
         gangway=dict(width=1.3, archApexY=2.10, halfWidth=0.65),
+        cab=dict(eyeFront=[-0.42, 1.845, round(-(total / 2 - 1.0), 3)], eyeRear=[0.42, 1.845, round(total / 2 - 1.0, 3)], eyeToGlassM=1.0, deskTopY=round(FLOOR + 0.80, 3), deskFrontToGlassM=0.30, driverSide='left of centre door (x=-0.42 front cab, +0.42 rear cab)', partitionDistanceFromNoseM=1.8, glazing='three bays (driver / centre evacuation door / right), glass y from 1.30 to 2.18, black frame, amber LED destination display node cab_dest'),
         cars=cars_json)
     json.dump(data, open(os.path.join(OUT, 'train_walkable.json'), 'w'), indent=1)
     return root
