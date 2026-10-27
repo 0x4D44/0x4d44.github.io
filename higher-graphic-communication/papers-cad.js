@@ -41,7 +41,6 @@
   // size patterns that need the number right beside its word, so a shuffle of the right words cannot assemble them
   const HT = (n) => `(?:\\b${n}\\s*(?:mm\\s*)?(?:high|tall|deep|thick|long|height|up)\\b|\\b(?:height|high|tall|thick|up to|to|rises?|rising|reach\\w*|finish\\w*|ends?)\\s*(?:at\\s*|of\\s*|=|:|is\\s*)?(?:a height of\\s*)?${n}\\b)`;
   const ST = (n) => `(?:\\b${n}\\s*(?:mm\\s*)?(?:long|high|tall|vertical|horizontal|straight|line|length|leg|up|across|along)\\b|\\b(?:vertical|horizontal|straight|line|lines|length|leg|height)\\s*(?:of\\s*|=|:|is\\s*|at\\s*)?${n}\\b)`;
-  const VERB = "(?:sketch|draw|creat|make|start|begin|insert|add|put|place|construct|model)";
   const GAP = (n) => `[^.]{0,${n}}`;
 
   // a comparison needs both sides: side A, a contrast word, side B (either way round), or each side tied to its own file name
@@ -201,7 +200,7 @@
 
   /* ---------- the bank ---------- */
   B.cad = {
-    intro: "Computer-aided design techniques are worth 20 to 30 of the 90 marks. This bank is 65 marks: modelling features with sized steps (revolve, extrude, loft, helix, extrude along a path), edits and Booleans, the modelling tree, 3D constraints, file types, libraries and rendering. About 60% of the marks are written \"describe how to model\" answers, so check that every step you write names a plane or face, a feature and its sizes.",
+    intro: "Computer-aided design techniques are worth 20 to 30 of the 90 marks. This bank is 68 marks: modelling features with sized steps (revolve, extrude, loft, helix, extrude along a path), edits and Booleans, the modelling tree, 3D constraints, file types (including a compare question), libraries and rendering. About 60% of the marks are written \"describe how to model\" answers, so check that every step you write names a plane or face, a feature and its sizes.",
     questions: [
       {
         id: "cad-01",
@@ -298,7 +297,7 @@
             q: "A Ø6 mounting hole must also pass through one sloping side of the duct. Explain why this hole should be cut after the hollowing edit and not before it.",
             points: [
               { desc: "Cause: the shell puts a wall of the set thickness round every face, including the faces of a hole already cut", any: [
-                "(?:shell|hollow)\\w*" + GAP(40) + "(?:wall|thickness|skin|tube|lining)" + GAP(25) + "(?:round|around|surround\\w*|inside|in)\\s+(?:\\w+\\s+){0,3}(?:hole|opening|edge)",
+                "(?:shell|hollow)\\w*" + GAP(40) + "(?:wall|thickness|skin|tube|lining)" + GAP(25) + "\\b(?:round|around|surround\\w*|inside|in)\\s+(?:\\w+\\s+){0,3}(?:hole|opening|edge)",
                 "(?:shell|hollow)\\w*" + GAP(40) + "(?:every|each|all)\\s+(?:\\w+\\s+)?(?:face|edge|surface)s?" + GAP(25) + "(?:hole|opening)",
                 "(?:shell|hollow)\\w*" + GAP(25) + "(?:hole|opening)" + GAP(25) + "(?:wall|thickness|tube|lining|skin|sleeve)",
                 "(?:hole|opening)" + GAP(30) + "(?:wall|thickness|tube|lining|skin|sleeve)" + GAP(25) + "(?:shell|hollow)"],
