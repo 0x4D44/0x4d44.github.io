@@ -65,7 +65,7 @@
     if (func / toks.length < 0.14) return "zero";
     if (toks.length < 8) return null;
     // padding a pile of key words with the same "the/is/and" over and over is not a sentence
-    if (func >= 6 && new Set(funcToks).size < 4) return "zero";
+    if (func >= 8 && new Set(funcToks).size < 4) return "zero";
     let run = 0, longest = 0;
     toks.forEach((t) => { if (FUNC.has(t)) run = 0; else { run++; if (run > longest) longest = run; } });
     return longest >= 10 ? "half" : null;
