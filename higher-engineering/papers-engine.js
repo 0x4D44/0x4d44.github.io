@@ -64,11 +64,15 @@
   const DETS = W("a an the its their his her this these those that one two"), PREP = W("of in on at by for with from into onto between through around after before during across against within without upon per until via like to");
   const CONJ = W("and or but so because since as if then than while whereas although though unless whether when where"), OBJ = W("it them him her us me you this these those");
   const PRON = W("it they he she we you i there");
+  const DEM = W("this these those that");
   const grammatical = (a, b) =>
-    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) || (CONJ.has(a) && PRON.has(b)) || (a === "if" && b === "not");
+    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) || (CONJ.has(a) && PRON.has(b)) || (a === "if" && b === "not")
+    || ((DEM.has(a) || DEM.has(b)) && (CONJ.has(a) || CONJ.has(b) || PREP.has(a) || PREP.has(b) || AUX.has(a) || AUX.has(b) || PRON.has(a) || PRON.has(b)))
+    || (a === "than" && PREP.has(b)) || (CONJ.has(a) && (b === "with" || b === "one" || b === "for"));
 
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
+  const AUXV = new Set("is are was were be been can could will would may might must should does do did has have had to that which because so if when then since as where while whereas".split(" "));
   function listLike(text) {
     const toks = text.match(/[a-z0-9']+/g) || [];
     if (toks.length < 4) return null;
@@ -76,7 +80,9 @@
     const func = funcToks.length;
     // numbers and one-letter labels (a trace such as "G1: inputs 1 and 1, output X = 0") do not dilute the function-word ratio
     const wordy = toks.filter((t) => !/^\d+$/.test(t) && !/^[a-z]\d?$/.test(t) || FUNC.has(t)).length;
-    if (func / Math.max(1, wordy) < 0.14) return "zero";
+    if (func / Math.max(1, wordy) < 0.14) return (text.match(/[,;]/g) || []).length >= 3 && func >= 1 ? "half" : "zero";
+    // a run of "and the"-joined nouns with no verb, auxiliary or linking word is a list, however it is punctuated
+    if ((text.match(/\b(and|or)\b/g) || []).length >= 3 && !toks.some((t) => AUXV.has(t))) return "half";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
@@ -98,7 +104,8 @@
       const t = seg.match(/[a-z0-9']+/g) || [];
       for (let i = 1; i < t.length; i++) if (FUNC.has(t[i - 1]) && FUNC.has(t[i])) { ff++; if (!FFPAIRS.has(t[i - 1] + " " + t[i]) && !grammatical(t[i - 1], t[i])) odd++; }
     });
-    if (ff >= 3 && odd * 2 >= ff) return "zero";
+    if (ff >= 4 && odd * 3 >= ff * 2) return "zero";
+    if (ff >= 3 && odd * 2 >= ff) return "half";
     // key words strictly alternating with filler words, run after run, is padding rather than prose
     let alt = 1, altMax = 1;
     for (let i = 1; i < toks.length; i++) {
@@ -121,7 +128,7 @@
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: false, group: pt.group }));
     const w = words(text);
     // a capital letter standing alone ("valve A", "B-") names a component, not the article "a"
-    const ident = HEP.norm(String(ans).replace(/\bA(?=[+-])/g, "\u0001").replace(/(^|[.!?:;]\s*)A\b/g, "$1\u0002").replace(/\b[A-Z]\b/g, "x1").replace(/[\u0001\u0002]/g, "A"));
+    const ident = HEP.norm(String(ans).replace(/\s*(?:->|\u2192|=>)\s*/g, ", then ").replace(/\bA(?=[+-])/g, "\u0001").replace(/(^|[.!?:;]\s*)A\b/g, "$1\u0002").replace(/\b[A-Z]\b/g, "x1").replace(/[\u0001\u0002]/g, "A"));
     const list = listLike(ident);
     const opts = { negCheck: !NEG.test(HEP.norm(part.sample || "")) };
     if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => { pts[i].hit = HEP.pointHit(pt, text, opts); });
@@ -153,9 +160,19 @@
       case "num": {
         // the last number in the answer counts, so working ("5 x 300 = 1500") and units ("12 mm") are fine
         const SUP = { "\u2070": 0, "\u00b9": 1, "\u00b2": 2, "\u00b3": 3, "\u2074": 4, "\u2075": 5, "\u2076": 6, "\u2077": 7, "\u2078": 8, "\u2079": 9 };
-        let raw = String(ans).toLowerCase().replace(/[\u2212\u2013\u2014]/g, "-")
+        // spelled-out units become symbols, and "(3 s.f.)" asides and trailing full stops are not part of the answer
+        const WORD = { ohm: "\u03a9", ohms: "\u03a9", amp: "A", amps: "A", ampere: "A", amperes: "A", volt: "V", volts: "V", watt: "W", watts: "W", second: "s", seconds: "s", joule: "J", joules: "J", newton: "N", newtons: "N", hertz: "Hz", siemens: "S" };
+        const PW = { giga: "G", mega: "M", kilo: "k", milli: "m", micro: "\u00b5", nano: "n" };
+        const clean = String(ans)
+          .replace(/\(\s*\d+\s*(?:s\.?\s*f\.?|sig\w*\.?\s*fig\w*\.?|d\.?\s*p\.?|decimal places?)\s*\)/gi, " ")
+          .replace(/\b(giga|mega|kilo|milli|micro|nano)?\s*(ohms?|amps?|amperes?|volts?|watts?|seconds?|joules?|newtons?|hertz|siemens)\b/gi, (m, p, u) => (p ? PW[p.toLowerCase()] : "") + WORD[u.toLowerCase()])
+          .replace(/(^|=)\s*-\s+(?=\d)/g, "$1-")
+          .replace(/(\d)\s*k\s*$/i, "$1k")
+          .replace(/[\s.]+$/, "");
+        let raw = clean.toLowerCase().replace(/[\u2212\u2013\u2014]/g, "-")
           .replace(/10([-\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, (m, sg, d) => "10^" + (sg ? "-" : "") + [...d].map((c) => SUP[c]).join(""))
           .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
+          .replace(/\ba\s*\/?\s*v\s*\^?\s*\{?-\s*1\}?\b/g, " ")
           .replace(/\b(?:rad|rev|mm|cm|km|m)?\s*(?:s|min)\s*\^?\s*-\s*1\b/g, " ")      // unit tails: m s-1, rad s^-1, rev min-1
           .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
           .replace(/(\d) (?=\d{3}\b)/g, "$1")                          // 2 880 000
@@ -168,13 +185,15 @@
         if (!isFinite(v)) return { got: 0, of };
         // a prefix typed on the unit ("0.003 A" for a part wanted in mA) is converted, so a missed prefix cannot pass for right
         const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
-        const UNIT = /^([GMkm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|Hz|m|Pa)$/;
-        const au = String(ans).match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
+        const UNIT = /^([GMkm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|S|Hz|m|Pa)$/;
+        const au = clean.match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
         const am = au && au[1].match(UNIT);
         if (am && eu) {
           const base = (b) => (/^(\u03a9|\u2126|ohms?)$/.test(b) ? "ohm" : b);
           if (base(am[2]) === base(eu[2])) v = v * PF[am[1]] / PF[eu[1]];
+          else if (am[2] !== "m" && eu[2] !== "m") return { got: 0, of };      // a different quantity ("2.4 A" for a power) is wrong
         }
+        if (/%\s*\)?\s*$/.test(clean) && Math.abs(part.a) <= 1 && part.unit !== "%") v = v / 100;     // "0.80 (80%)" for a ratio
         const targets = [part.a].concat(part.alts || []);
         const tol = part.tol == null ? 0 : part.tol;
         const within = (t) => Math.abs(v - t) <= tol + 1e-9 || (part.rtol != null && Math.abs(v - t) <= part.rtol * Math.abs(t) + 1e-12);
