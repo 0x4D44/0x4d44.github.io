@@ -229,7 +229,7 @@ export class App {
       // distance and the camera's height above the ground (nothing can be closer than that minus ~120 m of tower height).
       const cam = this.env.camera, cp = cam.position, tg = this.rig.target;
       const hgt = cp.y - Math.max(this.ground(cp.x, cp.z), this.ground(tg.x, tg.z));
-      const nt = clamp(Math.max(this.rig.distance * 0.02, 0.28 * (hgt - 120)), 2, 700);
+      const nt = this.nearOverride ?? clamp(Math.max(this.rig.distance * 0.02, 0.28 * (hgt - 120)), 2, 700); // nearOverride: test hook
       if (Math.abs(nt - cam.near) > cam.near * 0.12) { cam.near = nt; cam.updateProjectionMatrix(); }
     } const moved = this.rig.controls.target.distanceToSquared(this._lt || (this._lt = new THREE.Vector3())) > 0.01 || Math.abs(this.rig.distance - (this._ld || 0)) > 0.01;
     if (moved) { this._lt.copy(this.rig.controls.target); this._ld = this.rig.distance; this.onHashSave(); }

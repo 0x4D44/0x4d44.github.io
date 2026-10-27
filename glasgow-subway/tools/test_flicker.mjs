@@ -32,6 +32,7 @@ await page.goto(url); await page.waitForFunction(() => window.__explorer?.state?
 // hide the UI so only the canvas matters, keep the app running
 await page.addStyleTag({ content: '#topbar,.dock,#sheet,#xraybar,#minimap,#labels,#drawer,#gauge,#caption{display:none!important}' });
 
+if (arg('near', null)) await page.evaluate((n) => { window.__explorer.app.nearOverride = n; }, +arg('near', 0)); // A/B: force a fixed near plane
 const mpdLon = 111320 * Math.cos(55.86 * Math.PI / 180), mpdLat = 111132;
 const proj = (lat, lon) => ({ x: (lon + 4.27) * mpdLon, z: -(lat - 55.86) * mpdLat });
 const sites = await page.evaluate(() => { const a = window.__explorer.app; const s = (id) => a.byId.get(id); const c = a.ug.crossings[0]; return { clyde: c ? { x: c.pos.x, z: c.pos.z } : { x: s('bridge-street').x, z: s('bridge-street').z + 200 }, central: { x: s('st-enoch').x - 75, z: s('st-enoch').z - 280 }, govan: { x: s('govan').x, z: s('govan').z } }; });
@@ -51,11 +52,13 @@ async function measure(name, site, dist, polar) {
     const f0 = a.state.frames; while (a.state.frames < f0 + 3 && performance.now() - t0 < 120000) await sleep(100);
     a.paused = true; await sleep(50);
     const rd = a.env.renderer, gl = rd.getContext(), cam = a.env.camera, sc = a.env.scene; const w = rd.domElement.width, h = rd.domElement.height;
-    cam.updateMatrixWorld(true); const right = new V3().setFromMatrixColumn(cam.matrixWorld, 0), up = new V3().setFromMatrixColumn(cam.matrixWorld, 1);
+    cam.updateMatrixWorld(true); const right = new V3().setFromMatrixColumn(cam.matrixWorld, 0), up = new V3().setFromMatrixColumn(cam.matrixWorld, 1), fwd = new V3().setFromMatrixColumn(cam.matrixWorld, 2).negate();
     const wpp = (2 * dist * Math.tan((cam.fov * Math.PI) / 360)) / h; const base = cam.position.clone(); const frames = [];
     for (let k = 0; k < N; k++) {
-      const an = (k / N) * Math.PI * 2, dx = Math.cos(an) * radPx * wpp, dy = Math.sin(an) * radPx * wpp;
-      cam.position.copy(base).addScaledVector(right, dx).addScaledVector(up, dy); cam.updateMatrixWorld(true);
+      // sub-pixel lateral jitter (radPx) PLUS a few metres of dolly along the view axis: the dolly moves every depth value by
+      // far more than the depth quantum, so any z-fighting pattern re-rolls between frames while the picture barely moves.
+      const an = (k / N) * Math.PI * 2, dx = Math.cos(an) * radPx * wpp, dy = Math.sin(an) * radPx * wpp, dz = (k - (N - 1) / 2) * Math.max(0.4, dist * 0.0003);
+      cam.position.copy(base).addScaledVector(right, dx).addScaledVector(up, dy).addScaledVector(fwd, dz); cam.updateMatrixWorld(true);
       rd.render(sc, cam); const buf = new Uint8Array(w * h * 4); gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, buf); frames.push(buf);
     }
     cam.position.copy(base); cam.updateMatrixWorld(true); rd.render(sc, cam);

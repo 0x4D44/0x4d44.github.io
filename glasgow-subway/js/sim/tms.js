@@ -18,7 +18,7 @@ export class Tms {
     apply(trainView.cabScreen, this.tex); apply(trainView.cabSpeedo, this.tex2);
   }
   update(dt, info, mode) {
-    this.acc += dt; if (this.acc < 0.1) return; this.acc = 0;
+    if (dt > 0) { this.acc += dt; if (this.acc < 0.1) return; } this.acc = 0;
     const g = this.g, W = 512, H = 320;
     g.fillStyle = '#05070b'; g.fillRect(0, 0, W, H);
     const over = info.kmh > info.limitKmh + 1;

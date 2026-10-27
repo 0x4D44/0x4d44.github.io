@@ -118,7 +118,7 @@ export class TrainView {
     box(2.0, 0.04, 0.46, 0, 1.4, -19.1, desk, 0.2);
     box(2.0, 0.7, 0.44, 0, 1.02, -19.12, desk);
     // TMS screen on the desk in front of the driver (x -0.42), angled up toward him, + a small secondary speed display
-    const scr = new THREE.Group(); scr.position.set(-0.84, 1.42, -19.2 - zc); scr.rotation.x = -0.75; scr.rotation.y = 0.35; g.add(scr);
+    const scr = new THREE.Group(); scr.position.set(-0.84, 1.42, -19.2 - zc); scr.rotation.x = -0.75; scr.rotation.y = 0.18; g.add(scr);
     const bz = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.2, 0.025), trim); bz.position.set(0, 0.1, -0.01); scr.add(bz);
     const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 0.28 * 320 / 512), new THREE.MeshBasicMaterial({ map: texTms, toneMapped: false })); sp.position.set(0, 0.1, 0.004); scr.add(sp);
     const s2 = new THREE.Group(); s2.position.set(-0.55, 1.41, -19.2 - zc); s2.rotation.x = -0.75; g.add(s2);
