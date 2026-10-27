@@ -28,6 +28,7 @@
      pattern matches if `any` is given, and no `not` pattern matches. Patterns are matched against the
      normalised answer. */
   const WIN = 160;
+  const NEGWIN = 90;
   /* Negation: when the part's model answer says nothing negative, a negator just before a matched phrase
      turns the claim round ("STEP is not neutral"), so that point is not awarded. Parts whose model answer
      itself uses negatives (`opts.negOK`) skip the check. */
@@ -40,7 +41,7 @@
     if (opts && opts.negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - 34), a + 1).split(/[.;!?]/).pop()))) return false;
+      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?]|\bbut\b|\bhowever\b/).pop()))) return false;
     }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
