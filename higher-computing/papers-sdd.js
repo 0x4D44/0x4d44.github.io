@@ -94,9 +94,9 @@
             model: "<ul><li>Agile is adaptive / copes with changing requirements: short sprints let features be added or altered quickly. (1)</li><li>The client is involved throughout: a working piece is shown after every sprint and the feedback shapes the next one. (1)</li></ul><p>The link to the company's changing needs is what earns the marks, not just \"agile is faster\".</p>",
             points: [
               { desc: "Adaptive: changes to requirements are absorbed quickly", any: [
-                R`(adapt\w*|flexib\w*|cope\w*|respond\w*|react\w*|accommodat\w*|absorb\w*|incorporat\w*|handle\w*|deal\w* with|welcom\w*|allow\w*|lets?|permit\w*|support\w*|easy|easier|easily|quickly)\W+${NA(10)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
-                R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|done|incorporated|included|changed|easy|easier|easily|quick\w*)`,
-                R`(chang\w*|requirement\w*)\W+${NA(5)}(adapt\w*|flexib\w*|cope\w*|accommodat\w*)`] },
+                R`(adapt\w*|flexib\w*|cope\w*|respond\w*|react\w*|accommodat\w*|absorb\w*|incorporat\w*|handle\w*|deal\w* with|welcom\w*)\W+${NA(6)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
+                R`(allow\w*|lets?|permits?)\W+${NA(3)}(chang\w*|requirement\w*|new feature\w*|alter\w*|amend\w*|modif\w*)`,
+                R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|done|incorporated|included|changed|easy|easier|easily|quick\w*)`] },
               { desc: "Client involved throughout: sees working versions and gives feedback each sprint", any: [
                 R`(client|customer|users?|islanders?|company|stakeholders?|passengers?|they|them)s?\W+${NA(12)}(feedback|try|trying|test\w*|see|sees|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)\W+${NA(10)}(each|every|after|throughout|regular\w*|constant\w*|frequent\w*|continual\w*|early|sprints?|versions?|prototypes?|working|iterations?|releases?|increments?|demos?)`,
                 R`feedback\W+${NA(10)}(next|each|every|following|later|after|new|future|updated|improved)\W+(\w+\W+)?(sprints?|versions?|iterations?|releases?|prototypes?|builds?|cycles?)`,
@@ -174,13 +174,13 @@
               { desc: "Identifies hotPos as the wrong item", negOK: true, any: [
                 R`hot\s?pos\W+${WD(5)}(shouldn.t|should not|does ?n.t|do not|don.t|not|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error|unused|remov\w*|delet\w*|take\w* (it )?out)`,
                 R`(remov\w*|delet\w*|take out|drop|get rid of|without|shouldn.t (have|be)|should not (have|be)|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error)\W+${WD(4)}hot\s?pos`],
-                not: [R`should be (passed|sent|given|input)|(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`] },
+                not: [R`should be (passed|sent|given|input)|(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`, R`\bnot not\b`] },
               { desc: "Explains it is not used / unnecessary", negOK: true, any: [
                 R`(hot\s?pos|it|this|parameter|value|data|item|variable|extra)\W+${WD(4)}(is|are|was|be|being)\W+${WD(2)}(unnecessar\w*|extra|surplus|redundant|not (used|needed|required|necessary)|never (used|needed)|pointless|useless|irrelevant|wasted|unused)`,
                 R`(step 3|step three|counting|the step|the sub-?program|it|frost\w*)\W+${WD(3)}(never|does ?n.t|does not|do not|don.t|doesn.t|not|no)\W+(use|need|require)\w*\W+${WD(3)}(hot\s?pos|it|this|parameter|value|position)`,
                 R`(unnecessar\w*|extra|surplus|redundant|pointless|unused)\W+(parameters?|data|items?|values?|variables?|arguments?|inputs?)`,
                 R`(no need|no use|not needed|not necessary|not required|isn.t needed|isn.t used|not used)\W+${WD(3)}(for|to|by|in)\W+${WD(3)}(step 3|step three|counting|frost\w*|this step|hot\s?pos)`],
-                not: [R`(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`] },
+                not: [R`(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`, R`\bnot\W+(?:(an?|the|really|actually|at all)\W+){0,2}(unnecessar|extra|surplus|redundant|unused|pointless|useless|irrelevant|wasted)`] },
             ],
           },
           {
@@ -217,12 +217,12 @@
             model: "<ul><li>A simple sketch / plan of the layout of one screen: where each item goes. (1)</li><li>It shows the inputs, outputs and buttons (what the user enters and where results appear), not colours or finished content. (1)</li></ul>",
             points: [
               { desc: "A sketch of the layout / position of items on a screen", any: [
-                R`(sketch|layout|plan|picture|drawing|diagram|outline|design|blueprint|mock-?up|skeleton|template)\W+${WD(3)}(of|for|showing|shows|that shows|which shows)\W+${WD(3)}(screen|page|interface|app|display|window|user interface)`,
+                R`(sketch|layout|plan|picture|drawing|diagram|outline|design|blueprint|mock-?up|skeleton|template)\W+${NA(3)}(of|for|showing|shows|that shows|which shows)\W+${NA(3)}(screen|page|interface|app|display|window|user interface)`,
                 R`(layout|arrangement|positions?|placement|where (things|items|everything|each|the)\w*)\W+${WD(3)}(of|on|for|in)\W+${WD(3)}(screen|page|interface|app|display)`,
                 R`(what|how)\W+${WD(3)}(screen|page|interface|app|it)\W+${WD(3)}(look\w*|appear\w*|be laid out|be arranged)`] },
               { desc: "Shows the inputs and outputs (boxes, buttons, results)", any: [
                 R`where\W+${NA(4)}(input\w*|output\w*|button\w*|boxes|fields?|prompts?|results?|items?|data|labels?|text|everything|things|elements?|components?)\W+${NA(4)}(go|goes|be|are|is|will|placed|positioned|appear|shown|displayed|located|put|sit|sits|can be)`,
-                R`(shows?|includes?|contains?|labels?|marks?|identif\w*|displays?|has|with|positions?|places?|indicates?)\W+${NA(4)}(input\w*|output\w*|buttons?|boxes|fields?|prompts?)`] },
+                R`(shows?|includes?|contains?|labels?|marks?|identif\w*|displays?|indicates?|lays? out|arranges?)\W+${NA(4)}(input\w*|output\w*|buttons?|boxes|fields?|prompts?)`] },
             ],
           },
           {
@@ -233,12 +233,12 @@
             model: "<ul><li>Labels: the user knows what information to put in each box. (1)</li><li>Format hint: shows the layout of the date expected, so fewer wrong or rejected entries. (1)</li></ul>",
             points: [
               { desc: "Labels tell the user what to put in each box", all: [R`label\w*`, R`(what|which|where)\W+${NA(4)}(box|field|input|enter|type|put|write|data|information|goes|go|to type)|(clear|obvious)\W+${NA(5)}(what|which|box|field|enter|type)`], win: 140,
-                not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`] },
+                not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`, R`\bnot not\b|\b(do|does|did|can|will|would|could|is|are)(n.t| not)\W+(\w+\W+)?(tell|show|say|help|let|remind|indicate|prevent|stop|ensure|avoid|reduce|mean)\w*`] },
               { desc: "The hint shows the format needed, so fewer errors", any: [
                 R`(so|means?|which|helps?|ensur\w+|avoid\w*|prevent\w*|stop\w*|reduc\w*|therefore)\W+${NA(8)}(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly|accepted|enter\w*|type\w*|know\w*)\W+${NA(8)}(format|date|dd|hint|layout|way)`,
                 R`(hint|format|dd/mm/yyyy|dd/mm|example)\W+${NA(6)}(tells?|shows?|says?|lets?|reminds?|indicates?|gives?)\W+${NA(8)}(format|how|what|way|date|type|enter|layout)`,
                 R`(correct\w*|right|wrong|error\w*|invalid|mistake\w*|reject\w*|valid|properly)\W+${NA(8)}(format|date|dd)\W+${NA(8)}(hint|format|dd/mm)`],
-                not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`] },
+                not: [R`(harder|confus\w*|difficult|clutter\w*|slower|worse)`, R`\bnot not\b|\b(do|does|did|can|will|would|could|is|are)(n.t| not)\W+(\w+\W+)?(tell|show|say|help|let|remind|indicate|prevent|stop|ensure|avoid|reduce|mean)\w*`] },
             ],
           },
           {
@@ -425,15 +425,15 @@
             points: [
               { desc: "Judges it is not fit for purpose (not every requirement is met)", negOK: true, any: [
                 R`not (fully |completely |entirely |yet |quite )?(fit|meeting|met|meet)|(does ?n.t|does not|doesn.t|fails? to|failed to|never) (fully |completely |entirely )?(meet|satisf|fulfil|match)|only (partly|partially|two|2)|not (all|every)\W+${WD(2)}(requirements?|specification|brief|tests?|r\d)|isn.t (fully )?fit|(partly|partially|mostly|almost|nearly) (fit|met|meets|meet)|(does ?n.t|does not|doesn.t) (do|achieve|deliver|carry out|perform|cover) (everything|all|every)`],
-                not: [R`\\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\\w+|fulfil\\w*)\\W+(every|all)\\W+(the )?(requirements?|specification|brief)`] },
+                not: [R`\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\w+|fulfil\w*)\W+(every|all)\W+(the )?(requirements?|specification|brief)`, R`\bnot not\b`] },
               { desc: "R1 and R2 are met, with evidence from tests 1 and 2", all: [R`(r1|requirement 1|test 1|tests 1)\W+${WD(6)}(r2|requirement 2|test 2|2)`, R`(met|meet|work\w*|pass\w*|correct\w*|success\w*|satisf\w*|fulfil\w*)`], win: 60,
-                not: [R`\\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\\w+|fulfil\\w*)\\W+(every|all)\\W+(the )?(requirements?|specification|brief)`, R`(r3|requirement 3|test 3|all (three|3))\W+${WD(3)}(all )?(met|works?|worked|passes|passed|correct|successful)\b`, R`(?<!not )(?<!n.t )\b(every|all)\W+(of the )?(the )?(requirements?|tests?)\W+${WD(3)}(worked|passed|met|work|pass|correct|as expected|satisfied)`] },
+                not: [R`\b(is|are|be|looks|seems|was) (fully |completely |entirely |totally |very |really )?fit for purpose(?! (if|once|after|until|when|provided))`, R`(?<!not )(?<!n.t )(?<!fully )(?<!completely )(?<!entirely )(?<!yet )(?<!all )(meets?|satisf\w+|fulfil\w*)\W+(every|all)\W+(the )?(requirements?|specification|brief)`, R`(r3|requirement 3|test 3|all (three|3))\W+${WD(3)}(all )?(met|works?|worked|passes|passed|correct|successful)\b`, R`(r1|r2|requirement 1|requirement 2|test 1|test 2|tests 1)\W+${WX(6, "r3|requirement 3|test 3|but|however|whereas")}(not|isn.t|aren.t|never)\W+(met|work\w*|pass\w*|correct|success\w*|satisf\w*|fulfil\w*)`, R`(?<!not )(?<!n.t )\b(every|all)\W+(of the )?(the )?(requirements?|tests?)\W+${WD(3)}(worked|passed|met|work|pass|correct|as expected|satisfied)`] },
               { desc: "R3 is not met: test 3 counted wrongly", any: [
                 R`(r3|requirement 3|test 3|requirement three)\W+${NA(8)}(wrong\w*|incorrect\w*|inaccura\w*|fail\w*|not (met|working|correct|right|satisfied|achieved|fulfilled)|too many|one too|extra|error|fault|bug|isn.t (met|working|correct|right)|5 (instead|rather|not)|five (instead|rather|not))`,
                 R`(5|five)\W+(instead|rather)\W+${WD(2)}(4|four)`,
                 R`(counts?|counted|displays?|displayed|shows?|showed|outputs?|gives?|gave)\W+${WD(4)}(too many|one (too many|more|extra)|an extra)`,
                 R`(<=|less than or equal|<= 10)\W+${WD(10)}(wrong|should|instead|error|too many|extra|counts?)`],
-                not: [R`(r3|requirement 3|test 3)\W+${WD(2)}(is |was |were |are )?(met|works?|worked|passes|passed|correct|successful|fine)\b`] },
+                not: [R`(r3|requirement 3|test 3)\W+${WD(2)}(is |was |were |are )?(met|works?|worked|passes|passed|correct|successful|fine)\b`, R`\bnot\W+(wrong|incorrect|a problem|faulty|an error)`] },
             ],
           },
           {
@@ -470,7 +470,7 @@
               { desc: "Indentation", any: [
                 R`indent\w*\W+${WD(8)}(loop|if|selection|lines?|code|body|inside|structure|block)`,
                 R`(loop|if|lines?|body|inside|structure|block)\W+${WD(4)}indent`,
-                R`(use|add|put|apply|with|proper|correct|consistent|good)\W+${WD(2)}indent\w*`] },
+                R`(use|add|put|apply|with|proper|correct|consistent|good)\W+${WD(1)}indent\w*`] },
               { desc: "White space or a named constant", any: [R`white\s?space`, R`blank lines?`, R`(add|use|put|leave|insert|include|with)\w*\W+${WD(2)}(spacing|gaps?|line breaks?)`, R`(named|use|declare|a|the|as a) constants?\b`] },
             ],
           },
@@ -484,7 +484,7 @@
             points: [
               { desc: "Reusable with different values: no duplicated code", negOK: true, any: [
                 R`(with|for|using|call\w*|pass\w*)\W+${WD(3)}(different|another|any|other|new|various)\W+${WD(3)}(marks?|values?|arrays?|subjects?|tests?|classes|class|thresholds?|data|inputs?|parameters?|arguments?)`,
-                R`reus\w+|re-us\w+`, R`called?\W+${WD(4)}(again|more than once|several times|twice|many times|repeatedly|over and over|different)`,
+                R`(function|code|sub-?program|module|procedure|it|they)\W+${WD(4)}re-?us\w+`, R`\b(can|could|may|be|is|are|easily|become|makes? it)\W+(\w+\W+)?re-?us(ed|able|e)\b|re-?usable\b`, R`(can|could|may|be|is|are|gets?)\W+${WD(2)}called\W+${WD(4)}(again|more than once|several times|twice|many times|repeatedly|over and over|with different)`,
                 R`(no|avoid\w*|without|not)\W+${WD(3)}(duplicat\w*|repeat\w*|cop(y|ies|ied)|rewrit\w*|writ\w+ (it )?again)`,
                 R`not (have|need) to (copy|rewrite|repeat|write)`],
                 not: [R`(not|never|cannot|can.t|n.t|no)\W+${WD(2)}(reus\w*|re-us\w*)`, R`(faster|quicker|less memory|uses less|runs faster)`] },
@@ -537,7 +537,7 @@
             points: [
               { desc: "Starts with the first item as the cheapest", any: [R`(\w*(pos|min|cheap|best|low|index)\w*)\s*(=|:=|<-|\bto)\s*(0\b|1\b|price\s*[\[(]\s*[01]\s*[\])]|first)`, R`(first|1st)\W+${WD(5)}(cheap\w*|lowest|minimum|smallest)`] },
               { desc: "A loop over the other items", any: [LOOP] },
-              { desc: "Compares the price with the cheapest so far (<)", any: [R`\b(if|when|elif)\b.{0,50}(<|less than|lower than|cheaper than|smaller than)`] },
+              { desc: "Compares the price with the cheapest so far (<)", any: [R`\b(if|when|elif)\b\W*[\w\[\]().]+\s*<\s*[\w\[\]().]+`, R`\b(if|when|elif)\b.{0,40}(less than|lower than|cheaper than|smaller than)`] },
               { desc: "Updates the cheapest position to the current one", any: [R`(<|less than|lower than|cheaper|smaller)\W.{0,80}\w*(pos|min|cheap|best|low|index)\w*\s*(=|:=|<-|\bto\b)\s*(i\b|j\b|k\b|index\b|position\b|this\b|current\b|count\b)`] },
             ],
           },
