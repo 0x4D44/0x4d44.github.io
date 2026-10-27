@@ -46,7 +46,7 @@ export class TunnelView {
     this.setWindow(this.ahead, this.behind);
   }
   _buildFar() {
-    const THREE = this.THREE, L = FAR_LEN, R = 1.95, n = 18;
+    const THREE = this.THREE, L = FAR_LEN, R = 1.95, n = 44;
     // far lining: textured with the same ring_concrete map as the near GLB rings (u = once round the bore, v = one ring per 0.61 m)
     const tpos = [], tnor = [], tuv = [], tidx = [];
     for (let i = 0; i < n; i++) {

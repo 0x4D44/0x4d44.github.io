@@ -446,7 +446,8 @@ class Sim {
     if (this.sigWallTpl) {   // A3 rev 6: wall-mounted two-aspect signal (lamp_red / lamp_green own emissive materials, lenses face +Z)
       const c = this.sigWallTpl.clone(true); g.add(c); const lamps = {};
       c.traverse((o) => { if (o.isMesh && /^lamp_(red|green)$/.test(o.name)) { o.material = o.material.clone(); lamps[o.name] = o.material; } });
-      this.sigSet = (green) => { if (lamps.lamp_red) lamps.lamp_red.emissiveIntensity = green ? 0.05 : 4; if (lamps.lamp_green) lamps.lamp_green.emissiveIntensity = green ? 4 : 0.05; };
+      const setLamp = (m, on, hex) => { if (!m) return; m.color.setHex(0x060606); m.map = null; if (m.emissive) m.emissive.setHex(on ? hex : 0x000000); m.emissiveIntensity = on ? 1.1 : 0; m.needsUpdate = true; m.toneMapped = true; };
+      this.sigSet = (green) => { setLamp(lamps.lamp_red, !green, 0xff2a14); setLamp(lamps.lamp_green, green, 0x25ff62); };
       this.sigSet(false); this.sigWall = true;
       if (this.boardsTpl) { const b = this.boardsTpl.getObjectByName('board_speed'); if (b) { this.speedBoard = b.clone(true); this.speedBoard.visible = false; this.scene.add(this.speedBoard); } }
       return { group: g };
@@ -787,7 +788,7 @@ class Sim {
     if (!show) return;
     const p = tr.pose(svc.sigU, this._sp || (this._sp = {}));
     const rx = -p.tz, rz = p.tx; // right
-    if (this.sigWall) { g.position.set(p.x + rx * 1.3, p.y + 1.95, p.z + rz * 1.3); g.rotation.y = Math.atan2(-p.tx, -p.tz); }
+    g.scale.setScalar(1.6); if (this.sigWall) { g.position.set(p.x + rx * 1.3, p.y + 1.95, p.z + rz * 1.3); g.rotation.y = Math.atan2(-p.tx, -p.tz); }
     else { g.position.set(p.x + rx * 1.75, p.y - 0.1, p.z + rz * 1.75); g.rotation.y = Math.atan2(-p.tx, -p.tz) + Math.PI; }
     this.sigSet(!!svc.signalGreen);
   }
