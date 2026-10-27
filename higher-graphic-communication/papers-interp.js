@@ -258,7 +258,7 @@
             q: "Explain why the hole in the block is drawn differently in view Q from the way it is drawn in view P.",
             points: [
               { desc: "Cause: the hole is inside the material, so it cannot be seen from the front", any: ["(inside|within|behind).{0,30}(block|material|metal|front|surface)", "(cannot|can'?t|not) (be )?(see|seen|visible).{0,25}(front|view|outside|surface)", "hidden (from|by|behind)"] },
-              { desc: "Effect: it is drawn as thin dashed lines (hidden detail)", any: ["(drawn|shown|represented|appears?|use[ds]?|as|with|by) .{0,25}(dash|hidden detail|hidden line)", "(dash\\w*|hidden detail) (lines?)? ?.{0,25}(hole|edges)"] },
+              { desc: "Effect: it is drawn as thin dashed lines (hidden detail)", any: ["dash", "hidden detail", "hidden line", "broken line"] },
             ],
             sample: "In view Q the hole is inside the block and cannot be seen from the front, so its edges are drawn as thin dashed lines (hidden detail) to show that they are there. In view P you look straight down into it.",
             model: mi("The hole is inside the material / behind the front face, so it cannot be seen from the front (cause) (1)", "…so its edges are shown as hidden detail, thin dashed lines (effect) (1)") + "<p>Seen from above in view P the hole is a visible circle, so it is drawn in thick outline.</p>",
@@ -288,7 +288,7 @@
             label: "(d)", type: "text", marks: 2, rows: 3,
             q: "Describe how the slot would appear in the end elevation viewed from the right.",
             points: [
-              { desc: "The outline is a plain rectangle (40 wide, 30 high): no notch", any: ["rectangle", "no notch", "plain", "40 ?(mm)? (wide|by|x) ?30"] },
+              { desc: "The outline is a plain rectangle (40 wide, 30 high): no notch", any: ["^(?!.*notch).*rectangle", "no notch", "without (a )?notch", "plain"] },
               { desc: "The slot floor is a thin dashed (hidden detail) line across the view, 12 mm below the top (18 mm above the base)", all: ["dash|hidden"], any: ["across", "full (width|depth)", "\\b12 ?(mm)? (below|down|from the top)", "\\b18 ?(mm)? (above|up|from the (base|bottom))", "floor", "horizontal"] },
             ],
             sample: "The end elevation is a plain rectangle 40 wide and 30 high with no notch. A thin dashed hidden detail line runs right across it, 12 mm below the top, to show the floor of the slot.",
@@ -449,8 +449,8 @@
             label: "(d)", type: "text", marks: 2, rows: 3,
             q: "The bore receives a shaft. Decide which of the course's two labels, F or NF, suits its dimension, and give a reason.",
             points: [
-              { desc: "Functional", any: ["(?<!non-?)(?<!non )functional"] },
-              { desc: "Reason: it is essential to the shaft fitting and the part working", any: ["essential", "needs? to fit", "must fit", "has to fit", "fits? (the|a|its) shaft", "shaft.{0,30}(fit|work|turn|run)", "(fit|work).{0,30}(properly|correctly|together)", "tight tolerance"] },
+              { desc: "Functional", any: ["(?<!non-?)(?<!non )functional", "^\\s*f\\b", "\\b(is|it's|label|labelled|marked) f\\b"] },
+              { desc: "Reason: it is essential to the shaft fitting and the part working", any: ["(?<!not )(?<!n't )essential", "needs? to fit", "must fit", "has to fit", "fits? (the|a|its) shaft", "shaft.{0,30}(fit|work|turn|run)", "(fit|work).{0,30}(properly|correctly|together)", "tight tolerance"] },
             ],
             sample: "It is functional, because the bore has to fit the shaft correctly for the part to work.",
             model: mi("Functional (F) (1)", "It is essential to the function of the part: the bore must fit the shaft, so it needs a tight tolerance (1)") + "<p>A non-functional dimension, such as an overall length that does not affect fit, can have a looser tolerance.</p>",
