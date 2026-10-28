@@ -74,7 +74,7 @@
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
   function listLike(text) {
     // hyphenated compounds are one word ("one-to-many", "read-only"), and "IN:" / "OUT:" / "A:" labels are not prose words
-    text = text.replace(/([a-z0-9])-(?=[a-z0-9])/g, "$1").replace(/\b(?:in|out|a|q|ans|advantages?|disadvantages?|benefits?|drawbacks?|reasons?|examples?|pros?|cons?|answer|part [a-c])\s*:/g, " ");
+    text = text.replace(/([a-z0-9])-(?=[a-z0-9])/g, "$1").replace(/\b(?:in|out|a|q|ans|inputs?|processe?s?|processing|outputs?|advantages?|disadvantages?|benefits?|drawbacks?|reasons?|examples?|pros?|cons?|answer|part [a-c])\s*:/g, " ");
     const toks = text.match(/[a-z0-9']+/g) || [];
     if (toks.length < 6) return null;
     const funcToks = toks.filter((t) => FUNC.has(t));
@@ -82,7 +82,7 @@
     if (func / toks.length < 0.14) return "zero";
     // "I think that days and hot pos and frost and count": key words glued with "and", no verb or preposition anywhere
     const glue = new Set(["and", "or", "i", "that", "the", "a", "an", "it", "this", "think", "also", "then"]);
-    if (toks.length >= 8 && (() => { const n = toks.filter((t) => t === "and" || t === "or").length; return n >= 5 || (n >= 3 && !/,/.test(text)); })() && funcToks.filter((t) => !glue.has(t)).length <= Math.floor(toks.length / 14)) return "zero";
+    if (toks.length >= 8 && (() => { const n = toks.filter((t) => t === "and" || t === "or").length; return n >= 5 || (n >= 3 && !/[,.;:]/.test(text)); })() && funcToks.filter((t) => !glue.has(t)).length <= Math.floor(toks.length / 14)) return "zero";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "an", "these", "those", "its", "their", "his", "her"]);   // not "a": it is also a variable name
