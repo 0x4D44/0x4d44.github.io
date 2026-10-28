@@ -34,7 +34,7 @@
   const E14 = "4\\.6\\d{0,2}(?:x10\\^?14|e14)", EH = "\\(?3\\.09" + "(?:x10\\^?-19|e-19)\\)?/\\(?6\\.63(?:x10\\^?-34|e-34)";
   const HCE = "\\(?6\\.63(?:x10\\^?-34|e-34)x3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/\\(?3\\.09(?:x10\\^?-19|e-19)", HC = "1\\.9\\d*(?:x10\\^?-25|e-25)";
   const SUBHC = "3\\.09(?:x10\\^?-19|e-19)=\\(?6\\.63(?:x10\\^?-34|e-34)x3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/" + LAM;
-  const REL_DSIN = ["dsin\\(?(?:θ|theta)\\)?=m" + LAM, "dsin\\(?(?:θ|theta)\\)?=(?:\\d|\\()", "sin\\(?(?:θ|theta)\\)?=m" + LAM + "/d", "m" + LAM + "=dsin", "(?:θ|theta)=sin\\^?-1", "sin\\^?-1\\(?m"];
+  const REL_DSIN = ["dsin\\(?(?:θ|theta)\\)?=m" + LAM, "dsin\\(?(?:θ|theta)\\)?=(?:\\d|\\()", "sin\\(?(?:θ|theta)\\)?=m" + LAM + "/d", "m" + LAM + "=dsin", "(?:θ|theta)=sin\\^?-1", "sin\\^?-1\\(?m", "sin\\(?(?:θ|theta)\\)?=\\(?\\d[^=]*/"];
 
   /* ---------------------------------------------------------------- figures ---------------------------------------------------------------- */
   const INK = "#222", BLUE = "#1c3b66", RED = "#b3261e", FILL = "#e8eef7", PINK = "#f6d5d2";
@@ -183,7 +183,7 @@
             q: "Calculate the speed of a proton as it leaves the accelerating region. Ignore relativistic effects.",
             steps: [
               { desc: "Work done by the field: W = QV (or E<sub>k</sub> = QV)", rel: ["qv", "vq"] },
-              { desc: "Kinetic energy gained = 2.4 × 10⁻¹⁵ J", nums: [2.4e-15] },
+              { desc: "Kinetic energy gained = 2.4 × 10⁻¹⁵ J", nums: [[2.4e-15, 1.6e-19]] },
               { desc: "E<sub>k</sub> = ½mv² with the proton mass 1.673 × 10⁻²⁷ kg", rel: REL_EK, nums: [1.673e-27] },
               { desc: "v = 1.7 × 10⁶ m s⁻¹", ans: 1693841.03, sf: 2, unit: "m s-1" },
             ],
@@ -236,7 +236,7 @@
             points: [
               { desc: "The beta particles (electrons) were emitted with a range of energies, not one fixed energy, so some energy seemed to be missing",
                 not: [SAME_E],
-                any: [near("range|spread|variety|continuous|different|varying|variable|various|varied|all sorts|wide|lots of|many", "energ\\w*", 6), "(?:not|n't)\\s+(?:all\\s+)?(?:have|had|with|the|of)\\s+(?:the\\s+)?(?:same|equal|identical|fixed|single)\\s+(?:\\w+\\s+)?energ", "(?:energy|energies)\\s+(?:\\w+\\s+){0,3}(?:missing|lost|unaccounted|disappear\\w*|short)", "(?:missing|lost|unaccounted)\\s+(?:\\w+\\s+)?energy"] },
+                any: [near("range|spread|variety|continuous|different|varying|variable|various|varied|all sorts|wide|lots of|many", "energ\\w*", 6), "(?:not|n't)\\s+(?:all\\s+)?(?:have|had|with|the|of)\\s+(?:the\\s+)?(?:same|equal|identical|fixed|single)\\s+(?:\\w+\\s+)?energ", "(?:energy|energies)\\s+(?:\\w+\\s+){0,3}(?:varied|varies|varying|differ\\w*)"] },
               { desc: "Conclusion: a further, almost undetectable, neutral particle (the neutrino) is emitted and carries away the missing energy",
                 not: [SAME_E],
                 any: [near("neutrinos?|anti-?neutrinos?|third|another|new|extra|undetected|undetectable", "particles?|neutrinos?|exists?|proposed|predict\\w*|evidence|carr\\w*|emit\\w*|idea|suggest\\w*|postulat\\w*|hypothes\\w*|share\\w*|tak(?:es?|ing)|took|accounts?|explain\\w*", 8), "neutrinos?\\s+(?:\\w+\\s+){0,6}(?:energy|energies|missing)"] ,
@@ -269,14 +269,14 @@
           { label: "(ii)", type: "num", marks: 1, a: 91, tol: 0, sf: 2, unit: "", q: "State the atomic number of the protactinium nucleus.", why: "In beta decay a neutron changes into a proton, so the atomic number rises by 1 and the mass number is unchanged: 90 + 1 = <strong>91</strong>." },
           { label: "(iii)", type: "num", marks: 1, a: 142, tol: 0, rel: 0, sf: 3, unit: "neutrons", q: "The final uranium nucleus has a mass number of 234. How many neutrons does it contain?", why: "Neutrons = mass number − atomic number = 234 − 92 = <strong>142</strong>." },
           {
-            label: "(b)", type: "text", marks: 2, rows: 4, minWords: 8,
+            label: "(b)", type: "text", marks: 2, rows: 4, minWords: 6,
             q: "Describe what happens inside the thorium nucleus when it undergoes beta decay.",
             points: [
               { desc: "A neutron changes (decays) into a proton",
                 not: ["proton\\W+(?:\\w+\\W+){0,5}(?:turn|becom|chang|decay|convert|transform)\\w*\\W+(?:\\w+\\W+){0,3}neutron"],
-                any: ["neutrons?\\W+(?:\\w+\\W+){0,5}(?:turn|becom|chang|decay|convert|transform)\\w*\\W+(?:\\w+\\W+){0,3}protons?", "neutron\\W*(?:->|→|to)\\W*proton"] },
+                any: ["neutrons?\\W+(?:\\w+\\W+){0,5}(?:turn|becom|chang|decay|convert|transform)\\w*\\W+(?:\\w+\\W+){0,3}protons?", "neutron\\W*(?:->|→|to)\\W*proton", "(?<![a-z])n\\W*(?:->|→)\\W*p(?![a-z])"] },
               { desc: "An electron (the beta particle) and an antineutrino are emitted",
-                all: ["electron|beta (?:particle|minus)|β", "anti-?\\s?neutrino|ν̄"], win: 120 },
+                all: ["electron|beta (?:particle|minus)|β|e⁻|(?<![a-z])e\\W?-|e\\^-", "anti-?\\s?neutrino|ν̄|ν\\W*bar|ν̅|ν̃"], win: 120 },
             ],
             sample: "A neutron in the nucleus changes into a proton. An electron, which is the beta particle, and an antineutrino are emitted from the nucleus.",
             model: "<ul><li>A neutron turns into a proton (so the atomic number goes up by one) (1)</li><li>An electron (the beta particle) and an antineutrino are emitted (1)</li></ul><p>A proton changing into a neutron is beta-plus decay, which is not in this course. An orbiting electron is not the beta particle: it comes from the nucleus.</p>",
@@ -305,7 +305,7 @@
               { desc: "Each fission releases (more than one) neutrons",
                 any: [near("neutrons?", "releas\\w*|emit\\w*|given (?:off|out)|comes? out|ejected|spare|extra|several|more than one|produc\\w*|creat\\w*|generat\\w*|giv\\w*|yield\\w*|result\\w*|free\\w*|fires? out|thrown|throws?", 6), "neutrons?\\s+(?:\\w+\\s+){0,2}(?:from|by|of)\\s+(?:the\\s+)?(?:one|each|a|the|every|this|first|previous|that)\\s+(?:\\w+\\s+)?(?:fission|reaction|split|decay)"] },
               { desc: "These neutrons are absorbed by other uranium nuclei and cause further fissions",
-                all: [near("neutrons?", "absorb\\w*|hit\\w*|strik\\w*|collid\\w*|trigger\\w*|caus\\w*|induc\\w*|split\\w*|captur\\w*|bombard\\w*|start\\w*|lead\\w*", 7), near("another|other|further|more|next|new|nearby|surrounding|neighbouring|additional|subsequent|again", "nucle\\w*|fission\\w*|atoms?|uranium|u-?235|reactions?", 5)] },
+                all: [near("neutrons?|them|these|those|one of (?:them|these)", "absorb\\w*|hit\\w*|strik\\w*|collid\\w*|trigger\\w*|caus\\w*|induc\\w*|split\\w*|captur\\w*|bombard\\w*|start\\w*|lead\\w*", 7), near("another|other|further|more|next|new|nearby|surrounding|neighbouring|additional|subsequent|again", "nucle\\w*|fission\\w*|atoms?|uranium|u-?235|reactions?", 5)] },
             ],
             sample: "Each fission releases neutrons. These neutrons are absorbed by other uranium-235 nuclei and make them split too, so the reaction goes on by itself.",
             model: "<ul><li>Each fission releases neutrons (more than one) (1)</li><li>These neutrons are absorbed by other uranium-235 nuclei, causing further fissions, so the reaction sustains itself (1)</li></ul>",
@@ -315,7 +315,7 @@
             q: "Calculate the energy released in this fission reaction.",
             steps: [
               { desc: "Mass lost = 3.20 × 10⁻²⁸ kg (mass before − mass after, including all three neutrons)", nums: [3.2e-28] },
-              { desc: "E = mc²", rel: ["e=mc\\^?2", "e=m" + X + "\\(?c\\)?\\^?2", "e=m" + X + "\\(?3"] },
+              { desc: "E = mc²", rel: ["e=(?:δ|d|delta)?mc\\^?2", "e=(?:δ|d|delta)?m" + X + "\\(?c\\)?\\^?2", "e=(?:δ|d|delta)?m" + X + "\\(?3"] },
               { desc: "Substitution: 3.20 × 10⁻²⁸ × (3.00 × 10⁸)² (c must be squared)", rel: C_SQ, nums: [3.2e-28] },
               { desc: "E = 2.88 × 10⁻¹¹ J", ans: 2.88e-11, sf: 2, unit: ["j", "joules", "joule"] },
             ],
@@ -348,7 +348,7 @@
             q: "The fuel for a fusion reactor is a plasma at a temperature of over 100 million kelvin. Explain why the plasma has to be held in place by magnetic fields rather than a solid container.",
             points: [
               { desc: "Any solid container would melt (or vaporise), because the plasma is far hotter than any material can withstand",
-                any: [near("melt\\w*|vapori[sz]\\w*|destroy\\w*|burn\\w*|evaporat\\w*|damag\\w*|disintegrat\\w*", "container|walls?|vessel|material|solid|metal|reactor", 8), near("hotter|temperature|hot", "any|every|all|melting point|boiling point|material|container", 8)] },
+                any: [near("melt\\w*|vapori[sz]\\w*|destroy\\w*|burn\\w*|evaporat\\w*|damag\\w*|disintegrat\\w*", "container|walls?|vessel|material|solid|metal|reactor", 8), near("hotter|temperature|hot", "any|every|all|melting point|boiling point|material|container", 8), "(?:cannot|can't|could not|couldn't|would not|wouldn't|won't|unable to|no (?:\\w+ ){0,3}(?:can|could|would|will|is able to))\\s+(?:\\w+\\s+){0,2}(?:survive|withstand|endure|resist|cope with|stand)\\w*\\s+(?:\\w+\\s+){0,3}(?:temperatures?|heat|hot|kelvin)"] },
               { desc: "The plasma is made of charged particles, which magnetic fields push on (force at right angles), so the plasma is kept away from the walls",
                 all: [near("charged|charges?|ions?|nuclei|electrons", "particles?|plasma|moving|nuclei|electrons|ions", 4), near("magnet\\w*", "forces?|push\\w*|deflect\\w*|bend\\w*|confin\\w*|contain\\w*|hold\\w*|trap\\w*|steer\\w*|guid\\w*|away|keep\\w*|curv\\w*", 8)] },
             ],
@@ -370,7 +370,7 @@
             label: "(d)", type: "calc", marks: 3, rows: 5,
             q: "In a proposed power plant there are 1.2 × 10²⁰ of these fusion reactions every second. Calculate the power released.",
             steps: [
-              { desc: "P = E/t", rel: ["p=e/t", "e=pt", "p=\\(?e\\)?/\\(?t"] },
+              { desc: "P = E/t", rel: ["p=e/t", "e=pt", "p=\\(?e\\)?/\\(?t", "power=e/t", "power=energy/time", "(?:energy|joules?)(?:released)?(?:each|per|every|in(?:one|1)?|a)second"] },
               { desc: "Energy released in one second = 1.2 × 10²⁰ × 3.06 × 10⁻¹² = 3.67 × 10⁸ J", nums: [1.2e20, [3.06e-12, 3.1e-12]] },
               { desc: "P = 3.7 × 10⁸ W", ans: 3.672e8, alts: [3.72e8], sf: 2, unit: ["w", "watts", "watt", "j s-1"] },
             ],
@@ -392,9 +392,9 @@
             label: "(b)", type: "calc", marks: 3, rows: 5,
             q: "Calculate the work function of the metal.",
             steps: [
-              { desc: "Work function = hf₀ (E = hf)", rel: ["=hf", "hf0", "hf₀"] },
+              { desc: "Work function = hf₀ (E = hf)", rel: ["=hf", "hf0", "hf₀", "workfunction=(?:h|6\\.63)", "w=(?:h|6\\.63)"] },
               { desc: "Substitution: 6.63 × 10⁻³⁴ × 4.6 × 10¹⁴", nums: [6.63e-34, 4.6e14] },
-              { desc: "Work function = 3.0 × 10⁻¹⁹ J", ans: 3.0498e-19, sf: 2, unit: ["j", "joules", "joule"] },
+              { desc: "Work function = 3.0 × 10⁻¹⁹ J", ans: 3.0498e-19, alts: [3.1e-19], sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "work function = hf₀\nW = 6.63 × 10⁻³⁴ × 4.6 × 10¹⁴\nW = 3.0 × 10⁻¹⁹ J",
             model: "<ul><li>Work function = hf₀ (1)</li><li>6.63 × 10⁻³⁴ × 4.6 × 10¹⁴ (1)</li><li>3.0 × 10⁻¹⁹ J (1)</li></ul><p>The work function is the minimum energy a photon needs to cause photoemission, so it is the photon energy at the threshold frequency.</p>",
@@ -403,9 +403,9 @@
             label: "(c)", type: "calc", marks: 4, rows: 7,
             q: "Light of wavelength 250 nm is shone on the plate. Calculate the maximum kinetic energy of a photoelectron.",
             steps: [
-              { desc: "v = fλ (or f = v/λ), with the wavelength converted to metres", rel: REL_VFL },
-              { desc: "f = 1.2 × 10¹⁵ Hz", nums: [1.2e15] },
-              { desc: "E<sub>k</sub> = hf − hf₀", rel: ["ek=hf-", "ek=e-w", "hf-hf0", "hf-w", "ek=hf-hf"] },
+              { desc: "v = fλ (or f = v/λ), with the wavelength converted to metres", rel: REL_VFL.concat(["hc/" + LAM, "e=hc/", "ek=\\(?hc/"]) },
+              { desc: "f = 1.2 × 10¹⁵ Hz", nums: [[1.2e15, 7.956e-19]] },
+              { desc: "E<sub>k</sub> = hf − hf₀", rel: ["ek=hf-", "ek=e-w", "hf-hf0", "hf-w", "ek=hf-hf", "ek=\\(?hc/" + LAM + "\\)?-", "hc/" + LAM + "-"] },
               { desc: "E<sub>k</sub> = 4.9 × 10⁻¹⁹ J (5.0 × 10⁻¹⁹ J if the rounded work function from (b) is used)", ans: 4.9062e-19, alts: [4.956e-19], sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "v = fλ\n3.00 × 10⁸ = f × 250 × 10⁻⁹\nf = 1.2 × 10¹⁵ Hz\nEk = hf − hf₀ = 6.63 × 10⁻³⁴ × 1.2 × 10¹⁵ − 3.0 × 10⁻¹⁹\nEk = 5.0 × 10⁻¹⁹ J",
@@ -415,9 +415,10 @@
             label: "(d)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "The irradiance of the 250 nm light on the plate is now doubled. State what happens to (i) the number of photoelectrons emitted per second and (ii) the maximum kinetic energy of each photoelectron. Give a reason for each.",
             points: [
-              { desc: "(i) More photoelectrons per second, because there are more photons per second (each photon frees one electron)",
-                not: [NOT("(?:more|increas\\w*|greater|doubl\\w*)\\W+(?:\\w+\\W+){0,3}(?:photo)?electrons?"), "(?:photo)?electrons?\\W+(?:\\w+\\W+){0,6}(?:faster|more kinetic|more energy|greater energy|higher energy)", "electrons?\\W+(?:\\w+\\W+){0,2}(?:not|never)\\b"],
-                any: ["(?:more|greater|larger|extra|twice|double[ds]?|increased?)\\W+(?:\\w+\\W+){0,2}(?:photo)?electrons?\\W+(?:\\w+\\W+){0,4}(?:emit\\w*|releas\\w*|freed|per|each|every|ejected|leav\\w*)", "(?:number|amount|rate)\\W+of\\W+(?:photo)?electrons?\\W+(?:\\w+\\W+){0,5}(?:increas\\w*|doubl\\w*|rises?|greater|higher|goes up)", "(?:photo)?electrons?\\W+(?:\\w+\\W+){0,6}(?:per|each|every)\\W+second\\W+(?:\\w+\\W+){0,3}(?:increas\\w*|doubl\\w*|rises?|goes up)", "(?:more|extra|greater|twice as many)\\W+(?:photo)?electrons"] },
+              { desc: "(i) More photoelectrons per second, because there are more photons per second (each photon frees one electron)", negOK: true,
+                all: ["photons?|quanta|packets?|more light|each (?:electron|photon)|one electron per"],
+                not: ["(?:not|n't)\\W+(?:\\w+\\s+){0,2}(?:increas\\w*|doubl\\w*)",NOT("(?:more|increas\\w*|greater|doubl\\w*)\\W+(?:\\w+\\W+){0,3}(?:photo)?electrons?"), "(?:photo)?electrons?\\W+(?:\\w+\\W+){0,6}(?:faster|more kinetic|more energy|greater energy|higher energy)", "electrons?\\W+(?:\\w+\\W+){0,2}(?:not|never)\\b"],
+                any: ["(?:more|greater|larger|extra|twice|double[ds]?|increased?)\\W+(?:\\w+\\W+){0,2}(?:photo)?electrons?\\W+(?:\\w+\\W+){0,4}(?:emit\\w*|releas\\w*|freed|per|each|every|ejected|leav\\w*)", "(?:number|amount|rate)\\W+of\\W+(?:photo)?electrons?\\W+(?:\\w+\\W+){0,5}(?:increas\\w*|doubl\\w*|rises?|greater|higher|goes up)", "(?:photo)?electrons?\\W+(?:\\w+\\W+){0,6}(?:per|each|every)\\W+second\\W+(?:\\w+\\W+){0,3}(?:increas\\w*|doubl\\w*|rises?|goes up)", "(?:more|extra|greater|twice as many)\\W+(?:photo)?electrons", "\\(i\\)\\W*(?:\\w+\\W+){0,2}(?:increas\\w*|doubl\\w*|rises?|more|greater|goes up)", "(?:number|amount|rate)\\W+(?:per second|each second|emitted)\\W+(?:\\w+\\W+){0,3}(?:doubl\\w*|increas\\w*)"] },
               { desc: "(ii) The maximum kinetic energy is unchanged, because each photon still has the same energy hf", negOK: true,
                 not: ["\\b(?:not|never|n't|isn't|won't)\\W+(?:\\w+\\W+){0,1}(?:stay|remain|same|constant|unchanged|equal)", "(?:kinetic energy|energy|\\bke\\b|e_?k)\\W+(?:\\w+\\W+){0,1}(?:doubl\\w*|increas\\w*|rises?|risen|greater|higher|twice|halv\\w*|decreas\\w*|reduc\\w*|goes up|go up)"],
                 any: ["(?:kinetic energy|energy|\\bke\\b|e_?k)\\W+(?:\\w+\\W+){0,5}(?:unchanged|same|constant|no change|not change\\w*|doesn'?t change|stays?|remains?|independent|unaffected)", "(?:unchanged|same|constant|no change|unaffected)\\W+(?:\\w+\\W+){0,1}(?:maximum |max )?(?:kinetic energy|energy|\\bke\\b)", "(?:kinetic energy|energy|\\bke\\b)\\W+(?:\\w+\\W+){0,2}(?:not|n't)\\W+(?:\\w+\\W+){0,1}(?:increas\\w*|chang\\w*|rise|vary|alter\\w*|affect\\w*|depend\\w*)"] },
@@ -498,7 +499,7 @@
             q: "The lamp gives out light of only a few separate wavelengths. Explain how the atoms produce this line spectrum.",
             points: [
               { desc: "Electrons fall from a higher energy level to a lower one, and each fall emits a photon",
-                all: ["(?:fall\\w*|drop\\w*|jump\\w*|mov\\w*|go(?:es)? down|return\\w*|transition\\w*|de-?excit\\w*)", "\\b(?:low\\w*|ground)", "emit\\w*|releas\\w*|give\\w* (?:out|off)|photons?"], win: 120 },
+                all: ["(?:fall\\w*|drop\\w*|jump\\w*|mov\\w*|go(?:es)? down|return\\w*|transition\\w*|de-?excit\\w*)", "\\b(?:low\\w*|ground|between (?:two |the )?(?:\\w+ )?levels)", "emit\\w*|releas\\w*|give\\w* (?:out|off)|photons?"], win: 120 },
               { desc: "The photon energy equals the difference between the two levels (E₂ − E₁ = hf), and only certain differences exist, so only certain frequencies are emitted",
                 all: [near("difference|gap|equal\\w*|e2|e₂|between (?:two|the) (?:\\w+ )?levels", "photon|energy|energies|frequenc\\w*|wavelength\\w*", 8), "only|certain|specific|particular|fixed|discrete|set|allowed|definite|exact|unique"], win: 200 },
             ],
@@ -545,7 +546,7 @@
             q: "Calculate the energy of a photon absorbed to produce dark line 2, of wavelength 486 nm.",
             steps: [
               { desc: "E = hf (or E = hc/λ)", rel: REL_EHF.concat(["e=hc/", "=hc/", "e=h" + X + "c/" + LAM, "hc/" + LAM]) },
-              { desc: "f = v/λ = 6.17 × 10¹⁴ Hz (or the values put into hc/λ)", rel: ["6\\.(?:1\\d*|2\\d*)(?:x10\\^?14|e14)", "\\(?6\\.63(?:x10\\^?-34|e-34)\\)?x\\(?3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/\\(?(?:486|4\\.86)"] },
+              { desc: "f = v/λ = 6.17 × 10¹⁴ Hz (or the values put into hc/λ)", rel: ["(?:f|frequency)=(?:[^=]*=){0,2}6\\.(?:1\\d*|2\\d*)(?:x10\\^?14|e14)", "486(?:e-9|x10\\^?-9)m?=6\\.(?:1\\d*|2\\d*)(?:x10\\^?14|e14)", "\\(?6\\.63(?:x10\\^?-34|e-34)\\)?x\\(?3(?:\\.0+)?(?:x10\\^?8|e8)\\)?/\\(?(?:486|4\\.86)"] },
               { desc: "E = 4.09 × 10⁻¹⁹ J", ans: 4.0926e-19, sf: 2, unit: ["j", "joules", "joule"] },
             ],
             sample: "v = fλ so f = 3.00 × 10⁸ / 486 × 10⁻⁹ = 6.17 × 10¹⁴ Hz\nE = hf\nE = 6.63 × 10⁻³⁴ × 6.17 × 10¹⁴\nE = 4.09 × 10⁻¹⁹ J",
@@ -594,10 +595,10 @@
             points: [
               { desc: "Loud where the waves from the two speakers arrive in phase (path difference a whole number of wavelengths): constructive interference",
                 any: [near("in phase|constructive|crest\\W+(?:\\w+\\W+){0,3}crest|whole number|mλ|maximum|maxima|reinforc\\w*|add\\w*|combine\\w*", "loud\\w*|path difference|wavelengths?|waves?|sound", 8)],
-                not: ["out of phase\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}loud", "(?:destructive|trough|cancel\\w*)\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}loud"] },
+                not: ["out of phase\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b|so\\b|quiet|silent|alternat\\w*)\\w+\\W+){0,6}loud", "(?:destructive|trough|cancel\\w*)\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b|so\\b|quiet|silent|alternat\\w*)\\w+\\W+){0,6}loud"] },
               { desc: "Quiet where the waves arrive out of phase (path difference an odd number of half wavelengths): destructive interference",
                 any: [near("out of phase|destructive|crest\\W+(?:\\w+\\W+){0,3}trough|trough\\W+(?:\\w+\\W+){0,3}crest|cancel\\w*|half|m ?\\+ ?½|odd", "quiet|minim\\w*|path difference|wavelengths?|waves?|sound|silen\\w*|soft\\w*", 8)],
-                not: ["(?<!out of )in phase\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}quiet", "constructive\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}quiet"] },
+                not: ["(?<!out of )in phase\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b|so\\b|loud|alternat\\w*)\\w+\\W+){0,6}quiet", "constructive\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b|so\\b|loud|alternat\\w*)\\w+\\W+){0,6}quiet"] },
             ],
             sample: "Where the path difference is a whole number of wavelengths the waves from the two speakers arrive in phase and interfere constructively, so the sound is loud. Where the path difference is an odd number of half wavelengths the waves arrive out of phase and interfere destructively, so the sound is quiet.",
             model: "<ul><li>Maxima (loud): waves arrive in phase; path difference = mλ; constructive interference (1)</li><li>Minima (quiet): waves arrive out of phase (crest meets trough); path difference = (m + ½)λ; destructive interference (1)</li></ul><p>Walking along the line changes the path difference, so the pupil passes alternately through maxima and minima.</p>",
@@ -649,9 +650,9 @@
             q: "The red lamp is replaced by a lamp giving white light. Explain why the central maximum is white.",
             points: [
               { desc: "At the central maximum the path difference is zero for every wavelength (colour)",
-                all: [near("path difference", "zero|0|nothing|no difference|none|the same", 5), near("colou?rs?|wavelengths?|frequenc\\w*|every|all", "path difference|zero|same", 12)] },
+                all: ["(?:" + near("path difference", "zero|0|nothing|no difference|none|the same", 5) + ")|\\bno path difference|without (?:a )?path difference", near("colou?rs?|wavelengths?|frequenc\\w*|every|all", "path difference|zero|same", 12)] },
               { desc: "So all the colours arrive in phase and interfere constructively, combining to make white",
-                any: [near("colou?rs?|wavelengths?|waves?|frequenc\\w*|light", "in phase|constructive\\w*|reinforc\\w*|add\\w*|combin\\w*|overlap\\w*|superimpos\\w*", 6)] },
+                any: [near("colou?rs?|wavelengths?|waves?|frequenc\\w*|light", "in phase|constructive\\w*|reinforc\\w*|add\\w*|combin\\w*|overlap\\w*|superimpos\\w*", 6), "\\b(?:they|all|every|each)\\W+(?:\\w+\\W+){0,3}(?:reinforc\\w*|in phase|constructive\\w*)"] },
             ],
             sample: "At the central maximum the path difference is zero for every wavelength. All the colours therefore arrive in phase and interfere constructively, and they combine to give white light.",
             model: "<ul><li>Path difference is zero for all wavelengths (1)</li><li>All colours arrive in phase (constructive interference) and combine to make white (1)</li></ul><p>In the higher orders, sin θ = mλ/d, so each colour has a different angle and the light is spread into a spectrum, with red deviated more than violet.</p>",
@@ -679,7 +680,7 @@
             label: "(a)", type: "calc", marks: 3, rows: 5,
             q: "The sensor of the light meter has an area of 1.5 cm². Calculate the power of the light that enters the sensor when the meter is 0.40 m from the lamp.",
             steps: [
-              { desc: "I = P/A", rel: ["i=p/a", "p=ia", "p=i" + X + "a", "p=a" + X + "i"] },
+              { desc: "I = P/A", rel: ["i=p/a", "p=ia", "p=i" + X + "a", "p=a" + X + "i", "p=\\(?3\\.25\\)?x", "p=\\(?1\\.5(?:e-[24]|x10\\^?-[24])\\)?x"] },
               { desc: "Substitution: P = 3.25 × 1.5 × 10⁻⁴ (area converted to m²)", nums: [3.25, 1.5e-4] },
               { desc: "P = 4.9 × 10⁻⁴ W", ans: 4.875e-4, sf: 2, unit: ["w", "watts", "watt", "j s-1"] },
             ],
@@ -691,7 +692,7 @@
             q: "Use the reading at 0.40 m to calculate the irradiance at a distance of 0.90 m from the lamp.",
             steps: [
               { desc: "I₁d₁² = I₂d₂² (or I = k/d²)", rel: ["i[₁1]d[₁1]\\^?2=i[₂2]d[₂2]\\^?2", "i=k/d\\^?2", "i[₂2]=i[₁1]d[₁1]\\^?2/d[₂2]\\^?2", "i[₁1]/i[₂2]=\\(?d[₂2]/d[₁1]\\)?\\^?2", "k=id\\^?2", "i[₂2]=\\(?i[₁1]", "i[₂2]/i[₁1]=\\(?d[₁1]/d[₂2]\\)?\\^?2", "i[∝~α]1/d", "proportionalto1/d", "i[₂2]=\\(?3\\.25\\)?x\\(?0?\\.40?/0?\\.90?\\)\\^?2", "i[₂2]=\\(?3\\.25\\)?/\\(?0?\\.90?/0?\\.40?\\)\\^?2"] },
-              { desc: "Substitution: 3.25 × 0.40² = I₂ × 0.90²", nums: [3.25, 0.4, 0.9] },
+              { desc: "Substitution: 3.25 × 0.40² = I₂ × 0.90²", nums: [3.25, [0.4, 0.16], [0.9, 0.81]] },
               { desc: "I₂ = 0.64 W m⁻²", ans: 0.642, sf: 2, unit: ["w m-2", "w/m2", "watts per square metre"] },
             ],
             sample: "I₁d₁² = I₂d₂²\n3.25 × 0.40² = I₂ × 0.90²\nI₂ = 0.64 W m⁻²",
@@ -758,8 +759,8 @@
             label: "(b)", type: "calc", marks: 3, rows: 6,
             q: "Calculate the wavelength of the light in the glass. Take the refractive index of the glass as 1.50.",
             steps: [
-              { desc: "n = λ₁/λ₂ (sin θ₁/sin θ₂ = λ₁/λ₂)", rel: ["n=" + LAM + "[₁1]/" + LAM + "[₂2]", LAM + "[₁1]/" + LAM + "[₂2]=n", LAM + "[₂2]=" + LAM + "[₁1]/n", "n=" + LAM + "air/", "n=650/", "1\\.5=650", "650/1\\.5", "650/n", LAM + "[₂2]?(?:glass)?=" + LAM + "[₁1]?(?:air)?/n"] },
-              { desc: "Substitution: 1.50 = 650 / λ₂", nums: [1.5, 650] },
+              { desc: "n = λ₁/λ₂ (sin θ₁/sin θ₂ = λ₁/λ₂)", rel: ["n=" + LAM + "[₁1]/" + LAM + "[₂2]", LAM + "[₁1]/" + LAM + "[₂2]=n", LAM + "[₂2]=" + LAM + "[₁1]/n", "n=" + LAM + "air/", "n=650/", "1\\.5=650", "650/1\\.5", "650/n", LAM + "[₂2]?(?:glass)?=" + LAM + "[₁1]?(?:air)?/n", LAM + "(?:in)?(?:glass)?=" + LAM + "(?:in)?(?:air)?/n", "n=" + LAM + "(?:in)?air"] },
+              { desc: "Substitution: 1.50 = 650 / λ₂", nums: [1.5, [650, 6.5e-7]] },
               { desc: "λ₂ = 433 nm", ans: 433.33, alts: [4.3333e-7], sf: 2, unit: ["nm", "m", "nanometres", "metres", "metre"] },
             ],
             sample: "n = λ₁ / λ₂\n1.50 = 650 / λ₂\nλ₂ = 433 nm",
