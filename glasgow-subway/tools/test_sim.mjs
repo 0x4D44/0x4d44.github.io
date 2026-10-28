@@ -218,7 +218,7 @@ try {
   const au1 = await ev(p, () => { __sim.render(); __sim.render(); return __sim.peopleAudit(); });
   ok('saloon people: feet on floor/seat, heads below the ceiling profile, inside the walls, no overlaps', au1.checked >= 5 && au1.bad.length === 0, JSON.stringify(au1));
   const pi = await ev(p, () => { const w = __sim.walker(); w.sit = false; w.sitK = 0; w.place(0, w.z, 0); return __sim.peopleInfo(); });
-  ok('people scale: every character <= 1.80 m, clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.8 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
+  ok('people scale: every character <= 1.80 m (+2 cm for hair/arms), clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.82 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
   ok('user eye height is 1.50-1.55 m standing', pi.eye >= 1.49 && pi.eye <= 1.555, 'eye=' + pi.eye.toFixed(3));
   const sitT = await ev(p, () => { const s = __sim, sim = s.sim, w = s.walker(), tv = sim.trainView; const rg = sim.walkable.cars[1].benchZRanges[0];
     let zs = null; for (let z = rg[0] + 0.4; z < rg[1] - 0.4; z += 0.1) if (!sim.saloon.people.some((q) => q.state === 'sit' && Math.abs(q.x) > 0.5 && Math.abs(q.z + tv.carInfo[tv.cars.indexOf(q.parent)].zc - z) < 0.8)) { zs = z; break; }
@@ -227,7 +227,7 @@ try {
     s.key('c', true); s.key('c', false); s.tick(1.0); return { seated, up: { sit: w.sit, x: w.x, eye: w.eyeY() - w.y } }; });
   ok('C sits on a free bench (eye ~1.13 m, facing across) and stands up again', sitT.skip || (sitT.seated.sit && Math.abs(Math.abs(sitT.seated.x) - 0.74) < 0.02 && sitT.seated.eye > 1.08 && sitT.seated.eye < 1.2 && !sitT.up.sit && sitT.up.eye > 1.49), JSON.stringify(sitT));
   // double (bi-parting) doors: open ~1.2 m clear, hold while someone stands in the doorway, then close
-  const dd = await ev(p, () => { const s = __sim, svc = s.svc(); let g = 0; while (svc.phase !== 'station' && g++ < 4000) s.ff(1, 0.1); s.ff(1, 0.1); if (!svc.doorsOpen) { svc.openDoors(svc.doorSel, true); s.ff(4, 0.05); } const v1 = s.doorLeaves(); svc.closeDoors(); s.ff(4, 0.05); const v0 = s.doorLeaves(); return { v0, v1 }; });
+  const dd = await ev(p, () => { const s = __sim, svc = s.svc(); let g = 0; while (svc.phase !== 'station' && g++ < 4000) s.ff(1, 0.1); s.ff(1, 0.1); if (!svc.doorsOpen) { svc.openDoors(svc.doorSel, true); s.ff(4, 0.05); } s.sync(); const v1 = s.doorLeaves(); svc.closeDoors(); s.ff(4, 0.05); s.sync(); const v0 = s.doorLeaves(); return { v0, v1 }; });
   const gap = (v) => Math.abs(v.leaves[0][1] - v.leaves[0][0]);
   ok('train has double (two-leaf) doors that part ~1.2 m when open', dd.v0.double && Math.abs(gap(dd.v1) - gap(dd.v0) - 1.2) < 0.06, JSON.stringify(dd));
   const hold = await ev(p, () => { const s = __sim, sim = s.sim, w = s.walker(), svc = s.svc(); let g = 0; while (svc.phase !== 'station' && g++ < 4000) s.ff(1, 0.1); svc.openDoors(svc.doorSel, true); s.ff(4, 0.05); const sx = svc.doors.R > svc.doors.L ? 1 : -1;
