@@ -132,7 +132,7 @@
             q: "The new entity has a compound key. Name the attributes that make up the key and explain why neither attribute is enough on its own. [2]",
             points: [
               { desc: "pupilID and teamCode", all: [R`pupil.?id`, R`team.?code`], win: 90 },
-              { desc: "Each value repeats (a pupil is in several teams, a team has several pupils) but the pair is unique", any: [R`\b(neither|alone|on its own|by itself|individually|each one|either one)\b${G(80)}\b(unique|identif\w*|repeat\w*|duplicate\w*|more than once|several|many|again)`, R`\b(together|combin\w+|both|pair|compound|combination)\b${G(60)}\b(unique|identif\w*)`, R`\b(unique|identif\w*)\b${G(40)}\b(together|combin\w+|as a pair|both|pair)\b`, R`\b(repeat\w*|duplicat\w*|appears? (more than once|several times|many times|again)|same (pupil|team))\b${G(100)}\b(but|so|however|only|together|combin\w+|pair)\b${G(60)}\b(unique|identif\w*)`, R`\b(many|several|more than one|multiple)\b${G(70)}\b(isn.?t|wouldn.?t|couldn.?t|can.?t|cannot|not)\b ?(be )?unique`] }
+              { desc: "Each value repeats (a pupil is in several teams, a team has several pupils) but the pair is unique", any: [R`\b(neither|alone|on its own|by itself|individually|each one|either one)\b${G(80)}\b(unique|identif\w*|repeat\w*|duplicate\w*|more than once|several|many|again)`, R`\b(together|combin\w+|pair|combination)\b${G(60)}\b(unique|identif\w*)`, R`\b(unique|identif\w*)\b${G(40)}\b(together|combin\w+|as a pair|both|pair)\b`, R`\b(repeat\w*|duplicat\w*|appears? (more than once|several times|many times|again)|same (pupil|team))\b${G(100)}\b(but|so|however|only|together|combin\w+|pair)\b${G(60)}\b(unique|identif\w*)`, R`\b(many|several|more than one|multiple)\b${G(70)}\b(isn.?t|wouldn.?t|couldn.?t|can.?t|cannot|not)\b ?(be )?unique`] }
             ],
             sample: "pupilID and teamCode. A pupil can play for several teams and a team has many pupils, so each value repeats in the table, but the pair of values together is unique.",
             model: `<p>(1) pupilID and teamCode (each is the primary key of its own entity and a foreign key here). (1) Neither is unique alone: a pupil appears once for every team they play for, and a team once for every pupil; the <b>combination</b> identifies exactly one row.</p>`
@@ -159,7 +159,7 @@
 INSERT INTO Crossing VALUES (1,'Oban to Craignure','2026-06-01',38,160,0),(2,'Ullapool to Stornoway','2026-06-01',52,210,15),(3,'Largs to Cumbrae','2026-06-01',20,95,5),(4,'Oban to Craignure','2026-06-02',44,175,22),(5,'Ardrossan to Brodick','2026-06-02',31,140,22),(6,'Largs to Cumbrae','2026-06-02',18,80,15),(7,'Ullapool to Stornoway','2026-06-03',60,240,40),(8,'Ardrossan to Brodick','2026-06-03',27,120,8),(9,'Oban to Craignure','2026-06-03',35,150,15),(10,'Largs to Cumbrae','2026-06-03',22,101,0);`,
             solution: "SELECT route, sailDate, delayMins FROM Crossing WHERE delayMins >= 15 ORDER BY delayMins DESC, route ASC;",
             ordered: true,
-            must: [R`where[^;]*(delaymins\s*(>=\s*15|>\s*14|between\s+15\s+and)|(15\s*<=|14\s*<)\s*(\w+\.)?delaymins|not\s*\(?\s*delaymins\s*(<\s*15|<=\s*14))`, R`order by`],
+            must: [R`where[^;]*(delaymins\s*(>=\s*15|>\s*14|between\s+15\s+and)|(15\s*<=|14\s*<)\s*(\w+\.)?delaymins|not\s*\(?\s*(\w+\.)?delaymins\s*(<\s*15|<=\s*14))`, R`order by`],
             mustDesc: "a WHERE criterion that tests delayMins against 15, and an ORDER BY",
             model: `<p>(1) the three fields from Crossing; (1) <code>WHERE delayMins &gt;= 15</code>; (1) <code>ORDER BY delayMins DESC, route</code> (a second sort field breaks ties). Using <code>&gt; 15</code> drops the three crossings delayed by exactly 15 minutes.</p><pre>SELECT route, sailDate, delayMins
 FROM Crossing
@@ -191,7 +191,7 @@ ORDER BY delayMins DESC, route ASC;</pre>`
 INSERT INTO Book VALUES (1,'Treasure Island','R L Stevenson','Adventure',292,1883),(2,'The Island of Doctor Moreau','H G Wells','Science fiction',160,1896),(3,'Island Nights','A Burns','Fiction',310,2000),(4,'Isle of the Dead','M Hall','Crime',254,2011),(5,'The Lost Island','S Park','Adventure',340,2016),(6,'Kidnapped','R L Stevenson','Adventure',256,1886),(7,'Islands in the Stream','E Hemingway','Fiction',448,1970),(8,'Island of Secrets','L Grant','Crime',280,2019),(9,'The Silent Harbour','P Reid','Crime',301,2015),(10,'Hebridean Island Hopping','K Munro','Travel',190,2018),(11,'The Island Garden','J Boyd','Gardening',224,2012);`,
             solution: "SELECT title, author FROM Book WHERE title LIKE '%Island%' AND yearPublished >= 2000 ORDER BY title;",
             ordered: true,
-            must: [R`like\s*['"]%island%['"]`, R`yearpublished\s*(>=\s*2000|>\s*1999|between\s+2000)|(2000\s*<=|1999\s*<)\s*(\w+\.)?yearpublished|not\s*\(?\s*yearpublished\s*(<\s*2000|<=\s*1999)`, R`order by`],
+            must: [R`like\s*['"]%island%['"]`, R`yearpublished\s*(>=\s*2000|>\s*1999|between\s+2000)|(2000\s*<=|1999\s*<)\s*(\w+\.)?yearpublished|not\s*\(?\s*(\w+\.)?yearpublished\s*(<\s*2000|<=\s*1999)`, R`order by`],
             mustDesc: "LIKE with % wildcards either side of Island, the year test (2000 or later) and an ORDER BY",
             model: `<p>(1) title and author; (1) <code>title LIKE "%Island%"</code> (the word may be at the start, middle or end, so % goes at both ends) AND <code>yearPublished &gt;= 2000</code> (a 2000 book is included); (1) <code>ORDER BY title</code>. Wildcards only work with LIKE, never <code>=</code>.</p><pre>SELECT title, author
 FROM Book
@@ -223,7 +223,7 @@ CREATE TABLE Donation(donationID INTEGER PRIMARY KEY, campaignID INTEGER, donor 
 INSERT INTO Donation VALUES (1,1,'A Walker',20),(2,1,'B Munro',50),(3,2,'C Ellis',10),(4,3,'D Shah',25),(5,3,'E Gray',15),(6,1,'F Scott',30),(7,3,'G Hill',40),(8,2,'H Reid',5),(9,2,'I Cole',15),(10,1,'J Nair',10),(11,3,'K Orr',20);`,
             solution: "SELECT campaignName, SUM(amount) AS [Total Raised] FROM Campaign, Donation WHERE Campaign.campaignID = Donation.campaignID GROUP BY campaignName ORDER BY SUM(amount) DESC;",
             ordered: true,
-            must: [R`sum\s*\(`, R`group by`, R`campaignid\s*=\s*\w+\.?campaignid|using\s*\(\s*campaignid|natural join`, R`order by`, R`\bas\s*[^\w\s]\s*total\s*raised`],
+            must: [R`sum\s*\(`, R`group by`, R`campaignid\s*=\s*\w+\.?campaignid|using\s*\(\s*campaignid|natural join`, R`order by`, R`\bas\s*[^\w\s]?\s*total\s*_?\s*raised`],
             mustDesc: "SUM, a join on campaignID, a GROUP BY and the heading Total Raised (AS)",
             model: `<p>(1) campaignName and <code>SUM(amount) AS [Total Raised]</code>; (1) the join <code>Campaign.campaignID = Donation.campaignID</code> (without it every donation is paired with every campaign, so each total is 240); (1) <code>GROUP BY campaignName</code> (without it one total for the whole table); (1) <code>ORDER BY SUM(amount) DESC</code>.</p><pre>SELECT campaignName, SUM(amount) AS [Total Raised]
 FROM Campaign, Donation
@@ -320,7 +320,7 @@ ORDER BY SUM(qty * price) DESC;</pre>`
 INSERT INTO Member VALUES ('M01','Aisha','Standard',120,34),('M02','Ben','Standard',60,20),('M03','Carys','Gold',300,41),('M04','Dev','Standard',45,19),('M05','Eilidh','Student',80,25),('M06','Finn','Standard',200,27),('M07','Grace','Gold',150,12),('M08','Hari','Standard',10,3);`,
             solution: "UPDATE Member SET membershipType = 'Gold', points = points + 50 WHERE membershipType = 'Standard' AND visits >= 20;",
             check: "SELECT memberID, membershipType, points FROM Member ORDER BY memberID;",
-            must: [R`update\s+member`, R`set[^;]*points\s*=\s*(points\s*\+\s*50|50\s*\+\s*points)[^;]*where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*visits\s*(<\s*20|<=\s*19))`, R`where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*visits\s*(<\s*20|<=\s*19))`, R`where[^;]*membershiptype\s*=\s*['"]standard['"]`],
+            must: [R`update\s+member`, R`set[^;]*points\s*=\s*(points\s*\+\s*50|50\s*\+\s*points)[^;]*where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*(\w+\.)?visits\s*(<\s*20|<=\s*19))`, R`where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*(\w+\.)?visits\s*(<\s*20|<=\s*19))`, R`where[^;]*membershiptype\s*=\s*['"]standard['"]`],
             mustDesc: "UPDATE with SET points = points + 50 and a WHERE clause that tests both membershipType and visits",
             model: `<p>(1) <code>SET membershipType = "Gold"</code>; (1) <code>points = points + 50</code> (increment the existing value, not <code>points = 50</code>); (1) <code>WHERE membershipType = "Standard" AND visits &gt;= 20</code>. Without WHERE every row changes, and <code>&gt; 20</code> would miss Ben, who has exactly 20.</p><pre>UPDATE Member
 SET membershipType = "Gold", points = points + 50
@@ -347,7 +347,7 @@ WHERE membershipType = "Standard"
             schema: `CREATE TABLE Session(sessionCode TEXT PRIMARY KEY, className TEXT, dayName TEXT, startTime TEXT, spaces INTEGER);
 INSERT INTO Session VALUES ('YG1','Yoga','Monday','18:00',15),('SP2','Spin','Tuesday','07:30',20),('ZU1','Zumba','Wednesday','19:00',25),('PI3','Pilates','Thursday','12:15',12);
 CREATE TABLE Booking(memberID TEXT, sessionCode TEXT, bookedOn TEXT, PRIMARY KEY(memberID, sessionCode));
-INSERT INTO Booking VALUES ('M01','YG1','2026-02-14'),('M02','SP2','2026-02-28'),('M03','YG1','2026-03-01'),('M01','ZU1','2026-03-05'),('M05','PI3','2026-02-20'),('M06','SP2','2026-03-01'),('M07','ZU1','2026-03-10'),('M04','PI3','2026-01-30');`,
+INSERT INTO Booking VALUES ('M01','YG1','2026-02-14'),('M02','SP2','2026-02-28'),('M03','YG1','2026-03-01'),('M01','ZU1','2026-03-05'),('M05','PI3','2026-02-20'),('M06','SP2','2026-03-01'),('M07','ZU1','2026-03-10'),('M04','PI3','2026-01-30'),('M02','PI3','2026-03-12');`,
             solution: "INSERT INTO Session (sessionCode, className, dayName, startTime, spaces) VALUES ('YG7', 'Yoga', 'Tuesday', '18:30', 12);",
             check: "SELECT * FROM Session ORDER BY sessionCode;",
             must: [R`insert into session`, R`values`, R`(?<![\w'"])12(?![\w'"])`],
@@ -361,7 +361,7 @@ VALUES ("YG7", "Yoga", "Tuesday", "18:30", 12);</pre>`
             schema: `CREATE TABLE Session(sessionCode TEXT PRIMARY KEY, className TEXT, dayName TEXT, startTime TEXT, spaces INTEGER);
 INSERT INTO Session VALUES ('YG1','Yoga','Monday','18:00',15),('SP2','Spin','Tuesday','07:30',20),('ZU1','Zumba','Wednesday','19:00',25),('PI3','Pilates','Thursday','12:15',12);
 CREATE TABLE Booking(memberID TEXT, sessionCode TEXT, bookedOn TEXT, PRIMARY KEY(memberID, sessionCode));
-INSERT INTO Booking VALUES ('M01','YG1','2026-02-14'),('M02','SP2','2026-02-28'),('M03','YG1','2026-03-01'),('M01','ZU1','2026-03-05'),('M05','PI3','2026-02-20'),('M06','SP2','2026-03-01'),('M07','ZU1','2026-03-10'),('M04','PI3','2026-01-30');`,
+INSERT INTO Booking VALUES ('M01','YG1','2026-02-14'),('M02','SP2','2026-02-28'),('M03','YG1','2026-03-01'),('M01','ZU1','2026-03-05'),('M05','PI3','2026-02-20'),('M06','SP2','2026-03-01'),('M07','ZU1','2026-03-10'),('M04','PI3','2026-01-30'),('M02','PI3','2026-03-12');`,
             solution: "DELETE FROM Booking WHERE bookedOn < '2026-03-01';",
             check: "SELECT memberID, sessionCode FROM Booking ORDER BY memberID, sessionCode;",
             must: [R`delete from booking`, R`where[^;]*(bookedon\s*(<\s*['"]2026-03-01['"]|<=\s*['"]2026-02-2[89]['"]|between\s+['"][\d-]+['"]\s+and\s+['"]2026-02-2[89]['"])|['"]2026-03-01['"]\s*>\s*(\w+\.)?bookedon|['"]2026-02-2[89]['"]\s*>=\s*(\w+\.)?bookedon|not\s*\(?\s*(\w+\.)?bookedon\s*>=\s*['"]2026-03-01['"])`],
@@ -414,7 +414,7 @@ CREATE TABLE Player(playerID TEXT PRIMARY KEY, playerName TEXT, teamID INTEGER, 
 INSERT INTO Player VALUES ('P001','Amy',1,14),('P002','Beth',1,10),('P003','Cara',2,22),('P004','Dina',3,9),('P005','Elle',2,10),('P006','Fay',1,25),('P007','Gia',3,31),('P008','Hana',4,6),('P009','Ivy',2,3),('P010','Jo',3,10),('P011','Kim',3,11),('P012','Lou',4,8);`,
             solution: "SELECT teamName, COUNT(*) FROM Team, Player WHERE Team.teamID = Player.teamID AND goals >= 10 GROUP BY teamName;",
             ordered: false,
-            must: [R`teamid\s*=\s*\w+\.?teamid|using\s*\(\s*teamid|natural join`, R`group by`, R`count\s*\(`, R`goals\s*(>=\s*10|>\s*9|between\s+10)|(10\s*<=|9\s*<)\s*(\w+\.)?goals|not\s*\(?\s*goals\s*(<\s*10|<=\s*9)`],
+            must: [R`teamid\s*=\s*\w+\.?teamid|using\s*\(\s*teamid|natural join`, R`group by`, R`count\s*\(`, R`goals\s*(>=\s*10|>\s*9|between\s+10)|(10\s*<=|9\s*<)\s*(\w+\.)?goals|not\s*\(?\s*(\w+\.)?goals\s*(<\s*10|<=\s*9)`],
             mustDesc: "the join on teamID, goals at least 10, and GROUP BY",
             model: `<p>Error 1 (1): the join condition between the tables is missing, so every player is paired with every team; add <code>Team.teamID = Player.teamID</code>. Error 2 (1): <code>&gt; 10</code> leaves out players with exactly 10 goals; use <code>&gt;= 10</code>. (1) the rest of the statement still correct. &ldquo;Missing join&rdquo; on its own is too vague: say <i>which</i> join.</p><pre>SELECT teamName, COUNT(*)
 FROM Team, Player
@@ -440,7 +440,7 @@ CREATE TABLE Pupil(pupilID TEXT PRIMARY KEY, forename TEXT, houseID INTEGER, yea
 INSERT INTO Pupil VALUES ('A01','Rory',1,1,30),('A02','Sana',1,4,22),('A03','Tom',1,5,17),('A04','Una',2,4,25),('A05','Vik',2,6,10),('A06','Wren',2,3,40),('A07','Xan',3,4,14),('A08','Yara',3,5,21),('A09','Zed',3,2,35),('A10','Abi',1,4,13),('A11','Bo',4,3,50),('A12','Cleo',2,5,20);`,
             solution: "SELECT houseName, ROUND(AVG(merits), 1) AS [Average merits] FROM House, Pupil WHERE House.houseID = Pupil.houseID AND yearGroup >= 4 GROUP BY houseName ORDER BY AVG(merits) DESC;",
             ordered: true,
-            must: [R`avg\s*\(`, R`group by`, R`houseid\s*=\s*\w+\.?houseid|using\s*\(\s*houseid|natural join`, R`yeargroup\s*(>=\s*4|>\s*3|between\s+4)|yeargroup\s+in\s*\(\s*4\s*,\s*5\s*,\s*6\b|yeargroup\s+not\s+in\s*\(\s*1\s*,\s*2\s*,\s*3\s*\)|yeargroup\s*=\s*4\s+or\s+(\w+\.)?yeargroup\s*=\s*5|(4\s*<=|3\s*<)\s*(\w+\.)?yeargroup|not\s*\(?\s*yeargroup\s*(<\s*4|<=\s*3)`],
+            must: [R`avg\s*\(`, R`group by`, R`houseid\s*=\s*\w+\.?houseid|using\s*\(\s*houseid|natural join`, R`yeargroup\s*(>=\s*4|>\s*3|between\s+4)|yeargroup\s+in\s*\(\s*4\s*,\s*5\s*,\s*6\b|yeargroup\s+not\s+in\s*\(\s*1\s*,\s*2\s*,\s*3\s*\)|yeargroup\s*=\s*4\s+or\s+(\w+\.)?yeargroup\s*=\s*5|(4\s*<=|3\s*<)\s*(\w+\.)?yeargroup|not\s*\(?\s*(\w+\.)?yeargroup\s*(<\s*4|<=\s*3)`],
             mustDesc: "AVG, the join on houseID, the year-group test and a GROUP BY",
             model: `<p>(1) <code>ROUND(AVG(merits), 1) AS [Average merits]</code> with houseName; (1) the join <code>House.houseID = Pupil.houseID</code>; (1) <code>yearGroup &gt;= 4</code> (not <code>&gt; 4</code>, which drops S4); (1) <code>GROUP BY houseName</code> and <code>ORDER BY AVG(merits) DESC</code>. The design gives the criteria and grouping; the joins are implied by listing two tables and must be written in the WHERE clause.</p><pre>SELECT houseName, ROUND(AVG(merits), 1) AS [Average merits]
 FROM House, Pupil
@@ -490,7 +490,7 @@ ORDER BY surname;</pre>
             label: "(b)", type: "text", marks: 2, rows: 3,
             q: "The officer also asks for the total training cost of each posting. The tables above store only the fields listed. Explain why the database is not fit for this purpose and what change is needed. [2]",
             points: [
-              { desc: "No cost/price field is stored, so cost cannot be worked out", negOK: true, not: [R`\bnot\s+no\b`, R`\b(is|are|does|do)\s+not\s+(lack|miss)`, R`\b(is|are) (fully |perfectly |entirely )?fit for purpose`, R`\bis (stored|held|recorded|kept) in\b`], any: [R`\b(no|not any|none|nothing|missing|lacks?|lacking|without|absent)\b ?${G(45)}\b(cost|price|rate|charge|fee)\w*`, R`\b(cost|price|rate|charge|fee)\w*\b${G(45)}\b(missing|absent|not (stored|held|recorded|included|kept|there|available|in any|in the)|isn.t (stored|held|recorded|there|included)|doesn.t exist)`, R`\b(can.t|cannot|unable to|impossible to|not possible to|no way to|isn.t possible to)\b${G(30)}\b(work out|calculate|find|get|determine|compute)\b${G(30)}\b(cost|price|charge|total)`] },
+              { desc: "No cost/price field is stored, so cost cannot be worked out", negOK: true, not: [R`\bnot\s+no\b`, R`\b(is|are|does|do)\s+not\s+(lack|miss)`, R`\b(is|are) (fully |perfectly |entirely )?fit for purpose`, R`\bis (stored|held|recorded|kept) in\b`], any: [R`\b(no|not any|none|nothing|missing|lacks?|lacking|without|absent)\b ?${G(45)}\b(cost|price|rate|charge|fee)\w*`, R`\bnowhere\b${G(40)}\b(cost|price|rate|charge|fee)\w*`, R`\b(cost|price|rate|charge|fee)\w*\b${G(45)}\b(missing|absent|not (stored|held|recorded|included|kept|there|available|in any|in the)|isn.t (stored|held|recorded|there|included)|doesn.t exist)`, R`\b(can.t|cannot|unable to|impossible to|not possible to|no way to|isn.t possible to)\b${G(30)}\b(work out|calculate|find|get|determine|compute)\b${G(30)}\b(cost|price|charge|total)`] },
               { desc: "A cost attribute (field) must be added, e.g. to Ship or Posting", negOK: true, not: [R`\b(not|n.t|never)\s+(need|have|be\s+(added|included|created|stored))`, R`\bno\b[^.]{0,30}\b(needs?|needed|to be added|required|necessary)\b`, R`\bno need\b`, R`\b(is|are) (fully |perfectly |entirely )?fit for purpose`], all: [R`${NB}\b(add\w*|include\w*|creat\w*|new|extra|stor\w*|needs? (a|to))\b`, R`\b(field|attribute|column)\b`, R`\b(cost|price|rate|charge|fee)\b`], win: 70 }
             ],
             sample: "There is no cost field in any table, so the total cost is impossible to work out. A cost attribute, such as a daily cost, would need to be added to the Ship table.",
