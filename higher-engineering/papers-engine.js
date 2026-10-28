@@ -39,9 +39,15 @@
     if (not.some((p) => rx(p).test(text))) return false;
     if (any.length && !any.some((p) => rx(p).test(text))) return false;
     if (opts && opts.negCheck && !pt.negOK) {
-      const spans = [];
-      all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?]|\bbut\b|\bhowever\b/).pop()))) return false;
+      // each pattern that matched needs at least one occurrence with no negator ahead of it in its clause:
+      // a later, unrelated mention ("does not cut the supply to K1") must not veto the one that makes the point
+      const negated = (a) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?]|\bbut\b|\bhowever\b|\bbecause\b/).pop());
+      const veto = all.concat(any).some((p) => {
+        const g = new RegExp(rx(p).source, "gi"); let m, seen = 0, clean = 0;
+        while ((m = g.exec(text))) { seen++; if (!negated(m.index)) clean++; if (m[0] === "") g.lastIndex++; }
+        return seen > 0 && clean === 0;
+      });
+      if (veto) return false;
     }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
@@ -65,8 +71,9 @@
   const CONJ = W("and or but so because since as if then than while whereas although though unless whether when where"), OBJ = W("it them him her us me you this these those");
   const PRON = W("it they he she we you i there");
   const DEM = W("this these those that");
+  const CONNW = W("therefore thus since however unless so hence otherwise instead");
   const grammatical = (a, b) =>
-    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) || (CONJ.has(a) && PRON.has(b)) || (a === "if" && b === "not")
+    CONNW.has(a) || CONNW.has(b) || (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) || (CONJ.has(a) && PRON.has(b)) || (a === "if" && b === "not")
     || ((DEM.has(a) || DEM.has(b)) && (CONJ.has(a) || CONJ.has(b) || PREP.has(a) || PREP.has(b) || AUX.has(a) || AUX.has(b) || PRON.has(a) || PRON.has(b)))
     || (a === "than" && PREP.has(b)) || (CONJ.has(a) && (b === "with" || b === "one" || b === "for"));
 
@@ -86,7 +93,7 @@
     }
     // a run of "and the"-joined nouns with no verb, auxiliary or linking word is a list, however it is punctuated
     const joins = (text.match(/\b(and|or)\b/g) || []).length;
-    if (joins >= 3 && (!toks.some((t) => AUXV.has(t)) || (joins >= 4 && joins * 7 >= toks.length))) return "half";
+    if (joins >= 3 && !text.includes("=") && (!toks.some((t) => AUXV.has(t)) || (joins >= 4 && joins * 7 >= toks.length))) return "half";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
@@ -187,6 +194,8 @@
           .replace(/(\d)\s*e\s*(-?\d)/g, "$1e$2");
         const nums = raw.match(/(?:(?<![\w.)])-)?(?:\d+(?:\.\d+)?|\.\d+)(?:e-?\d+)?/g);
         let v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
+        const rt = part.unit === "" && clean.match(/(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/);      // "4 : 1" is a ratio of 4, "1 : 4" of 0.25
+        if (rt && +rt[2]) v = +rt[1] / +rt[2];
         if (!isFinite(v)) return { got: 0, of };
         // a prefix typed on the unit ("0.003 A" for a part wanted in mA) is converted, so a missed prefix cannot pass for right
         const VEL = (t) => {      // "mm/s", "m s-1", "m per min" -> metres per second, else null
@@ -199,7 +208,7 @@
         if (/\bN\//.test(String(part.unit || "")) && /(?:^|[\d\s])[kM]?N\s*\.?\s*$/.test(clean)) return { got: 0, of };      // a bare force for a stress
         const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, c: 1e-2, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
         const UNIT = /^([GMkcm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|S|Hz|m|Pa)$/;
-        const au = clean.match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
+        const au = clean.replace(/\ba\s*(?:\/|per)\s*v\b/gi, " ").replace(/\u03a9\s*\^?\s*[-\u2212]\s*1/g, "S").match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
         const nm = String(part.unit || "") === "N m" && String(ans).match(/([GMkm])?N\s*[.\u00b7*]?\s*m\s*$/);      // torque: "0.576 kNm"
         if (nm) v = v * PF[nm[1] || ""];
         const am = !nm && au && au[1].match(UNIT);
