@@ -8,6 +8,7 @@
   const WD = (n) => `(?:\\w+\\W+){0,${n}}`;
   const WX = (n, stop) => `(?:(?!(?:${stop})\\b)\\w+\\W+){0,${n}}`;
   const NA = (n) => WX(n, "and|or");
+  const WS = (n, stop) => `(?:(?!(?:${stop})\\b)\\w+[\\s/]+){0,${n}}`;
   const LOOP = R`\b(for\s+(each\s+|every\s+)?\w+\s+(in|from)\s+\w+|for\s*\(|for\s+\w+\s*(=|<-|:=|from)|while\s+\w+\s*(<|<=|!=|>|>=)|loop\w*\s+(through|over)\s+\w+|repeat\s+(for|until|\d+)|(loop|repeat)\w*\s+(each|every)\s+\w+)`;
   /* optional tail that swallows a trailing "without the colours" so the engine's negation look-ahead does not read it as a negated claim */
   const TAIL = R`(?:\W+(?:\w+\W+){0,5}?(?:(?:and|but)\W+)?(?:without|not|no|minus|excluding|rather than|instead of)\W+(?:\w+\W+){0,6}\w+)?`;
@@ -77,14 +78,14 @@
             model: "<ul><li>Iterative: a separate testing phase after implementation. (1)</li><li>Agile: testing takes place during each sprint, with no separate testing phase. (1)</li></ul><p>Both sides must be about the same heading (testing), linked by a connective such as <i>whereas</i>.</p>",
             points: [
               { desc: "Iterative: testing is a separate phase after implementation", any: [
-                R`(iterative|waterfall|predictive)\W+${WX(10, AGI)}test\w*\W+${WX(10, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final|until|left|later|finished|complete\w*|built)`,
-                R`(iterative|waterfall|predictive)\W+${WX(10, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final|until|left|later|finished|complete\w*|built)\W+${WX(8, AGI)}test\w*`,
-                R`(after|separate|at the end|end of|own (phase|stage)|once|last|final)\W+${WX(6, AGI + "|" + ITER + "|whereas|while|but|however|unlike|compared|and")}(in|for|with|using)\W+(an? |the )?(iterative|waterfall|predictive)`] },
+                R`(iterative|waterfall|predictive)[:,]?[\s/]+${WS(10, AGI)}test\w*[:,]?[\s/]+${WS(10, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final|until|left|later|finished|complete\w*|built)`,
+                R`(iterative|waterfall|predictive)[:,]?[\s/]+${WS(10, AGI)}(after|separate|at the end|end of|own (phase|stage)|once|last|final|until|left|later|finished|complete\w*|built)[:,]?[\s/]+${WS(8, AGI)}test\w*`,
+                R`(after|separate|at the end|end of|own (phase|stage)|once|last|final)[:,]?[\s/]+${WS(6, AGI + "|" + ITER + "|whereas|while|but|however|unlike|compared|and")}(in|for|with|using)\W+(an? |the )?(iterative|waterfall|predictive)`] },
               { desc: "Agile: testing happens during every sprint / throughout", any: [
-                R`(agile|sprints?|scrum)\W+${WX(10, ITER + "|separate")}test\w*\W+${WX(8, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)`,
-                R`(agile|sprints?|scrum)\W+${WX(10, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)\W+${WX(8, ITER + "|separate")}test\w*`,
-                R`(each|every)\W+(sprints?|iterations?)\W+${WX(4, "and|or")}(is|are|gets?)\W+(\w+\W+)?tested`,
-                R`test\w*\W+${WX(6, ITER + "|separate")}(during|in|every|each|throughout)\W+${WX(3, "and")}(sprints?|iterations?)`],
+                R`(agile|sprints?|scrum)[:,]?[\s/]+${WS(10, ITER + "|separate")}test\w*[:,]?[\s/]+${WS(8, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)`,
+                R`(agile|sprints?|scrum)[:,]?[\s/]+${WS(10, ITER + "|separate")}(during|every|each|throughout|alongside|continu\w*|regularly|all the time|at the same time|in parallel)[:,]?[\s/]+${WS(8, ITER + "|separate")}test\w*`,
+                R`(each|every)\W+(sprints?|iterations?)[:,]?[\s/]+${WS(4, "and|or")}(is|are|gets?)\W+(\w+\W+)?tested`,
+                R`test\w*[:,]?[\s/]+${WS(6, ITER + "|separate")}(during|in|every|each|throughout)[:,]?[\s/]+${WS(3, "and")}(sprints?|iterations?)`],
                 not: [R`(iterative|waterfall|predictive)\W+${WX(4, "agile")}test\w*\W+${WX(4, "agile")}(during|every|each|throughout|in)\W+${WX(3, "and")}(sprints?|iterations?)`] },
             ],
           },
@@ -601,6 +602,11 @@
      (The engine's own negation check switches itself off for a part whose model answer contains a word such as
      "wrong", so this guard stays.) */
   const TURNED = R`\b(is|are|can|will|does|do|has|have|would|should) not\b`;
+  /* piles: five one-word items in a row ("agile, adaptive, team, change, app,") or "is" padding every other word is a word list, not an answer */
+  const PILE = R`(?:[\w()]+[,;]\s+){5,}|(?:\b(?:is|are)\b\W+(?:\w+\W+){1,2}){4,}|(?:\b(?!(?:the|a|an|and|or|but|so|because|that|this|these|those|it|its|is|are|was|were|be|been|to|of|in|on|at|by|for|with|from|as|if|then|than|when|which|who|they|their|them|can|could|will|would|should|do|does|did|has|have|had|not|no|each|every|into|about|also|just|only|where|what|how|whether|you|we|i|there)\b)[\w()]+[ ]+){8,}`;
+  B.sdd.questions.forEach((q) => q.parts.forEach((p) => {
+    if (p.type === "text") p.points.forEach((pt) => { pt.not = (pt.not || []).concat(PILE); });
+  }));
   B.sdd.questions.forEach((q) => q.parts.forEach((p) => {
     if (p.type !== "text" || /\bnot\b|n't/i.test(p.sample)) return;
     p.points.forEach((pt) => { if (!pt.negOK) pt.not = (pt.not || []).concat(TURNED); });
