@@ -14,8 +14,9 @@ const cam = new THREE.PerspectiveCamera(+(q.get('fov') || 40), innerWidth / inne
 cam.position.set(...num(q.get('cam'), [0, 1.3, 9])); cam.lookAt(new THREE.Vector3(...num(q.get('look'), [0, 0.9, 0])));
 scene.add(new THREE.HemisphereLight(0xffffff, 0x666677, 1.6)); const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(3, 6, 5); scene.add(sun);
 const g = new THREE.GridHelper(40, 40, 0x445, 0x334); scene.add(g);
-new GLTFLoader().load('/models/people.glb', (gl) => {
+new GLTFLoader().load(q.get('lod') ? '/models/people_lod.glb' : '/models/people.glb', (gl) => {
   const names = []; gl.scene.traverse((o) => { if (/^person_[a-z_]+$/.test(o.name) && !o.name.endsWith('_mesh')) names.push(o.name); });
+  const only = q.get('only'); if (only) { const ks = only.split(','); for (let i = names.length - 1; i >= 0; i--) if (!ks.some((k) => names[i] === 'person_' + k)) names.splice(i, 1); }
   const clip = q.get('clip') || 'idle'; const t = +(q.get('t') || 0);
   const per = +(q.get('per') || 8);
   names.forEach((n, i) => {
