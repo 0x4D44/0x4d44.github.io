@@ -281,7 +281,7 @@
                   R`\b(?:sideways|horizontal\w*)\W+(?:(?!not\b|no\b|never\b|doesn\b|don\b|isn\b|aren\b|cannot\b|t\b)\w+\W+){0,4}(?:help\w*|contribut\w*|assist\w*)\W+(?:\w+\W+){0,3}(?:lift\w*|support\w*|hold\w*|carry\w*)`,
                   R`\bonly\W+(?:the )?(?:horizontal|sideways)\b`] },
               { desc: "So each tension has to be larger than its vertical component (more than its share of the weight), and the two tensions differ because the angles differ", group: "side", negOK: true,
-                any: [R`\b(?:more|greater|larger|bigger|higher|harder|stronger) than (?:just |only )?(?:half|a half|22[.]5|its share|their share|the share|the vertical|its vertical|each vertical)`,
+                any: [R`\b(?:more|greater|larger|bigger|higher|harder|stronger) than (?:just |only )?(?:half|a half|22[.]5|its share|their share|the share|the vertical|its vertical|each vertical|(?:the |that |this )?(?:part|bit|portion|fraction|proportion|amount|share) of the (?:weight|load)|the (?:weight|load) (?:it|each|that it) (?:carr(?:y|ies)|holds?|supports?|lifts?|takes?))`,
                   R`\b(?:tensions?|ropes?|pulls?|forces?)\W+(?:\w+\W+){0,5}(?:bigger|greater|larger|more|higher|stronger)\W+than\W+(?:\w+\W+){0,3}(?:vertical|share|half|22|lifting|supporting)`,
                   R`\b(?:pull|pulls|pulling|tension|tensions)\W+(?:\w+\W+){0,3}(?:harder|more)\b`,
                   R`\b(?:tensions?|ropes?|pulls?|forces?)\W+(?:\w+\W+){0,6}(?:has|have|need|needs|must|should|will|would)\W+(?:to be )?(?:\w+\W+){0,1}(?:bigger|greater|larger|higher|stronger)\b`,

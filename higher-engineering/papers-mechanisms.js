@@ -295,6 +295,8 @@
             R`\b${SPD}\b${C(R`torque|force|increas|higher|greater|faster|raise`, 30)}\b(?:reduc(?:e|es|ed|ing)|lower(?:s|ed|ing)?|decreas\w*|drops?|dropped|falls?|fell|slower|less|smaller)\b`,
             R`\b(?:turns?|runs?|rotates?|spins?|goes?|moves?)\s+(?:much |a lot |far |a bit |more )?(?:slower|more slowly|slowly)\b`,
             R`\bslow(?:s|ed|ing)?\b(?:\s+\w+){0,3}\s+down\b`,
+            R`\b(?:goes?|go|turns?|runs?|spins?|rotates?)\s+(?:\w+\s+){0,2}round\s+(?:much |a lot |far |a bit |more )?(?:slower|more slowly|slowly)\b`,
+            R`\bslow(?:s|ed|ing)?\s+(?:down\s+)?(?:the\s+)?(?:drum|winch|output|load|shaft|rotation)\b`,
             R`\b(?:speed|rpm)\s+(?:down|lower)\b`,
             R`\b(?:lower|slower|reduced|decreased)\s+(?:\w+\s+){0,2}(?:speed|rpm|rev/min)\b`,
             R`\breduction\s+(?:in|of)\s+(?:the\s+)?(?:\w+\s+)?(?:speed|rpm)\b`,
@@ -463,7 +465,8 @@
 
   /* mechanisms-12(b): A+ B+ A- B- */
   {
-    const who = (l) => R`(?:(?:cylinder|piston|ram|rod)\s+${l}\b${K(25)}|\b${l}\s+(?:then\s+|now\s+|also\s+|to\s+|will\s+|can\s+|starts?\s+to\s+|begins?\s+to\s+|starts?\s+|begins?\s+)?)`;
+    const NAMEOF = { a: "clamp", b: "stamp" };
+    const who = (l) => R`(?:(?:cylinder|piston|ram|rod)\s+${l}\b${K(25)}|\b${NAMEOF[l]}\w*(?:\s+(?:cylinder|piston|ram))?\b${K(25)}|\b${l}\s+(?:then\s+|now\s+|also\s+|to\s+|will\s+|can\s+|starts?\s+to\s+|begins?\s+to\s+|starts?\s+|begins?\s+)?)`;
     const OUT2 = R`(?:${OUT}|\bout\b)`;
     /* a result for cylinder l: words (piston A outstrokes) or the shorthand l+ / l- */
     const outS = (l) => R`\b${l}\s?\+(?![\w+])`;
@@ -517,8 +520,8 @@
           not: BADLATCH.concat([R`(?:\bnot\b|n't|\bnever\b|\bcannot\b|\bno longer\b)\s+(?:\w+\s+){0,2}(?:stay\w*|remain\w*|keep\w*|continu\w*|energi[sz]\w*|\bon\b|latch\w*|hold\w*)`, R`\b(?:k1|relay|coil|y1|solenoid)\b${K(25)}\b(?:de-?energi[sz]\w*|drops? out|switch\w* off|turns? off|goes? off)`]),
           negOK: true,
           all: [
-            R`(?:contacts?|parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
-            R`(?:stay\w*|remain\w*|keep\w*|continu\w*|maintain\w*|holds?|still|even after|even though|although|(?:does|do)\s+(?:not|n't)\s+(?:cut|lose|stop|break|interrupt|drop)\w*|doesn't\s+(?:cut|lose|stop|break|interrupt|drop)\w*|(?:is|are)\s+(?:not|n't)\s+(?:cut|lost|interrupted|broken))`,
+            R`(?:parallel\s+(?:with\s+|to\s+)?(?:s1|switch|button|the\s+(?:switch|button|push))|in\s+parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
+            R`(?:(?:stay\w*|remain\w*|keep\w*|continu\w*|maintain\w*)\s+(?:\w+\s+){0,2}(?:energi[sz]\w*|\bon\b|live|closed|latched|powered|supplied|in\b|current)|holds?\s+(?:it|itself|k1|the\s+relay|the\s+coil)\b|still|even after|even though|although|(?:does|do)\s+(?:not|n't)\s+(?:cut|lose|stop|break|interrupt|drop)\w*|doesn't\s+(?:cut|lose|stop|break|interrupt|drop)\w*|(?:is|are)\s+(?:not|n't)\s+(?:cut|lost|interrupted|broken))`,
             R`(?:energi[sz]\w*|\bon\b|live|supply|current|power\w*|flow\w*|supplied|holds?\s+(?:itself\s+)?in\b|stays?\s+(?:in|closed|latched)\b|latched|pulled in)`,
             R`(?:parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
           ],
@@ -674,7 +677,7 @@
         desc: "The worm pushes along its own shaft, so there is an axial (end) load that the thrust bearing carries",
         negOK: true,
         all: [
-          R`\b(?:axial|axially|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|end\s*(?:load|thrust|force)|thrust\s+(?:load|force)|thrust(?!\s+bearing)|sideways\s+(?:load|force|thrust)|lengthways|longways|parallel\s+to\s+(?:the\s+)?(?:shaft|axis))`,
+          R`\b(?:axially|lengthways|longways|axial\s+(?:load\w*|force\w*|thrust|push\w*|pressure|movement|direction|stress)|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|parallel\s+to\s+(?:the\s+)?(?:shaft|axis)|(?:end|sideways|side|endways)\s*(?:load\w*|force\w*|thrust|push\w*)|thrust\s+(?:load\w*|force\w*)|push\w*\s+(?:\w+\s+){0,3}(?:sideways|endways)|(?<=\b(?:resist\w*|against|takes?|carr(?:y|ies)|absorbs?|withstands?|handles?|bears?|from)\s(?:(?:the|this|that|any|its)\s)?)thrust(?!\s+bearing))`,
           R`\b(?:worm\w*|gear\w*|teeth|tooth|meshing|shaft|drives?|driving|produc\w*|creat\w*|generat\w*|caus\w*|experienc\w*|push\w*|force[sd]?|carr\w*|support\w*|take[sn]?|taking|withstand\w*|resist\w*|absorb\w*|handl\w*|cop(?:e|es|ing)|stop\w*|prevent\w*|hold\w*|against|deal\w*|bear\w*)\b`,
         ],
         not: [
