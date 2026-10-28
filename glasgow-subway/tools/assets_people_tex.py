@@ -151,7 +151,7 @@ def f_hair():
     s1 = fnoise(CELL, 0.4, 19, (14.0, 1.0)); s2 = fnoise(CELL, 0.8, 20, (6.0, 1.0)); s3 = fnoise(CELL, 1.2, 21)
     alb = np.clip(0.68 + 0.14 * s1 + 0.08 * s2 + 0.05 * s3, 0.2, 1.0)
     h = 0.6 * s1 + 0.35 * s2
-    return tile_out(alb, h, 0.38 + 0.12 * (0.5 - 0.5 * s2).clip(0, 1), 0.0, 2.2)
+    return tile_out(alb, h, 0.58 + 0.10 * (0.5 - 0.5 * s2).clip(0, 1), 0.0, 0.9)
 
 # ---------------------------------------------------------------- tartans (coloured twill)
 TARTAN_COL = {'G': '#1f5236', 'N': '#17254b', 'K': '#0e0e11', 'R': '#b3161f', 'Y': '#d8ac22', 'W': '#e6e6e0', 'B': '#1c3f92', 'A': '#8c9199', 'D': '#d8d8d4'}
@@ -236,7 +236,7 @@ def paint_face2(pd, SKIN, HAIR, seed):
     fem = pd['kind'] in ('woman', 'girl') or pd.get('fem') or pd['id'] == 'teen_girl'
     fl = 0.06 if (fem or pd['kind'] in ('boy', 'girl')) else 0.035
     img[:, :, 0] *= 1 + fl * flush; img[:, :, 1] *= 1 - 0.5 * fl * flush; img[:, :, 2] *= 1 - 0.4 * fl * flush
-    orb = g(0.306, 0.46, 0.075, 0.045) + g(0.694, 0.46, 0.075, 0.045)       # eye sockets (v measured from the top: eye row)
+    orb = g(0.306, 0.50, 0.075, 0.045) + g(0.694, 0.50, 0.075, 0.045)       # eye sockets (v measured from the top: eye row)
     img *= (1 - 0.14 * orb)[:, :, None]
     img *= (1 - 0.10 * np.clip((yy - 0.80) / 0.2, 0, 1))[:, :, None]            # under-chin shadow
     img *= (1 + 0.04 * g(0.5, 0.15, 0.20, 0.10))[:, :, None]                    # forehead light
@@ -244,7 +244,7 @@ def paint_face2(pd, SKIN, HAIR, seed):
     U = lambda u: u * S; V = lambda v: (1 - v) * S
     hair = rgb(HAIR[pd['hair'][0]] if pd['hair'][1] != 'bald' else '#3a2a1e')
     dark = tuple(int(c * 0.55) for c in base)
-    eye_v = 0.54
+    eye_v = 0.50
     for sg in (-1, 1):
         cx = U(0.5 + sg * 0.194); cy = V(eye_v)
         # lid crease + upper lid shadow + lash line + lower lid line

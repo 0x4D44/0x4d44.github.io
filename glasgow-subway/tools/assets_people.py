@@ -290,7 +290,7 @@ def build_person(pd):
     vr_t = loft(pb, torso_rings(layer), 'torso', top, hex_fn=thex, cap_top=True, cap_bot=True)
     fab('cotton')
     if pd.get('inner') and outer:    # shirt/collar visible at the neck opening
-        loft(pb, [ring(0, lean(P['nbase']) - 0.01 + 0.012, z, rx, ry, 10) for z, rx, ry in ((P['trap'] + 0.0, 0.07 * k, 0.062 * k), (P['nbase'] + 0.025, 0.056 * k, 0.05 * k))], 'neck', pd['inner'], cap_top=False, cap_bot=False)
+        loft(pb, [ring(0, lean(P['nbase']) - 0.01 + 0.012, z, rx, ry, 20) for z, rx, ry in ((P['trap'] + 0.0, 0.07 * k, 0.062 * k), (P['nbase'] + 0.025, 0.056 * k, 0.05 * k))], 'neck', pd['inner'], cap_top=False, cap_bot=False)
     if pd.get('vest'):
         fab('mesh')
         loft(pb, [r_ for r_ in [ring(0, rows[i][3] + lean(rows[i][0]) + 0.003, rows[i][0], rows[i][1] * 1.075, rows[i][2] * 1.07, 14) for i in range(3, 13)]], 'torso', pd['vest'], cap_top=False, cap_bot=False)
@@ -372,7 +372,7 @@ def build_person(pd):
         loft(pb, [ring(0, -0.05 * k, P['trap'] + 0.04, 0.095 * k, 0.07 * k, 10), ring(0, -0.075 * k, P['trap'] - 0.02, 0.105 * k, 0.07 * k, 10), ring(0, -0.07 * k, P['trap'] - 0.09, 0.09 * k, 0.05 * k, 10)], 'torso', top, cap_top=True, cap_bot=True)
     # collars for coats
     if tst in ('coat', 'jacket', 'puffer'):
-        loft(pb, [ring(0, lean(P['nbase']) - 0.01, P['trap'] - 0.01, 0.085 * k, 0.07 * k, 12), ring(0, lean(P['nbase']) - 0.012, P['nbase'] + 0.035, 0.07 * k, 0.062 * k, 12)], 'torso', top, cap_top=False, cap_bot=False)
+        loft(pb, [ring(0, lean(P['nbase']) - 0.01, P['trap'] - 0.01, 0.085 * k, 0.07 * k, 20), ring(0, lean(P['nbase']) - 0.012, P['nbase'] + 0.035, 0.07 * k, 0.062 * k, 20)], 'torso', top, cap_top=False, cap_bot=False)
     # ---------------- neck + head
     ncy = lean(P['nbase']) * 0.7
     nrings = [ring(0, ncy, P['nbase'] - 0.03, 0.062 * k, 0.058 * k, 10), ring(0, ncy + 0.004, P['nbase'] + 0.03 * k, 0.052 * k, 0.050 * k, 10), ring(0, ncy + 0.012, P['chin'] + hh * 0.18, 0.050 * k, 0.050 * k, 10)]
@@ -400,11 +400,11 @@ def build_person(pd):
     def face_disp(X, Zv):
         """outward (+y) displacement in head-heights at lateral X (in hh) and height fraction Zv (0 chin .. 1 crown)"""
         d = 0.0
-        d += (0.016 + 0.014 * mfac) * G_(Zv, 0.645, 0.05) * G_(X, 0.0, 0.30)                       # brow ridge
-        d -= 0.014 * G_(Zv, 0.54, 0.055) * (G_(X, 0.14, 0.07) + G_(X, -0.14, 0.07))             # eye sockets
-        d += 0.022 * G_(Zv, 0.42, 0.09) * (G_(X, 0.25, 0.10) + G_(X, -0.25, 0.10))               # cheekbones
+        d += (0.016 + 0.014 * mfac) * G_(Zv, 0.600, 0.05) * G_(X, 0.0, 0.30)                       # brow ridge
+        d -= 0.014 * G_(Zv, 0.50, 0.055) * (G_(X, 0.14, 0.07) + G_(X, -0.14, 0.07))             # eye sockets
+        d += 0.022 * G_(Zv, 0.39, 0.09) * (G_(X, 0.25, 0.10) + G_(X, -0.25, 0.10))               # cheekbones
         d -= (0.014 + 0.012 * mfac) * G_(Zv, 0.27, 0.07) * (G_(X, 0.27, 0.09) + G_(X, -0.27, 0.09))  # cheek hollows
-        d += 0.026 * G_(Zv, 0.185, 0.040) * G_(X, 0.0, 0.17)                                         # lips / muzzle
+        d += 0.034 * G_(Zv, 0.19, 0.036) * G_(X, 0.0, 0.17)                                         # lips / muzzle
         d -= 0.014 * G_(Zv, 0.165, 0.010) * G_(X, 0.0, 0.11)                                         # mouth groove
         d += 0.030 * G_(Zv, 0.065, 0.050) * G_(X, 0.0, 0.12)                                         # chin
         d += 0.014 * G_(Zv, 0.84, 0.12) * G_(X, 0.0, 0.25)                                           # forehead
@@ -432,11 +432,12 @@ def build_person(pd):
         return (0.09 < f < 0.92) and (i < 22)
     loft(pb, [skull_ring(r) for r in hrows], 'head', skin, cap_top=True, cap_bot=True, face_fn=face_fn)
     # nose: bridge -> tip -> alae, rings embedded in the face (units of head height)
-    NOSE = [(0.57, 0.030, 0.004), (0.51, 0.038, 0.026), (0.45, 0.049, 0.062), (0.39, 0.060, 0.098), (0.345, 0.068, 0.122), (0.318, 0.070, 0.120), (0.298, 0.056, 0.078), (0.285, 0.046, 0.024)]
+    NOSE_C = [(0.55, 0.020, 0.000), (0.51, 0.027, 0.022), (0.46, 0.036, 0.058), (0.41, 0.047, 0.095), (0.36, 0.058, 0.122), (0.328, 0.066, 0.130), (0.305, 0.060, 0.110), (0.288, 0.050, 0.066), (0.280, 0.042, 0.020)]
+    NOSE = crv(NOSE_C, 14)
     nrg = []
     for v_, w_, d_ in NOSE:
         zz = P['chin'] + v_ * hh; ys = skull_y(0.0, zz)
-        nrg.append(ring(0, ys - 0.012 * hh + d_ * hh * 0.5, zz, w_ * hh, d_ * hh * 0.5 + 0.004 * hh, 12))
+        nrg.append(ring(0, ys - 0.016 * hh + d_ * hh * 0.5, zz, max(0.004, w_) * hh, max(0.002, d_) * hh * 0.5 + 0.006 * hh, 16))
     loft(pb, nrg, 'head', skin, cap_top=True, cap_bot=True)
     for sg in (-1, 1):
         zz = P['chin'] + 0.318 * hh
@@ -447,14 +448,14 @@ def build_person(pd):
         sphere(pb, (sg * (rE[1] + 0.006 * hh), rE[3] - 0.03 * hh, P['chin'] + 0.47 * hh), 0.020 * hh, 0.075 * hh, 0.125 * hh, 'head', skin, 10, 6)
         sphere(pb, (sg * (rE[1] + 0.008 * hh), rE[3] - 0.01 * hh, P['chin'] + 0.35 * hh), 0.016 * hh, 0.030 * hh, 0.038 * hh, 'head', skin, 6, 4)
     # ---- eyes: modelled eyeballs (iris texture) + upper / lower lids that carry the lash line from the face tile
-    eye_z = P['chin'] + hh * 0.54
-    er = 0.056 * hh
+    eye_z = P['chin'] + hh * 0.50
+    er = 0.058 * hh
     for sg in (-1, 1):
         ex = sg * 0.194 * 0.72 * hh
         ysurf = skull_y(ex, eye_z)
         ec = (ex, ysurf - 0.62 * er, eye_z)
-        uvf = (lambda co, ec=ec, er=er: ((co.x - ec[0]) / (2 * er) + 0.5, (co.z - ec[2]) / (2 * er) + 0.5))
-        sphere(pb, ec, er, er, er, 'head', '#ffffff', 12, 7, smooth=True, uv=uvf, fab_='eye')
+        uvf = (lambda co, ec=ec, er=er: ((co.x - ec[0]) / (2 * er * 1.12) + 0.5, (co.z - ec[2]) / (2 * er) + 0.5))
+        sphere(pb, ec, er * 1.12, er, er, 'head', '#ffffff', 12, 7, smooth=True, uv=uvf, fab_='eye')
         zone(pb, ec, er * 1.09, 'head', 0.06, math.acos(0.16), 14, 3, fab_='face')          # upper lid
         zone(pb, ec, er * 1.09, 'head', math.acos(-0.46), math.pi - 0.06, 14, 3, fab_='face')   # lower lid
     # ---------------- hair: skull-hugging cap (hairline shaped per angle, strand texture) + alpha-tested hair cards (strand clumps) for length / fringe / silhouette
@@ -532,7 +533,6 @@ def build_person(pd):
         if style == 'short':
             # fringe tufts along the front hairline + short layers at the nape / sides
             cards_ring([fr + math.radians(d) for d in range(-40, 41, 16)], 0.86, 0.66, 0.002, 0.03, 3, 0.055, 1, 0.05, 0.1)
-            cards_ring(back, 0.60, 0.30, 0.0, 0.01, 3, 0.07, 1, 0.05, 0.1)
         if style == 'curly':
             for a_ in range(0, 360, 36):
                 ca, sa = math.cos(math.radians(a_)), math.sin(math.radians(a_))
@@ -1252,7 +1252,7 @@ def make_hair_material():
     Image.fromarray(TX.hair_sheet()).save(path)
     img = bpy.data.images.load(path); img.pack(); img.name = 'people_hair'
     m = bpy.data.materials.new('people_hair'); m.use_nodes = True; nt = m.node_tree
-    bs = nt.nodes['Principled BSDF']; bs.inputs['Roughness'].default_value = 0.42; bs.inputs['Metallic'].default_value = 0.0
+    bs = nt.nodes['Principled BSDF']; bs.inputs['Roughness'].default_value = 0.62; bs.inputs['Metallic'].default_value = 0.0
     t = nt.nodes.new('ShaderNodeTexImage'); t.image = img
     nt.links.new(t.outputs['Color'], bs.inputs['Base Color']); nt.links.new(t.outputs['Alpha'], bs.inputs['Alpha'])
     return m
