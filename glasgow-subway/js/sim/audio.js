@@ -1,7 +1,31 @@
 // Procedural cab audio (WebAudio) + PA via speechSynthesis. Everything guarded; starts after a user gesture.
 export class SimAudio {
-  constructor() { this.ctx = null; this.muted = false; this.ok = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext); this.speechOn = typeof window !== 'undefined' && 'speechSynthesis' in window; this.vol = 0.8; this.started = false; }
+  constructor() { this.ctx = null; this.muted = false; this.ok = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext); this.speechOn = typeof window !== 'undefined' && 'speechSynthesis' in window; this.vol = 0.8; this.started = false; this.hidden = false; this.blocked = 0; this._attachVisibility(); }
+  /** All sound goes silent immediately while the tab is hidden / page backgrounded (and stays silent until it returns); the manual mute flag is kept. */
+  _attachVisibility() {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+    this._vis = () => this.setHidden(!!document.hidden || document.visibilityState === 'hidden');
+    this._pagehide = () => this.setHidden(true);
+    this._blur = () => setTimeout(() => { if (document.hidden) this.setHidden(true); }, 0);
+    document.addEventListener('visibilitychange', this._vis); window.addEventListener('pagehide', this._pagehide); window.addEventListener('pageshow', this._vis); window.addEventListener('blur', this._blur); document.addEventListener('freeze', this._pagehide);
+    this.hidden = !!document.hidden;
+  }
+  setHidden(h) {
+    h = !!h; if (this.hidden === h && !(h && this.ctx && this.ctx.state === 'running')) return; this.hidden = h;
+    if (h) {
+      if (this.speechOn) try { speechSynthesis.cancel(); } catch (e) {}
+      if (this.master && this.ctx) try { this.master.gain.cancelScheduledValues(this.ctx.currentTime); this.master.gain.value = 0; } catch (e) {}
+      if (this.ctx && this.ctx.state === 'running') try { this.ctx.suspend(); } catch (e) {}
+      if (typeof document !== 'undefined') for (const a of document.querySelectorAll('audio,video')) try { if (!a.paused) { a.dataset.simPaused = '1'; a.pause(); } } catch (e) {}
+    } else {
+      if (this.master && this.ctx) try { this.master.gain.value = this.muted ? 0 : this.vol; } catch (e) {}
+      if (this.ctx && this.ctx.state === 'suspended' && this.started) try { this.ctx.resume(); } catch (e) {}
+      if (typeof document !== 'undefined') for (const a of document.querySelectorAll('audio[data-sim-paused]')) try { delete a.dataset.simPaused; a.play(); } catch (e) {}
+    }
+  }
+  state() { return { hidden: this.hidden, muted: this.muted, ctx: this.ctx ? this.ctx.state : 'none', gain: this.master ? this.master.gain.value : null, speaking: this.speechOn ? !!(speechSynthesis.speaking || speechSynthesis.pending) : false, blocked: this.blocked }; }
   async start() {
+    if (this.hidden) return;
     if (!this.ok || this.started) { if (this.ctx && this.ctx.state === 'suspended') try { await this.ctx.resume(); } catch (e) {} return; }
     try {
       const AC = window.AudioContext || window.webkitAudioContext; const c = this.ctx = new AC();
@@ -24,10 +48,10 @@ export class SimAudio {
       this.started = true; this._lastBrake = 0;
     } catch (e) { this.ok = false; }
   }
-  setMuted(m) { this.muted = m; if (this.master) this.master.gain.setTargetAtTime(m ? 0 : this.vol, this.ctx.currentTime, 0.05); if (m && this.speechOn) try { speechSynthesis.cancel(); } catch (e) {} }
+  setMuted(m) { this.muted = m; if (this.master && !this.hidden) this.master.gain.setTargetAtTime(m ? 0 : this.vol, this.ctx.currentTime, 0.05); if (m && this.speechOn) try { speechSynthesis.cancel(); } catch (e) {} }
   /** st: { v (m/s), traction 0..1, brake 0..1, curv (1/m), inCab (bool), inTrain, doorsOpen } */
   update(st) {
-    if (!this.started || !this.ctx) return; const t = this.ctx.currentTime, v = st.v || 0;
+    if (!this.started || !this.ctx || this.hidden) return; const t = this.ctx.currentTime, v = st.v || 0;
     const inside = st.inTrain ? 1 : 0.25;
     const f = 70 + v * 15 + st.traction * 40;
     this.m1.frequency.setTargetAtTime(f, t, 0.1); this.m2.frequency.setTargetAtTime(f * 1.505, t, 0.1);
@@ -39,6 +63,7 @@ export class SimAudio {
     this.hG.gain.setTargetAtTime(Math.min(0.18, rel * 6 + (st.brake > 0.1 ? st.brake * 0.02 : 0)) * inside, t, 0.05);
   }
   chime(kind = 'door') {
+    if (this.hidden) { this.blocked++; return; }
     if (!this.started || !this.ctx) return; const c = this.ctx, t = c.currentTime;
     const seq = { door: [880, 660], close: [660, 880, 660], vigil: [1200, 1200, 1200], trip: [300, 220, 300, 220], ok: [660, 990] }[kind] || [880];
     seq.forEach((fr, i) => {
@@ -48,8 +73,10 @@ export class SimAudio {
     });
   }
   speak(text) {
+    if (this.hidden) { this.blocked++; return; }
     if (this.muted || !this.speechOn || !this.started) return;
     try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'en-GB'; u.rate = 0.95; u.volume = 0.8; speechSynthesis.speak(u); } catch (e) {}
   }
-  dispose() { try { if (this.ctx) this.ctx.close(); if (this.speechOn) speechSynthesis.cancel(); } catch (e) {} this.started = false; }
+  dispose() { try { if (this._vis) { document.removeEventListener('visibilitychange', this._vis); window.removeEventListener('pagehide', this._pagehide); window.removeEventListener('pageshow', this._vis); window.removeEventListener('blur', this._blur); document.removeEventListener('freeze', this._pagehide); this._vis = null; } } catch (e) {}
+    try { if (this.ctx) this.ctx.close(); if (this.speechOn) speechSynthesis.cancel(); } catch (e) {} this.started = false; }
 }

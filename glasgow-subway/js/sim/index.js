@@ -36,6 +36,7 @@ class Sim {
     this.stations = this.subway.stations; this.stationIdx = new Map(this.stations.map((s, i) => [s.id, i]));
     this.stock = stockFrom(this.subway.rollingStock);
     this.mode = null; this.paused = false; this.disposed = false; this.look = { yaw: 0, pitch: 0 };
+    this.mouse = { sens: 1, invertY: false }; try { const m = JSON.parse(localStorage.getItem('gs.mouse') || 'null'); if (m) this.mouse = { sens: Math.min(3, Math.max(0.3, +m.sens || 1)), invertY: !!m.invertY }; } catch (_) {}
     this.keys = new Set(); this.line = ctx.line === 'inner' ? 'inner' : 'outer'; this.diffId = ctx.difficulty || 'standard';
     this.sel = { mode: ctx.mode || 'drive', station: ctx.startStation || this.stations[0].id, line: this.line, diff: this.diffId };
     this.tracks = {}; this.stationViews = new Map(); this.time = 0; this.alightNext = false;
@@ -88,7 +89,7 @@ class Sim {
     this.audio = new SimAudio();
     this.hud = new Hud(this.ctx.container, {
       onAction: (a, el) => this.action(a, el), onLever: (n) => { if (this.mode === 'drive') { this.svc.setLever(n); this.audio.start(); } },
-      doorSel: () => (this.svc ? this.svc.doorSel : 1), hints: () => this.svc && this.svc.diff.hints, onModal: (open) => { this._modalOpen = open; },
+      doorSel: () => (this.svc ? this.svc.doorSel : 1), hints: () => this.svc && this.svc.diff.hints, onModal: (open) => { this._modalOpen = open; if (open) this._releaseLock(); },
     });
     this._bindInput();
     this.trainView.root.visible = true;
@@ -258,7 +259,7 @@ class Sim {
 
   _setupStationWalker(view, fromRide) {
     const w = this.walker, inf = view.info;
-    w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.eye = 1.62; w.radius = 0.3; w.headroomFn = null;
+    w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.eye = 1.52; w.radius = 0.3; w.headroomFn = null;
     this.activeStation = view;
     if (fromRide) {
       const doorZ = this._nearestDoorZ();
@@ -286,7 +287,7 @@ class Sim {
     const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.5, x1: 0.5, z0: -half, z1: half, y: PY, name: 'aisle' }];
     for (const z of this.doorZ) zones.push({ kind: 'flat', x0: -1.12, x1: 1.12, z0: z - 0.75, z1: z + 0.75, y: PY, name: 'door' });
     w.setWorld(zones, []);
-    w.heightFn = null; w.eye = 1.6; w.radius = 0.2; w.headroomFn = (x) => this.trainView.headroomAt(x); w.minHead = 1.5;
+    w.heightFn = null; w.eye = 1.5; w.radius = 0.2; w.headroomFn = (x) => this.trainView.headroomAt(x); w.minHead = 1.5;
     this.ctxKind = 'train';
   }
 
@@ -301,7 +302,7 @@ class Sim {
     if (!this.street) { this.hud.setFade(false); this.fadeLock = false; return; }
     this.mode = 'street'; this.ctxKind = 'street'; this.hud.setMode('street');
     const w = this.walker, st = this.street;
-    w.headroomFn = null; w.setWorld([], []); w.heightFn = (x, z) => (Math.hypot(x - st.center.x, z - st.center.z) < st.radius ? st.ground(x, z) : null); w.eye = 1.65; w.radius = 0.3;
+    w.headroomFn = null; w.setWorld([], []); w.heightFn = (x, z) => (Math.hypot(x - st.center.x, z - st.center.z) < st.radius ? st.ground(x, z) : null); w.eye = 1.55; w.radius = 0.3;
     w.place(st.spawn.x, st.spawn.z, st.spawn.yaw); w.y = st.spawn.y;
     this.look.pitch = 0;
     this.hud.toast(`Street level: ${stn.name}. Walk back to the stairwell to descend.`, 'info', 5);
@@ -354,7 +355,7 @@ class Sim {
     this.mode = 'explore'; this.ctxKind = 'station'; this.hud.setMode('explore');
     this.exploreIdx = idx; this.shuttle.idx = idx; this.shuttle.state = 'dwell'; this.shuttle.streamed = false; this.scene.fog.density = 0.006;
     const view = this._ensureStation(idx, true);
-    this.walker.heightFn = null; this.walker.headroomFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.62; this.walker.radius = 0.3; this.activeStation = view;
+    this.walker.heightFn = null; this.walker.headroomFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.52; this.walker.radius = 0.3; this.activeStation = view;
     const inf = view.info;
     this.walker.place(inf.xe + inf.S * 0.9, this._trainCentreZl() + doorZ, -inf.S * Math.PI / 2); this.look.yaw = this.walker.yaw; this.look.pitch = 0;
     this.svc.schedule = null; this.svc.ato = true; this.svc.autoDoors = true;
@@ -478,19 +479,42 @@ class Sim {
     addEventListener('blur', this._blur = () => { this.keys.clear(); });   // no stuck movement keys after alt-tab
     let drag = null;
     this._pd = (e) => { if (e.pointerType === 'mouse' && e.button !== 0) return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} this.audio.start();
-      if (e.pointerType === 'mouse' && this.mode !== 'drive' && !this._modalOpen) { try { canvas.requestPointerLock && canvas.requestPointerLock(); } catch (_) {} } };
+      if (e.pointerType === 'mouse' && !this._modalOpen && !this.paused && this.mode !== 'street' && document.pointerLockElement !== canvas) this._requestLock(); };
     this._pm = (e) => {
-      if (document.pointerLockElement === canvas) { this._lookDelta(e.movementX, e.movementY); return; }
-      if (!drag || e.pointerId !== drag.id) return; this._lookDelta(e.clientX - drag.x, e.clientY - drag.y); drag.x = e.clientX; drag.y = e.clientY;
+      if (this._forceLock || document.pointerLockElement === canvas) { this._lookDelta(e.movementX || 0, e.movementY || 0); return; }
+      if (!drag || e.pointerId !== drag.id) return; this._lookDelta(e.clientX - drag.x, e.clientY - drag.y); drag.x = e.clientX; drag.y = e.clientY;   // drag-to-look fallback (no pointer lock / denied / touch)
     };
     this._pu = (e) => { if (drag && e.pointerId === drag.id) drag = null; };
     canvas.addEventListener('pointerdown', this._pd); canvas.addEventListener('pointermove', this._pm);
     canvas.addEventListener('pointerup', this._pu); canvas.addEventListener('pointercancel', this._pu);
     canvas.style.touchAction = 'none';
+    this._plc = () => { this._locked = document.pointerLockElement === canvas; this._hintT = this._locked ? 2.5 : 4; };
+    this._ple = () => { this._lockDenied = true; this._locked = false; };
+    document.addEventListener('pointerlockchange', this._plc); document.addEventListener('pointerlockerror', this._ple);
+    this._mkHint();
+  }
+  _requestLock() {
+    const c = this.canvas; if (!c.requestPointerLock || this._lockDenied > 2) return;
+    try { const r = c.requestPointerLock(); if (r && r.catch) r.catch(() => { this._lockDenied = (this._lockDenied || 0) + 1; }); } catch (_) { this._lockDenied = (this._lockDenied || 0) + 1; }
+  }
+  _releaseLock() { try { if (document.pointerLockElement === this.canvas) document.exitPointerLock(); } catch (_) {} }
+  _mkHint() {
+    if (this._hintEl || !this.hud) return; const h = document.createElement('div'); h.className = 'gs-hint';
+    h.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);padding:5px 12px;border-radius:999px;background:rgba(18,24,34,.72);color:#dfe8f2;font:12px/1.3 system-ui,sans-serif;pointer-events:none;opacity:0;transition:opacity .4s;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis';
+    this.hud.root.appendChild(h); this._hintEl = h; this._hintT = 8;
+  }
+  _updateHint(dt) {
+    const h = this._hintEl; if (!h) return;
+    const fine = typeof matchMedia === 'function' && matchMedia('(pointer: fine)').matches && !matchMedia('(pointer: coarse)').matches;
+    this._hintT = Math.max(0, (this._hintT || 0) - dt);
+    const show = fine && this.mode && this.mode !== 'street' && !this._modalOpen && this._hintT > 0 && !this._lockDenied;
+    h.textContent = this._locked ? 'Esc to release the mouse' : 'Click to look with the mouse - Esc to release';
+    h.style.opacity = show ? '0.85' : '0';
   }
   _lookDelta(dx, dy) {
     if (this._modalOpen) return;
-    const k = 0.0042; this.look.yaw -= dx * k; this.look.pitch = clamp(this.look.pitch - dy * k, -1.2, 1.2);
+    const ms = this.mouse || { sens: 1, invertY: false };
+    const k = 0.0042 * ms.sens; this.look.yaw -= dx * k; this.look.pitch = clamp(this.look.pitch - dy * k * (ms.invertY ? -1 : 1), -1.2, 1.2);
     if (this.mode === 'drive') { this.look.yaw = clamp(this.look.yaw, -2.2, 2.2); this.look.pitch = clamp(this.look.pitch, -0.7, 0.7); }
     this._lookT = this.time;
   }
@@ -510,6 +534,7 @@ class Sim {
     else if (kk === 'm') this.action('mute');
     else if (kk === 'l') this.hud.toggleLog();
     else if (kk === 'e' || kk === 'Enter') this.interact();
+    else if (kk === 'c' && this.mode !== 'drive' && this.mode !== 'street') this._toggleSit();
     else if (this.mode === 'drive') {
       const s = this.svc;
       if (kk === 'w' || kk === 'ArrowUp') s.stepLever(1);
@@ -537,6 +562,8 @@ class Sim {
     if (a.startsWith('mode:')) { this.sel.mode = a.slice(5); this._menuSync(); return; }
     if (a.startsWith('line:')) { this.sel.line = a.slice(5); this._menuSync(); return; }
     if (a.startsWith('diff:')) { this.sel.diff = a.slice(5); this._menuSync(); return; }
+    if (a === 'sens:-' || a === 'sens:+') { this.mouse.sens = Math.min(3, Math.max(0.3, +(this.mouse.sens * (a === 'sens:+' ? 1.25 : 0.8)).toFixed(2))); this._saveMouse(); const el2 = this.hud.panel.querySelector('#gs-sens'); if (el2) el2.textContent = this.mouse.sens.toFixed(1) + 'x'; return; }
+    if (a === 'invy') { this.mouse.invertY = !this.mouse.invertY; this._saveMouse(); const bt = this.hud.panel.querySelector('[data-a="invy"]'); if (bt) { bt.textContent = 'Invert Y: ' + (this.mouse.invertY ? 'on' : 'off'); bt.classList.toggle('on', this.mouse.invertY); } return; }
     switch (a) {
       case 'menu': this.hud.modalOpen ? this.hud.closeModal() : this.openMenu('menu'); break;
       case 'help': this.openHelp(); break;
@@ -570,13 +597,30 @@ class Sim {
 <h3>Station</h3><select id="gs-st" aria-label="Station">${opts}</select>
 <h3>Line</h3><div class="gs-row">${b('line:outer', 'Outer circle (clockwise)', st.line === 'outer')}${b('line:inner', 'Inner circle (anticlockwise)', st.line === 'inner')}</div>
 <h3>Difficulty</h3><div class="gs-row">${b('diff:easy', 'Easy - assisted', st.diff === 'easy')}${b('diff:standard', 'Standard', st.diff === 'standard')}${b('diff:expert', 'Expert', st.diff === 'expert')}</div>
+<h3>Mouse look</h3><div class="gs-row">${b('sens:-', 'Slower', false)}<span id="gs-sens" style="align-self:center;min-width:3.2em;text-align:center">${this.mouse.sens.toFixed(1)}x</span>${b('sens:+', 'Faster', false)}${b('invy', 'Invert Y: ' + (this.mouse.invertY ? 'on' : 'off'), this.mouse.invertY)}</div>
 <h3>&nbsp;</h3><div class="gs-row">${b('go', 'Go', false).replace('<button', '<button style="background:#e8741a;color:#111;font-weight:700"')}${kind === 'menu' ? b('resume', 'Resume', false) : ''}${b('help', 'Controls', false)}${b('exit', 'Back to explorer', false)}</div>`;
     this.hud.openModal(html, kind);
   }
+  /** C: crouch / sit. In the saloon, next to a free bench, sits on it facing across the aisle (eye ~1.13 m above the floor). */
+  _toggleSit() {
+    const w = this.walker;
+    if (w.sit) { w.sit = false; if (this._seat) { w.x = this._seat * 0.45; this._seat = null; } return; }
+    this._seat = null;
+    if (this.ctxKind === 'train' && this.mode !== 'drive') {
+      const sx = w.x >= 0 ? 1 : -1, tv = this.trainView, ci = tv.carAt(w.z), zc = tv.carInfo[ci].zc;
+      const busy = this.saloon ? this.saloon.people.some((p) => p.mode === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5) : false;
+      const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0);
+      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.8; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
+      else if (busy) this.hud.toast('That seat is taken', 'info', 2);
+    }
+    w.sit = true;
+  }
+  _saveMouse() { try { localStorage.setItem('gs.mouse', JSON.stringify(this.mouse)); } catch (_) {} }
   _menuSync() { for (const bt of this.hud.panel.querySelectorAll('button[data-a]')) { const a = bt.dataset.a; const m = /^(mode|line|diff):(.*)/.exec(a); if (m) bt.classList.toggle('on', this.sel[m[1]] === m[2]); } }
 
   // ------------------------------------------------------------------ interaction
   interact() {
+    if (this.walker.sit) this._toggleSit();
     const c = this.context;
     if (!c) return;
     if (c.kind === 'board') this._boardTrain();
@@ -643,6 +687,7 @@ class Sim {
       if (this.keys.has('ArrowLeft')) this.look.yaw += 1.8 * dt; if (this.keys.has('ArrowRight')) this.look.yaw -= 1.8 * dt;
       if (this.keys.has('ArrowUp') && this.mode !== 'drive') fwd += 1; if (this.keys.has('ArrowDown')) fwd -= 1;
       w.sprint = this.keys.has('Shift');
+      if (w.sit && (fwd || str) && w.sitK > 0.9) this._toggleSit();
       w.yaw = this.look.yaw;
       if (this.mode === 'ride') {
         // walker lives in train-local space; moves with the train
@@ -713,7 +758,7 @@ class Sim {
   }
 
   sync(dt) {
-    this._applyFov();
+    this._applyFov(); this._updateHint(dt);
     const THREE = this.THREE, svc = this.svc, tr = svc.train, cam = this.camera, track = this.track;
     const underground = this.mode !== 'street';
     if (underground) {
@@ -912,7 +957,7 @@ class Sim {
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
-      stationView: async (i) => this._prepare(i),
+      stationView: async (i) => this._prepare(i), mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'),
       railExt: async (i) => { const v = await this._prepare(i); if (!v) return null; v.group.updateMatrixWorld(true); const T = this.THREE, b = new T.Box3(), a = new T.Box3(), p = new T.Vector3(); let z0 = 1e9, z1 = -1e9;
         v.group.traverse((m) => { if (m.isMesh && m.material && /^rail_steel/.test(m.material.name || '')) { m.geometry.computeBoundingBox(); a.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); for (const zz of [a.min.z, a.max.z]) for (const xx of [a.min.x, a.max.x]) for (const yy of [a.min.y, a.max.y]) { p.set(xx, yy, zz); v.group.worldToLocal(p); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); } } });
         return { z0, z1, skipHalf: HALL_FULL }; }, render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
@@ -934,7 +979,7 @@ class Sim {
     if (this.disposed) return; this.disposed = true;
     this.renderer.setAnimationLoop(null);
     removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
-    const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu);
+    const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}
     this.audio.dispose(); this.hud.dispose();
     for (const v of this.stationViews.values()) v.dispose();
