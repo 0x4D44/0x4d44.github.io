@@ -107,8 +107,12 @@ def loft(pb, rings, part, hexc_, hex_fn=None, closed=True, cap_top=True, cap_bot
             j = (i + 1) % n
             pb.F((vr[r][i], vr[r][j], vr[r + 1][j], vr[r + 1][i]), hex_fn(r) if hex_fn else hexc_, smooth, face_fn(r, i) if face_fn else False, uv=uv, fab_=fab_)
     if closed:
-        if cap_bot: pb.F(vr[0][::-1], hex_fn(0) if hex_fn else hexc_, smooth, fab_=fab_, uv=uv)
-        if cap_top: pb.F(vr[-1], hex_fn(len(rings) - 2) if hex_fn else hexc_, smooth, fab_=fab_, uv=uv)
+        if cap_bot:
+            cv = [pb.V(tuple(v.co), part) for v in vr[0][::-1]]
+            pb.F(cv, hex_fn(0) if hex_fn else hexc_, False, fab_=fab_, uv=uv)
+        if cap_top:
+            cv = [pb.V(tuple(v.co), part) for v in vr[-1]]
+            pb.F(cv, hex_fn(len(rings) - 2) if hex_fn else hexc_, False, fab_=fab_, uv=uv)
     return vr
 
 
@@ -272,7 +276,7 @@ def build_person(pd):
     def torso_rings(scale, y_off=0.0, z0=None, extra_rx=0.0):
         rs = []
         for z, rx, ry, cy in rows:
-            rs.append(ring(0, cy + lean(z) + y_off, z, rx * scale + extra_rx, ry * scale + extra_rx * 0.8, 14))
+            rs.append(ring(0, cy + lean(z) + y_off, z, rx * scale + extra_rx, ry * scale + extra_rx * 0.8, 20))
         return rs
     outer = pd.get('top_style') in ('jacket', 'puffer', 'coat')
     layer = {'tshirt': 1.012, 'football': 1.012, 'hoodie': 1.03, 'jumper': 1.022, 'shirt': 1.012, 'dress': 1.012, 'jacket': 1.035, 'puffer': 1.065, 'coat': 1.04}.get(tst, 1.02)
@@ -309,7 +313,7 @@ def build_person(pd):
             t = i / 6.0
             z = z_top + (z_bot - z_top) * t
             sc = 1.0 + (0.14 if tst == 'coat' else (0.30 if tst == 'dress' or bst == 'skirt' else 0.07)) * t ** 1.4
-            rs.append(ring(0, rows[1][3], z, (rows[1][1] * layer) * sc, (rows[1][2] * layer) * (1.0 + 0.2 * t) * sc, 14))
+            rs.append(ring(0, rows[1][3], z, (rows[1][1] * layer) * sc, (rows[1][2] * layer) * (1.0 + 0.2 * t) * sc, 20))
         colr = top if tst in ('coat', 'puffer', 'jacket', 'dress') else bot
         loft(pb, rs, 'skirt', colr, cap_top=False, cap_bot=True)
         # hem trim
@@ -384,7 +388,7 @@ def build_person(pd):
     if not male or child:     # softer, rounder jaw
         hrx[1] += 0.008; hrx[2] += 0.010; hry[2] -= 0.008
     ctrl = [(P['chin'] + f * hh, hrx[i] * hh * wscale, hry[i] * hh, hcy[i] * hh + lean(P['chin']) * 0.9) for i, f in enumerate(hf)]
-    hrows = crv(ctrl, 30)
+    hrows = crv(ctrl, 22)
     hrows_fine = crv(ctrl, 80)
     hy0 = lean(P['chin']) * 0.9
     NH = 16
@@ -456,7 +460,7 @@ def build_person(pd):
     # ---------------- hair: skull-hugging cap (hairline shaped per angle, strand texture) + alpha-tested hair cards (strand clumps) for length / fringe / silhouette
     hcol = HAIR[pd['hair'][0]]; style = pd['hair'][1]
     zc_f = lambda f: P['chin'] + f * hh
-    th = 0.012 * k
+    th = 0.016 * k
     rng_h = random.Random(zlib.crc32(pd['id'].encode()))
     def hairline(phi, st):
         """hairline height fraction vs angle from the front (phi = 0 front .. pi back)"""
@@ -512,7 +516,7 @@ def build_person(pd):
                 card(pts, wid * rng_h.uniform(0.9, 1.15) * hh, (rng_h.randrange(4), rng_h.randrange(4)))
     if style != 'bald':
         HN = 28
-        rowsc = [r_ for r_ in crv(ctrl, 44) if (r_[0] - P['chin']) / hh >= 0.30]
+        rowsc = [r_ for r_ in crv(ctrl, 18) if (r_[0] - P['chin']) / hh >= 0.30]
         rgs = []
         for row in rowsc:
             f = (row[0] - P['chin']) / hh; pts_ = []
@@ -622,14 +626,14 @@ def build_person(pd):
         fa_c = [(elbow + 0.02, rf * 1.12, 0, 0), (elbow - fa * 0.25, rf * 1.12, 0, 0), (elbow - fa * 0.65, rf * 0.92, 0, 0), (wrist + 0.015, rf * 0.72, 0, 0)]
         fa_rows = crv(fa_c, 6)
         if sleeve_hex is None:
-            loft(pb, [ring(sx, 0, z, r + (0.006 if tst == 'tshirt' else 0.004), r + 0.004, 10) for z, r, _, _ in up_rows[:4]], 'arm' + sd, top, cap_top=False, cap_bot=True)   # short sleeve
-            loft(pb, [ring(sx, 0, z, r, r, 10) for z, r, _, _ in up_rows[3:]], 'arm' + sd, skin, cap_top=False, cap_bot=False)
-            loft(pb, [ring(sx, 0.0, z, r, r, 10) for z, r, _, _ in fa_rows], 'farm' + sd, skin, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sx, 0, z, r + (0.006 if tst == 'tshirt' else 0.004), r + 0.004, 14) for z, r, _, _ in up_rows[:4]], 'arm' + sd, top, cap_top=False, cap_bot=True)   # short sleeve
+            loft(pb, [ring(sx, 0, z, r, r, 14) for z, r, _, _ in up_rows[3:]], 'arm' + sd, skin, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sx, 0.0, z, r, r, 14) for z, r, _, _ in fa_rows], 'farm' + sd, skin, cap_top=False, cap_bot=False)
         else:
-            loft(pb, [ring(sx, 0, z, r + sleeve_thick, r + sleeve_thick, 10) for z, r, _, _ in up_rows], 'arm' + sd, sleeve_hex, cap_top=False, cap_bot=True)
-            loft(pb, [ring(sx, 0.0, z, r + sleeve_thick, r + sleeve_thick, 10) for z, r, _, _ in fa_rows], 'farm' + sd, sleeve_hex, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sx, 0, z, r + sleeve_thick, r + sleeve_thick, 14) for z, r, _, _ in up_rows], 'arm' + sd, sleeve_hex, cap_top=False, cap_bot=True)
+            loft(pb, [ring(sx, 0.0, z, r + sleeve_thick, r + sleeve_thick, 14) for z, r, _, _ in fa_rows], 'farm' + sd, sleeve_hex, cap_top=False, cap_bot=False)
             cuff = '#d9d9d9' if tst in ('hoodie', 'jumper') and False else sleeve_hex
-            loft(pb, [ring(sx, 0, wrist + 0.03, rf * 0.8 + sleeve_thick + 0.004, rf * 0.8 + sleeve_thick + 0.004, 10), ring(sx, 0, wrist + 0.005, rf * 0.76 + sleeve_thick + 0.004, rf * 0.76 + sleeve_thick + 0.004, 10)], 'farm' + sd, cuff if sleeve_hex else skin, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sx, 0, wrist + 0.03, rf * 0.8 + sleeve_thick + 0.004, rf * 0.8 + sleeve_thick + 0.004, 14), ring(sx, 0, wrist + 0.005, rf * 0.76 + sleeve_thick + 0.004, rf * 0.76 + sleeve_thick + 0.004, 14)], 'farm' + sd, cuff if sleeve_hex else skin, cap_top=False, cap_bot=False)
         pass   # (deltoid sphere removed: it z-fought with the sleeve)
         # hand: palm + 4 fingers + thumb (fingers hang straight; the `fingers` bone curls them)
         hl = 0.108 * H; hw_ = 0.040 * k * child_f
@@ -660,15 +664,15 @@ def build_person(pd):
         sh_c = [(P['knee'] + 0.02, r1 * 1.02, 0, 0), (P['knee'] - 0.06 * k, r1 * 1.0, 0, 0), (P['knee'] - 0.15 * k, r1 * 1.05, 0, 0), (P['knee'] - 0.28 * k, r2 * 1.05, 0, 0), (P['ankle'] + 0.018, r3 * 1.08, 0, 0)]
         sh_rows = crv(sh_c, 9)
         if bst == 'shorts':
-            loft(pb, [ring(sg * hx, 0, z, r + lay, r + lay, 10) for z, r, _, _ in th_rows[:5]], 'thigh' + sd, leg_hex, cap_top=False, cap_bot=True)
-            loft(pb, [ring(sg * hx, 0, z, r, r, 10) for z, r, _, _ in th_rows[4:]], 'thigh' + sd, skin, cap_top=False, cap_bot=False)
-            loft(pb, [ring(sg * hx, 0, z, r, r, 10) for z, r, _, _ in sh_rows], 'shin' + sd, skin, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0, z, r + lay, r + lay, 14) for z, r, _, _ in th_rows[:5]], 'thigh' + sd, leg_hex, cap_top=False, cap_bot=True)
+            loft(pb, [ring(sg * hx, 0, z, r, r, 14) for z, r, _, _ in th_rows[4:]], 'thigh' + sd, skin, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0, z, r, r, 14) for z, r, _, _ in sh_rows], 'shin' + sd, skin, cap_top=False, cap_bot=False)
             # socks
-            loft(pb, [ring(sg * hx, 0, P['knee'] - 0.12 * k, r1 * 0.98 + 0.004, r1 * 0.98 + 0.004, 10), ring(sg * hx, 0, P['ankle'] + 0.06, r3 * 1.1 + 0.004, r3 * 1.1 + 0.004, 10)], 'shin' + sd, '#f2f2f2', cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0, P['knee'] - 0.12 * k, r1 * 0.98 + 0.004, r1 * 0.98 + 0.004, 14), ring(sg * hx, 0, P['ankle'] + 0.06, r3 * 1.1 + 0.004, r3 * 1.1 + 0.004, 14)], 'shin' + sd, '#f2f2f2', cap_top=False, cap_bot=False)
         elif bst == 'skirtx':
             lg = pd.get('legs', 'skin'); lgx = skin if lg == 'skin' else lg
-            loft(pb, [ring(sg * hx, 0, z, r + (0.0 if lg == 'skin' else 0.002), r + (0.0 if lg == 'skin' else 0.002), 10) for z, r, _, _ in th_rows], 'thigh' + sd, lgx, cap_top=False, cap_bot=False, fab_=None if lg == 'skin' else 'jersey')
-            loft(pb, [ring(sg * hx, 0, z, r + (0.0 if lg == 'skin' else 0.002), r + (0.0 if lg == 'skin' else 0.002), 10) for z, r, _, _ in sh_rows], 'shin' + sd, lgx, cap_top=False, cap_bot=False, fab_=None if lg == 'skin' else 'jersey')
+            loft(pb, [ring(sg * hx, 0, z, r + (0.0 if lg == 'skin' else 0.002), r + (0.0 if lg == 'skin' else 0.002), 14) for z, r, _, _ in th_rows], 'thigh' + sd, lgx, cap_top=False, cap_bot=False, fab_=None if lg == 'skin' else 'jersey')
+            loft(pb, [ring(sg * hx, 0, z, r + (0.0 if lg == 'skin' else 0.002), r + (0.0 if lg == 'skin' else 0.002), 14) for z, r, _, _ in sh_rows], 'shin' + sd, lgx, cap_top=False, cap_bot=False, fab_=None if lg == 'skin' else 'jersey')
             if pd.get('hose'):
                 fab('knit')
                 hc_, cuc, fl_ = pd['hose']
@@ -678,17 +682,17 @@ def build_person(pd):
                         if z1 <= z <= z0: return r1_ + (r0_ - r1_) * (z - z1) / (z0 - z1 + 1e-9)
                     return sh_rows[-1][1]
                 zz_ = [zh_top + (P['ankle'] + 0.018 - zh_top) * i_ / 5 for i_ in range(6)]
-                loft(pb, [ring(sg * hx, 0, z_, r_sh(z_) + 0.005, r_sh(z_) + 0.005, 10) for z_ in zz_], 'shin' + sd, hc_, cap_top=False, cap_bot=False)
-                loft(pb, [ring(sg * hx, 0, zh_top + 0.012, r_sh(zh_top) + 0.010, r_sh(zh_top) + 0.010, 10), ring(sg * hx, 0, zh_top - 0.065 * k, r_sh(zh_top - 0.065 * k) + 0.010, r_sh(zh_top - 0.065 * k) + 0.010, 10)], 'shin' + sd, cuc, cap_top=False, cap_bot=False)
+                loft(pb, [ring(sg * hx, 0, z_, r_sh(z_) + 0.005, r_sh(z_) + 0.005, 14) for z_ in zz_], 'shin' + sd, hc_, cap_top=False, cap_bot=False)
+                loft(pb, [ring(sg * hx, 0, zh_top + 0.012, r_sh(zh_top) + 0.010, r_sh(zh_top) + 0.010, 14), ring(sg * hx, 0, zh_top - 0.065 * k, r_sh(zh_top - 0.065 * k) + 0.010, r_sh(zh_top - 0.065 * k) + 0.010, 14)], 'shin' + sd, cuc, cap_top=False, cap_bot=False)
                 if fl_:
                     rbox(pb, (sg * hx + sg * (r_sh(zh_top - 0.03) + 0.012), 0.0, zh_top - 0.060 * k), (0.012, 0.035 * k, 0.085 * k), 'shin' + sd, fl_)
         elif bst == 'skirt':
-            loft(pb, [ring(sg * hx, 0, z, r, r, 10) for z, r, _, _ in th_rows], 'thigh' + sd, '#26262a', cap_top=False, cap_bot=False)
-            loft(pb, [ring(sg * hx, 0, z, r, r, 10) for z, r, _, _ in sh_rows], 'shin' + sd, '#26262a', cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0, z, r, r, 14) for z, r, _, _ in th_rows], 'thigh' + sd, '#26262a', cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0, z, r, r, 14) for z, r, _, _ in sh_rows], 'shin' + sd, '#26262a', cap_top=False, cap_bot=False)
         else:
             flare = 0.006 if bst == 'jeans' else 0.0
-            loft(pb, [ring(sg * hx, 0, z, r + lay, r + lay, 10) for z, r, _, _ in th_rows], 'thigh' + sd, leg_hex, cap_top=False, cap_bot=(True))
-            loft(pb, [ring(sg * hx, 0, z, r + lay + (flare if i == len(sh_rows) - 1 else 0), r + lay + (flare if i == len(sh_rows) - 1 else 0), 10) for i, (z, r, _, _) in enumerate(sh_rows)], 'shin' + sd, leg_hex, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0, z, r + lay, r + lay, 14) for z, r, _, _ in th_rows], 'thigh' + sd, leg_hex, cap_top=False, cap_bot=(True))
+            loft(pb, [ring(sg * hx, 0, z, r + lay + (flare if i == len(sh_rows) - 1 else 0), r + lay + (flare if i == len(sh_rows) - 1 else 0), 14) for i, (z, r, _, _) in enumerate(sh_rows)], 'shin' + sd, leg_hex, cap_top=False, cap_bot=False)
         fab('leather' if pd['shoe'][0] != 'trainer' else 'nylon')
         # shoes: shaped loft along y + sole
         sst, sc_, sole_c = pd['shoe']
@@ -702,7 +706,7 @@ def build_person(pd):
             hgt = shoe_h if j < 3 else shoe_h * (0.78 if j == 3 else (0.55 if j == 4 else (0.38 if j == 5 else 0.18)))
             zz = 0.028 * k + hgt * 0.5
             if sst == 'boot' and j < 3: hgt = shoe_h * 0.6; zz = 0.028 * k + hgt * 0.5
-            rows_s.append(ring(sg * hx, yy, zz, wid, 0.0 + 0.0, 10) if False else [(sg * hx + wid * math.cos(2 * math.pi * i / 10), yy, zz + hgt * 0.5 * math.sin(2 * math.pi * i / 10)) for i in range(10)])
+            rows_s.append(ring(sg * hx, yy, zz, wid, 0.0 + 0.0, 14) if False else [(sg * hx + wid * math.cos(2 * math.pi * i / 10), yy, zz + hgt * 0.5 * math.sin(2 * math.pi * i / 10)) for i in range(10)])
             top_line.append((yy, zz + hgt * 0.5, wid))
         loft(pb, rows_s, 'foot' + sd, sc_, cap_top=True, cap_bot=True)
         if sst in ('trainer', 'shoe', 'boot'):                       # laces across the instep
@@ -722,10 +726,10 @@ def build_person(pd):
         loft(pb, rows_so, 'foot' + sd, sole_c, cap_top=True, cap_bot=True)
         fab('leather')
         if pd.get('ghillie'):
-            loft(pb, [ring(sg * hx, 0.0, P['ankle'] + 0.012, r3 * 1.28, r3 * 1.28, 10), ring(sg * hx, 0.0, P['ankle'] + 0.030, r3 * 1.28, r3 * 1.28, 10)], 'shin' + sd, '#101010', cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, 0.0, P['ankle'] + 0.012, r3 * 1.28, r3 * 1.28, 14), ring(sg * hx, 0.0, P['ankle'] + 0.030, r3 * 1.28, r3 * 1.28, 14)], 'shin' + sd, '#101010', cap_top=False, cap_bot=False)
             rbox(pb, (sg * hx, 0.045 * k, P['ankle'] + 0.040 * k), (0.030 * k, 0.07 * k, 0.012), 'foot' + sd, '#101010')
         if sst == 'boot':
-            loft(pb, [ring(sg * hx, -0.004, P['ankle'] + 0.02, r3 * 1.5, r3 * 1.5, 10), ring(sg * hx, -0.004, P['ankle'] + 0.14 * k, r3 * 1.45 + lay, r3 * 1.45 + lay, 10), ring(sg * hx, -0.004, P['ankle'] + 0.16 * k, r3 * 1.5 + lay, r3 * 1.5 + lay, 10)], 'shin' + sd, sc_, cap_top=False, cap_bot=False)
+            loft(pb, [ring(sg * hx, -0.004, P['ankle'] + 0.02, r3 * 1.5, r3 * 1.5, 14), ring(sg * hx, -0.004, P['ankle'] + 0.14 * k, r3 * 1.45 + lay, r3 * 1.45 + lay, 14), ring(sg * hx, -0.004, P['ankle'] + 0.16 * k, r3 * 1.5 + lay, r3 * 1.5 + lay, 14)], 'shin' + sd, sc_, cap_top=False, cap_bot=False)
     # ---------------- scarf, bags
     if pd.get('scarf'):
         sc = pd['scarf']; fab('knit')
@@ -1144,6 +1148,8 @@ ONE_SHOT = {'turn_left', 'turn_right'}
 
 # ------------------------------------------------------------------ main build
 
+QUANT = {'knit': (8, 12), 'jersey': (4, 5), 'denim': (4, 4), 'cotton': (4, 4), 'suit': (6, 6), 'puffer': (8, 128), 'mesh': (6, 6), 'nylon': (10, 10), 'reflective': (8, 8),
+         'tartan0': (32, 32), 'tartan1': (32, 32), 'tartan2': (32, 32), 'tartan3': (32, 32)}
 FAB_GAIN = {'skin': 1.0, 'hair': 1.45, 'knit': 1.5, 'puffer': 1.3, 'jersey': 1.25, 'denim': 1.35, 'leather': 1.45, 'rubber': 1.6, 'metal': 1.0, 'reflective': 1.0, 'plastic': 1.1, 'mesh': 1.15, 'nylon': 1.25}
 def _lin(c): return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 def hex_tint(h, gain=1.25):
@@ -1178,6 +1184,9 @@ def bake_ao(mo, maxd=0.35):
         if n.length < 1e-6: out.append(1.0); continue
         n = n.normalized()
         t = Vector((1, 0, 0)) if abs(n.x) < 0.9 else Vector((0, 1, 0)); t = (t - n * t.dot(n)).normalized(); b = n.cross(t)
+        loc0, nrm0, _, d0 = tree.ray_cast(v.co + n * 0.002, n, 0.4)
+        if loc0 is not None and nrm0.dot(n) > 0.15:          # vertex buried inside another closed surface (hidden): leave it neutral
+            out.append(1.0); continue
         o = v.co + n * 0.013; hit = 0.0
         for dx, dy, dz in AO_DIRS:
             d = t * dx + b * dy + n * dz
@@ -1335,22 +1344,27 @@ def build_people(only=None):
                 cx_, cy_, R_ = pst[part]
                 if ax is not None: cx_, cy_ = ax
                 th0 = None; pts_ = []
-                for co in cos_:
-                    th = math.atan2(co.y - cy_, co.x - cx_)
-                    if th0 is None: th0 = th
-                    while th - th0 > math.pi: th -= 2 * math.pi
-                    while th - th0 < -math.pi: th += 2 * math.pi
-                    pts_.append((th * R_ / tm * 256.0, co.z / tm * 256.0))
+                if abs(poly.normal.z) > 0.55:                  # near-horizontal faces (shoulder caps, hems, cap discs): planar XY projection
+                    for co in cos_: pts_.append((co.x / tm * 256.0, co.y / tm * 256.0))
+                else:
+                    for co in cos_:
+                        th = math.atan2(co.y - cy_, co.x - cx_)
+                        if th0 is None: th0 = th
+                        while th - th0 > math.pi: th -= 2 * math.pi
+                        while th - th0 < -math.pi: th += 2 * math.pi
+                        pts_.append((th * R_ / tm * 256.0, co.z / tm * 256.0))
                 us_ = [a_ for a_, _ in pts_]; vs_ = [b_ for _, b_ in pts_]
-                span = max(max(us_) - min(us_), max(vs_) - min(vs_), 1e-6)
-                if span > 150.0:                      # very large face: shrink the pattern so it stays inside its cell
-                    sc_ = 150.0 / span; uc = sum(us_) / len(us_); vc = sum(vs_) / len(vs_)
+                qu, qv = QUANT.get(fb, (1, 1))
+                su = max(us_) - min(us_); sv = max(vs_) - min(vs_)
+                if su > 240 - qu or sv > 240 - qv:                     # very large face: shrink the pattern so it fits inside its cell
+                    sc_ = min((240 - qu) / max(su, 1e-6), (240 - qv) / max(sv, 1e-6)); uc = sum(us_) / len(us_); vc = sum(vs_) / len(vs_)
                     for li, (uu, vv) in zip(lis, pts_):
                         uvl.data[li].uv = cell_px_uv(cell, 128 + (uu - uc) * sc_, 256 - (128 + (vv - vc) * sc_))
                 else:
-                    ku = math.floor((sum(us_) / len(us_)) / 192.0); kv = math.floor((sum(vs_) / len(vs_)) / 192.0)
+                    Wu = max(qu, math.floor((240 - su) / qu) * qu); Wv = max(qv, math.floor((240 - sv) / qv) * qv)
+                    ku = math.floor(min(us_) / Wu); kv = math.floor(min(vs_) / Wv)
                     for li, (uu, vv) in zip(lis, pts_):
-                        uvl.data[li].uv = cell_px_uv(cell, 32 + uu - ku * 192.0, 256 - (32 + vv - kv * 192.0))
+                        uvl.data[li].uv = cell_px_uv(cell, 8 + uu - ku * Wu, 256 - (8 + vv - kv * Wv))
             for li in lis:
                 sh = ao_v[me_.loops[li].vertex_index]
                 ca.data[li].color = (tint[0] * sh, tint[1] * sh, tint[2] * sh, 1.0)
@@ -1404,7 +1418,7 @@ def _decode(j, bin_, ai):
     arr = np.lib.stride_tricks.as_strided(raw, shape=(cnt, dt.itemsize * nc), strides=(stride, 1)).copy().view(dt).reshape(cnt, nc)
     return arr
 def quantize_glb(path, hair_mask=True):
-    """KHR_mesh_quantization: NORMAL int8, TEXCOORD u16, COLOR u8, WEIGHTS u16 (positions / joints unchanged); hair material -> alpha MASK; drop unused buffer data"""
+    """KHR_mesh_quantization: NORMAL int8, TEXCOORD u16, COLOR u8, WEIGHTS u8 (positions / joints unchanged); hair material -> alpha MASK; drop unused buffer data"""
     j, bin_ = _read_glb(path)
     conv = {}
     for m in j['meshes']:
@@ -1421,7 +1435,9 @@ def quantize_glb(path, hair_mask=True):
                         data = np.clip(np.round(arr.astype(np.float32) * 255.0), 0, 255).astype(np.uint8); ct = 5121; ty = 'VEC4'; nz = True; stride = 4
                     else:
                         w = arr.astype(np.float32); w = w / np.maximum(w.sum(1, keepdims=True), 1e-9)
-                        data = np.clip(np.round(w * 65535.0), 0, 65535).astype(np.uint16); ct = 5123; ty = 'VEC4'; nz = True; stride = 8
+                        q8 = np.clip(np.round(w * 255.0), 0, 255).astype(np.int32)
+                        diff = 255 - q8.sum(1); am = np.argmax(q8, 1); q8[np.arange(len(q8)), am] += diff          # make each weight set sum to exactly 255
+                        data = np.clip(q8, 0, 255).astype(np.uint8); ct = 5121; ty = 'VEC4'; nz = True; stride = 4
                     conv[ai] = (data, ct, ty, nz, stride)
     # rebuild buffer: keep views still referenced by non-converted accessors / images
     used = set()
@@ -1457,7 +1473,7 @@ def quantize_glb(path, hair_mask=True):
 def export_people(meta):
     path = os.path.join(OUTP, 'people_lod.glb' if LOD else 'people.glb')
     bpy.ops.object.select_all(action='DESELECT')
-    kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_materials='EXPORT', export_image_format='JPEG', export_jpeg_quality=90, export_vertex_color='ACTIVE', export_cameras=False, export_lights=False,
+    kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_materials='EXPORT', export_image_format='JPEG', export_jpeg_quality=86, export_vertex_color='ACTIVE', export_cameras=False, export_lights=False,
               export_skins=True, export_animations=True, export_animation_mode='NLA_TRACKS', export_frame_range=False, export_optimize_animation_size=True,
               export_force_sampling=True)
     try: bpy.ops.export_scene.gltf(**kw)
@@ -1479,7 +1495,7 @@ if __name__ == '__main__':
         for pd, pb, mo, ao, P, g, bd in objs:
             tris0 = sum(max(1, len(p_.vertices) - 2) for p_ in mo.data.polygons)
             mo.modifiers.remove(mo.modifiers['Armature'])
-            dm = mo.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = min(1.0, 2200.0 / tris0); dm.use_collapse_triangulate = True
+            dm = mo.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = min(1.0, 2200.0 / tris0); dm.use_collapse_triangulate = True; dm.delimit = {'UV', 'MATERIAL'}
             bpy.context.view_layer.objects.active = mo
             bpy.ops.object.modifier_apply(modifier='dec')
             am = mo.modifiers.new('Armature', 'ARMATURE'); am.object = ao
