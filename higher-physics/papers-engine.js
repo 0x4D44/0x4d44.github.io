@@ -67,7 +67,10 @@
   const CONJ = W("and or but so because since as if then than while whereas although though unless whether when where"), OBJ = W("it them him her us me you this these those");
   const PRON = W("it they he she we you i there");
   const grammatical = (a, b) =>
-    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b));
+    (PRON.has(a) && AUX.has(b)) || (AUX.has(a) && AUX.has(b)) ||
+    (CONJ.has(a) && (SUBJ.has(b) || DETS.has(b) || b === "no" || b === "not" || b === "does" || b === "also")) ||
+    (PREP.has(a) && (OBJ.has(b) || DETS.has(b) || b === "her" || b === "his")) ||
+    (AUX.has(a) && (DETS.has(b) || b === "also" || b === "not" || b === "no"));
 
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
@@ -98,7 +101,7 @@
       const t = seg.match(/[a-z0-9']+/g) || [];
       for (let i = 1; i < t.length; i++) if (FUNC.has(t[i - 1]) && FUNC.has(t[i])) { ff++; if (!FFPAIRS.has(t[i - 1] + " " + t[i]) && !grammatical(t[i - 1], t[i])) odd++; }
     });
-    if (ff >= 3 && odd * 2 >= ff) return "zero";
+    if (ff >= 4 && odd * 3 >= ff * 2) return "zero";
     // key words strictly alternating with filler words, run after run, is padding rather than prose
     let alt = 1, altMax = 1;
     for (let i = 1; i < toks.length; i++) {
@@ -152,7 +155,7 @@
     // same text with its capitals (J, Hz, N) so a unit can be read exactly; lower-casing never changes the length
     const keep = plain(str, true);
     const out = [];
-    const re = /(?<![\d.])(-?(?:\d+(?:\.\d+)?|\.\d+))(?:\s*(?:x|\*)\s*10\s*\^?\s*\(?([-+]?\d+)\)?|e([-+]?\d+)(?!\w))?/g;
+    const re = /(?<![\d.])(-?(?:\d+(?:\.\d+)?|\.\d+))(?:\s*(?:x|\*)\s*10\s*\^?\s*\(?([-+]?\d+)\)?|e([-+]?\d+))?/g;
     let m;
     while ((m = re.exec(t))) {
       // a power glued to a letter is a unit exponent ("m s-1", "m^2", "v2"), not a quantity
