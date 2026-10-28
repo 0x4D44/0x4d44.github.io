@@ -43,7 +43,10 @@
     if (opts && opts.negCheck && !pt.negOK) {
       const spans = [];
       all.concat(any).forEach((p) => { const g = new RegExp(rx(p).source, "gi"); let m; while ((m = g.exec(text))) { spans.push([m.index, m.index + m[0].length]); if (m[0] === "") g.lastIndex++; } });
-      if (spans.some(([a]) => NEG.test(text.slice(Math.max(0, a - NEGWIN), a + 1).split(/[.;!?,]|\bbut\b|\bhowever\b|\bso\b|\bwhereas\b/).pop()))) return false;
+      /* the negator must sit in the same clause (clauses end at punctuation, a spaced dash, a colon, a bracket, or
+         "but / however / so / whereas / which / called / known as / that / and") and within about four words of the term */
+      const CLAUSE = /[.;:!?,()\[\]]|\s[-]+\s|\bbut\b|\bhowever\b|\bso\b|\bwhereas\b|\bwhich\b|\bcalled\b|\bknown as\b|\bthat\b|\band\b/;
+      if (spans.some(([a]) => NEG.test((text.slice(Math.max(0, a - NEGWIN), a).split(CLAUSE).pop().match(/[a-z0-9']+/g) || []).slice(-6).join(" ")))) return false;
     }
     if (!all.length) return true;
     // some occurrence of every `all` pattern must sit within `win` characters of an occurrence of the first
@@ -75,11 +78,17 @@
   /* A written answer that is only a pile of key words (no sentence structure) earns nothing, and a long
      unbroken run of content words caps the answer at half marks. Returns null when the answer reads as prose. */
   function listLike(text) {
+    // "a.c.", "r.m.s.", "p.d.", "e.g." are abbreviations, not sentence ends
+    text = text.replace(/\b(a\.c|d\.c|r\.m\.s|p\.d|e\.m\.f|i\.e|e\.g)\b\.?/g, (m) => m.replace(/\./g, ""));
+    text = text.replace(/,?\s*\band so (?:on|forth)\b/g, " ");
     const toks = text.match(/[a-z0-9']+/g) || [];
     if (toks.length < 4) return null;
     const funcToks = toks.filter((t) => FUNC.has(t));
     const func = funcToks.length;
-    if (func / toks.length < 0.14) return "zero";
+    const dens = func / toks.length;
+    // a run of key words with hardly any filler is a list; a participle clause after a comma followed by a relative clause (", releasing more neutrons which...")
+    // is the sign of a real sentence with unusually few filler words
+    if (dens < 0.07 || (dens < 0.14 && !(/[a-z]+, [a-z]+ing\b.*\b(?:which|who|whose)\b/.test(text) || (dens >= 0.1 && toks.length <= 16 && /[a-z],[^,]*[a-z], (?:therefore|hence|thus)\s/.test(text))))) return "zero";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
@@ -134,8 +143,8 @@
     });
     let got = Math.min(part.marks, pts.reduce((a, p) => a + (p.hit ? p.marks : 0), 0));
     if (list === "half") got = Math.min(got, Math.floor(part.marks / 2));
-    // a mark needs some writing behind it: about four words each at the very least
-    got = Math.min(got, Math.max(Math.floor(w / 4), w >= minWords ? 1 : 0));
+    // a mark needs some writing behind it: about three words each at the very least
+    got = Math.min(got, Math.max(Math.floor(w / 3), w >= minWords ? 1 : 0));
     const out = { got, of: part.marks, points: pts };
     if (list) out.note = "Your answer reads like a list of key words. Write it as sentences; the marker gives little or no credit for a bare list.";
     return out;
@@ -246,7 +255,7 @@
 
   /* A calculation is marked in steps, as SQA do: the relationship, the substitution, the answer with its unit.
      step = { desc, marks?, rel?: [regex over the compacted working], nums?: [number | [alternatives]], ans?: number, alts?: [numbers],
-              sf?, rel2?, abs?, unit?: "m s-1" | [..], signed? }
+              sf?, rel2?, abs?, unit?: "m s-1" | [..], signed?, alt?: [regex: another route to the same step] }
      A step is earned when every part of it that is given holds. The `ans` step reads only the final number. */
   const compact = (s) => HPP.norm(s).replace(/\s+/g, "").replace(/[()]/g, (c) => c).replace(/\*/g, "x");
   function scoreCalc(part, ans) {
@@ -269,6 +278,8 @@
           ok = !!fin && tg.some((a) => HPP.closeTo(v, a, { sf: st.sf, rel: st.rel2, abs: st.abs, signed: st.signed }));
           if (ok && st.unit) ok = sc != null;
         }
+        // `alt`: regexes for another route to the same step (e.g. the numbers substituted without the symbols written out)
+        if (!ok && st.alt && st.ans == null && st.alt.some((r) => new RegExp(r, "i").test(flat))) ok = true;
         pts[i].hit = ok;
       });
     }

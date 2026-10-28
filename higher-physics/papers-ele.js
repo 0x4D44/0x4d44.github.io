@@ -24,6 +24,10 @@
   const DECW = "decreas|fall|drop|reduc|lower|smaller|less|down|declin";
   const UP = (subj, n) => "\\b(?:" + subj + ")\\b(?:\\W+(?!(?:" + DECW + ")\\w*)\\w+){0," + (n == null ? 4 : n) + "}\\W+\\b(?:" + INC + ")\\b|\\b(?:increas\\w*|rises?|rise|growth)\\W+(?:in|of)\\W+(?:the\\W+)?(?:\\w+\\W+){0,2}(?:" + subj + ")\\b";
 
+  /* direction-aware "falls": subject followed (within n words, none of them an increase word) by a decrease word */
+  const INCW = "increas|rise|ris|grow|greater|larger|bigger|higher|up";
+  const DOWN = (subj, n) => "\\b(?:" + subj + ")\\b(?:\\W+(?!(?:" + INCW + ")\\w*)\\w+){0," + (n == null ? 4 : n) + "}\\W+\\b(?:" + DEC + "|down)\\b|\\b(?:decreas\\w*|fall|drop|reduc\\w*|lower\\w*)\\W+(?:in|of)\\W+(?:the\\W+)?(?:\\w+\\W+){0,2}(?:" + subj + ")\\b|\\b(?:lower|smaller|less|reduced)\\W+(?:\\w+\\W+){0,2}(?:" + subj + ")\\b";
+
   /* ---------- small SVG kit ---------- */
   const INK = "#222", BLU = "#1c3b66", RED = "#b3261e", FILL = "#dbe6f5", GRID = "#d4d4d4";
   const tx = (x, y, s, o) => { o = o || {}; return '<text x="' + x + '" y="' + y + '" font-family="sans-serif" font-size="' + (o.s || 12) + '" text-anchor="' + (o.a || "middle") + '" fill="' + (o.f || INK) + '"' + (o.i ? ' font-style="italic"' : "") + (o.b ? ' font-weight="bold"' : "") + (o.r ? ' transform="rotate(' + o.r + " " + x + " " + y + ')"' : "") + ">" + s + "</text>"; };
@@ -248,8 +252,8 @@
             q: "Calculate the current in lamp X.",
             steps: [
               { desc: "Relationship: V = IR", rel: OHM.concat(["i[a-z_0-9]*=\\(?[0-9.]+\\)?/\\(?[0-9.]+", "ratio", "splits?", "divid", "inverse"]) },
-              { desc: "Total current from the supply: I = 12/12 = 1.0 A", nums: [1.0] },
-              { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [[4.0, 0.3333, 0.33, 0.6667, 0.67]] },
+              { desc: "Total current from the supply: I = 12/12 = 1.0 A", nums: [1.0], alt: ["12x4/\\(?8\\+4", "4/\\(?8\\+4\\)?x12", "12x\\(?4/\\(?8\\+4"] },
+              { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [[4.0, 0.6667, 0.67]] },
               { desc: "Current in lamp X = 0.33 A (333 mA is also accepted)", ans: 1 / 3, sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere"] },
             ],
             sample: "V = IR\nI(total) = V/R = 12/12 = 1.0 A\np.d. across R₁ = 1.0 × 8.0 = 8.0 V, so p.d. across the lamps = 12 − 8.0 = 4.0 V\nI(X) = V/R = 4.0/12 = 0.33 A",
@@ -268,7 +272,8 @@
                 any: [near("(?:total|overall|circuit|parallel|combined|branch|branches|section|network)\\W+(?:\\w+\\W+){0,3}resistance|resistance\\W+(?:\\w+\\W+){0,3}(?:circuit|parallel|section|branches|network)", INC, 5),
                   "\\b(?:bigger|larger|greater|higher|increased|more)\\W+(?:\\w+\\W+){0,2}(?:share|proportion|fraction)",
                   "(?:" + PD + ")\\W+(?:\\w+\\W+){0,4}(?:across|over|on)\\W+(?:\\w+\\W+){0,2}(?:x|lamp x|it)\\W+(?:\\w+\\W+){0,3}(?:" + INC + ")",
-                  near("(?:total|overall|circuit|supply)\\W+(?:\\w+\\W+){0,2}current", DEC, 4)] },
+                  near("(?:total|overall|circuit|supply)\\W+(?:\\w+\\W+){0,2}current", DEC, 4)],
+                not: ["(?<!not )(?<!n't )\\bdimmer\\b", "(?<!not )(?<!n't )\\bdim\\b", "less bright"] },
               { desc: "Lamp X becomes brighter", not: ["(?<!not )(?<!n't )dimmer", "less bright", "(?<!not )(?<!n't )\\bdim\\b", "same brightness", "stays? the same", "no change", "(?:not|n't|never|no)\\W+(?:\\w+\\W+){0,2}(?:brighter|bright|more bright)"],
                 any: ["\\bbrighter\\b|\\bmore bright\\b|glows? more|shines? more", near("brightness", "increas\\w*|rises?|greater|higher", 4)] },
             ],
@@ -316,7 +321,7 @@
               { desc: "The resistance of the LDR increases as the light level falls", not: ["\\bnot\\b.{0,30}(?:increas|rise)"],
                 all: [UP("resistance", 5) + "|\\b(?:higher|greater|larger|bigger|more)\\W+(?:\\w+\\W+){0,2}resistance"] },
               { desc: "The LDR takes a larger share of the 9.0 V, so the p.d. across the LDR (voltmeter reading) increases",
-                not: ["resistance\\W+(?:\\w+\\W+){0,3}(?:" + DECW + ")\\w*", "(?:" + DECW + ")\\w*\\W+(?:in\\W+)?(?:the\\W+)?(?:ldr\\W+)?resistance"],
+                not: ["resistance\\W+(?:\\w+\\W+){0,3}(?:" + DECW + ")\\w*", "(?:decreas|drop|declin)\\w*\\W+(?:in|of)\\W+(?:the\\W+)?(?:ldr\\W+)?resistance", "(?:reduc|lower|smaller|less|down)\\w*\\W+(?:the\\W+)?(?:ldr\\W+)?resistance", "\\bcurrent\\W+(?:\\w+\\W+){0,3}(?:increas\\w*|rises?|goes up|(?:gets?|becomes?) (?:bigger|larger|higher|greater))"],
                 all: [near(PD + "|reading|share|proportion|reads?|v|ratio|fraction", INC + "|more", 4)] },
             ],
             sample: "As the daylight fades the resistance of the LDR increases. The LDR then takes a larger share of the 9.0 V supply, so the p.d. across it, and the voltmeter reading, increases.",
@@ -401,11 +406,12 @@
             q: "The headlamps become dimmer while the starter motor is operating. Explain why.",
             points: [
               { desc: "The starter motor draws a large current from the battery (the current in the battery increases)",
-                all: ["starter|motor|large|big|high|increas|heavy", near("current", "large|big|high|increas\\w*|greater|larger|bigger|draws?|heavy", 5)] },
+                all: ["starter|motor|large|big|high|increas|heavy|ris(?:e|es|ing)|more|greater|bigger", near("current", "large|big|high|increas\\w*|ris(?:es?|ing)|goes up|greater|larger|bigger|draws?|heavy", 5)],
+                not: ["(?<!not )(?<!n't )\\bbrighter\\b", "current\\W+(?:\\w+\\W+){0,2}(?:through|in|of)\\W+(?:the\\W+)?(?:head)?(?:lamps?|lights?|bulbs?)\\W+(?:\\w+\\W+){0,3}(?:big|large|high|increas|greater|larger|bigger)"] },
               { desc: "More p.d. is lost across the internal resistance (more lost volts), so the terminal p.d. across the lamps falls", not: ["(?:not|n't|never)\\W+(?:\\w+\\W+){0,1}(?:dimmer|dim)"],
                 any: [near("lost volts|internal resistance|\\bir\\b", "more|increas\\w*|greater|larger|bigger|higher|lost|lose|loses|drop\\w*|across", 6) + "|" + near("lost volts", "increas\\w*|greater|larger|bigger|higher", 6),
                   near("t\\.?p\\.?d\\.?|terminal|" + PD + "|lamps?|headlamps?", DEC, 6)],
-                all: ["lost volts|internal resistance|\\bir\\b|t\\.?p\\.?d\\.?|terminal"] },
+                all: [near("t\\.?p\\.?d\\.?|terminal|" + PD + "|lamps?|headlamps?|bulbs?|lights?", DEC, 6)] },
             ],
             sample: "The starter motor draws a very large current from the battery. This increases the lost volts across the internal resistance of the battery, so the terminal p.d. across the headlamps falls and they are dimmer.",
             model: "<ul><li>The starter motor draws a large current from the battery (1)</li><li>so the lost volts (Ir) across the internal resistance increase, and the terminal p.d. across the lamps decreases (1)</li></ul><p>E = V + Ir: E is fixed, so when I rises V must fall. A bare &ldquo;the starter uses up the power&rdquo; earns nothing. Do not accept &ldquo;the battery runs out&rdquo;: the battery's EMF does not change.</p>",
@@ -465,9 +471,7 @@
             points: [
               { desc: "As the capacitor charges, the p.d. across the capacitor increases, so the p.d. across the resistor decreases",
                 any: [near("(?:" + PD + ")\\W+(?:\\w+\\W+){0,4}(?:across|over|on)\\W+(?:\\w+\\W+){0,2}(?:resistor|variable resistor|r)", DEC, 5),
-                  near("(?:" + PD + ")\\W+(?:\\w+\\W+){0,4}(?:across|over|of|on)\\W+(?:\\w+\\W+){0,2}(?:capacitor)", INC, 5),
-                  "capacitor\\W+(?:" + PD + ")\\W+(?:\\w+\\W+){0,3}(?:" + INC + ")",
-                  "(?:" + PD + ")\\W+(?:\\w+\\W+){0,2}(?:" + INC + ")\\W+(?:\\w+\\W+){0,3}capacitor",
+                  "capacitor\\W+(?:\\w+\\W+){0,6}(?:" + INC + ")\\W+(?:\\w+\\W+){0,12}(?:less|smaller|lower|reduc\\w*|remaining|left|decreas\\w*|falls?)",
                   "supply\\W+(?:\\w+\\W+){0,3}(?:" + PD + ")\\W+(?:\\w+\\W+){0,6}(?:shared|split)"] },
               { desc: "The resistance must be decreased so that I = V/R stays constant",
                 not: ["(?:increas\\w*|rais\\w*|greater|larger|bigger|higher)\\W+(?:\\w+\\W+){0,3}(?:resistance|resistor)", "(?:resistance|resistor)\\W+(?:\\w+\\W+){0,2}(?:must|has to|should|needs? to|to)\\W+(?:be\\W+)?(?:increas|rais)"],
@@ -571,7 +575,7 @@
                   near("short|brief|quick\\w*|fraction of a second", "burst|time|energy|current|release", 6)],
                 all: ["battery|cell|supply"] },
               { desc: "The capacitor stores the energy gradually, then releases it very quickly as a large current",
-                all: [near("capacitor", "stores?|stored|storing|charg\\w*|builds? up|collects?", 5), near("releas\\w*|discharg\\w*|dump\\w*|delivers?|gives? out|gives? off|burst", "quick\\w*|rapid\\w*|short|sudden\\w*|fast|large|big|high|burst", 6)] },
+                all: [near("capacitor", "stores?|stored|storing|charg\\w*|builds? up|collects?", 5) + "|\\bcapacitor\\W+(?:\\w+\\W+){0,4}(?:discharg|releas|dump|deliver)\\w*", near("releas\\w*|discharg\\w*|dump\\w*|delivers?|gives? out|gives? off|burst", "quick\\w*|rapid\\w*|short|sudden\\w*|fast|large|big|high|burst", 6)] },
             ],
             sample: "The flash needs a very large current for a very short time, and the battery cannot supply that because of its internal resistance. The capacitor stores energy slowly from the battery and then releases it quickly as a large current through the lamp.",
             model: "<ul><li>The flash needs a large current (high power) for a very short time, which the battery could not supply because of its internal resistance (lost volts) (1)</li><li>The capacitor charges slowly from the battery, storing the energy, and then discharges it all very rapidly through the lamp (1)</li></ul><p>Power = E/t = 5.4/1.5 × 10<sup>−3</sup> = 3.6 kW: far more than a small battery could deliver in one go.</p>",
@@ -655,7 +659,7 @@
                 all: [near("fall\\w*|drop\\w*|jump\\w*|move\\w*|go(?:es)? down|combin\\w*|recombin\\w*|fill\\w*|lose energy", "valence band|holes?", 6), "conduction band|conduction"] },
               { desc: "The energy released is emitted as photons (of light)",
                 not: ["\\babsorb\\w*\\W+(?:\\w+\\W+){0,3}photons?", "\\bphotons?\\W+(?:\\w+\\W+){0,3}(?:are |is |were |get |gets )?absorb"],
-                any: [near("photons?", "emit\\w*|releas\\w*|given (?:off|out)|radiat\\w*|produc\\w*|gives? out|gives? off|energy", 6), near("energy", "emitted|released|given (?:off|out)|lost as|converted|radiated", 5) + "|" + near("energy", "photon|photons", 6)] },
+                any: [near("photons?", "emit\\w*|releas\\w*|given (?:off|out)|radiat\\w*|produc\\w*|gives? out|gives? off|energy", 6), near("energy", "emitted|released|given (?:off|out)|lost as|converted|radiated", 5) + "|" + near("energy", "photon|photons", 6), "\\b(?:electrons?|they|it|energy|recombin\\w*|holes?)\\W+(?:\\w+\\W+){0,4}emit\\w*\\W+(?:\\w+\\W+){0,2}(?:light|photons?)", "\\bemit\\w*\\W+(?:\\w+\\W+){0,2}photons?", "\\b(?:light|photons?)\\W+(?:\\w+\\W+){0,3}emitted"] },
             ],
             sample: "The junction is forward biased, so the electric field in the junction is reduced and electrons move across from the n-type to the p-type material. The electrons then fall from the conduction band into the valence band, combining with holes. The energy they lose is given out as photons of light.",
             model: "<ul><li>Forward bias reduces the electric field in the junction, so electrons move from the n-type side to the p-type side (1)</li><li>The electrons fall from the conduction band to the valence band (and combine with holes) (1)</li><li>The energy lost by each electron is emitted as a photon (1)</li></ul><p>Precise band words matter: electrons <em>fall from the conduction band to the valence band</em>. &ldquo;The electrons fall from the n-type to the p-type&rdquo; names the layers, not the bands.</p>",
@@ -757,9 +761,11 @@
             label: "(c)", type: "text", marks: 2, minWords: 10,
             q: "Explain what is meant by saying that the mains supply is <strong>230 V r.m.s.</strong>",
             points: [
-              { desc: "230 V is the value of the direct (d.c.) voltage that would give the same power (heating) in the same resistor",
-                all: ["d\\.?c\\.?|direct|steady|constant", near("same", "power|heat\\w*|energy", 5)] },
-              { desc: "The alternating voltage is not constant: it only reaches its (larger) peak value of 325 V briefly in each cycle",
+              { desc: "230 V is the value of the steady (direct, d.c.) voltage that is equivalent to the alternating supply",
+                any: [near("d\\.?c\\.?|direct|steady|constant", "voltage|value|supply|p\\.?d\\.?|current", 4)] },
+              { desc: "...equivalent in that it gives the same power (heating) in the same resistor",
+                group: "rms2", all: [near("same", "power|heat\\w*|energy", 5)] },
+              { desc: "OR the alternating voltage is not constant: it only reaches its (larger) peak value of 325 V briefly in each cycle", group: "rms2",
                 any: [near("peak|325|maximum", "larger|greater|bigger|higher|more than|only|briefly|momentar\\w*|instant\\w*|reach\\w*|changes?|varies|varying|alternates?", 6), "peak\\W+(?:\\w+\\W+){0,5}(?:325|3\\.2|about)"],
                 not: ["peak (?:value )?is the same", "same as the peak"] },
             ],
@@ -804,9 +810,11 @@
             q: "Explain why the voltmeter reading changes as the temperature of the greenhouse rises.",
             points: [
               { desc: "As the temperature rises, the resistance of the thermistor decreases",
-                all: ["thermistor|temperature|hot\\w*|warm\\w*|heat\\w*", near("resistance|r|r_t|rt", DEC + "|down", 6)] },
+                all: ["thermistor|temperature|hot\\w*|warm\\w*|heat\\w*", DOWN("resistance|r|r_t|rt", 6)],
+                not: [UP("resistance|thermistor", 4)] },
               { desc: "so the fixed resistor takes a larger share of the supply p.d., and the p.d. across it (the reading) increases",
-                all: [near("fixed|resistor|voltmeter|reading|reads?|share|proportion|fraction|ratio", INC + "|more", 6), "share|proportion|fraction|ratio|(?:larger|bigger|greater|higher|more) (?:p\\.?d\\.?|voltage|potential)|more of|current|across|v ?= ?ir|" + PD] },
+                all: [near("fixed|resistor|voltmeter|reading|reads?|share|proportion|fraction|ratio", INC + "|more", 6), "share|proportion|fraction|ratio|(?:larger|bigger|greater|higher|more) (?:p\\.?d\\.?|voltage|potential)|more of|current|across|v ?= ?ir|" + PD],
+                not: ["(?:reading|voltmeter)\\W+(?:\\w+\\W+){0,4}(?:goes down|go down|decreas\\w*|falls?|drops?|lower|smaller|less)"] },
             ],
             sample: "As the temperature rises the resistance of the thermistor decreases. The thermistor then takes a smaller share of the 6.0 V, so the fixed resistor takes a larger share and the p.d. across it, which the voltmeter reads, increases.",
             model: "<ul><li>The thermistor's resistance decreases as the temperature rises (1)</li><li>The thermistor's share of the supply p.d. falls, so the p.d. across the fixed resistor (the voltmeter reading) increases, because the two p.d.s add to 6.0 V (1)</li></ul><p>At 40 °C the reading is 2.4 V; at 70 °C, where the thermistor is 1.0 kΩ, it is 4.0 V.</p>",
@@ -866,11 +874,11 @@
             q: "The experiment is repeated with the original 600 Ω resistor but a capacitor of larger capacitance. Describe and explain the effect on (i) the initial current, (ii) the final p.d. across the capacitor, and (iii) the time taken to charge.",
             points: [
               { desc: "The initial current is unchanged, because the capacitor starts uncharged so I = V/R is the same", not: ["not\\W+(?:also\\W+)?(?:the\\W+)?(?:same|unchanged|constant)"],
-                all: [near("initial|starting|start|first|beginning|\\(i\\)", "current|same|unchanged", 6), "same|unchanged|no change|not change|constant|doesn't change|does not change|unaffected|not affected|equal"] },
+                all: [near("initial|starting|start|first|beginning", "current|same|unchanged", 6) + "|(?:^|\\s)\\(?i[.):]\\s*(?:[a-z0-9.]+[ ,;-]+){0,6}(?:current|same|unchanged|no change)\\b", "same|unchanged|no change|not change|constant|doesn't change|does not change|unaffected|not affected|equal"] },
               { desc: "The final p.d. is unchanged: it equals the supply p.d. of 6.0 V", not: ["not\\W+(?:also\\W+)?(?:the\\W+)?(?:same|unchanged|constant)", "not\\W+(?:\\w+\\W+){0,1}equal", "(?:final|ends?)\\W+(?:\\w+\\W+){0,4}(?:p\\.?d\\.?|voltage)\\W+(?:\\w+\\W+){0,3}(?:smaller|larger|bigger|greater|higher|lower|less|increas|decreas)"],
-                all: [near("final|ends?|fully charged|eventually|finally|\\(ii\\)", PD + "|same|unchanged|6", 8), "same|unchanged|no change|not change|supply|6\\.0|6 v|equal|unaffected|not affected"] },
+                all: [near("final|ends?|fully charged|eventually|finally", PD + "|same|unchanged|6", 8) + "|(?:^|\\s)\\(?ii[.):]\\s*(?:[a-z0-9.]+[ ,;-]+){0,8}(?:" + PD + "|same|unchanged|no change|6)\\b", "same|unchanged|no change|not change|supply|6\\.0|6 v|equal|unaffected|not affected"] },
               { desc: "It takes longer to charge, because more charge must flow to reach the same p.d. (Q = CV)", not: ["not\\W+(?:\\w+\\W+){0,1}(?:to )?flow"],
-                all: ["longer|slower|more time|slowly|takes more", "more charge|larger charge|greater charge|bigger charge|more electrons|q ?= ?cv|charge|capacitance|stores? more|more energy|bigger capacitor|larger capacitor"] },
+                all: ["longer|slower|more time|slowly|takes more", "more charge|larger charge|greater charge|bigger charge|more electrons|q ?= ?cv|charge|capacitance|stores? more|more energy|bigger capacitor|larger capacitor|\\brc\\b\\W+(?:\\w+\\W+){0,3}(?:increas\\w*|larger|bigger|greater|higher)|time constant\\W+(?:\\w+\\W+){0,3}(?:increas\\w*|larger|bigger|greater|higher)|(?:larger|bigger|greater)\\W+(?:\\w+\\W+){0,2}time constant"] },
             ],
             sample: "The initial current is the same, because the capacitor starts uncharged so all of the supply p.d. is across the resistor and I = V/R stays the same. The final p.d. across the capacitor is also unchanged, since it still equals the 6.0 V supply. The capacitor takes longer to charge, because more charge has to flow to reach the same p.d.",
             model: "<ul><li>The initial current is unchanged (the capacitor starts with zero p.d., so I = V/R = 0.010 A as before) (1)</li><li>The final p.d. is unchanged: it reaches the supply p.d., 6.0 V (1)</li><li>It takes longer to charge, since more charge (Q = CV) must flow to reach the same p.d., at the same starting current (1)</li></ul><p>The graph for the larger capacitor starts with the same gradient-related current but climbs more slowly towards the same 6.0 V.</p>",
