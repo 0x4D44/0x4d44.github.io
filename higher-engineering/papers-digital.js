@@ -393,7 +393,7 @@
                   P1 + "[\\s\\S]{0,100}?" + R1,
                   R1 + "[\\s\\S]{0,100}?" + P1,
                   "\\b(?:p|g2|gate 2|gate two)\\W+(?:and|&)\\W+(?:r|g3|gate 3|gate three)\\b[^.;]{0,60}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
-                  "\\b(?:top and bottom|upper and lower|second and third|2nd and 3rd|middle|other two|remaining two|two middle|both of the others)\\W+(?:\\w+\\W+){0,4}?(?:gates?|nands?)?\\b[^.;]{0,40}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
+                  "\\b(?:top and bottom|upper and lower|next two|following two|other two gates|second and third|2nd and 3rd|middle|other two|remaining two|two middle|both of the others)\\W+(?:\\w+\\W+){0,4}?(?:gates?|nands?)?\\b[^.;]{0,40}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
                   "\\b(?:g2|gate 2|gate two)\\W+(?:(?:output|outputs|gives?|is|=|goes|will output|now|also|then)\\W+){1,2}(?:1|high|one)\\b[\\s\\S]{0,100}?\\b(?:g3|gate 3|gate three)\\W+(?:(?:output|outputs|gives?|is|=|goes|will output|now|also|then)\\W+){1,2}(?:1|high|one)\\b",
                   "\\b(?:one input|an input|input)\\W+(?:\\w+\\W+){0,4}(?:0|low|zero)\\W+(?:\\w+\\W+){0,6}(?:output|outputs|gives|so)\\W+(?:\\w+\\W+){0,2}(?:1|high|one)\\b",
                 ] },

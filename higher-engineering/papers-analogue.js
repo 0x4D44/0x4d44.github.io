@@ -219,14 +219,14 @@
   /* the wrong claim that the transistor, relay or heater ends up off */
   const OFF_CLAIM = R`(?:heater|relay|transistor|coil)\W+(?:(?:is|are|stays?|remains?|gets?|goes?|switch\w*|turn\w*|be|being|will be|would be|all)\W+){1,3}off\b`;
   /* the wrong claim "the resistance falls/is lower" (not "more resistance at lower temperatures") */
-  const RES_FALLS = R`resistance${C(UPSTOP + R`|\bas\b|when|if|\bat\b|\bin\b|\bwith\b`, 25)}(?:fall\w*|drop\w*|decreas\w*|reduc\w*|go(?:es)? down|dips?)|resistance(?:\W+(?:of|in)\W+(?:the\W+)?\w+(?:\W+\w+)?)?\W+(?:is|becomes|gets|goes|will be|would be)\W+(?:\w+\W+){0,1}(?:lower|less|smaller|down)`;
+  const RES_FALLS = R`resistance${C(UPSTOP + R`|,|\bso\b|therefore|\bas\b|when|if|\bat\b|\bin\b|\bwith\b`, 25)}(?:fall\w*|drop\w*|decreas\w*|reduc\w*|go(?:es)? down|dips?)|resistance(?:\W+(?:of|in)\W+(?:the\W+)?\w+(?:\W+\w+)?)?\W+(?:is|becomes|gets|goes|will be|would be)\W+(?:\w+\W+){0,1}(?:lower|less|smaller|down)`;
 
 
   /* analogue-04(b): the diode is wrongly blamed for the spike or the damage */
   const DIODE_SPIKE = R`diode${C(R`\bnot\b|n't|never|stops?|prevents?|protects?|avoids?|limits?|reduces?|absorbs?`, 40)}(?:causes?|creates?|produces?|generates?|induces?)\W+(?:\w+\W+){0,3}(?:voltage|spike|surge|emf|e\.m\.f)`;
   /* analogue-05(d): a broken lamp or transistor is not the reason */
   const BROKEN = R`\b(?:broken|faulty|blown|burnt out|burned out|dead|short.?circuit\w*)\b`;
-  const DIODE_ON = R`diode${C(NEG, 60)}(?:conduct\w*|carr(?:y|ies|ied))${C(NEG, 40)}(?:when|while|as long as|once)\W+(?:the\W+)?(?:transistor|relay|coil|circuit)\W+(?:\w+\W+){0,1}(?:on|conducting|switched on|turned on|operating|energi[sz]ed|working)\b`;
+  const DIODE_ON = R`diode${C(NEG, 60)}(?:conduct\w*|carr(?:y|ies|ied))${C(NEG, 80)}(?:when|while|as long as|once)\W+(?:the\W+)?(?:transistor|relay|coil|circuit)\W+(?:\w+\W+){0,1}(?:on|conducting|switched on|turned on|operating|energi[sz]ed|working)\b`;
   const DIODE_HARM = R`diode${C(R`\bnot\b|n't|never|stops?|prevents?|protects?|avoids?|saves?`, 40)}(?:damages?|destroys?|breaks?|blows?|burns?|ruins?|harms?|overheats?)\b`;
   /* analogue-08(a): BJT and MOSFET properties swapped round */
   const SWAP_BJT = [
@@ -362,8 +362,8 @@
                 not: [DIODE_ON, R`coil\W+(?:gets?|receives?|has|sees|is given)\W+(?:\w+\W+){0,1}(?:less|lower|reduced)`],
                 any: [
                   R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|dissipat\w*|bypass\w*|divert\w*|dump\w*|shunt\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 50)}(?:spike|surge|back.?emf|energy|voltage|induced|collaps\w*|stored|path|route|loop|field)`,
-                  R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|bypass\w*|divert\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 30)}current${C(NEG, 40)}(?:round|around|back|coil|loop|path|circulat\w*)`,
-                  R`diode${C(NEG, 50)}(?:provid\w*|giv\w*|allow\w*|let\w*|offer\w*|creat\w*|mak\w*)${C(NEG, 30)}(?:path|route|loop|way|circuit)`,
+                  R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|bypass\w*|divert\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 30)}current${C(NEG, 40)}(?:round|around|back|loop|path|circulat\w*)`,
+                  R`diode${C(NEG, 50)}(?:provid\w*|giv\w*|allow\w*|let\w*|offer\w*|creat\w*|mak\w*)${C(NEG, 30)}(?:path|route|loop|way (?:round|around|out)|circuit)`,
                   R`diode${C(NEG, 50)}(?:allow\w*|let\w*|enabl\w*|permit\w*)${C(NEG, 30)}(?:current|spike|surge|energy|it)${C(NEG, 30)}(?:flow\w*|go\w*|pass\w*|circulat\w*|travel\w*|continu\w*)`,
                   R`(?:current|spike|surge|voltage|energy)${C(NEG, 40)}(?:flows?|goes?|passes?|circulat\w*|travels?|is carried|is conducted|is absorbed)${C(NEG, 30)}(?:through|round|via|into|in) (?:the )?diode`,
                 ] },
@@ -429,6 +429,8 @@
                   R`current${C(NEG, 50)}(?:limit\w*|restrict\w*|capped|set|determined|fixed|governed)${C(NEG, 30)}(?:by|to)${C(NEG, 30)}(?:lamp|load|bulb|supply|12 ?v|resistance)`,
                   R`(?:lamp|bulb)${C(NEG, 40)}(?:only|just)${C(NEG, 20)}(?:take\w*|draw\w*|pass\w*|need\w*|let\w*|allow\w*|use\w*)`,
                   R`(?:cannot|can't|can not|unable to|won't|will not|never|no more|no further)\W+(?:\w+\W+){0,3}(?:rise|increase|exceed|go (?:higher|above|up|beyond)|get (?:any )?(?:higher|bigger|larger)|pass|draw|flow)(?=[^.;]{0,80}(?:lamp|load|bulb|300|0\.3|supply|maximum|resistance|12))`,
+                  R`current\W+(?:\w+\W+){0,2}(?:depends?|dependent)\W+(?:\w+\W+){0,2}on\W+(?:\w+\W+){0,3}(?:lamp|load|bulb|supply|12)`,
+                  R`(?:cannot|can't|can not|unable to|won't|will not|never)\W+(?:\w+\W+){0,2}(?:be\W+)?(?:more|greater|larger|bigger|higher)\W+than\W+(?:\w+\W+){0,8}(?:lamp|load|bulb|300|0\.3|supply|12)`,
                   R`(?:maximum|largest|most|highest)\W+(?:\w+\W+){0,4}(?:lamp|load|bulb)\W+(?:\w+\W+){0,2}(?:take|draw|pass|carry|allow|let|accept|handle)`,
                 ] },
               { desc: "The transistor is saturated (fully on, V_CE small); the extra base current is wasted",
@@ -512,7 +514,7 @@
             q: R`State what is meant by the threshold voltage of an n-channel enhancement MOSFET.`,
             points: [
               { desc: "The minimum gate-source voltage at which the MOSFET begins to conduct",
-                not: [R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`, R`(?:stops?|ceases?|no longer|prevent\w*|blocks?|unable to|cannot|can't)\W+(?:\w+\W+){0,3}(?:conduct\w*|current)`, R`which\W+(?:\w+\W+){0,1}(?:turns?|switch\w*)\W+(?:\w+\W+){0,1}off`, R`(?:supply|load|solenoid|drain)\W+(?:\w+\W+){0,2}(?:voltage|volts?)`,
+                not: [R`\b(?:below|under|less than|lower than)\W+which`, R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`, R`(?:stops?|ceases?|no longer|prevent\w*|blocks?|unable to|cannot|can't)\W+(?:\w+\W+){0,3}(?:conduct\w*|current)`, R`which\W+(?:\w+\W+){0,1}(?:turns?|switch\w*)\W+(?:\w+\W+){0,1}off`, R`(?:supply|load|solenoid|drain)\W+(?:\w+\W+){0,2}(?:voltage|volts?)`,
                   R`all the time|\balways\b|permanent\w*|constantly`, R`(?:minimum|least|lowest|smallest)\W+(?:\w+\W+){0,1}(?:current|power|resistance|capacitance|charge)\b`, R`\bgate\W+(?:current|resistance|capacitance|power)\b`],
                 win: 140,
                 all: [R`(?:\bv_?gs\b|gate.?source|gate to source|between (?:the )?gate|\bgate\W+(?:\w+\W+){0,3}(?:voltage|volts?|potential)|(?:voltage|volts?|potential)\W+(?:\w+\W+){0,8}\bgate\b)`,
@@ -612,7 +614,7 @@
             why: R`<p>$V_o = A_vV_i = -7.02 \times 1.2 = -8.43$ V (1). This lies between the supply rails, so it is the real output.</p><p>Slip: using $1 + R_f/R_i = 8.02$ (the non-inverting formula) gives $+9.6$ V.</p>`,
           },
           {
-            label: "(d)", type: "text", marks: 2, rows: 4, minWords: 8,
+            label: "(d)", type: "text", marks: 2, rows: 4, minWords: 4,
             q: R`When the input is $+2.0$ V the formula predicts $V_o = -14.0$ V. Explain why this is not the actual output, and state the actual output voltage.`,
             points: [
               { desc: "The output cannot go beyond the supply rails; it is limited by the supply voltage",
@@ -624,6 +626,9 @@
                   R`(?<!(?:cannot|can't|not|never|n't)\W+(?:\w+\W+){0,3})(?:beyond|past|exceed\w*|outside|more negative than|more than|lower than|greater than|larger than|higher than|below|above)\W+(?:the\W+)?(?:\w+\W+){0,2}(?:supply|rails?|vcc)`,
                   R`(?:saturat\w*|clip\w*)\W+at\W+(?:the\W+)?(?:\w+\W+){0,1}(?:supply|rail)`,
                   R`(?:supply|rails?|vcc|12 ?v|power supply)${C(NEG, 40)}(?:limit\w*|restrict\w*|set\w*|determin\w*|maximum|\bmax\b|cap\w*)`,
+                  R`(?:cannot|can't|can not|unable to|won't|will not|never|not able to)\W+(?:\w+\W+){0,5}(?:exceed\w*|go (?:beyond|past|above))\W+(?:\w+\W+){0,3}(?:supply|rails?|vcc)`,
+                  R`(?:maximum|max|highest|largest|most)\W+(?:\w+\W+){0,4}(?:output|voltage)\W+(?:\w+\W+){0,6}(?:supply|rails?|vcc)`,
+                  R`(?:output|voltages?)\W+(?:\w+\W+){0,3}(?:up to|no more than|at most|limited to)\W+(?:\w+\W+){0,3}(?:supply|rails?|vcc)`,
                   R`(?:output|it)${C(R`\bnot\b`, 40)}(?:cannot|can't|can not|unable|won't|never)\W+(?:\w+\W+){0,5}(?:more|further|greater|larger|bigger|higher|lower|exceed|negative)\W+(?:\w+\W+){0,6}(?:supply|rails?|vcc|12)`,
                   R`(?:can only|only)\W+(?:\w+\W+){0,3}(?:swing|go|reach|move|be)\W+(?:\w+\W+){0,4}(?:between|up to|as (?:far|low|high) as|within)\W+(?:\w+\W+){0,3}(?:supply|rails?|vcc|12)`,
                   R`(?:cannot|can't|can not|unable to|won't|will not|never|not able to)\W+(?:\w+\W+){0,5}(?:more negative|more than|lower than|go (?:beyond|past)|exceed\w*|below|beyond|past)\W+(?:\w+\W+){0,1}(?:that|this|the supply|the rail|it)\b`,
@@ -634,7 +639,7 @@
               { desc: "The output saturates (clips) at -12 V", negOK: true,
                 win: 70,
                 not: [R`(?:output|\bv_?o\b)\W+(?:\w+\W+){0,1}(?:is|=|of|will be|would be|goes to|reaches|saturat\w* at|clips? at|stuck at)\W+(?:\w+\W+){0,1}(?:\+\s?12|plus 12|positive 12)`],
-                all: [R`(?:[-−]\s?12(?:\.0)?\b|minus 12|negative 12|12(?:\.0)? ?(?:v|volts?) negative|12(?:\.0)? ?(?:v|volts?) below)`, R`(?:output|\bv_?o\b|saturat\w*|clip\w*|stuck|stops?|reach\w*|lowest|most negative|as far as|flat\w*|actual|final|limit\w*)`] },
+                all: [R`(?:[-−]\s?12(?:\.0)?(?!\d)|minus 12|negative 12|12(?:\.0)? ?(?:v|volts?) negative|12(?:\.0)? ?(?:v|volts?) below)`, R`(?:output|\bv_?o\b|saturat\w*|clip\w*|stuck|stops?|reach\w*|lowest|most negative|as far as|flat\w*|actual|final|limit\w*)`] },
             ],
             sample: "The output voltage is limited by the supply. It has to stay between the two rails, so the amplifier saturates and the output clips at -12 V.",
             model: R`<ul><li>The output of an op-amp cannot go beyond the supply rails ($\pm 12$ V); the formula only says what it <em>would</em> be with an unlimited supply (1)</li><li>the output saturates (clips) at $-12$ V (1)</li></ul><p>The sign is required for the second mark: $12$ V alone, or $+12$ V, is not accepted.</p>`,
@@ -879,6 +884,7 @@
                   R`\bldr\b${C(NEG, 40)}(?:bigger|larger|greater|more)\W+(?:\w+\W+){0,2}(?:share|proportion|voltage|part|fraction)`,
                   R`\bldr\b${C(DOWNSTOP + R`|` + NEG, 40)}(?:share|proportion|fraction)\W+(?:\w+\W+){0,4}${UP}`,
                   R`\bldr\b${C(NEG, 80)}voltage\W+(?:\w+\W+){0,2}(?:across|over|on|at)\W+(?:it|them)\b${C(DOWNSTOP + R`|` + NEG, 20)}${UP}`,
+                  R`\bv\b\W+(?:across|over|on|at)\W+(?:the\W+)?(?:ldr|base)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`(?:base voltage|\bv_?be\b|voltage at the base|base-emitter voltage|\bv ?ldr\b)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}voltage\W+(?:\w+\W+){0,3}(?:ldr|base)`,
                   R`\bldr\b${C(NEG, 60)}(?:increas\w*|rais\w*|gain\w*|tak\w*)\W+(?:\w+\W+){0,2}(?:share|proportion|fraction)`,
