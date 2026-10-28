@@ -250,7 +250,7 @@
             q: "State one piece of evidence from particle accelerators that protons and neutrons contain quarks.",
             points: [
               { desc: "High-energy electrons fired at protons or neutrons (nucleons) are scattered through large angles, as if they hit small hard objects inside",
-                all: [near("electrons?", "scatter\\w*|deflect\\w*|bounce\\w*|rebound\\w*|bouncing|large angles?", 8), "protons?|neutrons?|nucleons?|nuclei|nucleus|hadrons?"] },
+                all: [near("electrons?", "scatter\\w*|deflect\\w*|bounce\\w*|rebound\\w*|bouncing|large angles?", 8) + "|\\blarge[- ]angle\\W+(?:\\w+\\W+){0,2}(?:scatter\\w*|deflect\\w*)|(?:scatter\\w*|deflect\\w*)\\W+(?:\\w+\\W+){0,3}(?:large|wide|big)\\W+angles?|deep inelastic", "protons?|neutrons?|nucleons?|nuclei|nucleus|hadrons?"] },
             ],
             sample: "When high-energy electrons are fired at protons and neutrons, some are scattered through large angles, as if they had bounced off small hard objects inside the nucleons.",
             model: "<ul><li>Electrons collided with nucleons at high energy, and some bounced off at large angles, as though they had hit small hard objects (quarks) inside (1)</li></ul>",
@@ -350,7 +350,7 @@
               { desc: "Any solid container would melt (or vaporise), because the plasma is far hotter than any material can withstand",
                 any: [near("melt\\w*|vapori[sz]\\w*|destroy\\w*|burn\\w*|evaporat\\w*|damag\\w*|disintegrat\\w*", "container|walls?|vessel|material|solid|metal|reactor", 8), near("hotter|temperature|hot", "any|every|all|melting point|boiling point|material|container", 8)] },
               { desc: "The plasma is made of charged particles, which magnetic fields push on (force at right angles), so the plasma is kept away from the walls",
-                all: [near("charged|charges?|ions?|nuclei|electrons", "particles?|plasma|moving|nuclei|electrons|ions", 4), near("magnetic", "forces?|push\\w*|deflect\\w*|bend\\w*|confin\\w*|contain\\w*|hold\\w*|trap\\w*|steer\\w*|guid\\w*|away|keep\\w*|curv\\w*", 8)] },
+                all: [near("charged|charges?|ions?|nuclei|electrons", "particles?|plasma|moving|nuclei|electrons|ions", 4), near("magnet\\w*", "forces?|push\\w*|deflect\\w*|bend\\w*|confin\\w*|contain\\w*|hold\\w*|trap\\w*|steer\\w*|guid\\w*|away|keep\\w*|curv\\w*", 8)] },
             ],
             sample: "A plasma at over a hundred million kelvin is so hot that it would melt any solid container. The plasma is made of charged particles, so a magnetic field exerts a force on them and holds the plasma away from the walls.",
             model: "<ul><li>The plasma is hotter than the melting point of any material, so a solid container would melt or vaporise (1)</li><li>The plasma consists of charged particles (nuclei and electrons), and a magnetic field exerts a force on moving charges, so it can confine the plasma away from the walls (1)</li></ul><p>To fuse, nuclei must have enough kinetic energy to overcome the repulsion between their positive charges. That is why the temperature has to be so high.</p>",
@@ -498,7 +498,7 @@
             q: "The lamp gives out light of only a few separate wavelengths. Explain how the atoms produce this line spectrum.",
             points: [
               { desc: "Electrons fall from a higher energy level to a lower one, and each fall emits a photon",
-                all: ["(?:fall\\w*|drop\\w*|jump\\w*|mov\\w*|go(?:es)? down|return\\w*|transition\\w*|de-?excit\\w*)", "(?:lower|ground)", "emit\\w*|releas\\w*|give\\w* (?:out|off)|photons?"], win: 120 },
+                all: ["(?:fall\\w*|drop\\w*|jump\\w*|mov\\w*|go(?:es)? down|return\\w*|transition\\w*|de-?excit\\w*)", "\\b(?:low\\w*|ground)", "emit\\w*|releas\\w*|give\\w* (?:out|off)|photons?"], win: 120 },
               { desc: "The photon energy equals the difference between the two levels (E₂ − E₁ = hf), and only certain differences exist, so only certain frequencies are emitted",
                 all: [near("difference|gap|equal\\w*|e2|e₂|between (?:two|the) (?:\\w+ )?levels", "photon|energy|energies|frequenc\\w*|wavelength\\w*", 8), "only|certain|specific|particular|fixed|discrete|set|allowed|definite|exact|unique"], win: 200 },
             ],
@@ -594,10 +594,10 @@
             points: [
               { desc: "Loud where the waves from the two speakers arrive in phase (path difference a whole number of wavelengths): constructive interference",
                 any: [near("in phase|constructive|crest\\W+(?:\\w+\\W+){0,3}crest|whole number|mλ|maximum|maxima|reinforc\\w*|add\\w*|combine\\w*", "loud\\w*|path difference|wavelengths?|waves?|sound", 8)],
-                not: ["out of phase\\W+(?:\\w+\\W+){0,6}loud", "(?:destructive|trough|cancel\\w*)\\W+(?:\\w+\\W+){0,6}loud"] },
+                not: ["out of phase\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}loud", "(?:destructive|trough|cancel\\w*)\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}loud"] },
               { desc: "Quiet where the waves arrive out of phase (path difference an odd number of half wavelengths): destructive interference",
                 any: [near("out of phase|destructive|crest\\W+(?:\\w+\\W+){0,3}trough|trough\\W+(?:\\w+\\W+){0,3}crest|cancel\\w*|half|m ?\\+ ?½|odd", "quiet|minim\\w*|path difference|wavelengths?|waves?|sound|silen\\w*|soft\\w*", 8)],
-                not: ["in phase\\W+(?:\\w+\\W+){0,6}quiet", "constructive\\W+(?:\\w+\\W+){0,6}quiet"] },
+                not: ["(?<!out of )in phase\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}quiet", "constructive\\W+(?:(?!and\\b|while|whereas|but\\b|then\\b)\\w+\\W+){0,6}quiet"] },
             ],
             sample: "Where the path difference is a whole number of wavelengths the waves from the two speakers arrive in phase and interfere constructively, so the sound is loud. Where the path difference is an odd number of half wavelengths the waves arrive out of phase and interfere destructively, so the sound is quiet.",
             model: "<ul><li>Maxima (loud): waves arrive in phase; path difference = mλ; constructive interference (1)</li><li>Minima (quiet): waves arrive out of phase (crest meets trough); path difference = (m + ½)λ; destructive interference (1)</li></ul><p>Walking along the line changes the path difference, so the pupil passes alternately through maxima and minima.</p>",
@@ -727,7 +727,7 @@
             points: [
               { desc: "The laser beam is (almost) parallel and hardly spreads out, so the area it covers stays the same (it is not a point source)",
                 not: ["(?:not|n't)\\W+(?:\\w+\\W+){0,2}(?:parallel|narrow|collimated)"],
-                any: ["(?:laser|beam)\\W+(?:\\w+\\W+){0,6}(?:parallel|narrow|collimated|hardly spreads?|little spread|barely spreads?|doesn'?t spread|does not spread|not spread\\w*|doesn'?t diverge|does not diverge|not diverg\\w*|same (?:area|width|size))", "(?:parallel|collimated|doesn'?t spread|does not spread|not spread out|little spread|hardly spreads?|barely spreads?|no spreading)", "not a point source"] },
+                any: ["(?:laser|beam)\\W+(?:\\w+\\W+){0,6}(?:parallel|narrow|collimated|hardly spreads?|little spread|barely spreads?|doesn'?t spread|does not spread|not spread\\w*|doesn'?t diverge|does not diverge|not diverg\\w*|same (?:area|width|size))", "(?:parallel|collimated|doesn'?t spread|does not spread|not spread out|little spread|hardly spreads?|barely spreads?|no spreading)", "not a point source", "(?:laser|beam)\\W+(?:\\w+\\W+){0,2}spreads?\\W+(?:out\\W+)?(?:much |far |a lot |very )?(?:less|little)", "(?:laser|beam)\\W+(?:\\w+\\W+){0,3}(?:less|little|hardly|barely)\\W+(?:\\w+\\W+){0,1}(?:spread|diverg)"] },
             ],
             sample: "A laser beam is almost parallel and hardly spreads out, so the power is not spread over a larger area as the distance increases.",
             model: "<p>The beam is parallel (does not spread out), so the area it covers does not increase with distance and the irradiance stays almost constant; it is not a point source (1).</p>",
