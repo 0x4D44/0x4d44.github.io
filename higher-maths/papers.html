@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Past papers · Chart, Compass &amp; Calculus</title>
+<meta name="description" content="Past-paper practice for Higher Maths: a bank of original questions in the style of the 2022 to 2026 question papers across algebra, geometry, trigonometry and calculus, each with an answer panel, automatic marking, half-length calculator and non-calculator mock papers and a scoreboard.">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="papers.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230d3436'/%3E%3Cpath d='M8 1 L10 8 L8 15 L6 8 Z' fill='%23f4ecd8'/%3E%3Cpath d='M8 1 L10 8 L6 8 Z' fill='%23c8102e'/%3E%3Cpath d='M1 8 L8 6 L15 8 L8 10 Z' fill='%235fa9b8'/%3E%3C/svg%3E">
+<script defer src="vendor/katex/katex.min.js"></script>
+<script defer src="vendor/katex/auto-render.min.js"></script>
+<script src="common.js"></script>
+<script src="quiz.js"></script>
+<script src="papers-engine.js"></script>
+<script src="papers-alg.js"></script>
+<script src="papers-geo.js"></script>
+<script src="papers-trig.js"></script>
+<script src="papers-cal.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="index.html" aria-label="Chart, Compass and Calculus — briefing room">
+      <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="6" height="16" fill="#1c5fb3"/><rect x="0" y="5" width="16" height="6" fill="#1c5fb3"/><rect x="2" y="2" width="12" height="12" fill="#1c5fb3"/><rect x="1" y="3" width="14" height="10" fill="#1c5fb3"/><rect x="3" y="1" width="10" height="14" fill="#1c5fb3"/><rect x="4" y="3" width="8" height="10" fill="#fff"/><rect x="3" y="4" width="10" height="8" fill="#fff"/><rect x="5" y="5" width="6" height="6" fill="#c8102e"/><rect x="5" y="6" width="6" height="1" fill="#e0b23a"/><rect x="6" y="7" width="1" height="4" fill="#e0b23a"/><rect x="9" y="7" width="1" height="3" fill="#e0b23a"/><rect x="10" y="10" width="1" height="1" fill="#e0b23a"/></svg>
+      <span class="brand-text"><span class="brand-title">Chart, Compass &amp; Calculus</span><span class="brand-sub">Higher Maths · 1805 (Blockhaven) Squadron</span></span>
+    </a>
+    <div class="mast-tools">
+      <a class="rank-chip" href="index.html#ranks"></a>
+      <button class="theme-btn" type="button">☾ Night watch</button>
+    </div>
+    <nav class="decks" aria-label="Decks">
+      <ul>
+        <li><a href="index.html">Briefing</a></li>
+        <li><a href="algebra.html">Algebra</a></li>
+        <li><a href="geometry.html">Geometry</a></li>
+        <li><a href="trig.html">Trigonometry</a></li>
+        <li><a href="calculus.html">Calculus</a></li>
+        <li><a href="exam.html">Exam drill</a></li>
+        <li><a href="papers.html" aria-current="page">Past papers</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<div class="layout pp-layout">
+<main id="main">
+<div class="prose">
+<p class="kicker">The parade ground · past-paper practice</p>
+<h1>Past papers: the firing range</h1>
+<p class="lede">The Exam drill taught you how a Higher Maths paper is marked. This deck lets you sit questions and be marked. Pick a topic, type your answers, press <b>Mark my answer</b>, and the page checks them against the marking scheme line by line, shows the worked solution with its marks, and keeps your running totals. When you are ready, draw a half-length <b>Paper 1</b> (no calculator) or <b>Paper 2</b> (calculator) and run the clock.</p>
+<div class="callout exam"><div class="callout-title">Read this first: original questions, not the real papers</div><p>Every question here was written for this site, modelled on the question types of the recent Higher Mathematics papers (2022 to 2026): the same four areas, broadly in proportion, the same command words (<i>find, determine, show that, express in the form, solve, hence</i>), the same habit of chaining parts so that (b) uses (a), and the same split between a non-calculator and a calculator paper. None is copied from a past paper, and none predicts what will be asked. The real papers and marking instructions are free on the <a href="https://www.sqa.org.uk/pastpapers/findpastpaper.htm">SQA past-papers page</a>; work through those too. A few parts (multiple choice, tick-all-that-apply) are a practice-only format: the real papers do not use them.</p><p>The automatic marker judges your answer by <em>value</em>, not by spelling: <code>1/2</code>, <code>0.5</code> and <code>2/4</code> are the same, and <code>(x+1)^2</code> equals <code>x^2+2x+1</code>. It is a practice aid, not an examiner: SQA awards marks for working, and this panel checks the results of each step. The worked solution shows where the real marks sit (&bull;1, &bull;2 &hellip;).</p></div>
+<div class="callout tip pp-howto"><div class="callout-title">How to type your answers</div><p>Powers: <code>x^2</code>, <code>x^(1/2)</code>, <code>e^(2x)</code> (always bracket a power that is more than one symbol). Roots and constants: <code>sqrt(3)</code>, <code>pi</code>. Fractions: <code>3/4</code>. Functions: <code>sin(2x)</code>, <code>ln(x)</code>. Multiplication can be left out: <code>2x(x-1)</code>. Equations: <code>y = 2x + 3</code>, in any arrangement. Lists: <code>-1, 2, 3</code>. Vectors: <code>(3, -1, 2)</code> or <code>3i - j + 2k</code>. For an integral, add <code>+ c</code> as you would in the exam. Angles: just the number, in the unit the question asks for. If the marker cannot read something, it says so and does not count it wrong.</p></div>
+</div>
+<div id="pp-app"></div>
+<nav class="next-deck" aria-label="Deck navigation">
+  <a class="btn" href="exam.html">← Exam drill</a>
+  <a class="btn primary" href="index.html#ranks">Back to the briefing room: check your rank →</a>
+</nav>
+</main>
+</div>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>Content follows the Higher Mathematics course specification (version 3.0, May 2023), which Qualifications Scotland confirms is still current. Qualifications Scotland replaced SQA as Scotland's awarding body on 1 February 2026. 1805 (Blockhaven) Squadron and <em>HMS Lodestone</em> are fictional, and this site is not affiliated with SQA, Qualifications Scotland, the RAF Air Cadets or Mojang. The companion sites <a href="../higher-physics/">Shot, Spark &amp; Starlight</a> and <a href="../higher-computing/">Blocks, Wings &amp; Broadsides</a> cover Higher Physics and Higher Computing Science.</p>
+  </div>
+</footer>
+<script defer src="papers.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

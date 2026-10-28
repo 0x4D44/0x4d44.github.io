@@ -740,11 +740,12 @@ for l in LMS: lm_chunk.setdefault(chunk_of(l["cx"], l["cy"]), []).append(l)
 tree_by_chunk = {}
 for g, t, i in D["tree"]:
     tree_by_chunk.setdefault(chunk_of(g.x, g.y), []).append((g.x, g.y, "a" if hash01(i, 1) < 0.5 else ("b" if hash01(i, 1) < 0.8 else "c"), 0.8 + 0.6 * hash01(i, 2), hash01(i, 3) * 6.28))
+import city_bridges
+CLUSTERS = city_bridges.make_clusters(D, W, road_width)
+log("bridge clusters", len(CLUSTERS), [(c["name"], c["kind"], round(c["poly"].area)) for c in CLUSTERS if c["name"]])
 bridge_by_chunk = {}
-for g, t, i in W["bridges"]:
-    m = g.interpolate(0.5, normalized=True); bridge_by_chunk.setdefault(chunk_of(m.x, m.y), []).append((g, t, i, "road"))
-for g, t, i in W["rbridges"]:
-    m = g.interpolate(0.5, normalized=True); bridge_by_chunk.setdefault(chunk_of(m.x, m.y), []).append((g, t, i, "rail"))
+for c in CLUSTERS:
+    m = c["poly"].centroid; bridge_by_chunk.setdefault(chunk_of(m.x, m.y), []).append(c)
 rail_by_chunk = {}
 for g, t, i in W["rails"]:
     m = g.interpolate(0.5, normalized=True); rail_by_chunk.setdefault(chunk_of(m.x, m.y), []).append((g, t, i))
@@ -824,13 +825,14 @@ def build_chunk(ci, cj):
     if not g.is_empty:
         B2 = ground_poly_mesh([g], b, 900, 0.28, step, PARKC, 0, 30.0)
         if not B2.empty(): P, C, U, T, M = B2.arrays(); RB.add(P, T, C, None, 0)
-    for g, t, i, kind in bridge_by_chunk.get((ci, cj), []):
-        if kind == "road":
-            Bd = Buf(); Bs = Buf()
-            try: bridge_mesh(g, t, step, kind, Bd, Bs)
-            except Exception as ex: log("bridge fail", i, ex); continue
-            for BBx, mi in ((Bd, 0), (Bs, 2)):
-                if not BBx.empty(): P, C, U, T, M = BBx.arrays(); RB.add(P, T, C, None, mi)
+    RLd = Buf(); RLr = Buf()
+    for c in bridge_by_chunk.get((ci, cj), []):
+        Bd = Buf(); Bs = Buf()
+        try: city_bridges.build_cluster(c, TR, W, step, Bd, RLd, Bs, RLr)
+        except Exception as ex:
+            import traceback; log("bridge fail", c.get("name"), ex); traceback.print_exc(); continue
+        for BBx, mi in ((Bd, 0), (Bs, 2)):
+            if not BBx.empty(): P, C, U, T, M = BBx.arrays(); RB.add(P, T, C, None, mi)
     # rail bridges go to the rail buffer below
     finish("roads", make_object("roads_%d_%d" % (ci, cj), RB, ["road", "pave", "bridge"], coll), RB, "roads")
     # rail
@@ -849,13 +851,8 @@ def build_chunk(ci, cj):
             Pq = np.concatenate([np.c_[E, z], np.c_[E2, z]]); tri = []
             for k in range(n - 1): tri += [[k, n + k, n + k + 1], [k, n + k + 1, k + 1]]
             RL.add(Pq, flip_up(Pq, np.array(tri)), RAILC, None, 0)
-    for g, t, i, kind in bridge_by_chunk.get((ci, cj), []):
-        if kind == "rail":
-            Bd = Buf(); Bs = Buf()
-            try: bridge_mesh(g, t, step, kind, Bd, Bs)
-            except Exception as ex: log("rbridge fail", i, ex); continue
-            for BBx in (Bd, Bs):
-                if not BBx.empty(): P, C, U, T, M = BBx.arrays(); RL.add(P, T, C, None, 0)
+    for BBx in (RLd, RLr):
+        if not BBx.empty(): P, C, U, T, M = BBx.arrays(); RL.add(P, T, C, None, 0)
     finish("rail", make_object("rail_%d_%d" % (ci, cj), RL, ["rail"], coll), RL, "rail")
     # water
     WB = Buf(); g = clip(W["water_union"])

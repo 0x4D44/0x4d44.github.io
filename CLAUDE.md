@@ -60,6 +60,16 @@ the committed `index.html` but is regenerated on rebuild/re-import** — re-add 
 after copying `dist/*` in (better: add it to the source project's `index.html`)
 so those pages keep the button.
 
+**Past-papers decks** — `higher-graphic-communication/` and `higher-engineering/`
+each carry a `papers.html` deck: per-area question banks (`papers-<area>.js`,
+original questions in the style of recent papers, never copied), a shared
+auto-marker (`papers-engine.js`, pure functions, no DOM), the UI (`papers.js`) and a
+contract suite (`tests/papers.test.mjs`, run by `npm run test:higher-engineering`;
+`HEP_AREAS=analogue` limits it to one bank). Change a bank, then run that suite: it
+checks the model answer scores full marks, empty scores zero, and shuffled, negated and
+parroted answers do not. Numeric parts take the last number typed, so state the wanted
+unit in the question.
+
 Many document directories also contain a `*.zip` source archive and sometimes a
 print `*.pdf`. These are downloadable artifacts; the site does not reference them.
 
