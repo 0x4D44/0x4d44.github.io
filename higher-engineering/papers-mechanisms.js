@@ -826,7 +826,7 @@
         figure: figIdler(),
         parts: [
           {
-            label: "(a)", type: "num", marks: 1, a: 4, alts: [1], tol: 0.01, unit: "",
+            label: "(a)", type: "num", marks: 1, a: 4, tol: 0.01, unit: "",
             q: R`Calculate the velocity ratio of the gear train, $\text{VR} = \dfrac{\text{teeth on driven gear}}{\text{teeth on driver gear}}$. Give it as a single number.`,
             why: R`$\text{VR} = \dfrac{\text{teeth on driven gear C}}{\text{teeth on driver gear A}} = \dfrac{80}{20} = 4$ (1), which is a 4 : 1 reduction (typing 4 : 1 is accepted). Only the first and last gears count: the idler's teeth cancel. Slips: inverting the fraction gives 0.25, and counting the idler as the driven gear gives $30/20 = 1.5$ or $80/30 = 2.67$.`,
           },
@@ -936,7 +936,7 @@
         figure: figCompound(),
         parts: [
           {
-            label: "(a)", type: "num", marks: 2, a: 12, alts: [1], tol: 0.01, unit: "",
+            label: "(a)", type: "num", marks: 2, a: 12, tol: 0.01, unit: "",
             q: R`Calculate the velocity ratio of the gear train.`,
             why: R`<p>$\text{VR} = \dfrac{64}{16} \times \dfrac{54}{18}$ (1)</p><p>$\text{VR} = 4 \times 3 = 12$ (1)</p><p>The velocity ratios of the two meshes multiply; they are not added (adding gives 7). A ratio typed as 12 : 1 is accepted.</p>`,
           },
