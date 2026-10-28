@@ -208,6 +208,7 @@
           if (base(am[2]) === base(eu[2])) v = v * PF[am[1]] / PF[eu[1]];
           else if (am[2] !== "m" && eu[2] !== "m") return { got: 0, of };      // a different quantity ("2.4 A" for a power) is wrong
         }
+        if (!am && eu && /\d\s*k$/i.test(clean)) v = v * 1e3 / PF[eu[1]];      // "1.72k" for a part in ohms means kilo-ohms
         if (/%\s*\)?\s*$/.test(clean) && Math.abs(part.a) <= 1 && part.unit !== "%") v = v / 100;     // "0.80 (80%)" for a ratio
         const targets = [part.a].concat(part.alts || []);
         const tol = part.tol == null ? 0 : part.tol;
