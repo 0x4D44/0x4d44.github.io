@@ -42,7 +42,7 @@ window.ESSAYS = [
   {
     slug: "higher-graphic-communication",
     title: "Higher Graphic Communication: Planes, Plans & Pennants",
-    tagline: "A complete, interactive guide to Higher Graphic Communication: drawing standards and projection, geometric forms and pictorials, CAD, design and DTP, digital technology, the assignment and the exam. Plus a Past papers deck: 60 original, auto-marked exam-style questions and a timed mock. HMS Vellum's Plan Room and Air Cadets carry the diagrams. Vanilla JavaScript, canvas and SVG.",
+    tagline: "An interactive guide to Higher Graphic Communication: drawing standards, projection, pictorials, CAD, DTP, digital technology, the assignment and the exam. Plus a Past papers deck of 60 original, auto-marked questions and a timed mock. HMS Vellum's Plan Room carries the diagrams. Vanilla JavaScript, canvas and SVG.",
     url: "https://0x4d44.github.io/higher-graphic-communication/",
     illustration: "ill-higher-graphics",
     date: "2026-10-19T20:00:00",
@@ -55,7 +55,7 @@ window.ESSAYS = [
   {
     slug: "higher-maths",
     title: "Higher Maths: Chart, Compass & Calculus",
-    tagline: "A complete, interactive guide to Scotland's Higher Mathematics: polynomials to the wave function, 3D vectors to areas between curves, plus exam technique and two timed mini-papers. The Blockhaven Air Cadets join the block-built frigate HMS Lodestone, where cannon, compasses and cuboids carry 33 live widgets. Vanilla JavaScript, canvas and self-hosted KaTeX.",
+    tagline: "A complete, interactive guide to Scotland's Higher Mathematics: polynomials to the wave function, 3D vectors to areas between curves, plus exam technique and a Past papers deck of auto-marked questions and timed mocks. Air Cadets join the block-built frigate HMS Lodestone, where cannon, compasses and cuboids carry 33 live widgets. Vanilla JavaScript, canvas and KaTeX.",
     url: "https://0x4d44.github.io/higher-maths/",
     illustration: "ill-higher-maths",
     date: "2026-10-13T20:00:00",

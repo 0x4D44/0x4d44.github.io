@@ -77,6 +77,7 @@ export class Rig {
       }
       // keep the focus point inside the world & the camera above the ground
       const b = this.bounds; c.target.x = clamp(c.target.x, b.minX, b.maxX); c.target.z = clamp(c.target.z, b.minZ, b.maxZ);
+      c.dampingFactor = 1 - Math.exp(-Math.min(dt, 0.1) * 16); // time-based damping: settles in ~0.3 s at any frame rate
       c.update();
       const gy = this.ground(this.camera.position.x, this.camera.position.z) + 6;
       if (this.camera.position.y < gy) this.camera.position.y = gy;

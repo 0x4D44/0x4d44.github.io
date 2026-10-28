@@ -372,6 +372,11 @@
         p.hidden = k !== i;
       });
       if (focus) btns[i].focus();
+      // switching from deep in a long panel: start the new one at its top, just under the stuck strip
+      if (list.getBoundingClientRect().top <= 60 && list.parentNode.getBoundingClientRect().top < 0) {
+        const y = panels.getBoundingClientRect().top + window.scrollY - list.offsetHeight - 52;
+        window.scrollTo(0, Math.max(0, y));
+      }
       if (HG.markScrollables) setTimeout(HG.markScrollables, 50);
       try { history.replaceState(null, "", "#" + tabs[i].id); } catch (e) { /* ignore */ }
     };
