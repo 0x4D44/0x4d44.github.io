@@ -382,7 +382,7 @@
             minWords: 14,
             points: [
               { desc: "G1 has both inputs at 1, so its output X is 0",
-                not: ["\\bx\\W+(?:(?:is|=|equals|goes|becomes|gives|now)\\W+){0,2}(?:high|1|one)\\b", NAND_G1 + "[^.;]{0,50}?\\b(?:gives?|outputs?)\\W+(?:(?:a|an|the)\\W+)?(?:1|high|one)\\b"],
+                not: ["(?<!\\bnand\\W+)\\bx\\W+(?:(?:is|=|equals|goes|becomes|gives|now)\\W+){0,2}(?:high|1|one)\\b", NAND_G1 + "[^.;]{0,50}?\\b(?:gives?|outputs?)\\W+(?:(?:a|an|the)\\W+)?(?:1|high|one)\\b"],
                 any: [
                   "\\bx\\b[^.;]{0,24}?\\b(?:0|zero|low)\\b",
                   NAND_G1 + "[^.;]{0,60}?\\b(?:0|zero|low)\\b",
@@ -392,6 +392,7 @@
                 not: ["\\b(?:g2|p|gate 2)\\W+(?:and|&)\\W+(?:g3|r|gate 3)\\W+(?:(?:output|outputs|gives?|give|is|are|=|goes|go|will output)\\W+){1,2}(?:0|zero|low)\\b"],
                 any: [
                   P1 + "[\\s\\S]{0,100}?" + R1,
+                  "\\b(?:g2|gate 2)\\b[^.;]{0,40}?=\\s*(?:1|high)\\b[\\s\\S]{0,80}?\\b(?:g3|gate 3)\\b[^.;]{0,40}?=\\s*(?:1|high)\\b",
                   R1 + "[\\s\\S]{0,100}?" + P1,
                   "\\b(?:p|g2|gate 2|gate two)\\W+(?:and|&)\\W+(?:r|g3|gate 3|gate three)\\b[^.;]{0,60}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
                   "\\b(?:top and bottom|upper and lower|next two|following two|other two gates|second and third|2nd and 3rd|middle|other two|remaining two|two middle|both of the others)\\W+(?:\\w+\\W+){0,4}?(?:gates?|nands?)?\\b[^.;]{0,40}?\\b" + OUTV + "\\b(?:\\W+" + FILL + "){0,6}\\W+(?:1|high|one)\\b",
@@ -533,10 +534,10 @@
             points: [
               { desc: "Run the amended program (on the microcontroller or a simulator) and watch the lamp",
                 not: [ORIG_PROG],
-                all: ["\\b(?:hand.?trace|dry.?run|trace table|trace (?:the|through|it)|step through|walk through|work through|run|runs|running|simulat\\w*|upload\\w*|download\\w*|load\\w*|execut\\w*|try|trial|switch\\w* (?:it )?on|power\\w*|start\\w*|operat\\w*)\\b", "\\b(?:watch\\w*|observ\\w*|see|saw|seeing|look\\w*|count\\w*|record\\w*|monitor\\w*|check\\w*|time\\w*|video\\w*|note|show\\w*|table)\\b"] },
+                all: ["\\b(?:test|hand.?trace|dry.?run|trace table|trace (?:the|through|it)|step through|walk through|work through|run|runs|running|simulat\\w*|upload\\w*|download\\w*|load\\w*|execut\\w*|try|trial|switch\\w* (?:it )?on|power\\w*|start\\w*|operat\\w*)\\b", "\\b(?:watch\\w*|observ\\w*|see|saw|seeing|look\\w*|count\\w*|record\\w*|monitor\\w*|check\\w*|time\\w*|video\\w*|note|show\\w*|table|compar\\w*)\\b"] },
               { desc: "Expected result: four flashes of 0.5 s on and 0.5 s off, then the lamp stays off, and the observed result matches",
                 win: 200, not: [ORIG_PROG],
-                all: ["\\b(?:count\\w*|expect\\w*|observ\\w*|see|saw|seeing|watch\\w*|check\\w*|record\\w*|find\\w*|should|exactly|match\\w*|shows?|showed|showing|stops? at)\\b", "\\b(?:4|four)\\b", "\\b(?:flash\\w*|blink\\w*|times|pulses?|on)\\b"] },
+                all: ["\\b(?:count\\w*|expect\\w*|observ\\w*|see|saw|seeing|watch\\w*|check\\w*|record\\w*|find\\w*|should|exactly|match\\w*|compar\\w*|shows?|showed|showing|stops? at)\\b", "\\b(?:4|four)\\b", "\\b(?:flash\\w*|blink\\w*|times|pulses?|on)\\b"] },
             ],
             sample: "Run the amended program on the microcontroller and watch the lamp. Count the flashes: there should be exactly four, and then the lamp should stay off.",
             model: "<ul><li>Run the amended program (on the board or in a simulator) and watch the lamp (1)</li><li>State the expected result and compare: four flashes, each 0.5 s on and 0.5 s off, then the lamp stays off; the observed result must match (1)</li></ul><p>&quot;It worked&quot; with no input, expected output and observed output earns nothing. Also acceptable: timing the run with a stopwatch and expecting 4 s.</p>",
@@ -691,6 +692,8 @@
                   "\\b(?:opens?|opened|raises?)\\b[^.;]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high|warm\\w*)",
                   "\\bout1\\W+(?:is |= ?|equals |to |set to )?1\\b[^.;]{0,60}(?:above|over|greater|more than|higher|exceeds?|hotter|>|too hot|too high)",
                   "\\b(?:opens?|opened)\\b[^.;]{0,120}(?:above|over|greater than|more than|higher than|exceeds?|>)\\s*(?:24|153)",
+                  "\\b(?:vent|out1)\\b[^.;]{0,60}(?:switch\\w* on|turn\\w* on|\\bon\\b|activat\\w*|set to 1|operat\\w*)[^.;]{0,100}(?:above|over|greater than|more than|higher than|exceeds?|>)\\s*(?:24|153)",
+                  "(?:above|over|greater than|more than|higher than|exceeds?|>)\\s*(?:24|153)[^.;]{0,60}\\b(?:vent|out1)\\b[^.;]{0,40}(?:switch\\w* on|turn\\w* on|\\bon\\b|activat\\w*|set to 1|operat\\w*|opens?|opened)",
                 ] },
               { desc: "Otherwise (not above 153) the vent stays closed, out1 = 0",
                 win: 40,
