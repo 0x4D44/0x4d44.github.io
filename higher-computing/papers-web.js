@@ -7,10 +7,10 @@
   const rs = (s) => new RegExp(s).source;
   /* HTML helpers: each attribute test is a lookahead inside one <input ...> tag, so attribute order, quotes and bare values all work */
   const QE = String.raw`(?=["'\s/>])`;
-  const attr = (n, v) => String.raw`(?=[^>]*\b${n}\s*=\s*["']?${v}${QE})`;
-  const TEXT_FULL = String.raw`<input(?=[^>]*\btype\s*=\s*["']?text${QE})` + attr("name", "fullname");
-  const NUM_AGE = String.raw`<input(?=[^>]*\btype\s*=\s*["']?number${QE})` + attr("name", "age");
-  const radio = (v) => String.raw`<input(?=[^>]*\btype\s*=\s*["']?radio${QE})` + attr("name", "section") + attr("value", v) + "[^>]*>";
+  const attr = (n, v) => String.raw`(?=[^<>]*\b${n}\s*=\s*["']?${v}${QE})`;
+  const TEXT_FULL = String.raw`<input(?=[^<>]*\btype\s*=\s*["']?text${QE})` + attr("name", "fullname");
+  const NUM_AGE = String.raw`<input(?=[^<>]*\btype\s*=\s*["']?number${QE})` + attr("name", "age");
+  const radio = (v) => String.raw`<input(?=[^<>]*\btype\s*=\s*["']?radio${QE})` + attr("name", "section") + attr("value", v) + "[^<>]*>";
   /* JavaScript helpers: element lookup by getElementById or querySelector(All), chained or via a variable */
   const DOCEL = (id) => String.raw`document\s*\.\s*(?:getelementbyid\s*\(\s*["']${id}["']\s*\)|queryselector(?:all)?\s*\(\s*["']#${id}["']\s*\)(?:\s*\[\s*0\s*\])?)`;
   const DISP = String.raw`["']\s*(?:block|inline|inline-block|flex|grid|initial|unset|revert)?\s*["']`;
@@ -322,12 +322,12 @@
             label: "(a)", type: "code", marks: 6, rows: 10,
             q: "Write the HTML to go inside the form. It needs: a text input named <code>fullname</code> that cannot be left empty and holds at most 20 characters; a number input named <code>age</code> that accepts only 12 to 17; two radio buttons in one group named <code>section</code>, with the values <code>sea</code> and <code>air</code>; and a button to submit the form. [6]",
             points: [
-              { desc: "Text input with name fullname", any: [rs(TEXT_FULL + "[^>]*>")] },
-              { desc: "required on the text input (presence check)", any: [rs(TEXT_FULL + String.raw`(?=[^>]*\brequired\b)[^>]*>`)] },
-              { desc: "maxlength=20 on the text input (length check)", any: [rs(TEXT_FULL + String.raw`(?=[^>]*\bmaxlength\s*=\s*["']?20(?!\d))[^>]*>`)] },
-              { desc: "Number input named age with min=12 and max=17 (range check)", any: [rs(NUM_AGE + String.raw`(?=[^>]*\bmin\s*=\s*["']?12(?!\d))(?=[^>]*\bmax\s*=\s*["']?17(?!\d))[^>]*>`)] },
+              { desc: "Text input with name fullname", any: [rs(TEXT_FULL + "[^<>]*>")] },
+              { desc: "required on the text input (presence check)", any: [rs(TEXT_FULL + String.raw`(?=[^<>]*\brequired\b)[^<>]*>`)] },
+              { desc: "maxlength=20 on the text input (length check)", any: [rs(TEXT_FULL + String.raw`(?=[^<>]*\bmaxlength\s*=\s*["']?20(?!\d))[^<>]*>`)] },
+              { desc: "Number input named age with min=12 and max=17 (range check)", any: [rs(NUM_AGE + String.raw`(?=[^<>]*\bmin\s*=\s*["']?12(?!\d))(?=[^<>]*\bmax\s*=\s*["']?17(?!\d))[^<>]*>`)] },
               { desc: "Two radio buttons with the same name, section, and the values sea and air", all: [rs(radio("sea")), rs(radio("air"))], win: 300 },
-              { desc: "A submit button", any: [rs(String.raw`<input(?=[^>]*\btype\s*=\s*["']?submit(?=["'\s/>]))[^>]*>`), rs(String.raw`<button\b(?![^>]*\btype\s*=\s*["']?(button|reset))`)] },
+              { desc: "A submit button", any: [rs(String.raw`<input(?=[^<>]*\btype\s*=\s*["']?submit(?=["'\s/>]))[^<>]*>`), rs(String.raw`<button\b(?![^<>]*\btype\s*=\s*["']?(button|reset))`)] },
             ],
             sample: "<input type=\"text\" name=\"fullname\" required maxlength=\"20\">\n<input type=\"number\" name=\"age\" min=\"12\" max=\"17\">\n<input type=\"radio\" name=\"section\" value=\"sea\"> Sea\n<input type=\"radio\" name=\"section\" value=\"air\"> Air\n<input type=\"submit\" value=\"Join\">",
             model: "<pre>&lt;input type=\"text\" name=\"fullname\" required maxlength=\"20\"&gt;\n&lt;input type=\"number\" name=\"age\" min=\"12\" max=\"17\"&gt;\n&lt;input type=\"radio\" name=\"section\" value=\"sea\"&gt; Sea\n&lt;input type=\"radio\" name=\"section\" value=\"air\"&gt; Air\n&lt;input type=\"submit\" value=\"Join\"&gt;</pre><ul><li>text input, name fullname (1)</li><li>required (1)</li><li>maxlength=\"20\" (1)</li><li>number input, name age (1)</li><li>min=\"12\" max=\"17\" (1)</li><li>two radio buttons with the same name and different values (1)</li><li>submit button (1)</li></ul><p>Any 6. Labels and layout elements are not needed for the marks.</p>",

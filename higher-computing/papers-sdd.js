@@ -10,7 +10,7 @@
   const NA = (n) => WX(n, "and|or");
   const LOOP = R`\b(for\s+(each\s+|every\s+)?\w+\s+(in|from)\s+\w+|for\s*\(|for\s+\w+\s*(=|<-|:=|from)|while\s+\w+\s*(<|<=|!=|>|>=)|loop\w*\s+(through|over)\s+\w+|repeat\s+(for|until|\d+)|(loop|repeat)\w*\s+(each|every)\s+\w+)`;
   /* optional tail that swallows a trailing "without the colours" so the engine's negation look-ahead does not read it as a negated claim */
-  const TAIL = R`(?:\W+(?:(?:and|but)\W+)?(?:without|not|no|minus|excluding|rather than|instead of)\W+(?:\w+\W+){0,6}\w+)?`;
+  const TAIL = R`(?:\W+(?:\w+\W+){0,5}?(?:(?:and|but)\W+)?(?:without|not|no|minus|excluding|rather than|instead of)\W+(?:\w+\W+){0,6}\w+)?`;
   const ITER = "iterative|waterfall|predictive", AGI = "agile|sprints?|scrum";
 
   /* ---- figure: structure diagram with data flow (sdd-03) ---- */
