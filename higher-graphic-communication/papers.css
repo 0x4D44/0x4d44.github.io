@@ -3,7 +3,13 @@
 .pp-layout #main > * { max-width: var(--wrap); }
 #pp-app { max-width: var(--wrap); margin: 1.2em 0; }
 
-.pp-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; padding: 0 0 8px; border-bottom: 3px solid var(--navy-2); }
+/* sticky so the area tabs stay in reach; top: 48px clears the fixed "← Almanac" pill. One scrolling row keeps the height fixed. */
+.pp-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin: 0 0 12px; padding: 8px 0; border-bottom: 3px solid var(--navy-2);
+  position: sticky; top: 48px; z-index: 30; background: var(--paper); scrollbar-width: thin; }
+.pp-tabs [role="tab"] { flex: 0 0 auto; white-space: nowrap; }
+#pp-app .exam-timer.running { top: 112px; }
+html:has(.pp-tabs) { scroll-padding-top: 120px; }
+html:has(.pp-tabs):has(.exam-timer.running) { scroll-padding-top: 190px; }
 .pp-tabs [role="tab"] {
   font: 600 .92rem var(--font-pixel); padding: 9px 13px; min-height: 40px; cursor: pointer;
   color: var(--ink); background: var(--paper-2); border: 2px solid var(--line); border-radius: 3px;
