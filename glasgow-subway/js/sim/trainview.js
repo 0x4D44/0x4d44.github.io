@@ -77,7 +77,14 @@ export class TrainView {
     this.cabScreen = this.byName.cab_screen || null;
     this.cabSpeedo = this.byName.cab_speedo || null;
     this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : new THREE.Vector3(0, 1.98, this.zMin + 1.8);
-    root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    this.root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.frustumCulled = false;
+      // the route-diagram strips above the windows were baked mirrored left-to-right (text reads backwards): flip the map in U
+      for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+        if (m && m.name === 'route_map_panel' && m.map && !m.map.userData.flipped) { m.map.repeat.x = -1; m.map.offset.x = 1; m.map.userData.flipped = true; m.map.needsUpdate = true; }
+      }
+    });
     this._m = new THREE.Matrix4();
     this.bogie = this.carInfo.map((c) => Math.max(2, c.len * 0.34));
     const bA = this.byName['car_0_bogie_a'], bB = this.byName['car_0_bogie_b'];
