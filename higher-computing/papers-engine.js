@@ -153,6 +153,8 @@
      patterns that sit close together, so a loop and its comparison must be in the same stretch of code).
      An answer needs a few tokens per mark, so a pile of key words ("for while if") earns nothing. */
   function scoreCode(part, ans) {
+    // commented-out code is not code
+    ans = String(ans).replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(?<!:)\/\/[^\n]*/g, " ").replace(/(^|[ \t])#[ \t][^\n]*/g, "$1").replace(/<!--[\s\S]*?-->/g, " ");
     const text = HCP.norm(ans);
     const toks = (text.match(/[a-z0-9_]+|[^\sa-z0-9_]/g) || []).length;
     const pts = part.points.map((pt) => ({ desc: pt.desc, marks: pt.marks == null ? 1 : pt.marks, hit: false, group: pt.group }));

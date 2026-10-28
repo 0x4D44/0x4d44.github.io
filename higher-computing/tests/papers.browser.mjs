@@ -121,6 +121,24 @@ for (const [w, h] of [[1100, 900], [390, 844]]) {
     assert.ok(await again.locator("input:checked").count() >= 1, "keeps the chosen option");
   });
 
+  await step(`${w}: a shuffled multiple-choice part is marked, revealed and restored by option, not by position`, async () => {
+    await page.click("#pp-tab-sdd");
+    const part = page.locator("#pp-panel-sdd .pp-part:has(.pp-opts input[type=radio])").first();
+    const right = await page.evaluate(() => { const q = window.HCP_BANK.sdd.questions.find((q) => q.parts.some((p) => p.type === "mcq")); return q.parts.find((p) => p.type === "mcq").a; });
+    if (await part.getByRole("button", { name: /Try again/ }).isVisible()) await part.getByRole("button", { name: /Try again/ }).click();
+    await part.locator(`input[value="${right}"]`).check();
+    await part.getByRole("button", { name: "Mark my answer" }).click();
+    assert.match(await part.locator(".pp-score").innerText(), /^1 \//, "the correct option scores 1 wherever it is shown");
+    await page.reload();
+    await page.waitForSelector(".pp-tabs [role=tab]");
+    const again = page.locator("#pp-panel-sdd .pp-part:has(.pp-opts input[type=radio])").first();
+    assert.equal(await again.locator("input:checked").getAttribute("value"), String(right), "restores the same option");
+    await again.getByRole("button", { name: /Try again/ }).click();
+    await again.locator(`input:not([value="${right}"])`).first().check();
+    await again.getByRole("button", { name: "Mark my answer" }).click();
+    assert.match(await again.locator(".pp-score").innerText(), /^0 \//, "a wrong option scores 0");
+  });
+
   await step(`${w}: no page errors`, async () => assert.deepEqual(errors, []));
   await ctx.close();
 }

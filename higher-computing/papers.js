@@ -65,7 +65,7 @@
       });
       input.append(fs);
       if (multi) fs.querySelector("legend").after(el("p", { class: "pp-hint" }, `Choose ${part.a.length}.`));
-      getAns = () => (multi ? ctrls.filter((x) => x.c.checked).map((x) => +x.c.value) : (ctrls.findIndex((x) => x.c.checked)));
+      getAns = () => (multi ? ctrls.filter((x) => x.c.checked).map((x) => +x.c.value) : (() => { const c = ctrls.find((x) => x.c.checked); return c ? c.oi : -1; })());
       ready = () => (multi ? getAns().length > 0 : getAns() >= 0);
       lock = (on) => ctrls.forEach((x) => (x.c.disabled = on));
       box._reveal = () => ctrls.forEach((x) => {
