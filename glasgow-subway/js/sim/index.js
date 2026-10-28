@@ -123,7 +123,7 @@ class Sim {
   /** Seated / standing passengers riding in the saloons (ride + explore only; parented to the car groups so they move with the train). */
   _populateSaloon() {
     const sc = this.saloon, tv = this.trainView, W = this.walkable; this.saloonDone = true; if (!sc || !sc.hasAnim) return;
-    const rng = mulberry32(5), PYf = PY, seatX = 0.85, obstacles = this.saloonObstacles = [];
+    const rng = mulberry32(5), PYf = PY, seatX = 0.74, obstacles = this.saloonObstacles = [];
     const ceilAt = (x) => PYf + Math.min(tv.headroomAt(Math.abs(x)), tv.headroomMeasured ? tv.headroomMeasured(Math.abs(x)) : 9);
     tv.cars.forEach((car, ci) => {
       const info = tv.carInfo[ci], wc = W && W.cars && W.cars[ci], doors = tv.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1);
@@ -133,14 +133,14 @@ class Sim {
         if (doors.some((d) => Math.abs(z - d) < 0.9)) continue;
         if (rng() < dens) slots.push({ x: sx * seatX, y: PYf, z, yaw: sx * Math.PI / 2, seatY, mode: 'sit', ceilAt });
       }
-      const standing = [], nStand = this.quality === 'low' ? 1 : 2;
-      for (let k = 0; k < nStand * 4 && standing.length < nStand; k++) {
-        const z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), x = (rng() < 0.5 ? -1 : 1) * (0.08 + rng() * 0.2);
-        if (doors.some((d) => Math.abs(z - d) < 1.0) || standing.some((q) => Math.abs(q.z - z) < 0.8)) continue;
-        standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.5 ? 'pole' : 'stand', maxH: tv.headroomAt(Math.abs(x)) - 0.08 });
-        obstacles.push({ x0: x - 0.25, x1: x + 0.25, z0: z + info.zc - 0.25, z1: z + info.zc + 0.25, y: PYf, tall: true });
+      const seated = slots.slice(0, Math.max(1, Math.ceil((sc.max - 4) / tv.cars.length))), standing = [], nStand = this.quality === 'low' ? 1 : 2;
+      for (let k = 0; k < nStand * 6 && standing.length < nStand; k++) {
+        const z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), sx = rng() < 0.5 ? -1 : 1, x = sx * (0.4 + rng() * 0.12);
+        if (doors.some((d) => Math.abs(z - d) < 1.1) || standing.some((q) => Math.abs(q.z - z) < 0.9) || seated.some((q) => Math.sign(q.x) === sx && Math.abs(q.z - z) < 0.75)) continue;
+        standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.55 ? 'pole' : 'stand', maxH: tv.headroomAt(Math.abs(x)) - 0.08 });
+        obstacles.push({ x0: x - 0.2, x1: x + 0.2, z0: z + info.zc - 0.2, z1: z + info.zc + 0.2, y: PYf, tall: true });
       }
-      sc.seat(car, slots.slice(0, Math.max(1, Math.ceil((sc.max - standing.length * 4) / tv.cars.length))).concat(standing));
+      sc.seat(car, seated.concat(standing));
     });
     if (this.ctxKind === 'train') this.walker.obstacles = obstacles;
   }
@@ -226,7 +226,7 @@ class Sim {
     if (type === 'toast') this.hud.toast(d.text, d.kind, 3);
     else if (type === 'chime') this.audio.chime(d.kind);
     else if (type === 'log') { if (d.delta < 0 && d.kind !== 'time') this.hud.toast(d.text + ' (' + d.delta + ')', 'warn', 3); }
-    else if (type === 'doors') { this.audio.chime('door'); }
+    else if (type === 'doors') { this.audio.chime(d && d.open === false ? 'close' : 'door'); }
     else if (type === 'target') {
       const n = this.svc.station.name;
       if (this.mode === 'ride' || this.mode === 'drive') this._announce(`The next station is ${n}.`);
@@ -653,7 +653,7 @@ class Sim {
       const sx = w.x >= 0 ? 1 : -1, tv = this.trainView, ci = tv.carAt(w.z), zc = tv.carInfo[ci].zc;
       const busy = this.saloon ? this.saloon.people.some((p) => p.mode === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5) : false;
       const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0);
-      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.85; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
+      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.74; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
       else if (busy) this.hud.toast('That seat is taken', 'info', 2);
     }
     w.sit = true;
@@ -720,6 +720,11 @@ class Sim {
     const svc = this.svc; if (!svc) return;
     this.time += dt;
     let n = Math.ceil(dt / 0.05); const h = dt / n;
+    // someone in a doorway (passenger walking through an open door) holds the doors; resumes when clear
+    { const w = this.walker; let obs = false;
+      if (this.mode === 'ride' && this.ctxKind === 'train' && svc.phase === 'station' && (svc.doors.L > 0.02 || svc.doors.R > 0.02)) obs = Math.abs(w.x) > 0.8 && this.doorZ.some((dz) => Math.abs(w.z - dz) < 0.62);
+      if (obs && !svc.doorObstructed && !svc.doors.cmdL && !svc.doors.cmdR) this.hud.toast('Doors held - something is in the doorway', 'warn', 2.5);
+      svc.doorObstructed = obs; }
     for (let i = 0; i < n; i++) svc.update(h);
     // walker
     const w = this.walker;
@@ -1001,7 +1006,9 @@ class Sim {
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
       stationView: async (i) => this._prepare(i),
-      peopleAudit: () => this._peopleAudit(), mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'),
+      peopleAudit: () => this._peopleAudit(),
+      peopleInfo: () => { const c = this.crowd; const w = this.walker; return { maxH: Math.max(...(c.chars || []).map((ch) => c.standHeight(ch))), chars: (c.chars || []).length, eye: w.eyeY() - w.y, sit: w.sit, x: w.x, clips: c.chars && c.chars[0] ? Object.keys(c.chars[0].pools) : [] }; },
+      doorLeaves: () => { const tv = this.trainView, sv = this.svc, side = sv.doors.L > sv.doors.R ? 'L' : 'R', list = side === 'L' ? tv.doorsL : tv.doorsR; return { double: tv.doubleDoors, side, n: list.length, leaves: list.map((d) => d.leaves.map((l) => l.n.position.z)) }; }, mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'),
       railExt: async (i) => { const v = await this._prepare(i); if (!v) return null; v.group.updateMatrixWorld(true); const T = this.THREE, b = new T.Box3(), a = new T.Box3(), p = new T.Vector3(); let z0 = 1e9, z1 = -1e9;
         v.group.traverse((m) => { if (m.isMesh && m.material && /^rail_steel/.test(m.material.name || '')) { m.geometry.computeBoundingBox(); a.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); for (const zz of [a.min.z, a.max.z]) for (const xx of [a.min.x, a.max.x]) for (const yy of [a.min.y, a.max.y]) { p.set(xx, yy, zz); v.group.worldToLocal(p); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); } } });
         return { z0, z1, skipHalf: HALL_FULL }; }, render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },

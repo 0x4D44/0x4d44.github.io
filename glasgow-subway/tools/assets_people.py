@@ -41,6 +41,25 @@ PEOPLE = [
     dict(id='boy_small', kind='boy', H=1.20, skin=3, build=1.05, hair=(0, 'curly'), eye='#2a1a10', top='#e0a020', top_style='jumper', sleeve='long', bot_style='jeans', bot='#3d5b86', shoe=('trainer', '#e03030', '#f2f2f2')),
     dict(id='girl', kind='girl', H=1.30, skin=2, build=1.0, hair=(7, 'pony'), eye='#4a3020', top='#e07aa0', top_style='puffer', sleeve='long', bot_style='leggings', bot='#2b2b3a', shoe=('trainer', '#f2f2f2', '#ffffff'), bag=('schoolbag', '#7e57c2'), lips='#c07078'),
     dict(id='girl_small', kind='girl', H=1.12, skin=0, build=1.0, hair=(4, 'bob'), eye='#6a8a9a', top='#6fbf8a', top_style='dress', sleeve='long', bot_style='skirt', bot='#6fbf8a', shoe=('shoe', '#b03060', '#802040'), lips='#c07078'),
+    # ---- REVISION 7 addendum: skirts, kilts, Highland dress (tartans 0 green/navy, 1 red, 2 blue/green, 3 grey/black; generic setts, no clan claims)
+    dict(id='man_highland', kind='man', outfit='highland', H=1.77, skin=0, build=1.0, hair=(2, 'short'), eye='#5a7a8a', top='#16161a', top_style='jacket', sleeve='long', inner='#f4f4f0', waistcoat='#1d1a1a', bowtie='#101010', buttons=True,
+         bot_style='skirtx', bot='#202020', skirt=dict(kind='kilt', tart=0), hose=('#ddd6bf', '#b5161e', '#b5161e'), sporran=True, belt=True, ghillie=True, shoe=('shoe', '#17120f', '#0e0b09'), hat=('glengarry', '#16244a')),
+    dict(id='man_kilt_casual', kind='man', outfit='kilt', H=1.72, skin=1, build=1.05, hair=(1, 'short'), eye='#5a4630', top='#34363c', top_style='jumper', sleeve='long', bot_style='skirtx', bot='#202020', skirt=dict(kind='kilt', tart=3),
+         hose=('#2c2d30', '#2c2d30', None), sporran=True, belt=True, shoe=('boot', '#3a2a1e', '#22160e'), stubble=True),
+    dict(id='man_trews', kind='man', outfit='highland_trews', H=1.75, skin=2, build=1.0, hair=(3, 'short'), eye='#4a3a28', top='#5b5542', top_style='jacket', sleeve='long', inner='#e8e6dc', waistcoat='#2a2a2a', buttons=True,
+         bot_style='trews', bot='#202428', trews=2, shoe=('shoe', '#2a1a10', '#1a100a'), hat=('tam', '#1b2a4a')),
+    dict(id='woman_sash', kind='woman', outfit='highland_dress', H=1.68, skin=0, build=1.0, hair=(7, 'bun'), eye='#4a6b8a', top='#1c2a4a', top_style='shirt', sleeve='long', bot_style='skirtx', bot='#1c2a4a', skirt=dict(kind='maxi', col='#1c2a4a'),
+         sash=1, shoe=('shoe', '#1a1a1a', '#101010'), lips='#a8454a'),
+    dict(id='girl_school_kilt', kind='girl', outfit='school_kilt', H=1.34, skin=0, build=1.0, hair=(4, 'pony'), eye='#6a8a9a', top='#1b2540', top_style='jacket', sleeve='long', inner='#f4f4f4', bot_style='skirtx', bot='#202020',
+         skirt=dict(kind='pleated', tart=2, hem=0.10), hose=('#d9d9d9', '#d9d9d9', None), shoe=('shoe', '#1a1a1a', '#101010'), bag=('schoolbag', '#2b3a66'), lips='#c07078'),
+    dict(id='boy_kilt', kind='boy', outfit='kilt', H=1.28, skin=1, build=1.0, hair=(3, 'short'), eye='#4a3020', top='#1c3a2a', top_style='jacket', sleeve='long', inner='#f4f4f4', bot_style='skirtx', bot='#202020',
+         skirt=dict(kind='kilt', tart=0), hose=('#e0e0e0', '#e0e0e0', '#b5161e'), sporran=True, shoe=('shoe', '#1a1a1a', '#101010'), hat=('tam', '#1c3a2a')),
+    dict(id='woman_mini', kind='woman', outfit='skirt_short', H=1.64, skin=4, build=1.0, hair=(0, 'long'), eye='#2a1a10', top='#d9d4c8', top_style='jumper', sleeve='long', bot_style='skirtx', bot='#202020',
+         skirt=dict(kind='a_line', col='#17171a', hem=0.20), legs='#232326', shoe=('boot', '#1a1a1a', '#101010'), bag=('shoulder', '#7a5a3a'), lips='#7a3a32'),
+    dict(id='woman_midi', kind='woman', outfit='skirt_midi', H=1.66, skin=2, build=1.0, hair=(1, 'bob'), eye='#4a3020', top='#7a3e2e', top_style='jacket', sleeve='long', inner='#e8e0d0', bot_style='skirtx', bot='#202020',
+         skirt=dict(kind='pleated', col='#3b4a3a', hem=-0.17, apron=0.0), legs='#1d1d20', shoe=('boot', '#2b1d14', '#1a120c'), bag=('handbag', '#8a5a3a'), lips='#b06a62'),
+    dict(id='teen_skirt', kind='teen', fem=True, outfit='skirt_pleated', H=1.60, skin=1, build=0.9, hair=(2, 'long'), eye='#5a3a20', top='#e9e9e9', top_style='shirt', sleeve='long', bot_style='skirtx', bot='#202020',
+         skirt=dict(kind='pleated', col='#27304f', hem=0.12), legs='#27272b', shoe=('shoe', '#1a1a1a', '#101010'), bag=('backpack', '#3a4a7a'), lips='#c07078'),
 ]
 
 # ------------------------------------------------------------------ geometry helpers
@@ -115,7 +134,7 @@ def proportions(pd):
     H = pd['H']; kind = pd['kind']
     child = kind in ('boy', 'girl')
     teen = kind == 'teen'
-    fem = kind in ('woman', 'girl') or (kind == 'teen' and pd['id'] == 'teen_girl') or (kind == 'elder' and 'woman' in pd['id'])
+    fem = pd.get('fem', False) or kind in ('woman', 'girl') or (kind == 'teen' and pd['id'] == 'teen_girl') or (kind == 'elder' and 'woman' in pd['id'])
     # skull top is a little below the total height (hair / hats add ~1-3 cm); hats add more
     extra = 0.02
     if pd.get('hat'): extra = 0.045
@@ -158,6 +177,55 @@ def torso_ctrl(pd, P):
     if child:
         c = [(zz, rx * 0.95, ry * 1.02, cy) for zz, rx, ry, cy in c]
     return c
+
+
+def rows_at(rows, z):
+    if z <= rows[0][0]: return rows[0]
+    for a, b in zip(rows, rows[1:]):
+        if a[0] <= z <= b[0]:
+            t = (z - a[0]) / (b[0] - a[0] + 1e-9)
+            return tuple(a[i] + (b[i] - a[i]) * t for i in range(4))
+    return rows[-1]
+
+def tex_hex(tid, cx, cy): return f'T{tid}|{cx:.4f}|{cy:.4f}'
+
+def skirt_geom(pb, P, pd, rows, layer):
+    sk = pd['skirt']; kind = sk['kind']; k = P['k']; H = P['H']
+    prm = {'kilt': dict(zt=0.605, flare=0.050, apron=0.80, npl=7, amp=0.022, thick=0.008, hem=0.010),
+           'pleated': dict(zt=0.585, flare=0.070, apron=sk.get('apron', 0.0), npl=9, amp=0.016, thick=0.006, hem=sk.get('hem', 0.12)),
+           'a_line': dict(zt=0.585, flare=0.100, apron=3.2, npl=1, amp=0.0, thick=0.006, hem=sk.get('hem', 0.12)),
+           'maxi': dict(zt=0.590, flare=0.200, apron=3.2, npl=1, amp=0.0, thick=0.006, hem=None)}[kind]
+    zt = H * prm['zt']
+    zh = (P['knee'] + prm['hem'] * (1.0 if kind in ('kilt',) else k)) if prm['hem'] is not None else P['ankle'] + 0.12
+    if kind == 'kilt': zh = P['knee'] + 0.01
+    if 'hem' in sk and kind != 'kilt': zh = P['knee'] + sk['hem'] * k
+    n = 72; NR = 7
+    hexc_ = tex_hex(sk['tart'], 0.0, 0.0) if 'tart' in sk else sk['col']
+    def pt(z, t, inner=0.0):
+        rx, ry, cy = rows_at(rows, z)[1:]
+        rx = rx * layer + 0.014 + prm['flare'] * t ** 1.3 * k; ry = ry * layer + 0.012 + prm['flare'] * t ** 1.3 * k
+        ring_ = []
+        fade = min(1.0, max(0.0, (t - 0.04) / 0.35)); fade = fade * fade * (3 - 2 * fade)
+        for i in range(n):
+            th = 2 * math.pi * i / n
+            phi = ((th - math.pi / 2 + math.pi) % (2 * math.pi)) - math.pi
+            off = 0.0
+            if abs(phi) > prm['apron'] and prm['amp'] > 0:
+                pp = (abs(phi) - prm['apron']) / (math.pi - prm['apron'] + 1e-9) * prm['npl']
+                fr = pp - math.floor(pp)
+                off = prm['amp'] * k * (fr / 0.78 if fr < 0.78 else (1 - fr) / 0.22) * fade
+            ring_.append(((rx + off - inner) * math.cos(th), cy + (ry + off - inner) * math.sin(th), z))
+        return ring_
+    rs = [pt(zt + (zh - zt) * i / (NR - 1), i / (NR - 1)) for i in range(NR)]
+    rs.append(pt(zh, 1.0, prm['thick'])); rs.append(pt(zt, 0.0, prm['thick']))
+    cy0 = rows_at(rows, zt)[3]
+    if 'tart' in sk:
+        hexc_ = tex_hex(sk['tart'], 0.0, cy0)
+    loft(pb, rs, 'kilt', hexc_, closed=True, cap_top=False, cap_bot=False, smooth=kind in ('a_line', 'maxi'))
+    def fy(z):
+        t = min(1, max(0, (zt - z) / (zt - zh)))
+        r_ = rows_at(rows, z); return r_[3] + r_[2] * layer + 0.012 + prm['flare'] * t ** 1.3 * k
+    return dict(zt=zt, zh=zh, fy=fy, rows_top=rows_at(rows, zt))
 
 # ------------------------------------------------------------------ the person
 def build_person(pd):
