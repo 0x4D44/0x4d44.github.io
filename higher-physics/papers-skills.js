@@ -529,10 +529,10 @@
             steps: [
               { desc: "Relationship: C = I ÷ gradient (from V = Q/C and Q = It)", rel: ["c=i[/÷](?:gradient|slope|m)", "c=q[/÷]v", "q=it", "gradient=i[/÷]c", "slope=i[/÷]c", "c=it[/÷]v", "v=it[/÷]c", "i[/÷]c=(?:gradient|slope|0\\.08)", "c=4(?:0|x10\\^-?5|e-5)[/÷]"] },
               { desc: "Substitution: 40 µA (4.0 × 10⁻⁵ A) and the gradient 0.085 V s⁻¹", nums: [[4e-5, 40], [0.085, 0.0851, 0.0853, 0.0848, 0.85, 1.7, 2.55, 3.4, 4.26]], tol: 0.01, not: ["(?:gradient|slope)[/÷]i", "0\\.08\\d*[/÷]\\(?(?:4\\.?0?x10\\^-?5|4\\.?0?e-5|40x10\\^-?6|40e-6)"] },
-              { desc: "Capacitance with unit: 4.7 × 10⁻⁴ F (470 µF)", ans: 4.75e-4, sf: 2, abs: 0.15e-4, unit: ["f", "farad", "farads"] },
+              { desc: "Capacitance with unit: 4.7 × 10⁻⁴ F (470 µF)", ans: 4.706e-4, sf: 2, abs: 0.2e-4, unit: ["f", "farad", "farads"] },
             ],
             sample: "C = I/gradient\nC = 40 × 10⁻⁶ / 0.085\nC = 4.7 × 10⁻⁴ F",
-            model: "<ul><li>gradient = I/C, so C = I ÷ gradient (1)</li><li>C = 40 × 10⁻⁶ ÷ 0.085 (the prefix µ is 10⁻⁶) (1)</li><li>C = 4.7 × 10⁻⁴ F (= 470 µF) (1)</li></ul><p>Accept 4.6 to 4.9 × 10⁻⁴ F, and the answer in microfarads. Forgetting the µ gives 470 F, a million times too big. The gradient comes from Q = It and V = Q/C: V = (I/C)t.</p>",
+            model: "<ul><li>gradient = I/C, so C = I ÷ gradient (1)</li><li>C = 40 × 10⁻⁶ ÷ 0.085 (the prefix µ is 10⁻⁶) (1)</li><li>C = 4.7 × 10⁻⁴ F (= 470 µF) (1)</li></ul><p>Accept 4.5 to 4.9 × 10⁻⁴ F (exact 4.7 × 10⁻⁴ F), and the answer in microfarads. Forgetting the µ gives 470 F, a million times too big. The gradient comes from Q = It and V = Q/C: V = (I/C)t.</p>",
           },
           {
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
@@ -577,7 +577,7 @@
             sample: "gradient = v\ngradient = (0.68 − 0)/(2.0 × 10⁻³ − 0)\nv = 3.4 × 10² m s⁻¹",
             model: "<ul><li>v = fλ, so λ = v × (1/f) and the gradient of the graph is the speed v (1)</li><li>gradient = (0.68 − 0) ÷ (2.0 × 10⁻³ − 0), with the x axis converted from units of 10⁻³ s (1)</li><li>v = 3.4 × 10² m s⁻¹ (1)</li></ul><p>Accept 3.3 to 3.5 × 10² m s⁻¹. Forgetting the 10⁻³ on the axis gives 0.34 m s⁻¹, which is out by a factor of 1000. The data sheet value is 3.40 × 10² m s⁻¹.</p>",
           },
-          { label: "(b)", type: "num", marks: 1, a: 0.43, sf: 2, tol: 0.02, unit: "m", shown: "0.43", q: "Use the graph to find the wavelength of the sound when the frequency is 800 Hz.", why: "f = 800 Hz gives 1/f = 1.25 × 10⁻³ s. The line reads <strong>0.43 m</strong> at 1.25 on the horizontal axis (check: 340 ÷ 800 = 0.425 m). Accept 0.41 to 0.45." },
+          { label: "(b)", type: "num", marks: 1, a: 0.425, sf: 2, tol: 0.025, alts: [0.43], unit: "m", shown: "0.425", q: "Use the graph to find the wavelength of the sound when the frequency is 800 Hz.", why: "f = 800 Hz gives 1/f = 1.25 × 10⁻³ s. The line reads <strong>0.43 m</strong> at 1.25 on the horizontal axis (check: 340 ÷ 800 = 0.425 m, the exact value). Accept 0.40 to 0.45." },
           {
             label: "(c)", type: "text", marks: 2, rows: 4, minWords: 8,
             q: "Explain why the student plots λ against 1/f rather than λ against f.",

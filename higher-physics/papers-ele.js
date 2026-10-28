@@ -137,11 +137,9 @@
     b += tx(185, 70, "p-type") + tx(295, 70, "n-type");
     [[150, 100], [175, 125], [205, 105], [215, 135], [160, 140]].forEach((p) => { b += '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="5" fill="#fff" stroke="' + RED + '" stroke-width="1.5"/>'; });
     [[265, 105], [290, 130], [320, 100], [330, 135], [275, 140]].forEach((p) => { b += dot(p[0], p[1], 5, BLU); });
-    b += ln(150, 80, 150, 30) + ln(150, 30, 330, 30) + ln(330, 30, 330, 80) + resistor(240, 30) + tx(240, 14, "R");
-    b += ln(150, 150, 150, 200) + ln(150, 200, 330, 200) + ln(330, 200, 330, 150) + cell(240, 200, false);
-    b += tx(164, 192, "+", { s: 14, b: true, f: RED });
+    b += ln(150, 80, 150, 30) + ln(150, 30, 330, 30) + ln(330, 30, 330, 80) + resistor(195, 30) + tx(195, 14, "R") + cell(285, 30, false) + tx(285, 54, "cell", { s: 11 });
     b += tx(120, 118, "holes", { a: "end", s: 11, f: RED }) + tx(360, 118, "free electrons", { a: "start", s: 11, f: BLU });
-    return svg(500, 225, "Diagram of a p-n junction. A p-type block containing holes, drawn as open circles, is joined to an n-type block containing free electrons, drawn as filled dots. The p-type side is connected through a resistor and the n-type side is connected through a cell, with the positive terminal of the cell joined to the p-type side.", b);
+    return svg(500, 225, "Diagram of a p-n junction. A p-type block containing holes, drawn as open circles, is joined to an n-type block containing free electrons, drawn as filled dots. A single wire runs from the top of the p-type block over to the top of the n-type block, containing a resistor and then a cell in series, so the cell, the resistor and the junction form one series loop. The positive terminal of the cell faces the p-type side.", b);
   })();
 
   const figThermistor = (() => {
@@ -169,7 +167,7 @@
 
   B.ele = {
     intro:
-      "Electricity is the smallest of the three areas, but its questions are the most <strong>calculation-heavy</strong> of the paper, and it is where circuit diagrams and graphs earn marks. These fourteen questions (about 110 marks) cover alternating current and the oscilloscope, resistor networks and power, potential dividers with LDRs and thermistors, EMF and internal resistance, capacitors, band theory, and LEDs and solar cells. Marks are earned in small steps: write the relationship, show every substitution, and give the unit; and for a written explanation, give a <strong>cause and its effect</strong> (&ldquo;the resistance rises, so the share of the supply p.d. rises&rdquo;), not just the names of the quantities.",
+      "Electricity is the smallest of the three areas, but its questions are the most <strong>calculation-heavy</strong> of the paper, and it is where circuit diagrams and graphs earn marks. These fourteen questions (about 115 marks) cover alternating current and the oscilloscope, resistor networks and power, potential dividers with LDRs and thermistors, EMF and internal resistance, capacitors, band theory, and LEDs and solar cells. Marks are earned in small steps: write the relationship, show every substitution, and give the unit; and for a written explanation, give a <strong>cause and its effect</strong> (&ldquo;the resistance rises, so the share of the supply p.d. rises&rdquo;), not just the names of the quantities.",
     questions: [
       /* ---------------------------------------------------------------- 01 */
       {
@@ -606,7 +604,7 @@
                 all: ["energy|enough|valence", "gap|cross\\w*|jump\\w*|promot\\w*|excit\\w*|move\\w* (?:up )?(?:in)?to the conduction|reach\\w*|conduction", "more|enough|gain\\w*|gives?|extra|increas\\w*|greater|higher|thermal|heat\\w*|temperature|hotter|warm\\w*"] },
               { desc: "So there are more free charge carriers (electrons in the conduction band, and holes) to carry current",
                 not: ["(?:conductivity|conduction|current|conducts?)\\W+(?:\\w+\\W+){0,3}(?:" + DEC + ")", "vibrat", "collid|collision", "block"],
-                all: [near("more|increas\\w*|greater|larger|higher|extra", "carriers?|free electrons|electrons|holes|charges?", 5)] },
+                all: [near("more|increas\\w*|greater|larger|higher|extra|plenty|lots", "carriers?|free electrons|holes|(?:free |mobile )?charges?|charged particles", 5) + "|\\bcarriers?\\b|\\bholes\\b|\\bfree electrons\\b"] },
             ],
             sample: "At a higher temperature more electrons gain enough energy to cross the small gap from the valence band into the conduction band. There are then more free electrons, and holes, available to carry charge, so the conductivity is greater.",
             model: "<ul><li>At the higher temperature more electrons gain enough energy to cross the gap between the valence band and the conduction band (1)</li><li>There are more charge carriers (free electrons in the conduction band, and holes in the valence band), so the conductivity is greater / the resistance is less (1)</li></ul><p>Z has a <em>small</em> gap, so thermal energy at room temperature already lifts some electrons across. This is opposite to a metal, whose resistance rises with temperature.</p>",
