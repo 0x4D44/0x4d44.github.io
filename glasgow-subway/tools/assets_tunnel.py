@@ -88,8 +88,9 @@ def build_ring(lining, lamp):
 def build_segment():
     reset()
     root = group('tunnel_segment_root')
-    specs = [('seg_plain', 'ring_concrete', False, 0.0), ('seg_lamp', 'ring_concrete', True, 0.0),
-             ('seg_iron', 'ring_iron', False, 0.0), ('seg_iron_lamp', 'ring_iron', True, 0.0)]
+    # NOTE: running tunnels are unlit (research/drive-realism.md): no wall lamps.  seg_lamp / seg_iron_lamp are kept as aliases of the plain rings so older code keeps working.
+    specs = [('seg_plain', 'ring_concrete', False, 0.0), ('seg_lamp', 'ring_concrete', False, 0.0),
+             ('seg_iron', 'ring_iron', False, 0.0), ('seg_iron_lamp', 'ring_iron', False, 0.0)]
     for name, lining, lamp, _ in specs:
         o = build_ring(lining, lamp).to_obj(name, parent=root)
     # tunnel MOUTH: concrete ring + dark brick header collar (3 courses) around the bore at the +Z... (Blender -Y) end; rotate 180 deg about Y for the other end
@@ -100,7 +101,6 @@ def build_segment():
     mm.box((0, y0 + 0.0, -0.20), (2 * (R + 0.45) * math.cos(PHI0) + 0.4, 0.0001, 0.0001), 'brick_dark')
     mm.to_obj('seg_mouth', parent=root)
     # anchor empties for runtime point lights (relative to ring centre)
-    empty('light_anchor', loc=(1.40, 0.0, 2.1), parent=root)
     return root
 
 # ------------------------------------------------------------------ station vault

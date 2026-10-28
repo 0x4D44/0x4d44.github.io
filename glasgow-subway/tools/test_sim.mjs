@@ -160,11 +160,20 @@ try {
   // station teleport via API for all stations (builds every station without error)
   const built = await ev(p, async () => { const s = __sim; let n = 0; for (let i = 0; i < 15; i++) { const v = await s.stationView(i); if (v && v.info.hall) n++; } return n; });
   ok('all 15 station halls (A3 GLBs) load and build', built === 15, 'hall stations=' + built);
+  // continuous rails: the hall's own rails must reach the tunnel rings (rings start at the hall's full extent)
+  const gaps = await ev(p, async () => { const bad = []; for (let i = 0; i < 15; i++) { const r = await __sim.railExt(i); if (!r || r.z0 > -r.skipHalf - 0.001 + 0.15 || r.z1 < r.skipHalf - 0.15) bad.push(i + ':' + (r ? r.z0.toFixed(1) + '..' + r.z1.toFixed(1) : 'null')); } return bad; });
+  ok('hall rails run out to where the tunnel rings start (no track gap, 15 stations)', gaps.length === 0, gaps.join(' '));
   // inner line
   await ev(p, () => __sim.go({ mode: 'drive', station: 'cowcaddens', line: 'inner' }));
   ok('inner circle drive starts', (await ev(p, () => __sim.state())).line === 'inner');
   await ev(p, () => { __sim.svc().dwellT = 100; __sim.ato(true); __sim.ff(30, 0.1); });
   await shot(p, '19_inner_tunnel');
+  // camera sway: low-frequency only (< 2 Hz), small amplitude; no high-frequency head jitter
+  const sw = await ev(p, () => { const s = __sim.sim, T = s.THREE, f = new T.Vector3(), q = new T.Quaternion(), ys = [], ls = []; const v0 = s.svc.train.v;
+    for (let i = 0; i < 240; i++) { __sim.tick(1 / 30); __sim.sync(); s.trainView.eyeWorld(f, q); ys.push(s.camera.position.y - f.y); ls.push(Math.hypot(s.camera.position.x - f.x, s.camera.position.z - f.z)); }
+    const hf = (a) => { const m = a.reduce((x, y) => x + y, 0) / a.length; let c = 0, mx = 0; for (let i = 1; i < a.length; i++) { if ((a[i] - m) * (a[i - 1] - m) < 0) c++; mx = Math.max(mx, Math.abs(a[i] - m)); } return { hz: c / 2 / 8, amp: mx }; };
+    return { v0, y: hf(ys), l: hf(ls) }; });
+  ok('camera sway is low-frequency and small (<= 2 Hz, <= 2 cm)', sw.v0 > 8 && sw.y.hz <= 2.2 && sw.y.amp <= 0.02, JSON.stringify(sw));
   await p.close();
 
   // ---------------------------------------------------------------- RIDE start + explore start + street per station

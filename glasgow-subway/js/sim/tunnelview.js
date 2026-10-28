@@ -38,7 +38,7 @@ export class TunnelView {
     this.lamp = this._pool(tpl.parts.seg_lamp || tpl.parts.seg_iron_lamp || tpl.parts.seg_plain, this.capL);
     this.head = -1e9; this.skip = [];
     this.lights = [];
-    for (let i = 0; i < 2; i++) { const l = new THREE.PointLight(0xffc27a, 14, 16, 1.6); l.userData.lamp = -1; this.group.add(l); this.lights.push(l); }
+    this.lights = [];   // no lamp lights: the train's headlights light the bore
     this._m = new THREE.Matrix4(); this._pa = {}; this._pb = {};
     this.zero = new THREE.Matrix4().makeScale(0, 0, 0);
     { const m = (tpl.parts.seg_plain || []).map((x) => x.material).find((x) => x && x.name === 'ring_concrete'); this.liningMat = m || null; }
@@ -46,7 +46,7 @@ export class TunnelView {
     this.setWindow(this.ahead, this.behind);
   }
   _buildFar() {
-    const THREE = this.THREE, L = FAR_LEN, R = 1.95, n = 18;
+    const THREE = this.THREE, L = FAR_LEN, R = 1.95, n = 44;
     // far lining: textured with the same ring_concrete map as the near GLB rings (u = once round the bore, v = one ring per 0.61 m)
     const tpos = [], tnor = [], tuv = [], tidx = [];
     for (let i = 0; i < n; i++) {
@@ -98,7 +98,7 @@ export class TunnelView {
     m.set(rx, ux, -f[0], (a.x + b.x) / 2, 0, uy, -f[1], (a.y + b.y) / 2, rz, uz, -f[2], (a.z + b.z) / 2, 0, 0, 0, 1);
     this.far.setMatrixAt(slot, hidden ? this.zero : m); this.far.instanceMatrix.needsUpdate = true;
     this.farTube.setMatrixAt(slot, hidden ? this.zero : m); this.farTube.instanceMatrix.needsUpdate = true;
-    if (j % 2 === 0 && !hidden) { const t = new this.THREE.Matrix4().makeTranslation(1.45, 2.15, 0); t.premultiply(m); this.farLamp.setMatrixAt(slot, t); } else this.farLamp.setMatrixAt(slot, this.zero);
+    this.farLamp.setMatrixAt(slot, this.zero);
     this.farLamp.instanceMatrix.needsUpdate = true;
   }
   _pool(meshes, n) {
@@ -141,7 +141,7 @@ export class TunnelView {
   }
   _place(track, k) {
     const THREE = this.THREE, s = k * RING, L = track.length;
-    const isLamp = ((k % LAMP_EVERY) + LAMP_EVERY) % LAMP_EVERY === 0;
+    const isLamp = false;   // running tunnels are unlit (research/drive-realism.md): no wall lamps
     const slot = ((k % this.N) + this.N) % this.N;
     const hidden = this._skipped(s, L);
     const [mk, mslot] = this._mouthKind(s, L);
@@ -181,7 +181,7 @@ export class TunnelView {
     let n = 0;
     while (this.head < kEnd && n++ < 400) { this.head++; this._place(track, this.head); }
     const bs = s;
-    for (const l of this.lights) l.intensity = 14 * (0.93 + 0.07 * Math.sin(bs * 0.9 + l.userData.lamp * 3.1));
+    
   }
   dispose() { this.scene.remove(this.group); }
 }

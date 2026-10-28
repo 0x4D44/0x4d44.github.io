@@ -1,5 +1,5 @@
 // Contract checks on the shipped files of "Rivets, Relays & Rigging":
-// the Almanac's conventions, the links between the seven pages, the question
+// the Almanac's conventions, the links between the eight pages, the question
 // bank, and the widget placeholders each page script expects.
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -9,7 +9,7 @@ import vm from "node:vm";
 
 const PROJECT = resolve(import.meta.dirname, "..");
 const ROOT = resolve(PROJECT, "..");
-const PAGES = ["index.html", "systems.html", "analogue.html", "digital.html", "mechanisms.html", "structures.html", "exam.html"];
+const PAGES = ["index.html", "systems.html", "analogue.html", "digital.html", "mechanisms.html", "structures.html", "exam.html", "papers.html"];
 const DECKS = [["systems.html", "systems.js"], ["analogue.html", "analogue.js"], ["digital.html", "digital.js"], ["mechanisms.html", "mechanisms.js"], ["structures.html", "structures.js"], ["exam.html", "exam.js"]];
 const QUIZ_FILES = ["systems", "analogue", "digital", "mechanisms", "structures", "exam"].map((d) => `quiz-${d}.js`);
 const html = Object.fromEntries(await Promise.all(PAGES.map(async (p) => [p, await readFile(resolve(PROJECT, p), "utf8")])));

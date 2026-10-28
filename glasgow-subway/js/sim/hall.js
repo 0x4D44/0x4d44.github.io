@@ -2,7 +2,7 @@
 // Hall frame: origin = hall centre on the centre line at rail-head level, tracks along Z at x = trackX[0], trackX[1]
 // (outer circle uses the +x track, inner the -x track), platforms z in [-22.5, 22.5], hall shell z in [-27, 27],
 // end_walls to z = +-30 (3 m bore stubs).
-export const HALL_HALF = 27, HALL_FULL = 30.05, PLAT_HALF = 22.5;
+export const HALL_HALF = 27, HALL_FULL = 33.15, PLAT_HALF = 22.5;
 
 /**
  * Chooses how to orient the hall for a line so the platform side matches the data (S: +1 right of travel).
