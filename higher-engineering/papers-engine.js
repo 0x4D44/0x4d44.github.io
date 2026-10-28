@@ -186,7 +186,7 @@
           .replace(/10([-\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, (m, sg, d) => "10^" + (sg ? "-" : "") + [...d].map((c) => SUP[c]).join(""))
           .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
           .replace(/(cm|mm|km|\bm)\s*\^?-[1-3]\b/g, "$1")
-          .replace(/\ba\s*\/\s*v\b/g, " ")
+          .replace(/\b[gmkcu\u00b5]?a\s*\/\s*v\b/g, " ")
           .replace(/\ba\s*\/?\s*v\s*\^?\s*\{?-\s*1\}?\b/g, " ")
           .replace(/\b(?:rad|rev|mm|cm|km|m)?\s*(?:s|min)\s*\^?\s*-\s*1\b/g, " ")      // unit tails: m s-1, rad s^-1, rev min-1
           .replace(/(\d),(?=\d{3}\b)/g, "$1")                          // 2,880,000
@@ -211,6 +211,7 @@
         if (va && ve) v = v * va / ve;
         // a unit of a different kind from the one asked for ("24 rev/s" for rev/min, "576 J" for a torque) is a slip, whatever the number
         const UCLASS = (u) => {
+          if (/^\s*[GMkm\u00b5]?S\s*$/.test(String(u || ""))) return "siemens";      // capital S, so mS is not milliseconds
           const t = String(u || "").toLowerCase().replace(/\u207b\u00b9/g, "-1").replace(/\u00b2/g, "2").replace(/\u00b0/g, "deg").replace(/\bper\b/g, "/").replace(/[\s.\u00b7*]/g, "").replace(/revolutions?|revs/g, "rev").replace(/minutes?/g, "min").replace(/seconds?/g, "s");
           if (/^(rpm|rev\/min|rev-?min-1|rev\/m)$/.test(t)) return "rpm";
           if (/^(rps|rev\/s|revs-1|rev-?s-1)$/.test(t)) return "rps";
@@ -252,7 +253,9 @@
         if (/\bN\//.test(String(part.unit || "")) && /(?:^|[\d\s])[kM]?N\s*\.?\s*$/.test(clean)) return { got: 0, of };      // a bare force for a stress
         const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, c: 1e-2, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
         const UNIT = /^([GMkcm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|S|Hz|m|Pa)$/;
-        const au = clean.replace(/\ba\s*(?:\/|per)\s*v\b/gi, " ").replace(/\u03a9\s*\^?\s*[-\u2212]\s*1/g, "S").match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
+        const au = clean.replace(/\b[GMkmcu\u00b5\u03bc]?a\s*(?:\/|per)\s*v\b/gi, " ").replace(/\u03a9\s*\^?\s*[-\u2212]\s*1/g, "S").match(/([A-Za-z\u00b5\u03bc\u03a9\u2126]{1,5})\s*\)?\s*$/), eu = String(part.unit || "").match(UNIT);
+        const gm = clean.match(/\d\s*([GMkm\u00b5\u03bcu]?)A\s*(?:\/|per)\s*V\b/);      // "1200 mA/V" for a part in siemens
+        if (gm && eu && eu[2] === "S") v = v * PF[gm[1]] / PF[eu[1]];
         const nm = String(part.unit || "") === "N m" && String(ans).match(/([GMkm])?N\s*[.\u00b7*]?\s*m\s*$/);      // torque: "0.576 kNm"
         if (nm) v = v * PF[nm[1] || ""];
         const am = !nm && au && au[1].match(UNIT);
