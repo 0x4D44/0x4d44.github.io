@@ -311,6 +311,7 @@
           ],
           any: [
             R`\b${RAISE}\b${C(R`speed|rpm|reduc|lower|slow|decreas|drop|less|smaller|fewer|${NEGS}`, 30)}\b${TRQ}\b`,
+            R`\b${TRQ}\s+(?:up|higher)\b|\b(?:steps?|gears?|brings?|takes?|turns?)\s+(?:the\s+)?${TRQ}\s+up\b`,
             R`\b${TRQ}\b${C(R`speed|rpm|reduc|lower|slow|decreas|drop|less|smaller|fewer|${NEGS}`, 35)}\b(?:increas\w*|rises?|rising|rais\w*|bigger|larger|higher|greater|stronger|multipl\w*|boost\w*|more|goes? up|gains?)`,
             R`\b(?:high|large|greater|more|extra)\s+(?:output\s+)?(?:torque|turning force)\b`,
           ],
@@ -340,6 +341,7 @@
         {
           desc: "The piston rod takes up part of the piston face on the rod side, so the area the air pushes on (the annulus) is smaller on the instroke",
           group: "rod",
+          negOK: true,
           not: WRONGDIR.concat([
             R`\brod\b${C(R`not|n't|never|\bno\b|in-?\s?strok|rod end|rod side`, 45)}\b(?:reduc\w*|tak\w+|remov\w*|cover\w*|block\w*)\b${C(R`not|n't|never|\bno\b|in-?\s?strok|rod end|rod side`, 40)}\b(?:area|face)\b${C(R`in-?\s?strok|rod end`, 20)}\bon\s+(?:the\s+)?(?:out-?\s?strok\w*|cap end)`,
           ]),
@@ -367,6 +369,7 @@
         {
           desc: "Force = pressure x area, so the same pressure on a smaller area gives a smaller force",
           group: "fpa",
+          negOK: true,
           not: WRONGDIR,
           all: [FORM, R`\b${SM}\b`, R`\barea\b`],
           win: 200,
@@ -374,6 +377,7 @@
         {
           desc: "Force = pressure x area, so the same pressure on a smaller area gives a smaller force",
           group: "fpa",
+          negOK: true,
           not: WRONGDIR,
           any: [
             R`\b${SM}\s+(?:effective\s+|working\s+|piston\s+)?area\b${K(50)}\b${SM}\s+(?:\w+\s+){0,2}force`,
@@ -426,7 +430,7 @@
           not: [
             NOPIL,
             R`\b${REL}${K(60)}\b(?:supplies|supplied|sends|gives|applies|provides|admits|puts)\s+(?:\w+\s+){0,3}(?:pilot|14|signal)`,
-            R`\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
+            R`(?<!\b(?:not|never|n't|longer)\s+(?:\w+\s+){0,1})\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
             R`\b${REL}${K(60)}\b${OUTW}`,
           ],
           all: [R`${near(CHG, VREF, 6)}|\bchang\w+\s+(?:the\s+)?(?:v|valve v)\b`, OUT],
@@ -438,7 +442,7 @@
           not: [
             NOPIL,
             R`\b${REL}${K(60)}\b(?:supplies|supplied|sends|gives|applies|provides|admits|puts)\s+(?:\w+\s+){0,3}(?:pilot|14|signal)`,
-            R`\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
+            R`(?<!\b(?:not|never|n't|longer)\s+(?:\w+\s+){0,1})\b${PRESS}${C(R`${REL}|\bthen\b|\bwhen\b|\bafter\b`, 70)}\b${IN2}`,
             R`\b${REL}${K(60)}\bcap\b${K(60)}\b${OUTW}`,
           ],
           all: [CAP, OUT],
@@ -446,7 +450,8 @@
         },
         {
           desc: "On release S returns (spring), the pilot signal goes, V returns and the piston instrokes",
-          not: [R`\b${REL}${K(160)}\b${OUTW}`],
+          negOK: true,
+          not: [R`\b${REL}${K(160)}\b${OUTW}`, R`(?:\bnot|n't|\bnever|\bcannot)\s+(?:\w+\s+){0,2}(?:return\w*|reset\w*|instrok\w*|retract\w*|mov\w*\s+back)`, R`\b(?:spring|valve|v|s)\b${K(20)}\b(?:fails?|stuck|jams?)`],
           all: [R`${REL}`, R`${RET}`, R`\b${REL}[^;]{0,260}\b${IN2}`, R`${VALVEY}`],
           win: 200,
         },
@@ -485,6 +490,7 @@
     const CONTACT = R`(?:contacts?|switch)`;
     /* a contact wired across the wrong thing, or one that opens on release, is the opposite of a latch */
     const BADLATCH = [
+      R`\b(?:s1|switch|push-?\s?button|button|pushbutton)\b${K(20)}\b(?:is|are|being)\s+(?:a\s+)?latch\w*|\blatching\s+(?:switch|button|push)|\bs1\s+latch\w*|\brelay\b${K(10)}\b(?:is|are)\s+(?:a\s+)?latch\w*`,
       R`\b(?:across|parallel\s+(?:with|to)|in\s+parallel\s+with|bypass\w*)\s+(?:the\s+)?(?:s2|supply|y1|solenoid|coil|load|battery|power)\b`,
       R`\b(?:releas\w*|let go|lets go|no longer pressed)\b${K(50)}\bcontacts?\s+(?:\w+\s+){0,2}(?:opens?|breaks?|disconnect\w*)\b`,
     ];
@@ -494,6 +500,7 @@
           desc: "When S1 is pressed relay K1 is energised and its contact closes",
           group: "k1",
           not: BADLATCH,
+          negOK: true,
           all: [R`(?:\bk1\b|relay|coil)`, CONTACT, R`(?:clos\w*|make\w*|made|shut|join\w*|connect\w*|complet\w*)`],
           win: 110,
         },
@@ -501,16 +508,18 @@
           desc: "When S1 is pressed relay K1 is energised and its contact closes",
           group: "k1",
           not: BADLATCH,
+          negOK: true,
           all: [CONTACT, R`(?:parallel|across\s+s1|bypass\w*|alongside|latch\w*)`],
           win: 110,
         },
         {
           desc: "The contact is in parallel with S1 (a latch), giving the current another path, so K1 and Y1 stay energised after S1 is released",
-          not: BADLATCH,
+          not: BADLATCH.concat([R`(?:\bnot\b|n't|\bnever\b|\bcannot\b|\bno longer\b)\s+(?:\w+\s+){0,2}(?:stay\w*|remain\w*|keep\w*|continu\w*|energi[sz]\w*|\bon\b|latch\w*|hold\w*)`, R`\b(?:k1|relay|coil|y1|solenoid)\b${K(25)}\b(?:de-?energi[sz]\w*|drops? out|switch\w* off|turns? off|goes? off)`]),
+          negOK: true,
           all: [
             R`(?:contacts?|parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
-            R`(?:stay\w*|remain\w*|keep\w*|continu\w*|maintain\w*|holds?|still|even after|even though|although)`,
-            R`(?:energi[sz]\w*|\bon\b|live|current|power\w*|flow\w*|supplied|holds?\s+(?:itself\s+)?in\b|stays?\s+(?:in|closed|latched)\b|latched|pulled in)`,
+            R`(?:stay\w*|remain\w*|keep\w*|continu\w*|maintain\w*|holds?|still|even after|even though|although|(?:does|do)\s+(?:not|n't)\s+(?:cut|lose|stop|break|interrupt|drop)\w*|doesn't\s+(?:cut|lose|stop|break|interrupt|drop)\w*|(?:is|are)\s+(?:not|n't)\s+(?:cut|lost|interrupted|broken))`,
+            R`(?:energi[sz]\w*|\bon\b|live|supply|current|power\w*|flow\w*|supplied|holds?\s+(?:itself\s+)?in\b|stays?\s+(?:in|closed|latched)\b|latched|pulled in)`,
             R`(?:parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
           ],
           win: 170,
@@ -627,7 +636,7 @@
           not: [
             R`\brigid\b${Cc(R`${NEGS}|\bunlike\b|\bwhereas\b|\bbut\b|\bwhile\b|\bthan\b|\bflexible\b`, 45)}\b${GIVE}\w*${K(25)}misalign`,
             R`\bflexible\b${K(30)}\b(?:cannot|can't|can not|does not|doesn't|will not|won't|unable)\b${K(50)}misalign`,
-            R`\b${NEGV}\b${CL(30)}\b${GIVE}\w*${K(30)}misalign`,
+            R`(?<!\brigid\b[^.;,]{0,30})\b${NEGV}\b${CL(30)}\b${GIVE}\w*${K(30)}misalign`,
             R`\bno\s+(?:\w+\s+)?(?:allowance|tolerance|provision|room|give|flexibility|movement|play|compensation|capacity)\b${K(25)}misalign`,
             R`\bmisalign\w*${K(15)}\b(?:is|are|would be|will be)\s+(?:a\s+|an\s+)?(?:problem|issue|not (?:allowed|possible|tolerated|accepted)|impossible|bad)`,
             R`\bwithout\s+(?:any\s+)?(?:allowance|tolerance|provision|room|flexibility)\b${K(25)}misalign`,
@@ -669,7 +678,7 @@
           R`\b(?:carr\w*|support\w*|take[sn]?|taking|withstand\w*|resist\w*|absorb\w*|handl\w*|cop(?:e|es|ing)|stop\w*|prevent\w*|hold\w*|against|deal\w*|bear\w*)\b`,
         ],
         not: [
-          R`(?:\bno\b|\bnot\b(?!\s+only)|n't|\bnever\b|\bcannot\b|\bwithout\b|\bnor\b|\bneither\b)(?!\s+(?:slid\w*|slip\w*|mov\w*|shift\w*|push\w*|creep\w*|drift\w*|travel\w*))(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bthat\b)[^.;,]){0,40}\b(?:axial|axially|along|end\s*(?:load|thrust|force)|thrust|lengthways|longways|parallel)`,
+          R`(?<!\b(?:plain|normal|ordinary|radial|journal|standard|simple|ball|roller|other|usual|normal)\s+bearings?\s)(?:\bno\b|\bnot\b(?!\s+only)|n't|\bnever\b|\bcannot\b|\bwithout\b|\bnor\b|\bneither\b)(?!\s+(?:slid\w*|slip\w*|mov\w*|shift\w*|push\w*|creep\w*|drift\w*|travel\w*))(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bthat\b)[^.;,]){0,40}\b(?:axial|axially|along|end\s*(?:load|thrust|force)|thrust|lengthways|longways|parallel)`,
           R`\b(?:axial|end\s*(?:load|thrust|force)|thrust\s+(?:load|force))\b(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b)[^.;,]){0,25}\b(?:not|never|cannot|can't|unable)\s+(?:be\s+)?(?:carr|support|take|withstand|resist|handl|bear|stop)\w*`,
         ],
         win: 110,
@@ -706,7 +715,7 @@
             R`(?:does ?n'?t|doesn't|does not|never|cannot|can't|won't|will not)\s+(?:\w+\s+){0,2}lock`,
             R`\block\w*${Cc(R`\bthen\b|\buntil\b`, 40)}\b${IMM}`,
             R`\b${IMM}${Cc(R`\bthen\b|\buntil\b`, 40)}\block\w*`,
-            R`\b(?:engage\w*|grip\w*|connect\w*)${Cc(R`\bthen\b|\buntil\b`, 25)}\b${IMM}`,
+            R`(?<!\b(?:not|never|n't)\s+)\b(?:engage\w*|grip\w*|connect\w*)${Cc(R`\bthen\b|\buntil\b`, 25)}\b${IMM}`,
             NOSLIP,
           ],
           any: [R`\block\w*`, R`\b(?:same|equal|matching|matched)\s+(?:\w+\s+){0,1}(?:speed|rate)`, R`\bstops?\s+slipping`, R`\bno\s+(?:more\s+)?slip\w*`, R`\b(?:fully|firmly|tightly|completely)\s+(?:engage\w*|grip\w*|clamp\w*|press\w*|driven|drives?)`, R`\b(?:engage\w*|grip\w*|clamp\w*)\s+(?:fully|firmly|tightly|completely)`, R`\bspeeds?\s+(?:\w+\s+){0,2}(?:match\w*|equal|same)`, R`\bmatch\w*\s+(?:the\s+)?speeds?`, R`\bcatch(?:es)?\s+up`, R`\b(?:turn|rotat|spin|move|run)\w*\s+together`, R`\bas one\b|\b(?:pressed|squeezed|clamped|held|pushed|joined|forced)\s+together`
