@@ -219,6 +219,8 @@
           if (/^(rps|rev\/s|revs-1|rev-?s-1)$/.test(t)) return "rps";
           if (/^(rad\/s|rads-1|rad-?s-1|radians?\/s)$/.test(t)) return "rads";
           if (/^(rad|radians?)$/.test(t)) return "rad";
+          if (/^(k|degc|degreesc|degreescelsius|degcelsius|celsius|c)$/.test(t)) return "temp";
+          if (/^[kmg]?n\/m$|^[kmg]?n-?m-1$/.test(t)) return "nperm";
           if (/^(deg|degrees?|deg[a-z]*)$/.test(t)) return "deg";
           if (/^hz$|^khz$|^mhz$/.test(t)) return "hz";
           if (/^[kmg]?n(m|\*m)$/.test(t) || /^nm$/.test(t)) return "torque";
@@ -244,7 +246,7 @@
         const tc = ut && UCLASS(ut[1].replace(/\s+$/, "")), ec = part.unit === "" ? "none" : UCLASS(part.unit);
         if (tc && ec !== tc && !(ec === "none" && tc === "pct") && !(ec === null && tc !== "pct" && tc !== "kmh" && tc !== "rad")) {
           const pair = (x, y) => (tc === x && ec === y) || (tc === y && ec === x);
-          if (!pair("force", "torque") || tc !== ec) return { got: 0, of };
+          if (!(tc === "torque" && ec === "energy")) return { got: 0, of };      // N m is a joule
         }
         if (tc === "time" && ec === "time" && /(?:min|h|hr)[a-z]*\.?$/i.test(ut[1].trim())) {      // minutes or hours typed for a part wanted in seconds
           const TF = (u) => ({ s: 1, ms: 1e-3, min: 60, h: 3600, hr: 3600 }[String(u).toLowerCase().replace(/[\s.]/g, "").replace(/minutes?/, "min").replace(/hours?/, "h").replace(/seconds?/, "s")] || 1);
