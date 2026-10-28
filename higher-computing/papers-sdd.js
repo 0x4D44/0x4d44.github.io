@@ -416,7 +416,7 @@
                 R`(line|statement|point|place|position|instruction)\W+${WD(4)}(where|at which|in which|and)\W+${WD(3)}(paus\w*|stop\w*|halt\w*|suspend\w*)`,
                 R`(program|execution|it|code|running|run)\W+${WD(2)}(paus\w*|stop\w*|halt\w*|suspend\w*)\W+${WD(4)}(at|on|when|there|here|before)\b`,
                 R`(marker|mark\w*|flag|set|place\w*|put|point)\W+${WD(3)}(on|at|in|beside|next to)\W+${WD(3)}(line|statement|code|instruction|point)\w*\W+${WD(8)}(paus\w*|stop\w*|halt\w*|suspend\w*)`],
-                not: [R`crash\w*|error message`] },
+                not: [R`crash\w*|error message|break\s?points?\W+${WD(3)}(is|are|means?|causes?)\W+${WD(2)}(an?\W+)?(error|mistake|fault|bug|problem)`] },
               { desc: "Used to inspect variables / check the state at that point", any: [
                 R`(inspect\w*|examin\w*|check\w*|see|view\w*|look\w*|read\w*|monitor\w*|watch\w*|find out|test\w*)\W+${NA(5)}(variables?|values?|state|data|contents)`,
                 R`(find|locate|identif\w*|track down|spot|debug|fix|work out)\w*\W+${NA(5)}(errors?|bugs?|faults?|mistakes?|problems?|wrong)`,
@@ -587,7 +587,7 @@
             ],
           },
           {
-            label: "(c)", type: "text", marks: 2,
+            label: "(c)", type: "text", marks: 2, wordsPerMark: 2,
             q: "State one item of <b>extreme</b> test data and one item of <b>exceptional</b> test data for the manager's prices. [2]",
             rows: 3,
             sample: "Extreme test data: 1 or 40. Exceptional test data: 41, which should be rejected.",
