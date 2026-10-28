@@ -354,7 +354,7 @@ def build(TR, D, log):
         area = box(-880, -375, -712, -250)
         for g, t, i in D["road"]:
             if t.get("bridge") not in (None, "no") and g.intersects(area) and g.length > 100 and (arc is None or g.length > arc.length): arc = g
-    if arc is not None:
+    if False and arc is not None:
         pts = np.asarray(arc.coords); a0 = pts[0]; a1 = pts[-1]
         cx, cy = (a0 + a1) / 2; B, e = L("clyde_arc", cx, cy)
         d = a1 - a0; Ln = float(np.hypot(*d)); d /= Ln; nrm = np.array([-d[1], d[0]])

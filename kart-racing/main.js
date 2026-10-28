@@ -142,6 +142,13 @@ class Game {
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && this.inRace() && !this.paused) this.togglePause(true);
     });
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "KeyU" && !e.repeat && this.inRace() && !this.paused && !this.botPlayer) {
+        this.cheat = !this.cheat;
+        if (this.cheat) this._raceCheated = true;
+        this.audio.play(this.cheat ? "pad" : "ui-back");
+      }
+    });
     const unlock = () => this.audio.unlock();
     for (const ev of ["pointerdown", "keydown", "touchstart"]) window.addEventListener(ev, unlock, { passive: true });
   }
@@ -346,6 +353,7 @@ class Game {
     this.chase.setMode?.(this.settings?.camera === "far" ? "far" : "chase");
     this.chase.snap();
 
+    this.cheat = false; this._raceCheated = false; this._cheatFinal = false;
     this.audio.startMusic(track.def.theme || track.id);
     this.audio.setListener(this.player);
     this.audio.startEngine();
@@ -489,14 +497,18 @@ class Game {
     const race = this.race;
     const results = race.results(this.cfg.difficulty, this.cfg.mode);
     results.trackId = this.cfg.trackId;
+    const cheated = this._raceCheated;
+    this.cheat = false; this._cheatFinal = false;
     // records
     const tid = this.cfg.trackId;
     const rec = (this.best[tid + ":" + results.laps] = this.best[tid + ":" + results.laps] || { bestLap: null, bestRace: null });
     let prevLap = null;
+    if (!cheated) {
     for (const [k, v] of Object.entries(this.best)) if (k.startsWith(tid + ":") && v.bestLap != null && (prevLap == null || v.bestLap < prevLap)) prevLap = v.bestLap;
     if (results.bestLap != null && (rec.bestLap == null || results.bestLap < rec.bestLap)) { rec.bestLap = results.bestLap; if (prevLap == null || results.bestLap < prevLap) results.newRecord = true; }
     if (results.totalTime != null && !results.rows.find((r) => r.isPlayer)?.dnf && (rec.bestRace == null || results.totalTime < rec.bestRace)) { rec.bestRace = results.totalTime; results.newRecord = true; }
     this._saveBest();
+    }
 
     let cupInfo = null;
     if (this.cup) {
@@ -556,6 +568,7 @@ class Game {
         if (first && inp.useItem) pi.useItem = true;
       }
     }
+    if (this.cheat) this._applyCheat(player, race);
     // bots at 60 Hz
     const ctx = { karts: this.karts, items: this.items, race };
     if ((this.stepNo & 1) === 0) {
@@ -570,6 +583,19 @@ class Game {
     if ((this.stepNo & 15) === 0) this._housekeeping(h * 16);
   }
 
+  /** Secret "U" mode: endless turbo, and a guaranteed win on the final lap. */
+  _applyCheat(player, race) {
+    if (race.state !== "racing" || player.race.finished) return;
+    const finalLap = player.race.lap >= race.laps;
+    let strength = 1.15;
+    if (finalLap) {
+      const gap = Math.max(0, race.leaderProgress() - player.race.progress);
+      strength = Math.min(3, 1.4 + gap / 120);
+    }
+    if (player.boostTime < 0.35 || player.boostStrength < strength) player.boost(strength, 0.7);
+    this._cheatFinal = finalLap;
+  }
+
   /** Rubber-banding and recovery for karts that are hopelessly out of bounds. */
   _housekeeping(dt) {
     const race = this.race;
@@ -580,6 +606,10 @@ class Game {
     for (const k of this.karts) {
       if (!k.isPlayer || this.botPlayer) {
         if (!k.race.finished) k.speedScale = this.M.ai.rubberBand(k, lead, pp, diff);
+      }
+      if (this.cheat && this._cheatFinal && !k.isPlayer && !k.race.finished) {
+        const remain = race.laps * race.L - this.player.race.progress;
+        k.speedScale *= remain < 450 && k.race.progress > this.player.race.progress ? 0.35 : 0.9;
       }
       const st = k._fxStuck || (k._fxStuck = { off: 0, still: 0 });
       st.off = k.offRoad ? st.off + dt : 0;
