@@ -62,7 +62,8 @@ class Sim {
     this.looks = new Map(((looksJ && looksJ.stations) || []).map((x) => [x.id, x]));
     this.walkable = await this._json('models/train_walkable.json');
     this.halls = new Map(); this.hallLoading = new Map(); this.hallFailed = new Set(); this.entrances = new Map();
-    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleGltf = peopleTpl; this.peopleVariants = null; this.sigWallTpl = sigWallTpl; this.boardsTpl = boardsTpl;
+    this.kit = kitTpl; this.vaultTpl = vaultTpl; this.kioskTpl = kioskTpl; this.peopleGltf = peopleTpl; this.peopleVariants = null;
+    { const pm = await this._json('models/people_meta.json'); if (peopleTpl && pm && pm.people) { peopleTpl.meta = {}; for (const q of pm.people) peopleTpl.meta[q.id] = q; } } this.sigWallTpl = sigWallTpl; this.boardsTpl = boardsTpl;
     try { const SU = await import('three/addons/utils/SkeletonUtils.js'); this.SU = SU; } catch (e) { console.warn('[sim] SkeletonUtils unavailable', e && e.message); this.SU = null; }
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x050506);
     this.scene.fog = new THREE.FogExp2(0x0a0a0c, 0.026);
@@ -81,8 +82,8 @@ class Sim {
     this.cabLight = new THREE.PointLight(0xdfe8ff, 1, 5, 1.5); this.scene.add(this.cabLight);
     this.poolLights = []; for (let i = 0; i < (this.quality === 'low' ? 3 : 5); i++) { const l = new THREE.PointLight(0xffe3b0, 0, 28, 1.4); this.scene.add(l); this.poolLights.push(l); }
     { const lowQ = this.quality === 'low'; const ok = this.SU && this.peopleGltf && this.peopleGltf.animations && this.peopleGltf.animations.length;
-      this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 22 : 60, this.quality) : new Crowd(THREE, lowQ ? 28 : 110, null);
-      this.saloon = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 8 : 20, this.quality) : null; this.saloonDone = false;
+      this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 16 : 48, this.quality) : new Crowd(THREE, lowQ ? 28 : 110, null);
+      this.saloon = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 6 : 18, this.quality) : null; this.saloonDone = false;
       this.scene.add(this.crowd.group); }
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
@@ -121,19 +122,61 @@ class Sim {
   }
   /** Seated / standing passengers riding in the saloons (ride + explore only; parented to the car groups so they move with the train). */
   _populateSaloon() {
-    const sc = this.saloon, tv = this.trainView; this.saloonDone = true; if (!sc || !sc.hasAnim) return;
-    const rng = mulberry32(5), PYf = PY;
+    const sc = this.saloon, tv = this.trainView, W = this.walkable; this.saloonDone = true; if (!sc || !sc.hasAnim) return;
+    const rng = mulberry32(5), PYf = PY, seatX = 0.85, obstacles = this.saloonObstacles = [];
+    const ceilAt = (x) => PYf + Math.min(tv.headroomAt(Math.abs(x)), tv.headroomMeasured ? tv.headroomMeasured(Math.abs(x)) : 9);
     tv.cars.forEach((car, ci) => {
-      const info = tv.carInfo[ci], doors = tv.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1);
-      const zA = ci === 0 ? -info.len / 2 + 2.2 : -info.len / 2 + 0.9, zB = ci === tv.cars.length - 1 ? info.len / 2 - 2.2 : info.len / 2 - 0.9;
-      const slots = [];
-      for (let z = zA; z <= zB; z += 0.55) for (const sx of [-1, 1]) {
-        if (doors.some((d) => Math.abs(z - d) < 1.0)) continue;
-        if (rng() < (this.quality === 'low' ? 0.2 : 0.3)) slots.push({ x: sx * 0.8, y: PYf, z, yaw: sx * Math.PI / 2, mode: 'sit' });
+      const info = tv.carInfo[ci], wc = W && W.cars && W.cars[ci], doors = tv.doorZ.map((z) => z - info.zc).filter((z) => Math.abs(z) < info.len / 2 + 1);
+      const ranges = (wc && wc.benchZRanges ? wc.benchZRanges : [[info.zc - info.len / 2 + 1.6, info.zc + info.len / 2 - 1.6]]).map(([a, b]) => [a - info.zc, b - info.zc]);
+      const seatY = tv.seatTopY ? tv.seatTopY(ci, seatX) : PYf + 0.43, slots = [], dens = this.quality === 'low' ? 0.22 : 0.34;
+      for (const [a, b] of ranges) for (let z = a + 0.35; z <= b - 0.3; z += 0.55) for (const sx of [-1, 1]) {
+        if (doors.some((d) => Math.abs(z - d) < 0.9)) continue;
+        if (rng() < dens) slots.push({ x: sx * seatX, y: PYf, z, yaw: sx * Math.PI / 2, seatY, mode: 'sit', ceilAt });
       }
-      const standing = []; for (let k = 0; k < 2; k++) { const z = zA + rng() * (zB - zA); if (!doors.some((d) => Math.abs(z - d) < 1.2)) standing.push({ x: (rng() < 0.5 ? -1 : 1) * 0.62, y: PYf, z, yaw: rng() * 6.28, mode: 'idle' }); }
-      sc.seat(car, slots.slice(0, Math.ceil(sc.max / tv.cars.length)).concat(standing));
+      const standing = [], nStand = this.quality === 'low' ? 1 : 2;
+      for (let k = 0; k < nStand * 4 && standing.length < nStand; k++) {
+        const z = (ranges[0][0] + rng() * (ranges[ranges.length - 1][1] - ranges[0][0])), x = (rng() < 0.5 ? -1 : 1) * (0.08 + rng() * 0.2);
+        if (doors.some((d) => Math.abs(z - d) < 1.0) || standing.some((q) => Math.abs(q.z - z) < 0.8)) continue;
+        standing.push({ x, y: PYf, z, yaw: rng() * 6.28, mode: rng() < 0.5 ? 'pole' : 'stand', maxH: tv.headroomAt(Math.abs(x)) - 0.08 });
+        obstacles.push({ x0: x - 0.25, x1: x + 0.25, z0: z + info.zc - 0.25, z1: z + info.zc + 0.25, y: PYf, tall: true });
+      }
+      sc.seat(car, slots.slice(0, Math.max(1, Math.ceil((sc.max - standing.length * 4) / tv.cars.length))).concat(standing));
     });
+    if (this.ctxKind === 'train') this.walker.obstacles = obstacles;
+  }
+  /** Regression audit of every spawned person (real skinned vertices): soles on the floor/platform/seat, heads under the ceiling, inside the walls, no overlaps. */
+  _peopleAudit() {
+    const out = { checked: 0, bad: [], seated: 0, standing: 0, platform: 0, maxFootErr: 0, minHeadGap: 9 }, tv = this.trainView, bad = (m) => { if (out.bad.length < 12) out.bad.push(m); };
+    const wall = 1.085, PYf = PY;
+    if (this.saloon && this.saloon.people.length) {
+      const list = [];
+      for (const p of this.saloon.people) {
+        if (!p.obj) continue; const b = this.saloon.bodyOf(p); out.checked++; const sit = p.state === 'sit'; sit ? out.seated++ : out.standing++;
+        const footErr = b.foot - PYf; out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
+        if (footErr < -0.04) bad(`${b.id} ${p.state}: feet ${(-footErr * 100).toFixed(0)} cm below the floor`);
+        if (footErr > (sit ? 0.07 : 0.04)) bad(`${b.id} ${p.state}: feet ${(footErr * 100).toFixed(0)} cm above the floor (levitating)`);
+        if (sit) { const pel = p.y + p.yOff + p.m.contact; if (pel - p.seatY > 0.08 || p.seatY - pel > 0.07) bad(`${b.id}: pelvis ${(pel - p.seatY).toFixed(2)} m off the seat top`); }
+        let worst = 9, wx = 0;
+        for (let i = 0; i < b.pts.length; i += 3) { const x = b.pts[i], y = b.pts[i + 1]; if (Math.abs(x) > wall + 0.005) { bad(`${b.id} ${p.state}: through the side wall (x=${x.toFixed(2)})`); break; }
+          const lim = PYf + Math.min(tv.headroomAt(Math.abs(x)), tv.headroomMeasured(Math.abs(x))); if (y > PYf + 0.9) { const gap = lim - y; if (gap < worst) { worst = gap; wx = x; } } }
+        out.minHeadGap = Math.min(out.minHeadGap, worst); if (worst < 0.0) bad(`${b.id} ${p.state}: through the ceiling by ${(-worst * 100).toFixed(0)} cm at x=${wx.toFixed(2)}`);
+        list.push({ p, b, ci: tv.cars.indexOf(p.parent) });
+      }
+      for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) { const a = list[i], c = list[j]; if (a.ci !== c.ci) continue; const d = Math.hypot(a.p.x - c.p.x, a.p.z - c.p.z); if (d < 0.42) bad(`${a.b.id}/${c.b.id} overlap (${d.toFixed(2)} m apart)`); }
+    }
+    const av = this.activeStation || null;
+    if (av && this.crowd && this.crowd.people && this.crowd.bodyOf) {
+      const py = av.info.PY, list = [];
+      for (const p of this.crowd.people) {
+        if (!p.obj || p.hidden) continue; p.parent = this.crowd.group; const b = this.crowd.bodyOf(p); out.checked++; out.platform++;
+        const footErr = b.foot - py; out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
+        if (footErr < -0.04) bad(`platform ${b.id}: feet ${(-footErr * 100).toFixed(0)} cm below the platform`); if (footErr > 0.06) bad(`platform ${b.id}: feet ${(footErr * 100).toFixed(0)} cm above the platform (levitating)`);
+        if (this.crowd.avoid.some((a) => p.x > a.x0 && p.x < a.x1 && p.z > a.z0 && p.z < a.z1)) bad(`platform ${b.id}: standing inside furniture`);
+        list.push(p);
+      }
+      for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) if (Math.hypot(list[i].x - list[j].x, list[i].z - list[j].z) < 0.28 && list[i].mode !== 'go' && list[j].mode !== 'go') bad(`platform people overlap (${list[i].char.id}/${list[j].char.id})`);
+    }
+    return out;
   }
   async _opt(path) {
     try { const g = await new Promise((res, rej) => new this.GLTFLoader().load(this.url(path), res, undefined, rej)); return g.scene; } catch (e) { console.warn('[sim] optional model missing', path); return null; }
@@ -286,7 +329,7 @@ class Sim {
     // Whole 4-car train is one walkable corridor (open gangways). Generous aisle, door recesses, no seat colliders.
     const w = this.walker, half = this.trainLen / 2 - 2.5, zones = [{ kind: 'flat', x0: -0.5, x1: 0.5, z0: -half, z1: half, y: PY, name: 'aisle' }];
     for (const z of this.doorZ) zones.push({ kind: 'flat', x0: -1.12, x1: 1.12, z0: z - 0.75, z1: z + 0.75, y: PY, name: 'door' });
-    w.setWorld(zones, []);
+    w.setWorld(zones, this.saloonObstacles || []);
     w.heightFn = null; w.eye = 1.5; w.radius = 0.2; w.headroomFn = (x) => this.trainView.headroomAt(x); w.minHead = 1.5;
     this.ctxKind = 'train';
   }
@@ -610,7 +653,7 @@ class Sim {
       const sx = w.x >= 0 ? 1 : -1, tv = this.trainView, ci = tv.carAt(w.z), zc = tv.carInfo[ci].zc;
       const busy = this.saloon ? this.saloon.people.some((p) => p.mode === 'sit' && p.obj && Math.sign(p.x) === sx && Math.abs(p.z + tv.carInfo[tv.cars.indexOf(p.parent)].zc - w.z) < 0.5) : false;
       const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.0);
-      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.8; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
+      if (Math.abs(w.x) < 0.55 && !busy && !nearDoor) { this._seat = sx; w.x = sx * 0.85; this.look.yaw = sx * Math.PI / 2; this.look.pitch = 0; w.yaw = this.look.yaw; }
       else if (busy) this.hud.toast('That seat is taken', 'info', 2);
     }
     w.sit = true;
@@ -957,7 +1000,8 @@ class Sim {
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
-      stationView: async (i) => this._prepare(i), mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'),
+      stationView: async (i) => this._prepare(i),
+      peopleAudit: () => this._peopleAudit(), mouse: () => ({ locked: !!this._locked, sens: this.mouse.sens, invertY: this.mouse.invertY, denied: !!this._lockDenied, handlers: !!(this._pd && this._pm && this._plc), yaw: this.look.yaw, pitch: this.look.pitch, hint: this._hintEl ? this._hintEl.style.opacity : null }), mouseMove: (dx, dy, locked) => { this._forceLock = !!locked; try { this._pm({ movementX: dx, movementY: dy, clientX: 0, clientY: 0, pointerId: -9 }); } finally { this._forceLock = false; } }, mouseSet: (o) => { Object.assign(this.mouse, o); }, audioState: () => this.audio.state(), audioStart: () => this.audio.start(), audioSetHidden: (h) => this.audio.setHidden(h), audioMute: (m) => this.audio.setMuted(m), audioSpeak: (t) => this.audio.speak(t), audioChime: () => this.audio.chime('door'),
       railExt: async (i) => { const v = await this._prepare(i); if (!v) return null; v.group.updateMatrixWorld(true); const T = this.THREE, b = new T.Box3(), a = new T.Box3(), p = new T.Vector3(); let z0 = 1e9, z1 = -1e9;
         v.group.traverse((m) => { if (m.isMesh && m.material && /^rail_steel/.test(m.material.name || '')) { m.geometry.computeBoundingBox(); a.copy(m.geometry.boundingBox).applyMatrix4(m.matrixWorld); for (const zz of [a.min.z, a.max.z]) for (const xx of [a.min.x, a.max.x]) for (const yy of [a.min.y, a.max.y]) { p.set(xx, yy, zz); v.group.worldToLocal(p); z0 = Math.min(z0, p.z); z1 = Math.max(z1, p.z); } } });
         return { z0, z1, skipHalf: HALL_FULL }; }, render: () => { this._mgrT = 0; this.sync(0.016); this.renderer.render(this.mode === 'street' && this.street ? this.street.scene : this.scene, this.camera); },
