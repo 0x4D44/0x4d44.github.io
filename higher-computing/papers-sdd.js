@@ -106,6 +106,8 @@
                 R`(chang\w*|requirement\w*)\W+${NA(6)}(can|could|will|may|are|is|be|to be)\W+${NA(3)}(made|added|altered|accommodated|handled|adapted|absorbed|dealt|incorporated|included|easy|easier|easily|quick\w*)`] },
               { desc: "Client involved throughout: sees working versions and gives feedback each sprint", any: [
                 R`(client|customer|users?|islanders?|company|stakeholders?|passengers?|they|them)s?\W+${NA(12)}(feedback|try|trying|test\w*|see|sees|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)\W+${NA(10)}(each|every|after|throughout|regular\w*|constant\w*|frequent\w*|continual\w*|sprints?)`,
+                R`(each|every)\W+(\w+\W+)?(sprints?|iterations?)\W+${NA(10)}(client|customer|users?|islanders?|stakeholders?)s?\W+${NA(6)}(try|see|test|review|comment|use|view|feedback|give\w*)`,
+                R`(client|customer|users?|islanders?|stakeholders?)s?\W+${NA(6)}(try|test|review|view)\W+${NA(8)}(comment|feedback|suggest)\w*`,
                 R`(client|customer|users?|islanders?|stakeholders?|they)s?\W+${NA(4)}(regular\w*|frequent\w*|constant\w*|continual\w*|early)\W+${NA(4)}(feedback|try|test\w*|see|view\w*|review\w*|use|comment\w*|suggest\w*|involved|input|shown|show\w*)`,
                 R`(client|customer|users?|islanders?|stakeholders?)s?\W+${NA(3)}(see|try|test|view|review|use|get|receive)\w*\W+${NA(3)}(prototypes?|versions?|working \w+|demos?|builds?|releases?|increments?)\W+${WX(10, "or|but|however|whereas|not")}(feedback|comments?|suggest\w*)`,
                 R`(prototypes?|versions?|working \w+|demos?|builds?|releases?|increments?)\W+${NA(10)}(client|customer|users?|islanders?|stakeholders?)s?.?s?\W+${NA(3)}(feedback|comments?|suggest\w*)`,
@@ -201,6 +203,8 @@
             points: [
               { desc: "Identifies hotPos as the wrong item", negOK: true, any: [
                 R`hot\s?pos\W+${WD(5)}(shouldn.t|should not|does ?n.t|do not|don.t|not|never|isn.t|aren.t|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error|unused|remov\w*|delet\w*|take\w* (it )?out)`,
+                R`hot\s?pos\W+${WD(7)}(no use|no need|not (used|needed|required|necessary)|unused|never used|doesn.t (use|need)|does not (use|need)|has no (use|need)|redundant|unnecessary)`,
+                R`(step 3|step three|this step|it)\W+${WD(4)}(does ?n.t|does not|never|do not|don.t)\W+(use|need)\w*\W+${WD(2)}hot\s?pos`,
                 R`hot\s?pos\W+${WD(6)}(step 3|step three)\W+${WD(3)}(but|yet|although|even though|however)\W+${WD(8)}(no use|not (used|needed|required|necessary)|unused|never used|doesn.t (use|need)|does not (use|need)|has no (use|need)|only needs|only uses)`,
                 R`(remov\w*|delet\w*|take out|drop|get rid of|without|shouldn.t (have|be)|should not (have|be)|unnecessar\w*|extra|surplus|redundant|wrong|mistake|error)\W+${WD(4)}hot\s?pos`],
                 not: [R`should be (passed|sent|given|input)|(hot\s?pos|it) (is|are|gets|was) (needed|used|required|necessary)|because (it|hot\s?pos) (is|gets) (used|needed)`, R`\bnot not\b`] },
@@ -346,9 +350,11 @@
                 R`(mistake|error|fault|bug|problem)\W+${WD(6)}(stop\w*|prevent\w*|block\w*|keep\w*)\W+${WD(5)}(accepted|allowed|entered|let in)`,
                 R`(>=|<=|>|<)\W+${NA(3)}(written|used|coded|typed|put|entered)\W+${NA(1)}(as|instead of|rather than)\W+(>=|<=|>|<|greater|less)`,
                 R`(check\w*|test\w*|ensur\w*|verif\w*|prov\w*|confirm\w*|show\w*)\W+${NA(3)}(comparison|operators?|conditions?|relational|>=|<=)\W+${NA(3)}(is|are|has been|have been|been|was)\W+${NA(1)}(right|correct\w*|proper\w*|accurate\w*|written|used|coded|wrong\w*)`,
-                R`wrongly (reject|refus|turn)\w*`, R`reject\w*\s+(a |an |the )?(valid|correct|legal|allowed|acceptable|good)`,
+                R`wrongly (reject|refus|turn)\w*`,
+                R`off.by.one\W+${WD(1)}(errors?|mistakes?|bugs?)`,
+                R`(using|use|writing|typing|coding|putting|put)\W+(>=|<=|>|<)\W+(rather than|instead of|and not|not|vs)\W+(>=|<=|>|<)`, R`reject\w*\s+(a |an |the )?(valid|correct|legal|allowed|acceptable|good)`,
                 R`(valid|legal|correct|acceptable)[^.;!?]{0,25}(is|are|gets?|being|be|would be|will be) (wrongly )?(reject|refus)\w*`],
-                not: [R`(not|never|n.t)\W+(\w+\W+)?(reject|refus|turn)`, R`(not|never|n't)\W+${WD(2)}(check|test|show|ensure|verif|prove|confirm|reveal|find|spot|detect)\w*`, R`\bnot not\b`] },
+                not: [R`(?:\bnot|n't|\bno)\W+(?:\w+\W+){0,3}off.by.one`, R`(not|never|n.t)\W+(\w+\W+)?(reject|refus|turn)`, R`(not|never|n't)\W+${WD(2)}(check|test|show|ensure|verif|prove|confirm|reveal|find|spot|detect)\w*`, R`\bnot not\b`] },
             ],
           },
         ],
@@ -420,7 +426,8 @@
               { desc: "Used to inspect variables / check the state at that point", any: [
                 R`(inspect\w*|examin\w*|check\w*|see|view\w*|look\w*|read\w*|monitor\w*|watch\w*|find out|test\w*)\W+${NA(5)}(variables?|values?|state|data|contents)`,
                 R`(find|locate|identif\w*|track down|spot|debug|fix|work out)\w*\W+${NA(5)}(errors?|bugs?|faults?|mistakes?|problems?|wrong)`,
-                R`step\w*\W+(through|over|into|line by line)`] },
+                R`step\w*\W+(through|over|into|line by line)`,
+                R`(variables?|values?|state|data|contents)\W+${NA(6)}(can|could|may|to|will|are|be)\W+${NA(3)}(inspect\w*|examin\w*|check\w*|seen|viewed|read|monitor\w*|watch\w*|looked|tested|debugged)`] },
             ],
           },
           {
@@ -430,10 +437,13 @@
             sample: "A trace table records the value of each variable after every step of a dry run, with a column for each variable. The programmer can then see where a value first goes wrong or differs from what was expected.",
             model: "<ul><li>It records the value of every variable at each step (a column per variable, a row per step). (1)</li><li>Comparing with the values expected shows the step where a value first becomes wrong, which locates the error. (1)</li></ul>",
             points: [
-              { desc: "Records the value of each variable at each step", all: [
+              { desc: "Records the value of each variable at each step", negOK: true, all: [
                 R`(record\w*|show\w*|track\w*|list\w*|stor\w*|keep\w*|writ\w*|log\w*|note\w*|follow\w*|display\w*|hold\w*|has|contains?)\W+${NA(6)}(variables?|values?)`,
                 R`(each|every|after|per|at)\W+${WD(2)}(step|line|statement|instruction|iteration|loop|change|time|row|stage|pass|variable)|\b(a|each|every|one)\W+(columns?|rows?)\W+(for|per|each|of)\b|\b(line|step|row|stage) by (line|step|row|stage)\b`], win: 100 },
-              { desc: "Shows where a value first goes wrong", any: [
+              { desc: "Shows where a value first goes wrong", negOK: true, not: [R`\bnot not\b`], any: [
+                R`(see|spot|find|identif\w*|locat\w*|pinpoint\w*|show\w*|tell\w*|reveal\w*|know|work\w* out)\W+${NA(4)}(which|what|where|the)\W+${WD(3)}(line|step|row|statement|instruction|point)\W+${NA(6)}(produc\w*|caus\w*|gives?|goes|go|becomes?|creat\w*|is|are|has|have|makes?)\W+${NA(4)}(wrong|incorrect|unexpected|bad|error|mistake|faulty)`,
+                R`(value|variable)s?\W+${NA(8)}(you|we|it|they|one)\W+(did ?n.t|did not|do not|don.t|doesn.t|does not|wasn.t|was not|is not|isn.t)\W+(expect|predict|want|anticipat)\w*`,
+                R`(locat\w*|found|find|spot\w*|pinpoint\w*|identif\w*)\W+${NA(4)}(where|which)\W+${NA(4)}(logic )?(error|mistake|bug|fault|problem)`,
                 R`(where|when|point at which|the (line|step|row|point))\W+${NA(6)}(goes|go|went|becomes|become|turns|starts|is|are|first)\W+${NA(3)}(wrong|incorrect|unexpected|different|not what|not as)`,
                 R`(compar\w*|match\w*|check\w*)\W+${NA(4)}(with|to|against|what)\W+${NA(4)}(expected|should|correct|predicted)\W+${NA(10)}(differ\w*|wrong|where|first|error|spot|find|show|different)`,
                 R`(differs?|different|wrong|incorrect|unexpected)\W+${NA(4)}(from|to|than)\W+${NA(3)}(expected|what (it|they|was|should))`] },
@@ -536,7 +546,9 @@
               { desc: "A change is made in one place / sub-programs independent", negOK: true, any: [
                 R`(change|edit|alter|updat|amend|fix|modif)\w*\W+${NA(6)}(one place|only (one|the)|single|just (one|the)|in the function|without (affecting|changing|breaking)|separately|independent\w*|not affect|rest of)`,
                 R`(each|every|the) (sub-?program|module|function|part)s?\W+${WD(6)}(separately|independent\w*|on (its|their) own|alone)`,
-                R`(only|just) (needs?|has|have) to be (changed|edited|updated|made|fixed)`, R`(fix|change|update)\w*\W+${WD(4)}(once|one time)\b`],
+                R`(only|just) (needs?|has|have) to be (changed|edited|updated|made|fixed)`, R`(fix|chang|updat|edit|alter)\w*\W+${WD(4)}(once|one time)\b`,
+                R`(chang\w*|edit\w*|updat\w*|fix\w*|alter\w*)\W+${WD(4)}(done|made|needed|carried out|applied|required)\W+${WD(2)}(once|one time|one place|only once|in one)`,
+                R`(code|it|function|logic)\W+${WD(4)}(lives?|is|sits?|exists?|kept|stored|held|written|found)\W+(\w+\W+)?(in|at)\W+(just )?(one|a single)\W+(place|location|spot|area)`],
                 not: [R`(faster|quicker|less memory|uses less|runs faster)`] },
             ],
           },

@@ -223,8 +223,8 @@ CREATE TABLE Donation(donationID INTEGER PRIMARY KEY, campaignID INTEGER, donor 
 INSERT INTO Donation VALUES (1,1,'A Walker',20),(2,1,'B Munro',50),(3,2,'C Ellis',10),(4,3,'D Shah',25),(5,3,'E Gray',15),(6,1,'F Scott',30),(7,3,'G Hill',40),(8,2,'H Reid',5),(9,2,'I Cole',15),(10,1,'J Nair',10),(11,3,'K Orr',20);`,
             solution: "SELECT campaignName, SUM(amount) AS [Total Raised] FROM Campaign, Donation WHERE Campaign.campaignID = Donation.campaignID GROUP BY campaignName ORDER BY SUM(amount) DESC;",
             ordered: true,
-            must: [R`sum\s*\(`, R`group by`, R`campaignid\s*=\s*\w+\.?campaignid|using\s*\(\s*campaignid|natural join`, R`order by`, R`\bas\s*[^\w\s]?\s*total\s*_?\s*raised`],
-            mustDesc: "SUM, a join on campaignID, a GROUP BY and the heading Total Raised (AS)",
+            must: [R`sum\s*\(`, R`group by`, R`campaignid\s*=\s*\w+\.?campaignid|using\s*\(\s*campaignid|natural join`, R`order by`, R`\bas\s*[^\w\s]?\s*total\s*_?\s*raised|\)\s*[^\w\s]\s*total\s*_?\s*raised`],
+            mustDesc: "SUM, a join on campaignID, a GROUP BY and the heading Total Raised (with or without AS)",
             model: `<p>(1) campaignName and <code>SUM(amount) AS [Total Raised]</code>; (1) the join <code>Campaign.campaignID = Donation.campaignID</code> (without it every donation is paired with every campaign, so each total is 240); (1) <code>GROUP BY campaignName</code> (without it one total for the whole table); (1) <code>ORDER BY SUM(amount) DESC</code>.</p><pre>SELECT campaignName, SUM(amount) AS [Total Raised]
 FROM Campaign, Donation
 WHERE Campaign.campaignID = Donation.campaignID
@@ -290,8 +290,8 @@ CREATE TABLE OrderLine(lineID INTEGER PRIMARY KEY, productID INTEGER, qty INTEGE
 INSERT INTO OrderLine VALUES (1,1,10),(2,2,4),(3,1,6),(4,3,12),(5,2,3),(6,4,2),(7,3,5),(8,1,4),(9,2,2);`,
             solution: "SELECT productName, SUM(qty * price) AS Income FROM Product, OrderLine WHERE Product.productID = OrderLine.productID GROUP BY productName ORDER BY SUM(qty * price) DESC;",
             ordered: true,
-            must: [R`sum\s*\(`, R`group by`, R`productid\s*=\s*\w+\.?productid|using\s*\(\s*productid|natural join`, R`order by`],
-            mustDesc: "SUM of a calculation, a join on productID and a GROUP BY",
+            must: [R`sum\s*\(`, R`group by`, R`productid\s*=\s*\w+\.?productid|using\s*\(\s*productid|natural join`, R`order by[^;]*(?:income|price|\b2\b)`],
+            mustDesc: "SUM of a calculation, a join on productID, a GROUP BY and an ORDER BY on the income (not on the quantity)",
             model: `<p>(1) <code>SUM(qty * price) AS Income</code>: the calculation is combined with the aggregate (SUM(qty) * price also works); (1) the join on productID; (1) <code>GROUP BY productName</code> so there is one total per product; (1) sort by the income, highest first. A query with <code>qty * price</code> but no SUM and GROUP BY lists nine separate lines instead of four totals.</p><pre>SELECT productName, SUM(qty * price) AS Income
 FROM Product, OrderLine
 WHERE Product.productID = OrderLine.productID
@@ -320,7 +320,7 @@ ORDER BY SUM(qty * price) DESC;</pre>`
 INSERT INTO Member VALUES ('M01','Aisha','Standard',120,34),('M02','Ben','Standard',60,20),('M03','Carys','Gold',300,41),('M04','Dev','Standard',45,19),('M05','Eilidh','Student',80,25),('M06','Finn','Standard',200,27),('M07','Grace','Gold',150,12),('M08','Hari','Standard',10,3);`,
             solution: "UPDATE Member SET membershipType = 'Gold', points = points + 50 WHERE membershipType = 'Standard' AND visits >= 20;",
             check: "SELECT memberID, membershipType, points FROM Member ORDER BY memberID;",
-            must: [R`update\s+member`, R`set[^;]*points\s*=\s*(points\s*\+\s*50|50\s*\+\s*points)[^;]*where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*(\w+\.)?visits\s*(<\s*20|<=\s*19))`, R`where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*(\w+\.)?visits\s*(<\s*20|<=\s*19))`, R`where[^;]*membershiptype\s*=\s*['"]standard['"]`],
+            must: [R`update\s+member`, R`set[^;]*points\s*=\s*(points\s*\+\s*50|50\s*\+\s*points)[^;]*where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*(\w+\.)?visits\s*(<\s*20|<=\s*19))`, R`where[^;]*(visits\s*(>=\s*20|>\s*19)|(20\s*<=|19\s*<)\s*(\w+\.)?visits|not\s*\(?\s*(\w+\.)?visits\s*(<\s*20|<=\s*19))`, R`where[^;]*membershiptype\s*(?:=|like)\s*['"]standard['"]`],
             mustDesc: "UPDATE with SET points = points + 50 and a WHERE clause that tests both membershipType and visits",
             model: `<p>(1) <code>SET membershipType = "Gold"</code>; (1) <code>points = points + 50</code> (increment the existing value, not <code>points = 50</code>); (1) <code>WHERE membershipType = "Standard" AND visits &gt;= 20</code>. Without WHERE every row changes, and <code>&gt; 20</code> would miss Ben, who has exactly 20.</p><pre>UPDATE Member
 SET membershipType = "Gold", points = points + 50
