@@ -131,6 +131,8 @@ export function buildStation(THREE, o) {
     // ---- A3 per-station hall (models/station_<id>.glb): placed so the own track sits at x=0, train centred on z=0
     const hg = hall.tpl.clone(true); hg.name = 'hall';
     hg.updateMatrixWorld(true);
+    // bore stubs at the hall ends: the lit-concrete lining read as a glaring white ring against the unlit tunnel; fade it toward the dark bore
+    { const dm = new Map(); hg.traverse((m) => { if (m.isMesh && /^end_walls/.test(m.name) && m.material && m.material.name === 'ring_concrete') { if (!dm.has(m.material)) { const c = m.material.clone(); c.color.multiplyScalar(0.4); dm.set(m.material, c); } m.material = dm.get(m.material); } }); }
     const sg = HL.sg, own = HL.ownX, toL = (x, z) => [sg * (x - own), sg * z];
     // obstacles from the furniture meshes: occupancy cells (0.3 m) of vertices/edge samples between knee and head height
     const cells = new Set(), CS = 0.3;
