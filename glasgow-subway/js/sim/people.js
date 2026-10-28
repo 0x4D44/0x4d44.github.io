@@ -109,12 +109,12 @@ const catOf = (n) => {   // shared A3 clip names (rev 7) -> behaviour category
   n = n.toLowerCase();
   if (/^turn_/.test(n) || /^walk_(step|fast)/.test(n)) return null;
   if (/^kid_/.test(n)) return 'fidget'; if (/^sit_phone/.test(n)) return 'sitphone'; if (/^sit_(look|cross)/.test(n)) return 'sitalt'; if (/^sit/.test(n)) return 'sit';
-  if (/hold_(pole|rail)/.test(n)) return 'pole'; if (/^phone/.test(n)) return 'phone'; if (/^(talk|wave|point)/.test(n)) return 'talk'; if (/^walk/.test(n)) return 'walk'; if (/^idle/.test(n)) return 'idle';
+  if (/hold_(pole|rail)/.test(n)) return 'pole'; if (/^phone/.test(n)) return 'phone'; if (/^(wave|point)/.test(n)) return 'wave'; if (/^talk/.test(n)) return 'talk'; if (/^walk/.test(n)) return 'walk'; if (/^idle/.test(n)) return 'idle';
   return null;
 };
 const dflt = (a, b) => (a != null ? a : b);
 export class AnimCrowd {
-  constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high') {
+  constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99);
     this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 42 : 80; this.crossfade = 0.3;
     this.chars = []; this.meas = new Map();
@@ -127,47 +127,71 @@ export class AnimCrowd {
       const mt = meta && meta[m[1]], kid = /boy|girl|kid|child/.test(m[1]) && !/teen/.test(m[1]);
       const pools = {}; for (const k of Object.keys(shared)) { if (k === 'fidget' && !kid) continue; pools[k] = shared[k].filter((a) => !a.name.includes('__') || a.name.startsWith(m[1] + '__')); if (!pools[k].length) delete pools[k]; }
       if (!pools.idle) continue;
-      this.chars.push({ id: m[1], node: n, pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
+      const lodNode = lodGltf ? (lodGltf.scene.getObjectByName('person_' + m[1])) : null;
+      this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
     }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name.replace(/_\d+$/, '')); }); }
-    this.adults = this.chars.filter((c) => !c.kid && !c.staff && !c.small); this.group = new THREE.Group(); this.group.name = 'crowd';
+    this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = [];
   }
-  _clone(ch) { const o = this.SU.clone(ch.node); o.traverse((n) => { if (n.isBone) { const b = n.name.replace(/_\d+$/, ''); if (this.boneNames.has(b)) n.name = b; } }); return o; }
+  _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) { const b = n.name.replace(/_\d+$/, ''); if (this.boneNames.has(b)) n.name = b; } }); return o; }
   // ------------------------------------------------------------------ measuring
   /** soles/head/hips of a character in a clip, from the real skinned vertices over the clip. Cached. */
   measure(ch, clip) {
     const key = ch.id + ':' + clip.name, hit = this.meas.get(key); if (hit) return hit;
     const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
     const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /hips/i.test(b.name)) || sk[0].skeleton.bones[0];
-    const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 6, keep = []; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+    const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     for (let k = 0; k < N; k++) {
       mixer.setTime((k / N) * clip.duration); obj.updateMatrixWorld(true); hipsB.getWorldPosition(h);
       let sMin = 1e9; const cv = [];
-      for (const m of sk) { m.skeleton.update(); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i++) { m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld); sMin = Math.min(sMin, v.y); maxY = Math.max(maxY, v.y); minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z); cv.push(v.y, v.z); if ((k === 0 || k === 3) && (i % 3 === 0)) keep.push(v.x, v.y, v.z); } }
+      for (const m of sk) { m.skeleton.update(); const p = m.geometry.attributes.position; for (let i = 0; i < p.count; i += 2) { m.getVertexPosition(i, v).applyMatrix4(m.matrixWorld); sMin = Math.min(sMin, v.y); maxY = Math.max(maxY, v.y); minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z); cv.push(v.y, v.z); if (k === 0 || k === 2) keep.push(v.x, v.y, v.z); } }
       minY = Math.min(minY, sMin); hx += h.x; hy += h.y; hz += h.z;
       // pelvis contact: lowest vertex y near the hips' z (excluding the feet region) = where a seat surface touches
       let c = 1e9; for (let i = 0; i < cv.length; i += 2) if (Math.abs(cv[i + 1] - h.z) < 0.22 && cv[i] > sMin + 0.25 && cv[i] < c) c = cv[i]; contact += c === 1e9 ? h.y - 0.1 : c;
     }
-    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: contact / N, verts: new Float32Array(keep), w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
+    const r = { minY, maxY, height: maxY - minY, hips: [hx / N, hy / N, hz / N], contact: Math.max(contact / N, hy / N - 0.09), verts: new Float32Array(keep), w: maxX - minX, d: maxZ - minZ, minX, maxX, minZ, maxZ };
     this.meas.set(key, r); return r;
   }
   _clip(ch, cat, rng) { const a = ch.pools[cat]; return a && a.length ? a[Math.floor((rng || this.rng)() * a.length)] : null; }
-  /** tallest posture height (m) of a character; used for headroom decisions */
-  standHeight(ch) { if (ch._h != null) return ch._h; const c = this._clip(ch, 'idle', () => 0); ch._h = c ? this.measure(ch, c).height : (ch.metaH || 1.7); return ch._h; }
+  /** every vertex of every standing clip this state can use (hand on the rail included) must clear the ceiling profile and the walls at x, with this facing */
+  _fitsStandAt(ch, s) {
+    if (!s.ceilAt) return true; const cats = s.mode === 'pole' ? ['pole'] : ['idle', 'phone', 'talk', 'fidget'], cs = Math.cos(s.yaw), sn = Math.sin(s.yaw);
+    if (ch.metaH != null && ch.metaH > s.ceilAt(s.x) - s.y - 0.05) return false;
+    for (const c of cats) for (const clip of ch.pools[c] || []) {
+      const m = this.measure(ch, clip), V = m.verts;
+      for (let i = 0; i < V.length; i += 3) { const x = s.x + cs * V[i] + sn * V[i + 2], y = s.y - m.minY + V[i + 1]; if (Math.abs(x) > 1.07 || y > s.ceilAt(x) - 0.035) return false; }
+    }
+    return true;
+  }
+  /** tallest posture height (m, soles = 0) over the standing clips a state can use (arm-up poses count: a hand on the rail is higher than the head) */
+  standHeight(ch, state = 'stand') {
+    const key = '_h_' + state; if (ch[key] != null) return ch[key];
+    const cats = state === 'pole' ? ['pole'] : ['idle', 'phone', 'talk', 'fidget']; let h = 0;
+    for (const c of cats) for (const clip of ch.pools[c] || []) h = Math.max(h, this.measure(ch, clip).height);
+    return (ch[key] = h || ch.metaH || 1.7);
+  }
   // ------------------------------------------------------------------ people
   clear() { for (const p of this.people) this._drop(p); this.people.length = 0; }
   _drop(p) { if (p.obj && p.obj.parent) p.obj.parent.remove(p.obj); if (p.mixer) p.mixer.stopAllAction(); p.obj = p.mixer = null; }
+  _rawPick() {
+    // mix: ~10% children, ~3% staff, ~12% skirts/dresses, ~8% kilts/Highland dress, the rest everyday trousers
+    const r = this.rng(); let pool;
+    const skirt = (c) => /skirt|dress|sash|highland_dress/.test(c.outfit), kilt = (c) => /kilt|highland/.test(c.outfit) && !skirt(c);
+    if (r < 0.10) pool = this.chars.filter((c) => c.kid); else if (r < 0.13) pool = this.chars.filter((c) => c.staff);
+    else if (r < 0.25) pool = this.chars.filter((c) => skirt(c) && !c.kid); else if (r < 0.33) pool = this.chars.filter((c) => kilt(c) && !c.kid);
+    else pool = this.chars.filter((c) => !c.kid && !c.staff && !skirt(c) && !kilt(c));
+    if (!pool.length) pool = this.chars; return pool[Math.floor(this.rng() * pool.length)];
+  }
   _pick(filter) {
-    const r = this.rng(); let pool = this.adults;
-    if (r < 0.1) pool = this.chars.filter((c) => c.kid); else if (r < 0.13) pool = this.chars.filter((c) => c.staff);
-    if (filter) pool = pool.filter(filter); if (!pool.length) pool = this.chars.filter(filter || (() => true));
-    return pool[Math.floor(this.rng() * pool.length)] || this.chars[0];
+    if (!filter) return this._rawPick();
+    for (let i = 0; i < 14; i++) { const c = this._rawPick(); if (filter(c)) return c; }   // sample, don't test everyone (measuring is the expensive part)
+    return [...this.chars].sort((a, b) => (a.metaH || 9) - (b.metaH || 9)).find(filter) || null;   // nobody fits this spot -> leave it empty
   }
   add(p, parent, filter) {
     if (!this.hasAnim || this.people.length >= this.max) return p;
-    const ch = p.char || this._pick(filter); p.char = ch;
+    const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch;
     const obj = this._clone(ch); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
@@ -177,6 +201,13 @@ export class AnimCrowd {
     p.mixer.update(0.0001); p.dirty = false;   // pose the skeleton now (far people are frozen, never in the bind pose)
     this.people.push(p); this._place(p, true);
     return p;
+  }
+  /** LOD0 (people.glb) near, LOD1 (people_lod.glb, same rig/clips) beyond ~12 m: rebuild the clone and resume the same clip at the same time */
+  _swapLod(p, lod) {
+    const old = p.obj, par = p.parent, t = p.cur ? p.cur.time : 0, clip = p.curClip, vis = old.visible;
+    par.remove(old); p.mixer.stopAllAction(); p.lod = lod; const obj = this._clone(p.char, lod); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    p.obj = obj; par.add(obj); obj.visible = vis; p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null;
+    if (clip) { this._play(p, clip, 0, p.cur ? 1 : (clip.name.startsWith('walk') ? (p.speed ? p.speed / p.char.walkSpeed : 1) : 1)); if (p.cur) { p.cur.time = t; } } p.mixer.update(0.0001); p.dirty = false; this._place(p, true);
   }
   _action(p, clip) { let a = p.act.get(clip.name); if (!a) { a = p.mixer.clipAction(clip); a.setEffectiveWeight(0); a.play(); p.act.set(clip.name, a); } return a; }
   _play(p, clip, fade = this.crossfade, speed = 1) {
@@ -192,7 +223,7 @@ export class AnimCrowd {
     if (state === 'walk' || state === 'go') cat = 'walk';
     else if (state === 'sit') cat = r() < 0.4 ? (ch.pools.sitphone ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
-    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : x < 0.3 && ch.pools.phone ? 'phone' : x < 0.5 && ch.pools.talk ? 'talk' : 'idle'; }
+    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : x < 0.3 && ch.pools.phone ? 'phone' : x < 0.5 && ch.pools.talk ? 'talk' : x < 0.54 && ch.pools.wave && !p.static ? 'wave' : 'idle'; }
     let clip = this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9;
@@ -233,14 +264,24 @@ export class AnimCrowd {
       if (p.obj) { p.hidden = true; p.obj.visible = false; }
     }
   }
+  /** platform people walk to the train doors and wait there (queue); board() sends them in when the doors open */
+  queue(n, slots) {
+    const cand = this.people.filter((q) => !q.static && q.obj && q.mode !== 'go' && q.mode !== 'queue'); const used = [];
+    for (const s of slots) { if (used.length >= n) break; let best = null, bd = 1e9; for (const q of cand) { if (used.includes(q)) continue; const d = Math.hypot(q.x - s.x, q.z - s.z); if (d < bd) { bd = d; best = q; } } if (!best) break;
+      used.push(best); best.mode = 'queue'; best.tx = s.x; best.tz = s.z; best.qyaw = s.yaw; best.speed = Math.max(best.speed || 1, 1); best.wait = 0; this._enter(best, 'walk'); }
+    return used.length;
+  }
+  board(door, delayStep = 0.35) { let i = 0; for (const q of this.people) if (q.mode === 'queue') { q.mode = 'go'; q.delay = i++ * delayStep + this.rng() * 0.3; q.tx = door(q).x; q.tz = door(q).z; q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; this._enter(q, 'go', 0.2); } return i; }
   /** seated / standing passengers riding in a car: slots in the parent's (car group) frame: seated {x,y,z,yaw,seatY,mode:'sit'} (x,z = pelvis position),
    *  standing {x,y,z,yaw,mode:'stand'|'pole', maxH} (maxH = tallest allowed person: headroom(x) - 0.08) */
   seat(parent, slots) {
+    const made = [];
     for (const s of slots) {
       if (this.people.length >= this.max) break;
-      const filter = s.maxH != null ? (c) => this.standHeight(c) <= s.maxH : (s.mode === 'sit' ? (c) => this._canSit(c, s) : null);
-      const p = this.add({ ...s, static: true }, parent, filter); if (!p.obj) continue;
+      const filter = s.mode !== 'sit' && s.ceilAt ? (c) => this._fitsStandAt(c, s) : (s.mode === 'sit' ? (c) => this._canSit(c, s) : null);
+      const p = this.add({ ...s, static: true }, parent, filter); if (p.obj) made.push(p);
     }
+    return made;
   }
   _canSit(c, s) {   // every vertex of the seated body, in every sit clip, must stay under the ceiling profile and inside the side walls at this seat
     if (!s.ceilAt) return true; const cs = Math.cos(s.yaw), sn = Math.sin(s.yaw);
@@ -253,7 +294,7 @@ export class AnimCrowd {
   setEnabled(on) { if (this.enabled === on) return; this.enabled = on; if (!on) for (const p of this.people) if (p.obj) p.obj.visible = false; }
   update(dt, t, yAt, camWorld) {
     if (this.enabled === false) return;
-    const cam = camWorld || null, v = this._v; this._clock += dt;
+    const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       p.stateT += dt;
@@ -267,6 +308,9 @@ export class AnimCrowd {
             }
             if (!(p.wait > 0)) { if (!this._step(p, dt, p.speed * 0.85)) { p.tx = null; p.wait = 0.5 + this.rng(); this._enter(p, 'stand'); } }
           }
+        } else if (p.mode === 'queue') {
+          if (Math.hypot(p.tx - p.x, p.tz - p.z) > 0.12) { if (!this._step(p, dt, p.speed * 0.9)) { p.x += (this.rng() - 0.5) * 0.1; p.z += (this.rng() - 0.5) * 0.1; } }
+          else if (p.state === 'walk') { p.yaw = p.qyaw; this._enter(p, 'stand'); }
         } else if (p.mode === 'go') {
           if (p.delay > 0) { p.delay -= dt; continue; }
           if (p.hidden) { p.hidden = false; p.obj.visible = true; this._enter(p, 'go', 0); }
@@ -278,6 +322,7 @@ export class AnimCrowd {
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
+      if (cam && p.char.lodNode && swaps < 2 && !p.hidden && ((dist > 13 && !p.lod) || (dist < 11 && p.lod))) { this._swapLod(p, dist > 13); swaps++; }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       if (dist < this.rAnim && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
     }

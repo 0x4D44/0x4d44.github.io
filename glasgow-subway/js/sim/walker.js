@@ -53,8 +53,10 @@ export class Walker {
       if (this.headroomFn && this.headroomFn(nx, nz) < this.minHead) return false;
       this.x = nx; this.z = nz; this.tgtY = h; return true;
     };
-    if (!tryMove(this.x + mx, this.z + mz)) {
-      if (!tryMove(this.x + mx, this.z)) tryMove(this.x, this.z + mz);
+    let did = tryMove(this.x + mx, this.z + mz);
+    if (!did) { if (Math.abs(mx) > 1e-6 && tryMove(this.x + mx, this.z)) did = true; else if (Math.abs(mz) > 1e-6 && tryMove(this.x, this.z + mz)) did = true; }
+    if (!did) {   // blocked head-on (e.g. a standing passenger): side-step around it, whichever side is free
+      const len = Math.hypot(mx, mz); if (len > 1e-6) { const px = -mz / len, pz = mx / len, k = len * 1.1; if (!tryMove(this.x + px * k + mx * 0.5, this.z + pz * k + mz * 0.5)) tryMove(this.x - px * k + mx * 0.5, this.z - pz * k + mz * 0.5); }
     }
     const h = this.heightAt(this.x, this.z, this.y);
     if (h != null) { this.y += (h - this.y) * clamp(dt * 14, 0, 1); if (Math.abs(h - this.y) < 0.002) this.y = h; }
