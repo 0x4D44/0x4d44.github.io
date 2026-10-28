@@ -87,7 +87,9 @@
     const func = funcToks.length;
     // numbers and one-letter labels (a trace such as "G1: inputs 1 and 1, output X = 0") do not dilute the function-word ratio
     const wordy = toks.filter((t) => !/^\d+$/.test(t) && !/^[a-z]\d?$/.test(t) || FUNC.has(t)).length;
-    if (func / Math.max(1, wordy) < 0.14) {
+    // a short dense sentence with a real verb ("Fewer gates means lower cost and lower power.") is prose, not a pile of key words
+    const VERBISH = /\b(means|gives|reduces|causes|increases|decreases|makes|lowers|raises|produces|prevents|allows|keeps|stops|uses|needs|halves|risks|protects|supplies|conducts|drops|falls|rises|shows|leads|saves|cuts|wastes|limits|damages)\b/;
+    if (func / Math.max(1, wordy) < 0.14 && !(VERBISH.test(text) && (text.match(/[,;]/g) || []).length <= 1 && toks.length <= 22)) {
       if ((text.match(/=/g) || []).length >= 3) return null;       // a worked trace ("X = A NAND B = 0. P = ...") is not a pile of key words
       return (text.match(/[,;]/g) || []).length >= 3 && func >= 1 ? "half" : "zero";
     }
@@ -225,19 +227,26 @@
           if (/^[kmg]?w$/.test(t)) return "power";
           if (/^(k|\u00b0c|degc|c)$/.test(t)) return "temp";
           if (/^[ckm]?m2$|^[ckm]?m\^2$/.test(t)) return "area";
+          if (/^[mkgu\u00b5]k$/.test(t)) return "badtemp";
+          if (/^[mkgu\u00b5]?g$/.test(t)) return "mass";
           if (/^%$|^percent$/.test(t)) return "pct";
+          if (/^[gmkcu\u00b5\u03bc]?(wh|kwh|mwh)$/.test(t)) return "kwh";
+          if (/^db$/.test(t)) return "db";
+          if (/^[gmkun\u00b5\u03bc]?a(\/v|per v)$/.test(t) || /^1\/\u03c9$|^\u03c9-1$/.test(t)) return "siemens";
+          if (/^[gmkun\u00b5\u03bc]?(v|a|\u03c9|\u2126|ohms?)$/.test(t)) return "elec";
+          if (VEL(u) !== null) return "vel";
           if (/^[ckm]?m$/.test(t)) return "length";
           if (/^(s|ms|min|h|hr|hours?)$/.test(t)) return "time";
           if (/^(km\/h|kph|mph)$/.test(t)) return "kmh";
           return null;
         };
         const ut = clean.match(/\d\s*([a-z\u00b5\u03bc\u03a9\u00b0%][a-z\u00b5\u03bc\u03a9\u00b0%\/\s.\u00b7*\-\u207b\u00b9\u00b2^0-9]*)\s*$/i);
-        const tc = ut && UCLASS(ut[1].replace(/\s+$/, "")), ec = UCLASS(part.unit);
-        if (tc && ec !== tc && !(ec === null && tc !== "pct" && tc !== "kmh" && tc !== "rad")) {
+        const tc = ut && UCLASS(ut[1].replace(/\s+$/, "")), ec = part.unit === "" ? "none" : UCLASS(part.unit);
+        if (tc && ec !== tc && !(ec === "none" && tc === "pct") && !(ec === null && tc !== "pct" && tc !== "kmh" && tc !== "rad")) {
           const pair = (x, y) => (tc === x && ec === y) || (tc === y && ec === x);
           if (!pair("force", "torque") || tc !== ec) return { got: 0, of };
         }
-        if (tc === "time" && ec === "time") {      // minutes or hours typed for a part wanted in seconds
+        if (tc === "time" && ec === "time" && /(?:min|h|hr)[a-z]*\.?$/i.test(ut[1].trim())) {      // minutes or hours typed for a part wanted in seconds
           const TF = (u) => ({ s: 1, ms: 1e-3, min: 60, h: 3600, hr: 3600 }[String(u).toLowerCase().replace(/[\s.]/g, "").replace(/minutes?/, "min").replace(/hours?/, "h").replace(/seconds?/, "s")] || 1);
           v = v * TF(ut[1]) / TF(part.unit);
         }
