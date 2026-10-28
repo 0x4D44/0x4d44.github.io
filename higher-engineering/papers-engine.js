@@ -205,6 +205,15 @@
         const va = VEL(clean), ve = VEL(part.unit || "");
         if (va && ve) v = v * va / ve;
         if (/rad\s*\.?\s*$/i.test(clean) && /^\u00b0/.test(String(part.unit || ""))) return { got: 0, of };      // radians typed for a degrees part
+        const STRESS = { "N/mm\u00b2": 1, "kN/mm\u00b2": 1e3 }[String(part.unit || "").replace(/\s/g, "")];      // stress in MPa-equivalents
+        if (STRESS) {
+          const st = clean.replace(/\s+/g, "").match(/(?:([GMk]?Pa)|([kM]?N)\/?(?:mm|m)?(?:\^?[2\u00b2])?)$/);
+          const f = st && st[1] ? { GPa: 1e3, MPa: 1, kPa: 1e-3, Pa: 1e-6 }[st[1]] / STRESS : 1;
+          if (st && !st[1] && st[2] && !/\/mm/.test(clean.replace(/\s+/g, ""))) return { got: 0, of };      // a bare force, or N/m2, is not a stress here
+          if (/N\/m(?:\^?[2\u00b2])?$/.test(clean.replace(/\s+/g, "")) && !/mm/.test(clean)) return { got: 0, of };
+          v = v * f;
+          if (st && !st[1] && st[2] && /\/mm/.test(clean.replace(/\s+/g, ""))) v = v * { N: 1, kN: 1e3, MN: 1e6 }[st[2]] / STRESS;
+        }
         if (/\bN\//.test(String(part.unit || "")) && /(?:^|[\d\s])[kM]?N\s*\.?\s*$/.test(clean)) return { got: 0, of };      // a bare force for a stress
         const PF = { G: 1e9, M: 1e6, k: 1e3, "": 1, c: 1e-2, m: 1e-3, "\u00b5": 1e-6, "\u03bc": 1e-6, u: 1e-6, n: 1e-9 };
         const UNIT = /^([GMkcm\u00b5\u03bcun]?)(A|V|W|\u03a9|\u2126|ohms?|J|N|s|S|Hz|m|Pa)$/;
