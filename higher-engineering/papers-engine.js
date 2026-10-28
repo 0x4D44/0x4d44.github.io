@@ -95,7 +95,7 @@
     }
     // a run of "and the"-joined nouns with no verb, auxiliary or linking word is a list, however it is punctuated
     const joins = (text.match(/\b(and|or)\b/g) || []).length;
-    if (joins >= 3 && !text.includes("=") && (!toks.some((t) => AUXV.has(t)) || (joins >= 4 && joins * 7 >= toks.length))) return "half";
+    if (joins >= 3 && !text.includes("=") && (!toks.some((t) => AUXV.has(t) || /^(gives|operates|changes|supplies|actuates|outstrokes|instrokes)$/.test(t)) || (joins >= 4 && joins * 7 >= toks.length))) return "half";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
     const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
@@ -104,7 +104,7 @@
     let bad = 0;
     for (let i = 1; i < toks.length; i++) {
       const p = toks[i - 1], t = toks[i];
-      if ((DET.has(p) && NOUNLESS.has(t)) || (p === t) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that") && !(p === "and" && (t === "so" || t === "then")) && !(p === "but" && t === "then") && !(p === "so" && t === "then"))) bad++;
+      if ((DET.has(p) && NOUNLESS.has(t)) || (p === t && !/^[a-z]\d?$/.test(t)) || (JOINT.has(p) && JOINT.has(t) && !(p === "so" && t === "that") && !(p === "and" && (t === "so" || t === "then")) && !(p === "but" && t === "then") && !(p === "so" && t === "then"))) bad++;
     }
     // a clause that stops on "the", "of", "to", "and"... is a shuffled sentence, not a written one
     const dangle = (text.match(/\b(the|an|of|to|and|or|but|so|because|if|with|for|by|its|their|is|are|that|in|on|at)\s*[.;:!?]|\b(the|an|of|to|and|or|but|so|because|if|its|their|is|are|that)\s*,/g) || []).length;
@@ -128,7 +128,7 @@
     }
     if (altMax >= 24) return "zero";
     // padding a pile of key words with the same "the/is/and" over and over is not a sentence
-    if (func >= 12 && new Set(funcToks).size < 4 && (text.match(/[a-z0-9][.!?](?:\s|$)/g) || []).length < 3) return "zero";
+    if (funcToks.filter((t) => t !== "then").length >= 12 && new Set(funcToks.filter((t) => t !== "then")).size < 4 && (text.match(/[a-z0-9][.!?](?:\s|$)/g) || []).length < 3) return "zero";
     let longest = 0;
     text.split(/[.,;:!?()]+/).forEach((seg) => {
       let run = 0;
