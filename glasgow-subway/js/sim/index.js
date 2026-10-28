@@ -170,7 +170,7 @@ class Sim {
       for (const p of this.crowd.people) {
         if (!p.obj || p.hidden) continue; p.parent = this.crowd.group; const b = this.crowd.bodyOf(p); out.checked++; out.platform++;
         const footErr = b.foot - py; out.maxFootErr = Math.max(out.maxFootErr, Math.abs(footErr));
-        if (footErr < -0.04) bad(`platform ${b.id}: feet ${(-footErr * 100).toFixed(0)} cm below the platform`); if (footErr > 0.06) bad(`platform ${b.id}: feet ${(footErr * 100).toFixed(0)} cm above the platform (levitating)`);
+        if (footErr < -0.04) bad(`platform ${b.id}: feet ${(-footErr * 100).toFixed(0)} cm below the platform`); if (footErr > (p.state === 'walk' || p.state === 'go' ? 0.1 : 0.05)) bad(`platform ${b.id}: feet ${(footErr * 100).toFixed(0)} cm above the platform (levitating)`);
         if (this.crowd.avoid.some((a) => p.x > a.x0 && p.x < a.x1 && p.z > a.z0 && p.z < a.z1)) bad(`platform ${b.id}: standing inside furniture`);
         list.push(p);
       }

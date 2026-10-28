@@ -120,7 +120,8 @@ export class AnimCrowd {
     this.chars = []; this.meas = new Map();
     const scene = gltf.scene, holder = scene.getObjectByName('people') || scene;
     const meta = gltf.meta || null;   // optional models/people_meta.json: { <id>: { height } }
-    const shared = {}; for (const a of gltf.animations) { const cat = catOf(a.name.includes('__') ? a.name.split('__')[1] : a.name); if (cat) (shared[cat] = shared[cat] || []).push(a); }
+    const anims = gltf.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name.replace(/_\d+\./, '.'); return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
+    const shared = {}; for (const a of anims) { const cat = catOf(a.name.includes('__') ? a.name.split('__')[1] : a.name); if (cat) (shared[cat] = shared[cat] || []).push(a); }
     for (const n of holder.children) {
       const m = /^person_(.+)$/.exec(n.name); if (!m) continue;
       const mt = meta && meta[m[1]], kid = /boy|girl|kid|child/.test(m[1]) && !/teen/.test(m[1]);
