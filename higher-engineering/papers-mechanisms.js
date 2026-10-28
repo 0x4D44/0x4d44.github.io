@@ -298,6 +298,7 @@
             R`\b(?:speed|rpm)\s+(?:down|lower)\b`,
             R`\b(?:lower|slower|reduced|decreased)\s+(?:\w+\s+){0,2}(?:speed|rpm|rev/min)\b`,
             R`\breduction\s+(?:in|of)\s+(?:the\s+)?(?:\w+\s+)?(?:speed|rpm)\b`,
+            R`\b(?:speed|rpm)\s+(?:reduction|decrease|drop)\b`,
           ],
         },
         {
@@ -354,6 +355,12 @@
             R`\b(?:rod end|rod side|instroke|in-?\s?stroke)\b${KC(40)}\b(?:area|face|surface)\b${KC(30)}\b${SM}`,
             R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b${KC(40)}\b(?:rod|instroke|in-?\s?stroke)`,
             R`\b(?:area of|space taken by|room taken by)\s+(?:the\s+)?rod\b`,
+            R`\brod\b${K(30)}\b(?:in the way|taking up (?:some|part|room|space)|takes up (?:some|part|room|space)|reduces? the (?:area|surface))`,
+            R`\b(?:rod end|rod side|instroke|in-?\s?stroke|retract\w*)\b${KC(50)}\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b`,
+            R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b${K(70)}\b(?:because|due|since|as)\b${K(30)}\brod\b`,
+            R`\b(?:area|surface|face)\b${KC(40)}\b${SM}\b${K(60)}\b(?:because|due|since|as)\b${K(30)}\brod\b`,
+            R`\(\s*d\s*(?:²|\^?\s?2)\s*[−\-–]\s*d\s*(?:²|\^?\s?2)\s*\)`,
+            R`\b(?:pushes|acts|presses|pushing)\s+(?:only\s+)?on\s+(?:the\s+)?(?:ring|annul\w*)`,
             R`\b(?:rod|piston rod)\b${K(30)}\b(?:is|are|sits?|being)\s+(?:on|in|at)\s+(?:the\s+)?(?:same|that|rod|this)\s+side\b${K(40)}\b${SM}`,
           ],
         },
@@ -377,6 +384,9 @@
             R`\bforce\b${K(40)}\b(?:proportional|depends?|dependent)\b${K(30)}\barea\b${K(60)}\b${SM}`,
             R`\barea\b${K(60)}\b${SM}\b${K(85)}\b${SM}\s+(?:\w+\s+){0,2}force\b`,
             R`\b(?:takes?|taking|took|removes?|removing|uses?|using|reduces?|reducing|covers?|blocks?)\b${K(40)}\barea\b${K(50)}\bforce\b${K(30)}\b${SM}`,
+            R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b[\s\S]{0,140}\bforce\b${K(25)}\b${SM}\b`,
+            R`\b${SM}\s+(?:\w+\s+){0,2}(?:area|surface|face)\b[\s\S]{0,140}\b${SM}\s+(?:\w+\s+){0,2}force\b`,
+            R`\b${SM}\s+than\b${K(30)}\bso\b${K(15)}\bforce\b${K(25)}\b${SM}\b`,
             R`\b(?:out-?\s?strok\w*|cap end|full|whole)\b${K(90)}\barea\b${K(90)}\b${BIG}\s+(?:\w+\s+){0,2}force\b`,
             R`\b(?:greater|bigger|larger|more)\s+(?:\w+\s+){0,2}area\b${K(80)}\b(?:out-?\s?strok\w*|cap end)\b${K(90)}\bpressure\b${K(40)}\b${BIG}\s+(?:\w+\s+){0,2}force\b`,
           ],
@@ -389,7 +399,7 @@
 
   /* mechanisms-11(b): push-button, 5/2 valve, outstroke, release */
   {
-    const ACT = R`(?:actuat\w*|press(?:ed|es|ing)?|depress\w*|operat\w*|activat\w*|triggered|pushed)`;
+    const ACT = R`(?:actuat\w*|press(?:ed|es|ing)?|depress\w*|operat\w*|activat\w*|triggered|push(?:ed|es|ing)?)`;
     const SREF = R`(?:s|valve s|button|push-?\s?button|3/2|three[- ]port)`;
     const CHG = R`(?:changes?\s+(?:its\s+)?(?:state|position)|changed\s+(?:state|position)|switch(?:es|ed)?|shifts?|shifted|flips?|actuat\w*|operat\w*|moves?\s+(?:over|across)|reverses)`;
     const VREF = R`(?:v|valve v|5/2|five[- ]port)`;
@@ -473,22 +483,30 @@
   /* mechanisms-13(b): the latch */
   {
     const CONTACT = R`(?:contacts?|switch)`;
+    /* a contact wired across the wrong thing, or one that opens on release, is the opposite of a latch */
+    const BADLATCH = [
+      R`\b(?:across|parallel\s+(?:with|to)|in\s+parallel\s+with|bypass\w*)\s+(?:the\s+)?(?:s2|supply|y1|solenoid|coil|load|battery|power)\b`,
+      R`\b(?:releas\w*|let go|lets go|no longer pressed)\b${K(50)}\bcontacts?\s+(?:\w+\s+){0,2}(?:opens?|breaks?|disconnect\w*)\b`,
+    ];
     TXT.latch = {
       points: [
         {
           desc: "When S1 is pressed relay K1 is energised and its contact closes",
           group: "k1",
+          not: BADLATCH,
           all: [R`(?:\bk1\b|relay|coil)`, CONTACT, R`(?:clos\w*|make\w*|made|shut|join\w*|connect\w*|complet\w*)`],
           win: 110,
         },
         {
           desc: "When S1 is pressed relay K1 is energised and its contact closes",
           group: "k1",
+          not: BADLATCH,
           all: [CONTACT, R`(?:parallel|across\s+s1|bypass\w*|alongside|latch\w*)`],
           win: 110,
         },
         {
           desc: "The contact is in parallel with S1 (a latch), giving the current another path, so K1 and Y1 stay energised after S1 is released",
+          not: BADLATCH,
           all: [
             R`(?:contacts?|parallel|bypass\w*|latch\w*|self-?hold\w*|hold(?:s|ing)?\s+(?:itself|it)\s+on|hold-?on|(?:another|alternative|second|different|own|extra|separate)\s+(?:current\s+)?(?:path|route|way)|(?:path|route|way)\s+for\s+(?:the\s+)?current|(?:round|around|across)\s+s1)`,
             R`(?:stay\w*|remain\w*|keep\w*|continu\w*|maintain\w*|holds?|still|even after|even though|although)`,
@@ -524,7 +542,7 @@
         {
           desc: "A belt slips if the mixer jams or overloads, which protects the motor and drive (a chain would stall or break)",
           group: "slipjam", negOK: true,
-          not: [NOCH, BNOSLIP, R`\bnot\s+slip`],
+          not: [NOCH, BNOSLIP, R`\bbelts?\b${C("chain", 25)}\bnot\s+slip`],
           all: [R`\bslips?\b|\bslipped\b|\bslipping\b|\bslide`, JAMW, R`\bbelts?\b`],
           win: 90,
         },
@@ -546,7 +564,7 @@
             R`\b(?:oil\w*|lubricat\w*|grease\w*|lubricant)\b${C("belt", 45)}\bchains?\b`,
             R`\bbelts?\b${C("chain", 60)}\b(?:dry|clean|oil-?free|hygien\w*|food[- ]safe)`,
             R`\b(?:oil|lubricat\w*|grease)\w*${K(50)}\b(?:contaminat\w*|hygien\w*|bakery|food|dough)`,
-            R`\bbelts?\b${C("chain", 40)}\b(?:no|not|without|doesn'?t|does not|don'?t|never)\s+(?:\w+\s+){0,3}(?:oil\w*|lubricat\w*|grease\w*|lubricant)`,
+            R`\bbelts?\b${C("chain", 90)}\b(?:no|not|without|doesn'?t|does not|don'?t|never)\s+(?:\w+\s+){0,3}(?:oil\w*|lubricat\w*|grease\w*|lubricant)`,
           ],
         },
         {
@@ -568,6 +586,7 @@
             R`\bchains?\b${C("belt", 30)}\b(?:does ?n'?t|doesn't|do ?n'?t|cannot|can't|never|will not|won't|would not|does not|do not|can not|no)\s+slip`,
             R`\b${GOOD}\s+(?:\w+\s+){0,1}(?:speed\s+)?ratio\b${C("belt", 50)}\bchains?\b`,
             R`\bbelts?\b${C(R`chain|\bnot\b|n't|\bnever\b|\bno\b|\bcannot\b`, 25)}\bslip\w*${C(R`chain|jam|overload|protect|${GOOD}`, 50)}\b(?:speed|ratio|${RBAD})`,
+            R`\bbelts?\b${C("chain", 240)}\b(?:is\s*n'?t|is not|not)\s+(?:a\s+)?(?:positive|synchron\w*)`,
             R`\bbelts?\b${C("chain", 40)}\b(?:inexact|not\s+(?:exact|accurate|precise|positive)|inaccura\w*|imprecise)`,
           ],
         },
@@ -580,7 +599,7 @@
             R`\bchains?\b${C("belt", 40)}(?:\bnot|n't|\bnever)\s+(?:\w+\s+){0,2}(?:nois\w*|loud|rattl\w*|stretch\w*|wear\w*|heav\w*|expensive|costly|stronger|robust|durable)`,
             R`\bchains?\b(?:\s+drive)?\s+(?:is|are)\s+(?:the\s+|a\s+)?(?:better|best|superior|preferable|ideal|good|great)${K(30)}\b(?:because|as|since|so)\b${K(20)}\b(?:it|they)\s+(?:is|are)\s+(?:\w+\s+){0,2}(?:nois\w*|loud|heav\w*|expensive|costly|rattl\w*|stretch\w*)`],
           any: [
-            R`\bbelts?\b${C("chain", 70)}\b(?:quiet\w*|silent|less noisy|smooth\w*|cheap\w*|light\w*|simpl\w*)`,
+            R`\bbelts?\b${C("chain", 130)}\b(?:quiet\w*|silent|less noisy|smooth\w*|cheap\w*|light\w*|simpl\w*)`,
             R`\bchains?\b${C("belt", 40)}\b(?:nois\w*|loud|rattl\w*|stretch\w*|wear\w*|heav\w*|expensive|costly)`,
             R`\bchains?\b${C("belt", 40)}\b(?:stronger|more\s+(?:robust|durable)|longer[- ]lasting|lasts?\s+longer|(?:higher|greater|more|larger|bigger)\s+(?:torque|power|load)|(?:carr\w+|transmit\w*|handl\w*)\s+(?:\w+\s+){0,2}(?:torque|power|load))`,
           ],
@@ -644,12 +663,13 @@
     points: [
       {
         desc: "The worm pushes along its own shaft, so there is an axial (end) load that the thrust bearing carries",
+        negOK: true,
         all: [
           R`\b(?:axial|axially|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|end\s*(?:load|thrust|force)|thrust\s+(?:load|force)|lengthways|longways|parallel\s+to\s+(?:the\s+)?(?:shaft|axis))`,
           R`\b(?:carr\w*|support\w*|take[sn]?|taking|withstand\w*|resist\w*|absorb\w*|handl\w*|cop(?:e|es|ing)|stop\w*|prevent\w*|hold\w*|against|deal\w*|bear\w*)\b`,
         ],
         not: [
-          R`(?:\bno\b|\bnot\b(?!\s+only)|n't|\bnever\b|\bcannot\b|\bwithout\b|\bnor\b|\bneither\b)(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bthat\b)[^.;,]){0,40}\b(?:axial|axially|along|end\s*(?:load|thrust|force)|thrust|lengthways|longways|parallel)`,
+          R`(?:\bno\b|\bnot\b(?!\s+only)|n't|\bnever\b|\bcannot\b|\bwithout\b|\bnor\b|\bneither\b)(?!\s+(?:slid\w*|slip\w*|mov\w*|shift\w*|push\w*|creep\w*|drift\w*|travel\w*))(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bthat\b)[^.;,]){0,40}\b(?:axial|axially|along|end\s*(?:load|thrust|force)|thrust|lengthways|longways|parallel)`,
           R`\b(?:axial|end\s*(?:load|thrust|force)|thrust\s+(?:load|force))\b(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b)[^.;,]){0,25}\b(?:not|never|cannot|can't|unable)\s+(?:be\s+)?(?:carr|support|take|withstand|resist|handl|bear|stop)\w*`,
         ],
         win: 110,
@@ -696,6 +716,18 @@
           desc: "When both plates reach the same speed they lock together and the drive passes through (or the motor reaches speed before the conveyor is fully driven)",
           group: "lock", not: [NOSLIP],
           all: [R`\b${SLIP}`, R`\bmotor\b${K(40)}\b(?:reach\w*|get|gets|gain\w*|attain\w*)\b${K(30)}\b(?:running|full|operating|working|normal|its)\s+speed|\bbefore\b${K(40)}\b(?:fully|completely|full)\s+(?:driven|loaded|load|engaged|connected|drive)`],
+          win: 150,
+        },
+        {
+          desc: "The friction plates slip at first, so the load is taken up gradually (no jerk)",
+          group: "slip", negOK: true, not: [NOSLIP],
+          all: [R`\bfriction\b`, R`\bplates?\b`, R`\b(?:gradual\w*|slowly|smooth\w*|gentl\w*|progressive\w*|slow\w*)\b`],
+          win: 130,
+        },
+        {
+          desc: "When both plates reach the same speed they lock together and the drive passes through (or the motor reaches speed before the conveyor is fully driven)",
+          group: "lock", negOK: true, not: [NOSLIP],
+          all: [R`\bmotor\b${K(40)}\balready\b${K(20)}\b(?:full|running|operating|its|normal|top)\s+speed`, R`\b(?:friction|plates?|clutch|slip\w*)\b`],
           win: 150,
         },
       ],
