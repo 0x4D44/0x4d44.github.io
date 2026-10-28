@@ -85,9 +85,9 @@
     if (toks.length >= 8 && (() => { const n = toks.filter((t) => t === "and" || t === "or").length; return n >= 5 || (n >= 3 && !/,/.test(text)); })() && funcToks.filter((t) => !glue.has(t)).length <= Math.floor(toks.length / 14)) return "zero";
     if (toks.length < 8) return null;
     // ungrammatical joins ("the and", "a is", "so because", "is is") never occur in prose but fill word salad
-    const DET = new Set(["the", "a", "an", "these", "those", "its", "their", "his", "her"]);
+    const DET = new Set(["the", "an", "these", "those", "its", "their", "his", "her"]);   // not "a": it is also a variable name
     const NOUNLESS = new Set(["and", "or", "but", "is", "are", "was", "were", "be", "so", "because", "of", "to", "it", "in", "on", "for", "by", "with", "from", "at", "as", "if", "then", "than", "not", "the", "a", "an", "will", "can", "does", "do", "has", "have"]);
-    const JOINT = new Set(["and", "or", "but", "so", "because", "if", "then", "than"]);
+    const JOINT = new Set(["and", "or", "but", "so", "because", "then", "than"]);
     let bad = 0;
     for (let i = 1; i < toks.length; i++) {
       const p = toks[i - 1], t = toks[i];
