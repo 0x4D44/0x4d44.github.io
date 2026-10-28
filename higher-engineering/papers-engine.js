@@ -118,13 +118,15 @@
     if (ff >= 4 && odd * 3 >= ff * 2) return "zero";
     if (ff >= 3 && odd * 2 >= ff) return "half";
     // key words strictly alternating with filler words, run after run, is padding rather than prose
+    // (numbers and one-letter labels such as "in1 is 0" are program talk, not padding, so they do not count)
+    const at = toks.filter((t) => !/^\d+$/.test(t) && !/^[a-z]\d?$/.test(t) && !/^[a-z]+\d+$/.test(t));
     let alt = 1, altMax = 1;
-    for (let i = 1; i < toks.length; i++) {
-      if (FUNC.has(toks[i]) !== FUNC.has(toks[i - 1])) { alt++; if (alt > altMax) altMax = alt; } else alt = 1;
+    for (let i = 1; i < at.length; i++) {
+      if (FUNC.has(at[i]) !== FUNC.has(at[i - 1])) { alt++; if (alt > altMax) altMax = alt; } else alt = 1;
     }
     if (altMax >= 24) return "zero";
     // padding a pile of key words with the same "the/is/and" over and over is not a sentence
-    if (func >= 12 && new Set(funcToks).size < 4) return "zero";
+    if (func >= 12 && new Set(funcToks).size < 4 && (text.match(/[a-z0-9][.!?](?:\s|$)/g) || []).length < 3) return "zero";
     let longest = 0;
     text.split(/[.,;:!?()]+/).forEach((seg) => {
       let run = 0;
@@ -183,6 +185,7 @@
         let raw = clean.toLowerCase().replace(/[\u2212\u2013\u2014]/g, "-")
           .replace(/10([-\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, (m, sg, d) => "10^" + (sg ? "-" : "") + [...d].map((c) => SUP[c]).join(""))
           .replace(/(cm|mm|km|\bm)\s*\^?\s*[23²³]/g, "$1")
+          .replace(/(cm|mm|km|\bm)\s*\^?-[1-3]\b/g, "$1")
           .replace(/\ba\s*\/\s*v\b/g, " ")
           .replace(/\ba\s*\/?\s*v\s*\^?\s*\{?-\s*1\}?\b/g, " ")
           .replace(/\b(?:rad|rev|mm|cm|km|m)?\s*(?:s|min)\s*\^?\s*-\s*1\b/g, " ")      // unit tails: m s-1, rad s^-1, rev min-1
@@ -196,6 +199,8 @@
         let v = nums ? parseFloat(nums[nums.length - 1]) : NaN;
         const rt = part.unit === "" && clean.match(/(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)\s*$/);      // "4 : 1" is a ratio of 4, "1 : 4" of 0.25
         if (rt && +rt[2]) v = +rt[1] / +rt[2];
+        const fr = part.unit === "" && clean.match(/^\s*(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)\s*$/);      // "1/4" is a quarter, not 4
+        if (fr && +fr[2]) v = +fr[1] / +fr[2];
         if (!isFinite(v)) return { got: 0, of };
         // a prefix typed on the unit ("0.003 A" for a part wanted in mA) is converted, so a missed prefix cannot pass for right
         const VEL = (t) => {      // "mm/s", "m s-1", "m per min" -> metres per second, else null
@@ -204,7 +209,37 @@
         };
         const va = VEL(clean), ve = VEL(part.unit || "");
         if (va && ve) v = v * va / ve;
-        if (/rad\s*\.?\s*$/i.test(clean) && /^\u00b0/.test(String(part.unit || ""))) return { got: 0, of };      // radians typed for a degrees part
+        // a unit of a different kind from the one asked for ("24 rev/s" for rev/min, "576 J" for a torque) is a slip, whatever the number
+        const UCLASS = (u) => {
+          const t = String(u || "").toLowerCase().replace(/\u207b\u00b9/g, "-1").replace(/\u00b2/g, "2").replace(/\u00b0/g, "deg").replace(/\bper\b/g, "/").replace(/[\s.\u00b7*]/g, "").replace(/revolutions?|revs/g, "rev").replace(/minutes?/g, "min").replace(/seconds?/g, "s");
+          if (/^(rpm|rev\/min|rev-?min-1|rev\/m)$/.test(t)) return "rpm";
+          if (/^(rps|rev\/s|revs-1|rev-?s-1)$/.test(t)) return "rps";
+          if (/^(rad\/s|rads-1|rad-?s-1|radians?\/s)$/.test(t)) return "rads";
+          if (/^(rad|radians?)$/.test(t)) return "rad";
+          if (/^(deg|degrees?|deg[a-z]*)$/.test(t)) return "deg";
+          if (/^hz$|^khz$|^mhz$/.test(t)) return "hz";
+          if (/^[kmg]?n(m|\*m)$/.test(t) || /^nm$/.test(t)) return "torque";
+          if (/^[kmg]?n$/.test(t)) return "force";
+          if (/^[kmg]?j$/.test(t)) return "energy";
+          if (/^[kmg]?w$/.test(t)) return "power";
+          if (/^(k|\u00b0c|degc|c)$/.test(t)) return "temp";
+          if (/^[ckm]?m2$|^[ckm]?m\^2$/.test(t)) return "area";
+          if (/^%$|^percent$/.test(t)) return "pct";
+          if (/^[ckm]?m$/.test(t)) return "length";
+          if (/^(s|ms|min|h|hr|hours?)$/.test(t)) return "time";
+          if (/^(km\/h|kph|mph)$/.test(t)) return "kmh";
+          return null;
+        };
+        const ut = clean.match(/\d\s*([a-z\u00b5\u03bc\u03a9\u00b0%][a-z\u00b5\u03bc\u03a9\u00b0%\/\s.\u00b7*\-\u207b\u00b9\u00b2^0-9]*)\s*$/i);
+        const tc = ut && UCLASS(ut[1].replace(/\s+$/, "")), ec = UCLASS(part.unit);
+        if (tc && ec !== tc && !(ec === null && tc !== "pct" && tc !== "kmh" && tc !== "rad")) {
+          const pair = (x, y) => (tc === x && ec === y) || (tc === y && ec === x);
+          if (!pair("force", "torque") || tc !== ec) return { got: 0, of };
+        }
+        if (tc === "time" && ec === "time") {      // minutes or hours typed for a part wanted in seconds
+          const TF = (u) => ({ s: 1, ms: 1e-3, min: 60, h: 3600, hr: 3600 }[String(u).toLowerCase().replace(/[\s.]/g, "").replace(/minutes?/, "min").replace(/hours?/, "h").replace(/seconds?/, "s")] || 1);
+          v = v * TF(ut[1]) / TF(part.unit);
+        }
         const STRESS = { "N/mm\u00b2": 1, "kN/mm\u00b2": 1e3 }[String(part.unit || "").replace(/\s/g, "")];      // stress in MPa-equivalents
         if (STRESS) {
           const st = clean.replace(/\s+/g, "").match(/(?:([GMk]?Pa)|([kM]?N)\/?(?:mm|m)?(?:\^?[2\u00b2])?)$/);
@@ -229,6 +264,7 @@
         if (!am && eu && /\d\s*k$/i.test(clean)) v = v * 1e3 / PF[eu[1]];      // "1.72k" for a part in ohms means kilo-ohms
         if (/%\s*\)?\s*$/.test(clean) && Math.abs(part.a) <= 1 && part.unit !== "%") v = v / 100;     // "0.80 (80%)" for a ratio
         const targets = [part.a].concat(part.alts || []);
+        if (Math.abs(part.a) >= 1 && String(part.a).replace(/[-.]/g, "").length > 2) targets.push(Number(Number(part.a).toPrecision(2)));      // the answer rounded to 2 s.f. is still right
         const tol = part.tol == null ? 0 : part.tol;
         const within = (t) => Math.abs(v - t) <= tol + 1e-9 || (part.rtol != null && Math.abs(v - t) <= part.rtol * Math.abs(t) + 1e-12);
         return { got: targets.some(within) ? of : 0, of };
