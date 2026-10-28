@@ -36,7 +36,8 @@ export class TrainView {
     const box = new THREE.Box3().setFromObject(root);
     this.zMin = box.min.z; this.zMax = box.max.z; this.length = box.max.z - box.min.z; this.frontOffset = -box.min.z;
     const wz = new THREE.Vector3(), worldDoorZ = {};
-    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; } });
+    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; }
+      const m2 = /^(door_[LR]_\d+)_([ab])$/.exec(o.name); if (m2) { o.getWorldPosition(wz); const q = (worldDoorZ[m2[1] + '#'] = worldDoorZ[m2[1] + '#'] || []); q.push(wz.z); if (q.length === 2) worldDoorZ[m2[1]] = (q[0] + q[1]) / 2; } });   // rev 7: two bi-parting leaves per opening, centre = mean of the leaves
     const top = (root.children.length === 1 && root.children[0].name === 'train') ? root.children[0] : root;
     const carNodes = top.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     this.carInfo = carNodes.map((n) => { const b = new THREE.Box3().setFromObject(n); return { node: n, zc: (b.min.z + b.max.z) / 2, len: b.max.z - b.min.z, zmin: b.min.z }; });
@@ -54,12 +55,20 @@ export class TrainView {
     this.cars.forEach((g) => this.root.add(g));
     this.root.traverse((o) => { if (o.name) this.byName[o.name] = o; });
     this.doorsL = []; this.doorsR = []; this.doorZ = [];
+    this.doubleDoors = !!this.byName['door_R_0_a'] || !!this.byName['door_L_0_a'];
     for (let i = 0; i < 40; i++) {
+      if (this.doubleDoors) {   // A3 rev 7: leaf a (nose side) opens -Z by 0.6 m, leaf b (rear side) opens +Z by 0.6 m
+        const la = this.byName['door_L_' + i + '_a'], lb = this.byName['door_L_' + i + '_b'], ra = this.byName['door_R_' + i + '_a'], rb = this.byName['door_R_' + i + '_b'];
+        if (!la && !ra) break;
+        if (la) this.doorsL.push({ leaves: [{ n: la, z0: la.position.z, dir: -1 }, { n: lb, z0: lb.position.z, dir: 1 }] });
+        if (ra) this.doorsR.push({ leaves: [{ n: ra, z0: ra.position.z, dir: -1 }, { n: rb, z0: rb.position.z, dir: 1 }] });
+        continue;
+      }
       const l = this.byName['door_L_' + i], r = this.byName['door_R_' + i];
       if (!l && !r) break;
       const dir = 1; // revision 2: every leaf slides 1.2 m toward the rear
-      if (l) this.doorsL.push({ n: l, z0: l.position.z, dir });
-      if (r) this.doorsR.push({ n: r, z0: r.position.z, dir });
+      if (l) this.doorsL.push({ leaves: [{ n: l, z0: l.position.z, dir, travel: 1.2 }] });
+      if (r) this.doorsR.push({ leaves: [{ n: r, z0: r.position.z, dir, travel: 1.2 }] });
     }
     // door opening centres in root coordinates (one leaf per opening, centre of the opening = leaf closed pos)
     const refKey = this.doorsR.length ? 'door_R_' : 'door_L_';
@@ -210,7 +219,8 @@ export class TrainView {
     return (a + (b - a) * (t - i)) - h.floorY;
   }
   setDoors(L, R) {
-    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 1.2 * f; };
+    const ease = (f) => (f <= 0 ? 0 : f >= 1 ? 1 : f * f * (3 - 2 * f));   // smooth start/stop over the service's ~2.6 s door travel
+    const move = (list, f) => { const e = ease(f); for (const d of list) for (const lf of d.leaves) lf.n.position.z = lf.z0 + lf.dir * (lf.travel || 0.6) * e; };
     move(this.doorsL, L); move(this.doorsR, R);
   }
 
