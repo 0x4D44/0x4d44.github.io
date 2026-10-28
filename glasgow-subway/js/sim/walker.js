@@ -2,7 +2,7 @@
 // Coordinates are in a local frame (x, z) with heights y. Pure maths (no THREE) except for camera output.
 import { clamp } from './util.js';
 
-export const EYE = 1.62, RADIUS = 0.3;
+export const EYE = 1.52, SIT_EYE = 1.13, RADIUS = 0.3;   // standing eye of a ~1.62 m person; seated on a 0.43 m bench / crouched
 
 export function zoneHeight(z, x, zz) {
   if (z.kind === 'flat') return z.y;
@@ -12,7 +12,7 @@ export function zoneHeight(z, x, zz) {
 const inZone = (z, x, zz, m = 0) => x >= z.x0 - m && x <= z.x1 + m && zz >= z.z0 - m && zz <= z.z1 + m;
 
 export class Walker {
-  constructor() { this.headroomFn = null; this.minHead = 1.45; this.eye = EYE; this.radius = RADIUS; this.x = 0; this.z = 0; this.y = 0; this.yaw = 0; this.pitch = 0; this.zones = []; this.obstacles = []; this.bob = 0; this.vx = 0; this.vz = 0; this.speed = 0; this.onPush = 0; this.sprint = false; this.vy = 0; }
+  constructor() { this.headroomFn = null; this.minHead = 1.45; this.eye = EYE; this.sit = false; this.sitK = 0; this.radius = RADIUS; this.x = 0; this.z = 0; this.y = 0; this.yaw = 0; this.pitch = 0; this.zones = []; this.obstacles = []; this.bob = 0; this.vx = 0; this.vz = 0; this.speed = 0; this.onPush = 0; this.sprint = false; this.vy = 0; }
   setWorld(zones, obstacles) { this.zones = zones; this.obstacles = obstacles; }
   place(x, z, yaw = this.yaw) { this.x = x; this.z = z; this.yaw = yaw; this.y = this.heightAt(x, z, 1e9); }
   heightAt(x, z, nearY) {
@@ -35,6 +35,8 @@ export class Walker {
   }
   /** forward/strafe in [-1,1]; yaw 0 faces local -z. */
   update(dt, fwd, strafe) {
+    this.sitK += ((this.sit ? 1 : 0) - this.sitK) * clamp(dt * 7, 0, 1); if (Math.abs((this.sit ? 1 : 0) - this.sitK) < 0.002) this.sitK = this.sit ? 1 : 0;
+    if (this.sit) { fwd = 0; strafe = 0; }
     const sp = (this.sprint ? 3.8 : 2.0);
     const sy = Math.sin(this.yaw), cy = Math.cos(this.yaw);
     // forward vector (local frame): yaw=0 -> (0,-1)
@@ -60,5 +62,5 @@ export class Walker {
     this.speed = moved;
     this.bob += moved * dt * 4.2;
   }
-  eyeY() { let e = this.eye; if (this.headroomFn) e = Math.min(e, this.headroomFn(this.x, this.z) - 0.14); return this.y + e + Math.sin(this.bob) * 0.02 * Math.min(1, this.speed / 1.5); }
+  eyeY() { let e = this.eye + (SIT_EYE - this.eye) * this.sitK; if (this.headroomFn) e = Math.min(e, this.headroomFn(this.x, this.z) - 0.14); return this.y + e + Math.sin(this.bob) * 0.02 * Math.min(1, this.speed / 1.5); }
 }

@@ -207,33 +207,31 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
             q = ext.quad_uv(P(xo, yy - 0.2, 0.92), P(xo, yy + 0.2, 0.92), P(xo, yy + 0.2, 1.32), P(xo, yy - 0.2, 1.32), 'sign_roundel')
             q[ext.fx] = 1
             if q.normal.x * sg < 0: q.normal_flip()
-    # ---- door leaves: curved slabs following the arch, with a glass pane (separate animatable nodes)
+    # ---- DOUBLE doors: each opening has two bi-parting curved leaves (a = nose side, b = rear side), each 0.64 m wide, own animatable node
     nodes = {}
+    LW = 0.645; h = LW / 2
     for sgx, nm in ((-1, 'L'), (1, 'R')):
         for di, d in enumerate(DOORS):
-            wy = yc + s * d
-            lm = M(); lw = DOOR_W - 0.1; h = lw / 2
-            Ro, Rn = 1.135, 1.095
-            low = [(Ro, 0.70), (Ro, CZ)] + A(Ro, 0, SILL_DEG)
-            lowi = [(Rn, 0.70), (Rn, CZ)] + A(Rn, 0, SILL_DEG)
-            def sl(R, a0, a1, y0, y1, mat, **kw):
-                pts = A(R, a0, a1, step=7.5)
-                lm.strip_y([(sgx * x - sgx * 1.12, z - 0.0) for x, z in pts], y0, y1, mat, **kw)
-            ax_ = (-sgx * 1.12, CZ)
-            def pl(pts, y0, y1, mat, **kw):
-                lm.strip_y([(sgx * x - sgx * 1.12, z) for x, z in pts], y0, y1, mat, **kw)
-            pl(low, -h, h, 'subway_orange', away=ax_); pl(lowi, -h, h, 'interior_panel', toward=ax_)
-            pl(A(Ro, SILL_DEG, HEAD_DEG), -h, -h + 0.1, 'subway_orange', away=ax_); pl(A(Ro, SILL_DEG, HEAD_DEG), h - 0.1, h, 'subway_orange', away=ax_)
-            pl(A(Rn, SILL_DEG, HEAD_DEG), -h, -h + 0.1, 'interior_panel', toward=ax_); pl(A(Rn, SILL_DEG, HEAD_DEG), h - 0.1, h, 'interior_panel', toward=ax_)
-            pl(A(Ro, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'subway_orange', away=ax_)
-            pl(A(Ro, SILL_DEG, SILL_DEG + 0.0 + 3, step=3), -h + 0.1, h - 0.1, 'subway_orange', away=ax_)
-            pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), -h + 0.1, h - 0.1, 'glass_window', toward=ax_)       # GLASS PANE (curved)
-            for yy in (-h, h):
-                pl(A(Ro, 0, 1, step=1), yy, yy + 0.001, 'rubber_black')
-            o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0)) if False else None
-            # geometry is relative to (x=1.12*sgx, y=0 (leaf centre), z=0); place node at the leaf centre
-            o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0))
-            nodes.setdefault(nm, []).append((wy, o))
+            wyc = yc + s * d
+            for half, off in (('a', +0.3225), ('b', -0.3225)):
+                wy = wyc + off
+                lm = M(); Ro, Rn = 1.135, 1.095
+                ax_ = (-sgx * 1.12, CZ)
+                def pl(pts, y0, y1, mat, **kw):
+                    lm.strip_y([(sgx * x - sgx * 1.12, z) for x, z in pts], y0, y1, mat, **kw)
+                low = [(Ro, 0.70), (Ro, CZ)] + A(Ro, 0, SILL_DEG); lowi = [(Rn, 0.70), (Rn, CZ)] + A(Rn, 0, SILL_DEG)
+                pl(low, -h, h, 'subway_orange', away=ax_); pl(lowi, -h, h, 'interior_panel', toward=ax_)
+                # window zone: frame stiles (outer edge 0.07, meeting edge 0.09), top/bottom rails and the glass pane
+                pl(A(Ro, SILL_DEG, HEAD_DEG), -h, -h + 0.08, 'subway_orange', away=ax_); pl(A(Ro, SILL_DEG, HEAD_DEG), h - 0.08, h, 'subway_orange', away=ax_)
+                pl(A(Rn, SILL_DEG, HEAD_DEG), -h, -h + 0.08, 'interior_panel', toward=ax_); pl(A(Rn, SILL_DEG, HEAD_DEG), h - 0.08, h, 'interior_panel', toward=ax_)
+                pl(A(Ro, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'subway_orange', away=ax_)
+                pl(A(Rn, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'interior_panel', toward=ax_)
+                pl(A(Ro, SILL_DEG, SILL_DEG + 3, step=3), -h + 0.08, h - 0.08, 'subway_orange', away=ax_)
+                pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), -h + 0.08, h - 0.08, 'glass_window', toward=ax_)       # GLASS in each leaf
+                for yy in (-h, h):
+                    lm.strip_y([(sgx * Ro - sgx * 1.12, 0.72), (sgx * Ro - sgx * 1.12, 1.45)], yy - 0.004, yy + 0.004, 'rubber_black')
+                o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0))
+                nodes.setdefault(nm, []).append((wyc, half, o))
     if has_cab:
         build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort)
     ext.to_obj(f'car_{idx}_exterior', parent=car)
@@ -461,11 +459,14 @@ def build_train():
     nodes = []; lights = []
     for i, (yc, L, s, doors, cab) in enumerate(cars):
         n = build_car(i, yc, s, root, L, doors, cab); lights += n.pop('_lights'); nodes.append(n)
+    door_world = []
     for nm in ('L', 'R'):
         leaves = [t for n in nodes for t in n.get(nm, [])]
-        leaves.sort(key=lambda t: -t[0])
-        for i, (wy, o) in enumerate(leaves):
-            o.name = f'door_{nm}_{i}'; o.data.name = o.name; o.parent = root
+        centres = sorted({round(t[0], 4) for t in leaves}, reverse=True)       # front -> rear
+        for wyc, half, o in leaves:
+            i = centres.index(round(wyc, 4))
+            o.name = f'door_{nm}_{i}_{half}'; o.data.name = o.name; o.parent = root
+        if nm == 'L': door_world = centres
     build_bogies(root, total)
     nose = cars[0][0] + cars[0][1] / 2 - 0.03
     empty('couple_front', loc=(0, nose + 0.25, 0.56), parent=root, kind='ARROWS', size=0.3)
@@ -487,6 +488,8 @@ def build_train():
         minStandingHeadroom=1.75, minStandingNote='an adult of 1.75 m can only stand where headroomVsX >= 1.80 i.e. |x| <= 0.35; head-bump zone otherwise',
         gangway=dict(width=1.3, archApexY=2.10, halfWidth=0.65),
         cab=dict(eyeFront=[-0.42, 1.845, round(-(total / 2 - 1.0), 3)], eyeRear=[0.42, 1.845, round(total / 2 - 1.0, 3)], eyeToGlassM=1.0, deskTopY=round(FLOOR + 0.80, 3), deskFrontToGlassM=0.30, driverSide='left of centre door (x=-0.42 front cab, +0.42 rear cab)', partitionDistanceFromNoseM=1.8, glazing='three bays (driver / centre evacuation door / right), glass y from 1.30 to 2.18, black frame, amber LED destination display node cab_dest'),
+        doors=dict(type='double bi-parting', nodes='door_{L|R}_{n}_{a|b}, n=0..5 front->rear', centreZ=sorted(round(zz, 3) for c in cars_json for zz in c['doorZ']), openingWidth=DOOR_W, leafWidth=0.645, travelM=0.6,
+                   a='nose-side leaf: open = translate -Z by 0.6 m (toward the nose)', b='rear-side leaf: open = translate +Z by 0.6 m (toward the rear)', leafNodeOrigin='leaf centre: x=+-1.12, y=0, z=door centre +-0.3225 (a: -0.3225 in three z, b: +0.3225)'),
         cars=cars_json)
     json.dump(data, open(os.path.join(OUT, 'train_walkable.json'), 'w'), indent=1)
     return root

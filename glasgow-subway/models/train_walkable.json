@@ -75,6 +75,24 @@
   "partitionDistanceFromNoseM": 1.8,
   "glazing": "three bays (driver / centre evacuation door / right), glass y from 1.30 to 2.18, black frame, amber LED destination display node cab_dest"
  },
+ "doors": {
+  "type": "double bi-parting",
+  "nodes": "door_{L|R}_{n}_{a|b}, n=0..5 front->rear",
+  "centreZ": [
+   -15.055,
+   -10.255,
+   -3.785,
+   3.785,
+   10.255,
+   15.055
+  ],
+  "openingWidth": 1.3,
+  "leafWidth": 0.645,
+  "travelM": 0.6,
+  "a": "nose-side leaf: open = translate -Z by 0.6 m (toward the nose)",
+  "b": "rear-side leaf: open = translate +Z by 0.6 m (toward the rear)",
+  "leafNodeOrigin": "leaf centre: x=+-1.12, y=0, z=door centre +-0.3225 (a: -0.3225 in three z, b: +0.3225)"
+ },
  "cars": [
   {
    "index": 0,

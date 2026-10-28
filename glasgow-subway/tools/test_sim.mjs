@@ -168,6 +168,28 @@ try {
   ok('inner circle drive starts', (await ev(p, () => __sim.state())).line === 'inner');
   await ev(p, () => { __sim.svc().dwellT = 100; __sim.ato(true); __sim.ff(30, 0.1); });
   await shot(p, '19_inner_tunnel');
+  // mouse look: handlers attached; locked movementX/Y rotates yaw/pitch (sensitivity + invert-Y honoured); drag-to-look fallback; arrow keys still work
+  const m0 = await ev(p, () => { __sim.setLook(0, 0); __sim.mouseSet({ sens: 1, invertY: false }); return __sim.mouse(); });
+  const m1 = await ev(p, () => { __sim.mouseMove(100, 50, true); return __sim.mouse(); });
+  const m2 = await ev(p, () => { __sim.setLook(0, 0); __sim.mouseSet({ sens: 2, invertY: true }); __sim.mouseMove(100, 50, true); const r = __sim.mouse(); __sim.mouseSet({ sens: 1, invertY: false }); return r; });
+  ok('mouse look: handlers attached and pointer-lock movement turns the view (yaw/pitch, sensitivity, invert-Y)', m0.handlers && m1.yaw < -0.3 && m1.pitch < -0.1 && Math.abs(m2.yaw) > Math.abs(m1.yaw) * 1.8 && m2.pitch > 0.1, JSON.stringify([m0, m1, m2]));
+  await ev(p, () => __sim.setLook(0, 0));
+  const cb = await p.evaluate(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+  await p.mouse.move(cb[0], cb[1]); await p.mouse.down(); await p.mouse.move(cb[0] + 80, cb[1] + 20, { steps: 4 }); await p.mouse.up();
+  const m3 = await ev(p, () => { const r = __sim.mouse(); try { document.exitPointerLock(); } catch (e) {} return r; });
+  ok('mouse look: clicking + moving the mouse on the view changes yaw (pointer lock or drag fallback)', Math.abs(m3.yaw) > 0.1, JSON.stringify(m3));
+  await ev(p, () => __sim.setLook(0, 0)); await p.keyboard.down('ArrowLeft'); await ev(p, () => __sim.tick(0.3)); await p.keyboard.up('ArrowLeft');
+  ok('mouse look: arrow-key look still works alongside', Math.abs((await ev(p, () => __sim.mouse())).yaw) > 0.1);
+  // audio: silent immediately while the tab is hidden; manual mute is kept; nothing queued plays on return
+  const au = await ev(p, async () => {
+    const W = (ms) => new Promise((r) => setTimeout(r, ms)), hide = (h) => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => h }); document.dispatchEvent(new Event('visibilitychange')); };
+    await __sim.audioStart(); await W(100); const a0 = __sim.audioState();
+    hide(true); const a1 = __sim.audioState(); await W(150); const a1b = __sim.audioState(); __sim.audioSpeak('hello'); __sim.audioChime(); const a2 = __sim.audioState();
+    hide(false); await W(250); const a3 = __sim.audioState();
+    __sim.audioMute(true); await W(100); hide(true); await W(100); hide(false); await W(250); const a4 = __sim.audioState(); __sim.audioMute(false); await W(200); const a5 = __sim.audioState();
+    return { a0, a1, a1b, a2, a3, a4, a5 }; });
+  ok('audio: silent immediately when the tab is hidden (gain 0, context suspended, no speech, announcements dropped)', au.a1.hidden && au.a1.gain === 0 && au.a1b.ctx !== 'running' && !au.a1b.speaking && au.a2.blocked >= 2, JSON.stringify(au.a1b) + JSON.stringify(au.a2));
+  ok('audio: resumes on return; manual mute is kept across hide/show', !au.a3.hidden && au.a3.gain > 0.5 && (au.a3.ctx === 'running' || au.a0.ctx !== 'running') && au.a4.muted && au.a4.gain === 0 && au.a5.gain > 0.5, JSON.stringify([au.a3, au.a4, au.a5]));
   // camera sway: low-frequency only (< 2 Hz), small amplitude; no high-frequency head jitter
   const sw = await ev(p, () => { const s = __sim.sim, T = s.THREE, f = new T.Vector3(), q = new T.Quaternion(), ys = [], ls = []; const v0 = s.svc.train.v;
     for (let i = 0; i < 240; i++) { __sim.tick(1 / 30); __sim.sync(); s.trainView.eyeWorld(f, q); ys.push(s.camera.position.y - f.y); ls.push(Math.hypot(s.camera.position.x - f.x, s.camera.position.z - f.z)); }

@@ -40,6 +40,7 @@ files.forEach((fn) => new GLTFLoader().load('/models/' + fn, (g) => {
   });
   if (fn === files[0] && repN > 1) { for (let i = 1; i < repN; i++) { const c = g.scene.clone(); c.position.z = i * repDz; scene.add(c); } }
   if (only.length) for (const c of g.scene.children[0] ? (g.scene.children[0].children.length > 3 ? g.scene.children[0].children : g.scene.children) : []) { if (!only.some((h) => c.name.startsWith(h))) c.visible = false; }
+  if (q.get('open')) g.scene.traverse((o) => { if (/^door_[LR]_\d+_a$/.test(o.name)) o.position.z -= 0.6; if (/^door_[LR]_\d+_b$/.test(o.name)) o.position.z += 0.6; });
   scene.add(g.scene);
   if (--pending) return;
   const box = new THREE.Box3().setFromObject(g.scene); info.bbox = [box.min.toArray(), box.max.toArray()];
