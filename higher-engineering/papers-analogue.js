@@ -223,7 +223,7 @@
 
 
   /* analogue-04(b): the diode is wrongly blamed for the spike or the damage */
-  const DIODE_SPIKE = R`diode${C(R`\bnot\b|n't|never|stops?|prevents?|protects?|avoids?|limits?|reduces?|absorbs?`, 40)}(?:causes?|creates?|produces?|generates?|induces?)\W+(?:\w+\W+){0,3}(?:voltage|spike|surge|emf|e\.m\.f)`;
+  const DIODE_SPIKE = R`diode${C(R`\bnot\b|n't|never|stops?|prevents?|protects?|avoids?|limits?|reduces?|absorbs?`, 40)}(?:causes?|creates?|produces?|generates?|induces?|mak(?:es|ing)\W+(?:a|an)|giv\w*\W+rise\W+to)\W+(?:\w+\W+){0,3}(?:voltage|spike|surge|emf|e\.m\.f)`;
   /* analogue-05(d): a broken lamp or transistor is not the reason */
   const BROKEN = R`\b(?:broken|faulty|blown|burnt out|burned out|dead|short.?circuit\w*)\b`;
   const DIODE_ON = R`diode${C(NEG, 60)}(?:conduct\w*|carr(?:y|ies|ied))${C(NEG, 80)}(?:when|while|as long as|once)\W+(?:the\W+)?(?:transistor|relay|coil|circuit)\W+(?:\w+\W+){0,1}(?:on|conducting|switched on|turned on|operating|energi[sz]ed|working)\b`;
@@ -356,11 +356,12 @@
             q: R`Explain why diode D<sub>1</sub> is connected across the relay coil.`,
             points: [
               { desc: "The coil is inductive: when the current is switched off the collapsing magnetic field produces a large voltage spike",
-                not: [DIODE_SPIKE, DIODE_ON],
+                not: [DIODE_SPIKE, DIODE_ON, R`\b(?:not|n't|never)\W+(?:\w+\W+){0,1}(?:inductive|inductor)\b`],
                 all: [R`(?:spike\w*|surge\w*|(?:large|high|big|huge|sudden|reverse|back|induced|extra|excess\w*)\W+(?:\w+\W+){0,2}(?:voltage|emf|e\.m\.f\.?)|back.?emf|voltage (?:peak|pulse)|overvoltage)`, R`(?:coil|inductive|inductor|inductance|magnetic|field|relay|solenoid|motor|winding)`] },
               { desc: "The diode conducts / gives the current a path so the spike is limited",
                 not: [DIODE_ON, R`coil\W+(?:gets?|receives?|has|sees|is given)\W+(?:\w+\W+){0,1}(?:less|lower|reduced)`],
                 any: [
+                  R`\b(?:fly|free)-?\s?wheel\w*\W+diode`,
                   R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|dissipat\w*|bypass\w*|divert\w*|dump\w*|shunt\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 50)}(?:spike|surge|back.?emf|energy|voltage|induced|collaps\w*|stored|path|route|loop|field)`,
                   R`diode${C(NEG, 50)}(?:conduct\w*|absorb\w*|carr(?:y|ies|ied)|short\w*|clamp\w*|bypass\w*|divert\w*|circulat\w*|pass\w*|rout\w*)${C(NEG, 30)}current${C(NEG, 40)}(?:round|around|back|loop|path|circulat\w*)`,
                   R`diode${C(NEG, 50)}(?:provid\w*|giv\w*|allow\w*|let\w*|offer\w*|creat\w*|mak\w*)${C(NEG, 30)}(?:path|route|loop|way (?:round|around|out)|circuit)`,
@@ -368,7 +369,7 @@
                   R`(?:current|spike|surge|voltage|energy)${C(NEG, 40)}(?:flows?|goes?|passes?|circulat\w*|travels?|is carried|is conducted|is absorbed)${C(NEG, 30)}(?:through|round|via|into|in) (?:the )?diode`,
                 ] },
               { desc: "This protects the transistor from damage",
-                not: [DIODE_HARM, DIODE_SPIKE, DIODE_ON, R`diode\W+(?:\w+\W+){0,4}(?:to|so as to)\W+(?:make|cause|create|produce|generate|allow)\W+(?:\w+\W+){0,2}(?:this|that|it|the (?:spike|damage|surge))`, R`protect\w*\W+(?:the\W+)?(?:relay|coil|solenoid)(?:\W+\w+){0,2}\W+from\W+(?:the\W+)?(?:transistor|switch|bjt)`],
+                not: [DIODE_HARM, DIODE_SPIKE, DIODE_ON, R`diode\W+(?:\w+\W+){0,4}(?:to|so as to)\W+(?:make|cause|create|produce|generate|allow)\W+(?:\w+\W+){0,2}(?:this|that|it|the (?:spike|damage|surge))`, R`protect\w*\W+(?:the\W+)?(?:relay|coil|solenoid)(?:\W+\w+){0,2}\W+from\W+(?:the\W+)?(?:transistor|switch|bjt)`, R`protect\w*\W+(?:\w+\W+){0,3}from\W+(?:the\W+)?(?:transistor|switch|chip|bjt)\b`],
                 any: [
                   R`(?:transistor|circuit|component|electronics|switch|chip)${C(R`\bnot\b|n't|never`, 40)}(?:not|n't|never)\W+(?:\w+\W+){0,1}(?:damag\w*|destroy\w*|harm\w*|blown|burn\w*|burnt|fail\w*)`,
                   R`protect\w*${C(NEG, 60)}(?:transistor|circuit|component|electronics|switch|chip|driver|device)`,
@@ -513,8 +514,8 @@
             label: "(f)", type: "text", marks: 1, rows: 3, minWords: 4,
             q: R`State what is meant by the threshold voltage of an n-channel enhancement MOSFET.`,
             points: [
-              { desc: "The minimum gate-source voltage at which the MOSFET begins to conduct",
-                not: [R`\b(?:below|under|less than|lower than)\W+which`, R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`, R`(?:stops?|ceases?|no longer|prevent\w*|blocks?|unable to|cannot|can't)\W+(?:\w+\W+){0,3}(?:conduct\w*|current)`, R`which\W+(?:\w+\W+){0,1}(?:turns?|switch\w*)\W+(?:\w+\W+){0,1}off`, R`(?:supply|load|solenoid|drain)\W+(?:\w+\W+){0,2}(?:voltage|volts?)`,
+              { desc: "The minimum gate-source voltage at which the MOSFET begins to conduct", negOK: true,
+                not: [R`\b(?:not|n't|never)\W+(?:\w+\W+){0,3}(?:minimum|lowest|least|smallest|threshold)`, R`\b(?:not|n't|never)\W+(?:\w+\W+){0,2}(?:begin\w*|start\w*|conduct\w*)(?!(?:\W+\w+){0,8}\W+above\W+which)`, R`\b(?:below|under|less than|lower than)\W+which\W+(?!(?:\w+\W+){0,3}(?:not|no|never|n't|off|stops?)\b)`, R`(?:fully|completely|maximum|full)\W+(?:\w+\W+){0,2}(?:on\b|conduct\w*|switched|turned)|(?:on\b|conduct\w*|switch\w*|turn\w*)\W+(?:fully|completely)`, R`(?:maximum|highest|largest|greatest|upper|biggest|max)\W+(?:\w+\W+){0,3}(?:voltage|vgs|v_?gs)`, R`(?:stops?|ceases?|no longer|prevent\w*|blocks?|unable to|cannot|can't)\W+(?:\w+\W+){0,3}(?:conduct\w*|current)`, R`which\W+(?:\w+\W+){0,1}(?:turns?|switch\w*)\W+(?:\w+\W+){0,1}off`, R`(?:supply|load|solenoid|drain)\W+(?:\w+\W+){0,2}(?:voltage|volts?)`,
                   R`all the time|\balways\b|permanent\w*|constantly`, R`(?:minimum|least|lowest|smallest)\W+(?:\w+\W+){0,1}(?:current|power|resistance|capacitance|charge)\b`, R`\bgate\W+(?:current|resistance|capacitance|power)\b`],
                 win: 140,
                 all: [R`(?:\bv_?gs\b|gate.?source|gate to source|between (?:the )?gate|\bgate\W+(?:\w+\W+){0,3}(?:voltage|volts?|potential)|(?:voltage|volts?|potential)\W+(?:\w+\W+){0,8}\bgate\b)`,
@@ -635,6 +636,7 @@
                   R`(?:saturat\w*|clip\w*|limit\w*|stops?|stuck)\W+(?:\w+\W+){0,5}(?:because|as|since|due to|by)\W+(?:\w+\W+){0,6}(?:supply|rails?|vcc|12)`,
                   R`(?:because|as|since|due to)\W+(?:\w+\W+){0,4}(?:supply|rails?|vcc)\W+(?:\w+\W+){0,3}(?:only|just|is|are|of|limit\w*)\W+(?:\w+\W+){0,2}(?:12|limit\w*)`,
                   R`(?:supply|rails?|vcc)\W+(?:\w+\W+){0,3}(?:only|just)\W+(?:\w+\W+){0,4}12`,
+                  R`(?:bigger|larger|greater|more|higher|further)\W+than\W+(?:\w+\W+){0,3}(?:the\W+)?(?:supply|rails?|vcc|power supply)\b`,
                 ] },
               { desc: "The output saturates (clips) at -12 V", negOK: true,
                 win: 70,
@@ -721,7 +723,7 @@
             points: [
               { desc: "The thermistor's resistance increases as the temperature falls",
                 not: [RES_FALLS],
-                any: [R`resistance${C(DOWNSTOP + R`|\bas\b|when|if|` + NEG, 60)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|go(?:es)? up|climb\w*|grow\w*)`, R`(?:increase|rise|growth)\W+(?:in|of)\W+(?:the\W+)?(?:thermistor\W+)?resistance`, R`(?:higher|bigger|larger|greater|more)\W+resistance`, R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}resistance`] },
+                any: [R`resistance${C(DOWNSTOP + R`|\bas\b|when|if|` + NEG, 60)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|go(?:es)? up|climb\w*|grow\w*)`, R`(?:increase|rise|growth)\W+(?:in|of)\W+(?:the\W+)?(?:thermistor\W+)?resistance`, R`(?:higher|bigger|larger|greater|more)\W+(?:\w+\W+){0,2}resistance`, R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}resistance`] },
               { desc: "So V_i (the voltage across R / at the inverting input) falls",
                 not: [RES_FALLS],
                 any: [
@@ -880,14 +882,14 @@
                 any: [R`resistance${C(DOWNSTOP + R`|\bas\b|when|if|` + NEG, 60)}(?:ris(?:es|e|ing)|increas\w*|higher|bigger|larger|greater|go(?:es)? up|climb\w*|grow\w*)`, R`(?:increase|rise|growth)\W+(?:in|of)\W+(?:the\W+)?(?:ldr\W+)?resistance`, R`(?:higher|bigger|larger|greater|high|large)\W+(?:\w+\W+){0,1}resistance`, R`resistance\W+(?:\w+\W+){0,2}(?:is|becomes|gets)\W+(?:very\W+)?(?:high|large|big)`, R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}resistance`] },
               { desc: "So the LDR takes a bigger share of the supply: the voltage across the LDR (at the base) rises",
                 any: [
-                  R`voltage${C(R`resistor|` + DOWNSTOP + R`|` + NEG + R`|\bbut\b`, 40)}(?:across|over|at|on)${C(R`resistor|` + DOWNSTOP, 25)}(?:the )?(?:ldr|base|transistor)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
+                  R`(?:voltage|p\.?d\.?|potential difference)${C(R`resistor|` + DOWNSTOP + R`|` + NEG + R`|\bbut\b`, 40)}(?:across|over|at|on)${C(R`resistor|` + DOWNSTOP, 25)}(?:the )?(?:ldr|base|transistor)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`\bldr\b${C(NEG, 40)}(?:bigger|larger|greater|more)\W+(?:\w+\W+){0,2}(?:share|proportion|voltage|part|fraction)`,
                   R`\bldr\b${C(DOWNSTOP + R`|` + NEG, 40)}(?:share|proportion|fraction)\W+(?:\w+\W+){0,4}${UP}`,
                   R`\bldr\b${C(NEG, 80)}voltage\W+(?:\w+\W+){0,2}(?:across|over|on|at)\W+(?:it|them)\b${C(DOWNSTOP + R`|` + NEG, 20)}${UP}`,
                   R`\bv\b\W+(?:across|over|on|at)\W+(?:the\W+)?(?:ldr|base)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`(?:base voltage|\bv_?be\b|voltage at the base|base-emitter voltage|\bv ?ldr\b)${C(DOWNSTOP + R`|` + NEG, 40)}${UP}`,
                   R`(?:rais\w*|increas\w*)\W+(?:\w+\W+){0,3}voltage\W+(?:\w+\W+){0,3}(?:ldr|base)`,
-                  R`\bldr\b${C(NEG, 60)}(?:increas\w*|rais\w*|gain\w*|tak\w*)\W+(?:\w+\W+){0,2}(?:share|proportion|fraction)`,
+                  R`\bldr\b${C(NEG, 60)}(?:increas\w*|rais\w*|gain\w*|tak\w*)\W+(?:(?!smaller\b|less\b|lower\b|reduc|small\b|fewer\b)\w+\W+){0,2}(?:share|proportion|fraction)`,
                 ] },
               { desc: "When this reaches about 0.7 V a base current flows and the transistor starts to conduct",
                 all: [R`(?:0\.7|\bv_?be\b|base.?emitter|threshold|turn.?on voltage)`, R`(?:base current|conduct\w*|turn\w* on|switch\w* on|starts?|begins?|flows?)`] },
