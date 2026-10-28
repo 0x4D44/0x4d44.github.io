@@ -129,7 +129,9 @@
     const w = words(text);
     const list = listLike(text);
     const sampleText = HCP.norm(part.sample || "");
-    if (w >= minWords && list !== "zero") part.points.forEach((pt, i) => {
+    // an answer that opens by disowning itself ("This is incorrect: ...", "It is wrong to say ...") or is phrased as a question earns nothing
+    const disowned = /\?\s*$/.test(String(ans).trim()) || /^(?:\S+\s+){0,5}?(?:incorrect|wrong|false|untrue|a myth|not true|not correct)\b/.test(text) || /\b(?:wrong|incorrect|mistaken|false) to (?:say|claim|think|state|suggest)\b/.test(text);
+    if (w >= minWords && list !== "zero" && !disowned) part.points.forEach((pt, i) => {
       // the negation check runs on every point whose own model wording survives it (the sample must still earn the mark)
       if (pt._nc === undefined) pt._nc = !HCP.pointHit(pt, sampleText, { negCheck: true }) && HCP.pointHit(pt, sampleText, null) ? false : true;
       pts[i].hit = HCP.pointHit(pt, text, { negCheck: pt._nc });
