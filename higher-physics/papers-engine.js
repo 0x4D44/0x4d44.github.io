@@ -16,7 +16,7 @@
     return (keepCase ? t : t.toLowerCase())
       .replace(/[‘’“”]/g, "'")
       .replace(/[–—−]/g, "-")
-      .replace(/[×·]/g, "x")
+      .replace(/[×·]/g, "x").replace(/÷/g, "/")
       .replace(/[µμ]/g, "u")
       .replace(/√/g, " sqrt ")
       .replace(/\s+/g, " ")

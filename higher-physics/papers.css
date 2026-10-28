@@ -24,6 +24,7 @@
 .pp-badge.low { border-color: var(--redstone); color: var(--redstone); }
 .pp-style { font-size: .8rem; color: var(--muted); margin: 0 0 .5em; font-style: italic; }
 .pp-stem > :first-child { margin-top: 0; }
+.pp-table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-collapse: collapse; }
 .pp-fig { margin: .8em 0; }
 .pp-fig { overflow-x: auto; }
 .pp-fig svg { min-width: 480px; max-width: 560px; background: #fffaf0; border-radius: 2px; }

@@ -187,7 +187,7 @@
             q: "Show that the frequency of the supply is 100 Hz.",
             steps: [
               { desc: "Period from the trace: one cycle is 5.0 div, so T = 5.0 × 2.0 ms = 10 ms", nums: [[10, 0.01]] },
-              { desc: "Relationship: f = 1/T", rel: ["f=1/t", "f=1/period", "frequency=1/", "t=1/f", "f=1/0?\\.01", "f=1/10"] },
+              { desc: "Relationship: f = 1/T", rel: ["f=1[/÷]t", "f=1[/÷]period", "frequency=1[/÷]", "t=1[/÷]f", "f=1[/÷]0?\\.01", "f=1[/÷]10"] },
               { desc: "Final line: f = 100 Hz", ans: 100, sf: 2, unit: ["hz", "hertz"] },
             ],
             sample: "One cycle spans 5.0 div, so T = 5.0 × 2.0 ms = 10 ms = 0.010 s\nf = 1/T\nf = 1/0.010 = 100 Hz",
@@ -236,7 +236,7 @@
             label: "(a)", type: "calc", marks: 3,
             q: "Calculate the total resistance of the circuit.",
             steps: [
-              { desc: "Relationship for resistors in parallel: 1/R = 1/R₁ + 1/R₂", rel: ["1/r[a-z_0-9₀-₉]*=1/" + VNUM + "\\+1/" + VNUM, "r[a-z_0-9]*=\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM + "\\)?"] },
+              { desc: "Relationship for resistors in parallel: 1/R = 1/R₁ + 1/R₂", rel: ["1/r[a-z_0-9₀-₉]*=1/" + VNUM + "\\+1/" + VNUM, "r?[a-z_0-9]*=?\\(?" + VNUM + "x" + VNUM + "\\)?/\\(?" + VNUM + "\\+" + VNUM + "\\)?"] },
               { desc: "Resistance of the parallel pair = 4.0 Ω", nums: [4.0] },
               { desc: "Total resistance 12 Ω (with unit)", ans: 12, sf: 2, unit: "Ω" },
             ],
@@ -247,9 +247,9 @@
             label: "(b)", type: "calc", marks: 4,
             q: "Calculate the current in lamp X.",
             steps: [
-              { desc: "Relationship: V = IR", rel: OHM },
+              { desc: "Relationship: V = IR", rel: OHM.concat(["i[a-z_0-9]*=\\(?[0-9.]+\\)?/\\(?[0-9.]+", "ratio", "splits?", "divid", "inverse"]) },
               { desc: "Total current from the supply: I = 12/12 = 1.0 A", nums: [1.0] },
-              { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [4.0] },
+              { desc: "p.d. across the parallel lamps: 12 − (1.0 × 8.0) = 4.0 V", nums: [[4.0, 0.3333, 0.33, 0.6667, 0.67]] },
               { desc: "Current in lamp X = 0.33 A (333 mA is also accepted)", ans: 1 / 3, sf: 2, unit: ["a", "amps", "amp", "amperes", "ampere"] },
             ],
             sample: "V = IR\nI(total) = V/R = 12/12 = 1.0 A\np.d. across R₁ = 1.0 × 8.0 = 8.0 V, so p.d. across the lamps = 12 − 8.0 = 4.0 V\nI(X) = V/R = 4.0/12 = 0.33 A",
@@ -314,10 +314,10 @@
             q: "The voltmeter reading is used to switch on the lamp. Explain why the voltmeter reading changes as the daylight fades.",
             points: [
               { desc: "The resistance of the LDR increases as the light level falls", not: ["\\bnot\\b.{0,30}(?:increas|rise)"],
-                all: [UP("resistance|ldr", 5)] },
+                all: [UP("resistance", 5) + "|\\b(?:higher|greater|larger|bigger|more)\\W+(?:\\w+\\W+){0,2}resistance"] },
               { desc: "The LDR takes a larger share of the 9.0 V, so the p.d. across the LDR (voltmeter reading) increases",
                 not: ["resistance\\W+(?:\\w+\\W+){0,3}(?:" + DECW + ")\\w*", "(?:" + DECW + ")\\w*\\W+(?:in\\W+)?(?:the\\W+)?(?:ldr\\W+)?resistance"],
-                all: [near(PD + "|reading|share|proportion|reads?", INC + "|more", 4)] },
+                all: [near(PD + "|reading|share|proportion|reads?|v|ratio|fraction", INC + "|more", 4)] },
             ],
             sample: "As the daylight fades the resistance of the LDR increases. The LDR then takes a larger share of the 9.0 V supply, so the p.d. across it, and the voltmeter reading, increases.",
             model: "<ul><li>The resistance of the LDR increases when the light level falls (1)</li><li>The LDR takes a larger share of the supply p.d. (V<sub>1</sub>/V<sub>2</sub> = R<sub>1</sub>/R<sub>2</sub>), so the voltmeter reading increases (1)</li></ul><p>Both marks need the chain resistance, then share of the p.d. A bare &ldquo;it gets darker so the reading goes up&rdquo; is the observation, not the explanation. In the dark the reading is 8.1 V, in daylight 1.8 V.</p>",
@@ -353,7 +353,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Use the graph to determine the internal resistance of the cell.",
             steps: [
-              { desc: "Relationship: r = −gradient (E = V + Ir, so V = E − rI)", rel: ["gradient", "slope", "e=v\\+ir", "v=e-ir", "r=\\(?e-v\\)?/i", "r=e/i", "e=i\\(r\\+r\\)", "v=-ir\\+e", "y=mx\\+c", "y2-y1"] },
+              { desc: "Relationship: r = −gradient (E = V + Ir, so V = E − rI)", rel: ["-gradient", "-slope", "gradient=\\(?-", "gradient=\\(?0-", "slope=\\(?-", "slope=\\(?0-", "negative", "magnitude", "r=\\(?δv\\)?[/÷]\\(?δi", "r=-?δv", "e=v\\+ir", "v=e-ir", "r=\\(?e-v\\)?/i", "r=e/i", "e=i\\(r\\+r\\)", "v=-ir\\+e", "y=mx\\+c", "y2-y1"] },
               { desc: "Values taken from the graph, e.g. (0, 4.5 V) and (3.0 A, 0)", nums: [[4.5, 3.0, 1.5]] },
               { desc: "Internal resistance 1.5 Ω (a positive value: r = −gradient)", ans: 1.5, sf: 2, abs: 0.1, unit: "Ω", signed: true },
             ],
@@ -365,7 +365,7 @@
             q: "The cell is now connected across a resistor of resistance 3.0 Ω. Calculate the lost volts.",
             steps: [
               { desc: "Relationship: E = I(R + r) or E = V + Ir",
-                rel: ["e=i\\(r\\+r\\)", "i=e/\\(?r\\+r\\)?", "e=v\\+ir", "i=e/\\(?[0-9.]+\\+[0-9.]+\\)?", "4\\.5=i\\([0-9.]+\\+[0-9.]+\\)", "v=e-ir", "e=ir\\+ir", "lostvolts=ir", "lostv=ir", "lostvolts=4\\.5-", "lostvolts=e-"] },
+                rel: ["e=i\\(r\\+r\\)", "i=e/\\(?r\\+r\\)?", "e=v\\+ir", "i=e/\\(?[0-9.]+\\+[0-9.]+\\)?", "4\\.5=i\\([0-9.]+\\+[0-9.]+\\)", "v=e-ir", "e=ir\\+ir", "lostvolts=ir", "lostv=ir", "lostvolts=4\\.5-", "lostvolts=e-", "e=[0-9.]+=ix", "ir=\\d", "lostvoltsir"] },
               { desc: "Substitution using E = 4.5 V, R = 3.0 Ω and r = 1.5 Ω", nums: [4.5, [3.0, 4.5]] },
               { desc: "Lost volts 1.5 V", ans: 1.5, sf: 2, unit: ["v", "volts", "volt"] },
             ],
@@ -414,7 +414,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the terminal potential difference of the battery while the starter motor is operating.",
             steps: [
-              { desc: "Relationship: E = V + Ir", rel: ["e=v\\+ir", "v=e-ir", "v=e-\\(?ixr", "lostvolts=ir", "lostv=ir", "e=ir\\+v"] },
+              { desc: "Relationship: E = V + Ir", rel: ["e=v\\+ir", "v=e-ir", "v=e-\\(?ixr", "lostvolts=ir", "lostv=ir", "e=ir\\+v", "lostvoltsir", "ir=\\d", "terminalp\\.?d\\.?=e-", "terminalp\\.?d\\.?=12\\.4-"] },
               { desc: "Substitution: 12.4, 150 and 0.040 (lost volts 6.0 V)", nums: [12.4, [150, 6.0], [0.04, 6.0]] },
               { desc: "Terminal p.d. 6.4 V", ans: 6.4, sf: 2, unit: ["v", "volts", "volt"] },
             ],
@@ -446,7 +446,7 @@
             label: "(a)", type: "calc", marks: 4,
             q: "Calculate the capacitance of the capacitor.",
             steps: [
-              { desc: "Relationship: Q = It", rel: ["q=it", "i=q/t", "t=q/i", "q=ixt", "q=[0-9.]+(?:x10\\^?-?[0-9]+)?[a-z]*x[0-9.]+"] },
+              { desc: "Relationship: Q = It", rel: ["q=it", "i=q/t", "t=q/i", "q=ixt", "charge=(?:it|ixt|[0-9.x^\\-e]+[a-zµ]*x[0-9.]+)", "q=[0-9.]+(?:x10\\^?-?[0-9]+)?[a-z]*x[0-9.]+"] },
               { desc: "Charge Q = 40 × 10⁻⁶ × 50 = 2.0 × 10⁻³ C (2000 µC or 2.0 mC also accepted)", rel: ["(?<![0-9.])2(?:\\.0*)?(?:x10\\^?-3|e-3)(?![0-9])", "(?<![0-9.])0?\\.0*2(?![0-9])", "(?<![0-9.])2000(?:\\.0*)?uc", "(?<![0-9.])2(?:\\.0*)?mc"] },
               { desc: "Relationship C = Q/V with V = 4.0 V", rel: ["c=q/v", "v=q/c", "q=cv", "c=[0-9.x^\\-e]+[a-z]*[/÷]4(?:\\.0)?(?![0-9])"], nums: [4.0] },
               { desc: "Capacitance 5.0 × 10⁻⁴ F (500 µF is also accepted)", ans: 5e-4, sf: 2, unit: ["f", "farads", "farad"] },
@@ -698,7 +698,7 @@
             q: "Explain how a potential difference is produced across a solar cell when light shines on it.",
             points: [
               { desc: "Absorbed photons give electrons enough energy to move from the valence band to the conduction band (producing electron-hole pairs)",
-                all: [near("photons?|light", "absorb\\w*|hit\\w*|strike\\w*|arrive|shine\\w*|shining|give\\w*|provid\\w*|transfer\\w*", 6), near("electrons?", "valence|conduction|energy|excit\\w*|freed|free|release\\w*|promot\\w*|pairs?", 6), "conduction band|conduction|electron-hole|pairs?"] },
+                all: [near("photons?|light", "absorb\\w*|hit\\w*|strike\\w*|arrive|shine\\w*|shining|give\\w*|provid\\w*|transfer\\w*|excit\\w*|creat\\w*|produc\\w*|generat\\w*|liberat\\w*|knock\\w*|releas\\w*", 6), near("electrons?", "valence|conduction|energy|excit\\w*|freed|free|release\\w*|promot\\w*|pairs?", 6), "conduction band|conduction|electron-hole|pairs?"] },
               { desc: "The electric field in the junction pushes the electrons to the n-type side (and the holes to the p-type side), so a p.d. develops across the cell",
                 all: [near("field|junction|depletion", "push\\w*|force\\w*|sweep\\w*|separat\\w*|drives?|driven|attract\\w*", 6), "n-type|n side|p-type|p side|opposite|across|between|terminals?|p\\.?d\\.?|voltage"] },
             ],

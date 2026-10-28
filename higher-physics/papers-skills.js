@@ -241,7 +241,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Use the graph to determine the internal resistance of the cell.",
             steps: [
-              { desc: "Relationship: V = E − Ir, so r is minus the gradient (or gradient = ΔV/ΔI)", rel: ["v=e-ir", "e=v\\+ir", "r=-?\\(?(?:gradient|slope)", "-?(?:gradient|slope)=", "r=-?\\(?e-v\\)?[/÷]i", "(?:gradient|slope)=-?r", "rise[/÷]run", "\\(?y2-y1\\)?[/÷]\\(?x2-x1", "(?:δ|∆)v[/÷](?:δ|∆)i", "\\(?1\\.\\d+-1\\.\\d+\\)?[/÷]\\(?0?\\.\\d"] },
+              { desc: "Relationship: V = E − Ir, so r is minus the gradient (or gradient = ΔV/ΔI)", rel: ["v=e-ir", "e=v\\+ir", "lostvolts", "r=\\(?0?\\.[2-4]\\d*\\)?[/÷]\\(?0?\\.[4-6]", "r=-?\\(?(?:gradient|slope)", "-?(?:gradient|slope)=", "r=-?\\(?e-v\\)?[/÷]i", "(?:gradient|slope)=-?r", "rise[/÷]run", "\\(?y2-y1\\)?[/÷]\\(?x2-x1", "(?:δ|∆)v[/÷](?:δ|∆)i", "\\(?1\\.\\d+-1\\.\\d+\\)?[/÷]\\(?0?\\.\\d"] },
               { desc: "Two points on the line used (a V reading and a current reading from the line)", nums: [[1.5, 1.44, 1.38, 1.32, 1.26, 1.2, 1.14], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]] },
               { desc: "Internal resistance with unit: 0.60 Ω", ans: 0.6, sf: 2, abs: 0.04, signed: true, unit: ["ω", "ohm", "ohms"] },
             ],
@@ -260,7 +260,7 @@
                 any: [nearT("lost volts|\\bir\\b|internal resistance|p\\.?d\\.? across (?:the )?(?:internal|source|battery|cell)", UP, 7)] },
               { desc: "So the terminal p.d. (the p.d. across the lamp) falls and the lamp is dimmer", group: "c",
                 not: [negFor(DOWN)],
-                any: [nearT("terminal|t\\.?p\\.?d|(?:p\\.?d\\.?|voltage|potential difference) (?:across|of|at) (?:the )?(?:lamp|bulb|headlamp|light|battery|supply|source|cell|terminals)|(?:lamp|bulb|headlamp)'?s? (?:p\\.?d\\.?|voltage|potential difference)", DOWN, 6)] },
+                any: [nearT("terminal|t\\.?p\\.?d|(?:p\\.?d\\.?|voltage|potential difference) (?:across|of|at) (?:the )?(?:lamp|bulb|headlamp|light|battery|supply|source|cell|terminals)|(?:lamp|bulb|headlamp)'?s? (?:p\\.?d\\.?|voltage|potential difference)", DOWN, 6), "\\b(?:leaving|leaves|left)\\W+(?:\\w+\\W+){0,2}less\\W+(?:\\w+\\W+){0,3}(?:lamp|bulb|headlamp|light)", "\\bless\\W+(?:voltage|p\\.?d\\.?|potential difference)\\W+(?:\\w+\\W+){0,2}(?:lamp|bulb|headlamp|light)"] },
             ],
             sample: "The heater is in parallel with the lamp, so the total resistance of the circuit is lower and the current drawn from the battery is larger. The lost volts, Ir, across the internal resistance of the battery are therefore larger. By E = V + Ir the terminal p.d. is lower, so the p.d. across the lamp is lower and the lamp is dimmer.",
             model: "<p>Open-ended: three separate points, 1 mark each.</p><ul><li>Adding the heater in parallel decreases the total resistance, so the current drawn from the battery increases (1)</li><li>The lost volts, Ir, across the internal resistance increase (1)</li><li>E = V + Ir, so the terminal p.d., which is also the p.d. across the lamp, decreases and the lamp is dimmer (1)</li></ul><p>The EMF of the battery is constant; the internal resistance is constant. It is the lost volts that change. &quot;The heater takes some of the current from the lamp&quot; is not an explanation: in parallel the lamp keeps its own branch, and its current falls only because the p.d. across it falls.</p>",
@@ -373,7 +373,7 @@
             model: "<ul><li>h = ½gt², so the gradient = g/2 (1)</li><li>gradient = (2.51 − 0.06) ÷ (0.50 − 0) = 4.9 m s⁻², from two widely spaced points on the line (1)</li><li>g = 2 × 4.9 = 9.8 m s⁻² (1)</li></ul><p>Accept 9.4 to 10.2 m s⁻². The most common slip is to quote the gradient as g, forgetting the factor 2.</p>",
           },
           {
-            label: "(b)", type: "text", marks: 2, rows: 3, minWords: 8,
+            label: "(b)", type: "text", marks: 2, rows: 3, minWords: 2,
             q: "The line of best fit meets the h axis at 0.06 m, not at zero. State the type of uncertainty this indicates and suggest a possible cause.",
             points: [
               { desc: "A systematic uncertainty (error)", group: "a",
@@ -392,12 +392,12 @@
             points: [
               { desc: "Gravity (the astronaut's weight) still acts on them, as strongly as at the surface", group: "a",
                 not: [negFor("still|acting|acts?|strong\\w*|almost|nearly|close|present|exist\\w*|about")],
-                any: ["\\b(?:gravity|gravitational|weight|pull of the earth|earth'?s pull)\\W+(?:\\w+\\W+){0,6}(?:still|acts?|exists?|present|strong|almost|nearly|close|about 9\\d|90)", "\\b(?:still|almost|nearly|about)\\W+(?:\\w+\\W+){0,4}(?:gravity|gravitational|weight)"] },
+                any: ["\\b(?:gravity|gravitational|weight|pull of the earth|earth'?s pull)\\W+(?:\\w+\\W+){0,6}(?:still|acts?|exists?|present|strong|almost|nearly|close|about 9\\d|90)", "\\b(?:still|almost|nearly|about)\\W+(?:\\w+\\W+){0,4}(?:gravity|gravitational|weight)", "\\b(?:gravity|weight|gravitational)\\W+(?:\\w+\\W+){0,3}(?:hasn'?t|has not|doesn'?t|does not)\\W+(?:\\w+\\W+){0,2}(?:gone|disappear\\w*|vanish\\w*|go away|stop\\w*)"] },
               { desc: "The astronauts and the station are in free fall, accelerating towards the Earth at the same rate (gravity gives the centripetal acceleration of the orbit)", group: "b",
                 any: ["\\bfree[- ]?fall\\w*", "\\bfall(?:ing|s)?\\W+(?:\\w+\\W+){0,6}(?:together|same (?:rate|acceleration)|towards (?:the )?earth|around (?:the )?earth)", "\\baccelerat\\w+\\W+(?:\\w+\\W+){0,3}(?:towards|to|toward)\\W+(?:\\w+\\W+){0,2}(?:earth|centre|center)\\W+(?:\\w+\\W+){0,6}(?:together|same|both)", "\\b(?:together|both)\\W+(?:\\w+\\W+){0,6}accelerat\\w+\\W+(?:\\w+\\W+){0,3}(?:towards|toward|to) (?:the )?earth"] },
               { desc: "Nothing pushes up on them (no reaction/contact force from the floor), so they feel no weight", group: "c", negOK: true,
                 not: ["\\b(?:nothing|no|zero)\\W+(?:\\w+\\W+){0,3}(?:is|are|does|do)\\s+not\\b"],
-                any: ["\\b(?:no|nothing|zero)\\W+(?:\\w+\\W+){0,3}(?:reaction|contact force|normal force|push\\w*|support\\w*)", "\\b(?:reaction|contact|normal|supporting|support)\\W+(?:\\w+\\W+){0,2}force\\W+(?:\\w+\\W+){0,4}(?:zero|none|no|absent)", "\\bnothing (?:pushes|to push|supports|is pushing)", "\\b(?:feel|feels|feeling|experience|experiences)\\W+(?:\\w+\\W+){0,2}(?:no|zero) (?:weight|force|push)", "\\b(?:floor|station|surface)\\W+(?:\\w+\\W+){0,4}(?:pushes?|exerts?|provides?)\\W+(?:\\w+\\W+){0,3}(?:no|zero)"] },
+                any: ["\\b(?:no|nothing|zero)\\W+(?:\\w+\\W+){0,3}(?:reaction|contact force|normal force|push\\w*|support\\w*)", "\\b(?:reaction|contact|normal|supporting|support)\\W+(?:\\w+\\W+){0,2}force\\W+(?:\\w+\\W+){0,4}(?:zero|none|no|absent)", "\\bnothing (?:pushes|to push|supports|is pushing)", "\\b(?:feel|feels|feeling|experience|experiences)\\W+(?:\\w+\\W+){0,2}(?:no|zero) (?:weight|force|push)", "\\b(?:floor|station|surface)\\W+(?:\\w+\\W+){0,4}(?:pushes?|exerts?|provides?)\\W+(?:\\w+\\W+){0,3}(?:no|zero)", "\\b(?:floor|station|surface|ground)\\W+(?:\\w+\\W+){0,2}(?:does(?:n't| not)|cannot|can't|isn't|is not)\\W+(?:\\w+\\W+){0,2}(?:push|support|press|exert)\\w*"] },
             ],
             sample: "Gravity is still acting on the astronauts, and the pull is nearly as strong as at the surface. The astronauts and the station are in free fall together, accelerating towards the Earth at the same rate as they move around it. Nothing is pushing up on the astronauts from the floor, so they feel no weight and float.",
             model: "<p>Open-ended: three separate points, 1 mark each.</p><ul><li>Gravity (their weight) still acts: g is about 90 % of its value at the surface (1)</li><li>The astronauts and the station are in free fall, all accelerating towards the Earth at the same rate; gravity is the only force and provides the acceleration that keeps them in orbit (1)</li><li>No contact (reaction) force acts between the floor and the astronauts, so there is nothing pushing up on them and they feel weightless and float (1)</li></ul><p>&quot;There is no gravity in space&quot; is wrong: the weight is almost unchanged. They float because nothing supports them.</p>",
@@ -464,7 +464,7 @@
             label: "(b)", type: "calc", marks: 3,
             q: "Calculate the speed of sound from these measurements.",
             steps: [
-              { desc: "Relationship: d = vt (or v = d/t)", rel: ["v=d[/÷]t", "d=v\\u0304?t", "t=d[/÷]v", "v=s[/÷]t", "s=v\\u0304?t"] },
+              { desc: "Relationship: d = vt (or v = d/t)", rel: ["v=d[/÷]t", "d=v\\u0304?t", "t=d[/÷]v", "v=s[/÷]t", "s=v\\u0304?t", "speed=(?:distance|d|s)[/÷](?:time|t)", "distance=speed", "time=distance[/÷]speed"] },
               { desc: "Substitution with the time in seconds: 1.50 and 4.4 × 10⁻³", nums: [1.5, [4.4e-3, 0.0044, 4.4]], not: ["0\\.34\\d*m(?:s-1|/s|s\\^-1)\\.?$"] },
               { desc: "Speed with unit: 3.4 × 10² m s⁻¹", ans: 340.909, sf: 2, unit: ["m s-1", "m/s"] },
             ],
@@ -493,7 +493,7 @@
             label: "(a)", type: "calc", marks: 3,
             q: "Use the reading at 6.0 V to calculate the capacitance of the capacitor, in farads.",
             steps: [
-              { desc: "Relationship: C = Q/V", rel: ["c=q[/÷]v", "q=cv", "v=q[/÷]c"] },
+              { desc: "Relationship: C = Q/V", rel: ["c=q[/÷]v", "q=cv", "v=q[/÷]c", "capacitance=(?:charge|q)[/÷](?:voltage|v|potentialdifference|p\\.?d)", "charge=capacitance"] },
               { desc: "Substitution with the charge converted to coulombs: 28.8 × 10⁻⁶ C and 6.0 V", nums: [[2.88e-5, 28.8], 6.0] },
               { desc: "Capacitance with unit: 4.8 × 10⁻⁶ F (or 4.8 µF)", ans: 4.8e-6, sf: 2, unit: ["f", "farad", "farads"] },
             ],
