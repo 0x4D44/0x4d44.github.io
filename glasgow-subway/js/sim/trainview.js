@@ -188,6 +188,17 @@ export class TrainView {
     this._cullT0 = 0;
   }
   setWalkable(j) { this.walk = j; }
+  /** measured ceiling height above the floor at |x| (from computeHeadroom's ray casts), null if unavailable */
+  headroomMeasured(x) { const h = this.headroom; if (!h) return 9; const t = (x - h.xs[0]) / 0.05, i = Math.floor(t); if (i < 0 || i >= h.xs.length - 1) return 0; const a = h.head[i], b = h.head[i + 1]; if (a == null || b == null) return 0; return (a + (b - a) * (t - i)) - h.floorY; }
+  /** y (car-local) of the first saloon surface hit by a ray going down at (x, z) from 1.4 m above the floor: the bench seat top */
+  seatTopY(ci, x) {
+    const THREE = this.THREE, car = this.cars[ci], info = this.carInfo[ci], wc = this.walk && this.walk.cars && this.walk.cars[ci]; if (!car) return 0.695 + 0.43;
+    const rng = wc && wc.benchZRanges && wc.benchZRanges[0]; const z = rng ? (rng[0] + rng[1]) / 2 - info.zc : 0;
+    const meshes = []; const n = this.byName['car_' + ci + '_saloon']; if (n) n.traverse((m) => { if (m.isMesh) meshes.push(m); });
+    car.updateMatrixWorld(true); const rc = new THREE.Raycaster(), o = new THREE.Vector3(x, 1.1 + 0.695, z).applyMatrix4(car.matrixWorld), d = new THREE.Vector3(0, -1, 0).transformDirection(car.matrixWorld);
+    rc.set(o, d); rc.near = 0; rc.far = 1.2; const hit = rc.intersectObjects(meshes, false)[0]; if (!hit) return 0.695 + 0.43;
+    const loc = car.worldToLocal(hit.point.clone()); return loc.y > 0.695 + 0.3 && loc.y < 0.695 + 0.6 ? loc.y : 0.695 + 0.43;
+  }
   /** max head height above the floor at lateral x (interpolated); 0 outside the carbody */
   headroomAt(x) {
     const wk = this.walk && this.walk.headroomVsX;
