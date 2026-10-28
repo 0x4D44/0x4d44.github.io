@@ -211,6 +211,40 @@ for (const slug of slugs) {
   }
 }
 
+// Pages that are not <slug>/index.html but must hold to the same two rules, with
+// every [role=tab] opened in turn (a hidden tab panel has no width until it is
+// shown, so a wide figure or table in it is invisible to a load-time check).
+const EXTRA_PAGES = ["higher-physics/papers.html"];
+for (const page of EXTRA_PAGES) {
+  for (const vp of VIEWPORTS) {
+    await S("Emulation.setDeviceMetricsOverride", {
+      width: vp.width, height: vp.height, deviceScaleFactor: 1, mobile: vp.mobile,
+    });
+    await S("Page.navigate", { url: `${base}/${page}` });
+    for (let i = 0; i < 80; i++) {
+      if (await evaluate('document.readyState === "complete"')) break;
+      await delay(100);
+    }
+    await delay(450);
+    const nTabs = (await evaluate('document.querySelectorAll("[role=tab]").length')) || 0;
+    if (nTabs < 2) failures.push(`${page} @ ${vp.label}: expected the paper-deck tabs, found ${nTabs}`);
+    for (let t = -1; t < nTabs; t++) {
+      if (t >= 0) {
+        await evaluate(`document.querySelectorAll("[role=tab]")[${t}].click()`);
+        await delay(350);
+      }
+      const where = t < 0 ? "on load" : `tab ${t + 1}`;
+      const over = await evaluate(OVERFLOW);
+      if (over === null) { failures.push(`${page} @ ${vp.label} ${where}: page threw while measuring`); continue; }
+      if (over > 1) failures.push(`${page} @ ${vp.label} (${vp.width}px) ${where}: scrolls sideways by ${over}px`);
+      const buried = await evaluate(UNDER_PILL);
+      for (const b of buried || []) {
+        failures.push(`${page} @ ${vp.label} (${vp.width}px) ${where}: <${b.tag}> ${JSON.stringify(b.text)} is under the "← Almanac" pill, so it cannot be tapped`);
+      }
+    }
+  }
+}
+
 await cleanup();
 
 if (failures.length) {
@@ -220,4 +254,4 @@ if (failures.length) {
   console.error("tests/responsive.test.mjs for the usual causes of each kind.\n");
   process.exit(1);
 }
-console.log(`Responsive test: ${slugs.length} documents, no horizontal overflow and nothing tappable under the back pill, at 390px and 768px.`);
+console.log(`Responsive test: ${slugs.length} documents, no horizontal overflow and nothing tappable under the back pill, at 390px and 768px (plus ${EXTRA_PAGES.join(", ")} with every tab open).`);
