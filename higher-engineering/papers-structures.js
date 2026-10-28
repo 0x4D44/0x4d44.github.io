@@ -12,6 +12,8 @@
   const G = (n) => "(?:[\\w'-]+ ){0," + n + "}";
   /* K(n): like G but a comma may separate the words; a full stop, semicolon or colon still ends the stretch. */
   const K = (n) => "(?:[\\w'-]+,? ){0," + n + "}";
+  /* KB(n): like K, but the gap may not cross "but", "whereas" or "while" (a contrast starts a new claim) */
+  const KB = (n) => "(?:(?!but\\b|whereas\\b|while\\b|however\\b)[\\w'-]+,? ){0," + n + "}";
 
   /* Claims that turn the comparison round: cast iron stronger in tension, or its compressive figure read as a tensile one. */
   const WD = String.raw`\bcast(?: iron)?(?:'s)? ${G(8)}(?:stronger|higher|greater|better|more) ${G(5)}(?:in )?(?:tension|tensile|pulling|pull|stretch\w*)\b|\bcast(?: iron)?(?:'s)? ${G(8)}(?:6\d0|900|600)\b ${G(3)}(?:(?!compress)[\w'-]+ ){0,4}(?:in )?(?:tension|tensile)\b|\b(?:tension|tensile)\b ${G(3)}(?:strength|stress)? ?${G(3)}(?:of|for|in) cast(?: iron)? ${G(3)}(?:is|are) ${G(3)}(?:6\d0|900|600|higher|greater|stronger)`;
@@ -451,7 +453,7 @@
                   R`\b(?:ropes?|wires?|cables?)(?:'s)? ${K(8)}(?:weak|poor|bad|useless|no good)\w* (?:(?!compress|push|squash|but|strong|good|whereas)[\w'-]+,? ){0,4}(?:tension|tensile|pull\w*|stretch\w*)`,
                   R`\bjib ${K(5)}(?:in|under) (?:tension|tensile)`, R`\bjib ${K(4)}(?:is|are|being|gets?) ${G(1)}(?:pulled|stretched|pulling|stretching)`,
                   R`\btie ${K(5)}(?:in|under) compress\w*`, R`\btie ${K(4)}(?:is|are|being|gets?) ${G(1)}(?:pushed|squashed|compressed|pushing|squashing|crushed)`,
-                  R`\b(?:ropes?|wires?|cables?) ${K(3)}(?:suits?|is suitable|is good|is better|is fine|is ideal|is best|would be (?:good|better|suitable|ideal|fine|best)|are suitable|are good|are better|are ideal) ${K(2)}(?:the |a )?(?:jib|ab)\b`,
+                  R`\b(?:ropes?|wires?|cables?) ${K(3)}(?:suits?|is suitable|is good|is better|is fine|is ideal|is best|would be (?:good|better|suitable|ideal|fine|best)|are suitable|are good|are better|are ideal) ${KB(2)}(?:the |a )?(?:jib|ab)\b`,
                   R`\b(?:ropes?|wires?|cables?) (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|cannot|unable|but|whereas|while|however)[\w'-]+,? ){0,6}(?:good|strong|fine|ok|okay|better|suitable|resists?|withstands?|copes?|handles?) (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|cannot|unable|but|whereas|while|however)[\w'-]+,? ){0,2}(?:in |under |when |if |for )?(?:compress\w*|push\w*|squash\w*)`,
                   R`\b(?:pushed|compress\w*|push) ${K(3)}(?:just as well|equally well|as well as|equally|as easily)`,
                   R`\b(?:ropes?|wires?|cables?) ${K(3)}(?:not|isn't|aren't|weak) ${K(3)}(?:in )?(?:tension|tensile|pull\w*)`] },
@@ -460,7 +462,7 @@
                   R`\b(?:slack|limp|floppy|buckl\w*|sag\w*|collaps\w*|crumpl\w*|fold\w*|droop\w*|bend\w*) ${K(5)}(?:when|if|as|under) ${K(3)}(?:not|n't|never)\b`,
                   R`\btie ${K(4)}compress\w*`, R`\bjib ${K(5)}(?:in|under) (?:tension|tensile)`, R`\bjib ${K(4)}(?:is|are|being|gets?) ${G(1)}(?:pulled|stretched|pulling|stretching)`,
                   R`\bjib (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|un\w+|but|whereas|isn't)[\w'-]+,? ){0,6}(?:suitable|fine|ok|okay|would work|will work|can work|works|suits?|better|good)\b`,
-                  R`\b(?:ropes?|wires?|cables?) ${K(6)}(?:suits?|is suitable|is good|is better|is fine|is ideal|would be (?:good|better|suitable|ideal|fine|best)) ${K(2)}(?:the |a )?(?:jib|ab)\b`,
+                  R`\b(?:ropes?|wires?|cables?) ${K(6)}(?:suits?|is suitable|is good|is better|is fine|is ideal|would be (?:good|better|suitable|ideal|fine|best)) ${KB(2)}(?:the |a )?(?:jib|ab)\b`,
                   R`\b(?:ropes?|wires?|cables?) (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|cannot|unable|but|whereas|while|however|only)[\w'-]+ ){0,4}(?:can|could|would|will|also|able) (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|cannot|unable|but|whereas|while|however|buckl\w*|slack|sag\w*|collaps\w*|crumpl\w*|bend\w*|fold\w*|limp|floppy|droop\w*|just|simply)[\w'-]+ ){0,4}(?:in )?(?:push\w*|compress\w*|squash\w*)`,
                   R`\b(?:ropes?|wires?|cables?) (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|cannot|unable|but|whereas|while|however|only)[\w'-]+ ){0,4}(?:strong\w*|good|fine|ok|okay|resist\w*|withstand\w*|cope\w*|handle\w*) (?:(?!not\b|can't|won't|doesn't|don't|isn't|aren't|wouldn't|couldn't|n't|never|no\b|cannot|unable|but|whereas|while|however)[\w'-]+ ){0,4}(?:in )?(?:push\w*|compress\w*|squash\w*|bend\w*)`,
                   R`\b(?:pushed|compress\w*|push) ${K(3)}(?:just as well|equally well|as well as|equally|as easily)`],

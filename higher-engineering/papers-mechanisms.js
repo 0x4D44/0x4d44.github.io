@@ -16,7 +16,7 @@
   /* near(a, b, n): a and b in either order with at most n words between them */
   const near = (a, b, n) => { const g = R`\W+(?:\w+\W+){0,${n == null ? 3 : n}}`; return R`\b(?:${a})\b${g}\b(?:${b})\b|\b(?:${b})\b${g}\b(?:${a})\b`; };
   /* an outstroke or an instroke, in the words candidates use */
-  const OUT = R`(?:out-?\s?strok\w*|extend\w*|(?:moves?|goes?|comes?|pushes?|pushed|travels?)\s+out\w*|forwards?|advances?|thrust out)`;
+  const OUT = R`(?:out-?\s?strok\w*|extend\w*|push\w*\s+(?:the\s+)?(?:piston\s+|rod\s+|ram\s+)*out\b|(?:moves?|goes?|comes?|pushes?|pushed|travels?)\s+out\w*|forwards?|advances?|thrust out)`;
   const IN = R`(?:in-?\s?strok\w*|retract\w*|(?:moves?|goes?|comes?|pulls?|pulled|travels?|returns?)\s+(?:back\s+)?in\b|(?:moves?|goes?|comes?|returns?|pulls?|pulled)\s+back|returns?\b|withdraws?)`;
   const NEGS = R`\bnot\b|n't|\bnever\b|\bcannot\b|\bno\b|\bwithout\b`;
   /* ---- small SVG helpers (palette: ink, rust, paper, tan) ---- */
@@ -405,9 +405,9 @@
   {
     const ACT = R`(?:actuat\w*|press(?:ed|es|ing)?|depress\w*|operat\w*|activat\w*|triggered|push(?:ed|es|ing)?)`;
     const SREF = R`(?:s|valve s|button|push-?\s?button|3/2|three[- ]port)`;
-    const CHG = R`(?:changes?\s+(?:its\s+)?(?:state|position)|changed\s+(?:state|position)|switch(?:es|ed)?|shifts?|shifted|flips?|actuat\w*|operat\w*|moves?\s+(?:over|across)|reverses)`;
+    const CHG = R`(?:changes?\s+(?:its\s+)?(?:state|position|over)|changed\s+(?:state|position)|switch(?:es|ed)?|shifts?|shifted|flips?|actuat\w*|operat\w*|moves?\s+(?:over|across)|reverses)`;
     const VREF = R`(?:v|valve v|5/2|five[- ]port)`;
-    const PRESS = R`(?:press\w*|push(?:es|ed|ing)?\b(?!\s+(?:it|them|this|back)\b)|depress\w*|actuat\w*|operat\w*|activat\w*|trigger\w*|hold\w*|held)`;
+    const PRESS = R`(?:press\w*|push(?:es|ed|ing)?\b(?!\s+(?:it|them|this|back)\b)(?!\s+(?:the\s+)?(?:\w+\s+){0,2}back\b)|depress\w*|actuat\w*|operat\w*|activat\w*|trigger\w*|hold\w*|held)`;
     const REL = R`(?:releas\w*|let(?:s|ting)?\s+go|lets go|removed|no longer (?:pressed|held|operated)|stops? being (?:pressed|held)|taken off|unpress\w*|stops? pressing|let go)`;
     const RET = R`(?:spring|return\w*|reset\w*|revert\w*|snaps? back|springs? back|flips? back|switch(?:es)? back|(?:changes?|goes?|moves?) back|back (?:to|into) (?:its |their |the )?(?:original|rest|normal|first|starting))`;
     const IN2 = R`(?:in-?\s?strok(?:es|ed|ing)?|retract\w*|(?:moves?|goes?|comes?|pulls?|pulled|travels?)\s+(?:back\s+)?in\b|(?:piston|cylinder|rod|ram|c)\s+(?:then\s+|also\s+)?(?:returns?|goes?\s+back|comes?\s+back|moves?\s+back)|withdraws?|(?:door|oven)\s+(?:closes|shuts))`;
@@ -415,7 +415,7 @@
     const OUTW = R`(?:out-?\s?strok(?:es|e)\b|extends?\b|goes? (?:out|forward)|moves? (?:out|forward)|pushes? out|advances?)`;
     const ENDS = R`(?:exhaust\w*|vent\w*|remov\w*|cuts? off|stops?|release\w*|loses?|drops?|isolat\w*|blocks?|bleed\w*)`;
     const NOPIL = R`\bnothing\s+(?:happens|changes)|\bno\s+(?:pilot|signal)|\b(?:not|never|n't)\s+(?:\w+\s+){0,1}(?:change|shift|switch|flip|operate|actuate)`;
-    const CAP = R`(?:air|pressure|flows?|suppl\w*|goes|go|gets?|enters?|reach\w*|sent|to|into|fills?|admitted)\s+(?:\w+\s+){0,2}(?:the\s+)?cap\b(?:\s+end)?`;
+    const CAP = R`(?:air|pressure|flows?|suppl\w*|goes|go|gets?|enters?|reach\w*|sent|to|into|fills?|admitted)\s+(?:\w+\s+){0,3}(?:the\s+)?(?:cap|piston|blank)\b(?:\s+end)?`;
     TXT.simple = {
       points: [
         {
@@ -502,7 +502,7 @@
           not: BADLATCH,
           negOK: true,
           all: [R`(?:\bk1\b|relay|coil)`, CONTACT, R`(?:clos\w*|make\w*|made|shut|join\w*|connect\w*|complet\w*)`],
-          win: 110,
+          win: 60,
         },
         {
           desc: "When S1 is pressed relay K1 is energised and its contact closes",
@@ -510,7 +510,7 @@
           not: BADLATCH,
           negOK: true,
           all: [CONTACT, R`(?:parallel|across\s+s1|bypass\w*|alongside|latch\w*)`],
-          win: 110,
+          win: 60,
         },
         {
           desc: "The contact is in parallel with S1 (a latch), giving the current another path, so K1 and Y1 stay energised after S1 is released",
@@ -641,7 +641,7 @@
             R`\bmisalign\w*${K(15)}\b(?:is|are|would be|will be)\s+(?:a\s+|an\s+)?(?:problem|issue|not (?:allowed|possible|tolerated|accepted)|impossible|bad)`,
             R`\bwithout\s+(?:any\s+)?(?:allowance|tolerance|provision|room|flexibility)\b${K(25)}misalign`,
           ],
-          any: [R`\bmisalign\w*`, R`\bnot\s+(?:\w+\s+){0,2}(?:perfectly\s+)?(?:aligned|lined up|in line)`, R`\b(?:slight|small|minor|little|tiny)\s+(?:\w+\s+){0,1}(?:error|errors|offset|difference|gap|misfit|movement)`, R`\bout of (?:line|alignment|true)`, R`\boff[- ]cent\w*|\boff[- ]line\b|\bnot\s+(?:\w+\s+){0,2}(?:central|concentric|straight|true|exactly (?:aligned|in line))`],
+          any: [R`\bmisalign\w*`, R`\bnot\s+(?:\w+\s+){0,2}(?:perfectly\s+)?(?:aligned|lined up|in line)`, R`\b(?:slight|small|minor|little|tiny)\s+(?:\w+\s+){0,1}(?:error|errors|offset|difference|gap|misfit|movement)`, R`\bout of (?:line|alignment|true)`, R`\b(?:line|lined|lining)\s+up\b`, R`\balign(?:ment|ed|ing)?\b`, R`\bnever\s+(?:\w+\s+){0,2}(?:perfect\w*|exact\w*)`, R`\boff[- ]cent\w*|\boff[- ]line\b|\bnot\s+(?:\w+\s+){0,2}(?:central|concentric|straight|true|exactly (?:aligned|in line))`],
         },
         {
           desc: "It absorbs shock loads and vibration (for example when the conveyor starts)",
@@ -674,14 +674,14 @@
         desc: "The worm pushes along its own shaft, so there is an axial (end) load that the thrust bearing carries",
         negOK: true,
         all: [
-          R`\b(?:axial|axially|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|end\s*(?:load|thrust|force)|thrust\s+(?:load|force)|lengthways|longways|parallel\s+to\s+(?:the\s+)?(?:shaft|axis))`,
-          R`\b(?:carr\w*|support\w*|take[sn]?|taking|withstand\w*|resist\w*|absorb\w*|handl\w*|cop(?:e|es|ing)|stop\w*|prevent\w*|hold\w*|against|deal\w*|bear\w*)\b`,
+          R`\b(?:axial|axially|along\s+(?:the\s+|its\s+|their\s+)?(?:own\s+)?(?:axis|shaft|length)|end\s*(?:load|thrust|force)|thrust\s+(?:load|force)|thrust(?!\s+bearing)|sideways\s+(?:load|force|thrust)|lengthways|longways|parallel\s+to\s+(?:the\s+)?(?:shaft|axis))`,
+          R`\b(?:worm\w*|gear\w*|teeth|tooth|meshing|shaft|drives?|driving|produc\w*|creat\w*|generat\w*|caus\w*|experienc\w*|push\w*|force[sd]?|carr\w*|support\w*|take[sn]?|taking|withstand\w*|resist\w*|absorb\w*|handl\w*|cop(?:e|es|ing)|stop\w*|prevent\w*|hold\w*|against|deal\w*|bear\w*)\b`,
         ],
         not: [
           R`(?<!\b(?:plain|normal|ordinary|radial|journal|standard|simple|ball|roller|other|usual|normal)\s+bearings?\s)(?:\bno\b|\bnot\b(?!\s+only)|n't|\bnever\b|\bcannot\b|\bwithout\b|\bnor\b|\bneither\b)(?!\s+(?:slid\w*|slip\w*|mov\w*|shift\w*|push\w*|creep\w*|drift\w*|travel\w*))(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b|\bbecause\b|\bthat\b)[^.;,]){0,40}\b(?:axial|axially|along|end\s*(?:load|thrust|force)|thrust|lengthways|longways|parallel)`,
           R`\b(?:axial|end\s*(?:load|thrust|force)|thrust\s+(?:load|force))\b(?:(?!\band\b|\bbut\b|\bso\b|\bwhich\b)[^.;,]){0,25}\b(?:not|never|cannot|can't|unable)\s+(?:be\s+)?(?:carr|support|take|withstand|resist|handl|bear|stop)\w*`,
         ],
-        win: 110,
+        win: 70,
       },
     ],
     sample: "The teeth of the worm push it along its own shaft, and the thrust bearing carries this axial load.",
@@ -856,7 +856,7 @@
             why: R`<p>$T_{out} = T_{in} \times \text{VR} \times \eta$ (1)</p><p>$T_{out} = 6.0 \times 4 \times 0.92 = 22.1\ \text{N m}$ (1)</p><p>An ideal train would give 24 N m; the 8% loss takes off the rest.</p>`,
           },
           {
-            label: "(e)", type: "text", marks: 2, rows: 4, minWords: 8,
+            label: "(e)", type: "text", marks: 2, rows: 4, minWords: 4,
             q: R`Explain, in terms of speed and torque, why a reduction gear train is fitted between the motor and the winch drum.`,
             points: TXT.reduct.points,
             sample: TXT.reduct.sample,
