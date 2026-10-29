@@ -13,6 +13,7 @@ import { initAudio } from './audio/index.js';
 import { generatePlan } from './world/plan.js';
 import { buildWorld } from './world/terrain.js';
 import { buildProps } from './world/props.js';
+import { urbanDensity } from './world/periphery.js';
 import { planBuilding, buildBuilding } from './arch/index.js';
 import { loadInteriorAssets, furnishBuilding, buildInterior } from './interiors/index.js';
 import { loadPeople, spawnPeople } from './people/index.js';
@@ -34,7 +35,7 @@ const STAGES = [
   ['engine', 3, 'Encendiendo la luz…'], ['materials', 6, 'Mezclando pinturas y materiales…'], ['assets', 8, 'Trayendo muebles y vecinos…'],
   ['plan', 6, 'Trazando calles y escaleras…'], ['world', 10, 'Levantando el cerro…'], ['arch', 6, 'Pensando cada casa…'],
   ['furnish', 7, 'Amueblando los cuartos…'], ['colliders', 3, 'Poniendo las paredes en su sitio…'], ['build', 28, 'Construyendo casas y tiendas…'],
-  ['props', 8, 'Plantando árboles y postes…'], ['flush', 8, 'Juntándolo todo…'], ['people', 10, 'Despertando a los vecinos…'], ['start', 3, 'Casi listo…'],
+  ['props', 8, 'Plantando árboles y postes…'], ['flush', 8, 'Juntándolo todo…'], ['glow', 1, 'Encendiendo las farolas…'], ['people', 10, 'Despertando a los vecinos…'], ['start', 3, 'Casi listo…'],
 ];
 const TOTAL = STAGES.reduce((a, s) => a + s[1], 0);
 const HINTS = [
@@ -137,6 +138,8 @@ async function boot() {
       ctx.batch.flushAll();
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
     });
+    // every lamp is registered by now: one sprite each, and the far city on the hillsides round the plot (engine/glow.js)
+    await stage('glow', () => ctx.glow?.finalize({ far: ctx.plan?._far, density: (x, z) => urbanDensity(ctx.plan, x, z), seed: ctx.plan?.seed }));
     await stage('people', async () => { await loadPeople(ctx); spawnPeople(ctx); });
     await stage('start', async () => {
       // Textures are requested as materials are made and download alongside the build. Draw the first frame only once they are in: on a slow link

@@ -249,16 +249,20 @@ export function buildVehicles(K) {
       occ.take(x, z, 2.1); placed++; stats.cars++; if (taxi) stats.taxis++; rec(taxi ? 'taxi' : 'car', x, z, ry);
     }
   }
-  // ---- the buseta waits at the bus stop at the foot of the road
+  // ---- the buseta waits on the road near the bus stop. The 7.8 m between the gate hardware (z 98) and the Comercio crossing (z 90.4) is too short for it,
+  // so it takes the first stretch of S1 further up (either lane) that is clear of doors, side streets, nav lines and taken ground.
   {
     const s1 = plan.streets.find((s) => s.id === 'S1'), rr = R.fork('bus');
+    let done = false;
     if (s1) {
-      for (const s of [5, 4.6, 5.6, 6.6, 8, 14, 17, 20, 11, 24]) {                 // first choice: at the shelter (the road starts at the plot edge, z = 100)
-        const q = pointAt(s1._d.pts, s1._d.cum, s), lane = s1.width / 2 - 0.9 - 1.0, x = q.x + q.tz * lane, z = q.z - q.tx * lane, ry = Math.atan2(q.tx, q.tz) + Math.PI;
-        if (!okSpot(s1, x, z, x, z, 2.4, 7.8, ry, 0.4)) continue;
-        const y = H(x, z) + 0.04;
-        buseta(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rr.pick([0x2a6ab0, 0xd8402a, 0x3a9a5a]), stripe: 0xf2c230 });
-        K.rect(x, z, 2.2, 7.5, ry, 2.6, y); occ.take(x, z, 4); stats.busetas++; rec('buseta', x, z, ry); break;
+      for (let s = 5; s < Math.min(s1.len - 10, 260) && !done; s += s < 12 ? 1 : 2.5) {
+        for (const sd of [1, -1]) {
+          const q = pointAt(s1._d.pts, s1._d.cum, s), lane = s1.width / 2 - 0.9 - 1.0, x = q.x + q.tz * lane * sd, z = q.z - q.tx * lane * sd, ry = Math.atan2(q.tx, q.tz) + (sd > 0 ? Math.PI : 0);
+          if (!okSpot(s1, x, z, x, z, 2.4, 7.8, ry, 0.4) || !occ.clear(x, z, 0.5, OCC.DOOR)) continue;
+          const y = H(x, z) + 0.04;
+          buseta(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rr.pick([0x2a6ab0, 0xd8402a, 0x3a9a5a]), stripe: 0xf2c230 });
+          K.rect(x, z, 2.2, 7.5, ry, 2.6, y); occ.take(x, z, 4); stats.busetas++; rec('buseta', x, z, ry); done = true; break;
+        }
       }
     }
   }

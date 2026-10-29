@@ -415,7 +415,7 @@ export function bedroom(L, E, hh) {
     const small = ['bed_single', 'bed_single_metal', 'mattress_floor'];
     let b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
     if (!b && L.relaxKeeps(0.7)) b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
-    if (!b) b = any(() => L.wall('mattress_leaning', 'any', { prio: 1 }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true }));
+    if (!b) b = any(() => L.wall('mattress_leaning', 'any', { prio: 1 }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true, keepLateral: 0.05 }));
     if (b) beds = [b];
   }
   const bed = beds[0];

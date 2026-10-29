@@ -20,7 +20,7 @@ const FRAG = /* glsl */`
 precision highp float;
 varying vec3 vDir;
 uniform vec3 uSunDir, uMoonDir, uZenith, uHorizon, uGround, uSunCol, uGlowCol;
-uniform float uGlowAmt, uStars, uTime, uCloudAmt, uSunVis, uMoonVis, uAspect;
+uniform float uGlowAmt, uStars, uTime, uCloudAmt, uSunVis, uMoonVis, uAspect, uCity;
 
 float hash12( vec2 p ) { vec3 p3 = fract( vec3( p.xyx ) * 0.1031 ); p3 += dot( p3, p3.yzx + 33.33 ); return fract( ( p3.x + p3.y ) * p3.z ); }
 float hash13( vec3 p3 ) { p3 = fract( p3 * 0.1031 ); p3 += dot( p3, p3.zyx + 31.32 ); return fract( ( p3.x + p3.y ) * p3.z ); }
@@ -42,6 +42,15 @@ float starField( vec3 rd ) {
   float mag = 0.35 + 1.65 * hash13( id + 9.9 );
   float tw = 0.75 + 0.25 * sin( uTime * ( 1.5 + 3.0 * hash13( id + 2.2 ) ) + h * 80.0 );
   return smoothstep( 0.16, 0.0, d ) * mag * tw;
+}
+// The glow of the distant city on the air above it: orange, hugging the horizon, strongest down the valley (+z, south) where the districts are, thin
+// behind the hill, patchy where the parks and the river are. The lights themselves are real points on the far hillsides (engine/glow.js): the
+// terrain ring covers everything of the dome below the horizon. Fades in with uCity at dusk.
+vec3 cityGlow( vec3 rd ) {
+  float h = rd.y, a = atan( rd.x, rd.z );
+  float sector = 0.10 + 0.90 * ( 1.0 - smoothstep( 0.55, 2.5, abs( a ) ) );
+  float districts = 0.55 + 0.45 * vnoise( vec2( a * 5.0, 1.0 ) + 3.0 );
+  return vec3( 0.95, 0.50, 0.22 ) * 0.14 * sector * districts * exp( -abs( h ) * 13.0 ) * ( h > 0.0 ? 1.0 : 0.6 );
 }
 
 void main() {
@@ -75,6 +84,7 @@ void main() {
   col += vec3( 0.82, 0.88, 1.0 ) * ( smoothstep( 0.99984, 0.99991, md ) * 4.5 + pow( md, 160.0 ) * 0.22 ) * uMoonVis * vis * ( 1.0 - cov * 0.9 );
   // stars
   if ( uStars > 0.01 && h > 0.0 ) col += vec3( 0.85, 0.9, 1.0 ) * starField( rd ) * uStars * smoothstep( 0.0, 0.12, h ) * ( 1.0 - cov );
+  if ( uCity > 0.01 && abs( h ) < 0.5 ) col += cityGlow( rd ) * uCity;
   gl_FragColor = vec4( col, 1.0 );
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -85,7 +95,7 @@ export function createSky() {
     uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uMoonDir: { value: new THREE.Vector3(0, -1, 0) },
     uZenith: { value: new THREE.Color(0x3866ad) }, uHorizon: { value: new THREE.Color(0xe9b58c) }, uGround: { value: new THREE.Color(0x2a2118) },
     uSunCol: { value: new THREE.Color(1, 0.65, 0.35) }, uGlowCol: { value: new THREE.Color(1, 0.62, 0.35) },
-    uGlowAmt: { value: 0.4 }, uStars: { value: 0 }, uTime: { value: 0 }, uCloudAmt: { value: 0.6 }, uSunVis: { value: 1 }, uMoonVis: { value: 0 }, uAspect: { value: 1 },
+    uGlowAmt: { value: 0.4 }, uStars: { value: 0 }, uTime: { value: 0 }, uCloudAmt: { value: 0.6 }, uSunVis: { value: 1 }, uMoonVis: { value: 0 }, uAspect: { value: 1 }, uCity: { value: 0 },
   };
   const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, side: THREE.BackSide, depthWrite: false, depthTest: true, fog: false });
   mat.depthFunc = THREE.LessEqualDepth;

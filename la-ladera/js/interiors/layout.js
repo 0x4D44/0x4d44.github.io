@@ -266,8 +266,13 @@ export class Layout {
     }
     return false;
   }
-  _keepHit(ob) {
-    for (const k of this.keep) if (obbOverlap(ob, k.obb ?? rectObb(k), -0.01)) return k;
+  /** First keep-out the footprint overlaps. `lateral` trims that much off each side of a door's keep-out (its 5 cm margin), never the depth in front of the door. */
+  _keepHit(ob, lateral = 0) {
+    for (const k of this.keep) {
+      let r = k.obb ?? rectObb(k);
+      if (lateral && !k.obb && k.u0 != null) r = rectObb(k.wall === '-z' || k.wall === '+z' ? { ...k, x0: k.x0 + lateral, x1: k.x1 - lateral } : { ...k, z0: k.z0 + lateral, z1: k.z1 - lateral });
+      if (obbOverlap(ob, r, -0.01)) return k;
+    }
     return null;
   }
   _frontZone(it) {          // free space needed in front of / behind an item
@@ -281,7 +286,7 @@ export class Layout {
     if (!this.inside(it.ob)) return false;
     const flat = it.c.size[1] < 0.05;                    // rugs and mats: only avoid each other
     if (!flat) {
-      if (this._keepHit(it.ob) && !o.ignoreKeep) return false;
+      if (this._keepHit(it.ob, o.keepLateral ?? 0) && !o.ignoreKeep) return false;
       if (it.block && it.h > 0.5 && !o.winOk && this._windowHit(it.ob, it.h)) return false;
     }
     const zones = it.block && !o.noClear ? this._frontZone(it) : [];

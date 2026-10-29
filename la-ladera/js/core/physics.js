@@ -182,8 +182,11 @@ export class Physics {
     return false;
   }
 
-  /** Does the straight line (x1,z1)->(x2,z2) cross a wall that is solid at height y..y+h? (line of sight, NPC paths) */
-  segmentBlocked(x1, z1, x2, z2, y = 0, h = 1.6, ignoreDoor = null) {
+  /**
+   * Does the straight line (x1,z1)->(x2,z2) cross a wall that is solid at height y..y+h? (line of sight, NPC paths)
+   * `tall` > 0 counts only walls whose top is at least that far above y (a room wall, a shut door; not a piece of furniture).
+   */
+  segmentBlocked(x1, z1, x2, z2, y = 0, h = 1.6, ignoreDoor = null, tall = 0) {
     const len = Math.hypot(x2 - x1, z2 - z1), n = Math.max(1, Math.ceil(len / (CELL * 0.5)));
     const seen = new Set();
     for (let i = 0; i <= n; i++) {
@@ -191,7 +194,7 @@ export class Physics {
       const c = this._cell(Math.floor(x / CELL), Math.floor(z / CELL), false);
       if (!c) continue;
       for (const w of c.walls) {
-        if (seen.has(w) || !w.on || w.y1 <= y + 0.2 || w.y0 >= y + h) continue;
+        if (seen.has(w) || !w.on || w.y1 <= y + 0.2 || w.y0 >= y + h || w.y1 < y + tall) continue;
         if (ignoreDoor && w.door === ignoreDoor) continue;
         seen.add(w);
         const d1x = x2 - x1, d1z = z2 - z1, d2x = w.x2 - w.x1, d2z = w.z2 - w.z1;
@@ -219,7 +222,11 @@ export class Physics {
       if (this._step(s, s.x + tx, s.z + tz, R, H, STEP, SL)) continue;
       const okx = Math.abs(tx) > 1e-7 && this._step(s, s.x + tx, s.z, R, H, STEP, SL);
       const okz = Math.abs(tz) > 1e-7 && this._step(s, s.x, s.z + tz, R, H, STEP, SL);
-      if (!okx && !okz) { s.blocked = true; break; }
+      if (!okx && !okz) {
+        s.blocked = true;
+        if (this._pocket(s.x, s.z, s.y, R, H, STEP, SL) && this._unstick(s, dx, dz, R, H, STEP, SL)) continue;   // wedged, not just against a wall: out, then walk on
+        break;
+      }
     }
     // vertical
     const f = this._surf(s.x, s.z, s.y, STEP, H);
@@ -241,15 +248,59 @@ export class Physics {
     return s;
   }
 
-  _step(s, nx, nz, R, H, STEP, SL) {
+  /** Where a step of a character with feet at y toward (nx,nz) ends, or null when it is refused (walls that push back into walls, a head bump, a slope too steep). */
+  _stepPos(y, nx, nz, R, H, STEP, SL) {
     let px = nx, pz = nz;
-    const p = this._push(px, pz, s.y, R, H);
-    if (p) { px = p[0]; pz = p[1]; if (this._overlaps(px, pz, s.y, R, H)) return false; }
-    const f = this._surf(px, pz, s.y, STEP, H);
-    if (f.blocked) return false;
-    if (this.terrain && f.best > s.y + 0.05 && this._terrainGrad(px, pz) > SL && Math.abs(f.best - this.terrain(px, pz)) < 0.02) return false;
-    s.x = px; s.z = pz;
+    const p = this._push(px, pz, y, R, H);
+    if (p) { px = p[0]; pz = p[1]; if (this._overlaps(px, pz, y, R, H)) return null; }
+    const f = this._surf(px, pz, y, STEP, H);
+    if (f.blocked) return null;
+    if (this.terrain && f.best > y + 0.05 && this._terrainGrad(px, pz) > SL && Math.abs(f.best - this.terrain(px, pz)) < 0.02) return null;
+    return [px, pz];
+  }
+
+  _step(s, nx, nz, R, H, STEP, SL) {
+    const p = this._stepPos(s.y, nx, nz, R, H, STEP, SL);
+    if (!p) return false;
+    s.x = p[0]; s.z = p[1];
     return true;
+  }
+
+  /** True when a character at (x,z) can take no step of 0.12 m in any of eight directions: wedged inside wall zones, not merely standing against a wall. */
+  _pocket(x, z, y, R, H, STEP, SL) {
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      if (this._stepPos(y, x + 0.12 * Math.cos(a), z + 0.12 * Math.sin(a), R, H, STEP, SL)) return false;
+    }
+    return true;
+  }
+
+  /** A spot to stand on: free of every wall zone, on the same floor as the feet, not under a low ceiling, not on a slope too steep to climb. */
+  _standable(x, z, y, R, H, STEP, SL) {
+    if (this._overlaps(x, z, y, R, H)) return false;
+    const f = this._surf(x, z, y, STEP, H);
+    if (f.blocked || !(f.best > -Infinity) || Math.abs(f.best - y) > STEP) return false;
+    return !(this.terrain && f.best > y + 0.05 && this._terrainGrad(x, z) > SL && Math.abs(f.best - this.terrain(x, z)) < 0.02);
+  }
+
+  /**
+   * A character with no way to move (a jump landed it inside a piece of furniture's wall zone, a door shut on it, the push-out threw it into a
+   * second zone) is put on the nearest standable spot within 1.6 m on the same floor, preferring the heading it was walking. Never across a wall
+   * that stands 2 m or more above its feet (a room wall, a shut door): furniture outlines are crossed, rooms are not. Counted in s.unstuck.
+   */
+  _unstick(s, dx, dz, R, H, STEP, SL) {
+    const l = Math.hypot(dx, dz) || 1, hx = dx / l, hz = dz / l, ang = [];
+    for (let k = 0; k < 24; k++) ang.push((k * Math.PI) / 12);
+    ang.sort((a, b) => Math.cos(b) * hx + Math.sin(b) * hz - (Math.cos(a) * hx + Math.sin(a) * hz));
+    for (let r = 0.1; r < 1.65; r += 0.1) {
+      for (const a of ang) {
+        const x = s.x + r * Math.cos(a), z = s.z + r * Math.sin(a);
+        if (!this._standable(x, z, s.y, R, H, STEP, SL) || this.segmentBlocked(s.x, s.z, x, z, s.y, H, null, 2.0)) continue;
+        s.x = x; s.z = z; s.unstuck = (s.unstuck ?? 0) + 1;
+        return true;
+      }
+    }
+    return false;
   }
 
   stats() { return { walls: this.walls.length, floors: this.floors.length, cells: this.cells.size, doors: this.doors.size }; }

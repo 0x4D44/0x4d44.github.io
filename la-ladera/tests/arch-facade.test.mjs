@@ -132,3 +132,24 @@ test('without a canvas (Node) the atlas is absent and the signs fall back to fla
   assert.equal(ctx.matlib.cache.size, 0);
   assert.ok(GHOST_COUNT >= 6 && POSTER_COUNT >= 6, 'enough painted variety');
 });
+
+test('a sign painter that throws leaves the atlas standing, writes nothing to the console, and is reported through ctx.errors', () => {
+  // a recording stand-in for the 2D context: every call is a no-op, except that drawing the text "CANELO" (the lost-dog poster) throws
+  const g = new Proxy({}, {
+    get: (_, k) => (k === 'measureText' ? () => ({ width: 100 }) : k === 'createLinearGradient' ? () => ({ addColorStop() {} })
+      : k === 'fillText' ? (s) => { if (s === '"CANELO"') throw new Error('boom'); } : () => {}),
+    set: () => true,
+  });
+  const canvas = { width: 0, height: 0, getContext: () => g };
+  const lots = [{ id: 'L1', kind: 'shophouse', shop: 'tienda', name: 'Tienda' }];
+  const ctx = { matlib: { cache: new Map() }, plan: { lots } };
+  const heard = [], warn = console.warn, error = console.error;
+  globalThis.document = { createElement: () => canvas };
+  console.warn = (...a) => heard.push(['warn', ...a]); console.error = (...a) => heard.push(['error', ...a]);
+  try { ensureSignAtlas(ctx); } finally { console.warn = warn; console.error = error; delete globalThis.document; }
+  assert.ok(ctx.signAtlas, 'the atlas is still painted and published');
+  assert.ok(ctx.matlib.cache.has('sign_atlas'), 'the shared material is seeded');
+  assert.deepEqual(ctx.signAtlas.failed.map((f) => f.key), ['poster:2'], 'exactly the throwing painter is listed');
+  assert.deepEqual(heard, [], 'a console warning or error is a hard cap: report through ctx.errors instead');
+  assert.deepEqual((ctx.errors ?? []).map((e) => e.stage + ' ' + e.message), ['arch sign painter poster:2: boom']);
+});

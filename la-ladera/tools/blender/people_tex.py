@@ -42,10 +42,10 @@ XX, YY = np.meshgrid(np.arange(CELL), np.arange(CELL))
 # ---------------------------------------------------------------- fabrics (grey albedo ~0.8 so tints stay saturated)
 def f_skin(seed=1):
     n1 = fnoise(CELL, 1.4, seed); pores = fnoise(CELL, 0.2, seed + 1)
-    pit = np.clip(pores - 2.0, 0, None)
-    alb = 0.94 + 0.030 * n1 - 0.03 * pit
-    h = 0.35 * n1 * 0.2 - 0.9 * pit
-    return tile_out(alb, h, 0.58 + 0.06 * fnoise(CELL, 1.0, seed + 2), 0.0, 1.5)
+    pit = np.clip(pores - 2.4, 0, None)           # fewer and shallower pits: at 1.5 m the sun glinted off every one of them (bright specks on every forearm, like a rash)
+    alb = 0.94 + 0.030 * n1 - 0.02 * pit
+    h = 0.35 * n1 * 0.2 - 0.40 * pit
+    return tile_out(alb, h, 0.62 + 0.06 * fnoise(CELL, 1.0, seed + 2), 0.0, 0.9)
 
 def f_denim():
     warp = ((XX // 2) % 2).astype(np.float32); weft = ((YY // 2) % 2).astype(np.float32)

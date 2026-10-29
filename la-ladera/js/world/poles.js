@@ -221,10 +221,14 @@ export function buildPoles(K) {
     const hw = pl.w / 2 - 0.9, hd = pl.d / 2 - 0.9;
     const spots = pl.kind === 'court' ? [[-hw - 1.4, -hd - 1.4], [hw + 1.4, -hd - 1.4], [-hw - 1.4, hd + 1.4], [hw + 1.4, hd + 1.4]] : pl.kind === 'mirador' ? [[-hw, hd], [0, hd], [hw, hd]] : [[-hw * 0.7, -hd * 0.6], [hw * 0.7, hd * 0.6], [hw * 0.7, -hd * 0.6], [-hw * 0.7, hd * 0.6]];
     spots.slice(0, pl.kind === 'plaza' ? (pl.w > 14 ? 4 : 2) : 4).forEach(([lx, lz]) => {
-      const [x, z] = P(lx, lz);
-      if (!occ.clear(x, z, 0.25, OCC.STAIR | OCC.DOOR) || occ.overlaps(x, z, 0.4)) return;
-      if (pl.kind === 'court') floodlight(K, lampBuilder, x, z, ctx); else globePost(K, lampBuilder, x, z, ctx);
-      occ.take(x, z, 0.35);
+      // the nav lattice crosses every plaza: a post on one of its lines blocks the people, so it slides to the nearest spot beside the line
+      for (const [ox, oz] of [[0, 0], [0.9, 0], [-0.9, 0], [0, 0.9], [0, -0.9], [1.7, 0], [-1.7, 0], [0, 1.7], [0, -1.7]]) {
+        const [x, z] = P(lx + ox, lz + oz);
+        if (!occ.clear(x, z, 0.25, OCC.STAIR | OCC.DOOR) || occ.overlaps(x, z, 0.4) || occ.navDist(x, z) < 0.6) continue;
+        if (pl.kind === 'court') floodlight(K, lampBuilder, x, z, ctx); else globePost(K, lampBuilder, x, z, ctx);
+        occ.take(x, z, 0.35);
+        return;
+      }
     });
   }
   ctx.world && (ctx.world.poles = stats, ctx.world.poleList = poles.map((p) => ({ x: p.x, z: p.z, y: p.gy })));

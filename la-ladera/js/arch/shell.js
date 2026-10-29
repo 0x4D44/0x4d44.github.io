@@ -65,8 +65,6 @@ function outerFace(G, wl) {
   const m = caseta ? 'plaster_rough' : fs.m;
   const cuts = k === 0 && !caseta ? [0.0, 0.5, 0.95] : [];
   const damp = (y) => { if (caseta || k > 0) return 1; const h = y; return h <= 0 ? 1 : 0.55 + 0.45 * Math.min(1, h / 0.95); };
-  // a "peeling" facade peels where paint really fails first, at the foot of the wall; above 0.95 m it is plain rough-cast (the full-height texture reads as camouflage)
-  const mAt = (y0) => (m === 'paint_peeling' && (k > 0 || y0 >= 0.95 - 1e-3) ? 'plaster_rough' : m);
   columns(wl.a0, wl.a1, holes, G.rm.breaks(wl)).forEach((c, ci) => {
     const jit = 0.94 + 0.06 * hash01(wl.id, ci);
     const solids = [];
@@ -82,7 +80,7 @@ function outerFace(G, wl) {
           return;
         }
         const f0 = damp(y0) * jit, f1 = damp(Math.min(y1a, y1b)) * jit;
-        faceQuad(b, mAt(y0), wl.dir, plane, s, c.ua, c.ub, y0, y0, y1a, y1b, { cols: [mulc(wallCol, f0), mulc(wallCol, f0), mulc(wallCol, f1), mulc(wallCol, f1)] });
+        faceQuad(b, m, wl.dir, plane, s, c.ua, c.ub, y0, y0, y1a, y1b, { cols: [mulc(wallCol, f0), mulc(wallCol, f0), mulc(wallCol, f1), mulc(wallCol, f1)] });
       });
     }
   });

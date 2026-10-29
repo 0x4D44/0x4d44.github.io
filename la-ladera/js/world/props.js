@@ -13,6 +13,7 @@ import { buildBoundary } from './periphery.js';
 import { makeSignAtlas, buildSigns } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
+import { fitNav } from './navfit.js';
 
 export async function buildProps(ctx) {
   const plan = ctx.plan;
@@ -58,6 +59,7 @@ export async function buildProps(ctx) {
   await step('flora', () => buildFlora(K));
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
   await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks
+  await step('navfit', () => { ctx.world.navFit = fitNav(ctx); });   // every collider exists now: drop the nav edges a prop blocks (people read plan.nav after this)
   await step('discoveries', () => buildDiscoveries(K));
 
   ctx.world.propTimes = times;

@@ -45,19 +45,19 @@ export function freeChoices(npc, h) {
   const morning = h < 10, midday = h >= 10 && h < 14, afternoon = h >= 14 && h < 18, evening = h >= 18;
   switch (npc.routine) {
     case 'homemaker': return morning ? [['sweep', 4], ['errand', 3], ['chat', 2], ['wander', 1], ['bench', 1]]
-      : midday ? [['errand', 2], ['chat', 2], ['bench', 2], ['wander', 2], ['sweep', 1], ['phone', 1]]
-      : afternoon ? [['chat', 3], ['bench', 2], ['errand', 2], ['wander', 2], ['greet', 1], ['sweep', 1]]
-      : [['chat', 3], ['lean', 2], ['wander', 2], ['bench', 1], ['phone', 1]];
-    case 'neighbour': return [['lean', 3], ['chat', 3], ['bench', 2], ['wander', 2], ['errand', 2], ['phone', 2], ['stand', 1]];
+      : midday ? [['errand', 2], ['chat', 2], ['bench', 2], ['wander', 1], ['sweep', 1], ['phone', 1]]
+      : afternoon ? [['chat', 3], ['bench', 2], ['errand', 2], ['wander', 1], ['greet', 1], ['sweep', 1]]
+      : [['chat', 3], ['lean', 2], ['wander', 1], ['bench', 1], ['phone', 1]];
+    case 'neighbour': return [['lean', 3], ['chat', 3], ['bench', 2], ['wander', 1], ['errand', 2], ['phone', 2], ['stand', 1]];
     case 'elder': return npc.gender === 'f' && (morning || evening)
-      ? [['bench', 4], ['sweep', 2], ['chat', 3], ['wander', 2], ['pray', 1], ['greet', 1]] : [['bench', 5], ['chat', 3], ['wander', 2], ['greet', 1], ['sweep', 1]];
-    case 'kid': return morning ? [['wander', 3], ['stand', 1], ['court', 1]] : [['court', 7], ['wander', 2], ['bench', 1], ['chat', 1]];
-    case 'teen': return afternoon || evening ? [['lean', 3], ['phone', 3], ['chat', 3], ['court', 2], ['wander', 2], ['bench', 1]] : [['wander', 3], ['lean', 2], ['phone', 2], ['chat', 1]];
+      ? [['bench', 4], ['sweep', 2], ['chat', 3], ['wander', 1], ['pray', 1], ['greet', 1]] : [['bench', 5], ['chat', 3], ['wander', 1], ['greet', 1], ['sweep', 1]];
+    case 'kid': return morning ? [['wander', 2], ['stand', 1], ['court', 1]] : [['court', 7], ['wander', 1], ['bench', 1], ['chat', 1]];
+    case 'teen': return afternoon || evening ? [['lean', 3], ['phone', 3], ['chat', 3], ['court', 2], ['wander', 1], ['bench', 1]] : [['wander', 2], ['lean', 2], ['phone', 2], ['chat', 1]];
     case 'worker': return [['lean', 3], ['chat', 2], ['errand', 2], ['bench', 1], ['wander', 1]];
-    case 'teacher': case 'nurse': return [['errand', 2], ['wander', 2], ['bench', 2], ['chat', 2], ['sweep', 1]];
-    case 'moto': case 'vendor': return [['lean', 2], ['chat', 2], ['bench', 2], ['wander', 2], ['errand', 1]];
-    case 'beata': return [['pray', morning || evening ? 3 : 1], ['bench', 3], ['chat', 2], ['wander', 2], ['greet', 1]];
-    default: return [['wander', 3], ['bench', 1], ['chat', 1], ['stand', 1]];
+    case 'teacher': case 'nurse': return [['errand', 2], ['wander', 1], ['bench', 2], ['chat', 2], ['sweep', 1]];
+    case 'moto': case 'vendor': return [['lean', 2], ['chat', 2], ['bench', 2], ['wander', 1], ['errand', 1]];
+    case 'beata': return [['pray', morning || evening ? 3 : 1], ['bench', 3], ['chat', 2], ['wander', 1], ['greet', 1]];
+    default: return [['wander', 2], ['bench', 1], ['chat', 1], ['stand', 1]];
   }
 }
 

@@ -121,8 +121,9 @@ test('a walkable roof is a room, not a launch pad: no real jump (walk or sprint,
   for (const bp of bps) {
     if (!bp.roof.walkable) continue;
     roofs++;
-    const esc = roofJumpEscapes(ctx, bp);
-    if (esc.length) problems.push(`${bp.id} (${bp.shell.roofStyle}, parapet ${bp.shell.roofLayer?.parapetH}): ${esc.length} jumps clear the fence, e.g. ${JSON.stringify(esc[0])}`);
+    const { tested, escapes } = roofJumpEscapes(ctx, bp);
+    if (tested < 24) problems.push(`${bp.id}: only ${tested} jumps could be tried (the probe needs free spots along the fences)`);
+    if (escapes.length) problems.push(`${bp.id} (${bp.shell.roofStyle}, parapet ${bp.shell.roofLayer?.parapetH}): ${escapes.length} of ${tested} jumps clear the fence, e.g. ${JSON.stringify(escapes[0])}`);
   }
   assert.ok(roofs >= 6, `only ${roofs} walkable roofs / open decks in the test lots`);
   assert.deepEqual(problems, []);

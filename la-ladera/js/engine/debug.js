@@ -19,7 +19,7 @@ export function installDebug(ctx) {
         fps: st.fps, frameMs: st.frameMs, drawCalls: st.drawCalls ?? info?.render.calls, triangles: st.triangles ?? info?.render.triangles,
         geometries: info?.memory.geometries, textures: info?.memory.textures, programs: info?.programs?.length,
         quality: ctx.quality, qualityMode: ctx.qualityMode, night: r2(ctx.night ?? 0), sunEl: r2(ctx.sunEl ?? 0),
-        pool: ctx.pool?.stats?.(), visibility: ctx.visibility?.stats?.(), merge: ctx.batch?.mergeInfo ?? null, post: ctx.post ? { active: ctx.post.active, profile: ctx.post.name } : null,
+        pool: ctx.pool?.stats?.(), glow: ctx.glow?.stats?.() ?? null, visibility: ctx.visibility?.stats?.(), merge: ctx.batch?.mergeInfo ?? null, post: ctx.post ? { active: ctx.post.active, profile: ctx.post.name } : null,
         reversedZ: !!ctx.renderer?.capabilities?.reversedDepthBuffer, msaa: ctx.post?.profile?.samples ?? 0,
         buildings: ctx.buildings.size, anchors: ctx.anchors.length, lights: ctx.lights.list.length, discoveries: [ctx.discover.found.size, ctx.discover.total],
         npcs: ctx.people?.list?.().length ?? 0, errors: ctx.errors.length, timings: ctx.timings, physics: ctx.physics.stats(), audio: ctx.audio?.state?.() ?? null,
