@@ -22,12 +22,16 @@
 // illustration that needs a max-width; a full-bleed 100vw decoration (100vw
 // counts the scrollbar gutter).
 
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:http";
 import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { tmpdir } from "node:os";
+import os, { tmpdir } from "node:os";
+
+// Never compete with whoever is at the desk: below-normal priority (Chrome inherits it), no windows, and on Windows
+// the whole Chrome tree is killed at the end (process.kill(-pid) is POSIX-only and left a headless Chrome behind per run).
+try { os.setPriority(0, os.constants.priority.PRIORITY_BELOW_NORMAL); } catch { /* best effort */ }
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const VIEWPORTS = [
@@ -91,10 +95,11 @@ const chrome = spawn(chromeBin, [
   "--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
   "--no-sandbox", "--no-first-run", "--no-default-browser-check", "--mute-audio",
   "--disable-background-networking", "--force-prefers-reduced-motion", "about:blank",
-], { detached: true, stdio: "ignore" });
+], { detached: process.platform !== "win32", stdio: "ignore", windowsHide: true });
 
 const cleanup = async () => {
-  try { process.kill(-chrome.pid, "SIGKILL"); } catch { /* already gone */ }
+  if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+  else try { process.kill(-chrome.pid, "SIGKILL"); } catch { /* already gone */ }
   server.close();
   await rm(profile, { recursive: true, force: true }).catch(() => {});
 };

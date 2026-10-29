@@ -2,6 +2,7 @@
 // (stem balance fit, loop-tail fold, loudness) -> ffmpeg Ogg Opus -> assets/music/<id>/{stems,meta.json}.
 //   node build.mjs <track|all> [--no-render]      (tracks: menu sunrise redrock neon frost results stingers)
 // Env: SKY_SCRATCH (default: the agent scratchpad), FERRO (synth exe), FFMPEG.
+import '../../tests/tools/lowprio.mjs';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,7 +18,7 @@ const RATE = 48000;
 
 function run(cmd, args, label) {
   return new Promise((res, rej) => {
-    const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
     let err = ''; p.stderr.on('data', (d) => { err += d; }); p.stdout.on('data', () => {});
     p.on('close', (code) => (code === 0 ? res(err) : rej(new Error(`${label || cmd} exited ${code}\n${err.slice(-600)}`))));
   });
