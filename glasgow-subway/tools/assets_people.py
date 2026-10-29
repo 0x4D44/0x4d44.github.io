@@ -375,7 +375,7 @@ def build_person(pd):
         loft(pb, [ring(0, lean(P['nbase']) - 0.01, P['trap'] - 0.01, 0.085 * k, 0.07 * k, 20), ring(0, lean(P['nbase']) - 0.012, P['nbase'] + 0.035, 0.07 * k, 0.062 * k, 20)], 'torso', top, cap_top=False, cap_bot=False)
     # ---------------- neck + head
     ncy = lean(P['nbase']) * 0.7
-    nrings = [ring(0, ncy, P['nbase'] - 0.03, 0.062 * k, 0.058 * k, 10), ring(0, ncy + 0.004, P['nbase'] + 0.03 * k, 0.052 * k, 0.050 * k, 10), ring(0, ncy + 0.012, P['chin'] + hh * 0.18, 0.050 * k, 0.050 * k, 10)]
+    nrings = [ring(0, ncy, P['nbase'] - 0.03, 0.062 * k, 0.058 * k, 20), ring(0, ncy + 0.004, P['nbase'] + 0.03 * k, 0.054 * k, 0.051 * k, 20), ring(0, ncy + 0.010, P['chin'] + hh * 0.10, 0.054 * k, 0.054 * k, 20), ring(0, ncy + 0.026 * k, P['chin'] + hh * 0.30, 0.066 * k, 0.074 * k, 20)]
     loft(pb, nrings, 'neck', skin, cap_top=False, cap_bot=False)
     # head: skull profile (rx, ry, cy) over height fractions + sculpted face (analytic displacement of the front vertices)
     male = not fem
@@ -502,19 +502,38 @@ def build_person(pd):
             ua, ub = tx * 0.25 + 0.004, (tx + 1) * 0.25 - 0.004
             pb.F((L[i], R[i], R[i + 1], L[i + 1]), hexc, True, uv=[(ua, va), (ub, va), (ub, vb), (ua, vb)], fab_='hair_card')
     def cards_ring(angs, f0, f1, off0, flare, nseg, wid, layers=1, jitter=0.0, lenvar=0.15):
+        """solid hair volume: smooth-shaded shell over an arc of the head, per-column clump relief + uneven lengths, tapering to rounded ends"""
+        # arcs may wrap past 360: unwrap relative to the first angle
+        al = sorted(angs); a0, a1 = al[0] - math.radians(6), al[-1] + math.radians(6)
+        ncol = max(8, int((a1 - a0) / math.radians(8)))
         for L_ in range(layers):
-            for ang in angs:
-                a_ = ang + rng_h.uniform(-jitter, jitter)
-                ln = f1 * (1 + rng_h.uniform(-lenvar, lenvar)) if f1 > 0 else f1 * (1 + rng_h.uniform(-lenvar, lenvar))
-                pts = []
-                for j in range(nseg + 1):
-                    t = j / nseg; f = f0 + (ln - f0) * t
+            phase = rng_h.uniform(0, 6.28); lens = []
+            for i in range(ncol + 1):
+                v_ = 1 + lenvar * (math.sin(i * 1.7 + phase) * 0.6 + rng_h.uniform(-0.4, 0.4))
+                lens.append(f1 * v_ if f1 > 0 else f1 * v_)
+            rings_ = []
+            for j in range(nseg + 1):
+                t = j / nseg; pts = []
+                for i in range(ncol + 1):
+                    ang = a0 + (a1 - a0) * i / ncol
+                    f = f0 + (lens[i] - f0) * t
+                    edge = min(i, ncol - i) / 3.0
+                    clump = 0.005 * math.sin(i * 2.1 + phase) * min(1.0, t * 3)
+                    off = th + off0 + L_ * 0.008 + flare * (t ** 1.4) * hh + clump
+                    off *= (1.0 - 0.55 * (1 - min(1.0, edge)) * t)          # edges roll in toward the head
                     fh = max(f, 0.30)
-                    off = th + off0 + L_ * 0.006 + flare * (t ** 1.5) * hh
-                    pt = hair_point(a_, fh, off)
+                    pt = hair_point(ang, fh, off)
                     if f < 0.30: pt = (pt[0], pt[1], P['chin'] + f * hh)
-                    pts.append(torso_clamp(pt, a_, L_ * 0.006))
-                card(pts, wid * rng_h.uniform(0.9, 1.15) * hh, (rng_h.randrange(4), rng_h.randrange(4)))
+                    pts.append(torso_clamp(pt, ang, L_ * 0.008))
+                rings_.append(pts)
+            # rounded tip: one extra ring pulled in
+            tip = [(0.5 * (p_[0] + hair_point(a0 + (a1 - a0) * i / ncol, 0.30, 0)[0] * 0 ) + 0.0, 0, 0) for i, p_ in enumerate(rings_[-1])]
+            lr = rings_[-1]; ex = []
+            for i, p_ in enumerate(lr):
+                ang = a0 + (a1 - a0) * i / ncol
+                ex.append((p_[0] * 0.92, p_[1] - (0.012 if math.sin(ang) < 0 else -0.004), p_[2] - 0.035 * hh))
+            rings_.append(ex)
+            loft(pb, rings_, 'head', hcol, closed=False, cap_top=False, cap_bot=False, smooth=True)
     if style != 'bald':
         HN = 28
         rowsc = [r_ for r_ in crv(ctrl, 18) if (r_[0] - P['chin']) / hh >= 0.30]
@@ -552,9 +571,9 @@ def build_person(pd):
         if style == 'pony':
             cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.64, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.1)
             base = hair_point(math.radians(270), 0.78, th + 0.012)
-            for j in range(-2, 3):
-                pts = [(base[0] + j * 0.006, base[1], base[2]), (base[0] + j * 0.012, base[1] - 0.045 * hh, base[2] - 0.12 * hh), (base[0] + j * 0.018, base[1] - 0.075 * hh, base[2] - 0.46 * hh), (base[0] + j * 0.020, base[1] - 0.060 * hh, base[2] - 0.80 * hh), (base[0] + j * 0.022, base[1] - 0.04 * hh, base[2] - 1.02 * hh)]
-                card(pts, 0.11 * hh, (rng_h.randrange(4), rng_h.randrange(4)))
+            for j, wob in ((0, 0.0), (-1, -0.012), (1, 0.012)):
+                pts = [(base[0] + j * 0.010, base[1] + 0.004, base[2] + 0.004), (base[0] + j * 0.016 + wob * 0.3, base[1] - 0.05 * hh, base[2] - 0.12 * hh), (base[0] + j * 0.022 + wob, base[1] - 0.085 * hh, base[2] - 0.46 * hh), (base[0] + j * 0.020 + wob * 1.4, base[1] - 0.07 * hh, base[2] - 0.80 * hh), (base[0] + j * 0.020 + wob, base[1] - 0.05 * hh, base[2] - 1.0 * hh)]
+                tube_pts(pb, pts, [0.034 * k, 0.046 * k, 0.042 * k, 0.028 * k, 0.008 * k] if j == 0 else [0.024 * k, 0.034 * k, 0.030 * k, 0.020 * k, 0.006 * k], 'head', hcol, n=12)
             sphere(pb, base, 0.022 * k, 0.022 * k, 0.018 * k, 'head', '#d03a5a', 6, 3, fab_='rubber')
         if style == 'bun':
             cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.66, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.1)
