@@ -25,10 +25,10 @@ export const redrockDef = (() => {
   add(860, 92, -75, { hw: 105, hh: 70 });
   add(1120, 84, -195, { hw: 100, hh: 66 });
   add(1290, 76, -375, { mark: 'bend', hw: 95, hh: 62 });
-  add(1330, 70, -560, { mark: 'esses', hw: 72, hh: 52 });         // river esses
-  add(1285, 66, -690, { hw: 72, hh: 52 });
-  add(1360, 64, -820, { hw: 72, hh: 52 });
-  add(1300, 68, -945, { hw: 74, hh: 54 });
+  add(1330, 78, -560, { mark: 'esses', hw: 88, hh: 54 });         // river esses
+  add(1285, 76, -690, { hw: 90, hh: 54 });
+  add(1360, 76, -820, { hw: 92, hh: 54 });
+  add(1300, 78, -945, { hw: 90, hh: 54 });
   add(1245, 74, -1040, { mark: 'arch', hw: 58, hh: 44, bank: -10 });
   add(1170, 80, -1125, { hw: 90, hh: 64 });
   add(1030, 82, -1178, { hw: 105, hh: 75 });
@@ -66,11 +66,12 @@ export const redrockDef = (() => {
     sectors: ['bend', 'arch', 'spireEntry', 'bulge'],
     gateSpacing: 255,
     branches: [{
-      id: 'slot', name: 'Slot Canyon Shortcut', from: 'slotA', to: 'slotB', hw: 36, hh: 46, risk: 0.8, taper: 120,
+      id: 'slot', name: 'Slot Canyon Shortcut', from: 'slotA', to: 'slotB', hw: 44, hh: 48, risk: 0.8, taper: 120,
       points: [[-335, 114, -1020], [-345, 106, -850], [-365, 102, -670], [-420, 100, -470]],
       marks: { slot: 1 },
     }],
     boost: [
+      { branch: 0, u: 130, count: 7, gap: 120, radius: 17, weave: 6, power: 1.6, duration: 2.0 },   // slot canyon: rewarded line
       { mark: 'eyeLead', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'spireEntry', offset: -150, count: 2, gap: 50, weave: 20, radius: 20, power: 1.35, duration: 1.5 },
       { mark: 'esses', offset: -80, count: 2, gap: 70, weave: 18, radius: 20 },
@@ -78,9 +79,9 @@ export const redrockDef = (() => {
       { mark: 'deckMid', offset: -30, count: 1, radius: 22 },
     ],
     hazards: [
-      { kind: 'stack', column: true, mark: 'esses', offset: 40, lateral: 30, radius: 14, above: 30 },
-      { kind: 'stack', column: true, mark: 'esses', offset: 150, lateral: -34, radius: 14, above: 30 },
-      { kind: 'stack', column: true, mark: 'esses', offset: 260, lateral: 30, radius: 14, above: 30 },
+      { kind: 'stack', column: true, mark: 'esses', offset: 75, lateral: 24, radius: 12, above: 30 },
+      { kind: 'stack', column: true, mark: 'esses', offset: 215, lateral: -26, radius: 12, above: 30 },
+      { kind: 'stack', column: true, mark: 'esses', offset: 355, lateral: 24, radius: 12, above: 30 },
       { kind: 'stack', column: true, mark: 'bulge', offset: -120, lateral: -40, radius: 15, above: 30 },
       { kind: 'stack', column: true, mark: 'bulge', offset: 60, lateral: 42, radius: 15, above: 30 },
       { kind: 'stack', column: true, mark: 'bend', offset: -180, lateral: 45, radius: 16, above: 30 },

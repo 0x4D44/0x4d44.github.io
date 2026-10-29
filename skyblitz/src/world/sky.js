@@ -101,7 +101,7 @@ void main(){
   vC = c;
 }`;
 const CLOUD_FS = `
-uniform sampler2D tMap; uniform vec3 uLit, uShade, uFog; uniform float uFogD;
+uniform sampler2D tMap; uniform vec3 uLit, uShade, uFog; uniform float uFogD, uFade;
 varying vec2 vUv; varying float vA; varying vec3 vC;
 void main(){
   vec4 t = texture2D(tMap, vUv);
@@ -110,7 +110,7 @@ void main(){
   float d = length(cameraPosition - vC);
   float f = 1.0 - exp(-uFogD * uFogD * d * d);
   col = mix(col, uFog, f * 0.75);
-  gl_FragColor = vec4(col, t.a * vA);
+  gl_FragColor = vec4(col, t.a * vA * uFade);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`;
@@ -130,12 +130,12 @@ export function createCloudPuffs(env, game, list) {
   quad.setAttribute('aData', new THREE.InstancedBufferAttribute(dat, 4));
   const lit = env.cloudLit ?? new THREE.Color(1, 0.95, 0.9), shade = env.cloudShade ?? new THREE.Color(0.62, 0.66, 0.8);
   const mat = new THREE.ShaderMaterial({
-    uniforms: { tMap: { value: atlas.texture }, uLit: { value: lit }, uShade: { value: shade }, uFog: { value: env.fogColor }, uFogD: { value: env.fogDensity } },
+    uniforms: { tMap: { value: atlas.texture }, uLit: { value: lit }, uShade: { value: shade }, uFog: { value: env.fogColor }, uFogD: { value: env.fogDensity }, uFade: { value: 1 } },
     vertexShader: CLOUD_VS, fragmentShader: CLOUD_FS, transparent: true, depthWrite: false, fog: false,
   });
   const im = new THREE.InstancedMesh(quad, mat, n);
   const m = new THREE.Matrix4();
   list.forEach((c, i) => { im.setMatrixAt(i, m.makeTranslation(c.x, c.y, c.z)); });
   im.instanceMatrix.needsUpdate = true; im.frustumCulled = false; im.renderOrder = 5;
-  return { group: im, dispose() { quad.dispose(); mat.dispose(); } };
+  return { group: im, fade: mat.uniforms.uFade, dispose() { quad.dispose(); mat.dispose(); } };
 }

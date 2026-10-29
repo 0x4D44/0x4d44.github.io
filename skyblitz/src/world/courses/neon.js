@@ -13,7 +13,7 @@ const S = 0.9;                                   // horizontal scale of the hand
 // ---- hand-placed geometry the city generator needs (absolute world metres)
 export const NEON = {
   towerLoop: { entry: [1385 * S, 105, 640 * S], heading: [0, 1], R: 105, drift: 50, towerW: 84, towerTop: 412, gapToTower: 58 },
-  atrium: { z: 1530 * S, x0: 570 * S, x1: 930 * S, halfD: 64, top: 205, hw: 32, hh: 24 },
+  atrium: { z: 1530 * S, x0: 450 * S, x1: 975 * S, halfD: 64, top: 205, hw: 32, hh: 24 },
   river: { width: 170, pts: [[2300, 2500], [1800, 2150], [1300, 1950], [880, 1850], [420, 1900], [-60, 2080], [-520, 2160], [-1200, 2000], [-1700, 1600]].map(([x, z]) => [x * S, z * S]) },
   screens: { w: 84, d: 7, top: 188, gap: 52 },
 };
@@ -33,23 +33,24 @@ export const neonDef = (() => {
   b.loop(NEON.towerLoop.heading, { R: NEON.towerLoop.R, drift: NEON.towerLoop.drift, n: 12, tail: 140, hw: 46, hh: 50, mark: 'loop' });
   add(1318, 100, 960, { mark: 'hwyA', hw: 52, hh: 46 });
   add(1296, 92, 1150, { hw: 54, hh: 46 });
-  add(1268, 88, 1330, { mark: 'hwy', hw: 54, hh: 46 });
-  add(1190, 90, 1470, { hw: 54, hh: 46, bank: -14 });
-  add(1050, 92, 1535, { mark: 'hwyB', hw: 50, hh: 44 });
+  add(1255, 90, 1310, { mark: 'hwy', hw: 58, hh: 46 });
+  add(1150, 92, 1440, { hw: 60, hh: 46, bank: -14 });
+  add(1010, 98, 1520, { mark: 'hwyB', hw: 50, hh: 42 });
   // ---- atrium tunnel: dead straight west along z = 1530
-  add(940, 95, 1530, { mark: 'atriumIn', hw: 33, hh: 26 });
-  add(760, 95, 1530, { mark: 'atriumMid', hw: 31, hh: 25 });
-  add(580, 95, 1530, { mark: 'atriumOut', hw: 33, hh: 26 });
-  add(450, 96, 1530, { hw: 52, hh: 44 });
+  add(940, 100, 1530, { mark: 'atriumIn', hw: 38, hh: 30 });
+  add(760, 100, 1530, { mark: 'atriumMid', hw: 38, hh: 30 });
+  add(580, 100, 1530, { mark: 'atriumOut', hw: 38, hh: 30 });
+  add(450, 98, 1530, { hw: 50, hh: 42 });
   add(320, 102, 1532, { mark: 'branchA', hw: 56, hh: 46 });         // shortcut junction (west-bound)
   // ---- the long way: south-west bulge with a chicane
-  add(120, 108, 1590, { hw: 56, hh: 46 });
-  add(-130, 114, 1700, { mark: 'bulgeS', hw: 52, hh: 46, bank: 16 });
-  add(-390, 120, 1660, { hw: 50, hh: 46, bank: 16 });
-  add(-560, 126, 1480, { hw: 50, hh: 46 });
-  add(-540, 128, 1290, { mark: 'bulge', hw: 50, hh: 46 });
-  add(-640, 130, 1110, { hw: 50, hh: 46, bank: -20 });
-  add(-560, 132, 930, { hw: 50, hh: 46, bank: 20 });
+  add(150, 106, 1600, { hw: 58, hh: 46 });
+  add(-60, 112, 1700, { hw: 56, hh: 46, bank: 10 });
+  add(-300, 118, 1740, { mark: 'bulgeS', hw: 54, hh: 46, bank: 14 });
+  add(-520, 124, 1650, { hw: 54, hh: 46, bank: 14 });
+  add(-640, 128, 1470, { hw: 54, hh: 46 });
+  add(-650, 130, 1280, { mark: 'bulge', hw: 54, hh: 46 });
+  add(-610, 132, 1090, { hw: 54, hh: 46, bank: -10 });
+  add(-540, 134, 920, { hw: 54, hh: 46 });
   add(-470, 134, 780, { mark: 'branchB', hw: 54, hh: 46 });         // shortcut rejoin
   add(-420, 138, 560, { hw: 56, hh: 48 });
   add(-470, 142, 340, { mark: 'westAve', hw: 56, hh: 48 });
@@ -69,12 +70,13 @@ export const neonDef = (() => {
     sectors: ['avenue', 'hwy', 'atriumOut', 'bulge'],
     aiLatAccel: 62,
     branches: [{
-      id: 'billboard', name: 'Billboard Shortcut', from: 'branchA', to: 'branchB', hw: 28, hh: 34, risk: 0.75, taper: 120,
+      id: 'billboard', name: 'Billboard Shortcut', from: 'branchA', to: 'branchB', hw: 28, hh: 34, risk: 0.75, taper: 320,
       // heads NW through the slot between the two giant screens (mark 'gap'), then rejoins the west avenue
       points: [[150, 111, 1470], [-10, 116, 1300, null, 28, 34], [-130, 118, 1180], [-270, 124, 1040], [-380, 130, 910]].map(([x, y, z, ...r]) => [x * S, y, z * S, ...r]),
       marks: { gap: 1 },
     }],
     boost: [
+      { branch: 0, u: 130, count: 7, gap: 125, radius: 17, weave: 5, power: 1.6, duration: 2.0 },   // billboard slot: rewarded line
       { mark: 'loopEntry', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'sweepA', offset: -40, count: 2, gap: 55, weave: 22, radius: 20, power: 1.3, duration: 1.2 },
       { mark: 'hwy', offset: -150, count: 3, gap: 50, weave: 16, radius: 20, power: 1.35, duration: 1.4 },
@@ -83,23 +85,23 @@ export const neonDef = (() => {
       { mark: 'deckMid', offset: -30, count: 1, radius: 22 },
     ],
     hazards: [
-      // hover cars cross the avenue on rails (lateral sweep), blimps drift on slow vertical/lateral sways; moved by the scenery part
-      { kind: 'hovercar', mark: 'sweepA', offset: -200, lateral: 0, vertical: 4, radius: 7.5, data: { axis: 'lateral', amp: 36, period: 6.4 }, phase: 0.0 },
-      { kind: 'hovercar', mark: 'avenue', offset: -60, lateral: 0, vertical: -2, radius: 7.5, data: { axis: 'lateral', amp: 34, period: 5.6 }, phase: 2.1 },
-      { kind: 'hovercar', mark: 'hwy', offset: 120, lateral: 0, vertical: 6, radius: 7.5, data: { axis: 'lateral', amp: 36, period: 6.0 }, phase: 4.0 },
-      { kind: 'blimp', mark: 'sweepA', offset: 230, lateral: -34, vertical: 8, radius: 17, data: { axis: 'vertical', amp: 16, period: 9 }, phase: 1.0 },
-      { kind: 'hovercar', mark: 'bulge', offset: -160, lateral: 0, vertical: 0, radius: 7.5, data: { axis: 'lateral', amp: 36, period: 5.8 }, phase: 1.3 },
-      { kind: 'blimp', mark: 'westAve', offset: -150, lateral: 30, vertical: 6, radius: 17, data: { axis: 'lateral', amp: 22, period: 11 }, phase: 3.0 },
-      { kind: 'hovercar', mark: 'deckBack', offset: -150, lateral: 0, vertical: 4, radius: 7.5, data: { axis: 'lateral', amp: 36, period: 6.6 }, phase: 5.0 },
+      // hover cars shuttle across one half of the avenue on rails (the lane they leave free is always open), blimps drift on slow
+      // vertical / lateral sways; the scenery part moves them (data.axis / amp / period) and keeps h.pos current for collisions
+      { kind: 'hovercar', mark: 'sweepA', offset: -200, lateral: 34, vertical: 4, radius: 7.5, data: { axis: 'lateral', amp: 12, period: 5.6 }, phase: 0.0 },
+      { kind: 'hovercar', mark: 'avenue', offset: -60, lateral: -34, vertical: -2, radius: 7.5, data: { axis: 'lateral', amp: 12, period: 5.2 }, phase: 2.1 },
+      { kind: 'hovercar', mark: 'hwy', offset: 120, lateral: 34, vertical: 6, radius: 7.5, data: { axis: 'lateral', amp: 12, period: 5.8 }, phase: 4.0 },
+      { kind: 'blimp', mark: 'sweepA', offset: 230, lateral: -38, vertical: 8, radius: 17, data: { axis: 'vertical', amp: 14, period: 9 }, phase: 1.0 },
+      { kind: 'hovercar', mark: 'bulge', offset: -160, lateral: -34, vertical: 0, radius: 7.5, data: { axis: 'lateral', amp: 12, period: 5.4 }, phase: 1.3 },
+      { kind: 'blimp', mark: 'westAve', offset: -150, lateral: 30, vertical: 6, radius: 17, data: { axis: 'lateral', amp: 10, period: 11 }, phase: 3.0 },
     ],
     environment() {
       return {
-        sunDir: new THREE.Vector3(-0.35, 0.55, 0.3).normalize(), sunColor: new THREE.Color(0x7d9cff), sunIntensity: 0.55,
+        sunDir: new THREE.Vector3(0.62, 0.42, -0.35).normalize(), sunColor: new THREE.Color(0x7d9cff), sunIntensity: 0.55,
         skyTop: new THREE.Color(0x070d26), skyMid: new THREE.Color(0x1b1b4e), skyHorizon: new THREE.Color(0x6a2a6e), fogColor: new THREE.Color(0x1a1642),
         fogDensity: 0.00046, exposure: 1.05, night: true, ambientGround: new THREE.Color(0x4a2a58), hemiIntensity: 0.85, envIntensity: 1.1,
         ringColor: 0x7ff6ff, boostColor: 0xffe14a, shortcutColor: 0xff4fd8, guideColor: 0xd8f4ff, warnColor: 0xff5a1a,
         cloudLit: new THREE.Color(0.35, 0.25, 0.55), cloudShade: new THREE.Color(0.08, 0.06, 0.18),
-        bloom: { strength: 0.95, threshold: 0.8, radius: 0.65 }, grade: { saturation: 1.18, contrast: 1.1, vignette: 0.34, tint: new THREE.Color(0.97, 0.98, 1.06) },
+        bloom: { strength: 0.6, threshold: 0.92, radius: 0.55 }, grade: { saturation: 1.18, contrast: 1.1, vignette: 0.34, tint: new THREE.Color(0.97, 0.98, 1.06) },
       };
     },
   };

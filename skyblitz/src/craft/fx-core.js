@@ -4,8 +4,9 @@ import * as THREE from 'three';
 
 const VS = /* glsl */`
 attribute vec3 iPos; attribute float iSize; attribute float iRot; attribute vec4 iCol; attribute vec4 iUV;
-varying vec2 vUv; varying vec4 vCol;
+varying vec2 vUv; varying vec4 vCol; varying vec2 vQ;
 void main() {
+  vQ = position.xy * 2.0;
   vec4 mv = viewMatrix * vec4(iPos, 1.0);
   float c = cos(iRot), s = sin(iRot);
   vec2 p = position.xy * iSize;
@@ -14,9 +15,12 @@ void main() {
   gl_Position = projectionMatrix * mv;
 }`;
 const FS = /* glsl */`
-uniform sampler2D map; varying vec2 vUv; varying vec4 vCol;
+uniform sampler2D map; varying vec2 vUv; varying vec4 vCol; varying vec2 vQ;
 void main() {
   vec4 t = texture2D(map, vUv);
+  #ifdef RADIAL
+    t.a *= 1.0 - smoothstep(0.55, 1.0, length(vQ));
+  #endif
   #ifdef ADDITIVE
     gl_FragColor = vec4(t.rgb * vCol.rgb * (t.a * vCol.a), 1.0);
   #elif defined(PREMUL)
@@ -32,7 +36,7 @@ const STRIDE = 22;   // floats per particle in the sim array
 // layout: 0-2 pos, 3-5 vel, 6 age, 7 life, 8 s0, 9 s1, 10 rot, 11 rotV, 12-15 c0, 16-19 c1, 20 grav, 21 drag ; frames in Int arrays
 
 export class SpriteSystem {
-  constructor(texture, { cols = 1, rows = 1, additive = true, premul = false, cap = 2000, order = 5 } = {}) {
+  constructor(texture, { cols = 1, rows = 1, additive = true, premul = false, radial = false, cap = 2000, order = 5 } = {}) {
     this.cap = cap; this.n = 0; this.cols = cols; this.rows = rows; this.additive = additive;
     this.sim = new Float32Array(cap * STRIDE); this.f0 = new Int16Array(cap); this.fn = new Int16Array(cap);
     const base = new THREE.PlaneGeometry(1, 1);
@@ -45,7 +49,7 @@ export class SpriteSystem {
     g.setAttribute('iPos', this.aPos); g.setAttribute('iSize', this.aSize); g.setAttribute('iRot', this.aRot); g.setAttribute('iCol', this.aCol); g.setAttribute('iUV', this.aUV);
     g.instanceCount = 0;
     const mat = new THREE.ShaderMaterial({
-      uniforms: { map: { value: texture } }, vertexShader: VS, fragmentShader: FS, defines: additive ? { ADDITIVE: '' } : premul ? { PREMUL: '' } : {},
+      uniforms: { map: { value: texture } }, vertexShader: VS, fragmentShader: FS, defines: { ...(additive ? { ADDITIVE: '' } : premul ? { PREMUL: '' } : {}), ...(radial ? { RADIAL: '' } : {}) },
       transparent: true, depthWrite: false, blending: additive ? THREE.AdditiveBlending : premul ? THREE.CustomBlending : THREE.NormalBlending,
       blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor, blendEquation: THREE.AddEquation,
     });
@@ -154,8 +158,9 @@ export class RibbonSystem {
         let a = k >= cnt ? 0 : (1 - age); if (a < 0) a = 0;
         const fade = a * a * (3 - 2 * a);               // smoothstep fade-out along the length
         const head = Math.min(1, kk / 3);               // soft start at the aircraft end
-        const w = w0 * (0.35 + 0.65 * Math.min(1, age * 3 + 0.2) + age * 0.6) * (0.4 + 0.6 * head);
-        const al = fade * head * gain * 0.75;
+        const w = Math.min(w0 * (0.35 + 0.65 * Math.min(1, age * 3 + 0.2) + age * 0.6) * (0.4 + 0.6 * head), Math.hypot(cp.x - px, cp.y - py, cp.z - pz) * 0.01 + 0.03);
+        const dc = Math.hypot(cp.x - px, cp.y - py, cp.z - pz), near = Math.min(1, Math.max(0, (dc - 5) / 16));   // never a fat slab across the lens
+        const al = fade * head * gain * 0.55 * near * near * (3 - 2 * near);
         const v = (vbase + k * 2) * 3, c = (vbase + k * 2) * 4;
         this.pos[v] = px + _side.x * w; this.pos[v + 1] = py + _side.y * w; this.pos[v + 2] = pz + _side.z * w;
         this.pos[v + 3] = px - _side.x * w; this.pos[v + 4] = py - _side.y * w; this.pos[v + 5] = pz - _side.z * w;

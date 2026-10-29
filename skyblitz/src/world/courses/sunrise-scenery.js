@@ -4,6 +4,7 @@ import { mulberry32 } from '../../util.js';
 import { createSkyDome, createCloudPuffs } from '../sky.js';
 import { createWater } from '../water.js';
 import { buildPatch, createTerrainMaterial } from '../terrain.js';
+import { makeHutGeometry, makeJettyGeometry, makeBoatGeometry, makeFlowerGeometry, makeCoralGeometry, makeCrystalGeometry, makeStalactiteGeometry, makeBuoyGeometry } from '../props-isle.js';
 import { makePalmGeometry, makeRockGeometry, makeBalloonGeometry, makeLighthouse, makeRockArch, instanced, scatterAlongPath } from '../props.js';
 
 export async function buildScenery(course, game, progress, yieldFrame) {
@@ -21,7 +22,7 @@ export async function buildScenery(course, game, progress, yieldFrame) {
   const bounds = { minX, maxX, minZ, maxZ };
 
   // ---- water
-  course.addPart(createWater(env, game, { height: course.heightFn, bounds, deep: 0x0a4f85, shallow: 0x46dccb }));
+  course.addPart(createWater(env, game, { height: course.heightFn, bounds, deep: 0x083a78, shallow: 0x4ae6d2, reef: 1, maskRes: 1024 }));
   progress(0.35, 'Shaping terrain'); await yieldFrame();
 
   // ---- terrain patches around each island
@@ -61,11 +62,12 @@ export async function buildScenery(course, game, progress, yieldFrame) {
 function buildProps(course, game) {
   const q = game.q, def = course.def, H = course.heightFn;
   const group = new THREE.Group(); group.name = 'props'; course.group.add(group);
+  const up = new THREE.Vector3(0, 1, 0);
   const disposables = [];
   const sc = q.scenery;
   // ---- palms and boulders concentrated near the route
   const slope = (x, z) => Math.hypot(H(x + 6, z) - H(x - 6, z), H(x, z + 6) - H(x, z - 6)) / 12;
-  const palmSpots = scatterAlongPath(course, { count: Math.round(520 * sc), minLat: 4, maxLat: 520, seed: 11, accept: (x, z, h) => h > 3 && h < 46 && slope(x, z) < 0.55 });
+  const palmSpots = scatterAlongPath(course, { count: Math.round(900 * sc), minLat: 4, maxLat: 620, seed: 11, accept: (x, z, h) => h > 3 && h < 46 && slope(x, z) < 0.55 });
   const palmGeo = makePalmGeometry(), palmMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, side: THREE.DoubleSide });
   const rnd = mulberry32(99);
   const palms = palmSpots.map((o) => ({ pos: new THREE.Vector3(o.x, o.y - 0.5, o.z), yaw: rnd() * 6.28, scale: 0.8 + rnd() * 0.8, tx: (rnd() - 0.5) * 0.18, tz: (rnd() - 0.5) * 0.18 }));
@@ -77,20 +79,87 @@ function buildProps(course, game) {
   if (rocks.length) group.add(instanced(rockGeo, rockMat, rocks, { cast: false }));
   disposables.push(rockGeo, rockMat);
 
+  // ---- jungle canopy clumps, tall bushes and cliff boulders breaking up the smooth slopes
+  {
+    const r4 = mulberry32(555);
+    const bushGeo = makeRockGeometry({ seed: 13, detail: 1, rough: 0.5, stretch: [1, 0.8, 1], color: 0x5fb04a, color2: 0x1f5a2a }), bushGeo2 = makeRockGeometry({ seed: 17, detail: 1, rough: 0.5, stretch: [1, 0.9, 1], color: 0x8acb4a, color2: 0x2f7a32 });
+    const bushMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }); disposables.push(bushGeo, bushGeo2, bushMat);
+    const spots2 = scatterAlongPath(course, { count: Math.round(650 * sc), minLat: 4, maxLat: 650, seed: 71, accept: (x, z, h) => h > 5 && h < 150 && slope(x, z) < 0.9 });
+    const mk = (o) => { const s = 5 + r4() * 11; return { pos: new THREE.Vector3(o.x, o.y + s * 0.15, o.z), yaw: r4() * 6.28, scale: new THREE.Vector3(s * (1 + r4() * 0.6), s * (0.7 + r4() * 0.5), s * (1 + r4() * 0.6)) }; };
+    group.add(instanced(bushGeo, bushMat, spots2.filter((_, i) => i % 2 === 0).map(mk)), instanced(bushGeo2, bushMat, spots2.filter((_, i) => i % 2 === 1).map(mk)));
+    const cl = scatterAlongPath(course, { count: Math.round(160 * sc), minLat: 0, maxLat: 650, seed: 81, accept: (x, z, h) => h > 20 && h < 190 && slope(x, z) > 0.5 });
+    const bigRock = makeRockGeometry({ seed: 23, detail: 2, rough: 0.3, stretch: [1, 1.6, 1], color: 0x9a8f84, color2: 0x4a423c }), bigMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }); disposables.push(bigRock, bigMat);
+    group.add(instanced(bigRock, bigMat, cl.map((o) => { const s = 10 + r4() * 22; return { pos: new THREE.Vector3(o.x, o.y, o.z), yaw: r4() * 6.28, tx: (r4() - 0.5) * 0.3, scale: new THREE.Vector3(s, s * (0.9 + r4()), s) }; }), { cast: true }));
+  }
+
   // ---- sea stacks for the slalom hazards (columns, collision-matched)
   const stackGeo = makeRockGeometry({ seed: 9, detail: 2, rough: 0.28, color: 0xa39a90, color2: 0x5f5750 }), stackMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
   const stacks = course.hazards.filter((h) => h.kind === 'stack').map((h) => { const r = h.radius * 1.25, base = -4; return { pos: new THREE.Vector3(h.pos.x, base, h.pos.z), yaw: h.s, scale: new THREE.Vector3(r, h.top - base, r) }; });
   if (stacks.length) group.add(instanced(stackGeo, stackMat, stacks, { cast: true }));
   disposables.push(stackGeo, stackMat);
 
+  // ---- island dressing: huts + jetties on the beaches, boats and buoys in the lagoons, flowers, coral under the surface
+  {
+    const r2 = mulberry32(2024), place = (geo, mat, list, cast = false) => { if (list.length) group.add(instanced(geo, mat, list, { cast })); disposables.push(geo); };
+    const vcMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }); disposables.push(vcMat);
+    const beach = scatterAlongPath(course, { count: 30, minLat: 0, maxLat: 700, seed: 31, accept: (x, z, h) => h > 1.6 && h < 4.2 && slope(x, z) < 0.12 });
+    const seaDir = (x, z) => { let best = 0, bh = 1e9; for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, hh = H(x + Math.cos(a) * 45, z + Math.sin(a) * 45); if (hh < bh) { bh = hh; best = a; } } return best; };
+    const huts = [], jetties = [];
+    beach.forEach((o, i) => {
+      const a = seaDir(o.x, o.z);
+      if (i % 3 === 0 && jetties.length < 5) jetties.push({ pos: new THREE.Vector3(o.x, 0.2, o.z), yaw: Math.PI / 2 - a, scale: 1.2 });
+      else if (huts.length < 14) huts.push({ pos: new THREE.Vector3(o.x - Math.cos(a) * 8, o.y + 0.2, o.z - Math.sin(a) * 8), yaw: Math.PI / 2 - a, scale: 0.9 + r2() * 0.4 });
+    });
+    place(makeHutGeometry(), vcMat, huts, true); place(makeJettyGeometry(), vcMat, jetties);
+    const lagoon = scatterAlongPath(course, { count: 26, minLat: 0, maxLat: 900, seed: 41, accept: (x, z, h) => h < -6 && h > -30 });
+    place(makeBoatGeometry(), vcMat, lagoon.slice(0, 12).map((o) => ({ pos: new THREE.Vector3(o.x, 0.15, o.z), yaw: r2() * 6.28, scale: 0.9 + r2() * 0.6 })));
+    place(makeBuoyGeometry(), vcMat, lagoon.slice(12).map((o) => ({ pos: new THREE.Vector3(o.x, 0, o.z), yaw: 0, scale: 1.3 })));
+    const flowers = scatterAlongPath(course, { count: Math.round(420 * sc), minLat: 2, maxLat: 520, seed: 51, accept: (x, z, h) => h > 4 && h < 50 && slope(x, z) < 0.5 });
+    place(makeFlowerGeometry(), vcMat, flowers.map((o) => ({ pos: new THREE.Vector3(o.x, o.y, o.z), yaw: r2() * 6.28, scale: 1.2 + r2() * 1.8 })));
+    const coral = scatterAlongPath(course, { count: Math.round(320 * sc), minLat: 0, maxLat: 900, seed: 61, accept: (x, z, h) => h < -2.5 && h > -15 });
+    place(makeCoralGeometry(), vcMat, coral.map((o) => ({ pos: new THREE.Vector3(o.x, o.y - 0.4, o.z), yaw: r2() * 6.28, scale: 0.9 + r2() * 1.3 })));
+  }
+
+  // ---- sea-cave gorge dressing: glowing crystals on the walls, rock bridges with stalactites hanging beneath
+  {
+    const br = course.branches[0], r3 = mulberry32(77), f2 = {};
+    if (br) {
+      const crys = [], stal = [], bridges = [];
+      for (let u = 40; u < br.length - 40; u += 38) {
+        br.frameAt(u, f2);
+        for (const side of [-1, 1]) {
+          const lat = side * f2.halfWidth * (0.92 + r3() * 0.25), x = f2.pos.x + f2.right.x * lat, z = f2.pos.z + f2.right.z * lat;
+          const y = Math.max(-5, H(x, z)) - 1;
+          if (y < f2.pos.y + 10) crys.push({ pos: new THREE.Vector3(x, y, z), yaw: r3() * 6.28, tx: (r3() - 0.5) * 0.3, scale: 1.6 + r3() * 2.4 });
+        }
+      }
+      const archGeo = makeRockArch({ radius: 84, tube: 13, seed: 5, color: 0x8a7766, color2: 0x4a3c34 }), archMat2 = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 });
+      disposables.push(archGeo, archMat2);
+      for (let u = 150; u < br.length - 140; u += 230) {
+        br.frameAt(u, f2);
+        const rh = new THREE.Vector3(f2.right.x, 0, f2.right.z).normalize(), fw = new THREE.Vector3().crossVectors(rh, up);
+        const m = new THREE.Mesh(archGeo, archMat2); m.position.set(f2.pos.x, f2.pos.y + f2.halfHeight - 4, f2.pos.z);
+        m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(rh, up, fw)); m.castShadow = true; group.add(m); bridges.push(m);
+        const top = f2.pos.y + f2.halfHeight - 4 + 84 - 13;
+        for (let k = 0; k < 6; k++) { const a = (k / 5 - 0.5) * 1.5, lat = Math.sin(a) * 84, hy = Math.cos(a) * 84 - 13 * 0.8; stal.push({ pos: new THREE.Vector3(f2.pos.x + rh.x * lat, f2.pos.y + f2.halfHeight - 4 + hy - 2, f2.pos.z + rh.z * lat), yaw: r3() * 6, scale: new THREE.Vector3(2.4 + r3() * 2, 10 + r3() * 12, 2.4 + r3() * 2) }); }
+      }
+      const crystalMat = new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false }); crystalMat.color.setScalar(1.25); disposables.push(crystalMat);
+      const cg = makeCrystalGeometry(), sg = makeStalactiteGeometry(), stalMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+      disposables.push(cg, sg, stalMat);
+      if (crys.length) group.add(instanced(cg, crystalMat, crys, { receive: false }));
+      if (stal.length) group.add(instanced(sg, stalMat, stal, { cast: true }));
+    }
+  }
+
   // ---- hot-air balloons (sway)
   const balGeo = makeBalloonGeometry(), balMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7 }); disposables.push(balGeo, balMat);
   const balloons = course.hazards.filter((h) => h.kind === 'balloon').map((h) => { const m = new THREE.Mesh(balGeo, balMat); m.scale.setScalar(1.25); m.castShadow = true; group.add(m); return { h, m }; });
 
   // ---- sea arch: lintel spans the route between the two terrain pillars
+
   const af = course.frameAt(course.marks.arch, {});
-  const rightH = new THREE.Vector3(af.right.x, 0, af.right.z).normalize(), up = new THREE.Vector3(0, 1, 0), fwdH = new THREE.Vector3().crossVectors(rightH, up);
-  const archGeo = makeRockArch({ radius: 100, tube: 21 }), archMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }); disposables.push(archGeo, archMat);
+  const rightH = new THREE.Vector3(af.right.x, 0, af.right.z).normalize(), fwdH = new THREE.Vector3().crossVectors(rightH, up);
+  const archGeo = makeRockArch({ radius: 100, tube: 21, color: 0x9a8a78, color2: 0x56483f }), archMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }); disposables.push(archGeo, archMat);
   const arch = new THREE.Mesh(archGeo, archMat); arch.position.set(af.pos.x, af.pos.y - 35, af.pos.z);
   arch.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(rightH, up, fwdH)); arch.castShadow = true; arch.receiveShadow = true; group.add(arch);
 

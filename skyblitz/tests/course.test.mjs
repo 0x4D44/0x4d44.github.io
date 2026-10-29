@@ -203,6 +203,39 @@ for (const id of IDS) {
     }
   });
 
+  test(`${id}: inner 62% of the corridor ellipse is >= 8 m above terrain and water (main path, decks excluded)`, () => {
+    // Excluded spans (explicit): the launch deck ahead of the start line and the deck run-in behind it (the platform itself is the "ground" there);
+    // shortcut branches are not sampled (they are tubes through terrain by design).
+    const c0 = lay.startCfg, skipA = c0.fwd + 40, skipB = L - c0.back - 40, f = {}, bad = [];
+    const wl = def.waterLevel;
+    for (let s = 0; s < L; s += 10) {
+      if (s <= skipA || s >= skipB) continue;
+      lay.frameAt(s, f);
+      for (let a = -0.62; a <= 0.6201; a += 0.124) for (let b = -0.62; b <= 0.6201; b += 0.124) {
+        if (Math.hypot(a, b) > 0.62) continue;
+        const lx = a * f.halfWidth, ly = b * f.halfHeight;
+        const x = f.pos.x + f.right.x * lx + f.up.x * ly, y = f.pos.y + f.right.y * lx + f.up.y * ly, z = f.pos.z + f.right.z * lx + f.up.z * ly;
+        let c = y - lay.groundHeight(x, z); if (wl != null) c = Math.min(c, y - wl);
+        if (c < 8) { bad.push(`s=${s} (${a.toFixed(2)},${b.toFixed(2)}) clearance ${c.toFixed(1)}`); break; }
+      }
+    }
+    assert.equal(bad.length, 0, `${bad.length} samples under 8 m: ${bad.slice(0, 6).join('; ')}`);
+  });
+
+  test(`${id}: every shortcut carries boost rings inside its tube, ordered inside the credited main span`, () => {
+    const f = {};
+    lay.branches.forEach((b, bi) => {
+      const rings = lay.boostRings.filter((r) => r.branch === bi);
+      assert.ok(rings.length >= 5, `branch ${bi} has ${rings.length} boost rings`);
+      for (const r of rings) {
+        assert.ok(r.s > b.fromS && r.s < b.toS, `ring s=${r.s.toFixed(0)} outside span ${b.fromS.toFixed(0)}..${b.toS.toFixed(0)}`);
+        let best = 1e9;
+        for (let uu = 0; uu < b.length; uu += 5) { b.frameAt(uu, f); best = Math.min(best, Math.hypot(f.pos.x - r.pos.x, f.pos.y - r.pos.y, f.pos.z - r.pos.z)); }
+        assert.ok(best < Math.min(b.halfWidth, b.halfHeight) * 0.6, `ring ${best.toFixed(1)} m off the branch axis`);
+      }
+    });
+  });
+
   test(`${id}: collide: ground, hazard, wall; clear air returns false`, () => {
     const f = {}, p = new THREE.Vector3(), out = {}, proj = { branch: -1 };
     lay.frameAt(L * 0.3, f);

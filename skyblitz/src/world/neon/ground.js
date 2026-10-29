@@ -112,7 +112,7 @@ void main(){
 
 /** city = heightFn.city; bounds {minX,maxX,minZ,maxZ} must cover the river. */
 export function createGround(env, game, city, bounds) {
-  const res = 512, data = new Uint8Array(res * res * 4), w = city.river.width / 2;
+  const res = 1024, data = new Uint8Array(res * res * 4), w = city.river.width / 2;
   for (let j = 0; j < res; j++) for (let i = 0; i < res; i++) {
     const x = bounds.minX + ((i + 0.5) / res) * (bounds.maxX - bounds.minX), z = bounds.minZ + ((j + 0.5) / res) * (bounds.maxZ - bounds.minZ);
     const d = city.polyDist(city.river.pts, x, z) - w, v = Math.min(1, Math.max(0, (d + 80) / 240));
