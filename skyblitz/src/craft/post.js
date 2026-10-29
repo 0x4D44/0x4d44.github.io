@@ -2,7 +2,7 @@
 //   createPost(game) -> { init(), setQuality(q), resize(w, h, pixelRatio), update(dt, game), render(dt), dispose() }
 // Chain (HDR half-float): Render -> UnrealBloom -> [speed blur + chromatic aberration] -> OutputPass (ACES + sRGB)
 //                         -> [grade + vignette + boost glow + flashes + grain] -> FXAA | SMAA -> screen.
-// game.q.post === false renders straight to the screen. Flashes honour settings.reduceFlash.
+// game.q.post === false (Low) runs a light chain Render -> Output -> grade so the per-course grade still applies. Flashes honour settings.reduceFlash.
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -11,6 +11,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
 import { FXAAPass } from 'three/addons/postprocessing/FXAAPass.js';
+import { quietShaderWarnings } from './env.js';
 
 const VERT = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
 
@@ -77,7 +78,7 @@ export function createPost(game) {
 
   function flash(r, g, b, a) {
     const k = game.settings?.reduceFlash ? 0.12 : 1;
-    const v = Math.min(0.85, a * k);
+    const v = Math.min(0.5, a * k);        // never white the frame out (flash cap)
     if (v > S.flash) { S.flash = v; S.fr = r; S.fg = g; S.fb = b; }
   }
 
@@ -86,18 +87,22 @@ export function createPost(game) {
     if (built === sig && composer) return;
     destroy();
     built = sig;
-    if (!q.post) return;
-    const rt = new THREE.WebGLRenderTarget(Math.max(1, W * PR), Math.max(1, H * PR), { type: THREE.HalfFloatType, samples: q.aa === 'msaa' ? 4 : 0 });
+    const rt = new THREE.WebGLRenderTarget(Math.max(1, W * PR), Math.max(1, H * PR), q.post ? { type: THREE.HalfFloatType, samples: q.aa === 'msaa' ? 4 : 0 } : { type: THREE.UnsignedByteType, samples: 0 });
     composer = new EffectComposer(game.renderer, rt);
     composer.setPixelRatio(PR); composer.setSize(W, H);
     renderPass = new RenderPass(game.scene, game.camera); composer.addPass(renderPass);
-    if (q.bloom) { bloom = new UnrealBloomPass(new THREE.Vector2(W * PR, H * PR), 0.5, 0.5, 0.9); composer.addPass(bloom); }
-    speedPass = new ShaderPass(SPEED_SHADER);
-    speedPass.enabled = false; composer.addPass(speedPass);
+    if (q.post && q.bloom) {
+      bloom = new UnrealBloomPass(new THREE.Vector2(W * PR, H * PR), 0.5, 0.5, 0.9);
+      // clamp the HDR that feeds the bloom so a sun disc or a ring cannot flood the frame and swallow the craft (V-15)
+      const hp = bloom.materialHighPassFilter;
+      hp.fragmentShader = hp.fragmentShader.replace('vec4 texel = texture2D( tDiffuse, vUv );', 'vec4 texel = texture2D( tDiffuse, vUv ); texel.rgb *= min(1.0, 2.6 / max(luminance(texel.rgb), 0.001));');
+      composer.addPass(bloom);
+    }
+    if (q.post) { speedPass = new ShaderPass(SPEED_SHADER); speedPass.enabled = false; composer.addPass(speedPass); }
     outPass = new OutputPass(); composer.addPass(outPass);
     gradePass = new ShaderPass(GRADE_SHADER);
     composer.addPass(gradePass);
-    if (q.aa === 'smaa') { aaPass = new SMAAPass(); composer.addPass(aaPass); }
+    if (!q.post) { /* Low: light chain, no AA pass */ } else if (q.aa === 'smaa') { aaPass = new SMAAPass(); composer.addPass(aaPass); }
     else if (q.aa === 'fxaa') { aaPass = new FXAAPass(); composer.addPass(aaPass); }
     applyEnv(true);
     composer.setPixelRatio(PR); composer.setSize(W, H);
@@ -108,12 +113,22 @@ export function createPost(game) {
     composer = bloom = speedPass = gradePass = aaPass = renderPass = outPass = null; built = null;
   }
 
+  // Compile three's PMREM blur shader once, at boot, with its harmless ANGLE warnings (X4122/X3595, V-35) silenced; every course's sky then reuses the program.
+  let pmremWarmed = false;
+  function warmPmrem() {
+    if (pmremWarmed || !game.renderer?.getContext) return; pmremWarmed = true;
+    try {
+      const sc = new THREE.Scene(); sc.background = new THREE.Color(0.2, 0.3, 0.5);
+      const pm = new THREE.PMREMGenerator(game.renderer); const rt = quietShaderWarnings(game.renderer, () => pm.fromScene(sc, 0, 0.1, 10)); rt.dispose(); pm.dispose();
+    } catch (e) { /* optional warm-up */ }
+  }
+
   let lastEnv = null;
   function applyEnv(force) {
     const env = game.course?.environment; if (!env) { if (force && bloom) { bloom.strength = 0.45; bloom.threshold = 0.9; bloom.radius = 0.5; } return; }
     if (!force && env === lastEnv) return; lastEnv = env;
     const b = env.bloom || {};
-    if (bloom) { bloom.strength = b.strength ?? 0.5; bloom.threshold = Math.max(1.05, (b.threshold ?? 0.9) + 0.2); bloom.radius = b.radius ?? 0.5; }
+    if (bloom) { bloom.strength = (b.strength ?? 0.5) * 0.85; bloom.threshold = Math.max(1.1, (b.threshold ?? 0.9) + 0.25); bloom.radius = b.radius ?? 0.5; }
     const g = env.grade || {};
     if (gradePass) {
       const u = gradePass.uniforms;
@@ -142,7 +157,7 @@ export function createPost(game) {
 
   const api = {
     init() { listen(); },
-    setQuality() { build(); },
+    setQuality() { warmPmrem(); build(); },
     resize(w, h, pr) {
       W = w; H = h; PR = pr;
       if (composer) { composer.setPixelRatio(pr); composer.setSize(w, h); }
@@ -166,17 +181,16 @@ export function createPost(game) {
       applyEnv(false);
       const mot = reduce ? 0.2 : 1;
       const blur = (0.005 * S.speed * S.speed + 0.017 * S.boost + 0.012 * S.tumble) * mot;
-      const ca = (0.0004 * S.speed + 0.0022 * S.boost + 0.002 * S.tumble + S.flash * 0.003) * (reduce ? 0.15 : 1);
-      speedPass.enabled = blur > 0.0008 || ca > 0.0003;
-      speedPass.uniforms.uBlur.value = blur; speedPass.uniforms.uCA.value = ca;
+      const ca = Math.min(0.0011, 0.0004 * S.speed + 0.0022 * S.boost + 0.002 * S.tumble + S.flash * 0.003) * (reduce ? 0.15 : 1);   // capped: the rocket-start GO must not fringe rings/deck edges
+      if (speedPass) { speedPass.enabled = blur > 0.0008 || ca > 0.0003; speedPass.uniforms.uBlur.value = blur; speedPass.uniforms.uCA.value = ca; }
       const u = gradePass.uniforms;
       u.uFlash.value.set(S.fr, S.fg, S.fb, S.flash); u.uTime.value = S.time; u.uBoost.value = S.boost * (reduce ? 0.3 : 1);
       u.uGrain.value = game.q.id === 'low' ? 0 : 0.012;
-      if (bloom) bloom.strength = (game.course?.environment?.bloom?.strength ?? 0.5) * (1 + 0.5 * S.boost);
+      if (bloom) bloom.strength = (game.course?.environment?.bloom?.strength ?? 0.5) * 0.85 * (1 + 0.4 * S.boost);
     },
     render() {
-      if (game.q.post) build();
-      if (!game.q.post || !composer) { game.renderer.render(game.scene, game.camera); return; }
+      build();
+      if (!composer) { game.renderer.render(game.scene, game.camera); return; }
       renderPass.camera = game.camera; renderPass.scene = game.scene;
       const info = game.renderer.info; info.autoReset = false; info.reset();   // report the whole frame, not just the last pass
       composer.render();

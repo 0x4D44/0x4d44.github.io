@@ -1,5 +1,6 @@
-// Soft ground-shadow blobs under every racer: the key altitude cue. One instanced quad per racer, placed on groundHeight(x,z),
-// stretched along the craft heading, fading and widening with altitude. Zero allocation per frame. Owner: world agent.
+// Soft ground-shadow blobs under every racer: the key altitude cue. One instanced quad per racer, placed on max(groundHeight(x,z), waterLevel)
+// (groundHeight is the sea FLOOR; over water the shadow belongs on the surface you would hit, V-4), stretched along the craft heading,
+// fading and widening with altitude above that surface. Zero allocation per frame. Owner: world agent.
 import * as THREE from 'three';
 
 const VS = `
@@ -20,7 +21,7 @@ void main(){
 }`;
 
 export function buildBlobs(course, game) {
-  const MAX = 10;
+  const MAX = 10, wl = course.def?.waterLevel;                  // undefined on a dry course (frost)
   const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   const alpha = new Float32Array(MAX);
   geo.setAttribute('aAlpha', new THREE.InstancedBufferAttribute(alpha, 1));
@@ -36,7 +37,7 @@ export function buildBlobs(course, game) {
       let n = 0;
       for (let i = 0; i < racers.length && n < MAX; i++) {
         const r = racers[i]; if (!r.render) continue;
-        const pos = r.render.pos, gh = course.groundHeight(pos.x, pos.z), alt = pos.y - gh;
+        const pos = r.render.pos, floor = course.groundHeight(pos.x, pos.z), gh = wl != null && wl > floor ? wl : floor, alt = pos.y - gh;
         if (alt > 420) continue;
         fw.set(0, 0, -1).applyQuaternion(r.render.quat); fw.y = 0;
         const yaw = fw.lengthSq() > 1e-4 ? Math.atan2(-fw.x, -fw.z) : 0;
@@ -49,6 +50,6 @@ export function buildBlobs(course, game) {
       }
       mesh.count = n; mesh.instanceMatrix.needsUpdate = true; geo.attributes.aAlpha.needsUpdate = true;
     },
-    dispose() { geo.dispose(); mat.dispose(); },
+    dispose() { geo.dispose(); mat.dispose(); mesh.dispose(); },
   };
 }

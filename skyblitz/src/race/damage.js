@@ -3,6 +3,7 @@
 // (a shield absorbs ONE hit, hits never destroy, a hit is always followed by brief invulnerability) live in one place.
 import { applyTumble } from '../flight/flight.js';
 import { WEAPONS } from './balance.js';
+import { clamp } from '../util.js';
 
 /** Scale forward speed (keeps vel consistent). */
 export function scaleSpeed(fs, k) {
@@ -25,10 +26,12 @@ export function applyHit(race, victim, by, kind, opts = {}) {
     victim.invuln = Math.max(victim.invuln, 0.25);
     return false;
   }
-  const tumble = opts.tumble || 0;
+  // armour (roster stat 1..10): shorter tumble and less speed lost; never below 0.8 s of tumble
+  const armor = fs.spec?.stats?.armor ?? 5, armT = clamp(1.2 - 0.045 * armor, 0.75, 1.1), armL = clamp(1.25 - 0.05 * armor, 0.7, 1.1);
+  const tumble = opts.tumble ? Math.max(0.8, opts.tumble * armT) : 0;
   victim.stats.hitsTaken++;
   if (by && by !== victim) by.stats.hitsDealt++;
-  if (opts.loss) scaleSpeed(fs, 1 - opts.loss);
+  if (opts.loss) scaleSpeed(fs, 1 - opts.loss * armL);
   const severity = opts.severity ?? (tumble > 0 ? 0.8 : 0.25);
   ev.emit('racer:hit', { racer: victim, by: by || null, kind, pos: pos.clone ? pos.clone() : pos, severity });
   if (tumble > 0 && !(fs.tumble.t > 0.2)) {

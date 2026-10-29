@@ -111,9 +111,16 @@ def lowcut(x):
     return sosfilt(butter(2, 28, btype='high', fs=R, output='sos'), y, axis=0).astype(np.float32)
 
 
+SEAM_MS = float(cfg.get('seamMs', 2.5))
+
+
 def fold(x):
     f = x[:N].copy()
     t = x[N:N + tail].copy()
+    # V-6: the tail is the true continuation of the last sample (so the wrap is continuous), but the NEW material that starts at
+    # loopStart is a hard sample onset (kick / string attack): ramp it in over SEAM_MS so the wrap is not a click.
+    w = int(SEAM_MS * R / 1000)
+    f[intro_n:intro_n + w] *= ((1 - np.cos(np.linspace(0, np.pi, w))) / 2)[:, None]
     f[intro_n:intro_n + len(t)] += t
     # 3 ms fade-in at the very start (no click on the first note) – loop wrap itself is untouched
     k = int(0.003 * R)

@@ -49,6 +49,14 @@ export class Assets {
   constructor(renderer, base = new URL('../assets/tex/', import.meta.url).href) {
     this.renderer = renderer; this.base = base; this.cache = new Map(); this.warned = new Set(); this.failed = new Set();
     this.loader = new THREE.TextureLoader();
+    this.aniso = 8;                       // QUALITY[...].aniso of the active preset (game.setQuality pushes it), clamped to the GPU maximum
+  }
+  _maxAniso() { return this.renderer ? Math.min(this.aniso, this.renderer.capabilities.getMaxAnisotropy()) : 1; }
+  /** E-28: apply a preset's anisotropy to the textures already loaded and to every texture configured from now on. */
+  setAniso(n) {
+    this.aniso = n;
+    const a = this._maxAniso();
+    for (const t of this.cache.values()) if (!t.userData.placeholder && t.anisotropy !== a) { t.anisotropy = a; t.needsUpdate = true; }
   }
   has(name) { const t = this.cache.get(name); return !!t && !t.userData.placeholder; }
   /** Synchronous: returns the loaded texture, or a placeholder (the real one swaps its image in when it arrives). */
@@ -73,7 +81,7 @@ export class Assets {
     tex.colorSpace = d.colour === 'srgb' ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     const rep = d.wrap === 'clamp' ? THREE.ClampToEdgeWrapping : THREE.RepeatWrapping;
     tex.wrapS = d.wrap === 'clamp' ? rep : THREE.RepeatWrapping; tex.wrapT = d.wrap === 'repeat-x' || d.wrap === 'clamp' ? THREE.ClampToEdgeWrapping : rep;
-    tex.anisotropy = this.renderer ? Math.min(8, this.renderer.capabilities.getMaxAnisotropy()) : 1;
+    tex.anisotropy = this._maxAniso();
     tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter;
     tex.needsUpdate = true;
   }

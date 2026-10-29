@@ -2,21 +2,21 @@
  "stems": {
   "base": {
    "file": "base.ogg",
-   "bytes": 237399,
+   "bytes": 237400,
    "kbps": 52,
    "gain": 1.071,
    "rmsDb": -23.5
   },
   "lead": {
    "file": "lead.ogg",
-   "bytes": 336380,
+   "bytes": 336374,
    "kbps": 40,
    "gain": 0.195,
    "rmsDb": -24.7
   },
   "drive": {
    "file": "drive.ogg",
-   "bytes": 227700,
+   "bytes": 227706,
    "kbps": 40,
    "gain": 0.292,
    "rmsDb": -27
@@ -29,20 +29,20 @@
  "introSamples": 205714,
  "loopSamples": 1645714,
  "totalSamples": 1851428,
- "bytes": 801479,
+ "bytes": 801480,
  "stats": {
   "lufs": -17,
   "peakDb": -5.31,
   "fitResidual": 0.323,
-  "seamJump": 0.0678,
-  "seamRatio": 5,
+  "seamJump": 0.02412,
+  "seamRatio": 1.78,
   "trimsDb": {
    "base": 0,
    "lead": 9,
    "drive": 3.4
   },
   "seamRms": 0.101,
-  "startRms": 0.1287
+  "startRms": 0.128
  },
  "name": "Podium",
  "key": "C",

@@ -7,21 +7,25 @@ import { AIRCRAFT } from '../craft/roster.js';
 import { COURSES, previewCourse } from '../world/courses/index.js';
 import { buildAircraft, disposeAircraft } from '../craft/aircraft.js';
 import { bestFor } from './save.js';
+import { rocketTip } from './rocket-hint.js';
 
 const STATS = [['speed', 'Top speed'], ['accel', 'Acceleration'], ['handling', 'Handling'], ['stability', 'Stability'], ['boost', 'Boost'], ['armor', 'Armour']];
+// An entry is a string, or a function of the settings when the text depends on one (the double-tap roll is OFF by default, so it must not be taught by default).
 export const TIPS = [
   'Bank to turn, pull to loop: your aircraft turns where its wings point.',
-  'A barrel roll (Q / E, or double-tap A / D) dodges incoming missiles.',
+  (s) => `A barrel roll (Q / E${s?.doubleTapRoll ? ', or double-tap A / D' : ''}) dodges incoming missiles.`,
   'Fly through the golden rings for a speed burst; the centre of a gate earns a perfect.',
   'Loops, rolls, near misses and shortcuts all charge your boost meter.',
   'Dive to gain speed, climb to trade it back. Never stall: nose down to recover.',
-  'Hold BOOST in the last half second of the countdown for a rocket start.',
+  rocketTip,   // E-02: worded from RACE.rocketWindow (rocket-hint.js), so it always states the rule race.js applies
   'Hold B while using a missile or mine to fire it backwards.',
   'Shortcuts are risky and narrow, but they save seconds.',
   'Tuck in behind a rival to draft and slingshot past them.',
   'Last place gets the strongest items. Comebacks are always possible.',
   'The airbrake tightens turns when you are coming in too hot.',
 ];
+/** The i-th loading tip as text for the current settings. */
+export const tipAt = (i, settings) => { const t = TIPS[((i % TIPS.length) + TIPS.length) % TIPS.length]; return typeof t === 'function' ? t(settings) : t; };
 
 // ------------------------------------------------------------------ turntable
 class Turntable {
@@ -95,7 +99,8 @@ export function aircraftScreen(ui) {
     el.querySelector('.liv-n').textContent = a.liveries[liv].name.toUpperCase();
     stage.querySelectorAll('.dots i').forEach((d, i) => d.classList.toggle('on', i === idx));
     el.style.setProperty('--ac', a.liveries[liv].primary); el.style.setProperty('--ac2', a.liveries[liv].accent);
-    keys.textContent = padOn() ? '◀ ▶ aircraft    ▲ ▼ livery    A select    B back' : '← → aircraft    ↑ ↓ livery    Enter select    Esc back';
+    const pad = padOn(); keys.toggleAttribute('data-pad', pad);   // CSS hides the keyboard hint on touch screens, but not the gamepad one
+    keys.textContent = pad ? '◀ ▶ aircraft    ▲ ▼ livery    A select    B back' : '← → aircraft    ↑ ↓ livery    Enter select    Esc back';
     tt?.set(a, liv);
   };
   const stepLiv = (d) => { liv = mod(liv + d, AIRCRAFT[idx].liveries.length); refresh(); ui.cue('ui:click'); };
@@ -166,7 +171,7 @@ export function courseScreen(ui) {
         x.card.classList.toggle('sel', ui.flow.course === x.c.id);
       }
       clearTimeout(drawQ); drawQ = setTimeout(drawNext, 40);
-      const sel = cards.find((x) => x.c.id === ui.flow.course)?.card; if (sel) sel.dataset.nav = 'first';
+      for (const x of cards) x.card.dataset.nav = x.c.id === ui.flow.course ? 'first' : '';   // exactly one card carries first-focus (it used to stick to every card ever selected: V-25)
     },
     leave() { clearTimeout(drawQ); }, back: () => 'aircraft',
   };
@@ -204,7 +209,7 @@ export function loadingScreen(ui) {
   const fill = h('i'), label = h('div', { class: 'ld-l' }, 'Preparing'), tip = h('p', { class: 'ld-tip' }), where = h('div', { class: 'ld-w skew' }), pct = h('b', { class: 'ld-p' }, '0%');
   const el = h('div', { class: 'scr loading', role: 'status', 'aria-live': 'polite' }, h('div', { class: 'ld-in' }, where, h('h2', { class: 'ld-h' }, 'LOADING'), h('div', { class: 'ld-bar' }, fill), h('div', { class: 'ld-row' }, label, pct), h('div', { class: 'ld-tipbox' }, h('small', null, 'PRO TIP'), tip)));
   let tipI = 0, timer = 0, off = null;
-  const setTip = () => { tip.textContent = TIPS[tipI++ % TIPS.length]; tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); };
+  const setTip = () => { tip.textContent = tipAt(tipI++, ui.game.settings); tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); };
   return {
     el,
     enter() {

@@ -9,7 +9,7 @@ import { NEON } from './neon.js';
 import { createFacades } from '../neon/facade.js';
 import { createGround } from '../neon/ground.js';
 import { makeCityEnvironment } from '../neon/env.js';
-import { createSigns, createBeacons, createAirTraffic, createHighway, createAtriumInterior, createTowerRing, createScreens, createSearchLights, createMoon } from '../neon/parts.js';
+import { atriumMassBoxes, createSigns, createBeacons, createAirTraffic, createHighway, createAtriumInterior, createTowerRing, createScreens, createSearchLights, createMoon } from '../neon/parts.js';
 
 export async function buildScenery(course, game, progress, yieldFrame) {
   const env = course.environment, q = game.q, sc = q.scenery ?? 1, city = course.heightFn.city, rnd = mulberry32(0x7e0b1);
@@ -35,10 +35,8 @@ export async function buildScenery(course, game, progress, yieldFrame) {
   }
   // atrium mass around the tunnel: left, right, roof and base (the channel itself stays open)
   {
-    const A = city.atrium, wi = 44, yc = 135, len = A.hl * 2;
-    const mass = (cz, d, y0, y1, seed) => inst.push({ cx: A.cx, cz, w: len, d, y0, y1, cell: 14, seed, yaw: 0, kind: 'atrium', lit: 0.95 });
-    mass(A.cz - (wi + A.hw) / 2, A.hw - wi, -2, A.top, 31); mass(A.cz + (wi + A.hw) / 2, A.hw - wi, -2, A.top, 32);
-    mass(A.cz, 2 * wi, yc, A.top, 33); mass(A.cz, 2 * wi, -2, A.floor, 34);
+    const A = city.atrium, len = A.hl * 2;
+    for (const b of atriumMassBoxes(A)) inst.push({ cx: A.cx, cz: b.cz, w: len, d: b.d, y0: b.y0, y1: b.y1, cell: 14, seed: b.seed, yaw: 0, kind: 'atrium', lit: 0.95 });
   }
   const fac = createFacades(game, inst, env);
   course.addPart({ group: fac.mesh, update: fac.update, dispose: fac.dispose });
@@ -127,18 +125,20 @@ function createHazardVehicles(course, game) {
     grp.add(mesh);
     items.push({ h, mesh, d, right: fr.right.clone(), tan: fr.tangent.clone(), blimp: h.kind === 'blimp' });
   }
-  let tm = 0;
+  // h.pos is gameplay (collision, AI): Course.stepHazards(race.clock) sets it in the fixed step (E-04). The render loop only places meshes from it;
+  // heading, roll and the strobe read the same clock (course.hazardTime), so they flip exactly when the body turns round.
+  let tm = 0; const bp = new THREE.Vector3();
   return {
     group: grp,
-    update(dt) {
+    update(dt, game) {
       tm += dt;
+      const ct = course.hazardTime;
       for (const it of items) {
-        const { h, d } = it, w = (Math.PI * 2) / (d.period || 8), a = d.amp || 20, ph = tm * w + (h.phase || 0), sv = Math.sin(ph), cv = Math.cos(ph);
-        h.pos.copy(h.home);
+        const { h, d } = it, w = (Math.PI * 2) / (d.period || 8), cv = Math.cos(ct * w + (h.phase || 0));
         let vx = 0, vz = 0;
-        if (d.axis === 'vertical') { h.pos.y += a * sv; h.pos.addScaledVector(it.right, a * 0.25 * Math.sin(ph * 0.5)); vx = it.tan.x; vz = it.tan.z; }
-        else { h.pos.addScaledVector(it.right, a * sv); vx = it.right.x * cv; vz = it.right.z * cv; if (it.blimp) { vx = it.tan.x; vz = it.tan.z; } }
-        it.mesh.position.copy(h.pos);
+        if (d.axis === 'vertical') { vx = it.tan.x; vz = it.tan.z; }
+        else { vx = it.right.x * cv; vz = it.right.z * cv; if (it.blimp) { vx = it.tan.x; vz = it.tan.z; } }
+        it.mesh.position.copy(course.hazardRenderPos(h, bp, game));
         if (vx || vz) it.mesh.rotation.y = Math.atan2(-vx, -vz);
         it.mesh.rotation.z = it.blimp ? 0 : -cv * 0.18;
         const st = it.mesh.userData.strobe; if (st) st.visible = Math.sin(tm * 9 + (h.phase || 0)) > -0.1;

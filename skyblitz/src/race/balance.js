@@ -52,16 +52,16 @@ export function rollItem(rng, place, n) {
 // playerHelp small hidden speed help for a human who is last (fraction)
 export const DIFFICULTY = {
   easy:   { id: 'easy',   aiSpeed: 0.88, aiSkill: 0.55, rubber: 0.06, rubberRange: 500, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.05 },
-  normal: { id: 'normal', aiSpeed: 0.95, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
-  hard:   { id: 'hard',   aiSpeed: 1.00, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
+  normal: { id: 'normal', aiSpeed: 0.91, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
+  hard:   { id: 'hard',   aiSpeed: 0.98, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
   expert: { id: 'expert', aiSpeed: 1.05, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
 };
 
 export const RACE = {
   countdown: 3,            // seconds of 3-2-1 before GO
-  rocketWindow: 0.4,       // boost pressed in the last 0.4 s before GO = rocket start
+  rocketWindow: 0.5,       // boost pressed in the last 0.5 s before GO = rocket start (good, perfect inside perfectWindow); any boost earlier = early
   perfectWindow: 0.18,
-  finishTimeout: 20,       // seconds the race stays open after the human finishes
+  finishTimeout: 25,       // seconds the race stays open after the human finishes
   maxClock: 900,           // hard stop (s) if the human never finishes
   overtakeHyst: 5,         // metres a rival must be ahead before places swap
   launchSpeedFrac: 0.72,   // GO launch speed as a fraction of cruise
@@ -72,14 +72,27 @@ export const RACE = {
 };
 
 export const WEAPONS = {
-  missile: { lockTime: 0.9, lockCone: 0.42, lockMin: 40, lockMax: 750, speed: 175, turn: 1.7, turnWeak: 1.0, turnDumb: 0.65, life: 7.5, armT: 0.35, hitPad: 3.0, barrelRange: 70, tumble: 1.5, loss: 0.4 },
+  // missile: lock = the nearest racer AHEAD ON THE COURSE (gap lockMin..lockMax m) inside a cone measured in the course frame (angle of its lateral / vertical
+  // offset against the along-course gap, lockCone rad; a held lock survives lockStick x the cone). Guidance = course-following pursuit: a carrot `look` [near, far] m
+  // up the centre line, holding the missile's own offset inside the airway (`airway` of the corridor ellipse) and round hazards (`hazardMargin` m), blending onto the
+  // target's line over `courseBlend` [near, far] m of gap and into plain pursuit over `direct` [far, near] m of distance; turnCourse steers the carrot, turn* the pursuit.
+  // Barrel evasion is a TIMING WINDOW: a roll protects only from evadeFrom to evadeTo (fractions of the roll) after it starts, so one begun `evadeFrom x T` .. `evadeTo x T`
+  // seconds before arrival evades (T = FLIGHT.barrelTime). Warning pings: interval = clamp(ping[0] + ping[1] x tti, ping[2], ping[3]); closeTau smooths the closing speed.
+  // Speed: accelerates at `accel` to `speed`, holds it for `burn` s, then loses `decay` m/s per s down to `floor` (a boosting racer outruns it); it is lost after `life` s,
+  // beyond `loseDist` m, or `passTime` s after it has overshot its target by `passMargin` m (a corridor has no room for a U-turn).
+  missile: { lockTime: 0.9, lockCone: 0.45, lockStick: 1.5, lockMin: 40, lockMax: 450, speed: 180, accel: 240, burn: 5.5, decay: 32, floor: 115, turn: 1.7, turnWeak: 1.0, turnDumb: 0.65, turnCourse: 3.2,
+             look: [30, 80], airway: 0.6, hazardMargin: 16, courseBlend: [70, 300], direct: [130, 55], life: 8.5, armT: 0.35, hitPad: 3.0, loseDist: 560, passMargin: 8, passTime: 0.15,
+             evadeFrom: 0.12, evadeTo: 0.95, closeTau: 0.25, ping: [0.1, 0.13, 0.12, 0.5], tumble: 1.5, loss: 0.4 },
   mine: { arm: 0.8, ownerGrace: 1.8, radius: 14, life: 45, tumble: 1.35, loss: 0.35 },
   emp: { radius: 240, stun: 1.5, loss: 0.2 },
   storm: { tumble: 1.3, loss: 0.4 },
-  smoke: { radius: 55, life: 6.5 },
+  // smoke: dropped `back` m behind the owner on the line of the nearest follower (within `reach` m); a racer in it is blind for `blind` s (no lock-ons, wobbly steering)
+  // and loses speed at `drag` per second, never below 1.1 x its minimum speed.
+  smoke: { radius: 55, life: 6.5, blind: 1.2, drag: 0.4, back: 36, reach: 450 },
   shield: { time: 10 },
   turbo: { time: 2.2, power: 1.6 }, turbo3: { time: 1.6, power: 1.6 },
-  drone: { life: 13, speedMul: 1.15, fireEvery: 0.38, range: 230 },
+  // drone: course-following wingman that holds `station` m behind the racer ahead and shoots when that racer is within `cone` (cosine) of its nose; it is spent after `maxHits` landed bolts.
+  drone: { life: 13, speedMul: 1.15, fireEvery: 0.38, range: 230, cone: 0.86, maxHits: 6, turn: 3.0, station: 24 },
   cannon: { interval: 0.11, heatPerShot: 0.075, cool: 0.4, coolLocked: 0.28, resume: 0.4, speed: 260, life: 1.25, hitPad: 3.2, aimAssist: 0.35, aimCone: 0.14, stagger: 0.93, comboWindow: 2.5, comboHits: 5, comboTumble: 1.1 },
   invulnAfterHit: 1.6,
 };

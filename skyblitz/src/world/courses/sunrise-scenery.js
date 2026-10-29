@@ -170,11 +170,12 @@ function buildProps(course, game) {
   const lh = makeLighthouse(Math.max(120, lt.pos.y - by - 12)); lh.group.position.set(bx, by - 2, bz); group.add(lh.group);
   disposables.push({ dispose: lh.dispose });
 
-  let tm = 0;
+  // Balloon positions are gameplay (collision, AI): Course.stepHazards(race.clock) sets h.pos in the fixed step (E-04); here we only place the meshes.
+  let tm = 0; const bp = new THREE.Vector3();
   course.addPart({
-    update(dt) {
+    update(dt, game) {
       tm += dt; lh.beams.rotation.y += dt * 0.9;
-      for (const b of balloons) { const h = b.h; h.pos.x = h.home.x + Math.sin(tm * 0.5 + h.phase) * h.sway; h.pos.y = h.home.y + Math.sin(tm * 0.7 + h.phase * 2) * h.sway * 0.4; b.m.position.set(h.pos.x, h.pos.y - 13 * 1.25, h.pos.z); b.m.rotation.y = tm * 0.1; }
+      for (const b of balloons) { course.hazardRenderPos(b.h, bp, game); b.m.position.set(bp.x, bp.y - 13 * 1.25, bp.z); b.m.rotation.y = tm * 0.1; }
     },
     dispose() { disposables.forEach((d) => d.dispose?.()); },
   });

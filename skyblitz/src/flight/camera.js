@@ -30,14 +30,14 @@ export function createCameraRig(game) {
   };
   const s = {
     clock: 0, speed: 100, lean: 0, fov: 72, trauma: 0, lb: 0, lift: 0, shotIdx: 0, shotT: 0, shotCut: true, introT: 0, swoop: 1, finishT: 0,
-    shotSide: 1, cut: true, boost: 0, haveOrbit: false,
+    shotSide: 1, cut: true, boost: 0, haveOrbit: false, pull: 1, bank: 0, course: null,
   };
   const rig = {
     mode: 'chase', target: null, first: true, camMode: 'chase', fov: 72, speed: 0,
     init() { game.events?.on?.('input:camera', () => { if (game.state === 'race') this.cycle(); }); },
     reset(racer, mode = 'chase') {
       this.target = racer; this.mode = mode; this.camMode = MODES.includes(mode) ? mode : 'chase'; this.first = true; s.cut = true; s.shotIdx = 0; s.shotT = 0; s.shotCut = true;
-      s.introT = 0; s.swoop = 1; s.finishT = 0; s.clock = 0; s.trauma = 0; s.lb = 0; s.lift = 0; s.haveOrbit = false;
+      s.introT = 0; s.swoop = 1; s.finishT = 0; s.clock = 0; s.trauma = 0; s.lb = 0; s.lift = 0; s.haveOrbit = false; s.pull = 1; s.bank = 0;
     },
     setMode(mode) { this.mode = mode; if (MODES.includes(mode)) this.camMode = mode; this.first = true; s.cut = true; },
     cycle() {
@@ -55,6 +55,7 @@ export function createCameraRig(game) {
       if (!(dt >= 0)) dt = 0;
       if (dt > 0.25) dt = 0.25;
       const P = r.render.pos, Q = r.render.quat, cam = g.camera;
+      s.course = g.course || null;
       v.fwd.set(0, 0, -1).applyQuaternion(Q); v.up.set(0, 1, 0).applyQuaternion(Q); v.right.set(1, 0, 0).applyQuaternion(Q);
       const spec = r.spec?.visual, size = clamp((spec?.wingspan ?? 11) / 11, 0.8, 1.4);
       s.clock += dt;
@@ -149,8 +150,11 @@ export function createCameraRig(game) {
       s.lb = snap ? wantLb : damp(s.lb, wantLb, 9, dt);
       const lb = s.lb, bump = Math.sin(Math.PI * lb) * 5;
 
-      const back = (rg.back * size + (mode === 'nose' ? 0 : (s.boost * 2.4 + clamp((s.speed - 100) * 0.018, -0.8, 2.2)))) * (1 - 2 * lb);
-      const upOff = rg.up * size * (1 - 0.35 * lb);
+      // P-20: in a hard bank the wing and fuselage fill the view: ease back, rise and look into the turn (+ = right wing down)
+      s.bank = snap ? 0 : damp(s.bank, clamp(-v.right.y, -1, 1), 5, dt);
+      const bk = mode === 'nose' ? 0 : smoothstep(0.35, 0.95, Math.abs(s.bank)) * Math.sign(s.bank);
+      const back = (rg.back * size + (mode === 'nose' ? 0 : (s.boost * 2.4 + clamp((s.speed - 100) * 0.018, -0.8, 2.2) + 2.6 * Math.abs(bk) * size))) * (1 - 2 * lb);
+      const upOff = rg.up * size * (1 - 0.35 * lb) + 1.8 * Math.abs(bk) * size;
       v.tmp.copy(P).addScaledVector(v.sdir, -back).addScaledVector(v.sup, upOff + bump);
       if (mode === 'nose') { v.tmp.copy(P).addScaledVector(v.fwd, (spec(r) * 0.55)).addScaledVector(v.up, 0.7); }
       // look target: ahead along the (blended) heading with a lead into turns
@@ -158,8 +162,10 @@ export function createCameraRig(game) {
       v.look.copy(P).addScaledVector(v.tmp2, rg.look * (1 - lb)).addScaledVector(v.sup, 1.4 * (1 - lb));
       if (lb > 0) v.look.lerp(P, lb);
       if (mode !== 'nose') v.look.addScaledVector(v.right, clamp(s.lean * 9, -9, 9) * (1 - lb));
+      if (bk) { v.side.copy(v.right).setY(0); if (v.side.lengthSq() > 1e-6) v.look.addScaledVector(v.side.normalize(), bk * 16 * size * (1 - lb)); }
       v.pos.copy(v.tmp);
       v.tmpUp.copy(v.sup);
+      if (mode !== 'nose' && !fromOrbit) this.pullIn(dt, P, snap);
       if (fromOrbit || s.swoop < 1) {
         // grid intro / swoop at GO: blend the orbit pose into the chase pose
         if (fromOrbit) { v.pos.copy(v.orbitPos); v.look.copy(v.orbitLook); v.tmpUp.copy(v.worldUp); s.swoop = 0; }
@@ -172,6 +178,21 @@ export function createCameraRig(game) {
         } else s.swoop = 1;
       }
       return rg.fov;
+    },
+
+    /** P-19: the camera never sits inside terrain. March from the aircraft to the wanted camera spot; at the first sample under the ground the camera is
+     *  pulled in along that line (instantly, never clipping), and eases back out slowly. The look-back camera sits AHEAD of the aircraft, so it needs this most. */
+    pullIn(dt, P, snap) {
+      const gh = s.course?.groundHeight; let t = 1;
+      if (gh) {
+        const N = 10;
+        for (let i = 1; i <= N; i++) {
+          const u = i / N, x = P.x + (v.pos.x - P.x) * u, y = P.y + (v.pos.y - P.y) * u, z = P.z + (v.pos.z - P.z) * u;
+          if (y < gh.call(s.course, x, z) + 3.5) { t = (i - 1) / N; break; }
+        }
+      }
+      s.pull = snap || t < s.pull ? t : damp(s.pull, t, 2.5, dt);
+      if (s.pull < 1) v.pos.lerpVectors(P, v.pos, Math.max(0.12, s.pull));
     },
 
     /** Slow orbit of the player's aircraft on the grid. Writes v.orbitPos / v.orbitLook. */

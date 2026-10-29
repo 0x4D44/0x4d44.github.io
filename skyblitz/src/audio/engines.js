@@ -1,7 +1,9 @@
 // Continuous aircraft sounds: the player's engine (jet turbine / propeller), wind, boost roar, scrape, and the
 // light positional engine used for nearby AI racers. All nodes are created once per voice and only their params move.
 import { getLib } from './dsp.js';
-import { clamp, lerp } from '../util.js';
+import { clamp, lerp, mulberry32 } from '../util.js';
+
+const rnd = mulberry32(0xe91e);   // seeded loop offsets: offline renders are deterministic (E-21)
 
 // Per-craft voicing. kind 'jet' | 'prop'.
 export const ENGINE_VOICES = {
@@ -16,7 +18,7 @@ const FALLBACK = ENGINE_VOICES.falcon;
 export const voiceFor = (racer) => ENGINE_VOICES[racer?.spec?.id] || ENGINE_VOICES[racer?.craftId] || FALLBACK;
 
 function loopNoise(c, kind, lib) {
-  const s = c.createBufferSource(); s.buffer = lib[kind]; s.loop = true; s.start(0, Math.random() * 1.5); return s;
+  const s = c.createBufferSource(); s.buffer = lib[kind]; s.loop = true; s.start(0, rnd() * 1.5); return s;
 }
 function osc(c, type, f) { const o = c.createOscillator(); o.type = type; o.frequency.value = f; o.start(); return o; }
 const T = 0.07;   // param smoothing time constant (s)

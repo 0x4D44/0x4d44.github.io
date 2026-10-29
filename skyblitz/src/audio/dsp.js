@@ -46,7 +46,7 @@ export function getLib(c) {
 
 /** A recipe builder: collects every node it makes (for cleanup) and tracks when the sound ends. */
 export class Rig {
-  constructor(c, out, t0) { this.c = c; this.out = out; this.t0 = t0; this.end = t0; this.nodes = []; this.lib = getLib(c); }
+  constructor(c, out, t0, seed = 1) { this.rnd = mulberry32(seed >>> 0); this.c = c; this.out = out; this.t0 = t0; this.end = t0; this.nodes = []; this.lib = getLib(c); }
   add(n) { this.nodes.push(n); return n; }
   gain(v = 1, dest = this.out) { const g = this.add(this.c.createGain()); g.gain.value = v; g.connect(dest); return g; }
   filter(type, f, q = 1, dest = this.out) { const n = this.add(this.c.createBiquadFilter()); n.type = type; n.frequency.value = f; n.Q.value = q; n.connect(dest); return n; }
@@ -57,6 +57,9 @@ export class Rig {
 }
 
 function env(g, T, att, peak, dur, hold = 0) {
+  // The gain node's intrinsic value is 1: if the source starts one sample before this event takes effect, a full-level
+  // sample leaks through as a click (measured: a 0.07 click peaking at 0.34-0.65). Start the param at the floor.
+  g.value = FLOOR;
   g.setValueAtTime(FLOOR, T);
   g.linearRampToValueAtTime(peak, T + Math.max(att, 0.001));
   if (hold > 0) g.setValueAtTime(peak, T + att + hold);
@@ -87,7 +90,7 @@ export function tone(r, o) {
 export function noise(r, o) {
   const c = r.c, T = r.t0 + (o.t || 0), dur = o.dur;
   const src = r.add(c.createBufferSource()); src.buffer = r.lib[o.kind || 'white']; src.loop = true;
-  const off = (o.off ?? Math.random()) * 1.5;
+  const off = (o.off ?? r.rnd()) * 1.5;   // seeded (E-21): offline renders are deterministic
   const f = r.add(c.createBiquadFilter()); f.type = o.ftype || 'bandpass'; f.Q.value = o.q ?? 1;
   f.frequency.setValueAtTime(o.f0 || 1000, T);
   if (o.f1 && o.f1 !== o.f0) {

@@ -93,15 +93,18 @@ void main(){
 }`;
 
 export function createWater(env, game, { height, bounds, deep = 0x0a4f85, shallow = 0x3fd8c8, level = 0, maskRes = 1024, reef = 0, glitter = 0 }) {
-  const mask = bakeShoreMask(height, bounds, maskRes);
+  const mask = bakeShoreMask(height, bounds, maskRes), texN = game.assets.tex('water_n'), texFoam = game.assets.tex('foam');
   const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-    tN: { value: game.assets.tex('water_n') }, tFoam: { value: game.assets.tex('foam') }, tShore: { value: mask },
+    tN: { value: texN }, tFoam: { value: texFoam }, tShore: { value: mask },
     uBounds: { value: new THREE.Vector4(bounds.minX, bounds.minZ, 1 / (bounds.maxX - bounds.minX), 1 / (bounds.maxZ - bounds.minZ)) },
     uTime: { value: 0 }, uReef: { value: reef }, uGlit: { value: glitter }, uFull: { value: game.q.water === 'full' ? 1 : 0 },
     uDeep: { value: new THREE.Color(deep) }, uShallow: { value: new THREE.Color(shallow) },
     uTop: { value: env.skyTop }, uMid: { value: env.skyMid ?? env.skyTop.clone().lerp(env.skyHorizon, 0.55) }, uHorizon: { value: env.skyHorizon },
     uSunDir: { value: env.sunDir }, uSunColor: { value: env.sunColor },
   }]);
+  // merge() CLONES texture values. The cloned shore mask owns a GL upload that mask.dispose() never freed (one 640-1024 px texture leaked per race, E-06),
+  // and cloned asset textures are never disposed at all: hand the originals back so dispose() below frees what the material really samples.
+  uniforms.tN.value = texN; uniforms.tFoam.value = texFoam; uniforms.tShore.value = mask;
   const mat = new THREE.ShaderMaterial({ uniforms, vertexShader: VS, fragmentShader: FS, fog: true, transparent: true, depthWrite: true });
   const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
   const mesh = new THREE.Mesh(geo, mat); mesh.scale.set(60000, 1, 60000); mesh.position.y = level; mesh.frustumCulled = false; mesh.name = 'sea'; mesh.renderOrder = -1;

@@ -70,13 +70,13 @@ export const neonDef = (() => {
     sectors: ['avenue', 'hwy', 'atriumOut', 'bulge'],
     aiLatAccel: 62,
     branches: [{
-      id: 'billboard', name: 'Billboard Shortcut', from: 'branchA', to: 'branchB', hw: 28, hh: 34, risk: 0.75, taper: 320,
+      id: 'billboard', name: 'Billboard Shortcut', from: 'branchA', to: 'branchB', hw: 28, hh: 34, risk: 0.55, taper: 320,
       // heads NW through the slot between the two giant screens (mark 'gap'), then rejoins the west avenue
       points: [[150, 111, 1470], [-10, 116, 1300, null, 28, 34], [-130, 118, 1180], [-270, 124, 1040], [-380, 130, 910]].map(([x, y, z, ...r]) => [x * S, y, z * S, ...r]),
       marks: { gap: 1 },
     }],
     boost: [
-      { branch: 0, u: 130, count: 7, gap: 125, radius: 17, weave: 5, power: 1.6, duration: 2.0 },   // billboard slot: rewarded line
+      { branch: 0, u: 130, count: 5, gap: 125, radius: 17, weave: 5, power: 1.6, duration: 2.0 },   // billboard slot: rewarded line
       { mark: 'loopEntry', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'sweepA', offset: -40, count: 2, gap: 55, weave: 22, radius: 20, power: 1.3, duration: 1.2 },
       { mark: 'hwy', offset: -150, count: 3, gap: 50, weave: 16, radius: 20, power: 1.35, duration: 1.4 },

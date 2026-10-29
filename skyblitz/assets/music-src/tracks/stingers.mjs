@@ -1,5 +1,6 @@
 // One-shot stingers: win fanfare, lose sigh, final-lap alarm. Original, composed for SKYBLITZ. Not looped: rendered once, faded, Opus.
 import fs from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { Song, D } from '../theory.mjs';
 
@@ -61,9 +62,11 @@ export async function buildStingers({ SCRATCH, OUT, FERRO, FFMPEG, RATE, run, wr
     writeSong(song, mid);
     const wav = path.join(dir, `${id}.wav`), ogg = path.join(outDir, `${id}.ogg`);
     await run(FERRO, [mid, '-o', wav, '--rate', String(RATE), '--tail', String(tail), '--wet', '0.3', '--lufs', '-15', '--tp-ceiling', '-1.5', '-q'], `sting ${id}`);
-    const dur = (song.totalBars * 4 * 60) / song.bpm + tail;  // render = last note-off (parked on the final tick) + tail
+    // V-36: the synth trims silence, so the nominal bars+tail is NOT the file length: probe the real duration (meta now equals the decoded length)
+    const probe = (f) => Number(spawnSync(FFMPEG.replace(/ffmpeg(\.exe)?$/, 'ffprobe$1'), ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f], { encoding: 'utf8', windowsHide: true }).stdout.trim());
+    const dur = probe(wav);
     await run(FFMPEG, ['-y', '-hide_banner', '-loglevel', 'error', '-i', wav, '-af', `afade=t=out:st=${(dur - 0.5).toFixed(2)}:d=0.5`, '-c:a', 'libopus', '-b:a', '64k', ogg], `enc ${id}`);
-    info[id] = { bytes: fs.statSync(ogg).size, sec: Number(dur.toFixed(2)) };
+    info[id] = { bytes: fs.statSync(ogg).size, sec: Number(probe(ogg).toFixed(2)) };
   }
   fs.writeFileSync(path.join(outDir, 'meta.json'), JSON.stringify(info, null, 1));
   console.log('[stingers]', JSON.stringify(info));

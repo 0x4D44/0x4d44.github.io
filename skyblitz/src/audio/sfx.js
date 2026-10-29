@@ -5,7 +5,9 @@ import { Rig, tone, noise, lfo, semis } from './dsp.js';
 
 const R = {};
 const done = (r) => ({ dur: r.dur, nodes: r.nodes });
-const def = (name, fn) => { R[name] = (c, out, t, o = {}) => { const r = new Rig(c, out, t); fn(r, o); return done(r); }; };
+const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return h >>> 0; };
+// Seed = hash(name) ^ o.seed: tests get identical renders, the game passes a changing o.seed for variation.
+const def = (name, fn) => { const h = hash(name); R[name] = (c, out, t, o = {}) => { const r = new Rig(c, out, t, h ^ (o.seed | 0)); fn(r, o); return done(r); }; };
 
 // ---------------------------------------------------------------- UI
 def('uiHover', (r, o) => { tone(r, { f0: 1900 * (o.p || 1), f1: 2300, dur: 0.05, g: 0.12 }); });
@@ -149,20 +151,20 @@ def('explosion', (r, o) => {
   noise(r, { kind: 'pink', ftype: 'lowpass', f0: 3600, f1: 160, q: 0.5, dur: L, g: 0.32, att: 0.004, wet: 0.35 });
   noise(r, { ftype: 'bandpass', f0: 2200, f1: 900, q: 0.8, dur: 0.09, g: 0.2, att: 0.001 });
   noise(r, { kind: 'brown', ftype: 'lowpass', f0: 220, f1: 60, dur: L * 1.7, g: 0.28, att: 0.04, wet: 0.2 });
-  for (let i = 0; i < 4 + Math.floor(4 * s); i++) noise(r, { ftype: 'highpass', f0: 3000 + i * 400, t: 0.12 + Math.random() * 0.5 * s, dur: 0.03, g: 0.08, att: 0.002 });
+  for (let i = 0; i < 4 + Math.floor(4 * s); i++) noise(r, { ftype: 'highpass', f0: 3000 + i * 400, t: 0.12 + r.rnd() * 0.5 * s, dur: 0.03, g: 0.08, att: 0.002 });
 });
 def('mineDrop', (r) => { tone(r, { f0: 520, f1: 260, dur: 0.12, g: 0.22 }); noise(r, { ftype: 'highpass', f0: 3000, dur: 0.03, g: 0.1 }); });
 def('mineBlast', (r) => {
   tone(r, { f0: 120, f1: 35, dur: 0.5, g: 0.38 });
   noise(r, { kind: 'pink', ftype: 'lowpass', f0: 3000, f1: 200, dur: 0.6, g: 0.28, att: 0.003, wet: 0.25 });
-  for (let i = 0; i < 9; i++) noise(r, { ftype: 'bandpass', f0: 1500 + Math.random() * 3500, q: 3, t: i * 0.035 + Math.random() * 0.03, dur: 0.05, g: 0.13, att: 0.002 });
+  for (let i = 0; i < 9; i++) noise(r, { ftype: 'bandpass', f0: 1500 + r.rnd() * 3500, q: 3, t: i * 0.035 + r.rnd() * 0.03, dur: 0.05, g: 0.13, att: 0.002 });
 });
 def('emp', (r) => {
-  const g = tone(r, { type: 'sawtooth', f0: 1400, f1: 55, dur: 1.0, g: 0.14, lp: 3500, wet: 0.3 });
-  lfo(r, g.gain, 38, 0.06, r.t0, 1.0, 'square');
-  noise(r, { ftype: 'bandpass', f0: 5000, f1: 300, q: 2, dur: 0.9, g: 0.2, att: 0.01 });
-  for (let i = 0; i < 6; i++) noise(r, { ftype: 'highpass', f0: 4000, t: 0.05 + i * 0.08, dur: 0.025, g: 0.12, att: 0.001 });
-  tone(r, { f0: 70, f1: 30, dur: 0.5, g: 0.3 });
+  const g = tone(r, { type: 'sawtooth', f0: 1400, f1: 55, dur: 1.0, g: 0.08, lp: 3500, wet: 0.3 });
+  lfo(r, g.gain, 38, 0.04, r.t0, 1.0, 'square');
+  noise(r, { ftype: 'bandpass', f0: 5000, f1: 300, q: 2, dur: 0.9, g: 0.11, att: 0.01 });
+  for (let i = 0; i < 6; i++) noise(r, { ftype: 'highpass', f0: 4000, q: 0.5, t: 0.05 + i * 0.08, dur: 0.025, g: 0.07, att: 0.001 });
+  tone(r, { f0: 70, f1: 30, dur: 0.5, g: 0.17 });
 });
 def('lightning', (r) => {
   noise(r, { ftype: 'highpass', f0: 2000, dur: 0.12, g: 0.3, att: 0.001 });
@@ -240,6 +242,31 @@ def('tumble', (r, o) => {
   osc.start(T); osc.stop(T + d + 0.03); r.fin(T + d + 0.03);
   noise(r, { ftype: 'lowpass', f0: 600, f1: 150, dur: d, g: 0.15, att: 0.05 });
 });
+
+// ---------------------------------------------------------------- feedback cues (V-20, V-37, P-14)
+/** Storm cast for its user: a charging zap-rise, then a muffled distant thunder roll. */
+def('stormCast', (r) => {
+  tone(r, { type: 'sawtooth', f0: 220, f1: 1800, dur: 0.35, g: 0.1, lp: 2600, att: 0.05, wet: 0.3 });
+  noise(r, { ftype: 'highpass', f0: 3500, dur: 0.1, t: 0.33, g: 0.22, att: 0.001 });
+  noise(r, { kind: 'brown', ftype: 'lowpass', f0: 320, f1: 50, q: 0.5, t: 0.5, dur: 2.2, g: 0.4, att: 0.2, wet: 0.5 });
+});
+/** Distant thunder (the Storm user hearing a strike land far away). */
+def('thunderFar', (r) => {
+  noise(r, { kind: 'brown', ftype: 'lowpass', f0: 260, f1: 45, q: 0.5, dur: 2.4, g: 0.38, att: 0.25, wet: 0.55 });
+  tone(r, { f0: 70, f1: 32, dur: 1.2, g: 0.18, att: 0.1 });
+});
+/** Soft tone while a rival is locking on to the player: o.p rises with lock progress. */
+def('beingLocked', (r, o) => {
+  tone(r, { f0: 640 * (o.p || 1), dur: 0.12, g: 0.13, att: 0.01 });
+  tone(r, { f0: 960 * (o.p || 1), t: 0.001, dur: 0.1, g: 0.05, att: 0.01 });
+});
+/** "ROLL NOW": distinct rising triple chirp, only when the barrel roll can still evade the missile. */
+def('rollNow', (r) => {
+  [0, 0.09, 0.18].forEach((t, i) => tone(r, { type: 'triangle', f0: 1200 * semis(i * 4), t, dur: 0.09, g: 0.2, att: 0.004, wet: 0.2 }));
+  tone(r, { type: 'square', f0: 2400, t: 0.27, dur: 0.16, g: 0.07, lp: 4000 });
+});
+/** Tiny tick for camera change / look-back. */
+def('camTick', (r, o) => { tone(r, { type: 'triangle', f0: 1500 * (o.p || 1), f1: 1100 * (o.p || 1), dur: 0.035, g: 0.2, att: 0.002 }); });
 
 export const SFX = R;
 export const SFX_NAMES = Object.keys(R);

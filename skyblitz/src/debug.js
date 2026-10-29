@@ -1,16 +1,27 @@
-// window.__sky: the test/automation surface. Always installed (harmless in a single-player game). Owner: lead.
-// Typical headless use (see tests/tools/shot.mjs): load  /skyblitz/?manual=1&autostart=1&mute=1 , then
-//   __sky.step(600)  /  __sky.state()  /  __sky.cam([x,y,z],[lx,ly,lz])  /  screenshot via the harness.
+// window.__sky: the test/automation surface. Owner: core.
+// A bare URL (the real player) gets NONE of it (E-29): teleport / give / start and an error log that wraps console.error are test tools. It is
+// installed only when the URL carries one of DEBUG_PARAMS. Typical headless use (see tests/tools/shot.mjs): load
+//   /skyblitz/?manual=1&autostart=1&mute=1 , then  __sky.step(600)  /  __sky.state()  /  __sky.cam([x,y,z],[lx,ly,lz])  /  screenshot via the harness.
+// To open the title or a menu with the API and nothing else, add `debug=1`. `mute` alone stays a harmless player option.
 import { SIM_DT } from './config.js';
 
 const r1 = (x) => Math.round(x * 10) / 10;
 
+/** URL parameters that switch the test surface on. */
+export const DEBUG_PARAMS = ['debug', 'manual', 'autostart', 'demo', 'autopilot', 'course', 'craft', 'diff', 'laps', 'bots', 'seed', 'quality'];
+/** The error log keeps the newest entries only (a runaway error would otherwise grow without bound). */
+export const MAX_ERRORS = 200;
+
+export function debugEnabled(params) { return DEBUG_PARAMS.some((k) => params.has(k)); }
+
 export function installDebug(game) {
+  if (!debugEnabled(game.params)) return null;
   const errors = [];
-  addEventListener('error', (e) => errors.push(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}`));
-  addEventListener('unhandledrejection', (e) => errors.push('unhandledrejection: ' + (e.reason?.stack || e.reason)));
+  const note = (s) => { errors.push(s); if (errors.length > MAX_ERRORS) errors.splice(0, errors.length - MAX_ERRORS); };
+  addEventListener('error', (e) => note(`${e.message} @ ${(e.filename || '').split('/').pop()}:${e.lineno}`));
+  addEventListener('unhandledrejection', (e) => note(('unhandledrejection: ' + (e.reason?.stack || e.reason)).slice(0, 400)));
   const origErr = console.error;
-  console.error = (...a) => { errors.push(a.map((x) => (x && x.stack) || String(x)).join(' ').slice(0, 400)); origErr.apply(console, a); };
+  console.error = (...a) => { note(a.map((x) => (x && x.stack) || String(x)).join(' ').slice(0, 400)); origErr.apply(console, a); };
 
   const api = {
     ready: false, game, errors,
@@ -54,6 +65,8 @@ export function installDebug(game) {
     give(type, count = 1) { const p = game.player; if (p) p.item = { type, count }; return !!p; },
     ui(visible = true) { const e = document.getElementById('ui'); if (e) e.style.display = visible ? '' : 'none'; return visible; },
     quality(id) { game.setQuality(id); return game.qualityId; },
+    /** Auto-quality governor snapshot: { scale, preset, pending, median, p90, changes, ... }. */
+    governor() { return game.gov?.snapshot() ?? null; },
     /** Start/stop recording gameplay events (returns counts by type). */
     events(on = true) { game.events.log = on ? [] : null; },
     eventCounts() { const c = {}; for (const e of game.events.log || []) c[e.type] = (c[e.type] || 0) + 1; return c; },

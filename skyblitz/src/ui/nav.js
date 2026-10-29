@@ -22,7 +22,8 @@ export class Nav {
     const a = document.activeElement;
     if (a && items.includes(a)) return a;
     const first = items.find((e) => e.dataset.nav === 'first') || items.find((e) => e.classList.contains('primary')) || items[0];
-    first.focus({ preventScroll: true }); return first;
+    first.focus({ preventScroll: true }); first.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });   // a first focus below the fold (portrait course list, short screens) must come into view
+    return first;
   }
 
   move(dir) {
@@ -30,7 +31,7 @@ export class Nav {
     const cur = document.activeElement && items.includes(document.activeElement) ? document.activeElement : null;
     if (!cur) { this.ensureFocus(); return; }
     if (this.ui.cur?.onNav?.(dir, cur)) return;
-    const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, horiz = dir === 'left' || dir === 'right';
     let best = null, bs = 1e9;
     for (const el of items) {
       if (el === cur) continue;
@@ -38,6 +39,7 @@ export class Nav {
       const p = dir === 'up' ? -y : dir === 'down' ? y : dir === 'left' ? -x : x;
       const s = dir === 'up' || dir === 'down' ? Math.abs(x) : Math.abs(y);
       if (p < 4) continue;
+      if (horiz && Math.abs(y) >= (r.height + b.height) / 2) continue;   // left / right stay on the row: no jumping from the leftmost card or the "1" laps option to the footer Back button (V-26)
       const score = p + s * 2.2;
       if (score < bs) { bs = score; best = el; }
     }

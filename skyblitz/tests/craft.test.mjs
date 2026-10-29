@@ -74,3 +74,33 @@ test('RibbonSystem: pooled ribbons produce finite strips and release cleanly', (
   r.release(a); assert.equal(r.free.length, 1); void b; void c;
   assert.equal(r.acquire(1, 1, 1, 1, 1), a, 'slot reused');
 });
+
+test('SpriteSystem uploads only the live range: bytes scale with the particle count, nothing when idle (E-14)', () => {
+  const s = new SpriteSystem(new THREE.Texture(), { cap: 1000, additive: true });
+  s.update(0.016); assert.equal(s.uploadedBytes, 0, 'idle system uploads nothing');
+  for (let i = 0; i < 10; i++) s.emit(i, 0, 0, 0, 0, 0, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0);
+  s.update(0.016); const ten = s.uploadedBytes;
+  for (let i = 0; i < 90; i++) s.emit(i, 0, 0, 0, 0, 0, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0);
+  s.update(0.016); const hundred = s.uploadedBytes;
+  assert.ok(ten > 0 && ten < 1000 * 13 * 4 * 0.02, `10 particles upload ${ten} B`);
+  assert.ok(Math.abs(hundred / ten - 10) < 0.01, `bytes scale with count (${ten} -> ${hundred})`);
+  assert.equal(s.aPos.updateRanges.length, 1); assert.equal(s.aPos.updateRanges[0].count, 100 * 3);
+});
+
+test('shared aircraft geometry survives a race dispose (E-26)', async () => {
+  const { disposeAircraft, releaseAircraftCache } = await import('../src/craft/aircraft.js');
+  const spec = AIRCRAFT[0], m = buildAircraft(spec, 0, null);
+  let freed = 0; const geos = []; m.traverse((o) => { if (o.geometry) { geos.push(o.geometry); o.geometry.addEventListener('dispose', () => freed++); } });
+  disposeAircraft(m);
+  m.traverse((o) => { o.geometry?.dispose?.(); });            // what Race.dispose historically did
+  assert.equal(freed, 0, 'cached geometry must not be freed by a model dispose');
+  const again = buildAircraft(spec, 1, null);
+  assert.ok(again.children.some((c) => c.geometry === geos[0]), 'the cache is reused after the dispose');
+  releaseAircraftCache(); assert.ok(freed > 0, 'explicit cache release frees it');
+});
+
+test('livery.js has no literal backslash-n inside a // comment (dead-code guard, E-25)', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/craft/livery.js', import.meta.url), 'utf8');
+  src.split('\n').forEach((l, i) => { const k = l.indexOf('//'); if (k >= 0 && !/['"`]/.test(l.slice(0, k))) assert.ok(!l.slice(k).includes('\\n'), `livery.js:${i + 1} swallows code in a comment`); });
+});

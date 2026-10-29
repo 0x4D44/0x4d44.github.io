@@ -2,21 +2,21 @@
  "stems": {
   "base": {
    "file": "base.ogg",
-   "bytes": 403803,
+   "bytes": 403804,
    "kbps": 52,
    "gain": 1.068,
    "rmsDb": -25.2
   },
   "lead": {
    "file": "lead.ogg",
-   "bytes": 650736,
+   "bytes": 650733,
    "kbps": 40,
    "gain": 0.186,
    "rmsDb": -25.4
   },
   "drive": {
    "file": "drive.ogg",
-   "bytes": 333647,
+   "bytes": 333652,
    "kbps": 40,
    "gain": 0.093,
    "rmsDb": -26.1
@@ -36,13 +36,13 @@
  "introSamples": 192000,
  "loopSamples": 3072000,
  "totalSamples": 3264000,
- "bytes": 1746256,
+ "bytes": 1746259,
  "stats": {
   "lufs": -17,
   "peakDb": -4.05,
   "fitResidual": 0.168,
-  "seamJump": 0.12812,
-  "seamRatio": 10.01,
+  "seamJump": 0.01557,
+  "seamRatio": 1.22,
   "trimsDb": {
    "base": 0,
    "lead": 8,
@@ -50,7 +50,7 @@
    "final": 13.3
   },
   "seamRms": 0.0892,
-  "startRms": 0.14
+  "startRms": 0.1392
  },
  "name": "Midnight Overdrive",
  "key": "A",

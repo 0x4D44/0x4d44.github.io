@@ -124,6 +124,6 @@ export class ItemVisuals {
 
   dispose() {
     this.group.parent?.remove(this.group);
-    this.group.traverse((o) => { o.geometry?.dispose?.(); const m = o.material; if (m) (Array.isArray(m) ? m : [m]).forEach((x) => x.dispose?.()); });
+    this.group.traverse((o) => { o.geometry?.dispose?.(); const m = o.material; if (m) (Array.isArray(m) ? m : [m]).forEach((x) => x.dispose?.()); if (o.isInstancedMesh) o.dispose(); });   // E-06: instanceMatrix / instanceColor are GL buffers of their own
   }
 }

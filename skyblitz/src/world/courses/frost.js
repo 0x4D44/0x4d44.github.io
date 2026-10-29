@@ -58,7 +58,7 @@ export const frostDef = (() => {
     sectors: ['arch', 'loopExit', 'caveB'],
     gateSpacing: 250,
     branches: [{
-      id: 'cave', name: 'Ice Cave Shortcut', from: 'caveA', to: 'caveB', hw: 42, hh: 44, risk: 0.9, taper: 120,
+      id: 'cave', name: 'Ice Cave Shortcut', from: 'caveA', to: 'caveB', hw: 42, hh: 44, risk: 0.55, taper: 120,
       points: [[-330, 118, -1560], [-380, 112, -1340], [-450, 108, -1100], [-480, 106, -880], [-530, 108, -700]].map(([x, y, z]) => [x * S, y, z * S]),
       marks: { cave: 1 },
     }],

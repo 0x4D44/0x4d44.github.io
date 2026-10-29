@@ -87,7 +87,10 @@ function paint(spec, lv, style) {
     const fl = (c, s, off) => { g.fillStyle = c; g.beginPath(); const x0 = nose(-L2 * 0.9), dir = right ? -1 : 1; g.moveTo(x0, sy + off);
       for (let k = 0; k < 5; k++) { g.quadraticCurveTo(x0 + dir * (70 + k * 60) * s, sy + off - 40 * s + k * 6, x0 + dir * (160 + k * 95) * s, sy + off + (k % 2 ? 22 : -26) * s); } g.lineTo(x0 + dir * 80 * s, sy + off + 60 * s); g.closePath(); g.fill(); };
     if (style === 2) { fl(A, 1.2, -6); fl(S, 0.72, -2); }
-    // tail flash (reads on the fins)\n    g.fillStyle = A; g.beginPath(); g.moveTo(nose(L2 * 0.35), sy - 60); g.lineTo(nose(L2 * 0.7), sy - 60); g.lineTo(nose(L2 * 0.95), y0); g.lineTo(nose(L2 * 0.6), y0); g.fill();\n    g.fillStyle = S; g.beginPath(); g.moveTo(nose(L2 * 0.72), sy - 60); g.lineTo(nose(L2 * 0.78), sy - 60); g.lineTo(nose(L2 * 1.03), y0); g.lineTo(nose(L2 * 0.97), y0); g.fill();\n    // big racing number
+    // tail flash (reads on the fins)
+    g.fillStyle = A; g.beginPath(); g.moveTo(nose(L2 * 0.35), sy - 60); g.lineTo(nose(L2 * 0.7), sy - 60); g.lineTo(nose(L2 * 0.95), y0); g.lineTo(nose(L2 * 0.6), y0); g.fill();
+    g.fillStyle = S; g.beginPath(); g.moveTo(nose(L2 * 0.72), sy - 60); g.lineTo(nose(L2 * 0.78), sy - 60); g.lineTo(nose(L2 * 1.03), y0); g.lineTo(nose(L2 * 0.97), y0); g.fill();
+    // big racing number
     g.fillStyle = S; g.strokeStyle = dark; g.lineWidth = 12; g.font = '900 italic 190px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.strokeText(num, nose(L2 * 0.18), sy - 4); g.fillText(num, nose(L2 * 0.18), sy - 4);
     g.font = '800 italic 54px system-ui, sans-serif'; g.fillStyle = S; g.fillText(spec.name.split(' ')[0].toUpperCase(), nose(-L2 * 0.45), sy + 78);
