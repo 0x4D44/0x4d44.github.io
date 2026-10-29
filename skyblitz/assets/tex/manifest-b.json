@@ -1,0 +1,119 @@
+{
+  "facade_atlas.webp": {
+    "w": 2048,
+    "h": 2048,
+    "cols": 4,
+    "rows": 4,
+    "colorSpace": "srgb",
+    "alpha": false,
+    "use": "Repeating daytime building facade albedo tiles."
+  },
+  "facade_emissive.png": {
+    "w": 2048,
+    "h": 2048,
+    "cols": 4,
+    "rows": 4,
+    "colorSpace": "linear",
+    "alpha": false,
+    "use": "Window-only night emissive map aligned to facade_atlas."
+  },
+  "neon_signs.webp": {
+    "w": 2048,
+    "h": 1024,
+    "cols": 4,
+    "rows": 2,
+    "colorSpace": "srgb",
+    "alpha": false,
+    "use": "Fictional glowing neon sign illustrations on navy panels."
+  },
+  "stars.webp": {
+    "w": 2048,
+    "h": 1024,
+    "cols": 1,
+    "rows": 1,
+    "colorSpace": "srgb",
+    "alpha": false,
+    "use": "Horizontally seamless equirectangular night sky with Milky Way."
+  },
+  "aurora.png": {
+    "w": 1024,
+    "h": 256,
+    "cols": 1,
+    "rows": 1,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Horizontally wrapping green cyan violet aurora curtain."
+  },
+  "sun_glow.png": {
+    "w": 256,
+    "h": 256,
+    "cols": 1,
+    "rows": 1,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Soft additive white gold sun glow with subtle six ray star."
+  },
+  "cloud_atlas.png": {
+    "w": 2048,
+    "h": 2048,
+    "cols": 4,
+    "rows": 4,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Sixteen soft volumetric cloud puffs for billboards."
+  },
+  "smoke_atlas.png": {
+    "w": 1024,
+    "h": 1024,
+    "cols": 4,
+    "rows": 4,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Sixteen feathered grey smoke puffs."
+  },
+  "explosion_atlas.png": {
+    "w": 2048,
+    "h": 2048,
+    "cols": 4,
+    "rows": 4,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Sixteen frame expanding fireball and smoke flipbook."
+  },
+  "spark.png": {
+    "w": 128,
+    "h": 128,
+    "cols": 1,
+    "rows": 1,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Small white yellow additive glow dot."
+  },
+  "flare_atlas.png": {
+    "w": 1024,
+    "h": 256,
+    "cols": 4,
+    "rows": 1,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Ring, hex iris, anamorphic streak and starburst flare elements."
+  },
+  "shockwave.png": {
+    "w": 512,
+    "h": 512,
+    "cols": 1,
+    "rows": 1,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Thin white expanding shockwave ring."
+  },
+  "lightning_atlas.png": {
+    "w": 1024,
+    "h": 512,
+    "cols": 4,
+    "rows": 2,
+    "colorSpace": "srgb",
+    "alpha": true,
+    "use": "Eight forked white core blue violet lightning bolts."
+  }
+}

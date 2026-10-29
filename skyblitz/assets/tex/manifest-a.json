@@ -1,0 +1,93 @@
+{
+  "rock_red.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Terracotta canyon wall albedo"
+  },
+  "rock_red_n.png": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "linear",
+    "use": "Tangent-space normal for rock_red"
+  },
+  "rock_grey.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Volcanic basalt and granite albedo"
+  },
+  "rock_grey_n.png": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "linear",
+    "use": "Tangent-space normal for rock_grey"
+  },
+  "grass.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Tropical grass and jungle floor albedo"
+  },
+  "sand.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Golden beach and desert sand albedo"
+  },
+  "snow.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Bright snow albedo"
+  },
+  "ice.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Blue teal glacial ice albedo"
+  },
+  "concrete.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "City rooftop concrete albedo"
+  },
+  "metal_deck.webp": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "srgb",
+    "use": "Worn painted steel launch-deck albedo"
+  },
+  "water_n.png": {
+    "w": 1024,
+    "h": 1024,
+    "tileable": true,
+    "colorSpace": "linear",
+    "use": "Procedural ocean-surface tangent-space normal"
+  },
+  "foam.webp": {
+    "w": 512,
+    "h": 512,
+    "tileable": true,
+    "colorSpace": "linear",
+    "use": "Greyscale sea-foam mask"
+  },
+  "noise.png": {
+    "w": 512,
+    "h": 512,
+    "tileable": true,
+    "colorSpace": "linear",
+    "use": "Tileable shader noise: fBm, inverted Worley F1, fBm, billow"
+  }
+}
