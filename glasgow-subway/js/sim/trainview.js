@@ -36,7 +36,8 @@ export class TrainView {
     const box = new THREE.Box3().setFromObject(root);
     this.zMin = box.min.z; this.zMax = box.max.z; this.length = box.max.z - box.min.z; this.frontOffset = -box.min.z;
     const wz = new THREE.Vector3(), worldDoorZ = {};
-    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; } });
+    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; }
+      const m2 = /^(door_[LR]_\d+)_([ab])$/.exec(o.name); if (m2) { o.getWorldPosition(wz); const q = (worldDoorZ[m2[1] + '#'] = worldDoorZ[m2[1] + '#'] || []); q.push(wz.z); if (q.length === 2) worldDoorZ[m2[1]] = (q[0] + q[1]) / 2; } });   // rev 7: two bi-parting leaves per opening, centre = mean of the leaves
     const top = (root.children.length === 1 && root.children[0].name === 'train') ? root.children[0] : root;
     const carNodes = top.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     this.carInfo = carNodes.map((n) => { const b = new THREE.Box3().setFromObject(n); return { node: n, zc: (b.min.z + b.max.z) / 2, len: b.max.z - b.min.z, zmin: b.min.z }; });
@@ -54,12 +55,20 @@ export class TrainView {
     this.cars.forEach((g) => this.root.add(g));
     this.root.traverse((o) => { if (o.name) this.byName[o.name] = o; });
     this.doorsL = []; this.doorsR = []; this.doorZ = [];
+    this.doubleDoors = !!this.byName['door_R_0_a'] || !!this.byName['door_L_0_a'];
     for (let i = 0; i < 40; i++) {
+      if (this.doubleDoors) {   // A3 rev 7: leaf a (nose side) opens -Z by 0.6 m, leaf b (rear side) opens +Z by 0.6 m
+        const la = this.byName['door_L_' + i + '_a'], lb = this.byName['door_L_' + i + '_b'], ra = this.byName['door_R_' + i + '_a'], rb = this.byName['door_R_' + i + '_b'];
+        if (!la && !ra) break;
+        if (la) this.doorsL.push({ leaves: [{ n: la, z0: la.position.z, dir: -1 }, { n: lb, z0: lb.position.z, dir: 1 }] });
+        if (ra) this.doorsR.push({ leaves: [{ n: ra, z0: ra.position.z, dir: -1 }, { n: rb, z0: rb.position.z, dir: 1 }] });
+        continue;
+      }
       const l = this.byName['door_L_' + i], r = this.byName['door_R_' + i];
       if (!l && !r) break;
       const dir = 1; // revision 2: every leaf slides 1.2 m toward the rear
-      if (l) this.doorsL.push({ n: l, z0: l.position.z, dir });
-      if (r) this.doorsR.push({ n: r, z0: r.position.z, dir });
+      if (l) this.doorsL.push({ leaves: [{ n: l, z0: l.position.z, dir, travel: 1.2 }] });
+      if (r) this.doorsR.push({ leaves: [{ n: r, z0: r.position.z, dir, travel: 1.2 }] });
     }
     // door opening centres in root coordinates (one leaf per opening, centre of the opening = leaf closed pos)
     const refKey = this.doorsR.length ? 'door_R_' : 'door_L_';
@@ -68,7 +77,14 @@ export class TrainView {
     this.cabScreen = this.byName.cab_screen || null;
     this.cabSpeedo = this.byName.cab_speedo || null;
     this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : new THREE.Vector3(0, 1.98, this.zMin + 1.8);
-    root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    this.root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.frustumCulled = false;
+      // the route-diagram strips above the windows were baked mirrored left-to-right (text reads backwards): flip the map in U
+      for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+        if (m && m.name === 'route_map_panel' && m.map && !m.map.userData.flipped) { m.map.repeat.x = -1; m.map.offset.x = 1; m.map.userData.flipped = true; m.map.needsUpdate = true; }
+      }
+    });
     this._m = new THREE.Matrix4();
     this.bogie = this.carInfo.map((c) => Math.max(2, c.len * 0.34));
     const bA = this.byName['car_0_bogie_a'], bB = this.byName['car_0_bogie_b'];
@@ -100,47 +116,105 @@ export class TrainView {
     if (this.cabKit) return;
     const THREE = this.THREE, g = new THREE.Group(); g.name = 'cabKit'; g.visible = false;
     const zc = this.carInfo[0].zc, F = this.cars[0];
+    if (this.cabEye) this.cabEye.position.z += 0.09;      // driver sits closer to the glass (0.88 m)
+    this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : this.eyeLocal;
+    const ey = this.eyeLocal;
     const std = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0.05, side: THREE.DoubleSide, ...o });
-    const lining = std(0x4a4e56, { emissive: 0x15171a }), wall = std(0x3c4048, { emissive: 0x101214 }), desk = std(0x2b2f35, { emissive: 0x0c0d0f }), trim = std(0x1b1d21);
-    const box = (w, h, d, x, y, z, m, rx = 0) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(x, y, z - zc); b.rotation.x = rx; g.add(b); return b; };
-    const zf = -19.55, zr = -17.85;                       // windscreen plane / rear partition
-    box(2.2, 0.05, zr - zf + 0.2, 0, 2.275, (zf + zr) / 2, lining);                 // roof
-    box(0.05, 1.6, zr - zf, -1.1, 1.49, (zf + zr) / 2 - 0.05, wall);               // side walls (solid below/above the side window below)
-    box(0.05, 1.6, zr - zf, 1.1, 1.49, (zf + zr) / 2 - 0.05, wall);
-    box(2.2, 1.6, 0.05, 0, 1.49, zr, wall);                                         // rear partition
-    box(2.2, 0.62, 0.06, 0, 0.99, zf, wall);                                        // nose below the windscreen
-    box(2.2, 0.07, 0.12, 0, 2.215, zf, trim);                                         // slim header
-    for (const sx of [-1, 1]) box(0.13, 1.0, 0.12, sx * 1.035, 1.75, zf, trim);      // A pillars (windscreen opening is ~1.97 m wide)
-    box(2.18, 0.03, zr - zf, 0, 0.7, (zf + zr) / 2, std(0x2a2c30));                  // floor
-    // desk: low, top slopes down toward the driver
-    box(1.7, 0.04, 0.62, 0, 1.19, -19.2, desk, 0.22);
-    box(1.7, 0.5, 0.6, 0, 0.94, -19.22, desk);
-    box(0.1, 0.5, 0.42, -0.95, 1.0, -19.05, trim); box(0.1, 0.5, 0.42, 0.95, 1.0, -19.05, trim);
-    // TMS screen on the desk (angled up toward the driver) + secondary speed display
-    const scr = new THREE.Group(); scr.position.set(-0.72, 1.24, -19.14 - zc); scr.rotation.x = -0.6; g.add(scr);
-    const bz = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.25, 0.03), trim); bz.position.set(0, 0.12, -0.012); scr.add(bz);
-    const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.35 * 320 / 512), new THREE.MeshBasicMaterial({ map: texTms, toneMapped: false })); sp.position.set(0, 0.12, 0.006); scr.add(sp);
-    const s2 = new THREE.Group(); s2.position.set(0.34, 1.21, -19.12 - zc); s2.rotation.x = -0.6; g.add(s2);
-    const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.17, 0.025), trim); b2.position.set(0, 0.09, -0.01); s2.add(b2);
-    const p2 = new THREE.Mesh(new THREE.PlaneGeometry(0.21, 0.21 * 170 / 256), new THREE.MeshBasicMaterial({ map: texSpeedo, toneMapped: false })); p2.position.set(0, 0.09, 0.004); s2.add(p2);
-    // master controller: dark base, short lever, small dark grip (non-emissive)
-    const cyl = (r, h, x, y, z, m) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 14), m); c.position.set(x, y, z - zc); g.add(c); return c; };
-    cyl(0.05, 0.04, -0.05, 1.17, -18.88, trim); cyl(0.012, 0.13, -0.05, 1.24, -18.88, trim);
-    const grip = new THREE.Mesh(new THREE.SphereGeometry(0.026, 12, 8), std(0x15161a)); grip.position.set(-0.05, 1.32, -18.88 - zc); g.add(grip);
-    // door buttons (dull, only slightly emissive)
-    [[0x2d7a46, 0.12], [0x9a6a1c, 0.08], [0x8c2b2b, 0.08]].forEach(([c, e], i) => { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 12), std(c, { emissive: c, emissiveIntensity: e })); b.position.set(0.62 + i * 0.07, 1.19, -19.05 - zc); b.rotation.x = 0.25; g.add(b); });
-    for (const pl of [sp, p2]) { const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); }   // the TMS canvas textures use flipY=false
+    // procedural panel textures (seams) so the lining does not read as a flat slab
+    const tex = (base, seam, nx, ny) => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = base; x.fillRect(0, 0, 128, 128); x.strokeStyle = seam; x.lineWidth = 3; x.strokeRect(1, 1, 126, 126); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(nx, ny); return t; };
+    const ceilM = std(0xffffff, { map: tex('#c9ccd0', '#8e9296', 6, 2), emissive: 0x303234 });
+    const wallM = std(0xffffff, { map: tex('#4a5058', '#2a2d31', 4, 1), emissive: 0x141517 });
+    const blackM = std(0x0b0c0e, { roughness: 0.6 }), deskM = std(0x282c32, { emissive: 0x08090a }), deskTop = std(0x32363c, { emissive: 0x0b0c0d, roughness: 0.55 });
+    const R = 1.085, YC = 1.487, FL = 0.695, zf = -19.62, zr = -17.85;
+    const add = (o) => { g.add(o); return o; };
+    const prof = []; prof.push([-R, FL], [-R, YC]); for (let i = 1; i < 24; i++) { const a = Math.PI - Math.PI * i / 24; prof.push([R * Math.cos(a), YC + R * Math.sin(a)]); } prof.push([R, YC], [R, FL]);
+    // tube strip between z0..z1; skip(i) drops profile segment i (side window opening)
+    const strip = (z0, z1, mat, pick, skip) => { const pos = [], uv = [], idx = []; let n = 0;
+      for (let i = 0; i < prof.length - 1; i++) { if (skip && skip(i)) continue; const A = prof[i], B = prof[i + 1], my = (A[1] + B[1]) / 2; if (pick && !pick(my)) continue;
+        pos.push(A[0], A[1], z0 - zc, B[0], B[1], z0 - zc, B[0], B[1], z1 - zc, A[0], A[1], z1 - zc); uv.push(0, 0, 1, 0, 1, 1, 0, 1); idx.push(n, n + 1, n + 2, n, n + 2, n + 3); n += 4; }
+      const ge = new THREE.BufferGeometry(); ge.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); ge.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); ge.setIndex(idx); ge.computeVertexNormals(); return add(new THREE.Mesh(ge, mat)); };
+    const w0 = ey.z - 0.62, w1 = ey.z + 0.30;                                   // left side window z range
+    const inWin = (i) => { const l = prof[i][0] <= 0 && prof[i + 1][0] <= 0, r = prof[i][0] >= 0 && prof[i + 1][0] >= 0; const y0 = Math.min(prof[i][1], prof[i + 1][1]), y1 = Math.max(prof[i][1], prof[i + 1][1]); return (l || r) && y0 >= 1.2 && y1 <= 2.03 && Math.abs(prof[i][0]) > 0.9; };
+    const lowSeg = (my) => my < 1.30, hiSeg = (my) => my >= 1.30;
+    strip(zf, zr, wallM, lowSeg); strip(zf, w0, ceilM, hiSeg); strip(w0, w1, ceilM, hiSeg, inWin); strip(w1, zr, ceilM, hiSeg);
+    // window frame bars
+    const bar = (a, b, r, m) => { const d = new THREE.Vector3().subVectors(b, a), L = d.length(); const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 6), m); c.position.copy(a).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); return add(c); };
+    for (const side of [-1, 1]) { const ids = []; for (let i = 0; i < prof.length - 1; i++) if (inWin(i) && Math.sign(prof[i][0] + prof[i + 1][0]) === side) ids.push(i);
+      const pts = ids.map((i) => prof[i]).concat([prof[ids[ids.length - 1] + 1]]);
+      for (const zz of [w0, w1]) for (let k = 0; k < pts.length - 1; k++) bar(new THREE.Vector3(pts[k][0], pts[k][1], zz - zc), new THREE.Vector3(pts[k + 1][0], pts[k + 1][1], zz - zc), 0.022, blackM);
+      for (const p of [pts[0], pts[pts.length - 1]]) bar(new THREE.Vector3(p[0], p[1], w0 - zc), new THREE.Vector3(p[0], p[1], w1 - zc), 0.022, blackM); }
+    // front wall with three windscreen bays (driver / centre evacuation door / right); frames are the black wall between them
+    { const sh = new THREE.Shape(); sh.moveTo(prof[0][0], prof[0][1]); for (const p of prof) sh.lineTo(p[0], p[1]);
+      const arch = (x) => Math.abs(x) >= R ? FL : YC + Math.sqrt(R * R - x * x);
+      for (const [xa, xb] of [[-0.97, -0.32], [-0.255, 0.255], [0.32, 0.97]]) { const top = (x) => Math.min(2.42, arch(x) - 0.045); const h = new THREE.Path(); h.moveTo(xa, 1.40); h.lineTo(xb, 1.40); h.lineTo(xb, top(xb)); h.lineTo(xa, top(xa)); h.lineTo(xa, 1.40); sh.holes.push(h); }
+      const fm = new THREE.Mesh(new THREE.ShapeGeometry(sh), blackM); fm.position.z = zf - zc; add(fm);
+      // central door: thin grey handle strip + hinge line
+      const hd = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.2, 0.012), std(0x8a8f95)); hd.position.set(0.215, 1.62, zf + 0.02 - zc); add(hd); }
+    // rear partition (solid, with a small door window) and floor
+    { const sh = new THREE.Shape(); sh.moveTo(prof[0][0], prof[0][1]); for (const p of prof) sh.lineTo(p[0], p[1]);
+      const h = new THREE.Path(); h.moveTo(-0.55, 1.5); h.lineTo(-0.15, 1.5); h.lineTo(-0.15, 2.05); h.lineTo(-0.55, 2.05); h.lineTo(-0.55, 1.5); sh.holes.push(h);
+      const pm = new THREE.Mesh(new THREE.ShapeGeometry(sh), wallM); pm.position.z = zr - zc; add(pm); }
+    { const fl = new THREE.Mesh(new THREE.PlaneGeometry(2 * R, zr - zf), std(0x23262a)); fl.rotation.x = -Math.PI / 2; fl.position.set(0, FL + 0.01, (zf + zr) / 2 - zc); add(fl); }
+    // desk: extruded side profile (z, y): cowl at the glass, sloping down toward the driver
+    { const sh = new THREE.Shape(); const P = [[0.02, FL], [0.02, 1.50], [0.28, 1.50], [0.58, 1.37], [0.60, 1.34], [0.60, FL]]; sh.moveTo(zf + P[0][0], P[0][1]); for (const p of P) sh.lineTo(zf + p[0], p[1]);
+      const ge = new THREE.ExtrudeGeometry(sh, { depth: 2 * R - 0.02, bevelEnabled: false }); ge.rotateY(-Math.PI / 2); ge.translate(R - 0.01, 0, -zc);
+      add(new THREE.Mesh(ge, deskM)); const top = new THREE.Mesh(new THREE.BoxGeometry(2 * R - 0.04, 0.012, 0.32), deskTop); top.position.set(0, 1.434, zf + 0.44 - zc); top.rotation.x = Math.atan2(0.13, 0.30) * -1; add(top); }
+    const deskY = (u) => 1.50 - Math.max(0, u - 0.28) * (0.13 / 0.30);    // desk top height at u metres behind the glass
+    // TMS screens: bezel + display, turned toward the driver's eye
+    const eyeV = new THREE.Vector3(ey.x, ey.y, ey.z);
+    const screen = (x, u, w, h, tx, ratio) => { const gr = new THREE.Group(); gr.position.set(x, deskY(u) + h * 0.45, zf + u - zc); const bz = new THREE.Mesh(new THREE.BoxGeometry(w + 0.03, h + 0.03, 0.03), blackM); bz.position.z = -0.016; gr.add(bz);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tx, toneMapped: false })); pl.position.z = 0.002; gr.add(pl);
+      const uv = pl.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - uv.getY(i)); add(gr); gr.lookAt(eyeV.x, eyeV.y - 0.12, eyeV.z - zc); return gr; };
+    screen(-0.92, 0.22, 0.34, 0.34 * 320 / 512, texTms);
+    // controls on the driver's right: master controller (traction) and brake handle, door buttons, emergency mushroom
+    const cyl = (r, h, x, y, z, m, rx = 0) => { const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 16), m); c.position.set(x, y, z - zc); c.rotation.x = rx; return add(c); };
+    const steel = std(0xb9bdc2, { metalness: 0.6, roughness: 0.35 }), redM = std(0xb02020, { emissive: 0x300808 }), grip = std(0x101113);
+    const handle = (x, u, cap) => { const y0 = deskY(u); cyl(0.055, 0.04, x, y0 + 0.02, zf + u, deskM); cyl(0.010, 0.17, x, y0 + 0.10, zf + u, steel); const k = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.035, 0.07), cap); k.position.set(x, y0 + 0.195, zf + u - zc); add(k); };
+    handle(-0.20, 0.40, grip);      // master controller
+    handle(-0.56, 0.40, redM);      // brake handle
+    [[0x2d9a55], [0x2d9a55], [0xc98a1c], [0xd8d8d0], [0x2c6fb0]].forEach(([c], i) => { const b = cyl(0.016, 0.012, -0.40 + i * 0.075, deskY(0.47) + 0.006, zf + 0.47, std(c, { emissive: c, emissiveIntensity: 0.12 }), 0.4); });
+    cyl(0.032, 0.05, 0.05, deskY(0.34) + 0.025, zf + 0.34, redM);
+    // driver's seat (seen when looking round) and side-wall furniture
+    { const sm = std(0x1d2024), sx = ey.x, sz = ey.z + 0.28; const cu = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.09, 0.46), sm); cu.position.set(sx, FL + 0.45, sz - zc); add(cu);
+      const bk = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.60, 0.09), sm); bk.position.set(sx, FL + 0.82, sz + 0.24 - zc); bk.rotation.x = -0.12; add(bk);
+      const hr = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.17, 0.08), sm); hr.position.set(sx, FL + 1.22, sz + 0.27 - zc); add(hr);
+      cyl(0.04, 0.45, sx, FL + 0.22, sz, std(0x777b80)); }
+    { const pa = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.22, 0.17), std(0x16181b)); pa.position.set(-R + 0.02, 1.55, ey.z + 0.55 - zc); add(pa);
+      const ex = cyl(0.05, 0.3, R - 0.07, 1.05, zr - 0.15, redM); ex.position.y = 1.0;
+      bar(new THREE.Vector3(R - 0.06, 1.2, zf + 0.9 - zc), new THREE.Vector3(R - 0.06, 1.2, zr - 0.4 - zc), 0.013, steel); }
+    // ceiling LED strip
+    { const led = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.012, 1.0), new THREE.MeshBasicMaterial({ color: 0xf4f6ff })); led.position.set(0, YC + R - 0.015, (zf + zr) / 2 - zc); add(led); }
     this.cabKit = g; F.add(g);
+    this.setDest('INNER CIRCLE');
+  }
+  /** Paints the amber LED destination display above the cab glazing (cab_dest / cab_dest_rear, UV 0..1, flipY=false). */
+  setDest(text) {
+    const THREE = this.THREE; if (this._destText === text) return; this._destText = text;
+    const nodes = [this.byName.cab_dest, this.byName.cab_dest_rear].filter(Boolean); if (!nodes.length) return;
+    if (!this._destCanvas) { const c = document.createElement('canvas'); c.width = 512; c.height = 68; this._destCanvas = c; this._destTex = new THREE.CanvasTexture(c); this._destTex.colorSpace = THREE.SRGBColorSpace; this._destTex.flipY = false;
+      for (const n of nodes) n.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.map = this._destTex; o.material.emissiveMap = this._destTex; o.material.emissive.set(0xffffff); o.material.needsUpdate = true; } }); }
+    const g = this._destCanvas.getContext('2d'); g.fillStyle = '#120900'; g.fillRect(0, 0, 512, 68); g.fillStyle = '#ffb02e'; g.font = '700 40px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 36); this._destTex.needsUpdate = true;
   }
   /** Drive mode swaps A3's cab shell for the procedural cab (see buildCab). */
   setDriveCab(on) {
     on = !!on && !!this.cabKit; if (this._driveCab === on) return; this._driveCab = on;
     if (this.cabKit) this.cabKit.visible = on;
-    for (const nm of ['car_0_exterior', 'car_0_glass', 'car_0_cab', 'car_0_saloon']) { const n = this.byName[nm]; if (n) n.visible = !on; }
+    for (const nm of ['car_0_exterior', 'car_0_glass', 'car_0_cab', 'car_0_saloon', 'cab_dest']) { const n = this.byName[nm]; if (n) n.visible = !on; }
     for (const n of [this.cabScreen, this.cabSpeedo]) if (n) n.visible = !on;
     this._cullT0 = 0;
   }
   setWalkable(j) { this.walk = j; }
+  /** measured ceiling height above the floor at |x| (from computeHeadroom's ray casts), null if unavailable */
+  headroomMeasured(x) { const h = this.headroom; if (!h) return 9; const t = (x - h.xs[0]) / 0.05, i = Math.floor(t); if (i < 0 || i >= h.xs.length - 1) return 0; const a = h.head[i], b = h.head[i + 1]; if (a == null || b == null) return 0; return (a + (b - a) * (t - i)) - h.floorY; }
+  /** y (car-local) of the first saloon surface hit by a ray going down at (x, z) from 1.4 m above the floor: the bench seat top */
+  seatTopY(ci, x) {
+    const THREE = this.THREE, car = this.cars[ci], info = this.carInfo[ci], wc = this.walk && this.walk.cars && this.walk.cars[ci]; if (!car) return 0.695 + 0.43;
+    const rng = wc && wc.benchZRanges && wc.benchZRanges[0]; const z = rng ? (rng[0] + rng[1]) / 2 - info.zc : 0;
+    const meshes = []; const n = this.byName['car_' + ci + '_saloon']; if (n) n.traverse((m) => { if (m.isMesh) meshes.push(m); });
+    car.updateMatrixWorld(true); const rc = new THREE.Raycaster(), o = new THREE.Vector3(x, 1.1 + 0.695, z).applyMatrix4(car.matrixWorld), d = new THREE.Vector3(0, -1, 0).transformDirection(car.matrixWorld);
+    rc.set(o, d); rc.near = 0; rc.far = 1.2; const hit = rc.intersectObjects(meshes, false)[0]; if (!hit) return 0.695 + 0.43;
+    const loc = car.worldToLocal(hit.point.clone()); return loc.y > 0.695 + 0.3 && loc.y < 0.695 + 0.6 ? loc.y : 0.695 + 0.43;
+  }
   /** max head height above the floor at lateral x (interpolated); 0 outside the carbody */
   headroomAt(x) {
     const wk = this.walk && this.walk.headroomVsX;
@@ -152,7 +226,8 @@ export class TrainView {
     return (a + (b - a) * (t - i)) - h.floorY;
   }
   setDoors(L, R) {
-    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 1.2 * f; };
+    const ease = (f) => (f <= 0 ? 0 : f >= 1 ? 1 : f * f * (3 - 2 * f));   // smooth start/stop over the service's ~2.6 s door travel
+    const move = (list, f) => { const e = ease(f); for (const d of list) for (const lf of d.leaves) lf.n.position.z = lf.z0 + lf.dir * (lf.travel || 0.6) * e; };
     move(this.doorsL, L); move(this.doorsR, R);
   }
 

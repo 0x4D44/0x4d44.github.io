@@ -1,0 +1,327 @@
+{
+ "brick_clay_hollow": {
+  "key": "c6419645049fb4f4",
+  "rawKey": "796e3af00727ea73",
+  "at": "2026-10-29T13:35:14.215Z"
+ },
+ "brick_red_solid": {
+  "key": "2d83cffa48605264",
+  "rawKey": "c1fee51de0d60a32",
+  "at": "2026-10-29T13:35:15.277Z"
+ },
+ "asphalt": {
+  "key": "9f652a987f436afd",
+  "rawKey": "249b727f660e143a",
+  "at": "2026-10-29T13:35:10.989Z"
+ },
+ "cement_screed": {
+  "key": "b92397179b692a30",
+  "rawKey": "122bdf14e1a1d02f",
+  "at": "2026-10-29T13:35:37.869Z"
+ },
+ "cobble_stone": {
+  "key": "3539a74196f88024",
+  "rawKey": "595ba5e6cec50c77",
+  "at": "2026-10-29T13:35:40.862Z"
+ },
+ "concrete_bare": {
+  "key": "ad3bab9cef1c7c53",
+  "rawKey": "e6dca1bf9015776d",
+  "at": "2026-10-29T13:35:43.549Z"
+ },
+ "concrete_formwork": {
+  "key": "e3a135a690f1eb94",
+  "rawKey": "6fc89927def171f9",
+  "at": "2026-10-29T13:35:45.639Z"
+ },
+ "corrugated_zinc": {
+  "key": "4015ff8ee5695feb",
+  "rawKey": "c5a1700651f69461",
+  "at": "2026-10-29T13:35:48.062Z"
+ },
+ "fabric_woven": {
+  "key": "068e55393bc9389d",
+  "rawKey": "b299455242b78489",
+  "at": "2026-10-29T13:39:28.624Z"
+ },
+ "ground_dirt": {
+  "key": "4f679c4f697f486c",
+  "rawKey": "e0aa25d154bc2ee6",
+  "at": "2026-10-29T13:49:34.299Z"
+ },
+ "grass_patchy": {
+  "key": "9bfa8a189c1c462a",
+  "rawKey": "65fc7f9c93935602",
+  "at": "2026-10-29T13:49:32.215Z"
+ },
+ "dirt_path": {
+  "key": "60e2fcb167cdbc47",
+  "rawKey": "0b04a76ec17f07e3",
+  "at": "2026-10-29T13:35:51.210Z"
+ },
+ "paint_peeling": {
+  "key": "02ebfb342ab2b8e9",
+  "rawKey": "1f50805359ed5d26",
+  "at": "2026-10-29T13:49:36.490Z"
+ },
+ "plaster_a": {
+  "key": "c601a5fb506c9b97",
+  "rawKey": "5bf2f175c806ee94",
+  "at": "2026-10-29T13:53:33.829Z"
+ },
+ "roof_tile_clay": {
+  "key": "bc992b8631990134",
+  "rawKey": "ccd1456c6cc8baa1",
+  "at": "2026-10-29T13:50:06.744Z"
+ },
+ "rusty_iron": {
+  "key": "f5ef28f9d0cf291f",
+  "rawKey": "ed3ed09e5a37e260",
+  "at": "2026-10-29T13:54:35.925Z"
+ },
+ "plaster_rough": {
+  "key": "af860a1f950c5b3a",
+  "rawKey": "2afd43ce19e128ed",
+  "at": "2026-10-29T13:50:04.530Z"
+ },
+ "stone_wall": {
+  "key": "6b3cc2818ec21c0c",
+  "rawKey": "6a97abc858b579eb",
+  "at": "2026-10-29T13:53:34.771Z"
+ },
+ "tile_ceramic_checker": {
+  "key": "738c8cae237fae51",
+  "rawKey": "cdcb31490563f1d0",
+  "at": "2026-10-29T13:53:35.621Z"
+ },
+ "wood_dark_door": {
+  "key": "2e105f6036522d01",
+  "rawKey": "58eea5b3e0229069",
+  "at": "2026-10-29T13:56:18.948Z"
+ },
+ "tile_terracotta": {
+  "key": "08f34179e3a0b806",
+  "rawKey": "29e9291980d9a9dd",
+  "at": "2026-10-29T13:53:36.936Z"
+ },
+ "wood_pine": {
+  "key": "003a70bf8700920a",
+  "rawKey": "4a31b7bfb25b72ae",
+  "at": "2026-10-29T13:56:23.843Z"
+ },
+ "ceiling_white": {
+  "key": "3d7e22f46a594049",
+  "rawKey": "2a8f918c38b4cbd7",
+  "at": "2026-10-29T13:37:35.904Z"
+ },
+ "fabric_sofa": {
+  "key": "be4bd784004ef9af",
+  "rawKey": "e7e6d9058739b8bb",
+  "at": "2026-10-29T13:40:25.896Z"
+ },
+ "fabric_bedding": {
+  "key": "ad8181fc4b4f6ad5",
+  "rawKey": "c65a0cae2808cc9e",
+  "at": "2026-10-29T13:40:33.354Z"
+ },
+ "floor_tile_ceramic": {
+  "key": "7a29f3381744ed31",
+  "rawKey": "444702bb43523df2",
+  "at": "2026-10-29T14:01:40.439Z"
+ },
+ "floor_cement": {
+  "key": "13d7c9f3130f6e08",
+  "rawKey": "2e56634c08134d04",
+  "at": "2026-10-29T13:44:27.177Z"
+ },
+ "floor_pine": {
+  "key": "d549ab8e34d3c2b5",
+  "rawKey": "3253f6126e611dc2",
+  "at": "2026-10-29T13:47:50.967Z"
+ },
+ "floor_tile_checker": {
+  "key": "16e9c0856c926569",
+  "rawKey": "a475fb2bb41aa665",
+  "at": "2026-10-29T14:01:42.621Z"
+ },
+ "formica": {
+  "key": "b2e5e41b1137cbff",
+  "rawKey": "6eeb7055a3aaeb10",
+  "at": "2026-10-29T13:50:03.145Z"
+ },
+ "floor_tile_terracotta": {
+  "key": "e05006aefdd155af",
+  "rawKey": "b86b01d076dfca4b",
+  "at": "2026-10-29T14:01:45.345Z"
+ },
+ "vinyl_sofa": {
+  "key": "1aafc0a4c14f0040",
+  "rawKey": "b890feb05dc6cef8",
+  "at": "2026-10-29T13:54:42.584Z"
+ },
+ "wood_dark": {
+  "key": "bbc36736e6bd8b08",
+  "rawKey": "c5500aee493aa146",
+  "at": "2026-10-29T13:56:17.429Z"
+ },
+ "wall_paint": {
+  "key": "c1dd7e0377a3332e",
+  "rawKey": "1e9fa074e768dde0",
+  "at": "2026-10-29T13:57:04.186Z"
+ },
+ "wall_tile": {
+  "key": "54adb5bb8420aa55",
+  "rawKey": "bc8e16f833773be7",
+  "at": "2026-10-29T14:01:47.015Z"
+ },
+ "bedspread_floral": {
+  "key": "323fe6474a99f476",
+  "rawKey": "3c13a6e81bd00b03",
+  "at": "2026-10-29T14:20:31.650Z"
+ },
+ "blanket_andean": {
+  "key": "150c39af069df33e",
+  "rawKey": "b743faf51d936848",
+  "at": "2026-10-29T14:22:12.246Z"
+ },
+ "book_spines": {
+  "key": "f3f25429c1c6dbd5",
+  "rawKey": "1612d46d646e4a33",
+  "at": "2026-10-29T14:24:17.222Z"
+ },
+ "court_floor": {
+  "key": "7639978ae2df5f78",
+  "rawKey": "90b2a56af8d79571",
+  "at": "2026-10-29T14:25:38.037Z"
+ },
+ "crochet_cover": {
+  "key": "fdcff021c49783cc",
+  "rawKey": "2865eeb9185bc50e",
+  "at": "2026-10-29T14:26:50.946Z"
+ },
+ "curtain_fabric": {
+  "key": "7f559ecf74a55724",
+  "rawKey": "4f05b34c3d255368",
+  "at": "2026-10-29T14:28:24.754Z"
+ },
+ "floor_cement_red": {
+  "key": "abdffb34f2ffa979",
+  "rawKey": "5c4ee71ecd4dad23",
+  "at": "2026-10-29T14:29:52.865Z"
+ },
+ "floor_concrete_raw": {
+  "key": "e8f749da35a79024",
+  "rawKey": "c0fe87846c39136c",
+  "at": "2026-10-29T14:32:36.524Z"
+ },
+ "floor_laminate": {
+  "key": "c337fa7ad5c01563",
+  "rawKey": "7c8c3a9ae5824d19",
+  "at": "2026-10-29T14:34:03.554Z"
+ },
+ "melamine_wood": {
+  "key": "17ac8c831c262722",
+  "rawKey": "211b90c8c9389018",
+  "at": "2026-10-29T14:35:10.721Z"
+ },
+ "metal_painted": {
+  "key": "619d02202fca47a5",
+  "rawKey": "9b76dafc8b842542",
+  "at": "2026-10-29T14:36:14.511Z"
+ },
+ "metal_steel": {
+  "key": "6a927399e6545a71",
+  "rawKey": "bacb3bc175a81fd0",
+  "at": "2026-10-29T14:37:19.966Z"
+ },
+ "oilcloth_floral": {
+  "key": "8462c61a81144216",
+  "rawKey": "afb8e4a747786c0e",
+  "at": "2026-10-29T14:38:22.477Z"
+ },
+ "paving_plaza": {
+  "key": "29c18d812f1297bb",
+  "rawKey": "ffd4ec3528afa5a5",
+  "at": "2026-10-29T14:39:34.210Z"
+ },
+ "rug_woven": {
+  "key": "4eabff897915ca81",
+  "rawKey": "88e54867890bb502",
+  "at": "2026-10-29T14:41:03.691Z"
+ },
+ "sidewalk_slab": {
+  "key": "c8aaaf5b3fca48a1",
+  "rawKey": "40e014499ef1baff",
+  "at": "2026-10-29T14:42:07.998Z"
+ },
+ "street_concrete": {
+  "key": "2344f01c8f88cf47",
+  "rawKey": "e1f6717d33181b03",
+  "at": "2026-10-29T14:43:22.867Z"
+ },
+ "wall_cement_raw": {
+  "key": "80284b3ae5186140",
+  "rawKey": "e1375213b2e6389c",
+  "at": "2026-10-29T14:44:41.402Z"
+ },
+ "wall_gloss": {
+  "key": "84454055cc440170",
+  "rawKey": "c5f09eafb9d8f780",
+  "at": "2026-10-29T14:46:33.865Z"
+ },
+ "wall_paint_worn": {
+  "key": "ca85ebb3e2368c7a",
+  "rawKey": "9f7893399cb8047e",
+  "at": "2026-10-29T14:49:18.864Z"
+ },
+ "wood_old": {
+  "key": "1fdcbffeaa43b2ce",
+  "rawKey": "0586228dcc8e3605",
+  "at": "2026-10-29T14:50:22.342Z"
+ },
+ "wood_painted": {
+  "key": "92c93d954d0fc1a3",
+  "rawKey": "ffc918a3b67bbda9",
+  "at": "2026-10-29T14:52:45.676Z"
+ },
+ "cardboard": {
+  "key": "bfc903fa155445fe",
+  "rawKey": "58bdb28a51996a01",
+  "at": "2026-10-29T14:54:32.427Z"
+ },
+ "ceiling_concrete": {
+  "key": "dda7c89c62589611",
+  "rawKey": "934e5c1d998955ff",
+  "at": "2026-10-29T14:55:54.565Z"
+ },
+ "ceiling_pine": {
+  "key": "f8553732088f4870",
+  "rawKey": "205281984ab2595e",
+  "at": "2026-10-29T14:56:52.790Z"
+ },
+ "floor_vinyl": {
+  "key": "e36e6ebb31756411",
+  "rawKey": "e8f0aa76c48fc537",
+  "at": "2026-10-29T14:58:14.512Z"
+ },
+ "mattress_ticking": {
+  "key": "323952630907ee26",
+  "rawKey": "5487a7a722f3d3c6",
+  "at": "2026-10-29T14:59:53.911Z"
+ },
+ "oilcloth_check": {
+  "key": "79aed6d63bfe4386",
+  "rawKey": "68e84bbd3ed1476d",
+  "at": "2026-10-29T15:01:15.705Z"
+ },
+ "plywood": {
+  "key": "660920ea2643ca2e",
+  "rawKey": "0267cc94411c5aaa",
+  "at": "2026-10-29T15:03:15.318Z"
+ },
+ "stair_tread": {
+  "key": "544d9df78ba23fa4",
+  "rawKey": "c579bdb8858e1dfe",
+  "at": "2026-10-29T15:04:35.671Z"
+ }
+}
