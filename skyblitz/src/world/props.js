@@ -133,15 +133,22 @@ export function makeLighthouse(height = 190) {
   return { group: g, beams, dispose() { disposables.forEach((d) => d.dispose()); } };
 }
 
-/** A natural rock arch as an arc of displaced torus: spans the route between two pillars. */
+/** A natural rock arch as an arc of displaced torus: spans the route between two pillars. Thick at the feet, slimmer at the crown, smooth noisy surface. */
 export function makeRockArch({ radius = 100, tube = 22, seed = 3, color = 0x9a8f86, color2 = 0x6f655d } = {}) {
-  let g = new THREE.TorusGeometry(radius, tube, 14, 40, Math.PI); strip(g); g = mergeVertices(g, 1e-4);
-  const p = g.attributes.position, col = new Float32Array(p.count * 3), c1 = new THREE.Color(color), c2 = new THREE.Color(color2);
+  let g = new THREE.TorusGeometry(radius, tube, 28, 96, Math.PI); strip(g); g = mergeVertices(g, 1e-4);
+  const p = g.attributes.position, col = new Float32Array(p.count * 3), c1 = new THREE.Color(color), c2 = new THREE.Color(color2), tmp = new THREE.Color();
+  const sn = (x, y, z, f) => Math.sin(x * f + seed) * Math.sin(y * f * 1.3 + seed * 2.1) + Math.sin(z * f * 0.9 + x * f * 0.5 + seed * 0.7) * Math.cos(y * f * 0.8);
   for (let i = 0; i < p.count; i++) {
     const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const n = hash3(Math.round(x / 9) + seed, Math.round(y / 9), Math.round(z / 9)) * 0.6 + hash3(Math.round(x / 4) + seed, Math.round(y / 4), Math.round(z / 4)) * 0.4;
-    const k = 1 + (n - 0.5) * 0.35; p.setXYZ(i, x * (1 + (n - 0.5) * 0.06), y * (1 + (n - 0.5) * 0.06), z * k * 1.5);
-    const c = c2.clone().lerp(c1, Math.min(1, Math.max(0, n + y / (radius * 3)))); col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+    const phi = Math.atan2(y, x), cx = radius * Math.cos(phi), cy = radius * Math.sin(phi);
+    const dx = x - cx, dy = y - cy;
+    const n = 0.5 + 0.25 * sn(x, y, z, 0.045) + 0.15 * sn(x, y, z, 0.11) + 0.08 * sn(x, y, z, 0.27);
+    const foot = Math.pow(Math.abs(Math.cos(phi)), 3);
+    const k = (1 + 0.5 * foot - 0.12 * Math.sin(phi)) * (1 + (n - 0.5) * 0.45);
+    p.setXYZ(i, cx + dx * k, cy + dy * k, z * k * 1.5 + (n - 0.5) * tube * 0.25);
+    const strata = 0.5 + 0.5 * Math.sin(y * 0.22 + n * 3);
+    tmp.copy(c2).lerp(c1, Math.min(1, Math.max(0, 0.35 * strata + 0.45 * n + 0.25 * (y / (radius * 1.4)))));
+    col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
   }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
   return g;

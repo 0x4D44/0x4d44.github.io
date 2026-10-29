@@ -26,10 +26,10 @@ export const frostDef = (() => {
   add(1330, 116, -520, { mark: 'bend', hw: 74, hh: 54 });
   add(1320, 108, -760, { hw: 70, hh: 52 });
   add(1235, 102, -960, { mark: 'arch', hw: 52, hh: 42, bank: -8 });   // ICE ARCH
-  add(1320, 98, -1180, { hw: 62, hh: 48 });
-  add(1250, 94, -1390, { mark: 'switch', hw: 60, hh: 46 });           // glacier switchbacks
-  add(1320, 92, -1580, { hw: 62, hh: 46 });
-  add(1270, 90, -1720, { hw: 72, hh: 52 });
+  add(1305, 98, -1180, { hw: 72, hh: 52 });
+  add(1265, 94, -1390, { mark: 'switch', hw: 72, hh: 52 });           // glacier switchbacks
+  add(1305, 92, -1580, { hw: 72, hh: 52 });
+  add(1275, 90, -1720, { hw: 76, hh: 54 });
   add(1120, 92, -1790, { hw: 82, hh: 62 });
   add(990, 92, -1790, { hw: 84, hh: 66 });
   add(880, 92, -1780, { mark: 'fallLead', hw: 88, hh: 70 });
@@ -58,11 +58,12 @@ export const frostDef = (() => {
     sectors: ['arch', 'loopExit', 'caveB'],
     gateSpacing: 250,
     branches: [{
-      id: 'cave', name: 'Ice Cave Shortcut', from: 'caveA', to: 'caveB', hw: 34, hh: 40, risk: 0.9, taper: 120,
+      id: 'cave', name: 'Ice Cave Shortcut', from: 'caveA', to: 'caveB', hw: 42, hh: 44, risk: 0.9, taper: 120,
       points: [[-330, 118, -1560], [-380, 112, -1340], [-450, 108, -1100], [-480, 106, -880], [-530, 108, -700]].map(([x, y, z]) => [x * S, y, z * S]),
       marks: { cave: 1 },
     }],
     boost: [
+      { branch: 0, u: 140, count: 9, gap: 120, radius: 18, weave: 5, power: 1.8, duration: 2.3 },   // ice cave: rewarded line
       { mark: 'fallLead', offset: -230, count: 3, gap: 45, radius: 20, power: 1.4, duration: 1.6 },
       { mark: 'switch', offset: -90, count: 2, gap: 70, weave: 18, radius: 19, power: 1.35, duration: 1.5 },
       { mark: 'arch', offset: 120, count: 2, gap: 60, weave: 16, radius: 19 },
@@ -75,7 +76,6 @@ export const frostDef = (() => {
       { kind: 'stack', column: true, mark: 'switch', offset: -120, lateral: 28, radius: 13, above: 30 },
       { kind: 'stack', column: true, mark: 'switch', offset: 20, lateral: -30, radius: 13, above: 30 },
       { kind: 'stack', column: true, mark: 'switch', offset: 150, lateral: 28, radius: 13, above: 30 },
-      { kind: 'stack', column: true, mark: 'switch', offset: 280, lateral: -30, radius: 13, above: 30 },
       { kind: 'stack', column: true, mark: 'bulge', offset: -140, lateral: -38, radius: 14, above: 30 },
       { kind: 'stack', column: true, mark: 'bulge', offset: 40, lateral: 40, radius: 14, above: 30 },
       { kind: 'stack', column: true, mark: 'caveB', offset: -120, lateral: -34, radius: 14, above: 30 },

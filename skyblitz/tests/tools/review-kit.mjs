@@ -75,6 +75,7 @@ try {
   // ---- 2. fixed vantage cameras along the main path + whole-course overview -----------------------------------------------
   if (o.vantages > 0) {
     if (!o.race) { await page.eval('__sky.step(5)'); }
+    else { await page.eval('__sky.step(45)'); }       // sim() renders nothing, so the last hit's screen flash is still at full strength: it would veil the first vantages
     const geo = await J(`(()=>{const g=__sky.game,c=g.course,L=c.length,f={};const mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];for(let i=0;i<240;i++){c.frameAt(i/240*L,f);const p=[f.pos.x,f.pos.y,f.pos.z];for(let k=0;k<3;k++){mn[k]=Math.min(mn[k],p[k]);mx[k]=Math.max(mx[k],p[k]);}}return {L,mn,mx,laps:c.laps,sectors:c.sectors?.length,gates:c.gates?.length,rings:c.boostRings?.length,boxes:c.itemBoxes?.length,branches:(c.branches||[]).map(b=>({id:b.id,from:b.fromS,to:b.toS,len:b.length}))};})()`);
     report.course = geo;
     for (let k = 0; k < o.vantages; k++) {

@@ -27,7 +27,7 @@ export class Fx {
     this.expl = new SpriteSystem(A.tex('explosion_atlas'), { cols: 4, rows: 4, additive: false, premul: true, cap: 220, order: 6 });
     this.smoke = new SpriteSystem(A.tex('smoke_atlas'), { cols: 4, rows: 4, additive: false, cap: 2400, order: 5 });
     this.glow = new SpriteSystem(glow, { additive: true, cap: 4500, order: 7 });
-    this.sparks = new SpriteSystem(A.tex('spark'), { additive: true, cap: 3000, order: 7 });
+    this.sparks = new SpriteSystem(A.tex('spark'), { additive: true, radial: true, cap: 3000, order: 7 });
     this.stars = new SpriteSystem(star, { additive: true, cap: 160, order: 8 });
     this.rings = new SpriteSystem(ring, { additive: true, cap: 160, order: 7 });
     for (const s of [this.smoke, this.expl, this.glow, this.sparks, this.rings, this.stars]) this.group.add(s.mesh);
@@ -346,14 +346,14 @@ export class Fx {
     if (s.has && pos.distanceToSquared(s.lastPos) > 60 * 60) this._cut(s);
     s.lastPos.copy(pos); s.has = true;
     // wing-tip vapour: always faintly visible, strong in hard turns, boosts and stunts
-    const g = Math.abs(f.gLoad || 1), inten = Math.min(1, 0.22 + Math.max(0, g - 1.6) * 0.32 + s.boostSm * 0.55 + (s.glow > 0 ? 0.7 : 0) + (r.tumble > 0 ? 0.4 : 0));
+    const g = Math.abs(f.gLoad || 1), inten = Math.min(1, 0.08 + Math.max(0, g - 1.6) * 0.32 + s.boostSm * 0.55 + (s.glow > 0 ? 0.7 : 0) + (r.tumble > 0 ? 0.4 : 0));
     const speedK = Math.min(1, Math.max(0.25, (f.speed - 30) / 70));
     const tips = ud?.wingTips;
     if (tips) for (let i = 0; i < 2; i++) {
       const id = s.tipV[i]; if (id < 0) continue;
       _a.copy(tips[i]).applyQuaternion(quat).add(pos); this.vapour.push(id, _a.x, _a.y, _a.z, this.time);
-      this.vapour.gain[id] = inten * speedK * (near ? 1 : 0.7);
-      this.vapour.width[id] = 0.12 + 0.12 * inten;
+      this.vapour.gain[id] = inten * speedK * (near ? 1 : 0.3);
+      this.vapour.width[id] = 0.07 + 0.1 * inten;
       if (s.glow > 0 && s.accent) { const k = Math.min(1, s.glow); this.vapour.tint[id * 4] = 1 + (s.accent.r - 1) * k; this.vapour.tint[id * 4 + 1] = 1 + (s.accent.g - 1) * k; this.vapour.tint[id * 4 + 2] = 1 + (s.accent.b - 1) * k; }
       else if (s.boostSm > 0.05) { this.vapour.tint[id * 4] = 1 - 0.35 * s.boostSm; this.vapour.tint[id * 4 + 1] = 1 - 0.1 * s.boostSm; this.vapour.tint[id * 4 + 2] = 1; }
       else { this.vapour.tint[id * 4] = this.vapour.tint[id * 4 + 1] = this.vapour.tint[id * 4 + 2] = 1; }

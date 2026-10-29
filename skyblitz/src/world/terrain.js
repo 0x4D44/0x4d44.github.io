@@ -82,6 +82,7 @@ vec3 tri(sampler2D t, vec3 p, vec3 n, float sc){
   float wHigh = smoothstep(uH.z, uH.w, hh + (texture2D(tMid, vWPos.xz / 310.0).r - 0.5) * 30.0);
   float wCliff = smoothstep(uSlope.x, uSlope.y, slope);
   vec3 c = mix(cMid, cLow, wLow);
+  c *= mix(0.7, 1.0, smoothstep(0.0, 2.2, hh)) * 1.0;                       // wet sand strip at the waterline
   c = mix(c, cHigh, wHigh);
   c = mix(c, cCliff, wCliff);
   diffuseColor.rgb *= c;

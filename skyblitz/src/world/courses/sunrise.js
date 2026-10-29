@@ -17,7 +17,7 @@ const ISLANDS = [
   { x: 885, z: -732, r: 62, h: 130, name: 'archS', pillar: true },
 ];
 // sea-cave gorge polyline (x,z): carved through the cave isle; the shortcut flies it 40 m above the water.
-export const GORGE = [[1042, 510], [930, 526], [784, 504], [627, 504], [470, 538], [330, 570], [186, 571]];
+export const GORGE = [[1042, 510], [985, 545], [900, 560], [784, 504], [627, 504], [470, 538], [330, 570], [186, 571]];
 function gorgeDist(x, z) {
   let best = 1e9;
   for (let i = 0; i < GORGE.length - 1; i++) {
@@ -46,10 +46,13 @@ export function sunriseHeight(x, z) {
     if (d >= 1.45) continue;
     const t = Math.max(0, 1 - d);
     const rid = 1 - Math.abs(2 * fbm(x * 0.0042 + I.z * 0.01, z * 0.0042 + I.x * 0.01) - 1), tt = Math.min(1, t / 0.32);
-    let core = Math.min(I.h * 0.2, 26) * tt * tt * (3 - 2 * tt) + Math.pow(t, 1.55) * I.h * (0.3 + 1.05 * rid * rid) + (fbm(x * 0.02, z * 0.02) - 0.5) * 10 * t;
+    // shaped silhouettes: a cliff-ringed shoulder (not a cone), ridged flanks, crags on top and a few coves via the warped radius above
+    const sh = Math.min(1, Math.max(0, (t - 0.05) / 0.25)), cliff = sh * sh * (3 - 2 * sh), crag = Math.max(0, fbm(x * 0.012 + 3, z * 0.012 - 7) - 0.45) * 2.2;
+    let core = Math.min(I.h * 0.2, 26) * tt * tt * (3 - 2 * tt) + cliff * I.h * 0.26 + Math.pow(t, 1.55) * I.h * (0.3 + 1.05 * rid * rid) * 0.85 + crag * I.h * 0.18 * t + (fbm(x * 0.02, z * 0.02) - 0.5) * 16 * t + (fbm(x * 0.06, z * 0.06) - 0.5) * 6 * cliff;
     if (I.pillar) core = I.h * Math.pow(Math.min(1, t / 0.4), 0.5) * (0.88 + 0.25 * fbm(x * 0.03, z * 0.03)) - 6;
-    const shelf = -42 + 46 * Math.min(1, Math.max(0, (1.45 - d) / 0.55));     // lagoon shelf rising to the beach
-    h = Math.max(h, Math.max(shelf, core + shelf * 0.2 * (1 - t)));
+    const shelf = -64 + 68 * Math.min(1, Math.max(0, (1.45 - d) / 0.6));     // lagoon shelf rising to the beach
+    const edgeK = Math.min(1, Math.max(0, (1.45 - d) / 0.5)), edgeS = edgeK * edgeK * (3 - 2 * edgeK);
+    h = Math.max(h, -60 + (Math.max(shelf, core + shelf * 0.2 * (1 - t)) + 60) * edgeS);
   }
   const gd = gorgeDist(x, z);
   if (gd < 70 && h > -6) { const c = Math.min(1, Math.max(0, (gd - 30) / 38)); const cc = c * c * (3 - 2 * c); h = -6 + (h + 6) * cc; }
@@ -74,10 +77,10 @@ export const sunriseDef = (() => {
   add(1180, 74, -640, { hw: 100, hh: 72 });
   add(1250, 80, -500, { mark: 'eastTurn', hw: 100, hh: 70 });
   add(1235, 70, -330, { hw: 90, hh: 66 });
-  add(1275, 62, -200, { mark: 'slalom', hw: 80, hh: 60 });   // stack slalom
-  add(1195, 58, -30, { hw: 76, hh: 58 });
-  add(1275, 60, 140, { hw: 76, hh: 58 });
-  add(1205, 64, 300, { hw: 84, hh: 60 });
+  add(1258, 62, -200, { mark: 'slalom', hw: 90, hh: 64 });   // stack slalom
+  add(1212, 58, -30, { hw: 88, hh: 62 });
+  add(1258, 60, 140, { hw: 88, hh: 62 });
+  add(1215, 64, 300, { hw: 90, hh: 62 });
   add(1090, 66, 410, { hw: 90, hh: 64 });
   add(930, 62, 455, { mark: 'branchA', hw: 100, hh: 66 });    // shortcut junction (west-bound)
   add(830, 58, 690, { hw: 95, hh: 66 });
@@ -100,16 +103,19 @@ export const sunriseDef = (() => {
     items: ['ridge', 'eastTurn', 'slalom', 'bay', 'deckBack'].map((m) => m),
     sectors: ['sweepEnd', 'eastTurn', 'slalom', 'bay'],
     branches: [{
-      id: 'cave', name: 'Sea-Cave Shortcut', from: 'branchA', to: 'branchB', hw: 46, hh: 36, risk: 0.65,
-      points: [[930, 526, 40], [784, 504, 38], [627, 504, 38, null, 38, 30], [470, 538, 40], [330, 570, 46]].map(([x, z, y, ...r]) => [x, y, z, ...r]),
+      id: 'cave', name: 'Sea-Cave Shortcut', from: 'branchA', to: 'branchB', hw: 50, hh: 44, risk: 0.65,
+      points: [[985, 545, 60], [900, 560, 58], [784, 504, 56], [627, 504, 56, null, 42, 38], [470, 538, 56], [330, 570, 56]].map(([x, z, y, ...r]) => [x, y, z, ...r]),
       marks: { cave: 3 },
     }],
     boost: [
+      { branch: 0, u: 130, count: 8, gap: 100, radius: 18, weave: 6, power: 1.8, duration: 2.3 },   // cave: a rewarded line, tight enough to need flying
       { mark: 'loopEntry', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'ridge', offset: -60, count: 2, gap: 50, weave: 22, radius: 20, power: 1.3, duration: 1.2 },
       { mark: 'eastTurn', offset: 160, count: 2, gap: 60, weave: 24, radius: 20 },
       { mark: 'bay', offset: 40, count: 2, gap: 55, weave: 26, radius: 20 },
       { mark: 'deckMid', offset: -30, count: 1, radius: 22 },
+      { mark: 'sweepEnd', offset: -430, count: 11, gap: 34, spiral: 30, turn: 0.85, radius: 17, power: 1.3, duration: 1.0 },   // CORKSCREW chain over the lagoon
+      { mark: 'bay', offset: 150, count: 9, gap: 36, spiral: 24, turn: 0.8, vertical: -22, radius: 17, power: 1.3, duration: 1.0 },   // reef run: low rings over the coral
     ],
     hazards: [
       { kind: 'stack', column: true, mark: 'slalom', offset: -30, lateral: 40, radius: 16 },

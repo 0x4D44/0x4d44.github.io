@@ -45,6 +45,10 @@ export function makeNeonCity(lay, N) {
       const dx = Math.max(x0 - p.x, 0, p.x - x1), dz = Math.max(z0 - p.z, 0, p.z - z1);
       if (Math.hypot(dx, dz) < p.hw + 14) cap = Math.min(cap, p.y - 38);
     });
+    for (const p of highway.pts) {
+      const dx = Math.max(x0 - p.x, 0, p.x - x1), dz = Math.max(z0 - p.z, 0, p.z - z1);
+      if (Math.hypot(dx, dz) < highway.half + 10) cap = Math.min(cap, p.y - 8);
+    }
     return cap;
   };
 
@@ -56,7 +60,7 @@ export function makeNeonCity(lay, N) {
     lay.path.frameAt(0, f);
     const th = Math.hypot(f.tangent.x, f.tangent.z), tx = f.tangent.x / th, tz = f.tangent.z / th, c = lay.startCfg;
     const mid = (c.fwd - c.back) / 2;
-    addRect({ kind: 'podium', cx: f.pos.x + tx * mid, cz: f.pos.z + tz * mid, hl: (c.back + c.fwd) / 2 + 10, hw: c.halfW + 12, ax: [tx, tz], top: lay.deckY - 0.7, cell: 9 });
+    addRect({ kind: 'podium', cx: f.pos.x + tx * mid, cz: f.pos.z + tz * mid, hl: (c.back + c.fwd) / 2, hw: c.halfW + 6, ax: [tx, tz], top: lay.deckY - 0.7, cell: 9 });
   }
   // landmark tower beside the loop
   const T = N.towerLoop, th0 = T.heading, rightX = -th0[1], rightZ = th0[0];
@@ -78,7 +82,7 @@ export function makeNeonCity(lay, N) {
   const highway = { pts: [], half: 19, deckThick: 3.2 };
   {
     const a = lay.marks.hwyA, b = lay.marks.hwyB;
-    for (let s = a - 60; s <= b + 60; s += 6) { lay.path.frameAt(s, f); highway.pts.push({ x: f.pos.x, z: f.pos.z, y: f.pos.y - 28, s }); }
+    for (let s = a - 60; s <= b + 60; s += 6) { lay.path.frameAt(s, f); highway.pts.push({ x: f.pos.x, z: f.pos.z, y: f.pos.y - 42, s }); }
     // smooth the deck height so it does not follow the path's small wiggles
     for (let pass = 0; pass < 3; pass++) for (let i = 1; i < highway.pts.length - 1; i++) highway.pts[i].y = (highway.pts[i - 1].y + highway.pts[i].y * 2 + highway.pts[i + 1].y) / 4;
   }
@@ -112,7 +116,7 @@ export function makeNeonCity(lay, N) {
     if (blocked) continue;
     const r = rnd(), n1 = vnoise(i * 0.35 + 3.1, j * 0.35 - 1.7), n2 = vnoise(i * 1.3 - 9.4, j * 1.3 + 4.2);
     const dc = Math.hypot(cx - centre.x, cz - centre.z);
-    let H = 36 + 330 * Math.exp(-((dc / 1150) ** 2)) * (0.35 + 0.95 * n1) + 70 * n2 + r * 40;
+    let H = 36 + 330 * Math.exp(-((dc / 1900) ** 2)) * (0.35 + 0.95 * n1) + 70 * n2 + r * 40;
     if (r > 0.93) H *= 1.35;
     if (r < 0.05) continue;                                 // plaza / park
     H = Math.min(H, 395);
@@ -125,14 +129,14 @@ export function makeNeonCity(lay, N) {
     const t0 = tall ? 0.6 + rnd() * 0.22 : 1;
     const y1a = H * t0;
     let top = y1a;
-    addBox({ cx, cz, w: LOT * (0.92 + rnd() * 0.08), d: LOT * (0.92 + rnd() * 0.08), y0: -2, y1: y1a, cell, seed, yaw: 0, kind: 'lot', lit: 0.5 + rnd() * 0.5 });
+    addBox({ cx, cz, w: LOT * (0.92 + rnd() * 0.08), d: LOT * (0.92 + rnd() * 0.08), y0: -2, y1: y1a, cell, seed, yaw: 0, kind: 'lot', lit: rnd() < 0.18 ? 0.08 : 0.22 + rnd() * 0.5 });
     const tiers = [];
     if (tall) {
       let inset = 6 + rnd() * 8, y0 = y1a, w = LOT - inset * 2, d = LOT - inset * 2;
       const nt = H > 220 ? 2 : 1;
       for (let t = 0; t < nt; t++) {
         const y1 = t === nt - 1 ? H : y0 + (H - y0) * (0.5 + rnd() * 0.15);
-        addBox({ cx: cx + (rnd() - 0.5) * 6, cz: cz + (rnd() - 0.5) * 6, w, d, y0: y0 - 1, y1, cell: rnd() < 0.5 ? cell : Math.floor(rnd() * 16), seed: seed + 11 * (t + 1), yaw: 0, kind: 'lot', lit: 0.6 + rnd() * 0.4 });
+        addBox({ cx: cx + (rnd() - 0.5) * 6, cz: cz + (rnd() - 0.5) * 6, w, d, y0: y0 - 1, y1, cell: rnd() < 0.5 ? cell : Math.floor(rnd() * 16), seed: seed + 11 * (t + 1), yaw: 0, kind: 'lot', lit: 0.25 + rnd() * 0.55 });
         tiers.push([w, d, y1]);
         y0 = y1; w -= 10 + rnd() * 8; d -= 10 + rnd() * 8; inset += 10; top = y1;
       }

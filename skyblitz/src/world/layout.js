@@ -6,6 +6,7 @@ import { PathData } from './path.js';
 
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 const CLEAR = 5;               // path height above the launch deck
+const BLEND = 70;              // length of the straight junction blend at both ends of a shortcut branch (see Branch)
 const _m = new THREE.Matrix4(), _a = new THREE.Vector3();
 
 export function basisQuat(f, out = new THREE.Quaternion()) {
@@ -35,8 +36,14 @@ export class Branch {
     this.gates = [];
   }
   frameAt(u, out) { return this.path.frameAt(u, out); }
-  /** Main-path s equivalent of branch distance u. */
-  sOf(u) { return this.fromS + (u / this.length) * this.span; }
+  /** Main-path s equivalent of branch distance u: identity inside the two junction blends (the branch IS the main path there, so a racer
+   *  that flips between the two readings does not jump), linear in between (the saved distance is credited along the shortcut). */
+  sOf(u) {
+    const J = Math.min(BLEND, this.length * 0.25, this.span * 0.25);
+    if (u <= J) return this.fromS + u;
+    if (u >= this.length - J) return this.toS - (this.length - u);
+    return this.fromS + J + (u - J) * (this.span - 2 * J) / (this.length - 2 * J);
+  }
 }
 
 export class CourseLayout {
@@ -58,6 +65,50 @@ export class CourseLayout {
     this._buildAiHints();
     this._buildMinimap();
     this.heightFn = def.makeHeight ? def.makeHeight(this) : (def.height || (() => 0));
+    this._fitCorridor();
+  }
+
+  /** Clearance of the inner 62% of the corridor ellipse (the AI target clamp) above terrain and water at path sample i, for half-height hh / half-width hw. */
+  _innerClearance(i, hh, hw, f) {
+    this.path.frameAt(i * (this.length / this.path.N), f);
+    const wl = this.def.waterLevel; let worst = 1e9;
+    for (let a = -0.62; a <= 0.6201; a += 0.124) for (let b = -0.62; b <= 0.6201; b += 0.124) {
+      if (Math.hypot(a, b) > 0.62) continue;
+      const lx = a * hw, ly = b * hh;
+      const x = f.pos.x + f.right.x * lx + f.up.x * ly, y = f.pos.y + f.right.y * lx + f.up.y * ly, z = f.pos.z + f.right.z * lx + f.up.z * ly;
+      let c = y - this.groundHeight(x, z); if (wl != null) c = Math.min(c, y - wl);
+      if (c < worst) worst = c;
+    }
+    return worst;
+  }
+
+  /** Shrink the corridor half-height, then half-width (never grow them) wherever the inner ellipse would sit within 8 m of terrain or water, so the
+   *  AI line and a normal pilot never touch ground inside the "safe" corridor. Skips the launch deck. Eroded then smoothed so hh/hw stay continuous. */
+  _fitCorridor() {
+    const P = this.path, N = P.N, hh = P.hh, hw = P.hw, step = this.length / N, f = {}, MINH = this.def.minHh ?? 30, MINW = this.def.minHw ?? 36, need = 8.6;
+    this.rawHh = hh.slice(); this.rawHw = hw.slice();
+    const capH = new Float32Array(N).fill(1e4), capW = new Float32Array(N).fill(1e4); let any = false;
+    const c0 = this.startCfg;
+    for (let i = 0; i < N; i += 3) {
+      const s = i * step;
+      if (s <= c0.fwd + 40 || s >= this.length - c0.back - 40) continue;
+      if (this._innerClearance(i, hh[i], hw[i], f) >= need) continue;
+      any = true;
+      let lo = MINH, hi = hh[i];
+      if (this._innerClearance(i, lo, hw[i], f) >= need) { for (let k = 0; k < 7; k++) { const mid = (lo + hi) / 2; if (this._innerClearance(i, mid, hw[i], f) >= need) lo = mid; else hi = mid; } capH[i] = lo; continue; }
+      capH[i] = MINH; lo = MINW; hi = hw[i];
+      if (this._innerClearance(i, MINH, lo, f) < need) { capW[i] = lo; continue; }          // cannot fit: leave to the course author (flagged by the test)
+      for (let k = 0; k < 7; k++) { const mid = (lo + hi) / 2; if (this._innerClearance(i, MINH, mid, f) >= need) lo = mid; else hi = mid; }
+      capW[i] = lo;
+    }
+    if (!any) return;
+    const R = Math.round(75 / step), W = Math.round(30 / step), tmp = new Float32Array(N);
+    const apply = (cap, arr) => {
+      for (let i = 0; i < N; i++) { let m = 1e4; for (let k = -R; k <= R; k++) { const v = cap[(i + k + N) % N]; if (v < m) m = v; } tmp[i] = m; }
+      for (let i = 0; i < N; i++) { let sum = 0; for (let k = -W; k <= W; k++) sum += tmp[(i + k + N) % N]; const v = sum / (2 * W + 1); if (v < arr[i]) arr[i] = v; }
+    };
+    apply(capH, hh); apply(capW, hw);
+    this.fittedHh = true;
   }
 
   // ---------------------------------------------------------------- frames
@@ -65,7 +116,9 @@ export class CourseLayout {
 
   // ---------------------------------------------------------------- projection
   /** Nearest-point projection on main path / shortcut branches. out: {s, lateral, vertical, dist, branch, u}. A reused `out` carries the
-   *  previous branch id and gives the branch choice hysteresis (no flicker near junctions). */
+   *  previous branch id and gives the branch choice hysteresis (no flicker near junctions): a racer already on a branch stays on it while it is
+   *  still nearer to the branch line than to the main line and inside 2.2 tube radii (e), so scraping the cave wall never flips it to the main
+   *  path hundreds of metres away; a racer that is not on it needs to be inside the tube (e < 1.3). e = hypot(lateral / halfWidth, vertical / halfHeight). */
   project(pos, hintS, out) {
     const pm = this.path.project(pos, hintS, this._pm);
     const hinted = hintS != null && isFinite(hintS);
@@ -75,11 +128,11 @@ export class CourseLayout {
       const L = this.length, hs = hinted ? ((hintS % L) + L) % L : 0;
       for (const b of this.branches) {
         if (hinted && (hs < b.fromS - 90 || hs > b.toS + 90) && prev !== b.index) continue;
-        b.path.project(pos, null, this._pb);
+        const on = prev === b.index, margin = on ? 8 : -3;
+        b.path.project(pos, on ? out.u : null, this._pb);     // a racer on the branch is tracked locally: no flipping to another stretch of a looping cave
         const f = b.path.frameAt(this._pb.s, this._fb);
         const e = Math.hypot(this._pb.lateral / f.halfWidth, this._pb.vertical / f.halfHeight);
-        const margin = prev === b.index ? 8 : -3;
-        if (e < 1.3 && this._pb.dist < bd + margin && (best < 0 || this._pb.dist < bd)) {
+        if (e < (on ? 2.2 : 1.3) && this._pb.dist < bd + margin && (best < 0 || this._pb.dist < bd)) {
           best = b.index; bd = this._pb.dist; out.s = b.sOf(this._pb.s); out.lateral = this._pb.lateral; out.vertical = this._pb.vertical; out.u = this._pb.s;
         }
       }
@@ -175,13 +228,26 @@ export class CourseLayout {
     this.boostRings = [];
     const L = this.length;
     for (const spec of this.def.boost || []) {
+      if (spec.branch != null) {   // rings inside a shortcut: placed along the branch tube, ordered by the main-span s the branch credits
+        const b = this.branches[spec.branch];
+        if (!b) continue;
+        const count = spec.count ?? 1, gap = spec.gap ?? 40;
+        for (let k = 0; k < count; k++) {
+          const u = spec.u + k * gap, f = b.frameAt(u, {});
+          const lat = (spec.lateral ?? 0) + (spec.weave ? Math.sin(k * 1.7) * spec.weave : 0);
+          const pos = f.pos.clone().addScaledVector(f.right, lat).addScaledVector(f.up, spec.vertical ?? 0);
+          this.boostRings.push({ s: b.sOf(u), pos, quat: basisQuat(f), radius: spec.radius ?? 18, power: spec.power ?? 1.5, duration: spec.duration ?? 1.8, lateral: lat, branch: b.index });
+        }
+        continue;
+      }
       const base = spec.s ?? (this.marks[spec.mark] + (spec.offset || 0));
       const count = spec.count ?? 1, gap = spec.gap ?? 40;
       for (let k = 0; k < count; k++) {
         const s = (((base + k * gap) % L) + L) % L, f = this.path.frameAt(s, {});
         const lat = (spec.lateral ?? 0) + (spec.weave ? Math.sin(k * 1.7) * spec.weave : 0);
-        const pos = f.pos.clone().addScaledVector(f.right, lat).addScaledVector(f.up, spec.vertical ?? 0);
-        this.boostRings.push({ s, pos, quat: basisQuat(f), radius: spec.radius ?? 20, power: spec.power ?? 1.35, duration: spec.duration ?? 1.4, lateral: lat });
+        let pos = f.pos.clone().addScaledVector(f.right, lat).addScaledVector(f.up, spec.vertical ?? 0);
+        if (spec.spiral) { const ph = k * (spec.turn ?? 0.7); pos.addScaledVector(f.right, Math.cos(ph) * spec.spiral).addScaledVector(f.up, Math.sin(ph) * spec.spiral * 0.7); }   // corkscrew ring chain
+        this.boostRings.push({ s, pos, quat: basisQuat(f), radius: spec.radius ?? 20, power: spec.power ?? 1.35, duration: spec.duration ?? 1.4, lateral: lat + (spec.spiral ? Math.cos(k * (spec.turn ?? 0.7)) * spec.spiral : 0) });
       }
     }
     this.boostRings.sort((a, b) => a.s - b.s);
@@ -242,6 +308,39 @@ export class CourseLayout {
       let dg = 1e9; for (const g of this.gates) { let dd = Math.abs(g.s - i * this._hStep); dd = Math.min(dd, L - dd); if (dd < dg) dg = dd; }
       l *= 1 - 0.8 * Math.exp(-((dg / 28) ** 2));
       lat[i] = loop[i] ? 0 : l;
+    }
+    // hazard avoidance: keep the line >= radius + 12 m from every main-path hazard, passing on the side nearer the centre line
+    const hz = [];
+    for (const h of this.hazards) {
+      if (h.branch >= 0) continue;
+      this.path.frameAt(h.s, f);
+      const hl = (h.home.x - f.pos.x) * f.right.x + (h.home.y - f.pos.y) * f.right.y + (h.home.z - f.pos.z) * f.right.z;
+      const m = h.radius + 12, inner = hl > 0 ? -1 : 1;                 // inner = side towards the centre line
+      hz.push({ s: h.s, hl, m, inner, edge: hl + inner * m, reach: h.radius + 60, core: h.radius + 20 });
+    }
+    if (hz.length) {
+      const sg = (v) => (v < 0 ? -1 : 1);
+      for (let i = 0; i < n; i++) {
+        const s = i * this._hStep; if (loop[i]) continue;
+        this.path.frameAt(s, f);
+        const lim = Math.max(0, f.halfWidth - 8);
+        let l = lat[i];
+        for (const h of hz) {
+          let d = Math.abs(s - h.s); d = Math.min(d, L - d);
+          if (d > h.reach) continue;
+          const w = d <= h.core ? 1 : 1 - (d - h.core) / (h.reach - h.core), ws = w * w * (3 - 2 * w);
+          let target = l;
+          if (h.inner > 0) target = Math.max(l, h.edge); else target = Math.min(l, h.edge);
+          if (Math.abs(target) > lim) target = sg(target) * lim;       // never leave the corridor (the stack then relies on pilotAvoid)
+          l += (target - l) * ws;
+        }
+        lat[i] = l;
+      }
+      // approach slowdown: -8% over the 130 m before each hazard
+      for (let i = 0; i < n; i++) {
+        const s = i * this._hStep;
+        for (const h of hz) { let d = h.s - s; if (d < -L / 2) d += L; if (d > L / 2) d -= L; if (d > -15 && d < 130) { cap[i] *= 0.96; break; } }
+      }
     }
     this._hCap = cap; this._hLat = lat; this._hLoop = loop;
   }
