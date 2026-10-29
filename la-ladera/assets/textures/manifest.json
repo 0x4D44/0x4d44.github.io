@@ -1,1 +1,136 @@
-{ "textures": {} }
+{
+ "textures": {
+  "brick_clay_hollow": {
+   "map": "brick_clay_hollow.jpg",
+   "normal": "brick_clay_hollow_n.jpg",
+   "avg": "#a76a4b",
+   "size": 1024
+  },
+  "brick_red_solid": {
+   "map": "brick_red_solid.jpg",
+   "normal": "brick_red_solid_n.jpg",
+   "avg": "#a1654a",
+   "size": 512
+  },
+  "asphalt": {
+   "map": "asphalt.jpg",
+   "normal": "asphalt_n.jpg",
+   "avg": "#5a5755",
+   "size": 1024
+  },
+  "cement_screed": {
+   "map": "cement_screed.jpg",
+   "normal": "cement_screed_n.jpg",
+   "avg": "#969490",
+   "size": 512
+  },
+  "cobble_stone": {
+   "map": "cobble_stone.jpg",
+   "normal": "cobble_stone_n.jpg",
+   "avg": "#72654e",
+   "size": 1024
+  },
+  "concrete_bare": {
+   "map": "concrete_bare.jpg",
+   "normal": "concrete_bare_n.jpg",
+   "avg": "#93908c",
+   "size": 1024
+  },
+  "concrete_formwork": {
+   "map": "concrete_formwork.jpg",
+   "normal": "concrete_formwork_n.jpg",
+   "avg": "#87837b",
+   "size": 512
+  },
+  "corrugated_zinc": {
+   "map": "corrugated_zinc.jpg",
+   "normal": "corrugated_zinc_n.jpg",
+   "tint": true,
+   "tileScale": 0.887,
+   "avg": "#a2a2a2",
+   "size": 512
+  },
+  "fabric_woven": {
+   "map": "fabric_woven.jpg",
+   "normal": "fabric_woven_n.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#a1a1a1",
+   "size": 512
+  },
+  "ground_dirt": {
+   "map": "ground_dirt.jpg",
+   "normal": "ground_dirt_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#8f6144",
+   "size": 512
+  },
+  "grass_patchy": {
+   "map": "grass_patchy.jpg",
+   "tileScale": 0.976,
+   "avg": "#716d39",
+   "size": 1024
+  },
+  "dirt_path": {
+   "map": "dirt_path.jpg",
+   "normal": "dirt_path_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#9f7b56",
+   "size": 1024
+  },
+  "paint_peeling": {
+   "map": "paint_peeling.jpg",
+   "normal": "paint_peeling_n.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dadada",
+   "size": 512
+  },
+  "plaster_a": {
+   "map": "plaster_a.jpg",
+   "normal": "plaster_a_n.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 1024
+  },
+  "roof_tile_clay": {
+   "map": "roof_tile_clay.jpg",
+   "normal": "roof_tile_clay_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#936646",
+   "size": 512
+  },
+  "rusty_iron": {
+   "map": "rusty_iron.jpg",
+   "normal": "rusty_iron_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#734b35",
+   "size": 512
+  },
+  "plaster_rough": {
+   "map": "plaster_rough.jpg",
+   "normal": "plaster_rough_n.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 1024
+  },
+  "stone_wall": {
+   "map": "stone_wall.jpg",
+   "normal": "stone_wall_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#7e705a",
+   "size": 512
+  },
+  "tile_ceramic_checker": {
+   "map": "tile_ceramic_checker.jpg",
+   "normal": "tile_ceramic_checker_n.jpg",
+   "tileScale": 0.75,
+   "avg": "#625f5a",
+   "size": 512
+  }
+ },
+ "version": 2,
+ "generated": "2026-10-29T13:25:06.360Z"
+}
