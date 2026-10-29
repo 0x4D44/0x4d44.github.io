@@ -115,12 +115,15 @@ export class Game {
       el.style.cssText = 'position:fixed;inset:0;z-index:2147483000;display:grid;place-content:center;gap:16px;justify-items:center;background:rgba(11,26,51,.78);color:#fff;font:600 18px/1.4 system-ui;padding:24px;text-align:center';
       document.body.appendChild(el); this._noticeEl = el;
     }
-    el.replaceChildren(Object.assign(document.createElement('div'), { textContent: msg }));
+    const card = document.createElement('div');      // its own solid panel (text and button together): the dimmed pause menu stays visible behind, and the text must not read as a label on one of its buttons
+    card.style.cssText = 'display:grid;gap:16px;justify-items:center;max-width:min(30rem,90vw);padding:18px 26px;border-radius:12px;background:#0b1a33;border:1px solid rgba(255,255,255,.22);box-shadow:0 10px 40px rgba(0,0,0,.5)';
+    card.appendChild(Object.assign(document.createElement('div'), { textContent: msg }));
     if (reload) {
       const b = Object.assign(document.createElement('button'), { textContent: 'Reload', type: 'button' });
       b.style.cssText = 'font:700 16px system-ui;padding:10px 22px;border:0;border-radius:8px;background:#ffb020;color:#0b1a33;cursor:pointer';
-      b.onclick = () => location.reload(); el.appendChild(b);
+      b.onclick = () => location.reload(); card.appendChild(b);
     }
+    el.replaceChildren(card);
   }
 
   // ------------------------------------------------------------------ WebGL context loss (E-12)
@@ -226,6 +229,7 @@ export class Game {
    *  built scene in parallel without blocking; one hidden frame then compiles the post chain, whose passes are not in the scene. Never fatal. */
   async warmUp(race) {
     if (this.contextLost || !this.renderer?.compileAsync) return;
+    this.events.emit('game:loadProgress', { progress: 1, label: 'Compiling shaders' });     // the course build ended on "Ready"; the bar must not sit there for the seconds this takes
     try {
       let timer;
       await Promise.race([this.renderer.compileAsync(this.scene, this.camera), new Promise((r) => { timer = setTimeout(r, 5000); })]);

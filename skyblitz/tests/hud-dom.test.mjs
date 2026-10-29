@@ -161,7 +161,7 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
       assert.deepEqual(r.lines, ['ROLL x3 +36%', 'NEAR MISS x3 +18%'], `${tag}: one line per kind, running tally, two lines at most`);
       const craft = { l: r.W * 0.3, t: r.H * 0.4, r: r.W * 0.7, b: r.H * 0.95 };   // where the chase camera keeps the aircraft
       assert.ok(!overlap(r.box, craft), `${tag}: the popup column ${JSON.stringify(r.box)} stays off the craft area ${JSON.stringify(craft)}`);
-      assert.ok(r.box.l < r.W * 0.1 && r.box.r < r.W * 0.5, `${tag}: a left column ${JSON.stringify(r.box)}`);
+      assert.ok(r.box.l < r.W * 0.1 && r.box.r < r.W * 0.55, `${tag}: a left column ${JSON.stringify(r.box)}`);
     }
   });
 
@@ -209,21 +209,27 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
   check('P-18: nameplates never overlap each other, a HUD panel, a touch button or the screen edge', async () => {
     for (const [w, h, touch] of [[1280, 720, false], [390, 844, true], [844, 390, true]]) {
       await env(w, h, touch); await racing();
-      const r = await page.eval(`(async () => { const { g } = __t, ais = __t.ais(); __t.clear(); __t.quiet();
+      const r = await page.eval(`(async () => { const { g, ev } = __t, ais = __t.ais(); __t.clear(); __t.quiet();
         const spots = [[0.02, 0.1, 90], [0.05, 0.14, 120], [-0.02, 0.06, 150], [0.0, 0.2, 200], [-0.97, 0.1, 100], [0.0, 0.86, 140], [0.9, 0.86, 130]];
         ais.forEach((r, i) => spots[i] && __t.place(r, spots[i][0], spots[i][1], spots[i][2]));
         g.renderFrame(1, 0); await new Promise((r) => setTimeout(r, 260)); g.renderFrame(1, 0); g.renderFrame(1, 0);
         const box = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
-        const plates = [...document.querySelectorAll('.nameplate')].filter((e) => e.style.display !== 'none').map((e) => ({ n: e.textContent, ...box(e) }));
+        const shown = () => [...document.querySelectorAll('.nameplate')].filter((e) => e.style.display !== 'none').map((e) => ({ n: e.textContent, ...box(e) }));
+        const plates = shown();
         const panels = ['.hud-lapbox', '.hud-pos', '.hud-speed', '.hud-bc', '.hud-item', '.hud-shield', '.hud-map', '.hud-popups', '.hud-ticker'].map((s) => [s, document.querySelector(s)]).filter(([, e]) => e && getComputedStyle(e).display !== 'none').map(([s, e]) => ({ s, ...box(e) }));
         for (const b of document.querySelectorAll('#sb-touch > *')) if (b.textContent.trim()) panels.push({ s: 'btn:' + b.textContent.trim(), ...box(b) });
-        return { plates, panels, W: innerWidth, H: innerHeight }; })()`);
+        // the player locks the rival in the middle of the pile: its ring and the name under it are an obstacle too (P-14 / P-18)
+        ev.emit('missile:lock', { owner: g.player, target: ais[0], progress: 0.5, targetId: ais[0].id, targetName: ais[0].name }); g.renderFrame(1, 0); g.renderFrame(1, 0);
+        const ringEl = document.querySelector('.hud-lock'), lockPlates = shown();
+        return { plates, panels, lockPlates, lockOn: getComputedStyle(ringEl).display !== 'none', ring: box(ringEl), name: box(document.querySelector('.lk-name')), locked: ais[0].name, W: innerWidth, H: innerHeight }; })()`);
       const tag = `${w}x${h}${touch ? 't' : ''}`;
       assert.ok(r.plates.length >= 2 && r.plates.length <= 4, `${tag}: between two and four plates are shown: ${JSON.stringify(r.plates.map((p) => p.n))}`);
-      r.plates.forEach((a, i) => {
-        assert.ok(a.l >= -0.5 && a.t >= -0.5 && a.r <= r.W + 0.5 && a.b <= r.H + 0.5, `${tag}: plate ${a.n} is clipped by the screen ${JSON.stringify(a)}`);
-        for (const z of r.panels) assert.ok(!overlap(a, z), `${tag}: plate ${a.n} overlaps ${z.s}`);
-        for (const b of r.plates.slice(i + 1)) assert.ok(!overlap(a, b), `${tag}: plates ${a.n} and ${b.n} overlap`);
+      assert.ok(r.lockOn && r.lockPlates.length >= 1 && r.lockPlates.length <= 4, `${tag}: the reticle is up and the other rivals keep a plate: ${JSON.stringify(r.lockPlates.map((p) => p.n))}`);
+      for (const [what, list] of [['', r.plates], [' while a lock is on', r.lockPlates]]) list.forEach((a, i) => {
+        assert.ok(a.l >= -0.5 && a.t >= -0.5 && a.r <= r.W + 0.5 && a.b <= r.H + 0.5, `${tag}: plate ${a.n} is clipped by the screen${what} ${JSON.stringify(a)}`);
+        for (const z of r.panels) assert.ok(!overlap(a, z), `${tag}: plate ${a.n} overlaps ${z.s}${what}`);
+        for (const b of list.slice(i + 1)) assert.ok(!overlap(a, b), `${tag}: plates ${a.n} and ${b.n} overlap${what}`);
+        if (what) { assert.ok(!overlap(a, r.ring), `${tag}: plate ${a.n} sits on the lock ring`); assert.ok(!overlap(a, r.name), `${tag}: plate ${a.n} sits on the name under the lock ring`); assert.notEqual(a.n, r.locked, `${tag}: the locked rival has no plate besides its reticle`); }
       });
     }
   });
@@ -307,6 +313,58 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
     }
   });
 
+  check('V-13 / V-32: portrait touch keeps the readouts out of the stick zone, and the ROLL buttons off the countdown, the popups and every readout', async () => {
+    for (const [w, h] of [[390, 844], [360, 640], [412, 915], [768, 1024], [844, 390], [568, 320]]) {
+      await env(w, h, true); await racing();
+      const r = await page.eval(`(() => { const { ev, g, hud } = __t, p = g.player; __t.clear(); __t.quiet(); p.shield = 6; p.item = { type: 'missile', count: 3 };
+        ev.emit('race:countdown', { n: 2 });
+        for (let i = 0; i < 3; i++) { ev.emit('racer:stunt', { racer: p, kind: 'nearmiss', reward: 6 }); ev.emit('racer:stunt', { racer: p, kind: 'roll', reward: 12 }); }
+        hud.showNote('CAMERA: FAR'); __sky.step(2);
+        const box = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+        const kids = [...document.getElementById('sb-touch').children];
+        const btns = kids.filter((e) => e.textContent.trim()).map((e) => ({ n: e.textContent.trim(), k: e.dataset.k || '', ...box(e) }));
+        const named = { speed: '.hud-speed', boost: '.hud-bc', item: '.hud-item', shield: '.hud-shield', map: '.hud-map', lap: '.hud-lapbox', pos: '.hud-pos', digit: '.hud-cd', hint: '.hud-cdhint', popups: '.hud-popups', note: '.hud-note' };
+        const rects = {}; for (const k in named) rects[k] = __t.rect(named[k]);
+        return { btns, zone: box(kids[0]), rects, W: innerWidth, H: innerHeight }; })()`);
+      const tag = `${w}x${h}t`, portrait = h > w;
+      const rolls = r.btns.filter((b) => b.k.startsWith('roll'));
+      assert.equal(rolls.length, 2, `${tag}: two roll buttons ${JSON.stringify(r.btns.map((b) => b.n))}`);
+      for (const b of rolls) assert.match(b.n, /ROLL/, `${tag}: a roll button says what it does (V-32): ${JSON.stringify(b.n)}`);
+      for (const k of ['speed', 'boost', 'item', 'shield', 'digit', 'hint', 'popups', 'note']) assert.ok(r.rects[k], `${tag}: ${k} is drawn`);
+      for (const b of r.btns) {
+        assert.ok(b.w >= 44 && b.h >= 44 && b.l >= 0 && b.t >= 0 && b.l + b.w <= r.W && b.t + b.h <= r.H, `${tag}: touch target ${JSON.stringify(b.n)} is 44px or more and on the screen ${JSON.stringify(b)}`);
+        for (const k of Object.keys(r.rects)) assert.ok(!overlap(b, r.rects[k]), `${tag}: touch button ${JSON.stringify(b.n)} ${JSON.stringify(b)} covers the ${k} ${JSON.stringify(r.rects[k])}`);
+      }
+      if (portrait) for (const k of ['speed', 'boost', 'item', 'shield']) assert.ok(!overlap(r.rects[k], r.zone), `${tag}: the ${k} readout ${JSON.stringify(r.rects[k])} sits in the floating-stick zone ${JSON.stringify(r.zone)}, under the thumb`);
+    }
+  });
+
+  check('V-24 / V-21 / V-13: no HUD panel overlaps another, leaves the screen or sits under the Almanac pill, at 22 viewports with a mouse and with touch', async () => {
+    const SIZES = [[320, 568], [360, 640], [375, 667], [390, 844], [412, 915], [600, 960], [768, 1024], [820, 1180], [1024, 1366], [568, 320], [640, 360], [740, 360], [844, 390], [896, 414], [915, 412], [700, 500], [800, 600], [900, 500], [1024, 768], [1280, 720], [1366, 768], [1920, 1080]];
+    const NAMED = { lap: '.hud-lapbox', pos: '.hud-pos', speed: '.hud-speed', boost: '.hud-bc', item: '.hud-item', shield: '.hud-shield', map: '.hud-map', ticker: '.hud-ticker', digit: '.hud-cd', hint: '.hud-cdhint', popups: '.hud-popups' };
+    const ov = (a, b) => Math.min(a.r, b.r) - Math.max(a.l, b.l) > 3 && Math.min(a.b, b.b) - Math.max(a.t, b.t) > 3;   // 3 px of slack: a skewed box's bounding box reaches past its slanted edge
+    const pill = { l: 0, t: 0, r: 109, b: 41 }, bad = [];
+    for (const touch of [false, true]) for (const [w, h] of SIZES) for (const state of ['countdown', 'popups']) {   // the countdown digit and the stunt popups never share a frame
+      await env(w, h, touch); await racing();
+      const P = await page.eval(`(() => { const { g, hud, ev } = __t, p = g.player; __t.clear(); __t.quiet(); p.shield = 6; p.item = { type: 'missile', count: 3 };
+        if (${JSON.stringify(state)} === 'countdown') { hud.pop(hud.cd, '2', 'cd-pop'); hud.cdHint.textContent = ${JSON.stringify(rocketHint())}; }
+        else { ev.emit('gate:pass', { racer: p, perfect: true }); ev.emit('racer:stunt', { racer: p, kind: 'roll', reward: 12 }); }
+        __sky.step(2);
+        const P = {}, named = ${JSON.stringify(NAMED)}; for (const k in named) { const r = __t.rect(named[k]); if (r) P[k] = r; }
+        const t = document.getElementById('sb-touch'); if (t && getComputedStyle(t).display !== 'none') for (const c of t.children) { const r = c.getBoundingClientRect(); if (c.textContent.trim() && r.width > 1 && r.height > 1) P['btn:' + c.textContent.trim()] = { l: r.left, t: r.top, r: r.right, b: r.bottom }; }
+        return { P, W: innerWidth, H: innerHeight }; })()`);
+      const tag = `${w}x${h}${touch ? 't' : ''} ${state}`, keys = Object.keys(P.P);
+      for (const k of keys) { const r = P.P[k];
+        if (r.l < -1 || r.t < -1 || r.r > P.W + 1 || r.b > P.H + 1) bad.push(`${tag}: ${k} leaves the screen`);
+        if (ov(r, pill)) bad.push(`${tag}: ${k} sits under the Almanac pill`); }
+      for (let i = 0; i < keys.length; i++) for (let j = i + 1; j < keys.length; j++) {
+        if (keys[i].startsWith('btn:') && keys[j].startsWith('btn:')) continue;   // the touch buttons among themselves are the flight agent's layout
+        if (ov(P.P[keys[i]], P.P[keys[j]])) bad.push(`${tag}: ${keys[i]} overlaps ${keys[j]}`);
+      }
+    }
+    assert.deepEqual(bad, [], 'HUD layout problems:\n  ' + bad.join('\n  '));
+  });
+
   check('P-14: MISSILE banner follows time-to-impact, ROLL! shows while a barrel roll would work, and the lock reticle names its target', async () => {
     await env(1280, 720); await racing();
     const r = await page.eval(`(() => { const { ev, g, hud } = __t, p = g.player, [a, b] = __t.ais(), css = () => ({ txt: hud.warnTxt.textContent.trim(), roll: getComputedStyle(hud.rollEl).display !== 'none' && getComputedStyle(hud.warn).display !== 'none', near: parseFloat(hud.warn.style.getPropertyValue('--near')), rate: parseFloat(hud.warn.style.getPropertyValue('--rate')), shown: getComputedStyle(hud.warn).display !== 'none' });
@@ -319,6 +377,8 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
       __t.clear(); ev.emit('missile:warn', { target: p, missile: m, dist: 120 }); __sky.step(1); out.legacyClose = css();
       __t.clear(); __t.place(a, 0.1, 0.1, 120); ev.emit('missile:lock', { owner: p, target: a, progress: 0.5, targetId: a.id, targetName: a.name }); __sky.step(1);
       out.lock = hud.lockLbl.textContent; ev.emit('missile:lock', { owner: p, target: a, progress: 1, targetId: a.id, targetName: a.name }); __sky.step(1); out.locked = hud.lockLbl.textContent; out.name = a.name;
+      const plates = () => [...document.querySelectorAll('.hud-plates .nameplate')].filter((e) => e.style.display !== 'none').map((e) => e.textContent);
+      out.platesLocked = plates(); __sky.step(40); __t.place(a, 0.1, 0.1, 120); __sky.step(1); out.platesAfter = plates();   // 0.4 s without a lock event: the reticle is gone and the rival has its plate again
       return out; })()`);
     assert.ok(r.far.shown && r.far.txt === 'MISSILE!' && !r.far.roll, 'far, no evade window: MISSILE! and no ROLL!  ' + JSON.stringify(r.far));
     assert.ok(r.close.txt === 'MISSILE CLOSE!' && r.close.roll, 'close and inside the roll window: MISSILE CLOSE! and ROLL!  ' + JSON.stringify(r.close));
@@ -326,6 +386,8 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
     assert.ok(!r.rolling.roll, 'ROLL! goes while the roll is already under way'); assert.ok(!r.other.shown, 'a missile at another racer shows nothing');
     assert.ok(r.legacy.shown && r.legacy.txt === 'MISSILE!' && !r.legacy.roll && r.legacyClose.txt === 'MISSILE CLOSE!', 'a warning without tti / evade falls back to distance: ' + JSON.stringify([r.legacy, r.legacyClose]));
     assert.equal(r.lock, r.name, 'the reticle names the target'); assert.equal(r.locked, 'LOCKED: ' + r.name);
+    assert.ok(!r.platesLocked.includes(r.name), `the reticle already names its target, so it gets no second plate under the ring: ${JSON.stringify(r.platesLocked)}`);
+    assert.ok(r.platesAfter.includes(r.name), `...and the plate comes back once the lock has lapsed: ${JSON.stringify(r.platesAfter)}`);
   });
 
   check('V-37 / V-20: a rival locking on shows a named warning and an on-screen arrow; Storm gives popups; camera and rear-view show a tick', async () => {

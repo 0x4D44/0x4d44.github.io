@@ -1,5 +1,5 @@
-// UI pure-logic tests: time/ordinal formatting, the persistent save, the settings round trip, the main-menu GP label, the loading tips and the
-// Markdown subset behind the credits screen (no DOM needed).
+// UI pure-logic tests: time/ordinal formatting, the persistent save, the settings round trip, the main-menu GP label, the loading tips, the
+// Markdown subset behind the credits screen and the aircraft-screen stat bars (no DOM needed).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -129,6 +129,8 @@ test('V-29: the real CREDITS.md shows as headings, text and links, with its repo
   const { licenceBody } = await import('../src/ui/menus.js');
   assert.equal(licenceBody('front matter\n\n---\n\nbody text'), 'body text', 'everything before the first rule is dropped');
   assert.equal(licenceBody('no rule here'), 'no rule here'); assert.equal(licenceBody(undefined), '');
+  assert.equal(licenceBody('front\n\n---\n\nbody\n\n\n---\n'), 'body', 'a closing rule is dropped, so the text does not end on a bare line');
+  assert.equal(licenceBody('front\n\n---'), '', 'front matter only: nothing to show');
   const md = readFileSync(new URL('../assets/music/CREDITS.md', import.meta.url), 'utf8'), body = licenceBody(md);
   assert.doesNotMatch(body, /music-src/, 'no internal repo path is shown');
   const blocks = parseMd(body);
@@ -138,4 +140,35 @@ test('V-29: the real CREDITS.md shows as headings, text and links, with its repo
   assert.ok(kids.every((k) => k.t !== 'text' || !/\*\*|`/.test(k.s)), 'no raw ** or backtick is left in the text');
   const links = kids.filter((k) => k.t === 'a');
   assert.ok(links.length >= 5 && links.every((k) => /^https?:\/\/\S+[^\s.,;:!?)\]]$/.test(k.href)), 'bare URLs are links without trailing punctuation');
+});
+
+test('P-04: every stat bar on the aircraft screen drives a mechanic, and a tagline that claims the lead has it', async () => {
+  const THREE = await import('three');
+  const { STATS } = await import('../src/ui/select.js');
+  const { AIRCRAFT, getAircraft } = await import('../src/craft/roster.js');
+  const { createFlightState, resetFlightState, flightParams, topSpeed } = await import('../src/flight/flight.js');
+  const { applyHit } = await import('../src/race/damage.js');
+  assert.deepEqual(STATS.map(([k]) => k).sort(), ['accel', 'armor', 'boost', 'handling', 'speed', 'stability'], 'the bars on screen: a new bar needs a mechanic and a check below');
+  for (const a of AIRCRAFT) for (const [k, label] of STATS) assert.ok(Number.isInteger(a.stats[k]) && a.stats[k] >= 1 && a.stats[k] <= 10, `${a.id} ${label}: a whole rating 1..10 fills the bar`);
+  const withStat = (id, k, v) => ({ ...getAircraft(id), stats: { ...getAircraft(id).stats, [k]: v } });
+  // Five bars are read by flightParams: moving the rating must move a physical parameter, or the bar promises nothing.
+  for (const [k, label] of STATS) if (k !== 'armor') assert.notDeepEqual(flightParams(withStat('falcon', k, 2)), flightParams(withStat('falcon', k, 9)), `${label}: no flight parameter reads this rating`);
+  // Armour is read by damage.js: the same missile hit costs the heavily armoured craft less tumble time and less speed.
+  const hit = (armor) => {
+    const fs = createFlightState(withStat('falcon', 'armor', armor)); resetFlightState(fs, new THREE.Vector3(0, 500, 0), new THREE.Quaternion(), fs.params.cruise);
+    const victim = { flight: fs, invuln: 0, shield: 0, finished: false, stats: { hitsTaken: 0 }, tumble: 0, empT: 0 };
+    assert.ok(applyHit({ game: { events: { emit() {} } }, rng: { chance: () => true } }, victim, null, 'missile', { tumble: 1.5, loss: 0.4 }));
+    return { tumble: fs.tumble.t, speed: fs.speed / fs.params.cruise };
+  };
+  const soft = hit(2), hard = hit(9);
+  assert.ok(hard.tumble < soft.tumble && hard.speed > soft.speed, `Armour: armour 9 tumbles ${hard.tumble}s and keeps ${hard.speed.toFixed(2)} of cruise, armour 2 ${soft.tumble}s and ${soft.speed.toFixed(2)}`);
+  // A tagline that says "fastest" or "best" is a claim: the craft must lead on the mechanic behind it. A new superlative has to be added here to pass.
+  const claims = { manta: [/fastest in a straight line/i, (a) => topSpeed(a)], sprite: [/fastest boost recharge/i, (a) => flightParams(a).boostRegen], comet: [/savage acceleration/i, (a) => flightParams(a).accel], bulldog: [/shrugs off hits/i, (a) => a.stats.armor] };   // armour: the rating itself, its effect is checked just above
+  for (const [id, [re, value]] of Object.entries(claims)) {
+    const a = getAircraft(id); assert.match(a.tagline, re, `${id}: the claim this check covers is gone from the tagline: update the check`);
+    const all = AIRCRAFT.map(value);
+    assert.ok(Math.max(...all) > Math.min(...all), `${id}: the mechanic behind "${a.tagline}" is the same for every craft, so nothing leads`);
+    assert.equal(value(a), Math.max(...all), `${id}: "${a.tagline}" claims the lead, so it must have it`);
+  }
+  for (const a of AIRCRAFT) if (/\b(fastest|best|most|strongest|toughest|savage)\b/i.test(a.tagline)) assert.ok(claims[a.id], `${a.id}: "${a.tagline}" makes a claim that no check covers`);
 });

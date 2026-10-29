@@ -51,10 +51,10 @@ export function rollItem(rng, place, n) {
 // aggro      scale on item/cannon aggression
 // playerHelp small hidden speed help for a human who is last (fraction)
 export const DIFFICULTY = {
-  easy:   { id: 'easy',   aiSpeed: 0.88, aiSkill: 0.55, rubber: 0.06, rubberRange: 500, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.05 },
-  normal: { id: 'normal', aiSpeed: 0.91, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
-  hard:   { id: 'hard',   aiSpeed: 0.98, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
-  expert: { id: 'expert', aiSpeed: 1.05, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
+  easy:   { id: 'easy', shortcutBias: -0.12, finishExtra: 25,   aiSpeed: 0.88, aiSkill: 0.55, rubber: 0.06, rubberRange: 500, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.05 },
+  normal: { id: 'normal', shortcutBias: 0, aiSpeed: 0.91, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
+  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.98, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
+  expert: { id: 'expert', shortcutBias: 0.12, aiSpeed: 1.05, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
 };
 
 export const RACE = {
@@ -65,7 +65,7 @@ export const RACE = {
   maxClock: 900,           // hard stop (s) if the human never finishes
   overtakeHyst: 5,         // metres a rival must be ahead before places swap
   launchSpeedFrac: 0.72,   // GO launch speed as a fraction of cruise
-  respawnScrapeT: 3.5, respawnStuckT: 3, respawnLostT: 2.5,
+  respawnScrapeT: 3.5, respawnStuckT: 3, respawnLostT: 2.5, respawnHighM: 150, respawnHighT: 1,
   draftRange: 85, draftCone: 0.14, draftTime: 1.6, // slipstream: metres behind, wake half-width grows 0.14 m per m behind, seconds to charge a slingshot
   cruiseRef: 100,          // fallback reference cruise (m/s)
   cruiseNorm: 0.4,         // how far AI cruise is pulled toward the human's craft (0 = raw stats, 1 = identical)
@@ -77,12 +77,15 @@ export const WEAPONS = {
   // up the centre line, holding the missile's own offset inside the airway (`airway` of the corridor ellipse) and round hazards (`hazardMargin` m), blending onto the
   // target's line over `courseBlend` [near, far] m of gap and into plain pursuit over `direct` [far, near] m of distance; turnCourse steers the carrot, turn* the pursuit.
   // Barrel evasion is a TIMING WINDOW: a roll protects only from evadeFrom to evadeTo (fractions of the roll) after it starts, so one begun `evadeFrom x T` .. `evadeTo x T`
-  // seconds before arrival evades (T = FLIGHT.barrelTime). Warning pings: interval = clamp(ping[0] + ping[1] x tti, ping[2], ping[3]); closeTau smooths the closing speed.
+  // seconds before arrival evades (T = FLIGHT.barrelTime). The ROLL cue (warn `evade`) is narrower by `cue` [early, late] s, the error of tti in the last half second, so a
+  // roll begun on the cue lands inside the window. Warning pings: interval = clamp(ping[0] + ping[1] x tti, ping[2], ping[3]); closeTau smooths the closing speed,
+  // ttiTau x tti is the time constant that pulls the tti clock toward its raw estimate. The pursuit aims at the intercept point (lead capped at leadMax s); steering
+  // starts after armT s. A missile with no quarry, or one it can no longer hurt, takes the nearest racer ahead of it within seekRange m (a weak lock).
   // Speed: accelerates at `accel` to `speed`, holds it for `burn` s, then loses `decay` m/s per s down to `floor` (a boosting racer outruns it); it is lost after `life` s,
   // beyond `loseDist` m, or `passTime` s after it has overshot its target by `passMargin` m (a corridor has no room for a U-turn).
-  missile: { lockTime: 0.9, lockCone: 0.45, lockStick: 1.5, lockMin: 40, lockMax: 450, speed: 180, accel: 240, burn: 5.5, decay: 32, floor: 115, turn: 1.7, turnWeak: 1.0, turnDumb: 0.65, turnCourse: 3.2,
-             look: [30, 80], airway: 0.6, hazardMargin: 16, courseBlend: [70, 300], direct: [130, 55], life: 8.5, armT: 0.35, hitPad: 3.0, loseDist: 560, passMargin: 8, passTime: 0.15,
-             evadeFrom: 0.12, evadeTo: 0.95, closeTau: 0.25, ping: [0.1, 0.13, 0.12, 0.5], tumble: 1.5, loss: 0.4 },
+  missile: { lockTime: 0.9, lockCone: 0.45, lockStick: 1.5, lockMin: 40, lockMax: 450, speed: 180, accel: 240, burn: 7.0, decay: 32, floor: 115, turn: 1.7, turnWeak: 1.0, turnDumb: 0.65, turnCourse: 3.2,
+             look: [30, 80], airway: 0.6, hazardMargin: 16, courseBlend: [70, 300], direct: [130, 55], life: 9.0, armT: 0.05, seekRange: 300, leadMax: 1.2, hitPad: 3.0, loseDist: 560, passMargin: 8, passTime: 0.15,
+             evadeFrom: 0.12, evadeTo: 0.95, cue: [0.03, 0.12], closeTau: 0.25, ttiTau: 0.4, ping: [0.1, 0.13, 0.12, 0.5], tumble: 1.5, loss: 0.4 },
   mine: { arm: 0.8, ownerGrace: 1.8, radius: 14, life: 45, tumble: 1.35, loss: 0.35 },
   emp: { radius: 240, stun: 1.5, loss: 0.2 },
   storm: { tumble: 1.3, loss: 0.4 },

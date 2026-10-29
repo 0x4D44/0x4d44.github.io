@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from '../../util.js';
 import { createSkyDome, createCloudPuffs } from '../sky.js';
+import { chunkInstanced } from '../props.js';
 import { NEON } from './neon.js';
 import { createFacades } from '../neon/facade.js';
 import { createGround } from '../neon/ground.js';
@@ -39,7 +40,9 @@ export async function buildScenery(course, game, progress, yieldFrame) {
     for (const b of atriumMassBoxes(A)) inst.push({ cx: A.cx, cz: b.cz, w: len, d: b.d, y0: b.y0, y1: b.y1, cell: 14, seed: b.seed, yaw: 0, kind: 'atrium', lit: 0.95 });
   }
   const fac = createFacades(game, inst, env);
-  course.addPart({ group: fac.mesh, update: fac.update, dispose: fac.dispose });
+  // V-23: one 6500-box draw with frustum culling off cost 78 k triangles every frame, at Low as at High; spatial chunks let the camera cull what is behind it
+  const chunks = chunkInstanced(fac.mesh, { cell: 450 });
+  course.addPart({ group: chunks.group, update: fac.update, dispose() { chunks.geos.forEach((g) => g.dispose()); fac.dispose(); } });
   progress(0.3, 'Hanging the neon'); await yieldFrame();
 
   // ---- signs and aviation beacons (scaled by the scenery quality)

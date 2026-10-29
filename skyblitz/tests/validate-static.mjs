@@ -7,7 +7,7 @@
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, normalize, relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const appDir = normalize(join(here, ".."));
@@ -69,6 +69,31 @@ for (const [f, text] of texts) {
   check(remote.length === 0, `${rel(f)} reaches nothing off the network (${remote.slice(0, 2).join(", ")})`);
 }
 
+// ---- stylesheets and inline styles: no other origin through url() or @import, and every local url() resolves with exact case ----
+// (Pages serves everything in the tree, so every .css and every <style> / style="" in any .html counts, tests/lab included.)
+const servedFiles = walk(appDir, (abs) => /[\\/](node_modules|\.git)$/.test(abs));
+const cssTargets = (text) => {
+  const t = text.replace(/\/\*[\s\S]*?\*\//g, " "), out = [];
+  for (const m of t.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s"']*))\s*\)/gi)) out.push((m[1] ?? m[2] ?? m[3] ?? "").trim());
+  for (const m of t.matchAll(/@import\s+(?:"([^"]+)"|'([^']+)')/gi)) out.push((m[1] ?? m[2]).trim());
+  return out;
+};
+const isRemoteRef = (u) => /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(u) || /^https?:/i.test(u);
+const isLocalRef = (u) => u !== "" && !isRemoteRef(u) && !/^(?:data|blob|about|javascript):|^#/i.test(u);
+const styleHolders = servedFiles.filter((f) => /\.(css|html?)$/i.test(f));
+check(styleHolders.some((f) => f.endsWith(`${sep}style.css`)), "style.css is part of the style scan");
+for (const f of styleHolders) {
+  const raw = readFileSync(f, "utf8");
+  const text = /\.html?$/i.test(f) ? [...raw.replace(/<!--[\s\S]*?-->/g, " ").matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>|\bstyle\s*=\s*"([^"]*)"|\bstyle\s*=\s*'([^']*)'/gi)].map((m) => m[1] ?? m[2] ?? m[3]).join("\n") : raw;
+  const targets = cssTargets(text);
+  const remote = targets.filter(isRemoteRef);
+  check(remote.length === 0, `${rel(f)} reaches nothing off the network through url() or @import (${remote.slice(0, 2).join(", ")})`);
+  for (const u of targets.filter(isLocalRef)) check(existsExact(resolve(dirname(f), u.split(/[?#]/)[0])), `${rel(f)} refers to ${u} in a stylesheet, which must exist with exactly that case`);
+}
+const pageRefs = [];
+for (const f of servedFiles.filter((p) => /\.html?$/i.test(p))) for (const m of readFileSync(f, "utf8").replace(/<!--[\s\S]*?-->/g, " ").matchAll(/\b(?:src|href)\s*=\s*["'](?:https?:)?\/\/[^"']+["']/gi)) pageRefs.push(`${rel(f)}: ${m[0]}`);
+check(pageRefs.length === 0, `no page under skyblitz/ (tests/lab included) loads anything from another origin (found: ${pageRefs.join(", ")})`);
+
 // ---- importmap and vendored three ----
 const imap = html.match(/<script type=["']importmap["']>([\s\S]*?)<\/script>/);
 let imports = {};
@@ -92,6 +117,27 @@ for (const [f, text] of texts) {
 check(relImports > 100, `the import sweep saw the whole module graph (${relImports} relative imports)`);
 console.log(`  imports checked: ${relImports} relative, ${addonImports} three addons`);
 
+// ---- the vendored addons are a closed set (E-30): they import each other, and the tests may import them too ----
+// vendor/addons holds only what src/ reaches (EffectComposer -> MaskPass, UnrealBloomPass -> CopyShader ...). A dependency pruned or mis-cased there
+// would only show as a failed module load at boot, so every import inside the folder, and every addon import in tests/ and the lab pages, must resolve.
+const addonRoot = resolve(appDir, imports["three/addons/"] ?? "vendor/addons/");
+const addonFiles = existsSync(addonRoot) ? walk(addonRoot).filter((f) => f.endsWith(".js")) : [];
+check(addonFiles.length > 0, `vendor/addons holds the addons the game imports (${addonFiles.length} files)`);
+let addonDeps = 0;
+for (const f of addonFiles) {
+  for (const m of stripComments(readFileSync(f, "utf8")).matchAll(/(?:\bfrom|\bimport)\s*\(?\s*["'](\.{1,2}\/[^"']+)["']/g)) {
+    addonDeps += 1;
+    check(existsExact(resolve(dirname(f), m[1])), `${rel(f)} imports ${m[1]}, which must be vendored with exactly that case`);
+  }
+}
+for (const f of walk(join(appDir, "tests"), (abs) => /[\\/]node_modules$/.test(abs)).filter((p) => /\.(m?js|html?)$/i.test(p))) {
+  for (const m of readFileSync(f, "utf8").matchAll(/(?:\bfrom|\bimport)\s*\(?\s*["']three\/addons\/([^"']+)["']/g)) {
+    addonDeps += 1;
+    check(existsExact(resolve(addonRoot, m[1])), `${rel(f)} imports three/addons/${m[1]}, which must be vendored with exactly that case`);
+  }
+}
+console.log(`  vendored addons checked: ${addonFiles.length} files, ${addonDeps} imports`);
+
 // ---- asset references ----
 const assetsJs = readFileSync(join(srcDir, "assets.js"), "utf8");
 const textures = [...assetsJs.matchAll(/\bT\(\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
@@ -110,6 +156,21 @@ for (const id of readdirSync(musicDir).filter((n) => statSync(join(musicDir, n))
   }
 }
 
+// ---- play('id') literals name a real track or a real SFX, with exactly that case (a typo is silent at run time: the player just hears nothing) ----
+const musicIds = new Set(readdirSync(musicDir).filter((n) => n !== "stingers" && statSync(join(musicDir, n)).isDirectory()));
+let sfxNames = new Set();
+try { sfxNames = new Set((await import(pathToFileURL(join(srcDir, "audio", "sfx.js")).href)).SFX_NAMES); } catch (e) { check(false, `src/audio/sfx.js loads, so the SFX names can be listed (${e.message})`); }
+check(musicIds.size >= 6 && sfxNames.size >= 40, `the track list (${musicIds.size}) and the SFX list (${sfxNames.size}) were read`);
+let playCalls = 0;
+for (const [f, text] of texts) {
+  for (const m of text.matchAll(/\.play\(\s*(["'`])([^"'`$\\]+)\1/g)) {
+    playCalls += 1;
+    const id = m[2], music = f.endsWith(`${sep}music.js`);
+    check(music ? musicIds.has(id) : sfxNames.has(id) || musicIds.has(id), `${rel(f)} plays '${id}', which must be ${music ? "a track folder under assets/music" : "an SFX in audio/sfx.js or a track folder under assets/music"} with exactly that case`);
+  }
+}
+check(playCalls >= 30, `the play('...') sweep saw the audio call sites (${playCalls})`);
+
 // ---- size budget and nothing that must not ship ----
 const shipped = walk(appDir, (abs) => /[\\/](tests|node_modules)$/.test(abs) || /[\\/]assets[\\/](music-src|tex-src)$/.test(abs));
 const bytes = shipped.reduce((n, f) => n + statSync(f).size, 0);
@@ -120,15 +181,37 @@ const stray = shipped.filter((f) => /\.(zip|psd|7z|rar|log|tmp|bak|orig)$/i.test
 check(stray.length === 0, `no debug, scratch or archive file ships (${stray.join(", ")})`);
 check(!existsSync(join(appDir, "tests", "_dbg.mjs")), "the stray tests/_dbg.mjs debug file is gone");
 
+// Pages serves the WHOLE tree: tests/, the lab pages and the *-src folders are public too, so the archive and size scans cover every file in it (E-22).
+{
+  const MB = 1024 * 1024, mb = (n) => `${(n / MB).toFixed(1)} MB`;
+  const sizes = servedFiles.map((f) => [f, statSync(f).size]);
+  check(sizes.length > 100, `the served-file sweep saw the whole tree (${sizes.length} files)`);
+  const archives = sizes.filter(([f]) => /\.(zip|7z|rar|tar|tgz|gz|bz2|xz|zst|lz4|jar|psd)$/i.test(f)).map(([f, n]) => `${rel(f)} (${mb(n)})`);
+  check(archives.length === 0, `no archive of any size is served from skyblitz/, tests and source folders included (${archives.join(", ")})`);
+  const huge = sizes.filter(([, n]) => n > 5 * MB).map(([f, n]) => `${rel(f)} (${mb(n)})`);
+  check(huge.length === 0, `no served file is over 5 MB, audio dumps in the source folders included (${huge.join(", ")})`);
+  for (const [f, n] of sizes) if (n > 1.5 * MB && n <= 5 * MB) console.log(`  warning: ${rel(f)} is ${mb(n)} and is served as it is`);
+}
+
 // ---- policy: a test browser must never be able to clip the real desktop cursor ----
 for (const [f, text] of texts) {
   check(!/\b(requestPointerLock|exitPointerLock|pointerLockElement)\b/.test(text), `${rel(f)} takes no pointer lock (even headless Chrome would clip the real cursor)`);
-  check(!/\bconsole\.(log|debug|info)\(/.test(text) || f.endsWith(`${sep}debug.js`), `${rel(f)} leaves no console.log in production code`);
+  check(!/\bconsole\s*\.\s*(log|debug|info)\s*\(/.test(text) || f.endsWith(`${sep}debug.js`), `${rel(f)} leaves no console.log in production code`);   // `\s*`: "console.log (" and a line break before the dot are still calls
   check(!/\bdebugger\b/.test(text), `${rel(f)} leaves no debugger statement`);
 }
 
 // Three's default checks every program's link log synchronously, which stalls shader compilation; players get it off, tests and ?debug keep it on.
-check(/renderer\.debug\.checkShaderErrors\s*=(?!\s*true\s*;)[^;]*;/.test(texts.get(join(srcDir, "game.js")) ?? ""), "game.js turns the synchronous shader-link check off for players (renderer.debug.checkShaderErrors)");
+// The right-hand side is evaluated against a fake game (this.manual, this.params.has): falsy for a bare URL, truthy for ?manual and for ?debug. That rejects
+// `= true`, `= 1`, `= !!1`, `= this.manual || true` and every other truthy spelling, and a check that is never on.
+{
+  const assign = (texts.get(join(srcDir, "game.js")) ?? "").match(/renderer\.debug\.checkShaderErrors\s*=\s*([^;]+);/);
+  check(Boolean(assign) && /^[\w\s.!()'"|&,?:]+$/.test(assign[1]), "game.js assigns renderer.debug.checkShaderErrors a plain expression");
+  if (assign && /^[\w\s.!()'"|&,?:]+$/.test(assign[1])) {
+    const verdict = (manual, flags) => { try { return Boolean(new Function(`return (${assign[1]});`).call({ manual, params: { has: (k) => flags.includes(k) } })); } catch { return undefined; } };
+    check(verdict(false, []) === false, "game.js turns the synchronous shader-link check off for players (renderer.debug.checkShaderErrors must be false on a bare URL)");
+    check(verdict(true, []) === true && verdict(false, ["debug"]) === true, "game.js keeps the shader-link check on for ?manual and ?debug runs (renderer.debug.checkShaderErrors)");
+  }
+}
 
 // ---- catalogue wiring ----
 const dataPath = join(root, "data.js"), indexPath = join(root, "index.html");

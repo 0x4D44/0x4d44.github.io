@@ -336,6 +336,9 @@ test('E-12: losing the WebGL context pauses the race and shows a notice; restori
     assert.equal(a.paused, true, 'the race is paused'); assert.equal(a.screen, 'pause');
     assert.match(a.notice, /Graphics context lost/);
     assert.equal(b.sim, a.sim, 'the simulation is frozen'); assert.equal(b.frame, a.frame, 'nothing is drawn into the dead context');
+    await page.eval('__sky.step(3, 1); __sky.game.renderFrame(1, 1 / 60); 1');            // the loop already stands down; the test surface and any other direct caller must not draw into the dead context either
+    const d = await snap();
+    assert.equal(d.frame, a.frame, 'renderFrame is a no-op while the context is gone'); assert.equal(d.sim, a.sim, 'and so is the sim step');
     await page.eval('__sky.game.setPaused(false); 1');
     assert.equal((await snap()).paused, true, 'resuming into a blank frame is refused');
     await page.eval('__ext.restoreContext(); 1');
@@ -487,6 +490,42 @@ test('E-28: the quality preset reaches texture anisotropy', async () => {
     })()`);
     assert.ok(r.n >= 1, `textures were loaded (${r.n})`);
     for (const id of ['low', 'med', 'high', 'ultra']) assert.deepEqual(r[id].got, [r[id].want], `${id}: texture anisotropy`);
+  }, { wait: RACE });
+});
+
+test('E-28: Auto quality resolves the same way at boot and when picked at run time (Med on a touch phone, High on a desktop)', async () => {
+  const phone = (page) => Promise.all([page.setViewport(390, 844, { dpr: 3, mobile: true }), page.s('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })]);
+  await withPage('?debug=1&manual=1&mute=1', async (page) => {
+    const boot = await J(page, "({ coarse: matchMedia('(pointer: coarse)').matches, setting: __sky.game.settings.quality, id: __sky.game.qualityId })");
+    assert.equal(boot.coarse, true, 'the emulated phone has a coarse pointer'); assert.equal(boot.setting, 'auto'); assert.equal(boot.id, 'med', 'boot: Med');
+    await page.eval("__sky.quality('high'); 1");
+    assert.equal(await page.eval('__sky.game.qualityId'), 'high');
+    await page.eval("__sky.quality('auto'); 1");
+    assert.equal(await page.eval('__sky.game.qualityId'), 'med', 'run time: the same Med, not a hard-coded High');
+    assert.equal(await page.eval('__sky.game.settings.quality'), 'auto', 'and the setting stays Auto');
+  }, { setup: phone });
+  await withPage('?debug=1&manual=1&mute=1', async (page) => {
+    assert.equal(await page.eval('__sky.game.qualityId'), 'high', 'desktop boot: High');
+    await page.eval("__sky.quality('low'); __sky.quality('auto'); 1");
+    assert.equal(await page.eval('__sky.game.qualityId'), 'high', 'desktop run time: High');
+  });
+});
+
+test('E-28: Settings has a Controller vibration toggle (default on) that really gates the gamepad rumble, and Reset restores it', async () => {
+  await withPage('?debug=1&manual=1&autostart=1&mute=1&course=sunrise&seed=7', async (page) => {
+    await page.eval(`window.__rumbles = 0; navigator.getGamepads = () => [{ connected: true, id: 'fake pad', buttons: [], axes: [], vibrationActuator: { playEffect: () => { window.__rumbles++; return Promise.resolve(); } } }]; 1`);
+    const boost = () => page.eval("__sky.game.events.emit('racer:boost', { racer: __sky.game.player, kind: 'ring' }); window.__rumbles");
+    assert.equal(await page.eval('__sky.game.settings.rumble'), true, 'on by default');
+    assert.equal(await boost(), 1, 'the pad rumbles on a boost ring');
+    await page.eval("__sky.game.ui.goto('settings'); 1");                                  // the real Settings screen, the real switch
+    const sw = `document.querySelector('[data-screen=settings] button.toggle[aria-label="Controller vibration"]')`;
+    assert.equal(await page.eval(`${sw}.getAttribute('aria-checked')`), 'true');
+    await page.eval(`${sw}.click(); 1`);
+    assert.equal(await page.eval('__sky.game.settings.rumble'), false); assert.equal(await page.eval(`${sw}.getAttribute('aria-checked')`), 'false');
+    assert.equal(await boost(), 1, 'no rumble once it is switched off');
+    assert.equal(await J(page, `JSON.parse(localStorage.getItem('${SETTINGS_KEY}')).rumble`), false, 'and the choice is stored');
+    await page.eval('__sky.game.ui.resetSettings(); 1');
+    assert.equal(await page.eval('__sky.game.settings.rumble'), true, 'Reset to defaults switches it back on'); assert.equal(await boost(), 2);
   }, { wait: RACE });
 });
 

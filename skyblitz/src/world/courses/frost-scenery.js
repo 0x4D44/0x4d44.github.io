@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { mulberry32 } from '../../util.js';
 import { createSkyDome, createCloudPuffs } from '../sky.js';
 import { createTerrainMaterial } from '../terrain.js';
-import { patchTerrain, buildTerrainTiles } from '../terrain-fx.js';
+import { patchTerrain, buildTerrainTiles, terrainCellScale } from '../terrain-fx.js';
 import { createAurora, createSteam, createPools, createGlowPoints, createAltitudeFog } from '../atmos.js';
 import { makeRockGeometry } from '../props.js';
 import {
@@ -98,7 +98,7 @@ export async function buildScenery(course, game, progress, yieldFrame) {
     veins: { color: new THREE.Color(0.08, 0.44, 0.68), scale: 1, cover: 0.972, y0: 200, y1: 270 },    // cracks of glowing ice in the cliffs, fading out toward the snow
   });
   const tiles = await buildTerrainTiles({
-    course, H, mat, bounds, T: 360, cellFor: (d) => (d < 120 ? 11 : d < 300 ? 18 : d < 600 ? 30 : d < 900 ? 55 : 110), castNear: 200, nearD: 300, block: 3, farR: 7000,
+    course, H, mat, bounds, T: 360, cellFor: (d) => (d < 120 ? 11 : d < 300 ? 18 : d < 600 ? 30 : d < 900 ? 55 : 110), cellScale: terrainCellScale(q), castNear: 200, nearD: 300, block: 3, farR: 7000,
     progress: (fr, t) => progress(0.1 + fr, t), yieldFrame,
   });
   course.group.add(tiles.group);

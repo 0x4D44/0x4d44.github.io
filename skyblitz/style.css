@@ -188,13 +188,15 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .hud-ticker { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: flex-end; gap: .25em; font: 800 .8em var(--body); font-style: normal; max-width: 60vw; } .hud-ticker li { background: rgba(5, 10, 30, .62); padding: .15em .7em; border-radius: .3em; border-right: .25em solid var(--orange); animation: tickIn .25s ease-out; transition: opacity 1s; } .hud-ticker li.fade { opacity: 0; } @keyframes tickIn { from { opacity: 0; transform: translateX(1em); } }
 .hud-ticker li.mine { border-right-color: var(--cyan); } .hud-ticker li.bump { animation: tickBump .3s ease-out; } @keyframes tickBump { 0% { transform: scale(1.12); } }   /* a merged repeat ("x7") pops; lines about the player are marked */
 .hud-speed { position: absolute; left: max(.8em, env(safe-area-inset-left)); bottom: max(.8em, env(safe-area-inset-bottom)); padding: .15em 1em .25em .8em; } .spd { display: flex; align-items: baseline; gap: .25em; line-height: 1; } .spd b { font-size: 3em; font-variant-numeric: tabular-nums; min-width: 2.1em; text-align: right; } .spd small { font-size: .8em; color: var(--cyan); } .alt { font: 800 .75em var(--body); font-style: normal; color: #cfe0ff; letter-spacing: .05em; } .alt i { font-style: normal; color: #fff; }
-.hud-bottom { position: absolute; left: 50%; bottom: max(.8em, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; align-items: flex-end; gap: .8em; }
+/* boost + item sit in the band between the speed box (about 11 em from the left edge) and the minimap, centred on the screen when they fit and squeezed (the bar shrinks) when
+   they do not: the old centred group ran into "km/h" on narrow, tall windows such as 768 x 1024 (V-24) */
+.hud-bottom { position: absolute; --edge: max(calc(max(.8em, env(safe-area-inset-left)) + 11em), calc(max(.8em, env(safe-area-inset-right)) + clamp(100px, 21vmin, 230px) + .7em)); left: var(--edge); right: var(--edge); bottom: max(.8em, env(safe-area-inset-bottom)); display: flex; justify-content: center; align-items: flex-end; gap: .8em; }
 .hud-bc { display: flex; flex-direction: column; gap: .3em; width: min(34vw, 17em); } .boost-lbl { font-size: .7em; letter-spacing: .2em; color: var(--yellow); line-height: 1; } .boost-bar { display: grid; grid-template-columns: repeat(20, 1fr); gap: .1em; transform: skewX(-18deg); padding: .15em; background: rgba(5, 10, 30, .75); border: .1em solid rgba(143, 176, 255, .55); border-radius: .25em; }
 .boost-bar i { height: .85em; background: rgba(255, 255, 255, .12); border-radius: .08em; } .boost-bar i.lit { background: linear-gradient(180deg, #ffe66b, var(--orange)); box-shadow: 0 0 .4em rgba(255, 138, 31, .7); }
 .hud-boost.on .boost-bar i.lit { background: linear-gradient(180deg, #fff, var(--cyan)); box-shadow: 0 0 .7em var(--cyan); animation: boostOn .25s ease-in-out infinite alternate; } @keyframes boostOn { to { filter: brightness(1.5); } }
 .hud-boost.full .boost-bar { animation: fullFlash 1s ease-in-out infinite; border-color: var(--yellow); } @keyframes fullFlash { 50% { box-shadow: 0 0 1em var(--yellow); } }
 .hud-heat { display: none; align-items: center; gap: .5em; font-size: .6em; letter-spacing: .15em; } .hud-heat.show { display: flex; } .heat { flex: 1; height: .55em; background: rgba(5, 10, 30, .75); border-radius: .2em; overflow: hidden; border: .08em solid rgba(143, 176, 255, .5); } .heat i { display: block; height: 100%; transform-origin: left; background: linear-gradient(90deg, #ffe66b, #ff3d3d); } .hud-heat.hot { color: #ff5a5a; animation: fullFlash .4s infinite; }
-.hud-item { width: 4.3em; height: 4.3em; display: grid; place-items: center; position: relative; padding: 0; } .hud-item.has { border-color: var(--yellow); box-shadow: 0 0 1em rgba(255, 208, 46, .5), 0 .2em 0 rgba(0, 0, 0, .4); } .item-ico { width: 2.9em; height: 2.9em; display: grid; place-items: center; } .item-ico svg { width: 100%; height: 100%; filter: drop-shadow(0 .1em .15em rgba(0, 0, 0, .6)); } .item-ico .empty { font: 800 .55em var(--body); font-style: normal; color: rgba(255, 255, 255, .35); letter-spacing: .15em; }
+.hud-item { flex: none; width: 4.3em; height: 4.3em; display: grid; place-items: center; position: relative; padding: 0; } .hud-item.has { border-color: var(--yellow); box-shadow: 0 0 1em rgba(255, 208, 46, .5), 0 .2em 0 rgba(0, 0, 0, .4); } .item-ico { width: 2.9em; height: 2.9em; display: grid; place-items: center; } .item-ico svg { width: 100%; height: 100%; filter: drop-shadow(0 .1em .15em rgba(0, 0, 0, .6)); } .item-ico .empty { font: 800 .55em var(--body); font-style: normal; color: rgba(255, 255, 255, .35); letter-spacing: .15em; }
 .hud-item.get { animation: itemGet .6s cubic-bezier(.2, 1.5, .3, 1); } @keyframes itemGet { 0% { transform: skewX(-10deg) scale(.4); } 100% { transform: skewX(-10deg) scale(1); } } .hud-item.has .item-ico { animation: itemPulse 1.1s ease-in-out infinite; } @keyframes itemPulse { 50% { transform: scale(1.12); } }
 .item-n { position: absolute; right: .2em; bottom: .05em; font-size: 1.1em; color: #fff; } .item-hint { position: absolute; left: 50%; top: 100%; margin-top: .3em; white-space: nowrap; font: 800 .55em var(--body); font-style: normal; letter-spacing: .08em; color: var(--cyan); transform: translateX(-50%) skewX(10deg); }
 .hud-shield { display: flex; align-items: center; gap: .3em; color: #33d6ff; font-size: .9em; } .hud-shield .ico, .hud-shield svg { width: 1.8em; height: 1.8em; }
@@ -239,7 +241,7 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 }
 @media (max-height: 460px) and (orientation: landscape) {
   .scr { padding-top: calc(env(safe-area-inset-top, 0px) + 2.9em); gap: .5em; } .hdr h2 { font-size: 1.3em; } .menu { gap: .5em; } .btn { min-height: 2em; padding: .35em 1.2em; } .main-logo { font-size: 1.6em; }
-  .logo h1 { font-size: clamp(2.6em, 14vh, 6em); } .hud-cdwrap { top: 26%; } .hud-cd { font-size: 4.4em; } .hud-map { width: 80px; height: 80px; } .ac-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; } .stat { font-size: .8em; } .info { gap: .3em; } .ac-tag { display: none; } .stats { gap: .15em; } .ac-name { font-size: 1.5em; } .sw { height: 1.6em; }
+  .logo h1 { font-size: clamp(2.6em, 14vh, 6em); } .hud-cdwrap { top: 26%; max-width: calc(100vw - 200px); } .touch .hud-cdwrap { max-width: calc(100vw - 348px); } .hud-cdhint { font-size: .8em; letter-spacing: .06em; } .hud-cd { font-size: 4.4em; } .hud-map { width: 80px; height: 80px; } .ac-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: none; } .stat { font-size: .8em; } .info { gap: .3em; } .ac-tag { display: none; } .stats { gap: .15em; } .ac-name { font-size: 1.5em; } .sw { height: 1.6em; }
 }
 @media (prefers-reduced-motion: reduce) {
   .scr.on { animation: fadeIn .2s; } .press, .hud-cdhint, .hud-boost.full .boost-bar, .ld-h, .hud-wrong, .hud-respawn, .warn-txt, .warn-arrow, .hud-item.has .item-ico, .pod .trophy { animation: none; }
@@ -255,13 +257,33 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .hud-cdhint { text-shadow: 0 .1em 0 #000, 0 0 .6em #000, 0 0 1.2em #000; }
 .touch .hud-right { top: calc(env(safe-area-inset-top, 0px) + 64px); }
 .touch .hud-ticker { font-size: .7em; max-width: 36vw; } .touch .hud-ticker li:nth-last-child(n+3) { display: none; }   /* phones: the two newest feed lines (Storm / popups still carry the news in portrait, where the feed is hidden) */
-.touch .hud-popups { top: 44%; }
+.touch .hud-popups { top: 46%; }
 .touch .hud-map { right: auto; left: .6em; top: 3.4em; bottom: auto; width: 88px; height: 88px; }
 .touch .hud-speed { bottom: 5.6em; }
 .touch .hud-bottom { left: .8em; right: auto; transform: none; bottom: max(.8em, env(safe-area-inset-bottom)); flex-direction: row; align-items: flex-end; }
-.touch .hud-bc { width: 24vw; max-width: 14em; } .touch .hud-shield { position: absolute; left: 0; bottom: 100%; margin-bottom: .2em; }
+.touch .hud-bc { width: 24vw; max-width: 14em; } .touch .hud-shield { margin: 0; }   /* in the row after the item box: stacked above the bar it sat on the speed box (45 x 5 px) */
 .touch .hud-item { width: 3.4em; height: 3.4em; } .touch .item-hint { display: none; }
 .touch .hud-banner { top: 20%; }
+/* V-13: portrait touch. The thumb on the floating stick (bottom-left 48% x 62%) hides whatever sits there, so the readouts move up under the Almanac
+   pill (speed, then boost bar + item + shield, in the left column) and the minimap goes under the position box. The popup column and the camera tick
+   move up with them; the roll buttons (src/flight/input.js) sit above ITEM / BRAKE, clear of the countdown digit and the popups. */
+@media (orientation: portrait) {
+  .touch .hud-speed { top: calc(env(safe-area-inset-top, 0px) + 4.3em); bottom: auto; left: max(.6em, env(safe-area-inset-left)); }   /* below the LAP box, which sits left of centre on a phone */
+  .touch .hud-bottom { top: calc(env(safe-area-inset-top, 0px) + 8.3em); bottom: auto; left: max(.6em, env(safe-area-inset-left)); }
+  .touch .hud-map { left: auto; right: max(.6em, env(safe-area-inset-right)); top: calc(env(safe-area-inset-top, 0px) + 64px + 3.2em); }
+  .touch .hud-popups { top: 30%; }
+  .touch .hud-note { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 12.7em); }
+  .touch .hud-cdwrap, .touch .hud-banner { top: max(22%, calc(env(safe-area-inset-top, 0px) + 12.2em)); }   /* below the readouts on a short phone */
+  .touch .warn-stack { margin-top: max(15vh, calc(env(safe-area-inset-top, 0px) + 12.2em)); }
+}
+@media (max-width: 400px) { .hud-cdhint { font-size: .92em; letter-spacing: .06em; } }   /* the rocket-start hint takes two lines on a narrow phone, not three */
+@media (max-width: 340px) { .hud-top { left: 112px; } .hud-lapbox { padding: .2em .4em; } .hud-time { font-size: 1em; } }   /* 320 px wide: the LAP box ended under the CAM button */
+@media (orientation: portrait) and (min-width: 761px) {   /* tablets: bigger type, taller boxes, the LAP box is centred */
+  .touch .hud-speed { top: calc(env(safe-area-inset-top, 0px) + 3.4em); }
+  .touch .hud-bottom { top: calc(env(safe-area-inset-top, 0px) + 8.5em); }
+  .touch .hud-map { top: calc(env(safe-area-inset-top, 0px) + 64px + 4.2em); }
+  .touch .hud-note { top: calc(env(safe-area-inset-top, 0px) + 13em); }
+}
 @media (prefers-reduced-motion: reduce) { .warn-roll, .lockon-txt.locked, .lockon-arrow.locked, .hud-ticker li.bump { animation: none; } .hud-note.on { animation: fadeOnly 1.1s forwards; } }
 .calm .warn-roll, .calm .lockon-txt.locked, .calm .lockon-arrow.locked, .calm .hud-ticker li.bump { animation: none; } .calm .hud-note.on { animation: fadeOnly 1.1s forwards; }
 
@@ -296,8 +318,7 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .stage-col .stage { flex: 1; }
 .keyhint { margin: 0; text-align: center; font-size: .78em; letter-spacing: .04em; color: rgba(207, 225, 255, .75); white-space: normal; }
 @media (max-height: 460px) { .keyhint { display: none; } }
-.touch .keyhint:not([data-pad]) { display: none; }   /* "<- -> aircraft  Enter select  Esc back" is no use on a touch screen (class set by the first touch); the gamepad version still shows when a pad is connected ... */
-@media (hover: none) and (pointer: coarse) { .keyhint:not([data-pad]) { display: none; } }   /* ... or on a device whose only pointer is coarse (phones and tablets, before any touch) */
+.touch .keyhint:not([data-pad]) { display: none; }   /* "<- -> aircraft  Enter select  Esc back" is no use on a touch screen (.touch is set by the first touch, or at load on a coarse-pointer device: input.js wantTouch); the gamepad version still shows when a pad is connected */
 
 /* course select: all four courses visible without scrolling on desktop-size viewports */
 @media (min-width: 1000px) and (min-height: 560px) {

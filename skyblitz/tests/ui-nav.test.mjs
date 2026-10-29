@@ -38,6 +38,8 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
   const press = async (k) => { await page.key(k); await delay(220); const s = await state(); if (trace) console.log(k.padEnd(11), JSON.stringify(s)); return s; };
   const goto = async (name, params) => { await page.eval(`__sky.game.ui.goto(${JSON.stringify(name)}, ${JSON.stringify(params || {})})`); await delay(450); return page.eval('0').then(state); };
   const toMain = async () => { await page.eval(`(() => { const u = __sky.game.ui; u.save.gp = null; u.goto('main'); })()`); await delay(400); };
+  // The first race started from the menus opens the controls hint (paused). Checks that are about something else mark it seen; the hint has its own checks.
+  const noHint = () => page.eval(`__sky.game.ui.save.hintsSeen = true`);
   // The state every check may rely on: the default page (not another check's URL), 1280x720, no touch emulation, a menu showing (not a race).
   const resetEnv = async () => { await page.s('Emulation.setTouchEmulationEnabled', { enabled: false }).catch(() => {}); await page.setViewport(1280, 720, { dpr: 1, mobile: false }); };
   const ensureBase = async () => {
@@ -197,8 +199,12 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
       assert.match(text, /Sample licences/i, at + ': the sample licence notices loaded under their own heading');   // (innerText follows the heading's text-transform: uppercase)
       const c = await page.eval(`(() => { const p = document.querySelector('.scr.credits .panel'), links = [...p.querySelectorAll('a')]; return { heads: p.querySelectorAll('h3, h4, h5').length, links: links.length, safe: links.every((a) => /^https?:/.test(a.href) && a.rel.includes('noopener') && a.target === '_blank'),
         scrolls: p.scrollHeight > p.clientHeight + 1, wide: p.scrollWidth > p.clientWidth + 1, pageWide: document.documentElement.scrollWidth - document.documentElement.clientWidth, top: p.scrollTop }; })()`);
+      assert.equal(c.top, 0, at + ': the screen opens at the top, not where the last visit left off (the second pass re-opens it after ArrowDown scrolled it): ' + JSON.stringify(c));
       assert.ok(c.heads >= 3 && c.links >= 3 && c.safe, at + ': headings and safe links: ' + JSON.stringify(c));
       assert.ok(c.scrolls && !c.wide && c.pageWide <= 1, at + ': a scrolling panel with no sideways overflow: ' + JSON.stringify(c));
+      // ui.js places the first focus one animation frame after the screen opens, and on a revisit the licence text is already there, so nothing above has waited for it:
+      // wait for the condition (the assertion below still says what is focused when it never arrives)
+      await page.waitFor(`!!document.activeElement && !!document.activeElement.closest('.scr.credits')`, { timeout: 5000 }).catch(() => {});
       const s = await state(); assert.ok(/Back/.test(s.label) && s.visible && !s.underPill, at + ': focus is on Back ' + JSON.stringify(s));
       await press('ArrowDown'); await delay(700);
       assert.ok((await page.eval(`document.querySelector('.scr.credits .panel').scrollTop`)) > c.top + 50, at + ': ArrowDown scrolls the licence text');
@@ -224,9 +230,10 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     await seq(['ArrowDown']);
     s = await state(); assert.ok(/Start race/.test(s.label), 'Start race reachable by arrows: ' + JSON.stringify(s));
     await press('Enter');
-    await page.waitFor(`__sky.game.state === 'race' || __sky.game.ui.hintOpen`, { timeout: 90000 }); await delay(600);
+    await page.waitFor(`__sky.game.state === 'race' || __sky.game.ui.hintOpen`, { timeout: 90000 });
+    await page.waitFor(`!!__sky.game.ui.cur && __sky.game.ui.cur.name === 'hint' && !!document.activeElement && !!document.activeElement.closest('.scr.hint')`, { timeout: 20000 }).catch(() => {});   // the card opens two frames after the race starts and takes focus a frame later; if it never does, the assertion below says so
     s = await state();
-    assert.equal(s.screen, 'hint', 'a first race (clean profile) opens with the controls hint: ' + JSON.stringify(s));   // was an `if`: the hint keys went unchecked whenever it did not show
+    assert.equal(s.screen, 'hint','a first race (clean profile) opens with the controls hint: ' + JSON.stringify(s));   // was an `if`: the hint keys went unchecked whenever it did not show
     assert.ok(/Got it/.test(s.label), 'hint focus ' + JSON.stringify(s)); await press('Enter');
     assert.equal(await page.eval(`__sky.game.paused`), false, 'race resumes after hint');
     // Escape pauses, and the pause menu opens on RESUME: Enter on it resumes the race
@@ -263,6 +270,7 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     assert.ok(h.frames >= 1, 'the race was drawn at least once before the card opened (it used to open with 0 frames): ' + at);
     assert.ok(/\b1\s*\/\s*1\b/.test(h.lap), 'the lap counter shows this race (1/1), not the template 1/3: ' + at);
     assert.ok(h.map > 100, 'the minimap is painted behind the card: ' + at);
+    await page.waitFor(`!!document.activeElement && !!document.activeElement.closest('.scr.hint')`, { timeout: 15000 });   // first focus is placed a frame after the card opens (a loaded machine takes longer)
     const s = await state(); assert.equal(s.screen, 'hint'); assert.ok(/Got it/.test(s.label) && s.visible && !s.underPill, JSON.stringify(s));
     await press('Enter'); assert.equal(await page.eval(`__sky.game.paused`), false, 'Enter on the card starts the race');
   }, { own: true });
@@ -348,7 +356,7 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
 
   const raceReady =() => page.waitFor(`__sky.game.state === 'race'`, { timeout: 120000 });
   check('time trial: keys only to results; Retry primary, Escape back to menu', async () => {
-    await toMain();
+    await toMain(); await noHint();
     let s = await seq(['ArrowDown', 'ArrowDown']); assert.ok(/Time Trial/.test(s.label), JSON.stringify(s));
     await seq(['Enter', 'Enter', 'Enter']);   // aircraft -> course -> launch
     await raceReady(); await delay(300);
@@ -358,7 +366,7 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
   });
 
   check('grand prix: 4 races by keys, standings each time, podium', async () => {
-    await delay(400); await toMain();
+    await delay(400); await toMain(); await noHint();
     let s = await press('ArrowDown'); assert.ok(/Grand Prix/.test(s.label), JSON.stringify(s));
     await seq(['Enter', 'Enter']);   // aircraft -> options
     s = await state(); assert.equal(s.screen, 'options');
@@ -393,7 +401,8 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
       assert.ok(m.names.length >= 2 && /New Grand Prix/.test(m.names[0]) && /Quit/.test(m.names[m.names.length - 1]), 'the two actions exist: ' + at);
       assert.deepEqual(m.off, [], 'both actions are on screen without scrolling the page (they used to sit below the fold): ' + at);
       assert.ok(m.focusInRow && m.focusIn && !m.underPill, 'first focus is an action and it is visible: ' + at); assert.ok(m.overflowX <= 1, 'no sideways scroll: ' + at);
-      await press('ArrowRight'); const q = await state(); assert.ok(/Quit/.test(q.label) && q.visible, `${w}x${h}: Right reaches Quit, visible ${JSON.stringify(q)}`);
+      let q = await press('ArrowRight'); if (!/Quit/.test(q.label)) q = await press('ArrowDown');   // side by side on wide screens, stacked on narrow ones
+      assert.ok(/Quit/.test(q.label) && q.visible, `${w}x${h}: the arrow keys reach Quit, and it is visible ${JSON.stringify(q)}`);
     }
   });
 
@@ -487,8 +496,7 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
   }, { own: true });
 
   check('volume sliders reach the audio graph (unmuted page)', async () => {
-    await page.goto(GAME + '?debug=1');
-    await page.waitFor('window.__sky && __sky.ready', { timeout: 100000 }); await delay(800);
+    await fresh({ qs: 'debug=1' }); await delay(300);   // no mute=1: this page makes sound
     await press('Enter');   // title -> main (a key gesture starts audio)
     await page.eval(`__sky.game.ui.goto('settings', { back: 'main' })`); await delay(500);
     const gain = () => page.eval(`(() => { const a = __sky.game.audio; return a && a.master ? [a.master.gain.value, a.sfxBus.gain.value, a.musicBus.gain.value] : null; })()`);

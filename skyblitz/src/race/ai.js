@@ -17,6 +17,14 @@ const _tgt = new THREE.Vector3(), _a = new THREE.Vector3(), _b = new THREE.Vecto
 
 function wrapDelta(d, L) { if (d > L * 0.5) d -= L; else if (d < -L * 0.5) d += L; return d; }
 
+/** Probability that a pilot takes a shortcut of the given risk: personality, skill, field position and difficulty (`shortcutBias`: Easy takes it less, Hard / Expert more). */
+export function shortcutChance(shortcuts, risk, sk, place, difficulty) {
+  let p = 0.22 + 0.8 * shortcuts - risk * 0.35 * (1 - sk * 0.8) + (difficulty.shortcutBias ?? 0);
+  p += place >= 5 ? 0.15 : place === 1 ? -0.12 : 0;
+  p *= 0.55 + 0.45 * difficulty.aiSkill;
+  return clamp(p, 0.03, 0.97);
+}
+
 export function createAI(race, racer, pilot, difficulty) {
   const course = race.course, L = course.length, P = { ...DEFAULT_P, ...(pilot && pilot.personality) };
   const rng = race.game.rng.fork(0xa100 + racer.id * 131);
@@ -59,11 +67,7 @@ export function createAI(race, racer, pilot, difficulty) {
   }
 
   function decideBranch(b) {
-    const risk = b.risk ?? 0.5;
-    let p = 0.15 + 0.8 * P.shortcuts - risk * 0.45 * (1 - sk * 0.8);
-    p += racer.place >= 5 ? 0.15 : racer.place === 1 ? -0.12 : 0;
-    p *= 0.55 + 0.45 * difficulty.aiSkill;
-    return rng.float() < clamp(p, 0.03, 0.97);
+    return rng.float() < shortcutChance(P.shortcuts, b.risk ?? 0.5, sk, racer.place, difficulty);
   }
 
   function nearestAhead(maxD, minCos) {
@@ -215,7 +219,7 @@ export function createAI(race, racer, pilot, difficulty) {
       const look = clamp(v * (0.7 + (1 - sk) * 0.5), 55, 170);
 
       // ---- mistakes (seeded, scaled by consistency and difficulty)
-      let mistakeLat = 0, capMul = 0.8 + 0.2 * sk + (difficulty.aiSkill - 0.75) * 0.1, steerGain = 0.85 + 0.3 * sk;
+      let mistakeLat = 0, capMul = 0.8 + 0.2 * sk + (difficulty.aiSkill - 0.75) * 0.04, steerGain = 0.85 + 0.3 * sk;
       if (S.mist.t > 0) {
         S.mist.t -= dt;
         if (S.mist.kind === 'wide') mistakeLat = S.mist.mag; else if (S.mist.kind === 'late') capMul *= 1.22; else if (S.mist.kind === 'lazy') steerGain *= 0.4;
@@ -262,7 +266,7 @@ export function createAI(race, racer, pilot, difficulty) {
         let allowed = Infinity;
         for (let d = 0; d <= horizon; d += 30) {
           const u = Math.min(br.b.length, br.u + d + 10); branchPoint(br.b, u, g);
-          const k = Math.abs(g.curvature || 0), size = Math.min(g.halfWidth || 60, (g.halfHeight || 45) * 1.3), c = Math.min(k < 1e-4 ? 400 : Math.sqrt(A_LAT * 0.7 / k), 40 + size * 1.7) * capMul;   // the narrower the tube, the slower
+          const k = Math.abs(g.curvature || 0), size = Math.min(g.halfWidth || 60, (g.halfHeight || 45) * 1.3), c = Math.min(k < 1e-4 ? 400 : Math.sqrt(A_LAT * 0.7 / k), 40 + size * 1.4) * capMul;   // the narrower the tube, the slower
           allowed = Math.min(allowed, c + Math.sqrt(2 * A_BRAKE * d));
         }
         tgtCap = allowed;
@@ -288,7 +292,7 @@ export function createAI(race, racer, pilot, difficulty) {
           for (let u = 0; u <= 260; u += 15) {
             branchPoint(b, Math.min(u, b.length), g);
             const k = Math.abs(g.curvature || 0), size = Math.min(g.halfWidth || 60, (g.halfHeight || 45) * 1.3);
-            const c = Math.min(k < 1e-4 ? 400 : Math.sqrt(A_LAT * 0.7 / k), 40 + size * 1.7) * capMul;
+            const c = Math.min(k < 1e-4 ? 400 : Math.sqrt(A_LAT * 0.7 / k), 40 + size * 1.4) * capMul;
             allowed = Math.min(allowed, c + Math.sqrt(2 * A_BRAKE * (S.brApproach + u)));
             if (u <= 150) minCap = Math.min(minCap, S.brApproach + u < 300 ? c : Infinity);
           }

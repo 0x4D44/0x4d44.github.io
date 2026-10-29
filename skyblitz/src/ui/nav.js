@@ -39,7 +39,9 @@ export class Nav {
       const p = dir === 'up' ? -y : dir === 'down' ? y : dir === 'left' ? -x : x;
       const s = dir === 'up' || dir === 'down' ? Math.abs(x) : Math.abs(y);
       if (p < 4) continue;
-      if (horiz && Math.abs(y) >= (r.height + b.height) / 2) continue;   // left / right stay on the row: no jumping from the leftmost card or the "1" laps option to the footer Back button (V-26)
+      // Off-axis candidates never count. Left / right stay on the row: no jumping from the leftmost card or the "1" laps option to the footer Back button (V-26).
+      // Up / down skip what shares the row: a keyboard-focused or selected card is lifted .25em, so its neighbour looked "below" it and Down went sideways instead of to the footer.
+      if (horiz ? Math.abs(y) >= (r.height + b.height) / 2 : Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top) > Math.min(r.height, b.height) / 2) continue;
       const score = p + s * 2.2;
       if (score < bs) { bs = score; best = el; }
     }

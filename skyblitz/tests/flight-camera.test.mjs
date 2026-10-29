@@ -117,3 +117,33 @@ test('interpolated 144 Hz rendering of a 60 Hz sim moves the camera smoothly (no
   assert.ok(n > 300);
   assert.ok(maxSecond < 0.12, `second difference of camera position per frame: ${maxSecond.toFixed(3)} m`);
 });
+
+test('P-19: the look-back camera (which sits ahead of the aircraft) never ends up inside terrain: the line to it stays clear', () => {
+  const S = setup();
+  S.game.course.groundHeight = (x, z) => (z < -7 ? 380 : 250);            // a wall of rock 7 m ahead, higher than the aircraft
+  S.racer.controls.lookBack = true;
+  S.racer.render.pos.set(0, 300, 0); S.racer.render.quat.identity();
+  for (let i = 0; i < 120; i++) S.rig.update(DT, S.game, 1);
+  const P = S.racer.render.pos, C = S.camera.position, gh = S.game.course.groundHeight;
+  for (let k = 1; k <= 20; k++) { const u = k / 20; assert.ok(P.y + (C.y - P.y) * u >= gh(0, P.z + (C.z - P.z) * u), `the line to the camera runs through rock at ${u}: camera at ${C.toArray().map((x) => x.toFixed(1))}`); }
+  assert.ok(C.y >= gh(C.x, C.z) + 3, `camera under the ground: ${C.y}`);
+  S.racer.controls.lookBack = false;
+  for (let i = 0; i < 240; i++) S.rig.update(DT, S.game, 1);
+  assert.ok(S.camera.position.z > 8, `the camera comes back out behind the aircraft once looking forward again: z ${S.camera.position.z}`);
+});
+
+test('P-20: in a hard bank the chase camera eases back, rises and looks into the turn', () => {
+  const lvl = setup(); const c = createControls();
+  for (let i = 0; i < 120; i++) frame(lvl, c);
+  const S = setup(); const cb = createControls(); cb.roll = 1;
+  for (let i = 0; i < 150; i++) frame(S, cb);
+  assert.ok(Math.abs(Math.sin(S.fs.phi)) > 0.85, `banked ${S.fs.phi}`);
+  const relL = lvl.camera.position.clone().sub(lvl.racer.render.pos), relB = S.camera.position.clone().sub(S.racer.render.pos);
+  const dist = (rel, fs) => -rel.dot(fs.forward);
+  assert.ok(dist(relB, S.fs) > dist(relL, lvl.fs) + 1.5, `back ${dist(relB, S.fs)} vs level ${dist(relL, lvl.fs)}`);
+  assert.ok(relB.y > relL.y + 1, `rise ${relB.y} vs ${relL.y}`);
+  // the view axis leans toward the inside of the turn (+ = right wing down turns right)
+  const look = new THREE.Vector3(0, 0, -1).applyQuaternion(S.camera.quaternion), side = new THREE.Vector3().copy(S.fs.right).setY(0).normalize();
+  const lead = look.dot(side) * Math.sign(-S.fs.right.y);
+  assert.ok(lead > 0.12, `view not led into the turn: ${lead}`);
+});

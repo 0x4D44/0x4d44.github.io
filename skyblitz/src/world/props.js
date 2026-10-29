@@ -79,6 +79,37 @@ export function instanced(geo, mat, list, { cast = false, receive = true } = {})
   return im;
 }
 
+/**
+ * Split ONE instanced-box mesh (an InstancedBufferGeometry whose per-instance attributes include a vec3 base position and a vec3 size, e.g. neon's 6500 facade
+ * boxes in a single draw call) into spatial chunks, each its own mesh with a real bounding sphere, so the frustum culls what is behind the camera. A single
+ * mesh with frustumCulled = false draws every box every frame (V-23: neon's facades were 78 k triangles at Low and at High alike). The chunks share the
+ * material and the per-vertex buffers. Returns { group, geos } (dispose the geos with the course).
+ */
+export function chunkInstanced(mesh, { cell = 500, pos = 'aPos', size = 'aSize' } = {}) {
+  const src = mesh.geometry, n = src.instanceCount, P = src.attributes[pos].array, S = src.attributes[size].array;
+  const bins = new Map();
+  for (let i = 0; i < n; i++) {
+    const k = Math.floor(P[i * 3] / cell) * 65536 + Math.floor(P[i * 3 + 2] / cell);
+    let b = bins.get(k); if (!b) bins.set(k, b = []); b.push(i);
+  }
+  const group = new THREE.Group(); group.name = mesh.name; const geos = [], box = new THREE.Box3();
+  for (const list of bins.values()) {
+    const g = new THREE.InstancedBufferGeometry(); g.index = src.index;
+    for (const [name, a] of Object.entries(src.attributes)) {
+      if (!a.isInstancedBufferAttribute) { g.setAttribute(name, a); continue; }
+      const k = a.itemSize, arr = new a.array.constructor(list.length * k);
+      list.forEach((i, j) => { for (let c = 0; c < k; c++) arr[j * k + c] = a.array[i * k + c]; });
+      g.setAttribute(name, new THREE.InstancedBufferAttribute(arr, k));
+    }
+    g.instanceCount = list.length;
+    box.makeEmpty();                                                    // a yawed box is covered by its footprint circle
+    for (const i of list) { const r = Math.hypot(S[i * 3], S[i * 3 + 2]) / 2; box.expandByPoint(new THREE.Vector3(P[i * 3] - r, P[i * 3 + 1], P[i * 3 + 2] - r)); box.expandByPoint(new THREE.Vector3(P[i * 3] + r, P[i * 3 + 1] + S[i * 3 + 1], P[i * 3 + 2] + r)); }
+    g.boundingSphere = box.getBoundingSphere(new THREE.Sphere()); g.boundingBox = box.clone();
+    const m = new THREE.Mesh(g, mesh.material); m.name = mesh.name + ':chunk'; group.add(m); geos.push(g);
+  }
+  return { group, geos };
+}
+
 /** Scatter points near the route: returns [{x,z,s,lat}] with lateral offset in [minLat, maxLat] beyond the corridor, deterministic. */
 export function scatterAlongPath(course, { count, minLat = 10, maxLat = 400, seed = 7, accept }) {
   const rnd = mulberry32(seed), f = {}, out = [];

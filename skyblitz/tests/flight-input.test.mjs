@@ -81,3 +81,24 @@ test('K-1: double-tap A / D does nothing by default (setting off); Q / E always 
   now = 30000; fire('keydown', 'KeyA'); now += 150; fire('keyup', 'KeyA'); fire('keydown', 'KeyA'); fire('keyup', 'KeyA');
   assert.equal(run(on.input, 1).barrel, -1, 'two KeyA presses 150 ms apart: barrel left with the setting on');
 });
+
+test('P-17: a held bank key tops out below the 0.99 full stick that Pro assist reads as a continuous roll', () => {
+  const { input } = make();
+  fire('keydown', 'KeyD'); const c = run(input, 90);
+  assert.ok(c.roll > 0.95 && c.roll < 0.99, `held D roll ${c.roll}`); fire('keyup', 'KeyD');
+  fire('keydown', 'ArrowLeft'); const d = run(input, 90);
+  assert.ok(d.roll < -0.95 && d.roll > -0.99, `held Left roll ${d.roll}`); fire('keyup', 'ArrowLeft');
+});
+
+test('E-03: keys pressed while a menu or the pause screen is open are not latched, and pause / resume drop what was held', () => {
+  const listeners = {};
+  const game = { settings: { pitchMode: 'flight' }, state: 'race', paused: false, events: { on: (n, f) => { (listeners[n] ||= []).push(f); }, emit() {} } };
+  const input = createInput(game);
+  const emitEv = (n) => (listeners[n] || []).forEach((f) => f({}));
+  game.paused = true; fire('keydown', 'Enter'); fire('keydown', 'Space'); game.paused = false; emitEv('game:resume');
+  let c = run(input, 2); assert.ok(!c.item && !c.fire, 'Enter / Space pressed under the pause menu never reach the flight controls');
+  fire('keyup', 'Enter'); fire('keyup', 'Space');
+  fire('keydown', 'KeyF'); emitEv('game:pause'); c = run(input, 1); assert.ok(!c.item, 'pausing drops a latched press');
+  fire('keydown', 'KeyF'); c = run(input, 1); assert.ok(c.item, 'a fresh press in flight still works');
+  game.state = 'results'; fire('keydown', 'KeyF'); game.state = 'race'; c = run(input, 1); assert.ok(!c.item, 'a key pressed on the results screen is ignored too');
+});

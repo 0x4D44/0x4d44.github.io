@@ -8,7 +8,7 @@ import { createSkyDome, createCloudPuffs } from '../sky.js';
 import { createWater } from '../water.js';
 import { createRapids } from '../rapids.js';
 import { createTerrainMaterial } from '../terrain.js';
-import { patchTerrain, buildTerrainTiles } from '../terrain-fx.js';
+import { patchTerrain, buildTerrainTiles, terrainCellScale } from '../terrain-fx.js';
 import { createShafts, createDustDevils, createGlowPoints, createBirds, createAltitudeFog } from '../atmos.js';
 import { makeMast, instancedQ, surfaceNormal, scatterFloor, scatterWall, wallPoint } from '../props-ice.js';
 import { makeRockGeometry } from '../props.js';
@@ -72,7 +72,7 @@ export async function buildScenery(course, game, progress, yieldFrame) {
     shore: { color: new THREE.Color(0.62, 0.52, 0.46), y0: WATER_Y + 1.5, y1: WATER_Y + 7 },                    // wet, dark banks along the river
   });
   const tiles = await buildTerrainTiles({
-    course, H, mat, bounds, T: 360, cellFor: (d) => (d < 120 ? 9 : d < 300 ? 15 : d < 600 ? 26 : d < 900 ? 48 : 96), castNear: 200, nearD: 300, block: 3, farR: 7000,
+    course, H, mat, bounds, T: 360, cellFor: (d) => (d < 120 ? 9 : d < 300 ? 15 : d < 600 ? 26 : d < 900 ? 48 : 96), cellScale: terrainCellScale(q), castNear: 200, nearD: 300, block: 3, farR: 7000,
     progress: (fr, t) => progress(0.1 + fr, t), yieldFrame,
   });
   course.group.add(tiles.group);

@@ -11,8 +11,8 @@ const THEMES = {
     stripe: '#27c4b0', chev: 'rgba(250,228,186,0.95)', glow: [5, 2.6, 0.5] },
   neon: { name: 'glass', deck: 'glass', deckColor: 0xffffff, deckRough: 0.1, deckMetal: 0.7, deckGlow: 0.85, hull: 0x090b16, hullRough: 0.18, hullMetal: 0.9, leg: 0x131a2e, legRough: 0.2, legMetal: 0.85, accent: 0x35e8ff, accentGlow: 2.2,
     stripe: '#2ee6ff', chev: 'rgba(255,70,200,0.95)', glow: [0.5, 3.0, 5], decalGlow: 1.0 },
-  frost: { name: 'ice', deck: 'ice', deckColor: 0xffffff, deckRough: 0.16, deckMetal: 0.05, hull: 0x4f86b8, hullRough: 0.3, hullMetal: 0.1, leg: 0xa7d6f5, legRough: 0.22, legMetal: 0.08, accent: 0x66f0ff, accentGlow: 1.4,
-    stripe: '#e8fbff', chev: 'rgba(120,235,255,0.95)', glow: [1.2, 3.6, 5], decalGlow: 0.35 },
+  frost: { name: 'ice', deck: 'ice', deckColor: 0xffffff, deckRough: 0.34, deckMetal: 0.05, hull: 0x4f86b8, hullRough: 0.3, hullMetal: 0.1, leg: 0xa7d6f5, legRough: 0.22, legMetal: 0.08, accent: 0x66f0ff, accentGlow: 1.4,
+    stripe: '#1d78b8', chev: 'rgba(24,110,176,0.92)', glow: [1.2, 3.6, 5], decalGlow: 0.35 },
   default: { name: 'steel', deck: 'metal', deckColor: 0xb8c0c8, deckRough: 0.62, deckMetal: 0.45, hull: 0x3a424c, hullRough: 0.55, hullMetal: 0.65, leg: 0x3a424c, legRough: 0.55, legMetal: 0.65, accent: 0xff6a1a, accentGlow: 0,
     stripe: '#f2b61c', chev: 'rgba(255,200,40,0.9)', glow: [5, 3.2, 0.6] },
 };
@@ -42,28 +42,35 @@ function makeDeckTexture(kind) {
     g.strokeStyle = 'rgba(60,230,255,0.9)'; g.lineWidth = 2; for (let i = 0; i <= S; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, S); g.moveTo(0, i); g.lineTo(S, i); g.stroke(); }
     g.strokeStyle = 'rgba(255,60,200,0.55)'; g.lineWidth = 1; for (let i = 32; i < S; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, S); g.stroke(); }
   } else {                                                                                  // ice
-    g.fillStyle = '#cfeeff'; g.fillRect(0, 0, S, S);
-    for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(255,255,255,${0.05 + rnd() * 0.12})`; g.fillRect(rnd() * S, rnd() * S, 1 + rnd() * 10, 1 + rnd() * 3); }
-    g.strokeStyle = 'rgba(90,150,200,0.55)'; g.lineWidth = 1.2;
+    g.fillStyle = '#9ccaea'; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(255,255,255,${0.08 + rnd() * 0.2})`; g.fillRect(rnd() * S, rnd() * S, 1 + rnd() * 10, 1 + rnd() * 3); }
+    g.strokeStyle = 'rgba(46,104,166,0.6)'; g.lineWidth = 1.4;
     for (let i = 0; i < 22; i++) { let x = rnd() * S, y = rnd() * S; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 6; k++) { x += (rnd() - 0.5) * 50; y += (rnd() - 0.5) * 50; g.lineTo(((x % S) + S) % S, ((y % S) + S) % S); } g.stroke(); }
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
   return t;
 }
 
-/** Screen-door fade by camera distance: gone inside `near` metres, solid beyond `far`. Injected into the stock shaders, so it works on any built-in material
- *  (lit or basic, instanced or not) with no transparency sorting. V-14: at GO the chase camera swoops past a gantry leg that filled 25-30 % of the frame. */
-function distanceFade(mat, near, far) {
+/** Screen-door fade by camera distance: gone inside `near` metres, solid beyond `far` (mat.userData.fade = Vector2(near, far), live). Injected into the stock
+ *  shaders, so it works on any built-in material (lit or basic, instanced or not) with no transparency sorting. V-14: at GO the chase camera swoops through
+ *  the start gantry (10-30 m from a leg) and one leg filled 25-30 % of the frame, hard against the craft. */
+function distanceFade(mat, [near, far]) {
+  const u = { value: new THREE.Vector2(near, far) };
+  mat.userData.fade = u.value;
   mat.onBeforeCompile = (sh) => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vFadeD;').replace('#include <project_vertex>', '#include <project_vertex>\n  vFadeD = length(mvPosition.xyz);');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vFadeD;').replace('#include <clipping_planes_fragment>',
+    sh.uniforms.uFade = u;
+    // the view-space position is interpolated, so the distance is exact per fragment (a per-vertex distance is badly wrong across a 80 m crossbar of 8 vertices)
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vFadeP;').replace('#include <project_vertex>', '#include <project_vertex>\n  vFadeP = mvPosition.xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vFadeP;\nuniform vec2 uFade;').replace('#include <clipping_planes_fragment>',
       `#include <clipping_planes_fragment>
-  if (smoothstep(${near.toFixed(1)}, ${far.toFixed(1)}, vFadeD) < fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))))) discard;`);
+  if (smoothstep(uFade.x, uFade.y, length(vFadeP)) < fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))))) discard;`);
   };
-  mat.customProgramCacheKey = () => `pfade${near}:${far}`;
+  mat.customProgramCacheKey = () => 'pfade';
   return mat;
 }
-const FADE_NEAR = 14, FADE_FAR = 36;
+/** [gone, solid] camera distances in metres. The legs (the big dark slabs beside the swoop) go first; the crossbar, banner and lamps, which sit high and
+ *  read as the start gate, only dissolve when the camera is almost inside them. */
+const FADE_LEG = [34, 90], FADE_TOP = [16, 40];
 
 function deckDecal(course, w, l, back, fwd, th) {
   // canvas covers the deck: x in [-w/2, w/2] (right = +x), y from the front (top) to the rear (bottom)
@@ -119,16 +126,18 @@ export function buildPlatform(course, game) {
   const zc = (cfg.back - cfg.fwd) / 2;                       // deck centre along +z (behind the line is +z)
 
   const th = THEMES[course.id] || THEMES.default;             // V-34: wood pier / sandstone / glass / ice, steel for an unknown course
+  group.userData.theme = th.name;
   const deckTex = th.deck === 'metal' ? game.assets.tex('metal_deck') : makeDeckTexture(th.deck);
   if (th.deck !== 'metal') disposables.push(deckTex);
   const deckMat = new THREE.MeshStandardMaterial({ map: deckTex, color: th.deckColor, roughness: th.deckRough, metalness: th.deckMetal });
   if (th.deckGlow) { deckMat.emissive = new THREE.Color(0xffffff); deckMat.emissiveMap = deckTex; deckMat.emissiveIntensity = th.deckGlow; }
   const hullMat = new THREE.MeshStandardMaterial({ color: th.hull, roughness: th.hullRough, metalness: th.hullMetal });
-  // the gantry legs, crossbar and lamp rims are the parts the GO camera swoops past (V-14): they dither away inside FADE_NEAR m of the camera
-  const legMat = distanceFade(new THREE.MeshStandardMaterial({ color: th.leg, roughness: th.legRough, metalness: th.legMetal }), FADE_NEAR, FADE_FAR);
+  // the gantry dithers away as the GO camera swoops into it (V-14): the legs from 90 m, the crossbar / banner / lamps only inside 40 m
+  const legMat = distanceFade(new THREE.MeshStandardMaterial({ color: th.leg, roughness: th.legRough, metalness: th.legMetal }), FADE_LEG);
+  const barMat = distanceFade(new THREE.MeshStandardMaterial({ color: th.leg, roughness: th.legRough, metalness: th.legMetal }), FADE_TOP);
   const accent = new THREE.MeshStandardMaterial({ color: th.accent, roughness: 0.5, metalness: 0.3 });
   if (th.accentGlow) { accent.emissive = new THREE.Color(th.accent); accent.emissiveIntensity = th.accentGlow; }
-  disposables.push(deckMat, hullMat, legMat, accent);
+  disposables.push(deckMat, hullMat, legMat, barMat, accent);
 
   const top = new THREE.PlaneGeometry(w, l, 1, 1); top.rotateX(-Math.PI / 2);
   { const uv = top.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (w / 10), uv.getY(i) * (l / 10)); }
@@ -168,25 +177,25 @@ export function buildPlatform(course, game) {
   }
 
   // ---- start gantry at the line: two towers, a crossbar with a checkered banner and three lamps facing the grid (behind, +z)
-  const towerH = 46, gantry = new THREE.Group(); gantry.position.set(0, 0, 0); root.add(gantry);
+  const towerH = 46, gantry = new THREE.Group(); gantry.name = 'gantry'; gantry.position.set(0, 0, 0); root.add(gantry);
   const tw = new THREE.BoxGeometry(3, towerH, 3); disposables.push(tw);
-  for (const sx of [-1, 1]) { const t = new THREE.Mesh(tw, legMat); t.position.set(sx * (w / 2 + 3), towerH / 2, 0); t.castShadow = true; gantry.add(t); }
-  const barGeo = new THREE.BoxGeometry(w + 12, 6, 3.2); const bar = new THREE.Mesh(barGeo, legMat); bar.position.set(0, towerH - 3, 0); bar.castShadow = true; gantry.add(bar); disposables.push(barGeo);
+  for (const sx of [-1, 1]) { const t = new THREE.Mesh(tw, legMat); t.name = 'gantry-leg'; t.position.set(sx * (w / 2 + 3), towerH / 2, 0); t.castShadow = true; gantry.add(t); }
+  const barGeo = new THREE.BoxGeometry(w + 12, 6, 3.2); const bar = new THREE.Mesh(barGeo, barMat); bar.position.set(0, towerH - 3, 0); bar.castShadow = true; gantry.add(bar); disposables.push(barGeo);
   const bt = (() => {
     const c = document.createElement('canvas'); c.width = 1024; c.height = 64; const g = c.getContext('2d');
     for (let i = 0; i < 64; i++) for (let j = 0; j < 4; j++) { g.fillStyle = (i + j) % 2 ? '#fff' : '#111'; g.fillRect(i * 16, j * 16, 16, 16); }
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; return t;
   })();
-  const bannerGeo = new THREE.PlaneGeometry(w + 12, 4), bannerMat = distanceFade(new THREE.MeshBasicMaterial({ map: bt, side: THREE.DoubleSide, toneMapped: true }), FADE_NEAR, FADE_FAR);
+  const bannerGeo = new THREE.PlaneGeometry(w + 12, 4), bannerMat = distanceFade(new THREE.MeshBasicMaterial({ map: bt, side: THREE.DoubleSide, toneMapped: true }), FADE_TOP);
   const banner = new THREE.Mesh(bannerGeo, bannerMat); banner.position.set(0, towerH - 3, 1.7); gantry.add(banner);
   const banner2 = banner.clone(); banner2.position.z = -1.7; banner2.rotation.y = Math.PI; gantry.add(banner2);
   disposables.push(bt, bannerGeo, bannerMat);
   const lampGeo = new THREE.CircleGeometry(3.4, 24); disposables.push(lampGeo);
   const lamps = [];
   for (let i = 0; i < 3; i++) {
-    const m = distanceFade(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 0.02, 0.02), toneMapped: false }), FADE_NEAR, FADE_FAR);
+    const m = distanceFade(new THREE.MeshBasicMaterial({ color: new THREE.Color(0.12, 0.02, 0.02), toneMapped: false }), FADE_TOP);
     const lamp = new THREE.Mesh(lampGeo, m); lamp.position.set((i - 1) * 9, towerH - 11, 1.8); gantry.add(lamp); lamps.push(m);
-    const rim = new THREE.Mesh(new THREE.RingGeometry(3.4, 4.2, 24), legMat); rim.position.copy(lamp.position); rim.position.z += 0.02; gantry.add(rim); disposables.push(rim.geometry);
+    const rim = new THREE.Mesh(new THREE.RingGeometry(3.4, 4.2, 24), barMat); rim.position.copy(lamp.position); rim.position.z += 0.02; gantry.add(rim); disposables.push(rim.geometry);
     disposables.push(m);
   }
   const OFF = new THREE.Color(0.12, 0.02, 0.02), RED = new THREE.Color(5, 0.25, 0.15), GREEN = new THREE.Color(0.3, 5, 0.6);

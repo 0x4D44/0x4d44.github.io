@@ -155,8 +155,10 @@ export function buildWayfinding(course, game) {
   const shortColor = new THREE.Color(env.shortcutColor ?? 0xff7a1a), guideColor = new THREE.Color(env.guideColor ?? 0x9ff0ff), warnColor = new THREE.Color(env.warnColor ?? 0xff5a20);
   const _m = new THREE.Matrix4(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _q = new THREE.Quaternion(), _c = new THREE.Color();
 
-  // ---- rings (scoring gates, branch gates, boost rings)
-  const torus = new THREE.TorusGeometry(1, 0.055, 10, 64);
+  // ---- rings (scoring gates, branch gates, boost rings). They are the single biggest fixed cost in a frame (sunrise: 107 rings x 1280 triangles = 137 k, a third
+  // of the whole scene) and the stripes come from the uv, so a coarser torus looks the same: Low 320 triangles a ring, Med 832, High / Ultra 1280 (V-23).
+  const sc = game.q?.scenery ?? 1, [tubeSeg, ringSeg] = sc < 0.6 ? [5, 32] : sc < 0.9 ? [8, 52] : [10, 64];
+  const torus = new THREE.TorusGeometry(1, 0.055, tubeSeg, ringSeg);
   const ringMat = mat({ uTime, uStripes: { value: 26 }, uSpeed: { value: 0.5 } }, RING_VS, RING_FS);
   const boostMat = mat({ uTime, uStripes: { value: 14 }, uSpeed: { value: -1.4 } }, RING_VS, RING_FS);
   const rings = [], boosts = [];
