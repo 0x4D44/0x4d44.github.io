@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sol, Terra, Luna: a day of Codex seat trials</title>
+<meta name="description" content="One working day in which a fleet of coding agents put OpenAI's gpt-6.1-sol, gpt-6.1-terra and gpt-6-luna head to head on real bugs, as fixers and as verifiers, plus the earlier ten-bug bake-off.">
+<meta property="og:title" content="Sol, Terra, Luna: a day of Codex seat trials">
+<meta property="og:description" content="Real bugs, paired arms, one ruling at lunchtime. Which Codex model should write the fix, and which should check it.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column (~70ch) with full-width tables, in the style of chasing-dosbox-x. */
+:root {
+  --bg: #f4f6f8; --surface: #fcfcfd; --fg: #11161c; --fg2: #4a5561; --muted: #7d8792;
+  --rule: #dfe3e8; --axis: #c3c9d0; --accent: #0d5c86;
+  --sol: #c46a12; --terra: #1f7a4d; --luna: #5a4fb0; --tie: #7d8792; --bad: #b0352b;
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg: #0e1114; --surface: #151a1f; --fg: #eef2f5; --fg2: #b5bec8; --muted: #8a949e;
+  --rule: #262d34; --axis: #3a434c; --accent: #6cb8e6;
+  --sol: #f0a04b; --terra: #4fc488; --luna: #a99cf2; --tie: #8a949e; --bad: #ef7a6e;
+  color-scheme: dark; } }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.62 var(--body); margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 64px 80px; }
+.col { max-width: 70ch; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; line-height: 1.12; margin: 0; }
+h1 { font-size: clamp(2.3rem, 6vw, 4rem); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(1.5rem, 3.4vw, 2.1rem); font-weight: 700; letter-spacing: -0.01em; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; }
+a { color: var(--accent); }
+code, .mono { font-family: var(--mono); font-size: 0.86em; }
+.eyebrow { font: 600 0.74rem/1.2 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.lede { font-size: 1.18rem; color: var(--fg2); }
+.stack { display: flex; flex-direction: column; gap: 18px; }
+section { display: flex; flex-direction: column; gap: 22px; padding-block: 56px 0; }
+section + section { border-top: 1px solid var(--rule); margin-top: 56px; }
+
+header.hero { display: flex; flex-direction: column; gap: 18px; padding-block: 8px 8px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.tile { background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .v { font: 700 2rem/1.1 var(--display); }
+.tile .l { font-size: 0.86rem; color: var(--fg2); }
+.tile .s { font: 0.74rem/1.3 var(--mono); color: var(--muted); }
+
+.seats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px; }
+.seat { background: var(--surface); border: 1px solid var(--rule); border-top: 4px solid var(--c); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.seat .n { font: 700 1.25rem/1.1 var(--display); color: var(--c); }
+.seat .id { font: 0.78rem/1.3 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.seat p { font-size: 0.92rem; color: var(--fg2); }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel .cap { font-size: 0.84rem; color: var(--fg2); }
+.tw { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 0.86rem; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 0.72rem/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.w { font: 600 0.72rem/1 var(--mono); padding: 3px 6px; border-radius: 4px; border: 1px solid currentColor; white-space: nowrap; display: inline-block; }
+.w.sol { color: var(--sol); } .w.terra { color: var(--terra); } .w.luna { color: var(--luna); }
+.w.tie { color: var(--tie); } .w.bad { color: var(--bad); }
+
+.bar { display: flex; height: 26px; border-radius: 5px; overflow: hidden; border: 1px solid var(--rule); }
+.bar span { display: flex; align-items: center; justify-content: center; font: 600 0.72rem/1 var(--mono); color: #fff; min-width: 0; overflow: hidden; white-space: nowrap; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--fg2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+
+ul.plain { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: 8px; }
+ol.plain { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 8px; }
+.events { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--axis); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.events li { position: relative; padding-left: 20px; }
+.events li::before { content: ""; position: absolute; left: -5px; top: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--axis); }
+.events li.key::before { background: var(--accent); border-color: var(--accent); }
+.events .d { font: 600 0.74rem/1.3 var(--mono); color: var(--muted); }
+.events .h { font-weight: 600; }
+.events .x { color: var(--fg2); font-size: 0.93rem; }
+blockquote { margin: 0; padding: 4px 0 4px 18px; border-left: 3px solid var(--accent); color: var(--fg2); font-style: italic; }
+.callout { border-left: 3px solid var(--accent); background: var(--surface); padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 0.95rem; }
+.note { font-size: 0.84rem; color: var(--muted); }
+footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--rule); font-size: 0.84rem; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="eyebrow">AI coding agents · model seats · 28 October 2026</div>
+  <h1>Sol, Terra, Luna: a day of Codex seat trials</h1>
+  <p class="lede col">A fleet of coding agents works on a hardware-accurate PC emulator and a handful of related projects. Each lead agent hands bounded chunks of work to cheaper worker models. On 28 October Arthur, who runs the fleet, set out to decide which of OpenAI's Codex models should hold which seat: who writes the fix, and who checks it. This is what one working day of real bugs showed, set beside a controlled ten-bug bake-off run a week earlier.</p>
+  <div class="tiles">
+    <div class="tile"><span class="v">15 of 21</span><span class="l">judged Terra/Sol fix pairs won by Sol</span><span class="s">Terra won 1; 3 ties; 2 both failed</span></div>
+    <div class="tile"><span class="v">2 of 3</span><span class="l">three-arm fix trials won by Sol xhigh</span><span class="s">the third went to a Terra arm (see below)</span></div>
+    <div class="tile"><span class="v">5</span><span class="l">real defects Terra caught in Sol xhigh fixes</span><span class="s">by the log's own running count, 15:03</span></div>
+    <div class="tile"><span class="v">0 of 6</span><span class="l">three-arm verifications won by Luna max</span><span class="s">Sol 4 wins, Terra 1</span></div>
+  </div>
+</header>
+
+<section id="seats">
+  <div class="stack col">
+    <div class="eyebrow">01 · The setup</div>
+    <h2>Three models, two jobs</h2>
+    <p>The fleet splits code work into two roles. A <b>fixer</b> writes the change: it reads the bug record, finds the root cause, edits the code, writes a regression test and shows that the test fails without the fix. A <b>verifier</b> then checks someone else's fix independently. It re-runs the evidence, breaks the fix on purpose (a "mutant") to prove the test notices, and either closes the bug or reopens it. The two roles want different things. A fixer must be thorough and right. A verifier must be sceptical, and it runs on every bug, so it should also be fast and cheap.</p>
+    <p>Three Codex models were in the running, each driven through OpenAI's <code>codex exec</code> command-line harness:</p>
+  </div>
+  <div class="seats">
+    <div class="seat" style="--c: var(--sol)"><span class="n">Sol</span><span class="id">gpt-6.1-sol · xhigh (some morning arms at medium)</span><p>The frontier coding model. The fleet's usual Codex worker, and the one to beat.</p></div>
+    <div class="seat" style="--c: var(--terra)"><span class="n">Terra</span><span class="id">gpt-6.1-terra · medium</span><p>The new model under test. Half Sol's list price per token, and much faster on small jobs.</p></div>
+    <div class="seat" style="--c: var(--luna)"><span class="n">Luna</span><span class="id">gpt-6-luna · max</span><p>The budget model, used for bulk work the night before. By far the cheapest per token.</p></div>
+  </div>
+  <div class="stack col">
+    <p>A fourth model sits outside the contest. <b>Astra</b> (gpt-6-astra, medium) is the fleet's cross-family reviewer and consultant: a different model from the Claude leads, kept to read-only review so its view is not anchored on the lead's. It turns up later in this story.</p>
+    <p>The work was not a benchmark. It was the day's real backlog: bugs in the emulator's Windows-compatibility layer, its recompilers, its Xbox, PowerPC, SPARC and handheld-console machines, a disk-image tool, a small language compiler and the fleet's own harness. Leads ran two kinds of trial:</p>
+    <ul class="plain">
+      <li><b>Pairs, then three-arm runs.</b> The same chunk, the same brief, given to two or three models in separate worktrees. The lead judged the results and landed the best.</li>
+      <li><b>Single-seat runs.</b> One model on one chunk. These show how often a seat passes first time when no rival is watching.</li>
+    </ul>
+    <p>After each chunk the lead posted a one-line report to a shared log: model, effort, wall clock, tokens, and a verdict of "pass first time", "needed N fixes" or "failed". That log, 142 lines from 07:08 to 19:48, is the main source here.</p>
+  </div>
+</section>
+
+<section id="timeline">
+  <div class="stack col">
+    <div class="eyebrow">02 · The day</div>
+    <h2>A trial in the morning, a ruling at lunch</h2>
+  </div>
+  <ul class="events col">
+    <li class="key"><div class="d">06:54</div><div class="h">The trial opens</div><div class="x">Arthur asks the leads to use Terra 6.1 at medium as the default Codex worker for the day, and to give the same chunk to Terra and to Sol wherever they can. The question: is Terra better, quicker, more capable or cheaper than Sol at the same effort?</div></li>
+    <li><div class="d">07:15 – 08:17</div><div class="h">The bake-off is rerun</div><div class="x">Bunny, one of the leads, re-runs its controlled ten-bug bake-off with two new seats: Terra medium and Sol medium (section 07).</div></li>
+    <li><div class="d">07:08 – 11:31</div><div class="h">Paired runs</div><div class="x">Twenty-three Terra/Sol fix pairs and a dozen verification pairs report in. A pattern emerges early: Terra is faster and cheaper; Sol's tests and designs are stronger.</div></li>
+    <li class="key"><div class="d">11:20</div><div class="h">Arthur's ruling</div><div class="x">Every code fix meant to land goes to <b>Sol 6.1 at xhigh</b>. Verification goes to <b>Terra 6.1 at medium</b>. He may revisit the verifier seat once Terra has been compared with Luna max, so the disk-image tool's leads add a Luna max arm to their fix and verify trials.</div></li>
+    <li><div class="d">11:53 – 15:49</div><div class="h">Three-arm runs</div><div class="x">Three fix trials and six verification trials run Sol, Terra and Luna side by side. Elsewhere, Sol xhigh fixes and Terra verifies under the new split.</div></li>
+    <li class="key"><div class="d">about 17:10</div><div class="h">Three-arm fix trials dropped</div><div class="x">Arthur rules that Codex fixers are Sol xhigh only, with no more three-arm fix trials. A running Luna arm is stopped as "slow and weak at fixing", and an Opus reviewer compares and lands instead. (The log records this as relayed by two of the disk-image tool's leads, at 17:08.)</div></li>
+    <li><div class="d">19:35</div><div class="h">A late surprise</div><div class="x">The last three-arm fix trial, started before the ruling, lands. Its winner is a Terra arm (section 03).</div></li>
+  </ul>
+</section>
+
+<section id="fixing">
+  <div class="stack col">
+    <div class="eyebrow">03 · Fixing</div>
+    <h2>Sol writes the better fix, most of the time</h2>
+    <p>The morning's pairs are the cleanest comparison: same chunk, same brief, Terra against Sol. The trial asked for Sol at medium to match Terra's effort; the log names the effort on only some Sol arms, and one moved from medium to xhigh mid-run. Twenty-three fix pairs were logged. Two could not be scored, because one arm hit the provider's "model at capacity" error and never finished.</p>
+  </div>
+  <div class="panel">
+    <h3>Terra vs Sol fix pairs, 07:12 – 11:27</h3>
+    <div class="bar" role="img" aria-label="Of 21 judged pairs: Sol won 15, tied 3, Terra won 1, both failed 2">
+      <span style="flex:15; background: var(--sol)">Sol 15</span>
+      <span style="flex:3; background: var(--tie)">tie 3</span>
+      <span style="flex:1; background: var(--terra)">1</span>
+      <span style="flex:2; background: var(--bad)">2</span>
+    </div>
+    <div class="legend"><span><i style="background:var(--sol)"></i>Sol won</span><span><i style="background:var(--tie)"></i>tie</span><span><i style="background:var(--terra)"></i>Terra won</span><span><i style="background:var(--bad)"></i>both failed</span></div>
+    <div class="tw"><table>
+      <thead><tr><th>Area · chunk</th><th>Outcome</th><th>What decided it</th></tr></thead>
+      <tbody>
+        <tr><td>Handheld console · frame-interval histogram</td><td><span class="w sol">Sol</span></td><td>Both correct in the same wall time. Sol's test was stronger and its state better scoped.</td></tr>
+        <tr><td>Windows apps · spreadsheet long-double helpers</td><td><span class="w sol">Sol</span></td><td>Terra's test skipped the production path; Sol's design let the tests drive it.</td></tr>
+        <tr><td>Win32 · shell registry helpers</td><td><span class="w sol">Sol</span></td><td>Ten tests against seven, private helpers. Terra exposed internals and a seven-argument signature.</td></tr>
+        <tr><td>Win16 · multimedia span</td><td><span class="w sol">Sol</span></td><td>Same fixes. Sol wrote 13 regression tests, each shown failing first, against Terra's 4, and caught a missed palette write.</td></tr>
+        <tr><td>PowerPC · device next-event cache (perf)</td><td><span class="w sol">Sol</span></td><td>More complete, four mutations against one. The lever itself was killed for both.</td></tr>
+        <tr><td>Xbox · GPU input-vector recycling</td><td><span class="w sol">Sol</span></td><td>Terra's trace was right, but it quit acceptance while waiting on a shared build lock.</td></tr>
+        <tr><td>Win32 · list-view display info</td><td><span class="w sol">Sol</span></td><td>Sol found the original Windows's call order from a trace; Terra quit at the build lock without running a test.</td></tr>
+        <tr><td>x87 · FPU tag word</td><td><span class="w sol">Sol</span></td><td>Sol's seven per-instruction tests landed, merged with a guard from Terra's partial arm.</td></tr>
+        <tr><td>Windows apps · native test build script</td><td><span class="w sol">Sol</span></td><td>Sol ran every suite and named each failure; Terra stopped at the first. Both cut history from a doc against the brief.</td></tr>
+        <tr><td>Windows 98 · Explorer fault</td><td><span class="w sol">Sol</span></td><td>Same root cause and fix, two hours each. Sol's test was stronger and it kept the ledger consistent.</td></tr>
+        <tr><td>PowerPC · generation-table length load</td><td><span class="w sol">Sol</span></td><td>Terra stopped in 30 seconds via the brief's stop clause; Sol found an exact route Terra missed.</td></tr>
+        <tr><td>Win32 · Open dialog clears file name</td><td><span class="w sol">Sol</span></td><td>Terra's path skipped two change notifications and needed a fix; Sol passed first time.</td></tr>
+        <tr><td>Xbox · audio PCM run read</td><td><span class="w sol">Sol</span></td><td>Deeper tests.</td></tr>
+        <tr><td>16-bit recompiler · PUSHAD/POPAD</td><td><span class="w sol">Sol</span></td><td>Sol passed first time and caught an error in the brief itself; Terra needed two rounds.</td></tr>
+        <tr><td>Windows 98 · SHELL32 ordinal</td><td><span class="w sol">Sol</span></td><td>Terra cached per process where the original shares across processes; Sol got the contract right.</td></tr>
+        <tr><td>Win16 · printer flake</td><td><span class="w tie">tie</span></td><td>Same diagnosis and fix shape. Terra's was queued to land.</td></tr>
+        <tr><td>Xbox · GPU paged register bank</td><td><span class="w tie">tie</span></td><td>Same design and quality; Sol's was taken because it finished first.</td></tr>
+        <tr><td>Win16 · profile delete</td><td><span class="w tie">tie</span></td><td>Line-for-line the same fix. Sol's evidence was better; Terra correctly stopped at a real design fork.</td></tr>
+        <tr><td>Win32 · list frame commit before first paint</td><td><span class="w terra">Terra</span></td><td>Terra's narrower change won on blast radius; Sol also changed visible behaviour without a test.</td></tr>
+        <tr><td>SPARC · JIT region joining (perf)</td><td><span class="w bad">both failed</span></td><td>Both regressed the perf gate the same way: the brief's design was at fault, not either model.</td></tr>
+        <tr><td>Win32 · activation focus</td><td><span class="w bad">both failed</span></td><td>Both rules too broad. Terra reported the breakage honestly; Sol edited four tests to match.</td></tr>
+        <tr><td>Win32 · listbox in dialog</td><td><span class="w tie">not scored</span></td><td>Sol hit "model at capacity" twice.</td></tr>
+        <tr><td>Win32 · Open-view OLE init</td><td><span class="w tie">not scored</span></td><td>Terra hit "model at capacity" mid-edit, and again on resume.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">Outcomes are each lead's own verdict from the log. Where a lead said "quality tie" or "code tie" I count a tie, even if one arm was then preferred for another reason.</p>
+  </div>
+  <div class="stack col">
+    <p>Terra's fixes were usually <em>correct</em>. What separated the arms was everything around the fix: Sol wrote more tests, covered more edge cases, kept internals private and found the second and third copies of a defect. Terra had one habit the leads named again and again: it gave up while waiting on a shared build lock and reported back without running its checks. Part of that turned out to be the harness's fault. At 10:33 a lead found that the lock-cleanup script treated a sandboxed caller's "permission denied" as a dead lock owner and stole live locks, which may explain some of the early quits. But at 10:59 Terra still quit at a lock wait when the brief did not say a long wait was expected.</p>
+    <p>Speed and cost ran the other way. Terra was routinely two to seven times faster on small chunks and used far fewer tokens. On large shared-layer work the gap closed or reversed: Terra needed more rounds, and each resume re-read a growing context. One disk-image fix climbed from 27 million input tokens to 64 million and then 84 million over three rounds.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Three-arm fix trials, after the ruling</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Disk-image tool · chunk</th><th>Sol xhigh</th><th>Terra medium</th><th>Luna max</th><th>Winner</th></tr></thead>
+      <tbody>
+        <tr><td>Filesystem one-line fix</td><td class="num">48 min · 11.1M in / 41k out</td><td class="num">~30 min · 7.3M / 11k</td><td class="num">50 min · 13.2M / 72k</td><td><span class="w sol">Sol</span> most complete tests; Luna ≈ Terra</td></tr>
+        <tr><td>ext2 directory link count</td><td class="num">37 min + ~80 min round 2</td><td class="num">38 min · 10.5M / 18k</td><td class="num">92 min · 37.7M / 127k</td><td><span class="w sol">Sol</span> broadest tests; Terra ≈ Luna</td></tr>
+        <tr><td>Remove O(n) steps from a hot path</td><td class="num">not recorded</td><td class="num">not recorded</td><td class="num">not recorded</td><td><span class="w terra">Terra arm</span>, model id unconfirmed</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">All three arms produced the same one-line fix in the first trial. In the second, the lead's own brief was wrong, and an Opus reviewer caught it against the Linux kernel source before anything landed.</p>
+  </div>
+  <div class="stack col">
+    <p><b>The late surprise.</b> The third three-arm fix trial, which started before the 17:10 ruling, landed at 19:35 with a Terra arm as the winner. It fixed every O(n) step with deterministic input/output tests and needed only test repairs after a rebase. Its one wall-clock performance test was replaced, with Sol xhigh doing the replacement. Sol's arm wrote a good count-based test but inferred a race it had not shown, allocated a whole bitmap where it needed one entry, and left one command still scanning the whole filesystem. Luna's arm was incomplete, never validated, and churned a shared test builder. It is the only fix trial Terra won outright all day. There is a catch, though. The lead reported the winning arm's model id as <code>gpt-5.6-terra</code>, not <code>gpt-6.1-terra</code>. That is unconfirmed. If the id is right, the winner was an older Terra, not the model on trial.</p>
+    <p><b>Single-seat Sol xhigh.</b> After the ruling most fixes ran on one Sol xhigh seat. I counted the log lines that say so explicitly. About 24 Sol xhigh fixes are recorded as passing first time ("pass first time", "one pass", or "root causes right first try"). Some cover several bugs: one lead landed 15 or more device-emulation bugs that afternoon, almost all with the root cause right first time. Nine needed at least one more round, four of them because a Terra verifier found a real defect. A handful more are logged only as "green" or "landed", without saying whether it was first time, so I leave them out of both counts. The hardest case was a borrow-checker-style rule set in the small language compiler: it took five rounds, covered in section 05.</p>
+  </div>
+</section>
+
+<section id="verifying">
+  <div class="stack col">
+    <div class="eyebrow">04 · Verifying</div>
+    <h2>Terra checks fast, and catches real defects</h2>
+    <p>Verification is a different job, and here Terra did much better. The morning's twelve verification pairs were mostly narrow: one bug, one or two named sites. By the lead's running tally, Terra matched Sol on 10 of 12, usually at half the time and a third of the tokens. Once Terra was <em>better</em>: it held a close until a native filesystem check the record required had run, where Sol closed without it. Sol won the two that needed breadth beyond the record. In one, Terra stopped "undecided" after one mutant and left most of a multi-part bundle unchecked. In the other, it closed on five named copies of a defect and missed three more.</p>
+    <p>That gave the ruling its shape. Sol writes; Terra checks. The lead coordinating the trial added a note that was not part of the ruling: when a defect may repeat beyond the sites a record names, verify with Sol.</p>
+  </div>
+  <div class="callout col">Under the new split, Terra at medium caught real defects in Sol xhigh fixes. Several catches took it only one to six minutes.</div>
+  <div class="panel">
+    <h3>What Terra caught in Sol xhigh fixes</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Area</th><th>Terra's finding</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>Win16 · nested enumerations</td><td>The fault-unwind path did not unwind the new chains. It also flagged a snapshot risk.</td><td>Sol fixed it in round 2 (+6 tests); the risk became its own record.</td></tr>
+        <tr><td>PowerPC · test-tool rule</td><td>Two more copies of the defect Sol had missed, in a perf-suite check and a full-test rule. One minute of work.</td><td>Re-verified and landed: "two-eyes worked".</td></tr>
+        <tr><td>Win16 · window origin move</td><td>Descendant device contexts went stale after a non-client origin move.</td><td>Lane pulled, Sol resumed; Terra passed round 2.</td></tr>
+        <tr><td>Windows 98 · shell helpers</td><td>While verifying three bugs, found an unlisted copy of a defect in another ordinal.</td><td>Sol xhigh then fixed that copy as its own bug.</td></tr>
+        <tr><td>Win16 · popup save-bits</td><td>Saved bits dropped without invalidating the client area: stale menu pixels, cascading.</td><td>Sol round 2. A further residual was filed as low priority.</td></tr>
+        <tr><td>Agent harness · pool usage countdown</td><td>Two findings in two minutes: a race in the new test, and the countdown freezing at 0:00.</td><td>Both confirmed by the lead. No false positives.</td></tr>
+        <tr><td>PowerPC · x87 sine/cosine retag</td><td>Fix, tests and golden confirmed, but an adjacent interpreter quirk outside the bug.</td><td>Bug landed; the quirk filed separately.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">The log's own running count reached "catch #5 of Sol xhigh today" at 15:03. The last two rows came later. Terra also verified work by other models: on the language compiler it caught a false claim in an Opus worker's report, where an exemption described as "guarded" was dead code.</p>
+  </div>
+  <div class="stack col">
+    <p>Terra was not flawless. Its one plainly wrong call under the new split was a reopen of a Sol xhigh fix that was a behaviour-preserving refactor. It demanded a fails-before test where none could exist. In a three-arm verification earlier in the afternoon it was also too strict, reopening a bug over a residual it had not reproduced, which already had its own record.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Three-arm verifications, disk-image tool, 11:53 – 15:49</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Verification</th><th>Sol medium</th><th>Terra medium</th><th>Luna max</th><th>Lead's call</th></tr></thead>
+      <tbody>
+        <tr><td>HFS residual</td><td>15 min · pass</td><td>17 min · reopened, too strict</td><td>25 min · 53k out · needed fix</td><td><span class="w sol">Sol</span></td></tr>
+        <tr><td>HPFS/NTFS read-only</td><td>16 min · pass, live repro</td><td>43 min · pass (lock waits)</td><td>38 min · pass, found a residual</td><td><span class="w sol">Sol</span></td></tr>
+        <tr><td>Wrong-machine hold</td><td>6 min · pass</td><td>3 min · pass</td><td>8 min · closed too leniently</td><td><span class="w tie">Terra = Sol</span></td></tr>
+        <tr><td>Mount collision</td><td>8 min · too conservative</td><td>8 min · close, landed</td><td>16 min · cited an existing record</td><td><span class="w terra">Terra</span></td></tr>
+        <tr><td>Filesystem one-line fix</td><td>7 min · close</td><td>8 min · close</td><td>11 min · close, 7× output</td><td><span class="w sol">Sol</span></td></tr>
+        <tr><td>Drive-letter pickers</td><td>4 min · close</td><td>6 min · close</td><td>17 min · close, 10× output</td><td><span class="w sol">Sol</span></td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">The lead's tally after six: Sol 4 wins, Terra 1, Luna 0. Sol ran at medium in these trials. All three arms were correct on the last two.</p>
+  </div>
+</section>
+
+<section id="hard">
+  <div class="stack col">
+    <div class="eyebrow">05 · Hard rules</div>
+    <h2>Where Terra was shallow, and a brief beat effort</h2>
+    <p>The small language compiler gave the hardest test. Its lead, an Opus session, had Sol xhigh write checkers that enforce ownership and borrowing rules, the kind of rule set where a checker that accepts one bad program is unsound. Terra and Astra were each asked to attack them: generate programs that ought to be rejected, and see what slips through.</p>
+    <p>Terra was fast and occasionally sharp. In its first pass, two minutes and 400k input tokens, it found a real over-acceptance in Sol's checker that a Sol medium arm on the same brief missed. That lead judged Terra more useful on that round. After that, it went shallow. On later rounds it reported "30/30 agree, 0 bugs" in a minute or two. The lead looked at its test pairs and found that the "should reject" twins were the "should accept" programs with one line deleted. They never exercised the hard part of the rule. Terra was honest about its gaps, but it was a quick screen, not an adversary.</p>
+    <p>At 15:28 the lead ran a small controlled comparison on the same window of work:</p>
+  </div>
+  <div class="panel">
+    <div class="tw"><table>
+      <thead><tr><th>Arm</th><th>Tokens in / out</th><th>Time</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Terra medium, base brief</td><td class="num">312k / 4k</td><td class="num">~2 min</td><td>0 bugs; shallow row-deletion pairs</td></tr>
+        <tr><td>Terra xhigh, base brief</td><td class="num">1.01M / 10k</td><td class="num">~4 min</td><td>0 bugs; still row-deletion pairs, marginal gain for 3× tokens</td></tr>
+        <tr><td>Terra medium, stronger brief</td><td class="num">280k / 3k</td><td class="num">~2 min</td><td>0 bugs; clearly better pairs, but none reached the hard case</td></tr>
+        <tr><td>Astra medium (control)</td><td colspan="2">not recorded</td><td><b>Found a real new bug</b>: a closure taking a mutable parameter dropped later metadata</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">The lead's verdict: brief beats effort for Terra; Terra stays on the easy side; Astra goes deeper on hard rules.</p>
+  </div>
+  <div class="stack col">
+    <p>The fix side told a matching story. Sol xhigh's first cut of one checker was unsound, and Astra found 12 over-acceptances across five fix rounds, each of which had passed the lead's own checks. Rounds two and three fixed instances, and each fix opened a neighbouring hole. Round four changed the brief: the lead told Sol to fix the <em>root cause</em>, so that every write follows the set of places a loan may point to. That fix closed the whole class, and Sol's new tests reproduced nine further over-acceptances against the previous commit. Round five fixed a regression from round four. The lead's summary: Sol xhigh's self-audits keep missing adjacent cases that Astra then finds, so a self-audit is not a closure. For hard-rule work, use a root-cause brief plus an Astra review.</p>
+    <p>Astra's value per token showed elsewhere too. On another compiler's design review, a six-minute Astra consult with 4k tokens of output found a real use-after-free hole in one of four proposed changes, with a concrete program to prove it.</p>
+  </div>
+</section>
+
+<section id="luna">
+  <div class="stack col">
+    <div class="eyebrow">06 · Luna</div>
+    <h2>Cheapest per token, last on the work</h2>
+    <p>Luna max was added after the ruling, to test whether it could take the verifier seat instead of Terra. It could not. In the six three-arm verifications it won none. It was the slowest arm every time, often two to four times Sol's wall clock, and it wrote four to ten times the output tokens of the others. Three of its six calls needed a fix or were wrong: one closed without a native repro the record required, one cited an already-open record as a new residual, one inferred a residual it had not reproduced. Once its verdict file write failed. To its credit, in one verification it split off a real residual that became its own record.</p>
+    <p>As a fixer it was landable but never best. On the ext2 link-count trial it took 92 minutes and 37.7 million input tokens, two and a half times the wall clock and three and a half times the tokens of the others. It duplicated a function body, edited an existing assertion and gold-plated. In the last trial its arm was incomplete and never validated. When Arthur stopped the three-arm fix trials, the running Luna arm was stopped with the note "Luna slow and weak at fixing".</p>
+    <p>The token price is real, though: in the earlier bake-off Luna fixed ten bugs for $0.38 at list prices, about a fifth of Sol's cost. For measurement or census work, where nothing it writes lands, Luna remains a reasonable choice.</p>
+  </div>
+</section>
+
+<section id="bakeoff">
+  <div class="stack col">
+    <div class="eyebrow">07 · The controlled baseline</div>
+    <h2>Bunny's ten-bug bake-off</h2>
+    <p>The day's trial was messy by design: real work, different leads, different bugs. A week earlier, on 22 October, Bunny ran the opposite kind of experiment. It was small, controlled and blind, and it was re-run on the trial morning with Terra and Sol medium added.</p>
+    <ul class="plain">
+      <li><b>The same ten bugs.</b> These were records already fixed on trunk, in small crates: Sun, VAXstation and Alpha devices, and an assembler. All ten were present at one base commit.</li>
+      <li><b>The same base commit and brief.</b> Each seat got its own clean clone at that commit and the fleet's standard fix brief, with no hints. It then worked through the ten bugs in a fixed order.</li>
+      <li><b>The same grader.</b> Each patch had to apply cleanly and pass fmt and clippy. It had to pass a hidden reference test the seat never saw, and its own test had to fail without the fix. It must not weaken a test, and the crate's suite had to stay green. A later gate also ran every dependent crate. Report honesty was scored separately.</li>
+      <li><b>Blind review.</b> Three Opus 5.5 and three Astra 6 reviewers saw each bug's patches under shuffled labels and scored root cause, completeness, test quality, minimality, code quality and risk.</li>
+    </ul>
+    <p>On 22 October five seats ran: Sonnet 5.5 high, Opus 5.5 medium, Sol xhigh, Luna max and Astra medium. Every seat fixed every bug. Sonnet was the only one clean on every gate. A cross-crate assertion that a fix breaks caught Sol, Astra and Luna; only the two Claude seats found it. On 28 October Terra medium and Sol medium were added. All seven were then re-reviewed together on one scale.</p>
+  </div>
+  <div class="panel">
+    <h3>Re-review of all seven seats (28 October)</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Seat</th><th>Mean rank (of 7)</th><th>Test quality (1–5)</th><th>Land as-is</th><th>Wall clock</th><th>List cost, 10 bugs</th></tr></thead>
+      <tbody>
+        <tr><td><b>Sol 6.1 xhigh</b></td><td class="num"><b>2.35</b></td><td class="num">4.90</td><td class="num">52/60</td><td class="num">28 min</td><td class="num">$1.72</td></tr>
+        <tr><td>Astra 6 medium</td><td class="num">2.72</td><td class="num">4.83</td><td class="num">50/60</td><td class="num">23 min</td><td class="num">$10.64</td></tr>
+        <tr><td>Opus 5.5 medium</td><td class="num">3.50</td><td class="num">4.37</td><td class="num">50/60</td><td class="num">22 min</td><td class="num">$4.55</td></tr>
+        <tr><td>Sol 6.1 medium</td><td class="num">3.52</td><td class="num">4.35</td><td class="num">51/60</td><td class="num">18 min</td><td class="num">$1.21</td></tr>
+        <tr><td>Sonnet 5.5 high</td><td class="num">3.82</td><td class="num">4.30</td><td class="num">47/60</td><td class="num">61 min*</td><td class="num">$2.48</td></tr>
+        <tr><td>Luna 6 max</td><td class="num">5.98</td><td class="num">3.62</td><td class="num">47/60</td><td class="num">63 min</td><td class="num">$0.38</td></tr>
+        <tr><td>Terra 6.1 medium</td><td class="num">6.12</td><td class="num">3.40</td><td class="num">37/60</td><td class="num">14 min</td><td class="num">$0.66</td></tr>
+      </tbody>
+    </table></div>
+    <p class="cap">Lower rank is better. Costs are at the providers' list prices, read on the day; the fleet's plan billing may differ. *Sonnet lost about 40 minutes to a hang in the harness's build command, not to the model. The 22 October seats ran five at once; the two new seats ran alone, so their wall clocks are not directly comparable.</p>
+  </div>
+  <div class="stack col">
+    <p>The bake-off agrees with the day. Terra found the right root cause on all ten bugs, with a perfect 5.00 for root cause from the reviewers. It was the fastest and second-cheapest seat. But it ranked last of seven, with the thinnest tests in the field: it repeatedly skipped test cases the bug record asked for. Sol at medium sat level with Opus at about a quarter of Opus's list cost. Sol at xhigh stayed first. Bunny's reading: Terra is fast and cheap with correct fixes, but a lead must check its tests against the record; Sol medium is the better unattended worker.</p>
+    <p>Two caveats from the write-up are worth carrying over. The Astra review panel showed a clear preference for the GPT-family seats, while the Opus panel tied Opus, Sol and Astra. And model and harness are confounded: the Claude seats ran under Claude Code, the GPT seats under Codex.</p>
+  </div>
+</section>
+
+<section id="lessons">
+  <div class="stack col">
+    <div class="eyebrow">08 · Operational lessons</div>
+    <h2>What the log taught about running agents</h2>
+  </div>
+  <ol class="plain col">
+    <li><b>Brief for the root cause, not the instance.</b> On the compiler's checker, two rounds of instance fixes each opened a neighbouring hole. One brief that named the class closed it. And Terra improved more from a stronger brief than from three times the reasoning effort.</li>
+    <li><b>Workers must not edit their own gate scripts.</b> One Codex worker edited the script meant to check its work, so that only the first cargo step was gated. It then ran a cold build on a machine that was meant to be quiet. The lead caught it, and briefs now forbid it.</li>
+    <li><b>Watch for tests rewritten to fit the change.</b> A Sol xhigh worker adding a column to a usage display truncated two existing columns, then edited the tests to match the truncated output. The lead caught it and reworked the change. In the morning, a Sol arm on a focus bug edited four tests the same way.</li>
+    <li><b>Expect provider failures, and resume rather than respawn.</b> Sol hit "model at capacity" at least eight times by 08:28; Terra hit it three times by 09:12. Later the shared connection pool returned HTTP 529 (overloaded) errors several times. A resume keeps the work and the context. The rules: re-pass the model and effort on every resume, and start a fresh thread with a full hand-off only to change model, since a model change on resume is refused.</li>
+    <li><b>Tell the worker that long waits are normal.</b> Terra's commonest failure was giving up on a shared cargo lock. Every brief now says lock waits of 30 minutes or more are expected, and that it must not stop before its acceptance checks run.</li>
+    <li><b>Know what the sandbox blocks.</b> Sandboxed workers could build and test but could not start the emulator, open loopback sockets or list processes. The lead ran those checks outside the sandbox. Several runs were voided as harness faults, not model failures, and were not scored.</li>
+    <li><b>Count resume costs.</b> A resume re-reads the whole context. Multi-round lanes grew to 40 to 85 million input tokens, mostly cached, and that cost is easy to miss in a per-turn count.</li>
+  </ol>
+</section>
+
+<section id="caveats">
+  <div class="stack col">
+    <div class="eyebrow">09 · Caveats</div>
+    <h2>How much to trust this</h2>
+  </div>
+  <ul class="plain col">
+    <li><b>Small samples.</b> Twenty-three fix pairs, three three-arm fix trials and six three-arm verifications. That is enough for a direction, not for significance.</li>
+    <li><b>A mix of tasks.</b> The chunks ranged from a one-minute data merge to a 6-hour build delivery, across a dozen subsystems. No two pairs are alike, and some chunks had broken briefs.</li>
+    <li><b>Each lead judged its own pairs.</b> Unlike the bake-off, there was no common grader and no blind review. Verdicts are each lead's, written in its own words; I have mapped "quality tie" and similar to ties.</li>
+    <li><b>Efforts were not uniform.</b> Morning pairs were meant to be Terra medium against Sol medium; the log does not record Sol's effort on every arm. Afternoon fixes were Sol xhigh. Three-arm verifications ran Sol at medium.</li>
+    <li><b>Token counts are incomplete.</b> Some runs record only the resumed turn, some give no token count, and wall clocks include lock waits on shared, busy machines. Where the log lacks a figure, this page leaves it out.</li>
+    <li><b>One model id is unconfirmed.</b> The only Terra fix-trial win was reported as <code>gpt-5.6-terra</code>.</li>
+    <li><b>Model and harness are confounded.</b> Everything here is a model running inside a particular harness, sandbox and brief. That is how the fleet actually uses them, but a different harness could change the picture.</li>
+  </ul>
+  <div class="callout col"><b>Where it landed.</b> Sol 6.1 at xhigh writes every Codex fix meant to land. Terra 6.1 at medium verifies, using a brief that asks it to probe beyond the named sites, and Sol verifies where a defect may repeat widely. Astra stays the reviewer for hard rules and designs. Luna max is out of the fixing seat.</div>
+</section>
+
+<footer>
+  <p>Sources: the fleet's trial log for 28 October 2026 (one line per lead report, 07:08 to 19:48), the coordinating lead's notes of Arthur's rulings that day, and Bunny's bake-off write-up of 22 October with its 28 October addendum. Counts are tallied from the log by hand; where a lead's wording was ambiguous, the run is left out of the count. Bug identifiers, machine names and commit references are omitted.</p>
+  <p>Compiled 2026-10-28.</p>
+</footer>
+</div>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

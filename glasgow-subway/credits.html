@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Credits &amp; data sources - Under Glasgow</title>
+<link rel="icon" type="image/png" sizes="128x128" href="favicon.png">
+<style>
+:root{--bg:#15171b;--panel:#1d2025;--ink:#e9e6df;--dim:#a6a39b;--accent:#ff7a1f;--line:#31353c}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f5f1e8;--panel:#fffdf8;--ink:#201d18;--dim:#6b665c;--accent:#c85a00;--line:#ddd6c6}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:820px;margin:0 auto;padding:64px 16px 64px}
+h1{font:700 2rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 .3em}
+h1 span{color:var(--accent);font-style:italic}
+h2{font-size:1.1rem;margin:2.2em 0 .5em;border-bottom:1px solid var(--line);padding-bottom:.3em;color:var(--accent)}
+p,li{color:var(--ink)}
+.dim{color:var(--dim)}
+a{color:var(--accent)}
+.back{display:inline-block;margin:0 0 1.2em;padding:.4em .9em;border:1px solid var(--line);border-radius:99px;text-decoration:none;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:.9rem;display:block;overflow-x:auto}
+th,td{text-align:left;padding:.35em .6em;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dim);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="./">&larr; Back to the explorer</a>
+<h1>Credits <span>&amp; data sources</span></h1>
+<p class="dim">Under Glasgow is built from open data and open-licensed assets. Thank you to everyone listed here.</p>
+
+<h2>Map and terrain data</h2>
+<ul>
+<li>Buildings, roads, water, parks, rail lines, bridges and the Subway alignment: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, available under the <a href="https://opendatacommons.org/licenses/odbl/">Open Database Licence (ODbL)</a>. The 3D city in this project is a derived database; it remains under the ODbL.</li>
+<li>Terrain heights: <a href="https://registry.opendata.aws/terrain-tiles/">Terrain Tiles on AWS</a> (Terrarium encoding), a blend of public elevation sources including SRTM and national lidar datasets; see that page for the full source list.</li>
+</ul>
+
+<h2>Subway facts and appearance</h2>
+<ul>
+<li>Historical, technical and station information is compiled from Wikipedia and its cited sources, Wikimedia Commons file descriptions, SPT / Subway publications, Stadler documentation and other public references; estimates are marked as such in the project's research notes.</li>
+<li>Reference photographs of the trains and stations were used to check proportions and details. No photographs are reproduced here.</li>
+</ul>
+
+<h2>3D models</h2>
+<ul>
+<li>The trains, tunnels, stations, signals, bridges and city landmarks were modelled in <a href="https://www.blender.org/">Blender</a> for this project.</li>
+<li>The people were generated with <a href="https://static.makehumancommunity.org/">MakeHuman</a> (MPFB2) using its CC0 base mesh and the community asset packs below; kilts, skirts and Highland garments are original.</li>
+<li>3D engine: <a href="https://threejs.org/">three.js</a> (MIT licence).</li>
+</ul>
+
+<h2>Asset-pack attributions</h2>
+<p class="dim">Everything used is CC0 or CC-BY; CC-BY items are credited to their authors.</p>
+<table id="tbl"><thead><tr><th>Asset</th><th>Author</th><th>Licence</th></tr></thead><tbody><tr><td colspan="3" class="dim">Loading&hellip;</td></tr></tbody></table>
+</main>
+<script>
+(function(){
+  var tb=document.querySelector('#tbl tbody');
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]});}
+  fetch('models/credits.json').then(function(r){return r.json()}).then(function(list){
+    list.sort(function(a,b){return (a.licence===b.licence?0:(a.licence==='CC0'?1:-1))||String(a.name).localeCompare(b.name)});
+    tb.innerHTML=list.map(function(c){return '<tr><td>'+(c.url?'<a href="'+esc(c.url)+'">'+esc(c.name)+'</a>':esc(c.name))+'</td><td>'+esc(c.author)+'</td><td>'+esc(c.licence)+'</td></tr>'}).join('');
+  }).catch(function(){tb.innerHTML='<tr><td colspan="3">See <a href="models/CREDITS.md">models/CREDITS.md</a>.</td></tr>';});
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
