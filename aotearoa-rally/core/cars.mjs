@@ -94,7 +94,7 @@ export const CARS = {
     clutchTorque: 800,
     suspension: { spring: 41000, damper: 3500, travel: 0.22, antiRollFront: 10000, antiRollRear: 5000 },
     aero: { cd: 0.37, area: 1.9, downforce: 0.1 },
-    surfGrip: { gravel: 0.99, dirt: 0.99, tarmac: 0.885, mud: 1.1, snow: 1.06, pumice: 1.08 },
+    surfGrip: { gravel: 0.99, dirt: 0.98, tarmac: 0.885, mud: 1.1, snow: 1.06, pumice: 1.08 },
     handling: { gripFront: 1.04, gripRear: 0.92 },
     stats: { power: 7, grip: 7, handling: 9, acceleration: 8, toughness: 5 },
     liveries: [
@@ -137,11 +137,11 @@ export const CARS = {
     clutchTorque: 650,
     suspension: { spring: 38000, damper: 3300, travel: 0.22, antiRollFront: 12000, antiRollRear: 6000 },
     aero: { cd: 0.33, area: 1.8, downforce: 0.14 },
-    surfGrip: { gravel: 1.02, dirt: 0.965, tarmac: 1.04, mud: 0.91, snow: 0.955, pumice: 0.97 },
+    surfGrip: { gravel: 1.03, dirt: 0.94, tarmac: 1.04, mud: 0.91, snow: 0.955, pumice: 0.97 },
     handling: { gripFront: 1.05, gripRear: 0.98 },
     stats: { power: 5, grip: 7, handling: 8, acceleration: 6, toughness: 6 },
     liveries: [
-      { name: "Blue Takahe", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: "Trailhead Outfitters" },
+      { name: "Blue Takahē", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: "Trailhead Outfitters" },
       { name: "Red Tussock", body: 0xc22a2a, accent: 0xf0e2b0, number: 8, sponsor: "Copperfield Mutual" },
       { name: "Flax Green", body: 0x6aa84f, accent: 0x222222, number: 9, sponsor: "Greenleaf Gear" },
     ],
@@ -180,7 +180,7 @@ export const CARS = {
     clutchTorque: 1000,
     suspension: { spring: 40000, damper: 3600, travel: 0.23, antiRollFront: 11000, antiRollRear: 5000 },
     aero: { cd: 0.34, area: 1.95, downforce: 0.12 },
-    surfGrip: { gravel: 0.97, dirt: 0.98, tarmac: 1.07, mud: 0.96, snow: 1.08, pumice: 0.97 },
+    surfGrip: { gravel: 0.96, dirt: 0.95, tarmac: 1.07, mud: 0.96, snow: 1.08, pumice: 0.97 },
     handling: { gripFront: 1.0, gripRear: 0.97 },
     stats: { power: 9, grip: 6, handling: 6, acceleration: 7, toughness: 6 },
     liveries: [

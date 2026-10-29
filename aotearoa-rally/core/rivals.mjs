@@ -42,9 +42,9 @@ export const RIVALS = Object.freeze([
   Object.freeze({ id: "ingrid", name: "Ingrid Haugland", nationality: "NOR", car: "takahe", skill: 0.72, consistency: 0.9, flavour: "Careful, never off the pace" }),
 ]);
 
-// Difficulty is a multiple of the rival car's OWN bot lap (botPar), calibrated against measured bot laps (skill 0.9 = about +2 %, 0.75 = about +5 %):
-const BASE = { rookie: 1.08, pro: 0.97, expert: 0.92 };
-const SKILL_TOP = 0.93, SKILL_LOW = 0.72, SPREAD_AT_LOW = 0.1; // best rival +0 %, worst +10 %
+// Difficulty: multiples of the rival car's OWN bot lap (botPar). Top rival ~ x1.02 Expert, x1.06 Pro (about expert-human par x 0.98), x1.16 Rookie; slowest +7 % more.
+const BASE = { rookie: 1.16, pro: 1.06, expert: 1.02 }; // the top rival (before affinity and noise) as a multiple of their own car bot lap
+const SKILL_TOP = 0.93, SKILL_LOW = 0.72, SPREAD_AT_LOW = 0.07; // best rival +0 %, worst +7 %
 export const DIFFICULTIES = Object.freeze(["rookie", "pro", "expert"]);
 
 /**
@@ -67,7 +67,7 @@ export function rivalStageTime({ stageId, rivalIndex, parTime, difficulty = "pro
   // day-to-day variation, narrower for consistent drivers
   const sigma = (1 - rv.consistency) * 0.045 + 0.003;
   let f = pace + bias + rng.normal() * sigma;
-  let t = bot * Math.max(0.9, f);
+  let t = bot * Math.max(0.98, f);
   // an occasional mistake: bigger penalty for inconsistent drivers
   if (rng.chance((1 - rv.consistency) * 0.35)) t += 4 + rng.next() * 14;
   return Math.round(t * 1000) / 1000;

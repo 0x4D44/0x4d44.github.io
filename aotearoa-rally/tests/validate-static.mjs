@@ -119,7 +119,8 @@ for (const p of files) {
   if (/@import\s+url\(\s*['"]?https?:/i.test(src)) bad(`${r}: remote CSS import`);
   for (const re of FORBIDDEN) if (re.test(src)) bad(`${r}: forbidden term ${re}`);
   if (!r.startsWith("tests/") && !r.startsWith("tools/") && /\.(mjs|js)$/.test(p)) {
-    const code = src.replace(/\/\/[^\n]*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    // one deliberate, user-facing diagnostic is allowed per marked line (the bad-URL-parameter warning); stray debug logging still fails
+    const code = src.replace(/^.*\/\/ allow-console-warn.*$/gm, "").replace(/\/\/[^\n]*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
     const m = code.match(/\bconsole\.(log|debug|info|warn|trace|dir|table|time)\b/);
     if (m) bad(`${r}: console.${m[1]} left in shipped code`);
   }

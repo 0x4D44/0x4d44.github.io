@@ -87,6 +87,7 @@ export function createCarVisual(THREE, spec, opts = {}) {
   const bumperF = mkMesh(parts.bumperF.build(), M.paint, fPivot); bumperF.position.set(0, -(d.sill + 0.35), -(d.zF + 0.3));
   const rPivot = new THREE.Group(); rPivot.position.set(0, d.sill + 0.35, d.zR - 0.3); rig.add(rPivot);
   const bumperR = mkMesh(parts.bumperR.build(), M.paint, rPivot); bumperR.position.set(0, -(d.sill + 0.35), -(d.zR - 0.3));
+  const cabinMesh = mkMesh(parts.cabin.build(), M.paint);
   const glassMesh = mkMesh(parts.glass.build(), M.glass, rig, false); glassMesh.renderOrder = 5;
   const trimMesh = mkMesh(parts.trim.build(), M.trim);
   // head / tail / reverse lamps share one mesh; attribute aLamp selects the lamp type (0, 1, 2)
@@ -95,20 +96,23 @@ export function createCarVisual(THREE, spec, opts = {}) {
   [parts.head, parts.tail, parts.rev].forEach((g, k) => { const n = g.p.length / 3; for (let i = 0; i < n; i++) lampType.push(k); lampGeo.append(g); });
   const lampBuilt = lampGeo.build();
   lampBuilt.setAttribute("aLamp", new THREE.BufferAttribute(new Float32Array(lampType), 1));
-  mkMesh(lampBuilt, M.lamps, rig, false);
+  const lampMesh = mkMesh(lampBuilt, M.lamps, rig, false);
 
   const I = buildInterior(THREE, spec, d, livery);
   const interiorMesh = mkMesh(I.interior, M.interior);
   const helmetMesh = mkMesh(I.helmets, M.helmet);
+  const crewMesh = mkMesh(I.crew, M.interior); // suits and gloves: hidden in the driver's own view (arms would fill the lens)
   // steering wheel
   const wheelPivot = new THREE.Group();
   wheelPivot.position.set(I.wheelPos.x, I.wheelPos.y, I.wheelPos.z); wheelPivot.rotation.x = -0.45; rig.add(wheelPivot);
   const wheelMesh = mkMesh(I.wheel, M.interior, wheelPivot);
-  // instrument cluster
-  const gauge = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.17), gaugeMat);
+  // instrument cluster: a live canvas (needles, gear, shift lights) on the face of the pod built in interior.mjs
+  const gp = I.gaugePos;
+  const gauge = new THREE.Mesh(new THREE.PlaneGeometry(gp.w, gp.h), gaugeMat);
   geoms.push(gauge.geometry);
-  gauge.position.set(I.wheelPos.x, I.topY - 0.03, I.zD + 0.545); gauge.rotation.x = -0.2; gauge.frustumCulled = false;
+  gauge.position.set(gp.x, gp.y, gp.z); gauge.rotation.x = gp.tilt; gauge.frustumCulled = false;
   rig.add(gauge);
+  let gaugeAt = -1, gaugeKey = "";
 
   // wheels
   const R = d.R, Rr = R * 0.6, tw = R * 0.68;
@@ -150,12 +154,14 @@ export function createCarVisual(THREE, spec, opts = {}) {
   {
     const c = blobCanvas.getContext("2d");
     const g = c.createRadialGradient(64, 64, 4, 64, 64, 62);
-    g.addColorStop(0, "rgba(0,0,0,0.75)"); g.addColorStop(0.6, "rgba(0,0,0,0.35)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    // always-on ambient-occlusion contact shadow: independent of the sun, so an overcast or canopy-shaded stage still shows the car
+    // standing on the road. Dark core under the body, a long soft skirt that reaches well past the sills, bumpers and tyres.
+    g.addColorStop(0, "rgba(0,0,0,0.95)"); g.addColorStop(0.45, "rgba(0,0,0,0.8)"); g.addColorStop(0.7, "rgba(0,0,0,0.42)"); g.addColorStop(0.88, "rgba(0,0,0,0.12)"); g.addColorStop(1, "rgba(0,0,0,0)");
     c.fillStyle = g; c.fillRect(0, 0, 128, 128);
   }
   const blobTex = new THREE.CanvasTexture(blobCanvas);
-  const blob = new THREE.Mesh(new THREE.PlaneGeometry(d.W * 1.5, d.L * 1.12), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.55, polygonOffset: true, polygonOffsetFactor: -2 }));
-  blob.rotation.x = -Math.PI / 2; blob.position.set(0, 0.012, (d.zF + d.zR) / 2); blob.renderOrder = 1; blob.frustumCulled = false;
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(d.W * 2.3, d.L * 1.5), new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, opacity: 0.78, polygonOffset: true, polygonOffsetFactor: -2 }));
+  blob.rotation.x = -Math.PI / 2; blob.position.set(0, 0.02, (d.zF + d.zR) / 2); blob.renderOrder = 1; blob.frustumCulled = false;
   rig.add(blob);
 
   // headlight beam
@@ -214,7 +220,7 @@ export function createCarVisual(THREE, spec, opts = {}) {
       if (w && !S.rigKnown) {
         let n = 0, sum = 0;
         for (let i = 0; i < 4; i++) if (w[i] && w[i].grounded && Number.isFinite(w[i].contactY)) { sum += w[i].contactY; n++; }
-        if (n === 4 && Math.abs(st.pitch) < 0.15 && Math.abs(st.roll) < 0.15) {
+        if (n === 4 && Math.abs(st.pitch) < 0.15 && Math.abs(st.roll) < 0.15 && Math.abs(st.y - sum / 4 - cg) < 0.4) { // stale contacts after a teleport read tens of metres: wait for real ones
           const dy = st.y - sum / 4;
           S.rigY = -clamp(dy, 0, 1.5); S.rigKnown = true;
         }
@@ -238,6 +244,11 @@ export function createCarVisual(THREE, spec, opts = {}) {
           const sag = 1 - flat * 0.14;
           wh.tyre.scale.y = sag; wh.tyre.scale.z = sag;
         }
+      }
+      // gauges: only when the driver's eye can see them, ~20 Hz, and only when a reading moved
+      if (S.view === "cockpit" && S.time - gaugeAt > 0.05) {
+        const key = Math.round((st.rpm || 0) / 40) + "|" + Math.round(st.speedKmh || 0) + "|" + (st.gear || 0);
+        if (key !== gaugeKey) { gaugeKey = key; gaugeAt = S.time; drawGauges(gaugeCanvas, spec, { rpm: st.rpm || 0, kmh: st.speedKmh || 0, gear: st.gear || 0 }); gaugeTex.needsUpdate = true; }
       }
       // steering wheel
       const sa = clamp((st.steerAngle || 0) * 9, -3.2, 3.2);
@@ -317,9 +328,13 @@ export function createCarVisual(THREE, spec, opts = {}) {
       S.view = m;
       const inCar = m === "bonnet" || m === "cockpit";
       glassMesh.visible = !inCar;
+      cabinMesh.visible = m !== "bonnet"; // pillars and roof panels would only sit in the lens
+      cabinMesh.material = m === "cockpit" ? M.liner : M.paint; // from the driver's seat the greenhouse is dark headlining, not sunlit paint
+      lampMesh.visible = m !== "bonnet"; // lamp lenses read as bubbles on the bonnet edge
       // bonnet view sits at the base of the windscreen: the cabin furniture would only sit in front of the lens
       interiorMesh.visible = m !== "bonnet";
-      helmetMesh.visible = !inCar; // the driver's own head would sit on the lens
+      helmetMesh.visible = !inCar;
+      crewMesh.visible = !inCar; // the driver's own head would sit on the lens
       wheelPivot.visible = m === "exterior" || m === "cockpit"; // steering wheel only in the cockpit (and seen through the glass outside)
       gauge.visible = m !== "bonnet";
     },

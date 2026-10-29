@@ -13,8 +13,8 @@ export const STAGE_ORDER = Object.freeze(["waitomo", "whakarewarewa", "coromande
 
 export const DIFFICULTY = Object.freeze({
   rookie: { id: "rookie", label: "Rookie", blurb: "Forgiving rivals, generous service, light damage.", rivalPace: 1.12, repairMinutes: 60, damageScale: 0.6, respawnPenalty: 8 },
-  pro: { id: "pro", label: "Pro", blurb: "A fair fight. Rivals run close to par.", rivalPace: 1.0, repairMinutes: 45, damageScale: 1.0, respawnPenalty: 10 },
-  expert: { id: "expert", label: "Expert", blurb: "Sharp rivals, tight service, every dent hurts.", rivalPace: 0.965, repairMinutes: 30, damageScale: 1.35, respawnPenalty: 15 },
+  pro: { id: "pro", label: "Pro", blurb: "A fair fight. Rivals run close to expert-human pace.", rivalPace: 1.0, repairMinutes: 45, damageScale: 1.0, respawnPenalty: 10 },
+  expert: { id: "expert", label: "Expert", blurb: "Sharp rivals within 2% of a perfect lap, tight service, every dent hurts.", rivalPace: 0.965, repairMinutes: 30, damageScale: 1.35, respawnPenalty: 15 },
 });
 export const DIFFICULTY_IDS = Object.keys(DIFFICULTY);
 
@@ -44,14 +44,19 @@ const OPTION_RULES = {
   touch: (v) => (["auto", "on", "off"].includes(v) ? v : "auto"),
   master: (v) => clamp(num(v, 0.8), 0, 1), engine: (v) => clamp(num(v, 1), 0, 1), effects: (v) => clamp(num(v, 1), 0, 1),
   voice: (v) => clamp(num(v, 1), 0, 1), ambience: (v) => clamp(num(v, 0.7), 0, 1),
-  voiceName: (v) => (typeof v === "string" ? v.slice(0, 120) : ""),
+  voiceName: (v) => (typeof v === "string" && v.length <= 120 && !["__proto__", "constructor", "prototype"].includes(v) ? v : ""), // "" is Auto; anything odd falls back to it
 };
 /** Fill defaults and clamp every known option; unknown keys are dropped. */
 export function sanitiseOptions(o) {
   const out = {};
-  for (const k of Object.keys(DEFAULT_OPTIONS)) out[k] = OPTION_RULES[k](o && k in o ? o[k] : DEFAULT_OPTIONS[k]);
+  for (const k of Object.keys(DEFAULT_OPTIONS)) out[k] = OPTION_RULES[k](o && typeof o === "object" && Object.hasOwn(o, k) ? o[k] : DEFAULT_OPTIONS[k]);
   return out;
 }
+
+/** Keys that must never be used to index a save map (prototype pollution). */
+const BAD_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+export const safeKey = (k) => typeof k === "string" && k.length > 0 && k.length < 40 && !BAD_KEYS.has(k);
+const slot = (m, k) => (Object.hasOwn(m, k) ? m[k] : (m[k] = {}));
 
 const avg = (a) => (Array.isArray(a) && a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 const num = (v, d = 0) => (Number.isFinite(v) ? v : d);
@@ -140,13 +145,13 @@ function sanitiseProfile(p) {
   if (!p || typeof p !== "object") return out;
   if (p.best && typeof p.best === "object")
     for (const [sid, cars] of Object.entries(p.best)) {
-      if (!cars || typeof cars !== "object") continue;
-      for (const [cid, t] of Object.entries(cars)) if (Number.isFinite(t) && t > 0) (out.best[sid] ||= {})[cid] = t;
+      if (!safeKey(sid) || !cars || typeof cars !== "object") continue;
+      for (const [cid, t] of Object.entries(cars)) if (safeKey(cid) && Number.isFinite(t) && t > 0) slot(out.best, sid)[cid] = t;
     }
   if (p.splits && typeof p.splits === "object")
     for (const [sid, cars] of Object.entries(p.splits)) {
-      if (!cars || typeof cars !== "object") continue;
-      for (const [cid, arr] of Object.entries(cars)) if (Array.isArray(arr) && arr.length < 40 && arr.every((v) => Number.isFinite(v))) (out.splits[sid] ||= {})[cid] = arr;
+      if (!safeKey(sid) || !cars || typeof cars !== "object") continue;
+      for (const [cid, arr] of Object.entries(cars)) if (safeKey(cid) && Array.isArray(arr) && arr.length < 40 && arr.every((v) => Number.isFinite(v))) slot(out.splits, sid)[cid] = arr;
     }
   out.options = sanitiseOptions(p.options);
   if (p.stats && typeof p.stats === "object") {
@@ -198,7 +203,7 @@ function sanitiseChampionship(c, carIds) {
   const setup = { tyre: TYRES.includes(su.tyre) ? su.tyre : "gravel", gear: clamp(num(su.gear), ...SETUP_RANGE.gear), susp: clamp(num(su.susp), ...SETUP_RANGE.susp), brake: clamp(num(su.brake), ...SETUP_RANGE.brake) };
   const plan = {};
   const rawPlan = c.service && typeof c.service.plan === "object" && c.service.plan ? c.service.plan : {};
-  for (const p of PARTS) if (p in rawPlan) plan[p] = unit(rawPlan[p]);
+  for (const p of PARTS) if (Object.hasOwn(rawPlan, p)) plan[p] = unit(rawPlan[p]);
   return {
     difficulty: c.difficulty,
     carId: c.carId,
@@ -269,31 +274,32 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
 
     // ---- best times + ghost -----------------------------------------------------------------
     bestTime(stageId, carId) {
-      return (profile.best[stageId] && profile.best[stageId][carId]) || null;
+      return (Object.hasOwn(profile.best, stageId) && Object.hasOwn(profile.best[stageId], carId) && profile.best[stageId][carId]) || null;
     },
     bestTimeAnyCar(stageId) {
-      const m = profile.best[stageId];
+      const m = Object.hasOwn(profile.best, stageId) ? profile.best[stageId] : null;
       return m ? Math.min(...Object.values(m)) : null;
     },
     /** Returns { isBest, previous }. Does not persist ghost frames (see saveGhost). */
     recordBest(stageId, carId, time, splitTimes) {
       const prev = c.bestTime(stageId, carId);
+      if (!safeKey(stageId) || !safeKey(carId)) return { isBest: false, previous: prev };
       if (!Number.isFinite(time) || time <= 0) return { isBest: false, previous: prev };
       const isBest = prev == null || time < prev;
       if (isBest) {
-        (profile.best[stageId] ||= {})[carId] = time;
-        if (Array.isArray(splitTimes)) (profile.splits[stageId] ||= {})[carId] = splitTimes.slice(0, 39);
+        slot(profile.best, stageId)[carId] = time;
+        if (Array.isArray(splitTimes)) slot(profile.splits, stageId)[carId] = splitTimes.slice(0, 39);
       }
       return { isBest, previous: prev };
     },
     bestSplits(stageId, carId) {
-      return (profile.splits[stageId] && profile.splits[stageId][carId]) || null;
+      return (Object.hasOwn(profile.splits, stageId) && Object.hasOwn(profile.splits[stageId], carId) && profile.splits[stageId][carId]) || null;
     },
     get options() {
       return profile.options;
     },
     setOption(key, value) {
-      if (!(key in DEFAULT_OPTIONS)) return false;
+      if (!Object.hasOwn(DEFAULT_OPTIONS, key)) return false;
       profile.options = sanitiseOptions({ ...profile.options, [key]: value });
       return true;
     },

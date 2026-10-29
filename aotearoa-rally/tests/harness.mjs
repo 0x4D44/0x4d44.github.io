@@ -132,7 +132,7 @@ export async function openGame(o = {}) {
     });
     await S("Page.enable");
     // Headless=new Chrome still honours requestPointerLock and would clip the REAL cursor: stub it before any page script runs.
-    await S("Page.addScriptToEvaluateOnNewDocument", { source: "try{Element.prototype.requestPointerLock=function(){};document.exitPointerLock=function(){};}catch(e){}" });
+    await S("Page.addScriptToEvaluateOnNewDocument", { source: "try{Element.prototype.requestPointerLock=function(){};document.exitPointerLock=function(){};}catch(e){}window.__AR_TEST__=true;" });
     await S("Runtime.enable");
     await S("Log.enable");
     await S("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: dpr, mobile });
@@ -199,6 +199,8 @@ export async function openGame(o = {}) {
       /** Horizontal overflow in px (0 = none). */
       overflowX: () => evalRaw("document.documentElement.scrollWidth - document.documentElement.clientWidth", false),
       sleep: delay,
+      /** Raw DevTools call on the page session, for diagnostics (e.g. Profiler.start / Profiler.stop). */
+      cdp: (method, params) => S(method, params),
       /**
        * A REAL key event through CDP (goes through the browser's input pipeline, unlike a synthetic dispatchEvent).
        * code: "KeyA", "Escape", "Comma"...  Holds for holdMs, then releases.

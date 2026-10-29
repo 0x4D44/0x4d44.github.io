@@ -57,6 +57,22 @@ export function createEngine(ctx, out) {
   const nzG = mkg(0);
   nz.connect(nzF); nzF.connect(nzG); nzG.connect(lim);
 
+  // --- combustion irregularity: slow band-limited noise wobbles the pitch and level (cycle-to-cycle variation)
+  const irr = loopNoise(ctx, "brown", 1.7);
+  const irrF = ctx.createBiquadFilter(); irrF.type = "lowpass"; irrF.frequency.value = 38; irrF.Q.value = 0.5;
+  const irrPitch = mkg(0), irrAmp = mkg(0);
+  irr.connect(irrF); irrF.connect(irrPitch); irrF.connect(irrAmp);
+  irrPitch.connect(oscA.detune); irrPitch.connect(oscB.detune); irrAmp.connect(voice.gain);
+  // --- exhaust rasp and intake roar layers (load / throttle dependent)
+  const exh = loopNoise(ctx, "brown", 1.3);
+  const exhF = ctx.createBiquadFilter(); exhF.type = "lowpass"; exhF.frequency.value = 500; exhF.Q.value = 0.9;
+  const exhG = mkg(0);
+  exh.connect(exhF); exhF.connect(exhG); exhG.connect(lim);
+  const ink = loopNoise(ctx, "white", 0.8);
+  const inkF = ctx.createBiquadFilter(); inkF.type = "bandpass"; inkF.frequency.value = 1400; inkF.Q.value = 0.9;
+  const inkG = mkg(0);
+  ink.connect(inkF); inkF.connect(inkG); inkG.connect(lim);
+
   // --- turbo
   const wh = mk("sine"), wh2 = mk("sine");
   const whG = mkg(0), whG2 = mkg(0);
@@ -82,10 +98,10 @@ export function createEngine(ctx, out) {
   const thump = mk("sine"), thumpG = mkg(0);
   thump.frequency.value = 90; thump.connect(thumpG); thumpG.connect(out);
   let popIdx = 0;
-  for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn, thump, popV[0].src, popV[1].src]) n.start();
+  for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn, thump, popV[0].src, popV[1].src, irr, exh, ink]) n.start();
 
   let chr = engineCharacter(null), idle = 900, redline = 7500, hasTurbo = false;
-  let popAcc = 0, lastThrottle = 0, lastBoost = 0, limiterUntil = 0, lastPop = 0, dead = false, startedAt = 0;
+  let popAcc = 0, lastThrottle = 0, lastBoost = 0, limiterUntil = 0, cutUntil = 0, duckUntil = 0, duckLvl = 1, lastPop = 0, dead = false, startedAt = 0;
   const out_ = { v: null };
   const tc = 0.025;
 
@@ -118,6 +134,18 @@ export function createEngine(ctx, out) {
       sT(f2.frequency, 700 + 900 * v.rn, t, 0.08);
       sT(voice.gain, running ? v.gain * (view ? view.engine : 1) : 0, t, running ? 0.05 : 0.25);
       sT(nzF.frequency, v.noiseFreq, t, 0.08);
+      // irregularity: strongest near idle and on a closed throttle, settles under load
+      const rough = (1 - v.rn) * 0.7 + (1 - clamp(p.throttle || 0, 0, 1)) * 0.3;
+      sT(irrPitch.gain, 4 + 26 * rough * (0.4 + chr.burble), t, 0.1);
+      sT(irrAmp.gain, running ? v.gain * (0.18 + 0.35 * rough) * (view ? view.engine : 1) : 0, t, 0.1);
+      // exhaust rasp rises with load; intake roar with throttle and revs
+      const th = clamp(p.throttle || 0, 0, 1);
+      sT(exhF.frequency, 260 + 900 * v.rn + 700 * v.load, t, 0.08);
+      sT(exhG.gain, running ? (0.015 + 0.16 * v.load * (0.4 + 0.6 * v.rn)) * (view ? view.engine : 1) : 0, t, 0.06);
+      sT(inkF.frequency, 900 + 2200 * v.rn, t, 0.08);
+      sT(inkG.gain, running ? 0.2 * th * th * (0.2 + 0.8 * v.rn) * (view ? view.engine : 1) : 0, t, 0.05);
+      // timbre follows load: closed throttle darkens and thins the stack, open throttle brightens and adds bark
+      sT(f2.gain, 1 + 8 * v.load - 3 * (1 - th), t, 0.08);
       sT(nzG.gain, running ? v.noiseGain * (view ? view.engine : 1) : 0, t, 0.05);
       // turbo
       const tv = turboVoice(hasTurbo ? p.boost : 0, p.throttle, v.rn, chr);
@@ -132,11 +160,15 @@ export function createEngine(ctx, out) {
       sT(wnF.frequency, gw.hz * 1.1, t, 0.05);
       sT(wnG.gain, running ? gw.gain * (view ? view.whine : 1) : 0, t, 0.08);
       // limiter bounce
-      if (t < limiterUntil) {
+      if (t < duckUntil && t >= cutUntil) {
+        sT(lim.gain, duckLvl, t, 0.01); // brief duck under a body impact so the hit punches through
+      } else if (t < cutUntil) {
+        sT(lim.gain, 0.06, t, 0.006); // gear-change cut: the engine all but drops out while the clutch is in
+      } else if (t < limiterUntil) {
         sT(lim.gain, (Math.floor((limiterUntil - t) / 0.035) & 1) ? 0.35 : 1, t, 0.006);
       } else sT(lim.gain, 1, t, 0.02);
       // blow-off on throttle lift with boost
-      if (hasTurbo && lastThrottle > 0.6 && p.throttle < 0.2 && lastBoost > 0.45) api.blowoff(lastBoost);
+      if (hasTurbo && lastThrottle > 0.6 && p.throttle < 0.2 && lastBoost > 0.45) { api.blowoff(lastBoost); api.flutter(lastBoost); }
       // overrun pops / anti-lag crackle
       const cl = running ? crackleLevel(p.throttle, v.rn, p.boost, hasTurbo) : 0;
       if (cl > 0.12) {
@@ -170,17 +202,19 @@ export function createEngine(ctx, out) {
       const t = T(), n = 7;
       for (let i = 0; i < n; i++) burst(ctx, out, { kind: "white", t: t + i * 0.03, dur: 0.022, gain: 0.05 * (1 - i / (n + 2)) * clamp(b + 0.3, 0.3, 1), type: "bandpass", freq: 3000 + rng.next() * 1500, q: 2 });
     },
+    duck(s = 0.5) { const t = T(); duckUntil = Math.max(duckUntil, t + 0.12 + 0.25 * s); duckLvl = 0.55 - 0.3 * Math.min(1, s); },
     limiter() { limiterUntil = T() + 0.14; },
     shift(from, to) {
       const t = T();
-      tone(ctx, out, { type: "sine", t, f0: 95, f1: 45, dur: 0.12, gain: 0.16 });
-      burst(ctx, out, { kind: "white", t, dur: 0.03, gain: 0.06, type: "highpass", freq: 1500, q: 0.7 });
+      cutUntil = t + 0.12; limiterUntil = 0;
+      tone(ctx, out, { type: "sine", t: t + 0.11, f0: 95, f1: 45, dur: 0.14, gain: 0.22 });
+      burst(ctx, out, { kind: "white", t: t + 0.11, dur: 0.035, gain: 0.09, type: "highpass", freq: 1500, q: 0.7 });
       if (to > from && hasTurbo) api.flutter(0.5);
     },
     fail() { dead = true; for (let i = 0; i < 4; i++) setTimeout(() => api.pop(0.6), i * 120); },
     revive() { dead = false; },
     dispose() {
-      for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn, thump, popV[0].src, popV[1].src]) { try { n.stop(); } catch { /* */ } }
+      for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn, thump, popV[0].src, popV[1].src, irr, exh, ink]) { try { n.stop(); } catch { /* */ } }
       try { lim.disconnect(); wnG.disconnect(); } catch { /* */ }
     },
   };

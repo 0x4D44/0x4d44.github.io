@@ -6,7 +6,7 @@
 import { SURFACE as SF } from "./surfaces.mjs";
 import {
   S, L, R, TO, W, H, FILL, SURF, VERGE, WIDTH, mark, crest, jump, dip, ford, bridge, grid, nocut, culvert,
-  waterfall, hut, ess, camber,
+  waterfall, hut, ess, camber, tunnel,
 } from "./spline.mjs";
 
 export const STAGE_IDS = Object.freeze(["waitomo", "whakarewarewa", "coromandel", "otago", "remarkables", "fiordland"]);
@@ -130,6 +130,7 @@ const TW = (rows, f = 0.55) => W(rows.map((r) => (typeof r[0] === "number" ? [r[
 
 // --- 1. Waitomo Ridge: fast, rolling, long crests, a few medium corners to keep you honest ---------
 STAGE_DESIGNS.waitomo = {
+  maxSlope: 0.09,
   bearing0: 80, surf0: SF.GRAVEL, verge0: SF.GRASS, width: 7.2, length: 3800, roll: [3.2, 170],
   items: [
     H(96), mark("start"), S(110), camber(90, 2.4),
@@ -140,7 +141,9 @@ STAGE_DESIGNS.waitomo = {
       [40, 100, 40],
       [85, 40, 40],
       [60, 22, 20],
-      S(90), jump(2.4, 10), S(80),
+      S(90), jump(2.4, 10), S(100),
+      [210, 17, 40, "R"],
+      tunnel(120), S(150), [250, 90, 30],
     ]),
     H(150), camber(70, 2.6), R(75, 60, 48), S(30), nocut(), L(32, 95), S(40),
     ...W([[75, 100, 100]]),
@@ -175,6 +178,7 @@ STAGE_DESIGNS.waitomo = {
 
 // --- 2. Whakarewarewa: tight, twisty, up and down; pumice, gravel and mud ----------------------
 STAGE_DESIGNS.whakarewarewa = {
+  maxSlope: 0.12,
   bearing0: 95, surf0: SF.PUMICE, verge0: SF.LEAF_LITTER, width: 6.4, length: 3400, roll: [3.0, 90], bankGain: 2.2,
   items: [
     H(340), mark("start"), S(100), camber(70, 2.2),
@@ -220,6 +224,7 @@ STAGE_DESIGNS.whakarewarewa = {
 
 // --- 3. Coromandel: coast road, headland gravel, hairpins to the beach ----------------------------
 STAGE_DESIGNS.coromandel = {
+  maxSlope: 0.14,
   bearing0: 90, surf0: SF.TARMAC, verge0: SF.GRASS, width: 6.5, length: 4200, roll: [2.0, 200], bankGain: 2.4,
   items: [
     H(38), mark("start"), S(110),
@@ -269,6 +274,7 @@ STAGE_DESIGNS.coromandel = {
 
 // --- 4. Central Otago: huge fast sweepers, big crests and jumps ---------------------------------
 STAGE_DESIGNS.otago = {
+  maxSlope: 0.08,
   bearing0: 85, surf0: SF.PACKED_DIRT, verge0: SF.TUSSOCK, width: 7.4, length: 5000, roll: [4.0, 260],
   items: [
     H(420), mark("start"), S(90), camber(90, 2.0),
@@ -276,12 +282,12 @@ STAGE_DESIGNS.otago = {
       [114, 78, 60],
       crest(1.5, 28), S(80),
       [70, 82, 36],
-      S(70), jump(2.4, 10), S(100),
+      S(70), jump(1.6, 16), S(100),
       [121, 66, 41],
       [75, 62, 24], [114, 58, 24],
       [42, 40, 17], [100, 38, 29],
     ]),
-    H(490), mark("q1"), SURF(SF.GRAVEL),
+    H(450), mark("q1"), SURF(SF.GRAVEL),
     ...W([
       [49, 78, 60],
       crest(1.6, 30), S(70), crest(1.3, 26), S(80),
@@ -289,27 +295,35 @@ STAGE_DESIGNS.otago = {
       [85, 56, 14], [136, 50, 14], [70, 60, 29],
       [107, 101, 36],
     ]),
-    SURF(SF.PACKED_DIRT), H(425), mark("q2"), camber(80, -1.4),
+    SURF(SF.PACKED_DIRT), H(432), mark("q2"), camber(80, -1.4),
     ...W([
       [70, 85, 36],
-      S(60), jump(2.4, 10), S(70),
+      S(60), jump(1.6, 16), S(70),
       [121, 69, 48], [92, 85, 60],
       nocut(), [42, 66, 24],
       [107, 70, 24], [158, 80, 24], [107, 72, 29],
     ]),
-    grid(), S(60), H(485), camber(80, 2.4),
+    grid(), S(60), H(470), camber(80, 2.4),
     ...W([
       [63, 78, 60],
       crest(1.4, 28), S(70),
       [114, 85, 36],
     ]),
-    H(462), mark("q3"), S(40), ford(14, 0.5), S(70), H(461), S(40),
+    H(462), mark("q3"), S(60),
     ...W([
       [75, 79, 36],
       [114, 70, 17], [56, 66, 17], [107, 70, 24],
       [92, 92, 12],
     ]),
-    H(430), FILL(),
+    // long gravel descent down the valley, finishing through the ford
+    mark("descent"), SURF(SF.GRAVEL), H(470),
+    ...W([
+      [62, 150, 70], [108, 130, 60], [76, 110, 80], [118, 180, 40],
+      crest(1.3, 28), S(50), [88, 95, 70], [60, 72, 50], [104, 140, 90], [84, 90, 40], [112, 160, 80],
+    ]),
+    H(404), S(60), mark("ford"), ford(14, 0.5), S(90),
+    ...W([[95, 260, 0]]),
+    FILL(),
   ],
   shape: [
     { kind: "wall", side: -1, s0: "q2", s1: "q3", fade: 100, start: 6, ramp: 40, amount: 14, farFade: [90, 220] },
@@ -319,6 +333,7 @@ STAGE_DESIGNS.otago = {
 
 // --- 5. Remarkables Pass: switchback climb, rock walls, drop-offs, gravel into snow ---------------
 STAGE_DESIGNS.remarkables = {
+  maxSlope: 0.18,
   bearing0: 20, surf0: SF.GRAVEL, verge0: SF.SCREE, width: 6.6, length: 4400, roll: [2.0, 120], bankGain: 2.2,
   items: [
     H(620), mark("start"), S(100),
@@ -329,14 +344,14 @@ STAGE_DESIGNS.remarkables = {
     ...TWR([[285, 120, 90], [310, 130, 60], [290, 100, 70], [310, 110, 30]]),
     H(690), nocut(), ...TWR([[60, 10, 0]]), mark("L3"),
     ...TWR([[75, 120, 80], [95, 100, 40], [55, 90, 100], [70, 130, 60], [50, 120, 30]]),
-    H(725), ...TWR([[300, 10, 0]]), mark("L4"),
+    H(790), ...TWR([[300, 10, 0]]), mark("L4"),
     ...TWR([[280, 100, 70], [310, 90, 40], [285, 110, 60], [310, 110, 30]]),
-    H(765), mark("snowline"), SURF(SF.SNOW), VERGE(SF.SNOW_DEEP),
+    H(815), mark("snowline"), SURF(SF.SNOW), VERGE(SF.SNOW_DEEP),
     ...TWR([[60, 10, 0]]), mark("L5"),
     ...TWR([[80, 110, 70], [50, 90, 40], [75, 100, 70], [50, 120, 30]]),
-    H(805), ...TWR([[305, 10, 0]]), mark("L6"),
+    H(840), ...TWR([[305, 10, 0]]), mark("L6"),
     ...TWR([[285, 120, 70], [315, 90, 30], [290, 100, 70], [310, 110, 30]]),
-    H(845), ...TWR([[55, 10, 0]]), mark("L7"),
+    H(870), ...TWR([[55, 10, 0]]), mark("L7"),
     ...TWR([[75, 100, 50], [95, 90, 40], [55, 80, 40], [75, 120, 50], [50, 100, 30]]),
     H(880), ...TWR([[305, 10, 0]]), mark("L8"),
     ...TWR([[280, 90, 60], [310, 85, 50], [290, 120, 60], [305, 100, 30]]),
@@ -357,6 +372,7 @@ STAGE_DESIGNS.remarkables = {
 
 // --- 6. Fiordland Rain: narrow, wet, twisty; fords and a one-lane bridge ---------------------------
 STAGE_DESIGNS.fiordland = {
+  maxSlope: 0.11,
   bearing0: 100, surf0: SF.MUD, verge0: SF.LEAF_LITTER, width: 6.0, length: 5300, roll: [3.2, 110], bankGain: 2.2,
   items: [
     H(210), mark("start"), S(100), camber(80, 2.2),

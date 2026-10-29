@@ -1,7 +1,7 @@
 // Car materials: paint (livery atlas, clearcoat), glass, trim, lamps, tyres, rims; shader patches add
 // accumulated dirt (mud splatter), vertex-displaced crash damage, scrapes, holes and cracked glass.
 const SHARED = /* glsl */ `
-uniform vec4 uDmg; uniform vec4 uDim; uniform float uDmgTot; uniform float uDirt; uniform float uCrack; uniform float uSpray; uniform vec3 uMudC;
+uniform vec4 uLv; uniform vec4 uDmg; uniform vec4 uDim; uniform float uDmgTot; uniform float uDirt; uniform float uCrack; uniform float uSpray; uniform vec3 uMudC;
 float h31(vec3 p){ p = fract(p*vec3(0.1031,0.1030,0.0973)); p += dot(p, p.yxz+33.33); return fract((p.x+p.y)*p.z); }
 float vn3(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x), mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
@@ -29,7 +29,7 @@ vec3 dmgDisp(vec3 p){
   return d;
 }`;
 
-const VERT_DECL = SHARED + "\nvarying vec3 vObjP;\n";
+const VERT_DECL = SHARED + "\nvarying vec3 vObjP; varying vec3 vObjN;\n";
 const VERT_NORMAL = /* glsl */ `
 if (uDmgTot > 0.002) {
   vec3 pp = position;
@@ -42,9 +42,35 @@ if (uDmgTot > 0.002) {
   if (dot(nn, objectNormal) < 0.0) nn = -nn;
   objectNormal = nn;
 }`;
+// Livery projection per PIXEL (the atlas is planar: side | side / top | front + rear). Choosing the tile per quad left staircase
+// edges where a livery shape crosses a rounded corner; choosing it per pixel from the interpolated normal gives a clean line.
+// Texels at (0.003, 0.003) are the plain-colour swatch (details with fixed UVs) and are left alone.
+const LIVERY_FRAG = /* glsl */ `
+#ifdef USE_MAP
+{
+  vec3 dPx = dFdx(vObjP), dPy = dFdy(vObjP);
+  vec2 uvc = vMapUv, gx = dFdx(vMapUv), gy = dFdy(vMapUv);
+  if (!(uvc.x < 0.006 && uvc.y < 0.006)) {
+    vec3 n = normalize(vObjN), p = vObjP;
+    float ppm = uLv.w, zMin = uLv.x, zMax = uLv.y, hw = uLv.z;
+    float ax = abs(n.x), ay = abs(n.y), az = abs(n.z);
+    vec2 q, dX, dY;
+    if (ax >= ay && ax >= az) {
+      if (n.x < 0.0) { q = vec2((p.z - zMin) * ppm, (1.55 - p.y) * ppm); dX = vec2(dPx.z, -dPx.y) * ppm; dY = vec2(dPy.z, -dPy.y) * ppm; }
+      else { q = vec2(1024.0 + (zMax - p.z) * ppm, (1.55 - p.y) * ppm); dX = vec2(-dPx.z, -dPx.y) * ppm; dY = vec2(-dPy.z, -dPy.y) * ppm; }
+    } else if (ay >= az) {
+      q = vec2((p.z - zMin) * ppm, 512.0 + (p.x + hw + 0.2) * ppm); dX = vec2(dPx.z, dPx.x) * ppm; dY = vec2(dPy.z, dPy.x) * ppm;
+      if (n.y < 0.0) { q = vec2(6.0, 3.0); dX = vec2(0.0); dY = vec2(0.0); }
+    } else if (n.z < 0.0) { q = vec2(1024.0 + (hw + 0.1 - p.x) * ppm, 512.0 + (1.55 - p.y) * ppm); dX = vec2(-dPx.x, -dPx.y) * ppm; dY = vec2(-dPy.x, -dPy.y) * ppm; }
+    else { q = vec2(1536.0 + (p.x + hw + 0.1) * ppm, 512.0 + (1.55 - p.y) * ppm); dX = vec2(dPx.x, -dPx.y) * ppm; dY = vec2(dPy.x, -dPy.y) * ppm; }
+    uvc = clamp(q / vec2(2048.0, 1024.0), 0.001, 0.999); gx = dX / vec2(2048.0, 1024.0); gy = dY / vec2(2048.0, 1024.0);
+  }
+  diffuseColor *= textureGrad(map, uvc, gx, gy);
+}
+#endif`;
 const VERT_DISP = `vObjP = position; if (uDmgTot > 0.002) transformed += dmgDisp(position);`;
 
-const FRAG_DECL = SHARED + "\nvarying vec3 vObjP; float gDirt = 0.0;\n";
+const FRAG_DECL = SHARED + "\nvarying vec3 vObjP; varying vec3 vObjN; float gDirt = 0.0;\n";
 const DIRT = (mode) => /* glsl */ `
 {
   vec4 zw = dmgZones(vObjP);
@@ -71,9 +97,9 @@ const DIRT = (mode) => /* glsl */ `
   }`}
   vec3 mud = mix(uMudC * 0.55, uMudC, vn3(vObjP*14.0));
   ${mode === "paint" ? `// metallic flake: sparse glints that move with the view
-  { float fl = step(0.955, h31(floor(vObjP * 240.0)));
-    float tw = pow(abs(sin(dot(vViewPosition, vec3(31.0, 47.0, 23.0)) + h31(floor(vObjP * 240.0)) * 6.28)), 10.0);
-    diffuseColor.rgb *= 1.0 + fl * tw * 1.4 * (1.0 - dmask); }` : ""}
+  { float fl = step(0.992, h31(floor(vObjP * 160.0))) * (1.0 - smoothstep(3.0, 9.0, length(vViewPosition)));
+    float tw = pow(abs(sin(dot(vViewPosition, vec3(31.0, 47.0, 23.0)) + h31(floor(vObjP * 160.0)) * 6.28)), 10.0);
+    diffuseColor.rgb *= 1.0 + fl * tw * 0.55 * (1.0 - dmask); }` : ""}
   diffuseColor.rgb = mix(diffuseColor.rgb, mud, dmask);
   gDirt = dmask;
   ${mode === "glass" ? `
@@ -114,9 +140,10 @@ export function patchMaterial(mat, U, opts = {}) {
   mat.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
     let v = sh.vertexShader.replace("#include <common>", "#include <common>\n" + VERT_DECL);
-    if (dmg) v = v.replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n" + VERT_NORMAL);
+    v = v.replace("#include <beginnormal_vertex>", "#include <beginnormal_vertex>\n" + (dmg ? VERT_NORMAL : "") + "\nvObjN = objectNormal;");
     v = v.replace("#include <begin_vertex>", "#include <begin_vertex>\n" + (dmg ? VERT_DISP : "vObjP = position;"));
     let f = sh.fragmentShader.replace("#include <common>", "#include <common>\n" + FRAG_DECL);
+    if (opts.livery) f = f.replace("#include <map_fragment>", LIVERY_FRAG);
     if (!/MeshBasic/.test(mat.type)) {
       if (dmg && mode !== "wheel") f = f.replace("#include <clipping_planes_fragment>", "#include <clipping_planes_fragment>\n" + HOLES);
       f = f.replace("#include <color_fragment>", "#include <color_fragment>\n" + DIRT(mode));
@@ -125,12 +152,14 @@ export function patchMaterial(mat, U, opts = {}) {
     }
     sh.vertexShader = v; sh.fragmentShader = f;
   };
-  mat.customProgramCacheKey = () => `car-${mode}-${dmg ? 1 : 0}`;
+  mat.customProgramCacheKey = () => `car-${mode}-${dmg ? 1 : 0}-${opts.livery ? 1 : 0}`;
   return mat;
 }
 
+import { liveryParams } from "./livery.mjs";
 export function createUniforms(THREE, d) {
   return {
+    uLv: { value: new THREE.Vector4(...liveryParams(d)) },
     uDirt: { value: 0 },
     uSpray: { value: 0 },
     uMudC: { value: new THREE.Vector3(0.28, 0.2, 0.13) },
@@ -145,11 +174,11 @@ export function createCarMaterials(THREE, U, livery, atlasTexture, grain = null)
   const paint = patchMaterial(new THREE.MeshPhysicalMaterial({
     color: 0xffffff, map: atlasTexture, roughness: 0.3, metalness: 0.4, clearcoat: 1.0, clearcoatRoughness: 0.06,
     side: THREE.DoubleSide, envMapIntensity: 1.5,
-  }), U, { mode: "paint" });
+  }), U, { mode: "paint", livery: true });
   const glass = patchMaterial(new THREE.MeshStandardMaterial({
     color: 0x0a131b, roughness: 0.02, metalness: 0.85, transparent: true, opacity: 0.8, envMapIntensity: 2.6, depthWrite: false,
   }), U, { mode: "glass" });
-  const trim = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide }), U, { mode: "paint" });
+  const trim = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.72, metalness: 0.1, envMapIntensity: 0.6, side: THREE.DoubleSide }), U, { mode: "paint" });
   // one lamp material for head / tail / reverse lamps (vertex attribute aLamp: 0 head, 1 tail, 2 reverse)
   const lampI = { value: new THREE.Vector3(0.12, 0.12, 0.05) };
   const lampBase = patchMaterial(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.15, metalness: 0.1 }), U, { mode: "plain" });
@@ -165,10 +194,11 @@ export function createCarMaterials(THREE, U, livery, atlasTexture, grain = null)
   lampBase.customProgramCacheKey = () => "car-lamp";
   const lamps = lampBase;
   const interior = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, map: grain || null, roughness: 0.74, metalness: 0.05, emissive: 0x14151a, side: THREE.DoubleSide });
+  const liner = new THREE.MeshBasicMaterial({ color: 0x1b1c20, side: THREE.DoubleSide }); // headlining and pillar trim seen from inside the cabin: unlit, so no sun or shadow can wash it pale
   const helmet = new THREE.MeshPhysicalMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.25, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.05 });
   const wheelTrim = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.9, metalness: 0.0 });
   const tyre = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.92, metalness: 0 }), U, { mode: "wheel", damage: false });
   const rim = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.32, metalness: 0.75, envMapIntensity: 1.2 }), U, { mode: "wheel", damage: false });
   const caliper = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 0.4, metalness: 0.3 });
-  return { paint, glass, trim, lamps, lampI, interior, helmet, wheelTrim, tyre, rim, caliper };
+  return { paint, glass, trim, lamps, lampI, interior, liner, helmet, wheelTrim, tyre, rim, caliper };
 }

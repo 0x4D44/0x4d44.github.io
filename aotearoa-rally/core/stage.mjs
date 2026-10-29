@@ -406,6 +406,7 @@ export function buildStage(id, opts = {}) {
   }
   // feature furniture
   const hazards = [];
+  const setPieceList = [];
   for (const f of c.feats) {
     const fx = px[f.i], fz = pz[f.i];
     if (f.type === "jump" || f.type === "crest" || f.type === "ford" || f.type === "cattlegrid") {
@@ -435,6 +436,19 @@ export function buildStage(id, opts = {}) {
         pos(f.s + 3, side * (hwAt(f.s) + 1.5)); add("fence_post", PX, PZ, { rot: S0.heading });
       }
     }
+    if (f.type === "tunnel") {
+      // cave mouth: limestone portal pillars at both ends, close trees along both sides in between
+      setPieceList.push({ id: "cave_tunnel", kind: "tunnel", s0: f.s, s1: f.s + f.len, note: "cave mouth pillars at both ends, close trees either side" });
+      for (const e of [f.s, f.s + f.len]) for (const side of [-1, 1]) {
+        pos(e, side * (hwAt(e) + 5.2));
+        add("limestone", PX, PZ, { rot: Math.atan2(-PTX, -PTZ), scale: 2.3 + 0.3 * hf(Math.round(e), side + 2, 61) });
+      }
+      for (let s = f.s + 6; s < f.s + f.len - 3; s += 4.5) for (const side of [-1, 1]) {
+        const k = Math.floor(s / 4.5);
+        pos(s + hf(k, side + 2, 62) * 2, side * (hwAt(s) + 1.7 + hf(k, side + 4, 62) * 1.6));
+        add(hf(k, side + 6, 62) > 0.4 ? "macrocarpa" : "pine", PX, PZ, { scale: 1.2 + 0.5 * hf(k, side + 8, 62) });
+      }
+    }
     if (f.type === "culvert") {
       sample(f.s, S0);
       add("culvert", S0.x, S0.z, { rot: S0.heading, w: S0.width + 2, y: S0.y - 0.2, collide: false });
@@ -452,6 +466,15 @@ export function buildStage(id, opts = {}) {
     hazards.push({ s: pn.s, kind: "hairpin", x: S0.x, z: S0.z });
   }
   hazards.sort((a, b) => a.s - b.s);
+  for (const h of hazards) {
+    if (h.kind !== "jump") continue;
+    const hp = hazards.find((q) => q.kind === "hairpin" && q.s > h.s && q.s - h.s < 220);
+    if (hp) setPieceList.push({ id: "jump_hairpin", kind: "jump_hairpin", s0: h.s, s1: hp.s, note: "crest jump landing short of a hairpin" });
+  }
+  if (c.marks.descent !== undefined) {
+    const fd = hazards.find((q) => q.kind === "ford" && q.s > c.marks.descent);
+    if (fd) setPieceList.push({ id: "ford_descent", kind: "ford_descent", s0: c.marks.descent, s1: fd.s, note: "long gravel descent ending in a ford" });
+  }
 
   const decor = (opts && opts.noScenery) ? () => {} : buildScenery;
   decor();
@@ -715,7 +738,7 @@ export function buildStage(id, opts = {}) {
     parTime: 0,
     // contract amendments (see CONTRACTS.md "Amendments")
     seaLevel: 0, water, marks: c.marks, bankArr: bank, boundaryLeft: bl, boundaryRight: br,
-    obstacleCount: obstacles.length, camberRanges: c.camberRanges,
+    obstacleCount: obstacles.length, camberRanges: c.camberRanges, maxGrade: design.maxSlope ?? 0.145, setPieces: setPieceList,
   };
   stage.speedProfile = speedProfile(stage);
   // S4: a jump is called at the speed the stage is driven there (m/s), so it must launch a car at that speed

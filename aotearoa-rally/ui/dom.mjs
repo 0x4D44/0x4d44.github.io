@@ -44,7 +44,12 @@ export function fmtDelta(sec) {
   const body = a >= 60 ? `${Math.floor(a / 60)}:${(a % 60).toFixed(2).padStart(5, "0")}` : a.toFixed(2);
   return `${sec < 0 ? "-" : "+"}${body}`;
 }
-export const fmtMin = (m) => `${m.toFixed(m < 10 ? 1 : 0)} min`;
+/** Service minutes. Any real amount rounds UP, so a damaged part never reads "0.0 min". */
+export const fmtMin = (m) => {
+  if (!(m > 0)) return "0.0 min";
+  if (m < 10) return `${(Math.ceil(m * 10 - 1e-9) / 10).toFixed(1)} min`;
+  return `${Math.ceil(m - 1e-9)} min`;
+};
 export const stars = (n, max = 5) => h("span", { class: "stars", "aria-label": `${n} of ${max}` }, "★".repeat(n), h("i", null, "★".repeat(max - n)));
 
 // ---- pace-note glyphs ----------------------------------------------------------------------

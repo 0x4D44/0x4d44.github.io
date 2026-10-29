@@ -14,7 +14,7 @@ to WebP). They are not hand-drawn or photographed. Raw PNGs are not shipped.
 
 | NAME | DESC |
 |---|---|
-| keyart | painterly photoreal 16:9 illustration of a rally car with a green and yellow livery sliding sideways on a gravel road, dust plume lit by golden-hour sun, New Zealand snow-capped mountains and golden tussock behind, dramatic sky. |
+| keyart | (regenerated 2026-10-29 with the in-game Huia GT-T garage screenshot attached via `codex exec -i`) painterly photoreal 16:9 illustration of the rally car shown in the attached reference image (a four-door rally saloon, white body with dark-green stripes, roof-mounted lamp pod, rear wing, black wheel arches, small sponsor decals) sliding sideways on a gravel road, low in the left of the frame, dust plume lit by golden-hour sun, a New Zealand lake and snow-capped mountains at sunset behind, golden tussock, dramatic sky, calm darker space on the left-centre for overlay copy. Keep the car faithful to the reference: it is NOT a hatchback and has no yellow. |
 | card-waitomo | landscape of rolling green pasture hills in Waikato New Zealand with pale limestone bluffs, shelterbelt trees, sheep, a gravel road winding, clear morning with light mist in hollows. No cars. |
 | card-whakarewarewa | view of giant redwood forest in Rotorua New Zealand, tree ferns, rising steam, a pumice gravel road through trees, dappled overcast light. No cars. |
 | card-coromandel | Coromandel Coast New Zealand at golden-hour sunset, red pohutukawa trees on sea cliffs, a coastal road above a beach, sea glare on the water. No cars. |

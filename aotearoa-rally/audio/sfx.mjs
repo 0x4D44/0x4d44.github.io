@@ -10,8 +10,11 @@ export function createSfx(ctx, out, uiOut) {
   const api = {
     impact(ev) {
       const v = impactVoice(ev), t = T();
-      tone(ctx, out, { type: "sine", t, f0: v.thudHz * 1.6, f1: v.thudHz * 0.6, dur: v.dur, gain: v.thudGain * 0.6, pan: v.pan });
-      burst(ctx, out, { kind: "brown", t, dur: v.dur, gain: v.thudGain * 0.8, type: "lowpass", freq: 700, freq2: 150, q: 0.7, pan: v.pan });
+      // sharp transient first (stands out of the mix), then a low thump that carries the weight
+      burst(ctx, out, { kind: "white", t, dur: 0.012, attack: 0.001, gain: 0.55 * (0.5 + v.thudGain), type: "highpass", freq: 1800, q: 0.7, pan: v.pan });
+      tone(ctx, out, { type: "sine", t, f0: v.thudHz * 1.3, f1: 32, dur: v.dur * 1.4 + 0.25, gain: Math.min(1, v.thudGain * 1.3), pan: v.pan });
+      tone(ctx, out, { type: "triangle", t, f0: v.thudHz * 2.2, f1: v.thudHz * 0.7, dur: v.dur, gain: v.thudGain * 0.45, pan: v.pan });
+      burst(ctx, out, { kind: "brown", t, dur: v.dur, gain: v.thudGain * 1.1, type: "lowpass", freq: 700, freq2: 120, q: 0.7, pan: v.pan });
       const n = 3 + Math.floor(v.crunchGain * 5);
       for (let i = 0; i < n; i++) burst(ctx, out, { kind: "crackle", t: t + i * 0.022 + rng.next() * 0.02, dur: 0.06, gain: v.crunchGain * 0.5, type: "bandpass", freq: 600 + rng.next() * 2500, q: 1.2, pan: v.pan });
       if (v.clang > 0.05) for (const f of [310, 523, 811, 1367]) tone(ctx, out, { type: "sine", t, f0: f * (0.9 + rng.next() * 0.2), dur: 0.5 * v.clang + 0.15, gain: 0.07 * v.clang, pan: v.pan });

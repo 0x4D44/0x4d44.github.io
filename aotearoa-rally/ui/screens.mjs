@@ -306,7 +306,7 @@ export function createScreens(root, ctx) {
         const bar = h("i", { style: { width: Math.max(2, 100 - dmg * 100) + "%", background: col(dmg) } });
         const slider = h("input", { type: "range", min: "0", max: "100", step: "5", value: String(Math.round((champ.service.plan[p] || 0) * 100)), "aria-label": `Repair ${PART_LABELS[p]}`, disabled: dmg < 0.02,
           oninput: (e) => { const f = career.setRepair(p, +e.target.value / 100); e.target.value = String(Math.round(f * 100)); upd(); refresh(); } });
-        const upd = () => { const f = champ.service.plan[p] || 0; val.textContent = dmg < 0.02 ? "OK" : `${fmtMin(career.repairCost(p, f))}`; bar.style.width = Math.max(2, 100 - dmg * (1 - f) * 100) + "%"; bar.style.background = col(dmg * (1 - f)); };
+        const upd = () => { const f = champ.service.plan[p] || 0; val.textContent = dmg < 0.02 ? "OK" : fmtMin(career.repairCost(p, f > 0 ? f : 1)); val.title = f > 0 ? "Repair time chosen" : "Time to repair fully"; bar.style.width = Math.max(2, 100 - dmg * (1 - f) * 100) + "%"; bar.style.background = col(dmg * (1 - f)); };
         upd();
         return h("div", { class: "part-row" }, h("div", null, PART_LABELS[p], h("div", { class: "meta" }, `Full repair ${REPAIR_COST[p]} min`)), h("div", null, h("div", { class: "dmg" }, bar), slider), val);
       };
@@ -348,7 +348,8 @@ export function createScreens(root, ctx) {
     // ---------------------------------------------------------------- options
     options({ onBack, onChange, tab = "controls" }) {
       const o = career.options;
-      let paintPreview = () => {};
+      let paintPreview = () => {}, voiceListener = null;
+      { const prev = cleanup; cleanup = () => { try { if (voiceListener) speechSynthesis.removeEventListener("voiceschanged", voiceListener); } catch { /* ignore */ } if (prev) prev(); }; }
       const set = (k, v) => {
         career.setOption(k, v); onChange && onChange(k, career.options[k]); paintPreview();
         if (["master", "engine", "effects", "voice", "ambience"].includes(k)) { clearTimeout(set._t); set._t = setTimeout(() => ctx.sfx && ctx.sfx("click"), 120); } // audible feedback for volume sliders
@@ -415,8 +416,25 @@ export function createScreens(root, ctx) {
         row("Colour-safe HUD", sw("colourSafe"), "Blue/orange instead of green/red"),
       ];
       const audioTab = () => {
-        const voices = typeof speechSynthesis !== "undefined" ? speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang)) : [];
-        const vsel = h("select", { "aria-label": "Co-driver voice", onchange: (e) => set("voiceName", e.target.value) }, h("option", { value: "" }, "Automatic (en-NZ / AU / GB)"), voices.map((v) => h("option", { value: v.name, selected: career.options.voiceName === v.name ? "" : null }, `${v.name} (${v.lang})`)));
+        const readVoices = () => {
+          try { const l = ctx.listVoices ? ctx.listVoices() : []; if (l && l.length) return l; } catch { /* ignore */ }
+          try { return typeof speechSynthesis !== "undefined" ? speechSynthesis.getVoices().filter((v) => /^en/i.test(v.lang)).map((v) => ({ name: v.name, lang: v.lang })) : []; } catch { return []; }
+        };
+        const vsel = h("select", { "aria-label": "Co-driver voice", onchange: (e) => set("voiceName", e.target.value) });
+        const fillVoices = () => {
+          const list = readVoices(), cur = career.options.voiceName;
+          clear(vsel);
+          vsel.append(h("option", { value: "" }, "Auto (best available)"));
+          for (const v of list) vsel.append(h("option", { value: v.name }, `${v.name} (${v.lang})`));
+          vsel.value = list.some((v) => v.name === cur) ? cur : ""; // a saved voice that is gone shows Auto
+        };
+        fillVoices();
+        try { // speechSynthesis loads its voices late; refill when they arrive
+          if (typeof speechSynthesis !== "undefined" && speechSynthesis.addEventListener) {
+            if (voiceListener) speechSynthesis.removeEventListener("voiceschanged", voiceListener);
+            voiceListener = fillVoices; speechSynthesis.addEventListener("voiceschanged", fillVoices);
+          }
+        } catch { /* ignore */ }
         return [row("Mute all", sw("mute")), row("Master", range("master", 0, 1, 0.05, (v) => Math.round(v * 100))), row("Engine", range("engine", 0, 1, 0.05, (v) => Math.round(v * 100))), row("Effects", range("effects", 0, 1, 0.05, (v) => Math.round(v * 100))), row("Ambience", range("ambience", 0, 1, 0.05, (v) => Math.round(v * 100))), row("Co-driver volume", range("voice", 0, 1, 0.05, (v) => Math.round(v * 100))), row("Co-driver", sw("codriver"), "Spoken pace notes"), row("Co-driver voice", vsel)];
       };
       const dataTab = () => [
@@ -456,7 +474,7 @@ export function createScreens(root, ctx) {
         h("div", { class: "howto" },
           h("div", { class: "panel" }, h("h2", { class: "h2" }, "Game"), h("p", null, `Aotearoa Rally ${version}. Six New Zealand stages, four fictional cars and the whole soundtrack are made in code: the roads, terrain, car models, engine and surface audio, and the driving physics are procedural geometry, audio synthesis and simulation running in your browser. The textures, the key art and the stage and loading pictures were generated with an AI image generator and then processed for this game. No real car makes, sponsors or rally brands are used.`)),
           h("div", { class: "panel" }, h("h2", { class: "h2" }, "Licences"), h("p", null, "Three.js r186, MIT licence, © three.js authors (vendor/THREE-LICENSE.txt). Image prompts and the processing steps are logged in tools/ui-art/PROMPTS.md."), h("p", { class: "muted" }, "Fonts: your system's own condensed sans-serif; nothing is downloaded at runtime.")),
-          h("div", { class: "panel" }, h("h2", { class: "h2" }, "Te reo"), h("p", null, "Names such as huia, kea, takahe and piwakawaka are native birds of Aotearoa. Stage names are real places; the courses are fictional.")),
+          h("div", { class: "panel" }, h("h2", { class: "h2" }, "Te reo"), h("p", null, "Names such as Huia, Kea, Takahē and Pīwakawaka are native birds of Aotearoa. Stage names are real places; the courses are fictional.")),
         ),
         h("div", { class: "screen-foot" }, backBtn(onBack))]);
     },

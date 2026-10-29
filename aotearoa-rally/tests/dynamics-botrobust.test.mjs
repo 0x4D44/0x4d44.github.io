@@ -61,3 +61,28 @@ test("bot skill is monotonic: lower skill is slower, all skills finish clean", {
   for (let i = 1; i < times.length; i++) assert.ok(times[i] > times[i - 1], "not monotonic: " + times.map((x) => x.toFixed(1)).join(" "));
   assert.ok(times[2] / times[0] > 1.04 && times[2] / times[0] < 1.2, "skill 0.75 ratio " + (times[2] / times[0]).toFixed(3));
 });
+
+test("bot after a teleport: dropped onto a straight at 90 km/h it holds >= 80% of that speed over the next 3 s", () => {
+  for (const sid of ["waitomo"]) {
+    const st = buildStage(sid);
+    const v = createVehicle(CARS.huia, { tyre: bestTyreFor(st) });
+    v.reset(st.startPose, 0, st);
+    const bot = createBot(st, v, { skill: 1 });
+    // run a few seconds so the bot has history (stuck timers, brake memory, steering state)
+    for (let i = 0; i < 360; i++) { v.step(DT, bot.control(DT), st); v.state.events.length = 0; }
+    const prof = bot.speedProfile;
+    let s0 = -1;
+    for (let s = 300; s < st.lengthM - 200 && s0 < 0; s += 10) {
+      let ok = true;
+      for (let q = 0; q <= 150 && ok; q += 10) ok = prof[Math.round((s + q) / st.ds)] >= 27;
+      if (ok) s0 = s;
+    }
+    assert.ok(s0 > 0, sid + ": no straight found");
+    const sm = st.sample(s0, {});
+    v.reset({ x: sm.x, y: st.heightAt(sm.x, sm.z) + 0.4, z: sm.z, yaw: Math.atan2(-sm.tx, -sm.tz) }, 25, st);
+    // no bot.reset() on purpose: the bot must notice the jump itself
+    let minV = 1e9;
+    for (let i = 0; i < 360; i++) { v.step(DT, bot.control(DT), st); v.state.events.length = 0; if (i > 60) minV = Math.min(minV, v.state.speed); }
+    assert.ok(minV >= 0.8 * 25, `${sid}: bot slowed to ${(minV * 3.6).toFixed(0)} km/h after a teleport onto a straight`);
+  }
+});

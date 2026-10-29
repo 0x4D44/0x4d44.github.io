@@ -4,7 +4,7 @@ import { clamp, damp, lerp, wrapPi, smoothstep } from "../core/mathx.mjs";
 import { makeRng } from "../core/rng.mjs";
 import { eyePoints } from "./cars/profiles.mjs";
 
-export const CAMERA_MODES = ["chase", "far", "bumper", "bonnet", "cinematic", "replay"];
+export const CAMERA_MODES = ["chase", "far", "bumper", "bonnet", "cockpit", "cinematic", "replay"];
 
 /** Critically-ish damped spring. Mutates and returns [x, v] through `out` ({x,v}). Sub-steps for stability. */
 export function springStep(out, target, omega, zeta, dt) {
@@ -25,10 +25,14 @@ export function speedFov(baseFov, speedKmh, boost = 0) {
 }
 
 /** Chase distance / height as the car speeds up (the camera pulls back and rises a touch). */
-export function chaseArm(speedKmh, far = false) {
-  const t = clamp(speedKmh / 200, 0, 1);
-  return far ? { dist: lerp(11, 15, t), height: lerp(4.4, 5.6, t) } : { dist: lerp(5.4, 7.2, t), height: lerp(1.85, 2.25, t) };
+export function chaseArm(speedKmh, far = false, aspect = 1.78) {
+  const t = clamp(speedKmh / 200, 0, 1), p = portraitK(aspect);
+  const a = far ? { dist: lerp(11, 15, t), height: lerp(4.4, 5.6, t) } : { dist: lerp(5.4, 7.2, t), height: lerp(1.85, 2.25, t) };
+  return { dist: a.dist * (1 + 0.25 * p), height: a.height * (1 + 0.55 * p) };
 }
+
+/** 0 for landscape / desktop, rising to 1 for tall portrait phones (aspect <= ~0.5): drives the portrait framing. */
+export function portraitK(aspect) { return Number.isFinite(aspect) ? clamp((0.85 - aspect) / 0.37, 0, 1) : 0; }
 
 /** Heading the chase camera wants: blend between body yaw and velocity direction (more lag on slides). */
 export function chaseHeadingTarget(yaw, velDir, speed, slideBlend = 0.55) {
@@ -38,7 +42,7 @@ export function chaseHeadingTarget(yaw, velDir, speed, slideBlend = 0.55) {
 }
 
 /** Minimum fraction of the chase arm that terrain avoidance may use. Below this the camera is lifted instead. */
-export const MIN_ARM_FRAC = 0.55;
+export const MIN_ARM_FRAC = 0.75;
 export const CAM_GROUND_CLEAR = 0.45;
 export const CAM_BODY_MARGIN = 0.4;
 
@@ -139,7 +143,7 @@ export function carFadeForDistance(d) { return smoothstep(0.35, 1.2, d); }
  * Writes the desired position into `out` ({x,y,z}) and returns it.
  */
 export function placeChaseCamera(o, out = { x: 0, y: 0, z: 0 }) {
-  const arm = chaseArm(o.kmh, !!o.far);
+  const arm = chaseArm(o.kmh, !!o.far, o.aspect);
   const fx = -Math.sin(o.head), fz = -Math.cos(o.head);
   const tx = o.car.x, tz = o.car.z, ty = o.car.y + 0.9;
   out.x = tx - fx * arm.dist;
@@ -150,6 +154,20 @@ export function placeChaseCamera(o, out = { x: 0, y: 0, z: 0 }) {
     enforceCameraClear(out, o.heightAt, o.obstaclesNear || null, o.car);
   }
   return out;
+}
+
+/**
+ * Keep the chase lens at least max(4.8 m, 90 % of the arm) from the car horizontally, so the wing never fills the frame
+ * at low speed, after a respawn or while the spring catches up. Pushes straight out from the car (or straight back along
+ * the heading when the lens is on top of it). Mutates and returns `p` ({x,y,z}).
+ */
+export function enforceMinChaseDistance(p, cx, cz, armDist, fx, fz) {
+  const minD = Math.max(4.8, armDist * 0.9), px = p.x - cx, pz = p.z - cz, hd = Math.hypot(px, pz);
+  if (hd < minD) {
+    const ux = hd > 0.05 ? px / hd : -fx, uz = hd > 0.05 ? pz / hd : -fz;
+    p.x = cx + ux * minD; p.z = cz + uz * minD;
+  }
+  return p;
 }
 
 /** Crash / landing shake amplitude (0..1) from the events array; updates and returns the new decayed value. */
@@ -233,7 +251,11 @@ export function createCameraRig(THREE, camera) {
     if (w) for (let i = 0; i < 4; i++) if (w[i] && w[i].grounded && Number.isFinite(w[i].contactY)) { sum += w[i].contactY; n++; }
     if (n >= 3) {
       const d = st.y - sum / n;
-      baseOff = baseOff === null ? d : lerp(baseOff, d, 0.02);
+      // Ignore stale contact data (the frame after a teleport / respawn the wheels still hold the old place: d can be tens of
+      // metres) and never let it drag the first-person eye off the car. Accept only a believable CoM-to-ground height.
+      const ref = baseOff ?? (spec && spec.cgHeight) ?? 0.5;
+      if (Math.abs(d - ref) < 0.4) baseOff = baseOff === null ? d : lerp(baseOff, d, 0.1);
+      else if (baseOff === null && d > 0.15 && d < 1.2) baseOff = d;
     }
     return st.y - (baseOff ?? 0);
   }
@@ -282,22 +304,25 @@ export function createCameraRig(THREE, camera) {
     let tFov = 0;
 
     if (eff === "chase" || eff === "far") {
-      const arm = chaseArm(kmh, eff === "far");
+      const aspect = camera.aspect || 1.78, pk = portraitK(aspect);
+      const arm = chaseArm(kmh, eff === "far", aspect);
       const ht = chaseHeadingTarget(yaw, velDir, spd);
       if (snapNow || !headInit) { head = ht; headInit = true; }
       else head = head + wrapPi(ht - head) * (1 - Math.exp(-4.2 * dt));
       const fx = -Math.sin(head), fz = -Math.cos(head);
-      const lookAhead = eff === "far" ? 5 : 7 + spd * 0.12;
+      const lookAhead = (eff === "far" ? 5 : 7 + spd * 0.12) * (1 - 0.75 * pk);
       const tx = st.x, tz = st.z;
       const bias = clamp((st.yawRate || 0) * 0.55, -0.8, 0.8);
       lookBias = damp(lookBias, bias, 3, dt);
       carBox.x = st.x; carBox.y = gy; carBox.z = st.z; carBox.yaw = yaw;
-      placeChaseCamera({ heightAt, obstaclesNear, car: carBox, head, kmh, far: eff === "far", pitch: st.pitch }, des);
+      placeChaseCamera({ heightAt, obstaclesNear, car: carBox, head, kmh, far: eff === "far", pitch: st.pitch, aspect }, des);
       if (snapNow) { sx.x = des.x; sy.x = des.y; sz.x = des.z; sx.v = sy.v = sz.v = 0; }
       else {
         springStep(sx, des.x, 10, 1, dt); springStep(sz, des.z, 10, 1, dt); springStep(sy, des.y, 7, 1, dt);
       }
       camera.position.set(sx.x, sy.x + thump.x * 0.3 + shakeN(0) * lowShake * 0.35, sz.x);
+      // Keep a minimum horizontal distance (low speed, respawn, slow spring catch-up) so the wing never fills the frame.
+      enforceMinChaseDistance(camera.position, st.x, st.z, arm.dist, fx, fz);
       if (heightAt) {
         cp.x = camera.position.x; cp.y = camera.position.y; cp.z = camera.position.z;
         enforceCameraClear(cp, heightAt, obstaclesNear, carBox);
@@ -307,7 +332,7 @@ export function createCameraRig(THREE, camera) {
       const rx = Math.cos(head), rz = -Math.sin(head);
       look.x = tx + fx * lookAhead + rx * lookBias * lookAhead * 0.5;
       look.z = tz + fz * lookAhead + rz * lookBias * lookAhead * 0.5;
-      look.y = gy + 1.1;
+      look.y = gy + 1.1 - 2.2 * pk; // portrait: aim lower so the car rides in the upper-middle of the tall frame
       camera.up.set(0, 1, 0);
       camera.lookAt(look.x, look.y, look.z);
       roll = damp(roll, clamp(-(st.yawRate || 0) * 0.025 * Math.min(1, spd / 20), -0.08, 0.08), 3, dt);
@@ -361,7 +386,9 @@ export function createCameraRig(THREE, camera) {
       head = yaw;
     }
     fov = snapNow ? tFov : damp(fov, tFov, 6, dt);
-    if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+    // First-person lenses sit inside the car: the default 0.2 m near plane slices the steering wheel, dash and bonnet lip.
+    const wantNear = eff === "bumper" || eff === "bonnet" || eff === "cockpit" ? 0.06 : 0.2;
+    if (Math.abs(camera.fov - fov) > 0.01 || camera.near !== wantNear) { camera.fov = fov; camera.near = wantNear; camera.updateProjectionMatrix(); }
   }
 
   // cheap deterministic noise (no alloc)

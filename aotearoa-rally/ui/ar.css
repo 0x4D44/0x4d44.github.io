@@ -94,6 +94,7 @@ body.reduced-motion .press { animation: none; }
 .showroom .arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 52px; height: 72px; background: rgba(5, 15, 10, .6); border: 1px solid var(--line2); font-size: 26px; z-index: 2; }
 .showroom .arrow.l { left: 8px; } .showroom .arrow.r { right: 8px; }
 .car-info { display: flex; flex-direction: column; gap: 12px; }
+.car-info .h1 { line-height: 1.2; margin-top: 8px; padding-top: .1em; }
 .stat-row { display: grid; grid-template-columns: 110px 1fr 24px; gap: 10px; align-items: center; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--silver); }
 .bar { height: 10px; background: rgba(255, 255, 255, .09); position: relative; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); } .bar > i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, var(--fern), var(--kowhai)); transition: width .3s; }
 .swatches { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -175,9 +176,14 @@ kbd { font-family: var(--mono); font-size: 12px; background: rgba(255, 255, 255,
 .loading.done { opacity: 0; pointer-events: none; }
 .loading-inner, .nogl-inner { display: flex; flex-direction: column; align-items: center; gap: 16px; max-width: 520px; }
 .nogl h1 { margin: 0; text-transform: uppercase; letter-spacing: .08em; }
-.load-bar { width: min(360px, 76vw); height: 6px; background: rgba(255, 255, 255, .12); overflow: hidden; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); } .load-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--fern), var(--kowhai)); transition: width .2s; }
+.load-bar { position: relative; width: min(360px, 76vw); height: 6px; background: rgba(255, 255, 255, .12); overflow: hidden; clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%); }
+/* Compositor-only motion (transform/opacity): the bar, the shimmer, the koru and the tips keep moving while the main thread is blocked by the stage build and shader warm-up. */
+.load-bar i { position: absolute; inset: 0; display: block; background: linear-gradient(90deg, var(--fern), var(--kowhai)); transform: scaleX(0); transform-origin: 0 50%; transition: transform .25s linear; will-change: transform; }
+.load-bar::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 30%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent); transform: translateX(-100%); animation: load-sweep 1.6s linear infinite; will-change: transform; }
+@keyframes load-sweep { to { transform: translateX(340%); } }
+body.reduced-motion .load-bar::after { animation: none; display: none; }
 .load-label { color: var(--silver); letter-spacing: .12em; text-transform: uppercase; font-size: 12px; min-height: 1.4em; }
-.koru-mark { animation: spin 6s linear infinite; } body.reduced-motion .koru-mark { animation: none; }
+.koru-mark { animation: spin 6s linear infinite; will-change: transform; } body.reduced-motion .koru-mark { animation: none; }
 @keyframes spin { to { transform: rotate(360deg); } }
 #toasts { position: fixed; top: calc(52px + var(--safe-t)); left: 50%; transform: translateX(-50%); z-index: 40; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; width: min(92vw, 520px); }
 .toast { background: var(--panel2); border: 1px solid var(--kowhai); padding: 8px 18px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; font-size: 14px; animation: scr-in .25s both; text-align: center; }
@@ -191,7 +197,8 @@ body.rain .hud-glass { background: rgba(3, 10, 7, .8); }
 .h-top { position: absolute; top: calc(10px + var(--safe-t)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 210px; }
 .h-time { padding: 2px 22px; font-size: clamp(28px, 4.2vw, 46px); font-weight: 900; font-style: italic; font-variant-numeric: tabular-nums; letter-spacing: .02em; clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
 .h-delta { min-height: 24px; display: flex; gap: 14px; font-size: clamp(14px, 1.8vw, 19px); font-weight: 800; font-variant-numeric: tabular-nums; }
-.h-delta .lbl { font-size: 10px; letter-spacing: .14em; color: var(--muted); margin-right: 4px; text-transform: uppercase; }
+.h-delta > span { background: rgba(3, 10, 7, .72); border: 1px solid var(--line2); border-radius: 12px; padding: 1px 10px; }
+.h-delta .lbl { font-size: 10px; letter-spacing: .14em; color: var(--silver); margin-right: 5px; text-transform: uppercase; font-weight: 800; text-shadow: 0 0 3px #000, 0 1px 2px #000; }
 .h-prog { width: min(340px, 52vw); height: 26px; position: relative; }
 .h-prog canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .h-prog .tick { position: absolute; bottom: 0; width: 1px; height: 6px; background: var(--silver); opacity: .6; }
@@ -207,8 +214,11 @@ body.rain .hud-glass { background: rgba(3, 10, 7, .8); }
 .h-dash { position: absolute; right: calc(14px + var(--safe-r)); bottom: calc(14px + var(--safe-b)); width: clamp(190px, 26vw, 330px); display: flex; flex-direction: column; align-items: flex-end; gap: 2px; transform-origin: right bottom; }
 .gauge { position: relative; width: 100%; aspect-ratio: 1.45; }
 .gauge svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.gauge .speed { position: absolute; left: 0; right: 0; top: 24%; text-align: center; font-size: clamp(54px, 8.6vw, 100px); line-height: 1; font-weight: 900; font-style: italic; font-variant-numeric: tabular-nums; }
-.gauge .unit { position: absolute; left: 0; right: 0; top: 70%; text-align: center; font-size: 12px; letter-spacing: .3em; color: var(--silver); font-weight: 800; }
+.gauge { container-type: inline-size; }
+/* The readout is sized from the dial itself (cqw): two digits 22 cqw, three digits 17 cqw, tabular figures, so it always sits inside the radius of the rpm numerals (about 28 cqw from the centre). */
+.gauge .speed { position: absolute; left: 0; right: 0; top: 30%; text-align: center; font-size: clamp(40px, 8.6vw, 100px); font-size: 22cqw; line-height: 1; font-weight: 900; font-style: italic; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; white-space: nowrap; text-shadow: 0 2px 4px rgba(0, 0, 0, .9), 0 0 10px rgba(0, 0, 0, .7); }
+.gauge .speed.w3 { font-size: 17cqw; top: 33%; }
+.gauge .unit { position: absolute; left: 0; right: 0; top: 68%; text-align: center; font-size: 12px; letter-spacing: .3em; color: var(--silver); font-weight: 800; }
 .gauge .gear { position: absolute; right: 2%; bottom: 8%; font-size: clamp(34px, 5.2vw, 62px); font-weight: 900; font-style: italic; color: var(--kowhai); line-height: 1; min-width: 1ch; text-align: center; }
 .gauge .rpm-n { position: absolute; left: 0; right: 0; top: 84%; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--silver); }
 .shiftlight { display: flex; gap: 5px; justify-content: center; width: 100%; height: 8px; }
@@ -257,7 +267,7 @@ body.reduced-motion .h-warn { animation: none; }
   .h-mini { width: 84px; height: 84px; top: calc(54px + var(--safe-t)); right: calc(8px + var(--safe-r)); }
   .h-fps { top: calc(142px + var(--safe-t)); }
   .h-dash { bottom: auto; top: calc(144px + var(--safe-t)); right: calc(6px + var(--safe-r)); width: 154px; }
-  .gauge .speed { font-size: 46px; } .gauge .gear { font-size: 32px; }
+  .gauge .gear { font-size: 32px; }
   .h-left { bottom: auto; top: calc(214px + var(--safe-t)); flex-direction: column; align-items: flex-start; }
   .h-dmg { width: 52px; } .h-top { min-width: 170px; } .h-time { font-size: 24px; padding: 0 14px; }
 }
@@ -273,7 +283,9 @@ body.reduced-motion .h-warn { animation: none; }
 }
 @media (max-width: 420px) {
   .btn { padding-inline: 18px; letter-spacing: .06em; }
-  .stat-row { grid-template-columns: 92px 1fr 22px; }
+  .stat-row { grid-template-columns: 108px 1fr 22px; letter-spacing: .04em; }
+  .car-info { gap: 8px; }
+  .car-info .h1 { margin-top: 4px; line-height: 1.15; }
   .part-row { grid-template-columns: 92px 1fr 70px; }
   .sheet td, .sheet th { padding: 7px 5px; }
   .wordmark span { letter-spacing: .16em; }
@@ -287,7 +299,7 @@ body { touch-action: manipulation; }
 .switch { width: 72px; height: 44px; border-radius: 22px; }
 .switch::after { top: 5px; left: 5px; width: 32px; height: 32px; }
 .switch[aria-checked="true"]::after { transform: translateX(28px); }
-.livery-name { overflow-wrap: anywhere; line-height: 1.3; min-height: 2.6em; }
+.livery-name { overflow-wrap: anywhere; line-height: 1.3; min-height: 1.3em; }
 .podium .step { min-width: 0; overflow: hidden; }
 .podium .step .pts { font-size: clamp(12px, 1.6vw, 16px); font-weight: 800; color: var(--kowhai); white-space: nowrap; }
 .podium .step .tm { font-size: 12px; font-family: var(--mono); }
@@ -316,8 +328,57 @@ body { touch-action: manipulation; }
 .pv-sw { width: 18px; height: 18px; border-radius: 50%; display: inline-block; background: var(--good); } .pv-sw.bad { background: var(--bad); }
 .opt-preview.colour-safe .pv-sw { background: #2f8cff; } .opt-preview.colour-safe .pv-sw.bad { background: #ff9a1f; }
 .pv-fovwrap { display: flex; align-items: center; gap: 10px; color: var(--kowhai); } .pv-fov { width: 110px; height: 64px; }
-.load-tip { max-width: min(520px, 86vw); text-align: center; color: var(--silver); font-size: 14px; margin: 14px auto 0; line-height: 1.4; min-height: 2.8em; }
+.load-tip { position: relative; width: min(520px, 86vw); height: 3.4em; text-align: center; color: var(--silver); font-size: 14px; margin: 14px auto 0; line-height: 1.4; }
+.load-tip span { position: absolute; inset: 0; opacity: 0; animation: tip-cycle calc(var(--n, 8) * 6s) linear infinite; animation-delay: calc((var(--i) - var(--start, 0)) * 6s); will-change: opacity; }
+@keyframes tip-cycle { 0% { opacity: 0; } 1.5% { opacity: 1; } 11% { opacity: 1; } 12.5% { opacity: 0; } 100% { opacity: 0; } }
+body.reduced-motion .load-tip span { animation: none; display: none; } body.reduced-motion .load-tip span:first-child { display: block; opacity: 1; }
 @media (pointer: coarse) { .screen.art[data-screen="title"] { background-position: 62% center; } }
 @media (max-width: 760px) { .opt-preview { gap: 10px; } .screen-foot.sticky .btn { flex: 1 1 140px; } .replay-bar { gap: 6px; padding: 8px 10px; } .replay-bar input[type="range"] { flex-basis: 100%; order: 5; } }
 @media (max-height: 800px) { .brief .charts canvas { max-height: 150px; } .screen { gap: 10px; } .facts { gap: 8px; } }
 @media (max-height: 800px) and (min-width: 901px) { [data-screen="briefing"] .notes-sample > :nth-child(n+3), [data-screen="briefing"] .brief .chip:nth-of-type(n+5) { display: none; } [data-screen="briefing"] .brief p { font-size: 15px; } }
+
+/* ---------- every screen's footer (Back / Confirm) stays reachable: pinned to the bottom of the scrolling screen ---------- */
+.screen-foot { position: sticky; bottom: calc(-18px - var(--safe-b)); z-index: 3; margin-inline: calc(-1 * var(--pad)); padding: 10px var(--pad) calc(14px + var(--safe-b)); background: linear-gradient(180deg, transparent, rgba(3, 9, 6, .92) 42%); }
+
+/* ---------- short landscape (phones on their side, 844x390): primary controls fully on screen, nothing overlapping ---------- */
+@media (max-height: 480px) and (min-width: 561px) {
+  .screen { padding-top: calc(46px + var(--safe-t)); gap: 6px; }
+  .screen-head { gap: 6px; }
+  .kicker { font-size: 11px; letter-spacing: .22em; }
+  .h1 { font-size: clamp(26px, 8vh, 40px); }
+  .wordmark.sm span { font-size: 13px; } .wordmark.sm b { font-size: 34px; }
+  .title-wrap { gap: 8px; margin-bottom: 14px; }
+  .title-wrap .wordmark span { font-size: 22px; } .title-wrap .wordmark b { font-size: 64px; }
+  .title-wrap .tagline { display: none; }
+  .press { font-size: 14px; letter-spacing: .24em; }
+  .foot-note { display: none; }
+  .menu-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; width: min(640px, 100%); margin-top: 0; }
+  .menu-list .btn { min-height: 38px; font-size: 16px; padding-block: 4px; }
+  [data-screen="menu"] .kicker { display: none; }
+  .car-layout { grid-template-columns: minmax(0, 1fr) minmax(250px, 1fr); gap: 12px; flex: 0 0 auto; }
+  .showroom { min-height: 0; height: clamp(150px, 46vh, 230px); }
+  .showroom .arrow { width: 40px; height: 54px; }
+  .car-info { gap: 6px; }
+  .car-info .h1 { font-size: 24px; }
+  .car-info .stat-row { font-size: 11px; }
+  .car-info .chips, .car-info p.muted, .car-info > .kicker { display: none; }
+  .swatch { height: 30px; }
+  .livery-name { min-height: 0; font-size: 12px; }
+  .screen-foot { padding-block: 6px calc(10px + var(--safe-b)); }
+  .screen-foot .btn { min-height: 38px; }
+  .stage-grid { gap: 8px; }
+}
+
+/* ---------- portrait phone touch controls: small, translucent, in the bottom corners, nothing in the middle third ---------- */
+@media (max-width: 560px) and (orientation: portrait) {
+  .touch-controls > * { opacity: .62; }
+  .tc-steer { left: calc(10px + var(--safe-l)); bottom: calc(10px + var(--safe-b)); width: 120px; height: 72px; border-radius: 40px; border-color: rgba(255, 255, 255, .2); background: rgba(5, 15, 10, .28); }
+  .tc-knob { width: 44px; height: 44px; }
+  .tc-arrow { font-size: 16px; } .tc-arrow.l { left: 10px; } .tc-arrow.r { right: 10px; }
+  .tc-right { right: calc(10px + var(--safe-r)); bottom: calc(10px + var(--safe-b)); grid-template-columns: 54px 60px; grid-template-rows: 48px 48px; gap: 6px; }
+  .tc-btn { border-radius: 12px; font-size: 11px; border-color: rgba(255, 255, 255, .22); background: rgba(5, 15, 10, .3); }
+  .tc-gas { font-size: 14px; }
+  .tc-btn.sm { width: 48px; height: 42px; font-size: 18px; }
+  .tc-gears { left: calc(10px + var(--safe-l)); bottom: calc(92px + var(--safe-b)); gap: 6px; }
+  .tc-cam { right: calc(10px + var(--safe-r)); bottom: calc(120px + var(--safe-b)); }
+}

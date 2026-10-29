@@ -6,11 +6,12 @@ import { createTerrain } from "./terrain.mjs";
 import { createRoad } from "./road.mjs";
 import { createScenery } from "./scenery.mjs";
 import { createSky, createLighting, sunDirection } from "./sky.mjs";
-import { createWeather } from "./weather.mjs";
+import { createWeather, fogFactor } from "./weather.mjs";
 import { createSplash, sprayAmount, inWaterSpan } from "./splash.mjs";
 import { createSea } from "./sea.mjs";
+const FOG_GREY = new THREE.Color();
 import { createPost } from "./post.mjs";
-import { QUALITY, QUALITY_LEVELS, createGovernor, forceVisible, guessTier, normalizeQuality, percentile, tierBelow } from "./quality.mjs";
+import { QUALITY, QUALITY_LEVELS, createGovernor, forceVisible, guessTier, normalizeQuality, percentile, tierAbove, tierBelow, TIER_UP_SCALE } from "./quality.mjs";
 
 // per-biome colour grade: lift (shadow tint), gain (highlight tint), saturation, contrast, vignette, bloom
 const GRADES = {
@@ -63,6 +64,7 @@ export async function createWorld(canvas, opts = {}) {
 
   const terrain = createTerrain(THREE, { SU, textures, getCfg });
   const road = createRoad(THREE, { SU, textures, getCfg });
+  terrain.setRenderer(renderer);
   const scenery = createScenery(THREE, { SU, textures, getCfg });
   const sky = createSky(THREE, { getCfg });
   const lighting = createLighting(THREE, scene, getCfg);
@@ -138,16 +140,17 @@ export async function createWorld(canvas, opts = {}) {
     let dens = env.fogDensity ?? 1.7 / fogFar;
     dens = Math.min(3.2 / fogFar, Math.max(1.2 / fogFar, dens));
     const w = weather.state;
-    dens *= 1 + 0.9 * w.rainAmt + 1.2 * w.mist + 0.5 * w.snowAmt;
+    dens *= fogFactor(w);
     S.baseDensity = dens;
     scene.fog.color.set(env.fogColor);
+    if (w.fog > 0) scene.fog.color.lerp(FOG_GREY.set(0xc9d0d4), 0.55 * w.fog);
     scene.fog.density = dens;
     environment.fogColor.copy(scene.fog.color);
     environment.fogDensity = dens;
     renderer.setClearColor(scene.fog.color, 1);
     SU.uFogBase.value = (S.stage.bounds?.minY ?? 0) + 6;
     SU.uFogFall.value = 0.03;
-    SU.uFogBoost.value = 0.35 + 1.3 * w.mist + 0.4 * w.rainAmt;
+    SU.uFogBoost.value = (w.cleared ? 0.12 : 0.35) + 1.3 * w.mist + 0.4 * w.rainAmt + 1.2 * w.fog;
     SU.uSunDir.value.copy(S.sunDir);
     sky.uniforms.uMist.value = w.mist * 0.5;
     const precip = Math.max(w.rainAmt, w.snowAmt);
@@ -179,6 +182,11 @@ export async function createWorld(canvas, opts = {}) {
     const lit = lighting.setEnvironment(env, S.sunDir);
     S.mood.day = lit.day;
     weather.setWeather(env, S.weatherOverride);
+    if (weather.state.fog > 0) { // overcast soft light under fog: dimmer, less directional sun, stronger fill
+      const f = weather.state.fog;
+      lighting.sun.intensity *= 1 - 0.45 * f; lighting.state.sunIntensity = lighting.sun.intensity;
+      lighting.hemi.intensity *= 1 + 0.5 * f;
+    }
     S.mood.wetSky = Math.min(1, weather.state.rainAmt); S.mood.mist = weather.state.mist;
     sky.setEnvironment(env, S.sunDir, S.mood);
     sky.setBiome(stage.def.biome);
@@ -213,10 +221,9 @@ export async function createWorld(canvas, opts = {}) {
     camera.updateMatrixWorld(true);
     S.camPos.copy(camera.position);
     onProgress(0.55, "terrain");
-    await terrain.prebuild(sp.x, sp.z, Math.min(560, terrain.viewDist), (p) => onProgress(0.55 + p * 0.38, "terrain"));
+    await terrain.prebuild(sp.x, sp.z, terrain.viewDist, (p) => onProgress(0.55 + p * 0.38, "terrain"));
     scenery.update(camera, 0, true);
     lighting.update(S.carPos, S.carYaw, 0, 0);
-    try { renderer.compile(scene, camera); } catch { /* ignore */ }
     S.ready = true;
     onProgress(1, "ready");
   }
@@ -260,18 +267,45 @@ export async function createWorld(canvas, opts = {}) {
     environment.sunIntensity = lighting.sun.intensity;
   }
 
+  /** Wait for the GPU to drain the queued warm-up work without blocking the main thread (a fence polled between timers,
+   *  so the loading overlay keeps repainting). Falls back to a blocking finish() where fences are unavailable. */
+  async function gpuIdle(maxMs = 15000) {
+    const gl = renderer.getContext();
+    if (!gl.fenceSync || !gl.clientWaitSync) { gl.finish(); return; }
+    const f = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    if (!f) { gl.finish(); return; }
+    gl.flush();
+    const t0 = performance.now();
+    try {
+      while (performance.now() - t0 < maxMs) {
+        const r = gl.clientWaitSync(f, 0, 0);
+        if (r === gl.ALREADY_SIGNALED || r === gl.CONDITION_SATISFIED || r === gl.WAIT_FAILED) break;
+        await new Promise((res) => setTimeout(res, 8));
+      }
+    } finally { gl.deleteSync(f); }
+  }
+
   /** Compile every program (weather, flare, post, shadow variants) and draw one frame so the first drive has no stall.
    *  Call after the game has attached the car visual and FX. */
-  async function warmup() {
+  const rafYield = () => new Promise((res) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => res()) : setTimeout(res, 0)));
+  /** warmup({ onProgress(fraction 0..1) }): fires between awaited steps, with an rAF yield after each so the overlay repaints. */
+  async function warmup({ onProgress } = {}) {
     if (!S.stage) return;
+    const step = async (f) => { onProgress?.(f); await rafYield(); };
+    await step(0);
+    scenery.prewarm();
     const objs = [];
     scene.traverse((o) => { if (o !== scene && !o.isLight) objs.push(o); });
     const restore = forceVisible(objs);
     try {
-      try { await renderer.compileAsync(scene, camera); } catch { /* ignore */ }
+      let n = 0;
+      try { await post.compileAsync(scene, camera, () => { n++; onProgress?.(Math.min(0.7, 0.1 + 0.2 * n)); }); } catch { /* ignore */ }
+      await step(0.75);
       renderer.shadowMap.needsUpdate = true;
       if (post.enabled) post.render(0.016); else renderer.render(scene, camera);
-      renderer.getContext().finish();
+      await step(0.9);
+      await gpuIdle();
+      await step(1);
     } finally { restore(); renderer.info.reset(); S.lastRender = 0; }
   }
 
@@ -287,9 +321,14 @@ export async function createWorld(canvas, opts = {}) {
           const before = governor.scale;
           governor.frame(ms);
           if (Math.abs(governor.scale - before) > 1e-4) { S.scale = governor.scale; applySize(); }
-          if (governor.tierDownRequested && tier !== "low" && now - S.lastQualityChange > 8000) {
-            governor.reset(); governor.scale = 1; S.scale = 1;
+          governor.tierHeadroom = tier !== autoTier && QUALITY_LEVELS.indexOf(tier) < QUALITY_LEVELS.indexOf(autoTier);
+          if (governor.tierDownRequested && tier !== "low" && (governor.urgent || now - S.lastQualityChange > 8000)) {
+            governor.resetWindow(); governor.scale = 1; S.scale = 1;
             applyQuality(tierBelow(tier), false);
+          } else if (governor.tierUpRequested) {
+            governor.tierUpRequested = false; // the probe stays armed in the governor; a bad frame time reverts it
+            governor.scale = TIER_UP_SCALE; S.scale = TIER_UP_SCALE; applySize();
+            applyQuality(tierAbove(tier), false);
           }
         }
       }
