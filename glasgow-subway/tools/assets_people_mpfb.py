@@ -55,10 +55,10 @@ PEOPLE = [
          clothes=['elvs_hooded_sweat_jacket1', 'punkduck_female_tight_jeans', 'punkduck_comfortable_sneakers']),
     dict(id='woman_scarf', kind='woman', outfit='trousers', H=1.63, gender=0, age=0.47, weight=0.5, muscle=0.35, race=(0.0, 0.1, 0.9), skin='middleage_african_female', eye='brown', brows='eyebrow012', lashes='eyelashes02', hair='afro01', hair_col='#17120e',
          clothes=['female_casualsuit01', 'toigo_ankle_boots_female']),
-    dict(id='woman_bob', kind='woman', outfit='leggings', H=1.60, gender=0, age=0.44, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='toigo_light_skin_female_ginger', eye='bluegreen', brows='eyebrow006', lashes='eyelashes03', hair='bob01', hair_col='#7a2f1a',
+    dict(id='woman_bob', kind='woman', outfit='leggings', H=1.60, gender=0, age=0.44, weight=0.55, muscle=0.35, race=(0.0, 1.0, 0.0), skin='young_caucasian_female', eye='bluegreen', brows='eyebrow006', lashes='eyelashes03', hair='bob01', hair_col='#7a2f1a',
          clothes=['mindfront_knitted_sweater_01', 'elvs_disco_pants_skinny', 'toigo_ankle_boots_female']),
-    dict(id='teen_boy', kind='teen', outfit='shorts', H=1.68, gender=1, age=0.26, weight=0.4, muscle=0.4, race=(0.1, 0.8, 0.1), skin='young_caucasian_male2', eye='blue', brows='eyebrow002', lashes=None, hair='short03', hair_col='#a87a43',
-         clothes=['toigo_basic_tucked_t-shirt', 'cortu_jeans_shorts', 'culturalibre_sneakers']),
+    dict(id='teen_boy', kind='teen', outfit='trousers', H=1.68, gender=1, age=0.26, weight=0.4, muscle=0.4, race=(0.1, 0.8, 0.1), skin='young_caucasian_male2', eye='blue', brows='eyebrow002', lashes=None, hair='short03', hair_col='#a87a43',
+         clothes=['toigo_basic_tucked_t-shirt', 'mindfront_male_trousers_2', 'culturalibre_sneakers']),
     dict(id='teen_girl', kind='teen', outfit='trousers', H=1.58, gender=0, age=0.25, weight=0.4, muscle=0.35, race=(0.2, 0.7, 0.1), skin='young_caucasian_female2', eye='brown', brows='eyebrow007', lashes='eyelashes01', hair='ponytail01', hair_col='#6d4a2c',
          clothes=['elvs_hooded_sweat_jacket1', 'punkduck_female_tight_jeans', 'punkduck_comfortable_sneakers']),
     dict(id='boy', kind='boy', outfit='trousers', H=1.38, gender=1, age=0.14, weight=0.45, muscle=0.4, race=(0.1, 0.8, 0.1), skin='young_caucasian_male', eye='brown', brows='eyebrow002', lashes=None, hair='short02', hair_col='#6d4a2c',
@@ -124,7 +124,14 @@ def load_image(path, maxpx, alpha=False, quality=80, srgb=True):
     if alpha:
         out = os.path.join(TEXDIR, base + '.png'); im.convert('RGBA').quantize(colors=48, method=Image.FASTOCTREE).save(out, optimize=True)
     else:
-        out = os.path.join(TEXDIR, base + '.jpg'); im.convert('RGB').save(out, quality=quality)
+        out = os.path.join(TEXDIR, base + '.jpg')
+        if im.mode in ('RGBA', 'LA', 'P'):
+            import numpy as _np
+            rgba = _np.asarray(im.convert('RGBA')).astype(_np.float32); msk = rgba[..., 3] > 200
+            if msk.any() and (~msk).mean() > 0.002:
+                avg = rgba[..., :3][msk].mean(0); rgba[..., :3][~msk] = avg      # transparent texels (unused UV space) -> average cloth colour instead of black
+            im = Image.fromarray(rgba[..., :3].astype(_np.uint8))
+        im.convert('RGB').save(out, quality=quality)
     img = bpy.data.images.load(out); img.pack(); img.name = base
     if not srgb: img.colorspace_settings.name = 'Non-Color'
     IMG_CACHE[key] = img
@@ -232,6 +239,7 @@ def build_person(spec):
     for o in [human] + [p[0] for p in parts]:
         for vg in list(o.vertex_groups):
             if vg.name not in bones: o.vertex_groups.remove(vg)
+    human['_body'] = 1
     person = dict(spec=spec, human=human, rig=rig, parts=parts, scale=k)
     replace_eyes(person)
     return person
@@ -585,9 +593,18 @@ def decimate(o, ratio, weight_group=None):
     select_only([o])
     am = [m for m in o.modifiers if m.type == 'ARMATURE']; rig = am[0].object if am else None
     for m in am: o.modifiers.remove(m)
-    dm = o.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = max(0.02, ratio); dm.use_collapse_triangulate = False; dm.delimit = {'UV'} if ratio > 0.3 else set()
+    if LOD:
+        import bmesh
+        bm = bmesh.new(); bm.from_mesh(o.data)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=0.0006)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        bm.to_mesh(o.data); bm.free()
+    dm = o.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = max(0.02, ratio); dm.use_collapse_triangulate = True; dm.delimit = set() if LOD else {'UV'}
     if weight_group: dm.vertex_group = weight_group; dm.vertex_group_factor = float(os.environ.get('DECF', '2.0')); dm.invert_vertex_group = False
     bpy.ops.object.modifier_apply(modifier='dec')
+    if LOD and o.type == 'MESH' and not o.get('_body') and 'eyes_new' not in o.name:
+        o.data.update(); nrm = {v.index: v.normal.copy() for v in o.data.vertices}
+        for v in o.data.vertices: v.co += nrm[v.index] * 0.015
     if rig:
         n = o.modifiers.new('Armature', 'ARMATURE'); n.object = rig
 
@@ -611,6 +628,7 @@ def budget_and_join(person, total):
         if r == 'lashes' and LOD:
             bpy.data.objects.remove(o); continue
         wg = None
+        if r == 'cloth' and any(w in o.name.lower() for w in ('shoe', 'sneaker', 'boot')): tgt[id(o)] = max(tgt[id(o)], min(cnt[id(o)], 520))
         decimate(o, tgt[id(o)] / max(1, cnt[id(o)]), wg)
         if wg:
             o.vertex_groups.remove(o.vertex_groups['faceW'])
