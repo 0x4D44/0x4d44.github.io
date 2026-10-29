@@ -11,6 +11,56 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-29 - Windows serves any path case, Pages does not: check exact-case paths (la-ladera/tests/live-paths.mjs)
+  A request for /la-ladera/Assets/textures/asphalt.jpg is answered 200 by the local dev server (self-test of the tool) and would 404 on GitHub
+  Pages (Linux). live-paths.test.mjs scans imports, import map, index.html, css url() and manifests against directory listings with exact case;
+  live-paths.mjs boots the page, walks it, and checks every URL the page really requested (dynamic strings, GLB-internal textures).
+
+- 2026-10-29 - Headless rAF ticks at 17.6 ms on an EMPTY page, so gate frames relative to it (la-ladera/tests/metrics.mjs)
+  The "median frame <= 16.7 ms" gate failed every view at 17.5-17.7 ms whatever the load (616-791 draw calls, 1.3 M triangles,
+  uncapped render 6-10 ms): a blank data: page in the same harness (below-normal priority, compositor-timed rAF) also reads 17.6.
+  metrics.mjs now measures that baseline first, allows baseline + 1 ms, and gates the real work separately (gl.finish cost <= 12 ms).
+  Both gates were tightened on purpose once (--cost-gate 1 --frame-slack -20) to prove they still fail.
+
+- 2026-10-29 - Headless Chrome still locks the real mouse and speaks aloud; shim both (la-ladera/tests/quiet-init.js)
+  Reported by the box coordinator: headless=new honours requestPointerLock (a CDP click is a user gesture) and Windows then
+  ClipCursor()s the person's REAL cursor into the invisible 1280x720 window. Speech goes to the OS voice, which --mute-audio is
+  not expected to silence (from Chromium's design, not measured). chrome.mjs injects quiet-init.js before any page script:
+  page-only twins with the same events and promises, spoken lines kept in window.__quiet.spoken. Never reproduced live.
+
+- 2026-10-29 - Chromium re-sets its own priorities; lower every pid from SystemInfo.getProcessInfo (la-ladera/tests/chrome.mjs:launch)
+  Inheriting below-normal from the Node parent only reached the browser, crashpad and utility processes: the GPU process
+  came up AboveNormal and the foreground renderers Normal. Measured with os.getPriority(pid); the timer + post-navigation
+  re-apply keeps new renderers low. A priority that is already lower (background renderers: idle) is never raised.
+
+- 2026-10-29 - Pipe child stdio when hiding windows; libuv sets CREATE_NO_WINDOW only if no stdio is inherited (la-ladera/tools/nice.mjs)
+  From libuv's uv_spawn as I remember it (not re-verified here): with stdio:'inherit' a console child can open a visible
+  window when its parent has no console (detached, or started by a service). Piped or ignored stdio plus windowsHide is safe.
+  A window watcher (EnumWindows every 120 ms) is the way to find who pops windows; process lists miss short-lived ones.
+
+- 2026-10-29 - Codex-made swatches can show centre-cross seams; tile 2x2 before accepting (la-ladera/tools/textures/post.py)
+  Fabric prompts also came back as corrugated metal (fabric_woven). Contact-sheet every batch and diff suspicious pairs
+  against their siblings before a texture ships.
+
+- 2026-10-29 - Kill the headless Chrome tree by pid (taskkill /T /F), never by name (la-ladera/tests/chrome.mjs:killTree)
+  The user's real Chrome runs on the same box and other agents leave orphan --user-data-dir profiles under H:/temp.
+  Only the root we spawned (and its children) may be killed; every exit path goes through killTree.
+
+- 2026-10-29 - BFS nodes must keep real positions; grid snapping fakes traps at ramps (la-ladera/tests/stuck-lib.mjs:analyze)
+  The first probe snapped nodes to cell centres and reported a trap at a stair edge: the snapped point lay inside the
+  ramp footprint, where nobody can stand. Nodes now keep the post-move position and dedupe on cell + 0.35 m height.
+
+- 2026-10-29 - Wall colliders are capsules: a door gap g needs g - 2t >= 0.62 (la-ladera/js/core/physics.js:addWall)
+  The cap at a wall end has radius t. t=0.06 -> g >= 0.8, t=0.1 -> 0.85, t=0.12-0.15 -> 0.9-0.95. The rounded caps funnel
+  an off-centre walker (measured: +-0.4 m still passes). Same rule for furniture blockers beside a door.
+
+- 2026-10-29 - Open MessagePort hangs node --test; unref it unless a tick is pending (la-ladera/js/core/util.js:tick)
+  tick() yields through a MessageChannel because browsers throttle timers. Under Node the open port kept the process
+  alive for ever (smoke.data.test.mjs exited 124). Browsers have no unref, so the call is optional-chained.
+
+- 2026-10-29 - python -I hides user-site PIL/numpy on this box; use plain python (la-ladera/tools/textures/post.py)
+  Python 3.13 here has PIL and numpy only in the user site-packages. The isolated flag drops it and the import fails.
+
 - 2026-10-29 - Decode exported frames by number: ffmpeg -ss gives frame i+1 at times (plan-to-build/index.html:expPass)
   A one-frame decode with -ss (i+0.5)/60 -frames:v 1 returned frame i+1 for some i and frame i for others (rounding). It read as
   22 dB on fast camera moves and as a pass on slow ones, so a good MP4 looked broken. Decode by number instead: -vf
