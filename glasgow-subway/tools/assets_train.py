@@ -12,7 +12,7 @@ W = RO
 FLOOR = 0.695
 GAP = 0.17
 CAR_LENS = [12.4, 7.0, 7.0, 12.4]
-DOORS_END = [-3.2, 1.6]; DOORS_MID = [0.2]        # car-local door centres (end cars 2, middle cars 1  -> 6 per side)
+DOORS_END = [-3.7, 2.9]; DOORS_MID = [0.77]          # 2+1+1+2 per side, centres from the nose ~3.3 / 9.9 / 15.3 / 24.0 / 29.5 / 36.0 m (research/train-front.md)        # car-local door centres (end cars 2, middle cars 1  -> 6 per side)
 DOOR_W = 1.3                                      # opening width (single 1.2 m sliding leaf per node)
 SKIRT_Z = 0.82
 CAB_LEN = 1.8                                     # cab depth behind the nose (partition at t=1.8)
@@ -207,33 +207,31 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
             q = ext.quad_uv(P(xo, yy - 0.2, 0.92), P(xo, yy + 0.2, 0.92), P(xo, yy + 0.2, 1.32), P(xo, yy - 0.2, 1.32), 'sign_roundel')
             q[ext.fx] = 1
             if q.normal.x * sg < 0: q.normal_flip()
-    # ---- door leaves: curved slabs following the arch, with a glass pane (separate animatable nodes)
+    # ---- DOUBLE doors: each opening has two bi-parting curved leaves (a = nose side, b = rear side), each 0.64 m wide, own animatable node
     nodes = {}
+    LW = 0.645; h = LW / 2
     for sgx, nm in ((-1, 'L'), (1, 'R')):
         for di, d in enumerate(DOORS):
-            wy = yc + s * d
-            lm = M(); lw = DOOR_W - 0.1; h = lw / 2
-            Ro, Rn = 1.135, 1.095
-            low = [(Ro, 0.70), (Ro, CZ)] + A(Ro, 0, SILL_DEG)
-            lowi = [(Rn, 0.70), (Rn, CZ)] + A(Rn, 0, SILL_DEG)
-            def sl(R, a0, a1, y0, y1, mat, **kw):
-                pts = A(R, a0, a1, step=7.5)
-                lm.strip_y([(sgx * x - sgx * 1.12, z - 0.0) for x, z in pts], y0, y1, mat, **kw)
-            ax_ = (-sgx * 1.12, CZ)
-            def pl(pts, y0, y1, mat, **kw):
-                lm.strip_y([(sgx * x - sgx * 1.12, z) for x, z in pts], y0, y1, mat, **kw)
-            pl(low, -h, h, 'subway_orange', away=ax_); pl(lowi, -h, h, 'interior_panel', toward=ax_)
-            pl(A(Ro, SILL_DEG, HEAD_DEG), -h, -h + 0.1, 'subway_orange', away=ax_); pl(A(Ro, SILL_DEG, HEAD_DEG), h - 0.1, h, 'subway_orange', away=ax_)
-            pl(A(Rn, SILL_DEG, HEAD_DEG), -h, -h + 0.1, 'interior_panel', toward=ax_); pl(A(Rn, SILL_DEG, HEAD_DEG), h - 0.1, h, 'interior_panel', toward=ax_)
-            pl(A(Ro, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'subway_orange', away=ax_)
-            pl(A(Ro, SILL_DEG, SILL_DEG + 0.0 + 3, step=3), -h + 0.1, h - 0.1, 'subway_orange', away=ax_)
-            pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), -h + 0.1, h - 0.1, 'glass_window', toward=ax_)       # GLASS PANE (curved)
-            for yy in (-h, h):
-                pl(A(Ro, 0, 1, step=1), yy, yy + 0.001, 'rubber_black')
-            o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0)) if False else None
-            # geometry is relative to (x=1.12*sgx, y=0 (leaf centre), z=0); place node at the leaf centre
-            o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0))
-            nodes.setdefault(nm, []).append((wy, o))
+            wyc = yc + s * d
+            for half, off in (('a', +0.3225), ('b', -0.3225)):
+                wy = wyc + off
+                lm = M(); Ro, Rn = 1.135, 1.095
+                ax_ = (-sgx * 1.12, CZ)
+                def pl(pts, y0, y1, mat, **kw):
+                    lm.strip_y([(sgx * x - sgx * 1.12, z) for x, z in pts], y0, y1, mat, **kw)
+                low = [(Ro, 0.70), (Ro, CZ)] + A(Ro, 0, SILL_DEG); lowi = [(Rn, 0.70), (Rn, CZ)] + A(Rn, 0, SILL_DEG)
+                pl(low, -h, h, 'subway_orange', away=ax_); pl(lowi, -h, h, 'interior_panel', toward=ax_)
+                # window zone: frame stiles (outer edge 0.07, meeting edge 0.09), top/bottom rails and the glass pane
+                pl(A(Ro, SILL_DEG, HEAD_DEG), -h, -h + 0.08, 'subway_orange', away=ax_); pl(A(Ro, SILL_DEG, HEAD_DEG), h - 0.08, h, 'subway_orange', away=ax_)
+                pl(A(Rn, SILL_DEG, HEAD_DEG), -h, -h + 0.08, 'interior_panel', toward=ax_); pl(A(Rn, SILL_DEG, HEAD_DEG), h - 0.08, h, 'interior_panel', toward=ax_)
+                pl(A(Ro, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'subway_orange', away=ax_)
+                pl(A(Rn, HEAD_DEG - 3, HEAD_DEG, step=3), -h, h, 'interior_panel', toward=ax_)
+                pl(A(Ro, SILL_DEG, SILL_DEG + 3, step=3), -h + 0.08, h - 0.08, 'subway_orange', away=ax_)
+                pl(A(1.115, SILL_DEG + 3, HEAD_DEG - 3), -h + 0.08, h - 0.08, 'glass_window', toward=ax_)       # GLASS in each leaf
+                for yy in (-h, h):
+                    lm.strip_y([(sgx * Ro - sgx * 1.12, 0.72), (sgx * Ro - sgx * 1.12, 1.45)], yy - 0.004, yy + 0.004, 'rubber_black')
+                o = lm.to_obj('tmp', parent=None, loc=(sgx * 1.12, wy, 0.0))
+                nodes.setdefault(nm, []).append((wyc, half, o))
     if has_cab:
         build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort)
     ext.to_obj(f'car_{idx}_exterior', parent=car)
@@ -304,13 +302,24 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
         suffix = '' if s > 0 else '_rear'
         hinge = empty(f'cab_door_{nm}{suffix}', loc=(sg * 1.12, P(0, Y(t0), 0)[1], 0.0), parent=car, kind='ARROWS', size=0.2)
         dm.to_obj(f'cab_door_{nm}{suffix}_mesh', parent=hinge, loc=(0, 0, 0))
-    # ---- nose: loft of the body section from t=0.80 (full) to the nose face at t=0.03
-    rings = [(0.80, 1.0, 1.0), (0.50, 0.95, 0.985), (0.25, 0.88, 0.96), (0.03, 0.78, 0.92)]
+    # ---- nose (rebuilt from photos, research/train-front.md): squat rounded "bell" section, flat-ish face, ONE big black glazed panel
+    rings = [(0.85, 1.0, 1.0), (0.55, 0.985, 0.995), (0.30, 0.95, 0.985), (0.10, 0.905, 0.975), (0.03, 0.88, 0.97)]
     Z0 = 0.5
-    base = [(RO, 0.62)] + OUT_FULL + [(-RO, 0.62)]
-    ringpts = []
-    for t, sx, sz in rings:
-        ringpts.append([(x * sx, Z0 + (z - Z0) * sz) for x, z in base])
+    RC = 0.35                                     # lower front corner radius
+    def lowcorner(sgn):
+        cx = sgn * (RO - RC)
+        return [(cx + sgn * RC * math.cos(math.radians(a_)), 0.5 + RC - RC * math.sin(math.radians(a_))) for a_ in (10, 35, 60, 85)]
+    LBp = [(-x, z) for x, z in lowcorner(1)][::1]          # left-bottom corner from the side wall down to the bottom edge
+    RBp = lowcorner(1)[::-1]
+    LBp = [(-RO + RC - RC * math.cos(math.radians(a_)), 0.5 + RC - RC * math.sin(math.radians(a_))) for a_ in (10, 35, 60, 85)]
+    RBp = [(RO - RC + RC * math.cos(math.radians(a_)), 0.5 + RC - RC * math.sin(math.radians(a_))) for a_ in (85, 60, 35, 10)]
+    base = [(RO, 0.85)] + OUT_FULL + [(-RO, 0.85)] + LBp + RBp
+    def hb(zo):
+        if zo >= CZ: return hp_x(zo)
+        if zo >= 0.85: return RO
+        dz = 0.85 - zo
+        return RO - RC + math.sqrt(max(0.0, RC * RC - dz * dz))
+    ringpts = [[(x * sx, Z0 + (z - Z0) * sz) for x, z in base] for t, sx, sz in rings]
     bmx = ext.bm; fs = []
     vr = [[bmx.verts.new(P(x, Y(t), z)) for x, z in rp] for (t, _, _), rp in zip(rings, ringpts)]
     n = len(base)
@@ -322,71 +331,88 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
             if f.normal.x * cx + f.normal.z * (cz - 1.4) < 0: f.normal_flip()
             fs.append(f)
     ext._tag(fs, 'livery_white')
-    # nose face with THREE glazing bays (driver left / centre evacuation door / right) - per research/drive-realism.md
     sxN, szN = rings[-1][1], rings[-1][2]
     def zs(zo): return Z0 + (zo - Z0) * szN
-    def hw(zo): return sxN * hp_x(zo) - 0.07
+    def gw(zo):
+        mg = 0.13 if zo < 2.25 else 0.13 - 0.06 * (zo - 2.25) / 0.31
+        return max(0.08, sxN * hb(zo) - mg)
     import bmesh as bm_
     ov = [bmx.verts.new(P(x * sxN, Y(0.03), Z0 + (z - Z0) * szN)) for x, z in base]
     ed = [bmx.edges.new((ov[i], ov[(i + 1) % len(ov)])) for i in range(len(ov))]
-    GZ0, GZ1 = 1.30, 2.18            # glazing from just above the black lower panel to near the roof line (bigger windscreen)
-    PIL_ = 0.045                      # half-width of the white pillars between the bays
-    bays = [(-1.0, -0.30 - PIL_), (-0.30 + PIL_, 0.30 - PIL_), (0.30 + PIL_, 1.0)]     # x extents (outer limits clipped to hw(z))
-    def bay_poly(xa, xb):
-        pa0 = max(xa, -hw(GZ0)); pb0 = min(xb, hw(GZ0)); pa1 = max(xa, -hw(GZ1)); pb1 = min(xb, hw(GZ1))
-        return [(pa0, zs(GZ0)), (pb0, zs(GZ0)), (pb1, zs(GZ1)), (pa1, zs(GZ1))]
-    bay_polys = [bay_poly(xa, xb) for xa, xb in bays]
-    for bp in bay_polys:
-        hv = [bmx.verts.new(P(x, Y(0.03), z)) for x, z in bp]
-        ed += [bmx.edges.new((hv[i], hv[(i + 1) % 4])) for i in range(4)]
+    ZB, ZT, ZG = 0.70, 2.56, 1.30                  # glass panel bottom / top; transparent above ZG (desk behind), opaque black below
+    zl = [ZB + (ZT - ZB) * i / 16 for i in range(17)]
+    gl_levels = [z for z in zl if z >= ZG - 1e-6]
+    hole = [(-gw(z), zs(z)) for z in gl_levels] + [(gw(z), zs(z)) for z in gl_levels[::-1]]
+    hv = [bmx.verts.new(P(x, Y(0.03), z)) for x, z in hole]
+    ed += [bmx.edges.new((hv[i], hv[(i + 1) % len(hv)])) for i in range(len(hv))]
     res = bm_.ops.triangle_fill(bmx, use_beauty=True, edges=ed)
     for f in res['geom']:
         if isinstance(f, bm_.types.BMFace):
             f.material_index = ext._mi('livery_white'); f[ext.fx] = 1
             if f.normal.y * s < 0: f.normal_flip()
-    # transparent glass in each bay + thin black frames; opaque black lower nose panel with the roundel
-    for bp in bay_polys:
-        f = gls.quad(*[P(x, NOSE_Y + 0.002, z) for x, z in bp], 'glass_window'); f[gls.fx] = 1
+    # glass (transparent) + opaque black lower part, one continuous panel
+    f = gls.poly(*[[P(x, NOSE_Y + 0.002, z) for x, z in hole]], 'glass_window') if False else None
+    gpts = [P(x, NOSE_Y + 0.002, z) for x, z in hole]
+    fg = gls.poly(gpts, 'glass_window'); fg[gls.fx] = 1
+    if fg.normal.y * s < 0: fg.normal_flip()
+    low_levels = [z for z in zl if z <= ZG + 1e-6]
+    for i in range(len(low_levels) - 1):
+        a_, b_ = low_levels[i], low_levels[i + 1]
+        f = ext.quad(P(-gw(a_), NOSE_Y + 0.004, zs(a_)), P(gw(a_), NOSE_Y + 0.004, zs(a_)), P(gw(b_), NOSE_Y + 0.004, zs(b_)), P(-gw(b_), NOSE_Y + 0.004, zs(b_)), 'glass_black'); f[ext.fx] = 1
         if f.normal.y * s < 0: f.normal_flip()
-        xs_ = [x for x, _ in bp]
-        for (xa_, za_), (xb_, zb_) in zip(bp, bp[1:] + bp[:1]):
-            ext.cyl_between(P(xa_, NOSE_Y + 0.006, za_), P(xb_, NOSE_Y + 0.006, zb_), 0.012, 'glass_black', seg=4)
-    def panel(z0o, z1o, mat, dy=0.006, nstep=4):
-        zl = [z0o + (z1o - z0o) * i / nstep for i in range(nstep + 1)]
-        for i in range(nstep):
-            a_, b_ = zl[i], zl[i + 1]
-            f = ext.quad(P(-hw(a_), NOSE_Y + dy, zs(a_)), P(hw(a_), NOSE_Y + dy, zs(a_)), P(hw(b_), NOSE_Y + dy, zs(b_)), P(-hw(b_), NOSE_Y + dy, zs(b_)), mat)
-            f[ext.fx] = 1
-            if f.normal.y * s < 0: f.normal_flip()
-    panel(0.72, GZ0, 'glass_black')
-    # centre evacuation door handle strip + hinge line
-    ext.box(P(0.20, NOSE_Y + 0.008, zs(1.0)), (0.02, 0.008, 0.18), 'steel_bright')
-    # amber LED destination display above the glazing: separate node, UV 0..1 (runtime canvas)
-    dsz0, dsz1 = zs(GZ1) + 0.035, zs(GZ1) + 0.17
-    dsm = M()
-    wd = hw(GZ1 + 0.1) * 0.9
-    f = dsm.quad(P(-wd, NOSE_Y + 0.008, dsz0), P(wd, NOSE_Y + 0.008, dsz0), P(wd, NOSE_Y + 0.008, dsz1), P(-wd, NOSE_Y + 0.008, dsz1), 'dest_amber')
-    uvl = dsm.bm.loops.layers.uv.verify()
-    ls = list(f.loops)
-    for l, uv in zip(ls, ((1, 0), (0, 0), (0, 1), (1, 1))): l[uvl].uv = uv
-    f[dsm.cuv] = 1; f[dsm.fx] = 1
-    if f.normal.y * s < 0: f.normal_flip()
-    dsm.to_obj('cab_dest' if s > 0 else 'cab_dest_rear', parent=car, uv=False)
+    # thin black frame round the panel, pane dividers (left 0.54 | door 0.84 | right 0.59) and the arched-top evacuation door outline
+    outline = [(-gw(z), zs(z)) for z in zl] + [(gw(z), zs(z)) for z in zl[::-1]]
+    for (xa_, za_), (xb_, zb_) in zip(outline, outline[1:] + outline[:1]):
+        ext.cyl_between(P(xa_, NOSE_Y + 0.008, za_), P(xb_, NOSE_Y + 0.008, zb_), 0.014, 'glass_black', seg=4)
+    for xd in (-0.40, 0.44):
+        ext.cyl_between(P(xd, NOSE_Y + 0.008, zs(ZB)), P(xd, NOSE_Y + 0.008, zs(2.30)), 0.012, 'steel_dark', seg=4)
+    arch = [(-0.40 + 0.84 * i / 8, 2.30 + 0.24 * math.sin(math.pi * i / 8)) for i in range(9)]
+    for (xa_, za_), (xb_, zb_) in zip(arch, arch[1:]):
+        ext.cyl_between(P(xa_, NOSE_Y + 0.008, zs(za_)), P(xb_, NOSE_Y + 0.008, zs(zb_)), 0.012, 'steel_dark', seg=4)
+    for zz in (1.0, 1.7): ext.box(P(-0.37, NOSE_Y + 0.012, zs(zz)), (0.03, 0.02, 0.16), 'steel_bright')      # latch rod handles
+    ext.box(P(0.44, NOSE_Y + 0.012, zs(1.0)), (0.03, 0.02, 0.10), 'steel_dark'); ext.box(P(0.44, NOSE_Y + 0.012, zs(1.9)), (0.03, 0.02, 0.10), 'steel_dark')   # hinge knuckles
+    # wiper on the right pane
+    ext.cyl_between(P(0.66, NOSE_Y + 0.02, zs(1.05)), P(0.62, NOSE_Y + 0.02, zs(2.0)), 0.008, 'plastic_black', seg=4)
+    # LED blades: crescents inside the glass edges, 1.3 m tall, wide at the foot, thin at the top (white = headlights, red = tail lights)
     front = s > 0
     lm = 'headlight' if front else 'taillight'
     for sg in (-1, 1):
-        ext.box(P(sg * 0.86, NOSE_Y + 0.010, zs(1.0)), (0.03, 0.012, 0.55), lm)
+        zb0, zb1 = 0.86, 2.16
+        steps = 10
+        for i in range(steps):
+            ta, tb = i / steps, (i + 1) / steps
+            za, zb = zb0 + (zb1 - zb0) * ta, zb0 + (zb1 - zb0) * tb
+            wa, wb = 0.04 + 0.16 * (1 - ta) ** 1.3, 0.04 + 0.16 * (1 - tb) ** 1.3
+            ea, eb = gw(za) - 0.035, gw(zb) - 0.035
+            f = ext.quad(P(sg * ea, NOSE_Y + 0.010, zs(za)), P(sg * (ea - wa), NOSE_Y + 0.010, zs(za)), P(sg * (eb - wb), NOSE_Y + 0.010, zs(zb)), P(sg * eb, NOSE_Y + 0.010, zs(zb)), lm); f[ext.fx] = 1
+            if f.normal.y * s < 0: f.normal_flip()
         for r in range(4):
             for c in range(2):
-                ext.cyl(P(sg * (0.80 + c * 0.04), NOSE_Y + 0.010, zs(0.76 + r * 0.04)), 0.011, 0.012, lm, axis='y', seg=8)
+                ext.cyl(P(sg * (gw(0.84) - 0.07 - c * 0.05), NOSE_Y + 0.010, zs(0.76 + r * 0.04)), 0.013, 0.014, lm, axis='y', seg=8)
     nm = 'headlight' if front else 'taillight'
-    empty(f'{nm}_L', loc=P(-0.86 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.0)), parent=car)
-    empty(f'{nm}_R', loc=P(0.86 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.0)), parent=car)
+    empty(f'{nm}_L', loc=P(-0.92 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.2)), parent=car)
+    empty(f'{nm}_R', loc=P(0.92 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.2)), parent=car)
+    # roundel + "Subway" under the door glass (lower centre)
     q = ext.quad_uv(P(-0.17, NOSE_Y + 0.012, zs(0.74)), P(0.17, NOSE_Y + 0.012, zs(0.74)), P(0.17, NOSE_Y + 0.012, zs(1.12)), P(-0.17, NOSE_Y + 0.012, zs(1.12)), 'sign_roundel')
     q[ext.fx] = 1
     if q.normal.y * s < 0: q.normal_flip()
-    ext.box(P(0, NOSE_Y + 0.08, 0.56), (0.3, 0.26, 0.16), 'steel_dark')
-    ext.box(P(0, NOSE_Y - 0.0, 0.52), (1.4, 0.1, 0.1), 'steel_dark')
+    # destination display: separate node, dim by default, inside the top of the glass (optional / in-service strip)
+    dsm = M(); wd = 0.30
+    f = dsm.quad(P(-wd, NOSE_Y + 0.012, zs(2.40)), P(wd, NOSE_Y + 0.012, zs(2.40)), P(wd, NOSE_Y + 0.012, zs(2.47)), P(-wd, NOSE_Y + 0.012, zs(2.47)), 'dest_amber')
+    uvl = dsm.bm.loops.layers.uv.verify()
+    for l, uv in zip(list(f.loops), ((1, 0), (0, 0), (0, 1), (1, 1))): l[uvl].uv = uv
+    f[dsm.cuv] = 1; f[dsm.fx] = 1
+    if f.normal.y * s < 0: f.normal_flip()
+    dsm.to_obj('cab_dest' if s > 0 else 'cab_dest_rear', parent=car, uv=False)
+    # chin, black bumper skirt, lamp lens, orange grab handle, coupler cover plate + Scharfenberg head
+    ext.box(P(0, NOSE_Y + 0.004, 0.55), (1.30, 0.012, 0.13), 'skirt_black')
+    ext.box(P(0.68, NOSE_Y + 0.010, 0.52), (0.27, 0.012, 0.08), 'plastic_black')
+    ext.cyl_between(P(-0.78, NOSE_Y + 0.03, 0.48), P(-0.60, NOSE_Y + 0.03, 0.56), 0.012, 'subway_orange', seg=6)
+    CP = 0.42
+    ext.box(P(0, NOSE_Y + CP / 2, 0.44), (1.17, CP, 0.07), 'plastic_black')                 # cover plate
+    ext.box(P(0, NOSE_Y + CP * 0.7, 0.30), (0.55, CP * 0.9, 0.26), 'steel_bright')           # coupler head
+    for sgn in (-1, 1): ext.box(P(sgn * 0.40, NOSE_Y + CP * 0.65, 0.30), (0.20, CP * 0.8, 0.34), 'plastic_black')
+    ext.box(P(0, NOSE_Y + CP * 0.5, 0.49), (0.16, 0.03, 0.03), 'steel_bright')
     # ---- cab interior (compact): ceiling, desk (just behind the glass), controls, seat; driver LEFT of the centre door, eyes ~1.0 m back
     cab.strip_y(CEIL, *ysort(CAB_Y, Y(0.45)), 'interior_ceiling', toward=AX)
     DZ = FLOOR + 0.80                                    # desk top 0.80 m above the floor
@@ -461,15 +487,18 @@ def build_train():
     nodes = []; lights = []
     for i, (yc, L, s, doors, cab) in enumerate(cars):
         n = build_car(i, yc, s, root, L, doors, cab); lights += n.pop('_lights'); nodes.append(n)
+    door_world = []
     for nm in ('L', 'R'):
         leaves = [t for n in nodes for t in n.get(nm, [])]
-        leaves.sort(key=lambda t: -t[0])
-        for i, (wy, o) in enumerate(leaves):
-            o.name = f'door_{nm}_{i}'; o.data.name = o.name; o.parent = root
+        centres = sorted({round(t[0], 4) for t in leaves}, reverse=True)       # front -> rear
+        for wyc, half, o in leaves:
+            i = centres.index(round(wyc, 4))
+            o.name = f'door_{nm}_{i}_{half}'; o.data.name = o.name; o.parent = root
+        if nm == 'L': door_world = centres
     build_bogies(root, total)
     nose = cars[0][0] + cars[0][1] / 2 - 0.03
-    empty('couple_front', loc=(0, nose + 0.25, 0.56), parent=root, kind='ARROWS', size=0.3)
-    empty('couple_rear', loc=(0, -(nose + 0.25), 0.56), parent=root, kind='ARROWS', size=0.3)
+    empty('couple_front', loc=(0, nose + 0.42, 0.30), parent=root, kind='ARROWS', size=0.3)
+    empty('couple_rear', loc=(0, -(nose + 0.42), 0.30), parent=root, kind='ARROWS', size=0.3)
     for k, wy in enumerate(sorted(lights, reverse=True)):
         empty(f'interior_light_{k}', loc=(0, wy, 2.45), parent=root)
     # ---- walkable-volume data for the simulator
@@ -487,6 +516,8 @@ def build_train():
         minStandingHeadroom=1.75, minStandingNote='an adult of 1.75 m can only stand where headroomVsX >= 1.80 i.e. |x| <= 0.35; head-bump zone otherwise',
         gangway=dict(width=1.3, archApexY=2.10, halfWidth=0.65),
         cab=dict(eyeFront=[-0.42, 1.845, round(-(total / 2 - 1.0), 3)], eyeRear=[0.42, 1.845, round(total / 2 - 1.0, 3)], eyeToGlassM=1.0, deskTopY=round(FLOOR + 0.80, 3), deskFrontToGlassM=0.30, driverSide='left of centre door (x=-0.42 front cab, +0.42 rear cab)', partitionDistanceFromNoseM=1.8, glazing='three bays (driver / centre evacuation door / right), glass y from 1.30 to 2.18, black frame, amber LED destination display node cab_dest'),
+        doors=dict(type='double bi-parting', nodes='door_{L|R}_{n}_{a|b}, n=0..5 front->rear', centreZ=sorted(round(zz, 3) for c in cars_json for zz in c['doorZ']), openingWidth=DOOR_W, leafWidth=0.645, travelM=0.6,
+                   a='nose-side leaf: open = translate -Z by 0.6 m (toward the nose)', b='rear-side leaf: open = translate +Z by 0.6 m (toward the rear)', leafNodeOrigin='leaf centre: x=+-1.12, y=0, z=door centre +-0.3225 (a: -0.3225 in three z, b: +0.3225)'),
         cars=cars_json)
     json.dump(data, open(os.path.join(OUT, 'train_walkable.json'), 'w'), indent=1)
     return root
