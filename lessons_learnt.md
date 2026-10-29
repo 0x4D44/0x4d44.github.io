@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-29 - Headless rAF ticks at 17.6 ms on an EMPTY page, so gate frames relative to it (la-ladera/tests/metrics.mjs)
+  The "median frame <= 16.7 ms" gate failed every view at 17.5-17.7 ms whatever the load (616-791 draw calls, 1.3 M triangles,
+  uncapped render 6-10 ms): a blank data: page in the same harness (below-normal priority, compositor-timed rAF) also reads 17.6.
+  metrics.mjs now measures that baseline first, allows baseline + 1 ms, and gates the real work separately (gl.finish cost <= 12 ms).
+  Both gates were tightened on purpose once (--cost-gate 1 --frame-slack -20) to prove they still fail.
+
 - 2026-10-29 - Headless Chrome still locks the real mouse and speaks aloud; shim both (la-ladera/tests/quiet-init.js)
   Reported by the box coordinator: headless=new honours requestPointerLock (a CDP click is a user gesture) and Windows then
   ClipCursor()s the person's REAL cursor into the invisible 1280x720 window. Speech goes to the OS voice, which --mute-audio is
