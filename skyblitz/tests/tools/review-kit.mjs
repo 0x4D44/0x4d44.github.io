@@ -35,6 +35,8 @@ try {
   await page.waitFor('window.__sky && window.__sky.ready', { timeout: 90000 });
   report.loadMs = Date.now() - t0;
   await page.eval('__sky.events(true)');
+  // hotspot recorder: where along the lap do tumbles, stalls, wrong-way flags, respawns, hits and wall/ground grazes happen?
+  await page.eval(`(()=>{window.__hot=[];const g=__sky.game,ev=g.events;for(const t of ['racer:tumble','racer:stall','race:wrongway','race:respawn','racer:hit','racer:graze']){ev.on(t,(d)=>{const r=d&&(d.racer||d.target||d.victim);if(r&&r.flight)__hot.push({t,s:Math.round(r.s||0),lap:r.lap,n:r.name,k:d.kind||d.surface||(d.on===false?'off':''),c:+(g.race?.clock||0).toFixed(1)});});}return 1})()`);
   const shot = async (name) => { await page.screenshot(jpg(name), { format: 'jpeg', quality: 88 }); report.shots.push(name); };
   const J = async (expr) => JSON.parse(await page.eval(`JSON.stringify(${expr})`));
 
@@ -63,6 +65,11 @@ try {
     report.raceEnded = done;
     report.result = await J(`(()=>{const r=__sky.game.race; if(!r) return null; return {clock:+r.clock.toFixed(2), state:r.state, racers:r.racers.map(x=>({name:x.name,player:!!x.isPlayer,place:x.place,lap:x.lap,finished:!!x.finished,finishTime:x.finishTime,bestLap:x.bestLap,lapTimes:x.lapTimes,stats:x.stats}))}})()`);
     report.events = await J('__sky.eventCounts()');
+    // hotspots: 100 m bins along the main path (s wraps per lap), top bins per event type + hit kinds
+    const hot = await J('window.__hot||[]'), L = await J('__sky.game.course.length');
+    const by = {};
+    for (const h of hot) { const key = h.t + (h.t === 'racer:hit' || h.t === 'racer:graze' ? ':' + h.k : ''); ((by[key] ||= {})[Math.floor((((h.s % L) + L) % L) / 100)] ||= 0); by[key][Math.floor((((h.s % L) + L) % L) / 100)]++; }
+    report.hotspots = Object.fromEntries(Object.entries(by).map(([k, bins]) => [k, { total: Object.values(bins).reduce((a, b) => a + b, 0), top: Object.entries(bins).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([b, n]) => `s=${b * 100}-${b * 100 + 99}: ${n}`) }]));
   }
 
   // ---- 2. fixed vantage cameras along the main path + whole-course overview -----------------------------------------------
@@ -96,5 +103,6 @@ const res = report.result;
 console.log(`review-kit ${o.course}: loaded in ${report.loadMs} ms, ${report.shots.length} shots, errors=${report.errors.length}`);
 if (res) console.log(`  race clock ${res.clock}s state=${res.state}; finished ${res.racers.filter((r) => r.finished).length}/${res.racers.length}; player place ${res.racers.find((r) => r.player)?.place}`);
 if (report.frameCost) console.log(`  frame ${report.frameCost.avgMs} ms avg / ${report.frameCost.p95} p95, ${report.frameCost.calls} calls, ${report.frameCost.triangles} tris @ ${report.frameCost.quality}`);
+if (report.hotspots) for (const [k, v] of Object.entries(report.hotspots)) console.log(`  hot ${k}: ${v.total}  (${v.top.slice(0, 3).join(' | ')})`);
 console.log(`  report: ${join(out, 'report.json')}`);
 process.exit(report.errors.length ? 1 : 0);

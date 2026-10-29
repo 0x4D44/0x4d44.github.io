@@ -1,0 +1,68 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>skyblitz lab: neon design</title>
+<!-- Neon Skyline design overview: top plan (building footprints shaded by height, path, marks, branch, river, highway) and a side profile
+     (path height + the tallest ground under the corridor, per metre of lap). window.__lab.ready / __lab.info -->
+<style>html,body{margin:0;background:#06060f;color:#ddd;font:12px system-ui}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../../vendor/three.module.min.js","three/addons/":"../../vendor/addons/"}}</script>
+<canvas id="c" width="2000" height="1100"></canvas>
+<script type="module">
+import { CourseLayout } from '../../src/world/layout.js';
+import { courseDef } from '../../src/world/courses/index.js';
+
+const def = courseDef('neon'), lay = new CourseLayout(def), city = lay.heightFn.city, L = lay.length;
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+g.fillStyle = '#06060f'; g.fillRect(0, 0, cv.width, cv.height);
+const mb = lay.minimap.bounds, pad = 260;
+const X0 = mb.minX - pad, X1 = mb.maxX + pad + 200, Z0 = mb.minZ - pad, Z1 = mb.maxZ + pad + 700;
+const W = 1160, sc = Math.min(W / (X1 - X0), 1060 / (Z1 - Z0)), ox = 20, oz = 20;
+const px = (x) => ox + (x - X0) * sc, pz = (z) => oz + (z - Z0) * sc;
+// river
+g.strokeStyle = '#0d3a55'; g.lineWidth = city.river.width * sc; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath();
+city.river.pts.forEach(([x, z], i) => (i ? g.lineTo(px(x), pz(z)) : g.moveTo(px(x), pz(z)))); g.stroke();
+// buildings
+for (const b of city.boxes) {
+  if (b.kind === 'antenna') continue;
+  const t = Math.min(1, b.y1 / 380); const r = Math.round(40 + 200 * t), gg = Math.round(40 + 90 * (1 - Math.abs(t - 0.5) * 2)), bb = Math.round(110 + 100 * (1 - t));
+  g.fillStyle = `rgb(${r},${gg},${bb})`; g.globalAlpha = 0.55;
+  if (b.yaw) { g.save(); g.translate(px(b.cx), pz(b.cz)); g.rotate(b.yaw); g.fillRect(-b.w / 2 * sc, -b.d / 2 * sc, b.w * sc, b.d * sc); g.restore(); } else g.fillRect(px(b.cx - b.w / 2), pz(b.cz - b.d / 2), b.w * sc, b.d * sc);
+}
+g.globalAlpha = 1;
+for (const r of city.rects) {
+  g.save(); g.translate(px(r.cx), pz(r.cz)); g.rotate(r.yaw);
+  g.strokeStyle = r.kind === 'atrium' ? '#ffb347' : r.kind === 'screen' ? '#ff4fd8' : r.kind === 'tower' ? '#7ff6ff' : '#fff'; g.lineWidth = 2;
+  g.strokeRect(-r.hl * sc, -r.hw * sc, r.hl * 2 * sc, r.hw * 2 * sc); g.restore();
+}
+// highway
+g.strokeStyle = '#ffd36a'; g.lineWidth = 3; g.beginPath(); city.highway.pts.forEach((p, i) => (i ? g.lineTo(px(p.x), pz(p.z)) : g.moveTo(px(p.x), pz(p.z)))); g.stroke();
+// path
+const f = {};
+const trace = (fr, a, b, col, w) => { g.strokeStyle = col; g.lineWidth = w; g.beginPath(); for (let s = a; s <= b; s += 6) { fr(s, f); (s === a ? g.moveTo : g.lineTo).call(g, px(f.pos.x), pz(f.pos.z)); } g.stroke(); };
+trace((s, o) => lay.frameAt(s, o), 0, L, '#7ff6ff', 3);
+for (const br of lay.branches) trace((u, o) => br.frameAt(u, o), 0, br.length, '#ff4fd8', 3);
+g.font = '14px system-ui'; g.fillStyle = '#fff';
+for (const [k, s] of Object.entries(lay.marks)) { lay.frameAt(s, f); g.fillStyle = '#fff'; g.beginPath(); g.arc(px(f.pos.x), pz(f.pos.z), 3, 0, 7); g.fill(); g.fillText(k + ' ' + Math.round(s), px(f.pos.x) + 6, pz(f.pos.z) - 5); }
+g.fillStyle = '#9ad'; g.font = '16px system-ui'; g.fillText(`NEON SKYLINE  length ${L.toFixed(0)} m   lots ${city.counts.lots}  boxes ${city.counts.boxes}  signs ${city.counts.signs}  beacons ${city.counts.beacons}`, 20, 1090);
+for (const gt of lay.gates) { g.fillStyle = gt.big ? '#ff8a2a' : '#8ff'; g.fillRect(px(gt.pos.x) - 2, pz(gt.pos.z) - 2, 4, 4); }
+
+// ---- side profile: s on x, y on y
+const PX0 = 1230, PW = 740, PY0 = 60, PH = 420, YMAX = 440;
+const ps = (s) => PX0 + (s / L) * PW, py = (y) => PY0 + PH - (y / YMAX) * PH;
+g.fillStyle = '#101024'; g.fillRect(PX0, PY0, PW, PH);
+g.strokeStyle = '#2a2a50'; g.lineWidth = 1; for (let y = 0; y <= YMAX; y += 100) { g.beginPath(); g.moveTo(PX0, py(y)); g.lineTo(PX0 + PW, py(y)); g.stroke(); g.fillStyle = '#778'; g.fillText(y + ' m', PX0 - 42, py(y) + 4); }
+g.strokeStyle = '#ff9a3a'; g.lineWidth = 1.2; g.beginPath();
+for (let s = 0; s <= L; s += 4) { lay.frameAt(s, f); let hmax = 0; for (const lat of [-1, -0.5, 0, 0.5, 1]) hmax = Math.max(hmax, lay.groundHeight(f.pos.x + f.right.x * lat * f.halfWidth, f.pos.z + f.right.z * lat * f.halfWidth)); (s ? g.lineTo : g.moveTo).call(g, ps(s), py(hmax)); }
+g.stroke();
+trace2();
+function trace2() { g.strokeStyle = '#7ff6ff'; g.lineWidth = 2; g.beginPath(); for (let s = 0; s <= L; s += 4) { lay.frameAt(s, f); (s ? g.lineTo : g.moveTo).call(g, ps(s), py(f.pos.y)); } g.stroke(); }
+for (const [k, s] of Object.entries(lay.marks)) { g.fillStyle = '#9ab'; g.save(); g.translate(ps(s), PY0 + PH + 8); g.rotate(Math.PI / 3); g.fillText(k, 0, 0); g.restore(); }
+g.fillStyle = '#9ad'; g.fillText('path height (cyan) and tallest ground within the corridor (orange) along the lap', PX0, PY0 - 18);
+// ---- side elevation: x on x, y on y (path projected), with building silhouettes
+const EY0 = 620, EH = 360; const ex = (x) => PX0 + ((x - X0) / (X1 - X0 - 200)) * PW, ey = (y) => EY0 + EH - (y / YMAX) * EH;
+g.fillStyle = '#101024'; g.fillRect(PX0, EY0, PW, EH);
+for (const b of city.boxes) { if (b.kind === 'antenna') continue; g.fillStyle = 'rgba(120,110,200,0.25)'; g.fillRect(ex(b.cx - b.w / 2), ey(b.y1), Math.max(1, (b.w / (X1 - X0 - 200)) * PW), ((b.y1 + 2) / YMAX) * EH); }
+g.strokeStyle = '#7ff6ff'; g.lineWidth = 2; g.beginPath(); for (let s = 0; s <= L; s += 4) { lay.frameAt(s, f); (s ? g.lineTo : g.moveTo).call(g, ex(f.pos.x), ey(f.pos.y)); } g.stroke();
+g.strokeStyle = '#ff4fd8'; for (const br of lay.branches) { g.beginPath(); for (let u = 0; u <= br.length; u += 4) { br.frameAt(u, f); (u ? g.lineTo : g.moveTo).call(g, ex(f.pos.x), ey(f.pos.y)); } g.stroke(); }
+g.fillStyle = '#9ad'; g.fillText('side elevation (looking north): path and building silhouettes', PX0, EY0 - 12);
+window.__lab = { ready: true, info: { length: L, counts: city.counts, marks: lay.marks } };
+</script>

@@ -1,0 +1,74 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SKYBLITZ audio offline render harness</title>
+<!-- No UI: tests/audio.test.mjs drives window.__off through headless Chrome (OfflineAudioContext renders + numeric analysis). -->
+<script type="module">
+import { SFX, SFX_NAMES } from '../../src/audio/sfx.js';
+import { getLib } from '../../src/audio/dsp.js';
+import { PlayerEngine, AIEngine, ENGINE_VOICES } from '../../src/audio/engines.js';
+import { AudioEngine } from '../../src/audio/audio.js';
+
+const SR = 44100;
+function analyse(buf) {
+  const ch = [];
+  for (let c = 0; c < buf.numberOfChannels; c++) ch.push(buf.getChannelData(c));
+  const n = buf.length; let peak = 0, sum = 0, nan = 0, clip = 0, dc = 0, pk = 0, pkAt = 0, last = 0;
+  for (let i = 0; i < n; i++) {
+    let m = 0;
+    for (const d of ch) { const v = d[i]; if (!Number.isFinite(v)) { nan++; continue; } const a = Math.abs(v); if (a > m) m = a; sum += v * v; dc += v; if (a >= 0.9999) clip++; }
+    if (m > peak) { peak = m; } if (m > pk) { pk = m; pkAt = i; } if (m > 1e-3) last = i;
+  }
+  const rms = Math.sqrt(sum / (n * ch.length));
+  const win = (a, b) => { let s = 0, k = 0; for (const d of ch) for (let i = Math.max(0, a); i < Math.min(n, b); i++) { s += d[i] * d[i]; k++; } return k ? Math.sqrt(s / k) : 0; };
+  const tailRms = win(n - Math.floor(0.03 * SR), n);
+  return { peak, peakDb: 20 * Math.log10(peak + 1e-12), rms, rmsDb: 20 * Math.log10(rms + 1e-12), nan, clip, dc: dc / (n * ch.length), peakAtSec: pkAt / SR, activeSec: last / SR,
+    headRms: win(0, Math.floor(0.05 * SR)), midRms: win(Math.floor(n * 0.3), Math.floor(n * 0.4)), tailRms };
+}
+
+async function renderSfx(name, opts = {}, len = 4) {
+  const c = new OfflineAudioContext(2, Math.floor(SR * len), SR);
+  const lib = getLib(c);
+  const conv = c.createConvolver(); conv.buffer = lib.ir; const rin = c.createGain(); rin.gain.value = 1; const rout = c.createGain(); rout.gain.value = 0.55;
+  rin.connect(conv); conv.connect(rout); rout.connect(c.destination); lib.reverbIn = rin;
+  const out = c.createGain(); out.connect(c.destination);
+  const r = SFX[name](c, out, 0.01, opts);
+  const buf = await c.startRendering();
+  return { name, dur: r.dur, nodes: r.nodes.length, ...analyse(buf) };
+}
+
+/** Same recipe through the real mix graph (sfx bus compressor + master limiter) to check the limiter holds. */
+async function renderMix(names, len = 3) {
+  const c = new OfflineAudioContext(2, Math.floor(SR * len), SR);
+  const eng = new AudioEngine({ params: new URLSearchParams('mute=0'), settings: {}, events: { on() {} } });
+  eng.buildGraph(c);
+  for (const n of names) SFX[n](c, eng.worldBus, 0.01, { size: 1, sev: 1, n: 5, perfect: true });
+  const buf = await c.startRendering();
+  return analyse(buf);
+}
+
+async function renderEngine(craft, st, len = 2.5) {
+  const c = new OfflineAudioContext(2, Math.floor(SR * len), SR);
+  const e = new PlayerEngine(c, c.destination, ENGINE_VOICES[craft]);
+  e.update({ on: true, speedN: 1, throttle: 0.7, boost: 0, g: 1, airbrake: 0, tumble: false, draft: 0, scrape: 0, ...st }, 0);
+  // jump the smoothed params to their targets by running a second update far in the future is not possible; render and ignore the first 1 s
+  const buf = await c.startRendering();
+  const a = analyse(buf);
+  // spectral centroid of the last 1 s (rough DFT on 4096 samples)
+  const d = buf.getChannelData(0), N = 4096, o = d.length - N; let num = 0, den = 0;
+  for (let k = 1; k < 400; k++) { let re = 0, im = 0; const f = k * 8; for (let i = 0; i < N; i += 2) { const ph = 2 * Math.PI * f * (o + i) / SR; re += d[o + i] * Math.cos(ph); im += d[o + i] * Math.sin(ph); } const m = Math.hypot(re, im); num += m * f; den += m; }
+  e.dispose();
+  return { craft, ...a, centroidHz: den ? num / den : 0 };
+}
+
+async function renderAIEngine(dist, doppler, len = 1.5) {
+  const c = new OfflineAudioContext(2, Math.floor(SR * len), SR);
+  const e = new AIEngine(c, c.destination, getLib(c));
+  e.assign({ spec: { id: 'falcon' } });
+  e.update({ x: dist, y: 0, z: -dist * 0.2 }, doppler, 1, 0.8, 0, 0);
+  const buf = await c.startRendering();
+  e.dispose();
+  return analyse(buf);
+}
+
+window.__off = { SFX_NAMES, ENGINE_VOICES: Object.keys(ENGINE_VOICES), renderSfx, renderMix, renderEngine, renderAIEngine, ready: true };
+</script>
