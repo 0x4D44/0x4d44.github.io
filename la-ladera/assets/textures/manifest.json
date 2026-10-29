@@ -1,0 +1,438 @@
+{
+ "textures": {
+  "brick_clay_hollow": {
+   "map": "brick_clay_hollow.jpg",
+   "normal": "brick_clay_hollow_n.jpg",
+   "avg": "#a76a4c",
+   "size": 1024
+  },
+  "brick_red_solid": {
+   "map": "brick_red_solid.jpg",
+   "normal": "brick_red_solid_n.jpg",
+   "avg": "#a1654a",
+   "size": 512
+  },
+  "asphalt": {
+   "map": "asphalt.jpg",
+   "normal": "asphalt_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#5a5755",
+   "size": 1024
+  },
+  "cement_screed": {
+   "map": "cement_screed.jpg",
+   "tileScale": 0.976,
+   "avg": "#969490",
+   "size": 512
+  },
+  "cobble_stone": {
+   "map": "cobble_stone.jpg",
+   "normal": "cobble_stone_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#73654f",
+   "size": 1024
+  },
+  "concrete_bare": {
+   "map": "concrete_bare.jpg",
+   "normal": "concrete_bare_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#93908b",
+   "size": 512
+  },
+  "concrete_formwork": {
+   "map": "concrete_formwork.jpg",
+   "normal": "concrete_formwork_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#87827b",
+   "size": 512
+  },
+  "corrugated_zinc": {
+   "map": "corrugated_zinc.jpg",
+   "normal": "corrugated_zinc_n.jpg",
+   "tint": true,
+   "tileScale": 0.983,
+   "avg": "#a1a1a1",
+   "size": 512
+  },
+  "fabric_woven": {
+   "map": "fabric_woven.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#bcbcbc",
+   "size": 512
+  },
+  "ground_dirt": {
+   "map": "ground_dirt.jpg",
+   "normal": "ground_dirt_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#8f6144",
+   "size": 512
+  },
+  "grass_patchy": {
+   "map": "grass_patchy.jpg",
+   "tileScale": 0.976,
+   "avg": "#716d39",
+   "size": 512
+  },
+  "dirt_path": {
+   "map": "dirt_path.jpg",
+   "normal": "dirt_path_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#a07b56",
+   "size": 512
+  },
+  "paint_peeling": {
+   "map": "paint_peeling.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dadada",
+   "size": 512
+  },
+  "plaster_a": {
+   "map": "plaster_a.jpg",
+   "normal": "plaster_a_n.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 1024
+  },
+  "roof_tile_clay": {
+   "map": "roof_tile_clay.jpg",
+   "normal": "roof_tile_clay_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#926545",
+   "size": 512
+  },
+  "rusty_iron": {
+   "map": "rusty_iron.jpg",
+   "normal": "rusty_iron_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#865a40",
+   "size": 512
+  },
+  "plaster_rough": {
+   "map": "plaster_rough.jpg",
+   "normal": "plaster_rough_n.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "stone_wall": {
+   "map": "stone_wall.jpg",
+   "normal": "stone_wall_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#7e705a",
+   "size": 512
+  },
+  "tile_ceramic_checker": {
+   "map": "tile_ceramic_checker.jpg",
+   "avg": "#7e7a72",
+   "size": 1024
+  },
+  "wood_dark_door": {
+   "map": "wood_dark_door.jpg",
+   "normal": "wood_dark_door_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#4c3324",
+   "size": 512
+  },
+  "tile_terracotta": {
+   "map": "tile_terracotta.jpg",
+   "normal": "tile_terracotta_n.jpg",
+   "tileScale": 0.988,
+   "avg": "#c36d46",
+   "size": 1024
+  },
+  "wood_pine": {
+   "map": "wood_pine.jpg",
+   "normal": "wood_pine_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#c9904f",
+   "size": 1024
+  },
+  "ceiling_white": {
+   "map": "ceiling_white.jpg",
+   "tileScale": 0.976,
+   "avg": "#d6d3ce",
+   "size": 512
+  },
+  "fabric_sofa": {
+   "map": "fabric_sofa.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#bbbbbb",
+   "size": 512
+  },
+  "fabric_bedding": {
+   "map": "fabric_bedding.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "floor_tile_ceramic": {
+   "map": "floor_tile_ceramic.jpg",
+   "normal": "floor_tile_ceramic_n.jpg",
+   "tint": true,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "floor_cement": {
+   "map": "floor_cement.jpg",
+   "tileScale": 0.976,
+   "avg": "#8e8983",
+   "size": 512
+  },
+  "floor_pine": {
+   "map": "floor_pine.jpg",
+   "tileScale": 0.976,
+   "avg": "#c58647",
+   "size": 512
+  },
+  "floor_tile_checker": {
+   "map": "floor_tile_checker.jpg",
+   "normal": "floor_tile_checker_n.jpg",
+   "avg": "#8c7c6a",
+   "size": 512
+  },
+  "formica": {
+   "map": "formica.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "floor_tile_terracotta": {
+   "map": "floor_tile_terracotta.jpg",
+   "normal": "floor_tile_terracotta_n.jpg",
+   "avg": "#aa653d",
+   "size": 512
+  },
+  "vinyl_sofa": {
+   "map": "vinyl_sofa.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#8d8d8d",
+   "size": 512
+  },
+  "wood_dark": {
+   "map": "wood_dark.jpg",
+   "tileScale": 0.976,
+   "avg": "#4b3121",
+   "size": 512
+  },
+  "wall_paint": {
+   "map": "wall_paint.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "wall_tile": {
+   "map": "wall_tile.jpg",
+   "normal": "wall_tile_n.jpg",
+   "tint": true,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "bedspread_floral": {
+   "map": "bedspread_floral.jpg",
+   "tileScale": 0.976,
+   "avg": "#c6a09b",
+   "size": 512
+  },
+  "blanket_andean": {
+   "map": "blanket_andean.jpg",
+   "tileScale": 0.976,
+   "avg": "#612e20",
+   "size": 512
+  },
+  "book_spines": {
+   "map": "book_spines.jpg",
+   "tileScale": 0.976,
+   "avg": "#6f5140",
+   "size": 512
+  },
+  "court_floor": {
+   "map": "court_floor.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "crochet_cover": {
+   "map": "crochet_cover.jpg",
+   "tileScale": 0.976,
+   "avg": "#d5ccbf",
+   "size": 512
+  },
+  "curtain_fabric": {
+   "map": "curtain_fabric.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "floor_cement_red": {
+   "map": "floor_cement_red.jpg",
+   "tileScale": 0.976,
+   "avg": "#8f3b2a",
+   "size": 512
+  },
+  "floor_concrete_raw": {
+   "map": "floor_concrete_raw.jpg",
+   "normal": "floor_concrete_raw_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#97948f",
+   "size": 512
+  },
+  "floor_laminate": {
+   "map": "floor_laminate.jpg",
+   "tileScale": 0.976,
+   "avg": "#88694e",
+   "size": 512
+  },
+  "melamine_wood": {
+   "map": "melamine_wood.jpg",
+   "tileScale": 0.976,
+   "avg": "#ccb9a3",
+   "size": 512
+  },
+  "metal_painted": {
+   "map": "metal_painted.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "metal_steel": {
+   "map": "metal_steel.jpg",
+   "tileScale": 0.976,
+   "avg": "#9a9999",
+   "size": 512
+  },
+  "oilcloth_floral": {
+   "map": "oilcloth_floral.jpg",
+   "tileScale": 0.976,
+   "avg": "#ad8767",
+   "size": 512
+  },
+  "paving_plaza": {
+   "map": "paving_plaza.jpg",
+   "tileScale": 0.976,
+   "avg": "#b4a187",
+   "size": 512
+  },
+  "rug_woven": {
+   "map": "rug_woven.jpg",
+   "tileScale": 0.976,
+   "avg": "#754a33",
+   "size": 512
+  },
+  "sidewalk_slab": {
+   "map": "sidewalk_slab.jpg",
+   "tileScale": 0.976,
+   "avg": "#a89f93",
+   "size": 512
+  },
+  "street_concrete": {
+   "map": "street_concrete.jpg",
+   "normal": "street_concrete_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#85807b",
+   "size": 512
+  },
+  "wall_cement_raw": {
+   "map": "wall_cement_raw.jpg",
+   "tileScale": 0.976,
+   "avg": "#908a81",
+   "size": 512
+  },
+  "wall_gloss": {
+   "map": "wall_gloss.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "wall_paint_worn": {
+   "map": "wall_paint_worn.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "wood_old": {
+   "map": "wood_old.jpg",
+   "tileScale": 0.976,
+   "avg": "#6c6057",
+   "size": 512
+  },
+  "wood_painted": {
+   "map": "wood_painted.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dbdbdb",
+   "size": 512
+  },
+  "cardboard": {
+   "map": "cardboard.jpg",
+   "tileScale": 0.976,
+   "avg": "#a98561",
+   "size": 512
+  },
+  "ceiling_concrete": {
+   "map": "ceiling_concrete.jpg",
+   "normal": "ceiling_concrete_n.jpg",
+   "tileScale": 0.976,
+   "avg": "#99958e",
+   "size": 512
+  },
+  "ceiling_pine": {
+   "map": "ceiling_pine.jpg",
+   "tileScale": 0.976,
+   "avg": "#dfa86c",
+   "size": 512
+  },
+  "floor_vinyl": {
+   "map": "floor_vinyl.jpg",
+   "tileScale": 0.976,
+   "avg": "#828276",
+   "size": 512
+  },
+  "mattress_ticking": {
+   "map": "mattress_ticking.jpg",
+   "tileScale": 0.976,
+   "avg": "#c6c3b6",
+   "size": 512
+  },
+  "oilcloth_check": {
+   "map": "oilcloth_check.jpg",
+   "tileScale": 0.976,
+   "avg": "#da7375",
+   "size": 512
+  },
+  "plywood": {
+   "map": "plywood.jpg",
+   "tileScale": 0.976,
+   "avg": "#dec3a3",
+   "size": 512
+  },
+  "stair_tread": {
+   "map": "stair_tread.jpg",
+   "tileScale": 0.976,
+   "avg": "#8e8980",
+   "size": 512
+  },
+  "paint_peeling_soft": {
+   "map": "paint_peeling_soft.jpg",
+   "tint": true,
+   "tileScale": 0.976,
+   "avg": "#dadada",
+   "size": 512
+  }
+ },
+ "version": 2,
+ "generated": "2026-10-29T15:04:35.673Z"
+}
