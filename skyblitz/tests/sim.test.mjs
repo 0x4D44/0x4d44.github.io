@@ -91,3 +91,17 @@ test('sim: points follow the GP table down the finishing order', () => {
   assert.equal(st.length, 8);
   st.forEach((x, i) => assert.equal(x.points, GP_POINTS[i], 'place ' + (i + 1)));
 });
+
+test('sim: AI contact time stays low on every course (share of racer-seconds in wall / ground / water contact) and no 100 m bin is a hotspot', () => {
+  for (const id of COURSES) {
+    let ct = 0, rt = 0, laps = 0; const binRL = {};
+    for (const seed of [1, 2, 7]) {
+      const out = run(id, { seed, laps: 3 });
+      const st = out.race.stats; ct += st.contactT; rt += st.racerT; laps += 3;
+      for (const [b, set] of st.contactBins) binRL[b] = (binRL[b] || 0) + set.size;
+    }
+    const pct = 100 * ct / rt, worst = Math.max(...Object.values(binRL)) / laps;
+    assert.ok(pct <= 1.2, `${id}: contact ${pct.toFixed(2)}% of racer-time (limit 1.2)`);
+    assert.ok(worst <= 2.6, `${id}: worst 100 m bin has ${worst.toFixed(2)} scraping racers per lap (limit 2.6)`);
+  }
+});

@@ -7,6 +7,7 @@
 //   * going backwards lowers `dist` but never un-passes a sector/gate (pointers only advance), so there is nothing to farm.
 
 const _wf = {};
+const ENTRY_CAP = 40;     // metres of credit per step at a shortcut entry (remainder repaid smoothly, see stepProgress)
 const MAX_STEP = 150;     // metres of arc length accepted per fixed step: the nearest-point projection is ill-conditioned inside tight turns (an aircraft 90 m inside a 100 m radius corner legitimately jumps 80 m of s in one step); real teleports are 100s of metres
 
 function wrapDelta(d, L) {
@@ -25,7 +26,7 @@ export function syncProgress(race, r) {
   const gates = race.gates, rings = race.rings;
   while (r.gateIdx < gates.length && gates[r.gateIdx].s <= s) r.gateIdx++;
   while (r.ringIdx < rings.length && rings[r.ringIdx].s <= s) r.ringIdx++;
-  r.lastGoodS = p.s; r.glitchT = 0; r.shortcut = -1; r.lastU = 0;
+  r.lastGoodS = p.s; r.glitchT = 0; r.shortcut = -1; r.lastU = 0; r.debt = 0;
 }
 
 /** Re-anchor after a teleport / respawn WITHOUT changing dist, sectors or laps (so teleporting grants nothing). */
@@ -34,7 +35,7 @@ export function reanchor(race, r) {
   if (r.shortcut >= 0) race.shortcutExit(r, r.shortcut, false);
   race.course.project(r.flight.pos, null, p);
   r.lastS = p.s; r.s = p.s; r.lateral = p.lateral; r.vertical = p.vertical; r.onBranch = p.branch ?? -1; r.lastBranch = r.onBranch;
-  r.glitchT = 0;
+  r.glitchT = 0; r.debt = 0;
 }
 
 /**
@@ -54,6 +55,12 @@ export function stepProgress(race, r, dt) {
     if (r.glitchT > 0.5) { r.lastS = p.s; r.glitchT = 0; race.stats.relocks++; }
     d = 0;
   } else { r.glitchT = 0; r.lastS = p.s; }
+  // A shortcut entry can map the racer many metres down the main line in a single step (the branch is projected as its main-line equivalent).
+  // Credit at most ENTRY_CAP per step while it is on / joining a branch, bank the remainder as `debt` and repay it smoothly (50% extra on
+  // forward steps), in full at the exit. Ranks therefore never jump, and dist stays consistent with the mapped s.
+  if (d > ENTRY_CAP && (branch >= 0 || r.lastBranch >= 0)) { r.debt = (r.debt || 0) + (d - ENTRY_CAP); d = ENTRY_CAP; }
+  else if (r.debt > 0 && d > 0) { const pay = Math.min(r.debt, d * 0.5); d += pay; r.debt -= pay; }
+  if (r.debt > 0 && branch < 0 && r.lastBranch >= 0) { d += r.debt; r.debt = 0; }
   if (branchChange) r.lastBranch = branch;
   r.onBranch = branch;
   // shortcut bookkeeping: only counted once past the junction blend (u > 80 m), so skimming the mouth fires nothing
@@ -85,9 +92,9 @@ export function stepProgress(race, r, dt) {
 /** Wrong-way detection from the smoothed progress speed; emits race:wrongway {racer,on} on change. */
 export function updateWrongWay(race, r, dt) {
   let bad = r.progSpeed < -10 && r.flight.speed > 20 && !(r.tumble > 0) && r.sinceTumble > 1.2;
-  if (bad) { race.course.frameAt(r.s, _wf); bad = r.flight.forward.dot(_wf.tangent) < 0.2; }       // really pointing the wrong way
+  if (bad) { race.course.frameAt(r.s, _wf); bad = r.flight.forward.dot(_wf.tangent) < -0.1 && r.flight.vel.dot(_wf.tangent) < -0.1 * r.flight.speed; }       // nose AND velocity against the course (a banked S-bend or a hard switchback is not 'wrong way')
   if (bad) { r.wrongT += dt; r.rightT = 0; } else { r.rightT += dt; if (r.progSpeed > 3) r.wrongT = 0; }
-  if (!r.wrongWay && r.wrongT > 1.2) { r.wrongWay = true; race.game.events.emit('race:wrongway', { racer: r, on: true }); }
+  if (!r.wrongWay && r.wrongT > 1.6) { r.wrongWay = true; race.game.events.emit('race:wrongway', { racer: r, on: true }); }
   else if (r.wrongWay && r.rightT > 0.6 && r.progSpeed > 3) { r.wrongWay = false; r.wrongT = 0; race.game.events.emit('race:wrongway', { racer: r, on: false }); }
 }
 

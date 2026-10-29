@@ -51,21 +51,21 @@ export function rollItem(rng, place, n) {
 // aggro      scale on item/cannon aggression
 // playerHelp small hidden speed help for a human who is last (fraction)
 export const DIFFICULTY = {
-  easy:   { id: 'easy',   aiSpeed: 0.90, aiSkill: 0.55, rubber: 0.10, rubberRange: 500, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.05 },
-  normal: { id: 'normal', aiSpeed: 0.96, aiSkill: 0.75, rubber: 0.08, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
-  hard:   { id: 'hard',   aiSpeed: 1.00, aiSkill: 0.90, rubber: 0.06, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
-  expert: { id: 'expert', aiSpeed: 1.04, aiSkill: 1.00, rubber: 0.05, rubberRange: 350, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
+  easy:   { id: 'easy',   aiSpeed: 0.88, aiSkill: 0.55, rubber: 0.06, rubberRange: 500, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.05 },
+  normal: { id: 'normal', aiSpeed: 0.95, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
+  hard:   { id: 'hard',   aiSpeed: 1.00, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
+  expert: { id: 'expert', aiSpeed: 1.05, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
 };
 
 export const RACE = {
   countdown: 3,            // seconds of 3-2-1 before GO
   rocketWindow: 0.4,       // boost pressed in the last 0.4 s before GO = rocket start
   perfectWindow: 0.18,
-  finishTimeout: 14,       // seconds the race stays open after the human finishes
+  finishTimeout: 20,       // seconds the race stays open after the human finishes
   maxClock: 900,           // hard stop (s) if the human never finishes
   overtakeHyst: 5,         // metres a rival must be ahead before places swap
   launchSpeedFrac: 0.72,   // GO launch speed as a fraction of cruise
-  respawnStuckT: 3, respawnLostT: 2.5,
+  respawnScrapeT: 3.5, respawnStuckT: 3, respawnLostT: 2.5,
   draftRange: 85, draftCone: 0.14, draftTime: 1.6, // slipstream: metres behind, wake half-width grows 0.14 m per m behind, seconds to charge a slingshot
   cruiseRef: 100,          // fallback reference cruise (m/s)
   cruiseNorm: 0.4,         // how far AI cruise is pulled toward the human's craft (0 = raw stats, 1 = identical)

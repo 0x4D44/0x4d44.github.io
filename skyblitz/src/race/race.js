@@ -37,8 +37,8 @@ export function makeRacer(game, id, spec, livery, isPlayer, pilot, slot) {
     item: null, shield: 0, invuln: 0, tumble: 0, heat: 0, stats: { hitsTaken: 0, hitsDealt: 0, stunts: 0, perfectGates: 0, shortcuts: 0, nearMisses: 0, overtakes: 0, rings: 0 },
     ai: null, proj: { s: 0, lateral: 0, vertical: 0, dist: 0, branch: -1 },
     // race-agent state
-    lastS: 0, lastBranch: -1, lastGoodS: 0, glitchT: 0, progSpeed: 0, gateIdx: 0, ringIdx: 0, wrongT: 0, rightT: 0, wrongWay: false, branchT: 0, shortcut: -1, lastU: 0, sinceTumble: 9,
-    lock: { target: null, progress: 0, emitT: 0 }, empT: 0, blind: 0, overheated: false, fireT: 0, gun: 1, cannonCombo: { n: 0, t: 0 }, grazeT: 0, groundT: 0, wallT: 0, nearMissT: 0,
+    lastS: 0, lastBranch: -1, lastGoodS: 0, glitchT: 0, progSpeed: 0, gateIdx: 0, ringIdx: 0, wrongT: 0, rightT: 0, wrongWay: false, branchT: 0, shortcut: -1, lastU: 0, debt: 0, sinceTumble: 9,
+    lock: { target: null, progress: 0, emitT: 0 }, empT: 0, blind: 0, overheated: false, fireT: 0, gun: 1, cannonCombo: { n: 0, t: 0 }, grazeT: 0, groundT: 0, wallT: 0, contactRun: 0, nearMissT: 0,
     draft: { on: false, target: null, t: 0 }, draftBonus: 0, rb: 1, launchLock: 0, stuckT: 0, lostT: 0, startPlan: 'none', boostHeld: false, early: false, rocket: null, finishIndex: -1,
   };
 }
@@ -51,7 +51,7 @@ export class Race {
     this.rng = game.rng.fork(0x5ace);
     this.state = 'grid'; this.clock = 0; this.cd = RACE.countdown + 1.2; this.lastCount = 4; this.autopilot = false; this.endTimer = null;
     this.frame = 0; this.finishedCount = 0; this.bumpAt = new Map();
-    this.stats = { glitches: 0, relocks: 0, overtakes: 0, respawns: 0 };
+    this.stats = { glitches: 0, relocks: 0, overtakes: 0, respawns: 0, contactT: 0, racerT: 0, contactBins: new Map(), contactBinT: {}, contactKinds: {} };
     this.ctx = { speedMul: 1, assist: 'standard', gravityScale: 1 };
     this.gates = (this.course.gates || []).slice().sort((x, y) => x.s - y.s);
     this.rings = (this.course.boostRings || []).slice().sort((x, y) => x.s - y.s);
@@ -180,6 +180,7 @@ export class Race {
     if (this.state === 'grid') return;
     if (this.state === 'countdown') { this.tickCountdown(dt, playerControls); return; }
     this.clock += dt; this.frame++;
+    if (this.state !== 'done') { let flying = 0; for (const x of this.racers) if (!x.finished) flying++; this.stats.racerT += dt * flying; }
     const racing = this.state !== 'done';
     for (const r of this.racers) this.stepRacer(r, dt, playerControls);
     if (racing) for (const r of this.racers) { stepProgress(this, r, dt); updateWrongWay(this, r, dt); }
@@ -363,6 +364,7 @@ export class Race {
       const fs = r.flight;
       r.stuckT = fs.speed < 12 && this.clock > 2 && r.tumble <= 0 ? r.stuckT + dt : 0;
       if (r.stuckT > RACE.respawnStuckT) { this.respawn(r, 'stuck'); continue; }
+      if (r.contactRun > RACE.respawnScrapeT) { this.respawn(r, 'scrape'); continue; }                    // riding a wall / rooftop for seconds: put it back on the line
       if ((this.frame + r.id) % 6 === 0 && r.onBranch < 0) {
         course.frameAt(r.s, _f);
         const e = Math.hypot(r.lateral / (_f.halfWidth || 90), r.vertical / (_f.halfHeight || 70));
