@@ -20,14 +20,9 @@ export const BONES = ['hips', 'spine', 'chest', 'neck', 'head', 'clavicle_l', 'c
 
 async function fetchJson(url) { const r = await fetch(url, { cache: 'no-cache' }); if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.json(); }
 
-// ---- colour maths (mirrors hex_tint in people_build.py: linear * gain, clamped to 1) -----------------------------------------------------------
-const lin = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-export function hexLinear(hex) {
-  let h = hex.toLowerCase(); if (h.length === 4) h = '#' + [...h.slice(1)].map((c) => c + c).join('');
-  return [1, 3, 5].map((i) => lin(parseInt(h.slice(i, i + 2), 16) / 255));
-}
-export const tintOf = (hex, gain = 1.25) => hexLinear(hex).map((c) => Math.min(1, c * gain));
-const RATIO_MAX = 6;
+// ---- colour maths lives in look.js (pure, so Node tests can import it); re-exported for the labs ---------------------------------------------
+import { hexLinear, tintOf, RATIO_MAX, variantKey } from './look.js';
+export { hexLinear, tintOf, variantKey };
 
 /** Copy of a colour attribute with the slots of `spec` ({ slotName: '#hex' }) re-tinted. `slots` = meta.slots of the character. */
 export function recolourAttribute(src, slots, spec) {
@@ -47,9 +42,6 @@ export function recolourAttribute(src, slots, spec) {
   }
   return new THREE.BufferAttribute(out, 4, true);
 }
-
-/** Stable text key of a variant (also the cache key and the `appearance` string published by ctx.people). */
-export const variantKey = (spec) => Object.keys(spec ?? {}).sort().map((k) => `${k}:${spec[k]}`).join(',');
 
 export class CharacterLibrary {
   /** root = the models folder (holds manifest.people.json, whose `people` block names the files; a missing LOD file is never requested). */

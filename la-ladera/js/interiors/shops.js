@@ -2,7 +2,7 @@
 // 0.9 m of keeper space behind, a customer floor in front, and type-specific fixtures, goods and hand-lettered signs.
 import { CATALOG } from './catalog.js';
 import { wallInfo, wallPoint } from './layout.js';
-import { D, chairsAround, fillMin } from './rooms.js';
+import { D, chairsAround, fillMin, moreLights } from './rooms.js';
 
 const PI = Math.PI;
 const any = (...fns) => { for (const f of fns) { const r = f(); if (r) return r; } return null; };
@@ -232,10 +232,16 @@ export function shopRoom(L, E, hh) {
   const rng = L.rng;
   FIT[type](L, E, hh, sw);
   E.shopType = type;
-  // ceiling fixture: tube light (shops are brightly lit)
-  const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
-  if (L.W * L.D >= 12 && rng.chance(0.5)) { L.ceil('fan_ceiling', cx, cz, { ry: rng.range(0, PI) }); L.fixture = { x: cx, z: cz, kind: 'fan', color: 0xffe2b0, i: 7, d: 7.5 }; }
-  else { L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 }); L.fixture = { x: cx, z: cz, kind: 'tube', color: 0xeaf2ff, i: 10, d: 8 }; }
+  // ceiling fixture: ALWAYS a cool fluorescent tube (shops are brightly lit, homes are warm); a fan, when the room is long enough, hangs beside it
+  const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2, longW = L.W >= L.D, span = longW ? L.W : L.D, off = Math.min(span / 4, 1.5);
+  let tx = cx, tz = cz;
+  if (span >= 4.2 && L.W * L.D >= 12 && rng.chance(0.5)) {
+    L.ceil('fan_ceiling', longW ? cx + off : cx, longW ? cz : cz + off, { ry: rng.range(0, PI) });
+    tx = longW ? cx - off : cx; tz = longW ? cz : cz - off;
+  }
+  L.ceil('light_tube', tx, tz, { ry: longW ? 0 : PI / 2 });
+  L.fixture = { x: tx, z: tz, kind: 'tube', color: 0xeaf2ff, i: 10, d: 8 };
+  moreLights(L, 'tube');
   fillMin(L, E, hh, 8);
 }
 export const SHOP_FITOUTS = Object.keys(FIT);

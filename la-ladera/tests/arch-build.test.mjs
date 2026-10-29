@@ -145,7 +145,7 @@ test('door leaves swing in 0.35 s, follow door:request from NPCs, and report whe
   for (let i = 0; i < 40; i++) sys.fn(dt);
 });
 
-test('walking into a closed swing door opens it after 0.25 s; sliding along it, standing, or a shutter does not', () => {
+test('walking into a closed door or shutter opens it after 0.25 s; sliding along it, standing, or being beside it does not', () => {
   const sys = ctx.systems.find((s) => s.name === 'arch-doors');
   const bp = bps.find((b) => b.doors.some((q) => q.kind === 'exterior' && q.floor === 0));
   const d = bp.doors.find((q) => q.kind === 'exterior' && q.floor === 0), st = ctx.archDoors.get(d.id), g = st.geo;
@@ -174,8 +174,17 @@ test('walking into a closed swing door opens it after 0.25 s; sliding along it, 
   for (let i = 0; i < 40; i++) sys.fn(dt);
   const sbp = bps.find((b) => b.doors.some((q) => q.kind === 'shutter')), sh = sbp.doors.find((q) => q.kind === 'shutter'), sg = ctx.archDoors.get(sh.id).geo;
   const sow = sbp.frame.dir(-sh.nx, -sh.nz);
+  // the shop shutter gives way too: it is the shop's only way in, and a shopkeeper on the doorstep takes the aim from it
   const sp = { s: { x: sg.cx + sow[0] * 0.35, y: sg.y, z: sg.cz + sow[1] * 0.35, vy: 0, onGround: true }, vx: -sow[0] * 2.3, vz: -sow[1] * 2.3, speed: 0, locked: false, yaw: 0 };
-  run(sp, 1);
-  assert.equal(ctx.physics.doorOpen(sh.id), false, 'a shop shutter does not give way to a shove');
+  ctx.physics.setDoor(sh.id, false);
+  run(sp, 0.2);
+  assert.equal(ctx.physics.doorOpen(sh.id), false, 'a shutter does not give way before 0.25 s either');
+  run(sp, 0.5);
+  assert.equal(ctx.physics.doorOpen(sh.id), true, 'a shop shutter gives way to a held shove');
+  const beside = { ...sp, s: { ...sp.s, x: sp.s.x + sg.tx * (sh.w / 2 + 0.4), z: sp.s.z + sg.tz * (sh.w / 2 + 0.4) } };
+  ctx.player = null; ctx.physics.setDoor(sh.id, false);
+  for (let i = 0; i < 40; i++) sys.fn(dt);
+  run(beside, 0.6);
+  assert.equal(ctx.physics.doorOpen(sh.id), false, 'a shove beside the shutter opening does nothing');
   ctx.player = null;
 });

@@ -21,7 +21,7 @@ function canopy(K, b, tile, c0, rx, ry, rz, n, size, r, base, o = {}) {
     const w = size * r.range(0.85, 1.25), h = (o.tall ? o.tall : 1) * w, p = [c0[0] + dx * rx, c0[1] + dy * ry, c0[2] + dz * rz];
     const bottom = o.hang ? V.sub(p, V.mul(up, h * 0.15)) : V.sub(p, V.mul(up, h / 2));
     const shade = 0.66 + 0.34 * (dy * 0.5 + 0.5) + r.range(-0.06, 0.06);
-    card(b, 'foliage', bottom, right, up, w, h, uv, scale(lerpc(base, o.alt ?? base, r.next()), shade), V.nrm([dx, dy * 0.8 + 0.45, dz]));
+    card(b, o.mat ?? 'foliage', bottom, right, up, w, h, uv, scale(lerpc(base, o.alt ?? base, r.next()), shade), V.nrm([dx, dy * 0.8 + 0.45, dz]));
   }
 }
 
@@ -85,7 +85,7 @@ export function cypress(K, x, z, o = {}) {
   const n = 3, rot = r.range(0, 3);
   for (let i = 0; i < n; i++) {
     const yaw = rot + (i * Math.PI) / n, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage', [x, gy - 0.1, z], right, [0, 1, 0], w * 1.25, h, uv, scale(rgb(0xc4dcc0), r.range(0.85, 1.08)), V.nrm([Math.sin(yaw), 0.55, Math.cos(yaw)]));
+    card(b, 'foliage_low', [x, gy - 0.1, z], right, [0, 1, 0], w * 1.25, h, uv, scale(rgb(0xc4dcc0), r.range(0.85, 1.08)), V.nrm([Math.sin(yaw), 0.55, Math.cos(yaw)]));
   }
   tube(b, 'bark_trunk', [x, gy - 0.2, z], [x, gy + 0.7, z], 0.14, 0.1, 5, { col: scale(BARK.broad, 0.6) });
   K.post(x, z, 0.28, 4); K.occ.take(x, z, 0.8);
@@ -98,22 +98,22 @@ export function banana(K, x, z, o = {}) {
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + r.range(-0.3, 0.3), tau = r.range(0.7, 1.25), len = r.range(2.0, 2.9);
     const d = V.nrm([Math.cos(a) * Math.sin(tau), Math.cos(tau) * 0.9, Math.sin(a) * Math.sin(tau)]), right = V.nrm(V.cross(d, [0, 1, 0]));
-    card(b, 'foliage', [x, gy + h - 0.1, z], right, d, len * 0.5, len, uv, scale(rgb(0x7fb04a), r.range(0.8, 1.1)), V.nrm([Math.cos(a), 0.8, Math.sin(a)]));
+    card(b, 'foliage_low', [x, gy + h - 0.1, z], right, d, len * 0.5, len, uv, scale(rgb(0x7fb04a), r.range(0.8, 1.1)), V.nrm([Math.cos(a), 0.8, Math.sin(a)]));
   }
 }
 
 // ---------------------------------------------------------------------------------------------------- low plants
 export function shrub(K, x, z, o = {}) {
   const r = o.rng, b = K.b(o.kind ?? 'floralow', x, z, { cast: false }), gy = K.H(x, z) + (o.dy ?? 0), s = o.size ?? r.range(0.7, 1.2), tile = o.tile ?? TILE.SHRUB;
-  canopy(K, b, tile, [x, gy + s * 0.45, z], s * 0.7, s * 0.45, s * 0.7, o.cards ?? 6, s * 0.95, r, o.leaf ?? rgb(0x7ca24d), { inner: 0.4, alt: o.alt });
-  if (o.flowers) canopy(K, b, TILE.FLOWERS, [x, gy + s * 0.8, z], s * 0.5, s * 0.2, s * 0.5, 3, s * 0.8, r, rgb(0xffffff), { inner: 0.5 });
+  canopy(K, b, tile, [x, gy + s * 0.45, z], s * 0.7, s * 0.45, s * 0.7, o.cards ?? 6, s * 0.95, r, o.leaf ?? rgb(0x7ca24d), { inner: 0.4, alt: o.alt, mat: 'foliage_low' });
+  if (o.flowers) canopy(K, b, TILE.FLOWERS, [x, gy + s * 0.8, z], s * 0.5, s * 0.2, s * 0.5, 3, s * 0.8, r, rgb(0xffffff), { inner: 0.5, mat: 'foliage_low' });
 }
 
 export function agave(K, x, z, o = {}) {
   const r = o.rng, b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), uv = K.atlas ? K.atlas.uv(TILE.AGAVE) : [0, 0, 1, 1], rot = r.range(0, 3);
   for (let i = 0; i < 3; i++) {
     const yaw = rot + (i * Math.PI) / 3, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage', [x, gy - 0.05, z], right, [0, 1, 0], s * 1.3, s, uv, scale(rgb(0xc9e0d3), r.range(0.85, 1.05)), V.nrm([Math.sin(yaw), 0.8, Math.cos(yaw)]));
+    card(b, 'foliage_low', [x, gy - 0.05, z], right, [0, 1, 0], s * 1.3, s, uv, scale(rgb(0xc9e0d3), r.range(0.85, 1.05)), V.nrm([Math.sin(yaw), 0.8, Math.cos(yaw)]));
   }
 }
 
@@ -122,14 +122,14 @@ export function tuft(K, x, z, rng, big = 1) {
   const s = rng.range(0.7, 1.25) * big, rot = rng.range(0, 3), col = scale(rgb(0xdce8b0), rng.range(0.8, 1.1));
   for (let i = 0; i < 2; i++) {
     const yaw = rot + (i * Math.PI) / 2, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage', [x, gy - 0.04, z], right, [0, 1, 0], s * 1.3, s * 0.8, uv, col, [0, 1, 0]);
+    card(b, 'foliage_low', [x, gy - 0.04, z], right, [0, 1, 0], s * 1.3, s * 0.8, uv, col, [0, 1, 0]);
   }
 }
 
 export function pottedPlant(K, x, z, rng, solid = true) {
   const b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = rng.range(0.5, 0.8);
   tube(b, 'pot_clay', [x, gy, z], [x, gy + 0.34, z], 0.17, 0.23, 8, { col: scale(rgb(0xc8683c), rng.range(0.85, 1.1)), caps: true });
-  canopy(K, b, rng.chance(0.5) ? TILE.FLOWERS : TILE.SHRUB, [x, gy + 0.34 + s * 0.4, z], s * 0.5, s * 0.4, s * 0.5, 4, s * 0.9, rng, rgb(0xd8e8c8), { inner: 0.3 });
+  canopy(K, b, rng.chance(0.5) ? TILE.FLOWERS : TILE.SHRUB, [x, gy + 0.34 + s * 0.4, z], s * 0.5, s * 0.4, s * 0.5, 4, s * 0.9, rng, rgb(0xd8e8c8), { inner: 0.3, mat: 'foliage_low' });
   if (solid) K.post(x, z, 0.24, 0.9);
 }
 
@@ -145,7 +145,7 @@ export function drape(K, pts, rng, o = {}) {
     if (rng.chance(0.3)) continue;
     const b = K.b('floralow', p.x, p.z, { cast: false }), hang = Math.max(0.6, rng.range(0.7, 1.5) * (o.hang ?? 1.4)), w = rng.range(1.2, 2.8);
     const right = V.nrm([q.x - p.x, 0, q.z - p.z]), col = scale(rgb(o.hex ?? 0xffffff), rng.range(0.85, 1.1));
-    card(b, 'foliage', [p.x + p.nx * 0.14, p.y - hang + 0.12, p.z + p.nz * 0.14], right, [0, 1, 0], w, hang, uv, col, V.nrm([p.nx, 0.35, p.nz]));
+    card(b, 'foliage_low', [p.x + p.nx * 0.14, p.y - hang + 0.12, p.z + p.nz * 0.14], right, [0, 1, 0], w, hang, uv, col, V.nrm([p.nx, 0.35, p.nz]));
   }
 }
 
@@ -244,7 +244,7 @@ export function buildFlora(K) {
   // ---- bougainvillea / vine over the tall retaining walls
   const runs = K.ctx.world?.wallRuns ?? [], dr = R.fork('drape');
   for (const run of runs) {
-    if (run.tall < 0.9 || !dr.chance(0.5)) continue;
+    if (run.tall < 0.9 || !dr.chance(0.5) || K.ctx.world?.muralRuns?.has(run)) continue;       // (a painted wall is left uncovered)
     // cut wall (sign > 0): face on the edge looking at the structure, crest = upper ground; fill wall: face on the outer line, crest = structure level
     const pts = run.S.map((s) => (run.sign > 0
       ? { x: s.x, z: s.z, nx: -s.nx, nz: -s.nz, y: s.outer + 0.02 }

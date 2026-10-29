@@ -28,7 +28,7 @@ export class Talk {
     npc.beginTalk(w.svc, w.player);
     this.dlg = new Dialogue({
       npc: { id: npc.id, persona: npc.bank, name: npc.display, mem: npc.mem, x: npc.x, z: npc.z, shopName: npc.shopName, gender: npc.gender, act: npc.act },
-      bank: BANK, rng: npc.rng, hour: ctx.hour,
+      bank: BANK, rng: npc.rng, hour: ctx.hour, address: ctx.settings?.v?.address === 'f' ? 'f' : 'm',      // how the player is addressed (settings; default masculine)
       world: { landmarks: w.landmarks, discoveries: this._discoveries(), player: { x: pl.s.x, y: pl.s.y, z: pl.s.z, yaw: pl.yaw } },
     });
     this.ui.show({ name: npc.display, role: npc.roleLabel }, { onPick: (id) => this.pick(id), onSkip: () => this.skip(), onLeave: () => this.leave() });

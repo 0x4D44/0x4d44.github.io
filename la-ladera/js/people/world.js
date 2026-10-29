@@ -2,21 +2,20 @@
 // interaction and publishes ctx.people. Logic lives in npc.js / brain.js / talk.js; this file is the glue and the only place THREE is touched.
 import { Npc } from './npc.js';
 import { NavGraph } from './nav.js';
-import { PERSONAS, ageOf, genderOf, makeName, voiceFor, charMatches } from './personas.js';
+import { PERSONAS, voiceFor } from './personas.js';
+import { planCast } from './cast.js';
 import { Brain } from './brain.js';
 import { Talk } from './talk.js';
 import { DialogueUI } from './ui.js';
 import { CharacterLibrary } from './rig.js';
 import { Speech } from './speech.js';
+import { countLines } from './lines/index.js';
 import { makeRng } from '../core/rng.js';
 
 const VIEW_MAX = 95;          // beyond this nobody is drawn
 const SHADOW_MAX = 42;        // beyond this nobody casts a shadow
+const LOD_NEAR = 32, LOD_FAR = 38;   // full-detail mesh inside 32 m, the 1.6k-triangle one beyond 38 m (hysteresis)
 const TIER0 = 28, TIER1 = 70; // full-rate simulation / 20 Hz / 5 Hz
-const DEFAULT_COUNT = 30;
-
-const FEM = { Tendero: 'Tendera', Niño: 'Niña', Vecino: 'Vecina', Abuelo: 'Abuela', Obrero: 'Obrera', Panadero: 'Panadera', Carnicero: 'Carnicera', Vendedor: 'Vendedora' };
-const roleFor = (role, gender) => (gender === 'f' ? FEM[role] ?? role : role);
 
 /** Places people can be asked about. plan.landmarks when A5 supplies enough of them, else derived from plazas / civic lots / shops. */
 export function collectLandmarks(plan) {
@@ -69,7 +68,7 @@ export class PeopleWorld {
     this.group = new THREE.Group(); this.group.name = 'people'; ctx.scene.add(this.group);
     this._frustum = new THREE.Frustum(); this._pv = new THREE.Matrix4(); this._sph = new THREE.Sphere();
     const q = typeof location !== 'undefined' ? new URLSearchParams(location.search) : null;
-    const n = count ?? (q?.has('npcs') ? Math.max(0, +q.get('npcs') | 0) : DEFAULT_COUNT);
+    const n = count ?? (q?.has('npcs') ? Math.max(0, +q.get('npcs') | 0) : null);      // null = the whole barrio (every shop + the community quotas)
     this._cast(n);
     ctx.addSystem('people', (dt) => this.update(dt), 20);
     this.ready = true;
@@ -78,36 +77,25 @@ export class PeopleWorld {
 
   _cast(count) {
     const { lib, ctx, nav } = this, plan = ctx.plan, hy = plan.heightAt ?? (() => 0);
-    const personas = Object.entries(PERSONAS).map(([id, p]) => ({
-      id, ...p,
-      chars: lib.ids().filter((cid) => { const m = lib.info(cid); return charMatches(m, p) && (p.shopType ? m.tags.includes('shop') : !m.tags.includes('shop')); }),
-    })).filter((p) => p.chars.length);
-    const usedChar = new Map(), mainNodes = nav.nodes.filter((nd) => this.inMain(nd.i));
-    const lots = plan.lots ?? [], shopLots = lots.filter((l) => l.shop), homeLots = lots.filter((l) => !l.shop);
-    const sp = plan.spawn ?? { x: 0, z: 0 }, placed = []; let shopI = 0;
-    for (let i = 0; i < count; i++) {
-      const r = this.rng.fork('cast:' + i);
-      const p = i < personas.length ? personas[i] : r.weighted(personas);
-      let charId = null, best = 1e9;
-      for (const c of r.shuffle([...p.chars])) { const u = usedChar.get(c) ?? 0; if (u < best) { best = u; charId = c; } }
-      usedChar.set(charId, (usedChar.get(charId) ?? 0) + 1);
-      const meta = lib.info(charId), age = ageOf(meta.tags), gender = genderOf(meta.tags);
-      const name = makeName(r, gender, age, p.id);
-      const shopLot = p.shopType && shopLots.length ? shopLots[shopI++ % shopLots.length] : null;
-      const homeLot = shopLot ?? (homeLots.length ? r.pick(homeLots) : null);
+    const metas = new Map(lib.ids().map((id) => [id, lib.info(id)]));
+    const cast = planCast({ plan, charMetas: metas, rng: this.rng.fork('cast'), count });
+    this.cast = cast;
+    const mainNodes = nav.nodes.filter((nd) => this.inMain(nd.i));
+    const sp = plan.spawn ?? { x: 0, z: 0 }, placed = [];
+    for (let i = 0; i < cast.length; i++) {
+      const c = cast[i], r = this.rng.fork('life:' + c.id), meta = lib.info(c.charId), p = PERSONAS[c.persona];
+      const { gender, age, charId, shopLot, homeLot } = c, shop = !!shopLot;
       // home position (door step) and nearest graph node
       let hx, hz, hyv;
       if (homeLot?.entrance?.outside) { [hx, hyv, hz] = homeLot.entrance.outside; }
       else { const nd = r.pick(mainNodes); hx = nd.x; hz = nd.z; hyv = nd.y; }
       let homeNode = nav.nearest(hx, hz, 30, hyv); if (homeNode < 0 || !this.inMain(homeNode)) homeNode = r.pick(mainNodes).i;
-      const shop = p.shopType === 'tienda';
       const npc = new Npc({
-        id: 'n' + String(i).padStart(2, '0'), name, persona: p.id, bank: p.bank ?? p.id, role: p.role, age, gender, charId, meta,
-        rng: r.fork('life'), voice: voiceFor('n' + i, gender, age), speedBase: meta.walkSpeedMps,
+        id: c.id, name: c.name, persona: c.persona, bank: c.bank, role: p.role[0], age, gender, charId, meta,
+        rng: r.fork('life'), voice: voiceFor(c.id, gender, age), speedBase: meta.walkSpeedMps,
         lane: 0.55 + r.next() * 0.7,
       });
-      npc.roleLabel = roleFor(p.role, gender);
-      npc.shopName = shopLot?.name ?? (shop ? 'la tienda' : undefined);
+      npc.roleLabel = c.role; npc.variant = c.variant; npc.appearance = c.appearance; npc.shopName = shopLot?.name; npc.homeLotId = homeLot?.id ?? null; npc.shopLotId = shopLot?.id ?? null;
       npc.homeNode = homeNode; npc.homePos = { x: hx, y: hyv, z: hz };
       npc.idleVariant = r.chance(0.5) ? 'idle_a' : 'idle_b';
       npc.riseH = (shop ? 5.8 : age === 'kid' ? 6.4 : 5.0) + r.next() * 1.3;
@@ -163,7 +151,7 @@ export class PeopleWorld {
 
   // ---- views ---------------------------------------------------------------------------------------------------------------------
   _makeView(n) {
-    const v = this.lib.instantiate(n.charId); n.view = v;
+    const v = this.lib.instantiate(n.charId, n.variant); n.view = v;
     v.root.visible = false; v.root.userData.npc = n.id; this.group.add(v.root);
     this.lib.play(v, n.idleVariant, { time: n.rng.next(), fade: 0 }); n.clipName = n.idleVariant;
   }
@@ -193,6 +181,8 @@ export class PeopleWorld {
       this.lib.play(v, clip, { fade: 0.25, speed, time: clip !== n.clipName && walking ? n.rng.next() : undefined });
       n.clipName = clip;
     }
+    const wantLod = n.dist > (v.lod ? LOD_NEAR : LOD_FAR) ? 1 : 0;                       // far people use the light mesh (same skeleton, same colours)
+    if (wantLod !== v.lod) this.lib.setLod(v, wantLod);
     n.mixAcc += dt;
     const step = n.dist < 35 ? 0 : n.dist < 60 ? 0.05 : 0.1;
     if (n.mixAcc >= step) { v.mixer.update(n.mixAcc); n.mixAcc = 0; }
@@ -261,7 +251,8 @@ export class PeopleWorld {
   // ---- published API -------------------------------------------------------------------------------------------------------------
   describe(n, full = false) {
     const o = {
-      id: n.id, name: n.name.full, display: n.display, persona: n.persona, role: n.roleLabel, char: n.charId, age: n.age, gender: n.gender,
+      id: n.id, name: n.name.full, display: n.display, persona: n.persona, bank: n.bank, role: n.roleLabel, char: n.charId, appearance: n.appearance, shop: n.shopName ?? null,
+      age: n.age, gender: n.gender,
       x: +n.st.x.toFixed(2), y: +n.st.y.toFixed(2), z: +n.st.z.toFixed(2), ry: +n.ry.toFixed(2),
       mode: n.mode, act: n.act, visible: !!n.visible, away: !!n.away, dist: +(n.dist ?? 0).toFixed(1), tier: n.tier, clip: n.clipName,
     };
@@ -277,7 +268,12 @@ export class PeopleWorld {
       if (n.mode === 'walk') walking++; if (n.mode === 'talk') talking++;
       tiers[n.tier]++; maxStuck = Math.max(maxStuck, n.maxStuck); stuckTotal += n.stuckTotal;
     }
-    return { npcs: this.npcs.length, visible, walking, talking, away, tiers, maxStuck: +maxStuck.toFixed(1), stuckTotal: +stuckTotal.toFixed(1), tris, navNodes: this.nav?.size ?? 0, fallbackNav: !!this.nav?.fallback, landmarks: this.landmarks.length, speech: { ready: this.speech.ready, voices: this.speech.ranked.length, reason: this.speech.reason } };
+    const bank = countLines(), looks = new Set(this.npcs.map((n) => n.appearance)), chars = new Set(this.npcs.map((n) => n.charId)), personas = new Set(this.npcs.map((n) => n.persona));
+    return {
+      npcs: this.npcs.length, visible, walking, talking, away, tiers, maxStuck: +maxStuck.toFixed(1), stuckTotal: +stuckTotal.toFixed(1), tris, navNodes: this.nav?.size ?? 0, fallbackNav: !!this.nav?.fallback,
+      landmarks: this.landmarks.length, appearances: looks.size, characters: chars.size, personas: personas.size, lines: bank.total, bankPersonas: bank.personas,
+      speech: { ready: this.speech.ready, voices: this.speech.ranked.length, reason: this.speech.reason },
+    };
   }
 
   nearestNpc(x = this.player.x, z = this.player.z) {

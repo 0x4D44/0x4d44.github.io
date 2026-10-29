@@ -2,7 +2,8 @@
 //   loadInteriorAssets(ctx)   preload the furniture GLBs (stand-in boxes are used for anything not loaded)
 //   furnishBuilding(ctx, bp)  PURE DATA: finishes, furniture list, blocker walls, anchors, lights, interactables, discoveries
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
-import { Layout, resetUid, obbDist } from './layout.js';
+import { Layout, resetUid } from './layout.js';
+import { freePoint, snapStand } from './reach.js';
 import { CATALOG, seatOffsets } from './catalog.js';
 import { makeHousehold, finishRoom } from './household.js';
 import * as R from './rooms.js';
@@ -24,7 +25,7 @@ function pickFurnisher(bp, room, L) {
   const t = room.type, k = bp.lot?.kind, area = L.W * L.D;
   if (t === 'chapel' || (k === 'chapel' && (t === 'hall' || t === 'living'))) return S.chapel;
   if (t === 'classroom' || (k === 'school' && (t === 'living' || t === 'dining' || t === 'shop'))) return S.classroom;
-  if (k === 'school' && t === 'bedroom') return R.office;
+  if (k === 'school' && t === 'bedroom') return area > 24 ? S.classroom : R.office;       // A2 types the upper-floor classrooms 'bedroom'
   if (k === 'school' && t === 'patio') return S.schoolyard;
   if (k === 'clinic') {
     if (t === 'hall' || t === 'living' || t === 'dining' || t === 'entry' || t === 'shop') return area >= 6 ? S.clinicWaiting : R.circulation;
@@ -74,39 +75,6 @@ function makeEnv(ctx, bp, rng) {
 }
 
 // ------------------------------------------------------------------ anchors
-function freePoint(L, clear = 0.55, conn = L.connectivity()) {
-  const r = L.r, bl = L.blockers(), cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2;
-  let best = null, bs = Infinity;
-  for (let x = r.x0 + 0.5; x <= r.x1 - 0.5 + 1e-6; x += 0.15) for (let z = r.z0 + 0.5; z <= r.z1 - 0.5 + 1e-6; z += 0.15) {
-    if (L.keep.some((k) => x > k.x0 - 0.2 && x < k.x1 + 0.2 && z > k.z0 - 0.2 && z < k.z1 + 0.2)) continue;
-    if (bl.some((it) => obbDist(it.ob, x, z) < clear)) continue;
-    if (!L.inMainRegion(x, z, conn, 1)) continue;
-    const s = Math.hypot(x - cx, z - cz);
-    if (s < bs) { bs = s; best = [x, z]; }
-  }
-  return best;
-}
-
-/** Is (x,z) a place a person can stand: inside the room (0.3 m off the walls), clear of furniture and stair openings? */
-function standable(L, x, z, conn, clear = 0.27) {
-  const r = L.r;
-  if (x < r.x0 + 0.3 || x > r.x1 - 0.3 || z < r.z0 + 0.3 || z > r.z1 - 0.3) return false;
-  for (const k of L.keep) if (k.why?.startsWith('stair') && x > k.x0 - 0.15 && x < k.x1 + 0.15 && z > k.z0 - 0.15 && z < k.z1 + 0.15) return false;
-  for (const it of L.blockers()) if (obbDist(it.ob, x, z) < clear) return false;
-  return L.inMainRegion(x, z, conn, 4);                 // and connected to the doors (no walled-off pockets)
-}
-/** Nearest standable point to (x,z) within `rad` metres, or null. */
-function snapStand(L, x, z, conn, rad = 0.9) {
-  if (standable(L, x, z, conn)) return [x, z];
-  let best = null, bd = Infinity;
-  for (let dx = -rad; dx <= rad + 1e-6; dx += 0.1) for (let dz = -rad; dz <= rad + 1e-6; dz += 0.1) {
-    const d = Math.hypot(dx, dz);
-    if (d >= bd || d > rad || !standable(L, x + dx, z + dz, conn)) continue;
-    best = [x + dx, z + dz]; bd = d;
-  }
-  return best;
-}
-
 function emitAnchors(E, room, L, hh) {
   const { bp, ctx } = E, fr = bp.frame, rotY = bp.lot.rotY ?? 0;
   const fy = bp.lot.y + (room.y ?? 0);
@@ -116,7 +84,7 @@ function emitAnchors(E, room, L, hh) {
     if (extra.raw) { if (!L.inMainRegion(lx0, lz0, conn, Math.ceil((extra.rad ?? 1) / 0.1))) return null; }            // seats and beds must be reachable from a door
     else { const p = snapStand(L, lx0, lz0, conn); if (!p) return null; [lx, lz] = p; }   // standing spots must be free floor
     const [wx, , wz] = fr.toWorld(lx, 0, lz);
-    const a = ctx.addAnchor({ kind, x: +wx.toFixed(3), y: +(fy + (extra.dy ?? 0)).toFixed(3), z: +wz.toFixed(3), ry: +(rotY + lry).toFixed(4), building: bp.id, room: room.id, tags: extra.tags ?? [], capacity: 1, seatH: extra.seatH, owner: extra.owner });
+    const a = ctx.addAnchor({ kind, x: +wx.toFixed(3), y: +(fy + (extra.dy ?? 0)).toFixed(3), z: +wz.toFixed(3), ry: +(rotY + lry).toFixed(4), building: bp.id, room: room.id, tags: extra.tags ?? [], capacity: 1, seatH: extra.seatH, owner: extra.owner, item: extra.item });
     bp.anchors.push(a); return a;
   };
   const tvs = L.items.filter((i) => i.name === 'tv_flat' || i.name === 'tv_crt' || i.name === 'tv_wall');
@@ -135,7 +103,7 @@ function emitAnchors(E, room, L, hh) {
         else if (c.arch === 'barber') tags.push('barber');
         else if (c.arch === 'pew') tags.push('chapel', 'pray');
         else if (c.arch === 'waiting') tags.push('waiting');
-        A(kind, sx, sz, it.ry, { seatH: c.seat[0], tags, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8 });
+        A(kind, sx, sz, it.ry, { seatH: c.seat[0], tags, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, item: it.id });
       }
     }
     if (c.arch === 'bed' || c.arch === 'cot' || c.arch === 'mattress' || c.arch === 'bunk' || c.arch === 'crib') {
@@ -194,12 +162,13 @@ function emitLights(E, room, L, hh, recs) {
   if (L.fixture) {
     const f = L.fixture, y = (room.y ?? 0) + (room.h ?? 2.7) - (f.kind === 'fan' ? 0.38 : f.kind === 'tube' ? 0.12 : 0.3);
     f.light = add('ceiling', f.x, y, f.z, f.color, f.i, f.d);
+    for (const g of L.extra ?? []) g.light = add('ceiling', g.x, (room.y ?? 0) + (room.h ?? 2.7) - (g.kind === 'tube' ? 0.12 : 0.3), g.z, g.color, g.i, g.d);
   }
   for (const it of L.items) {
-    if (it.name === 'lamp_floor') add('lamp', it.x, it.y + 1.4, it.z, 0xffcf90, 2.2, 3.8);
-    else if (it.name === 'lamp_table') add('lamp', it.x, it.y + 0.35, it.z, 0xffcf90, 1.6, 3.2);
-    else if (it.name === 'candles_set') add('candle', it.x, it.y + 0.15, it.z, 0xffa850, 0.9, 2.4, { flicker: 0.5 });
-    else if (it.name === 'candle_rack') add('candle', it.x, it.y + 1.0, it.z, 0xffa850, 1.6, 3.2, { flicker: 0.6 });
+    if (it.name === 'lamp_floor') it.light = add('lamp', it.x, it.y + 1.4, it.z, 0xffcf90, 2.2, 3.8);
+    else if (it.name === 'lamp_table') it.light = add('lamp', it.x, it.y + 0.35, it.z, 0xffcf90, 1.6, 3.2);
+    else if (it.name === 'candles_set') it.light = add('candle', it.x, it.y + 0.15, it.z, 0xffa850, 0.9, 2.4, { flicker: 0.5 });
+    else if (it.name === 'candle_rack') it.light = add('candle', it.x, it.y + 1.0, it.z, 0xffa850, 1.6, 3.2, { flicker: 0.6 });
     else if ((it.name === 'tv_flat' || it.name === 'tv_crt' || it.name === 'tv_wall')) { it.light = add('tv', it.x, it.y + 0.3, it.z, 0x9db8ff, 1.0, 3.5, { flicker: 0.8 }); }
   }
   void recs;

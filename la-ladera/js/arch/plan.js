@@ -19,7 +19,7 @@ function chooseLook(S) {
   if (trim === wall) trim = 0xf2efe6;
   const roof = rng.pick(PALETTE.roof);
   const kind = S.kind;
-  const base = kind === 'unfinished' ? 'brick' : rng.weighted([['plaster', 6], ['brick', 1.2], ['rough', 1.4], ['peeling', 1.2]], (e) => e[1])[0];
+  const base = kind === 'unfinished' ? 'brick' : rng.weighted([['plaster', 6], ['brick', 1.2], ['rough', 2], ['peeling', 0.35]], (e) => e[1])[0];
   return {
     wall: hex(wall), trim: hex(trim), roof: hex(roof), base,
     door: hex(rng.pick([0x3b7a9a, 0x8a5a34, 0x23858a, 0xb23a36, 0x4a8a56, 0x6b4a32, 0x2f62a8, 0xc9923a, 0x7a3b6b, 0xd9d2c0])),

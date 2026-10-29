@@ -157,7 +157,7 @@ export function genBuilding(o) {
           const [x, z] = w.at(u);
           if (bp.doors.some((d) => Math.hypot(d.x - x, d.z - z) < 1.3)) continue;
           const bath = r.type === 'bathroom', ww = bath ? 0.5 : w.len > 3.5 ? 1.2 : 0.9;
-          bp.windows.push({ id: `${lot.id}.w${wn++}`, room: r.id, x, z, y: r.y + (bath ? 1.5 : 0.95), w: ww, h: bath ? 0.5 : 1.2, nx: w.n[0], nz: w.n[1], kind: 'casement', grille: rng.chance(0.4) });
+          bp.windows.push({ id: `${lot.id}.w${wn++}`, room: r.id, x, z, y: bath ? 1.5 : 0.95, floor: r.floor, w: ww, h: bath ? 0.5 : 1.2, nx: w.n[0], nz: w.n[1], kind: 'casement', grille: rng.chance(0.4) });
           r.windows.push(bp.windows[bp.windows.length - 1].id);
         }
       }

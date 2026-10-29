@@ -2,6 +2,13 @@
 import { R, rectMinusRects, rw, rd, rcx, rcz } from './geom.js';
 
 export const CASETA_T = 0.14, CASETA_H = 2.45;
+/**
+ * Fences of a walkable roof: the terrace parapet and the brick pretil of an unfinished open deck. The jump (vy 3.6, g 9.8) peaks at 0.69 m at 60 fps and
+ * 0.75 m at the page's 20 fps frame clamp, and the physics kernel ignores a wall whose top is within 0.4 m of the feet, so anything up to ~1.15 m is
+ * jumped over: with 1.0 / 1.1 m every roof was a launch pad, and a player who cleared the party-wall fence landed inside the neighbour's open top floor,
+ * wedged in its wall (tests/stuck.mjs + trapcheck.mjs: 10 pockets). 1.2 m clears the jump with a margin; `roofJumpEscapes` (tests/arch-lib.mjs) pins it.
+ */
+export const PARAPET_H = 1.2, PRETIL_H = 1.2;
 
 const ROOF_WEIGHTS = {
   house: { terrace: 0.45, corrugated: 0.3, tile: 0.25 }, rowhouse: { terrace: 0.5, corrugated: 0.3, tile: 0.2 },
@@ -32,7 +39,7 @@ export function resolveRoof(S) {
 /** After the layout: build the roof layer. */
 export function planRoof(S) {
   const F = S.F, fd = S.floorsData[F];
-  const rl = S.roofLayer = { style: S.roofStyle, walkable: S.roofWalkable, parapetH: S.roofStyle === 'terrace' ? (S.roofWalkable ? 1.0 : 0.7) : 0, caseta: null, terraceRooms: [] };
+  const rl = S.roofLayer = { style: S.roofStyle, walkable: S.roofWalkable, parapetH: S.roofStyle === 'terrace' ? (S.roofWalkable ? PARAPET_H : 0.7) : 0, caseta: null, terraceRooms: [] };
   if (!S.core || !S.roofWalkable || S.openTop) {
     if (S.roofWalkable && !S.core) S.roofWalkable = false;
     // open skeleton top: guards around the stair void, rebar/columns are meshed in the shell

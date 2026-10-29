@@ -55,6 +55,8 @@ export function penetration(a, b) {
 }
 export const rectOb = (x0, z0, x1, z1) => ({ cx: (x0 + x1) / 2, cz: (z0 + z1) / 2, hx: (x1 - x0) / 2, hz: (z1 - z0) / 2, ux: [1, 0], uz: [0, 1] });
 export const catalogOf = (rec) => CATALOG[rec.name] ?? null;
+/** Archetypes a person can sleep on (a crib is not one). */
+export const SLEEP_ARCH = new Set(['bed', 'cot', 'bunk', 'mattress', 'mattress_up']);
 export const roomOf = (bp, id) => bp.rooms.find((r) => r.id === id);
 
 // ---------------------------------------------------------------- sabotage (to prove each test can fail)
@@ -89,6 +91,20 @@ export function sabotage(bps, kind = process.env.A3_SABOTAGE) {
     }
     case 'count': { const r = bp.rooms.find((x) => !['hall', 'corridor', 'stairwell', 'landing', 'entry'].includes(x.type)); bp.furniture = bp.furniture.filter((f) => f.room !== r.id); break; }
     case 'anchors': { bp.anchors = bp.anchors.filter((a) => a.kind !== 'sleep' && a.kind !== 'sit' && a.kind !== 'tv'); break; }
+    case 'nobed': {                                             // take every bed out of the first home bedroom
+      for (const b of bps) {
+        const r = b.rooms.find((x) => x.type === 'bedroom' && b.interior?.rooms?.[x.id]?.role && b.interior.rooms[x.id].role !== 'study' && b.furniture.some((f) => f.room === x.id && SLEEP_ARCH.has(catalogOf(f)?.arch)));
+        if (r) { b.furniture = b.furniture.filter((f) => !(f.room === r.id && SLEEP_ARCH.has(catalogOf(f)?.arch))); break; }
+      }
+      break;
+    }
+    case 'nostove': {                                           // take the stove out of the first kitchen
+      for (const b of bps) {
+        const r = b.rooms.find((x) => x.type === 'kitchen' && b.furniture.some((f) => f.room === x.id && catalogOf(f)?.arch === 'stove'));
+        if (r) { b.furniture = b.furniture.filter((f) => !(f.room === r.id && catalogOf(f)?.arch === 'stove')); break; }
+      }
+      break;
+    }
     case 'material': { const f = bp.furniture[0]; f.name = 'no_such_item'; break; }
     case 'random': break;                                       // handled by the determinism test itself
     default: throw new Error('unknown sabotage ' + kind);

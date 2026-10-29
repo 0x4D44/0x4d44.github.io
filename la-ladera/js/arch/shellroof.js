@@ -1,7 +1,7 @@
 // Roofs for buildBuilding: the roof MODEL (wall tops that follow the roof, so the shell stays watertight) and the roof MESHES.
 // Styles: terrace (flat slab + parapet, optional caseta over the stairs), corrugated (mono-pitch zinc), tile (gable, clay), unfinished
 // (open concrete deck with columns and sprouting rebar). Local frame: y = floor-index * fh.
-import { CASETA_H, CASETA_T } from './roof.js';
+import { CASETA_H, CASETA_T, PRETIL_H } from './roof.js';
 import { lin, mulc, mixc, qd, faceQuad, flat, bar, hash01 } from './mb.js';
 
 export function makeRoofModel(G) {
@@ -119,12 +119,12 @@ function unfinishedTop(G) {
     }
   }
   if (S.openTop) {
-    // pretil cap (top of the 1.1 m brick parapet) and a stub beam across the front
+    // pretil cap (top of the brick parapet, PRETIL_H) and a stub beam across the front
     const t = S.te, ct = 0.04;
-    box(G, 'concrete_bare', 0, yk + 1.1 + ct / 2, O.z1 - t / 2, S.W, ct, t + 0.04, [0.93, 0.93, 0.9]);
-    box(G, 'concrete_bare', 0, yk + 1.1 + ct / 2, O.z0 + t / 2, S.W, ct, t + 0.04, [0.93, 0.93, 0.9]);
-    box(G, 'concrete_bare', O.x0 + t / 2, yk + 1.1 + ct / 2, 0, t + 0.04, ct, S.D - 2 * t, [0.93, 0.93, 0.9]);
-    box(G, 'concrete_bare', O.x1 - t / 2, yk + 1.1 + ct / 2, 0, t + 0.04, ct, S.D - 2 * t, [0.93, 0.93, 0.9]);
+    box(G, 'concrete_bare', 0, yk + PRETIL_H + ct / 2, O.z1 - t / 2, S.W, ct, t + 0.04, [0.93, 0.93, 0.9]);
+    box(G, 'concrete_bare', 0, yk + PRETIL_H + ct / 2, O.z0 + t / 2, S.W, ct, t + 0.04, [0.93, 0.93, 0.9]);
+    box(G, 'concrete_bare', O.x0 + t / 2, yk + PRETIL_H + ct / 2, 0, t + 0.04, ct, S.D - 2 * t, [0.93, 0.93, 0.9]);
+    box(G, 'concrete_bare', O.x1 - t / 2, yk + PRETIL_H + ct / 2, 0, t + 0.04, ct, S.D - 2 * t, [0.93, 0.93, 0.9]);
     box(G, 'concrete_formwork', 0, yk + 2.55 - 0.14, O.z1 - cs / 2, S.W - cs, 0.28, cs * 0.9, [0.95, 0.95, 0.93]);
   } else {
     flat(b, 'concrete_bare', S.inner.x0, S.inner.z0, S.inner.x1, S.inner.z1, yF, true, { col: [0.95, 0.95, 0.93] });

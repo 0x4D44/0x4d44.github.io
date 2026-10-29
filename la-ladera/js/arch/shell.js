@@ -4,11 +4,13 @@
 import { rectMinusRects } from './geom.js';
 import { roomFinish, facadeStyle } from './finish.js';
 import { lin, mulc, mixc, prod, faceQuad, flat, qd, hash01, OUT } from './mb.js';
-import { CASETA_H, CASETA_T } from './roof.js';
+import { CASETA_H, CASETA_T, PRETIL_H } from './roof.js';
 import { makeRoofModel, buildRoof } from './shellroof.js';
 import { buildWindows, buildDoorFrames, buildEntrySteps } from './shellwin.js';
 import { buildStairs } from './shellstair.js';
 import { buildDoorLeaves } from './doors.js';
+import { buildFacade } from './shellfacade.js';
+import { ensureSignAtlas } from './signs.js';
 
 const FOUND_COL = lin(0xb9b5ab);
 
@@ -56,13 +58,15 @@ export function makeG(ctx, bp) {
 // ---- exterior face --------------------------------------------------------------------------------------------------------------
 function outerFace(G, wl) {
   const { S, b, fs } = G, k = wl.floor, yk = k * S.fh, s = OUT[wl.side], t = wl.t, plane = wl.at + s * t / 2, caseta = !!wl.caseta;
-  const top = (u) => (caseta ? yk + CASETA_H : wl.open ? yk + 1.1 : k === S.F - 1 ? G.rm.wallTop(wl, u) : yk + S.fh);
+  const top = (u) => (caseta ? yk + CASETA_H : wl.open ? yk + PRETIL_H : k === S.F - 1 ? G.rm.wallTop(wl, u) : yk + S.fh);
   const yBot = caseta ? yk : k === 0 ? S.foundY : yk;
   const holes = wl.openings.map((o) => ({ u0: o.u0, u1: o.u1, y0: yk + o.y0, y1: yk + o.y1 }));
   const wallCol = caseta ? mulc(fs.wall, 0.96) : fs.wall;
   const m = caseta ? 'plaster_rough' : fs.m;
   const cuts = k === 0 && !caseta ? [0.0, 0.5, 0.95] : [];
   const damp = (y) => { if (caseta || k > 0) return 1; const h = y; return h <= 0 ? 1 : 0.55 + 0.45 * Math.min(1, h / 0.95); };
+  // a "peeling" facade peels where paint really fails first, at the foot of the wall; above 0.95 m it is plain rough-cast (the full-height texture reads as camouflage)
+  const mAt = (y0) => (m === 'paint_peeling' && (k > 0 || y0 >= 0.95 - 1e-3) ? 'plaster_rough' : m);
   columns(wl.a0, wl.a1, holes, G.rm.breaks(wl)).forEach((c, ci) => {
     const jit = 0.94 + 0.06 * hash01(wl.id, ci);
     const solids = [];
@@ -78,7 +82,7 @@ function outerFace(G, wl) {
           return;
         }
         const f0 = damp(y0) * jit, f1 = damp(Math.min(y1a, y1b)) * jit;
-        faceQuad(b, m, wl.dir, plane, s, c.ua, c.ub, y0, y0, y1a, y1b, { cols: [mulc(wallCol, f0), mulc(wallCol, f0), mulc(wallCol, f1), mulc(wallCol, f1)] });
+        faceQuad(b, mAt(y0), wl.dir, plane, s, c.ua, c.ub, y0, y0, y1a, y1b, { cols: [mulc(wallCol, f0), mulc(wallCol, f0), mulc(wallCol, f1), mulc(wallCol, f1)] });
       });
     }
   });
@@ -106,7 +110,7 @@ function innerFace(G, wl, side) {
   columns(fa, fb, holes, cuts).forEach((c, ci) => {
     const mid = (c.ua + c.ub) / 2, q = cells.find((e) => mid >= e.lo && mid <= e.hi);
     const room = q?.c.room ?? null;
-    const hh = caseta ? CASETA_H : wl.open ? 1.1 : (room?.h ?? S.h);
+    const hh = caseta ? CASETA_H : wl.open ? PRETIL_H : (room?.h ?? S.h);
     const jit = 0.97 + 0.03 * hash01(wl.id, ci + 50 * (side > 0 ? 1 : 2));
     const solids = [];
     if (!c.hole) solids.push([yk, yk + hh]);
@@ -235,8 +239,19 @@ export function buildBuilding(ctx, bp) {
   buildDoorFrames(G);
   buildEntrySteps(G);
   buildRoof(G);
+  dressFacade(G);
   ctx.batch.flush(bp.id + '.ext');
   buildDoorLeaves(G);
+}
+
+/** Facade language (shellfacade.js): decoration only. A fault in it is reported and the bare shell still ships. `ctx.noFacade = true` skips it (A/B measurements). */
+function dressFacade(G) {
+  const { ctx, bp, b } = G, t0 = b.tris;
+  if (ctx.noFacade) { bp.shell.facadeTris = 0; return; }
+  try { ensureSignAtlas(ctx); buildFacade(G); } catch (e) {
+    (ctx.errors ??= []).push({ stage: 'arch', building: bp.id, message: 'facade ' + String(e?.message ?? e), stack: e?.stack });
+  }
+  bp.shell.facadeTris = b.tris - t0;
 }
 
 export { OUT, CASETA_T };

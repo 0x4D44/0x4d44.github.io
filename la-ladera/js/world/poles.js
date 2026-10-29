@@ -109,6 +109,7 @@ export function buildPoles(K) {
     if (linked.has(key)) return; linked.add(key);
     const L = Math.hypot(a.x - c.x, a.z - c.z), b = wires, sag = Math.max(0.15, L * 0.016);
     for (let i = 0; i < 3; i++) wire(b, a.ins[i], c.ins[i], sag, 0.032);
+    if (ctx.world) (ctx.world.cableSpans ??= []).push({ a: a.ins[1], c: c.ins[1], sag, L });      // the middle wire: pigeons sit on it (life.js)
     wire(b, a.low[0], c.low[0], sag * 1.5, 0.05); wire(b, a.low[1], c.low[1], sag * 1.7, 0.04);
     if (L > 10) wire(b, [a.low[0][0], a.low[0][1] - 0.35, a.low[0][2]], [c.low[1][0], c.low[1][1] - 0.5, c.low[1][2]], sag * 1.9, 0.026);   // a sagging dead cable
     stats.spans++;
@@ -226,7 +227,7 @@ export function buildPoles(K) {
       occ.take(x, z, 0.35);
     });
   }
-  ctx.world && (ctx.world.poles = stats);
+  ctx.world && (ctx.world.poles = stats, ctx.world.poleList = poles.map((p) => ({ x: p.x, z: p.z, y: p.gy })));
   return stats;
 }
 

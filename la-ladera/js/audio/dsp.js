@@ -101,6 +101,22 @@ export function finite(x) { for (let i = 0; i < x.length; i++) if (!Number.isFin
 
 /** Scale so the peak is `target` (no-op for silence). */
 export function normalize(x, target = 0.9) { const p = peak(x); if (p > 1e-9) { const g = target / p; for (let i = 0; i < x.length; i++) x[i] *= g; } return x; }
+/** Scale to a loudness (RMS `target`), but never past `maxPeak`: beds of different crest factors then sit at comparable levels in the mix. */
+export function normalizeRms(x, target = 0.07, maxPeak = 0.95) {
+  const e = rms(x); if (e < 1e-9) return x;
+  let g = target / e; const p = peak(x) * g; if (p > maxPeak) g *= maxPeak / p;
+  for (let i = 0; i < x.length; i++) x[i] *= g;
+  return x;
+}
+/** Smooth random control signal in [-1, 1]: a new random target `hz` times a second, cosine-interpolated (gusts, drift, swells). */
+export function lfo(n, r, hz, sr = SR) {
+  const out = new Float32Array(n), step = sr / hz; let a = r() * 2 - 1, b = r() * 2 - 1, start = 0;
+  for (let i = 0; i < n; i++) {
+    if (i >= start + step) { a = b; b = r() * 2 - 1; start += step; }
+    out[i] = a + (b - a) * (0.5 - 0.5 * Math.cos(Math.PI * (i - start) / step));
+  }
+  return out;
+}
 export function gain(x, g) { for (let i = 0; i < x.length; i++) x[i] *= g; return x; }
 export function removeDC(x) { const m = mean(x); for (let i = 0; i < x.length; i++) x[i] -= m; return x; }
 export function softclip(x, drive = 1.5) { const n = Math.tanh(drive); for (let i = 0; i < x.length; i++) x[i] = Math.tanh(x[i] * drive) / n; return x; }
@@ -148,8 +164,7 @@ export function babble(o, sr = SR) {
   const [pLo, pHi] = o.pause ?? [0.15, 0.9], speed = o.rate ?? 1;
   for (let v = 0; v < voices; v++) {
     const base = r.range(f0lo, f0hi), src = new Float32Array(n), env = new Float32Array(n), f1 = new Float32Array(n), f2 = new Float32Array(n);
-    let t = r.range(0, pHi), ph = r.r?.() ?? 0, vow = r.pick(VOWELS), prev = vow;
-    ph = 0;
+    let t = r.range(0, pHi), ph = 0, prev = r.pick(VOWELS);
     while (t < o.sec + 0.4) {
       const dur = r.range(0.12, 0.35) / speed, nxt = r.pick(VOWELS), i0 = Math.round(t * sr), i1 = Math.min(n, Math.round((t + dur) * sr));
       const glide = r.range(-0.18, 0.22);
@@ -173,6 +188,27 @@ export function babble(o, sr = SR) {
     let t = 0; const pf = new Float32Array(n);
     while (t < o.sec) { const i0 = Math.round(t * sr), len = Math.round(r.range(0.01, 0.03) * sr); for (let i = 0; i < len && i0 + i < n; i++) pf[i0 + i] = Math.exp(-i / (0.35 * len)); t += r.range(0.08, 0.35) / (voices ** 0.5) / speed; }
     for (let i = 0; i < n; i++) out[i] += nz[i] * pf[i] * o.breath;
+  }
+  return out;
+}
+
+// ---- spaces -----------------------------------------------------------------------------------------------------------------------------
+/**
+ * A synthetic room impulse response, two decorrelated channels at sample rate `sr` (a ConvolverNode needs the buffer at the context's own rate).
+ * Early reflections, then noise that decays exponentially and darkens as it goes. o: { sec, tau, pre, dark 0..1, early: [[seconds, gain],...], seed }
+ */
+export function reverbIR(o = {}, sr = SR) {
+  const { sec = 1.2, tau = 0.35, pre = 0.008, dark = 0.6, early = [], seed = 7 } = o, n = Math.max(8, Math.round(sec * sr)), out = [];
+  for (let c = 0; c < 2; c++) {
+    const r = rng(seed * 131 + c * 17), x = new Float32Array(n), k0 = Math.round(pre * sr); let lp = 0;
+    for (let i = k0; i < n; i++) {
+      const t = (i - k0) / sr, a = clamp(1 - dark * (1 - Math.exp(-t / (tau * 1.2))), 0.04, 1);
+      lp += a * ((r() * 2 - 1) - lp);
+      x[i] = lp * Math.exp(-t / tau);
+    }
+    for (const [at, g] of early) { const k = Math.round((at + c * 0.0037) * sr); if (k > 0 && k < n) x[k] += g * (r() < 0.5 ? -1 : 1); }
+    const tail = Math.min(n >> 1, Math.round(0.15 * n)); for (let i = 0; i < tail; i++) x[n - 1 - i] *= i / tail;
+    out.push(x);
   }
   return out;
 }

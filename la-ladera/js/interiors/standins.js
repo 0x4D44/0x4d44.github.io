@@ -88,7 +88,16 @@ class Pen {
     this.b.geometry(mat, g, m, { col });
     this.n++;
   }
+  /** Picture quad on the item's front (+z) face with explicit UVs: centre lx, bottom ly, depth lz, size w x h, uv = [u0, v0, u1, v1] (v0 = bottom edge). */
+  quadUV(mat, lx, ly, lz, w, h, uv) {
+    const y = this.y0 + ly, xa = this.X(lx - w / 2, lz), za = this.Z(lx - w / 2, lz), xb = this.X(lx + w / 2, lz), zb = this.Z(lx + w / 2, lz);
+    this.b.quad(mat, [xa, y, za], [xb, y, zb], [xb, y + h, zb], [xa, y + h, za], { uv: [uv[0], uv[1], uv[2], uv[1], uv[2], uv[3], uv[0], uv[3]], col: 0xffffff });
+    this.n++;
+  }
 }
+/** The painted decal atlas (atlas.js), set once by loadInteriorAssets in the browser; without it decals stay flat coloured paper. */
+let ATLAS = null;
+export const setAtlas = (a) => { ATLAS = a; };
 const GEO = new Map(), _M = new THREE.Matrix4(), _S = new THREE.Matrix4();
 const _RZ = new THREE.Matrix4().makeRotationZ(Math.PI / 2), _RX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
 
@@ -150,6 +159,14 @@ S.mattress = (P, c, T, r) => {
   P.box('mattress_ticking', 0, 0, 0, W, 0.17, D, undefined, NY);
   P.box(pick(BED_BLANKETS, P.id), 0, 0.15, D * 0.2, W - 0.04, 0.06, D * 0.55, T ?? undefined);
   P.box('fabric_bedding', 0, 0.16, -D / 2 + 0.28, W * 0.6, 0.08, 0.32, 0xf2eee6);
+};
+
+S.mattress_up = (P, c, T, r) => {                 // a mattress stood on its edge against the wall, the blanket folded at its foot
+  const { W, D } = P, H = c.size[1], t = 0.17;                 // t = the mattress thickness, against the wall; the blanket sits on the floor in front of it
+  P.box('mattress_ticking', 0, 0.02, -D / 2 + t / 2, W, H - 0.04, t, undefined, NY);
+  P.box('mattress_ticking', 0, H * 0.46, -D / 2 + t + 0.003, W - 0.12, 0.012, 0.004, 0x9aa0a8);   // the quilting seam
+  P.box(pick(BED_BLANKETS, P.id), 0, 0, -D / 2 + t + 0.07, W - 0.14, 0.22, 0.13, T ?? undefined);
+  P.box('fabric_bedding', 0.1, 0.22, -D / 2 + t + 0.07, W * 0.5, 0.08, 0.12, 0xf2eee6);
 };
 
 // ---- storage
@@ -470,7 +487,7 @@ S.counter = (P, c, T, r) => {
     P.box(c.mat, 0, 0, 0, W, H - 0.05, D, col, NY);
     for (let i = 1; i < 4; i++) P.box('metal_dark', -W / 2 + W * i / 4, 0.05, D / 2 + 0.002, 0.012, H - 0.15, 0.004);
     P.box('formica', 0, H - 0.05, 0, W + 0.02, 0.05, D + 0.02, 0xe8e0d0);
-    for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.12 + u * 0.12, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
+    for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.1 + u * 0.08, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
     return;
   }
   // shop counters: solid body at the shopkeeper side, glass case at the customer side
@@ -589,10 +606,15 @@ S.radio = (P, c, T, r) => {
   P.box('metal_chrome', W * 0.12, H, -D / 4, 0.01, 0.2, 0.01, undefined, undefined, 0.5);
 };
 S.fanc = (P, c, T, r) => {
-  const rad = P.W / 2, H = c.size[1], col = T ?? 0xa87445;
-  P.cyl('metal_dark', 0, H - 0.1, 0, 0.012, 0.1, 6);
-  P.cyl('metal_dark', 0, H - 0.2, 0, 0.1, 0.1, 10, undefined, 0.07);
-  for (let i = 0; i < 4; i++) P.box('wood_pine', Math.cos(i * Math.PI / 2) * (rad * 0.52 + 0.02), H - 0.19, Math.sin(i * Math.PI / 2) * (rad * 0.52 + 0.02), i % 2 ? 0.14 : rad * 0.9, 0.012, i % 2 ? rad * 0.9 : 0.14, col);
+  // The static parts only: canopy, down-rod, motor housing and light-kit bowl. The four pitched blades turn, so they are NOT here: anim.js draws
+  // them as one InstancedMesh per building (blade centre line = 0.165 m above this item's base).
+  const H = c.size[1], col = mul(T ?? 0xa87445, 0.55);
+  P.cyl('metal_dark', 0, H - 0.035, 0, 0.075, 0.035, 12, 0xd8d0c0, 0.05);            // canopy against the ceiling
+  P.cyl('metal_dark', 0, H - 0.1, 0, 0.013, 0.07, 6, 0x2a2a2c);                      // down-rod
+  P.cyl('metal_dark', 0, 0.13, 0, 0.1, 0.12, 14, col, 0.07);                         // motor housing (the blades attach at its waist)
+  P.cyl('metal_dark', 0, 0.115, 0, 0.082, 0.02, 14, 0x2a2a2c);                       // blade-iron ring
+  P.cyl('lamp_shade', 0, 0.045, 0, 0.05, 0.07, 12, 0xf4ead0, 0.088);                 // frosted light-kit bowl
+  P.cyl('metal_dark', 0, 0.035, 0, 0.034, 0.012, 10, col);
 };
 S.fans = (P, c, T, r) => {
   const n = r.name, H = c.size[1], col = NAMECOL[n] ?? T;
@@ -968,11 +990,13 @@ S.cage = (P, c) => {
   P.sphere('feather_canary', 0.0, H * 0.32 + 0.06, 0, 0.022, 0.022, 0.022);
 };
 S.cat = (P, c) => {
-  const col = pick([0x2a2a2c, 0xc8a070, 0x8a8a88, 0xd8d0c0], P.id);
-  P.sphere('fur_cat', 0, 0.12, -0.04, 0.09, 0.12, 0.1, col);
-  P.sphere('fur_cat', 0, 0.26, 0.04, 0.06, 0.055, 0.055, col);
-  P.box('fur_cat', -0.035, 0.31, 0.04, 0.025, 0.035, 0.015, col); P.box('fur_cat', 0.035, 0.31, 0.04, 0.025, 0.035, 0.015, col);
-  P.box('fur_cat', 0.09, 0.01, -0.12, 0.2, 0.03, 0.03, col, undefined, 0.5);
+  const col = pick([0x2a2a2c, 0xc8a070, 0x8a8a88, 0xd8d0c0, 0xb8703a], P.id), dk = mul(col, 0.7);
+  P.sphere('fur_cat', 0, 0.12, -0.07, 0.085, 0.12, 0.1, col);                       // haunches and chest
+  P.sphere('fur_cat', 0, 0.2, 0.03, 0.07, 0.1, 0.07, col);
+  P.sphere('fur_cat', 0, 0.28, 0.06, 0.055, 0.05, 0.05, col);                       // head
+  for (const sx of [-1, 1]) { P.box('fur_cat', sx * 0.035, 0.31, 0.06, 0.022, 0.04, 0.015, dk); P.box('fur_cat', sx * 0.03, 0.0, 0.1, 0.03, 0.12, 0.03, col); }
+  P.flat(0, 0.268, 0.108, 0.02, 0.012, 0.006, 0xd9a0a8);
+  P.box('fur_cat', 0.07, 0.0, -0.08, 0.04, 0.03, 0.16, dk, undefined, 0.5);         // tail curled round the feet
 };
 S.dog = (P, c) => {
   const col = pick([0xc8a070, 0x6b4226, 0x2a2a2c, 0xd8d0c0], P.id);
@@ -1014,6 +1038,12 @@ S.decal = (P, c, T, r) => {
   const PAPER = { religion: 0xe8dcc0, photo: 0xb8a888, art: 0xa8b8a0, kids: 0xf0e0b0, poster: 0xd8503a, calendar: 0xf0ecd8, document: 0xf0ecd8, notes: 0xf0ecd8, notice: 0xf0ecd8, shop: 0xf0e4c8, school: 0xf0ecd8, clinic: 0xe8f0f0 };
   let col = PAPER[kind] ?? 0xe8e0d0;
   if (id === 'chalkboard') col = 0x2f4a3c; else if (id === 'menu_board') col = 0x2a2a28; else if (id === 'poster_music') col = 0x6a3a8a; else if (id === 'poster_football_b') col = 0x2f6fbf; else if (id === 'poster_football_c') col = 0x2f9a58; else if (id === 'poster_map') col = 0xc8d8c0;
+  const uv = ATLAS?.uv[id];
+  if (uv) {                                                                          // painted picture from the atlas
+    if (d.frame != null) { P.box(FLAT, 0, 0, 0, W + 0.04, H + 0.04, 0.014, d.frame, NY); P.quadUV('decal_atlas', 0, 0.02, 0.0105, W, H, uv); }
+    else { P.box(FLAT, 0, 0, 0, W, H, 0.01, 0xd8d0c0); P.quadUV('decal_atlas', 0, 0, 0.0085, W, H, uv); }
+    return;
+  }
   if (d.frame != null) { P.box(FLAT, 0, 0, 0, W + 0.04, H + 0.04, 0.014, d.frame, ['ny']); P.box(FLAT, 0, 0.02, 0.008, W, H, 0.006, col); }
   else P.box(FLAT, 0, 0, 0, W, H, 0.01, col);
   const z = d.frame != null ? 0.013 : 0.007;

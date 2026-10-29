@@ -14,10 +14,18 @@ export default {
 
   // ---- vegetation: cards from the sprite atlas painted at boot (world/sprites.js), so the texture factory leaves them alone
   foliage: { color: 0xffffff, rough: 0.85, alphaTest: 0.42, side: 'double', tex: false, env: 0.35 },
+  // the same atlas for low plants (tufts, reeds, shrubs, agaves, bananas, cypresses, drapes), lit as if every card faced the sky: no black back faces by night (props.js patches the normal)
+  foliage_low: { color: 0xffffff, rough: 0.9, alphaTest: 0.42, side: 'double', tex: false, env: 0.3 },
   bark_trunk: { color: 0xffffff, rough: 0.95, tex: false },
   bark_euca: { color: 0xffffff, rough: 0.95, tex: false },
   bark_palm: { color: 0xffffff, rough: 0.9, tex: false },
   pot_clay: { color: 0xffffff, rough: 0.9, tex: false },
+
+  // ---- painted signage: ONE atlas (murals, gate boards, plaques, hand signs, chalk) painted at boot by world/signs.js and bound in props.js.
+  // Alpha-tested so the chalk hopscotch needs no blending; A2's `sign_atlas` (shop fascias) is a different material with its own canvas.
+  world_sign: { color: 0xffffff, rough: 0.78, alphaTest: 0.4, tex: false, env: 0.4 },
+  // animal parts and cloth for the living props (life.js): flat colours tinted per vertex
+  fur: { color: 0xffffff, rough: 0.95, tex: false },
 
   // ---- railings, poles, metal furniture
   iron_green: { color: 0x2d5b46, rough: 0.55, metal: 0.45, tex: false },

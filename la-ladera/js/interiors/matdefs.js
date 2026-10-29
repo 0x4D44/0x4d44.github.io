@@ -61,7 +61,7 @@ export default {
   metal_dark: { color: 0x2b2b2d, rough: 0.6, metal: 0.5, tex: false },
   enamel_white: { color: 0xeeeeea, rough: 0.3, metal: 0.05, tex: false },
   ceramic_white: { color: 0xf4f4f0, rough: 0.15, tex: false },
-  mirror: { color: 0xcfd6da, rough: 0.04, metal: 1, tex: false, env: 1.4, vertexColors: false },
+  mirror: { color: 0xa9bcc6, rough: 0.05, metal: 0.5, tex: false, env: 1.2, vertexColors: false, emissive: 0x2c3c46, emissiveIntensity: 0.7 },   // a metal=1 mirror renders black without a reflection probe
   rubber_black: { color: 0x1c1c1c, rough: 0.9, tex: false },
 
   // ---------------------------------------------------------------- misc / clutter
@@ -105,4 +105,6 @@ export default {
 
   // ---------------------------------------------------------------- runtime decals (canvas atlas built in interiors/decals.js)
   decal_atlas: { color: 0xffffff, rough: 0.85, uv: 'unit', tex: false },
+  // soft additive halo behind every TV (runtime canvas material seeded by interiors/anim.js makeTvGlowMaterial; the definition here is for the lint)
+  tv_glow: { color: 0x6fa0ff, rough: 1, tex: false, alpha: 0.25 },
 };

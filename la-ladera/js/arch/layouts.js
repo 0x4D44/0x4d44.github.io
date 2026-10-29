@@ -19,13 +19,18 @@ function stack(S, k, rect, specs) {
 
 /** Carve a bathroom out of `room` (its rect shrinks); returns the new bathroom room. */
 function carveBath(S, room, k, awaySide) {
-  const r = room.rect, bw = 1.55;
-  if (rw(r) >= bw + ti + 1.9) {
+  const r = room.rect, bw = 1.55, bd = 1.7;
+  // classic rule: beside the room when it is wide enough, else across its back wall; but never leave a sliver (< 1.4 m) behind:
+  // when the classic choice does, take the other cut if that leaves more
+  const left = (beside) => (beside ? Math.min(rw(r) - bw - ti, rd(r)) : Math.min(rw(r), rd(r) - bd - ti));
+  let beside = rw(r) >= bw + ti + 1.9;
+  if (left(beside) < 1.4 && left(!beside) > left(beside)) beside = !beside;
+  if (beside) {
     const [a, b] = awaySide === 'east' ? cutEast(r, bw) : cutWest(r, bw);
     room.rect = awaySide === 'east' ? a : b;
     return S.addRoom(k, 'bathroom', awaySide === 'east' ? b : a);
   }
-  const [bath, rest] = cutNorth(r, 1.7);
+  const [bath, rest] = cutNorth(r, bd);
   room.rect = rest;
   return S.addRoom(k, 'bathroom', bath);
 }
@@ -82,8 +87,9 @@ function flatHome(S, k = 0) {
     S.link(sala, dorm); S.link(sala, cocina); S.link(cocina, bath);
   } else {
     const cocina = S.addRoom(k, 'kitchen', B);
+    const bath = rd(B) >= 3.6 && rw(B) >= 2.4 ? carveBath(S, cocina, k, away) : null;   // carve first: a door placed before the cut can end up off the kitchen's wall
     S.link(sala, cocina);
-    if (rd(B) >= 3.6 && rw(B) >= 2.4) S.link(cocina, carveBath(S, cocina, k, away));
+    if (bath) S.link(cocina, bath);
   }
   return sala;
 }
@@ -134,14 +140,32 @@ export function layoutShopHouse(S) {
   }
   S.placeCore(g.core, g.orient, g.flip); S.addCoreRooms();
   const entry = S.addRoom(0, 'entry', g.entry);
-  const [backR, shopR] = cutSouth(g.restFull, rd(g.restFull) - clamp(rd(g.restFull) * 0.3, 2.4, 3.4) - ti);
-  const shop = S.addRoom(0, 'shop', shopR, { occupant: 'shopkeeper' }); shop.shopType = shopType;
-  const back = S.addRoom(0, 'backroom', backR);
+  // behind the shop: a storeroom and a bathroom. The shop must reach back past the stair landing (its door has to sit wholly inside the wall the
+  // two rooms share). Where the bath cannot sit beside the storeroom (a narrow plot) it would leave a sliver of storeroom, so the storeroom gets
+  // the depth it needs for both, or is dropped and the shop runs back to the bathroom.
+  const rest = g.restFull, Dr = rd(rest), shopMin = S.inner.z1 - rcz(S.core.landing) + 0.6;
+  const sideOk = !!g.back || rw(rest) >= 1.55 + ti + 1.4;
+  const bdNeed = sideOk ? 1.8 : 1.7 + ti + 1.5;
+  const bd = Math.min(sideOk ? clamp(Dr * 0.3, 2.4, 3.4) : Math.max(clamp(Dr * 0.3, 2.4, 3.4), bdNeed), Dr - ti - shopMin);
+  const keepBack = bd >= bdNeed && Dr - bd - ti >= 3.6;
+  let shop, back = null, bath, shopR;
+  if (keepBack) {
+    const [backR, sr] = cutSouth(rest, Dr - bd - ti);
+    shopR = sr;
+    shop = S.addRoom(0, 'shop', shopR, { occupant: 'shopkeeper' });
+    back = S.addRoom(0, 'backroom', backR);
+    bath = g.back ? S.addRoom(0, 'bathroom', g.back) : carveBath(S, back, 0, g.coreLeft ? 'east' : 'west');
+  } else {
+    const [bathR, sr] = cutSouth(rest, Dr - 1.7 - ti);
+    shopR = sr;
+    shop = S.addRoom(0, 'shop', shopR, { occupant: 'shopkeeper' });
+    bath = S.addRoom(0, 'bathroom', bathR);
+  }
+  shop.shopType = shopType;
   const core = S.coreRooms[0], lz = S.core.landing;
-  const bath = g.back ? S.addRoom(0, 'bathroom', g.back) : carveBath(S, back, 0, g.coreLeft ? 'east' : 'west');
   S.link(entry, core, { kind: 'arch', w: 1.3, atX: rcx(core.rect) });
   S.link(shop, entry); S.link(core, shop, { atZ: rcz(lz) });
-  S.link(shop, back); S.link(back, bath);
+  if (back) { S.link(shop, back); S.link(back, bath); } else S.link(shop, bath);
   const sw = clamp(rw(shopR) * 0.55, 1.8, 2.7);
   const e = S.lot.entrance;
   const shopU = e && e.side === 'front' && e.u != null && e.u >= shopR.x0 && e.u <= shopR.x1 ? e.u : rcx(shopR);
@@ -154,7 +178,8 @@ export function layoutShopHouse(S) {
 /** Block of flats: [unit | hall+core | unit] on every floor. */
 export function layoutApartments(S) {
   const { inner } = S, Wi = rw(inner), Di = rd(inner), cd = coreDims(S.fh);
-  if (!S.nUp || Wi < cd.across + 2 * ti + 5.6 || Di < cd.along + ti + 3) { return layoutHouse(S); }
+  // a unit is living (>= 3.0) + bedroom (>= 2.8) + kitchen/bath band (>= 2.4) front to back; a shallower plot is planned as a house
+  if (!S.nUp || Wi < cd.across + 2 * ti + 5.6 || Di < cd.along + ti + 3 || Di < 3.0 + 2.8 + 2.4 + 2 * ti) { return layoutHouse(S); }
   const cw = cd.across, wu = (Wi - cw - 2 * ti) / 2;
   const left = R(inner.x0, inner.z0, inner.x0 + wu, inner.z1), mid = R(left.x1 + ti, inner.z0, left.x1 + ti + cw, inner.z1), right = R(mid.x1 + ti, inner.z0, inner.x1, inner.z1);
   const df = Di - cd.along - ti;
@@ -193,7 +218,28 @@ export function layoutUnfinished(S) {
   S.floorsData[top].open = true;
 }
 
+/** Capilla: one nave behind a tall front door, a sacristy and a small bathroom behind the altar wall (A3 furnishes `chapel` rooms with pews and an altar). */
+export function layoutChapel(S) {
+  const { inner } = S, Di = rd(inner), Wi = rw(inner);
+  if (S.F > 1 || Di < 7 || Wi < 4.6) return layoutHouse(S);
+  const bd = clamp(Di * 0.2, 2.4, 3.2);
+  const [back, front] = cutSouth(inner, Di - bd - ti);
+  const nave = S.addRoom(0, 'chapel', front, { name: 'Capilla' });
+  const [sacR, bathR] = cutX(back, back.x0 + clamp(rw(back) * 0.64, 2.6, 7.5));
+  const sacristy = S.addRoom(0, 'office', sacR, { name: 'Sacristía' });
+  const bath = S.addRoom(0, 'bathroom', bathR);
+  S.link(nave, sacristy, { atX: rcx(sacR) });
+  S.link(sacristy, bath);
+  S.extDoor(nave, 'front', 0, { entrance: 'main', w: 1.3, h: 2.4 });
+}
+
+/** Taller: the shop-house plan with a workshop (not a shop) at the street, behind a roll-up door. */
+export function layoutWorkshop(S) {
+  layoutShopHouse(S);
+  for (const r of S.rooms) if (r.type === 'shop') { r.type = 'workshop'; r.name = 'Taller'; r.zone = 'public'; }
+}
+
 export const LAYOUTS = {
   house: layoutHouse, rowhouse: layoutHouse, shophouse: layoutShopHouse, cornerstore: layoutShopHouse, apartments: layoutApartments, unfinished: layoutUnfinished,
-  kiosk: layoutKiosk,
+  kiosk: layoutKiosk, chapel: layoutChapel, workshop: layoutWorkshop,
 };

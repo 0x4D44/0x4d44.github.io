@@ -138,7 +138,16 @@ async function boot() {
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
     });
     await stage('people', async () => { await loadPeople(ctx); spawnPeople(ctx); });
-    await stage('start', () => startEngine(ctx));
+    await stage('start', async () => {
+      // Textures are requested as materials are made and download alongside the build. Draw the first frame only once they are in: on a slow link
+      // the world would otherwise show flat colours and pop when the images land. Bounded, so one stuck request cannot hold the page forever.
+      const lib = ctx.matlib, total = lib?.pending ?? 0;
+      if (total > 0) {
+        const tick = setInterval(() => ctx.progress?.(1 - lib.pending / total, `Cargando texturas (${lib.pending})…`), 200);
+        try { await Promise.race([lib.whenReady(), new Promise((r) => setTimeout(r, 25000))]); } finally { clearInterval(tick); }
+      }
+      startEngine(ctx);
+    });
   } finally { clearInterval(hintTimer); }
   progress('Listo', 1, 0); setBar(1);
   ctx.timings.total = Math.round(performance.now() - t0);

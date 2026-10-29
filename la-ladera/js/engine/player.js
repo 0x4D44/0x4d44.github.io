@@ -90,11 +90,12 @@ export class Player {
   attach(dom) {
     const ctx = this.ctx, canvas = this.canvas = dom ?? document.getElementById('gl');
     const down = (e) => {
-      if (e.repeat) return;
+      const code = typeof e.code === 'string' ? e.code : '';           // a script-made plain Event('keydown') has no code: ignore it, never throw
+      if (e.repeat || !code) return;
       if (e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
-      this.keys.add(e.code);
-      if (e.code === 'KeyE' && !this.locked && ctx.running) ctx.interact.use();
-      if ((e.code === 'Space' || e.code.startsWith('Arrow')) && ctx.running) e.preventDefault();
+      this.keys.add(code);
+      if (code === 'KeyE' && !this.locked && ctx.running) ctx.interact.use();
+      if ((code === 'Space' || code.startsWith('Arrow')) && ctx.running) e.preventDefault();
     };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));

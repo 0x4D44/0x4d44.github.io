@@ -8,6 +8,11 @@ import { buildFlora } from './flora.js';
 import { buildPoles } from './poles.js';
 import { buildVehicles } from './vehicles.js';
 import { buildDress, buildPlanters } from './dress.js';
+import { buildDiscoveries } from './discover.js';
+import { buildBoundary } from './periphery.js';
+import { makeSignAtlas, buildSigns } from './signs.js';
+import { buildHill } from './hill.js';
+import { buildLife } from './life.js';
 
 export async function buildProps(ctx) {
   const plan = ctx.plan;
@@ -16,7 +21,7 @@ export async function buildProps(ctx) {
   const times = {};
   ctx.world = ctx.world ?? {};
   const t0 = performance.now();
-  const occ = buildOccupancy(plan);
+  const occ = buildOccupancy(plan, ctx.buildings);
   ctx.world.occ = occ;
   times.occupancy = Math.round(performance.now() - t0);
   const K = makeKit(ctx, plan, occ);
@@ -32,15 +37,28 @@ export async function buildProps(ctx) {
 
   await step('atlas', () => {
     K.atlas = makeFoliageAtlas(ctx.THREE, ctx.rng.fork('world:sprites'));
-    if (K.atlas) { const m = ctx.mat('foliage'); m.map = K.atlas.texture; m.needsUpdate = true; ctx.world.atlas = K.atlas; }
+    if (K.atlas) { for (const k of ['foliage', 'foliage_low']) { const m = ctx.mat(k); m.map = K.atlas.texture; m.needsUpdate = true; } ctx.world.atlas = K.atlas; }
+    // low plants: light every card with an upward normal (three flips the normal of a back face, which turned tufts black under the moon)
+    const low = ctx.mat('foliage_low');
+    low.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_begin>', '#include <normal_fragment_begin>\n\tnormal = normalize( ( viewMatrix * vec4( 0.0, 1.0, 0.0, 0.0 ) ).xyz );'); };
+    low.customProgramCacheKey = () => 'foliage_low_up';
+    low.needsUpdate = true;
     const ft = makeFenceTexture(ctx.THREE);
     if (ft) { const m = ctx.mat('fence_mesh'); m.map = ft; m.transparent = true; m.alphaTest = 0.12; m.needsUpdate = true; }
+    K.signs = makeSignAtlas(plan);                    // murals, gate boards, plaques, hand signs, chalk (browser only; null under Node: flat boards)
+    if (K.signs) { const m = ctx.mat('world_sign'); m.map = K.signs.texture; m.needsUpdate = true; ctx.world.signAtlas = true; }
+    if (makeSignAtlas.errors?.length) ctx.errors?.push({ stage: 'props', item: 'signs.paint', message: makeSignAtlas.errors.join(' | ') });
   });
+  await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
   await step('poles', () => buildPoles(K));          // before the flora: poles and lamps claim their ground first
   await step('vehicles', () => buildVehicles(K));
   await step('dress', () => buildDress(K));          // before the flora too: benches, the shrine and the shelter keep their ground
+  await step('signs', () => buildSigns(K));          // murals, arch boards, street plaques, hopscotch: they claim their spots before the trees do
+  await step('hill', () => buildHill(K));            // the huerta, the roadside cross, boulders, a yard clothes line
   await step('flora', () => buildFlora(K));
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
+  await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks
+  await step('discoveries', () => buildDiscoveries(K));
 
   ctx.world.propTimes = times;
   ctx.timings && (ctx.timings.propParts = times);

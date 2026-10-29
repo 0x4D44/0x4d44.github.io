@@ -8,6 +8,7 @@ import { BAND, PAD_BAND } from './plan.js';
 import { buildSurfaces } from './surfaces.js';
 import { buildStairs } from './stairs.js';
 import { buildRetaining } from './walls.js';
+import { buildFarTerrain } from './periphery.js';
 
 const TILE = 25, CPT = TILE / CELL;          // 8 x 8 tiles of 50 x 50 cells
 const CARVE = 0.07, CARVE_STAIR = 0.13;       // terrain sits this far under paved surfaces (no z-fighting, no poke-through)
@@ -114,23 +115,8 @@ function buildTerrain(ctx, plan, masks) {
     }
     ctx.batch.flush(id);
   }
-  // ---- the far skirt: 100 m tiles at 5 m up to +-300 m, so the plot does not float in a void (the periphery hills sit on top)
-  const FT = 100, FC = 20;
-  for (let tj = -3; tj < 3; tj++) for (let ti = -3; ti < 3; ti++) {
-    if (ti >= -1 && ti < 1 && tj >= -1 && tj < 1) continue;
-    const id = `world.terrain.far.${ti + 3}.${tj + 3}`, b = ctx.batch.builder(id, { cast: false }), acc = b._acc(GRASS), idx = new Int32Array((FC + 1) ** 2);
-    for (let cj = 0; cj <= FC; cj++) for (let ci = 0; ci <= FC; ci++) {
-      const x = ti * FT + (ci * FT) / FC, z = tj * FT + (cj * FT) / FC, h = H(x, z), e = 1.5;
-      const nx = -(H(x + e, z) - H(x - e, z)) / (2 * e), nz = -(H(x, z + e) - H(x, z - e)) / (2 * e), l = Math.hypot(nx, 1, nz);
-      const n = vnoise(x, z, 23, seed + 5);
-      idx[cj * (FC + 1) + ci] = b.vert(acc, [x, h, z], [nx / l, 1 / l, nz / l], x, z, [0.86 + 0.08 * n, 0.9 + 0.05 * n, 0.74 + 0.05 * n]);
-    }
-    for (let cj = 0; cj < FC; cj++) for (let ci = 0; ci < FC; ci++) {
-      const a = idx[cj * (FC + 1) + ci], bb = idx[(cj + 1) * (FC + 1) + ci], c = idx[(cj + 1) * (FC + 1) + ci + 1], d = idx[cj * (FC + 1) + ci + 1];
-      acc.idx.push(a, bb, c, a, c, d); b.tris += 2;
-    }
-    ctx.batch.flush(id);
-  }
+  // ---- the land around the plot: mountain wall behind, side ridges, the valley in front (periphery.js), so the plot does not float in a void
+  buildFarTerrain(ctx, plan, GRASS);
 }
 
 // ---------------------------------------------------------------------------------------------------- perimeter
