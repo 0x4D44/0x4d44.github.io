@@ -120,7 +120,7 @@ export class AnimCrowd {
     this.chars = []; this.meas = new Map();
     const scene = gltf.scene, holder = scene.getObjectByName('people') || scene;
     const meta = gltf.meta || null;   // optional models/people_meta.json: { <id>: { height } }
-    const anims = gltf.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name.replace(/_\d+\./, '.'); return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
+    const anims = gltf.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name; return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
     const shared = {}; for (const a of anims) { const cat = catOf(a.name.includes('__') ? a.name.split('__')[1] : a.name); if (cat) (shared[cat] = shared[cat] || []).push(a); }
     for (const n of holder.children) {
       const m = /^person_(.+)$/.exec(n.name); if (!m) continue;
@@ -131,17 +131,20 @@ export class AnimCrowd {
       this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
     }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
-    this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name.replace(/_\d+$/, '')); }); }
+    this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
+    this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
+    for (const a of anims) for (const k of a.tracks) { const m = /^(.*)\.(quaternion|position|scale)$/.exec(k.name); if (m) k.name = this.canon(m[1]) + '.' + m[2]; }
+    for (const k of Object.keys(shared)) shared[k] = shared[k];
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
   }
-  _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) { const b = n.name.replace(/_\d+$/, ''); if (this.boneNames.has(b)) n.name = b; } }); return o; }
+  _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
   /** soles/head/hips of a character in a clip, from the real skinned vertices over the clip. Cached. */
   measure(ch, clip) {
     const key = ch.id + ':' + clip.name, hit = this.meas.get(key); if (hit) return hit;
     const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
-    const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /hips/i.test(b.name)) || sk[0].skeleton.bones[0];
+    const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /^(pelvis|hips)$/i.test(b.name)) || sk[0].skeleton.bones[0];
     const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     for (let k = 0; k < N; k++) {
       mixer.setTime((k / N) * clip.duration); obj.updateMatrixWorld(true); hipsB.getWorldPosition(h);
