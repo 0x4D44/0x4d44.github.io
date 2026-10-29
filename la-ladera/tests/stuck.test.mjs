@@ -113,3 +113,18 @@ test('stairs: a flight to an upper slab with a hole is walkable both ways; witho
   const r = analyze({ physics: mk(true), spawn: { x: 0, z: 0 }, cell: 0.3, region: [-13, -13, 13, 13] });
   assert.equal(r.trapNodes, 0, 'the upper slab is not a trap: you can walk back down (or drop off its edge)');
 });
+
+test('jump arcs: an island across a 1.5 m moat is reachable and returnable (walk-only search misses it); the moat itself stays a trap', () => {
+  const mk = () => {
+    const P = new Physics();
+    P.setTerrain((x, z) => { const d = Math.max(Math.abs(x - 6), Math.abs(z)); return d >= 1 && d < 2.5 ? -1.2 : 0; });
+    P.addWalls(wallsRect(0, 0, 24, 24, 0, -5, 5, 0.1));
+    return P;
+  };
+  const bp = { id: 'T', bounds: { x0: 5, x1: 7, z0: -1, z1: 1 }, frame: { toWorld: (x, y, z) => [x, y, z], toLocal: (x, y, z) => [x, y, z] }, entrances: [],
+    rooms: [{ id: 'T.f0.r0', type: 'patio', y: 0, rect: { x0: 5.4, z0: -0.4, x1: 6.6, z1: 0.4 } }] };
+  const withArcs = run(mk(), { buildings: [bp] });
+  assert.equal(withArcs.missingCount, 0, 'the island is reached by a jump and left again by one: ' + JSON.stringify(withArcs.missing));
+  assert.ok(withArcs.trapNodes > 10, `the moat (1.2 m deep, more than a 0.66 m jump) is still a trap: ${withArcs.trapNodes}`);
+  assert.equal(run(mk(), { buildings: [bp], arcs: false }).missingCount, 1, 'without jump arcs the island cannot be reached at all');
+});

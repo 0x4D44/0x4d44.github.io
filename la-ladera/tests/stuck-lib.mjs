@@ -2,20 +2,22 @@
 // CLI wrapper: stuck.mjs. Fixture tests: stuck.test.mjs.
 //
 // Breadth-first search of the DIRECTED graph of moves the player can really make from the spawn: 8 walking directions,
-// stepping up, dropping off ledges, and a hop (start 0.6 m above the surface) that clears low walls. Every edge is one
-// `physics.move` call, so the kernel decides. Doors are treated as openable (E toggles them).
+// stepping up, dropping off ledges, a hop (start 0.6 m above the surface) that clears low walls, and, where walking is blocked,
+// a real jump arc (vy 3.6 m/s at walk or sprint speed, until landing). Every edge is `physics.move` calls, so the kernel decides.
+// Doors are treated as openable (E toggles them).
 // Nodes keep their REAL position (never snapped to a grid centre, which would invent standing places inside walls);
 // the grid only de-duplicates: one node per (cell, quantised height).
 // A backward search from the spawn over the same edges then finds:
 //   traps    reachable from the spawn but with no way back (pit, walled terrace, one-way drop ...)
 //   boundary reachable positions within 1 m of the plot edge (the player can walk off the map)
 //   missing  required places (entrances, rooms, roofs, POIs, nav nodes, anchors) with no spawn-reachable AND return-capable node
+const ARC_JUMP = 3.6, ARC_SPEEDS = [2.3, 5.0];       // CONFIG.PLAYER jump, walk, sprint
 const R2 = Math.SQRT1_2;
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [R2, R2], [R2, -R2], [-R2, R2], [-R2, -R2]];
 
 export function analyze(o) {
   const { physics: P, spawn, plan = {}, buildings = [], anchors = [] } = o;
-  const CELL = o.cell ?? 0.3, LO = o.lo ?? -100, HI = o.hi ?? 100, MAXLIST = o.maxList ?? 12, log = o.log ?? (() => {});
+  const CELL = o.cell ?? 0.3, LO = o.lo ?? -100, HI = o.hi ?? 100, MAXLIST = o.maxList ?? 12, log = o.log ?? (() => {}), ARCS = o.arcs ?? true;
   const N = Math.ceil((HI - LO) / CELL) + 1;
   const [X0, Z0, X1, Z1] = o.region ?? [LO, LO, HI, HI];
   for (const id of [...P.doors.keys()]) P.setDoor(id, true);
@@ -47,6 +49,17 @@ export function analyze(o) {
     if (Math.hypot(S.x - nx[id], S.z - nz[id]) < CELL * 0.5) return -1;     // blocked, or only nudged: not an edge
     return addNode(S.x, S.y, S.z);
   };
+  // A real jump: vy = CONFIG.PLAYER.jump (3.6 m/s: apex 0.66 m), horizontal speed walk 2.3 or sprint 5.0 m/s, until the feet land. It reaches
+  // across a gap or over a low wall in one go, which the one-cell hop cannot (without it, pockets the player jumps out of read as traps).
+  const tryArc = (id, dx, dz, speed) => {
+    S.x = nx[id]; S.z = nz[id]; S.y = ny[id]; S.vy = ARC_JUMP; S.onGround = false; S.blocked = false;
+    const mx = (dx * speed) / 60, mz = (dz * speed) / 60;
+    for (let f = 0; f < 240 && !(S.onGround && f > 0); f++) P.move(S, mx, mz, 1 / 60);
+    if (!S.onGround) return -1;
+    if (S.x < X0 || S.x > X1 || S.z < Z0 || S.z > Z1) return -1;
+    if (Math.hypot(S.x - nx[id], S.z - nz[id]) < CELL * 0.5) return -1;
+    return addNode(S.x, S.y, S.z);
+  };
   let head = 0;
   while (head < queue.length) {
     const id = queue[head++];
@@ -54,6 +67,11 @@ export function analyze(o) {
       let to = tryMove(id, dx, dz, 0);
       if (to < 0) to = tryMove(id, dx, dz, 0.6);                               // hop over a low obstacle
       if (to >= 0 && to !== id) { efrom.push(id); eto.push(to); }
+      const drop = to >= 0 && ny[to] < ny[id] - 0.5;                           // a step off a ledge is one-way; a jump may clear the gap instead
+      if (ARCS && (to < 0 || drop)) for (const speed of ARC_SPEEDS) {                    // walking is blocked (or falls) this way: try a jump at walk and sprint speed
+        const a = tryArc(id, dx, dz, speed);
+        if (a >= 0 && a !== id) { efrom.push(id); eto.push(a); }
+      }
     }
     if (head % 50000 === 0) log(`  ... ${head} nodes expanded, ${nx.length} found`);
   }
