@@ -35,8 +35,8 @@ test('bank keys, boost, airbrake, fire, item latch, look back', () => {
   c = run(input, 20); assert.ok(c.roll === 0 && !c.boost && !c.fire && !c.lookBack && c.airbrake === 0);
 });
 
-test('Q / E barrel roll is an edge; double-tap A / D within 220 ms barrel-rolls, slower taps do not', () => {
-  const { input } = make();
+test('Q / E barrel roll is an edge; with doubleTapRoll ON a double-tap A / D within 220 ms barrel-rolls, slower taps do not', () => {
+  const { input } = make({ pitchMode: 'flight', doubleTapRoll: true });
   fire('keydown', 'KeyE'); fire('keyup', 'KeyE'); assert.equal(run(input, 1).barrel, 1); assert.equal(run(input, 1).barrel, 0);
   fire('keydown', 'KeyQ'); fire('keyup', 'KeyQ'); assert.equal(run(input, 1).barrel, -1);
   now = 5000; fire('keydown', 'KeyA'); now += 150; fire('keyup', 'KeyA'); fire('keydown', 'KeyA'); fire('keyup', 'KeyA');
@@ -62,4 +62,22 @@ test('bindingsText lists every control group and follows pitchMode', () => {
   assert.deepEqual(a.map((g) => g.group), ['Keyboard', 'Gamepad', 'Touch']);
   assert.ok(a[0].rows.some(([k, v]) => /W/.test(k) && /down/i.test(v)));
   assert.ok(b[0].rows.some(([k, v]) => /W/.test(k) && /up/i.test(v)));
+});
+
+test('K-1: double-tap A / D does nothing by default (setting off); Q / E always roll; the Controls text says so', () => {
+  for (const settings of [{ pitchMode: 'flight' }, { pitchMode: 'flight', doubleTapRoll: false }]) {
+    const { input } = make(settings);
+    now = 20000; fire('keydown', 'KeyA'); now += 150; fire('keyup', 'KeyA'); fire('keydown', 'KeyA'); fire('keyup', 'KeyA');
+    assert.equal(run(input, 1).barrel, 0, 'two KeyA presses 150 ms apart: no barrel with the setting off');
+    now += 100; fire('keydown', 'ArrowRight'); now += 100; fire('keyup', 'ArrowRight'); fire('keydown', 'ArrowRight'); fire('keyup', 'ArrowRight');
+    assert.equal(run(input, 1).barrel, 0, 'arrow keys likewise');
+    fire('keydown', 'KeyQ'); fire('keyup', 'KeyQ'); assert.equal(run(input, 1).barrel, -1, 'Q still rolls left');
+    fire('keydown', 'KeyE'); fire('keyup', 'KeyE'); assert.equal(run(input, 1).barrel, 1, 'E still rolls right');
+    const row = input.bindingsText()[0].rows.find((r) => /Double-tap/.test(r[0]));
+    assert.ok(/off/.test(row[1]), 'controls text: ' + row);
+  }
+  const on = make({ pitchMode: 'flight', doubleTapRoll: true });
+  assert.ok(/ON/.test(on.input.bindingsText()[0].rows.find((r) => /Double-tap/.test(r[0]))[1]));
+  now = 30000; fire('keydown', 'KeyA'); now += 150; fire('keyup', 'KeyA'); fire('keydown', 'KeyA'); fire('keyup', 'KeyA');
+  assert.equal(run(on.input, 1).barrel, -1, 'two KeyA presses 150 ms apart: barrel left with the setting on');
 });

@@ -85,7 +85,9 @@ export function aircraftScreen(ui) {
     h('div', { class: 'dots' }, AIRCRAFT.map((a, i) => h('i', { 'data-i': i }))));
   const info = h('aside', { class: 'panel info' }, cls, name, tag, h('div', { class: 'stats' }, bars.map((b) => b.row)), h('div', { class: 'liv-l' }, 'LIVERY ', h('b', { class: 'liv-n' })), sw);
   const go = btn('Continue', () => { ui.flow.craft = AIRCRAFT[idx].id; ui.flow.livery = liv; ui.after('aircraft'); }, { cls: 'primary', cue: 'ui:confirm' });
-  const el = h('div', { class: 'scr aircraft' }, header('CHOOSE YOUR AIRCRAFT'), h('div', { class: 'ac-body' }, stage, info), footer(ui, [go]));
+  const keys = h('p', { class: 'keyhint' });
+  const padOn = () => !!navigator.getGamepads && [...navigator.getGamepads()].some((x) => x && x.connected);
+  const el = h('div', { class: 'scr aircraft' }, header('CHOOSE YOUR AIRCRAFT'), h('div', { class: 'ac-body' }, h('div', { class: 'stage-col' }, stage, keys), info), footer(ui, [go]));
   const refresh = () => {
     const a = AIRCRAFT[idx]; name.textContent = a.name; cls.firstChild?.remove?.(); cls.replaceChildren(h('span', null, a.cls)); tag.textContent = a.tagline;
     for (const b of bars) { const v = a.stats[b.k] || 0; b.fill.style.transform = `scaleX(${v / 10})`; b.v.textContent = v; b.row.dataset.v = v; }
@@ -93,8 +95,10 @@ export function aircraftScreen(ui) {
     el.querySelector('.liv-n').textContent = a.liveries[liv].name.toUpperCase();
     stage.querySelectorAll('.dots i').forEach((d, i) => d.classList.toggle('on', i === idx));
     el.style.setProperty('--ac', a.liveries[liv].primary); el.style.setProperty('--ac2', a.liveries[liv].accent);
+    keys.textContent = padOn() ? '◀ ▶ aircraft    ▲ ▼ livery    A select    B back' : '← → aircraft    ↑ ↓ livery    Enter select    Esc back';
     tt?.set(a, liv);
   };
+  const stepLiv = (d) => { liv = mod(liv + d, AIRCRAFT[idx].liveries.length); refresh(); ui.cue('ui:click'); };
   const step = (d) => { idx = mod(idx + d, AIRCRAFT.length); liv = 0; refresh(); ui.cue('ui:click'); };
   return {
     el,
@@ -104,7 +108,12 @@ export function aircraftScreen(ui) {
       tt.reduce = !!g.settings.reduceFlash; refresh(); tt.start();
     },
     leave() { tt?.stop(); },
-    onNav(dir, cur) { if ((dir === 'left' || dir === 'right') && cur === stage) { step(dir === 'left' ? -1 : 1); return true; } return false; },
+    onNav(dir, cur) {
+      if (cur !== stage) return false;
+      if (dir === 'left' || dir === 'right') { step(dir === 'left' ? -1 : 1); return true; }
+      stepLiv(dir === 'up' ? -1 : 1); return true;
+    },
+    onActivate(a) { if (a === stage) { go.click(); return true; } return false; },
     back: () => 'main',
   };
 }
@@ -178,7 +187,15 @@ export function optionsScreen(ui) {
       const f = ui.flow, a = AIRCRAFT.find((x) => x.id === f.craft), c = COURSES.find((x) => x.id === f.course);
       sum.replaceChildren(h('span', null, a?.name || ''), h('span', null, f.mode === 'gp' ? 'Grand Prix: 4 courses, 3 laps each' : (c?.name || '')));
       laps.style.display = f.mode === 'quick' ? '' : 'none'; refresh();
-    }, back: () => (ui.flow.mode === 'gp' ? 'aircraft' : 'course'),
+    },
+    onNav(dir, cur) {   // Up from the footer lands on the last option row (on its selected value); Down from the last row lands on Start
+      const rows = [diff, laps].filter((r) => r.style.display !== 'none'), last = rows[rows.length - 1];
+      const inFooter = !el.querySelector('.opts').contains(cur);
+      if (dir === 'up' && inFooter) { (last.querySelector('.opt.on') || last.querySelector('.opt')).focus({ preventScroll: true }); return true; }
+      if (dir === 'down' && last.contains(cur)) { go.focus({ preventScroll: true }); return true; }
+      return false;
+    },
+    back: () => (ui.flow.mode === 'gp' ? 'aircraft' : 'course'),
   };
 }
 

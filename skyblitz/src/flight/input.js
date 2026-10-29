@@ -32,9 +32,9 @@ export function createInput(game) {
       return [
         { group: 'Keyboard', rows: [
           [fl ? 'W / Up' : 'S / Down', 'Nose down (push)'], [fl ? 'S / Down' : 'W / Up', 'Nose up (pull)'],
-          ['A / Left, D / Right', 'Bank left / right'], ['Q / E, or double-tap A / D', 'Barrel roll (dodges missiles)'],
+          ['A / Left, D / Right', 'Bank left / right'], ['Q / E', 'Barrel roll (dodges missiles)'],
           ['Shift', 'Boost'], ['Ctrl / X', 'Airbrake'], ['Space', 'Cannon'], ['F / Enter', 'Use item (hold B for backwards)'],
-          ['V', 'Look back'], ['C', 'Change camera'], ['Esc / P', 'Pause'] ] },
+          ['V', 'Look back'], ['C', 'Change camera'], ['Esc / P', 'Pause'], ['Double-tap A or D', game.settings?.doubleTapRoll ? 'Barrel roll: ON (Settings)' : 'Barrel roll: off (enable in Settings)'] ] },
         { group: 'Gamepad', rows: [
           ['Left stick', fl ? 'Pitch (up = nose down) and bank' : 'Pitch (up = nose up) and bank'], ['Right trigger', 'Boost'], ['Left trigger', 'Airbrake'],
           ['LB / RB', 'Barrel roll left / right'], ['A', 'Use item'], ['B', 'Use item backwards'], ['X', 'Cannon'], ['Y', 'Change camera'], ['Right stick click', 'Look back'], ['Start', 'Pause'] ] },
@@ -112,7 +112,7 @@ export function createInput(game) {
     keys.add(code); latched.add(code);
     if (code === 'KeyC') emit('input:camera');
     if (code === 'KeyV') emit('input:lookback');
-    if (code === 'KeyA' || code === 'KeyD' || code === 'ArrowLeft' || code === 'ArrowRight') {
+    if (game.settings?.doubleTapRoll && (code === 'KeyA' || code === 'KeyD' || code === 'ArrowLeft' || code === 'ArrowRight')) {
       const now = performance.now() / 1000, last = lastDown[code] ?? -9;
       if (now - last <= DOUBLE_TAP) { st.tapBarrel = code === 'KeyA' || code === 'ArrowLeft' ? -1 : 1; lastDown[code] = -9; } else lastDown[code] = now;
     }
@@ -184,8 +184,8 @@ export function createInput(game) {
     btn('BOOST', `right:max(116px,calc(env(safe-area-inset-right) + 116px));${bt};width:78px;height:78px`, 'boost', null, 'rgba(255,150,20,.75)');
     btn('ITEM', `${r};bottom:max(118px,calc(env(safe-area-inset-bottom) + 118px));width:72px;height:72px`, null, () => { st.touchItem = true; }, 'rgba(60,140,255,.75)');
     btn('BRAKE', `right:max(106px,calc(env(safe-area-inset-right) + 106px));bottom:max(104px,calc(env(safe-area-inset-bottom) + 104px));width:56px;height:56px;font-size:12px`, 'brake', null, 'rgba(90,90,110,.7)');
-    btn('<', `left:max(14px,env(safe-area-inset-left));top:26%;width:52px;height:52px;font-size:20px`, null, () => { st.touchBarrel = -1; }, 'rgba(60,200,160,.7)');
-    btn('>', `right:max(14px,env(safe-area-inset-right));top:26%;width:52px;height:52px;font-size:20px`, null, () => { st.touchBarrel = 1; }, 'rgba(60,200,160,.7)');
+    btn('<', `left:max(112px,calc(env(safe-area-inset-left) + 112px));top:26%;width:52px;height:52px;font-size:20px`, null, () => { st.touchBarrel = -1; }, 'rgba(60,200,160,.7)');
+    btn('>', `right:max(150px,calc(env(safe-area-inset-right) + 150px));top:26%;width:52px;height:52px;font-size:20px`, null, () => { st.touchBarrel = 1; }, 'rgba(60,200,160,.7)');
     btn('II', `right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:44px;height:44px;font-size:14px`, null, () => emit('input:pause'), 'rgba(20,30,60,.6)');
     btn('CAM', `right:max(66px,calc(env(safe-area-inset-right) + 66px));top:max(12px,env(safe-area-inset-top));width:44px;height:44px;font-size:11px`, null, () => emit('input:camera'), 'rgba(20,30,60,.6)');
     document.body.appendChild(root);
