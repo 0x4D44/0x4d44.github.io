@@ -133,7 +133,7 @@ export class AnimCrowd {
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name.replace(/_\d+$/, '')); }); }
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
-    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = [];
+    this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
   }
   _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) { const b = n.name.replace(/_\d+$/, ''); if (this.boneNames.has(b)) n.name = b; } }); return o; }
   // ------------------------------------------------------------------ measuring
@@ -244,7 +244,15 @@ export class AnimCrowd {
     }
     p.obj.position.set(x, p.y + p.yOff, z); p.obj.rotation.set(0, p.yaw, 0);
   }
+  /** the first-person user (crowd-group local frame): nobody spawns within 2.5 m or in the near view cone, and people step around them */
+  setWalker(x, z, yaw, on = true) { this.walker = on ? { x, z, yaw } : null; }
+  _nearWalker(x, z, R, cone) {
+    const w = this.walker; if (!w) return false; const dx = x - w.x, dz = z - w.z, d = Math.hypot(dx, dz); if (d < R) return true;
+    if (cone && d < cone) { const fx = -Math.sin(w.yaw), fz = -Math.cos(w.yaw); if ((dx * fx + dz * fz) / (d || 1) > Math.cos(1.15)) return true; }   // inside ~66 deg of the view direction
+    return false;
+  }
   _free(x, z, r, self) {
+    if (this._nearWalker(x, z, 0.75 + r * 0.5, 0)) return false;
     for (const a of this.avoid) if (x > a.x0 - r && x < a.x1 + r && z > a.z0 - r && z < a.z1 + r) return false;
     for (const q of this.people) if (q !== self && !q.hidden && q.obj && !q.static && (q.x - x) ** 2 + (q.z - z) ** 2 < 0.45 * 0.45) return false;
     return true;
@@ -253,8 +261,8 @@ export class AnimCrowd {
     this.avoid = avoid;
     for (let i = 0; i < n && this.people.length < this.max; i++) {
       let x, z, tries = 0;
-      do { x = rect.x0 + this.rng() * (rect.x1 - rect.x0); z = rect.z0 + this.rng() * (rect.z1 - rect.z0); } while (tries++ < 30 && !this._free(x, z, 0.3));
-      if (tries > 30) continue;
+      do { x = rect.x0 + this.rng() * (rect.x1 - rect.x0); z = rect.z0 + this.rng() * (rect.z1 - rect.z0); } while (tries++ < 40 && (!this._free(x, z, 0.3) || this._nearWalker(x, z, 2.5, 3.6)));
+      if (tries > 40) continue;
       this.add({ x, z, y, yaw: this.rng() * 6.28, mode: this.rng() < 0.4 ? 'walk' : 'stand', rect, speed: 0.9 + this.rng() * 0.35, wait: 0 });
     }
   }
@@ -318,6 +326,8 @@ export class AnimCrowd {
           if (Math.hypot(p.tx - p.x, p.tz - p.z) < 0.35) { this._drop(p); this.people.splice(i, 1); continue; }
         }
       }
+      // soft avoidance: step away from the user's body instead of standing in their face
+      if (!p.static && this.walker && p.mode !== 'go') { const dx = p.x - this.walker.x, dz = p.z - this.walker.z, d = Math.hypot(dx, dz); if (d < 1.25 && d > 1e-4) { const k = Math.min(1.25 - d, 1.4 * dt); p.x += (dx / d) * k; p.z += (dz / d) * k; if (p.rect) { p.x = Math.min(p.rect.x1, Math.max(p.rect.x0, p.x)); p.z = Math.min(p.rect.z1, Math.max(p.rect.z0, p.z)); } } }
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._place(p, false);

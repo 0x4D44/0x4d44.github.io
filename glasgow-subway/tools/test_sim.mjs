@@ -250,8 +250,8 @@ try {
     return out;
   });
   ok('every hall: platform edge matches the train and exit portals are walkable (both circles)', portals.length === 0, portals.slice(0, 4).join(' | '));
-  const pa = await ev(p, async () => { const bad = []; for (const id of ['govan', 'buchanan-street', 'cessnock', 'kelvinhall', 'st-enoch', 'hillhead']) { await __sim.go({ mode: 'explore', station: id, line: 'outer' }); __sim.ff(8, 0.1); __sim.render(); __sim.render(); const a = __sim.peopleAudit(); if (a.platform < 3 || a.bad.length) bad.push(id + ':' + a.platform + ':' + a.bad.slice(0, 2).join(';')); } return bad; });
-  ok('platform crowds (6 halls): soles on the platform, nobody inside furniture or each other', pa.length === 0, pa.join(' | '));
+  const pa = await ev(p, async () => { const bad = []; for (const id of ['govan', 'buchanan-street', 'cessnock', 'kelvinhall', 'st-enoch', 'hillhead']) { await __sim.go({ mode: 'explore', station: id, line: 'outer' }); __sim.render(); __sim.render(); const cl = __sim.crowdClearance(); if (cl.n > 3 && (cl.d < 2.4 || cl.front < 3)) bad.push(id + ': spawned ' + cl.d.toFixed(2) + ' m from the walker (front ' + cl.front.toFixed(1) + ')'); __sim.ff(8, 0.1); __sim.render(); __sim.render(); const a = __sim.peopleAudit(); if (a.platform < 3 || a.bad.length) bad.push(id + ':' + a.platform + ':' + a.bad.slice(0, 2).join(';')); } return bad; });
+  ok('platform crowds (6 halls): nobody spawns within 2.4 m / the near view cone of the walker; soles on the platform, nobody inside furniture or each other', pa.length === 0, pa.join(' | '));
   await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');

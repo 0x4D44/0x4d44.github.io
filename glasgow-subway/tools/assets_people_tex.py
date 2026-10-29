@@ -218,6 +218,9 @@ def eye_tile(col, seed=0):
     d.ellipse((c - ri * 0.42, c - ri * 0.62, c - ri * 0.12, c - ri * 0.34), fill=(250, 250, 250))             # catch-light
     im = im.filter(ImageFilter.GaussianBlur(0.8)).resize((CELL, CELL), Image.LANCZOS)
     a = np.asarray(im, np.float32) / 255.0
+    yy_, xx_ = np.mgrid[0:CELL, 0:CELL] / CELL
+    a *= (1.0 - 0.38 * np.clip((0.40 - yy_) / 0.40, 0, 1) ** 1.5)[:, :, None]                          # lid shadow on the upper eyeball
+    a *= (1.0 - 0.22 * np.clip((np.hypot(xx_ - 0.5, yy_ - 0.5) - 0.38) / 0.12, 0, 1))[:, :, None]       # sclera darkens toward the rim
     h = np.zeros((CELL, CELL), np.float32)
     return tile_out(a, h, np.full((CELL, CELL), 0.16, np.float32), 0.0, 0.3)
 
