@@ -1438,9 +1438,35 @@ def _decode(j, bin_, ai):
     raw = np.frombuffer(bin_, np.uint8, count=stride * (cnt - 1) + dt.itemsize * nc, offset=base)
     arr = np.lib.stride_tricks.as_strided(raw, shape=(cnt, dt.itemsize * nc), strides=(stride, 1)).copy().view(dt).reshape(cnt, nc)
     return arr
-def quantize_glb(path, hair_mask=True):
+def quantize_glb(path, hair_mask=True, strip_trs=False):
     """KHR_mesh_quantization: NORMAL int8, TEXCOORD u16, COLOR u8, WEIGHTS u8 (positions / joints unchanged); hair material -> alpha MASK; drop unused buffer data"""
     j, bin_ = _read_glb(path)
+    if strip_trs:       # clips are rotation-only: drop baked translation / scale tracks so every person keeps its own bone lengths; prune orphan accessors
+        for an in j.get('animations', []):
+            an['channels'] = [c for c in an['channels'] if c['target']['path'] == 'rotation']
+            used = sorted(set(c['sampler'] for c in an['channels'])); remap = {o: n for n, o in enumerate(used)}
+            an['samplers'] = [an['samplers'][i] for i in used]
+            for c in an['channels']: c['sampler'] = remap[c['sampler']]
+        usedacc = set()
+        for m in j['meshes']:
+            for pr in m['primitives']:
+                usedacc.update(pr['attributes'].values())
+                if 'indices' in pr: usedacc.add(pr['indices'])
+                for t in pr.get('targets', []): usedacc.update(t.values())
+        for sk in j.get('skins', []):
+            if 'inverseBindMatrices' in sk: usedacc.add(sk['inverseBindMatrices'])
+        for an in j.get('animations', []):
+            for sm in an['samplers']: usedacc.update((sm['input'], sm['output']))
+        order = sorted(usedacc); amap = {o: n for n, o in enumerate(order)}
+        j['accessors'] = [j['accessors'][i] for i in order]
+        for m in j['meshes']:
+            for pr in m['primitives']:
+                pr['attributes'] = {k: amap[v] for k, v in pr['attributes'].items()}
+                if 'indices' in pr: pr['indices'] = amap[pr['indices']]
+        for sk in j.get('skins', []):
+            if 'inverseBindMatrices' in sk: sk['inverseBindMatrices'] = amap[sk['inverseBindMatrices']]
+        for an in j.get('animations', []):
+            for sm in an['samplers']: sm['input'] = amap[sm['input']]; sm['output'] = amap[sm['output']]
     conv = {}
     for m in j['meshes']:
         for pr in m['primitives']:
@@ -1451,6 +1477,7 @@ def quantize_glb(path, hair_mask=True):
                     if name == 'NORMAL':
                         q = np.zeros((arr.shape[0], 4), np.int8); q[:, :3] = np.clip(np.round(arr * 127.0), -127, 127).astype(np.int8); data = q; ct = 5120; ty = 'VEC3'; nz = True; stride = 4
                     elif name == 'TEXCOORD_0':
+                        if arr.min() < -1e-4 or arr.max() > 1.0001: continue          # tiling UVs: keep float
                         data = np.clip(np.round(arr * 65535.0), 0, 65535).astype(np.uint16); ct = 5123; ty = 'VEC2'; nz = True; stride = 4
                     elif name == 'COLOR_0':
                         data = np.clip(np.round(arr.astype(np.float32) * 255.0), 0, 255).astype(np.uint8); ct = 5121; ty = 'VEC4'; nz = True; stride = 4
@@ -1487,7 +1514,7 @@ def quantize_glb(path, hair_mask=True):
     req = set(j.get('extensionsRequired', [])); req.add('KHR_mesh_quantization'); j['extensionsRequired'] = sorted(req)
     for m in j['materials']:
         m['doubleSided'] = True
-        if m.get('name') == 'people_hair' and hair_mask: m['alphaMode'] = 'MASK'; m['alphaCutoff'] = 0.5
+        if (m.get('name') == 'people_hair' or str(m.get('name', '')).startswith('alpha_')) and hair_mask: m['alphaMode'] = 'MASK'; m['alphaCutoff'] = 0.5
     _write_glb(path, j, newbin)
     print('quantized', path, round(os.path.getsize(path) / 1e6, 2), 'MB')
 
