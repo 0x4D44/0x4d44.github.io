@@ -1,6 +1,7 @@
 // Lead's independent oracle for the PLAN (CONTRACT 5.1). `checkPlan(plan)` is a pure function over plan data, so the fixtures in
 // plan-oracle.test.mjs can prove that every check is able to fail. Run it on the real plan:
 //   node --import ./la-ladera/tests/register.mjs la-ladera/tests/plan-oracle.mjs [--seed N] [--json]      (exit 1 = violations)
+import './nice.mjs';
 import { pathToFileURL } from 'node:url';
 import { LOT_KINDS, SHOP_TYPES, STREET_KINDS } from '../js/core/vocab.js';
 

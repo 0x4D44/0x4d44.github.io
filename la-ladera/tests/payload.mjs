@@ -3,6 +3,7 @@
 //
 // Budgets: textures <= 24 MB, models <= 32 MB (people <= 14, furniture <= 10, world <= 6, arch <= 2), no file > 8 MB,
 // shipped total (everything except vendor/, dev/, labs/, tests/, tools/) <= 60 MB, estimated GPU texture memory <= 220 MB.
+import './nice.mjs';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve, dirname, relative, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';

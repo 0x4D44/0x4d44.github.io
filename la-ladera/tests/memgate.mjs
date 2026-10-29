@@ -2,6 +2,7 @@
 // This box runs short of commit memory: near 0 GB free, allocations fail for every process, agent sessions included.
 //   node la-ladera/tests/memgate.mjs [minGB=6] [maxWaitSec=300]    exit 0 = go; exit 1 = still short after the wait
 //   import { memGate, commitFreeGB } from './memgate.mjs'; await memGate(6);
+import './nice.mjs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -10,6 +10,12 @@
 //
 // Windows notes (see lessons_learnt): Chrome's renderer children outlive chrome.kill(); we use an OS-assigned free
 // debug port and `taskkill /T /F /PID` on our own pid only. Never blanket-kill chrome.exe: the user's real Chrome runs.
+//
+// Quiet by construction (the person at the desk must never see or feel the tests): ALWAYS `--headless=new` (there is no headed mode here
+// on purpose), every child is spawned with `windowsHide: true`, and the whole process tree runs below-normal priority (./nice.mjs;
+// Chrome and its GPU/renderer processes inherit it from this process).
+import './nice.mjs';
+import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { createServer as createNet } from 'node:net';
@@ -102,6 +108,7 @@ class Page {
   async goto(url, { ready = true, timeout = 240000 } = {}) {
     this.logs.length = this.errors.length = this.netErrors.length = 0;
     await this.send('Page.navigate', { url });
+    await this.b.nice?.();                      // a navigation can start a new renderer: lower it too
     await this.waitFor('document.readyState === "complete"', 60000);
     if (ready) {
       await this.waitFor('!!window.__ladera && !!window.__ladera.ready', 60000);
@@ -129,24 +136,25 @@ class Page {
 }
 
 /**
- * Start a static server + headless Chrome. Options: width, height, gpu ('auto' | 'swiftshader' | 'gpu'), headless (true), root.
- * Returns { open(path), page, close(), baseUrl, renderer }.
+ * Start a static server + headless Chrome. Options: width, height, gpu ('auto' | 'swiftshader' | 'gpu'), root, args.
+ * Returns { open(path), page, close(), baseUrl, renderer }. There is no headed mode: `headless:false` throws.
  */
 export async function launch(o = {}) {
+  if (o.headless === false) throw new Error('chrome.mjs is headless-only: a visible browser window steals the user\'s focus');
   if (o.memGate !== false) await memGate(o.minFreeGB ?? 5, 180);   // shared box: wait for commit headroom before another Chrome
   const srv = await serve(o.root ?? REPO);
   const port = await freePort();
   const profile = await mkdtemp(join(tmpdir(), 'ladera-chrome-'));
   const gpu = o.gpu ?? 'auto';
   const args = [
-    o.headless === false ? '' : '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
+    '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     '--no-first-run', '--no-default-browser-check', '--mute-audio', '--hide-scrollbars', '--disable-background-networking',
     '--disable-features=Translate,MediaRouter', '--ignore-gpu-blocklist', '--enable-unsafe-swiftshader',
     `--window-size=${o.width ?? 1280},${o.height ?? 720}`,
     ...(gpu === 'swiftshader' ? ['--use-angle=swiftshader', '--use-gl=angle'] : gpu === 'gpu' ? ['--use-angle=d3d11'] : []),
     ...(process.platform === 'linux' ? ['--no-sandbox'] : []), ...(o.args ?? []), 'about:blank',
   ].filter(Boolean);
-  const chrome = spawn(findChrome(), args, { stdio: 'ignore', detached: process.platform !== 'win32' });
+  const chrome = spawn(findChrome(), args, { stdio: 'ignore', windowsHide: true, detached: process.platform !== 'win32' });
   const b = { listeners: new Map(), pending: new Map(), id: 0, srv, chrome, profile, baseUrl: `http://127.0.0.1:${srv.port}` };
 
   let wsUrl;
@@ -166,10 +174,24 @@ export async function launch(o = {}) {
     b.pending.set(id, { res, rej, t }); sock.send(JSON.stringify({ id, method, params, sessionId }));
   });
 
+  // Chromium sets its own priorities (GPU process above normal, foreground renderers normal), so inheriting below-normal from this process is not
+  // enough: ask the browser which processes it has (SystemInfo.getProcessInfo) and lower each one. Re-applied on a timer and after navigations.
+  let closed = false;
+  b.nice = async () => {
+    const want = { idle: os.constants.priority.PRIORITY_LOW, below: os.constants.priority.PRIORITY_BELOW_NORMAL }[String(process.env.LADERA_PRIO ?? 'below').toLowerCase()];
+    if (closed || want === undefined) return;
+    try {
+      const info = await b.send('SystemInfo.getProcessInfo', {}, undefined, 5000);
+      for (const p of info.processInfo ?? []) { try { if (os.getPriority(p.id) < want) os.setPriority(p.id, want); } catch { /* exited or not ours to change */ } }
+    } catch { /* browser busy or closing */ }
+  };
+  const niceTimer = setInterval(() => b.nice(), 2500); niceTimer.unref();
+
   const { targetId } = await b.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await b.send('Target.attachToTarget', { targetId, flatten: true });
   const page = new Page(b, sessionId); await page.enable();
   await page.viewport(o.width ?? 1280, o.height ?? 720);
+  await b.nice();
 
   const out = {
     page, baseUrl: b.baseUrl,
@@ -178,6 +200,7 @@ export async function launch(o = {}) {
     /** WebGL renderer string (tells you whether you got the GPU or SwiftShader). */
     renderer: async () => page.eval(`(() => { const c = document.createElement('canvas'); const g = c.getContext('webgl2'); if (!g) return 'no webgl'; const e = g.getExtension('WEBGL_debug_renderer_info'); return e ? g.getParameter(e.UNMASKED_RENDERER_WEBGL) : g.getParameter(g.RENDERER); })()`),
     close: async () => {
+      closed = true; clearInterval(niceTimer);
       try { sock.close(); } catch { /* ignore */ }
       await killTree(chrome); await srv.close();
       await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }).catch(() => {});
@@ -188,7 +211,7 @@ export async function launch(o = {}) {
 
 async function killTree(proc) {
   if (!proc?.pid) return;
-  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' });
+  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
   else { try { process.kill(-proc.pid, 'SIGKILL'); } catch { /* gone */ } }
   await delay(300);
 }
