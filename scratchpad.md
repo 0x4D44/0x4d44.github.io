@@ -204,3 +204,19 @@ human-invoked review triages these — don't fix them inline.
   `npm run test:responsive` run nothing and look green. Seen while running it for `plan-to-build`. Fix: add the Windows
   install paths (`C:\Program Files\Google\Chrome\Application\chrome.exe`) to the list, and consider failing rather than
   skipping when no browser is found.
+
+- [ ] 2026-10-29 — `plan-to-build/index.html`: its regression checks exist only as scripts in a session scratchpad, which is
+  deleted with the session: the plan draw order (rugs and chairs under furniture, 20 checks), the paint stage (32 checks, each
+  room's faces change, nothing outside the building does, and a window's outer reveal stays as built), coplanar faces among
+  construction solids and between frames and reveals (8 checks, the flicker), jamb shimmer under a creeping camera (6 cases),
+  player (32), review fixes (64), export (69) and catalogue (14). They need only node and Chrome (no new dependency). The
+  review's 120 ms first-draw check is load-sensitive: it failed twice on a box at 100 % CPU with idle-priority Chrome and
+  passed once at 75 to 100 %. A repo home would be
+  `tests/plan-to-build.test.mjs` next to `tests/responsive.test.mjs`; that is new test surface, so it needs a go before it is
+  built. Until then the page has no automated guard against the flicker or the rug order coming back.
+
+- [ ] 2026-10-29 — `plan-to-build/index.html`: a first-person tour through the front door as the film's last stage (Arthur asked
+  whether it is possible; the answer and the design are in `wrk_journals/2026.10.29 - JRN - Plan to Build flicker, rug and
+  paint.md`, "The tour"). Nothing is built. It needs Arthur's go on the design first: ceilings, interior lights, a
+  first-person camera mode, a smaller near plane, the entry door D01 opening, a hand-authored path, and the end title moved
+  after it. Painted interior walls (done) were its prerequisite.
