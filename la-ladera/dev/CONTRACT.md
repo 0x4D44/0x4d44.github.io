@@ -242,5 +242,11 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
 
 ## Amendments (lead-maintained; re-read before each major step)
 
-* (none yet)
+* **Labs**: each agent may create `labs/<id>/**` (e.g. `labs/a3/furniture.html`, `labs/a4/people.html`) for standalone test pages and scripts. A lab page loads the real modules through the same importmap
+  (copy the `<script type="importmap">` block from `index.html`; paths are relative to `la-ladera/`). Labs are dev-only: the lead deletes `labs/` before release, so nothing shipped may depend on them.
+* **Ground under and around buildings (A5 <-> A2)**: `plan.heightAt(x,z)` inside any lot footprint (plus 0.3 m margin) returns `lot.y - 0.30` (a plinth), so the ground-floor slab (A2, top surface at `lot.y`) is always above terrain.
+  A5 shapes the street/pad profile so `heightAt` at each `entrance.outside` is within +-0.35 m of `lot.y` (curb, ramp or a stair in the street profile); A2 adds a threshold step/ramp of up to 0.3 m if needed.
+  A2 extends exterior walls down to `min(heightAt sampled around the footprint) - 0.2` so a building on a slope never floats (foundation wall, plain concrete/stone), and A5 builds retaining walls where a pad is cut into the slope.
+* **Reference implementation**: `glasgow-subway/` (same repo) is a prior multi-agent Three.js build. Worth reading: `SPEC.md`, `NOTES-A*.md`, `js/sim/walker.js`, `js/sim/people.js`, `js/explorer/rig.js`, `tools/assets_people*.py`,
+  `models/people.glb` + `people_meta.json` (rigged people from Blender, shared clips). Copy ideas and code freely (not files that are not yours: copy into your own area).
 

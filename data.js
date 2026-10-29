@@ -2031,6 +2031,17 @@ window.ESSAYS = [
     tags: ["rail", "engineering", "history"],
     real: true,
   },
+  {
+    slug: "la-ladera",
+    title: "La Ladera",
+    tagline: "A hillside barrio you can walk into: steep stairways, stacked houses, shops, courtyards and rooftop terraces on 200 m of Andean slope. Every door opens onto a furnished home, and the neighbours answer in Spanish. First person, WASD and mouse. Three.js, Blender models, Codex-made textures, browser speech.",
+    url: "https://0x4d44.github.io/la-ladera/",
+    illustration: "ill-ladera",
+    date: "2026-10-29T18:00:00",
+    year: 2026,
+    tags: ["simulation", "design"],
+    real: true,
+  },
 ];
 
 // Filter vocabulary, split into two axes for the grouped filter row:
@@ -2073,7 +2084,7 @@ window.COLLECTIONS = [
     slugs: ["social-situations", "master-flanger", "be-ready"] },
   { id: "language", name: "Learn a Language", icon: "ill-kotoba",
     blurb: "Japanese and Spanish, taught properly.",
-    slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis"] },
+    slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis", "la-ladera"] },
   { id: "education", name: "Education", icon: "ill-higher-maths",
     blurb: "Interactive study guides for Scottish Highers and Advanced Highers and first-year university courses — revise it, then play with it.",
     slugs: ["higher-maths", "higher-physics", "higher-engineering", "higher-computing", "higher-graphic-communication", "meiosis",
@@ -2116,7 +2127,7 @@ window.COLLECTIONS = [
   { id: "maps", name: "Maps & Nations", icon: "ill-map",
     blurb: "Atlases, isochrones, cities and the past.",
     slugs: ["arran-deep-time", "mdisochrone", "uk-isochrone", "edinburgh-isochrone", "worldviewer",
-      "barcelona", "the-second-world-war", "world-population", "lothian", "perth", "bunched"] },
+      "barcelona", "the-second-world-war", "world-population", "lothian", "perth", "bunched", "la-ladera"] },
   { id: "engine", name: "The Engine Room", icon: "ill-engine",
     blurb: "Engines, motors, turbines and the power plants behind them.",
     slugs: ["higher-engineering", "the-grid", "ic-engine", "cruise-propulsion", "traction-motors",
