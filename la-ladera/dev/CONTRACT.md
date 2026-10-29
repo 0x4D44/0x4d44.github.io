@@ -247,6 +247,12 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
 * **Ground under and around buildings (A5 <-> A2)**: `plan.heightAt(x,z)` inside any lot footprint (plus 0.3 m margin) returns `lot.y - 0.30` (a plinth), so the ground-floor slab (A2, top surface at `lot.y`) is always above terrain.
   A5 shapes the street/pad profile so `heightAt` at each `entrance.outside` is within +-0.35 m of `lot.y` (curb, ramp or a stair in the street profile); A2 adds a threshold step/ramp of up to 0.3 m if needed.
   A2 extends exterior walls down to `min(heightAt sampled around the footprint) - 0.2` so a building on a slope never floats (foundation wall, plain concrete/stone), and A5 builds retaining walls where a pad is cut into the slope.
+* **Door gaps vs wall colliders (A2, A3)**: a wall collider is a capsule, so its END has a round cap of radius `t`. Between two wall segments that stop at a door's jambs (gap `g` face to face) the 0.6 m body needs
+  `g - 2t >= 0.62`: with t = 0.06 (interior wall) any g >= 0.8 works, with t = 0.1 use g >= 0.85, with t = 0.12-0.15 (thick exterior wall) use g >= 0.9-0.95. Keep interior doors at 0.85-0.9 and exterior doors at 1.0 m.
+  The rounded cap funnels the player into the gap (measured: straight walks from +-0.4 m off-centre still pass), so no precise aiming is needed. The same rule applies to furniture blockers beside a door and to passage widths between furniture (>= 0.7 m clear).
+* **`bp.roof.poly` ([[x,z]...]) and `bp.roof.y` are WORLD space** (like `footprint` and `bounds`; unlike `Room.rect`, which is building-local). The lead's reachability probe walks to every walkable roof.
+* **Lead probes you can run on your own area** (plain Node, real physics kernel): `node --import ./la-ladera/tests/register.mjs la-ladera/tests/stuck.mjs --lots L03,L04 --cell 0.3` reports traps (reachable but no way back), walk-off-the-map exposure and unreachable
+  required places (entrances, every room, walkable roofs, POIs, nav nodes, anchors - seats and beds only need a reachable spot within 1.4 m); `--region x0,z0,x1,z1` limits it; exit code 1 = findings. Run it before you report.
 * **Reference implementation**: `glasgow-subway/` (same repo) is a prior multi-agent Three.js build. Worth reading: `SPEC.md`, `NOTES-A*.md`, `js/sim/walker.js`, `js/sim/people.js`, `js/explorer/rig.js`, `tools/assets_people*.py`,
   `models/people.glb` + `people_meta.json` (rigged people from Blender, shared clips). Copy ideas and code freely (not files that are not yours: copy into your own area).
 
