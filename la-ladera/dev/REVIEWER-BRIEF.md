@@ -11,6 +11,12 @@ no sub-agents. **Never edit shipped files** (anything under `la-ladera/` except 
 `dev/RUBRIC.md` (the scale, categories, weights, hard caps C1-C10, defect JSON), `dev/CONTRACT.md` (what was promised), then run the page. Repo root = `H:\worktrees\0x4d44.github.io\20261029-DEV-CLA-la-ladera-explorable-3d-hillside-barrio\`,
 the page is `la-ladera/`.
 
+## Quiet box (binding: a person is working at this machine right now)
+Headless only, nothing visible, nothing that touches their desktop. Open a browser ONLY through `tests/chrome.mjs` (directly, or via `tests/shot.mjs` / `tests/metrics.mjs`): it is headless-only, hidden, low priority, and injects `tests/quiet-init.js`, so
+**pointer lock and speech are simulated in the page** (a real lock clips the person's real mouse into the window box; a real voice talks through their speakers). Never use `mcp__claude-in-chrome__*`, computer-use or any desktop tool, never `start`/`explorer`/an
+image viewer, never play audio, never a second browser launcher (raw CDP, Playwright). Any other heavy command goes through `node la-ladera/tools/nice.mjs --idle <cmd>`; any child you spawn uses `windowsHide: true` with piped stdio (never `'inherit'`).
+The title screen works inside the page: `p.eval('document.getElementById("start").click()')` locks the (simulated) pointer. Language lens: what an NPC "said" is data in `window.__quiet.spoken` (`text, lang, voice, rate, pitch, volume, t`) next to the subtitles; judge the Spanish as text.
+
 ## Tools (plain Node, headless Chrome with the real GPU; close stdin on every command: `</dev/null`)
 * **Screenshot**: `node la-ladera/tests/shot.mjs --q "autostart&manual" --eval "__ladera.enter('L07'); __ladera.look(0.4,-0.1); __ladera.step(30)" --out .scratch/<id>/a.jpg` then LOOK at the jpg with the Read tool. Several shots in one boot: `--steps steps.json`
   (`[{"eval":"...","out":"a.jpg"},...]`). Add `--w 1600 --h 900` for detail. For a scripted session: `import { launch } from './la-ladera/tests/chrome.mjs'` (see its header; `p.eval`, `p.canvasShot`, `p.summary()`; always `await b.close()`).
