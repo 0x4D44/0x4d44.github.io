@@ -349,6 +349,7 @@ class Game {
       scene: this.scene, track, karts: this.karts, effects: this.effects, audio: this.audio, rng: this.rng,
     });
     this._wireRace();
+    track.onRaceStart?.(this.race, this.player, this.audio, this);   // optional per-track hook (e.g. the Highland piper)
     this._wireKarts();
     this.chase.setTarget(this.player);
     this.chase.setMode?.(this.settings?.camera === "far" ? "far" : "chase");
