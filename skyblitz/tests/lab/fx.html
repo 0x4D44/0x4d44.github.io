@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>skyblitz lab: fx + post</title>
+<!-- FX gallery driven through the real event bus, with the real Fx + Post and three racers flying a straight.
+     ?fx=explosion|missile|shield|emp|lightning|pickup|gate|perfect|boost|smoke|flak|cannon|stunt|tumble|spray|fireworks|all
+     ?quality=low|med|high|ultra  ?night=1  ?view=chase|static  ?frames=N (frames to simulate before __fxlab.ready)  ?boost=1 ?post=0
+     window.__fxlab: ready, fire(name), run(frames), game, ms (frame-ms with/without post)  -->
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh}</style>
+<script type="importmap">{"imports":{"three":"../../vendor/three.module.min.js","three/addons/":"../../vendor/addons/"}}</script>
+<canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { EventBus } from '../../src/events.js';
+import { QUALITY, DEFAULT_SETTINGS } from '../../src/config.js';
+import { Assets } from '../../src/assets.js';
+import { AIRCRAFT } from '../../src/craft/roster.js';
+import { buildAircraft, updateAircraft } from '../../src/craft/aircraft.js';
+import { makeSkyEnvironment } from '../../src/craft/env.js';
+import { Fx } from '../../src/craft/fx.js';
+import { createPost } from '../../src/craft/post.js';
+
+const P = new URLSearchParams(location.search);
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+const night = P.has('night');
+const scene = new THREE.Scene();
+const skyCol = night ? 0x0a1030 : 0x86b8f2;
+scene.background = new THREE.Color(skyCol); scene.fog = new THREE.FogExp2(night ? 0x0a1030 : 0xa8c8f0, 0.0016);
+scene.environment = makeSkyEnvironment(renderer, night ? { top: [0.02, 0.04, 0.12], horizon: [0.12, 0.1, 0.25], sun: [2, 2.5, 4] } : undefined);
+const sun = new THREE.DirectionalLight(night ? 0x8899ff : 0xfff0d8, night ? 0.6 : 2.6); sun.position.set(80, 140, 60); scene.add(sun);
+scene.add(new THREE.HemisphereLight(night ? 0x223366 : 0xbcd8ff, 0x556644, 0.6));
+// ground with a grid for speed cues
+const gtex = (() => { const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); g.fillStyle = '#5f8f57'; g.fillRect(0, 0, 256, 256); g.fillStyle = '#6fa062'; g.fillRect(0, 0, 128, 128); g.fillRect(128, 128, 128, 128); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(200, 200); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: gtex, roughness: 1 })); ground.position.y = -40; scene.add(ground);
+const camera = new THREE.PerspectiveCamera(74, 1, 0.6, 12000); scene.add(camera);
+
+const qid = P.get('quality') || 'high';
+const game = {
+  THREE, scene, camera, renderer, canvas, events: new EventBus(), settings: { ...DEFAULT_SETTINGS, reduceFlash: P.has('reduce') }, q: QUALITY[qid], assets: new Assets(renderer),
+  course: { environment: { bloom: { strength: night ? 0.9 : 0.5, threshold: night ? 0.7 : 0.9, radius: 0.55 }, grade: { saturation: 1.12, contrast: 1.06, vignette: 0.32, tint: [1, 1, 1] }, fogColor: new THREE.Color(0xa8c8f0), night }, groundHeight: () => -40 },
+  race: null, player: null, perf: {}, width: 1, height: 1,
+};
+renderer.shadowMap.enabled = false;
+game.fx = new Fx(game); game.post = createPost(game);
+await game.assets.preload(['explosion_atlas', 'smoke_atlas', 'spark', 'shockwave', 'flare_atlas']);
+
+// racers: three aircraft flying -Z
+const mk = (i, spec, x, y, z, speed) => {
+  const model = buildAircraft(spec, i % 3, game); scene.add(model);
+  const r = { id: i, isPlayer: i === 0, spec, livery: i % 3, model, controls: { roll: 0, pitch: 0, yaw: 0, boost: false, fire: false }, flight: { speed, vel: new THREE.Vector3(0, 0, -speed), throttle: 0.85, gLoad: 1, boost: { active: false, meter: 50 } }, render: { pos: new THREE.Vector3(x, y, z), quat: new THREE.Quaternion() }, tumble: 0, shield: 0, place: i + 1 };
+  return r;
+};
+const racers = [mk(0, AIRCRAFT[P.has('craft') ? AIRCRAFT.findIndex((a) => a.id === P.get('craft')) : 0], 0, 0, 0, 110), mk(1, AIRCRAFT[3], -28, 6, -40, 100), mk(2, AIRCRAFT[4], 30, -4, -70, 120)];
+game.player = racers[0]; game.race = { racers, items: { missiles: [], drones: [] } };
+game.fx.init(); game.post.init();
+const resize = () => { const w = innerWidth, h = innerHeight, pr = Math.min(devicePixelRatio, game.q.pixelRatioCap) * game.q.renderScale; renderer.setPixelRatio(pr); renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); game.post.resize(w, h, pr); game.width = w; game.height = h; };
+game.post.setQuality(game.q); resize(); addEventListener('resize', resize);
+game.events.emit('race:ready', { race: game.race });
+
+let T = 0; const DT = 1 / 60; const view = P.get('view') || 'chase';
+const _p = new THREE.Vector3(), _q = new THREE.Quaternion();
+if (P.has('boost')) racers[0].flight.boost.active = true;
+function step() {
+  T += DT;
+  racers.forEach((r, i) => {
+    if (!P.has('still')) r.render.pos.z -= r.flight.speed * DT * (r.flight.boost.active ? 1.4 : 1);
+    r.render.pos.y += Math.sin(T * 0.7 + i) * 0.04;
+    const roll = Math.sin(T * 0.8 + i * 2) * 0.6; r.controls.roll = Math.sin(T * 0.8 + i * 2); r.controls.pitch = 0.3 * Math.sin(T * 0.5 + i);
+    r.flight.gLoad = 1 + 2.5 * Math.abs(Math.sin(T * 0.8 + i * 2));
+    r.render.quat.setFromEuler(new THREE.Euler(0, 0, -roll, 'YXZ'));
+    r.model.position.copy(r.render.pos); r.model.quaternion.copy(r.render.quat);
+    updateAircraft(r.model, r, DT);
+  });
+  const pl = racers[0];
+  if (view === 'chase') { camera.position.copy(pl.render.pos).add(_p.set(0, 3.6, 12)); camera.lookAt(_p.copy(pl.render.pos).add(new THREE.Vector3(0, 0.8, -30))); }
+  else { camera.position.set(pl.render.pos.x + 4, pl.render.pos.y + 7, pl.render.pos.z - 30); camera.lookAt(pl.render.pos.x + 2, pl.render.pos.y + 4, pl.render.pos.z - 90); }
+  ground.position.x = camera.position.x; ground.position.z = camera.position.z;
+  const m = game.race.items.missiles; for (const b of m) { b.pos.addScaledVector(b.dir, b.speed * DT); b.t += DT; if (b.t > 2.2) { b.dead = true; game.events.emit('missile:hit', { missile: b, target: racers[1], owner: racers[0], pos: b.pos.clone() }); } }
+  game.race.items.missiles = m.filter((b) => !b.dead);
+  game.fx.update(DT, game); game.post.update(DT, game); game.post.render(DT);
+}
+const at = (dz = -90, dx = 0, dy = 6) => new THREE.Vector3(racers[0].render.pos.x + dx, racers[0].render.pos.y + dy, racers[0].render.pos.z + dz);
+const E = game.events;
+const fire = {
+  explosion: () => E.emit('missile:hit', { target: racers[1], owner: racers[0], pos: at(-90, 8, 6) }),
+  missile: () => { const p = racers[0].render.pos.clone(); game.race.items.missiles.push({ id: 7, pos: p.clone().add(new THREE.Vector3(0, -1, -8)), dir: new THREE.Vector3(0.05, 0.02, -1).normalize(), speed: 230, t: 0, dead: false }); E.emit('missile:launch', { id: 7, owner: racers[0], target: racers[1], pos: p }); },
+  shield: () => { racers[0].shield = 8; E.emit('shield:up', { racer: racers[0] }); setTimeout(() => E.emit('shield:block', { racer: racers[0], by: 'missile' }), 900); },
+  emp: () => E.emit('emp:fire', { owner: racers[0], pos: racers[0].render.pos.clone(), radius: 110 }),
+  lightning: () => E.emit('lightning:strike', { owner: racers[1], target: racers[0], pos: at(-110, 5, 0) }),
+  pickup: () => E.emit('pickup:orb', { racer: racers[0], item: 'missile', pos: at(-40, 6, 3) }),
+  gate: () => E.emit('gate:pass', { racer: racers[0], gate: { pos: at(-50, 0, 0), radius: 38, quat: new THREE.Quaternion() }, offset: 0.6, perfect: false }),
+  perfect: () => E.emit('gate:pass', { racer: racers[0], gate: { pos: at(-50, 0, 0), radius: 38, quat: new THREE.Quaternion() }, offset: 0.05, perfect: true }),
+  boost: () => { racers[0].flight.boost.active = true; E.emit('racer:boost', { racer: racers[0], kind: 'item', duration: 2, power: 1.6 }); },
+  smoke: () => E.emit('smoke:deploy', { owner: racers[1], pos: at(-70, 0, 0) }),
+  flak: () => E.emit('mine:hit', { victim: racers[1], pos: at(-60, 4, 2) }),
+  cannon: () => { for (let i = 0; i < 6; i++) setTimeout(() => { E.emit('cannon:fire', { racer: racers[0], pos: racers[0].render.pos.clone().add(new THREE.Vector3(i % 2 ? 2 : -2, 0, -6)), dir: new THREE.Vector3(0, 0, -1) }); }, i * 60); E.emit('cannon:hit', { racer: racers[0], target: racers[1], pos: at(-60, 4, 0) }); },
+  stunt: () => E.emit('racer:stunt', { racer: racers[0], kind: 'loop', reward: 25 }),
+  tumble: () => { racers[2].tumble = 3; E.emit('racer:tumble', { racer: racers[2], duration: 3 }); E.emit('racer:hit', { racer: racers[2], by: racers[0], kind: 'missile', pos: racers[2].render.pos.clone(), severity: 0.9 }); },
+  spray: () => { game.course.groundHeight = () => racers[0].render.pos.y - 7; },
+  fireworks: () => E.emit('race:finish', { racer: racers[0], place: 1, time: 60 }),
+  hit: () => E.emit('racer:hit', { racer: racers[0], by: racers[1], kind: 'missile', pos: racers[0].render.pos.clone(), severity: 0.9 }),
+};
+function run(n) { for (let i = 0; i < n; i++) step(); return game.renderer.info.render; }
+const timeIt = (n) => { const t0 = performance.now(); for (let i = 0; i < n; i++) { step(); } renderer.getContext().finish(); return (performance.now() - t0) / n; };
+window.__fxlab = {
+  ready: false, game, fire: (n) => { fire[n]?.(); }, run, fireNames: Object.keys(fire),
+  info: () => { const i = renderer.info; return { calls: i.render.calls, triangles: i.render.triangles, geometries: i.memory.geometries, textures: i.memory.textures, sprites: { smoke: game.fx.smoke.n, glow: game.fx.glow.n, sparks: game.fx.sparks.n, expl: game.fx.expl.n } }; },
+  bench(n = 120) { const a = timeIt(n); const q = game.q; const on = game.q.post; game.q = { ...q, post: false }; game.post.setQuality(game.q); const b = timeIt(n); game.q = q; game.post.setQuality(q); return { ms_post_on: a, ms_post_off: b, post: on, quality: q.id }; },
+};
+run(Number(P.get('frames') || 90));
+if (P.get('fx') && P.get('fx') !== 'all') { fire[P.get('fx')]?.(); run(Number(P.get('after') || 20)); }
+else if (P.get('fx') === 'all') { for (const k of ['pickup', 'gate', 'stunt', 'cannon']) fire[k](); run(10); }
+if (!P.has('manual')) { const loop = () => { step(); requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+window.__fxlab.ready = true;
+</script>
