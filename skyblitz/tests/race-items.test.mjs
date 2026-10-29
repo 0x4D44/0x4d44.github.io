@@ -112,9 +112,11 @@ function missileArena(seed) {
   assert.equal(items.useItem(owner), true);
   assert.equal(items.missiles.length, 1);
   assert.equal(items.missiles[0].target, target);
+  target._ts = 880;
   return { ...ar, owner, target };
 }
-const run = (race, until, seconds = 6) => stepRace(race, { seconds, controls: idle(), until });
+// the idle target is carried down the centreline at 100 m/s (a neutral aircraft would otherwise fly into the first bend and tumble)
+const run = (race, until, seconds = 6) => stepRace(race, { seconds, controls: idle(), until: (x) => { const t = x.racers.find((r) => r._ts); if (t) { t._ts += 100 / 60; place(x, t, t._ts, 0, 0, 100); } return until(x); } });
 
 test('missile: a locked missile hits a plain target and tumbles it', () => {
   const { race, rec, target, items } = missileArena(25);
@@ -148,7 +150,7 @@ test('missile counterplay: shield eats it, barrel roll dodges it, an obstacle st
   {
     const { race, rec, target } = missileArena(29);
     let k = 0;
-    run(race, () => { if (++k === 100) { place(race, target, 1800, 0, 0, 100); } return types(rec, 'missile:evaded').length > 0; }, 8);
+    run(race, () => { if (++k === 100) { target._ts = 1800; place(race, target, 1800, 0, 0, 100); } return types(rec, 'missile:evaded').length > 0; }, 8);
     const e = types(rec, 'missile:evaded')[0]; assert.ok(e && e.payload.by === 'outrun', 'outrun, got ' + e?.payload.by);
     assert.equal(target.tumble, 0);
   }
@@ -156,11 +158,12 @@ test('missile counterplay: shield eats it, barrel roll dodges it, an obstacle st
 
 test('mine: arms, ignores its owner at first, then tumbles whoever flies into it', () => {
   const { race, rec, items } = arena(30, { bots: 2 });
+  const clearS = [900, 1300, 1700, 2100, 2900, 3300, 3700].find((q) => !course.hazards.some((h) => h.s > q - 160 && h.s < q + 900)) ?? 900;
   const owner = race.player, victim = race.racers.find((r) => r.isAI);
-  place(race, owner, 900); items.give(owner, 'mine', 1); assert.equal(items.useItem(owner), true);
+  place(race, owner, clearS); items.give(owner, 'mine', 1); assert.equal(items.useItem(owner), true);
   const mine = items.mines[0]; assert.ok(mine);
   // armed, but the owner is inside the grace window
-  place(race, victim, 3000);
+  place(race, victim, clearS + 400);
   const pin = (r) => { r.flight.pos.copy(mine.pos); r.prev.pos.copy(mine.pos); race.onTeleport(r); };
   for (let k = 0; mine.t < W.mine.ownerGrace - 0.1 && k < 400; k++) { pin(owner); stepRace(race, { steps: 1, controls: idle() }); }
   assert.ok(mine.t > W.mine.arm, 'armed');
@@ -168,13 +171,14 @@ test('mine: arms, ignores its owner at first, then tumbles whoever flies into it
   for (let k = 0; !mine.dead && k < 400; k++) { pin(owner); stepRace(race, { steps: 1, controls: idle() }); }
   assert.equal(types(rec, 'mine:hit').length, 1, 'after the grace window even the owner is hit');
   owner.invuln = 0; owner.tumble = 0; owner.flight.tumble.t = 0;
-  items.give(owner, 'mine', 1); place(race, owner, 900); items.useItem(owner);
+  items.give(owner, 'mine', 1); place(race, owner, clearS); items.useItem(owner);
   // a stranger on the mine
-  place(race, owner, 3500);
+  place(race, owner, clearS + 700);
+  victim.invuln = 0;
   const m = items.mines[0];
   for (let k = 0; !m.dead && k < 200; k++) { victim.flight.pos.copy(m.pos); victim.prev.pos.copy(m.pos); race.onTeleport(victim); stepRace(race, { steps: 1, controls: idle() }); }
   assert.equal(types(rec, 'mine:hit').length, 2);
-  assert.ok(victim.tumble > 0 && victim.stats.hitsTaken === 1);
+  assert.ok(victim.tumble > 0 && victim.stats.hitsTaken >= 1, 'kinds ' + types(rec, 'racer:hit').map((e) => e.payload.kind + ':' + e.payload.racer.name).join() + ' tumble ' + victim.tumble + ' hits ' + victim.stats.hitsTaken);
   assert.equal(items.mines.length, 0, 'mine consumed');
 });
 

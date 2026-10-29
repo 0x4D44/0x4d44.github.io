@@ -8,6 +8,7 @@ import { createFakeGame, loadCourseHeadless, makeRace, stepRace, recordEvents, s
 import { createControls } from '../src/controls.js';
 import { RACE, DIFFICULTY } from '../src/race/balance.js';
 import { basisQuat } from '../src/world/layout.js';
+import { stepProgress } from '../src/race/progress.js';
 
 const base = createFakeGame({ seed: 11 });
 const course = await loadCourseHeadless(base, 'sunrise');
@@ -343,4 +344,54 @@ test('SIM_DT is 1/60 and the race never reads wall-clock time', () => {
   const { race } = fresh(23);
   const t0 = Date.now(); stepRace(race, { seconds: 1 }); assert.ok(Date.now() - t0 < 2000);
   assert.ok(RACE.countdown === 3);
+});
+
+test('shortcut entry: a deep 70 m remap is credited in capped steps and repaid, never in one jump; the exit settles the debt', () => {
+  const { race } = fresh(40, { bots: 0, mode: 'trial' });
+  go(race, null);
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  place(race, p, 1000); p.proj.branch = -1; p.lastBranch = -1; p.lastS = 1000; p.dist = 1000; p.debt = 0;
+  const real = course.project; const script = [];
+  course.project = (pos, hint, out) => { const x = script.shift(); out.s = x.s; out.branch = x.branch; out.u = x.u ?? 0; out.lateral = 0; out.vertical = 0; out.dist = 1; return out; };
+  try {
+    const steps = []; const run = (s, branch, u) => { script.push({ s, branch, u }); const d0 = p.dist; stepProgress(race, p, SIM_DT); steps.push(p.dist - d0); };
+    run(1003, -1, 0);
+    run(1076, 0, 100);                                // the deep-entry jump: 73 m of mapped arc in one step
+    assert.ok(steps[1] <= 40.5, 'entry credit capped, got ' + steps[1]);
+    assert.ok(p.debt > 30, 'remainder banked, debt ' + p.debt);
+    let s = 1076; for (let i = 0; i < 30; i++) { s += 3; run(s, 0, 100 + i * 3); }
+    assert.ok(Math.max(...steps.slice(2)) < 5, 'repayment is smooth: max forward step ' + Math.max(...steps.slice(2)));
+    run(s + 3, -1, 0);                                // exit: settle in full
+    assert.ok(Math.abs(p.dist - (s + 3)) < 1e-6, `dist ${p.dist} equals the mapped s ${s + 3}`);
+    assert.equal(p.debt, 0);
+  } finally { course.project = real; }
+});
+
+test('column flank: clipping the side of a tall column slides the racer out sideways, never up onto the roof (neon regression, 85 m ejection)', () => {
+  const { race, rec } = fresh(41, { bots: 0, mode: 'trial' });
+  go(race, null);
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  place(race, p, 1500, 0, 0, 100);
+  const wall = p.flight.pos.x + 1;
+  const real = course.groundHeight;
+  course.groundHeight = (x) => (x > wall ? 190 : 0);                 // a 190 m column whose flank is at x = wall
+  try {
+    p.flight.pos.y = 100;
+    const y0 = p.flight.pos.y, x0 = p.flight.pos.x;
+    stepRace(race, { steps: 1, controls: createControls() });
+    assert.ok(p.flight.pos.y - y0 < 10, 'not ejected upward: dy ' + (p.flight.pos.y - y0));
+    assert.ok(p.flight.pos.x < x0 + 0.5, 'pushed away from the column, dx ' + (p.flight.pos.x - x0));
+    assert.ok(rec.log.some((e) => e.type === 'racer:hit' && e.payload.kind === 'ground'), 'it is a crash, not a free pass');
+  } finally { course.groundHeight = real; }
+});
+
+test('scrape respawn: riding geometry for seconds (not just standing still) puts the racer back on the line', () => {
+  const { race, rec } = fresh(42, { bots: 0, mode: 'trial' });
+  go(race, null);
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  place(race, p, 2000, 0, 0, 100);
+  const real = course.collide;
+  course.collide = (pos, r, proj, out) => { out.kind = 'wall'; out.depth = 0.5; out.soft = true; (out.normal ||= new THREE.Vector3()).set(0, 1, 0); return true; };
+  try { stepRace(race, { seconds: 4.5, controls: createControls() }); } finally { course.collide = real; }
+  assert.ok(rec.log.some((e) => e.type === 'race:respawn' && e.payload.racer === p), 'respawned after ' + RACE.respawnScrapeT + ' s of continuous contact');
 });

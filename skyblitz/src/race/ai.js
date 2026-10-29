@@ -22,7 +22,7 @@ export function createAI(race, racer, pilot, difficulty) {
   const rng = race.game.rng.fork(0xa100 + racer.id * 131);
   const sk = clamp(P.skill * (0.55 + 0.45 * difficulty.aiSkill), 0.25, 1);
   const cons = P.consistency, aggro = P.aggression * difficulty.aggro;
-  const f = {}, g = {}, bf = {}, lookF = {};
+  const f = {}, g = {}, bf = {}, lookF = {}, hzF = {}, hzD = new THREE.Vector3(), hzList = [];
   const S = {
     lane: rng.range(-0.45, 0.45), avoidSide: 0, avoidT: 0,
     mist: { t: 0, kind: '', mag: 0 }, nextMist: rng.range(8, 40),
@@ -53,15 +53,14 @@ export function createAI(race, racer, pilot, difficulty) {
 
   function cornerCap(s) {
     const h = course.aiHints(s);
-    if (h && isFinite(h.speedCap)) return h.speedCap;
     course.frameAt(s, lookF);
-    const kappa = Math.abs(lookF.curvature || 0);
-    return kappa < 1e-4 ? 400 : Math.sqrt(A_LAT / kappa);
+    const kappa = Math.abs(lookF.curvature || 0), own = kappa < 1e-4 ? 400 : Math.sqrt(A_LAT / kappa);     // never trust the hint alone: bank/curvature of the path itself
+    return h && isFinite(h.speedCap) ? Math.min(h.speedCap, own) : own;
   }
 
   function decideBranch(b) {
     const risk = b.risk ?? 0.5;
-    let p = 0.08 + 0.8 * P.shortcuts - risk * 0.45 * (1 - sk * 0.8);
+    let p = -0.08 + 0.8 * P.shortcuts - risk * 0.45 * (1 - sk * 0.8);
     p += racer.place >= 5 ? 0.15 : racer.place === 1 ? -0.12 : 0;
     p *= 0.7 + 0.3 * difficulty.aiSkill;
     return rng.float() < clamp(p, 0.03, 0.97);
@@ -133,6 +132,7 @@ export function createAI(race, racer, pilot, difficulty) {
         return;
       case 'shield':
         if (threat && threat.tti < 2.6) return fire();
+        if (race.racers.some((o) => o !== racer && o.lock.target === racer && o.lock.progress > 0.6)) return fire();      // someone is locking on: raise it before the shot
         if (P.itemSense < 0.5 || S.heldT > patience + 10) return fire();
         return;
       case 'emp': {
@@ -153,6 +153,54 @@ export function createAI(race, racer, pilot, difficulty) {
       case 'drone': return fire();
       default: return;
     }
+  }
+
+
+  // ---- hazard planner: pick the lateral/vertical offset (at the look-ahead point) that clears every hazard in the look-ahead window.
+  // Candidates are scored on clearance (craft radius + 11 m), deviation from the wanted line, and whether the swerve is reachable in time.
+  const plan = { lat: 0, vert: 0, near: false, clear: 99 };
+  function planHazards(s, v, lat0, vert0, hw, hh, look) {
+    plan.lat = lat0; plan.vert = vert0; plan.near = false; plan.clear = 99;
+    hzList.length = 0;
+    const horizon = look * 1.6 + 50;
+    for (const h of course.hazards || []) {
+      if (h.branch >= 0 || !h.pos) continue;
+      const ds = wrapDelta(h.s - s, L);
+      if (ds < -12 || ds > horizon) continue;
+      course.frameAt(h.s, hzF); hzD.copy(h.pos).sub(hzF.pos);
+      hzList.push({ ds, l: hzD.dot(hzF.right), v: hzD.dot(hzF.up), r: (h.radius || 15) + 11, column: !!h.column });
+      if (ds < v * 2.2 && ds > 0) plan.near = true;
+    }
+    // terrain that reaches into the corridor (mesas, rooftops): per-lane terrain penalty at four stations ahead
+    let terr = null;
+    for (let st = 0; st < 4; st++) {
+      course.frameAt(s + look * (0.35 + st * 0.4), hzF);
+      for (let k = -8; k <= 8; k++) {
+        const cl = k * hw * 0.1; _a.copy(hzF.pos).addScaledVector(hzF.right, cl).addScaledVector(hzF.up, vert0);
+        const over = course.groundHeight(_a.x, _a.z) + 16 - _a.y;
+        if (over > 0) { terr ||= new Float32Array(17); terr[k + 8] += over * 14; }
+      }
+    }
+    if (!hzList.length && !terr) return plan;
+    let nearest = 1e9; for (const h of hzList) if (h.ds > -4) nearest = Math.min(nearest, h.ds);
+    const tn = Math.max(0.05, nearest / Math.max(v, 40)), reach = 0.5 * 45 * tn * tn + 6;
+    const vcs = hzList.some((h) => !h.column) ? [vert0, vert0 - 0.4 * hh, vert0 + 0.4 * hh] : [vert0];
+    let bc = Infinity;
+    for (let k = -8; k <= 8; k++) {
+      const cl = k * hw * 0.1; if (Math.abs(cl) > hw * 0.78) continue;
+      for (const cv of vcs) {
+        if (Math.abs(cv) > hh * 0.5) continue;
+        let cost = (terr ? terr[k + 8] : 0) + Math.abs(cl - lat0) * 0.6 + Math.abs(cv - vert0) * 0.4 + Math.abs(cl - racer.lateral) * 0.12 + Math.max(0, Math.abs(cl - racer.lateral) - reach) * 3;
+        let mc = 99;
+        for (const h of hzList) {
+          const d = Math.hypot(cl - h.l, h.column ? 0 : cv - h.v) - h.r, w = h.ds < look ? 1 : 0.5;
+          if (d < 0) cost += (1500 - d * 80) * w; else if (d < 14) cost += (14 - d) * 4 * w;
+          if (d < mc) mc = d;
+        }
+        if (cost < bc) { bc = cost; plan.lat = cl; plan.vert = cv; plan.clear = mc; }
+      }
+    }
+    return plan;
   }
 
   // ---------------------------------------------------------------- think
@@ -183,7 +231,7 @@ export function createAI(race, racer, pilot, difficulty) {
       if (racer.blind > 0) { S.wobble += dt * 3; mistakeLat += Math.sin(S.wobble) * 0.3; steerGain *= 0.7; }
 
       // ---- shortcut state machine
-      let br = S.br;
+      let br = S.br; S.brApproach = -1;
       if (!br && branches.length && racer.onBranch < 0 && !finished) {
         for (let i = 0; i < branches.length; i++) {
           const b = branches[i], ds = wrapDelta(b.fromS - s, L);
@@ -191,23 +239,36 @@ export function createAI(race, racer, pilot, difficulty) {
             const key = i + ':' + racer.lap;
             let take = S.brDec.get(key); if (take === undefined) { take = decideBranch(b); S.brDec.set(key, take); }
             if (take && ds < 55) { S.br = br = { b, i, u: 0 }; break; }
+            if (take) { S.brApproach = ds; S.brApproachB = b; }
           }
         }
       }
+      if (!br && racer.onBranch >= 0 && !finished && branches[racer.onBranch] && racer.proj.u > 5) S.br = br = { b: branches[racer.onBranch], i: racer.onBranch, u: racer.proj.u };   // carried into a tube anyway: fly it properly
       if (br) {
         for (let k = 0; k < 2; k++) { branchPoint(br.b, br.u, bf); br.u = clamp(br.u + (_a.copy(fs.pos).sub(bf.pos).dot(bf.tangent)), 0, br.b.length); }
         branchPoint(br.b, br.u, bf);
         const off = fs.pos.distanceTo(bf.pos);
-        if (br.u >= br.b.length - 8 || off > 160) { S.br = br = null; }
+        if (br.u >= br.b.length - 8 || (off > 160 && racer.onBranch !== br.i)) { S.br = br = null; }
       }
 
       // ---- target point
-      let cornerAhead = 400, tgtCap;
+      let cornerAhead = 400, tgtCap, hazNear = false;
       if (br) {
-        const lu = br.u + look;
+        // inside a narrow shortcut follow the BRANCH frame closely: a short look-ahead (long ones cut the bends into the wall), early braking
+        const lookB = clamp(v * 0.75, 50, 130), lu = br.u + lookB;
         if (lu < br.b.length) { branchPoint(br.b, lu, f); _tgt.copy(f.pos); }
         else { course.frameAt(br.b.toS + (lu - br.b.length), f); _tgt.copy(f.pos); }
-        tgtCap = Math.min(...[0, 0.5, 1].map((q) => { const u = Math.min(br.b.length, br.u + 30 + q * look * 1.5); branchPoint(br.b, u, g); const k = Math.abs(g.curvature || 0); return k < 1e-4 ? 400 : Math.sqrt(A_LAT / k); }));
+        const horizon = Math.min(450, v * v / (2 * A_BRAKE) + 90);
+        let allowed = Infinity;
+        for (let d = 0; d <= horizon; d += 30) {
+          const u = Math.min(br.b.length, br.u + d + 10); branchPoint(br.b, u, g);
+          const k = Math.abs(g.curvature || 0), size = Math.min(g.halfWidth || 60, (g.halfHeight || 45) * 1.3), c = Math.min(k < 1e-4 ? 400 : Math.sqrt(A_LAT * 0.7 / k), 40 + size * 1.7) * capMul;   // the narrower the tube, the slower
+          allowed = Math.min(allowed, c + Math.sqrt(2 * A_BRAKE * d));
+        }
+        tgtCap = allowed;
+        // recover to the centreline when drifting toward the wall
+        branchPoint(br.b, br.u, bf); _a.copy(fs.pos).sub(bf.pos); const off = Math.hypot(_a.dot(bf.right) / (bf.halfWidth || 40), _a.dot(bf.up) / (bf.halfHeight || 40));
+        if (off > 0.5) tgtCap = Math.min(tgtCap, v * 0.9);
         cornerAhead = tgtCap;
       } else {
         const st = s + look;
@@ -220,6 +281,17 @@ export function createAI(race, racer, pilot, difficulty) {
         for (let d = 0; d <= horizon; d += 45) {
           const c = cornerCap(s + d + 10) * capMul; minCap = Math.min(minCap, d <= 300 ? c : Infinity);
           allowed = Math.min(allowed, c + Math.sqrt(2 * A_BRAKE * d));
+        }
+        // a chosen shortcut: brake for ITS bends before reaching the mouth (the first ~150 m turn hard), not after
+        if (S.brApproach >= 0 && S.brApproachB) {
+          const b = S.brApproachB;
+          for (let u = 0; u <= 260; u += 15) {
+            branchPoint(b, Math.min(u, b.length), g);
+            const k = Math.abs(g.curvature || 0), size = Math.min(g.halfWidth || 60, (g.halfHeight || 45) * 1.3);
+            const c = Math.min(k < 1e-4 ? 400 : Math.sqrt(A_LAT * 0.7 / k), 40 + size * 1.7) * capMul;
+            allowed = Math.min(allowed, c + Math.sqrt(2 * A_BRAKE * (S.brApproach + u)));
+            if (u <= 150) minCap = Math.min(minCap, S.brApproach + u < 300 ? c : Infinity);
+          }
         }
         cornerAhead = minCap; tgtCap = allowed;
         const straightness = clamp((minCap - 70) / 70, 0, 1);
@@ -248,13 +320,20 @@ export function createAI(race, racer, pilot, difficulty) {
           if (S.avoidT <= 0) { let side = dl > 0 ? -1 : 1; if (Math.abs(racer.lateral + side * 25) > hw * 0.8) side = -side; S.avoidSide = side; S.avoidT = 1.1 + rng.float() * 0.5; }
         }
         if (S.avoidT > 0) lat += S.avoidSide * 22;
+        if (S.brApproach >= 0) { const w = clamp(1 - S.brApproach / 280, 0, 1); lat = lerp(lat, 0, w); vert = lerp(vert, 0, w); }   // line up with the narrow shortcut mouth
         lat = clamp(lat, -hw * 0.78, hw * 0.78); vert = clamp(vert, -hh * 0.7, hh * 0.7);
+        const pl = planHazards(s, v, lat, vert, hw, hh, look); lat = pl.lat; vert = pl.vert; hazNear = pl.near;
+        if (pl.clear < 7) tgtCap = Math.min(tgtCap, v * 0.88);
+        // wall-aware recovery: past ~70% of the corridor ellipse, aim back toward the middle and shave speed
+        const we = Math.hypot(racer.lateral / hw, racer.vertical / hh);
+        if (we > 0.7) { const w = clamp((we - 0.7) / 0.3, 0, 1); lat = lerp(lat, 0, 0.85 * w); vert = lerp(vert, 0, 0.85 * w); tgtCap = Math.min(tgtCap, v * (1 - 0.18 * w)); }
+        if (pl.near && pl.clear < 14) tgtCap = Math.min(tgtCap, Math.max(70, 40 + (hw + hh) * 0.9));   // slalom: slow to what the craft can turn at
         _tgt.copy(f.pos).addScaledVector(f.right, lat).addScaledVector(f.up, vert);
       }
 
       // ---- hazards and mines bend the target (segment based, so a line through a hazard is repaired)
       const margin = 22 + v * 0.08;
-      for (const hz of course.hazards || []) {
+      for (const hz of br ? (course.hazards || []) : []) {
         if (!hz.pos || hz.pos.distanceToSquared(fs.pos) > 500 * 500) continue;
         steerAround(fs.pos, hz.pos, (hz.radius || 20) + margin);
       }
@@ -267,9 +346,26 @@ export function createAI(race, racer, pilot, difficulty) {
       }
       // ground clearance
       const gh = course.groundHeight(_tgt.x, _tgt.z);
-      if (_tgt.y < gh + 28) _tgt.y = gh + 28;
+      if (br) { const wl = course.def?.waterLevel; if (wl != null && _tgt.y < wl + 20) _tgt.y = wl + 20; }      // inside a low tube: keep off the sea (the ellipse clamp below keeps it in the tube)
+      if (!br) {
+        // terrain starts abruptly (mesas, cliffs): look at the ground along the whole braking window, at our own lateral offset, not only at the target
+        let gmax = gh;
+        for (let k = 0.3; k <= 1.61; k += 0.45) {
+          course.frameAt(s + look * k, lookF); _a.copy(lookF.pos).addScaledVector(lookF.right, racer.lateral);
+          gmax = Math.max(gmax, course.groundHeight(_a.x, _a.z), course.groundHeight(lookF.pos.x, lookF.pos.z));
+        }
+        if (_tgt.y < gmax + 30) _tgt.y = gmax + 30;
+      }
       if (fs.pos.y - course.groundHeight(fs.pos.x, fs.pos.y) < 0) { /* unreachable guard for odd stubs */ }
 
+      // keep the (bent) target inside the corridor of the frame we are aiming along: a narrow shortcut is only ~34 m half-width, so an
+      // unclamped hazard / mine detour drags the racer out of the branch (where the projection then falls back to a distant main-line point)
+      {
+        const hw0 = f.halfWidth || 90, hh0 = f.halfHeight || 70;           // the corridor is an ellipse: lateral and vertical offsets share one budget
+        _a.copy(_tgt).sub(f.pos); const dl = _a.dot(f.right), dv = _a.dot(f.up);
+        const e = Math.hypot(dl / hw0, dv / hh0);
+        if (e > 0.62) { const k = 0.62 / e; _tgt.addScaledVector(f.right, dl * k - dl).addScaledVector(f.up, dv * k - dv); }
+      }
       // ---- stunts: manual roll or barrel on a clear straight (never in a fight)
       const st = S.stunt;
       if (st.t > 0) {
@@ -291,9 +387,9 @@ export function createAI(race, racer, pilot, difficulty) {
       if (st.t <= 0 || st.kind !== 'roll') pilotSteer(fs, _tgt, out, { aggressiveness: steerGain });
 
       // ---- speed management
-      const capNow = tgtCap;
+      const capNow = Math.max(tgtCap, fs.params.minSpeed * 1.22);      // below ~minSpeed the control authority fades (and it stalls): never brake into that
       if (v > capNow * 1.02) out.airbrake = clamp((v - capNow) / 28, 0, 1);
-      else if (straight && fs.boost.meter > 12 && !racer.wrongWay && !finished) out.boost = true;
+      else if (straight && !hazNear && fs.boost.meter > 12 && !racer.wrongWay && !finished) out.boost = true;
       if (finished) out.boost = false;
 
       // ---- missile evasion

@@ -20,6 +20,16 @@ function nudgeToward(fs, dir, rate, dt) {
   _q.setFromAxisAngle(_ax, Math.min(ang, rate * dt)); fs.quat.premultiply(_q).normalize();
 }
 
+/** Contact accounting (race.stats.contactT = racer-seconds scraping wall / ground / water; contactBins = 100 m bin -> Set of racer:lap that scraped it). */
+function trackContact(race, r, dt, kind) {
+  if (r.finished) return;
+  const st = race.stats; st.contactT += dt; r.contactT = (r.contactT || 0) + dt;
+  st.contactKinds[kind] = (st.contactKinds[kind] || 0) + dt;
+  const L = race.course.length, b = Math.floor((((r.s % L) + L) % L) / 100), key = r.id + ':' + r.lap;
+  let set = st.contactBins.get(b); if (!set) st.contactBins.set(b, set = new Set()); set.add(key);
+  st.contactBinT[b] = (st.contactBinT[b] || 0) + dt;
+}
+
 function environment(race, r, dt, frame) {
   const course = race.course, fs = r.flight, ev = race.game.events;
   r.grazeT = Math.max(0, r.grazeT - dt);
@@ -28,11 +38,19 @@ function environment(race, r, dt, frame) {
   if ((!hit || out.kind !== 'ground') && wl != null && fs.pos.y - r.radius < wl) {
     out.kind = 'ground'; out.depth = wl - (fs.pos.y - r.radius); out.normal.set(0, 1, 0); out.soft = false; out.surface = 'water'; hit = true;
   } else out.surface = '';
-  if (!hit) { r.groundT = 0; return; }
+  if (!hit) { r.groundT = 0; r.contactRun = Math.max(0, (r.contactRun || 0) - dt * 2); return; }
   const depth = out.depth || 0;
+  if (out.kind !== 'hazard') r.contactRun = (r.contactRun || 0) + dt;
+  if (out.kind !== 'hazard') trackContact(race, r, dt, out.kind === 'wall' ? 'wall' : out.surface === 'water' ? 'water' : 'ground');
   if (out.kind === 'ground') {
-    const into = -fs.vel.dot(out.normal);
-    fs.pos.addScaledVector(out.normal, depth);
+    let into = -fs.vel.dot(out.normal);
+    if (depth > 8 && out.surface !== 'water') {
+      // The ground is a column field (city towers, cliffs): a deep overlap means the flank of a column, not a landing. Never eject the
+      // aircraft up onto the roof (a 85 m teleport); slide it out sideways, away from the higher side, a few metres per step.
+      const c = race.course, x = fs.pos.x, z = fs.pos.z, e = 6;
+      _d.set(c.groundHeight(x - e, z) - c.groundHeight(x + e, z), 0, c.groundHeight(x, z - e) - c.groundHeight(x, z + e));
+      if (_d.lengthSq() > 1e-3) { _d.normalize(); fs.pos.addScaledVector(_d, Math.min(2.5, depth)); into = Math.max(into, -fs.vel.dot(_d), fs.speed * 0.6); } else fs.pos.addScaledVector(out.normal, Math.min(depth, 2.5));
+    } else fs.pos.addScaledVector(out.normal, depth);
     r.groundT += dt;
     if (into > COLLISION.crashSpeed && r.tumble <= 0 && fs.speed > 20) {
       applyHit(race, r, null, 'ground', { tumble: 1.4, loss: 0.45, severity: clamp(into / 60, 0.5, 1), pierce: true, pos: fs.pos });
@@ -48,7 +66,7 @@ function environment(race, r, dt, frame) {
     // soft corridor edge: push back in, bleed speed, steer the nose inward. No tumble; riding the wall is strictly slower.
     fs.pos.addScaledVector(out.normal, Math.min(depth * 6 * dt, 0.7));   // gentle: at most ~42 m/s inward
     scaleSpeed(fs, 1 - COLLISION.wallLoss * dt * clamp(0.4 + depth / 25, 0.4, 1.5));
-    _d.copy(fs.forward).addScaledVector(out.normal, 0.6).normalize(); nudgeToward(fs, _d, 1.6, dt);
+    _d.copy(fs.forward).addScaledVector(out.normal, 0.6).normalize(); nudgeToward(fs, _d, 5, dt);
     r.wallT += dt;
     if (r.grazeT <= 0) { r.grazeT = 0.3; ev.emit('racer:graze', { racer: r, surface: 'wall', pos: fs.pos.clone(), intensity: clamp(depth / 30, 0.2, 1) }); }
   }
