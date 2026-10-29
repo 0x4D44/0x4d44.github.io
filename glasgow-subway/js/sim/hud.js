@@ -197,4 +197,5 @@ export const HELP_HTML = `<div class="gs-help"><h2>Controls</h2>
 <h3>General</h3><table>
 <tr><td><kbd>Esc</kbd></td><td>Menu / pause</td></tr><tr><td><kbd>H</kbd></td><td>This help</td></tr><tr><td><kbd>M</kbd></td><td>Mute</td></tr><tr><td><kbd>L</kbd></td><td>Score log</td></tr></table>
 <p>Stop with the nose of the train on the mark for a perfect berthing. Doors open only when stopped inside the platform, on the platform side. Depart when the signal clears; passing it at red is a SPAD.</p>
+<p style="font-size:12px;opacity:.75"><a href="credits.html" target="_blank" rel="noopener" style="color:#ff9a4a">Credits &amp; data sources</a> (OpenStreetMap contributors, MakeHuman community assets and more)</p>
 <div class="gs-row"><button data-a="closemodal">Close</button></div></div>`;

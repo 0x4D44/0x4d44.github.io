@@ -116,11 +116,11 @@ const dflt = (a, b) => (a != null ? a : b);
 export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99);
-    this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 42 : 80; this.crossfade = 0.3;
+    this.rAnim = quality === 'low' ? 16 : 30; this.rVis = quality === 'low' ? 36 : 60; this.crossfade = 0.3; this.maxHi = quality === 'low' ? 3 : 8;
     this.chars = []; this.meas = new Map();
     const scene = gltf.scene, holder = scene.getObjectByName('people') || scene;
     const meta = gltf.meta || null;   // optional models/people_meta.json: { <id>: { height } }
-    const anims = gltf.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name.replace(/_\d+\./, '.'); return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
+    const anims = gltf.animations.map((a) => new THREE.AnimationClip(a.name, a.duration, a.tracks.map((k) => { const c = k.clone(); c.name = k.name; return c; })));   // shared clips address suffixed bones (hips_5): retarget to the canonical names
     const shared = {}; for (const a of anims) { const cat = catOf(a.name.includes('__') ? a.name.split('__')[1] : a.name); if (cat) (shared[cat] = shared[cat] || []).push(a); }
     for (const n of holder.children) {
       const m = /^person_(.+)$/.exec(n.name); if (!m) continue;
@@ -131,17 +131,20 @@ export class AnimCrowd {
       this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
     }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
-    this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name.replace(/_\d+$/, '')); }); }
+    this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
+    this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
+    for (const a of anims) for (const k of a.tracks) { const m = /^(.*)\.(quaternion|position|scale)$/.exec(k.name); if (m) k.name = this.canon(m[1]) + '.' + m[2]; }
+    for (const k of Object.keys(shared)) shared[k] = shared[k];
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
   }
-  _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) { const b = n.name.replace(/_\d+$/, ''); if (this.boneNames.has(b)) n.name = b; } }); return o; }
+  _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
   /** soles/head/hips of a character in a clip, from the real skinned vertices over the clip. Cached. */
   measure(ch, clip) {
     const key = ch.id + ':' + clip.name, hit = this.meas.get(key); if (hit) return hit;
     const THREE = this.THREE, obj = this._clone(ch), mixer = new THREE.AnimationMixer(obj); mixer.clipAction(clip).play();
-    const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /hips/i.test(b.name)) || sk[0].skeleton.bones[0];
+    const sk = []; obj.traverse((o) => { if (o.isSkinnedMesh) sk.push(o); }); const hipsB = sk[0].skeleton.bones.find((b) => /^(pelvis|hips)$/i.test(b.name)) || sk[0].skeleton.bones[0];
     const v = new THREE.Vector3(), h = new THREE.Vector3(), N = 4, keep = []; let minY = 1e9, maxY = -1e9, hx = 0, hy = 0, hz = 0, contact = 0, minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
     for (let k = 0; k < N; k++) {
       mixer.setTime((k / N) * clip.duration); obj.updateMatrixWorld(true); hipsB.getWorldPosition(h);
@@ -185,14 +188,16 @@ export class AnimCrowd {
     if (!pool.length) pool = this.chars; return pool[Math.floor(this.rng() * pool.length)];
   }
   _pick(filter) {
-    if (!filter) return this._rawPick();
-    for (let i = 0; i < 14; i++) { const c = this._rawPick(); if (filter(c)) return c; }   // sample, don't test everyone (measuring is the expensive part)
+    const used = (c) => this.people.reduce((n, q) => n + (q.char === c ? 1 : 0), 0);   // spread the mix: repeats are progressively less likely
+    if (!filter) { for (let i = 0; i < 6; i++) { const c = this._rawPick(); if (this.rng() < 1 / (1 + used(c))) return c; } return this._rawPick(); }
+    for (let i = 0; i < 18; i++) { const c = this._rawPick(); if (this.rng() < 1 / (1 + 0.8 * used(c)) && filter(c)) return c; }
+    for (let i = 0; i < 10; i++) { const c = this._rawPick(); if (filter(c)) return c; }   // sample, don't test everyone (measuring is the expensive part)
     return [...this.chars].sort((a, b) => (a.metaH || 9) - (b.metaH || 9)).find(filter) || null;   // nobody fits this spot -> leave it empty
   }
   add(p, parent, filter) {
     if (!this.hasAnim || this.people.length >= this.max) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch;
-    const obj = this._clone(ch); obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    const obj = this._clone(ch, !!ch.lodNode && !p.static); p.lod = !!ch.lodNode && !p.static; obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
     p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
     p.parent = parent || this.group; p.obj = obj; p.parent.add(obj);
@@ -303,6 +308,8 @@ export class AnimCrowd {
   update(dt, t, yAt, camWorld) {
     if (this.enabled === false) return;
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
+    // LOD0 (~9.5k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
+    let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if (hiSet.size >= this.maxHi || d > 11) break; hiSet.add(q); } }
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       p.stateT += dt;
@@ -332,7 +339,7 @@ export class AnimCrowd {
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
-      if (cam && p.char.lodNode && swaps < 2 && !p.hidden && ((dist > 13 && !p.lod) || (dist < 11 && p.lod))) { this._swapLod(p, dist > 13); swaps++; }
+      if (cam && hiSet && p.char.lodNode && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
       if (dist < this.rAnim && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
     }

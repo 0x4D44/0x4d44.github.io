@@ -16,19 +16,20 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0x666677, 1.6)); const sun = new T
 const g = new THREE.GridHelper(40, 40, 0x445, 0x334); scene.add(g);
 new GLTFLoader().load(q.get('dev') ? ('/tools/_dev_people/' + (q.get('lod') ? 'people_lod.glb' : 'people.glb')) : (q.get('lod') ? '/models/people_lod.glb' : '/models/people.glb'), (gl) => {
   const matq = q.get('mat'); if (matq) gl.scene.traverse((o) => { if (o.isMesh) { const m0 = o.material; o.material = matq === 'vc' ? new THREE.MeshBasicMaterial({ vertexColors: true }) : (matq === 'tex' ? new THREE.MeshBasicMaterial({ map: m0.map }) : new THREE.MeshNormalMaterial()); o.material.skinning = true; } });
+  const BS = new Set(["Root", "pelvis", "spine_01", "spine_02", "spine_03", "clavicle_l", "upperarm_l", "lowerarm_l", "hand_l", "index_01_l", "index_02_l", "index_03_l", "middle_01_l", "middle_02_l", "middle_03_l", "pinky_01_l", "pinky_02_l", "pinky_03_l", "ring_01_l", "ring_02_l", "ring_03_l", "thumb_01_l", "thumb_02_l", "thumb_03_l", "clavicle_r", "upperarm_r", "lowerarm_r", "hand_r", "index_01_r", "index_02_r", "index_03_r", "middle_01_r", "middle_02_r", "middle_03_r", "pinky_01_r", "pinky_02_r", "pinky_03_r", "ring_01_r", "ring_02_r", "ring_03_r", "thumb_01_r", "thumb_02_r", "thumb_03_r", "neck_01", "head", "thigh_l", "calf_l", "foot_l", "ball_l", "thigh_r", "calf_r", "foot_r", "ball_r"]); const unsuf = (n) => { const m = n.match(/^(.*)_\d+$/); return (m && BS.has(m[1])) ? m[1] : n; };
   const names = []; gl.scene.traverse((o) => { if (/^person_[a-z_]+$/.test(o.name) && !o.name.endsWith('_mesh')) names.push(o.name); });
   const only = q.get('only'); if (only) { const ks = only.split(','); for (let i = names.length - 1; i >= 0; i--) if (!ks.some((k) => names[i] === 'person_' + k)) names.splice(i, 1); }
   const clip = q.get('clip') || 'idle'; const t = +(q.get('t') || 0);
   const per = +(q.get('per') || 8);
   names.forEach((n, i) => {
-    const src = gl.scene.getObjectByName(n); const c = SU.clone(src); c.traverse((o) => { if (o.isBone) o.name = o.name.replace(/_\d+$/, ''); });
+    const src = gl.scene.getObjectByName(n); const c = SU.clone(src); c.traverse((o) => { if (o.isBone) o.name = unsuf(o.name); });
     /* GLTFLoader de-duplicates names (hips_1 ...): strip suffix so shared clips bind */
     c.position.set((i % per - (per - 1) / 2) * 1.0, 0, -Math.floor(i / per) * 1.4); scene.add(c);
-    const ac0 = gl.animations.find((a) => a.name === clip); const ac = ac0 && ac0.clone(); if (ac) ac.tracks.forEach((k) => { k.name = k.name.replace(/_\d+\./, '.'); });
+    const ac0 = gl.animations.find((a) => a.name === clip); const ac = ac0 && ac0.clone(); if (ac) ac.tracks.forEach((k) => { const i = k.name.indexOf('.'); k.name = unsuf(k.name.slice(0, i)) + k.name.slice(i); });
     if (ac) { const m = new THREE.AnimationMixer(c); m.clipAction(ac).play(); m.setTime(t * ac.duration); c.userData.m = m; }
     if (q.get('rot')) c.rotation.y = +q.get('rot');
   });
-  window.__info = { anims: gl.animations.map((a) => a.name + ":" + a.tracks.length + ":" + a.tracks[0].name) }; window.__ready = true;
+  window.__info = { heights: names.map((n) => { const b = new THREE.Box3().setFromObject(gl.scene.getObjectByName(n)); return n + ':' + (b.max.y - b.min.y).toFixed(2) + '@' + b.min.y.toFixed(2); }), anims: gl.animations.map((a) => a.name)}; window.__ready = true;
 }, undefined, (e) => { window.__err = String(e); window.__ready = true; });
 r.setAnimationLoop(() => r.render(scene, cam));
 </script></body></html>

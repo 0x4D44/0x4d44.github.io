@@ -161,6 +161,7 @@ export class UI {
     this.panes.line.append(
       h('div.sec', h('h4', { text: m.name || 'Glasgow Subway' }), m.operator ? h('p.sub', { text: 'Operated by ' + m.operator }) : null, h('div.stats', ...g)),
       h('div.sec', h('a.btn.ghost', { href: '../glasgow-subway-trains/' }, 'Trains & power: engineering notes')),
+      h('div.sec', h('a.btn.ghost', { href: 'credits.html' }, 'Credits & data sources')),
       dyk.length ? h('div.sec.dykbox', h('h4', { text: 'Did you know?' }), this.dykEl, h('button.btn.ghost', { type: 'button', on: { click: () => { di = (di + 1) % dyk.length; this.dykEl.textContent = dyk[di]; } } }, 'Another')) : null,
       t.lining || t.tubeSeparationM ? h('div.sec', h('h4', { text: 'The tunnels' }), h('p', { text: 'Two separate single-bore tubes run side by side: the Outer Circle clockwise and the Inner Circle anticlockwise.' }), h('dl.dims', ...(t.lining ? [h('dt', { text: 'Lining' }), h('dd', { text: t.lining })] : []), ...(t.tubeSeparationM ? [h('dt', { text: 'Tube spacing' }), h('dd', { text: '~' + t.tubeSeparationM + ' m' })] : []), ...(t.depot?.name ? [h('dt', { text: 'Depot' }), h('dd', { text: t.depot.name })] : []))) : null,
       rsRows.length ? h('div.sec', h('h4', { text: 'Rolling stock today' }), h('dl.dims', ...rsRows.flatMap(([k, v]) => [h('dt', { text: pretty(k) }), h('dd', { text: v })]))) : null,
