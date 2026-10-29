@@ -364,3 +364,8 @@ aotearoa-rally/
 
 ## Amendments (append-only; lane — what)
 
+* lead — `Vehicle.state.flipped` (bool): true when the body's up-vector has y < 0.35 continuously for > 0.5 s. The rules layer respawns on it.
+* lead — `Vehicle.state.collided` (number): seconds since the last `impact` event (starts at 99). The camera rig and audio may read it.
+* lead — `Vehicle.state.distance` (number): total metres driven this run (for service wear and stats).
+* lead — `Stage.defaultSeed` (number) and `buildStage(id, { seed })`: the shipped stages always use `defaultSeed`.
+
