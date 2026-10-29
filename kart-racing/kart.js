@@ -31,6 +31,7 @@ const T = {
   gravity: 32, airEps: 0.05, maxAir: 4, slopeSpeed: 0.5, slopeMin: 0.95, slopeMax: 1.04, snapJump: 1.5,
 };
 
+const _ob = { nx: 0, nz: 0, depth: 0 };
 const TWO_PI = Math.PI * 2;
 const wrapPi = (a) => { a %= TWO_PI; if (a > Math.PI) a -= TWO_PI; else if (a < -Math.PI) a += TWO_PI; return a; };
 
@@ -488,6 +489,7 @@ export class Kart {
     this.s = nl.s; this.lateral = nl.lateral;
     const wd = nl.wallDist - this.radius;
     if (Math.abs(nl.lateral) > wd) this._wall(track, nl, wd, dt);
+    if (track.obstacleAt && track.obstacleAt(this.position.x, this.position.y, this.position.z, this.radius, _ob)) this._bump(_ob);
     this._vertical(dt, nl, track);
 
     // ---- stuck detection
@@ -534,6 +536,19 @@ export class Kart {
     if (!this.grounded) { tp = -Math.atan(this._vyb / Math.max(8, Math.abs(this.speed))) * 0.8; tr *= 0.3; }
     const k = Math.min(1, 14 * dt);
     this._sp += (tp - this._sp) * k; this._sr += (tr - this._sr) * k;
+  }
+
+  _bump(o) {
+    const v = this.velocity;
+    this.position.x += o.nx * o.depth; this.position.z += o.nz * o.depth;
+    const vn = v.x * o.nx + v.z * o.nz;
+    if (vn < 0) {
+      v.x -= (1 + T.wallRestitution) * vn * o.nx; v.z -= (1 + T.wallRestitution) * vn * o.nz;
+      v.x *= 0.85; v.z *= 0.85;
+      if (-vn > 2.5 && this._wallCool <= 0) { this._wallCool = 0.25; this._emit("wall", -vn); }
+      if (this.drifting && -vn > 6) this._cancelDrift(false);
+      this.speed = v.x * Math.sin(this.heading) + v.z * Math.cos(this.heading);
+    }
   }
 
   _wall(track, loc, wd, dt) {
