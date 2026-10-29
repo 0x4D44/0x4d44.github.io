@@ -11,6 +11,38 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-29 - Decode exported frames by number: ffmpeg -ss gives frame i+1 at times (plan-to-build/index.html:expPass)
+  A one-frame decode with -ss (i+0.5)/60 -frames:v 1 returned frame i+1 for some i and frame i for others (rounding). It read as
+  22 dB on fast camera moves and as a pass on slow ones, so a good MP4 looked broken. Decode by number instead: -vf
+  select='eq(n\,i)' -fps_mode passthrough, and assert PSNR against t=i/60 beats PSNR against t=(i-1)/60 and t=(i+1)/60.
+
+- 2026-10-29 - First draw of each 3D part stalls up to 0.9 s: warm it in idle slices (plan-to-build/index.html:warm3D)
+  three.js compiles shaders and uploads buffers the first time an object is drawn: 165-906 ms against 3 ms warm, ten times in
+  the film, 381 ms right at the 2D to 3D handoff. renderer.compile() misses the clipped variants, so render the 3D half at 2 s
+  steps in setTimeout slices once buildScene3D is done (not while exporting). Load three with import() in the background
+  (G3.loading): a top-level await made the whole page wait for four serial fetches before the first frame.
+
+- 2026-10-29 - A button that doubles as Cancel needs a start guard and a blur (plan-to-build/index.html:initExport)
+  Render shrinks to Cancel on the first click, so a double-click's second click lands on it and aborts the run, and Space on the
+  still-focused button does the same. Ignore clicks with detail > 1 or within 0.9 s of the start, and blur after a mouse click.
+  In a trusted-click test aim at the button's right-hand part: it is the part still under the pointer once the label shrinks.
+
+- 2026-10-29 - Clipped solids look hollow: use DoubleSide and a flat back-face cap (plan-to-build/index.html:patchMat)
+  With renderer.localClippingEnabled and a THREE.Plane in material.clippingPlanes, a cut wall is an open shell and you see
+  its back faces. Render the material DoubleSide, set clipShadows, and in the patched shader write a flat cap colour when
+  !gl_FrontFacing (injected before dithering_fragment). Glass stays FrontSide. Lowering the plane over time (cutAt) then
+  reads as a live section plane with solid caps.
+
+- 2026-10-29 - 1440p60 H.264 needs L5.2, not L4.2: probe a codec list (plan-to-build/index.html:EXP_CODECS)
+  VideoEncoder.isConfigSupported at 2560x1440 and 60 fps rejected level 4.2. Try High L5.2, High L5.1, Main L5.2, Baseline L5.2 (the only
+  profile some software encoders offer: inference, untested here), then VP9 and AV1, hardware first and software second, and move to the next plan only if an encoder dies before its first chunk.
+  Configure H.264 with avc:{format:'avc'} so the chunks suit mp4-muxer. Headless Chrome 155 rejected every prefer-hardware
+  config here and encoded in software at 33-67 fps.
+
+- 2026-10-29 - three r186 dropped PCFSoftShadowMap; use PCFShadowMap (plan-to-build/index.html:buildScene3D)
+  Setting renderer.shadowMap.type = THREE.PCFSoftShadowMap logs "PCFSoftShadowMap has been removed. Using PCFShadowMap
+  instead." Set THREE.PCFShadowMap directly.
+
 - 2026-08-27 - Keep career and physical stage IDs separate across the simulator adapter (championship.js:championshipChoice)
   OxAlphaRally's career schedules 51 stages while the renderer owns 12 playable roads.
   A stable surface-aware mapping lets career.js remain authoritative for results, saves,
