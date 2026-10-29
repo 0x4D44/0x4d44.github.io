@@ -109,7 +109,7 @@ def grid_crop(a, nx, ny, even=(False, False)):
         return a[y0:y0 + side, x0:x0 + side], info
     ex, ey = even
     P0 = Px if ok_x else Py                          # primary period drives the crop side S = k * P0
-    kmax = int((side - 2) / P0)
+    kmax = max(1, int(side / P0 + 0.03))
     best = None
     for k in range(kmax, 0, -1):
         S = k * P0
@@ -152,6 +152,33 @@ def pblur(a, s):
     return np.real(np.fft.ifft2(f * np.exp(-2 * (np.pi ** 2) * s * s * (fx ** 2 + fy ** 2))))
 
 
+def smoothstep(e0, e1, x):
+    t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def blend_seamless(a, band=0.17, core=0.035, sigma_frac=0.03):
+    """Make a square float image tile without a visible seam.
+    Roll by half so the original border seams meet in the centre cross (the rolled image is continuous across ITS borders),
+    then replace the cross by content from the un-rolled interior with a wide feathered mask. Low frequencies blend linearly,
+    high frequencies blend with variance compensation so the band keeps its grain (no blurry cross)."""
+    h, w = a.shape[:2]
+    S = np.roll(a, (h // 2, w // 2), axis=(0, 1))
+    x = np.abs(np.arange(w) - w / 2.0) / w
+    y = np.abs(np.arange(h) - h / 2.0) / h
+    mx = 1.0 - smoothstep(core, band, x)
+    my = 1.0 - smoothstep(core, band, y)
+    m = np.maximum(mx[None, :], my[:, None])[..., None].astype(np.float32)
+    sig = max(2.0, sigma_frac * w)
+    lowS = np.stack([pblur(S[..., c], sig) for c in range(3)], axis=2).astype(np.float32)
+    lowI = np.stack([pblur(a[..., c], sig) for c in range(3)], axis=2).astype(np.float32)
+    low = lowS * (1 - m) + lowI * m
+    norm = np.sqrt((1 - m) ** 2 + m ** 2)
+    hi = ((S - lowS) * (1 - m) + (a - lowI) * m) / norm
+    return np.clip(low + hi, 0, 1).astype(np.float32)
+
+
+
 def make_normal(L, strength, size, invert=False):
     """Tangent-space (OpenGL, +Y up) normal map from the fine luminance detail of a periodic texture.
     invert=True when the bright parts are the recessed ones (pale mortar between darker bricks)."""
@@ -184,7 +211,7 @@ def process(name, spec, raw_dir, out_dir):
     rgb = np.asarray(im.convert('RGB'), dtype=np.float32) / 255.0
     H, W = rgb.shape[:2]
     frame = min(H, W)                              # the generator's frame = `tile` metres on a side
-    m = int(round(frame * 0.012))
+    m = 0 if spec.get('mode') == 'grid' else int(round(frame * 0.012))      # regular patterns keep every period
     rgb = rgb[m:H - m, m:W - m]
     if alpha is not None:
         alpha = alpha[m:H - m, m:W - m]
@@ -207,7 +234,9 @@ def process(name, spec, raw_dir, out_dir):
     work = max(size, 640)                          # process at >= 640 then resize: keeps the FFT cheap, detail sufficient
     if mode != 'none':
         rgb = resize(rgb, work, work)
-        rgb = flatten(rgb, 0.9 if not spec.get('tint') else 0.97, 6)
+        fs = float(spec.get('flat', 0.9 if not spec.get('tint') else 0.97))
+        if fs > 0:
+            rgb = flatten(rgb, fs, int(spec.get('flatCells', 6)))
     else:
         rgb = resize(rgb, size, size)
         if alpha is not None:
@@ -225,8 +254,10 @@ def process(name, spec, raw_dir, out_dir):
         lo, hi = np.percentile(L, 0.5), np.percentile(L, 99.5)
         if hi - lo > 0.05:
             rgb = np.clip((rgb - lo * 0.6) / (hi - lo * 0.6 + 1e-6) * 0.97, 0, 1) if False else rgb
-    if mode in ('periodic', 'grid'):
-        rgb = periodic(rgb)
+    if mode == 'grid':
+        rgb = periodic(rgb)                       # residual colour jumps between cut bricks/tiles: smooth them
+    elif mode == 'periodic':
+        rgb = blend_seamless(rgb)
     if mode != 'none' and rgb.shape[0] != size:
         rgb = resize(rgb, size, size)
     ext = 'png' if alpha is not None else 'jpg'

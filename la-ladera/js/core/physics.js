@@ -109,6 +109,32 @@ export class Physics {
     return out.sort((a, b) => a - b);
   }
 
+  /**
+   * Headroom test for standing up from a crouch (also: "may I jump here?" with o.height = standing height + jump apex).
+   * True when no ceiling or low soffit lies between the crouched head (feet + crouchHeight) and the standing head (feet + height)
+   * above the centre or any of four points around the body.
+   */
+  canStand(x, z, y, o = {}) {
+    const H = o.height ?? 1.78, C = o.crouchHeight ?? 1.25, R = (o.radius ?? 0.3) * 0.8;
+    const f = this._surf(x, z, y, C, H);
+    if (f.blocked) return false;
+    return !(this._surf(x + R, z, y, C, H).blocked || this._surf(x - R, z, y, C, H).blocked
+      || this._surf(x, z + R, y, C, H).blocked || this._surf(x, z - R, y, C, H).blocked);
+  }
+
+  /** The highest surface at (x,z) that is at most `stepUp` above y: { y, id (floor patch id or null), terrain:bool }. y = -Infinity when none. */
+  surfaceAt(x, z, y, stepUp = 0.5) {
+    const lim = y + stepUp; let best = -Infinity, id = null, terrain = false;
+    if (this.terrain) { const h = this.terrain(x, z); if (h <= lim) { best = h; terrain = true; } }
+    const c = this._cell(Math.floor(x / CELL), Math.floor(z / CELL), false);
+    if (c) for (const f of c.floors) {
+      if (x < f.x0 || x > f.x1 || z < f.z0 || z > f.z1 || !Physics.inside(f.pts, x, z)) continue;
+      const h = f.y + f.a * (x - f.px) + f.b * (z - f.pz);
+      if (h <= lim && h > best) { best = h; id = f.id; terrain = false; }
+    }
+    return { y: best, id, terrain };
+  }
+
   _terrainGrad(x, z) {
     const e = 0.25, h = this.terrain;
     return Math.hypot(h(x + e, z) - h(x - e, z), h(x, z + e) - h(x, z - e)) / (2 * e);

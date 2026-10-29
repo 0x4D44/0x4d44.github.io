@@ -34,6 +34,6 @@ export default {
   wood_dark_door: { color: 0x4a3020, rough: 0.6, tile: 1, prio: 1, desc: 'old dark-brown varnished hardwood planks with vertical grain, scuffs, worn edges and a few dents' },
   corrugated_zinc: { color: 0x9aa3a6, rough: 0.5, metal: 0.35, tile: 1, prio: 1, tintable: true, desc: 'galvanised corrugated zinc roofing sheet seen from above, regular vertical corrugations, dull grey with faint rust streaks and nail marks; nearly neutral grey because it will be tinted rust, blue or red' },
   roof_tile_clay: { color: 0xa8502e, rough: 0.9, tile: 1.2, prio: 1, desc: 'weathered barrel (Spanish) clay roof tiles in rows, orange-brown with dark streaks, lichen and moss patches, some chipped tiles, seen from above' },
-  fabric_woven: { color: 0xb8a58a, rough: 1, tile: 0.5, prio: 1, tintable: true, desc: 'coarse woven cotton fabric with a visible weave, soft and slightly fuzzy, neutral light grey-beige because it will be tinted' },
+  fabric_woven: { color: 0xb8a58a, rough: 1, tile: 0.25, prio: 1, tintable: true, desc: 'coarse plain-weave cotton cloth (sack cloth / tela de costal) with clearly visible warp and weft threads forming a tight crosshatch, matte, slightly fuzzy fibres; nearly colourless light grey-beige because it will be tinted' },
   rusty_iron: { color: 0x6e4a36, rough: 0.75, metal: 0.55, tile: 1, prio: 1, desc: 'old corroded painted iron plate with flaking dark paint and orange-brown rust bloom, pitting and a few rivets, top-down' },
 };
