@@ -15,7 +15,8 @@ export const OCC = {
 };
 const ALL = 255;
 
-export function buildOccupancy(plan) {
+/** buildings: optional Map(id -> blueprint with entrances[{outside:[x,y,z], ry}]) so that EVERY door, not only lot.entrance, keeps its doorstep clear. */
+export function buildOccupancy(plan, buildings) {
   const f = plan._field, bits = new Uint8Array(N * N);
   const nodeById = new Map(plan.nav.nodes.map((n) => [n.id, n]));
   const mark = (x0, z0, x1, z1, fn) => f.nodes(x0, z0, x1, z1, fn);
@@ -50,10 +51,24 @@ export function buildOccupancy(plan) {
     const A = nodeById.get(a), C = nodeById.get(c); if (!A || !C) continue;
     mark(Math.min(A.x, C.x) - 0.8, Math.min(A.z, C.z) - 0.8, Math.max(A.x, C.x) + 0.8, Math.max(A.z, C.z) + 0.8, (i, x, z) => { if (segDist(x, z, [A.x, A.z], [C.x, C.z]) <= 0.8) bits[i] |= OCC.NAV; });
   }
-  for (const n of plan.nav.nodes) {
-    if (n.kind !== 'door') continue;
-    mark(n.x - 1.8, n.z - 1.8, n.x + 1.8, n.z + 1.8, (i, x, z) => { if (Math.hypot(x - n.x, z - n.z) <= 1.8) bits[i] |= OCC.DOOR; });
+  const stampDoor = (cx, cz, r) => mark(cx - r, cz - r, cx + r, cz + r, (i, x, z) => { if (Math.hypot(x - cx, z - cz) <= r) bits[i] |= OCC.DOOR; });
+  for (const n of plan.nav.nodes) if (n.kind === 'door') stampDoor(n.x, n.z, 1.8);
+  // every entrance the buildings actually have (shop shutter + main door, side doors, courtyard gates ...): the doorstep and the strip to the door
+  if (buildings) {
+    let doors = 0;
+    for (const bp of buildings.values ? buildings.values() : buildings) {
+      for (const e of bp?.entrances ?? []) {
+        const o = e.outside; if (!o) continue;
+        const ox = o[0], oz = o[2], dx = Math.sin(e.ry ?? 0), dz = Math.cos(e.ry ?? 0);
+        stampDoor(ox, oz, 1.8);
+        for (const k of [0.6, 1.2, 1.8]) stampDoor(ox - dx * k, oz - dz * k, 1.2);
+        doors++;
+      }
+    }
+    plan._extraDoors = doors;
   }
+
+  const navSegs = plan.nav.edges.map(([a, c]) => [nodeById.get(a), nodeById.get(c)]).filter(([A, C]) => A && C).map(([A, C]) => [[A.x, A.z], [C.x, C.z]]);
 
   // circles already taken by solid props (4 m spatial hash)
   const taken = new Map(), HC = 4, hk = (a, b) => (a + 256) * 512 + (b + 256);
@@ -73,6 +88,12 @@ export function buildOccupancy(plan) {
         if (occ.at(x + di * CELL, z + dj * CELL) & mask) return false;
       }
       return true;
+    },
+    /** distance (m) from a point to the nearest nav edge: a collider needs navDist > its radius + ~0.5 to leave NPCs a free walk */
+    navDist(x, z) {
+      let d = Infinity;
+      for (const [a, c] of navSegs) { if (Math.abs(a[0] - x) > 40 && Math.abs(c[0] - x) > 40) continue; const v = segDist(x, z, a, c); if (v < d) d = v; }
+      return d;
     },
     /** gradient magnitude of the ground at a point */
     slope(x, z) {

@@ -1,9 +1,9 @@
 // INTERIORS data invariants on a batch of synthetic buildings (all kinds, every shop type).
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-data.test.mjs
-//   A3_SABOTAGE=<overlap|outside|doorclear|count|anchors|random> makes the matching test fail (proof the test can fail).
+//   A3_SABOTAGE=<overlap|outside|doorclear|count|anchors|random|nobed|nostove> makes the matching test fail (proof the test can fail).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { furnishedBatch, sabotage, obbOf, corners, penetration, rectOb, roomOf, catalogOf, landing } from './interiors-lib.mjs';
+import { furnishedBatch, sabotage, obbOf, corners, penetration, rectOb, roomOf, catalogOf, landing, SLEEP_ARCH } from './interiors-lib.mjs';
 import { genBatch } from './interiors-plans.mjs';
 import { ALL_DEFS } from '../js/core/matlib.js';
 
@@ -132,6 +132,21 @@ test('every non-circulation room has >= 3 pieces of furniture or decor', () => {
     if (n < 3) problems.push(`${bp.id} ${r.id} (${r.type}, ${(r.rect.x1 - r.rect.x0).toFixed(1)}x${(r.rect.z1 - r.rect.z0).toFixed(1)}): ${n} items`);
   }
   report(problems, 'under-furnished rooms');
+});
+
+test('homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)', async () => {
+  const problems = [];
+  const check = (label, list) => {
+    for (const bp of list) for (const r of bp.rooms) {
+      const rec = bp.interior?.rooms?.[r.id]; if (!rec || rec.skipped) continue;
+      const items = bp.furniture.filter((f) => f.room === r.id);
+      if (r.type === 'kitchen' && !items.some((f) => catalogOf(f)?.arch === 'stove')) problems.push(`${label} ${bp.id} ${r.id}: a kitchen without a stove (${items.length} items)`);
+      if (r.type === 'bedroom' && rec.role && rec.role !== 'study' && !items.some((f) => SLEEP_ARCH.has(catalogOf(f)?.arch))) problems.push(`${label} ${bp.id} ${r.id}: a ${rec.role} bedroom with nowhere to sleep (${items.length} items)`);
+    }
+  };
+  check('synthetic', bps);
+  check('real', (await furnishedBatch({ real: true })).bps);
+  report(problems, 'rooms missing their core furniture');
 });
 
 test('anchors: every seat, bed, stove and shop counter has one; anchors stand in free space', () => {

@@ -22,7 +22,7 @@ export function installDebug(ctx) {
         pool: ctx.pool?.stats?.(), visibility: ctx.visibility?.stats?.(), merge: ctx.batch?.mergeInfo ?? null, post: ctx.post ? { active: ctx.post.active, profile: ctx.post.name } : null,
         reversedZ: !!ctx.renderer?.capabilities?.reversedDepthBuffer, msaa: ctx.post?.profile?.samples ?? 0,
         buildings: ctx.buildings.size, anchors: ctx.anchors.length, lights: ctx.lights.list.length, discoveries: [ctx.discover.found.size, ctx.discover.total],
-        npcs: ctx.people?.list?.().length ?? 0, errors: ctx.errors.length, timings: ctx.timings, physics: ctx.physics.stats(),
+        npcs: ctx.people?.list?.().length ?? 0, errors: ctx.errors.length, timings: ctx.timings, physics: ctx.physics.stats(), audio: ctx.audio?.state?.() ?? null,
         target: ctx.interact.target ? { id: ctx.interact.target.id, kind: ctx.interact.target.kind, prompt: ctx.interact.prompt() } : null,
       };
     },

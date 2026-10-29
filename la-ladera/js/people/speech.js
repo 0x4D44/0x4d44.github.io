@@ -40,7 +40,7 @@ export function pickVoice(ranked, { gender = '?', seed = 0, preferURI = null } =
   const bestRank = langRank(ranked[0].lang);
   const group = ranked.filter((v) => langRank(v.lang) === bestRank);
   const same = group.filter((v) => voiceGender(v) === gender);
-  const pool = same.length ? same : (ranked.filter((v) => voiceGender(v) === gender).length ? ranked.filter((v) => voiceGender(v) === gender) : group);
+  const pool = same.length ? same : group;                       // the language ranking outranks gender: a Colombian voice beats a Mexican one of the "right" gender
   return pool[Math.abs(seed | 0) % pool.length];
 }
 
@@ -53,19 +53,32 @@ export class Speech {
 
   synth() { return typeof window !== 'undefined' ? (window.speechSynthesis ?? null) : null; }
 
-  /** The babble fallback needs an AudioContext started by a user gesture: create it on the first key/click so it is ready in time. */
-  _audio(create = true) {
+  /** The player really used the page (a trusted gesture or sticky user activation): only then may an AudioContext be created or resumed (Chrome warns otherwise). */
+  _activated(e = null) {
+    try { return e?.isTrusted === true || navigator.userActivation?.hasBeenActive === true; } catch { return false; }
+  }
+
+  /**
+   * The babble fallback needs an AudioContext. Reuse the game's own (ctx.audio) when it has one; otherwise create ours on the first TRUSTED
+   * key / click, so it is ready in time and script-made events never trigger the "AudioContext was not allowed to start" warning.
+   */
+  _audio(create = true, e = null) {
     try {
-      const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
-      if (!this._ac && create) this._ac = new AC();
-      if (this._ac?.state === 'suspended') this._ac.resume?.();
+      const shared = this.ctx?.audio?.context?.() ?? this.ctx?.audio?.ac ?? null;
+      const ac = shared ?? this._ac;
+      if (ac) { if (ac.state === 'suspended' && this._activated(e)) ac.resume?.(); return ac; }
+      const AC = window.AudioContext || window.webkitAudioContext; if (!AC || !create || !this._activated(e)) return null;
+      this._ac = new AC();
       return this._ac;
     } catch { return null; }
   }
 
   init() {
     if (typeof window !== 'undefined' && !this._unlock) {
-      this._unlock = () => { window.removeEventListener('pointerdown', this._unlock, true); window.removeEventListener('keydown', this._unlock, true); this._audio(); };
+      this._unlock = (e) => {
+        if (!this._activated(e)) return;                            // a script-made event: keep waiting for a real one
+        window.removeEventListener('pointerdown', this._unlock, true); window.removeEventListener('keydown', this._unlock, true); this._audio(true, e);
+      };
       window.addEventListener('pointerdown', this._unlock, true); window.addEventListener('keydown', this._unlock, true);
     }
     const ss = this.synth();

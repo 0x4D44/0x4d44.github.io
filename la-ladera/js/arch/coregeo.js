@@ -23,7 +23,7 @@ export function coreGeo(S, style = 'home', o = {}) {
     else {
       const spare = Dr - along - ti;
       if (spare >= (o.backMin ?? 1.6)) back = spare;
-      else if (spare > 0) { df = Di - ti - along; Dr = along; }
+      else if (Dr - along > 1e-6) { df = Di - ti - along; Dr = along; }   // no room for a back strip: the core takes exactly its own depth (a sliver of <= ti must not be left over)
     }
     g.df = df;
     if (style === 'home') {

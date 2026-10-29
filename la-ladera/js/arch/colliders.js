@@ -1,6 +1,7 @@
 // Colliders (WORLD space) from the wall records, slabs, stair flights and roof layer. Pure data.
 import { floorRamp } from '../core/physics.js';
 import { R, rectMinusRects, rpoly } from './geom.js';
+import { PRETIL_H } from './roof.js';
 
 export function buildColliders(S) {
   const fr = S.frame, y0w = fr.y, walls = [], floors = [];
@@ -35,7 +36,7 @@ export function buildColliders(S) {
   for (const wl of S.walls) {
     const yf = wl.floor * S.fh;
     const ya = wl.floor === 0 && wl.ext ? y0w + S.foundY : y0w + yf;
-    const yb = y0w + yf + (wl.open ? 1.1 : S.fh);
+    const yb = y0w + yf + (wl.open ? PRETIL_H : S.fh);
     wallColliders(wl, ya, yb);
   }
 

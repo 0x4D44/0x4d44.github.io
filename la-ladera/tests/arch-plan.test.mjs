@@ -2,8 +2,10 @@
 // node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/arch-plan.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { testLots, planAll } from './arch-lib.mjs';
+import { testLots, planAll, makeCtx, planBuilding } from './arch-lib.mjs';
 import { LOT_KINDS } from '../js/core/vocab.js';
+import { LAYOUTS, layoutHouse } from '../js/arch/layouts.js';
+import { sharedWall } from '../js/arch/geom.js';
 
 const lots = testLots();
 const { ctx, bps } = planAll(lots);
@@ -67,7 +69,10 @@ test('human-scale dimensions (doors, ceilings, windows, stairs)', () => {
     for (const d of bp.doors) {
       if (d.kind === 'arch') { assert.ok(d.w >= 0.9 && d.w <= 3.5 && d.h >= 2.0 && d.h <= 2.6, `${d.id} arch ${d.w}x${d.h}`); continue; }
       if (d.kind === 'interior') assert.ok(d.w >= 0.8 - 1e-9 && d.w <= 0.9 + 1e-9 && d.h >= 2.0 && d.h <= 2.1 + 1e-9, `${d.id} interior door ${d.w}x${d.h}`);
-      else if (d.kind === 'exterior') assert.ok(d.w >= 0.9 && d.w <= 1.1 && d.h >= 2.0 && d.h <= 2.2, `${d.id} exterior door ${d.w}x${d.h}`);
+      else if (d.kind === 'exterior') {                                // a chapel's door is a tall double leaf
+        const big = bp.lot.kind === 'chapel' && d.entrance === 'main';
+        assert.ok(d.w >= 0.9 && d.w <= (big ? 1.4 : 1.1) && d.h >= 2.0 && d.h <= (big ? 2.5 : 2.2), `${d.id} exterior door ${d.w}x${d.h}`);
+      }
       else if (d.kind === 'shutter') assert.ok(d.w >= 1.6 && d.w <= 3.2 && d.h >= 2.1 && d.h <= 2.5, `${d.id} shutter ${d.w}x${d.h}`);
     }
     for (const w of bp.windows) {
@@ -142,6 +147,45 @@ test('wall colliders leave every doorway a corridor of w - 0.6 m for the R = 0.3
   }
   assert.ok(measured > 100, `doorways measured: ${measured}`);
   assert.deepEqual(bad.slice(0, 10), []);
+});
+
+// A layout that throws is a console error (rubric hard cap C1) and a skipped building; a sliver room is a believable-interior failure.
+// Lot sizes come from another agent's generator and change, so sweep the whole plausible range on a fine grid (the stair core fits a depth
+// window only 0.11 m wide, which a coarse grid never hits: that is how `core rect mismatch` shipped once).
+test('layout sweep: every layout plans at every plausible lot size (no throw, no sliver, every room reachable by doors and stairs)', () => {
+  const reps = new Map();                                              // one representative kind per distinct layout function
+  for (const k of LOT_KINDS) { const fn = LAYOUTS[k] ?? layoutHouse; if (!reps.has(fn)) reps.set(fn, k); }
+  const kinds = [...reps.values()], sctx = makeCtx([]);
+  const base = { id: 'S', name: 'sweep', x: 0, y: 0, z: 0, rotY: 0, fh: 2.8, front: 'S0', entrance: { side: 'front', u: 0 }, party: { left: false, right: false, back: false }, style: {} };
+  const fails = []; let n = 0, plans = 0;
+  for (const kind of kinds) for (const floors of [1, 2, 3, 4]) for (const w of [4.2, 5.5, 7, 10, 14]) for (let d = 5; d <= 18 + 1e-9; d += 0.05) {
+    const lot = { ...base, kind, w, d: Math.round(d * 100) / 100, floors, roofAccess: n++ % 2 === 0, seed: n };
+    const tag = `${kind} ${w}x${lot.d} F${floors}${lot.roofAccess ? ' roof' : ''}`;
+    let bp; plans++;
+    try { bp = planBuilding(sctx, lot); } catch (e) { fails.push(`${tag}: threw ${String(e.message).slice(0, 90)}`); continue; }
+    if (fails.length > 12) break;
+    const indoor = bp.rooms.filter((r) => !r.outdoor);
+    for (const r of bp.rooms) if (!(r.rect.x1 - r.rect.x0 > 0.3 && r.rect.z1 - r.rect.z0 > 0.3)) fails.push(`${tag}: ${r.id} ${r.type} has a degenerate rect`);
+    if (kind !== 'kiosk' && d >= 7) for (const r of indoor) if (!r.core) {
+      const m = Math.min(r.rect.x1 - r.rect.x0, r.rect.z1 - r.rect.z0);
+      if (m < 1.3) fails.push(`${tag}: ${r.id} ${r.type} is only ${m.toFixed(2)} m thin`);
+    }
+    const byRoom = new Map(bp.rooms.map((r) => [r.id, r]));
+    for (const dr of bp.doors) if (d >= 7 && dr.rooms[0] && dr.rooms[1]) {   // an interior door sits wholly inside the wall its two rooms share
+      const sw = sharedWall(byRoom.get(dr.rooms[0]).rect, byRoom.get(dr.rooms[1]).rect), u = dr.wall.dir === 'z' ? dr.z : dr.x;
+      if (!sw || u - dr.w / 2 < sw.a0 - 0.01 || u + dr.w / 2 > sw.a1 + 0.01) fails.push(`${tag}: ${dr.id} (${dr.rooms.join(' -> ')}) hangs off the wall its rooms share`);
+    }
+    const adj = new Map(bp.rooms.map((r) => [r.id, []]));                // door graph (arches included) + the stair joining each storey's core rooms
+    for (const dr of bp.doors) { const [a, b] = dr.rooms; if (a && b) { adj.get(a)?.push(b); adj.get(b)?.push(a); } }
+    const stairRooms = bp.rooms.filter((r) => r.stair);
+    for (const a of stairRooms) for (const b of stairRooms) if (a !== b) adj.get(a.id).push(b.id);
+    const seen = new Set(bp.doors.filter((x) => x.ext && x.rooms[1]).map((x) => x.rooms[1])), q = [...seen];
+    while (q.length) for (const nb of adj.get(q.pop()) ?? []) if (!seen.has(nb)) { seen.add(nb); q.push(nb); }
+    const lost = indoor.filter((r) => !seen.has(r.id));
+    if (lost.length) fails.push(`${tag}: unreachable ${lost.map((r) => r.id + ':' + r.type).join(',')}`);
+  }
+  assert.deepEqual(fails.slice(0, 12), []);
+  assert.ok(plans > 15000, `swept ${plans} plans`);
 });
 
 test('planning is deterministic', () => {

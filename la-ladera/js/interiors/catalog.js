@@ -36,6 +36,7 @@ add('bed_bunk', 0.95, 1.75, 1.95, 'bunk', 'bed sleep bunk', { clear: [0.55, 0, 0
 add('bed_cot', 0.72, 0.5, 1.85, 'cot', 'bed sleep cot', { clear: [0.4, 0, 0.3], cols: 'bedding', mat: 'metal_painted', bh: 0.5 });
 add('bed_crib', 0.7, 0.95, 1.25, 'crib', 'bed sleep crib baby', { clear: [0.4, 0, 0.3], cols: 'paint', mat: 'wood_painted' });
 add('mattress_floor', 0.9, 0.22, 1.9, 'mattress', 'bed sleep mattress', { clear: [0.4, 0, 0.3], cols: 'bedding', mat: 'mattress_ticking', bh: 0.45 });
+add('mattress_leaning', 0.9, 1.7, 0.34, 'mattress_up', 'sleep mattress lean storage', { clear: [0.25, 0, 0.05], cols: 'bedding', mat: 'mattress_ticking' });   // stood on its edge against the wall by day: the bed of a room too small for a bed frame
 add('nightstand_a', 0.42, 0.55, 0.38, 'cabinet', 'storage nightstand', { cols: 'wood', mat: 'wood_pine' });
 add('nightstand_b', 0.45, 0.5, 0.4, 'cabinet', 'storage nightstand', { cols: 'paint', mat: 'wood_painted' });
 
@@ -138,7 +139,7 @@ add('trash_bin', 0.28, 0.35, 0.28, 'cylinder', 'bath trash clutter', { cols: 'pl
 
 // ------------------------------------------------------------------ electronics / lights
 add('tv_flat', 0.78, 0.5, 0.1, 'tv', 'tv screen electronics', { top: true, dyn: 'tv', cols: 'none', mat: 'plastic_solid' });
-add('tv_crt', 0.55, 0.45, 0.5, 'tvcrt', 'tv screen electronics crt', { top: true, dyn: 'tv', cols: 'none', mat: 'plastic_solid' });
+add('tv_crt', 0.55, 0.45, 0.4, 'tvcrt', 'tv screen electronics crt', { top: true, dyn: 'tv', cols: 'none', mat: 'plastic_solid' });
 add('tv_wall', 0.9, 0.55, 0.08, 'tv', 'tv screen electronics wall', { wall: true, y: 1.85, dyn: 'tv', cols: 'none', mat: 'plastic_solid', block: false });
 add('radio_old', 0.35, 0.2, 0.12, 'radio', 'radio electronics decor', { top: true, cols: 'wood', mat: 'wood_dark' });
 add('radio_boombox', 0.5, 0.25, 0.18, 'radio', 'radio electronics boombox', { top: true, cols: 'none', mat: 'plastic_solid' });

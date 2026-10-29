@@ -285,6 +285,30 @@ function mirador(K, stats) {
   stats.mirador = 1;
 }
 
+// ---------------------------------------------------------------------------------------------------- the public wash-basin
+function pila(K, stats) {
+  const pl = K.plan.plazas.find((p) => p.id === 'P2') ?? K.plan.plazas.find((p) => p.kind === 'plaza'); if (!pl) return;
+  const P = localToWorld(pl.cx, pl.cz, pl.ry), hd = pl.d / 2;
+  for (const lx of [-1.5, 0, -3, 1.5, 3, -4.5, 4.5]) {
+    const [x, z] = P(lx, -hd + 0.62);                                  // against the north edge, facing into the plaza
+    if (!pointInPoly(pl.poly, x, z) || !K.occ.clear(x, z, 0.7, OCC.STAIR | OCC.DOOR | OCC.ROAD) || K.occ.overlaps(x, z, 1.0) || K.occ.navDist(x, z) < 0.85) continue;
+    const y = K.H(x, z), at = localToWorld(x, z, pl.ry), b = K.b('feature', x, z), ry = pl.ry;
+    const box = (mat, a, c, d, sx, sy, sz, col = W) => { const [wx, wz] = at(a, d); b.box(mat, wx, y + c, wz, sx, sy, sz, { ry, col }); };
+    box('concrete_bare', 0, 0.3, 0, 1.3, 0.6, 0.6);                      // the trough
+    box('glass_dark', 0, 0.605, 0.02, 1.0, 0.02, 0.38);                   // dark water
+    box('plaster_rough#d5cdbb', 0, 1.1, -0.38, 1.4, 1.0, 0.16);           // back wall
+    box('concrete_bare', 0, 1.64, -0.38, 1.5, 0.08, 0.26);                // coping
+    { const [x0, z0] = at(0, -0.3), [x1, z1] = at(0, -0.1); tube(b, 'galvanised', [x0, y + 1.1, z0], [x1, y + 1.1, z1], 0.018, 0.018, 6, { col: W });
+      tube(b, 'galvanised', [x1, y + 1.1, z1], [x1, y + 0.96, z1], 0.018, 0.018, 6, { col: W });
+      b.cyl('iron_blue', x0 + (x1 - x0) * 0.5, y + 1.12, z0 + (z1 - z0) * 0.5, 0.03, 0.07, 6, { col: W }); }
+    { const [bx, bz] = at(0.85, 0.5); b.cyl('plastic_bin', bx, y, bz, 0.15, 0.3, 10, { r1: 0.19, col: rgb(0x2e6ab0) }); }
+    K.rect(x, z, 1.4, 0.7, ry, 1.6, y); K.occ.take(x, z, 1.0);
+    K.ctx.world.pila = { x, y, z };
+    stats.pila = 1;
+    return;
+  }
+}
+
 // ---------------------------------------------------------------------------------------------------- the lit summit cross
 function cross(K, stats) {
   // a free spot near the crest, west of the viewpoint: visible from every street, lit all night
@@ -312,7 +336,7 @@ function cross(K, stats) {
 export function buildDress(K) {
   const stats = { rails: 0, benches: 0, shelters: 0, shrine: 0, fenceM: 0, court: 0, mirador: 0, cross: 0, planters: 0, rings: 0 };
   K.ctx.world.dress = stats;
-  for (const f of [railings, benches, busShelter, shrine, court, mirador, cross]) {
+  for (const f of [railings, benches, busShelter, shrine, court, mirador, pila, cross]) {
     try { f(K, stats); } catch (e) { console.error(`[dress.${f.name}]`, e); K.ctx.errors?.push({ stage: 'props', item: 'dress.' + f.name, message: String(e?.message ?? e), stack: e?.stack }); }
   }
   return stats;

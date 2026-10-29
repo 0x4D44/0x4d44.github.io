@@ -1,1 +1,4 @@
-{ "files": [] }
+{
+  "files": [],
+  "people": { "dir": "people/", "glb": "people.glb", "meta": "people_meta.json", "lod": "people_lod.glb" }
+}

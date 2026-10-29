@@ -128,15 +128,25 @@ test('"Cómo te llaman": the address setting defaults to m, is a select in Ajust
 });
 
 test('the place label and the discovery toast follow the player', async () => {
-  await page.eval('__ladera.step(2)');
-  assert.ok((await page.eval('document.getElementById("place").textContent')).length > 2, 'a place name is shown at the spawn');
-  await page.eval(`(() => { const c = __ladera.ctx, p = c.player.s; c.discover.register({ id: 'ui-test', name: 'Mural de prueba', en: 'A test mural', x: p.x, y: p.y, z: p.z, radius: 4, kind: 'mural' }); __ladera.step(2); })()`);
-  assert.deepEqual(await page.eval('__ladera.ctx.discover.order'), ['ui-test']);
-  assert.match(await page.eval('document.getElementById("toast").textContent'), /Mural de prueba/);
-  await page.key('KeyJ'); await tick();
-  assert.match(await page.eval('document.getElementById("panelbody").textContent'), /1 de 1 descubrimientos[\s\S]*Mural de prueba/);
-  await page.key('KeyJ'); await tick();
-  assert.equal((await S()).mode, 'play');
+  // The fixture owns its discovery list: the world registers its own (a number that grows with the content), so the real registry is set aside
+  // for this test and put back afterwards. Counts and order below then depend on nothing but this test.
+  await page.eval(`(() => { const d = __ladera.ctx.discover; window.__realDiscoveries = { items: d.items, found: d.found, order: [...d.order] };
+    d.items = new Map(); d.found = new Set(); d.order.length = 0; })()`);
+  try {
+    await page.eval('__ladera.step(2)');
+    assert.ok((await page.eval('document.getElementById("place").textContent')).length > 2, 'a place name is shown at the spawn');
+    assert.equal(await page.eval('__ladera.ctx.discover.total'), 0, 'the fixture starts with an empty registry');
+    await page.eval(`(() => { const c = __ladera.ctx, p = c.player.s; c.discover.register({ id: 'ui-test', name: 'Mural de prueba', en: 'A test mural', x: p.x, y: p.y, z: p.z, radius: 4, kind: 'mural' }); __ladera.step(2); })()`);
+    assert.deepEqual(await page.eval('__ladera.ctx.discover.order'), ['ui-test']);
+    assert.match(await page.eval('document.getElementById("toast").textContent'), /Mural de prueba/);
+    await page.key('KeyJ'); await tick();
+    assert.match(await page.eval('document.getElementById("panelbody").textContent'), /1 de 1 descubrimientos[\s\S]*Mural de prueba/);
+    await page.key('KeyJ'); await tick();
+    assert.equal((await S()).mode, 'play');
+  } finally {
+    await page.eval(`(() => { const d = __ladera.ctx.discover, r = window.__realDiscoveries; if (!r) return;
+      d.items = r.items; d.found = r.found; d.order.length = 0; d.order.push(...r.order); delete window.__realDiscoveries; })()`);
+  }
 });
 
 for (const [w, h] of [[390, 844], [768, 1024], [1280, 720]]) {

@@ -22,7 +22,11 @@ export default {
   grille_iron: { color: 0x1e2023, rough: 0.5, metal: 0.45, tex: false, vertexColors: true },
   rail_metal: { color: 0x2b2e31, rough: 0.45, metal: 0.55, tex: false, vertexColors: true },
   rebar_rust: { color: 0x7a4a2c, rough: 0.85, metal: 0.4, tex: false, vertexColors: false },
-  tank_plastic: { color: 0x2c5f8f, rough: 0.6, tex: false, vertexColors: true },
+  tank_plastic: { color: 0xffffff, rough: 0.55, tex: false, vertexColors: true },     // tanks, PVC drainpipes: the colour comes from the vertex tint (a coloured base would multiply into near-black)
+
+  // ---- exterior lettering: a runtime canvas atlas painted by arch/signs.js (shop fascias, blade signs, ghost signs, posters). Without a canvas
+  // (Node) the material is plain white and the signs are flat boards tinted by vertex colour.
+  sign_atlas: { color: 0xffffff, rough: 0.8, uv: 'unit', tex: false },
 
   // ---- roofs ------------------------------------------------------------------------------------------------------------
   roof_terrace: { color: 0x9a968d, rough: 0.95, tile: 3, prio: 2,

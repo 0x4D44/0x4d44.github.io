@@ -52,6 +52,12 @@ PEOPLE = [
     dict(id='w_beata', kind='elder', fem=True, H=1.50, skin=3, build=1.05, hair=(6, 'bald'), eye='#4a3020', top='#5a5a68', top_style='coat', sleeve='long', inner='#e8e8e8', bot_style='skirt', bot='#2a2a2e', shoe=('shoe', '#2a2a2a', '#1a1a1a'), hat=('scarf', '#3a3a46'), bag=('handbag', '#2a2a30'), stoop=0.06, wrinkles=True, lips='#8a4a42', tags=['woman', 'elder', 'beata', 'uniform']),
     dict(id='b_escolar', kind='boy', H=1.32, skin=3, build=1.0, hair=(0, 'short'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='trousers', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#c0392b'), tags=['boy', 'kid', 'student', 'uniform']),
     dict(id='g_escolar', kind='girl', H=1.24, skin=2, build=1.0, hair=(0, 'pigtails'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='skirt', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#e0609a'), lips='#c07078', tags=['girl', 'kid', 'student', 'uniform']),
+    # ---- P3 cast: more silhouettes (heavier, slimmer, taller) and the hair styles the first 25 did not use (slick, sidepart, topknot, buzz)
+    dict(id='m_joven', kind='man', H=1.77, skin=3, build=0.94, hair=(0, 'slick'), eye='#2a1a10', top='#2f7d5a', top_style='football', sleeve='short', bot_style='jeans', bot='#3a4a66', shoe=('trainer', '#f2f2f2', '#e6e6e6'), tags=['man', 'adult', 'young']),
+    dict(id='w_vecina', kind='woman', H=1.56, skin=3, build=1.28, hair=(1, 'sidepart'), eye='#3a2a1a', top='#8f9a5b', top_style='jumper', sleeve='long', bot_style='trousers', bot='#4a5a7a', shoe=('shoe', '#3a2a1e', '#2a1e14'), glasses=True, lips='#a8524a', tags=['woman', 'adult', 'home']),
+    dict(id='m_don', kind='man', H=1.68, skin=2, build=1.30, hair=(5, 'receding'), eye='#3a2a1a', top='#9bb0c8', top_style='shirt', sleeve='short', bot_style='trousers', bot='#5a5a64', shoe=('shoe', '#2a1c14', '#1a120c'), stubble=True, tags=['man', 'adult']),
+    dict(id='w_joven', kind='woman', H=1.65, skin=4, build=0.88, hair=(0, 'topknot'), eye='#2a1a10', top='#f2c14e', top_style='tshirt', sleeve='short', bot_style='jeans', bot='#3d5b86', shoe=('trainer', '#f2f2f2', '#ffffff'), bag=('shoulder', '#7a4a2a'), lips='#8a3a3a', tags=['woman', 'adult', 'young']),
+    dict(id='m_rapado', kind='teen', H=1.73, skin=5, build=1.0, hair=(0, 'buzz'), eye='#2a1a10', top='#c0392b', top_style='football', sleeve='short', bot_style='shorts', bot='#1b1b22', shoe=('trainer', '#e6e6e6', '#ffffff'), tags=['man', 'teen']),
 ]
 
 # ------------------------------------------------------------------ geometry helpers
@@ -95,11 +101,20 @@ def loft(pb, rings, part, hexc_, hex_fn=None, closed=True, cap_top=True, cap_bot
             j = (i + 1) % n
             pb.F((vr[r][i], vr[r][j], vr[r + 1][j], vr[r + 1][i]), hex_fn(r) if hex_fn else hexc_, smooth, face_fn(r, i) if face_fn else False, uv=uv, fab_=fab_)
     if closed:
+        # caps face OUTWARD, away from the other end of the loft, whatever direction the rings run (arms and sleeves run downward: their first ring is the TOP one, and its
+        # cap used to face down into the sleeve, so the AO bake lit it from inside: a dark cup on every shoulder)
+        def cap_ring(ring_, other):
+            c = [sum(p_[j] for p_ in ring_) / len(ring_) for j in range(3)]; o = [sum(p_[j] for p_ in other) / len(other) for j in range(3)]
+            nx = ny = nz = 0.0
+            for i_ in range(len(ring_)):
+                a_ = ring_[i_]; b_ = ring_[(i_ + 1) % len(ring_)]
+                nx += (a_[1] - b_[1]) * (a_[2] + b_[2]); ny += (a_[2] - b_[2]) * (a_[0] + b_[0]); nz += (a_[0] - b_[0]) * (a_[1] + b_[1])
+            return ring_ if nx * (c[0] - o[0]) + ny * (c[1] - o[1]) + nz * (c[2] - o[2]) >= 0 else ring_[::-1]
         if cap_bot:
-            cv = [pb.V(tuple(v.co), part) for v in vr[0][::-1]]
+            cv = [pb.V(tuple(p_), part) for p_ in cap_ring(rings[0], rings[-1])]
             pb.F(cv, hex_fn(0) if hex_fn else hexc_, False, fab_=fab_, uv=uv)
         if cap_top:
-            cv = [pb.V(tuple(v.co), part) for v in vr[-1]]
+            cv = [pb.V(tuple(p_), part) for p_ in cap_ring(rings[-1], rings[0])]
             pb.F(cv, hex_fn(len(rings) - 2) if hex_fn else hexc_, False, fab_=fab_, uv=uv)
     return vr
 
@@ -184,11 +199,12 @@ def torso_ctrl(pd, P):
     shw = P['shw']
     if not fem:
         # pelvis rows are as wide as the two thigh tubes (outer edge = hx + r0 + layer ~ 0.185 k b) so the trousers read as one garment, not a box between two legs
-        c = [(z(0.455), 0.182 * k * b, 0.106 * k * b, 0.0), (z(0.51), 0.190 * k * b, 0.110 * k * b, 0.0), (z(0.568), 0.162 * k * b, 0.098 * k * b, 0.0), (z(0.614), 0.150 * k * b, 0.094 * k * b, 0.004),
+        # (the lowest row used to be as wide as the hips: its flat edge floated between the thighs like the hem of a short skirt; it now tucks inside the thigh tubes)
+        c = [(z(0.455), 0.150 * k * b, 0.098 * k * b, 0.0), (z(0.51), 0.188 * k * b, 0.110 * k * b, 0.0), (z(0.568), 0.162 * k * b, 0.098 * k * b, 0.0), (z(0.614), 0.150 * k * b, 0.094 * k * b, 0.004),
              (z(0.682), 0.156 * k * b, 0.102 * k * b, 0.008), (z(0.739), 0.168 * k * b, 0.108 * k * b, 0.010), (z(0.784), shw * 0.95, 0.098 * k, 0.004), (P['sh'] - 0.012, shw * 0.99, 0.088 * k, -0.002), (P['sh'] + 0.010, shw * 0.80, 0.078 * k, -0.006), (P['sh'] + 0.030, shw * 0.54, 0.070 * k, -0.010),
              (P['trap'], shw * 0.35, 0.064 * k, -0.012), (P['nbase'], 0.062 * k, 0.056 * k, -0.004)]
     else:
-        c = [(z(0.455), 0.188 * k * b, 0.108 * k * b, 0.0), (z(0.505), 0.200 * k * b, 0.114 * k * b, -0.004), (z(0.565), 0.146 * k * b, 0.090 * k, 0.0), (z(0.612), 0.118 * k * b, 0.082 * k, 0.003),
+        c = [(z(0.455), 0.158 * k * b, 0.100 * k * b, 0.0), (z(0.505), 0.196 * k * b, 0.114 * k * b, -0.004), (z(0.565), 0.146 * k * b, 0.090 * k, 0.0), (z(0.612), 0.118 * k * b, 0.082 * k, 0.003),
              (z(0.682), 0.140 * k * b, 0.100 * k * b, 0.014), (z(0.738), 0.152 * k * b, 0.112 * k * b, 0.022), (z(0.784), shw * 0.98, 0.095 * k, 0.006), (P['sh'] - 0.012, shw * 0.99, 0.082 * k, -0.002), (P['sh'] + 0.010, shw * 0.78, 0.074 * k, -0.006), (P['sh'] + 0.030, shw * 0.52, 0.066 * k, -0.010),
              (P['trap'], shw * 0.33, 0.060 * k, -0.012), (P['nbase'], 0.058 * k, 0.052 * k, -0.004)]
     if child:
@@ -284,8 +300,27 @@ def build_person(pd):
         fab('mesh')
         loft(pb, [r_ for r_ in [ring(0, rows[i][3] + lean(rows[i][0]) + 0.003, rows[i][0], rows[i][1] * 1.075, rows[i][2] * 1.07, 14) for i in range(3, 13)]], 'torso', pd['vest'], cap_top=False, cap_bot=False)
         fab('reflective')
-        for zi in (6, 9):
-            loft(pb, [ring(0, rows[i][3] + lean(rows[i][0]) + 0.004, rows[i][0], rows[i][1] * 1.08, rows[i][2] * 1.075, 14) for i in (zi, zi + 1)], 'torso', '#c9cdd1', cap_top=False, cap_bot=False)
+        for zi in (6, 9):       # reflective bands stand 4 mm clear of the vest (at 0.7 mm they z-fought with it: white slashes on a dark vest)
+            loft(pb, [ring(0, rows[i][3] + lean(rows[i][0]) + 0.006, rows[i][0], rows[i][1] * 1.105, rows[i][2] * 1.10, 14) for i in (zi, zi + 1)], 'torso', '#c9cdd1', cap_top=False, cap_bot=False)
+    # ---- shirt details: collar flaps, a button placket and a belt on the tucked-in waist (they are what makes a shirt read as a shirt, not a tube)
+    def chest_pt(z_, xs_, off=0.0):
+        r_ = rows_at(rows, z_); e_ = max(0.0, 1.0 - (xs_ / (r_[1] * layer)) ** 2)
+        return (xs_, r_[3] + lean(z_) + r_[2] * layer * math.sqrt(e_) + off, z_)
+    if tst == 'shirt':
+        fab('cotton'); nb_ = P['nbase']; zv_ = nb_ - 0.062 * k
+        for sg_ in (-1, 1):
+            vv_ = [pb.V(p_, 'torso') for p_ in (chest_pt(nb_ + 0.002, sg_ * 0.022 * k, 0.011), chest_pt(nb_ + 0.004, sg_ * 0.058 * k, 0.012), chest_pt(nb_ - 0.040 * k, sg_ * 0.070 * k, 0.009), chest_pt(zv_, sg_ * 0.008 * k, 0.007))]
+            pb.F(vv_, top, False); pb.F(vv_[::-1], top, False)
+        zl_ = [zv_ - (zv_ - (waist_z + 0.012)) * j_ / 7.0 for j_ in range(8)]
+        loft(pb, [ring(0, rows_at(rows, z_)[3] + lean(z_), z_, rows_at(rows, z_)[1] * layer + 0.0035, rows_at(rows, z_)[2] * layer + 0.0035, 3, a0=math.radians(86), a1=math.radians(94), closed=False) for z_ in zl_], 'torso', top, closed=False, cap_top=False, cap_bot=False)
+        fab('plastic')
+        for j_ in range(5):
+            z_ = zv_ - 0.012 * k - (zv_ - waist_z - 0.03) * j_ / 4.0; p_ = chest_pt(z_, 0.0, 0.0050)
+            sphere(pb, p_, 0.0058 * k, 0.0045 * k, 0.0058 * k, 'torso', '#efe9da', 6, 3)
+        if bst in ('trousers', 'jeans'):
+            fab('leather'); zb_ = waist_z - 0.012; r_b = rows_at(rows, zb_ + 0.012)
+            loft(pb, [ring(0, r_b[3] + lean(zb_), zb_ + 0.030, r_b[1] * layer + 0.0045, r_b[2] * layer + 0.0045, 20), ring(0, r_b[3] + lean(zb_), zb_, r_b[1] * layer + 0.0045, r_b[2] * layer + 0.0045, 20)], 'torso', '#2a1a12', cap_top=False, cap_bot=False)
+            rbox(pb, (0, r_b[3] + lean(zb_) + r_b[2] * layer + 0.0075, zb_ + 0.015), (0.040 * k, 0.008, 0.026 * k), 'torso', '#c8a44a', fab_='metal')
     fab('knit')
     if pd.get('cardigan'):
         loft(pb, [ring(0, rows[i][3] + lean(rows[i][0]) + 0.002, rows[i][0], rows[i][1] * 1.05, rows[i][2] * 1.05, 14) for i in range(4, 13)], 'torso', pd['cardigan'], cap_top=False, cap_bot=False)
@@ -402,7 +437,8 @@ def build_person(pd):
         # neckband: a short rolled ring that hides where the neck column meets the flat top of the torso (it used to show as a ragged edge)
         ncy_ = lean(P['nbase']) * 0.7; nb_ = P['nbase']
         coll = pd.get('collar') or top
-        loft(pb, [ring(0, ncy_ - 0.004, nb_ - 0.012, 0.0668 * k, 0.0600 * k, 20), ring(0, ncy_ - 0.002, nb_ + 0.002, 0.0630 * k, 0.0575 * k, 20), ring(0, ncy_ + 0.000, nb_ + 0.011, 0.0590 * k, 0.0550 * k, 20), ring(0, ncy_ + 0.001, nb_ + 0.012, 0.0572 * k, 0.0535 * k, 20)], 'neck', coll, cap_top=False, cap_bot=False)
+        # (about 40 % lower than before: at 2.4 cm it read as a turtleneck on every T-shirt)
+        loft(pb, [ring(0, ncy_ - 0.004, nb_ - 0.012, 0.0668 * k, 0.0600 * k, 20), ring(0, ncy_ - 0.002, nb_ - 0.003, 0.0636 * k, 0.0578 * k, 20), ring(0, ncy_ - 0.001, nb_ + 0.004, 0.0600 * k, 0.0556 * k, 20), ring(0, ncy_ + 0.000, nb_ + 0.006, 0.0584 * k, 0.0545 * k, 20)], 'neck', coll, cap_top=False, cap_bot=False)
     # ---------------- neck + head
     ncy = lean(P['nbase']) * 0.7
     nrings = [ring(0, ncy, P['nbase'] - 0.03, 0.062 * k, 0.058 * k, 20), ring(0, ncy + 0.004, P['nbase'] + 0.03 * k, 0.054 * k, 0.051 * k, 20), ring(0, ncy + 0.010, P['chin'] + hh * 0.10, 0.054 * k, 0.054 * k, 20), ring(0, ncy + 0.026 * k, P['chin'] + hh * 0.30, 0.066 * k, 0.074 * k, 20)]
@@ -621,8 +657,9 @@ def build_person(pd):
             cards_ring([fr + math.radians(d) for d in range(30, 71, 20)], 0.84, 0.72, 0.003, 0.03, 3, 0.055, 1, 0.03, 0.08)
         if style == 'slick':           # combed straight back, a little length over the collar
             cards_ring(back, 0.74, 0.36, 0.004, 0.06, 4, 0.09, 1, 0.03, 0.08)
-        if style == 'receding':        # elder man: thin crown, tufts above the ears and at the nape
-            cards_ring(side_l + side_r, 0.62, 0.40, 0.004, 0.04, 3, 0.07, 1, 0.04, 0.1)
+        if style == 'receding':        # elder man: thin crown, tufts above the ears and at the nape (two separate arcs: one call over both sides ran a band across the face)
+            cards_ring(side_l, 0.62, 0.40, 0.004, 0.04, 3, 0.07, 1, 0.04, 0.1)
+            cards_ring(side_r, 0.62, 0.40, 0.004, 0.04, 3, 0.07, 1, 0.04, 0.1)
             cards_ring(back, 0.52, 0.30, 0.004, 0.05, 3, 0.09, 1, 0.03, 0.08)
         if style == 'topknot':         # hair gathered high at the front of the crown
             cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.70, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.1)
@@ -707,7 +744,14 @@ def build_person(pd):
                 vv = [pb.V(p, 'head') for p in vis]; pb.F(vv, hc, False); pb.F(vv[::-1], hc, False)
                 if hs == 'hardhat': rbox(pb, (0, cyc, zb + 0.092 * k), (0.020 * k, 0.17 * k, 0.020 * k), 'head', hc)          # centre ridge
                 else:
-                    for sg_ in (-1, 1): tube_pts(pb, [(sg_ * (cap_r + over * k), cyc, zb + 0.030), (sg_ * (cap_r * 0.70), cyc + cap_ry * 0.50, P['chin'] + 0.10 * hh)], [0.005, 0.005], 'head', '#101010', n=4)     # chin strap
+                    # chin strap: it used to be one straight tube through the cheek, so only its ends showed (black needles at the temples); it now follows the
+                    # face from the shell rim, in front of the ear, down to under the chin, 7 mm off the skin
+                    for sg_ in (-1, 1):
+                        sp_ = []
+                        for zf_, an_ in ((0.60, 14), (0.46, 24), (0.32, 38), (0.19, 56), (0.08, 80)):
+                            r_ = row_at(P['chin'] + zf_ * hh); a_ = math.radians(an_)
+                            sp_.append((sg_ * (r_[1] + 0.007 * k) * math.cos(a_), r_[3] + (r_[2] + 0.007 * k) * math.sin(a_), P['chin'] + zf_ * hh))
+                        tube_pts(pb, sp_, [0.0045 * k] * 5, 'head', '#101010', n=5, cap_top=True, cap_bot=True)
             elif hs == 'chef':
                 fab('cotton')
                 loft(pb, [ring(0, cyc, zb - 0.004, cap_r + 0.010, cap_ry + 0.010, 16), ring(0, cyc, zb + 0.040, cap_r + 0.016, cap_ry + 0.016, 16), ring(0, cyc, zb + 0.090, cap_r + 0.040, cap_ry + 0.040, 16), ring(0, cyc, zb + 0.130, cap_r + 0.050, cap_ry + 0.050, 16), ring(0, cyc, zb + 0.150, cap_r + 0.030, cap_ry + 0.030, 16)], 'head', hc, cap_top=True, cap_bot=False)
@@ -770,11 +814,12 @@ def build_person(pd):
         loft(pb, [ring(sx, 0.0, wrist + 0.030, rf * 0.70, rf * 0.52, 8), ring(sx, 0.0, wrist - 0.02 * k, hw_, 0.020 * k, 8), ring(sx, 0.0, wrist - hl * 0.42, hw_ * 0.98, 0.018 * k, 8), ring(sx, 0.0, wrist - hl * 0.50, hw_ * 0.90, 0.014 * k, 8)], 'hand' + sd, skin, cap_top=True, cap_bot=False)       # (starts inside the forearm: no gap at the wrist)
         fl = [0.46, 0.52, 0.48, 0.38]
         for fi in range(4):
-            fx = sx + (fi - 1.5) * hw_ * 0.50
+            fx = sx + (fi - 1.5) * hw_ * 0.46
             z0 = wrist - hl * 0.5
-            cu = 1.0 + 0.25 * fi                                           # relaxed curl: pinky side curls a little more
-            pts = [(fx, 0.002, z0), (fx, 0.006 * cu, z0 - hl * fl[fi] * 0.52), (fx, 0.017 * cu, z0 - hl * fl[fi] * 0.96)]
-            tube_pts(pb, pts, [0.0108 * k * child_f, 0.0098 * k * child_f, 0.0072 * k * child_f], 'fingers' + sd, skin, n=6)
+            cu = 1.0 + 0.22 * fi                                           # relaxed curl: pinky side curls a little more
+            # four fingers lying together and curling toward the palm (they used to hang straight and apart, like a rake)
+            pts = [(fx, 0.002, z0), (fx, 0.012 * cu, z0 - hl * fl[fi] * 0.50), (fx, 0.032 * cu, z0 - hl * fl[fi] * 0.84)]
+            tube_pts(pb, pts, [0.0114 * k * child_f, 0.0104 * k * child_f, 0.0078 * k * child_f], 'fingers' + sd, skin, n=6)
         th_pts = [(sx - sg * hw_ * 0.95, 0.012 * k, wrist - hl * 0.10), (sx - sg * hw_ * 1.04, 0.022 * k, wrist - hl * 0.28), (sx - sg * hw_ * 0.92, 0.034 * k, wrist - hl * 0.42)]
         tube_pts(pb, th_pts, [0.0125 * k * child_f, 0.0115 * k * child_f, 0.0085 * k * child_f], 'fingers' + sd, skin, n=6)
     fab(BOTF)
@@ -1277,8 +1322,10 @@ def clip_defs():
         p = ph * TAU; d = idle_a(ph); st = s_(p)
         d['spine'] = [('x', -0.20 + 0.03 * s_(2 * p)), ('z', 0.13 * st), ('y', -0.03)]; d['chest'] = [('z', 0.06 * st)]; d['hips'] = [('z', -0.05 * st)]
         d['head'] = [('x', -0.22), ('z', -0.05 * st)]
-        d['upperarm_r'] = [('x', 0.50 + 0.07 * s_(2 * p)), ('y', 0.14)]; d['forearm_r'] = [('x', 0.80)]; d['fingers_r'] = [('x', 0.9)]
-        d['upperarm_l'] = [('x', 0.62 + 0.07 * s_(2 * p)), ('y', -0.12)]; d['forearm_l'] = [('x', 0.95)]; d['fingers_l'] = [('x', 0.9)]
+        # both hands on the broom handle (solved on the rig, tools: .scratch arm_solve.py): right hand low (0.12, 0.90, -0.38), left hand 0.28 m up the stick, which leans
+        # up and forward along u = (0.03, 0.90, 0.43) in the glTF frame; the sweep itself is the spine / hip swing above (both hands ride on the upper body)
+        d['upperarm_r'] = [('x', 0.189 + 0.03 * s_(2 * p)), ('y', 0.245), ('z', 0.0)]; d['forearm_r'] = [('x', 1.343)]; d['fingers_r'] = [('x', 0.9)]
+        d['upperarm_l'] = [('x', -0.233 + 0.03 * s_(2 * p)), ('y', -0.622), ('z', -0.912)]; d['forearm_l'] = [('x', 1.910)]; d['fingers_l'] = [('x', 0.9)]
         d['thigh_l'] = [('x', 0.08)]; d['thigh_r'] = [('x', 0.08)]; d['shin_l'] = [('x', -0.10)]; d['shin_r'] = [('x', -0.10)]
         return d
     C['sweep'] = (72, sweep)
@@ -1324,8 +1371,9 @@ def clip_defs():
     C['laundry'] = (96, laundry)
     def pray(ph):
         p = ph * TAU; d = idle_a(ph)
-        d['upperarm_r'] = [('x', 0.62), ('y', 0.30)]; d['forearm_r'] = [('x', 2.05)]; d['hand_r'] = [('z', 0.1)]; d['fingers_r'] = [('x', 0.1)]
-        d['upperarm_l'] = [('x', 0.62), ('y', -0.30)]; d['forearm_l'] = [('x', 2.05)]; d['fingers_l'] = [('x', 0.1)]
+        # palms together in front of the chest (solved on the rig: the finger heads meet at (+-0.028, 1.06, -0.24) in the glTF frame)
+        d['upperarm_r'] = [('x', -0.338), ('y', 0.969)]; d['forearm_r'] = [('x', 2.030)]; d['hand_r'] = []; d['fingers_r'] = [('x', 0.1)]
+        d['upperarm_l'] = [('x', -0.349), ('y', -1.032)]; d['forearm_l'] = [('x', 2.013)]; d['hand_l'] = []; d['fingers_l'] = [('x', 0.1)]
         d['head'] = [('x', -0.40 + 0.02 * s_(p))]; d['spine'] = [('x', -0.06 + 0.01 * s_(p))]
         return d
     C['pray'] = (120, pray)
@@ -1409,9 +1457,26 @@ def bake_ao(mo, maxd=0.35):
     return out
 
 from mathutils import noise as mnoise
-CLOTH_FABS = {'suit', 'denim', 'cotton', 'wool_coat', 'jersey'}
+CLOTH_FABS = {'suit', 'denim', 'cotton', 'wool_coat', 'jersey', 'knit'}
+MOTTLE = {'suit': 0.065, 'cotton': 0.055, 'jersey': 0.055, 'denim': 0.075, 'wool_coat': 0.07, 'knit': 0.045, 'puffer': 0.03, 'leather': 0.05, 'nylon': 0.03}
+def vertex_shade(co, fb, fold_v, P):
+    """Per-vertex tonal variation baked next to the AO (the 256 px fabric cells are sub-millimetre weave, invisible beyond a metre; this is the part of cloth that
+    reads at 1.5-10 m): fade / mottling at 3-6 cm, fold bands where the wrinkle pass bends the cloth, worn knees on denim; a little life in skin and hair."""
+    m = 1.0; amp = MOTTLE.get(fb)
+    if amp:
+        m *= 1.0 + amp * mnoise.noise(Vector((co.x * 16, co.y * 16, co.z * 14))) + 0.5 * amp * mnoise.noise(Vector((co.x * 52 + 7, co.y * 52, co.z * 40)))
+        if fb in CLOTH_FABS: m *= 1.0 + 0.11 * fold_v
+        if fb == 'denim': m *= 1.0 + 0.14 * math.exp(-((co.z - P['knee']) / 0.11) ** 2) * (0.55 + 0.45 * mnoise.noise(Vector((co.x * 30, co.y * 30, co.z * 30))))
+    elif fb == 'skin':
+        m *= 1.0 + 0.03 * mnoise.noise(Vector((co.x * 40, co.y * 40, co.z * 30)))
+    elif fb in ('hair', 'hair_card'):
+        m *= 0.86 + 0.28 * (0.5 + 0.5 * mnoise.noise(Vector((co.x * 90, co.y * 90, co.z * 70))))
+    return max(0.55, min(1.35, m))
+
 def wrinkle_pass(me_, pb, bd, P, k):
-    """sculpt-like fold displacement of cloth vertices (elbow / knee / waist / ankle creases + low-frequency drape), along the vertex normal"""
+    """sculpt-like fold displacement of cloth vertices (elbow / knee / waist / ankle creases + low-frequency drape), along the vertex normal.
+    Returns {vertex index: fold value in -1..1} for the shading bake."""
+    fold = {}
     vfab = {}
     for f in pb.bm.faces:
         pass
@@ -1429,18 +1494,21 @@ def wrinkle_pass(me_, pb, bd, P, k):
         co = v.co; z = co.z
         a = 0.0016 * mnoise.noise(Vector((co.x * 11, co.y * 11, co.z * 7)))
         ph = 3.0 * mnoise.noise(Vector((co.x * 23, co.y * 23, co.z * 9)))
+        fa = 0.0
         if part.startswith(('arm', 'farm')):
-            a += 0.0034 * math.exp(-((z - elbow) / 0.075) ** 2) * math.sin(z * 120 + ph)
-            a += 0.0018 * math.exp(-((z - (bd['upperarm_l'][0][2] - 0.03)) / 0.06) ** 2) * math.sin(z * 90 + ph)
+            fa += 0.0034 * math.exp(-((z - elbow) / 0.075) ** 2) * math.sin(z * 120 + ph)
+            fa += 0.0018 * math.exp(-((z - (bd['upperarm_l'][0][2] - 0.03)) / 0.06) ** 2) * math.sin(z * 90 + ph)
         elif part.startswith(('thigh', 'shin')):
-            a += 0.0040 * math.exp(-((z - knee) / 0.09) ** 2) * math.sin(z * 110 + ph)
-            a += 0.0030 * math.exp(-((z - (hip - 0.04)) / 0.07) ** 2) * math.sin(z * 100 + ph)
-            a += 0.0035 * math.exp(-((z - (ankle + 0.07)) / 0.05) ** 2) * math.sin(z * 130 + ph)     # trouser break above the shoe
+            fa += 0.0040 * math.exp(-((z - knee) / 0.09) ** 2) * math.sin(z * 110 + ph)
+            fa += 0.0030 * math.exp(-((z - (hip - 0.04)) / 0.07) ** 2) * math.sin(z * 100 + ph)
+            fa += 0.0035 * math.exp(-((z - (ankle + 0.07)) / 0.05) ** 2) * math.sin(z * 130 + ph)     # trouser break above the shoe
         elif part == 'torso':
-            a += 0.0032 * math.exp(-((z - waist) / 0.07) ** 2) * math.sin(z * 90 + ph + co.x * 25)
-            a += 0.0022 * math.exp(-((z - hip) / 0.07) ** 2) * math.sin(z * 85 + ph - co.x * 30)
-        out.append((vi, v.normal * a))
+            fa += 0.0032 * math.exp(-((z - waist) / 0.07) ** 2) * math.sin(z * 90 + ph + co.x * 25)
+            fa += 0.0022 * math.exp(-((z - hip) / 0.07) ** 2) * math.sin(z * 85 + ph - co.x * 30)
+        out.append((vi, v.normal * (a + 1.4 * fa)))
+        fold[vi] = max(-1.0, min(1.0, fa / 0.0042))
     for vi, d in out: me_.vertices[vi].co += d
+    return fold
 
 def make_pbr_material(imgs):
     m = bpy.data.materials.new('people_pbr'); m.use_nodes = True; nt = m.node_tree
@@ -1555,7 +1623,7 @@ def build_people(only=None):
         fabidx = {n_: i for i, n_ in enumerate(TX.FABRIC_ORDER)}
         eyecell = TX.eye_cell_for(pd['eye'])
         face_cell = TX.cell_index('face', idx)
-        wrinkle_pass(me_, pb, bd, P, P['k'])
+        fold_v = wrinkle_pass(me_, pb, bd, P, P['k'])
         me_.update()
         # vertex AO (rays against the rest-pose body) + per-corner tint colour.  The alpha channel carries a RECOLOUR SLOT id (id * 16 / 255) for the
         # garment layers the game may re-tint per NPC (js/people/rig.js): 2 top, 3 bottom, 4 shoes, 5 hat, 6 accessory (apron / ruana / scarf), 7 inner layer.
@@ -1566,9 +1634,9 @@ def build_people(only=None):
         if acc_: hexmap[acc_] = 6
         if pd.get('hat'): hexmap[pd['hat'][1]] = 5
         hexmap[pd['shoe'][1]] = 4; hexmap[pd['bot']] = 3; hexmap[pd['top']] = 2
-        FIXED_FAB = {'skin', 'hair', 'hair_card', 'metal', 'rubber', 'reflective', 'face'}
+        FIXED_FAB = {'hair', 'hair_card', 'metal', 'rubber', 'reflective'}
         slot_meta = {}
-        SLOT_NAME = {2: 'top', 3: 'bottom', 4: 'shoes', 5: 'hat', 6: 'accessory', 7: 'inner'}
+        SLOT_NAME = {2: 'top', 3: 'bottom', 4: 'shoes', 5: 'hat', 6: 'accessory', 7: 'inner', 8: 'skin'}      # 8: every bare-skin polygon, the face tile included (the game shifts the tone per person)
         ca = me_.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER'); me_.color_attributes.active_color = ca
         for pi, poly in enumerate(me_.polygons):
             fb = pb.ffab[pi]; hexc = pb.fhex[pi]; uvspec = pb.fuv[pi]
@@ -1617,11 +1685,13 @@ def build_people(only=None):
                     ku = math.floor(min(us_) / Wu); kv = math.floor(min(vs_) / Wv)
                     for li, (uu, vv) in zip(lis, pts_):
                         uvl.data[li].uv = cell_px_uv(cell, 8 + uu - ku * Wu, 256 - (8 + vv - kv * Wv))
-            slot = 0 if (fb in FIXED_FAB or fb.startswith(('eye', 'tartan'))) else hexmap.get(hexc, 0)
-            if slot and SLOT_NAME[slot] not in slot_meta: slot_meta[SLOT_NAME[slot]] = dict(id=slot, hex=hexc, gain=FAB_GAIN.get(fb, 1.25))
+            if fb in ('skin', 'face'): slot = 8
+            else: slot = 0 if (fb in FIXED_FAB or fb.startswith(('eye', 'tartan'))) else hexmap.get(hexc, 0)
+            if slot and SLOT_NAME[slot] not in slot_meta: slot_meta[SLOT_NAME[slot]] = dict(id=slot, hex=SKIN[pd['skin']] if slot == 8 else hexc, gain=FAB_GAIN.get('skin' if slot == 8 else fb, 1.25))
             alpha = 1.0 if slot == 0 else slot * 16.0 / 255.0
             for li in lis:
-                sh = ao_v[me_.loops[li].vertex_index]
+                vi_ = me_.loops[li].vertex_index
+                sh = ao_v[vi_] * vertex_shade(me_.vertices[vi_].co, fb, fold_v.get(vi_, 0.0), P)
                 ca.data[li].color = (tint[0] * sh, tint[1] * sh, tint[2] * sh, alpha)
         ao.parent = root
         # ---------- meta (z extents)

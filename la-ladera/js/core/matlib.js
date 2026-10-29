@@ -69,7 +69,10 @@ export class MaterialLib {
     this.vcache.set(key, v);
     let list = this.variants.get(base); if (!list) this.variants.set(base, list = []);
     list.push(v);
-    v.needsUpdate = !!base.image;               // not loaded yet: the loader callback marks it when the image arrives
+    // Texture.clone() ends with `needsUpdate = true` (version 1) even when the shared image has not arrived: a frame drawn then makes three log
+    // "Texture marked for update but no image data found" once per variant (a console warning = rubric hard cap C1, and a slow link always
+    // draws such frames). An empty variant stays at version 0; the loader callback in _texture() marks it when the image lands.
+    if (!base.image) v.version = 0;
     return v;
   }
   _done() { if (--this.pending <= 0) { const w = this.waiters.splice(0); w.forEach((f) => f()); } }

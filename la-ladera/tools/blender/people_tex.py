@@ -315,7 +315,9 @@ def paint_face2(pd, SKIN, HAIR, seed):
     h = -0.5 * pit + 0.2 * fnoise(CELL, 1.4, seed + 4) * 0.2
     gx = lambda cx, cy, sx, sy: np.exp(-(((np.arange(CELL)[None, :] / CELL - cx) / sx) ** 2 + (((np.arange(CELL)[:, None]) / CELL - cy) / sy) ** 2))
     lipmask = gx(0.5, 1 - 0.185 + 0.0, 0.10, 0.045)
-    rough = 0.56 - 0.20 * lipmask + 0.05 * fnoise(CELL, 1.0, seed + 6)
+    # a little sheen where skin catches the light: forehead, nose bridge and tip, cheekbones (rows are measured from the top: crown 0, chin 1)
+    shine = 0.10 * gx(0.5, 0.17, 0.16, 0.07) + 0.12 * gx(0.5, 0.64, 0.045, 0.08) + 0.06 * (gx(0.30, 0.58, 0.07, 0.05) + gx(0.70, 0.58, 0.07, 0.05))
+    rough = 0.56 - 0.20 * lipmask - shine + 0.05 * fnoise(CELL, 1.0, seed + 6)
     return tile_out(a, h, rough, 0.0, 1.6)
 
 # ---------------------------------------------------------------- hair card sheet (RGBA 512x512: 4x4 strand-clump cards, alpha tapered)

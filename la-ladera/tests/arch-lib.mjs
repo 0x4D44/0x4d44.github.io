@@ -23,7 +23,9 @@ export function testLots() {
   mk('apartments', 12, 12, 5, { roofAccess: true }); mk('apartments', 11, 13, 4, { party: { left: true, right: true, back: false } }); mk('apartments', 10, 11, 3);
   mk('unfinished', 6, 10, 3); mk('unfinished', 7, 9, 2, { roofAccess: true }); mk('unfinished', 5, 9, 4);
   for (const k of LOT_KINDS) if (!['house', 'rowhouse', 'apartments', 'shophouse', 'cornerstore', 'unfinished'].includes(k)) {
-    mk(k, k === 'kiosk' ? 3.5 : k === 'school' ? 16 : k === 'chapel' ? 8 : 10, k === 'kiosk' ? 3.5 : k === 'school' ? 14 : k === 'chapel' ? 14 : 11, k === 'school' ? 2 : k === 'tenement' ? 3 : k === 'kiosk' ? 1 : 2, { shop: k === 'workshop' ? 'taller' : undefined });
+    // the chapel is the page's own size (11 x 14, one tall storey); a two-storey chapel would fall back to the house plan
+    mk(k, k === 'kiosk' ? 3.5 : k === 'school' ? 16 : k === 'chapel' ? 11 : 10, k === 'kiosk' ? 3.5 : k === 'school' ? 14 : k === 'chapel' ? 14 : 11, k === 'school' ? 2 : k === 'tenement' ? 3 : k === 'kiosk' || k === 'chapel' ? 1 : 2,
+      { shop: k === 'workshop' ? 'taller' : undefined, ...(k === 'chapel' ? { fh: 4.2 } : {}) });
   }
   return lots;
 }
@@ -87,6 +89,33 @@ export function explore(ctx, bp, o = {}) {
     }
   }
   return { visited: [...seen.values()], drops, exhausted: guard >= (o.max ?? 400000) };
+}
+
+/**
+ * Can a player standing on a walkable roof (or an open top deck) JUMP OFF it over the fence? Runs real jumps with the physics kernel from three spots along each of
+ * the four fences, straight at the fence, at walk and sprint speed, at 60 and at the page's 20 fps frame clamp (the slowest frame the player ever gets, so the
+ * highest jump), and keeps pushing forward after the landing. Returns one record per jump that ended below the roof.
+ */
+export function roofJumpEscapes(ctx, bp, jump = 3.6, speeds = [2.3, 5.0], fps = [60, 20]) {
+  const S = bp.shell, ph = ctx.physics, out = [];
+  if (!bp.roof?.walkable) return out;
+  const o = S.outer, yRoof = bp.roof.y, ax = (o.x0 + o.x1) / 2, az = (o.z0 + o.z1) / 2;
+  const fences = [['front', 0, 1, 'z', o.z1], ['back', 0, -1, 'z', o.z0], ['left', -1, 0, 'x', o.x0], ['right', 1, 0, 'x', o.x1]];
+  for (const [side, dx, dz, axis, edge] of fences) for (const along of [-0.3, 0, 0.3]) {
+    const span = axis === 'z' ? o.x1 - o.x0 : o.z1 - o.z0, u = (axis === 'z' ? ax : az) + along * span;
+    const lx = axis === 'z' ? u : edge - dx * 0.6, lz = axis === 'z' ? edge - dz * 0.6 : u;       // 0.6 m inside the fence: just outside its 0.375 m push zone
+    const a = bp.frame.toWorld(lx, 0, lz), b = bp.frame.toWorld(lx + dx, 0, lz + dz), l = Math.hypot(b[0] - a[0], b[2] - a[2]), ux = (b[0] - a[0]) / l, uz = (b[2] - a[2]) / l;
+    for (const speed of speeds) for (const f of fps) {
+      const dt = 1 / f, s = { x: a[0], z: a[2], y: yRoof, vy: 0, onGround: true }, base = P;
+      ph.move(s, 0, 0, dt, base);
+      if (Math.abs(s.y - yRoof) > 0.05) continue;                                                  // not standing on the roof here (stair hole, caseta, a unit)
+      ph.move(s, ux * speed * dt, uz * speed * dt, dt, { ...base, jump });
+      for (let i = 0; i < 100 && !s.onGround; i++) ph.move(s, ux * speed * dt, uz * speed * dt, dt, base);
+      for (let i = 0; i < 40; i++) ph.move(s, ux * speed * dt, uz * speed * dt, dt, base);
+      if (s.y < yRoof - 0.3) out.push({ id: bp.id, side, along, speed, fps: f, fell: +(yRoof - s.y).toFixed(2) });
+    }
+  }
+  return out;
 }
 
 /** Is there a visited state within `r` (xz) of local point (lx,lz) at local floor height ly (+-0.35)? */

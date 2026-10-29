@@ -26,6 +26,13 @@ export class Npc {
     this.stuckT = 0; this.lastX = 0; this.lastZ = 0; this.checkT = 0; this.sidestep = 0; this.sideDir = 1; this.stuckTotal = 0; this.maxStuck = 0;
     this.talkWith = null; this.prevMode = null; this.item = null; this.view = null; this.clipName = null;
     this.fx = 0; this.fz = 0;           // steering force accumulator (reused)
+    // daily life (brain.js): where they are, what they hold, what happens when the current task ends
+    this.then = null;                    // continuation run when an idle task expires (null: ask the brain what next)
+    this.sitH = null;                    // seat height above the floor while seated (the view lowers the root)
+    this.prop = null;                    // 'broom' | 'bundle' | 'basket' | null: what they hold
+    this.carry = false;                  // walking with a load (walk_carry)
+    this.away = false; this.awayWhy = null; this.inLot = null;   // hidden inside a building: 'sleep' | 'school' | 'work'
+    this.spot = null; this.block = null; this.activity = null; this.convo = null; this.talkVariant = 0;
   }
 
   get x() { return this.st.x; } get y() { return this.st.y; } get z() { return this.st.z; }
@@ -33,16 +40,16 @@ export class Npc {
 
   place(x, y, z, ry = 0) { const s = this.st; s.x = x; s.y = y; s.z = z; s.vy = 0; s.onGround = true; this.ry = this.targetRy = ry; this.lastX = x; this.lastZ = z; }
 
-  /** Stand and play logical animation `act` for `secs` of world time (then the brain is consulted). */
-  stand(w, act = 'idle', secs = 5, face = null) {
-    this.mode = 'idle'; this.act = act; this.until = w.t + secs; this.path = null; this.moving = false; this.speed = 0;
+  /** Stand and play logical animation `act` for `secs` of world time, then run `then(npc, w)` or (without one) ask the brain what next. */
+  stand(w, act = 'idle', secs = 5, face = null, then = null) {
+    this.mode = 'idle'; this.act = act; this.until = w.t + secs; this.path = null; this.moving = false; this.speed = 0; this.then = then;
     if (face != null) this.targetRy = face;
   }
 
   /** Walk a list of waypoints [{x,z,y?}] then call `arrive(npc, w)`. */
   walk(w, pts, arrive = null, speed = null) {
     if (!pts?.length) { this.stand(w, 'idle', 1); return false; }
-    this.path = pts; this.pi = 0; this.mode = 'walk'; this.arrive = arrive; this.speed = speed ?? this.speedBase * (0.92 + this.rng.next() * 0.16);
+    this.path = pts; this.pi = 0; this.mode = 'walk'; this.arrive = arrive; this.speed = speed ?? this.speedBase * (0.92 + this.rng.next() * 0.16); this.then = null;
     this.stuckT = 0; this.checkT = 0; this.lastX = this.st.x; this.lastZ = this.st.z; this.moving = true; this.act = 'walk';
     return true;
   }
@@ -57,6 +64,7 @@ export class Npc {
     if (this.mode !== 'talk') return;
     const p = this.prevMode; this.talkWith = null; this.prevMode = null;
     if (p?.mode === 'walk' && p.path) { this.mode = 'walk'; this.path = p.path; this.pi = p.pi; this.arrive = p.arrive; this.moving = true; this.act = 'walk'; this.speed = this.speedBase; }
+    else if (p?.mode === 'idle') { this.mode = 'idle'; this.act = p.act === 'talk' ? 'idle' : p.act; this.until = w.t + Math.max(2, p.until); }   // go on with what they were doing (still seated, still sweeping)
     else this.stand(w, 'idle', 1.5 + this.rng.next() * 3);
   }
 
@@ -75,7 +83,10 @@ export class Npc {
   _idle(dt, w) {
     // settle on the ground (stairs / slopes may have changed it)
     this._ground(dt, w);
-    if (w.t >= this.until) w.brain.next(this, w);
+    if (w.t >= this.until) {
+      const cb = this.then;
+      if (cb) { this.then = null; cb(this, w); } else w.brain.next(this, w);
+    }
   }
 
   _talk(dt, w) {
@@ -129,7 +140,7 @@ export class Npc {
 
   _arrived(w) {
     this.moving = false; this.speed = 0; this.path = null;
-    const cb = this.arrive; this.arrive = null; this.mode = 'idle'; this.act = 'idle'; this.until = w.t + 0.1;
+    const cb = this.arrive; this.arrive = null; this.mode = 'idle'; this.act = 'idle'; this.until = w.t + 0.1; this.then = null; this.carry = false;
     if (cb) cb(this, w);
   }
 }

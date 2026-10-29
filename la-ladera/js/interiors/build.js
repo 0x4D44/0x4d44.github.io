@@ -8,14 +8,22 @@
 import * as THREE from 'three';
 import { CATALOG } from './catalog.js';
 import { decalDef } from './decals.js';
-import { drawStandin } from './standins.js';
+import { drawStandin, setAtlas } from './standins.js';
+import { paintDecalAtlas, atlasMaterial } from './atlas.js';
+import { dressWindows } from './windows.js';
+import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
 
 const M = new THREE.Matrix4(), S = new THREE.Matrix4();
 const MAX_REPORTED = 12;
 
-/** Preload the GLBs of every catalogue key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. */
+/** Preload the GLBs of every catalogue key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). */
 export async function loadInteriorAssets(ctx) {
   ctx.interiorGlb = new Set();
+  try {
+    const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
+    if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
+    makeTvGlowMaterial(ctx);
+  } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
   const a = ctx.assets;
   if (!a?.names) return;
   const names = a.names().filter((n) => CATALOG[n]);
@@ -62,6 +70,11 @@ export function buildInterior(ctx, bp) {
       if (reported++ < MAX_REPORTED) (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, item: rec.id, name: rec.name, message: String(e?.message ?? e), stack: e?.stack });
     }
   }
+  try {
+    st.curtains = dressWindows(b, bp);
+    st.fans = buildRotors(ctx, bp, group, recs, CATALOG);
+    st.tvs = buildTvGlow(ctx, bp, b, recs, CATALOG);
+  } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'dressing ' + String(e?.message ?? e), stack: e?.stack }); }
   st.tris = b.tris; st.materials = b.accs.size;
   ctx.batch.flush(id);
   if (bp.interior) bp.interior.stats = st;

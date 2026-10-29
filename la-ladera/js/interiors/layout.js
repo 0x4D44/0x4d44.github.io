@@ -127,6 +127,9 @@ export class Layout {
     }
     for (const st of bp.stairs ?? []) this._stair(st);
     this._openEdges();
+    // three doors in under nine square metres (a rowhouse kitchen, a bedroom that is half a hall): the sweeps would leave no wall for a bed or a stove
+    const nDoors = WALLS.reduce((n, w) => n + this.obs[w].filter((o) => o.kind === 'door').length, 0);
+    if (nDoors >= 3 && this.W * this.D < 9) this.relaxKeeps(0.7);
   }
   /** Sides with no wall at all (a terrace open to the next one, a yard): every open run of >= 0.75 m is a way in, like a door. */
   _openEdges() {
@@ -178,11 +181,21 @@ export class Layout {
     const wi = wallInfo(this.r, wall);
     const u0 = Math.min(a, b), u1 = Math.max(a, b);
     this.obs[wall].push({ u0, u1, kind, ...extra });
-    const k = { why: kind, wall, ...this._wallRect(wall, u0 - 0.05, u1 + 0.05, depth) };
+    const k = { why: kind, wall, u0: u0 - 0.05, u1: u1 + 0.05, depth, ...this._wallRect(wall, u0 - 0.05, u1 + 0.05, depth) };
     this.keep.push(k);
     const mid = Math.min(wi.hi - 0.3, Math.max(wi.lo + 0.3, (u0 + u1) / 2));
     const [lx, lz] = wallPoint(this.r, wall, mid, 0.44);              // just past the 0.38 m band the body keeps off the wall
     this.landings.push({ x: lx, z: lz, kind: 'door', door: extra.door, wall, u: mid });
+  }
+  /** A room with three doors in four square metres (a rowhouse kitchen): shrink every door's keep-out to `depth` so it can still hold what it is for.
+   *  The leaf then sweeps through the corner of a counter, which nobody sees; the walking lanes stay guarded by the connectivity check. Returns how many shrank. */
+  relaxKeeps(depth = 0.7) {
+    let n = 0;
+    for (const k of this.keep) {
+      if (k.why !== 'door' || k.depth == null || k.depth <= depth + 1e-6) continue;
+      Object.assign(k, this._wallRect(k.wall, k.u0, k.u1, depth)); k.depth = depth; n++;
+    }
+    return n;
   }
   _wallRect(wall, u0, u1, depth) {
     const r = this.r;
@@ -280,7 +293,7 @@ export class Layout {
       if (it.block) for (const z of b.zones ?? []) if (obbOverlap(it.ob, z, -0.01)) return false;
       if (b.block) for (const z of zones) if (obbOverlap(z, b.ob, -0.01)) return false;
     }
-    if (it.block && !flat && !o.noConn && it.h >= 0.35 && !this._connOk(it)) return false;    // never cut the room in two (>= 0.7 m passages)
+    if (it.block && !flat && !o.noConn && it.h >= (o.connAll ? 0.2 : 0.35) && !this._connOk(it)) return false;    // never cut the room in two (>= 0.7 m passages)
     if (!o.noConn && this._needsAccess(it) && !this._accessOk(it)) return false;             // a seat or bed someone cannot walk up to is useless
     return true;
   }
@@ -366,7 +379,8 @@ export class Layout {
     const c = o.def ?? CATALOG[name]; if (!c) throw new Error('unknown catalogue item ' + name);
     const list = walls === 'any' ? WALLS : Array.isArray(walls) ? walls : [walls];
     const cands = [];
-    const w = o.w ?? c.size[0], d = c.size[2], gap = o.gap ?? 0.01, half = w / 2;
+    const along = !!o.along;                              // long side against the wall (a bed or sofa where the room is too narrow for its length)
+    const w = o.w ?? c.size[0], d = c.size[2], gap = o.gap ?? 0.01, half = (along ? d : w) / 2, off = (along ? w : d) / 2 + gap;
     for (const wall of list) {
       const wi = wallInfo(this.r, wall);
       const lo = wi.lo + half + (o.inset ?? 0), hi = wi.hi - half - (o.inset ?? 0);
@@ -383,8 +397,8 @@ export class Layout {
     cands.sort((a, b) => b.s - a.s);
     for (const cd of cands) {
       const wi = wallInfo(this.r, cd.wall);
-      const [cx, cz] = wallPoint(this.r, cd.wall, cd.u, d / 2 + gap);
-      const ry = wi.ry + (o.flip ? PI : 0);
+      const [cx, cz] = wallPoint(this.r, cd.wall, cd.u, off);
+      const ry = wi.ry + (along ? (o.flip ? -PI / 2 : PI / 2) : (o.flip ? PI : 0));
       const it = this._make(name, cx, cz, ry, o);
       if (o.sideNeed && !this._sideFree(it, o.sideNeed)) continue;
       if (this.valid(it, o)) { it.wallSide = cd.wall; it.u = cd.u; return this._commit(it, o); }

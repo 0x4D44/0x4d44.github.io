@@ -2,7 +2,7 @@
 import { CATALOG } from './catalog.js';
 import { opposite, wallInfo, wallPoint, mkObb } from './layout.js';
 import { decalDef } from './decals.js';
-import { D, chairsAround, fillMin, outdoor } from './rooms.js';
+import { D, chairsAround, fillMin, outdoor, moreLights } from './rooms.js';
 import { SHOP_FITOUTS } from './shops.js';
 
 const PI = Math.PI;
@@ -66,6 +66,7 @@ export function chapel(L, E, hh) {
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('bulb_bare', cx, cz);
   L.fixture = { x: cx, z: cz, kind: 'bulb', color: 0xffe0b0, i: 6, d: 8 };
+  moreLights(L, 'bulb');
   fillMin(L, E, hh, 8);
 }
 
@@ -97,6 +98,7 @@ export function classroom(L, E, hh) {
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 });
   L.fixture = { x: cx, z: cz, kind: 'tube', color: 0xeaf2ff, i: 10, d: 9 };
+  moreLights(L, 'tube');
   E.classroomDesks = (E.classroomDesks ?? 0) + n;
   fillMin(L, E, hh, 10);
 }
@@ -143,6 +145,7 @@ export function hall(L, E, hh) {
   D(L, 'poster_football_c', 'any'); D(L, 'poster_football_a', 'any'); D(L, 'schedule', 'any'); D(L, 'photo_collage', 'any'); D(L, 'flag_co', 'any', { y: 1.8 }); L.hang('clock_wall', 'any', {});
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('fan_ceiling', cx, cz); L.fixture = { x: cx, z: cz, kind: 'fan', color: 0xffe2b0, i: 8, d: 9 };
+  moreLights(L, 'bulb');
   fillMin(L, E, hh, 9);
 }
 

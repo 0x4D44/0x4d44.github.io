@@ -112,10 +112,11 @@ function worldGeo(bp, d, yk) {
 const PUSH_T = 0.25;                                          // seconds of walking into a closed door before it gives way
 
 /**
- * Push to open: a player who keeps walking into a closed swing door (centred in the opening, held by it) opens it after a beat.
- * Aiming and E still work; this is for the player who never finds the prompt, or whose aim is on the neighbour standing by the door.
- * Shop shutters never open this way. The physics clips the move at a wall instead of flagging `blocked`, so "pushing" is read from the
- * player's own numbers: the velocity that follows the held keys stays high while the distance actually covered drops to nothing.
+ * Push to open: a player who keeps walking into a closed door or shop shutter (centred in the opening, held by it) opens it after a beat.
+ * Aiming and E still work; this is for the player who never finds the prompt, or whose aim is on the neighbour standing by the door
+ * (a shopkeeper on the doorstep wins the aim, and the shutter is the shop's only way in). The physics clips the move at a wall instead
+ * of flagging `blocked`, so "pushing" is read from the player's own numbers: the velocity that follows the held keys stays high while
+ * the distance actually covered drops to nothing.
  */
 function pushOpen(ctx, dt) {
   const P = ctx.player, s = P?.s, ps = ctx.archPush ??= { id: null, t: 0 };
@@ -124,9 +125,9 @@ function pushOpen(ctx, dt) {
   const wx = P.vx / v, wz = P.vz / v;
   let hit = null;
   for (const st of ctx.archDoors.values()) {
-    if (st.kind !== 'swing' || st.open) continue;
+    if (st.open) continue;
     const g = st.geo, rx = s.x - g.cx, rz = s.z - g.cz;
-    if (rx * rx + rz * rz > 1.0 || Math.abs(s.y - g.y) > 0.8) continue;
+    if (rx * rx + rz * rz > 6.0 || Math.abs(s.y - g.y) > 0.8) continue;           // cheap reject (a wide shutter's edge is 1.6 m from its centre)
     const across = rx * g.nx + rz * g.nz, along = rx * g.tx + rz * g.tz;
     if (Math.abs(across) > 0.55 || Math.abs(along) > g.hw) continue;
     if (-Math.sign(across) * (wx * g.nx + wz * g.nz) < 0.6) continue;      // not heading into the door

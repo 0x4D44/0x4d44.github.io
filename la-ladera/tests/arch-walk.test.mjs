@@ -2,7 +2,7 @@
 // node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/arch-walk.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { testLots, planAll, explore, reached, openAllDoors } from './arch-lib.mjs';
+import { testLots, planAll, explore, reached, openAllDoors, roofJumpEscapes } from './arch-lib.mjs';
 
 const lots = testLots();
 const only = process.env.ARCH_LOTS ? process.env.ARCH_LOTS.split(',') : null;
@@ -114,6 +114,18 @@ test('every doorway admits the R=0.3 player with +-0.11 m of lateral error, and 
   }
   assert.ok(count > 80 && checkedSides > 60, `doors tested: ${count}, wall sides tested: ${checkedSides}`);
   assert.deepEqual(bad.slice(0, 12), []);
+});
+
+test('a walkable roof is a room, not a launch pad: no real jump (walk or sprint, 60 or 20 fps) clears its parapet or pretil', () => {
+  let roofs = 0; const problems = [];
+  for (const bp of bps) {
+    if (!bp.roof.walkable) continue;
+    roofs++;
+    const esc = roofJumpEscapes(ctx, bp);
+    if (esc.length) problems.push(`${bp.id} (${bp.shell.roofStyle}, parapet ${bp.shell.roofLayer?.parapetH}): ${esc.length} jumps clear the fence, e.g. ${JSON.stringify(esc[0])}`);
+  }
+  assert.ok(roofs >= 6, `only ${roofs} walkable roofs / open decks in the test lots`);
+  assert.deepEqual(problems, []);
 });
 
 test('walking straight through a door line works (door opens, player passes, wall beside it blocks)', () => {
