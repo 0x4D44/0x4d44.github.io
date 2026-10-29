@@ -1,0 +1,100 @@
+{
+ "stems": {
+  "base": {
+   "file": "base.ogg",
+   "bytes": 450727,
+   "kbps": 46,
+   "gain": 0.871,
+   "rmsDb": -23.9
+  },
+  "lead": {
+   "file": "lead.ogg",
+   "bytes": 623584,
+   "kbps": 36,
+   "gain": 0.104,
+   "rmsDb": -26.7
+  },
+  "drive": {
+   "file": "drive.ogg",
+   "bytes": 372462,
+   "kbps": 32,
+   "gain": 0.135,
+   "rmsDb": -30.4
+  },
+  "final": {
+   "file": "final.ogg",
+   "bytes": 332619,
+   "kbps": 34,
+   "gain": 0.135,
+   "rmsDb": -28.4
+  }
+ },
+ "rate": 48000,
+ "introSec": 4.615375,
+ "loopSec": 73.84614583333334,
+ "totalSec": 78.46152083333334,
+ "introSamples": 221538,
+ "loopSamples": 3544615,
+ "totalSamples": 3766153,
+ "bytes": 1779392,
+ "stats": {
+  "lufs": -17,
+  "peakDb": -2.76,
+  "fitResidual": 0.282,
+  "seamJump": 0.13889,
+  "seamRatio": 7,
+  "trimsDb": {
+   "base": 0,
+   "lead": 6.8,
+   "drive": 7.1,
+   "final": 11
+  },
+  "seamRms": 0.0712,
+  "startRms": 0.1471
+ },
+ "name": "Mesa Burn",
+ "key": "E",
+ "bpm": 104,
+ "bars": {
+  "intro": 2,
+  "loop": 32
+ },
+ "sections": [
+  {
+   "name": "intro",
+   "bar": 0,
+   "bars": 2
+  },
+  {
+   "name": "A",
+   "bar": 2,
+   "bars": 8
+  },
+  {
+   "name": "B",
+   "bar": 10,
+   "bars": 8
+  },
+  {
+   "name": "A2",
+   "bar": 18,
+   "bars": 8
+  },
+  {
+   "name": "build",
+   "bar": 26,
+   "bars": 4
+  },
+  {
+   "name": "drop",
+   "bar": 30,
+   "bars": 4
+  }
+ ],
+ "roles": {
+  "base": "always",
+  "lead": "race",
+  "drive": "speed",
+  "final": "finalLap"
+ }
+}
