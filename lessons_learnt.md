@@ -134,6 +134,40 @@ and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
   Setting renderer.shadowMap.type = THREE.PCFSoftShadowMap logs "PCFSoftShadowMap has been removed. Using PCFShadowMap
   instead." Set THREE.PCFShadowMap directly.
 
+- 2026-10-29 - Headless Chrome still pointer-locks and clips the real mouse; stub it (chrome.mjs:NO_DESKTOP_GRABS)
+  A Skyblitz test browser confined the user's real mouse (ClipCursor) even with --headless=new. Inject a stub for requestPointerLock,
+  exitPointerLock, pointerLockElement and requestFullscreen with Page.addScriptToEvaluateOnNewDocument before the first navigation, and keep
+  game code free of pointer lock (validate-static.mjs fails if src mentions it). Also spawn Chrome with windowsHide and lower the priority of
+  the whole tree: Chrome re-prices its GPU (AboveNormal) and renderer (Normal) children, so launchChrome re-lowers them every 2 s from the
+  CDP SystemInfo.getProcessInfo list.
+
+- 2026-10-29 - process.kill(-pid) is POSIX only; on Windows it leaked Chrome trees (responsive.test.mjs:taskkill)
+  Use taskkill /PID n /T /F with windowsHide:true on win32. Leaked trees kept running (and kept their responsive-* profile dirs) after the suite.
+
+- 2026-10-29 - display:grid in a media query beat [hidden] and drew a menu over the race (style.css:.scr[hidden])
+  The podium screen's grid rule out-ranked .scr[hidden], so the "Grand Prix complete" panel covered every race frame. DOM tests did not
+  notice; screenshots from a keyboard-bot race did. Fix: .scr[hidden], #ui [hidden] { display: none !important }; ui-nav.test.mjs now asserts
+  that no menu screen is drawn during a race.
+
+- 2026-10-29 - Nearest-point projection flips racers between shortcut and main line (layout.js:project)
+  Needs hysteresis: a racer already on a branch keeps it while its lateral error is under ~2.2 corridor widths and the main path is not much
+  nearer; race/progress.js caps the credit at a branch entry to 40 m a step and repays the rest. Only some seeds showed it (sunrise seed 1 and
+  neon seed 1 had 31-40 progress glitches, seeds 7 and 11 had none), so sweep several seeds before calling a course clean.
+
+- 2026-10-29 - Full-depth ejection from a column field threw a racer 85 m onto a roof (collision.js:environment)
+  A deep overlap (over 8 m) is the flank of a column: slide the racer out sideways a few metres a step and count a normal ground crash. A racer
+  that rides a wall or rooftop for 3.5 s is respawned (RACE.respawnScrapeT). Tests: "column flank" and "scrape respawn" in race.test.mjs.
+
+- 2026-10-29 - Double-tap A/D barrel roll fired 64 times a lap by accident; now a setting (config.js:doubleTapRoll)
+  Found by flying the real game with tests/tools/keybot.mjs (real key events, closed-loop key controller). The first bot ran on wall-clock time
+  and open-loop timing, which confounded reaction delay with the 0.22 s double-tap window: step the sim and make performance.now follow sim time.
+
+- 2026-10-29 - three r186 has no PCFSoftShadowMap and its shader link check stalls loading (game.js:Game)
+  Use PCFShadowMap and set renderer.debug.checkShaderErrors off for players (on for ?debug and tests); validate-static.mjs asserts it.
+
+- 2026-10-29 - Pages is case-sensitive, Windows is not: check asset case (validate-static.mjs:existsExact)
+  A wrong-case import or texture name loads fine on the dev box and 404s on GitHub Pages; the static check walks the directory listing byte for byte.
+
 - 2026-08-27 - Keep career and physical stage IDs separate across the simulator adapter (championship.js:championshipChoice)
   OxAlphaRally's career schedules 51 stages while the renderer owns 12 playable roads.
   A stable surface-aware mapping lets career.js remain authoritative for results, saves,
