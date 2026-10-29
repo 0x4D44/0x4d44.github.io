@@ -132,12 +132,16 @@ ${NOISE_GLSL}${on.abs ? STRATA_GLSL : ''}`);
   return mat;
 }
 
+/** Terrain mesh cell size multiplier for a quality preset (V-23): triangles go with 1 / cell^2, so cell x scenery^-0.5 makes the terrain cost follow `scenery`
+ *  (Low 0.45 -> cells x1.49, 0.45x the triangles; Med x1.20, 0.7x; High x1; Ultra x0.88, 1.3x). Collision reads the height function, never the mesh. */
+export const terrainCellScale = (q) => Math.pow(Math.max(0.3, q?.scenery ?? 1), -0.5);
+
 /**
- * LOD tile grid over `bounds` (+ coarse far strips). cellFor(d) maps the distance to the route (minus half a tile) to a grid cell size.
+ * LOD tile grid over `bounds` (+ coarse far strips). cellFor(d) maps the distance to the route (minus half a tile) to a grid cell size (x cellScale).
  * Tiles that are near the route stay individual (they cast shadows and are frustum-culled one by one); the far ones are merged
  * in blocks of `block` x `block` tiles. Returns { group, geos, tiles, meshes }.
  */
-export async function buildTerrainTiles({ course, H, mat, bounds, T = 360, cellFor, castNear = 200, nearD = 300, block = 3, farR = 7000, progress, yieldFrame }) {
+export async function buildTerrainTiles({ course, H, mat, bounds, T = 360, cellFor, cellScale = 1, castNear = 200, nearD = 300, block = 3, farR = 7000, progress, yieldFrame }) {
   const samples = [], f = {};
   for (let s = 0; s < course.length; s += 40) { course.frameAt(s, f); samples.push(f.pos.x, f.pos.z); }
   for (const b of course.branches) for (let u = 0; u < b.length; u += 40) { b.frameAt(u, f); samples.push(f.pos.x, f.pos.z); }
@@ -149,7 +153,7 @@ export async function buildTerrainTiles({ course, H, mat, bounds, T = 360, cellF
   for (let j = 0; j < tilesZ; j++) {
     for (let i = 0; i < tilesX; i++) {
       const x0 = bounds.minX + i * T, z0 = bounds.minZ + j * T, d = dMin(x0 + T / 2, z0 + T / 2) - T * 0.7;
-      const g = buildPatch(H, { x0, z0, x1: x0 + T, z1: z0 + T, cell: cellFor(d) }, { minH: -1e9, skirt: true, skirtDrop: 60 });
+      const g = buildPatch(H, { x0, z0, x1: x0 + T, z1: z0 + T, cell: cellFor(d) * cellScale }, { minH: -1e9, skirt: true, skirtDrop: 60 });
       if (d < nearD) {
         const m = new THREE.Mesh(g, mat); m.receiveShadow = true; m.castShadow = d < castNear; group.add(m); geos.push(g); meshes++;
       } else {

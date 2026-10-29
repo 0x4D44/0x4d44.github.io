@@ -3,6 +3,7 @@
 // sample() is called once per FIXED sim step and returns edge-latched controls (barrel / item are true for exactly one sample
 // after the press). Emits 'input:pause' (Esc / P / Start / touch pause), 'input:camera' (C / Y / touch), 'input:lookback' (V / R3).
 // settings.pitchMode: 'flight' (default) = push forward (W / Up / stick up) is nose DOWN, 'arcade' flips it.
+import { createGuide } from './guide.js';
 import { createControls, resetControls } from '../controls.js';
 import { SIM_DT } from '../config.js';
 
@@ -14,6 +15,7 @@ const dead = (x, dz) => { const a = Math.abs(x); if (a <= dz) return 0; const n 
 
 export function createInput(game) {
   const keys = new Set(), latched = new Set(), lastDown = {}, c = createControls();
+  const guide = createGuide(), gOut = { roll: 0, pitch: 0 };
   const flying = () => !game.paused && (game.state == null || game.state === 'race' || game.state === 'finish' || game.state === 'demo');
   const st = { pitch: 0, roll: 0, padBarrel: 0, padItem: false, padPrev: [], menuKey: false, tapBarrel: 0, touchBarrel: 0, touchItem: false, tick: 0, touchOn: false };
   const touch = { root: null, ids: {}, stick: { id: -1, ox: 0, oy: 0, x: 0, y: 0 }, held: { boost: false, fire: false, brake: false, back: false, look: false }, built: false, visible: false };
@@ -95,6 +97,8 @@ export function createInput(game) {
         if (touch.held.back) itemBack = true;
       }
 
+      // keyboard only (no pad, no touch): the guide steers towards the middle of the course while the keys are idle or tapped (Standard assist)
+      if (!gp && !(touch.built && touch.visible) && game.player?.flight && game.course) { guide.blend(game, game.player.flight, roll, pitch, gOut); roll = gOut.roll; pitch = gOut.pitch; }
       c.pitch = clamp(pitch, -1, 1); c.roll = clamp(roll, -1, 1); c.yaw = clamp(yaw, -1, 1);
       c.boost = boost; c.airbrake = brake; c.fire = fire; c.itemBack = itemBack; c.lookBack = look;
       c.barrel = barrel; c.item = item;
@@ -123,7 +127,7 @@ export function createInput(game) {
   const reset = () => { keys.clear(); latched.clear(); st.tapBarrel = 0; };
   // E-03: pausing or resuming drops every latched key and pad edge, and a key still down is not re-latched (only a fresh press counts)
   const flush = () => {
-    reset(); st.padPrev = [];
+    reset(); guide.reset(); st.padPrev = [];
     const gp = readPad(); if (gp) for (let i = 0; i < gp.buttons.length; i++) st.padPrev[i] = !!gp.buttons[i]?.pressed;
   };
   game.events?.on?.('game:pause', flush);
@@ -194,8 +198,20 @@ export function createInput(game) {
     btn('BOOST', `right:max(116px,calc(env(safe-area-inset-right) + 116px));${bt};width:78px;height:78px`, 'boost', null, 'rgba(255,150,20,.75)');
     btn('ITEM', `${r};bottom:max(118px,calc(env(safe-area-inset-bottom) + 118px));width:72px;height:72px`, null, () => { st.touchItem = true; }, 'rgba(60,140,255,.75)');
     btn('BRAKE', `right:max(106px,calc(env(safe-area-inset-right) + 106px));bottom:max(104px,calc(env(safe-area-inset-bottom) + 104px));width:56px;height:56px;font-size:12px`, 'brake', null, 'rgba(90,90,110,.7)');
-    btn('<', `left:max(112px,calc(env(safe-area-inset-left) + 112px));top:26%;width:52px;height:52px;font-size:20px`, null, () => { st.touchBarrel = -1; }, 'rgba(60,200,160,.7)');
-    btn('>', `right:max(150px,calc(env(safe-area-inset-right) + 150px));top:26%;width:52px;height:52px;font-size:20px`, null, () => { st.touchBarrel = 1; }, 'rgba(60,200,160,.7)');
+    // V-32: the roll buttons say what they do (an arrow over "ROLL"). V-13: in portrait they leave the top band, where they covered the
+    // countdown digit and the stunt popups, and sit above ITEM / BRAKE under the right thumb (a stylesheet rule, so a rotation moves them by itself).
+    const roll = (arrow, css, dir, key) => {
+      const b = btn('', css, null, () => { st.touchBarrel = dir; }, 'rgba(60,200,160,.7)');
+      b.dataset.k = key; b.style.flexDirection = 'column'; b.style.lineHeight = '1'; b.style.fontSize = '12px';
+      const a = document.createElement('b'); a.textContent = arrow; a.style.cssText = 'font-size:22px;line-height:.8;pointer-events:none'; b.append(a, 'ROLL');
+      return b;
+    };
+    roll('<', `left:max(112px,calc(env(safe-area-inset-left) + 112px));top:26%;width:52px;height:52px`, -1, 'rollL');
+    roll('>', `right:max(150px,calc(env(safe-area-inset-right) + 150px));top:26%;width:52px;height:52px`, 1, 'rollR');
+    const css = document.createElement('style'); css.id = 'sb-touch-css';
+    css.textContent = '@media (orientation: portrait) { #sb-touch [data-k=rollL], #sb-touch [data-k=rollR] { top: auto !important; left: auto !important; width: 56px !important; height: 56px !important; bottom: max(204px, calc(env(safe-area-inset-bottom) + 204px)) !important; } '
+      + '#sb-touch [data-k=rollL] { right: max(90px, calc(env(safe-area-inset-right) + 90px)) !important; } #sb-touch [data-k=rollR] { right: max(24px, calc(env(safe-area-inset-right) + 24px)) !important; } }';
+    document.head.appendChild(css);
     btn('II', `right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));width:44px;height:44px;font-size:14px`, null, () => emit('input:pause'), 'rgba(20,30,60,.6)');
     btn('CAM', `right:max(66px,calc(env(safe-area-inset-right) + 66px));top:max(12px,env(safe-area-inset-top));width:44px;height:44px;font-size:11px`, null, () => emit('input:camera'), 'rgba(20,30,60,.6)');
     document.body.appendChild(root);

@@ -138,13 +138,37 @@ export function makeCottonwood({ seed = 1 } = {}) {
 const mix = (a, b, t) => a.clone().lerp(b, t);
 const SAND = C(0xc88a62);
 
+/** Fine rock / foliage relief for createStrataMaterial: three octaves of world-space value noise, faded out by pixel footprint so far rocks do not shimmer.
+ *  uRk = (features per metre of the first octave, relief height in metres, albedo blotch strength). gRKH is the grain height (0..1), gRKFP the metres per pixel. */
+const RELIEF_GLSL = `
+uniform vec3 uRk; float gRKH = 0.0, gRKFP = 1.0;
+float rkH3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+float rkN3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(rkH3(i), rkH3(i + vec3(1.0, 0.0, 0.0)), f.x), mix(rkH3(i + vec3(0.0, 1.0, 0.0)), rkH3(i + vec3(1.0, 1.0, 0.0)), f.x), f.y),
+             mix(mix(rkH3(i + vec3(0.0, 0.0, 1.0)), rkH3(i + vec3(1.0, 0.0, 1.0)), f.x), mix(rkH3(i + vec3(0.0, 1.0, 1.0)), rkH3(i + vec3(1.0, 1.0, 1.0)), f.x), f.y), f.z); }
+float rkHeight(vec3 wp){
+  gRKFP = max(length(fwidth(wp)), 1e-3);
+  float f1 = uRk.x, f2 = f1 * 2.7, f3 = f1 * 7.3;
+  float w1 = 1.0 - smoothstep(0.15, 0.45, gRKFP * f1), w2 = 1.0 - smoothstep(0.15, 0.45, gRKFP * f2), w3 = 1.0 - smoothstep(0.15, 0.45, gRKFP * f3);
+  return 0.55 * mix(0.5, rkN3(wp * f1), w1) + 0.3 * mix(0.5, rkN3(wp * f2 + 7.3), w2) + 0.15 * mix(0.5, rkN3(wp * f3 + 3.1), w3);
+}
+vec3 rkBump(vec3 sp, vec3 sn, vec2 dh, float fd){
+  dh *= min(1.0, 1.2 / max(length(dh), 1e-4));                                  // never steeper than ~50 degrees
+  vec3 sx = normalize(dFdx(sp)), sy = normalize(dFdy(sp)), r1 = cross(sy, sn), r2 = cross(sn, sx);
+  float det = dot(sx, r1) * fd;
+  return normalize(abs(det) * sn - sign(det) * (dh.x * r1 + dh.y * r2));
+}`;
+
 /**
  * Standard material with world-space sandstone strata (the same bands the canyon walls carry, so props and walls agree): vertex colours give the base
  * rock, dark vertex colours (caprock) stay unbanded. Works on plain and instanced meshes.
+ * bump (metres of relief) + bumpScale (features per metre) + blotch (albedo mottling) add grain to a smooth low-poly blob: a rocky crag or a leafy canopy
+ * instead of a pebble (V-16). Off by default, so the canyon material is unchanged.
  */
-export function createStrataMaterial(game, { scale = 0.055, warp = 2.6, strength = 0.9, colors = [0xb8532c, 0xd99a5c, 0xecd2a6, 0x6e2f3a], lumBase = 0.3, lumGain = 1.7, relief = 2.2, detail = 'rock_red', detailScale = 45, detailMix = 0.8, emissive = 0x3a160a, emissiveIntensity = 0.22, roughness = 0.94 } = {}) {
+export function createStrataMaterial(game, { scale = 0.055, warp = 2.6, strength = 0.9, colors = [0xb8532c, 0xd99a5c, 0xecd2a6, 0x6e2f3a], lumBase = 0.3, lumGain = 1.7, relief = 2.2, detail = 'rock_red', detailScale = 45, detailMix = 0.8, emissive = 0x3a160a, emissiveIntensity = 0.22, roughness = 0.94, bump = 0, bumpScale = 0.5, blotch = 0 } = {}) {
   const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness, emissive: new THREE.Color(emissive), emissiveIntensity });
-  const u = { uBand: { value: new THREE.Vector3(scale, warp, strength) }, uBA: { value: C(colors[0]) }, uBB: { value: C(colors[1]) }, uBC: { value: C(colors[2]) }, uBD: { value: C(colors[3]) }, tDetail: { value: detail ? game.assets.tex(detail) : null }, uDetail: { value: new THREE.Vector2(detailScale, detailMix) } };
+  const grain = bump > 0 || blotch > 0;
+  const u = { uBand: { value: new THREE.Vector3(scale, warp, strength) }, uBA: { value: C(colors[0]) }, uBB: { value: C(colors[1]) }, uBC: { value: C(colors[2]) }, uBD: { value: C(colors[3]) }, tDetail: { value: detail ? game.assets.tex(detail) : null }, uDetail: { value: new THREE.Vector2(detailScale, detailMix) }, uRk: { value: new THREE.Vector3(bumpScale, bump, blotch) } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, u);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vSW, vSN;').replace('#include <begin_vertex>', `#include <begin_vertex>
@@ -156,7 +180,7 @@ export function createStrataMaterial(game, { scale = 0.055, warp = 2.6, strength
   vSW = (modelMatrix * sw).xyz; vSN = normalize(mat3(modelMatrix) * on); }`);
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
 varying vec3 vSW, vSN; uniform vec3 uBand, uBA, uBB, uBC, uBD; uniform vec2 uDetail; uniform sampler2D tDetail;
-${NOISE_GLSL}${STRATA_GLSL}
+${NOISE_GLSL}${STRATA_GLSL}${grain ? RELIEF_GLSL : ''}
 vec3 tfTri(sampler2D t, vec3 p, vec3 n, float sc){
   vec3 w = pow(abs(n), vec3(4.0)); w /= (w.x + w.y + w.z);
   return texture2D(t, p.zy / sc).rgb * w.x + texture2D(t, p.xz / sc).rgb * w.y + texture2D(t, p.xy / sc).rgb * w.z;
@@ -166,9 +190,11 @@ vec3 tfTri(sampler2D t, vec3 p, vec3 n, float sc){
   float lum = dot(diffuseColor.rgb, vec3(0.3, 0.59, 0.11));
   diffuseColor.rgb = mix(diffuseColor.rgb, bc * (${lumBase.toFixed(2)} + ${lumGain.toFixed(2)} * lum), bk * smoothstep(0.07, 0.2, lum));
   ${detail ? 'float dl = dot(tfTri(tDetail, vSW, normalize(vSN), uDetail.x), vec3(0.3, 0.59, 0.11)); diffuseColor.rgb *= mix(1.0, clamp(0.55 + 1.9 * dl, 0.45, 1.6), uDetail.y);' : ''}
-}`).replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>' + STRATA_NORMAL_GLSL(relief, 'smoothstep(0.1, 0.6, 1.0 - abs((normal * mat3(viewMatrix)).y))'));
+  ${grain ? 'gRKH = rkHeight(vSW); diffuseColor.rgb *= 1.0 + (gRKH - 0.5) * uRk.z;' : ''}
+}`).replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>' + STRATA_NORMAL_GLSL(relief, 'smoothstep(0.1, 0.6, 1.0 - abs((normal * mat3(viewMatrix)).y))')
+      + (bump > 0 ? '\n  normal = rkBump(-vViewPosition, normal, vec2(dFdx(gRKH), dFdy(gRKH)) * (uRk.y / gRKFP), faceDirection);' : ''));
   };
-  m.customProgramCacheKey = () => 'sbstrata' + lumBase + '/' + lumGain + '/' + relief;
+  m.customProgramCacheKey = () => 'sbstrata' + lumBase + '/' + lumGain + '/' + relief + (detail ? 'd' : '') + (blotch > 0 ? 'k' : '') + (bump > 0 ? 'b' : '');
   return m;
 }
 

@@ -96,7 +96,7 @@ export class UI {
     g.saveSettings();
   }
   resetSettings() {
-    for (const k of ['masterVolume', 'musicVolume', 'sfxVolume', 'pitchMode', 'assist', 'shake', 'showFps', 'doubleTapRoll', 'reduceFlash', 'difficulty']) this.setSetting(k, DEFAULT_SETTINGS[k]);
+    for (const k of ['masterVolume', 'musicVolume', 'sfxVolume', 'pitchMode', 'assist', 'shake', 'showFps', 'doubleTapRoll', 'reduceFlash', 'rumble', 'difficulty']) this.setSetting(k, DEFAULT_SETTINGS[k]);
     this.setSetting('quality', DEFAULT_SETTINGS.quality);
     this.screens.settings.enter?.(); this.cue('ui:click');
   }
@@ -159,11 +159,10 @@ export class UI {
     const g = this.game, f = this.flow;
     if (!f.fromMenu || g.race?.demo || this.save.hintsSeen || g.race?.autopilot) return;
     f.fromMenu = false; this.hintOpen = true; g.setPaused(true);   // freeze the countdown now ...
-    const race = g.race;   // ... but show the card only once the new race has been drawn: straight away it floats over the previous frame with template HUD values (LAP 1/3, 1st/8, an empty minimap): V-31
+    const race = g.race;   // ... but show the card only once the new race has been drawn: straight away it floats over the previous frame (V-31); the HUD fills in this race's values and minimap itself on game:raceStart (hud.js)
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (!this.hintOpen || g.race !== race) return;   // dismissed, restarted or quit in the meantime
-      g.setPaused(true); this.hud.update(0, g); this.hud.drawMap();   // the minimap only redraws on a running clock; paint it once for the card
-      this.goto('hint');
+      g.setPaused(true); this.goto('hint');
     }));
   }
 

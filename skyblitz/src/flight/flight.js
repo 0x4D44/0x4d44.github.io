@@ -23,7 +23,6 @@ export const FLIGHT = {
   maxBank: 1.4,              // rad (80 deg): stick-commanded bank limit
   boostDrain: 25,            // meter units per second while boosting from the meter
   meterBoostPower: 1.6,
-  loopThreshold: 310 * Math.PI / 180,
   rollThreshold: 330 * Math.PI / 180,
 };
 
@@ -63,7 +62,7 @@ export function createFlightState(spec) {
     t: 0, phi: 0,                                                       // flight clock; full roll angle (+ right wing down, +-PI inverted)
     kick: new THREE.Vector3(),                                          // decaying world-space velocity from impulses (bumps)
     ctl: { rollTurn: 0, inverted: false, q: 0, p: 0, r: 0, hold: 0, recover: 0, barrelAngle: 0, shiftAxis: new THREE.Vector3(), shiftDone: 0, push: false },
-    stunt: { loop: 0, roll: 0, rollIdle: 0, inv: 0, loopCool: 0, rollCool: 0 },
+    stunt: { loop: 0, loopArm: false, loopDir: 0, loopT: 0, roll: 0, rollIdle: 0, inv: 0, loopCool: 0, rollCool: 0 },
   };
 }
 
@@ -88,7 +87,7 @@ export function resetFlightState(fs, pos, quat, speed = 0) {
   fs.boost.meter = 0; fs.boost.timer = 0; fs.boost.active = false;
   fs.barrel.t = 0; fs.barrel.cooldown = 0; fs.tumble.t = 0; fs.stall.active = false; fs.stall.t = 0; fs.events.length = 0;
   const c = fs.ctl; c.q = c.p = c.r = c.hold = c.recover = c.barrelAngle = c.shiftDone = 0; c.push = false; c.inverted = false; c.rollTurn = 0;
-  const s = fs.stunt; s.loop = s.roll = s.rollIdle = s.inv = s.loopCool = s.rollCool = s.loopIdle = 0;
+  const s = fs.stunt; s.loop = s.roll = s.rollIdle = s.inv = s.loopCool = s.rollCool = s.loopIdle = s.loopDir = s.loopT = 0; s.loopArm = false;
   fs.gLoad = 1; fs.airbrake = 0;
   return fs;
 }
@@ -258,16 +257,26 @@ function detectStunts(fs, h, tumbling) {
   const st = fs.stunt, w = fs.angVel;
   if (st.loopCool > 0) st.loopCool -= h;
   if (st.rollCool > 0) st.rollCool -= h;
-  // loop: accumulated pitch rotation while the wings stay roughly level (or inverted), i.e. not a knife-edge turn
+  // loop: the nose goes vertical, over the top (belly to the sky), vertical the other way, and the craft comes back upright and level.
+  // That is watched through the nose and belly directions, so a banked or spiral loop (the course's own) pays as well as a wings-level one,
+  // while flat turns, rolls and half loops never get there. Phase in st.loop: 0 idle, 1 first vertical, 2 over the top, 3 second vertical.
   if (tumbling) { st.loop = 0; st.roll = 0; st.inv = 0; return; }
-  const wingY = Math.abs(fs.right.y);
-  if (wingY > 0.75) { st.loop = 0; st.loopIdle = 0; }
-  else if (wingY < 0.5) st.loop += w.x * h;
-  // the accumulator never decays while the pitch keeps turning; it is dropped once the pitch rate has stayed small for 0.4 s (half loops pay nothing)
-  if (Math.abs(w.x) > 0.5) st.loopIdle = 0; else { st.loopIdle = (st.loopIdle || 0) + h; if (st.loopIdle > 0.4) st.loop = 0; }
-  if (Math.abs(st.loop) >= FLIGHT.loopThreshold) {
-    st.loop = 0;
-    if (st.loopCool <= 0) { st.loopCool = 1.0; pushEvent(fs, { type: 'stunt', kind: 'loop', reward: 25 }); }
+  const fy = fs.forward.y, uy = fs.up.y;
+  if (Math.abs(w.x) > 0.5) st.loopIdle = 0; else { st.loopIdle = (st.loopIdle || 0) + h; if (st.loopIdle > 1.0) st.loop = 0; }   // pitch stalled for a second: a half loop that stops on its back pays nothing
+  if (st.loop === 0) {
+    if (Math.abs(fy) < 0.35 && uy > 0.5) st.loopArm = true;                                                       // a loop starts from level flight, so the tail of the last one never counts as a new one
+    else if (st.loopArm && Math.abs(fy) > 0.6 && uy > 0) { st.loop = 1; st.loopDir = Math.sign(fy); st.loopT = 0; st.loopArm = false; }
+  }
+  else {
+    st.loopT += h;
+    const sy = st.loopDir * fy;
+    if (st.loopT > 12) st.loop = 0;
+    else if (st.loop === 1) { if (uy < -0.2) st.loop = 2; }
+    else if (st.loop === 2) { if (sy < -0.6) st.loop = 3; }
+    else if (uy > 0.3) {                                                                                          // upright again after the second vertical
+      st.loop = 0;
+      if (st.loopCool <= 0) { st.loopCool = 1.0; pushEvent(fs, { type: 'stunt', kind: 'loop', reward: 25 }); }
+    }
   }
   // manual roll: accumulated roll rate outside a scripted barrel
   if (fs.barrel.t > 0 || fs.barrel.cooldown > FLIGHT.barrelCooldown - FLIGHT.barrelTime - 0.05) { st.roll = 0; }

@@ -380,3 +380,15 @@ test('E-19: the airbrake tightens the turn rate by itself (at the same speed, no
     assert.ok(braked > free * 1.2, `${id} airbraked turn ${braked.toFixed(1)} deg/s vs free ${free.toFixed(1)} at equal speed`);
   }
 });
+
+test('P-07: a zoom climb pushed over into a dive (never on its back) pays no LOOP', () => {
+  for (const id of ['falcon', 'comet']) {
+    const fs = make(id); let loops = 0, phase = 0;
+    run(fs, (t) => ctl({ pitch: phase === 0 ? 1 : phase === 1 ? -1 : 0 }), 8, undefined, (f) => {
+      for (const e of f.events) if (e.type === 'stunt' && e.kind === 'loop') loops++; f.events.length = 0;
+      if (phase === 0 && f.forward.y > 0.8) phase = 1; else if (phase === 1 && f.forward.y < -0.7) phase = 2;
+    });
+    assert.equal(phase, 2, `${id}: the push-over reached the dive`);
+    assert.equal(loops, 0, `${id}: climb + push-over is not a loop`);
+  }
+});

@@ -10,7 +10,7 @@ const _kick = new THREE.Vector3(), _n = new THREE.Vector3(), _d = new THREE.Vect
 const out = { kind: '', depth: 0, normal: new THREE.Vector3(), soft: false, surface: '' };
 const probe = { kind: '', depth: 0, normal: new THREE.Vector3(), soft: false };
 
-export const COLLISION = { crashSpeed: 30, steepRad: 0.6, nearMissGap: 7, nearMissClosing: 22, nearMissReward: 6, bumpLoss: 0.05, wallLoss: 0.35 };
+export const COLLISION = { crashSpeed: 30, steepRad: 0.6, flankSlope: 1.6, nearMissGap: 7, nearMissClosing: 22, nearMissReward: 6, bumpLoss: 0.05, wallLoss: 0.35 };
 
 /** Rotate the aircraft a little about the axis that turns its nose toward `dir` (a gentle assist, not a bounce). */
 function nudgeToward(fs, dir, rate, dt) {
@@ -44,11 +44,16 @@ function environment(race, r, dt, frame) {
   if (out.kind !== 'hazard') trackContact(race, r, dt, out.kind === 'wall' ? 'wall' : out.surface === 'water' ? 'water' : 'ground');
   if (out.kind === 'ground') {
     let into = -fs.vel.dot(out.normal);
-    if (depth > 8 && out.surface !== 'water') {
-      // The ground is a column field (city towers, cliffs): a deep overlap means the flank of a column, not a landing. Never eject the
-      // aircraft up onto the roof (a 85 m teleport); slide it out sideways, away from the higher side, a few metres per step.
+    // The ground is a column field (city towers, cliffs): a deep overlap OR a steep local slope means the flank of a column, not a landing.
+    // Never eject the aircraft up onto the roof (a 85 m teleport, or a slow climb of 8 m per step up a 200 m tower: the redrock seed 2
+    // "roof throw"); slide it out sideways, away from the higher side, a few metres per step.
+    let flank = false;
+    if (out.surface !== 'water') {
       const c = race.course, x = fs.pos.x, z = fs.pos.z, e = 6;
       _d.set(c.groundHeight(x - e, z) - c.groundHeight(x + e, z), 0, c.groundHeight(x, z - e) - c.groundHeight(x, z + e));
+      flank = depth > 8 || _d.length() / (2 * e) > COLLISION.flankSlope;
+    }
+    if (flank) {
       if (_d.lengthSq() > 1e-3) { _d.normalize(); fs.pos.addScaledVector(_d, Math.min(2.5, depth)); into = Math.max(into, -fs.vel.dot(_d), fs.speed * 0.6); } else fs.pos.addScaledVector(out.normal, Math.min(depth, 2.5));
     } else fs.pos.addScaledVector(out.normal, depth);
     r.groundT += dt;

@@ -4,8 +4,17 @@ import { mulberry32 } from '../../util.js';
 import { createSkyDome, createCloudPuffs } from '../sky.js';
 import { createWater } from '../water.js';
 import { buildPatch, createTerrainMaterial } from '../terrain.js';
+import { terrainCellScale } from '../terrain-fx.js';
 import { makeHutGeometry, makeJettyGeometry, makeBoatGeometry, makeFlowerGeometry, makeCoralGeometry, makeCrystalGeometry, makeStalactiteGeometry, makeBuoyGeometry } from '../props-isle.js';
 import { makePalmGeometry, makeRockGeometry, makeBalloonGeometry, makeLighthouse, makeRockArch, instanced, scatterAlongPath } from '../props.js';
+import { createStrataMaterial } from '../props-desert.js';
+
+// V-16: the island rocks, cliff boulders, sea stacks and arches used to be flat vertex-colour blobs. They now run the canyon's strata shader (world-space bands, a
+// stone detail texture, ledge relief) tuned to grey-brown basalt with a warm limestone band, plus grain (a fine bump and a mottled albedo): stone, not pebbles.
+const rockPaint = (game, o) => createStrataMaterial(game, { colors: [0x6f655b, 0x8d8176, 0xb7aa99, 0x453c36], lumBase: 0.3, lumGain: 1.6, detail: 'rock_grey', detailMix: 1.1, emissive: 0x000000, emissiveIntensity: 0, roughness: 0.93, blotch: 0.5, ...o });
+const ARCH_PAINT = { scale: 0.06, warp: 2.4, strength: 0.65, relief: 2.0, detailScale: 30, bump: 1.4, bumpScale: 0.14 };
+// jungle canopy: no bands, a leaf-scale bump and a mottled green
+const leafPaint = (game) => createStrataMaterial(game, { strength: 0, relief: 0, detail: 'grass', detailScale: 6, detailMix: 1, emissive: 0x000000, emissiveIntensity: 0, roughness: 0.9, bump: 0.45, bumpScale: 0.75, blotch: 0.7 });
 
 export async function buildScenery(course, game, progress, yieldFrame) {
   const def = course.def, env = course.environment, q = game.q;
@@ -33,7 +42,7 @@ export async function buildScenery(course, game, progress, yieldFrame) {
   const group = new THREE.Group(); group.name = 'terrain';
   const geos = [];
   for (const I of def.islands) {
-    const ext = I.r * 1.55, cell = Math.max(8, Math.round(I.r / 36));
+    const ext = I.r * 1.55, cell = Math.max(8, Math.round(I.r / 36)) * terrainCellScale(q);       // V-23: the terrain mesh follows the quality preset
     const g = buildPatch(course.heightFn, { x0: I.x - ext, z0: I.z - ext, x1: I.x + ext, z1: I.z + ext, cell });
     if (!g.index.count) { g.dispose(); continue; }
     const m = new THREE.Mesh(g, mat); m.receiveShadow = true; m.castShadow = true; group.add(m); geos.push(g);
@@ -74,7 +83,7 @@ function buildProps(course, game) {
   if (palms.length) group.add(instanced(palmGeo, palmMat, palms, { cast: false }));
   disposables.push(palmGeo, palmMat);
   const rockSpots = scatterAlongPath(course, { count: Math.round(170 * sc), minLat: 0, maxLat: 520, seed: 21, accept: (x, z, h) => h > -1 && h < 160 });
-  const rockGeo = makeRockGeometry({ seed: 4, rough: 0.35, stretch: [1, 0.8, 1], color: 0x7a6e64, color2: 0x453d38 }), rockMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 });
+  const rockGeo = makeRockGeometry({ seed: 4, rough: 0.35, stretch: [1, 0.8, 1], color: 0x7a6e64, color2: 0x453d38 }), rockMat = rockPaint(game, { scale: 0.16, warp: 1.4, strength: 0.5, relief: 0.8, detailScale: 7, bump: 0.55, bumpScale: 0.45 });
   const rocks = rockSpots.map((o) => { const s = 3 + rnd() * 9; return { pos: new THREE.Vector3(o.x, o.y + s * 0.1, o.z), yaw: rnd() * 6.28, scale: new THREE.Vector3(s * (0.8 + rnd() * 0.6), s * (0.6 + rnd() * 0.6), s * (0.8 + rnd() * 0.6)) }; });
   if (rocks.length) group.add(instanced(rockGeo, rockMat, rocks, { cast: false }));
   disposables.push(rockGeo, rockMat);
@@ -83,17 +92,17 @@ function buildProps(course, game) {
   {
     const r4 = mulberry32(555);
     const bushGeo = makeRockGeometry({ seed: 13, detail: 1, rough: 0.5, stretch: [1, 0.8, 1], color: 0x5fb04a, color2: 0x1f5a2a }), bushGeo2 = makeRockGeometry({ seed: 17, detail: 1, rough: 0.5, stretch: [1, 0.9, 1], color: 0x8acb4a, color2: 0x2f7a32 });
-    const bushMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }); disposables.push(bushGeo, bushGeo2, bushMat);
+    const bushMat = leafPaint(game); disposables.push(bushGeo, bushGeo2, bushMat);
     const spots2 = scatterAlongPath(course, { count: Math.round(650 * sc), minLat: 4, maxLat: 650, seed: 71, accept: (x, z, h) => h > 5 && h < 150 && slope(x, z) < 0.9 });
     const mk = (o) => { const s = 5 + r4() * 11; return { pos: new THREE.Vector3(o.x, o.y + s * 0.15, o.z), yaw: r4() * 6.28, scale: new THREE.Vector3(s * (1 + r4() * 0.6), s * (0.7 + r4() * 0.5), s * (1 + r4() * 0.6)) }; };
     group.add(instanced(bushGeo, bushMat, spots2.filter((_, i) => i % 2 === 0).map(mk)), instanced(bushGeo2, bushMat, spots2.filter((_, i) => i % 2 === 1).map(mk)));
     const cl = scatterAlongPath(course, { count: Math.round(160 * sc), minLat: 0, maxLat: 650, seed: 81, accept: (x, z, h) => h > 20 && h < 190 && slope(x, z) > 0.5 });
-    const bigRock = makeRockGeometry({ seed: 23, detail: 2, rough: 0.3, stretch: [1, 1.6, 1], color: 0x9a8f84, color2: 0x4a423c }), bigMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }); disposables.push(bigRock, bigMat);
+    const bigRock = makeRockGeometry({ seed: 23, detail: 2, rough: 0.3, stretch: [1, 1.6, 1], color: 0x9a8f84, color2: 0x4a423c }), bigMat = rockPaint(game, { scale: 0.1, warp: 1.8, strength: 0.6, relief: 1.2, detailScale: 14, bump: 0.9, bumpScale: 0.28 }); disposables.push(bigRock, bigMat);
     group.add(instanced(bigRock, bigMat, cl.map((o) => { const s = 10 + r4() * 22; return { pos: new THREE.Vector3(o.x, o.y, o.z), yaw: r4() * 6.28, tx: (r4() - 0.5) * 0.3, scale: new THREE.Vector3(s, s * (0.9 + r4()), s) }; }), { cast: true }));
   }
 
   // ---- sea stacks for the slalom hazards (columns, collision-matched)
-  const stackGeo = makeRockGeometry({ seed: 9, detail: 2, rough: 0.28, color: 0xa39a90, color2: 0x5f5750 }), stackMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 });
+  const stackGeo = makeRockGeometry({ seed: 9, detail: 2, rough: 0.28, color: 0xa39a90, color2: 0x5f5750 }), stackMat = rockPaint(game, { scale: 0.075, warp: 2.2, strength: 0.7, relief: 2.0, detailScale: 26, bump: 1.3, bumpScale: 0.2 });
   const stacks = course.hazards.filter((h) => h.kind === 'stack').map((h) => { const r = h.radius * 1.25, base = -4; return { pos: new THREE.Vector3(h.pos.x, base, h.pos.z), yaw: h.s, scale: new THREE.Vector3(r, h.top - base, r) }; });
   if (stacks.length) group.add(instanced(stackGeo, stackMat, stacks, { cast: true }));
   disposables.push(stackGeo, stackMat);
@@ -133,12 +142,12 @@ function buildProps(course, game) {
           if (y < f2.pos.y + 10) crys.push({ pos: new THREE.Vector3(x, y, z), yaw: r3() * 6.28, tx: (r3() - 0.5) * 0.3, scale: 1.6 + r3() * 2.4 });
         }
       }
-      const archGeo = makeRockArch({ radius: 84, tube: 13, seed: 5, color: 0x8a7766, color2: 0x4a3c34 }), archMat2 = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 });
+      const archGeo = makeRockArch({ radius: 84, tube: 13, seed: 5, color: 0x8a7766, color2: 0x4a3c34 }), archMat2 = rockPaint(game, ARCH_PAINT);
       disposables.push(archGeo, archMat2);
       for (let u = 150; u < br.length - 140; u += 230) {
         br.frameAt(u, f2);
         const rh = new THREE.Vector3(f2.right.x, 0, f2.right.z).normalize(), fw = new THREE.Vector3().crossVectors(rh, up);
-        const m = new THREE.Mesh(archGeo, archMat2); m.position.set(f2.pos.x, f2.pos.y + f2.halfHeight - 4, f2.pos.z);
+        const m = new THREE.Mesh(archGeo, archMat2); m.name = 'rock-arch'; m.position.set(f2.pos.x, f2.pos.y + f2.halfHeight - 4, f2.pos.z);
         m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(rh, up, fw)); m.castShadow = true; group.add(m); bridges.push(m);
         const top = f2.pos.y + f2.halfHeight - 4 + 84 - 13;
         for (let k = 0; k < 6; k++) { const a = (k / 5 - 0.5) * 1.5, lat = Math.sin(a) * 84, hy = Math.cos(a) * 84 - 13 * 0.8; stal.push({ pos: new THREE.Vector3(f2.pos.x + rh.x * lat, f2.pos.y + f2.halfHeight - 4 + hy - 2, f2.pos.z + rh.z * lat), yaw: r3() * 6, scale: new THREE.Vector3(2.4 + r3() * 2, 10 + r3() * 12, 2.4 + r3() * 2) }); }
@@ -159,8 +168,8 @@ function buildProps(course, game) {
 
   const af = course.frameAt(course.marks.arch, {});
   const rightH = new THREE.Vector3(af.right.x, 0, af.right.z).normalize(), fwdH = new THREE.Vector3().crossVectors(rightH, up);
-  const archGeo = makeRockArch({ radius: 100, tube: 21, color: 0x9a8a78, color2: 0x56483f }), archMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 }); disposables.push(archGeo, archMat);
-  const arch = new THREE.Mesh(archGeo, archMat); arch.position.set(af.pos.x, af.pos.y - 35, af.pos.z);
+  const archGeo = makeRockArch({ radius: 100, tube: 21, color: 0x9a8a78, color2: 0x56483f }), archMat = rockPaint(game, ARCH_PAINT); disposables.push(archGeo, archMat);
+  const arch = new THREE.Mesh(archGeo, archMat); arch.name = 'rock-arch'; arch.position.set(af.pos.x, af.pos.y - 35, af.pos.z);
   arch.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(rightH, up, fwdH)); arch.castShadow = true; arch.receiveShadow = true; group.add(arch);
 
   // ---- lighthouse beside the loop

@@ -182,3 +182,12 @@ test('neon: no atrium interior quad is coplanar with an overlapping mass face (V
   assert.ok(quads.length === 4 && faces.length === 24);
   void checked;
 });
+test('neon: the deck approach (s 6200-6450) is nearly level and at least 66 m half-wide after the fit (contact sweep, s 6300-6500)', () => {
+  // The bank used to unwind from ~45 degrees to 0 inside the last 60 m before the deck, and the tilted ellipse dipped into the roofs, so the fit
+  // squeezed the corridor to ~64 m where racers carrying speed out of the bend scraped the outside wall.
+  for (let s = 6200; s <= 6450; s += 10) {
+    lay.frameAt(s, f);
+    assert.ok(f.halfWidth >= 66, `half width ${f.halfWidth.toFixed(0)} at s=${s}`);
+    assert.ok(Math.abs(f.bank) < 0.62, `bank ${(f.bank * 57.3).toFixed(0)} deg at s=${s}`);
+  }
+});

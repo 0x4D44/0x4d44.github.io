@@ -55,10 +55,10 @@ export const neonDef = (() => {
   add(-420, 138, 560, { hw: 56, hh: 48 });
   add(-470, 142, 340, { mark: 'westAve', hw: 56, hh: 48 });
   add(-520, 148, 170, { hw: 58, hh: 48, bank: 16 });
-  add(-440, 150, 50, { hw: 62, hh: 52 });
-  add(-340, 150, 4, { hw: 64, hh: 52 });
-  add(-250, 150, 0, { mark: 'deckBack', hw: 64, hh: 52 });
-  add(-120, 150, 0, { mark: 'deckMid', hw: 62, hh: 52 });
+  add(-440, 150, 50, { hw: 76, hh: 58, bank: -20 });
+  add(-340, 150, 4, { hw: 86, hh: 60, bank: -32 });
+  add(-250, 150, 0, { mark: 'deckBack', hw: 92, hh: 62 });
+  add(-120, 150, 0, { mark: 'deckMid', hw: 90, hh: 62 });
   return {
     id: 'neon', laps: 3,
     points: b.pts, marks: b.marks, hw: 56, hh: 48,

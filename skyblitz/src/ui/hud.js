@@ -26,7 +26,7 @@ export class Hud {
     this.feed = new Feed(); this.feedEls = new Map(); this.tally = new Map(); this.clock = 0;
     this.lockT = 0; this.warnT = 0; this.warnDist = 999; this.warnTti = null; this.warnRate = 0; this.warnEvade = false; this.warnEvadeT = 0;
     this.lockTarget = null; this.lockProg = 0; this.lockedBy = null; this.lockedByT = 0; this.lockedByProg = 0;
-    this.finishT = 0; this.camPending = false; this._zones = null; this._zonesT = 0; this._claim = 0;
+    this.finishT = 0; this.camPending = false; this._zones = null; this._zonesT = 0; this._claim = 0; this._rm = null;
     this.build(); this.listen();
   }
 
@@ -285,7 +285,7 @@ export class Hud {
     if (this.deltaT > 0) { this.deltaT -= dt; if (this.deltaT <= 0) { this.posDelta.textContent = ''; } }
     if (this.feed.tick(dt)) this.syncFeed();
     for (const l of this.feed.lines) this.feedEls.get(l.id)?.classList.toggle('fade', l.ttl - l.age < 1);
-    if (this.camPending) { this.camPending = false; const nm = CAM_NAMES[game.cameraRig?.mode]; if (nm) this.showNote('CAMERA: ' + nm); }
+    if (this.camPending) { this.camPending = false; const nm = game.state === 'race' ? CAM_NAMES[game.cameraRig?.mode] : null; if (nm) this.showNote('CAMERA: ' + nm); }   // the rig only cycles during a race (camera.js)
     this.updateAlerts(dt, p);
     this.lockT -= dt; this.updatePlates(game, p, race);
     // finish panel
@@ -341,16 +341,22 @@ export class Hud {
   updatePlates(game, p, race) {
     game.camera.updateMatrixWorld();
     const scr = this._scr || (this._scr = { x: 0, y: 0, z: 0 }), pp = p.render?.pos || p.flight.pos;
-    // lock reticle, named after its target (P-14)
+    // lock reticle, named after its target (P-14); its box (ring + name) is one more obstacle for the plates below (P-18)
+    let rz = null;
     if (this.lockT > 0 && this.lockTarget && this.project((this.lockTarget.render?.pos || this.lockTarget.flight.pos), scr)) {
       const locked = this.lockProg >= 1;
+      if (this.reticle.style.display === 'none') this._rm = null;
       this.reticle.style.display = ''; this.reticle.style.transform = `translate(${scr.x.toFixed(0)}px,${scr.y.toFixed(0)}px) translate(-50%,-50%)`;
       this.lockFg.style.strokeDashoffset = (100 - this.lockProg * 100).toFixed(1); this.reticle.classList.toggle('locked', locked);
-      this.set('lockLbl', (locked ? 'LOCKED: ' : '') + this.lockName, (v) => { this.lockLbl.textContent = v; });
+      this.set('lockLbl', (locked ? 'LOCKED: ' : '') + this.lockName, (v) => { this.lockLbl.textContent = v; this._rm = null; });
+      if (!this._rm) this.measureReticle();
+      const m = this._rm; rz = this._rz || (this._rz = { l: 0, t: 0, r: 0, b: 0 });
+      rz.l = scr.x + m.l; rz.t = scr.y + m.t; rz.r = scr.x + m.r; rz.b = scr.y + m.b;
     } else if (this.reticle.style.display !== 'none') this.reticle.style.display = 'none';
     // nameplates (P-18): the nearest visible rivals, laid out clear of each other, the screen edges, every HUD panel and every touch button
     const near = this._near || (this._near = []); near.length = 0;
-    for (const r of race.racers) { if (r === p) continue; const rp = r.render?.pos || r.flight.pos, d = rp.distanceTo(pp); if (d < 420 && d > 12) near.push([d, r]); }
+    const locked = this.lockT > 0 ? this.lockTarget : null;   // the lock reticle names its target: a second plate would sit under the ring
+    for (const r of race.racers) { if (r === p || r === locked) continue; const rp = r.render?.pos || r.flight.pos, d = rp.distanceTo(pp); if (d < 420 && d > 12) near.push([d, r]); }
     near.sort((a, b) => a[0] - b[0]);
     const cands = this._cands || (this._cands = []); cands.length = 0;
     for (let i = 0; i < near.length && cands.length < this.plates.length; i++) {
@@ -361,7 +367,8 @@ export class Hud {
     for (const c of cands) for (const q of this.plates) if (q.id === c.id) { q.claim = claim; c.pl = q; break; }
     for (const c of cands) if (!c.pl) for (const q of this.plates) if (q.claim !== claim) { q.claim = claim; q.id = c.id; q.w = 0; q.el.textContent = c.r.name; q.el.style.setProperty('--c', c.r.pilot?.color || '#fff'); c.pl = q; break; }
     for (const c of cands) { if (!c.pl.w) this.measure(c.pl); c.w = c.pl.w; c.h = c.pl.h; }
-    const out = layoutPlates(cands, this.zones(), game.width, game.height);
+    const zl = this._zl || (this._zl = []); zl.length = 0; for (const z of this.zones()) zl.push(z); if (rz) zl.push(rz);
+    const out = layoutPlates(cands, zl, game.width, game.height);
     for (const q of this.plates) q.on = false;
     for (const o of out) {
       const c = cands[o.i], q = c.pl; q.on = true;
@@ -371,11 +378,16 @@ export class Hud {
     for (const q of this.plates) if (!q.on && q.el.style.display !== 'none') q.el.style.display = 'none';
   }
   measure(q) { q.el.style.display = ''; q.w = q.el.offsetWidth; q.h = q.el.offsetHeight; }
+  /** Offsets of the reticle's box (the ring and the name under it) from the ring's centre. Reads layout, so it is cached: redone when the reticle appears, its name changes or the zones refresh. */
+  measureReticle() {
+    const a = this.reticle.getBoundingClientRect(), b = this.lockLbl.getBoundingClientRect(), cx = a.left + a.width / 2, cy = a.top + a.height / 2;
+    this._rm = { l: Math.min(a.left, b.left) - cx, t: Math.min(a.top, b.top) - cy, r: Math.max(a.right, b.right) - cx, b: Math.max(a.bottom, b.bottom) - cy };
+  }
   /** Rectangles the nameplates must stay out of: the HUD panels, the alerts and the touch buttons. Re-measured at 5 Hz (it reads layout), not every frame. */
   zones() {
     const now = performance.now();
     if (this._zones && now - this._zonesT < 200) return this._zones;
-    const out = this._zones || (this._zones = []); out.length = 0; this._zonesT = now;
+    const out = this._zones || (this._zones = []); out.length = 0; this._zonesT = now; this._rm = null;   // a resize, a font or a settings change moves the reticle's box too
     const els = this._ze || (this._ze = ['.hud-lapbox', '.hud-pos', '.hud-ticker', '.hud-speed', '.hud-bc', '.hud-item', '.hud-shield', '.hud-map', '.hud-finish', '.hud-popups', '.hud-banner', '.hud-cd', '.hud-cdhint',
       '.warn-txt', '.warn-roll', '.lockon-txt', '.hud-note', '.hud-wrong'].map((s) => this.el.querySelector(s)));
     const add = (e) => { const r = e.getBoundingClientRect(); if (r.width > 1 && r.height > 1) out.push({ l: r.left, t: r.top, r: r.right, b: r.bottom }); };

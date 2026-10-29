@@ -292,7 +292,7 @@ export class Race {
       this.assignPlaces(true);
       this.game.events.emit('race:finish', { racer: r, place: r.finishIndex + 1, time: r.finishTime });
       if (r.item && r.item.type) r.item = null;
-      if (r === this.player && this.state === 'racing') { this.state = 'finishing'; this.endTimer = this.mode === 'trial' ? 3 : RACE.finishTimeout; }
+      if (r === this.player && this.state === 'racing') { this.state = 'finishing'; this.endTimer = this.mode === 'trial' ? 3 : RACE.finishTimeout + (this.difficulty.finishExtra || 0); }
     }
     q.length = 0;
   }
@@ -391,6 +391,9 @@ export class Race {
         course.frameAt(r.s, _f);
         const e = Math.hypot(r.lateral / (_f.halfWidth || 90), r.vertical / (_f.halfHeight || 70));
         if (e > 3) r.lostT += dt * 6; else { r.lostT = 0; if (e < 1.5 && r.glitchT === 0) this.markGood(r, -1); }
+        // safety net (redrock seed 2 roof throw): far above the corridor for ~1 s is never a legitimate line, whatever the projection says
+        r.highT = r.vertical > Math.max(RACE.respawnHighM, 2.2 * (_f.halfHeight || 70)) ? (r.highT || 0) + dt * 6 : 0;
+        if (r.highT > RACE.respawnHighT) { this.respawn(r, 'high'); continue; }
         if (r.lostT > RACE.respawnLostT) this.respawn(r, 'lost');
       } else if ((this.frame + r.id) % 6 === 0 && r.onBranch >= 0 && r.glitchT === 0) {
         const b = course.branches[r.onBranch];
@@ -413,7 +416,7 @@ export class Race {
     const meter = fs.boost.meter;
     resetFlightState(fs, pos, quat, fs.params.cruise * 0.6);
     fs.boost.meter = meter;
-    r.tumble = 0; r.invuln = 3; r.stuckT = 0; r.contactRun = 0; r.lostT = 0; r.wrongWay = false; r.wrongT = 0; r.progSpeed = 0;
+    r.tumble = 0; r.invuln = 3; r.stuckT = 0; r.highT = 0; r.contactRun = 0; r.lostT = 0; r.wrongWay = false; r.wrongT = 0; r.progSpeed = 0;
     r.prev.pos.copy(pos); r.prev.quat.copy(quat); r.render.pos.copy(pos); r.render.quat.copy(quat);
     reanchor(this, r, gb ? { branch: gb.index, u: Math.max(0, r.lastGoodU - 10), s: r.lastGoodS } : null);
     let back = r.s - r.lastGoodS; if (back > L / 2) back -= L; else if (back < -L / 2) back += L;

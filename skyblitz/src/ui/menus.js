@@ -85,6 +85,7 @@ export function settingsScreen(ui) {
     toggle(ui, 'Double-tap bank key = barrel roll', 'doubleTapRoll', 'Off by default: Q / E always roll. Double-tapping A / D can fire by accident while steering'),
     toggle(ui, 'Show FPS counter', 'showFps'),
     toggle(ui, 'Reduce flashing & motion', 'reduceFlash', 'Softer screen effects and fewer flashes'),
+    toggle(ui, 'Controller vibration', 'rumble', 'Gamepad rumble on hits, tumbles and boosts'),
   ];
   const el = h('div', { class: 'scr settings' }, header('SETTINGS', 'Saved automatically'), h('div', { class: 'panel scroll rows' }, rows), footer(ui, [btn('Reset to defaults', () => ui.resetSettings(), { cls: 'ghost', cue: 'ui:click' })]));
   return { el, enter() { rows.forEach((r) => r.sync?.()); }, back: (p) => p?.back || 'main' };
@@ -108,8 +109,8 @@ export function controlsScreen(ui) {
 // rendered from that file, everything after its first "---" rule, so the attributions that travel with the audio are shown word for word.
 const SOUNDTRACK = 'Every track is an original composition written for SKYBLITZ, rendered offline with **ferrosintesis** (https://github.com/0x4D44/ferrosintesis, MIT OR Apache-2.0). '
   + 'The audio is derivative of the synthesiser\'s embedded sample sets: the samples were trimmed, pitch-shifted, layered with physical models, mixed, EQ-ed, compressed and encoded to Ogg Opus. No endorsement by the original authors is implied.';
-/** The licence-notice part of CREDITS.md: everything after the first "---" line (the whole text when there is none). */
-export const licenceBody = (md) => { const s = String(md ?? ''), i = s.search(/^---\s*$/m); return (i >= 0 ? s.slice(i).replace(/^---\s*$/m, '') : s).trim(); };
+/** The licence-notice part of CREDITS.md: everything after the first "---" line (the whole text when there is none), without a closing rule. */
+export const licenceBody = (md) => { const s = String(md ?? ''), i = s.search(/^---\s*$/m); return (i >= 0 ? s.slice(i).replace(/^---\s*$/m, '') : s).trim().replace(/(?:^|\n)\s*-{3,}$/, '').trim(); };
 
 export function creditsScreen(ui) {
   const more = h('section', { class: 'md', hidden: true });
@@ -127,6 +128,7 @@ export function creditsScreen(ui) {
   let loaded = false;
   return {
     el, enter() {
+      panel.scrollTop = 0;   // the screen is kept between visits: open at the top, not where the last visit left off
       if (loaded) return;
       fetch('assets/music/CREDITS.md').then((r) => (r.ok ? r.text() : '')).then((t) => {
         if (!t || /^<!doctype/i.test(t.trim())) return;

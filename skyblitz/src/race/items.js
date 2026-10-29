@@ -21,6 +21,7 @@ import { ItemVisuals } from './items-vis.js';
 const W = WEAPONS;
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _ax = new THREE.Vector3(), _q = new THREE.Quaternion(), _u = new THREE.Vector3(), _aim = new THREE.Vector3(), _lead = new THREE.Vector3();
 const _fr = {}, _bp = {}, _off = { lat: 0, vert: 0 };
+const INVULN_LOCK = 0.5;     // a racer with more grace than this (the long one after a landed hit) cannot be locked: a missile would only be spent on it
 
 function dirTo(out, from, to) { return out.copy(to).sub(from); }
 const wrapD = (d, L) => (d > L * 0.5 ? d - L : d < -L * 0.5 ? d + L : d);
@@ -139,7 +140,7 @@ export class ItemSystem {
     const m = {
       id: this.nextId++, owner: r, target, pos: fs.pos.clone().addScaledVector(dir, r.radius + 4), prev: new THREE.Vector3(), dir, sign: backward ? -1 : 1,
       speed: backward ? W.missile.speed * 0.8 : Math.max(W.missile.speed * 0.75, fs.speed + 35), turn, t: 0, warnT: 0, mesh: null, locked: lock.progress >= 1,
-      passT: 0, proj: newProj(), dist: 0, closing: 0, evadeSent: false,
+      passT: 0, proj: newProj(), dist: 0, closing: 0, evadeSent: false, seekT: 0,
       threat: { missile: null, dist: 0, tti: 99, evade: false, closing: 0 },
     };
     m.threat.missile = m; m.prev.copy(m.pos);
@@ -268,10 +269,10 @@ export class ItemSystem {
         if (o === b.owner || o.finished) continue;
         if (segDist(b.prev, b.pos, o.flight.pos) > o.radius + W.cannon.hitPad) continue;
         b.active = false;
-        if (b.drone) b.drone.hits++;
         const hitPos = o.flight.pos.clone();
         ev.emit('cannon:hit', { racer: b.owner, target: o, pos: hitPos });
         if (applyHit(this.race, o, b.owner, 'cannon', { loss: 1 - W.cannon.stagger, severity: 0.25, shieldCost: 1.2, noInvuln: true, pos: hitPos })) {
+          if (b.drone) b.drone.hits++;                                     // a drone is spent by LANDED bolts (not by a shield or a grace soaking them up)
           o.cannonCombo.n++; o.cannonCombo.t = W.cannon.comboWindow;
           if (o.cannonCombo.n >= W.cannon.comboHits) { o.cannonCombo.n = 0; applyHit(this.race, o, b.owner, 'cannon', { tumble: W.cannon.comboTumble, loss: 0.2, severity: 0.6, pierce: true, pos: hitPos }); }
         }
@@ -284,13 +285,14 @@ export class ItemSystem {
   /**
    * The racer a missile fired by `r` should lock: the NEAREST racer ahead on the course (behind it, when `backward`) inside a cone measured in the course frame
    * (angle of the target's lateral / vertical offset against the along-course gap), not whoever sits closest to the nose. `keep` is the current lock: it is
-   * preferred and survives a wider cone, so the reticle does not flip between two rivals. Blind racers cannot be locked.
+   * preferred and survives a wider cone, so the reticle does not flip between two rivals. Blind racers cannot be locked, and neither can a racer one of `r`'s
+   * own missiles is already chasing (the next shot of a triple goes to the next racer instead of into the tumble the first one causes).
    */
   bestCandidate(r, backward, cone, keep = null) {
     const L = this.course.length, sign = backward ? -1 : 1, M = W.missile, fs = r.flight;
     let best = null, bs = Infinity;
     for (const o of this.race.racers) {
-      if (o === r || o.finished || o.blind > 0) continue;
+      if (o === r || o.finished || o.blind > 0 || o.invuln > INVULN_LOCK || this.chasedBy(o, r)) continue;
       let gap, ang;
       if (o.onBranch === r.onBranch) {
         gap = sign * wrapD(o.s - r.s, L);
@@ -307,6 +309,29 @@ export class ItemSystem {
     }
     return best;
   }
+  /** Is a live missile fired by `owner` chasing `o`? */
+  chasedBy(o, owner) {
+    for (const m of this.missiles) if (!m.dead && m.target === o && m.owner === owner) return true;
+    return false;
+  }
+
+  /**
+   * In-flight seeker: the nearest racer ahead of missile `m` ON THE COURSE (gap 15..seekRange m, same path, inside 1.5 x the lock cone in the course frame) that it
+   * can still hurt, or null. Used when a missile flies without a quarry (fired with no lock) or its quarry cannot be hit any more (finished, or tumbling in the grace of
+   * another hit): the shot is not thrown away.
+   */
+  seek(m) {
+    const L = this.course.length, M = W.missile, p = m.proj;
+    let best = null, bg = M.seekRange;
+    for (const o of this.race.racers) {
+      if (o === m.owner || o === m.target || o.finished || o.blind > 0 || o.invuln > INVULN_LOCK || o.onBranch !== p.branch) continue;
+      const gap = m.sign * wrapD(o.s - p.s, L);
+      if (gap < 15 || gap > bg) continue;
+      if (Math.atan2(Math.hypot(o.lateral - p.lateral, o.vertical - p.vertical), gap) > M.lockCone * 1.5) continue;
+      bg = gap; best = o;
+    }
+    return best;
+  }
 
   /** Clear `r`'s lock and tell the HUD (missile:unlock). reason: 'lost' | 'blind' | 'item' | 'fired'. */
   dropLock(r, reason) {
@@ -320,7 +345,8 @@ export class ItemSystem {
     for (const r of this.race.racers) {
       const it = r.item, lock = r.lock;
       if (!it || (it.type !== 'missile' && it.type !== 'triple') || r.tumble > 0 || r.finished || r.blind > 0) { this.dropLock(r, r.blind > 0 ? 'blind' : 'item'); continue; }
-      if (lock.target && (lock.target.blind > 0 || lock.target.finished)) this.dropLock(r, 'blind');      // smoke breaks a lock at once
+      const lt = lock.target;
+      if (lt && (lt.blind > 0 || lt.finished || lt.invuln > INVULN_LOCK)) this.dropLock(r, lt.blind > 0 ? 'blind' : lt.finished ? 'lost' : 'invuln');      // smoke, or a hit's grace, breaks a lock at once
       const cand = this.bestCandidate(r, r.controls.itemBack, W.missile.lockCone, lock.target);
       lock.emitT -= dt;
       if (cand && cand === lock.target) {
@@ -375,8 +401,9 @@ export class ItemSystem {
     let br = null, c0 = p.s, lat = p.lateral, vert = p.vertical;
     if (p.branch >= 0) { br = course.branches[p.branch]; c0 = p.u; }          // inside a shortcut tube: stay in it
     else if (tgt && tgt.onBranch >= 0) {                                      // the target flies a shortcut: join it at its mouth
-      const b = course.branches[tgt.onBranch];
-      if (Math.abs(wrapD(b.fromS - p.s, L)) < 160) { b.path.project(body.pos, null, _bp); if (_bp.dist < 90) { br = b; c0 = _bp.s; lat = _bp.lateral; vert = _bp.vertical; } }
+      const b = course.branches[tgt.onBranch], du = wrapD(p.s - b.fromS, L);
+      // hint: at the mouth the branch IS the main line (u = s - fromS), so a local window finds it; no scan of the whole tube
+      if (Math.abs(du) < 160) { b.path.project(body.pos, clamp(du, 0, b.length), _bp); if (_bp.dist < 90) { br = b; c0 = _bp.s; lat = _bp.lateral; vert = _bp.vertical; } }
     }
     let gap = Infinity, tLat = lat, tVert = vert;
     if (tgt) {
@@ -388,6 +415,8 @@ export class ItemSystem {
         if (tgt.onBranch < 0) { tLat = tgt.lateral; tVert = tgt.vertical; }
       }
     }
+    const f0 = br ? br.frameAt(c0, _fr) : course.frameAt(c0, _fr), e0 = Math.hypot(lat / f0.halfWidth, vert / f0.halfHeight);
+    if (e0 > M.airway) look *= clamp(1 - 2.5 * (e0 - M.airway), 0.4, 1);     // outside the airway (a launch from a banked turn): a nearer carrot turns it back in before the terrain at the edge
     const c = c0 + sign * look, f = br ? br.frameAt(c, _fr) : course.frameAt(c, _fr);
     const e = Math.hypot(lat / f.halfWidth, vert / f.halfHeight);
     if (e > M.airway) { const k = M.airway / e; lat *= k; vert *= k; }          // never aim outside the airway: its inner ellipse is clear of terrain
@@ -406,6 +435,13 @@ export class ItemSystem {
     return wd;
   }
 
+  /** Course metres from missile `m` to `tgt` in its direction of travel (0 once level with or past it). */
+  courseGap(m, tgt) {
+    const p = m.proj;
+    const g = p.branch >= 0 && tgt.onBranch === p.branch ? m.sign * (tgt.proj.u - p.u) : m.sign * wrapD(tgt.s - p.s, this.course.length);
+    return g > 0 ? g : 0;
+  }
+
   /** Rotate `dir` toward `aim` (seen from `pos`) by at most rate * dt radians. */
   steer(dir, pos, aim, rate, dt) {
     dirTo(_u, pos, aim).normalize();
@@ -416,12 +452,17 @@ export class ItemSystem {
     _q.setFromAxisAngle(_ax, Math.min(ang, rate * dt)); dir.applyQuaternion(_q).normalize();
   }
 
+  /** Seconds until a body at speed `sp` leaving `from` meets a target at `p` flying straight at `v` (0..cap); the lead point is p + v * t. */
+  interceptT(from, sp, p, v, cap) {
+    _u.copy(p).sub(from);
+    const a = v.lengthSq() - sp * sp, b = 2 * _u.dot(v), c = _u.lengthSq();
+    const t = a < -1e-6 ? (-b - Math.sqrt(Math.max(0, b * b - 4 * a * c))) / (2 * a) : Math.sqrt(c) / 30;      // a target as fast as the body: lead it by the gap
+    return clamp(t, 0, cap);
+  }
+
   steerMissile(m, tgt, dt) {
     const M = W.missile;
-    if (tgt) {
-      const lead = Math.min(tgt.flight.pos.distanceTo(m.pos) / Math.max(m.speed, 1), 0.8) * 0.7;
-      _lead.copy(tgt.flight.pos).addScaledVector(tgt.flight.vel, lead);
-    }
+    if (tgt) _lead.copy(tgt.flight.pos).addScaledVector(tgt.flight.vel, this.interceptT(m.pos, Math.max(m.speed, 1), tgt.flight.pos, tgt.flight.vel, M.leadMax));
     const wd = this.courseAim(m, tgt, m.sign, clamp(m.speed * 0.4, M.look[0], M.look[1]), tgt ? _lead : null, M.direct[1], M.direct[0], true, _aim);
     let turn = M.turnCourse + (m.turn - M.turnCourse) * wd;
     if (tgt && tgt.blind > 0) turn *= 0.4;                                   // a missile loses its eyes in smoke
@@ -430,15 +471,25 @@ export class ItemSystem {
 
   /**
    * Distance, smoothed closing speed and time-to-impact of missile `m` against `tgt`, the "a barrel roll would work now" flag, and the warning pings (dt = 0 at launch).
-   * tti is measured to the hit radius and comes from the smoothed closing speed, so it does not jump; pings speed up as it falls.
+   * The distance still to fly is the larger of the straight line and the along-course gap (round a bend the missile follows the course, so the straight line
+   * understates it and its rate swings); tti is that distance to the hit radius over the closing rate, so it does not jump; pings speed up as it falls.
    */
   trackThreat(m, tgt, dt) {
-    const M = W.missile, th = m.threat, d = m.pos.distanceTo(tgt.flight.pos);
-    if (dt > 0) m.closing += ((m.dist - d) / dt - m.closing) * Math.min(1, dt / M.closeTau);
+    const M = W.missile, th = m.threat, d = m.pos.distanceTo(tgt.flight.pos), togo = Math.max(d, this.courseGap(m, tgt));
+    if (dt > 0) m.closing += ((m.togo - togo) / dt - m.closing) * Math.min(1, dt / M.closeTau);
     else { dirTo(_u, m.pos, tgt.flight.pos).normalize(); m.closing = clamp(m.dir.dot(_u) * m.speed - tgt.flight.vel.dot(_u), 25, 400); }
-    m.dist = d;
-    const tti = Math.max(0, d - tgt.radius - M.hitPad) / Math.max(m.closing, 25), T = FLIGHT.barrelTime;
-    const evade = this.canRoll(tgt) && tti >= M.evadeFrom * T && tti <= M.evadeTo * T;
+    m.dist = d; m.togo = togo;
+    // closing: the measured rate, but never below the path model (the missile's own speed against the target's speed along the course), which the measured
+    // rate undershoots badly in bends
+    const tf = tgt.onBranch >= 0 ? this.course.branches[tgt.onBranch].frameAt(tgt.proj.u, _fr) : this.course.frameAt(tgt.s, _fr);
+    const model = (m.t < M.burn ? M.speed : m.speed) - m.sign * tgt.flight.vel.dot(tf.tangent);      // cruise speed while the motor burns (the launch run-up lasts 0.2 s)
+    // even so the estimate swings in bends, so tti runs as a clock (it falls by dt each step) pulled toward the raw estimate: gently while far off (pings only need
+    // to speed up smoothly), within a few steps once it is close (the roll cue must be on time)
+    const raw = Math.max(0, togo - tgt.radius - M.hitPad) / Math.max(m.closing, model, 25), T = FLIGHT.barrelTime;
+    if (dt > 0) { const pred = Math.max(0, m.tti - dt); m.tti = pred + (raw - pred) * Math.min(1, dt / clamp(M.ttiTau * Math.min(raw, pred), 0.05, 0.6)); }
+    else m.tti = raw;
+    const tti = m.tti;
+    const evade = this.canRoll(tgt) && tti >= M.evadeFrom * T + M.cue[0] && tti <= M.evadeTo * T - M.cue[1];      // the cue sits inside the window by tti's error margin
     th.dist = d; th.tti = tti; th.evade = evade; th.closing = m.closing;
     if (dt <= 0) return;
     m.warnT -= dt;
@@ -455,7 +506,16 @@ export class ItemSystem {
       if (m.dead) continue;
       m.prev.copy(m.pos); m.t += dt;
       let tgt = m.target;
-      if (tgt && (tgt.finished && tgt.flight.speed < 1)) tgt = m.target = null;
+      // no quarry, or one it can no longer hurt (finished, or tumbling in the grace of another hit): look for the next racer ahead every 0.2 s
+      if (!tgt || tgt.finished || (tgt.tumble > 0 && tgt.invuln > INVULN_LOCK)) {
+        m.seekT -= dt;
+        if (m.seekT <= 0) {
+          m.seekT = 0.2;
+          const nt = this.seek(m);
+          if (nt) { tgt = m.target = nt; m.turn = Math.max(m.turn, M.turnWeak); m.passT = 0; m.warnT = 0; m.evadeSent = false; this.trackThreat(m, nt, 0); }
+          else if (tgt && tgt.finished) tgt = m.target = null;
+        }
+      }
       if (m.t > M.armT) this.steerMissile(m, tgt, dt);
       // speed profile: boost to cruise, burn out after `burn` s (a boosting racer outruns it)
       if (m.t < M.burn) m.speed = Math.min(M.speed, m.speed + M.accel * dt); else m.speed = Math.max(M.floor, m.speed - M.decay * dt);
@@ -485,7 +545,8 @@ export class ItemSystem {
       if (course.collide(m.pos, 1.5, m.proj, this.out) && this.out.kind !== 'wall') { this.endMissile(m, 'obstacle', tgt); continue; }
       // overshot the quarry: it is behind the missile and falling away. A corridor has no room for the U-turn, so the missile is lost; a target that has just rolled gets the credit
       if (tgt && m.t > M.armT + 0.15) {
-        if (dirTo(_u, m.pos, tgt.flight.pos).dot(m.dir) < -M.passMargin) m.passT += dt; else m.passT = 0;
+        const ahead = m.sign * wrapD(tgt.s - m.proj.s, course.length);        // course metres to the target (negative: behind it); the course frame, because a hairpin puts a target that is still ahead behind the nose
+        if (ahead < -M.passMargin && dirTo(_u, m.pos, tgt.flight.pos).dot(m.dir) < 0) m.passT += dt; else m.passT = 0;
         if (m.passT > M.passTime) { this.endMissile(m, tgt.flight.barrel.cooldown > FLIGHT.barrelCooldown - FLIGHT.barrelTime ? 'barrel' : 'outrun', tgt); continue; }
       }
       // lost the quarry
@@ -572,7 +633,8 @@ export class ItemSystem {
         if (into < 0) d.dir.addScaledVector(n, -into).normalize();
       }
       d.fireT -= dt;
-      if (tgt && d.fireT <= 0 && d.t > 1) {
+      // holds fire while the target tumbles or sits in a hit's grace: those bolts would be wasted, and maxHits (6) is below two cannon combos, so the drone cannot chain-stun
+      if (tgt && d.fireT <= 0 && d.t > 1 && tgt.tumble <= 0 && tgt.invuln <= 0.2) {
         dirTo(_u, d.pos, tgt.flight.pos); const range = _u.length(); _u.divideScalar(range);
         if (range < D.range && range > 20 && (d.guard ? -d.dir.dot(_u) : d.dir.dot(_u)) > D.cone) {
           d.fireT = D.fireEvery; d.shots++;

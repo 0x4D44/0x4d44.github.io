@@ -1,6 +1,7 @@
 // E-06, in a real browser: consecutive races in ONE page must not grow GPU buffers, three.js textures or the JS heap.
 // For each course the same one-lap race (same seed, autopilot) is run RACES times through the real lifecycle (start -> race -> finish -> game.disposeRace()).
-// WebGL objects are counted at the API (createBuffer / deleteBuffer ... wrapped before any page script runs); the heap is read after two forced GCs.
+// WebGL objects are counted at the API (createBuffer / deleteBuffer ... wrapped before any page script runs); the heap and the live three.js objects (Object3D,
+// BufferGeometry, Material, Texture, BufferAttribute: Runtime.queryObjects) are read after two forced GCs.
 // Compared: the state after race 2 vs after the last race (race 1 fills the one-time caches: shader programs, craft liveries, asset images).
 // Before the fix (reviewer probe `leak`, redrock x4): GL buffers 713 -> 781 -> 895 -> 955, three.js textures 57 -> 65 -> 68 -> 71, heap 11.1 -> 13.3 MB.
 // Causes: InstancedMesh.dispose() was never called (instanceMatrix / instanceColor buffers, +65 per race on redrock) and a water shore mask that
@@ -24,6 +25,9 @@ const GLCOUNT = `(()=>{const c={buffers:0,bufMB:0,textures:0,programs:0,framebuf
   const ob=P.bindBuffer,obd=P.bufferData;P.bindBuffer=function(t,b){bound.set(t,b);return ob.call(this,t,b)};
   P.bufferData=function(t,d,...r){const b=bound.get(t);if(b){const sz=typeof d==='number'?d:(d&&d.byteLength)||0;bytes+=sz-(sizes.get(b)||0);sizes.set(b,sz);c.bufMB=+(bytes/1048576).toFixed(2);}return obd.call(this,t,d,...r)};}})()`;
 const SNAP = `(()=>{const g=__sky.game,i=g.renderer.info;return {gl:{...window.__glc},geometries:i.memory.geometries,textures:i.memory.textures,programs:(i.programs||[]).length,errors:__sky.errors.length}})()`;
+// JS objects that are alive after the forced GCs, by three.js class (Runtime.queryObjects walks the prototype chain, so Object3D covers every mesh / group / light).
+// A course that is not let go leaves whole scene graphs behind, which no GL counter sees.
+const CLASSES = { object3d: 'Object3D', geometry: 'BufferGeometry', material: 'Material', texture: 'Texture', attribute: 'BufferAttribute' };
 
 let chrome, srv, page;
 test.before(async () => {
@@ -40,6 +44,17 @@ async function heapMB() {
   for (let k = 0; k < 2; k++) { await page.s('HeapProfiler.collectGarbage'); await delay(150); }
   return +((await page.s('Runtime.getHeapUsage')).usedSize / 1048576).toFixed(2);
 }
+async function liveObjects() {
+  const out = {};
+  for (const [key, cls] of Object.entries(CLASSES)) {
+    const proto = await page.s('Runtime.evaluate', { expression: `__sky.game.THREE.${cls}.prototype`, objectGroup: 'qo' });
+    const found = await page.s('Runtime.queryObjects', { prototypeObjectId: proto.result.objectId, objectGroup: 'qo' });
+    out[key] = (await page.s('Runtime.callFunctionOn', { objectId: found.objects.objectId, functionDeclaration: 'function(){return this.length}', returnByValue: true })).result.value;
+  }
+  await page.s('Runtime.releaseObjectGroup', { objectGroup: 'qo' });
+  return out;
+}
+const slope = (ys) => { const n = ys.length, mx = (n - 1) / 2, my = ys.reduce((s, v) => s + v, 0) / n; let sxy = 0, sxx = 0; ys.forEach((y, i) => { sxy += (i - mx) * (y - my); sxx += (i - mx) ** 2; }); return sxy / sxx; };
 async function runToDone() {
   for (let n = 0; n < 60 * 400; n += 240) {
     const done = await page.eval(`(()=>{const g=__sky.game;for(let i=0;i<240;i++){if(g.race.state==='done')return true;g.fixedUpdate();if(i%6===0)g.renderFrame(1,1/60);}return g.race.state==='done'})()`);
@@ -63,11 +78,13 @@ for (const course of COURSES) {
       await page.eval('__sky.step(60, 6)');
       await page.eval('__sky.game.disposeRace()');                                   // what quit() / the next start() do first
       await page.eval('__sky.game.renderer.render(__sky.game.scene, __sky.game.camera)');   // three.js frees on the next frame
-      disposed.push({ ...(await J(SNAP)), heap: await heapMB() });
+      const snap = await J(SNAP), heap = await heapMB();
+      disposed.push({ ...snap, heap, live: await liveObjects() });
     }
     const row = (s) => `buf ${s.gl.buffers} (${s.gl.bufMB} MB) tex ${s.gl.textures}/${s.textures} geo ${s.geometries} prog ${s.programs} heap ${s.heap}`;
     t.diagnostic(`${course} running : ${running.map(row).join('  |  ')}`);
     t.diagnostic(`${course} disposed: ${disposed.map(row).join('  |  ')}`);
+    t.diagnostic(`${course} live objects after dispose: ${disposed.map((s) => Object.values(s.live).join('/')).join('  |  ')}  (${Object.keys(CLASSES).join('/')})`);
     const a = RACES >= 4 ? 1 : 0, b = RACES - 1;                                       // race 2 vs the last race (indices)
     for (const [label, S] of [['while racing', running], ['after dispose', disposed]]) {
       const p = S[a], q = S[b];
@@ -79,8 +96,17 @@ for (const course of COURSES) {
       assert.ok(Math.abs(q.programs - p.programs) <= 2, `${label}: shader programs ${p.programs} -> ${q.programs}`);
       assert.ok(q.gl.framebuffers <= p.gl.framebuffers && q.gl.renderbuffers <= p.gl.renderbuffers, `${label}: framebuffers / renderbuffers grew`);
     }
-    const perRace = (disposed[b].heap - disposed[a].heap) / (b - a);
-    assert.ok(perRace < 0.2, `heap after GC grows ${perRace.toFixed(2)} MB per race (${disposed[a].heap} -> ${disposed[b].heap} MB)`);
+    // JS objects: nothing of a finished course may stay alive (flat from race 2 on, a few lazily created pool objects aside)
+    for (const key of Object.keys(CLASSES)) {
+      const p = disposed[a].live[key], q = disposed[b].live[key];
+      assert.ok(q - p <= Math.max(25, p * 0.02), `after dispose: live ${CLASSES[key]} objects ${p} (race 2) -> ${q} (race ${RACES})`);
+    }
+    // Heap MB: least-squares slope over the races after the warm-up race. It is not zero and cannot be: a heap snapshot diff of neon races 3 -> 8 (+0.96 MB)
+    // is 0.91 MB V8 code (bytecode and feedback vectors of functions that warm up as the races repeat), 0.05 MB Chrome performance-entry buffers and 2 KB of game
+    // objects (65 Objects, 26 Arrays). That warm-up measures 0.10-0.20 MB per race; the leak this test was written for grew 0.55 MB per race (redrock, 11.1 -> 13.3 MB
+    // in 4 races), so the limit sits between them, and the live-object counts above carry the sharp check.
+    const heaps = disposed.slice(a).map((s) => s.heap), perRace = slope(heaps);
+    assert.ok(perRace < 0.3, `heap after GC grows ${perRace.toFixed(2)} MB per race (${heaps.join(' -> ')} MB)`);
     assert.equal(disposed[b].errors, 0, '__sky.errors stays empty');
   });
 }

@@ -28,6 +28,7 @@ const BASE_SETTINGS = {
   assist: 'standard',       // 'standard' (auto-level, soft walls) | 'pro' (less hand-holding)
   shake: 1,                 // camera shake scale 0..1
   showFps: false,
+  keyGuide: true,           // keyboard flight guide (Standard assist, keyboard only): steers down the course while the keys are idle or only tapped
   doubleTapRoll: false,     // double-tap A / D (or the arrow keys) = barrel roll; off by default (it fires by accident while trimming a turn)
   reduceFlash: false,       // accessibility: no screen flashes / strong chromatic effects
   rumble: true,             // gamepad vibration on hits / tumbles / boosts (flight/input.js reads `rumble === false` as off)

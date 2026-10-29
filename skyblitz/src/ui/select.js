@@ -9,7 +9,8 @@ import { buildAircraft, disposeAircraft } from '../craft/aircraft.js';
 import { bestFor } from './save.js';
 import { rocketTip } from './rocket-hint.js';
 
-const STATS = [['speed', 'Top speed'], ['accel', 'Acceleration'], ['handling', 'Handling'], ['stability', 'Stability'], ['boost', 'Boost'], ['armor', 'Armour']];
+/** The six bars on the aircraft screen. Each is a promise, so each must drive a mechanic (tests/ui.test.mjs, P-04). */
+export const STATS = [['speed', 'Top speed'], ['accel', 'Acceleration'], ['handling', 'Handling'], ['stability', 'Stability'], ['boost', 'Boost'], ['armor', 'Armour']];
 // An entry is a string, or a function of the settings when the text depends on one (the double-tap roll is OFF by default, so it must not be taught by default).
 export const TIPS = [
   'Bank to turn, pull to loop: your aircraft turns where its wings point.',
@@ -55,16 +56,23 @@ class Turntable {
     let m; try { m = buildAircraft(spec, livery, this.game); } catch (e) { console.warn('[ui] turntable model failed', e); return; }
     const box = new THREE.Box3().setFromObject(m), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
     m.position.sub(c); this.pivot.add(m); this.model = m;
-    this.rad = Math.max(sz.x, sz.z) * 0.62 + 0.5; this.pivot.position.set(0, 0, 0);
+    this.rad = Math.max(sz.x, sz.z) * 0.62 + 0.5; this.pivot.position.set(0, 0, 0); this.lookY = -sz.y * 0.05;
     this.disc.scale.setScalar(this.rad * 1.5); this.disc.position.y = -sz.y * 0.5 - 0.3;
-    this.cam.position.set(0, this.rad * 0.42, this.rad * 2.9); this.cam.lookAt(0, -sz.y * 0.05, 0);
+    this.place();
     this.pop = 0;
+  }
+  /** Camera at 2.9 x rad, which holds the turning circle (radius rad) while the stage is about as wide as it is tall; on a narrower stage it backs off until the circle fits the
+   *  stage's width. The fixed distance cut the wings and nose at every turn of the table on a portrait tablet (768x1024: a 422 x 755 stage, the model out to 1.8 half-widths). */
+  place() {
+    if (!this.rad) return;
+    const d = this.rad * Math.max(2.9, 1 / (Math.tan(this.cam.fov * Math.PI / 360) * Math.max(0.2, this.cam.aspect)));
+    this.cam.position.set(0, d * (0.42 / 2.9), d); this.cam.lookAt(0, this.lookY, 0);
   }
   resize() {
     if (!this.ok) return;
     const w = this.canvas.clientWidth, h2 = this.canvas.clientHeight; if (!w || !h2) return;
     const pr = Math.min(devicePixelRatio || 1, 2);
-    if (this.canvas.width !== Math.round(w * pr) || this.canvas.height !== Math.round(h2 * pr)) { this.r.setPixelRatio(pr); this.r.setSize(w, h2, false); this.cam.aspect = w / h2; this.cam.updateProjectionMatrix(); }
+    if (this.canvas.width !== Math.round(w * pr) || this.canvas.height !== Math.round(h2 * pr)) { this.r.setPixelRatio(pr); this.r.setSize(w, h2, false); this.cam.aspect = w / h2; this.cam.updateProjectionMatrix(); this.place(); }
   }
   start() { if (!this.ok || this.raf) return; let last = performance.now(); const loop = (now) => { this.raf = requestAnimationFrame(loop); const dt = Math.min(0.05, (now - last) / 1000); last = now; this.frame(dt); }; this.raf = requestAnimationFrame(loop); }
   stop() { cancelAnimationFrame(this.raf); this.raf = 0; }

@@ -11,6 +11,8 @@ import { basisQuat } from '../src/world/layout.js';
 import { stepProgress } from '../src/race/progress.js';
 import { PILOTS } from '../src/craft/roster.js';
 import { Race } from '../src/race/race.js';
+import { shortcutChance } from '../src/race/ai.js';
+import { stepCollisions } from '../src/race/collision.js';
 
 const base = createFakeGame({ seed: 11 });
 const course = await loadCourseHeadless(base, 'sunrise');
@@ -197,7 +199,7 @@ test('respawn: a racer far off the course is put back (race:respawn) with invuln
   p.flight.pos.y += 900; p.flight.pos.x += 700;           // way outside the corridor
   stepRace(race, { seconds: 6, until: () => rec.counts['race:respawn'] > 0 });
   assert.equal(rec.counts['race:respawn'], 1);
-  assert.equal(rec.log.find((e) => e.type === 'race:respawn').payload.reason, 'lost');
+  assert.ok(['lost', 'high'].includes(rec.log.find((e) => e.type === 'race:respawn').payload.reason), 'put back as lost (far off) or high (900 m up, ~1 s) ');
   assert.ok(p.proj.dist < 120, 'back on course: ' + p.proj.dist);
   assert.ok(p.invuln > 1);
 });
@@ -518,4 +520,102 @@ test('E-08 a relock that jumps over a vertical loop emits race:missed (no credit
   try { stepRace(race, { steps: 45, controls: createControls() }); } finally { c.project = real; }
   assert.ok(rec.log.some((e) => e.type === 'race:missed' && e.payload.what === 'loop' && e.payload.racer === p), 'missed-loop event');
   assert.ok(p.dist - d0 < 200, 'no credit for the skipped loop: ' + (p.dist - d0));
+});
+
+test('R1-1 shortcut take probability rises with difficulty (Easy < Normal < Hard < Expert) and Normal sits in 40-70 %', () => {
+  for (const [shortcuts, risk, sk, place] of [[0.6, 0.55, 0.7, 4], [0.5, 0.5, 0.7, 4], [0.25, 0.55, 0.6, 1], [0.85, 0.55, 0.5, 3]]) {
+    const ds = ['easy', 'normal', 'hard', 'expert'];
+    const p = ds.map((d) => shortcutChance(shortcuts, risk, sk, place, DIFFICULTY[d]));
+    assert.ok(p[0] < p[1] && p[1] < p[2] && p[2] < p[3], `ordering ${p.map((x) => x.toFixed(2))} for ${[shortcuts, risk, sk, place]}`);
+    const q = ds.map((d) => shortcutChance(shortcuts, risk, sk, place, { ...DIFFICULTY[d], aiSkill: 0.75 }));      // the bias alone (equal skill) must order them
+    assert.ok(q[0] < q[1] && q[1] < q[2] && q[2] < q[3], `shortcutBias ordering ${q.map((x) => x.toFixed(2))}`);
+  }
+  const mid = shortcutChance(0.6, 0.55, 0.7, 4, DIFFICULTY.normal);
+  assert.ok(mid >= 0.4 && mid <= 0.7, 'a typical pilot at Normal takes the shortcut 40-70 %: ' + mid.toFixed(2));
+});
+
+test('R1-2 finishExtra: Easy keeps the race open finishTimeout + 25 s after the human finishes, Normal exactly finishTimeout', () => {
+  for (const [diff, extra] of [['easy', 25], ['normal', 0], ['hard', 0], ['expert', 0]]) {
+    const { race } = fresh(52, { bots: 1, difficulty: diff });
+    go(race, null);
+    race.finishRacer(race.player, 100); race.flushFinishers();
+    assert.equal(race.state, 'finishing');
+    assert.equal(race.endTimer, RACE.finishTimeout + extra, diff);
+  }
+});
+
+test('R1-3 a racer far above the corridor for ~1 s takes the normal respawn (reason high), keeps dist - s and earns no progress', () => {
+  const { race, rec } = fresh(61, { bots: 0, mode: 'trial' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  const L = course.length;
+  const at = (s, up) => { course.frameAt(s, f); p.flight.pos.copy(f.pos).addScaledVector(f.up, up); p.flight.quat.copy(basisQuat(f)); p.flight.vel.copy(f.tangent).multiplyScalar(60); p.flight.speed = 60; p.prev.pos.copy(p.flight.pos); };
+  at(900, 0); race.onTeleport(p); p.dist = p.s; race.markGood(p, -1);
+  stepRace(race, { seconds: 1, controls: createControls() });
+  const base = offset(p, L), d0 = p.dist, seen = race.stats.respawns;
+  let steps = 0;
+  for (; steps < 150 && race.stats.respawns === seen; steps++) { at(wrapMod(p.s, L), 220); stepRace(race, { steps: 1, controls: createControls() }); }
+  assert.equal(race.stats.respawns, seen + 1, 'respawned');
+  assert.ok(steps < 100, 'within ~1.5 s, well before the 2.5 s lost timer: ' + steps + ' steps');
+  assert.equal(rec.log.filter((e) => e.type === 'race:respawn').pop().payload.reason, 'high');
+  assert.ok(Math.abs(offset(p, L) - base) < 5, `dist - s kept: ${base.toFixed(1)} -> ${offset(p, L).toFixed(1)}`);
+  assert.ok(p.dist - d0 < 60, 'no progress credit: ' + (p.dist - d0).toFixed(1));
+});
+
+// A stubbed ground: a ramp along world +x, height H(x) = clamp(slope * x, 0, 200). slope 20 is a column flank (200 m tower), slope 0.5 a gentle hill.
+// course.collide reports 'ground' with depth = H - (y - radius) and a straight-up normal (the heightfield contract), so the only thing under test is
+// how collision.js `environment()` resolves the overlap.
+function withRamp(slope, fn) {
+  const real = { collide: course.collide, groundHeight: course.groundHeight };
+  const H = (x) => Math.min(200, Math.max(0, slope * x));
+  course.groundHeight = (x) => H(x);
+  course.collide = (pos, radius, proj, out) => {
+    const depth = H(pos.x) - (pos.y - radius);
+    if (depth <= 0) return false;
+    out.kind = 'ground'; out.depth = depth; out.normal.set(0, 1, 0); out.soft = false; out.surface = ''; return true;
+  };
+  try { return fn(H); } finally { course.collide = real.collide; course.groundHeight = real.groundHeight; }
+}
+function rampRacer(H, overlap) {
+  const { race } = fresh(71, { bots: 0, mode: 'trial' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  p.flight.pos.set(10, 0, 0); p.flight.pos.y = H(10) - overlap + p.radius;         // overlapping the flank by `overlap` m
+  p.flight.vel.set(20, 0, 0); p.flight.speed = 20; p.prev.pos.copy(p.flight.pos); p.tumble = 0; p.invuln = 0;
+  return { race, p };
+}
+
+test('R1-4 column flank: a 3 m overlap on a near-vertical flank slides the racer sideways and never climbs it; a gentle slope still pushes along the normal', () => {
+  // flank, slope 20 >> flankSlope 1.6, overlap 3 m (< the old depth > 8 trigger)
+  withRamp(20, (H) => {
+    const { race, p } = rampRacer(H, 3);
+    const y0 = p.flight.pos.y, x0 = p.flight.pos.x;
+    stepCollisions(race, 1 / 60, 1);
+    assert.ok(p.flight.pos.y - y0 < 0.5, 'one step does not lift the racer up the flank: dy ' + (p.flight.pos.y - y0).toFixed(2));
+    assert.ok(p.flight.pos.x < x0 - 1, 'slid away from the higher side (-x): dx ' + (p.flight.pos.x - x0).toFixed(2));
+  });
+  withRamp(20, (H) => {
+    const { race, p } = rampRacer(H, 3);
+    const y0 = p.flight.pos.y;
+    let top = y0;
+    for (let i = 0; i < 100; i++) { stepRace(race, { steps: 1, controls: createControls() }); top = Math.max(top, p.flight.pos.y); }
+    assert.ok(top - y0 < 10, 'over 100 real steps the racer gains < 10 m of height against the flank: ' + (top - y0).toFixed(1));
+    assert.ok(p.flight.pos.x < 10, 'and ends on the low side');
+  });
+  // control: gentle slope 0.5 < flankSlope, same 3 m overlap: pushed out along the normal (straight up), not sideways
+  withRamp(0.5, (H) => {
+    const { race, p } = rampRacer(H, 3);
+    const y0 = p.flight.pos.y, x0 = p.flight.pos.x;
+    stepCollisions(race, 1 / 60, 1);
+    assert.ok(Math.abs(p.flight.pos.y - y0 - 3) < 0.6, 'pushed up by the overlap: dy ' + (p.flight.pos.y - y0).toFixed(2));
+    assert.ok(Math.abs(p.flight.pos.x - x0) < 0.1, 'not slid sideways: dx ' + (p.flight.pos.x - x0).toFixed(2));
+  });
+});
+
+test('R1-5 smoke: redrock Normal seed 2, 3 laps has no glitch burst and no respawn', async () => {
+  const game = createFakeGame({ seed: 2 });
+  const c = await loadCourseHeadless(game, 'redrock');
+  const res = simulate(game, c, { difficulty: 'normal', laps: 3, seed: 2 }, { maxSeconds: 420 });
+  assert.ok(res.race.stats.glitches <= 2, 'glitches ' + res.race.stats.glitches);
+  assert.equal(res.race.stats.respawns, 0, 'respawns');
 });
