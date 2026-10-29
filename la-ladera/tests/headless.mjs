@@ -4,6 +4,7 @@
 //   node --import ./la-ladera/tests/register.mjs your-test.mjs
 //   import { buildData } from './headless.mjs';
 //   const { ctx, plan, buildings } = await buildData({ lots: ['L00'] });   // lots optional
+import './nice.mjs';   // low priority for every data test and probe built on buildData()
 import { readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -11,6 +11,39 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-29 - Chromium re-sets its own priorities; lower every pid from SystemInfo.getProcessInfo (la-ladera/tests/chrome.mjs:launch)
+  Inheriting below-normal from the Node parent only reached the browser, crashpad and utility processes: the GPU process
+  came up AboveNormal and the foreground renderers Normal. Measured with os.getPriority(pid); the timer + post-navigation
+  re-apply keeps new renderers low. A priority that is already lower (background renderers: idle) is never raised.
+
+- 2026-10-29 - Pipe child stdio when hiding windows; libuv sets CREATE_NO_WINDOW only if no stdio is inherited (la-ladera/tools/nice.mjs)
+  From libuv's uv_spawn as I remember it (not re-verified here): with stdio:'inherit' a console child can open a visible
+  window when its parent has no console (detached, or started by a service). Piped or ignored stdio plus windowsHide is safe.
+  A window watcher (EnumWindows every 120 ms) is the way to find who pops windows; process lists miss short-lived ones.
+
+- 2026-10-29 - Codex-made swatches can show centre-cross seams; tile 2x2 before accepting (la-ladera/tools/textures/post.py)
+  Fabric prompts also came back as corrugated metal (fabric_woven). Contact-sheet every batch and diff suspicious pairs
+  against their siblings before a texture ships.
+
+- 2026-10-29 - Kill the headless Chrome tree by pid (taskkill /T /F), never by name (la-ladera/tests/chrome.mjs:killTree)
+  The user's real Chrome runs on the same box and other agents leave orphan --user-data-dir profiles under H:/temp.
+  Only the root we spawned (and its children) may be killed; every exit path goes through killTree.
+
+- 2026-10-29 - BFS nodes must keep real positions; grid snapping fakes traps at ramps (la-ladera/tests/stuck-lib.mjs:analyze)
+  The first probe snapped nodes to cell centres and reported a trap at a stair edge: the snapped point lay inside the
+  ramp footprint, where nobody can stand. Nodes now keep the post-move position and dedupe on cell + 0.35 m height.
+
+- 2026-10-29 - Wall colliders are capsules: a door gap g needs g - 2t >= 0.62 (la-ladera/js/core/physics.js:addWall)
+  The cap at a wall end has radius t. t=0.06 -> g >= 0.8, t=0.1 -> 0.85, t=0.12-0.15 -> 0.9-0.95. The rounded caps funnel
+  an off-centre walker (measured: +-0.4 m still passes). Same rule for furniture blockers beside a door.
+
+- 2026-10-29 - Open MessagePort hangs node --test; unref it unless a tick is pending (la-ladera/js/core/util.js:tick)
+  tick() yields through a MessageChannel because browsers throttle timers. Under Node the open port kept the process
+  alive for ever (smoke.data.test.mjs exited 124). Browsers have no unref, so the call is optional-chained.
+
+- 2026-10-29 - python -I hides user-site PIL/numpy on this box; use plain python (la-ladera/tools/textures/post.py)
+  Python 3.13 here has PIL and numpy only in the user site-packages. The isolated flag drops it and the import fails.
+
 - 2026-08-27 - Keep career and physical stage IDs separate across the simulator adapter (championship.js:championshipChoice)
   OxAlphaRally's career schedules 51 stages while the renderer owns 12 playable roads.
   A stable surface-aware mapping lets career.js remain authoritative for results, saves,
