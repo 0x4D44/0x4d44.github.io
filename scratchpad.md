@@ -190,3 +190,17 @@ human-invoked review triages these — don't fix them inline.
   All four now *resolve* root-absolute refs against the repo root rather than
   skipping them, so the check keeps its teeth; `npm test` is green. Awaiting
   independent two-eyes closure.)
+
+- [ ] 2026-10-29 — `tests/responsive.test.mjs:96` stops Chrome with `process.kill(-chrome.pid, "SIGKILL")`. On Windows that
+  throws ESRCH (swallowed by the `catch`) and leaves the child running (checked with a detached `ping`: still alive
+  right after the call, dead after `taskkill /PID <pid> /T /F`). So a Windows run never actually stops its headless
+  Chrome, and the `rm` of the `responsive-*` profile that follows is likely to fail silently too (five such dirs sit in
+  `H:\temp` now; the cause is inference). Fix: on `win32` use `spawnSync("taskkill", ["/PID", String(chrome.pid), "/T",
+  "/F"])` and retry the `rm`. Found while adding `plan-to-build`; unrelated to it. Also inference, not checked: this is
+  what the box coordinators have been calling orphaned `responsive-*` Chrome trees.
+
+- [ ] 2026-10-29 — `tests/responsive.test.mjs:42` lists Chrome paths for macOS and Linux only, plus `CHROME_PATH`. On Windows
+  with `CHROME_PATH` unset the test reaches line 68, prints "no Chrome found; skipping" and exits 0, so `npm test` and
+  `npm run test:responsive` run nothing and look green. Seen while running it for `plan-to-build`. Fix: add the Windows
+  install paths (`C:\Program Files\Google\Chrome\Application\chrome.exe`) to the list, and consider failing rather than
+  skipping when no browser is found.

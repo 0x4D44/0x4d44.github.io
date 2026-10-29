@@ -1,0 +1,2956 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Plan to Build</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#12161b">
+<meta name="description" content="A 92 m² apartment drafted in a CAD screen, command by command, then built in 3D from the same drawing. One timeline, rendered frame by frame to a 1440p60 MP4 in your browser.">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "mp4-muxer": "https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.mjs"
+  }
+}
+</script>
+<style>
+:root {
+  --bg: #0e1115; --panel: #161b21; --panel2: #1d242c; --line: #2a333d; --txt: #dfe6ee; --dim: #8b97a6; --acc: #4ea5ff; --acc2: #7fc0ff; --warn: #ffb454;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", "DejaVu Sans Mono", monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--txt); font-family: var(--sans); -webkit-text-size-adjust: 100%; }
+body { min-height: 100vh; }
+header.top { padding: 14px 16px 12px 128px; max-width: 1480px; margin: 0 auto; min-height: 58px; }
+header.top h1 { margin: 0; font-size: 20px; letter-spacing: .02em; font-weight: 650; }
+header.top h1 span { color: var(--acc); }
+header.top p { margin: 3px 0 0; color: var(--dim); font-size: 13px; line-height: 1.4; max-width: 760px; }
+main { max-width: 1480px; margin: 0 auto; padding: 0 16px 28px; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }   /* fullscreen on a 16:10 or phone screen letterboxes the 16:9 film instead of stretching it */
+.bigplay { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 84px; height: 84px; border-radius: 50%; border: 2px solid rgba(255,255,255,.75); background: rgba(14,17,21,.55); color: #fff; font-size: 30px; cursor: pointer; display: grid; place-items: center; backdrop-filter: blur(3px); padding-left: 6px; }
+.bigplay:hover { background: rgba(78,165,255,.35); }
+.bigplay[hidden] { display: none; }
+.msg { position: absolute; left: 12px; right: 12px; bottom: 10px; font: 12px/1.4 var(--mono); color: var(--warn); text-shadow: 0 1px 2px #000; pointer-events: none; }
+.bar { display: flex; align-items: center; gap: 12px; margin-top: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.bar button, .bar2 button, .bar2 select { font: 600 13px var(--sans); color: var(--txt); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; height: 36px; padding: 0 14px; cursor: pointer; }
+.bar button:hover, .bar2 button:hover { border-color: var(--acc); }
+.bar button#play { width: 44px; padding: 0; font-size: 15px; }
+.scrub { position: relative; flex: 1; min-width: 0; height: 36px; }
+.scrub input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.scrub input::-webkit-slider-runnable-track { height: 6px; background: var(--line); border-radius: 3px; }
+.scrub input::-moz-range-track { height: 6px; background: var(--line); border-radius: 3px; }
+.scrub input::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--acc); border: 2px solid #fff; margin-top: -5px; }
+.scrub input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--acc); border: 2px solid #fff; }
+.scrub .ticks { position: absolute; left: 8px; right: 8px; top: 0; bottom: 0; pointer-events: none; }
+.scrub .ticks i { position: absolute; top: 9px; width: 2px; height: 18px; background: rgba(255,255,255,.28); border-radius: 1px; }
+.time { font: 12px var(--mono); color: var(--dim); white-space: nowrap; min-width: 92px; text-align: right; }
+.bar2 { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; margin-top: 10px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 360px; min-width: 0; }
+.chips button { height: 30px; padding: 0 10px; font-weight: 500; font-size: 12px; color: var(--dim); }
+.chips button.on { color: #fff; border-color: var(--acc); background: rgba(78,165,255,.16); }
+.exp { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.exp button#exportBtn { background: var(--acc); border-color: var(--acc); color: #04121f; }
+.exp button#exportBtn:hover { background: var(--acc2); }
+.exp button#exportBtn[disabled] { opacity: .5; cursor: default; }
+.prog { flex: 1 1 100%; position: relative; height: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; font: 11px/22px var(--mono); }
+.prog[hidden] { display: none; }
+.prog .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgba(78,165,255,.55); }
+.prog span { position: relative; padding-left: 8px; color: #fff; }
+.again { font: 600 13px var(--sans); color: var(--acc2); }
+.again[hidden] { display: none; }
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.note { color: var(--dim); font-size: 12.5px; line-height: 1.55; margin: 14px 2px 0; max-width: 980px; }
+.note b { color: var(--txt); font-weight: 600; }
+@media (max-width: 640px) {
+  header.top { padding-left: 124px; }
+  header.top p { display: none; }
+  .bar { gap: 8px; padding: 6px 8px; }
+  .time { min-width: 0; font-size: 11px; }
+  .bigplay { width: 64px; height: 64px; font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Plan <span>to</span> Build</h1>
+  <p>A 92&nbsp;m&sup2; apartment drafted command by command on a CAD screen, then built in 3D from the very same drawing.</p>
+</header>
+<main>
+  <div class="stage" id="stage">
+    <canvas id="screen" width="1280" height="720" role="img" aria-label="A CAD screen on which a 92 square metre apartment is drafted command by command, then built in 3D from the same drawing"></canvas>
+    <button class="bigplay" id="bigplay" aria-label="Play">&#9654;</button>
+    <div class="msg" id="msg" role="status"></div>
+  </div>
+  <div class="bar">
+    <button id="play" aria-label="Play">&#9654;</button>
+    <div class="scrub"><div class="ticks" id="ticks"></div><input id="seek" type="range" min="0" max="100" step="0.01" value="0" aria-label="Timeline" aria-valuetext="0:00"></div>
+    <span class="time" id="time">0:00 / 0:00</span>
+  </div>
+  <div class="bar2">
+    <div class="chips" id="chips"></div>
+    <div class="exp">
+      <select id="speed" aria-label="Playback speed"><option value="0.5">0.5&times;</option><option value="1" selected>1&times;</option><option value="2">2&times;</option><option value="4">4&times;</option></select>
+      <select id="bitrate" aria-label="Video bitrate"><option value="16">16 Mbps</option><option value="24" selected>24 Mbps</option><option value="40">40 Mbps</option></select>
+      <button id="exportBtn" type="button">Render 1440p60 MP4</button>
+      <a class="again" id="again" href="#" hidden>save the MP4 again</a>
+    </div>
+    <div class="prog" id="prog" role="progressbar" aria-label="Render progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div class="fill" id="progFill"></div><span id="progTxt"></span></div>
+    <div class="sr" id="sr" role="status" aria-live="polite"></div>
+  </div>
+  <p class="note"><b>One timeline.</b> Every frame of this film is a pure function of the clock: the CAD screen, the typed commands, the crosshair and the 3D build all read the same time value. The render button steps that clock frame by frame (1/60 s at a time), draws each frame at 2560&times;1440 and hands it to <b>WebCodecs</b> (H.264) and <b>mp4-muxer</b>, so the file is perfect however slow your machine is.</p>
+</main>
+<script type="module">
+
+/* ---------------- 10-util.js ---------------- */
+// ============================================================================
+// 1. UTILITIES  (pure; no DOM, no THREE)
+// ============================================================================
+const TAU = Math.PI * 2, DEG = Math.PI / 180;
+const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
+const lerp = (a, b, t) => a + (b - a) * t;
+const invLerp = (a, b, v) => (b === a ? 0 : (v - a) / (b - a));
+const smooth = (t) => { t = clamp(t); return t * t * (3 - 2 * t); };
+const smoother = (t) => { t = clamp(t); return t * t * t * (t * (t * 6 - 15) + 10); };
+// easeInOutCubic. The line shader carries a GLSL copy of this exact curve, so the
+// rubber-band of a LINE tracks the cursor, which uses the same curve on the CPU.
+const easeIO = (t) => { t = clamp(t); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
+const easeOut = (t) => 1 - Math.pow(1 - clamp(t), 3);
+const easeIn = (t) => { t = clamp(t); return t * t * t; };
+const easeOutBack = (t, s = 1.70158) => { t = clamp(t) - 1; return 1 + t * t * ((s + 1) * t + s); };
+const easeOutQuint = (t) => 1 - Math.pow(1 - clamp(t), 5);
+// a falling body: accelerate, hit at t = 1, rebound twice
+const dropBounce = (t) => {
+  t = clamp(t);
+  if (t < 0.62) { const u = t / 0.62; return 1 - u * u; }          // 1 -> 0 (height fraction), accelerating
+  if (t < 0.84) { const u = (t - 0.62) / 0.22; return 0.085 * 4 * u * (1 - u); }
+  const u = (t - 0.84) / 0.16; return 0.022 * 4 * u * (1 - u);
+};
+const sq = (x) => x * x;
+const hyp = (x, y) => Math.sqrt(x * x + y * y);
+const mod = (a, n) => ((a % n) + n) % n;
+const sign = (x) => (x < 0 ? -1 : 1);
+const fmtInt = (n) => String(Math.round(n));
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const hash2 = (a, b) => { let h = Math.imul(a | 0, 374761393) ^ Math.imul(b | 0, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+
+// '#rrggbb' -> [r,g,b] in 0..1
+function hexRGB(hex) {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+const rgbaCss = (hex, a = 1) => { const [r, g, b] = hexRGB(hex); return `rgba(${Math.round(r * 255)},${Math.round(g * 255)},${Math.round(b * 255)},${a})`; };
+
+// piecewise-linear keyframe track: [[t, v], ...] sorted by t
+function track(keys, t) {
+  if (!keys.length) return 0;
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    if (t <= keys[i][0]) { const a = keys[i - 1], b = keys[i]; return lerp(a[1], b[1], (t - a[0]) / (b[0] - a[0])); }
+  }
+  return keys[keys.length - 1][1];
+}
+// Catmull-Rom through scalar values at (possibly uneven) times (centripetal-ish, non-overshooting variant)
+function spline(keys, t) {
+  const n = keys.length;
+  if (t <= keys[0][0]) return keys[0][1];
+  if (t >= keys[n - 1][0]) return keys[n - 1][1];
+  let i = 1;
+  while (i < n - 1 && t > keys[i][0]) i++;
+  const p0 = keys[Math.max(i - 2, 0)], p1 = keys[i - 1], p2 = keys[i], p3 = keys[Math.min(i + 1, n - 1)];
+  const u = (t - p1[0]) / (p2[0] - p1[0]);
+  // tangents from neighbouring slopes (Hermite), scaled by the segment length
+  const dt = p2[0] - p1[0];
+  const m1 = p0 === p1 ? (p2[1] - p1[1]) / dt : (p2[1] - p0[1]) / (p2[0] - p0[0]);
+  const m2 = p3 === p2 ? (p2[1] - p1[1]) / dt : (p3[1] - p1[1]) / (p3[0] - p1[0]);
+  const u2 = u * u, u3 = u2 * u;
+  return (2 * u3 - 3 * u2 + 1) * p1[1] + (u3 - 2 * u2 + u) * dt * m1 + (-2 * u3 + 3 * u2) * p2[1] + (u3 - u2) * dt * m2;
+}
+// binary search: last index i with arr[i].t <= t  (or -1)
+function lastLE(arr, t, key = 't') {
+  let lo = 0, hi = arr.length - 1, r = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (arr[m][key] <= t) { r = m; lo = m + 1; } else hi = m - 1; }
+  return r;
+}
+
+
+/* ---------------- 20-plan.js ---------------- */
+
+// ============================================================================
+// 2. THE PLAN  (pure data: one source of truth for the drawing, the schedule and the 3D build)
+//    All lengths in millimetres. Plan x = east, y = north; three.js gets (x, z, -y) / 1000.
+// ============================================================================
+const XD = 12000, XC = 8000, YDW = 3900, YCW = 5250, Y3 = 8950;      // grid / wall axes
+const GX = [0, 4000, XC, XD], GY = [0, YDW, Y3];
+const GXN = ['A', 'B', 'C', 'D'], GYN = ['1', '2', '3'];
+const WT = 300, WH = WT / 2, COLW = 400, INSW = 150;                   // block wall, half wall, column, insulation
+const STOREY = 2800, OPEN_HEAD = 2200, LINTEL_H = 200;
+
+const rW = (r) => r[2] - r[0], rH = (r) => r[3] - r[1];
+const rCX = (r) => (r[0] + r[2]) / 2, rCY = (r) => (r[1] + r[3]) / 2;
+const rGrow = (r, d) => [r[0] - d, r[1] - d, r[2] + d, r[3] + d];
+
+// ---- columns: A1 is drawn, the other eleven are COPY targets, in the order a drafter sweeps the grid
+const COL_ORDER = [[0, 0], [1, 0], [2, 0], [3, 0], [3, 1], [2, 1], [1, 1], [0, 1], [0, 2], [1, 2], [2, 2], [3, 2]];
+const COLUMNS = COL_ORDER.map(([i, j], n) => ({
+  n, i, j, id: GXN[i] + GYN[j], cx: GX[i], cy: GY[j],
+  r: [GX[i] - COLW / 2, GY[j] - COLW / 2, GX[i] + COLW / 2, GY[j] + COLW / 2],
+}));
+
+// ---- the three outlines of the envelope: wall outer face is flush with the column faces
+const OUT = [-200, -200, XD + 200, Y3 + 200];          // wall outer face
+const INN = [OUT[0] + WT, OUT[1] + WT, OUT[2] - WT, OUT[3] - WT];   // wall inner face (100 .. XD-100)
+const INSO = rGrow(OUT, INSW);                          // insulation outer face
+
+// ---- wall bands (300 block); ext walls carry a 150 insulation band outside
+const WALLS = {
+  S: { ext: true, ax: 'x', dir: 1, r: [OUT[0], OUT[1], OUT[2], INN[1]], ins: [INSO[0], INSO[1], INSO[2], OUT[1]] },
+  E: { ext: true, ax: 'y', dir: 1, r: [INN[2], INN[1], OUT[2], INN[3]], ins: [OUT[2], OUT[1], INSO[2], OUT[3]] },
+  N: { ext: true, ax: 'x', dir: -1, r: [OUT[0], INN[3], OUT[2], OUT[3]], ins: [INSO[0], OUT[3], INSO[2], INSO[3]] },
+  W: { ext: true, ax: 'y', dir: -1, r: [OUT[0], INN[1], INN[0], INN[3]], ins: [INSO[0], OUT[1], OUT[0], OUT[3]] },
+  DW: { ax: 'x', dir: 1, c: YDW, r: [INN[0], YDW - WH, INN[2], YDW + WH] },
+  CW: { ax: 'x', dir: 1, c: YCW, r: [INN[0], YCW - WH, INN[2], YCW + WH] },
+  P8: { ax: 'y', dir: 1, c: XC, r: [XC - WH, INN[1], XC + WH, YDW - WH] },
+  N1: { ax: 'y', dir: 1, c: 4000, r: [4000 - WH, YCW + WH, 4000 + WH, INN[3]] },
+  N2: { ax: 'y', dir: 1, c: 6200, r: [6200 - WH, YCW + WH, 6200 + WH, INN[3]] },
+  N3: { ax: 'y', dir: 1, c: 10000, r: [10000 - WH, YCW + WH, 10000 + WH, INN[3]] },
+};
+for (const id in WALLS) WALLS[id].id = id;
+const WALL_ORDER = ['S', 'E', 'N', 'W', 'DW', 'CW', 'P8', 'N1', 'N2', 'N3'];
+const INT_WALLS = ['DW', 'CW', 'P8', 'N1', 'N2', 'N3'];
+
+// MLINE centreline (start -> end) of an interior wall, running into the crossing wall's axis
+const MLINES = {
+  DW: [[INN[0], YDW], [INN[2], YDW]],
+  CW: [[INN[0], YCW], [INN[2], YCW]],
+  P8: [[XC, INN[1]], [XC, YDW]],
+  N1: [[4000, YCW], [4000, INN[3]]],
+  N2: [[6200, YCW], [6200, INN[3]]],
+  N3: [[10000, YCW], [10000, INN[3]]],
+};
+
+// ---- openings. t: win | tall | door | entry | pass.  swing: side of the wall the leaf opens to (+1 north/east)
+const OPENINGS = [
+  // windows, south wall then east, north, west
+  { id: 'W01', t: 'win', wall: 'S', c: 2000, w: 2200, sill: 900, room: 'LIVING' },
+  { id: 'W02', t: 'tall', wall: 'S', c: 6000, w: 2400, sill: 0, room: 'LIVING' },
+  { id: 'W03', t: 'win', wall: 'S', c: 10600, w: 1200, sill: 1100, room: 'KITCHEN' },
+  { id: 'W04', t: 'win', wall: 'E', c: 1900, w: 1400, sill: 900, room: 'KITCHEN' },
+  { id: 'W05', t: 'win', wall: 'E', c: 7100, w: 1200, sill: 900, room: 'STUDY' },
+  { id: 'W06', t: 'win', wall: 'N', c: 11000, w: 1000, sill: 900, room: 'STUDY' },
+  { id: 'W07', t: 'win', wall: 'N', c: 9000, w: 1200, sill: 900, room: 'BED 2' },
+  { id: 'W08', t: 'win', wall: 'N', c: 5100, w: 700, sill: 1500, room: 'BATH' },
+  { id: 'W09', t: 'win', wall: 'N', c: 2000, w: 1800, sill: 900, room: 'BED 1' },
+  { id: 'W10', t: 'win', wall: 'W', c: 7000, w: 1600, sill: 900, room: 'BED 1' },
+  { id: 'W11', t: 'win', wall: 'W', c: 4575, w: 600, sill: 900, room: 'CORRIDOR' },
+  { id: 'W12', t: 'win', wall: 'W', c: 1900, w: 1800, sill: 900, room: 'LIVING' },
+  // doors
+  { id: 'D01', t: 'entry', wall: 'E', c: 4650, w: 900, hinge: -1, swing: -1, room: 'CORRIDOR' },
+  { id: 'D02', t: 'door', wall: 'DW', c: 1600, w: 900, hinge: -1, swing: -1, room: 'LIVING' },
+  { id: 'D03', t: 'door', wall: 'DW', c: 9600, w: 900, hinge: -1, swing: -1, room: 'KITCHEN' },
+  { id: 'D04', t: 'door', wall: 'CW', c: 3200, w: 900, hinge: 1, swing: 1, room: 'BED 1' },
+  { id: 'D05', t: 'door', wall: 'CW', c: 5600, w: 800, hinge: 1, swing: 1, room: 'BATH' },
+  { id: 'D06', t: 'door', wall: 'CW', c: 7000, w: 900, hinge: -1, swing: 1, room: 'BED 2' },
+  { id: 'D07', t: 'door', wall: 'CW', c: 10800, w: 800, hinge: -1, swing: 1, room: 'STUDY' },
+  { id: 'P01', t: 'pass', wall: 'P8', c: 2000, w: 1400, room: 'LIVING' },
+];
+for (const o of OPENINGS) {
+  const W = WALLS[o.wall];
+  o.W = W; o.ax = W.ax; o.ext = !!W.ext;
+  o.a0 = o.c - o.w / 2; o.a1 = o.c + o.w / 2;                              // span along the wall
+  o.head = o.t === 'pass' ? OPEN_HEAD : OPEN_HEAD;
+  o.isDoor = o.t === 'door' || o.t === 'entry';
+  const wr = W.r, ir = W.ins;
+  const lo = (k) => Math.min(wr[k], ir ? ir[k] : wr[k]), hi = (k) => Math.max(wr[k + 2], ir ? ir[k + 2] : wr[k + 2]);
+  o.cut = o.ax === 'x' ? [o.a0, lo(1), o.a1, hi(1)] : [lo(0), o.a0, hi(0), o.a1];     // opening through wall (+ insulation)
+  o.wcut = o.ax === 'x' ? [o.a0, wr[1], o.a1, wr[3]] : [wr[0], o.a0, wr[2], o.a1];    // through the wall only
+  // wall mid-line coordinate across the wall
+  o.mid = o.ax === 'x' ? (wr[1] + wr[3]) / 2 : (wr[0] + wr[2]) / 2;
+}
+const OPEN_BY_ID = Object.fromEntries(OPENINGS.map((o) => [o.id, o]));
+
+// ---- rooms (clear internal rectangles)
+const ROOMS = [
+  { id: 'LIVING', r: [INN[0], INN[1], XC - WH, YDW - WH], floor: 'oak' },
+  { id: 'KITCHEN', r: [XC + WH, INN[1], INN[2], YDW - WH], floor: 'tile' },
+  { id: 'CORRIDOR', r: [INN[0], YDW + WH, INN[2], YCW - WH], floor: 'tile' },
+  { id: 'BED 1', r: [INN[0], YCW + WH, 4000 - WH, INN[3]], floor: 'oak' },
+  { id: 'BATH', r: [4000 + WH, YCW + WH, 6200 - WH, INN[3]], floor: 'tile' },
+  { id: 'BED 2', r: [6200 + WH, YCW + WH, 10000 - WH, INN[3]], floor: 'oak' },
+  { id: 'STUDY', r: [10000 + WH, YCW + WH, INN[2], INN[3]], floor: 'oak' },
+];
+for (const rm of ROOMS) {
+  rm.exact = rW(rm.r) * rH(rm.r) / 1e6;
+  rm.area = Math.round(rm.exact * 10) / 10;
+}
+const ROOM_BY_ID = Object.fromEntries(ROOMS.map((r) => [r.id, r]));
+const TOTAL_AREA = Math.round(ROOMS.reduce((s, r) => s + r.area, 0) * 10) / 10;
+
+// ---- furniture and fixtures: type (see FT), centre, rotation (deg, CCW, 0 = front faces north), room
+//      fx = built-in (kitchen / bath): rises from the floor instead of dropping in
+const ITEMS = [];
+const addItem = (type, room, x, y, rot = 0, extra = null) => { ITEMS.push(Object.assign({ id: type + '_' + ITEMS.length, type, room, x, y, rot, fx: false }, extra)); };
+const addFx = (type, room, x, y, rot = 0, extra = null) => { addItem(type, room, x, y, rot, Object.assign({ fx: true }, extra)); };
+// LIVING
+addItem('rug', 'LIVING', 5300, 1900, 0, { w: 3000, d: 2000, mat: 'rugA' });
+addItem('sofa', 'LIVING', 5300, 1500, 0);
+addItem('coffee', 'LIVING', 5300, 2450, 0);
+addItem('tvu', 'LIVING', 5300, 3525, 180);
+addItem('armchair', 'LIVING', 3350, 1750, 270);
+addItem('dtab', 'LIVING', 1800, 1900, 0);
+addItem('chair', 'LIVING', 1400, 2620, 180); addItem('chair', 'LIVING', 2200, 2620, 180);
+addItem('chair', 'LIVING', 1400, 1180, 0); addItem('chair', 'LIVING', 2200, 1180, 0);
+addItem('side', 'LIVING', 3000, 3525, 180);
+addItem('bcase', 'LIVING', 7100, 3600, 180);
+addItem('plant', 'LIVING', 420, 3420, 0); addItem('plant', 'LIVING', 7500, 470, 0);
+addItem('lamp', 'LIVING', 6900, 900, 0);
+// KITCHEN (built in)
+addFx('fridge', 'KITCHEN', 8500, 425, 0);
+addFx('cab', 'KITCHEN', 9100, 400, 0);
+addFx('hob', 'KITCHEN', 9700, 400, 0);
+addFx('sink', 'KITCHEN', 10600, 400, 0);
+addFx('cab', 'KITCHEN', 11500, 400, 0);
+addFx('upper', 'KITCHEN', 9100, 275, 0); addFx('upper', 'KITCHEN', 11500, 275, 0);
+addFx('hood', 'KITCHEN', 9700, 350, 0);
+addItem('ktab', 'KITCHEN', 10600, 2300, 0);
+addItem('chair', 'KITCHEN', 10300, 2900, 180); addItem('chair', 'KITCHEN', 10900, 2900, 180);
+addItem('chair', 'KITCHEN', 10300, 1700, 0); addItem('chair', 'KITCHEN', 10900, 1700, 0);
+// CORRIDOR
+addItem('cons', 'CORRIDOR', 4800, 4200, 0);
+addItem('shoe', 'CORRIDOR', 8200, 4925, 180);
+addItem('rug', 'CORRIDOR', 6100, 4575, 0, { w: 5400, d: 640, mat: 'rugB' });
+// BED 1
+addItem('rug', 'BED 1', 2450, 7500, 0, { w: 2300, d: 1700, mat: 'rugB' });
+addItem('bed160', 'BED 1', 2825, 7500, 90);
+addItem('night', 'BED 1', 3590, 6420, 90); addItem('night', 'BED 1', 3590, 8580, 90);
+addItem('ward', 'BED 1', 1300, 5700, 0, { w: 2400, d: 600 });
+addItem('dress', 'BED 1', 2000, 8625, 180);
+addItem('armchair', 'BED 1', 600, 8250, 300, { s: 0.85 });
+// BATH (built in)
+addFx('tub', 'BATH', 5050, 8475, 180);
+addFx('wc', 'BATH', 4500, 7400, 270);
+addFx('basin', 'BATH', 4390, 6450, 270);
+addFx('washer', 'BATH', 5750, 7400, 90);
+// BED 2
+addItem('bed140', 'BED 2', 7375, 7400, 270);
+addItem('night', 'BED 2', 6575, 6420, 270); addItem('night', 'BED 2', 6575, 8380, 270);
+addItem('ward', 'BED 2', 9550, 6500, 90, { w: 2000, d: 600 });
+addItem('desk', 'BED 2', 8950, 8550, 180, { w: 1200, d: 600 });
+addItem('chair', 'BED 2', 8950, 8000, 0);
+// STUDY
+addItem('desk', 'STUDY', 10900, 8500, 180, { w: 1400, d: 700 });
+addItem('chair', 'STUDY', 10900, 7950, 0);
+addItem('bcase', 'STUDY', 10300, 7200, 270);
+addItem('plant', 'STUDY', 11600, 5700, 0);
+
+// ---- the 1:50 sheet (A3 = 420 x 297 mm  ->  21000 x 14850 model mm)
+const SHEET = [-3500, -3300, 17500, 11550];
+const FRAME = [-2250, -2800, 17000, 11050];          // 25 mm binding edge, 10 mm elsewhere
+const TBLK = [14000, -2800, 17000, 1000];            // title block
+const SCHED = [14000, 1300, 17000, 5500];            // room schedule
+const NARROW = [15500, 8600];                        // north arrow centre
+
+// ---- dimensions. h: measures along x. a,b: extents along the measured axis; base: where the extension lines start
+const DIMS = [
+  { id: 'X1', h: true, a: 0, b: 4000, base: INSO[1], pos: -900 },
+  { id: 'X2', h: true, a: 4000, b: 8000, base: INSO[1], pos: -900 },
+  { id: 'X3', h: true, a: 8000, b: 12000, base: INSO[1], pos: -900 },
+  { id: 'XO', h: true, a: INSO[0], b: INSO[2], base: INSO[1], pos: -1500 },
+  { id: 'Y1', h: false, a: 0, b: 3900, base: INSO[0], pos: -900 },
+  { id: 'Y2', h: false, a: 3900, b: 8950, base: INSO[0], pos: -900 },
+  { id: 'YO', h: false, a: INSO[1], b: INSO[3], base: INSO[0], pos: -1500 },
+  { id: 'T150', h: true, a: INSO[0], b: OUT[0], base: INSO[3], pos: 9750, small: 'left' },
+  { id: 'T300', h: true, a: OUT[0], b: INN[0], base: INSO[3], pos: 9750, small: 'right' },
+];
+
+// ---- derived wall geometry (shared by the hatch, the cut-outs and the 3D build)
+// Wall pieces: the wall box, split around the openings. along = coordinate along the wall axis
+function wallPieces(W) {
+  const ops = OPENINGS.filter((o) => o.wall === W.id).sort((p, q) => p.a0 - q.a0);
+  const x = W.ax === 'x';
+  const A0 = x ? W.r[0] : W.r[1], A1 = x ? W.r[2] : W.r[3];
+  const mk = (a0, a1, z0, z1, kind, op) => ({ kind, op, a0, a1, z0, z1, r: x ? [a0, W.r[1], a1, W.r[3]] : [W.r[0], a0, W.r[2], a1] });
+  const out = [];
+  let cur = A0;
+  for (const o of ops) {
+    if (o.a0 > cur) out.push(mk(cur, o.a0, 0, STOREY, 'pier'));
+    if (o.sill > 0) out.push(mk(o.a0, o.a1, 0, o.sill, 'sill', o));
+    out.push(mk(o.a0, o.a1, OPEN_HEAD, OPEN_HEAD + LINTEL_H, 'lintel', o));
+    out.push(mk(o.a0, o.a1, OPEN_HEAD + LINTEL_H, STOREY, 'header', o));
+    cur = o.a1;
+  }
+  if (cur < A1) out.push(mk(cur, A1, 0, STOREY, 'pier'));
+  return out;
+}
+// same for the insulation band (windows and doors cut it too)
+function insulPieces(W) {
+  if (!W.ins) return [];
+  const ops = OPENINGS.filter((o) => o.wall === W.id).sort((p, q) => p.a0 - q.a0);
+  const x = W.ax === 'x';
+  const A0 = x ? W.ins[0] : W.ins[1], A1 = x ? W.ins[2] : W.ins[3];
+  const mk = (a0, a1, z0, z1, kind) => ({ kind, a0, a1, z0, z1, r: x ? [a0, W.ins[1], a1, W.ins[3]] : [W.ins[0], a0, W.ins[2], a1] });
+  const out = [];
+  let cur = A0;
+  for (const o of ops) {
+    if (o.a0 > cur) out.push(mk(cur, o.a0, 0, STOREY, 'pier'));
+    if (o.sill > 0) out.push(mk(o.a0, o.a1, 0, o.sill, 'sill'));
+    out.push(mk(o.a0, o.a1, OPEN_HEAD, STOREY, 'head'));
+    cur = o.a1;
+  }
+  if (cur < A1) out.push(mk(cur, A1, 0, STOREY, 'pier'));
+  return out;
+}
+
+
+/* ---------------- 30-furn.js ---------------- */
+
+// ============================================================================
+// 3. FURNITURE LIBRARY  (one definition drives the plan symbol AND the 3D model)
+//    local frame: origin = footprint centre, +y = front, z up from the floor, mm.
+//    ['b', x, y, z, w, d, h, mat, r?]   box (r = corner radius)
+//    ['c', x, y, z, rad, h, mat]        cylinder
+//    ['s', x, y, zc, rad, mat]          sphere
+//    ['k', x, y, z, rb, rt, h, mat]     truncated cone
+// ============================================================================
+const leg = (x, y, h, w = 40, m = 'black') => ['b', x, y, 0, w, w, h, m];
+const FT = {
+  rug: (it) => ({ w: it.w, d: it.d, c: 'dim', parts: [
+    ['b', 0, 0, 0, it.w, it.d, 12, it.mat, 5],
+    ['b', 0, 0, 12, it.w - 180, it.d - 180, 2, it.mat + '2', 2]] }),
+  sofa: { w: 2200, d: 950, c: 'blue', parts: [
+    ['b', 0, -290, 90, 2200, 370, 780, 'fabA', 70],
+    ['b', -1000, 0, 90, 200, 950, 580, 'fabA', 60], ['b', 1000, 0, 90, 200, 950, 580, 'fabA', 60],
+    ['b', -600, 185, 90, 580, 580, 330, 'fabB', 50], ['b', 0, 185, 90, 580, 580, 330, 'fabB', 50], ['b', 600, 185, 90, 580, 580, 330, 'fabB', 50],
+    ['b', -600, -150, 420, 560, 140, 340, 'fabB', 50], ['b', 0, -150, 420, 560, 140, 340, 'fabB', 50], ['b', 600, -150, 420, 560, 140, 340, 'fabB', 50],
+    leg(-1000, -410, 90, 50), leg(1000, -410, 90, 50), leg(-1000, 410, 90, 50), leg(1000, 410, 90, 50)] },
+  coffee: { w: 1100, d: 600, c: 'blue', parts: [
+    ['b', 0, 0, 380, 1100, 600, 40, 'oak', 20], ['b', 0, 0, 120, 960, 460, 24, 'oakD', 6],
+    leg(-500, -250, 380, 50), leg(500, -250, 380, 50), leg(-500, 250, 380, 50), leg(500, 250, 380, 50)] },
+  armchair: { w: 850, d: 850, c: 'blue', parts: [
+    ['b', 0, 0, 120, 850, 850, 300, 'fabC', 70], ['b', 0, -330, 120, 850, 190, 650, 'fabC', 70],
+    ['b', -380, 40, 120, 90, 770, 480, 'fabC', 40], ['b', 380, 40, 120, 90, 770, 480, 'fabC', 40],
+    ['b', 0, 80, 420, 640, 600, 110, 'fabB', 45],
+    leg(-340, -340, 120, 40, 'oakD'), leg(340, -340, 120, 40, 'oakD'), leg(-340, 340, 120, 40, 'oakD'), leg(340, 340, 120, 40, 'oakD')] },
+  tvu: { w: 1800, d: 450, c: 'blue', parts: [
+    ['b', 0, 0, 120, 1800, 450, 380, 'oakD', 18], leg(-860, 0, 120, 40), leg(860, 0, 120, 40),
+    ['b', 0, -130, 500, 380, 150, 24, 'black'], ['b', 0, -130, 524, 1250, 46, 730, 'tv', 12], ['b', 0, -105, 560, 1180, 3, 660, 'screen']],
+    pp: [['b', 0, 0, 120, 1800, 450, 380], ['b', 0, -130, 524, 1250, 46, 730]] },
+  dtab: { w: 1800, d: 900, c: 'blue', parts: [
+    ['b', 0, 0, 710, 1800, 900, 40, 'oak', 15],
+    leg(-800, -380, 710, 70, 'oakD'), leg(800, -380, 710, 70, 'oakD'), leg(-800, 380, 710, 70, 'oakD'), leg(800, 380, 710, 70, 'oakD')],
+    pp: [['b', 0, 0, 710, 1800, 900, 40, null, 15], ['b', 0, 0, 700, 1600, 700, 10]] },
+  chair: { w: 450, d: 450, c: 'blue', parts: [
+    ['b', 0, 0, 430, 450, 450, 40, 'fabC', 18], ['b', 0, -205, 470, 430, 40, 440, 'fabC', 18],
+    leg(-190, -190, 430, 32), leg(190, -190, 430, 32), leg(-190, 190, 430, 32), leg(190, 190, 430, 32)],
+    pp: [['b', 0, 0, 430, 450, 450, 40, null, 18], ['b', 0, -205, 470, 430, 40, 440, null, 18]] },
+  side: { w: 1500, d: 450, c: 'blue', parts: [
+    ['b', 0, 0, 110, 1500, 450, 700, 'oakD', 14], ['b', 0, 0, 810, 1520, 460, 24, 'oak', 8],
+    leg(-640, 0, 110, 50), leg(640, 0, 110, 50),
+    ['b', -375, 228, 600, 120, 10, 14, 'steel'], ['b', 375, 228, 600, 120, 10, 14, 'steel'], ['b', 0, 226, 120, 4, 3, 690, 'black']],
+    pp: [['b', 0, 0, 810, 1520, 460, 24, null, 8], ['b', 0, 0, 800, 1500, 450, 10]] },
+  bcase: { w: 1000, d: 300, c: 'blue', parts: [
+    ['b', -490, 0, 0, 20, 300, 2000, 'oak'], ['b', 490, 0, 0, 20, 300, 2000, 'oak'], ['b', 0, -140, 0, 960, 20, 2000, 'oakD'],
+    ['b', 0, 0, 0, 960, 280, 24, 'oak'], ['b', 0, 0, 400, 960, 280, 24, 'oak'], ['b', 0, 0, 800, 960, 280, 24, 'oak'], ['b', 0, 0, 1200, 960, 280, 24, 'oak'],
+    ['b', 0, 0, 1600, 960, 280, 24, 'oak'], ['b', 0, 0, 1976, 1000, 300, 24, 'oak'],
+    ['b', -300, 20, 24, 60, 200, 300, 'bookA'], ['b', -230, 20, 24, 50, 200, 340, 'bookB'], ['b', -170, 20, 24, 70, 200, 280, 'bookC'],
+    ['b', 150, 20, 424, 60, 200, 320, 'bookB'], ['b', 220, 20, 424, 80, 200, 280, 'bookA'], ['b', -200, 20, 824, 70, 200, 330, 'bookC'],
+    ['b', -120, 20, 824, 50, 200, 300, 'bookA'], ['b', 250, 20, 1224, 90, 200, 320, 'bookB']],
+    pp: [['b', 0, 0, 0, 1000, 300, 2000, null], ['b', 0, 0, 0, 940, 250, 2001]] },
+  plant: { w: 520, d: 520, c: 'green', parts: [
+    ['k', 0, 0, 0, 170, 220, 420, 'pot'], ['s', 0, 0, 720, 250, 'leaf'], ['s', 110, 70, 980, 190, 'leaf2'], ['s', -100, -50, 1180, 160, 'leaf']] },
+  lamp: { w: 320, d: 320, c: 'yellow', parts: [
+    ['c', 0, 0, 0, 160, 20, 'black'], ['c', 0, 0, 20, 12, 1450, 'black'], ['k', 0, 0, 1440, 190, 130, 300, 'lampsh']] },
+  // ---- kitchen run: 600 modules, worktop 40, 870 high
+  fridge: { w: 600, d: 650, c: 'orange', parts: [
+    ['b', 0, 0, 20, 600, 640, 1830, 'steel', 22], ['b', 0, 322, 640, 592, 8, 10, 'black'],
+    ['b', -240, 334, 1100, 18, 24, 520, 'black'], ['b', -240, 334, 300, 18, 24, 240, 'black']],
+    pp: [['b', 0, 0, 20, 600, 640, 1830, null, 22], ['b', 0, 0, 20, 540, 580, 1830]] },
+  cab: { w: 600, d: 600, c: 'orange', parts: [
+    ['b', 0, -10, 0, 560, 560, 100, 'black'], ['b', 0, 0, 100, 596, 596, 720, 'cabW', 6],
+    ['b', 0, 10, 820, 600, 620, 40, 'stone'], ['b', 0, 304, 740, 300, 12, 14, 'steel'], ['b', 0, 298, 100, 3, 3, 700, 'black']],
+    pp: [['b', 0, 10, 820, 600, 620, 40, null], ['b', 0, 0, 810, 560, 560, 10]] },
+  hob: { w: 600, d: 600, c: 'orange', parts: [
+    ['b', 0, -10, 0, 560, 560, 100, 'black'], ['b', 0, 0, 100, 596, 596, 720, 'cabW', 6],
+    ['b', 0, 10, 820, 600, 620, 40, 'stone'], ['b', 0, 0, 860, 540, 480, 8, 'black', 14],
+    ['c', -135, 100, 868, 78, 5, 'steel'], ['c', 135, 100, 868, 56, 5, 'steel'], ['c', -135, -100, 868, 56, 5, 'steel'], ['c', 135, -100, 868, 78, 5, 'steel'],
+    ['b', 0, 303, 300, 480, 8, 330, 'tv', 6], ['b', 0, 304, 700, 300, 10, 14, 'steel']],
+    pp: [['b', 0, 10, 820, 600, 620, 40, null], ['b', 0, 0, 860, 540, 480, 8, null, 14],
+      ['c', -135, 100, 868, 78, 5], ['c', 135, 100, 868, 56, 5], ['c', -135, -100, 868, 56, 5], ['c', 135, -100, 868, 78, 5]] },
+  sink: { w: 1200, d: 600, c: 'orange', parts: [
+    ['b', 0, -10, 0, 1160, 560, 100, 'black'], ['b', 0, 0, 100, 1196, 596, 720, 'cabW', 6],
+    ['b', 0, 10, 820, 1200, 620, 40, 'stone'], ['b', -230, 20, 856, 520, 400, 8, 'steel', 25], ['b', 330, 20, 856, 300, 400, 3, 'steel'],
+    ['c', 0, -220, 860, 14, 250, 'steel'], ['b', 0, -140, 1090, 12, 170, 12, 'steel'],
+    ['b', -300, 304, 740, 300, 12, 14, 'steel'], ['b', 300, 304, 740, 300, 12, 14, 'steel'], ['b', 0, 298, 100, 3, 3, 700, 'black']],
+    pp: [['b', 0, 10, 820, 1200, 620, 40, null], ['b', -230, 20, 856, 520, 400, 8, null, 25], ['b', 330, 20, 856, 300, 400, 3]] },
+  upper: { w: 600, d: 350, c: 'orange', parts: [
+    ['b', 0, 0, 1400, 596, 346, 700, 'cabW', 6], ['b', 0, 176, 1450, 300, 8, 12, 'steel']] },
+  hood: { w: 600, d: 500, c: 'orange', parts: [
+    ['b', 0, 0, 1500, 600, 500, 80, 'steel', 20], ['b', 0, -100, 1580, 300, 280, 1220, 'steel']] },
+  ktab: { w: 1400, d: 800, c: 'orange', parts: [
+    ['b', 0, 0, 710, 1400, 800, 40, 'oak', 15],
+    leg(-620, -330, 710, 60, 'black'), leg(620, -330, 710, 60, 'black'), leg(-620, 330, 710, 60, 'black'), leg(620, 330, 710, 60, 'black')],
+    pp: [['b', 0, 0, 710, 1400, 800, 40, null, 15], ['b', 0, 0, 700, 1200, 600, 10]] },
+  // ---- hall
+  cons: { w: 1000, d: 300, c: 'blue', parts: [
+    ['b', 0, 0, 760, 1000, 300, 40, 'oakD', 10], leg(-450, 0, 760, 40), leg(450, 0, 760, 40), ['b', 0, 0, 300, 920, 260, 18, 'oakD'],
+    ['c', 0, 0, 800, 70, 150, 'ceramic']] },
+  shoe: { w: 1200, d: 350, c: 'blue', parts: [
+    ['b', 0, 0, 0, 1200, 350, 1900, 'white', 10], ['b', 0, 178, 0, 2, 4, 1900, 'black'], ['b', -300, 178, 0, 2, 4, 1900, 'black'], ['b', 300, 178, 0, 2, 4, 1900, 'black'],
+    ['b', -30, 180, 900, 14, 12, 300, 'steel'], ['b', 30, 180, 900, 14, 12, 300, 'steel']],
+    pp: [['b', 0, 0, 0, 1200, 350, 1900, null, 10], ['b', 0, 0, 0, 1120, 270, 1901]] },
+  // ---- bedrooms
+  bed160: { w: 1700, d: 2050, c: 'magenta', parts: [
+    ['b', 0, -1000, 0, 1700, 50, 1050, 'oakD', 10], ['b', 0, 0, 140, 1700, 2000, 160, 'oakD', 14],
+    ['b', 0, 15, 300, 1600, 1960, 210, 'bedA', 60], ['b', 0, 330, 500, 1640, 1350, 60, 'bedB', 40],
+    ['b', -410, -780, 510, 700, 400, 130, 'pillow', 55], ['b', 410, -780, 510, 700, 400, 130, 'pillow', 55],
+    leg(-800, -980, 140, 60, 'oakD'), leg(800, -980, 140, 60, 'oakD'), leg(-800, 980, 140, 60, 'oakD'), leg(800, 980, 140, 60, 'oakD')],
+    pp: [['b', 0, -1000, 0, 1700, 50, 1050, null, 10], ['b', 0, 0, 140, 1700, 2000, 160, null, 14], ['b', 0, 15, 300, 1600, 1960, 210, null, 60],
+      ['b', 0, 330, 500, 1640, 1350, 60, null, 40], ['b', -410, -780, 510, 700, 400, 130, null, 55], ['b', 410, -780, 510, 700, 400, 130, null, 55]] },
+  bed140: { w: 1500, d: 2050, c: 'magenta', parts: [
+    ['b', 0, -1000, 0, 1500, 50, 1050, 'oakD', 10], ['b', 0, 0, 140, 1500, 2000, 160, 'oakD', 14],
+    ['b', 0, 15, 300, 1400, 1960, 210, 'bedA', 60], ['b', 0, 330, 500, 1440, 1350, 60, 'bedB', 40],
+    ['b', -320, -780, 510, 600, 400, 130, 'pillow', 55], ['b', 320, -780, 510, 600, 400, 130, 'pillow', 55],
+    leg(-700, -980, 140, 60, 'oakD'), leg(700, -980, 140, 60, 'oakD'), leg(-700, 980, 140, 60, 'oakD'), leg(700, 980, 140, 60, 'oakD')],
+    pp: [['b', 0, -1000, 0, 1500, 50, 1050, null, 10], ['b', 0, 0, 140, 1500, 2000, 160, null, 14], ['b', 0, 15, 300, 1400, 1960, 210, null, 60],
+      ['b', 0, 330, 500, 1440, 1350, 60, null, 40], ['b', -320, -780, 510, 600, 400, 130, null, 55], ['b', 320, -780, 510, 600, 400, 130, null, 55]] },
+  night: { w: 450, d: 400, c: 'magenta', parts: [
+    ['b', 0, 0, 120, 450, 400, 380, 'oak', 10], ['b', 0, 0, 500, 470, 420, 20, 'oakD', 6], leg(-190, -160, 120, 36), leg(190, -160, 120, 36), leg(-190, 160, 120, 36), leg(190, 160, 120, 36),
+    ['b', 0, 202, 350, 120, 8, 12, 'steel'], ['c', 100, -80, 520, 55, 8, 'ceramic'], ['k', 100, -80, 528, 22, 18, 140, 'lampsh']],
+    pp: [['b', 0, 0, 500, 470, 420, 20, null, 6], ['b', 0, 0, 495, 420, 370, 10]] },
+  ward: (it) => {
+    const w = it.w, n = Math.max(2, Math.round(w / 600)), pw = w / n, parts = [['b', 0, 0, 0, w, 600, 2300, 'white', 12]];
+    for (let i = 0; i < n; i++) {
+      const x = -w / 2 + pw * (i + 0.5);
+      parts.push(['b', x, 301, 40, pw - 8, 6, 2220, 'whiteG', 3]);
+      parts.push(['b', x + (i % 2 ? -pw / 2 + 50 : pw / 2 - 50), 312, 1000, 12, 14, 420, 'steel']);
+    }
+    return { w, d: 600, c: 'magenta', parts, pp: [['b', 0, 0, 0, w, 600, 2300, null, 12], ['b', 0, 0, 0, w - 80, 520, 2301]] };
+  },
+  dress: { w: 1200, d: 450, c: 'magenta', parts: [
+    ['b', 0, 0, 110, 1200, 450, 690, 'oakD', 12], ['b', 0, 0, 800, 1220, 460, 22, 'oak', 8], leg(-540, -160, 110, 46), leg(540, -160, 110, 46), leg(-540, 160, 110, 46), leg(540, 160, 110, 46),
+    ['b', 0, 226, 400, 400, 10, 14, 'steel'], ['b', 0, 226, 650, 400, 10, 14, 'steel'], ['b', 0, 226, 250, 400, 10, 14, 'steel']],
+    pp: [['b', 0, 0, 800, 1220, 460, 22, null, 8], ['b', 0, 0, 790, 1160, 400, 10]] },
+  desk: (it) => {
+    const w = it.w, d = it.d;
+    return { w, d, c: 'magenta', parts: [
+      ['b', 0, 0, 700, w, d, 40, 'oak', 10],
+      ['b', -w / 2 + 40, 0, 0, 40, d - 40, 700, 'black'], ['b', w / 2 - 40, 0, 0, 40, d - 40, 700, 'black'],
+      ['b', 0, -d / 2 + 40, 300, w - 80, 14, 380, 'black'],
+      ['b', w / 2 - 330, 40, 740, 24, 190, 140, 'steel'], ['b', -w / 2 + 330, 10, 740, 180, 12, 12, 'black'], ['b', 0, -d / 2 + 90, 740, 520, 22, 340, 'tv', 6], ['b', 0, 55, 740, 400, 140, 14, 'black', 4]],
+      pp: [['b', 0, 0, 700, w, d, 40, null, 10], ['b', 0, d / 2 - 140, 740, 400, 140, 14, null, 4]] };
+  },
+  // ---- bathroom
+  tub: { w: 1700, d: 750, c: 'cyan', parts: [
+    ['b', 0, 0, 0, 1700, 750, 80, 'ceramic', 30], ['b', 0, 345, 0, 1700, 60, 560, 'ceramic', 30], ['b', 0, -345, 0, 1700, 60, 560, 'ceramic', 30],
+    ['b', 820, 0, 0, 60, 630, 560, 'ceramic', 30], ['b', -820, 0, 0, 60, 630, 560, 'ceramic', 30],
+    ['b', 0, 0, 350, 1560, 610, 3, 'water'], ['c', -720, 0, 560, 18, 160, 'steel'], ['b', -720, 0, 700, 70, 12, 12, 'steel']],
+    pp: [['b', 0, 0, 560, 1700, 750, 10, null, 160], ['b', 0, 0, 550, 1560, 610, 10, null, 140]] },
+  wc: { w: 400, d: 700, c: 'cyan', parts: [
+    ['b', 0, -290, 0, 380, 150, 850, 'ceramic', 30], ['b', 0, 90, 0, 370, 520, 400, 'ceramic', 120], ['b', 0, 100, 400, 380, 500, 26, 'ceramic', 150],
+    ['c', 0, -290, 850, 36, 10, 'steel']],
+    pp: [['b', 0, -290, 0, 380, 150, 850, null, 30], ['b', 0, 100, 400, 380, 500, 26, null, 150]] },
+  basin: { w: 600, d: 480, c: 'cyan', parts: [
+    ['b', 0, 0, 150, 600, 460, 600, 'cabW', 8], leg(-270, -200, 150, 30), leg(270, -200, 150, 30), leg(-270, 200, 150, 30), leg(270, 200, 150, 30),
+    ['b', 0, 0, 750, 620, 480, 30, 'stone'], ['b', 0, 30, 780, 440, 320, 70, 'ceramic', 70], ['c', 0, -190, 780, 12, 140, 'steel'], ['b', 0, -150, 910, 10, 90, 10, 'steel']],
+    pp: [['b', 0, 0, 750, 620, 480, 30, null], ['b', 0, 30, 780, 440, 320, 70, null, 70]] },
+  washer: { w: 600, d: 600, c: 'cyan', parts: [
+    ['b', 0, 0, 0, 600, 600, 850, 'white', 20], ['b', 0, 303, 250, 400, 10, 400, 'glassD', 60], ['b', 0, 303, 700, 400, 8, 90, 'whiteG', 10]],
+    pp: [['b', 0, 0, 850, 600, 600, 10, null, 20], ['c', 0, 0, 850, 230, 10]] },
+};
+const ITEM_DEF = {};
+function itemDef(it) {
+  if (ITEM_DEF[it.id]) return ITEM_DEF[it.id];
+  const f = FT[it.type];
+  const d = typeof f === 'function' ? f(it) : f;
+  ITEM_DEF[it.id] = d;
+  return d;
+}
+
+// plan symbol primitives (local frame): rect / circle, filled so that higher parts hide lower ones
+function planPrims(def) {
+  const src = def.pp || def.parts;
+  const parts = src.slice().sort((a, b) => zTop(a) - zTop(b));
+  const out = [];
+  for (const p of parts) {
+    const k = p[0];
+    if (k === 'b') {
+      const [, x, y, z, w, d, h, , r] = p;
+      if (!def.pp && w < 70 && d < 70) continue;                      // legs and knobs stay off the plan
+      if (!def.pp && h < 30 && w < 200) continue;
+      out.push({ t: 'r', x0: x - w / 2, y0: y - d / 2, x1: x + w / 2, y1: y + d / 2, rad: Math.min(r || 0, w / 2, d / 2), dash: z >= 1300, fill: true });
+    } else if (k === 'c') {
+      const [, x, y, z, rad] = p;
+      if (rad < 40 && !def.pp) continue;
+      out.push({ t: 'c', x, y, r: rad, dash: z >= 1300, fill: true });
+    } else if (k === 's') {
+      out.push({ t: 'c', x: p[1], y: p[2], r: p[4], dash: false, fill: false });
+    } else if (k === 'k') {
+      const [, x, y, z, rb, rt] = p;
+      out.push({ t: 'c', x, y, r: Math.max(rb, rt), dash: false, fill: false });
+      if (Math.abs(rb - rt) > 20) out.push({ t: 'c', x, y, r: Math.min(rb, rt), dash: false, fill: false });
+    }
+  }
+  return out;
+}
+function zTop(p) { return p[0] === 'b' ? p[3] + p[6] : p[0] === 'c' ? p[3] + p[5] : p[0] === 's' ? p[3] + p[4] : p[3] + p[6]; }
+// bounding half-extents in plan for an item after rotation
+function itemBox(it) {
+  const d = itemDef(it), s = it.s || 1, a = it.rot * DEG, c = Math.abs(Math.cos(a)), sn = Math.abs(Math.sin(a));
+  const hw = (d.w * c + d.d * sn) / 2 * s, hd = (d.w * sn + d.d * c) / 2 * s;
+  return [it.x - hw, it.y - hd, it.x + hw, it.y + hd];
+}
+
+// ---- door geometry in plan: hinge point on the wall mid-line, leaf closed along `cl`, open along `op`
+function doorGeom(o) {
+  const hingeAlong = o.hinge < 0 ? o.a0 : o.a1, sgn = o.hinge < 0 ? 1 : -1;
+  if (o.ax === 'x') return { H: [hingeAlong, o.mid], cl: [sgn, 0], op: [0, o.swing], w: o.w };
+  return { H: [o.mid, hingeAlong], cl: [0, sgn], op: [o.swing, 0], w: o.w };
+}
+
+
+/* ---------------- 40-draw2d.js ---------------- */
+
+// ============================================================================
+// 4. THE 2D PAINTER  (CAD drawing as a pure function of time: paintPlan(ctx, E, t))
+//    E = { k: px per mm, ox, oy: screen position of plan origin, ui: line-weight multiplier, tex: bool }
+// ============================================================================
+const CC = {
+  bg: '#1c2128', bgHi: '#232a33', white: '#e8edf3', gray: '#8c97a6', dim: '#5d6877', faint: '#3a434f',
+  red: '#ff6b6b', yellow: '#ffd84a', green: '#46e08b', cyan: '#3bd3ee', blue: '#6f9dff', magenta: '#e47fff', orange: '#ffa04d',
+  sel: '#4ea5ff', hot: '#ffffff',
+};
+// layer: colour, line weight (design px), draw order
+const LAYERS = {
+  sheet: { c: CC.white, w: 1.1, o: 5 },
+  grid: { c: CC.red, w: 0.9, o: 40, dash: [1500, 220, 140, 220] },
+  tmp: { c: CC.gray, w: 0.9, o: 11, dash: [260, 160] },
+  insul: { c: CC.yellow, w: 1.0, o: 31 },
+  wall: { c: CC.white, w: 1.5, o: 32 },
+  col: { c: CC.white, w: 1.6, o: 60 },
+  win: { c: CC.cyan, w: 1.1, o: 70 },
+  door: { c: CC.green, w: 1.1, o: 70 },
+  blue: { c: CC.blue, w: 1.0, o: 80 }, magenta: { c: CC.magenta, w: 1.0, o: 80 }, orange: { c: CC.orange, w: 1.0, o: 80 },
+  cyan: { c: CC.cyan, w: 1.0, o: 80 }, green: { c: '#62d27e', w: 1.0, o: 80 }, yellow: { c: CC.yellow, w: 1.0, o: 80 }, dim: { c: CC.dim, w: 0.9, o: 79 },
+  dims: { c: CC.green, w: 0.9, o: 90 },
+  text: { c: CC.yellow, w: 1, o: 95 },
+};
+// layer alpha tracks, written by the director: LA.grid = [[t, a], ...]
+const LA = {};
+const layerA = (L, t) => (LA[L] ? track(LA[L], t) : 1);
+
+// element list (filled by the director)
+const EL = [];
+const prog = (t, t0, t1) => (t < t0 ? 0 : t1 > t0 ? easeIO((t - t0) / (t1 - t0)) : 1);
+const popOf = (t, t0, d = 0.28) => { const u = clamp((t - t0) / d); return { a: smooth(clamp(u * 1.8)), s: 1 + 0.35 * (1 - easeOut(u)) * (u < 1 ? 1 : 0), flash: 1 - smooth(clamp((t - t0) / 0.7)) }; };
+
+// ---- static hatch geometry (computed once from the model)
+let HATCH_W = null, HATCH_I = null;
+function buildHatch() {
+  if (HATCH_W) return;
+  const segs = [], S = 105;                                             // 45° lines, spacing S along x (global phase)
+  const addRect = (r) => {
+    const [x0, y0, x1, y1] = r;
+    const c0 = Math.ceil((y0 - x1) / S) * S, c1 = y1 - x0;
+    for (let c = c0; c <= c1; c += S) {
+      const xa = Math.max(x0, y0 - c), xb = Math.min(x1, y1 - c);
+      if (xb - xa > 4) segs.push([xa, xa + c, xb, xb + c]);
+    }
+  };
+  for (const id of WALL_ORDER) addRect(WALLS[id].r);
+  HATCH_W = segs;
+  const zz = [];                                                        // insulation: zig-zag along the band
+  for (const id of ['S', 'E', 'N', 'W']) {
+    const W = WALLS[id], b = W.ins, x = W.ax === 'x';
+    const a0 = x ? b[0] : b[1], a1 = x ? b[2] : b[3], m = x ? (b[1] + b[3]) / 2 : (b[0] + b[2]) / 2, amp = INSW * 0.36, step = 75;
+    const pts = [];
+    for (let a = a0, i = 0; a <= a1 + 1; a += step, i++) { const v = m + (i % 2 ? amp : -amp); pts.push(x ? [a, v] : [v, a]); }
+    zz.push(pts);
+  }
+  HATCH_I = zz;
+}
+
+// ---- helpers
+function strokeStyle(E, ctx, L, alpha, wMul = 1) {
+  const l = LAYERS[L] || LAYERS.wall;
+  ctx.strokeStyle = l.c; ctx.globalAlpha = alpha * layerA(L, E.t) * E.ga; ctx.lineWidth = l.w * E.ui * wMul;
+  ctx.setLineDash(l.dash ? l.dash.map((d) => d * E.k) : []);
+}
+function rrPath(ctx, x0, y0, x1, y1, r) {
+  if (r < 0.6) { ctx.rect(x0, y0, x1 - x0, y1 - y0); return; }
+  ctx.moveTo(x0 + r, y0); ctx.lineTo(x1 - r, y0); ctx.arcTo(x1, y0, x1, y0 + r, r); ctx.lineTo(x1, y1 - r); ctx.arcTo(x1, y1, x1 - r, y1, r);
+  ctx.lineTo(x0 + r, y1); ctx.arcTo(x0, y1, x0, y1 - r, r); ctx.lineTo(x0, y0 + r); ctx.arcTo(x0, y0, x0 + r, y0, r); ctx.closePath();
+}
+// quarter arc about screen point (cx,cy) from plan-direction v0 to v1 (unit vectors, plan space), radius px
+function arc90(ctx, cx, cy, rpx, v0, v1) {
+  const a0 = Math.atan2(-v0[1], v0[0]), a1 = Math.atan2(-v1[1], v1[0]);
+  const cross = v0[0] * v1[1] - v0[1] * v1[0];                      // plan CCW when > 0 -> screen anticlockwise
+  ctx.arc(cx, cy, rpx, a0, a1, cross > 0);
+}
+
+// ---- the painter
+function paintPlan(ctx, E, t, opt = {}) {
+  buildHatch();
+  const { k, ox, oy } = E, X = (x) => ox + x * k, Y = (y) => oy - y * k;
+  E.t = t; E.ga = E.ga === undefined ? 1 : E.ga;
+  const sel = opt.sel || 0;                                             // selection highlight 0..1
+  ctx.save();
+  ctx.lineCap = 'butt'; ctx.lineJoin = 'miter';
+  const els = EL_SORTED;
+  // pass 1: everything except text on top; hatch & fills handled in-order by layer order
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < els.length; i++) {
+      const el = els[i];
+      if (t < el.t0 || (el.td !== undefined && t > el.td + 0.4)) continue;
+      const f = DRAW[el.k]; if (f) f(ctx, E, el, t, X, Y, pass, sel);
+    }
+  }
+  ctx.restore();
+}
+let EL_SORTED = [];
+function sortElements() {
+  const ord = { ln: 0, rc: 0, ml: 0, wf: 1, hw: 2, hi: 2, cf: -1, op: 4, fu: 5, gb: 6, dm: 7, tx: 8 };
+  EL.forEach((e, i) => { e._i = i; });
+  EL_SORTED = EL.slice().sort((a, b) => ((LAYERS[a.L] ? LAYERS[a.L].o : 50) + (ord[a.k] || 0) * 0.01 - (LAYERS[b.L] ? LAYERS[b.L].o : 50) - (ord[b.k] || 0) * 0.01) || a._i - b._i);
+}
+const delA = (el, t) => (el.td === undefined ? 1 : 1 - smooth(clamp((t - el.td) / 0.35)));
+
+const DRAW = {
+  // ---------------------------------------------------------------- line (grow or slide)
+  ln(ctx, E, el, t, X, Y, pass, sel) {
+    if (pass) return;
+    let u = prog(t, el.t0, el.t1); const a = el.a, b = el.b, fl = el.full ? 1 - smooth(clamp((t - el.t0) / 0.7)) : 0;
+    if (el.full) u = 1;
+    let ax = a[0], ay = a[1], bx = lerp(a[0], b[0], u), by = lerp(a[1], b[1], u);
+    if (el.sl) { const s = 1 - u; ax = a[0] - el.sl[0] * s; ay = a[1] - el.sl[1] * s; bx = b[0] - el.sl[0] * s; by = b[1] - el.sl[1] * s; }
+    const al = delA(el, t) * (el.al === undefined ? 1 : el.al);
+    ctx.beginPath(); ctx.moveTo(X(ax), Y(ay)); ctx.lineTo(X(bx), Y(by));
+    strokeStyle(E, ctx, el.L, al, el.wm || 1);
+    if (el.c) ctx.strokeStyle = el.c;
+    if (fl > 0.01) ctx.strokeStyle = mixHex(el.c || LAYERS[el.L].c, '#ffffff', fl * 0.9);
+    ctx.stroke();
+    if (sel > 0 && el.L !== 'sheet' && el.L !== 'tmp') { ctx.strokeStyle = CC.sel; ctx.globalAlpha = sel * 0.55 * al; ctx.lineWidth = LAYERS[el.L].w * E.ui * 3.2; ctx.setLineDash([]); ctx.stroke(); }
+    ctx.setLineDash([]);
+  },
+  // ---------------------------------------------------------------- rectangle outline (rubber band or morph from another rect)
+  rc(ctx, E, el, t, X, Y, pass, sel) {
+    if (pass) return;
+    const u = el.full ? (t >= el.t0 ? 1 : 0) : prog(t, el.t0, el.t1), r = el.r, fl = el.full ? 1 - smooth(clamp((t - el.t0) / 0.7)) : 0;
+    let x0, y0, x1, y1, al = delA(el, t) * (el.al === undefined ? 1 : el.al), sc = 1;
+    if (el.full) { x0 = r[0]; y0 = r[1]; x1 = r[2]; y1 = r[3]; }
+    else if (el.fr) { x0 = lerp(el.fr[0], r[0], u); y0 = lerp(el.fr[1], r[1], u); x1 = lerp(el.fr[2], r[2], u); y1 = lerp(el.fr[3], r[3], u); }
+    else if (el.pop) { const p = popOf(t, el.t0, el.pop); x0 = r[0]; y0 = r[1]; x1 = r[2]; y1 = r[3]; al *= p.a; sc = p.s; }
+    else { x0 = r[0]; y0 = r[1]; x1 = lerp(r[0], r[2], u); y1 = lerp(r[1], r[3], u); }
+    if (sc !== 1) { const cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2; x0 = cx + (x0 - cx) * sc; x1 = cx + (x1 - cx) * sc; y0 = cy + (y0 - cy) * sc; y1 = cy + (y1 - cy) * sc; }
+    if (Math.abs(x1 - x0) < 1 && Math.abs(y1 - y0) < 1) return;
+    ctx.beginPath(); ctx.rect(X(Math.min(x0, x1)), Y(Math.max(y0, y1)), Math.abs(x1 - x0) * E.k, Math.abs(y1 - y0) * E.k);
+    strokeStyle(E, ctx, el.L, al, el.wm || 1);
+    if (fl > 0.01) ctx.strokeStyle = mixHex(LAYERS[el.L].c, '#ffffff', fl * 0.9);
+    ctx.stroke();
+    if (sel > 0 && el.L !== 'sheet') { ctx.strokeStyle = CC.sel; ctx.globalAlpha = sel * 0.55 * al; ctx.lineWidth = LAYERS[el.L].w * E.ui * 3.2; ctx.setLineDash([]); ctx.stroke(); }
+    ctx.setLineDash([]);
+  },
+  // ---------------------------------------------------------------- column solid fill
+  cf(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    const p = popOf(t, el.t0, 0.3), r = el.r, cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2, h = (r[2] - r[0]) / 2 * (el.big ? p.s : 1);
+    ctx.globalAlpha = p.a * layerA('col', t) * E.ga;
+    ctx.fillStyle = mixHex(CC.gray, CC.white, 0.25 + 0.75 * p.flash);
+    ctx.fillRect(X(cx - h), Y(cy + h), 2 * h * E.k, 2 * h * E.k);
+  },
+  // ---------------------------------------------------------------- wall clean-up fill (TRIM): erases the construction lines inside the walls
+  wf(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    ctx.globalAlpha = 1; ctx.fillStyle = CC.bg;
+    const ins = (LAYERS.wall.w * E.ui) * 0.9;
+    for (const id of WALL_ORDER) {
+      const r = WALLS[id].r;
+      let [x0, y0, x1, y1] = r;
+      if (!WALLS[id].ext) {                                          // run 120 into the crossing wall so its face line is trimmed too
+        if (WALLS[id].ax === 'x') { x0 -= 120; x1 += 120; } else { y0 -= 120; y1 += 120; }
+      }
+      ctx.fillRect(X(x0) + ins, Y(y1) + ins, (x1 - x0) * E.k - 2 * ins, (y1 - y0) * E.k - 2 * ins);
+    }
+    // insulation bands are line-only
+  },
+  // ---------------------------------------------------------------- hatch sweeps
+  hw(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    const u = prog(t, el.t0, el.t1);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(X(-400), 0, (12800) * E.k * u + 1, 1e5); ctx.clip();
+    ctx.strokeStyle = CC.gray; ctx.globalAlpha = 0.85 * layerA('hatch', t) * (1 - 0.2 * (E.tex ? 1 : 0)); ctx.lineWidth = 0.8 * E.ui; ctx.setLineDash([]);
+    ctx.beginPath();
+    for (const s of HATCH_W) { ctx.moveTo(X(s[0]), Y(s[1])); ctx.lineTo(X(s[2]), Y(s[3])); }
+    ctx.stroke(); ctx.restore();
+  },
+  hi(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    const u = prog(t, el.t0, el.t1);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(X(-400), 0, (12800) * E.k * u + 1, 1e5); ctx.clip();
+    ctx.strokeStyle = CC.yellow; ctx.globalAlpha = 0.9; ctx.lineWidth = 0.9 * E.ui; ctx.setLineDash([]); ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (const pts of HATCH_I) { ctx.moveTo(X(pts[0][0]), Y(pts[0][1])); for (let i = 1; i < pts.length; i++) ctx.lineTo(X(pts[i][0]), Y(pts[i][1])); }
+    ctx.stroke(); ctx.restore();
+  },
+  // ---------------------------------------------------------------- opening: erase the wall, then draw the window / door symbol
+  op(ctx, E, el, t, X, Y, pass, sel) {
+    const o = el.o;
+    if (pass === 0) {                                                // cut-out (instant) over walls and hatch
+      const c = o.cut;
+      ctx.globalAlpha = 1; ctx.fillStyle = CC.bg;
+      ctx.fillRect(X(c[0]), Y(c[3]), (c[2] - c[0]) * E.k, (c[3] - c[1]) * E.k);
+      return;
+    }
+    const p = popOf(t, el.t0, 0.35);
+    const lw = (o.isDoor ? LAYERS.door.w : LAYERS.win.w) * E.ui;
+    const col = o.isDoor || o.t === 'pass' ? LAYERS.door.c : LAYERS.win.c;
+    ctx.globalAlpha = p.a * E.ga; ctx.strokeStyle = mixHex(col, '#ffffff', p.flash * 0.8); ctx.lineWidth = lw; ctx.setLineDash([]);
+    const c = o.cut, wc = o.wcut;
+    ctx.beginPath();
+    // jambs across the wall (and insulation)
+    if (o.ax === 'x') { ctx.moveTo(X(c[0]), Y(c[1])); ctx.lineTo(X(c[0]), Y(c[3])); ctx.moveTo(X(c[2]), Y(c[1])); ctx.lineTo(X(c[2]), Y(c[3])); }
+    else { ctx.moveTo(X(c[0]), Y(c[1])); ctx.lineTo(X(c[2]), Y(c[1])); ctx.moveTo(X(c[0]), Y(c[3])); ctx.lineTo(X(c[2]), Y(c[3])); }
+    if (!o.isDoor && o.t !== 'pass') {                                // window: lines along the span at the faces and the glass
+      const lines = [];
+      if (o.ax === 'x') { for (const y of [c[1], wc[1], o.mid - 28, o.mid + 28, wc[3]]) lines.push([c[0], y, c[2], y]); }
+      else { for (const x of [c[0], wc[0], o.mid - 28, o.mid + 28, wc[2]]) lines.push([x, c[1], x, c[3]]); }
+      if (o.t === 'tall') { const m = o.ax === 'x' ? [(c[0] + c[2]) / 2, c[1], (c[0] + c[2]) / 2, c[3]] : [c[0], (c[1] + c[3]) / 2, c[2], (c[1] + c[3]) / 2]; lines.push(m); }
+      for (const l of lines) { ctx.moveTo(X(l[0]), Y(l[1])); ctx.lineTo(X(l[2]), Y(l[3])); }
+    }
+    ctx.stroke();
+    if (o.isDoor) {                                                  // leaf (open 90 degrees) and swing arc
+      const g = doorGeom(o), H = g.H, w = g.w, th = 45;
+      const tip = [H[0] + g.op[0] * w, H[1] + g.op[1] * w], cl = [H[0] + g.cl[0] * w, H[1] + g.cl[1] * w];
+      ctx.beginPath();
+      ctx.moveTo(X(H[0]), Y(H[1])); ctx.lineTo(X(tip[0]), Y(tip[1]));
+      ctx.lineTo(X(tip[0] + g.cl[0] * th), Y(tip[1] + g.cl[1] * th)); ctx.lineTo(X(H[0] + g.cl[0] * th), Y(H[1] + g.cl[1] * th)); ctx.closePath();
+      ctx.stroke();
+      ctx.globalAlpha = p.a * 0.75 * E.ga; ctx.lineWidth = lw * 0.8; ctx.beginPath(); ctx.moveTo(X(cl[0]), Y(cl[1])); arc90(ctx, X(H[0]), Y(H[1]), w * E.k, g.cl, g.op); ctx.stroke();
+    }
+  },
+  // ---------------------------------------------------------------- furniture block
+  fu(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    const it = el.it, def = itemDef(it), pr = el.prims || (el.prims = planPrims(def));
+    const p = popOf(t, el.t0, 0.3), lay = LAYERS[def.c] || LAYERS.blue, sc = (it.s || 1) * (1 + (p.s - 1) * 0.35);
+    ctx.save();
+    ctx.translate(X(it.x), Y(it.y)); ctx.scale(E.k * sc, -E.k * sc); ctx.rotate(it.rot * DEG);
+    const lw = lay.w * E.ui / (E.k * sc);
+    ctx.globalAlpha = p.a * layerA(def.c, t) * E.ga; ctx.lineWidth = lw; ctx.lineJoin = 'round';
+    ctx.strokeStyle = mixHex(lay.c, '#ffffff', p.flash * 0.7);
+    for (const q of pr) {
+      ctx.setLineDash(q.dash ? [90 , 60] : []);
+      ctx.beginPath();
+      if (q.t === 'r') rrPath(ctx, q.x0, q.y0, q.x1, q.y1, q.rad); else ctx.arc(q.x, q.y, q.r, 0, TAU);
+      if (q.fill) { ctx.save(); ctx.globalAlpha = p.a * Math.min(1, E.ga * 1.6); ctx.fillStyle = CC.bg; ctx.fill(); ctx.restore(); }
+      ctx.stroke();
+    }
+    ctx.restore();
+  },
+  // ---------------------------------------------------------------- circle (north arrow, markers)
+  ci(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    const p = el.full ? { a: 1 } : popOf(t, el.t0, 0.3);
+    strokeStyle(E, ctx, el.L, p.a * delA(el, t), el.wm || 1);
+    ctx.beginPath(); ctx.arc(X(el.x), Y(el.y), el.r * E.k, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+  },
+  // ---------------------------------------------------------------- grid bubble
+  gb(ctx, E, el, t, X, Y, pass) {
+    if (pass) return;
+    const p = popOf(t, el.t0, 0.3), r = 330 * E.k;
+    ctx.globalAlpha = p.a * layerA('grid', t) * E.ga; ctx.strokeStyle = CC.red; ctx.lineWidth = 1.1 * E.ui; ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(X(el.x), Y(el.y), r * (0.7 + 0.3 * p.a), 0, TAU); ctx.stroke();
+    ctx.fillStyle = CC.red; ctx.font = `500 ${Math.max(6, 300 * E.k)}px ${FONT_MONO}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(el.s, X(el.x), Y(el.y) + 0.5);
+  },
+  // ---------------------------------------------------------------- text
+  tx(ctx, E, el, t, X, Y, pass) {
+    if (pass !== 1) return;
+    let u = prog(t, el.t0, el.t1), s = el.s;
+    if (el.typed) s = s.slice(0, Math.ceil(s.length * clamp((t - el.t0) / Math.max(0.01, el.t1 - el.t0))));
+    else if (t < el.t0) return;
+    if (!s) return;
+    const al = (el.typed ? 1 : smooth(clamp((t - el.t0) / 0.3))) * delA(el, t) * layerA(el.L || 'text', t);
+    const px = Math.max(5, el.h * E.k);
+    ctx.save();
+    ctx.translate(X(el.x), Y(el.y)); if (el.rot) ctx.rotate(-el.rot * DEG);
+    ctx.globalAlpha = al * E.ga; ctx.fillStyle = el.c || CC.yellow;
+    ctx.font = `${el.w || 400} ${px}px ${el.f || FONT_MONO}`; ctx.textAlign = el.al === 'c' ? 'center' : el.al === 'r' ? 'right' : 'left'; ctx.textBaseline = el.va || 'alphabetic';
+    ctx.fillText(s, 0, 0);
+    ctx.restore();
+  },
+  // ---------------------------------------------------------------- linear dimension
+  dm(ctx, E, el, t, X, Y, pass) {
+    const d = el.d;
+    if (pass === 1) {
+      if (t < el.t0 + (el.t1 - el.t0) * 0.55) return;
+      const al = smooth(clamp((t - el.t0 - (el.t1 - el.t0) * 0.55) / 0.3));
+      const val = Math.round(Math.abs(d.b - d.a)), txt = String(val).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+      const px = 150 * E.k, mid = (d.a + d.b) / 2;
+      ctx.save(); ctx.globalAlpha = al * layerA('dims', t) * E.ga; ctx.fillStyle = CC.green;
+      ctx.font = `400 ${Math.max(5, px)}px ${FONT_MONO}`; ctx.textBaseline = 'alphabetic';
+      const wTxt = ctx.measureText(txt).width, segPx = Math.abs(d.b - d.a) * E.k, small = segPx < wTxt + 6 * E.ui;
+      if (d.h) {
+        let tx = X(mid), ay = 'center';
+        ctx.textAlign = 'center';
+        if (small) { ctx.textAlign = d.small === 'left' ? 'right' : 'left'; tx = d.small === 'left' ? X(Math.min(d.a, d.b)) - 90 * E.k : X(Math.max(d.a, d.b)) + 90 * E.k; }
+        ctx.fillText(txt, tx, Y(d.pos) - 70 * E.k);
+      } else {
+        ctx.translate(X(d.pos) - 70 * E.k, Y(mid)); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+        ctx.fillText(txt, 0, 0);
+      }
+      ctx.restore();
+      return;
+    }
+    if (pass) return;
+    const u1 = prog(t, el.t0, el.t0 + (el.t1 - el.t0) * 0.55), u2 = prog(t, el.t0 + (el.t1 - el.t0) * 0.35, el.t1);
+    ctx.globalAlpha = layerA('dims', t) * E.ga; ctx.strokeStyle = CC.green; ctx.lineWidth = 0.9 * E.ui; ctx.setLineDash([]);
+    ctx.beginPath();
+    const gap = 90, over = 140;
+    const P = (a, b) => (d.h ? [X(a), Y(b)] : [X(b), Y(a)]);          // (along, across) -> screen
+    const sgn = Math.sign(d.pos - d.base) || -1;
+    for (const a of [d.a, d.b]) {                                     // extension lines
+      const s = d.base + sgn * gap, e = lerp(s, d.pos + sgn * over, u1);
+      const p0 = P(a, s), p1 = P(a, e); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]);
+    }
+    const dr = Math.sign(d.b - d.a) || 1, pa = P(d.a - 90 * dr, d.pos), pb = P(lerp(d.a, d.b, u2) + 90 * dr * u2, d.pos);
+    if (u1 > 0.3) { ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); }
+    ctx.stroke();
+    ctx.beginPath();                                                  // architectural ticks
+    const tk = 70 * E.k;
+    for (const a of u2 > 0.98 ? [d.a, d.b] : [d.a]) { const q = P(a, d.pos); ctx.moveTo(q[0] - tk, q[1] + tk); ctx.lineTo(q[0] + tk, q[1] - tk); }
+    ctx.lineWidth = 1.6 * E.ui; ctx.stroke();
+  },
+};
+const FONT_MONO = "Consolas, 'Cascadia Mono', 'SF Mono', 'DejaVu Sans Mono', 'Courier New', monospace";
+const FONT_UI = "'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+function mixHex(a, b, t) {
+  if (t <= 0) return a; if (t >= 1) return b;
+  const A = hexRGB(a), B = hexRGB(b);
+  return `rgb(${Math.round(lerp(A[0], B[0], t) * 255)},${Math.round(lerp(A[1], B[1], t) * 255)},${Math.round(lerp(A[2], B[2], t) * 255)})`;
+}
+
+
+/* ---------------- 50-chrome.js ---------------- */
+
+// ============================================================================
+// 5. CAD CHROME  (ribbon, tabs, command line, status bar, crosshair, snaps, previews)
+//    Design space is 1280 x 720; the composite scales it to the real frame.
+// ============================================================================
+const DW = 1280, DH = 720;
+const LAY = { title: 22, ribbonY: 22, ribbonH: 54, tabsY: 76, tabsH: 18, vpY: 94, cmdY: 616, cmdH: 66, ltabsY: 682, statusY: 698 };
+const VP = { x: 0, y: LAY.vpY, w: DW, h: LAY.cmdY - LAY.vpY };       // model-space viewport while the chrome is up
+const VP_FULL = { x: 0, y: 0, w: DW, h: DH };
+
+// ---- timeline tracks, filled by the director
+const TR = { cur: [], clk: [], snp: [], hl: [], win: [], ghost: [], dyn: [], cmd: [], cam: [], tool: [], tab: [], lay: [], cap: [], chap: [], fl: [] };
+const CAM0 = { cx: 6000, cy: 4650, vis: 13500 };
+function cam2At(t) {
+  let c = CAM0;
+  for (const s of TR.cam) {
+    if (t >= s.t1) { c = s.to; continue; }
+    if (t > s.t0) { const u = smoother((t - s.t0) / (s.t1 - s.t0)); return { cx: lerp(s.from.cx, s.to.cx, u), cy: lerp(s.from.cy, s.to.cy, u), vis: Math.exp(lerp(Math.log(s.from.vis), Math.log(s.to.vis), u)) }; }
+    break;
+  }
+  return c;
+}
+function view2D(t, vp) {
+  const c = cam2At(t), k = VP.h / c.vis;
+  return { k, ox: vp.x + vp.w / 2 - c.cx * k, oy: vp.y + vp.h / 2 + c.cy * k, ui: 1, cam: c, vp };
+}
+// cursor in design px
+function cursorAt(t, V) {
+  const K = TR.cur; if (!K.length || t < K[0].t) return null;
+  const sc = (q) => (q.sp === 's' ? [q.x, q.y] : [V.ox + q.x * V.k, V.oy - q.y * V.k]);
+  const i = lastLE(K, t);
+  if (i >= K.length - 1) return K[K.length - 1].gone ? null : sc(K[K.length - 1]);
+  const a = K[i], b = K[i + 1], u = easeIO((t - a.t) / (b.t - a.t)), pa = sc(a), pb = sc(b);
+  let x = lerp(pa[0], pb[0], u), y = lerp(pa[1], pb[1], u);
+  if (b.bd) { const dx = pb[0] - pa[0], dy = pb[1] - pa[1], L = hyp(dx, dy) || 1, s = Math.sin(Math.PI * u) * b.bd; x += -dy / L * s; y += dx / L * s; }
+  return [x, y];
+}
+const PAL = { title: '#11151a', ribbon: '#2a3038', tabbar: '#1e2329', tabAct: '#2a3038', doc: '#181c21', cmd: '#151a1f', status: '#1e2329', line: '#3a424d', txt: '#c9d2dd', dim: '#7d8896', acc: '#4ea5ff', white: '#f2f5f8' };
+
+function fillTxt(ctx, s, x, y, size, color, align = 'left', font = FONT_UI, weight = 400) {
+  ctx.font = `${weight} ${size}px ${font}`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y);
+}
+
+// ---- icons (20 x 20 box at x,y)
+const ICONS = {
+  line(c, x, y) { c.beginPath(); c.moveTo(x + 3, y + 17); c.lineTo(x + 17, y + 3); c.stroke(); c.strokeRect(x + 1.5, y + 15.5, 3, 3); c.strokeRect(x + 15.5, y + 1.5, 3, 3); },
+  pline(c, x, y) { c.beginPath(); c.moveTo(x + 2, y + 16); c.lineTo(x + 8, y + 6); c.lineTo(x + 13, y + 14); c.lineTo(x + 18, y + 3); c.stroke(); },
+  circle(c, x, y) { c.beginPath(); c.arc(x + 10, y + 10, 7, 0, TAU); c.stroke(); },
+  arc(c, x, y) { c.beginPath(); c.arc(x + 4, y + 17, 14, -1.45, -0.15); c.stroke(); },
+  rect(c, x, y) { c.strokeRect(x + 2.5, y + 5.5, 15, 10); },
+  hatch(c, x, y) { c.strokeRect(x + 3.5, y + 3.5, 13, 13); c.beginPath(); for (let i = 0; i < 4; i++) { c.moveTo(x + 4 + i * 4, y + 16); c.lineTo(x + 16, y + 4 + i * 4 - 0); } c.stroke(); },
+  mline(c, x, y) { c.beginPath(); c.moveTo(x + 2, y + 7); c.lineTo(x + 18, y + 7); c.moveTo(x + 2, y + 13); c.lineTo(x + 18, y + 13); c.stroke(); },
+  move(c, x, y) { c.beginPath(); c.moveTo(x + 10, y + 2); c.lineTo(x + 10, y + 18); c.moveTo(x + 2, y + 10); c.lineTo(x + 18, y + 10); c.moveTo(x + 7, y + 5); c.lineTo(x + 10, y + 2); c.lineTo(x + 13, y + 5); c.moveTo(x + 7, y + 15); c.lineTo(x + 10, y + 18); c.lineTo(x + 13, y + 15); c.stroke(); },
+  copy(c, x, y) { c.strokeRect(x + 3.5, y + 6.5, 10, 10); c.strokeRect(x + 7.5, y + 2.5, 10, 10); },
+  rotate(c, x, y) { c.beginPath(); c.arc(x + 10, y + 10, 7, 0.4, 5.2); c.stroke(); c.beginPath(); c.moveTo(x + 14, y + 1); c.lineTo(x + 15.5, y + 6); c.lineTo(x + 10.5, y + 5.5); c.stroke(); },
+  mirror(c, x, y) { c.beginPath(); c.moveTo(x + 3, y + 5); c.lineTo(x + 3, y + 15); c.lineTo(x + 8, y + 10); c.closePath(); c.moveTo(x + 17, y + 5); c.lineTo(x + 17, y + 15); c.lineTo(x + 12, y + 10); c.closePath(); c.stroke(); c.setLineDash([2, 2]); c.beginPath(); c.moveTo(x + 10, y + 2); c.lineTo(x + 10, y + 18); c.stroke(); c.setLineDash([]); },
+  offset(c, x, y) { c.beginPath(); c.moveTo(x + 2, y + 6); c.lineTo(x + 8, y + 6); c.moveTo(x + 2, y + 14); c.lineTo(x + 8, y + 14); c.moveTo(x + 8, y + 3); c.lineTo(x + 8, y + 17); c.moveTo(x + 12, y + 10); c.lineTo(x + 18, y + 10); c.moveTo(x + 15, y + 7); c.lineTo(x + 18, y + 10); c.lineTo(x + 15, y + 13); c.stroke(); },
+  trim(c, x, y) { c.beginPath(); c.moveTo(x + 2, y + 10); c.lineTo(x + 18, y + 10); c.moveTo(x + 10, y + 2); c.lineTo(x + 10, y + 7); c.moveTo(x + 10, y + 13); c.lineTo(x + 10, y + 18); c.stroke(); },
+  erase(c, x, y) { c.beginPath(); c.moveTo(x + 3, y + 14); c.lineTo(x + 11, y + 4); c.lineTo(x + 18, y + 9); c.lineTo(x + 10, y + 17); c.closePath(); c.stroke(); c.beginPath(); c.moveTo(x + 7, y + 10); c.lineTo(x + 14, y + 15); c.stroke(); },
+  text(c, x, y) { fillTxt(c, 'A', x + 10, y + 11, 16, c.strokeStyle, 'center', FONT_UI, 600); },
+  dim(c, x, y) { c.beginPath(); c.moveTo(x + 2, y + 6); c.lineTo(x + 2, y + 16); c.moveTo(x + 18, y + 6); c.lineTo(x + 18, y + 16); c.moveTo(x + 2, y + 12); c.lineTo(x + 18, y + 12); c.moveTo(x + 4, y + 14); c.lineTo(x + 2, y + 12); c.lineTo(x + 4, y + 10); c.moveTo(x + 16, y + 14); c.lineTo(x + 18, y + 12); c.lineTo(x + 16, y + 10); c.stroke(); },
+  insert(c, x, y) { c.strokeRect(x + 6.5, y + 8.5, 11, 9); c.beginPath(); c.moveTo(x + 3, y + 2); c.lineTo(x + 3, y + 10); c.moveTo(x + 3, y + 10); c.lineTo(x + 0.5, y + 7.5); c.moveTo(x + 3, y + 10); c.lineTo(x + 5.5, y + 7.5); c.stroke(); },
+  layer(c, x, y) { for (let i = 0; i < 3; i++) { c.beginPath(); c.moveTo(x + 10, y + 3 + i * 5); c.lineTo(x + 18, y + 6 + i * 5); c.lineTo(x + 10, y + 9 + i * 5); c.lineTo(x + 2, y + 6 + i * 5); c.closePath(); c.stroke(); } },
+  select(c, x, y) { c.setLineDash([3, 2]); c.strokeRect(x + 2.5, y + 4.5, 15, 11); c.setLineDash([]); },
+};
+const RIBBON = {
+  Home: [
+    { g: 'Draw', x: 10, tools: [['line', 'Line'], ['pline', 'Polyline'], ['circle', 'Circle'], ['arc', 'Arc'], ['rect', 'Rectangle'], ['hatch', 'Hatch'], ['mline', 'Mline']] },
+    { g: 'Modify', x: 282, tools: [['move', 'Move'], ['copy', 'Copy'], ['rotate', 'Rotate'], ['mirror', 'Mirror'], ['offset', 'Offset'], ['trim', 'Trim'], ['erase', 'Erase']] },
+    { g: 'Annotation', x: 566, tools: [['text', 'Text'], ['dim', 'Dimension']] },
+    { g: 'Block', x: 650, tools: [['insert', 'Insert']] },
+    { g: 'Layers', x: 706, tools: [['layer', 'Properties']] },
+  ],
+};
+const TOOL_ID = { LINE: 'line', PLINE: 'pline', RECTANG: 'rect', HATCH: 'hatch', MLINE: 'mline', COPY: 'copy', OFFSET: 'offset', TRIM: 'trim', ERASE: 'erase', DIMLINEAR: 'dim', TEXT: 'text', INSERT: 'insert', MOVE: 'move', SELECT: 'select', EXTRUDE: 'select', ZOOM: 'select', LAYER: 'layer' };
+const TABS = ['Home', 'Insert', 'Annotate', 'Parametric', 'View', 'Manage', 'Output'];
+// button hot-spots (design px), so cursor trips to the ribbon can be aimed
+const HOT = {};
+(function () {
+  for (const gr of RIBBON.Home) gr.tools.forEach((tl, i) => { HOT[tl[0]] = [gr.x + i * 38 + 17, LAY.ribbonY + 16 + 28]; });
+  TABS.forEach((n, i) => { HOT['tab:' + n] = [34 + i * 62, LAY.ribbonY + 8]; });
+})();
+
+function activeAt(arr, t, k0 = 't0', k1 = 't1') { for (let i = arr.length - 1; i >= 0; i--) if (t >= arr[i][k0] && t < arr[i][k1]) return arr[i]; return null; }
+function stateAt(arr, t) { const i = lastLE(arr, t); return i < 0 ? null : arr[i]; }
+
+// ---- the whole CAD frame
+function drawChrome(ctx, t, slide, V) {
+  const sl = slide, up = -sl * (LAY.vpY + 4), dn = sl * (DH - LAY.cmdY + 4);
+  // ---- top group: title bar + ribbon + document tabs
+  ctx.save(); ctx.translate(0, up);
+  ctx.fillStyle = PAL.title; ctx.fillRect(0, 0, DW, LAY.title);
+  // app mark + quick access
+  ctx.fillStyle = '#e04a3f'; ctx.beginPath(); ctx.moveTo(10, 15); ctx.lineTo(16, 5); ctx.lineTo(22, 15); ctx.lineTo(19, 15); ctx.lineTo(16, 10); ctx.lineTo(13, 15); ctx.closePath(); ctx.fill();
+  fillTxt(ctx, 'DRAFT', 28, 11, 9, PAL.txt, 'left', FONT_UI, 700);
+  ctx.strokeStyle = PAL.dim; ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) { ctx.strokeRect(80 + i * 18 + 0.5, 6.5, 9, 9); }
+  fillTxt(ctx, 'Apartment 92 m² — A-101 Plan.dwg', DW / 2, 11, 10, PAL.txt, 'center');
+  fillTxt(ctx, '—      □      ✕', DW - 34, 11, 11, PAL.txt, 'center');
+  // tab row
+  ctx.fillStyle = PAL.tabbar; ctx.fillRect(0, LAY.ribbonY, DW, 16);
+  const tab = (stateAt(TR.tab, t) || { name: 'Home' }).name;
+  TABS.forEach((n, i) => {
+    const x = 6 + i * 62, act = n === tab;
+    if (act) { ctx.fillStyle = PAL.ribbon; ctx.fillRect(x, LAY.ribbonY + 1, 58, 15); ctx.fillStyle = PAL.acc; ctx.fillRect(x, LAY.ribbonY + 1, 58, 1.5); }
+    fillTxt(ctx, n, x + 29, LAY.ribbonY + 9, 9, act ? PAL.white : PAL.dim, 'center');
+  });
+  // panel row
+  ctx.fillStyle = PAL.ribbon; ctx.fillRect(0, LAY.ribbonY + 16, DW, LAY.ribbonH - 16);
+  ctx.strokeStyle = PAL.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, LAY.ribbonY + LAY.ribbonH - 0.5); ctx.lineTo(DW, LAY.ribbonY + LAY.ribbonH - 0.5); ctx.stroke();
+  const act = activeAt(TR.tool, t);
+  const tid = act ? TOOL_ID[act.name] : null;
+  const flashT = act ? clamp((t - act.t0) / 0.5) : 1;
+  if (tab === 'Insert') drawInsertRibbon(ctx, t, act);
+  else for (const gr of RIBBON.Home) {
+    gr.tools.forEach((tl, i) => {
+      const bx = gr.x + i * 38, by = LAY.ribbonY + 19, on = tl[0] === tid;
+      if (on) { ctx.fillStyle = mixHex('#3a5f8f', '#5aa6ff', 1 - flashT); ctx.fillRect(bx + 2, by, 34, 33); }
+      ctx.strokeStyle = on ? PAL.white : PAL.txt; ctx.lineWidth = 1.2; ctx.setLineDash([]);
+      ICONS[tl[0]](ctx, bx + 9, by + 3);
+      fillTxt(ctx, tl[1], bx + 19, by + 27, 6.6, on ? PAL.white : PAL.dim, 'center');
+    });
+    ctx.strokeStyle = PAL.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(gr.x + gr.tools.length * 38 + 3.5, LAY.ribbonY + 20); ctx.lineTo(gr.x + gr.tools.length * 38 + 3.5, LAY.ribbonY + LAY.ribbonH - 4); ctx.stroke();
+  }
+  // layer dropdown
+  const ly = stateAt(TR.lay, t) || { name: '0', color: CC.white };
+  if (tab === 'Home') {
+    ctx.fillStyle = '#1b2026'; ctx.fillRect(760, LAY.ribbonY + 20, 170, 15); ctx.strokeStyle = PAL.line; ctx.strokeRect(760.5, LAY.ribbonY + 20.5, 169, 14);
+    ctx.fillStyle = ly.color; ctx.fillRect(765, LAY.ribbonY + 24, 8, 7);
+    fillTxt(ctx, ly.name, 780, LAY.ribbonY + 28, 9, PAL.txt, 'left');
+    fillTxt(ctx, '▾', 922, LAY.ribbonY + 28, 8, PAL.dim, 'center');
+    ctx.fillStyle = '#1b2026'; ctx.fillRect(760, LAY.ribbonY + 38, 170, 12); ctx.strokeRect(760.5, LAY.ribbonY + 38.5, 169, 11);
+    fillTxt(ctx, '——— ByLayer', 768, LAY.ribbonY + 44, 8, PAL.dim, 'left');
+  }
+  // doc tabs
+  ctx.fillStyle = PAL.doc; ctx.fillRect(0, LAY.tabsY, DW, LAY.tabsH);
+  fillTxt(ctx, 'Start', 20, LAY.tabsY + 9, 9, PAL.dim, 'center');
+  ctx.fillStyle = '#232a31'; ctx.fillRect(48, LAY.tabsY + 1, 124, LAY.tabsH - 1); ctx.fillStyle = PAL.acc; ctx.fillRect(48, LAY.tabsY + 1, 124, 1.5);
+  fillTxt(ctx, 'A-101 Plan*  ✕', 110, LAY.tabsY + 9.5, 9, PAL.white, 'center');
+  fillTxt(ctx, '+', 186, LAY.tabsY + 9, 11, PAL.dim, 'center');
+  ctx.restore();
+
+  // ---- bottom group: layout tabs + status bar
+  ctx.save(); ctx.translate(0, dn);
+  ctx.fillStyle = PAL.doc; ctx.fillRect(0, LAY.ltabsY, DW, 16);
+  fillTxt(ctx, 'Model', 30, LAY.ltabsY + 8.5, 9, PAL.white, 'center');
+  ctx.fillStyle = PAL.acc; ctx.fillRect(8, LAY.ltabsY, 44, 1.5);
+  fillTxt(ctx, 'Layout1', 84, LAY.ltabsY + 8.5, 9, PAL.dim, 'center'); fillTxt(ctx, 'Layout2', 128, LAY.ltabsY + 8.5, 9, PAL.dim, 'center'); fillTxt(ctx, '+', 160, LAY.ltabsY + 8.5, 11, PAL.dim, 'center');
+  ctx.fillStyle = PAL.status; ctx.fillRect(0, LAY.statusY, DW, DH - LAY.statusY);
+  const wc = V ? V.cursorW : null;
+  const cs = wc ? `${wc[0].toFixed(4)}, ${wc[1].toFixed(4)}, 0.0000` : '0.0000, 0.0000, 0.0000';
+  ctx.fillStyle = '#171b20'; ctx.fillRect(6, LAY.statusY + 3, 188, 16);
+  fillTxt(ctx, cs, 12, LAY.statusY + 11.5, 9.5, PAL.txt, 'left', FONT_MONO);
+  const tog = [['MODEL', 1], ['GRID', 0], ['SNAP', 0], ['INFER', 1], ['DYN', 1], ['ORTHO', 1], ['POLAR', 1], ['OSNAP', 1], ['OTRACK', 0], ['LWT', 1], ['TPY', 0], ['SEL', 0]];
+  tog.forEach(([n, on], i) => { const x = 206 + i * 56; if (on) { ctx.fillStyle = 'rgba(78,165,255,.18)'; ctx.fillRect(x - 2, LAY.statusY + 3, 52, 16); } fillTxt(ctx, n, x + 24, LAY.statusY + 11.5, 8.5, on ? PAL.acc : PAL.dim, 'center', FONT_UI, 600); });
+  fillTxt(ctx, 'ANNO 1:50', DW - 140, LAY.statusY + 11.5, 9, PAL.txt, 'center'); fillTxt(ctx, 'Drafting & Annotation', DW - 52, LAY.statusY + 11.5, 9, PAL.dim, 'center');
+  ctx.restore();
+}
+function drawInsertRibbon(ctx, t, act) {
+  const items = [['insert', 'Insert'], ['layer', 'Create'], ['text', 'Attribute'], ['select', 'Edit']];
+  items.forEach((tl, i) => {
+    const bx = 10 + i * 46, by = LAY.ribbonY + 19, on = act && TOOL_ID[act.name] === tl[0] && tl[0] === 'insert';
+    if (on) { ctx.fillStyle = '#4e86c5'; ctx.fillRect(bx + 2, by, 42, 33); }
+    ctx.strokeStyle = on ? PAL.white : PAL.txt; ctx.lineWidth = 1.2; ICONS[tl[0]](ctx, bx + 13, by + 3);
+    fillTxt(ctx, tl[1], bx + 23, by + 27, 6.6, on ? PAL.white : PAL.dim, 'center');
+  });
+}
+
+// ---- viewport furniture: view label, view cube, UCS icon
+function drawViewportDecor(ctx, vp, t, alpha = 1, label = '[–][Top][2D Wireframe]', labelAlpha = alpha) {
+  ctx.save(); ctx.globalAlpha = labelAlpha;
+  fillTxt(ctx, label, vp.x + 10, vp.y + 11, 9, '#9aa6b4', 'left');
+  ctx.globalAlpha = alpha;
+  // view cube
+  const cx = vp.x + vp.w - 56, cy = vp.y + 52;
+  ctx.strokeStyle = '#7f8b99'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, 30, 0, TAU); ctx.stroke();
+  ctx.fillStyle = 'rgba(40,48,58,.85)'; ctx.fillRect(cx - 16, cy - 16, 32, 32); ctx.strokeRect(cx - 16.5, cy - 16.5, 33, 33);
+  fillTxt(ctx, 'TOP', cx, cy, 8, '#cfd8e3', 'center', FONT_UI, 600);
+  fillTxt(ctx, 'N', cx, cy - 38, 8, '#9aa6b4', 'center'); fillTxt(ctx, 'S', cx, cy + 38, 8, '#9aa6b4', 'center'); fillTxt(ctx, 'W', cx - 38, cy, 8, '#9aa6b4', 'center'); fillTxt(ctx, 'E', cx + 38, cy, 8, '#9aa6b4', 'center');
+  // UCS icon
+  const ux = vp.x + 34, uy = vp.y + vp.h - 34;
+  ctx.strokeStyle = '#e8edf3'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(ux, uy); ctx.lineTo(ux + 26, uy); ctx.moveTo(ux, uy); ctx.lineTo(ux, uy - 26); ctx.stroke();
+  ctx.fillStyle = '#e8edf3'; ctx.beginPath(); ctx.moveTo(ux + 26, uy); ctx.lineTo(ux + 20, uy - 3); ctx.lineTo(ux + 20, uy + 3); ctx.fill(); ctx.beginPath(); ctx.moveTo(ux, uy - 26); ctx.lineTo(ux - 3, uy - 20); ctx.lineTo(ux + 3, uy - 20); ctx.fill();
+  fillTxt(ctx, 'X', ux + 33, uy, 8, '#e8edf3', 'center'); fillTxt(ctx, 'Y', ux, uy - 33, 8, '#e8edf3', 'center');
+  ctx.restore();
+}
+
+// ---- command line window
+function cmdState(t) {
+  const i = lastLE(TR.cmd, t);
+  if (i < 0) return { hist: [], prompt: 'Command:', typed: '', ev: null, dt: 0 };
+  const ev = TR.cmd[i], n = ev.dur > 0 ? Math.floor(clamp((t - ev.t) / ev.dur) * ev.text.length + 1e-6) : ev.text.length;
+  return { hist: ev.hist, prompt: ev.prompt, typed: ev.text.slice(0, n), ev, dt: t - ev.t, done: n >= ev.text.length };
+}
+function drawCmdLine(ctx, t, mode) {            // mode: 0 docked panel .. 1 translucent overlay (3D phase)
+  const y0 = LAY.cmdY, h = LAY.cmdH, st = cmdState(t);
+  ctx.save();
+  const a = lerp(1, 0.62, mode);
+  ctx.fillStyle = mode > 0.01 ? `rgba(14,18,23,${a})` : PAL.cmd; ctx.fillRect(mode > 0.01 ? 0 : 0, y0, DW, h);
+  ctx.strokeStyle = PAL.line; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, y0 + 0.5); ctx.lineTo(DW, y0 + 0.5); ctx.stroke();
+  const lines = st.hist.slice(-3), baseY = y0 + 11;
+  lines.forEach((s, i) => fillTxt(ctx, s, 34, baseY + i * 16, 12.5, '#8b97a6', 'left', FONT_MONO));
+  const ay = baseY + 3 * 16 + 1;
+  ctx.fillStyle = PAL.line; ctx.fillRect(8, y0 + 8, 12, 4); ctx.fillRect(8, y0 + 15, 12, 4);            // grip dots
+  fillTxt(ctx, '▸', 24, ay, 11, PAL.acc, 'left', FONT_MONO);
+  ctx.font = `400 12.5px ${FONT_MONO}`;
+  const pw = ctx.measureText(st.prompt + ' ').width;
+  fillTxt(ctx, st.prompt, 38, ay, 12.5, '#c3ccd8', 'left', FONT_MONO);
+  fillTxt(ctx, st.typed, 38 + pw, ay, 12.5, '#ffffff', 'left', FONT_MONO);
+  const tw = ctx.measureText(st.typed).width;
+  if (Math.floor(t * 2.2) % 2 === 0 || (st.ev && st.dt < 0.4 && !st.done)) { ctx.fillStyle = '#ffffff'; ctx.fillRect(38 + pw + tw + 1, ay - 7, 7, 14); }
+  ctx.restore();
+}
+
+// ---- cursor layer: crosshair, pickbox, snap markers, tooltips, click ripples
+const SNAPNAME = { end: 'Endpoint', mid: 'Midpoint', int: 'Intersection', cen: 'Center', per: 'Perpendicular', nea: 'Nearest', ins: 'Insertion', nod: 'Node' };
+function drawSnapMarker(ctx, kind, x, y, s = 1) {
+  ctx.save(); ctx.strokeStyle = '#ffe14d'; ctx.lineWidth = 1.7; ctx.setLineDash([]);
+  const r = 5 * s;
+  ctx.beginPath();
+  if (kind === 'end' || kind === 'ins') ctx.rect(x - r, y - r, 2 * r, 2 * r);
+  else if (kind === 'mid') { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y + r * 0.8); ctx.lineTo(x - r, y + r * 0.8); ctx.closePath(); }
+  else if (kind === 'int') { ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); }
+  else if (kind === 'cen') ctx.arc(x, y, r, 0, TAU);
+  else if (kind === 'per') { ctx.moveTo(x - r, y - r); ctx.lineTo(x - r, y + r); ctx.lineTo(x + r, y + r); }
+  else { ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y - r); ctx.lineTo(x - r, y + r); ctx.lineTo(x + r, y + r); ctx.closePath(); }
+  ctx.stroke(); ctx.restore();
+}
+function drawTip(ctx, x, y, lines, color = '#f2f5f8', bg = 'rgba(22,27,33,.94)') {
+  ctx.font = `400 9.5px ${FONT_MONO}`;
+  const w = Math.max(...lines.map((s) => ctx.measureText(s).width)) + 10, h = lines.length * 13 + 5;
+  ctx.fillStyle = bg; ctx.fillRect(x, y, w, h); ctx.strokeStyle = '#4b5666'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+  lines.forEach((s, i) => fillTxt(ctx, s, x + 5, y + 9.5 + i * 13, 9.5, color, 'left', FONT_MONO));
+}
+function drawCursor(ctx, E, t, vp) {
+  const p = cursorAt(t, E); if (!p) return null;
+  const [sx, sy] = p;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(vp.x, vp.y, vp.w, vp.h); ctx.clip();
+  // crosshair
+  ctx.strokeStyle = 'rgba(232,237,243,.62)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(vp.x, Math.round(sy) + 0.5); ctx.lineTo(vp.x + vp.w, Math.round(sy) + 0.5); ctx.moveTo(Math.round(sx) + 0.5, vp.y); ctx.lineTo(Math.round(sx) + 0.5, vp.y + vp.h); ctx.stroke();
+  // click ripples
+  for (let i = lastLE(TR.clk, t); i >= 0 && t - TR.clk[i].t < 0.5; i--) {
+    const c = TR.clk[i], u = (t - c.t) / 0.5, q = c.sp === 's' ? [c.x, c.y] : [E.ox + c.x * E.k, E.oy - c.y * E.k];
+    ctx.strokeStyle = `rgba(255,255,255,${0.9 * (1 - u)})`; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.arc(q[0], q[1], 4 + 16 * easeOut(u), 0, TAU); ctx.stroke();
+  }
+  // snap markers
+  let snap = null;
+  for (const s of TR.snp) if (t >= s.t0 && t < s.t1) { snap = s; }
+  if (snap) {
+    const q = snap.sp === 's' ? [snap.x, snap.y] : [E.ox + snap.x * E.k, E.oy - snap.y * E.k];
+    drawSnapMarker(ctx, snap.kind, q[0], q[1], 1 + 0.35 * (1 - smooth(clamp((t - snap.t0) / 0.2))));
+    drawTip(ctx, q[0] + 12, q[1] + 10, [SNAPNAME[snap.kind] || snap.kind], '#ffe14d');
+  }
+  // pickbox
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2; ctx.strokeRect(Math.round(sx) - 4.5, Math.round(sy) - 4.5, 9, 9);
+  // dynamic input
+  const dy = activeAt(TR.dyn, t);
+  if (dy) { const lines = dy.fn(t, [(sx - E.ox) / E.k, (E.oy - sy) / E.k]); if (lines && lines.length) drawTip(ctx, sx + 16, sy + 18 + (snap ? 18 : 0), lines); }
+  ctx.restore();
+  return [(sx - E.ox) / E.k, (E.oy - sy) / E.k];
+}
+
+// ---- previews: selection highlights, windows, ghosts
+function drawHL(ctx, E, h, t) {
+  const a = smooth(clamp((t - h.t0) / 0.12)) * (1 - smooth(clamp((t - h.t1) / 0.18)));
+  if (a <= 0) return;
+  const X = (x) => E.ox + x * E.k, Y = (y) => E.oy - y * E.k;
+  ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = '#7fb9ff'; ctx.lineWidth = 2.2; ctx.setLineDash([6, 4]);
+  const grips = [];
+  if (h.k === 'seg') { ctx.beginPath(); ctx.moveTo(X(h.a[0]), Y(h.a[1])); ctx.lineTo(X(h.b[0]), Y(h.b[1])); ctx.stroke(); grips.push(h.a, [(h.a[0] + h.b[0]) / 2, (h.a[1] + h.b[1]) / 2], h.b); }
+  else if (h.k === 'rect') { const r = h.r; ctx.beginPath(); ctx.rect(X(r[0]), Y(r[3]), (r[2] - r[0]) * E.k, (r[3] - r[1]) * E.k); ctx.stroke(); grips.push([r[0], r[1]], [r[2], r[1]], [r[2], r[3]], [r[0], r[3]], [rCX(r), rCY(r)]); }
+  else if (h.k === 'poly') { ctx.beginPath(); h.pts.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.stroke(); grips.push(...h.pts); }
+  ctx.setLineDash([]); ctx.fillStyle = '#3d8bff'; ctx.strokeStyle = '#cfe3ff'; ctx.lineWidth = 0.8;
+  for (const g of grips) { ctx.fillRect(X(g[0]) - 3, Y(g[1]) - 3, 6, 6); ctx.strokeRect(X(g[0]) - 3, Y(g[1]) - 3, 6, 6); }
+  ctx.restore();
+}
+function drawWin(ctx, E, w, t) {
+  if (t < w.t0) return;
+  const X = (x) => E.ox + x * E.k, Y = (y) => E.oy - y * E.k;
+  const u = w.t1 > w.t0 ? easeIO((t - w.t0) / (w.t1 - w.t0)) : 1, fade = 1 - smooth(clamp((t - w.tEnd) / 0.25));
+  if (fade <= 0) return;
+  const bx = lerp(w.a[0], w.b[0], u), by = lerp(w.a[1], w.b[1], u);
+  const crossing = w.b[0] < w.a[0];
+  ctx.save(); ctx.globalAlpha = fade;
+  const x0 = X(Math.min(w.a[0], bx)), y0 = Y(Math.max(w.a[1], by)), ww = Math.abs(bx - w.a[0]) * E.k, hh = Math.abs(by - w.a[1]) * E.k;
+  ctx.fillStyle = crossing ? 'rgba(80,220,120,.16)' : 'rgba(80,150,255,.18)'; ctx.fillRect(x0, y0, ww, hh);
+  ctx.strokeStyle = crossing ? '#62e08a' : '#6fb0ff'; ctx.lineWidth = 1.2; ctx.setLineDash(crossing ? [5, 3] : []); ctx.strokeRect(x0, y0, ww, hh);
+  ctx.restore();
+}
+function drawGhost(ctx, E, g, t) {
+  if (t < g.t0 || t > g.tEnd) return;
+  const u = g.t1 > g.t0 ? easeIO((t - g.t0) / (g.t1 - g.t0)) : 1;
+  const dx = lerp(g.off0[0], g.off1[0], u), dy = lerp(g.off0[1], g.off1[1], u);
+  const fade = smooth(clamp((t - g.t0) / 0.1));
+  ctx.save(); ctx.translate(dx * E.k, -dy * E.k);
+  const E2 = Object.assign({}, E, { ga: (g.ga === undefined ? 0.55 : g.ga) * fade });
+  for (const el of g.els) { const f = DRAW[el.k]; if (f) { const ps = el.k === 'op' || el.k === 'tx' ? 1 : 0; f(ctx, E2, el, t, (x) => E.ox + x * E.k, (y) => E.oy - y * E.k, ps, 0); } }
+  ctx.restore();
+}
+function drawTransients(ctx, E, t) {
+  for (const w of TR.win) drawWin(ctx, E, w, t);
+  for (const g of TR.ghost) drawGhost(ctx, E, g, t);
+  for (const h of TR.hl) if (t >= h.t0 - 0.01 && t < h.t1 + 0.4) drawHL(ctx, E, h, t);
+  // flashes (object picked)
+  const X = (x) => E.ox + x * E.k, Y = (y) => E.oy - y * E.k;
+  for (const f of TR.fl) if (t >= f.t && t < f.t + 0.6) {
+    const u = (t - f.t) / 0.6; ctx.save(); ctx.strokeStyle = `rgba(120,200,255,${1 - u})`; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(X(f.x), Y(f.y), (f.r || 120) * E.k * (0.6 + u), 0, TAU); ctx.stroke(); ctx.restore();
+  }
+}
+
+
+/* ---------------- 60-director.js ---------------- */
+
+// ============================================================================
+// 6. THE DIRECTOR  (compiles the film command by command into tracks + elements)
+//    The cursor, the command line, the rubber-banding lines and the camera are all driven from here;
+//    nothing in the film is random, so renderAt(t) is a pure function of t.
+// ============================================================================
+const T3 = {};                       // 3D schedule marks (absolute seconds), written at the end of the script
+const MARKS = [];                    // debug: [t, label]
+const D = { t: 0, sp: 1, cp: null, ct: 0, hist: [], act: { prompt: '', text: '' }, cam: Object.assign({}, CAM0), lastIt: null };
+
+const wait = (dt) => { D.t += dt / D.sp; };
+const mark = (s) => MARKS.push([+D.t.toFixed(2), s]);
+const scrOf = (q, V) => (q.sp === 's' ? [q.x, q.y] : [V.ox + q.x * V.k, V.oy - q.y * V.k]);
+function autoDur(a, b, slow = 1) {
+  const V = view2D(D.t, VP), pa = scrOf(a, V), pb = scrOf(b, V), d = hyp(pa[0] - pb[0], pa[1] - pb[1]);
+  return clamp((0.14 + d * 0.0017) * slow, 0.12, 1.25) / D.sp;
+}
+function mv(p, dur, o = {}) {
+  if (D.t < D.ct) D.t = D.ct;
+  const sp = o.s ? 's' : 'w', x = o.s ? o.s[0] : p[0], y = o.s ? o.s[1] : p[1];
+  if (!D.cp) { TR.cur.push({ t: D.t, x, y, sp }); D.cp = { x, y, sp }; D.ct = D.t; return D.t; }
+  const nq = { x, y, sp };
+  if (dur === undefined || dur === null) dur = autoDur(D.cp, nq, o.slow || 1);
+  if (D.t > D.ct + 1e-6) TR.cur.push({ t: D.t, x: D.cp.x, y: D.cp.y, sp: D.cp.sp });
+  const bd = o.bd !== undefined ? o.bd : (dur > 0.3 ? (hash2(TR.cur.length, 11) - 0.5) * 26 : 0);
+  TR.cur.push({ t: D.t + dur, x, y, sp, bd });
+  D.cp = { x, y, sp }; D.ct = D.t + dur;
+  if (!o.async) D.t += dur;
+  return D.t;
+}
+function click(dw = 0.1) {
+  const tc = D.t;
+  TR.clk.push({ t: tc, x: D.cp.x, y: D.cp.y, sp: D.cp.sp });
+  D.t += dw / Math.max(1, D.sp * 0.7);
+  return tc;
+}
+// move onto a point, show the snap marker, click. returns the click time
+function pick(p, kind, o = {}) {
+  mv(p, o.dur, o);
+  const sn = kind ? { t0: Math.max(0, D.ct - 0.2), t1: D.t + 0.4, kind, x: p[0], y: p[1], sp: 'w' } : null;
+  if (sn) TR.snp.push(sn);
+  D.t += (o.dwell === undefined ? 0.09 : o.dwell) / D.sp;
+  const tc = click();
+  if (sn) sn.t1 = tc + 0.1;
+  return tc;
+}
+function par(...fns) { const t0 = D.t; let tm = t0; for (const f of fns) { D.t = t0; f(); tm = Math.max(tm, D.t); } D.t = tm; }
+function dyn(t0, t1, fn) { TR.dyn.push({ t0, t1, fn }); }
+
+// ---- command line
+function cmdEvent(dur = 0) { TR.cmd.push({ t: D.t, dur, prompt: D.act.prompt, text: D.act.text, hist: D.hist.slice(-3) }); }
+function commit() { if ((D.act.prompt && D.act.prompt !== 'Command:') || D.act.text) D.hist.push((D.act.prompt + ' ' + D.act.text).trim()); D.act = { prompt: '', text: '' }; }
+function ask(prompt) { commit(); D.act = { prompt, text: '' }; cmdEvent(0); }
+function typeText(text, dur) { const d = dur / D.sp; D.act.text = text; cmdEvent(d); D.t += d; }   // dur is the nominal (speed 1) duration
+function enter(dw = 0.1) { D.t += dw / D.sp; commit(); cmdEvent(0); }
+function info(text) { commit(); D.hist.push(text); cmdEvent(0); }
+function cmd(name, o = {}) {
+  ask('Command:'); typeText(name, (o.dur || 0.1 + 0.05 * name.length)); enter(o.dw === undefined ? 0.14 : o.dw);
+  const nm = name.replace(/^-/, '').toUpperCase();
+  const tl = { name: nm, t0: D.t, t1: 1e9 };
+  const prev = TR.tool[TR.tool.length - 1]; if (prev && prev.t1 > D.t) prev.t1 = D.t;
+  TR.tool.push(tl);
+}
+function endCmd() { const prev = TR.tool[TR.tool.length - 1]; if (prev && prev.t1 > D.t) prev.t1 = D.t; ask('Command:'); }
+function el(e) { EL.push(e); return e; }
+const CH_SPEED = { '01': 1.7, '02': 1.6, '03': 2.0, '04': 1.4, '05': 1.55, '06': 1.8, '07': 1.4, '08': 1.2, '09': 1.3 };   // timelapse factor per chapter
+function chapter(num, name, sub) { D.sp = CH_SPEED[num] || 1; TR.chap.push({ t: D.t, num, name, sub }); TR.cap.push({ t0: D.t, t1: D.t + 3.4, num, text: name, sub }); mark('chapter ' + num + ' ' + name); }
+function camTo(target, dur, o = {}) {
+  const to = Object.assign({}, D.cam, target);
+  TR.cam.push({ t0: D.t, t1: D.t + dur, from: Object.assign({}, D.cam), to });
+  D.cam = to;
+  if (o.sync) D.t += dur;
+}
+let curLayer = '0';
+function setLayer(name, color) {
+  cmd('-LAYER', { dur: 0.25 });
+  ask('Enter an option [?/Make/Set/New/ON/OFF/Color/Ltype/LWeight/Material/Plot/Freeze/Thaw/LOck/Unlock/stAte/Reconcile]:'); typeText('M', 0.1); enter(0.06);
+  ask('Enter name for new layer (becomes the current layer) <' + curLayer + '>:'); typeText(name, 0.08 + 0.05 * name.length); enter(0.06);
+  curLayer = name;
+  TR.lay.push({ t: D.t, name, color });
+  endCmd();
+}
+// a rubber-banded run from the cursor's position to p: returns [t0, t1]
+function run(p, dur, o = {}) { const t0 = D.t; mv(p, dur, Object.assign({ bd: 0 }, o)); return [t0, D.t]; }
+const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '');
+const angOf = (a, b) => ((Math.atan2(b[1] - a[1], b[0] - a[0]) / DEG) + 360) % 360;
+const R2 = (r) => r.map((v) => Math.round(v));
+const ghostOf = (els, from, to, t0, t1, tEnd, ga) => TR.ghost.push({ t0, t1, tEnd, els: els.map((e) => Object.assign({}, e, { t0: -1e9, t1: -1e9 })), off0: from, off1: to, ga });
+
+// ---------------------------------------------------------------------------------------------------
+// macros
+// ---------------------------------------------------------------------------------------------------
+// LINE run: pts, typed lengths optional. returns created elements
+function lineCmd(L, pts, o = {}) {
+  cmd('LINE', o);
+  ask('Specify first point:');
+  if (o.typed0) { par(() => mv(pts[0], o.d0), () => typeText(o.typed0, 0.5)); enter(); }
+  else pick(pts[0], o.snap0, { dur: o.d0 });
+  const out = [];
+  for (let i = 1; i < pts.length; i++) {
+    ask('Specify next point or [Undo]:');
+    const a = pts[i - 1], b = pts[i], dur = (o.dur || 1.2) / D.sp, t0 = D.t;
+    const e = el({ k: 'ln', L, a, b, t0, t1: t0 + dur, c: o.color });
+    out.push(e);
+    dyn(t0, t0 + dur + 0.2, (t, cw) => { const dx = clamp(invLerp(t0, t0 + dur, t)); const u = easeIO(dx); const len = hyp(b[0] - a[0], b[1] - a[1]) * u; return [fmt(len) + ' < ' + Math.round(angOf(a, b)) + '°']; });
+    par(() => mv(b, dur, { bd: 0 }), () => { if (o.typed && o.typed[i]) typeText(o.typed[i], (o.dur || 1.2) * 0.8); });
+    if (o.typed && o.typed[i]) enter(); else { if (o.snapN && o.snapN[i]) TR.snp.push({ t0: D.t - 0.25, t1: D.t + 0.3, kind: o.snapN[i], x: b[0], y: b[1], sp: 'w' }); click(); }
+  }
+  ask('Specify next point or [Undo]:'); wait(0.25); enter();
+  endCmd();
+  return out;
+}
+
+// OFFSET: picks = [{ src: {k:'seg',a,b}|{k:'rect',r}, at: [x,y] (point to click on the object), side: [x,y], out: [elements to create at click] }]
+function offsetCmd(dist, picks, o = {}) {
+  cmd('OFFSET', o);
+  ask('Specify offset distance or [Through/Erase/Layer] <Through>:'); par(() => typeText(String(dist), 0.12 + 0.07 * String(dist).length)); enter();
+  const res = [];
+  for (const p of picks) {
+    ask('Select object to offset or [Exit/Undo] <Exit>:');
+    mv(p.at, undefined, { slow: o.slow }); wait(0.06); const tp = click(0.08);
+    const h = Object.assign({ t0: tp, t1: 1e9 }, p.src); TR.hl.push(h);
+    ask('Specify point on side to offset or [Exit/Multiple/Undo] <Exit>:');
+    const tg = D.t;
+    mv(p.side, undefined, { slow: o.slow });
+    const els = p.out.map((e) => Object.assign({}, e, { t0: -1e9, t1: -1e9 }));
+    TR.ghost.push({ t0: tg + (D.t - tg) * 0.3, t1: D.t, tEnd: D.t + 0.14 / D.sp, els, off0: [0, 0], off1: [0, 0], ga: 0.5 });
+    dyn(tg, D.t + 0.2, () => ['Offset: ' + dist]);
+    wait(0.08); const tc = click(0.1); h.t1 = tc;
+    for (const e of p.out) { e.t0 = tc; e.t1 = tc + 0.2; e.full = true; EL.push(e); }
+    res.push(p.out);
+  }
+  ask('Select object to offset or [Exit/Undo] <Exit>:'); wait(0.2); enter();
+  endCmd();
+  return res;
+}
+
+// RECTANG with rubber band from corner 1 to corner 2
+function rectCmd(L, r, o = {}) {
+  cmd('RECTANG', o);
+  ask('Specify first corner point or [Chamfer/Elevation/Fillet/Thickness/Width]:');
+  if (o.typed1) { par(() => mv([r[0], r[1]], o.d1), () => typeText(o.typed1, 0.7)); enter(); }
+  else pick([r[0], r[1]], o.snap1, { dur: o.d1 });
+  ask('Specify other corner point or [Area/Dimensions/Rotation]:');
+  const dur = (o.dur || 1.3) / D.sp, t0 = D.t;
+  const e = el({ k: 'rc', L, r, t0, t1: t0 + dur, wm: o.wm });
+  dyn(t0, t0 + dur + 0.1, (t) => { const u = easeIO(clamp((t - t0) / dur)); return [fmt(rW(r) * u) + ' x ' + fmt(rH(r) * u)]; });
+  par(() => mv([r[2], r[3]], dur, { bd: 0 }), () => { if (o.typed2) typeText(o.typed2, (o.dur || 1.3) * 0.85); });
+  if (o.typed2) enter(); else { if (o.snap2) TR.snp.push({ t0: D.t - 0.25, t1: D.t + 0.3, kind: o.snap2, x: r[2], y: r[3], sp: 'w' }); click(); }
+  endCmd();
+  return e;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// the film
+// ---------------------------------------------------------------------------------------------------
+const INTRO = 3.0;
+const GRID_Y0 = -1000, GRID_Y1 = 10000, GRID_X0 = -1000, GRID_X1 = 13000;
+const BLOCKNAME = { sofa: 'SOFA-3S', coffee: 'TABLE-COFFEE', armchair: 'ARMCHAIR', tvu: 'TV-UNIT', dtab: 'TABLE-DINING', chair: 'CHAIR', side: 'SIDEBOARD', bcase: 'BOOKCASE', plant: 'PLANT', lamp: 'LAMP-FLOOR',
+  rug: 'RUG', fridge: 'FRIDGE', cab: 'BASE-600', hob: 'HOB-UNIT', sink: 'SINK-1200', upper: 'WALL-600', hood: 'HOOD', ktab: 'TABLE-KITCHEN', cons: 'CONSOLE', shoe: 'SHOE-CAB', bed160: 'BED-1600', bed140: 'BED-1400',
+  night: 'NIGHTSTAND', ward: 'WARDROBE', dress: 'DRESSER', desk: 'DESK', tub: 'BATH-1700', wc: 'WC', basin: 'BASIN-VANITY', washer: 'WASHER' };
+const WINNAME = (o) => (o.t === 'door' ? 'DOOR-' + o.w : o.t === 'entry' ? 'DOOR-ENTRY-' + o.w : o.t === 'pass' ? 'OPENING-' + o.w : (o.t === 'tall' ? 'GLAZED-DOOR-' : 'WINDOW-') + o.w);
+
+function filmCAD() {
+  D.t = 0;
+  TR.lay.push({ t: 0, name: '0', color: CC.white });
+  TR.tab.push({ t: 0, name: 'Home' });
+  D.t = INTRO;
+  mv([6000, 4500], 0);
+  mark('start');
+  camTo({ cx: 6000, cy: 4500, vis: 12600 }, 0.01);
+  wait(0.5);
+
+  // ================================================================= 01 GRID
+  chapter('01', 'GRID LINES', 'LINE  ·  OFFSET  ·  4000 / 3900 / 5050');
+  setLayer('S-GRID', CC.red);
+  const gA = lineCmd('grid', [[0, GRID_Y0], [0, GRID_Y1]], { typed0: '0,-1000', typed: [null, '11000'], d0: 0.5, dur: 1.5 })[0];
+  // verticals B, C, D
+  const gl = { A: gA };
+  const vOut = (x) => ({ k: 'ln', L: 'grid', a: [x, GRID_Y0], b: [x, GRID_Y1] });
+  const vo = [vOut(4000), vOut(8000), vOut(12000)];
+  offsetCmd(4000, [
+    { src: { k: 'seg', a: [0, GRID_Y0], b: [0, GRID_Y1] }, at: [0, 3000], side: [2000, 3000], out: [vo[0]] },
+    { src: { k: 'seg', a: [4000, GRID_Y0], b: [4000, GRID_Y1] }, at: [4000, 3000], side: [6000, 3000], out: [vo[1]] },
+    { src: { k: 'seg', a: [8000, GRID_Y0], b: [8000, GRID_Y1] }, at: [8000, 3000], side: [10000, 3000], out: [vo[2]] },
+  ], { dur: 0.3 });
+  // horizontal 1, then 2 and 3
+  const gH = lineCmd('grid', [[GRID_X0, 0], [GRID_X1, 0]], { typed0: '-1000,0', typed: [null, '14000'], d0: 0.6, dur: 1.4 })[0];
+  const hOut = (y) => ({ k: 'ln', L: 'grid', a: [GRID_X0, y], b: [GRID_X1, y] });
+  const ho = [hOut(YDW), hOut(Y3)];
+  offsetCmd(3900, [{ src: { k: 'seg', a: [GRID_X0, 0], b: [GRID_X1, 0] }, at: [2600, 0], side: [2600, 1800], out: [ho[0]] }], { dur: 0.3 });
+  offsetCmd(5050, [{ src: { k: 'seg', a: [GRID_X0, YDW], b: [GRID_X1, YDW] }, at: [2600, YDW], side: [2600, 6000], out: [ho[1]] }], { dur: 0.3 });
+  // bubbles
+  {
+    cmd('-INSERT', { dur: 0.35 }); ask('Enter block name or [?]:'); typeText('GRID-BUBBLE', 0.8); enter(); info('7 blocks inserted along the grid lines');
+    const tb = D.t;
+    GX.forEach((x, i) => el({ k: 'gb', x, y: GRID_Y1 + 360, s: GXN[i], t0: tb + i * 0.13, t1: tb + i * 0.13 + 0.3, L: 'grid' }));
+    GY.forEach((y, i) => el({ k: 'gb', x: GRID_X1 + 360, y, s: GYN[i], t0: tb + 0.55 + i * 0.13, t1: tb + 0.55 + i * 0.13 + 0.3, L: 'grid' }));
+    mv([GX[3], 6000], undefined); D.t = Math.max(D.t, tb + 1.1); endCmd();
+  }
+  wait(0.3);
+
+  // ================================================================= 02 COLUMNS
+  chapter('02', 'COLUMNS 400 × 400', 'RECTANG  ·  HATCH SOLID  ·  COPY to every crossing');
+  setLayer('S-COLS', CC.white);
+  camTo({ cx: 600, cy: 600, vis: 2300 }, 1.5); wait(1.0);
+  const c0 = COLUMNS[0];
+  mv([-1100, -900], 0.5); 
+  const colRect = rectCmd('col', c0.r, { typed1: '-200,-200', typed2: '@400,400', d1: 0.7, dur: 1.2 });
+  wait(0.2);
+  {
+    cmd('HATCH', { dur: 0.35 }); ask('Pick internal point or [Select objects/Undo/seTtings]:'); typeText('T', 0.15); enter(0.1);
+    ask('Enter a pattern name or [?/Solid/User defined] <ANSI31>:'); typeText('SOLID', 0.4); enter();
+    ask('Pick internal point or [Select objects/Undo/seTtings]:');
+    const tc = pick([0, 0], null, { dur: 0.45 });
+    el({ k: 'cf', r: c0.r, t0: tc, t1: tc + 0.3, big: true });
+    wait(0.35); ask('Pick internal point or [Select objects/Undo/seTtings]:'); wait(0.2); enter(); endCmd();
+  }
+  wait(0.2);
+  // COPY the column to the other eleven crossings
+  cmd('COPY', { dur: 0.3 });
+  ask('Select objects:');
+  mv([-500, 450], 0.45); wait(0.05);
+  const w0 = { t0: D.t, t1: D.t + 0.45, tEnd: D.t + 0.55, a: [-500, 450], b: [500, -450], mode: 'window' };
+  // a crossing-style grab: move the opposite corner, then it selects
+  TR.win.push({ t0: D.t, t1: D.t + 0.5, tEnd: D.t + 0.7, a: [-520, -520], b: [520, 520] });
+  mv([-520, -520], 0.1); click(0.06); mv([520, 520], 0.5, { bd: 0 }); click(0.1);
+  ask('Select objects:'); info('Select objects: 2 found');
+  const selH = { k: 'rect', r: c0.r, t0: D.t, t1: 1e9 }; TR.hl.push(selH);
+  wait(0.15); ask('Select objects:'); enter(0.12);
+  ask('Specify base point or [Displacement/mOde] <Displacement>:');
+  const tb0 = pick([0, 0], 'int', { dur: 0.35, dwell: 0.2 });
+  selH.t1 = D.t;
+  ask('Specify second point or [Array] <use first point as displacement>:');
+  // copy targets in sweep order; the camera pulls back in three steps while the copies spread
+  const colEls = (c) => [{ k: 'rc', L: 'col', r: c.r }, { k: 'cf', r: c.r }];
+  let prev = [0, 0];
+  const camSteps = { 1: { cx: 2000, cy: 900, vis: 5400 }, 3: { cx: 4800, cy: 2400, vis: 8600 }, 6: { cx: 6000, cy: 4500, vis: 12600 } };
+  for (let n = 1; n < COLUMNS.length; n++) {
+    const c = COLUMNS[n], fast = n > 3;
+    if (camSteps[n]) camTo(camSteps[n], fast ? 1.6 : 1.1);
+    ask(n === 1 ? 'Specify second point or [Array] <use first point as displacement>:' : 'Specify second point or [Array/Exit/Undo] <Exit>:');
+    const tm0 = D.t, dur = fast ? 0.2 : (n === 1 ? 0.8 : 0.55);
+    ghostOf(colEls(c), [prev[0] - c.cx, prev[1] - c.cy], [0, 0], tm0, tm0 + dur, tm0 + dur + 0.05, 0.6);
+    mv([c.cx, c.cy], dur, { bd: 0 });
+    TR.snp.push({ t0: D.t - 0.12, t1: D.t + 0.14, kind: 'int', x: c.cx, y: c.cy, sp: 'w' });
+    D.t += (fast ? 0.01 : 0.1) / D.sp;
+    const tc = click(fast ? 0.03 : 0.08);
+    el({ k: 'rc', L: 'col', r: c.r, t0: tc, t1: tc + 0.1, pop: 0.3 });
+    el({ k: 'cf', r: c.r, t0: tc, t1: tc + 0.3 });
+    prev = [c.cx, c.cy];
+  }
+  ask('Specify second point or [Array/Exit/Undo] <Exit>:'); wait(0.25); enter(); endCmd();
+  wait(0.3);
+
+  // ================================================================= 03 WALLS
+  chapter('03', 'BLOCK WALLS 300 + INSULATION 150', 'RECTANG on the column faces  ·  OFFSET  ·  MLINE  ·  TRIM  ·  HATCH');
+  setLayer('A-WALL', CC.white);
+  camTo({ cx: 6000, cy: 4500, vis: 12000 }, 1.0); wait(0.7);
+  mv([-200, -200], 0.6);
+  rectCmd('wall', OUT, { snap1: 'end', snap2: 'end', dur: 1.9, wm: 1 });
+  wait(0.2);
+  // offset 300 inward: the double line appears; zoom to the SW corner to read it
+  const innEl = { k: 'rc', L: 'wall', r: INN };
+  const insEl = { k: 'rc', L: 'insul', r: INSO };
+  offsetCmd(300, [{ src: { k: 'rect', r: OUT }, at: [6000, -200], side: [6000, 1500], out: [innEl] }], { slow: 1.1 });
+  camTo({ cx: 300, cy: 400, vis: 2400 }, 1.1); wait(0.9);
+  offsetCmd(150, [{ src: { k: 'rect', r: OUT }, at: [1100, -200], side: [1100, -1000], out: [insEl] }], { slow: 1.1 });
+  wait(0.4);
+  camTo({ cx: 6000, cy: 4500, vis: 12000 }, 1.5); wait(0.6);
+  // interior walls with MLINE
+  {
+    cmd('MLINE', { dur: 0.3 });
+    info('Current settings: Justification = Zero, Scale = 300.00, Style = STANDARD');
+    ask('Specify start point or [Justification/Scale/STyle]:');
+    let first = true;
+    const mline = (id, fast) => {
+      const [a, b] = MLINES[id], horiz = WALLS[id].ax === 'x';
+      if (!first) { ask('Specify start point or [Justification/Scale/STyle]:'); }
+      mv(a, undefined, { slow: fast ? 0.8 : 1 }); TR.snp.push({ t0: D.t - 0.2, t1: D.t + 0.25, kind: horiz ? 'mid' : 'int', x: a[0], y: a[1], sp: 'w' }); wait(0.05); click(0.06);
+      ask('Specify next point or [Undo]:');
+      const dur = (fast ? 0.7 : 1.5) / D.sp, t0 = D.t, h = WH;
+      const mk = (o1) => (horiz ? { k: 'ln', L: 'wall', a: [a[0], a[1] + o1], b: [b[0], b[1] + o1], t0, t1: t0 + dur } : { k: 'ln', L: 'wall', a: [a[0] + o1, a[1]], b: [b[0] + o1, b[1]], t0, t1: t0 + dur });
+      el(mk(h)); el(mk(-h));
+      dyn(t0, t0 + dur + 0.1, (t) => [fmt(hyp(b[0] - a[0], b[1] - a[1]) * easeIO(clamp((t - t0) / dur))) + ' < ' + Math.round(angOf(a, b)) + '°']);
+      mv(b, dur, { bd: 0 });
+      click(0.08); ask('Specify next point or [Undo]:'); wait(fast ? 0.1 : 0.2); enter(0.08); first = false;
+    };
+    mline('DW', false); mline('CW', false);
+    camTo({ cx: 6000, cy: 4500, vis: 11000 }, 1.0);
+    for (const id of ['P8', 'N1', 'N2', 'N3']) mline(id, true);
+    endCmd();
+  }
+  wait(0.3);
+  // TRIM the construction lines inside the walls
+  {
+    cmd('TRIM', { dur: 0.25 });
+    info('Current settings: Projection=UCS, Edge=None, Mode=Quick');
+    ask('Select objects or <select all>:'); wait(0.25); enter(0.1);
+    ask('Select object to trim or shift-select to extend or [Fence/Crossing/Project/Edge/eRase/Undo]:');
+    const spots = [[8000, 3900], [4000, 3900], [4000, 5250], [11900, 5250]];
+    let tl = 0;
+    for (const sp of spots) {
+      mv(sp, undefined, { slow: 0.7 });
+      const tc = click(0.06); tl = tc;
+      TR.fl.push({ t: tc, x: sp[0], y: sp[1], r: 260 });
+    }
+    el({ k: 'wf', L: 'wall', t0: tl + 0.02, t1: tl + 0.02 });
+    wait(0.35); ask('Select object to trim or shift-select to extend or [Fence/Crossing/Project/Edge/eRase/Undo]:'); enter(); endCmd();
+  }
+  wait(0.2);
+  // HATCH the block walls (ANSI31) and the insulation (zig-zag)
+  {
+    cmd('HATCH', { dur: 0.3 });
+    ask('Pick internal point or [Select objects/Undo/seTtings]:'); typeText('T', 0.12); enter(0.08);
+    ask('Enter a pattern name or [?/Solid/User defined] <SOLID>:'); typeText('ANSI31', 0.45); enter();
+    ask('Pick internal point or [Select objects/Undo/seTtings]:');
+    for (const p of [[2000, 0], [12050, 2500], [-50, 6000], [6000, 3900]]) { mv(p, undefined, { slow: 0.75 }); wait(0.04); click(0.05); }
+    ask('Pick internal point or [Select objects/Undo/seTtings]:'); wait(0.15); enter(0.1);
+    const th = D.t; el({ k: 'hw', L: 'wall', t0: th, t1: th + 1.8 });
+    mv([11500, 5000], 1.8, { bd: 0 });
+    endCmd();
+    setLayer('A-INSU', CC.yellow);
+    cmd('HATCH', { dur: 0.3 });
+    ask('Enter a pattern name or [?/Solid/User defined] <ANSI31>:'); typeText('INSUL', 0.35); enter();
+    ask('Pick internal point or [Select objects/Undo/seTtings]:');
+    for (const p of [[3000, -275], [12275, 4000], [-275, 4000]]) { mv(p, undefined, { slow: 0.75 }); wait(0.03); click(0.05); }
+    wait(0.1); enter(0.1);
+    const ti = D.t; el({ k: 'hi', L: 'wall', t0: ti, t1: ti + 1.6 });
+    mv([-275, 800], 1.6, { bd: 0 });
+    endCmd();
+  }
+  // grid lines step back: dimmed
+  LA.grid = [[D.t, 1], [D.t + 1.2, 0.34]];
+  wait(0.5);
+
+  // ================================================================= 04 DOORS + WINDOWS
+  chapter('04', 'DOORS & WINDOWS', 'INSERT blocks  ·  12 windows  ·  7 doors  ·  1 opening');
+  TR.tab.push({ t: D.t, name: 'Insert' }); 
+  mv(HOT['tab:Insert'].map((v) => v), undefined, { s: HOT['tab:Insert'] }); wait(0.1); click(0.1);
+  mv([0, 0], undefined, { s: [33, 54] });
+  setLayer('A-OPEN', CC.cyan);
+  const opOrder = ['W01', 'W02', 'W03', 'W04', 'D01', 'W05', 'W06', 'W07', 'W08', 'W09', 'W10', 'W11', 'W12', 'D02', 'D03', 'D04', 'D05', 'D06', 'D07', 'P01'];
+  camTo({ cx: 3000, cy: 600, vis: 6200 }, 1.2);
+  let firstOp = true;
+  cmd('INSERT', { dur: 0.3 });
+  for (let n = 0; n < opOrder.length; n++) {
+    const o = OPEN_BY_ID[opOrder[n]], oc = o.ax === 'x' ? [o.c, o.mid] : [o.mid, o.c];
+    const slow = n < 3, mid = n >= 3 && n < 8;
+    if (n === 4) camTo({ cx: 9000, cy: 2600, vis: 8200 }, 1.1);
+    if (n === 7) camTo({ cx: 6000, cy: 4500, vis: 11000 }, 1.4);
+    ask('Enter block name or [?]:'); typeText(WINNAME(o), slow ? 0.6 : 0.14); enter(slow ? 0.1 : 0.02);
+    ask('Specify insertion point or [Basepoint/Scale/Rotate]:');
+    const ghostEl = [{ k: 'op', o, ghost: true }];
+    const tm0 = D.t, dur = slow ? 0.8 : mid ? 0.3 : 0.22;
+    const from = D.cp && D.cp.sp === 'w' ? [D.cp.x - oc[0], D.cp.y - oc[1]] : [-1500, -900];
+    ghostOf(ghostEl, from, [0, 0], tm0, tm0 + dur, tm0 + dur + 0.04, 0.7);
+    mv(oc, dur, { bd: slow ? 10 : 0 });
+    TR.snp.push({ t0: D.t - 0.15, t1: D.t + 0.18, kind: o.isDoor || o.t === 'pass' ? 'mid' : 'mid', x: oc[0], y: oc[1], sp: 'w' });
+    D.t += (slow ? 0.18 : 0.02) / D.sp;
+    const tc = click(slow ? 0.1 : 0.03);
+    el({ k: 'op', L: o.isDoor || o.t === 'pass' ? 'door' : 'win', o, t0: tc, t1: tc + 0.35 });
+    if (slow && n === 0) { info('WINDOW-2200 inserted  (cut through block wall 300 + insulation 150)'); }
+  }
+  endCmd();
+  wait(0.3);
+  TR.tab.push({ t: D.t, name: 'Home' });
+  mark('openings done');
+
+  // ================================================================= 05 FURNITURE
+  chapter('05', 'FURNITURE AT REAL SIZE', 'INSERT blocks  ·  sofa 2200  ·  bed 1600 × 2000  ·  kitchen run 600 modules');
+  const cams = { LIVING: { cx: 3900, cy: 1900, vis: 4700 }, KITCHEN: { cx: 10000, cy: 1900, vis: 4700 }, CORRIDOR: { cx: 6000, cy: 4580, vis: 7000 }, 'BED 1': { cx: 2000, cy: 7100, vis: 4800 }, BATH: { cx: 5100, cy: 7100, vis: 4800 }, 'BED 2': { cx: 8100, cy: 7100, vis: 4800 }, STUDY: { cx: 11000, cy: 7100, vis: 4800 } };
+  const lays = { blue: CC.blue, magenta: CC.magenta, orange: CC.orange, cyan: CC.cyan, green: '#62d27e', yellow: CC.yellow, dim: CC.dim };
+  let curRoom = null, nIt = 0;
+  setLayer('A-FURN', CC.blue);
+  cmd('INSERT', { dur: 0.3 });
+  for (const it of ITEMS) {
+    if (it.room !== curRoom) {
+      curRoom = it.room;
+      camTo(cams[curRoom], curRoom === 'LIVING' ? 1.3 : 0.9);
+      if (curRoom !== 'LIVING') wait(0.25);
+    }
+    const slow = nIt < 3, fast = nIt >= 10;
+    ask('Enter block name or [?]:');
+    typeText(BLOCKNAME[it.type] + (it.w ? '-' + it.w : ''), slow ? 0.5 : fast ? 0.07 : 0.1);
+    ask('Specify insertion point or [Basepoint/Scale/Rotate]:');
+    const tm0 = D.t, dur = slow ? 0.7 : fast ? 0.15 : 0.26;
+    const from = D.cp && D.cp.sp === 'w' ? [D.cp.x - it.x, D.cp.y - it.y] : [-900, -500];
+    ghostOf([{ k: 'fu', it }], from, [0, 0], tm0, tm0 + dur, tm0 + dur + 0.04, 0.6);
+    mv([it.x, it.y], dur, { bd: slow ? 12 : 0 });
+    D.t += (slow ? 0.12 : 0.01) / D.sp;
+    const tc = click(slow ? 0.08 : 0.02);
+    const e = el({ k: 'fu', it, t0: tc, t1: tc + 0.3 });
+    if (nIt === 0) info('SOFA-3S  2200 x 950 x 850  inserted');
+    nIt++;
+  }
+  endCmd(); wait(0.3);
+  mark('furniture done');
+
+  // ================================================================= 06 DIMENSIONS
+  chapter('06', 'DIMENSIONS', 'DIMLINEAR  ·  grid chains  ·  overall  ·  wall build-up 150 + 300');
+  setLayer('A-DIMS', CC.green);
+  camTo({ cx: 6000, cy: 3000, vis: 9800 }, 1.2);
+  cmd('DIMLINEAR', { dur: 0.5 });
+  let nd = 0;
+  for (const d of DIMS) {
+    const fast = nd >= 2;
+    if (d.id === 'Y1') camTo({ cx: 3000, cy: 4000, vis: 11000 }, 1.0);
+    if (d.id === 'T150') camTo({ cx: 400, cy: 8200, vis: 3800 }, 1.2);
+    const P = (a, b) => (d.h ? [a, b] : [b, a]);
+    const p1 = P(d.a, d.base), p2 = P(d.b, d.base), pm = P((d.a + d.b) / 2, d.pos);
+    const kind = (d.id === 'XO' || d.id === 'YO' || d.id[0] === 'T') ? 'end' : 'int';
+    ask('Specify first extension line origin or <select object>:');
+    const t0 = D.t; pick(p1, kind, { dur: fast ? 0.28 : 0.6, dwell: fast ? 0.03 : 0.1 });
+    ask('Specify second extension line origin:');
+    pick(p2, kind, { dur: fast ? 0.24 : 0.5, dwell: fast ? 0.03 : 0.1 });
+    ask('Specify dimension line location or [Mtext/Text/Angle/Horizontal/Vertical/Rotated]:');
+    mv(pm, fast ? 0.2 : 0.4);
+    const tc = click(fast ? 0.04 : 0.1);
+    el({ k: 'dm', L: 'dims', d, t0: tc, t1: tc + (fast ? 0.6 : 1.0) });
+    info('Dimension text = ' + fmt(Math.abs(d.b - d.a)));
+    wait(fast ? 0.04 : 0.15);
+    nd++;
+  }
+  ask('Specify first extension line origin or <select object>:'); wait(0.2); enter(); endCmd();
+  camTo({ cx: 6000, cy: 4500, vis: 12000 }, 1.3);
+  wait(0.4);
+
+  // ================================================================= 07 ROOMS + AREAS
+  chapter('07', 'ROOM AREAS', 'AREA  ·  ROOMTAG attribute blocks  ·  Σ = ' + TOTAL_AREA.toFixed(1) + ' m²');
+  setLayer('A-AREA', CC.yellow);
+  cmd('AREA', { dur: 0.3 });
+  ask('Specify first corner point or [Object/Add area/Subtract area/eXit] <Object>:'); typeText('O', 0.12); enter(0.08);
+  ask('Select objects:');
+  const lv = ROOM_BY_ID.LIVING;
+  camTo({ cx: 3900, cy: 1900, vis: 5200 }, 1.0); wait(0.6);
+  mv([rCX(lv.r) + 600, 2900], 0.8); const tcA = click(0.1);
+  TR.hl.push({ k: 'rect', r: lv.r, t0: tcA, t1: tcA + 1.7 });
+  info('Area = ' + (lv.exact * 1e6).toFixed(0) + ' sq mm (' + lv.exact.toFixed(2) + ' m²), Perimeter = ' + fmt(2 * (rW(lv.r) + rH(lv.r))) + '.0000');
+  wait(0.9); endCmd();
+  camTo({ cx: 6000, cy: 4500, vis: 11200 }, 1.4);
+  cmd('-INSERT', { dur: 0.3 });
+  ask('Enter block name or [?]:'); typeText('ROOMTAG', 0.55); enter();
+  const TAGPOS = {
+    LIVING: [3500, 700], KITCHEN: [10150, 3300], CORRIDOR: [3500, 4600], 'BED 1': [1400, 6750], BATH: [5100, 7000], 'BED 2': [8000, 5900], STUDY: [11000, 6500],
+  };
+  ROOMS.forEach((rm, i) => {
+    const pos = TAGPOS[rm.id] || [rCX(rm.r), rCY(rm.r)];
+    ask('Specify insertion point:');
+    const dur = i === 0 ? 0.5 : 0.3;
+    mv(pos, dur);
+    const tc = click(0.05);
+    ask('Enter ROOM <' + rm.id + '>:'); typeText(rm.id, 0.12); 
+    ask('Enter AREA <' + rm.area.toFixed(1) + '>:'); typeText(rm.area.toFixed(1), 0.1); enter(0.04);
+    el({ k: 'tx', L: 'text', x: pos[0], y: pos[1], s: rm.id, h: 190, c: CC.white, w: 600, al: 'c', t0: tc, t1: tc + 0.3 });
+    el({ k: 'tx', L: 'text', x: pos[0], y: pos[1] - 270, s: rm.area.toFixed(1) + ' m²', h: 170, c: CC.yellow, al: 'c', t0: tc + 0.05, t1: tc + 0.35 });
+    rm.tag = pos;
+  });
+  endCmd(); wait(0.4);
+
+  // ================================================================= 08 SHEET 1:50
+  chapter('08', 'SHEET  A3  1 : 50', 'INSERT title block at scale 50  ·  ZOOM EXTENTS');
+  setLayer('G-SHEET', CC.white);
+  cmd('INSERT', { dur: 0.3 });
+  ask('Enter block name or [?]:'); typeText('A3-LANDSCAPE', 0.7); enter();
+  ask('Specify insertion point or [Basepoint/Scale/Rotate]:'); typeText('S', 0.12); enter(0.08);
+  ask('Specify scale factor for XYZ axes <1>:'); typeText('50', 0.25); enter();
+  ask('Specify insertion point or [Basepoint/Scale/Rotate]:');
+  camTo({ cx: 7000, cy: 4125, vis: 16200 }, 1.8); wait(0.3);
+  const sheetEls = buildSheetEls();
+  {
+    const tm0 = D.t, dur = 1.6;
+    const from = [4000, 2600];
+    TR.ghost.push({ t0: tm0, t1: tm0 + dur, tEnd: tm0 + dur + 0.05, els: [{ k: 'rc', L: 'sheet', r: SHEET, t0: -1e9, t1: -1e9, full: true }, { k: 'rc', L: 'sheet', r: FRAME, t0: -1e9, t1: -1e9, full: true }], off0: from, off1: [0, 0], ga: 0.5 });
+    mv([SHEET[0], SHEET[1]], dur, { bd: 0 });
+    TR.snp.push({ t0: D.t - 0.2, t1: D.t + 0.25, kind: 'ins', x: SHEET[0], y: SHEET[1], sp: 'w' });
+    wait(0.1);
+    const tc = click(0.12);
+    sheetEls.forEach((e, i) => { e.t0 = tc + (e.dt || 0); e.t1 = e.t0 + (e.dur || 0.01); e.full = true; });
+    const lastSh = sheetEls.reduce((m, e) => Math.max(m, e.t1), tc);
+    EL.push(...sheetEls);
+    wait(0.5); endCmd();
+  }
+  // title block text, typed in with TEXT
+  {
+    cmd('TEXT', { dur: 0.3 });
+    const lines = [['PROJECT:', 'APARTMENT 92 m²'], ['TITLE:', 'GROUND FLOOR PLAN'], ['SCALE:', '1 : 50  (A3)'], ['DRAWN:', '0x4D44    29.10.2026']];
+    for (const [a, b] of lines) { ask('Specify start point of text or [Justify/Style]:'); typeText(a + ' ' + b, 0.3); enter(0.04); }
+    endCmd();
+    sheetTexts().forEach((e, i) => { e.t0 = D.t - 1.3 + i * 0.16; e.t1 = e.t0 + 0.5; EL.push(e); });
+  }
+  wait(0.8);
+  mark('sheet done');
+  camTo({ cx: 5000, cy: 4300, vis: 12600 }, 1.5);
+  wait(1.0);
+
+  // ================================================================= 09 SELECT -> 3D
+  chapter('09', 'SELECT THE PLAN', 'window selection  ·  the same drawing becomes the model');
+  cmd('SELECT', { dur: 0.35 });
+  ask('Select objects:');
+  const wa = [-2000, -1900], wb = [13700, 10800];
+  mv(wa, 1.0); click(0.15);
+  ask('Specify opposite corner:');
+  {
+    const t0 = D.t, dur = 1.5;
+    TR.win.push({ t0, t1: t0 + dur, tEnd: t0 + dur + 0.5, a: wa, b: wb });
+    mv(wb, dur, { bd: 0 });
+    click(0.1);
+    T3.selT = D.t;
+  }
+  info(EL.length + ' found');
+  TR.sel = { t0: T3.selT, t1: T3.selT + 0.5 };
+  wait(1.5);
+  ask('Select objects:'); enter(0.1); endCmd();
+  mark('selected');
+}
+
+// ---- the sheet: border, title block, schedule, north arrow, scale bar
+function buildSheetEls() {
+  const out = [];
+  const rc = (r, wm = 1, extra) => out.push(Object.assign({ k: 'rc', L: 'sheet', r, wm }, extra));
+  const ln = (a, b, wm = 1, extra) => out.push(Object.assign({ k: 'ln', L: 'sheet', a, b, wm }, extra));
+  rc(SHEET, 1); rc(FRAME, 1.5);
+  rc(TBLK, 1.3); [100, -800, -1500, -2150].forEach((y) => ln([TBLK[0], y], [TBLK[2], y], 1));
+  ln([15600, -2150], [15600, -1500], 1);
+  rc(SCHED, 1.3); ln([SCHED[0], SCHED[3] - 450], [SCHED[2], SCHED[3] - 450], 1.3); ln([15700, SCHED[1]], [15700, SCHED[3]], 1);
+  const rows = ROOMS.length + 1;
+  for (let i = 1; i <= rows; i++) { const y = SCHED[3] - 450 - i * 440; if (y > SCHED[1] + 1) ln([SCHED[0], y], [SCHED[2], y], 0.8); }
+  // north arrow
+  out.push({ k: 'ci', L: 'sheet', x: NARROW[0], y: NARROW[1], r: 650, wm: 1.1 });
+  ln([NARROW[0], NARROW[1] - 520], [NARROW[0], NARROW[1] + 880], 1.2); ln([NARROW[0], NARROW[1] + 880], [NARROW[0] - 230, NARROW[1] + 430], 1.2); ln([NARROW[0], NARROW[1] + 880], [NARROW[0] + 230, NARROW[1] + 430], 1.2);
+  // scale bar 0..5 m at 1:50 beneath the plan
+  const sx = -1500, sy = -2350;
+  for (let i = 0; i <= 5; i++) ln([sx + i * 1000, sy], [sx + i * 1000, sy + (i % 5 === 0 ? 200 : 120)], 1);
+  ln([sx, sy], [sx + 5000, sy], 1.3); ln([sx, sy + 90], [sx + 5000, sy + 90], 0.8);
+  out.forEach((e, i) => { e.dt = i * 0.012; e.dur = 0.01; });
+  return out;
+}
+function sheetTexts() {
+  const t = [];
+  const tx = (x, y, s, h, o = {}) => t.push(Object.assign({ k: 'tx', L: 'sheet', x, y, s, h, c: CC.white, al: 'l' }, o));
+  tx(TBLK[0] + 200, TBLK[3] - 520, 'PLAN TO BUILD', 330, { w: 700, c: CC.white });
+  tx(TBLK[0] + 200, TBLK[3] - 900, 'ground floor plan  ·  apartment', 150, { c: CC.gray });
+  tx(TBLK[0] + 200, -250, 'APARTMENT 92 m²', 210, { w: 600 });
+  tx(TBLK[0] + 200, -620, 'Ground floor plan', 150, { c: CC.gray });
+  tx(TBLK[0] + 200, -1050, 'SCALE', 110, { c: CC.gray }); tx(TBLK[0] + 200, -1330, '1 : 50', 230, { w: 600 });
+  tx(15750, -1050, 'SHEET', 110, { c: CC.gray }); tx(15750, -1330, 'A3', 230, { w: 600 });
+  tx(TBLK[0] + 200, -1850, 'DWG  A-101', 150); tx(15750, -1850, 'REV  A', 150);
+  tx(TBLK[0] + 200, -2420, 'drawn by 0x4D44  ·  29.10.2026', 120, { c: CC.gray });
+  tx(SCHED[0] + 200, SCHED[3] - 310, 'ROOM', 130, { c: CC.gray }); tx(15900, SCHED[3] - 310, 'AREA m²', 130, { c: CC.gray });
+  ROOMS.forEach((rm, i) => { const y = SCHED[3] - 450 - (i + 1) * 440 + 150; tx(SCHED[0] + 200, y, rm.id, 150); tx(16750, y, rm.area.toFixed(1), 150, { al: 'r', c: CC.yellow }); });
+  { const y = SCHED[3] - 450 - (ROOMS.length + 1) * 440 + 150; tx(SCHED[0] + 200, y, 'TOTAL', 150, { w: 700 }); tx(16750, y, TOTAL_AREA.toFixed(1), 170, { al: 'r', c: CC.yellow, w: 700 }); }
+  tx(NARROW[0], NARROW[1] + 1150, 'N', 230, { al: 'c', w: 700 });
+  tx(-1500, -2050, '0       1       2       3       4       5 m', 110, { c: CC.gray }); 
+  return t;
+}
+
+
+/* ---------------- 66-film3d.js ---------------- */
+
+// ============================================================================
+// 6b. THE 3D HALF OF THE FILM  (phase windows, camera path, command-line story, chapters)
+//     Runs after filmCAD(): the 2D film ends with the plan selected, D.t is the moment the model takes over.
+// ============================================================================
+function film3D() {
+  const S = D.t;
+  D.sp = 1; D.cp = null;
+  T3.swap = S; T3.fade = 0.6; T3.chrome0 = S + 0.8; T3.chrome1 = S + 2.6;
+  const ph = (T3.ph = {
+    col: [S + 5.0, S + 9.8], wall: [S + 9.4, S + 21.4], ins: [S + 19.9, S + 25.9], lint: [S + 25.6, S + 30.2], win: [S + 30.4, S + 34.0],
+    door: [S + 33.4, S + 39.0], floor: [S + 38.4, S + 45.0], fx: [S + 45.0, S + 50.2], furn: [S + 50.2, S + 65.2],
+  });
+  T3.end = S + 74.0;
+  const IT = schedItems();
+  const nFx = ITEMS.filter((it) => it.fx).length, nFu = ITEMS.length - nFx;
+  const seg = (dt, fn) => { D.t = S + dt; fn(); };
+  const ch = (dt, num, name, sub) => { D.t = S + dt; chapter(num, name, sub); };
+
+  // ---------------------------------------------------------------- the command-line story
+  const extrude = (name, found, h, note) => {
+    cmd('EXTRUDE', { dur: 0.45, dw: 0.1 });
+    info('Current wire density:  ISOLINES=4,  Closed profiles creation mode = Solid');
+    ask('Select objects to extrude or [MOde]:'); wait(0.3); info(found + ' found');
+    ask('Select objects to extrude or [MOde]:'); wait(0.15); enter(0.08);
+    ask('Specify height of extrusion or [Direction/Path/Taper angle/Expression]:'); typeText(String(h), 0.4); enter(0.1);
+    if (note) info(note);
+    endCmd();
+  };
+  seg(0.9, () => { cmd('-VIEW', { dur: 0.35, dw: 0.1 }); ask('Enter an option [?/Categories/Delete/Orthographic/Restore/Save/sEttings/Window]:'); typeText('SWISO', 0.35); enter(0.08); info('Regenerating model.'); endCmd(); });
+  seg(2.15, () => { cmd('VSCURRENT', { dur: 0.5, dw: 0.1 }); ask('Enter an option [2dwireframe/Wireframe/Hidden/Realistic/Conceptual/Shaded/shaded with Edges/shades of Gray/SKetchy/X-ray/Other] <2dwireframe>:'); typeText('R', 0.15); enter(0.08); info('Regenerating model.'); endCmd(); });
+  ch(3.1, '10', 'COLUMNS', 'EXTRUDE 2810  ·  concrete, cast in formwork');
+  seg(3.1, () => extrude('columns', 12, 2810, null));
+  seg(7.4, () => info('12 solids created  (2.81 m, 400 × 400)'));
+  ch(7.6, '11', 'BLOCK WALLS', 'EXTRUDE 2800  ·  300 mm blocks, laid course by course');
+  seg(7.6, () => extrude('walls', 10, 2800, null));
+  seg(15.0, () => info('10 solids created  (10 walls, 300 mm block)'));
+  ch(18.2, '12', 'INSULATION', '150 mm boards fixed to the outside of the envelope');
+  seg(18.2, () => extrude('insulation', 4, 2800, null));
+  ch(23.8, '13', 'LINTELS', 'precast beams over every opening, blocks above');
+  seg(23.8, () => { cmd('-INSERT', { dur: 0.4, dw: 0.1 }); ask('Enter block name or [?]:'); typeText('LINTEL-200', 0.5); enter(0.08); info('20 blocks inserted at the opening heads  (2200)'); endCmd(); });
+  ch(28.6, '14', 'WINDOWS & DOORS', 'INSERT 3D blocks  ·  ROTATE3D 90° to swing the leaves');
+  seg(28.6, () => { cmd('-INSERT', { dur: 0.4, dw: 0.1 }); ask('Enter block name or [?]:'); typeText('WINDOW-3D', 0.5); enter(0.08); info('12 windows placed, glazed 24 mm'); endCmd(); });
+  seg(31.4, () => { cmd('-INSERT', { dur: 0.4, dw: 0.1 }); ask('Enter block name or [?]:'); typeText('DOOR-3D', 0.4); enter(0.08); info('7 doors placed'); endCmd(); });
+  seg(34.2, () => { cmd('ROTATE3D', { dur: 0.45, dw: 0.1 }); ask('Select objects:'); wait(0.2); info('7 found'); ask('Specify first point on axis or define axis by [Object/Last/View/Xaxis/Yaxis/Zaxis/2points]:'); typeText('Z', 0.12); enter(0.06); ask('Specify point on Z axis <0,0,0>:'); wait(0.2); enter(0.06); ask('Specify rotation angle or [Reference]:'); typeText('90', 0.2); enter(0.1); endCmd(); });
+  ch(36.0, '15', 'FLOORS', 'PRESSPULL 40  ·  oak planks and ceramic tile');
+  seg(36.0, () => { cmd('PRESSPULL', { dur: 0.5, dw: 0.1 }); info('Click inside bounded areas to press or pull.'); ask('Specify extrusion height or [Multiple]:'); typeText('40', 0.2); enter(0.1); endCmd(); });
+  seg(39.0, () => { cmd('-MATERIALATTACH', { dur: 0.6, dw: 0.1 }); ask('Enter material name:'); typeText('OAK-PLANK-190', 0.5); enter(0.08); ask('Enter material name:'); typeText('TILE-600', 0.35); enter(0.08); endCmd(); });
+  seg(41.0, () => {
+    cmd('SECTIONPLANE', { dur: 0.6, dw: 0.1 });
+    ask('Select face or any point to locate section line or [Draw section/Orthographic]:'); typeText('O', 0.12); enter(0.06);
+    ask('Align section to [Front/Back/Top/Bottom/Left/Right] <Front>:'); typeText('T', 0.12); enter(0.06);
+    info('Section plane placed at Z = 1300  (live section on: walls, columns and openings are cut)');
+    endCmd();
+  });
+  ch(43.6, '16', 'KITCHEN & BATH', 'a section cut at 1.3 m  ·  the fixtures rise out of the footprints they were drawn in');
+  seg(43.6, () => extrude('fixtures', nFx, 870, null));
+  ch(48.0, '17', 'FURNITURE', '3DMOVE every block onto the spot where it was drawn');
+  seg(48.0, () => { cmd('3DMOVE', { dur: 0.45, dw: 0.1 }); ask('Select objects:'); wait(0.2); info(nFu + ' found'); ask('Specify base point or [Displacement]:'); wait(0.15); typeText('0,0,2000', 0.4); enter(0.06); ask('Specify second point or <use first point as displacement>:'); endCmd(); });
+  // each landing prints its block, in the order they fall
+  for (const it of ITEMS) {
+    if (it.fx) continue;
+    const S0 = IT[it.id].t0 + 0.62 * IT[it.id].dur;
+    seg(S0 - S, () => info(BLOCKNAME[it.type] + (it.w ? '-' + it.w : '') + '   ' + Math.round(it.x) + ', ' + Math.round(it.y) + ', 0'));
+  }
+  seg(65.0, () => { cmd('ERASE', { dur: 0.3, dw: 0.08 }); ask('Select objects:'); wait(0.2); info('1 found  (section plane)'); ask('Select objects:'); enter(0.1); endCmd(); });
+  ch(66.2, '18', 'HOME', ROOMS.length + ' rooms  ·  ' + TOTAL_AREA.toFixed(1) + ' m²  ·  ' + ITEMS.length + ' pieces, all from one drawing');
+  seg(66.7, () => { cmd('3DORBIT', { dur: 0.5, dw: 0.1 }); endCmd(); });
+  T3.cutT = { down: [S + 43.1, S + 44.6], up: [S + 66.2, S + 67.8] };               // the section plane lowers after SECTIONPLANE, lifts after ERASE
+
+  // ---------------------------------------------------------------- the camera
+  // three coordinates: x east, y up, z south. The plan centre is (6.0, ., -4.475).
+  const K = [];
+  const key = (dt, tx, ty, tz, az, el, H, fov) => K.push([S + dt, { tx, ty, tz, az, el, H, lp: Math.log(Math.tan(fov * DEG / 2)) }]);
+  const room = (id) => { const rm = ROOM_BY_ID[id]; return [rCX(rm.r) / 1000, -rCY(rm.r) / 1000]; };
+  const rt = {}, rf = {};                                                    // when the first / last piece of each room arrives (furniture, fixtures)
+  for (const it of ITEMS) { const a = IT[it.id], o = it.fx ? rf : rt; if (!o[it.room]) o[it.room] = [1e9, 0]; o[it.room][0] = Math.min(o[it.room][0], a.t0); o[it.room][1] = Math.max(o[it.room][1], a.t0 + a.dur); }
+  const kit = room('KITCHEN'), bath = room('BATH'), liv = room('LIVING'), b1 = room('BED 1'), b2 = room('BED 2'), st = room('STUDY'), co = room('CORRIDOR');
+  key(0.0, 5.0, 0, -4.3, 0, 90, 17.38, 3);                                   // exactly the 2D view the drawing ended on, looking straight down
+  key(4.6, 6.0, 0.7, -4.5, -36, 40, 21, 34);
+  key(9.8, 5.6, 1.0, -3.8, -12, 28, 16.5, 36);
+  key(14.0, 6.0, 1.2, -4.5, 40, 26, 18, 38);
+  key(18.0, 6.0, 1.2, -4.5, 100, 28, 18.5, 38);
+  key(22.0, 6.0, 1.2, -4.5, 160, 30, 19, 38);
+  key(26.0, 6.0, 1.2, -4.5, 225, 30, 19, 38);
+  key(30.0, 6.0, 1.0, -3.4, 290, 27, 16, 38);
+  key(34.0, 6.3, 1.0, -2.6, 340, 25, 15, 38);
+  // The interiors are filmed through a section cut at 1.3 m (SECTIONPLANE): near walls can no longer hide a bed or the kitchen run,
+  // and the camera keeps flying around: the kitchen run is filmed from the north, everything else from the south.
+  key(38.0, 6.0, 0.8, -4.5, 372, 50, 18, 38);
+  key(42.0, 6.0, 0.4, -4.5, 384, 58, 17, 38);
+  key((rf.KITCHEN[0] - S) - 0.5, 8.6, 0.3, -2.6, 448, 57, 12.5, 38);
+  key((rf.KITCHEN[0] - S) + 1.4, kit[0] + 0.1, 0.3, kit[1] + 0.2, 512, 55, 9.2, 38);
+  key((rf.BATH[0] - S) - 0.3, (kit[0] + bath[0]) / 2, 0.3, (kit[1] + bath[1]) / 2, 440, 58, 12.5, 38);
+  key((rf.BATH[0] - S) + 1.0, bath[0], 0.3, bath[1] + 0.2, 374, 60, 8.8, 38);
+  key((rt.LIVING[0] - S) + 0.9, liv[0], 0.3, liv[1] + 0.1, 366, 60, 11.5, 38);
+  key((rt.LIVING[1] - S) - 0.6, liv[0] + 0.5, 0.3, liv[1], 352, 60, 10.5, 38);
+  key((rt.KITCHEN[0] - S) + 0.5, kit[0] - 0.6, 0.3, (kit[1] + co[1]) / 2, 370, 62, 10.5, 38);
+  key((rt.CORRIDOR[0] - S) + 0.5, co[0] + 1.0, 0.3, co[1] + 0.2, 392, 62, 10.5, 38);
+  key((rt['BED 1'][0] - S) + 0.9, b1[0] + 0.2, 0.3, b1[1], 404, 62, 8.8, 38);
+  key((rt['BED 2'][0] - S) + 0.9, b2[0], 0.3, b2[1], 412, 62, 8.8, 38);
+  key((rt.STUDY[0] - S) + 0.4, st[0] - 0.6, 0.3, st[1], 420, 62, 9.2, 38);
+  key(66.2, 6.0, 0.6, -4.5, 436, 54, 15.5, 38);
+  key(70.0, 6.0, 0.6, -4.5, 476, 42, 16.5, 38);
+  key(74.0, 6.0, 0.6, -4.5, 516, 36, 17.5, 38);
+  T3.cam = K.sort((a, b) => a[0] - b[0]);
+  mark('3D film');
+}
+
+
+/* ---------------- 70-scene3d.js ---------------- */
+
+// ============================================================================
+// 7. THE 3D BUILD  (three.js).  Everything below is a pure function of t, built from the same model as the drawing:
+//    plan (x, y, z) in mm  ->  three (x, z, -y) in metres.   Parts: 70 core + materials, 72 construction, 74 furniture.
+// ============================================================================
+const G3 = { ready: false, anims: [], error: null, lost: false, warm: false, loading: null };
+let THREE = null, RoundedBoxGeometry = null, RoomEnvironment = null;
+// Fetched in the background and in parallel: the drafting plays at once, and boot (98) builds the 3D scene when this settles.
+G3.loading = Promise.all([import('three'), import('three/addons/geometries/RoundedBoxGeometry.js'), import('three/addons/environments/RoomEnvironment.js')])
+  .then(([t, g, e]) => { THREE = t; RoundedBoxGeometry = g.RoundedBoxGeometry; RoomEnvironment = e.RoomEnvironment; })
+  .catch((e) => { console.warn('three.js could not be loaded - the 2D drafting still plays', e); G3.error = e; THREE = null; });
+
+const FLOOR_TOP = 0.046;                                   // screed 40 + finished floor 6
+const SCREED_H = 0.04;
+const SUN_DIR = [0.55, 0.78, 0.62];                        // towards the sun (x east, y up, z south)
+
+const prog3 = (t, a, b) => (b > a ? clamp((t - a) / (b - a)) : (t >= a ? 1 : 0));
+
+// ---- a camera spline with a standing start and a standing finish (C1 Hermite through unevenly spaced keys)
+function splineZ(keys, t) {
+  const n = keys.length;
+  if (t <= keys[0][0]) return keys[0][1];
+  if (t >= keys[n - 1][0]) return keys[n - 1][1];
+  let i = 1; while (i < n - 1 && t > keys[i][0]) i++;
+  const p1 = keys[i - 1], p2 = keys[i], dt = p2[0] - p1[0], u = (t - p1[0]) / dt;
+  const slope = (j) => (j <= 0 || j >= n - 1 ? 0 : (keys[j + 1][1] - keys[j - 1][1]) / (keys[j + 1][0] - keys[j - 1][0]));
+  const m1 = slope(i - 1) * dt, m2 = slope(i) * dt, u2 = u * u, u3 = u2 * u;
+  return (2 * u3 - 3 * u2 + 1) * p1[1] + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * p2[1] + (u3 - u2) * m2;
+}
+// T3.cam = [[t, {tx,ty,tz, az,el, H, lp}], ...]   target (m), azimuth / elevation (deg), visible height at the target (m), lp = ln tan(fov/2)
+const CAM_KEYS = ['tx', 'ty', 'tz', 'az', 'el', 'H', 'lp'];
+function camAt3(t) {
+  const K = T3.cam, out = {};
+  for (const k of CAM_KEYS) out[k] = splineZ(K.map((q) => [q[0], q[1][k]]), t);
+  return out;
+}
+
+// ---- procedural surfaces (GLSL, world-space so a wall that grows keeps its coursing).
+//      Every line and dot is filtered by the pixel footprint (fwidth), so nothing shimmers in motion or at a distance.
+const GLSL_LIB = `
+vec3 sc(vec3 c){ return pow(c, vec3(2.2)); }
+float h11(float p){ p = fract(p * .1031); p *= p + 33.33; p *= p + p; return fract(p); }
+float h21(vec2 p){ vec3 q = fract(vec3(p.xyx) * .1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
+float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h21(i), h21(i + vec2(1., 0.)), f.x), mix(h21(i + vec2(0., 1.)), h21(i + vec2(1., 1.)), f.x), f.y); }
+vec2 wallUV(vec3 p, vec3 n){ vec3 a = abs(n); return a.x > a.z ? vec2(p.z, p.y) : vec2(p.x, p.y); }
+// coverage of a line of half-width hw at distance d from its centre, for a pixel footprint aa
+float lineCov(float d, float hw, float aa){ return clamp((hw + aa - d) / (2. * aa), 0., 1.) * min(1., hw / aa); }
+`;
+// cap: a flat colour (sRGB, "r,g,b") painted on the back faces that show through a section cut, so a clipped solid reads as solid
+function patchMat(mat, key, body, cap) {
+  mat.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;\n' + GLSL_LIB)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n{\n' + body + '\n}');
+    if (cap) sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>', 'if (!gl_FrontFacing) gl_FragColor = vec4(' + cap + ', 1.0);\n#include <dithering_fragment>');
+  };
+  mat.customProgramCacheKey = () => key;
+  return mat;
+}
+// ---- the section plane: while the interiors are filmed, everything built (walls, columns, openings) is cut at CUT_H
+const CUT_H = 1.3, CUT_TOP = 2.95;
+const CUT_CAP = { block: '.86,.83,.78', insul: '.95,.78,.32', concrete: '.78,.78,.76' };
+const CUT_PLAIN = new Set(['pvc', 'door', 'doorE', 'sill', 'glass']);
+function cutAt(t) {
+  const c = T3.cutT;
+  if (!c || t < c.down[0] || t >= c.up[1]) return 100;
+  return CUT_TOP - (CUT_TOP - CUT_H) * easeIO(prog3(t, c.down[0], c.down[1])) + (CUT_TOP - CUT_H) * easeIO(prog3(t, c.up[0], c.up[1]));
+}
+const SURF = {
+  block: `
+    vec2 uv = wallUV(vWP, vWN);
+    if (abs(vWN.y) > 0.7) { diffuseColor.rgb = sc(vec3(.80, .78, .74)) * (.93 + .07 * h21(floor(vWP.xz * 2.5))); }
+    else {
+      float row = floor(uv.y / .2), u = uv.x + mod(row, 2.) * .2, col = floor(u / .4);
+      vec2 f = vec2(mod(u, .4), mod(uv.y, .2)), aa = fwidth(vec2(u, uv.y)) * .75 + 1e-5;
+      float mortar = max(lineCov(min(f.x, .4 - f.x), .0045, aa.x), lineCov(min(f.y, .2 - f.y), .005, aa.y));
+      float lod = 1. - smoothstep(.02, .07, aa.y);
+      vec3 blk = sc(vec3(.78, .76, .72)) * (.9 + .2 * h21(vec2(col, row))) * (1. - .06 * lod + .12 * lod * vn(uv * 22.));
+      diffuseColor.rgb = mix(blk, sc(vec3(.44, .42, .39)), mortar * .9);
+      roughnessFactor = .96;
+    }`,
+  insul: `
+    vec2 uv = wallUV(vWP, vWN);
+    vec3 wool = sc(vec3(.91, .72, .27));
+    if (abs(vWN.y) > 0.7) { diffuseColor.rgb = wool * .9; }
+    else {
+      float row = floor(uv.y / .6), u = uv.x + mod(row, 2.) * .6;
+      vec2 f = vec2(mod(u, 1.2), mod(uv.y, .6)), aa = fwidth(vec2(u, uv.y)) * .75 + 1e-5;
+      float seam = max(lineCov(min(f.x, 1.2 - f.x), .003, aa.x), lineCov(min(f.y, .6 - f.y), .003, aa.y));
+      vec2 q = vec2(min(f.x, 1.2 - f.x), min(f.y, .6 - f.y));
+      float d = min(length(q), length(f - vec2(.6, .3))), aaD = max(aa.x, aa.y);
+      float dowel = clamp((.03 + aaD - d) / (2. * aaD), 0., 1.) * min(1., .03 / aaD);
+      float lod = 1. - smoothstep(.03, .09, aaD);
+      vec3 c = wool * (.95 + .12 * lod * (vn(uv * 48.) - .5)) * (.92 + .14 * h21(vec2(floor(u / 1.2), row)));
+      c = mix(c, sc(vec3(.9, .91, .92)), dowel * .9);
+      diffuseColor.rgb = c * (1. - .5 * seam);
+      roughnessFactor = .98;
+    }`,
+  concrete: `
+    vec2 uv = wallUV(vWP, vWN);
+    float aaB = fwidth(uv.x) / .15 + 1e-4, board = fract(uv.x / .15);
+    float line = (1. - smoothstep(.0, .035 + aaB, min(board, 1. - board))) * (1. - smoothstep(.1, .5, aaB));
+    float row = floor(uv.y / .6);
+    vec2 tie = vec2(mod(uv.x + .075, .6) - .3, mod(uv.y, .9) - .45);
+    float aaT = max(fwidth(uv.x), fwidth(uv.y)) + 1e-5;
+    float hole = (1. - smoothstep(.016 - aaT, .022 + aaT, length(tie))) * min(1., .02 / aaT);
+    float lod = 1. - smoothstep(.02, .08, aaT);
+    vec3 c = sc(vec3(.62, .62, .60)) * (.9 + .16 * lod * vn(uv * 7.) + .08 * h21(vec2(floor(uv.x / .15), row)));
+    diffuseColor.rgb = c * (1. - .22 * line) * (1. - .55 * hole);
+    roughnessFactor = .93;`,
+  screed: `
+    float aa = max(fwidth(vWP.x), fwidth(vWP.z)) + 1e-5, lod = 1. - smoothstep(.01, .06, aa);
+    vec3 c = sc(vec3(.56, .57, .58)) * (.92 + .16 * vn(vWP.xz * 3.) + .06 * lod * vn(vWP.xz * 31.));
+    diffuseColor.rgb = c; roughnessFactor = .9;`,
+  oakfloor: `
+    float row = floor(vWP.z / .19), off = h11(row) * 2.4, u = vWP.x + off, col = floor(u / 2.4);
+    float fx = mod(u, 2.4), fz = mod(vWP.z, .19);
+    vec2 aa = fwidth(vec2(u, vWP.z)) * .75 + 1e-5;
+    float edge = max(lineCov(min(fx, 2.4 - fx), .0015, aa.x), lineCov(min(fz, .19 - fz), .0012, aa.y));
+    float lod = 1. - smoothstep(.008, .04, aa.y);
+    float sh = h21(vec2(col, row));
+    vec3 base = mix(sc(vec3(.80, .60, .38)), sc(vec3(.66, .46, .26)), sh);
+    float grain = .5 + .5 * sin(vWP.z * 150. + vn(vec2(vWP.x * 2.4, row * 3.)) * 9.);
+    base *= 1. - .13 * lod + .13 * lod * grain;
+    diffuseColor.rgb = mix(base, base * .3, edge);
+    roughnessFactor = mix(.42, .7, edge);`,
+  tile: `
+    vec2 g = vWP.xz / .6, id = floor(g), f = fract(g) * .6, aa = fwidth(vWP.xz) * .75 + 1e-5;
+    float grout = max(lineCov(min(f.x, .6 - f.x), .0025, aa.x), lineCov(min(f.y, .6 - f.y), .0025, aa.y));
+    float lod = 1. - smoothstep(.01, .05, max(aa.x, aa.y));
+    vec3 c = sc(vec3(.80, .78, .74)) * (.88 + .16 * h21(id)) * (.98 + .04 * lod * vn(vWP.xz * 14.));
+    diffuseColor.rgb = mix(c, sc(vec3(.40, .40, .39)), grout);
+    roughnessFactor = mix(.22, .8, grout);`,
+};
+
+// ---- materials
+const MAT3 = {};
+const FURN3 = {
+  oak: ['#b98a56', .55, 0], oakD: ['#6e4c30', .6, 0], fabA: ['#4d5f7a', .96, 0], fabB: ['#93a4ba', .96, 0], fabC: ['#c99b4d', .92, 0],
+  black: ['#17191c', .5, .25], steel: ['#bcc3cb', .28, .9], white: ['#f1f0ec', .5, 0], whiteG: ['#f8f8f6', .22, 0],
+  stone: ['#dad6ce', .28, 0], cabW: ['#eae7e0', .42, 0], ceramic: ['#f6f8f8', .1, 0], pillow: ['#f2efe9', .96, 0],
+  bedA: ['#e9e6e0', .96, 0], bedB: ['#7f9b97', .96, 0], bookA: ['#a23b3b', .8, 0], bookB: ['#2c5a86', .8, 0], bookC: ['#d6ac45', .8, 0],
+  pot: ['#8a5a3c', .85, 0], leaf: ['#3f7d44', .7, 0], leaf2: ['#5f9a4c', .7, 0], rugA2: ['#d8cab0', 1, 0], rugB2: ['#a86d52', 1, 0],
+  tv: ['#0c0d10', .3, .3], door: ['#f3f2ee', .38, 0], doorE: ['#2e3844', .45, .1], pvc: ['#f4f5f6', .4, 0], sill: ['#c9c6bf', .35, 0],
+};
+function canvasTex(w, h, draw, srgb = true) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function rugTex(base, line, alt, stripes) {
+  return canvasTex(512, 512, (g, w, h) => {
+    g.fillStyle = base; g.fillRect(0, 0, w, h);
+    g.strokeStyle = line; g.lineWidth = 10; g.strokeRect(26, 26, w - 52, h - 52);
+    g.lineWidth = 3; g.strokeRect(48, 48, w - 96, h - 96);
+    if (stripes) { g.fillStyle = alt; for (let x = 80; x < w - 70; x += 44) g.fillRect(x, 58, 20, h - 116); }
+    else { g.strokeStyle = alt; g.lineWidth = 3; const cx = w / 2, cy = h / 2; for (let r = 40; r < 170; r += 34) { g.beginPath(); g.moveTo(cx, cy - r); g.lineTo(cx + r, cy); g.lineTo(cx, cy + r); g.lineTo(cx - r, cy); g.closePath(); g.stroke(); } }
+  });
+}
+function mat3(name) {
+  if (MAT3[name]) return MAT3[name];
+  let m;
+  const std = (o) => new THREE.MeshStandardMaterial(o);
+  if (SURF[name]) m = patchMat(std({ color: 0xffffff, roughness: .9, metalness: 0 }), 'surf-' + name, SURF[name], CUT_CAP[name]);
+  else if (name === 'rugA') m = std({ map: rugTex('#d6c8ae', '#8a7656', '#a9946f', false), roughness: 1 });
+  else if (name === 'rugB') m = std({ map: rugTex('#b8745a', '#5e3426', '#e3c9a4', true), roughness: 1 });
+  else if (name === 'screen') m = std({ color: 0x000000, emissive: 0xffffff, emissiveIntensity: .9, emissiveMap: canvasTex(256, 144, (g, w, h) => { const q = g.createLinearGradient(0, 0, 0, h); q.addColorStop(0, '#2b5f9e'); q.addColorStop(.55, '#78b0d6'); q.addColorStop(.56, '#2d5a4a'); q.addColorStop(1, '#16302a'); g.fillStyle = q; g.fillRect(0, 0, w, h); }), roughness: .3 });
+  else if (name === 'water') m = std({ color: 0x7fc8e8, roughness: .05, transparent: true, opacity: .55, depthWrite: false });
+  else if (name === 'glassD') m = std({ color: 0x1d2a31, roughness: .06, metalness: .2, transparent: true, opacity: .6, depthWrite: false });
+  else if (name === 'glass') m = std({ color: 0xbfe0ee, roughness: .04, metalness: 0, transparent: true, opacity: .2, depthWrite: false, envMapIntensity: 1.6 });
+  else if (name === 'lampsh') m = std({ color: 0xf6ecd4, emissive: 0xffc67a, emissiveIntensity: .75, roughness: .9 });
+  else { const q = FURN3[name] || ['#cccccc', .6, 0]; m = std({ color: new THREE.Color(q[0]), roughness: q[1], metalness: q[2] }); }
+  if (CUT_CAP[name] || CUT_PLAIN.has(name)) { m.clippingPlanes = [G3.clip]; m.clipShadows = true; if (name !== 'glass') m.side = THREE.DoubleSide; }
+  MAT3[name] = m;
+  return m;
+}
+const geoCache = new Map();
+const cacheGeo = (k, f) => { let g = geoCache.get(k); if (!g) { g = f(); geoCache.set(k, g); } return g; };
+function boxGeo(w, h, d, r = 0) {
+  r = Math.min(r, Math.min(w, h, d) / 2 - 1e-4);
+  return cacheGeo(`b${w.toFixed(4)},${h.toFixed(4)},${d.toFixed(4)},${r.toFixed(4)}`, () => (r > 0.0009 ? new RoundedBoxGeometry(w, h, d, r > 0.012 ? 3 : 2, r) : new THREE.BoxGeometry(w, h, d)));
+}
+// a unit box whose base sits on y = 0 and whose x/z extents are 1 (scaled per piece)
+const unitBase = () => cacheGeo('unitBase', () => new THREE.BoxGeometry(1, 1, 1).translate(0, .5, 0));
+const unitWest = () => cacheGeo('unitWest', () => new THREE.BoxGeometry(1, 1, 1).translate(.5, 0, 0));
+const unitFlat = () => cacheGeo('unitFlat', () => new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2));
+
+// ---- the scene
+function buildScene3D() {
+  if (!THREE) return;
+  const glc = document.createElement('canvas'); glc.width = 1280; glc.height = 720;
+  const renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(1);
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.96;
+  renderer.localClippingEnabled = true;
+  G3.clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 100);                 // keeps everything below y = constant
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(CC.bg);
+  const camera = new THREE.PerspectiveCamera(30, 16 / 9, .1, 2000);
+  Object.assign(G3, { glc, renderer, scene, camera, W: 0, H: 0 });
+
+  // light: a low afternoon sun from the south-east, sky fill, and a room-sized environment for the glossy things
+  const sun = new THREE.DirectionalLight(0xfff0dc, 2.8);
+  const sd = new THREE.Vector3(...SUN_DIR).normalize();
+  sun.position.copy(sd.clone().multiplyScalar(32)).add(new THREE.Vector3(6, 0, -4.4)); sun.target.position.set(6, 0, -4.4);
+  sun.castShadow = true; sun.shadow.mapSize.set(4096, 4096);
+  Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 4, far: 70 }); sun.shadow.camera.updateProjectionMatrix();
+  sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02; sun.shadow.radius = 2.5;
+  scene.add(sun, sun.target);
+  scene.add(new THREE.HemisphereLight(0xcfe0f5, 0x2a2f36, 0.8));
+  const pm = new THREE.PMREMGenerator(renderer);
+  G3.makeEnv = () => { if (scene.environment) scene.environment.dispose(); scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture; };
+  G3.makeEnv(); scene.environmentIntensity = 0.42;
+  // A lost GL context (GPU reset, driver update) empties the environment map: remember it so an export stops instead of writing dim or blank frames,
+  // and rebuild the map when the context comes back. preventDefault() is what allows it to come back.
+  glc.addEventListener('webglcontextlost', (e) => { e.preventDefault(); G3.lost = true; });
+  glc.addEventListener('webglcontextrestored', () => { G3.makeEnv(); G3.lost = false; PL_.dirty = true; });
+
+  // the ground is the drawing sheet itself: the finished 2D plan, painted once by the very same painter
+  const KT = 4096 / (SHEET[2] - SHEET[0]), TW = 4096, TH = Math.round((SHEET[3] - SHEET[1]) * KT);
+  const pc = document.createElement('canvas'); pc.width = TW; pc.height = TH;
+  const pg = pc.getContext('2d');
+  pg.fillStyle = CC.bg; pg.fillRect(0, 0, TW, TH);
+  paintPlan(pg, { k: KT, ox: -SHEET[0] * KT, oy: SHEET[3] * KT, ui: 4.8, tex: true, ga: 1 }, T3.selT, { sel: 0 });
+  const ptex = new THREE.CanvasTexture(pc); ptex.colorSpace = THREE.SRGBColorSpace; ptex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry((SHEET[2] - SHEET[0]) / 1000, (SHEET[3] - SHEET[1]) / 1000).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ map: ptex, toneMapped: false }));
+  ground.position.set((SHEET[0] + SHEET[2]) / 2000, 0, -(SHEET[1] + SHEET[3]) / 2000);
+  scene.add(ground);
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(60, 60).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: .42 }));
+  catcher.position.set(6, 0.003, -4.4); catcher.receiveShadow = true; scene.add(catcher);
+
+  // a pale sheet marks the section plane while it moves
+  const sr = rGrow(OUT, 1100);
+  G3.cutQuad = new THREE.Mesh(unitFlat(), new THREE.MeshBasicMaterial({ color: 0x4aa8ff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+  G3.cutQuad.scale.set(rW(sr) / 1000, 1, rH(sr) / 1000); G3.cutQuad.position.set(rCX(sr) / 1000, 0, -rCY(sr) / 1000); G3.cutQuad.visible = false; G3.cutQuad.renderOrder = 7;
+  scene.add(G3.cutQuad);
+
+  G3.root = new THREE.Group(); scene.add(G3.root);
+  if (typeof build3Construction === 'function') build3Construction();
+  if (typeof build3Furniture === 'function') build3Furniture();
+  G3.ready = true;
+}
+
+// ---- per-frame: poses first, then the camera, then composite into the 2D frame
+function update3D(t) {
+  const h = cutAt(t), c = T3.cutT;
+  G3.clip.constant = h;
+  const mv = c ? Math.max(Math.sin(Math.PI * prog3(t, c.down[0], c.down[1])), Math.sin(Math.PI * prog3(t, c.up[0], c.up[1]))) : 0;
+  G3.cutQuad.visible = mv > 0.01; G3.cutQuad.position.y = Math.min(h, CUT_TOP); G3.cutQuad.material.opacity = 0.2 * mv;
+  for (const a of G3.anims) a(t);
+}
+
+function render3D(ctx, W, H, t, vp, slide) {
+  if (!G3.ready) return;
+  const { renderer, camera, scene, glc } = G3;
+  if (G3.W !== W || G3.H !== H) { renderer.setSize(W, H, false); G3.W = W; G3.H = H; }
+  update3D(t);
+  const c = camAt3(t), S = W / DW;
+  const az = c.az * DEG, el = c.el * DEG, tanH = Math.exp(c.lp), fov = 2 * Math.atan(tanH) / DEG, dist = c.H / (2 * tanH);
+  const hx = -Math.sin(az), hz = -Math.cos(az);                               // horizontal forward
+  const tgt = new THREE.Vector3(c.tx, c.ty, c.tz);
+  camera.position.set(tgt.x - hx * Math.cos(el) * dist, tgt.y + Math.sin(el) * dist, tgt.z - hz * Math.cos(el) * dist);
+  camera.up.set(hx * Math.sin(el), Math.cos(el), hz * Math.sin(el));
+  camera.lookAt(tgt);
+  camera.fov = fov; camera.aspect = W / H; camera.near = clamp(dist * 0.04, 0.05, 18); camera.far = dist * 2 + 90;
+  const pcy = (vp.y + vp.h / 2) * S;                                          // keep the target at the centre of the (growing) viewport
+  camera.setViewOffset(W, H, 0, -(pcy - H / 2), W, H);
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(vp.x * S, vp.y * S, vp.w * S, vp.h * S); ctx.clip();
+  ctx.globalAlpha = T3.fade > 0 ? smooth((t - T3.swap) / T3.fade) : 1;
+  ctx.drawImage(glc, 0, 0, W, H);
+  ctx.restore();
+}
+
+
+/* ---------------- 72-build3d.js ---------------- */
+
+// ============================================================================
+// 7b. THE 3D BUILD: construction  (columns, block walls, insulation, lintels, slab, floors, windows, doors)
+//     Phase windows come from the director (T3.ph); each element is timed inside its window, deterministically.
+// ============================================================================
+const CAP_COL = 0x66b8ff;
+function addCap(cx, cz, w, d) {
+  const m = new THREE.Mesh(unitFlat(), new THREE.MeshBasicMaterial({ color: CAP_COL, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
+  m.scale.set(w, 1, d); m.position.set(cx, 0, cz); m.visible = false; m.renderOrder = 5; G3.root.add(m); return m;
+}
+// a box that grows upward from its base (continuously, or one course at a time when q is set)
+function growBox(o) {
+  const [x0, y0, x1, y1] = o.r, w = (x1 - x0) / 1000 + (o.pad || 0), d = (y1 - y0) / 1000 + (o.pad || 0), hF = (o.z1 - o.z0) / 1000;
+  const cx = (x0 + x1) / 2000, cz = -(y0 + y1) / 2000, base = o.z0 / 1000;
+  const m = new THREE.Mesh(unitBase(), mat3(o.mat)); m.scale.set(w, 1e-3, d); m.position.set(cx, base, cz);
+  m.castShadow = true; m.receiveShadow = true; m.visible = false; G3.root.add(m);
+  const cap = o.cap === false ? null : addCap(cx, cz, w, d);
+  G3.anims.push((t) => {
+    const p = prog3(t, o.t0, o.t1);
+    if (p <= 0) { m.visible = false; if (cap) cap.visible = false; return; }
+    let h = hF;
+    if (p < 1) {
+      if (o.q) { const c = p * hF / o.q, k = Math.floor(c); h = Math.min(hF, (k + smooth((c - k) * 1.8)) * o.q); }
+      else h = hF * easeOut(p);
+    }
+    m.visible = true; m.scale.y = Math.max(h, 1e-3);
+    if (cap) { cap.visible = p < 1; cap.position.y = base + h + 0.002; cap.material.opacity = 0.5 * (1 - smooth(p)); }
+  });
+  return m;
+}
+// a beam that is lowered onto its opening
+function dropBox(o) {
+  const [x0, y0, x1, y1] = o.r, w = (x1 - x0) / 1000 + 0.002, d = (y1 - y0) / 1000 + 0.002, hF = (o.z1 - o.z0) / 1000 + 0.001;
+  const m = new THREE.Mesh(unitBase(), mat3(o.mat)); m.scale.set(w, hF, d);
+  const base = o.z0 / 1000 - 0.0005, cx = (x0 + x1) / 2000, cz = -(y0 + y1) / 2000;
+  m.castShadow = true; m.receiveShadow = true; m.visible = false; G3.root.add(m);
+  G3.anims.push((t) => {
+    const p = prog3(t, o.t0, o.t1);
+    if (p <= 0) { m.visible = false; return; }
+    m.visible = true; m.position.set(cx, base + (1 - easeOut(p)) * 0.8, cz);
+  });
+  return m;
+}
+const popScale = (g, t0, dur = 0.5) => G3.anims.push((t) => { const p = prog3(t, t0, t0 + dur); g.visible = p > 0; if (p > 0) g.scale.setScalar(Math.max(1e-3, easeOutBack(p))); });
+
+function windowGroup(o) {
+  const W = o.w / 1000, tall = o.t === 'tall';
+  const yb = tall ? FLOOR_TOP : o.sill / 1000 + 0.03, yt = OPEN_HEAD / 1000, Hh = yt - yb, fw = 0.06, fd = 0.11;
+  const g = new THREE.Group(), add = (geo, m, x, y, z, cast = true) => { const q = new THREE.Mesh(geo, m); q.position.set(x, y, z); q.castShadow = cast; q.receiveShadow = true; g.add(q); return q; };
+  const pvc = mat3('pvc');
+  add(boxGeo(W, fw, fd, 0.004), pvc, 0, Hh / 2 - fw / 2, 0); add(boxGeo(W, fw, fd, 0.004), pvc, 0, -Hh / 2 + fw / 2, 0);
+  add(boxGeo(fw, Hh - 2 * fw, fd, 0.004), pvc, -W / 2 + fw / 2, 0, 0); add(boxGeo(fw, Hh - 2 * fw, fd, 0.004), pvc, W / 2 - fw / 2, 0, 0);
+  add(boxGeo(W - 2 * fw + 0.012, Hh - 2 * fw + 0.012, 0.012), mat3('glass'), 0, 0, 0, false).renderOrder = 3;
+  if (W >= 1.55) { add(boxGeo(0.05, Hh - 2 * fw, 0.07, 0.003), pvc, 0, 0, 0); add(boxGeo(0.02, 0.12, 0.03, 0.004), mat3('steel'), 0.07, -0.05, 0.06); }
+  else add(boxGeo(0.02, 0.1, 0.03, 0.004), mat3('steel'), W / 2 - fw - 0.05, -0.05, 0.06);
+  if (!tall && o.sill > 0) add(boxGeo(W + 0.12, 0.03, 0.52, 0.004), mat3('sill'), 0, -Hh / 2 - 0.015, 0.04);
+  const out = o.ax === 'x' ? [0, o.mid < 4475 ? -1 : 1] : [o.mid < 6000 ? -1 : 1, 0];   // outward normal in plan
+  const cx = o.ax === 'x' ? o.c : o.mid + out[0] * 40, cy = o.ax === 'x' ? o.mid + out[1] * 40 : o.c;
+  g.position.set(cx / 1000, (yb + yt) / 2, -cy / 1000);
+  g.rotation.y = Math.atan2(out[0], -out[1]);
+  return g;
+}
+function doorGroups(o) {
+  const out = [], W = o.w / 1000, isE = o.t === 'entry';
+  const mk = () => new THREE.Group();
+  // frame, aligned with the wall
+  const fr = mk(), fw = 0.06, fd = isE ? 0.2 : 0.14, hH = OPEN_HEAD / 1000 - FLOOR_TOP;
+  const add = (g, geo, m, x, y, z) => { const q = new THREE.Mesh(geo, m); q.position.set(x, y, z); q.castShadow = true; q.receiveShadow = true; g.add(q); return q; };
+  const pvc = mat3(isE ? 'doorE' : 'pvc');
+  add(fr, boxGeo(fw, hH, fd, 0.004), pvc, -W / 2 + fw / 2, hH / 2, 0); add(fr, boxGeo(fw, hH, fd, 0.004), pvc, W / 2 - fw / 2, hH / 2, 0);
+  add(fr, boxGeo(W, fw, fd, 0.004), pvc, 0, hH - fw / 2, 0);
+  fr.position.set((o.ax === 'x' ? o.c : o.mid) / 1000, FLOOR_TOP, -(o.ax === 'x' ? o.mid : o.c) / 1000);
+  fr.rotation.y = o.ax === 'x' ? 0 : Math.PI / 2;
+  out.push({ g: fr, kind: 'frame' });
+  if (o.isDoor) {
+    const G = doorGeom(o), a0 = Math.atan2(G.cl[1], G.cl[0]), a1 = Math.atan2(G.op[1], G.op[0]);
+    let dl = a1 - a0; while (dl > Math.PI) dl -= TAU; while (dl < -Math.PI) dl += TAU;
+    const piv = mk(), lw = W - 0.03, lm = mat3(isE ? 'doorE' : 'door');
+    const leaf = add(piv, boxGeo(lw, hH - 0.07, 0.044, 0.004), lm, lw / 2 + 0.014, (hH - 0.07) / 2 + 0.01, 0);
+    const hx = lw - 0.075;
+    add(piv, boxGeo(0.13, 0.022, 0.034, 0.005), mat3('steel'), hx, 1.02, 0.03); add(piv, boxGeo(0.13, 0.022, 0.034, 0.005), mat3('steel'), hx, 1.02, -0.03);
+    if (isE) add(piv, boxGeo(0.025, 0.9, 0.03, 0.005), mat3('steel'), lw - 0.12, 1.02, 0.045);
+    piv.position.set((G.H[0] + G.cl[0] * 12) / 1000, FLOOR_TOP, -(G.H[1] + G.cl[1] * 12) / 1000);
+    piv.rotation.y = a0;
+    out.push({ g: piv, kind: 'leaf', a0, dl });
+  }
+  return out;
+}
+
+function build3Construction() {
+  const ph = T3.ph, root = G3.root;
+  // ---- 1. columns (snake order, one after the other)
+  COLUMNS.forEach((c, n) => {
+    const t0 = ph.col[0] + n * ((ph.col[1] - ph.col[0] - 1.5) / 11);
+    growBox({ r: c.r, z0: 0, z1: 2810, mat: 'concrete', t0, t1: t0 + 1.5 });
+  });
+  // ---- 2. walls: exterior four, then the interior ones; piers / sills / headers by courses, lintels dropped in
+  const wspan = ph.wall[1] - ph.wall[0], K = wspan / 10.1;
+  const WT = { S: [0, 3.2], E: [1.2, 4.2], N: [2.4, 5.4], W: [3.6, 6.6], DW: [5.4, 7.6], CW: [6.4, 8.6], P8: [7.4, 8.8], N1: [7.8, 9.3], N2: [8.2, 9.7], N3: [8.6, 10.1] };
+  const lintels = [], headers = [];
+  for (const id of WALL_ORDER) {
+    const W = WALLS[id], [ws, we] = [ph.wall[0] + WT[id][0] * K, ph.wall[0] + WT[id][1] * K];
+    const A0 = W.ax === 'x' ? W.r[0] : W.r[1], A1 = W.ax === 'x' ? W.r[2] : W.r[3];
+    for (const p of wallPieces(W)) {
+      const f = clamp((((p.a0 + p.a1) / 2) - A0) / (A1 - A0));
+      if (p.kind === 'lintel') { lintels.push({ p, W }); continue; }
+      if (p.kind === 'header') { headers.push({ p, W }); continue; }
+      const t0 = ws + (we - ws) * 0.55 * f, t1 = Math.min(we + 0.2, t0 + Math.max(1.1, (we - ws) * 0.45));
+      growBox({ r: p.r, z0: p.z0, z1: p.z1, mat: 'block', t0, t1, q: 0.2 });
+    }
+  }
+  // ---- 3. insulation, outside the exterior walls (boards, 600 high, up to the openings)
+  const ispan = ph.ins[1] - ph.ins[0], IT = { S: [0, 0.36], E: [0.18, 0.54], N: [0.36, 0.72], W: [0.54, 0.9] };
+  const heads = [];
+  for (const id of ['S', 'E', 'N', 'W']) {
+    const W = WALLS[id], ws = ph.ins[0] + IT[id][0] * ispan, we = ph.ins[0] + IT[id][1] * ispan + ispan * 0.1;
+    const A0 = W.ax === 'x' ? W.ins[0] : W.ins[1], A1 = W.ax === 'x' ? W.ins[2] : W.ins[3];
+    for (const p of insulPieces(W)) {
+      const f = clamp((((p.a0 + p.a1) / 2) - A0) / (A1 - A0));
+      if (p.kind === 'head') { heads.push({ p, W }); continue; }
+      const t0 = ws + (we - ws) * 0.5 * f, t1 = t0 + Math.max(1.0, (we - ws) * 0.5);
+      growBox({ r: p.r, z0: p.z0, z1: p.z1, mat: 'insul', t0, t1, q: 0.6 });
+    }
+  }
+  // ---- 4. lintels (precast, lowered in) with the courses above them; the insulation heads follow
+  const nL = lintels.length;
+  lintels.forEach(({ p }, i) => {
+    const t0 = ph.lint[0] + (ph.lint[1] - ph.lint[0] - 1.6) * (nL > 1 ? i / (nL - 1) : 0), t1 = t0 + 0.7;
+    dropBox({ r: p.r, z0: p.z0, z1: p.z1, mat: 'concrete', t0, t1 });
+    p.t0h = t1;
+  });
+  for (const { p } of headers) {                                           // the courses above the lintel
+    const L = lintels.find((q) => q.p.op === p.op), t0 = (L ? L.p.t0h : ph.lint[0]) - 0.05;
+    growBox({ r: p.r, z0: p.z0, z1: p.z1, mat: 'block', t0, t1: t0 + 0.9, q: 0.2 });
+  }
+  for (const { p, W } of heads) {                                          // the insulation above an opening, after its lintel
+    const L = lintels.find((q) => q.W === W && q.p.a0 === p.a0 && q.p.a1 === p.a1), t0 = (L ? L.p.t0h : ph.lint[0]) + 0.5;
+    growBox({ r: p.r, z0: p.z0, z1: p.z1, mat: 'insul', t0, t1: t0 + 0.9, q: 0.6 });
+  }
+
+  // ---- 5. the slab and the finished floors
+  {
+    const r = INN, w = (r[2] - r[0]) / 1000, d = (r[3] - r[1]) / 1000;
+    const slab = new THREE.Mesh(unitWest(), mat3('screed')); slab.scale.set(w, SCREED_H, d); slab.position.set(r[0] / 1000, SCREED_H / 2, -(r[1] + r[3]) / 2000);
+    slab.castShadow = false; slab.receiveShadow = true; slab.visible = false; root.add(slab);
+    const thr = [];
+    for (const o of OPENINGS) if (o.isDoor || o.t === 'pass') {
+      const c = o.ext ? o.cut : o.wcut, b = new THREE.Mesh(unitBase(), mat3('screed'));
+      b.scale.set((c[2] - c[0]) / 1000, SCREED_H, (c[3] - c[1]) / 1000); b.position.set((c[0] + c[2]) / 2000, 0, -(c[1] + c[3]) / 2000); b.receiveShadow = true; b.visible = false; root.add(b);
+      thr.push({ b, x: (c[0] + c[2]) / 2000 });
+    }
+    const fs0 = ph.floor[0], fdur = 1.5;
+    G3.anims.push((t) => {
+      const p = prog3(t, fs0, fs0 + fdur);
+      slab.visible = p > 0; if (p > 0) slab.scale.x = Math.max(1e-3, w * easeOut(p));
+      const front = r[0] / 1000 + w * easeOut(p);
+      for (const q of thr) q.b.visible = p > 0 && front >= q.x;
+    });
+    ROOMS.forEach((rm, i) => {
+      const t0 = fs0 + 1.5 + i * ((ph.floor[1] - fs0 - 1.5 - 1.0) / (ROOMS.length - 1)), rw = rW(rm.r) / 1000, rd = rH(rm.r) / 1000;
+      const m = new THREE.Mesh(unitWest(), mat3(rm.floor === 'oak' ? 'oakfloor' : 'tile'));
+      m.scale.set(rw, 0.006, rd); m.position.set(rm.r[0] / 1000, SCREED_H + 0.003, -rCY(rm.r) / 1000); m.receiveShadow = true; m.visible = false; root.add(m);
+      const cap = addCap(0, -rCY(rm.r) / 1000, 1, rd);
+      G3.anims.push((t) => {
+        const p = prog3(t, t0, t0 + 1.0);
+        m.visible = p > 0; if (p > 0) m.scale.x = Math.max(1e-3, rw * easeOut(p));
+        cap.visible = p > 0 && p < 1; cap.position.x = rm.r[0] / 1000 + rw * easeOut(p) - 0.02; cap.position.y = FLOOR_TOP + 0.003; cap.scale.x = 0.06;
+        cap.material.opacity = 0.9 * Math.sin(Math.PI * clamp(p));
+      });
+    });
+  }
+
+  // ---- 6. windows pop into their openings, then the doors: frame, leaf closed, leaf swings to the angle drawn
+  const wins = OPENINGS.filter((o) => o.t === 'win' || o.t === 'tall'), doors = OPENINGS.filter((o) => o.isDoor || o.t === 'pass');
+  wins.forEach((o, i) => { const g = windowGroup(o); root.add(g); popScale(g, ph.win[0] + i * ((ph.win[1] - ph.win[0] - 0.6) / (wins.length - 1))); });
+  doors.forEach((o, i) => {
+    const t0 = ph.door[0] + i * ((ph.door[1] - ph.door[0] - 1.9) / (doors.length - 1));
+    for (const d of doorGroups(o)) {
+      root.add(d.g);
+      if (d.kind === 'frame') popScale(d.g, t0, 0.45);
+      else G3.anims.push((t) => {
+        const pp = prog3(t, t0, t0 + 0.4), sw = prog3(t, t0 + 0.7, t0 + 1.9);
+        d.g.visible = pp > 0;
+        d.g.scale.set(1, Math.max(1e-3, easeOutBack(pp)), 1);
+        d.g.rotation.y = d.a0 + d.dl * (easeOut(sw) + 0.035 * Math.sin(Math.PI * sw * 2.2) * (1 - sw));
+      });
+    }
+  });
+}
+
+
+/* ---------------- 74-furn3d.js ---------------- */
+
+// ============================================================================
+// 7c. THE 3D BUILD: kitchen / bath fixtures rise out of their footprints, furniture drops onto the spot where it was drawn
+//     Both read the SAME definition (FT / itemDef) that drew the plan symbol.
+// ============================================================================
+const isHigh = (it) => it.type === 'upper' || it.type === 'hood';            // fixtures that hang on the wall drop in, the rest rise
+// when each item arrives: T3.itemT[id] = { t0, rise }   (shared by the camera, the command line and the scene)
+function schedItems() {
+  if (T3.itemT) return T3.itemT;
+  const T = (T3.itemT = {}), ph = T3.ph;
+  const fx = ITEMS.filter((it) => it.fx), fu = ITEMS.filter((it) => !it.fx);
+  const kit = fx.filter((it) => it.room === 'KITCHEN');
+  const fxOrder = kit.filter((it) => !isHigh(it)).concat(kit.filter(isHigh), fx.filter((it) => it.room !== 'KITCHEN'));   // kitchen run, then what hangs over it, then the bath
+  const put = (list, a, b, dur) => list.forEach((it, i) => { T[it.id] = { t0: a + (b - a - dur) * (list.length > 1 ? i / (list.length - 1) : 0), rise: it.fx && !isHigh(it), dur }; });
+  put(fxOrder, ph.fx[0], ph.fx[1], 0.8);
+  put(fu, ph.furn[0], ph.furn[1], 1.0);
+  return T;
+}
+
+function itemGroup(it) {
+  const def = itemDef(it), g = new THREE.Group();
+  for (const p of def.parts) {
+    const k = p[0]; let m;
+    if (k === 'b') { const [, x, y, z, w, d, h, mt, r] = p; m = new THREE.Mesh(boxGeo(w / 1000, h / 1000, d / 1000, (r || 0) / 1000), mat3(mt || 'white')); m.position.set(x / 1000, (z + h / 2) / 1000, -y / 1000); }
+    else if (k === 'c') { const [, x, y, z, rad, h, mt] = p; m = new THREE.Mesh(cacheGeo(`c${rad},${h}`, () => new THREE.CylinderGeometry(rad / 1000, rad / 1000, h / 1000, 28)), mat3(mt)); m.position.set(x / 1000, (z + h / 2) / 1000, -y / 1000); }
+    else if (k === 's') { const [, x, y, zc, rad, mt] = p; m = new THREE.Mesh(cacheGeo(`s${rad}`, () => new THREE.SphereGeometry(rad / 1000, 22, 16)), mat3(mt)); m.position.set(x / 1000, zc / 1000, -y / 1000); }
+    else if (k === 'k') { const [, x, y, z, rb, rt, h, mt] = p; m = new THREE.Mesh(cacheGeo(`k${rb},${rt},${h}`, () => new THREE.CylinderGeometry(rt / 1000, rb / 1000, h / 1000, 28)), mat3(mt)); m.position.set(x / 1000, (z + h / 2) / 1000, -y / 1000); }
+    else continue;
+    m.castShadow = !(p[7] === 'screen' || p[6] === 'screen'); m.receiveShadow = true; g.add(m);
+  }
+  const s = it.s || 1;
+  g.rotation.y = it.rot * DEG; g.position.set(it.x / 1000, FLOOR_TOP, -it.y / 1000); g.scale.setScalar(s);
+  return { g, def, s };
+}
+
+function build3Furniture() {
+  const T = schedItems(), root = G3.root;
+  const ghostGeo = unitFlat();
+  for (const it of ITEMS) {
+    const { g, def, s } = itemGroup(it), S = T[it.id];
+    g.visible = false; root.add(g);
+    const gm = new THREE.Mesh(ghostGeo, new THREE.MeshBasicMaterial({ color: 0x59b0ff, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    gm.scale.set(def.w * s / 1000, 1, def.d * s / 1000); gm.position.set(it.x / 1000, FLOOR_TOP + 0.004, -it.y / 1000); gm.rotation.y = it.rot * DEG; gm.visible = false; gm.renderOrder = 4; root.add(gm);
+    const H0 = 1.6 + 0.7 * hash2(it.x | 0, it.y | 0);
+    G3.anims.push((t) => {
+      const p = prog3(t, S.t0, S.t0 + S.dur);
+      const gp = prog3(t, S.t0 - 0.45, S.t0 + S.dur + 0.5);
+      gm.visible = gp > 0 && gp < 1; gm.material.opacity = 0.7 * Math.sin(Math.PI * gp);
+      g.visible = p > 0;
+      if (p <= 0) return;
+      if (S.rise) { g.scale.set(s, Math.max(1e-3, s * easeOutBack(p, 1.2)), s); g.position.y = FLOOR_TOP; }
+      else { g.scale.setScalar(s); g.position.y = FLOOR_TOP + H0 * dropBounce(p); }
+    });
+  }
+}
+
+
+/* ---------------- 80-render.js ---------------- */
+
+// ============================================================================
+// 8. RENDER  (the whole frame as a pure function of t)
+// ============================================================================
+let T_END = 10;
+
+function selAt(t) { return TR.sel ? smooth(clamp((t - TR.sel.t0) / (TR.sel.t1 - TR.sel.t0))) : 0; }
+
+function drawCaptions(ctx, t, vp, mul = 1) {
+  for (const c of TR.cap) {
+    if (t < c.t0 || t > c.t1) continue;
+    const a = smooth(clamp((t - c.t0) / 0.45)) * (1 - smooth(clamp((t - (c.t1 - 0.6)) / 0.6))) * mul;
+    if (a <= 0.01) continue;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.font = `600 13px ${FONT_UI}`; const w1 = ctx.measureText(c.text).width;
+    ctx.font = `400 10.5px ${FONT_UI}`; const w2 = c.sub ? ctx.measureText(c.sub).width : 0;
+    const w = Math.max(w1, w2) + 64, h = c.sub ? 38 : 28, x = DW / 2 - w / 2, y = vp.y + 14 + (1 - a) * -8;
+    ctx.fillStyle = 'rgba(14,18,23,.86)'; ctx.beginPath(); rrPath(ctx, x, y, x + w, y + h, 8); ctx.fill();
+    ctx.strokeStyle = '#3a4654'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = PAL.acc; ctx.beginPath(); ctx.arc(x + 20, y + h / 2, 11, 0, TAU); ctx.fill();
+    fillTxt(ctx, c.num, x + 20, y + h / 2 + 0.5, 10, '#04121f', 'center', FONT_UI, 700);
+    fillTxt(ctx, c.text, x + 40, y + (c.sub ? 12 : h / 2), 13, '#f2f5f8', 'left', FONT_UI, 600);
+    if (c.sub) fillTxt(ctx, c.sub, x + 40, y + 27, 10.5, '#93a0b0', 'left');
+    ctx.restore();
+  }
+}
+function drawIntro(ctx, t) {
+  const a = 1 - smooth(clamp((t - 1.9) / 1.0));
+  if (a <= 0) return;
+  const fin = smooth(clamp(t / 0.6));
+  ctx.save();
+  ctx.fillStyle = `rgba(9,11,14,${0.95 * a})`; ctx.fillRect(0, 0, DW, DH);
+  ctx.globalAlpha = a * fin;
+  fillTxt(ctx, 'PLAN TO BUILD', DW / 2, DH / 2 - 26, 62, '#f2f5f8', 'center', FONT_UI, 700);
+  ctx.fillStyle = PAL.acc; ctx.fillRect(DW / 2 - 60, DH / 2 + 12, 120, 3);
+  fillTxt(ctx, 'a 92 m² apartment, drafted command by command', DW / 2, DH / 2 + 46, 19, '#aeb9c7', 'center');
+  fillTxt(ctx, 'then built in 3D from the same drawing', DW / 2, DH / 2 + 72, 19, '#aeb9c7', 'center');
+  ctx.restore();
+}
+
+// the last seconds of the 3D film: a quiet title over the finished apartment
+function drawEnd(ctx, t) {
+  const a = smooth(clamp((t - (T3.end - 6.6)) / 1.0));
+  if (a <= 0.01) return;
+  ctx.save();
+  const g = ctx.createLinearGradient(0, DH * 0.55, 0, DH); g.addColorStop(0, 'rgba(9,11,14,0)'); g.addColorStop(1, `rgba(9,11,14,${0.7 * a})`);
+  ctx.fillStyle = g; ctx.fillRect(0, DH * 0.55, DW, DH * 0.45);
+  ctx.globalAlpha = a;
+  fillTxt(ctx, 'PLAN TO BUILD', 56, DH - 112, 34, '#f2f5f8', 'left', FONT_UI, 700);
+  ctx.fillStyle = PAL.acc; ctx.fillRect(58, DH - 90, 70, 3);
+  fillTxt(ctx, TOTAL_AREA.toFixed(1) + ' m²  ·  ' + COLUMNS.length + ' columns  ·  ' + OPENINGS.length + ' openings  ·  ' + ITEMS.length + ' pieces of furniture', 56, DH - 66, 14, '#c3ccd8', 'left');
+  fillTxt(ctx, 'drafted command by command, built in 3D from the same drawing, on one timeline', 56, DH - 44, 12, '#8f9bab', 'left');
+  ctx.restore();
+}
+
+function renderFrame(ctx, W, H, t, opt = {}) {
+  const S = W / DW;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.setLineDash([]);
+  ctx.fillStyle = '#0b0d10'; ctx.fillRect(0, 0, W, H);
+  ctx.setTransform(S, 0, 0, S, 0, 0);
+  const slide = T3.chrome1 ? smooth(clamp((t - T3.chrome0) / (T3.chrome1 - T3.chrome0))) : 0;
+  const in3D = T3.swap !== undefined && t >= T3.swap && G3.ready;
+  const xfade = in3D && T3.fade > 0 && t < T3.swap + T3.fade;            // dissolve: the 2D frame stays underneath while the model fades in
+  const vp = { x: 0, y: lerp(VP.y, 0, slide), w: DW, h: lerp(VP.h, DH, slide) };
+  let cursorW = null;
+  if (!in3D || xfade) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(vp.x, vp.y, vp.w, vp.h); ctx.clip();
+    ctx.fillStyle = CC.bg; ctx.fillRect(vp.x, vp.y, vp.w, vp.h);
+    const V = view2D(t, vp);
+    const E = { k: V.k, ox: V.ox, oy: V.oy, ui: 1, tex: false, ga: 1 };
+    paintPlan(ctx, E, t, { sel: selAt(t) });
+    drawTransients(ctx, E, t);
+    cursorW = drawCursor(ctx, E, t, vp);
+    ctx.restore();
+  }
+  if (in3D) {
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    render3D(ctx, W, H, t, vp, slide);
+    ctx.restore();
+  }
+  const lbl = in3D && t >= T3.swap + 1.4 ? '[–][SW Isometric][Realistic]' : '[–][Top][2D Wireframe]';
+  drawViewportDecor(ctx, vp, t, 1 - slide, lbl, 1 - 0.25 * slide);
+  drawChrome(ctx, t, slide, { cursorW });
+  const cmdA = in3D ? 1 - smooth(clamp((t - (T3.end - 7.4)) / 0.9)) : 1;      // the command line leaves before the end title arrives
+  if (cmdA > 0.01) { ctx.save(); ctx.globalAlpha = cmdA; drawCmdLine(ctx, t, slide); ctx.restore(); }
+  drawCaptions(ctx, t, vp);
+  if (t < INTRO) drawIntro(ctx, t);
+  if (in3D) drawEnd(ctx, t);
+  if (opt.fade !== false) {                                  // fade to black at the very end
+    const fo = smooth(clamp((t - (T_END - 0.8)) / 0.8));
+    if (fo > 0) { ctx.fillStyle = `rgba(7,9,12,${fo})`; ctx.fillRect(0, 0, DW, DH); }
+  }
+}
+
+
+/* ---------------- 90-player.js ---------------- */
+
+// ============================================================================
+// 9. PLAYER  (clock, scrubber, chapters)  --  export lives in 95-export.js
+// ============================================================================
+const $ = (id) => document.getElementById(id);
+const FPS = 60;
+const PL_ = { t: 0, playing: false, speed: 1, last: 0, W: 1280, H: 720, dirty: true, ci: -1, sec: -1 };
+const screen = $('screen'), sctx = screen.getContext('2d');
+const fmtTime = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+function layoutCanvas() {
+  const r = screen.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const W = clamp(Math.round(r.width * dpr), 640, 2560);
+  const H = Math.round(W * 9 / 16);
+  if (W !== screen.width || H !== screen.height) { screen.width = W; screen.height = H; PL_.W = W; PL_.H = H; PL_.dirty = true; }
+}
+function drawNow() {
+  try { renderFrame(sctx, screen.width, screen.height, PL_.t); }
+  catch (e) {
+    console.error('render failed at t=' + PL_.t.toFixed(2), e); showMsg('render error: ' + e.message);
+    if (PL_.playing) setPlaying(false);                            // do not repeat the same failure sixty times a second
+    screen.width = screen.width;                                   // a frame that threw may have left a clip or a saved state behind: start the canvas afresh
+  }
+  $('seek').value = PL_.t;
+  $('time').textContent = `${fmtTime(PL_.t)} / ${fmtTime(T_END)}`;
+  const sec = Math.floor(PL_.t);
+  if (sec !== PL_.sec) { PL_.sec = sec; $('seek').setAttribute('aria-valuetext', `${fmtTime(PL_.t)} of ${fmtTime(T_END)}`); }
+  const ci = lastLE(TR.chap, PL_.t);
+  if (ci !== PL_.ci) {
+    PL_.ci = ci;
+    document.querySelectorAll('#chips button').forEach((b, i) => { b.classList.toggle('on', i === ci); if (i === ci) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
+  }
+  PL_.dirty = false;
+}
+function showMsg(s) { const m = $('msg'); m.textContent = s || ''; }
+// the big play button shows while the film is paused at its very start
+const syncBig = () => { $('bigplay').hidden = PL_.playing || PL_.t > 0.05; };
+function seek(t) { if (!Number.isFinite(t)) return; PL_.t = clamp(t, 0, T_END); PL_.dirty = true; syncBig(); }
+function setPlaying(p) {
+  PL_.playing = p; PL_.last = performance.now();
+  $('play').innerHTML = p ? '&#10074;&#10074;' : '&#9654;';
+  $('play').setAttribute('aria-label', p ? 'Pause' : 'Play');
+  syncBig();
+}
+function loop(now) {
+  if (PL_.playing) {
+    // the frame time can predate the click that started playback: never run the clock backwards
+    const dt = Math.max(0, Math.min(0.1, (now - PL_.last) / 1000)) * PL_.speed;
+    PL_.last = now; PL_.t += dt;
+    if (PL_.t >= T_END) { PL_.t = T_END; setPlaying(false); }
+    PL_.dirty = true;
+  }
+  layoutCanvas();
+  if (PL_.dirty && !EXPORTING) drawNow();
+  requestAnimationFrame(loop);
+}
+let EXPORTING = false;
+
+function initUI() {
+  // after a mouse click the keys go back to the film (Space plays and pauses, arrows skip); a keyboard press has detail 0 and keeps focus
+  $('play').onclick = (e) => { if (PL_.t >= T_END - 0.01) seek(0); setPlaying(!PL_.playing); if (e.detail) e.currentTarget.blur(); };
+  $('bigplay').onclick = () => { if (PL_.t >= T_END - 0.01) seek(0); setPlaying(true); };
+  $('seek').max = T_END; $('seek').oninput = (e) => { seek(+e.target.value); };
+  $('speed').onchange = (e) => { PL_.speed = +e.target.value; };
+  const ticks = $('ticks'), chips = $('chips');
+  TR.chap.forEach((c, i) => {
+    const tk = document.createElement('i'); tk.style.left = (c.t / T_END * 100) + '%'; tk.title = c.num + ' ' + c.name; ticks.appendChild(tk);
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = c.num + ' ' + c.name.replace(/ 400.*|\s+\d.*$/, '').toLowerCase(); b.title = c.sub || '';
+    b.onclick = (e) => { seek(c.t + 0.05); if (!PL_.playing) setPlaying(true); if (e.detail) b.blur(); }; chips.appendChild(b);   // a mouse click hands Space back to play/pause
+  });
+  const toggleFullscreen = () => { const st = $('stage'); if (document.fullscreenElement) document.exitFullscreen(); else if (st.requestFullscreen) st.requestFullscreen(); };
+  addEventListener('keydown', (e) => {
+    const tg = (e.target && e.target.tagName) || '';
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (tg === 'BUTTON' || tg === 'SELECT' || tg === 'A') return;                  // a focused control keeps its own keys (Space presses a button, opens a select)
+    const skip = e.shiftKey ? 10 : 2;
+    if (tg === 'INPUT') {                                                          // the timeline slider: its own step is 10 ms, so its keys skip like the rest of the page
+      const by = { ArrowRight: skip, ArrowUp: skip, ArrowLeft: -skip, ArrowDown: -skip, PageUp: 10, PageDown: -10 }[e.key];
+      if (by !== undefined) { e.preventDefault(); seek(PL_.t + by); return; }
+      if (e.key === 'Home') { e.preventDefault(); seek(0); return; }
+      if (e.key === 'End') { e.preventDefault(); seek(T_END); return; }
+      if (e.key !== ' ') return;
+    }
+    if (e.key === ' ') { e.preventDefault(); if (!e.repeat) $('play').click(); }    // a held key must not flicker the film between play and pause
+    else if (e.key === 'ArrowRight') seek(PL_.t + skip);
+    else if (e.key === 'ArrowLeft') seek(PL_.t - skip);
+    else if ((e.key === 'f' || e.key === 'F') && !e.repeat) toggleFullscreen();
+  });
+  $('screen').addEventListener('dblclick', toggleFullscreen);
+}
+
+
+/* ---------------- 95-export.js ---------------- */
+
+// ============================================================================
+// 9b. EXPORT  (step the clock 1/60 s, draw offscreen, WebCodecs -> mp4-muxer -> .mp4)
+// ============================================================================
+// The film is a pure function of t, so the file is exact however slow the machine is: frame i is
+// renderFrame(t = i / fps) on a private canvas (the visible #screen is never touched), handed to a
+// VideoEncoder with a few frames in flight, and muxed. One pipeline (expEncode) serves the button
+// and the test hook window.__export.run. The button wires itself at the bottom of this file.
+const EXP_ = { busy: false, ctl: null, last: null, range: null };    // range: [i0, i1) override for the button (tests only)
+const EXP_NAME = 'plan-to-build-1440p60.mp4';
+const EXP_NEED = 'Rendering needs WebCodecs: use a recent Chrome or Edge.';
+const EXP_BACKLOG = 8;                                       // frames allowed to wait inside the encoder
+// H.264 High L5.2 (L4.2 is refused at 1440p60), High L5.1, Main L5.2, Baseline L5.2 (all some software encoders offer); VP9 and AV1 as a last resort
+const EXP_CODECS = [['avc1.640034', 'avc'], ['avc1.640033', 'avc'], ['avc1.4d0034', 'avc'], ['avc1.420034', 'avc'], ['vp09.00.51.08', 'vp9'], ['av01.0.12M.08', 'av1']];
+
+// never write a film that silently lacks its 3D half: why the 3D scene cannot be drawn up to time endT, or null
+function exp3DProblem(endT) {
+  if (T3.swap === undefined || G3.ready || endT <= T3.swap) return null;
+  if (G3.error) return `the 3D scene did not load (${G3.error.message || G3.error}), so the second half of the film cannot be drawn: reload the page and try again`;
+  return 'the 3D scene is still loading, so the second half of the film cannot be drawn yet: wait a moment and try again';
+}
+
+const expAbortErr = () => new DOMException('export cancelled', 'AbortError');
+// a macrotask hop: the page repaints and handles clicks between frames
+const EXP_MC = new MessageChannel();
+let expPing = null;
+EXP_MC.port1.onmessage = () => { const f = expPing; expPing = null; if (f) f(); };
+const expYield = () => new Promise((f) => { expPing = f; EXP_MC.port2.postMessage(0); });
+const expDequeue = (enc) => new Promise((f) => { enc.ondequeue = f; setTimeout(f, 30); });   // woken by the encoder, or by the timer
+
+// ---- which encoders will take this size: every candidate x {hardware first, then whatever works}
+async function expPlans(w, h, fps, bps) {
+  const out = [];
+  for (const [codec, mux] of EXP_CODECS) {
+    for (const hw of ['prefer-hardware', 'no-preference']) {
+      const cfg = { codec, width: w, height: h, framerate: fps, bitrate: bps, latencyMode: 'quality', hardwareAcceleration: hw };
+      if (mux === 'avc') cfg.avc = { format: 'avc' };
+      let ok = false;
+      try { ok = !!(await VideoEncoder.isConfigSupported(cfg)).supported; } catch (e) { /* this build rejects the config outright */ }
+      out.push({ cfg, mux, ok });
+    }
+  }
+  return out;
+}
+
+// ---- one encoder, one muxer, frames i0..i1-1. A failure before the first chunk is out is tagged .retry.
+async function expPass(o) {
+  const { M, plan, writable, i0, i1, w, h, fps, signal, onProgress } = o, N = i1 - i0, DUR = Math.round(1e6 / fps);
+  const retry = (e) => Object.assign(e instanceof Error || e instanceof DOMException ? e : new Error(String(e)), { retry: true });
+  const gone = () => signal && signal.aborted;
+  if (gone()) throw expAbortErr();
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  const target = writable ? new M.FileSystemWritableFileStreamTarget(writable) : new M.ArrayBufferTarget();
+  const muxer = new M.Muxer({ target, video: { codec: plan.mux, width: w, height: h, frameRate: fps }, fastStart: writable ? { expectedVideoChunks: N } : 'in-memory' });
+  let fail = null, nOut = 0;                                 // the first error from the encoder or the muxer; chunks muxed so far
+  const enc = new VideoEncoder({
+    output: (chunk, meta) => {
+      try {
+        const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d);
+        muxer.addVideoChunkRaw(d, chunk.type, chunk.timestamp, chunk.duration ?? DUR, meta);
+        nOut++;
+      } catch (e) { if (!fail) fail = nOut ? e : retry(e); }       // a muxer that refuses the very first chunk is a reason to try the next encoder, like an encoder error
+    },
+    error: (e) => { if (!fail) fail = nOut ? e : retry(e); },
+  });
+  try {
+    try { enc.configure(plan.cfg); } catch (e) { throw retry(e); }
+    const t0 = performance.now();
+    const check = () => { if (gone()) throw expAbortErr(); if (fail) throw fail; };
+    for (let i = i0; i < i1; i++) {
+      check();
+      while (enc.encodeQueueSize > EXP_BACKLOG) { await expDequeue(enc); check(); }
+      const j = i - i0, t = i / fps;
+      if (G3.lost && T3.swap !== undefined && t >= T3.swap) throw new Error('the graphics context was lost while rendering (a GPU reset?): the 3D frames would be blank. Try again');
+      try { renderFrame(ctx, w, h, t); } catch (e) { throw new Error(`frame ${i} (t=${t.toFixed(3)}): ${e && e.message || e}`, { cause: e }); }
+      const fr = new VideoFrame(cv, { timestamp: Math.round(j * 1e6 / fps), duration: DUR });
+      try { enc.encode(fr, { keyFrame: j % 120 === 0 }); } finally { fr.close(); }
+      if (onProgress) { const n = j + 1, rate = n / ((performance.now() - t0) / 1000); onProgress({ phase: 'encode', n, N, fps: rate, eta: (N - n) / rate }); }
+      await expYield();
+    }
+    if (onProgress) onProgress({ phase: 'finish', n: N, N, fps: N / ((performance.now() - t0) / 1000), eta: 0 });
+    try { await enc.flush(); } catch (e) { if (!fail) fail = nOut ? e : retry(e); }
+    check();
+    if (nOut !== N) throw new Error(`the encoder returned ${nOut} of ${N} frames`);
+    muxer.finalize();
+    if (writable) { await writable.close(); return { bytes: null, frames: N, codec: plan.cfg.codec, hw: plan.cfg.hardwareAcceleration }; }
+    return { bytes: new Uint8Array(target.buffer), frames: N, codec: plan.cfg.codec, hw: plan.cfg.hardwareAcceleration };
+  } finally {
+    enc.ondequeue = null;
+    if (enc.state !== 'closed') enc.close();
+    cv.width = cv.height = 0;                                // give the 15 MB back now, not at the next GC
+  }
+}
+
+// ---- the pipeline: clock stopped, wake lock held, best encoder first; the next plan only if one died before its first chunk
+async function expEncode(o) {
+  if (EXP_.busy) throw new Error('an export is already running');
+  EXP_.busy = true;
+  const writable = o.writable || null, t0 = performance.now(), keepT = PL_.t;
+  let lock = null, live = true;
+  // best effort: keep the screen awake. The browser drops the lock when the tab is hidden, so ask again when it is shown.
+  const takeLock = () => {
+    if (!live || !navigator.wakeLock || document.visibilityState !== 'visible') return;
+    navigator.wakeLock.request('screen').then((l) => { if (live) lock = l; else l.release().catch(() => {}); }, () => {});
+  };
+  try {
+    EXPORTING = true; setPlaying(false);
+    takeLock(); document.addEventListener('visibilitychange', takeLock);
+    if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') throw new Error(EXP_NEED);
+    const no3D = exp3DProblem(o.i1 / o.fps); if (no3D) throw new Error(no3D);
+    const M = await import('mp4-muxer');
+    const plans = (await expPlans(o.w, o.h, o.fps, o.bps)).filter((p) => p.ok && (!o.only || p.cfg.codec.startsWith(o.only)));
+    if (!plans.length) throw new Error(`this browser has no ${o.w}x${o.h} H.264, VP9 or AV1 encoder. ${EXP_NEED}`);
+    for (let k = 0; ; k++) {
+      try { return { ...(await expPass({ ...o, M, plan: plans[k], writable })), ms: performance.now() - t0 }; }
+      catch (e) {
+        if (!e.retry || k + 1 >= plans.length) throw e;
+        console.warn(`encoder ${plans[k].cfg.codec} (${plans[k].cfg.hardwareAcceleration}) failed before its first frame, trying the next: ${e.message}`);
+      }
+    }
+  } catch (e) {
+    // abort() discards the pending writes, so a file that already existed keeps its content (a file the dialog just created may stay empty)
+    if (writable) { try { await writable.abort(); } catch (_) { /* already closed */ } }
+    throw e;
+  } finally {
+    live = false; document.removeEventListener('visibilitychange', takeLock); if (lock) lock.release().catch(() => {});
+    EXPORTING = false; PL_.t = keepT; PL_.dirty = true; setPlaying(false);        // paused where it was, even if play was pressed meanwhile
+    EXP_.busy = false;
+  }
+}
+
+// ---- no file picker: hand the in-memory MP4 to the download manager, and keep it behind a "save again" link until the next render
+// (a browser that asks before a download that starts minutes after the click may refuse it, and this is the only copy)
+let EXP_URL = null;
+function expForget() { if (EXP_URL) { URL.revokeObjectURL(EXP_URL); EXP_URL = null; } $('again').hidden = true; }
+function expDownload(bytes) {
+  expForget();
+  EXP_URL = URL.createObjectURL(new Blob([bytes], { type: 'video/mp4' }));
+  const a = document.createElement('a');
+  a.href = EXP_URL; a.download = EXP_NAME; document.body.appendChild(a); a.click(); a.remove();
+  const again = $('again'); again.href = EXP_URL; again.download = EXP_NAME; again.hidden = false;
+}
+
+// ---- the button
+function initExport() {
+  const btn = $('exportBtn'), bar = $('prog'), fill = $('progFill'), txt = $('progTxt'), rate = $('bitrate');
+  let ours = '';                                             // the last message we put on the stage, so a retry can clear it
+  if (!window.showSaveFilePicker) {                          // nothing here can stream to disk: the whole file is held in memory (two or three copies of it while it is finished)
+    for (const o of rate.options) if (+o.value > 16) o.disabled = true;
+    rate.value = '16'; rate.title = 'This browser cannot save while it renders, so the whole file is held in memory: the bitrate is capped at 16 Mbps.';
+  }
+  const say = (s, pct) => {
+    bar.hidden = false; txt.textContent = s; bar.setAttribute('aria-valuetext', s);
+    if (pct !== undefined) { fill.style.width = pct + '%'; bar.setAttribute('aria-valuenow', String(Math.round(pct))); }
+  };
+  const announce = (s) => { $('sr').textContent = s; };       // the screen-reader live region: milestones, not the per-frame text
+  const fail = (s) => { say(s, 0); showMsg(ours = s); announce(s); };
+  const range = () => EXP_.range || [0, Math.ceil(T_END * FPS)];
+  async function go(pick) {
+    const [i0, i1] = range(), N = i1 - i0, ctl = EXP_.ctl = new AbortController();
+    EXP_.t0 = performance.now(); expForget();
+    btn.textContent = 'Cancel'; rate.disabled = true;
+    if (ours && $('msg').textContent === ours) showMsg('');
+    announce('Rendering the film');
+    say(pick ? 'choose where to save the file…' : 'starting…', 0);
+    let handle = null, writable = null, lastUi = 0;
+    try {
+      if (pick) {
+        try { handle = await pick; writable = await handle.createWritable(); }
+        catch (e) {
+          if (e && e.name === 'AbortError') { bar.hidden = true; return; }            // the user closed the save dialog
+          console.warn('save dialog unavailable, falling back to a download:', e); handle = writable = null;
+        }
+      }
+      say('starting…', 0);
+      const r = await expEncode({
+        i0, i1, w: 2560, h: 1440, fps: FPS, bps: +rate.value * 1e6, writable, signal: ctl.signal,
+        onProgress: (p) => {
+          const now = performance.now();
+          if (p.phase === 'encode' && now - lastUi < 200 && p.n < p.N) return;        // repaint-friendly: ~5 text updates a second
+          lastUi = now;
+          say(p.phase === 'finish' ? `frame ${p.N} / ${p.N} · finishing the file…` : `frame ${p.n} / ${p.N} · ${p.fps.toFixed(1)} fps · ETA ${fmtTime(p.eta)}`, p.n / p.N * 100);
+        },
+      });
+      let size = r.bytes ? r.bytes.length : 0;
+      if (writable) { try { size = (await handle.getFile()).size; } catch (e) { /* size is cosmetic */ } } else expDownload(r.bytes);
+      const doneTxt = `Done · ${(size / 1048576).toFixed(1)} MB · ${fmtTime(Math.round(N / FPS))} · ${writable ? 'saved' : 'downloaded'}`;
+      say(doneTxt, 100); announce(doneTxt);
+    } catch (e) {
+      if (e && e.name === 'AbortError') { say('cancelled', 0); announce('Render cancelled'); }
+      else { console.error('export failed', e); fail('export failed: ' + (e && e.message || e)); }
+    } finally {
+      EXP_.ctl = null; btn.textContent = 'Render 1440p60 MP4'; btn.disabled = false; rate.disabled = false;
+    }
+  }
+  btn.onclick = (e) => {
+    if (EXP_.ctl) {
+      // Render doubles as Cancel, so the second click of a double-click, a held Enter, or a Space meant for the film must not stop a run that has just begun
+      if (e.detail > 1 || performance.now() - EXP_.t0 < 900) return;
+      EXP_.ctl.abort(); btn.disabled = true; btn.textContent = 'Cancelling…'; return;
+    }
+    if (EXP_.busy) return;
+    if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') { fail(EXP_NEED); return; }          // checked here too: no point opening a save dialog
+    const no3D = exp3DProblem(range()[1] / FPS);
+    if (no3D) { fail('export failed: ' + no3D); return; }                                                               // ... nor when the film cannot be drawn
+    // The save dialog needs this click's user activation, so it is requested before the first await of the export.
+    let pick = null;
+    if (window.showSaveFilePicker) {
+      try { pick = window.showSaveFilePicker({ suggestedName: EXP_NAME, types: [{ description: 'MP4 video', accept: { 'video/mp4': ['.mp4'] } }] }); }
+      catch (err) { pick = Promise.reject(err); }
+    }
+    go(pick);
+    if (e.detail) btn.blur();                                // after a mouse click the keys go back to the film: Space must not press this button again
+  };
+}
+initExport();
+
+// ---- test hook: the same pipeline, in memory, any range, no UI
+window.__export = {
+  codecs: async (o = {}) => (await expPlans(o.w || 2560, o.h || 1440, o.fps || 60, (o.mbps || 24) * 1e6)).map((p) => ({ codec: p.cfg.codec, hw: p.cfg.hardwareAcceleration, supported: p.ok })),
+  async run({ from = 0, to = T_END, w = 2560, h = 1440, fps = 60, mbps = 24, signal, onProgress, only } = {}) {
+    const r = await expEncode({ i0: Math.round(from * fps), i1: Math.round(to * fps), w, h, fps, bps: mbps * 1e6, signal, onProgress, only });
+    EXP_.last = r.bytes;
+    return r;
+  },
+  take: (start, len) => new Promise((res, rej) => {                                      // base64 of a slice of the last run's file
+    const fr = new FileReader();
+    fr.onload = () => res(fr.result.slice(fr.result.indexOf(',') + 1));
+    fr.onerror = () => rej(fr.error);
+    fr.readAsDataURL(new Blob([EXP_.last.subarray(start, start + len)]));
+  }),
+  range: (from, to) => { EXP_.range = from === undefined ? null : [Math.round(from * FPS), Math.round(to * FPS)]; },   // shorten what the real button renders (test only)
+  state: () => ({ exporting: EXPORTING, busy: EXP_.busy, playing: PL_.playing, t: PL_.t, dirty: PL_.dirty }),
+};
+
+
+/* ---------------- 98-boot.js ---------------- */
+
+// ============================================================================
+// 98. BOOT
+// ============================================================================
+// "90", "90s", "1:30" or "1:30.5" -> seconds; anything else -> null (a link with a typo opens at the start, it does not break the frame)
+function parseT(s) {
+  const m = /^\s*(?:(\d+):)?(\d+(?:\.\d+)?)s?\s*$/.exec(String(s));
+  return m ? (m[1] ? +m[1] * 60 : 0) + +m[2] : null;
+}
+
+// The first time each kind of part comes into view, three.js compiles its shaders and uploads its buffers: here up to 0.9 s, which would show as a
+// stall in the middle of playback. Render the 3D half once, in small slices while the drafting plays; a pure function of t, so it changes nothing.
+function warm3D() {
+  const S = T3.swap, ts = [];
+  for (let t = S + 0.2; t < T_END; t += 2) ts.push(t);
+  const cv = document.createElement('canvas'), cx = cv.getContext('2d');
+  let i = 0;
+  const done = (all) => { cv.width = cv.height = 0; G3.warm = all; };                // warm = true only if every slice was drawn
+  const slice = () => {
+    if (G3.lost) { done(false); return; }
+    if (EXPORTING) { setTimeout(slice, 400); return; }                               // never share the renderer with an export in progress
+    if (i >= ts.length) { done(true); return; }
+    if (cv.width !== PL_.W) { cv.width = PL_.W; cv.height = PL_.H; }
+    try { renderFrame(cx, cv.width, cv.height, ts[i++]); } catch (e) { console.warn('3D warm-up stopped', e); done(false); return; }
+    setTimeout(slice, 30);
+  };
+  setTimeout(slice, 150);
+}
+
+(function boot() {
+  const t0 = performance.now();
+  filmCAD();
+  if (typeof film3D === 'function') film3D();
+  sortElements();
+  T_END = T3.end || (D.t + 2);
+  initUI();
+  layoutCanvas();
+  window.__tl = {
+    get T() { return T_END; }, T3, MARKS, TR, EL, D,
+    get g3() { return { ready: G3.ready, warm: G3.warm, lost: G3.lost, error: G3.error ? String(G3.error.message || G3.error) : null }; },
+    get glc() { return G3.glc; },                                                    // the WebGL canvas (tests lose and restore its context)
+    get renderer() { return G3.renderer; },                                          // for counting programs, geometries and textures in tests
+    at(t) { seek(t); drawNow(); return PL_.t; },
+    png(t, w) { const c = document.createElement('canvas'); c.width = w || 1280; c.height = Math.round((w || 1280) * 9 / 16); renderFrame(c.getContext('2d'), c.width, c.height, t); return c.toDataURL('image/png'); },
+    ms(t, w) { const c = document.createElement('canvas'); c.width = w || 1280; c.height = Math.round((w || 1280) * 9 / 16); const a = performance.now(); renderFrame(c.getContext('2d'), c.width, c.height, t); return performance.now() - a; },
+  };
+  const q = new URLSearchParams(location.search);
+  if (q.has('t')) { const v = parseT(q.get('t')); if (v !== null) seek(v); }
+  if (q.has('play')) setPlaying(true);
+  console.log('film compiled in', (performance.now() - t0).toFixed(0), 'ms;', EL.length, 'elements; T_END', T_END.toFixed(1));
+  requestAnimationFrame(loop);
+  // The 3D scene is built as soon as three.js has arrived. Until then, or if it never does, the drafting plays on its own.
+  G3.loading.then(() => {
+    if (!THREE) { showMsg('The 3D view could not be loaded (is the network blocking cdn.jsdelivr.net?), so only the drafting will play. Check the connection and reload.'); return; }
+    try { buildScene3D(); } catch (e) { console.error('3D build failed', e); G3.error = e; showMsg('3D unavailable: ' + e.message); return; }
+    PL_.dirty = true;                                                                // a seek past the handoff made before this point drew the drafting; draw it again
+    warm3D();
+  }).finally(() => { window.__ready = true; console.log('3D settled after', (performance.now() - t0).toFixed(0), 'ms; ready =', G3.ready); });
+})();
+
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
