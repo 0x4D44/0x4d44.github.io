@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en-NZ">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#06110c">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Aotearoa Rally: six New Zealand special stages, a four-car garage and a championship against seven rivals, in your browser.">
+<title>Aotearoa Rally</title>
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="stylesheet" href="./ui/ar.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons": "./vendor/three-addons.min.js" } }
+</script>
+</head>
+<body>
+<canvas id="gl" aria-label="Game view"></canvas>
+
+<div id="vignette" aria-hidden="true"></div>
+<div id="hud" hidden></div>
+<div id="screens" role="main"></div>
+<div id="touch-host"></div>
+<div id="toasts" aria-live="polite"></div>
+
+<div id="loading" class="loading" role="status">
+  <div class="loading-inner">
+    <svg class="koru-mark" viewBox="0 0 100 100" aria-hidden="true"><use href="#koru"/></svg>
+    <div class="wordmark sm"><span>AOTEAROA</span><b>RALLY</b></div>
+    <div class="load-bar" aria-hidden="true"><i id="load-fill"></i></div>
+    <p id="load-label" class="load-label">Warming up the engine...</p>
+  </div>
+</div>
+
+<div id="nogl" class="nogl" hidden>
+  <div class="nogl-inner">
+    <svg class="koru-mark" viewBox="0 0 100 100" aria-hidden="true"><use href="#koru"/></svg>
+    <h1>WebGL 2 is needed</h1>
+    <p>Aotearoa Rally draws its stages with WebGL 2, and this browser or device is not offering it. Try a current Chrome, Edge, Firefox or Safari, switch on hardware acceleration, and reload.</p>
+  </div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="koru" viewBox="0 0 100 100">
+      <path d="M52 92C24 92 8 66 18 42 28 18 62 10 80 28 94 42 90 66 70 74 54 80 38 70 40 54 42 40 58 36 64 46" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="62" cy="52" r="4.5" fill="currentColor"/>
+    </symbol>
+    <symbol id="fern" viewBox="0 0 100 100">
+      <path d="M50 96C50 70 50 40 50 6M50 84C38 80 28 72 22 60M50 84C62 80 72 72 78 60M50 66C40 62 32 54 28 44M50 66C60 62 68 54 72 44M50 48C43 45 38 39 36 31M50 48C57 45 62 39 64 31" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script type="module" src="./game.mjs"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

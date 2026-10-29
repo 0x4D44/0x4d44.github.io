@@ -1,0 +1,166 @@
+{
+ "version": 1,
+ "textures": {
+  "road_gravel": {
+   "file": "road_gravel.jpg",
+   "normal": "road_gravel_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 3.0
+  },
+  "road_dirt": {
+   "file": "road_dirt.jpg",
+   "normal": "road_dirt_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 3.0
+  },
+  "road_tarmac": {
+   "file": "road_tarmac.jpg",
+   "normal": "road_tarmac_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 3.0
+  },
+  "road_mud": {
+   "file": "road_mud.jpg",
+   "normal": "road_mud_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 3.0
+  },
+  "road_snow": {
+   "file": "road_snow.jpg",
+   "normal": "road_snow_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 3.0
+  },
+  "road_pumice": {
+   "file": "road_pumice.jpg",
+   "normal": "road_pumice_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 3.0
+  },
+  "gnd_grass": {
+   "file": "gnd_grass.jpg",
+   "normal": "gnd_grass_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_tussock": {
+   "file": "gnd_tussock.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_leaf": {
+   "file": "gnd_leaf.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_schist": {
+   "file": "gnd_schist.jpg",
+   "normal": "gnd_schist_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_limestone": {
+   "file": "gnd_limestone.jpg",
+   "normal": "gnd_limestone_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_moss_rock": {
+   "file": "gnd_moss_rock.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_sand": {
+   "file": "gnd_sand.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_snow": {
+   "file": "gnd_snow.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "gnd_fern": {
+   "file": "gnd_fern.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "bark_redwood": {
+   "file": "bark_redwood.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 512,
+   "meters": 1.5
+  },
+  "bark_beech": {
+   "file": "bark_beech.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 512,
+   "meters": 1.5
+  },
+  "bark_pine": {
+   "file": "bark_pine.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 512,
+   "meters": 1.5
+  },
+  "foliage_fern": {
+   "file": "foliage_fern.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
+  },
+  "foliage_pine": {
+   "file": "foliage_pine.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
+  },
+  "foliage_broadleaf": {
+   "file": "foliage_broadleaf.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
+  },
+  "foliage_flax": {
+   "file": "foliage_flax.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
+  },
+  "foliage_grass": {
+   "file": "foliage_grass.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
+  }
+ }
+}
