@@ -202,6 +202,9 @@ export function createInput(game) {
     if (wantTouch()) enableTouch();
   }
   game.events?.on?.('game:state', ({ to }) => showTouch(to === 'race'));
+  // the pause menu (z-index below the overlay) must stay tappable: hide the touch controls while paused
+  game.events?.on?.('game:pause', () => showTouch(false));
+  game.events?.on?.('game:resume', () => showTouch(game.state === 'race'));
 
   return input;
 }

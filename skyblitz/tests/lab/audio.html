@@ -1,0 +1,166 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SKYBLITZ audio lab</title>
+<!-- Audition page: every procedural SFX, every music track/stem, the engines (sliders), positional fly-bys and the event wiring.
+     Click anywhere once to unlock audio. Hotkeys: 1-9 / q-p select-and-play SFX in the first rows, Space = stop music, Esc = silence.
+     Test hooks (used by tests/audio.test.mjs): window.__audioLab. -->
+<style>
+  :root{color-scheme:dark}
+  body{margin:0;background:#0b1424;color:#dbe8ff;font:14px/1.4 system-ui,sans-serif;padding:16px 16px 60px}
+  h1{font-size:20px;margin:0 0 4px} h2{font-size:14px;margin:18px 0 6px;color:#7fb0ff;text-transform:uppercase;letter-spacing:.08em}
+  .grid{display:flex;flex-wrap:wrap;gap:6px}
+  button{background:#16294a;color:#dbe8ff;border:1px solid #2d4a7c;border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit}
+  button:hover{background:#1f3a6a} button.on{background:#2f7bff;border-color:#7fb0ff;color:#fff}
+  button kbd{opacity:.6;margin-right:4px;font-size:11px}
+  label{display:inline-flex;align-items:center;gap:6px;margin:4px 14px 4px 0}
+  input[type=range]{width:160px}
+  #log{position:fixed;left:0;right:0;bottom:0;background:#050a14;border-top:1px solid #1f3a6a;padding:6px 16px;font:12px ui-monospace,monospace;max-height:70px;overflow:auto;color:#8fb2e8}
+  .row{margin:4px 0}
+</style>
+<h1>SKYBLITZ audio lab</h1>
+<div id="status">click anywhere to unlock audio</div>
+
+<h2>Volumes</h2>
+<div class="row">
+  <label>master <input id="vm" type="range" min="0" max="1" step="0.01" value="1"></label>
+  <label>music <input id="vmu" type="range" min="0" max="1" step="0.01" value="0.7"></label>
+  <label>sfx <input id="vs" type="range" min="0" max="1" step="0.01" value="0.9"></label>
+</div>
+
+<h2>One-shot SFX</h2>
+<div class="grid" id="sfx"></div>
+
+<h2>Music</h2>
+<div class="grid" id="tracks"></div>
+<div class="row" id="layers"></div>
+<div class="grid" id="stingers"></div>
+
+<h2>Engine (player) - drives the real PlayerEngine / wind / boost / scrape</h2>
+<div class="row">
+  <label>craft <select id="craft"><option>falcon</option><option>wasp</option><option>manta</option><option>comet</option><option>bulldog</option><option>sprite</option></select></label>
+  <label>speed <input id="sp" type="range" min="40" max="190" value="100"><b id="spv">100</b> m/s</label>
+  <label>throttle <input id="th" type="range" min="0" max="1" step="0.01" value="0.7"></label>
+  <label>G <input id="gl" type="range" min="0" max="8" step="0.1" value="1"></label>
+  <label><input id="bo" type="checkbox"> boost</label>
+  <label><input id="ab" type="checkbox"> airbrake</label>
+  <label><input id="sc" type="checkbox"> scrape</label>
+  <label><input id="dr" type="checkbox"> draft</label>
+  <button id="eng">engine on/off</button>
+</div>
+
+<h2>World / events</h2>
+<div class="grid" id="events"></div>
+<div class="row"><button id="flyby">AI fly-by (left to right, 120 m/s, Doppler)</button> <button id="warn">escalating missile warning (600 m to 0)</button> <button id="lock">lock-on 0 to 1</button> <button id="chain">gate chain x8</button></div>
+<div id="log"></div>
+
+<script type="importmap">{"imports":{"three":"../../vendor/three.module.min.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { EventBus } from '../../src/events.js';
+import { AudioEngine } from '../../src/audio/audio.js';
+import { MusicPlayer } from '../../src/audio/music.js';
+import { SFX, SFX_NAMES } from '../../src/audio/sfx.js';
+
+const $ = (id) => document.getElementById(id);
+const logEl = $('log');
+const log = (m) => { logEl.textContent = m + '\n' + logEl.textContent.slice(0, 600); };
+
+const events = new EventBus();
+const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 5000);
+const racer = (id, x, y, z) => ({ id, spec: { id }, render: { pos: new THREE.Vector3(x, y, z) }, flight: { speed: 100, throttle: 0.7, vel: new THREE.Vector3(), boost: { active: false }, gLoad: 1, airbrake: 0, tumble: { t: 0 } }, heat: 0, item: null, place: 3 });
+const player = racer('falcon', 0, 0, 0);
+const game = { THREE, params: new URLSearchParams(location.search.includes('mute=1') ? 'mute=1' : 'mute=0'), events, settings: { masterVolume: 1, musicVolume: 0.7, sfxVolume: 0.9 }, camera, player, race: { racers: [], demo: false }, state: 'race', simTime: 0, paused: false, course: null };
+const audio = game.audio = new AudioEngine(game); audio.init();
+const music = game.music = new MusicPlayer(game); music.init();
+window.__audioLab = { game, audio, music, events, THREE, SFX, SFX_NAMES, racer };
+
+let engineOn = false;
+const unlock = () => { audio.resume(); music.resume(); $('status').textContent = `audio: ${audio.ctx?.state || 'n/a'} @ ${audio.ctx?.sampleRate} Hz`; };
+addEventListener('pointerdown', unlock); addEventListener('keydown', unlock);
+
+// ---- SFX buttons
+const KEYS = '1234567890qwertyuiopasdfghjklzxcvbnm';
+SFX_NAMES.forEach((n, i) => {
+  const b = document.createElement('button'); b.innerHTML = `<kbd>${KEYS[i] || ''}</kbd>${n}`;
+  b.onclick = () => { unlock(); const ok = audio.play(n, { n: Math.floor(Math.random() * 6), sev: 0.8, dur: 1.6, size: 1, perfect: true, bus: n.startsWith('ui') ? 'ui' : undefined }); log(`play ${n} -> ${ok}`); };
+  $('sfx').appendChild(b); b._key = KEYS[i];
+});
+addEventListener('keydown', (e) => {
+  if (e.key === ' ') { music.stop(0.5); e.preventDefault(); return; }
+  if (e.key === 'Escape') { audio.killVoices(); music.stop(0.1); return; }
+  const i = KEYS.indexOf(e.key.toLowerCase());
+  if (i >= 0 && i < SFX_NAMES.length && !e.ctrlKey && !e.metaKey && document.activeElement?.tagName !== 'INPUT') $('sfx').children[i].click();
+});
+
+// ---- music
+const TRACKS = ['menu', 'sunrise', 'redrock', 'neon', 'frost', 'results'];
+for (const t of TRACKS) {
+  const b = document.createElement('button'); b.textContent = `play ${t}`;
+  b.onclick = () => { unlock(); music.targets = { base: 1, lead: 1, drive: 1, final: 0 }; music.manual = true; music.play(t, { fade: 0.4 }); log(`music ${t}`); };
+  $('tracks').appendChild(b);
+}
+const layerState = { base: 1, lead: 1, drive: 1, final: 0 };
+for (const k of Object.keys(layerState)) {
+  const l = document.createElement('label'); l.innerHTML = `<input type="checkbox" ${layerState[k] ? 'checked' : ''}> ${k}`;
+  l.firstChild.onchange = () => { layerState[k] = l.firstChild.checked ? 1 : 0; };
+  $('layers').appendChild(l);
+}
+for (const s of ['win', 'lose', 'finalLap']) {
+  const b = document.createElement('button'); b.textContent = `stinger ${s}`;
+  b.onclick = () => { unlock(); music.loadStingers().then(() => log(`stinger ${s} -> ${music.stinger(s)}`)); };
+  $('stingers').appendChild(b);
+}
+// manual layer control overrides the adaptive rules while the lab plays a track
+const origUpdate = music.update.bind(music);
+music.update = (dt, g) => { if (music.manual) { music.targets = { ...layerState }; music.applyTargets(0.2); if (music.ctx) { music.old = music.old.filter((o) => { if (music.ctx.currentTime >= o.dieAt) { music.release(o); return false; } return true; }); } } else origUpdate(dt, g); };
+
+// ---- volumes
+const vol = () => { game.settings.masterVolume = +$('vm').value; game.settings.musicVolume = +$('vmu').value; game.settings.sfxVolume = +$('vs').value; events.emit('settings:change', { key: 'masterVolume', value: 1 }); };
+['vm', 'vmu', 'vs'].forEach((id) => { $(id).oninput = vol; });
+
+// ---- engine
+const ctl = () => {
+  const f = player.flight; f.speed = +$('sp').value; $('spv').textContent = f.speed; f.throttle = +$('th').value; f.gLoad = +$('gl').value;
+  f.boost.active = $('bo').checked; f.airbrake = $('ab').checked ? 1 : 0; audio.drafting = $('dr').checked;
+  if ($('sc').checked) events.emit('racer:graze', { racer: player, surface: 'wall', intensity: 0.8 });
+  if (player.spec.id !== $('craft').value) player.spec = { id: $('craft').value };
+};
+$('eng').onclick = () => { unlock(); engineOn = !engineOn; game.state = engineOn ? 'race' : 'title'; $('eng').classList.toggle('on', engineOn); };
+game.state = 'title';
+
+// ---- events
+const EV = [
+  ['race:countdown', { n: 3 }], ['race:go', {}], ['race:lap', { racer: player }], ['race:finalLap', { racer: player }], ['race:finish', { racer: player, place: 1 }],
+  ['pickup:orb', { racer: player }], ['gate:pass', { racer: player, perfect: false }], ['gate:pass', { racer: player, perfect: true }], ['racer:boost', { racer: player, kind: 'item' }],
+  ['racer:stunt', { racer: player, kind: 'loop' }], ['racer:stunt', { racer: player, kind: 'barrel' }], ['racer:stunt', { racer: player, kind: 'nearmiss' }],
+  ['missile:launch', { owner: player, pos: new THREE.Vector3(0, 0, -20) }], ['missile:hit', { target: player }], ['mine:hit', { victim: player }], ['emp:fire', { owner: player }],
+  ['lightning:strike', { target: player }], ['shield:up', { racer: player }], ['shield:block', { racer: player }], ['cannon:fire', { racer: player }], ['racer:tumble', { racer: player, duration: 1.6 }],
+  ['racer:hit', { racer: player, kind: 'racer', severity: 0.6 }], ['race:wrongway', { racer: player, on: true }], ['race:wrongway', { racer: player, on: false }],
+  ['ui:click', {}], ['ui:hover', {}], ['ui:confirm', {}], ['ui:back', {}], ['ui:error', {}],
+];
+for (const [t, p] of EV) {
+  const b = document.createElement('button'); b.textContent = t + (p.kind ? ':' + p.kind : '') + (p.perfect ? '!' : '');
+  b.onclick = () => { unlock(); events.emit(t, p); log(`emit ${t}`); };
+  $('events').appendChild(b);
+}
+$('chain').onclick = () => { unlock(); for (let i = 0; i < 8; i++) setTimeout(() => events.emit('gate:pass', { racer: player, perfect: i === 7 }), i * 260); };
+$('warn').onclick = () => { unlock(); const t0 = performance.now(); const iv = setInterval(() => { const k = (performance.now() - t0) / 3500; if (k > 1) { clearInterval(iv); return; } events.emit('missile:warn', { target: player, dist: 600 * (1 - k) }); }, 120); };
+$('lock').onclick = () => { unlock(); const t0 = performance.now(); const iv = setInterval(() => { const k = (performance.now() - t0) / 2200; if (k > 1.4) { clearInterval(iv); return; } events.emit('missile:lock', { owner: player, target: null, progress: Math.min(1, k) }); }, 80); };
+
+// ---- AI fly-by
+const ai = racer('comet', -400, 0, -80); game.race.racers = [player, ai]; audio.attachRacer(ai);
+let fly = 0;
+$('flyby').onclick = () => { unlock(); engineOn = true; $('eng').classList.add('on'); game.state = 'race'; ai.render.pos.set(-400, 10, -60); ai.flight.vel.set(120, 0, 0); ai.flight.throttle = 0.9; fly = 1; };
+
+let last = performance.now();
+const tick = (t) => {
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.1, (t - last) / 1000); last = t; game.simTime += dt;
+  ctl();
+  if (fly) { ai.render.pos.x += ai.flight.vel.x * dt; if (ai.render.pos.x > 400) { fly = 0; ai.flight.vel.set(0, 0, 0); ai.render.pos.set(5000, 0, 0); } }
+  camera.updateMatrixWorld();
+  audio.update(dt, game); music.update(dt, game);
+};
+requestAnimationFrame(tick);
+</script>
