@@ -19,7 +19,7 @@ export const QUALITY = {
   ultra: { id: 'ultra', renderScale: 1,    pixelRatioCap: 2,    shadows: 4096, bloom: true,  aa: 'smaa', particles: 1.4, scenery: 1.3,  trails: 1.4,  clouds: 1.3, water: 'full',   post: true,  farMul: 1.2,  aniso: 16 },
 };
 
-export const DEFAULT_SETTINGS = {
+const BASE_SETTINGS = {
   quality: 'auto',          // 'auto' | 'low' | 'med' | 'high' | 'ultra'
   masterVolume: 1,
   musicVolume: 0.7,
@@ -30,10 +30,46 @@ export const DEFAULT_SETTINGS = {
   showFps: false,
   doubleTapRoll: false,     // double-tap A / D (or the arrow keys) = barrel roll; off by default (it fires by accident while trimming a turn)
   reduceFlash: false,       // accessibility: no screen flashes / strong chromatic effects
+  rumble: true,             // gamepad vibration on hits / tumbles / boosts (flight/input.js reads `rumble === false` as off)
   difficulty: 'normal',     // 'easy' | 'normal' | 'hard' | 'expert'
   lastCraft: 'falcon',
   lastCourse: 'sunrise',
   lastLivery: 0,
 };
+
+// V-8: until the player touches them, the two motion settings follow the OS "reduce motion" preference.
+export const MOTION_KEYS = ['reduceFlash', 'shake'];
+export const REDUCED_MOTION_DEFAULTS = { reduceFlash: true, shake: 0.4 };
+const SETTINGS_VERSION = 2;           // blobs without `v` were written when every key was saved, so a motion key equal to the plain default there was never a choice
+
+export function prefersReducedMotion() {
+  try { return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; }
+}
+
+/** The defaults for this OS preference. `DEFAULT_SETTINGS` below is this, evaluated once for the page that loads it (Settings > Reset uses it). */
+export function defaultSettings(reducedMotion = false) { return { ...BASE_SETTINGS, ...(reducedMotion ? REDUCED_MOTION_DEFAULTS : null) }; }
+export const DEFAULT_SETTINGS = defaultSettings(prefersReducedMotion());
+
+/** Pure: the settings object for a stored blob (any shape, possibly corrupt) under an OS preference. */
+export function resolveSettings(stored, reducedMotion = false) {
+  const blob = stored && typeof stored === 'object' && !Array.isArray(stored) ? { ...stored } : {};
+  if (!(blob.v >= SETTINGS_VERSION)) for (const k of MOTION_KEYS) if (blob[k] === BASE_SETTINGS[k]) delete blob[k];   // legacy blob: that value is the old default, not a choice
+  delete blob.v;
+  return { ...defaultSettings(reducedMotion), ...blob };
+}
+
+/** Pure: the blob to persist. A motion key still equal to the default for the current OS preference is left out, so it keeps following the OS. */
+export function settingsToStore(settings, reducedMotion = false) {
+  const out = { ...settings }, follow = defaultSettings(reducedMotion);
+  for (const k of MOTION_KEYS) if (out[k] === follow[k]) delete out[k];
+  out.v = SETTINGS_VERSION;
+  return out;
+}
+
+/** E-28: one rule for boot and for a runtime pick. 'auto' = Med on coarse-pointer devices, High elsewhere; anything unknown = High. */
+export function resolveQualityId(setting, coarse = false) {
+  if (setting === 'auto') return coarse ? 'med' : 'high';
+  return typeof setting === 'string' && Object.hasOwn(QUALITY, setting) ? setting : 'high';     // own keys only: 'constructor' / 'toString' are not presets
+}
 
 export const DIFFICULTIES = ['easy', 'normal', 'hard', 'expert'];

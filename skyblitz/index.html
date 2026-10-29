@@ -8,6 +8,47 @@
 <meta name="description" content="Skyblitz: a 3D arcade air-racing game. Loops, barrel rolls, shortcuts, missiles and power-ups across four courses.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1a33'/%3E%3Cpath d='M8 36 32 10l24 26-12-4-12 22-12-22z' fill='%23ffb020'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
+<script>
+/* Boot watchdog (E-11). The game is a graph of ES modules: one that fails to download (a stale or missing file right after a deploy) leaves a
+   blank page with nothing in the console. This classic script runs first and owns the one failure overlay. window.__skyBoot.ready() is called
+   by src/main.js once Game.init() has finished; window.__skyBoot.fail(msg, {reload}) is Game.fail's route (no WebGL). */
+(function () {
+  var done = false, hard = false, el = null;
+  function show(title, body, reload, isHard) {
+    if (hard) return;                                   // the first fatal message stays
+    if (done && !isHard) return;                        // a soft warning that lost the race against a successful start
+    if (!document.body) { document.addEventListener('DOMContentLoaded', function () { show(title, body, reload, isHard); }); return; }
+    hard = !!isHard;
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'sb-boot'; el.setAttribute('role', 'alert');
+      el.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;box-sizing:border-box;background:#0b1a33;color:#fff;font:600 18px/1.4 system-ui,sans-serif;text-align:center';
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '';
+    var h = document.createElement('div'); h.style.cssText = 'font-size:24px;font-weight:800'; h.textContent = title; el.appendChild(h);
+    if (body) { var p = document.createElement('div'); p.style.cssText = 'font-weight:500;max-width:34em;opacity:.85'; p.textContent = body; el.appendChild(p); }
+    if (reload) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Reload';
+      b.style.cssText = 'font:700 16px system-ui,sans-serif;padding:10px 24px;border:0;border-radius:8px;background:#ffb020;color:#0b1a33;cursor:pointer';
+      b.onclick = function () { location.reload(); }; el.appendChild(b);
+    }
+  }
+  window.__skyBoot = {
+    ready: function () { done = true; clearTimeout(timer); if (el && !hard) { el.parentNode.removeChild(el); el = null; } },
+    fail: function (msg, opts) { show(msg || 'Skyblitz failed to load', msg ? '' : 'Reload the page to try again.', !opts || opts.reload !== false, true); }
+  };
+  var LOAD = 'Skyblitz failed to load';
+  // a module script, or one of its imports, did not download; or a game module threw while it loaded
+  window.addEventListener('error', function (e) {
+    if (done) return;
+    var t = e.target;
+    if (t && t.tagName === 'SCRIPT' && t.type === 'module') show(LOAD, 'A game file did not download or is out of date. Reload the page to try again.', true, true);
+    else if (e.filename && /\/src\/[^?#]*\.js/.test(e.filename)) show(LOAD, 'A game file could not be run. Reload the page to try again.', true, true);
+  }, true);
+  var timer = setTimeout(function () { if (!done) show(LOAD, 'Skyblitz has not started after 8 seconds. Reload the page to try again.', true, false); }, 8000);
+})();
+</script>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
 </head>
 <body>

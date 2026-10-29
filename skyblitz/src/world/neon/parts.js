@@ -204,15 +204,33 @@ void main(){
 }
 
 // ------------------------------------------------------------------------------------------------ atrium interior + portals
+export const ATRIUM_WI = 44, ATRIUM_YC = 135, ATRIUM_INSET = 0.6;
+
+/** The four solid atrium masses (left, right, roof, base) as { cz, d, y0, y1 } boxes spanning the full atrium length; the channel between them stays open. */
+export function atriumMassBoxes(A) {
+  const wi = ATRIUM_WI, yc = ATRIUM_YC;
+  return [
+    { cz: A.cz - (wi + A.hw) / 2, d: A.hw - wi, y0: -2, y1: A.top, seed: 31 }, { cz: A.cz + (wi + A.hw) / 2, d: A.hw - wi, y0: -2, y1: A.top, seed: 32 },
+    { cz: A.cz, d: 2 * wi, y0: yc, y1: A.top, seed: 33 }, { cz: A.cz, d: 2 * wi, y0: -2, y1: A.floor, seed: 34 },
+  ];
+}
+
+/** Interior wall / ceiling / floor quads as corner lists [a,b,c,d] + uv + mode. They sit ATRIUM_INSET m inside the channel so they are never coplanar with the mass faces (V-5). */
+export function atriumQuads(A) {
+  const x0 = A.cx - A.hl, x1 = A.cx + A.hl, z = A.cz, wi = ATRIUM_WI - ATRIUM_INSET, yf = A.floor + ATRIUM_INSET, yc = ATRIUM_YC - ATRIUM_INSET;
+  return [
+    { c: [[x0, yf, z - wi], [x1, yf, z - wi], [x1, yc, z - wi], [x0, yc, z - wi]], uv: [[x0, 0], [x1, 0], [x1, yc - yf], [x0, yc - yf]], m: 0 },
+    { c: [[x1, yf, z + wi], [x0, yf, z + wi], [x0, yc, z + wi], [x1, yc, z + wi]], uv: [[x1, 0], [x0, 0], [x0, yc - yf], [x1, yc - yf]], m: 0 },
+    { c: [[x0, yc, z - wi], [x1, yc, z - wi], [x1, yc, z + wi], [x0, yc, z + wi]], uv: [[x0, -wi], [x1, -wi], [x1, wi], [x0, wi]], m: 1 },
+    { c: [[x0, yf, z + wi], [x1, yf, z + wi], [x1, yf, z - wi], [x0, yf, z - wi]], uv: [[x0, wi], [x1, wi], [x1, -wi], [x0, -wi]], m: 2 },
+  ];
+}
+
 export function createAtriumInterior(city, N) {
-  const A = city.atrium, x0 = A.cx - A.hl, x1 = A.cx + A.hl, z = A.cz, wi = 44, yf = A.floor, yc = 135;
+  const A = city.atrium, x0 = A.cx - A.hl, x1 = A.cx + A.hl, z = A.cz, wi = ATRIUM_WI, yf = A.floor, yc = ATRIUM_YC;
   const pos = [], uvs = [], mode = [], idx = [];
   const quad = (a, b, c, d, uA, uB, uC, uD, m) => { const o = pos.length / 3; pos.push(...a, ...b, ...c, ...d); uvs.push(...uA, ...uB, ...uC, ...uD); mode.push(m, m, m, m); idx.push(o, o + 1, o + 2, o, o + 2, o + 3); };
-  // walls (u = x along the tunnel, v = height), ceiling and floor (u = x, v = lateral)
-  quad([x0, yf, z - wi], [x1, yf, z - wi], [x1, yc, z - wi], [x0, yc, z - wi], [x0, 0], [x1, 0], [x1, yc - yf], [x0, yc - yf], 0);
-  quad([x1, yf, z + wi], [x0, yf, z + wi], [x0, yc, z + wi], [x1, yc, z + wi], [x1, 0], [x0, 0], [x0, yc - yf], [x1, yc - yf], 0);
-  quad([x0, yc, z - wi], [x1, yc, z - wi], [x1, yc, z + wi], [x0, yc, z + wi], [x0, -wi], [x1, -wi], [x1, wi], [x0, wi], 1);
-  quad([x0, yf, z + wi], [x1, yf, z + wi], [x1, yf, z - wi], [x0, yf, z - wi], [x0, wi], [x1, wi], [x1, -wi], [x0, -wi], 2);
+  for (const q of atriumQuads(A)) quad(q.c[0], q.c[1], q.c[2], q.c[3], q.uv[0], q.uv[1], q.uv[2], q.uv[3], q.m);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('aUv', new THREE.Float32BufferAttribute(uvs, 2)); geo.setAttribute('aMode', new THREE.Float32BufferAttribute(mode, 1)); geo.setIndex(idx);
   const u = { ...fogUniforms(), uTime: { value: 0 } };

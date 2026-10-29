@@ -1,5 +1,6 @@
 // Persistent save data (best times, last picks, hints seen, Grand Prix progress). Owner: UI agent.
 import { SAVE_KEY } from '../config.js';
+import { ordinal } from './dom.js';
 
 const DEFAULT = { v: 1, best: {}, hintsSeen: false, last: { craft: 'falcon', livery: 0, course: 'sunrise', difficulty: 'normal', laps: 3 }, gp: null, gpDone: 0 };
 
@@ -17,6 +18,16 @@ export function recordResult(save, courseId, craftId, { lap, race }) {
   if (race != null && isFinite(race) && (b.race == null || race < b.race)) { b.race = race; out.newRace = true; }
   writeSave(save);
   return out;
+}
+/** Main-menu sub-label of a saved Grand Prix, e.g. "Race 2 of 4 - 2nd, 25 pts". `totals` is an object keyed by pilot name (not an array). */
+export function gpLabel(gp) {
+  if (!gp || typeof gp !== 'object') return '';
+  const head = `Race ${Math.min(3, Math.max(0, Math.floor(Number(gp.race) || 0))) + 1} of 4`;
+  const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);   // a tampered save must not print "NaN pts" or throw
+  const rows = Object.values(gp.totals && typeof gp.totals === 'object' ? gp.totals : {}).filter((t) => t && typeof t === 'object').map((t) => ({ pts: num(t.points), wins: num(t.wins), you: !!t.isPlayer }));
+  rows.sort((a, b) => b.pts - a.pts || b.wins - a.wins);   // same order as UI.gpStandings()
+  const i = rows.findIndex((t) => t.you);
+  return i < 0 ? head : `${head} - ${ordinal(i + 1)}, ${rows[i].pts} pts`;
 }
 /** Best across all craft for a course. */
 export function bestFor(save, courseId) {

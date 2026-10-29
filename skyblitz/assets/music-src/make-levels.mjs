@@ -9,9 +9,9 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const rows = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')).rows;
 // target peak (dBFS) by sound role: UI is quiet, alerts cut through, weapons/impacts are the loudest (the master limiter catches them)
 const T = [
-  [/^ui/, -11], [/^(countBeep|goBeep|warnBeep|lockTick|lockSolid|wrongWay|stall|overheat)$/, -6], [/^(finalLap|lap|rocket|winJingle|loseJingle)$/, -6],
+  [/^(ui|camTick)/, -11], [/^(beingLocked)$/, -10], [/^(rollNow)$/, -5], [/^(stormCast|thunderFar)$/, -6], [/^(countBeep|goBeep|warnBeep|lockTick|lockSolid|wrongWay|stall|overheat)$/, -6], [/^(finalLap|lap|rocket|winJingle|loseJingle)$/, -6],
   [/^(gate|gatePerfect|orb|itemReady|stunt|recover|respawn)$/, -8], [/Whoosh$|^(nearMiss|evade|overtake|passed|shortcut|ringBoost|smoke|boostIgnite)$/, -7],
-  [/^(cannon|cannonHit|mineDrop)$/, -10], [/^(tumble)$/, -8], [/^(explosion|hitThump|lightning|mineBlast|emp|shieldBlock)$/, -4],
+  [/^(cannon|cannonHit|mineDrop)$/, -13], [/^(tumble)$/, -8], [/^(explosion|hitThump|lightning|mineBlast|emp|shieldBlock)$/, -4],
   [/^(missileLaunch|shieldUp|shieldDown|droneLaunch)$/, -5],
 ];
 const out = {};

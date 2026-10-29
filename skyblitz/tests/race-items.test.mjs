@@ -142,7 +142,10 @@ test('missile counterplay: shield eats it, barrel roll dodges it, an obstacle st
   }
   {
     const { race, rec, items, target } = missileArena(28);
-    items.course = { collide(pos, r, _x, out) { out.kind = 'hazard'; out.depth = 1; out.soft = false; return pos.distanceTo(target.flight.pos) > 40; } };
+    // the real course (project, frameAt, ground) with only the obstacle query replaced: the guidance and its projection hints keep working
+    const stub = Object.create(course);
+    stub.collide = (pos, r, _x, out) => { out.kind = 'hazard'; out.depth = 1; out.soft = false; return pos.distanceTo(target.flight.pos) > 40; };
+    items.course = stub;
     run(race, () => types(rec, 'missile:evaded').length > 0);
     const e = types(rec, 'missile:evaded')[0]; assert.ok(e && e.payload.by === 'obstacle', 'obstacle, got ' + e?.payload.by);
     assert.equal(target.tumble, 0);

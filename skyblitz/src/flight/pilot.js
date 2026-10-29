@@ -13,7 +13,7 @@
 // The flight model maps roll to a BANK ANGLE command (cap +-80 deg), so the pilot outputs roll = desiredBank / cap.
 import * as THREE from 'three';
 import { clamp, smoothstep } from '../util.js';
-import { rollRel } from './flight.js';
+import { rollCtl as rollRel } from './flight.js';   // the same roll reference the flight controller regulates (upright unless really on its back)
 
 const _d = new THREE.Vector3(), _inv = new THREE.Quaternion(), _t = new THREE.Vector3(), _f = new THREE.Vector3();
 

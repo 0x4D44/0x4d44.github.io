@@ -19,6 +19,8 @@ const LIMITS = {
   mineBlast: { gap: 0.05, max: 4 }, boostIgnite: { gap: 0.2, max: 2 }, lightning: { gap: 0.3, max: 2 }, tumble: { gap: 0.3, max: 2 },
 };
 const DEFAULT_LIMIT = { gap: 0.02, max: 5 };
+// Bus trims (V-19): the score sat 9-12 dB under the SFX bus while racing; music up, SFX bus and engine bed down.
+const MUSIC_GAIN = 1.45, SFX_GAIN = 0.62;
 
 export class AudioEngine {
   constructor(game) {
@@ -30,10 +32,11 @@ export class AudioEngine {
     this.pe = null; this.peId = null; this.ai = []; this.paused = false; this.hidden = false; this.pausedAt = 0;
     this.duckUntil = 0; this.duckLevel = 1; this.musicPause = 1;
     this.lastPlay = {}; this.chain = 0; this.lastGateT = -99;
-    this.warn = { dist: 1e9, t: -99, next: 0 }; this.lock = { progress: 0, t: -99, next: 0 };
+    this.warn = { dist: 1e9, t: -99, next: 0, tti: null, evade: false, rollNext: 0 }; this.lock = { progress: 0, t: -99, next: 0 };
     this.scrape = { level: 0, until: 0 }; this.wrong = { on: false, next: 0 }; this.drafting = false; this.prevHeat = 0;
     this.boostSm = 0; this.camPrev = null; this.listenerVel = null; this.scratch = null; this.prevItem = null;
-    this.volumes = { master: 1, music: 1, sfx: 1 };
+    this.volumes = { master: 1, music: 1, sfx: 1 }; this.seq = 0;
+    this.locked = { t: -99, progress: 0, next: 0 };
     this.musicIn = null; this.state = 'off';
   }
 
@@ -71,7 +74,7 @@ export class AudioEngine {
     const sfxBus = this.sfxBus = g(1), sfxComp = comp(-16, 12, 3, 0.004, 0.22);
     sfxBus.connect(sfxComp); sfxComp.connect(master);
     this.worldBus = g(1); this.uiBus = g(1); this.worldBus.connect(sfxBus); this.uiBus.connect(sfxBus);
-    this.engineBus = g(1.6); this.engineBus.connect(this.worldBus);
+    this.engineBus = g(0.9); this.engineBus.connect(this.worldBus);
     this.duckGain = g(1); this.musicFilter = c.createBiquadFilter(); this.musicFilter.type = 'lowpass'; this.musicFilter.frequency.value = 22000;
     this.musicBus = g(1); this.musicIn = this.duckGain;
     this.duckGain.connect(this.musicFilter); this.musicFilter.connect(this.musicBus); this.musicBus.connect(master);
@@ -114,8 +117,8 @@ export class AudioEngine {
     const v = (x, d) => (typeof x === 'number' && isFinite(x) ? clamp(x, 0, 1) : d);
     this.volumes.master = v(s.masterVolume, 1); this.volumes.music = v(s.musicVolume, 0.7); this.volumes.sfx = v(s.sfxVolume, 0.9);
     this.master.gain.setTargetAtTime(this.volumes.master, now, k);
-    this.musicBus.gain.setTargetAtTime(this.volumes.music * 0.95, now, k);
-    this.sfxBus.gain.setTargetAtTime(this.volumes.sfx * 0.9, now, k);
+    this.musicBus.gain.setTargetAtTime(this.volumes.music * MUSIC_GAIN, now, k);
+    this.sfxBus.gain.setTargetAtTime(this.volumes.sfx * SFX_GAIN, now, k);
   }
 
   /** Dip the music for a big sound. depth = remaining music level (0..1), hold seconds. */
@@ -153,7 +156,7 @@ export class AudioEngine {
       vol.connect(pan); pan.connect(dest);
     } else vol.connect(dest);
     let r;
-    try { r = fn(c, vol, now + 0.005, opts); } catch (e) { console.warn('[audio] recipe failed', name, e); try { vol.disconnect(); } catch { /* gone */ } return false; }
+    try { r = fn(c, vol, now + 0.005, opts.seed == null ? { ...opts, seed: (this.seq = (this.seq + 1) | 0) } : opts); } catch (e) { console.warn('[audio] recipe failed', name, e); try { vol.disconnect(); } catch { /* gone */ } return false; }
     const nodes = r.nodes; nodes.push(vol); if (pan) nodes.push(pan);
     this.active.push({ name, end: now + r.dur + 0.1, nodes });
     this.counts[name] = (this.counts[name] || 0) + 1;
@@ -218,6 +221,8 @@ export class AudioEngine {
     on('race:wrongway', ({ racer, on: o }) => { if (me(racer)) { this.wrong.on = !!o; this.wrong.next = 0; } });
     on('race:respawn', ({ racer }) => { if (me(racer)) this.play('respawn'); });
     on('shortcut:enter', ({ racer }) => { if (me(racer)) this.play('shortcut'); });
+    on('input:camera', () => this.play('camTick', { bus: 'ui' }));
+    on('input:lookback', () => this.play('camTick', { bus: 'ui', p: 0.8 }));
     // gates / pickups
     on('gate:pass', ({ racer, perfect }) => {
       if (!me(racer)) return;
@@ -230,12 +235,25 @@ export class AudioEngine {
       const pos = racer?.render?.pos;
       if (type === 'smoke') return;           // smoke:deploy plays it
       if (type === 'turbo' || type === 'turbo3') { if (!me(racer)) this.at('boostIgnite', racer, pos, { far: 0.5 }); return; }
+      if (type === 'storm' && me(racer)) { this.play('stormCast'); return; }
       if (me(racer) && (type === 'shield' || type === 'emp' || type === 'storm' || type === 'drone' || type === 'mine' || type === 'missile' || type === 'triple')) return; // their own events
     });
     // missiles
     on('missile:launch', ({ owner, pos }) => this.at('missileLaunch', owner, pos, { far: 0.8 }));
-    on('missile:lock', ({ owner, target, progress }) => { if (me(owner)) { this.lock.progress = progress; this.lock.t = this.ctx?.currentTime ?? 0; } if (me(target)) { this.warn.dist = Math.min(this.warn.dist, 700); } });
-    on('missile:warn', ({ target, dist }) => { if (me(target)) { this.warn.dist = dist; this.warn.t = this.ctx?.currentTime ?? 0; } });
+    on('missile:lock', ({ owner, target, progress }) => {
+      const t = this.ctx?.currentTime ?? 0;
+      if (me(owner)) { this.lock.progress = progress; this.lock.t = t; }
+      if (me(target) && !me(owner)) { this.locked.progress = progress ?? 0; this.locked.t = t; }   // V-37: a rival is locking on to YOU
+    });
+    on('missile:unlock', ({ owner, target }) => {                 // the lock broke (lost / blinded / fired): stop the lock tones now
+      if (me(target) && !me(owner)) this.locked.t = -99;
+      if (me(owner)) this.lock.t = -99;
+    });
+    on('missile:warn', ({ target, dist, tti, evade }) => {
+      if (!me(target)) return;
+      const t = this.ctx?.currentTime ?? 0;
+      this.warn.dist = dist; this.warn.t = t; this.warn.tti = Number.isFinite(tti) ? tti : null; this.warn.evade = !!evade; this.locked.t = -99;
+    });
     on('missile:evaded', ({ target, by }) => { if (me(target)) { this.warn.t = -99; this.play(by === 'shield' ? 'shieldBlock' : 'evade'); } });
     on('missile:hit', ({ target, pos }) => {
       if (me(target)) { this.warn.t = -99; this.play('explosion', { size: 1, important: true }); this.duck(0.3, 0.7); }
@@ -244,7 +262,11 @@ export class AudioEngine {
     on('mine:drop', ({ owner, pos }) => this.at('mineDrop', owner, pos, { far: 0.6 }));
     on('mine:hit', ({ victim, pos }) => { if (me(victim)) { this.play('mineBlast', { important: true }); this.duck(0.35, 0.6); } else this.at('mineBlast', null, pos, { far: 0.9 }); });
     on('emp:fire', ({ owner, pos }) => { if (me(owner)) this.play('emp', { important: true }); else this.at('emp', null, pos, { far: 0.9 }); this.duck(0.5, 0.8); });
-    on('lightning:strike', ({ target, pos }) => { if (me(target)) { this.play('lightning', { important: true }); this.duck(0.3, 1.5); } else this.at('lightning', null, pos, { far: 0.9 }); });
+    on('lightning:strike', ({ owner, target, pos }) => {
+      if (me(target)) { this.play('lightning', { important: true }); this.duck(0.3, 1.5); }
+      else if (me(owner)) this.play('thunderFar', { vol: 0.9 });          // V-20: the Storm user hears its strike land, wherever it is
+      else this.at('lightning', null, pos, { far: 0.9 });
+    });
     on('smoke:deploy', ({ owner, pos }) => this.at('smoke', owner, pos, { far: 0.7 }));
     on('drone:launch', ({ owner }) => this.at('droneLaunch', owner, owner?.render?.pos, { far: 0.7 }));
     // shields
@@ -402,16 +424,21 @@ export class AudioEngine {
 
   updateWarnings(game, now) {
     const p = game.player; if (!p) return;
-    // escalating missile-warning beeps: the closer the missile, the faster and higher
+    // escalating missile-warning pings: urgency u rises as time-to-impact drops (P-14); falls back to distance if no tti is given
     const w = this.warn;
     if (now - w.t < 0.9) {
+      const u = w.tti != null ? clamp(1 - (w.tti - 0.4) / 3.6, 0, 1) : clamp(1 - w.dist / 450, 0, 1);
       if (now >= w.next) {
-        const u = clamp(1 - w.dist / 450, 0, 1);
         this.play('warnBeep', { p: 0.85 + 0.55 * u, important: true });
         w.next = now + lerp(0.55, 0.085, Math.pow(u, 0.8));
         this.duck(0.7, 0.2);
       }
-    }
+      // distinct "roll now" cue while a barrel roll would still evade the missile
+      if (w.evade && now >= w.rollNext) { this.play('rollNow', { important: true }); w.rollNext = now + 0.5; }
+    } else w.rollNext = 0;
+    // a rival is locking on to us: soft tick that quickens with lock progress
+    const l = this.locked;
+    if (now - l.t < 0.4 && now >= l.next) { this.play('beingLocked', { p: 0.85 + 0.35 * l.progress }); l.next = now + lerp(0.5, 0.16, l.progress); }
     // our own lock-on progress: ticks accelerate and turn into a solid tone
     const k = this.lock;
     if (now - k.t < 0.35 && now >= k.next) {

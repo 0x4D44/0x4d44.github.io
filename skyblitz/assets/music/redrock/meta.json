@@ -2,21 +2,21 @@
  "stems": {
   "base": {
    "file": "base.ogg",
-   "bytes": 450727,
+   "bytes": 450723,
    "kbps": 46,
    "gain": 0.871,
    "rmsDb": -23.9
   },
   "lead": {
    "file": "lead.ogg",
-   "bytes": 623584,
+   "bytes": 623583,
    "kbps": 36,
    "gain": 0.104,
    "rmsDb": -26.7
   },
   "drive": {
    "file": "drive.ogg",
-   "bytes": 372462,
+   "bytes": 372438,
    "kbps": 32,
    "gain": 0.135,
    "rmsDb": -30.4
@@ -36,13 +36,13 @@
  "introSamples": 221538,
  "loopSamples": 3544615,
  "totalSamples": 3766153,
- "bytes": 1779392,
+ "bytes": 1779363,
  "stats": {
   "lufs": -17,
   "peakDb": -2.76,
   "fitResidual": 0.282,
-  "seamJump": 0.13889,
-  "seamRatio": 7,
+  "seamJump": 0.01234,
+  "seamRatio": 0.63,
   "trimsDb": {
    "base": 0,
    "lead": 6.8,
@@ -50,7 +50,7 @@
    "final": 11
   },
   "seamRms": 0.0712,
-  "startRms": 0.1471
+  "startRms": 0.1465
  },
  "name": "Mesa Burn",
  "key": "E",

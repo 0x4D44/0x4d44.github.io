@@ -52,10 +52,10 @@ export const redrockDef = (() => {
   add(-900, 94, -600, { hw: 90, hh: 64 });
   add(-720, 98, -420, { hw: 95, hh: 66 });
   add(-500, 102, -280, { mark: 'slotB', hw: 100, hh: 68 });       // shortcut rejoin
-  add(-420, 106, -140, { hw: 100, hh: 66 });
-  add(-340, 110, -30, { hw: 100, hh: 64 });
-  add(-250, 110, 0, { mark: 'deckBack', hw: 100, hh: 62 });
-  add(-120, 110, 0, { mark: 'deckMid', hw: 96, hh: 62 });
+  add(-420, 106, -140, { hw: 112, hh: 70 });
+  add(-340, 110, -30, { hw: 120, hh: 72 });
+  add(-250, 110, 0, { mark: 'deckBack', hw: 124, hh: 74 });
+  add(-120, 110, 0, { mark: 'deckMid', hw: 120, hh: 72 });
   return {
     id: 'redrock', laps: 3,
     points: b.pts, marks: b.marks, hw: 100, hh: 70,
@@ -66,7 +66,7 @@ export const redrockDef = (() => {
     sectors: ['bend', 'arch', 'spireEntry', 'bulge'],
     gateSpacing: 255,
     branches: [{
-      id: 'slot', name: 'Slot Canyon Shortcut', from: 'slotA', to: 'slotB', hw: 44, hh: 48, risk: 0.8, taper: 120,
+      id: 'slot', name: 'Slot Canyon Shortcut', from: 'slotA', to: 'slotB', hw: 44, hh: 48, risk: 0.55, taper: 120,
       points: [[-335, 114, -1020], [-345, 106, -850], [-365, 102, -670], [-420, 100, -470]],
       marks: { slot: 1 },
     }],

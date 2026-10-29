@@ -12,6 +12,15 @@ import { EventBus } from '../src/events.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SRC = fs.readFileSync(path.join(HERE, '..', 'src', 'audio', 'audio.js'), 'utf8');
+const MUSIC_SRC = fs.readFileSync(path.join(HERE, '..', 'src', 'audio', 'music.js'), 'utf8');
+const SRC_ROOT = path.join(HERE, '..', 'src');
+function walk(dir, out = []) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) { if (e.name !== 'audio') walk(p, out); } else if (e.name.endsWith('.js')) out.push(p);
+  }
+  return out;
+}
 
 test('layerTargets: grid is base-only, the hook is loudest for the leader, urgency layers for the pack', () => {
   const pre = layerTargets({ phase: 'pre', place: 4, n: 8 });
@@ -57,4 +66,35 @@ test('?mute=1: no AudioContext is ever created and every call is a safe no-op', 
   const on = new AudioEngine({ params: new URLSearchParams('mute=0'), events: new EventBus(), settings: {} });
   assert.equal(on.muted, false);
   assert.equal(new AudioEngine({ params: new URLSearchParams(''), events: new EventBus(), settings: {} }).muted, false);
+});
+
+// Events the game emits that deliberately make no sound (each with the reason). Anything else the game emits MUST have a handler
+// in audio.js / music.js: a new gameplay event without a sound (or a removed handler, mutation A1) fails here.
+const NO_SOUND = {
+  'game:loading': 'loading screen: UI only', 'game:error': 'error toast: UI plays ui:error itself', 'game:resize': 'layout only', 'game:loadProgress': 'loading bar only',
+  'race:missed': 'ticker text only', 'sector:pass': 'internal progress marker', 'race:position': 'HUD number only (overtake has the sound)', 'shortcut:exit': 'entering is the cue',
+  'game:autoquality': 'quality governor notice: UI only', 'game:contextlost': 'GL context loss: the overlay explains it, audio keeps running', 'game:contextrestored': 'GL context back: UI only',
+  'smoke:blind': 'a rival lost its lock in smoke: the smoke:deploy cue already played, HUD text only',
+  'drone:expire': 'drone has no end cue', 'input:pause': 'the pause UI plays its own ui:* sound', 'game:state': 'handled indirectly (resets + music routing)',
+};
+
+test('every gameplay event the game emits has an audio handler or a documented "no sound" reason', () => {
+  const emitted = new Set();
+  for (const f of walk(SRC_ROOT)) for (const m of fs.readFileSync(f, 'utf8').matchAll(/\bemit\('([a-zA-Z]+:[a-zA-Z]+)'/g)) emitted.add(m[1]);
+  assert.ok(emitted.size > 40, `scan found only ${emitted.size} emitted events`);
+  const handled = new Set([...SRC.matchAll(/\bon\('([a-zA-Z]+:[a-zA-Z]+)'/g), ...MUSIC_SRC.matchAll(/\bon\('([a-zA-Z]+:[a-zA-Z]+)'/g)].map((m) => m[1]));
+  const missing = [...emitted].filter((e) => !handled.has(e) && !(e in NO_SOUND)).sort();
+  assert.deepEqual(missing, [], 'emitted events with neither an audio handler nor a NO_SOUND entry');
+  const stale = Object.keys(NO_SOUND).filter((e) => !emitted.has(e));
+  assert.deepEqual(stale, [], 'NO_SOUND entries that nothing emits any more');
+  const both = Object.keys(NO_SOUND).filter((e) => handled.has(e) && e !== 'game:state');
+  assert.deepEqual(both, [], 'NO_SOUND events that do have a handler: remove from the list');
+});
+
+test('new feedback cues exist: storm cast, distant thunder, being-locked, roll-now, camera tick', () => {
+  for (const n of ['stormCast', 'thunderFar', 'beingLocked', 'rollNow', 'camTick']) assert.ok(SFX_NAMES.includes(n), n);
+  for (const e of ['input:camera', 'input:lookback']) assert.ok(SRC.includes(`'${e}'`), e);
+  assert.match(SRC, /type === 'storm' && me\(racer\)/);
+  assert.match(SRC, /me\(owner\)\) this\.play\('thunderFar'/);
+  assert.match(SRC, /w\.evade/);
 });

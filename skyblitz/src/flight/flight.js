@@ -23,23 +23,24 @@ export const FLIGHT = {
   maxBank: 1.4,              // rad (80 deg): stick-commanded bank limit
   boostDrain: 25,            // meter units per second while boosting from the meter
   meterBoostPower: 1.6,
-  loopThreshold: 330 * Math.PI / 180,
+  loopThreshold: 310 * Math.PI / 180,
   rollThreshold: 330 * Math.PI / 180,
 };
 
 /** Physical parameters derived from an AIRCRAFT spec (stats 1..10). */
 export function flightParams(spec) {
   const s = spec?.stats || { speed: 6, accel: 6, handling: 6, stability: 6, boost: 6 };
-  const cruise = 70 + s.speed * 6;                       // 94..124 m/s for speed 4..9
+  const cruise = 104 + 1.0 * (s.speed - 4);              // 104..109 m/s for speed 4..9: craft are close in pace, identity is handling / boost / armour
   const minSpeed = cruise * FLIGHT.minSpeedFrac;
   return {
     cruise, minSpeed, stallSpeed: minSpeed * FLIGHT.stallFrac,
-    boostSpeedMul: 1.38 + 0.02 * s.boost,
+    boostSpeedMul: 1.42 + 0.006 * s.boost,
+    boostRegen: 0.35 * Math.max(0, s.boost - 4),            // meter units / s of passive boost recharge (the sprite is the boost-regen craft)
     accel: 22 + 3 * s.accel,                              // boost acceleration cap (m/s^2)
     thrust: 0.4 * (22 + 3 * s.accel),                     // normal thrust cap (m/s^2)
-    pitchRate: 1.45 + 0.1 * s.handling,                   // rad/s at full pull
+    pitchRate: 1.6 + 0.075 * s.handling,                   // rad/s at full pull
     rollRate: 2.0 + 0.2 * s.handling,                     // rad/s
-    turnRate: 0.55 + 0.085 * s.handling,                  // rad/s of heading change at 90 degrees of bank, at cruise
+    turnRate: 0.82 + 0.038 * s.handling,                  // rad/s of heading change at 90 degrees of bank, at cruise
     levelRate: 1.0 + 0.22 * s.stability,                  // 1/s auto-level strength
     tumbleRecover: 0.35 + 0.05 * s.stability,             // s of extra levelling after a tumble
     gravity: FLIGHT.gravity,
@@ -61,7 +62,7 @@ export function createFlightState(spec) {
     // --- additions (internal, but readable) ---
     t: 0, phi: 0,                                                       // flight clock; full roll angle (+ right wing down, +-PI inverted)
     kick: new THREE.Vector3(),                                          // decaying world-space velocity from impulses (bumps)
-    ctl: { q: 0, p: 0, r: 0, hold: 0, recover: 0, barrelAngle: 0, shiftAxis: new THREE.Vector3(), shiftDone: 0, push: false },
+    ctl: { rollTurn: 0, inverted: false, q: 0, p: 0, r: 0, hold: 0, recover: 0, barrelAngle: 0, shiftAxis: new THREE.Vector3(), shiftDone: 0, push: false },
     stunt: { loop: 0, roll: 0, rollIdle: 0, inv: 0, loopCool: 0, rollCool: 0 },
   };
 }
@@ -77,14 +78,17 @@ function derive(fs) {
 
 /** Roll angle relative to the nearest flat attitude (upright or inverted): in (-PI/2, PI/2]. Pilots and the flight model share it. */
 export function rollRel(fs) { const a = fs.phi; return Math.abs(a) > Math.PI / 2 ? a - Math.sign(a) * Math.PI : a; }
+/** Roll angle the stick controller regulates. Upright reference (so a pull while banked past 90 degrees of phi is over-banked, never "inverted");
+ *  the inverted reference only applies once the craft has really flown onto its back (latched in stepOnce, with hysteresis). */
+export function rollCtl(fs) { return fs.ctl.inverted ? rollRel(fs) : fs.phi; }
 
 export function resetFlightState(fs, pos, quat, speed = 0) {
   fs.pos.copy(pos); fs.quat.copy(quat); derive(fs);
   fs.speed = speed; fs.vel.copy(fs.forward).multiplyScalar(speed); fs.kick.set(0, 0, 0); fs.angVel.set(0, 0, 0);
   fs.boost.meter = 0; fs.boost.timer = 0; fs.boost.active = false;
   fs.barrel.t = 0; fs.barrel.cooldown = 0; fs.tumble.t = 0; fs.stall.active = false; fs.stall.t = 0; fs.events.length = 0;
-  const c = fs.ctl; c.q = c.p = c.r = c.hold = c.recover = c.barrelAngle = c.shiftDone = 0; c.push = false;
-  const s = fs.stunt; s.loop = s.roll = s.rollIdle = s.inv = s.loopCool = s.rollCool = 0;
+  const c = fs.ctl; c.q = c.p = c.r = c.hold = c.recover = c.barrelAngle = c.shiftDone = 0; c.push = false; c.inverted = false; c.rollTurn = 0;
+  const s = fs.stunt; s.loop = s.roll = s.rollIdle = s.inv = s.loopCool = s.rollCool = s.loopIdle = 0;
   fs.gLoad = 1; fs.airbrake = 0;
   return fs;
 }
@@ -136,6 +140,8 @@ function stepOnce(fs, c, h, ctx) {
   const abTight = 1 + 0.3 * fs.airbrake;
 
   let qT = (pitchIn > 0 ? pitchIn : pitchIn * 0.75) * p.pitchRate * auth * agil * abTight;
+  // pull while banked: the nose swings round the turn, never over the top (the pull fades as the bank nears its limit)
+  if (qT > 0 && Math.abs(rollIn) > 0.3 && !k.inverted && cosP > 0.3) qT *= 1 - 0.75 * smoothstep(1.0, 1.45, Math.abs(fs.phi));
   const levelOn = !tumbling && !barreling;
   const pitchFree = 1 - smoothstep(0.02, 0.25, Math.abs(pitchIn));
   const lvl = (pro ? 0.18 : 1) * p.levelRate;
@@ -147,7 +153,9 @@ function stepOnce(fs, c, h, ctx) {
   if (k.recover > 0) { k.recover -= h; qT += clamp(-1.2 * p.levelRate * el * clamp(upY * 3, -1, 1), -1.2, 1.2) * flat; }
 
   // roll: stick = bank-angle command (+ rate limited); released = auto-level (standard) or hold (pro)
-  const phiR = rollRel(fs), cap = p.maxBank;
+  const aphi = Math.abs(fs.phi);
+  if (!k.inverted && aphi > 2.36) k.inverted = true; else if (k.inverted && aphi < 0.79) k.inverted = false;   // on its back above 135 deg, upright again below 45
+  const phiR = rollCtl(fs), cap = p.maxBank;
   let pT = 0;
   const rollRate = p.rollRate * (0.5 + 0.5 * auth);
   if (Math.abs(rollIn) > 0.015) {
@@ -194,8 +202,10 @@ function stepOnce(fs, c, h, ctx) {
   _c.copy(fs.forward).cross(Y);
   const lat = fs.up.dot(_c);
   const sf = clamp(Math.pow(p.cruise / Math.max(v, p.minSpeed), 0.8), 0.7, 1.25);
-  const turn = p.turnRate * sf * abTight * (0.35 + 0.65 * auth) * (stalled ? 0.5 : 1) * (tumbling || barreling ? 0 : 1);
-  const rotY = -turn * lat;
+  const turn = p.turnRate * sf * abTight * (0.35 + 0.65 * auth) * (stalled ? 0.5 : 1) * (tumbling ? 0 : 1);
+  // a scripted barrel roll keeps the turn the craft was making when it started (the roll itself would otherwise cancel the lift vector)
+  const rotY = barreling ? k.rollTurn : -turn * lat;
+  if (!barreling) k.rollTurn = rotY;
   if (rotY !== 0) { _q2.setFromAxisAngle(Y, rotY * h); fs.quat.premultiply(_q2); }
   fs.quat.normalize();
   if (!(fs.quat.lengthSq() > 0.5)) fs.quat.copy(_qp);          // paranoia: never let NaN in
@@ -210,6 +220,7 @@ function stepOnce(fs, c, h, ctx) {
   const boostMeter = !!c.boost && fs.boost.meter > 0 && !tumbling;
   if (fs.boost.timer > 0) fs.boost.timer -= h;
   if (boostMeter && fs.boost.timer <= 0) fs.boost.meter = Math.max(0, fs.boost.meter - FLIGHT.boostDrain * h);
+  else if (!boostMeter && fs.boost.meter < 100) fs.boost.meter = Math.min(100, fs.boost.meter + p.boostRegen * h);
   const timed = fs.boost.timer > 0 && !tumbling;
   const boosting = boostMeter || timed;
   fs.boost.active = boosting;
@@ -218,13 +229,14 @@ function stepOnce(fs, c, h, ctx) {
   const vt = p.cruise * speedMul * capMul;
   let acc;
   if (v < vt) {
-    const lim = boosting ? p.accel * power / FLIGHT.meterBoostPower : p.thrust * speedMul;
-    acc = clamp((boosting ? 1.4 : 0.45) * (vt - v), 0, lim);
+    const rec = k.recover > 0 && !boosting;                                       // just out of a tumble: engines spool back up fast
+    const lim = boosting ? p.accel * power / FLIGHT.meterBoostPower : p.thrust * speedMul * (rec ? 3 : 1);
+    acc = clamp((boosting ? 1.4 : rec ? 2.2 : 0.45) * (vt - v), 0, lim);
   } else acc = -0.4 * (v - vt) - 0.0006 * (v - vt) * (v - vt);
   acc -= gs * fs.forward.y * (fs.forward.y > 0 ? 1 + 0.6 * fs.forward.y : 1 - 0.3 * fs.forward.y);   // dives gain speed, climbs lose it (steep climbs bleed hardest)
   acc -= (0.02 * Math.abs(k.q) + 0.012 * Math.abs(rotY)) * v;                    // induced drag from pulling / turning
   acc -= 28 * fs.airbrake * smoothstep(p.minSpeed, p.minSpeed * 1.15, v);        // airbrake never takes you below minSpeed
-  if (tumbling) acc -= 2.5 * Math.max(0, v - 0.62 * p.minSpeed);
+  if (tumbling) acc -= 2.5 * Math.max(0, v - 0.5 * p.cruise);                  // a hit costs speed but never below half cruise: no stall afterwards
   v += acc * h;
   fs.speed = clamp(v, 0.3 * p.minSpeed, p.cruise * 1.95);
   fs.throttle = damp(fs.throttle, clamp(0.55 + 0.45 * (boosting ? 1 : 0) - 0.4 * fs.airbrake + 0.6 * fs.forward.y, 0.1, 1), 6, h);
@@ -249,9 +261,10 @@ function detectStunts(fs, h, tumbling) {
   // loop: accumulated pitch rotation while the wings stay roughly level (or inverted), i.e. not a knife-edge turn
   if (tumbling) { st.loop = 0; st.roll = 0; st.inv = 0; return; }
   const wingY = Math.abs(fs.right.y);
-  if (wingY > 0.75) st.loop = 0;
+  if (wingY > 0.75) { st.loop = 0; st.loopIdle = 0; }
   else if (wingY < 0.5) st.loop += w.x * h;
-  st.loop -= st.loop * 0.12 * h;
+  // the accumulator never decays while the pitch keeps turning; it is dropped once the pitch rate has stayed small for 0.4 s (half loops pay nothing)
+  if (Math.abs(w.x) > 0.5) st.loopIdle = 0; else { st.loopIdle = (st.loopIdle || 0) + h; if (st.loopIdle > 0.4) st.loop = 0; }
   if (Math.abs(st.loop) >= FLIGHT.loopThreshold) {
     st.loop = 0;
     if (st.loopCool <= 0) { st.loopCool = 1.0; pushEvent(fs, { type: 'stunt', kind: 'loop', reward: 25 }); }
@@ -274,7 +287,7 @@ function detectStunts(fs, h, tumbling) {
 /** Uncontrollable spin for `seconds` with heavy speed loss. dir = spin direction (+1 right / -1 left). */
 export function applyTumble(fs, seconds, dir = 1) {
   if (!(seconds > 0)) return;
-  if (!(fs.tumble.t > 0)) fs.speed = Math.max(fs.params.minSpeed * 0.7, fs.speed * 0.78);
+  if (!(fs.tumble.t > 0)) fs.speed = Math.max(fs.params.cruise * 0.5, fs.speed * 0.92);
   fs.tumble.t = Math.max(fs.tumble.t, seconds); fs.tumble.dir = dir < 0 ? -1 : 1;
   fs.barrel.t = 0; fs.ctl.hold = 0;
 }

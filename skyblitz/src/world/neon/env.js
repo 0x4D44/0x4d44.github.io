@@ -1,6 +1,7 @@
 // Night-city reflection environment for glossy paint: dark sky, magenta/teal horizon haze, warm street glow below, a few neon bars and a moon.
 // Browser only (PMREM). Owner: craft agent (role C).
 import * as THREE from 'three';
+import { quietShaderWarnings } from '../../craft/env.js';
 
 export function makeCityEnvironment(renderer, env) {
   const sc = new THREE.Scene();
@@ -29,7 +30,7 @@ export function makeCityEnvironment(renderer, env) {
   });
   const moonGeo = new THREE.SphereGeometry(4.2, 16, 12), moonMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(5.5, 6.2, 8), toneMapped: false });
   const moon = new THREE.Mesh(moonGeo, moonMat); moon.position.copy((env?.sunDir || new THREE.Vector3(-0.35, 0.55, 0.3)).clone().normalize().multiplyScalar(48)); sc.add(moon);
-  const pm = new THREE.PMREMGenerator(renderer), rt = pm.fromScene(sc, 0.03, 0.1, 200);
+  const pm = new THREE.PMREMGenerator(renderer), rt = quietShaderWarnings(renderer, () => pm.fromScene(sc, 0.03, 0.1, 200));
   pm.dispose(); geo.dispose(); barGeo.dispose(); moonGeo.dispose(); moonMat.dispose(); mats.forEach((m) => m.dispose());
   return rt;
 }

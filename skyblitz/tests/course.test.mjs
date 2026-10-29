@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { CourseLayout } from '../src/world/layout.js';
+import { PathData } from '../src/world/path.js';
 import { courseDef, COURSES, previewCourse } from '../src/world/courses/index.js';
 import { mulberry32 } from '../src/util.js';
 
@@ -146,7 +147,10 @@ for (const id of IDS) {
         b.frameAt(u, fb); pos.copy(fb.pos).addScaledVector(fb.right, 5);
         lay.project(pos, last, out); last = out.s;
         if (u > 150 && u < b.length - 150) { assert.equal(out.branch, b.index, `u=${u}`); seen++; }
-        assert.ok(out.s >= prevS - 1, `s monotonic on branch (${out.s} < ${prevS} at u=${u})`); prevS = Math.max(prevS, out.s);
+        // before the capture point (P-08: 130 m past the mouth) the racer is still read as main, and the branch curving away from the main line
+        // makes its main-path s wobble by a couple of metres; once captured, s must be monotonic to 1 m
+        if (out.branch === b.index) { assert.ok(out.s >= prevS - 1, `s monotonic on branch (${out.s} < ${prevS} at u=${u})`); prevS = Math.max(prevS, out.s); }
+        else assert.ok(Math.abs(out.s - b.sOf(u)) < 70, `uncaptured s ${out.s.toFixed(0)} strays from the branch's credited s ${b.sOf(u).toFixed(0)} at u=${u}`);
         assert.ok(out.s >= b.fromS - 40 && out.s <= b.toS + 40);
       }
       assert.ok(seen > 10);
@@ -234,6 +238,85 @@ for (const id of IDS) {
         assert.ok(best < Math.min(b.halfWidth, b.halfHeight) * 0.6, `ring ${best.toFixed(1)} m off the branch axis`);
       }
     });
+  });
+
+  test(`${id}: a racer flying the main line through a junction is never captured; one on the branch axis past the mouth is`, () => {
+    const f = {}, p = new THREE.Vector3(), out = { branch: -1 };
+    lay.branches.forEach((b, bi) => {
+      for (const lat of [-0.5, -0.25, 0, 0.25, 0.5]) {
+        out.branch = -1;
+        for (let s = b.fromS - 80; s <= b.toS + 80; s += 5) {
+          lay.frameAt(s, f); p.copy(f.pos).addScaledVector(f.right, lat * f.halfWidth);
+          lay.project(p, s, out);
+          assert.equal(out.branch, -1, `main line lat ${lat} captured by branch ${bi} at s=${s.toFixed(0)}`);
+        }
+      }
+      out.branch = -1;
+      for (let u = b.blend + 80; u < b.length * 0.35; u += 5) {
+        b.frameAt(u, f); p.copy(f.pos);
+        lay.project(p, b.sOf(u), out);
+      }
+      assert.equal(out.branch, bi, 'a racer flying down the branch axis is captured');
+    });
+  });
+
+  test(`${id}: junction blend: the branch is the main line for its first and last blend metres, credit is identity there (E-18, mutation C2)`, () => {
+    const fm = {}, fb = {};
+    for (const b of lay.branches) {
+      assert.ok(b.blend >= 50, `junction blend ${b.blend} m`);
+      for (let u = 0; u <= b.blend - 5; u += 5) {
+        const geo = u <= b.blend / 2;
+        b.frameAt(u, fb); lay.frameAt(b.fromS + u, fm);
+        assert.ok(!geo || fm.pos.distanceTo(fb.pos) < 8, `start blend: branch ${fm.pos.distanceTo(fb.pos).toFixed(1)} m off the main line at u=${u}`);
+        assert.ok(Math.abs(b.sOf(u) - (b.fromS + u)) < 1e-6, 'credit is identity in the start blend');
+        b.frameAt(b.length - u, fb); lay.frameAt(b.toS - u, fm);
+        assert.ok(!geo || fm.pos.distanceTo(fb.pos) < 8, `end blend: branch ${fm.pos.distanceTo(fb.pos).toFixed(1)} m off the main line at ${u} m from the end`);
+        assert.ok(Math.abs(b.sOf(b.length - u) - (b.toS - u)) < 1e-6, 'credit is identity in the end blend');
+      }
+      let prev = -1;
+      for (let u = 0; u <= b.length; u += 4) { const s = b.sOf(u); assert.ok(s >= prev, 'credit is non-decreasing'); prev = s; }
+    }
+  });
+
+  test(`${id}: a racer scraping the branch tube wall stays on the branch (hysteresis, E-18, mutation C1)`, () => {
+    const f = {}, fm2 = {}, p = new THREE.Vector3(), out = { branch: -1 };
+    for (const b of lay.branches) {
+      out.branch = -1;
+      let checked = 0;
+      for (let u = b.enter; u < b.length - b.blend - 20; u += 5) {   // capture on the axis, then drift out to 1.7 tube radii (e between 1.3 and 2.2)
+        b.frameAt(u, f);
+        const outside = u > b.length * 0.3 && u < b.length * 0.7;
+        p.copy(f.pos); if (outside) p.addScaledVector(f.right, 1.7 * f.halfWidth);
+        lay.project(p, b.sOf(u), out);
+        if (outside) { lay.frameAt(b.sOf(u), fm2); if (p.distanceTo(fm2.pos) > 1.7 * f.halfWidth + 20) { assert.equal(out.branch, b.index, `dropped to main while scraping at u=${u}`); checked++; } }
+      }
+      assert.ok(checked > 10, `only ${checked} scrape samples were far enough from the main line to judge`);
+    }
+  });
+
+  test(`${id}: an open path honours the projection hint (a doubling-back path is tracked on its own leg, E-18)`, () => {
+    const pts = [[0, 50, 0], [100, 50, 0], [200, 50, 0], [260, 50, 10], [200, 50, 20], [100, 50, 20], [0, 50, 20]].map((p) => ({ p }));
+    const path = new PathData(pts, { closed: false, ds: 2.5, hw: 30, hh: 30 });
+    const pos = new THREE.Vector3(100, 50, 13), a = {}, b = {};      // 13 m from leg one, 7 m from leg two
+    path.project(pos, null, a);
+    path.project(pos, 100, b, 40);
+    assert.ok(a.s > path.length / 2, `full scan finds the nearer leg two (s=${a.s.toFixed(0)})`);
+    assert.ok(Math.abs(b.s - 100) < 30, `hinted projection stays on leg one (s=${b.s.toFixed(0)})`);
+  });
+
+  test(`${id}: baked ground height matches the analytic function within 0.5 m on a sampled grid (E-15)`, () => {
+    const f = {}; let max = 0, n = 0;
+    for (let s = 0; s < L; s += 9) {
+      lay.frameAt(s, f);
+      for (let a = -1.6; a <= 1.6; a += 0.4) {
+        const x = f.pos.x + f.right.x * a * f.halfWidth + (s % 7) * 0.61, z = f.pos.z + f.right.z * a * f.halfWidth + (s % 5) * 0.43;
+        if (lay._onDeck(x, z)) continue;
+        max = Math.max(max, Math.abs(lay.groundHeight(x, z) - lay.heightFn(x, z))); n++;
+      }
+    }
+    assert.ok(n > 500);
+    assert.ok(max <= 0.5, `max baked-vs-analytic error ${max.toFixed(2)} m`);
+    if (def.bakeCell) assert.ok(lay._bakeTiles.size > 20, 'the bake was actually used');
   });
 
   test(`${id}: collide: ground, hazard, wall; clear air returns false`, () => {

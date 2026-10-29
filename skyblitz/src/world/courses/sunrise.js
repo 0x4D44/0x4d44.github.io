@@ -95,7 +95,7 @@ export const sunriseDef = (() => {
     id: 'sunrise', laps: 3,
     points: b.pts, marks: b.marks,
     hw: 100, hh: 70,
-    height: sunriseHeight,
+    height: sunriseHeight, bakeCell: 2,
     islands: ISLANDS,
     waterLevel: 0,
     start: { back: 250, fwd: 70, halfW: 46 },
@@ -103,12 +103,12 @@ export const sunriseDef = (() => {
     items: ['ridge', 'eastTurn', 'slalom', 'bay', 'deckBack'].map((m) => m),
     sectors: ['sweepEnd', 'eastTurn', 'slalom', 'bay'],
     branches: [{
-      id: 'cave', name: 'Sea-Cave Shortcut', from: 'branchA', to: 'branchB', hw: 50, hh: 44, risk: 0.65,
+      id: 'cave', name: 'Sea-Cave Shortcut', from: 'branchA', to: 'branchB', hw: 50, hh: 44, risk: 0.5,
       points: [[985, 545, 60], [900, 560, 58], [784, 504, 56], [627, 504, 56, null, 42, 38], [470, 538, 56], [330, 570, 56]].map(([x, z, y, ...r]) => [x, y, z, ...r]),
       marks: { cave: 3 },
     }],
     boost: [
-      { branch: 0, u: 130, count: 8, gap: 100, radius: 18, weave: 6, power: 1.8, duration: 2.3 },   // cave: a rewarded line, tight enough to need flying
+      { branch: 0, u: 130, count: 6, gap: 120, radius: 18, weave: 6, power: 1.7, duration: 2.0 },   // cave: a rewarded line, tight enough to need flying
       { mark: 'loopEntry', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'ridge', offset: -60, count: 2, gap: 50, weave: 22, radius: 20, power: 1.3, duration: 1.2 },
       { mark: 'eastTurn', offset: 160, count: 2, gap: 60, weave: 24, radius: 20 },

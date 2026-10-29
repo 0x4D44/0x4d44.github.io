@@ -41,8 +41,8 @@
   "lufs": -17,
   "peakDb": -3.16,
   "fitResidual": 0.33,
-  "seamJump": 0.05924,
-  "seamRatio": 5.45,
+  "seamJump": 0.01089,
+  "seamRatio": 1,
   "trimsDb": {
    "base": 0,
    "lead": 3.8,
@@ -50,7 +50,7 @@
    "final": 1.2
   },
   "seamRms": 0.0868,
-  "startRms": 0.149
+  "startRms": 0.1489
  },
  "name": "Skyward",
  "key": "G",

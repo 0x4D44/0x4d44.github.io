@@ -6,6 +6,7 @@
 import { createControls, resetControls } from '../controls.js';
 import { SIM_DT } from '../config.js';
 
+const KEY_ROLL_MAX = 0.98;   // keys never reach the 0.99 'full stick' that Pro assist reads as a continuous roll (a keyboard has no half stick)
 const DOUBLE_TAP = 0.22;      // s between two presses of A / D for a barrel roll
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const approach = (cur, target, rate, dt) => { const d = target - cur, m = rate * dt; return Math.abs(d) <= m ? target : cur + Math.sign(d) * m; };
@@ -13,7 +14,8 @@ const dead = (x, dz) => { const a = Math.abs(x); if (a <= dz) return 0; const n 
 
 export function createInput(game) {
   const keys = new Set(), latched = new Set(), lastDown = {}, c = createControls();
-  const st = { pitch: 0, roll: 0, padBarrel: 0, padItem: false, padPrev: [], tapBarrel: 0, touchBarrel: 0, touchItem: false, tick: 0, touchOn: false };
+  const flying = () => !game.paused && (game.state == null || game.state === 'race' || game.state === 'finish' || game.state === 'demo');
+  const st = { pitch: 0, roll: 0, padBarrel: 0, padItem: false, padPrev: [], menuKey: false, tapBarrel: 0, touchBarrel: 0, touchItem: false, tick: 0, touchOn: false };
   const touch = { root: null, ids: {}, stick: { id: -1, ox: 0, oy: 0, x: 0, y: 0 }, held: { boost: false, fire: false, brake: false, back: false, look: false }, built: false, visible: false };
   const emit = (n) => game.events?.emit?.(n, {});
   const isField = (e) => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable); };
@@ -51,7 +53,7 @@ export function createInput(game) {
       const pullKey = axis(['KeyW', 'ArrowUp'], ['KeyS', 'ArrowDown']);            // +1 = S / Down
       const kp = pullKey * ps, kr = axis(['KeyA', 'ArrowLeft'], ['KeyD', 'ArrowRight']);
       st.pitch = approach(st.pitch, kp, kp === 0 ? 9 : 4.5, dt);
-      st.roll = approach(st.roll, kr, kr === 0 ? 12 : 8, dt);
+      st.roll = approach(st.roll, kr * KEY_ROLL_MAX, kr === 0 ? 12 : 8, dt);
       let pitch = st.pitch, roll = st.roll, yaw = 0;
       let boost = keys.has('ShiftLeft') || keys.has('ShiftRight');
       let brake = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyX') ? 1 : 0;
@@ -108,7 +110,7 @@ export function createInput(game) {
     if (code === 'Space' || code.startsWith('Arrow') || code === 'Tab') { if (input.enabled && game.state === 'race') e.preventDefault(); }
     if (e.repeat) return;
     if (code === 'Escape' || code === 'KeyP') emit('input:pause');
-    if (!input.enabled) return;
+    if (!input.enabled || st.menuKey) return;   // E-03: a key pressed in a menu (or the one that closed it) is never a flight input
     keys.add(code); latched.add(code);
     if (code === 'KeyC') emit('input:camera');
     if (code === 'KeyV') emit('input:lookback');
@@ -119,7 +121,15 @@ export function createInput(game) {
   };
   const onUp = (e) => { keys.delete(e.code); };
   const reset = () => { keys.clear(); latched.clear(); st.tapBarrel = 0; };
+  // E-03: pausing or resuming drops every latched key and pad edge, and a key still down is not re-latched (only a fresh press counts)
+  const flush = () => {
+    reset(); st.padPrev = [];
+    const gp = readPad(); if (gp) for (let i = 0; i < gp.buttons.length; i++) st.padPrev[i] = !!gp.buttons[i]?.pressed;
+  };
+  game.events?.on?.('game:pause', flush);
+  game.events?.on?.('game:resume', flush);
   if (typeof addEventListener === 'function') {
+    addEventListener('keydown', (e) => { st.menuKey = !flying(); }, true);   // capture, so it sees the state before a menu handler closes the menu on this very key
     addEventListener('keydown', onDown);
     addEventListener('keyup', onUp);
     addEventListener('blur', reset);

@@ -9,6 +9,7 @@ import { CourseLayout } from '../src/world/layout.js';
 import { courseDef, COURSES } from '../src/world/courses/index.js';
 import { NEON } from '../src/world/courses/neon.js';
 import { makeNeonCity } from '../src/world/neon/city.js';
+import { atriumMassBoxes, atriumQuads } from '../src/world/neon/parts.js';
 
 const def = courseDef('neon');
 const t0 = performance.now();
@@ -158,4 +159,26 @@ test('neon: item clusters, boost rings and gates cover the lap', () => {
 test('neon: sky is night with strong bloom', () => {
   const e = def.environment();
   assert.ok(e.night && e.bloom.strength >= 0.6 && e.fogDensity > 0.0003 && e.ringColor !== undefined && e.warnColor !== undefined);
+});
+
+test('neon: no atrium interior quad is coplanar with an overlapping mass face (V-5 z-fighting)', () => {
+  const A = city.atrium, len = A.hl * 2, x0 = A.cx - A.hl, x1 = A.cx + A.hl;
+  // axis-aligned face rectangles: { axis: 0|1|2 (normal), at, lo: [a,b], hi: [a,b] } over the two other axes
+  const rect = (axis, at, mn, mx) => { const o = [0, 1, 2].filter((k) => k !== axis); return { axis, at, lo: [mn[o[0]], mn[o[1]]], hi: [mx[o[0]], mx[o[1]]] }; };
+  const faces = [];
+  for (const b of atriumMassBoxes(A)) {
+    const mn = [x0, b.y0, b.cz - b.d / 2], mx = [x1, b.y1, b.cz + b.d / 2];
+    for (const axis of [0, 1, 2]) for (const side of [mn, mx]) faces.push(rect(axis, side[axis], mn, mx));
+  }
+  assert.equal(len > 100, true);
+  const quads = atriumQuads(A).map((q) => { const mn = [0, 1, 2].map((k) => Math.min(...q.c.map((p) => p[k]))), mx = [0, 1, 2].map((k) => Math.max(...q.c.map((p) => p[k]))); const axis = [0, 1, 2].find((k) => mx[k] - mn[k] < 1e-6); return rect(axis, mn[axis], mn, mx); });
+  let checked = 0;
+  for (const q of quads) for (const f2 of faces) {
+    if (q.axis !== f2.axis || Math.abs(q.at - f2.at) >= 0.05) continue;
+    const ov = [0, 1].every((k) => Math.min(q.hi[k], f2.hi[k]) - Math.max(q.lo[k], f2.lo[k]) > 0.01);
+    assert.ok(!ov, `quad on axis ${q.axis} at ${q.at} is coplanar with a mass face at ${f2.at}`);
+    checked++;
+  }
+  assert.ok(quads.length === 4 && faces.length === 24);
+  void checked;
 });

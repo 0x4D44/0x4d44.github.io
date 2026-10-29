@@ -103,17 +103,18 @@ test('music: every built track decodes in Chrome to the sample count in meta.jso
       const file = path.join(dir, st.file);
       assert.ok(fs.existsSync(file), `${id}/${st.file}`);
       bytes += fs.statSync(file).size;
-      const r = await run(`(async()=>{const ab=await (await fetch('${BASE}/assets/music/${id}/${st.file}')).arrayBuffer();const c=new OfflineAudioContext(2,48000,48000);const b=await c.decodeAudioData(ab);let nan=0,pk=0;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i+=7){const v=d[i];if(!Number.isFinite(v))nan++;else if(Math.abs(v)>pk)pk=Math.abs(v);}}return {len:b.length,rate:b.sampleRate,ch:b.numberOfChannels,nan,pk}})()`);
+      const r = await run(`(async()=>{const ab=await (await fetch('${BASE}/assets/music/${id}/${st.file}')).arrayBuffer();const c=new OfflineAudioContext(2,48000,48000);const b=await c.decodeAudioData(ab);let nan=0,pk=0;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);for(let i=0;i<d.length;i+=7){const v=d[i];if(!Number.isFinite(v))nan++;else if(Math.abs(v)>pk)pk=Math.abs(v);}}let wr=0;{const ls=${meta.introSamples},le=${meta.totalSamples},w=240;for(let ch=0;ch<b.numberOfChannels;ch++){const d=b.getChannelData(ch);const seg=new Float32Array(2*w);for(let i=0;i<w;i++){seg[i]=d[le-w+i];seg[w+i]=d[ls+i]}let lm=1e-9;for(let i=0;i<2*w-1;i++){if(i===w-1)continue;const s=Math.abs(seg[i+1]-seg[i]);if(s>lm)lm=s}const r2=Math.abs(seg[w]-seg[w-1])/lm;if(r2>wr)wr=r2}}return {len:b.length,rate:b.sampleRate,ch:b.numberOfChannels,nan,pk,wr}})()`);
       assert.equal(r.rate, 48000);
       assert.ok(Math.abs(r.len - meta.totalSamples) <= 1, `${id}/${name}: decoded ${r.len} vs meta ${meta.totalSamples}`);
       assert.equal(r.nan, 0);
       assert.ok(r.pk > 0.05 && r.pk <= 1.0001, `${id}/${name} peak ${r.pk}`);
+      // V-6: the loop wrap step (last sample before loopEnd -> loopStart) may be at most 2x the largest step within +-5 ms (it was 8x on menu/base)
+      assert.ok(r.wr < 2.0, `${id}/${name}: loop wrap step is ${r.wr.toFixed(2)}x the local max step (limit 2.0)`);
     }
     assert.ok(Math.abs(bytes - meta.bytes) < 64, `${id}: meta bytes ${meta.bytes} vs ${bytes}`);
     const limit = ['menu', 'results'].includes(id) ? 2.0e6 : 2.0e6;
     assert.ok(bytes <= limit, `${id} is ${(bytes / 1e6).toFixed(2)} MB`);
     assert.ok(meta.loopSamples > 48000 * 20 && meta.introSamples >= 0);
-    assert.ok(meta.stats.seamRatio < 40, `${id}: loop seam jump ratio ${meta.stats.seamRatio}`);
     total += bytes;
   }
   const stingers = path.join(MUSIC, 'stingers');
@@ -161,7 +162,7 @@ test('live AudioContext: events make sound, voices are released, volumes apply, 
   await page.eval(`(()=>{const {game,events}=__audioLab;game.settings.masterVolume=0.25;game.settings.musicVolume=0.1;game.settings.sfxVolume=0.5;events.emit('settings:change',{key:'masterVolume',value:0.25});})()`);
   await delay(500);
   const g = await page.eval('({m:__audioLab.audio.master.gain.value,mu:__audioLab.audio.musicBus.gain.value,s:__audioLab.audio.sfxBus.gain.value})');
-  assert.ok(Math.abs(g.m - 0.25) < 0.02 && Math.abs(g.s - 0.45) < 0.03 && Math.abs(g.mu - 0.095) < 0.02, JSON.stringify(g));
+  assert.ok(Math.abs(g.m - 0.25) < 0.02 && Math.abs(g.s - 0.31) < 0.03 && Math.abs(g.mu - 0.145) < 0.02, JSON.stringify(g));
   assert.deepEqual(page.errors(), []);
   const warns = page.logs.filter((l) => l.type === 'warning');
   assert.deepEqual(warns, []);
@@ -208,6 +209,41 @@ test('MusicPlayer: loads a track, loops sample-accurately on one clock, crossfad
   await page.close();
 });
 
+async function blockedMusicPage(urls) {
+  const page = await chrome.newPage();
+  await page.s('Network.enable');
+  await page.s('Network.setBlockedURLs', { urls });
+  await page.goto(`${BASE}/tests/lab/audio.html`);
+  await page.waitFor('!!window.__audioLab');
+  await page.key('Space'); await page.click(100, 100);
+  await page.waitFor("!!__audioLab.audio.ctx && __audioLab.audio.ctx.state==='running'", { timeout: 8000 });
+  return page;
+}
+
+test('E-13: one missing stem or stinger does not silence the music (blocked URLs)', async () => {
+  const page = await blockedMusicPage(['*/music/sunrise/base.ogg*', '*/music/stingers/win.ogg*']);
+  const r = await page.eval(`(async()=>{const {music}=__audioLab;music.manual=false;
+    await music.play('sunrise',{fade:0.2});for(let i=0;i<100&&music.current!=='sunrise';i++)await new Promise(x=>setTimeout(x,100));
+    const out={current:music.current,stems:music.voice?Object.keys(music.voice.stems):null,errors:music.errors.slice()};
+    await music.loadStingers();let threw=false,res=null;try{res=music.stinger('win')}catch(e){threw=true}
+    out.stingerThrew=threw;out.stingerWin=res;out.stingerLose=music.stinger('lose');out.errorsAfter=music.errors.slice();return out})()`);
+  assert.equal(r.current, 'sunrise', 'track must still play: ' + JSON.stringify(r));
+  assert.deepEqual(r.stems.sort(), ['drive', 'final', 'lead']);
+  assert.ok(r.errors.some((e) => e.includes('sunrise/base')), JSON.stringify(r.errors));
+  assert.equal(r.stingerThrew, false); assert.equal(r.stingerWin, false); assert.equal(r.stingerLose, true);
+  await page.close();
+});
+
+test('E-13: a course track that cannot load at all falls back to the menu track', async () => {
+  const page = await blockedMusicPage(['*/music/sunrise/*']);
+  const r = await page.eval(`(async()=>{const {music}=__audioLab;music.manual=false;
+    await music.play('sunrise',{fade:0.2});for(let i=0;i<100&&music.current!=='menu';i++)await new Promise(x=>setTimeout(x,100));
+    return {current:music.current,stems:music.voice?Object.keys(music.voice.stems):null}})()`);
+  assert.equal(r.current, 'menu');
+  assert.equal(r.stems.length, 4);
+  await page.close();
+});
+
 test('?mute=1 creates no AudioContext and plays nothing', async () => {
   const page = await chrome.newPage();
   await page.goto(`${BASE}/tests/lab/audio.html?mute=1`);
@@ -225,7 +261,7 @@ test('?mute=1 creates no AudioContext and plays nothing', async () => {
 test('in the real game: engine + positional AI engines + music run through a short autopilot race without errors', async (t) => {
   const page = await chrome.newPage();
   await page.goto(`${BASE}/?autostart=1&autopilot=1&course=sunrise&seed=7&mute=0`);
-  try { await page.waitFor('window.__sky && __sky.ready && !!__sky.game.race', { timeout: 40000 }); } catch { t.skip("game did not boot (another role's module?)"); await page.close(); return; }
+  try { await page.waitFor('window.__sky && __sky.ready && !!__sky.game.race', { timeout: 40000 }); } catch { await page.close(); assert.fail("game did not boot within 40 s: this test must fail, not skip"); }
   await page.key('Space'); await page.click(300, 300);
   await page.waitFor("!!__sky.game.audio.ctx && __sky.game.audio.ctx.state==='running'", { timeout: 8000 });
   await delay(14000);

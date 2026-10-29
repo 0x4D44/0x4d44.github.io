@@ -9,6 +9,8 @@ import { createControls } from '../src/controls.js';
 import { RACE, DIFFICULTY } from '../src/race/balance.js';
 import { basisQuat } from '../src/world/layout.js';
 import { stepProgress } from '../src/race/progress.js';
+import { PILOTS } from '../src/craft/roster.js';
+import { Race } from '../src/race/race.js';
 
 const base = createFakeGame({ seed: 11 });
 const course = await loadCourseHeadless(base, 'sunrise');
@@ -83,13 +85,15 @@ test('rocket start: boost pressed in the last 0.4 s is perfect/good; holding ear
 
 test('progress: dist advances smoothly, sectors fire in order, laps count once per lap', () => {
   const { race, rec } = fresh(7, { autopilot: true, laps: 2, bots: 3 });
-  let maxJump = 0, maxBranchJump = 0, last = race.racers.map((r) => r.dist), lastB = race.racers.map((r) => r.lastBranch), lastS = race.racers.map((r) => r.shortcut);
+  let maxJump = 0, maxBranchJump = 0, last = race.racers.map((r) => r.dist), lastB = race.racers.map((r) => r.lastBranch), lastS = race.racers.map((r) => r.shortcut), laps = [];
   while (race.state !== 'done' && race.clock < 300) {
     stepRace(race, { steps: 1 });
     race.racers.forEach((r, i) => {
       const j = Math.abs(r.dist - last[i]);
       if (r.lastBranch !== lastB[i] || r.shortcut !== lastS[i]) maxBranchJump = Math.max(maxBranchJump, j); else maxJump = Math.max(maxJump, j);
       last[i] = r.dist; lastB[i] = r.lastBranch; lastS[i] = r.shortcut;
+      if (r.lapTimes.length > (laps[i] || 0)) assert.ok(r.dist >= r.lapTimes.length * course.length - 1, `lap ${r.lapTimes.length} credited ${(r.lapTimes.length * course.length - r.dist).toFixed(0)} m early`);
+      laps[i] = r.lapTimes.length;
     });
   }
   assert.ok(Math.max(maxJump, maxBranchJump) < 150, `no distance teleports, max step ${Math.max(maxJump, maxBranchJump)}`);
@@ -125,11 +129,15 @@ test('exploit: a projection glitch is rejected, not turned into distance', () =>
   const d0 = p.dist;
   // move the aircraft 1.5 km ahead for 20 steps, then back
   const keep = p.flight.pos.clone();
-  course.frameAt(p.s + 1500, f);
-  for (let i = 0; i < 20; i++) { p.flight.pos.copy(f.pos); stepRace(race, { steps: 1 }); }
+  // the course projection is hint-local, so script it to report a point 1.5 km ahead (as a bad projection would)
+  const far = (p.s + 1500) % course.length, real = course.project;
+  course.project = (pos, hint, out) => { out.s = far; out.branch = -1; out.u = far; out.lateral = 0; out.vertical = 0; out.dist = 1; return out; };
+  try { for (let i = 0; i < 50; i++) stepRace(race, { steps: 1 }); } finally { course.project = real; }    // held 0.83 s: past the 0.5 s relock
+  assert.ok(race.stats.relocks >= 1, 'the projection relocked onto the far point');
+  assert.ok(p.dist - d0 < 400, `a relock gives no credit for the jump, got ${p.dist - d0}`);
   p.flight.pos.copy(keep);
-  stepRace(race, { steps: 2 });
-  assert.ok(p.dist - d0 < 60, `distance only from real flight, got ${p.dist - d0}`);
+  stepRace(race, { seconds: 1 });
+  assert.ok(p.dist - d0 < 400, `distance only from real flight (no credit for the 1.5 km jump), got ${p.dist - d0}`);
   assert.ok(race.stats.glitches > 0);
 });
 
@@ -147,7 +155,7 @@ test('ranking: 5 m hysteresis, overtake + position events, finishers lock in', (
   assert.ok(rec.log.some((e) => e.type === 'race:position' && e.payload.racer === b && e.payload.place === 1));
   // a finisher goes to the front regardless of distance
   const last = race.order[race.order.length - 1];
-  race.finishRacer(last, race.clock);
+  race.finishRacer(last, race.clock); race.flushFinishers();
   assert.equal(race.order[0], last); assert.equal(last.place, 1);
 });
 
@@ -394,4 +402,120 @@ test('scrape respawn: riding geometry for seconds (not just standing still) puts
   course.collide = (pos, r, proj, out) => { out.kind = 'wall'; out.depth = 0.5; out.soft = true; (out.normal ||= new THREE.Vector3()).set(0, 1, 0); return true; };
   try { stepRace(race, { seconds: 4.5, controls: createControls() }); } finally { course.collide = real; }
   assert.ok(rec.log.some((e) => e.type === 'race:respawn' && e.payload.racer === p), 'respawned after ' + RACE.respawnScrapeT + ' s of continuous contact');
+});
+
+// ---------------------------------------------------------------- round 1 fixes (E-01, E-02, E-07, E-08, E-09, P-13)
+const wrapMod = (x, L) => ((x % L) + L) % L;
+const offset = (r, L) => { const o = wrapMod(r.dist - r.s, L); return o > L / 2 ? o - L : o; };
+
+test('E-01 respawn keeps (dist - s): inside every shortcut at 20/50/80% on all four courses, and after a relock', async () => {
+  for (const id of ['sunrise', 'redrock', 'neon', 'frost']) {
+    const game = createFakeGame({ seed: 50 });
+    const c = await loadCourseHeadless(game, id);
+    const race = makeRace(game, c, { seed: 50, bots: 0, mode: 'trial' });
+    stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+    const p = race.player; race.autopilot = false; neutralAI(p);
+    const L = c.length;
+    for (const br of c.branches) for (const frac of [0.2, 0.5, 0.8]) {
+      const fr = {}; br.frameAt(frac * br.length, fr);
+      const putOn = (u) => {                                                      // as if flown there: branch state set by hand (an unhinted teleport only captures the first 40%)
+        br.frameAt(u, fr); p.flight.pos.copy(fr.pos); p.flight.quat.copy(basisQuat(fr)); p.flight.vel.copy(fr.tangent).multiplyScalar(90); p.flight.speed = 90; p.prev.pos.copy(fr.pos);
+        p.proj.branch = br.index; p.proj.u = u; p.proj.s = br.sOf(u); p.proj.lateral = 0; p.proj.vertical = 0;
+        p.s = p.lastS = p.proj.s; p.lateral = 0; p.vertical = 0; p.onBranch = p.lastBranch = br.index; p.dist = p.s; p.debt = 0; p.glitchT = 0;
+      };
+      putOn(frac * br.length);
+      race.markGood(p, br.index);
+      putOn(Math.min(br.length - 5, frac * br.length + 150));                     // fly on a little, then fail
+      const before = offset(p, L);
+      race.respawn(p, 'scrape');
+      assert.ok(Math.abs(offset(p, L) - before) < 5, `${id} branch ${br.index} @${frac}: dist-s ${before.toFixed(1)} -> ${offset(p, L).toFixed(1)}`);
+      assert.equal(p.onBranch, br.index, `${id}: respawned inside the shortcut, not at the mouth`);
+    }
+    // a 'lost' respawn after the projection relocked onto another stretch
+    const onMain = (s) => { c.frameAt(s, f); p.flight.pos.copy(f.pos); p.flight.quat.copy(basisQuat(f)); p.flight.vel.copy(f.tangent).multiplyScalar(90); p.flight.speed = 90; p.prev.pos.copy(f.pos); race.onTeleport(p); };
+    onMain(900); p.dist = p.s; p.lastGoodS = p.s; p.lastGoodDist = p.dist; p.lastGoodBranch = -1;
+    stepRace(race, { seconds: 1, controls: createControls() });
+    const base = offset(p, L), seen = race.stats.respawns;
+    c.frameAt(wrapMod(p.s + 1700, L), f); p.flight.pos.copy(f.pos).addScaledVector(f.right, 500);
+    for (let i = 0; i < 400 && race.stats.respawns === seen; i++) { p.flight.pos.copy(f.pos).addScaledVector(f.right, 500); stepRace(race, { steps: 1, controls: createControls() }); }
+    assert.ok(race.stats.relocks >= 1, id + ': relocked first');
+    assert.equal(race.stats.respawns, seen + 1, id + ': lost respawn fired');
+    assert.ok(Math.abs(offset(p, L) - base) < 5, `${id} lost after relock: dist-s ${base.toFixed(1)} -> ${offset(p, L).toFixed(1)}`);
+  }
+});
+
+test('E-02 rocket start rule: any boost in the last 0.5 s = rocket (good, perfect inside 0.18 s); boost before the window or held from it = early', () => {
+  const press = (tPress, tRelease = 0) => {
+    const { race, rec } = fresh(5); const c = createControls();
+    while (race.state === 'countdown') { const t = race.cd - 1.2; c.boost = t <= tPress && t > tRelease; stepRace(race, { steps: 1, controls: c }); }
+    return { race, rec, rs: rec.log.find((e) => e.type === 'race:rocketStart' && e.payload.racer === race.player), stall: rec.log.some((e) => e.type === 'racer:stall' && e.payload.racer === race.player) };
+  };
+  for (const t of [0.47, 0.28]) { const r = press(t); assert.ok(r.rs && r.rs.payload.perfect === false && !r.stall, `-${t} s is a good start`); }
+  { const r = press(0.08); assert.ok(r.rs && r.rs.payload.perfect === true, '-0.08 s is perfect'); }
+  { const r = press(2.0); assert.ok(!r.rs && r.stall, 'held from -2.0 s is early'); }
+  { const r = press(1.0, 0.7); assert.ok(!r.rs && r.stall, 'a tap at -1.0 s (before the window) is early even if released'); }
+  assert.equal(RACE.rocketWindow, 0.5);
+});
+
+test('E-07 photo finish: two racers finishing in one step are placed by finishTime, not array order', () => {
+  const { race, rec } = fresh(51, { bots: 1 });
+  go(race, null);
+  const [a, b] = race.racers;                       // a before b in the array
+  race.finishRacer(a, 100.016); race.finishRacer(b, 100.004);
+  race.flushFinishers();
+  assert.equal(b.finishIndex, 0, 'the earlier finishTime wins'); assert.equal(a.finishIndex, 1);
+  const fin = rec.log.filter((e) => e.type === 'race:finish');
+  assert.deepEqual(fin.map((e) => e.payload.racer.id), [b.id, a.id]);
+  assert.deepEqual(fin.map((e) => e.payload.place), [1, 2]);
+  assert.equal(race.standings()[0], b);
+});
+
+test('E-09 grid order = sort by one precomputed noisy key per pilot (exactly one draw each, engine independent)', () => {
+  const game = createFakeGame({ seed: 77 });
+  let draws = 0; const fork = game.rng.fork.bind(game.rng);
+  game.rng.fork = (salt) => { const r = fork(salt); if (salt === 0x5ace) { const range = r.range.bind(r); r.range = (...a) => { draws++; return range(...a); }; } return r; };
+  const race = new Race(game, { courseId: course.id, craftId: 'falcon', livery: 0, difficulty: 'normal', laps: 3, bots: 7, mode: 'quick', seed: 77, course });
+  assert.equal(draws, 7, 'one noisy key per pilot, not one per comparison');
+  const rng = createFakeGame({ seed: 77 }).rng.fork(0x5ace);
+  const pilots = PILOTS.slice(); rng.shuffle(pilots); pilots.length = 7;
+  const keys = pilots.map((p) => p.personality.skill + rng.range(-0.15, 0.15));
+  const expected = pilots.map((p, i) => ({ p, k: keys[i], i })).sort((x, y) => y.k - x.k || x.i - y.i).map((e) => e.p.id);
+  const got = race.racers.filter((r) => r.isAI).sort((x, y) => x.slot - y.slot).map((r) => r.pilot.id);
+  assert.deepEqual(got, expected);
+});
+
+test('P-13 player catch-up is measured against the leader: far-behind player gets a bonus on easy/normal, the leader none', () => {
+  for (const d of ['easy', 'normal']) {
+    const { race } = fresh(52, { difficulty: d });
+    go(race, null);
+    const p = race.player, lead = race.racers.find((r) => r.isAI);
+    race.autopilot = false;
+    lead.dist = 1000; for (const o of race.racers) if (o !== lead && o !== p) o.dist = 900; p.dist = 300; p.place = 8;
+    for (let i = 0; i < 200; i++) race.speedMulFor(p, 1 / 60);
+    assert.ok(p.rb > 1.005, `${d}: far-behind player boosted, rb ${p.rb}`);
+    assert.ok(p.rb <= 1 + DIFFICULTY[d].playerHelp + 1e-9);
+    p.dist = 1200; p.place = 1; p.rb = 1;
+    for (let i = 0; i < 200; i++) race.speedMulFor(p, 1 / 60);
+    assert.equal(p.rb, 1, `${d}: the leader gets no help`);
+  }
+});
+
+test('E-08 a relock that jumps over a vertical loop emits race:missed (no credit)', async () => {
+  const game = createFakeGame({ seed: 53 });
+  const c = await loadCourseHeadless(game, 'sunrise');
+  const loops = Object.keys(c.marks).filter((k) => k.endsWith('Entry') && c.marks[k.slice(0, -5) + 'Exit'] != null);
+  assert.ok(loops.length > 0, 'sunrise has a loop');
+  const nm = loops[0].slice(0, -5), entry = c.marks[nm + 'Entry'], exit = c.marks[nm + 'Exit'];
+  const rec = recordEvents(game);
+  const race = makeRace(game, c, { seed: 53, bots: 0, mode: 'trial' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  const fr = {}; c.frameAt(entry - 60, fr);
+  p.flight.pos.copy(fr.pos); p.flight.quat.copy(basisQuat(fr)); p.flight.vel.copy(fr.tangent).multiplyScalar(90); p.flight.speed = 90; p.prev.pos.copy(fr.pos); race.onTeleport(p);
+  const d0 = p.dist;
+  const real = c.project;                                  // under the loop the nearest-point projection snaps to the exit side: script that
+  c.project = (pos, hint, out) => { out.s = exit + 60; out.branch = -1; out.u = exit + 60; out.lateral = 0; out.vertical = 0; out.dist = 1; return out; };
+  try { stepRace(race, { steps: 45, controls: createControls() }); } finally { c.project = real; }
+  assert.ok(rec.log.some((e) => e.type === 'race:missed' && e.payload.what === 'loop' && e.payload.racer === p), 'missed-loop event');
+  assert.ok(p.dist - d0 < 200, 'no credit for the skipped loop: ' + (p.dist - d0));
 });

@@ -106,7 +106,7 @@ function ensureEnvironment(game) {
 
 export function buildAircraft(spec, liveryIndex = 0, game) {
   let G = geomCache.get(spec.id);
-  if (!G) { G = buildGeometry(spec); geomCache.set(spec.id, G); }
+  if (!G) { G = buildGeometry(spec); protectShared(G); geomCache.set(spec.id, G); }
   const lv = spec.liveries[liveryIndex % spec.liveries.length];
   const hasDom = typeof document !== 'undefined';
   if (hasDom) ensureEnvironment(game);
@@ -157,6 +157,19 @@ export function buildAircraft(spec, liveryIndex = 0, game) {
 /** Idle pose for menus/turntables: engines spooled a little, lights on. */
 export function buildPreviewAircraft(spec, liveryIndex = 0, game) {
   const m = buildAircraft(spec, liveryIndex, game); m.userData.rig.s.thr = 0.45; m.userData.preview = true; return m;
+}
+
+/** The geometry cache is shared by every racer and the hangar: a stray `geometry.dispose()` on a model must not free it (E-26). */
+function protectShared(G) {
+  const geos = [G.paint, G.glass, G.lights, ...G.flameGeos, ...G.propGeos, ...G.parts.map((p) => p.geom)].filter(Boolean);
+  for (const g of geos) { g.userData.shared = true; g.dispose = () => {}; }
+  G.geos = geos;
+}
+
+/** Real teardown of the shared geometry cache (tests, full game dispose). */
+export function releaseAircraftCache() {
+  for (const G of geomCache.values()) for (const g of G.geos || []) { delete g.dispose; g.dispose(); }
+  geomCache.clear();
 }
 
 export function disposeAircraft(model) {

@@ -18,7 +18,14 @@ export function makeSkyEnvironment(renderer, { top = [0.28, 0.5, 1.0], horizon =
   const s = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 8), new THREE.MeshBasicMaterial({ color: new THREE.Color(...sun), toneMapped: false }));
   s.position.copy(d); scene.add(s);
   const pm = new THREE.PMREMGenerator(renderer);
-  const rt = pm.fromScene(scene, 0.02);
+  const rt = quietShaderWarnings(renderer, () => pm.fromScene(scene, 0.02));
   pm.dispose(); geo.dispose();
   return rt.texture;
+}
+
+/** three's own PMREM blur shader makes ANGLE/D3D print "X4122 sum of 1 and -1.5e-17 cannot be represented" / "X3595 gradient instruction used in a loop"
+ *  on its first compile (V-35). They are harmless warnings inside three.js, not our shaders: skip the program-log check for that one compile. */
+export function quietShaderWarnings(renderer, fn) {
+  const d = renderer.debug, prev = d.checkShaderErrors; d.checkShaderErrors = false;
+  try { return fn(); } finally { d.checkShaderErrors = prev; }
 }

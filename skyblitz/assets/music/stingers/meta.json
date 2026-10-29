@@ -1,14 +1,14 @@
 {
  "win": {
   "bytes": 73170,
-  "sec": 8.11
+  "sec": 8.12
  },
  "lose": {
-  "bytes": 67375,
-  "sec": 8.6
+  "bytes": 67236,
+  "sec": 7.95
  },
  "finalLap": {
   "bytes": 36915,
-  "sec": 5
+  "sec": 5.01
  }
 }

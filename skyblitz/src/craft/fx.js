@@ -398,18 +398,22 @@ export class Fx {
     // low-altitude dust / water spray
     const course = game.course;
     if (course?.groundHeight && f.speed > 40) {
-      const gy = course.groundHeight(pos.x, pos.z), h = pos.y - gy;
+      // groundHeight() is the sea FLOOR: the surface you skim is max(floor, waterLevel) (V-4)
+      const wl = course.def?.waterLevel, floor = course.groundHeight(pos.x, pos.z), overWater = wl != null && wl > floor;
+      const gy = overWater ? wl : floor, h = pos.y - gy;
       if (h < 26 && h > -2) {
         const k = 1 - Math.max(0, h) / 26;
-        s.sprayAcc += dt * 70 * k * k * pm;
-        const env = course.environment, fc = env?.fogColor, sandy = env && !env.night;
+        s.sprayAcc += dt * (overWater ? 130 : 70) * k * k * pm;
+        const env = course.environment, fc = env?.fogColor;
+        const wk = overWater ? 0.55 : 0;                                  // water spray is whiter than the fog tint
         const cr = fc ? 0.55 + fc.r * 0.45 : 0.9, cg = fc ? 0.55 + fc.g * 0.45 : 0.9, cb = fc ? 0.55 + fc.b * 0.45 : 0.9;
+        const sr = cr + (1 - cr) * wk, sg = cg + (1 - cg) * wk, sb = cb + (1 - cb) * wk;
         while (s.sprayAcc >= 1) {
           s.sprayAcc -= 1; const sp = (rnd() - 0.5) * 12;
-          _b.copy(f.vel).multiplyScalar(0.25);
-          this.smoke.emit(pos.x + (rnd() - 0.5) * 6, gy + 0.6, pos.z + (rnd() - 0.5) * 6, _b.x + sp, 2 + rnd() * 5 * k, _b.z + sp, 0.9 + rnd() * 0.7, 2 + 2 * k, 9 + 6 * k, cr, cg, cb, 0.42 * k + 0.05, cr, cg, cb, 0, -1, 1.2, Math.floor(rnd() * 16), 0, rnd() * 6, (rnd() - 0.5) * 0.6);
+          const tight = overWater && rnd() < 0.5;                         // half the water spray is a tight plume right under the craft so the wake reads in a chase shot
+          _b.copy(f.vel).multiplyScalar(tight ? 0.7 : 0.25);
+          this.smoke.emit(pos.x + (rnd() - 0.5) * (tight ? 3 : 6), gy + 0.6, pos.z + (rnd() - 0.5) * (tight ? 3 : 6), _b.x + sp, (overWater ? 4 : 2) + rnd() * 5 * k, _b.z + sp, 0.9 + rnd() * 0.7, 2 + 2 * k, (tight ? 6 : 9) + 6 * k, sr, sg, sb, (overWater ? 0.6 : 0.42) * k + 0.05, sr, sg, sb, 0, -1, 1.2, Math.floor(rnd() * 16), 0, rnd() * 6, (rnd() - 0.5) * 0.6);
         }
-        void sandy;
       }
     }
     // shield bubble

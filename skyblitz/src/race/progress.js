@@ -26,14 +26,30 @@ export function syncProgress(race, r) {
   const gates = race.gates, rings = race.rings;
   while (r.gateIdx < gates.length && gates[r.gateIdx].s <= s) r.gateIdx++;
   while (r.ringIdx < rings.length && rings[r.ringIdx].s <= s) r.ringIdx++;
-  r.lastGoodS = p.s; r.glitchT = 0; r.shortcut = -1; r.lastU = 0; r.debt = 0;
+  r.lastGoodS = p.s; r.lastGoodDist = r.dist; r.lastGoodBranch = r.onBranch; r.lastGoodU = p.u ?? 0; r.lastGoodDebt = 0; r.glitchT = 0; r.shortcut = -1; r.lastU = 0; r.debt = 0;
+}
+
+/** E-08: a relock that jumps over a vertical loop forfeits its distance silently; tell the UI (no credit is given). */
+function reportMissedLoop(race, r, fromS, toS) {
+  const L = race.course.length, marks = race.course.marks;
+  if (!marks) return;
+  const span = wrapDelta(toS - fromS, L);
+  if (!(span > 0)) return;
+  for (const k in marks) {
+    if (!k.endsWith('Entry')) continue;
+    const nm = k.slice(0, -5), exit = marks[nm + 'Exit'];
+    if (exit == null) continue;
+    const a = wrapDelta(marks[k] - fromS, L), b = wrapDelta(exit - fromS, L);
+    if (a >= -30 && b <= span + 30 && b > a) { race.game.events.emit('race:missed', { racer: r, what: 'loop', name: nm }); return; }
+  }
 }
 
 /** Re-anchor after a teleport / respawn WITHOUT changing dist, sectors or laps (so teleporting grants nothing). */
-export function reanchor(race, r) {
+export function reanchor(race, r, hint = null) {
   const p = r.proj;
   if (r.shortcut >= 0) race.shortcutExit(r, r.shortcut, false);
-  race.course.project(r.flight.pos, null, p);
+  if (hint && hint.branch >= 0) { p.branch = hint.branch; p.u = hint.u; race.course.project(r.flight.pos, hint.s, p); }   // respawn inside a shortcut: stay on it
+  else race.course.project(r.flight.pos, null, p);
   r.lastS = p.s; r.s = p.s; r.lateral = p.lateral; r.vertical = p.vertical; r.onBranch = p.branch ?? -1; r.lastBranch = r.onBranch;
   r.glitchT = 0; r.debt = 0;
 }
@@ -52,7 +68,10 @@ export function stepProgress(race, r, dt) {
   if (Math.abs(d) > limit) {
     // projection glitch or teleport: ignore the sample; after 0.5 s of persistent disagreement re-anchor (no distance credit)
     r.glitchT += dt; race.stats.glitches++;
-    if (r.glitchT > 0.5) { r.lastS = p.s; r.glitchT = 0; race.stats.relocks++; }
+    if (r.glitchT > 0.5) {
+      reportMissedLoop(race, r, r.lastS, p.s);
+      r.lastS = p.s; r.glitchT = 0; race.stats.relocks++;
+    }
     d = 0;
   } else { r.glitchT = 0; r.lastS = p.s; }
   // A shortcut entry can map the racer many metres down the main line in a single step (the branch is projected as its main-line equivalent).

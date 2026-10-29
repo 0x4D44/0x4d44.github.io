@@ -9,14 +9,14 @@
   },
   "lead": {
    "file": "lead.ogg",
-   "bytes": 616976,
+   "bytes": 616977,
    "kbps": 40,
    "gain": 0.271,
    "rmsDb": -25.5
   },
   "drive": {
    "file": "drive.ogg",
-   "bytes": 421219,
+   "bytes": 421230,
    "kbps": 40,
    "gain": 0.102,
    "rmsDb": -25.8
@@ -36,13 +36,13 @@
  "introSamples": 182857,
  "loopSamples": 2925714,
  "totalSamples": 3108571,
- "bytes": 1737324,
+ "bytes": 1737336,
  "stats": {
   "lufs": -17,
   "peakDb": -1.76,
   "fitResidual": 0.177,
-  "seamJump": 0.0826,
-  "seamRatio": 5.92,
+  "seamJump": 0.00265,
+  "seamRatio": 0.19,
   "trimsDb": {
    "base": 0,
    "lead": 5.4,
@@ -50,7 +50,7 @@
    "final": -1.9
   },
   "seamRms": 0.0701,
-  "startRms": 0.1985
+  "startRms": 0.1976
  },
  "name": "Glacier Pulse",
  "key": "D",

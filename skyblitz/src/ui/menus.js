@@ -1,6 +1,7 @@
 // Title, main menu, settings, controls, credits and pause screens. Owner: UI agent.
-import { h, esc } from './dom.js';
+import { h, esc, mdNodes } from './dom.js';
 import { icon, MISC } from './icons.js';
+import { gpLabel } from './save.js';
 
 /** Parallelogram button. opts: { cls, ico, sub, cue } */
 export function btn(label, onClick, opts = {}) {
@@ -27,14 +28,20 @@ export function mainScreen(ui) {
   const list = h('nav', { class: 'menu', 'aria-label': 'Main menu' });
   const add = (label, fn, o) => { const b = btn(label, fn, o); list.append(b); return b; };
   add('Quick Race', () => ui.startFlow('quick'), { cls: 'primary big', first: true, sub: 'Pick a plane and a course' });
-  const resume = add('Resume Grand Prix', () => ui.resumeGP(), { cls: 'big', sub: 'Continue your championship' });
+  const resume = add('Resume GP', () => ui.resumeGP(), { cls: 'big', sub: 'Continue your championship' });
   add('Grand Prix', () => ui.startFlow('gp'), { cls: 'big', sub: '4 races, one champion' });
   add('Time Trial', () => ui.startFlow('trial'), { cls: 'big', sub: 'Solo against the clock' });
   add('Settings', () => ui.goto('settings', { back: 'main' }), { ico: MISC.gear });
   add('Controls', () => ui.goto('controls', { back: 'main' }), { ico: MISC.pad });
   add('Credits', () => ui.goto('credits', { back: 'main' }), { ico: MISC.heart });
   const el = h('div', { class: 'scr main' }, h('div', { class: 'main-logo skew' }, h('b', null, 'SKY'), h('b', null, 'BLITZ')), list, h('div', { class: 'main-foot' }, 'A Mario-Kart-meets-Star-Fox air race, built for the Almanac.'));
-  return { el, enter() { resume.style.display = ui.save.gp ? '' : 'none'; resume.querySelector('small').textContent = ui.save.gp ? `Race ${ui.save.gp.race + 1} of 4 - ${ui.save.gp.totals?.length ? 'standings saved' : ''}` : ''; }, back: () => 'title' };
+  return {
+    el, enter() {
+      const label = gpLabel(ui.save.gp);   // "Race 2 of 4 - 2nd, 25 pts" (totals is an object keyed by pilot name)
+      resume.style.display = ui.save.gp ? '' : 'none'; resume.querySelector('small').textContent = label;
+      resume.setAttribute('aria-label', label ? `Resume Grand Prix, ${label}` : 'Resume Grand Prix');
+    }, back: () => 'title',
+  };
 }
 
 // ---------------------------------------------------------------- settings
@@ -97,9 +104,16 @@ export function controlsScreen(ui) {
   };
 }
 
+// The soundtrack statement is written here (the front matter of assets/music/CREDITS.md talks about repo paths); the per-sample licence notices below it are
+// rendered from that file, everything after its first "---" rule, so the attributions that travel with the audio are shown word for word.
+const SOUNDTRACK = 'Every track is an original composition written for SKYBLITZ, rendered offline with **ferrosintesis** (https://github.com/0x4D44/ferrosintesis, MIT OR Apache-2.0). '
+  + 'The audio is derivative of the synthesiser\'s embedded sample sets: the samples were trimmed, pitch-shifted, layered with physical models, mixed, EQ-ed, compressed and encoded to Ogg Opus. No endorsement by the original authors is implied.';
+/** The licence-notice part of CREDITS.md: everything after the first "---" line (the whole text when there is none). */
+export const licenceBody = (md) => { const s = String(md ?? ''), i = s.search(/^---\s*$/m); return (i >= 0 ? s.slice(i).replace(/^---\s*$/m, '') : s).trim(); };
+
 export function creditsScreen(ui) {
-  const more = h('pre', { class: 'credits-more' });
-  const el = h('div', { class: 'scr credits' }, header('CREDITS'), h('div', { class: 'panel scroll' },
+  const more = h('section', { class: 'md', hidden: true });
+  const panel = h('div', { class: 'panel scroll' },
     h('p', null, h('b', null, 'SKYBLITZ'), ' is a single-file-set browser game made for the Almanac.'),
     h('ul', null,
       h('li', null, 'Engine: ', h('b', null, 'Three.js'), ' (MIT licence), rendered with WebGL2.'),
@@ -107,13 +121,25 @@ export function creditsScreen(ui) {
       h('li', null, 'Sound effects: generated live with WebAudio.'),
       h('li', null, 'Textures: created with an AI image model, then tuned in the engine.'),
       h('li', null, 'Aircraft, courses, pilots and brands are fictional.'),
-      h('li', null, 'Part of the ', h('b', null, '0x4D44 Almanac'), '.')), more), footer(ui));
+      h('li', null, 'Part of the ', h('b', null, '0x4D44 Almanac'), '.')),
+    h('section', { class: 'md' }, h('h3', null, 'Soundtrack'), mdNodes(SOUNDTRACK)), more);
+  const el = h('div', { class: 'scr credits' }, header('CREDITS'), panel, footer(ui));
   let loaded = false;
   return {
     el, enter() {
-      if (loaded) return; loaded = true;
-      fetch('assets/music/CREDITS.md').then((r) => (r.ok ? r.text() : '')).then((t) => { if (t && !/^<!doctype/i.test(t.trim())) more.textContent = t.trim(); }).catch(() => {});
-    }, back: (p) => p?.back || 'main',
+      if (loaded) return;
+      fetch('assets/music/CREDITS.md').then((r) => (r.ok ? r.text() : '')).then((t) => {
+        if (!t || /^<!doctype/i.test(t.trim())) return;
+        loaded = true; more.replaceChildren(h('h3', null, 'Sample licences'), ...mdNodes(licenceBody(t), 3)); more.hidden = false;
+      }).catch(() => {});
+    },
+    onNav(dir) {   // Up / Down scroll the long licence text (nothing else on this screen is vertical); at either end they fall through to the normal move
+      if (dir !== 'up' && dir !== 'down') return false;
+      const room = dir === 'down' ? panel.scrollHeight - panel.clientHeight - panel.scrollTop : panel.scrollTop;
+      if (room < 2) return false;
+      panel.scrollBy({ top: (dir === 'down' ? 1 : -1) * panel.clientHeight * 0.8, behavior: ui.game.settings.reduceFlash ? 'auto' : 'smooth' }); return true;
+    },
+    back: (p) => p?.back || 'main',
   };
 }
 

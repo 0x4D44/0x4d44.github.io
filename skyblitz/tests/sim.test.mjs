@@ -24,7 +24,7 @@ for (const id of COURSES) {
     assert.equal(race.state, 'done', 'race ended, clock ' + out.clock.toFixed(0));
     assert.equal(race.racers.length, 8);
     const fin = race.racers.filter((r) => r.finished && r.finishTime != null);
-    assert.ok(fin.length >= 5, 'most of the field finishes, got ' + fin.length);
+    assert.ok(fin.length >= 6, 'most of the field finishes, got ' + fin.length);
     for (const r of fin) {
       const avg = (L * laps) / r.finishTime;
       assert.ok(avg > 35 && avg < 330, `${r.name} average speed ${avg.toFixed(0)} m/s over ${r.finishTime.toFixed(0)} s`);
@@ -37,8 +37,8 @@ for (const id of COURSES) {
     assert.ok((counts['item:use'] || 0) >= 8, 'items are used: ' + (counts['item:use'] || 0));
     assert.ok((counts['pickup:orb'] || 0) >= 8, 'orbs are picked up: ' + (counts['pickup:orb'] || 0));
     assert.ok((counts['racer:hit'] || 0) >= 3, 'hits happen: ' + (counts['racer:hit'] || 0));
-    assert.equal(race.stats.respawns <= 4, true, 'respawns are rare: ' + race.stats.respawns);
-    assert.equal(race.stats.glitches <= 10, true, 'progress glitches: ' + race.stats.glitches);
+    assert.equal(race.stats.respawns <= 1, true, 'respawns are rare: ' + race.stats.respawns);
+    assert.equal(race.stats.glitches <= 2, true, 'progress glitches: ' + race.stats.glitches);
     const st = race.results().standings;
     assert.deepEqual(st.map((x) => x.place), [1, 2, 3, 4, 5, 6, 7, 8], 'places are unique and contiguous');
     const ft = st.filter((x) => x.time != null).map((x) => x.time);

@@ -30,7 +30,7 @@ export class Branch {
       closed: false, ds: main.ds, lead: 1, trail: 1, hw: bdef.hw ?? 50, hh: bdef.hh ?? 40,
       upStart: f0.up, upEnd: f1.up, hwStart: f0.halfWidth, hhStart: f0.halfHeight, hwEnd: f1.halfWidth, hhEnd: f1.halfHeight, taper: bdef.taper ?? 150,
     });
-    this.length = this.path.length; this.halfWidth = bdef.hw ?? 50; this.halfHeight = bdef.hh ?? 40;
+    this.length = this.path.length; this.blend = Math.min(BLEND, this.length * 0.25, this.span * 0.25); this.enter = this.blend + 60; this.halfWidth = bdef.hw ?? 50; this.halfHeight = bdef.hh ?? 40;
     this.marks = {};
     for (const k in bdef.marks || {}) this.marks[k] = this.path.sAtParam(bdef.marks[k] + 3);   // index 0 = first user point (after ghost, junction, join)
     this.gates = [];
@@ -39,10 +39,10 @@ export class Branch {
   /** Main-path s equivalent of branch distance u: identity inside the two junction blends (the branch IS the main path there, so a racer
    *  that flips between the two readings does not jump), linear in between (the saved distance is credited along the shortcut). */
   sOf(u) {
-    const J = Math.min(BLEND, this.length * 0.25, this.span * 0.25);
-    if (u <= J) return this.fromS + u;
+    const J = this.blend, E = this.enter;     // E: a racer is only captured past the mouth (P-08), so the credit stays identity up to there and the capture does not jump
+    if (u <= E) return this.fromS + u;
     if (u >= this.length - J) return this.toS - (this.length - u);
-    return this.fromS + J + (u - J) * (this.span - 2 * J) / (this.length - 2 * J);
+    return this.fromS + E + (u - E) * (this.span - E - J) / (this.length - E - J);
   }
 }
 
@@ -65,11 +65,41 @@ export class CourseLayout {
     this._buildAiHints();
     this._buildMinimap();
     this.heightFn = def.makeHeight ? def.makeHeight(this) : (def.height || (() => 0));
-    this._fitCorridor();
+    this._fitCorridor();      // before the bake: the fit's sparse queries would otherwise build every tile along the course at load
+    this._initBake();
+  }
+
+  // ---------------------------------------------------------------- baked ground height (E-15)
+  /** def.bakeCell (m): groundHeight() samples a lazily built bilinear grid of heightFn instead of re-evaluating the (noise-heavy) analytic function
+   *  on every collision query. Tiles of 16x16 cells are built the first time a query lands in them. The analytic heightFn stays exact for scenery. */
+  _initBake() {
+    const c = this.def.bakeCell;
+    this._bakeC = c || 0; this._bakeTiles = new Map(); this._bt = null; this._btk = -1;
+  }
+  _bakeTile(tx, tz) {
+    const c = this._bakeC, t = new Float32Array(17 * 17), x0 = tx * 16 * c, z0 = tz * 16 * c;
+    for (let j = 0; j <= 16; j++) for (let i = 0; i <= 16; i++) t[j * 17 + i] = this.heightFn(x0 + i * c, z0 + j * c);
+    // a cell whose centre the bilinear patch misses by more than 0.35 m (cliff rim, pillar flank) sends the whole tile back to the analytic function
+    let worst = 0;
+    for (let j = 0; j < 16 && worst <= 0.35; j++) for (let i = 0; i < 16; i++) {
+      const k = j * 17 + i, mid = (t[k] + t[k + 1] + t[k + 17] + t[k + 18]) / 4;
+      worst = Math.max(worst, Math.abs(mid - this.heightFn(x0 + (i + 0.5) * c, z0 + (j + 0.5) * c)));
+      if (worst > 0.35) break;
+    }
+    t.exact = worst > 0.35;
+    return t;
+  }
+  _baked(x, z) {
+    const c = this._bakeC, gx = x / c, gz = z / c, ix = Math.floor(gx), iz = Math.floor(gz), tx = ix >> 4, tz = iz >> 4, key = (tx + 4096) * 8192 + (tz + 4096);
+    let t = this._bt;
+    if (key !== this._btk) { t = this._bakeTiles.get(key); if (!t) this._bakeTiles.set(key, t = this._bakeTile(tx, tz)); this._bt = t; this._btk = key; }
+    if (t.exact) return this.heightFn(x, z);
+    const i = (iz - (tz << 4)) * 17 + (ix - (tx << 4)), fx = gx - ix, fz = gz - iz;
+    return (t[i] * (1 - fx) + t[i + 1] * fx) * (1 - fz) + (t[i + 17] * (1 - fx) + t[i + 18] * fx) * fz;
   }
 
   /** Clearance of the inner 62% of the corridor ellipse (the AI target clamp) above terrain and water at path sample i, for half-height hh / half-width hw. */
-  _innerClearance(i, hh, hw, f) {
+  _innerClearance(i, hh, hw, f, bail = -Infinity) {
     this.path.frameAt(i * (this.length / this.path.N), f);
     const wl = this.def.waterLevel; let worst = 1e9;
     for (let a = -0.62; a <= 0.6201; a += 0.124) for (let b = -0.62; b <= 0.6201; b += 0.124) {
@@ -77,7 +107,7 @@ export class CourseLayout {
       const lx = a * hw, ly = b * hh;
       const x = f.pos.x + f.right.x * lx + f.up.x * ly, y = f.pos.y + f.right.y * lx + f.up.y * ly, z = f.pos.z + f.right.z * lx + f.up.z * ly;
       let c = y - this.groundHeight(x, z); if (wl != null) c = Math.min(c, y - wl);
-      if (c < worst) worst = c;
+      if (c < worst) { worst = c; if (worst < bail) return worst; }
     }
     return worst;
   }
@@ -89,16 +119,16 @@ export class CourseLayout {
     this.rawHh = hh.slice(); this.rawHw = hw.slice();
     const capH = new Float32Array(N).fill(1e4), capW = new Float32Array(N).fill(1e4); let any = false;
     const c0 = this.startCfg;
-    for (let i = 0; i < N; i += 3) {
+    for (let i = 0; i < N; i += 5) {
       const s = i * step;
       if (s <= c0.fwd + 40 || s >= this.length - c0.back - 40) continue;
-      if (this._innerClearance(i, hh[i], hw[i], f) >= need) continue;
+      if (this._innerClearance(i, hh[i], hw[i], f, need) >= need) continue;
       any = true;
       let lo = MINH, hi = hh[i];
-      if (this._innerClearance(i, lo, hw[i], f) >= need) { for (let k = 0; k < 7; k++) { const mid = (lo + hi) / 2; if (this._innerClearance(i, mid, hw[i], f) >= need) lo = mid; else hi = mid; } capH[i] = lo; continue; }
+      if (this._innerClearance(i, lo, hw[i], f, need) >= need) { for (let k = 0; k < 7; k++) { const mid = (lo + hi) / 2; if (this._innerClearance(i, mid, hw[i], f, need) >= need) lo = mid; else hi = mid; } capH[i] = lo; continue; }
       capH[i] = MINH; lo = MINW; hi = hw[i];
-      if (this._innerClearance(i, MINH, lo, f) < need) { capW[i] = lo; continue; }          // cannot fit: leave to the course author (flagged by the test)
-      for (let k = 0; k < 7; k++) { const mid = (lo + hi) / 2; if (this._innerClearance(i, MINH, mid, f) >= need) lo = mid; else hi = mid; }
+      if (this._innerClearance(i, MINH, lo, f, need) < need) { capW[i] = lo; continue; }          // cannot fit: leave to the course author (flagged by the test)
+      for (let k = 0; k < 7; k++) { const mid = (lo + hi) / 2; if (this._innerClearance(i, MINH, mid, f, need) >= need) lo = mid; else hi = mid; }
       capW[i] = lo;
     }
     if (!any) return;
@@ -128,11 +158,12 @@ export class CourseLayout {
       const L = this.length, hs = hinted ? ((hintS % L) + L) % L : 0;
       for (const b of this.branches) {
         if (hinted && (hs < b.fromS - 90 || hs > b.toS + 90) && prev !== b.index) continue;
-        const on = prev === b.index, margin = on ? 8 : -3;
+        const on = prev === b.index, margin = on ? 8 : -10;
         b.path.project(pos, on ? out.u : null, this._pb);     // a racer on the branch is tracked locally: no flipping to another stretch of a looping cave
         const f = b.path.frameAt(this._pb.s, this._fb);
         const e = Math.hypot(this._pb.lateral / f.halfWidth, this._pb.vertical / f.halfHeight);
-        if (e < (on ? 2.2 : 1.3) && this._pb.dist < bd + margin && (best < 0 || this._pb.dist < bd)) {
+        // not on it yet: the first junction blend IS the main line, so a racer is only captured once it is past the blend, inside the tube and nearer the branch line
+        if ((on || (this._pb.s >= b.enter && this._pb.s < b.length * 0.4)) && e < (on ? 2.2 : 1.3) && this._pb.dist < bd + margin && (best < 0 || this._pb.dist < bd)) {
           best = b.index; bd = this._pb.dist; out.s = b.sOf(this._pb.s); out.lateral = this._pb.lateral; out.vertical = this._pb.vertical; out.u = this._pb.s;
         }
       }
@@ -164,7 +195,7 @@ export class CourseLayout {
     return a >= -c.back && a <= c.fwd && Math.abs(b) <= c.halfW;
   }
   groundHeight(x, z) {
-    const h = this.heightFn(x, z);
+    const h = this._bakeC ? this._baked(x, z) : this.heightFn(x, z);
     if (this._onDeck(x, z)) return Math.max(h, this.deckY);
     return h;
   }
@@ -176,7 +207,7 @@ export class CourseLayout {
       const row = i >> 1, col = i & 1 ? 1 : -1;
       const back = 26 + row * 38 + (col > 0 ? 12 : 0);                  // staggered like a road-race grid
       this.path.frameAt(-back, f);
-      const lat = col * Math.min(20, f.halfWidth * 0.3);
+      const lat = col * Math.min(20, f.halfWidth * 0.2);
       const pos = f.pos.clone().addScaledVector(f.right, lat); pos.y = this.deckY + CLEAR;
       out.push({ pos, quat: basisQuat(f, q).clone(), slot: i });
     }
@@ -255,12 +286,12 @@ export class CourseLayout {
 
   _buildItems() {
     this.itemBoxes = []; this.itemClusters = [];
-    const L = this.length, spec = this.def.items || [0.1, 0.3, 0.5, 0.7, 0.9];
+    const L = this.length, spec = this.def.items || [0.1, 0.2, 0.5, 0.7, 0.9];
     spec.forEach((v, ci) => {
       let s = typeof v === 'string' ? this.marks[v] : v * L;
       for (const b of this.branches) if (s > b.fromS - 60 && s < b.toS + 60) s = b.fromS - 130;   // keep orbs out of the shortcut mouth
       const f = this.path.frameAt(s, {});
-      const hw = Math.min(f.halfWidth, 90) * 0.55, hh = f.halfHeight * 0.3, cnt = 4;
+      const hw = Math.min(f.halfWidth, 90) * 0.55, hh = f.halfHeight * 0.2, cnt = 4;
       this.itemClusters.push(s);
       for (let k = 0; k < cnt; k++) {
         const lat = (k / (cnt - 1) - 0.5) * 2 * hw, vert = (k % 2 ? 1 : -1) * hh * 0.4;

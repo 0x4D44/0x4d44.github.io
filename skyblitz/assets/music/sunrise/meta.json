@@ -9,7 +9,7 @@
   },
   "lead": {
    "file": "lead.ogg",
-   "bytes": 551796,
+   "bytes": 551741,
    "kbps": 40,
    "gain": 0.311,
    "rmsDb": -25.6
@@ -23,7 +23,7 @@
   },
   "final": {
    "file": "final.ogg",
-   "bytes": 351616,
+   "bytes": 351626,
    "kbps": 40,
    "gain": 0.385,
    "rmsDb": -31.4
@@ -36,13 +36,13 @@
  "introSamples": 180000,
  "loopSamples": 2880000,
  "totalSamples": 3060000,
- "bytes": 1708917,
+ "bytes": 1708872,
  "stats": {
   "lufs": -17,
   "peakDb": -2.12,
   "fitResidual": 0.363,
-  "seamJump": 0.19758,
-  "seamRatio": 14.73,
+  "seamJump": 0.01273,
+  "seamRatio": 0.96,
   "trimsDb": {
    "base": 0,
    "lead": 6.9,
@@ -50,7 +50,7 @@
    "final": 1.6
   },
   "seamRms": 0.0761,
-  "startRms": 0.1893
+  "startRms": 0.1876
  },
  "name": "Lagoon Run",
  "key": "A",

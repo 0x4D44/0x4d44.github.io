@@ -80,11 +80,15 @@ export class MusicPlayer {
     p = (async () => {
       const meta = await (await fetch(new URL(`${id}/meta.json`, BASE_URL))).json();
       const names = Object.keys(meta.stems);
+      // One bad stem must not silence the track: keep the stems that loaded (E-13). Only zero stems is a failure.
       const bufs = await Promise.all(names.map(async (n) => {
-        const ab = await this.fetchBuf(new URL(`${id}/${meta.stems[n].file}`, BASE_URL));
-        return c.decodeAudioData(ab);
+        try {
+          const ab = await this.fetchBuf(new URL(`${id}/${meta.stems[n].file}`, BASE_URL));
+          return await c.decodeAudioData(ab);
+        } catch (e) { this.errors.push(`${id}/${n}: ${e?.message || e}`); return null; }
       }));
-      const buffers = {}; names.forEach((n, i) => { buffers[n] = bufs[i]; });
+      const buffers = {}; names.forEach((n, i) => { if (bufs[i]) buffers[n] = bufs[i]; });
+      if (!Object.keys(buffers).length) throw new Error(`no stems loaded for ${id}`);
       return { meta, buffers };
     })();
     p.catch((e) => { this.errors.push(`${id}: ${e?.message || e}`); this.cache.delete(id); });
@@ -113,7 +117,10 @@ export class MusicPlayer {
     if (!c) return;                       // waits for the first gesture (kick() is called from resume())
     const token = ++this.token;
     let data;
-    try { data = await this.load(id); } catch { return; }
+    try { data = await this.load(id); } catch {
+      if (id !== 'menu' && COURSE_TRACKS.has(id)) { this.current = null; this.play('menu', opts); }   // E-13 fallback: never a silent race
+      return;
+    }
     if (token !== this.token || c !== this.ctx) return;
     this.startVoice(id, data, opts);
   }

@@ -91,7 +91,14 @@ export class SpriteSystem {
       i++;
     }
     this.geo.instanceCount = this.n;
-    this.aPos.needsUpdate = this.aSize.needsUpdate = this.aRot.needsUpdate = this.aCol.needsUpdate = this.aUV.needsUpdate = true;
+    // upload only the live range (E-14): bytes per frame scale with the particle count, nothing when idle
+    this.uploadedBytes = 0;
+    if (this.n > 0) {
+      for (const a of [this.aPos, this.aSize, this.aRot, this.aCol, this.aUV]) {
+        const len = this.n * a.itemSize;
+        a.clearUpdateRanges(); a.addUpdateRange(0, len); a.needsUpdate = true; this.uploadedBytes += len * 4;
+      }
+    }
   }
   clear() { this.n = 0; this.geo.instanceCount = 0; }
   dispose() { this.geo.dispose(); this.mat.dispose(); }

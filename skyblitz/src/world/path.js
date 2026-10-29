@@ -268,7 +268,7 @@ export class PathData {
     return out;
   }
 
-  /** Nearest point projection. closed: hintS windowed (±windowM) unless null/non-finite -> full scan. open: always full scan.
+  /** Nearest point projection. closed: hintS windowed (±windowM) unless null/non-finite -> full scan. open: the same window clamped to [0, L] (no wrap).
    *  out gets s (wrapped to [0,L) for closed), lateral (+right), vertical (+up), dist. Returns out. */
   project(pos, hintS, out, windowM = 130) {
     const N = this.N, P = this.pos, ds = this.ds, L = this.length, closed = this.closed;
@@ -281,6 +281,9 @@ export class PathData {
     if (closed && hintS != null && isFinite(hintS)) {
       const c = Math.round((((hintS % L) + L) % L) / ds), w = Math.min(Math.ceil(windowM / ds), (N >> 1) - 1);
       for (let k = -w; k <= w; k++) scan((((c + k) % N) + N) % N);
+    } else if (!closed && hintS != null && isFinite(hintS)) {   // open: the same local window (no wrap), so a path that doubles back is tracked, not flipped to the other leg
+      const c = Math.max(0, Math.min(N - 1, Math.round(hintS / ds))), w = Math.ceil(windowM / ds);
+      for (let i = Math.max(0, c - w); i <= Math.min(N - 1, c + w); i++) scan(i);
     } else for (let i = 0; i < N; i++) scan(i);
 
     // Newton refinement of  f(s) = (pos - P(s)) . T(s) = 0  using interpolated frames

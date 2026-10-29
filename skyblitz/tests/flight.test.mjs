@@ -301,3 +301,82 @@ test('no hovering: a sustained vertical climb bleeds speed, stalls, and the nose
   assert.ok(vmin < fs.params.minSpeed, `speed fell below min speed (${vmin})`);
   assert.ok(finite(fs));
 });
+
+// ---------------------------------------------------------------- round 1 fixes (P-02, P-06, P-07, P-11, P-17)
+const turnDeg = (fs0, c, secs, ctx) => { let tot = 0, prev = fs0.heading; run(fs0, c, secs, ctx, (f) => { let d = f.heading - prev; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; tot += d; prev = f.heading; }); return Math.abs(tot) * 180 / Math.PI / secs; };
+
+test('P-02: bank + pull tightens the turn, never past the bank limit or onto the back (all 6 craft)', () => {
+  for (const a of AIRCRAFT) {
+    const only = make(a.id); const rateBank = turnDeg(only, ctl({ roll: 1 }), 1.5);
+    const fs = make(a.id);
+    const rate = turnDeg(fs, ctl({ roll: 1, pitch: 1 }), 1.5, undefined);
+    let maxBank = 0, minUp = 1;
+    const f2 = make(a.id); run(f2, ctl({ roll: 1, pitch: 1 }), 1.5, undefined, (f) => { maxBank = Math.max(maxBank, Math.abs(f.bank)); minUp = Math.min(minUp, f.up.y); });
+    assert.ok(maxBank < deg(85), `${a.id} bank ${maxBank * 57.3}`);
+    assert.ok(minUp > 0, `${a.id} up.y ${minUp}`);
+    assert.ok(rate >= rateBank, `${a.id} turn ${rate} vs bank-only ${rateBank}`);
+    assert.ok(finite(f2));
+  }
+});
+
+test('P-07: a clean keyboard-ramped 360 loop pays exactly one LOOP, a half loop pays none', () => {
+  for (const a of AIRCRAFT) {
+    let loops = 0;
+    const count = (f) => { for (const e of f.events) if (e.type === 'stunt' && e.kind === 'loop') loops++; f.events.length = 0; };
+    const fs = make(a.id); let rot = 0;
+    run(fs, (t) => ctl({ pitch: rot >= 330 * Math.PI / 180 ? 0 : Math.min(1, t * 4.5) }), 6, undefined, (f) => { rot += f.angVel.x / 60; count(f); });
+    assert.equal(loops, 1, `${a.id}: one LOOP for a full loop (rotated ${rot})`);
+    loops = 0; const h = make(a.id); let rot2 = 0;
+    run(h, (t) => ctl({ pitch: rot2 >= Math.PI ? 0 : Math.min(1, t * 4.5) }), 6, undefined, (f) => { rot2 += f.angVel.x / 60; count(f); });
+    assert.equal(loops, 0, `${a.id}: a half loop pays nothing`);
+    loops = 0; const two = make(a.id); let rot3 = 0, seg = 0;
+    run(two, (t) => { if (t > 2.5 && seg === 0) { seg = 1; rot3 = 0; } if (t > 5.5 && seg === 1) { seg = 2; rot3 = 0; } return ctl({ pitch: (seg === 0 || seg === 2) && rot3 < 0.9 * Math.PI ? Math.min(1, (t % 3) * 4.5) : 0 }); }, 9, undefined, (f) => { rot3 += f.angVel.x / 60; count(f); });
+    assert.equal(loops, 0, `${a.id}: two separate half loops do not add up`);
+  }
+});
+
+test('P-06: after a missile hit every craft is back to 90% cruise within 3.5 s, without a stall; armour shortens the tumble', async () => {
+  const { applyHit } = await import('../src/race/damage.js');
+  const { WEAPONS } = await import('../src/race/balance.js');
+  const race = { game: { events: { emit() {} } }, rng: { chance: () => true } };
+  for (const a of AIRCRAFT) {
+    const fs = make(a.id); run(fs, ctl(), 1);
+    const victim = { flight: fs, invuln: 0, shield: 0, finished: false, stats: { hitsTaken: 0 }, tumble: 0, empT: 0 };
+    assert.ok(applyHit(race, victim, null, 'missile', { tumble: WEAPONS.missile.tumble, loss: WEAPONS.missile.loss }));
+    assert.ok(fs.tumble.t >= 0.8, `${a.id} tumble ${fs.tumble.t}`);
+    assert.ok(fs.speed < 0.75 * fs.params.cruise, `${a.id} the hit still costs speed (${fs.speed / fs.params.cruise})`);
+    let t90 = null, stalled = false;
+    run(fs, ctl(), 6, undefined, (f, t) => { if (f.stall.active) stalled = true; if (t90 === null && f.tumble.t <= 0 && f.speed >= 0.9 * f.params.cruise) t90 = t; });
+    assert.ok(t90 !== null && t90 <= 3.5, `${a.id} recovered at ${t90}`);
+    assert.ok(!stalled, `${a.id} no forced stall`);
+  }
+  const mk = (id) => ({ flight: make(id), invuln: 0, shield: 0, finished: false, stats: { hitsTaken: 0 }, tumble: 0, empT: 0 });
+  const bull = mk('bulldog'), wasp = mk('wasp');
+  applyHit(race, bull, null, 'missile', { tumble: 1.5, loss: 0.4 }); applyHit(race, wasp, null, 'missile', { tumble: 1.5, loss: 0.4 });
+  assert.ok(bull.flight.tumble.t < wasp.flight.tumble.t, `armour 9 tumbles shorter than armour 3 (${bull.flight.tumble.t} vs ${wasp.flight.tumble.t})`);
+});
+
+test('P-11: a scripted barrel roll keeps turning the nose', () => {
+  const a = make('falcon'); run(a, ctl({ roll: 1 }), 1.2);
+  const b = make('falcon'); run(b, ctl({ roll: 1 }), 1.2);
+  const h0 = a.heading; run(a, ctl({ roll: 1 }), 0.7);
+  const dNo = Math.abs(wrapPi(a.heading - h0));
+  const h1 = b.heading; run(b, ctl({ roll: 1, barrel: 1 }), 0.7);
+  const dRoll = Math.abs(wrapPi(b.heading - h1));
+  assert.ok(dNo > 0.4 && dRoll > 0.6 * dNo, `heading change with roll ${dRoll} vs without ${dNo}`);
+});
+
+test('P-17: Pro assist with a held bank key keeps turning (no continuous roll below full analog stick)', () => {
+  for (const a of AIRCRAFT) {
+    const fs = make(a.id); const rate = turnDeg(fs, ctl({ roll: 0.98 }), 2, { assist: 'pro' });
+    assert.ok(rate > 35, `${a.id} pro turn rate ${rate}`);
+  }
+});
+
+test('E-19: the airbrake tightens the turn rate by itself (at the same speed, not just by slowing the craft)', () => {
+  for (const id of ['falcon', 'manta']) {
+    const rate = (airbrake) => { const f = make(id); f.speed = 90; f.vel.copy(f.forward).multiplyScalar(90); let prev = f.heading, tot = 0; run(f, ctl({ roll: 1, airbrake }), 1.5, undefined, (g) => { g.speed = 90; g.vel.copy(g.forward).multiplyScalar(90); let d = g.heading - prev; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; tot += d; prev = g.heading; }); return Math.abs(tot) * 180 / Math.PI / 1.5; };
+    const free = rate(0), braked = rate(1);
+    assert.ok(braked > free * 1.2, `${id} airbraked turn ${braked.toFixed(1)} deg/s vs free ${free.toFixed(1)} at equal speed`);
+  }
+});

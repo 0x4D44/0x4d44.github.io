@@ -60,9 +60,9 @@ export function createAI(race, racer, pilot, difficulty) {
 
   function decideBranch(b) {
     const risk = b.risk ?? 0.5;
-    let p = -0.08 + 0.8 * P.shortcuts - risk * 0.45 * (1 - sk * 0.8);
+    let p = 0.15 + 0.8 * P.shortcuts - risk * 0.45 * (1 - sk * 0.8);
     p += racer.place >= 5 ? 0.15 : racer.place === 1 ? -0.12 : 0;
-    p *= 0.7 + 0.3 * difficulty.aiSkill;
+    p *= 0.55 + 0.45 * difficulty.aiSkill;
     return rng.float() < clamp(p, 0.03, 0.97);
   }
 
@@ -356,7 +356,6 @@ export function createAI(race, racer, pilot, difficulty) {
         }
         if (_tgt.y < gmax + 30) _tgt.y = gmax + 30;
       }
-      if (fs.pos.y - course.groundHeight(fs.pos.x, fs.pos.y) < 0) { /* unreachable guard for odd stubs */ }
 
       // keep the (bent) target inside the corridor of the frame we are aiming along: a narrow shortcut is only ~34 m half-width, so an
       // unclamped hazard / mine detour drags the racer out of the branch (where the projection then falls back to a distant main-line point)
