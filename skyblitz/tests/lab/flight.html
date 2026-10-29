@@ -1,0 +1,121 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>skyblitz flight lab</title>
+<!--
+  Flight lab: the real flight model + camera rig + the real aircraft model over a synthetic course (ground grid, pylons, ring chain).
+  A scripted pilot flies level -> hard bank turn -> loop -> barrel roll -> dive -> boost, with a telemetry overlay.
+  URL: tests/lab/flight.html?craft=falcon&cam=chase     Keys: arrows/WASD fly by hand once the script ends (or ?manual=1 for hand flight from the start).
+  Automation: window.__lab = { ready, step(n), t, state(), log[], cam(mode), script }.  step(n) advances n fixed steps and renders.
+-->
+<style>
+  html,body{margin:0;background:#000;overflow:hidden;font:12px ui-monospace,Consolas,monospace;color:#fff}
+  canvas{display:block}
+  #hud{position:fixed;left:120px;top:8px;background:rgba(0,0,0,.55);padding:6px 10px;border-radius:6px;white-space:pre;line-height:1.35}
+  #stunt{position:fixed;left:50%;top:18%;transform:translateX(-50%);font:900 italic 44px system-ui;color:#ffe14a;text-shadow:0 3px 0 #b33,0 0 18px #f80;opacity:0;transition:opacity .3s}
+</style>
+<script type="importmap">{"imports":{"three":"../../vendor/three.module.min.js","three/addons/":"../../vendor/addons/"}}</script>
+<div id="hud"></div><div id="stunt"></div>
+<script type="module">
+import * as THREE from 'three';
+import { getAircraft } from '../../src/craft/roster.js';
+import { createFlightState, resetFlightState, stepFlight, addBoostMeter } from '../../src/flight/flight.js';
+import { createCameraRig } from '../../src/flight/camera.js';
+import { createControls } from '../../src/controls.js';
+import { SIM_DT } from '../../src/config.js';
+
+const P = new URLSearchParams(location.search);
+const craftId = P.get('craft') || 'falcon', camMode = P.get('cam') || 'chase', manual = P.has('manual');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x7fb8ff); scene.fog = new THREE.Fog(0x9cc8ff, 400, 4200);
+const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.5, 8000);
+scene.add(new THREE.HemisphereLight(0xdcecff, 0x5a6a40, 1.6));
+const sun = new THREE.DirectionalLight(0xfff0d0, 3); sun.position.set(300, 500, 200); scene.add(sun);
+
+// synthetic course: checker ground at y=0, pylons every 150 m along -Z, a ring chain
+const c2 = document.createElement('canvas'); c2.width = c2.height = 256; const g2 = c2.getContext('2d');
+for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) { g2.fillStyle = (x + y) % 2 ? '#4f8a3c' : '#6aa84f'; g2.fillRect(x * 32, y * 32, 32, 32); }
+const gt = new THREE.CanvasTexture(c2); gt.wrapS = gt.wrapT = THREE.RepeatWrapping; gt.repeat.set(400, 400); gt.colorSpace = THREE.SRGBColorSpace;
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), new THREE.MeshStandardMaterial({ map: gt, roughness: 1 }));
+ground.rotation.x = -Math.PI / 2; scene.add(ground);
+const pyl = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 120, 10), new THREE.MeshStandardMaterial({ color: 0xff6a2a }));
+for (let i = -40; i < 40; i++) for (const sx of [-120, 120]) { const m = pyl.clone(); m.position.set(sx, 60, i * 150 - 600); scene.add(m); }
+const ring = new THREE.TorusGeometry(35, 2.5, 8, 40), rm = new THREE.MeshBasicMaterial({ color: 0xffd02e });
+for (let i = 0; i < 24; i++) { const m = new THREE.Mesh(ring, rm); m.position.set(0, 100 + 15 * Math.sin(i), -400 - i * 300); scene.add(m); }
+
+// the real aircraft model if the craft module is up, else a stand-in
+const spec = getAircraft(craftId);
+let model;
+try {
+  const { buildAircraft, updateAircraft } = await import('../../src/craft/aircraft.js');
+  const fakeGame = { assets: { tex: () => null, has: () => false, atlas: () => null, uv: () => [0, 0, 1, 1] }, q: { shadows: 0 }, settings: {}, headless: false, THREE };
+  model = buildAircraft(spec, 0, fakeGame); window.__updateAircraft = updateAircraft;
+} catch (e) { console.warn('lab: aircraft model unavailable, using stand-in', e); }
+if (!model) { model = new THREE.Group(); const b = new THREE.Mesh(new THREE.ConeGeometry(1.5, 12, 8), new THREE.MeshStandardMaterial({ color: 0x3a7bff })); b.rotation.x = -Math.PI / 2; const w = new THREE.Mesh(new THREE.BoxGeometry(11, 0.3, 3), new THREE.MeshStandardMaterial({ color: 0xffffff })); model.add(b, w); }
+scene.add(model);
+
+// fake game + racer matching the contract (the rig only reads render.pos/quat, controls.lookBack, finished, spec, flight.boost.active)
+const fs = createFlightState(spec);
+resetFlightState(fs, new THREE.Vector3(0, 110, 0), new THREE.Quaternion(), fs.params.cruise);
+const racer = { id: 0, isPlayer: true, spec, flight: fs, controls: createControls(), render: { pos: fs.pos.clone(), quat: fs.quat.clone() }, prev: { pos: fs.pos.clone(), quat: fs.quat.clone() }, place: 1, finished: false, tumble: 0, model };
+const events = { on() {}, emit() {} };
+const game = { camera, settings: { shake: 1, assist: 'standard', pitchMode: 'flight' }, player: racer, race: { state: 'racing', racers: [racer] }, course: { groundHeight: () => 0 }, events, state: 'race' };
+const rig = createCameraRig(game); rig.init(); rig.reset(racer, camMode);
+
+// scripted pilot: [duration s, controls]
+const script = [
+  [3.0, {}], [2.2, { roll: 1 }], [0.8, {}], [2.0, { roll: -1 }], [1.0, {}],
+  [3.1, { pitch: 1 }], [1.5, {}], [0.05, { barrel: 1 }], [1.6, {}], [1.6, { pitch: -0.6 }], [1.2, {}], [2.5, { boost: true }], [2.0, {}],
+];
+addBoostMeter(fs, 100);
+const log = []; let t = 0, si = 0, st = 0, simStep = 0, stuntTxt = '';
+const hud = document.getElementById('hud'), stuntEl = document.getElementById('stunt');
+const keys = new Set(); addEventListener('keydown', (e) => keys.add(e.code)); addEventListener('keyup', (e) => keys.delete(e.code));
+const ctl = racer.controls;
+function setControls() {
+  Object.assign(ctl, { pitch: 0, roll: 0, yaw: 0, boost: false, airbrake: 0, barrel: 0 });
+  if (manual || si >= script.length) {
+    ctl.pitch = (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0) - (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0);
+    ctl.roll = (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0);
+    ctl.boost = keys.has('ShiftLeft'); ctl.airbrake = keys.has('ControlLeft') ? 1 : 0; ctl.barrel = keys.has('KeyE') ? 1 : keys.has('KeyQ') ? -1 : 0; keys.delete('KeyE'); keys.delete('KeyQ');
+    return;
+  }
+  const [dur, c] = script[si]; Object.assign(ctl, c);
+  if (c.barrel && st > 0) ctl.barrel = 0;
+  st += SIM_DT; if (st >= dur) { si++; st = 0; }
+}
+function fixed() {
+  setControls();
+  racer.prev.pos.copy(fs.pos); racer.prev.quat.copy(fs.quat);
+  stepFlight(fs, ctl, SIM_DT, { assist: 'standard' });
+  if (fs.pos.y < 8) { fs.pos.y = 8; if (fs.forward.y < 0) fs.quat.premultiply(new THREE.Quaternion().setFromAxisAngle(fs.right, -0.02)); }   // lab ground: keep the demo alive
+  for (const e of fs.events) if (e.type === 'stunt') { stuntTxt = e.kind.toUpperCase() + ' +' + e.reward; stuntEl.textContent = stuntTxt; stuntEl.style.opacity = 1; setTimeout(() => (stuntEl.style.opacity = 0), 900); log.push(`t=${t.toFixed(2)} STUNT ${e.kind} +${e.reward}`); }
+  fs.events.length = 0;
+  t += SIM_DT; simStep++;
+  if (simStep % 10 === 0) log.push(`t=${t.toFixed(2)} v=${fs.speed.toFixed(0)} alt=${fs.pos.y.toFixed(0)} bank=${(fs.bank * 57.3).toFixed(0)} pitch=${(fs.pitch * 57.3).toFixed(0)} g=${fs.gLoad.toFixed(1)} fov=${camera.fov.toFixed(0)} boost=${fs.boost.active ? 1 : 0}`);
+}
+function render(alpha, dt) {
+  racer.render.pos.lerpVectors(racer.prev.pos, fs.pos, alpha); racer.render.quat.slerpQuaternions(racer.prev.quat, fs.quat, alpha);
+  model.position.copy(racer.render.pos); model.quaternion.copy(racer.render.quat);
+  window.__updateAircraft?.(model, { ...racer, controls: ctl, flight: fs }, dt);
+  rig.update(dt, game, alpha);
+  ground.position.set(Math.round(camera.position.x / 100) * 100, 0, Math.round(camera.position.z / 100) * 100);
+  renderer.render(scene, camera);
+  hud.textContent = `${spec.name}  cam:${rig.camMode}\nspeed ${(fs.speed * 3.6).toFixed(0)} km/h  alt ${fs.pos.y.toFixed(0)} m\nbank ${(fs.bank * 57.3).toFixed(0)}  pitch ${(fs.pitch * 57.3).toFixed(0)}  G ${fs.gLoad.toFixed(1)}\nboost ${fs.boost.meter.toFixed(0)}%${fs.boost.active ? ' ON' : ''}  barrel ${fs.barrel.t > 0 ? 'EVADE' : '-'}  stall ${fs.stall.active ? 'YES' : '-'}\nt ${t.toFixed(2)}  fov ${camera.fov.toFixed(0)}`;
+}
+window.__lab = {
+  ready: true, log, script, rig, fs, racer,
+  get t() { return t; },
+  step(n = 1) { for (let i = 0; i < n; i++) { fixed(); if (i === n - 1 || i % 2 === 1) render(1, SIM_DT * (i === n - 1 ? 1 : 2)); } return this.state(); },
+  state() { return { t: +t.toFixed(2), speed: +fs.speed.toFixed(1), pos: fs.pos.toArray().map((x) => +x.toFixed(1)), bank: +fs.bank.toFixed(2), pitch: +fs.pitch.toFixed(2), g: +fs.gLoad.toFixed(1), fov: +camera.fov.toFixed(1), scriptDone: si >= script.length }; },
+  cam(m) { rig.setMode(m); },
+};
+// free-running preview (skipped when an automation harness steps it)
+if (!P.has('step')) {
+  let last = performance.now(), acc = 0;
+  const loop = (now) => { requestAnimationFrame(loop); const dt = Math.min(0.1, (now - last) / 1000); last = now; acc += dt; while (acc >= SIM_DT) { fixed(); acc -= SIM_DT; } render(acc / SIM_DT, dt); };
+  if (!P.has('manual') || true) requestAnimationFrame(loop);
+}
+</script>

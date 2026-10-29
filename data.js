@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "skyblitz",
+    title: "SKYBLITZ",
+    tagline: "An arcade air-racing Grand Prix: eight pilots, four courses from a tropical archipelago to aurora glaciers, loops, barrel rolls, shortcuts, ten power-ups and AI rivals that fight back. Three.js, synthesised audio and ferrosintesis-rendered music; keyboard, gamepad or touch; no build.",
+    url: "https://0x4d44.github.io/skyblitz/",
+    illustration: "ill-skyblitz",
+    date: "2026-10-29T18:00:00",
+    year: 2026,
+    tags: ["games", "simulation", "transport"],
+    real: true,
+  },
+  {
     slug: "kart-racing",
     title: "Apex Karts",
     tagline: "A 3D arcade kart racer: eight drivers, three tracks from sunset coast to neon docks, drift-boost handling, seven power-ups, AI rivals and a three-race Grand Prix. Procedural Three.js, synthesised audio, keyboard, gamepad or touch; no assets, no build.",
@@ -2101,7 +2112,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "kart-racing", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["southern-cross-rally", "OxAlphaRally", "cairn-run-rally", "opus-rally", "stratego", "game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "kart-racing", "skyblitz", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "pigeon-protocol", "bunched",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
