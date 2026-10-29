@@ -8,7 +8,9 @@
 //   await page.screenshot("out.png");
 //   await chrome.close();
 // Windows-safe: picks a free OS port, uses a throwaway profile, kills the whole process tree on close.
-// Env: CHROME_PATH to override the browser; SKY_GL=swiftshader to force software GL.
+// Env: CHROME_PATH to override the browser; SKY_GL=swiftshader to force software GL; SKY_PRIORITY (see lowprio.mjs).
+// House rule for every test and tool: headless only (no window, no console, no desktop input) and below-normal priority.
+import { lowerPriority } from "./lowprio.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { accessSync, writeFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -147,11 +149,12 @@ export class Page {
 }
 
 export async function launchChrome({ width = 1280, height = 720, dpr = 1, headless = true, args = [] } = {}) {
+  if (!headless) throw new Error("headed Chrome is not allowed: all testing is headless so it never opens a window or takes focus");
   const bin = findChrome();
   const port = await freePort();
   const profile = await mkdtemp(join(tmpdir(), "sky-chrome-"));
   const flags = [
-    headless ? "--headless=new" : null,
+    "--headless=new",
     `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${height}`,
     "--no-first-run", "--no-default-browser-check", "--mute-audio", "--autoplay-policy=no-user-gesture-required",
     "--ignore-gpu-blocklist", "--disable-background-timer-throttling", "--disable-renderer-backgrounding",
@@ -161,6 +164,7 @@ export async function launchChrome({ width = 1280, height = 720, dpr = 1, headle
     ...args, "about:blank",
   ].filter(Boolean);
   const proc = spawn(bin, flags, { stdio: "ignore", windowsHide: true });
+  lowerPriority(proc.pid);                           // the browser root; its renderer / GPU children inherit from it
   let wsUrl;
   for (let i = 0; i < 200 && !wsUrl; i++) {
     try { wsUrl = (await (await fetch(`http://127.0.0.1:${port}/json/version`)).json()).webSocketDebuggerUrl; } catch { await delay(100); }
@@ -170,6 +174,9 @@ export async function launchChrome({ width = 1280, height = 720, dpr = 1, headle
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
   const cdp = new Cdp(ws);
   const pages = [];
+  // Chrome re-prices its own children (GPU above normal, visible renderers normal), so pull every one of them down to the house level.
+  const lowerTree = async () => { try { for (const p of (await cdp.send("SystemInfo.getProcessInfo")).processInfo) lowerPriority(p.id); } catch { /* closing */ } };
+  const keepLow = setInterval(lowerTree, 2000); keepLow.unref();
   const api = {
     cdp, pid: proc.pid,
     async newPage() {
@@ -178,11 +185,13 @@ export async function launchChrome({ width = 1280, height = 720, dpr = 1, headle
       const page = new Page(cdp, sessionId, targetId);
       await page.init(width, height, dpr);
       pages.push(page);
+      await lowerTree();
       return page;
     },
     async close() {
+      clearInterval(keepLow);
       try { ws.close(); } catch { /* ignore */ }
-      if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
+      if (process.platform === "win32") spawnSync("taskkill", ["/PID", String(proc.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
       else { try { process.kill(-proc.pid, "SIGKILL"); } catch { proc.kill("SIGKILL"); } }
       await delay(150);
       await rm(profile, { recursive: true, force: true }).catch(() => {});

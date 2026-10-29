@@ -4,6 +4,7 @@
 // Root defaults to the repo root, so the game is at http://127.0.0.1:<port>/skyblitz/
 // Serves correct MIME types for ES modules (.js and .mjs), audio, images and wasm;
 // disables caching so edits show up on reload; supports Range requests for media.
+import "./lowprio.mjs";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
