@@ -817,6 +817,7 @@ class Sim {
     const THREE = this.THREE, svc = this.svc, tr = svc.train, cam = this.camera, track = this.track;
     const underground = this.mode !== 'street';
     if (underground) {
+      if (this.crowd.setWalker) this.crowd.setWalker(this.walker.x, this.walker.z, this.walker.yaw, this.mode === 'explore');   // before the crowd is (re)populated
       this._mgrT = (this._mgrT || 0) - dt; if (this._mgrT <= 0) { this._mgrT = 0.4; this._manageStations(); }
       this.trainView.place(track, tr.s); this.trainView.setDriveCab(this.mode === 'drive');
       const d = svc.doors; this.trainView.setDoors(d.L, d.R);
@@ -827,7 +828,6 @@ class Sim {
         const lv = v.group.userData.psdLeaves;
         if (lv && lv.length) { const open = svc.phase === 'station' && svc.idx === v.stopIdx && (svc.doors.L > 0.04 || svc.doors.R > 0.04); for (const m of lv) m.visible = !open; }
       }
-      if (this.crowd.setWalker) this.crowd.setWalker(this.walker.x, this.walker.z, this.walker.yaw, this.mode === 'explore');
       this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position);
       if (this.saloon) { const sv = this.mode === 'ride' || this.mode === 'explore'; this.saloon.setEnabled(sv); if (sv) { if (!this.saloonDone) this._populateSaloon(); this.saloon.update(dt, this.time, null, this.camera.position); } }
       this._signal(svc);
