@@ -4,6 +4,8 @@
 // Extra (backwards-compatible) per-track fields used by track.js:
 //   itemAt: fractions of the lap where item-box clusters sit; pads: [{ at: fraction, lat: -1..1 of half-width|"line", len, wid }]
 
+import { EXTRA_DEFS } from "./tracks/defs.js";
+
 export const TRACK_DEFS = [
   {
     id: "sunset-coast", name: "Sunset Coast", blurb: "Wide, flowing seaside circuit. Palms, a long boost straight and one sneaky chicane.",
@@ -29,6 +31,7 @@ export const TRACK_DEFS = [
     itemAt: [0.07, 0.22, 0.41, 0.6, 0.88],
     pads: [{ s: 30, lat: "line", len: 11, wid: 5.5 }, { s: 250, lat: "line", len: 11, wid: 5.5 }, { s: 300, lat: 0.5, len: 11, wid: 5.5 }, { s: 300, lat: -0.5, len: 11, wid: 5.5 }, { s: 540, lat: "line", len: 11, wid: 5.5 }, { s: 1330, lat: "line", len: 11, wid: 5.5 }, { s: 1600, lat: "line", len: 11, wid: 5.5 }],
   },
+  ...EXTRA_DEFS,
 ];
 
 // Periodic height profile: elev = [[u, y], ...] with u in [0,1) (fraction of lap), cubic Hermite, C1, wraps.

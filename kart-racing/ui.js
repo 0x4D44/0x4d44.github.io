@@ -772,4 +772,5 @@ export class UI {
   showCupSummary(res, cbs) { this.showResults(res, cbs); }
 
   hideScreen() { this._clearScreen(); }
+  hideResults() { if (this.screenName === "results") this._clearScreen(); }
 }

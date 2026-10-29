@@ -283,6 +283,7 @@ class Game {
   toMenu() {
     this.paused = false;
     this.ui.hidePause?.();
+    this.ui.hideResults?.();
     this.ui.hideHUD?.();
     this.ui.hideCountdown?.();
     this.controls.enabled = false;

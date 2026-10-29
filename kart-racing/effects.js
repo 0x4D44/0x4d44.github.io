@@ -171,19 +171,17 @@ export class Effects {
     const blob = new THREE.Mesh(this._blobGeo, this._blobMat);
     blob.scale.set(2.8, 1, 3.6);
     blob.renderOrder = 1;
-    this.scene.add(blob);
     this.karts.push({ kart, blob, tSmoke: 0, tSpark: 0, tFlame: 0, tDust: 0 });
   }
 
   detachKart(kart) {
     const i = this.karts.findIndex((k) => k.kart === kart);
     if (i < 0) return;
-    this.scene.remove(this.karts[i].blob);
     this.karts.splice(i, 1);
   }
 
   detachAll() {
-    for (const k of this.karts) this.scene.remove(k.blob);
+    
     this.karts.length = 0;
   }
 
@@ -307,8 +305,6 @@ export class Effects {
   _updateKart(e, dt) {
     const k = e.kart;
     const px = k.position.x, pz = k.position.z;
-    e.blob.position.set(px, 0.06, pz);
-    e.blob.rotation.y = k.heading || 0;
     if (!this.enabled || !k.mesh || !k.mesh.visible) return;
     const rate = k.isPlayer ? 1 : 0.5;
     const h = k.heading || 0;

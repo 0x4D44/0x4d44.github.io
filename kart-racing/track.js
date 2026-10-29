@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { TRACK_DEFS, splineClosed, elevAt } from "./trackdefs.js";
 import { makeRng, clamp } from "./roster.js";
+import { EXTRA_THEMES } from "./tracks/themes.js";
 
 const TAU = Math.PI * 2;
 const KERB_W = 1.3;
@@ -165,7 +166,8 @@ function buildCentreline(def) {
 // ---------------------------------------------------------------- the track
 export function createTrack(id) {
   const def = TRACK_DEFS.find((d) => d.id === id) || TRACK_DEFS[0];
-  const theme = THEMES[def.theme];
+  const theme = THEMES[def.theme] || EXTRA_THEMES[def.theme].theme;
+  const extra = EXTRA_THEMES[def.theme] || null;
   const C = buildCentreline(def);
   const { N, ds, px, pz, tx, tz, curv, py } = C;
   const L = C.length;
@@ -174,6 +176,7 @@ export function createTrack(id) {
   const rng = makeRng(hashStr(def.id));
   const disposables = [];
   const track = { id: def.id, name: def.name, laps: def.laps, length: L, def };
+  ensureObstacles(track);
 
   // ---- bounds + minimap
   let minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
@@ -343,7 +346,7 @@ export function createTrack(id) {
   track.crossings = bridgeIdx.length ? { upperS: bridgeIdx.map((i) => i * ds) } : null;
 
   // ---- shoreline / lake (terrain is carved around these)
-  const shore = def.theme === "sunset" ? { kind: "sea", z: track.bounds.minZ - 70 } : def.theme === "neon" ? { kind: "quay", z: track.bounds.maxZ + wallDist + 26 } : null;
+  const shore = extra ? (extra.shore ? extra.shore(track, wallDist) : null) : def.theme === "sunset" ? { kind: "sea", z: track.bounds.minZ - 70 } : def.theme === "neon" ? { kind: "quay", z: track.bounds.maxZ + wallDist + 26 } : null;
   let lake = null;
   if (def.theme === "snow") {
     let best = null, bd = 1e9; const cxx = (track.bounds.minX + track.bounds.maxX) / 2, czz = (track.bounds.minZ + track.bounds.maxZ) / 2;
@@ -483,7 +486,7 @@ export function createTrack(id) {
     m.name = "startline"; group.add(m);
   }
 
-  track._ctx = { THREE, C, theme, def, hw, wallDist, cor, bridgeIdx, shore, lake, rng, own, anim, group, nearest, kerbL, kerbR, lineLat, canvas, toTex, noiseFill, bake, mat, part, col, groundTexture, Strips, WH, cells, ck, CELL };
+  track._ctx = { THREE, extra, C, theme, def, hw, wallDist, cor, bridgeIdx, shore, lake, rng, own, anim, group, nearest, kerbL, kerbR, lineLat, canvas, toTex, noiseFill, bake, mat, part, col, groundTexture, Strips, WH, cells, ck, CELL };
 
   track._ctx.groundClip = shore ? (shore.kind === "sea" ? { zMin: shore.z - 8 } : { zMax: shore.z }) : {};
   buildTerrain(track);
@@ -512,7 +515,7 @@ function buildTerrain(track) {
   const hash2 = (ix, iz) => { let h = Math.imul(ix, 374761393) ^ Math.imul(iz, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
   const vnoise = (x, z) => { x += seed; z -= seed; const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz, u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz); const a = hash2(ix, iz), c = hash2(ix + 1, iz), d = hash2(ix, iz + 1), e = hash2(ix + 1, iz + 1); return (a + (c - a) * u) * (1 - v) + (d + (e - d) * u) * v; };
   const fbm = (x, z) => vnoise(x / 95, z / 95) * 0.62 + vnoise(x / 41, z / 41) * 0.28 + vnoise(x / 17, z / 17) * 0.10 - 0.5;
-  const amp = def.theme === "snow" ? 20 : def.theme === "sunset" ? 13 : 1.6;
+  const amp = X.extra?.terrainAmp ?? (def.theme === "snow" ? 20 : def.theme === "sunset" ? 13 : 1.6);
 
   const D0 = wallDist + 2.5, BL = 30;
   // coarse samples for the large-scale height field
@@ -599,7 +602,33 @@ function buildTerrain(track) {
   mesh.name = "terrain"; group.add(mesh);
 }
 
+// Static circular colliders (pillars, trunks...): hashed on a 16 m grid; karts query them by height band.
+function ensureObstacles(track) {
+  if (track.addObstacle) return;
+  const G = 16, map = new Map();
+  track.obstacles = [];
+  track.addObstacle = (x, z, r, y0 = -1e9, y1 = 1e9) => {
+    const o = { x, z, r, y0, y1 }; track.obstacles.push(o);
+    const a = Math.floor((x - r) / G), b = Math.floor((x + r) / G), c = Math.floor((z - r) / G), d = Math.floor((z + r) / G);
+    for (let i = a; i <= b; i++) for (let j = c; j <= d; j++) { const k = i * 100003 + j; let l = map.get(k); if (!l) map.set(k, (l = [])); l.push(o); }
+  };
+  // deepest overlap with a circle of radius rad at (x,y,z); writes into out {nx,nz,depth}; returns false if clear
+  track.obstacleAt = (x, y, z, rad, out) => {
+    const l = map.get(Math.floor(x / G) * 100003 + Math.floor(z / G)); if (!l) return false;
+    let best = 0;
+    for (const o of l) {
+      if (y < o.y0 - 0.4 || y > o.y1 + 0.2) continue;
+      const dx = x - o.x, dz = z - o.z, rr = o.r + rad, d2 = dx * dx + dz * dz;
+      if (d2 >= rr * rr) continue;
+      const d = Math.sqrt(d2) || 1e-4, depth = rr - d;
+      if (depth > best) { best = depth; out.nx = dx / d; out.nz = dz / d; out.depth = depth; }
+    }
+    return best > 0;
+  };
+}
+
 function buildBridges(track) {
+  ensureObstacles(track);
   const X = track._ctx;
   const { C, wallDist, own, group, bake, mat, part, Strips, def, theme } = X;
   const { N, ds, px, pz, tx, tz, py } = C, gy = X.groundY;
@@ -623,6 +652,7 @@ function buildBridges(track) {
     const ry = Math.atan2(tx[i], tz[i]), lat = W - 3.2, top = py[i] - 1.4, bot = gy(px[i], pz[i]) - 0.5;
     for (const sg of [-1, 1]) {
       const x = px[i] - tz[i] * lat * sg, z = pz[i] + tx[i] * lat * sg;
+      track.addObstacle(x, z, 1.25, bot, top);
       parts.push(part(new THREE.BoxGeometry(2.0, top - bot, 2.0), mat(x, (top + bot) / 2, z, 1, 1, 1, 0, ry, 0), pc));
       parts.push(part(new THREE.BoxGeometry(3.0, 0.6, 3.0), mat(x, top - 0.3, z, 1, 1, 1, 0, ry, 0), pc));
     }
@@ -919,7 +949,7 @@ function buildScenery(track) {
 
   // ============================================================ theme dispatch
   const ctx = { at, instanced, blobShadows, scatter, ringAround, lam, basic, pick, R, stripedTex, addFlags };
-  ({ sunset: sceneSunset, snow: sceneSnow, neon: sceneNeon })[def.theme](track, X, ctx);
+  (X.extra?.scenery || { sunset: sceneSunset, snow: sceneSnow, neon: sceneNeon }[def.theme])(track, X, ctx);
 }
 
 // ---------------------------------------------------------------- Sunset Coast
