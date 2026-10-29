@@ -722,8 +722,9 @@ let EL_SORTED = [];
 function sortElements() {
   const ord = { ln: 0, rc: 0, ml: 0, wf: 1, hw: 2, hi: 2, cf: -1, op: 4, fu: 5, gb: 6, dm: 7, tx: 8 };
   // an integer key: o + ord * .01 leaves a rounding residue, so equal keys compared unequal and the creation-order tie-break never ran (a rug drawn over its sofa).
-  // A rug lies under the furniture whatever order it was created in (just above the openings, below every other piece).
-  const key = (e) => (LAYERS[e.L] ? LAYERS[e.L].o : 50) * 1000 + (ord[e.k] || 0) * 10 - (e.k === 'fu' && e.it.type === 'rug' ? 5 : 0);
+  // A rug lies under the furniture whatever order it was created in, and a chair is pushed in under its table or desk: both get a slot of their own below the other pieces.
+  const UNDER = { rug: 5, chair: 2 };
+  const key = (e) => (LAYERS[e.L] ? LAYERS[e.L].o : 50) * 1000 + (ord[e.k] || 0) * 10 - (e.k === 'fu' ? UNDER[e.it.type] || 0 : 0);
   EL.forEach((e, i) => { e._i = i; });
   EL_SORTED = EL.slice().sort((a, b) => (key(a) - key(b)) || a._i - b._i);
 }
@@ -2017,6 +2018,7 @@ void paintWall(inout vec3 col, inout float rough){
   if (isTop && (vWN.y < 0. || vWP.y > 2.)) return;
   int ri = 0; float dm = 1e9;
   for (int i = 0; i < ${n}; i++) { float d = rectDist(q, PR_RECT[i]); if (d < dm) { dm = d; ri = i; } }
+  if (dm > .245) return;                                                           // deeper than a window frame's outer face (245 mm in): that part of a reveal is seen from outside and stays as built
   float pr = uPaint[ri];
   if (pr <= 0.) return;
   float ep = clamp(pr / .62, 0., 1.), ec = clamp((pr - .38) / .62, 0., 1.);        // the plasterer leads, the painter follows
@@ -2337,8 +2339,9 @@ function dropBox(o) {
 }
 const popScale = (g, t0, dur = 0.5) => G3.anims.push((t) => { const p = prog3(t, t0, t0 + dur); g.visible = p > 0; if (p > 0) g.scale.setScalar(Math.max(1e-3, easeOutBack(p))); });
 
+const FRAME_CLEAR = 0.004;      // a frame is this much narrower than its opening (2 mm a side): its side faces then do not lie in the plane of the reveals, which fought through the section cut
 function windowGroup(o) {
-  const W = o.w / 1000, tall = o.t === 'tall';
+  const W = o.w / 1000 - FRAME_CLEAR, tall = o.t === 'tall';
   const yb = tall ? FLOOR_TOP : o.sill / 1000 + 0.03, yt = OPEN_HEAD / 1000, Hh = yt - yb, fw = 0.06, fd = 0.11;
   const g = new THREE.Group(), add = (geo, m, x, y, z, cast = true) => { const q = new THREE.Mesh(geo, m); q.position.set(x, y, z); q.castShadow = cast; q.receiveShadow = true; g.add(q); return q; };
   const pvc = mat3('pvc');
@@ -2358,11 +2361,11 @@ function doorGroups(o) {
   const out = [], W = o.w / 1000, isE = o.t === 'entry';
   const mk = () => new THREE.Group();
   // frame, aligned with the wall
-  const fr = mk(), fw = 0.06, fd = isE ? 0.2 : 0.14, hH = OPEN_HEAD / 1000 - FLOOR_TOP;
+  const fr = mk(), fw = 0.06, fd = isE ? 0.2 : 0.14, hH = OPEN_HEAD / 1000 - FLOOR_TOP, Wf = W - FRAME_CLEAR;
   const add = (g, geo, m, x, y, z) => { const q = new THREE.Mesh(geo, m); q.position.set(x, y, z); q.castShadow = true; q.receiveShadow = true; g.add(q); return q; };
   const pvc = mat3(isE ? 'doorE' : 'pvc');
-  add(fr, boxGeo(fw, hH, fd, 0.004), pvc, -W / 2 + fw / 2, hH / 2, 0); add(fr, boxGeo(fw, hH, fd, 0.004), pvc, W / 2 - fw / 2, hH / 2, 0);
-  add(fr, boxGeo(W, fw, fd, 0.004), pvc, 0, hH - fw / 2, 0);
+  add(fr, boxGeo(fw, hH, fd, 0.004), pvc, -Wf / 2 + fw / 2, hH / 2, 0); add(fr, boxGeo(fw, hH, fd, 0.004), pvc, Wf / 2 - fw / 2, hH / 2, 0);
+  add(fr, boxGeo(Wf, fw, fd, 0.004), pvc, 0, hH - fw / 2, 0);
   fr.position.set((o.ax === 'x' ? o.c : o.mid) / 1000, FLOOR_TOP, -(o.ax === 'x' ? o.mid : o.c) / 1000);
   fr.rotation.y = o.ax === 'x' ? 0 : Math.PI / 2;
   out.push({ g: fr, kind: 'frame' });
