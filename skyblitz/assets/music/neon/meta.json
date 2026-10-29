@@ -1,0 +1,100 @@
+{
+ "stems": {
+  "base": {
+   "file": "base.ogg",
+   "bytes": 403803,
+   "kbps": 52,
+   "gain": 1.068,
+   "rmsDb": -25.2
+  },
+  "lead": {
+   "file": "lead.ogg",
+   "bytes": 650736,
+   "kbps": 40,
+   "gain": 0.186,
+   "rmsDb": -25.4
+  },
+  "drive": {
+   "file": "drive.ogg",
+   "bytes": 333647,
+   "kbps": 40,
+   "gain": 0.093,
+   "rmsDb": -26.1
+  },
+  "final": {
+   "file": "final.ogg",
+   "bytes": 358070,
+   "kbps": 40,
+   "gain": 0.136,
+   "rmsDb": -27.7
+  }
+ },
+ "rate": 48000,
+ "introSec": 4,
+ "loopSec": 64,
+ "totalSec": 68,
+ "introSamples": 192000,
+ "loopSamples": 3072000,
+ "totalSamples": 3264000,
+ "bytes": 1746256,
+ "stats": {
+  "lufs": -17,
+  "peakDb": -4.05,
+  "fitResidual": 0.168,
+  "seamJump": 0.12812,
+  "seamRatio": 10.01,
+  "trimsDb": {
+   "base": 0,
+   "lead": 8,
+   "drive": 14.4,
+   "final": 13.3
+  },
+  "seamRms": 0.0892,
+  "startRms": 0.14
+ },
+ "name": "Midnight Overdrive",
+ "key": "A",
+ "bpm": 120,
+ "bars": {
+  "intro": 2,
+  "loop": 32
+ },
+ "sections": [
+  {
+   "name": "intro",
+   "bar": 0,
+   "bars": 2
+  },
+  {
+   "name": "A",
+   "bar": 2,
+   "bars": 8
+  },
+  {
+   "name": "B",
+   "bar": 10,
+   "bars": 8
+  },
+  {
+   "name": "A2",
+   "bar": 18,
+   "bars": 8
+  },
+  {
+   "name": "build",
+   "bar": 26,
+   "bars": 4
+  },
+  {
+   "name": "drop",
+   "bar": 30,
+   "bars": 4
+  }
+ ],
+ "roles": {
+  "base": "always",
+  "lead": "race",
+  "drive": "speed",
+  "final": "finalLap"
+ }
+}

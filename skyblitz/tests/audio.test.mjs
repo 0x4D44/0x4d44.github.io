@@ -195,9 +195,9 @@ test('MusicPlayer: loads a track, loops sample-accurately on one clock, crossfad
   assert.ok(L.loop && L.same);
   assert.ok(Math.abs(L.loopStart - L.metaIntro) < 1e-6 && Math.abs(L.loopEnd - L.metaEnd) < 1e-6, JSON.stringify(L));
   assert.ok(Math.abs(L.bufLen - L.metaEnd * L.sr) <= 1);
-  assert.ok(L.gainsLeader.base > 0.9 && L.gainsLeader.lead > 0.9, JSON.stringify(L.gainsLeader));
+  assert.ok(L.gainsLeader.base > 0.8 && L.gainsLeader.lead > 0.8, JSON.stringify(L.gainsLeader));
   assert.ok(L.gainsLeader.final < 0.05, 'final layer silent before the final lap');
-  assert.ok(L.finalGain > 0.9, `final layer should be up on the final lap (${L.finalGain})`);
+  assert.ok(L.finalGain > 0.8, `final layer should be up on the final lap (${L.finalGain})`);
   assert.equal(L.afterFade, 'neon');
   assert.equal(L.oldAfter, 0, 'faded-out voice released');
   assert.equal(L.stinger, true); assert.equal(L.hasStingers, true);

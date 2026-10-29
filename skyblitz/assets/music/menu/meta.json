@@ -1,0 +1,95 @@
+{
+ "stems": {
+  "base": {
+   "file": "base.ogg",
+   "bytes": 405624,
+   "kbps": 52,
+   "gain": 0.926,
+   "rmsDb": -23.2
+  },
+  "lead": {
+   "file": "lead.ogg",
+   "bytes": 609303,
+   "kbps": 40,
+   "gain": 0.181,
+   "rmsDb": -24.8
+  },
+  "drive": {
+   "file": "drive.ogg",
+   "bytes": 389647,
+   "kbps": 40,
+   "gain": 0.215,
+   "rmsDb": -26
+  },
+  "final": {
+   "file": "final.ogg",
+   "bytes": 303315,
+   "kbps": 40,
+   "gain": 0.383,
+   "rmsDb": -30.2
+  }
+ },
+ "rate": 48000,
+ "introSec": 5,
+ "loopSec": 60,
+ "totalSec": 65,
+ "introSamples": 240000,
+ "loopSamples": 2880000,
+ "totalSamples": 3120000,
+ "bytes": 1707889,
+ "stats": {
+  "lufs": -17,
+  "peakDb": -3.16,
+  "fitResidual": 0.33,
+  "seamJump": 0.05924,
+  "seamRatio": 5.45,
+  "trimsDb": {
+   "base": 0,
+   "lead": 3.8,
+   "drive": 4,
+   "final": 1.2
+  },
+  "seamRms": 0.0868,
+  "startRms": 0.149
+ },
+ "name": "Skyward",
+ "key": "G",
+ "bpm": 96,
+ "bars": {
+  "intro": 2,
+  "loop": 24
+ },
+ "sections": [
+  {
+   "name": "intro",
+   "bar": 0,
+   "bars": 2
+  },
+  {
+   "name": "A",
+   "bar": 2,
+   "bars": 8
+  },
+  {
+   "name": "B",
+   "bar": 10,
+   "bars": 8
+  },
+  {
+   "name": "build",
+   "bar": 18,
+   "bars": 4
+  },
+  {
+   "name": "drop",
+   "bar": 22,
+   "bars": 4
+  }
+ ],
+ "roles": {
+  "base": "always",
+  "lead": "always",
+  "drive": "always",
+  "final": "always"
+ }
+}

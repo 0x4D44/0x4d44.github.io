@@ -1,0 +1,76 @@
+{
+ "stems": {
+  "base": {
+   "file": "base.ogg",
+   "bytes": 237399,
+   "kbps": 52,
+   "gain": 1.071,
+   "rmsDb": -23.5
+  },
+  "lead": {
+   "file": "lead.ogg",
+   "bytes": 336380,
+   "kbps": 40,
+   "gain": 0.195,
+   "rmsDb": -24.7
+  },
+  "drive": {
+   "file": "drive.ogg",
+   "bytes": 227700,
+   "kbps": 40,
+   "gain": 0.292,
+   "rmsDb": -27
+  }
+ },
+ "rate": 48000,
+ "introSec": 4.285708333333333,
+ "loopSec": 34.28570833333333,
+ "totalSec": 38.571416666666664,
+ "introSamples": 205714,
+ "loopSamples": 1645714,
+ "totalSamples": 1851428,
+ "bytes": 801479,
+ "stats": {
+  "lufs": -17,
+  "peakDb": -5.31,
+  "fitResidual": 0.323,
+  "seamJump": 0.0678,
+  "seamRatio": 5,
+  "trimsDb": {
+   "base": 0,
+   "lead": 9,
+   "drive": 3.4
+  },
+  "seamRms": 0.101,
+  "startRms": 0.1287
+ },
+ "name": "Podium",
+ "key": "C",
+ "bpm": 112,
+ "bars": {
+  "intro": 2,
+  "loop": 16
+ },
+ "sections": [
+  {
+   "name": "intro",
+   "bar": 0,
+   "bars": 2
+  },
+  {
+   "name": "A",
+   "bar": 2,
+   "bars": 8
+  },
+  {
+   "name": "B",
+   "bar": 10,
+   "bars": 8
+  }
+ ],
+ "roles": {
+  "base": "always",
+  "lead": "always",
+  "drive": "always"
+ }
+}

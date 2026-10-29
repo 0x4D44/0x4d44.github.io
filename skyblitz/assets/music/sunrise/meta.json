@@ -1,0 +1,100 @@
+{
+ "stems": {
+  "base": {
+   "file": "base.ogg",
+   "bytes": 373503,
+   "kbps": 52,
+   "gain": 0.953,
+   "rmsDb": -23.7
+  },
+  "lead": {
+   "file": "lead.ogg",
+   "bytes": 551796,
+   "kbps": 40,
+   "gain": 0.311,
+   "rmsDb": -25.6
+  },
+  "drive": {
+   "file": "drive.ogg",
+   "bytes": 432002,
+   "kbps": 40,
+   "gain": 0.081,
+   "rmsDb": -26.1
+  },
+  "final": {
+   "file": "final.ogg",
+   "bytes": 351616,
+   "kbps": 40,
+   "gain": 0.385,
+   "rmsDb": -31.4
+  }
+ },
+ "rate": 48000,
+ "introSec": 3.75,
+ "loopSec": 60,
+ "totalSec": 63.75,
+ "introSamples": 180000,
+ "loopSamples": 2880000,
+ "totalSamples": 3060000,
+ "bytes": 1708917,
+ "stats": {
+  "lufs": -17,
+  "peakDb": -2.12,
+  "fitResidual": 0.363,
+  "seamJump": 0.19758,
+  "seamRatio": 14.73,
+  "trimsDb": {
+   "base": 0,
+   "lead": 6.9,
+   "drive": 16.3,
+   "final": 1.6
+  },
+  "seamRms": 0.0761,
+  "startRms": 0.1893
+ },
+ "name": "Lagoon Run",
+ "key": "A",
+ "bpm": 128,
+ "bars": {
+  "intro": 2,
+  "loop": 32
+ },
+ "sections": [
+  {
+   "name": "intro",
+   "bar": 0,
+   "bars": 2
+  },
+  {
+   "name": "A",
+   "bar": 2,
+   "bars": 8
+  },
+  {
+   "name": "B",
+   "bar": 10,
+   "bars": 8
+  },
+  {
+   "name": "A2",
+   "bar": 18,
+   "bars": 8
+  },
+  {
+   "name": "build",
+   "bar": 26,
+   "bars": 4
+  },
+  {
+   "name": "drop",
+   "bar": 30,
+   "bars": 4
+  }
+ ],
+ "roles": {
+  "base": "always",
+  "lead": "race",
+  "drive": "speed",
+  "final": "finalLap"
+ }
+}
