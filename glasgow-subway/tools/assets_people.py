@@ -416,7 +416,7 @@ def build_person(pd):
         r_ = row_at(z)
         return r_[3] + r_[2] * math.sqrt(max(0.0, 1 - (x / r_[1]) ** 2)) + face_disp(x / hh, (z - P['chin']) / hh) * hh
     A0, A1 = math.radians(22), math.radians(158)
-    ANG = [A0 + (A1 - A0) * i / 22 for i in range(23)] + [A1 + (A0 + 2 * math.pi - A1) * j / 17 for j in range(1, 17)]
+    ANG = [A0 + (A1 - A0) * i / 19 for i in range(20)] + [A1 + (A0 + 2 * math.pi - A1) * j / 14 for j in range(1, 14)]
     def skull_ring(row):
         z, rx, ry, cy = row
         out = []
@@ -429,7 +429,7 @@ def build_person(pd):
     NA = len(ANG)
     def face_fn(r, i):
         z = hrows[r][0]; f = (z - P['chin']) / hh
-        return (0.09 < f < 0.92) and (i < 22)
+        return (0.09 < f < 0.92) and (i < 19)
     loft(pb, [skull_ring(r) for r in hrows], 'head', skin, cap_top=True, cap_bot=True, face_fn=face_fn)
     # nose: bridge -> tip -> alae, rings embedded in the face (units of head height)
     NOSE_C = [(0.55, 0.020, 0.000), (0.51, 0.027, 0.022), (0.46, 0.036, 0.058), (0.41, 0.047, 0.095), (0.36, 0.058, 0.122), (0.328, 0.066, 0.130), (0.305, 0.060, 0.110), (0.288, 0.050, 0.066), (0.280, 0.042, 0.020)]
@@ -504,8 +504,10 @@ def build_person(pd):
     def cards_ring(angs, f0, f1, off0, flare, nseg, wid, layers=1, jitter=0.0, lenvar=0.15):
         """solid hair volume: smooth-shaded shell over an arc of the head, per-column clump relief + uneven lengths, tapering to rounded ends"""
         # arcs may wrap past 360: unwrap relative to the first angle
-        al = sorted(angs); a0, a1 = al[0] - math.radians(6), al[-1] + math.radians(6)
-        ncol = max(8, int((a1 - a0) / math.radians(8)))
+        al = list(angs)
+        if max(al) - min(al) > math.pi: al = [x + 2 * math.pi if x < math.radians(90) else x for x in al]
+        al = sorted(al); a0, a1 = al[0] - math.radians(6), al[-1] + math.radians(6)
+        ncol = max(8, int((a1 - a0) / math.radians(10)))
         for L_ in range(layers):
             phase = rng_h.uniform(0, 6.28); lens = []
             for i in range(ncol + 1):
@@ -536,7 +538,7 @@ def build_person(pd):
             loft(pb, rings_, 'head', hcol, closed=False, cap_top=False, cap_bot=False, smooth=True)
     if style != 'bald':
         HN = 28
-        rowsc = [r_ for r_ in crv(ctrl, 18) if (r_[0] - P['chin']) / hh >= 0.30]
+        rowsc = [r_ for r_ in crv(ctrl, 22) if (r_[0] - P['chin']) / hh >= 0.30]
         rgs = []
         for row in rowsc:
             f = (row[0] - P['chin']) / hh; pts_ = []
@@ -563,10 +565,10 @@ def build_person(pd):
                 sphere(pb, (ca * r_[1] * 1.5, r_[3] + sa * r_[2] * 1.5, zc_f(0.98)), 0.036 * k, 0.036 * k, 0.030 * k, 'head', hcol, 7, 4)
             sphere(pb, (0, hy0, zc_f(1.02)), 0.05 * k, 0.05 * k, 0.04 * k, 'head', hcol, 8, 4)
         if style == 'bob':
-            cards_ring(back + side_l + side_r, 0.76, 0.10, 0.004, 0.14, 5, 0.085, 2, 0.04, 0.06)
+            cards_ring(back + side_l + side_r, 0.76, 0.10, 0.004, 0.14, 5, 0.085, 1, 0.04, 0.06)
             cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.64, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.1)
         if style == 'long':
-            cards_ring(back + side_l + side_r, 0.76, -1.05, 0.004, 0.12, 8, 0.095, 2, 0.04, 0.12)
+            cards_ring(back + side_l + side_r, 0.76, -1.05, 0.004, 0.12, 8, 0.095, 1, 0.04, 0.12)
             cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.58, 0.004, 0.05, 3, 0.065, 1, 0.04, 0.1)
         if style == 'pony':
             cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.64, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.1)
