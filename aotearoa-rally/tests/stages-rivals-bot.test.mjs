@@ -1,5 +1,5 @@
-// S5: rival difficulty is calibrated against real bot laps.  A skill-0.9 bot should win on Rookie and finish mid-field
-// (about 3rd-5th) on Pro; Expert should be tougher than Pro.  Bot laps are measured here, as a ratio to the skill-1.0 lap,
+// S5: rival difficulty is calibrated against real bot laps.  A skill-0.9 bot should win on Rookie, win or nearly win on
+// Pro, and be in the fight (about 2nd-4th) on Expert.  Bot laps are measured here, as a ratio to the skill-1.0 lap,
 // and applied to the (possibly not yet recalibrated) PAR_TIMES entry, so the check holds across recalibration.
 // STAGES_BREAK=slow-rivals pushes every rival 30 % slower so the check can be seen to fail (self-test).
 import { test } from "node:test";
@@ -18,7 +18,7 @@ function positionOf(stageId, playerTime, difficulty, seed) {
   return buildTimeSheet(playerTime, times).find((r) => r.isPlayer).position;
 }
 
-test("a skill-0.9 bot wins Rookie, finishes mid-field on Pro and is beaten on Expert", () => {
+test("a skill-0.9 bot wins Rookie, wins or nearly wins Pro and is in the fight on Expert", () => {
   const sums = { rookie: 0, pro: 0, expert: 0 };
   let n = 0;
   for (const id of STAGE_IDS) {
@@ -38,7 +38,8 @@ test("a skill-0.9 bot wins Rookie, finishes mid-field on Pro and is beaten on Ex
   }
   const mean = (d) => sums[d] / n;
   console.log(`# mean finishing position of a skill-0.9 bot: rookie ${mean("rookie").toFixed(2)}, pro ${mean("pro").toFixed(2)}, expert ${mean("expert").toFixed(2)}`);
-  assert.ok(mean("rookie") <= 1.5, `rookie ${mean("rookie")}`);
-  assert.ok(mean("pro") >= 2.5 && mean("pro") <= 5.5, `pro ${mean("pro")}`);
-  assert.ok(mean("expert") > mean("pro") && mean("expert") >= 4, `expert ${mean("expert")}`);
+  // round 3: the field is beatable. A near-perfect (skill 0.9) driver wins Rookie and Pro, and is in the fight on Expert.
+  assert.ok(mean("rookie") <= 1.2, `rookie ${mean("rookie")}`);
+  assert.ok(mean("pro") <= 1.8, `pro ${mean("pro")}`);
+  assert.ok(mean("expert") >= 1.5 && mean("expert") <= 4.5 && mean("expert") > mean("pro"), `expert ${mean("expert")}`);
 });

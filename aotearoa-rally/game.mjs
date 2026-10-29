@@ -18,6 +18,7 @@ import { createShowroom } from "./ui/showroom.mjs";
 import { toast } from "./ui/dom.mjs";
 import { createRecorder, createPlayer, ghostFramesFromRecording, ghostPose, REC_HZ } from "./ui/replay.mjs";
 import { GHOST_HZ } from "./core/career.mjs";
+import { parseLaunch, weatherOverride } from "./core/launch.mjs";
 
 const VERSION = "1.0.0";
 const DT = 1 / 120;
@@ -65,7 +66,7 @@ const G = {
   playing: false, weather: null, quality: "auto", cameraMode: "chase", camIdx: 0, ghost: null, ghostPos: { x: 0, y: 0, z: 0, yaw: 0, pitch: 0, roll: 0 },
   replay: null, shake: 0, fps: 60, fpsAcc: 0, fpsN: 0, loadedKey: "", sessionDifficulty: "pro", benchmarks: null,
 };
-AR._G = G;
+if (window.__AR_TEST__) { AR._G = G; AR._rawKeys = (on) => input.setRawKeySteer(on); } // internals are exposed to the test harness only (it sets __AR_TEST__ before load)
 const stepInput = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
 const frameInfo = { time: 0, carPos: { x: 0, y: 0, z: 0 }, carVel: { x: 0, y: 0, z: 0 }, camPos: { x: 0, y: 0, z: 0 }, speedKmh: 0, stageS: 0 };
 const PLAY_CAMS = ["chase", "far", "bumper", "bonnet"];
@@ -78,7 +79,7 @@ let opts = career.options;
 // ---------------------------------------------------------------- loading overlay
 function setProgress(p, label) {
   const f = $("load-fill"), l = $("load-label");
-  if (f) f.style.width = Math.round(clamp(p, 0, 1) * 100) + "%";
+  if (f) f.style.transform = `scaleX(${clamp(p, 0, 1).toFixed(3)})`; // compositor-driven: keeps animating while the main thread is busy
   if (l && label) l.textContent = label;
 }
 const TIPS = [
@@ -91,11 +92,16 @@ const TIPS = [
   "In a championship the damage you take stays with you. Spend your service minutes where the car is hurt most.",
   "Wet roads double your braking distance. Rain and mist change every stage.",
 ];
-let tipN = Math.floor(Math.random() * TIPS.length);
+// every tip is in the DOM; a CSS animation (opacity only) rotates them, so the rotation survives a blocked main thread
+(function buildTips() {
+  const tip = $("load-tip");
+  if (!tip) return;
+  tip.style.setProperty("--n", String(TIPS.length));
+  tip.style.setProperty("--start", String(Math.floor(Math.random() * TIPS.length)));
+  TIPS.forEach((t, i) => { const s = document.createElement("span"); s.style.setProperty("--i", String(i)); s.textContent = "Tip: " + t; tip.append(s); });
+})();
 function showLoading(label) {
   const el = $("loading");
-  const tip = $("load-tip");
-  if (tip) tip.textContent = "Tip: " + TIPS[tipN++ % TIPS.length];
   el.classList.remove("done");
   el.hidden = false;
   setProgress(0.02, label || "Loading...");
@@ -152,6 +158,7 @@ function buildScreens() {
   const stageDefs = G.mods.stage ? G.mods.stage.STAGE_DEFS : {};
   screens = createScreens(screensRoot, {
     career, input, cars: cars(), carIds: carIds(), stageDefs, stageIds: STAGE_ORDER, sfx, recommendedTyre,
+    listVoices: () => { try { ensureAudio(); return G.audio ? G.audio.listVoices() : []; } catch { return []; } },
     createShowroom: (canvas) => (G.mods.car ? createShowroom(canvas, G.mods.car.createCarVisual) : null),
     onMount: (name, el) => { G.screen = name; nav && (nav.active = true); requestAnimationFrame(() => nav && nav.focusFirst()); void el; },
     onWipe: () => { career.wipe(); career.save(); toast("Saved data erased"); },
@@ -256,7 +263,7 @@ async function loadStage(stageId, { weather = null, fresh = false } = {}) {
   const stage = M.stage.buildStage(stageId);
   const world = await ensureWorld();
   setProgress(0.5, "Building " + def.name);
-  await world.setStage(stage, weather ? { weather: { ...def.environment.weather, type: weather, intensity: weather === "rain" || weather === "storm" ? 0.8 : weather === "snow" ? 0.7 : 0.4, wetness: weather === "rain" || weather === "storm" ? 0.9 : weather === "clear" ? 0 : 0.3 } } : {});
+  await world.setStage(stage, weather ? { weather: weatherOverride(def.environment.weather, weather) } : {});
   G.stage = stage;
   G.stageId = stageId;
   G.loadedKey = key;
@@ -359,7 +366,7 @@ async function prepareRun({ stageId, carId, livery = 0, weather = null, countdow
     if (bot) makeBot();
     // compile shaders and upload textures now, behind the loading screen, so the first seconds do not hitch
     setProgress(0.9, "Warming up the renderer");
-    try { if (G.world.warmup) await G.world.warmup(); } catch (e) { console.error("warmup failed: " + (e && e.message)); }
+    try { if (G.world.warmup) await G.world.warmup({ onProgress: (f) => setProgress(0.9 + 0.1 * clamp(+f || 0, 0, 1), "Warming up the renderer") }); } catch (e) { console.error("warmup failed: " + (e && e.message)); }
     setProgress(1, "Ready");
     if (mode === "championship" && career.championship) { career.markStageStarted(); career.save(); }
     if (!countdown) G.run.skipCountdown(v.state);
@@ -464,7 +471,7 @@ window.addEventListener("keydown", unlock);
 
 // ---------------------------------------------------------------- simulation
 function pollInput(dt) {
-  const i = input.poll(dt);
+  const i = input.poll(dt, G.vehicle && G.vehicle.state ? G.vehicle.state.speed : 0);
   stepInput.steer = i.steer; stepInput.throttle = i.throttle; stepInput.brake = i.brake; stepInput.handbrake = i.handbrake;
   stepInput.gearUp = i.gearUp; stepInput.gearDown = i.gearDown;
   return stepInput;
@@ -1071,6 +1078,10 @@ async function boot() {
     return;
   }
   if (carsM && career.championship && !carsM.CARS[career.championship.carId]) { career.abandon(); career.save(); }
+  // A typo in the URL falls back to the defaults (and the menu), never a blank screen.
+  const launch = parseLaunch(params, { stageIds: STAGE_ORDER, carIds: carIds() });
+  for (const w of launch.warnings) console.warn("[aotearoa-rally] " + w); // allow-console-warn
+  for (const k of ["stage", "car", "weather", "quality", "camera"]) if (params.get(k) != null && launch[k === "stage" ? "stageId" : k === "car" ? "carId" : k] === undefined) params.delete(k);
   buildScreens();
   nav = createNav(screensRoot, { getPads: () => (navigator.getGamepads ? navigator.getGamepads() : []) });
   applyOptionsAll();
@@ -1082,7 +1093,7 @@ async function boot() {
   hideLoading();
   requestAnimationFrame(() => { clock.reset(performance.now()); requestAnimationFrame(frame); });
   const urlStage = params.get("stage");
-  if (params.get("nomenu") === "1") {
+  if (params.get("nomenu") === "1" && (urlStage || !launch.warnings.some((w) => w.startsWith("ignoring ?stage")))) {
     const sid = urlStage || STAGE_ORDER[0];
     try {
       await AR.startStage({ stageId: sid, carId: G.carId, livery: G.livery, weather: params.get("weather") || undefined, quality: params.get("quality") || undefined, countdown: params.get("countdown") === "1", bot: params.get("bot") === "1" });
@@ -1091,7 +1102,7 @@ async function boot() {
     resolveReady(true);
     return;
   }
-  if (navigator.webdriver || params.get("menu") === "1") showMainMenu();
+  if (params.get("title") !== "1" && (navigator.webdriver || params.get("menu") === "1" || params.get("nomenu") === "1")) showMainMenu(); // nomenu with a bad stage lands here: straight to the menu
   else screens.title({ version: VERSION, onStart: () => { unlock(); showMainMenu(); } });
   resolveReady(true);
 }

@@ -123,31 +123,77 @@ export function tierBelow(level) {
   return QUALITY_LEVELS[Math.max(0, i - 1)];
 }
 
-/** Dynamic-resolution governor. Feed `frame(ms)`; read `.scale`. Pure and deterministic. */
-export function createGovernor({ targetMs = 1000 / 58, min = 0.6, max = 1, step = 0.05, window = 24 } = {}) {
+export function tierAbove(level) {
+  const i = QUALITY_LEVELS.indexOf(level);
+  return QUALITY_LEVELS[Math.min(QUALITY_LEVELS.length - 1, i + 1)];
+}
+
+/**
+ * Dynamic-resolution governor. Feed `frame(ms)`; read `.scale`. Pure and deterministic.
+ * Down: avg above target*1.15 steps the scale down, then asks for a lower tier (`tierDownRequested`).
+ * Up (probe): a vsync-capped display never reports frames faster than its refresh, so "fast enough" means avg <= target*1.05
+ * for `interval` ms. The governor then steps the scale up one step (or, at max scale with `tierHeadroom`, sets
+ * `tierUpRequested`). If the probe degrades within 3 s it is reverted and the next
+ * probe waits twice as long (up to 2 min); a held probe resets the wait. `reset()` forgets the backoff; `resetWindow()` keeps them.
+ */
+/** Scale at which a higher tier is worth probing (the renderer restarts the new tier at this scale). */
+export const TIER_UP_SCALE = 0.8;
+
+export function createGovernor({ targetMs = 1000 / 58, min = 0.6, max = 1, step = 0.05, window = 24, probeMs = 6000, probeMaxMs = 120000 } = {}) {
   const buf = new Float32Array(window);
-  let n = 0, head = 0, cool = 0, slowFor = 0;
+  let n = 0, head = 0, cool = 0, slowFor = 0, okFor = 0, interval = probeMs, probe = null;
   const g = {
-    scale: max, enabled: true, tierDownRequested: false, targetMs, min, max,
-    reset() { n = 0; head = 0; cool = 0; slowFor = 0; g.tierDownRequested = false; },
+    scale: max, enabled: true, tierDownRequested: false, tierUpRequested: false, urgent: false, tierHeadroom: false, targetMs, min, max,
+    get probing() { return !!probe; },
+    resetWindow() { n = 0; head = 0; cool = 0; slowFor = 0; okFor = 0; probe = null; g.tierDownRequested = false; g.tierUpRequested = false; g.urgent = false; },
+    reset() { g.resetWindow(); interval = probeMs; },
     frame(ms) {
       if (!g.enabled || !(ms > 0)) return g.scale;
       buf[head] = Math.min(ms, 250);
       head = (head + 1) % window;
       if (n < window) n++;
       if (cool > 0) cool -= ms;
+      if (probe) probe.t += ms;
       if (n < window) return g.scale;
-      let sum = 0;
-      for (let i = 0; i < window; i++) sum += buf[i];
-      const avg = sum / window;
-      if (avg > targetMs * 1.15 && cool <= 0) {
+      // trimmed mean: drop the 3 slowest frames so one chunk upload or GC hitch cannot flip the decision
+      let sum = 0, m1 = 0, m2 = 0, m3 = 0;
+      for (let i = 0; i < window; i++) {
+        const v = buf[i]; sum += v;
+        if (v > m1) { m3 = m2; m2 = m1; m1 = v; } else if (v > m2) { m3 = m2; m2 = v; } else if (v > m3) m3 = v;
+      }
+      const avg = (sum - m1 - m2 - m3) / (window - 3);
+      const slow = avg > targetMs * 1.15;
+      if (probe && slow) { // the probe did not hold: revert and back off
+        interval = Math.min(probeMaxMs, interval * 2);
+        if (probe.kind === "scale") { g.scale = probe.prev; n = 0; head = 0; cool = 1500; }
+        else { g.tierDownRequested = true; g.urgent = true; }
+        probe = null; okFor = 0;
+        return g.scale;
+      }
+      if (probe && probe.t > 3000) { probe = null; interval = probeMs; } // held: the new level stands, probe again soon
+      if (slow && cool <= 0) {
         if (g.scale > min + 1e-6) g.scale = Math.max(min, +(g.scale - step).toFixed(4));
         else { slowFor += window * avg; if (slowFor > 4000) g.tierDownRequested = true; }
-        cool = 400; n = Math.floor(window / 2);
-      } else if (avg < targetMs * 0.78 && cool <= 0 && g.scale < max) {
-        g.scale = Math.min(max, +(g.scale + step * 0.5).toFixed(4));
-        cool = 1200; slowFor = 0;
-      } else if (avg <= targetMs * 1.15) slowFor = 0;
+        cool = 400; n = Math.floor(window / 2); okFor = 0;
+      } else if (avg <= targetMs * 1.05) {
+        slowFor = 0;
+        okFor += ms;
+        if (!probe) {
+          if (okFor >= interval && cool <= 0) {
+            if (g.tierHeadroom && g.scale >= TIER_UP_SCALE - 1e-6) {
+              probe = { kind: "tier", prev: g.scale, t: 0 };
+              g.tierUpRequested = true; n = 0; head = 0; cool = 800; okFor = 0;
+            } else if (g.scale < max - 1e-6) {
+              probe = { kind: "scale", prev: g.scale, t: 0 };
+              g.scale = Math.min(max, +(g.scale + step * 3).toFixed(4));
+              n = 0; head = 0; cool = 800; okFor = 0;
+            } else if (g.tierHeadroom) {
+              probe = { kind: "tier", prev: g.scale, t: 0 };
+              g.tierUpRequested = true; n = 0; head = 0; cool = 800; okFor = 0;
+            } else okFor = 0;
+          }
+        }
+      } else { if (!slow) slowFor = 0; okFor = 0; }
       return g.scale;
     },
   };

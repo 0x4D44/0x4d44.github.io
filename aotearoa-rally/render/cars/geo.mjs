@@ -30,7 +30,7 @@ export class Geo {
         if (m) v.applyMatrix3(nm).normalize();
         this.n.push(v.x, v.y, v.z);
       } else this.n.push(0, 1, 0);
-      this.uv.push(uv ? uv.getX(i) : 0, uv ? uv.getY(i) : 0);
+      if (this.fixUV) this.uv.push(this.fixUV[0], this.fixUV[1]); else this.uv.push(uv ? uv.getX(i) : 0, uv ? uv.getY(i) : 0);
       this.c.push(col.r, col.g, col.b);
     }
     if (g !== geometry) g.dispose();
@@ -60,6 +60,35 @@ export class Geo {
     const path = curved ? new T.CatmullRomCurve3(pts, false, "centripetal") : new T.CatmullRomCurve3(pts, false, "catmullrom", 0);
     const g = new T.TubeGeometry(path, Math.max(2, pts.length * (curved ? 6 : 1)), radius, seg, false);
     return this.add(g, null, color);
+  }
+  /**
+   * Tube along a path whose radius varies: `rf(u)` for u in 0..1 along the path (0 at an end = a closed, rounded tip).
+   * Parallel-transport frames, smooth normals.
+   */
+  tubeR(points, rf, color, seg = 8, curved = true, n = 0) {
+    const T = this.T;
+    const pts = points.map((p) => new T.Vector3(p[0], p[1], p[2]));
+    const path = curved ? new T.CatmullRomCurve3(pts, false, "centripetal") : new T.CatmullRomCurve3(pts, false, "catmullrom", 0);
+    n = n || Math.max(10, pts.length * 8);
+    const c = new T.Color(color), rows = [];
+    let N = null;
+    for (let i = 0; i <= n; i++) {
+      const u = i / n, p = path.getPointAt(u), t = path.getTangentAt(u).normalize();
+      if (!N) { N = Math.abs(t.y) < 0.9 ? new T.Vector3(0, 1, 0) : new T.Vector3(1, 0, 0); }
+      N = N.clone().sub(t.clone().multiplyScalar(N.dot(t))).normalize();
+      const B = new T.Vector3().crossVectors(t, N), r = rf(u), row = [];
+      for (let j = 0; j < seg; j++) {
+        const a = (j / seg) * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a);
+        const nx = N.x * ca + B.x * sa, ny = N.y * ca + B.y * sa, nz = N.z * ca + B.z * sa;
+        row.push([p.x + nx * r, p.y + ny * r, p.z + nz * r, nx, ny, nz]);
+      }
+      rows.push(row);
+    }
+    for (let i = 0; i < n; i++) for (let j = 0; j < seg; j++) {
+      const j2 = (j + 1) % seg, A = rows[i][j], Bq = rows[i][j2], C = rows[i + 1][j2], D = rows[i + 1][j];
+      for (const q of [A, Bq, C, A, C, D]) this.vert(q[0], q[1], q[2], q[3], q[4], q[5], 0, 0, c.r, c.g, c.b);
+    }
+    return this;
   }
   /** Flat quad strip between two polylines (a[i], b[i]) with an up-ish normal. */
   strip(a, b, color, flip = false) {

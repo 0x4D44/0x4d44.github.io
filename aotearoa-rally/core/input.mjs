@@ -41,6 +41,27 @@ export function shapeAxis(v, deadzone = 0.14, curve = 1.6) {
   return Math.sign(v) * Math.pow(n, curve);
 }
 
+/**
+ * Digital (keyboard) steering shaping. Pure.
+ * Speed (m/s) sets three things: the largest lock a key can ask for (1.0 at rest, 0.55 at 45 m/s and above),
+ * how fast steering winds on (4.2 per second at rest, 1.8 at speed) and how fast it centres or reverses
+ * (9 per second at rest, 14 at speed). Slow winding-on and a smaller lock keep a key tap from snapping the
+ * car sideways; quick centring lets go of the corner promptly.
+ * @param {number} current  present steering -1..1
+ * @param {number} dir      key direction -1, 0 or 1
+ * @param {number} speed    m/s (sign ignored)
+ * @param {number} dt       seconds
+ */
+export const KEY_STEER = Object.freeze({ fullSpeed: 45, lockAtSpeed: 0.55, windOn: [4.2, 1.8], centre: [9, 14] });
+export function shapeKeySteer(current, dir, speed, dt) {
+  const f = clamp(Math.abs(Number.isFinite(speed) ? speed : 0) / KEY_STEER.fullSpeed, 0, 1);
+  const lerp = (a, b) => a + (b - a) * f;
+  const target = dir * lerp(1, KEY_STEER.lockAtSpeed);
+  const winding = dir !== 0 && (current === 0 || Math.sign(current) === dir) && Math.abs(target) >= Math.abs(current);
+  const rate = winding ? lerp(...KEY_STEER.windOn) : lerp(...KEY_STEER.centre);
+  return approach(current, target, rate * dt);
+}
+
 /** Merge user bindings over defaults; unknown actions and non-string codes are dropped. */
 export function normaliseBindings(user) {
   const out = {};
@@ -123,6 +144,7 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
     _pressGear: { up: false, down: false },
   };
   const info = { gamepadConnected: false, lastDevice: "keyboard" };
+  let rawKeys = false; // test hook: bypass shapeKeySteer (raw +-1 target, old smoothing) to compare
 
   const codeToAction = (code) => {
     for (const a of ACTIONS) if (bindings[a].includes(code)) return a;
@@ -194,6 +216,8 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
     resetBindings() {
       api.setBindings(null);
     },
+    /** Test hook: true bypasses speed-sensitive key steering. */
+    setRawKeySteer(on) { rawKeys = !!on; },
     /** Resolve with the next key code pressed (for the rebinding UI). */
     captureKey() {
       return new Promise((res) => (rebindResolver = res));
@@ -222,11 +246,10 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
       }
     },
     /** Sample all devices. `dt` seconds since the last poll (for key-steer smoothing). */
-    poll(dt = 1 / 60) {
+    poll(dt = 1 / 60, speed = 0) {
       const k = enabled ? mapKeyboard(keys, bindings) : { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
       // keyboard smoothing: steering ramps in, snaps back faster; pedals ramp briefly
-      const steerRate = k.steer !== 0 && Math.sign(k.steer) === Math.sign(kbSteer) ? 4.2 : 9;
-      kbSteer = approach(kbSteer, k.steer, steerRate * dt);
+      kbSteer = rawKeys ? approach(kbSteer, k.steer, (k.steer ? 5 : 9) * dt) : shapeKeySteer(kbSteer, k.steer, speed, dt);
       kbThrottle = approach(kbThrottle, k.throttle, (k.throttle ? 7 : 12) * dt);
       kbBrake = approach(kbBrake, k.brake, (k.brake ? 9 : 14) * dt);
       let steer = kbSteer, throttle = kbThrottle, brake = kbBrake, handbrake = k.handbrake;

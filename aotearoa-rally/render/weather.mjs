@@ -52,26 +52,30 @@ void main(){
 const SPLASH_VERT = /* glsl */ `
 attribute vec3 aSeed; attribute vec2 aCorner;
 uniform vec3 uCenter; uniform float uTime; uniform float uRadius; uniform float uGroundY;
-varying vec2 vC; varying float vA;
+varying vec2 vC; varying float vA; varying float vPh;
 void main(){
-  float ph = fract(uTime * (1.4 + aSeed.z) + aSeed.y * 7.0);
+  float ph = fract(uTime * (0.9 + 0.6 * aSeed.z) + aSeed.y * 7.0);
   vec2 off = (aSeed.xz * 2.0 - 1.0) * uRadius;
   vec3 c = vec3(uCenter.x + off.x, uGroundY + 0.03, uCenter.z + off.y);
-  float s = 0.05 + ph * 0.22;
-  vC = aCorner;
-  vA = (1.0 - ph) * (1.0 - length(off) / uRadius);
+  float s = 0.05 + ph * 0.24;
+  vC = aCorner; vPh = ph;
+  // fades: born soft, dies slowly, thins out toward the edge of the patch and with camera distance
+  float dist = length(c - cameraPosition);
+  vA = pow(1.0 - ph, 1.6) * smoothstep(0.0, 0.08, ph) * (1.0 - length(off) / uRadius) * (1.0 - smoothstep(3.0, 12.0, dist));
   gl_Position = projectionMatrix * viewMatrix * vec4(c + vec3(aCorner.x * s, 0.0, aCorner.y * s), 1.0);
 }`;
 
 const SPLASH_FRAG = /* glsl */ `
 precision highp float;
 uniform vec3 uColor; uniform float uAlpha;
-varying vec2 vC; varying float vA;
+varying vec2 vC; varying float vA; varying float vPh;
 void main(){
   float r = length(vC);
-  float ring = smoothstep(1.0, 0.7, r) * smoothstep(0.35, 0.7, r);
-  float a = ring * vA * uAlpha;
-  if (a < 0.01) discard;
+  // thin gaussian ring whose width follows the quad's pixel footprint, plus a faint inner echo; no hard edge anywhere
+  float w = max(0.2, fwidth(r) * 2.2);
+  float ring = exp(-pow((r - 0.72) / w, 2.0)) + 0.35 * exp(-pow((r - 0.42) / (w * 1.2), 2.0)) * smoothstep(0.15, 0.5, vPh);
+  float a = ring * smoothstep(1.0, 0.8, r) * vA * uAlpha * 0.6;
+  if (a < 0.006) discard;
   gl_FragColor = vec4(uColor, a);
 }`;
 
@@ -98,6 +102,13 @@ function makeQuads(THREE, count, seedFn) {
   return g;
 }
 
+/** Multiplier on the stage's base fog density for a weather state (pure). `clear` over a hazy stage default thins the haze. */
+export function fogFactor(w) {
+  let f = 1 + 0.9 * w.rainAmt + 1.2 * w.mist + 0.5 * w.snowAmt + 2.6 * w.fog;
+  if (w.cleared) f *= 0.35;
+  return f;
+}
+
 export function createWeather(THREE, { SU, getCfg }) {
   const group = new THREE.Group();
   group.name = "weather";
@@ -116,7 +127,7 @@ export function createWeather(THREE, { SU, getCfg }) {
   const splashU = { uCenter: { value: new THREE.Vector3() }, uTime: { value: 0 }, uRadius: { value: 11 }, uGroundY: { value: 0 }, uColor: { value: new THREE.Color(0.8, 0.85, 0.9) }, uAlpha: { value: 0.35 } };
 
   let rain = null, snow = null, splash = null;
-  const state = { type: "clear", intensity: 0, wetness: 0, rainAmt: 0, snowAmt: 0, mist: 0, flash: 0, nextFlash: 4, flashT: 0, storm: false, maxRain: 0, maxSnow: 0 };
+  const state = { type: "clear", intensity: 0, wetness: 0, rainAmt: 0, snowAmt: 0, mist: 0, fog: 0, cleared: false, flash: 0, nextFlash: 4, flashT: 0, storm: false, maxRain: 0, maxSnow: 0 };
   const wind = { x: 1, z: 0, strength: 0.3 };
 
   function build() {
@@ -143,7 +154,10 @@ export function createWeather(THREE, { SU, getCfg }) {
       state.storm = state.type === "storm";
       state.rainAmt = state.type === "rain" ? state.intensity : state.storm ? Math.max(0.85, state.intensity) : 0;
       state.snowAmt = state.type === "snow" ? state.intensity : 0;
-      state.mist = state.type === "mist" ? state.intensity : 0;
+      state.fog = state.type === "fog" ? Math.min(1, state.intensity) : 0;
+      // fog implies a hazy sky too; mist is lighter. A plain "clear" override on a stage that ships with mist/cloud/snow strips its haze.
+      state.mist = state.type === "mist" ? state.intensity : state.type === "fog" ? 0.55 + 0.45 * state.fog : 0;
+      state.cleared = state.type === "clear" && !!env.weather?.type && env.weather.type !== "clear";
       wind.strength = env.windStrength ?? 0.3 + (state.storm ? 0.5 : 0);
       if (state.storm) wind.strength = Math.max(wind.strength, 0.8);
       wind.x = 0.82; wind.z = 0.57;

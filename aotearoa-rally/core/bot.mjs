@@ -163,6 +163,7 @@ export function createBot(stage, vehicle, opts = {}) {
   const input = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
   const prj = {};
   let mode = 0; // 0 drive, 1 reverse
+  let lastX = NaN, lastZ = NaN;
   let stuckT = 0, revT = 0, offT = 0, cool = 0, lastSteer = 0;
 
   function lineAt(s, out) {
@@ -175,13 +176,16 @@ export function createBot(stage, vehicle, opts = {}) {
   const tgt = { x: 0, z: 0, v: 0 }, ahead = { x: 0, z: 0, v: 0 };
 
   function reset() {
-    mode = 0; stuckT = 0; revT = 0; offT = 0; cool = 0; lastSteer = 0;
+    mode = 0; stuckT = 0; revT = 0; offT = 0; cool = 0; lastSteer = 0; lastX = NaN; lastZ = NaN;
     input.steer = 0; input.throttle = 0; input.brake = 0; input.handbrake = 0;
   }
 
   function control(dt) {
     const st = vehicle.state;
     const v = st.speed;
+    // position discontinuity (teleport, respawn): drop every piece of internal state, as bot.reset() does
+    if (lastX === lastX && Math.abs(st.x - lastX) + Math.abs(st.z - lastZ) > 6) reset();
+    lastX = st.x; lastZ = st.z;
     stage.project(st.x, st.z, st.s, prj);
     const s = prj.s;
     const yaw = st.yaw;

@@ -88,7 +88,9 @@ export const dip = (D = 0.8, w = 14) => ["feat", { type: "dip", D, w }];
 export const ford = (len = 16, D = 0.65) => ["feat", { type: "ford", len, D }];
 export const bridge = (len = 16) => ["feat", { type: "bridge", len }];
 /** scale the camber gain for the next `len` m: f > 1 banks it up, f < 0 is adverse camber */
-export const camber = (len = 80, f = 1.8) => ["feat", { type: "camber", len, f }];
+/** an enclosed section (cave mouth then close trees) of `len` m from the current s; scenery + a pace note, no geometry change */
+export const tunnel = (len = 140) => ["feat", { type: "tunnel", len }];
+export const camber =(len = 80, f = 1.8) => ["feat", { type: "camber", len, f }];
 export const grid = () => ["feat", { type: "cattlegrid" }];
 export const nocut = () => ["feat", { type: "nocut" }];
 export const culvert = () => ["feat", { type: "culvert" }];
@@ -278,6 +280,25 @@ export function compileDesign(design, seed = 1) {
   for (let i = 1; i < N; i++) {
     y += clamp(yraw[i] - y, -maxStep, maxStep);
     c.py[i] = y;
+  }
+  // rounded pitch changes: where the rate limiter lets go the grade would step, so ease it with a short box blur
+  // (not at jump lips, which stay crisp; a blur never raises the peak grade)
+  {
+    const jumpS = feats.filter((f) => f.type === "jump").map((f) => f.s);
+    for (let pass = 0; pass < 4; pass++) {
+      const src = Float64Array.from(c.py);
+      for (let i = 0; i < N; i++) {
+        const ss = i * DS;
+        let near = 1e9;
+        for (const js of jumpS) near = Math.min(near, Math.abs(ss - js));
+        const w = smoothstep(20, 70, near);
+        if (w <= 0) continue;
+        let a = 0;
+        for (let q = -3; q <= 3; q++) a += src[Math.min(N - 1, Math.max(0, i + q))];
+        a /= 7;
+        c.py[i] = src[i] + (a - src[i]) * w;
+      }
+    }
   }
   for (let i = 0; i < N; i++) {
     const a = Math.max(0, i - 1), bI = Math.min(N - 1, i + 1);

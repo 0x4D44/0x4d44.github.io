@@ -34,6 +34,11 @@ export function createAudio(volumes = {}, opts = {}) {
     setStage(def) { stageDef = def; ambience.setStage(def); },
     setCarSpec(s) { spec = s; engine.setSpec(s); },
     setVolumes(v) { mixer.setVolumes(v); },
+    /** Co-driver voices, best first: [{ name, lang }]. Empty when speech synthesis is missing. */
+    listVoices() { try { return codriver.listVoices(); } catch { return []; } },
+    /** Choose a co-driver voice by name (null or unknown name restores the automatic pick). */
+    setVoice(name) { try { codriver.setVoice(name); } catch { /* ignore */ } },
+    get voiceName() { return codriver.voiceName; },
     playUI(name) { if (!disposed) sfx.ui(name); },
     /** Resets the co-driver and one-shot state for a restart. */
     reset(s = 0) { codriver.reset(s); engine.revive(); },
@@ -55,7 +60,7 @@ export function createAudio(volumes = {}, opts = {}) {
       for (let i = 0; i < ev.length; i++) {
         const e = ev[i];
         switch (e.t) {
-          case "impact": sfx.impact(e); break;
+          case "impact": sfx.impact(e); if ((e.strength || 0) > 0.25) engine.duck(e.strength); break;
           case "landing": sfx.landing(e.strength); break;
           case "bottomout": sfx.bottomout(e.strength); break;
           case "shift": engine.shift(e.from, e.to); break;

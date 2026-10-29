@@ -20,7 +20,7 @@ export function buildTyre(THREE, R, Rr, tw, J = 96) {
         const sh = (p === 4 || p === 5 || p === 8 || p === 9 || p === 3 || p === 10);
         const m = sh ? (j % 6 < 3 ? 0 : 1) : ((j + 3) % 6 < 3 ? 0 : 1);
         const groove = (p === 6 || p === 7) ? (Math.abs(((j % 12) - 5.5)) < 0.6 ? 1 : 0) * 0.5 : 0;
-        r -= 0.008 * m * (sh ? 1 : 0.8) + 0.004 * groove;
+        r -= 0.004 * m * (sh ? 1 : 0.8) + 0.002 * groove;
       }
       const x = prof[p][0] * tw;
       row.push([x, Math.cos(a) * r, Math.sin(a) * r, a, r]);
@@ -44,8 +44,8 @@ export function buildTyre(THREE, R, Rr, tw, J = 96) {
   const N = P.map((row, j) => row.map((_, p) => nrm(j, p)));
   const col = (p, j) => {
     // sidewall lettering ring: a lighter band on the outer sidewall for a few segments
-    const side = p >= 10 && p <= 12;
-    const v = side && j % 24 < 8 ? 0.085 : 0.04;
+    const side = p >= 9 && p <= 11;
+    const v = side && j % 48 < 3 ? 0.07 : 0.04;
     return [v, v, v * 1.02];
   };
   for (let j = 0; j < J; j++) {

@@ -26,6 +26,11 @@ export function buildPacenotes(c, opts = {}) {
   const { N, ds, curv, lengthM, feats, surf } = c;
   const notes = [];
   const KIN = 1 / 330, KOUT = 1 / 420;
+  const pt = (s) => {
+    const f = clamp(s, 0, lengthM) / ds;
+    const i = Math.min(N - 2, Math.floor(f)), t = f - i;
+    return [c.px[i] + (c.px[i + 1] - c.px[i]) * t, c.pz[i] + (c.pz[i + 1] - c.pz[i]) * t];
+  };
 
   // ---------------- corner runs
   const runs = [];
@@ -66,7 +71,16 @@ export function buildPacenotes(c, opts = {}) {
       if (u <= 0.4 && k > kIn) kIn = k;
       if (u >= 0.6 && k > kOut) kOut = k;
     }
-    const gApex = gradeOfRadius(1 / kmax);
+    // grade on the measured minimum radius: circumcircle of centreline points 12 m apart over the call (the way a
+    // driver would judge it), not the smoothed curvature, which sits a metre or two off at the grade boundaries
+    let rmin = 1e9;
+    for (let s = r.i0 * ds - 5; s <= r.i0 * ds + Math.max(ds, len) + 5 + 1e-9; s += 2) {
+      const p1 = pt(s - 6), p2 = pt(s), p3 = pt(s + 6);
+      const ax = p2[0] - p1[0], az = p2[1] - p1[1], bx = p3[0] - p2[0], bz = p3[1] - p2[1], cx = p3[0] - p1[0], cz = p3[1] - p1[1];
+      const ar = Math.abs(ax * bz - az * bx) / 2;
+      if (ar > 1e-6) rmin = Math.min(rmin, (Math.hypot(ax, az) * Math.hypot(bx, bz) * Math.hypot(cx, cz)) / (4 * ar));
+    }
+    const gApex = gradeOfRadius(rmin < 1e8 ? rmin : 1 / kmax);
     let gIn = gradeOfRadius(1 / Math.max(kIn, 1e-5)), gOut = gradeOfRadius(1 / Math.max(kOut, 1e-5));
     const mods = [];
     const hairpin = gApex === 1 && angle * 57.2958 >= 100;
@@ -94,6 +108,8 @@ export function buildPacenotes(c, opts = {}) {
       notes.push({ s: Math.max(0, f.s - f.len / 2 - 8), kind: "ford", dir: null, severity: 6, length: f.len + 12, modifiers: ["caution", "slippery"], _prio: 3 });
     } else if (f.type === "bridge") {
       notes.push({ s: Math.max(0, f.s - 10), kind: "bridge", dir: null, severity: 6, length: f.len + 14, modifiers: ["narrows", "caution"], _prio: 3 });
+    } else if (f.type === "tunnel") {
+      notes.push({ s: Math.max(0, f.s - 14), kind: "caution", dir: null, severity: 6, length: f.len + 14, modifiers: ["narrows", "caution"], _prio: 3, _cave: true });
     } else if (f.type === "cattlegrid") {
       notes.push({ s: Math.max(0, f.s - 6), kind: "caution", dir: null, severity: 6, length: 12, modifiers: ["bumpy", "caution"], _prio: 2, _grid: true });
     }
@@ -284,7 +300,9 @@ export function buildPacenotes(c, opts = {}) {
       case "jump": n.speak = "Caution, jump"; n.text = "JUMP caution"; break;
       case "ford": n.speak = "Caution, ford"; n.text = "FORD"; break;
       case "bridge": n.speak = "Caution, one lane bridge"; n.text = "BRIDGE narrow"; break;
-      case "caution": n.speak = "Cattle grid"; n.text = "GRID"; break;
+      case "caution":
+        if (n._cave) { n.speak = "Caution, cave mouth, trees close in"; n.text = "CAVE narrows"; } else { n.speak = "Cattle grid"; n.text = "GRID"; }
+        break;
       case "surface": {
         const to = SURF_NAME[n._to] ?? "gravel", from = SURF_NAME[n._from] ?? "gravel";
         n.speak = `${n._from === 2 ? "Tarmac ends, " + to : cap(to)}${n.modifiers.includes("slippery") ? ", slippery" : ""}`;
@@ -307,7 +325,7 @@ export function buildPacenotes(c, opts = {}) {
   }
   for (const n of out) {
     n.lead = makeLead(n.s);
-    delete n._prio; delete n._say; delete n._gIn; delete n._apex; delete n._grid; delete n._from; delete n._to;
+    delete n._prio; delete n._say; delete n._gIn; delete n._apex; delete n._grid; delete n._cave; delete n._from; delete n._to;
     if (!n.modifiers) n.modifiers = [];
   }
   return out;

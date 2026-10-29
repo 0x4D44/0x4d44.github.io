@@ -16,3 +16,13 @@ test("a call (merged or not) is spoken to its end before the first feature, at a
     assert.ok(over <= 1, `"${got.text}" at ${v} m/s ends ${over.toFixed(1)} m after the feature`);
   }
 });
+
+import { simulateCalls } from "../audio/codriver.mjs";
+test("simulateCalls: one row per call, queued calls never overlap in time, leads within the cap", () => {
+  const mk = (s, speak) => ({ s, speak, text: speak, kind: "corner", length: 20, severity: 3 });
+  const notes = [mk(800, "Left four"), mk(1500, "Right three"), mk(2200, "Left two")];
+  const rows = simulateCalls(notes, () => 25);
+  assert.equal(rows.length, 3);
+  for (let i = 1; i < rows.length; i++) assert.ok(rows[i].startT >= rows[i - 1].endT);
+  for (const r of rows) { assert.ok(r.leadS <= MAX_LEAD_S + 0.2 && r.leadS > 0.5); assert.ok(r.endBeforeM > -1); }
+});

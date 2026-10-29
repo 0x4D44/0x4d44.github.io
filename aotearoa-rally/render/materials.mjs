@@ -219,13 +219,18 @@ export function createWaterMaterial(THREE, SU, { color = 0x3f5d58, detail = true
           vec2 p = vWPos.xz * 0.9;
           float e = 0.08;
           vec2 f1 = vec2(uTime * 0.9, uTime * 0.35), f2 = vec2(-uTime * 0.55, uTime * 0.8);
-          float h0 = vnoise(p + f1) + 0.6 * vnoise(p * 2.7 + f2);
-          float hx = vnoise(p + f1 + vec2(e, 0.)) + 0.6 * vnoise(p * 2.7 + f2 + vec2(e * 2.7, 0.));
-          float hz = vnoise(p + f1 + vec2(0., e)) + 0.6 * vnoise(p * 2.7 + f2 + vec2(0., e * 2.7));
-          vec3 wn = normalize(vec3(-(hx - h0) / e * 0.22, 1.0, -(hz - h0) / e * 0.22));
+          float l0 = vnoise(p + f1), h0 = 0.6 * vnoise(p * 2.7 + f2);
+          vec2 lg = vec2(vnoise(p + f1 + vec2(e, 0.)) - l0, vnoise(p + f1 + vec2(0., e)) - l0) / e;
+          vec2 hg = 0.6 * vec2(vnoise(p * 2.7 + f2 + vec2(e * 2.7, 0.)) - vnoise(p * 2.7 + f2), vnoise(p * 2.7 + f2 + vec2(0., e * 2.7)) - vnoise(p * 2.7 + f2)) / e;
+          // band-limit the ripple normals with distance (they alias into glitter on a far sea otherwise)
+          float wd = length(vWPos.xz - cameraPosition.xz);
+          float fa = 1.0 / (1.0 + wd * 0.012), fb = 1.0 / (1.0 + wd * wd * 0.0016);
+          vec2 sl = (lg * fa + hg * fb) * 0.22;
+          vec3 wn = normalize(vec3(-sl.x, 1.0, -sl.y));
           normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz);
+          diffuseColor.a = mix(diffuseColor.a, 1.0, smoothstep(40.0, 160.0, wd)); // distant water is opaque: no seabed walls showing through
           diffuseColor.a *= smoothstep(0.0, 0.35, vEdge);
-          diffuseColor.rgb += vec3(0.05) * smoothstep(0.62, 0.8, h0) * (1.0 - uNight);
+          diffuseColor.rgb += vec3(0.05) * smoothstep(0.62, 0.8, l0 + h0) * fb * (1.0 - uNight);
         }`);
   };
   m.customProgramCacheKey = () => "ar-water";

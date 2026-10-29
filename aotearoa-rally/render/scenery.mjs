@@ -168,7 +168,7 @@ class MB {
     return this;
   }
   /** faceted displaced icosphere (rocks). */
-  rock(rx, ry, rz, seed, sub = 1, rough = 0.28, planar = 0) {
+  rock(rx, ry, rz, seed, sub = 1, rough = 0.28, planar = 0, { blocky = 0, strata = 0, facet = 0.18, top = 1, lean = 0 } = {}) {
     const T = this.T;
     const t = (1 + Math.sqrt(5)) / 2;
     let V = [[-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0], [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t], [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]].map((v) => { const l = Math.hypot(...v); return v.map((c) => c / l); });
@@ -192,8 +192,16 @@ class MB {
       const n2 = n3(v[0] * 3.9 + 9, v[1] * 3.9 + seed, v[2] * 3.9, seed + 5) * 2 - 1;
       const n4 = n3(v[0] * 8.5 + 3, v[1] * 6 + seed, v[2] * 8.5, seed + 9) * 2 - 1;
       const k = 1 + rough * (0.62 * n + 0.3 * n2 + 0.2 * n4);
-      const y = v[1] * ry * k;
-      return [v[0] * rx * k, planar && y < -ry * 0.3 ? -ry * 0.3 * 0 + y * 0.2 : y, v[2] * rz * k];
+      const yn = v[1], hz = Math.sqrt(Math.max(0, 1 - yn * yn));
+      // blocky: pull the rounded profile toward a squared-off column (flat top, near-vertical sides) so tall rocks are not cones
+      const sq = Math.pow(Math.max(0, 1 - Math.pow(Math.abs(yn), 4)), 0.25);
+      const f = blocky ? 1 + blocky * (Math.min(1.5, sq / Math.max(0.2, hz)) - 1) : 1;
+      // strata: horizontal ledges that step the radius in and out with height
+      const led = strata ? 1 + strata * 0.16 * (((yn * 3.1 + seed * 0.37) % 1 + 1) % 1 - 0.5) : 1;
+      let y = yn * ry * k;
+      if (top < 1) y = Math.min(y, ry * top * (0.94 + 0.06 * n2));
+      const kk = k * f * led;
+      return [v[0] * rx * kk + lean * Math.max(0, y), planar && y < -ry * 0.3 ? -ry * 0.3 * 0 + y * 0.2 : y, v[2] * rz * kk];
     });
     const vn = disp.map(() => [0, 0, 0]);
     for (const [a, b, c] of F) {
@@ -209,7 +217,7 @@ class MB {
       let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
       const ax = Math.abs(nx), ay = Math.abs(ny), az = Math.abs(nz);
       const uvf = (P) => (ay >= ax && ay >= az ? [P[0] / (rx * 1.4) * 0.5 + 0.5, P[2] / (rz * 1.4) * 0.5 + 0.5] : ax >= az ? [P[2] / (rz * 1.4) * 0.5 + 0.5, P[1] / (ry * 1.4) * 0.5 + 0.5] : [P[0] / (rx * 1.4) * 0.5 + 0.5, P[1] / (ry * 1.4) * 0.5 + 0.5]);
-      const ids = [[A, a], [B, b], [C, c]].map(([P, qi]) => { const uv = uvf(P); const sn = vn[qi]; return this.vert(P[0], P[1], P[2], sn[0] * 0.82 + nx * 0.18, sn[1] * 0.82 + ny * 0.18, sn[2] * 0.82 + nz * 0.18, uv[0], uv[1]); });
+      const ids = [[A, a], [B, b], [C, c]].map(([P, qi]) => { const uv = uvf(P); const sn = vn[qi]; return this.vert(P[0], P[1], P[2], sn[0] * (1 - facet) + nx * facet, sn[1] * (1 - facet) + ny * facet, sn[2] * (1 - facet) + nz * facet, uv[0], uv[1]); });
       this.i.push(ids[0], ids[1], ids[2]);
     }
     return this;
@@ -290,35 +298,62 @@ function blobTree(mb, P, o, lod) { // LOD2: vertex-colour silhouette
 }
 
 function broadleaf(mb, P, o, lod, v) {
-  const { H, trunkH, trunkR, crownR, crownY, clusters, cardSize, lean = 0, tint = 1, bark = "bark_beech", cardCell = "foliage_broadleaf", red = 0, limbs = 4 } = o;
+  const { H, trunkH, trunkR, crownR, crownY, clusters, cardSize, lean = 0, tint = 1, bark = "bark_beech", cardCell = "foliage_broadleaf", red = 0, limbs = 4, flat = 0.62, stems = 1, spread = 0.72, arch = 0.5 } = o;
   mb.sway((y) => Math.pow(Math.max(0, y / H), 1.5));
-  mb.cellName(bark).colorV(P.trunk, 1);
-  const tp = [[0, 0, 0], [lean * 0.4, trunkH * 0.5, lean * 0.2], [lean, trunkH, lean * 0.5]];
-  mb.limb(tp, trunkR, trunkR * 0.55, lod === 0 ? 9 : 6, { tile: 3, flare: 0.6 });
-  const nCl = lod === 0 ? clusters : Math.ceil(clusters * 0.4);
-  const cx0 = lean, cz0 = lean * 0.5;
-  if (lod === 0) {
-    for (let k = 0; k < limbs; k++) {
-      const az = (k / limbs) * TAU + v;
-      const ex = cx0 + Math.sin(az) * crownR * 0.7, ez = cz0 + Math.cos(az) * crownR * 0.7, ey = crownY + crownR * 0.1;
-      mb.limb([[lean, trunkH * 0.9, lean * 0.5], [(lean + ex) / 2, (trunkH + ey) / 2 + 0.3, (lean * 0.5 + ez) / 2], [ex, ey, ez]], trunkR * 0.38, trunkR * 0.12, 6, { tile: 3 });
+  const R = (k, q = 0) => hs(k * 17 + q, v + 41);
+  // every crown cluster sits on a branch: collect anchors while the branches are built, then hang foliage on them
+  const anchors = [];
+  const nst = lod === 2 ? 1 : stems;
+  const cx0 = lean, cz0 = lean * 0.5; // crown centre (xz)
+  for (let st = 0; st < nst; st++) {
+    const sa = (st / nst) * TAU + v * 2.1, so = st === 0 ? 0 : 0.5 + 0.6 * R(st, 1);
+    const bx = Math.sin(sa) * so * 0.5, bz = Math.cos(sa) * so * 0.5;
+    const fh = trunkH * (st === 0 ? 1 : 0.7 + 0.3 * R(st, 2)); // fork height
+    const fx = bx + lean * (st === 0 ? 1 : 1.2) + Math.sin(sa) * so * 0.35, fz = bz + lean * 0.5 * (st === 0 ? 1 : 1.2) + Math.cos(sa) * so * 0.35;
+    mb.cellName(bark).colorV(P.trunk, st === 0 ? 1 : 0.92);
+    mb.limb([[bx, 0, bz], [bx + (fx - bx) * 0.35 + (R(st, 3) - 0.5) * 0.3, fh * 0.45, bz + (fz - bz) * 0.35], [fx, fh, fz]], trunkR * (st === 0 ? 1 : 0.72), trunkR * (st === 0 ? 0.62 : 0.5), lod === 0 ? 8 : 5, { tile: 2.4, flare: 0.7 });
+    const nl = lod === 2 ? 0 : Math.max(3, Math.ceil(limbs / nst));
+    for (let j = 0; j < nl; j++) {
+      const az = (j / nl) * TAU + sa + R(j, 4) * 0.9;
+      const reach = crownR * (spread * (0.7 + 0.45 * R(j, 5)));
+      const top = Math.max(fh + 0.6, crownY + crownR * flat * (R(j, 6) * 0.9 - 0.25));
+      const ex = cx0 + Math.sin(az) * reach, ez = cz0 + Math.cos(az) * reach;
+      // control points: leave the fork rising, then arch outward
+      const m1 = [fx + (ex - fx) * 0.22, fh + (top - fh) * (0.45 + 0.4 * arch), fz + (ez - fz) * 0.22];
+      const m2 = [fx + (ex - fx) * 0.62, fh + (top - fh) * (0.85 + 0.15 * arch) + 0.25, fz + (ez - fz) * 0.62];
+      const pts = [[fx, fh, fz], m1, m2, [ex, top, ez]];
+      mb.cellName(bark).colorV(P.trunk, 0.95);
+      mb.limb(pts, trunkR * 0.46, trunkR * 0.1, lod === 0 ? 5 : 4, { tile: lod === 0 ? 2.2 : 3.2 });
+      for (const t of [0.34, 0.5, 0.64, 0.78, 0.9, 1.0]) {
+        const u = 1 - t, c = [u * u * u * pts[0][0] + 3 * u * u * t * pts[1][0] + 3 * u * t * t * pts[2][0] + t * t * t * pts[3][0], u * u * u * pts[0][1] + 3 * u * u * t * pts[1][1] + 3 * u * t * t * pts[2][1] + t * t * t * pts[3][1], u * u * u * pts[0][2] + 3 * u * u * t * pts[1][2] + 3 * u * t * t * pts[2][2] + t * t * t * pts[3][2]];
+        anchors.push(c);
+      }
     }
   }
+  if (lod === 2 || !anchors.length) { // never reached for lod 2 in practice (blobTree), but keep a sane fallback
+    anchors.push([cx0, crownY, cz0]);
+  }
   mb.cellName(cardCell);
+  const per = lod === 0 ? 3 : 2;
+  const want = lod === 0 ? clusters : Math.ceil(clusters * 0.45);
+  const nCl = Math.min(anchors.length, want);
+  const stride = anchors.length / nCl;
   for (let k = 0; k < nCl; k++) {
-    const a = hs(k, v + 21) * TAU, b = Math.acos(1 - 2 * hs(k, v + 22) * 0.9), r = Math.cbrt(hs(k, v + 23)) * 0.95;
-    const cx = cx0 + Math.sin(b) * Math.cos(a) * crownR * r, cy = crownY + Math.cos(b) * crownR * 0.62 * r, cz = cz0 + Math.sin(b) * Math.sin(a) * crownR * r;
-    const nx = cx - cx0, ny = (cy - crownY) * 1.1 + 0.4, nz = cz - cz0, nl = Math.hypot(nx, ny, nz) || 1;
-    const nn = [nx / nl, ny / nl, nz / nl];
-    const per = lod === 0 ? 5 : 3;
+    const an = anchors[Math.min(anchors.length - 1, Math.floor(k * stride))];
+    const cx = an[0] + (R(k, 7) - 0.5) * cardSize * 0.5, cy = an[1] + (R(k, 8) - 0.3) * cardSize * 0.5, cz = an[2] + (R(k, 9) - 0.5) * cardSize * 0.5;
+    const ox = cx - cx0, oz = cz - cz0, ol = Math.hypot(ox, oz) || 1;
+    const hgt = Math.max(-1, Math.min(1, (cy - crownY) / (crownR * flat + 0.01)));
+    const nn0 = [ox / ol * 0.7, 0.55 + 0.3 * hgt, oz / ol * 0.7], nl0 = Math.hypot(...nn0);
+    const nn = [nn0[0] / nl0, nn0[1] / nl0, nn0[2] / nl0];
+    const outward = Math.min(1, ol / (crownR * spread + 0.01));
     for (let q = 0; q < per; q++) {
-      const az = hs(k * 5 + q, v + 31) * TAU, tilt = (hs(k * 7 + q, v + 32) - 0.35) * 1.4;
-      const dx = Math.sin(az) * Math.cos(tilt), dz = Math.cos(az) * Math.cos(tilt), dy = Math.sin(tilt) * 0.8 + 0.2;
-      const sz = cardSize * (lod === 0 ? 1.3 : 2.0) * (0.8 + hs(k, q) * 0.5);
-      const isRed = red && hs(k * 3 + q, v) < red;
+      const az = Math.atan2(ox, oz) + (R(k * 5 + q, 10) - 0.5) * 3.4, tilt = -0.15 + R(k * 7 + q, 11) * 0.75;
+      const dx = Math.sin(az) * Math.cos(tilt), dz = Math.cos(az) * Math.cos(tilt), dy = Math.sin(tilt);
+      const sz = cardSize * (lod === 0 ? 1.45 : 2.1) * (0.8 + R(k, q + 12) * 0.5);
+      const isRed = red && R(k * 3 + q, 13) < red;
       if (isRed) mb.colorV(P.accent, 1.2);
-      else mb.colorV(hs(k, q + 3) < 0.5 ? P.f1 : P.f2, (0.75 + 0.4 * hs(k + 9, q)) * tint * (0.66 + 0.4 * r + 0.18 * Math.max(-1, Math.min(1, (cy - crownY) / (crownR * 0.6)))));
-      mb.card(cx - dx * sz * 0.4, cy - dy * sz * 0.4, cz - dz * sz * 0.4, dx, dy, dz, dz, 0, -dx, sz, sz, nn, [0, -sz * 0.25, 0], 1, 1);
+      else mb.colorV(R(k, q + 3) < 0.5 ? P.f1 : P.f2, (0.74 + 0.4 * R(k + 9, q)) * tint * (0.7 + 0.25 * outward + 0.2 * hgt));
+      mb.card(cx - dx * sz * 0.45, cy - dy * sz * 0.45, cz - dz * sz * 0.45, dx, dy, dz, dz, 0, -dx, sz, sz, nn, [0, -sz * 0.22, 0], 1, 1);
     }
   }
 }
@@ -362,52 +397,82 @@ function bladeClump(mb, P, o, lod, v) { // flax, toetoe, tussock, grass, fern, s
 }
 
 function rockKind(mb, P, o, lod, v) {
-  const { rx, ry, rz, cell, sub, rough, tint = 1, count = 1, cluster = 0.6, mossy = 0 } = o;
+  const { rx, ry, rz, cell, sub, rough, tint = 1, count = 1, cluster = 0.6, mossy = 0, shape = {} } = o;
   mb.cellName(cell);
   const s = lod === 0 ? sub : Math.max(0, sub - 1);
   for (let k = 0; k < count; k++) {
     const a = (k / count) * TAU + v, d = k === 0 ? 0 : cluster * Math.max(rx, rz);
-    const sc = k === 0 ? 1 : 0.45 + 0.3 * hs(k, v);
-    mb.at(Math.sin(a) * d, ry * sc * 0.3, Math.cos(a) * d, 0, hs(k, v) * TAU, 0);
-    mb.colorV(P.rock, tint * (0.85 + 0.25 * hs(k, v + 4)));
-    mb.rock(rx * sc, ry * sc, rz * sc, v * 7 + k, s, rough);
+    const sc = k === 0 ? 1 : 0.45 + 0.35 * hs(k, v);
+    const tall = k === 0 ? 1 : 0.7 + 0.6 * hs(k, v + 3);
+    mb.at(Math.sin(a) * d, ry * sc * 0.25, Math.cos(a) * d, (hs(k, v + 8) - 0.5) * 0.12, hs(k, v) * TAU, (hs(k, v + 9) - 0.5) * 0.12);
+    mb.colorV(P.rock, tint * (0.8 + 0.3 * hs(k, v + 4)));
+    mb.rock(rx * sc * (0.85 + 0.3 * hs(k, v + 5)), ry * sc * tall, rz * sc * (0.85 + 0.3 * hs(k, v + 6)), v * 7 + k * 3.7, s, rough, 0, { ...shape, lean: (shape.lean ?? 0) * (hs(k, v + 7) - 0.5) * 2 });
     mb.pop();
   }
   if (mossy) { mb.cellName("gnd_moss_rock"); mb.colorV(P.f1d, 1.3); mb.at(0, ry * 0.7, 0); mb.rock(rx * 0.7, ry * 0.4, rz * 0.7, v + 77, 0, 0.2); mb.pop(); }
 }
 
 function person(mb, P, v, kind) {
-  // variety by variant: jacket colour, trousers, hat, cheering arms, child scale, backpack
+  // variety by variant: clothing, hair/hat, pose (arms down / waving / both up / one up), child scale, backpack
   const jackets = [[0.75, 0.12, 0.1], [0.12, 0.3, 0.7], [0.9, 0.78, 0.12], [0.15, 0.5, 0.3], [0.86, 0.86, 0.84], [0.5, 0.15, 0.5], [0.95, 0.45, 0.1], [0.1, 0.1, 0.12]];
   const trousers = [[0.14, 0.16, 0.3], [0.2, 0.2, 0.22], [0.35, 0.28, 0.2], [0.1, 0.1, 0.12], [0.25, 0.32, 0.45]];
   const skin = [[0.8, 0.58, 0.45], [0.55, 0.38, 0.28], [0.9, 0.7, 0.58], [0.4, 0.27, 0.2], [0.7, 0.5, 0.38]];
+  const hairs = [[0.12, 0.08, 0.05], [0.3, 0.2, 0.1], [0.65, 0.5, 0.25], [0.5, 0.5, 0.5], [0.05, 0.05, 0.05]];
   const marshal = kind === "marshal";
   const h1 = (k) => hs(v * 13 + 5, k);
   const sh = marshal ? [0.98, 0.5, 0.04] : jackets[Math.floor(h1(1) * jackets.length)];
   const pants = marshal ? [0.1, 0.12, 0.2] : trousers[Math.floor(h1(2) * trousers.length)];
   const sk = skin[Math.floor(h1(3) * skin.length)];
-  const child = !marshal && h1(4) > 0.78;
-  const cheer = !marshal && h1(5) > 0.5;
-  const hat = marshal ? 1 : Math.floor(h1(6) * 4); // 0 none, 1 cap/helmet, 2 beanie, 3 wide hat
+  const hair = hairs[Math.floor(h1(14) * hairs.length)];
+  const child = !marshal && h1(4) > 0.8;
+  const pose = marshal ? 5 : Math.floor(h1(5) * 5); // 0,1 arms down; 2 one arm waving; 3 both up; 4 one up, one on hip; 5 marshal (flag arm forward)
+  const hat = marshal ? 1 : Math.floor(h1(6) * 4); // 0 hair, 1 cap/helmet, 2 beanie, 3 wide hat
+  const wide = 0.92 + 0.16 * h1(15); // shoulder / hip width variation
   mb.at(0, 0, 0, 0, 0, 0, child ? 0.66 : 0.94 + 0.12 * h1(7));
   mb.cellName("fabric");
   mb.sway(0);
-  for (const sd of [-1, 1]) { mb.color(...pants); mb.at(sd * 0.1, 0.07, 0); mb.cyl(0.078, 0.066, 0.8, 6, { tile: 3 }); mb.pop(); mb.color(0.08, 0.08, 0.09); mb.at(sd * 0.1, 0, 0.04); mb.ellipsoid(0.075, 0.045, 0.12, 6, 3); mb.pop(); }
-  mb.color(...sh); mb.at(0, 0.82, 0); mb.cyl(0.2, 0.175, 0.64, 8, { tile: 3 }); mb.pop();
-  mb.color(...sh); mb.at(0, 1.4, 0); mb.ellipsoid(0.215, 0.09, 0.14, 8, 3); mb.pop(); // shoulders
-  if (marshal) { for (const y of [0.98, 1.2]) { mb.color(0.85, 0.88, 0.8); mb.at(0, y, 0); mb.cyl(0.205, 0.205, 0.05, 8, { tile: 3 }); mb.pop(); } }
-  else if (h1(8) > 0.65) { mb.color(...jackets[(Math.floor(h1(9) * 8) + 3) % 8]); mb.at(0, 0.9, -0.17); mb.box(0.26, 0.38, 0.12); mb.pop(); } // backpack
+  // legs: tapered with a bent knee, shoes
   for (const sd of [-1, 1]) {
-    mb.color(...sh);
-    if (cheer) { mb.at(sd * 0.23, 1.38, 0, 0, 0, -sd * (0.35 + 0.25 * h1(10))); mb.cyl(0.058, 0.046, 0.52, 5, { tile: 3 }); mb.pop(); mb.color(...sk); mb.at(sd * (0.23 + 0.2 + 0.1 * h1(10)), 1.88, 0); mb.ellipsoid(0.055, 0.055, 0.055, 5, 3); mb.pop(); }
-    else { mb.at(sd * 0.25, 1.4, 0, 0, 0, sd * 0.12); mb.cyl(0.058, 0.046, -0.55, 5, { tile: 3 }); mb.pop(); mb.color(...sk); mb.at(sd * 0.29, 0.83, 0); mb.ellipsoid(0.052, 0.052, 0.052, 5, 3); mb.pop(); }
+    const st = sd * (0.02 + 0.03 * h1(16));
+    mb.color(...pants);
+    mb.limb([[sd * 0.095 * wide, 0.95, 0], [sd * 0.1 * wide + st, 0.52, 0.02], [sd * 0.1 * wide + st, 0.09, 0.0]], 0.09, 0.058, 6, { tile: 0.45 });
+    mb.color(0.08, 0.08, 0.09); mb.at(sd * 0.1 * wide + st, 0.0, 0.05); mb.ellipsoid(0.07, 0.05, 0.13, 6, 3); mb.pop();
   }
-  mb.color(...sk); mb.at(0, 1.43, 0); mb.cyl(0.05, 0.055, 0.1, 5, { tile: 3 }); mb.pop();
-  mb.color(...sk); mb.at(0, 1.56, 0); mb.ellipsoid(0.105, 0.125, 0.115, 8, 5); mb.pop();
-  if (hat === 1) { mb.color(...(marshal ? [0.95, 0.95, 0.95] : jackets[Math.floor(h1(11) * 8)])); mb.at(0, 1.63, 0); mb.ellipsoid(0.12, 0.085, 0.13, 8, 3); mb.pop(); mb.at(0, 1.62, 0.1); mb.box(0.18, 0.02, 0.1); mb.pop(); }
-  else if (hat === 2) { mb.color(...jackets[Math.floor(h1(12) * 8)]); mb.at(0, 1.62, 0); mb.ellipsoid(0.115, 0.1, 0.12, 8, 4); mb.pop(); }
-  else if (hat === 3) { mb.color(0.45, 0.36, 0.22); mb.at(0, 1.64, 0); mb.cyl(0.22, 0.22, 0.02, 10, { tile: 3 }); mb.pop(); mb.at(0, 1.64, 0); mb.cyl(0.11, 0.1, 0.1, 8, { tile: 3 }); mb.pop(); }
-  else { mb.color(0.15 + 0.3 * h1(13), 0.1 + 0.12 * h1(13), 0.06); mb.at(0, 1.61, -0.01); mb.ellipsoid(0.11, 0.08, 0.115, 6, 3); mb.pop(); }
+  // hips and a tapered torso (narrow waist, broad chest) rather than a straight tube
+  mb.color(...pants); mb.at(0, 0.97, 0); mb.ellipsoid(0.185 * wide, 0.1, 0.125, 7, 3); mb.pop();
+  mb.color(...sh);
+  mb.limb([[0, 0.95, 0], [0, 1.18, 0], [0, 1.42, 0]], 0.158 * wide, 0.2 * wide, 7, { tile: 0.5 });
+  mb.at(0, 1.43, 0); mb.ellipsoid(0.225 * wide, 0.085, 0.135, 8, 3); mb.pop(); // shoulders
+  if (marshal) { for (const y of [1.0, 1.24]) { mb.color(0.85, 0.88, 0.8); mb.at(0, y, 0); mb.ellipsoid(0.172 * wide, 0.028, 0.14, 8, 2); mb.pop(); } }
+  else if (h1(8) > 0.68) { mb.color(...jackets[(Math.floor(h1(9) * 8) + 3) % 8]); mb.at(0, 1.1, -0.15); mb.ellipsoid(0.15, 0.22, 0.09, 6, 3); mb.pop(); } // backpack
+  // arms: shoulder -> elbow -> hand, so waving and raised arms read as bent limbs
+  const arm = (sd, mode) => {
+    const x0 = sd * 0.235 * wide;
+    let e, hnd;
+    if (mode === 0) { e = [sd * 0.29, 1.15, 0.03]; hnd = [sd * 0.27, 0.92, 0.1]; } // down
+    else if (mode === 1) { e = [sd * 0.38, 1.6, 0.0]; hnd = [sd * 0.36, 1.93, 0.02]; } // cheer: up and out
+    else if (mode === 2) { e = [sd * 0.4, 1.46, 0.04]; hnd = [sd * 0.3, 1.84, 0.1]; } // waving: forearm up
+    else if (mode === 3) { e = [sd * 0.33, 1.18, 0.0]; hnd = [sd * 0.2, 1.0, 0.04]; } // hand on hip
+    else { e = [sd * 0.28, 1.2, 0.18]; hnd = [sd * 0.18, 1.38, 0.38]; } // forward (marshal)
+    mb.color(...sh); mb.limb([[x0, 1.4, 0], e, hnd], 0.058, 0.045, 5, { tile: 0.45 });
+    mb.color(...sk); mb.at(hnd[0], hnd[1], hnd[2]); mb.ellipsoid(0.05, 0.055, 0.05, 5, 3); mb.pop();
+  };
+  const sdWave = h1(17) > 0.5 ? 1 : -1;
+  for (const sd of [-1, 1]) {
+    let mode = 0;
+    if (pose === 2) mode = sd === sdWave ? 2 : 0;
+    else if (pose === 3) mode = 1;
+    else if (pose === 4) mode = sd === sdWave ? 1 : 3;
+    else if (pose === 5) mode = sd === sdWave ? 4 : 0;
+    arm(sd, mode);
+  }
+  mb.color(...sk); mb.at(0, 1.47, 0); mb.cyl(0.05, 0.055, 0.1, 5, { tile: 3 }); mb.pop();
+  mb.color(...sk); mb.at(0, 1.58, 0.005); mb.ellipsoid(0.1, 0.125, 0.112, 8, 5); mb.pop(); // head
+  mb.color(...sk); mb.at(0, 1.565, 0.108); mb.ellipsoid(0.02, 0.028, 0.025, 4, 2); mb.pop(); // nose
+  if (hat === 1) { mb.color(...(marshal ? [0.95, 0.95, 0.95] : jackets[Math.floor(h1(11) * 8)])); mb.at(0, 1.65, 0); mb.ellipsoid(0.118, 0.075, 0.13, 8, 3); mb.pop(); mb.at(0, 1.63, 0.105); mb.ellipsoid(0.1, 0.012, 0.07, 6, 2); mb.pop(); }
+  else if (hat === 2) { mb.color(...jackets[Math.floor(h1(12) * 8)]); mb.at(0, 1.645, -0.005); mb.ellipsoid(0.12, 0.1, 0.125, 8, 4); mb.pop(); mb.at(0, 1.74, -0.005); mb.ellipsoid(0.035, 0.035, 0.035, 5, 2); mb.pop(); }
+  else if (hat === 3) { mb.color(0.45, 0.36, 0.22); mb.at(0, 1.665, 0); mb.ellipsoid(0.23, 0.014, 0.23, 9, 2); mb.pop(); mb.at(0, 1.69, 0); mb.ellipsoid(0.105, 0.075, 0.108, 8, 3); mb.pop(); }
+  else { mb.color(...hair); mb.at(0, 1.62, -0.018); mb.ellipsoid(0.108, 0.1, 0.12, 8, 3); mb.pop(); if (h1(18) > 0.5) { mb.at(0, 1.55, -0.07); mb.ellipsoid(0.09, 0.12, 0.06, 6, 3); mb.pop(); } }
   mb.pop();
 }
 
@@ -423,13 +488,13 @@ const BUILD = {
   redwood: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 44, trunkR: 0.95, crownR: 4.2, crownY: 15, conifer: true }, lod)
     : conifer(mb, P, { H: 44, trunkR: 1.05, crownStart: 16, crownR: 4.6, whorls: 17, perW: 7, tint: 0.85, cardW: 3.0, droop: 0.28, bark: "bark_redwood" }, lod, v),
   kauri: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 30, trunkR: 0.8, crownR: 5, crownY: 17, conifer: false }, lod)
-    : broadleaf(mb, P, { H: 30, trunkH: 17, trunkR: 0.85, crownR: 5.5, crownY: 22, clusters: 26, cardSize: 3, tint: 0.9, bark: "bark_pine", limbs: 5 }, lod, v),
+    : broadleaf(mb, P, { H: 30, trunkH: 17, trunkR: 0.85, crownR: 5.5, crownY: 22, clusters: 22, cardSize: 3.3, tint: 0.9, bark: "bark_pine", limbs: 5 }, lod, v),
   macrocarpa: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 15, trunkR: 0.55, crownR: 7, crownY: 8, conifer: false }, lod)
-    : broadleaf(mb, P, { H: 15, trunkH: 5, trunkR: 0.55, crownR: 7.5, crownY: 9, clusters: 24, cardSize: 3.3, tint: 0.62, bark: "bark_pine", cardCell: "foliage_pine", limbs: 5, lean: 0.4 }, lod, v),
+    : broadleaf(mb, P, { H: 15, trunkH: 5, trunkR: 0.55, crownR: 7.5, crownY: 9, clusters: 26, cardSize: 3.2, tint: 0.62, bark: "bark_pine", cardCell: "foliage_pine", limbs: 6, lean: 0.4, spread: 0.8, flat: 0.55 }, lod, v),
   beech: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 21, trunkR: 0.38, crownR: 6, crownY: 13, conifer: false }, lod)
-    : broadleaf(mb, P, { H: 21, trunkH: 9, trunkR: 0.45, crownR: 6.4, crownY: 14, clusters: 30, cardSize: 2.6, tint: 0.95, bark: "bark_beech", limbs: 5 }, lod, v),
+    : broadleaf(mb, P, { H: 21, trunkH: 9, trunkR: 0.45, crownR: 6.4, crownY: 14, clusters: 24, cardSize: 3.0, tint: 0.95, bark: "bark_beech", limbs: 5 }, lod, v),
   pohutukawa: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 10, trunkR: 0.6, crownR: 6.5, crownY: 6, conifer: false }, lod)
-    : broadleaf(mb, P, { H: 10, trunkH: 3.2, trunkR: 0.62, crownR: 7, crownY: 6, clusters: 28, cardSize: 2.6, tint: 0.8, bark: "bark_beech", limbs: 6, lean: 1.2, red: 0.1 }, lod, v),
+    : broadleaf(mb, P, { H: 10, trunkH: 2.4, trunkR: 0.62, crownR: 7.2, crownY: 5.0, clusters: 34, cardSize: 2.7, tint: 0.7, bark: "bark_beech", limbs: 8, lean: 1.0, red: 0.12, flat: 0.42, stems: 2, spread: 0.85, arch: 0.25 }, lod, v),
   tree_fern: (mb, P, lod, v) => lod === 2 ? (mb.sway(0.4), mb.cellName("white").colorV(P.trunkD, 0.7), mb.cyl(0.12, 0.1, 3.6, 4), mb.colorV(P.f1d, 1), mb.at(0, 3.5, 0), mb.ellipsoid(2, 0.7, 2, 6, 3), mb.pop())
     : palmLike(mb, P, { H: 3.8, headY: 3.8, trunkR: 0.14, fronds: 11, frondL: 2.4, frondW: 1.1, cell: "foliage_fern", tint: 0.95 }, lod, v),
   cabbage_tree: (mb, P, lod, v) => lod === 2 ? (mb.sway(0.4), mb.cellName("white").colorV(P.trunkD, 1), mb.cyl(0.22, 0.14, 5, 4), mb.colorV(P.f2d, 1.05), mb.at(0, 5.6, 0), mb.ellipsoid(1.8, 1.1, 1.8, 6, 3), mb.pop())
@@ -448,9 +513,9 @@ const BUILD = {
   grass_tuft: (mb, P, lod, v) => bladeClump(mb, P, { n: 9, h: 0.55, w: 0.28, cell: "foliage_grass", spread: 0.4, tint: 1.1, droop: 0.25, grassy: true }, lod, v),
   fern: (mb, P, lod, v) => bladeClump(mb, P, { n: 9, h: 1.0, w: 0.55, cell: "foliage_fern", spread: 0.8, tint: 0.95, droop: 0.55, flatten: 0.3 }, lod, v),
   shrub: (mb, P, lod, v) => broadleaf(mb, P, { H: 1.6, trunkH: 0.3, trunkR: 0.05, crownR: 0.95, crownY: 0.8, clusters: lod === 0 ? 10 : 5, cardSize: 0.8, tint: 0.95, bark: "bark_beech", limbs: 0 }, lod, v),
-  boulder: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.0, ry: 1.0, rz: 0.85, cell: "gnd_schist", sub: 2, rough: 0.4, count: 2, cluster: 0.45 }, lod, v),
-  limestone: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.5, ry: 3.3, rz: 1.3, cell: "gnd_limestone", sub: 3, rough: 0.5, count: 3, cluster: 0.7, tint: 0.85 }, lod, v),
-  schist: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.9, ry: 2.7, rz: 1.6, cell: "gnd_schist", sub: 3, rough: 0.5, count: 3, cluster: 0.6 }, lod, v),
+  boulder: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.0, ry: 1.0, rz: 0.85, cell: "gnd_schist", sub: 2, rough: 0.55, count: 2, cluster: 0.45, shape: { facet: 0.4 } }, lod, v),
+  limestone: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.7, ry: 3.0, rz: 1.45, cell: "gnd_limestone", sub: 2, rough: 0.62, count: 4, cluster: 0.8, tint: 0.85, shape: { blocky: 0.85, strata: 1, facet: 0.55, top: 0.8, lean: 0.25 } }, lod, v),
+  schist: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.9, ry: 2.5, rz: 1.6, cell: "gnd_schist", sub: 2, rough: 0.6, count: 3, cluster: 0.6, shape: { blocky: 0.45, strata: 0.7, facet: 0.5, top: 0.88 } }, lod, v),
   log: (mb, P) => { mb.cellName("bark_beech").colorV(P.trunk, 0.9); mb.at(0, 0.35, 0, 0, 0, Math.PI / 2); mb.cyl(0.34, 0.3, 4.6, 8, { cap: true }); mb.pop(); mb.cellName("white").color(0.72, 0.6, 0.42); mb.at(-0.0, 0.35, 0, 0, 0, Math.PI / 2); mb.ellipsoid(0.01, 0.01, 0.01, 3, 2); mb.pop(); },
   stump: (mb, P) => { mb.cellName("bark_pine").colorV(P.trunk, 0.9); mb.cyl(0.42, 0.34, 0.65, 9, { cap: true }); mb.cellName("white").color(0.72, 0.6, 0.44); mb.at(0, 0.655, 0); mb.ellipsoid(0.34, 0.01, 0.34, 8, 2); mb.pop(); },
   fence_post: (mb, P) => { mb.cellName("planks").color(0.75, 0.62, 0.45); mb.cyl(0.07, 0.06, 1.25, 6, { tile: 3 }); mb.cellName("white").color(0.55, 0.45, 0.32); mb.at(0, 1.25, 0); mb.ellipsoid(0.06, 0.03, 0.06, 5, 2); mb.pop(); },
@@ -458,7 +523,7 @@ const BUILD = {
   power_pole: (mb, P, lod) => {
     mb.cellName("bark_pine").colorV(P.trunk, 0.8); mb.cyl(0.17, 0.12, 10.5, 7, { tile: 4 });
     mb.cellName("planks").color(0.6, 0.5, 0.38); mb.at(0, 9.6, 0); mb.box(2.4, 0.12, 0.12); mb.pop();
-    if (lod === 0) for (const x of [-1.0, 0, 1.0]) { mb.cellName("white").color(0.82, 0.82, 0.8); mb.at(x, 9.72, 0); mb.cyl(0.04, 0.05, 0.22, 5); mb.pop(); mb.cellName("metal").color(0.2, 0.2, 0.22); mb.limb([[x, 9.9, 0], [x + 6, 9.55, 0.05], [x + 12, 9.9, 0.1]], 0.012, 0.012, 3, { tile: 8 }); }
+    if (lod === 0) for (const x of [-1.0, 0, 1.0]) { mb.cellName("white").color(0.82, 0.82, 0.8); mb.at(x, 9.72, 0); mb.cyl(0.04, 0.05, 0.22, 5); mb.pop(); } // wires: see setupWires (continuous catenaries between poles)
   },
   sign_chevron: (mb) => {
     mb.cellName("metal").color(0.5, 0.5, 0.52); mb.cyl(0.035, 0.035, 1.9, 6, { tile: 4 });
@@ -610,6 +675,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   const cullStats = { instances: 0, triangles: 0, meshes: 0 };
   const vents = { mesh: null, uniforms: null, list: [] };
   const falls = [];
+  let wires = null;
   const m4 = new THREE.Matrix4();
   const colTmp = new THREE.Color();
 
@@ -694,6 +760,8 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   const api = {
     group,
     get stats() { return cullStats; },
+    /** Placed props (read-only view) for tests: positions and kind names. */
+    get propData() { return { n: X ? X.length : 0, X, Y, Z, K, kinds }; },
     async setStage(st, palette) {
       api.disposeStage();
       stage = st;
@@ -728,6 +796,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
       // steam vents and waterfalls
       setupVents(props);
       setupFalls(props);
+      setupWires(props);
       lastBuild.x = 1e9;
     },
     /** rebuild the visible instance sets when the camera moved enough. */
@@ -744,6 +813,19 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
       rebuild(camera, cfg);
       updateVents(time, camera);
     },
+    /** Build and upload every kind/variant/LOD mesh the stage can show (one dummy instance each) so no first-sight
+     *  geometry build or buffer upload lands in a driving frame. Call before the warm-up render. */
+    prewarm() {
+      if (!stage) return;
+      for (const kind of kinds) {
+        const nv = VARIANTS[kind] ?? 1, lods = (PROP_TABLE[kind] ?? PROP_TABLE.boulder).lods;
+        for (let v = 0; v < nv; v++) {
+          const cnt = api._counts.get(kind + "|" + v);
+          if (!cnt) continue;
+          for (let lod = 0; lod < lods; lod++) { const e = ensureMesh(kind, v, lod, cnt); if (e.n === undefined) e.n = 0; if (!e.mesh.count) { e.mesh.count = 1; e.mesh.visible = true; } }
+        }
+      }
+    },
     disposeStage() {
       for (const e of meshes.values()) { group.remove(e.mesh); e.mesh.dispose(); }
       meshes.clear();
@@ -752,6 +834,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
       if (vents.mesh) { group.remove(vents.mesh); vents.mesh.geometry.dispose(); vents.mesh.material.dispose(); vents.mesh = null; }
       for (const f of falls) { group.remove(f); f.geometry.dispose(); f.material.dispose(); }
       falls.length = 0;
+      if (wires) { group.remove(wires); wires.geometry.dispose(); wires.material.dispose(); wires = null; }
       atlas?.dispose(); mat?.dispose(); atlas = mat = null; stage = null; cellMap = new Map();
     },
     refreshQuality() {
@@ -806,7 +889,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
         const mx = tbl.max * dm;
         if (d2 > mx * mx) continue;
         const d = Math.sqrt(d2);
-        if (!keepProp(i, kind, dens)) continue;
+        if (kind !== "power_pole" && !keepProp(i, kind, dens)) continue; // poles are never thinned: the wires join them
         // frustum-ish cone cull (always keep near props: they cast shadows / are about to be seen)
         if (d > 70) {
           const cosA = (ex * nfx + ez * nfz) / d;
@@ -911,6 +994,83 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     group.add(vents.mesh);
   }
   function updateVents(time) { if (vents.uniforms) vents.uniforms.uTime.value = time; }
+
+
+  // ---- power lines: one draw call of continuous catenary ribbons joining the insulators of consecutive poles.
+  // Ribbons are expanded in clip space to a fixed pixel width with a soft edge, so they stay a solid anti-aliased line at any distance.
+  function setupWires(props) {
+    const poles = props.filter((p) => p.kind === "power_pole");
+    if (poles.length < 2) return;
+    const pos = [], other = [], side = [], idx = [];
+    const ins = (p, lx) => { const s = p.scale ?? 1, r = p.rot ?? 0; return [p.x + lx * Math.cos(r) * s, p.y - 0.04 + 9.9 * s, p.z - lx * Math.sin(r) * s]; };
+    const push = (a, b, sd) => { pos.push(a[0], a[1], a[2]); other.push(b[0], b[1], b[2]); side.push(sd); };
+    for (let i = 0; i + 1 < poles.length; i++) {
+      const A = poles[i], B = poles[i + 1];
+      const dx = B.x - A.x, dz = B.z - A.z, L = Math.hypot(dx, dz);
+      if (L < 8 || L > 160) continue; // a different line, or a gap in this one
+      const r = A.rot ?? 0, tx = Math.sin(r), tz = Math.cos(r); // pole local +z = line direction
+      if (Math.abs(dx * tx + dz * tz) < 0.7 * L) continue;
+      for (const lx of [-1, 0, 1]) {
+        const a = ins(A, lx), b = ins(B, lx);
+        const span = Math.hypot(b[0] - a[0], b[2] - a[2]), sag = Math.min(2.6, span * 0.022);
+        const n = Math.max(6, Math.min(16, Math.ceil(span / 5)));
+        let prev = null;
+        for (let k = 0; k <= n; k++) {
+          const t = k / n;
+          const q = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t - sag * 4 * t * (1 - t), a[2] + (b[2] - a[2]) * t];
+          if (prev) {
+            const base = pos.length / 3;
+            push(prev, q, -1); push(prev, q, 1); push(q, prev, 1); push(q, prev, -1);
+            idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+          }
+          prev = q;
+        }
+      }
+    }
+    if (!idx.length) return;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute("aOther", new THREE.Float32BufferAttribute(other, 3));
+    g.setAttribute("aSide", new THREE.Float32BufferAttribute(side, 1));
+    g.setIndex(idx);
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e6);
+    const m = new THREE.ShaderMaterial({
+      uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uRes: { value: new THREE.Vector2(1280, 720) }, uPx: { value: 1.7 }, uCol: { value: new THREE.Color(0.1, 0.1, 0.12) } }]),
+      transparent: true, depthWrite: false, fog: true, side: THREE.DoubleSide,
+      vertexShader: /* glsl */ `attribute vec3 aOther; attribute float aSide; uniform vec2 uRes; uniform float uPx; varying float vS; varying float vW;
+        #include <fog_pars_vertex>
+        void main(){
+          vec4 c0 = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          vec4 c1 = projectionMatrix * modelViewMatrix * vec4(aOther, 1.0);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vec2 s0 = c0.xy / max(c0.w, 1e-4) * uRes * 0.5, s1 = c1.xy / max(c1.w, 1e-4) * uRes * 0.5;
+          vec2 d = s1 - s0; float dl = length(d); d = dl > 1e-4 ? d / dl : vec2(1.0, 0.0);
+          vec2 n = vec2(-d.y, d.x);
+          float half_ = uPx * 0.5 + 0.75; // half width + one pixel of soft edge
+          vec2 off = n * aSide * half_;
+          gl_Position = c0; gl_Position.xy += off / (uRes * 0.5) * c0.w;
+          vS = aSide * half_ / (uPx * 0.5 + 0.75);
+          vW = uPx;
+          #include <fog_vertex>
+        }`,
+      fragmentShader: /* glsl */ `uniform vec3 uCol; varying float vS; varying float vW;
+        #include <fog_pars_fragment>
+        void main(){
+          float edge = abs(vS), core = (vW * 0.5) / (vW * 0.5 + 0.75);
+          float a = 1.0 - smoothstep(core, 1.0, edge);
+          if (a < 0.01) discard;
+          gl_FragColor = vec4(uCol, a * 0.85);
+          #include <fog_fragment>
+        }`,
+    });
+    wires = new THREE.Mesh(g, m);
+    wires.frustumCulled = false; wires.renderOrder = 3;
+    wires.onBeforeRender = (r) => {
+      const t = r.getRenderTarget();
+      if (t) m.uniforms.uRes.value.set(t.width, t.height); else r.getDrawingBufferSize(m.uniforms.uRes.value);
+    };
+    group.add(wires);
+  }
 
   // ---- waterfalls: animated streaking sheet + foam
   function setupFalls(props) {

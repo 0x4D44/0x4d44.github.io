@@ -1,9 +1,13 @@
 // Livery atlas (2048x1024 canvas): left side | right side / top | front+rear. Planar UV projection (pure) +
 // canvas painting (browser). Sponsors are fictional.
+import { sideSlots } from "./profiles.mjs";
 export const ATLAS_W = 2048, ATLAS_H = 1024;
 const TILE = 1024, TILE_H = 512, MARGIN = 0.06, TOPY = 1.55;
 
 function ppmOf(d) { return TILE / (d.L + 2 * MARGIN); }
+
+/** Constants the paint shader needs to redo liveryUV per pixel: [zMin, zMax, halfWidth, pixelsPerMetre]. */
+export function liveryParams(d) { return [d.zF - MARGIN, d.zR + MARGIN, d.hw, ppmOf(d)]; }
 
 /** Planar UV for a point with normal n, chosen by dominant axis. Returns [u, v] (flipY = false). */
 export function liveryUV(d, x, y, z, nx, ny, nz) {
@@ -104,16 +108,26 @@ export function drawLivery(canvas, d, spec, livery, number) {
       }
       ctx.globalAlpha = 1;
     }
-    // door number plate
-    const px = X(doorXd), py = Y(0.84);
+    // door number plate (the sponsor slots below avoid it, the door shut lines and the wheel arches)
+    const px = X(doorXd), py = Y(Math.min(0.84, d.topC(doorT) - 0.2));
     ctx.fillStyle = "#f2f2ee"; rr(ctx, px - 0.2 * ppm, py - 0.17 * ppm, 0.4 * ppm, 0.34 * ppm, 0.04 * ppm); ctx.fill();
     ctx.lineWidth = 0.014 * ppm; ctx.strokeStyle = accent; ctx.stroke();
     txt(String(number), px + 0.0, py + 0.1 * ppm, 0.3 * ppm, "#111", "center", 0);
     // sponsor on the rear quarter + second sponsor lower on the front door sill
     const sponsor = (livery.sponsor || "").toUpperCase();
-    txt(sponsor, X(len * 0.74), Y(0.66), 0.095 * ppm, ink, "center", -0.12, len * 0.3 * ppm);
-    txt(SPONSORS2[(number | 0) % SPONSORS2.length], X(len * 0.2), Y(0.24), 0.07 * ppm, ink, "center", -0.12, len * 0.26 * ppm);
-    txt("AOTEAROA RALLY", X(len * 0.5), Y(0.12), 0.05 * ppm, ink, "center", 0, len * 0.4 * ppm);
+    // text sits where the flank is near vertical (below the shoulder, where the planar projection stays on the side tile)
+    const slot = (yHint, extra) => {
+      const first = sideSlots(d, yHint - 0.04, yHint + 0.04, extra)[0];
+      if (!first) return null;
+      const lows = [first[0] + 0.1, (first[0] + first[1]) / 2, first[1] - 0.1].map((q) => d.topC(d.tAt(d.zF + q)));
+      const y = Math.max(0.34, Math.min(yHint, Math.min(...lows) - 0.2));
+      const s = sideSlots(d, y - 0.04, y + 0.04, extra)[0] || first;
+      return { c: (s[0] + s[1]) / 2, w: s[1] - s[0] - 0.1, y };
+    };
+    const s1 = slot(0.66, [[doorXd - 0.24, doorXd + 0.24]]);
+    if (s1) txt(sponsor, X(s1.c), Y(s1.y), 0.095 * ppm, ink, "center", -0.12, s1.w * ppm);
+    const s2 = slot(0.27, []);
+    if (s2) txt(SPONSORS2[(number | 0) % SPONSORS2.length], X(s2.c), Y(s2.y), 0.06 * ppm, ink, "center", -0.12, s2.w * ppm);
     ctx.restore();
   }
 
@@ -129,12 +143,13 @@ export function drawLivery(canvas, d, spec, livery, number) {
   else if (style === "takahe") { ctx.fillRect(TX(d.zF), cx0, (d.zR - d.zF) * ppm, cw); ctx.fillStyle = body; ctx.fillRect(TX(d.zF), TV(-0.025), (d.zR - d.zF) * ppm, 0.05 * ppm); }
   else { ctx.beginPath(); ctx.moveTo(TX(d.zF), TV(-0.3)); ctx.lineTo(TX(d.zR), TV(-0.12)); ctx.lineTo(TX(d.zR), TV(0.12)); ctx.lineTo(TX(d.zF), TV(0.3)); ctx.closePath(); ctx.fill(); }
   // bonnet number plate and sponsor, roof number
-  const bz = (d.zAt(d.S.bonnetT[0]) + d.zAt(d.S.bonnetT[1])) / 2;
+  const [bn0, bn1] = d.S.bonnetT;
+  const bz = d.zAt(d.S.scoop === "bonnet" ? 0.27 : bn0 + 0.42 * (bn1 - bn0));
   ctx.fillStyle = "#f2f2ee"; rr(ctx, TX(bz) - 0.22 * ppm, TV(0) - 0.17 * ppm, 0.44 * ppm, 0.34 * ppm, 0.04 * ppm); ctx.fill();
   txtTop(String(number), TX(bz), TV(0) + 0.1 * ppm, 0.3 * ppm, "#111", "center", 0);
   const rz = d.zAt((d.cabin.rs + d.cabin.re) / 2);
   ctx.save(); ctx.translate(TX(rz), TV(0)); ctx.transform(0, 1, 1, 0, 0, 0); ctx.fillStyle = ink; ctx.font = `900 ${0.34 * ppm}px "Arial Black", Impact, Arial, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(number), 0, 0); ctx.restore();
-  txtTop((livery.sponsor || "").toUpperCase(), TX(d.zAt(d.S.bonnetT[0] + 0.12)), TV(0), 0.08 * ppm, ink, "center", 0, d.W * ppm * 0.5);
+  if (d.S.scoop !== "bonnet") txtTop((livery.sponsor || "").toUpperCase(), TX(d.zAt(bn1 - 0.04)), TV(0), 0.07 * ppm, ink, "center", 0, d.W * ppm * 0.5);
   txtTop(SPONSORS2[((number | 0) + 1) % SPONSORS2.length], TX(d.zAt(0.9)), TV(-0.38), 0.08 * ppm, ink, "center", 0, 0.5 * ppm);
   ctx.restore();
 

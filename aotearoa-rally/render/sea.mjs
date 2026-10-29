@@ -44,10 +44,13 @@ export function createSea(THREE, SU, makeWaterMaterial) {
   function build(stage, viewDist) {
     api.dispose(true);
     level = stage.seaLevel ?? 0;
-    const g = new THREE.PlaneGeometry(1, 1);
+    const g = new THREE.PlaneGeometry(1, 1, 48, 48);
     g.rotateX(-Math.PI / 2);
     const n = g.attributes.position.count;
-    g.setAttribute("aEdge", new THREE.BufferAttribute(new Float32Array(n).fill(1), 1));
+    // radial fade: the sea dissolves into the fog colour before its rim, so there is no hard rectangular edge
+    const edge = new Float32Array(n), pa = g.attributes.position.array;
+    for (let i = 0; i < n; i++) { const r = Math.hypot(pa[i * 3], pa[i * 3 + 2]) * 2; edge[i] = 0.35 * Math.min(1, Math.max(0, (0.97 - r) / 0.4)); }
+    g.setAttribute("aEdge", new THREE.BufferAttribute(edge, 1));
     g.setAttribute("normal", new THREE.BufferAttribute(Float32Array.from({ length: n * 3 }, (_, i) => (i % 3 === 1 ? 1 : 0)), 3));
     planeMat = makeWaterMaterial(THREE, SU, { color: 0x2c5a66 });
     planeMat.opacity = 0.9;

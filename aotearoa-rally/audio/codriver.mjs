@@ -29,7 +29,7 @@ export function createScheduler(opts = {}) {
   const maxMerge = opts.maxMerge ?? 3;
   const maxQueue = opts.maxQueue ?? 3;
   const queue = []; // {text, s, end, notes}
-  let next = 0, lastS = -Infinity;
+  let next = 0, lastS = -Infinity, headS = -Infinity; // headS: stage position of the head note of the last call queued
   let notesRef = null;
   const st = { spoken: 0, dropped: 0, merged: 0 };
 
@@ -40,7 +40,7 @@ export function createScheduler(opts = {}) {
       // the call takes time to say: start early enough that it ENDS about lookahead before the feature
       const baseAt = typeof n.lead === "function" ? n.lead(v) : n.s - L;
       const voiceAt = callStart(n.s, baseAt, n.speak || n.text, v);
-      if (s < voiceAt) break;
+      if (s < Math.min(voiceAt, n.s - Math.max(MAX_LEAD_S * Math.abs(v || 0), 25))) break; // cheap bound; the exact start (which depends on the merged text) is checked below
       // too late: the feature is already behind us
       if (n.s - s < -Math.max(4, (n.length || 0) * 0.4) && n.kind !== "finish") { next++; st.dropped++; continue; }
       // gather following notes that begin soon after this one ends -> "A into B"
@@ -65,10 +65,12 @@ export function createScheduler(opts = {}) {
         while (j < notes.length && notes[j].chained && !notes[j].speak) { end = Math.max(end, notes[j].s + (notes[j].length || 0)); j++; }
       }
       // the merged call is longer than the head note alone: start only once it will also END before the feature
-      if (s < callStart(n.s, baseAt, text, v)) break;
+      const fullAt = callStart(n.s, baseAt, text, v);
+      if (s < fullAt) break;
       next = j;
+      headS = n.s;
       if (group.length > 1) st.merged += group.length - 1;
-      queue.push({ text: text.replace(/\s+/g, " ").trim(), s: n.s, end: n.s, notes: group, sev: Math.min(...group.map((g) => g.severity || 6)) });
+      queue.push({ jump: s - Math.max(fullAt, 0) > 25, text: text.replace(/\s+/g, " ").trim(), s: n.s, end: n.s, notes: group, sev: Math.min(...group.map((g) => g.severity || 6)) });
       while (queue.length > maxQueue) {
         // drop the least urgent (highest severity number = flatter) of the older items, keep the nearest
         let k = 0;
@@ -99,12 +101,22 @@ export function createScheduler(opts = {}) {
       if (!notesRef) return null;
       // a car teleported back (respawn / restart): rewind
       // (any backwards jump of more than 15 m, however short: a respawn 100 m back must re-arm the notes it skipped)
-      if (next > 0 && (lastS - s > 15 || (notesRef[next - 1] && notesRef[next - 1].s - s > 300))) { queue.length = 0; next = 0; while (next < notesRef.length && notesRef[next].s < s - 4) next++; }
+      if (next > 0 && (lastS - s > 15 || (headS - s > 300))) { queue.length = 0; next = 0; headS = -Infinity; while (next < notesRef.length && notesRef[next].s < s - 4) next++; }
       lastS = s;
       enqueueDue(notesRef, s, v);
       // discard queued items we have already driven past
       while (queue.length && queue[0].s - s < -8) { queue.shift(); st.dropped++; }
       if (busy || !queue.length) return null;
+      // never speak late: a call must END before its feature. Too long -> say only the head note; still too long -> drop it
+      // (the queue is in stage order, so the nearest corner always goes first).
+      // (a scheduler first asked far past a call's trigger - seek, respawn, restart - has no way to be on time: it just speaks)
+      const fits = (txt, it) => it.jump || it.s < s || s + speechSeconds(txt, speechRate(v)) * Math.abs(v) <= it.s;
+      while (queue.length && !fits(queue[0].text, queue[0])) {
+        const q = queue[0], head = String(q.notes[0].speak || q.notes[0].text || "").replace(/\s+/g, " ").trim();
+        if (q.notes.length > 1 && head && fits(head, q)) { st.dropped += q.notes.length - 1; q.text = head; q.notes = [q.notes[0]]; break; }
+        queue.shift(); st.dropped++;
+      }
+      if (!queue.length) return null;
       const it = queue.shift();
       st.spoken++;
       return { text: it.text, rate: speechRate(v), note: it.notes[0], merged: it.notes.length, s: it.s };
@@ -112,15 +124,33 @@ export function createScheduler(opts = {}) {
   };
 }
 
-/** Voice preference: en-NZ, en-AU, en-GB, then any English. Pure. */
+const NOVELTY = /(?:^|\s)(albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|hysterical|junior|organ|princess|ralph|trinoids|whisper|wobble|zarvox|fred|superstar|jester|grandma|grandpa|eddy|flo|reed|rocko|sandy|shelley|kathy|novelty)(?:\s|$)/i;
+/** Quality score of one voice (higher is better): language tier first, then natural/online over robotic, never novelty. Pure. */
+export function voiceScore(v) {
+  const lang = (v.lang || "").toLowerCase().replace("_", "-");
+  const name = String(v.name || "");
+  let sc = 0;
+  if (lang.startsWith("en-nz")) sc += 400; else if (lang.startsWith("en-au")) sc += 300; else if (lang.startsWith("en-gb")) sc += 200;
+  else if (lang.startsWith("en-ie") || lang.startsWith("en-za")) sc += 150; else if (lang.startsWith("en-us")) sc += 100; else if (lang.startsWith("en")) sc += 50;
+  else return -1000;
+  if (/natural|neural|online/i.test(name)) sc += 60;
+  if (/premium|enhanced|siri/i.test(name)) sc += 40;
+  if (/google/i.test(name)) sc += 25;
+  if (v.localService) sc += 5;
+  if (/espeak|robot|compact/i.test(name)) sc -= 120;
+  else if (/(^|\s)desktop(\s|$)/i.test(name)) sc -= 20;
+  if (NOVELTY.test(name)) sc -= 300;
+  return sc;
+}
+/** Voices ranked best first (English only). Pure. */
+export function rankVoices(voices) {
+  return (voices || []).map((v, i) => ({ v, i, sc: voiceScore(v) })).filter((x) => x.sc > -500 && x.sc >= 0).sort((a, b) => b.sc - a.sc || a.i - b.i).map((x) => x.v);
+}
+/** Best voice: a named one if present, else the top ranked English voice. Pure. */
 export function pickVoice(voices, preferredName) {
   if (!voices || !voices.length) return null;
   if (preferredName) { const f = voices.find((v) => v.name === preferredName); if (f) return f; }
-  for (const lang of ["en-nz", "en-au", "en-gb", "en-ie", "en-za", "en-us", "en"]) {
-    const hits = voices.filter((v) => (v.lang || "").toLowerCase().replace("_", "-").startsWith(lang));
-    if (hits.length) return hits.find((v) => v.localService) || hits[0];
-  }
-  return null;
+  return rankVoices(voices)[0] || null;
 }
 
 /**
@@ -155,7 +185,7 @@ export function createCodriver(deps = {}) {
     try {
       const u = new Utter(text);
       if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = "en-GB";
-      u.rate = rate; u.pitch = 1; u.volume = clamp(volume(), 0, 1);
+      u.rate = rate; u.pitch = 0.95; u.volume = clamp(volume(), 0, 1);
       // a stale end/error event from a cancelled utterance must not clear the state of the one now speaking
       const my = ++token;
       current = { text, rate };
@@ -174,7 +204,8 @@ export function createCodriver(deps = {}) {
     get usingBeeps() { return useBeeps; },
     enable(b) { enabled = !!b; if (!enabled) this.cancel(); },
     setVoice(name) { voiceName = name || null; refreshVoices(); },
-    listVoices() { refreshVoices(); return voices.map((v) => ({ name: v.name, lang: v.lang })); },
+    listVoices() { try { refreshVoices(); } catch { /* ignore */ } return rankVoices(voices).map((v) => ({ name: v.name, lang: v.lang })); },
+    get voiceName() { return voice ? voice.name : null; },
     say(text) { return say(text, 1); },
     cancel() { token++; current = null; interrupted = null; try { if (synth && synth.cancel) synth.cancel(); } catch { /* ignore */ } speaking = false; },
     pause(b) {
@@ -201,4 +232,27 @@ export function createCodriver(deps = {}) {
     },
     reset(sNow = 0) { this.cancel(); sched.reset(sNow); },
   };
+}
+
+/**
+ * Offline call-timing model (pure): drives the scheduler along a speed profile and returns, per spoken call, when it
+ * started and ended and how far before its feature that was. speedAt(s) -> m/s. Speech occupies speechSeconds(text, rate).
+ * Rows: { text, startS, startT, endT, noteS, leadM, leadS, endBeforeM (negative = still talking after the feature), merged }.
+ */
+export function simulateCalls(notes, speedAt, { startS = 0, endS = null, dt = 0.05 } = {}) {
+  const sc = createScheduler();
+  const last = endS ?? ((notes.length ? notes[notes.length - 1].s : 0) + 50);
+  const rows = [];
+  let s = startS, t = 0, busyUntil = 0;
+  while (s < last && t < 3600) {
+    const v = Math.max(0.5, speedAt(s));
+    const u = sc.update(notes, s, v, t < busyUntil);
+    if (u) {
+      const dur = speechSeconds(u.text, u.rate);
+      busyUntil = t + dur;
+      rows.push({ text: u.text, startS: s, startT: t, endT: t + dur, noteS: u.s, leadM: u.s - s, leadS: (u.s - s) / v, endBeforeM: u.s - (s + dur * v), merged: u.merged });
+    }
+    s += v * dt; t += dt;
+  }
+  return rows;
 }

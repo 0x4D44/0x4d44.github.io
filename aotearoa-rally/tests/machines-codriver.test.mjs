@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createScheduler, lookahead, leadExtra, speechRate, pickVoice, createCodriver } from "../audio/codriver.mjs";
+import { createScheduler, lookahead, leadExtra, speechRate, pickVoice, rankVoices, createCodriver } from "../audio/codriver.mjs";
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const note = (s, speak, o = {}) => ({ s, speak, text: speak, kind: "corner", length: 30, severity: 3, lead: (v) => s - clamp(v * 2.6, 40, 220), ...o });
@@ -150,4 +150,18 @@ test("codriver wrapper: speaks through the synth, never overlaps, and falls back
   cd2.reset();
   cd2.update(stage, 260, 30, 0.016);
   assert.equal(beeps.length, 1);
+});
+
+test("rankVoices: NZ before AU before GB, natural over robotic, novelty and non-English dropped", () => {
+  const v = [
+    { name: "Albert", lang: "en-US", localService: true }, { name: "eSpeak English", lang: "en-GB" },
+    { name: "Microsoft Libby Online (Natural)", lang: "en-GB" }, { name: "Microsoft Natasha Online (Natural)", lang: "en-AU" },
+    { name: "Fred", lang: "en-NZ" }, { name: "Google UK English Female", lang: "en-GB" }, { name: "Amelie", lang: "fr-CA" },
+  ];
+  const names = rankVoices(v).map((x) => x.name);
+  assert.equal(names[0], "Microsoft Natasha Online (Natural)");
+  assert.ok(names.indexOf("Microsoft Libby Online (Natural)") < names.indexOf("Google UK English Female"));
+  assert.ok(names.indexOf("Google UK English Female") < names.indexOf("eSpeak English"));
+  assert.ok(!names.includes("Amelie"));
+  assert.deepEqual(createCodriver({ synth: null }).listVoices(), []);
 });

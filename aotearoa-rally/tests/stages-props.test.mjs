@@ -8,12 +8,19 @@ import { makeRng } from "../core/rng.mjs";
 import { SURFACE } from "../core/surfaces.mjs";
 
 const BREAK = process.env.STAGES_BREAK || "";
+/** CPU milliseconds (user + system) spent in fn. Wall time reads several times high when the box is busy; CPU time does not. */
+function cpuMs(fn) {
+  const c0 = process.cpuUsage();
+  const value = fn();
+  const c = process.cpuUsage(c0);
+  return { ms: (c.user + c.system) / 1000, value };
+}
 const times = {};
 const stages = {};
 for (const id of STAGE_IDS) {
-  const t0 = performance.now();
-  stages[id] = buildStage(id);
-  times[id] = performance.now() - t0;
+  const r = cpuMs(() => buildStage(id));
+  stages[id] = r.value;
+  times[id] = r.ms;
 }
 if (BREAK === "prop-corridor") { const s = stages.otago; s.props.push({ ...s.props.find((p) => p.kind === "tussock"), x: s.px[400], z: s.pz[400] }); }
 if (BREAK === "kind") stages.waitomo.props[3].kind = "dragon";
@@ -132,12 +139,10 @@ for (const id of STAGE_IDS) {
     assert.equal(a.heightAt(a.px[900] + 40, a.pz[900]), c.heightAt(a.px[900] + 40, a.pz[900]));
   });
 
-  test(`${id}: build time under 1500 ms`, () => {
-    const t0 = performance.now();
-    buildStage(id);
-    const dt = performance.now() - t0;
-    console.log(`# ${id}: build ${dt.toFixed(0)} ms (first ${times[id].toFixed(0)} ms), ${stages[id].props.length} props, ${stages[id].obstacleCount} colliders`);
-    assert.ok(dt < 1500 && times[id] < 1500, `build ${dt} / ${times[id]} ms`);
+  test(`${id}: build time under 1500 ms of CPU`, () => {
+    const dt = cpuMs(() => buildStage(id)).ms;
+    console.log(`# ${id}: build ${dt.toFixed(0)} ms cpu (first ${times[id].toFixed(0)} ms), ${stages[id].props.length} props, ${stages[id].obstacleCount} colliders`);
+    assert.ok(dt < 1500 && times[id] < 1500, `build ${dt} / ${times[id]} ms cpu`);
   });
 }
 

@@ -93,3 +93,23 @@ test("camera placement is a no-op in open flat ground", () => {
   const arm = chaseArm(0, false);
   assert.ok(Math.abs(cam.z - arm.dist) < 1e-9 && Math.abs(cam.y - (0.9 + arm.height)) < 1e-9);
 });
+import { enforceMinChaseDistance } from "../render/camera.mjs";
+
+test("enforceMinChaseDistance: a lens 1 m from the car is pushed out to the minimum; a far lens is untouched; on-top falls back to the heading", () => {
+  const a = enforceMinChaseDistance({ x: 1, y: 2, z: 0 }, 0, 0, 5.4, 0, -1);
+  assert.ok(Math.abs(Math.hypot(a.x, a.z) - 4.86) < 1e-6 && a.x > 0 && a.z === 0);
+  const b = enforceMinChaseDistance({ x: 0, y: 2, z: 9 }, 0, 0, 5.4, 0, -1);
+  assert.equal(b.z, 9);
+  const c = enforceMinChaseDistance({ x: 0, y: 2, z: 0 }, 0, 0, 5.4, 0, -1);
+  assert.ok(c.z > 4 && c.x === 0);
+});
+import { portraitK } from "../render/camera.mjs";
+
+test("portrait framing: landscape and desktop unchanged, phones pull back and rise (aspect 0.46, 0.75, 1.78, 2.16)", () => {
+  const base = chaseArm(0, false);
+  for (const a of [1.78, 2.16, 1.0]) { const r = chaseArm(0, false, a); assert.equal(r.dist, base.dist); assert.equal(r.height, base.height); }
+  const a75 = chaseArm(0, false, 0.75), a46 = chaseArm(0, false, 0.46);
+  assert.ok(a75.dist > base.dist && a75.height > base.height);
+  assert.ok(a46.dist > a75.dist && a46.height > a75.height);
+  assert.equal(portraitK(0.46), 1); assert.equal(portraitK(2.16), 0); assert.equal(portraitK(NaN), 0);
+});

@@ -6,7 +6,7 @@ import { curve, dimsFor, eyePoints, inArch } from "../render/cars/profiles.mjs";
 import { CARS, CAR_IDS } from "../core/cars.mjs";
 
 test("camera modes are the contract set", () => {
-  assert.deepEqual(CAMERA_MODES, ["chase", "far", "bumper", "bonnet", "cinematic", "replay"]);
+  assert.deepEqual(CAMERA_MODES, ["chase", "far", "bumper", "bonnet", "cockpit", "cinematic", "replay"]);
 });
 
 test("springStep converges on the target without overshoot when critically damped", () => {

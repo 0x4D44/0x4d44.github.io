@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openGame, findChrome } from "./harness.mjs";
 import { leakProblems } from "./leak-trend.mjs";
+import { walkLayout } from "./layout-walk.mjs";
 
 const SHOT_DIR = process.env.SHOT_DIR || (await mkdtemp(join(tmpdir(), "ar-shots-")));
 const chrome = findChrome();
@@ -193,6 +194,17 @@ test("phone: Waitomo at 390x844 has no sideways scroll, HUD and touch controls s
     assert.equal(await g.evalAsync("!!document.querySelector('.touch-controls') && !document.querySelector('.touch-controls').hidden"), true, "touch controls visible");
     assert.deepEqual((await g.eval(UNDER_PILL)).hits, [], "controls under the Almanac pill during play");
     await g.screenshot(join(SHOT_DIR, "stage-390.png"));
+    // portrait touch layout: every control in a bottom corner, nothing in the middle third; steer/gas/brake in the bottom 22 %
+    const tc = await g.eval(`(() => { const W = innerWidth, H = innerHeight; const out = [];
+      for (const el of document.querySelectorAll(".touch-controls button, .touch-controls .tc-steer")) { const r = el.getBoundingClientRect(); if (r.width <= 0) continue;
+        out.push({ n: el.getAttribute("aria-label"), l: r.left, r: r.right, t: r.top, b: r.bottom, op: (() => { let o = 1; for (let e = el; e && !e.classList.contains("touch-controls"); e = e.parentElement) o *= +getComputedStyle(e).opacity; return o * +getComputedStyle(document.querySelector(".touch-controls")).opacity; })() }); } return { W, H, out }; })()`);
+    assert.ok(tc.out.length >= 6, "touch controls present");
+    for (const c of tc.out) {
+      assert.ok(c.r <= tc.W / 3 + 1 || c.l >= (2 * tc.W) / 3 - 1, `touch control ${c.n} sits in the middle third [${Math.round(c.l)}..${Math.round(c.r)}]`);
+      assert.ok(c.op <= 0.7, `touch control ${c.n} is too opaque (${c.op})`);
+      if (["Steer", "Throttle", "Brake"].includes(c.n)) assert.ok(c.t >= tc.H * 0.78 - 1, `${c.n} reaches above the bottom 22 % (top ${Math.round(c.t)} of ${tc.H})`);
+      assert.ok(c.t >= tc.H * 0.7, `touch control ${c.n} is higher than 30 % of the screen`);
+    }
     await g.setViewport(844, 390, 2, true);
     await g.evalAsync("window.__AR__.renderNow(); 1");
     assert.ok((await g.overflowX()) <= 1, "landscape overflow");
@@ -428,3 +440,142 @@ for (const quality of ["medium", "high"]) {
     } finally { await g.close(); }
   });
 }
+
+test("a hostile save (__proto__, constructor, prototype keys) cannot pollute Object.prototype; the game still starts a stage", opts, async () => {
+  const g = await openGame({ width: 640, height: 360, query: "menu=1&quality=low&mute=1" });
+  try {
+    await g.waitForReady();
+    const evil = '{"v":1,"profile":{"best":{"__proto__":{"polluted":123},"constructor":{"prototype":9},"waitomo":{"__proto__":5,"huia":88.5}},"splits":{"__proto__":{"polluted":[1]}},"options":{"__proto__":{"polluted":1},"units":"mph"},"stats":{"__proto__":{"polluted":1}}},"championship":null}';
+    await g.evalAsync(`localStorage.setItem(${JSON.stringify(SAVE_KEY)}, ${JSON.stringify(evil)}); localStorage.setItem("aotearoa-rally.ghost.v1.__proto__.constructor", '{"__proto__":{"polluted":1},"n":1,"d":[0,0,0,0,0,0]}'); 1`);
+    await g.goto("menu=1&quality=low&mute=1");
+    await g.waitForReady(); await on(g, "menu");
+    assert.equal(await g.evalAsync("({}).polluted === undefined && Object.prototype.polluted === undefined"), true, "Object.prototype is clean");
+    assert.equal(await g.evalAsync("window.__AR__.career().profile.best.waitomo.huia"), 88.5, "the valid part of the save loaded");
+    await g.evalAsync("window.__AR__.startStage({ stageId: 'waitomo', carId: 'huia', quality: 'low' })");
+    assert.equal(await g.evalAsync("window.__AR__.state().screen"), "stage");
+    assert.equal(await g.evalAsync("({}).polluted === undefined"), true);
+    await checkNoErrors(g, "hostile save proto keys");
+    await g.evalAsync("window.__AR__.eraseSave(); 1");
+  } finally { await g.close(); }
+});
+
+test("bad URL parameters fall back to the menu with a console warning, never a blank screen", opts, async () => {
+  const g = await openGame({ width: 640, height: 360, query: "nomenu=1&stage=nope&car=ghost&weather=hail&quality=ultra9&mute=1" });
+  try {
+    await g.waitForReady();
+    await on(g, "menu");
+    const warns = g.logs().filter((l) => l.startsWith("warning:") && l.includes("ignoring ?"));
+    for (const k of ["stage=nope", "car=ghost", "weather=hail", "quality=ultra9"]) assert.ok(warns.some((w) => w.includes(k)), `no warning for ${k}`);
+    assert.ok(await g.evalAsync("window.__AR__.buttons().length > 3"), "the menu has buttons");
+    await checkNoErrors(g, "bad params");
+  } finally { await g.close(); }
+  const g2 = await openGame({ width: 640, height: 360, query: "nomenu=1&stage=waitomo&car=ghost&weather=hail&quality=low&mute=1" });
+  try {
+    await g2.waitForReady();
+    assert.equal(await g2.evalAsync("window.__AR__.state().stageId"), "waitomo", "a valid stage still starts with the other values dropped");
+    assert.equal(await g2.evalAsync("window.__AR__.state().screen"), "stage");
+    await checkNoErrors(g2, "bad car and weather");
+  } finally { await g2.close(); }
+});
+
+test("the loading overlay is compositor-driven (transform/opacity only) and rotates its tips in CSS", opts, async () => {
+  const g = await openGame({ width: 640, height: 360, query: "menu=1&quality=low&mute=1" });
+  try {
+    await g.waitForReady();
+    const r = await g.eval(`(() => { const cs = (s) => getComputedStyle(document.querySelector(s)); const spans = [...document.querySelectorAll("#load-tip span")];
+      return { fillTransition: cs("#load-fill").transitionProperty, fillWill: cs("#load-fill").willChange, fillWidthAnimated: cs("#load-fill").transitionProperty.includes("width"),
+        spin: cs(".koru-mark").animationName, spinWill: cs(".koru-mark").willChange, sweep: getComputedStyle(document.querySelector(".load-bar"), "::after").animationName,
+        tips: spans.length, tipAnim: spans.map((s) => getComputedStyle(s).animationName), tipProps: getComputedStyle(spans[0]).willChange }; })()`);
+    assert.equal(r.fillTransition, "transform"); assert.equal(r.fillWill, "transform"); assert.equal(r.fillWidthAnimated, false);
+    assert.equal(r.spin, "spin"); assert.equal(r.spinWill, "transform"); assert.equal(r.sweep, "load-sweep");
+    assert.ok(r.tips >= 6 && r.tipAnim.every((a) => a === "tip-cycle"), "every tip is a CSS-animated span");
+    assert.equal(r.tipProps, "opacity");
+  } finally { await g.close(); }
+});
+
+test("HUD: a three-digit speed sits inside the dial numerals and the RIVAL label has a dark pill, at 1280x720 and 1920x1080", opts, async () => {
+  const g = await openGame({ width: 1280, height: 720, query: "nomenu=1&stage=waitomo&quality=low&mute=1" });
+  try {
+    await g.waitForReady();
+    for (const [w, h] of [[1280, 720], [1920, 1080]]) {
+      await g.setViewport(w, h, 1, false);
+      await g.evalAsync("window.__AR__.teleport(1500, 0, 150); window.__AR__.stepSim(36); window.__AR__.renderNow(); 1");
+      await g.sleep(200);
+      const r = await g.eval(`(() => { const gg = document.querySelector(".gauge").getBoundingClientRect(); const sp = document.querySelector(".gauge .speed");
+        const range = document.createRange(); range.selectNodeContents(sp); const t = range.getBoundingClientRect();
+        const lbl = document.querySelector(".h-delta > span"); const bg = getComputedStyle(lbl).backgroundColor.match(/[\\d.]+/g).map(Number);
+        return { text: sp.textContent, gw: gg.width, cx: gg.left + gg.width / 2, tl: t.left, tr: t.right, w3: sp.classList.contains("w3"), alpha: bg.length > 3 ? bg[3] : 1, lum: bg[0] + bg[1] + bg[2] }; })()`);
+      assert.ok(+r.text >= 100, `speed ${r.text} should be three digits`);
+      assert.equal(r.w3, true, "three-digit class");
+      assert.ok(r.tr - r.tl <= r.gw * 0.5, `${w}: readout ${Math.round(r.tr - r.tl)}px wide in a ${Math.round(r.gw)}px dial`);
+      assert.ok(r.tl >= r.cx - r.gw * 0.28 && r.tr <= r.cx + r.gw * 0.28, `${w}: readout leaves the numerals' inner radius`);
+      assert.ok(r.alpha >= 0.6 && r.lum < 60, `${w}: RIVAL pill is not dark enough (alpha ${r.alpha}, rgb sum ${r.lum})`);
+      await g.screenshot(join(SHOT_DIR, `hud-150kmh-${w}.png`));
+    }
+    await checkNoErrors(g, "hud");
+  } finally { await g.close(); }
+});
+
+test("layout: every primary control is inside the viewport and no two controls overlap, on every screen at 844x390, 390x844 and 1280x720", opts, async () => {
+  const res = await walkLayout(SHOT_DIR);
+  const bad = Object.entries(res).filter(([, v]) => v.problems.length).map(([k, v]) => k + ": " + v.problems.join("; "));
+  assert.deepEqual(bad, []);
+  assert.ok(Object.keys(res).length >= 30, "all screens were probed");
+});
+
+test("the service area washes the car (setDirt(0)) when you leave it", opts, async () => {
+  const g = await openGame({ width: 1280, height: 720, query: "menu=1&quality=low&mute=1" });
+  try {
+    await g.waitForReady();
+    await startChampionship(g);
+    await click(g, "Start stage"); await inStage(g);
+    await g.evalAsync("window.__AR__.stepSim(120 * 4); window.__AR__.finishRun(); window.__AR__.showResults(); 1");
+    await on(g, "results");
+    await click(g, "Standings"); await on(g, "standings");
+    await click(g, "Service area"); await on(g, "service");
+    await g.evalAsync("(() => { const c = window.__AR__._G.carVis; c.__dirt = []; const o = c.setDirt.bind(c); c.setDirt = (v) => { c.__dirt.push(v); return o(v); }; return 1; })()");
+    await click(g, "Go to the start line"); await on(g, "briefing");
+    assert.ok((await g.evalAsync("window.__AR__._G.carVis.__dirt")).includes(0), "service calls setDirt(0)");
+    await checkNoErrors(g, "service dirt");
+    await g.evalAsync("window.__AR__.eraseSave(); 1");
+  } finally { await g.close(); }
+});
+
+test("Options > Audio > Co-driver voice: Auto + listed voices, late voiceschanged, persisted, a vanished or hostile saved voice shows Auto, fits 844x390 and 390x844, nothing is spoken", opts, async () => {
+  const STUB = `(() => { window.__said = 0; window.__voices = []; const s = window.speechSynthesis;
+    s.getVoices = () => window.__voices; s.speak = () => { window.__said++; }; s.cancel = () => {}; return 1; })()`;
+  const SET = (v) => `window.__voices = ${JSON.stringify(v)}; speechSynthesis.dispatchEvent(new Event("voiceschanged")); 1`;
+  const OPTS = `[...document.querySelector('select[aria-label="Co-driver voice"]').options].map((o) => o.value + "|" + o.textContent)`;
+  const g = await openGame({ width: 844, height: 390, mobile: true, query: "menu=1&quality=low&mute=1" });
+  try {
+    await g.waitForReady(); await on(g, "menu");
+    await g.eval(STUB);
+    await click(g, "Options"); await on(g, "options"); await click(g, "audio");
+    assert.deepEqual(await g.eval(OPTS), ["|Auto (best available)"], "no voices yet: only Auto");
+    await g.eval(SET([{ name: "Libby", lang: "en-GB" }, { name: "Fenella", lang: "en-NZ" }, { name: "Hans", lang: "de-DE" }]));
+    const list = await g.eval(OPTS);
+    assert.equal(list[0], "|Auto (best available)"); assert.ok(list.some((x) => x.startsWith("Libby|")) && list.some((x) => x.startsWith("Fenella|")), "late voices arrive");
+    assert.ok(!list.some((x) => x.startsWith("Hans|")), "English voices only");
+    for (const [w, h] of [[844, 390], [390, 844]]) {
+      await g.setViewport(w, h, 1, true); await g.sleep(250);
+      const r = await g.eval(`(() => { const e = document.querySelector('select[aria-label="Co-driver voice"]'); e.scrollIntoView({ block: "center" }); const b = e.getBoundingClientRect();
+        return { l: b.left, r: b.right, t: b.top, b: b.bottom, w: innerWidth, h: innerHeight, sx: document.documentElement.scrollWidth - document.documentElement.clientWidth }; })()`);
+      assert.ok(r.l >= 0 && r.r <= r.w + 0.5 && r.t >= 0 && r.b <= r.h + 0.5 && r.r - r.l > 40, `voice row inside ${w}x${h}: ${JSON.stringify(r)}`);
+      assert.ok(r.sx <= 1, "no sideways scroll");
+    }
+    await g.eval(`(() => { const e = document.querySelector('select[aria-label="Co-driver voice"]'); e.value = "Fenella"; e.dispatchEvent(new Event("change")); return 1; })()`);
+    assert.equal(await g.evalAsync("window.__AR__.career().profile.options.voiceName"), "Fenella", "choice stored");
+    assert.equal(JSON.parse(await g.evalAsync(`localStorage.getItem(${JSON.stringify(SAVE_KEY)})`)).profile.options.voiceName, "Fenella", "choice persisted");
+    // a saved voice that no longer exists, and hostile values, show Auto and raise nothing
+    for (const bad of ["Gone Voice", 12, { a: 1 }, "__proto__", "x".repeat(5000)]) {
+      await g.evalAsync(`(() => { const k = ${JSON.stringify(SAVE_KEY)}; const s = JSON.parse(localStorage.getItem(k)); s.profile.options.voiceName = ${JSON.stringify(bad)}; localStorage.setItem(k, JSON.stringify(s)); return 1; })()`);
+      await g.goto("menu=1&quality=low&mute=1"); await g.waitForReady(); await on(g, "menu");
+      await g.eval(STUB); await g.eval(`window.__voices = [{ name: "Libby", lang: "en-GB" }]; 1`);
+      await click(g, "Options"); await on(g, "options"); await click(g, "audio");
+      assert.equal(await g.eval(`document.querySelector('select[aria-label="Co-driver voice"]').value`), "", `Auto shown for ${String(typeof bad === "string" ? bad.slice(0, 12) : JSON.stringify(bad))}`);
+      await checkNoErrors(g, "hostile voice " + typeof bad);
+    }
+    assert.equal(await g.eval("window.__said"), 0, "nothing was spoken");
+    await g.evalAsync("window.__AR__.eraseSave(); 1");
+  } finally { await g.close(); }
+});

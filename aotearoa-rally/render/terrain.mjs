@@ -154,17 +154,18 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
     return idxCache[lod];
   };
 
-  function buildGeometry(cx, cz, lod) {
+  /** Incremental chunk build: yields after each row so update() can spend a small time budget per frame. */
+  function* buildGen(cx, cz, lod) {
     const n = LOD_QUADS[lod], w = n + 3, h = CHUNK_SIZE / n, x0 = cx * CHUNK_SIZE, z0 = cz * CHUNK_SIZE;
     const H = new Float32Array(w * w);
     const hf = stage.heightAt;
-    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) H[j * w + i] = hf(x0 + (i - 1) * h, z0 + (j - 1) * h);
+    for (let j = 0; j < w; j++) { for (let i = 0; i < w; i++) H[j * w + i] = hf(x0 + (i - 1) * h, z0 + (j - 1) * h); yield; }
     const pos = new Float32Array(w * w * 3), nor = new Float32Array(w * w * 3), road = new Float32Array(w * w);
     const skirt = skirtDepth(lod);
     let minY = 1e9, maxY = -1e9;
     const wid = stage.width, ds = stage.ds, N = stage.N;
     const canProject = typeof stage.project === "function";
-    hint.s = -1;
+    let hintS = -1;
     for (let j = 0; j < w; j++) {
       const sj = Math.min(Math.max(j - 1, 0), n), isSkirtJ = j === 0 || j === w - 1;
       for (let i = 0; i < w; i++) {
@@ -182,12 +183,13 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
         const il = 1 / Math.hypot(nx, ny, nz);
         nor[v * 3] = nx * il; nor[v * 3 + 1] = ny * il; nor[v * 3 + 2] = nz * il;
         if (lod <= 2 && canProject && !isSkirt) {
-          const r = stage.project(pos[v * 3], pos[v * 3 + 2], hint.s >= 0 ? hint.s : undefined, proj);
-          hint.s = r.s;
+          const r = stage.project(pos[v * 3], pos[v * 3 + 2], hintS >= 0 ? hintS : undefined, proj);
+          hintS = r.s;
           const wi = wid[Math.min(N - 1, Math.max(0, Math.round(r.s / ds)))] * 0.5;
           road[v] = Math.max(0, Math.min(40, r.dist - wi));
         } else road[v] = lod <= 2 && canProject ? 0 : 40;
       }
+      yield;
     }
     // skirt vertices inherit the road value of their border neighbour
     for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) {
@@ -207,30 +209,55 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
     return g;
   }
 
-  function ensureChunk(cx, cz, lod, dist) {
+  /** Attach a finished geometry to its chunk (new mesh, or swap the LOD of the existing one). */
+  function commit(cx, cz, lod, dist, g) {
     const key = chunkKey(cx, cz);
     let c = chunks.get(key);
-    if (!c) {
-      c = { cx, cz, key, lod: -1, mesh: null };
-      chunks.set(key, c);
+    if (!c) { c = { cx, cz, key, lod: -1, mesh: null }; chunks.set(key, c); }
+    if (!c.mesh) {
+      c.mesh = new THREE.Mesh(g, mat);
+      c.mesh.receiveShadow = true;
+      c.mesh.matrixAutoUpdate = false;
+      c.mesh.frustumCulled = true;
+      group.add(c.mesh);
+    } else {
+      c.mesh.geometry.dispose();
+      c.mesh.geometry = g;
     }
-    if (c.lod !== lod) {
-      const g = buildGeometry(cx, cz, lod);
-      if (!c.mesh) {
-        c.mesh = new THREE.Mesh(g, mat);
-        c.mesh.receiveShadow = true;
-        c.mesh.matrixAutoUpdate = false;
-        c.mesh.frustumCulled = true;
-        group.add(c.mesh);
-      } else {
-        c.mesh.geometry.dispose();
-        c.mesh.geometry = g;
-      }
-      c.lod = lod;
-    }
+    c.lod = lod;
     c.mesh.castShadow = lod === 0 && dist < shadowRange + 90;
     return c;
   }
+
+  function ensureChunk(cx, cz, lod, dist) { // synchronous (warm-up and teleports)
+    const c0 = chunks.get(chunkKey(cx, cz));
+    if (c0 && c0.lod === lod) { c0.mesh.castShadow = lod === 0 && dist < shadowRange + 90; return c0; }
+    const gen = buildGen(cx, cz, lod);
+    let r; while (!(r = gen.next()).done);
+    const g = r.value;
+    uploadNow(g);
+    return commit(cx, cz, lod, dist, g);
+  }
+
+  // GPU upload off the hot path: a finished geometry is drawn once into a 1x1 target (one per frame) so its buffers exist
+  // before the first visible frame needs them.
+  let gl = null, upScene = null, upCam = null, upRT = null, upMesh = null;
+  function uploadNow(g) {
+    if (!gl) return;
+    if (!upScene) {
+      upScene = new THREE.Scene(); upCam = new THREE.PerspectiveCamera(); upRT = new THREE.WebGLRenderTarget(1, 1, { depthBuffer: false });
+      upMesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial()); upMesh.frustumCulled = false; upScene.add(upMesh);
+    }
+    upMesh.geometry = g;
+    const prev = gl.getRenderTarget();
+    gl.setRenderTarget(upRT);
+    try { gl.render(upScene, upCam); } catch { /* ignore */ }
+    gl.setRenderTarget(prev);
+  }
+
+  // time-sliced build queue
+  const jobs = { cur: null, todo: [], ready: [], pos: { x: 1e9, z: 1e9 }, frames: 99, stamp: 0 };
+  const BUDGET_MS = 3;
 
   const wantList = [];
   const api = {
@@ -277,6 +304,31 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
         }
       }
     },
+    /** Build every chunk that is missing within `radius` of (px,pz), nearest first, in one go. Used after a jump of the camera
+     *  (teleport, respawn, restart) so no terrain is absent and the props placed on it never hover over the far ground disc. */
+    fillSync(px, pz, radius = viewDist + CHUNK_SIZE) {
+      let n = 0;
+      const list = api.wanted(px, pz, radius, getCfg());
+      for (let k = 0; k < list.length; k++) {
+        const w = list[k];
+        if (chunks.has(chunkKey(w.cx, w.cz))) continue;
+        ensureChunk(w.cx, w.cz, w.lod, w.dist); n++;
+      }
+      jobs.cur = null; jobs.todo.length = 0; jobs.pos.x = px; jobs.pos.z = pz; jobs.frames = 99;
+      return n;
+    },
+    /** Height of the terrain as it is drawn right now (the LOD mesh of the chunk under x,z), or null where no chunk exists. */
+    renderedHeightAt(x, z) {
+      const cx = Math.floor(x / CHUNK_SIZE), cz = Math.floor(z / CHUNK_SIZE);
+      const c = chunks.get(chunkKey(cx, cz));
+      if (!c || !c.mesh) return null;
+      const n = LOD_QUADS[c.lod], w = n + 3, h = CHUNK_SIZE / n;
+      const fx = Math.min(n - 1e-6, Math.max(0, (x - cx * CHUNK_SIZE) / h)), fz = Math.min(n - 1e-6, Math.max(0, (z - cz * CHUNK_SIZE) / h));
+      const i = Math.floor(fx), j = Math.floor(fz), tx = fx - i, tz = fz - j;
+      const P = c.mesh.geometry.attributes.position.array;
+      const y = (a, b) => P[((b + 1) * w + a + 1) * 3 + 1];
+      return (y(i, j) * (1 - tx) + y(i + 1, j) * tx) * (1 - tz) + (y(i, j + 1) * (1 - tx) + y(i + 1, j + 1) * tx) * tz;
+    },
     /** Chunks within `radius` of (px,pz), nearest first, with their wanted LOD. */
     wanted(px, pz, radius, cfg = getCfg()) {
       wantList.length = 0;
@@ -295,25 +347,55 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
       wantList.sort((a, b) => a.dist - b.dist);
       return wantList;
     },
+    /** Give the terrain the renderer so finished chunks can be uploaded to the GPU one per frame, off the hot path. */
+    setRenderer(r) { gl = r; },
     update(camPos, carPos) {
       if (!stage) return 0;
       const cfg = getCfg();
       const px = camPos.x, pz = camPos.z;
-      const list = api.wanted(px, pz, viewDist, cfg);
-      let built = 0;
       const t0 = performance.now();
-      for (let k = 0; k < list.length; k++) {
-        const w = list[k];
-        const c = chunks.get(chunkKey(w.cx, w.cz));
-        if (c && c.lod === w.lod) { c.mesh.castShadow = w.lod === 0 && w.dist < shadowRange + 90; continue; }
-        const urgent = !c && w.dist < 450; // a hole near the camera: never wait
-        if (!urgent && (built >= cfg.chunkBuildPerFrame || (built > 0 && performance.now() - t0 > 4))) continue;
-        if (urgent && built >= 8) continue;
-        ensureChunk(w.cx, w.cz, w.lod, w.dist);
-        built++;
+      // 1. refresh the work list only when the camera has moved (or every ~20 frames): the scan covers a whole chunk field
+      const mdx = px - jobs.pos.x, mdz = pz - jobs.pos.z;
+      // a jump (teleport, respawn, restart): fill every hole at once rather than trickling in over seconds
+      if (mdx * mdx + mdz * mdz > 250 * 250) api.fillSync(px, pz); // (also the first update after a stage load)
+      else if (mdx * mdx + mdz * mdz > 144 || jobs.frames++ > 20 || jobs.stamp !== cfg.viewDist) {
+        jobs.pos.x = px; jobs.pos.z = pz; jobs.frames = 0; jobs.stamp = cfg.viewDist;
+        const list = api.wanted(px, pz, viewDist + CHUNK_SIZE, cfg); // one chunk of look-ahead beyond the view distance
+        jobs.todo.length = 0;
+        for (let k = 0; k < list.length; k++) {
+          const w = list[k];
+          const c = chunks.get(chunkKey(w.cx, w.cz));
+          if (c && c.lod === w.lod) { c.mesh.castShadow = w.lod === 0 && w.dist < shadowRange + 90; continue; }
+          jobs.todo.push({ cx: w.cx, cz: w.cz, lod: w.lod, dist: w.dist });
+        }
+        if (jobs.cur && !jobs.todo.some((j) => j.cx === jobs.cur.cx && j.cz === jobs.cur.cz && j.lod === jobs.cur.lod)) jobs.cur = null;
+      }
+      // 2. build: a few ms of generator steps per frame (more only for a hole right next to the camera)
+      let built = 0;
+      for (;;) {
+        if (!jobs.cur) {
+          const j = jobs.todo.shift();
+          if (!j) break;
+          const c = chunks.get(chunkKey(j.cx, j.cz));
+          if (c && c.lod === j.lod) continue;
+          jobs.cur = { ...j, gen: buildGen(j.cx, j.cz, j.lod), hole: !c && j.dist < 450 };
+        }
+        const budget = jobs.cur.hole ? 14 : BUDGET_MS;
+        let done = false;
+        while (performance.now() - t0 < budget) { const r = jobs.cur.gen.next(); if (r.done) { done = true; jobs.cur.geom = r.value; break; } }
+        if (!done) break;
+        if (gl) jobs.ready.push(jobs.cur); else { commit(jobs.cur.cx, jobs.cur.cz, jobs.cur.lod, jobs.cur.dist, jobs.cur.geom); }
+        jobs.cur = null; built++;
+        if (performance.now() - t0 >= BUDGET_MS) break;
+      }
+      // 3. upload one finished chunk per frame, then show it
+      if (jobs.ready.length) {
+        const j = jobs.ready.shift();
+        uploadNow(j.geom);
+        commit(j.cx, j.cz, j.lod, j.dist, j.geom);
       }
       // drop chunks well beyond the view distance
-      const drop = viewDist * 1.2 + CHUNK_SIZE;
+      const drop = viewDist * 1.2 + CHUNK_SIZE * 2;
       for (const [key, c] of chunks) {
         if (chunkDistance(px, pz, c.cx, c.cz) > drop) {
           group.remove(c.mesh);
@@ -329,6 +411,7 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
       for (const c of chunks.values()) if (c.mesh) { group.remove(c.mesh); c.mesh.geometry.dispose(); }
       chunks.clear();
       if (disc) { group.remove(disc); disc.geometry.dispose(); disc.material.dispose(); disc = null; }
+      jobs.cur = null; jobs.todo.length = 0; jobs.ready.length = 0; jobs.pos.x = 1e9;
       mat?.dispose(); mat = null; stage = null;
     },
     dispose() { api.disposeStage(); },

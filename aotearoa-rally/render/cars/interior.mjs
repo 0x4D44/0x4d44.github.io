@@ -1,26 +1,44 @@
 // Cockpit: dash, seats, harnesses, roll cage, crew (suits + helmets), steering wheel, instrument cluster.
 import { Geo } from "./geo.mjs";
+import { cabinRing } from "./body.mjs";
+import { cockpitEyeY } from "./profiles.mjs";
 
 export function buildInterior(THREE, spec, d, livery) {
   const I = new Geo(THREE), H = new Geo(THREE), H2 = new Geo(THREE), SW = new Geo(THREE), CREW = new Geo(THREE);
   const cab = d.cabin;
   const zD = d.zAt(cab.t0) + 0.06; // dash front
   const hwC = d.hw * cab.w * 0.92;
-  const ZS = d.seatZ;
+  // seats: move forward / shorten the back until the head rests sit under the (sloping) roof and inside the side walls
+  let ZS = d.seatZ;
+  const hrRoom = (zs) => cabinRing(d, d.tAt(zs + 0.47)).yTop - 0.06 - (d.sill + 1.04);
+  for (let k = 0; k < 8 && hrRoom(ZS) < 0; k++) ZS -= 0.02;
+  const hrDrop = Math.max(0, -hrRoom(ZS)) + 0.0;
+  const wallX = (t, y) => { const { ring } = cabinRing(d, t); for (let k = 0; k < ring.length / 2; k++) { const a = ring[k], b = ring[k + 1]; if (a[1] <= y && b[1] >= y && b[1] > a[1]) return a[0] + (b[0] - a[0]) * ((y - a[1]) / (b[1] - a[1])); } return ring[0][0]; };
+  let seatW = 0.36;
+  while (seatW > 0.22 && seatW + 0.25 > wallX(d.tAt(ZS + 0.47), d.sill + 0.96 - hrDrop + 0.08) - 0.03) seatW -= 0.01;
   const topY = d.topC(cab.t0) - 0.05;
   const suit = livery.accent, suit2 = livery.body;
-  const DARK = 0x2a2c32, MID = 0x40434a, SEAT = 0x323a52, HARN = 0xc9231f, CAGE = 0xd4d6d2;
+  const DARK = 0x2a2c32, MID = 0x40434a, SEAT = 0x323a52, HARN = 0xc9231f, CAGE = 0x1c1d20;
 
   // ---- tub interior surfaces
   I.box(hwC * 1.9, 0.04, d.zAt(cab.t1) - zD + 0.2, 0, d.sill + 0.12, (zD + d.zAt(cab.t1)) / 2, 0x0e0e10); // floor
   I.box(0.28, 0.2, d.zAt(cab.t1 - 0.12) - zD, 0, d.sill + 0.25, (zD + d.zAt(cab.t1 - 0.12)) / 2, MID); // tunnel
   for (const sd of [-1, 1]) I.box(0.05, 0.38, d.zAt(cab.re) - zD + 0.1, sd * (hwC - 0.02), d.sill + 0.42, (zD + d.zAt(cab.re)) / 2, MID); // door cards
-  // dash
-  I.box(hwC * 1.9, 0.2, 0.42, 0, topY - 0.14, zD + 0.21, DARK);
-  I.box(hwC * 1.9, 0.05, 0.3, 0, topY - 0.015, zD + 0.12, 0x0b0b0c, 0.12);
-  I.box(0.46, 0.14, 0.3, 0.36, topY - 0.01, zD + 0.38, 0x0c0c0d, 0.0); // instrument hood
-  I.box(0.34, 0.22, 0.12, 0, topY - 0.22, zD + 0.46, 0x202226); // centre stack
-  I.box(0.22, 0.04, 0.02, 0, topY - 0.14, zD + 0.525, 0x3df0ff); // trip computer (bright)
+  // dash: a padded top that rolls from the scuttle to a soft lip (smooth-shaded extrusion), a raised instrument pod in front of the
+  // driver, a centre stack with a small amber read-out. Plastics pin their uv to one flat texel so the cabin weave never stripes them.
+  const wheelPos = { x: 0.36, y: cockpitEyeY(d) - 0.26, z: zD + 0.6 };
+  const gaugePos = { x: wheelPos.x, y: wheelPos.y + 0.1, z: wheelPos.z - 0.3, w: 0.34, h: 0.17, tilt: -0.28 };
+  I.fixUV = [0.002, 0.002];
+  const DASH = 0x1d1e22, TRIM = 0x2a2b30;
+  I.extrude([[zD, topY - 0.2], [zD + 0.5, topY - 0.2], [zD + 0.535, topY - 0.09], [zD + 0.47, topY - 0.025], [zD + 0.3, topY + 0.008], [zD + 0.08, topY + 0.006], [zD - 0.02, topY - 0.04]], -hwC * 0.95, hwC * 0.95, DASH);
+  // instrument pod: a hooded housing on the driver's side carrying the gauge face (drawn live in car.mjs)
+  const pz0 = gaugePos.z - 0.16, pz1 = gaugePos.z - 0.006, py1 = gaugePos.y + gaugePos.h / 2 + 0.035;
+  I.extrude([[pz0, topY - 0.05], [pz1, topY - 0.05], [pz1 + 0.01, gaugePos.y - gaugePos.h / 2 - 0.02], [pz1 - 0.02, py1], [pz0 + 0.04, py1 + 0.012], [pz0, py1 - 0.03]], gaugePos.x - gaugePos.w / 2 - 0.03, gaugePos.x + gaugePos.w / 2 + 0.03, 0x121316);
+  I.box(0.3, 0.2, 0.1, 0, topY - 0.2, zD + 0.47, TRIM); // centre stack
+  I.box(0.1, 0.026, 0.01, 0, topY - 0.13, zD + 0.526, 0x6a4a14); // amber read-out
+  for (let k = 0; k < 4; k++) I.cyl(0.014, 0.014, 0.012, -0.09 + k * 0.06, topY - 0.22, zD + 0.526, 0x0c0c0e, Math.PI / 2, 0, 0, 12); // knobs
+  I.box(0.46, 0.012, 0.24, 0.36, topY + 0.006, zD + 0.2, 0x08080a); // anti-glare mat
+  I.fixUV = null;
   I.box(0.1, 0.24, 0.08, 0, d.sill + 0.42, zD + 0.8, 0x101012); // gear lever base
   I.cyl(0.012, 0.012, 0.22, 0, d.sill + 0.5, zD + 0.83, 0xaaaaaa, -0.2, 0, 0, 8); // gear lever
   I.sphere(0.028, 0, d.sill + 0.61, zD + 0.86, 0x111111);
@@ -34,14 +52,14 @@ export function buildInterior(THREE, spec, d, livery) {
   // rear bulkhead and spare wheel
   const zB = d.zAt(cab.t1 - 0.03);
   I.box(hwC * 1.9, 0.4, 0.04, 0, d.sill + 0.4, zB - 0.02, 0x1a1a1d);
-  I.cyl(0.3, 0.3, 0.2, 0, d.sill + 0.3, zB + 0.2, 0x111113, Math.PI / 2, 0, 0, 20);
+  I.cyl(0.3, 0.3, 0.2, 0, d.sill + 0.3, d.S.kind === "hatch" ? zB - 0.38 : zB + 0.2, 0x111113, Math.PI / 2, 0, 0, 20); // spare (cargo area in the hatch)
   // ---- seats and harnesses
   for (const sd of [-1, 1]) {
-    const sx = sd * 0.36;
+    const sx = sd * seatW;
     I.box(0.46, 0.1, 0.44, sx, d.sill + 0.28, ZS + 0.18, SEAT, 0.0); // base
-    I.box(0.46, 0.62, 0.1, sx, d.sill + 0.58, ZS + 0.38, SEAT, -0.28); // back
-    for (const bx of [-1, 1]) I.box(0.05, 0.6, 0.15, sx + bx * 0.25, d.sill + 0.58, ZS + 0.33, 0x222428, -0.28);
-    I.box(0.4, 0.16, 0.1, sx, d.sill + 0.96, ZS + 0.47, SEAT, -0.28); // head rest
+    I.box(0.46, 0.62 - hrDrop, 0.1, sx, d.sill + 0.58 - hrDrop / 2, ZS + 0.38, SEAT, -0.28); // back
+    for (const bx of [-1, 1]) I.box(0.05, 0.6 - hrDrop, 0.15, sx + bx * 0.23, d.sill + 0.58 - hrDrop / 2, ZS + 0.33, 0x222428, -0.28);
+    I.box(0.4, 0.16, 0.1, sx, d.sill + 0.96 - hrDrop, ZS + 0.47, SEAT, -0.28); // head rest
     for (const hx of [-0.11, 0.11]) I.box(0.06, 0.62, 0.012, sx + hx, d.sill + 0.7, ZS + 0.285, HARN, -0.3 + 0); // shoulder belts
     I.box(0.4, 0.05, 0.012, sx, d.sill + 0.4, ZS + 0.12, HARN, 0.1);
   }
@@ -49,7 +67,28 @@ export function buildInterior(THREE, spec, d, livery) {
   const rY = d.roof - 0.04, bY = d.sill + 0.28;
   const zA = d.zAt(cab.t0 + 0.03), zRs = d.zAt(cab.rs), zMain = d.zAt(cab.re - 0.02), zRear = d.zAt(cab.t1 - 0.06);
   const w = hwC * 0.98;
-  const T = (pts, r = 0.0185) => I.tube(pts, r, CAGE, 6, false);
+  // keep every cage point inside the tumbled-home shell: below the roof crown and inboard of the side wall at that height
+  const fit = (p) => {
+    const { ring, yTop } = cabinRing(d, d.tAt(p[2]));
+    const y = Math.min(p[1], yTop - 0.03);
+    let sx = Infinity;
+    for (let k = 0; k < ring.length / 2; k++) {
+      const a = ring[k], b = ring[k + 1];
+      if (a[1] <= y && b[1] >= y && b[1] > a[1]) { sx = a[0] + (b[0] - a[0]) * ((y - a[1]) / (b[1] - a[1])); break; }
+    }
+    if (sx === Infinity) sx = ring[0][0];
+    return [Math.sign(p[0]) * Math.min(Math.abs(p[0]), Math.max(0.05, sx - 0.03)), y, p[2]];
+  };
+  const dense = (pts) => {
+    const out = [pts[0]];
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 0.08));
+      for (let j = 1; j <= n; j++) out.push([a[0] + ((b[0] - a[0]) * j) / n, a[1] + ((b[1] - a[1]) * j) / n, a[2] + ((b[2] - a[2]) * j) / n]);
+    }
+    return out;
+  };
+  // round matte tubes (<= 2 cm radius): 14 sides, smooth normals, one flat texel so the cabin weave cannot band them
+  const T = (pts, r = 0.0185) => { I.fixUV = [0.002, 0.002]; I.tube(dense(pts).map(fit), r, CAGE, 14, false); I.fixUV = null; };
   // main hoop
   T([[-w, bY, zMain], [-w, rY - 0.12, zMain], [-w * 0.93, rY, zMain], [w * 0.93, rY, zMain], [w, rY - 0.12, zMain], [w, bY, zMain]]);
   // front hoop (A pillars)
@@ -66,7 +105,7 @@ export function buildInterior(THREE, spec, d, livery) {
   T([[-w, rY - 0.12, zMain], [w, rY - 0.4, zMain]], 0.015);
 
   // ---- crew
-  const crew = [{ x: 0.36, driver: true }, { x: -0.36, driver: false }];
+  const crew = [{ x: seatW, driver: true }, { x: -seatW, driver: false }];
   const eyeY = d.eye.y;
   for (const c of crew) {
     const hx = c.x, hy = eyeY + 0.02, hz = ZS + 0.2;
@@ -80,10 +119,10 @@ export function buildInterior(THREE, spec, d, livery) {
     // arms
     for (const lx of [-1, 1]) {
       const sxp = hx + lx * 0.22;
-      if (c.driver) CREW.tube([[sxp, d.sill + 0.82, ZS + 0.2], [hx + lx * 0.34, d.sill + 0.74, ZS - 0.12], [hx + lx * 0.2, d.sill + 0.88, ZS - 0.42]], 0.03, suit, 10, true);
+      if (c.driver) CREW.tube([[sxp, d.sill + 0.82, ZS + 0.2], [hx + lx * 0.34, d.sill + 0.74, ZS - 0.12], [hx + lx * 0.15, wheelPos.y - 0.02, wheelPos.z + 0.04]], 0.03, suit, 10, true);
       else CREW.tube([[sxp, d.sill + 0.82, ZS + 0.2], [hx + lx * 0.2, d.sill + 0.7, ZS - 0.05], [hx + lx * 0.1, d.sill + 0.62, ZS - 0.22]], 0.034, suit, 8, true);
       // glove: flattened ellipsoid palm + four knuckle/finger bumps + a coloured cuff, so hands on the wheel do not read as balls
-      const gx = c.driver ? hx + lx * 0.2 : hx + lx * 0.1, gy = c.driver ? d.sill + 0.88 : d.sill + 0.62, gz = c.driver ? ZS - 0.44 : ZS - 0.24;
+      const gx = c.driver ? hx + lx * 0.15 : hx + lx * 0.1, gy = c.driver ? wheelPos.y - 0.02 : d.sill + 0.62, gz = c.driver ? wheelPos.z + 0.01 : ZS - 0.24;
       CREW.sphere(0.036, gx, gy, gz, 0x15161a, 1.15, 0.85, 1.3, 12);
       for (let f = 0; f < 4; f++) CREW.sphere(0.011, gx + (f - 1.5) * 0.017, gy + 0.004, gz - 0.044, 0x15161a, 1, 1.4, 1.3, 6);
       CREW.cyl(0.03, 0.028, 0.035, gx, gy + 0.002, gz + 0.05, suit, Math.PI / 2, 0, 0, 10);
@@ -97,45 +136,83 @@ export function buildInterior(THREE, spec, d, livery) {
   }
 
   // ---- steering wheel (own mesh so it can turn); built in a frame whose normal is +Z
+  // padded rim (round, 14 sides) with suede grips at 3 and 9 o'clock, three flat spokes (left, right, bottom: the top stays open so the
+  // gauge pod reads through it), a domed hub with a centre cap, and a red top marker
   const R = 0.14;
-  SW.add(new THREE.TorusGeometry(R, 0.0165, 8, 28), null, 0x1b1b1d);
-  SW.box(0.26, 0.03, 0.02, 0, 0, 0, 0x2a2b2f);
-  SW.box(0.03, 0.12, 0.02, 0, -0.07, 0, 0x2a2b2f);
-  SW.cyl(0.04, 0.045, 0.05, 0, 0, 0.0, 0x111113, Math.PI / 2, 0, 0, 12);
-  SW.box(0.025, 0.012, 0.014, 0, R, 0.0, 0xd01c18); // top marker
-  const wheelPos = { x: 0.36, y: d.sill + 0.9, z: zD + 0.5 };
+  SW.fixUV = [0.002, 0.002];
+  SW.add(new THREE.TorusGeometry(R, 0.0185, 14, 48), null, 0x151517);
+  for (const a of [0, Math.PI]) SW.add(new THREE.TorusGeometry(R, 0.0215, 14, 12, 1.0), SW.mat(0, 0, 0, 0, 0, a - 0.5), 0x2c2d31);
+  for (const sd of [-1, 1]) SW.box(R - 0.04, 0.026, 0.013, sd * (0.04 + (R - 0.04) / 2), -0.004, 0, 0x4a4d53);
+  SW.box(0.026, R - 0.04, 0.013, 0, -(0.04 + (R - 0.04) / 2), 0, 0x4a4d53);
+  SW.cyl(0.042, 0.048, 0.04, 0, 0, 0.004, 0x131315, Math.PI / 2, 0, 0, 28);
+  SW.cyl(0.03, 0.036, 0.012, 0, 0, 0.026, 0x75787e, Math.PI / 2, 0, 0, 28);
+  SW.box(0.022, 0.014, 0.012, 0, R, 0.0, 0xd01c18); // top marker
+  SW.fixUV = null;
   // steering column in interior
-  I.cyl(0.03, 0.03, 0.4, wheelPos.x, wheelPos.y - 0.12, wheelPos.z - 0.14, 0x111113, 1.1, 0, 0, 8);
+  I.fixUV = [0.002, 0.002];
+  I.cyl(0.03, 0.03, 0.4, wheelPos.x, wheelPos.y - 0.12, wheelPos.z - 0.14, 0x111113, 1.1, 0, 0, 14);
+  // interior mirror under the roof header, centred: housing, a dark glass face turned to the driver, and a short stalk
+  const mz = d.zAt(cab.rs) - 0.01, my = d.roof - 0.17;
+  I.cyl(0.007, 0.007, 0.08, 0, my + 0.07, mz - 0.01, 0x15161a, 0, 0, 0, 8);
+  I.box(0.22, 0.062, 0.03, 0, my, mz, 0x15161a);
+  I.box(0.2, 0.046, 0.004, 0, my, mz + 0.017, 0x56626e);
+  I.fixUV = null;
 
-  I.append(CREW);
-  return { interior: I.build(), helmets: H.build(), wheel: SW.build(), crew: CREW.build(), wheelPos, zD, topY };
+  return { interior: I.build(), helmets: H.build(), wheel: SW.build(), crew: CREW.build(), wheelPos, gaugePos, zD, topY };
 }
 
-/** Instrument cluster texture (tacho + speedo + shift lights), drawn once. */
-export function drawGauges(canvas, spec) {
-  canvas.width = 512; canvas.height = 256;
+/**
+ * Instrument cluster texture: tacho (x1000 rpm) and speedo (km/h) dials, a gear letter between them and a row of shift lights.
+ * `live` = { rpm, kmh, gear } moves the needles and lights; omitted, the needles rest at idle. The static face is drawn once per
+ * canvas and restored from a cached copy, so a live update is one putImageData plus two needles.
+ */
+const FACE = new WeakMap();
+export function drawGauges(canvas, spec, live = null) {
+  const W = 512, H = 256;
+  if (canvas.width !== W) canvas.width = W;
+  if (canvas.height !== H) canvas.height = H;
   const c = canvas.getContext("2d");
-  c.fillStyle = "#0a0b0d"; c.fillRect(0, 0, 512, 256);
-  const dial = (cx, cy, r, max, step, label, redFrom) => {
-    c.save(); c.translate(cx, cy);
-    c.beginPath(); c.arc(0, 0, r, 0, 7); c.fillStyle = "#111318"; c.fill(); c.lineWidth = 4; c.strokeStyle = "#666a72"; c.stroke();
-    c.font = "bold 16px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
-    for (let v = 0; v <= max; v += step) {
-      const a = Math.PI * 0.75 + (v / max) * Math.PI * 1.5;
-      const red = redFrom && v >= redFrom;
-      c.strokeStyle = red ? "#ff3a2a" : "#e8e8e8"; c.lineWidth = 3;
-      c.beginPath(); c.moveTo(Math.cos(a) * r * 0.82, Math.sin(a) * r * 0.82); c.lineTo(Math.cos(a) * r * 0.95, Math.sin(a) * r * 0.95); c.stroke();
-      c.fillStyle = red ? "#ff6a5a" : "#f2f2f2"; c.fillText(String(label(v)), Math.cos(a) * r * 0.66, Math.sin(a) * r * 0.66);
-    }
-    // needle at idle-ish
-    const a0 = Math.PI * 0.75 + 0.12 * Math.PI * 1.5;
-    c.strokeStyle = "#ff5a1c"; c.lineWidth = 4; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a0) * r * 0.8, Math.sin(a0) * r * 0.8); c.stroke();
-    c.restore();
+  const redK = Math.max(4, Math.round((spec.engine?.redline || 7500) / 1000)), maxK = redK + 1;
+  const TACHO = { x: 124, y: 138, r: 104 }, SPEEDO = { x: 388, y: 138, r: 104 };
+  const ang = (f) => Math.PI * 0.75 + Math.min(1, Math.max(0, f)) * Math.PI * 1.5;
+  if (!FACE.has(canvas)) {
+    c.fillStyle = "#08090b"; c.fillRect(0, 0, W, H);
+    const dial = (D, max, step, label, redFrom, unit) => {
+      c.save(); c.translate(D.x, D.y);
+      c.beginPath(); c.arc(0, 0, D.r, 0, 7); c.fillStyle = "#101216"; c.fill(); c.lineWidth = 5; c.strokeStyle = "#5c6068"; c.stroke();
+      c.font = "bold 17px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+      for (let v = 0; v <= max; v += step) {
+        const a = ang(v / max), red = redFrom != null && v >= redFrom;
+        c.strokeStyle = red ? "#ff3a2a" : "#e8e8e8"; c.lineWidth = 3;
+        c.beginPath(); c.moveTo(Math.cos(a) * D.r * 0.82, Math.sin(a) * D.r * 0.82); c.lineTo(Math.cos(a) * D.r * 0.95, Math.sin(a) * D.r * 0.95); c.stroke();
+        c.fillStyle = red ? "#ff6a5a" : "#f2f2f2"; c.fillText(String(label(v)), Math.cos(a) * D.r * 0.64, Math.sin(a) * D.r * 0.64);
+      }
+      c.fillStyle = "#3df0ff"; c.font = "bold 14px sans-serif"; c.fillText(unit, 0, D.r * 0.42);
+      c.restore();
+    };
+    dial(TACHO, maxK, 1, (v) => v, redK - 1, "x1000 rpm");
+    dial(SPEEDO, 240, 40, (v) => v, null, "km/h");
+    FACE.set(canvas, c.getImageData(0, 0, W, H));
+  } else c.putImageData(FACE.get(canvas), 0, 0);
+  const rpm = live ? live.rpm : (spec.engine?.idleRpm || 1000), kmh = live ? live.kmh : 0;
+  const needle = (D, f, colour) => {
+    const a = ang(f);
+    c.save(); c.translate(D.x, D.y); c.strokeStyle = colour; c.lineWidth = 5; c.lineCap = "round";
+    c.beginPath(); c.moveTo(-Math.cos(a) * 14, -Math.sin(a) * 14); c.lineTo(Math.cos(a) * D.r * 0.84, Math.sin(a) * D.r * 0.84); c.stroke();
+    c.fillStyle = "#222"; c.beginPath(); c.arc(0, 0, 9, 0, 7); c.fill(); c.restore();
   };
-  const red = Math.round((spec.engine?.redline || 7500) / 1000);
-  dial(150, 128, 112, red, 1, (v) => v, red - 1);
-  dial(370, 128, 100, 240, 40, (v) => v);
-  c.fillStyle = "#3df0ff"; c.font = "bold 14px sans-serif"; c.textAlign = "center"; c.fillText("x1000 rpm", 150, 190); c.fillText("km/h", 370, 190);
-  for (let i = 0; i < 9; i++) { c.fillStyle = i < 3 ? "#20e060" : i < 6 ? "#ffd020" : "#ff3030"; c.beginPath(); c.arc(100 + i * 39, 20, 7, 0, 7); c.fill(); }
+  needle(TACHO, rpm / 1000 / maxK, "#ff5a1c");
+  needle(SPEEDO, kmh / 240, "#ff5a1c");
+  // gear letter and digital speed between the dials
+  const gear = live ? live.gear : 0;
+  c.fillStyle = "#3df0ff"; c.font = "bold 46px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+  c.fillText(gear < 0 ? "R" : gear === 0 ? "N" : String(gear), 256, 118);
+  c.font = "bold 22px sans-serif"; c.fillStyle = "#f2f2f2"; c.fillText(String(Math.round(Math.abs(kmh))), 256, 170);
+  // shift lights: 9 over the last fifth of the rev range
+  const lit = Math.max(0, Math.min(9, Math.round(((rpm / 1000 / redK) - 0.82) / 0.18 * 9)));
+  for (let i = 0; i < 9; i++) {
+    const on = i < lit, col = i < 3 ? "#20e060" : i < 6 ? "#ffd020" : "#ff3030";
+    c.fillStyle = on ? col : "#1b1d21"; c.beginPath(); c.arc(100 + i * 39, 20, 7, 0, 7); c.fill();
+  }
   return canvas;
 }

@@ -256,6 +256,9 @@ export function createVehicle(spec, options = {}) {
 
   // ---------- collisions ----------
   let impDiss = 0;
+  // soft props (signs, posts, bales) are knocked once per pass: obstacle -> time it was hit
+  const softHit = new Map();
+  let softClock = 0;
   /** 3-D impulse at world offset r from CG along unit normal n (pointing out of the obstacle into the car). */
   function impulse(nx, ny, nz, rxw, ryw, rzw, e, muT, scale) {
     // velocity of contact point
@@ -348,10 +351,18 @@ export function createVehicle(spec, options = {}) {
         if (pu < pw) { nu = u > 0 ? -1 : 1; nw = 0; pen = pu + o.r; cuu = u > 0 ? boxHw : -boxHw; cww = w; }
         else { nu = 0; nw = w > 0 ? -1 : 1; pen = pw + o.r; cww = w > 0 ? boxHl : -boxHl; cuu = u; }
       }
+      const hard0 = o.hardness === undefined ? 0.6 : o.hardness;
+      if (hard0 < 0.6) {
+        // a soft prop is struck once: it gives way and the car rolls past instead of being pinned and hit 20 times
+        const th = softHit.get(o);
+        if (th !== undefined && softClock - th < 0.8) continue;
+        softHit.set(o, softClock);
+        if (softHit.size > 64) for (const [k, t] of softHit) if (softClock - t > 0.8) softHit.delete(k);
+      }
       const nxw = nu * rx2 + nw * fx2, nzw = nu * rz2 + nw * fz2;
       const cwx = cxw + cuu * rx2 + cww * fx2, cwz = czw + cuu * rz2 + cww * fz2;
       const hard = o.hardness === undefined ? 0.6 : o.hardness;
-      const scale = hard >= 0.34 ? 1 : Math.max(0.12, hard * 2.9);
+      const scale = hard >= 0.6 ? 1 : Math.max(0.05, hard * 1.1); // signs, posts, bales, tyre stacks give way: they shed a fraction of the closing speed
       const e = 0.01 + 0.1 * hard;
       const corr = (0.15 + 0.8 * scale) * pen;
       const cap = corr > 0.3 ? 0.3 : corr;
@@ -395,7 +406,7 @@ export function createVehicle(spec, options = {}) {
         if (pen > 0.5 && n.y >= 0.77) { /* deep burial: push up */ }
         const corr = Math.min(0.35, pen * 0.8);
         D.px += nx * corr * 0.6; D.py += ny * corr * 0.6; D.pz += nz * corr * 0.6;
-        const closing = impulse(nx, ny, nz, rxw, ryw, rzw, 0.1, 0.35, 1);
+        const closing = impulse(nx, ny, nz, rxw, ryw, rzw, 0.1, 0.18, 1);
         if (closing > 0.2) registerImpact(closing, wx, wz, "terrain", null);
         else impDiss = 0;
       } else {
@@ -458,7 +469,7 @@ export function createVehicle(spec, options = {}) {
       const cwx = D.px + ox, cwz = D.pz + oz;
       const corr = Math.min(0.12, pen * 0.35);
       D.px += nxw * corr; D.pz += nzw * corr;
-      const closing = impulse(nxw, 0, nzw, ox, -cg * 0.4 + 0.3, oz, 0.1, 0.28, 1);
+      const closing = impulse(nxw, 0, nzw, ox, -cg * 0.4 + 0.3, oz, 0.1, 0.14, 1);
       if (closing > 0.15) registerImpact(closing, cwx, cwz, "terrain", null);
       else {
         // scraping along: a little wear
@@ -513,11 +524,15 @@ export function createVehicle(spec, options = {}) {
     thrEff = D.thr; brkEff = D.brk; hbEff = D.hb;
     // traction / stability assist: feather the throttle when driven wheels spin or the tail steps out
     if (opts.assist > 0 && thrEff > 0.05 && D.gear !== 0) {
-      let ms = 0;
-      for (let i = 0; i < 4; i++) if (driven[i]) { const k = state.wheels[i].slipRatio; if (k > ms) ms = k; }
+      // mean slip of the driven wheels (not the worst one): a single unloaded or damaged wheel stuck spinning after
+      // a hit must not hold the whole throttle closed ("crawl at 20 km/h in 1st on full throttle")
+      let ms = 0, nd = 0;
+      for (let i = 0; i < 4; i++) if (driven[i]) { ms += state.wheels[i].slipRatio; nd++; }
+      ms = nd ? ms / nd : 0;
       let cut = clamp((ms - 0.16) / 0.35, 0, 1);
+      // slide angle is meaningless at crawl speed (a car spun round by an impact): ease the cut in with speed
       const sa = Math.abs(state.slideAngle);
-      if (sa > 0.3) cut = Math.max(cut, clamp((sa - 0.3) / 0.5, 0, 1) * 0.8);
+      if (sa > 0.3) cut = Math.max(cut, clamp((sa - 0.3) / 0.5, 0, 1) * 0.8 * clamp((state.speed - 4) / 6, 0, 1));
       cut *= Math.min(0.85, opts.assist * 2.2);
       thrEff *= 1 - cut;
     }
@@ -573,7 +588,7 @@ export function createVehicle(spec, options = {}) {
     }
     D.thr = 0; D.brk = 0; D.hb = 0; D.steerIn = 0; D.steerAng = 0; D.analogT = 0; D.shiftT = 0; D.shiftLock = 0; D.cutT = 0;
     D.boost = 0; D.prevThr = 0; D.airT = 0; D.airMinVy = 0; D.flipT = 0; D.wgCool = 0; D.limCool = 0; D.impCool = 0; D.boCool = 0;
-    D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0;
+    D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
     D.gear = 1;
     if (opts.auto) {
       let g = 1;
@@ -659,6 +674,7 @@ export function createVehicle(spec, options = {}) {
     D.impCool -= dt; D.boCool -= dt; D.wgCool -= dt; D.limCool -= dt; D.splashCool -= dt; D.shiftLock -= dt; D.cutT -= dt;
     if (D.shiftT > 0) D.shiftT -= dt;
     D.collided += dt; if (D.collided > 99) D.collided = 99;
+    softClock += dt;
 
     processInput(dt, input, fs, stage);
 
@@ -980,7 +996,13 @@ export function createVehicle(spec, options = {}) {
     for (let i = 0; i < 4; i++) {
       const w = W[i];
       const front = w.front;
-      let bt = brkEff * (front ? bF : bR2) + against;
+      let bkT = brkEff * (front ? bF : bR2);
+      // ABS-like modulation (assist): ease the brake on a wheel that is locking so it keeps steering and gripping
+      if (opts.assist > 0 && bkT > 0 && spd > 3 && Math.abs(D.steerIn) > 0.12) { // only while turning: straight-line stops keep their natural lock-up distance
+        const kk = s.wheels[i].slipRatio;
+        if (kk < -0.16) bkT *= clamp(1 - (-kk - 0.16) * 4.5 * Math.min(1, opts.assist * 3), 0.3, 1);
+      }
+      let bt = bkT + against;
       if (!front) bt += hbEff * 3200;
       if (hold) bt += 600;
       const I = IW + (driven[i] ? reflect : 0);

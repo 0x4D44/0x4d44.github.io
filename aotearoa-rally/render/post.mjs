@@ -107,6 +107,49 @@ export function createPost(THREE, renderer, scene, camera) {
       if (grade) { grade.uniforms.uTime.value = time; grade.uniforms.uSpeed.value = speed01; }
     },
     render(dt) { composer.render(dt); },
+    /** Start every program the composer needs in parallel and wait for them. The scene programs must be compiled with the HDR target
+     *  bound (cache keys include output colour space / tone mapping, which differ between the canvas and a render target),
+     *  and each pass material under the target it will render into (the last pass renders to the canvas). */
+    async compileAsync(extraScene, cam, onStep) {
+      const prev = renderer.getRenderTarget();
+      try {
+        if (composer && rt) {
+          renderer.setRenderTarget(rt);
+          await renderer.compileAsync(extraScene, cam);
+          onStep?.();
+          const passes = composer.passes.filter((p) => p.enabled !== false);
+          const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); quad.frustumCulled = false;
+          const sc = new THREE.Scene(); sc.add(quad);
+          const oc = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+          const mats = (p) => {
+            const out = new Set();
+            const add = (v) => { if (v && v.isMaterial) out.add(v); else if (Array.isArray(v)) v.forEach(add); };
+            if (p.isRenderPass) return out;
+            for (const v of Object.values(p)) add(v);
+            return out;
+          };
+          const jobs = [];
+          passes.forEach((p, i) => {
+            const last = i === passes.length - 1;
+            for (const m of mats(p)) jobs.push({ m, target: last ? null : rt });
+          });
+          // group by target so every compile of a group is in flight at once
+          for (const tgt of [rt, null]) {
+            const group = jobs.filter((j) => j.target === tgt);
+            if (!group.length) continue;
+            renderer.setRenderTarget(tgt);
+            const sceneG = new THREE.Scene();
+            for (const j of group) { const q = new THREE.Mesh(quad.geometry, j.m); q.frustumCulled = false; sceneG.add(q); }
+            try { await renderer.compileAsync(sceneG, oc); } catch { /* ignore */ }
+            onStep?.();
+          }
+          quad.geometry.dispose();
+        } else {
+          renderer.setRenderTarget(null);
+          await renderer.compileAsync(extraScene, cam);
+        }
+      } finally { renderer.setRenderTarget(prev); }
+    },
     dispose,
   };
   return api;

@@ -88,6 +88,9 @@ export function dimsFor(spec) {
   };
 }
 
+/** Driver's eye height: a seated rally driver, 0.2 m under the roof so the cage and headlining sit clear of the lens. */
+export function cockpitEyeY(d) { return Math.min(d.sill + 1.0, d.roof - 0.2); }
+
 /** Camera eye points (ground-relative) for a spec. */
 export function eyePoints(spec) {
   const d = dimsFor(spec);
@@ -96,7 +99,8 @@ export function eyePoints(spec) {
   const t0 = d.cabin.t0 + 0.02;
   return {
     bonnet: [0.0, d.topC(t0) + 0.22, d.zAt(t0) + 0.65],
-    cockpit: [d.eye.x, d.eye.y, d.eye.z + 0.02],
+    // driver's eye: half a metre behind the steering wheel (wheel x / y / z as built in interior.mjs), under the roof
+    cockpit: [0.36, cockpitEyeY(d), d.zAt(d.cabin.t0) + 0.06 + 0.6 + 0.5],
     bumper: [d.bumperEye.x, d.bumperEye.y, d.bumperEye.z],
   };
 }
@@ -114,3 +118,35 @@ export function inArch(d, x, y, z, gap = 0.05) {
 }
 
 export function clampSeverity(v) { return clamp(Number.isFinite(v) ? v : 0, 0, 1); }
+
+/** Station values (t) of the door shut lines: shared by the body (gaps) and the livery (so text never crosses one). */
+export function doorLinesT(d) {
+  const t0 = d.cabin.t0 + 0.012, tB = d.cabin.rs + (d.cabin.re - d.cabin.rs) * 0.38;
+  return d.S.doors === 4 ? [t0 + 0.0, (t0 + tB) / 2 + 0.01, tB + 0.005, d.cabin.re + 0.01] : [t0 + 0.02, tB + 0.08, d.cabin.re - 0.02];
+}
+
+/**
+ * Free z-intervals (metres from the nose) on the body side within the height band [y0, y1]: clear of the wheel arches
+ * (with their lips), the door shut lines, the nose / tail curvature and any extra blocked spans [[a, b], ...].
+ */
+export function sideSlots(d, y0, y1, extra = []) {
+  const blocks = [[-1e9, 0.3], [d.zR - d.zF - 0.3, 1e9], ...extra];
+  for (const w of d.wheels) {
+    if (w.x < 0) continue;
+    const rr = w.r + 0.058 + 0.035;
+    let lo = Infinity, hi = -Infinity;
+    for (let k = 0; k <= 6; k++) {
+      const y = y0 + ((y1 - y0) * k) / 6, dy = y - w.r;
+      if (Math.abs(dy) < rr) { const dz = Math.sqrt(rr * rr - dy * dy); lo = Math.min(lo, w.z - dz - d.zF); hi = Math.max(hi, w.z + dz - d.zF); }
+    }
+    if (hi > lo) blocks.push([lo, hi]);
+  }
+  for (const t of doorLinesT(d)) { const z = d.zAt(t) - d.zF; blocks.push([z - 0.045, z + 0.045]); }
+  blocks.sort((a, b) => a[0] - b[0]);
+  const free = [];
+  let cur = -1e9;
+  const end = d.zR - d.zF;
+  for (const [a, b] of blocks) { if (a > cur && a - Math.max(cur, 0) > 0.05) free.push([Math.max(cur, 0), a]); cur = Math.max(cur, b); }
+  if (end - cur > 0.05) free.push([cur, end]);
+  return free.filter(([a, b]) => b - a > 0.05).sort((p, q) => (q[1] - q[0]) - (p[1] - p[0]));
+}

@@ -207,7 +207,9 @@ export function createHud(root) {
     update(state, run, fps) {
       const kmh = state.speedKmh != null ? Math.abs(state.speedKmh) : Math.abs(state.speed) * 3.6;
       const spd = units === "mph" ? kmh * 0.621371 : kmh;
-      set("spd", el.speed, Math.round(spd));
+      const spdR = Math.round(spd);
+      set("spd", el.speed, spdR);
+      set("spdw", el.speed, spdR >= 100 ? 3 : 2, (n, w) => n.classList.toggle("w3", w === 3)); // shrink-to-fit: three digits get a smaller face so they stay inside the dial numerals
       const g = state.gear;
       set("gear", el.gear, g < 0 ? "R" : g === 0 ? "N" : String(g));
       const rpmN = Math.round(state.rpm / 50) * 50;
