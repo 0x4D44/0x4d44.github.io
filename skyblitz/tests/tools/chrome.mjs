@@ -56,6 +56,16 @@ function keyInfo(name) {
   return { code: name, key: name, vk: 0 };
 }
 
+// Even headless=new keeps a real (hidden) browser window, and a page that takes pointer lock makes Chrome ClipCursor() the person's REAL
+// desktop cursor to that window (ClipCursor, 14:17 GMT 2026-10-29). So every page this tool opens gets pointer lock and fullscreen stubbed out
+// before any page script runs; CDP mouse/key events stay inside the page and never touch the OS cursor.
+const NO_DESKTOP_GRABS = `(() => { try {
+  const no = () => Promise.resolve();
+  Element.prototype.requestPointerLock = no; Document.prototype.exitPointerLock = () => {};
+  Object.defineProperty(Document.prototype, "pointerLockElement", { get: () => null, configurable: true });
+  Element.prototype.requestFullscreen = no; Document.prototype.exitFullscreen = no;
+} catch (e) { /* page without Element/Document */ } })();`;
+
 class Cdp {
   constructor(ws) {
     this.ws = ws; this.id = 0; this.pending = new Map(); this.listeners = [];
@@ -95,6 +105,7 @@ export class Page {
   s(method, params) { return this.cdp.send(method, params, this.sid); }
   async init(width, height, dpr = 1) {
     await this.s("Page.enable"); await this.s("Runtime.enable"); await this.s("Log.enable");
+    await this.s("Page.addScriptToEvaluateOnNewDocument", { source: NO_DESKTOP_GRABS });
     await this.setViewport(width, height, { dpr });
   }
   setViewport(width, height, { dpr = 1, mobile = false } = {}) {
