@@ -589,11 +589,11 @@ function planPrims(def) {
       const [, x, y, z, w, d, h, , r] = p;
       if (!def.pp && w < 70 && d < 70) continue;                      // legs and knobs stay off the plan
       if (!def.pp && h < 30 && w < 200) continue;
-      out.push({ t: 'r', x0: x - w / 2, y0: y - d / 2, x1: x + w / 2, y1: y + d / 2, rad: Math.min(r || 0, w / 2, d / 2), dash: z >= 1300, fill: true });
+      out.push({ t: 'r', x0: x - w / 2, y0: y - d / 2, x1: x + w / 2, y1: y + d / 2, rad: Math.min(r || 0, w / 2, d / 2), dash: z >= 1300, fill: z < 1300 });   // dashed = above the cut plane: see-through
     } else if (k === 'c') {
       const [, x, y, z, rad] = p;
       if (rad < 40 && !def.pp) continue;
-      out.push({ t: 'c', x, y, r: rad, dash: z >= 1300, fill: true });
+      out.push({ t: 'c', x, y, r: rad, dash: z >= 1300, fill: z < 1300 });
     } else if (k === 's') {
       out.push({ t: 'c', x: p[1], y: p[2], r: p[4], dash: false, fill: false });
     } else if (k === 'k') {
@@ -721,8 +721,11 @@ function paintPlan(ctx, E, t, opt = {}) {
 let EL_SORTED = [];
 function sortElements() {
   const ord = { ln: 0, rc: 0, ml: 0, wf: 1, hw: 2, hi: 2, cf: -1, op: 4, fu: 5, gb: 6, dm: 7, tx: 8 };
+  // an integer key: o + ord * .01 leaves a rounding residue, so equal keys compared unequal and the creation-order tie-break never ran (a rug drawn over its sofa).
+  // A rug lies under the furniture whatever order it was created in (just above the openings, below every other piece).
+  const key = (e) => (LAYERS[e.L] ? LAYERS[e.L].o : 50) * 1000 + (ord[e.k] || 0) * 10 - (e.k === 'fu' && e.it.type === 'rug' ? 5 : 0);
   EL.forEach((e, i) => { e._i = i; });
-  EL_SORTED = EL.slice().sort((a, b) => ((LAYERS[a.L] ? LAYERS[a.L].o : 50) + (ord[a.k] || 0) * 0.01 - (LAYERS[b.L] ? LAYERS[b.L].o : 50) - (ord[b.k] || 0) * 0.01) || a._i - b._i);
+  EL_SORTED = EL.slice().sort((a, b) => (key(a) - key(b)) || a._i - b._i);
 }
 const delA = (el, t) => (el.td === undefined ? 1 : 1 - smooth(clamp((t - el.td) / 0.35)));
 
@@ -1828,11 +1831,16 @@ function film3D() {
   const S = D.t;
   D.sp = 1; D.cp = null;
   T3.swap = S; T3.fade = 0.6; T3.chrome0 = S + 0.8; T3.chrome1 = S + 2.6;
+  const P = 9.0;                                                              // plaster & paint: after the floors, and everything from there on is this much later
   const ph = (T3.ph = {
     col: [S + 5.0, S + 9.8], wall: [S + 9.4, S + 21.4], ins: [S + 19.9, S + 25.9], lint: [S + 25.6, S + 30.2], win: [S + 30.4, S + 34.0],
-    door: [S + 33.4, S + 39.0], floor: [S + 38.4, S + 45.0], fx: [S + 45.0, S + 50.2], furn: [S + 50.2, S + 65.2],
+    door: [S + 33.4, S + 39.0], floor: [S + 38.4, S + 45.0], paint: [S + 45.0, S + 45.0 + P], fx: [S + 45.0 + P, S + 50.2 + P], furn: [S + 50.2 + P, S + 65.2 + P],
   });
-  T3.end = S + 74.0;
+  T3.end = S + 74.0 + P;
+  // each room is plastered and painted in turn (build3d reads T3.paintT; the shader paints every face that looks into the room)
+  const PO = ['LIVING', 'KITCHEN', 'CORRIDOR', 'BED 1', 'BATH', 'BED 2', 'STUDY'], PS = [0.6, 1.9, 3.0, 4.1, 5.1, 6.1, 7.0];
+  T3.paintT = {};
+  PO.forEach((id, i) => { T3.paintT[id] = [ph.paint[0] + PS[i], ph.paint[0] + PS[i] + 2.0]; });
   const IT = schedItems();
   const nFx = ITEMS.filter((it) => it.fx).length, nFu = ITEMS.length - nFx;
   const seg = (dt, fn) => { D.t = S + dt; fn(); };
@@ -1874,20 +1882,29 @@ function film3D() {
     info('Section plane placed at Z = 1300  (live section on: walls, columns and openings are cut)');
     endCmd();
   });
-  ch(43.6, '16', 'KITCHEN & BATH', 'a section cut at 1.3 m  ·  the fixtures rise out of the footprints they were drawn in');
-  seg(43.6, () => extrude('fixtures', nFx, 870, null));
-  ch(48.0, '17', 'FURNITURE', '3DMOVE every block onto the spot where it was drawn');
-  seg(48.0, () => { cmd('3DMOVE', { dur: 0.45, dw: 0.1 }); ask('Select objects:'); wait(0.2); info(nFu + ' found'); ask('Specify base point or [Displacement]:'); wait(0.15); typeText('0,0,2000', 0.4); enter(0.06); ask('Specify second point or <use first point as displacement>:'); endCmd(); });
+  ch(43.6, '16', 'PLASTER & PAINT', 'section cut at 1.3 m  ·  gypsum plaster, then emulsion  ·  a colour for every room');
+  seg(43.6, () => {
+    cmd('MATERIALASSIGN', { dur: 0.5, dw: 0.08 });
+    ask('Select faces to assign:'); wait(0.2); info(ROOMS.length + ' rooms  ·  every wall face that looks into one');
+    ask('Enter material name:'); typeText('PLASTER-GYPSUM-12', 0.4); enter(0.06);
+    ask('Enter material name:'); typeText('PAINT-EMULSION', 0.35); enter(0.06);
+    endCmd();
+  });
+  PO.forEach((id, i) => seg(T3.paintT[id][0] - S + 0.5, () => info(id.padEnd(9) + PAINT[id][1])));
+  ch(43.6 + P, '17', 'KITCHEN & BATH', 'the fixtures rise out of the footprints they were drawn in');
+  seg(43.6 + P, () => extrude('fixtures', nFx, 870, null));
+  ch(48.0 + P, '18', 'FURNITURE', '3DMOVE every block onto the spot where it was drawn');
+  seg(48.0 + P, () => { cmd('3DMOVE', { dur: 0.45, dw: 0.1 }); ask('Select objects:'); wait(0.2); info(nFu + ' found'); ask('Specify base point or [Displacement]:'); wait(0.15); typeText('0,0,2000', 0.4); enter(0.06); ask('Specify second point or <use first point as displacement>:'); endCmd(); });
   // each landing prints its block, in the order they fall
   for (const it of ITEMS) {
     if (it.fx) continue;
     const S0 = IT[it.id].t0 + 0.62 * IT[it.id].dur;
     seg(S0 - S, () => info(BLOCKNAME[it.type] + (it.w ? '-' + it.w : '') + '   ' + Math.round(it.x) + ', ' + Math.round(it.y) + ', 0'));
   }
-  seg(65.0, () => { cmd('ERASE', { dur: 0.3, dw: 0.08 }); ask('Select objects:'); wait(0.2); info('1 found  (section plane)'); ask('Select objects:'); enter(0.1); endCmd(); });
-  ch(66.2, '18', 'HOME', ROOMS.length + ' rooms  ·  ' + TOTAL_AREA.toFixed(1) + ' m²  ·  ' + ITEMS.length + ' pieces, all from one drawing');
-  seg(66.7, () => { cmd('3DORBIT', { dur: 0.5, dw: 0.1 }); endCmd(); });
-  T3.cutT = { down: [S + 43.1, S + 44.6], up: [S + 66.2, S + 67.8] };               // the section plane lowers after SECTIONPLANE, lifts after ERASE
+  seg(65.0 + P, () => { cmd('ERASE', { dur: 0.3, dw: 0.08 }); ask('Select objects:'); wait(0.2); info('1 found  (section plane)'); ask('Select objects:'); enter(0.1); endCmd(); });
+  ch(66.2 + P, '19', 'HOME', ROOMS.length + ' rooms  ·  ' + TOTAL_AREA.toFixed(1) + ' m²  ·  ' + ITEMS.length + ' pieces, all from one drawing');
+  seg(66.7 + P, () => { cmd('3DORBIT', { dur: 0.5, dw: 0.1 }); endCmd(); });
+  T3.cutT = { down: [S + 43.1, S + 44.6], up: [S + 66.2 + P, S + 67.8 + P] };       // the section plane lowers after SECTIONPLANE, lifts after ERASE
 
   // ---------------------------------------------------------------- the camera
   // three coordinates: x east, y up, z south. The plan centre is (6.0, ., -4.475).
@@ -1910,7 +1927,14 @@ function film3D() {
   // and the camera keeps flying around: the kitchen run is filmed from the north, everything else from the south.
   key(38.0, 6.0, 0.8, -4.5, 372, 50, 18, 38);
   key(42.0, 6.0, 0.4, -4.5, 384, 58, 17, 38);
-  key((rf.KITCHEN[0] - S) - 0.5, 8.6, 0.3, -2.6, 448, 57, 12.5, 38);
+  // plaster and paint: over the rooms in the order they are done (north faces and east faces show from the south-west, so the camera keeps turning)
+  key(45.3, liv[0] + 0.2, 0.3, liv[1] + 0.0, 392, 52, 6.4, 38);
+  key(47.2, 7.0, 0.3, -2.1, 402, 52, 6.8, 38);
+  key(48.5, 8.2, 0.3, -3.3, 412, 54, 7.2, 38);
+  key(49.7, 4.2, 0.3, -5.8, 422, 54, 7.2, 38);
+  key(50.8, 3.6, 0.3, -6.9, 430, 54, 6.8, 38);
+  key(51.8, 6.8, 0.3, -6.9, 438, 54, 6.8, 38);
+  key(53.0, 10.2, 0.3, -6.9, 444, 54, 7.0, 38);
   key((rf.KITCHEN[0] - S) + 1.4, kit[0] + 0.1, 0.3, kit[1] + 0.2, 512, 55, 9.2, 38);
   key((rf.BATH[0] - S) - 0.3, (kit[0] + bath[0]) / 2, 0.3, (kit[1] + bath[1]) / 2, 440, 58, 12.5, 38);
   key((rf.BATH[0] - S) + 1.0, bath[0], 0.3, bath[1] + 0.2, 374, 60, 8.8, 38);
@@ -1921,9 +1945,9 @@ function film3D() {
   key((rt['BED 1'][0] - S) + 0.9, b1[0] + 0.2, 0.3, b1[1], 404, 62, 8.8, 38);
   key((rt['BED 2'][0] - S) + 0.9, b2[0], 0.3, b2[1], 412, 62, 8.8, 38);
   key((rt.STUDY[0] - S) + 0.4, st[0] - 0.6, 0.3, st[1], 420, 62, 9.2, 38);
-  key(66.2, 6.0, 0.6, -4.5, 436, 54, 15.5, 38);
-  key(70.0, 6.0, 0.6, -4.5, 476, 42, 16.5, 38);
-  key(74.0, 6.0, 0.6, -4.5, 516, 36, 17.5, 38);
+  key(66.2 + P, 6.0, 0.6, -4.5, 436, 54, 15.5, 38);
+  key(70.0 + P, 6.0, 0.6, -4.5, 476, 42, 16.5, 38);
+  key(74.0 + P, 6.0, 0.6, -4.5, 516, 36, 17.5, 38);
   T3.cam = K.sort((a, b) => a[0] - b[0]);
   mark('3D film');
 }
@@ -1967,6 +1991,49 @@ function camAt3(t) {
   return out;
 }
 
+// ---- plaster and paint: the faces of walls and columns that look into a room are plastered, then painted, rising from the floor (shader: paintWall, below).
+//      One progress value per room (PAINTU, in ROOMS order, set from T3.paintT by the build); the colour is the room's own.
+const PAINT = {
+  LIVING: ['#8fb09c', 'Sage'], KITCHEN: ['#f0c85a', 'Butter'], CORRIDOR: ['#d29a7a', 'Terracotta'], 'BED 1': ['#8fb0d8', 'Powder blue'],
+  BATH: ['#6cc3bf', 'Aqua'], 'BED 2': ['#e3a6b0', 'Blush'], STUDY: ['#6a7fb0', 'Denim'],
+};
+const PAINTU = { value: new Float32Array(ROOMS.length) };
+const PAINT_GLSL = (() => {
+  const n = ROOMS.length, hex = (h) => [1, 3, 5].map((i) => (parseInt(h.slice(i, i + 2), 16) / 255).toFixed(3)).join(', ');
+  const R = (a) => `vec4(${(a[0] / 1000).toFixed(3)}, ${(-a[3] / 1000).toFixed(3)}, ${(a[2] / 1000).toFixed(3)}, ${(-a[1] / 1000).toFixed(3)})`;     // plan mm -> (x0, z0, x1, z1) in metres
+  return `
+uniform float uPaint[${n}];
+const vec4 PR_RECT[${n}] = vec4[${n}](${ROOMS.map((rm) => R(rm.r)).join(', ')});
+const vec3 PR_COL[${n}] = vec3[${n}](${ROOMS.map((rm) => 'vec3(' + hex(PAINT[rm.id][0]) + ')').join(', ')});
+const vec4 PR_OUT = ${R(OUT)};
+float rectDist(vec2 q, vec4 r){ return length(max(max(r.xy - q, q - r.zw), 0.)); }
+// plaster, then paint, on the faces that look into a room (and on the reveals of its openings and the window boards); outside faces and wall tops stay as built.
+void paintWall(inout vec3 col, inout float rough){
+  vec2 wuv = wallUV(vWP, vWN);
+  float lodN = 1. - smoothstep(.006, .016, max(fwidth(wuv.x), fwidth(wuv.y)));     // before any return: derivatives need every pixel of the quad
+  vec2 q = vWP.xz + vWN.xz * .07;                                                  // the point just in front of the face
+  if (q.x < PR_OUT.x || q.x > PR_OUT.z || q.y < PR_OUT.y || q.y > PR_OUT.w) return;
+  bool isTop = abs(vWN.y) > .7;
+  if (isTop && (vWN.y < 0. || vWP.y > 2.)) return;
+  int ri = 0; float dm = 1e9;
+  for (int i = 0; i < ${n}; i++) { float d = rectDist(q, PR_RECT[i]); if (d < dm) { dm = d; ri = i; } }
+  float pr = uPaint[ri];
+  if (pr <= 0.) return;
+  float ep = clamp(pr / .62, 0., 1.), ec = clamp((pr - .38) / .62, 0., 1.);        // the plasterer leads, the painter follows
+  float y = vWP.y + .03 * sin(vWP.x * 7. + vWP.z * 5.) + .015 * sin(vWP.x * 19. - vWP.z * 13. + vWP.y * 3.);
+  float hp = ep >= 1. ? 9. : ep * 1.4, hc = ec >= 1. ? 9. : ec * 1.4;               // 1.4 m is more than the section plane leaves in view
+  float plastered = 1. - smoothstep(hp - .03, hp + .03, y), painted = 1. - smoothstep(hc - .03, hc + .03, y);
+  vec3 plaster = sc(vec3(.85, .76, .68)) * (1. + .035 * lodN * (vn(wuv * 31.) - .5));
+  vec3 paint = ((isTop || dm > .002) ? sc(vec3(.95, .95, .93)) : sc(PR_COL[ri])) * (1. + .03 * lodN * (vn(wuv * 83.) - .5));   // white lining in reveals and on boards
+  float sk = isTop ? 0. : 1. - smoothstep(.13, .137, vWP.y);                         // 9 cm skirting above the 46 mm floor
+  paint = mix(paint, sc(vec3(.95, .95, .94)), sk);
+  paint *= 1. - .12 * (isTop ? 0. : smoothstep(.137, .14, vWP.y) * (1. - smoothstep(.14, .15, vWP.y)));
+  float wet = hc > 8. ? 0. : smoothstep(hc - .10, hc - .02, y) * (1. - smoothstep(hc - .02, hc + .03, y));
+  col = mix(mix(col, plaster, plastered), paint * (1. - .13 * wet), painted);
+  rough = mix(mix(rough, .95, plastered), mix(.84, .38, wet), painted);
+}`;
+})();
+
 // ---- procedural surfaces (GLSL, world-space so a wall that grows keeps its coursing).
 //      Every line and dot is filtered by the pixel footprint (fwidth), so nothing shimmers in motion or at a distance.
 const GLSL_LIB = `
@@ -1978,22 +2045,26 @@ vec2 wallUV(vec3 p, vec3 n){ vec3 a = abs(n); return a.x > a.z ? vec2(p.z, p.y) 
 // coverage of a line of half-width hw at distance d from its centre, for a pixel footprint aa
 float lineCov(float d, float hw, float aa){ return clamp((hw + aa - d) / (2. * aa), 0., 1.) * min(1., hw / aa); }
 `;
-// cap: a flat colour (sRGB, "r,g,b") painted on the back faces that show through a section cut, so a clipped solid reads as solid
+// cap: a flat colour (sRGB, "r,g,b") for the face a section cut leaves, so a cut solid reads as a solid (see CUTU)
 function patchMat(mat, key, body, cap) {
   mat.onBeforeCompile = (sh) => {
+    sh.uniforms.uCut = CUTU; sh.uniforms.uPaint = PAINTU;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;\n' + GLSL_LIB)
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;\nuniform float uCut;\n' + GLSL_LIB + PAINT_GLSL)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n{\n' + body + '\n}');
-    if (cap) sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>', 'if (!gl_FrontFacing) gl_FragColor = vec4(' + cap + ', 1.0);\n#include <dithering_fragment>');
+    if (cap) sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>', 'if (vWN.y > .9 && abs(vWP.y - uCut) < .004) gl_FragColor = vec4(' + cap + ', 1.0);\n#include <dithering_fragment>');
   };
   mat.customProgramCacheKey = () => key;
   return mat;
 }
-// ---- the section plane: while the interiors are filmed, everything built (walls, columns, openings) is cut at CUT_H
+// ---- the section plane: while the interiors are filmed, everything built (walls, columns, openings) is cut at CUT_H.
+//      Walls, columns and insulation are cut by making the solid shorter (build3d: growBox, dropBox): the cut face is then a real polygon, anti-aliased
+//      like any edge, and there are no back faces to fight the faces behind them. A clipping plane (G3.clip) is kept only for the thin window and door parts.
 const CUT_H = 1.3, CUT_TOP = 2.95;
+const CUTU = { value: 100 };                                                       // the section height; a top face at exactly this height is a cut face and is drawn flat (CUT_CAP)
 const CUT_CAP = { block: '.86,.83,.78', insul: '.95,.78,.32', concrete: '.78,.78,.76' };
 const CUT_PLAIN = new Set(['pvc', 'door', 'doorE', 'sill', 'glass']);
 function cutAt(t) {
@@ -2007,25 +2078,26 @@ const SURF = {
     if (abs(vWN.y) > 0.7) { diffuseColor.rgb = sc(vec3(.80, .78, .74)) * (.93 + .07 * h21(floor(vWP.xz * 2.5))); }
     else {
       float row = floor(uv.y / .2), u = uv.x + mod(row, 2.) * .2, col = floor(u / .4);
-      vec2 f = vec2(mod(u, .4), mod(uv.y, .2)), aa = fwidth(vec2(u, uv.y)) * .75 + 1e-5;
+      vec2 f = vec2(mod(u, .4), mod(uv.y, .2)), aa = fwidth(uv) * .75 + 1e-5;       // from uv, not u: u jumps by half a block at every course, which spiked the footprint
       float mortar = max(lineCov(min(f.x, .4 - f.x), .0045, aa.x), lineCov(min(f.y, .2 - f.y), .005, aa.y));
-      float lod = 1. - smoothstep(.02, .07, aa.y);
+      float lod = 1. - smoothstep(.007, .018, aa.y);                                 // the 4.5 cm speckle is gone before it is sampled less than twice per cycle
       vec3 blk = sc(vec3(.78, .76, .72)) * (.9 + .2 * h21(vec2(col, row))) * (1. - .06 * lod + .12 * lod * vn(uv * 22.));
       diffuseColor.rgb = mix(blk, sc(vec3(.44, .42, .39)), mortar * .9);
       roughnessFactor = .96;
-    }`,
+    }
+    paintWall(diffuseColor.rgb, roughnessFactor);`,
   insul: `
     vec2 uv = wallUV(vWP, vWN);
     vec3 wool = sc(vec3(.91, .72, .27));
     if (abs(vWN.y) > 0.7) { diffuseColor.rgb = wool * .9; }
     else {
       float row = floor(uv.y / .6), u = uv.x + mod(row, 2.) * .6;
-      vec2 f = vec2(mod(u, 1.2), mod(uv.y, .6)), aa = fwidth(vec2(u, uv.y)) * .75 + 1e-5;
+      vec2 f = vec2(mod(u, 1.2), mod(uv.y, .6)), aa = fwidth(uv) * .75 + 1e-5;
       float seam = max(lineCov(min(f.x, 1.2 - f.x), .003, aa.x), lineCov(min(f.y, .6 - f.y), .003, aa.y));
       vec2 q = vec2(min(f.x, 1.2 - f.x), min(f.y, .6 - f.y));
       float d = min(length(q), length(f - vec2(.6, .3))), aaD = max(aa.x, aa.y);
       float dowel = clamp((.03 + aaD - d) / (2. * aaD), 0., 1.) * min(1., .03 / aaD);
-      float lod = 1. - smoothstep(.03, .09, aaD);
+      float lod = 1. - smoothstep(.003, .008, aaD);                                  // 2 cm speckle: gone once a pixel is wider than 1 cm
       vec3 c = wool * (.95 + .12 * lod * (vn(uv * 48.) - .5)) * (.92 + .14 * h21(vec2(floor(u / 1.2), row)));
       c = mix(c, sc(vec3(.9, .91, .92)), dowel * .9);
       diffuseColor.rgb = c * (1. - .5 * seam);
@@ -2042,7 +2114,9 @@ const SURF = {
     float lod = 1. - smoothstep(.02, .08, aaT);
     vec3 c = sc(vec3(.62, .62, .60)) * (.9 + .16 * lod * vn(uv * 7.) + .08 * h21(vec2(floor(uv.x / .15), row)));
     diffuseColor.rgb = c * (1. - .22 * line) * (1. - .55 * hole);
-    roughnessFactor = .93;`,
+    if (abs(vWN.y) > .7) diffuseColor.rgb = sc(vec3(.64, .64, .62)) * (.94 + .06 * h21(floor(vWP.xz * 12.)));   // the top of a column (or its cut face): plain, no formwork lines
+    roughnessFactor = .93;
+    paintWall(diffuseColor.rgb, roughnessFactor);`,
   screed: `
     float aa = max(fwidth(vWP.x), fwidth(vWP.z)) + 1e-5, lod = 1. - smoothstep(.01, .06, aa);
     vec3 c = sc(vec3(.56, .57, .58)) * (.92 + .16 * vn(vWP.xz * 3.) + .06 * lod * vn(vWP.xz * 31.));
@@ -2104,7 +2178,7 @@ function mat3(name) {
   else if (name === 'glass') m = std({ color: 0xbfe0ee, roughness: .04, metalness: 0, transparent: true, opacity: .2, depthWrite: false, envMapIntensity: 1.6 });
   else if (name === 'lampsh') m = std({ color: 0xf6ecd4, emissive: 0xffc67a, emissiveIntensity: .75, roughness: .9 });
   else { const q = FURN3[name] || ['#cccccc', .6, 0]; m = std({ color: new THREE.Color(q[0]), roughness: q[1], metalness: q[2] }); }
-  if (CUT_CAP[name] || CUT_PLAIN.has(name)) { m.clippingPlanes = [G3.clip]; m.clipShadows = true; if (name !== 'glass') m.side = THREE.DoubleSide; }
+  if (CUT_PLAIN.has(name)) { m.clippingPlanes = [G3.clip]; m.clipShadows = true; if (name !== 'glass') m.side = THREE.DoubleSide; }
   MAT3[name] = m;
   return m;
 }
@@ -2180,7 +2254,7 @@ function buildScene3D() {
 // ---- per-frame: poses first, then the camera, then composite into the 2D frame
 function update3D(t) {
   const h = cutAt(t), c = T3.cutT;
-  G3.clip.constant = h;
+  G3.clip.constant = h; CUTU.value = h;
   const mv = c ? Math.max(Math.sin(Math.PI * prog3(t, c.down[0], c.down[1])), Math.sin(Math.PI * prog3(t, c.up[0], c.up[1]))) : 0;
   G3.cutQuad.visible = mv > 0.01; G3.cutQuad.position.y = Math.min(h, CUT_TOP); G3.cutQuad.material.opacity = 0.2 * mv;
   for (const a of G3.anims) a(t);
@@ -2222,7 +2296,9 @@ function addCap(cx, cz, w, d) {
   const m = new THREE.Mesh(unitFlat(), new THREE.MeshBasicMaterial({ color: CAP_COL, transparent: true, opacity: 0, depthWrite: false, toneMapped: false }));
   m.scale.set(w, 1, d); m.position.set(cx, 0, cz); m.visible = false; m.renderOrder = 5; G3.root.add(m); return m;
 }
-// a box that grows upward from its base (continuously, or one course at a time when q is set)
+// a box that grows upward from its base (continuously, or one course at a time when q is set).
+// pad: made this much bigger in plan (so a face is not in the plane of the wall face it is flush with, which would z-fight).
+// lip: while the section plane cuts it, it stands this much above the plane, so its cut face is not in the plane of the walls' cut faces.
 function growBox(o) {
   const [x0, y0, x1, y1] = o.r, w = (x1 - x0) / 1000 + (o.pad || 0), d = (y1 - y0) / 1000 + (o.pad || 0), hF = (o.z1 - o.z0) / 1000;
   const cx = (x0 + x1) / 2000, cz = -(y0 + y1) / 2000, base = o.z0 / 1000;
@@ -2237,8 +2313,10 @@ function growBox(o) {
       if (o.q) { const c = p * hF / o.q, k = Math.floor(c); h = Math.min(hF, (k + smooth((c - k) * 1.8)) * o.q); }
       else h = hF * easeOut(p);
     }
+    const under = CUTU.value - base, cut = under < h;                         // the section plane (set by update3D): build only what is below it
+    if (cut) { if (under <= 1e-3) { m.visible = false; if (cap) cap.visible = false; return; } h = under + (o.lip || 0); }
     m.visible = true; m.scale.y = Math.max(h, 1e-3);
-    if (cap) { cap.visible = p < 1; cap.position.y = base + h + 0.002; cap.material.opacity = 0.5 * (1 - smooth(p)); }
+    if (cap) { cap.visible = p < 1 && !cut; cap.position.y = base + h + 0.002; cap.material.opacity = 0.5 * (1 - smooth(p)); }
   });
   return m;
 }
@@ -2251,7 +2329,9 @@ function dropBox(o) {
   G3.anims.push((t) => {
     const p = prog3(t, o.t0, o.t1);
     if (p <= 0) { m.visible = false; return; }
-    m.visible = true; m.position.set(cx, base + (1 - easeOut(p)) * 0.8, cz);
+    const y = base + (1 - easeOut(p)) * 0.8, under = CUTU.value - y;
+    if (under <= 1e-3) { m.visible = false; return; }
+    m.visible = true; m.position.set(cx, y, cz); m.scale.y = Math.min(hF, under);
   });
   return m;
 }
@@ -2306,7 +2386,7 @@ function build3Construction() {
   // ---- 1. columns (snake order, one after the other)
   COLUMNS.forEach((c, n) => {
     const t0 = ph.col[0] + n * ((ph.col[1] - ph.col[0] - 1.5) / 11);
-    growBox({ r: c.r, z0: 0, z1: 2810, mat: 'concrete', t0, t1: t0 + 1.5 });
+    growBox({ r: c.r, z0: 0, z1: 2810, mat: 'concrete', t0, t1: t0 + 1.5, pad: 0.004, lip: 0.001 });          // flush with the wall faces: 2 mm proud, or the two z-fight
   });
   // ---- 2. walls: exterior four, then the interior ones; piers / sills / headers by courses, lintels dropped in
   const wspan = ph.wall[1] - ph.wall[0], K = wspan / 10.1;
@@ -2400,6 +2480,9 @@ function build3Construction() {
       });
     }
   });
+
+  // ---- 7. plaster, then paint: one progress value per room, read by the block shader (PAINT_GLSL)
+  G3.anims.push((t) => { ROOMS.forEach((rm, i) => { const w = T3.paintT[rm.id]; PAINTU.value[i] = prog3(t, w[0], w[1]); }); });
 }
 
 
@@ -2928,8 +3011,7 @@ function warm3D() {
   initUI();
   layoutCanvas();
   window.__tl = {
-    get T() { return T_END; }, T3, MARKS, TR, EL, D,
-    get g3() { return { ready: G3.ready, warm: G3.warm, lost: G3.lost, error: G3.error ? String(G3.error.message || G3.error) : null }; },
+    get T() { return T_END; }, T3, MARKS, TR, EL, D,    get g3() { return { ready: G3.ready, warm: G3.warm, lost: G3.lost, error: G3.error ? String(G3.error.message || G3.error) : null }; },
     get glc() { return G3.glc; },                                                    // the WebGL canvas (tests lose and restore its context)
     get renderer() { return G3.renderer; },                                          // for counting programs, geometries and textures in tests
     at(t) { seek(t); drawNow(); return PL_.t; },

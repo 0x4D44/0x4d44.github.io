@@ -2021,7 +2021,7 @@ window.ESSAYS = [
   {
     slug: "plan-to-build",
     title: "Plan to Build",
-    tagline: "A 92 m² apartment drafted command by command on an AutoCAD-style screen, from grid lines to a 1:50 sheet. A selection window grabs the plan and the same drawing builds itself in 3D: columns, block walls, insulation, windows, doors, floors, kitchen and furniture. One timeline, renderable to a 1440p60 MP4.",
+    tagline: "A 92 m² apartment drafted command by command on an AutoCAD-style screen, from grid lines to a 1:50 sheet. A selection window grabs the plan and the same drawing builds itself in 3D: columns, block walls, insulation, windows, doors, floors, plaster and paint, kitchen and furniture. One timeline, renderable to a 1440p60 MP4.",
     url: "https://0x4d44.github.io/plan-to-build/",
     illustration: "ill-plan",
     date: "2026-10-29T14:00:00",
