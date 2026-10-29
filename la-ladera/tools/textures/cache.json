@@ -1,0 +1,97 @@
+{
+ "brick_clay_hollow": {
+  "key": "8af85eeb3bb0f08d",
+  "rawKey": "8af85eeb3bb0f08d",
+  "at": "2026-10-29T13:14:06.762Z"
+ },
+ "brick_red_solid": {
+  "key": "32c7077a150f7eae",
+  "rawKey": "32c7077a150f7eae",
+  "at": "2026-10-29T13:15:14.026Z"
+ },
+ "asphalt": {
+  "key": "dd34e43b3931f500",
+  "rawKey": "dd34e43b3931f500",
+  "at": "2026-10-29T13:15:57.886Z"
+ },
+ "cement_screed": {
+  "key": "d2ec9baed7f64e0b",
+  "rawKey": "d2ec9baed7f64e0b",
+  "at": "2026-10-29T13:16:24.015Z"
+ },
+ "cobble_stone": {
+  "key": "1922b42f2e2104e3",
+  "rawKey": "1922b42f2e2104e3",
+  "at": "2026-10-29T13:16:46.243Z"
+ },
+ "concrete_bare": {
+  "key": "644482bd6b775714",
+  "rawKey": "644482bd6b775714",
+  "at": "2026-10-29T13:17:04.113Z"
+ },
+ "concrete_formwork": {
+  "key": "74cacbfdfa6a356c",
+  "rawKey": "74cacbfdfa6a356c",
+  "at": "2026-10-29T13:17:33.328Z"
+ },
+ "corrugated_zinc": {
+  "key": "ef79364bfcc8c7ed",
+  "rawKey": "ef79364bfcc8c7ed",
+  "at": "2026-10-29T13:18:07.375Z"
+ },
+ "fabric_woven": {
+  "key": "b9b78a598bc54db5",
+  "rawKey": "b9b78a598bc54db5",
+  "at": "2026-10-29T13:19:10.169Z"
+ },
+ "ground_dirt": {
+  "key": "0d0e4c352b8b6603",
+  "rawKey": "0d0e4c352b8b6603",
+  "at": "2026-10-29T13:20:04.349Z"
+ },
+ "grass_patchy": {
+  "key": "3a8774595d7cbc43",
+  "rawKey": "3a8774595d7cbc43",
+  "at": "2026-10-29T13:20:32.095Z"
+ },
+ "dirt_path": {
+  "key": "1c80e75598c06bfa",
+  "rawKey": "1c80e75598c06bfa",
+  "at": "2026-10-29T13:21:10.872Z"
+ },
+ "paint_peeling": {
+  "key": "0605c3f816fa68b8",
+  "rawKey": "0605c3f816fa68b8",
+  "at": "2026-10-29T13:21:31.715Z"
+ },
+ "plaster_a": {
+  "key": "d9414382b374223d",
+  "rawKey": "d9414382b374223d",
+  "at": "2026-10-29T13:21:58.765Z"
+ },
+ "roof_tile_clay": {
+  "key": "852fd583f3f083de",
+  "rawKey": "852fd583f3f083de",
+  "at": "2026-10-29T13:22:59.353Z"
+ },
+ "rusty_iron": {
+  "key": "87a1637305cd3088",
+  "rawKey": "87a1637305cd3088",
+  "at": "2026-10-29T13:23:27.597Z"
+ },
+ "plaster_rough": {
+  "key": "82005677227c93aa",
+  "rawKey": "82005677227c93aa",
+  "at": "2026-10-29T13:23:46.269Z"
+ },
+ "stone_wall": {
+  "key": "a3d8f9b2c4c508b4",
+  "rawKey": "a3d8f9b2c4c508b4",
+  "at": "2026-10-29T13:24:57.960Z"
+ },
+ "tile_ceramic_checker": {
+  "key": "fd4f31699d8feffb",
+  "rawKey": "fd4f31699d8feffb",
+  "at": "2026-10-29T13:25:06.360Z"
+ }
+}

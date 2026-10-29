@@ -196,7 +196,7 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
 ## 7. Tools and recipes
 
 * **Blender 5.2.1**: `"C:\Program Files\Blender Foundation\Blender 5.2\blender.exe" --background --factory-startup --python tools/blender/<script>.py -- <args>` (run from the repo root; scripts live under `la-ladera/tools/blender/`).
-  Python in Blender has numpy; no PIL (system Python 3.13 with PIL 12 + numpy 2 is available for image work: run it with `python -I script.py`).
+  Python in Blender has numpy; no PIL (system Python 3.13 with PIL 12 + numpy 2 is available for image work: run it as `python script.py`; do NOT pass `-I`, PIL lives in the user site-packages and `-I` hides it - the images are our own, so isolation is not needed).
   Export GLB with `bpy.ops.export_scene.gltf(filepath=..., export_format='GLB', export_apply=True, export_yup=True, export_image_format='NONE', export_materials='EXPORT', use_selection=...)`.
   **No textures inside GLBs.** Name each material after a library material (`wood_pine`, `fabric_sofa_a`...); the page maps by name. Unit = metre, origin at the object's floor/back-centre as documented in the manifest.
   UVs: box-projected, 1 uv unit = 1 m, for tiling materials; 0..1 for decal materials. Keep every asset <= 3k triangles unless it is a hero piece; whole GLB sets <= the budget in 8. Quantize/Draco (`export_draco_mesh_compression_enable`) is allowed (decoder is vendored).
