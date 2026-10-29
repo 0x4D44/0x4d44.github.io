@@ -8,11 +8,14 @@
 //   ctx.mat('plaster_a#d9a441')     same material, tinted (colour multiplies the texture) - one texture, many paints
 //
 // matdef fields: { color, rough, metal, tile, uv:'metric'|'unit', tex, normal, emissive, emissiveIntensity,
-//                  alpha, alphaTest, side:'double', vertexColors (default true), env, desc }
+//                  alpha, alphaTest, side:'double', vertexColors (default true), env, desc, prio, glow }
 //   tile  - metres per texture repeat for uv:'metric' materials (geometry UVs are in metres)
 //   uv    - 'unit' = decal-style 0..1 UVs (posters, signs, product labels): never repeated
 //   tex   - texture basename in the manifest (default: the material's own name); false = never textured
 //   desc  - plain-language brief for the texture generator (what the real-world surface looks like)
+//   prio  - 1|2|3 generation order for the texture factory (1 = needed first)
+//   glow  - emissive intensity at FULL NIGHT (the engine drives emissiveIntensity = glow * ctx.night); `window_lit` defaults to 2.4
+// The manifest entry may carry `tileScale` (< 1 when the processed swatch covers less than `tile` metres): repeat = 1 / (tile * tileScale).
 import * as THREE from 'three';
 import engine from '../engine/matdefs.js';
 import world from '../world/matdefs.js';
@@ -29,7 +32,10 @@ export class MaterialLib {
     this.ctx = ctx; this.defs = ALL_DEFS; this.cache = new Map(); this.tex = new Map();
     this.manifest = {}; this.pending = 0; this.missing = new Set(); this.loader = new THREE.TextureLoader();
     this.waiters = [];
-    this.anisotropy = 8;
+    this.anisotropy = 8;                       // the engine raises it to the GPU maximum before any material is made
+    this.variants = new Map();                 // base texture -> [clones with their own repeat]
+    this.vcache = new Map();
+    this.glowing = [];                         // materials whose emissiveIntensity follows ctx.night
   }
 
   async init() {
@@ -46,12 +52,25 @@ export class MaterialLib {
     let t = this.tex.get(k);
     if (t) return t;
     this.pending++;
-    t = this.loader.load('./assets/textures/' + file, () => this._done(), undefined, () => { console.warn('[mat] texture failed', file); this._done(); });
+    t = this.loader.load('./assets/textures/' + file, () => { for (const v of this.variants.get(t) ?? []) v.needsUpdate = true; this._done(); }, undefined, () => { console.warn('[mat] texture failed', file); this._done(); });
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     t.anisotropy = this.anisotropy;
     this.tex.set(k, t);
     return t;
+  }
+  /** A texture object with its own repeat that SHARES the base image (one GPU upload however many tile sizes use the file). */
+  _variant(base, rep, clamp) {
+    const key = `${base.uuid}:${rep.toFixed(5)}:${clamp ? 'c' : 'r'}`;
+    let v = this.vcache.get(key);
+    if (v) return v;
+    v = base.clone(); v.repeat.set(rep, rep);
+    if (clamp) v.wrapS = v.wrapT = THREE.ClampToEdgeWrapping;
+    this.vcache.set(key, v);
+    let list = this.variants.get(base); if (!list) this.variants.set(base, list = []);
+    list.push(v);
+    v.needsUpdate = !!base.image;               // not loaded yet: the loader callback marks it when the image arrives
+    return v;
   }
   _done() { if (--this.pending <= 0) { const w = this.waiters.splice(0); w.forEach((f) => f()); } }
   /** Resolves when every texture requested so far has finished loading. */
@@ -79,9 +98,11 @@ export class MaterialLib {
     if (d.alphaTest != null) m.alphaTest = d.alphaTest;
     if (d.flat) m.flatShading = true;
     m.name = key;
+    if (d.glow != null || name === 'window_lit') { m.userData.glow = d.glow ?? 2.4; m.emissiveIntensity = (this.ctx?.night ?? 0) * m.userData.glow; this.glowing.push(m); }
     if (tex) {
-      const rep = d.uv === 'unit' ? 1 : 1 / (d.tile ?? 1);
-      const bind = (file, srgb) => { const t = this._texture(file, srgb); if (rep !== 1) { t.repeat.set(rep, rep); } if (d.uv === 'unit') { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; } return t; };
+      const unit = d.uv === 'unit';
+      const rep = unit ? 1 : 1 / ((d.tile ?? 1) * (tex.tileScale ?? 1));
+      const bind = (file, srgb) => { const t = this._texture(file, srgb); return (rep === 1 && !unit) ? t : this._variant(t, rep, unit); };
       if (tex.map) m.map = bind(tex.map, true);
       if (tex.normal) { m.normalMap = bind(tex.normal, false); m.normalScale = new THREE.Vector2(d.normalScale ?? 1, d.normalScale ?? 1); }
       if (tex.rough) m.roughnessMap = bind(tex.rough, false);
