@@ -206,8 +206,8 @@ export function buildFlora(K) {
     const x = gx + sc.range(0, 3.2), z = gz + sc.range(0, 3.2);
     if (x < -98 || x > 98 || z < -98 || z > 98) continue;
     const north = ss(-66, -88, z), east = ss(58, 80, x), west = ss(-58, -80, x), n1 = vnoise(x, z, 13, plan.seed + 21), n2 = vnoise(x, z, 5, plan.seed + 23);
-    const wild = Math.max(north, east, west), terrace = 0.12 + 0.1 * (n1 + 1);
-    const dens = wild * (0.55 + 0.45 * n1) + (1 - wild) * terrace * 0.5;
+    const wild = Math.max(north, east, west), terrace = 0.12 + 0.1 * (n1 + 1), upper = ss(-36, -64, z) * (0.6 + 0.4 * n2);   // upper: the scrubby band above the last houses (z -64..-36)
+    const dens = wild * (0.55 + 0.45 * n1) + (1 - wild) * (terrace * 0.5 + 0.42 * upper);
     if (sc.next() > dens * 0.55) continue;
     if (occ.slope(x, z) > 0.55) continue;
     const r = sc.fork('c' + sp.n);
@@ -228,7 +228,6 @@ export function buildFlora(K) {
       else shrub(K, x, z, { rng: r, flowers: r.chance(0.4) }), sp.shrub++;
       sp.n++;
     }
-    void n2;
   }
 
   // ---- grass tufts on the open grass

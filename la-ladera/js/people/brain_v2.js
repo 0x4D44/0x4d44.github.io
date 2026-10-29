@@ -123,10 +123,18 @@ export class Brain {
     const W = this.w; W.doors.know(ent.doorId, ent);
     const through = (n) => {
       W.doors.hold(ent.doorId, n.id);
-      const go = (m) => m.walk(W, [ent.inside, ...targets], (k) => { W.doors.release(ent.doorId, k.id); arrive(k, W); }, this.speedFor(m, { slow: true }));
+      const go = (m) => m.walk(W, [ent.inside, ...this.indoors(ent, ent.inside, targets)], (k) => { W.doors.release(ent.doorId, k.id); arrive(k, W); }, this.speedFor(m, { slow: true }));
       if (W.doors.isOpen(ent.doorId)) go(n); else n.stand(W, 'wait', 0.55, yawTo(ent.outside.x, ent.outside.z, ent.inside.x, ent.inside.z), go);
     };
     return this.goPoint(npc, ent.outside, through, { snapD: 8, ...o });
+  }
+
+  /** Waypoints inside a building from `from` through each of `targets` in turn, round the counters and the furniture (indoor.js); the last one is the last target. */
+  indoors(ent, from, targets) {
+    if (!ent.inside) return targets.filter(Boolean);                       // a lot known from the plan only: no building to route through
+    const pts = []; let cur = from;
+    for (const t of targets) { if (!t) continue; for (const p of this.w.indoor.route(ent.lot, cur, t, ent.inside.y)) pts.push(p); cur = t; }
+    return pts;
   }
 
   /** Out through an entrance from inside (the NPC is hidden or inside): reveal behind the door, walk out and a step beyond, then `arrive`. */
@@ -233,8 +241,8 @@ export class Brain {
     for (let k = 0; k < 10; k++) {
       const j = nav.randomNode(r, (n) => W.inMain(n.i) && n.kind !== 'door'), n = nav.nodes[j];
       const dh = dist2d(n, hn), dc = dist2d(n, npc);
-      if (dh > rad || dc < 10) continue;
-      const score = -Math.abs(dc - 38) + r.next() * 16;
+      if (dh > rad || dc < 8) continue;
+      const score = -Math.abs(dc - 26) + r.next() * 12;
       if (score > bs) { bs = score; best = j; }
     }
     if (best < 0) return false;
@@ -244,42 +252,42 @@ export class Brain {
 
   idleHere(npc) {
     const W = this.w, r = npc.rng, kind = npc.age === 'kid' ? pickW(r, [['bounce', 0.5], ['fidget', 0.5]]) : npc.age === 'teen' ? pickW(r, [['idle', 0.5], ['phone', 0.5]]) : pickW(r, [['idle', 0.88], ['phone', 0.12]]);
-    npc.stand(W, kind, span(r, 3, 9), npc.ry + (r.next() - 0.5) * 1.6);
+    npc.stand(W, kind, span(r, 8, 22), npc.ry + (r.next() - 0.5) * 1.6);
     return true;
   }
 
   do_sweep(npc, o = {}) {
     const own = npc.homeLotId, shop = npc.shopLotId, r = npc.rng;
-    let spot = r.chance(0.7) ? this.pickSpot(npc, 'sweep', o, { maxD: 70, filter: (s) => s.building === own || s.building === shop }) : null;
-    spot ??= this.pickSpot(npc, 'sweep', o, { maxD: 70 });
+    let spot = r.chance(0.7) ? this.pickSpot(npc, 'sweep', o, { maxD: 45, filter: (s) => s.building === own || s.building === shop }) : null;
+    spot ??= this.pickSpot(npc, 'sweep', o, { maxD: 45 });
     return this.toSpot(npc, spot, (n) => this.sweepHere(n, spot, o), o);
   }
   sweepHere(npc, spot, o = {}) {
-    const W = this.w; npc.prop = 'broom'; npc.stand(W, 'sweep', span(npc.rng, 24, 55), spot.ry); if (o.instant) npc.ry = npc.targetRy = spot.ry;
+    const W = this.w; npc.prop = 'broom'; npc.stand(W, 'sweep', span(npc.rng, 40, 90), spot.ry); if (o.instant) npc.ry = npc.targetRy = spot.ry;
   }
 
   do_lean(npc, o = {}) {
-    const spot = this.pickSpot(npc, 'lean', o, { maxD: 80 });
-    return this.toSpot(npc, spot, (n) => { n.stand(this.w, npc.age === 'teen' && n.rng.chance(0.5) ? 'phone' : 'lean', span(n.rng, 18, 70), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
+    const spot = this.pickSpot(npc, 'lean', o, { maxD: 55 });
+    return this.toSpot(npc, spot, (n) => { n.stand(this.w, npc.age === 'teen' && n.rng.chance(0.5) ? 'phone' : 'lean', span(n.rng, 30, 100), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
   }
 
   do_bench(npc, o = {}) {
-    const spot = this.pickSpot(npc, 'bench', o, { maxD: 100, filter: (s) => !s.tagSet.has('busstop') || npc.routine !== 'shopkeeper' });
+    const spot = this.pickSpot(npc, 'bench', o, { maxD: 65, filter: (s) => !s.tagSet.has('busstop') || npc.routine !== 'shopkeeper' });
     return this.toSpot(npc, spot, (n) => this.sitAt(n, spot, o), o);
   }
   sitAt(npc, spot, o = {}) {
     const W = this.w, f = [Math.sin(spot.ry), Math.cos(spot.ry)];
     npc.st.x = spot.x - f[0] * 0.1; npc.st.z = spot.z - f[1] * 0.1; npc.lastX = npc.st.x; npc.lastZ = npc.st.z;   // hips on the middle of the seat
     npc.sitH = spot.seatH ?? 0.49; npc.targetRy = spot.ry; if (o.instant) npc.ry = spot.ry;
-    npc.stand(W, 'sit', span(npc.rng, 40, 130), spot.ry);
+    npc.stand(W, 'sit', span(npc.rng, 60, 200), spot.ry);
   }
 
   do_chat(npc, o = {}) {
     const W = this.w;
     // join somebody who is already waiting at a chat spot, else wait at a free one
-    let spot = this.pickSpot(npc, 'chat', o, { maxD: 60, half: true, filter: (s) => s.waiting && W.byId.get(s.waiting)?.spot === s });
+    let spot = this.pickSpot(npc, 'chat', o, { maxD: 45, half: true, filter: (s) => s.waiting && W.byId.get(s.waiting)?.spot === s });
     const joining = !!spot;
-    spot ??= this.pickSpot(npc, 'chat', o, { maxD: 80, filter: (s) => s.occ.length === 0 });
+    spot ??= this.pickSpot(npc, 'chat', o, { maxD: 55, filter: (s) => s.occ.length === 0 });
     return this.toSpot(npc, spot, (n) => this.chatHere(n, spot, o), o);
   }
   chatHere(npc, spot, o = {}) {
@@ -288,7 +296,7 @@ export class Brain {
     const other = spot.waiting && spot.waiting !== npc.id ? W.byId.get(spot.waiting) : null;
     if (other && other.spot === spot && !other.away && other.mode === 'idle') {
       // the second one has arrived: stand opposite, and talk, taking turns
-      const T = span(r, 26, 62), c = { a: other.id, b: npc.id, turnAt: W.t + 2, speaker: other.id };
+      const T = span(r, 40, 100), c = { a: other.id, b: npc.id, turnAt: W.t + 2, speaker: other.id };
       npc.st.x = spot.x - px * 0.4; npc.st.z = spot.z - pz * 0.4; npc.lastX = npc.st.x; npc.lastZ = npc.st.z;
       npc.convo = c; other.convo = c; other.until = npc.until = W.t + T;
       other.then = null; npc.then = null;
@@ -300,29 +308,33 @@ export class Brain {
     }
     spot.waiting = npc.id;
     npc.st.x = spot.x + px * 0.4; npc.st.z = spot.z + pz * 0.4; npc.lastX = npc.st.x; npc.lastZ = npc.st.z;
-    npc.stand(W, r.chance(0.35) ? 'phone' : 'wait', span(r, 25, 45), spot.ry + Math.PI / 2);
+    npc.stand(W, r.chance(0.35) ? 'phone' : 'wait', span(r, 30, 60), spot.ry + Math.PI / 2);
     return true;
   }
 
   do_court(npc, o = {}) {
     const W = this.w, r = npc.rng;
     const spot = this.pickSpot(npc, 'play', o, { maxD: 160 });
-    return this.toSpot(npc, spot, (n) => { n.stand(W, r.chance(0.6) ? 'bounce' : 'fidget', span(r, 2.5, 8), yawTo(n.x, n.z, spot.x + (r.next() - 0.5) * 8, spot.z + (r.next() - 0.5) * 6)); }, { ...o, run: npc.age === 'kid' || (npc.age === 'teen' && r.chance(0.3)) });
+    const play = (n) => {                                                   // a minute on the court: bounce, fidget, bounce... (two beats, then the next thing)
+      const face = () => yawTo(n.x, n.z, spot.x + (r.next() - 0.5) * 8, spot.z + (r.next() - 0.5) * 6), a1 = r.chance(0.6) ? 'bounce' : 'fidget', a2 = a1 === 'bounce' ? 'fidget' : 'bounce';
+      n.stand(W, a1, span(r, 8, 22), face(), (m) => m.stand(W, a2, span(r, 8, 24), face()));
+    };
+    return this.toSpot(npc, spot, play, { ...o, run: npc.age === 'kid' || (npc.age === 'teen' && r.chance(0.3)) });
   }
 
   do_greet(npc, o = {}) {
-    const spot = this.pickSpot(npc, 'greet', o, { maxD: 100 });
-    return this.toSpot(npc, spot, (n) => { n.greet = true; n.stand(this.w, 'idle', span(n.rng, 20, 50), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
+    const spot = this.pickSpot(npc, 'greet', o, { maxD: 60 });
+    return this.toSpot(npc, spot, (n) => { n.greet = true; n.stand(this.w, 'idle', span(n.rng, 30, 70), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
   }
 
   do_stand(npc, o = {}) {
-    const spot = this.pickSpot(npc, 'stand', o, { maxD: 140 }) ?? this.pickSpot(npc, 'phone', o, { maxD: 140 });
-    return this.toSpot(npc, spot, (n) => { n.stand(this.w, spot.kind === 'phone' || n.rng.chance(0.3) ? 'phone' : 'idle', span(n.rng, 20, 60), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
+    const spot = this.pickSpot(npc, 'stand', o, { maxD: 80 }) ?? this.pickSpot(npc, 'phone', o, { maxD: 80 });
+    return this.toSpot(npc, spot, (n) => { n.stand(this.w, spot.kind === 'phone' || n.rng.chance(0.3) ? 'phone' : 'idle', span(n.rng, 30, 90), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
   }
 
   do_phone(npc, o = {}) {
-    const spot = this.pickSpot(npc, 'phone', o, { maxD: 140 }) ?? this.pickSpot(npc, 'lean', o, { maxD: 80 });
-    return this.toSpot(npc, spot, (n) => { n.stand(this.w, 'phone', span(n.rng, 20, 60), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
+    const spot = this.pickSpot(npc, 'phone', o, { maxD: 80 }) ?? this.pickSpot(npc, 'lean', o, { maxD: 55 });
+    return this.toSpot(npc, spot, (n) => { n.stand(this.w, 'phone', span(n.rng, 30, 80), spot.ry); if (o.instant) n.ry = n.targetRy = spot.ry; }, o);
   }
 
   /** The devout go to the chapel at prayer time: in through the door and to the altar (or a pew), and out again. */
@@ -347,7 +359,7 @@ export class Brain {
     const W = this.w; npc.sitH = null; W.doors.hold(ent.doorId, npc.id);
     const dx = ent.outside.x - ent.inside.x, dz = ent.outside.z - ent.inside.z, l = Math.hypot(dx, dz) || 1;
     const beyond = { x: ent.outside.x + (dx / l) * 1.4, z: ent.outside.z + (dz / l) * 1.4, y: ent.outside.y };
-    npc.walk(W, [ent.inside, ent.outside, beyond], (n) => { W.doors.release(ent.doorId, n.id); this.next(n); }, this.speedFor(npc, { slow: true }));
+    npc.walk(W, [...this.indoors(ent, npc, [ent.inside]), ent.outside, beyond], (n) => { W.doors.release(ent.doorId, n.id); this.next(n); }, this.speedFor(npc, { slow: true }));
   }
 
   // ---- shops -------------------------------------------------------------------------------------------------------------------------------------
@@ -392,9 +404,9 @@ export class Brain {
     const W = this.w, shop = W.shops.get(npc.shopLotId), r = npc.rng; if (!shop) return this.leisure(npc);
     const p = shop.post;
     if (dist2d(npc, p) > 1.3 || Math.abs(npc.y - p.y) > 1.0) return this.backToPost(npc);
-    if (!first && r.next() < 0.17 && this.excursion(npc, shop)) return true;
+    if (!first && r.next() < 0.12 && this.excursion(npc, shop)) return true;
     const x = r.next(), act = x < 0.5 ? 'sell' : x < 0.78 ? 'idle' : x < 0.9 ? 'phone' : 'wait';
-    npc.stand(W, act, span(r, 12, 34), p.ry);
+    npc.stand(W, act, span(r, 20, 50), p.ry);
     return true;
   }
 
@@ -414,7 +426,7 @@ export class Brain {
     if (!spot) return false;
     const e = shop.ent, back = (n) => { this.finish(n); this.backToPost(n); };
     W.spots.claim(spot, npc); npc.spot = spot;
-    return npc.walk(W, [e.inside, e.outside, { x: spot.x, z: spot.z, y: spot.y }], (n) => {
+    return npc.walk(W, [...this.indoors(e, npc, [e.inside]), e.outside, { x: spot.x, z: spot.z, y: spot.y }], (n) => {
       if (kind === 'sweep') { n.prop = 'broom'; n.stand(W, 'sweep', span(n.rng, 14, 30), spot.ry, back); }
       else if (kind === 'lean') n.stand(W, 'lean', span(n.rng, 12, 35), spot.ry, back);
       else { this.chatHere(n, spot); n.then = back; }
@@ -432,10 +444,10 @@ export class Brain {
     const dwell = (n, act, secs, face) => { n.stand(W, act, secs, face, null); };
     const go = (n) => {
       const x = r.next();
-      if (x < 0.45) { n.prop = 'bundle'; n.carry = false; dwell(n, 'carry', span(r, 4, 9), yawTo(n.x, n.z, c.x, c.z)); }
-      else if (x < 0.62) dwell(n, 'point', span(r, 3, 7), yawTo(n.x, n.z, c.x, c.z));
-      else if (x < 0.8) dwell(n, 'talk', span(r, 5, 12), n.ry + 0.6);
-      else dwell(n, 'phone', span(r, 6, 14), n.ry);
+      if (x < 0.45) { n.prop = 'bundle'; n.carry = false; dwell(n, 'carry', span(r, 8, 18), yawTo(n.x, n.z, c.x, c.z)); }
+      else if (x < 0.62) dwell(n, 'point', span(r, 6, 14), yawTo(n.x, n.z, c.x, c.z));
+      else if (x < 0.8) dwell(n, 'talk', span(r, 8, 20), n.ry + 0.6);
+      else dwell(n, 'phone', span(r, 8, 18), n.ry);
     };
     if (o.instant) { W.placeNpc(npc, nd.x + (r.next() - 0.5), nd.z + (r.next() - 0.5), nd.y, r.range(-Math.PI, Math.PI)); go(npc); return true; }
     const carrying = r.chance(0.5);
@@ -450,7 +462,7 @@ export class Brain {
     const nodes = W.nav.nodes.filter((n) => W.inMain(n.i) && n.kind !== 'door' && dist2d(n, lm) < 9);
     if (!nodes.length) return this.leisure(npc, o);
     const nd = nodes[Math.floor(r.next() * nodes.length)];
-    const here = (n) => n.stand(W, pickW(r, [['idle', 4], ['phone', 3], ['wait', 2], ['talk', 1]]), span(r, 10, 35), yawTo(n.x, n.z, lm.x, lm.z) + (r.next() - 0.5));
+    const here = (n) => n.stand(W, pickW(r, [['idle', 4], ['phone', 3], ['wait', 2], ['talk', 1]]), span(r, 25, 80), yawTo(n.x, n.z, lm.x, lm.z) + (r.next() - 0.5));
     if (o.instant) { W.placeNpc(npc, nd.x + (r.next() - 0.5), nd.z + (r.next() - 0.5), nd.y, r.range(-Math.PI, Math.PI)); here(npc); return true; }
     return this.goPoint(npc, nd, here, { snapD: 14 }) || this.leisure(npc, o);
   }
@@ -458,8 +470,9 @@ export class Brain {
   /** The street seller: a basket on the arm, a few minutes at each plaza corner. */
   sellRoute(npc, o = {}) {
     const W = this.w, r = npc.rng;
-    const nodes = W.nav.nodes.filter((n) => W.inMain(n.i) && (n.kind === 'plaza' || n.kind === 'court'));
-    if (!nodes.length) return this.leisure(npc, o);
+    const all = W.nav.nodes.filter((n) => W.inMain(n.i) && (n.kind === 'plaza' || n.kind === 'court'));
+    if (!all.length) return this.leisure(npc, o);
+    const close = all.filter((n) => { const d = dist2d(n, npc); return d > 8 && d < 70; }), nodes = close.length ? close : all;       // the next corner, not the far side of the barrio
     const nd = nodes[Math.floor(r.next() * nodes.length)];
     const here = (n) => { n.prop = 'basket'; n.stand(W, 'sell', span(r, 35, 95), n.ry + (r.next() - 0.5) * 2); };
     if (o.instant) { W.placeNpc(npc, nd.x, nd.z, nd.y, r.range(-Math.PI, Math.PI)); here(npc); return true; }

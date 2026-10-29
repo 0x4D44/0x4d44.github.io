@@ -92,30 +92,34 @@ export function explore(ctx, bp, o = {}) {
 }
 
 /**
- * Can a player standing on a walkable roof (or an open top deck) JUMP OFF it over the fence? Runs real jumps with the physics kernel from three spots along each of
- * the four fences, straight at the fence, at walk and sprint speed, at 60 and at the page's 20 fps frame clamp (the slowest frame the player ever gets, so the
- * highest jump), and keeps pushing forward after the landing. Returns one record per jump that ended below the roof.
+ * Can a player standing on a walkable roof (or an open top deck) JUMP OFF it over the fence? Runs real jumps with the physics kernel from five spots along each of
+ * the four fences (spots inside a wall's push zone, e.g. beside the caseta, or over the stair hole are skipped), straight at the fence, at walk and sprint speed,
+ * at 60 and at the page's 20 fps frame clamp (the slowest frame the player ever gets, so the highest jump), and keeps pushing forward after the landing.
+ * Returns { tested, escapes }: one escape record per jump that ended below the roof.
  */
 export function roofJumpEscapes(ctx, bp, jump = 3.6, speeds = [2.3, 5.0], fps = [60, 20]) {
-  const S = bp.shell, ph = ctx.physics, out = [];
-  if (!bp.roof?.walkable) return out;
+  const S = bp.shell, ph = ctx.physics, escapes = [];
+  let tested = 0;
+  if (!bp.roof?.walkable) return { tested, escapes };
   const o = S.outer, yRoof = bp.roof.y, ax = (o.x0 + o.x1) / 2, az = (o.z0 + o.z1) / 2;
   const fences = [['front', 0, 1, 'z', o.z1], ['back', 0, -1, 'z', o.z0], ['left', -1, 0, 'x', o.x0], ['right', 1, 0, 'x', o.x1]];
-  for (const [side, dx, dz, axis, edge] of fences) for (const along of [-0.3, 0, 0.3]) {
+  for (const [side, dx, dz, axis, edge] of fences) for (const along of [-0.4, -0.2, 0, 0.2, 0.4]) {
     const span = axis === 'z' ? o.x1 - o.x0 : o.z1 - o.z0, u = (axis === 'z' ? ax : az) + along * span;
     const lx = axis === 'z' ? u : edge - dx * 0.6, lz = axis === 'z' ? edge - dz * 0.6 : u;       // 0.6 m inside the fence: just outside its 0.375 m push zone
     const a = bp.frame.toWorld(lx, 0, lz), b = bp.frame.toWorld(lx + dx, 0, lz + dz), l = Math.hypot(b[0] - a[0], b[2] - a[2]), ux = (b[0] - a[0]) / l, uz = (b[2] - a[2]) / l;
+    if (ph._overlaps(a[0], a[2], yRoof, P.radius, P.height)) continue;                              // inside a wall's push zone (the caseta, a roof unit): not a place to stand
     for (const speed of speeds) for (const f of fps) {
-      const dt = 1 / f, s = { x: a[0], z: a[2], y: yRoof, vy: 0, onGround: true }, base = P;
-      ph.move(s, 0, 0, dt, base);
-      if (Math.abs(s.y - yRoof) > 0.05) continue;                                                  // not standing on the roof here (stair hole, caseta, a unit)
-      ph.move(s, ux * speed * dt, uz * speed * dt, dt, { ...base, jump });
-      for (let i = 0; i < 100 && !s.onGround; i++) ph.move(s, ux * speed * dt, uz * speed * dt, dt, base);
-      for (let i = 0; i < 40; i++) ph.move(s, ux * speed * dt, uz * speed * dt, dt, base);
-      if (s.y < yRoof - 0.3) out.push({ id: bp.id, side, along, speed, fps: f, fell: +(yRoof - s.y).toFixed(2) });
+      const dt = 1 / f, s = { x: a[0], z: a[2], y: yRoof, vy: 0, onGround: true };
+      for (let i = 0; i < 12 && !(s.onGround && i > 0); i++) ph.move(s, 0, 0, dt, P);
+      if (!s.onGround || Math.abs(s.y - yRoof) > 0.05) continue;                                   // over the stair hole, not on the roof slab
+      tested++;
+      ph.move(s, ux * speed * dt, uz * speed * dt, dt, { ...P, jump });
+      for (let i = 0; i < 100 && !s.onGround; i++) ph.move(s, ux * speed * dt, uz * speed * dt, dt, P);
+      for (let i = 0; i < 40; i++) ph.move(s, ux * speed * dt, uz * speed * dt, dt, P);
+      if (s.y < yRoof - 0.3) escapes.push({ id: bp.id, side, along, speed, fps: f, fell: +(yRoof - s.y).toFixed(2) });
     }
   }
-  return out;
+  return { tested, escapes };
 }
 
 /** Is there a visited state within `r` (xz) of local point (lx,lz) at local floor height ly (+-0.35)? */

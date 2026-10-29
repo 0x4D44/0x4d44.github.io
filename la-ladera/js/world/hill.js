@@ -242,7 +242,7 @@ export function buildHill(K) {
     const n = fr.int(3, 6);
     for (let i = 0; i < n; i++) {
       const px = x + fr.range(-0.7, 0.7), pz = z + fr.range(-0.7, 0.7), yaw = fr.range(0, 3.14), right = [Math.cos(yaw), 0, -Math.sin(yaw)], s = fr.range(0.5, 0.85);
-      card(b, 'foliage_low', [px, H(px, pz) - 0.03, pz], right, [0, 1, 0], s, s * 0.85, uv, scale(tint, fr.range(0.85, 1.05)), [0, 1, 0]);
+      card(b, 'foliage_low', [px, H(px, pz) - 0.03 - s * 0.17, pz], right, [0, 1, 0], s, s * 0.85, uv, scale(tint, fr.range(0.85, 1.05)), [0, 1, 0]);   // the tile's bush sits high in the card: sink it so it rests on the ground
     }
     stats.flowers++;
   }

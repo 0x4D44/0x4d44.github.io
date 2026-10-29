@@ -9,6 +9,9 @@ import { Physics } from '../js/core/physics.js';
 import { generatePlan } from '../js/world/plan.js';
 import { buildWorld } from '../js/world/terrain.js';
 import { buildProps } from '../js/world/props.js';
+import { fitNav } from '../js/world/navfit.js';
+import { settle } from '../js/world/discover.js';
+import { makeKit } from '../js/world/kit.js';
 import { HALF } from '../js/world/field.js';
 import { footprint, pointInPoly } from '../js/world/geom.js';
 import { lotWalls, walk, SEED } from './world-lib.mjs';
@@ -93,6 +96,20 @@ test('the signage and the living props all got a place (counts, not just "no err
   assert.ok(W.hill.beds === 4 && W.hill.rocks >= 40 && W.hill.cross === 1 && W.hill.lines >= 1, JSON.stringify(W.hill));
   assert.deepEqual(W.life, { pigeons: 7, crows: 3, dogs: 2, hens: 6, swing: 1, kite: 1, ball: 1, welding: 1 });
   assert.ok(W.huerta && W.scarecrow && W.roadCross && W.henPen && W.hopscotch, 'features recorded for the people / tests');
+  assert.ok(W.vehicles.busetas === 1 && W.vehicleList.some((v) => v.kind === 'buseta'), 'the buseta found a stretch of road (the bus-stop story needs one)');
+  assert.ok(W.vehicles.cars >= 5 && W.vehicles.motos >= 20 && W.vehicles.carts >= 1, JSON.stringify(W.vehicles));
+});
+
+test('the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)', () => {
+  const P2 = plan.plazas.find((q) => q.id === 'P2'), hop = W.hopscotch, sign = A.mat('world_sign'), ys = [];
+  A.scene.updateMatrixWorld(true);
+  A.scene.traverse((o) => {
+    if (!o.isMesh || o.material !== sign) return;
+    const p = o.geometry.getAttribute('position'), v = new A.THREE.Vector3();
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld); if (Math.abs(v.x - hop.x) < 1.4 && Math.abs(v.z - hop.z) < 0.7 && Math.abs(v.y - P2.y) < 0.2) ys.push(v.y); }
+  });
+  assert.equal(ys.length, 4, 'the chalk quad is in the scene');
+  assert.ok(Math.min(...ys) >= P2.y + 0.028 + 0.004, `chalk at y ${Math.min(...ys).toFixed(3)} over a plaza whose border band is at ${(P2.y + 0.028).toFixed(3)}`);
 });
 
 test('the murals hang on tall cut walls and the flora leaves those walls bare', () => {
@@ -130,15 +147,29 @@ test('perimeter: nobody walks out of the plot from any edge (TEETH: without the 
   assert.ok(escapedBare >= walks * 0.5, `TEETH: only ${escapedBare} of ${walks} walks leave once the perimeter walls are removed`);
 });
 
-test('every nav edge can be walked both ways WITH the prop colliders (trees, poles, benches, dogs, hens, the swing tree, the huerta fence)', () => {
-  const ph = physicsOf(A), byId = new Map(plan.nav.nodes.map((n) => [n.id, n])), bad = [];
+/** Connected components (as a count) over the nodes inside the perimeter, for a list of id-pair edges. */
+function components(nodes, edges) {
+  const lim = HALF - 0.6, inside = nodes.filter((n) => Math.max(Math.abs(n.x), Math.abs(n.z)) <= lim), parent = new Map(inside.map((n) => [n.id, n.id]));
+  const find = (a) => { while (parent.get(a) !== a) { parent.set(a, parent.get(parent.get(a))); a = parent.get(a); } return a; };
+  for (const [a, b] of edges) if (parent.has(a) && parent.has(b)) parent.set(find(a), find(b));
+  return new Set(inside.map((n) => find(n.id))).size;
+}
+
+test('nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders', () => {
+  const fit = W.navFit, nav = plan.nav, byId = new Map(nav.nodes.map((n) => [n.id, n]));
   const props = A.physics.walls.filter((w) => w.id === 'prop').length;
   assert.ok(props > 300, `${props} prop colliders: the check would be vacuous without them`);
-  for (const [ia, ib] of plan.nav.edges) {
+  assert.ok(fit && fit.checked > 400 && fit.candidates > 20, `navfit looked at ${fit?.checked} edges, ${fit?.candidates} near a prop`);
+  assert.deepEqual(fit.stranded, [], 'a blocked edge that is the only link is a defect: move the prop');
+  assert.ok(fit.dropped.length >= 1 && fit.dropped.length <= 16, `${fit.dropped.length} edges dropped for a prop (more than a handful means a prop module ignores navDist)`);
+  assert.ok(fit.outside.length <= 4, `${fit.outside.length} edges lead out of the plot`);
+  assert.equal(components(nav.nodes, nav.edges), components(nav.nodes, [...nav.edges, ...fit.dropped]), 'dropping edges must not split the graph');
+  const ph = physicsOf(A), bad = [];                                                                       // an independent kernel, built here
+  for (const [ia, ib] of nav.edges) {
     const a = byId.get(ia), b = byId.get(ib);
     for (const [p, q] of [[a, b], [b, a]]) { const r = walk(ph, p, q); if (!r.ok) bad.push(`${p.id}(${p.kind} ${p.x},${p.z}) -> ${q.id}(${q.kind} ${q.x},${q.z}): ${r.reason} at ${r.at}`); }
   }
-  assert.deepEqual(bad.slice(0, 12), [], `${bad.length} blocked walks of ${plan.nav.edges.length * 2}`);
+  assert.deepEqual(bad.slice(0, 12), [], `${bad.length} blocked walks of ${nav.edges.length * 2}`);
 });
 
 test('TEETH: a prop collider across a nav edge is found by the same walk', () => {
@@ -148,6 +179,33 @@ test('TEETH: a prop collider across a nav edge is found by the same walk', () =>
   const nx = -(b.z - a.z), nz = b.x - a.x, l = Math.hypot(nx, nz);
   ph.addWall({ x1: mx - (nx / l) * 3, z1: mz - (nz / l) * 3, x2: mx + (nx / l) * 3, z2: mz + (nz / l) * 3, t: 0.2, y0: -5, y1: 60, id: 'prop' });
   assert.equal(walk(ph, a, b).ok, false);
+});
+
+test('TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link', () => {
+  const nodes = plan.nav.nodes, byId = new Map(nodes.map((n) => [n.id, n])), edges = plan.nav.edges;
+  const deg = new Map(); for (const [a, b] of edges) { deg.set(a, (deg.get(a) ?? 0) + 1); deg.set(b, (deg.get(b) ?? 0) + 1); }
+  const inside = ([a, b]) => [a, b].every((id) => Math.max(Math.abs(byId.get(id).x), Math.abs(byId.get(id).z)) < HALF - 3) && Math.hypot(byId.get(a).x - byId.get(b).x, byId.get(a).z - byId.get(b).z) > 2.5;
+  const loop = edges.find((e) => inside(e) && deg.get(e[0]) >= 2 && deg.get(e[1]) >= 2 && components(nodes, edges.filter((x) => x !== e)) === components(nodes, edges));
+  const leaf = edges.find((e) => inside(e) && (deg.get(e[0]) === 1 || deg.get(e[1]) === 1));
+  assert.ok(loop && leaf, 'the plan has a loop edge and a dead-end edge to test with');
+  const across = (e) => { const a = byId.get(e[0]), b = byId.get(e[1]), mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2, nx = -(b.z - a.z), nz = b.x - a.x, l = Math.hypot(nx, nz); return { x1: mx - (nx / l) * 2.5, z1: mz - (nz / l) * 2.5, x2: mx + (nx / l) * 2.5, z2: mz + (nz / l) * 2.5, t: 0.2, y0: -50, y1: 90, id: 'prop' }; };
+  const ctx = { plan: { ...plan, nav: { nodes, edges: edges.slice() } }, physics: { walls: [...A.physics.walls, across(loop), across(leaf)] } };
+  const fit = fitNav(ctx);
+  const has = (list, e) => list.some(([a, b]) => (a === e[0] && b === e[1]) || (a === e[1] && b === e[0]));
+  assert.ok(has(fit.dropped, loop), 'the blocked loop edge is dropped');
+  assert.ok(!has(ctx.plan.nav.edges, loop), '... and gone from plan.nav');
+  assert.ok(has(fit.stranded, leaf) && has(ctx.plan.nav.edges, leaf), 'the blocked dead-end edge is reported and kept');
+  assert.equal(components(nodes, ctx.plan.nav.edges), components(nodes, edges), 'the graph is still whole');
+});
+
+test('settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)', () => {
+  const K = makeKit(A, plan, W.occ), post = A.physics.walls.find((w) => w.id === 'prop' && w.x1 === w.x2 && w.z1 === w.z2 && w.t >= 0.1 && Math.abs(w.x1) < 80 && Math.abs(w.z1) < 80);
+  assert.ok(post, 'a round prop collider (a post) to stand on');
+  const ph = physicsOf(A);
+  assert.ok(pushedBy(ph, post.x1, post.z1, plan.heightAt(post.x1, post.z1)) > 0.05, 'the post pushes a walker standing on it');
+  const [x, z] = settle(K, post.x1, post.z1), d = Math.hypot(x - post.x1, z - post.z1);
+  assert.ok(d > 0.3 && d <= 3.0, `moved ${d.toFixed(2)} m`);
+  assert.ok(pushedBy(ph, x, z, plan.heightAt(x, z)) < 0.05, 'and the new spot is free');
 });
 
 test('budget: the batched world stays inside the draw and triangle allowance', () => {

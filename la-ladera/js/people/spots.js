@@ -3,7 +3,7 @@
 //
 //   const spots = new Spots({ plan, anchors: ctx.anchors, buildings: ctx.buildings });
 //   const s = spots.nearest('sweep', x, z, { maxD: 60, tag: 'doorstep' }); spots.claim(s, npc); ... spots.release(npc);
-//   spots.entrance('L02')        -> { id, doorId, outside:{x,y,z}, inside:{x,y,z}, ry, yawIn, kind }
+//   spots.entrance('L02')        -> { id, lot, doorId, outside:{x,y,z}, inside:{x,y,z}, ry, yawIn, kind }
 //
 // Capacity: a bench seats one, a chat spot two, a play spot (a patch of the court) six; everything else one.
 const CAPACITY = { chat: 2, play: 6, bench: 1, sweep: 1, lean: 1, vend: 1, greet: 1, stand: 2, phone: 1, counter: 1, customer: 1, cook: 1, sit: 1, work: 1, pray: 3, sleep: 1 };
@@ -54,7 +54,7 @@ export class Spots {
       if (o.half && s.occ.length !== 1) continue;
       if (o.filter && !o.filter(s)) continue;
       const d = Math.hypot(s.x - x, s.z - z); if (d > (o.maxD ?? 1e9)) continue;
-      cands.push([s, 1 / (8 + d)]);
+      cands.push([s, 1 / (6 + d) ** 1.5]);
     }
     if (!cands.length) return null;
     let tot = 0; for (const [, w] of cands) tot += w; let r = rng.next() * tot;
@@ -81,9 +81,9 @@ export class Spots {
     for (const k of prefer) { e = list.find((x) => x.kind === k); if (e) break; }
     e ??= list[0] ?? null;
     let out = null;
-    if (e) out = { id: e.id, doorId: e.doorId, kind: e.kind, outside: { x: e.outside[0], y: e.outside[1], z: e.outside[2] }, inside: { x: e.inside[0], y: e.inside[1], z: e.inside[2] }, ry: e.ry ?? 0, yawIn: e.yawIn ?? 0 };
+    if (e) out = { id: e.id, lot: lotId, doorId: e.doorId, kind: e.kind, outside: { x: e.outside[0], y: e.outside[1], z: e.outside[2] }, inside: { x: e.inside[0], y: e.inside[1], z: e.inside[2] }, ry: e.ry ?? 0, yawIn: e.yawIn ?? 0 };
     else if (lot?.entrance?.outside) {                                    // plan only (no building plan): the step in front of the lot, no door
-      const o = lot.entrance.outside; out = { id: lotId + '.e', doorId: null, kind: 'main', outside: { x: o[0], y: o[1], z: o[2] }, inside: null, ry: 0, yawIn: 0 };
+      const o = lot.entrance.outside; out = { id: lotId + '.e', lot: lotId, doorId: null, kind: 'main', outside: { x: o[0], y: o[1], z: o[2] }, inside: null, ry: 0, yawIn: 0 };
     }
     this._ent.set(key, out); return out;
   }

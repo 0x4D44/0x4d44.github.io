@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { CATALOG } from './catalog.js';
 import { decalDef } from './decals.js';
-import { drawStandin, setAtlas } from './standins.js';
+import { drawStandin, setAtlas, tintFor, u01 } from './standins.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
 import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
@@ -32,16 +32,75 @@ export async function loadInteriorAssets(ctx) {
   for (const n of names) { const e = a.meta(n); if (e && a.loaded?.has(e.glb)) ctx.interiorGlb.add(n); }
 }
 
+const _tc = new THREE.Color();
+
+/**
+ * The drawable parts of one asset, read once from its loaded GLB (tools/blender/furn_lib.py names them `<key>-<flag>-...-<n>`):
+ *   tint            the part takes the record's tint (its vertex colours, if it has any, are shades that multiply the tint)
+ *   made / unmade   drawn only for a made / an unmade bed (rec.flags.unmade)
+ *   magnets         drawn only when the record asks for fridge magnets (rec.flags.magnets)
+ *   p<a-z><k>       one of several alternatives of channel <a-z>: exactly one k is drawn, picked by the record id
+ * Anything else is always drawn. A part keeps its own library material (the glTF material name) and its own vertex colours.
+ */
+export function glbParts(ctx, name) {
+  const cache = (ctx.interiorGlbParts ??= new Map());
+  let parts = cache.get(name);
+  if (parts) return parts;
+  parts = [];
+  const e = ctx.assets.meta(name), gl = e && ctx.assets.loaded.get(e.glb), node = gl?.scene.getObjectByName(e.node);
+  if (node) {
+    const inv = new THREE.Matrix4().copy(node.matrixWorld).invert(), mm = new THREE.Matrix4();
+    node.traverse((o) => {
+      if (!o.isMesh) return;
+      const geometry = o.geometry.clone().applyMatrix4(mm.multiplyMatrices(inv, o.matrixWorld));
+      const flags = o.name.split('-').slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
+      parts.push({
+        geometry, matKey: (Array.isArray(o.material) ? o.material[0] : o.material).name || 'missing_asset', colored: !!geometry.attributes.color,
+        tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
+        ch: pick ? pick[1] : null, k: pick ? +pick[2] : 0, tinted: new Map(),
+      });
+    });
+    const n = {};                                                                    // alternatives per channel = highest index + 1
+    for (const p of parts) if (p.ch) n[p.ch] = Math.max(n[p.ch] ?? 0, p.k + 1);
+    for (const p of parts) p.choices = p.ch ? n[p.ch] : 0;
+  }
+  cache.set(name, parts);
+  return parts;
+}
+
+/** The part's geometry with its shades multiplied by the tint (cached per tint colour: palettes are small). */
+function tintedGeometry(p, tint) {
+  let g = p.tinted.get(tint);
+  if (!g) {
+    g = p.geometry.clone(); _tc.setHex(tint);
+    const a = g.attributes.color;
+    for (let i = 0; i < a.count; i++) a.setXYZ(i, a.getX(i) * _tc.r, a.getY(i) * _tc.g, a.getZ(i) * _tc.b);
+    p.tinted.set(tint, g);
+  }
+  return g;
+}
+
 /** Draw one record from its GLB; returns the number of parts drawn (0 = use the stand-in). */
 function drawGlb(ctx, b, rec, c) {
-  const parts = ctx.assets.parts(rec.name);
+  const parts = glbParts(ctx, rec.name);
   if (!parts.length) return 0;
-  M.makeRotationY(rec.ry ?? 0).setPosition(rec.x, rec.y, rec.z);
+  M.makeRotationY(rec.ry ?? 0).setPosition(rec.x, rec.kind === 'ceil' ? rec.y - c.size[1] : rec.y, rec.z);       // ceiling fixtures: rec.y is the ceiling, the model stands on y = 0 like every other
   if (rec.kind === 'wall' && ((rec.w && Math.abs(rec.w - c.size[0]) > 0.02) || (rec.h && Math.abs(rec.h - c.size[1]) > 0.02))) {
     M.multiply(S.makeScale(rec.w ? rec.w / c.size[0] : 1, rec.h ? rec.h / c.size[1] : 1, 1));          // stretched hangings (clothesline)
   }
-  for (const p of parts) b.geometry(p.matKey, p.geometry, M, { col: p.matKey === c.mat ? (rec.tint ?? undefined) : undefined });
-  return parts.length;
+  const tint = rec.tint == null ? null : tintFor(c, rec.tint), unmade = !!rec.flags?.unmade;
+  const chosen = {};
+  let n = 0;
+  for (const p of parts) {
+    if (p.made && unmade) continue;
+    if (p.unmade && !unmade) continue;
+    if (p.magnets && !rec.flags?.magnets) continue;
+    if (p.ch) { chosen[p.ch] ??= Math.floor(u01(rec.id, 11 + p.ch.charCodeAt(0)) * p.choices) % p.choices; if (chosen[p.ch] !== p.k) continue; }
+    const shaded = p.tint && tint != null && p.colored;
+    b.geometry(p.matKey, shaded ? tintedGeometry(p, tint) : p.geometry, M, { col: p.tint && !p.colored && tint != null ? tint : undefined });
+    n++;
+  }
+  return n;
 }
 
 /**

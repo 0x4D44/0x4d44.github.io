@@ -67,6 +67,7 @@ SKINSET = set(SKIN); HAIRSET = set(HAIR)
 class PB:
     def __init__(self):
         self.bm = bmesh.new(); self.vpart = []; self.fhex = []; self.fsmooth = []; self.fface = []; self.ffab = []; self.fuv = []
+        self.caps = []          # (cap face, direction it must face): re-applied after bmesh's normal recalculation, which orients a lone disc at random
     def V(self, co, part):
         v = self.bm.verts.new(co); self.vpart.append(part); return v
     def F(self, vs, hexc_, smooth=True, face=False, uv=None, fab_=None):
@@ -92,14 +93,14 @@ def ring(cx, cy, z, rx, ry, n=12, a0=0.0, a1=2 * math.pi, closed=True):
     m = n if closed else n + 1
     return [(cx + rx * math.cos(a0 + (a1 - a0) * i / (n if not closed else n)), cy + ry * math.sin(a0 + (a1 - a0) * i / (n if not closed else n)), z) for i in range(m)]
 
-def loft(pb, rings, part, hexc_, hex_fn=None, closed=True, cap_top=True, cap_bot=True, smooth=True, face_fn=None, fab_=None, uv=None):
+def loft(pb, rings, part, hexc_, hex_fn=None, closed=True, cap_top=True, cap_bot=True, smooth=True, face_fn=None, fab_=None, uv=None, fab_fn=None):
     vr = [[pb.V(p, part) for p in rg] for rg in rings]
     n = len(rings[0])
     nn = n if closed else n - 1
     for r in range(len(rings) - 1):
         for i in range(nn):
             j = (i + 1) % n
-            pb.F((vr[r][i], vr[r][j], vr[r + 1][j], vr[r + 1][i]), hex_fn(r) if hex_fn else hexc_, smooth, face_fn(r, i) if face_fn else False, uv=uv, fab_=fab_)
+            pb.F((vr[r][i], vr[r][j], vr[r + 1][j], vr[r + 1][i]), hex_fn(r) if hex_fn else hexc_, smooth, face_fn(r, i) if face_fn else False, uv=uv, fab_=fab_fn(r) if fab_fn else fab_)
     if closed:
         # caps face OUTWARD, away from the other end of the loft, whatever direction the rings run (arms and sleeves run downward: their first ring is the TOP one, and its
         # cap used to face down into the sleeve, so the AO bake lit it from inside: a dark cup on every shoulder)
@@ -109,13 +110,16 @@ def loft(pb, rings, part, hexc_, hex_fn=None, closed=True, cap_top=True, cap_bot
             for i_ in range(len(ring_)):
                 a_ = ring_[i_]; b_ = ring_[(i_ + 1) % len(ring_)]
                 nx += (a_[1] - b_[1]) * (a_[2] + b_[2]); ny += (a_[2] - b_[2]) * (a_[0] + b_[0]); nz += (a_[0] - b_[0]) * (a_[1] + b_[1])
-            return ring_ if nx * (c[0] - o[0]) + ny * (c[1] - o[1]) + nz * (c[2] - o[2]) >= 0 else ring_[::-1]
+            want = (c[0] - o[0], c[1] - o[1], c[2] - o[2])
+            return (ring_ if nx * want[0] + ny * want[1] + nz * want[2] >= 0 else ring_[::-1]), want
         if cap_bot:
-            cv = [pb.V(tuple(p_), part) for p_ in cap_ring(rings[0], rings[-1])]
-            pb.F(cv, hex_fn(0) if hex_fn else hexc_, False, fab_=fab_, uv=uv)
+            ro_, want = cap_ring(rings[0], rings[-1])
+            f_ = pb.F([pb.V(tuple(p_), part) for p_ in ro_], hex_fn(0) if hex_fn else hexc_, False, fab_=fab_fn(0) if fab_fn else fab_, uv=uv)
+            if f_ is not None: pb.caps.append((f_, want))
         if cap_top:
-            cv = [pb.V(tuple(p_), part) for p_ in cap_ring(rings[-1], rings[0])]
-            pb.F(cv, hex_fn(len(rings) - 2) if hex_fn else hexc_, False, fab_=fab_, uv=uv)
+            ro_, want = cap_ring(rings[-1], rings[0])
+            f_ = pb.F([pb.V(tuple(p_), part) for p_ in ro_], hex_fn(len(rings) - 2) if hex_fn else hexc_, False, fab_=fab_fn(len(rings) - 2) if fab_fn else fab_, uv=uv)
+            if f_ is not None: pb.caps.append((f_, want))
     return vr
 
 
@@ -292,7 +296,10 @@ def build_person(pd):
         if tst == 'dress': return top
         cut = H * 0.47 if tst in ('jumper', 'hoodie', 'tshirt', 'football') else waist_z - 0.01
         return top if z > cut else (bot if bst not in ('skirt',) else top)
-    vr_t = loft(pb, torso_rings(layer), 'torso', top, hex_fn=thex, cap_top=True, cap_bot=True)
+    cut_z_ = None if tst in ('jacket', 'puffer', 'coat', 'labcoat', 'dress') else (H * 0.47 if tst in ('jumper', 'hoodie', 'tshirt', 'football') else waist_z - 0.01)
+    def tfab(r):          # the strip of pelvis below the hem is trouser cloth (denim / suit), not the top's jersey: it used to read as a flat navy apron between two textured legs
+        return BOTF if (cut_z_ is not None and bst != 'skirt' and rows[r][0] <= cut_z_) else TOPF
+    vr_t = loft(pb, torso_rings(layer), 'torso', top, hex_fn=thex, cap_top=True, cap_bot=True, fab_fn=tfab)
     fab('cotton')
     if pd.get('inner') and outer:    # shirt/collar visible at the neck opening
         loft(pb, [ring(0, lean(P['nbase']) - 0.01 + 0.012, z, rx, ry, 20) for z, rx, ry in ((P['trap'] + 0.0, 0.07 * k, 0.062 * k), (P['nbase'] + 0.025, 0.056 * k, 0.05 * k))], 'neck', pd['inner'], cap_top=False, cap_bot=False)
@@ -906,6 +913,24 @@ def build_person(pd):
             rbox(pb, (sg * hx, 0.045 * k, P['ankle'] + 0.040 * k), (0.030 * k, 0.07 * k, 0.012), 'foot' + sd, '#101010')
         if sst == 'boot':
             loft(pb, [ring(sg * hx, -0.004, P['ankle'] + 0.02, r3 * 1.5, r3 * 1.5, 14), ring(sg * hx, -0.004, P['ankle'] + 0.14 * k, r3 * 1.45 + lay, r3 * 1.45 + lay, 14), ring(sg * hx, -0.004, P['ankle'] + 0.16 * k, r3 * 1.5 + lay, r3 * 1.5 + lay, 14)], 'shin' + sd, sc_, cap_top=False, cap_bot=False)
+    # ---- untucked top: the hem hangs over the trousers, a flared ring one to two centimetres outside the pelvis AND the thigh tops. The torso loft ends at the crotch and the
+    #      thigh tubes are wider than it at the hips, so they poked through the shirt in torn-looking teeth at both sides of every T-shirt hem.
+    if tst in ('tshirt', 'football', 'jumper', 'hoodie') and bst not in ('skirt', 'skirtx'):
+        fab(TOPF)
+        zc_ = H * 0.47
+        def th_out(z_):          # outer edge of the thigh tube at height z_ (the last leg built; both are alike), straight from the ring list the leg was lofted from
+            r_ = th_rows[-1][1]
+            for (za_, ra_, _, _), (zb_, rb_, _, _) in zip(th_rows, th_rows[1:]):
+                if zb_ <= z_ <= za_: r_ = rb_ + (ra_ - rb_) * (z_ - zb_) / (za_ - zb_ + 1e-9); break
+            else:
+                if z_ > th_rows[0][0]: r_ = th_rows[0][1]
+            return hx + r_ + lay
+        hr_ = []
+        # (height above the hem, flare over the body, margin over the thigh): the margin has to beat the 4-6 mm the cloth wrinkle pass pushes the thigh and the hem by
+        for dz_, fl_, mg_ in ((0.085, 0.0, -0.004), (0.055, 0.003, 0.003), (0.025, 0.010, 0.009), (0.0, 0.015, 0.012), (-0.013, 0.017, 0.014)):
+            z_ = zc_ + dz_; r_ = rows_at(rows, z_)
+            hr_.append(ring(0, r_[3] + lean(z_), z_, max(r_[1] * layer + fl_, th_out(z_) + mg_), r_[2] * layer + fl_ * 0.8, 20))
+        loft(pb, hr_, 'torso', top, cap_top=False, cap_bot=False)
     # ---------------- scarf, bags
     if pd.get('scarf'):
         sc = pd['scarf']; fab('knit')
@@ -930,11 +955,21 @@ def build_person(pd):
             rbox(pb, (sd_x, 0.04 * k, P['hip'] - 0.05 * k), (0.07 * k, 0.28 * k, 0.22 * k), 'thigh_r', bc)
             loft(pb, [ring(sd_x - 0.02, 0.04 * k, P['hip'] + 0.12 * k, 0.012, 0.012, 6), ring(sd_x - 0.04, 0.04 * k, P['hip'] + 0.03 * k, 0.012, 0.012, 6)], 'thigh_r', bc, cap_top=True, cap_bot=True)
         elif bs_ == 'shoulder':
-            rbox(pb, (shw * 0.95 + 0.09 * k, 0.01, P['hip'] + 0.0), (0.06 * k, 0.24 * k, 0.20 * k), 'thigh_r', bc)
-            for sg in (1,):
-                pass
-            tube_pts(pb, [(shw * 0.55, 0.0, P['sh'] + 0.0), (0.0, rows[8][2] + 0.012 * k, rows[6][0] + 0.06), (-shw * 0.7, 0.0, P['hip'] + 0.12 * k)], [0.008, 0.008, 0.008], 'chest', bc, n=5) if False else None
-            rbox(pb, (shw * 0.55, 0.0, (P['sh'] + P['hip'] + 0.0) / 2 + 0.2 * k), (0.02 * k, 0.05 * k, 0.40 * k), 'chest', bc)
+            # crossbody: the bag rides on the left hip and the strap runs from the right shoulder over the chest and the back, hugging the torso
+            # (it used to be a vertical stick standing 40 cm tall beside the neck)
+            rbox(pb, (-(shw * 0.95 + 0.09 * k), 0.01, P['hip'] + 0.0), (0.06 * k, 0.24 * k, 0.20 * k), 'thigh_l', bc)
+            def sp_(z_, xs_, sgn_, off_=0.006):
+                r_ = rows_at(rows, z_); e_ = max(0.0, 1.0 - (xs_ / (r_[1] * layer)) ** 2)
+                return (xs_, r_[3] + lean(z_) + sgn_ * (r_[2] * layer * math.sqrt(e_) + off_), z_)
+            z_a = P['sh'] + 0.030; z_b = P['hip'] + 0.10 * k
+            for sgn_ in (1, -1):
+                pts_ = []
+                for i_ in range(7):
+                    t_ = i_ / 6.0; z_ = z_a + (z_b - z_a) * t_
+                    xr_ = rows_at(rows, z_)[1] * layer
+                    pts_.append(sp_(z_, shw * 0.42 * (1 - t_) - 0.80 * xr_ * t_, sgn_))
+                tube_pts(pb, pts_, [0.0075 * k] * 7, 'chest', bc, n=5)
+            rbox(pb, (shw * 0.42, rows_at(rows, z_a)[3] + lean(z_a), z_a + 0.004), (0.02 * k, 0.085 * k, 0.012), 'chest', bc)       # over the shoulder
     # normalise: soles on z=0
     # (soles are built from z=0 already)
     return pb, P, dict(rows=rows, ctrl=ctrl, hy0=hy0, kilt=(kz['zt'], kz['zh'], {'kilt': 0.90, 'pleated': 0.80, 'a_line': 0.72, 'maxi': 0.48}[pd['skirt']['kind']]) if kz else None)
@@ -1575,6 +1610,11 @@ def build_people(only=None):
         pb.bm.normal_update()
         nflip = fix_outward(pb.bm)
         if nflip: print(pd['id'], 'inside-out components flipped:', nflip)
+        pb.bm.normal_update()
+        ncap = 0
+        for f_, want in pb.caps:       # a cap disc is a component of its own: bmesh orients it arbitrarily, and the AO bake of a downward-facing shoulder cap was a black spot
+            if f_.is_valid and f_.normal.dot(Vector(want)) < 0: f_.normal_flip(); ncap += 1
+        if ncap: print(pd['id'], 'cap discs turned outward:', ncap)
         pb.bm.normal_update()
         me = bpy.data.meshes.new(f"person_{pd['id']}_mesh"); pb.bm.to_mesh(me)
         for pi, p_ in enumerate(me.polygons): p_.use_smooth = pb.fsmooth[pi]

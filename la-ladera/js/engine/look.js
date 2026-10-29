@@ -160,6 +160,7 @@ export class Look {
     su.uGlowCol.value.copy(p.sun).lerp(p.hor, 0.35);
     su.uGlowAmt.value = p.glow; su.uCloudAmt.value = p.cloud; su.uStars.value = p.stars * st.night;
     su.uSunVis.value = sstep(-2.5, 0.5, st.elDeg); su.uMoonVis.value = sstep(-3, -9, st.elDeg) * sstep(-1, 4, st.moonEl);
+    su.uCity.value = 1 - sstep(-9, -1, st.elDeg);                        // the valley's lights come on at dusk (sun 1 deg below the horizon), full by 9 deg
     lookUniforms.ladGlowCol.value.copy(su.uGlowCol.value); lookUniforms.ladGlowAmt.value = p.glow * (1 - 0.6 * ind);
   }
 

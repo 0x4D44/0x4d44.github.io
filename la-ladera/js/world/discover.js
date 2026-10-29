@@ -1,6 +1,25 @@
 // Outdoor discoveries: things a walker finds by being near them. Spanish names (journal + toast), one English line, each bound to
 // something that really exists in the world (a built feature, a landmark of the plan, or a tree zone). Registered through ctx.discover.
+import { OCC } from './occupancy.js';
+
 const KINDS = ['vista', 'mirador', 'shrine', 'object', 'story', 'nature', 'mural', 'hidden'];
+
+const wallDist = (w, x, z) => {                                       // from a point to a collider's surface
+  const dx = w.x2 - w.x1, dz = w.z2 - w.z1, l2 = dx * dx + dz * dz, t = l2 > 1e-9 ? Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.z1) * dz) / l2)) : 0;
+  return Math.hypot(x - (w.x1 + t * dx), z - (w.z1 + t * dz)) - (w.t ?? 0) / 2;
+};
+
+/**
+ * The nearest spot to (x, z) a walker can really stand on: 0.5 m clear of every prop / guard collider, outside the lots, off steep ground.
+ * What we mark is often the very object (a signpost, the scarecrow, a stake), whose own collider covers its centre.
+ */
+export function settle(K, x, z) {
+  const walls = (K.ctx.physics?.walls ?? []).filter((w) => (w.id === 'prop' || w.id === 'guard') && wallDist(w, x, z) < 6);
+  const ok = (px, pz) => K.occ.clear(px, pz, 0.5, OCC.LOT | OCC.STEEP) && !walls.some((w) => wallDist(w, px, pz) < 0.5);
+  if (ok(x, z)) return [x, z];
+  for (let r = 0.4; r <= 3.0; r += 0.2) for (let k = 0; k < 16; k++) { const a = (k / 16) * Math.PI * 2 + r, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r; if (ok(px, pz)) return [px, pz]; }
+  return [x, z];
+}
 
 export function buildDiscoveries(K) {
   const { ctx, plan } = K, W = ctx.world, H = plan.heightAt, out = [];
@@ -32,7 +51,11 @@ export function buildDiscoveries(K) {
   const fp = plan.pois.find((p) => p.kind === 'vend' && (p.tags ?? []).some((t) => /fruit/.test(t)));
   if (fp) add('carrito', 'El carrito de fruta', 'A hand-painted price board, a pile of mangos and a scale older than its owner.', 'object', fp.x, fp.z, { radius: 3 });
   // everything the other modules found a place for (signs.js murals / arch / plaques / hopscotch, hill.js, life.js): { id, name, en, kind, x, z, y, radius, dy }
-  for (const m of [...(W.murals ?? []), ...(W.extra ?? [])]) add(m.id, m.name, m.en, m.kind ?? 'mural', m.x, m.z, { radius: m.radius ?? 5, y: m.y, dy: m.dy });
+  for (const m of W.murals ?? []) add(m.id, m.name, m.en, m.kind ?? 'mural', m.x, m.z, { radius: m.radius ?? 5, y: m.y, dy: m.dy });
+  for (const m of W.extra ?? []) {                                    // beside the thing itself, never inside its collider; y follows the ground
+    const [x, z] = Number.isFinite(m.x) && Number.isFinite(m.z) ? settle(K, m.x, m.z) : [m.x, m.z];
+    add(m.id, m.name, m.en, m.kind ?? 'mural', x, z, { radius: m.radius ?? 5, y: m.y == null ? undefined : m.y + (H(x, z) - H(m.x, m.z)), dy: m.dy });
+  }
   W.discoveries = out.map((d) => d.id);
   return out;
 }

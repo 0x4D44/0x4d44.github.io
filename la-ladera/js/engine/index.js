@@ -1,7 +1,7 @@
 // Engine core (owner: A1). Exports initEngine(ctx) (stage 'engine': renderer, look, post, lights, settings, UI) and
 // startEngine(ctx) (last stage: player, visibility, frame loop).
 //
-// ctx fields set here: renderer camera look post pool settings sun hemi stats quality qualityMode
+// ctx fields set here: renderer camera look post pool glow settings sun hemi stats quality qualityMode
 //   ctx.step(dt)  run every system once        ctx.render()  draw one frame (idempotent, deterministic with ?manual)
 //   ctx.setHour(h) ctx.setQuality(level) ctx.resize() ctx.resizeTo(w,h)    ctx.ui.{prompt,subtitle,toast,place}
 //   ctx.stats = { fps, frameMs, drawCalls, triangles, geometries, textures, programs, quality, ... }  (live, every frame)
@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { Look } from './look.js';
 import { Post, PROFILES } from './post.js';
 import { LightPool } from './lights.js';
+import { Glow } from './glow.js';
 import { Visibility } from './visibility.js';
 import { createSettings } from './settings.js';
 import { Player } from './player.js';
@@ -74,7 +75,8 @@ export function initEngine(ctx) {
   const post = new Post(ctx, renderer, ctx.scene, camera);
   const pool = new LightPool(ctx, 8);
   const visibility = new Visibility(ctx);
-  Object.assign(ctx, { look, post, pool, visibility, sun: look.sun, hemi: look.hemi });
+  const glow = new Glow(ctx);
+  Object.assign(ctx, { look, post, pool, visibility, glow, sun: look.sun, hemi: look.hemi });
   ctx.stats = { fps: 0, frameMs: 0, drawCalls: 0, triangles: 0, geometries: 0, textures: 0, programs: 0, quality: ctx.quality, frames: 0 };
 
   // ---- size / quality -----------------------------------------------------------------------------------------------------
@@ -140,6 +142,7 @@ export function initEngine(ctx) {
     if (ctx.contextLost) return;
     const info = renderer.info; info.reset();
     look.update(0);                                              // sun/sky placement for the camera pose of this very frame
+    glow.sync();                                                 // lamp and city sprites: clock, viewport and fog of this very frame
     post.render(ctx.frameDt, look);
     const s = ctx.stats;
     s.drawCalls = info.render.calls; s.triangles = info.render.triangles; s.geometries = info.memory.geometries;

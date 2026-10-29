@@ -39,8 +39,24 @@ export const PALETTE = {
 };
 const TOP_BY_AGE = (tags) => (tags.includes('kid') ? PALETTE.topKid : tags.includes('elder') ? PALETTE.topElder : PALETTE.top);
 /** Chance that a character re-colours each slot (a uniform keeps its look and only changes footwear / small details). */
-const P_SLOT = { top: 1, bottom: 0.7, shoes: 0.55, hat: 0.7, accessory: 0.6, inner: 0.5 };
-const P_SLOT_UNIFORM = { shoes: 0.6, accessory: 0.35 };
+const P_SLOT = { top: 1, bottom: 0.7, shoes: 0.55, hat: 0.7, accessory: 0.6, inner: 0.5, skin: 0.9 };
+const P_SLOT_UNIFORM = { shoes: 0.6, accessory: 0.35, skin: 0.9 };
+
+// ---- skin ---------------------------------------------------------------------------------------------------------------------------------
+// The face tile is painted with the character's own tone and its vertex colour is white, so a slot ratio above 1 cannot brighten it (rig.js clamps at 1):
+// a person's tone can only be pushed DARKER (sun, work outdoors) and warmer (red-brown) than the baked one. Across the 30 bodies (skin 1..6 of the build: light mestizo,
+// mid brown, indigenous red-brown, dark Afro-Colombian) that gives a continuous range; no two neighbours share an exact tone.
+const toHex2 = (v) => { const c = v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055; return Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, '0'); };
+/** The colour whose tint is the baked tint of `slot` times `ratio` (per channel, linear): what the variant stores, so slotRatio gives `ratio` back. */
+export function shadeHex(slot, ratio) {
+  const g = slot.gain ?? 1, base = tintOf(slot.hex, g);
+  return '#' + [0, 1, 2].map((c) => toHex2(Math.min(1, base[c] * ratio[c]) / g)).join('');
+}
+/** A darker / warmer version of the baked skin: `dark` and `warm` in [0, 1]. */
+export function skinShade(slot, dark, warm) {
+  const k = 1 - 0.22 * dark;
+  return shadeHex(slot, [k, k * (1 - 0.07 * warm), k * (1 - 0.15 * warm)]);
+}
 
 function pickColour(rng, slotName, slot, tags, forbid) {
   const list = slotName === 'top' ? TOP_BY_AGE(tags) : PALETTE[slotName];
@@ -65,6 +81,7 @@ export function makeVariant(meta, rng, taken = null, tries = 20) {
     const spec = {}; let topHex = null;
     for (const [name, p] of Object.entries(chance)) {
       const slot = slots[name]; if (!slot || !rng.chance(p)) continue;
+      if (name === 'skin') { spec.skin = skinShade(slot, rng.next(), rng.next()); continue; }
       const hex = pickColour(rng, name, slot, tags, name === 'bottom' ? new Set([topHex]) : null); if (!hex) continue;
       spec[name] = hex; if (name === 'top') topHex = hex;
     }

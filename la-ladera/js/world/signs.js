@@ -205,8 +205,8 @@ function paintPlaque(name) {
   return (g, w, h) => {
     g.fillStyle = '#17458f'; rrect(g, 0, 0, w, h, 7); g.fill();
     g.strokeStyle = '#f4f4ee'; g.lineWidth = 3; rrect(g, 4, 4, w - 8, h - 8, 5); g.stroke();
-    if (kind) text(g, kind, w / 2, 17, fit(g, kind, w - 40, 15, 9), '#cfe0ff');
-    const sz = fit(g, rest, w - 26, 30, 12); text(g, rest, w / 2, kind ? 42 : 34, sz, '#f4f4ee');
+    if (kind) text(g, kind, w / 2, 16, fit(g, kind, w - 40, 19, 9), '#e4eeff');
+    const sz = fit(g, rest, w - 26, 28, 12); text(g, rest, w / 2, kind ? 43 : 34, sz, '#f4f4ee');
   };
 }
 function paintRayuela(g, w, h) {
@@ -345,7 +345,7 @@ export function buildSigns(K) {
     const vx = p.cx + ox * 2.4, vz = p.cz + oz * 2.4;
     occ.take(vx, vz, 1.2);
     (W.muralRuns ??= new Set()).add(p.run);
-    extra.push({ id, name, en, kind: 'mural', x: vx, z: vz, y: H(vx, vz), radius: 5.2, dy: 3.2 });
+    extra.push({ id, name, en, kind: 'mural', x: vx, z: vz, y: H(vx, vz), radius: 5.2, dy: 3.2, face: [+ox.toFixed(3), +oz.toFixed(3)] });   // face: the way the painting looks (toward the street)
     stats.murals++;
   });
 
@@ -376,12 +376,13 @@ export function buildSigns(K) {
         b.box('iron_black', x, gy + 2.36, z, 0.94, 0.27, 0.02, { ry, col: [0.15, 0.16, 0.2] });
         for (const f of [1, -1]) panel(K, b, `plaque.${i}`, x + q.tx * f * 0.012, z + q.tz * f * 0.012, q.tx * f, q.tz * f, 0.9, gy + 2.36 - 0.1125, gy + 2.36 - 0.1125, 0.225);
         K.post(x, z, 0.06, 2.6); occ.take(x, z, 0.4);
-        plaqueAt.push({ x, z, y: gy, i, name: st.name });
+        plaqueAt.push({ x, z, y: gy, i, name: st.name, tx: q.tx, tz: q.tz });
         stats.plaques++; done = true; break;
       }
       if (done) break;
     }
   });
+  W.plaques = plaqueAt;
   const sp = plan.spawn;
   const near = plaqueAt.slice().sort((a, c) => Math.hypot(a.x - sp.x, a.z - sp.z) - Math.hypot(c.x - sp.x, c.z - sp.z))[0];
   if (near) extra.push({ id: 'placas', name: 'Las placas de las calles', en: `Blue enamel plaques on iron posts: this one says "${near.name}"; every street of the barrio has its own, and some have a story.`, kind: 'object', x: near.x, z: near.z, y: near.y, radius: 3.6, dy: 3 });
@@ -398,15 +399,15 @@ export function buildSigns(K) {
       if (spotOk(x, z, ry)) hit = [x, z];
     }
     if (hit) {
-      const [x, z] = hit, y = H(x, z) + 0.016, dx = c, dz = -s, rx = s, rz = c;           // d = the plaza's local x (the long way), r = its local z
+      const [x, z] = hit, y = pl.y + 0.036, dx = c, dz = -s, rx = s, rz = c;              // the paving tops out at pl.y + 0.02 (its border band at + 0.028): chalk lies on it. d = the plaza's local x (the long way), r = its local z
       const BL = [x - dx * LEN / 2 - rx * WID / 2, y, z - dz * LEN / 2 - rz * WID / 2], BR = [x - dx * LEN / 2 + rx * WID / 2, y, z - dz * LEN / 2 + rz * WID / 2];
       const TR = [x + dx * LEN / 2 + rx * WID / 2, y, z + dz * LEN / 2 + rz * WID / 2], TL = [x + dx * LEN / 2 - rx * WID / 2, y, z + dz * LEN / 2 - rz * WID / 2];
       const r = K.signs ? K.signs.uv('rayuela') : [0, 0, 1, 1];
       b.quad('world_sign', BL, BR, TR, TL, { uv: [r[0], r[1], r[2], r[1], r[2], r[3], r[0], r[3]], col: K.signs ? [1, 1, 1] : FLAT.rayuela });
       occ.take(x, z, 1.5);
       const sx = x - dx * (LEN / 2 - 0.3), sz = z - dz * (LEN / 2 - 0.3);                 // the start square
-      W.hopscotch = { x, z, ry, sx, sz, dx, dz, len: LEN, y: y - 0.016 };
-      extra.push({ id: 'rayuela', name: 'La rayuela', en: 'A hopscotch in chalk, redrawn every week by whoever is small enough to care; it still ends in "cielo".', kind: 'object', x: sx, z: sz, y: y - 0.016, radius: 2.4, dy: 2.5 });
+      W.hopscotch = { x, z, ry, sx, sz, dx, dz, len: LEN, y: pl.y + 0.02 };
+      extra.push({ id: 'rayuela', name: 'La rayuela', en: 'A hopscotch in chalk, redrawn every week by whoever is small enough to care; it still ends in "cielo".', kind: 'object', x: sx, z: sz, y: pl.y + 0.02, radius: 2.4, dy: 2.5 });
       stats.hopscotch = 1;
     }
   }

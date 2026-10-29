@@ -114,16 +114,17 @@ export function paintSignAtlas(lots, THREE_ = THREE) {
   const H = Math.min(2048, Math.ceil((y + rowH + GUT) / 4) * 4);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d'); g.fillStyle = '#d8d0c0'; g.fillRect(0, 0, W, H);
-  const uv = {};
+  const uv = {}, failed = [];
   for (const it of items) {
     g.save(); g.beginPath(); g.rect(it.x - GUT, it.y - GUT, it.w + 2 * GUT, it.h + 2 * GUT); g.clip(); g.translate(it.x, it.y);
-    try { it.paint(g, it.w, it.h); } catch (e) { g.fillStyle = '#c8c0b0'; g.fillRect(-GUT, -GUT, it.w + 2 * GUT, it.h + 2 * GUT); console.warn('[signs]', it.key, e); }
+    // a painter that throws leaves a blank board; it is listed on the atlas (ensureSignAtlas reports it through ctx.errors), never written to the console
+    try { it.paint(g, it.w, it.h); } catch (e) { g.fillStyle = '#c8c0b0'; g.fillRect(-GUT, -GUT, it.w + 2 * GUT, it.h + 2 * GUT); failed.push({ key: it.key, message: String(e?.message ?? e) }); }
     g.restore();
     uv[it.key] = [it.x / W, 1 - (it.y + it.h) / H, (it.x + it.w) / W, 1 - it.y / H];
   }
   const tex = new THREE_.CanvasTexture(cv);
   tex.colorSpace = THREE_.SRGBColorSpace; tex.anisotropy = 8; tex.generateMipmaps = true; tex.minFilter = THREE_.LinearMipmapLinearFilter; tex.magFilter = THREE_.LinearFilter;
-  return { texture: tex, uv, canvas: cv, size: [W, H], count: items.length };
+  return { texture: tex, uv, canvas: cv, size: [W, H], count: items.length, failed };
 }
 
 /** The shared `sign_atlas` material around a painted atlas (vertex colours stay white: the atlas carries its own colours). */
@@ -144,7 +145,10 @@ export function ensureSignAtlas(ctx) {
   try {
     const lots = ctx.plan?.lots ?? [...(ctx.buildings?.values?.() ?? [])].map((b) => b.lot);
     const atlas = paintSignAtlas(lots);
-    if (atlas) { ctx.matlib.cache.set('sign_atlas', signMaterial(atlas)); ctx.signAtlas = atlas; }
+    if (atlas) {
+      ctx.matlib.cache.set('sign_atlas', signMaterial(atlas)); ctx.signAtlas = atlas;
+      for (const f of atlas.failed) (ctx.errors ??= []).push({ stage: 'arch', message: `sign painter ${f.key}: ${f.message}` });
+    }
   } catch (e) { (ctx.errors ??= []).push({ stage: 'arch', message: 'sign atlas ' + String(e?.message ?? e), stack: e?.stack }); }
   return ctx.signAtlas;
 }

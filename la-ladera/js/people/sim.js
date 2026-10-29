@@ -12,6 +12,7 @@ import { planCast } from './cast.js';
 import { Brain } from './brain_v2.js';
 import { Spots } from './spots.js';
 import { Doors } from './doors.js';
+import { Indoor } from './indoor.js';
 import { makeRng } from '../core/rng.js';
 
 export const TIER0 = 28, TIER1 = 70;     // full-rate simulation / 20 Hz / 5 Hz
@@ -39,7 +40,7 @@ export class PeopleSim {
     this.rng = makeRng(ctx.seed ?? 1).fork('people');
     this.physics = ctx.physics; this.brain = new Brain(this);
     this.player = { x: 0, y: 0, z: 0, yaw: 0, isPlayer: true };
-    this.nav = null; this.landmarks = []; this.comp = null; this.mainComp = 0; this.spots = null; this.doors = null; this.lots = null;
+    this.nav = null; this.landmarks = []; this.comp = null; this.mainComp = 0; this.spots = null; this.doors = null; this.indoor = null; this.lots = null;
     this.shops = new Map(); this.cast = [];
     this._grid = new Map(); this._near = []; this._cs = 3; this.clockT = 0; this._later = [];
     this.simVisible = true;          // Node tests: "visible" = within 35 m of the player (the world replaces this with the camera frustum)
@@ -60,7 +61,7 @@ export class PeopleSim {
     const { comp, sizes } = nav.components(); this.comp = comp; this.mainComp = sizes.indexOf(Math.max(...sizes));
     this.landmarks = collectLandmarks(plan);
     this.spots = new Spots({ plan, anchors: ctx.anchors ?? [], buildings: ctx.buildings ?? new Map() });
-    this.doors = new Doors(this);
+    this.doors = new Doors(this); this.indoor = new Indoor(this);
     this._indexLots(plan); this._makeShops(plan);
     const cast = this.cast = planCast({ plan, charMetas, rng: this.rng.fork('cast'), count });
     const mainNodes = nav.nodes.filter((nd) => this.inMain(nd.i)), sp = plan.spawn ?? { x: 0, z: 0 };
@@ -117,7 +118,7 @@ export class PeopleSim {
     for (const lot of plan.lots) {
       if (!lot.shop) continue;
       const ent = S.entrance(lot.id, ['shop', 'main']);
-      const counters = S.inside(lot.id, 'counter'), custs = S.inside(lot.id, 'customer');
+      const counters = S.inside(lot.id, 'counter'); let custs = S.inside(lot.id, 'customer');
       let post = null;
       const c0 = counters.find((a) => (a.tags ?? []).includes('shopkeeper')) ?? counters[0];
       if (c0) post = { x: c0.x, y: c0.y, z: c0.z, ry: c0.ry };
@@ -160,6 +161,13 @@ export class PeopleSim {
   canSnap(n) { return !n.visible && (n.dist ?? 1e9) > 25; }
   /** Is this point out of the player's sight (the world refines this with the camera frustum)? */
   unseen(p) { return dist2d(p, this.player) > 30; }
+
+  // hooks: the world (views, prompts) overrides them; under Node they do nothing
+  onNpcCreated(n) { /* world: make the view and the prompt */ }
+  syncNpc(n, dt) { /* world: pose the view */ }
+  onAway(n, away) { /* world: hide or show the view */ }
+  beforeStep(dt) { /* world: frustum */ }
+  afterStep(dt) { /* world: dialogue */ }
 
   /** Graph path (node indices) -> waypoints with a "keep to your right" lane offset. */
   waypoints(npc, idx) {
@@ -244,7 +252,11 @@ export class PeopleSim {
     const msg = String(e?.message ?? e), rec = { id: n?.id ?? null, msg, stack: String(e?.stack ?? '').split('\n').slice(0, 4).join(' | '), t: +this.t.toFixed(1) };
     if (this.faults.length < 40) this.faults.push(rec);
     if (!this._faultSeen) this._faultSeen = new Set();
-    if (!this._faultSeen.has(msg)) { this._faultSeen.add(msg); try { console.error('[people] ' + (n ? n.id + ': ' : '') + msg + '\n' + rec.stack); } catch { /* no console */ } }
+    if (!this._faultSeen.has(msg)) {
+      this._faultSeen.add(msg);
+      try { (this.ctx.errors ??= []).push({ stage: 'people', npc: n?.id ?? null, message: msg, stack: rec.stack }); } catch { /* no error list */ }
+      try { console.error('[people] ' + (n ? n.id + ': ' : '') + msg + '\n' + rec.stack); } catch { /* no console */ }
+    }
     if (!n) return;
     try {
       n.then = null; n.arrive = null; n.path = null; n.moving = false; n.speed = 0; n.convo = null;

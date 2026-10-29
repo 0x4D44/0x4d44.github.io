@@ -66,7 +66,7 @@ export function roomFinish(room, bp) {
 /** Facade colours/materials for the building (exterior faces). */
 export function facadeStyle(bp) {
   const L = bp.look;
-  const m = L.base === 'brick' ? 'brick_clay_hollow' : L.base === 'rough' ? 'plaster_rough' : L.base === 'peeling' ? 'paint_peeling' : 'plaster_a';
+  const m = L.base === 'brick' ? 'brick_clay_hollow' : L.base === 'rough' ? 'plaster_rough' : L.base === 'peeling' ? 'paint_peeling_soft' : 'plaster_a';
   const wall = L.base === 'brick' ? lin(0xe0d2c8) : lin(parseInt(L.wall, 16));
   return { m, wall, trim: lin(parseInt(L.trim, 16)), roof: lin(parseInt(L.roof, 16)), door: lin(parseInt(L.door, 16)), metal: lin(parseInt(L.metal, 16)), brick: L.base === 'brick' };
 }
