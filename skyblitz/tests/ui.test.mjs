@@ -48,3 +48,10 @@ test('recordResult keeps the best and reports records', () => {
   assert.deepEqual(bestFor(s, 'neon'), { lap: null, race: null });
   assert.equal(loadSave().best['sunrise|falcon'].lap, 58.5, 'persisted');
 });
+
+test('U-3: stunt popup text merges repeats into one counted line', async () => {
+  const { popupText } = await import('../src/ui/hud.js');
+  assert.equal(popupText('BARREL ROLL', 1, 6), 'BARREL ROLL +6%');
+  assert.equal(popupText('BARREL ROLL', 3, 18), 'BARREL ROLL x3 +18%');
+  assert.equal(popupText('SHORTCUT!', 1, 0), 'SHORTCUT!');
+});

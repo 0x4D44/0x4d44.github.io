@@ -60,7 +60,7 @@ export class Nav {
     if (e.code === 'Enter' || e.code === 'Space') {
       const a = document.activeElement;
       if (!a || !a.dataset || !('nav' in a.dataset)) { e.preventDefault(); const f = this.ensureFocus(); if (f && ui.cur?.anyKey) f.click(); }
-      else if (a.tagName !== 'INPUT') { e.preventDefault(); if (!e.repeat) a.click(); }   // activate on keydown ourselves (native key-activation is inconsistent)
+      else if (a.tagName !== 'INPUT') { e.preventDefault(); if (!e.repeat && !ui.cur?.onActivate?.(a)) a.click(); }   // activate on keydown ourselves (native key-activation is inconsistent)
     }
   }
 
@@ -79,11 +79,12 @@ export class Nav {
       if (dir && (P.t <= 0 || dir !== P.dir)) { this.move(dir); P.t = dir === P.dir ? 0.16 : 0.32; }
       if (!dir) P.t = 0;
       P.dir = dir;
-      if (edge(0)) { const a = document.activeElement; if (a && a.dataset && 'nav' in a.dataset) a.click(); else if (ui.cur?.anyKey) ui.cur.anyKey(); }
+      if (edge(0)) { const a = document.activeElement; if (a && a.dataset && 'nav' in a.dataset) { if (!ui.cur?.onActivate?.(a)) a.click(); } else if (ui.cur?.anyKey) ui.cur.anyKey(); }
       if (edge(1)) ui.back();
       if (edge(9) && ui.cur?.name === 'title') ui.cur.anyKey?.();
-      if (edge(9) && paused) ui.game.setPaused(false);
+      if (edge(9) && paused && P.wasPaused) ui.game.setPaused(false);   // not on the very frame that Start paused the game
     }
+    P.wasPaused = paused;
     for (let i = 0; i < gp.buttons.length; i++) P.prev[i] = b(i);
   }
 }

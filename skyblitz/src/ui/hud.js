@@ -7,6 +7,7 @@ import { ITEM_ICONS, MISC } from './icons.js';
 import { ITEMS } from '../race/balance.js';
 
 const STUNT = { loop: 'LOOP', roll: 'ROLL', barrel: 'BARREL ROLL', inverted: 'INVERTED', nearmiss: 'NEAR MISS', shortcut: 'SHORTCUT!' };
+export const popupText = (base, n, sum) => base + (n > 1 ? ' x' + n : '') + (sum ? ' +' + sum + '%' : '');
 const BACKABLE = new Set(['missile', 'triple', 'mine', 'smoke']);
 const SEGS = 20;
 const _v = new THREE.Vector3();
@@ -93,7 +94,7 @@ export class Hud {
     ev.on('race:wrongway', ({ racer, on }) => { if (me(racer)) this.wrong.style.display = on ? '' : 'none'; });
     ev.on('race:respawn', ({ racer }) => { if (me(racer)) { this.respawn.style.display = ''; clearTimeout(this._rsT); this._rsT = setTimeout(() => { this.respawn.style.display = 'none'; }, 1400); } });
     ev.on('gate:pass', ({ racer, perfect }) => { if (me(racer) && perfect) this.stunt('PERFECT GATE', '#29d3ff'); });
-    ev.on('racer:stunt', ({ racer, kind, reward }) => { if (me(racer)) this.stunt(`${STUNT[kind] || String(kind).toUpperCase()}${reward ? ' +' + Math.round(reward) + '%' : ''}`, kind === 'shortcut' ? '#ff8a1f' : kind === 'nearmiss' ? '#ff3d9a' : '#ffd02e'); });
+    ev.on('racer:stunt', ({ racer, kind, reward }) => { if (me(racer)) this.stunt(STUNT[kind] || String(kind).toUpperCase(), kind === 'shortcut' ? '#ff8a1f' : kind === 'nearmiss' ? '#ff3d9a' : '#ffd02e', Math.round(reward || 0)); });
     ev.on('shortcut:enter', ({ racer }) => { if (me(racer)) this.stunt('SHORTCUT!', '#ff8a1f'); });
     ev.on('pickup:orb', ({ racer, item }) => { if (me(racer)) { this.tick(`You got ${ITEMS[item]?.name || item}`); this.itemBox.classList.remove('get'); void this.itemBox.offsetWidth; this.itemBox.classList.add('get'); } });
     ev.on('item:use', ({ racer, type }) => { if (me(racer)) this.tick(`Used ${ITEMS[type]?.name || type}`); });
@@ -117,8 +118,16 @@ export class Hud {
 
   pop(el, text, cls) { el.textContent = text; el.classList.remove('cd-pop', 'cd-go'); void el.offsetWidth; el.classList.add(cls); }
   flashBanner(text, cls, secs = 2.6) { this.banner.textContent = text; this.banner.className = 'hud-banner on ' + cls; clearTimeout(this._bT); this._bT = setTimeout(() => { this.banner.className = 'hud-banner'; if (cls !== 'finish') this.banner.textContent = ''; }, secs * 1000); }
-  stunt(text, color) {
-    const e = h('div', { class: 'popup', style: `--c:${color}` }, text);
+  /** One popup line per kind: consecutive identical stunts merge into "BARREL ROLL x3 +18%" and refresh their timer. Max 4 lines. */
+  stunt(text, color, reward = 0) {
+    const last = this.popups[this.popups.length - 1];
+    if (last && last.dataset.base === text && last.isConnected) {
+      const n = Number(last.dataset.n) + 1, sum = Number(last.dataset.sum) + reward;
+      last.dataset.n = n; last.dataset.sum = sum; last.textContent = popupText(text, n, sum);
+      last.style.animation = 'none'; void last.offsetWidth; last.style.animation = '';   // restart the timer
+      return;
+    }
+    const e = h('div', { class: 'popup', style: `--c:${color}`, 'data-base': text, 'data-n': 1, 'data-sum': reward }, popupText(text, 1, reward));
     this.stack.prepend(e); this.popups.push(e);
     while (this.popups.length > 4) this.popups.shift().remove();
     e.addEventListener('animationend', () => { e.remove(); const i = this.popups.indexOf(e); if (i >= 0) this.popups.splice(i, 1); }, { once: true });

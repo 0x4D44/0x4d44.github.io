@@ -75,6 +75,7 @@ export function settingsScreen(ui) {
     seg(ui, 'Flight assist', [{ v: 'standard', t: 'Standard (auto-level)' }, { v: 'pro', t: 'Pro (hands-on)' }], () => S().assist, (v) => ui.setSetting('assist', v), 'assist'),
     slider(ui, 'Camera shake', 'shake', 0, 1, 0.05, (v) => (v === 0 ? 'Off' : Math.round(v * 100) + '%')),
     seg(ui, 'Default difficulty', [{ v: 'easy', t: 'Easy' }, { v: 'normal', t: 'Normal' }, { v: 'hard', t: 'Hard' }, { v: 'expert', t: 'Expert' }], () => S().difficulty, (v) => ui.setSetting('difficulty', v), 'diff'),
+    toggle(ui, 'Double-tap bank key = barrel roll', 'doubleTapRoll', 'Off by default: Q / E always roll. Double-tapping A / D can fire by accident while steering'),
     toggle(ui, 'Show FPS counter', 'showFps'),
     toggle(ui, 'Reduce flashing & motion', 'reduceFlash', 'Softer screen effects and fewer flashes'),
   ];

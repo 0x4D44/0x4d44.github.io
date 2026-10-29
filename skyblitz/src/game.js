@@ -49,8 +49,9 @@ export class Game {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
+    renderer.debug.checkShaderErrors = this.manual || this.params.has('debug');   // players: no synchronous link check (smoother load); tests and ?debug keep it
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;      // r186 removed PCFSoftShadowMap (PCFShadowMap is the soft filter now)
     renderer.setClearColor(0x0b1a33, 1);
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(72, 1, 0.6, 24000);

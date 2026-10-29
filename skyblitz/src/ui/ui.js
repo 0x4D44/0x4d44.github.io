@@ -96,7 +96,7 @@ export class UI {
     g.saveSettings();
   }
   resetSettings() {
-    for (const k of ['masterVolume', 'musicVolume', 'sfxVolume', 'pitchMode', 'assist', 'shake', 'showFps', 'reduceFlash', 'difficulty']) this.setSetting(k, DEFAULT_SETTINGS[k]);
+    for (const k of ['masterVolume', 'musicVolume', 'sfxVolume', 'pitchMode', 'assist', 'shake', 'showFps', 'doubleTapRoll', 'reduceFlash', 'difficulty']) this.setSetting(k, DEFAULT_SETTINGS[k]);
     this.setSetting('quality', DEFAULT_SETTINGS.quality);
     this.screens.settings.enter?.(); this.cue('ui:click');
   }

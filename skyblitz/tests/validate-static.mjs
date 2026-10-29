@@ -127,6 +127,9 @@ for (const [f, text] of texts) {
   check(!/\bdebugger\b/.test(text), `${rel(f)} leaves no debugger statement`);
 }
 
+// Three's default checks every program's link log synchronously, which stalls shader compilation; players get it off, tests and ?debug keep it on.
+check(/renderer\.debug\.checkShaderErrors\s*=(?!\s*true\s*;)[^;]*;/.test(texts.get(join(srcDir, "game.js")) ?? ""), "game.js turns the synchronous shader-link check off for players (renderer.debug.checkShaderErrors)");
+
 // ---- catalogue wiring ----
 const dataPath = join(root, "data.js"), indexPath = join(root, "index.html");
 const data = readFileSync(dataPath, "utf8"), catalogue = readFileSync(indexPath, "utf8");

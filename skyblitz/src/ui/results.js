@@ -35,7 +35,7 @@ export function resultsScreen(ui) {
       const R = ui.lastResults; if (!R) { actions.replaceChildren(btn('Main menu', () => ui.quit(true), { cls: 'primary', first: true })); return; }
       const f = ui.flow, gp = f.mode === 'gp', course = COURSES.find((c) => c.id === R.courseId);
       title.firstChild.textContent = gp ? `RACE ${R.gpIndex + 1} / 4 RESULTS` : f.mode === 'trial' ? 'TIME TRIAL' : 'RESULTS';
-      sub.textContent = `${course?.name || ''} - ${R.laps} laps - ${R.difficulty}`;
+      sub.textContent = [course?.name, R.laps + (R.laps === 1 ? ' lap' : ' laps'), R.difficulty].filter(Boolean).join(' - ');
       table.replaceChildren(resultTable(R.rows));
       const me = R.rows.find((r) => r.me);
       const rec = [];
