@@ -1,0 +1,215 @@
+// Stage rules: countdown, false start, checkpoints/splits, wrong-way and off-road warnings,
+// stuck/flipped respawn with penalty, DNF. Pure (no DOM, no THREE); drives the vehicle only
+// through vehicle.reset(pose, speed) when it respawns the car.
+
+import { yawOfDir, clamp } from "./mathx.mjs";
+
+export const RULES = Object.freeze({
+  countdownSeconds: 3,
+  falseStartSpeed: 1.2, // m/s before GO
+  falseStartMove: 1.0, // metres moved before GO
+  falseStartPenalty: 5,
+  stuckSpeed: 0.9, // m/s
+  stuckSeconds: 6,
+  stuckGrace: 4, // run seconds before stuck detection arms
+  flippedSeconds: 0.4, // on top of the physics flag (which already waits 0.5 s)
+  respawnCooldown: 4,
+  wrongWayDot: -0.25,
+  wrongWaySeconds: 1.2,
+  offRoadSeconds: 0.6,
+  corridorFraction: 0.82,
+  dnfDamage: 1,
+  respawnPenalty: { rookie: 8, pro: 10, expert: 15 },
+});
+
+const mkOut = () => ({ s: 0, x: 0, y: 0, z: 0, tx: 0, tz: 1, left: 0, right: 0, width: 8 });
+
+/**
+ * @param {{stage:object, vehicle:object, difficulty?:"rookie"|"pro"|"expert"}} o
+ */
+export function createRun({ stage, vehicle, difficulty = "pro" }) {
+  const cps = stage.checkpoints && stage.checkpoints.length ? stage.checkpoints : [{ s: 0, name: "Start" }, { s: stage.lengthM, name: "Finish" }];
+  const respawnPenalty = RULES.respawnPenalty[difficulty] ?? RULES.respawnPenalty.pro;
+  const tmp = { sample: mkOut(), bound: { left: 20, right: 20 } };
+  const run = {
+    stageId: stage.id,
+    difficulty,
+    status: "ready", // ready | countdown | running | finished | dnf
+    time: 0, // stage clock (seconds since GO), penalties excluded
+    countdown: RULES.countdownSeconds, // seconds left until GO
+    splits: [], // { index, name, s, time } time = clock + penalties at crossing
+    penalties: [], // { kind, seconds, at }
+    penaltyTotal: 0,
+    nextCheckpoint: 1,
+    lastCheckpointS: 0,
+    respawns: 0,
+    falseStart: false,
+    dnfReason: null,
+    finishTime: null,
+    warnings: { wrongWay: false, offRoad: false, corridor: false },
+    events: [], // drained by the game: { t, ... }
+    get total() {
+      return run.time + run.penaltyTotal;
+    },
+    start() {
+      run.status = "countdown";
+      run.countdown = RULES.countdownSeconds;
+      run._lastBeep = RULES.countdownSeconds; // the "3" is announced by start() itself
+      run._startS = vehicle.state ? vehicle.state.s || 0 : 0;
+      run._startX = vehicle.state ? vehicle.state.x : 0;
+      run._startZ = vehicle.state ? vehicle.state.z : 0;
+      run.events.push({ t: "countdown", n: RULES.countdownSeconds });
+    },
+    /** Test/tooling helper: go straight to the running state (no countdown, no false-start check). */
+    skipCountdown(state) {
+      if (run.status === "ready") run.start();
+      run.countdown = 0;
+      run.falseStart = true; // no false-start penalty when the countdown is skipped
+      run.events.length = 0;
+      run.status = "running";
+      run.time = 0;
+      run._lastS = state ? state.s : 0;
+      run._respawnCool = 0; run._stuck = 0; run._flip = 0; run._wrong = 0; run._off = 0;
+    },
+    addPenalty(kind, seconds) {
+      run.penalties.push({ kind, seconds, at: run.time });
+      run.penaltyTotal += seconds;
+      run.events.push({ t: "penalty", kind, seconds });
+    },
+    /** Advance by dt (seconds of sim time). `state` is vehicle.state. */
+    update(dt, state) {
+      if (run.status === "countdown") {
+        run.countdown -= dt;
+        const n = Math.ceil(run.countdown);
+        if (n < run._lastBeep && n >= 1) {
+          run._lastBeep = n;
+          run.events.push({ t: "countdown", n });
+        }
+        if (!run.falseStart) {
+          const moved = Math.hypot(state.x - run._startX, state.z - run._startZ);
+          if (Math.abs(state.speed) > RULES.falseStartSpeed || moved > RULES.falseStartMove) {
+            run.falseStart = true;
+            run.addPenalty("false_start", RULES.falseStartPenalty);
+            run.events.push({ t: "falseStart" });
+          }
+        }
+        if (run.countdown <= 0) {
+          run.status = "running";
+          run.time = 0;
+          run._lastS = state.s;
+          run._respawnCool = 0;
+          run._stuck = 0;
+          run._flip = 0;
+          run._wrong = 0;
+          run._off = 0;
+          run.events.push({ t: "go" });
+        }
+        return run.status;
+      }
+      if (run.status !== "running") return run.status;
+
+      run.time += dt;
+      run._respawnCool = Math.max(0, run._respawnCool - dt);
+
+      // checkpoints / finish
+      while (run.nextCheckpoint < cps.length) {
+        const cp = cps[run.nextCheckpoint];
+        if (state.s + 1e-6 < cp.s) break;
+        const isFinish = run.nextCheckpoint === cps.length - 1;
+        const split = { index: run.nextCheckpoint, name: cp.name, s: cp.s, time: run.time + run.penaltyTotal };
+        run.splits.push(split);
+        run.lastCheckpointS = cp.s;
+        run.nextCheckpoint++;
+        if (isFinish) {
+          run.status = "finished";
+          run.finishTime = run.time + run.penaltyTotal;
+          run.events.push({ t: "finish", time: run.finishTime });
+          return run.status;
+        }
+        run.events.push({ t: "checkpoint", index: split.index, name: cp.name, time: split.time });
+      }
+
+      // DNF
+      const dmg = state.damage ? state.damage.total : 0;
+      if (dmg >= RULES.dnfDamage) {
+        run.status = "dnf";
+        run.dnfReason = "damage";
+        run.events.push({ t: "dnf", reason: "damage" });
+        return run.status;
+      }
+
+      // wrong way: car heading versus the road tangent
+      const sm = stage.sample(clamp(state.s, 0, stage.lengthM), tmp.sample);
+      const fx = -Math.sin(state.yaw);
+      const fz = -Math.cos(state.yaw);
+      const dot = fx * sm.tx + fz * sm.tz;
+      const movingAgainst = state.speed < -3;
+      if ((dot < RULES.wrongWayDot && Math.abs(state.speed) > 2.5) || movingAgainst) run._wrong += dt;
+      else run._wrong = Math.max(0, run._wrong - dt * 2);
+      const ww = run._wrong > RULES.wrongWaySeconds;
+      if (ww && !run.warnings.wrongWay) run.events.push({ t: "wrongWay" });
+      run.warnings.wrongWay = ww;
+
+      // off road + corridor
+      const halfW = (sm.width || 8) / 2;
+      const off = state.onRoad === false || Math.abs(state.lat) > halfW + 0.8;
+      run._off = off ? run._off + dt : 0;
+      const wasOff = run.warnings.offRoad;
+      run.warnings.offRoad = run._off > RULES.offRoadSeconds;
+      if (run.warnings.offRoad && !wasOff) run.events.push({ t: "offRoad" });
+      if (stage.boundaryAt) {
+        const b = stage.boundaryAt(clamp(state.s, 0, stage.lengthM), tmp.bound);
+        const lim = state.lat >= 0 ? b.right : b.left;
+        run.warnings.corridor = Math.abs(state.lat) > lim * RULES.corridorFraction && lim > 0;
+      }
+
+      // stuck
+      if (run.time > RULES.stuckGrace && Math.abs(state.speed) < RULES.stuckSpeed && !state.airborne) run._stuck += dt;
+      else run._stuck = 0;
+      // flipped
+      const flipped = !!state.flipped;
+      run._flip = flipped ? run._flip + dt : 0;
+      let reason = null;
+      if (run._stuck > RULES.stuckSeconds) reason = "stuck";
+      else if (run._flip > RULES.flippedSeconds) reason = "flipped";
+      if (reason && run._respawnCool <= 0) run.respawn(reason);
+      return run.status;
+    },
+    /** Put the car back on the road at the last checkpoint with a time penalty. */
+    respawn(reason = "manual") {
+      const s = clamp(run.lastCheckpointS + (run.lastCheckpointS > 0 ? 3 : 0), 0, stage.lengthM);
+      const sm = stage.sample(s, {});
+      const pose = s <= 0 && stage.startPose ? { ...stage.startPose } : { x: sm.x, y: sm.y + 0.3, z: sm.z, yaw: yawOfDir(sm.tx, sm.tz) };
+      vehicle.reset(pose, 0, stage);
+      run.respawns++;
+      run._stuck = 0;
+      run._flip = 0;
+      run._wrong = 0;
+      run._respawnCool = RULES.respawnCooldown;
+      run.addPenalty(reason === "manual" ? "reset" : reason, respawnPenalty);
+      run.events.push({ t: "respawn", reason, s });
+    },
+    /** Final summary, valid for finished and dnf. */
+    result() {
+      return {
+        stageId: stage.id,
+        status: run.status,
+        time: run.time,
+        penaltyTotal: run.penaltyTotal,
+        total: run.status === "dnf" ? Infinity : run.time + run.penaltyTotal,
+        splits: run.splits.map((s) => ({ ...s })),
+        penalties: run.penalties.map((p) => ({ ...p })),
+        respawns: run.respawns,
+        falseStart: run.falseStart,
+        dnfReason: run.dnfReason,
+      };
+    },
+    drainEvents() {
+      if (!run.events.length) return run.events;
+      const e = run.events.slice();
+      run.events.length = 0;
+      return e;
+    },
+  };
+  return run;
+}
