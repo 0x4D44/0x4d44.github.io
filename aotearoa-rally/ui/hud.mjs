@@ -20,8 +20,20 @@ const dmgColour = (v, safe) => {
 export function createHud(root) {
   const el = {};
   let stage = null, mini = null, base = null, notes = [], noteIdx = 0;
-  let units = "kmh", colourSafe = false, redline = 7000, maxRpm = 8000, bestSplits = null, benchSplits = null;
+  let units = "kmh", colourSafe = false, redline = 7000, maxRpm = 8000, bestSplits = null, benchSplits = null, noRivals = false;
   const cache = Object.create(null);
+  // hoisted so the per-frame path allocates no closures, arrays or key strings
+  const miniPt = [0, 0];
+  const fnRpm = (n, v) => (n.textContent = v + " rpm");
+  const fnTime = (n, v) => (n.textContent = fmtTime(v / 100));
+  const fnShift = (n, v) => { for (let i = 0; i < n.children.length; i++) n.children[i].classList.toggle("on", i < v); };
+  const fnBoost = (n, v) => (n.style.width = v * 2 + "%");
+  const fnDelta = (n, q) => {
+    n.hidden = q === null;
+    const vEl = n.querySelector(".v");
+    vEl.textContent = q === null ? "" : fmtDelta(q / 20);
+    vEl.className = "v " + (q !== null && q <= 0 ? "gain" : "loss");
+  };
   const set = (key, node, val, fn) => {
     if (cache[key] === val) return;
     cache[key] = val;
@@ -185,6 +197,8 @@ export function createHud(root) {
       el.count.hidden = true;
       noteIdx = 0;
     },
+    /** trial mode: no rival benchmark */
+    setNoRivals(v) { noRivals = !!v; },
     setBenchmarks(best, bench) {
       bestSplits = best;
       benchSplits = bench;
@@ -197,22 +211,20 @@ export function createHud(root) {
       const g = state.gear;
       set("gear", el.gear, g < 0 ? "R" : g === 0 ? "N" : String(g));
       const rpmN = Math.round(state.rpm / 50) * 50;
-      set("rpmn", el.rpmN, rpmN, (n, v) => (n.textContent = v + " rpm"));
+      set("rpmn", el.rpmN, rpmN, fnRpm);
       const rf = Math.min(1, Math.max(0, state.rpm / maxRpm));
       set("rpm", el.rpmFill, Math.round(rf * 200), (n) => {
         n.setAttribute("stroke-dasharray", `${(rf * 100).toFixed(2)} 100`);
         n.setAttribute("stroke", state.rpm > redline * 0.97 ? "#ff5a52" : "#ffc81e");
       });
       const lit = Math.round(Math.min(1, Math.max(0, (state.rpm / redline - 0.8) / 0.18)) * 10);
-      set("shift", el.shift, lit, (n, v) => {
-        for (let i = 0; i < n.children.length; i++) n.children[i].classList.toggle("on", i < v);
-      });
-      set("boost", el.boostFill, Math.round((state.boost || 0) * 50), (n, v) => (n.style.width = v * 2 + "%"));
+      set("shift", el.shift, lit, fnShift);
+      set("boost", el.boostFill, Math.round((state.boost || 0) * 50), fnBoost);
       el.boost.style.display = state.boost == null ? "none" : "";
       // time
       if (run) {
         const total = run.status === "finished" ? run.finishTime : run.time + run.penaltyTotal;
-        set("time", el.time, Math.floor(total * 100), (n) => (n.textContent = fmtTime(total)));
+        set("time", el.time, Math.floor(total * 100), fnTime);
         const pn = run.penaltyTotal > 0 ? `+${run.penaltyTotal.toFixed(0)} s penalties` : "";
         set("pen", el.pen, pn);
       }
@@ -224,7 +236,7 @@ export function createHud(root) {
           cache.mdot = Math.round(p * 400);
           const c = el.miniDot, g2 = c.getContext("2d");
           g2.clearRect(0, 0, c.width, c.height);
-          const pt = minimapPoint(mini, stage, state.s, []);
+          const pt = minimapPoint(mini, stage, state.s, miniPt);
           g2.fillStyle = "#ffc81e";
           g2.strokeStyle = "#000";
           g2.lineWidth = 2 * mini.dpr;
@@ -250,7 +262,7 @@ export function createHud(root) {
       // damage
       const d = state.damage;
       if (d) {
-        const key = Math.round(d.total * 40) + "|" + Math.round(d.engine * 20) + "|" + Math.round((d.body.front + d.body.rear + d.body.left + d.body.right) * 12) + "|" + Math.round((d.tyres[0] + d.tyres[1] + d.tyres[2] + d.tyres[3]) * 12) + colourSafe;
+        const key = (((Math.round(d.total * 40) * 64 + Math.round(d.engine * 20)) * 64 + Math.round((d.body.front + d.body.rear + d.body.left + d.body.right) * 12)) * 64 + Math.round((d.tyres[0] + d.tyres[1] + d.tyres[2] + d.tyres[3]) * 12)) * 2 + (colourSafe ? 1 : 0);
         if (cache.dmgKey !== key) {
           cache.dmgKey = key;
           zones.engine.setAttribute("fill", dmgColour(Math.max(d.engine, d.radiator || 0), colourSafe));
@@ -287,19 +299,14 @@ export function createHud(root) {
         return t - (t0 + (t1 - t0) * Math.min(1, Math.max(0, f)));
       };
       const a = calc(bestSplits), b = calc(benchSplits);
-      for (const [key, node, v] of [["dpb", el.dPB, a], ["dr", el.dRiv, b]]) {
-        const q = Number.isFinite(v) ? Math.round(v * 20) : null;
-        set(key, node, q, (n) => {
-          n.hidden = q === null;
-          const vEl = n.querySelector(".v");
-          vEl.textContent = q === null ? "" : fmtDelta(q / 20);
-          vEl.className = "v " + (q !== null && q <= 0 ? "gain" : "loss");
-        });
-      }
+      set("dpb", el.dPB, Number.isFinite(a) ? Math.round(a * 20) : null, fnDelta);
+      set("dr", el.dRiv, Number.isFinite(b) && !noRivals ? Math.round(b * 20) : null, fnDelta);
     },
     notesUpdate(s) {
+      // rewind after a respawn / teleport, then advance
+      while (noteIdx > 0 && notes[noteIdx - 1].s >= s - 12) noteIdx--;
       while (noteIdx < notes.length && notes[noteIdx].s < s - 12) noteIdx++;
-      const key = noteIdx + ":" + Math.round(s / 5);
+      const key = noteIdx * 100000 + Math.round(s / 5);
       if (cache.notesKey === key) return;
       cache.notesKey = key;
       const kids = el.notes.children;

@@ -8,6 +8,7 @@
 // Also exports bestTyreFor(stage) -> "gravel"|"tarmac"|"snow" (used by calibration and rivals).
 
 import { SURFACE_INFO } from "./surfaces.mjs";
+import { surfGripTable } from "./cars.mjs";
 import { TYRE_GRIP } from "./tyre.mjs";
 import { steerFactor } from "./physics.mjs";
 
@@ -40,8 +41,9 @@ export function createBot(stage, vehicle, opts = {}) {
   const tab = TYRE_GRIP[tyre] || TYRE_GRIP.gravel;
   const N = stage.N, ds = stage.ds;
   const margin = opts.margin === undefined ? 2.3 : opts.margin;
+  const sgTab = surfGripTable(spec);
   const gripAvg = (spec.handling.gripFront + spec.handling.gripRear) * 0.5;
-  const aMul = (0.5 + 0.5 * skill) * (opts.planFactor === undefined ? 0.6 : opts.planFactor);
+  const aMul = (1 - 0.85 * (1 - skill)) * (opts.planFactor === undefined ? 0.6 : opts.planFactor);
   const vTop = opts.vTop || 75;
 
   // ---------- racing line ----------
@@ -112,7 +114,7 @@ export function createBot(stage, vehicle, opts = {}) {
   const muAt = new Float64Array(N);
   for (let i = 0; i < N; i++) {
     const sf = stage.surf[i];
-    const mu = SURFACE_INFO[sf].mu * tab[sf] * gripAvg;
+    const mu = SURFACE_INFO[sf].mu * tab[sf] * gripAvg * sgTab[sf];
     muAt[i] = mu;
     const bankEff = stage.bank ? Math.sin(stage.bank[i] * Math.sign(kappa[i] || 1)) * G : 0;
     const aLat = mu * G * aMul + bankEff * 0.6;
@@ -199,8 +201,11 @@ export function createBot(stage, vehicle, opts = {}) {
       const wantMove = true;
       if (Math.abs(v) < 1.2 && st.s > 5 || (Math.abs(v) < 1.2 && st.distance > 20)) stuckT += dt; else stuckT = 0;
       const wrong = Math.abs(headErr) > 1.9 && Math.abs(v) < 6;
-      if ((stuckT > 1.6 || wrong) && cool <= 0 && wantMove) {
-        mode = 1; revT = 1.3 + (wrong ? 0.6 : 0); stuckT = 0;
+      // give-up rule: outside the road for > 4 s means the plan is not working; back out and rejoin
+      if (Math.abs(prj.lat) > wi * 0.5) offT += dt; else offT = 0;
+      const lost = offT > 4;
+      if ((stuckT > 1.6 || wrong || lost) && cool <= 0 && wantMove) {
+        mode = 1; revT = 1.3 + (wrong || lost ? 0.8 : 0); stuckT = 0; offT = 0;
       }
     }
     if (mode === 1) {
@@ -227,11 +232,14 @@ export function createBot(stage, vehicle, opts = {}) {
       const lineL = lat[i0] + (lat[i0 + 1] - lat[i0]) * (fi - i0);
       const e = prj.lat - lineL; // + : car right of the line
       delta -= Math.atan((opts.cte === undefined ? 0 : opts.cte) * e / (Math.abs(v) + 3));
+      // far from the line (after a slide, a respawn or a teleport): pull back harder
+      const ea = Math.abs(e) - 1.2;
+      if (ea > 0) delta -= Math.atan(1.6 * Math.sign(e) * ea / (Math.abs(v) + 3));
     }
     // yaw-rate damping: the car lags the kinematic steer, which excites a slow weave
     if (v > 6) {
       const yrDes = -v * Math.tan(delta) / spec.wheelbase;
-      delta += clamp((st.yawRate - yrDes) * spec.wheelbase / v * (opts.kyaw === undefined ? 1.0 : opts.kyaw), -0.12, 0.12);
+      delta += clamp((st.yawRate - yrDes) * spec.wheelbase / v * (opts.kyaw === undefined ? 1.0 : opts.kyaw) * (1 + 0.8 * clamp((v - 25) / 15, 0, 1)), -0.12, 0.12);
     }
     // damp slides: steer toward the velocity direction when the car is rotating past it
     const sl = st.slideAngle;

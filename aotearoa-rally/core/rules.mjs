@@ -14,6 +14,10 @@ export const RULES = Object.freeze({
   stuckGrace: 4, // run seconds before stuck detection arms
   flippedSeconds: 0.4, // on top of the physics flag (which already waits 0.5 s)
   respawnCooldown: 4,
+  noProgressMetres: 40,
+  noProgressSeconds: 25,
+  timeCapFactor: 3,
+  timeCapExtra: 480,
   wrongWayDot: -0.25,
   wrongWaySeconds: 1.2,
   offRoadSeconds: 0.6,
@@ -27,7 +31,13 @@ const mkOut = () => ({ s: 0, x: 0, y: 0, z: 0, tx: 0, tz: 1, left: 0, right: 0, 
 /**
  * @param {{stage:object, vehicle:object, difficulty?:"rookie"|"pro"|"expert"}} o
  */
-export function createRun({ stage, vehicle, difficulty = "pro" }) {
+/**
+ * @param {{stage:object, vehicle:object, difficulty?:string, par?:number, countdown?:number}} o
+ * `par` (expert-human par in seconds) sets the stage time cap: min(3 x par, par + 8 min) -> DNF.
+ */
+export function createRun({ stage, vehicle, difficulty = "pro", par = null, countdown = RULES.countdownSeconds }) {
+  const cdSeconds = Math.max(0, countdown);
+  const timeCap = Number.isFinite(par) && par > 0 ? Math.min(RULES.timeCapFactor * par, par + RULES.timeCapExtra) : Infinity;
   const cps = stage.checkpoints && stage.checkpoints.length ? stage.checkpoints : [{ s: 0, name: "Start" }, { s: stage.lengthM, name: "Finish" }];
   const respawnPenalty = RULES.respawnPenalty[difficulty] ?? RULES.respawnPenalty.pro;
   const tmp = { sample: mkOut(), bound: { left: 20, right: 20 } };
@@ -36,7 +46,8 @@ export function createRun({ stage, vehicle, difficulty = "pro" }) {
     difficulty,
     status: "ready", // ready | countdown | running | finished | dnf
     time: 0, // stage clock (seconds since GO), penalties excluded
-    countdown: RULES.countdownSeconds, // seconds left until GO
+    timeCap,
+    countdown: cdSeconds, // seconds left until GO
     splits: [], // { index, name, s, time } time = clock + penalties at crossing
     penalties: [], // { kind, seconds, at }
     penaltyTotal: 0,
@@ -53,12 +64,12 @@ export function createRun({ stage, vehicle, difficulty = "pro" }) {
     },
     start() {
       run.status = "countdown";
-      run.countdown = RULES.countdownSeconds;
-      run._lastBeep = RULES.countdownSeconds; // the "3" is announced by start() itself
+      run.countdown = cdSeconds;
+      run._lastBeep = Math.ceil(cdSeconds); // the "3" is announced by start() itself
       run._startS = vehicle.state ? vehicle.state.s || 0 : 0;
       run._startX = vehicle.state ? vehicle.state.x : 0;
       run._startZ = vehicle.state ? vehicle.state.z : 0;
-      run.events.push({ t: "countdown", n: RULES.countdownSeconds });
+      run.events.push({ t: "countdown", n: Math.ceil(cdSeconds) });
     },
     /** Test/tooling helper: go straight to the running state (no countdown, no false-start check). */
     skipCountdown(state) {
@@ -70,6 +81,7 @@ export function createRun({ stage, vehicle, difficulty = "pro" }) {
       run.time = 0;
       run._lastS = state ? state.s : 0;
       run._respawnCool = 0; run._stuck = 0; run._flip = 0; run._wrong = 0; run._off = 0;
+      run._progS = state ? state.s : 0; run._progT = 0;
     },
     addPenalty(kind, seconds) {
       run.penalties.push({ kind, seconds, at: run.time });
@@ -102,6 +114,8 @@ export function createRun({ stage, vehicle, difficulty = "pro" }) {
           run._flip = 0;
           run._wrong = 0;
           run._off = 0;
+          run._progS = state.s;
+          run._progT = 0;
           run.events.push({ t: "go" });
         }
         return run.status;
@@ -163,6 +177,22 @@ export function createRun({ stage, vehicle, difficulty = "pro" }) {
         run.warnings.corridor = Math.abs(state.lat) > lim * RULES.corridorFraction && lim > 0;
       }
 
+      // time cap: a stage that has run far past par is abandoned
+      if (run.time > run.timeCap) {
+        run.status = "dnf";
+        run.dnfReason = "timeout";
+        run.events.push({ t: "dnf", reason: "timeout" });
+        return run.status;
+      }
+      // no progress: throttle applied but < 40 m gained in 25 s
+      if (state.throttle > 0.1) {
+        run._progT += dt;
+        if (state.s - run._progS >= RULES.noProgressMetres) { run._progS = state.s; run._progT = 0; }
+        else if (run._progT >= RULES.noProgressSeconds) {
+          run._progT = 0; run._progS = state.s;
+          if (run._respawnCool <= 0) { run.respawn("no_progress"); return run.status; }
+        }
+      } else if (state.s - run._progS >= RULES.noProgressMetres) { run._progS = state.s; run._progT = 0; }
       // stuck
       if (run.time > RULES.stuckGrace && Math.abs(state.speed) < RULES.stuckSpeed && !state.airborne) run._stuck += dt;
       else run._stuck = 0;
@@ -185,9 +215,18 @@ export function createRun({ stage, vehicle, difficulty = "pro" }) {
       run._stuck = 0;
       run._flip = 0;
       run._wrong = 0;
+      run._progT = 0;
+      run._progS = s;
       run._respawnCool = RULES.respawnCooldown;
       run.addPenalty(reason === "manual" ? "reset" : reason, respawnPenalty);
       run.events.push({ t: "respawn", reason, s });
+    },
+    /** The driver gives up: a DNF with reason "retired" (championship Retire, or a stage left mid-run). */
+    retire() {
+      if (run.status === "finished" || run.status === "dnf") return;
+      run.status = "dnf";
+      run.dnfReason = "retired";
+      run.events.push({ t: "dnf", reason: "retired" });
     },
     /** Final summary, valid for finished and dnf. */
     result() {

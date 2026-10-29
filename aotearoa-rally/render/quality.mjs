@@ -31,9 +31,9 @@ export const PROP_TABLE = {
   grass_tuft: { lods: 2, d0: 30, d1: 70, max: 120, cast: false, dens: "small" },
   fern: { lods: 2, d0: 45, d1: 110, max: 200, cast: false, dens: "small" },
   shrub: { lods: 2, d0: 55, d1: 140, max: 280, cast: false, dens: "mid" },
-  boulder: { lods: 2, d0: 90, d1: 260, max: 760, cast: true, dens: "mid" },
-  limestone: { lods: 2, d0: 120, d1: 320, max: 950, cast: true, dens: "mid" },
-  schist: { lods: 2, d0: 120, d1: 320, max: 950, cast: true, dens: "mid" },
+  boulder: { lods: 2, d0: 50, d1: 260, max: 760, cast: true, dens: "mid" },
+  limestone: { lods: 2, d0: 60, d1: 320, max: 950, cast: true, dens: "mid" },
+  schist: { lods: 2, d0: 60, d1: 320, max: 950, cast: true, dens: "mid" },
   log: { lods: 1, d0: 1e9, d1: 1e9, max: 280, cast: true, dens: "small" },
   stump: { lods: 1, d0: 1e9, d1: 1e9, max: 260, cast: true, dens: "small" },
   fence_post: { lods: 1, d0: 1e9, d1: 1e9, max: 330, cast: false, dens: "small" },
@@ -72,7 +72,7 @@ export const PROP_TABLE = {
 export const QUALITY = {
   low: {
     pixelRatioCap: 1, resScale: 0.85, post: false, msaa: 0, bloom: false, grade: false,
-    shadows: true, shadowMap: 1024, shadowRange: 45, shadowCascade2: false, shadowPrimaryLodOnly: true,
+    shadows: true, shadowMap: 1024, shadowRange: 45, shadowFar: 0, shadowCascade2: false, shadowPrimaryLodOnly: true,
     terrainLod: [120, 260, 520], viewDist: 900, terrainSeg: 48, chunkBuildPerFrame: 1,
     density: { tree: 0.55, mid: 0.7, small: 0.4 }, distMul: 0.55, detailTex: false, anisotropy: 2,
     rain: 2600, snow: 1600, envSize: 64, alphaToCoverage: false, grain: 0, texScale: 0.5,
@@ -80,7 +80,7 @@ export const QUALITY = {
   },
   medium: {
     pixelRatioCap: 1.25, resScale: 1, post: true, msaa: 0, bloom: true, grade: true,
-    shadows: true, shadowMap: 2048, shadowRange: 55, shadowCascade2: false, shadowPrimaryLodOnly: false,
+    shadows: true, shadowMap: 2048, shadowRange: 55, shadowFar: 0, shadowCascade2: false, shadowPrimaryLodOnly: false,
     terrainLod: [150, 330, 680], viewDist: 1300, terrainSeg: 64, chunkBuildPerFrame: 1,
     density: { tree: 0.8, mid: 0.9, small: 0.7 }, distMul: 0.8, detailTex: true, anisotropy: 4,
     rain: 4600, snow: 2800, envSize: 128, alphaToCoverage: false, grain: 0.5, texScale: 1,
@@ -88,7 +88,7 @@ export const QUALITY = {
   },
   high: {
     pixelRatioCap: 1.5, resScale: 1, post: true, msaa: 4, bloom: true, grade: true,
-    shadows: true, shadowMap: 2048, shadowRange: 60, shadowCascade2: false, shadowPrimaryLodOnly: false,
+    shadows: true, shadowMap: 2048, shadowRange: 35, shadowFar: 200, shadowCascade2: true, shadowPrimaryLodOnly: false,
     terrainLod: [190, 400, 800], viewDist: 1700, terrainSeg: 64, chunkBuildPerFrame: 2,
     density: { tree: 1, mid: 1, small: 1 }, distMul: 1, detailTex: true, anisotropy: 8,
     rain: 7000, snow: 4200, envSize: 256, alphaToCoverage: true, grain: 1, texScale: 1,
@@ -96,7 +96,7 @@ export const QUALITY = {
   },
   ultra: {
     pixelRatioCap: 2, resScale: 1, post: true, msaa: 4, bloom: true, grade: true,
-    shadows: true, shadowMap: 4096, shadowRange: 80, shadowCascade2: false, shadowPrimaryLodOnly: false,
+    shadows: true, shadowMap: 4096, shadowRange: 40, shadowFar: 240, shadowCascade2: true, shadowPrimaryLodOnly: false,
     terrainLod: [240, 480, 950], viewDist: 2100, terrainSeg: 64, chunkBuildPerFrame: 2,
     density: { tree: 1, mid: 1, small: 1 }, distMul: 1.25, detailTex: true, anisotropy: 16,
     rain: 10000, snow: 6000, envSize: 256, alphaToCoverage: true, grain: 1, texScale: 1,
@@ -308,3 +308,23 @@ export function skidStyle(surfaceId) {
     default: return { r: 0.2, g: 0.17, b: 0.13, width: 0.26 }; // gravel and the rest
   }
 }
+
+/** Force `visible = true` on every object in the list; the returned function restores the previous flags. */
+export function forceVisible(objs) {
+  const saved = objs.map((o) => o.visible);
+  for (const o of objs) o.visible = true;
+  return () => { for (let i = 0; i < objs.length; i++) objs[i].visible = saved[i]; };
+}
+
+/** Two-cascade split distances: near covers [0, near], far covers [near, far]; 10% overlap for blending. */
+export function cascadeSplits(near = 40, far = 140, overlap = 0.1) {
+  return { near: { start: 0, end: near * (1 + overlap) }, far: { start: near * (1 - overlap), end: far } };
+}
+
+/** Particle fade by camera distance: 0 at d0*0.35 and below, 1 at d0 and beyond (matches the weather shader). */
+export function nearFade(d, d0) {
+  const a = d0 * 0.35, t = Math.min(1, Math.max(0, (d - a) / (d0 - a)));
+  return t * t * (3 - 2 * t);
+}
+/** Angular cap on a flake's half-size so it can never grow into a disc up close. */
+export function flakeSize(base, seedY, d) { return Math.min(base * (0.6 + seedY), d * 0.0075); }

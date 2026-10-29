@@ -3,7 +3,7 @@
 
 const PARTICLE_VERT = /* glsl */ `
 attribute vec3 aSeed; attribute vec2 aCorner;
-uniform vec3 uCam; uniform vec3 uVel; uniform vec3 uBox; uniform float uTime; uniform float uSize; uniform float uLen; uniform float uSway;
+uniform vec3 uCam; uniform vec3 uVel; uniform vec3 uStreak; uniform float uNear; uniform vec3 uBox; uniform float uTime; uniform float uSize; uniform float uLen; uniform float uSway;
 varying vec2 vC; varying float vFade; varying float vDist;
 void main(){
   vec3 base = aSeed * uBox;
@@ -19,17 +19,17 @@ void main(){
   #ifdef SNOW
     vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCam));
     vec3 up = normalize(cross(toCam, right));
-    float s = uSize * (0.6 + aSeed.y);
+    float s = min(uSize * (0.6 + aSeed.y), d * 0.0075);
     vec3 wp = p + right * aCorner.x * s + up * aCorner.y * s;
   #else
-    vec3 dir = normalize(uVel);
+    vec3 dir = normalize(uStreak);
     vec3 right = normalize(cross(dir, toCam));
     float l = uLen * (0.7 + 0.6 * aSeed.y);
-    vec3 wp = p + dir * (aCorner.y * max(l, d * 0.025)) + right * aCorner.x * max(uSize, d * 0.0021);
+    vec3 wp = p + dir * (aCorner.y * max(l, d * 0.012)) + right * aCorner.x * max(uSize, d * 0.0014);
   #endif
   // fade at the box boundary and very near the camera
   vec3 rel = (p - uCam) / (uBox * 0.5);
-  vFade = (1.0 - smoothstep(0.7, 1.0, max(abs(rel.x), max(abs(rel.y), abs(rel.z))))) * smoothstep(0.6, 2.5, d);
+  vFade = (1.0 - smoothstep(0.7, 1.0, max(abs(rel.x), max(abs(rel.y), abs(rel.z))))) * smoothstep(uNear * 0.35, uNear, d);
   gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
 }`;
 
@@ -40,7 +40,7 @@ varying vec2 vC; varying float vFade; varying float vDist;
 void main(){
   #ifdef SNOW
     float r = length(vC);
-    float a = smoothstep(1.0, 0.25, r);
+    float a = smoothstep(1.0, 0.1, r); a *= a;
   #else
     float a = (1.0 - abs(vC.x)) * smoothstep(1.0, 0.55, abs(vC.y));
   #endif
@@ -106,12 +106,12 @@ export function createWeather(THREE, { SU, getCfg }) {
 
   const common = () => ({
     uCam: { value: new THREE.Vector3() }, uVel: { value: new THREE.Vector3(0, -9, 0) }, uBox: { value: new THREE.Vector3(26, 17, 26) },
-    uTime: { value: 0 }, uSize: { value: 0.016 }, uLen: { value: 0.9 }, uSway: { value: 0.6 },
+    uStreak: { value: new THREE.Vector3(0, -1, 0) }, uNear: { value: 5 }, uTime: { value: 0 }, uSize: { value: 0.016 }, uLen: { value: 0.9 }, uSway: { value: 0.6 },
     uColor: { value: new THREE.Color(0.72, 0.78, 0.86) }, uAlpha: { value: 0.35 }, uLight: { value: 1 },
   });
   const rainU = common();
   const snowU = common();
-  snowU.uVel.value.set(0.6, -1.4, 0.3); snowU.uSize.value = 0.035; snowU.uAlpha.value = 0.9;
+  snowU.uVel.value.set(0.6, -1.4, 0.3); snowU.uSize.value = 0.07; snowU.uAlpha.value = 1.0; snowU.uNear.value = 4.5;
   snowU.uColor.value.set(1, 1, 1);
   const splashU = { uCenter: { value: new THREE.Vector3() }, uTime: { value: 0 }, uRadius: { value: 11 }, uGroundY: { value: 0 }, uColor: { value: new THREE.Color(0.8, 0.85, 0.9) }, uAlpha: { value: 0.35 } };
 
@@ -124,7 +124,7 @@ export function createWeather(THREE, { SU, getCfg }) {
     const cfg = getCfg();
     state.maxRain = cfg.rain; state.maxSnow = cfg.snow;
     const mat = (u, frag, vert, defs) => new THREE.ShaderMaterial({
-      uniforms: u, vertexShader: vert, fragmentShader: frag, transparent: true, depthWrite: false, fog: false, defines: defs,
+      uniforms: u, vertexShader: vert, fragmentShader: frag, transparent: true, depthWrite: false, fog: false, defines: defs, side: THREE.DoubleSide,
     });
     rain = new THREE.Mesh(makeQuads(THREE, cfg.rain, seedFn), mat(rainU, PARTICLE_FRAG, PARTICLE_VERT, {}));
     snow = new THREE.Mesh(makeQuads(THREE, cfg.snow, seedFn), mat(snowU, PARTICLE_FRAG, PARTICLE_VERT, { SNOW: 1 }));
@@ -176,17 +176,21 @@ export function createWeather(THREE, { SU, getCfg }) {
         }
       }
       SU.uFlash.value = state.flash;
-      const lit = Math.max(0.18, Math.min(1.1, lightLevel));
+      const lit = Math.max(0.42, Math.min(1.1, lightLevel));
       if (rain.visible) {
         rainU.uCam.value.copy(camPos);
         rainU.uTime.value = time;
         const spd = 11 + 5 * state.rainAmt;
         // streak direction = fall velocity relative to the moving camera
-        rainU.uVel.value.set(wind.x * wind.strength * 5 - carVel.x * 0.05, -spd, wind.z * wind.strength * 5 - carVel.z * 0.05);
-        rainU.uLen.value = 0.8 + 0.05 * Math.hypot(carVel.x, carVel.z);
-        rainU.uAlpha.value = 0.38 + 0.3 * state.rainAmt;
+        const vx = wind.x * wind.strength * 5, vz = wind.z * wind.strength * 5;
+        rainU.uVel.value.set(vx, -spd, vz);
+        // streak = fall velocity relative to the moving car, drawn as ~1/28 s of exposure
+        const sx = vx - carVel.x, sz = vz - carVel.z;
+        rainU.uStreak.value.set(sx, -spd, sz);
+        rainU.uLen.value = Math.min(2.2, Math.hypot(sx, spd, sz) * 0.012);
+        rainU.uAlpha.value = 0.4 + 0.25 * state.rainAmt;
         rainU.uLight.value = lit;
-        rainU.uColor.value.set(fogColor).lerp(new THREE.Color(1, 1, 1), 0.4);
+        rainU.uColor.value.set(fogColor).lerp(new THREE.Color(1, 1, 1), 0.65);
         splashU.uCenter.value.copy(carPos);
         splashU.uGroundY.value = carPos.y - 0.25;
         splashU.uTime.value = time;

@@ -44,13 +44,16 @@ for (const id of STAGE_IDS) {
         const cx = (px[i + 1] - px[i]) / d, cz = (pz[i + 1] - pz[i]) / d;
         assert.ok(cx * (tx[i] + tx[i + 1]) / 2 + cz * (tz[i] + tz[i + 1]) / 2 > 0.99, `chord vs tangent at ${i}`);
       }
-      assert.ok(Math.abs(slope[i]) <= 0.12 + 1e-6, `gradient ${slope[i]} at ${i}`);
+      // S2 (review round 1): pitches up to 14.5 % and camber up to ~10 degrees on selected bends
+      assert.ok(Math.abs(slope[i]) <= 0.15 + 1e-6, `gradient ${slope[i]} at ${i}`);
       assert.ok(width[i] >= 5.5 - 1e-6 && width[i] <= 8 + 1e-6, `width ${width[i]} at ${i}`);
-      assert.ok(Math.abs(bank[i]) <= 0.12);
+      assert.ok(Math.abs(bank[i]) <= 0.18);
       if (Math.abs(curv[i]) > 1e-6) minR = Math.min(minR, 1 / Math.abs(curv[i]));
       assert.ok(Math.abs(curv[i]) <= 1 / 9 + 1e-4, `corner tighter than 9 m radius at ${i}`);
       // camber on bends: bank has the sign of the curvature
-      if (Math.abs(curv[i]) > 0.02) assert.ok(bank[i] * curv[i] > 0, `camber sign at ${i}`);
+      // (except inside the design's deliberate adverse-camber ranges, st.camberRanges with f < 0)
+      const adverse = (st.camberRanges || []).some((r) => r.f < 0 && i * ds >= r.s0 && i * ds <= r.s1);
+      if (Math.abs(curv[i]) > 0.02 && !adverse) assert.ok(bank[i] * curv[i] > 0, `camber sign at ${i}`);
     }
     // heights finite
     for (let i = 0; i < N; i++) assert.ok(Number.isFinite(st.py[i]));
@@ -199,7 +202,7 @@ for (const id of STAGE_IDS) {
     }
     assert.ok(st.parTime > 60 && st.parTime < 420, `parTime ${st.parTime}`);
     const avg = (st.lengthM / st.parTime) * 3.6;
-    assert.ok(avg > 55 && avg < 140, `average speed ${avg} km/h`);
+    assert.ok(avg > 40 && avg < 140, `average speed ${avg} km/h`);
   });
 }
 

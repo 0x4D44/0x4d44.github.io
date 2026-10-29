@@ -26,10 +26,11 @@ const W = { engine: 0.22, gearbox: 0.08, steering: 0.08, susp: 0.12, tyres: 0.08
  */
 export function createDamage(spec, dmg, emit) {
   const tough = spec.stats ? spec.stats.toughness : 6;
-  const eRef = spec.mass * 320 * (0.7 + 0.06 * tough); // joules for a "write-off" frontal hit
+  const eRef = spec.mass * 700 * (0.7 + 0.06 * tough); // joules for a "write-off" frontal hit
   const punctured = [false, false, false, false];
   let engineFailed = false;
   let pullSign = 1;
+  let dScale = 1;
   const fx = {
     powerMul: 1,
     torqueMul: 1,
@@ -57,6 +58,8 @@ export function createDamage(spec, dmg, emit) {
     mb = (d.body.front + d.body.rear + d.body.left + d.body.right) * 0.25;
     let t = 1.6 * (W.engine * d.engine + W.gearbox * d.gearbox + W.steering * d.steering + W.susp * ms +
       W.tyres * mt + W.radiator * d.radiator + W.body * mb);
+    const bz = Math.max(d.body.front, d.body.rear, d.body.left, d.body.right);
+    if (t < 0.9 * bz) t = 0.9 * bz; // a write-off hit reads as one
     if (t < d.engine) t = d.engine;
     t = clamp01(t);
     if (t > d.total) d.total = t; // monotonic
@@ -97,10 +100,13 @@ export function createDamage(spec, dmg, emit) {
 
   const api = {
     fx,
+    /** Expert-chip multiplier on impact / landing / bottom-out damage (default 1). */
+    setScale(v) { dScale = v > 0 ? v : 1; },
+    get scale() { return dScale; },
     punctured,
     /** damage for an impact; energy in joules actually dissipated, local contact point (x right, z back). */
     impact(zone, energy, lx, lz) {
-      let d = energy / eRef;
+      let d = (energy / eRef) * dScale;
       if (d < 0.004) return 0; // scuffs do nothing
       d = d > 1.2 ? 1.2 : d;
       const dm = dmg;
@@ -108,7 +114,7 @@ export function createDamage(spec, dmg, emit) {
       const off = Math.min(1, Math.abs(lx) / 0.8); // off-centre hits spare the engine
       if (zone === "front") {
         dm.body.front = add(dm.body.front, d);
-        dm.engine = add(dm.engine, d * (0.5 - 0.2 * off));
+        dm.engine = add(dm.engine, d * (0.5 - 0.2 * off) + (d > 0.8 ? (d - 0.8) * 2.5 * (1 - 0.6 * off) : 0));
         dm.radiator = add(dm.radiator, d * (0.85 - 0.3 * off));
         dm.steering = add(dm.steering, d * 0.4);
         dm.suspension[c] = add(dm.suspension[c], d * 0.5);
@@ -141,7 +147,7 @@ export function createDamage(spec, dmg, emit) {
     },
     landing(strength) {
       if (strength < 0.25) return;
-      const d = strength * strength * 0.35;
+      const d = strength * strength * 0.35 * dScale;
       for (let i = 0; i < 4; i++) {
         dmg.suspension[i] = add(dmg.suspension[i], d * 0.5);
         dmg.tyres[i] = add(dmg.tyres[i], d * 0.1);
@@ -152,7 +158,7 @@ export function createDamage(spec, dmg, emit) {
     },
     bottomout(strength, wheel) {
       if (strength < 0.15) return;
-      const d = strength * strength * 0.12;
+      const d = strength * strength * 0.12 * dScale;
       dmg.suspension[wheel] = add(dmg.suspension[wheel], d);
       dmg.engine = add(dmg.engine, d * 0.2);
       dmg.gearbox = add(dmg.gearbox, d * 0.25);

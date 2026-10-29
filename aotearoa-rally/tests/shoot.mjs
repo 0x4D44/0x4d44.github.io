@@ -32,6 +32,12 @@ for (const stageId of stages) {
   const g = await openGame({ width: W, height: H, query: q, mobile: W < 600 });
   try {
     await g.waitForReady(180000);
+    await g.evalAsync("window.__AR__.hideOverlays()");
+    if (flags.camera) {
+      // use the game's own API so the requested view is really active (not the silent chase fallback)
+      const got = await g.evalAsync(`window.__AR__.setCamera(${JSON.stringify(flags.camera)})`);
+      if (got !== flags.camera) throw new Error(`camera "${flags.camera}" not applied (rig reports ${got}); valid: chase, far, bumper, bonnet`);
+    }
     const len = await g.evalAsync("window.__AR__.state().stageId && window.__AR__.perf() && 1");
     void len;
     for (let i = 0; i < positions.length; i++) {
@@ -41,6 +47,7 @@ for (const stageId of stages) {
       const file = resolve(outDir, `${stageId}-${W}x${H}-${quality}-p${String(i + 1)}.png`);
       await g.screenshot(file);
       const perf = await g.evalAsync("window.__AR__.perf()");
+      if (flags.camera) { const m = await g.evalAsync("window.__AR__.state().camera"); if (m !== flags.camera) throw new Error(`camera drifted to ${m}`); }
       console.log(JSON.stringify({ stage: stageId, file, s: Math.round(st.s), speedKmh: Math.round(st.speedKmh), drawCalls: perf && perf.drawCalls, triangles: perf && perf.triangles }));
     }
     const errs = [...g.consoleErrors(), ...(await g.evalAsync("window.__AR__.errors"))];

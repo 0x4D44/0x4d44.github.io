@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { buildStage, STAGE_IDS, PROP_KINDS, CORRIDOR_KINDS } from "../core/stage.mjs";
 import { makeRng } from "../core/rng.mjs";
+import { SURFACE } from "../core/surfaces.mjs";
 
 const BREAK = process.env.STAGES_BREAK || "";
 const times = {};
@@ -139,6 +140,69 @@ for (const id of STAGE_IDS) {
     assert.ok(dt < 1500 && times[id] < 1500, `build ${dt} / ${times[id]} ms`);
   });
 }
+
+// S1: big props (visual radius >= 1.2 m) clear the road edge by 1 m (6 m on a hairpin's inside); colliders by 0.3 m
+if (BREAK === "prop-big") { const s = stages.remarkables; s.props.push({ ...s.props.find((p) => p.kind === "schist"), x: s.px[300] + 4, z: s.pz[300] }); }
+test("big props and colliders stay clear of the road on every stage", () => {
+  const allow = new Set(CORRIDOR_KINDS);
+  const p = {}, q = {};
+  let bigSeen = 0;
+  for (const id of STAGE_IDS) {
+    const st = stages[id];
+    for (const pr of st.props) {
+      if (allow.has(pr.kind)) continue;
+      const big = pr.r >= 1.2;
+      if (!big && !pr.collide) continue;
+      st.project(pr.x, pr.z, undefined, p);
+      st.sample(p.s, q);
+      const edge = Math.abs(p.lat) - pr.r - q.width / 2;
+      const where = `${id} ${pr.kind} r=${pr.r.toFixed(2)} at s=${p.s.toFixed(0)} lat=${p.lat.toFixed(2)}`;
+      if (pr.collide) assert.ok(edge >= 0.3 - 1e-3, `collider ${where} reaches ${(-edge).toFixed(2)} m into the road margin`);
+      if (big) {
+        bigSeen++;
+        assert.ok(edge >= 1.0 - 1e-3, `big prop ${where} is only ${edge.toFixed(2)} m off the road edge`);
+        if (edge < 6) {
+          const i0 = Math.round(p.s / st.ds);
+          let k = 0;
+          for (let i = Math.max(0, i0 - 10); i <= Math.min(st.N - 1, i0 + 10); i++) if (Math.abs(st.curv[i]) > Math.abs(k)) k = st.curv[i];
+          assert.ok(!(Math.abs(k) > 1 / 32 && p.lat * k > 0), `big prop ${where} inside a hairpin, ${edge.toFixed(1)} m from the edge`);
+        }
+      }
+    }
+  }
+  assert.ok(bigSeen > 50, `only ${bigSeen} big props to check`);
+});
+
+// S6: every ford is wet across the whole road (and 6 m beyond each edge)
+if (BREAK === "ford-dry") for (const w of stages.otago.water) if (w.kind === "ford") w.halfWidth = 2;
+test("every ford holds water across the road, shallow, with the road surface WATER", () => {
+  let fords = 0;
+  const o = {};
+  for (const id of STAGE_IDS) {
+    const st = stages[id];
+    for (const hz of st.hazards.filter((h) => h.kind === "ford")) {
+      fords++;
+      const w = st.water.find((q) => q.kind === "ford" && Math.abs(q.s - hz.s) < 3);
+      assert.ok(w, `${id}: ford at s=${hz.s} has no water entry`);
+      st.sample(hz.s, o);
+      assert.ok(w.halfWidth >= o.width / 2 + 6 - 1e-6, `${id}: ford water half width ${w.halfWidth} < road half ${o.width / 2} + 6`);
+      assert.ok(w.depth > 0.05 && w.depth <= 0.6, `${id}: ford depth ${w.depth}`);
+      // sample the road along the ford: surface is WATER, the plane sits above the road bed by about `depth`
+      for (let s = w.s - w.halfLen + 4; s <= w.s + w.halfLen - 4; s += 2) {
+        st.sample(s, o);
+        for (let lat = -o.width / 2 + 0.3; lat <= o.width / 2 - 0.3; lat += 1) {
+          const x = o.x + o.nx * lat, z = o.z + o.nz * lat;
+          if (Math.abs(s - w.s) <= (w.halfLen - 3)) {
+            assert.equal(st.surfaceAt(x, z), SURFACE.WATER,`${id}: dry road at s=${s} lat=${lat.toFixed(1)}`);
+            const over = w.y - st.heightAt(x, z);
+            assert.ok(over > 0.02 && over < 0.9, `${id}: water ${over.toFixed(2)} m over the bed at s=${s}`);
+          }
+        }
+      }
+    }
+  }
+  assert.ok(fords >= 4, `${fords} fords`);
+});
 
 test("heightAt is fast and allocation-light", () => {
   const st = stages.otago;

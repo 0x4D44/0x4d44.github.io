@@ -70,7 +70,7 @@ export function buildPacenotes(c, opts = {}) {
     let gIn = gradeOfRadius(1 / Math.max(kIn, 1e-5)), gOut = gradeOfRadius(1 / Math.max(kOut, 1e-5));
     const mods = [];
     const hairpin = gApex === 1 && angle * 57.2958 >= 100;
-    let sev = hairpin ? 1 : gIn;
+    let sev = hairpin ? 1 : gApex;
     if (!hairpin) {
       if (gOut <= gIn - 1 && len > 20) mods.push("tightens");
       else if (gOut >= gIn + 1 && len > 20) mods.push("opens");
@@ -80,7 +80,7 @@ export function buildPacenotes(c, opts = {}) {
     else if (len < 24 && sev >= 3) mods.push("short");
     notes.push({
       s: r.i0 * ds, kind: hairpin ? "hairpin" : "corner", dir: r.sign > 0 ? "right" : "left", severity: sev,
-      length: Math.max(ds, len), modifiers: mods, _prio: 4, _apex: gApex, _angle: angle,
+      length: Math.max(ds, len), modifiers: mods, _prio: 4, _apex: gApex, _gIn: gIn, _angle: angle,
     });
   }
 
@@ -126,13 +126,26 @@ export function buildPacenotes(c, opts = {}) {
       if (flat && a < 0) a = q;
       if (!flat && a >= 0) {
         const len = (q - a) * ds;
-        if (len >= 320 && a > 0) notes.push({ s: (a + 5) * ds, kind: "straight", dir: null, severity: 6, length: len, modifiers: [], _prio: 0 });
+        if (len >= 200 && a > 0) notes.push({ s: (a + 5) * ds, kind: "straight", dir: null, severity: 6, length: len, modifiers: [], _prio: 0 });
         a = -1;
       }
     }
   }
   notes.push({ s: 0, kind: "start", dir: null, severity: 6, length: 60, modifiers: [], _prio: 9 });
   notes.push({ s: lengthM, kind: "finish", dir: null, severity: 6, length: 0, modifiers: [], _prio: 9 });
+  // distance calls: "200" after a feature when the next one is 150 m+ away
+  {
+    const sorted = [...notes].sort((a, b) => a.s - b.s);
+    for (let q = 0; q < sorted.length - 1; q++) {
+      const a = sorted[q], b = sorted[q + 1];
+      if (b.kind === "straight" && b.s - (a.s + a.length) < 60) continue;
+      const gap = b.s - (a.s + a.length);
+      if (gap >= 150) {
+        const d = Math.round(gap / 50) * 50;
+        notes.push({ s: a.s + a.length + 8, kind: "distance", dir: null, severity: 6, length: 0, modifiers: [], _prio: 0.5, _say: String(d) });
+      }
+    }
+  }
 
   // ---------------- "don't cut": a nocut feature within 90 m before (or inside) a corner
   const nocuts = feats.filter((f) => f.type === "nocut");
@@ -193,7 +206,7 @@ export function buildPacenotes(c, opts = {}) {
         const parts = [`${dirWord(n)} ${NUM[n.severity]}`];
         if (m.includes("long")) parts.push("long");
         if (m.includes("short")) parts.push("short");
-        if (m.includes("tightens")) parts.push("tightens");
+        if (m.includes("tightens")) { if (n._gIn > n.severity) parts[0] = `${dirWord(n)} ${NUM[n._gIn]}`; parts.push(n._gIn > n.severity ? `tightens to ${NUM[n.severity]}` : "tightens"); }
         if (m.includes("opens")) parts.push("opens");
         if (m.includes("dont_cut")) parts.push("don't cut");
         if (m.includes("maybe")) parts.push("maybe flat");
@@ -209,7 +222,7 @@ export function buildPacenotes(c, opts = {}) {
       let t = `${n.dir === "left" ? "L" : "R"}${n.severity}`;
       if (m.includes("long")) t += " long";
       if (m.includes("short")) t += " short";
-      if (m.includes("tightens")) t += " tightens";
+      if (m.includes("tightens")) t += n._gIn > n.severity ? ` tightens ${n.severity}` : " tightens";
       if (m.includes("opens")) t += " opens";
       if (m.includes("dont_cut")) t += " dont cut";
       return t;
@@ -285,6 +298,7 @@ export function buildPacenotes(c, opts = {}) {
         n.text = `FLAT ${d}`;
         break;
       }
+      case "distance": n.speak = n._say; n.text = n._say; break;
       case "start": n.speak = "Go, flat out"; n.text = "START"; break;
       case "finish": n.speak = "Finish, flat out"; n.text = "FINISH"; break;
       default: break;
@@ -293,7 +307,7 @@ export function buildPacenotes(c, opts = {}) {
   }
   for (const n of out) {
     n.lead = makeLead(n.s);
-    delete n._prio; delete n._apex; delete n._grid; delete n._from; delete n._to;
+    delete n._prio; delete n._say; delete n._gIn; delete n._apex; delete n._grid; delete n._from; delete n._to;
     if (!n.modifiers) n.modifiers = [];
   }
   return out;

@@ -100,6 +100,7 @@ export function vehicleOptionsFor(spec, setup, options) {
       brakeBias: clamp((spec && spec.brakeBias != null ? spec.brakeBias : 0.6) + clamp(num(s.brake), -0.1, 0.1), 0.4, 0.8),
     },
   };
+  if (o.difficulty && DIFFICULTY[o.difficulty]) out.damageScale = DIFFICULTY[o.difficulty].damageScale;
   if (o.gearbox) out.auto = o.gearbox !== "manual";
   if (o.steerAssist != null) out.assist = clamp(num(o.steerAssist), 0, 1) * 0.7;
   return out;
@@ -155,38 +156,66 @@ function sanitiseProfile(p) {
   return out;
 }
 
-function sanitiseChampionship(c) {
+const CAR_IDS_DEFAULT = ["huia", "kea", "takahe", "piwakawaka"];
+const unit = (v) => clamp(num(v), 0, 1);
+function sanitiseDamage(d) {
+  if (!d || typeof d !== "object") return null;
+  const arr4 = (a) => [0, 1, 2, 3].map((i) => unit(Array.isArray(a) ? a[i] : 0));
+  const b = d.body && typeof d.body === "object" ? d.body : {};
+  const out = {
+    engine: unit(d.engine), gearbox: unit(d.gearbox), steering: unit(d.steering), radiator: unit(d.radiator),
+    suspension: arr4(d.suspension), tyres: arr4(d.tyres),
+    body: { front: unit(b.front), rear: unit(b.rear), left: unit(b.left), right: unit(b.right) },
+    total: 0,
+  };
+  out.total = Math.min(0.999, unit(d.total)); // a championship car never carries a destroyed state across stages
+  return out;
+}
+function sanitiseChampionship(c, carIds) {
   if (!c || typeof c !== "object") return null;
   if (!DIFFICULTY[c.difficulty]) return null;
+  if (typeof c.carId !== "string" || !carIds.includes(c.carId)) return null;
   if (!Number.isInteger(c.stageIndex) || c.stageIndex < 0 || c.stageIndex > STAGE_ORDER.length) return null;
-  if (!Array.isArray(c.results) || c.results.length > STAGE_ORDER.length) return null;
+  if (!Array.isArray(c.results) || c.results.length !== c.stageIndex) return null;
   const results = [];
-  for (const r of c.results) {
-    if (!r || !Array.isArray(r.sheet)) return null;
-    const sheet = r.sheet.map((e) => ({
-      id: String(e.id), name: String(e.name), player: !!e.player, dnf: !!e.dnf, time: e.dnf ? null : num(e.time, null),
-      penalty: num(e.penalty), position: num(e.position), points: num(e.points),
-    }));
-    results.push({ stageId: String(r.stageId), sheet });
+  for (let k = 0; k < c.results.length; k++) {
+    const r = c.results[k];
+    if (!r || typeof r !== "object" || !Array.isArray(r.sheet) || r.sheet.length < 1 || r.sheet.length > 8 || r.stageId !== STAGE_ORDER[k]) return null;
+    const sheet = [];
+    for (const e of r.sheet) {
+      if (!e || typeof e !== "object") return null;
+      const dnf = !!e.dnf;
+      const time = dnf ? null : e.time;
+      if (!dnf && !(Number.isFinite(time) && time > 0 && time < 1e5)) return null;
+      sheet.push({
+        id: String(e.id).slice(0, 24), name: String(e.name).slice(0, 40), player: !!e.player, dnf, time,
+        penalty: clamp(num(e.penalty), 0, 1e4), gap: dnf || !Number.isFinite(e.gap) ? null : clamp(e.gap, 0, 1e5), position: clamp(Math.round(num(e.position, 1)), 1, 8), points: clamp(Math.round(num(e.points)), 0, 10),
+      });
+    }
+    results.push({ stageId: r.stageId, sheet });
   }
-  const setup = { ...DEFAULT_SETUP, ...(c.setup || {}) };
-  if (!TYRES.includes(setup.tyre)) setup.tyre = "gravel";
+  const su = c.setup && typeof c.setup === "object" ? c.setup : {};
+  const setup = { tyre: TYRES.includes(su.tyre) ? su.tyre : "gravel", gear: clamp(num(su.gear), ...SETUP_RANGE.gear), susp: clamp(num(su.susp), ...SETUP_RANGE.susp), brake: clamp(num(su.brake), ...SETUP_RANGE.brake) };
+  const plan = {};
+  const rawPlan = c.service && typeof c.service.plan === "object" && c.service.plan ? c.service.plan : {};
+  for (const p of PARTS) if (p in rawPlan) plan[p] = unit(rawPlan[p]);
   return {
     difficulty: c.difficulty,
-    carId: String(c.carId || "huia"),
-    livery: Math.max(0, num(c.livery)),
+    carId: c.carId,
+    livery: clamp(Math.round(num(c.livery)), 0, 9),
     setup,
     stageIndex: c.stageIndex,
     results,
-    damage: c.damage && typeof c.damage === "object" ? c.damage : null,
-    service: { budget: num(c.service && c.service.budget), plan: (c.service && c.service.plan) || {} },
+    damage: sanitiseDamage(c.damage),
+    service: { budget: clamp(num(c.service && c.service.budget), 0, 300), plan },
+    inStage: !!c.inStage && c.stageIndex < STAGE_ORDER.length,
   };
 }
 
 /**
  * @param {{storage:{getJSON,setJSON,remove}, rivals?:(stageId:string, ctx:object)=>Array, parTime?:(stageId:string, carId:string)=>number}} o
  */
-export function createCareer({ storage, rivals = fallbackRivals, parTime = () => 240 } = {}) {
+export function createCareer({ storage, rivals = fallbackRivals, parTime = () => 240, carIds = CAR_IDS_DEFAULT } = {}) {
   let profile = emptyProfile();
   let champ = null;
 
@@ -217,7 +246,7 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
         const o = typeof text === "string" ? JSON.parse(text) : text;
         if (!o || typeof o !== "object" || o.v !== SAVE_VERSION) return false;
         profile = sanitiseProfile(o.profile);
-        champ = sanitiseChampionship(o.championship);
+        champ = sanitiseChampionship(o.championship, carIds);
         return true;
       } catch {
         return false;
@@ -286,6 +315,7 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
         results: [],
         damage: null,
         service: { budget: 0, plan: {} },
+        inStage: false,
       };
       return champ;
     },
@@ -310,9 +340,10 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
 
     /** Build the sorted time sheet of a stage (player + rivals), without mutating anything. */
     buildSheet(stageId, playerResult, ctx = {}) {
-      const diff = c.difficulty;
-      const par = ctx.parTime ?? parTime(stageId, champ ? champ.carId : "huia");
-      const field = rivals(stageId, { parTime: par, pace: diff.rivalPace, difficulty: diff.id, carId: champ ? champ.carId : "huia" }) || [];
+      const diff = ctx.difficulty && DIFFICULTY[ctx.difficulty] ? DIFFICULTY[ctx.difficulty] : c.difficulty;
+      const carId = ctx.carId || (champ ? champ.carId : "huia");
+      const par = ctx.parTime ?? parTime(stageId, carId);
+      const field = rivals(stageId, { parTime: par, pace: diff.rivalPace, difficulty: diff.id, carId }) || [];
       const rows = field.slice(0, 7).map((r) => ({ id: String(r.id), name: String(r.name), player: false, dnf: !!r.dnf, time: r.dnf ? null : num(r.time, par), penalty: 0 }));
       const dnf = !playerResult || playerResult.status === "dnf" || !Number.isFinite(playerResult.total);
       rows.push({
@@ -320,7 +351,9 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
         time: dnf ? null : playerResult.total, penalty: dnf ? 0 : playerResult.penaltyTotal || 0,
       });
       rows.sort((a, b) => (a.dnf !== b.dnf ? (a.dnf ? 1 : -1) : a.dnf ? 0 : a.time - b.time));
+      const lead = rows.length && !rows[0].dnf ? rows[0].time : null;
       rows.forEach((r, i) => {
+        r.gap = lead != null && !r.dnf ? r.time - lead : null;
         r.position = i + 1;
         r.points = r.dnf ? 0 : POINTS[i] || 0;
       });
@@ -334,7 +367,8 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
       const sheet = c.buildSheet(stageId, playerResult, ctx);
       champ.results.push({ stageId, sheet });
       champ.stageIndex++;
-      champ.damage = damage || null;
+      champ.inStage = false;
+      champ.damage = sanitiseDamage(damage);
       champ.service = { budget: c.difficulty.repairMinutes, plan: {} };
       if (c.finished) {
         profile.stats.championships++;
@@ -342,6 +376,19 @@ export function createCareer({ storage, rivals = fallbackRivals, parTime = () =>
       }
       profile.stats.stagesFinished += playerResult && playerResult.status !== "dnf" ? 1 : 0;
       return sheet;
+    },
+
+    /** Mark the current championship stage as started: leaving it unfinished later counts as a DNF. */
+    markStageStarted() {
+      if (champ && champ.stageIndex < STAGE_ORDER.length) champ.inStage = true;
+    },
+    /** Overall-time classification (total time asc, DNFs counted at slowest +25 %). */
+    timeStandings() {
+      const rows = c.standings().slice().sort((a, b) => a.total - b.total);
+      rows.forEach((r, i) => (r.timePosition = i + 1));
+      const lead = rows.length ? rows[0].total : 0;
+      for (const r of rows) r.timeGap = r.total - lead;
+      return rows;
     },
 
     /** Cumulative standings: points desc, then total time asc. */

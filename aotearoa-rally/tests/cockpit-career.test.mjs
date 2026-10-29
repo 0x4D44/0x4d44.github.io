@@ -232,3 +232,89 @@ test("vehicleOptionsFor maps setup onto Vehicle.configure arguments", () => {
   assert.ok(Math.abs(o.assist - 0.7) < 1e-9);
   assert.equal(vehicleOptionsFor(spec, { tyre: "bogus" }).tyre, "gravel");
 });
+
+const HOSTILE = (champ) => JSON.stringify({ v: 1, profile: {}, championship: champ });
+const goodChamp = () => {
+  const { c } = mkCareer();
+  c.newChampionship({ difficulty: "pro", carId: "kea" });
+  c.completeStage(finished(150), dmg());
+  return JSON.parse(JSON.stringify(c.championship));
+};
+
+test("hostile championships (unknown car, NaN, negatives, huge, wrong types) are rejected or clamped, never crash", () => {
+  const base = goodChamp();
+  const rejected = [
+    { ...base, carId: "nope" }, { ...base, carId: 7 }, { ...base, carId: null }, { ...base, carId: "__proto__" },
+    { ...base, stageIndex: -1 }, { ...base, stageIndex: 1e9 }, { ...base, stageIndex: "1" }, { ...base, stageIndex: null },
+    { ...base, difficulty: "insane" }, { ...base, results: [] }, { ...base, results: "x" },
+    { ...base, results: [{ stageId: "otago", sheet: base.results[0].sheet }] },
+    { ...base, results: [{ stageId: "waitomo", sheet: [null] }] },
+    { ...base, results: [{ stageId: "waitomo", sheet: [{ ...base.results[0].sheet[0], time: -5 }] }] },
+    { ...base, results: [{ stageId: "waitomo", sheet: Array(50).fill(base.results[0].sheet[0]) }] },
+  ];
+  for (const h of rejected) {
+    const { c } = mkCareer();
+    assert.doesNotThrow(() => c.deserialize(HOSTILE(h)), JSON.stringify(h).slice(0, 80));
+    assert.equal(c.championship, null, JSON.stringify(h).slice(0, 90));
+  }
+  const clamped = { ...base, livery: 1e12, setup: { tyre: "slicks", gear: 99, susp: -99, brake: NaN }, damage: { engine: 9, gearbox: -3, suspension: "x", tyres: [5, "a"], body: null, total: 7 }, service: { budget: 1e9, plan: { engine: 40, evil: 1 } } };
+  const { c } = mkCareer();
+  c.deserialize(HOSTILE(clamped));
+  const ch = c.championship;
+  assert.ok(ch, "a salvageable save is kept");
+  assert.equal(ch.livery, 9);
+  assert.equal(ch.setup.tyre, "gravel"); assert.equal(ch.setup.gear, 1); assert.equal(ch.setup.susp, -1); assert.equal(ch.setup.brake, 0);
+  assert.equal(ch.damage.engine, 1); assert.equal(ch.damage.gearbox, 0);
+  assert.deepEqual(ch.damage.suspension, [0, 0, 0, 0]); assert.deepEqual(ch.damage.tyres, [1, 0, 0, 0]);
+  assert.ok(ch.damage.total < 1);
+  assert.equal(ch.service.budget, 300); assert.deepEqual(ch.service.plan, { engine: 1 });
+  assert.doesNotThrow(() => { c.standings(); c.partDamage(); c.serviceLeft(); c.timeStandings(); });
+});
+
+test("career accepts only the car ids it is told about", () => {
+  const c = createCareer({ storage: createStorage(createMemoryStorage()), carIds: ["only"] });
+  c.deserialize(HOSTILE(goodChamp()));
+  assert.equal(c.championship, null);
+});
+
+test("a stage left mid-run is flagged, cleared when completed, and survives a save", () => {
+  const { store, c } = mkCareer();
+  c.newChampionship({ difficulty: "pro" });
+  assert.equal(c.championship.inStage, false);
+  c.markStageStarted();
+  assert.equal(c.save(), true);
+  const { c: d } = mkCareer(store);
+  assert.equal(d.load(), true);
+  assert.equal(d.championship.inStage, true, "persisted so a reload can score the DNF");
+  d.completeStage({ status: "dnf", total: Infinity, penaltyTotal: 0 }, dmg());
+  assert.equal(d.championship.inStage, false);
+  assert.equal(d.championship.results[0].sheet.find((r) => r.player).dnf, true);
+});
+
+test("sheet gap is relative to the winner (0 for the winner, null for a DNF)", () => {
+  const { c } = mkCareer();
+  c.newChampionship({ difficulty: "pro" });
+  const sheet = c.buildSheet("waitomo", finished(1));
+  assert.equal(sheet[0].gap, 0);
+  for (const r of sheet) assert.ok(r.gap >= 0);
+  const s2 = c.buildSheet("waitomo", { status: "dnf", total: Infinity, penaltyTotal: 0 });
+  assert.equal(s2.find((r) => r.player).gap, null);
+  assert.equal(s2[0].gap, 0);
+});
+
+test("overall-time classification is sorted by total time and carries the gap", () => {
+  const { c } = mkCareer();
+  c.newChampionship({ difficulty: "pro" });
+  c.completeStage(finished(50), dmg());
+  c.completeStage(finished(400), dmg());
+  const t = c.timeStandings();
+  for (let i = 1; i < t.length; i++) assert.ok(t[i - 1].total <= t[i].total);
+  assert.equal(t[0].timeGap, 0);
+  assert.equal(t[0].timePosition, 1);
+  assert.ok(t.some((r) => r.player && r.timeGap > 0 || r.player && r.timePosition === 1));
+});
+
+test("the difficulty's damage scale is passed to Vehicle.configure", () => {
+  assert.equal(vehicleOptionsFor({ brakeBias: 0.6 }, {}, { difficulty: "expert" }).damageScale, DIFFICULTY.expert.damageScale);
+  assert.equal(vehicleOptionsFor({ brakeBias: 0.6 }, {}, {}).damageScale, undefined);
+});

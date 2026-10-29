@@ -174,3 +174,67 @@ test("skipCountdown starts straight away without a false-start penalty", () => {
   advance(run, vehicle, 1);
   assert.equal(run.penaltyTotal, 0);
 });
+
+test("no progress: throttle applied but under 40 m in 25 s respawns with a penalty", () => {
+  const { run, vehicle } = mk("pro");
+  goRunning(run, vehicle);
+  vehicle.state.s = 300; vehicle.state.z = -300; run.update(0.1, vehicle.state);
+  vehicle.state.throttle = 1; vehicle.state.speed = 6;
+  advance(run, vehicle, 23);
+  assert.equal(run.respawns, 0);
+  advance(run, vehicle, 3);
+  assert.equal(run.respawns, 1);
+  assert.equal(run.penalties.at(-1).kind, "no_progress");
+});
+
+test("steady progress never trips no-progress, and coasting without throttle does not either", () => {
+  const a = mk("pro");
+  goRunning(a.run, a.vehicle);
+  a.vehicle.state.throttle = 1; a.vehicle.state.speed = 20;
+  for (let i = 0; i < 3600; i++) { a.vehicle.state.s += 20 / 60; a.vehicle.state.z = -a.vehicle.state.s % 900; a.run.update(1 / 60, a.vehicle.state); if (a.vehicle.state.s > 900) break; }
+  assert.equal(a.run.respawns, 0);
+  const b = mk("pro");
+  goRunning(b.run, b.vehicle);
+  b.vehicle.state.throttle = 0; b.vehicle.state.speed = 5;
+  advance(b.run, b.vehicle, 40);
+  assert.ok(!b.run.penalties.some((p) => p.kind === "no_progress"));
+});
+
+test("time cap: min(3 x par, par + 8 min) is a DNF with reason timeout", () => {
+  const { stage, vehicle } = mk();
+  assert.equal(createRun({ stage, vehicle, par: 100 }).timeCap, 300);
+  assert.equal(createRun({ stage, vehicle, par: 600 }).timeCap, 1080);
+  assert.equal(createRun({ stage, vehicle }).timeCap, Infinity);
+  const run = createRun({ stage, vehicle, par: 100 });
+  goRunning(run, vehicle);
+  vehicle.state.speed = 30;
+  for (let t = 0; t < 290; t++) { vehicle.state.s = Math.min(900, vehicle.state.s + 1); run.update(1, vehicle.state); }
+  assert.equal(run.status, "running");
+  for (let t = 0; t < 20; t++) run.update(1, vehicle.state);
+  assert.equal(run.status, "dnf");
+  assert.equal(run.dnfReason, "timeout");
+  assert.equal(run.result().total, Infinity);
+});
+
+test("countdown length is configurable (time trial uses a short one)", () => {
+  const { stage, vehicle } = mk();
+  const run = createRun({ stage, vehicle, countdown: 1 });
+  run.start();
+  advance(run, vehicle, 1.2);
+  assert.equal(run.status, "running");
+});
+
+test("retire is a DNF with reason retired, and cannot undo a finish", () => {
+  const { run, vehicle } = mk();
+  goRunning(run, vehicle);
+  run.retire();
+  assert.equal(run.status, "dnf");
+  assert.equal(run.result().dnfReason, "retired");
+  assert.equal(run.result().total, Infinity);
+  const f = mk();
+  goRunning(f.run, f.vehicle);
+  f.vehicle.state.s = 1000; f.run.update(0.1, f.vehicle.state);
+  assert.equal(f.run.status, "finished");
+  f.run.retire();
+  assert.equal(f.run.status, "finished");
+});

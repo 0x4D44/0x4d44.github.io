@@ -1,6 +1,7 @@
 // Generates core/partimes.mjs: skill-1.0 bot laps for every stage x car (par = what a clean, sensible drive takes).
 //   node aotearoa-rally/tests/calibrate-par.mjs        (writes core/partimes.mjs and prints the table)
 //   node aotearoa-rally/tests/calibrate-par.mjs --dry  (prints only)
+import os from "node:os"; os.setPriority(0, os.constants.priority.PRIORITY_LOW);
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { CAR_IDS } from "../core/cars.mjs";

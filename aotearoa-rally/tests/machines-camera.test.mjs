@@ -60,7 +60,9 @@ test("terrain avoidance lifts the camera above a hill and pulls it in when the a
   const out = { x: 0, y: 2, z: 14 };
   const f = avoidTerrain(hill, 0, 1.5, 0, out, 0.6);
   assert.ok(f < 1, `frac ${f}`);
-  assert.ok(out.z < 5.01, `z ${out.z}`);
+  assert.ok(f >= 0.55 - 1e-9, `arm shortened below the floor: ${f}`);
+  assert.ok(out.z >= 14 * 0.55 - 1e-6, `z ${out.z}`);
+  assert.ok(out.y > hill(0, out.z) + 0.45, `camera lifted over the hill: y ${out.y}`);
   const free = { x: 0, y: 3, z: 14 };
   assert.equal(avoidTerrain(() => 0, 0, 1, 0, free, 0.6), 1);
   assert.equal(free.z, 14);

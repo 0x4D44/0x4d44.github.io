@@ -8,6 +8,7 @@
 // Body axes (local): +x right, +y up, +z back (car faces -z). Yaw 0 faces world -Z. See CONTRACTS.md.
 
 import { SURFACE_INFO, SURFACE } from "./surfaces.mjs";
+import { surfGripTable } from "./cars.mjs";
 import { tyreForce, TYRE_GRIP, TYRE_ROLL } from "./tyre.mjs";
 import { makeDamageState, createDamage } from "./damage.mjs";
 
@@ -85,7 +86,7 @@ const DYN_SCALARS = [
   "px", "py", "pz", "qw", "qx", "qy", "qz", "vx", "vy", "vz", "wx", "wy", "wz",
   "rpm", "gear", "boost", "thr", "brk", "hb", "steerIn", "steerAng", "analogT", "shiftT", "shiftLock", "cutT", "prevThr",
   "prevUp", "prevDown", "airT", "airMinVy", "flipT", "collided", "distance", "wgCool", "limCool", "impCool", "boCool", "splashCool",
-  "needAlign", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir",
+  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir",
 ];
 
 export function createVehicle(spec, options = {}) {
@@ -94,7 +95,9 @@ export function createVehicle(spec, options = {}) {
     tyre: options.tyre || "gravel",
     setup: options.setup || {},
     assist: options.assist === undefined ? 0.35 : options.assist,
+    damageScale: options.damageScale === undefined ? 1 : options.damageScale,
   };
+  const sgTab = surfGripTable(spec);
   const state = makeState();
   const dmgFx = {};
   const pool = [];
@@ -177,6 +180,8 @@ export function createVehicle(spec, options = {}) {
     if (o.auto !== undefined) opts.auto = !!o.auto;
     if (o.assist !== undefined) opts.assist = o.assist;
     if (o.tyre) opts.tyre = o.tyre;
+    if (o.damageScale !== undefined) opts.damageScale = o.damageScale;
+    dmg.setScale(opts.damageScale);
     if (o.setup) opts.setup = { ...opts.setup, ...o.setup };
     const su = opts.setup;
     gearScale = su.gearRatioScale || 1;
@@ -347,7 +352,7 @@ export function createVehicle(spec, options = {}) {
       const cwx = cxw + cuu * rx2 + cww * fx2, cwz = czw + cuu * rz2 + cww * fz2;
       const hard = o.hardness === undefined ? 0.6 : o.hardness;
       const scale = hard >= 0.34 ? 1 : Math.max(0.12, hard * 2.9);
-      const e = 0.04 + 0.32 * hard;
+      const e = 0.01 + 0.1 * hard;
       const corr = (0.15 + 0.8 * scale) * pen;
       const cap = corr > 0.3 ? 0.3 : corr;
       D.px += nxw * cap; D.pz += nzw * cap;
@@ -684,14 +689,23 @@ export function createVehicle(spec, options = {}) {
         const big = clamp((sb - 0.1) / 0.2, 0, 1); // only a real slide wakes the caster up
         delta += 0.8 * hold * hold * big * (clamp(dFree, -lock, lock) - delta);
       }
-      // stability assist: partial counter-steer toward the velocity direction
+      // stability assist (ESC-like): counter-steers a developing slide and stops the driver winding on more
+      // steering once the yaw rate passes what the surface can sustain. Strength follows opts.assist (0..1)
+      // and speed; a held handbrake mostly switches it off so deliberate slides stay possible.
       if (opts.assist > 0 && spd > 4) {
+        const E = Math.min(1, opts.assist * 3.0) * clamp((spd - 6) / 10, 0, 1) * (hbEff > 0.2 ? 0.25 : 1);
         const beta = Math.atan2(ls, Math.abs(fs) + 0.5) * (fs >= 0 ? 1 : -1);
         const ab = Math.abs(beta);
-        if (ab > 0.1) {
-          const k = clamp((ab - 0.1) / 0.25, 0, 1);
-          delta += opts.assist * 0.9 * clamp(beta, -0.5, 0.5) * k * (fs >= 0 ? 1 : 0);
+        if (ab > 0.08 && fs >= 0) {
+          const k = clamp((ab - 0.08) / 0.2, 0, 1);
+          delta += E * 0.75 * clamp(beta, -0.55, 0.55) * k;
         }
+        // yaw-rate governor: sustainable rate ~ mu g / v
+        let muE = 0;
+        for (let i = 0; i < 4; i++) muE += SURFACE_INFO[W[i].surf].mu;
+        const rMax = (0.35 + 0.65 * (muE * 0.25)) * 1.05 * G / Math.max(spd, 8);
+        const ar = Math.abs(D.wy);
+        if (ar > rMax && delta * D.wy < 0) delta *= 1 - clamp((ar - rMax) / (0.3 * rMax), 0, 1) * E;
       }
       const maxD = lock * 1.5;
       delta = clamp(delta, -maxD, maxD);
@@ -818,7 +832,7 @@ export function createVehicle(spec, options = {}) {
       let fxT = 0, fyT = 0;
       w.dFx = 0; w.fxTyre = 0;
       if (fz > 1) {
-        const grip = tyreGrip[w.surf] * (w.front ? spec.handling.gripFront : spec.handling.gripRear) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
+        const grip = tyreGrip[w.surf] * sgTab[w.surf] * (w.front ? spec.handling.gripFront : spec.handling.gripRear) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
         const o = tyreForce(fz, vxw, vyw, Wom[i] * Rw, w.surf, grip, w.loadRef, Rw);
         fxT = o.fx; fyT = o.fy;
         // stiction safety: forces must not overshoot the slip velocity in one step
@@ -960,11 +974,13 @@ export function createVehicle(spec, options = {}) {
     // ----- wheel spin integration -----
     const hold = fs < 0.5 && fs > -0.5 && spd < 0.8 && thr < 0.03 ? 1 : 0;
     const bF = brakeBias * 0.5 * spec.brakeTorque, bR2 = (1 - brakeBias) * 0.5 * spec.brakeTorque;
+    // moving against the engaged gear with the pedal up: driveline drag (engine braking) stops the roll-back
+    const against = thr < 0.05 && ((D.gear > 0 && fs < -0.5) || (D.gear < 0 && fs > 0.5)) ? 0.1 * spec.brakeTorque * 0.5 : 0;
     let spinSum = 0;
     for (let i = 0; i < 4; i++) {
       const w = W[i];
       const front = w.front;
-      let bt = brkEff * (front ? bF : bR2);
+      let bt = brkEff * (front ? bF : bR2) + against;
       if (!front) bt += hbEff * 3200;
       if (hold) bt += 600;
       const I = IW + (driven[i] ? reflect : 0);
@@ -983,6 +999,28 @@ export function createVehicle(spec, options = {}) {
     s.wheelspin = spinSum * 0.25;
     s.slide = powerSkid;
 
+    // ----- stability control: a braking-yaw-moment stand-in (ESC) that kills runaway rotation -----
+    if (opts.assist > 0 && groundedCount >= 3 && spd > 7 && fs > 3) {
+      if (hbEff > 0.2) D.hbHold = 1.1; else if (D.hbHold > 0) D.hbHold -= dt;
+      const E = Math.min(1, opts.assist * 3.0) * clamp((spd - 7) / 10, 0, 1) * (D.hbHold > 0 ? 0 : 1);
+      const wup = D.wx * ux + D.wy * uy + D.wz * uz;
+      // yaw rate the driver is asking for (kinematic), limited to what the surface can sustain
+      let muE = 0;
+      for (let i = 0; i < 4; i++) muE += SURFACE_INFO[W[i].surf].mu;
+      const rLim = (0.35 + 0.65 * muE * 0.25) * 1.05 * G / Math.max(spd, 8);
+      let rDes = -(fs / wb) * Math.tan(D.steerAng);
+      rDes = clamp(rDes, -rLim, rLim);
+      const ex = wup - rDes;
+      const gate = clamp((Math.abs(ex) - 0.3) / 0.3, 0, 1);
+      if (gate > 0) {
+        const beta = Math.abs(Math.atan2(ls, fs + 0.5));
+        const g2 = gate * clamp((beta - 0.05) / 0.15 + 0.35, 0, 1);
+        let T = -E * g2 * 4.0 * Iyaw * ex;
+        const Tmax = E * 2400;
+        if (T > Tmax) T = Tmax; else if (T < -Tmax) T = -Tmax;
+        Tx += ux * T; Ty += uy * T; Tz += uz * T;
+      }
+    }
     // ----- angular & linear integration -----
     // gravity already in Fy
     D.vx += (Fx / m) * dt; D.vy += (Fy / m) * dt; D.vz += (Fz / m) * dt;
@@ -1000,6 +1038,14 @@ export function createVehicle(spec, options = {}) {
       wbx += ((tbx + gx) / Ipitch) * dt;
       wby += ((tby + gy2) / Iyaw) * dt;
       wbz += ((tbz + gz) / Iroll) * dt;
+      // air attitude control: a flying rally car noses over with the trajectory instead of tumbling
+      if (groundedCount === 0 && D.airT > 0.06 && uy > 0.3 && Math.abs(state.pitch) < 1.25) {
+        const vh = Math.sqrt(D.vx * D.vx + D.vz * D.vz) + 2;
+        const tgt = Math.atan2(D.vy, vh) * 0.85;
+        const accP = clamp(5 * (tgt - state.pitch) - 3.2 * wbx, -9, 9);
+        wbx += accP * dt;
+        wbz -= wbz * Math.min(1, 2.5 * dt);
+      }
       // light angular damping (air/viscous) to stay tame
       D.wx = rx * wbx + ux * wby + kx * wbz;
       D.wy = ry * wbx + uy * wby + ky * wbz;
@@ -1137,7 +1183,7 @@ export function createVehicle(spec, options = {}) {
 
   // ---------- snapshot / restore ----------
   function snapshot() {
-    const o = { D: {}, om: Wom.slice(), spin: Wspin.slice(), temp: Wtemp.slice(), xc: [], xcPrev: [], rate: [], dmg: JSON.parse(JSON.stringify(state.damage)), dmgI: dmg.snapshot(), flags: { flipped: state.flipped, airborne: state.airborne, wasRoll }, glat: state.gLat, glong: state.gLong, ex: [state.engineTorque, state.wheelspin, state.slide], ws: [], opts: { auto: opts.auto, tyre: opts.tyre, assist: opts.assist, setup: { ...opts.setup } } };
+    const o = { D: {}, om: Wom.slice(), spin: Wspin.slice(), temp: Wtemp.slice(), xc: [], xcPrev: [], rate: [], dmg: JSON.parse(JSON.stringify(state.damage)), dmgI: dmg.snapshot(), flags: { flipped: state.flipped, airborne: state.airborne, wasRoll }, glat: state.gLat, glong: state.gLong, ex: [state.engineTorque, state.wheelspin, state.slide], ws: [], opts: { auto: opts.auto, tyre: opts.tyre, assist: opts.assist, damageScale: opts.damageScale, setup: { ...opts.setup } } };
     for (const k of DYN_SCALARS) o.D[k] = D[k];
     o.D.clutchSlip = D.clutchSlip || 0;
     for (let i = 0; i < 4; i++) o.ws.push(state.wheels[i].slipRatio, state.wheels[i].slipAngle, state.wheels[i].skid);
@@ -1158,7 +1204,7 @@ export function createVehicle(spec, options = {}) {
     dmg.restore(o.dmgI);
     state.flipped = o.flags.flipped; state.airborne = o.flags.airborne; wasRoll = !!o.flags.wasRoll;
     state.gLat = o.glat; state.gLong = o.glong;
-    if (o.opts) configure({ auto: o.opts.auto, tyre: o.opts.tyre, assist: o.opts.assist, setup: o.opts.setup });
+    if (o.opts) configure({ auto: o.opts.auto, tyre: o.opts.tyre, assist: o.opts.assist, damageScale: o.opts.damageScale, setup: o.opts.setup });
     state.events.length = 0;
     for (let i = 0; i < 4; i++) {
       const w = state.wheels[i];

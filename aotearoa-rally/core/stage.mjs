@@ -8,6 +8,7 @@ import { STAGE_DEFS, STAGE_IDS, STAGE_DESIGNS, DEFAULT_SEEDS, getStageDef } from
 import { compileDesign, createRoadIndex, noise1, DS } from "./spline.mjs";
 import { createTerrain, noise2, BIOME_TERRAIN } from "./terrain.mjs";
 import { buildPacenotes } from "./pacenotes.mjs";
+import { parFor } from "./rivals.mjs";
 
 export { STAGE_DEFS, STAGE_IDS, getStageDef };
 
@@ -82,7 +83,11 @@ export function buildStage(id, opts = {}) {
     if (f.type === "ford") {
       const y0 = py[f.i] + 0.22;
       streams.push({ s0: f.s - f.len / 2 - 3, s1: f.s + f.len / 2 + 3, reach: 14, depth: 0.9 + 0.5, y: y0, kind: "ford" });
-      water.push({ kind: "ford", s: f.s, x: px[f.i], z: pz[f.i], y: y0, halfLen: f.len / 2 + 3, reach: 18 });
+      // the plane spans the full road width plus 6 m a side; `depth` = water over the road bed (shallow)
+      let wmax = 0;
+      for (let q = Math.max(0, f.i - Math.round(f.len / 2 / ds)); q <= Math.min(N - 1, f.i + Math.round(f.len / 2 / ds)); q++) wmax = Math.max(wmax, width[q]);
+      water.push({ kind: "ford", s: f.s, x: px[f.i], z: pz[f.i], y: y0, halfLen: f.len / 2 + 3, reach: 18,
+        halfWidth: wmax / 2 + 6, depth: 0.22, yaw: Math.atan2(tx[f.i], -tz[f.i]) });
     } else if (f.type === "bridge") {
       const bi = clamp(Math.round((f.s + f.len / 2) / ds), 0, N - 1);
       streams.push({ s0: f.s - 2, s1: f.s + f.len + 2, reach: 18, depth: 4.5, y: py[bi] - 2.6, kind: "bridge" });
@@ -107,6 +112,18 @@ export function buildStage(id, opts = {}) {
     }
     for (const f of c.feats) {
       if (f.type === "bridge" && s >= f.s - 2 && s <= f.s + f.len + 2) { L = Math.min(L, hw + 0.5); Rr = Math.min(Rr, hw + 0.5); }
+    }
+    // S7 (cut policing): on the inside of a bend the wall closes to hw + 2.5 m (fully by R <= 55 m), easing back out
+    // along the straights, so a corner cannot be cut across the verge.  Outside walls stay soft.
+    {
+      let ks = 0, kn = 0;
+      for (let q = Math.max(0, i - 12); q <= Math.min(N - 1, i + 12); q++) { ks += curv[q]; kn++; }
+      ks /= kn;
+      const f = smoothstep(1 / 1000, 1 / 150, Math.abs(ks));
+      if (f > 0) {
+        const m = hw + lerp(1.9, 1.2, smoothstep(1 / 45, 1 / 18, Math.abs(ks))); // hairpins close tighter still
+        if (ks > 0) Rr = Math.min(Rr, lerp(Rr, m, f)); else L = Math.min(L, lerp(L, m, f));
+      }
     }
     bl[i] = L; br[i] = Rr;
   }
@@ -179,10 +196,34 @@ export function buildStage(id, opts = {}) {
     }
     return true;
   }
+  // S1: keep big props (visual radius >= 1.2 m) >= 1 m clear of the road edge (6 m on a hairpin's inside),
+  // and every collidable obstacle >= 0.3 m clear of it.  Exact distance to the nearest centreline point.
+  const CORR = new Set(CORRIDOR_KINDS);
+  const tmpA = {}, S1 = {};
+  function placeOk(kind, x, z, r, collide) {
+    if (CORR.has(kind)) return true;
+    const big = r >= 1.2;
+    if (!big && !collide) return true;
+    if (!idx.nearest(x, z, tmpA)) return true;
+    sample(tmpA.s, S1);
+    const edge = Math.abs(tmpA.lat) - r - S1.width / 2;
+    if (collide && edge < 0.3) return false;
+    if (!big) return true;
+    if (edge < 1.0) return false;
+    if (edge < 6) {
+      // inside of a tight bend: nothing big within 6 m of the edge
+      const i0 = Math.round(tmpA.s / ds);
+      let kmax = 0;
+      for (let q = Math.max(0, i0 - 10); q <= Math.min(N - 1, i0 + 10); q++) if (Math.abs(curv[q]) > Math.abs(kmax)) kmax = curv[q];
+      if (Math.abs(kmax) > 1 / 32 && tmpA.lat * kmax > 0) return false;
+    }
+    return true;
+  }
   function add(kind, x, z, o) {
     o = o || {};
     const info = PK[kind];
     const sc = o.scale ?? 1;
+    if (!placeOk(kind, x, z, info.r * sc, o.collide ?? !!info.c)) return null;
     const y = o.y ?? heightAt(x, z);
     const collide = o.collide ?? !!info.c;
     const p = {
@@ -502,12 +543,98 @@ export function buildStage(id, opts = {}) {
       layer({ id: 6, sp: 14, a: 1.5, b: 10, kinds: [["flax", 1, 0.8, 1.3], ["toetoe", 1, 0.7, 1.1]], p: (s, e, x, z) => 0.4 * th(cl(x, z, 100, 6), 0.4, 3) });
       layer({ id: 7, sp: 4.5, a: 1.4, b: 8, kinds: [["grass_tuft", 1, 0.7, 1.2]], p: () => 0.3 });
     }
+    setPieces(biome);
     // huts at design markers
     for (const f of c.feats) {
       if (f.type === "hut") {
         pos(f.s, f.side * (hwAt(f.s) + 14));
         if (clear(PX, PZ, 8)) add("hut", PX, PZ, { rot: Math.atan2(-PTX, -PTZ) });
       }
+    }
+  }
+
+  // Landmark set pieces and the raised-bar terrain dressing (existing PROP_KINDS only).  `at(s, lat)` places relative
+  // to the road; every add() still goes through the corridor rules.
+  function setPieces(biome) {
+    const yawAt = () => Math.atan2(-PTX, -PTZ);
+    const put = (kind, s, lat, o) => { pos(s, lat); return add(kind, PX, PZ, { rot: yawAt(), ...o }); };
+    const seaMark = (s) => seaSideAt(s);
+    if (biome === "pasture") {
+      // limestone bluffs: a stepped wall of pale rock along one side, and a cave mouth (twin pillars + lintel)
+      const s0 = (c.marks.mid1 ?? lengthM * 0.4) + 60;
+      for (let k = 0; k < 30; k++) {
+        const s = s0 + k * 6, tier = k % 3;
+        put("limestone", s + hf(k, 1, 40) * 4, hwAt(s) + 5 + tier * 3.6 + hf(k, 2, 40) * 2, { scale: 2.0 + tier * 0.6 + hf(k, 3, 40) * 0.6 });
+      }
+      const sc = s0 + 220;
+      for (const side of [-1, 1]) {
+        put("limestone", sc, side * (hwAt(sc) + 4.5), { scale: 2.6 });
+        put("limestone", sc + 5, side * (hwAt(sc) + 8.5), { scale: 3.2 });
+      }
+      put("limestone", sc + 2.5, hwAt(sc) + 6, { scale: 3.4, dy: 0.5 });
+      put("limestone", sc + 2.5, -(hwAt(sc) + 6), { scale: 3.4, dy: 0.5 });
+      put("limestone", sc + 14, 0 - (hwAt(sc) + 14), { scale: 3.8 });
+    } else if (biome === "redwood") {
+      // steaming geothermal pool: a ring of vents and boulders beside the mud corner
+      const sm = (c.marks.mud ?? lengthM * 0.4) + 40;
+      const side = 1, lat0 = hwAt(sm) + 15;
+      pos(sm, side * lat0);
+      const cx = PX, cz = PZ;
+      for (let k = 0; k < 9; k++) {
+        const a = (k / 9) * TAU;
+        add("steam_vent", cx + Math.cos(a) * 5, cz + Math.sin(a) * 5, { scale: 1.1 + 0.8 * hf(k, 5, 41) });
+        add("boulder", cx + Math.cos(a + 0.3) * 8, cz + Math.sin(a + 0.3) * 8, { scale: 0.8 + hf(k, 6, 41) });
+      }
+      add("steam_vent", cx, cz, { scale: 2.6 });
+    } else if (biome === "coast") {
+      // clifftop lip on the sea side, a wharf and boat shed on the beach
+      for (let s = 30; s < lengthM - 30; s += 9) {
+        const side = seaMark(s);
+        if (!side) continue;
+        put(hf(Math.floor(s / 9), 8, 42) > 0.55 ? "boulder" : "flax", s, side * (hwAt(s) + 3.4 + hf(Math.floor(s / 9), 9, 42) * 2), { scale: 1.1 + hf(Math.floor(s / 9), 10, 42) * 0.9 });
+      }
+      const sb = (c.marks.beach ?? lengthM * 0.75) + 160, sd = seaMark(sb) || 1;
+      put("farm_shed", sb, sd * (hwAt(sb) + 24), { scale: 0.9 });
+      put("tyre_stack", sb + 8, sd * (hwAt(sb) + 16), {});
+      put("log", sb - 10, sd * (hwAt(sb) + 14), { scale: 1.5 });
+      pos(sb + 20, sd * (hwAt(sb) + 12));
+      const wx = PX, wz = PZ, nx = S0.nx * sd, nz = S0.nz * sd;
+      add("bridge_deck", wx + nx * 12, wz + nz * 12, { rot: Math.atan2(-nx, -nz), len: 26, w: 3, y: S0.y - 0.3, collide: false });
+      for (let k = 0; k <= 8; k++) for (const e of [-1.4, 1.4]) add("bridge_rail", wx + nx * (k * 3 - 1) - nz * e * sd, wz + nz * (k * 3 - 1) + nx * e * sd, { len: 3, collide: false, y: S0.y - 0.3 });
+    } else if (biome === "tussock") {
+      // sheep station: woolshed, yards and a mob, well back from the road
+      const ss = lengthM * 0.28, sd = -1;
+      put("farm_shed", ss, sd * (hwAt(ss) + 34), { scale: 1.35 });
+      put("hut", ss + 26, sd * (hwAt(ss) + 30), {});
+      put("farm_shed", ss - 28, sd * (hwAt(ss) + 40), { scale: 0.8 });
+      for (let k = 0; k < 14; k++) put("fence_post", ss - 20 + k * 3, sd * (hwAt(ss) + 18), { rot: 0 });
+      for (let k = 0; k < 18; k++) put("sheep", ss - 25 + hf(k, 11, 43) * 50, sd * (hwAt(ss) + 14 + hf(k, 12, 43) * 14), { scale: 1 });
+      put("power_pole", ss + 60, sd * (hwAt(ss) + 12), {});
+    } else if (biome === "alpine") {
+      // carved rock walls (stepped schist faces), scree and overhanging blocks on the uphill side of each leg, snow poles
+      for (let k = 2; k <= 9; k++) {
+        const west = k % 2 === 0, side = west ? 1 : -1;
+        const a = c.marks[`L${k}`], b = k < 9 ? c.marks[`L${k + 1}`] : c.marks.summit;
+        if (a === undefined || b === undefined) continue;
+        for (let s = a + 24; s < b - 44; s += 7) {
+          const h = hf(Math.floor(s / 7), k, 44);
+          const hwv = hwAt(s);
+          put("schist", s + h * 3, side * (hwv + 3.2 + h * 1.0), { scale: 2.0 + h * 0.8 });
+          put("schist", s + 3 + h * 2, side * (hwv + 7 + h * 1.5), { scale: 3.0 + h * 1.0 });
+          if (h > 0.45) put("schist", s + 1, side * (hwv + 11.5), { scale: 3.8 + h });
+          for (let q = 0; q < 3; q++) put("boulder", s + q * 2.2, side * (hwv + 1.7 + hf(Math.floor(s / 7), q + 20, 44) * 5), { scale: 0.35 + hf(Math.floor(s / 7), q + 30, 44) * 0.5, collide: false });
+        }
+      }
+      const sl = c.marks.snowline ?? lengthM * 0.4;
+      for (let s = sl; s < lengthM - 40; s += 24) for (const side of [-1, 1]) put("marker_post", s, side * (hwAt(s) + 1.6), { scale: 2.4, variant: 2 });
+    } else if (biome === "rainforest") {
+      // swing bridge across a gully beside the road
+      const sb = (c.marks.mud ?? lengthM * 0.4) + 200, sd = 1;
+      pos(sb, sd * (hwAt(sb) + 20));
+      const bx = PX, bz = PZ, tx0 = PTX, tz0 = PTZ, by = heightAt(bx, bz) + 2.5;
+      add("bridge_deck", bx, bz, { rot: Math.atan2(-tx0, -tz0), len: 26, w: 1.5, y: by, collide: false });
+      for (let k = 0; k <= 8; k++) for (const e of [-0.8, 0.8]) add("bridge_rail", bx + tx0 * (k * 3 - 12) - tz0 * e, bz + tz0 * (k * 3 - 12) + tx0 * e, { len: 3, collide: false, y: by });
+      put("kauri", sb + 40, sd * (hwAt(sb) + 30), { scale: 1.2 });
     }
   }
 
@@ -531,7 +658,7 @@ export function buildStage(id, opts = {}) {
   const obstaclesNear = (x, z, r, out) => {
     out = out || [];
     out.length = 0;
-    const maxR = 6; // largest obstacle radius we ever store
+    const maxR = 12; // largest obstacle radius we ever store (rock-wall schist at scale 4.8)
     const x0 = Math.floor((x - r - maxR - oX0) / OBS_CELL), x1 = Math.floor((x + r + maxR - oX0) / OBS_CELL);
     const z0 = Math.floor((z - r - maxR - oZ0) / OBS_CELL), z1 = Math.floor((z + r + maxR - oZ0) / OBS_CELL);
     for (let cz = z0 < 0 ? 0 : z0; cz <= z1 && cz < oH; cz++) {
@@ -588,10 +715,13 @@ export function buildStage(id, opts = {}) {
     parTime: 0,
     // contract amendments (see CONTRACTS.md "Amendments")
     seaLevel: 0, water, marks: c.marks, bankArr: bank, boundaryLeft: bl, boundaryRight: br,
-    obstacleCount: obstacles.length,
+    obstacleCount: obstacles.length, camberRanges: c.camberRanges,
   };
   stage.speedProfile = speedProfile(stage);
-  stage.parTime = stage.speedProfile.time;
+  // S4: a jump is called at the speed the stage is driven there (m/s), so it must launch a car at that speed
+  for (const h of hazards) if (h.kind === "jump") h.speed = Math.round(clamp(stage.speedProfile.v[clamp(Math.round((h.s - 20) / ds), 0, N - 1)], 18, 30) * 10) / 10;
+  // par = the huia's calibrated bot lap x 1.08 (core/rivals.mjs parFor); our speed-profile estimate when no table exists
+  stage.parTime = parFor(id, "huia") ?? stage.speedProfile.time;
   return stage;
 }
 
@@ -615,7 +745,8 @@ export function speedProfile(stage, opts = {}) {
     const aLat = Math.max(2.5, mu * g + g * Math.max(0, bk) * 0.6);
     let vm = k > 1e-5 ? Math.sqrt(aLat / k) : vTop;
     // vertical curvature: do not leave the ground more than a little on crests
-    if (i > 0 && i < N - 1) {
+    const nearJump = stage.hazards && stage.hazards.some((h) => h.kind === "jump" && Math.abs(h.s - i * ds) < 30);
+    if (!nearJump && i > 0 && i < N - 1) {
       const kv = (slope[i + 1] - slope[i - 1]) / (2 * ds);
       if (kv < -0.004) vm = Math.min(vm, Math.sqrt((0.9 * g) / -kv) * 1.25);
     }

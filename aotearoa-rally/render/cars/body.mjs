@@ -180,6 +180,29 @@ export function buildBody(THREE, spec, d) {
   return B;
 }
 
+
+/** Cambered aerofoil section as a CCW [z, y] profile: chord (m), relative thickness, camber (negative = inverted), angle (rad, trailing edge up), centre. */
+export function foil(chord, thick, camber, aoa, cz, cy, n = 14) {
+  const top = [], bot = [];
+  for (let i = 0; i <= n; i++) {
+    const x = (1 - Math.cos((Math.PI * i) / n)) / 2; // cosine spacing: dense at the leading edge
+    const yt = 5 * thick * (0.2969 * Math.sqrt(x) - 0.126 * x - 0.3516 * x * x + 0.2843 * x ** 3 - 0.1015 * x ** 4);
+    const yc = camber * 4 * x * (1 - x);
+    top.push([x, yc + yt]); bot.push([x, yc - yt]);
+  }
+  const pts = [...bot, ...top.reverse().slice(0, -1)];
+  const ca = Math.cos(aoa), sa = Math.sin(aoa);
+  return pts.map(([x, y]) => { const px = (x - 0.4) * chord, py = y * chord; return [cz + px * ca - py * sa, cy + px * sa + py * ca]; });
+}
+/** Rear-wing end plate outline (CCW [z, y]); `k` scales it down for smaller wings. */
+export function plateProfile(cz, cy, k = 1) {
+  return [[-0.27, -0.06], [0.1, -0.11], [0.32, -0.12], [0.36, 0.17], [0.1, 0.2], [-0.12, 0.13], [-0.25, 0.04]].map(([z, y]) => [cz + z * k, cy + y * k]);
+}
+/** A thin dark band along the end plate's top edge. */
+export function plateEdge(cz, cy, k = 1) {
+  return [[-0.12, 0.125], [0.1, 0.195], [0.36, 0.165], [0.36, 0.17], [0.1, 0.2], [-0.12, 0.13]].map(([z, y]) => [cz + z * k, cy + y * k]);
+}
+
 /** Surface half-width of the tub at station t and height y (scans the ring). */
 export function sideX(d, t, y) {
   const { ring } = tubRing(d, t);
@@ -335,33 +358,42 @@ function buildDetails(THREE, spec, d, B, tub) {
   trim.box(0.015, 0.2, 0.2, Math.abs(sideX(d, d.tAt(d.wheels[1].z + 0.4), 0.2)), 0.2, d.wheels[1].z + 0.42, 0x0b0b0d);
   trim.cyl(0.018, 0.018, 0.1, hw * 0.46, d.sill + 0.04, zR - 0.02, RED, Math.PI / 2, 0, 0, 8);
 
-  // ---- wipers (visible through glass) and roof vent
-  const wt = d.cabin.t0 + 0.03, wy = d.topC(wt) + 0.02, wz = d.zAt(wt);
-  trim.box(0.5, 0.01, 0.015, -0.3, wy, wz - 0.01, 0x0a0a0a, -0.35, 0, 0.08);
-  trim.box(0.5, 0.01, 0.015, 0.2, wy + 0.0, wz - 0.01, 0x0a0a0a, -0.35, 0, 0.06);
 
-  // ---- aero: wings, scoops
+  // ---- aero: wings, scoops (real aerofoil sections, end plates and swan-neck uprights)
   const wingMat = body;
-  const rt = 0.93;
+  void wingMat;
   if (S.wing === "gt") {
-    const wz2 = d.zAt(0.965), wy2 = d.topC(0.94) + 0.3;
+    const wz2 = d.zAt(0.972), deckY = d.topC(0.94), wy2 = deckY + 0.36;
+    // main plane + upper flap (inverted cambered sections, trailing edge up)
+    body.extrude(foil(0.4, 0.1, -0.055, 0.12, wz2, wy2), -0.74, 0.74, 0xffffff);
+    body.extrude(foil(0.22, 0.07, -0.05, 0.4, wz2 + 0.17, wy2 + 0.1), -0.72, 0.72, 0xffffff);
+    trim.box(1.48, 0.014, 0.012, 0, wy2 + 0.1, wz2 + 0.2, 0x0b0b0d, 0.12); // gurney strip
     for (const sd of [-1, 1]) {
-      trim.box(0.035, 0.27, 0.12, sd * 0.52, wy2 - 0.15, wz2 + 0.04, 0x1a1a1d, -0.15);
-      body.box(0.02, 0.2, 0.46, sd * 0.78, wy2 + 0.01, wz2 - 0.02, 0xffffff);
+      // shaped end plates, swan-neck uprights, plate edge trim
+      body.extrude(plateProfile(wz2, wy2), sd * 0.755 - 0.008, sd * 0.755 + 0.008, 0xffffff);
+      trim.extrude(plateEdge(wz2, wy2), sd * 0.755 - 0.01, sd * 0.755 + 0.01, 0x0d0d10);
+      trim.tube([[sd * 0.5, deckY - 0.02, wz2 + 0.02], [sd * 0.5, deckY + 0.1, wz2 + 0.03], [sd * 0.5, wy2 - 0.2, wz2 + 0.0], [sd * 0.5, wy2 - 0.05, wz2 - 0.04]], 0.022, 0x1a1a1d, 7, true);
+      trim.box(0.09, 0.012, 0.16, sd * 0.5, deckY - 0.004, wz2 + 0.02, 0x1a1a1d);
     }
-    body.box(1.58, 0.028, 0.38, 0, wy2 + 0.01, wz2 - 0.02, 0xffffff, 0.12);
-    body.box(1.58, 0.02, 0.15, 0, wy2 + 0.065, wz2 + 0.1, 0xffffff, 0.25);
   } else if (S.wing === "roof") {
-    const wz2 = d.zAt(d.cabin.t1 - 0.14), wy2 = d.roof - 0.2;
-    body.box(hw * 1.18, 0.025, 0.2, 0, wy2 + 0.1, wz2 + 0.1, 0xffffff, 0.2);
-    for (const sd of [-1, 1]) body.box(0.018, 0.1, 0.22, sd * hw * 0.58, wy2 + 0.1, wz2 + 0.1, 0xffffff);
+    const wz2 = d.zAt(d.cabin.t1 - 0.12), wy2 = d.roof - 0.1;
+    body.extrude(foil(0.24, 0.07, -0.04, 0.2, wz2 + 0.1, wy2 + 0.1), -hw * 0.6, hw * 0.6, 0xffffff);
+    for (const sd of [-1, 1]) {
+      body.extrude(plateProfile(wz2 + 0.1, wy2 + 0.1, 0.55), sd * hw * 0.605 - 0.007, sd * hw * 0.605 + 0.007, 0xffffff);
+      trim.box(0.03, 0.09, 0.05, sd * hw * 0.38, wy2 + 0.04, wz2 + 0.02, 0x15151a);
+    }
   } else if (S.wing === "small") {
-    const wz2 = d.zAt(0.95), wy2 = d.topC(0.92) + 0.12;
-    body.box(hw * 1.15, 0.02, 0.22, 0, wy2 + 0.04, wz2, 0xffffff, 0.12);
-    for (const sd of [-1, 1]) { body.box(0.02, 0.12, 0.24, sd * hw * 0.56, wy2 + 0.04, wz2, 0xffffff); trim.box(0.025, 0.1, 0.05, sd * 0.35, wy2 - 0.01, wz2 + 0.04, 0x15151a); }
+    const wz2 = d.zAt(0.953), deckY = d.topC(0.92), wy2 = deckY + 0.2;
+    body.extrude(foil(0.3, 0.09, -0.05, 0.16, wz2, wy2), -hw * 0.6, hw * 0.6, 0xffffff);
+    for (const sd of [-1, 1]) {
+      body.extrude(plateProfile(wz2, wy2, 0.7), sd * hw * 0.605 - 0.007, sd * hw * 0.605 + 0.007, 0xffffff);
+      trim.tube([[sd * 0.34, deckY, wz2 + 0.03], [sd * 0.34, wy2 - 0.07, wz2 + 0.0]], 0.02, 0x15151a, 7, false);
+    }
   } else if (S.wing === "duck") {
-    const wz2 = d.zAt(0.96), wy2 = d.topC(0.95) + 0.025;
-    body.box(hw * 1.5, 0.03, 0.2, 0, wy2, wz2 + 0.03, 0xffffff, 0.35);
+    const wz2 = d.zAt(0.965), wy2 = d.topC(0.95);
+    // ducktail: a lip that rises smoothly off the boot lid
+    const duck = [[-0.24, 0.0], [0.1, -0.01], [0.24, 0.045], [0.27, 0.085], [0.255, 0.092], [0.12, 0.055], [-0.1, 0.02], [-0.24, 0.012]];
+    body.extrude(duck.map((q) => [q[0] + wz2, q[1] + wy2 + 0.005]), -hw * 0.74, hw * 0.74, 0xffffff);
   }
   if (S.scoop === "bonnet") {
     const sz = d.zAt(0.21), sy = d.topC(0.21) + 0.02;

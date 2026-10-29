@@ -7,6 +7,8 @@ import { createSfx } from "./sfx.mjs";
 import { createCodriver } from "./codriver.mjs";
 import { viewMix, volumesClean } from "./params.mjs";
 
+const PARAM_HZ = 30;
+
 /**
  * createAudio(volumes, opts?)  opts: { ctx } injects a (possibly Offline) AudioContext for tests;
  * { speech } injects codriver deps. Create it from a user gesture (or call resume() from one).
@@ -22,7 +24,8 @@ export function createAudio(volumes = {}, opts = {}) {
   const sfx = createSfx(ctx, mixer.effectsBus, mixer.voiceBus);
   const codriver = createCodriver({ volume: () => mixer.volumes.voice * mixer.volumes.master, beep: (t) => sfx.beepCall(t), ...(opts.speech || {}) });
   let mode = "chase", view = viewMix(mode), paused = false, suspended = false, stageDef = null, spec = null, disposed = false;
-  let lastS = 0;
+  let lastS = 0, acc = 0, firstUpdate = true, paramWrites = 0, backoff = 0;
+  const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
   const api = {
     ctx, mixer, engine, surface, ambience, sfx, codriver,
@@ -34,6 +37,9 @@ export function createAudio(volumes = {}, opts = {}) {
     playUI(name) { if (!disposed) sfx.ui(name); },
     /** Resets the co-driver and one-shot state for a restart. */
     reset(s = 0) { codriver.reset(s); engine.revive(); },
+    /** Respawn / teleport: jump the co-driver cursor to stage position s. */
+    seek(s) { codriver.seek(s); },
+    get paramWrites() { return paramWrites; },
     update(dt, state, stage, o = {}) {
       if (disposed || !state) return;
       const cm = o.cameraMode || mode;
@@ -62,10 +68,21 @@ export function createAudio(volumes = {}, opts = {}) {
           default: break;
         }
       }
-      const running = !(state.damage && state.damage.engine >= 1);
-      engine.update({ rpm: state.rpm, throttle: state.throttle, boost: state.boost, speed: state.speed, gear: state.gear, running }, dt, view);
-      surface.update({ wheels: state.wheels, speed: state.speed }, dt, view);
-      ambience.update(dt, { speed: state.speed, s: state.s }, view, stage);
+      // Continuous parameters are written at <= PARAM_HZ: every setTargetAtTime adds a timeline event per AudioParam, and at
+      // 60 Hz x ~60 params that is a lot of automation for no audible gain. One-shot events above still run every frame.
+      acc += dt;
+      if (backoff > 0) { backoff--; acc = Math.min(acc, 0.2); }
+      else if (acc >= 1 / PARAM_HZ - 1e-4 || firstUpdate) {
+        const t0 = now();
+        const running = !(state.damage && state.damage.engine >= 1);
+        engine.update({ rpm: state.rpm, throttle: state.throttle, boost: state.boost, speed: state.speed, gear: state.gear, running }, acc, view);
+        surface.update({ wheels: state.wheels, speed: state.speed }, acc, view);
+        ambience.update(acc, { speed: state.speed, s: state.s }, view, stage);
+        paramWrites++;
+        // a slow param block (audio-thread lock contention) skips the next two ticks instead of stalling consecutive frames
+        if (now() - t0 > 8) backoff = 2;
+        acc = 0; firstUpdate = false;
+      }
       if (stage) codriver.update(stage, state.s, Math.abs(state.speed || 0), dt);
       lastS = state.s;
     },
