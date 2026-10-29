@@ -1,5 +1,5 @@
 // Course framework tests (pure logic; no WebGL). Run: node --import ./skyblitz/tests/register.mjs --test skyblitz/tests/course.test.mjs
-// COURSE=sunrise limits to one course.
+// Every course by default; COURSE=sunrise limits to one.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -7,7 +7,7 @@ import { CourseLayout } from '../src/world/layout.js';
 import { courseDef, COURSES, previewCourse } from '../src/world/courses/index.js';
 import { mulberry32 } from '../src/util.js';
 
-const IDS = (process.env.COURSE ? [process.env.COURSE] : ['sunrise']).filter((id) => COURSES.some((c) => c.id === id));
+const IDS = (process.env.COURSE ? [process.env.COURSE] : COURSES.map((c) => c.id)).filter((id) => COURSES.some((c) => c.id === id));
 
 for (const id of IDS) {
   const def = courseDef(id);
@@ -188,6 +188,19 @@ for (const id of IDS) {
     }
     assert.ok(capMin > 55 && capMin < 130, `slowest corner cap ${capMin}`);
     const o = lay.aiHints(100); assert.ok('lateral' in o && 'speedCap' in o);
+  });
+
+  test(`${id}: aiHints racing line clears every main-path hazard and slows before it`, () => {
+    const h = {}, f = {}, h0 = {}, noHaz = new CourseLayout({ ...def, hazards: [] });
+    for (const hz of lay.hazards) {
+      if (hz.branch >= 0) continue;
+      lay.path.frameAt(hz.s, f);
+      const hl = (hz.home.x - f.pos.x) * f.right.x + (hz.home.y - f.pos.y) * f.right.y + (hz.home.z - f.pos.z) * f.right.z;
+      lay.aiHints(hz.s, h);
+      assert.ok(Math.abs(h.lateral - hl) >= hz.radius + 11, `line ${h.lateral.toFixed(1)} vs hazard ${hl.toFixed(1)} r=${hz.radius} at s=${hz.s.toFixed(0)}`);
+      lay.aiHints(hz.s - 60, h); noHaz.aiHints(hz.s - 60, h0);
+      if (Number.isFinite(h0.speedCap)) assert.ok(h.speedCap <= h0.speedCap * 0.97, `cap ${h.speedCap} vs hazard-free ${h0.speedCap} at s=${hz.s.toFixed(0)}`);
+    }
   });
 
   test(`${id}: collide: ground, hazard, wall; clear air returns false`, () => {

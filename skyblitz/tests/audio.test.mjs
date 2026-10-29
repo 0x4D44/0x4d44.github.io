@@ -1,29 +1,31 @@
 // Audio verification (headless Chrome via tests/tools/chrome.mjs): offline renders of every SFX + engines + mix, decode of every
 // music stem against meta.json, and a live AudioContext run of the lab page (event wiring, voice cleanup, ?mute=1).
-//   node --test skyblitz/tests/audio.test.mjs        (needs the dev server: node skyblitz/tests/tools/serve.mjs --port 8100)
-// Env: SKY_URL (default http://127.0.0.1:8100/skyblitz).
+//   node --test skyblitz/tests/audio.test.mjs        (starts its own static server on a free port)
+// Env: SKY_URL (e.g. http://127.0.0.1:8100/skyblitz) to use a server that is already running instead.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { launchChrome } from './tools/chrome.mjs';
+import { startStaticServer } from './tools/static-server.mjs';
 import { LEVEL } from '../src/audio/levels.js';
 
-const BASE = process.env.SKY_URL || 'http://127.0.0.1:8100/skyblitz';
+let BASE = process.env.SKY_URL || '';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MUSIC = path.resolve(HERE, '..', 'assets', 'music');
 const TRACKS = ['menu', 'sunrise', 'redrock', 'neon', 'frost', 'results'];
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
-let chrome, off;
+let chrome, off, srv;
 test.before(async () => {
+  if (!BASE) { srv = await startStaticServer(); BASE = `${srv.url}/skyblitz`; }
   chrome = await launchChrome({ width: 800, height: 600 });
   off = await chrome.newPage();
   await off.goto(`${BASE}/tests/lab/audio-offline.html`);
   await off.waitFor('window.__off && window.__off.ready');
 });
-test.after(async () => { await chrome?.close(); });
+test.after(async () => { await chrome?.close(); await srv?.close(); });
 
 const run = (expr) => off.eval(expr);
 
