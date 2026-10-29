@@ -1,0 +1,9 @@
+/* Skyblitz global styles. The UI owner (see design contract) rewrites everything below the base block.
+   HARD RULES: no horizontal overflow at 390px/768px wide; no interactive control inside the top-left 112x44px
+   (the Almanac back pill lives there); everything scales with the viewport. */
+:root { --sky-bg: #0b1a33; --sky-fg: #f4f8ff; --sky-accent: #ffb020; --sky-accent-2: #29d3ff; }
+html, body { margin: 0; height: 100%; background: var(--sky-bg); color: var(--sky-fg); overflow: hidden; overscroll-behavior: none;
+  font-family: ui-rounded, "Segoe UI", system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
+#gl { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; outline: none; touch-action: none; }
+#ui { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+#ui > * { pointer-events: auto; }

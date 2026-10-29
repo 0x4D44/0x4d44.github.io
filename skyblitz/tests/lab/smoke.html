@@ -1,0 +1,40 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>skyblitz toolchain smoke test</title>
+<!-- Template for lab pages: copy this importmap (paths are relative to skyblitz/tests/lab/). -->
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../../vendor/three.module.min.js","three/addons/":"../../vendor/addons/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+const gl = renderer.getContext();
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x5aa7ff);
+const cam = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+cam.position.set(2.5, 1.8, 3.5); cam.lookAt(0, 0.2, 0);
+scene.add(new THREE.HemisphereLight(0xcfe6ff, 0x405030, 1.2));
+const sun = new THREE.DirectionalLight(0xfff0d0, 3); sun.position.set(3, 5, 2); scene.add(sun);
+const cube = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: 0xff7a1a, roughness: 0.35, metalness: 0.2 }));
+scene.add(cube);
+const glow = new THREE.Mesh(new THREE.SphereGeometry(0.25, 24, 16), new THREE.MeshBasicMaterial({ color: new THREE.Color(6, 3, 0.6) }));
+glow.position.set(1.4, 0.4, 0); scene.add(glow);
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, cam));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.8, 0.6, 0.9));
+composer.addPass(new OutputPass());
+function frame() { cube.rotation.y += 0.01; composer.render(); requestAnimationFrame(frame); }
+frame();
+window.__smoke = {
+  webgl2: gl instanceof WebGL2RenderingContext,
+  renderer: (gl.getExtension('WEBGL_debug_renderer_info') ? gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL) : 'n/a'),
+  three: THREE.REVISION,
+};
+</script>
