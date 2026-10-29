@@ -255,7 +255,7 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
   required places (entrances, every room, walkable roofs, POIs, nav nodes, anchors - seats and beds only need a reachable spot within 1.4 m); `--region x0,z0,x1,z1` limits it; exit code 1 = findings. Run it before you report.
 * **Quiet box (user instruction, 29 Oct 14:02; binding on every agent and reviewer)**: a person is using this machine while we work. Headless only (`tests/chrome.mjs` is headless-only and throws on `headless:false`; Blender `--background`), no visible window, no desktop automation, no
   `mcp__claude-in-chrome__*` / computer-use tools, every spawned child hidden (`windowsHide: true` with piped stdio / `CREATE_NO_WINDOW`), everything at low priority (`tests/register.mjs` and `tests/chrome.mjs` do it for tests and Chrome; `node la-ladera/tools/nice.mjs [--idle] <cmd>` for Blender,
-  Codex, Python and long jobs). Details: BRIEF-COMMON "Quiet box rules".
+  Codex, Python and long jobs). Pages loaded through `tests/chrome.mjs` get `tests/quiet-init.js` first: pointer lock is simulated in the page (a real lock clips the person's real mouse) and speech is recorded in `window.__quiet.spoken`, never voiced. Details: BRIEF-COMMON "Quiet box rules".
 * **Reference implementation**: `glasgow-subway/` (same repo) is a prior multi-agent Three.js build. Worth reading: `SPEC.md`, `NOTES-A*.md`, `js/sim/walker.js`, `js/sim/people.js`, `js/explorer/rig.js`, `tools/assets_people*.py`,
   `models/people.glb` + `people_meta.json` (rigged people from Blender, shared clips). Copy ideas and code freely (not files that are not yours: copy into your own area).
 

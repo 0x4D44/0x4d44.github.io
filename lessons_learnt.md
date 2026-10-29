@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-29 - Headless Chrome still locks the real mouse and speaks aloud; shim both (la-ladera/tests/quiet-init.js)
+  Reported by the box coordinator: headless=new honours requestPointerLock (a CDP click is a user gesture) and Windows then
+  ClipCursor()s the person's REAL cursor into the invisible 1280x720 window. Speech goes to the OS voice, which --mute-audio is
+  not expected to silence (from Chromium's design, not measured). chrome.mjs injects quiet-init.js before any page script:
+  page-only twins with the same events and promises, spoken lines kept in window.__quiet.spoken. Never reproduced live.
+
 - 2026-10-29 - Chromium re-sets its own priorities; lower every pid from SystemInfo.getProcessInfo (la-ladera/tests/chrome.mjs:launch)
   Inheriting below-normal from the Node parent only reached the browser, crashpad and utility processes: the GPU process
   came up AboveNormal and the foreground renderers Normal. Measured with os.getPriority(pid); the timer + post-navigation
