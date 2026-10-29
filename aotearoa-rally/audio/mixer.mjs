@@ -3,6 +3,10 @@ import { makeRng } from "../core/rng.mjs";
 import { volumesClean } from "./params.mjs";
 
 const bufCache = new WeakMap();
+/** Hard ceiling of the master soft clip (linear): -3.1 dBFS. */
+export const CEILING = 0.7;
+/** Gain that cancels Chrome's automatic compressor make-up (tuned by measurement). */
+export const MAKEUP_TRIM = 1.05;
 
 /** Cached looping noise buffers. kinds: white, pink, brown, gravel (granular clicks), crackle (sparse). */
 export function noiseBuffer(ctx, kind) {
@@ -49,6 +53,21 @@ export function noiseBuffer(ctx, kind) {
   return buf;
 }
 
+const lastSet = new WeakMap();
+/**
+ * AudioParam.setTargetAtTime that skips writes which would not change the sound (< 0.4 % relative + a tiny absolute floor).
+ * Each AudioParam call takes the audio thread's parameter lock, and under load that lock produced 30-190 ms main-thread
+ * stalls; most surface/ambience params sit unchanged for seconds, so skipping them removes most of the calls.
+ * Returns true when a write happened.
+ */
+export function sT(param, v, t, tc) {
+  const last = lastSet.get(param);
+  if (last !== undefined && Math.abs(v - last) <= 0.004 * Math.abs(last) + 1e-5) return false;
+  lastSet.set(param, v);
+  param.setTargetAtTime(v, t, tc);
+  return true;
+}
+
 export function loopNoise(ctx, kind, rateJitter = 1) {
   const s = ctx.createBufferSource();
   s.buffer = noiseBuffer(ctx, kind);
@@ -60,15 +79,20 @@ export function loopNoise(ctx, kind, rateJitter = 1) {
 export function createMixer(ctx, volumes) {
   let vols = volumesClean(volumes);
   const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 10; comp.attack.value = 0.003; comp.release.value = 0.18;
+  // Gentle bus compressor. Chrome applies automatic make-up gain to DynamicsCompressor, so `trim` takes it back out
+  // (value tuned by measurement, see tests/machines-audio-evidence.mjs).
+  comp.threshold.value = -12; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.2;
+  const trim = ctx.createGain(); trim.gain.value = MAKEUP_TRIM;
   const masterIn = ctx.createGain();
   const master = ctx.createGain();
-  // final soft clip so nothing can exceed 0.98 even on a compressor overshoot
+  // Final soft clip: tanh(1.2 x) / tanh(1.2) scaled to CEILING (-3.1 dBFS), so nothing exceeds CEILING and the curve
+  // reaches exactly CEILING at |x| = 1. 4x oversampled so the shaper's harmonics do not alias.
   const clip = ctx.createWaveShaper();
   const curve = new Float32Array(2049);
-  for (let i = 0; i < curve.length; i++) { const x = (i / 1024) - 1; curve[i] = Math.tanh(x * 1.2) * 0.96; }
-  clip.curve = curve;
-  masterIn.connect(comp); comp.connect(master); master.connect(clip); clip.connect(ctx.destination);
+  const k = Math.tanh(1.2);
+  for (let i = 0; i < curve.length; i++) { const x = (i / 1024) - 1; curve[i] = (Math.tanh(x * 1.2) / k) * CEILING; }
+  clip.curve = curve; clip.oversample = "4x";
+  masterIn.connect(comp); comp.connect(trim); trim.connect(master); master.connect(clip); clip.connect(ctx.destination);
 
   const mk = () => ctx.createGain();
   const engineBus = mk(), effectsBus = mk(), ambienceBus = mk(), voiceBus = mk();

@@ -11,6 +11,7 @@ import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, extname, normalize, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { lowerPriority } from "./lowprio.mjs";
 
 export const GAME_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_ROOT = resolve(GAME_ROOT, "..");
@@ -76,13 +77,15 @@ export async function openGame(o = {}) {
   const srv = await serve(root);
   const port = await freePort();
   const profile = await mkdtemp(join(tmpdir(), "ar-chrome-"));
-  const chrome = spawn(chromeBin, [...CHROME_FLAGS, ...extraFlags, `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore", detached: process.platform !== "win32" });
+  // Headless only, no window of any kind (windowsHide), low priority (this process is already low, so Chrome inherits it).
+  const chrome = spawn(chromeBin, [...CHROME_FLAGS, ...extraFlags, `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore", windowsHide: true, detached: process.platform !== "win32" });
+  lowerPriority(chrome.pid);
   let sock = null, closed = false;
   const consoleErrs = [];
   const logs = [];
   const killChrome = () => {
     try {
-      if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(chrome.pid), "/T", "/F"], { stdio: "ignore" });
+      if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(chrome.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
       else process.kill(-chrome.pid, "SIGKILL");
     } catch { /* already gone */ }
   };
@@ -128,10 +131,17 @@ export async function openGame(o = {}) {
       } else if (m.method === "Log.entryAdded" && m.params.entry.level === "error") consoleErrs.push("log: " + m.params.entry.text + " " + (m.params.entry.url || ""));
     });
     await S("Page.enable");
+    // Headless=new Chrome still honours requestPointerLock and would clip the REAL cursor: stub it before any page script runs.
+    await S("Page.addScriptToEvaluateOnNewDocument", { source: "try{Element.prototype.requestPointerLock=function(){};document.exitPointerLock=function(){};}catch(e){}" });
     await S("Runtime.enable");
     await S("Log.enable");
     await S("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: dpr, mobile });
     if (mobile) await S("Emulation.setTouchEmulationEnabled", { enabled: true });
+
+    // Chromium lifts its GPU and foreground renderer processes above the class they inherited; put every Chrome process back down.
+    const lowerAll = async () => {
+      try { for (const p of (await send("SystemInfo.getProcessInfo")).processInfo) lowerPriority(p.id); } catch { /* best effort */ }
+    };
 
     const evalRaw = async (expression, awaitPromise = true) => {
       const r = await S("Runtime.evaluate", { expression, returnByValue: true, awaitPromise });
@@ -167,6 +177,7 @@ export async function openGame(o = {}) {
       async waitForReady(timeoutMs = 90000) {
         await api.waitFor("!!(window.__AR__ && window.__AR__.ready)", timeoutMs);
         await evalRaw("window.__AR__.ready.then(() => true)", true);
+        await lowerAll();
         return true;
       },
       async screenshot(file, { format = "png", quality = 90 } = {}) {
@@ -175,17 +186,53 @@ export async function openGame(o = {}) {
         await writeFile(file, Buffer.from(r.data, "base64"));
         return file;
       },
+      /** Mean luma (0..255) of the centre of the WebGL canvas, read page-side after two animation frames (0 = black frame). */
+      luma: () => evalRaw(`(async () => {
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const c = document.querySelector("canvas"); if (!c) return -1;
+        const w = 48, h = 27, t = document.createElement("canvas"); t.width = w; t.height = h;
+        const x = t.getContext("2d"); x.drawImage(c, 0, 0, w, h);
+        const d = x.getImageData(w >> 2, h >> 2, w >> 1, h >> 1).data; let s = 0;
+        for (let i = 0; i < d.length; i += 4) s += d[i] + d[i + 1] + d[i + 2];
+        return Math.round(s / (d.length / 4) / 3);
+      })()`, true),
       /** Horizontal overflow in px (0 = none). */
       overflowX: () => evalRaw("document.documentElement.scrollWidth - document.documentElement.clientWidth", false),
       sleep: delay,
+      /**
+       * A REAL key event through CDP (goes through the browser's input pipeline, unlike a synthetic dispatchEvent).
+       * code: "KeyA", "Escape", "Comma"...  Holds for holdMs, then releases.
+       */
+      async keyPress(code, { holdMs = 60 } = {}) {
+        await api.keyDown(code);
+        await delay(holdMs);
+        await api.keyUp(code);
+      },
+      async keyDown(code) {
+        const k = keyInfo(code);
+        await S("Input.dispatchKeyEvent", { type: "keyDown", code, key: k.key, windowsVirtualKeyCode: k.vk, nativeVirtualKeyCode: k.vk, text: k.text });
+      },
+      async keyUp(code) {
+        const k = keyInfo(code);
+        await S("Input.dispatchKeyEvent", { type: "keyUp", code, key: k.key, windowsVirtualKeyCode: k.vk, nativeVirtualKeyCode: k.vk });
+      },
       close,
     };
     await api.goto(query);
+    await lowerAll();
     return api;
   } catch (e) {
     await close();
     throw e;
   }
+}
+
+const KEYS = { Escape: ["Escape", 27], Enter: ["Enter", 13, "\r"], Space: [" ", 32, " "], Backspace: ["Backspace", 8], ArrowUp: ["ArrowUp", 38], ArrowDown: ["ArrowDown", 40], ArrowLeft: ["ArrowLeft", 37], ArrowRight: ["ArrowRight", 39], Comma: [",", 188, ","], Period: [".", 190, "."], ShiftLeft: ["Shift", 16], ControlLeft: ["Control", 17] };
+function keyInfo(code) {
+  if (KEYS[code]) return { key: KEYS[code][0], vk: KEYS[code][1], text: KEYS[code][2] };
+  const m = /^Key([A-Z])$/.exec(code);
+  if (m) return { key: m[1].toLowerCase(), vk: m[1].charCodeAt(0), text: m[1].toLowerCase() };
+  throw new Error("keyInfo: unknown key code " + code);
 }
 
 /** Run fn(h) and always tear down. */

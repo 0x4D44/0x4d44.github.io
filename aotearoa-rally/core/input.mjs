@@ -5,10 +5,11 @@
 import { clamp, approach } from "./mathx.mjs";
 
 export const DEFAULT_BINDINGS = Object.freeze({
-  steerLeft: ["KeyA", "ArrowLeft"],
-  steerRight: ["KeyD", "ArrowRight"],
-  throttle: ["KeyW", "ArrowUp"],
-  brake: ["KeyS", "ArrowDown"],
+  // physical keys (event.code): A accelerate, Z brake / reverse, comma steer left, period steer right; arrows are the alternate set
+  steerLeft: ["Comma", "ArrowLeft"],
+  steerRight: ["Period", "ArrowRight"],
+  throttle: ["KeyA", "ArrowUp"],
+  brake: ["KeyZ", "ArrowDown"],
   handbrake: ["Space"],
   gearUp: ["ShiftLeft", "ShiftRight", "KeyE"],
   gearDown: ["ControlLeft", "ControlRight", "KeyQ"],
@@ -16,13 +17,16 @@ export const DEFAULT_BINDINGS = Object.freeze({
   reset: ["KeyR"],
   pause: ["KeyP", "Escape"],
   hud: ["KeyH"],
+  restart: ["KeyT"],
 });
 
+// v2: the default keys changed (WASD removed); older saved bindings are ignored so nobody keeps stale codes
+export const BINDINGS_KEY = "aotearoa-rally.bindings.v2";
 export const ACTIONS = Object.keys(DEFAULT_BINDINGS);
 export const ACTION_LABELS = {
   steerLeft: "Steer left", steerRight: "Steer right", throttle: "Throttle", brake: "Brake / reverse",
   handbrake: "Handbrake", gearUp: "Gear up", gearDown: "Gear down", camera: "Change camera",
-  reset: "Recover to road", pause: "Pause", hud: "Hide HUD",
+  reset: "Back to checkpoint", pause: "Pause", hud: "Hide HUD", restart: "Restart (single stage and trial)",
 };
 
 export const DEFAULT_PAD = Object.freeze({
@@ -96,10 +100,10 @@ export function mapTilt(gammaDeg, range = 28) {
   return shapeAxis(clamp(gammaDeg / range, -1, 1), 0.05, 1.2);
 }
 
-export function createInput({ target, onPause, onAction, getGamepads, storage } = {}) {
+export function createInput({ target, onPause, onAction, getGamepads, storage, isActive, isPaused } = {}) {
   const T = target || (typeof window !== "undefined" ? window : new EventTarget());
   const keys = new Set();
-  let bindings = normaliseBindings(storage ? storage.getJSON("aotearoa-rally.bindings.v1", null) : null);
+  let bindings = normaliseBindings(storage ? storage.getJSON(BINDINGS_KEY, null) : null);
   let pad = { ...DEFAULT_PAD };
   const prev = { gearUp: false, gearDown: false, camera: false, reset: false, pause: false };
   const out = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
@@ -136,11 +140,14 @@ export function createInput({ target, onPause, onAction, getGamepads, storage } 
     if (e.code === "Tab" || e.altKey || e.metaKey) return;
     const a = codeToAction(e.code);
     if (!a) return;
-    if (e.preventDefault && a !== "hud") e.preventDefault();
+    // Outside driving, menus own the keys (arrows navigate, Escape goes back). Only "pause" stays live
+    // so the same key that opened the pause menu closes it.
+    if (isActive && !isActive() && (a !== "pause" || (isPaused && !isPaused()))) return;
+    if (e.preventDefault) e.preventDefault(); // Ctrl+A / Ctrl+Z / Space / arrows never reach the browser while driving
     info.lastDevice = "keyboard";
     if (!keys.has(e.code)) {
       keys.add(e.code);
-      if (a === "camera" || a === "reset" || a === "pause" || a === "hud") fire(a);
+      if (a === "camera" || a === "reset" || a === "pause" || a === "hud" || a === "restart") fire(a);
     }
   };
   const onKeyUp = (e) => void keys.delete(e.code);
@@ -182,7 +189,7 @@ export function createInput({ target, onPause, onAction, getGamepads, storage } 
     },
     setBindings(next, persist = true) {
       bindings = normaliseBindings(next);
-      if (persist && storage) storage.setJSON("aotearoa-rally.bindings.v1", bindings);
+      if (persist && storage) storage.setJSON(BINDINGS_KEY, bindings);
     },
     resetBindings() {
       api.setBindings(null);

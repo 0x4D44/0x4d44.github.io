@@ -13,27 +13,38 @@ try {
   PAR_TIMES = null;
 }
 
-/** Expert par for a stage: the calibrated bot time for `carId` when available, else stage.parTime. */
-export function parTimeFor(stageId, carId, fallbackStageParTime) {
+/** Calibrated bot lap (skill 1.0, tests/calibrate-par.mjs) for a stage and car; null when there is no table. */
+export function botPar(stageId, carId) {
   const t = PAR_TIMES && PAR_TIMES[stageId] && PAR_TIMES[stageId][carId];
-  return Number.isFinite(t) && t > 0 ? t : fallbackStageParTime;
+  return Number.isFinite(t) && t > 0 ? t : null;
+}
+export const HUMAN_PAR_FACTOR = 1.08;
+/** Expert-human par = botPar x 1.08 (HUD / briefing "Par time"). Uses `fallbackBot` x 1.08 when no table. */
+export function parFor(stageId, carId, fallbackBot = null) {
+  const b = botPar(stageId, carId) ?? fallbackBot;
+  return b == null ? null : Math.round(b * HUMAN_PAR_FACTOR * 10) / 10;
+}
+/** Older name: the calibrated bot lap when available, else the fallback. */
+export function parTimeFor(stageId, carId, fallbackStageParTime) {
+  return botPar(stageId, carId) ?? fallbackStageParTime;
 }
 
 export const RIVAL_POINTS = Object.freeze([10, 8, 6, 5, 4, 3, 2, 1]);
 
 /** name, nationality code (ISO-3), car id, skill 0..1, consistency 0..1 (higher = fewer bad stages) */
 export const RIVALS = Object.freeze([
-  Object.freeze({ id: "tane", name: "Tane Rangihuna", nationality: "NZL", car: "huia", skill: 0.93, consistency: 0.92, flavour: "Local hero, relentless on gravel" }),
-  Object.freeze({ id: "mere", name: "Mere Kowhai", nationality: "NZL", car: "kea", skill: 0.9, consistency: 0.9, flavour: "Fearless in the wet" }),
+  Object.freeze({ id: "tane", name: "Tāne Rangihuna", nationality: "NZL", car: "huia", skill: 0.93, consistency: 0.92, flavour: "Local hero, relentless on gravel" }),
+  Object.freeze({ id: "mere", name: "Mere Kōwhai", nationality: "NZL", car: "kea", skill: 0.9, consistency: 0.9, flavour: "Fearless in the wet" }),
   Object.freeze({ id: "hamish", name: "Hamish Strathearn", nationality: "NZL", car: "takahe", skill: 0.86, consistency: 0.88, flavour: "Smooth, momentum merchant" }),
-  Object.freeze({ id: "aroha", name: "Aroha Pomare", nationality: "NZL", car: "piwakawaka", skill: 0.84, consistency: 0.78, flavour: "Fast, loose and occasionally in a hedge" }),
+  Object.freeze({ id: "aroha", name: "Aroha Pōmare", nationality: "NZL", car: "piwakawaka", skill: 0.84, consistency: 0.78, flavour: "Fast, loose and occasionally in a hedge" }),
   Object.freeze({ id: "callum", name: "Callum Treloar", nationality: "AUS", car: "huia", skill: 0.8, consistency: 0.84, flavour: "Tarmac specialist from Tasmania" }),
   Object.freeze({ id: "sione", name: "Sione Tuilagi", nationality: "SAM", car: "kea", skill: 0.77, consistency: 0.8, flavour: "Bold, loves a jump" }),
   Object.freeze({ id: "ingrid", name: "Ingrid Haugland", nationality: "NOR", car: "takahe", skill: 0.72, consistency: 0.9, flavour: "Careful, never off the pace" }),
 ]);
 
-const BASE = { rookie: 1.16, pro: 1.075, expert: 1.02 };
-const SPREAD = { rookie: 0.55, pro: 0.42, expert: 0.34 };
+// Difficulty is a multiple of the rival car's OWN bot lap (botPar), calibrated against measured bot laps (skill 0.9 = about +2 %, 0.75 = about +5 %):
+const BASE = { rookie: 1.08, pro: 0.97, expert: 0.92 };
+const SKILL_TOP = 0.93, SKILL_LOW = 0.72, SPREAD_AT_LOW = 0.1; // best rival +0 %, worst +10 %
 export const DIFFICULTIES = Object.freeze(["rookie", "pro", "expert"]);
 
 /**
@@ -46,13 +57,17 @@ export function rivalStageTime({ stageId, rivalIndex, parTime, difficulty = "pro
   const diff = BASE[difficulty] !== undefined ? difficulty : "pro";
   const stageNo = Math.max(0, STAGE_IDS.indexOf(stageId));
   const rng = makeRng(hashString(`${seed}|${stageId}|${rivalIndex}|${diff}`));
-  const pace = BASE[diff] + (1 - rv.skill) * SPREAD[diff];
+  // each rival drives their OWN car: its calibrated bot lap; `parTime` (player's expert par) is only the fallback
+  let bot = botPar(stageId, rv.car);
+  if (bot == null) bot = (parTime ?? 240) / HUMAN_PAR_FACTOR;
+  const spread = Math.min(1, Math.max(0, (SKILL_TOP - rv.skill) / (SKILL_TOP - SKILL_LOW))) * SPREAD_AT_LOW;
+  const pace = BASE[diff] + spread;
   // stage affinity: a fixed per-driver / per-stage bias of up to about +-1.2 %
   const bias = (makeRng(hashString(`affinity|${rv.id}|${stageNo}`)).next() - 0.5) * 0.024;
   // day-to-day variation, narrower for consistent drivers
   const sigma = (1 - rv.consistency) * 0.045 + 0.003;
   let f = pace + bias + rng.normal() * sigma;
-  let t = parTime * Math.max(1.0, f);
+  let t = bot * Math.max(0.9, f);
   // an occasional mistake: bigger penalty for inconsistent drivers
   if (rng.chance((1 - rv.consistency) * 0.35)) t += 4 + rng.next() * 14;
   return Math.round(t * 1000) / 1000;

@@ -91,7 +91,14 @@ export function dimsFor(spec) {
 /** Camera eye points (ground-relative) for a spec. */
 export function eyePoints(spec) {
   const d = dimsFor(spec);
-  return { bonnet: [d.eye.x, d.eye.y, d.eye.z + 0.02], bumper: [d.bumperEye.x, d.bumperEye.y, d.bumperEye.z] };
+  // bonnet: centred, low, just inside the base of the windscreen (bonnet, wipers, mirrors and A-pillars frame the view, road clear);
+  // cockpit: the driver's eye (steering wheel and cage visible); bumper: low in front of the grille.
+  const t0 = d.cabin.t0 + 0.02;
+  return {
+    bonnet: [0.0, d.topC(t0) + 0.22, d.zAt(t0) + 0.65],
+    cockpit: [d.eye.x, d.eye.y, d.eye.z + 0.02],
+    bumper: [d.bumperEye.x, d.bumperEye.y, d.bumperEye.z],
+  };
 }
 
 /** Is a point inside the arch cut-out of any wheel? (model space, side faces only). */

@@ -1,7 +1,7 @@
 // Car materials: paint (livery atlas, clearcoat), glass, trim, lamps, tyres, rims; shader patches add
 // accumulated dirt (mud splatter), vertex-displaced crash damage, scrapes, holes and cracked glass.
 const SHARED = /* glsl */ `
-uniform vec4 uDmg; uniform vec4 uDim; uniform float uDmgTot; uniform float uDirt; uniform float uCrack;
+uniform vec4 uDmg; uniform vec4 uDim; uniform float uDmgTot; uniform float uDirt; uniform float uCrack; uniform float uSpray; uniform vec3 uMudC;
 float h31(vec3 p){ p = fract(p*vec3(0.1031,0.1030,0.0973)); p += dot(p, p.yxz+33.33); return fract((p.x+p.y)*p.z); }
 float vn3(vec3 p){ vec3 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x), mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
@@ -54,14 +54,26 @@ const DIRT = (mode) => /* glsl */ `
   float scrape = smoothstep(0.64, 0.7, sc + dm*0.3 - 0.12) * step(0.15, dm);
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.44,0.44,0.46)*(0.6+0.5*sc), scrape*0.85);
   diffuseColor.rgb *= 1.0 - 0.18*dm*vn3(vObjP*4.0);`}
-  ${mode === "paint" ? "if (!gl_FrontFacing) diffuseColor.rgb = vec3(0.06, 0.06, 0.07);" : ""}
+  ${mode === "paint" ? "if (!gl_FrontFacing) diffuseColor.rgb = vec3(0.17, 0.17, 0.19);" : ""}
   float height = ${mode === "wheel" ? "0.15" : "clamp(vObjP.y / max(uDim.w, 0.5), 0.0, 1.2)"};
   float dn = vn3(vObjP*vec3(3.5, 5.0, 3.5)) * 0.45 + vn3(vObjP*vec3(10.0, 14.0, 10.0))*0.3 + vn3(vObjP*vec3(30.0, 40.0, 30.0))*0.25;
   float lower = 1.0 - smoothstep(0.08, 0.8, height);
   float rearK = smoothstep(uDim.x, uDim.y, vObjP.z);
   float amt = uDirt * (0.3 + 1.15*lower + 0.28*rearK) ${mode === "glass" ? "* 0.5" : ""};
   float dmask = smoothstep(0.52, 0.66, dn*0.9 + amt - 0.58) + step(0.8, vn3(vObjP*70.0)) * step(0.35, uDirt) * 0.6 * (0.3 + lower); dmask = clamp(dmask, 0.0, 1.0);
-  vec3 mud = mix(vec3(0.23,0.165,0.10), vec3(0.44,0.35,0.24), vn3(vObjP*14.0));
+  // tyre-spray streaks: thin bands running up and back from the wheel arches, strongest low down and behind the wheels
+  ${mode === "glass" ? "" : `{
+    vec3 sp = vObjP;
+    float along = sp.y * 0.6 - sp.z * 0.8, across = sp.y * 0.8 + sp.z * 0.6;
+    float st = vn3(vec3(sp.x * 38.0, across * 30.0, along * 2.2)) * 0.65 + vn3(vec3(sp.x * 90.0, across * 70.0, along * 5.0)) * 0.35;
+    float sm = smoothstep(0.5, 0.72, st) * (1.0 - smoothstep(0.05, 0.85, height)) * (0.55 + 0.45 * rearK);
+    dmask = max(dmask, clamp(uSpray * sm * 1.1, 0.0, 0.92));
+  }`}
+  vec3 mud = mix(uMudC * 0.55, uMudC, vn3(vObjP*14.0));
+  ${mode === "paint" ? `// metallic flake: sparse glints that move with the view
+  { float fl = step(0.955, h31(floor(vObjP * 240.0)));
+    float tw = pow(abs(sin(dot(vViewPosition, vec3(31.0, 47.0, 23.0)) + h31(floor(vObjP * 240.0)) * 6.28)), 10.0);
+    diffuseColor.rgb *= 1.0 + fl * tw * 1.4 * (1.0 - dmask); }` : ""}
   diffuseColor.rgb = mix(diffuseColor.rgb, mud, dmask);
   gDirt = dmask;
   ${mode === "glass" ? `
@@ -120,6 +132,8 @@ export function patchMaterial(mat, U, opts = {}) {
 export function createUniforms(THREE, d) {
   return {
     uDirt: { value: 0 },
+    uSpray: { value: 0 },
+    uMudC: { value: new THREE.Vector3(0.28, 0.2, 0.13) },
     uDmg: { value: new THREE.Vector4(0, 0, 0, 0) },
     uDim: { value: new THREE.Vector4(d.zF, d.zR, d.hw, d.H) },
     uDmgTot: { value: 0 },
@@ -127,13 +141,13 @@ export function createUniforms(THREE, d) {
   };
 }
 
-export function createCarMaterials(THREE, U, livery, atlasTexture) {
+export function createCarMaterials(THREE, U, livery, atlasTexture, grain = null) {
   const paint = patchMaterial(new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, map: atlasTexture, roughness: 0.34, metalness: 0.28, clearcoat: 0.85, clearcoatRoughness: 0.12,
-    side: THREE.DoubleSide, envMapIntensity: 1.1,
+    color: 0xffffff, map: atlasTexture, roughness: 0.3, metalness: 0.4, clearcoat: 1.0, clearcoatRoughness: 0.06,
+    side: THREE.DoubleSide, envMapIntensity: 1.5,
   }), U, { mode: "paint" });
   const glass = patchMaterial(new THREE.MeshStandardMaterial({
-    color: 0x060a0f, roughness: 0.03, metalness: 0.7, transparent: true, opacity: 0.72, envMapIntensity: 1.8, depthWrite: false,
+    color: 0x0a131b, roughness: 0.02, metalness: 0.85, transparent: true, opacity: 0.8, envMapIntensity: 2.6, depthWrite: false,
   }), U, { mode: "glass" });
   const trim = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.55, metalness: 0.2, side: THREE.DoubleSide }), U, { mode: "paint" });
   // one lamp material for head / tail / reverse lamps (vertex attribute aLamp: 0 head, 1 tail, 2 reverse)
@@ -150,7 +164,7 @@ export function createCarMaterials(THREE, U, livery, atlasTexture) {
   };
   lampBase.customProgramCacheKey = () => "car-lamp";
   const lamps = lampBase;
-  const interior = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.82, metalness: 0.05, emissive: 0x0b0b0e, side: THREE.DoubleSide });
+  const interior = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, map: grain || null, roughness: 0.74, metalness: 0.05, emissive: 0x14151a, side: THREE.DoubleSide });
   const helmet = new THREE.MeshPhysicalMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.25, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.05 });
   const wheelTrim = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.9, metalness: 0.0 });
   const tyre = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.92, metalness: 0 }), U, { mode: "wheel", damage: false });

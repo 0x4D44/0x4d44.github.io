@@ -242,7 +242,7 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
       const cfg = getCfg();
       grid = chunkGrid(stage.bounds);
       viewDist = Math.min(cfg.viewDist, Math.max(700, (stage.def.environment?.fogFar ?? 900) * 1.35));
-      shadowRange = cfg.shadowRange;
+      shadowRange = cfg.shadowFar || cfg.shadowRange;
       mat = makeTerrainMaterial(THREE, SU, textures, stage, cfg);
       // far ground disc beyond the chunk field so the world never ends in a void
       const b = stage.bounds;
@@ -258,7 +258,7 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
       if (!stage) return;
       const cfg = getCfg();
       viewDist = Math.min(cfg.viewDist, Math.max(700, (stage.def.environment?.fogFar ?? 900) * 1.35));
-      shadowRange = cfg.shadowRange;
+      shadowRange = cfg.shadowFar || cfg.shadowRange;
       const old = mat;
       mat = makeTerrainMaterial(THREE, SU, textures, stage, cfg);
       for (const c of chunks.values()) if (c.mesh) c.mesh.material = mat;

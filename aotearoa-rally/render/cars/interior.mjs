@@ -9,7 +9,7 @@ export function buildInterior(THREE, spec, d, livery) {
   const ZS = d.seatZ;
   const topY = d.topC(cab.t0) - 0.05;
   const suit = livery.accent, suit2 = livery.body;
-  const DARK = 0x16171a, MID = 0x2a2b2f, SEAT = 0x1d1e22, HARN = 0xc9231f, CAGE = 0xd4d6d2;
+  const DARK = 0x2a2c32, MID = 0x40434a, SEAT = 0x323a52, HARN = 0xc9231f, CAGE = 0xd4d6d2;
 
   // ---- tub interior surfaces
   I.box(hwC * 1.9, 0.04, d.zAt(cab.t1) - zD + 0.2, 0, d.sill + 0.12, (zD + d.zAt(cab.t1)) / 2, 0x0e0e10); // floor
@@ -80,9 +80,13 @@ export function buildInterior(THREE, spec, d, livery) {
     // arms
     for (const lx of [-1, 1]) {
       const sxp = hx + lx * 0.22;
-      if (c.driver) CREW.tube([[sxp, d.sill + 0.82, ZS + 0.2], [hx + lx * 0.34, d.sill + 0.74, ZS - 0.12], [hx + lx * 0.2, d.sill + 0.88, ZS - 0.42]], 0.026, suit, 8, true);
+      if (c.driver) CREW.tube([[sxp, d.sill + 0.82, ZS + 0.2], [hx + lx * 0.34, d.sill + 0.74, ZS - 0.12], [hx + lx * 0.2, d.sill + 0.88, ZS - 0.42]], 0.03, suit, 10, true);
       else CREW.tube([[sxp, d.sill + 0.82, ZS + 0.2], [hx + lx * 0.2, d.sill + 0.7, ZS - 0.05], [hx + lx * 0.1, d.sill + 0.62, ZS - 0.22]], 0.034, suit, 8, true);
-      CREW.sphere(0.034, c.driver ? hx + lx * 0.2 : hx + lx * 0.1, c.driver ? d.sill + 0.88 : d.sill + 0.62, c.driver ? ZS - 0.44 : ZS - 0.24, 0x111111);
+      // glove: flattened ellipsoid palm + four knuckle/finger bumps + a coloured cuff, so hands on the wheel do not read as balls
+      const gx = c.driver ? hx + lx * 0.2 : hx + lx * 0.1, gy = c.driver ? d.sill + 0.88 : d.sill + 0.62, gz = c.driver ? ZS - 0.44 : ZS - 0.24;
+      CREW.sphere(0.036, gx, gy, gz, 0x15161a, 1.15, 0.85, 1.3, 12);
+      for (let f = 0; f < 4; f++) CREW.sphere(0.011, gx + (f - 1.5) * 0.017, gy + 0.004, gz - 0.044, 0x15161a, 1, 1.4, 1.3, 6);
+      CREW.cyl(0.03, 0.028, 0.035, gx, gy + 0.002, gz + 0.05, suit, Math.PI / 2, 0, 0, 10);
     }
     // helmet (separate glossy mesh): shell, visor, chin bar
     const HH = H;

@@ -46,10 +46,10 @@ export function engineVoice(rpm, throttle, boost, idle, redline, chr = ENGINE_CH
   return {
     rn, load,
     fundHz: firingHz(rpm, chr.cyl),
-    gain: clamp(0.16 + 0.16 * rn + 0.22 * load, 0, 0.62),
+    gain: clamp(0.13 + 0.13 * rn + 0.2 * load, 0, 0.5),
     lowpass: clamp(700 + 4200 * rn * chr.tone + 3400 * load, 400, 11000),
     drive: clamp(0.8 + 3.2 * load * (0.6 + chr.growl), 0.5, 6),
-    subGain: clamp(0.2 + 0.35 * chr.burble * (0.5 + 0.5 * idleLevel) + 0.1 * (1 - th), 0, 0.8),
+    subGain: clamp(0.02 + 0.1 * chr.burble * (0.5 + 0.5 * idleLevel) + 0.03 * (1 - th), 0, 0.2), // half-order content stays well below the firing frequency
     noiseGain: clamp(0.015 + 0.09 * rn * (0.35 + 0.65 * th), 0, 0.2),
     noiseFreq: clamp(500 + 2500 * rn, 300, 4000),
   };
@@ -106,7 +106,7 @@ export function tyreMix(wheels, speedMs, infoOf, out) {
     const g = w.grounded === false ? 0 : 1;
     const cat = noiseCategory(infoOf(w.surf));
     const slip = clamp01(Math.max(Math.abs(fin(w.slipRatio)) * 0.9, Math.abs(fin(w.slipAngle)) * 3.2, fin(w.skid)));
-    out.roll[cat] += (g * (0.1 + 0.9 * Math.pow(v, 0.85))) / 4;
+    out.roll[cat] += (g * Math.pow(v, 0.85)) / 4; // silent when stopped
     out.slide[cat] += (g * slip * (0.25 + 0.75 * Math.sqrt(v + 0.05))) / 4;
     if (cat === "tarmac") out.squeal += (g * smoothstep(0.35, 0.9, slip) * clamp01(Math.abs(w.load || 4000) / 4000)) / 2;
     out.skidMax = Math.max(out.skidMax, slip * g);

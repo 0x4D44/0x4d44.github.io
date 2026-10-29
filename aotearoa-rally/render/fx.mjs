@@ -196,13 +196,17 @@ void main(){
   float n = vn(vUv*2.3 + seed*31.0), n2 = vn(vUv*5.5 - seed*17.0 + vData.x*1.7);
   float shape = smoothstep(1.0, 0.18 + 0.28*n, r);
   float a = shape * (0.62 + 0.38*n2) * vCol.a * smoothstep(-1.0, -0.2, vUv.y);
+  // thin near the lens and never a solid wall between camera and car (no scene depth is available for a true depth-fade)
+  float cd = length(vWorld - uCamPos);
+  a *= smoothstep(0.5, 3.2, cd) * mix(0.6, 1.0, smoothstep(3.0, 14.0, cd));
   if (a < 0.003) discard;
   vec3 nrm = normalize(uRight*vUv.x + uUp*vUv.y + uBack*sqrt(max(0.0, 1.0 - r*r)));
   float ndl = dot(nrm, uSunDir)*0.5 + 0.5;
   float cs = max(dot(normalize(vWorld - uCamPos), uSunDir), 0.0);
   float scatter = pow(cs, 5.0) * (1.0 - 0.5*shape);
-  vec3 lit = uAmb + uSunCol * (ndl*ndl*0.85 + scatter*1.3) + headLight(vWorld);
-  vec3 col = vCol.rgb * lit * (0.85 + 0.3*n2);
+  // diffuse-lit only: capped so a low orange sun or a headlight can never make a plume glow (never emissive)
+  vec3 lit = uAmb + uSunCol * (ndl*ndl*0.7 + scatter*0.45) + headLight(vWorld) * 0.5;
+  vec3 col = vCol.rgb * min(lit, vec3(1.08)) * (0.85 + 0.3*n2);
   gl_FragColor = vec4(applyFog(col, vWorld), a);
 }`;
 
@@ -230,7 +234,7 @@ void main(){
   float k = vMisc.x; float r = length(vUv); if (r > 1.0) discard;
   float t = vData.x; vec3 c; float a;
   if (k < 0.5) { float core = smoothstep(1.0, 0.0, abs(vUv.y)*2.2) * smoothstep(1.0, 0.2, abs(vUv.x)); c = mix(vec3(1.0,0.45,0.1), vec3(1.0,0.9,0.6), core*(1.0-t)); a = core; }
-  else if (k < 1.5) { float g = smoothstep(1.0, 0.0, r); c = mix(vec3(0.25,0.45,1.0), vec3(1.0,0.5,0.12), smoothstep(0.0, 0.5, t)); c = mix(vec3(1.0,0.9,0.7), c, smoothstep(0.0, 0.35, r + t*0.6)); a = g*g; }
+  else if (k < 1.5) { float g = smoothstep(1.0, 0.0, r); c = mix(vec3(0.55,0.6,1.0), vec3(1.0,0.45,0.1), smoothstep(0.0, 0.25, t)); c = mix(vec3(1.0,0.85,0.55), c, smoothstep(0.0, 0.5, r + t*0.5)); a = g*g*g * (1.0 - t); }
   else { float g = smoothstep(1.0, 0.0, r); c = vec3(1.0,0.55,0.15); a = g*g*g; }
   gl_FragColor = vec4(c * a * vCol.a * 1.6, 1.0) ;
   gl_FragColor.rgb = applyFog(gl_FragColor.rgb, vWorld) * 1.0;
@@ -254,7 +258,7 @@ void main(){
   float angNow; { float ph = mod(tt, P)/(P*0.5); angNow = (ph < 1.0 ? ph : 2.0 - ph)*2.0*A - A; }
   float blade = smoothstep(0.012, 0.0, abs(ang - angNow)*rad) * step(rad, 1.25) * step(0.12, rad) * uWiperOn;
   // droplets
-  float acc = 0.0; vec2 refr = vec2(0.0);
+  float acc = 0.0, spec = 0.0, rim = 0.0;
   for (int layer = 0; layer < 2; layer++) {
     float sc = layer == 0 ? 9.0 : 23.0;
     vec2 g = vec2(uv.x*sc*uAspect, uv.y*sc); vec2 id = floor(g); vec2 f = fract(g) - 0.5;
@@ -265,21 +269,24 @@ void main(){
     vec2 off = (vec2(h21(id+7.7), h21(id+9.9)) - 0.5) * 0.5;
     float slide = smoothstep(2.0, period, ageDrop) * 0.35 * h;
     vec2 q = f - off + vec2(0.0, slide);
-    float rr = (0.05 + 0.13*h*h) * smoothstep(0.0, 0.6, ageDrop) * (layer == 0 ? 1.0 : 0.55);
+    float rr = (0.035 + 0.075*h*h) * smoothstep(0.0, 0.6, ageDrop) * (layer == 0 ? 1.0 : 0.55);
     float dist = length(q * vec2(1.0, 0.9));
     float drop = smoothstep(rr, rr*0.55, dist);
     float vis = step(ageDrop, wipeAge);
     float m = drop * on * vis;
     acc = max(acc, m);
-    refr += normalize(q + 1e-4) * m * 0.02;
+    // a bead of water: dark refracted body, thin bright rim, one small specular glint (never a flat white disc)
+    vec2 qn = q / max(rr, 1e-3);
+    spec = max(spec, smoothstep(0.42, 0.0, length(qn - vec2(-0.3, 0.38))) * m);
+    rim = max(rim, smoothstep(0.55, 0.95, length(qn)) * m);
     // trail
     float trail = step(abs(q.x), rr*0.25) * step(0.0, -q.y + slide) * step(-q.y + slide, slide*1.6) * on * vis * 0.25;
     acc = max(acc, trail*0.5);
   }
-  vec3 col = uTint * (0.35 + 0.65*acc);
-  float a = acc * 0.38 + blade * 0.85;
+  vec3 col = uTint * (0.12 + 0.22*acc) + vec3(0.55) * rim * 0.35 + vec3(spec) * 0.85;
+  float a = acc * 0.16 + rim * 0.12 + spec * 0.55 + blade * 0.85;
   col = mix(col, vec3(0.03), blade);
-  gl_FragColor = vec4(col + acc*0.25, clamp(a, 0.0, 0.9));
+  gl_FragColor = vec4(col, clamp(a, 0.0, 0.8));
 }`;
 
 // -------------------------------------------------------------------------------------------------
@@ -506,7 +513,7 @@ export function createFX(THREE, world) {
           acc[A.dust + i] += dt * 70 * sk;
           while (acc[A.dust + i] >= 1) {
             acc[A.dust + i] -= 1;
-            soft.pool.emit(cx + rng.range(-0.1, 0.1), cy + 0.08, cz + rng.range(-0.1, 0.1), st.vx * 0.06 + rng.range(-0.4, 0.4), rng.range(0.4, 1.2), st.vz * 0.06 + rng.range(-0.4, 0.4), rng.range(1.0, 2.0), 0.35, 1.4 + sk, 0.85, 0.85, 0.87, 0.2 + 0.2 * sk, { drag: 1.8, wind: 0.8, rotV: rng.range(-0.6, 0.6), rot: rng.next() * 6 });
+            soft.pool.emit(cx + rng.range(-0.1, 0.1), cy + 0.08, cz + rng.range(-0.1, 0.1), st.vx * 0.06 + rng.range(-0.4, 0.4), rng.range(0.4, 1.2), st.vz * 0.06 + rng.range(-0.4, 0.4), rng.range(1.0, 2.0), 0.3, 0.8 + (0.4 + 0.9 * sk) * smoothstep(1, 22, aspd), 0.85, 0.85, 0.87, (0.14 + 0.18 * sk) * (0.4 + 0.6 * smoothstep(1, 22, aspd)), { drag: 1.8, wind: 0.8, rotV: rng.range(-0.6, 0.6), rot: rng.next() * 6 });
           }
         }
         // wet-road rooster tail
@@ -525,12 +532,14 @@ export function createFX(THREE, world) {
           acc[A.dust + i] -= 1;
           const sb = 0.4 + slip;
           const vv = rng.range(0.8, 1.4);
-          const lift = rng.range(0.5, 1.8) * (0.5 + slip * 0.9) * (info.id === SURFACE.SNOW || info.id === SURFACE.SNOW_DEEP ? 1.4 : 1);
+          const lift = rng.range(0.5, 1.8) * (0.5 + slip * 0.9) * (0.55 + 0.45 * smoothstep(1, 22, aspd)) * (info.id === SURFACE.SNOW || info.id === SURFACE.SNOW_DEEP ? 1.4 : 1);
           const shade = 0.88 + rng.next() * 0.2;
+          // plume size and opacity grow with speed: a slow wheelspin makes a small puff, not a wall that hides the car
+          const sp = smoothstep(1, 22, aspd);
           soft.pool.emit(cx + rng.range(-0.15, 0.15), cy + 0.1, cz + rng.range(-0.15, 0.15),
             st.vx * 0.1 - fx * aspd * 0.05 + rng.range(-1.1, 1.1) * sb, lift, st.vz * 0.1 - fz * aspd * 0.05 + rng.range(-1.1, 1.1) * sb,
-            rng.range(1.6, 3.2) + slip * 1.4, 0.35 + 0.4 * slip, (1.4 + 2.6 * slip) * k, cr * shade, cg * shade, cb * shade,
-            (info.spray ? 0.2 : 0.17 + 0.17 * Math.min(1, info.dust)) * (0.6 + 0.6 * clamp01(slip + 0.3)),
+            rng.range(1.6, 3.2) + slip * 1.4, 0.3 + 0.3 * slip, (0.8 + (0.5 + 1.7 * Math.min(1, slip)) * sp) * k, cr * shade, cg * shade, cb * shade,
+            (info.spray ? 0.2 : 0.17 + 0.17 * Math.min(1, info.dust)) * (0.6 + 0.6 * clamp01(slip + 0.3)) * (0.45 + 0.55 * sp),
             { drag: info.spray ? 2.4 : 1.35, wind: 0.9, rotV: rng.range(-0.7, 0.7), rot: rng.next() * 6 });
         }
       }
@@ -658,8 +667,8 @@ export function createFX(THREE, world) {
       const lx = exhaustX * side, lz = exhaustZ;
       const ex = st.x + lx * cs + lz * sn, ez = st.z - lx * sn + lz * cs;
       const ey = gy + exhaustY;
-      for (let i = 0; i < 4; i++) {
-        glow.pool.emit(ex, ey, ez, -fx * rng.range(3, 9) * s + st.vx * 0.5, rng.range(-0.2, 0.7), -fz * rng.range(3, 9) * s + st.vz * 0.5, rng.range(0.07, 0.17), 0.12, 0.4 * s + 0.15, 1, 1, 1, 0.9, { kind: KIND.FLAME, drag: 4, rot: rng.next() * 6 });
+      for (let i = 0; i < 3; i++) {
+        glow.pool.emit(ex, ey, ez, -fx * rng.range(3, 9) * s + st.vx * 0.5, rng.range(-0.2, 0.7), -fz * rng.range(3, 9) * s + st.vz * 0.5, rng.range(0.05, 0.11), 0.05, 0.16 * s + 0.06, 1, 1, 1, 0.7, { kind: KIND.FLAME, drag: 5, rot: rng.next() * 6 });
       }
       for (let i = 0; i < 6; i++) {
         glow.pool.emit(ex, ey, ez, -fx * rng.range(4, 12) + rng.range(-2, 2), rng.range(0, 2.5), -fz * rng.range(4, 12) + rng.range(-2, 2), rng.range(0.15, 0.4), 0.04, 0.02, 1, 0.7, 0.3, 1, { kind: KIND.SPARK, grav: 9.8, drag: 1.2 });

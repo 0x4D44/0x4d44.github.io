@@ -5,11 +5,12 @@
 import * as THREE from "three";
 import { browserStorage } from "./core/storage.mjs";
 import { createInput } from "./core/input.mjs";
-import { createRun } from "./core/rules.mjs";
+import { createRun, RULES } from "./core/rules.mjs";
 import {
   createCareer, DIFFICULTY, STAGE_ORDER, recommendedTyre, vehicleOptionsFor, partDamage, fallbackRivals, DEFAULT_SETUP,
 } from "./core/career.mjs";
 import { clamp, yawOfDir } from "./core/mathx.mjs";
+import { createFrameClock } from "./core/frameclock.mjs";
 import { createScreens } from "./ui/screens.mjs";
 import { createHud } from "./ui/hud.mjs";
 import { createNav } from "./ui/nav.mjs";
@@ -80,16 +81,32 @@ function setProgress(p, label) {
   if (f) f.style.width = Math.round(clamp(p, 0, 1) * 100) + "%";
   if (l && label) l.textContent = label;
 }
+const TIPS = [
+  "Brake before the corner, not in it: the car turns best when it is not slowing hard.",
+  "Handbrake pitches the tail round in a hairpin. Tap it, do not hold it.",
+  "Gravel, tarmac or snow: check the tyres at the briefing and in the service area.",
+  "Listen to the co-driver. A number is the corner tightness: one is a hairpin, six is nearly flat.",
+  "Crests hide the road. Lift before a crest you cannot see over.",
+  "R puts you back at the last checkpoint for a time penalty. No progress for 25 s does it for you.",
+  "In a championship the damage you take stays with you. Spend your service minutes where the car is hurt most.",
+  "Wet roads double your braking distance. Rain and mist change every stage.",
+];
+let tipN = Math.floor(Math.random() * TIPS.length);
 function showLoading(label) {
   const el = $("loading");
+  const tip = $("load-tip");
+  if (tip) tip.textContent = "Tip: " + TIPS[tipN++ % TIPS.length];
   el.classList.remove("done");
   el.hidden = false;
   setProgress(0.02, label || "Loading...");
 }
+// resolves once the overlay is fully gone (fade finished, display:none), so screenshots never catch it mid-fade
+let overlayGone = Promise.resolve();
 function hideLoading() {
   const el = $("loading");
+  if (el.hidden) return;
   el.classList.add("done");
-  setTimeout(() => { if (el.classList.contains("done")) el.hidden = true; }, 600);
+  overlayGone = new Promise((res) => setTimeout(() => { if (el.classList.contains("done")) el.hidden = true; res(); }, 560));
 }
 $("loading").style.setProperty("--loadart", `url(${new URL("./assets/ui/loading.webp", document.baseURI).href})`);
 
@@ -98,10 +115,16 @@ function webgl2Ok() {
 }
 
 // ---------------------------------------------------------------- helpers using lane modules
+/** Expert-human par (calibrated bot lap x 1.08) for the briefing, HUD benchmark and results. */
 function parFor(stageId, carId) {
+  const fallback = G.stage && G.stage.id === stageId && G.stage.parTime ? G.stage.parTime : null;
+  const R = G.mods.rivals;
+  if (R && R.parFor) {
+    try { const v = R.parFor(stageId, carId, fallback ? fallback / 1.08 : null); if (Number.isFinite(v) && v > 0) return v; } catch { /* fall through */ }
+  }
   const p = G.mods.partimes && G.mods.partimes.PAR_TIMES;
-  if (p && p[stageId] && Number.isFinite(p[stageId][carId])) return p[stageId][carId];
-  if (G.stage && G.stage.id === stageId && G.stage.parTime) return G.stage.parTime;
+  if (p && p[stageId] && Number.isFinite(p[stageId][carId])) return p[stageId][carId] * 1.08;
+  if (fallback) return fallback;
   const d = G.mods.stage && G.mods.stage.getStageDef ? G.mods.stage.getStageDef(stageId) : null;
   return d ? d.lengthTarget / 19 : 240;
 }
@@ -136,7 +159,12 @@ function buildScreens() {
 }
 
 // ---------------------------------------------------------------- input
-const input = createInput({ target: window, storage, onPause: () => togglePause(), onAction: (a) => onAction(a) });
+const input = createInput({
+  target: window, storage, onPause: () => togglePause(), onAction: (a) => onAction(a),
+  // menus own the keys unless we are driving or replaying; the pause key still closes the pause menu (not a dialog over it)
+  isActive: () => (G.playing && !G.paused) || !!G.replay,
+  isPaused: () => G.paused && !(screens && screens.modal),
+});
 input.mountTouch($("touch-host"));
 function applyTouchVisibility() {
   const coarse = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
@@ -161,7 +189,16 @@ function onAction(a) {
   if (!G.playing && !G.replay) return;
   if (a === "camera") cycleCamera();
   else if (a === "reset") recover();
+  else if (a === "restart" && G.mode !== "championship" && G.playing && !G.restarting) restartStage();
 }
+/** After the car is put somewhere else (respawn, teleport): rewind the note ribbon and the spoken notes. */
+function afterJump(s) {
+  if (!Number.isFinite(s)) s = G.vehicle ? G.vehicle.state.s : 0;
+  hud.notesUpdate(s);
+  const cd = G.audio && G.audio.codriver;
+  if (cd) { if (cd.seek) cd.seek(s); else if (cd.reset) cd.reset(s); }
+}
+const curDifficulty = () => (career.championship && G.mode === "championship" ? career.championship.difficulty : G.sessionDifficulty);
 function cycleCamera() {
   if (!G.rig) return;
   G.camIdx = (PLAY_CAMS.indexOf(G.rig.mode) + 1) % PLAY_CAMS.length;
@@ -178,7 +215,6 @@ function setCamera(mode) {
 function recover() {
   if (!G.run || G.run.status !== "running") return;
   G.run.respawn("reset");
-  if (G.rig) G.rig.snap(G.vehicle.state, G.stage);
 }
 
 // ---------------------------------------------------------------- world / stage loading
@@ -261,7 +297,7 @@ function ensureVehicle(carId, { fresh }) {
   const spec = cars()[carId];
   if (!M.physics || !spec) throw new Error("physics/cars module missing");
   const champ = career.championship;
-  const vopts = vehicleOptionsFor(spec, champ && G.mode === "championship" ? champ.setup : { ...DEFAULT_SETUP, tyre: recommendedTyre(G.stageDef), ...(G.singleSetup || {}) }, opts);
+  const vopts = vehicleOptionsFor(spec, champ && G.mode === "championship" ? champ.setup : { ...DEFAULT_SETUP, tyre: recommendedTyre(G.stageDef), ...(G.singleSetup || {}) }, { ...opts, difficulty: curDifficulty() });
   if (!G.vehicle || G.vehicle.spec.id !== carId || fresh) {
     G.vehicle = M.physics.createVehicle(spec, vopts);
     G.vehicleFresh = true;
@@ -286,8 +322,10 @@ async function prepareRun({ stageId, carId, livery = 0, weather = null, countdow
   showLoading(def ? `Loading ${def.name}` : "Loading");
   try {
     const stage = await loadStage(stageId, { weather, fresh });
+    setProgress(0.7, "Preparing the car");
     ensureVehicle(carId, { fresh: freshCar || mode !== "championship" });
     ensureCar(carId, livery);
+    if (G.carVis && G.carVis.setDirt) G.carVis.setDirt(0); // a fresh start (or restart) is a clean car
     const spec = cars()[carId];
     const v = G.vehicle;
     if (mode === "championship" && career.championship && career.championship.damage && G.vehicleFresh) applyDamage(v, career.championship.damage);
@@ -300,21 +338,30 @@ async function prepareRun({ stageId, carId, livery = 0, weather = null, countdow
     hud.setOptions(opts);
     ensureAudio();
     if (G.audio) { G.audio.setStage(stage.def || def); G.audio.setCarSpec(spec); G.audio.reset && G.audio.reset(0); applyAudioOptions(); }
-    G.run = createRun({ stage, vehicle: v, difficulty: career.championship && mode === "championship" ? career.championship.difficulty : G.sessionDifficulty });
+    const trial = mode === "trial";
+    const par = parFor(stageId, carId);
+    G.run = createRun({ stage, vehicle: v, difficulty: curDifficulty(), par, countdown: trial ? 1 : 3 });
     G.recorder.reset();
     const champ = career.championship;
     const bestSplits = career.bestSplits(stageId, carId);
-    const par = parFor(stageId, carId);
-    const rivalTimes = rivalsFor(stageId, { parTime: par, difficulty: (champ && mode === "championship" ? champ.difficulty : G.sessionDifficulty), carId });
-    const benchTotal = rivalTimes && rivalTimes.length ? Math.min(...rivalTimes.map((r) => r.time).filter(Number.isFinite)) : par;
+    const rivalTimes = trial ? [] : rivalsFor(stageId, { parTime: par, difficulty: curDifficulty(), carId });
+    const finiteRivals = rivalTimes.map((r) => r.time).filter(Number.isFinite);
+    const benchTotal = finiteRivals.length ? Math.min(...finiteRivals) : par;
     G.benchTotal = benchTotal;
     const benchSplits = stage.checkpoints.map((cp) => (cp.s / stage.lengthM) * benchTotal);
     hud.reset();
     hud.setStage(stage, { best: bestSplits, bench: benchSplits });
+    hud.setNoRivals(trial);
+    setProgress(0.8, "Placing the ghost");
     setupGhost(stageId, carId, spec);
     G.bot = null;
     G.botOn = !!bot;
     if (bot) makeBot();
+    // compile shaders and upload textures now, behind the loading screen, so the first seconds do not hitch
+    setProgress(0.9, "Warming up the renderer");
+    try { if (G.world.warmup) await G.world.warmup(); } catch (e) { console.error("warmup failed: " + (e && e.message)); }
+    setProgress(1, "Ready");
+    if (mode === "championship" && career.championship) { career.markStageStarted(); career.save(); }
     if (!countdown) G.run.skipCountdown(v.state);
     else { G.run.start(); }
     G.playing = true;
@@ -327,6 +374,10 @@ async function prepareRun({ stageId, carId, livery = 0, weather = null, countdow
     hud.hint(countdown ? "" : "");
     renderFrame(0);
     hideLoading();
+    // the warm-up above blocks the main thread behind the loading overlay: start the frame clock fresh so that
+    // block is not counted as a hitch in play
+    clock.reset(performance.now());
+    AR.worstFrameMs = 0; G.watchUntil = performance.now() + 3000;
     return true;
   } catch (e) {
     hideLoading();
@@ -449,15 +500,22 @@ function onRunEvents() {
         sfx("checkpoint");
         break;
       }
-      case "respawn": hud.banner(`Recovered +${(G.run.penalties[G.run.penalties.length - 1] || {}).seconds || 10} s`, "bad", 2400); break;
+      case "respawn": {
+        const pen = G.run.penalties[G.run.penalties.length - 1] || {};
+        hud.banner(`${e.reason === "no_progress" ? "No progress: back to checkpoint" : "Back at checkpoint"} +${pen.seconds || 10} s`, "bad", 2600);
+        if (G.rig) G.rig.snap(G.vehicle.state, G.stage);
+        afterJump(e.s);
+        break;
+      }
       case "wrongWay": sfx("warning"); break;
       case "finish": hud.banner("Finish!", "good", 3000); sfx("finish"); break;
-      case "dnf": hud.banner("Car destroyed", "bad", 3000); sfx("warning"); break;
+      case "dnf": hud.banner(e.reason === "timeout" ? "Out of time" : e.reason === "retired" ? "Retired" : "Car destroyed", "bad", 3000); if (e.reason !== "retired") sfx("warning"); break;
       default: break;
     }
   }
 }
 
+const LIGHTS = { head: false, brake: false, reverse: false }, RIG_OPTS = { shake: 0, fovBoost: 0 }, AUDIO_OPTS = { cameraMode: "chase", paused: false };
 function afterSim(dt) {
   const v = G.vehicle, st = v.state, world = G.world;
   G.time += dt;
@@ -465,14 +523,14 @@ function afterSim(dt) {
   if (G.carVis) {
     G.carVis.update(st, dt, world.environment);
     if (st.events.length) G.carVis.setDamage && G.carVis.setDamage(st.damage);
-    G.carVis.setLights && G.carVis.setLights({ head: !!(world.environment && world.environment.headlights), brake: st.brake > 0.05, reverse: st.gear < 0 });
+    if (G.carVis.setLights) { LIGHTS.head = !!(world.environment && world.environment.headlights); LIGHTS.brake = st.brake > 0.05; LIGHTS.reverse = st.gear < 0; G.carVis.setLights(LIGHTS); }
   }
   let shake = 0;
   for (let i = 0; i < st.events.length; i++) if (st.events[i].t === "impact") shake = Math.max(shake, st.events[i].strength);
   if (opts.reducedMotion) shake = 0;
   if (G.fx) G.fx.update(dt, st, world.environment, G.stage);
-  if (G.rig) G.rig.update(dt, st, G.stage, { shake: shake * 0.8, fovBoost: opts.fov - 70 });
-  if (G.audio) G.audio.update(dt, st, G.stage, { cameraMode: G.rig ? G.rig.mode : "chase", paused: G.paused });
+  if (G.rig) { RIG_OPTS.shake = shake * 0.8; RIG_OPTS.fovBoost = opts.fov - 70; G.rig.update(dt, st, G.stage, RIG_OPTS); if (G.carVis && G.carVis.setFade) G.carVis.setFade(G.rig.carFade ?? 1); }
+  if (G.audio) { AUDIO_OPTS.cameraMode = G.rig ? G.rig.mode : "chase"; AUDIO_OPTS.paused = G.paused; G.audio.update(dt, st, G.stage, AUDIO_OPTS); }
   updateGhost(dt);
   frameInfo.time = G.time;
   frameInfo.carPos.x = st.x; frameInfo.carPos.y = st.y; frameInfo.carPos.z = st.z;
@@ -518,37 +576,42 @@ function showResults() {
   let sheet, mode = G.mode;
   if (mode === "championship" && career.championship) {
     sheet = career.completeStage(result, cloneDamage(G.vehicle.state.damage));
+  } else if (mode === "trial") {
+    sheet = []; // a time trial has no rivals and no points
   } else {
-    sheet = career.buildSheet(G.stageId, result, { parTime: parFor(G.stageId, G.carId) });
+    sheet = career.buildSheet(G.stageId, result, { parTime: parFor(G.stageId, G.carId), difficulty: G.sessionDifficulty, carId: G.carId });
   }
   career.save();
-  const champ = career.championship;
   const goOn = () => {
     if (mode !== "championship") return backToMenu();
     showStandings();
   };
-  screens.results({
-    def, result, sheet, isBest, previousBest, bestSplits: bestSplitsBefore, mode, dnf,
-    continueLabel: mode === "championship" ? "Standings" : "Continue",
-    onContinue: goOn,
-    onRetry: mode === "championship" ? null : () => startFromMenu(),
-    onReplay: G.lastRec && G.lastRec.n > 10 ? () => startReplay() : null,
-    onMenu: mode === "championship" ? null : backToMenu,
-  });
-  void champ;
+  const show = () => {
+    G.screen = "results";
+    screens.results({
+      def, result, sheet, isBest, previousBest, bestSplits: bestSplitsBefore, mode, dnf,
+      continueLabel: mode === "championship" ? "Standings" : "Continue",
+      onContinue: goOn,
+      onRetry: mode === "championship" ? null : () => startFromMenu(),
+      onReplay: G.lastRec && G.lastRec.n > 10 ? () => startReplay("results") : null,
+      onMenu: mode === "championship" ? null : backToMenu,
+    });
+  };
+  G.reshowResults = show; // the replay returns here
+  show();
 }
 function showStandings() {
   const champ = career.championship;
   const rows = career.standings();
   const last = career.finished;
   screens.standings({
-    rows, stageIndex: champ.stageIndex, last,
+    rows, timeRows: career.timeStandings(), stageIndex: champ.stageIndex, last,
     continueLabel: last ? "Final podium" : "Service area",
     onContinue: () => (last ? showPodium() : showService()),
   });
 }
 function showPodium() {
-  screens.podium({ rows: career.standings(), onContinue: () => { career.abandon(); career.save(); backToMenu(); } });
+  screens.podium({ rows: career.standings(), timeRows: career.timeStandings(), onContinue: () => { career.abandon(); career.save(); backToMenu(); } });
 }
 function showService() {
   const champ = career.championship;
@@ -558,6 +621,7 @@ function showService() {
     nextDef, spec: cars()[champ.carId],
     onDone: async () => {
       const plan = career.commitService();
+      if (G.carVis && G.carVis.setDirt) G.carVis.setDirt(0); // the service crew wash the car
       if (G.vehicle) {
         const p = { ...plan, radiator: plan.engine || 0 };
         G.vehicle.repair(p);
@@ -570,12 +634,13 @@ function showService() {
 }
 
 // ---------------------------------------------------------------- replay
-function startReplay() {
+const REPLAY_SHOTS = ["replay", "chase", "far", "bumper"], SHOT_LABEL = { replay: "Broadcast", chase: "Chase", far: "Far", bumper: "Bumper" };
+function startReplay(from = "menu") {
   if (!G.lastRec || !G.world || !G.vehicle) return;
   const v = G.vehicle;
   const backup = cloneDamage(v.state.damage);
   const player = createPlayer(G.lastRec, v.state);
-  const r = { player, t: 0, playing: true, speed: 1, shot: 0, backup, dur: player.duration };
+  const r = { player, t: 0, playing: true, speed: 1, shot: 0, backup, dur: player.duration, from };
   G.replay = r;
   G.screen = "replay";
   hud.show(false);
@@ -584,7 +649,7 @@ function startReplay() {
     onToggle: () => { r.playing = !r.playing; r.ui.setPos(r.t, r.playing); },
     onSeek: (t) => { r.t = t; },
     onSpeed: () => { r.speed = r.speed === 1 ? 0.5 : r.speed === 0.5 ? 2 : 1; r.ui.speed.textContent = r.speed + "x"; },
-    onShot: () => { G.rig.setMode("cinematic"); G.rig.setMode("replay"); },
+    onShot: () => { r.shot = (r.shot + 1) % REPLAY_SHOTS.length; G.rig.setMode(REPLAY_SHOTS[r.shot]); r.ui.shot.textContent = SHOT_LABEL[REPLAY_SHOTS[r.shot]]; },
     onExit: () => exitReplay(),
   });
   G.rig && G.rig.setMode("replay");
@@ -593,14 +658,15 @@ function startReplay() {
 }
 function exitReplay() {
   const v = G.vehicle;
+  const from = G.replay ? G.replay.from : "menu";
   if (G.replay) applyDamage(v, G.replay.backup);
   G.replay = null;
   G.screen = "results";
   G.rig && G.rig.setMode(opts.camera);
   if (G.carVis && G.carVis.setViewMode) G.carVis.setViewMode("exterior");
-  const mode = G.mode;
-  void mode;
-  backToMenu();
+  // back to wherever the replay was opened from (the results screen, so a championship is not lost)
+  if (from === "results" && G.reshowResults) { G.playing = false; hud.show(false); applyTouchVisibility(); G.reshowResults(); }
+  else backToMenu();
 }
 function replayFrame(dt) {
   const r = G.replay;
@@ -619,7 +685,8 @@ function replayFrame(dt) {
 
 // ---------------------------------------------------------------- pause
 function togglePause() {
-  if (G.replay) return;
+  if (G.replay) { exitReplay(); return; }
+  if (screens && screens.modal) return;
   if (!G.playing) return;
   if (G.paused) resumeGame();
   else pauseGame();
@@ -629,6 +696,8 @@ function pauseGame() {
   G.paused = true;
   hud.show(true);
   screens.pause({
+    mode: G.mode, recoverPenalty: RULES.respawnPenalty[curDifficulty()] ?? 10,
+    onRetire: () => retireStage(),
     onResume: resumeGame,
     onRestart: () => { resumeGame(); restartStage(); },
     onOptions: () => screens.options({ onChange: optionChanged, onBack: () => pauseGame2() }),
@@ -636,6 +705,17 @@ function pauseGame() {
     onRecover: () => { resumeGame(); recover(); },
   });
   if (G.audio) G.audio.update(0, G.vehicle.state, G.stage, { paused: true });
+}
+/** Championship: give up the stage. Scores a DNF (0 points, slowest time + penalty in the standings). */
+function retireStage() {
+  if (!G.run || !G.playing) return;
+  G.paused = false;
+  screens.clear();
+  G.screen = "stage";
+  G.run.retire();
+  G.finishing = true;
+  G.endTimer = 0.05;
+  hud.hint("");
 }
 function pauseGame2() { G.paused = false; pauseGame(); }
 function resumeGame() {
@@ -650,7 +730,10 @@ window.addEventListener("blur", () => { if (G.playing && !G.paused && !G.finishi
 
 // ---------------------------------------------------------------- flows
 async function restartStage() {
-  await prepareRun({ stageId: G.stageId, carId: G.carId, livery: G.livery, weather: G.weather, countdown: true, mode: G.mode });
+  if (G.mode === "championship" || G.restarting) return; // a championship stage has no free restart
+  G.restarting = true;
+  try { await prepareRun({ stageId: G.stageId, carId: G.carId, livery: G.livery, weather: G.weather, countdown: true, mode: G.mode }); }
+  finally { G.restarting = false; }
 }
 function optionChanged(k, v) {
   opts = career.options;
@@ -687,7 +770,7 @@ function showMainMenu() {
     onTrial: () => beginSingle("trial"),
     onReplay: () => { startReplayFromMenu(); },
     onOptions: () => screens.options({ onChange: optionChanged, onBack: showMainMenu }),
-    onGarage: () => screens.carSelect({ carId: G.carId, livery: G.livery, title: "Garage", confirmLabel: "Back", onConfirm: (c, l) => { G.carId = c; G.livery = l; showMainMenu(); }, onBack: showMainMenu }),
+    onGarage: () => screens.carSelect({ carId: G.carId, livery: G.livery, title: "Garage", confirmLabel: "Use this car", backLabel: "Menu", onConfirm: (c, l) => { G.carId = c; G.livery = l; showMainMenu(); }, onBack: showMainMenu }),
     onHow: () => screens.howto({ onBack: showMainMenu }),
     onCredits: () => screens.credits({ onBack: showMainMenu, version: VERSION }),
   });
@@ -724,6 +807,13 @@ function continueChampionship() {
   G.carId = c.carId;
   G.livery = c.livery;
   if (!G.vehicle || G.vehicle.spec.id !== c.carId) G.vehicle = null;
+  if (c.inStage) {
+    // the stage was left unfinished (quit, closed tab, crash): that is a DNF, there is no free retry
+    career.completeStage({ status: "dnf", total: Infinity, penaltyTotal: 0 }, c.damage);
+    career.save();
+    toast("Unfinished stage scored as a DNF", "bad", 3200);
+    return showStandings();
+  }
   if (c.stageIndex > 0) showService();
   else startChampionshipStage(true);
 }
@@ -743,12 +833,16 @@ function showBriefing(stage, stageId, mode, onStart, onBack) {
   const def = G.mods.stage.getStageDef(stageId);
   const best = career.bestTime(stageId, G.carId);
   const par = parFor(stageId, G.carId);
-  const d = career.championship && mode === "championship" ? career.difficulty : DIFFICULTY[G.sessionDifficulty];
-  const rv = rivalsFor(stageId, { parTime: par, difficulty: d.id, carId: G.carId });
-  const bench = rv && rv.length ? Math.min(...rv.map((r) => r.time).filter(Number.isFinite)) : null;
+  const benchFor = (did) => {
+    const rv = rivalsFor(stageId, { parTime: par, difficulty: did, carId: G.carId });
+    const t = rv.map((r) => r.time).filter(Number.isFinite);
+    return t.length ? Math.min(...t) : null;
+  };
+  const did = career.championship && mode === "championship" ? career.championship.difficulty : G.sessionDifficulty;
   const champ = career.championship;
   screens.briefing({
-    def, stage, mode, carId: G.carId, best, bench, championship: mode === "championship",
+    def, stage, mode, carId: G.carId, best, par, bench: mode === "trial" ? null : benchFor(did), benchFor, championship: mode === "championship",
+    difficulty: mode === "single" ? G.sessionDifficulty : null, onDifficulty: (id) => { G.sessionDifficulty = id; },
     tyre: champ && mode === "championship" ? champ.setup.tyre : (G.singleSetup && G.singleSetup.tyre) || recommendedTyre(def),
     onTyre: (t) => { if (champ && mode === "championship") career.setSetup({ tyre: t }); else G.singleSetup = { ...(G.singleSetup || {}), tyre: t }; },
     onStart, onBack,
@@ -779,12 +873,12 @@ function startFromMenu() {
 }
 
 // ---------------------------------------------------------------- main loop
-let last = performance.now();
+const clock = createFrameClock(performance.now());
 function frame(now) {
   requestAnimationFrame(frame);
-  let dt = (now - last) / 1000;
-  last = now;
+  let dt = clock.tick(now);
   if (!(dt > 0)) return;
+  if (now < (G.watchUntil || 0) && dt * 1000 > (AR.worstFrameMs || 0)) { AR.worstFrameMs = Math.round(dt * 1000); AR.worstFrameAtMs = Math.round(now - (G.watchUntil - 3000)); AR.frameIdx = G.fpsN; }
   dt = Math.min(dt, 0.1);
   G.fpsAcc += dt; G.fpsN++;
   if (G.fpsAcc >= 0.5) { G.fps = G.fpsN / G.fpsAcc; G.fpsAcc = 0; G.fpsN = 0; }
@@ -836,6 +930,7 @@ Object.assign(AR, {
     if (quality && !G.world) params.set("quality", quality);
     if (career.championship && mode !== "championship") { /* keep save intact, run a free stage */ }
     await prepareRun({ stageId, carId, livery, weather: weather || null, countdown, bot, fresh, freshCar: true, mode });
+    await overlayGone;
     return AR.state();
   },
   teleport(s, lat = 0, speedKmh = 0) {
@@ -851,6 +946,7 @@ Object.assign(AR, {
     if (G.run.status === "running" || G.run.status === "countdown") { G.run._stuck = 0; G.run._wrong = 0; G.run._off = 0; G.run._flip = 0; }
     G.carVis.update(G.vehicle.state, DT, G.world.environment);
     if (G.bot && G.bot.reset) G.bot.reset();
+    afterJump(G.vehicle.state.s);
     return AR.state();
   },
   setBot(on) {
@@ -901,7 +997,16 @@ Object.assign(AR, {
       championship: career.championship ? { stageIndex: career.championship.stageIndex, difficulty: career.championship.difficulty, results: career.championship.results.length } : null,
     };
   },
-  perf() { return G.world ? G.world.getStats() : null; },
+  perf() { return { ...(G.world ? G.world.getStats() : {}), worstFrameMs: AR.worstFrameMs ?? null, fps: Math.round(G.fps) }; },
+  /** For screenshot tooling: drop the loading overlay and toasts instantly (no fade). */
+  hideOverlays() {
+    const l = $("loading");
+    l.classList.add("done"); l.hidden = true;
+    const t = $("toasts");
+    t && t.replaceChildren();
+    return true;
+  },
+  whenOverlayGone() { return overlayGone; },
   /** Drive with the bot until the stage is over (real physics, no rendering). Returns the final state. */
   finishRun(maxSeconds = 1200) {
     needStage();
@@ -937,6 +1042,8 @@ Object.assign(AR, {
   setOption(k, v) { career.setOption(k, v); optionChanged(k, career.options[k]); },
   eraseSave() { career.wipe(); },
   paused() { return G.paused; },
+  inputNow() { return { ...stepInput }; },
+  modalOpen() { return !!(screens && screens.modal); },
   pause() { pauseGame(); },
   resume() { resumeGame(); },
   hudHidden() { return hud.hidden; },
@@ -963,6 +1070,7 @@ async function boot() {
     resolveReady(true);
     return;
   }
+  if (carsM && career.championship && !carsM.CARS[career.championship.carId]) { career.abandon(); career.save(); }
   buildScreens();
   nav = createNav(screensRoot, { getPads: () => (navigator.getGamepads ? navigator.getGamepads() : []) });
   applyOptionsAll();
@@ -972,7 +1080,7 @@ async function boot() {
     try { await ensureWorld(); } catch (e) { console.error("world failed: " + (e && e.message)); AR.worldError = String(e && e.message); }
   }
   hideLoading();
-  requestAnimationFrame((t) => { last = t; requestAnimationFrame(frame); });
+  requestAnimationFrame(() => { clock.reset(performance.now()); requestAnimationFrame(frame); });
   const urlStage = params.get("stage");
   if (params.get("nomenu") === "1") {
     const sid = urlStage || STAGE_ORDER[0];

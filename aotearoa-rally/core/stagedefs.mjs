@@ -6,7 +6,7 @@
 import { SURFACE as SF } from "./surfaces.mjs";
 import {
   S, L, R, TO, W, H, FILL, SURF, VERGE, WIDTH, mark, crest, jump, dip, ford, bridge, grid, nocut, culvert,
-  waterfall, hut, ess,
+  waterfall, hut, ess, camber,
 } from "./spline.mjs";
 
 export const STAGE_IDS = Object.freeze(["waitomo", "whakarewarewa", "coromandel", "otago", "remarkables", "fiordland"]);
@@ -46,7 +46,7 @@ export const STAGE_DEFS = {
   },
   coromandel: {
     id: "coromandel", number: 3, name: "Coromandel Coast", region: "Coromandel", island: "North",
-    blurb: "A clifftop road above the Pacific at golden hour, tarmac giving way to gravel on the headland before the hairpins drop to the beach. Pohutukawa lean over the edge and the sea glares in your eyes.",
+    blurb: "A clifftop road above the Pacific at golden hour, tarmac giving way to gravel on the headland before the hairpins drop to the beach. Pōhutukawa lean over the edge and the sea glares in your eyes.",
     lengthTarget: 4200, difficulty: 3, biome: "coast",
     environment: {
       timeOfDay: 18.5, sunAzimuth: 4.71, sunElevation: 0.11, sunColor: hex(0xffb060), sunIntensity: 3.0,
@@ -57,7 +57,7 @@ export const STAGE_DEFS = {
     },
     palette: { grass: hex(0x8a9a4a), grass2: hex(0xa8a85a), dirtEdge: hex(0xb59a6a), rock: hex(0x8a7e72), foliage: hex(0x2f5f3a), foliage2: hex(0x4a7a44), trunk: hex(0x4a3a2c), accent: hex(0xc23a2a) },
     roadSurfaces: [SF.TARMAC, SF.GRAVEL, SF.PACKED_DIRT],
-    landmarks: ["Pohutukawa headland", "Cathedral hairpins", "Hot-water style beach finish", "Sea-glare straight"],
+    landmarks: ["Pōhutukawa headland", "Cathedral hairpins", "Driftwood beach finish", "Sea-glare straight"],
   },
   otago: {
     id: "otago", number: 4, name: "Central Otago Tussock", region: "Central Otago", island: "South",
@@ -92,7 +92,7 @@ export const STAGE_DEFS = {
   fiordland: {
     id: "fiordland", number: 6, name: "Fiordland Rain", region: "Milford", island: "South",
     blurb: "Beech rainforest closes over a narrow, greasy road at dusk, with waterfalls pouring off the valley walls and fords crossing the track. Headlights cut the rain as you thread a one-lane bridge in the dark.",
-    lengthTarget: 4800, difficulty: 5, biome: "rainforest",
+    lengthTarget: 5300, difficulty: 5, biome: "rainforest",
     environment: {
       timeOfDay: 20.75, sunAzimuth: 4.89, sunElevation: -0.07, sunColor: hex(0x6a7aa8), sunIntensity: 0.35,
       skyTop: hex(0x0b1220), skyHorizon: hex(0x2a3646), fogColor: hex(0x1a2430),
@@ -102,7 +102,7 @@ export const STAGE_DEFS = {
     },
     palette: { grass: hex(0x2f4a2a), grass2: hex(0x3d5a32), dirtEdge: hex(0x4a3a2a), rock: hex(0x4a5058), foliage: hex(0x1f4a30), foliage2: hex(0x2f6040), trunk: hex(0x3a3326), accent: hex(0x7ad0c0) },
     roadSurfaces: [SF.MUD, SF.GRAVEL],
-    landmarks: ["Bealey-style beech tunnel", "Twin waterfalls", "One-lane bridge", "Mossy ford"],
+    landmarks: ["Beech-canopy tunnel", "Twin waterfalls", "One-lane bridge", "Mossy ford"],
   },
 };
 
@@ -122,7 +122,9 @@ export const DEFAULT_SEEDS = { waitomo: 1101, whakarewarewa: 2202, coromandel: 3
 
 export const STAGE_DESIGNS = {};
 /** tighten radii of TO rows by factor f (min 24 m) */
-const TWF = (rows) => TW(rows, 0.48);
+const VARY = [0.8, 1.35, 0.62, 1.7, 0.95, 2.0, 0.72, 1.15];
+let vk = 0;
+const TWF = (rows) => W(rows.map((r) => (typeof r[0] === "number" && r[1] >= 20 ? [r[0], Math.max(20, r[1] * 0.33 * VARY[vk++ % VARY.length]), r[2], r[3]] : (typeof r[0] === "number" ? r : r))));
 const TWR = (rows) => TW(rows, 0.72);
 const TW = (rows, f = 0.55) => W(rows.map((r) => (typeof r[0] === "number" ? [r[0], r[1] < 20 ? r[1] : Math.max(f > 0.5 ? 24 : 20, r[1] * f), r[2], r[3]] : r)));
 
@@ -130,42 +132,42 @@ const TW = (rows, f = 0.55) => W(rows.map((r) => (typeof r[0] === "number" ? [r[
 STAGE_DESIGNS.waitomo = {
   bearing0: 80, surf0: SF.GRAVEL, verge0: SF.GRASS, width: 7.2, length: 3800, roll: [3.2, 170],
   items: [
-    H(96), mark("start"), S(110),
+    H(96), mark("start"), S(110), camber(90, 2.4),
     ...W([
-      [100, 170, 40],
+      [100, 105, 40],
       crest(1.1, 22), S(60),
-      [62, 170, 40],
+      [62, 115, 40],
       [40, 100, 40],
-      [85, 48, 40],
-      [60, 55, 20],
-      S(20), jump(1.4, 13), S(80),
+      [85, 40, 40],
+      [60, 22, 20],
+      S(90), jump(2.4, 10), S(80),
     ]),
-    H(112), R(75, 60, 48), S(30), nocut(), L(32, 95), S(40),
-    ...W([[75, 140, 100]]),
-    mark("mid1"), SURF(SF.PACKED_DIRT), H(104),
+    H(150), camber(70, 2.6), R(75, 60, 48), S(30), nocut(), L(32, 95), S(40),
+    ...W([[75, 100, 100]]),
+    mark("mid1"), SURF(SF.PACKED_DIRT), H(112),
     ...W([
-      [50, 240, 100],
+      [50, 150, 100],
       crest(1.3, 26), S(70),
-      [85, 160, 60],
+      [85, 95, 60],
       [60, 85, 25], [95, 85, 25], [65, 85, 60],
     ]),
-    H(128), R(60, 70, 40), S(80),
-    ...W([[100, 150, 40]]),
+    H(90), camber(60, -1.4), R(60, 70, 40), S(80),
+    ...W([[100, 100, 40]]),
     grid(), S(60),
     ...W([
-      [75, 160, 80],
-      jump(1.5, 14), S(100),
-      [105, 140, 50],
-      [70, 45, 40],
+      [75, 100, 80],
+      jump(2.4, 10), S(100),
+      [105, 90, 50],
+      [70, 36, 40],
       [115, 45, 60],
-      [85, 160, 80],
+      [85, 105, 80],
       crest(1.2, 24), S(80),
-      [110, 200, 60],
-      [75, 100, 50],
+      [110, 130, 60],
+      [75, 70, 50],
       S(40), crest(1.0, 20), S(60),
-      [105, 120, 40], [70, 60, 30], nocut(), [110, 55, 40], [85, 130, 60], [100, 200, 40],
+      [105, 90, 40], [70, 50, 30], nocut(), [110, 24, 40], [85, 100, 60], [100, 150, 40],
     ]),
-    H(100), FILL(),
+    H(96), FILL(),
   ],
   shape: [],
   edges: [],
@@ -175,11 +177,11 @@ STAGE_DESIGNS.waitomo = {
 STAGE_DESIGNS.whakarewarewa = {
   bearing0: 95, surf0: SF.PUMICE, verge0: SF.LEAF_LITTER, width: 6.4, length: 3400, roll: [3.0, 90], bankGain: 2.2,
   items: [
-    H(340), mark("start"), S(100),
+    H(340), mark("start"), S(100), camber(70, 2.2),
     ...W([
       [65, 55, 20], [120, 42, 25], [80, 36, 40], [135, 60, 60],
       crest(0.9, 14), S(30),
-      [70, 22, 15], [110, 22, 20], [60, 20, 25], [125, 24, 35],
+      [70, 22, 15], [195, 14, 25], [60, 14, 25], [125, 24, 35],
     ]),
     H(318), SURF(SF.GRAVEL),
     ...W([
@@ -202,10 +204,10 @@ STAGE_DESIGNS.whakarewarewa = {
       [90, 90, 60], [60, 50, 30], [115, 50, 40],
       nocut(), [75, 36, 25], [120, 40, 60],
     ]),
-    SURF(SF.GRAVEL), H(335), mark("late"),
+    SURF(SF.GRAVEL), H(335), mark("late"), camber(60, -1.3),
     ...W([
       [85, 100, 80],
-      jump(1.0, 11), S(50),
+      jump(2.4, 10), S(50),
       [55, 60, 35], [100, 55, 30], [65, 42, 25], [110, 42, 30], [80, 36, 40],
       [125, 70, 90],
       [95, 120, 50],
@@ -234,7 +236,7 @@ STAGE_DESIGNS.coromandel = {
     mark("headland"), H(62), SURF(SF.GRAVEL), VERGE(SF.SCREE),
     ...W([
       [85, 120, 60], [55, 70, 30], [100, 65, 40], [70, 90, 80],
-      jump(1.2, 12), S(90),
+      jump(2.4, 10), S(90),
       [110, 150, 60], [75, 110, 50], [95, 130, 150],
     ]),
     SURF(SF.TARMAC), VERGE(SF.GRASS), mark("hp0"), H(58),
@@ -269,45 +271,45 @@ STAGE_DESIGNS.coromandel = {
 STAGE_DESIGNS.otago = {
   bearing0: 85, surf0: SF.PACKED_DIRT, verge0: SF.TUSSOCK, width: 7.4, length: 5000, roll: [4.0, 260],
   items: [
-    H(420), mark("start"), S(90),
+    H(420), mark("start"), S(90), camber(90, 2.0),
     ...W([
-      [105, 300, 100],
+      [114, 78, 60],
       crest(1.5, 28), S(80),
-      [75, 320, 60],
-      jump(1.7, 15), S(100),
-      [110, 160, 70],
-      [78, 90, 40], [105, 85, 40],
-      [55, 45, 30], [95, 40, 50],
+      [70, 82, 36],
+      S(70), jump(2.4, 10), S(100),
+      [121, 66, 41],
+      [75, 62, 24], [114, 58, 24],
+      [42, 40, 17], [100, 38, 29],
     ]),
-    H(455), mark("q1"), SURF(SF.GRAVEL),
+    H(490), mark("q1"), SURF(SF.GRAVEL),
     ...W([
-      [60, 300, 100],
+      [49, 78, 60],
       crest(1.6, 30), S(70), crest(1.3, 26), S(80),
-      [95, 220, 60], [125, 170, 40],
-      [85, 70, 25], [120, 65, 25], [75, 70, 50],
-      [100, 400, 60],
+      [100, 72, 36], [143, 62, 24],
+      [85, 56, 14], [136, 50, 14], [70, 60, 29],
+      [107, 101, 36],
     ]),
-    SURF(SF.PACKED_DIRT), H(430), mark("q2"),
+    SURF(SF.PACKED_DIRT), H(425), mark("q2"), camber(80, -1.4),
     ...W([
-      [75, 240, 60],
-      jump(1.8, 16), S(70),
-      [110, 300, 80], [90, 280, 100],
-      nocut(), [55, 100, 40],
-      [100, 95, 40], [135, 120, 40], [100, 140, 50],
+      [70, 85, 36],
+      S(60), jump(2.4, 10), S(70),
+      [121, 69, 48], [92, 85, 60],
+      nocut(), [42, 66, 24],
+      [107, 70, 24], [158, 80, 24], [107, 72, 29],
     ]),
-    grid(), S(60), H(470),
+    grid(), S(60), H(485), camber(80, 2.4),
     ...W([
-      [70, 360, 100],
+      [63, 78, 60],
       crest(1.4, 28), S(70),
-      [105, 280, 60],
+      [114, 85, 36],
     ]),
-    mark("q3"), S(40), ford(14, 0.5), S(60),
+    H(462), mark("q3"), S(40), ford(14, 0.5), S(70), H(461), S(40),
     ...W([
-      [78, 220, 60],
-      [105, 100, 30], [65, 95, 30], [100, 95, 40],
-      [90, 300, 20],
+      [75, 79, 36],
+      [114, 70, 17], [56, 66, 17], [107, 70, 24],
+      [92, 92, 12],
     ]),
-    H(425), FILL(),
+    H(430), FILL(),
   ],
   shape: [
     { kind: "wall", side: -1, s0: "q2", s1: "q3", fade: 100, start: 6, ramp: 40, amount: 14, farFade: [90, 220] },
@@ -341,7 +343,7 @@ STAGE_DESIGNS.remarkables = {
     H(915), ...TWR([[60, 10, 0]]), mark("L9"),
     ...TWR([[75, 110, 60], [45, 100, 60], [85, 100, 90]]),
     mark("summit"), H(940),
-    ...TWR([[60, 150, 100], jump(1.0, 13), S(60), [100, 140, 100], [75, 160, 100]]),
+    ...TWR([[60, 150, 100], jump(2.4, 10), S(60), [100, 140, 100], [75, 160, 100]]),
     mark("ridge"), H(950),
     ...TW([
       [110, 100, 40], [60, 80, 30], [100, 70, 30], [55, 70, 40], [105, 100, 60], [65, 90, 40],
@@ -355,9 +357,9 @@ STAGE_DESIGNS.remarkables = {
 
 // --- 6. Fiordland Rain: narrow, wet, twisty; fords and a one-lane bridge ---------------------------
 STAGE_DESIGNS.fiordland = {
-  bearing0: 100, surf0: SF.MUD, verge0: SF.LEAF_LITTER, width: 6.0, length: 4800, roll: [3.2, 110], bankGain: 2.2,
+  bearing0: 100, surf0: SF.MUD, verge0: SF.LEAF_LITTER, width: 6.0, length: 5300, roll: [3.2, 110], bankGain: 2.2,
   items: [
-    H(210), mark("start"), S(100),
+    H(210), mark("start"), S(100), camber(80, 2.2),
     ...TWF([
       [75, 90, 40], [115, 70, 30], [85, 55, 30], [120, 80, 50],
       waterfall(-1, 34, 5), S(10),
@@ -377,6 +379,9 @@ STAGE_DESIGNS.fiordland = {
     ]),
     SURF(SF.MUD), H(205), mark("mud"),
     ...TWF([
+      [330, 14, 60], [315, 70, 50], [340, 60, 50], [95, 14, 50],
+    ]),
+    ...TWF([
       [75, 100, 40], [125, 80, 40], [90, 70, 50],
       waterfall(1, 42, 7), S(10),
       [55, 60, 30], [100, 55, 35],
@@ -389,15 +394,19 @@ STAGE_DESIGNS.fiordland = {
       dip(0.6, 12), S(30),
       [75, 70, 30], [105, 70, 35],
     ]),
+    camber(70, -1.4),
     SURF(SF.MUD), H(215), mark("late"),
     ...TWF([
       [60, 85, 40], [115, 50, 25], [75, 50, 25], [120, 50, 25], [85, 55, 40],
       waterfall(-1, 28, 4), S(10),
       [110, 110, 70], [65, 85, 40], [105, 75, 30],
-      jump(0.9, 11), S(50),
+      S(80), jump(2.4, 10), S(50),
       [80, 130, 80], [115, 100, 60], [85, 120, 90],
     ]),
-    H(228), mark("gorge"),
+    H(228), mark("gorge"), camber(90, 2.4),
+    ...TWF([
+      [335, 14, 60], [320, 60, 50], [350, 55, 50], [100, 14, 40],
+    ]),
     ...TWF([
       [60, 80, 30], [110, 70, 25], [70, 70, 20], [125, 90, 40],
       culvert(), [90, 60, 20], [45, 60, 25], [100, 70, 30], [65, 60, 35],

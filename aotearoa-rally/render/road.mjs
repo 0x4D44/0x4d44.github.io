@@ -10,7 +10,7 @@ const NV = 11; // vertices per cross-section
 const ROAD_COMMON = /* glsl */ `
 uniform sampler2D tR0, tR1, tR2, tR3, tR4, tR5;
 uniform sampler2D nR0, nR1, nR2, nR3, nR4, nR5;
-uniform float uHasN[6]; uniform float uInvM[6]; uniform vec3 uEdgeCol; uniform vec3 uTint[6];
+uniform float uHasN[6]; uniform float uInvM[6]; uniform vec3 uEdgeCol; uniform vec3 uTint[6]; uniform vec4 uCar;
 varying vec2 vRUv; varying vec3 vW0; varying vec3 vW1; varying float vVerge; varying float vLat; varying float vHalfW;
 vec3 arRoadTex(int k, vec2 uv, vec2 gx, vec2 gy){
   vec2 q = uv * uInvM[k]; vec2 qx = gx * uInvM[k], qy = gy * uInvM[k];
@@ -42,7 +42,7 @@ mat3 arTBN(vec3 N, vec3 p, vec2 uv){
 `;
 
 function makeRoadMaterial(THREE, SU, textures, stage, cfg) {
-  const U = { uHasN: { value: [] }, uInvM: { value: [] }, uEdgeCol: { value: new THREE.Color(stage.def.palette?.dirtEdge ?? 0x8b7455) }, uTint: { value: [] } };
+  const U = { uHasN: { value: [] }, uInvM: { value: [] }, uEdgeCol: { value: new THREE.Color(stage.def.palette?.dirtEdge ?? 0x8b7455) }, uTint: { value: [] }, uCar: { value: new THREE.Vector4(0, 0, 0, -1) } };
   ROAD_TEX.forEach((n, k) => {
     U["tR" + k] = { value: textures.get(n) };
     const nt = textures.getNormal(n);
@@ -53,7 +53,7 @@ function makeRoadMaterial(THREE, SU, textures, stage, cfg) {
   });
   // light recolour only for procedural fallbacks (real photos keep their own colour)
   const m = new THREE.MeshStandardMaterial({
-    color: 0xffffff, roughness: 0.93, metalness: 0, envMapIntensity: 0.8,
+    color: 0xffffff, roughness: 0.93, metalness: 0, transparent: true, envMapIntensity: 0.8,
     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
   });
   m.onBeforeCompile = (shader) => {
@@ -106,10 +106,18 @@ function makeRoadMaterial(THREE, SU, textures, stage, cfg) {
           rc = mix(rc, vec3(0.62, 0.62, 0.6), mk * 0.85);
           rrough = mix(rrough, 0.6, mk * 0.4);
         }
+        // surface character: tonal patches that hide tiling, oil drip strip down the middle, scattered loose stones near the edges
+        float patchN = smoothstep(0.52, 0.64, vnoise(vWPos.xz * 0.11 + 11.0));
+        rc *= 1.0 - 0.1 * patchN + 0.04 * (vnoise(vWPos.xz * 0.9) - 0.5);
+        float lat0 = abs(aLatM * vHalfW);
+        float oil = (1.0 - smoothstep(0.08, 0.4, lat0)) * smoothstep(0.5, 0.75, vnoise(vec2(vRUv.y * 0.22, 3.1 + floor(vRUv.y / 40.0))));
+        rc *= 1.0 - 0.22 * oil; rrough = mix(rrough, 0.45, oil * 0.5);
+        float stones = step(0.93, h21(floor(vWPos.xz * 38.0))) * (0.3 + 0.7 * edgeLoose);
+        rc *= 1.0 + 0.28 * stones * wGravel;
         // verge: blend toward the roadside earth colour and dither the outer edge into the terrain
         float vg = vVerge;
-        float dth = h21(floor(vWPos.xz * 28.0)) * 0.35 + vnoise(vWPos.xz * 2.3) * 0.65;
-        if (vg > 0.02 && dth < vg * 1.15 - 0.1) discard;
+        float brk = fbm3(vWPos.xz * 1.7) * 0.5 + vnoise(vWPos.xz * 6.0) * 0.18;
+        diffuseColor.a *= 1.0 - smoothstep(0.30, 0.95, vg + (brk - 0.35) * 0.55);
         rc = mix(rc, uEdgeCol * (0.8 + 0.4 * nz), clamp(vg * 1.6, 0.0, 0.9));
         // wet look: darker, puddles in low spots, glossy
         float pud = smoothstep(0.52, 0.66, fbm3(vWPos.xz * 0.28) + 0.18 * rut) * smoothstep(0.35, 0.9, uWet);
@@ -120,8 +128,20 @@ function makeRoadMaterial(THREE, SU, textures, stage, cfg) {
         nTS.xy *= 1.0 - pud * 0.9;
         // snow dust on the verge shoulder
         rc = mix(rc, vec3(0.88, 0.92, 0.98), uSnow * 0.35 * smoothstep(0.4, 1.0, aLatM) * (1.0 - wts[4] / max(tot, 1e-4)));
-        diffuseColor.rgb *= rc;
+        { vec3 vdW = normalize(cameraPosition - vWPos); float frn = pow(1.0 - clamp(vdW.y, 0.0, 1.0), 3.0); float wr = uWet * (0.55 + 0.45 * pud); diffuseColor.rgb = diffuseColor.rgb * rc + fogColor * frn * wr * 0.5; }
         float arRough = rrough;`)
+      .replace("#include <emissivemap_fragment>", `#include <emissivemap_fragment>
+        {
+          vec2 rel = vWPos.xz - uCar.xy; vec2 fw = uCar.zw; vec2 rt = vec2(-fw.y, fw.x);
+          float along = -dot(rel, fw), lat = dot(rel, rt);
+          // along is clamped: ahead of the car it is large and negative, and exp(-along * 0.3) overflowed to +Inf there,
+          // so Inf * smoothstep(..)=0 gave NaN that bloom then spread over the whole frame once the car had a heading.
+          float alongP = clamp(along, 0.0, 60.0);
+          float tlw = (abs(lat) - 0.7) / (0.1 + 0.03 * alongP);
+          float tl = exp(-tlw * tlw) * smoothstep(1.0, 2.6, along) * exp(-alongP * 0.3) * (0.55 + 0.45 * sin(alongP * 7.0 + lat * 3.0));
+          float wetR = smoothstep(0.35, 0.9, uWet);
+          totalEmissiveRadiance += vec3(0.75, 0.07, 0.04) * tl * wetR * (0.35 + 0.5 * uNight) * step(0.5, length(fw));
+        }`)
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = arRough;")
       .replace("#include <normal_fragment_maps>", /* glsl */ `#include <normal_fragment_maps>
         {
@@ -283,7 +303,7 @@ export function createRoad(THREE, { SU, textures, getCfg }) {
           const t = c / (cols - 1) * 2 - 1;
           const lat = t * hw;
           const v = r * cols + c;
-          pos[v * 3] = st.px[i] + nx * lat; pos[v * 3 + 1] = fixedY ?? (st.py[i] + 0.045); pos[v * 3 + 2] = st.pz[i] + nzv * lat;
+          pos[v * 3] = st.px[i] + nx * lat; pos[v * 3 + 1] = fixedY ?? (st.py[i] + 0.075); pos[v * 3 + 2] = st.pz[i] + nzv * lat;
           edge[v] = Math.min(endFade, (1 - Math.abs(t)) * 3.2);
         }
       }
@@ -354,6 +374,7 @@ export function createRoad(THREE, { SU, textures, getCfg }) {
       if (sty.width <= 0) { skid.lift(wheel & 3); return; }
       skid.mark(wheel & 3, contact.x, contact.y, contact.z, yaw, intensity, sty.r, sty.g, sty.b, sty.width);
     },
+    setCar(x, z, fx, fz) { mat?.userData.uniforms.uCar.value.set(x, z, fx, fz); },
     update(wet) {
       if (skidMesh && skid.version !== skidVersion) {
         skidVersion = skid.version;

@@ -73,8 +73,10 @@ test("damage is monotonic across repeated hits and zoned by impact side", () => 
     const flat = [d.engine, d.gearbox, d.steering, d.radiator, d.total, ...d.suspension, ...d.tyres, d.body.front, d.body.rear, d.body.left, d.body.right];
     if (prev) for (let k = 0; k < flat.length; k++) if (flat[k] < prev[k] - 1e-12) regress++;
     prev = flat;
+    // relaunch short of the next tree so the car really takes several hits (damage persists across reset)
+    if (v.state.speed < 2 && impacts >= 1 && impacts < 3) v.reset({ x: 0, y: 0, z: -60 * impacts - 20, yaw: 0 }, 20, st);
   }
-  assert.ok(impacts >= 1);
+  assert.ok(impacts >= 2, "only " + impacts + " impacts");
   assert.equal(regress, 0, "damage decreased without repair");
   assert.ok(v.state.damage.total > 0.1 && v.state.damage.total <= 1);
   // zoning: a hit on the right side hurts the right more than the left; a front hit hurts the front most

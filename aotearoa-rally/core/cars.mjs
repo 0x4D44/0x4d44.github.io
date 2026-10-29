@@ -7,6 +7,15 @@ export const CAR_IDS = ["huia", "kea", "takahe", "piwakawaka"];
 
 const mk = (o) => o;
 
+const SG_KEYS = { gravel: 0, dirt: 1, tarmac: 2, mud: 3, snow: 4, pumice: 5 };
+/** Per-surface tyre-grip multiplier table (13 entries, index = SURFACE id) from a car's `surfGrip` map (default 1). */
+export function surfGripTable(spec) {
+  const t = new Float64Array(13).fill(1);
+  const m = spec.surfGrip;
+  if (m) for (const k in m) if (k in SG_KEYS) t[SG_KEYS[k]] = m[k];
+  return t;
+}
+
 export const CARS = {
   huia: mk({
     id: "huia",
@@ -42,12 +51,13 @@ export const CARS = {
     clutchTorque: 900,
     suspension: { spring: 46000, damper: 4300, travel: 0.23, antiRollFront: 16000, antiRollRear: 9000 },
     aero: { cd: 0.36, area: 2.0, downforce: 0.22 },
+    surfGrip: { gravel: 0.985, dirt: 0.985, tarmac: 0.87, mud: 1.03, snow: 1.05, pumice: 1.0 },
     handling: { gripFront: 1.0, gripRear: 1.0 },
     stats: { power: 8, grip: 8, handling: 7, acceleration: 8, toughness: 7 },
     liveries: [
-      { name: "Kauri Works", body: 0xf2f0e8, accent: 0x1c6b4a, number: 1, sponsor: "Kauri Timber Co." },
-      { name: "Tui Sound", body: 0x1b3b6f, accent: 0xf2c230, number: 2, sponsor: "Tui Audio" },
-      { name: "Pounamu Racing", body: 0x2f7d5d, accent: 0xeeeeee, number: 3, sponsor: "Pounamu Fuels" },
+      { name: "Forest Works", body: 0xf2f0e8, accent: 0x1c6b4a, number: 1, sponsor: "Ridgeline Supplies" },
+      { name: "Harbour Blue", body: 0x1b3b6f, accent: 0xf2c230, number: 2, sponsor: "Cobalt Sound Labs" },
+      { name: "Greenstone Racing", body: 0x2f7d5d, accent: 0xeeeeee, number: 3, sponsor: "Wavecrest Fuel Co." },
     ],
   }),
   kea: mk({
@@ -78,23 +88,24 @@ export const CARS = {
     reverse: 3.3,
     finalDrive: 4.45,
     diff: { front: 0.2, centre: 0.3, rear: 0.2, split: 0.46 },
-    steeringLockDeg: 36,
+    steeringLockDeg: 42,
     brakeBias: 0.64,
     brakeTorque: 4800,
     clutchTorque: 800,
     suspension: { spring: 41000, damper: 3500, travel: 0.22, antiRollFront: 10000, antiRollRear: 5000 },
     aero: { cd: 0.37, area: 1.9, downforce: 0.1 },
-    handling: { gripFront: 1.04, gripRear: 0.94 },
+    surfGrip: { gravel: 0.99, dirt: 0.99, tarmac: 0.885, mud: 1.1, snow: 1.06, pumice: 1.08 },
+    handling: { gripFront: 1.04, gripRear: 0.92 },
     stats: { power: 7, grip: 7, handling: 9, acceleration: 8, toughness: 5 },
     liveries: [
-      { name: "Alpine Parrot", body: 0xe86a1c, accent: 0x1a1a1a, number: 4, sponsor: "Aroha Energy" },
-      { name: "Glacier Pack", body: 0xdfeaf2, accent: 0xd02a2a, number: 5, sponsor: "Southern Ice" },
-      { name: "Night Kea", body: 0x1a1d24, accent: 0x7be0c2, number: 6, sponsor: "Moana Telecom" },
+      { name: "Alpine Parrot", body: 0xe86a1c, accent: 0x1a1a1a, number: 4, sponsor: "Brightcell Drinks" },
+      { name: "Glacier Pack", body: 0xdfeaf2, accent: 0xd02a2a, number: 5, sponsor: "Frostline Coolers" },
+      { name: "Night Kea", body: 0x1a1d24, accent: 0x7be0c2, number: 6, sponsor: "Skylink Wireless" },
     ],
   }),
   takahe: mk({
     id: "takahe",
-    name: "Takahe Spirit",
+    name: "Takahē Spirit",
     tagline: "Light front-drive kit car. Carry your speed and it rewards you.",
     class: "Kit Car",
     drivetrain: "FWD",
@@ -111,7 +122,7 @@ export const CARS = {
     engine: {
       idleRpm: 1000,
       redline: 8400,
-      torqueCurve: [[800, 130], [1500, 185], [2500, 230], [3500, 262], [4500, 285], [5500, 300], [6500, 305], [7500, 285], [8400, 240], [9000, 120]],
+      torqueCurve: [[800, 138], [1500, 196], [2500, 244], [3500, 278], [4500, 302], [5500, 318], [6500, 323], [7500, 302], [8400, 254], [9000, 127]],
       turbo: null,
       inertia: 0.14,
       friction: 1.0,
@@ -120,23 +131,24 @@ export const CARS = {
     reverse: 3.4,
     finalDrive: 4.7,
     diff: { front: 0.55, centre: 0, rear: 0, split: 1 },
-    steeringLockDeg: 34,
+    steeringLockDeg: 31,
     brakeBias: 0.66,
     brakeTorque: 4500,
     clutchTorque: 650,
     suspension: { spring: 38000, damper: 3300, travel: 0.22, antiRollFront: 12000, antiRollRear: 6000 },
     aero: { cd: 0.33, area: 1.8, downforce: 0.14 },
+    surfGrip: { gravel: 1.02, dirt: 0.965, tarmac: 1.04, mud: 0.91, snow: 0.955, pumice: 0.97 },
     handling: { gripFront: 1.05, gripRear: 0.98 },
     stats: { power: 5, grip: 7, handling: 8, acceleration: 6, toughness: 6 },
     liveries: [
-      { name: "Blue Takahe", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: "Fiordland Outfitters" },
-      { name: "Red Tussock", body: 0xc22a2a, accent: 0xf0e2b0, number: 8, sponsor: "Tussock Bank" },
-      { name: "Flax Green", body: 0x6aa84f, accent: 0x222222, number: 9, sponsor: "Harakeke Gear" },
+      { name: "Blue Takahe", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: "Trailhead Outfitters" },
+      { name: "Red Tussock", body: 0xc22a2a, accent: 0xf0e2b0, number: 8, sponsor: "Copperfield Mutual" },
+      { name: "Flax Green", body: 0x6aa84f, accent: 0x222222, number: 9, sponsor: "Greenleaf Gear" },
     ],
   }),
   piwakawaka: mk({
     id: "piwakawaka",
-    name: "Piwakawaka V8",
+    name: "Pīwakawaka V8",
     tagline: "Rear-drive coupe with big power. It loves to slide and rewards a delicate right foot.",
     class: "Rear-Drive Coupe",
     drivetrain: "RWD",
@@ -162,18 +174,19 @@ export const CARS = {
     reverse: 3.1,
     finalDrive: 4.05,
     diff: { front: 0, centre: 0, rear: 0.5, split: 0 },
-    steeringLockDeg: 36,
+    steeringLockDeg: 30,
     brakeBias: 0.58,
     brakeTorque: 5000,
     clutchTorque: 1000,
     suspension: { spring: 40000, damper: 3600, travel: 0.23, antiRollFront: 11000, antiRollRear: 5000 },
     aero: { cd: 0.34, area: 1.95, downforce: 0.12 },
+    surfGrip: { gravel: 0.97, dirt: 0.98, tarmac: 1.07, mud: 0.96, snow: 1.08, pumice: 0.97 },
     handling: { gripFront: 1.0, gripRear: 0.97 },
     stats: { power: 9, grip: 6, handling: 6, acceleration: 7, toughness: 6 },
     liveries: [
-      { name: "Fantail Gold", body: 0xe4b21c, accent: 0x14141c, number: 10, sponsor: "Piwakawaka Pies" },
-      { name: "Pacific Silver", body: 0xb9c2cc, accent: 0x1b6fa8, number: 11, sponsor: "Pacific Freight" },
-      { name: "Ember", body: 0x8a1f1a, accent: 0xf0c36a, number: 12, sponsor: "Ember Hot Sauce" },
+      { name: "Fantail Gold", body: 0xe4b21c, accent: 0x14141c, number: 10, sponsor: "Goldcrust Bakery" },
+      { name: "Pacific Silver", body: 0xb9c2cc, accent: 0x1b6fa8, number: 11, sponsor: "Longhaul Freight Group" },
+      { name: "Ember", body: 0x8a1f1a, accent: 0xf0c36a, number: 12, sponsor: "Cinderpot Foods" },
     ],
   }),
 };

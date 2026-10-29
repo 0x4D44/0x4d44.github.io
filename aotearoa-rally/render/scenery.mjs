@@ -262,7 +262,7 @@ function conifer(mb, P, o, lod, v) {
       const sx = Math.cos(az), sz = -Math.sin(az);
       const nn = [Math.sin(az) * 0.8, 0.45, Math.cos(az) * 0.8];
       const tcol = j % 2 ? P.f1 : P.f2;
-      mb.colorV(tcol, (0.78 + 0.35 * hs(k * 13 + j, v)) * tint);
+      mb.colorV(tcol, (0.78 + 0.35 * hs(k * 13 + j, v)) * tint * (0.68 + 0.42 * t));
       mb.card(0, y, 0, dx, dy, dz, sx, 0, sz, W, L, nn, [0, -L * droop, 0], 1, 2);
     }
   }
@@ -317,7 +317,7 @@ function broadleaf(mb, P, o, lod, v) {
       const sz = cardSize * (lod === 0 ? 1.3 : 2.0) * (0.8 + hs(k, q) * 0.5);
       const isRed = red && hs(k * 3 + q, v) < red;
       if (isRed) mb.colorV(P.accent, 1.2);
-      else mb.colorV(hs(k, q + 3) < 0.5 ? P.f1 : P.f2, (0.75 + 0.4 * hs(k + 9, q)) * tint);
+      else mb.colorV(hs(k, q + 3) < 0.5 ? P.f1 : P.f2, (0.75 + 0.4 * hs(k + 9, q)) * tint * (0.66 + 0.4 * r + 0.18 * Math.max(-1, Math.min(1, (cy - crownY) / (crownR * 0.6)))));
       mb.card(cx - dx * sz * 0.4, cy - dy * sz * 0.4, cz - dz * sz * 0.4, dx, dy, dz, dz, 0, -dx, sz, sz, nn, [0, -sz * 0.25, 0], 1, 1);
     }
   }
@@ -377,20 +377,38 @@ function rockKind(mb, P, o, lod, v) {
 }
 
 function person(mb, P, v, kind) {
-  const shirts = [[0.75, 0.12, 0.1], [0.12, 0.3, 0.7], [0.9, 0.8, 0.15], [0.15, 0.55, 0.3], [0.85, 0.85, 0.85], [0.5, 0.15, 0.5]];
-  const skin = [[0.8, 0.58, 0.45], [0.55, 0.38, 0.28], [0.9, 0.7, 0.58], [0.4, 0.27, 0.2]];
-  const sh = kind === "marshal" ? [1.0, 0.42, 0.04] : shirts[v % shirts.length];
-  const pants = kind === "marshal" ? [0.12, 0.14, 0.2] : [0.12 + 0.1 * (v % 3), 0.14, 0.2];
-  const sk = skin[(v * 3 + 1) % skin.length];
+  // variety by variant: jacket colour, trousers, hat, cheering arms, child scale, backpack
+  const jackets = [[0.75, 0.12, 0.1], [0.12, 0.3, 0.7], [0.9, 0.78, 0.12], [0.15, 0.5, 0.3], [0.86, 0.86, 0.84], [0.5, 0.15, 0.5], [0.95, 0.45, 0.1], [0.1, 0.1, 0.12]];
+  const trousers = [[0.14, 0.16, 0.3], [0.2, 0.2, 0.22], [0.35, 0.28, 0.2], [0.1, 0.1, 0.12], [0.25, 0.32, 0.45]];
+  const skin = [[0.8, 0.58, 0.45], [0.55, 0.38, 0.28], [0.9, 0.7, 0.58], [0.4, 0.27, 0.2], [0.7, 0.5, 0.38]];
+  const marshal = kind === "marshal";
+  const h1 = (k) => hs(v * 13 + 5, k);
+  const sh = marshal ? [0.98, 0.5, 0.04] : jackets[Math.floor(h1(1) * jackets.length)];
+  const pants = marshal ? [0.1, 0.12, 0.2] : trousers[Math.floor(h1(2) * trousers.length)];
+  const sk = skin[Math.floor(h1(3) * skin.length)];
+  const child = !marshal && h1(4) > 0.78;
+  const cheer = !marshal && h1(5) > 0.5;
+  const hat = marshal ? 1 : Math.floor(h1(6) * 4); // 0 none, 1 cap/helmet, 2 beanie, 3 wide hat
+  mb.at(0, 0, 0, 0, 0, 0, child ? 0.66 : 0.94 + 0.12 * h1(7));
   mb.cellName("fabric");
   mb.sway(0);
-  for (const sd of [-1, 1]) { mb.color(...pants); mb.at(sd * 0.1, 0, 0); mb.cyl(0.075, 0.065, 0.85, 6, { tile: 3 }); mb.pop(); }
-  mb.color(...sh); mb.at(0, 0.82, 0); mb.cyl(0.19, 0.17, 0.62, 7, { tile: 3 }); mb.pop();
-  if (kind === "marshal") { mb.color(0.9, 0.9, 0.8); mb.at(0, 1.1, 0); mb.cyl(0.195, 0.195, 0.07, 7, { tile: 3 }); mb.pop(); }
-  for (const sd of [-1, 1]) { mb.color(...sh); mb.at(sd * 0.25, 1.4, 0, 0, 0, sd * 0.12); mb.cyl(0.055, 0.045, -0.55, 5, { tile: 3 }); mb.pop(); mb.color(...sk); mb.at(sd * 0.29, 0.83, 0); mb.ellipsoid(0.05, 0.05, 0.05, 5, 3); mb.pop(); }
-  mb.color(...sk); mb.at(0, 1.55, 0); mb.ellipsoid(0.105, 0.125, 0.115, 7, 5); mb.pop();
-  if (kind === "marshal") { mb.color(0.95, 0.95, 0.95); mb.at(0, 1.62, 0); mb.ellipsoid(0.125, 0.09, 0.13, 7, 3); mb.pop(); }
-  else { mb.color(0.15 + 0.2 * hs(v, 3), 0.1, 0.06); mb.at(0, 1.6, -0.01); mb.ellipsoid(0.11, 0.08, 0.115, 6, 3); mb.pop(); }
+  for (const sd of [-1, 1]) { mb.color(...pants); mb.at(sd * 0.1, 0.07, 0); mb.cyl(0.078, 0.066, 0.8, 6, { tile: 3 }); mb.pop(); mb.color(0.08, 0.08, 0.09); mb.at(sd * 0.1, 0, 0.04); mb.ellipsoid(0.075, 0.045, 0.12, 6, 3); mb.pop(); }
+  mb.color(...sh); mb.at(0, 0.82, 0); mb.cyl(0.2, 0.175, 0.64, 8, { tile: 3 }); mb.pop();
+  mb.color(...sh); mb.at(0, 1.4, 0); mb.ellipsoid(0.215, 0.09, 0.14, 8, 3); mb.pop(); // shoulders
+  if (marshal) { for (const y of [0.98, 1.2]) { mb.color(0.85, 0.88, 0.8); mb.at(0, y, 0); mb.cyl(0.205, 0.205, 0.05, 8, { tile: 3 }); mb.pop(); } }
+  else if (h1(8) > 0.65) { mb.color(...jackets[(Math.floor(h1(9) * 8) + 3) % 8]); mb.at(0, 0.9, -0.17); mb.box(0.26, 0.38, 0.12); mb.pop(); } // backpack
+  for (const sd of [-1, 1]) {
+    mb.color(...sh);
+    if (cheer) { mb.at(sd * 0.23, 1.38, 0, 0, 0, -sd * (0.35 + 0.25 * h1(10))); mb.cyl(0.058, 0.046, 0.52, 5, { tile: 3 }); mb.pop(); mb.color(...sk); mb.at(sd * (0.23 + 0.2 + 0.1 * h1(10)), 1.88, 0); mb.ellipsoid(0.055, 0.055, 0.055, 5, 3); mb.pop(); }
+    else { mb.at(sd * 0.25, 1.4, 0, 0, 0, sd * 0.12); mb.cyl(0.058, 0.046, -0.55, 5, { tile: 3 }); mb.pop(); mb.color(...sk); mb.at(sd * 0.29, 0.83, 0); mb.ellipsoid(0.052, 0.052, 0.052, 5, 3); mb.pop(); }
+  }
+  mb.color(...sk); mb.at(0, 1.43, 0); mb.cyl(0.05, 0.055, 0.1, 5, { tile: 3 }); mb.pop();
+  mb.color(...sk); mb.at(0, 1.56, 0); mb.ellipsoid(0.105, 0.125, 0.115, 8, 5); mb.pop();
+  if (hat === 1) { mb.color(...(marshal ? [0.95, 0.95, 0.95] : jackets[Math.floor(h1(11) * 8)])); mb.at(0, 1.63, 0); mb.ellipsoid(0.12, 0.085, 0.13, 8, 3); mb.pop(); mb.at(0, 1.62, 0.1); mb.box(0.18, 0.02, 0.1); mb.pop(); }
+  else if (hat === 2) { mb.color(...jackets[Math.floor(h1(12) * 8)]); mb.at(0, 1.62, 0); mb.ellipsoid(0.115, 0.1, 0.12, 8, 4); mb.pop(); }
+  else if (hat === 3) { mb.color(0.45, 0.36, 0.22); mb.at(0, 1.64, 0); mb.cyl(0.22, 0.22, 0.02, 10, { tile: 3 }); mb.pop(); mb.at(0, 1.64, 0); mb.cyl(0.11, 0.1, 0.1, 8, { tile: 3 }); mb.pop(); }
+  else { mb.color(0.15 + 0.3 * h1(13), 0.1 + 0.12 * h1(13), 0.06); mb.at(0, 1.61, -0.01); mb.ellipsoid(0.11, 0.08, 0.115, 6, 3); mb.pop(); }
+  mb.pop();
 }
 
 function signPlate(mb, post, w, h, yTop, fn) {
@@ -530,7 +548,7 @@ const BUILD = {
     mb.at(0, 0.52, 0); mb.box(0.1, 0.3, 6.0, { yBase: false }); mb.pop();
     mb.color(0.5, 0.5, 0.52); for (const z of [-2.9, 0, 2.9]) { mb.at(-0.12, 0, z); mb.cyl(0.05, 0.05, 0.8, 5); mb.pop(); }
   },
-  tyre_stack: (mb, P, lod, v) => { mb.cellName("white"); for (let k = 0; k < 3; k++) { mb.color(k === 1 && v % 2 ? 0.9 : 0.07, k === 1 && v % 2 ? 0.9 : 0.07, k === 1 && v % 2 ? 0.88 : 0.075); mb.at(0, 0.12 + k * 0.24, 0); mb.torus(0.3, 0.12, lod === 0 ? 14 : 8, 6); mb.pop(); } },
+  tyre_stack: (mb, P, lod, v) => { mb.cellName("white"); for (let k = 0; k < 5; k++) { mb.color(k === 1 && v % 2 ? 0.9 : 0.07, k === 1 && v % 2 ? 0.9 : 0.07, k === 1 && v % 2 ? 0.88 : 0.075); mb.at(0, 0.12 + k * 0.24, 0); mb.torus(0.3, 0.12, lod === 0 ? 14 : 8, 6); mb.pop(); } },
   flag: (mb, P, lod, v) => {
     mb.sway(0); mb.cellName("metal"); mb.color(0.7, 0.7, 0.72); mb.cyl(0.03, 0.025, 4.2, 6, { tile: 4 });
     mb.cellName("white"); const cols = [[0.85, 0.12, 0.1], [0.95, 0.8, 0.1], [0.12, 0.3, 0.7]]; mb.color(...cols[v % 3]);
@@ -572,6 +590,18 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   let atlas = null, mat = null;
   let stage = null, P = null;
   const meshes = new Map(); // key -> { mesh, kind, lod, tri, cap }
+  // baked-style ambient occlusion: soft dark blobs on the ground under trees and rocks (one instanced draw call)
+  const AO_MAX = 1400;
+  const AO_R = { pine: 2.6, redwood: 5.5, beech: 3.4, kauri: 4.2, macrocarpa: 4, pohutukawa: 3.6, boulder: 1.9, limestone: 2.6, schist: 3.2, tree_fern: 1.8, cabbage_tree: 1.2, stump: 0.9, log: 1.8 };
+  const aoGeo = new THREE.PlaneGeometry(2, 2); aoGeo.rotateX(-Math.PI / 2);
+  const aoMesh = new THREE.InstancedMesh(aoGeo, new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, fog: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    vertexShader: "varying vec2 vU; void main(){ vU = position.xz; gl_Position = projectionMatrix * viewMatrix * modelMatrix * instanceMatrix * vec4(position, 1.0); }",
+    fragmentShader: "precision highp float; varying vec2 vU; void main(){ float r = length(vU); float a = smoothstep(1.0, 0.1, r) * 0.42; if (a < 0.01) discard; gl_FragColor = vec4(0.02, 0.025, 0.02, a); }",
+  }), AO_MAX);
+  aoMesh.frustumCulled = false; aoMesh.count = 0; aoMesh.visible = false; aoMesh.renderOrder = 1;
+  aoMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  group.add(aoMesh);
   const geomCache = new Map();
   const cell = 64;
   let cellMap = new Map();
@@ -584,7 +614,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   const colTmp = new THREE.Color();
 
   const SPAN = { fence_wire: { l: 1 }, tape_barrier: { l: 6 }, guardrail: { l: 6 }, bridge_rail: { l: 3 }, bridge_deck: { w: 5.4, l: 12 }, cattlegrid: { w: 6.6, l: 3.0 }, culvert: { w: 2.6 }, banner_arch: { w: 10.8 } };
-  const VARIANTS = { pine: 2, redwood: 2, beech: 2, macrocarpa: 2, pohutukawa: 2, kauri: 1, boulder: 2, limestone: 2, schist: 2, spectator: 4, spectator_group: 2, car_parked: 3, haybale: 2, cow: 2, flag: 3, tent: 3, tyre_stack: 2, tree_fern: 2, cabbage_tree: 2, flax: 2, tussock: 2, fern: 2, toetoe: 1 };
+  const VARIANTS = { pine: 2, redwood: 2, beech: 2, macrocarpa: 2, pohutukawa: 2, kauri: 1, boulder: 2, limestone: 2, schist: 2, spectator: 8, spectator_group: 4, car_parked: 3, haybale: 2, cow: 2, flag: 3, tent: 3, tyre_stack: 2, tree_fern: 2, cabbage_tree: 2, flax: 2, tussock: 2, fern: 2, toetoe: 1 };
 
   function geometryFor(kind, v, lod) {
     const key = kind + "|" + v + "|" + lod;
@@ -596,6 +626,41 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     g.userData.tris = mb.i.length / 3;
     geomCache.set(key, g);
     return g;
+  }
+
+  /** Dense render-only undergrowth beside the road (ferns, flax, tussock, tufts); the stage's own props are untouched. */
+  const COVER = {
+    pasture: [["grass_tuft", 5, 1.0, 1.7], ["flax", 1, 0.8, 1.3]],
+    redwood: [["fern", 6, 0.9, 1.6], ["grass_tuft", 1, 0.8, 1.2]],
+    coast: [["flax", 3, 0.8, 1.4], ["grass_tuft", 4, 1, 1.6], ["toetoe", 1, 0.8, 1.2]],
+    tussock: [["tussock", 4, 0.8, 1.4], ["grass_tuft", 3, 1, 1.5]],
+    alpine: [["tussock", 3, 0.6, 1.0], ["grass_tuft", 1, 0.7, 1.0]],
+    rainforest: [["fern", 7, 1.0, 1.9], ["shrub", 1, 0.7, 1.1]],
+  };
+  function groundCover(st, biome) {
+    const tbl = COVER[biome];
+    if (!tbl || !st.px || !st.N) return [];
+    const out = [];
+    let wsum = 0; for (const t of tbl) wsum += t[1];
+    const step = Math.max(2, Math.round(2.0 / (st.ds || 1)));
+    const mAlpine = biome === "alpine" ? 0.5 : 1;
+    for (let i = 2; i < st.N - 2; i += step) {
+      for (let side = -1; side <= 1; side += 2) for (let k = 0; k < 5; k++) {
+        const id = i * 12 + (side > 0 ? 6 : 0) + k;
+        if (hs(id, 71) > 0.8 * mAlpine) continue;
+        const tx = st.px[i + 1] - st.px[i - 1], tz = st.pz[i + 1] - st.pz[i - 1], tl = Math.hypot(tx, tz) || 1;
+        const nx = -tz / tl, nz = tx / tl;
+        const hw = Math.max(1.5, st.width[i] * 0.5);
+        const lat = side * (hw + 1.0 + Math.pow(hs(id, 72), 1.5) * 13);
+        const x = st.px[i] + nx * lat + (hs(id, 73) - 0.5) * 2.0, z = st.pz[i] + nz * lat + (hs(id, 74) - 0.5) * 2.0;
+        const y = st.heightAt(x, z);
+        if (!(y > (st.seaLevel ?? 0) + 0.35)) continue;
+        let r = hs(id, 75) * wsum, pick = tbl[0];
+        for (const t of tbl) { if (r < t[1]) { pick = t; break; } r -= t[1]; }
+        out.push({ kind: pick[0], x, y, z, rot: hs(id, 76) * TAU, scale: pick[2] + hs(id, 77) * (pick[3] - pick[2]), variant: (hs(id, 78) * 4) | 0 });
+      }
+    }
+    return out;
   }
 
   function ensureMesh(kind, v, lod, cap) {
@@ -614,7 +679,14 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     mesh.castShadow = !!t.cast && getCfg().shadows && lod === 0;
     mesh.receiveShadow = true;
     group.add(mesh);
-    e = { mesh, kind, lod, tri: g.userData.tris, cap, key };
+    e = { mesh, kind, lod, tri: g.userData.tris, cap, key, nS: 0 };
+    if (mesh.castShadow) {
+      // shadow passes draw fewer instances: near cascade = the near-ring prefix, far cascade = trees only (keeps tris in budget)
+      const ent = e, treeLike = t.dens === "tree";
+      let saved = 0;
+      mesh.onBeforeShadow = (r, o, cam, shCam) => { saved = mesh.count; mesh.count = shCam.userData.far ? (treeLike ? saved : 0) : Math.min(saved, ent.nS); };
+      mesh.onAfterShadow = () => { mesh.count = saved; };
+    }
     meshes.set(key, e);
     return e;
   }
@@ -629,7 +701,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
       P = paletteFor(THREE, palette ?? st.def.palette);
       atlas = buildPropAtlas(THREE, textures, { cell: cfg.texScale < 1 ? 256 : 512, anisotropy: cfg.anisotropy });
       mat = createPropMaterial(THREE, atlas, SU, { alphaToCoverage: cfg.alphaToCoverage });
-      const props = st.props ?? [];
+      const props = (st.props ?? []).concat(groundCover(st, st.def.biome));
       const n = props.length;
       X = new Float32Array(n); Y = new Float32Array(n); Z = new Float32Array(n); R = new Float32Array(n); S = new Float32Array(n);
       K = new Uint8Array(n); Vv = new Uint8Array(n); LN = new Float32Array(n); WD = new Float32Array(n);
@@ -706,7 +778,9 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     maxR = Math.min(maxR, getCfg().viewDist);
     const cr = Math.ceil(maxR / cell) + 1;
     const ccx = Math.floor(cx / cell), ccz = Math.floor(cz / cell);
-    for (const e of meshes.values()) e.n = 0;
+    for (const e of meshes.values()) { e.n = 0; e.nS = 0; }
+    let aoN = 0;
+    let crossed = false;
     let total = 0;
     const budget = cfg.maxPropInstances;
     const dens = cfg.density;
@@ -720,6 +794,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     const swMat = m4.elements;
     for (let oi = 0; oi < order.length && total < budget; oi++) {
       const [, dx, dz] = order[oi];
+      if (!crossed && Math.sqrt(order[oi][0]) * cell > 80) { crossed = true; for (const e of meshes.values()) e.nS = e.n; }
       const arr = cellMap.get((ccx + dx + 4096) * 8192 + (ccz + dz + 4096));
       if (!arr) continue;
       for (let a = 0; a < arr.length; a++) {
@@ -758,19 +833,22 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
         const c = Math.cos(R[i]), sn = Math.sin(R[i]);
         const o = e.n * 16, ar = e.mesh.instanceMatrix.array;
         ar[o] = c * sxx; ar[o + 1] = 0; ar[o + 2] = -sn * sxx; ar[o + 3] = 0;
-        ar[o + 4] = 0; ar[o + 5] = sy; ar[o + 6] = 0; ar[o + 7] = 0;
+        const ln = tbl.dens === "tree" ? (hs(i, 12) - 0.5) * 0.14 : 0, ln2 = tbl.dens === "tree" ? (hs(i, 13) - 0.5) * 0.14 : 0;
+        ar[o + 4] = ln * sy; ar[o + 5] = sy; ar[o + 6] = ln2 * sy; ar[o + 7] = 0;
         ar[o + 8] = sn * szz; ar[o + 9] = 0; ar[o + 10] = c * szz; ar[o + 11] = 0;
         ar[o + 12] = X[i]; ar[o + 13] = Y[i] - 0.04; ar[o + 14] = Z[i]; ar[o + 15] = 1;
-        const tint = 0.86 + 0.28 * hs(i, 9);
+        const tint = tbl.dens === "tree" ? 0.78 + 0.44 * hs(i, 9) : 0.86 + 0.28 * hs(i, 9);
         const ca = e.mesh.instanceColor.array, oc = e.n * 3;
-        ca[oc] = tint * (0.97 + 0.06 * hs(i, 10)); ca[oc + 1] = tint; ca[oc + 2] = tint * (0.97 + 0.06 * hs(i, 11));
+        const hue = tbl.dens === "tree" ? 0.12 : 0.06; ca[oc] = tint * (1 - hue / 2 + hue * hs(i, 10)); ca[oc + 1] = tint; ca[oc + 2] = tint * (1 - hue / 2 + hue * hs(i, 11) * 0.8);
         e.n++;
+        if (aoN < AO_MAX && d < 75 && AO_R[kind]) { const r = AO_R[kind] * S[i] * (0.9 + 0.3 * hs(i, 14)), ao = aoMesh.instanceMatrix.array, q = aoN * 16; ao[q] = r; ao[q + 1] = 0; ao[q + 2] = 0; ao[q + 3] = 0; ao[q + 4] = 0; ao[q + 5] = 1; ao[q + 6] = 0; ao[q + 7] = 0; ao[q + 8] = 0; ao[q + 9] = 0; ao[q + 10] = r; ao[q + 11] = 0; ao[q + 12] = X[i]; ao[q + 13] = Y[i] + 0.05; ao[q + 14] = Z[i]; ao[q + 15] = 1; aoN++; }
         total++;
       }
     }
     let tris = 0, ms = 0;
     for (const e of meshes.values()) {
       e.mesh.count = e.n;
+      if (!crossed) e.nS = e.n;
       e.mesh.visible = e.n > 0;
       if (e.n > 0) {
         ms++;
@@ -779,6 +857,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
         const ic = e.mesh.instanceColor; ic.clearUpdateRanges?.(); ic.addUpdateRange?.(0, e.n * 3); ic.needsUpdate = true;
       }
     }
+    aoMesh.count = aoN; aoMesh.visible = aoN > 0; aoMesh.instanceMatrix.needsUpdate = true;
     cullStats.instances = total; cullStats.triangles = tris; cullStats.meshes = ms;
   }
 
@@ -837,7 +916,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   function setupFalls(props) {
     for (const p of props) {
       if (p.kind !== "waterfall") continue;
-      const w = (p.w ?? 3.2) * (p.scale ?? 1), h = (p.h ?? 26) * (p.scale ?? 1);
+      const w = (p.w ?? 3.2) * (p.scale ?? 1) * 1.6, h = (p.h ?? 26) * (p.scale ?? 1) * 1.2;
       const g = new THREE.PlaneGeometry(w, h, 1, 1);
       g.translate(0, h / 2, 0);
       const m = new THREE.ShaderMaterial({
@@ -851,9 +930,9 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
             float edge = smoothstep(0.0, 0.18, x) * smoothstep(1.0, 0.82, x);
             float streak = vnoise(vec2(x * 22.0 + uSeed, y * 2.2 + uTime * 2.4)) * 0.6 + vnoise(vec2(x * 50.0 + uSeed * 2.0, y * 5.0 + uTime * 4.0)) * 0.4;
             float foam = smoothstep(0.18, 0.0, y) * (0.6 + 0.4 * vnoise(vec2(x * 14.0, uTime * 3.0)));
-            float a = edge * (0.35 + 0.55 * streak) * smoothstep(1.0, 0.9, y) + foam;
-            vec3 c = mix(vec3(0.7, 0.78, 0.82), vec3(1.0), streak * 0.8 + foam) * (0.55 + 0.45 * (1.0 - uNight) + 0.15);
-            gl_FragColor = vec4(c, clamp(a, 0.0, 0.85) * 0.8);
+            float a = edge * (0.5 + 0.55 * streak) * smoothstep(1.0, 0.9, y) + foam * 1.4;
+            vec3 c = mix(vec3(0.7, 0.78, 0.82), vec3(1.0), streak * 0.8 + foam) * (0.55 + 0.45 * (1.0 - uNight) + 0.15 + 0.55 * uNight);
+            gl_FragColor = vec4(c, clamp(a, 0.0, 0.9) * 0.9);
           }`,
       });
       const mesh = new THREE.Mesh(g, m);

@@ -1,14 +1,16 @@
 // World renderer: createWorld(canvas, opts) -> world (see CONTRACTS.md section 4).
 import * as THREE from "three";
 import { loadTextureSet } from "./textures.mjs";
-import { createSharedUniforms } from "./materials.mjs";
+import { createSharedUniforms, createWaterMaterial } from "./materials.mjs";
 import { createTerrain } from "./terrain.mjs";
 import { createRoad } from "./road.mjs";
 import { createScenery } from "./scenery.mjs";
 import { createSky, createLighting, sunDirection } from "./sky.mjs";
 import { createWeather } from "./weather.mjs";
+import { createSplash, sprayAmount, inWaterSpan } from "./splash.mjs";
+import { createSea } from "./sea.mjs";
 import { createPost } from "./post.mjs";
-import { QUALITY, QUALITY_LEVELS, createGovernor, guessTier, normalizeQuality, percentile, tierBelow } from "./quality.mjs";
+import { QUALITY, QUALITY_LEVELS, createGovernor, forceVisible, guessTier, normalizeQuality, percentile, tierBelow } from "./quality.mjs";
 
 // per-biome colour grade: lift (shadow tint), gain (highlight tint), saturation, contrast, vignette, bloom
 const GRADES = {
@@ -65,8 +67,10 @@ export async function createWorld(canvas, opts = {}) {
   const sky = createSky(THREE, { getCfg });
   const lighting = createLighting(THREE, scene, getCfg);
   const weather = createWeather(THREE, { SU, getCfg });
+  const splash = createSplash(THREE);
+  const sea = createSea(THREE, SU, createWaterMaterial);
   const post = createPost(THREE, renderer, scene, camera);
-  scene.add(sky.mesh, terrain.group, road.group, scenery.group, weather.group, dynamicRoot);
+  scene.add(sky.mesh, terrain.group, road.group, scenery.group, weather.group, splash.group, sea.group, dynamicRoot);
   scene.fog = new THREE.FogExp2(0xaabbcc, 0.001);
 
   const governor = createGovernor();
@@ -100,7 +104,7 @@ export async function createWorld(canvas, opts = {}) {
   function applyQuality(level, silent) {
     tier = level;
     cfg = QUALITY[tier];
-    lighting.setShadowMap(cfg.shadowMap, cfg.shadowRange, false, cfg.shadows);
+    lighting.setShadowMap(cfg.shadowMap, cfg.shadowRange, !!cfg.shadowCascade2, cfg.shadows, cfg.shadowFar);
     renderer.shadowMap.enabled = cfg.shadows;
     textures.setAnisotropy(Math.min(cfg.anisotropy, renderer.capabilities.getMaxAnisotropy()));
     post.configure(cfg);
@@ -111,6 +115,7 @@ export async function createWorld(canvas, opts = {}) {
     if (S.stage && !silent) {
       terrain.refreshQuality(); road.refreshQuality(); scenery.refreshQuality(); weather.rebuild();
       weather.setWeather(S.def.environment, S.weatherOverride);
+      sky.setEnvironment(S.def.environment, S.sunDir, S.mood);
       configureFog();
       applyGrade();
     }
@@ -145,6 +150,15 @@ export async function createWorld(canvas, opts = {}) {
     SU.uFogBoost.value = 0.35 + 1.3 * w.mist + 0.4 * w.rainAmt;
     SU.uSunDir.value.copy(S.sunDir);
     sky.uniforms.uMist.value = w.mist * 0.5;
+    const precip = Math.max(w.rainAmt, w.snowAmt);
+    if (precip > 0) {
+      // precipitation implies overcast: heavy cloud cover and a greyed, darker dome
+      const u = sky.uniforms;
+      u.uCover.value = Math.max(u.uCover.value, 0.6 + 0.4 * precip);
+      const grey = Math.min(1, precip * 0.7);
+      u.uTop.value.lerp(u.uHorizon.value, grey * 0.6).multiplyScalar(1 - 0.25 * grey);
+      u.uHorizon.value.lerp(scene.fog.color, grey * 0.7);
+    }
     sky.uniforms.uWetSky.value = Math.min(1, w.rainAmt * 0.9 + w.snowAmt * 0.6);
   }
 
@@ -167,6 +181,7 @@ export async function createWorld(canvas, opts = {}) {
     weather.setWeather(env, S.weatherOverride);
     S.mood.wetSky = Math.min(1, weather.state.rainAmt); S.mood.mist = weather.state.mist;
     sky.setEnvironment(env, S.sunDir, S.mood);
+    sky.setBiome(stage.def.biome);
     configureFog();
     renderer.toneMappingExposure = 1 + 0.9 * (1 - lit.day) + (stage.def.biome === "alpine" ? 0.05 : 0);
     environment.sunDir.x = S.sunDir.x; environment.sunDir.y = S.sunDir.y; environment.sunDir.z = S.sunDir.z;
@@ -188,6 +203,7 @@ export async function createWorld(canvas, opts = {}) {
     camera.updateProjectionMatrix();
     onProgress(0.45, "road");
     road.setStage(stage);
+    sea.setStage(stage, stage.def.biome, Math.min(getCfg().viewDist, 1600));
     onProgress(0.5, "scenery");
     await scenery.setStage(stage);
     const sp = stage.startPose ?? { x: stage.px[0], y: stage.py[0], z: stage.pz[0], yaw: 0 };
@@ -207,7 +223,7 @@ export async function createWorld(canvas, opts = {}) {
 
   function disposeStage() {
     S.ready = false;
-    terrain.disposeStage(); road.disposeStage(); scenery.disposeStage();
+    terrain.disposeStage(); road.disposeStage(); scenery.disposeStage(); sea.dispose();
     S.envRT?.dispose(); S.envRT = null; scene.environment = null;
     S.stage = null;
   }
@@ -231,13 +247,32 @@ export async function createWorld(canvas, opts = {}) {
     const w = weather.state;
     terrain.update(S.camPos, S.carPos);
     road.update(SU.uWet.value);
+    if (spd > 1) { S.fx = cv.x / spd; S.fz = cv.z / spd; }
+    road.setCar(S.carPos.x, S.carPos.z, S.fx ?? 0, S.fz ?? 0);
     scenery.update(camera, S.time);
+    sea.update(S.camPos);
     weather.update(dt, S.time, S.camPos, S.carPos, cv, 0.6 + 0.55 * S.mood.day * (1 - 0.35 * w.rainAmt), S.def.environment.fogColor);
+    splash.update(S.time, S.carPos, cv, S.carPos.y - 0.2, sprayAmount(inWaterSpan(S.stage.water, S.carPos.x, S.carPos.z), SU.uWet.value, spd), 0.6 + 0.55 * S.mood.day);
     lighting.update(S.carPos, S.carYaw, spd, weather.state.flash);
     sky.update(S.time, S.camPos, { x: weather.wind.x * weather.wind.strength * 4, z: weather.wind.z * weather.wind.strength * 4 }, weather.state.flash);
     environment.windVec.x = weather.wind.x * weather.wind.strength * 8; environment.windVec.z = weather.wind.z * weather.wind.strength * 8;
     environment.flash = weather.state.flash;
     environment.sunIntensity = lighting.sun.intensity;
+  }
+
+  /** Compile every program (weather, flare, post, shadow variants) and draw one frame so the first drive has no stall.
+   *  Call after the game has attached the car visual and FX. */
+  async function warmup() {
+    if (!S.stage) return;
+    const objs = [];
+    scene.traverse((o) => { if (o !== scene && !o.isLight) objs.push(o); });
+    const restore = forceVisible(objs);
+    try {
+      try { await renderer.compileAsync(scene, camera); } catch { /* ignore */ }
+      renderer.shadowMap.needsUpdate = true;
+      if (post.enabled) post.render(0.016); else renderer.render(scene, camera);
+      renderer.getContext().finish();
+    } finally { restore(); renderer.info.reset(); S.lastRender = 0; }
   }
 
   const noPost = { w: 0 };
@@ -288,7 +323,7 @@ export async function createWorld(canvas, opts = {}) {
 
   const world = {
     THREE, renderer, scene, camera, dynamicRoot, environment, textures,
-    setStage, update, render, resize, getStats, disposeStage,
+    setStage, update, render, warmup, resize, getStats, disposeStage,
     get quality() { return requested; },
     get effectiveQuality() { return tier; },
     setQuality(level) {
@@ -306,7 +341,7 @@ export async function createWorld(canvas, opts = {}) {
     get stageObjects() { return { terrain, road, scenery, sky, lighting, weather, post }; },
     dispose() {
       disposeStage();
-      post.dispose(); weather.dispose(); sky.dispose(); lighting.dispose(); textures.dispose();
+      post.dispose(); weather.dispose(); splash.dispose(); sky.dispose(); lighting.dispose(); textures.dispose();
       renderer.dispose();
     },
   };

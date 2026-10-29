@@ -7,11 +7,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from specs import SPECS, prompt
 
 
+# Windows: no console window (CREATE_NO_WINDOW) and BELOW_NORMAL priority, so a run never disturbs the desk.
+FLAGS = 0x08000000 | 0x00004000 if os.name == "nt" else 0
+
+
 def run(scratch, name):
     cmd = ["deltic", "timeout", "280", "codex", "exec", "--json", "--skip-git-repo-check", "-C", scratch,
            "-s", "workspace-write", "-c", "approval_policy=never", "-m", "gpt-6.1-sol",
            "-c", "model_reasoning_effort=medium", prompt(name)]
-    r = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    r = subprocess.run(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=FLAGS)
     ok = os.path.exists(os.path.join(scratch, name + ".png"))
     print(name, "OK" if ok else f"FAIL rc={r.returncode}", flush=True)
     return ok

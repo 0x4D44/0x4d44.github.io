@@ -2,7 +2,7 @@
 import { makeRng } from "../core/rng.mjs";
 import { clamp, clamp01 } from "../core/mathx.mjs";
 import { ambiencePlan } from "./params.mjs";
-import { loopNoise, tone, burst } from "./mixer.mjs";
+import { loopNoise, tone, burst, sT } from "./mixer.mjs";
 
 export function createAmbience(ctx, out) {
   const rng = makeRng("ambience-synth");
@@ -44,11 +44,37 @@ export function createAmbience(ctx, out) {
   let plan = ambiencePlan(null), birdT = 2, crowdLevel = 0, cheerT = 4;
   const target = { rain: 0, wind: 0, birds: 0, insects: 0, surf: 0, stream: 0, roar: 0, steam: 0 };
 
+  // bird voices: three persistent oscillators (osc -> gain -> panner). A chirp only schedules params on them; creating
+  // 3 nodes per note from the frame path caused main-thread stalls.
+  const birdV = [0, 1, 2].map(() => {
+    const o = ctx.createOscillator(); o.type = "sine"; o.frequency.value = 3000;
+    const g = ctx.createGain(); g.gain.value = 0;
+    o.connect(g);
+    let pn = null;
+    if (ctx.createStereoPanner) { pn = ctx.createStereoPanner(); g.connect(pn); pn.connect(out); } else g.connect(out);
+    o.start();
+    return { o, g, pn, free: 0 };
+  });
+  let birdI = 0;
+  // a chirp is queued as notes and scheduled at most 2 per update() so one call never makes ~45 AudioParam writes at once
+  const birdQ = [];
   function chirp(base, n, spacing, gain, pan) {
     const t0 = T();
-    for (let i = 0; i < n; i++) {
-      const f = base * (1 + 0.15 * rng.range(-1, 1));
-      tone(ctx, out, { type: "sine", t: t0 + i * spacing, f0: f, f1: f * rng.range(1.15, 1.7), dur: 0.05 + rng.next() * 0.07, gain, attack: 0.006, pan });
+    for (let i = 0; i < n; i++) birdQ.push({ f: base * (1 + 0.15 * rng.range(-1, 1)), dur: 0.05 + rng.next() * 0.07, t: t0 + i * spacing, gain, pan });
+  }
+  function flushChirps(max) {
+    for (let k = 0; k < max && birdQ.length; k++) {
+      const { f, dur, gain, pan, t: tn } = birdQ.shift();
+      const t = Math.max(tn, T() + 0.01);
+      const v = birdV[birdI++ % 3];
+      if (t < v.free) continue; // voice still busy: drop the note rather than creating another node
+      v.free = t + dur + 0.02;
+      v.o.frequency.setValueAtTime(f, t);
+      v.o.frequency.exponentialRampToValueAtTime(Math.max(20, f * rng.range(1.15, 1.7)), t + dur);
+      if (v.pn) v.pn.pan.setValueAtTime(pan || 0, t);
+      v.g.gain.setValueAtTime(0.0001, t);
+      v.g.gain.linearRampToValueAtTime(gain, t + 0.006);
+      v.g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     }
   }
 
@@ -57,19 +83,20 @@ export function createAmbience(ctx, out) {
     setStage(def) {
       plan = ambiencePlan(def);
       const t = T();
-      rain.g.gain.setTargetAtTime(plan.rain * 0.16, t, 0.5);
-      rainLow.g.gain.setTargetAtTime(plan.rain * 0.12, t, 0.5);
-      windA.g.gain.setTargetAtTime(plan.wind * 0.14, t, 0.5);
-      surf.g.gain.setTargetAtTime(plan.surf * 0.16, t, 0.5);
-      stream.g.gain.setTargetAtTime(plan.stream * 0.07, t, 0.5);
-      roar.g.gain.setTargetAtTime(plan.roar * 0.3, t, 0.5);
-      steam.g.gain.setTargetAtTime(plan.steam * 0.03, t, 0.5);
-      insG.gain.setTargetAtTime(plan.insects * 0.012, t, 0.5);
+      sT(rain.g.gain, plan.rain * 0.16, t, 0.5);
+      sT(rainLow.g.gain, plan.rain * 0.12, t, 0.5);
+      sT(windA.g.gain, plan.wind * 0.14, t, 0.5);
+      sT(surf.g.gain, plan.surf * 0.16, t, 0.5);
+      sT(stream.g.gain, plan.stream * 0.07, t, 0.5);
+      sT(roar.g.gain, plan.roar * 0.3, t, 0.5);
+      sT(steam.g.gain, plan.steam * 0.03, t, 0.5);
+      sT(insG.gain, plan.insects * 0.012, t, 0.5);
     },
     update(dt, p, view, stage) {
       const t = T();
+      flushChirps(3);
       // rain louder in cockpit-ish low-passed form handled by the bus; add roof drum there
-      rainLow.g.gain.setTargetAtTime(plan.rain * (0.1 + 0.2 * (view ? view.cockpit : 0)), t, 0.3);
+      sT(rainLow.g.gain, plan.rain * (0.1 + 0.2 * (view ? view.cockpit : 0)), t, 0.3);
       // birds
       birdT -= dt;
       if (plan.birds > 0.02 && birdT <= 0 && Math.abs(p.speed || 0) < 55) {
@@ -86,8 +113,8 @@ export function createAmbience(ctx, out) {
       const s = p.s || 0, L = stage && stage.lengthM ? stage.lengthM : 1e9;
       const near = Math.max(1 - s / 90, 1 - Math.abs(L - s) / 90, 0);
       crowdLevel = clamp01(near);
-      crowd.g.gain.setTargetAtTime(crowdLevel * 0.06, t, 0.4);
-      crowd2.g.gain.setTargetAtTime(crowdLevel * 0.035, t, 0.4);
+      sT(crowd.g.gain, crowdLevel * 0.06, t, 0.4);
+      sT(crowd2.g.gain, crowdLevel * 0.035, t, 0.4);
       cheerT -= dt;
       if (crowdLevel > 0.3 && cheerT <= 0) {
         cheerT = rng.range(2.5, 6);
@@ -96,7 +123,7 @@ export function createAmbience(ctx, out) {
     },
     dispose() {
       for (const l of [rain, rainLow, windA, surf, stream, roar, steam, crowd, crowd2]) { try { l.s.stop(); } catch { /* */ } }
-      for (const o of [...lfos, ins, ins2, amO]) { try { o.stop(); } catch { /* */ } }
+      for (const o of [...lfos, ins, ins2, amO, ...birdV.map((b) => b.o)]) { try { o.stop(); } catch { /* */ } }
     },
   };
 }

@@ -24,6 +24,7 @@ export function createShowroom(canvas, createCarVisual) {
   scene.add(rim);
   const floor = new THREE.Mesh(new THREE.CircleGeometry(4.2, 64), new THREE.MeshStandardMaterial({ color: 0x0c1c14, roughness: 0.85, metalness: 0.2 }));
   floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.03; // the plate sits just under the tyres
   scene.add(floor);
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.9, 4.05, 96), new THREE.MeshBasicMaterial({ color: 0xffc81e, transparent: true, opacity: 0.55 }));
   ring.rotation.x = -Math.PI / 2;
@@ -77,6 +78,7 @@ export function createShowroom(canvas, createCarVisual) {
       try {
         car = createCarVisual(THREE, spec, { livery, number: 7 });
         car.setShowroom && car.setShowroom(true);
+        car.object3d.position.y = Number.isFinite(car.groundOffset) ? car.groundOffset : 0; // tyres at y = 0
         pivot.add(car.object3d);
       } catch (e) {
         car = null;

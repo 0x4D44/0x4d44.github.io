@@ -204,7 +204,7 @@ export function createPropMaterial(THREE, atlas, SU, { alphaToCoverage = false }
 
 export function createWaterMaterial(THREE, SU, { color = 0x3f5d58, detail = true } = {}) {
   const m = new THREE.MeshStandardMaterial({
-    color, roughness: 0.06, metalness: 0.0, transparent: true, opacity: 0.82, envMapIntensity: 1.6,
+    color, roughness: 0.06, metalness: 0.0, transparent: true, opacity: 0.82, envMapIntensity: 1.6, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6,
     depthWrite: false,
   });
   m.onBeforeCompile = (shader) => {

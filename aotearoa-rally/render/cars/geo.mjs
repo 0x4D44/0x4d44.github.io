@@ -75,6 +75,33 @@ export class Geo {
     }
     return this;
   }
+  /**
+   * Extrude a closed 2D profile (array of [z, y], counter-clockwise with z to the right and y up) along x from xa to xb.
+   * Side walls get smooth normals from the profile; the two caps are flat. `uv` pins every vertex to one atlas texel
+   * (paint colour), `tz` / `ty` optionally shear the far end (for tapered plates).
+   */
+  extrude(profile, xa, xb, color, uv = [0.003, 0.003]) {
+    const T = this.T, c = new T.Color(color), n = profile.length;
+    const nrm = profile.map((p, i) => {
+      const a = profile[(i + n - 1) % n], b = profile[(i + 1) % n];
+      const dz = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dz, dy) || 1;
+      return [-dy / l, dz / l]; // outward (ny, nz) for a CCW profile
+    });
+    const v = (x, p, k, nx = 0, ny = nrm[k][0], nz = nrm[k][1]) => this.vert(x, p[1], p[0], nx, ny, nz, uv[0], uv[1], c.r, c.g, c.b);
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, p = profile[i], q = profile[j];
+      v(xa, p, i); v(xb, p, i); v(xb, q, j);
+      v(xa, p, i); v(xb, q, j); v(xa, q, j);
+    }
+    let cz = 0, cy = 0;
+    for (const p of profile) { cz += p[0] / n; cy += p[1] / n; }
+    for (let i = 0; i < n; i++) {
+      const p = profile[i], q = profile[(i + 1) % n];
+      this.vert(xa, cy, cz, -1, 0, 0, uv[0], uv[1], c.r, c.g, c.b); this.vert(xa, q[1], q[0], -1, 0, 0, uv[0], uv[1], c.r, c.g, c.b); this.vert(xa, p[1], p[0], -1, 0, 0, uv[0], uv[1], c.r, c.g, c.b);
+      this.vert(xb, cy, cz, 1, 0, 0, uv[0], uv[1], c.r, c.g, c.b); this.vert(xb, p[1], p[0], 1, 0, 0, uv[0], uv[1], c.r, c.g, c.b); this.vert(xb, q[1], q[0], 1, 0, 0, uv[0], uv[1], c.r, c.g, c.b);
+    }
+    return this;
+  }
   /** Build a BufferGeometry (computes bounds). */
   build(withColor = true) {
     const T = this.T;

@@ -3,7 +3,7 @@
 import { makeRng } from "../core/rng.mjs";
 import { clamp } from "../core/mathx.mjs";
 import { engineCharacter, engineVoice, turboVoice, gearWhine, rpmNorm, crackleLevel } from "./params.mjs";
-import { loopNoise, burst, tone } from "./mixer.mjs";
+import { loopNoise, burst, tone, sT } from "./mixer.mjs";
 
 function pulseWave(ctx, bright = 0.9) {
   const N = 48;
@@ -71,7 +71,18 @@ export function createEngine(ctx, out) {
   const wnF = ctx.createBiquadFilter(); wnF.type = "bandpass"; wnF.Q.value = 3; wnF.frequency.value = 800;
   wn.connect(wnF); wnF.connect(wnG); wnG.connect(out);
 
-  for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn]) n.start();
+  // --- anti-lag pops: two persistent voices (crackle noise -> bandpass -> gain) plus a thump oscillator. A pop only
+  // automates their params; creating ~7 nodes per pop was the main source of 80-190 ms main-thread stalls.
+  const popV = [0, 1].map(() => {
+    const src = loopNoise(ctx, "crackle", 1), f = ctx.createBiquadFilter(), g = mkg(0);
+    f.type = "bandpass"; f.Q.value = 0.9; f.frequency.value = 1500;
+    src.connect(f); f.connect(g); g.connect(out);
+    return { src, f, g };
+  });
+  const thump = mk("sine"), thumpG = mkg(0);
+  thump.frequency.value = 90; thump.connect(thumpG); thumpG.connect(out);
+  let popIdx = 0;
+  for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn, thump, popV[0].src, popV[1].src]) n.start();
 
   let chr = engineCharacter(null), idle = 900, redline = 7500, hasTurbo = false;
   let popAcc = 0, lastThrottle = 0, lastBoost = 0, limiterUntil = 0, lastPop = 0, dead = false, startedAt = 0;
@@ -85,7 +96,7 @@ export function createEngine(ctx, out) {
       idle = e.idleRpm || 900; redline = e.redline || 7500; hasTurbo = !!e.turbo;
       lfoDepth.gain.value = 18 + 70 * chr.burble;
       lfo.frequency.value = 6 + 5 * chr.burble;
-      gSub.gain.value = 0.2 + 0.3 * chr.burble;
+      gSub.gain.value = 0.04 + 0.1 * chr.burble;
       gH2.gain.value = 0;
     },
     /** p = { rpm, throttle, boost, speed, gear, running }  */
@@ -95,35 +106,35 @@ export function createEngine(ctx, out) {
       const running = p.running !== false && rpm > 100 && !dead;
       const v = engineVoice(rpm, p.throttle, p.boost, idle, redline, chr);
       const f0 = Math.max(8, v.fundHz);
-      oscA.frequency.setTargetAtTime(f0, t, tc);
-      oscB.frequency.setTargetAtTime(f0 * 1.004, t, tc);
-      sub.frequency.setTargetAtTime(f0 * 0.5, t, tc);
-      h2.frequency.setTargetAtTime(f0 * 2, t, tc);
-      gH2.gain.setTargetAtTime(0.08 + 0.3 * v.load * chr.growl, t, 0.05);
-      gSub.gain.setTargetAtTime(v.subGain, t, 0.05);
-      pre.gain.setTargetAtTime(v.drive * 0.6, t, 0.05);
-      lp.frequency.setTargetAtTime(v.lowpass, t, 0.05);
-      f1.frequency.setTargetAtTime(160 + 220 * v.rn, t, 0.08);
-      f2.frequency.setTargetAtTime(700 + 900 * v.rn, t, 0.08);
-      voice.gain.setTargetAtTime(running ? v.gain * (view ? view.engine : 1) : 0, t, running ? 0.05 : 0.25);
-      nzF.frequency.setTargetAtTime(v.noiseFreq, t, 0.08);
-      nzG.gain.setTargetAtTime(running ? v.noiseGain * (view ? view.engine : 1) : 0, t, 0.05);
+      sT(oscA.frequency, f0, t, tc);
+      sT(oscB.frequency, f0 * 1.004, t, tc);
+      sT(sub.frequency, f0 * 0.5, t, tc);
+      sT(h2.frequency, f0 * 2, t, tc);
+      sT(gH2.gain, 0.08 + 0.3 * v.load * chr.growl, t, 0.05);
+      sT(gSub.gain, v.subGain, t, 0.05);
+      sT(pre.gain, v.drive * 0.6, t, 0.05);
+      sT(lp.frequency, v.lowpass, t, 0.05);
+      sT(f1.frequency, 160 + 220 * v.rn, t, 0.08);
+      sT(f2.frequency, 700 + 900 * v.rn, t, 0.08);
+      sT(voice.gain, running ? v.gain * (view ? view.engine : 1) : 0, t, running ? 0.05 : 0.25);
+      sT(nzF.frequency, v.noiseFreq, t, 0.08);
+      sT(nzG.gain, running ? v.noiseGain * (view ? view.engine : 1) : 0, t, 0.05);
       // turbo
       const tv = turboVoice(hasTurbo ? p.boost : 0, p.throttle, v.rn, chr);
-      wh.frequency.setTargetAtTime(tv.whistleHz, t, 0.06);
-      wh2.frequency.setTargetAtTime(tv.whistleHz * 1.51, t, 0.06);
-      whG.gain.setTargetAtTime(running ? tv.whistleGain : 0, t, 0.06);
-      whG2.gain.setTargetAtTime(running ? tv.whistleGain * 0.3 : 0, t, 0.06);
-      wshG.gain.setTargetAtTime(running ? tv.whooshGain : 0, t, 0.08);
+      sT(wh.frequency, tv.whistleHz, t, 0.06);
+      sT(wh2.frequency, tv.whistleHz * 1.51, t, 0.06);
+      sT(whG.gain, running ? tv.whistleGain : 0, t, 0.06);
+      sT(whG2.gain, running ? tv.whistleGain * 0.3 : 0, t, 0.06);
+      sT(wshG.gain, running ? tv.whooshGain : 0, t, 0.08);
       // gear whine
       const gw = gearWhine(p.speed, p.gear, v.load, chr);
-      wn.frequency.setTargetAtTime(gw.hz, t, 0.05);
-      wnF.frequency.setTargetAtTime(gw.hz * 1.1, t, 0.05);
-      wnG.gain.setTargetAtTime(running ? gw.gain * (view ? view.whine : 1) : 0, t, 0.08);
+      sT(wn.frequency, gw.hz, t, 0.05);
+      sT(wnF.frequency, gw.hz * 1.1, t, 0.05);
+      sT(wnG.gain, running ? gw.gain * (view ? view.whine : 1) : 0, t, 0.08);
       // limiter bounce
       if (t < limiterUntil) {
-        lim.gain.setTargetAtTime((Math.floor((limiterUntil - t) / 0.035) & 1) ? 0.35 : 1, t, 0.006);
-      } else lim.gain.setTargetAtTime(1, t, 0.02);
+        sT(lim.gain, (Math.floor((limiterUntil - t) / 0.035) & 1) ? 0.35 : 1, t, 0.006);
+      } else sT(lim.gain, 1, t, 0.02);
       // blow-off on throttle lift with boost
       if (hasTurbo && lastThrottle > 0.6 && p.throttle < 0.2 && lastBoost > 0.45) api.blowoff(lastBoost);
       // overrun pops / anti-lag crackle
@@ -136,9 +147,19 @@ export function createEngine(ctx, out) {
       lastThrottle = p.throttle; lastBoost = p.boost || 0;
     },
     pop(s = 0.5) {
-      const t = T(), k = 0.5 + rng.next() * 0.5;
-      burst(ctx, out, { kind: "crackle", t, dur: 0.045 + rng.next() * 0.05, gain: 0.18 * s * k, type: "bandpass", freq: 700 + rng.next() * 2200, q: 0.9, rate: 0.7 + rng.next() * 0.8 });
-      if (k > 0.75) tone(ctx, out, { type: "sine", t, f0: 130, f1: 55, dur: 0.07, gain: 0.14 * s });
+      const t = T(), k = 0.5 + rng.next() * 0.5, dur = 0.045 + rng.next() * 0.05;
+      const v = popV[popIdx++ & 1];
+      v.f.frequency.cancelScheduledValues(t); v.g.gain.cancelScheduledValues(t);
+      v.src.playbackRate.value = 0.7 + rng.next() * 0.8;
+      v.f.frequency.setValueAtTime(700 + rng.next() * 2200, t);
+      v.g.gain.setValueAtTime(0.0001, t);
+      v.g.gain.linearRampToValueAtTime(0.18 * s * k, t + 0.002);
+      v.g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      if (k > 0.75) {
+        thump.frequency.cancelScheduledValues(t); thumpG.gain.cancelScheduledValues(t);
+        thump.frequency.setValueAtTime(130, t); thump.frequency.exponentialRampToValueAtTime(55, t + 0.07);
+        thumpG.gain.setValueAtTime(0.0001, t); thumpG.gain.linearRampToValueAtTime(0.14 * s, t + 0.004); thumpG.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+      }
     },
     blowoff(b = 0.6) {
       const t = T();
@@ -159,7 +180,7 @@ export function createEngine(ctx, out) {
     fail() { dead = true; for (let i = 0; i < 4; i++) setTimeout(() => api.pop(0.6), i * 120); },
     revive() { dead = false; },
     dispose() {
-      for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn]) { try { n.stop(); } catch { /* */ } }
+      for (const n of [oscA, oscB, sub, h2, lfo, wh, wh2, nz, wsh, wn, thump, popV[0].src, popV[1].src]) { try { n.stop(); } catch { /* */ } }
       try { lim.disconnect(); wnG.disconnect(); } catch { /* */ }
     },
   };

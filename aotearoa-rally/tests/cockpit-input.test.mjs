@@ -15,13 +15,57 @@ test("dead-zone and response curve", () => {
   assert.ok(shapeAxis(0.5) < shapeAxis(0.7));
 });
 
-test("keyboard mapping covers WASD, arrows, space, shift, ctrl", () => {
+test("default keys: A accelerate, Z brake, comma left, period right; arrows are alternates; WASD no longer drives", () => {
   const b = normaliseBindings(null);
-  assert.deepEqual(mapKeyboard(new Set(["KeyW", "KeyD"]), b), { steer: 1, throttle: 1, brake: 0, handbrake: 0, gearUp: false, gearDown: false });
-  assert.equal(mapKeyboard(new Set(["ArrowLeft", "ArrowDown", "Space"]), b).steer, -1);
-  const m = mapKeyboard(new Set(["ArrowLeft", "ArrowDown", "Space", "ShiftLeft", "KeyQ"]), b);
-  assert.equal(m.brake, 1); assert.equal(m.handbrake, 1); assert.equal(m.gearUp, true); assert.equal(m.gearDown, true);
-  assert.equal(mapKeyboard(new Set(["KeyA", "KeyD"]), b).steer, 0, "both directions cancel");
+  const none = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
+  assert.deepEqual(mapKeyboard(new Set(["KeyA", "Period"]), b), { ...none, steer: 1, throttle: 1 });
+  assert.deepEqual(mapKeyboard(new Set(["KeyZ", "Comma"]), b), { ...none, steer: -1, brake: 1 });
+  assert.deepEqual(mapKeyboard(new Set(["ArrowUp", "ArrowRight"]), b), { ...none, steer: 1, throttle: 1 });
+  assert.deepEqual(mapKeyboard(new Set(["ArrowDown", "ArrowLeft"]), b), { ...none, steer: -1, brake: 1 });
+  for (const wasd of ["KeyW", "KeyS", "KeyD"]) assert.deepEqual(mapKeyboard(new Set([wasd]), b), none, wasd + " is unbound");
+  assert.deepEqual(DEFAULT_BINDINGS.steerLeft, ["Comma", "ArrowLeft"]);
+  // simultaneous keys all count
+  const m = mapKeyboard(new Set(["KeyA", "Comma", "Space", "ShiftLeft", "KeyQ"]), b);
+  assert.deepEqual(m, { steer: -1, throttle: 1, brake: 0, handbrake: 1, gearUp: true, gearDown: true });
+  assert.equal(mapKeyboard(new Set(["Comma", "Period"]), b).steer, 0, "both directions cancel");
+});
+
+test("a key press is prevented while driving (no Ctrl+A / Space scroll) and ignored when the game is not active", () => {
+  const t = new EventTarget();
+  let active = true;
+  const inp = createInput({ target: t, getGamepads: () => [], isActive: () => active, isPaused: () => false });
+  const ev = (type, code) => { const e = new Event(type, { cancelable: true }); e.code = code; t.dispatchEvent(e); return e; };
+  assert.equal(ev("keydown", "KeyA").defaultPrevented, true);
+  assert.equal(ev("keydown", "Space").defaultPrevented, true);
+  ev("keyup", "KeyA"); ev("keyup", "Space");
+  active = false; // a menu or a stage-less screen: A / Z / , / . must not drive
+  ev("keydown", "KeyA"); ev("keydown", "Comma");
+  assert.equal(ev("keydown", "Escape").defaultPrevented, false, "menus keep Escape");
+  for (let i = 0; i < 30; i++) inp.poll(1 / 60);
+  const o = inp.poll(1 / 60);
+  assert.equal(o.throttle, 0); assert.equal(o.steer, 0);
+  inp.dispose();
+});
+
+test("stale saved bindings (old v1 WASD) are ignored and the new defaults apply", () => {
+  const store = createStorage(createMemoryStorage({ "aotearoa-rally.bindings.v1": JSON.stringify({ throttle: ["KeyW"], brake: ["KeyS"], steerLeft: ["KeyA"], steerRight: ["KeyD"] }) }));
+  const inp = createInput({ target: new EventTarget(), storage: store, getGamepads: () => [] });
+  assert.deepEqual(inp.bindings.throttle, DEFAULT_BINDINGS.throttle);
+  assert.deepEqual(inp.bindings.steerLeft, DEFAULT_BINDINGS.steerLeft);
+  inp.dispose();
+});
+
+test("blur releases every held key", () => {
+  const t = new EventTarget();
+  const inp = createInput({ target: t, getGamepads: () => [] });
+  key(t, "keydown", "KeyA"); key(t, "keydown", "Period");
+  for (let i = 0; i < 30; i++) inp.poll(1 / 60);
+  assert.equal(inp.poll(1 / 60).throttle, 1);
+  t.dispatchEvent(new Event("blur"));
+  for (let i = 0; i < 60; i++) inp.poll(1 / 60);
+  const o = inp.poll(1 / 60);
+  assert.equal(o.throttle, 0); assert.equal(o.steer, 0);
+  inp.dispose();
 });
 
 test("poll returns exactly the input shape, with steering ramping and gear edges", () => {
@@ -30,12 +74,12 @@ test("poll returns exactly the input shape, with steering ramping and gear edges
   const a = inp.poll(1 / 60);
   assert.deepEqual(Object.keys(a).sort(), ["brake", "gearDown", "gearUp", "handbrake", "steer", "throttle"]);
   assert.deepEqual({ ...a }, { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false });
-  key(t, "keydown", "KeyD");
+  key(t, "keydown", "Period");
   const s1 = inp.poll(1 / 60).steer;
   assert.ok(s1 > 0 && s1 < 0.3, "ramps in: " + s1);
   for (let i = 0; i < 30; i++) inp.poll(1 / 60);
   assert.equal(inp.poll(1 / 60).steer, 1);
-  key(t, "keyup", "KeyD");
+  key(t, "keyup", "Period");
   assert.ok(inp.poll(1 / 60).steer < 1);
   for (let i = 0; i < 30; i++) inp.poll(1 / 60);
   assert.equal(inp.poll(1 / 60).steer, 0);
@@ -43,7 +87,7 @@ test("poll returns exactly the input shape, with steering ramping and gear edges
   assert.equal(inp.poll(1 / 60).gearUp, true);
   assert.equal(inp.poll(1 / 60).gearUp, false, "edge triggered");
   key(t, "keyup", "ShiftLeft");
-  key(t, "keydown", "KeyW");
+  key(t, "keydown", "KeyA");
   for (let i = 0; i < 30; i++) inp.poll(1 / 60);
   assert.equal(inp.poll(1 / 60).throttle, 1);
   inp.dispose();
@@ -113,10 +157,10 @@ test("rebinding is applied, rejects junk, and persists through storage", async (
   assert.deepEqual(inp.bindings.throttle, ["KeyI"]);
   assert.deepEqual(inp.bindings.steerLeft, DEFAULT_BINDINGS.steerLeft, "junk falls back to default");
   assert.deepEqual(inp.bindings.brake, DEFAULT_BINDINGS.brake);
-  key(t, "keydown", "KeyW");
+  key(t, "keydown", "KeyA");
   for (let i = 0; i < 30; i++) inp.poll(1 / 60);
   assert.equal(inp.poll(1 / 60).throttle, 0, "old key no longer drives");
-  key(t, "keyup", "KeyW"); key(t, "keydown", "KeyI");
+  key(t, "keyup", "KeyA"); key(t, "keydown", "KeyI");
   for (let i = 0; i < 30; i++) inp.poll(1 / 60);
   assert.equal(inp.poll(1 / 60).throttle, 1);
   inp.dispose();

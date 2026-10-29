@@ -87,6 +87,8 @@ export const jump = (Hm = 1.5, w = 13) => ["feat", { type: "jump", H: Hm, w }];
 export const dip = (D = 0.8, w = 14) => ["feat", { type: "dip", D, w }];
 export const ford = (len = 16, D = 0.65) => ["feat", { type: "ford", len, D }];
 export const bridge = (len = 16) => ["feat", { type: "bridge", len }];
+/** scale the camber gain for the next `len` m: f > 1 banks it up, f < 0 is adverse camber */
+export const camber = (len = 80, f = 1.8) => ["feat", { type: "camber", len, f }];
 export const grid = () => ["feat", { type: "cattlegrid" }];
 export const nocut = () => ["feat", { type: "nocut" }];
 export const culvert = () => ["feat", { type: "culvert" }];
@@ -235,16 +237,42 @@ export function compileDesign(design, seed = 1) {
     for (const f of feats) {
       const d = ss - f.s;
       if (f.type === "crest") y += f.H * Math.exp(-((d / f.w) ** 2));
-      else if (f.type === "jump") y += f.H * Math.exp(-((d / f.w) ** 2));
+      else if (f.type === "jump") y += f.H * Math.exp(-((d / (d < 0 ? f.w : f.w * 0.5)) ** 2)); // kicker: long ramp, short drop
       else if (f.type === "dip") y -= f.D * Math.exp(-((d / f.w) ** 2));
       else if (f.type === "ford") {
         const hl = f.len / 2;
-        y -= f.D * (1 - smoothstep(hl * 0.8, hl * 1.5, Math.abs(d)));
+        y -= f.D * (1 - smoothstep(hl * 0.8, hl * 3, Math.abs(d)));
       }
     }
     yraw[i] = y;
   }
-  const maxStep = 0.112 * DS;
+  // fords: a level, flat-bottomed bowl so the water surface really covers the road
+  for (const f of feats) {
+    if (f.type !== "ford") continue;
+    const fi = clamp(Math.round(f.s / DS), 0, N - 1);
+    const hl = f.len / 2;
+    let yt = 0, yn = 0;
+    for (let q = Math.max(0, fi - 8); q <= Math.min(N - 1, fi + 8); q++) { yt += yraw[q]; yn++; }
+    yt /= yn;
+    for (let i = 0; i < N; i++) {
+      const w = 1 - smoothstep(hl * 0.95, hl * 5, Math.abs(i * DS - f.s));
+      if (w > 0) yraw[i] += (yt - yraw[i]) * w;
+    }
+  }
+  // jumps: level the ground ~45 m either side of the kicker so the run-up and landing are not on a climb
+  for (const f of feats) {
+    if (f.type !== "jump") continue;
+    const kick = (d) => f.H * Math.exp(-((d / (d < 0 ? f.w : f.w * 0.5)) ** 2));
+    const fi = clamp(Math.round(f.s / DS), 0, N - 1);
+    const yt = yraw[fi] - kick(0);
+    for (let i = 0; i < N; i++) {
+      const d = i * DS - f.s, w = 1 - smoothstep(25, 70, Math.abs(d));
+      if (w <= 0) continue;
+      const k = kick(d), b = yraw[i] - k;
+      yraw[i] = b + (yt - b) * w + k;
+    }
+  }
+  const maxStep = (design.maxSlope ?? 0.145) * DS;
   let y = yraw[0];
   c.py[0] = y;
   for (let i = 1; i < N; i++) {
@@ -306,8 +334,15 @@ export function compileDesign(design, seed = 1) {
   }
 
   // ---- camber
-  const gain = design.bankGain ?? 2.0, maxB = design.maxBank ?? 0.085;
-  for (let i = 0; i < N; i++) c.bank[i] = clamp(c.curv[i] * gain, -maxB, maxB);
+  // gain grows on tight bends; `camber(len, f)` features scale it (f > 1 banked up, f < 0 adverse)
+  const gain = design.bankGain ?? 2.6, maxB = design.maxBank ?? 0.15;
+  for (let i = 0; i < N; i++) {
+    const k = c.curv[i], ss = i * DS;
+    let g = gain + 2.2 * smoothstep(1 / 90, 1 / 22, Math.abs(k));
+    for (const f of feats) if (f.type === "camber" && ss >= f.s && ss <= f.s + f.len) g *= f.f;
+    c.bank[i] = clamp(k * g, -maxB * 1.15, maxB * 1.15);
+  }
+  c.camberRanges = feats.filter((f) => f.type === "camber").map((f) => ({ s0: f.s, s1: f.s + f.len, f: f.f }));
   for (const f of feats) {
     if (f.type === "bridge") {
       for (let i = 0; i < N; i++) if (i * DS >= f.s - 4 && i * DS <= f.s + f.len + 4) c.bank[i] = 0;

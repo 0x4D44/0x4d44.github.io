@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createScheduler, lookahead, speechRate, pickVoice, createCodriver } from "../audio/codriver.mjs";
+import { createScheduler, lookahead, leadExtra, speechRate, pickVoice, createCodriver } from "../audio/codriver.mjs";
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const note = (s, speak, o = {}) => ({ s, speak, text: speak, kind: "corner", length: 30, severity: 3, lead: (v) => s - clamp(v * 2.6, 40, 220), ...o });
@@ -25,10 +25,10 @@ test("speech rate increases with speed and is bounded", () => {
 test("a note is voiced at s - lead(v), not before", () => {
   const sc = createScheduler();
   const notes = NOTES();
-  // 40 m/s -> lead 104 m: voice at s >= 196
+  // 40 m/s -> lookahead plus the (capped) speech time; no earlier
   assert.equal(sc.update(notes, 150, 40, false), null);
-  assert.equal(sc.update(notes, 190, 40, false), null);
-  const u = sc.update(notes, 197, 40, false);
+  assert.equal(sc.update(notes, 300 - lookahead(40) - leadExtra("Left three", 40) - 2, 40, false), null);
+  const u = sc.update(notes, 300 - lookahead(40) - leadExtra("Left three", 40) + 1, 40, false);
   assert.ok(u && u.text === "Left three", JSON.stringify(u));
 });
 
@@ -36,8 +36,8 @@ test("faster car hears the call earlier (greater distance) than a slow one", () 
   const first = (v) => { const sc = createScheduler(); const n = NOTES(); for (let s = 0; s < 400; s += 1) { const u = sc.update(n, s, v, false); if (u) return s; } return -1; };
   const slow = first(15), fast = first(60);
   assert.ok(slow > fast, `slow ${slow} fast ${fast}`);
-  assert.equal(300 - slow, 40);
-  assert.equal(300 - fast, 156);
+  assert.ok(Math.abs((300 - slow) - (lookahead(15) + leadExtra("Left three", 15))) <= 1.5);
+  assert.ok(Math.abs((300 - fast) - (lookahead(60) + leadExtra("Left three", 60))) <= 1.5);
 });
 
 test("never returns a phrase while speech is busy; queue releases afterwards in order", () => {

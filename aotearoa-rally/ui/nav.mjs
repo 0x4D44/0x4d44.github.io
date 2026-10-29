@@ -1,11 +1,17 @@
-// Menu navigation: arrow keys / WASD / gamepad move focus between controls, Enter/A activates,
+// Menu navigation: arrow keys / gamepad move focus between controls, Enter/A activates,
 // Escape/B presses the screen's [data-back] button. Keeps every menu playable without a mouse.
 
 const SELECTOR = "button:not([disabled]):not([hidden]), input:not([disabled]), select:not([disabled]), [tabindex='0']";
 
 export function createNav(root, { getPads } = {}) {
   let active = true;
-  const items = () => [...root.querySelectorAll(SELECTOR)].filter((e) => e.offsetParent !== null);
+  const items = () => [...root.querySelectorAll(SELECTOR)].filter((e) => e.offsetParent !== null && !e.closest("[inert]"));
+  // the topmost [data-back] wins, so a confirmation dialog over a screen is dismissed first
+  const lastBack = () => {
+    const all = root.querySelectorAll("[data-back]");
+    for (let i = all.length - 1; i >= 0; i--) if (all[i].offsetParent !== null) return all[i];
+    return null;
+  };
   function move(dir) {
     const list = items();
     if (!list.length) return;
@@ -32,19 +38,22 @@ export function createNav(root, { getPads } = {}) {
     } else list[0].focus();
   }
   const onKey = (e) => {
-    if (!active || e.altKey || e.ctrlKey || e.metaKey) return;
+    // another handler (e.g. the driving Escape that just opened the pause menu) already used this key
+    if (!active || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
     const el = document.activeElement;
     const isRange = el && el.tagName === "INPUT" && el.type === "range";
     const isSelect = el && el.tagName === "SELECT";
     if (el && el.classList && el.classList.contains("listening")) return;
     let dir = null;
     switch (e.key) {
-      case "ArrowDown": case "s": case "S": dir = "down"; break;
-      case "ArrowUp": case "w": case "W": dir = "up"; break;
-      case "ArrowLeft": case "a": case "A": dir = "left"; break;
-      case "ArrowRight": case "d": case "D": dir = "right"; break;
+      case "ArrowDown": dir = "down"; break;
+      case "ArrowUp": dir = "up"; break;
+      case "ArrowLeft": dir = "left"; break;
+      case "ArrowRight": dir = "right"; break;
       case "Escape": case "Backspace": {
-        const back = root.querySelector("[data-back]");
+        if (e.key === "Backspace" && el && (el.tagName === "INPUT" && el.type !== "range" || el.tagName === "TEXTAREA")) return;
+        if (e.repeat) return;
+        const back = lastBack();
         if (back) { e.preventDefault(); back.click(); }
         return;
       }
@@ -62,7 +71,8 @@ export function createNav(root, { getPads } = {}) {
   return {
     set active(v) { active = !!v; },
     focusFirst() {
-      const pref = root.querySelector("[data-focus]") || items()[0];
+      const top = root.lastElementChild;
+      const pref = (top && top.querySelector("[data-focus]")) || root.querySelector("[data-focus]") || items()[0];
       pref && pref.focus({ preventScroll: true });
     },
     move,
@@ -88,7 +98,7 @@ export function createNav(root, { getPads } = {}) {
         }
       }
       if (cur.a && !prev.a && document.activeElement && document.activeElement.click) document.activeElement.click();
-      if (cur.b && !prev.b) { const back = root.querySelector("[data-back]"); back && back.click(); }
+      if (cur.b && !prev.b) { const back = lastBack(); back && back.click(); }
       Object.assign(prev, cur);
     },
   };

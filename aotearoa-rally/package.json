@@ -5,9 +5,9 @@
   "type": "module",
   "description": "Aotearoa Rally: six New Zealand special stages in the browser (Three.js, no build step).",
   "scripts": {
-    "test": "node --test \"tests/cockpit-*.test.mjs\" \"tests/stages-*.test.mjs\" \"tests/dynamics-*.test.mjs\" \"tests/world-*.test.mjs\" \"tests/machines-*.test.mjs\" && node tests/validate-static.mjs",
+    "test": "node --import ./tests/lowprio.mjs --test \"tests/cockpit-*.test.mjs\" \"tests/stages-*.test.mjs\" \"tests/dynamics-*.test.mjs\" \"tests/world-*.test.mjs\" \"tests/machines-*.test.mjs\" && node tests/validate-static.mjs",
     "validate": "node tests/validate-static.mjs",
-    "browser": "node --test --test-timeout=1200000 tests/browser.test.mjs",
+    "browser": "node --import ./tests/lowprio.mjs --test --test-timeout=1200000 tests/browser.test.mjs",
     "shoot": "node tests/shoot.mjs"
   }
 }
