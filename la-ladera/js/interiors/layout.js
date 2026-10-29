@@ -111,7 +111,11 @@ export class Layout {
       const depth = d.kind === 'shutter' ? 0.9 : (swingIn ? w + 0.08 : 0.75);
       this._opening(s.wall, s.u - w / 2, s.u + w / 2, depth, 'door', { door: d.id, h: d.h ?? 2.1 });
       // the street door: the first 3 m straight in stay free (the tour test and every first-time visitor walk in along it)
-      if ((bp.entrances ?? []).some((e) => e.doorId === d.id)) this.keep.push({ why: 'entrance', wall: s.wall, ...this._wallRect(s.wall, s.u - w / 2 - 0.1, s.u + w / 2 + 0.1, 3.0) });
+      const ent = (bp.entrances ?? []).find((e) => e.doorId === d.id);
+      if (ent?.inside && bp.frame?.toLocal) {                   // only the room the visitor steps into
+        const [ix, , iz] = bp.frame.toLocal(...ent.inside);
+        if (ix >= r.x0 - 0.15 && ix <= r.x1 + 0.15 && iz >= r.z0 - 0.15 && iz <= r.z1 + 0.15) this.keep.push({ why: 'entrance', wall: s.wall, ...this._wallRect(s.wall, s.u - w / 2 - 0.1, s.u + w / 2 + 0.1, 3.0) });
+      }
     }
     for (const op of room.openings ?? []) {
       this._opening(op.side, op.from, op.to, 0.8, 'door', { arch: true, h: 2.2 });

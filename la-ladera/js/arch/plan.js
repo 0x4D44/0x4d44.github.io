@@ -6,6 +6,7 @@ import { resolveRoof, planRoof } from './roof.js';
 import { genWindows } from './openings.js';
 import { deriveWalls } from './walls.js';
 import { buildColliders } from './colliders.js';
+import { planSteps } from './steps.js';
 import { clamp, round2 } from './geom.js';
 
 const hex = (n) => n.toString(16).padStart(6, '0');
@@ -21,7 +22,7 @@ function chooseLook(S) {
   const base = kind === 'unfinished' ? 'brick' : rng.weighted([['plaster', 6], ['brick', 1.2], ['rough', 1.4], ['peeling', 1.2]], (e) => e[1])[0];
   return {
     wall: hex(wall), trim: hex(trim), roof: hex(roof), base,
-    door: hex(rng.pick([0x2f4f5f, 0x6b3a22, 0x1d5c63, 0x8a2b2b, 0x3a5a40, 0x4e3524, 0x224a7a])),
+    door: hex(rng.pick([0x3b7a9a, 0x8a5a34, 0x23858a, 0xb23a36, 0x4a8a56, 0x6b4a32, 0x2f62a8, 0xc9923a, 0x7a3b6b, 0xd9d2c0])),
     metal: hex(rng.pick([0x1d1d1f, 0x1f3a2a, 0x3b2a1a, 0x20323f])),
     stainy: rng.range(0.6, 1.0), seed: (S.lot.seed ?? 1) >>> 0,
   };
@@ -69,6 +70,7 @@ export function planBuilding(ctx, lot) {
   genWindows(S);
   deriveWalls(S);
   planRoof(S);
+  planSteps(S);
   const colliders = buildColliders(S);
   const fr = S.frame, fp = footprintOf(S);
   const xs = fp.map((p) => p[0]), zs = fp.map((p) => p[1]);
@@ -87,7 +89,7 @@ export function planBuilding(ctx, lot) {
     shell: {
       kind: S.kind, F: S.F, fh: S.fh, h: S.h, slab: S.slab, W: S.W, D: S.D, te: S.te, ti: S.ti, outer: S.outer, inner: S.inner, party: S.party,
       walls: S.walls, core: S.core, roofLayer: S.roofLayer, roofStyle: S.roofStyle, roofWalkable: S.roofWalkable, openTop: S.openTop,
-      guards: S.guards, foundY: S.foundY, floorsData: S.floorsData, notes: S.notes,
+      guards: S.guards, foundY: S.foundY, floorsData: S.floorsData, notes: S.notes, steps: S.steps,
     },
   };
   return bp;

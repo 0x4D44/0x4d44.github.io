@@ -24,5 +24,27 @@ export default {
   iron_blue: { color: 0x2c4f86, rough: 0.55, metal: 0.45, tex: false },
   iron_black: { color: 0x25262a, rough: 0.6, metal: 0.5, tex: false },
   galvanised: { color: 0x9aa2a6, rough: 0.45, metal: 0.7, tex: false },
-  wire_dark: { color: 0x16171a, rough: 0.8, metal: 0.2, tex: false, vertexColors: false },
+  gold: { color: 0xd9b24a, rough: 0.35, metal: 0.8, tex: false, vertexColors: false, side: 'double', env: 1.1 },
+  fence_mesh: { color: 0xb8bcc0, rough: 0.6, metal: 0.5, side: 'double', tex: false, vertexColors: false },   // chain-link: the diamond-mesh alpha texture is painted at boot (sprites.js) and bound in props.js
+  wire_dark: { color: 0x16171a, rough: 0.8, metal: 0.2, tex: false, vertexColors: false, side: 'double' },
+  insulator: { color: 0x8a6a58, rough: 0.35, tex: false },
+  paper_flyer: { color: 0xf0eadb, rough: 0.9, tex: false },
+  laundry: { color: 0xffffff, rough: 0.95, side: 'double', tex: false },
+  // vehicles, carts, bins (flat colours, tinted per vertex)
+  car_paint: { color: 0xffffff, rough: 0.32, metal: 0.35, tex: false, env: 1.0 },
+  tyre: { color: 0x141416, rough: 0.9, tex: false },
+  chrome: { color: 0xc8ccd0, rough: 0.25, metal: 0.9, tex: false, env: 1.2 },
+  glass_dark: { color: 0x1b2630, rough: 0.12, metal: 0.4, tex: false, env: 1.3, vertexColors: false },
+  bumper: { color: 0x2a2a2e, rough: 0.7, tex: false },
+  light_head: { color: 0xf4f0e0, emissive: 0xfff2cc, emissiveIntensity: 0.12, rough: 0.2, tex: false, vertexColors: false },
+  light_tail: { color: 0xc01818, emissive: 0xff2010, emissiveIntensity: 0.2, rough: 0.3, tex: false, vertexColors: false },
+  light_roof: { color: 0xf0f0e8, emissive: 0xfff2cc, emissiveIntensity: 0.3, tex: false, vertexColors: false },
+  seat: { color: 0x151518, rough: 0.8, tex: false },
+  sign_route: { color: 0xf2f2e8, rough: 0.6, tex: false },
+  produce: { color: 0xffffff, rough: 0.7, tex: false },
+  bag: { color: 0xffffff, rough: 0.5, tex: false },
+  plastic_bin: { color: 0xffffff, rough: 0.6, tex: false },
+  // lamps: emissive at night only (the engine drives glow * ctx.night)
+  lamp_glow: { color: 0xfff1cf, emissive: 0xffd596, emissiveIntensity: 0, glow: 3.4, tex: false, vertexColors: false },
+  lamp_glow_cool: { color: 0xf3f7ff, emissive: 0xdfeaff, emissiveIntensity: 0, glow: 3.2, tex: false, vertexColors: false },
 };

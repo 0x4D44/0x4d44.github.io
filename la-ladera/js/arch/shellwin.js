@@ -29,6 +29,7 @@ export function buildWindows(G) {
       b.quad(gm, P(a, gy0), P(c, gy0), P(c, gy1), P(a, gy1), { col: [1, 1, 1] });
     };
     if (w.kind === 'louvre') {
+      pane(gu0, gu1, pF + s * 0.03);                                           // glass behind the slats: slats alone leave the room open to the street
       const n = Math.max(3, Math.floor((gy1 - gy0) / 0.075));
       for (let i = 0; i < n; i++) wbox(b, 'frame_paint', dir, uc, gy0 + ((i + 0.5) * (gy1 - gy0)) / n, pF, gu1 - gu0, 0.014, 0.07, mulc(frameCol, 0.85), ['ny']);
     } else if (w.kind === 'casement' || w.kind === 'sliding') {

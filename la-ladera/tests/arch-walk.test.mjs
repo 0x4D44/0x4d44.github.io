@@ -48,6 +48,37 @@ test('closed doors block: nothing inside is reachable until the doors open', { t
   }
 });
 
+test('entry steps carry the player over a sill 0.52 m above the street (more than one step-up), with human-scale risers', { timeout: 300000 }, () => {
+  const { ctx: c2, bps: b2 } = planAll(lots, undefined, true, 0.52, 0);      // no plinth margin: the street meets the wall 0.52 m below the sill
+  const problems = [];
+  let checked = 0;
+  for (const bp of b2) {
+    if (only && !only.includes(bp.id)) continue;
+    const planned = new Set(bp.shell.steps.map((s) => s.door));
+    openAllDoors(c2, bp, true);
+    const { visited } = explore(c2, bp, { step: 0.25 });
+    for (const e of bp.entrances) {
+      const d = bp.doors.find((q) => q.id === e.doorId);
+      if (d.roof || d.floor !== 0 || d.kind === 'shutter') continue;      // roof casetas have their own stair; shop shutters open onto the pavement
+      checked++;
+      if (!planned.has(d.id)) problems.push(`${bp.id} ${d.id}: no entry step planned`);
+      const l = bp.frame.toLocal(...e.inside);
+      if (!reached(bp, visited, l[0], l[2], l[1], 0.5)) problems.push(`${bp.id} ${e.id}: cannot climb to the door`);
+    }
+    const byDoor = new Map();
+    for (const s of bp.shell.steps) (byDoor.get(s.door) ?? byDoor.set(s.door, []).get(s.door)).push(s);
+    for (const [id, list] of byDoor) {
+      const tops = list.map((s) => s.y1).sort((a, b) => b - a);
+      if (tops[0] > 0 || tops[0] < -0.05) problems.push(`${bp.id} ${id}: top tread ${tops[0]} is not just below the sill`);
+      for (let i = 1; i < tops.length; i++) if (tops[i - 1] - tops[i] > 0.21) problems.push(`${bp.id} ${id}: riser ${(tops[i - 1] - tops[i]).toFixed(2)} m`);
+      if (tops.at(-1) - list[0].y0 < 0.05) problems.push(`${bp.id} ${id}: bottom tread does not reach the ground`);
+    }
+    openAllDoors(c2, bp, false);
+  }
+  assert.ok(checked >= 20, `only ${checked} ground-floor doors checked`);
+  assert.deepEqual(problems, []);
+});
+
 test('every doorway admits the R=0.3 player with +-0.11 m of lateral error, and the wall beside it still blocks', () => {
   const ph = ctx.physics, P = { radius: 0.3, height: 1.78, stepUp: 0.5, maxSlope: 0.9, gravity: 9.8 };
   const run = (bp, d, lat) => {

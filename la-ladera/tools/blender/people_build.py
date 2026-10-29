@@ -39,19 +39,19 @@ PEOPLE = [
     dict(id='m_afro', kind='man', H=1.78, skin=6, build=1.05, hair=(0, 'curly'), eye='#2a1a10', top='#d9a441', top_style='jersey' if False else 'football', sleeve='short', bot_style='jeans', bot='#2f3e57', shoe=('trainer', '#e6e6e6', '#f2f2f2'), beard=True, tags=['man', 'adult']),
     dict(id='w_afro', kind='woman', H=1.66, skin=5, build=1.0, hair=(0, 'curly'), eye='#2a1a10', top='#c8573c', top_style='dress', sleeve='short', bot_style='skirt', bot='#c8573c', shoe=('shoe', '#2a1c14', '#1a120c'), lips='#6a2a2a', bag=('handbag', '#8a5a3a'), tags=['woman', 'adult']),
     # ---- P2 cast: the people who keep the barrio running (shopkeepers by trade, school, clinic, street)
-    dict(id='m_panadero', kind='man', H=1.72, skin=3, build=1.12, hair=(0, 'short'), eye='#3a2a1a', top='#5a86a8', top_style='tshirt', sleeve='short', bot_style='trousers', bot='#c9c4b6', apron='#efe9d8', shoe=('shoe', '#2a1c14', '#1a120c'), hat=('chef', '#f6f4ee'), stubble=True, tags=['man', 'adult', 'shop', 'shop:panaderia', 'cook']),
-    dict(id='w_cocinera', kind='woman', H=1.58, skin=3, build=1.12, hair=(0, 'braid'), eye='#2a1a10', top='#d4725a', top_style='tshirt', sleeve='short', bot_style='skirt', bot='#4a5a7a', apron='#e9e1c8', shoe=('shoe', '#2a1c14', '#1a120c'), lips='#9a4a46', tags=['woman', 'adult', 'shop', 'shop:restaurante', 'shop:cafe', 'cook', 'vendor']),
-    dict(id='m_carnicero', kind='man', H=1.74, skin=2, build=1.22, hair=(1, 'short'), eye='#3a2a1a', top='#f2f2ee', top_style='tshirt', sleeve='short', bot_style='trousers', bot='#6a7078', apron='#c9ced6', shoe=('boot', '#e0e0d8', '#2a2a2a'), hat=('cap', '#f2f2ee'), stubble=True, tags=['man', 'adult', 'shop', 'shop:carniceria']),
+    dict(id='m_panadero', kind='man', H=1.72, skin=3, build=1.12, hair=(0, 'short'), eye='#3a2a1a', top='#5a86a8', top_style='tshirt', sleeve='short', bot_style='trousers', bot='#c9c4b6', apron='#efe9d8', shoe=('shoe', '#2a1c14', '#1a120c'), hat=('chef', '#f6f4ee'), stubble=True, tags=['man', 'adult', 'shop', 'shop:panaderia', 'cook', 'uniform']),
+    dict(id='w_cocinera', kind='woman', H=1.58, skin=3, build=1.12, hair=(0, 'braid'), eye='#2a1a10', top='#d4725a', top_style='tshirt', sleeve='short', bot_style='skirt', bot='#4a5a7a', apron='#e9e1c8', shoe=('shoe', '#2a1c14', '#1a120c'), lips='#9a4a46', tags=['woman', 'adult', 'shop', 'shop:restaurante', 'shop:cafe', 'cook', 'vendor', 'uniform']),
+    dict(id='m_carnicero', kind='man', H=1.74, skin=2, build=1.22, hair=(1, 'short'), eye='#3a2a1a', top='#f2f2ee', top_style='tshirt', sleeve='short', bot_style='trousers', bot='#6a7078', apron='#c9ced6', shoe=('boot', '#e0e0d8', '#2a2a2a'), hat=('cap', '#f2f2ee'), stubble=True, tags=['man', 'adult', 'shop', 'shop:carniceria', 'uniform']),
     dict(id='w_peluquera', kind='woman', H=1.66, skin=2, build=0.96, hair=(7, 'long'), eye='#3a2a1a', top='#c8c0d8', top_style='tshirt', sleeve='short', bot_style='jeans', bot='#5a6c8a', shoe=('trainer', '#f2f2f2', '#e6e6e6'), lips='#b03a50', tags=['woman', 'adult', 'shop', 'shop:peluqueria', 'shop:modista', 'shop:zapateria']),
-    dict(id='m_mecanico', kind='man', H=1.76, skin=3, build=1.1, hair=(0, 'short'), eye='#2a1a10', top='#6a8fb8', top_style='shirt', sleeve='long', bot_style='trousers', bot='#6a8fb8', shoe=('boot', '#6b4a2a', '#2a1e14'), hat=('cap', '#d8604a'), stubble=True, tags=['man', 'adult', 'shop', 'shop:taller', 'shop:ferreteria', 'work']),
-    dict(id='w_farmaceutica', kind='woman', H=1.62, skin=3, build=0.98, hair=(1, 'bun'), eye='#2a1a10', top='#f4f4f2', top_style='labcoat', sleeve='long', inner='#5aa6a6', bot_style='trousers', bot='#8a96a8', shoe=('shoe', '#f2f2f2', '#d8d8d8'), glasses=True, lips='#a8524a', tags=['woman', 'adult', 'shop', 'shop:drogueria', 'nurse']),
+    dict(id='m_mecanico', kind='man', H=1.76, skin=3, build=1.1, hair=(0, 'short'), eye='#2a1a10', top='#6a8fb8', top_style='shirt', sleeve='long', bot_style='trousers', bot='#6a8fb8', shoe=('boot', '#6b4a2a', '#2a1e14'), hat=('cap', '#d8604a'), stubble=True, tags=['man', 'adult', 'shop', 'shop:taller', 'shop:ferreteria', 'work', 'uniform']),
+    dict(id='w_farmaceutica', kind='woman', H=1.62, skin=3, build=0.98, hair=(1, 'bun'), eye='#2a1a10', top='#f4f4f2', top_style='labcoat', sleeve='long', inner='#5aa6a6', bot_style='trousers', bot='#8a96a8', shoe=('shoe', '#f2f2f2', '#d8d8d8'), glasses=True, lips='#a8524a', tags=['woman', 'adult', 'shop', 'shop:drogueria', 'nurse', 'uniform']),
     dict(id='w_maestra', kind='woman', H=1.64, skin=2, build=0.97, hair=(2, 'bob'), eye='#3a2a1a', top='#a77fc0', top_style='jumper', sleeve='long', bot_style='trousers', bot='#6a6a74', shoe=('shoe', '#5a3a2a', '#2a1e14'), glasses=True, bag=('shoulder', '#7a5a3a'), lips='#a8524a', tags=['woman', 'adult', 'teacher', 'shop:papeleria', 'shop:minutos']),
-    dict(id='m_mototaxi', kind='man', H=1.70, skin=3, build=1.0, hair=(0, 'short'), eye='#2a1a10', top='#8a8a92', top_style='tshirt', sleeve='short', vest='#f08a1a', bot_style='jeans', bot='#5a7aa8', shoe=('trainer', '#e6e6e6', '#f2f2f2'), hat=('helmet', '#d8dce0'), stubble=True, tags=['man', 'adult', 'moto', 'work']),
+    dict(id='m_mototaxi', kind='man', H=1.70, skin=3, build=1.0, hair=(0, 'short'), eye='#2a1a10', top='#8a8a92', top_style='tshirt', sleeve='short', vest='#f08a1a', bot_style='jeans', bot='#5a7aa8', shoe=('trainer', '#e6e6e6', '#f2f2f2'), hat=('helmet', '#d8dce0'), stubble=True, tags=['man', 'adult', 'moto', 'work', 'uniform']),
     dict(id='m_vendedor', kind='man', H=1.68, skin=2, build=1.0, hair=(1, 'short'), eye='#3a2a1a', top='#f0e8d0', top_style='shirt', sleeve='long', bot_style='trousers', bot='#8a7a5e', shoe=('shoe', '#5a4030', '#2a1e14'), hat=('sombrero', '#d6c08a'), stubble=True, tags=['man', 'adult', 'vendor', 'work']),
     dict(id='m_abuelo', kind='elder', H=1.62, skin=2, build=1.0, hair=(5, 'receding'), eye='#3a2a1a', top='#d8d2c2', top_style='shirt', sleeve='long', ruana='#8a5a34', ruana_trim='#c9a24a', bot_style='trousers', bot='#6a6d72', shoe=('shoe', '#3a2a1e', '#2a1e14'), hat=('sombrero', '#cdb88a'), stoop=0.07, wrinkles=True, tags=['man', 'elder']),
-    dict(id='w_beata', kind='elder', fem=True, H=1.50, skin=3, build=1.05, hair=(6, 'bun'), eye='#4a3020', top='#5a5a68', top_style='coat', sleeve='long', inner='#e8e8e8', bot_style='skirt', bot='#2a2a2e', shoe=('shoe', '#2a2a2a', '#1a1a1a'), hat=('scarf', '#3a3a46'), bag=('handbag', '#2a2a30'), stoop=0.06, wrinkles=True, lips='#8a4a42', tags=['woman', 'elder', 'beata']),
-    dict(id='b_escolar', kind='boy', H=1.32, skin=3, build=1.0, hair=(0, 'short'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='trousers', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#c0392b'), tags=['boy', 'kid', 'student']),
-    dict(id='g_escolar', kind='girl', H=1.24, skin=2, build=1.0, hair=(0, 'pigtails'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='skirt', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#e0609a'), lips='#c07078', tags=['girl', 'kid', 'student']),
+    dict(id='w_beata', kind='elder', fem=True, H=1.50, skin=3, build=1.05, hair=(6, 'bald'), eye='#4a3020', top='#5a5a68', top_style='coat', sleeve='long', inner='#e8e8e8', bot_style='skirt', bot='#2a2a2e', shoe=('shoe', '#2a2a2a', '#1a1a1a'), hat=('scarf', '#3a3a46'), bag=('handbag', '#2a2a30'), stoop=0.06, wrinkles=True, lips='#8a4a42', tags=['woman', 'elder', 'beata', 'uniform']),
+    dict(id='b_escolar', kind='boy', H=1.32, skin=3, build=1.0, hair=(0, 'short'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='trousers', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#c0392b'), tags=['boy', 'kid', 'student', 'uniform']),
+    dict(id='g_escolar', kind='girl', H=1.24, skin=2, build=1.0, hair=(0, 'pigtails'), eye='#2a1a10', top='#f2f2f2', top_style='shirt', sleeve='short', bot_style='skirt', bot='#6a82b8', shoe=('shoe', '#2a2a2e', '#101010'), bag=('schoolbag', '#e0609a'), lips='#c07078', tags=['girl', 'kid', 'student', 'uniform']),
 ]
 
 # ------------------------------------------------------------------ geometry helpers
@@ -372,9 +372,14 @@ def build_person(pd):
         loft(pb, lo_, 'skirt', ac, closed=False, cap_top=False, cap_bot=False)
         r_ = rows_at(rows, rows[5][0]); zt_ = rows[5][0]
         loft(pb, [ring(0, r_[3] + lean(zt_), zt_ - 0.014, r_[1] * layer * 1.07 + 0.008, r_[2] * layer * 1.07 + 0.010, 20), ring(0, r_[3] + lean(zt_), zt_ + 0.010, r_[1] * layer * 1.07 + 0.008, r_[2] * layer * 1.07 + 0.010, 20)], 'torso', ac, cap_top=False, cap_bot=False)   # waist tie
-        rt_ = rows_at(rows, zb_)
+        def surf_(z_, xs_):          # a point just outside the chest surface at height z_ and lateral offset xs_ (the straps hug the body instead of cutting through it)
+            r_ = rows_at(rows, z_); e_ = max(0.0, 1.0 - (xs_ / (r_[1] * layer * 1.03)) ** 2)
+            return (xs_, r_[3] + lean(z_) + r_[2] * layer * 1.03 * math.sqrt(e_) + 0.010, z_)
         for sg_ in (-1, 1):
-            tube_pts(pb, [(sg_ * 0.060 * k, rt_[3] + rt_[2] * layer * 1.04 + 0.010, zb_), (sg_ * 0.052 * k, rt_[3] + 0.004, P['trap'] + 0.004), (sg_ * 0.046 * k, rt_[3] - 0.020, P['nbase'] + 0.010)], [0.0075 * k] * 3, 'torso', ac, n=5, cap_top=True, cap_bot=True)
+            zz_ = (zb_, (zb_ + P['trap']) / 2, P['trap'] + 0.004)
+            pts_a = [surf_(z_, sg_ * x_ * k) for z_, x_ in zip(zz_, (0.060, 0.058, 0.054))]
+            pts_a.append((sg_ * 0.046 * k, rows_at(rows, P['nbase'])[3] - 0.022, P['nbase'] + 0.010))
+            tube_pts(pb, pts_a, [0.0075 * k] * 4, 'torso', ac, n=5, cap_top=True, cap_bot=True)
     # ---- ruana (Andean wool poncho): hangs from the shoulders, open slit at the front, wide enough for the arms to swing inside
     if pd.get('ruana'):
         rc_ = pd['ruana']; fab('wool_coat')
@@ -487,13 +492,15 @@ def build_person(pd):
     hcol = HAIR[pd['hair'][0]]; style = pd['hair'][1]
     zc_f = lambda f: P['chin'] + f * hh
     th = (0.007 if style == 'buzz' else 0.016) * k
+    hat_off = th + 0.010 * k                    # every hat shell stands clear of the hair cap (it used to be thinner than the hair, which then poked through)
+    hat_ = pd.get('hat')
     rng_h = random.Random(zlib.crc32(pd['id'].encode()))
     def hairline(phi, st):
         """hairline height fraction vs angle from the front (phi = 0 front .. pi back)"""
         pts_ = [(0.0, 0.80), (0.5, 0.75), (0.9, 0.66), (1.57, 0.62), (2.2, 0.54), (3.14159, 0.36)]
         if st in ('long', 'bob', 'braid', 'pigtails'): pts_ = [(0.0, 0.79), (0.5, 0.75), (0.9, 0.62), (1.57, 0.56), (2.2, 0.40), (3.14159, 0.32)]
         if pd['kind'] == 'elder': pts_ = [(0.0, 0.74), (0.5, 0.70), (0.9, 0.64), (1.57, 0.62), (2.2, 0.54), (3.14159, 0.40)]
-        if st == 'receding': pts_ = [(0.0, 0.64), (0.5, 0.62), (0.9, 0.60), (1.57, 0.60), (2.2, 0.50), (3.14159, 0.38)]       # bald crown front, hair at the sides and nape
+        if st == 'receding': pts_ = [(0.0, 0.92), (0.5, 0.88), (0.9, 0.72), (1.57, 0.60), (2.2, 0.50), (3.14159, 0.38)]       # bare forehead and crown, hair at the sides and nape
         if st == 'slick': pts_ = [(0.0, 0.86), (0.5, 0.80), (0.9, 0.66), (1.57, 0.58), (2.2, 0.44), (3.14159, 0.34)]
         if st == 'scarf': pts_ = [(0.0, 0.76), (0.5, 0.72), (0.9, 0.62), (1.57, 0.52), (2.2, 0.40), (3.14159, 0.28)]
         phi = abs(phi)
@@ -580,7 +587,7 @@ def build_person(pd):
         fr = math.radians(90)
         back = [math.radians(a_) for a_ in range(200, 341, 10)]
         side_l = [math.radians(a_) for a_ in (150, 165, 180)]; side_r = [math.radians(a_) for a_ in (0, 15, 30)]
-        if style == 'short':
+        if style == 'short' and not hat_:
             # fringe tufts along the front hairline + short layers at the nape / sides
             cards_ring([fr + math.radians(d) for d in range(-40, 41, 16)], 0.86, 0.66, 0.002, 0.03, 3, 0.055, 1, 0.05, 0.1)
         if style == 'curly':
@@ -654,12 +661,12 @@ def build_person(pd):
         hs, hc = hat
         fab('knit' if hs == 'beanie' else 'wool_coat')
         if hs == 'beanie':
-            rs = [hring(r_, 1.0, -0.004, 0.016 * k, 0.016 * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.62]
+            rs = [hring(r_, 1.0, -0.004, hat_off, hat_off) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.62]
             loft(pb, rs, 'head', hc, cap_top=True, cap_bot=False)
             loft(pb, [rs[0], [(x, y, z - 0.012) for x, y, z in rs[0]]], 'head', '#d9d9d9', cap_top=False, cap_bot=False)
         if hs == 'tam':
             zb_ = P['chin'] + hh * 0.70
-            rb_ = [hring(r_, 1.0, -0.002, 0.012 * k, 0.012 * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.70]
+            rb_ = [hring(r_, 1.0, -0.002, hat_off, hat_off) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.70]
             r0_ = rb_[0]; cyc = sum(p_[1] for p_ in r0_) / len(r0_); zc0 = r0_[0][2]
             cap_r = max(abs(p_[0]) for p_ in r0_)
             crown = [ring(0, cyc + 0.006, zc0 + dz, cap_r * sc_, cap_r * sc_ * 1.02, 14) for dz, sc_ in ((0.0, 1.0), (0.016, 1.22), (0.034, 1.30), (0.052, 1.18), (0.062, 0.86))]
@@ -667,7 +674,7 @@ def build_person(pd):
             loft(pb, [ring(0, cyc, zc0 - 0.014, cap_r * 1.02, cap_r * 1.05, 14), ring(0, cyc, zc0 + 0.008, cap_r * 1.04, cap_r * 1.07, 14)], 'head', '#14141a', cap_top=False, cap_bot=False)
             sphere(pb, (0, cyc + 0.006, zc0 + 0.070), 0.016 * k, 0.016 * k, 0.014 * k, 'head', '#b5161e', 6, 3)
         if hs == 'glengarry':
-            rs = [hring(r_, 1.0, -0.002, 0.013 * k, 0.013 * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.70]
+            rs = [hring(r_, 1.0, -0.002, hat_off, hat_off) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.70]
             loft(pb, rs, 'head', hc, cap_top=True, cap_bot=False)
             zb_ = rs[0][0][2]; cyc = sum(p_[1] for p_ in rs[0]) / len(rs[0])
             rbox(pb, (0, cyc, zb_ + 0.075 * k), (0.016 * k, 0.17 * k, 0.034 * k), 'head', hc)
@@ -675,13 +682,13 @@ def build_person(pd):
             for sg_ in (-1, 1): rbox(pb, (sg_ * 0.012, cyc - max(p_[1] - cyc for p_ in rs[0]) - 0.012, zb_ - 0.020), (0.012, 0.010, 0.060 * k), 'head', '#101010')
             sphere(pb, (0, cyc + max(p_[1] - cyc for p_ in rs[0]) + 0.006, zb_ + 0.016), 0.010 * k, 0.005, 0.010 * k, 'head', '#c9ced6', 6, 3)
         if hs == 'cap':
-            rs = [hring(r_, 1.0, -0.002, 0.012 * k, 0.012 * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.70]
+            rs = [hring(r_, 1.0, -0.002, hat_off, hat_off) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.70]
             loft(pb, rs, 'head', hc, cap_top=True, cap_bot=False)
             zb = rs[0][0][2]
             pk = [(-0.07 * k, hy0 + ctrl[6][2] + 0.0, zb + 0.004), (0.07 * k, hy0 + ctrl[6][2] + 0.0, zb + 0.004), (0.06 * k, hy0 + ctrl[6][2] + 0.075 * k, zb - 0.004), (-0.06 * k, hy0 + ctrl[6][2] + 0.075 * k, zb - 0.004)]
             vv = [pb.V(p, 'head') for p in pk]; pb.F(vv, hc, False); pb.F(vv[::-1], hc, False)
         if hs in ('sombrero', 'hardhat', 'helmet', 'chef', 'scarf'):
-            rs = [hring(r_, 1.0, -0.002, 0.012 * k, 0.012 * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= (0.62 if hs in ('hardhat', 'helmet') else 0.72)]
+            rs = [hring(r_, 1.0, -0.002, hat_off, hat_off) for r_ in hrows if (r_[0] - P['chin']) / hh >= (0.62 if hs in ('hardhat', 'helmet') else 0.72)]
             zb = rs[0][0][2]; cyc = sum(p_[1] for p_ in rs[0]) / len(rs[0]); cap_r = max(abs(p_[0]) for p_ in rs[0]); cap_ry = max(p_[1] - cyc for p_ in rs[0])
             if hs == 'sombrero':
                 # Colombian straw hat (aguadeño): tall flat-topped crown, dark band, wide drooping brim
@@ -693,8 +700,8 @@ def build_person(pd):
                 loft(pb, brim, 'head', hc, cap_top=False, cap_bot=False, smooth=False)
             elif hs in ('hardhat', 'helmet'):
                 fab('plastic')
-                over = 0.016 if hs == 'hardhat' else 0.024
-                loft(pb, [hring(r_, 1.0, -0.002, over * k, over * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= (0.62 if hs == 'hardhat' else 0.50)], 'head', hc, cap_top=True, cap_bot=False)
+                over = (hat_off / k + 0.004) if hs == 'hardhat' else (hat_off / k + 0.010)
+                loft(pb, [hring(r_, 1.0, -0.002, over * k, over * k) for r_ in hrows if (r_[0] - P['chin']) / hh >= 0.60], 'head', hc, cap_top=True, cap_bot=False)
                 zf_ = zb + 0.006
                 vis = [(-0.075 * k, cyc + cap_ry + over * k + 0.002, zf_), (0.075 * k, cyc + cap_ry + over * k + 0.002, zf_), (0.066 * k, cyc + cap_ry + over * k + (0.085 if hs == 'hardhat' else 0.050) * k, zf_ - 0.010), (-0.066 * k, cyc + cap_ry + over * k + (0.085 if hs == 'hardhat' else 0.050) * k, zf_ - 0.010)]
                 vv = [pb.V(p, 'head') for p in vis]; pb.F(vv, hc, False); pb.F(vv[::-1], hc, False)
@@ -713,7 +720,7 @@ def build_person(pd):
                     for i in range(HN2):
                         ang = 2 * math.pi * i / HN2; phi = ((ang - math.pi / 2 + math.pi) % (2 * math.pi)) - math.pi
                         ff = max(f, hairline(phi, 'scarf'))
-                        pts_.append(hair_point(ang, ff, th + 0.008 * k))
+                        pts_.append(hair_point(ang, ff, th + 0.012 * k))
                     rgs.append(pts_)
                 loft(pb, rgs, 'head', hc, cap_top=True, cap_bot=False, closed=True)
                 kb = hair_point(math.radians(270), 0.40, th + 0.014)
@@ -1257,6 +1264,83 @@ def clip_defs():
         d['forearm_l'] = [('x', 0.5 + 0.3 * s_(2 * p))]; d['forearm_r'] = [('x', 0.5 + 0.3 * s_(2 * p + 1))]; d['head'] = [('z', 0.4 * s_(p + 0.2)), ('x', 0.05 * s_(3 * p))]
         return d
     C['kid_fidget'] = (96, fidget)
+    # ---- P2 clips: daily-life and work loops (props such as the broom or the bundle are attached by js/people/props.js)
+    def talk_b(ph):
+        p = ph * TAU; d = idle_a(ph)
+        d['upperarm_r'] = [('x', 0.45 + 0.16 * s_(p)), ('y', 0.16)]; d['forearm_r'] = [('x', 1.05 + 0.35 * s_(2 * p + 1.0))]; d['hand_r'] = [('x', 0.25 * s_(2 * p)), ('z', 0.2 * s_(p))]
+        d['upperarm_l'] = [('x', 0.10), ('y', -0.04)]; d['forearm_l'] = [('x', 0.55 + 0.10 * s_(p + 2.0))]
+        d['head'] = [('x', 0.05 * s_(3 * p)), ('z', 0.12 * s_(p + 0.5))]; d['spine'] = [('y', -0.05 * s_(p)), ('x', 0.01)]
+        d['hips'] = [('y', 0.03 * s_(p)), ('z', 0.02 * s_(p + 1.0))]; d['fingers_r'] = [('x', 0.15 + 0.2 * (0.5 + 0.5 * s_(2 * p)))]
+        return d
+    C['talk_b'] = (120, talk_b)
+    def sweep(ph):
+        p = ph * TAU; d = idle_a(ph); st = s_(p)
+        d['spine'] = [('x', -0.20 + 0.03 * s_(2 * p)), ('z', 0.13 * st), ('y', -0.03)]; d['chest'] = [('z', 0.06 * st)]; d['hips'] = [('z', -0.05 * st)]
+        d['head'] = [('x', -0.22), ('z', -0.05 * st)]
+        d['upperarm_r'] = [('x', 0.50 + 0.07 * s_(2 * p)), ('y', 0.14)]; d['forearm_r'] = [('x', 0.80)]; d['fingers_r'] = [('x', 0.9)]
+        d['upperarm_l'] = [('x', 0.62 + 0.07 * s_(2 * p)), ('y', -0.12)]; d['forearm_l'] = [('x', 0.95)]; d['fingers_l'] = [('x', 0.9)]
+        d['thigh_l'] = [('x', 0.08)]; d['thigh_r'] = [('x', 0.08)]; d['shin_l'] = [('x', -0.10)]; d['shin_r'] = [('x', -0.10)]
+        return d
+    C['sweep'] = (72, sweep)
+    def cook(ph):
+        p = ph * TAU; d = idle_a(ph)
+        d['spine'] = [('x', -0.12), ('y', 0.03 * s_(p))]; d['head'] = [('x', -0.30 + 0.03 * s_(2 * p)), ('z', 0.04 * s_(p))]
+        d['upperarm_r'] = [('x', 0.55 + 0.05 * s_(p)), ('y', 0.10)]; d['forearm_r'] = [('x', 1.05 + 0.18 * s_(p + 1.0))]; d['hand_r'] = [('z', 0.30 * s_(p)), ('x', 0.18 * c_(p))]; d['fingers_r'] = [('x', 0.8)]
+        d['upperarm_l'] = [('x', 0.40), ('y', -0.12)]; d['forearm_l'] = [('x', 0.85)]; d['fingers_l'] = [('x', 0.5)]
+        return d
+    C['cook'] = (72, cook)
+    def sell(ph):
+        p = ph * TAU; d = idle_a(ph)
+        k = max(0.0, s_(p)) ** 2                                   # hands out toward the customer, then back
+        d['upperarm_r'] = [('x', 0.40 + 0.30 * k), ('y', 0.14)]; d['forearm_r'] = [('x', 0.95 + 0.45 * k)]; d['hand_r'] = [('x', -0.2 * k)]; d['fingers_r'] = [('x', 0.1)]
+        d['upperarm_l'] = [('x', 0.34 + 0.10 * k), ('y', -0.12)]; d['forearm_l'] = [('x', 0.90)]
+        d['head'] = [('x', -0.05 + 0.08 * s_(2 * p)), ('z', 0.06 * s_(p))]; d['spine'] = [('x', -0.04 - 0.03 * k)]
+        return d
+    C['sell'] = (96, sell)
+    def carry_arms(d):
+        d.update({'upperarm_l': [('x', 0.42), ('y', -0.10)], 'upperarm_r': [('x', 0.42), ('y', 0.10)], 'forearm_l': [('x', 1.35)], 'forearm_r': [('x', 1.35)], 'fingers_l': [('x', 0.6)], 'fingers_r': [('x', 0.6)]})
+        return d
+    def walk_carry(ph):
+        d = carry_arms(walk_gen(0.38, 0.52, 0.0, ph)); p = ph * TAU
+        d['spine'] = [('z', -0.10 * s_(p)), ('x', 0.02), ('y', -0.03 * s_(p))]
+        return d
+    C['walk_carry'] = (24, walk_carry)
+    C['carry_stand'] = (96, lambda ph: carry_arms(idle_a(ph)))
+    def lean_wall(ph):
+        p = ph * TAU; d = idle_a(ph)
+        d['spine'] = [('x', 0.10), ('z', 0.04)]; d['chest'] = [('x', 0.04)]; d['head'] = [('z', 0.05 * s_(p))]; d['hips'] = [('z', 0.05), ('y', 0.02 * s_(p))]
+        d['thigh_l'] = [('x', 0.04)]; d['thigh_r'] = [('x', 0.30), ('y', -0.05)]; d['shin_r'] = [('x', -0.30)]; d['foot_r'] = [('x', 0.22)]
+        d['upperarm_r'] = [('x', 0.30)]; d['forearm_r'] = [('x', 1.6)]; d['fingers_r'] = [('x', 0.5)]
+        d['upperarm_l'] = [('x', -0.05)]; d['forearm_l'] = [('x', 0.35)]
+        return d
+    C['lean_wall'] = (120, lean_wall)
+    def laundry(ph):
+        p = ph * TAU; d = idle_a(ph)
+        a = 0.5 + 0.5 * s_(p); b = 0.5 + 0.5 * s_(p + math.pi)
+        d['upperarm_r'] = [('x', 1.6 + 0.9 * a), ('y', 0.12)]; d['forearm_r'] = [('x', 0.5 - 0.3 * a)]; d['fingers_r'] = [('x', 0.5)]
+        d['upperarm_l'] = [('x', 0.9 + 1.0 * b), ('y', -0.12)]; d['forearm_l'] = [('x', 0.9 - 0.5 * b)]; d['fingers_l'] = [('x', 0.4)]
+        d['spine'] = [('x', 0.05 + 0.05 * a), ('z', 0.04 * s_(p))]; d['head'] = [('x', 0.30)]
+        return d
+    C['laundry'] = (96, laundry)
+    def pray(ph):
+        p = ph * TAU; d = idle_a(ph)
+        d['upperarm_r'] = [('x', 0.62), ('y', 0.30)]; d['forearm_r'] = [('x', 2.05)]; d['hand_r'] = [('z', 0.1)]; d['fingers_r'] = [('x', 0.1)]
+        d['upperarm_l'] = [('x', 0.62), ('y', -0.30)]; d['forearm_l'] = [('x', 2.05)]; d['fingers_l'] = [('x', 0.1)]
+        d['head'] = [('x', -0.40 + 0.02 * s_(p))]; d['spine'] = [('x', -0.06 + 0.01 * s_(p))]
+        return d
+    C['pray'] = (120, pray)
+    def sit_talk(ph):
+        p = ph * TAU; d = sit_base(p)
+        d['upperarm_r'] = [('x', 0.65 + 0.2 * s_(2 * p)), ('y', 0.2 + 0.1 * s_(p))]; d['forearm_r'] = [('x', 1.25 + 0.4 * s_(2 * p + 0.5))]; d['hand_r'] = [('z', 0.25 * s_(3 * p))]
+        d['head'] = [('z', 0.2 * s_(p)), ('x', -0.05 + 0.05 * s_(2 * p))]; d['spine'] = [('y', 0.05 * s_(p))]
+        return d
+    C['sit_talk'] = (96, sit_talk)
+    def run_gen(ph):
+        d = walk_gen(0.78, 1.25, 0.95, ph, lift=0.35); p = ph * TAU
+        d['spine'] = [('z', -0.14 * s_(p)), ('x', -0.16), ('y', -0.05 * s_(p))]
+        d['forearm_l'] = [('x', 1.1 + 0.3 * max(0.0, s_(p + 1.2)))]; d['forearm_r'] = [('x', 1.1 + 0.3 * max(0.0, -s_(p + 1.2)))]
+        return d
+    C['run'] = (16, run_gen)
     return C
 
 def turn_gen(ph, sgn):
@@ -1384,6 +1468,32 @@ def make_hair_material():
     nt.links.new(t.outputs['Color'], bs.inputs['Base Color']); nt.links.new(t.outputs['Alpha'], bs.inputs['Alpha'])
     return m
 
+def fix_outward(bm):
+    """bmesh's recalc_face_normals orients an OPEN tube (all the lofted garments) by a global heuristic and gets some of them inside-out (every coat, jacket and
+    lab-coat torso came out dark: inward normals light and occlude the wrong way).  Per connected component, take a vote of side faces against the component's own
+    axis and flip the whole component when the majority points inward."""
+    bm.faces.ensure_lookup_table(); bm.faces.index_update()
+    seen = set(); flipped = 0
+    for f0 in bm.faces:
+        if f0.index in seen: continue
+        comp = []; stack = [f0]; seen.add(f0.index)
+        while stack:
+            f = stack.pop(); comp.append(f)
+            for e in f.edges:
+                for g in e.link_faces:
+                    if g.index not in seen: seen.add(g.index); stack.append(g)
+        if len(comp) < 12: continue
+        xs = [v.co.x for f in comp for v in f.verts]; ys = [v.co.y for f in comp for v in f.verts]
+        cx = (min(xs) + max(xs)) / 2; cy = (min(ys) + max(ys)) / 2
+        vote = n = 0
+        for f in comp:
+            if abs(f.normal.z) > 0.6: continue
+            c = f.calc_center_median(); o = f.normal.x * (c.x - cx) + f.normal.y * (c.y - cy)
+            vote += 1 if o > 0 else -1; n += 1
+        if n >= 10 and vote < -0.35 * n:
+            bmesh.ops.reverse_faces(bm, faces=comp); flipped += 1
+    return flipped
+
 def build_people(only=None):
     reset()
     root = group('people')
@@ -1394,6 +1504,10 @@ def build_people(only=None):
         bd = bone_defs(P, pd, g); bd['_kilt'] = g.get('kilt')
         pb.bm.verts.ensure_lookup_table(); pb.bm.faces.ensure_lookup_table()
         bmesh.ops.recalc_face_normals(pb.bm, faces=pb.bm.faces[:])
+        pb.bm.normal_update()
+        nflip = fix_outward(pb.bm)
+        if nflip: print(pd['id'], 'inside-out components flipped:', nflip)
+        pb.bm.normal_update()
         me = bpy.data.meshes.new(f"person_{pd['id']}_mesh"); pb.bm.to_mesh(me)
         for pi, p_ in enumerate(me.polygons): p_.use_smooth = pb.fsmooth[pi]
         mo = bpy.data.objects.new(f"person_{pd['id']}_mesh", me)
@@ -1409,16 +1523,17 @@ def build_people(only=None):
     # ---- PBR pages (albedo / normal / ORM, 2048 px = 256 px cells; LOD pages 1024 px)
     A, Nn, O = TX.build_pages([o[0] for o in objs], SKIN, HAIR)
     imgs = {}
-    for nm, arr in (('albedo', A), ('normal', Nn), ('orm', O)):
-        path = os.path.join(SCRATCH, f'people_{nm}.png')
-        im_ = Image.fromarray(arr)
-        if LOD: im_ = im_.resize((1024, 1024), Image.LANCZOS)
-        im_.save(path)
-        img = bpy.data.images.load(path); img.pack(); img.name = f'people_{nm}'
-        if nm != 'albedo': img.colorspace_settings.name = 'Non-Color'
-        imgs[nm] = img
-    m = make_pbr_material(imgs)
-    mh = make_hair_material()
+    if LOD:       # the LOD geometry is drawn with the full-detail material at run time (same UV layout): ship no textures
+        m = bpy.data.materials.new('people_pbr'); mh = bpy.data.materials.new('people_hair')
+    else:
+        for nm, arr in (('albedo', A), ('normal', Nn), ('orm', O)):
+            path = os.path.join(SCRATCH, f'people_{nm}.png')
+            Image.fromarray(arr).save(path)
+            img = bpy.data.images.load(path); img.pack(); img.name = f'people_{nm}'
+            if nm != 'albedo': img.colorspace_settings.name = 'Non-Color'
+            imgs[nm] = img
+        m = make_pbr_material(imgs)
+        mh = make_hair_material()
     meta = {}
     global CLIPS
     CLIPS = clip_defs()
@@ -1520,7 +1635,7 @@ def build_people(only=None):
         drop = hip - SEAT_HIP
         meta[pd['id']] = dict(id=pd['id'], kind=pd['kind'], tags=pd.get('tags', []), skin=pd['skin'], outfit=pd.get('outfit', {'trousers': 'trousers', 'jeans': 'trousers', 'leggings': 'leggings', 'shorts': 'shorts', 'skirt': 'dress'}.get(pd['bot_style'], pd['bot_style'])), heightM=round(top - bottom, 3), shoulderWidthM=round(2 * P['shw'] + 0.06, 3), eyeHeightM=round(eye, 3),
                               seatRootDropM=round(drop, 3), seatedEyeHeightM=round(eye - drop, 3), seatedHeadTopM=round(top - bottom - drop, 3), hipHeightM=round(hip, 3),
-                              legLengthM=round(hip, 3), walkSpeedMps=round(4 * hip * math.sin(0.40) / 1.0, 2), walkFastSpeedMps=round(4 * hip * math.sin(0.52) / (19 / 24), 2),
+                              legLengthM=round(hip, 3), walkSpeedMps=round(4 * hip * math.sin(0.40) / 1.0, 2), walkFastSpeedMps=round(4 * hip * math.sin(0.52) / (19 / 24), 2), runSpeedMps=round(4 * hip * math.sin(0.78) / (16 / 24), 2),
                               tris=sum(max(1, len(p_.vertices) - 2) for p_ in mo.data.polygons), slots=slot_meta, _bottom=bottom, _bd=None)
         # bones shift handled by rebuilding below
         g['bottom'] = bottom
@@ -1557,8 +1672,8 @@ def _decode(j, bin_, ai):
     raw = np.frombuffer(bin_, np.uint8, count=stride * (cnt - 1) + dt.itemsize * nc, offset=base)
     arr = np.lib.stride_tricks.as_strided(raw, shape=(cnt, dt.itemsize * nc), strides=(stride, 1)).copy().view(dt).reshape(cnt, nc)
     return arr
-def quantize_glb(path, hair_mask=True):
-    """KHR_mesh_quantization: NORMAL int8, TEXCOORD u16, COLOR u8, WEIGHTS u8 (positions / joints unchanged); hair material -> alpha MASK; drop unused buffer data"""
+def quantize_glb(path, hair_mask=True, color16=True):
+    """KHR_mesh_quantization: NORMAL int8, TEXCOORD u16, COLOR u16 (u8 for the LOD), WEIGHTS u8 (positions / joints unchanged); hair material -> alpha MASK; drop unused buffer data"""
     j, bin_ = _read_glb(path)
     conv = {}
     for m in j['meshes']:
@@ -1575,7 +1690,8 @@ def quantize_glb(path, hair_mask=True):
                         # normalized uint16: dark cloth keeps its gradient, and the game can re-tint a slot (alpha = slot * 16 / 255) by multiplying the colours
                         a4 = arr.astype(np.float32)
                         if a4.shape[1] == 3: a4 = np.concatenate([a4, np.ones((a4.shape[0], 1), np.float32)], 1)
-                        data = np.clip(np.round(a4 * 65535.0), 0, 65535).astype(np.uint16); ct = 5123; ty = 'VEC4'; nz = True; stride = 8
+                        if color16: data = np.clip(np.round(a4 * 65535.0), 0, 65535).astype(np.uint16); ct = 5123; ty = 'VEC4'; nz = True; stride = 8
+                        else: data = np.clip(np.round(a4 * 255.0), 0, 255).astype(np.uint8); ct = 5121; ty = 'VEC4'; nz = True; stride = 4
                     else:
                         w = arr.astype(np.float32); w = w / np.maximum(w.sum(1, keepdims=True), 1e-9)
                         q8 = np.clip(np.round(w * 255.0), 0, 255).astype(np.int32)
@@ -1613,19 +1729,33 @@ def quantize_glb(path, hair_mask=True):
     _write_glb(path, j, newbin)
     print('quantized', path, round(os.path.getsize(path) / 1e6, 2), 'MB')
 
+DRACO = os.environ.get('PEOPLE_DRACO', '1') != '0'
+def finish_glb(path, hair_mask=True):
+    """Draco build: geometry is already compressed by the exporter; only the material flags are patched (double sided cloth, alpha-tested hair cards)."""
+    j, bin_ = _read_glb(path)
+    for m in j['materials']:
+        m['doubleSided'] = True
+        if m.get('name') == 'people_hair' and hair_mask: m['alphaMode'] = 'MASK'; m['alphaCutoff'] = 0.5
+    _write_glb(path, j, bin_)
+    print('finished', path, round(os.path.getsize(path) / 1e6, 2), 'MB')
+
 def export_people(meta):
     path = os.path.join(OUTP, 'people_lod.glb' if LOD else 'people.glb')
     bpy.ops.object.select_all(action='DESELECT')
     kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_materials='EXPORT', export_image_format='JPEG', export_jpeg_quality=86, export_vertex_color='ACTIVE', export_cameras=False, export_lights=False,
               export_skins=True, export_animations=True, export_animation_mode='NLA_TRACKS', export_frame_range=False, export_optimize_animation_size=True,
               export_force_sampling=True)
+    if DRACO:      # Draco keeps 25 characters + LOD far under the 14 MB budget (js/people/rig.js decodes it with the vendored three.js Draco decoder)
+        kw.update(export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=7, export_draco_position_quantization=14, export_draco_normal_quantization=10,
+                  export_draco_texcoord_quantization=12, export_draco_color_quantization=12, export_draco_generic_quantization=12)
     try: bpy.ops.export_scene.gltf(**kw)
     except TypeError as e:
         print('TypeError', e)
         for k_ in ('export_optimize_animation_size', 'export_force_sampling', 'export_frame_range'): kw.pop(k_, None)
         bpy.ops.export_scene.gltf(**kw)
-    print(f'EXPORTED people.glb: {os.path.getsize(path)/1024:.0f} KB')
-    quantize_glb(path)
+    print(f'EXPORTED people.glb: {os.path.getsize(path)/1024:.0f} KB (draco={DRACO})')
+    if DRACO: finish_glb(path)
+    else: quantize_glb(path, color16=not LOD)
 
 def fk_grips(P, bd):
     """Hand grip positions (relative to the root) for stand_hold_pole (right hand) and stand_hold_rail (left hand): forward kinematics of the clip poses."""
@@ -1634,11 +1764,11 @@ def fk_grips(P, bd):
 if __name__ == '__main__':
     only = [a for a in ARGS if not a.startswith('--')]
     root, objs, meta, sw = build_people(only or None)
-    if LOD:      # LOD1: decimate every body (same rig / weights / names), 512 px atlas
+    if LOD:      # LOD1: decimate every body (same rig / weights / names), 1024 px atlas, no clips (it binds to the full-detail skeleton at run time)
         for pd, pb, mo, ao, P, g, bd in objs:
             tris0 = sum(max(1, len(p_.vertices) - 2) for p_ in mo.data.polygons)
             mo.modifiers.remove(mo.modifiers['Armature'])
-            dm = mo.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = min(1.0, 2200.0 / tris0); dm.use_collapse_triangulate = True; dm.delimit = {'UV', 'MATERIAL'}
+            dm = mo.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = min(1.0, 1600.0 / tris0); dm.use_collapse_triangulate = True; dm.delimit = {'UV', 'MATERIAL'}
             bpy.context.view_layer.objects.active = mo
             bpy.ops.object.modifier_apply(modifier='dec')
             am = mo.modifiers.new('Armature', 'ARMATURE'); am.object = ao
@@ -1646,7 +1776,7 @@ if __name__ == '__main__':
     finalize_rigs(objs, meta)
     # author the shared clips ONCE (on the first armature); every person has identical bone names / rest orientations
     first = objs[0][3]
-    names = list(CLIPS.keys())
+    names = list(CLIPS.keys()) if not LOD else []
     for nme in names:
         frames, fn = CLIPS[nme]
         pose_clip(first, nme, frames, fn)
@@ -1659,6 +1789,6 @@ if __name__ == '__main__':
     if LOD:
         sys.exit(0)
     out = dict(note='Heights are total standing heights (soles = 0). Headroom rule: train centre-line headroom is 1.88 m, 1.68 m above the bench fronts (|x|=0.62), ~1.3 m at the seat backs; every person is <= 1.80 m so standing in the aisle never clips; seated heads top out at seatedHeadTopM above the floor. Seated: set the root so that root.y = seatFloorY - seatRootDropM (clips sit_* are rotation-only).',
-               lod=dict(file='people_lod.glb', trisPerPerson=2200, atlasPx=512, note='same node names, rig and clips as people.glb; use beyond ~12 m (LOD0 people.glb nearer). Decimated: minor colour/UV artefacts possible on small details.'), seatTopM=SEAT_TOP, seatHipM=SEAT_HIP, loopClips=[c for c in names if c not in ONE_SHOT], oneShotClips=sorted(ONE_SHOT), fps=24,
+               lod=dict(file='people_lod.glb', trisPerPerson=1600, note='geometry only (no textures, no clips): same node names, skin and UV layout as people.glb, so js/people/rig.js swaps it into the full-detail skinned mesh beyond ~35 m. Same recolour slots (COLOR_0 alpha).'), seatTopM=SEAT_TOP, seatHipM=SEAT_HIP, loopClips=[c for c in names if c not in ONE_SHOT], oneShotClips=sorted(ONE_SHOT), fps=24,
                clipFrames={n: CLIPS[n][0] for n in names}, people=list(meta.values()))
     json.dump(out, open(os.path.join(OUTP, 'people_meta.json'), 'w'), indent=1)

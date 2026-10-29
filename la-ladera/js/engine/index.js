@@ -47,6 +47,7 @@ export function initEngine(ctx) {
   const renderer = new THREE.WebGLRenderer({
     canvas, antialias: false, powerPreference: 'high-performance', stencil: false,
     preserveDrawingBuffer: !!ctx.opts.preserve,
+    reversedDepthBuffer: ctx.opts.rdb !== false,                 // 32-bit float reversed-Z (EXT_clip_control): no z-fighting at distance; three falls back silently
   });
   renderer.shadowMap.enabled = ctx.opts.shadows !== false;
   renderer.shadowMap.type = THREE.PCFShadowMap;                 // 17-tap kernel with a controllable radius (see Look.setShadowQuality)

@@ -9,7 +9,11 @@ varying vec3 vDir;
 void main() {
   vDir = position;
   vec4 p = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-  gl_Position = p.xyww;
+  #ifdef USE_REVERSED_DEPTH_BUFFER
+  gl_Position = vec4( p.xy, 0.0, p.w );     // reversed-Z: the far plane is depth 0
+  #else
+  gl_Position = p.xyww;                     // the far plane is depth 1
+  #endif
 }`;
 
 const FRAG = /* glsl */`

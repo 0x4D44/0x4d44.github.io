@@ -12,6 +12,7 @@
 //    building-local -> world matrix) and author geometry in local coordinates.
 //  * matKey = material name, optionally tinted: 'plaster_a' or 'plaster_a#d9a441'.
 import * as THREE from 'three';
+import { mergeStatic } from './merge.js';
 
 const _c = new THREE.Color();
 const UP = [0, 1, 0];
@@ -284,6 +285,11 @@ export class Batcher {
     g.meshes.push(...ms); return ms;
   }
   flushAll() { for (const id of this.groups.keys()) this.flush(id); }
+  /**
+   * Fuse the static meshes of all groups (not `.int`) per material into spatial chunks: ~1300 meshes become a few hundred, so the main pass and the
+   * sun's shadow pass pay far fewer draw calls. Call once after flushAll(). See merge.js for what is left alone. o: { maxSpan, maxVerts, skip }.
+   */
+  mergeStatic(o) { return this.mergeInfo = mergeStatic(this, o); }
   stats() {
     let meshes = 0, tris = 0;
     for (const g of this.groups.values()) for (const m of g.meshes) { meshes++; tris += m.geometry.index.count / 3; }

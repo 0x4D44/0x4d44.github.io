@@ -84,18 +84,57 @@ export function buildDoorLeaves(G) {
     if (d.ext || d.roof) pose = poseExt ??= mkPose(bp.id + '.leaves.ext');
     else pose = poseInt ??= mkPose(bp.id + '.leaves.int');
     pose.add(pivot);
-    const wp = bp.frame.toWorld(d.x, yk + 1.05, d.z);
-    const st = { id: d.id, d, kind, pivot, phi0, dphi, t: 0, target: 0, open: false, bid: bp.id, emit: null };
+    const st = { id: d.id, d, kind, pivot, phi0, dphi, t: 0, target: 0, open: false, bid: bp.id, emit: null, geo: worldGeo(bp, d, yk) };
     ctx.archDoors.set(d.id, st);
-    ctx.interact.register({
-      id: 'door:' + d.id, kind: 'door', x: wp[0], y: wp[1], z: wp[2], radius: 2.4, aim: 0.5, ignoreDoor: d.id, building: bp.id,
-      prompt: () => (st.open ? (kind === 'shutter' ? 'Cerrar persiana' : 'Cerrar puerta') : (kind === 'shutter' ? 'Abrir persiana' : 'Abrir puerta')),
-      use: () => toggle(ctx, st, 'player'),
-    });
+    // one target on each side of the leaf, 0.45 m off the wall plane: whoever stands there is closer to it than to anything behind the door
+    for (const sd of [1, -1]) {
+      const wp = bp.frame.toWorld(d.x + sd * d.nx * 0.45, yk + 1.05, d.z + sd * d.nz * 0.45);
+      ctx.interact.register({
+        id: 'door:' + d.id + (sd > 0 ? ':in' : ':out'), kind: 'door', x: wp[0], y: wp[1], z: wp[2], radius: 2.4, aim: 0.5, ignoreDoor: d.id, building: bp.id,
+        prompt: () => (st.open ? (kind === 'shutter' ? 'Cerrar persiana' : 'Cerrar puerta') : (kind === 'shutter' ? 'Abrir persiana' : 'Abrir puerta')),
+        use: () => toggle(ctx, st, 'player'),
+      });
+    }
   }
   if (poseExt) ctx.batch.object(bp.id + '.ext').add(poseExt);
   if (poseInt) ctx.batch.object(bp.id + '.int').add(poseInt);
   installSystem(ctx);
+}
+
+/** The door in world axes: centre on the wall plane, unit vectors along the wall (t) and across it (n), floor height, half opening. */
+function worldGeo(bp, d, yk) {
+  const fr = bp.frame, c = fr.toWorld(d.x, yk, d.z), ex = fr.toWorld(d.x + 1, yk, d.z), ez = fr.toWorld(d.x, yk, d.z + 1);
+  const ux = [ex[0] - c[0], ex[2] - c[2]], uz = [ez[0] - c[0], ez[2] - c[2]];
+  const [tx, tz] = d.wall.dir === 'x' ? ux : uz, [nx, nz] = d.wall.dir === 'x' ? uz : ux;
+  return { cx: c[0], cz: c[2], y: c[1], tx, tz, nx, nz, hw: d.w / 2 };
+}
+
+const PUSH_T = 0.25;                                          // seconds of walking into a closed door before it gives way
+
+/**
+ * Push to open: a player who keeps walking into a closed swing door (centred in the opening, held by it) opens it after a beat.
+ * Aiming and E still work; this is for the player who never finds the prompt, or whose aim is on the neighbour standing by the door.
+ * Shop shutters never open this way. The physics clips the move at a wall instead of flagging `blocked`, so "pushing" is read from the
+ * player's own numbers: the velocity that follows the held keys stays high while the distance actually covered drops to nothing.
+ */
+function pushOpen(ctx, dt) {
+  const P = ctx.player, s = P?.s, ps = ctx.archPush ??= { id: null, t: 0 };
+  const v = P ? Math.hypot(P.vx ?? 0, P.vz ?? 0) : 0;
+  if (!s || P.locked || v < 1.0 || (P.speed ?? 0) > 0.35) { ps.id = null; ps.t = 0; return; }
+  const wx = P.vx / v, wz = P.vz / v;
+  let hit = null;
+  for (const st of ctx.archDoors.values()) {
+    if (st.kind !== 'swing' || st.open) continue;
+    const g = st.geo, rx = s.x - g.cx, rz = s.z - g.cz;
+    if (rx * rx + rz * rz > 1.0 || Math.abs(s.y - g.y) > 0.8) continue;
+    const across = rx * g.nx + rz * g.nz, along = rx * g.tx + rz * g.tz;
+    if (Math.abs(across) > 0.55 || Math.abs(along) > g.hw) continue;
+    if (-Math.sign(across) * (wx * g.nx + wz * g.nz) < 0.6) continue;      // not heading into the door
+    hit = st; break;
+  }
+  if (!hit) { ps.id = null; ps.t = 0; return; }
+  if (ps.id !== hit.id) { ps.id = hit.id; ps.t = 0; }
+  if ((ps.t += dt) >= PUSH_T) { ps.id = null; ps.t = 0; toggle(ctx, hit, 'player'); }
 }
 
 /** True when the player stands too close to the door line to close it safely. */
@@ -130,6 +169,7 @@ function installSystem(ctx) {
   });
   ctx.addSystem('arch-doors', (dt) => {
     const ph = ctx.physics;
+    pushOpen(ctx, dt);
     // follow the physics state (a collider flipped by anyone else still swings the leaf)
     for (const st of ctx.archDoors.values()) {
       const open = ph.doorOpen(st.id);

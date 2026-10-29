@@ -18,10 +18,11 @@ export const DEFAULTS = {
   ttsOn: true,          // speak NPC lines aloud
   crosshair: true,
   timeFlow: false,      // let the clock run
+  address: 'm',         // how the neighbours address you in dialogue: 'm' = vecino, mijo, señor; 'f' = vecina, mija, señora (people/ reads ctx.settings.v.address)
 };
 
 const RANGE = { fov: [55, 100], sens: [0.2, 3], volume: [0, 1], ttsRate: [0.6, 1.4] };
-const ENUM = { quality: ['auto', 'low', 'medium', 'high'], subLang: ['both', 'es', 'en'] };
+const ENUM = { quality: ['auto', 'low', 'medium', 'high'], subLang: ['both', 'es', 'en'], address: ['m', 'f'] };
 
 export function createSettings(ctx) {
   const v = { ...DEFAULTS }, subs = [];
