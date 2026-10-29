@@ -489,6 +489,7 @@ export function createTrack(id) {
   track._ctx = { THREE, extra, C, theme, def, hw, wallDist, cor, bridgeIdx, shore, lake, rng, own, anim, group, nearest, kerbL, kerbR, lineLat, canvas, toTex, noiseFill, bake, mat, part, col, groundTexture, Strips, WH, cells, ck, CELL };
 
   track._ctx.groundClip = shore ? (shore.kind === "sea" ? { zMin: shore.z - 8 } : { zMax: shore.z }) : {};
+  extra?.prepTerrain?.(track);   // theme hook: runs once before the terrain is built (may adjust track._ctx.cor etc.)
   buildTerrain(track);
   buildBridges(track);
   buildScenery(track);
@@ -550,6 +551,7 @@ function buildTerrain(track) {
   const height = (x, z) => {
     corr(x, z, tmp);
     let h = bg(x, z);
+    if (X.extra?.carve) h = X.extra.carve(track, x, z, h);   // theme hook: carve lochs / burns / valleys into the background height
     if (tmp[0] > 0) h += (tmp[1] - 0.12 - h) * tmp[0];
     if (tmp[2] <= wallDist + 1.0 && h > tmp[3]) h = tmp[3];   // never above the road surface inside the walls
     if (lake) { const dl = Math.hypot(x - lake.x, z - lake.z); if (dl < lake.r + 26) { const ly = lake.y; h += (ly - 0.35 - h) * (1 - sm(lake.r - 4, lake.r + 26, dl)); } }

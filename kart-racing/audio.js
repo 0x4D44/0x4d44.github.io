@@ -6,6 +6,34 @@
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const NOTE = (n) => 440 * Math.pow(2, (n - 69) / 12);
 const MAX_VOICES = 44;
+// ---- bagpipe tune (original, A mixolydian, 6/8 jig feel). Tokens: pitch letter + length in eighths. g=low G, A=low A, B, C=C#, D, E, F=F#, G=high G, a=high A.
+const PIPE_HZ = { g: 392, A: 440, B: 493.9, C: 554.4, D: 587.3, E: 659.3, F: 740, G: 784, a: 880 };
+const PIPE_EIGHTH = 0.178;
+const PIPE_SCORE = [
+  "A2 C1 E2 C1 | E1 a2 E1 C2 | D2 F1 a2 F1 | E2 B1 A3",
+  "A2 C1 E2 C1 | E1 a2 E1 C2 | D2 F1 a2 F1 | B2 g1 A3",
+  "a3 G1 a1 G1 | F2 E1 F2 D1 | E3 C1 E1 F1 | E2 D1 C2 B1",
+  "a3 G1 a1 G1 | F2 E1 D2 C1 | B2 C1 D1 C1 B1 | A5 g1",
+];
+let _pipeEv = null;
+function PIPE_TUNE() {
+  if (_pipeEv) return _pipeEv;
+  const out = []; let prev = null;
+  for (const line of PIPE_SCORE) for (const bar of line.split("|")) {
+    bar.trim().split(/\s+/).forEach((tok, i) => {
+      const f = PIPE_HZ[tok[0]], n = parseFloat(tok.slice(1)); let dur = n * PIPE_EIGHTH;
+      const accent = i === 0;
+      // gracenote: on a repeated pitch, on bar downbeats, and before long notes (high G above F#, otherwise a low-E flick)
+      let grace = 0;
+      if (prev === f || (accent && prev !== null) || n >= 3) grace = f >= PIPE_HZ.G ? PIPE_HZ.E : PIPE_HZ.G;
+      if (grace === f) grace = 0;
+      if (grace) dur = Math.max(0.05, dur);
+      out.push({ f, dur, grace, acc: accent });
+      prev = f;
+    });
+  }
+  return (_pipeEv = out);
+}
 const MIN_GAP = { bump: 0.06, wall: 0.08, hit: 0.1, "item-roll": 0.02, "ui-move": 0.03, "drift-level": 0.05, throw: 0.05 };
 
 function driveCurve(k, n = 1024) {
@@ -597,6 +625,121 @@ export class GameAudio {
         for (const n of [e.intake, e.wind, e.skid, e.skid2, e.rumble]) { try { n.gain.disconnect(); } catch (x) { /* ignore */ } }
       }, 600);
     } catch (err) { /* ignore */ }
+  }
+
+  // ------------------------------------------------------------------ bagpiper (Highland Fling): chanter + 3 drones, positional
+  // setPiper(true, {x,y,z}) every frame while the piper plays; setPiper(false) fades him out. Self-stops ~0.7 s after the last update.
+  // Routed through sfxBus (+ reverb send) so it follows the SFX volume. Tune: an original A-mixolydian 6/8 jig with pipe gracenotes.
+  setPiper(on, pos) {
+    if (!this.ctx) return;
+    try {
+      const now = this.ctx.currentTime;
+      if (!on) { if (this._piper && !this._piper.dying) this._piperStop(1.1); return; }
+      let p = this._piper;
+      if (!p || p.dying) p = this._piperStart();
+      if (!p) return;
+      p.seen = now; if (pos) p.pos = pos;
+      this._piperMix(p);
+    } catch (e) { /* never break the game for audio */ }
+  }
+
+  _piperStart() {
+    const ctx = this.ctx, t0 = ctx.currentTime, mk = (t, f) => { const o = ctx.createOscillator(); o.type = t; o.frequency.value = f; return o; };
+    const nodes = [], oscs = [], g = (v) => { const n = ctx.createGain(); n.gain.value = v; nodes.push(n); return n; };
+    const bq = (type, f, q) => { const n = ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; n.Q.value = q; nodes.push(n); return n; };
+    // output chain: voice sum -> distance low-pass -> fade -> panner -> sfxBus (+ reverb send)
+    const sum = g(1), dist = bq("lowpass", 6000, 0.6), out = g(0);
+    sum.connect(dist); dist.connect(out);
+    const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if (pan) { nodes.push(pan); out.connect(pan); pan.connect(this.sfxBus); } else out.connect(this.sfxBus);
+    const send = g(0.42); out.connect(send); send.connect(this.reverbIn);
+    // reed buzz curve (slightly asymmetric, like a double reed)
+    if (!this._reedCurve) {
+      const n = 1024, c = new Float32Array(n);
+      for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; c[i] = Math.tanh(2.4 * x + 0.35) - Math.tanh(0.35); }
+      this._reedCurve = c;
+    }
+    // chanter: two slightly detuned reeds -> shaper -> fixed nasal formants (parallel band-passes) + a little dry body
+    const c1 = mk("sawtooth", 440), c2 = mk("sawtooth", 440); c2.detune.value = 6; oscs.push(c1, c2);
+    const cIn = g(0.5), cGain = g(0.0), ws = ctx.createWaveShaper(); ws.curve = this._reedCurve; nodes.push(ws);
+    c1.connect(cIn); c2.connect(cIn); cIn.connect(ws);
+    const fm = g(1);
+    const f1 = bq("bandpass", 950, 3.2), f2 = bq("bandpass", 2150, 4.5), f3 = bq("bandpass", 3300, 6), body = bq("lowpass", 2600, 0.7);
+    const a1 = g(1.0), a2 = g(0.75), a3 = g(0.3), a4 = g(0.45);
+    ws.connect(f1); f1.connect(a1); a1.connect(fm); ws.connect(f2); f2.connect(a2); a2.connect(fm); ws.connect(f3); f3.connect(a3); a3.connect(fm); ws.connect(body); body.connect(a4); a4.connect(fm);
+    fm.connect(cGain); cGain.connect(sum);
+    // 3 drones: A, A (octave+ below the chanter's low A) and a bass A two octaves down; each two reeds, soft low-pass, slow bag-pressure wobble
+    const lfo = mk("sine", 0.37); oscs.push(lfo);
+    [[220, 0.15, 1500], [220.7, 0.15, 1400], [110, 0.22, 900]].forEach(([f, v, cut], i) => {
+      const o = mk("sawtooth", f), o2 = mk("square", f * 1.0035); oscs.push(o, o2);
+      const d = g(v), s = ctx.createWaveShaper(); s.curve = this._reedCurve; nodes.push(s);
+      const lp = bq("lowpass", cut, 1.4), pk = bq("peaking", f * 5, 1.2); pk.gain.value = 5;
+      const m = g(0.5); o2.connect(m); o.connect(s); m.connect(s); s.connect(lp); lp.connect(pk); pk.connect(d); d.connect(sum);
+      const lg = g(v * 0.08 * (i + 1)); lfo.connect(lg); lg.connect(d.gain);
+    });
+    for (const o of oscs) o.start(t0);
+    const p = { ctx, nodes, oscs, c1, c2, cGain, out, dist, pan, send, t0, pos: { x: 0, y: 0, z: 0 }, seen: t0, dying: false, nextT: t0 + 0.05, idx: 0, last: 0, timer: null };
+    this._piper = p;
+    p.timer = setInterval(() => {
+      try {
+        if (this._piper !== p) { clearInterval(p.timer); return; }
+        if (!p.dying && ctx.currentTime - p.seen > 0.7) this._piperStop(0.5);
+        else this._piperSchedule(p, ctx.currentTime + 1.0);
+      } catch (e) { /* ignore */ }
+    }, 70);
+    this._piperSchedule(p, t0 + 1.0);
+    return p;
+  }
+
+  /** 3D mix: distance attenuation (louder as the kart nears the line), dulling with range, pan from the listener's heading. */
+  _piperMix(p) {
+    const L = this.listener, now = this.ctx.currentTime;
+    let d = 30, pan = 0;
+    if (L && L.position && p.pos) {
+      const dx = p.pos.x - L.position.x, dz = p.pos.z - L.position.z;
+      d = Math.hypot(dx, dz);
+      const rx = -Math.cos(L.heading || 0), rz = Math.sin(L.heading || 0);
+      pan = clamp((dx * rx + dz * rz) / Math.max(10, d), -1, 1) * 0.85;
+    }
+    const near = 1 / (1 + d / 22), far = clamp((430 - d) / 90, 0, 1);
+    p.out.gain.setTargetAtTime(0.75 * near * far, now, 0.08);
+    p.dist.frequency.setTargetAtTime(1400 + 8000 / (1 + d / 28), now, 0.1);
+    if (p.pan) p.pan.pan.setTargetAtTime(pan, now, 0.08);
+  }
+
+  _piperStop(sec = 1.0) {
+    const p = this._piper; if (!p || p.dying) return;
+    p.dying = true;
+    const now = this.ctx.currentTime;
+    p.out.gain.cancelScheduledValues(now); p.out.gain.setTargetAtTime(0, now, sec / 4);
+    setTimeout(() => {
+      clearInterval(p.timer);
+      for (const o of p.oscs) { try { o.stop(); } catch (e) { /* ignore */ } }
+      setTimeout(() => { for (const n of p.nodes) { try { n.disconnect(); } catch (e) { /* ignore */ } } try { p.out.disconnect(); p.send.disconnect(); } catch (e) { /* ignore */ } }, 200);
+      if (this._piper === p) this._piper = null;
+    }, sec * 1000 + 300);
+  }
+
+  /** Schedule chanter events (pitch, gracenotes, articulation dips) up to audio time `until`. */
+  _piperSchedule(p, until) {
+    const ev = PIPE_TUNE();
+    while (p.nextT < until) {
+      const e = ev[p.idx % ev.length]; p.idx++;
+      const t = p.nextT, f = e.f;
+      if (e.grace) {
+        // gracenote: a very short flick of another pitch, separating (or ornamenting) the note
+        p.c1.frequency.setTargetAtTime(e.grace, t, 0.002); p.c2.frequency.setTargetAtTime(e.grace, t, 0.002);
+        p.cGain.gain.setValueAtTime(0.5, t); p.cGain.gain.linearRampToValueAtTime(0.95, t + 0.008);
+        const tn = t + 0.034;
+        p.c1.frequency.setTargetAtTime(f, tn, 0.002); p.c2.frequency.setTargetAtTime(f, tn, 0.002);
+        p.cGain.gain.setValueAtTime(0.62, tn); p.cGain.gain.linearRampToValueAtTime(e.acc ? 1.12 : 1.0, tn + 0.02);
+      } else {
+        p.c1.frequency.setTargetAtTime(f, t, 0.004); p.c2.frequency.setTargetAtTime(f, t, 0.004);
+        p.cGain.gain.setValueAtTime(p.last ? 0.7 : 0.0, t); p.cGain.gain.linearRampToValueAtTime(e.acc ? 1.12 : 1.0, t + 0.025);
+      }
+      p.last = f;
+      p.nextT += e.dur;
+    }
   }
 
   // ------------------------------------------------------------------ music (music.js, optional)
