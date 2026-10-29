@@ -11,6 +11,11 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-29 - Windows serves any path case, Pages does not: check exact-case paths (la-ladera/tests/live-paths.mjs)
+  A request for /la-ladera/Assets/textures/asphalt.jpg is answered 200 by the local dev server (self-test of the tool) and would 404 on GitHub
+  Pages (Linux). live-paths.test.mjs scans imports, import map, index.html, css url() and manifests against directory listings with exact case;
+  live-paths.mjs boots the page, walks it, and checks every URL the page really requested (dynamic strings, GLB-internal textures).
+
 - 2026-10-29 - Headless rAF ticks at 17.6 ms on an EMPTY page, so gate frames relative to it (la-ladera/tests/metrics.mjs)
   The "median frame <= 16.7 ms" gate failed every view at 17.5-17.7 ms whatever the load (616-791 draw calls, 1.3 M triangles,
   uncapped render 6-10 ms): a blank data: page in the same harness (below-normal priority, compositor-timed rAF) also reads 17.6.
