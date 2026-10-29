@@ -61,6 +61,47 @@ and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 - 2026-10-29 - python -I hides user-site PIL/numpy on this box; use plain python (la-ladera/tools/textures/post.py)
   Python 3.13 here has PIL and numpy only in the user site-packages. The isolated flag drops it and the import fails.
 
+- 2026-10-29 - Paint cut-off 245 mm = frame outer face; move both together (plan-to-build/index.html:paintWall)
+  paintWall lines every reveal white, but the block beyond a window frame (the outer 55 mm of the 300 mm wall) is seen from
+  outside and must stay as built. It returns when the point 7 cm in front of the face is more than .245 m from the nearest room
+  rectangle: windowGroup puts the frame 40 mm outward of the wall mid-line and .11 deep, so its outer face is 245 mm from the room.
+  Change the frame's depth or offset (windowGroup, doorGroups) and this number must move with it; the paint check's outer-reveal
+  probe (painting on against off, over a quad on the jamb beyond the frame) fails if they drift apart.
+
+- 2026-10-29 - Frames as wide as their opening z-fight the reveal: trim 4 mm (plan-to-build/index.html:windowGroup)
+  A window or door frame exactly as wide as its opening has side faces in the plane of the block reveals. pvc and doorE are
+  double-sided (the section plane clips them), so through the cut the frame's back face fights the wall: 8 to 11 % of a 1:1 jamb
+  crop shimmered from frame to frame with the sun's shadow on or off (so not shadow acne), and 0.1 % after FRAME_CLEAR (2 mm a
+  side). The coplanar-face scan skipped RoundedBoxGeometry, which frames use: include it, and count back-to-back (opposed) pairs
+  when one of the two is double-sided. Measure shimmer as the second temporal difference while the camera creeps 0.03 deg a frame.
+
+- 2026-10-29 - Flush solids z-fight: make a column 2 mm bigger than its wall face (plan-to-build/index.html:growBox)
+  A 400 mm column whose outer face lay exactly in the plane of the 300 mm wall face drew a checkerboard of the two surfaces: 18
+  same-side coplanar face pairs among block, insulation and concrete (up to 1.1 m2 each). pad: 0.004 makes the column 2 mm proud.
+  While the section plane cuts, lip: 0.001 keeps its cut top 1 mm above the walls' cut tops. camera.near follows the camera
+  distance (update3D: dist*0.04), so 1 mm is many depth steps. Find these by listing the same-side overlapping coplanar faces of
+  the axis-aligned boxes under G3.root (ignore downward faces and slivers under 5 mm); the page keeps G3 module-private, so serve a
+  copy with one extra getter on window.__tl.
+
+- 2026-10-29 - Float sort key residue: o + ord*0.01 lost creation order (plan-to-build/index.html:sortElements)
+  The key o + ord*0.01 compared unequal for equal inputs, creation order was lost and the living-room rug was drawn over the sofa
+  and the coffee table. Integer keys (o*1000 + ord*10) with the creation index as the tie-break fix it. Rugs get their own slot
+  (-5) below the other furniture: a rug created last (the corridor one) otherwise covers the console and the shoe cabinet.
+  Chairs get one too (-2): each is pushed 25 mm under its table or desk, and with the new key a chair created after its table
+  was drawn over the table's edge (the review caught it; the order check now looks at the edge pixels).
+
+- 2026-10-29 - Cut a solid by shortening it, not with a clip plane (plan-to-build/index.html:growBox, dropBox)
+  A clipping plane at 1.3 m gave hard-aliased cut edges and exposed the back faces of block, insulation and concrete, which fought
+  the faces behind them. growBox and dropBox now shorten the box to CUTU.value - base, so the cut face is a real polygon that MSAA
+  smooths like any edge; a top face at exactly the cut height is drawn flat in the poche colour (patchMat cap). Only the thin window
+  and door parts keep a clipping plane (CUT_PLAIN). Take fwidth from a continuous coordinate: u = x + row*offset jumps at every
+  course and spikes the footprint, which made the mortar lines shimmer.
+
+- 2026-10-29 - Seek and read state in ONE eval: the page warms shaders in idle slices (plan-to-build/index.html:warm3D)
+  After __ready the warm-up keeps drawing other frames in idle slices. at(t) in one CDP call and a read of PAINTU in the next
+  returned another frame's values (a progress for t=46 s after a seek to 54 s), and a progress test failed three ways for no reason.
+  Do the seek and the read inside one evaluated function. window.__tl.png(t, w) is safe: it renders at call time.
+
 - 2026-10-29 - Decode exported frames by number: ffmpeg -ss gives frame i+1 at times (plan-to-build/index.html:expPass)
   A one-frame decode with -ss (i+0.5)/60 -frames:v 1 returned frame i+1 for some i and frame i for others (rounding). It read as
   22 dB on fast camera moves and as a pass on slow ones, so a good MP4 looked broken. Decode by number instead: -vf
