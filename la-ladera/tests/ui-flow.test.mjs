@@ -107,6 +107,26 @@ test('settings apply live and persist', async () => {
   assert.equal(await page.eval('__ladera.ctx.settings.v.fov'), 72);
 });
 
+test('"Cómo te llaman": the address setting defaults to m, is a select in Ajustes, is validated, persisted and reset', async () => {
+  assert.equal(await page.eval('__ladera.ctx.settings.v.address'), 'm', 'default: vecino, mijo, señor');
+  await page.key('Escape'); await tick();
+  await page.eval('document.querySelector("#pause [data-open=settings]").click()'); await tick();
+  const sel = 'document.querySelector("#panelbody select[aria-label^=\\"Cómo te llaman\\"]")';
+  assert.deepEqual(await page.eval(`[...${sel}.options].map((o) => o.value)`), ['m', 'f']);
+  assert.equal(await page.eval(`${sel}.value`), 'm');
+  await page.eval(`${sel}.value = "f"; ${sel}.dispatchEvent(new Event("change", { bubbles: true }))`);
+  assert.equal(await page.eval('__ladera.ctx.settings.v.address'), 'f');
+  assert.equal(JSON.parse(await page.eval('localStorage.getItem("la-ladera.settings.v1")')).address, 'f', 'persisted like the other keys');
+  await page.eval('__ladera.ctx.settings.set("address", "x")');                     // like every enum key: anything but m / f falls back to the default, never stored raw
+  assert.equal(await page.eval('__ladera.ctx.settings.v.address'), 'm');
+  assert.equal(JSON.parse(await page.eval('localStorage.getItem("la-ladera.settings.v1")')).address, 'm');
+  await page.eval('__ladera.ctx.settings.set("address", "f"); __ladera.ctx.settings.reset()');
+  assert.equal(await page.eval('__ladera.ctx.settings.v.address'), 'm', 'reset restores the default');
+  await page.key('Escape'); await tick();
+  await page.eval('document.getElementById("resume").click()'); await tick();
+  assert.equal((await S()).mode, 'play');
+});
+
 test('the place label and the discovery toast follow the player', async () => {
   await page.eval('__ladera.step(2)');
   assert.ok((await page.eval('document.getElementById("place").textContent')).length > 2, 'a place name is shown at the spawn');

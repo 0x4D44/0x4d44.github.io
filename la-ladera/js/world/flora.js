@@ -25,7 +25,7 @@ function canopy(K, b, tile, c0, rx, ry, rz, n, size, r, base, o = {}) {
   }
 }
 
-const BARK = { broad: [0.36, 0.28, 0.22], euca: [0.74, 0.7, 0.62], palm: [0.55, 0.5, 0.42] };
+const BARK = { broad: [0.36, 0.28, 0.22], euca: [0.6, 0.56, 0.49], palm: [0.55, 0.5, 0.42] };
 
 // ---------------------------------------------------------------------------------------------------- trees
 export function broadTree(K, x, z, o = {}) {
@@ -64,11 +64,17 @@ export function palm(K, x, z, o = {}) {
     const t0 = i / segs, t1 = (i + 1) / segs, bend = (t) => [x + lean * t * t, gy + h * t - (i === 0 ? 0.25 : 0), z + lz * t * t];
     tube(b, 'bark_palm', bend(t0), bend(t1), tr * (1 - 0.3 * t0), tr * (1 - 0.3 * t1), 6, { col: scale(BARK.palm, i % 2 ? 0.86 : 1.05), caps: i === segs - 1 });
   }
-  const top = [x + lean, gy + h, z + lz], uv = K.atlas ? K.atlas.uv(TILE.FROND) : [0, 0, 1, 1], n = 11;
+  const top = [x + lean, gy + h, z + lz], uv = K.atlas ? K.atlas.uv(TILE.FROND) : [0, 0, 1, 1], n = 13;
+  const uvLo = [uv[0], uv[1], uv[2], (uv[1] + uv[3]) / 2], uvHi = [uv[0], (uv[1] + uv[3]) / 2, uv[2], uv[3]];
   for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + r.range(-0.2, 0.2), tau = r.range(-0.15, 0.85) * (i % 2 ? 1 : 0.55), len = r.range(3.1, 3.9);
-    const d = V.nrm([Math.cos(a) * Math.cos(tau), Math.sin(tau) + 0.1, Math.sin(a) * Math.cos(tau)]), right = V.nrm(V.cross(d, [0, 1, 0]));
-    card(b, 'foliage', [top[0], top[1] - 0.1, top[2]], right, d, len * 0.62, len, uv, scale(rgb(0x6f9a44), r.range(0.8, 1.1)), V.nrm([Math.cos(a), 0.7, Math.sin(a)]));
+    // each frond = a base card rising out of the crown and a tip card arching down; the pair is rolled into a shallow V
+    const a = (i / n) * Math.PI * 2 + r.range(-0.2, 0.2), tau = r.range(0.2, 0.95) * (i % 2 ? 1 : 0.6), len = r.range(3.8, 4.8) / 2, roll = r.range(0.3, 0.7) * (i % 2 ? 1 : -1);
+    const dirAt = (t) => V.nrm([Math.cos(a) * Math.cos(t), Math.sin(t), Math.sin(a) * Math.cos(t)]);
+    const rollRight = (d) => { const s0 = V.nrm(V.cross(d, [0, 1, 0])), u0 = V.cross(s0, d); return V.nrm(V.add(V.mul(s0, Math.cos(roll)), V.mul(u0, Math.sin(roll)))); };
+    const d1 = dirAt(tau), p1 = [top[0], top[1] - 0.05, top[2]], p2 = V.add(p1, V.mul(d1, len * 0.92)), d2 = dirAt(tau - 0.75);
+    const col = scale(rgb(0x7fa850), r.range(0.85, 1.1)), nrm = V.nrm([Math.cos(a), 0.7, Math.sin(a)]);
+    card(b, 'foliage', p1, rollRight(d1), d1, len * 1.5, len, uvLo, col, nrm);
+    card(b, 'foliage', p2, rollRight(d2), d2, len * 1.2, len, uvHi, col, nrm);
   }
   tube(b, 'bark_trunk', [top[0], top[1] - 0.2, top[2]], [top[0], top[1] + 0.35, top[2]], 0.18, 0.12, 6, { col: [0.3, 0.36, 0.2] });
   K.post(x, z, tr + 0.08, 4); K.occ.take(x, z, 0.7);
@@ -79,9 +85,9 @@ export function cypress(K, x, z, o = {}) {
   const n = 3, rot = r.range(0, 3);
   for (let i = 0; i < n; i++) {
     const yaw = rot + (i * Math.PI) / n, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage', [x, gy - 0.1, z], right, [0, 1, 0], w * 1.25, h, uv, scale(rgb(0x8da58a), r.range(0.85, 1.08)), V.nrm([Math.sin(yaw), 0.55, Math.cos(yaw)]));
+    card(b, 'foliage', [x, gy - 0.1, z], right, [0, 1, 0], w * 1.25, h, uv, scale(rgb(0xc4dcc0), r.range(0.85, 1.08)), V.nrm([Math.sin(yaw), 0.55, Math.cos(yaw)]));
   }
-  tube(b, 'bark_trunk', [x, gy - 0.2, z], [x, gy + 1.4, z], 0.16, 0.1, 5, { col: BARK.broad });
+  tube(b, 'bark_trunk', [x, gy - 0.2, z], [x, gy + 0.7, z], 0.14, 0.1, 5, { col: scale(BARK.broad, 0.6) });
   K.post(x, z, 0.28, 4); K.occ.take(x, z, 0.8);
 }
 
@@ -98,13 +104,13 @@ export function banana(K, x, z, o = {}) {
 
 // ---------------------------------------------------------------------------------------------------- low plants
 export function shrub(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(0.7, 1.2), tile = o.tile ?? TILE.SHRUB;
+  const r = o.rng, b = K.b(o.kind ?? 'floralow', x, z, { cast: false }), gy = K.H(x, z) + (o.dy ?? 0), s = o.size ?? r.range(0.7, 1.2), tile = o.tile ?? TILE.SHRUB;
   canopy(K, b, tile, [x, gy + s * 0.45, z], s * 0.7, s * 0.45, s * 0.7, o.cards ?? 6, s * 0.95, r, o.leaf ?? rgb(0x7ca24d), { inner: 0.4, alt: o.alt });
   if (o.flowers) canopy(K, b, TILE.FLOWERS, [x, gy + s * 0.8, z], s * 0.5, s * 0.2, s * 0.5, 3, s * 0.8, r, rgb(0xffffff), { inner: 0.5 });
 }
 
 export function agave(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), uv = K.atlas ? K.atlas.uv(TILE.AGAVE) : [0, 0, 1, 1], rot = r.range(0, 3);
+  const r = o.rng, b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), uv = K.atlas ? K.atlas.uv(TILE.AGAVE) : [0, 0, 1, 1], rot = r.range(0, 3);
   for (let i = 0; i < 3; i++) {
     const yaw = rot + (i * Math.PI) / 3, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
     card(b, 'foliage', [x, gy - 0.05, z], right, [0, 1, 0], s * 1.3, s, uv, scale(rgb(0xc9e0d3), r.range(0.85, 1.05)), V.nrm([Math.sin(yaw), 0.8, Math.cos(yaw)]));
@@ -113,15 +119,15 @@ export function agave(K, x, z, o = {}) {
 
 export function tuft(K, x, z, rng, big = 1) {
   const b = K.b('tufts', x, z, { cast: false }), gy = K.H(x, z), uv = K.atlas ? K.atlas.uv(rng.chance(0.18) ? TILE.REED : TILE.TUFT) : [0, 0, 1, 1];
-  const s = rng.range(0.6, 1.1) * big, rot = rng.range(0, 3), col = scale(rgb(0xbfd08a), rng.range(0.8, 1.1));
+  const s = rng.range(0.7, 1.25) * big, rot = rng.range(0, 3), col = scale(rgb(0xdce8b0), rng.range(0.8, 1.1));
   for (let i = 0; i < 2; i++) {
     const yaw = rot + (i * Math.PI) / 2, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage', [x, gy - 0.04, z], right, [0, 1, 0], s, s * 0.85, uv, col, [0, 1, 0]);
+    card(b, 'foliage', [x, gy - 0.04, z], right, [0, 1, 0], s * 1.3, s * 0.8, uv, col, [0, 1, 0]);
   }
 }
 
 export function pottedPlant(K, x, z, rng, solid = true) {
-  const b = K.b('flora', x, z, { cast: false }), gy = K.H(x, z), s = rng.range(0.5, 0.8);
+  const b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = rng.range(0.5, 0.8);
   tube(b, 'pot_clay', [x, gy, z], [x, gy + 0.34, z], 0.17, 0.23, 8, { col: scale(rgb(0xc8683c), rng.range(0.85, 1.1)), caps: true });
   canopy(K, b, rng.chance(0.5) ? TILE.FLOWERS : TILE.SHRUB, [x, gy + 0.34 + s * 0.4, z], s * 0.5, s * 0.4, s * 0.5, 4, s * 0.9, rng, rgb(0xd8e8c8), { inner: 0.3 });
   if (solid) K.post(x, z, 0.24, 0.9);
@@ -130,13 +136,14 @@ export function pottedPlant(K, x, z, rng, solid = true) {
 /** Bougainvillea sheets hanging over a wall edge: pts = [{x,z,nx,nz,y}] along the crest (y = crest height), n = outward normal. */
 export function drape(K, pts, rng, o = {}) {
   const tile = o.tile ?? TILE.BOUGAIN, uv = K.atlas ? K.atlas.uv(tile) : [0, 0, 1, 1];
-  let acc = 0;
+  let acc = 0, next = rng.range(0.5, 3.5);
   for (let i = 0; i + 1 < pts.length; i++) {
     const p = pts[i], q = pts[i + 1], l = Math.hypot(q.x - p.x, q.z - p.z);
     acc += l;
-    if (acc < (o.step ?? 2.2)) continue;
-    acc = 0;
-    const b = K.b('flora', p.x, p.z, { cast: false }), hang = Math.max(0.6, rng.range(0.8, 1.2) * (o.hang ?? 1.4)), w = rng.range(2.0, 2.8);
+    if (acc < next) continue;
+    acc = 0; next = (o.step ?? 2.2) * rng.range(0.5, 2.0);
+    if (rng.chance(0.3)) continue;
+    const b = K.b('floralow', p.x, p.z, { cast: false }), hang = Math.max(0.6, rng.range(0.7, 1.5) * (o.hang ?? 1.4)), w = rng.range(1.2, 2.8);
     const right = V.nrm([q.x - p.x, 0, q.z - p.z]), col = scale(rgb(o.hex ?? 0xffffff), rng.range(0.85, 1.1));
     card(b, 'foliage', [p.x + p.nx * 0.14, p.y - hang + 0.12, p.z + p.nz * 0.14], right, [0, 1, 0], w, hang, uv, col, V.nrm([p.nx, 0.35, p.nz]));
   }
@@ -158,9 +165,10 @@ export function buildFlora(K) {
       const x = r.range(Math.min(...xs), Math.max(...xs)), z = r.range(Math.min(...zs), Math.max(...zs));
       if (!pointInPoly(pl.poly, x, z) || polyDistPoint(pl.poly, x, z) > 99) continue;
       let dEdge = Infinity; for (let i = 0; i < pl.poly.length; i++) { const a = pl.poly[i], c = pl.poly[(i + 1) % pl.poly.length]; const vx = c[0] - a[0], vz = c[1] - a[1], l2 = vx * vx + vz * vz || 1; const u = Math.max(0, Math.min(1, ((x - a[0]) * vx + (z - a[1]) * vz) / l2)); dEdge = Math.min(dEdge, Math.hypot(x - a[0] - vx * u, z - a[1] - vz * u)); }
-      if (dEdge < 0.9 || dEdge > 2.6) continue;
-      if (!occ.clear(x, z, 0.9, BLOCK & ~OCC.PLAZA) || occ.overlaps(x, z, 2.6)) continue;
+      if (dEdge < 0.9 || dEdge > 4.6) continue;
+      if (!occ.clear(x, z, 0.4, BLOCK & ~OCC.PLAZA) || occ.overlaps(x, z, 1.9)) continue;     // (the nav grid covers most of a plaza: trees stand in the pockets between its lines)
       got.push([x, z]); occ.take(x, z, 0.5);
+      (K.ctx.world.plazaTrees ??= []).push([x, z, spec]);                               // dress.js raises a stone ring around each
       if (spec === 'palm') palm(K, x, z, { rng: r.fork('t' + got.length) }); else if (spec === 'cypress') cypress(K, x, z, { rng: r.fork('t' + got.length) });
       else broadTree(K, x, z, { rng: r.fork('t' + got.length), h: r.range(6.5, 8.5), crown: r.range(3.2, 4.2), cards: 30 });
       sp[spec === 'palm' ? 'palm' : spec === 'cypress' ? 'cypress' : 'broad']++; sp.n++;

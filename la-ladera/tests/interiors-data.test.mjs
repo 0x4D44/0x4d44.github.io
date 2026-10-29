@@ -107,12 +107,14 @@ test('the first 3 m inside every street door stay free of furniture', () => {
   for (const bp of bps) for (const e of bp.entrances ?? []) {
     const d = bp.doors.find((x) => x.id === e.doorId); if (!d) continue;
     const [ox, , oz] = bp.frame.toLocal(...e.outside), [ix, , iz] = bp.frame.toLocal(...e.inside), l = Math.hypot(ix - ox, iz - oz) || 1;
+    const entry = d.rooms.filter(Boolean).map((id) => roomOf(bp, id)).find((r) => ix >= r.rect.x0 - 0.15 && ix <= r.rect.x1 + 0.15 && iz >= r.rect.z0 - 0.15 && iz <= r.rect.z1 + 0.15);
+    if (!entry) { problems.push(`${bp.id} entrance ${e.id}: its inside point is in no room`); continue; }
     const ux = (ix - ox) / l, uz = (iz - oz) / l, hw = 0.5;
     const zone = Math.abs(ux) > Math.abs(uz)
       ? rectOb(Math.min(d.x, d.x + Math.sign(ux) * 3), d.z - hw, Math.max(d.x, d.x + Math.sign(ux) * 3), d.z + hw)
       : rectOb(d.x - hw, Math.min(d.z, d.z + Math.sign(uz) * 3), d.x + hw, Math.max(d.z, d.z + Math.sign(uz) * 3));
     for (const f of bp.furniture) {
-      if (f.kind !== 'floor') continue;
+      if (f.kind !== 'floor' || f.room !== entry.id) continue;
       const c = catalogOf(f);
       if (!(f.block || (c?.size[1] ?? 0) > 0.25)) continue;
       const p = penetration(obbOf(f), zone);

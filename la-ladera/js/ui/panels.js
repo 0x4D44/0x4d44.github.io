@@ -76,6 +76,8 @@ export function settingsPanel(ctx) {
         h('h3', {}, 'Subtítulos · Subtitles'),
         check('subs', 'Mostrar subtítulos'),
         select('subLang', 'Idioma de los subtítulos', [['both', 'Español e inglés'], ['es', 'Solo español'], ['en', 'Solo inglés']]),
+        h('h3', {}, 'Conversación · Conversation'),
+        select('address', 'Cómo te llaman · How people address you', [['m', 'Vecino, mijo, señor'], ['f', 'Vecina, mija, señora']], 'Así te hablan los vecinos. · What the neighbours call you.'),
         h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn quiet', onclick: () => { st.reset(); applyTts(ctx); this.render(body); } }, 'Restablecer ajustes')),
       );
     },

@@ -14,6 +14,7 @@ export function buildRetaining(ctx, plan) {
   const H = plan.heightAt, b = ctx.batch.builder('world.walls'), phys = ctx.physics, rnd = ctx.rng.fork('world:walls');
   const lotFps = plan.lots.map((l) => footprint(l, 0.05));
   const stats = { runs: 0, metres: 0, guards: 0 }, runsOut = [];
+  let src = 'street';                                                    // which kind of edge the current scan walks: street | stair | plaza:<id> | pad
 
   const MATS_TALL = ['stone_wall', 'stone_wall', 'concrete_formwork'];
   const MATS = ['stone_wall', 'concrete_formwork', 'brick_clay_hollow', 'concrete_formwork', 'stone_wall', 'plaster_rough#c9b79a'];
@@ -21,7 +22,7 @@ export function buildRetaining(ctx, plan) {
   const run = (S, sign, B) => {
     const tall = S.reduce((m, s) => Math.max(m, Math.abs(s.outer - s.inner)), 0);
     const mat = rnd.pick(tall > 2.2 ? MATS_TALL : MATS), k = 0.9 + rnd.next() * 0.2, col = [k, k, k];
-    runsOut.push({ S, sign, B, tall });
+    runsOut.push({ S, sign, B, tall, src });
     for (let i = 0; i + 1 < S.length; i++) {
       const p = S[i], q = S[i + 1];
       const f = sign > 0 ? 0 : B;                                   // face line offset from the edge
@@ -56,6 +57,7 @@ export function buildRetaining(ctx, plan) {
   // ---- street and stair sides, and open ends
   for (const st of plan.streets) {
     const d = st._d, hw = st.width / 2, B = BAND[st.kind] ?? 0.5, T = tangents(d.pts);
+    src = st.kind === 'stair' ? 'stair' : 'street';
     for (const side of [-1, 1]) {
       scan(d.pts.map((p, k) => { const nx = -T[k][1] * side, nz = T[k][0] * side; return [p[0] + nx * hw, p[1] + nz * hw, nx, nz]; }), B);
     }
@@ -68,8 +70,9 @@ export function buildRetaining(ctx, plan) {
     }
   }
   // ---- plazas
-  for (const pl of plan.plazas) scan_poly(pl.poly, PLAZA_BAND, scan);
+  for (const pl of plan.plazas) { src = 'plaza:' + pl.id; scan_poly(pl.poly, PLAZA_BAND, scan); }
   // ---- lot pads (the +0.3 m margin of the plinth rule); no wall where another lot is
+  src = 'pad';
   plan.lots.forEach((l, i) => {
     scan_poly(footprint(l, 0.3), PAD_BAND, scan, (s) => lotFps.some((f, j) => j !== i && (pointInPoly(f, s.x, s.z) || pointInPoly(f, s.x + s.nx * 0.8, s.z + s.nz * 0.8))));
   });

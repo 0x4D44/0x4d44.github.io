@@ -29,8 +29,14 @@ function leaf(g, x, y, rot, L, W, col, vein) {
 // ---------------------------------------------------------------------------------------------------- tile painters
 const GREENS = [0x2c4a22, 0x3d6228, 0x4f7a30, 0x62893a, 0x7aa443, 0x8fb04a, 0xa7b94a];
 function broadleaf(g, r, o = {}) {
-  const n = o.n ?? 170, size = o.size ?? 0.095, spread = o.spread ?? 0.47;
+  const n = o.n ?? 260, size = o.size ?? 0.11, spread = o.spread ?? 0.47;
   const pal = o.pal ?? GREENS;
+  // a solid dark mass under the leaves, so the cluster reads as foliage rather than loose confetti
+  g.fillStyle = hex(mixc(pal[0], 0x0e160c, 0.25));
+  for (let i = 0; i < 46; i++) {
+    const a = r.range(0, Math.PI * 2), d = Math.sqrt(r.next()) * spread * 0.78 * T, rr = r.range(0.07, 0.15) * T;
+    g.beginPath(); g.ellipse(T / 2 + Math.cos(a) * d, T / 2 + Math.sin(a) * d * 0.9, rr, rr * 0.85, r.range(0, 3), 0, 6.28); g.fill();
+  }
   for (let pass = 0; pass < 3; pass++) for (let i = 0; i < n / 3; i++) {
     const a = r.range(0, Math.PI * 2), d = Math.sqrt(r.next()) * spread * T, x = T / 2 + Math.cos(a) * d, y = T / 2 + Math.sin(a) * d * 0.92;
     if (r.chance(0.07)) continue;
@@ -61,13 +67,13 @@ function frond(g, r) {
   const bend = r.range(0.04, 0.09) * T, bx = (t) => T / 2 + bend * (t * t) * 3 - bend * 0.5, by = (t) => T * (0.97 - 0.94 * t);
   g.strokeStyle = hex(0x9aa860); g.lineWidth = 4;
   g.beginPath(); g.moveTo(bx(0), by(0)); for (let t = 0.05; t <= 1.001; t += 0.05) g.lineTo(bx(t), by(t)); g.stroke();
-  for (let t = 0.08; t < 0.99; t += 0.026) {
-    const len = T * 0.46 * Math.pow(Math.sin(Math.PI * (0.1 + 0.9 * t)), 0.7) * (1 - 0.35 * t), x = bx(t), y = by(t);
+  for (let t = 0.06; t < 0.99; t += 0.02) {
+    const len = T * 0.5 * Math.pow(Math.sin(Math.PI * (0.1 + 0.9 * t)), 0.7) * (1 - 0.3 * t), x = bx(t), y = by(t);
     for (const s of [-1, 1]) {
       const ang = s * (0.95 - 0.35 * t) + (r.next() - 0.5) * 0.12, droop = 0.35 + 0.35 * t;
       const ex = x + Math.sin(ang) * len, ey = y - Math.cos(ang) * len * 0.45 + len * droop * 0.6;
       g.strokeStyle = hex(r.pick([0x3f6a2c, 0x4b7a31, 0x5b8a3a, 0x376026]));
-      g.lineWidth = 3.4 - 1.5 * t;
+      g.lineWidth = 4.2 - 1.8 * t;
       g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.sin(ang) * len * 0.6, y - Math.cos(ang) * len * 0.35, ex, ey); g.stroke();
     }
   }
@@ -110,8 +116,8 @@ function bougainvillea(g, r) {
 
 function tuft(g, r) {
   const pal = [0x5f8433, 0x73963c, 0x88a748, 0xa3b455, 0xb9b45f, 0x4a6e2b];
-  for (let i = 0; i < 34; i++) {
-    const x0 = T / 2 + r.range(-0.1, 0.1) * T, lean = r.range(-0.3, 0.3) * T * (0.4 + Math.abs(x0 - T / 2) / T * 3), h = r.range(0.45, 0.95) * T, w = r.range(3.5, 7);
+  for (let i = 0; i < 64; i++) {
+    const x0 = T / 2 + r.range(-0.3, 0.3) * T, lean = r.range(-0.22, 0.22) * T + (x0 - T / 2) * 0.55, h = r.range(0.28, 0.78) * T * (1 - 0.35 * Math.abs(x0 - T / 2) / (0.3 * T)), w = r.range(4, 8);
     const tx = x0 + lean, ty = T - h, c = r.pick(pal);
     g.fillStyle = hex(c);
     g.beginPath(); g.moveTo(x0 - w / 2, T); g.quadraticCurveTo(x0 + lean * 0.2, T - h * 0.55, tx, ty); g.quadraticCurveTo(x0 + lean * 0.35 + w * 0.2, T - h * 0.5, x0 + w / 2, T); g.fill();
@@ -145,15 +151,30 @@ function agave(g, r) {
 }
 
 function cypress(g, r) {
-  const pal = [0x1f3a22, 0x28472a, 0x315530, 0x3b6238];
-  for (let i = 0; i < 420; i++) {
-    const t = Math.pow(r.next(), 0.8), y = T * (0.03 + 0.95 * t), prof = Math.sin(Math.PI * Math.min(1, 0.2 + 0.8 * (1 - t) * 1.0)) ** 0.9 * (0.15 + 0.85 * t) * 0.34;
-    const x = T / 2 + r.range(-1, 1) * T * prof, c = pal[Math.min(3, Math.floor(r.next() * 4 + (1 - t) * 0.6))];
-    g.fillStyle = hex(c); g.beginPath(); g.ellipse(x, y, r.range(6, 11), r.range(7, 14), r.range(-0.4, 0.4), 0, 6.28); g.fill();
+  const pal = [0x2a4a2c, 0x33603a, 0x3f7244, 0x4f8750, 0x62984f];
+  // t = 0 at the tip, 1 at the base: a flame whose width grows to ~0.4 of the tile and stays full to the very bottom
+  for (let i = 0; i < 620; i++) {
+    const t = Math.pow(r.next(), 0.85), y = T * (0.02 + 0.97 * t), prof = 0.5 * Math.min(1, 0.12 + 1.15 * Math.sin(Math.min(1, t * 1.15) * Math.PI / 2)) * 0.8;
+    const x = T / 2 + r.range(-1, 1) * T * prof * 0.5, c = pal[Math.min(4, Math.max(0, Math.floor(r.next() * 3 + (1 - t) * 2.2)))];
+    g.fillStyle = hex(c); g.beginPath(); g.ellipse(x, y, r.range(7, 13), r.range(8, 15), r.range(-0.5, 0.5), 0, 6.28); g.fill();
   }
 }
 
-function vine(g, r) { broadleaf(g, r, { n: 150, size: 0.065, spread: 0.49, pal: [0x2e5424, 0x3e6b2c, 0x538235, 0x6a9a40] }); }
+/** Ivy / hanging vine: wavy vertical strands carrying leaves, dense at the top, ragged at the bottom. */
+function vine(g, r) {
+  const pal = [0x2e5424, 0x3e6b2c, 0x538235, 0x6a9a40, 0x7bab48];
+  for (let s = 0; s < 15; s++) {
+    const x0 = r.range(0.04, 0.96) * T, len = r.range(0.45, 0.98) * T, ph = r.range(0, 6.28), amp = r.range(0.01, 0.04) * T;
+    g.strokeStyle = hex(0x3a5a2a); g.lineWidth = 1.6; g.beginPath(); g.moveTo(x0, 0);
+    for (let y = 0; y <= len; y += 6) g.lineTo(x0 + Math.sin(ph + y * 0.05) * amp, y);
+    g.stroke();
+    for (let y = 2; y < len; y += r.range(5, 8)) {
+      const x = x0 + Math.sin(ph + y * 0.05) * amp + r.range(-5, 5), L = r.range(0.07, 0.11) * T, c = pal[Math.min(4, Math.floor(r.next() * 4 + (1 - y / T) * 1.2))];
+      leaf(g, x, y, r.range(0, Math.PI * 2), L, L * r.range(0.4, 0.55), c, null);
+    }
+  }
+  g.fillStyle = hex(0x2e5424); g.fillRect(0, 0, T, 9);
+}
 
 function reed(g, r) {
   const pal = [0xa9b45c, 0xc2c070, 0xd8d08a, 0x8fa24c];
@@ -176,8 +197,27 @@ function flowering(g, r) {
 
 const PAINT = [
   (g, r) => broadleaf(g, r), (g, r) => eucalyptus(g, r), frond, banana, bougainvillea, tuft, flowers, agave,
-  (g, r) => broadleaf(g, r, { n: 200, size: 0.06, spread: 0.46, pal: [0x35582a, 0x466e32, 0x5a8539, 0x6f9a44] }), cypress, vine, reed, flowering,
+  (g, r) => broadleaf(g, r, { n: 300, size: 0.075, spread: 0.46, pal: [0x35582a, 0x466e32, 0x5a8539, 0x6f9a44] }), cypress, vine, reed, flowering,
 ];
+
+/** Chain-link: a 64 px tile of diamond mesh, transparent between the wires (repeats every 0.4 m). Null without a canvas. */
+export function makeFenceTexture(THREE) {
+  const cv = makeCanvas(64, 64); if (!cv) return null;
+  const g = cv.getContext('2d', { willReadFrequently: true }); if (!g) return null;
+  g.clearRect(0, 0, 64, 64);
+  g.strokeStyle = '#d4d8dc'; g.lineWidth = 3; g.lineCap = 'butt';
+  for (let k = -2; k <= 2; k++) { g.beginPath(); g.moveTo(k * 32, 0); g.lineTo(k * 32 + 64, 64); g.stroke(); }          // x - y = const
+  for (let k = 0; k <= 4; k++) { g.beginPath(); g.moveTo(k * 32, 0); g.lineTo(k * 32 - 64, 64); g.stroke(); }          // x + y = const
+  const d = g.getImageData(0, 0, 64, 64).data, out = new Uint8Array(64 * 64 * 4);
+  for (let i = 0; i < 64 * 64; i++) {
+    const a = d[i * 4 + 3];
+    out[i * 4] = a < 8 ? 205 : d[i * 4]; out[i * 4 + 1] = a < 8 ? 210 : d[i * 4 + 1]; out[i * 4 + 2] = a < 8 ? 214 : d[i * 4 + 2]; out[i * 4 + 3] = a;
+  }
+  const tex = new THREE.DataTexture(out, 64, 64, THREE.RGBAFormat);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 8; tex.needsUpdate = true;
+  return tex;
+}
 
 /** Paint the atlas. Returns { texture, uv(tile) -> [u0,v0,u1,v1], canvas } or null without a canvas. */
 export function makeFoliageAtlas(THREE, rng) {

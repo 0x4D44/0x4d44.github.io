@@ -28,27 +28,30 @@ export function testLots() {
   return lots;
 }
 
-/** Terrain: flat at y=0 except a plinth (lot.y - 0.3) under every footprint (+0.3 margin), as A5 promises. */
-export function makeHeightAt(lots) {
-  const boxes = lots.map((l) => ({ x: l.x, z: l.z, c: Math.cos(l.rotY), s: Math.sin(l.rotY), hw: l.w / 2 + 0.3, hd: l.d / 2 + 0.3, y: l.y - 0.3 }));
+/**
+ * Terrain: flat at y=0 except a plinth (lot.y - 0.3) under every footprint (+0.3 margin), as A5 promises.
+ * `drop` (env ARCH_DROP) sinks the street below the floors, so the entry steps (steps.js) are exercised by every walk test.
+ */
+export function makeHeightAt(lots, drop = Number(process.env.ARCH_DROP ?? 0), margin = 0.3) {
+  const boxes = lots.map((l) => ({ x: l.x, z: l.z, c: Math.cos(l.rotY), s: Math.sin(l.rotY), hw: l.w / 2 + margin, hd: l.d / 2 + margin, y: l.y - 0.3 }));
   return (x, z) => {
     for (const b of boxes) {
       const dx = x - b.x, dz = z - b.z, lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c;
       if (Math.abs(lx) <= b.hw && Math.abs(lz) <= b.hd) return b.y;
     }
-    return 0;
+    return -drop;
   };
 }
 
-export function makeCtx(lots, seed = 20261029) {
+export function makeCtx(lots, seed = 20261029, drop = undefined, margin = undefined) {
   const ctx = createContext({ seed, headless: true });
-  ctx.plan = { heightAt: makeHeightAt(lots), lots };
+  ctx.plan = { heightAt: makeHeightAt(lots, drop, margin), lots };
   ctx.physics.setTerrain(ctx.plan.heightAt);
   return ctx;
 }
 
-export function planAll(lots, seed, colliders = true) {
-  const ctx = makeCtx(lots, seed);
+export function planAll(lots, seed, colliders = true, drop = undefined, margin = undefined) {
+  const ctx = makeCtx(lots, seed, drop, margin);
   const bps = lots.map((l) => planBuilding(ctx, l));
   if (colliders) for (const bp of bps) ctx.physics.add(bp.colliders);
   return { ctx, bps };

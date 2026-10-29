@@ -273,7 +273,7 @@ export class Player {
     const yb = Math.sin(this.bob * 2) * amp, xb = Math.cos(this.bob) * amp * 0.55;
     this.fovKick += ((sprinting && hs > 3 ? 5 : 0) - this.fovKick) * (1 - Math.exp(-dt * 6));
     const cam = ctx.camera, aspect = cam.aspect || 1.78;
-    const fov = 72 * (aspect < 1 ? clamp(1 + (1 - aspect) * 0.85, 1, 1.35) : 1) + this.fovKick;
+    const fov = (st.fov ?? 72) * (aspect < 1 ? clamp(1 + (1 - aspect) * 0.85, 1, 1.35) : 1) + this.fovKick;
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
     const strafeV = this.vx * cy - this.vz * sy;
     this.roll += ((-strafeV * 0.0022) - this.roll) * (1 - Math.exp(-dt * 8));

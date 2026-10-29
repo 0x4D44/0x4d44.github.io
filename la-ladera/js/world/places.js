@@ -43,16 +43,20 @@ export function buildPlaces(plan, rng) {
     const P = (lx, lz) => [cx + lx * c + lz * s, cz - lx * s + lz * c];
     if (pl.kind === 'court') {
       for (const [lx, lz] of [[-6, -3], [-3, 3], [0, 0], [3, -3], [6, 3], [9, 0], [-9, 0]]) { const [x, z] = P(lx, lz); add('play', x, z, R.range(0, 6.28), { tags: ['football'] }); }
-      for (const [lx, lz] of [[-5, hd + 1.8], [5, hd + 1.8], [0, -hd - 1.8]]) { const [x, z] = P(lx, lz); add('bench', x, z, lz > 0 ? Math.PI : 0, { tags: ['court-side'] }); }
+      // spectators' benches: behind the north bank and at both ends (the south side is the Calle del Comercio), all facing the court
+      for (const [lx, lz, fy] of [[0, -hd - 1.8, 0], [-hw - 1.8, 0, Math.PI / 2], [hw + 1.8, 0, -Math.PI / 2]]) { const [x, z] = P(lx, lz); add('bench', x, z, pl.ry + fy, { tags: ['court-side'] }); }
       for (const lx of [-8, 8]) { const [x, z] = P(lx, -hd - 1.2); add('lean', x, z, 0, { tags: ['fence'] }); }
     } else if (pl.kind === 'mirador') {
-      for (const lx of [-6, -1, 5]) { const [x, z] = P(lx, hd - 1.4); add('stand', x, z, Math.PI, { tags: ['viewpoint'] }); }
-      const [bx, bz] = P(-hw + 2, 0); add('bench', bx, bz, Math.PI, { tags: ['viewpoint'] });
+      // the view is south, over the whole barrio: the parapet is the south edge and everybody faces it
+      for (const lx of [-6, -1, 5]) { const [x, z] = P(lx, hd - 1.4); add('stand', x, z, 0, { tags: ['viewpoint'] }); }
+      const [bx, bz] = P(-hw + 2, hd - 1.9); add('bench', bx, bz, 0, { tags: ['viewpoint'] });
       const [px, pz] = P(hw - 3, 0); add('phone', px, pz, Math.PI, {});
     } else {
       const nb = pl.w > 12 ? 4 : 2;
       for (let k = 0; k < nb; k++) {
-        const lx = (k - (nb - 1) / 2) * (pl.w / nb) * 0.9, side = k % 2 ? 1 : -1, [x, z] = P(lx, side * (hd - 1.0));
+        let lx = (k - (nb - 1) / 2) * (pl.w / nb) * 0.9, side = k % 2 ? 1 : -1;
+        if (pl.id === 'P1') lx = [-3.6, -3.9, 3.6, 3.9][k];     // the north centre stays free for the shrine, the south centre for the stair
+        const [x, z] = P(lx, side * (hd - 0.6));          // back against the edge; the nav ring runs 1.2 m in, clear of the bench front
         add('bench', x, z, side > 0 ? Math.PI : 0, { tags: ['plaza'] });
       }
       const [x1, z1] = P(-hw * 0.4, 0); add('chat', x1, z1, 0.6, { tags: ['plaza', 'neighbours'] });
@@ -68,9 +72,10 @@ export function buildPlaces(plan, rng) {
     add('greet', b[0] + (dx / l) * 0.5, b[1] + (dz / l) * 0.5, Math.atan2(-dx, -dz), { tags: ['stairtop', st.id] });
   }
   // ---- bus stop on the entry road
-  add('bench', 43.2, 95.5, Math.PI / 2, { tags: ['busstop'] });
-  add('stand', 43.2, 93.6, Math.PI / 2, { tags: ['busstop'] });
-  add('stand', 43.4, 97.2, Math.PI / 2, { tags: ['busstop'] });
+  // (the shelter stands on the verge west of the kerb; the people wait on the pavement in front of it)
+  add('bench', 40.9, 95.5, Math.PI / 2, { tags: ['busstop'] });
+  add('stand', 42.4, 93.7, Math.PI / 2, { tags: ['busstop'] });
+  add('stand', 42.5, 97.2, Math.PI / 2, { tags: ['busstop'] });
   plan.pois = pois;
 
   // ---- landmarks
@@ -96,7 +101,7 @@ export function buildPlaces(plan, rng) {
   }
   const tl = lots.find((q) => q.shop === 'taller'); if (tl) L('taller', tl.name, 'Motorbike Workshop', tl.x, tl.z, 'shop');
   const pn = lots.find((q) => q.shop === 'panaderia'); if (pn) L('panaderia', pn.name, 'Bakery', pn.x, pn.z, 'shop');
-  L('busstop', 'Parada del Bus', 'Bus Stop', 43.2, 95.5, 'busstop');
+  L('busstop', 'Parada del Bus', 'Bus Stop', 41.5, 95.5, 'busstop');
   plan.landmarks = lm;
 
   // ---- areas (ambience zones and map labels)

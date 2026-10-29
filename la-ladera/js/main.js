@@ -4,6 +4,7 @@
 //            ?debug  ?hour=17.2  ?seed=N  ?lots=L00,L02 (only these lots)  ?skip=props,people,furnish,interiors,world
 //            ?preserve (preserveDrawingBuffer)  ?dpr=1  ?shadows=0  ?aa=0  ?post=0 (no bloom/grade: emergency look)
 //            ?quality=low|medium|high|auto  ?timescale=N (game minutes per real second; 0 freezes the clock)
+//            ?skip=merge (keep one mesh per group x material: debugging only)  ?mergespan=N (largest merged chunk in metres, default 96)
 import { createContext } from './core/ctx.js';
 import { initEngine, startEngine } from './engine/index.js';
 import { createSettings } from './engine/settings.js';
@@ -19,10 +20,10 @@ import { loadPeople, spawnPeople } from './people/index.js';
 const q = new URLSearchParams(location.search);
 const num = (k) => (q.has(k) && q.get(k) !== '' && Number.isFinite(+q.get(k)) ? +q.get(k) : undefined);
 const opts = {
-  seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'),
+  seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
   debug: q.has('debug'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'),
-  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0',
+  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0',
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
@@ -132,7 +133,10 @@ async function boot() {
       if (!opts.skip.has('interiors')) buildInterior(ctx, bp);
     }, 'buildBuilding'));
     await stage('props', () => buildProps(ctx));
-    await stage('flush', () => ctx.batch.flushAll());
+    await stage('flush', () => {
+      ctx.batch.flushAll();
+      if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
+    });
     await stage('people', async () => { await loadPeople(ctx); spawnPeople(ctx); });
     await stage('start', () => startEngine(ctx));
   } finally { clearInterval(hintTimer); }

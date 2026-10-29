@@ -4,9 +4,9 @@
 // Fields: see core/matlib.js. `desc` is the plain-language brief the texture generator receives; `prio` is its generation order.
 export default {
   // ---- doors and shutters -----------------------------------------------------------------------------------------------
-  door_wood: { color: 0x7a5636, rough: 0.7, tile: 1.0, prio: 2, tintable: true,
+  door_wood: { color: 0xe4ddd0, rough: 0.7, tile: 1.0, prio: 2, tintable: true,
     desc: 'old painted timber boards (tongue-and-groove planks laid vertically) filling the whole image edge to edge, fine V-grooves between boards, thick enamel paint in a light neutral grey-beige (it will be tinted any colour) worn through to bare wood along some edges, scuffs, small dents and a few nail heads; no frame, no handle, seamless flat surface' },
-  door_metal: { color: 0x68737a, rough: 0.55, metal: 0.4, tile: 1.0, prio: 2, tintable: true,
+  door_metal: { color: 0xd6dadd, rough: 0.55, metal: 0.4, tile: 1.0, prio: 2, tintable: true,
     desc: 'painted pressed sheet steel filling the whole image edge to edge: fine vertical stiffening ribs, a few rivet heads, light neutral grey paint (it will be tinted any colour) scratched and chipped to rust-brown in patches, faint drips; no frame, no handle, seamless flat surface' },
   shutter_steel: { color: 0x8c9296, rough: 0.5, metal: 0.5, tile: 0.8, prio: 2,
     desc: 'galvanised steel roll-up shop shutter (persiana metalica enrollable) seen straight on: tight horizontal interlocking slats about 8 cm tall, dull grey with dents, rust streaks at the bottom edge, scratches and a faint chalk scribble' },
