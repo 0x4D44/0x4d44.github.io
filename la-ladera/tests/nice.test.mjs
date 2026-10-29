@@ -15,11 +15,14 @@ const NICE = pathToFileURL(resolve(HERE, 'nice.mjs')).href;
 const PRINT = 'process.stdout.write(String(require("os").getPriority()))';
 const run = (args, env = {}) => spawnSync(process.execPath, args, { encoding: 'utf8', windowsHide: true, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
 // Priority values as Node reports them: 0 normal, 10 below normal, 19 idle (Windows classes map to these).
+// Nothing ever raises a priority, so "below normal" means max(10, this process): under an idle parent (the whole suite started through
+// `tools/nice.mjs --idle`) it degenerates to inheriting idle, and only a normal or below-normal parent exercises the lowering itself.
+const BELOW = String(Math.max(10, os.getPriority()));
 
 test('the wrapper starts its child below normal by default', () => {
   const r = run([WRAP, process.execPath, '-e', PRINT]);
   assert.equal(r.status, 0, r.stderr);
-  assert.equal(r.stdout, '10');
+  assert.equal(r.stdout, BELOW);
 });
 
 test('--idle starts the child at idle priority', () => {
@@ -42,7 +45,7 @@ test('the child exit code is forwarded, and a missing command is 127', () => {
 
 test('importing tests/nice.mjs lowers the importing process; LADERA_PRIO=normal opts out; idle sticks', () => {
   const imp = `import(${JSON.stringify(NICE)}).then(() => process.stdout.write(String(require('os').getPriority())))`;
-  assert.equal(run(['-e', imp]).stdout, '10');
+  assert.equal(run(['-e', imp]).stdout, BELOW);
   assert.equal(run(['-e', imp], { LADERA_PRIO: 'idle' }).stdout, '19');
   // the opt-out leaves the priority as inherited from the parent (this test may itself already run below normal under the register.mjs preload)
   assert.equal(run(['-e', imp], { LADERA_PRIO: 'normal' }).stdout, String(os.getPriority()));
@@ -52,7 +55,7 @@ test('importing tests/nice.mjs lowers the importing process; LADERA_PRIO=normal 
 
 test('every test/probe started with --import register.mjs runs below normal priority', () => {
   const reg = pathToFileURL(resolve(HERE, 'register.mjs')).href;
-  assert.equal(run(['--import', reg, '-e', PRINT]).stdout, '10');
+  assert.equal(run(['--import', reg, '-e', PRINT]).stdout, BELOW);
   assert.equal(run(['--import', reg, '-e', PRINT], { LADERA_PRIO: 'idle' }).stdout, '19');
 });
 
