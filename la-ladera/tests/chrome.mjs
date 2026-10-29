@@ -13,7 +13,8 @@
 //
 // Quiet by construction (the person at the desk must never see or feel the tests): ALWAYS `--headless=new` (there is no headed mode here
 // on purpose), every child is spawned with `windowsHide: true`, and the whole process tree runs below-normal priority (./nice.mjs;
-// Chrome and its GPU/renderer processes inherit it from this process).
+// Chrome and its GPU/renderer processes inherit it from this process). Pages also get ./quiet-init.js before any script of their own: pointer lock
+// is simulated in the page (real lock makes Windows ClipCursor() the person's mouse into the invisible window) and speech is recorded, never voiced.
 import './nice.mjs';
 import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
@@ -190,6 +191,7 @@ export async function launch(o = {}) {
   const { targetId } = await b.send('Target.createTarget', { url: 'about:blank' });
   const { sessionId } = await b.send('Target.attachToTarget', { targetId, flatten: true });
   const page = new Page(b, sessionId); await page.enable();
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: await readFile(new URL('./quiet-init.js', import.meta.url), 'utf8') });   // every later document, every frame
   await page.viewport(o.width ?? 1280, o.height ?? 720);
   await b.nice();
 
