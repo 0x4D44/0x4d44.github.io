@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>La Ladera</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Walk a hillside barrio in first person: steep streets, stairways, alleys, courtyards, shops and homes you can enter, and neighbours who answer in Spanish.">
+<meta name="theme-color" content="#1b1410">
+<link rel="stylesheet" href="css/ladera.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.min.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="gl" aria-label="First-person 3D view of La Ladera. Click to look around, W A S D to walk, E to interact."></canvas>
+
+<div id="hud" aria-live="polite">
+  <div id="crosshair"></div>
+  <div id="prompt"></div>
+  <div id="subtitle"></div>
+  <div id="toast"></div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="card">
+    <h1>La Ladera</h1>
+    <p class="sub">Un barrio en la ladera &middot; a hillside barrio, on foot</p>
+    <p class="blurb">Steep streets, stairways, alleys and courtyards. Every door opens. Say <i>buenas</i> to the neighbours.</p>
+    <button id="start" disabled>Cargando…</button>
+    <div id="loadbar"><i></i></div>
+    <div id="loadmsg">&nbsp;</div>
+    <div class="keys"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk</span><span>mouse look</span><span><kbd>Shift</kbd> run</span><span><kbd>E</kbd> open / talk</span></div>
+  </div>
+</div>
+
+<div id="fatal" class="overlay hidden"><div class="card"><h2>Something went wrong</h2><pre></pre></div></div>
+
+<script type="module" src="js/main.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

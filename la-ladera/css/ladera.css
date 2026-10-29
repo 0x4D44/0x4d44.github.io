@@ -1,0 +1,31 @@
+/* BASELINE styles (owner: ENGINE agent). Keep every interactive control OUT of the top-left 112x41px:
+   the shared "<- Almanac" pill is pinned there (see CLAUDE.md). No document may scroll sideways. */
+:root { --ink: #f6ead7; --paper: #1b1410; --accent: #e9a23b; --accent2: #d9542f; --shadow: rgba(0,0,0,.55); }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); overflow: hidden; font-family: Georgia, 'Times New Roman', serif; }
+#gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+.hidden { display: none !important; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+#crosshair { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: rgba(255,255,255,.75); box-shadow: 0 0 0 1px rgba(0,0,0,.45); }
+#prompt { position: absolute; left: 50%; top: calc(50% + 34px); transform: translateX(-50%); padding: 6px 14px; border-radius: 6px; background: var(--shadow); font: 600 15px/1.2 system-ui, sans-serif; letter-spacing: .02em; opacity: 0; transition: opacity .15s; white-space: nowrap; max-width: 92vw; overflow: hidden; text-overflow: ellipsis; }
+#subtitle { position: absolute; left: 50%; bottom: 7vh; transform: translateX(-50%); width: min(820px, 92vw); text-align: center; padding: 10px 16px; border-radius: 8px; background: var(--shadow); opacity: 0; transition: opacity .25s; font: 500 18px/1.35 system-ui, sans-serif; }
+#subtitle b { color: var(--accent); margin-right: .4em; }
+#subtitle .es { display: block; font-size: 20px; }
+#subtitle .en { display: block; margin-top: 3px; font-size: 14px; opacity: .72; font-style: italic; }
+#toast { position: absolute; left: 50%; top: 56px; transform: translateX(-50%); padding: 8px 16px; border-radius: 6px; background: var(--shadow); font: 600 14px/1.3 system-ui, sans-serif; opacity: 0; transition: opacity .3s; max-width: 92vw; text-align: center; }
+
+.overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: radial-gradient(ellipse at 50% 60%, rgba(27,20,16,.78), rgba(27,20,16,.94)); }
+.card { width: min(560px, 100%); text-align: center; padding: 28px 24px; }
+.card h1 { margin: 0 0 4px; font-size: clamp(40px, 9vw, 76px); letter-spacing: .02em; color: var(--accent); font-weight: 400; }
+.card h2 { margin: 0 0 10px; font-weight: 400; }
+.card .sub { margin: 0 0 16px; opacity: .8; font-style: italic; }
+.card .blurb { margin: 0 auto 22px; max-width: 42ch; line-height: 1.5; opacity: .9; }
+#start { font: 600 18px/1 system-ui, sans-serif; padding: 14px 30px; border-radius: 999px; border: 0; background: var(--accent); color: #2a1a0a; cursor: pointer; }
+#start:disabled { opacity: .55; cursor: progress; }
+#loadbar { margin: 18px auto 6px; width: min(320px, 80%); height: 4px; background: rgba(255,255,255,.14); border-radius: 2px; overflow: hidden; }
+#loadbar > i { display: block; height: 100%; width: 0; background: var(--accent2); transition: width .2s; }
+#loadmsg { min-height: 1.3em; font: 12px/1.3 system-ui, sans-serif; opacity: .6; }
+.keys { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px 18px; justify-content: center; font: 13px/1.2 system-ui, sans-serif; opacity: .78; }
+kbd { display: inline-block; min-width: 1.6em; padding: 2px 5px; margin: 0 2px; border-radius: 4px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.08); font: 600 12px system-ui, sans-serif; }
+#fatal pre { text-align: left; white-space: pre-wrap; max-height: 50vh; overflow: auto; font-size: 12px; }
