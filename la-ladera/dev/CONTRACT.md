@@ -239,3 +239,8 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
 ## 11. Final report format (<= 300 words, to the lead)
 
 `DONE/PARTIAL`, what exists (files + 1 line each), how to run/test it (exact commands), measured results (numbers, screenshot paths), known gaps/risks, requests for other agents. Report only what you observed.
+
+## Amendments (lead-maintained; re-read before each major step)
+
+* (none yet)
+

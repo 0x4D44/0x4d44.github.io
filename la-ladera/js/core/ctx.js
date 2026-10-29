@@ -16,6 +16,8 @@ export function createContext(opts = {}) {
     THREE, opts, config: CONFIG,
     seed: opts.seed ?? CONFIG.SEED,
     hour: opts.hour ?? CONFIG.HOUR,
+    night: 0,                         // 0 day .. 1 night; the engine keeps it in sync with `hour`
+    quality: opts.quality ?? 'high',  // 'low' | 'medium' | 'high'; the engine may adapt it
     errors: [], timings: {}, systems: [],
     scene: new THREE.Scene(),
     plan: null,                       // world/plan.js -> generatePlan()
