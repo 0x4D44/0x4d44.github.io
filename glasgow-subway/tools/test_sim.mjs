@@ -234,6 +234,10 @@ try {
     w.place(sx * 1.0, sim.doorZ[2], 0); svc.closeDoors(); s.tick(3); const held = { f: svc.doors.L + svc.doors.R, obs: svc.doorObstructed }; w.place(0, sim.doorZ[2] + 2, 0); s.tick(4); return { held, closed: svc.doorsClosed }; });
   ok('doors hold open while a passenger stands in the doorway, then close when clear', hold.held.obs && hold.held.f > 0.9 && hold.closed, JSON.stringify(hold));
   // every hall station, both circles: platform side matches the hall, exit portals lie on walkable platform
+  p = await open(browser, 'mode=explore&station=partick');
+  await ev(p, () => { __sim.ff(1, 0.1); __sim.render(); __sim.render(); });
+  const cl0 = await ev(p, () => __sim.crowdClearance());
+  ok('explore start: no one spawns within 2.5 m or in the near view cone of the walker', cl0.n > 5 && cl0.d >= 2.4 && cl0.front >= 3.4, JSON.stringify(cl0));
   p = await open(browser, 'mode=explore&station=buchanan-street');
   const portals = await ev(p, async () => {
     const s = __sim, out = [];
