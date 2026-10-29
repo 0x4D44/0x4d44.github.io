@@ -190,9 +190,9 @@ export const HELP_HTML = `<div class="gs-help"><h2>Controls</h2>
 <tr><td><kbd>,</kbd> <kbd>.</kbd></td><td>Select door side Left / Right (platform side is shown on the TMS)</td></tr>
 <tr><td><kbd>A</kbd></td><td>Toggle ATO (auto drive)</td></tr>
 <tr><td><kbd>R</kbd> (hold)</td><td>Reverse shunt after an overrun</td></tr>
-<tr><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd> / drag</td><td>Look around</td></tr></table>
+<tr><td>Mouse / <kbd>&larr;</kbd> <kbd>&rarr;</kbd> / drag</td><td>Look around (click the view to capture the mouse, <kbd>Esc</kbd> releases it; sensitivity and invert-Y are in the menu)</td></tr></table>
 <h3>On foot / in the saloon</h3><table>
-<tr><td><kbd>WASD</kbd></td><td>Walk (<kbd>Shift</kbd> to hurry), mouse drag / arrows to look</td></tr>
+<tr><td><kbd>WASD</kbd></td><td>Walk (<kbd>Shift</kbd> to hurry); mouse (click to capture, <kbd>Esc</kbd> releases) / drag / arrows to look</td></tr>
 <tr><td><kbd>E</kbd></td><td>Interact: board the train, take the driver's seat, alight, go outside</td></tr></table>
 <h3>General</h3><table>
 <tr><td><kbd>Esc</kbd></td><td>Menu / pause</td></tr><tr><td><kbd>H</kbd></td><td>This help</td></tr><tr><td><kbd>M</kbd></td><td>Mute</td></tr><tr><td><kbd>L</kbd></td><td>Score log</td></tr></table>

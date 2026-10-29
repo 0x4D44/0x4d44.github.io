@@ -36,7 +36,8 @@ export class TrainView {
     const box = new THREE.Box3().setFromObject(root);
     this.zMin = box.min.z; this.zMax = box.max.z; this.length = box.max.z - box.min.z; this.frontOffset = -box.min.z;
     const wz = new THREE.Vector3(), worldDoorZ = {};
-    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; } });
+    root.traverse((o) => { if (/^door_[LR]_\d+$/.test(o.name)) { o.getWorldPosition(wz); worldDoorZ[o.name] = wz.z; }
+      const m2 = /^(door_[LR]_\d+)_([ab])$/.exec(o.name); if (m2) { o.getWorldPosition(wz); const q = (worldDoorZ[m2[1] + '#'] = worldDoorZ[m2[1] + '#'] || []); q.push(wz.z); if (q.length === 2) worldDoorZ[m2[1]] = (q[0] + q[1]) / 2; } });   // rev 7: two bi-parting leaves per opening, centre = mean of the leaves
     const top = (root.children.length === 1 && root.children[0].name === 'train') ? root.children[0] : root;
     const carNodes = top.children.filter((c) => /^car_\d+$/.test(c.name)).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     this.carInfo = carNodes.map((n) => { const b = new THREE.Box3().setFromObject(n); return { node: n, zc: (b.min.z + b.max.z) / 2, len: b.max.z - b.min.z, zmin: b.min.z }; });
@@ -54,12 +55,20 @@ export class TrainView {
     this.cars.forEach((g) => this.root.add(g));
     this.root.traverse((o) => { if (o.name) this.byName[o.name] = o; });
     this.doorsL = []; this.doorsR = []; this.doorZ = [];
+    this.doubleDoors = !!this.byName['door_R_0_a'] || !!this.byName['door_L_0_a'];
     for (let i = 0; i < 40; i++) {
+      if (this.doubleDoors) {   // A3 rev 7: leaf a (nose side) opens -Z by 0.6 m, leaf b (rear side) opens +Z by 0.6 m
+        const la = this.byName['door_L_' + i + '_a'], lb = this.byName['door_L_' + i + '_b'], ra = this.byName['door_R_' + i + '_a'], rb = this.byName['door_R_' + i + '_b'];
+        if (!la && !ra) break;
+        if (la) this.doorsL.push({ leaves: [{ n: la, z0: la.position.z, dir: -1 }, { n: lb, z0: lb.position.z, dir: 1 }] });
+        if (ra) this.doorsR.push({ leaves: [{ n: ra, z0: ra.position.z, dir: -1 }, { n: rb, z0: rb.position.z, dir: 1 }] });
+        continue;
+      }
       const l = this.byName['door_L_' + i], r = this.byName['door_R_' + i];
       if (!l && !r) break;
       const dir = 1; // revision 2: every leaf slides 1.2 m toward the rear
-      if (l) this.doorsL.push({ n: l, z0: l.position.z, dir });
-      if (r) this.doorsR.push({ n: r, z0: r.position.z, dir });
+      if (l) this.doorsL.push({ leaves: [{ n: l, z0: l.position.z, dir, travel: 1.2 }] });
+      if (r) this.doorsR.push({ leaves: [{ n: r, z0: r.position.z, dir, travel: 1.2 }] });
     }
     // door opening centres in root coordinates (one leaf per opening, centre of the opening = leaf closed pos)
     const refKey = this.doorsR.length ? 'door_R_' : 'door_L_';
@@ -68,7 +77,14 @@ export class TrainView {
     this.cabScreen = this.byName.cab_screen || null;
     this.cabSpeedo = this.byName.cab_speedo || null;
     this.eyeLocal = this.cabEye ? this.cabEye.position.clone() : new THREE.Vector3(0, 1.98, this.zMin + 1.8);
-    root.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
+    this.root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.frustumCulled = false;
+      // the route-diagram strips above the windows were baked mirrored left-to-right (text reads backwards): flip the map in U
+      for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+        if (m && m.name === 'route_map_panel' && m.map && !m.map.userData.flipped) { m.map.repeat.x = -1; m.map.offset.x = 1; m.map.userData.flipped = true; m.map.needsUpdate = true; }
+      }
+    });
     this._m = new THREE.Matrix4();
     this.bogie = this.carInfo.map((c) => Math.max(2, c.len * 0.34));
     const bA = this.byName['car_0_bogie_a'], bB = this.byName['car_0_bogie_b'];
@@ -188,6 +204,17 @@ export class TrainView {
     this._cullT0 = 0;
   }
   setWalkable(j) { this.walk = j; }
+  /** measured ceiling height above the floor at |x| (from computeHeadroom's ray casts), null if unavailable */
+  headroomMeasured(x) { const h = this.headroom; if (!h) return 9; const t = (x - h.xs[0]) / 0.05, i = Math.floor(t); if (i < 0 || i >= h.xs.length - 1) return 0; const a = h.head[i], b = h.head[i + 1]; if (a == null || b == null) return 0; return (a + (b - a) * (t - i)) - h.floorY; }
+  /** y (car-local) of the first saloon surface hit by a ray going down at (x, z) from 1.4 m above the floor: the bench seat top */
+  seatTopY(ci, x) {
+    const THREE = this.THREE, car = this.cars[ci], info = this.carInfo[ci], wc = this.walk && this.walk.cars && this.walk.cars[ci]; if (!car) return 0.695 + 0.43;
+    const rng = wc && wc.benchZRanges && wc.benchZRanges[0]; const z = rng ? (rng[0] + rng[1]) / 2 - info.zc : 0;
+    const meshes = []; const n = this.byName['car_' + ci + '_saloon']; if (n) n.traverse((m) => { if (m.isMesh) meshes.push(m); });
+    car.updateMatrixWorld(true); const rc = new THREE.Raycaster(), o = new THREE.Vector3(x, 1.1 + 0.695, z).applyMatrix4(car.matrixWorld), d = new THREE.Vector3(0, -1, 0).transformDirection(car.matrixWorld);
+    rc.set(o, d); rc.near = 0; rc.far = 1.2; const hit = rc.intersectObjects(meshes, false)[0]; if (!hit) return 0.695 + 0.43;
+    const loc = car.worldToLocal(hit.point.clone()); return loc.y > 0.695 + 0.3 && loc.y < 0.695 + 0.6 ? loc.y : 0.695 + 0.43;
+  }
   /** max head height above the floor at lateral x (interpolated); 0 outside the carbody */
   headroomAt(x) {
     const wk = this.walk && this.walk.headroomVsX;
@@ -199,7 +226,8 @@ export class TrainView {
     return (a + (b - a) * (t - i)) - h.floorY;
   }
   setDoors(L, R) {
-    const move = (list, f) => { for (const d of list) d.n.position.z = d.z0 + d.dir * 1.2 * f; };
+    const ease = (f) => (f <= 0 ? 0 : f >= 1 ? 1 : f * f * (3 - 2 * f));   // smooth start/stop over the service's ~2.6 s door travel
+    const move = (list, f) => { const e = ease(f); for (const d of list) for (const lf of d.leaves) lf.n.position.z = lf.z0 + lf.dir * (lf.travel || 0.6) * e; };
     move(this.doorsL, L); move(this.doorsR, R);
   }
 

@@ -168,6 +168,28 @@ try {
   ok('inner circle drive starts', (await ev(p, () => __sim.state())).line === 'inner');
   await ev(p, () => { __sim.svc().dwellT = 100; __sim.ato(true); __sim.ff(30, 0.1); });
   await shot(p, '19_inner_tunnel');
+  // mouse look: handlers attached; locked movementX/Y rotates yaw/pitch (sensitivity + invert-Y honoured); drag-to-look fallback; arrow keys still work
+  const m0 = await ev(p, () => { __sim.setLook(0, 0); __sim.mouseSet({ sens: 1, invertY: false }); return __sim.mouse(); });
+  const m1 = await ev(p, () => { __sim.mouseMove(100, 50, true); return __sim.mouse(); });
+  const m2 = await ev(p, () => { __sim.setLook(0, 0); __sim.mouseSet({ sens: 2, invertY: true }); __sim.mouseMove(100, 50, true); const r = __sim.mouse(); __sim.mouseSet({ sens: 1, invertY: false }); return r; });
+  ok('mouse look: handlers attached and pointer-lock movement turns the view (yaw/pitch, sensitivity, invert-Y)', m0.handlers && m1.yaw < -0.3 && m1.pitch < -0.1 && Math.abs(m2.yaw) > Math.abs(m1.yaw) * 1.8 && m2.pitch > 0.1, JSON.stringify([m0, m1, m2]));
+  await ev(p, () => __sim.setLook(0, 0));
+  const cb = await p.evaluate(() => { const r = document.querySelector('canvas').getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+  await p.mouse.move(cb[0], cb[1]); await p.mouse.down(); await p.mouse.move(cb[0] + 80, cb[1] + 20, { steps: 4 }); await p.mouse.up();
+  const m3 = await ev(p, () => { const r = __sim.mouse(); try { document.exitPointerLock(); } catch (e) {} return r; });
+  ok('mouse look: clicking + moving the mouse on the view changes yaw (pointer lock or drag fallback)', Math.abs(m3.yaw) > 0.1, JSON.stringify(m3));
+  await ev(p, () => __sim.setLook(0, 0)); await p.keyboard.down('ArrowLeft'); await ev(p, () => __sim.tick(0.3)); await p.keyboard.up('ArrowLeft');
+  ok('mouse look: arrow-key look still works alongside', Math.abs((await ev(p, () => __sim.mouse())).yaw) > 0.1);
+  // audio: silent immediately while the tab is hidden; manual mute is kept; nothing queued plays on return
+  const au = await ev(p, async () => {
+    const W = (ms) => new Promise((r) => setTimeout(r, ms)), hide = (h) => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => h }); document.dispatchEvent(new Event('visibilitychange')); };
+    await __sim.audioStart(); await W(100); const a0 = __sim.audioState();
+    hide(true); const a1 = __sim.audioState(); await W(150); const a1b = __sim.audioState(); __sim.audioSpeak('hello'); __sim.audioChime(); const a2 = __sim.audioState();
+    hide(false); await W(250); const a3 = __sim.audioState();
+    __sim.audioMute(true); await W(100); hide(true); await W(100); hide(false); await W(250); const a4 = __sim.audioState(); __sim.audioMute(false); await W(200); const a5 = __sim.audioState();
+    return { a0, a1, a1b, a2, a3, a4, a5 }; });
+  ok('audio: silent immediately when the tab is hidden (gain 0, context suspended, no speech, announcements dropped)', au.a1.hidden && au.a1.gain === 0 && au.a1b.ctx !== 'running' && !au.a1b.speaking && au.a2.blocked >= 2, JSON.stringify(au.a1b) + JSON.stringify(au.a2));
+  ok('audio: resumes on return; manual mute is kept across hide/show', !au.a3.hidden && au.a3.gain > 0.5 && (au.a3.ctx === 'running' || au.a0.ctx !== 'running') && au.a4.muted && au.a4.gain === 0 && au.a5.gain > 0.5, JSON.stringify([au.a3, au.a4, au.a5]));
   // camera sway: low-frequency only (< 2 Hz), small amplitude; no high-frequency head jitter
   const sw = await ev(p, () => { const s = __sim.sim, T = s.THREE, f = new T.Vector3(), q = new T.Quaternion(), ys = [], ls = []; const v0 = s.svc.train.v;
     for (let i = 0; i < 240; i++) { __sim.tick(1 / 30); __sim.sync(); s.trainView.eyeWorld(f, q); ys.push(s.camera.position.y - f.y); ls.push(Math.hypot(s.camera.position.x - f.x, s.camera.position.z - f.z)); }
@@ -192,7 +214,30 @@ try {
     return { z0, zEnd, back: w.z, cars: seen.size, half, ncars: sim.trainView.cars.length };
   });
   ok('can walk the full length of the train through every car', trainWalk.zEnd < -trainWalk.half + 1 && trainWalk.cars === trainWalk.ncars, JSON.stringify(trainWalk));
+  // people: real skinned-vertex audit (soles on the floor / seat, heads under the curved ceiling, inside the walls, no overlaps) + scale + eye height
+  const au1 = await ev(p, () => { __sim.render(); __sim.render(); return __sim.peopleAudit(); });
+  ok('saloon people: feet on floor/seat, heads below the ceiling profile, inside the walls, no overlaps', au1.checked >= 5 && au1.bad.length === 0, JSON.stringify(au1));
+  const pi = await ev(p, () => { const w = __sim.walker(); w.sit = false; w.sitK = 0; w.place(0, w.z, 0); return __sim.peopleInfo(); });
+  ok('people scale: every character <= 1.80 m (+2 cm for hair/arms), clips shared (idle/walk/sit/phone/talk/pole)', pi.maxH <= 1.82 && pi.chars >= 10 && ['idle', 'walk', 'sit', 'phone', 'talk', 'pole'].every((k) => pi.clips.includes(k)), JSON.stringify(pi));
+  ok('user eye height is 1.50-1.55 m standing', pi.eye >= 1.49 && pi.eye <= 1.555, 'eye=' + pi.eye.toFixed(3));
+  const sitT = await ev(p, () => { const s = __sim, sim = s.sim, w = s.walker(), tv = sim.trainView; const rg = sim.walkable.cars[1].benchZRanges[0];
+    let zs = null; for (let z = rg[0] + 0.4; z < rg[1] - 0.4; z += 0.1) if (!sim.saloon.people.some((q) => q.state === 'sit' && Math.abs(q.x) > 0.5 && Math.abs(q.z + tv.carInfo[tv.cars.indexOf(q.parent)].zc - z) < 0.8)) { zs = z; break; }
+    if (zs == null) return { skip: true };
+    w.place(0.1, zs, 0); s.key('c', true); s.key('c', false); s.tick(1.0); const seated = { sit: w.sit, x: w.x, eye: w.eyeY() - w.y };
+    s.key('c', true); s.key('c', false); s.tick(1.0); return { seated, up: { sit: w.sit, x: w.x, eye: w.eyeY() - w.y } }; });
+  ok('C sits on a free bench (eye ~1.13 m, facing across) and stands up again', sitT.skip || (sitT.seated.sit && Math.abs(Math.abs(sitT.seated.x) - 0.74) < 0.02 && sitT.seated.eye > 1.08 && sitT.seated.eye < 1.2 && !sitT.up.sit && sitT.up.eye > 1.49), JSON.stringify(sitT));
+  // double (bi-parting) doors: open ~1.2 m clear, hold while someone stands in the doorway, then close
+  const dd = await ev(p, () => { const s = __sim, svc = s.svc(); let g = 0; while (svc.phase !== 'station' && g++ < 4000) s.ff(1, 0.1); s.ff(1, 0.1); if (!svc.doorsOpen) { svc.openDoors(svc.doorSel, true); s.ff(4, 0.05); } s.sync(); const v1 = s.doorLeaves(); svc.closeDoors(); s.ff(4, 0.05); s.sync(); const v0 = s.doorLeaves(); return { v0, v1 }; });
+  const gap = (v) => Math.abs(v.leaves[0][1] - v.leaves[0][0]);
+  ok('train has double (two-leaf) doors that part ~1.2 m when open', dd.v0.double && Math.abs(gap(dd.v1) - gap(dd.v0) - 1.2) < 0.06, JSON.stringify(dd));
+  const hold = await ev(p, () => { const s = __sim, sim = s.sim, w = s.walker(), svc = s.svc(); let g = 0; while (svc.phase !== 'station' && g++ < 4000) s.ff(1, 0.1); svc.openDoors(svc.doorSel, true); s.ff(4, 0.05); const sx = svc.doors.R > svc.doors.L ? 1 : -1;
+    w.place(sx * 1.0, sim.doorZ[2], 0); svc.closeDoors(); s.tick(3); const held = { f: svc.doors.L + svc.doors.R, obs: svc.doorObstructed }; w.place(0, sim.doorZ[2] + 2, 0); s.tick(4); return { held, closed: svc.doorsClosed }; });
+  ok('doors hold open while a passenger stands in the doorway, then close when clear', hold.held.obs && hold.held.f > 0.9 && hold.closed, JSON.stringify(hold));
   // every hall station, both circles: platform side matches the hall, exit portals lie on walkable platform
+  p = await open(browser, 'mode=explore&station=partick');
+  await ev(p, () => { __sim.ff(1, 0.1); __sim.render(); __sim.render(); });
+  const cl0 = await ev(p, () => __sim.crowdClearance());
+  ok('explore start: no one spawns within 2.5 m or in the near view cone of the walker', cl0.n > 5 && cl0.d >= 2.4 && cl0.front >= 3.4, JSON.stringify(cl0));
   p = await open(browser, 'mode=explore&station=buchanan-street');
   const portals = await ev(p, async () => {
     const s = __sim, out = [];
@@ -209,6 +254,8 @@ try {
     return out;
   });
   ok('every hall: platform edge matches the train and exit portals are walkable (both circles)', portals.length === 0, portals.slice(0, 4).join(' | '));
+  const pa = await ev(p, async () => { const bad = []; for (const id of ['govan', 'buchanan-street', 'cessnock', 'kelvinhall', 'st-enoch', 'hillhead']) { await __sim.go({ mode: 'explore', station: id, line: 'outer' }); __sim.render(); __sim.render(); const cl = __sim.crowdClearance(); if (cl.n > 3 && (cl.d < 2.4 || cl.front < 3)) bad.push(id + ': spawned ' + cl.d.toFixed(2) + ' m from the walker (front ' + cl.front.toFixed(1) + ')'); __sim.ff(8, 0.1); __sim.render(); __sim.render(); const a = __sim.peopleAudit(); if (a.platform < 3 || a.bad.length) bad.push(id + ':' + a.platform + ':' + a.bad.slice(0, 2).join(';')); } return bad; });
+  ok('platform crowds (6 halls): nobody spawns within 2.4 m / the near view cone of the walker; soles on the platform, nobody inside furniture or each other', pa.length === 0, pa.join(' | '));
   await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');

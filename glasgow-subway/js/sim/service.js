@@ -345,8 +345,10 @@ export class Service {
 
   _doors(dt) {
     const d = this.doors, step = dt / DOOR_TIME;
-    d.L = clamp(d.L + (d.cmdL ? step : -step), 0, 1);
-    d.R = clamp(d.R + (d.cmdR ? step : -step), 0, 1);
+    // door-obstruction safety: someone standing in an opening stops the leaves closing (they stay where they are) until the doorway is clear
+    const held = !!this.doorObstructed;
+    d.L = clamp(d.L + (d.cmdL ? step : (held ? 0 : -step)), 0, 1);
+    d.R = clamp(d.R + (d.cmdR ? step : (held ? 0 : -step)), 0, 1);
     if (this.phase !== 'station' && (d.cmdL || d.cmdR)) { d.cmdL = d.cmdR = 0; }
     if (this.train.v > 0.2 && (d.L > 0 || d.R > 0)) { d.cmdL = d.cmdR = 0; }
   }

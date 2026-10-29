@@ -2,7 +2,7 @@
 <style>html,body{margin:0;height:100%;background:#2a2f36;overflow:hidden}</style>
 <script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script></head><body>
 <script type="module">
-// ?clip=walk&t=0.3&cam=x,y,z&look=x,y,z   - lays out every person in a row, each a SkeletonUtils clone with its own AnimationMixer
+// REVISION 7: clips are shared by all people (rotation only): ?clip=walk&t=0.3&cam=x,y,z&look=x,y,z   - lays out every person in a row, each a SkeletonUtils clone with its own AnimationMixer
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as SU from 'three/addons/utils/SkeletonUtils.js';
@@ -14,17 +14,21 @@ const cam = new THREE.PerspectiveCamera(+(q.get('fov') || 40), innerWidth / inne
 cam.position.set(...num(q.get('cam'), [0, 1.3, 9])); cam.lookAt(new THREE.Vector3(...num(q.get('look'), [0, 0.9, 0])));
 scene.add(new THREE.HemisphereLight(0xffffff, 0x666677, 1.6)); const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(3, 6, 5); scene.add(sun);
 const g = new THREE.GridHelper(40, 40, 0x445, 0x334); scene.add(g);
-new GLTFLoader().load('/models/people.glb', (gl) => {
+new GLTFLoader().load(q.get('dev') ? ('/tools/_dev_people/' + (q.get('lod') ? 'people_lod.glb' : 'people.glb')) : (q.get('lod') ? '/models/people_lod.glb' : '/models/people.glb'), (gl) => {
+  const matq = q.get('mat'); if (matq) gl.scene.traverse((o) => { if (o.isMesh) { const m0 = o.material; o.material = matq === 'vc' ? new THREE.MeshBasicMaterial({ vertexColors: true }) : (matq === 'tex' ? new THREE.MeshBasicMaterial({ map: m0.map }) : new THREE.MeshNormalMaterial()); o.material.skinning = true; } });
   const names = []; gl.scene.traverse((o) => { if (/^person_[a-z_]+$/.test(o.name) && !o.name.endsWith('_mesh')) names.push(o.name); });
+  const only = q.get('only'); if (only) { const ks = only.split(','); for (let i = names.length - 1; i >= 0; i--) if (!ks.some((k) => names[i] === 'person_' + k)) names.splice(i, 1); }
   const clip = q.get('clip') || 'idle'; const t = +(q.get('t') || 0);
   const per = +(q.get('per') || 8);
   names.forEach((n, i) => {
-    const src = gl.scene.getObjectByName(n); const c = SU.clone(src); c.position.set((i % per - (per - 1) / 2) * 1.0, 0, -Math.floor(i / per) * 1.4); scene.add(c);
-    const id = n.slice(7); const ac = gl.animations.find((a) => a.name === id + '__' + clip);
+    const src = gl.scene.getObjectByName(n); const c = SU.clone(src); c.traverse((o) => { if (o.isBone) o.name = o.name.replace(/_\d+$/, ''); });
+    /* GLTFLoader de-duplicates names (hips_1 ...): strip suffix so shared clips bind */
+    c.position.set((i % per - (per - 1) / 2) * 1.0, 0, -Math.floor(i / per) * 1.4); scene.add(c);
+    const ac0 = gl.animations.find((a) => a.name === clip); const ac = ac0 && ac0.clone(); if (ac) ac.tracks.forEach((k) => { k.name = k.name.replace(/_\d+\./, '.'); });
     if (ac) { const m = new THREE.AnimationMixer(c); m.clipAction(ac).play(); m.setTime(t * ac.duration); c.userData.m = m; }
     if (q.get('rot')) c.rotation.y = +q.get('rot');
   });
-  window.__info = { names, anims: gl.animations.length }; window.__ready = true;
+  window.__info = { anims: gl.animations.map((a) => a.name + ":" + a.tracks.length + ":" + a.tracks[0].name) }; window.__ready = true;
 }, undefined, (e) => { window.__err = String(e); window.__ready = true; });
 r.setAnimationLoop(() => r.render(scene, cam));
 </script></body></html>
