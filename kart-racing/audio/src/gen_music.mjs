@@ -7,20 +7,26 @@ import fs from "node:fs";
 import path from "node:path";
 import { THEMES, compileTheme } from "./songs.mjs";
 
-const TPQ = 480, STEP = TPQ / 4;
+const TPQ = 480;
 const outDir = process.argv[2] || "midi";
 fs.mkdirSync(outDir, { recursive: true });
 
 // GM programs of the sampled/recorded voices in ferrosintesis
 const PROG = { piano: 0, epiano: 4, bassF: 33, bassP: 34, bassS: 34, strings: 48, pizz: 45, trem: 44, brass: 61, flute: 73,
   glock: 9, celesta: 8, marimba: 12, vibes: 11, gtrC: 27, gtrM: 28, gtrOD: 29, timp: 47, trumpet: 56, sax: 66, horn: 60,
-  violin: 40, cello: 42, synstr: 50, synbrass: 62, sawlead: 81 };
+  violin: 40, cello: 42, synstr: 50, synbrass: 62, sawlead: 81,
+  // round 2 (skyway / canyon / highland / mall)
+  squarelead: 80, synbass1: 38, synbass2: 39, warmpad: 89, polypad: 90, sweeppad: 95, fxbright: 100, fxscifi: 103, revcym: 119,
+  banjo: 105, fiddle: 110, harmonica: 22, accordion: 21, whistle: 78, piccolo: 72, ocarina: 79, nylon: 24, steel: 25, mandolin: 25,
+  upright: 32, slapB: 36, slapB2: 37, fretless: 35, bagpipe: 109, clav: 7, organ: 17, oboe: 68, clarinet: 71, oh: 55, harp: 46,
+  pizzS: 45, dulcimer: 15, kalimba: 108, musicbox: 10, chorus: 52, tuba: 58, trombone: 57, muted: 59, tsax: 66, asax: 65 };
+const LSB = { mandolin: 96 };          // XG bank-select LSB variation (ferrosintesis: program 25 + LSB 96 = mandolin)
 const DRUM = { kick: 36, stick: 37, snare: 38, clap: 39, hat: 42, phat: 44, open: 46, tomL: 41, tomM: 45, tomH: 48,
   crash: 49, ride: 51, tamb: 54, cowbell: 56, shaker: 70 };
 // stem roles: base always on; lead = melody; extra fades in from ~0.2; boost from ~0.55
-const LEADS = new Set(["sax", "trumpet", "flute", "violin", "horn", "saw", "lead", "fan", "glock", "celm", "pianoM", "fanB"]);
-const EXTRA = new Set(["perc", "arp", "celesta", "pizz", "glockA", "vibes", "ostc", "pn"]);
-const BOOST = new Set(["horns", "stab", "stc", "stabs", "hornm", "gtrR", "syn", "swell", "brassP"]);
+const LEADS = new Set(["sax", "trumpet", "flute", "violin", "horn", "saw", "lead", "fan", "glock", "celm", "pianoM", "fanB", "fid", "harm", "wst", "tw", "acc", "pipe", "vib", "ldsyn", "hook", "guit"]);
+const EXTRA = new Set(["perc", "arp", "celesta", "pizz", "glockA", "vibes", "ostc", "pn", "acid", "pluck", "banj", "mand", "dbl2", "chick", "claps", "perc2", "shk", "clav", "wah", "bells"]);
+const BOOST = new Set(["horns", "stab", "stc", "stabs", "hornm", "gtrR", "syn", "swell", "brassP", "ssaw", "riser", "strs", "fidD", "ohit", "hornsB", "fx"]);
 // CC7 channel volume per part (loudness balance, tuned from stem measurements)
 const VOL = { drums: 100, perc: 80, bass: 104, bassS: 104, timp: 92, ostv: 92, ostc: 86, pizz: 86, celesta: 78, celm: 80, pad: 84, swell: 80,
   syn: 78, stab: 92, stc: 90, stabs: 90, horns: 92, hornm: 92, gtr: 92, gtrR: 84, keys: 98, sax: 108, horn: 104, violin: 100, trumpet: 106,
@@ -46,6 +52,7 @@ const chunk = (id, buf) => { const h = Buffer.alloc(8); h.write(id, 0, "ascii");
 
 function build(id) {
   const th = THEMES[id], song = compileTheme(th);
+  const NS = song.NS, STEP = 1920 / NS;
   const bars = song.bars;
   const loop0 = song.loopBar;
   const order = [];                       // bar indices: intro once, body twice
@@ -74,13 +81,17 @@ function build(id) {
     const c = { ch, t, stem, part };
     chan[tk] = c;
     if (patch.kind !== "drums") {
+      if (PROG[bank] == null) throw new Error("unknown bank " + bank);
+      if (LSB[bank] != null) { t.add(0, [0xb0 | ch, 0, 0]); t.add(0, [0xb0 | ch, 32, LSB[bank]]); }
       t.add(0, [0xc0 | ch, PROG[bank]]);
-      t.add(0, [0xb0 | ch, 7, Math.round(Math.min(127, (VOL[part] || 90) * (extra.vscale || 1)))]);
+      if (patch.cc) for (const [num, val] of Object.entries(patch.cc)) t.add(0, [0xb0 | ch, +num, val]);
+      t.add(0, [0xb0 | ch, 7, Math.round(Math.min(127, ((th.vol && th.vol[part]) || VOL[part] || 90) * (extra.vscale || 1)))]);
       t.add(0, [0xb0 | ch, 10, Math.round(64 + 63 * Math.max(-1, Math.min(1, (patch.pan || 0) + (extra.pan || 0))))]);
       t.add(0, [0xb0 | ch, 91, Math.round(Math.min(127, 18 + 95 * ((patch.rev || 0) + (patch.room || 0) * 0.5 + (patch.plate || 0) * 0.5)))]);
       if (patch.chorus) t.add(0, [0xb0 | ch, 93, Math.round(40 * patch.chorus)]);
     } else {
-      t.add(0, [0xb0 | ch, 7, VOL.drums]);
+      if (th.kit) t.add(0, [0xc0 | ch, th.kit]);
+      t.add(0, [0xb0 | ch, 7, (th.vol && th.vol[part]) || VOL.drums]);
       t.add(0, [0xb0 | ch, 91, 34]);
     }
     return c;
@@ -92,8 +103,8 @@ function build(id) {
     const bar = bars[bi];
     const sec = th.sections[bar.si];
     const dyn = SECDYN[sec.name] || 0.9;
-    const barTick = oi * 16 * STEP;
-    for (let s = 0; s < 16; s++) {
+    const barTick = oi * NS * STEP;
+    for (let s = 0; s < NS; s++) {
       const base = barTick + s * STEP + ((s & 1) ? (th.swing || 0) * STEP : 0);
       for (const e of bar.at[s]) {
         const part = e.p, patch = th.patch[part];
@@ -125,6 +136,11 @@ function build(id) {
               const L = Math.round(dur), n0 = 45;
               for (let k = 0; k <= 6; k++) c.t.add(t + L * 0.6 * k / 6, [0xb0 | c.ch, 11, Math.round(n0 + (112 - n0) * Math.sin(k / 6 * Math.PI / 2))]);
             }
+            if (patch.sweep && i === 0) {            // per-note filter automation (CC74/CC71...) ramped across the section
+              const sw = patch.sweep, rg = (sw.sec && sw.sec[sec.name]) || sw.def || [sw.hi, sw.hi];
+              const prog = ((bar.bi + s / NS) / sec.bars);
+              c.t.add(Math.max(0, t - 2), [0xb0 | c.ch, sw.cc || 74, Math.round(rg[0] + (rg[1] - rg[0]) * Math.pow(prog, sw.pow || 1))]);
+            }
             c.t.add(t, [0x90 | c.ch, Math.max(0, Math.min(127, n + oct)), v]);
             c.t.add(t + Math.max(30, dur - 6), [0x80 | c.ch, Math.max(0, Math.min(127, n + oct)), 0]);
           });
@@ -140,7 +156,7 @@ function build(id) {
       }
     }
   });
-  const totalTicks = order.length * 16 * STEP;
+  const totalTicks = order.length * NS * STEP;
   const write = (name, list) => {
     const hdr = Buffer.alloc(6); hdr.writeUInt16BE(1, 0); hdr.writeUInt16BE(list.length + 1, 2); hdr.writeUInt16BE(TPQ, 4);
     fs.writeFileSync(path.join(outDir, name + ".mid"), Buffer.concat([chunk("MThd", hdr), chunk("MTrk", tempo.bytes()), ...list.map((t) => chunk("MTrk", t.bytes()))]));
@@ -154,7 +170,7 @@ function build(id) {
   fs.writeFileSync(path.join(outDir, id + ".json"), JSON.stringify(layout, null, 1));
   return layout;
 }
-for (const id of ["menu", "sunset", "snow", "neon", "results"]) {
+for (const id of (process.argv[3] ? process.argv[3].split(",") : Object.keys(THEMES))) {
   const l = build(id);
   console.log(id, l.bpm + "bpm", "intro", l.introBars, "body", l.bodyBars, "bars", l.bodySec.toFixed(1) + "s loop");
 }

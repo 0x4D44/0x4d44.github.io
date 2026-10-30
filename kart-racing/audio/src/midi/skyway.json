@@ -1,0 +1,108 @@
+{
+ "id": "skyway",
+ "bpm": 128,
+ "introBars": 4,
+ "bodyBars": 32,
+ "tailBars": 4,
+ "secPerBar": 1.875,
+ "introSec": 7.5,
+ "bodySec": 60,
+ "stems": [
+  "base",
+  "lead",
+  "extra",
+  "boost"
+ ],
+ "channels": {
+  "pad|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "pad"
+  },
+  "ldsyn|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "ldsyn"
+  },
+  "acid|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "acid"
+  },
+  "fx|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "fx"
+  },
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "bass|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "bass"
+  },
+  "stc|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "stc"
+  },
+  "saw|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "saw"
+  },
+  "saw_dbl|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "saw"
+  },
+  "riser|boost": {
+   "ch": 2,
+   "stem": "boost",
+   "part": "riser"
+  },
+  "fx|boost": {
+   "ch": 3,
+   "stem": "boost",
+   "part": "fx"
+  },
+  "ssaw|boost": {
+   "ch": 4,
+   "stem": "boost",
+   "part": "ssaw"
+  },
+  "ssaw_dbl|boost": {
+   "ch": 5,
+   "stem": "boost",
+   "part": "ssaw"
+  },
+  "syn|boost": {
+   "ch": 6,
+   "stem": "boost",
+   "part": "syn"
+  },
+  "pn|extra": {
+   "ch": 2,
+   "stem": "extra",
+   "part": "pn"
+  },
+  "bells|extra": {
+   "ch": 3,
+   "stem": "extra",
+   "part": "bells"
+  },
+  "stc|extra": {
+   "ch": 4,
+   "stem": "extra",
+   "part": "stc"
+  }
+ }
+}

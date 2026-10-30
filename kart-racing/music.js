@@ -7,10 +7,12 @@
 //
 //   const m = new MusicEngine(ctx, destinationNode);
 //   m.start("sunset", { fadeIn: 1 });  m.setIntensity(0..1);  m.stop(1);  m.dispose();
-// Themes: "menu", "sunset", "snow", "neon", "results". Unknown ids fall back to a race theme.
+// Themes: "menu", "sunset", "snow", "neon", "results" + the per-track themes added later ("skyway", "canyon", "highland", "mall").
+// Unknown ids fall back to one of the three original race themes.
 
 const BASE = new URL("./audio/", import.meta.url).href;
-const THEME_IDS = ["menu", "sunset", "snow", "neon", "results"];
+const THEME_IDS = ["menu", "sunset", "snow", "neon", "results", "skyway"];
+const PREFETCH_IDS = ["menu", "sunset", "snow", "neon", "results"];   // idle-time prefetch pool (the per-track themes load on demand: ~1.3 MB of base+lead each)
 const RACE_THEMES = ["sunset", "snow", "neon"];
 const STEMS = ["base", "lead", "extra", "boost"];
 const PRIMARY = ["base"];                   // must be decoded before the music starts (lead + the rest join as they arrive)
@@ -239,7 +241,7 @@ export class MusicEngine {
       if (conn && (conn.saveData || /(^|-)2g$/.test(conn.effectiveType || ""))) return;
     } catch (e) { /* ignore */ }
     const list = [];
-    for (const id of THEME_IDS) if (id !== curId) for (const st of ["base", "lead"]) list.push(BASE + id + "/" + st + ".ogg");
+    for (const id of PREFETCH_IDS) if (id !== curId) for (const st of ["base", "lead"]) list.push(BASE + id + "/" + st + ".ogg");
     const run = () => {
       if (this._disposed || !list.length) return;
       this._fetch(list.shift()).then(() => setTimeout(run, 600), () => setTimeout(run, 600));
