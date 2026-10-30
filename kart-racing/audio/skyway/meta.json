@@ -1,0 +1,19 @@
+{
+ "bpm": 128,
+ "introSec": 7.5,
+ "loopSec": 60.0,
+ "stems": {
+  "base": {
+   "bytes": 674549
+  },
+  "lead": {
+   "bytes": 480479
+  },
+  "extra": {
+   "bytes": 295051
+  },
+  "boost": {
+   "bytes": 317148
+  }
+ }
+}

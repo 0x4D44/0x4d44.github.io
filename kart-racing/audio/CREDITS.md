@@ -1,6 +1,6 @@
 # Apex Karts soundtrack - credits and licences
 
-All five themes (menu, sunset, snow, neon, results) were composed for this game (see `src/songs.mjs`,
+All nine themes (menu, sunset, snow, neon, results and the per-track themes skyway, canyon, highland, mall) were composed for this game (see `src/songs.mjs`,
 `src/gen_music.mjs`), exported as MIDI (`src/midi/`) and rendered offline with **ferrosintesis**
 (https://github.com/0x4D44/ferrosintesis, MIT OR Apache-2.0), a pure-Rust MIDI synthesiser that embeds recorded
 instrument samples. The `.ogg` files in this folder are therefore derivative audio of those sample sets; the
@@ -271,3 +271,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---
 
+---
+
+## Round 2 themes (skyway, canyon, highland, mall)
+
+Four further original themes, one per added track (`def.theme`): **skyway** (Skyway Station, F# minor, 128 bpm, orbital
+techno/trance-house), **canyon** (Dune Canyon, D major, 136 bpm, bluegrass-rally country with a D-minor spaghetti-western
+bridge), **highland** (Highland Fling, A mixolydian, 12/8 jig at 112 bpm dotted-quarter, written to sit beside the real-time
+bagpipe tune in `audio.js`: verse tune A3-A4, chorus hook B5-A6, low A/E drone) and **mall** (Mall Mayhem, Eb major / C minor,
+114 bpm, funk-disco with a mock-muzak lounge bridge). Composed in `src/songs.mjs`, exported by `src/gen_music.mjs`
+(`src/midi/<theme>.*`), rendered with the same ferrosintesis build and packed by `src/build_audio.py` exactly as the first five.
+
+No new sample sets were introduced: the voices used are the ones already covered by the notices above and by the CC0 / MIT banks listed
+in the opening paragraph - the 5-string banjo (GM 105, owner-recorded, CC0), the fiddle / violin (VSCO 2 CE, CC0), Eastman E1D steel guitar (GM 25, CC0)
+and mandolin (GM 25 + bank LSB 96, CC0), the Yamaha B1 upright (GM 32, CC0), the sampled drum kit, brass section / vibraphone / clavinet / strings
+(MuseScore MS Basic, MIT), the Fender Rhodes e-piano (GM 4, CC BY 4.0, tim.kahn - see ferrosintesis-samples-ccby above) and the sax (MTG Solo
+Saxophones, CC BY 4.0 / CC BY 3.0 - see ferrosintesis-samples-sax above). Harmonica, accordion, tin whistle, the synth drum kit (channel-10
+program 24), synth bass / leads / pads, the clean and overdriven electric guitars and the reverse-cymbal swell are ferrosintesis' own modelled
+voices (no third-party samples). The attributions already reproduced in this file therefore cover the new `.ogg` files too.
