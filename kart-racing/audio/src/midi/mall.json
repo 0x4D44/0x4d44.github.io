@@ -1,0 +1,108 @@
+{
+ "id": "mall",
+ "bpm": 114,
+ "introBars": 4,
+ "bodyBars": 32,
+ "tailBars": 4,
+ "secPerBar": 2.1052631578947367,
+ "introSec": 8.421052631578947,
+ "bodySec": 67.36842105263158,
+ "stems": [
+  "base",
+  "lead",
+  "extra",
+  "boost"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "gtr|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "gtr"
+  },
+  "keys|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "keys"
+  },
+  "sax|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "sax"
+  },
+  "bass|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "bass"
+  },
+  "clav|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "clav"
+  },
+  "vibes|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "vibes"
+  },
+  "strs|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "strs"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "horns|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "horns"
+  },
+  "pad|base": {
+   "ch": 3,
+   "stem": "base",
+   "part": "pad"
+  },
+  "trumpet|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "trumpet"
+  },
+  "horns|extra": {
+   "ch": 2,
+   "stem": "extra",
+   "part": "horns"
+  },
+  "bassU|base": {
+   "ch": 4,
+   "stem": "base",
+   "part": "bassU"
+  },
+  "vib|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "vib"
+  },
+  "bells|extra": {
+   "ch": 3,
+   "stem": "extra",
+   "part": "bells"
+  },
+  "hornsB|boost": {
+   "ch": 2,
+   "stem": "boost",
+   "part": "hornsB"
+  },
+  "gtr|extra": {
+   "ch": 4,
+   "stem": "extra",
+   "part": "gtr"
+  }
+ }
+}

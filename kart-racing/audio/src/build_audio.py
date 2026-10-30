@@ -32,7 +32,7 @@ STEM_FX = {
 # stem balance in the shipped files (the renders come out with the melody ~9 dB under the band)
 MIX_DB = {"base": 0.0, "lead": 6.0, "extra": 2.0, "boost": 4.0}
 THEME_MIX = {"skyway": {"boost": 0.0, "lead": 4.5}}   # per-theme overrides of MIX_DB
-THEME_TRIM = {"skyway": 0.8, "canyon": 0.5}   # per-theme dB added to TARGET_LUFS (keeps the shipped mixes within ~1 LU of the old themes)
+THEME_TRIM = {"skyway": 0.8, "canyon": 0.5, "mall": 0.5}   # per-theme dB added to TARGET_LUFS (keeps the shipped mixes within ~1 LU of the old themes)
 
 
 # per-theme extra voicing (piano/strings themes need more presence and less sub)
