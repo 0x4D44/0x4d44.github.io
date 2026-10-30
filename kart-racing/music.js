@@ -11,7 +11,7 @@
 // Unknown ids fall back to one of the three original race themes.
 
 const BASE = new URL("./audio/", import.meta.url).href;
-const THEME_IDS = ["menu", "sunset", "snow", "neon", "results", "skyway", "canyon"];
+const THEME_IDS = ["menu", "sunset", "snow", "neon", "results", "skyway", "canyon", "highland"];
 const PREFETCH_IDS = ["menu", "sunset", "snow", "neon", "results"];   // idle-time prefetch pool (the per-track themes load on demand: ~1.3 MB of base+lead each)
 const RACE_THEMES = ["sunset", "snow", "neon"];
 const STEMS = ["base", "lead", "extra", "boost"];

@@ -1,0 +1,93 @@
+{
+ "id": "highland",
+ "bpm": 112,
+ "introBars": 4,
+ "bodyBars": 30,
+ "tailBars": 4,
+ "secPerBar": 2.142857142857143,
+ "introSec": 8.571428571428571,
+ "bodySec": 64.28571428571428,
+ "stems": [
+  "base",
+  "extra",
+  "lead",
+  "boost"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "drn|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "drn"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "wst|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "wst"
+  },
+  "bass|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "bass"
+  },
+  "gtr|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "gtr"
+  },
+  "fid|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "fid"
+  },
+  "acc|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "acc"
+  },
+  "accC|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "accC"
+  },
+  "mand|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "mand"
+  },
+  "fidD|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "fidD"
+  },
+  "gtrR|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "gtrR"
+  },
+  "pad|base": {
+   "ch": 3,
+   "stem": "base",
+   "part": "pad"
+  },
+  "bells|extra": {
+   "ch": 2,
+   "stem": "extra",
+   "part": "bells"
+  },
+  "gtrR|extra": {
+   "ch": 3,
+   "stem": "extra",
+   "part": "gtrR"
+  }
+ }
+}

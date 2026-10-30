@@ -25,7 +25,7 @@ const DRUM = { kick: 36, stick: 37, snare: 38, clap: 39, hat: 42, phat: 44, open
   crash: 49, ride: 51, tamb: 54, cowbell: 56, shaker: 70 };
 // stem roles: base always on; lead = melody; extra fades in from ~0.2; boost from ~0.55
 const LEADS = new Set(["sax", "trumpet", "flute", "violin", "horn", "saw", "lead", "fan", "glock", "celm", "pianoM", "fanB", "fid", "harm", "wst", "tw", "acc", "pipe", "vib", "ldsyn", "hook", "guit"]);
-const EXTRA = new Set(["perc", "arp", "celesta", "pizz", "glockA", "vibes", "ostc", "pn", "acid", "pluck", "banj", "mand", "dbl2", "chick", "claps", "perc2", "shk", "clav", "wah", "bells"]);
+const EXTRA = new Set(["perc", "arp", "celesta", "pizz", "glockA", "vibes", "ostc", "pn", "acid", "pluck", "banj", "mand", "dbl2", "chick", "claps", "perc2", "shk", "clav", "wah", "bells", "accC", "bod", "drn2"]);
 const BOOST = new Set(["horns", "stab", "stc", "stabs", "hornm", "gtrR", "syn", "swell", "brassP", "ssaw", "riser", "strs", "fidD", "ohit", "hornsB", "fx"]);
 // CC7 channel volume per part (loudness balance, tuned from stem measurements)
 const VOL = { drums: 100, perc: 80, bass: 104, bassS: 104, timp: 92, ostv: 92, ostc: 86, pizz: 86, celesta: 78, celm: 80, pad: 84, swell: 80,
