@@ -237,7 +237,7 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
   check('V-11 / V-17: the screen flashes paint under the HUD, the white flash is capped at 0.5, and no flash replays when the HUD is shown again', async () => {
     await env(1280, 720); await racing();
     const order = await page.eval(`(() => { const kids = [...__t.hud.el.children], fx = kids.filter((k) => k.classList.contains('fx')).map((k) => kids.indexOf(k)), panels = kids.filter((k) => /^hud-(top|right|speed|bottom|map|center|warn|lock|finish)$/.test(k.className.split(' ')[0])).map((k) => kids.indexOf(k)); return { fx, panels }; })()`);
-    assert.equal(order.fx.length, 3, 'three flash overlays'); assert.ok(Math.max(...order.fx) < Math.min(...order.panels), 'every flash overlay is below every panel: ' + JSON.stringify(order));
+    assert.equal(order.fx.length, 4, 'four screen overlays (the P-15 smoke fog, damage, EMP, white flash)'); assert.ok(Math.max(...order.fx) < Math.min(...order.panels), 'every screen overlay (smoke fog included) is below every panel: ' + JSON.stringify(order));
     const a = await page.eval(`(() => { const { ev, g, hud } = __t, p = g.player; ev.emit('lightning:strike', { owner: __t.ais()[0], target: p, pos: p.flight.pos }); const s = parseFloat(hud.flash.style.getPropertyValue('--a')); hud.fx(hud.flash, 1); return [s, parseFloat(hud.flash.style.getPropertyValue('--a'))]; })()`);
     assert.ok(a[0] <= 0.5 + 1e-9 && a[1] <= 0.5 + 1e-9, 'the white flash alpha is capped at 0.5: ' + a);
     // V-17: damage, EMP and lightning flashes, then a retry hides and shows the HUD
@@ -250,6 +250,55 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
     // and a flash that ran to its end drops its class by itself
     await page.eval(`(() => { const { ev, g } = __t; ev.emit('racer:hit', { racer: g.player, by: __t.ais()[0], kind: 'cannon', pos: g.player.flight.pos, severity: 1 }); })()`);
     await page.waitFor(`document.querySelectorAll('.fx.go').length === 0`, { timeout: 4000 });
+  });
+
+  check('P-15: smoke:blind fogs the local player\'s screen and no one else\'s: in fast, out over the blind time, never above 0.75, softer with Reduce flashing, under every panel and over the 3D view', async () => {
+    await env(1280, 720); await racing();
+    const r = await page.eval(`(() => { const { g, hud, ev } = __t, p = g.player, [a, b] = __t.ais(), S = g.settings, out = { top: 0 };
+      const op = () => { const v = +parseFloat(getComputedStyle(hud.smoke).opacity).toFixed(3); out.top = Math.max(out.top, v); return v; };
+      const reset = () => { __t.clear(); g.race.items.clouds.length = 0; for (const x of g.race.racers) x.blind = 0; __sky.step(2); };
+      // a real cloud dropped by 'owner' on 'at' (items.js stepClouds is the emit site: { racer, owner, duration }), flown through until the player is no longer blind and the fog is gone; one sample per 3 sim steps
+      const fly = (owner, at) => { g.race.items.clouds.push({ owner, pos: at.flight.pos.clone(), t: 0 }); const s = []; for (let i = 0; i < 100; i++) { __sky.step(3); s.push({ f: op(), blind: +p.blind.toFixed(3) }); if (i > 4 && !p.blind && !op()) break; } g.race.items.clouds.length = 0; return s; };
+      reset(); out.idle = op();
+      out.mine = fly(a, p);                                                                  // the player flies through a rival's cloud
+      reset(); S.reduceFlash = true; out.calm = fly(a, p); S.reduceFlash = false;           // the same cloud with Reduce flashing & motion on
+      reset(); g.race.items.clouds.push({ owner: p, pos: b.flight.pos.clone(), t: 0 }); out.rival = [];   // a rival flies through the player's own cloud
+      for (let i = 0; i < 12; i++) { __sky.step(3); out.rival.push(op()); if (i === 0) out.rivalTimer = b.blind; } out.myTimer = p.blind; g.race.items.clouds.length = 0;
+      reset(); ev.emit('smoke:blind', { racer: p, owner: a, duration: 1.2 }); out.evt = [];  // the event alone, no timer on the racer: the fog still clears over the announced time
+      for (let i = 0; i < 40; i++) { __sky.step(3); out.evt.push(op()); }
+      reset(); ev.emit('smoke:blind', { racer: p, owner: a }); __sky.step(3); out.noDur = op();                  // a payload without a duration
+      reset(); ev.emit('smoke:blind', { racer: b, owner: p, duration: 1.2 }); __sky.step(3); out.rivalEvt = op();   // a rival's event
+      // paint order: with the fog up, the open sky hits the fog (it is over the 3D view) and the speed box hits the panel (the panel is over the fog); the temporary rule only makes those two hit-testable
+      reset(); ev.emit('smoke:blind', { racer: p, owner: a, duration: 1.2 }); __sky.step(12);   // (0.2 s: the fog is in by 0.15 s)
+      const st = document.createElement('style'); st.textContent = '.hud .fx-smoke, .hud-speed { pointer-events: auto !important; }'; document.head.append(st);
+      const sp = document.querySelector('.hud-speed').getBoundingClientRect(), sm = hud.smoke.getBoundingClientRect();
+      const sky = document.elementFromPoint(innerWidth / 2, innerHeight * 0.3), onSpeed = document.elementFromPoint(sp.left + sp.width / 2, sp.top + sp.height / 2);
+      out.layer = { sky: sky === hud.smoke, skyIs: sky && (sky.tagName + '.' + sky.className), speed: !!onSpeed && !!onSpeed.closest('.hud-speed'), covers: Math.abs(sm.left) < 1 && Math.abs(sm.top) < 1 && Math.abs(sm.right - innerWidth) < 1 && Math.abs(sm.bottom - innerHeight) < 1, bg: getComputedStyle(hud.smoke).backgroundImage, now: op() };
+      st.remove();
+      // a retry: hiding and showing the HUD must not bring the last fog back (the player's own timer is still running)
+      reset(); g.race.items.clouds.push({ owner: a, pos: p.flight.pos.clone(), t: 0 }); __sky.step(12); out.up = op();
+      hud.show(false); hud.show(true); out.afterShow = op(); __sky.step(2); out.afterStep = op(); out.stillBlind = p.blind;
+      reset(); return out; })()`);
+    const f = (s) => s.map((x) => x.f), hi = (s) => Math.max(...s), rise = (s) => s.findIndex((v) => v >= 0.9 * hi(s));
+    const shape = (s) => { const i = s.indexOf(hi(s)); return s.every((v, k) => k === 0 || (k <= i ? v >= s[k - 1] - 1e-9 : v <= s[k - 1] + 1e-9)); };   // rises once, falls once: nothing pulses
+    const mine = f(r.mine), calm = f(r.calm);
+    assert.equal(r.idle, 0, 'no smoke, no fog');
+    assert.ok(hi(mine) > 0.5 && hi(mine) <= 0.75, `the fog gets dense and stays at or under 0.75: ${hi(mine)}`);
+    assert.ok(mine[3] >= 0.65, `...and comes in fast (a fifth of a second after the event): ${mine.slice(0, 6)}`);
+    assert.ok(shape(mine), `it rises once and clears once, nothing pulses: ${mine}`);
+    assert.ok(r.mine.every((x) => !(x.blind > 0.05) || x.f > 0) && r.mine.every((x) => x.blind > 0 || x.f === 0), `the fog lasts exactly as long as the player is blind (inside the cloud and 1.2 s after): ${JSON.stringify(r.mine)}`);
+    assert.ok(r.mine.at(-1).f === 0 && r.mine.at(-1).blind === 0, 'and it is gone at the end');
+    assert.ok(hi(calm) > 0.15 && hi(calm) <= 0.45 && hi(calm) < hi(mine) - 0.15, `Reduce flashing: a lighter fog (${hi(calm)} against ${hi(mine)})`);
+    assert.ok(shape(calm) && rise(calm) >= rise(mine) + 3, `...that comes in slowly and also only rises and falls (samples to 90%: ${rise(calm)} against ${rise(mine)}): ${calm}`);
+    assert.ok(r.rivalTimer > 0 && r.myTimer === 0, `a rival really was blinded by the player's cloud (its timer ${r.rivalTimer}) and the player was not (${r.myTimer})`);
+    assert.ok(r.rival.every((v) => v === 0) && r.rivalEvt === 0, `a rival's blindness, and a rival's event, leave the player's screen clear: ${r.rival} / ${r.rivalEvt}`);
+    const last = r.evt.map((v) => v > 0).lastIndexOf(true);
+    assert.ok(hi(r.evt) > 0.5 && (last + 1) * 0.05 >= 1 && (last + 1) * 0.05 <= 1.4, `the event alone fogs and clears over the announced 1.2 s (last non-zero sample ${last}): ${r.evt}`);
+    assert.ok(r.noDur > 0, 'a payload without a duration still fogs (1.2 s)');
+    assert.ok(r.layer.sky, `the fog is over the 3D view (the open sky hit-tests to ${r.layer.skyIs})`); assert.ok(r.layer.speed, 'the speed box is over the fog'); assert.ok(r.layer.covers, 'the fog covers the whole screen');
+    assert.match(r.layer.bg, /gradient/, 'the fog has its grey gradient (style.css .fx-smoke)'); assert.ok(r.layer.now > 0.5 && r.layer.now <= 0.75, `the fog shows: ${r.layer.now}`);
+    assert.ok(r.up > 0.5 && r.afterShow === 0 && r.afterStep === 0 && r.stillBlind > 0, `no fog comes back when the HUD is shown again, although the player is still blind: ${JSON.stringify([r.up, r.afterShow, r.afterStep, r.stillBlind])}`);
+    assert.ok(r.top <= 0.75, `at no sample over 0.75: ${r.top}`);
   });
 
   check('E-10: the real shield:block event (damage.js: { racer, by, kind }) shows SHIELD BLOCKED once, and only for the local player', async () => {
@@ -350,6 +399,9 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
         if (${JSON.stringify(state)} === 'countdown') { hud.pop(hud.cd, '2', 'cd-pop'); hud.cdHint.textContent = ${JSON.stringify(rocketHint())}; }
         else { ev.emit('gate:pass', { racer: p, perfect: true }); ev.emit('racer:stunt', { racer: p, kind: 'roll', reward: 12 }); }
         __sky.step(2);
+        // the feed is not left to chance: none during a countdown (nothing has happened yet), two lines in a running race (the most a touch screen shows); what the race did in those two steps must not decide whether the ticker is measured
+        hud.feed.clear(); hud.feedEls.clear(); hud.tickEl.replaceChildren();
+        if (${JSON.stringify(state)} !== 'countdown') { hud.say("Dutch Bergman's missile hit Mika Tanaka"); hud.say('Ace Hardcastle passed you'); }   // the longest feed text (hud-feed.js: "<name>'s missile hit <name>") and a short one
         const P = {}, named = ${JSON.stringify(NAMED)}; for (const k in named) { const r = __t.rect(named[k]); if (r) P[k] = r; }
         const t = document.getElementById('sb-touch'); if (t && getComputedStyle(t).display !== 'none') for (const c of t.children) { const r = c.getBoundingClientRect(); if (c.textContent.trim() && r.width > 1 && r.height > 1) P['btn:' + c.textContent.trim()] = { l: r.left, t: r.top, r: r.right, b: r.bottom }; }
         return { P, W: innerWidth, H: innerHeight }; })()`);

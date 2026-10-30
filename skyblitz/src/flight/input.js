@@ -43,7 +43,7 @@ export function createInput(game) {
           ['Left stick', fl ? 'Pitch (up = nose down) and bank' : 'Pitch (up = nose up) and bank'], ['Right trigger', 'Boost'], ['Left trigger', 'Airbrake'],
           ['LB / RB', 'Barrel roll left / right'], ['A', 'Use item'], ['B', 'Use item backwards'], ['X', 'Cannon'], ['Y', 'Change camera'], ['Right stick click', 'Look back'], ['Start', 'Pause'] ] },
         { group: 'Touch', rows: [
-          ['Left thumb: drag', 'Steer (pitch and bank)'], ['BOOST / FIRE / ITEM', 'Boost, cannon, use item'], ['< ROLL / ROLL >', 'Barrel roll'], ['BRAKE', 'Airbrake'], ['Pause (top right)', 'Pause'] ] },
+          ['Left thumb: drag', 'Steer (pitch and bank)'], ['BOOST / FIRE / ITEM', 'Boost, cannon, use item'], ['< ROLL / > ROLL', 'Barrel roll left / right'], ['BRAKE', 'Airbrake'], ['CAM', 'Change camera (top right)'], ['II', 'Pause (top right)'] ] },
       ];
     },
     sample() {
@@ -203,7 +203,7 @@ export function createInput(game) {
     const roll = (arrow, css, dir, key) => {
       const b = btn('', css, null, () => { st.touchBarrel = dir; }, 'rgba(60,200,160,.7)');
       b.dataset.k = key; b.style.flexDirection = 'column'; b.style.lineHeight = '1'; b.style.fontSize = '12px';
-      const a = document.createElement('b'); a.textContent = arrow; a.style.cssText = 'font-size:22px;line-height:.8;pointer-events:none'; b.append(a, 'ROLL');
+      const a = document.createElement('b'); a.textContent = arrow; a.style.cssText = 'font-size:22px;line-height:.8;pointer-events:none'; b.append(a, ' ROLL');   // the text reads "< ROLL" / "> ROLL" (the space is not drawn in a flex column): the keycaps of the Controls screen's touch row
       return b;
     };
     roll('<', `left:max(112px,calc(env(safe-area-inset-left) + 112px));top:26%;width:52px;height:52px`, -1, 'rollL');

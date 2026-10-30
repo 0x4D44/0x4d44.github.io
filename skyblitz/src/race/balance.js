@@ -49,13 +49,21 @@ export function rollItem(rng, place, n) {
 // mistakes   scale on the frequency of human-like mistakes
 // reaction   AI reaction time (s) to a missile warning / item opportunity
 // aggro      scale on item/cannon aggression
-// playerHelp small hidden speed help for a human who is last (fraction)
+// playerHelp hidden speed help for a human trailing the best AI by up to rubberRange m (fraction; from place 4 down)
+// aheadSlow  max slowdown of an AI far AHEAD of the human (fraction): 0 within RACE.aheadDead m of gap, full rubberRange m beyond that;
+//            never takes the AI below RACE.aheadFloor of its craft's cruise
 export const DIFFICULTY = {
-  easy:   { id: 'easy', shortcutBias: -0.12, finishExtra: 25,   aiSpeed: 0.88, aiSkill: 0.55, rubber: 0.06, rubberRange: 500, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.05 },
-  normal: { id: 'normal', shortcutBias: 0, aiSpeed: 0.91, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.025 },
-  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.98, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
-  expert: { id: 'expert', shortcutBias: 0.12, aiSpeed: 1.05, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
+  easy:   { id: 'easy', shortcutBias: -0.12, finishExtra: 25,   aiSpeed: 0.67, aiSkill: 0.55, rubber: 0.06, rubberRange: 650, aheadSlow: 0.25, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.25 },
+  normal: { id: 'normal', shortcutBias: 0, aiSpeed: 0.86, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, aheadSlow: 0.14, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.12 },
+  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.90, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, aheadSlow: 0.04, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
+  expert: { id: 'expert', shortcutBias: 0.12, aiSpeed: 0.996, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, aheadSlow: 0, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
 };
+
+/** Fraction an AI `gap` m ahead of the human slows by: 0 within RACE.aheadDead, rising linearly to d.aheadSlow over d.rubberRange more metres. */
+export function aheadSlowFor(gap, d) {
+  const g = Math.max(0, Math.min(1, (gap - RACE.aheadDead) / d.rubberRange));
+  return (d.aheadSlow || 0) * g;
+}
 
 export const RACE = {
   countdown: 3,            // seconds of 3-2-1 before GO
@@ -68,7 +76,9 @@ export const RACE = {
   respawnScrapeT: 3.5, respawnStuckT: 3, respawnLostT: 2.5, respawnHighM: 150, respawnHighT: 1,
   draftRange: 85, draftCone: 0.14, draftTime: 1.6, // slipstream: metres behind, wake half-width grows 0.14 m per m behind, seconds to charge a slingshot
   cruiseRef: 100,          // fallback reference cruise (m/s)
-  cruiseNorm: 0.4,         // how far AI cruise is pulled toward the human's craft (0 = raw stats, 1 = identical)
+  aheadDead: 150,          // metres an AI may lead the human before the ahead-slowdown starts
+  aheadFloor: 0.65,        // the ahead-slowdown never takes an AI below this fraction of its craft's cruise
+  cruiseNorm: 0.4,        // how far AI cruise is pulled toward the human's craft (0 = raw stats, 1 = identical)
 };
 
 export const WEAPONS = {

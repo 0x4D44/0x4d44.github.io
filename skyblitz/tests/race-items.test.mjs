@@ -11,6 +11,8 @@ import { applyHit } from '../src/race/damage.js';
 import { FLIGHT } from '../src/flight/flight.js';
 import { RNG } from '../src/util.js';
 import { basisQuat } from '../src/world/layout.js';
+import { ItemVisuals } from '../src/race/items-vis.js';
+import { QUALITY } from '../src/config.js';
 
 const base = createFakeGame({ seed: 5 });
 const course = await loadCourseHeadless(base, 'sunrise');
@@ -318,6 +320,18 @@ test('lock (P-05, E-17): the racer ahead ON THE COURSE in the course-frame cone 
   assert.notEqual(owner.lock.target, ace, 'a blind racer cannot be locked');
 });
 
+test('lock (P-05): a racer ahead on the course but off the nose (the owner turned through a bend) is still locked, in the course frame', () => {
+  const { race, items } = arena(52, { bots: 2 });
+  const owner = race.player, ace = race.racers.find((r) => r.isAI);
+  Object.assign(owner, { _cs: 1500, _yaw: 0.7 }); Object.assign(ace, { _cs: 1610 });
+  carry(race, [owner, ace]);
+  const noseAng = Math.acos(clamp(_dv.copy(ace.flight.pos).sub(owner.flight.pos).normalize().dot(_nose.set(0, 0, -1).applyQuaternion(owner.flight.quat)), -1, 1));
+  assert.ok(noseAng > W.missile.lockCone, `ace is outside the nose cone (${noseAng.toFixed(2)} rad off the nose)`);
+  items.give(owner, 'missile', 1);
+  drive(race, 1.5, [owner, ace], () => owner.lock.progress >= 1);
+  assert.equal(owner.lock.target, ace, 'locked in the course frame'); assert.equal(owner.lock.progress, 1);
+});
+
 test('triple (P-05): while the first missile flies, the next lock goes to the next racer ahead instead of into the tumble the first will cause', () => {
   const { race, items } = arena(41, { bots: 3 });
   const owner = race.player, [a, b] = race.racers.filter((r) => r.isAI);
@@ -418,6 +432,7 @@ test('smoke (P-15): dropped on the follower\'s line; a follower at 110 m/s is bl
   const bl = types(rec, 'smoke:blind').filter((e) => e.payload.racer === fol);
   assert.equal(bl.length, 1); assert.equal(bl[0].payload.owner, owner); assert.equal(bl[0].payload.duration, W.smoke.blind);
   assert.ok(blindAfter >= W.smoke.blind - 3 * SIM_DT && blindAfter <= W.smoke.blind + 2 * SIM_DT, `blind for ${blindAfter.toFixed(2)} s after leaving the cloud`);
+  assert.ok(blindAfter >= 1.0 && blindAfter <= 1.5, `the P-15 target is ~1.2 s of blindness, got ${blindAfter.toFixed(2)} s`);
   assert.ok(spdOut <= spdIn * 0.85, `speed ${spdIn.toFixed(0)} -> ${spdOut.toFixed(0)} m/s across the cloud`);
   assert.equal(lockable, 0, 'a blind racer cannot be locked');
   assert.equal(owner.blind, 0, 'the owner is never blinded by its own smoke');
@@ -430,8 +445,11 @@ test('drone (P-09, E-17): flies the course, survives brushing the ground, fires 
   const rs = [owner, tgt]; carry(race, rs);
   // a teleport keeps race distance, so set the ranking the placement means: tgt leads, the owner is next, the parked racers trail
   for (const o of race.racers) o.dist = o === tgt ? 1100 : o === owner ? 1000 : 0;
-  let shots = 0; const fb = items.fireBolt.bind(items);
-  items.fireBolt = (r, byDrone, from, dir) => { if (byDrone) shots++; return fb(r, byDrone, from, dir); };
+  let shots = 0, wasted = 0; const fb = items.fireBolt.bind(items);
+  items.fireBolt = (r, byDrone, from, dir) => {
+    if (byDrone) { shots++; const t = items.drones[0]?.target; if (t && (t.tumble > 0 || t.invuln > 0.2)) wasted++; }
+    return fb(r, byDrone, from, dir);
+  };
   items.give(owner, 'drone', 1); assert.equal(items.useItem(owner), true);
   const d = items.drones[0];
   drive(race, 1, rs);
@@ -444,6 +462,7 @@ test('drone (P-09, E-17): flies the course, survives brushing the ground, fires 
   assert.ok(shots >= 3, 'drone bolts fired: ' + shots);
   assert.ok(hits >= 1 && d.hits >= 1, 'drone bolts land: ' + hits);
   assert.ok(d.hits <= W.drone.maxHits, 'never more than maxHits landed bolts');
+  assert.equal(wasted, 0, 'no bolt fired into a tumble or a hit\'s grace');
   const exp = types(rec, 'drone:expire');
   assert.equal(exp.length, 1); assert.equal(exp[0].payload.reason, d.hits >= W.drone.maxHits ? 'spent' : 'time');
   assert.equal(items.drones.length, 0);
@@ -490,4 +509,83 @@ test('projectiles keep their own projection hint (E-32): no full projection scan
   assert.ok(calls >= 120, 'projectiles projected every step: ' + calls);
   assert.equal(scans, 0, 'no un-hinted (whole-course) projection');
   assert.equal(noProj, 0, 'collide always gets the projectile\'s own projection');
+});
+
+test('item orbs follow the quality preset: Low is coarser than Med, Med than High, at the same size', () => {
+  const tris = (g) => (g.index ? g.index.count : g.attributes.position.count) / 3;
+  const build = (id) => {
+    const v = new ItemVisuals({ scene: new THREE.Scene(), q: QUALITY[id] }, 2), meshes = [v.orbCore, v.orbShell, v.orbRing];
+    const tri = tris(v.orbCore.geometry) + tris(v.orbShell.geometry) + 2 * tris(v.orbRing.geometry);       // one orb: core, shell, two rings
+    const size = meshes.map((m) => { m.geometry.computeBoundingSphere(); return m.geometry.boundingSphere.radius; });
+    v.dispose();
+    return { tri, size };
+  };
+  const low = build('low'), med = build('med'), high = build('high'), ultra = build('ultra');
+  assert.ok(low.tri < med.tri && med.tri < high.tri, `triangles per orb: low ${low.tri}, med ${med.tri}, high ${high.tri}`);
+  assert.ok(low.tri <= 0.5 * high.tri, `Low is at most half of High: ${low.tri} vs ${high.tri}`);
+  assert.equal(ultra.tri, high.tri);
+  for (const q of [low, med]) q.size.forEach((r, i) => assert.ok(Math.abs(r - high.size[i]) <= 0.05 * high.size[i], `same size as High: ${r.toFixed(2)} vs ${high.size[i].toFixed(2)}`));
+});
+
+// ---------------------------------------------------------------- missile guidance details (P-05): hand-built scenes in which ONLY the missile step runs
+/** Step only the missiles (no AI, no flight model, no other item) for `seconds`; each(stepIndex) runs after every step and stops early on true. */
+function flyMissiles(items, seconds, each = () => false) {
+  const n = Math.round(seconds / SIM_DT);
+  for (let i = 0; i < n; i++) { items.stepMissiles(SIM_DT); if (each(i) === true) return i + 1; }
+  return n;
+}
+
+test('missile arm time (P-05): fired 30-40 degrees off its target, it is already steering at 0.2 s (armT 0.05, not 0.35)', () => {
+  const { race, items } = arena(61, { bots: 2 });
+  const owner = race.player, tgt = race.racers.find((r) => r.isAI);
+  place(race, owner, 1500, 0, 0, 100);
+  const q = new THREE.Quaternion().setFromAxisAngle(f.up, 0.65);                 // the nose 0.65 rad off the course, as in a banked turn
+  owner.flight.quat.premultiply(q); owner.flight.forward.applyQuaternion(q); owner.flight.right.applyQuaternion(q);
+  place(race, tgt, 1700, 0, 0, 0); tgt.flight.vel.set(0, 0, 0);                  // a parked target 200 m up the course
+  items.give(owner, 'missile', 1); owner.lock.target = tgt; owner.lock.progress = 1; assert.equal(items.useItem(owner), true);
+  const m = items.missiles[0];
+  const err = () => Math.acos(clamp(m.dir.dot(_dv.copy(tgt.flight.pos).sub(m.pos).normalize()), -1, 1)) * 180 / Math.PI;
+  const e0 = err();
+  assert.ok(e0 > 30 && e0 < 40, `launched ${e0.toFixed(1)} degrees off its target`);
+  flyMissiles(items, 0.2);
+  assert.ok(!m.dead, 'still flying');
+  // measured: 10 degrees with armT 0.05; 40 degrees with armT 0.35 (it has not turned at all yet)
+  assert.ok(err() < 20, `heading error after 0.2 s: ${err().toFixed(1)} degrees`);
+});
+
+test('missile airway return (P-05): a missile outside the airway turns back in hard (a nearer carrot), not on a long shallow curve', () => {
+  const { race, items } = arena(62, { bots: 2 });
+  const owner = race.player;
+  course.frameAt(700, f); const hw = f.halfWidth;
+  place(race, owner, 700, 0.95 * hw, 0, 100);                                    // 0.95 of the corridor ellipse; the airway is 0.6 of it
+  items.give(owner, 'missile', 1); assert.equal(items.useItem(owner), true);      // no lock and nobody within reach: it simply flies the course
+  const m = items.missiles[0], fr = {};
+  assert.equal(m.target, null);
+  let back = -1, inward = 0;
+  flyMissiles(items, 1, (i) => {
+    course.frameAt(m.proj.s, fr);
+    const e = Math.hypot(m.proj.lateral / fr.halfWidth, m.proj.vertical / fr.halfHeight);
+    inward = Math.max(inward, -Math.atan2(m.dir.dot(fr.right), m.dir.dot(fr.tangent)) * 180 / Math.PI);
+    if (back < 0 && e <= 0.7) back = (i + 1) * SIM_DT;
+  });
+  assert.ok(!m.dead, 'still flying');
+  // measured: back to 0.7 after 0.42 s at up to 41.5 degrees; without the nearer carrot 0.67 s at up to 27 degrees. (The last stretch to 0.6 is an
+  // asymptotic approach to the airway edge with any carrot, so 0.7 is the line that tells the two apart.)
+  assert.ok(back > 0 && back < 0.55, `back inside 0.7 of the ellipse after ${back.toFixed(2)} s`);
+  assert.ok(inward > 34, `turned in at up to ${inward.toFixed(1)} degrees`);
+});
+
+test('triple (AI): the hold clock restarts after each shot, so an unlocked follow-up waits like the first instead of firing 0.1-0.2 s later', () => {
+  const game = createFakeGame({ seed: 52 });
+  const race = makeRace(game, course, { seed: 52, bots: 1, mode: 'quick', laps: 3 });
+  stepRace(race, { seconds: 6, until: (x) => x.state === 'racing' });
+  race.autopilot = false;
+  const bot = race.racers.find((r) => r.isAI);
+  place(race, bot, 1000, 0, 0, 100); place(race, race.player, 3500, 0, 0, 100);       // nobody within missile range, ahead or behind: no lock, no target
+  bot.item = { type: 'triple', count: 3 }; bot.lock.target = null; bot.lock.progress = 0;
+  const out = createControls(); const shots = [];
+  for (let i = 0; i < 60 * 60 && shots.length < 2; i++) { out.item = false; bot.ai.think(1 / 60, out); if (out.item) shots.push(i / 60); }
+  assert.equal(shots.length, 2, 'the patience timeout fires the first missile, then the second after its own wait');
+  assert.ok(shots[0] >= 12, `first unlocked shot only after the patience wait: ${shots[0]}`);
+  assert.ok(shots[1] - shots[0] > 5, `second unlocked shot waits again, not 0.1-0.2 s later: gap ${shots[1] - shots[0]}`);
 });

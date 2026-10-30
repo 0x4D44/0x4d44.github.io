@@ -17,6 +17,8 @@ const POPUP_MAX = 2;          // stunt lines on screen at once (V-3): the rest o
 const TALLY_SECS = 4;         // a stunt kind not seen for this long starts again at x1
 const FLASH_MAX = 0.5;        // white screen flash cap (V-11): LAP, place and speed stay readable through a lightning hit
 const PLATE_POOL = 6;         // nameplate elements; layoutPlates shows at most PLATE.max of them
+const SMOKE_MAX = 0.7;        // smoke fog at its densest (P-15): under the 0.75 cap, so the track still shows through it
+const SMOKE_CALM = 0.4;       // ... with "Reduce flashing & motion" on (the OS reduced-motion preference sets that setting: game.js onReducedMotion)
 const CAM_NAMES = { chase: 'CHASE', far: 'FAR', low: 'LOW', nose: 'NOSE' };
 const _v = new THREE.Vector3();
 
@@ -27,6 +29,7 @@ export class Hud {
     this.lockT = 0; this.warnT = 0; this.warnDist = 999; this.warnTti = null; this.warnRate = 0; this.warnEvade = false; this.warnEvadeT = 0;
     this.lockTarget = null; this.lockProg = 0; this.lockedBy = null; this.lockedByT = 0; this.lockedByProg = 0;
     this.finishT = 0; this.camPending = false; this._zones = null; this._zonesT = 0; this._claim = 0; this._rm = null;
+    this.smokeT = 0; this.smokeDur = 0; this.smokeA = 0;   // P-15: seconds of fog left on the event's own clock, the blind time the event announced, and the fog's current strength (0..1)
     this.build(); this.listen();
   }
 
@@ -35,11 +38,13 @@ export class Hud {
     const el = this.el = h('div', { class: 'hud', 'aria-hidden': 'false' });
     // underlay: the screen flashes and the nameplates paint first, so every panel after them draws over them (V-11, P-18); a flash class is dropped when its
     // animation ends, or the whole HUD replays it when it is shown again (V-17)
+    // (the smoke fog, P-15, is the lowest of them: a damage or lightning flash inside smoke still reads on top of it; its opacity is set per frame, so it never carries `go`)
+    this.smoke = h('div', { class: 'fx fx-smoke' });
     this.dmg = h('div', { class: 'fx fx-dmg' }); this.emp = h('div', { class: 'fx fx-emp' }); this.flash = h('div', { class: 'fx fx-flash' });
     for (const f of [this.dmg, this.emp, this.flash]) { const off = () => f.classList.remove('go'); f.addEventListener('animationend', off); f.addEventListener('animationcancel', off); }
     this.platesEl = h('div', { class: 'hud-plates' }); this.plates = [];
     for (let i = 0; i < PLATE_POOL; i++) { const p = h('div', { class: 'nameplate', style: 'display:none' }); this.plates.push({ el: p, id: -1, w: 0, h: 0, claim: 0, on: false }); this.platesEl.append(p); }
-    el.append(this.dmg, this.emp, this.flash, this.platesEl);
+    el.append(this.smoke, this.dmg, this.emp, this.flash, this.platesEl);
     // top: lap + timers (left of centre on phones) / position (right)
     this.lapEl = h('div', { class: 'hud-lap' }, h('b', null, 'LAP 1/3'));
     this.timeEl = h('div', { class: 'hud-time' }, '0:00.000');
@@ -100,6 +105,7 @@ export class Hud {
     this.warn.style.display = 'none'; this.reticle.style.display = 'none'; this.warnT = 0; this.warnEvadeT = 0; this.lockT = 0; this.lockedBy = null; this.lockedByT = 0; this.camPending = false;
     this.note.classList.remove('on'); this.feed.clear(); this.feedEls.clear(); this.tickEl.replaceChildren();
     for (const f of [this.dmg, this.emp, this.flash]) f.classList.remove('go');   // V-17: a shown-again HUD must not replay the last race's flashes
+    this.smokeT = this.smokeDur = this.smokeA = 0; this.smoke.style.opacity = '0';   // ... nor the last race's fog (P-15)
     for (const p of this.plates) { p.el.style.display = 'none'; p.id = -1; p.on = false; }
     this.finishBox.style.display = 'none'; this.wrong.style.display = 'none'; this.respawn.style.display = 'none'; this.c = {}; this._zones = null;
   }
@@ -155,6 +161,8 @@ export class Hud {
       else if (me(owner)) this.stunt(`STORM HIT ${target?.name || 'RIVAL'}`, '#7aa8ff');
     });
     ev.on('shield:block', ({ racer }) => { if (me(racer)) this.stunt('SHIELD BLOCKED', '#33d6ff'); });   // damage.js emits { racer, by, kind } (E-10: this read `victim`)
+    // P-15: items.js stepClouds emits { racer, owner, duration } when a racer enters a smoke cloud while not blind. Only the local player's screen fogs (updateSmoke); a rival's blindness is theirs
+    ev.on('smoke:blind', ({ racer, duration }) => { if (me(racer)) { this.smokeDur = duration > 0 ? duration : 1.2; this.smokeT = this.smokeDur; } });
     ev.on('input:camera', () => { this.camPending = true; });   // the rig cycles in its own listener (after this one): read the new mode next frame
     ev.on('input:lookback', () => this.showNote('REAR VIEW'));
     ev.on('game:pause', () => { this.el.classList.add('paused'); });
@@ -286,12 +294,26 @@ export class Hud {
     if (this.feed.tick(dt)) this.syncFeed();
     for (const l of this.feed.lines) this.feedEls.get(l.id)?.classList.toggle('fade', l.ttl - l.age < 1);
     if (this.camPending) { this.camPending = false; const nm = game.state === 'race' ? CAM_NAMES[game.cameraRig?.mode] : null; if (nm) this.showNote('CAMERA: ' + nm); }   // the rig only cycles during a race (camera.js)
-    this.updateAlerts(dt, p);
+    this.updateAlerts(dt, p); this.updateSmoke(dt, p);
     this.lockT -= dt; this.updatePlates(game, p, race);
     // finish panel
     if (game.state === 'finish' || p.finished) { this.finishT += dt; if (this.finishT > 0.3 && Math.floor(this.finishT * 4) !== c.fin) { c.fin = Math.floor(this.finishT * 4); this.updateFinish(race, p); } }
     this.t30 += dt; if (this.t30 > 0.045) { this.t30 = 0; this.drawMap(); }
     this.el.classList.toggle('calm', !!game.settings.reduceFlash);
+  }
+
+  /**
+   * P-15: the smoke fog over the 3D view, under every panel. Its strength is the time the player is still blind as a share of the blind time `smoke:blind` announced: items.js keeps
+   * the racer's own `blind` timer at the full duration while it is inside the cloud and counts it down after it leaves, so the fog holds as long as the lock-on penalty does and
+   * then clears linearly over `duration`; the event's own clock covers a payload whose racer carries no timer. It comes in fast (0.15 s), never above SMOKE_MAX, and with
+   * Reduce flashing it comes in over 0.6 s to SMOKE_CALM. A haze that only rises and falls: nothing here pulses.
+   */
+  updateSmoke(dt, p) {
+    if (this.smokeT > 0) this.smokeT -= dt;
+    const calm = !!this.game.settings.reduceFlash, dur = this.smokeDur;
+    const want = dur > 0 ? clamp(Math.max(this.smokeT, p.blind || 0) / dur, 0, 1) : 0;
+    this.smokeA = want > this.smokeA ? Math.min(want, this.smokeA + dt / (calm ? 0.6 : 0.15)) : want;
+    this.set('smoke', Math.round(this.smokeA * (calm ? SMOKE_CALM : SMOKE_MAX) * 100), (v) => { this.smoke.style.opacity = (v / 100).toFixed(2); });
   }
 
   /** Alert column for this frame: missile warning (+ ROLL cue while a barrel roll would break it) and lock-on warning, each shown only while its timer runs. */

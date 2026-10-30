@@ -68,10 +68,12 @@ export class ItemVisuals {
   constructor(game, orbCount) {
     this.game = game; this.group = new THREE.Group(); this.group.name = 'items'; game.scene.add(this.group);
     const mk = (geo, mat, n) => { const im = new THREE.InstancedMesh(geo, mat, Math.max(1, n)); im.frustumCulled = false; im.instanceMatrix.setUsage(THREE.DynamicDrawUsage); im.count = 0; this.group.add(im); return im; };
-    // orbs: glowing core, translucent shell, two crossed rings
-    this.orbCore = mk(new THREE.IcosahedronGeometry(2.6, 2), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x666666, roughness: 0.18, metalness: 0.15 }), orbCount);
-    this.orbShell = mk(new THREE.SphereGeometry(4.2, 16, 12), glow(1, 1, 1, 0.3, false), orbCount);
-    this.orbRing = mk(new THREE.TorusGeometry(5.4, 0.2, 6, 28), glow(0.9, 1.1, 1.6, 0.75, true), orbCount * 2);
+    // orbs: glowing core, translucent shell, two crossed rings. The tessellation follows the quality preset the way the scenery does (game.q.scenery, as in
+    // world/wayfinding.js): same radii and colours, fewer segments. Triangles per orb: High / Ultra 1204, Med 872, Low 536.
+    const sc = game.q?.scenery ?? 1, [coreDetail, shellW, shellH, ringRad, ringTub] = sc < 0.6 ? [1, 12, 8, 4, 18] : sc < 0.9 ? [2, 14, 10, 5, 22] : [2, 16, 12, 6, 28];
+    this.orbCore = mk(new THREE.IcosahedronGeometry(2.6, coreDetail), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x666666, roughness: 0.18, metalness: 0.15 }), orbCount);
+    this.orbShell = mk(new THREE.SphereGeometry(4.2, shellW, shellH), glow(1, 1, 1, 0.3, false), orbCount);
+    this.orbRing = mk(new THREE.TorusGeometry(5.4, 0.2, ringRad, ringTub), glow(0.9, 1.1, 1.6, 0.75, true), orbCount * 2);
     this.orbCore.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(Math.max(1, orbCount) * 3), 3);
     this.orbShell.instanceColor = this.orbCore.instanceColor;      // shared: shell tints with the core
     this.bolts = mk(new THREE.BoxGeometry(0.4, 0.4, 6), glow(1.2, 3.2, 3.6, 1, true), 192);

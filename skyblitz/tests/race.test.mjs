@@ -218,11 +218,37 @@ test('rubber band: AI speedMul stays inside [aiSpeed*(1-0.6*rubber)-eps, aiSpeed
         prev.set(r, r.rb);
       }
     }
-    const norm = 1.25;    // craft pull toward the human's craft is bounded well within +-25 %
-    assert.ok(hi <= D.aiSpeed * norm * (1 + D.rubber) + 1e-3, `${diff}: hi ${hi}`);
-    assert.ok(lo >= D.aiSpeed / norm * (1 - 0.6 * D.rubber) - 1e-3, `${diff}: lo ${lo}`);
+    // rb starts at 1 and eases to its target, so a field slower than 1 starts above its cap. Craft pull toward the human's craft: the exact per-AI factor, so the bound holds for any aiSpeed (a slow field sits at the rubber cap)
+    const refC = race.player.flight.params.cruise; let nHi = 0, nLo = 9;
+    for (const x of race.racers.filter((r) => r.isAI)) { const c = x.flight.params.cruise; const n = (c + (refC - c) * RACE.cruiseNorm) / c; nHi = Math.max(nHi, n); nLo = Math.min(nLo, n); }
+    assert.ok(hi <= Math.max(1, D.aiSpeed * nHi * (1 + D.rubber)) + 1e-3, `${diff}: hi ${hi}`);
+    assert.ok(lo >= D.aiSpeed * nLo * (1 - 0.6 * D.rubber) - 1e-3, `${diff}: lo ${lo}`);
     assert.ok(maxStep < 0.004, `${diff}: smooth, max per-step change ${maxStep}`);
   }
+});
+
+test('ahead-slowdown: an AI far ahead of a still-racing human eases off in proportion to the gap; 0 when the human leads or within the dead zone', () => {
+  const settle = (race, ai, gap) => { race.player.dist = 1000; ai.dist = 1000 + gap; ai.rb = 0.9; for (let i = 0; i < 600; i++) race.speedMulFor(ai, 1 / 60); return ai.rb; };
+  for (const diff of ['easy', 'normal']) {
+    const D = DIFFICULTY[diff];
+    const { race } = fresh(31, { difficulty: diff }); go(race, null);
+    const ai = race.racers.find((x) => x.isAI);
+    const cruise = ai.flight.params.cruise, norm = (cruise + (race.player.flight.params.cruise - cruise) * RACE.cruiseNorm) / cruise;
+    const dead = settle(race, ai, RACE.aheadDead - 1), lead = settle(race, ai, -300), mid = settle(race, ai, RACE.aheadDead + D.rubberRange * 0.25), far = settle(race, ai, RACE.aheadDead + D.rubberRange * 3);
+    const base = D.aiSpeed * norm;
+    // inside the dead zone only the old mild band applies (<= 0.6 x rubber); the human leading never slows the AI (it speeds it up)
+    assert.ok(dead >= base * (1 - 0.6 * D.rubber) - 1e-3, `${diff}: dead zone ${dead}`);
+    assert.ok(lead >= base - 1e-3, `${diff}: human leads, AI must not slow: ${lead}`);
+    assert.ok(mid < dead - Math.min(0.5 * 0.25 * D.aheadSlow * base, 0.5 * (dead - RACE.aheadFloor * norm)), `${diff}: a quarter of the range slows ${mid} vs ${dead}`);
+    assert.ok(far <= mid - 1e-4, `${diff}: slowdown grows with the gap ${far} vs ${mid}`);
+    assert.ok(far >= RACE.aheadFloor * norm - 1e-3 || far >= base * (1 - 0.6 * D.rubber) - 1e-3, `${diff}: floor ${far}`);
+    assert.ok(far <= base * (1 - D.aheadSlow + 0.01) * (1 - 0.6 * D.rubber) + 1e-2 || far <= RACE.aheadFloor * norm + 1e-3, `${diff}: full slow ${far}`);
+  }
+  const { race } = fresh(31, { difficulty: 'expert' }); go(race, null);
+  const ai = race.racers.find((x) => x.isAI);
+  const a = (() => { race.player.dist = 1000; ai.dist = 1600; ai.rb = 0.9; for (let i = 0; i < 600; i++) race.speedMulFor(ai, 1 / 60); return ai.rb; })();
+  race.player.dist = 1000; ai.dist = 1000 + RACE.aheadDead + 50; ai.rb = 0.9; for (let i = 0; i < 600; i++) race.speedMulFor(ai, 1 / 60);
+  assert.ok(Math.abs(a - ai.rb) < 0.02, `expert has no ahead-slowdown: ${a} vs ${ai.rb}`);
 });
 
 test('drafting: tailing a faster-or-equal racer charges a slingshot and emits racer:draft', () => {

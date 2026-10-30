@@ -120,7 +120,7 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .arrow { all: unset; cursor: pointer; position: absolute; top: 50%; width: 2.6em; height: 3.2em; margin-top: -1.6em; display: grid; place-items: center; border-radius: .5em; color: #fff; background: rgba(8, 14, 40, .6); border: .1em solid rgba(143, 176, 255, .6); transform: skewX(-10deg); }
 .arrow.l { left: .6em; } .arrow.l .ico { transform: scaleX(-1) skewX(10deg); } .arrow.r { right: .6em; } .arrow.r .ico { transform: skewX(10deg); } .arrow:hover { background: var(--orange); color: #2b1300; }
 .dots { position: absolute; left: 0; right: 0; bottom: .7em; display: flex; justify-content: center; gap: .5em; } .dots i { width: .7em; height: .7em; border-radius: 50%; background: rgba(255, 255, 255, .3); } .dots i.on { background: var(--yellow); transform: scale(1.3); }
-.info { display: flex; flex-direction: column; gap: .6em; overflow: auto; min-height: 0; }
+.info { display: flex; flex-direction: column; gap: .6em; overflow: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: var(--orange) transparent; overscroll-behavior: contain; }   /* the scrollbar is only the last resort (below): the thin orange one of the other panels */
 .ac-cls { align-self: flex-start; padding: .1em .9em; background: linear-gradient(90deg, var(--cyan), #2a63ff); font: 900 italic .85em var(--disp); text-transform: uppercase; letter-spacing: .08em; border-radius: .2em; }
 .ac-name { font: 900 italic 2em/1 var(--disp); margin: 0; color: #fff; text-shadow: 0 .06em 0 rgba(0, 0, 0, .5); letter-spacing: 0; text-transform: uppercase; } .ac-tag { margin: 0; color: #dbe6ff; font-weight: 600; }
 .stats { display: flex; flex-direction: column; gap: .4em; }
@@ -130,6 +130,14 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .liv-l { font-weight: 800; color: var(--muted); letter-spacing: .08em; font-size: .85em; } .liv-l b { color: #fff; }
 .swatches { display: flex; gap: .7em; }
 .sw { all: unset; cursor: pointer; width: 3em; height: 2.2em; border-radius: .4em; transform: skewX(-12deg); border: .15em solid rgba(255, 255, 255, .5); background: linear-gradient(135deg, var(--a) 0 50%, var(--b) 50% 75%, var(--c) 75%); transition: transform .12s; } .sw.on { border-color: #fff; box-shadow: 0 0 0 .18em var(--orange), 0 .3em .8em rgba(0, 0, 0, .5); transform: skewX(-12deg) translateY(-.15em) scale(1.08); }
+/* The details panel never scrolls: select.js fit() adds these classes one at a time, only while the content is still taller than the panel (a short window, a three-line tagline):
+   spacing, the tagline, the stat rows, tighter spacing, the class chip, the livery name, in that order. The swatches (44 px touch targets), the name and the stat bars always stay. */
+.info.fit1 { padding-top: .6em; padding-bottom: .6em; gap: .3em; }
+.info.fit2 .ac-tag { display: none; }
+.info.fit3 .stat .ico { width: 1.15em; height: 1.15em; }
+.info.fit4 { padding-top: .45em; padding-bottom: .45em; gap: .2em; } .info.fit4 .stats { gap: .1em; }
+.info.fit5 .ac-cls { display: none; }
+.info.fit6 .liv-l { display: none; } .info.fit6 .sw.on { transform: skewX(-12deg); }   /* with the livery name gone the lifted, scaled swatch would ride up over the last stat row (568x320) */
 
 /* ---------------------------------------------------------------- course select */
 .cards { scrollbar-width: thin; scrollbar-color: var(--orange) transparent; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15em), 1fr)); gap: 1em; align-content: start; grid-auto-rows: max-content; padding: .8em .6em 1em .4em; }
@@ -226,6 +234,7 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .nameplate { position: absolute; left: 0; top: 0; padding: .05em .7em; font-size: .8em; color: #fff; background: rgba(5, 10, 30, .6); border-bottom: .15em solid var(--c, #fff); border-radius: .2em; white-space: nowrap; will-change: transform, opacity; }
 .fx { position: absolute; inset: 0; opacity: 0; } .fx.go { animation: fxGo .7s ease-out; } @keyframes fxGo { 0% { opacity: var(--a, .6); } 100% { opacity: 0; } }
 .fx-dmg { background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 30, 30, .85)); } .fx-emp { background: repeating-linear-gradient(0deg, rgba(120, 90, 255, .3) 0 .3em, transparent .3em .6em), radial-gradient(ellipse at center, rgba(160, 120, 255, .15), rgba(110, 80, 255, .7)); } .fx-flash { background: #fff; }
+.fx-smoke { background: radial-gradient(ellipse 90% 80% at 50% 56%, #a3abb8 0%, #70788a 50%, #3b4150 100%); }   /* P-15: the smoke fog; hud.js sets its opacity every frame (cap 0.75); it is the first child of .hud, so every panel draws over it */
 .hud-finish { position: absolute; right: max(.8em, env(safe-area-inset-right)); top: 34%; width: min(18em, 46vw); padding: .5em .9em; background: rgba(6, 12, 34, .82); border: .12em solid rgba(143, 176, 255, .6); border-radius: .4em; font-style: normal; } .fin-t { font: 900 italic .8em var(--disp); letter-spacing: .15em; color: var(--yellow); } .hud-finish ol { list-style: none; margin: .3em 0 0; padding: 0; font: 800 .75em var(--body); } .hud-finish li { display: grid; grid-template-columns: 1.4em 1fr auto; gap: .4em; padding: .12em 0; } .hud-finish li.me { color: var(--orange); } .hud-finish em { font-style: normal; color: var(--muted); }
 
 /* ---------------------------------------------------------------- responsive */
@@ -233,6 +242,7 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
   .ac-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(9em, 34vh) minmax(0, 1fr); }
   .res-body { grid-template-columns: minmax(0, 1fr); overflow-y: auto; } .res-t { flex: none; max-height: none; overflow: visible; } .res-side { flex: none; }
   .btn.big small { display: none; } .hdr h2 { font-size: 1.5em; }
+  .btn.big.sub-live small { display: block; } .btn.big.sub-live .btn-in { flex-direction: column; gap: .1em; }   /* Resume GP keeps its race and rank, on a second line (side by side it would not fit) */
   .row { grid-template-columns: 1fr; gap: .3em; } .main-logo { font-size: 2.2em; }
   .hud-top { justify-content: flex-start; left: 120px; } .hud-lapbox { min-width: 0; padding: .2em .6em; } .hud-time { font-size: 1.25em; } .hud-sub { display: none; }
   .pos-n { font-size: 2.5em; } .hud-ticker { display: none; } .hud-map { bottom: auto; top: 6.2em; right: .5em; width: 92px; height: 92px; }
@@ -278,10 +288,16 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 }
 @media (max-width: 400px) { .hud-cdhint { font-size: .92em; letter-spacing: .06em; } }   /* the rocket-start hint takes two lines on a narrow phone, not three */
 @media (max-width: 340px) { .hud-top { left: 112px; } .hud-lapbox { padding: .2em .4em; } .hud-time { font-size: 1em; } }   /* 320 px wide: the LAP box ended under the CAM button */
+@media (orientation: landscape) and (min-width: 761px) {   /* touch, wide enough to show the feed: its lines sat on the right ROLL button (src/flight/input.js: right 150px, top 26%, 52 px + border); they start below that button's row instead (V-24, two lines in the matrix) */
+  .touch .hud-ticker { position: absolute; right: 0; top: calc(26vh - env(safe-area-inset-top, 0px) + 8px); }
+}
+@media (orientation: landscape) and (max-height: 460px) { .touch .hud-ticker { display: none; } }   /* a phone on its side (844 x 390, 915 x 412): the strip under the ROLL button is where ITEM and BRAKE are; like a phone held upright, the popups and warnings carry the news (V-20) */
 @media (orientation: portrait) and (min-width: 761px) {   /* tablets: bigger type, taller boxes, the LAP box is centred */
   .touch .hud-speed { top: calc(env(safe-area-inset-top, 0px) + 3.4em); }
   .touch .hud-bottom { top: calc(env(safe-area-inset-top, 0px) + 8.5em); }
   .touch .hud-map { top: calc(env(safe-area-inset-top, 0px) + 64px + 4.2em); }
+  .hud-ticker { max-width: calc(50vw - 150px); }   /* mouse: the centred LAP box is 234 px wide, and a long line ran under it (touch keeps its own 36vw cap, further down) */
+  .touch .hud-ticker { margin-right: calc(88px + 1em); }   /* a tablet shows the feed, and the minimap sits where its first line goes (under the position box): the lines run to the minimap's left (V-24: the matrix puts two lines on screen) */
   .touch .hud-note { top: calc(env(safe-area-inset-top, 0px) + 13em); }
 }
 @media (prefers-reduced-motion: reduce) { .warn-roll, .lockon-txt.locked, .lockon-arrow.locked, .hud-ticker li.bump { animation: none; } .hud-note.on { animation: fadeOnly 1.1s forwards; } }
@@ -336,6 +352,9 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
   .scr.podium-scr > .res-act { grid-column: 1 / -1; grid-row: 4; }
 }
 @media (min-width: 700px) and (orientation: landscape) { .scr.podium-scr .tbl td { padding-top: .22em; padding-bottom: .22em; } }
+/* 700-740 px tall windows (1280x720 is the common one): the nine-row standings table was a few pixels taller than its panel, so the panel showed a scrollbar for
+   nothing; tighter rows fit it (below 500 px tall the compact rules further down take over) */
+@media (min-width: 700px) and (orientation: landscape) and (max-height: 740px) { .scr.podium-scr .tbl td { padding-top: .14em; padding-bottom: .14em; } }
 
 /* touch targets: every control at least 44px tall on small, short or coarse-pointer screens (and the segmented options everywhere) */
 .opt, .toggle { min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
