@@ -67,15 +67,17 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
   const GP_TOTALS = { 'Nova Kim': { points: 27, wins: 0, color: '#e6212b', isPlayer: false }, You: { points: 25, wins: 1, color: '#ffd02e', isPlayer: true }, 'Rosa Vega': { points: 24, wins: 1, color: '#ff7bc0', isPlayer: false }, 'Mika Tanaka': { points: 22, wins: 1, color: '#18b8b0', isPlayer: false },
     'Ace Hardcastle': { points: 22, wins: 1, color: '#2f7bff', isPlayer: false }, Zed: { points: 19, wins: 0, color: '#ffcf1f', isPlayer: false }, 'Pip Moreau': { points: 11, wins: 0, color: '#5bd16a', isPlayer: false }, 'Dutch Bergman': { points: 6, wins: 0, color: '#6f8f3a', isPlayer: false } };
 
-  check('main menu: a saved Grand Prix reads "Resume GP" with its race and rank, and the 7 entries fit without a scrollbar (E-24 / V-18)', async () => {
+  check('main menu: a saved Grand Prix reads "Resume GP" with its race and rank, also on a phone, and the 7 entries fit without a scrollbar (E-24 / V-18)', async () => {
     try {
-      for (const [w, h] of [[1280, 720], [1366, 768], [1024, 600], [844, 390], [390, 844]]) {
+      for (const [w, h] of [[1280, 720], [1366, 768], [1024, 600], [844, 390], [390, 844], [360, 640], [320, 568]]) {
         await page.setViewport(w, h, { dpr: 1 }); await delay(300);
         await page.eval(`(() => { const u = __sky.game.ui; u.save.gp = { race: 1, craft: 'falcon', livery: 0, difficulty: 'normal', totals: ${JSON.stringify(GP_TOTALS)} }; u.goto('main'); })()`); await delay(500);
         const m = await page.eval(`(() => {
           const scr = document.querySelector('.scr.main'), menu = scr.querySelector('.menu'), bs = [...menu.querySelectorAll('.btn')].filter((b) => b.offsetParent !== null);
           const resume = bs.find((b) => /Resume/.test(b.textContent)), lines = (e) => { const r = document.createRange(); r.selectNodeContents(e); return new Set([...r.getClientRects()].map((q) => Math.round(q.top))).size; };
+          const sm = resume && resume.querySelector('small'), sr = sm && sm.getBoundingClientRect(), br = resume && resume.getBoundingClientRect(), lr = resume && resume.querySelector('.btn-t').getBoundingClientRect();
           return { n: bs.length, label: resume && resume.querySelector('.btn-t').textContent, sub: resume && resume.querySelector('small').textContent, aria: resume && resume.getAttribute('aria-label'),
+            subShown: !!sm && getComputedStyle(sm).display !== 'none' && sr.width > 0 && sr.height > 0, subInside: !!sr && sr.top >= br.top - 1 && sr.bottom <= br.bottom + 1 && sr.left >= br.left - 1 && sr.right <= br.right + 1, subBelow: !!sr && sr.top >= lr.bottom - 2,
             wrapped: bs.filter((b) => lines(b.querySelector('.btn-t')) > 1 || (b.querySelector('small') && lines(b.querySelector('small')) > 1)).map((b) => b.textContent.trim()),
             menuScrolls: menu.scrollHeight > menu.clientHeight + 1, scrScrolls: scr.scrollHeight > scr.clientHeight + 1,
             off: bs.filter((b) => { const r = b.getBoundingClientRect(); return r.top < -1 || r.bottom > innerHeight + 1 || r.left < -1 || r.right > innerWidth + 1; }).map((b) => b.textContent.trim().slice(0, 14)),
@@ -85,6 +87,9 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
         assert.equal(m.n, 7, 'seven entries with a saved Grand Prix: ' + at);
         assert.equal(m.label, 'Resume GP', at); assert.equal(m.sub, 'Race 2 of 4 - 2nd, 25 pts', 'race, rank and points, no dangling dash: ' + at);
         assert.equal(m.aria, 'Resume Grand Prix, Race 2 of 4 - 2nd, 25 pts', at);
+        // the line is on screen at every size, a phone included (the other sub-labels are hidden there; this one is the player's own race and rank), under the label when the width is narrow
+        assert.ok(m.subShown && m.subInside, 'the race and rank line is drawn inside its entry (a phone used to hide it, so the rank showed only in the aria-label): ' + at);
+        if (w <= 760) assert.ok(m.subBelow, 'on a narrow screen the line sits under the label (side by side it does not fit): ' + at);
         assert.deepEqual(m.wrapped, [], 'no label wraps: ' + at); assert.ok(!m.menuScrolls && !m.scrScrolls, 'the menu needs no scrollbar: ' + at);
         assert.deepEqual(m.off, [], 'every entry is on screen: ' + at); assert.ok(m.overflowX <= 1, 'no sideways scroll: ' + at);
       }
@@ -111,6 +116,72 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     k = await hint(); assert.ok(k && k.touch, 'a first touch sets .touch on the UI root ' + JSON.stringify(k)); assert.ok(!k.shown, 'no keyboard hint on a touch screen ' + JSON.stringify(k));
     await fakePad(); await page.eval(`__sky.game.ui.startFlow('quick')`); await delay(700);   // a pad on a touch device still gets its hint
     k = await hint(); assert.ok(k && k.shown && k.pad && /A select/.test(k.text), 'the gamepad hint stays on a touch device ' + JSON.stringify(k));
+  });
+
+  check('aircraft: the whole aircraft stays inside the turntable stage at every turn of the table, on a tall narrow stage too (768x1024)', async () => {
+    // How far from the middle of the stage the aircraft reaches (1 = the stage edge): every vertex on show, projected through the turntable camera, over 16 angles of the table.
+    const reach = () => page.eval(`(() => {
+      const tt = __sky.game.ui.turntable, v = new (tt.cam.position.constructor)(); let x = 0, y = 0;
+      for (let k = 0; k < 16; k++) {
+        tt.angle = k * Math.PI / 8; tt.pop = 1; tt.frame(0); tt.pivot.updateMatrixWorld(true); tt.cam.updateMatrixWorld(true);
+        tt.model.traverse((o) => { const p = o.isMesh && o.visible !== false && o.geometry.attributes.position; for (let i = 0; p && i < p.count; i++) { v.fromBufferAttribute(p, i).applyMatrix4(o.matrixWorld).project(tt.cam); x = Math.max(x, Math.abs(v.x)); y = Math.max(y, Math.abs(v.y)); } });
+      }
+      return { x: +x.toFixed(2), y: +y.toFixed(2), stage: [tt.canvas.clientWidth, tt.canvas.clientHeight] };
+    })()`);
+    for (const [w, h] of [[768, 1024], [1024, 1366], [800, 700], [1280, 720], [390, 844]]) {
+      await page.setViewport(w, h, { dpr: 1 }); await delay(300);
+      await page.eval(`__sky.game.ui.startFlow('quick')`); await page.waitFor(`!!__sky.game.ui.turntable && !!__sky.game.ui.turntable.model`, { timeout: 20000 }); await delay(500);   // the screen is open and the stage has focus
+      const n = await page.eval(`document.querySelectorAll('.scr.aircraft .stage .dots i').length`); assert.ok(n >= 2, 'the aircraft screen lists its aircraft');
+      for (let i = 0; i < n; i++) {   // every aircraft: ArrowRight on the stage turns to the next
+        const r = await reach(), at = `${w}x${h} ${await page.eval(`document.querySelector('.ac-name').textContent`)}: ${JSON.stringify(r)}`;
+        assert.ok(r.x <= 0.97 && r.y <= 0.97, 'the aircraft stays inside the stage at every turn of the table (on a tall narrow stage it used to reach out to 1.8 half-widths and was cut at the sides): ' + at);
+        assert.ok(r.x >= 0.5, 'and it is not shrunk to a speck to get there: ' + at);
+        await press('ArrowRight');
+      }
+    }
+  });
+
+  check('aircraft: the details panel never scrolls on a short landscape window, for any aircraft, keeps its name, bars and swatches, and refits when the window changes (round 3)', async () => {
+    // The panel (.info) stacks class chip, name, tagline, six stat bars, livery name and swatches. It used to scroll on every landscape phone: 12 px past its box at 844x390, 15 at 812x375, 30 at 640x360, 79 at 1024x600.
+    // select.js fit() now takes room back in steps (spacing, tagline, bar icons, ...) only while the content is taller than the panel. Per aircraft (the stage's next arrow steps through them): scrollHeight - clientHeight is 0.
+    const panel = () => page.eval(`(async () => {
+      const scr = document.querySelector('.scr.aircraft'), info = scr.querySelector('.info'), next = scr.querySelector('.arrow.r'), n = scr.querySelectorAll('.stage .dots i').length, out = [];
+      const shown = (e) => !!e && e.offsetParent !== null && getComputedStyle(e).display !== 'none';
+      for (let i = 0; i < n; i++) {
+        await new Promise((r) => setTimeout(r, 220));   // longer than the swatches' .12 s transform transition, so the selected one is measured where it settles
+        const ib = info.getBoundingClientRect(), sw = [...info.querySelectorAll('.sw')], inside = (e) => { const b = e.getBoundingClientRect(); return b.top >= ib.top - 1 && b.bottom <= ib.bottom + 1; };
+        const stats = [...info.querySelectorAll('.stat')], lastBar = stats[stats.length - 1].getBoundingClientRect(), swTop = Math.min(...sw.map((e) => e.getBoundingClientRect().top));   // as drawn: the selected swatch is lifted and scaled
+        out.push({ who: info.querySelector('.ac-name').textContent, over: info.scrollHeight - info.clientHeight, nameOn: shown(info.querySelector('.ac-name')), bars: stats.filter((e) => shown(e) && inside(e)).length,
+          swatches: sw.length, swIn: sw.filter(inside).length, clear: +(swTop - lastBar.bottom).toFixed(1), chip: shown(info.querySelector('.ac-cls')), tag: shown(info.querySelector('.ac-tag')), liv: shown(info.querySelector('.liv-l')),
+          fit: (info.className.match(/fit\\d/g) || []).length });
+        next.click();
+      }
+      return out;
+    })()`);
+    const open = async (w, h) => { await page.setViewport(w, h, { dpr: 1 }); await delay(300); await page.eval(`__sky.game.ui.startFlow('quick')`); await page.waitFor(`!!document.querySelector('.scr.aircraft .info .sw')`, { timeout: 20000 }); await delay(400); };
+    for (const [w, h] of [[844, 390], [812, 375], [667, 375], [640, 360], [568, 320], [896, 414], [932, 430], [800, 480], [1024, 600], [1280, 720], [390, 844]]) {
+      await open(w, h);
+      const rows = await panel(); assert.ok(rows.length >= 2, 'the aircraft screen lists its aircraft: ' + rows.length);
+      for (const r of rows) {
+        const at = `${w}x${h} ${r.who}: ${JSON.stringify(r)}`;
+        assert.ok(r.over <= 0, 'the details panel scrolls by ' + r.over + ' px (a scrollbar over the stat bars on a phone): ' + at);
+        assert.ok(r.nameOn && r.bars === 6, 'the aircraft name and all six stat bars stay on show, inside the panel: ' + at);
+        assert.ok(r.swatches >= 2 && r.swIn === r.swatches, 'every livery swatch stays inside the panel: ' + at);
+        assert.ok(r.clear >= 2, 'the swatches (the selected one lifted) stay clear of the last stat bar instead of riding up over it (at 568x320 the orange ring covered the Armour row): ' + at);
+        if (h >= 360 && w > h) assert.ok(r.chip && r.liv, 'from 360 px tall up only the tagline (and spacing) gives way: the class chip and the livery name stay: ' + at);
+        if (h > w) assert.ok(r.tag && r.chip && r.liv, 'a portrait phone has the room: nothing is hidden: ' + at);
+        // not cramped: the order of the steps matters, the tagline goes before the bars are squeezed (a later step has to do the work of a broken earlier one and the panel still "fits")
+        if (w === 1024 && h === 600) assert.ok(r.fit <= 2 && !r.tag && r.chip && r.liv, 'at 1024x600 only the spacing and the tagline give way, the bars and their icons keep their size: ' + at);
+        if ((w === 1280 && h === 720) || h > w) assert.ok(r.fit <= 1, 'with this much room at most the spacing tightens: ' + at);
+      }
+    }
+    // the panel refits when the window changes under it (a rotation) and gives the room back, without leaving the screen
+    const now = () => page.eval(`(() => { const i = document.querySelector('.scr.aircraft .info'); return { over: i.scrollHeight - i.clientHeight, tag: getComputedStyle(i.querySelector('.ac-tag')).display !== 'none', fit: (i.className.match(/fit\\d/g) || []).length }; })()`);
+    await open(1280, 720); let s = await now(); assert.ok(s.over <= 0 && s.tag, 'at 1280x720 the panel fits with its tagline: ' + JSON.stringify(s));
+    await page.setViewport(844, 390, { dpr: 1 }); await delay(600); s = await now();
+    assert.ok(s.over <= 0 && !s.tag && s.fit >= 1, 'turned to 844x390 under the open screen, the panel refits by itself (no scrollbar, tagline given up): ' + JSON.stringify(s));
+    await page.setViewport(1280, 720, { dpr: 1 }); await delay(600); s = await now();
+    assert.ok(s.over <= 0 && s.tag, 'and back at 1280x720 it gives the room back (the tagline returns): ' + JSON.stringify(s));
   });
 
   check('every flow screen: Escape goes back one screen; first focus is visible and clear of the pill', async () => {
@@ -340,11 +411,12 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     } finally { await fresh({ clear: true }); }
   }, { own: true });
 
+  // The screen starts on a random tip: step through all of them by feeding Math.random one value per tip.
+  const loadingTips = () => page.eval(`(() => { const out = new Set(), real = Math.random, n = 64; try { for (let i = 0; i < n; i++) { Math.random = () => (i + 0.5) / n; __sky.game.ui.goto('loading'); out.add(document.querySelector('.scr.loading .ld-tip').textContent); } } finally { Math.random = real; __sky.game.ui.goto('main'); } return [...out]; })()`);
   check('loading screen: the double-tap roll is taught only when that setting is on (V-30)', async () => {
     try {
       await fresh({ clear: true });
-      // The screen starts on a random tip: step through all of them by feeding Math.random one value per tip.
-      const tips = () => page.eval(`(() => { const out = new Set(), real = Math.random, n = 64; try { for (let i = 0; i < n; i++) { Math.random = () => (i + 0.5) / n; __sky.game.ui.goto('loading'); out.add(document.querySelector('.scr.loading .ld-tip').textContent); } } finally { Math.random = real; __sky.game.ui.goto('main'); } return [...out]; })()`);
+      const tips = loadingTips;
       assert.equal(await page.eval(`__sky.game.settings.doubleTapRoll`), false, 'the premise: double-tap roll is off by default');
       let t = await tips(); assert.ok(t.length >= 8, 'the loading screen shows its tips: ' + t.length);
       assert.ok(t.some((x) => /barrel roll/i.test(x)), 'the barrel-roll tip is among them');
@@ -352,6 +424,23 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
       await page.eval(`__sky.game.ui.setSetting('doubleTapRoll', true)`);
       t = await tips(); assert.ok(t.some((x) => /double-tap/i.test(x)), 'with the setting on, the tip names it: ' + JSON.stringify(t.filter((x) => /roll/i.test(x))));
     } finally { await fresh({ clear: true }); }
+  }, { own: true });
+
+  check('loading screen: the tips name the controls this device has - keys, then a first touch, then a gamepad on top of it (V-30 follow-up)', async () => {
+    const KEY = /Q \/ E|Hold B/, PAD = /LB \/ RB|right trigger|Press B instead/, SCREEN = /the ROLL buttons|the BOOST button|Tap ITEM/;
+    try {
+      await fresh({ clear: true });
+      let t = await loadingTips();
+      assert.ok(t.some((x) => /Q \/ E/.test(x)) && t.some((x) => /Hold B/.test(x)) && t.some((x) => /Tap BOOST in/.test(x)) && !t.some((x) => SCREEN.test(x) || PAD.test(x)), 'keyboard and mouse: key words only ' + JSON.stringify(t));
+      await page.s('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+      await page.s('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 5, y: 700, id: 1 }] }); await page.s('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await delay(500);   // the first touch
+      assert.ok(await page.eval(`__sky.game.input.touchActive`), 'premise: the first touch made the controls touch controls');
+      t = await loadingTips();
+      assert.ok(t.some((x) => /the ROLL buttons/.test(x)) && t.some((x) => /the BOOST button/.test(x)) && t.some((x) => /Tap ITEM/.test(x)) && !t.some((x) => KEY.test(x) || PAD.test(x)), 'after a first touch: the on-screen buttons, no key ' + JSON.stringify(t));
+      await fakePad();
+      t = await loadingTips();
+      assert.ok(t.some((x) => /\(LB \/ RB\)/.test(x)) && t.some((x) => /right trigger/.test(x)) && t.some((x) => /Press B instead/.test(x)) && !t.some((x) => KEY.test(x) || SCREEN.test(x)), 'a pad on top of the touch screen: the pad buttons ' + JSON.stringify(t));
+    } finally { await page.s('Emulation.setTouchEmulationEnabled', { enabled: false }).catch(() => {}); await fresh({ clear: true }); }
   }, { own: true });
 
   const raceReady =() => page.waitFor(`__sky.game.state === 'race'`, { timeout: 120000 });
@@ -386,8 +475,8 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     s = await press('ArrowRight'); assert.ok(/Quit/.test(s.label), JSON.stringify(s));
     await press('Escape'); await page.waitFor(`__sky.game.ui.cur && __sky.game.ui.cur.name === 'main'`, { timeout: 60000 });
   });
-  check('podium: New Grand Prix and Quit stay on screen, with focus on one of them, in portrait and in small windows (V-12)', async () => {
-    for (const [w, h] of [[1280, 720], [768, 1024], [390, 844], [360, 640], [844, 390]]) {
+  check('podium: New Grand Prix and Quit stay on screen, with focus on one of them, in portrait and in small windows (V-12); on a 720p window the standings table fits its panel without a scrollbar', async () => {
+    for (const [w, h] of [[1280, 720], [1024, 720], [1366, 768], [768, 1024], [390, 844], [360, 640], [844, 390]]) {
       await page.setViewport(w, h, { dpr: 1 }); await delay(300);
       await page.eval(`(() => { const u = __sky.game.ui; u.goto('main'); })()`); await delay(300);   // leave and re-enter: goto() of the screen already showing only calls its enter(), which rebuilds the buttons and drops focus
       await page.eval(`(() => { const u = __sky.game.ui; u.gp = { race: 3, totals: ${JSON.stringify(GP_TOTALS)} }; u.pending = null; u.goto('podium'); })()`); await delay(700);
@@ -395,9 +484,12 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
         const bs = [...document.querySelectorAll('.scr.podium-scr .res-act .btn')], a = document.activeElement, rect = (e) => e.getBoundingClientRect();
         const inView = (e) => { const r = rect(e); return r.width > 0 && r.top >= -1 && r.bottom <= innerHeight + 1 && r.left >= -1 && r.right <= innerWidth + 1; };
         return { names: bs.map((b) => b.textContent.trim()), off: bs.filter((b) => !inView(b)).map((b) => b.textContent.trim()), focus: a && a.textContent.trim(), focusIn: !!a && inView(a), focusInRow: !!a && !!a.closest('.res-act'),
-          underPill: !!a && rect(a).left < 112 && rect(a).top < 44, overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+          underPill: !!a && rect(a).left < 112 && rect(a).top < 44, overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          tableOver: (() => { const p = document.querySelector('.scr.podium-scr > .panel.scroll'); return p ? p.scrollHeight - p.clientHeight : null; })() };   // how far the standings panel's content reaches past it (a scrollbar when above 0)
       })()`);
       const at = `${w}x${h}: ${JSON.stringify(m)}`;
+      // side by side on a wide window that is 700 px or more tall (1280x720 is the common one) the nine standings rows fit their panel; it used to scroll for 6 px
+      if (w >= 700 && w > h && h >= 700) assert.ok(m.tableOver !== null && m.tableOver <= 1, 'the standings table needs no scrollbar (its panel was 6 px too short at 1280x720): ' + at);
       assert.ok(m.names.length >= 2 && /New Grand Prix/.test(m.names[0]) && /Quit/.test(m.names[m.names.length - 1]), 'the two actions exist: ' + at);
       assert.deepEqual(m.off, [], 'both actions are on screen without scrolling the page (they used to sit below the fold): ' + at);
       assert.ok(m.focusInRow && m.focusIn && !m.underPill, 'first focus is an action and it is visible: ' + at); assert.ok(m.overflowX <= 1, 'no sideways scroll: ' + at);
@@ -493,6 +585,33 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
       assert.ok(boosting, `${w}x${h}: BOOST touch button works`);
     }
     await page.s('Emulation.setTouchEmulationEnabled', { enabled: false }); await page.setViewport(1280, 720, { dpr: 1, mobile: false });
+  }, { own: true });
+
+  check('touch: each on-screen button reads one clear label, and the Controls screen lists those labels (roll buttons "< ROLL" and "> ROLL")', async () => {
+    await page.s('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    try {
+      await page.setViewport(844, 390, { dpr: 1, mobile: true });
+      await page.goto(GAME + '?debug=1&manual=1&autostart=1&mute=1&laps=3&bots=3&course=sunrise'); await page.waitFor('window.__sky && __sky.ready && __sky.game.state === "race"', { timeout: 100000 });
+      const tp = (type, pts) => page.s('Input.dispatchTouchEvent', { type, touchPoints: pts });
+      await tp('touchStart', [{ x: 5, y: 385, id: 1 }]); await tp('touchEnd', []); await delay(300);   // the first touch builds the overlay
+      await page.eval(`__sky.step(3)`); await delay(300);
+      let labels = [];
+      for (const [w, h] of [[844, 390], [390, 844]]) {   // landscape and portrait: the layout differs, the labels do not
+        await page.setViewport(w, h, { dpr: 1, mobile: true }); await delay(400);
+        const buttons = await page.eval(`[...document.getElementById('sb-touch').children].filter((e) => e.textContent.trim()).map((e) => { const r = e.getBoundingClientRect(); return { text: e.textContent.trim(), key: e.dataset.k || '', drawn: r.width > 0 && r.height > 0 }; })`);
+        const at = `${w}x${h}: ${JSON.stringify(buttons)}`;
+        assert.ok(buttons.length >= 6 && buttons.every((b) => b.drawn), 'the touch buttons are drawn: ' + at);
+        assert.equal(buttons.find((b) => b.key === 'rollL')?.text, '< ROLL', 'the left roll button is one label, an arrow and ROLL: ' + at);
+        assert.equal(buttons.find((b) => b.key === 'rollR')?.text, '> ROLL', 'the right roll button is one label, an arrow and ROLL: ' + at);
+        labels = buttons.map((b) => b.text);
+      }
+      await page.eval(`__sky.game.ui.goto('controls', { back: 'main' })`); await delay(700);
+      const c = await page.eval(`(() => { const g = [...document.querySelectorAll('.scr.controls .cgrp')].find((s) => /touch/i.test(s.querySelector('h3').textContent)); return { caps: g ? [...g.querySelectorAll('dt kbd')].map((k) => k.textContent) : null, tip: (document.querySelector('.scr.controls .tip') || {}).textContent || '' }; })()`);
+      assert.ok(c.caps && c.caps.length, 'the Controls screen has a touch group: ' + JSON.stringify(c));
+      for (const l of labels) assert.ok(c.caps.includes(l), `the on-screen button "${l}" is named on the Controls screen (touch keys: ${JSON.stringify(c.caps)})`);
+      for (const k of c.caps) if (k !== 'Left thumb: drag') assert.ok(labels.includes(k), `the Controls screen's touch key "${k}" is a button on screen (${JSON.stringify(labels)})`);
+      assert.match(c.tip, /ROLL buttons/, 'the tip on the Controls screen names the touch roll buttons, not just Q / E: ' + c.tip);
+    } finally { await page.s('Emulation.setTouchEmulationEnabled', { enabled: false }); await page.setViewport(1280, 720, { dpr: 1, mobile: false }); }
   }, { own: true });
 
   check('volume sliders reach the audio graph (unmuted page)', async () => {

@@ -9,8 +9,9 @@
 // Missile counterplay (all four are tested in tests/race-items.test.mjs):
 //   barrel   a roll is a TIMING WINDOW: it protects between evadeFrom and evadeTo of the roll (WEAPONS.missile)  -> missile:evaded by 'barrel'
 //   shield   target.shield > 0                                                                          -> shield:block + evaded 'shield'
-//   outrun   missile burns out after ~4.5 s (speed decays below a boosting racer) / loses the target  -> evaded 'outrun'
+//   outrun   missile burns out after WEAPONS.missile.burn s (speed decays below a boosting racer) / loses the target  -> evaded 'outrun'
 //   obstacle missile flies into ground/hazard geometry                                                  -> evaded 'obstacle'
+// (a missile that reaches its target inside the grace of an earlier hit is spent on it -> evaded 'invuln')
 import * as THREE from 'three';
 import { clamp } from '../util.js';
 import { startBoost, FLIGHT } from '../flight/flight.js';
@@ -333,7 +334,7 @@ export class ItemSystem {
     return best;
   }
 
-  /** Clear `r`'s lock and tell the HUD (missile:unlock). reason: 'lost' | 'blind' | 'item' | 'fired'. */
+  /** Clear `r`'s lock and tell the HUD (missile:unlock). reason: 'lost' | 'blind' | 'invuln' | 'item' | 'fired'. */
   dropLock(r, reason) {
     const lock = r.lock, t = lock.target;
     if (t) this.game.events.emit('missile:unlock', { owner: r, target: t, targetId: t.id, targetName: t.name, reason });

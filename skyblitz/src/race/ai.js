@@ -110,17 +110,20 @@ export function createAI(race, racer, pilot, difficulty) {
     S.itemTimer = 0.1 + rng.float() * 0.1;
     const patience = 12 + P.itemSense * 14;
     const fire = () => { out.item = true; S.backT = 0; };
+    // a triple keeps its type between shots: restart the hold clock after each one (at `react`, so a locked follow-up still goes at once)
+    // so an unlocked follow-up waits the same patience as the first instead of sailing out 0.1-0.2 s after it
+    const fireMissile = () => { S.heldT = S.react; return fire(); };
     switch (it.type) {
       case 'missile': case 'triple': {
         const lock = racer.lock;
-        if (lock.target && lock.progress >= 1) return fire();
-        if (lock.target && P.itemSense < 0.5 && lock.progress > 0.45) return fire();
+        if (lock.target && lock.progress >= 1) return fireMissile();
+        if (lock.target && P.itemSense < 0.5 && lock.progress > 0.45) return fireMissile();
         if (!lock.target) {
           const ahead = nearestAhead(700, 0.9), behind = nearestBehind(450, 0.9);
           if (!ahead && behind && P.itemSense > 0.45 && S.backT <= 0) S.backT = 1.8;
-          else if (ahead && aggro > 0.75 && S.heldT > S.react + 2.5) return fire();
+          else if (ahead && aggro > 0.75 && S.heldT > S.react + 2.5) return fireMissile();
         }
-        if (S.heldT > patience + 8) return fire();
+        if (S.heldT > patience + 8) return fireMissile();
         return;
       }
       case 'mine': {

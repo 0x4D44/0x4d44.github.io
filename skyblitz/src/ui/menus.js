@@ -28,7 +28,7 @@ export function mainScreen(ui) {
   const list = h('nav', { class: 'menu', 'aria-label': 'Main menu' });
   const add = (label, fn, o) => { const b = btn(label, fn, o); list.append(b); return b; };
   add('Quick Race', () => ui.startFlow('quick'), { cls: 'primary big', first: true, sub: 'Pick a plane and a course' });
-  const resume = add('Resume GP', () => ui.resumeGP(), { cls: 'big', sub: 'Continue your championship' });
+  const resume = add('Resume GP', () => ui.resumeGP(), { cls: 'big sub-live', sub: 'Continue your championship' });   // sub-live: its sub-label is the player's race and rank, so a phone keeps it (the other sub-labels are hidden there)
   add('Grand Prix', () => ui.startFlow('gp'), { cls: 'big', sub: '4 races, one champion' });
   add('Time Trial', () => ui.startFlow('trial'), { cls: 'big', sub: 'Solo against the clock' });
   add('Settings', () => ui.goto('settings', { back: 'main' }), { ico: MISC.gear });
@@ -100,7 +100,7 @@ export function controlsScreen(ui) {
       for (const grp of ui.game.input.bindingsText()) {
         body.append(h('section', { class: 'cgrp' }, h('h3', null, grp.group), h('dl', null, grp.rows.map(([k, a]) => [h('dt', null, (/ or /.test(k) ? [k] : k.split(/ \/ |, /)).map((x) => h('kbd', null, x))), h('dd', null, a)]))));
       }
-      body.append(h('p', { class: 'tip' }, 'Tip: bank to turn, pull to loop. A barrel roll (Q/E) dodges missiles. Boost and stunts fill the meter.'));
+      body.append(h('p', { class: 'tip' }, 'Tip: bank to turn, pull to loop. A barrel roll dodges missiles (Q / E, LB / RB, or the ROLL buttons). Boost and stunts fill the meter.'));
     }, back: (p) => p?.back || 'main',
   };
 }

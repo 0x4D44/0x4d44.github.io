@@ -16,6 +16,7 @@ export const GUIDE = {
   aggr: 0.8,
   predT: 1.3,               // s: where the craft will be if the player does nothing; the guide acts on that point, not on where the craft is now
   eLo: 0.55, eHi: 0.95,     // tube fraction (at the predicted point) where the guide starts to act / acts fully
+  mouth: 140,               // m ahead of a shortcut mouth where the guide stands aside
   floor: 0.5,               // guide weight in plain safe flight (a gentle drift back to the middle)
 };
 
@@ -102,6 +103,7 @@ export function createGuide() {
     if (!race || !course || !racer || race.state !== 'racing' || racer.finished || racer.tumble > 0 || fs.tumble.t > 0 || fs.barrel.t > 0 || fs.stall.active) { g.have = false; return 0; }
     const s = game.settings;
     if (!s || s.assist === 'pro' || s.keyGuide === false) return 0;
+    if (fs.stunt.loop > 0 || Math.abs(fs.forward.y) > 0.6 || fs.up.y < -0.2) { g.have = false; return 0; }    // a loop (or any steep / inverted attitude) is the player's own
     course.project(fs.pos, g.have ? proj.s : racer.s, proj);
     if (!g.have || proj.dist > 400) { g.have = true; course.project(fs.pos, null, proj); }
     const br = proj.branch >= 0 ? course.branches[proj.branch] : null;
@@ -126,7 +128,9 @@ export function createGuide() {
     pilotSteer(fs, _t, _o, { aggressiveness: cfg.aggr });
     // how bad is the player's own line? predicted tube position, terrain and hazards a moment ahead; fine lines (shortcut mouths, loops, corner cutting) cost nothing
     const risk = g.risk = Math.max(avoiding ? 1 : 0, predictRisk(course, fs, proj, br, cfg), g.risk - 0.5 * SIM_STEP * 1.0);
-    const k = cfg.floor + (1 - cfg.floor) * risk;
+    let mouth = br ? 1 : 0;
+    if (!br) for (const b of course.branches) { let d = b.fromS - proj.s; d -= Math.round(d / course.length) * course.length; if (d > -40 && d < cfg.mouth + look) mouth = 1; }
+    const k = (cfg.floor + (1 - cfg.floor) * risk) * (mouth ? 0.15 + 0.85 * risk : 1);
     const wR = cfg.strength * k * (1 - smoothstep(cfg.fadeLo, cfg.fadeHi, Math.abs(roll)));
     const wP = cfg.strength * k * (1 - smoothstep(cfg.fadeLo, cfg.fadeHi, Math.abs(pitch)));
     out.roll = roll + wR * (clamp(_o.roll, -1, 1) - roll);

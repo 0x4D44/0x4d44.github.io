@@ -14,7 +14,7 @@ import { buildAircraft, updateAircraft, disposeAircraft } from '../craft/aircraf
 import { AIRCRAFT, getAircraft, PILOTS } from '../craft/roster.js';
 import { createAI } from './ai.js';
 import { ItemSystem } from './items.js';
-import { DIFFICULTY, RACE, GP_POINTS } from './balance.js';
+import { DIFFICULTY, RACE, GP_POINTS, aheadSlowFor } from './balance.js';
 import { syncProgress, reanchor, stepProgress, updateWrongWay } from './progress.js';
 import { stepCollisions } from './collision.js';
 import { applyHit } from './damage.js';
@@ -61,7 +61,7 @@ export class Race {
     this.order.forEach((r, i) => { r.place = i + 1; });
     this.meanCruise = this.racers.reduce((a, x) => a + x.flight.params.cruise, 0) / this.racers.length;
     this.items = new ItemSystem(this);
-    for (const r of this.racers) { r.ai = createAI(this, r, r.pilot || AUTO_PILOT, this.difficulty); syncProgress(this, r); r.prev.pos.copy(r.flight.pos); }
+    for (const r of this.racers) { if (r.isAI) r.rb = this.difficulty.aiSpeed; r.ai = createAI(this, r, r.pilot || AUTO_PILOT, this.difficulty); syncProgress(this, r); r.prev.pos.copy(r.flight.pos); }
     game.events.emit('race:ready', { race: this });
   }
 
@@ -170,7 +170,11 @@ export class Race {
       const refC = this.player ? this.player.flight.params.cruise : this.meanCruise;
       const norm = (cruise + (refC - cruise) * RACE.cruiseNorm) / cruise;
       target = d.aiSpeed * norm * (f > 0 ? 1 + d.rubber * f : 1 + d.rubber * 0.6 * f);
-    } else if (r.place >= 5) {
+      if (f < 0 && this.player && !this.player.finished) {                // far ahead of a human who is still racing: ease off so a slower human stays in touch
+        const slowed = target * (1 - aheadSlowFor(r.dist - this.player.dist, d));
+        target = Math.max(slowed, Math.min(target, RACE.aheadFloor * norm));
+      }
+    } else if (r.place >= 4) {
       // catch-up for the human: measured against the best AI (never against the player's own distance, which is always 0 away)
       let lead = -Infinity; for (const o of this.racers) if (o !== r && o.dist > lead) lead = o.dist;
       const g = clamp((lead - r.dist) / d.rubberRange, 0, 1);

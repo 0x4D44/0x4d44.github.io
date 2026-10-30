@@ -106,6 +106,55 @@ test('V-30: the loading tips teach the double-tap roll only when that setting is
   assert.equal(tipAt(-1, DEFAULT_SETTINGS), tipAt(TIPS.length - 1, DEFAULT_SETTINGS), 'a negative index wraps');
 });
 
+// The loading tips name the controls this player has: Q / E and "Hold B" are keyboard words; a phone has the ROLL, BOOST and ITEM buttons, a pad has LB / RB, the right trigger and B.
+// Each kind is read against the rows the Controls screen prints (flight/input.js bindingsText), so renaming a control there fails here.
+async function tipKit() {
+  const { TIPS, tipAt, inputKind } = await import('../src/ui/select.js');
+  const { createInput } = await import('../src/flight/input.js');
+  globalThis.addEventListener = () => {};   // createInput registers its listeners on the window; there is none here
+  let groups;
+  try { groups = createInput({ settings: { pitchMode: 'flight' }, state: 'menu', events: { on() {}, emit() {} } }).bindingsText(); } finally { delete globalThis.addEventListener; }
+  const rows = (g) => groups.find((x) => x.group === g).rows;
+  return { TIPS, tipAt, inputKind, rows, caps: (g) => rows(g).map(([k]) => k).join(' | '), tips: (d, s = {}) => TIPS.map((_, i) => tipAt(i, s, d)) };
+}
+const KEY_WORDS = /Q \/ E|A \/ D|double-tap|Hold B|\bShift\b|\bCtrl\b|\bEnter\b|\bEsc\b/, SCREEN_WORDS = /ROLL buttons|BOOST button|Tap ITEM/, PAD_WORDS = /LB \/ RB|right trigger|Press B instead/;
+
+test('loading tips on a touch screen name the on-screen buttons and no key', async () => {
+  const { tips, caps } = await tipKit();
+  for (const s of [{}, { doubleTapRoll: true }]) for (const t of tips('touch', s)) { assert.doesNotMatch(t, KEY_WORDS, 'a key on a phone: ' + t); assert.doesNotMatch(t, PAD_WORDS, 'a pad button on a phone: ' + t); }
+  assert.deepEqual(tips('touch', { doubleTapRoll: true }), tips('touch', {}), 'double-tap A / D is a keyboard setting: it changes nothing on a phone');
+  const all = tips('touch').join('\n');
+  assert.match(all, /A barrel roll \(the ROLL buttons\) dodges incoming missiles\./); assert.match(all, /Tap the BOOST button in the last half second before GO/); assert.match(all, /Tap ITEM to use what you picked up/);
+  assert.doesNotMatch(all, /backwards/, 'the touch controls have no fire-backwards button, so none is taught');
+  for (const w of ['ROLL', 'BOOST', 'ITEM']) assert.ok(caps('Touch').includes(w), `the Controls screen lists a ${w} button: ${caps('Touch')}`);
+});
+
+test('loading tips with a gamepad name the pad buttons and no key or screen button', async () => {
+  const { tips, caps, rows } = await tipKit();
+  for (const s of [{}, { doubleTapRoll: true }]) for (const t of tips('pad', s)) { assert.doesNotMatch(t, KEY_WORDS, 'a key with a pad: ' + t); assert.doesNotMatch(t, SCREEN_WORDS, 'a screen button with a pad: ' + t); }
+  assert.deepEqual(tips('pad', { doubleTapRoll: true }), tips('pad', {}), 'double-tap A / D is a keyboard setting: it changes nothing with a pad');
+  const all = tips('pad').join('\n');
+  assert.match(all, /A barrel roll \(LB \/ RB\) dodges incoming missiles\./); assert.match(all, /Tap the right trigger in the last half second before GO/); assert.match(all, /Press B instead of A to fire a missile backwards\./);
+  assert.ok(caps('Gamepad').includes('LB / RB') && /^right trigger/im.test(rows('Gamepad').map(([k]) => k).join('\n')), `the Controls screen lists LB / RB and the right trigger: ${caps('Gamepad')}`);
+  const act = (k) => rows('Gamepad').find(([x]) => x === k)?.[1];
+  assert.equal(act('A'), 'Use item'); assert.equal(act('B'), 'Use item backwards');
+});
+
+test('loading tips on the keyboard keep their wording, and anything unknown reads as the keyboard', async () => {
+  const { tips, caps, rows } = await tipKit(), { rocketTip } = await import('../src/ui/rocket-hint.js');
+  const kb = tips('keys');
+  assert.ok(kb.includes('A barrel roll (Q / E) dodges incoming missiles.') && kb.includes('Hold B while using a missile or mine to fire it backwards.') && kb.includes(rocketTip()), JSON.stringify(kb));
+  assert.ok(tips('keys', { doubleTapRoll: true }).includes('A barrel roll (Q / E, or double-tap A / D) dodges incoming missiles.'), 'the double-tap roll is still taught to the keyboard when it is on');
+  for (const d of [undefined, null, '', 'bogus', 'KEYS']) assert.deepEqual(tips(d), kb, `device ${JSON.stringify(d)} reads as the keyboard`);
+  for (const t of kb) { assert.doesNotMatch(t, SCREEN_WORDS, 'a screen button on a keyboard: ' + t); assert.doesNotMatch(t, PAD_WORDS, 'a pad button on a keyboard: ' + t); }
+  assert.ok(caps('Keyboard').includes('Q / E') && rows('Keyboard').some(([k, a]) => /F \/ Enter/.test(k) && /hold B/.test(a)), `the Controls screen lists Q / E and Hold B: ${caps('Keyboard')}`);
+});
+
+test('input kind for the tips: a connected pad wins over the touch controls (as on the aircraft screen), touch over the keyboard', async () => {
+  const { inputKind } = await tipKit();
+  assert.deepEqual([[false, false], [true, false], [false, true], [true, true]].map(([t, p]) => inputKind(t, p)), ['keys', 'touch', 'pad', 'pad']);
+});
+
 test('V-29: parseMd reads the Markdown subset the credits use', () => {
   const md = ['# Title', '', 'A line', 'wrapped on two.', '', '- one', '- two', '  continues', '', '    code a', '    code b', '', '---', '', '## Crate', 'Crate', '=====', 'Done.'].join('\n');
   assert.deepEqual(parseMd(md), [

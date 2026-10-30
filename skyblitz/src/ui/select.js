@@ -11,22 +11,28 @@ import { rocketTip } from './rocket-hint.js';
 
 /** The six bars on the aircraft screen. Each is a promise, so each must drive a mechanic (tests/ui.test.mjs, P-04). */
 export const STATS = [['speed', 'Top speed'], ['accel', 'Acceleration'], ['handling', 'Handling'], ['stability', 'Stability'], ['boost', 'Boost'], ['armor', 'Armour']];
-// An entry is a string, or a function of the settings when the text depends on one (the double-tap roll is OFF by default, so it must not be taught by default).
+// An entry is a string, or a function of the settings and of the controls in use ('keys' | 'touch' | 'pad', see inputKind) when the text depends on one: the double-tap roll is OFF by
+// default, so it must not be taught by default, and a tip that names a control names the one this player has (Q / E mean nothing on a phone).
+const ROLL = { keys: 'Q / E', touch: 'the ROLL buttons', pad: 'LB / RB' };   // as the Controls screen names them (flight/input.js bindingsText)
 export const TIPS = [
   'Bank to turn, pull to loop: your aircraft turns where its wings point.',
-  (s) => `A barrel roll (Q / E${s?.doubleTapRoll ? ', or double-tap A / D' : ''}) dodges incoming missiles.`,
+  (s, d) => `A barrel roll (${ROLL[d]}${d === 'keys' && s?.doubleTapRoll ? ', or double-tap A / D' : ''}) dodges incoming missiles.`,
   'Fly through the golden rings for a speed burst; the centre of a gate earns a perfect.',
   'Loops, rolls, near misses and shortcuts all charge your boost meter.',
   'Dive to gain speed, climb to trade it back. Never stall: nose down to recover.',
-  rocketTip,   // E-02: worded from RACE.rocketWindow (rocket-hint.js), so it always states the rule race.js applies
-  'Hold B while using a missile or mine to fire it backwards.',
+  (s, d) => rocketTip(d),   // E-02: worded from RACE.rocketWindow (rocket-hint.js), so it always states the rule race.js applies
+  // Firing backwards is the B key held (keyboard) or the B button (pad); the touch controls have no such button, so a phone is taught the ITEM button instead.
+  (s, d) => (d === 'touch' ? 'Tap ITEM to use what you picked up. A missile locks on to a rival ahead of you.' : d === 'pad' ? 'Press B instead of A to fire a missile backwards.' : 'Hold B while using a missile or mine to fire it backwards.'),
   'Shortcuts are risky and narrow, but they save seconds.',
   'Tuck in behind a rival to draft and slingshot past them.',
   'Last place gets the strongest items. Comebacks are always possible.',
   'The airbrake tightens turns when you are coming in too hot.',
 ];
-/** The i-th loading tip as text for the current settings. */
-export const tipAt = (i, settings) => { const t = TIPS[((i % TIPS.length) + TIPS.length) % TIPS.length]; return typeof t === 'function' ? t(settings) : t; };
+/** The controls the player is using, for wording that names a control: a connected gamepad wins (the aircraft screen's hint does the same), then the touch controls once they are active, else the keyboard. */
+export const inputKind = (touch, pad) => (pad ? 'pad' : touch ? 'touch' : 'keys');
+const padOn = () => typeof navigator !== 'undefined' && !!navigator.getGamepads && [...navigator.getGamepads()].some((x) => x && x.connected);
+/** The i-th loading tip as text for the current settings and controls (`device`: 'keys' | 'touch' | 'pad'; anything else reads as 'keys'). */
+export const tipAt = (i, settings, device) => { const t = TIPS[((i % TIPS.length) + TIPS.length) % TIPS.length], d = device === 'touch' || device === 'pad' ? device : 'keys'; return typeof t === 'function' ? t(settings, d) : t; };
 
 // ------------------------------------------------------------------ turntable
 class Turntable {
@@ -98,8 +104,13 @@ export function aircraftScreen(ui) {
   const info = h('aside', { class: 'panel info' }, cls, name, tag, h('div', { class: 'stats' }, bars.map((b) => b.row)), h('div', { class: 'liv-l' }, 'LIVERY ', h('b', { class: 'liv-n' })), sw);
   const go = btn('Continue', () => { ui.flow.craft = AIRCRAFT[idx].id; ui.flow.livery = liv; ui.after('aircraft'); }, { cls: 'primary', cue: 'ui:confirm' });
   const keys = h('p', { class: 'keyhint' });
-  const padOn = () => !!navigator.getGamepads && [...navigator.getGamepads()].some((x) => x && x.connected);
   const el = h('div', { class: 'scr aircraft' }, header('CHOOSE YOUR AIRCRAFT'), h('div', { class: 'ac-body' }, h('div', { class: 'stage-col' }, stage, keys), info), footer(ui, [go]));
+  // The details panel never scrolls: while its content is taller than the panel (a short window, a three-line tagline) it gives way one step at a time (style.css .info.fit1 to .fit6:
+  // spacing, the tagline, the stat rows, tighter spacing, the class chip, the livery name) and stops as soon as it fits. Fitted again when the aircraft or livery changes, and whenever the panel
+  // is resized or first shown.
+  const FIT = ['fit1', 'fit2', 'fit3', 'fit4', 'fit5', 'fit6'];
+  const fit = () => { info.classList.remove(...FIT); for (const c of FIT) { if (info.scrollHeight <= info.clientHeight) break; info.classList.add(c); } };
+  if (typeof ResizeObserver === 'function') new ResizeObserver(fit).observe(info, { box: 'border-box' });
   const refresh = () => {
     const a = AIRCRAFT[idx]; name.textContent = a.name; cls.firstChild?.remove?.(); cls.replaceChildren(h('span', null, a.cls)); tag.textContent = a.tagline;
     for (const b of bars) { const v = a.stats[b.k] || 0; b.fill.style.transform = `scaleX(${v / 10})`; b.v.textContent = v; b.row.dataset.v = v; }
@@ -109,9 +120,9 @@ export function aircraftScreen(ui) {
     el.style.setProperty('--ac', a.liveries[liv].primary); el.style.setProperty('--ac2', a.liveries[liv].accent);
     const pad = padOn(); keys.toggleAttribute('data-pad', pad);   // CSS hides the keyboard hint on touch screens, but not the gamepad one
     keys.textContent = pad ? '◀ ▶ aircraft    ▲ ▼ livery    A select    B back' : '← → aircraft    ↑ ↓ livery    Enter select    Esc back';
-    tt?.set(a, liv);
+    tt?.set(a, liv); fit();
   };
-  const stepLiv = (d) => { liv = mod(liv + d, AIRCRAFT[idx].liveries.length); refresh(); ui.cue('ui:click'); };
+  const stepLiv =(d) => { liv = mod(liv + d, AIRCRAFT[idx].liveries.length); refresh(); ui.cue('ui:click'); };
   const step = (d) => { idx = mod(idx + d, AIRCRAFT.length); liv = 0; refresh(); ui.cue('ui:click'); };
   return {
     el,
@@ -217,7 +228,7 @@ export function loadingScreen(ui) {
   const fill = h('i'), label = h('div', { class: 'ld-l' }, 'Preparing'), tip = h('p', { class: 'ld-tip' }), where = h('div', { class: 'ld-w skew' }), pct = h('b', { class: 'ld-p' }, '0%');
   const el = h('div', { class: 'scr loading', role: 'status', 'aria-live': 'polite' }, h('div', { class: 'ld-in' }, where, h('h2', { class: 'ld-h' }, 'LOADING'), h('div', { class: 'ld-bar' }, fill), h('div', { class: 'ld-row' }, label, pct), h('div', { class: 'ld-tipbox' }, h('small', null, 'PRO TIP'), tip)));
   let tipI = 0, timer = 0, off = null;
-  const setTip = () => { tip.textContent = tipAt(tipI++, ui.game.settings); tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); };
+  const setTip = () => { tip.textContent = tipAt(tipI++, ui.game.settings, inputKind(!!ui.game.input?.touchActive, padOn())); tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); };
   return {
     el,
     enter() {
