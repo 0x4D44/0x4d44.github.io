@@ -55,7 +55,7 @@ function expandList(str, label) {
   return out;
 }
 
-function parseBarString(str, label) {
+function parseBarString(str, label, NS = 16) {
   const out = [];
   let s = 0;
   for (const tok of str.trim().split(/\s+/)) {
@@ -65,7 +65,7 @@ function parseBarString(str, label) {
     out.push({ s, l, tok: m[1], v: m[3] === "!" ? 1 : m[3] === "*" ? 0.55 : 0.82 });
     s += l;
   }
-  if (s !== 16 && s !== 32) throw new Error(label + ": bar sums to " + s + " (" + str + ")");
+  if (s !== NS && s !== 2 * NS) throw new Error(label + ": bar sums to " + s + " (" + str + ")");
   return out;
 }
 
@@ -118,6 +118,7 @@ function parseKey(k) {
 
 // ---- compile -----------------------------------------------------------------------------------
 export function compileTheme(th) {
+  const NS = th.steps || 16;               // steps per bar (16 = 4/4 sixteenths; 12 = 12/8 / two 6/8 jig bars of eighths)
   const bars = [];
   const prevV = {};
   const P = th.patch;
@@ -143,8 +144,8 @@ export function compileTheme(th) {
     for (let bi = 0; bi < sec.bars; bi++) {
       const syms = secBars[si][bi].split("|");
       const n = syms.length;
-      if (![1, 2, 4].includes(n)) throw new Error(label + ": chords per bar must be 1, 2 or 4");
-      const span = 16 / n;
+      if (NS % n !== 0 || n > 4) throw new Error(label + ": chords per bar must divide " + NS + " (max 4)");
+      const span = NS / n;
       const chords = syms.map((sym, ci) => {
         const c = parseChord(sym, tr);
         c.bass = bassNote(c.bassPc, bassLo);
@@ -158,7 +159,7 @@ export function compileTheme(th) {
         return chordFlat[(chords[ci]._flat + 1) % chordFlat.length].c;
       };
       const barIdx = bars.length;
-      const bar = { si, sec: sec.name, bi, chords, at: Array.from({ length: 16 }, () => []) };
+      const bar = { si, sec: sec.name, bi, chords, at: Array.from({ length: NS }, () => []) };
       bars.push(bar);
       const addAbs = (bIdx, s, e) => {
         if (bIdx === barIdx) bar.at[s].push(e);
@@ -176,16 +177,16 @@ export function compileTheme(th) {
           const str = th.m[m[1]];
           if (str == null) throw new Error(L + ": unknown motif " + m[1]);
           const t2 = tr + (m[2] ? +m[2] : 0);
-          for (const ev of parseBarString(str, L + "/" + m[1])) {
+          for (const ev of parseBarString(str, L + "/" + m[1], NS)) {
             if (ev.tok === "r") continue;
             const notes = ev.tok.split("+").map((x) => noteToMidi(x) + t2);
-            const b = barIdx + Math.floor(ev.s / 16);
-            addAbs(b, ev.s % 16, { p: ln.name, n: notes, l: ev.l, v: ev.v, ...win });
+            const b = barIdx + Math.floor(ev.s / NS);
+            addAbs(b, ev.s % NS, { p: ln.name, n: notes, l: ev.l, v: ev.v, ...win });
           }
         } else if (kind === "bass") {
           const str = th.bp[entry];
           if (str == null) throw new Error(L + ": unknown bass pattern " + entry);
-          for (const ev of parseBarString(str, L + "/" + entry)) {
+          for (const ev of parseBarString(str, L + "/" + entry, NS)) {
             if (ev.tok === "r") continue;
             const c = chordAt(ev.s);
             const blo = patch.lo || bassLo;
@@ -209,13 +210,13 @@ export function compileTheme(th) {
         } else if (kind === "comp") {
           const str = th.cp[entry];
           if (str == null) throw new Error(L + ": unknown comp pattern " + entry);
-          if (str.length !== 16) throw new Error(L + ": comp pattern length " + entry);
+          if (str.length !== NS) throw new Error(L + ": comp pattern length " + entry);
           const rng = patch.rng || [52, 76];
-          for (let s = 0; s < 16; s++) {
+          for (let s = 0; s < NS; s++) {
             const ch = str[s];
             if (ch === "." || ch === "-") continue;
             let l = 1;
-            while (s + l < 16 && str[s + l] === "-") l++;
+            while (s + l < NS && str[s + l] === "-") l++;
             const c = chordAt(s);
             let pcs = c.pcs;
             if (patch.pick) pcs = patch.pick.map((i) => c.pcs[Math.min(i, c.pcs.length - 1)]);
@@ -231,7 +232,7 @@ export function compileTheme(th) {
           const toks = th.ap[entry];
           if (toks == null) throw new Error(L + ": unknown arp pattern " + entry);
           const arr = toks.trim().split(/\s+/);
-          if (arr.length !== 16) throw new Error(L + ": arp pattern length " + arr.length);
+          if (arr.length !== NS) throw new Error(L + ": arp pattern length " + arr.length);
           const lo = patch.arpLo || 60;
           arr.forEach((tk, s) => {
             if (tk === ".") return;
@@ -247,8 +248,8 @@ export function compileTheme(th) {
           const pat = (th.dr && th.dr[entry]) || (th.perc && th.perc[entry]);
           if (!pat) throw new Error(L + ": unknown drum pattern " + entry);
           for (const [dn, str] of Object.entries(pat)) {
-            if (str.length !== 16) throw new Error(L + ": drum '" + dn + "' length in " + entry);
-            for (let s = 0; s < 16; s++) if (str[s] !== "." && VEL[str[s]]) bar.at[s].push({ p: ln.name, d: dn, v: VEL[str[s]], ...win });
+            if (str.length !== NS) throw new Error(L + ": drum '" + dn + "' length in " + entry);
+            for (let s = 0; s < NS; s++) if (str[s] !== "." && VEL[str[s]]) bar.at[s].push({ p: ln.name, d: dn, v: VEL[str[s]], ...win });
           }
         } else throw new Error(L + ": unknown kind " + kind);
       }
@@ -265,7 +266,7 @@ export function compileTheme(th) {
     for (const b of [p.bank, p.dbl && p.dbl.bank]) if (b && !banks.includes(b)) banks.push(b);
     if (p.core && !core.includes(p.bank)) core.push(p.bank);
   }
-  return { id: th.id, bpm: th.bpm, bars, loopBar, th, banks, core };
+  return { id: th.id, bpm: th.bpm, bars, loopBar, th, banks, core, NS };
 }
 
 const THEMES_BUILD = {};
@@ -875,6 +876,123 @@ const results = {
   ],
 };
 THEMES_BUILD.results = results;
+
+// ===== SKYWAY STATION: F# minor, 128 bpm, euphoric orbital techno / trance-house =====
+// Electronic by design: ferrosintesis synth drum kit (GM2 Electronic slot, channel-10 program 24), synth bass, resonant saw
+// lead + acid line with CC74 filter sweeps, supersaw stabs (octave-doubled saw stack), reverse-cymbal swells and snare-roll builds.
+const skyway = {
+  id: "skyway", name: "Skyway Station", bpm: 128, swing: 0, kit: 24, loopFrom: 1, level: 1,
+  bassLo: 30,
+  vol: { drums: 86, perc: 80, bass: 127, acid: 125, ldsyn: 120, bells: 105, pn: 68, fx: 127 },
+  m: {
+    // verse/intro lead: plucked square-lead arpeggio motifs (F#m D A E)
+    VL1: "C#6.3 A5.3 F#5.2 r.2 C#6.3 A5.3",
+    VL2: "B5.3 F#5.3 D5.2 r.2 B5.3 F#5.3",
+    VL3: "C#6.3 A5.3 E5.2 r.2 C#6.3 A5.3",
+    VL4: "B5.3 G#5.3 E5.2 r.2 G#5.3 B5.3",
+    // build lead: held rising notes
+    BU1: "A5.16", BU2: "B5.16", BU3: "C#6.16", BU4: "F6.8 G#6.8",
+    // drop hook (saw lead, doubled an octave up on the boost stem)
+    H1: "C#6.3 C#6.1 E6.4 C#6.4 A5.4",
+    H2: "B5.3 B5.1 D6.4 B5.4 F#5.4",
+    H3: "C#6.3 C#6.1 E6.4 A6.4 E6.4",
+    H4: "B5.6 G#5.2 E5.4 r.4",
+    H5: "F#6.3 F#6.1 A6.4 F#6.4 C#6.4",
+    H6: "D6.3 D6.1 F#6.4 D6.4 B5.4",
+    H7: "E6.3 E6.1 A6.4 E6.4 C#6.4",
+    H8: "G#5.4 C#6.4 F6.4 G#6.4",
+    // breakdown melody (long, singing)
+    BK1: "A5.6 F#5.2 D5.4 F#5.4",
+    BK2: "E5.6 C#5.2 A4.4 C#5.4",
+    BK3: "G#5.6 B5.2 E6.8",
+    BK4: "C#6.12 A5.4",
+    BK5: "A5.6 D6.2 F#6.4 D6.4",
+    BK6: "E6.6 C#6.2 A5.4 C#6.4",
+    BK7: "B5.4 E6.4 G#6.4 E6.4",
+    BK8: "F6.8 G#6.4 F6.4",
+    // tag
+    TG1: "A5.4 r.4 C#6.8", TG2: "E6.8 r.8",
+  },
+  bp: {
+    roll: "r.1 R.1 R.1 O.1 r.1 R.1 R.1 R.1 r.1 R.1 R.1 O.1 r.1 R.1 R.1 A.1",
+    roll2: "r.1 R.1 O.1 R.1 r.1 R.1 R.1 O.1 r.1 R.1 O.1 R.1 r.1 R.1 R.1 A.1",
+    off: "r.2 R.2 r.2 R.2 r.2 R.2 r.2 R.2",
+    hold: "R.16",
+    sub: "R.8 R.6 A.2",
+  },
+  cp: {
+    pad: "x---------------",
+    st1: "..x...x...x...x.",
+    st2: "x..x..x...x.x...",
+    sw: "X---------------",
+    sw2: "X--x--X--x--x---",
+    fx: "x---------------",
+  },
+  ap: {
+    ac1: "0! . 0 3 . 0 . 2 0! . 0 3 . 5! . 2",
+    ac2: "0 0 3 0 5 0 3 0 0 0 3 0 5 3 2 0",
+    ar: "0 . 2 . 4 . 2 . 3 . 2 . 4 . 5 .",
+    ru: "0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15",
+    pn: "0 . 2 . 1 . 2 . 0 . 2 . 1 . 2 .",
+    bl: ". . 5 . . . 7 . . . 5 . . . 8 .",
+  },
+  dr: {
+    i1: { hat: "..x...x...x...x." },
+    i2: { kick: "X...............", hat: "..x...x...x...x.", open: "................" },
+    v1: { kick: "X...X...X...X...", clap: "....X.......X...", open: "..X...X...X...X.", hat: ".g.g.g.g.g.g.g.g", crash: "X..............." },
+    v: { kick: "X...X...X...X...", clap: "....X.......X...", open: "..X...X...X...X.", hat: ".g.g.g.g.g.g.g.g" },
+    bd1: { kick: "X...X...X...X...", clap: "....x.......x...", hat: "x.x.x.x.x.x.x.x." },
+    bd2: { kick: "X...X...X...X...", snare: "x.x.x.x.x.x.x.x.", hat: "x.x.x.x.x.x.x.x." },
+    bd3: { kick: "X...X...X...X...", snare: "gxgxgxgxxxxxxxxx" },
+    bd4: { snare: "xxxxXXXXXXXXXXXX", tomH: "............x.x." },
+    dp1: { kick: "X...X...X...X...", clap: "....X.......X...", open: "..X...X...X...X.", hat: ".g.g.g.g.g.g.g.g", crash: "X..............." },
+    dp: { kick: "X...X...X...X...", clap: "....X.......X...", open: "..X...X...X...X.", hat: ".g.g.g.g.g.g.g.g" },
+    dpf: { kick: "X...X...X...X...", clap: "....X...x.x.xxxx", open: "..X...X.........", hat: ".g.g.g.g.g.g...." },
+    br: { kick: "X...............", hat: "x.x.x.x.x.x.x.x.", clap: "........g.......".replace("g", "x") },
+    br2: { hat: "x.x.x.x.x.x.x.x.", clap: "....g.......g..." },
+    brr1: { kick: "X...............", snare: "........x.x.x.x.", hat: "x.x.x.x.x.x.x.x." },
+    brr2: { kick: "X...............", snare: "xxxxxxxxXXXXXXXX", tomH: "............x.x." },
+    tg1: { kick: "X...X...X...X...", clap: "....X.......X...", open: "..X...X...X...X.", hat: ".g.g.g.g.g.g.g.g" },
+    tg2: { kick: "X...X...X...X...", clap: "....X...x.x.xxxx", hat: "x.x.x.x.x.x.x.x.", tomH: "..........x....." },
+    tg3: { kick: "X...X...X...X...", snare: "xxxxxxxxXXXXXXXX", tomL: "............x.x." },
+  },
+  perc: { sh: { shaker: "x.x.x.x.x.x.x.x.", tamb: "....x.......x..." }, sh2: { shaker: "xxxxxxxxxxxxxxxx", tamb: "....x.......x..." } },
+  patch: {
+    drums: { kind: "drums", bank: "kitSynth", core: true, bus: "drum" },
+    perc: { kind: "drums", bank: "kitSynth", bus: "drum" },
+    bass: { kind: "bass", bank: "synbass2", core: true, bus: "bass", lo: 30, len: 0.85 },
+    pad: { kind: "comp", bank: "warmpad", core: true, rng: [50, 72], hold: "chord", len: 1.0, att: 0.15, rev: 0.45, chorus: 0.5, pan: 0 },
+    syn: { kind: "comp", bank: "synstr", rng: [55, 76], hold: "chord", len: 1.0, att: 0.1, rev: 0.4, chorus: 0.5 },
+    ldsyn: { kind: "mel", bank: "squarelead", pan: 0.1, rev: 0.3, len: 0.8, cc: { 74: 80 } },
+    saw: { kind: "mel", bank: "sawlead", pan: 0, rev: 0.3, len: 0.95,
+      dbl: { bank: "squarelead", oct: 12, v: 0.5, rev: 0.3 } },
+    acid: { kind: "arp", bank: "sawlead", arpLo: 48, len: 1, pan: -0.15, rev: 0.12, sweep: { cc: 74, def: [55, 100], sec: { intro: [30, 100], verse: [40, 110], break: [30, 70] } } },
+    ssaw: { kind: "comp", bank: "sawlead", rng: [54, 78], n: 3, len: 0.7, rev: 0.3, pan: 0.15, dbl: { bank: "sawlead", oct: 12, rev: 0.3 } },
+    stc: { kind: "comp", bank: "synbrass", rng: [55, 76], n: 3, len: 0.6, rev: 0.25, pan: -0.2 },
+    riser: { kind: "arp", bank: "sawlead", arpLo: 48, len: 1, rev: 0.25, sweep: { cc: 74, def: [30, 127], pow: 1.4 } },
+    fx: { kind: "comp", bank: "revcym", rng: [60, 72], n: 1, hold: "chord", len: 1.0, rev: 0.2 },
+    pn: { kind: "arp", bank: "piano", arpLo: 52, len: 3, pan: -0.2, rev: 0.3 },
+    bells: { kind: "arp", bank: "glock", arpLo: 72, len: 2, pan: 0.3, rev: 0.4 },
+  },
+  sections: [
+    { name: "intro", bars: 4, prog: "F#m D A E",
+      lanes: { drums: "i1 i1 i2 i2", pad: "pad*4", ldsyn: "VL1 VL2 VL3 VL4", acid: "ac1*4", "fx?0.3": "fx*4" } },
+    { name: "verse", bars: 4, prog: "F#m D A E",
+      lanes: { drums: "v1 v v v", bass: "roll roll roll roll2", pad: "pad*4", ldsyn: "VL1 VL2 VL3 VL4", acid: "ac1*4", perc: "sh*4", "stc?0.55": "st1*4" } },
+    { name: "build", bars: 4, prog: "D E F#m C#",
+      lanes: { drums: "bd1 bd2 bd3 bd4", bass: "off*3 hold", pad: "pad*4", saw: "BU1 BU2 BU3 BU4", acid: "ac2*4", riser: "ru*4", fx: "fx*4", perc: "sh2*4" } },
+    { name: "drop", bars: 8, prog: "F#m D A E F#m D A C#",
+      lanes: { drums: "dp1 dp*6 dpf", bass: "roll roll2 roll roll2 roll roll2 roll roll2", pad: "pad*8", saw: "H1 H2 H3 H4 H5 H6 H7 H8",
+        acid: "ac2*8", perc: "sh*8", ssaw: "sw sw sw sw sw sw sw sw2", "stc?0.6": "st2*8" } },
+    { name: "break", bars: 8, prog: "D A E F#m D A E C#",
+      lanes: { drums: "br*4 br2*2 brr1 brr2", bass: "sub*6 off hold", pad: "pad*8", syn: "pad*8", saw: "BK1 BK2 BK3 BK4 BK5 BK6 BK7 BK8",
+        pn: "pn*8", bells: "bl*8", riser: "-*6 ru ru", fx: "-*6 fx fx", perc: "-*6 sh2 sh2" } },
+    { name: "drop2", bars: 8, prog: "F#m D A E F#m D A C#",
+      lanes: { drums: "dp1 dp*6 dpf", bass: "roll roll2 roll roll2 roll roll2 roll roll2", pad: "pad*8", syn: "pad*8", saw: "H5 H6 H7 H8 H1 H2 H3 H8",
+        acid: "ac2*8", perc: "sh2*8", ssaw: "sw2*8", "stc?0.5": "st2*8", riser: "-*6 ru ru", fx: "fx*8" } },
+  ],
+};
+THEMES_BUILD.skyway = skyway;
 
 export const THEMES = THEMES_BUILD;
 export const RACE_THEMES = ["sunset", "snow", "neon"].filter((k) => THEMES_BUILD[k]);
