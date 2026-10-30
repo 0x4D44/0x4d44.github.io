@@ -32,7 +32,7 @@ STEM_FX = {
 # stem balance in the shipped files (the renders come out with the melody ~9 dB under the band)
 MIX_DB = {"base": 0.0, "lead": 6.0, "extra": 2.0, "boost": 4.0}
 THEME_MIX = {"skyway": {"boost": 0.0, "lead": 4.5}}   # per-theme overrides of MIX_DB
-THEME_TRIM = {"skyway": 0.8}   # per-theme dB added to TARGET_LUFS (keeps the shipped mixes within ~1 LU of the old themes)
+THEME_TRIM = {"skyway": 0.8, "canyon": 0.5}   # per-theme dB added to TARGET_LUFS (keeps the shipped mixes within ~1 LU of the old themes)
 
 
 # per-theme extra voicing (piano/strings themes need more presence and less sub)
@@ -40,6 +40,8 @@ THEME_EQ = {
     "menu": ",equalizer=f=60:t=q:w=1:g=-2.5,equalizer=f=4500:t=q:w=0.9:g=3,highshelf=f=9000:g=2",
     "results": ",equalizer=f=60:t=q:w=1:g=-3.5,equalizer=f=4500:t=q:w=0.9:g=3,highshelf=f=9000:g=2",
     # round 2: the synth drum kit's hats/claps are noise-heavy -> tame everything above ~5 kHz so the band profile matches the sampled themes
+    # acoustic country band: sampled banjo/steel/fiddle need more presence and air than the default mastering EQ gives
+    "canyon": ",equalizer=f=3500:t=q:w=0.9:g=3.5,highshelf=f=8500:g=3",
     "skyway": ",equalizer=f=85:t=q:w=1:g=-2.5,equalizer=f=3800:t=q:w=0.8:g=3.5,highshelf=f=7500:g=-9,lowpass=f=15000",
 }
 

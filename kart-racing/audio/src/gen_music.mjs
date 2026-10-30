@@ -89,8 +89,9 @@ function build(id) {
       t.add(0, [0xb0 | ch, 10, Math.round(64 + 63 * Math.max(-1, Math.min(1, (patch.pan || 0) + (extra.pan || 0))))]);
       t.add(0, [0xb0 | ch, 91, Math.round(Math.min(127, 18 + 95 * ((patch.rev || 0) + (patch.room || 0) * 0.5 + (patch.plate || 0) * 0.5)))]);
       if (patch.chorus) t.add(0, [0xb0 | ch, 93, Math.round(40 * patch.chorus)]);
+      if (patch.echo) t.add(0, [0xb0 | ch, 94, Math.round(127 * patch.echo)]);
     } else {
-      if (th.kit) t.add(0, [0xc0 | ch, th.kit]);
+      if (patch.kit || th.kit) t.add(0, [0xc0 | ch, patch.kit || th.kit]);
       t.add(0, [0xb0 | ch, 7, (th.vol && th.vol[part]) || VOL.drums]);
       t.add(0, [0xb0 | ch, 91, 34]);
     }
