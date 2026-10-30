@@ -1114,5 +1114,110 @@ const canyon = {
 };
 THEMES_BUILD.canyon = canyon;
 
+// ===== HIGHLAND FLING: A mixolydian, 12/8 (two 6/8 jig bars per 12-step bar), eighth = 0.1786 s like the in-game piper =====
+// steps: 12 -> every step is a jig eighth; bpm 112 is the dotted-quarter beat (the same pulse as the real-time bagpipe tune on the final lap).
+// The verse tune lives below the pipe's register (A3-A4), the chorus hook above it (B5-A6), the drone is a low A/E, so the piper can lay over the top.
+const highland = {
+  id: "highland", name: "Highland Fling", bpm: 112, steps: 12, swing: 0, loopFrom: 1, level: 1, bassLo: 28,
+  vol: { perc: 55, accC: 60, wst: 45, fid: 127, acc: 110, fidD: 57, mand: 110, bells: 110, gtr: 100 },
+  m: {
+    // verse tune (low fiddle + accordion) over A A G G D D A A
+    V1: "A3.2 C#4.1 E4.2 C#4.1 A3.2 C#4.1 D4.2 B3.1",
+    V2: "C#4.2 B3.1 A3.2 B3.1 C#4.3 E4.3",
+    V3: "B3.2 D4.1 G4.2 D4.1 B3.2 D4.1 E4.2 D4.1",
+    V4: "D4.2 B3.1 G3.2 B3.1 D4.3 B3.3",
+    V5: "A3.2 D4.1 F#4.2 D4.1 A3.2 D4.1 E4.2 D4.1",
+    V6: "F#4.2 E4.1 D4.2 E4.1 F#4.3 A4.3",
+    V7: "E4.2 C#4.1 A3.2 C#4.1 E4.2 A4.1 G4.2 E4.1",
+    V8: "A3.2 C#4.1 E4.3 A3.6",
+    // chorus hook (fiddle, whistle) over A G D A A G D E
+    H1: "E6.2 C#6.1 E6.2 A6.1 E6.2 C#6.1 B5.2 A5.1",
+    H2: "D6.2 B5.1 D6.2 G6.1 D6.2 B5.1 B5.2 A5.1",
+    H3: "D6.2 F#6.1 A6.2 F#6.1 D6.2 F#6.1 E6.2 D6.1",
+    H4: "C#6.2 E6.1 A6.2 E6.1 C#6.3 E6.3",
+    H5: "E6.2 C#6.1 E6.2 A6.1 E6.2 C#6.1 E6.2 A6.1",
+    H6: "D6.2 B5.1 D6.2 G6.1 D6.2 B5.1 D6.2 B5.1",
+    H7: "F#6.2 A6.1 F#6.2 D6.1 A5.2 D6.1 F#6.2 D6.1",
+    H8: "B5.2 E6.1 G#6.2 E6.1 B5.3 E6.3",
+    // break: slow air (whistle) over Bm G D E
+    BR1: "B5.3 D6.3 F#6.6", BR2: "D6.3 B5.3 G5.6", BR3: "A5.3 D6.3 F#6.6", BR4: "G#5.3 B5.3 E6.6",
+    // tag
+    FT1: "F#6.2 A6.1 F#6.2 D6.1 A5.3 D6.3", FT2: "E6.3 B5.3 G#5.3 B5.3",
+    // drone
+    DR: "A2+E3+A3.12",
+  },
+  bp: {
+    bj: "R.2 R.1 O.2 R.1 R.2 R.1 F.2 R.1",
+    bj2: "R.1 R.1 R.1 R.1 R.1 R.1 R.1 R.1 R.1 R.1 R.1 A.1",
+    bj3: "R.2 r.1 R.2 r.1 F.2 r.1 O.2 A.1",
+    hold: "R.6 F.6",
+  },
+  cp: {
+    st: "X.xx.xX.xx.x",
+    st2: "X..x..x..x..",
+    ch: "..x..x..x..x",
+    ac: "X.....x.....",
+    ac2: "X.....X.....",
+    pc: "X.xx.xX.xx.x",
+    pad: "x-----------",
+    sus: "X-----------",
+  },
+  ap: {
+    hp: "0 1 2 3 2 1 0 1 2 3 2 1",
+    hp2: "0 . 1 . 2 . 3 . 2 . 1 .",
+  },
+  dr: {
+    i: { kick: "X...........", stick: "...x.....x.." },
+    v: { kick: "X.....X.....", stick: "...x.....x..", hat: "x..x..x..x.." },
+    vf: { kick: "X.....X.....", snare: "...x..x.xxxx", hat: "x..x..x....." },
+    c: { kick: "X.....X.....", snare: "...X.....X..", hat: "x.xx.xx.xx.x", crash: "X..........." },
+    c2: { kick: "X.....X.....", snare: "...X.....X..", hat: "x.xx.xx.xx.x" },
+    cf: { kick: "X.....X.....", snare: "...X..xxxxxX", crash: "............" },
+    br: { kick: "X...........", tomL: "......x....." },
+    brf: { kick: "X.....X.....", snare: "...x..x.xxxX" },
+    tg: { kick: "X.....X.....", snare: "...X..XxXxXX", crash: "............" },
+    tg2: { kick: "X...........", crash: "X..........." },
+  },
+  perc: {
+    bod: { tomL: "X.....X.x...", tomM: "..x.x...x.x.", tamb: "x.x.x.x.x.x." },
+    bod2: { tomL: "X.xx.xX.xx.x", tamb: "x.x.x.x.x.x." },
+    bodq: { tomL: "X.....x.....", tamb: "...x.....x.." },
+  },
+  patch: {
+    drums: { kind: "drums", bank: "kit", core: true, bus: "drum" },
+    perc: { kind: "drums", bank: "kit", bus: "drum" },
+    bass: { kind: "bass", bank: "bassP", core: true, bus: "bass", lo: 28, len: 0.8 },
+    gtr: { kind: "comp", bank: "steel", core: true, rng: [50, 70], n: 4, strum: 0.006, len: 0.6, pan: 0.3, rev: 0.12, room: 0.1 },
+    drn: { kind: "mel", bank: "strings", pan: 0, rev: 0.4, chorus: 0.3, att: 0.2, len: 1.0 },
+    pad: { kind: "comp", bank: "strings", rng: [48, 68], hold: "chord", len: 1.0, att: 0.18, rev: 0.45, chorus: 0.4 },
+    accC: { kind: "comp", bank: "accordion", rng: [52, 72], n: 3, hold: "chord", len: 0.95, pan: -0.25, rev: 0.2 },
+    mand: { kind: "comp", bank: "mandolin", rng: [60, 80], n: 3, len: 0.4, pan: 0.4, rev: 0.12 },
+    fid: { kind: "mel", bank: "fiddle", pan: -0.05, rev: 0.25, len: 0.96 },
+    wst: { kind: "mel", bank: "whistle", pan: 0.15, rev: 0.5, echo: 0.45, len: 0.97 },
+    acc: { kind: "mel", bank: "accordion", pan: -0.2, rev: 0.2, len: 0.96 },
+    fidD: { kind: "comp", bank: "fiddle", rng: [62, 80], pick: [0, 2], hold: "chord", len: 0.95, pan: 0.15, rev: 0.25 },
+    gtrR: { kind: "comp", bank: "gtrOD", rng: [40, 62], pick: [0, 2], strum: 0.004, len: 0.55, pan: -0.4, rev: 0.1 },
+    bells: { kind: "arp", bank: "harp", arpLo: 60, len: 3, pan: 0.25, rev: 0.4 },
+  },
+  sections: [
+    { name: "intro", bars: 4, prog: "A G D A",
+      lanes: { drums: "i*4", bass: "-*2 hold hold", drn: "DR*4", perc: "bodq*4", gtr: "-*2 st2 st2", wst: "H1 H2 H3 H4" } },
+    { name: "verse", bars: 8, prog: "A A G G D D A A",
+      lanes: { drums: "v*7 vf", bass: "bj*8", gtr: "st2 st st2 st st2 st st2 st", fid: "V1 V2 V3 V4 V5 V6 V7 V8", acc: "V1 V2 V3 V4 V5 V6 V7 V8",
+        perc: "bod*8", "mand?0.25": "ch*8", "accC?0.45": "ac*8" } },
+    { name: "chorus", bars: 8, prog: "A G D A A G D E",
+      lanes: { drums: "c c2*6 cf", bass: "bj2 bj2 bj2 bj2 bj2 bj2 bj2 bj3", gtr: "st*8", fid: "H1 H2 H3 H4 H5 H6 H7 H8", wst: "H1 H2 H3 H4 H5 H6 H7 H8",
+        perc: "bod2*8", "mand?0.25": "ch*8", "accC?0.4": "ac2*8", "fidD?0.55": "sus*8", "gtrR?0.6": "pc*8" } },
+    { name: "break", bars: 4, prog: "Bm G D E",
+      lanes: { drums: "br br br brf", bass: "hold*4", drn: "DR*4", pad: "pad*4", wst: "BR1 BR2 BR3 BR4", bells: "hp*4", perc: "bodq*4", "accC?0.3": "ac*4" } },
+    { name: "chorus2", bars: 8, prog: "A G D A A G D E",
+      lanes: { drums: "c c2*6 cf", bass: "bj2 bj2 bj2 bj2 bj2 bj2 bj2 bj3", gtr: "st*8", fid: "H1 H2 H3 H4 H5 H6 H7 H8", wst: "H1 H2 H3 H4 H5 H6 H7 H8",
+        perc: "bod2*8", mand: "ch*8", accC: "ac2*8", fidD: "sus*8", "gtrR?0.3": "pc*8", pad: "pad*8" } },
+    { name: "tag", bars: 2, prog: "D E",
+      lanes: { drums: "tg tg2", bass: "bj3 hold", gtr: "st st", fid: "FT1 FT2", wst: "FT1 FT2", perc: "bod2 bodq" } },
+  ],
+};
+THEMES_BUILD.highland = highland;
+
 export const THEMES = THEMES_BUILD;
 export const RACE_THEMES = ["sunset", "snow", "neon"].filter((k) => THEMES_BUILD[k]);

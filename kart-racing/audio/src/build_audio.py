@@ -42,6 +42,7 @@ THEME_EQ = {
     # round 2: the synth drum kit's hats/claps are noise-heavy -> tame everything above ~5 kHz so the band profile matches the sampled themes
     # acoustic country band: sampled banjo/steel/fiddle need more presence and air than the default mastering EQ gives
     "canyon": ",equalizer=f=3500:t=q:w=0.9:g=3.5,highshelf=f=8500:g=3",
+    "highland": ",equalizer=f=3200:t=q:w=0.9:g=2.5,highshelf=f=8500:g=2",
     "skyway": ",equalizer=f=85:t=q:w=1:g=-2.5,equalizer=f=3800:t=q:w=0.8:g=3.5,highshelf=f=7500:g=-9,lowpass=f=15000",
 }
 
