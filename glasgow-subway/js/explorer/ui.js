@@ -34,7 +34,7 @@ export class UI {
     const btn = (id, icon, text, title, fn, cls = '') => h('button.tbtn' + (cls ? '.' + cls : ''), { id, type: 'button', title, 'aria-label': title, on: { click: fn } }, h('span.ic', { 'aria-hidden': 'true', text: icon }), h('span.tx', { text }));
     bar.append(
       btn('btn-tour', '▶', 'Tour the loop', 'Start the guided tour of the loop', () => this.tour?.toggle()),
-      btn('btn-trains', '⚡', 'Trains & power', 'Engineering notes on the trains and the power system', () => { location.href = '../glasgow-subway-trains/'; }, 'desk'),
+      btn('btn-trains', '⚡', 'Trains & power', 'Engineering notes on the trains and the power system', () => { location.href = 'trains/'; }, 'desk'),
       btn('btn-drive', '⚓', 'Drive', 'Drive or ride a train (simulator)', () => $('#simdlg').showModal(), 'primary'),
       btn('btn-profile', '∿', 'Profile', 'Show the long-section chart', () => this.toggleProfile(), 'desk'),
       btn('btn-home', '⌂', 'Home', 'Return to the overview', () => { a.selectStation(null); a.hero(); }),
@@ -160,7 +160,7 @@ export class UI {
     this.dykEl = h('p.dyk', { text: dyk[0] || '' }); let di = 0;
     this.panes.line.append(
       h('div.sec', h('h4', { text: m.name || 'Glasgow Subway' }), m.operator ? h('p.sub', { text: 'Operated by ' + m.operator }) : null, h('div.stats', ...g)),
-      h('div.sec', h('a.btn.ghost', { href: '../glasgow-subway-trains/' }, 'Trains & power: engineering notes')),
+      h('div.sec', h('a.btn.ghost', { href: 'trains/' }, 'Trains & power: engineering notes')),
       h('div.sec', h('a.btn.ghost', { href: 'credits.html' }, 'Credits & data sources')),
       dyk.length ? h('div.sec.dykbox', h('h4', { text: 'Did you know?' }), this.dykEl, h('button.btn.ghost', { type: 'button', on: { click: () => { di = (di + 1) % dyk.length; this.dykEl.textContent = dyk[di]; } } }, 'Another')) : null,
       t.lining || t.tubeSeparationM ? h('div.sec', h('h4', { text: 'The tunnels' }), h('p', { text: 'Two separate single-bore tubes run side by side: the Outer Circle clockwise and the Inner Circle anticlockwise.' }), h('dl.dims', ...(t.lining ? [h('dt', { text: 'Lining' }), h('dd', { text: t.lining })] : []), ...(t.tubeSeparationM ? [h('dt', { text: 'Tube spacing' }), h('dd', { text: '~' + t.tubeSeparationM + ' m' })] : []), ...(t.depot?.name ? [h('dt', { text: 'Depot' }), h('dd', { text: t.depot.name })] : []))) : null,
