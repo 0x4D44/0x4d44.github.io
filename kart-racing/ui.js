@@ -731,10 +731,9 @@ export class UI {
         </div>
       </div>
       <div class="ak-foot">
-        ${cup && onNext ? `<button class="ak-btn pri" data-nav data-default data-act="next">${cup.final ? "Finish" : "Next Race"} &#9654;</button>` : ""}
-        ${onRetry ? `<button class="ak-btn${cup && onNext ? "" : " pri"}" data-nav ${cup && onNext ? "" : "data-default"} data-act="retry">${cup ? "Restart Cup" : "Race Again"}</button>` : ""}
+        ${onNext ? `<button class="ak-btn pri" data-nav data-default data-act="next">${cup ? (cup.final ? "Finish" : "Next Race") : "Next Track"} &#9654;</button>` : ""}
+        ${onRetry ? `<button class="ak-btn${onNext ? "" : " pri"}" data-nav ${onNext ? "" : "data-default"} data-act="retry">${cup ? "Restart Cup" : "Race Again"}</button>` : ""}
         ${onMenu ? `<button class="ak-btn" data-nav data-act="menu">Menu</button>` : ""}
-        ${!cup && onNext ? `<button class="ak-btn" data-nav data-act="next">Next</button>` : ""}
       </div>`, "ak-res");
     el.addEventListener("click", (e) => {
       const t = e.target.closest("[data-tab]");

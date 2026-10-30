@@ -540,7 +540,13 @@ class Game {
           this.cup.round++;
           this.cfg = { ...this.cfg, trackId: this.cup.order[this.cup.round] };
           this.startRace(this.cfg);
-        } else this.toMenu();
+        } else {
+          // single race: "Next" rolls on to the following track (wrapping round) with the same driver, laps, difficulty
+          const ids = this.TRACK_DEFS.map((d) => d.id);
+          const nid = ids[(Math.max(0, ids.indexOf(this.cfg.trackId)) + 1) % ids.length];
+          this.cfg = { ...this.cfg, trackId: nid };
+          this.startRace(this.cfg);
+        }
       },
       onRetry: () => {
         if (this.cup) {
