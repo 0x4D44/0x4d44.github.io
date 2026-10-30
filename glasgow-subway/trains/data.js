@@ -23,7 +23,7 @@ window.SRC = [
   { id:'commons', t:'Wikimedia Commons: Category Glasgow Subway', u:'https://commons.wikimedia.org/wiki/Category:Glasgow_Subway', n:'Photographs of live-rail arrangement, tunnel mouths and trains.', r:'M' },
   { id:'curbside', t:'Curbside Classic: Trackside Classic, 1896 Glasgow Subway car No. 1', u:'https://www.curbsideclassic.com/trackside-classic/trackside-classic-1896-glasgow-subway-car-no-1-simply-different/', n:'Gripper car description (read through search summary).', r:'L' },
   { id:'sg-24', t:'SPT / travel summaries: circuit about 24 minutes', u:'https://metroeasy.com/scotland/glasgow-subway/', n:'Published full circuit time of about 24 minutes (secondary).', r:'M' },
-  { id:'osm', t:'OpenStreetMap contributors via glasgow-subway/research', u:'../glasgow-subway/research/NOTES.md', n:'Loop geometry and station positions; the vertical profile is a model (see the Explorer notes).', r:'M' }
+  { id:'osm', t:'OpenStreetMap contributors via glasgow-subway/research', u:'../research/NOTES.md', n:'Loop geometry and station positions; the vertical profile is a model (see the Explorer notes).', r:'M' }
 ];
 
 window.GENS = [
