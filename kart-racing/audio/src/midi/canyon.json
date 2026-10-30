@@ -1,0 +1,88 @@
+{
+ "id": "canyon",
+ "bpm": 136,
+ "introBars": 4,
+ "bodyBars": 36,
+ "tailBars": 4,
+ "secPerBar": 1.7647058823529411,
+ "introSec": 7.0588235294117645,
+ "bodySec": 63.529411764705884,
+ "stems": [
+  "base",
+  "lead",
+  "extra",
+  "boost"
+ ],
+ "channels": {
+  "drums|base": {
+   "ch": 9,
+   "stem": "base",
+   "part": "drums"
+  },
+  "bass|base": {
+   "ch": 0,
+   "stem": "base",
+   "part": "bass"
+  },
+  "banjo|base": {
+   "ch": 1,
+   "stem": "base",
+   "part": "banjo"
+  },
+  "wst|lead": {
+   "ch": 0,
+   "stem": "lead",
+   "part": "wst"
+  },
+  "gtr|base": {
+   "ch": 2,
+   "stem": "base",
+   "part": "gtr"
+  },
+  "harm|lead": {
+   "ch": 1,
+   "stem": "lead",
+   "part": "harm"
+  },
+  "perc|extra": {
+   "ch": 9,
+   "stem": "extra",
+   "part": "perc"
+  },
+  "mand|extra": {
+   "ch": 0,
+   "stem": "extra",
+   "part": "mand"
+  },
+  "fid|lead": {
+   "ch": 2,
+   "stem": "lead",
+   "part": "fid"
+  },
+  "fidD|boost": {
+   "ch": 0,
+   "stem": "boost",
+   "part": "fidD"
+  },
+  "pad|base": {
+   "ch": 3,
+   "stem": "base",
+   "part": "pad"
+  },
+  "tw|lead": {
+   "ch": 3,
+   "stem": "lead",
+   "part": "tw"
+  },
+  "gtrR|extra": {
+   "ch": 1,
+   "stem": "extra",
+   "part": "gtrR"
+  },
+  "gtrR|boost": {
+   "ch": 1,
+   "stem": "boost",
+   "part": "gtrR"
+  }
+ }
+}
