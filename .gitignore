@@ -6,6 +6,9 @@
 .impl-work$1.png
 
 # local tooling (never commit)
+.scratch/
+la-ladera/tools/blender/__pycache__/
+la-ladera/assets/models/.furniture-build-*/
 node_modules/
 package-lock.json
 mos-6502/tests/vendor/

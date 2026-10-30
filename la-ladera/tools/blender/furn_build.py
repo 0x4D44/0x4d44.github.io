@@ -1,68 +1,152 @@
-"""Build the furniture GLBs of La Ladera interiors (A3).  Run through the quiet-box wrapper (never a window):
+"""Build La Ladera's furniture with Blender's real glTF exporter.
 
-    node la-ladera/tests/memgate.mjs 6 300 && node la-ladera/tools/nice.mjs --idle "C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe" --background --factory-startup \\
-         --python la-ladera/tools/blender/furn_build.py -- --catalog <catalog.json> --out <models dir> [--only key,key] [--theme living,home,shop]
+From the repository root (Blender 4.5 LTS or newer):
+  node la-ladera/tools/blender/furn_dump_catalog.mjs .scratch/furniture/catalog.json
+  blender --background --factory-startup --python-exit-code 1 \
+    --python la-ladera/tools/blender/furn_build.py -- \
+    --catalog .scratch/furniture/catalog.json
 
-  catalog.json   from  node la-ladera/tools/blender/furn_dump_catalog.mjs <catalog.json>   (sizes, materials and tags straight from js/interiors/catalog.js)
-  --out          the models folder: furniture/furn_<theme>.glb and manifest.furniture.json are written inside it (default: la-ladera/assets/models)
-Prints one line per asset (triangles, bounds against the catalogue box).  tests/interiors-catalog.test.mjs holds the result to the catalogue.
+The complete build is staged, independently validated, then installed with its
+manifest. A failed build leaves the previous library intact. --only / --theme
+are previews and require an explicit --out outside the shipped models folder.
+No texture or compression decoder is embedded or needed.
 """
-import os, sys, json
-HERE = os.path.dirname(os.path.abspath(__file__))
-if HERE not in sys.path: sys.path.insert(0, HERE)
+import argparse
+import hashlib
+import importlib
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
 import bpy
 import furn_lib as L
-import furn_assets_living, furn_assets_home, furn_assets_shop                      # noqa: F401  (they register their builders)
+
+
+def arguments():
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--catalog', required=True, type=Path)
+    p.add_argument('--out', type=Path, default=Path(L.ROOT) / 'assets' / 'models')
+    p.add_argument('--only', help='comma-separated catalogue keys (preview only)')
+    p.add_argument('--theme', help='comma-separated builder themes (preview only)')
+    p.add_argument('--node', default='node', help='Node executable for byte-level validation')
+    return p.parse_args(L.argv_after_dashes())
+
+
+def check_geometry(a):
+    """Catch broken builders before creating Blender data blocks."""
+    lo, hi = a.bounds()
+    if not all(math.isfinite(v) for v in lo + hi) or any(hi[i] <= lo[i] for i in range(3)):
+        raise ValueError(f'{a.key}: empty or non-finite geometry')
+    tris = sum(len(g.I) for g in a.groups.values())
+    if not tris:
+        raise ValueError(f'{a.key}: no triangles')
+    for g in a.groups.values():
+        if len(g.P) != len(g.N) or len(g.P) != len(g.UV):
+            raise ValueError(f'{a.key}: mismatched vertex attributes')
+        for values in (g.P, g.N, g.UV, g.C):
+            if not all(math.isfinite(v) for row in values for v in row):
+                raise ValueError(f'{a.key}: non-finite attribute')
+    return lo, hi, tris
+
+
+def install(staged, output):
+    """Swap the owned furniture directory; publish its manifest last; roll back on error."""
+    target = output / 'furniture'
+    backup = staged / 'previous-furniture'
+    had_previous = target.exists()
+    if had_previous:
+        target.rename(backup)
+    try:
+        (staged / 'furniture').rename(target)
+        os.replace(staged / 'manifest.furniture.json', output / 'manifest.furniture.json')
+    except BaseException:
+        if target.exists():
+            shutil.rmtree(target)
+        if had_previous:
+            backup.rename(target)
+        raise
 
 
 def main():
-    a = L.argv_after_dashes()
-    opt = {}
-    i = 0
-    while i < len(a):
-        if a[i].startswith('--') and i + 1 < len(a): opt[a[i][2:]] = a[i + 1]; i += 2
-        else: i += 1
-    cat_path = opt.get('catalog')
-    out = os.path.abspath(opt.get('out') or os.path.join(L.ROOT, 'assets', 'models'))
-    with open(cat_path, 'r', encoding='utf8') as f: catalog = json.load(f)
-    only = set(str(opt['only']).split(',')) if opt.get('only') else None
-    themes_wanted = set(str(opt['theme']).split(',')) if opt.get('theme') else None
-    os.makedirs(os.path.join(out, 'furniture'), exist_ok=True)
-
+    opt = arguments()
+    for name in ('living', 'home', 'shop', 'details'):
+        importlib.import_module('furn_assets_' + name)
+    catalog = json.loads(opt.catalog.read_text(encoding='utf8'))
+    out = opt.out.resolve()
+    partial = bool(opt.only or opt.theme)
+    shipped = (Path(L.ROOT) / 'assets' / 'models').resolve()
+    if partial and out == shipped:
+        raise ValueError('Preview filters require --out to a scratch directory; refusing to replace the shipped manifest')
+    only = set(opt.only.split(',')) if opt.only else None
+    themes = set(opt.theme.split(',')) if opt.theme else None
+    if only and only - catalog.keys():
+        raise ValueError('Unknown catalogue keys: ' + ', '.join(sorted(only - catalog.keys())))
+    unknown = L.BUILDERS.keys() - catalog.keys()
+    if unknown:
+        raise ValueError('Builders without catalogue entries: ' + ', '.join(sorted(unknown)))
+    missing = (only or catalog.keys()) - L.BUILDERS.keys()
+    if missing and not themes:
+        raise ValueError('Missing builders: ' + ', '.join(sorted(missing)))
     by_theme = {}
-    for key, (theme, fn) in L.BUILDERS.items():
-        if only and key not in only: continue
-        if themes_wanted and theme not in themes_wanted: continue
+    for key in catalog:
+        if key not in L.BUILDERS or (only and key not in only):
+            continue
+        theme, fn = L.BUILDERS[key]
+        if themes and theme not in themes:
+            continue
         by_theme.setdefault(theme, []).append((key, fn))
+    if not by_theme:
+        raise ValueError('No assets selected')
+    out.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.furniture-build-', dir=out) as tmp:
+        staged = Path(tmp)
+        (staged / 'furniture').mkdir()
+        files = []
+        for theme, items in sorted(by_theme.items()):
+            L.reset()
+            assets = {}
+            for key, fn in items:
+                c = catalog[key]
+                a = L.Asset(key, c)
+                fn(a, key, c)
+                lo, hi, tris = check_geometry(a)
+                L.build_objects(a, bpy.context.scene.collection)
+                assets[key] = {
+                    'node': key, 'size': c['size'], 'footprint': c['footprint'],
+                    'tags': c['tags'], 'origin': 'floor-centre', 'triangles': tris,
+                    'bounds': {'min': [round(v, 6) for v in lo], 'max': [round(v, 6) for v in hi]},
+                }
+                print(f'{key:24s} triangles={tris:5d} parts={len(a.groups):2d} '
+                      f'bounds={lo!r}..{hi!r}', flush=True)
+            rel = f'furniture/furn_{theme}.glb'
+            path = staged / rel
+            L.export_glb(str(path))
+            data = path.read_bytes()
+            files.append({'glb': rel, 'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest(), 'assets': assets})
+            print(f'{theme}: {len(assets)} assets, {len(data):,} bytes', flush=True)
+        total = sum(f['bytes'] for f in files)
+        if total > 10_000_000 or any(f['bytes'] > 8_000_000 for f in files):
+            raise ValueError(f'Furniture exceeds the payload budget: {total:,} bytes')
+        manifest = {
+            'generator': {'script': 'tools/blender/furn_build.py', 'blender': bpy.app.version_string,
+                          'catalogSha256': hashlib.sha256(opt.catalog.read_bytes()).hexdigest()},
+            'assetCount': sum(len(f['assets']) for f in files), 'totalBytes': total, 'files': files,
+        }
+        (staged / 'manifest.furniture.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf8')
+        # Inspect exported vertices and named roots before a full build is installed.
+        if not partial:
+            subprocess.run([opt.node, str(HERE / 'furn_validate.mjs'), '--models', str(staged), '--complete'], check=True)
+        install(staged, out)
+    print(f"Installed {manifest['assetCount']} Blender assets ({total:,} bytes) at {out}", flush=True)
 
-    files, problems = [], []
-    for theme, items in by_theme.items():
-        L.reset()
-        col = bpy.context.scene.collection
-        assets = {}
-        for key, fn in items:
-            c = catalog.get(key)
-            if c is None: problems.append(f'{key}: not in the catalogue'); continue
-            A = L.Asset(key, c)
-            fn(A, key, c)
-            lo, hi = A.bounds()
-            tris = sum(len(g.I) for g in A.groups.values())
-            W, H, D = c['size']
-            sz = [hi[k] - lo[k] for k in range(3)]
-            flag = ''
-            if lo[1] < -0.02 or hi[1] > H + 0.2 or lo[0] < -W / 2 - 0.1 or hi[0] > W / 2 + 0.1 or lo[2] < -D / 2 - 0.12 or hi[2] > D / 2 + 0.12:
-                flag = '  <-- outside the catalogue box'; problems.append(key)
-            print(f'  {key:22s} tris={tris:5d} parts={len(A.groups):2d} x[{lo[0]:+.2f},{hi[0]:+.2f}] y[{lo[1]:+.2f},{hi[1]:+.2f}] z[{lo[2]:+.2f},{hi[2]:+.2f}]  cat {W:.2f}x{H:.2f}x{D:.2f}{flag}')
-            L.build_objects(A, col)
-            assets[key] = {'node': key, 'tags': c['tags'], 'footprint': c['footprint']}
-        rel = f'furniture/furn_{theme}.glb'
-        L.export_glb(os.path.join(out, rel))
-        files.append({'glb': rel, 'assets': assets})
-        print(f'{theme}: {len(assets)} assets -> {rel} ({os.path.getsize(os.path.join(out, rel)) / 1024:.1f} KB)')
-    man = os.path.join(out, 'manifest.furniture.json')
-    with open(man, 'w', encoding='utf8', newline='\n') as f: json.dump({'files': files}, f, indent=1); f.write('\n')
-    print('manifest ->', man)
-    if problems: print('PROBLEMS:', ', '.join(problems))
 
-
-main()
+if __name__ == '__main__':
+    main()

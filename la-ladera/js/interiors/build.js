@@ -19,6 +19,11 @@ const MAX_REPORTED = 12;
 /** Preload the GLBs of every catalogue key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). */
 export async function loadInteriorAssets(ctx) {
   ctx.interiorGlb = new Set();
+  // A retry may replace a previously failed model. Do not retain flattened parts from an older load.
+  for (const parts of ctx.interiorGlbParts?.values() ?? []) for (const p of parts) {
+    p.geometry.dispose(); for (const g of p.tinted.values()) g.dispose();
+  }
+  ctx.interiorGlbParts = new Map();
   try {
     const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
     if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
@@ -29,10 +34,37 @@ export async function loadInteriorAssets(ctx) {
   const names = a.names().filter((n) => CATALOG[n]);
   if (!names.length) return;
   try { await a.preload(names); } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'preload ' + String(e?.message ?? e) }); }
-  for (const n of names) { const e = a.meta(n); if (e && a.loaded?.has(e.glb)) ctx.interiorGlb.add(n); }
+  for (const n of names) {
+    const e = a.meta(n);
+    if (!e || !a.loaded?.has(e.glb)) continue;
+    try {
+      // Loading a shared file does not prove that this particular named asset exists and is drawable.
+      if (glbParts(ctx, n).length) ctx.interiorGlb.add(n);
+    } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', name: n, message: 'model fallback: ' + String(e?.message ?? e) }); }
+  }
 }
 
 const _tc = new THREE.Color();
+
+/** Reject a broken part before any vertices are appended to a building. Checked once per loaded asset. */
+function checkPart(geometry, name) {
+  const p = geometry?.attributes?.position;
+  if (!p || p.itemSize !== 3 || p.count < 3) throw new Error(`${name}: missing mesh positions`);
+  for (const [key, width] of [['position', 3], ['normal', 3], ['uv', 2], ['color', 3]]) {
+    const a = geometry.attributes[key];
+    if (!a) continue;
+    if (a.count !== p.count || a.itemSize < width) throw new Error(`${name}: invalid ${key} attribute`);
+    for (let i = 0; i < a.count; i++) for (let k = 0; k < width; k++) {
+      if (!Number.isFinite(a.getComponent(i, k))) throw new Error(`${name}: non-finite ${key}`);
+    }
+  }
+  const index = geometry.index, count = index?.count ?? p.count;
+  if (!count || count % 3) throw new Error(`${name}: invalid triangle indices`);
+  if (index) for (let i = 0; i < count; i++) {
+    const k = index.getX(i);
+    if (!Number.isInteger(k) || k < 0 || k >= p.count) throw new Error(`${name}: index outside mesh`);
+  }
+}
 
 /**
  * The drawable parts of one asset, read once from its loaded GLB (tools/blender/furn_lib.py names them `<key>-<flag>-...-<n>`):
@@ -49,22 +81,29 @@ export function glbParts(ctx, name) {
   parts = [];
   const e = ctx.assets.meta(name), gl = e && ctx.assets.loaded.get(e.glb), node = gl?.scene.getObjectByName(e.node);
   if (node) {
+    node.updateWorldMatrix(true, true);
     const inv = new THREE.Matrix4().copy(node.matrixWorld).invert(), mm = new THREE.Matrix4();
-    node.traverse((o) => {
+    try { node.traverse((o) => {
       if (!o.isMesh) return;
       const geometry = o.geometry.clone().applyMatrix4(mm.multiplyMatrices(inv, o.matrixWorld));
+      const matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      try {
+        checkPart(geometry, o.name);
+        if (!matKey || matKey === 'missing_asset' || (ctx.matlib?.has && !ctx.matlib.has(matKey))) throw new Error(`${o.name}: unknown material '${matKey}'`);
+      } catch (e) { geometry.dispose(); throw e; }
       const flags = o.name.split('-').slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
       parts.push({
-        geometry, matKey: (Array.isArray(o.material) ? o.material[0] : o.material).name || 'missing_asset', colored: !!geometry.attributes.color,
+        geometry, matKey, colored: !!geometry.attributes.color,
         tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
         ch: pick ? pick[1] : null, k: pick ? +pick[2] : 0, tinted: new Map(),
       });
-    });
+    }); } catch (e) { for (const p of parts) p.geometry.dispose(); throw e; }
     const n = {};                                                                    // alternatives per channel = highest index + 1
     for (const p of parts) if (p.ch) n[p.ch] = Math.max(n[p.ch] ?? 0, p.k + 1);
     for (const p of parts) p.choices = p.ch ? n[p.ch] : 0;
   }
-  cache.set(name, parts);
+  // Missing nodes are not cached: a later successful load can replace the stand-in.
+  if (parts.length) cache.set(name, parts);
   return parts;
 }
 
@@ -90,17 +129,18 @@ function drawGlb(ctx, b, rec, c) {
   }
   const tint = rec.tint == null ? null : tintFor(c, rec.tint), unmade = !!rec.flags?.unmade;
   const chosen = {};
-  let n = 0;
+  const draws = [];
   for (const p of parts) {
     if (p.made && unmade) continue;
     if (p.unmade && !unmade) continue;
     if (p.magnets && !rec.flags?.magnets) continue;
     if (p.ch) { chosen[p.ch] ??= Math.floor(u01(rec.id, 11 + p.ch.charCodeAt(0)) * p.choices) % p.choices; if (chosen[p.ch] !== p.k) continue; }
     const shaded = p.tint && tint != null && p.colored;
-    b.geometry(p.matKey, shaded ? tintedGeometry(p, tint) : p.geometry, M, { col: p.tint && !p.colored && tint != null ? tint : undefined });
-    n++;
+    draws.push({ p, geometry: shaded ? tintedGeometry(p, tint) : p.geometry, col: p.tint && !p.colored && tint != null ? tint : undefined });
   }
-  return n;
+  // Prepare every selected part (including tint copies) before writing any of them.
+  for (const { p, geometry, col } of draws) b.geometry(p.matKey, geometry, M, { col });
+  return draws.length;
 }
 
 /**
@@ -121,7 +161,14 @@ export function buildInterior(ctx, bp) {
     if (!c) { st.failed++; continue; }
     try {
       let n = 0;
-      if (glb?.has(rec.name)) n = drawGlb(ctx, b, rec, c);
+      if (glb?.has(rec.name)) {
+        try { n = drawGlb(ctx, b, rec, c); }
+        catch (e) {
+          // A malformed GLB must not leave a hole in an otherwise furnished room.
+          glb.delete(rec.name);
+          if (reported++ < MAX_REPORTED) (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, name: rec.name, message: 'model fallback: ' + String(e?.message ?? e) });
+        }
+      }
       if (n) st.glb++; else { n = drawStandin(b, rec, c); st.standin++; }
       st.prims += n;
     } catch (e) {

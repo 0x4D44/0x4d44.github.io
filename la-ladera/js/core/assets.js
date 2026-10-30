@@ -43,7 +43,13 @@ export class Assets {
   load(path) {
     let p = this.inflight.get(path);
     if (!p) {
-      p = this.loader.loadAsync(this.root + path).then((g) => { g.scene.updateMatrixWorld(true); this.loaded.set(path, g); return g; });
+      p = this.loader.loadAsync(this.root + path).then((g) => {
+        g.scene.updateMatrixWorld(true); this.loaded.set(path, g); return g;
+      }).catch((e) => {
+        // A temporary download/parse failure must not poison the cache for the whole session.
+        this.inflight.delete(path);
+        throw e;
+      });
       this.inflight.set(path, p);
     }
     return p;

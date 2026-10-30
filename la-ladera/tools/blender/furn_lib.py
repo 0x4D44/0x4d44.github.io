@@ -8,7 +8,7 @@ handed to Blender (X, -Z, Y) and exported with the glTF exporter (+Y up) so the 
   rises to y = H (ceiling fixtures hang from y = H: build.js puts that top against the ceiling).
   every child mesh is named  <key>-<flag>-...-<n>  and uses ONE library material (the glTF material NAME is the core/matlib.js name, no textures are embedded).
   flags:  tint  = the part takes the record's tint colour (its vertex colours, if any, are shades that multiply it)
-          made / unmade = the bed variants; alt0..altN = alternatives of which one is drawn (picked by the record id); magnets = only when the record asks.
+          made / unmade = the bed variants; pa0..paN (and pb, pc...) = alternative channels picked by the record id; magnets = only when the record asks.
   a part without the `tint` flag keeps its own vertex colours (COLOR_0, linear) - small coloured things are drawn with plastic_solid + colour, so a
   building still costs one draw call per material.
 """
@@ -293,7 +293,10 @@ BUILDERS = OrderedDict()                                                   # key
 
 def asset(theme, *keys):
     def deco(fn):
-        for k in keys: BUILDERS[k] = (theme, fn)
+        for k in keys:
+            if k in BUILDERS:
+                raise ValueError('Duplicate furniture builder: ' + k)
+            BUILDERS[k] = (theme, fn)
         return fn
     return deco
 

@@ -3,10 +3,10 @@
 // `assets/models/manifest.furniture.json` sizes match by construction; tests/interiors-catalog.test.mjs cross-checks them.
 //
 // Conventions (all assets):
-//   origin = centre of the footprint on the floor (floor items), +z = FRONT (the side a person uses), +y up.
-//   wall items : origin = bottom-centre of the BACK face; hung at height `y` (default per item).  `wall:true`
-//   top items  : stand on a surface (origin = bottom-centre); `top:true`
-//   ceiling    : origin = top-centre (hangs down); `ceil:true`
+//   source models: origin = centre of the footprint at y=0, +z = FRONT (the side a person uses), +y up, including wall/ceiling models.
+//   wall records: layout offsets the centred model from the wall by half its depth; `y` is the bottom hang height. `wall:true`
+//   top records : stand on a surface (y = surface height); `top:true`
+//   ceiling records: y is the ceiling; build.js subtracts size[1] so the model's top meets it. `ceil:true`
 // Options: arch (stand-in archetype), tags, clear:[front,back,side] free space needed, seat:[seatH,n], bh (blocker height),
 //          block:false (never blocks), cols (tint palette key), mat (primary material), y (hang height), dyn (animated kind).
 

@@ -1,1 +1,6964 @@
-{ "files": [] }
+{
+  "generator": {
+    "script": "tools/blender/furn_build.py",
+    "blender": "4.5.3 LTS",
+    "catalogSha256": "26a52d713b6d76b2cf77549de83f1e2e3852fb4f199b0901da528ba5a2d44a64"
+  },
+  "assetCount": 222,
+  "totalBytes": 6454296,
+  "files": [
+    {
+      "glb": "furniture/furn_details.glb",
+      "bytes": 1435020,
+      "sha256": "4136041d1eaa9e8c3b82e8fb6c5ef970ca2a6e38952e43e9c5befb3a38422ad8",
+      "assets": {
+        "radio_old": {
+          "node": "radio_old",
+          "size": [
+            0.35,
+            0.2,
+            0.12
+          ],
+          "footprint": [
+            0.35,
+            0.12
+          ],
+          "tags": [
+            "radio",
+            "electronics",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 300,
+          "bounds": {
+            "min": [
+              -0.175,
+              0.0,
+              -0.0552
+            ],
+            "max": [
+              0.175,
+              0.18,
+              0.0603
+            ]
+          }
+        },
+        "radio_boombox": {
+          "node": "radio_boombox",
+          "size": [
+            0.5,
+            0.25,
+            0.18
+          ],
+          "footprint": [
+            0.5,
+            0.18
+          ],
+          "tags": [
+            "radio",
+            "electronics",
+            "boombox"
+          ],
+          "origin": "floor-centre",
+          "triangles": 372,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.0828
+            ],
+            "max": [
+              0.25,
+              0.250441,
+              0.09045
+            ]
+          }
+        },
+        "fan_stand": {
+          "node": "fan_stand",
+          "size": [
+            0.45,
+            1.25,
+            0.45
+          ],
+          "footprint": [
+            0.45,
+            0.45
+          ],
+          "tags": [
+            "fan",
+            "stand"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1188,
+          "bounds": {
+            "min": [
+              -0.207,
+              0.0,
+              -0.198
+            ],
+            "max": [
+              0.207,
+              1.230136,
+              0.198
+            ]
+          }
+        },
+        "fan_desk": {
+          "node": "fan_desk",
+          "size": [
+            0.3,
+            0.4,
+            0.22
+          ],
+          "footprint": [
+            0.3,
+            0.22
+          ],
+          "tags": [
+            "fan",
+            "desk"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1188,
+          "bounds": {
+            "min": [
+              -0.138,
+              0.0,
+              -0.0968
+            ],
+            "max": [
+              0.138,
+              0.394511,
+              0.0968
+            ]
+          }
+        },
+        "bulb_bare": {
+          "node": "bulb_bare",
+          "size": [
+            0.1,
+            0.22,
+            0.1
+          ],
+          "footprint": [
+            0.1,
+            0.1
+          ],
+          "tags": [
+            "light",
+            "bulb",
+            "ceiling"
+          ],
+          "origin": "floor-centre",
+          "triangles": 264,
+          "bounds": {
+            "min": [
+              -0.043,
+              0.0044,
+              -0.043
+            ],
+            "max": [
+              0.043,
+              0.22,
+              0.043
+            ]
+          }
+        },
+        "light_tube": {
+          "node": "light_tube",
+          "size": [
+            1.25,
+            0.08,
+            0.1
+          ],
+          "footprint": [
+            1.25,
+            0.1
+          ],
+          "tags": [
+            "light",
+            "tube",
+            "ceiling"
+          ],
+          "origin": "floor-centre",
+          "triangles": 76,
+          "bounds": {
+            "min": [
+              -0.625,
+              0.0,
+              -0.05
+            ],
+            "max": [
+              0.625,
+              0.08,
+              0.05
+            ]
+          }
+        },
+        "pc_set": {
+          "node": "pc_set",
+          "size": [
+            0.6,
+            0.45,
+            0.5
+          ],
+          "footprint": [
+            0.6,
+            0.5
+          ],
+          "tags": [
+            "electronics",
+            "computer",
+            "pc"
+          ],
+          "origin": "floor-centre",
+          "triangles": 456,
+          "bounds": {
+            "min": [
+              -0.27,
+              0.0,
+              -0.215
+            ],
+            "max": [
+              0.288,
+              0.4365,
+              0.23
+            ]
+          }
+        },
+        "phone_landline": {
+          "node": "phone_landline",
+          "size": [
+            0.22,
+            0.1,
+            0.2
+          ],
+          "footprint": [
+            0.22,
+            0.2
+          ],
+          "tags": [
+            "electronics",
+            "phone",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 444,
+          "bounds": {
+            "min": [
+              -0.1034,
+              0.0,
+              -0.094
+            ],
+            "max": [
+              0.1034,
+              0.098876,
+              0.094
+            ]
+          }
+        },
+        "sewing_machine": {
+          "node": "sewing_machine",
+          "size": [
+            0.42,
+            0.36,
+            0.2
+          ],
+          "footprint": [
+            0.42,
+            0.2
+          ],
+          "tags": [
+            "sewing",
+            "machine",
+            "modista"
+          ],
+          "origin": "floor-centre",
+          "triangles": 444,
+          "bounds": {
+            "min": [
+              -0.21,
+              0.0,
+              -0.1
+            ],
+            "max": [
+              0.21,
+              0.36,
+              0.1
+            ]
+          }
+        },
+        "printer": {
+          "node": "printer",
+          "size": [
+            0.4,
+            0.2,
+            0.35
+          ],
+          "footprint": [
+            0.4,
+            0.35
+          ],
+          "tags": [
+            "electronics",
+            "printer"
+          ],
+          "origin": "floor-centre",
+          "triangles": 168,
+          "bounds": {
+            "min": [
+              -0.2,
+              0.0,
+              -0.16625
+            ],
+            "max": [
+              0.2,
+              0.184,
+              0.175
+            ]
+          }
+        },
+        "speaker": {
+          "node": "speaker",
+          "size": [
+            0.3,
+            0.9,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "tags": [
+            "electronics",
+            "speaker"
+          ],
+          "origin": "floor-centre",
+          "triangles": 312,
+          "bounds": {
+            "min": [
+              -0.15,
+              0.0,
+              -0.138
+            ],
+            "max": [
+              0.15,
+              0.9,
+              0.15075
+            ]
+          }
+        },
+        "clock_wall": {
+          "node": "clock_wall",
+          "size": [
+            0.3,
+            0.3,
+            0.05
+          ],
+          "footprint": [
+            0.3,
+            0.05
+          ],
+          "tags": [
+            "decor",
+            "clock"
+          ],
+          "origin": "floor-centre",
+          "triangles": 576,
+          "bounds": {
+            "min": [
+              -0.147,
+              0.003,
+              -0.0225
+            ],
+            "max": [
+              0.147,
+              0.297,
+              0.0254
+            ]
+          }
+        },
+        "altar_home": {
+          "node": "altar_home",
+          "size": [
+            0.8,
+            1.05,
+            0.38
+          ],
+          "footprint": [
+            0.8,
+            0.38
+          ],
+          "tags": [
+            "religion",
+            "altar",
+            "decor",
+            "shrine"
+          ],
+          "origin": "floor-centre",
+          "triangles": 144,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.19
+            ],
+            "max": [
+              0.4,
+              1.029,
+              0.19
+            ]
+          }
+        },
+        "statue_virgin": {
+          "node": "statue_virgin",
+          "size": [
+            0.22,
+            0.42,
+            0.16
+          ],
+          "footprint": [
+            0.22,
+            0.16
+          ],
+          "tags": [
+            "religion",
+            "statue",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 524,
+          "bounds": {
+            "min": [
+              -0.0946,
+              0.0,
+              -0.065433
+            ],
+            "max": [
+              0.0946,
+              0.4158,
+              0.065433
+            ]
+          }
+        },
+        "candles_set": {
+          "node": "candles_set",
+          "size": [
+            0.2,
+            0.2,
+            0.12
+          ],
+          "footprint": [
+            0.2,
+            0.12
+          ],
+          "tags": [
+            "religion",
+            "candles",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 480,
+          "bounds": {
+            "min": [
+              -0.1,
+              0.0,
+              -0.06
+            ],
+            "max": [
+              0.1,
+              0.194,
+              0.06
+            ]
+          }
+        },
+        "vase_flowers": {
+          "node": "vase_flowers",
+          "size": [
+            0.2,
+            0.4,
+            0.2
+          ],
+          "footprint": [
+            0.2,
+            0.2
+          ],
+          "tags": [
+            "decor",
+            "flowers",
+            "vase"
+          ],
+          "origin": "floor-centre",
+          "triangles": 840,
+          "bounds": {
+            "min": [
+              -0.076326,
+              0.0,
+              -0.07
+            ],
+            "max": [
+              0.07,
+              0.398,
+              0.070573
+            ]
+          }
+        },
+        "crucifix_wall": {
+          "node": "crucifix_wall",
+          "size": [
+            0.3,
+            0.5,
+            0.05
+          ],
+          "footprint": [
+            0.3,
+            0.05
+          ],
+          "tags": [
+            "religion",
+            "crucifix",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 192,
+          "bounds": {
+            "min": [
+              -0.15,
+              0.0,
+              -0.0175
+            ],
+            "max": [
+              0.15,
+              0.5,
+              0.024
+            ]
+          }
+        },
+        "crucifix_large": {
+          "node": "crucifix_large",
+          "size": [
+            0.6,
+            1,
+            0.1
+          ],
+          "footprint": [
+            0.6,
+            0.1
+          ],
+          "tags": [
+            "religion",
+            "crucifix",
+            "chapel",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 192,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.035
+            ],
+            "max": [
+              0.3,
+              1.0,
+              0.048
+            ]
+          }
+        },
+        "altar_main": {
+          "node": "altar_main",
+          "size": [
+            2,
+            1.1,
+            0.7
+          ],
+          "footprint": [
+            2,
+            0.7
+          ],
+          "tags": [
+            "religion",
+            "altar",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 120,
+          "bounds": {
+            "min": [
+              -1.0,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              1.0,
+              1.0615,
+              0.35
+            ]
+          }
+        },
+        "lectern": {
+          "node": "lectern",
+          "size": [
+            0.5,
+            1.25,
+            0.45
+          ],
+          "footprint": [
+            0.5,
+            0.45
+          ],
+          "tags": [
+            "religion",
+            "lectern",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 60,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.222339
+            ],
+            "max": [
+              0.25,
+              1.09375,
+              0.222339
+            ]
+          }
+        },
+        "candle_rack": {
+          "node": "candle_rack",
+          "size": [
+            0.7,
+            1.1,
+            0.45
+          ],
+          "footprint": [
+            0.7,
+            0.45
+          ],
+          "tags": [
+            "religion",
+            "candles",
+            "votive",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1020,
+          "bounds": {
+            "min": [
+              -0.35,
+              -0.003491,
+              -0.195358
+            ],
+            "max": [
+              0.35,
+              1.089,
+              0.195358
+            ]
+          }
+        },
+        "statue_saint_large": {
+          "node": "statue_saint_large",
+          "size": [
+            0.5,
+            1.5,
+            0.4
+          ],
+          "footprint": [
+            0.5,
+            0.4
+          ],
+          "tags": [
+            "religion",
+            "statue",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 524,
+          "bounds": {
+            "min": [
+              -0.215,
+              0.0,
+              -0.163582
+            ],
+            "max": [
+              0.215,
+              1.485,
+              0.163582
+            ]
+          }
+        },
+        "plant_tin": {
+          "node": "plant_tin",
+          "size": [
+            0.2,
+            0.35,
+            0.2
+          ],
+          "footprint": [
+            0.2,
+            0.2
+          ],
+          "tags": [
+            "plant",
+            "tin",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 648,
+          "bounds": {
+            "min": [
+              -0.077298,
+              0.0,
+              -0.078199
+            ],
+            "max": [
+              0.0785,
+              0.301,
+              0.07
+            ]
+          }
+        },
+        "plant_bucket": {
+          "node": "plant_bucket",
+          "size": [
+            0.45,
+            0.85,
+            0.45
+          ],
+          "footprint": [
+            0.45,
+            0.45
+          ],
+          "tags": [
+            "plant",
+            "bucket",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 408,
+          "bounds": {
+            "min": [
+              -0.17392,
+              0.0,
+              -0.175948
+            ],
+            "max": [
+              0.176625,
+              0.731,
+              0.153
+            ]
+          }
+        },
+        "plant_pot_clay": {
+          "node": "plant_pot_clay",
+          "size": [
+            0.35,
+            0.6,
+            0.35
+          ],
+          "footprint": [
+            0.35,
+            0.35
+          ],
+          "tags": [
+            "plant",
+            "pot",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 408,
+          "bounds": {
+            "min": [
+              -0.135271,
+              0.0,
+              -0.136848
+            ],
+            "max": [
+              0.137375,
+              0.516,
+              0.119
+            ]
+          }
+        },
+        "plant_hanging": {
+          "node": "plant_hanging",
+          "size": [
+            0.3,
+            0.5,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "tags": [
+            "plant",
+            "hanging",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 480,
+          "bounds": {
+            "min": [
+              -0.115947,
+              0.14,
+              -0.117298
+            ],
+            "max": [
+              0.11775,
+              0.491182,
+              0.102
+            ]
+          }
+        },
+        "plant_big": {
+          "node": "plant_big",
+          "size": [
+            0.7,
+            1.7,
+            0.7
+          ],
+          "footprint": [
+            0.7,
+            0.7
+          ],
+          "tags": [
+            "plant",
+            "floor",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 528,
+          "bounds": {
+            "min": [
+              -0.270543,
+              0.0,
+              -0.273696
+            ],
+            "max": [
+              0.27475,
+              1.462,
+              0.265314
+            ]
+          }
+        },
+        "pot_stack": {
+          "node": "pot_stack",
+          "size": [
+            0.3,
+            0.3,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "tags": [
+            "kitchen",
+            "pots",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 744,
+          "bounds": {
+            "min": [
+              -0.150093,
+              0.0,
+              -0.111
+            ],
+            "max": [
+              0.150093,
+              0.294,
+              0.111
+            ]
+          }
+        },
+        "kettle": {
+          "node": "kettle",
+          "size": [
+            0.22,
+            0.28,
+            0.2
+          ],
+          "footprint": [
+            0.22,
+            0.2
+          ],
+          "tags": [
+            "kitchen",
+            "kettle",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 372,
+          "bounds": {
+            "min": [
+              -0.0814,
+              0.0,
+              -0.068
+            ],
+            "max": [
+              0.111309,
+              0.258017,
+              0.068
+            ]
+          }
+        },
+        "thermos_set": {
+          "node": "thermos_set",
+          "size": [
+            0.3,
+            0.38,
+            0.25
+          ],
+          "footprint": [
+            0.3,
+            0.25
+          ],
+          "tags": [
+            "cafe",
+            "thermos",
+            "tinto",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 816,
+          "bounds": {
+            "min": [
+              -0.129,
+              0.0,
+              -0.07
+            ],
+            "max": [
+              0.141204,
+              0.3762,
+              0.105
+            ]
+          }
+        },
+        "dish_rack": {
+          "node": "dish_rack",
+          "size": [
+            0.5,
+            0.3,
+            0.35
+          ],
+          "footprint": [
+            0.5,
+            0.35
+          ],
+          "tags": [
+            "kitchen",
+            "dishes",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 468,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.175
+            ],
+            "max": [
+              0.25,
+              0.291,
+              0.175
+            ]
+          }
+        },
+        "fruit_bowl": {
+          "node": "fruit_bowl",
+          "size": [
+            0.32,
+            0.18,
+            0.32
+          ],
+          "footprint": [
+            0.32,
+            0.32
+          ],
+          "tags": [
+            "kitchen",
+            "fruit",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -0.1536,
+              0.0,
+              -0.1536
+            ],
+            "max": [
+              0.1536,
+              0.1548,
+              0.1536
+            ]
+          }
+        },
+        "bread_basket": {
+          "node": "bread_basket",
+          "size": [
+            0.35,
+            0.2,
+            0.28
+          ],
+          "footprint": [
+            0.35,
+            0.28
+          ],
+          "tags": [
+            "bread",
+            "basket",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -0.168,
+              0.0,
+              -0.1344
+            ],
+            "max": [
+              0.168,
+              0.164,
+              0.1344
+            ]
+          }
+        },
+        "bottles_group": {
+          "node": "bottles_group",
+          "size": [
+            0.3,
+            0.3,
+            0.2
+          ],
+          "footprint": [
+            0.3,
+            0.2
+          ],
+          "tags": [
+            "bottles",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 636,
+          "bounds": {
+            "min": [
+              -0.126,
+              0.0,
+              -0.056532
+            ],
+            "max": [
+              0.111,
+              0.288,
+              0.0717
+            ]
+          }
+        },
+        "books_stack": {
+          "node": "books_stack",
+          "size": [
+            0.25,
+            0.2,
+            0.2
+          ],
+          "footprint": [
+            0.25,
+            0.2
+          ],
+          "tags": [
+            "books",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 144,
+          "bounds": {
+            "min": [
+              -0.125,
+              0.0,
+              -0.096
+            ],
+            "max": [
+              0.125,
+              0.186,
+              0.094
+            ]
+          }
+        },
+        "knickknacks": {
+          "node": "knickknacks",
+          "size": [
+            0.5,
+            0.22,
+            0.2
+          ],
+          "footprint": [
+            0.5,
+            0.2
+          ],
+          "tags": [
+            "knickknacks",
+            "decor",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 336,
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.04
+            ],
+            "max": [
+              0.22,
+              0.1584,
+              0.06
+            ]
+          }
+        },
+        "photo_frames": {
+          "node": "photo_frames",
+          "size": [
+            0.3,
+            0.2,
+            0.08
+          ],
+          "footprint": [
+            0.3,
+            0.08
+          ],
+          "tags": [
+            "photos",
+            "decor",
+            "frames"
+          ],
+          "origin": "floor-centre",
+          "triangles": 216,
+          "bounds": {
+            "min": [
+              -0.1365,
+              -0.000261,
+              -0.031192
+            ],
+            "max": [
+              0.132,
+              0.19,
+              0.0244
+            ]
+          }
+        },
+        "trophy_football": {
+          "node": "trophy_football",
+          "size": [
+            0.14,
+            0.25,
+            0.14
+          ],
+          "footprint": [
+            0.14,
+            0.14
+          ],
+          "tags": [
+            "football",
+            "trophy",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 308,
+          "bounds": {
+            "min": [
+              -0.063,
+              0.0,
+              -0.063
+            ],
+            "max": [
+              0.063,
+              0.2475,
+              0.063
+            ]
+          }
+        },
+        "football": {
+          "node": "football",
+          "size": [
+            0.22,
+            0.22,
+            0.22
+          ],
+          "footprint": [
+            0.22,
+            0.22
+          ],
+          "tags": [
+            "football",
+            "toy",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 408,
+          "bounds": {
+            "min": [
+              -0.109347,
+              -0.0132,
+              -0.110363
+            ],
+            "max": [
+              0.109347,
+              0.2332,
+              0.110363
+            ]
+          }
+        },
+        "toy_pile": {
+          "node": "toy_pile",
+          "size": [
+            0.5,
+            0.2,
+            0.5
+          ],
+          "footprint": [
+            0.5,
+            0.5
+          ],
+          "tags": [
+            "toys",
+            "clutter",
+            "kids"
+          ],
+          "origin": "floor-centre",
+          "triangles": 332,
+          "bounds": {
+            "min": [
+              -0.205,
+              0.0,
+              -0.193793
+            ],
+            "max": [
+              0.205,
+              0.16,
+              0.1725
+            ]
+          }
+        },
+        "doll": {
+          "node": "doll",
+          "size": [
+            0.15,
+            0.35,
+            0.1
+          ],
+          "footprint": [
+            0.15,
+            0.1
+          ],
+          "tags": [
+            "toys",
+            "doll",
+            "clutter",
+            "kids"
+          ],
+          "origin": "floor-centre",
+          "triangles": 524,
+          "bounds": {
+            "min": [
+              -0.0645,
+              0.0,
+              -0.040895
+            ],
+            "max": [
+              0.0645,
+              0.3465,
+              0.040895
+            ]
+          }
+        },
+        "shoes_pair": {
+          "node": "shoes_pair",
+          "size": [
+            0.28,
+            0.12,
+            0.3
+          ],
+          "footprint": [
+            0.28,
+            0.3
+          ],
+          "tags": [
+            "shoes",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 432,
+          "bounds": {
+            "min": [
+              -0.1316,
+              0.0,
+              -0.147
+            ],
+            "max": [
+              0.1316,
+              0.0924,
+              0.147
+            ]
+          }
+        },
+        "school_bag": {
+          "node": "school_bag",
+          "size": [
+            0.32,
+            0.42,
+            0.18
+          ],
+          "footprint": [
+            0.32,
+            0.18
+          ],
+          "tags": [
+            "bag",
+            "school",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 336,
+          "bounds": {
+            "min": [
+              -0.144,
+              0.0,
+              -0.0882
+            ],
+            "max": [
+              0.144,
+              0.421136,
+              0.0855
+            ]
+          }
+        },
+        "broom": {
+          "node": "broom",
+          "size": [
+            0.3,
+            1.2,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "tags": [
+            "broom",
+            "clutter",
+            "cleaning"
+          ],
+          "origin": "floor-centre",
+          "triangles": 144,
+          "bounds": {
+            "min": [
+              -0.135,
+              0.0,
+              -0.0525
+            ],
+            "max": [
+              0.135,
+              1.188439,
+              0.0525
+            ]
+          }
+        },
+        "mop_bucket": {
+          "node": "mop_bucket",
+          "size": [
+            0.35,
+            1.2,
+            0.35
+          ],
+          "footprint": [
+            0.35,
+            0.35
+          ],
+          "tags": [
+            "mop",
+            "clutter",
+            "cleaning"
+          ],
+          "origin": "floor-centre",
+          "triangles": 336,
+          "bounds": {
+            "min": [
+              -0.161,
+              0.0,
+              -0.161
+            ],
+            "max": [
+              0.161,
+              1.189078,
+              0.161
+            ]
+          }
+        },
+        "box_cardboard_s": {
+          "node": "box_cardboard_s",
+          "size": [
+            0.3,
+            0.25,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "tags": [
+            "box",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 84,
+          "bounds": {
+            "min": [
+              -0.15,
+              0.0,
+              -0.15
+            ],
+            "max": [
+              0.15,
+              0.25,
+              0.15135
+            ]
+          }
+        },
+        "box_cardboard_m": {
+          "node": "box_cardboard_m",
+          "size": [
+            0.5,
+            0.4,
+            0.4
+          ],
+          "footprint": [
+            0.5,
+            0.4
+          ],
+          "tags": [
+            "box",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 84,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.25,
+              0.4,
+              0.2018
+            ]
+          }
+        },
+        "box_cardboard_l": {
+          "node": "box_cardboard_l",
+          "size": [
+            0.6,
+            0.5,
+            0.5
+          ],
+          "footprint": [
+            0.6,
+            0.5
+          ],
+          "tags": [
+            "box",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 84,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.3,
+              0.5,
+              0.25225
+            ]
+          }
+        },
+        "cage_canary": {
+          "node": "cage_canary",
+          "size": [
+            0.3,
+            0.5,
+            0.3
+          ],
+          "footprint": [
+            0.3,
+            0.3
+          ],
+          "tags": [
+            "pet",
+            "canary",
+            "cage",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 984,
+          "bounds": {
+            "min": [
+              -0.141,
+              0.0,
+              -0.141
+            ],
+            "max": [
+              0.141,
+              0.500196,
+              0.141
+            ]
+          }
+        },
+        "pet_bed": {
+          "node": "pet_bed",
+          "size": [
+            0.5,
+            0.12,
+            0.4
+          ],
+          "footprint": [
+            0.5,
+            0.4
+          ],
+          "tags": [
+            "pet",
+            "bed",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -0.24,
+              0.0,
+              -0.192
+            ],
+            "max": [
+              0.24,
+              0.102,
+              0.192
+            ]
+          }
+        },
+        "cat_sitting": {
+          "node": "cat_sitting",
+          "size": [
+            0.2,
+            0.3,
+            0.3
+          ],
+          "footprint": [
+            0.2,
+            0.3
+          ],
+          "tags": [
+            "pet",
+            "cat",
+            "animal"
+          ],
+          "origin": "floor-centre",
+          "triangles": 436,
+          "bounds": {
+            "min": [
+              -0.066,
+              0.0,
+              -0.100552
+            ],
+            "max": [
+              0.090627,
+              0.3,
+              0.128093
+            ]
+          }
+        },
+        "dog_sleeping": {
+          "node": "dog_sleeping",
+          "size": [
+            0.7,
+            0.3,
+            0.4
+          ],
+          "footprint": [
+            0.7,
+            0.4
+          ],
+          "tags": [
+            "pet",
+            "dog",
+            "animal"
+          ],
+          "origin": "floor-centre",
+          "triangles": 380,
+          "bounds": {
+            "min": [
+              -0.349185,
+              0.010024,
+              -0.168
+            ],
+            "max": [
+              0.343,
+              0.21,
+              0.176
+            ]
+          }
+        },
+        "guitar_lean": {
+          "node": "guitar_lean",
+          "size": [
+            0.4,
+            1,
+            0.2
+          ],
+          "footprint": [
+            0.4,
+            0.2
+          ],
+          "tags": [
+            "music",
+            "guitar",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 696,
+          "bounds": {
+            "min": [
+              -0.176,
+              0.02,
+              -0.072
+            ],
+            "max": [
+              0.176,
+              1.002,
+              0.08
+            ]
+          }
+        },
+        "pigeon_loft": {
+          "node": "pigeon_loft",
+          "size": [
+            1.2,
+            1.5,
+            0.8
+          ],
+          "footprint": [
+            1.2,
+            0.8
+          ],
+          "tags": [
+            "terrace",
+            "pigeon",
+            "loft",
+            "roof"
+          ],
+          "origin": "floor-centre",
+          "triangles": 276,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.4
+            ],
+            "max": [
+              0.6,
+              1.47,
+              0.416
+            ]
+          }
+        },
+        "rug_small": {
+          "node": "rug_small",
+          "size": [
+            0.9,
+            0.02,
+            0.6
+          ],
+          "footprint": [
+            0.9,
+            0.6
+          ],
+          "tags": [
+            "rug",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.45,
+              0.0148,
+              0.3
+            ]
+          }
+        },
+        "rug_big": {
+          "node": "rug_big",
+          "size": [
+            2,
+            0.02,
+            1.4
+          ],
+          "footprint": [
+            2,
+            1.4
+          ],
+          "tags": [
+            "rug",
+            "decor",
+            "living"
+          ],
+          "origin": "floor-centre",
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -1.0,
+              0.0,
+              -0.7
+            ],
+            "max": [
+              1.0,
+              0.0148,
+              0.7
+            ]
+          }
+        },
+        "doormat": {
+          "node": "doormat",
+          "size": [
+            0.6,
+            0.02,
+            0.4
+          ],
+          "footprint": [
+            0.6,
+            0.4
+          ],
+          "tags": [
+            "rug",
+            "doormat",
+            "entry"
+          ],
+          "origin": "floor-centre",
+          "triangles": 72,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.3,
+              0.0148,
+              0.2
+            ]
+          }
+        },
+        "curtain_window": {
+          "node": "curtain_window",
+          "size": [
+            1.2,
+            1.4,
+            0.08
+          ],
+          "footprint": [
+            1.2,
+            0.08
+          ],
+          "tags": [
+            "decor",
+            "curtain",
+            "window"
+          ],
+          "origin": "floor-centre",
+          "triangles": 180,
+          "bounds": {
+            "min": [
+              -0.6009,
+              0.0,
+              -0.028
+            ],
+            "max": [
+              0.6003,
+              1.4,
+              0.028
+            ]
+          }
+        }
+      }
+    },
+    {
+      "glb": "furniture/furn_home.glb",
+      "bytes": 1153304,
+      "sha256": "ac6daaab5293cfde9c90ca5b9c6b874079d696ee411973c908d7225421534e50",
+      "assets": {
+        "bed_single": {
+          "node": "bed_single",
+          "size": [
+            0.9,
+            0.6,
+            1.9
+          ],
+          "footprint": [
+            0.9,
+            1.9
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "single"
+          ],
+          "origin": "floor-centre",
+          "triangles": 888,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.95
+            ],
+            "max": [
+              0.45,
+              0.59,
+              0.95
+            ]
+          }
+        },
+        "bed_single_metal": {
+          "node": "bed_single_metal",
+          "size": [
+            0.95,
+            0.95,
+            1.95
+          ],
+          "footprint": [
+            0.95,
+            1.95
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "single",
+            "metal"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1008,
+          "bounds": {
+            "min": [
+              -0.475,
+              0.0,
+              -0.975
+            ],
+            "max": [
+              0.475,
+              0.94,
+              0.975
+            ]
+          }
+        },
+        "bed_double": {
+          "node": "bed_double",
+          "size": [
+            1.4,
+            0.65,
+            1.9
+          ],
+          "footprint": [
+            1.4,
+            1.9
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "double"
+          ],
+          "origin": "floor-centre",
+          "triangles": 996,
+          "bounds": {
+            "min": [
+              -0.7,
+              0.0,
+              -0.95
+            ],
+            "max": [
+              0.7,
+              0.64,
+              0.95
+            ]
+          }
+        },
+        "bed_double_wood": {
+          "node": "bed_double_wood",
+          "size": [
+            1.55,
+            1,
+            2
+          ],
+          "footprint": [
+            1.55,
+            2
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "double"
+          ],
+          "origin": "floor-centre",
+          "triangles": 996,
+          "bounds": {
+            "min": [
+              -0.775,
+              0.0,
+              -1.0
+            ],
+            "max": [
+              0.775,
+              0.99,
+              1.0
+            ]
+          }
+        },
+        "bed_bunk": {
+          "node": "bed_bunk",
+          "size": [
+            0.95,
+            1.75,
+            1.95
+          ],
+          "footprint": [
+            0.95,
+            1.95
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "bunk"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1260,
+          "bounds": {
+            "min": [
+              -0.475,
+              0.0,
+              -0.975
+            ],
+            "max": [
+              0.475,
+              1.75,
+              0.975
+            ]
+          }
+        },
+        "bed_cot": {
+          "node": "bed_cot",
+          "size": [
+            0.72,
+            0.5,
+            1.85
+          ],
+          "footprint": [
+            0.72,
+            1.85
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "cot"
+          ],
+          "origin": "floor-centre",
+          "triangles": 452,
+          "bounds": {
+            "min": [
+              -0.36,
+              -0.017686,
+              -0.925
+            ],
+            "max": [
+              0.36,
+              0.47,
+              0.925
+            ]
+          }
+        },
+        "bed_crib": {
+          "node": "bed_crib",
+          "size": [
+            0.7,
+            0.95,
+            1.25
+          ],
+          "footprint": [
+            0.7,
+            1.25
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "crib",
+            "baby"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1404,
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.625
+            ],
+            "max": [
+              0.35,
+              0.95,
+              0.625
+            ]
+          }
+        },
+        "mattress_floor": {
+          "node": "mattress_floor",
+          "size": [
+            0.9,
+            0.22,
+            1.9
+          ],
+          "footprint": [
+            0.9,
+            1.9
+          ],
+          "tags": [
+            "bed",
+            "sleep",
+            "mattress"
+          ],
+          "origin": "floor-centre",
+          "triangles": 336,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.95
+            ],
+            "max": [
+              0.45,
+              0.205,
+              0.95
+            ]
+          }
+        },
+        "mattress_leaning": {
+          "node": "mattress_leaning",
+          "size": [
+            0.9,
+            1.7,
+            0.34
+          ],
+          "footprint": [
+            0.9,
+            0.34
+          ],
+          "tags": [
+            "sleep",
+            "mattress",
+            "lean",
+            "storage"
+          ],
+          "origin": "floor-centre",
+          "triangles": 396,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.17
+            ],
+            "max": [
+              0.45,
+              1.7,
+              0.173464
+            ]
+          }
+        },
+        "nightstand_a": {
+          "node": "nightstand_a",
+          "size": [
+            0.42,
+            0.55,
+            0.38
+          ],
+          "footprint": [
+            0.42,
+            0.38
+          ],
+          "tags": [
+            "storage",
+            "nightstand"
+          ],
+          "origin": "floor-centre",
+          "triangles": 114,
+          "bounds": {
+            "min": [
+              -0.21,
+              0.0,
+              -0.19
+            ],
+            "max": [
+              0.21,
+              0.55,
+              0.214934
+            ]
+          }
+        },
+        "nightstand_b": {
+          "node": "nightstand_b",
+          "size": [
+            0.45,
+            0.5,
+            0.4
+          ],
+          "footprint": [
+            0.45,
+            0.4
+          ],
+          "tags": [
+            "storage",
+            "nightstand"
+          ],
+          "origin": "floor-centre",
+          "triangles": 114,
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.225,
+              0.5,
+              0.224934
+            ]
+          }
+        },
+        "ironing_board": {
+          "node": "ironing_board",
+          "size": [
+            1.2,
+            0.9,
+            0.35
+          ],
+          "footprint": [
+            1.2,
+            0.35
+          ],
+          "tags": [
+            "laundry",
+            "ironing"
+          ],
+          "origin": "floor-centre",
+          "triangles": 224,
+          "bounds": {
+            "min": [
+              -0.6,
+              -0.003513,
+              -0.175
+            ],
+            "max": [
+              0.6,
+              0.9,
+              0.175
+            ]
+          }
+        },
+        "wardrobe_2": {
+          "node": "wardrobe_2",
+          "size": [
+            1,
+            2,
+            0.55
+          ],
+          "footprint": [
+            1,
+            0.55
+          ],
+          "tags": [
+            "storage",
+            "wardrobe",
+            "bedroom"
+          ],
+          "origin": "floor-centre",
+          "triangles": 186,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.5,
+              2.0,
+              0.299934
+            ]
+          }
+        },
+        "wardrobe_3": {
+          "node": "wardrobe_3",
+          "size": [
+            1.5,
+            2,
+            0.56
+          ],
+          "footprint": [
+            1.5,
+            0.56
+          ],
+          "tags": [
+            "storage",
+            "wardrobe",
+            "bedroom"
+          ],
+          "origin": "floor-centre",
+          "triangles": 258,
+          "bounds": {
+            "min": [
+              -0.75,
+              0.0,
+              -0.28
+            ],
+            "max": [
+              0.75,
+              2.0,
+              0.304934
+            ]
+          }
+        },
+        "wardrobe_metal": {
+          "node": "wardrobe_metal",
+          "size": [
+            0.9,
+            1.9,
+            0.5
+          ],
+          "footprint": [
+            0.9,
+            0.5
+          ],
+          "tags": [
+            "storage",
+            "wardrobe",
+            "metal"
+          ],
+          "origin": "floor-centre",
+          "triangles": 258,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.45,
+              1.9,
+              0.274934
+            ]
+          }
+        },
+        "dresser_4": {
+          "node": "dresser_4",
+          "size": [
+            0.9,
+            1.1,
+            0.45
+          ],
+          "footprint": [
+            0.9,
+            0.45
+          ],
+          "tags": [
+            "storage",
+            "dresser",
+            "bedroom"
+          ],
+          "origin": "floor-centre",
+          "triangles": 282,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              0.45,
+              1.1,
+              0.249986
+            ]
+          }
+        },
+        "dresser_low": {
+          "node": "dresser_low",
+          "size": [
+            1.2,
+            0.8,
+            0.45
+          ],
+          "footprint": [
+            1.2,
+            0.45
+          ],
+          "tags": [
+            "storage",
+            "dresser",
+            "sideboard"
+          ],
+          "origin": "floor-centre",
+          "triangles": 282,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              0.6,
+              0.8,
+              0.249986
+            ]
+          }
+        },
+        "pantry_cabinet": {
+          "node": "pantry_cabinet",
+          "size": [
+            0.9,
+            1.9,
+            0.45
+          ],
+          "footprint": [
+            0.9,
+            0.45
+          ],
+          "tags": [
+            "storage",
+            "pantry",
+            "kitchen"
+          ],
+          "origin": "floor-centre",
+          "triangles": 162,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              0.45,
+              1.9,
+              0.249934
+            ]
+          }
+        },
+        "filing_cabinet": {
+          "node": "filing_cabinet",
+          "size": [
+            0.45,
+            1.3,
+            0.6
+          ],
+          "footprint": [
+            0.45,
+            0.6
+          ],
+          "tags": [
+            "storage",
+            "filing",
+            "office"
+          ],
+          "origin": "floor-centre",
+          "triangles": 330,
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.225,
+              1.3,
+              0.324973
+            ]
+          }
+        },
+        "locker_pair": {
+          "node": "locker_pair",
+          "size": [
+            0.8,
+            1.8,
+            0.5
+          ],
+          "footprint": [
+            0.8,
+            0.5
+          ],
+          "tags": [
+            "storage",
+            "lockers",
+            "school"
+          ],
+          "origin": "floor-centre",
+          "triangles": 258,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.4,
+              1.8,
+              0.274934
+            ]
+          }
+        },
+        "coat_rack_wall": {
+          "node": "coat_rack_wall",
+          "size": [
+            0.7,
+            0.3,
+            0.12
+          ],
+          "footprint": [
+            0.7,
+            0.12
+          ],
+          "tags": [
+            "storage",
+            "hooks",
+            "entry",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 204,
+          "bounds": {
+            "min": [
+              -0.35,
+              0.187327,
+              -0.047
+            ],
+            "max": [
+              0.35,
+              0.3,
+              0.048
+            ]
+          }
+        },
+        "stove_gas": {
+          "node": "stove_gas",
+          "size": [
+            0.6,
+            0.9,
+            0.62
+          ],
+          "footprint": [
+            0.6,
+            0.62
+          ],
+          "tags": [
+            "kitchen",
+            "stove",
+            "gas"
+          ],
+          "origin": "floor-centre",
+          "triangles": 840,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.31
+            ],
+            "max": [
+              0.3,
+              0.924,
+              0.334993
+            ]
+          }
+        },
+        "gas_cylinder": {
+          "node": "gas_cylinder",
+          "size": [
+            0.32,
+            0.62,
+            0.32
+          ],
+          "footprint": [
+            0.32,
+            0.32
+          ],
+          "tags": [
+            "kitchen",
+            "gas",
+            "pipeta"
+          ],
+          "origin": "floor-centre",
+          "triangles": 284,
+          "bounds": {
+            "min": [
+              -0.16,
+              0,
+              -0.155988
+            ],
+            "max": [
+              0.16,
+              0.62,
+              0.155988
+            ]
+          }
+        },
+        "fridge": {
+          "node": "fridge",
+          "size": [
+            0.65,
+            1.7,
+            0.68
+          ],
+          "footprint": [
+            0.65,
+            0.68
+          ],
+          "tags": [
+            "kitchen",
+            "fridge"
+          ],
+          "origin": "floor-centre",
+          "triangles": 284,
+          "bounds": {
+            "min": [
+              -0.325,
+              0.0,
+              -0.34
+            ],
+            "max": [
+              0.325,
+              1.7,
+              0.364956
+            ]
+          }
+        },
+        "fridge_small": {
+          "node": "fridge_small",
+          "size": [
+            0.5,
+            0.85,
+            0.55
+          ],
+          "footprint": [
+            0.5,
+            0.55
+          ],
+          "tags": [
+            "kitchen",
+            "fridge",
+            "small"
+          ],
+          "origin": "floor-centre",
+          "triangles": 284,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.25,
+              0.85,
+              0.299931
+            ]
+          }
+        },
+        "sink_kitchen": {
+          "node": "sink_kitchen",
+          "size": [
+            1.2,
+            0.92,
+            0.55
+          ],
+          "footprint": [
+            1.2,
+            0.55
+          ],
+          "tags": [
+            "kitchen",
+            "sink",
+            "counter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 520,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.06,
+              -0.275
+            ],
+            "max": [
+              0.6,
+              1.110359,
+              0.299923
+            ]
+          }
+        },
+        "counter_base": {
+          "node": "counter_base",
+          "size": [
+            0.6,
+            0.9,
+            0.6
+          ],
+          "footprint": [
+            0.6,
+            0.6
+          ],
+          "tags": [
+            "kitchen",
+            "counter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 210,
+          "bounds": {
+            "min": [
+              -0.306,
+              0.0,
+              -0.306
+            ],
+            "max": [
+              0.306,
+              0.9,
+              0.324934
+            ]
+          }
+        },
+        "counter_base_long": {
+          "node": "counter_base_long",
+          "size": [
+            1.8,
+            0.92,
+            0.6
+          ],
+          "footprint": [
+            1.8,
+            0.6
+          ],
+          "tags": [
+            "kitchen",
+            "counter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 330,
+          "bounds": {
+            "min": [
+              -0.906,
+              0.0,
+              -0.306
+            ],
+            "max": [
+              0.906,
+              0.92,
+              0.324934
+            ]
+          }
+        },
+        "kitchen_upper": {
+          "node": "kitchen_upper",
+          "size": [
+            0.9,
+            0.7,
+            0.34
+          ],
+          "footprint": [
+            0.9,
+            0.34
+          ],
+          "tags": [
+            "kitchen",
+            "upper",
+            "cabinet"
+          ],
+          "origin": "floor-centre",
+          "triangles": 130,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.17
+            ],
+            "max": [
+              0.45,
+              0.7,
+              0.194934
+            ]
+          }
+        },
+        "pot_rack_wall": {
+          "node": "pot_rack_wall",
+          "size": [
+            0.8,
+            0.5,
+            0.15
+          ],
+          "footprint": [
+            0.8,
+            0.15
+          ],
+          "tags": [
+            "kitchen",
+            "pots",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 444,
+          "bounds": {
+            "min": [
+              -0.42,
+              0.08,
+              -0.056
+            ],
+            "max": [
+              0.42,
+              0.5,
+              0.0585
+            ]
+          }
+        },
+        "water_stand": {
+          "node": "water_stand",
+          "size": [
+            0.32,
+            1.05,
+            0.32
+          ],
+          "footprint": [
+            0.32,
+            0.32
+          ],
+          "tags": [
+            "kitchen",
+            "water",
+            "botellon"
+          ],
+          "origin": "floor-centre",
+          "triangles": 212,
+          "bounds": {
+            "min": [
+              -0.1504,
+              0.0,
+              -0.146629
+            ],
+            "max": [
+              0.1504,
+              1.0185,
+              0.174
+            ]
+          }
+        },
+        "washing_machine": {
+          "node": "washing_machine",
+          "size": [
+            0.6,
+            0.95,
+            0.6
+          ],
+          "footprint": [
+            0.6,
+            0.6
+          ],
+          "tags": [
+            "laundry",
+            "washing",
+            "machine"
+          ],
+          "origin": "floor-centre",
+          "triangles": 320,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.3,
+              0.95,
+              0.341
+            ]
+          }
+        },
+        "lavadero": {
+          "node": "lavadero",
+          "size": [
+            1,
+            0.9,
+            0.6
+          ],
+          "footprint": [
+            1,
+            0.6
+          ],
+          "tags": [
+            "laundry",
+            "wash",
+            "pila",
+            "patio"
+          ],
+          "origin": "floor-centre",
+          "triangles": 444,
+          "bounds": {
+            "min": [
+              -0.48,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.5,
+              1.090359,
+              0.3
+            ]
+          }
+        },
+        "bucket_big": {
+          "node": "bucket_big",
+          "size": [
+            0.5,
+            0.7,
+            0.5
+          ],
+          "footprint": [
+            0.5,
+            0.5
+          ],
+          "tags": [
+            "laundry",
+            "bucket",
+            "water"
+          ],
+          "origin": "floor-centre",
+          "triangles": 332,
+          "bounds": {
+            "min": [
+              -0.256,
+              0,
+              -0.249582
+            ],
+            "max": [
+              0.256,
+              0.674428,
+              0.249582
+            ]
+          }
+        },
+        "drying_rack": {
+          "node": "drying_rack",
+          "size": [
+            1,
+            1,
+            0.5
+          ],
+          "footprint": [
+            1,
+            0.5
+          ],
+          "tags": [
+            "laundry",
+            "drying",
+            "tendedero"
+          ],
+          "origin": "floor-centre",
+          "triangles": 284,
+          "bounds": {
+            "min": [
+              -0.5,
+              -0.004395,
+              -0.22933
+            ],
+            "max": [
+              0.5,
+              0.99,
+              0.22933
+            ]
+          }
+        },
+        "laundry_basket": {
+          "node": "laundry_basket",
+          "size": [
+            0.45,
+            0.45,
+            0.35
+          ],
+          "footprint": [
+            0.45,
+            0.35
+          ],
+          "tags": [
+            "laundry",
+            "basket"
+          ],
+          "origin": "floor-centre",
+          "triangles": 476,
+          "bounds": {
+            "min": [
+              -0.181,
+              0,
+              -0.176462
+            ],
+            "max": [
+              0.181,
+              0.426678,
+              0.176462
+            ]
+          }
+        },
+        "clothesline": {
+          "node": "clothesline",
+          "size": [
+            2.4,
+            0.55,
+            0.05
+          ],
+          "footprint": [
+            2.4,
+            0.05
+          ],
+          "tags": [
+            "laundry",
+            "line",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 210,
+          "bounds": {
+            "min": [
+              -1.20019,
+              0.061,
+              -0.006
+            ],
+            "max": [
+              1.20019,
+              0.553799,
+              0.014
+            ]
+          }
+        },
+        "toilet": {
+          "node": "toilet",
+          "size": [
+            0.4,
+            0.78,
+            0.7
+          ],
+          "footprint": [
+            0.4,
+            0.7
+          ],
+          "tags": [
+            "bath",
+            "toilet"
+          ],
+          "origin": "floor-centre",
+          "triangles": 580,
+          "bounds": {
+            "min": [
+              -0.2,
+              0,
+              -0.331
+            ],
+            "max": [
+              0.2,
+              0.78,
+              0.344
+            ]
+          }
+        },
+        "basin_pedestal": {
+          "node": "basin_pedestal",
+          "size": [
+            0.5,
+            0.85,
+            0.42
+          ],
+          "footprint": [
+            0.5,
+            0.42
+          ],
+          "tags": [
+            "bath",
+            "basin"
+          ],
+          "origin": "floor-centre",
+          "triangles": 400,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.2
+            ],
+            "max": [
+              0.25,
+              1.010359,
+              0.22
+            ]
+          }
+        },
+        "basin_vanity": {
+          "node": "basin_vanity",
+          "size": [
+            0.6,
+            0.85,
+            0.45
+          ],
+          "footprint": [
+            0.6,
+            0.45
+          ],
+          "tags": [
+            "bath",
+            "basin",
+            "vanity"
+          ],
+          "origin": "floor-centre",
+          "triangles": 412,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.04,
+              -0.215
+            ],
+            "max": [
+              0.3,
+              1.010359,
+              0.235
+            ]
+          }
+        },
+        "shower_tray": {
+          "node": "shower_tray",
+          "size": [
+            0.9,
+            2.1,
+            0.9
+          ],
+          "footprint": [
+            0.9,
+            0.9
+          ],
+          "tags": [
+            "bath",
+            "shower",
+            "electric"
+          ],
+          "origin": "floor-centre",
+          "triangles": 316,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.45,
+              1.963199,
+              0.45
+            ]
+          }
+        },
+        "shower_head_electric": {
+          "node": "shower_head_electric",
+          "size": [
+            0.2,
+            0.5,
+            0.2
+          ],
+          "footprint": [
+            0.2,
+            0.2
+          ],
+          "tags": [
+            "bath",
+            "shower",
+            "head",
+            "heater",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 174,
+          "bounds": {
+            "min": [
+              -0.075,
+              0.0,
+              -0.073
+            ],
+            "max": [
+              0.082734,
+              0.501647,
+              0.085
+            ]
+          }
+        },
+        "mirror_bath": {
+          "node": "mirror_bath",
+          "size": [
+            0.5,
+            0.7,
+            0.03
+          ],
+          "footprint": [
+            0.5,
+            0.03
+          ],
+          "tags": [
+            "bath",
+            "mirror",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 24,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.015
+            ],
+            "max": [
+              0.25,
+              0.7,
+              0.019
+            ]
+          }
+        },
+        "towel_rail": {
+          "node": "towel_rail",
+          "size": [
+            0.6,
+            0.15,
+            0.1
+          ],
+          "footprint": [
+            0.6,
+            0.1
+          ],
+          "tags": [
+            "bath",
+            "towel",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 216,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.041
+            ],
+            "max": [
+              0.3,
+              0.15,
+              0.043
+            ]
+          }
+        },
+        "trash_bin": {
+          "node": "trash_bin",
+          "size": [
+            0.28,
+            0.35,
+            0.28
+          ],
+          "footprint": [
+            0.28,
+            0.28
+          ],
+          "tags": [
+            "bath",
+            "trash",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 196,
+          "bounds": {
+            "min": [
+              -0.146,
+              0,
+              -0.142339
+            ],
+            "max": [
+              0.146,
+              0.35,
+              0.142339
+            ]
+          }
+        },
+        "photocopier": {
+          "node": "photocopier",
+          "size": [
+            0.7,
+            0.95,
+            0.6
+          ],
+          "footprint": [
+            0.7,
+            0.6
+          ],
+          "tags": [
+            "electronics",
+            "photocopier",
+            "shop"
+          ],
+          "origin": "floor-centre",
+          "triangles": 296,
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.35,
+              0.954,
+              0.324972
+            ]
+          }
+        },
+        "mirror_wall": {
+          "node": "mirror_wall",
+          "size": [
+            0.6,
+            0.8,
+            0.03
+          ],
+          "footprint": [
+            0.6,
+            0.03
+          ],
+          "tags": [
+            "decor",
+            "mirror"
+          ],
+          "origin": "floor-centre",
+          "triangles": 24,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.015
+            ],
+            "max": [
+              0.3,
+              0.8,
+              0.019
+            ]
+          }
+        },
+        "mirror_barber": {
+          "node": "mirror_barber",
+          "size": [
+            1.4,
+            1,
+            0.03
+          ],
+          "footprint": [
+            1.4,
+            0.03
+          ],
+          "tags": [
+            "decor",
+            "mirror",
+            "barber",
+            "shop"
+          ],
+          "origin": "floor-centre",
+          "triangles": 24,
+          "bounds": {
+            "min": [
+              -0.7,
+              0.0,
+              -0.015
+            ],
+            "max": [
+              0.7,
+              1.0,
+              0.019
+            ]
+          }
+        },
+        "fridge_drinks": {
+          "node": "fridge_drinks",
+          "size": [
+            0.8,
+            1.9,
+            0.72
+          ],
+          "footprint": [
+            0.8,
+            0.72
+          ],
+          "tags": [
+            "shop",
+            "fridge",
+            "drinks",
+            "tienda",
+            "cafe",
+            "restaurante"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1170,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.36
+            ],
+            "max": [
+              0.4,
+              1.9,
+              0.384984
+            ]
+          }
+        },
+        "meat_hooks": {
+          "node": "meat_hooks",
+          "size": [
+            2,
+            0.5,
+            0.1
+          ],
+          "footprint": [
+            2,
+            0.1
+          ],
+          "tags": [
+            "shop",
+            "hooks",
+            "carniceria",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 348,
+          "bounds": {
+            "min": [
+              -1.0,
+              0.387676,
+              -0.041
+            ],
+            "max": [
+              1.0,
+              0.5,
+              0.041
+            ]
+          }
+        },
+        "fridge_meds": {
+          "node": "fridge_meds",
+          "size": [
+            0.6,
+            1.7,
+            0.6
+          ],
+          "footprint": [
+            0.6,
+            0.6
+          ],
+          "tags": [
+            "shop",
+            "fridge",
+            "drogueria",
+            "meds"
+          ],
+          "origin": "floor-centre",
+          "triangles": 284,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.3,
+              1.7,
+              0.324956
+            ]
+          }
+        },
+        "oil_drum": {
+          "node": "oil_drum",
+          "size": [
+            0.58,
+            0.88,
+            0.58
+          ],
+          "footprint": [
+            0.58,
+            0.58
+          ],
+          "tags": [
+            "workshop",
+            "drum",
+            "taller"
+          ],
+          "origin": "floor-centre",
+          "triangles": 280,
+          "bounds": {
+            "min": [
+              -0.296,
+              0,
+              -0.288579
+            ],
+            "max": [
+              0.296,
+              0.88,
+              0.288579
+            ]
+          }
+        },
+        "tool_cabinet_roll": {
+          "node": "tool_cabinet_roll",
+          "size": [
+            0.7,
+            1,
+            0.5
+          ],
+          "footprint": [
+            0.7,
+            0.5
+          ],
+          "tags": [
+            "workshop",
+            "tools",
+            "cabinet",
+            "taller"
+          ],
+          "origin": "floor-centre",
+          "triangles": 470,
+          "bounds": {
+            "min": [
+              -0.35,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.35,
+              1.0,
+              0.274986
+            ]
+          }
+        },
+        "water_tank_small": {
+          "node": "water_tank_small",
+          "size": [
+            0.8,
+            1,
+            0.8
+          ],
+          "footprint": [
+            0.8,
+            0.8
+          ],
+          "tags": [
+            "terrace",
+            "tank",
+            "water"
+          ],
+          "origin": "floor-centre",
+          "triangles": 328,
+          "bounds": {
+            "min": [
+              -0.406,
+              0,
+              -0.395821
+            ],
+            "max": [
+              0.406,
+              1,
+              0.395821
+            ]
+          }
+        }
+      }
+    },
+    {
+      "glb": "furniture/furn_living.glb",
+      "bytes": 1484012,
+      "sha256": "68a676ec22d4c347148a9f82e99cd494e868723cd556249cf012f4af7ff78c39",
+      "assets": {
+        "sofa_3_vinyl": {
+          "node": "sofa_3_vinyl",
+          "size": [
+            2,
+            0.88,
+            0.9
+          ],
+          "footprint": [
+            2,
+            0.9
+          ],
+          "tags": [
+            "seat",
+            "sofa",
+            "vinyl"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1670,
+          "bounds": {
+            "min": [
+              -1.0,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              1.0,
+              0.85,
+              0.45
+            ]
+          }
+        },
+        "sofa_3_fabric": {
+          "node": "sofa_3_fabric",
+          "size": [
+            1.9,
+            0.85,
+            0.92
+          ],
+          "footprint": [
+            1.9,
+            0.92
+          ],
+          "tags": [
+            "seat",
+            "sofa",
+            "fabric"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1778,
+          "bounds": {
+            "min": [
+              -0.95,
+              0.0,
+              -0.475
+            ],
+            "max": [
+              0.95,
+              0.836,
+              0.46
+            ]
+          }
+        },
+        "sofa_2_fabric": {
+          "node": "sofa_2_fabric",
+          "size": [
+            1.5,
+            0.85,
+            0.88
+          ],
+          "footprint": [
+            1.5,
+            0.88
+          ],
+          "tags": [
+            "seat",
+            "sofa",
+            "fabric"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1346,
+          "bounds": {
+            "min": [
+              -0.75,
+              0.0,
+              -0.455
+            ],
+            "max": [
+              0.75,
+              0.836,
+              0.44
+            ]
+          }
+        },
+        "sofa_2_vinyl": {
+          "node": "sofa_2_vinyl",
+          "size": [
+            1.5,
+            0.88,
+            0.88
+          ],
+          "footprint": [
+            1.5,
+            0.88
+          ],
+          "tags": [
+            "seat",
+            "sofa",
+            "vinyl"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1166,
+          "bounds": {
+            "min": [
+              -0.75,
+              0.0,
+              -0.44
+            ],
+            "max": [
+              0.75,
+              0.85,
+              0.44
+            ]
+          }
+        },
+        "armchair_vinyl": {
+          "node": "armchair_vinyl",
+          "size": [
+            0.85,
+            0.92,
+            0.85
+          ],
+          "footprint": [
+            0.85,
+            0.85
+          ],
+          "tags": [
+            "seat",
+            "armchair",
+            "vinyl"
+          ],
+          "origin": "floor-centre",
+          "triangles": 878,
+          "bounds": {
+            "min": [
+              -0.425,
+              0.0,
+              -0.425
+            ],
+            "max": [
+              0.425,
+              0.89,
+              0.425
+            ]
+          }
+        },
+        "armchair_fabric": {
+          "node": "armchair_fabric",
+          "size": [
+            0.8,
+            0.95,
+            0.82
+          ],
+          "footprint": [
+            0.8,
+            0.82
+          ],
+          "tags": [
+            "seat",
+            "armchair",
+            "fabric"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1130,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.425
+            ],
+            "max": [
+              0.4,
+              0.936,
+              0.41
+            ]
+          }
+        },
+        "rocking_chair": {
+          "node": "rocking_chair",
+          "size": [
+            0.6,
+            1,
+            0.9
+          ],
+          "footprint": [
+            0.6,
+            0.9
+          ],
+          "tags": [
+            "seat",
+            "rocking",
+            "wood"
+          ],
+          "origin": "floor-centre",
+          "triangles": 988,
+          "bounds": {
+            "min": [
+              -0.294,
+              0.013,
+              -0.428865
+            ],
+            "max": [
+              0.294,
+              1.0,
+              0.428865
+            ]
+          }
+        },
+        "chair_wood": {
+          "node": "chair_wood",
+          "size": [
+            0.44,
+            0.9,
+            0.46
+          ],
+          "footprint": [
+            0.44,
+            0.46
+          ],
+          "tags": [
+            "seat",
+            "chair",
+            "wood"
+          ],
+          "origin": "floor-centre",
+          "triangles": 436,
+          "bounds": {
+            "min": [
+              -0.215,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              0.215,
+              0.9,
+              0.225
+            ]
+          }
+        },
+        "chair_wood_padded": {
+          "node": "chair_wood_padded",
+          "size": [
+            0.45,
+            0.92,
+            0.48
+          ],
+          "footprint": [
+            0.45,
+            0.48
+          ],
+          "tags": [
+            "seat",
+            "chair",
+            "wood",
+            "padded"
+          ],
+          "origin": "floor-centre",
+          "triangles": 544,
+          "bounds": {
+            "min": [
+              -0.22,
+              0.0,
+              -0.235
+            ],
+            "max": [
+              0.22,
+              0.92,
+              0.235
+            ]
+          }
+        },
+        "chair_plastic": {
+          "node": "chair_plastic",
+          "size": [
+            0.45,
+            0.82,
+            0.5
+          ],
+          "footprint": [
+            0.45,
+            0.5
+          ],
+          "tags": [
+            "seat",
+            "chair",
+            "plastic"
+          ],
+          "origin": "floor-centre",
+          "triangles": 722,
+          "bounds": {
+            "min": [
+              -0.222962,
+              -0.001081,
+              -0.258473
+            ],
+            "max": [
+              0.222962,
+              0.815031,
+              0.24
+            ]
+          }
+        },
+        "chair_plastic_arm": {
+          "node": "chair_plastic_arm",
+          "size": [
+            0.55,
+            0.82,
+            0.55
+          ],
+          "footprint": [
+            0.55,
+            0.55
+          ],
+          "tags": [
+            "seat",
+            "chair",
+            "plastic",
+            "arm"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1154,
+          "bounds": {
+            "min": [
+              -0.275,
+              -0.001081,
+              -0.283473
+            ],
+            "max": [
+              0.275,
+              0.815031,
+              0.265
+            ]
+          }
+        },
+        "chair_metal": {
+          "node": "chair_metal",
+          "size": [
+            0.42,
+            0.85,
+            0.45
+          ],
+          "footprint": [
+            0.42,
+            0.45
+          ],
+          "tags": [
+            "seat",
+            "chair",
+            "metal"
+          ],
+          "origin": "floor-centre",
+          "triangles": 396,
+          "bounds": {
+            "min": [
+              -0.1974,
+              0.0,
+              -0.1975
+            ],
+            "max": [
+              0.1974,
+              0.85,
+              0.1975
+            ]
+          }
+        },
+        "stool_wood": {
+          "node": "stool_wood",
+          "size": [
+            0.33,
+            0.46,
+            0.33
+          ],
+          "footprint": [
+            0.33,
+            0.33
+          ],
+          "tags": [
+            "seat",
+            "stool",
+            "wood"
+          ],
+          "origin": "floor-centre",
+          "triangles": 120,
+          "bounds": {
+            "min": [
+              -0.165,
+              0.0,
+              -0.165
+            ],
+            "max": [
+              0.165,
+              0.46,
+              0.165
+            ]
+          }
+        },
+        "stool_bar": {
+          "node": "stool_bar",
+          "size": [
+            0.36,
+            0.72,
+            0.36
+          ],
+          "footprint": [
+            0.36,
+            0.36
+          ],
+          "tags": [
+            "seat",
+            "stool",
+            "bar"
+          ],
+          "origin": "floor-centre",
+          "triangles": 236,
+          "bounds": {
+            "min": [
+              -0.18,
+              0.0,
+              -0.18
+            ],
+            "max": [
+              0.18,
+              0.68,
+              0.18
+            ]
+          }
+        },
+        "stool_plastic": {
+          "node": "stool_plastic",
+          "size": [
+            0.32,
+            0.42,
+            0.32
+          ],
+          "footprint": [
+            0.32,
+            0.32
+          ],
+          "tags": [
+            "seat",
+            "stool",
+            "plastic"
+          ],
+          "origin": "floor-centre",
+          "triangles": 164,
+          "bounds": {
+            "min": [
+              -0.16,
+              0.0,
+              -0.16
+            ],
+            "max": [
+              0.16,
+              0.42,
+              0.16
+            ]
+          }
+        },
+        "pouf": {
+          "node": "pouf",
+          "size": [
+            0.42,
+            0.4,
+            0.42
+          ],
+          "footprint": [
+            0.42,
+            0.42
+          ],
+          "tags": [
+            "seat",
+            "pouf"
+          ],
+          "origin": "floor-centre",
+          "triangles": 192,
+          "bounds": {
+            "min": [
+              -0.212,
+              0.0,
+              -0.212
+            ],
+            "max": [
+              0.212,
+              0.4,
+              0.212
+            ]
+          }
+        },
+        "bench_wood": {
+          "node": "bench_wood",
+          "size": [
+            1.4,
+            0.46,
+            0.38
+          ],
+          "footprint": [
+            1.4,
+            0.38
+          ],
+          "tags": [
+            "seat",
+            "bench",
+            "wood"
+          ],
+          "origin": "floor-centre",
+          "triangles": 132,
+          "bounds": {
+            "min": [
+              -0.7,
+              0.0,
+              -0.1558
+            ],
+            "max": [
+              0.7,
+              0.43,
+              0.172
+            ]
+          }
+        },
+        "bench_pew": {
+          "node": "bench_pew",
+          "size": [
+            2.2,
+            0.95,
+            0.6
+          ],
+          "footprint": [
+            2.2,
+            0.6
+          ],
+          "tags": [
+            "seat",
+            "bench",
+            "pew",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 588,
+          "bounds": {
+            "min": [
+              -1.1,
+              0.0,
+              -0.246
+            ],
+            "max": [
+              1.1,
+              0.95,
+              0.26
+            ]
+          }
+        },
+        "bench_pew_short": {
+          "node": "bench_pew_short",
+          "size": [
+            1.6,
+            0.95,
+            0.6
+          ],
+          "footprint": [
+            1.6,
+            0.6
+          ],
+          "tags": [
+            "seat",
+            "bench",
+            "pew",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 588,
+          "bounds": {
+            "min": [
+              -0.8,
+              0.0,
+              -0.246
+            ],
+            "max": [
+              0.8,
+              0.95,
+              0.26
+            ]
+          }
+        },
+        "waiting_row": {
+          "node": "waiting_row",
+          "size": [
+            1.6,
+            0.85,
+            0.55
+          ],
+          "footprint": [
+            1.6,
+            0.55
+          ],
+          "tags": [
+            "seat",
+            "bench",
+            "waiting",
+            "clinic"
+          ],
+          "origin": "floor-centre",
+          "triangles": 872,
+          "bounds": {
+            "min": [
+              -0.773333,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.773333,
+              0.85,
+              0.25
+            ]
+          }
+        },
+        "barber_chair": {
+          "node": "barber_chair",
+          "size": [
+            0.7,
+            1.1,
+            0.95
+          ],
+          "footprint": [
+            0.7,
+            0.95
+          ],
+          "tags": [
+            "seat",
+            "barber",
+            "shop"
+          ],
+          "origin": "floor-centre",
+          "triangles": 872,
+          "bounds": {
+            "min": [
+              -0.3435,
+              0,
+              -0.301
+            ],
+            "max": [
+              0.3435,
+              1.1,
+              0.456
+            ]
+          }
+        },
+        "office_chair": {
+          "node": "office_chair",
+          "size": [
+            0.56,
+            0.95,
+            0.56
+          ],
+          "footprint": [
+            0.56,
+            0.56
+          ],
+          "tags": [
+            "seat",
+            "chair",
+            "office"
+          ],
+          "origin": "floor-centre",
+          "triangles": 500,
+          "bounds": {
+            "min": [
+              -0.2296,
+              0.0,
+              -0.242711
+            ],
+            "max": [
+              0.2359,
+              0.95,
+              0.2472
+            ]
+          }
+        },
+        "desk_school": {
+          "node": "desk_school",
+          "size": [
+            0.62,
+            0.78,
+            0.82
+          ],
+          "footprint": [
+            0.62,
+            0.82
+          ],
+          "tags": [
+            "school",
+            "desk",
+            "seat"
+          ],
+          "origin": "floor-centre",
+          "triangles": 492,
+          "bounds": {
+            "min": [
+              -0.31,
+              -0.00122,
+              -0.369
+            ],
+            "max": [
+              0.31,
+              0.78,
+              0.369
+            ]
+          }
+        },
+        "table_formica_4": {
+          "node": "table_formica_4",
+          "size": [
+            1,
+            0.75,
+            0.7
+          ],
+          "footprint": [
+            1,
+            0.7
+          ],
+          "tags": [
+            "table",
+            "formica",
+            "kitchen"
+          ],
+          "origin": "floor-centre",
+          "triangles": 504,
+          "bounds": {
+            "min": [
+              -0.515,
+              0.0,
+              -0.365
+            ],
+            "max": [
+              0.515,
+              0.762,
+              0.365
+            ]
+          }
+        },
+        "table_formica_6": {
+          "node": "table_formica_6",
+          "size": [
+            1.4,
+            0.75,
+            0.8
+          ],
+          "footprint": [
+            1.4,
+            0.8
+          ],
+          "tags": [
+            "table",
+            "formica",
+            "dining"
+          ],
+          "origin": "floor-centre",
+          "triangles": 504,
+          "bounds": {
+            "min": [
+              -0.715,
+              0.0,
+              -0.415
+            ],
+            "max": [
+              0.715,
+              0.762,
+              0.415
+            ]
+          }
+        },
+        "table_wood_6": {
+          "node": "table_wood_6",
+          "size": [
+            1.6,
+            0.75,
+            0.85
+          ],
+          "footprint": [
+            1.6,
+            0.85
+          ],
+          "tags": [
+            "table",
+            "wood",
+            "dining"
+          ],
+          "origin": "floor-centre",
+          "triangles": 756,
+          "bounds": {
+            "min": [
+              -0.8,
+              0,
+              -0.425
+            ],
+            "max": [
+              0.8,
+              0.75,
+              0.425
+            ]
+          }
+        },
+        "table_plastic": {
+          "node": "table_plastic",
+          "size": [
+            0.85,
+            0.73,
+            0.85
+          ],
+          "footprint": [
+            0.85,
+            0.85
+          ],
+          "tags": [
+            "table",
+            "plastic"
+          ],
+          "origin": "floor-centre",
+          "triangles": 198,
+          "bounds": {
+            "min": [
+              -0.425,
+              0.0,
+              -0.425
+            ],
+            "max": [
+              0.425,
+              0.73,
+              0.425
+            ]
+          }
+        },
+        "table_round_small": {
+          "node": "table_round_small",
+          "size": [
+            0.7,
+            0.72,
+            0.7
+          ],
+          "footprint": [
+            0.7,
+            0.7
+          ],
+          "tags": [
+            "table",
+            "round"
+          ],
+          "origin": "floor-centre",
+          "triangles": 192,
+          "bounds": {
+            "min": [
+              -0.35,
+              0.00532,
+              -0.35
+            ],
+            "max": [
+              0.35,
+              0.72,
+              0.35
+            ]
+          }
+        },
+        "table_cafe_round": {
+          "node": "table_cafe_round",
+          "size": [
+            0.62,
+            0.74,
+            0.62
+          ],
+          "footprint": [
+            0.62,
+            0.62
+          ],
+          "tags": [
+            "table",
+            "round",
+            "cafe"
+          ],
+          "origin": "floor-centre",
+          "triangles": 192,
+          "bounds": {
+            "min": [
+              -0.31,
+              0.005543,
+              -0.31
+            ],
+            "max": [
+              0.31,
+              0.74,
+              0.31
+            ]
+          }
+        },
+        "coffee_table": {
+          "node": "coffee_table",
+          "size": [
+            1,
+            0.45,
+            0.55
+          ],
+          "footprint": [
+            1,
+            0.55
+          ],
+          "tags": [
+            "table",
+            "coffee",
+            "living"
+          ],
+          "origin": "floor-centre",
+          "triangles": 176,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.5,
+              0.45,
+              0.275
+            ]
+          }
+        },
+        "side_table": {
+          "node": "side_table",
+          "size": [
+            0.45,
+            0.55,
+            0.45
+          ],
+          "footprint": [
+            0.45,
+            0.45
+          ],
+          "tags": [
+            "table",
+            "side"
+          ],
+          "origin": "floor-centre",
+          "triangles": 164,
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              0.225,
+              0.55,
+              0.225
+            ]
+          }
+        },
+        "desk_wood": {
+          "node": "desk_wood",
+          "size": [
+            1.2,
+            0.75,
+            0.6
+          ],
+          "footprint": [
+            1.2,
+            0.6
+          ],
+          "tags": [
+            "table",
+            "desk",
+            "work"
+          ],
+          "origin": "floor-centre",
+          "triangles": 248,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.6,
+              0.75,
+              0.3
+            ]
+          }
+        },
+        "desk_student": {
+          "node": "desk_student",
+          "size": [
+            1,
+            0.76,
+            0.55
+          ],
+          "footprint": [
+            1,
+            0.55
+          ],
+          "tags": [
+            "table",
+            "desk",
+            "study"
+          ],
+          "origin": "floor-centre",
+          "triangles": 248,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.5,
+              0.76,
+              0.275
+            ]
+          }
+        },
+        "desk_teacher": {
+          "node": "desk_teacher",
+          "size": [
+            1.3,
+            0.78,
+            0.65
+          ],
+          "footprint": [
+            1.3,
+            0.65
+          ],
+          "tags": [
+            "table",
+            "desk",
+            "teacher",
+            "school"
+          ],
+          "origin": "floor-centre",
+          "triangles": 248,
+          "bounds": {
+            "min": [
+              -0.65,
+              0.0,
+              -0.325
+            ],
+            "max": [
+              0.65,
+              0.78,
+              0.325
+            ]
+          }
+        },
+        "desk_office": {
+          "node": "desk_office",
+          "size": [
+            1.4,
+            0.75,
+            0.7
+          ],
+          "footprint": [
+            1.4,
+            0.7
+          ],
+          "tags": [
+            "table",
+            "desk",
+            "office"
+          ],
+          "origin": "floor-centre",
+          "triangles": 248,
+          "bounds": {
+            "min": [
+              -0.7,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.7,
+              0.75,
+              0.35
+            ]
+          }
+        },
+        "workbench": {
+          "node": "workbench",
+          "size": [
+            1.8,
+            0.9,
+            0.7
+          ],
+          "footprint": [
+            1.8,
+            0.7
+          ],
+          "tags": [
+            "table",
+            "workbench",
+            "workshop"
+          ],
+          "origin": "floor-centre",
+          "triangles": 232,
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.9,
+              1.035,
+              0.35
+            ]
+          }
+        },
+        "workbench_metal": {
+          "node": "workbench_metal",
+          "size": [
+            1.8,
+            0.95,
+            0.7
+          ],
+          "footprint": [
+            1.8,
+            0.7
+          ],
+          "tags": [
+            "table",
+            "workbench",
+            "workshop",
+            "metal"
+          ],
+          "origin": "floor-centre",
+          "triangles": 232,
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.9,
+              1.085,
+              0.35
+            ]
+          }
+        },
+        "sewing_table": {
+          "node": "sewing_table",
+          "size": [
+            1.2,
+            0.78,
+            0.55
+          ],
+          "footprint": [
+            1.2,
+            0.55
+          ],
+          "tags": [
+            "table",
+            "sewing",
+            "modista"
+          ],
+          "origin": "floor-centre",
+          "triangles": 248,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.275
+            ],
+            "max": [
+              0.6,
+              0.78,
+              0.275
+            ]
+          }
+        },
+        "cutting_table": {
+          "node": "cutting_table",
+          "size": [
+            1.9,
+            0.85,
+            1
+          ],
+          "footprint": [
+            1.9,
+            1
+          ],
+          "tags": [
+            "table",
+            "cutting",
+            "modista"
+          ],
+          "origin": "floor-centre",
+          "triangles": 164,
+          "bounds": {
+            "min": [
+              -0.95,
+              0.0,
+              -0.5
+            ],
+            "max": [
+              0.95,
+              0.85,
+              0.5
+            ]
+          }
+        },
+        "folding_table": {
+          "node": "folding_table",
+          "size": [
+            1.2,
+            0.74,
+            0.6
+          ],
+          "footprint": [
+            1.2,
+            0.6
+          ],
+          "tags": [
+            "table",
+            "folding",
+            "hall"
+          ],
+          "origin": "floor-centre",
+          "triangles": 212,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.3
+            ],
+            "max": [
+              0.6,
+              0.74,
+              0.3
+            ]
+          }
+        },
+        "dough_table": {
+          "node": "dough_table",
+          "size": [
+            1.8,
+            0.9,
+            0.8
+          ],
+          "footprint": [
+            1.8,
+            0.8
+          ],
+          "tags": [
+            "table",
+            "dough",
+            "bakery",
+            "shop"
+          ],
+          "origin": "floor-centre",
+          "triangles": 216,
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.4
+            ],
+            "max": [
+              0.9,
+              0.96,
+              0.4
+            ]
+          }
+        },
+        "table_pingpong": {
+          "node": "table_pingpong",
+          "size": [
+            2.74,
+            0.76,
+            1.52
+          ],
+          "footprint": [
+            2.74,
+            1.52
+          ],
+          "tags": [
+            "table",
+            "pingpong",
+            "hall",
+            "game"
+          ],
+          "origin": "floor-centre",
+          "triangles": 344,
+          "bounds": {
+            "min": [
+              -1.37,
+              0.0,
+              -0.76
+            ],
+            "max": [
+              1.37,
+              0.91,
+              0.76
+            ]
+          }
+        },
+        "table_foosball": {
+          "node": "table_foosball",
+          "size": [
+            1.4,
+            0.9,
+            0.75
+          ],
+          "footprint": [
+            1.4,
+            0.75
+          ],
+          "tags": [
+            "table",
+            "foosball",
+            "hall",
+            "game"
+          ],
+          "origin": "floor-centre",
+          "triangles": 692,
+          "bounds": {
+            "min": [
+              -0.7,
+              0.0,
+              -0.37
+            ],
+            "max": [
+              0.7,
+              0.9,
+              0.37
+            ]
+          }
+        },
+        "tv_stand": {
+          "node": "tv_stand",
+          "size": [
+            1.2,
+            0.5,
+            0.4
+          ],
+          "footprint": [
+            1.2,
+            0.4
+          ],
+          "tags": [
+            "storage",
+            "tvstand",
+            "living"
+          ],
+          "origin": "floor-centre",
+          "triangles": 938,
+          "bounds": {
+            "min": [
+              -0.61,
+              0.0,
+              -0.21
+            ],
+            "max": [
+              0.61,
+              0.5,
+              0.212
+            ]
+          }
+        },
+        "tv_flat": {
+          "node": "tv_flat",
+          "size": [
+            0.78,
+            0.5,
+            0.1
+          ],
+          "footprint": [
+            0.78,
+            0.1
+          ],
+          "tags": [
+            "tv",
+            "screen",
+            "electronics"
+          ],
+          "origin": "floor-centre",
+          "triangles": 780,
+          "bounds": {
+            "min": [
+              -0.39,
+              0.0,
+              -0.06
+            ],
+            "max": [
+              0.39,
+              0.5,
+              0.0515
+            ]
+          }
+        },
+        "tv_crt": {
+          "node": "tv_crt",
+          "size": [
+            0.55,
+            0.45,
+            0.4
+          ],
+          "footprint": [
+            0.55,
+            0.4
+          ],
+          "tags": [
+            "tv",
+            "screen",
+            "electronics",
+            "crt"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1216,
+          "bounds": {
+            "min": [
+              -0.275,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.275,
+              0.45,
+              0.212
+            ]
+          }
+        },
+        "tv_wall": {
+          "node": "tv_wall",
+          "size": [
+            0.9,
+            0.55,
+            0.08
+          ],
+          "footprint": [
+            0.9,
+            0.08
+          ],
+          "tags": [
+            "tv",
+            "screen",
+            "electronics",
+            "wall"
+          ],
+          "origin": "floor-centre",
+          "triangles": 660,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.05
+            ],
+            "max": [
+              0.45,
+              0.55,
+              0.0415
+            ]
+          }
+        },
+        "fan_ceiling": {
+          "node": "fan_ceiling",
+          "size": [
+            1.1,
+            0.35,
+            1.1
+          ],
+          "footprint": [
+            1.1,
+            1.1
+          ],
+          "tags": [
+            "fan",
+            "ceiling",
+            "dyn"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1108,
+          "bounds": {
+            "min": [
+              -0.108,
+              0.0,
+              -0.106901
+            ],
+            "max": [
+              0.108,
+              0.35,
+              0.106901
+            ]
+          }
+        },
+        "lamp_floor": {
+          "node": "lamp_floor",
+          "size": [
+            0.35,
+            1.55,
+            0.35
+          ],
+          "footprint": [
+            0.35,
+            0.35
+          ],
+          "tags": [
+            "light",
+            "lamp",
+            "floor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 480,
+          "bounds": {
+            "min": [
+              -0.175,
+              0,
+              -0.175
+            ],
+            "max": [
+              0.175,
+              1.53,
+              0.175
+            ]
+          }
+        },
+        "lamp_table": {
+          "node": "lamp_table",
+          "size": [
+            0.25,
+            0.42,
+            0.25
+          ],
+          "footprint": [
+            0.25,
+            0.25
+          ],
+          "tags": [
+            "light",
+            "lamp",
+            "table"
+          ],
+          "origin": "floor-centre",
+          "triangles": 352,
+          "bounds": {
+            "min": [
+              -0.12,
+              0,
+              -0.12
+            ],
+            "max": [
+              0.12,
+              0.41,
+              0.12
+            ]
+          }
+        },
+        "kneeler": {
+          "node": "kneeler",
+          "size": [
+            1.2,
+            0.4,
+            0.4
+          ],
+          "footprint": [
+            1.2,
+            0.4
+          ],
+          "tags": [
+            "religion",
+            "kneeler",
+            "chapel"
+          ],
+          "origin": "floor-centre",
+          "triangles": 132,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.164
+            ],
+            "max": [
+              0.6,
+              0.37,
+              0.18
+            ]
+          }
+        },
+        "shampoo_chair": {
+          "node": "shampoo_chair",
+          "size": [
+            0.7,
+            1.1,
+            1.1
+          ],
+          "footprint": [
+            0.7,
+            1.1
+          ],
+          "tags": [
+            "shop",
+            "chair",
+            "shampoo",
+            "peluqueria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 904,
+          "bounds": {
+            "min": [
+              -0.3435,
+              0,
+              -0.519053
+            ],
+            "max": [
+              0.3435,
+              1.09,
+              0.528
+            ]
+          }
+        },
+        "cobbler_bench": {
+          "node": "cobbler_bench",
+          "size": [
+            1.4,
+            1,
+            0.7
+          ],
+          "footprint": [
+            1.4,
+            0.7
+          ],
+          "tags": [
+            "shop",
+            "bench",
+            "zapateria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 316,
+          "bounds": {
+            "min": [
+              -0.7,
+              0.0,
+              -0.35
+            ],
+            "max": [
+              0.7,
+              1.135,
+              0.35
+            ]
+          }
+        }
+      }
+    },
+    {
+      "glb": "furniture/furn_shop.glb",
+      "bytes": 2381960,
+      "sha256": "dc7892063e1083489bc28070c0e10044b854356dfbba616b7c1f0478323c4069",
+      "assets": {
+        "wall_unit_big": {
+          "node": "wall_unit_big",
+          "size": [
+            2.2,
+            1.9,
+            0.45
+          ],
+          "footprint": [
+            2.2,
+            0.45
+          ],
+          "tags": [
+            "storage",
+            "wallunit",
+            "living",
+            "knickknacks"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1574,
+          "bounds": {
+            "min": [
+              -1.1,
+              0.0,
+              -0.225
+            ],
+            "max": [
+              1.1,
+              1.9,
+              0.225
+            ]
+          }
+        },
+        "wall_unit_small": {
+          "node": "wall_unit_small",
+          "size": [
+            1.6,
+            1.8,
+            0.42
+          ],
+          "footprint": [
+            1.6,
+            0.42
+          ],
+          "tags": [
+            "storage",
+            "wallunit",
+            "living",
+            "knickknacks"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1574,
+          "bounds": {
+            "min": [
+              -0.8,
+              0.0,
+              -0.21
+            ],
+            "max": [
+              0.8,
+              1.8,
+              0.21
+            ]
+          }
+        },
+        "bookshelf": {
+          "node": "bookshelf",
+          "size": [
+            0.8,
+            1.8,
+            0.3
+          ],
+          "footprint": [
+            0.8,
+            0.3
+          ],
+          "tags": [
+            "storage",
+            "shelf",
+            "books"
+          ],
+          "origin": "floor-centre",
+          "triangles": 512,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.15
+            ],
+            "max": [
+              0.4,
+              1.8,
+              0.15
+            ]
+          }
+        },
+        "bookshelf_low": {
+          "node": "bookshelf_low",
+          "size": [
+            0.9,
+            1,
+            0.3
+          ],
+          "footprint": [
+            0.9,
+            0.3
+          ],
+          "tags": [
+            "storage",
+            "shelf",
+            "books"
+          ],
+          "origin": "floor-centre",
+          "triangles": 404,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.15
+            ],
+            "max": [
+              0.45,
+              1.0,
+              0.15
+            ]
+          }
+        },
+        "shoe_rack": {
+          "node": "shoe_rack",
+          "size": [
+            0.8,
+            0.55,
+            0.3
+          ],
+          "footprint": [
+            0.8,
+            0.3
+          ],
+          "tags": [
+            "storage",
+            "shoes",
+            "entry"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1832,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.15
+            ],
+            "max": [
+              0.4,
+              0.55,
+              0.15
+            ]
+          }
+        },
+        "display_cabinet": {
+          "node": "display_cabinet",
+          "size": [
+            0.9,
+            1.75,
+            0.4
+          ],
+          "footprint": [
+            0.9,
+            0.4
+          ],
+          "tags": [
+            "storage",
+            "display",
+            "living"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1452,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.45,
+              1.75,
+              0.222
+            ]
+          }
+        },
+        "chest_trunk": {
+          "node": "chest_trunk",
+          "size": [
+            0.8,
+            0.5,
+            0.45
+          ],
+          "footprint": [
+            0.8,
+            0.45
+          ],
+          "tags": [
+            "storage",
+            "chest"
+          ],
+          "origin": "floor-centre",
+          "triangles": 276,
+          "bounds": {
+            "min": [
+              -0.422965,
+              0.015,
+              -0.228
+            ],
+            "max": [
+              0.422965,
+              0.507,
+              0.239
+            ]
+          }
+        },
+        "cubby_shelf": {
+          "node": "cubby_shelf",
+          "size": [
+            1.2,
+            0.8,
+            0.35
+          ],
+          "footprint": [
+            1.2,
+            0.35
+          ],
+          "tags": [
+            "storage",
+            "cubby",
+            "school"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1052,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.175
+            ],
+            "max": [
+              0.6,
+              0.8,
+              0.175
+            ]
+          }
+        },
+        "shelf_wall": {
+          "node": "shelf_wall",
+          "size": [
+            0.9,
+            0.2,
+            0.22
+          ],
+          "footprint": [
+            0.9,
+            0.22
+          ],
+          "tags": [
+            "storage",
+            "shelf",
+            "wall",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 36,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.11
+            ],
+            "max": [
+              0.45,
+              0.2,
+              0.11
+            ]
+          }
+        },
+        "shop_counter_glass": {
+          "node": "shop_counter_glass",
+          "size": [
+            1.8,
+            1,
+            0.6
+          ],
+          "footprint": [
+            1.8,
+            0.6
+          ],
+          "tags": [
+            "shop",
+            "counter",
+            "glass",
+            "tienda",
+            "drogueria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 740,
+          "bounds": {
+            "min": [
+              -0.906,
+              0.035,
+              -0.306
+            ],
+            "max": [
+              0.906,
+              1.0,
+              0.306
+            ]
+          }
+        },
+        "shop_counter_wood": {
+          "node": "shop_counter_wood",
+          "size": [
+            2,
+            1,
+            0.65
+          ],
+          "footprint": [
+            2,
+            0.65
+          ],
+          "tags": [
+            "shop",
+            "counter",
+            "wood",
+            "ferreteria",
+            "papeleria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 84,
+          "bounds": {
+            "min": [
+              -1.006,
+              0.035,
+              -0.331
+            ],
+            "max": [
+              1.006,
+              1.0,
+              0.339
+            ]
+          }
+        },
+        "shop_counter_short": {
+          "node": "shop_counter_short",
+          "size": [
+            1.2,
+            1,
+            0.6
+          ],
+          "footprint": [
+            1.2,
+            0.6
+          ],
+          "tags": [
+            "shop",
+            "counter",
+            "small"
+          ],
+          "origin": "floor-centre",
+          "triangles": 60,
+          "bounds": {
+            "min": [
+              -0.606,
+              0.035,
+              -0.306
+            ],
+            "max": [
+              0.606,
+              1.0,
+              0.314
+            ]
+          }
+        },
+        "shelf_tienda": {
+          "node": "shelf_tienda",
+          "size": [
+            1.2,
+            2.1,
+            0.38
+          ],
+          "footprint": [
+            1.2,
+            0.38
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "tienda",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1344,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.19
+            ],
+            "max": [
+              0.6,
+              2.1,
+              0.19
+            ]
+          }
+        },
+        "shelf_ferre": {
+          "node": "shelf_ferre",
+          "size": [
+            1.2,
+            2.1,
+            0.4
+          ],
+          "footprint": [
+            1.2,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "ferreteria",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 832,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.6,
+              2.1,
+              0.2
+            ]
+          }
+        },
+        "shelf_pharma": {
+          "node": "shelf_pharma",
+          "size": [
+            1.2,
+            2.1,
+            0.35
+          ],
+          "footprint": [
+            1.2,
+            0.35
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "drogueria",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 512,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.175
+            ],
+            "max": [
+              0.6,
+              2.1,
+              0.175
+            ]
+          }
+        },
+        "shelf_papel": {
+          "node": "shelf_papel",
+          "size": [
+            1.2,
+            2,
+            0.35
+          ],
+          "footprint": [
+            1.2,
+            0.35
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "papeleria",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 512,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.175
+            ],
+            "max": [
+              0.6,
+              2.0,
+              0.175
+            ]
+          }
+        },
+        "shelf_shoes": {
+          "node": "shelf_shoes",
+          "size": [
+            1.2,
+            1.8,
+            0.32
+          ],
+          "footprint": [
+            1.2,
+            0.32
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "zapateria",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 3584,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.16
+            ],
+            "max": [
+              0.6,
+              1.8,
+              0.16
+            ]
+          }
+        },
+        "shelf_fabric": {
+          "node": "shelf_fabric",
+          "size": [
+            1,
+            1.9,
+            0.5
+          ],
+          "footprint": [
+            1,
+            0.5
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "modista",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 640,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.5,
+              1.9,
+              0.25
+            ]
+          }
+        },
+        "shelf_cafe": {
+          "node": "shelf_cafe",
+          "size": [
+            1.2,
+            2,
+            0.3
+          ],
+          "footprint": [
+            1.2,
+            0.3
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "cafe",
+            "restaurante",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1344,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.15
+            ],
+            "max": [
+              0.6,
+              2.0,
+              0.15
+            ]
+          }
+        },
+        "shelf_barber": {
+          "node": "shelf_barber",
+          "size": [
+            1.2,
+            0.2,
+            0.25
+          ],
+          "footprint": [
+            1.2,
+            0.25
+          ],
+          "tags": [
+            "shop",
+            "shelf",
+            "peluqueria",
+            "goods"
+          ],
+          "origin": "floor-centre",
+          "triangles": 340,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.125
+            ],
+            "max": [
+              0.6,
+              0.2,
+              0.125
+            ]
+          }
+        },
+        "fridge_meat": {
+          "node": "fridge_meat",
+          "size": [
+            1.8,
+            1.2,
+            0.8
+          ],
+          "footprint": [
+            1.8,
+            0.8
+          ],
+          "tags": [
+            "shop",
+            "fridge",
+            "display",
+            "carniceria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 996,
+          "bounds": {
+            "min": [
+              -0.906,
+              0.035,
+              -0.406
+            ],
+            "max": [
+              0.906,
+              1.2,
+              0.406
+            ]
+          }
+        },
+        "chips_rack": {
+          "node": "chips_rack",
+          "size": [
+            0.5,
+            1.7,
+            0.35
+          ],
+          "footprint": [
+            0.5,
+            0.35
+          ],
+          "tags": [
+            "shop",
+            "rack",
+            "chips",
+            "tienda"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1424,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.175
+            ],
+            "max": [
+              0.25,
+              1.7,
+              0.175
+            ]
+          }
+        },
+        "bread_case_glass": {
+          "node": "bread_case_glass",
+          "size": [
+            1.6,
+            1.2,
+            0.7
+          ],
+          "footprint": [
+            1.6,
+            0.7
+          ],
+          "tags": [
+            "shop",
+            "case",
+            "glass",
+            "bread",
+            "panaderia"
+          ],
+          "origin": "floor-centre",
+          "triangles": 708,
+          "bounds": {
+            "min": [
+              -0.806,
+              0.035,
+              -0.356
+            ],
+            "max": [
+              0.806,
+              1.2,
+              0.356
+            ]
+          }
+        },
+        "bread_rack": {
+          "node": "bread_rack",
+          "size": [
+            0.6,
+            1.7,
+            0.5
+          ],
+          "footprint": [
+            0.6,
+            0.5
+          ],
+          "tags": [
+            "shop",
+            "rack",
+            "bread",
+            "panaderia"
+          ],
+          "origin": "floor-centre",
+          "triangles": 684,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.3,
+              1.7,
+              0.25
+            ]
+          }
+        },
+        "oven_baker": {
+          "node": "oven_baker",
+          "size": [
+            0.9,
+            1.8,
+            0.9
+          ],
+          "footprint": [
+            0.9,
+            0.9
+          ],
+          "tags": [
+            "shop",
+            "oven",
+            "panaderia",
+            "backroom"
+          ],
+          "origin": "floor-centre",
+          "triangles": 308,
+          "bounds": {
+            "min": [
+              -0.45,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.45,
+              1.8,
+              0.497
+            ]
+          }
+        },
+        "crate_stack_mango": {
+          "node": "crate_stack_mango",
+          "size": [
+            0.6,
+            0.8,
+            0.4
+          ],
+          "footprint": [
+            0.6,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "crates",
+            "fruver",
+            "mango"
+          ],
+          "origin": "floor-centre",
+          "triangles": 756,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.3,
+              0.8,
+              0.2
+            ]
+          }
+        },
+        "crate_stack_lulo": {
+          "node": "crate_stack_lulo",
+          "size": [
+            0.6,
+            0.8,
+            0.4
+          ],
+          "footprint": [
+            0.6,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "crates",
+            "fruver",
+            "lulo"
+          ],
+          "origin": "floor-centre",
+          "triangles": 756,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.3,
+              0.8,
+              0.2
+            ]
+          }
+        },
+        "crate_stack_tomato": {
+          "node": "crate_stack_tomato",
+          "size": [
+            0.6,
+            0.8,
+            0.4
+          ],
+          "footprint": [
+            0.6,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "crates",
+            "fruver",
+            "tomato"
+          ],
+          "origin": "floor-centre",
+          "triangles": 756,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.3,
+              0.8,
+              0.2
+            ]
+          }
+        },
+        "crate_stack_veg": {
+          "node": "crate_stack_veg",
+          "size": [
+            0.6,
+            0.8,
+            0.4
+          ],
+          "footprint": [
+            0.6,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "crates",
+            "fruver",
+            "veg"
+          ],
+          "origin": "floor-centre",
+          "triangles": 756,
+          "bounds": {
+            "min": [
+              -0.3,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.3,
+              0.8,
+              0.2
+            ]
+          }
+        },
+        "fruit_stand": {
+          "node": "fruit_stand",
+          "size": [
+            1.6,
+            0.9,
+            0.9
+          ],
+          "footprint": [
+            1.6,
+            0.9
+          ],
+          "tags": [
+            "shop",
+            "stand",
+            "fruver"
+          ],
+          "origin": "floor-centre",
+          "triangles": 956,
+          "bounds": {
+            "min": [
+              -0.8,
+              0.0,
+              -0.45
+            ],
+            "max": [
+              0.8,
+              0.9,
+              0.45
+            ]
+          }
+        },
+        "butcher_block": {
+          "node": "butcher_block",
+          "size": [
+            0.8,
+            0.85,
+            0.8
+          ],
+          "footprint": [
+            0.8,
+            0.8
+          ],
+          "tags": [
+            "shop",
+            "block",
+            "carniceria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 224,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.4
+            ],
+            "max": [
+              0.4,
+              1.04,
+              0.4
+            ]
+          }
+        },
+        "barber_station": {
+          "node": "barber_station",
+          "size": [
+            1.4,
+            0.95,
+            0.4
+          ],
+          "footprint": [
+            1.4,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "station",
+            "peluqueria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 188,
+          "bounds": {
+            "min": [
+              -0.706,
+              0.035,
+              -0.206
+            ],
+            "max": [
+              0.706,
+              1.08,
+              0.214
+            ]
+          }
+        },
+        "pipes_bundle": {
+          "node": "pipes_bundle",
+          "size": [
+            1.8,
+            0.3,
+            0.3
+          ],
+          "footprint": [
+            1.8,
+            0.3
+          ],
+          "tags": [
+            "shop",
+            "pipes",
+            "ferreteria",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 184,
+          "bounds": {
+            "min": [
+              -0.9,
+              0.01,
+              -0.15
+            ],
+            "max": [
+              0.9,
+              0.29,
+              0.15
+            ]
+          }
+        },
+        "cement_sacks": {
+          "node": "cement_sacks",
+          "size": [
+            0.5,
+            0.5,
+            0.8
+          ],
+          "footprint": [
+            0.5,
+            0.8
+          ],
+          "tags": [
+            "shop",
+            "sacks",
+            "ferreteria",
+            "cement"
+          ],
+          "origin": "floor-centre",
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.4
+            ],
+            "max": [
+              0.25,
+              0.499,
+              0.4
+            ]
+          }
+        },
+        "paint_cans_stack": {
+          "node": "paint_cans_stack",
+          "size": [
+            0.4,
+            0.6,
+            0.4
+          ],
+          "footprint": [
+            0.4,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "cans",
+            "ferreteria",
+            "paint"
+          ],
+          "origin": "floor-centre",
+          "triangles": 324,
+          "bounds": {
+            "min": [
+              -0.184,
+              0.0,
+              -0.184
+            ],
+            "max": [
+              0.184,
+              0.596,
+              0.1855
+            ]
+          }
+        },
+        "tool_pegboard": {
+          "node": "tool_pegboard",
+          "size": [
+            1.2,
+            1,
+            0.08
+          ],
+          "footprint": [
+            1.2,
+            0.08
+          ],
+          "tags": [
+            "shop",
+            "pegboard",
+            "ferreteria",
+            "decor"
+          ],
+          "origin": "floor-centre",
+          "triangles": 276,
+          "bounds": {
+            "min": [
+              -0.6,
+              0.0,
+              -0.032
+            ],
+            "max": [
+              0.6,
+              1.0,
+              0.0275
+            ]
+          }
+        },
+        "wheelbarrow": {
+          "node": "wheelbarrow",
+          "size": [
+            0.6,
+            0.6,
+            1.5
+          ],
+          "footprint": [
+            0.6,
+            1.5
+          ],
+          "tags": [
+            "shop",
+            "wheelbarrow",
+            "ferreteria",
+            "workshop"
+          ],
+          "origin": "floor-centre",
+          "triangles": 348,
+          "bounds": {
+            "min": [
+              -0.25974,
+              0.0,
+              -0.701239
+            ],
+            "max": [
+              0.25974,
+              0.541232,
+              0.722115
+            ]
+          }
+        },
+        "pharmacy_counter": {
+          "node": "pharmacy_counter",
+          "size": [
+            2,
+            1.05,
+            0.6
+          ],
+          "footprint": [
+            2,
+            0.6
+          ],
+          "tags": [
+            "shop",
+            "counter",
+            "glass",
+            "drogueria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 324,
+          "bounds": {
+            "min": [
+              -1.006,
+              0.035,
+              -0.306
+            ],
+            "max": [
+              1.006,
+              1.05,
+              0.306
+            ]
+          }
+        },
+        "cafe_counter": {
+          "node": "cafe_counter",
+          "size": [
+            2,
+            1,
+            0.65
+          ],
+          "footprint": [
+            2,
+            0.65
+          ],
+          "tags": [
+            "shop",
+            "counter",
+            "cafe",
+            "restaurante"
+          ],
+          "origin": "floor-centre",
+          "triangles": 312,
+          "bounds": {
+            "min": [
+              -1.006,
+              0.035,
+              -0.331
+            ],
+            "max": [
+              1.006,
+              1.15,
+              0.339
+            ]
+          }
+        },
+        "spinner_rack": {
+          "node": "spinner_rack",
+          "size": [
+            0.5,
+            1.6,
+            0.5
+          ],
+          "footprint": [
+            0.5,
+            0.5
+          ],
+          "tags": [
+            "shop",
+            "rack",
+            "papeleria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 272,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.25,
+              1.6,
+              0.25
+            ]
+          }
+        },
+        "cabin_pc": {
+          "node": "cabin_pc",
+          "size": [
+            0.95,
+            1.4,
+            0.75
+          ],
+          "footprint": [
+            0.95,
+            0.75
+          ],
+          "tags": [
+            "shop",
+            "cabin",
+            "minutos",
+            "computer"
+          ],
+          "origin": "floor-centre",
+          "triangles": 180,
+          "bounds": {
+            "min": [
+              -0.475,
+              0.0,
+              -0.375
+            ],
+            "max": [
+              0.475,
+              1.4,
+              0.375
+            ]
+          }
+        },
+        "phone_booth": {
+          "node": "phone_booth",
+          "size": [
+            0.8,
+            2,
+            0.8
+          ],
+          "footprint": [
+            0.8,
+            0.8
+          ],
+          "tags": [
+            "shop",
+            "booth",
+            "minutos",
+            "phone"
+          ],
+          "origin": "floor-centre",
+          "triangles": 408,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.4
+            ],
+            "max": [
+              0.4,
+              2.0,
+              0.4
+            ]
+          }
+        },
+        "mannequin": {
+          "node": "mannequin",
+          "size": [
+            0.45,
+            1.7,
+            0.4
+          ],
+          "footprint": [
+            0.45,
+            0.4
+          ],
+          "tags": [
+            "shop",
+            "mannequin",
+            "modista"
+          ],
+          "origin": "floor-centre",
+          "triangles": 316,
+          "bounds": {
+            "min": [
+              -0.216,
+              0.0,
+              -0.207
+            ],
+            "max": [
+              0.216,
+              1.7,
+              0.207
+            ]
+          }
+        },
+        "rack_fabric": {
+          "node": "rack_fabric",
+          "size": [
+            1,
+            1.9,
+            0.5
+          ],
+          "footprint": [
+            1,
+            0.5
+          ],
+          "tags": [
+            "shop",
+            "rack",
+            "fabric",
+            "modista"
+          ],
+          "origin": "floor-centre",
+          "triangles": 748,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.25
+            ],
+            "max": [
+              0.5,
+              1.9,
+              0.25
+            ]
+          }
+        },
+        "fitting_curtain": {
+          "node": "fitting_curtain",
+          "size": [
+            1,
+            2.1,
+            1
+          ],
+          "footprint": [
+            1,
+            1
+          ],
+          "tags": [
+            "shop",
+            "fitting",
+            "modista"
+          ],
+          "origin": "floor-centre",
+          "triangles": 368,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.5
+            ],
+            "max": [
+              0.5,
+              2.1,
+              0.5
+            ]
+          }
+        },
+        "shoe_grinder": {
+          "node": "shoe_grinder",
+          "size": [
+            0.5,
+            1.1,
+            0.5
+          ],
+          "footprint": [
+            0.5,
+            0.5
+          ],
+          "tags": [
+            "shop",
+            "machine",
+            "zapateria"
+          ],
+          "origin": "floor-centre",
+          "triangles": 196,
+          "bounds": {
+            "min": [
+              -0.25,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.25,
+              1.086,
+              0.235
+            ]
+          }
+        },
+        "motorbike": {
+          "node": "motorbike",
+          "size": [
+            0.75,
+            1.1,
+            1.9
+          ],
+          "footprint": [
+            0.75,
+            1.9
+          ],
+          "tags": [
+            "workshop",
+            "motorbike",
+            "taller",
+            "vehicle"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1268,
+          "bounds": {
+            "min": [
+              -0.34382,
+              0.0,
+              -0.883746
+            ],
+            "max": [
+              0.34382,
+              1.111915,
+              0.883746
+            ]
+          }
+        },
+        "tire_stack": {
+          "node": "tire_stack",
+          "size": [
+            0.7,
+            0.8,
+            0.7
+          ],
+          "footprint": [
+            0.7,
+            0.7
+          ],
+          "tags": [
+            "workshop",
+            "tires",
+            "taller",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1472,
+          "bounds": {
+            "min": [
+              -0.353,
+              0.0,
+              -0.353
+            ],
+            "max": [
+              0.353,
+              0.8,
+              0.353
+            ]
+          }
+        },
+        "parts_shelf": {
+          "node": "parts_shelf",
+          "size": [
+            1,
+            1.8,
+            0.4
+          ],
+          "footprint": [
+            1,
+            0.4
+          ],
+          "tags": [
+            "workshop",
+            "parts",
+            "shelf",
+            "taller"
+          ],
+          "origin": "floor-centre",
+          "triangles": 832,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.5,
+              1.8,
+              0.2
+            ]
+          }
+        },
+        "exam_bed": {
+          "node": "exam_bed",
+          "size": [
+            0.8,
+            0.75,
+            1.95
+          ],
+          "footprint": [
+            0.8,
+            1.95
+          ],
+          "tags": [
+            "clinic",
+            "bed",
+            "exam"
+          ],
+          "origin": "floor-centre",
+          "triangles": 316,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.975
+            ],
+            "max": [
+              0.4,
+              0.760107,
+              0.975
+            ]
+          }
+        },
+        "medical_scale": {
+          "node": "medical_scale",
+          "size": [
+            0.45,
+            1.5,
+            0.5
+          ],
+          "footprint": [
+            0.45,
+            0.5
+          ],
+          "tags": [
+            "clinic",
+            "scale"
+          ],
+          "origin": "floor-centre",
+          "triangles": 252,
+          "bounds": {
+            "min": [
+              -0.225,
+              0.0,
+              -0.235
+            ],
+            "max": [
+              0.225,
+              1.5,
+              0.245
+            ]
+          }
+        },
+        "med_cabinet": {
+          "node": "med_cabinet",
+          "size": [
+            0.8,
+            1.75,
+            0.4
+          ],
+          "footprint": [
+            0.8,
+            0.4
+          ],
+          "tags": [
+            "clinic",
+            "cabinet",
+            "meds"
+          ],
+          "origin": "floor-centre",
+          "triangles": 620,
+          "bounds": {
+            "min": [
+              -0.4,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.4,
+              1.75,
+              0.222
+            ]
+          }
+        },
+        "privacy_screen": {
+          "node": "privacy_screen",
+          "size": [
+            1.6,
+            1.6,
+            0.1
+          ],
+          "footprint": [
+            1.6,
+            0.1
+          ],
+          "tags": [
+            "clinic",
+            "screen"
+          ],
+          "origin": "floor-centre",
+          "triangles": 388,
+          "bounds": {
+            "min": [
+              -0.78,
+              -0.0,
+              -0.05
+            ],
+            "max": [
+              0.78,
+              1.6,
+              0.05
+            ]
+          }
+        },
+        "iv_stand": {
+          "node": "iv_stand",
+          "size": [
+            0.5,
+            1.8,
+            0.5
+          ],
+          "footprint": [
+            0.5,
+            0.5
+          ],
+          "tags": [
+            "clinic",
+            "iv"
+          ],
+          "origin": "floor-centre",
+          "triangles": 506,
+          "bounds": {
+            "min": [
+              -0.239,
+              0.001,
+              -0.239
+            ],
+            "max": [
+              0.239,
+              1.787108,
+              0.239
+            ]
+          }
+        },
+        "wheelchair": {
+          "node": "wheelchair",
+          "size": [
+            0.65,
+            0.9,
+            1.05
+          ],
+          "footprint": [
+            0.65,
+            1.05
+          ],
+          "tags": [
+            "clinic",
+            "wheelchair"
+          ],
+          "origin": "floor-centre",
+          "triangles": 816,
+          "bounds": {
+            "min": [
+              -0.3055,
+              0.0,
+              -0.411594
+            ],
+            "max": [
+              0.3055,
+              0.901091,
+              0.5355
+            ]
+          }
+        },
+        "trophy_case": {
+          "node": "trophy_case",
+          "size": [
+            1,
+            1.8,
+            0.4
+          ],
+          "footprint": [
+            1,
+            0.4
+          ],
+          "tags": [
+            "hall",
+            "trophy",
+            "display"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1228,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              0.5,
+              1.8,
+              0.222
+            ]
+          }
+        },
+        "fruit_crate_small": {
+          "node": "fruit_crate_small",
+          "size": [
+            0.4,
+            0.3,
+            0.3
+          ],
+          "footprint": [
+            0.4,
+            0.3
+          ],
+          "tags": [
+            "shop",
+            "crate",
+            "fruit",
+            "clutter"
+          ],
+          "origin": "floor-centre",
+          "triangles": 444,
+          "bounds": {
+            "min": [
+              -0.2,
+              0.0,
+              -0.15
+            ],
+            "max": [
+              0.2,
+              0.3,
+              0.15
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

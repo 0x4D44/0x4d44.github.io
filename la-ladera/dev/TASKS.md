@@ -34,6 +34,13 @@ Read `CONTRACT.md` (interfaces, rules) and `RUBRIC.md` (the bar) first.
 | T3.3 | `buildInterior`: place assets via `ctx.assets.place`, decals, light fixtures with emissive bulbs, a few animated things (ceiling fans, TV flicker, canary), interactables ('Encender la luz' toggles a lamp, 'Abrir cajón', 'Sentarse' if A1/A4 support sit) | visual: 30 room screenshots across kinds, no floating/clipping/z-fight; interior group draw calls bounded |
 | T3.4 | Discovery content: 3-6 per module (>= 12 interior stories: a student's desk with exam notes, a grandmother's altar, a hidden rooftop pigeon loft, a shop cat, a child's drawings...) | registered via `ctx.discover` with Spanish names |
 
+**T3.1 implementation, 30 October 2026:** the generated library now contains all
+222 current catalogue assets in four GLBs (6,454,296 bytes), with a complete
+furniture manifest. Nine full-library contact sheets and 27 room captures were
+reviewed. See [the verification report](progress/furniture-integration-20261030.md)
+for actual loading/render counts, regression results and limits, and
+[the generation guide](../tools/blender/FURNITURE.md) for reproducible commands.
+
 ## T4 - People (A4)
 | id | task | acceptance |
 |---|---|---|

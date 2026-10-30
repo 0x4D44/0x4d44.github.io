@@ -55,6 +55,6 @@ child.stdout.pipe(process.stdout);
 child.stderr.pipe(process.stderr);
 process.stdin.pipe(child.stdin);
 child.stdin.on('error', () => { /* child closed its stdin first */ });
-child.on('error', (e) => { console.error('nice: ' + e.message); process.exit(126); });
+child.on('error', (e) => { console.error('nice: ' + e.message); process.exit(e.code === 'ENOENT' ? 127 : 126); });
 child.on('close', (code, sig) => process.exit(code ?? (sig ? 1 : 0)));
 for (const s of ['SIGINT', 'SIGTERM', 'SIGBREAK']) process.on(s, () => { try { child.kill(); } catch { /* gone */ } });
