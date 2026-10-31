@@ -37,7 +37,7 @@ await T.run(async () => {
     // ---- everything that is a number on the camera track, measured in the page in one pass (1/60 s steps from Z to the end of the film)
     const M = JSON.parse(await page.eval(`(() => {
       const d = window.__tl._dbg, T3 = d.T3, K = ${JSON.stringify(TOUR)}, DEG = Math.PI / 180, DT = 1 / 60;
-      const Z = T3.walk[0][0], END = T3.end, out = { Z, END, nKeys: T3.walk.length };
+      const Z = T3.walk[0][0], END = T3.walkEnd, out = { Z, END, nKeys: T3.walk.length, filmEnd: T3.end };
       out.keysIncreasing = T3.walk.every((k, i) => i === 0 || k[0] > T3.walk[i - 1][0]);
       // the hand-over: the orbit just before Z against the walk at Z
       { const c = d.camAt3(Z - 1e-6), o = d.orbitPose(c), w = d.walkAt3(Z);
@@ -107,9 +107,9 @@ await T.run(async () => {
     const Z = M.Z, rel = (t) => (t - Z).toFixed(2);
 
     // ---- the film's own structure
-    const last = film.chapters[film.chapters.length - 1];
-    T.check(`the tour is the last chapter, "${TOUR.chapter}", and it opens just before the walk (Z - 1 s .. Z)`, last.name === TOUR.chapter && last.t >= Z - 1 && last.t <= Z, `${last.num} ${last.name} at Z${last.t - Z >= 0 ? "+" : ""}${(last.t - Z).toFixed(2)}`);
-    T.check(`the tour lasts ${TOUR.seconds} s: the film ends where the walk ends`, near(film.T - Z, TOUR.seconds, FILM.secondsTol) && near(M.END, film.T, 1e-9), `Z = ${Z.toFixed(2)}, end ${M.END.toFixed(2)}, film ${film.T.toFixed(2)}`);
+    const last = film.chapters[film.chapters.length - 2];
+    T.check(`the tour is the chapter before the last, "${TOUR.chapter}", and it opens just before the walk (Z - 1 s .. Z)`, last.name === TOUR.chapter && last.t >= Z - 1 && last.t <= Z, `${last.num} ${last.name} at Z${last.t - Z >= 0 ? "+" : ""}${(last.t - Z).toFixed(2)}`);
+    T.check(`the walk lasts ${TOUR.seconds} s (T3.walkEnd); the film goes on to the television (tv.test.mjs)`, near(M.END - Z, TOUR.seconds, 1e-6) && M.filmEnd > M.END, `Z = ${Z.toFixed(2)}, walk ends ${M.END.toFixed(2)}, film ${film.T.toFixed(2)}`);
     T.check("the walk's keys are in strict time order", M.keysIncreasing && M.nKeys > 10, `${M.nKeys} keys`);
     const rl = (k) => JSON.stringify(M.tourT[k].map((v) => +v.toFixed(3)));
     for (const k of ["roof", "lights", "shut", "open"]) T.check(`the ${k} window is ${JSON.stringify(TOUR[k])} s after Z`, M.tourT[k].every((v, i) => near(v, TOUR[k][i], 1e-6)), `page says ${rl(k)}`);

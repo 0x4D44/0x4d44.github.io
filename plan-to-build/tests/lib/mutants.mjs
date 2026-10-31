@@ -8,7 +8,7 @@
 // The anchors are written against the page as it ships. If the page is refactored, edit the anchors here and nowhere else.
 //
 // The first seven are derived from `git diff f7ee3dc 5fb49d8 -- plan-to-build/index.html` (f7ee3dc: the page before the flicker, rug and paint fixes);
-// the next eight undo one decision of the first-person tour each, and the last eight one decision of the facade.
+// the next eight undo one decision of the first-person tour each, the next eight one decision of the facade, and the last ten one decision of the television.
 
 export const MUTANTS = [
   {
@@ -178,6 +178,77 @@ export const MUTANTS = [
     anchor: "{ N: [0.2, 5.4], W: [3.2, 8.4],",
     replace: "{ N: [3.2, 8.4], W: [0.2, 5.4],",
     guards: [{ file: "facade.test.mjs", fails: /order the camera meets them/ }],
+  },
+  // ---- the television (tv.test.mjs)
+  {
+    id: "tv-ad-off",
+    what: "the set is never given the advert: the screen keeps its old picture",
+    anchor: "G3.anims.push(tvAdUpdate);",
+    replace: "G3.anims.push(() => {});",
+    guards: [{ file: "tv.test.mjs", fails: /fills the frame|picture changes/ }],
+  },
+  {
+    id: "tv-lens-wide",
+    what: "the last lens stays at 40 degrees: the screen fills only part of the last frame",
+    anchor: "wk(66.0, [5300, 1700, 0.99], [5300, 3630, 0.936], 19);",
+    replace: "wk(66.0, [5300, 1700, 0.99], [5300, 3630, 0.936], 40);",
+    guards: [{ file: "tv.test.mjs", fails: /fills the frame/ }],
+  },
+  {
+    id: "tv-wrong-way",
+    what: "the last look is aimed a metre west of the screen: the film does not end square on the television",
+    anchor: "wk(66.0, [5300, 1700, 0.99], [5300, 3630, 0.936], 19);",
+    replace: "wk(66.0, [5300, 1700, 0.99], [4300, 3630, 0.936], 19);",
+    guards: [{ file: "tv.test.mjs", fails: /seated eye|fills the frame/ }],
+  },
+  {
+    id: "tv-standing",
+    what: "the last eye stays at standing height instead of sitting on the sofa line",
+    anchor: "wk(66.0, [5300, 1700, 0.99], [5300, 3630, 0.936], 19);",
+    replace: "wk(66.0, [5300, 1700, 1.6], [5300, 3630, 0.936], 19);",
+    guards: [{ file: "tv.test.mjs", fails: /seated eye/ }],
+  },
+  {
+    id: "tv-tone-mapped",
+    what: "the screen goes through the tone map: the end card reaches the viewer duller than painted",
+    anchor: "m.toneMapped = false;",
+    replace: "",
+    guards: [{ file: "tv.test.mjs", fails: /not tone-mapped|fills the frame/ }],
+  },
+  {
+    id: "tv-snow-random",
+    what: "the snow uses Math.random: the picture is no longer a function of the time",
+    anchor: "const v = 30 + 200 * adHash(i, j, f);",
+    replace: "const v = 30 + 200 * Math.random();",
+    guards: [{ file: "tv.test.mjs", fails: /pure function/ }],
+  },
+  {
+    id: "tv-ad-late",
+    what: "the channel changes 20 s late: the advert never gets going before the film ends",
+    anchor: "T3.tvAd = [Z + 51.0, Z + 51.0 + 13.5];",
+    replace: "T3.tvAd = [Z + 71.0, Z + 71.0 + 13.5];",
+    guards: [{ file: "tv.test.mjs", fails: /changes channel/ }],
+  },
+  {
+    id: "tv-hud-stays",
+    what: "the viewport label stays on screen through the advert",
+    anchor: "const hud = 1 - (in3D && T3.walkEnd ? smooth(clamp((t - T3.walkEnd) / 0.8)) : 0);",
+    replace: "const hud = 1;",
+    guards: [{ file: "tv.test.mjs", fails: /nothing is laid over it/ }],
+  },
+  {
+    id: "tv-title-stays",
+    what: "the end title never leaves: it lies over the advert",
+    anchor: "const a = smooth(clamp((t - T3.titleT) / 1.0)) * (1 - smooth(clamp((t - T3.titleOut) / 1.0)));",
+    replace: "const a = smooth(clamp((t - T3.titleT) / 1.0));",
+    guards: [{ file: "tv.test.mjs", fails: /nothing is laid over it/ }],
+  },
+  {
+    id: "tv-no-end-card",
+    what: "the advert has no end card: the scene it ends on is the three lines",
+    anchor: "if (dY < 1080) {",
+    replace: "if (false) {",
+    guards: [{ file: "tv.test.mjs", fails: /end card/ }],
   },
 ];
 

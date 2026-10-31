@@ -11,6 +11,9 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-31 - TV advert dulls under ACES: plan-to-build/index.html:mat3 screen sets toneMapped=false (tv.test.mjs)
+  Read TVAD back through a scratch canvas (willReadFrequently): getImageData on the live GPU canvas hashed the same picture differently
+  and logged a console warning. The ad is painted by adFrame(u), a pure function of u, so seeking back repaints the same picture.
 - 2026-10-31 - A stop or turn key overshoots on splineZ: pre-aim the key before it (plan-to-build/index.html:splineZ)
   splineZ takes each interior tangent as the centred difference of its neighbours, so a key whose neighbours lie on one side of it still
   carries a slope. The door approach keyed on the door axis swayed 166 mm across it and dipped 49 mm; the study hold swung 4.7 deg past

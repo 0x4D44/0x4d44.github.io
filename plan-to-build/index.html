@@ -2038,18 +2038,28 @@ function film3D() {
   wk(42.5, [1650, 4150], { hd: 272, pd: 3 }, 66);
   wk(43.8, [1680, 3650], { hd: 320, pd: 3.5 }, 66);
   wk(45.2, [1850, 3320], { hd: 354, pd: 3 }, 66);
-  wk(51.5, [2250, 3250], { hd: 359, pd: 3 }, 66);
+  wk(49.0, [2250, 3250], { hd: 359, pd: 3 }, 66);
+  T3.walkEnd = Z + 49.0;                                                     // the walk proper ends here; the rest of the film turns to the television
+  // the finish: across the room to the sofa and a seated eye, the lens closing in until the TV screen (1.18 x 0.66 m on the north wall, 5.3 m east) fills the frame
+  wk(51.5, [3000, 3050], [5300, 3630, 1.0], 62);
+  wk(54.5, [4100, 2650, 1.4], [5300, 3630, 0.95], 54);
+  wk(57.5, [5000, 2050, 1.15], [5300, 3630, 0.94], 40);
+  wk(60.5, [5300, 1750, 1.0], [5300, 3630, 0.936], 26);
+  wk(66.0, [5300, 1700, 0.99], [5300, 3630, 0.936], 19);
   T3.walk = WK;
   T3.end = WK[WK.length - 1][0];
   T3.cmdOut = Z + 7.6;                                                       // the command line leaves once the door is open
   T3.titleT = Z + 44.8;                                                      // the end title arrives as the walk reaches its last view and slows down
+  T3.titleOut = Z + 49.0;                                                    // and leaves as the camera sets off for the television
+  T3.tvAd = [Z + 51.0, Z + 51.0 + 13.5];                                     // the set changes channel; the advert runs 13.5 s (AD.len) and ends on its end card, which the film ends on
   // room tags: the name and floor area of the room the walk is in
   const tag = (id, a, b) => T3.tags.push({ t0: Z + a, t1: Z + b, name: id, area: ROOM_BY_ID[id].area.toFixed(1) + ' m²' });
   T3.tags = [];
   // (a tag fades for 0.5 s at each end: the camera must be looking into its room for the 0.5 s .. t1 - 0.5 s in between; tests/tour.test.mjs checks it)
-  tag('CORRIDOR', 8.8, 10.9); tag('STUDY', 11.3, 13.7); tag('KITCHEN', 17.0, 26.6); tag('BED 2', 31.2, 33.3); tag('BATH', 33.9, 35.7); tag('BED 1', 36.9, 38.7); tag('LIVING', 43.0, 51.5);
+  tag('CORRIDOR', 8.8, 10.9); tag('STUDY', 11.3, 13.7); tag('KITCHEN', 17.0, 26.6); tag('BED 2', 31.2, 33.3); tag('BATH', 33.9, 35.7); tag('BED 1', 36.9, 38.7); tag('LIVING', 43.0, 49.0);
   ch(73.4 + P + FAC, '21', 'WALK-THROUGH', '3DWALK  ·  eye height 1.6 m  ·  in through the front door, room by room');
   seg(73.4 + P + FAC, () => { cmd('3DWALK', { dur: 0.45, dw: 0.1 }); info('Press ESC or ENTER to exit, or right-click to display shortcut-menu.'); info('Walk settings:  eye height 1600  ·  step 0.5 m/s  ·  lens 64°'); });
+  ch(123.0 + P + FAC, '22', 'ON THE TELEVISION', 'the walk ends across the room: an advert for Claude Code (Sonnet 5.5) on the TV, and the film ends on it');
   mark('3D film');
 }
 
@@ -2353,6 +2363,24 @@ function canvasTex(w, h, draw, srgb = true) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
+// the TV's picture: one 1920 x 1080 canvas, painted by adFrame() and laid on the screen mesh as its emissive map (lit as the set itself, not by the room: toneMapped is off,
+// so the colours reach the viewer as painted). Before the advert it holds the old picture; after it, the end card.
+const TVAD = { w: 1920, h: 1080, c: null, g: null, tex: null, state: '' };
+function tvAdTex() {
+  if (!TVAD.tex) {
+    const c = document.createElement('canvas'); c.width = TVAD.w; c.height = TVAD.h;
+    TVAD.c = c; TVAD.g = c.getContext('2d'); adIdle(TVAD.g, TVAD.w, TVAD.h); TVAD.state = 'idle';
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; TVAD.tex = t;
+  }
+  return TVAD.tex;
+}
+function tvAdUpdate(t) {
+  const tex = tvAdTex(), u = t - T3.tvAd[0];
+  if (u < 0) { if (TVAD.state !== 'idle') { adIdle(TVAD.g, TVAD.w, TVAD.h); TVAD.state = 'idle'; tex.needsUpdate = true; } return; }
+  const key = u >= AD.len ? 'end' : 'play';
+  if (key === 'end' && TVAD.state === 'end') return;
+  adFrame(TVAD.g, TVAD.w, TVAD.h, Math.min(u, AD.len)); TVAD.state = key; tex.needsUpdate = true;
+}
 function rugTex(base, line, alt, stripes) {
   return canvasTex(512, 512, (g, w, h) => {
     g.fillStyle = base; g.fillRect(0, 0, w, h);
@@ -2369,7 +2397,7 @@ function mat3(name) {
   if (SURF[name]) m = patchMat(std({ color: 0xffffff, roughness: .9, metalness: 0 }), 'surf-' + name, SURF[name], CUT_CAP[name]);
   else if (name === 'rugA') m = std({ map: rugTex('#d6c8ae', '#8a7656', '#a9946f', false), roughness: 1 });
   else if (name === 'rugB') m = std({ map: rugTex('#b8745a', '#5e3426', '#e3c9a4', true), roughness: 1 });
-  else if (name === 'screen') m = std({ color: 0x000000, emissive: 0xffffff, emissiveIntensity: .9, emissiveMap: canvasTex(256, 144, (g, w, h) => { const q = g.createLinearGradient(0, 0, 0, h); q.addColorStop(0, '#2b5f9e'); q.addColorStop(.55, '#78b0d6'); q.addColorStop(.56, '#2d5a4a'); q.addColorStop(1, '#16302a'); g.fillStyle = q; g.fillRect(0, 0, w, h); }), roughness: .3 });
+  else if (name === 'screen') { m = std({ color: 0x000000, emissive: 0xffffff, emissiveIntensity: 1, emissiveMap: tvAdTex(), roughness: .3 }); m.toneMapped = false; }
   else if (name === 'water') m = std({ color: 0x7fc8e8, roughness: .05, transparent: true, opacity: .55, depthWrite: false });
   else if (name === 'glassD') m = std({ color: 0x1d2a31, roughness: .06, metalness: .2, transparent: true, opacity: .6, depthWrite: false });
   else if (name === 'glass') m = std({ color: 0xbfe0ee, roughness: .04, metalness: 0, transparent: true, opacity: .2, depthWrite: false, envMapIntensity: 1.6 });
@@ -2698,6 +2726,7 @@ function build3Construction() {
 
   // ---- 7b. the facade: one progress value per elevation, read by the insulation shader (FACADE_GLSL)
   G3.anims.push((t) => { FACADE_IDS.forEach((id, i) => { const w = T3.facT[id]; FACADEU.value[i] = prog3(t, w[0], w[1]); }); });
+  G3.anims.push(tvAdUpdate);                                                 // the television's picture
 
   // ---- 8. the roof: one slab over the whole footprint, set down on the walls as the tour begins. Its underside is the white ceiling of every room.
   {
@@ -2851,9 +2880,100 @@ function drawIntro(ctx, t) {
   ctx.restore();
 }
 
+// ---- the television advert, the film's last scene: the walk ends in front of the TV, which is showing an advert for Claude Code (Sonnet 5.5).
+//      adFrame(g, W, H, u) paints the picture of the set u seconds after it changes channel, and is a pure function of u: the same u gives the same pixels, whatever
+//      was drawn before. The 3D scene lays this picture on the screen mesh (TVAD, in the 3D section); the picture is laid out for 1920 x 1080 and scaled to W x H.
+const AD = { ink: '#141413', paper: '#f0eee6', clay: '#d97757', mute: '#87867f', len: 13.5 };
+const AD_SERIF = "Georgia, 'Times New Roman', serif", AD_MONO = "Consolas, 'Cascadia Mono', Menlo, 'Courier New', monospace";
+const adHash = (a, b, c) => { let h = Math.imul(a, 374761393) + Math.imul(b, 668265263) + Math.imul(c, 1274126177) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+function adSpark(g, x, y, r, rot, col) {                                        // a twelve-ray burst: the mark of the advert
+  g.save(); g.translate(x, y); g.rotate(rot); g.strokeStyle = col; g.lineCap = 'round'; g.lineWidth = r * 0.17;
+  for (let i = 0; i < 12; i++) { g.rotate(TAU / 12); const l = r * (i % 2 ? 0.74 : 1); g.beginPath(); g.moveTo(r * 0.2, 0); g.lineTo(l, 0); g.stroke(); }
+  g.restore();
+}
+function adCheck(g, x, y, s, col) {
+  g.save(); g.strokeStyle = col; g.lineWidth = s * 0.16; g.lineCap = 'round'; g.lineJoin = 'round';
+  g.beginPath(); g.moveTo(x - s * 0.45, y); g.lineTo(x - s * 0.12, y + s * 0.32); g.lineTo(x + s * 0.5, y - s * 0.35); g.stroke(); g.restore();
+}
+function adFrame(g, W, H, u) {
+  const k = (a, b) => smooth(clamp((u - a) / (b - a)));
+  const T = (s, x, y, size, col, font = FONT_UI, wt = 400, al = 'left') => { g.font = `${wt} ${size}px ${font}`; g.fillStyle = col; g.textAlign = al; g.fillText(s, x, y); };
+  g.save(); g.setTransform(W / 1920, 0, 0, H / 1080, 0, 0); g.globalAlpha = 1; g.textBaseline = 'middle'; g.lineCap = 'butt'; g.lineJoin = 'miter';
+  g.fillStyle = '#050506'; g.fillRect(0, 0, 1920, 1080);
+  // A. a terminal: the command, then the film's own numbers as the answer
+  const aOn = k(0.4, 0.9);
+  if (aOn > 0 && u < 5.9) {
+    g.globalAlpha = aOn; g.fillStyle = AD.ink; g.fillRect(0, 0, 1920, 1080);
+    const cmd = 'build the flat from this drawing', n = Math.floor(clamp((u - 1.0) / 1.5) * cmd.length);
+    T('>', 170, 330, 60, AD.clay, AD_MONO, 700);
+    T(cmd.slice(0, n), 240, 330, 60, AD.paper, AD_MONO);
+    g.font = `400 60px ${AD_MONO}`; const cx = 240 + g.measureText(cmd.slice(0, n)).width;
+    const rows = [[2.9, 'Drafting', TOTAL_AREA.toFixed(0) + ' m²  ·  ' + COLUMNS.length + ' columns  ·  ' + OPENINGS.length + ' openings'],
+                  [3.6, 'Building in 3D', ITEMS.length + ' pieces of furniture'],
+                  [4.3, 'Rendering 1440p60', 'done']];
+    rows.forEach(([t0, a, b], i) => {
+      const p = k(t0, t0 + 0.25), y = 470 + i * 110; if (p <= 0) return;
+      g.globalAlpha = aOn * p; adCheck(g, 190, y, 46, AD.clay); T(a, 270, y, 50, AD.paper, AD_MONO, 700);
+      g.font = `700 50px ${AD_MONO}`; T(b, 270 + g.measureText(a + '   ').width, y, 50, AD.mute, AD_MONO);
+    });
+    g.globalAlpha = aOn;
+    if (u < 4.9 && Math.floor(u * 2) % 2 === 0) { g.fillStyle = AD.paper; g.fillRect(cx + 6, 330 - 32, 30, 64); }
+  }
+  g.globalAlpha = 1;
+  // the channel change: snow, the channel number, a rolling bar
+  const sn = 1 - k(0.5, 1.0);
+  if (sn > 0) {
+    const f = Math.floor(u * 30);
+    for (let j = 0; j < 36; j++) for (let i = 0; i < 64; i++) { const v = 30 + 200 * adHash(i, j, f); g.fillStyle = `rgba(${v},${v},${v},${0.9 * sn})`; g.fillRect(i * 30, j * 30, 30, 30); }
+    g.fillStyle = `rgba(255,255,255,${0.18 * sn})`; g.fillRect(0, (u * 900) % 1300 - 120, 1920, 90);
+    T('CH 05', 110, 110, 64, `rgba(120,255,140,${sn})`, AD_MONO, 700);
+  }
+  // B. the title card, opened from the middle of the screen
+  const bR = k(5.0, 5.9) * 1500;
+  if (bR > 1 && u < 12.4) {
+    g.save(); g.beginPath(); g.arc(960, 540, bR, 0, TAU); g.clip(); g.fillStyle = AD.paper; g.fillRect(0, 0, 1920, 1080);
+    const bo = 1 - k(8.6, 9.1);
+    g.globalAlpha = bo;
+    const sp = k(5.3, 6.1), r = 118 * (0.4 + 0.6 * easeOut(sp));
+    adSpark(g, 960, 330, r, u * 0.4, AD.clay);
+    T('Claude Code', 960, 590, 176, AD.ink, AD_SERIF, 500, 'center');
+    const pl = k(6.3, 6.9); g.globalAlpha = bo * pl;
+    g.fillStyle = AD.ink; g.beginPath(); g.roundRect(960 - 230, 742 - 48 + (1 - pl) * 24, 460, 96, 48); g.fill();
+    T('Sonnet 5.5', 960, 742 + (1 - pl) * 24, 54, AD.paper, FONT_UI, 600, 'center');
+    const tg = k(7.1, 7.8); g.globalAlpha = bo * tg; T('Describe it. Watch it get built.', 960, 900 + (1 - tg) * 20, 58, AD.mute, AD_SERIF, 400, 'center');
+    // C. three lines on what it does
+    const feats = ['Reads your whole codebase', 'Edits files, runs tests, commits', 'In your terminal, IDE or browser'];
+    feats.forEach((s, i) => {
+      const t0 = 9.2 + i * 0.6, p = k(t0, t0 + 0.5), q = 1 - k(11.6, 12.0); if (p <= 0 || q <= 0) return;
+      g.globalAlpha = p * q; const y = 380 + i * 160 + (1 - p) * 36;
+      adSpark(g, 250, y, 36, i, AD.clay); T(s, 340, y, 78, AD.ink, AD_SERIF, 400);
+    });
+    g.restore();
+  }
+  // D. the end card, risen from the bottom edge
+  const dY = 1080 * (1 - k(11.9, 12.6));
+  if (dY < 1080) {
+    g.save(); g.beginPath(); g.rect(0, dY, 1920, 1080 - dY); g.clip(); g.fillStyle = AD.clay; g.fillRect(0, 0, 1920, 1080);
+    adSpark(g, 960, 270, 86, u * 0.4, AD.paper);
+    T('Claude Code', 960, 520, 196, AD.paper, AD_SERIF, 500, 'center');
+    T('Sonnet 5.5', 960, 690, 84, AD.ink, FONT_UI, 700, 'center');
+    T('claude.ai/code', 960, 830, 54, AD.paper, AD_MONO, 400, 'center');
+    T('This film was made with Claude Code.', 960, 960, 34, 'rgba(240,238,230,.8)', FONT_UI, 400, 'center');
+    g.restore();
+  }
+  // the channel's bug, in the corner while the advert plays
+  if (u > 0.9) { g.globalAlpha = 0.55; g.fillStyle = '#000'; g.beginPath(); g.roundRect(1690, 66, 140, 56, 12); g.fill(); g.globalAlpha = 0.9; T('AD', 1760, 95, 34, '#fff', FONT_UI, 700, 'center'); }
+  g.restore();
+}
+// what the set shows before the advert: the picture the screen has always had, at the advert's resolution
+function adIdle(g, W, H) {
+  const q = g.createLinearGradient(0, 0, 0, H); q.addColorStop(0, '#2b5f9e'); q.addColorStop(.55, '#78b0d6'); q.addColorStop(.56, '#2d5a4a'); q.addColorStop(1, '#16302a');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = q; g.fillRect(0, 0, W, H);
+}
+
 // the last seconds of the 3D film: a quiet title over the finished apartment
 function drawEnd(ctx, t) {
-  const a = smooth(clamp((t - T3.titleT) / 1.0));
+  const a = smooth(clamp((t - T3.titleT) / 1.0)) * (1 - smooth(clamp((t - T3.titleOut) / 1.0)));
   if (a <= 0.01) return;
   ctx.save();
   const g = ctx.createLinearGradient(0, DH * 0.55, 0, DH); g.addColorStop(0, 'rgba(9,11,14,0)'); g.addColorStop(1, `rgba(9,11,14,${0.7 * a})`);
@@ -2894,7 +3014,8 @@ function renderFrame(ctx, W, H, t, opt = {}) {
   }
   const walking = T3.walk && t >= T3.walk[0][0];
   const lbl = in3D && t >= T3.swap + 1.4 ? (walking ? '[–][Perspective][Realistic]' : '[–][SW Isometric][Realistic]') : '[–][Top][2D Wireframe]';
-  drawViewportDecor(ctx, vp, t, 1 - slide, lbl, 1 - 0.25 * slide);
+  const hud = 1 - (in3D && T3.walkEnd ? smooth(clamp((t - T3.walkEnd) / 0.8)) : 0);   // the viewport furniture leaves with the walk: the last scene is only the television
+  drawViewportDecor(ctx, vp, t, (1 - slide) * hud, lbl, (1 - 0.25 * slide) * hud);
   drawChrome(ctx, t, slide, { cursorW });
   const cmdA = in3D ? 1 - smooth(clamp((t - T3.cmdOut) / 0.9)) : 1;           // the command line leaves once the walk is under way, well before the end title
   if (cmdA > 0.01) { ctx.save(); ctx.globalAlpha = cmdA; drawCmdLine(ctx, t, slide); ctx.restore(); }

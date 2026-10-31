@@ -11,8 +11,8 @@
 
 // ---- the film as a whole
 export const FILM = {
-  chapters: 21,            // player chips. 18 -> 19 when PLASTER & PAINT was added, 19 -> 20 with the WALK-THROUGH (the tour), 20 -> 21 with the FACADE (inserted before the tour)
-  seconds: 266.93,         // T_END = S + 83 s (the HOME orbit ends) + 14.5 s (the facade lap) + 51.5 s (the tour). 16,016 frames at 60 fps
+  chapters: 22,            // player chips. 18 -> 19 when PLASTER & PAINT was added, 19 -> 20 with the WALK-THROUGH (the tour), 20 -> 21 with the FACADE (inserted before the tour), 21 -> 22 with ON THE TELEVISION (after it)
+  seconds: 281.43,         // T_END = S + 83 s (the HOME orbit ends) + 14.5 s (the facade lap) + 66 s (the tour: 49 s of walk, then 17 s that end on the television). 16,886 frames at 60 fps
   secondsTol: 0.01,
 };
 
@@ -140,9 +140,10 @@ export const FACADE = {
 };
 
 // ---- the first-person tour (tour.test.mjs). Z = the moment the facade lap ends and the walk begins: T3.walk[0][0] = S + 83 + 14.5 s. Times below are seconds after Z.
+//      The walk proper runs from Z to T3.walkEnd (Z + 49 s); the 17 s after it belong to the television (TV, below) and are not held to the walk's limits.
 export const TOUR = {
   chapter: "WALK-THROUGH",    // the chip that opens the tour (found by name); it starts within [Z - 1, Z]
-  seconds: 51.5,              // the tour's length: Z to the end of the film
+  seconds: 49.0,              // the walk's length: Z to T3.walkEnd, where the camera sets off for the television
   roof: [0.3, 2.7],           // the roof slab drops onto the walls ...
   lights: [0.8, 2.6],         // ... the ceiling lamps come up from zero while it shuts the sun out ...
   shut: [1.2, 2.2],           // ... the front door D01 closes under it ...
@@ -166,4 +167,26 @@ export const TOUR = {
     shutAt: 6.4, openAt: 8.6, box: [0.46, 0.4, 0.54, 0.6],      // frame fractions x0, y0, x1, y1
     shutMax: 90, openMin: 120,                                  // mean luminance (0..255) of that box
   },
+};
+
+// ---- the television (tv.test.mjs): the walk ends in front of the TV, which shows an advert for Claude Code (Sonnet 5.5), and the film ends on it. Times are seconds after Z.
+export const TV = {
+  chapter: "ON THE TELEVISION",  // the last chip; it opens where the walk proper ends (T3.walkEnd = Z + 49)
+  after: 49.0,                   // the chapter and the camera's set-off
+  seconds: 66.0,                 // Z to the end of the film
+  adStart: 51.0, adLen: 13.5,    // the set changes channel here (snow), and the advert runs this long; the end card then stays on until the film ends
+  maxSpeed: 1.0,                 // m/s: the camera crosses the room slowly (the walk's own limit is 1.4; this stretch peaks near 0.5)
+  maxYaw: 30, maxPitch: 12,      // deg/s
+  clearTv: 0.6,                  // m: in plan, the eye never comes closer than this to the TV unit's footprint (the crossing peaks at 0.72, 1.4 m up, over the TV's 1.27 m top; it ends 1.9 m from the screen)
+  endEye: [5.3, 0.99, -1.7], endEyeTol: 0.05, endHeading: 90, endHeadingTol: 1,   // the final pose: a seated eye on the sofa line, facing north to the screen (m, m, m = three.js x, y, z; deg)
+  fillAt: 65.0,                  // a frame before the final fade (it starts 0.8 s before the end): the screen fills the whole frame
+  card: [217, 119, 87], cardTol: 20, cardTolTop: 70, // the end card's colour (terracotta) as it reaches the viewer, per channel, at the frame's corners and edges: within 20 at the sides and the bottom, 70 along the top, where the ceiling lamp's reflection lifts it (a tone-mapped screen would be well under 20 here)
+  hudDev: 30,                    // the largest deviation of any colour channel from the mean, in a corner strip of that frame: the card is a smooth gradient there (about 15); a label or a title is 40 or more
+  phases: [                      // the picture alone (adFrame), at these seconds into the advert
+    { u: 0.2, what: "snow", stdMin: 40 },
+    { u: 3.9, what: "terminal", lumMax: 60, clayMin: 0.0002 },
+    { u: 7.6, what: "title card", lumMin: 200, clayMin: 0.001 },
+    { u: 10.8, what: "three lines", lumMin: 200, bands: [[0.3, 0.42], [0.46, 0.58], [0.62, 0.74]], bandDark: 0.002 },
+    { u: 13.4, what: "end card", clayMin: 0.5 },
+  ],
 };
