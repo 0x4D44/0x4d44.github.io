@@ -7,12 +7,19 @@ import { SIM_DT } from './config.js';
 
 const r1 = (x) => Math.round(x * 10) / 10;
 
-/** URL parameters that switch the test surface on. */
-export const DEBUG_PARAMS = ['debug', 'manual', 'autostart', 'demo', 'autopilot', 'course', 'craft', 'diff', 'laps', 'bots', 'seed', 'quality'];
+/** URL parameters that switch the test surface on. `quality` is not one of them (R2-E-13): it is a setting a player may be told to use (`?quality=low`),
+ *  and the game honours it with or without the surface. */
+export const DEBUG_PARAMS = ['debug', 'manual', 'autostart', 'demo', 'autopilot', 'course', 'craft', 'diff', 'laps', 'bots', 'seed'];
 /** The error log keeps the newest entries only (a runaway error would otherwise grow without bound). */
 export const MAX_ERRORS = 200;
 
-export function debugEnabled(params) { return DEBUG_PARAMS.some((k) => params.has(k)); }
+/** `?debug` is a switch, so `debug=0`, `debug=false`, `debug=off` and `debug=no` mean off; any other value ("1", "true", a bare `?debug`) means on. */
+export function debugFlag(params) {
+  if (!params.has('debug')) return false;
+  return !['0', 'false', 'off', 'no'].includes(String(params.get('debug')).trim().toLowerCase());
+}
+
+export function debugEnabled(params) { return DEBUG_PARAMS.some((k) => (k === 'debug' ? debugFlag(params) : params.has(k))); }
 
 export function installDebug(game) {
   if (!debugEnabled(game.params)) return null;

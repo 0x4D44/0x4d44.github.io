@@ -5,7 +5,7 @@ import { SIM_DT, MAX_SIM_STEPS, QUALITY, DEFAULT_SETTINGS, DEFAULT_LAPS, SETTING
 import { EventBus } from './events.js';
 import { RNG } from './util.js';
 import { Assets } from './assets.js';
-import { installDebug } from './debug.js';
+import { installDebug, debugFlag } from './debug.js';
 import { createGovernor, CostMeter } from './governor.js';
 import { GpuTimer } from './gpu-timer.js';
 import { createInput } from './flight/input.js';
@@ -17,6 +17,9 @@ import { createPost } from './craft/post.js';
 import { AudioEngine } from './audio/audio.js';
 import { MusicPlayer } from './audio/music.js';
 import { UI } from './ui/ui.js';
+
+/** R2-E-04: most programs the game keeps linked between races (a course needs 60-120; four courses and three presets stay well under this). */
+const MAX_KEPT_PROGRAMS = 600;
 
 /** Resolves once the next frame has been presented, or after `ms` (a hidden tab gets no animation frames and must not wait for one). */
 const nextPaint = (ms = 250) => new Promise((resolve) => {
@@ -51,6 +54,8 @@ export class Game {
     this.contextLost = false;                                                   // E-12
     this._loadToken = 0; this.ready = false;
     this._warming = 0;                                                          // warm-ups in progress
+    this._kept = new Set();                                                     // R2-E-04: programs held across races (keepPrograms)
+    this._holdDraw = false; this._presetToken = 0;                            // R2-V-16: a preset change holds the last frame while its programs link
     this.COURSES = COURSES;
   }
 
@@ -67,7 +72,7 @@ export class Game {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
-    renderer.debug.checkShaderErrors = this.manual || this.params.has('debug');   // players: no synchronous link check (smoother load); tests and ?debug keep it
+    renderer.debug.checkShaderErrors = this.manual || debugFlag(this.params);   // players: no synchronous link check (smoother load); tests and ?debug keep it
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;      // r186 removed PCFSoftShadowMap (PCFShadowMap is the soft filter now)
     renderer.setClearColor(0x0b1a33, 1);
@@ -142,6 +147,7 @@ export class Game {
     clearTimeout(this._ctxT);
     this._ctxT = setTimeout(() => { if (this.contextLost) this.notice('Still waiting for the graphics driver. If this does not clear, reload the page.', { reload: true }); }, 8000);
     this.gpuTimer = null;                               // its queries died with the context
+    this._kept.clear();                                 // the programs died with it too
     this.events.emit('game:contextlost', {});
   }
 
@@ -226,6 +232,7 @@ export class Game {
   /** cfg = { courseId, craftId, livery, difficulty, laps, mode:'quick'|'gp'|'trial'|'demo', bots, seed, demo, autopilot } */
   async startRace(cfg, { keepState = false } = {}) {
     const token = ++this._loadToken;
+    this._presetToken++; this._holdDraw = false;        // a preset warm-up still running belongs to the scene that is about to go
     if (!keepState) this.setState('loading');
     this.events.emit('game:loading', { cfg });
     this.disposeRace();
@@ -271,9 +278,39 @@ export class Game {
    *  127 ms frame seven seconds into the race, R2-E-05; the first countdown frame cost 195-247 ms uploading 112-120 geometries that the grid camera did not see, R2-E-04).
    *  Culling flags are put back before anything else runs. */
   hiddenFrame() {
-    const forced = [];
+    const forced = [], probe = this.q.shadows > 0 ? this.shadowProbe() : null;
     this.scene.traverse((o) => { if (o.frustumCulled && (o.isMesh || o.isPoints || o.isLine || o.isSprite)) { o.frustumCulled = false; forced.push(o); } });
-    try { this.renderFrame(0, 0); } finally { for (const o of forced) o.frustumCulled = true; }
+    if (probe) this.scene.add(probe);
+    this.post?.forceSpeed?.(true);                // the speed pass is off until the craft is fast: its program used to link 3 s into the race
+    try { this.renderFrame(0, 0); } finally { this.post?.forceSpeed?.(false); if (probe) this.scene.remove(probe); for (const o of forced) o.frustumCulled = true; }
+  }
+
+  /** Three casters for the shadow pass, drawn after the real ones: alpha-tested without a map, a map without alpha test, both. three uses ONE shared depth material and
+   *  mutates it per caster (`map`, `alphaTest`), re-linking its program only when the alpha-test state crosses zero, so which depth variants exist after the hidden
+   *  frame depends on the order the real casters happen to be drawn in. Neon's `depth ... uv` variant (map, no alpha test) was the one program created after go (a
+   *  110-150 ms frame about 11 s in). With the three probes every variant exists before the race. Built once, reused. */
+  shadowProbe() {
+    if (!this._probe) {
+      const tex = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1); tex.needsUpdate = true;
+      const geo = new THREE.PlaneGeometry(1, 1), g = new THREE.Group(); g.name = 'shadowProbe';
+      for (const o of [{ alphaTest: 0.5 }, { map: tex }, { map: tex, alphaTest: 0.5 }]) {
+        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial(o)); m.castShadow = true; m.frustumCulled = false; g.add(m);
+      }
+      this._probe = g;
+    }
+    return this._probe;
+  }
+
+  /** R2-E-04: three frees a GPU program the moment the last material using it is disposed, so every race rebuilt (and re-linked) the same 60-120 programs. One extra
+   *  reference per program keeps it linked across races; the next course finds it by cache key. Capped, so a long session cannot collect programs without end;
+   *  forgotten on context loss (three rebuilds its tables then). */
+  keepPrograms() {
+    const progs = this.renderer?.info?.programs; if (!progs || this.contextLost) return;
+    for (const p of progs) {
+      if (this._kept.has(p) || this._kept.size >= MAX_KEPT_PROGRAMS) continue;
+      if (/^\d/.test(p.cacheKey)) continue;             // a ShaderMaterial program: its key starts with per-race shader ids, so no later race can find it and holding it would only pile up (leak.test: +13 programs per race)
+      p.usedTimes++; this._kept.add(p);
+    }
   }
 
   /** compileAsync of everything the game draws, raced against 5 s (a driver without parallel compile, or a stuck one, must not hold the game up). The programs are
@@ -290,6 +327,7 @@ export class Game {
   }
 
   disposeRace() {
+    this.keepPrograms();
     if (this.race) { this.race.dispose?.(); this.race = null; this.player = null; }
     if (this.course) { this.course.detach?.(this); this.course.dispose?.(); this.course = null; }
   }
@@ -307,7 +345,26 @@ export class Game {
     this.post?.setQuality?.(this.q);
     this.resize();
     if (keepScale) this.gov?.applied(this.qualityId, this.q.renderScale); else this.gov?.reset(this.qualityId, this.q.renderScale);
+    if (this.race && !this.manual) this.warmPreset();   // (a manual-mode harness steps and draws by hand: it must not find a held frame)// a scene already exists: its programs for the new preset (shadows on or off, another post chain) would otherwise link inside the next frame
     if (!silent) this.events.emit('settings:change', { key: 'quality', value: id });
+  }
+
+  /** R2-V-16: switching preset with a race built (Settings from the pause menu, or a harness) used to compile the new preset's programs inside the next frame: Redrock
+   *  High -> Low froze the page for 1.7-2.3 s with the Settings screen on top. The programs are linked in parallel with compileAsync while the last frame stays on
+   *  screen (renderFrame draws nothing meanwhile; the sim and the UI go on), then one hidden frame builds the post chain's own. Never fatal; a newer preset change or
+   *  a new race supersedes it (a stale run must not clear the newer one's hold). */
+  async warmPreset() {
+    if (this.contextLost || !this.renderer?.compileAsync) return;
+    const token = ++this._presetToken;
+    this._holdDraw = true; this._warming++;
+    try {
+      this.renderFrame(0, 0);                           // every system adopts the preset (materials, visibility) before the programs are collected; nothing is drawn
+      await this.compileScene();
+      if (token !== this._presetToken || this.contextLost) return;
+      this._holdDraw = false;                           // the hidden frame has to draw
+      this.hiddenFrame();
+    } catch { /* a failed warm-up only costs the first-frame stall */ }
+    finally { this._warming--; if (token === this._presetToken) this._holdDraw = false; }
   }
 
   /** E-05: the governor wants another preset; it is applied between races only. */
@@ -381,7 +438,7 @@ export class Game {
     this.music.update(dt, this);
     this.ui.update(dt, this);
     this.post.update(dt, this);
-    this.post.render(dt);
+    if (!this._holdDraw) this.post.render(dt);          // R2-V-16: held while a preset change links its programs
     gpu?.end();
   }
 

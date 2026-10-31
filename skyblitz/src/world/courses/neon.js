@@ -76,7 +76,7 @@ export const neonDef = (() => {
       marks: { gap: 1 },
     }],
     boost: [
-      { branch: 0, u: 130, count: 5, gap: 125, radius: 17, weave: 5, power: 1.3, duration: 1.0 },   // billboard slot: rewarded line
+      { branch: 0, u: 130, count: 5, gap: 125, radius: 17, weave: 5, power: 1.2, duration: 0.6 },   // billboard slot: rewarded line (power 1.3 -> 1.2, duration 1.0 -> 0.6, R3-C4: trims the shortcut saving so the fastest Normal lap clears the 55 s floor; power 1.15 / duration 1.0 pushed AI contact over its limit)
       { mark: 'loopEntry', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'sweepA', offset: -40, count: 2, gap: 55, weave: 22, radius: 20, power: 1.3, duration: 1.2 },
       { mark: 'hwy', offset: -150, count: 3, gap: 50, weave: 16, radius: 20, power: 1.35, duration: 1.4 },

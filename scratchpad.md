@@ -234,3 +234,12 @@ human-invoked review triages these — don't fix them inline.
   whether a bot takes the shortcut; trim the neon shortcut saving or loosen by one reviewed number.
 - [ ] 2026-10-31 — Frost GO frame: white pixels 2.65 % and bright 22.4 % pass, but craft-to-deck contrast is 1.4, not the 3:1 I asked
   for (`skyblitz/src/world/platform.js` deckIbl). Needs a look by eye on the next visual pass.
+
+- [ ] 2026-10-31 — `skyblitz/tests/sim.test.mjs:121` lap-time band (Normal, seed 7, 3 laps) is a `todo`: sunrise's fastest lap is 52.6 s (< 55; it is the autopilot
+  player's shortcut lap, every AI lap is 61.5 s or more) and redrock's median is 85.7 s (> 85; the AI pack). Same numbers on the round-2 tree. Trim the sunrise shortcut
+  saving ~3 s and speed the redrock AI ~1 %, retuning the keyboard gate (`balance.js`, `keybot-node.mjs`) together, or move one band number after review.
+- [ ] 2026-10-31 — `skyblitz/src/flight/guide.js:hazardPush` fixed the Sunrise sphere tumble, but hands-off still tumbles on Redrock Wasp/Comet/Sprite in the column
+  slalom (s 1584 to 1864), Redrock s 2396 and Frost Comet s 3440 (4 of 24 craft/course runs); the old guide failed 9 of 24. The `track` key bot tumbles on 16 of 18
+  Sunrise first laps with either guide.
+- [ ] 2026-10-31 — Keyboard gate: Normal `assist` mean place is 4.0 over 16 races (limit 3.5); Hard `aiSpeed` was raised 0.79 -> 0.87 so Hard tap/hands stay inside the gate
+  after the guide stopped tumbling. The gate wants assist <= 3.5 and hands >= 4.5 together, a one-place window narrower than the 16-race noise: re-define it, or add races.

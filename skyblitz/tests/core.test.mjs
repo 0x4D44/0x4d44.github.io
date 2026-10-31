@@ -320,10 +320,14 @@ test('debug gate: a bare URL (the real player) gets no test surface; every docum
   assert.equal(debugEnabled(new URLSearchParams('')), false);
   assert.equal(debugEnabled(new URLSearchParams('mute=1')), false, 'mute alone stays a harmless player option');
   assert.equal(debugEnabled(new URLSearchParams('foo=1&utm_source=x')), false);
-  for (const k of ['manual', 'debug', 'autostart', 'demo', 'autopilot', 'course', 'craft', 'diff', 'laps', 'bots', 'seed', 'quality']) {
+  for (const k of ['manual', 'debug', 'autostart', 'demo', 'autopilot', 'course', 'craft', 'diff', 'laps', 'bots', 'seed']) {
     assert.ok(DEBUG_PARAMS.includes(k), k);
     assert.equal(debugEnabled(new URLSearchParams(`${k}=1`)), true, k);
   }
+  // R2-E-13: `debug` is a switch, and `quality` is a player setting, not a gate
+  for (const off of ['debug=0', 'debug=false', 'debug=OFF', 'debug=no', 'quality=low', 'quality=auto', 'mute=1&quality=high', 'debug=0&quality=low']) assert.equal(debugEnabled(new URLSearchParams(off)), false, off);
+  for (const on of ['debug=1', 'debug=true', 'debug', 'debug=0&manual=1', 'quality=low&seed=3']) assert.equal(debugEnabled(new URLSearchParams(on)), true, on);
+  assert.equal(DEBUG_PARAMS.includes('quality'), false);
   assert.equal(MAX_ERRORS, 200);
 });
 
@@ -338,6 +342,11 @@ const env = () => (envP ??= (async () => {
 test.after(async () => { if (envP) { const e = await envP.catch(() => null); await e?.chrome.close(); await e?.srv?.close(); } });
 
 const J = async (page, expr) => JSON.parse(await page.eval(`JSON.stringify(${expr})`));
+/** Like J for an expression that is a promise. */
+const JA = async (page, expr) => JSON.parse(await page.eval(`(async () => JSON.stringify(await ${expr}))()`));
+/** Let the page draw `n` frames. For "nothing happens" assertions: the window is measured in frames the page really ran, so a loaded machine gets the same chance for a wrong
+ *  reaction to show itself as an idle one (a wall-clock sleep gave it fewer). Positive waits use page.waitFor on the condition instead. */
+const frames = (page, n = 3) => page.eval(`new Promise((res) => { let k = ${n}; const f = () => (--k > 0 ? requestAnimationFrame(f) : res(1)); requestAnimationFrame(f); })`);
 const TITLE = "document.getElementById('ui') && document.getElementById('ui').dataset.screen === 'title'";
 const ALERT = "!!document.getElementById('sb-boot')";
 const READY = 'window.__sky && __sky.ready';
@@ -384,10 +393,10 @@ const holdScenery = () => holdRequests('*src/world/courses/*-scenery.js*');     
 // ---- E-29
 
 test('E-29: a bare URL (and ?mute alone) exposes no test surface and leaves console.error alone', async () => {
-  for (const q of ['', '?mute=1', '?utm_source=x']) {
+  for (const q of ['', '?mute=1', '?utm_source=x', '?debug=0', '?quality=low', '?mute=1&debug=false&quality=med']) {
     await withPage(q, async (page) => {
-      await page.waitFor(TITLE, { timeout: 60000 });
-      await delay(300);
+      await page.waitFor(TITLE, { timeout: 150000 });                          // generous: a loaded machine took over 60 s once
+      await frames(page, 20);
       assert.equal(await page.eval('typeof window.__sky'), 'undefined', `${q || 'bare URL'}: window.__sky`);
       assert.match(await page.eval('Function.prototype.toString.call(console.error)'), /native code/, `${q || 'bare URL'}: console.error is native`);
       assert.equal(await page.eval(ALERT), false, 'a healthy start shows no failure overlay');
@@ -487,8 +496,9 @@ test('R2-E-03: a load that is slow but keeps making progress (every file 0.8 s l
 test('R2-E-03: a dynamic import that rejects before the game is up shows the failure card; an unrelated rejection does not', async () => {
   const hold = holdRequests('*src/race/items.js*');
   await withPage('?mute=1', async (page) => {
-    await delay(500);
-    await page.eval("Promise.reject(new Error('boom')); 1"); await delay(300);
+    for (let i = 0; i < 600 && !hold.ids.length; i++) await delay(50);          // the module graph is loading (the held request arrived): the watchdog has been installed for a while
+    assert.ok(hold.ids.length >= 1, 'the request was held');
+    await page.eval("Promise.reject(new Error('boom')); 1"); await frames(page, 20);
     assert.equal(await page.eval(ALERT), false, 'an unrelated rejection is not a load failure');
     await page.eval("Promise.reject(new TypeError('Failed to fetch dynamically imported module: http://x/y.js')); 1");
     await page.waitFor(ALERT, { timeout: 5000 });
@@ -519,8 +529,8 @@ test('E-12 / R2-V-18: losing the WebGL context pauses the race and shows a notic
     assert.equal(before.lost, false); assert.equal(before.paused, false); assert.equal(before.notice, null);
     await page.eval("window.__ext = __sky.game.renderer.getContext().getExtension('WEBGL_lose_context'); __ext.loseContext(); 1");
     await page.waitFor('__sky.game.contextLost === true', { timeout: 5000 });
-    await delay(300);
-    const a = await snap(); await delay(800); const b = await snap();
+    await page.waitFor(`__sky.game.paused === true && !!document.getElementById('sb-notice') && document.getElementById('ui').dataset.screen === 'pause'`, { timeout: 30000 });
+    const a = await snap(); await frames(page, 45); const b = await snap();
     assert.equal(a.paused, true, 'the race is paused'); assert.equal(a.screen, 'pause');
     assert.match(a.notice, /Graphics context lost/);
     assert.equal(b.sim, a.sim, 'the simulation is frozen'); assert.equal(b.frame, a.frame, 'nothing is drawn into the dead context');
@@ -531,7 +541,8 @@ test('E-12 / R2-V-18: losing the WebGL context pauses the race and shows a notic
     assert.equal((await snap()).paused, true, 'resuming into a blank frame is refused');
     await page.eval('__ext.restoreContext(); 1');
     await page.waitFor('__sky.game.contextLost === false', { timeout: 10000 });
-    await delay(1500);                                                                    // long enough for an automatic resume (the old behaviour) to show itself
+    await page.waitFor(`__sky.game.frame > ${b.frame + 10}`, { timeout: 30000 });                  // drawing again
+    await frames(page, 90);                                                               // long enough for an automatic resume (the old behaviour) to show itself
     const c = await snap();
     assert.equal(c.paused, true, 'still paused: the race does not restart mid-air'); assert.equal(c.screen, 'pause'); assert.equal(c.notice, null, 'notice removed');
     assert.equal(c.sim, b.sim, 'the simulation has not moved'); assert.ok(c.frame > b.frame + 10, 'drawing again');
@@ -551,7 +562,7 @@ test('E-12: a race the player had paused stays paused after the context comes ba
     await page.waitFor('__sky.game.contextLost === true', { timeout: 5000 });
     await page.eval('__ext.restoreContext(); 1');
     await page.waitFor('__sky.game.contextLost === false', { timeout: 10000 });
-    await delay(300);
+    await frames(page, 20);
     assert.equal(await page.eval('__sky.game.paused'), true);
     assert.equal(await page.eval("document.getElementById('sb-notice')"), null);
     assert.deepEqual(page.errors(), []);
@@ -581,11 +592,13 @@ test('R2-V-01: a race the player starts while the demo is still being built wins
   const hold = holdScenery();
   await withPage('?debug=1&mute=1', async (page) => {
     await page.waitFor(TITLE, { timeout: 30000 });
-    await page.eval("window.__states = []; __sky.game.events.on('game:state', (e) => window.__states.push(e.to)); 1");
+    await page.eval("window.__states = []; window.__ready = 0; __sky.game.events.on('game:state', (e) => window.__states.push(e.to)); __sky.game.events.on('game:loadProgress', (e) => { if (e.label === 'Ready') window.__ready++; }); 1");
     await page.eval("window.__mine = __sky.start({ courseId: 'sunrise', craftId: 'falcon', seed: 7, bots: 1, laps: 1 }); 1");       // the player picks Quick Race before the title demo exists
     await hold.release();
     await page.waitFor("__sky.game.state === 'race' && !!__sky.game.race && !__sky.game.race.demo", { timeout: 90000 });
-    await delay(2500);                                                                                          // long enough for the superseded demo build to finish and report
+    // C1: the superseded demo build ends with its own 'Ready' (the player's race is the second); then a few frames let its continuation (token check, canvas restore) run
+    await page.waitFor('window.__ready >= 2', { timeout: 90000 });
+    await page.eval('new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r))))');
     const r = await J(page, `({ state: __sky.game.state, screen: __sky.game.ui.cur && __sky.game.ui.cur.name, demo: !!__sky.game.race.demo, op: ${CANVAS_OPACITY}, inline: document.querySelector('canvas').style.opacity, course: __sky.game.course && __sky.game.course.id, states: window.__states })`);
     assert.deepEqual(r, { state: 'race', screen: null, demo: false, op: '1', inline: '', course: 'sunrise', states: ['loading', 'race'] }, 'the superseded demo never put the title state back over the player\'s loading race');
     assert.deepEqual(page.errors(), []);
@@ -626,7 +639,12 @@ test('V-8: an untouched profile starts with reduced flashing and gentler shake w
 
 test('V-8: with no OS preference the defaults are unchanged, and a live change of the preference is followed unless the player chose', async () => {
   await withPage('?debug=1&manual=1&mute=1', async (page) => {
-    const set = async (v) => { await page.s('Emulation.setEmulatedMedia', REDUCE(v)); await delay(150); };
+    // C1: wait for what the game observes (the page's own media query and the game's copy of it), not for a fixed time
+    const set = async (v) => {
+      await page.s('Emulation.setEmulatedMedia', REDUCE(v));
+      const want = v === 'reduce';
+      await page.waitFor(`matchMedia('(prefers-reduced-motion: reduce)').matches === ${want} && __sky.game.reducedMotion === ${want}`, { timeout: 30000 });
+    };
     const m = await motion(page);
     assert.equal(m.os, false); assert.equal(m.reduceFlash, false); assert.equal(m.shake, 1); assert.equal(m.calm, false);
     assert.equal(m.post, 0.5); assert.equal(m.hudA, 0.5);
@@ -732,6 +750,102 @@ test('R2-E-01: the game tells the governor whether a GPU timer is reading: witho
   }, { wait: RACE });
 });
 
+// ---- R2-V-16
+
+/** Real loop (no `manual`). Wraps post.render to log, for every frame that really draws, how many programs it had to create. */
+const WATCH_DRAWS = `(() => {
+  const g = __sky.game, orig = g.post.render.bind(g.post); window.__draws = [];
+  g.post.render = (dt) => { const n0 = g.renderer.info.programs.length; orig(dt); window.__draws.push({ add: g.renderer.info.programs.length - n0, warming: g._warming, held: g._holdDraw, frame: g.frame }); };
+  return 1; })()`;
+
+test('R2-V-16: switching the preset with a race built links the new programs before the first frame that uses them (no compile inside a drawn frame), and the held frame is released', async () => {
+  await withPage('?debug=1&autostart=1&mute=1&course=redrock&seed=7&quality=high&bots=3&laps=1', async (page) => {
+    await page.waitFor('__sky.game.simTime > 1', { timeout: 60000 });
+    await page.eval('__sky.game.setPaused(true); 1');                                  // what Settings does: the pause menu is up
+    await page.eval(WATCH_DRAWS);
+    for (const [id, minNew, maxHidden] of [['low', 20, 4], ['high', 0, 20]]) {      // maxHidden: the post chain's own programs (High: bloom blurs, SMAA's three passes, grade, output; Low: grade, output)
+      const p0 = await page.eval('__sky.game.renderer.info.programs.length');
+      await page.eval('window.__draws.length = 0; 1');
+      await page.eval(`__sky.game.setQuality('${id}'); 1`);
+      await page.waitFor(`__sky.game.qualityId === '${id}' && __sky.game._warming === 0 && !__sky.game._holdDraw`, { timeout: 30000 });
+      assert.ok((await page.eval('__sky.game.renderer.info.programs.length')) - p0 >= minNew, `${id}: the warm-up linked the new preset's programs (>= ${minNew})`);
+      await page.eval('new Promise((res) => { const n0 = window.__draws.length; const f = () => (window.__draws.length >= n0 + 8 ? res(1) : requestAnimationFrame(f)); f(); })');   // drawing goes on afterwards
+      const draws = await J(page, 'window.__draws');
+      const live = draws.filter((d) => !d.warming);
+      assert.ok(live.length >= 8, `${id}: frames were drawn after the switch (${live.length})`);
+      assert.deepEqual(live.map((d) => d.add), live.map(() => 0), `${id}: no program was created inside a live frame`);
+      const hidden = draws.filter((d) => d.warming);
+      assert.ok(hidden.length <= 1, `${id}: only the one hidden frame drew while the warm-up ran (${hidden.length})`);
+      assert.ok(hidden.reduce((s, d) => s + d.add, 0) <= maxHidden, `${id}: the hidden frame only builds the post chain's own programs (${JSON.stringify(hidden)})`);   // Low: 19 without the pre-pass, the parallel link covered fewer
+    }
+    assert.deepEqual(page.errors(), []);
+  }, { wait: RACE });
+});
+
+test('R2-V-16: a new race that starts while a preset warm-up runs is not left with a held frame, and manual mode never holds', async () => {
+  await withPage('?debug=1&autostart=1&mute=1&course=redrock&seed=7&quality=high&bots=1&laps=1', async (page) => {
+    await page.waitFor('__sky.game.simTime > 1', { timeout: 60000 });
+    await page.eval("__sky.game.setQuality('low'); window.__hold = __sky.game._holdDraw; window.__next = __sky.start({ courseId: 'sunrise', seed: 3, bots: 1, laps: 1 }); 1");
+    assert.equal(await page.eval('window.__hold'), true, 'the switch holds the frame while it links');
+    await page.waitFor("__sky.game.state === 'race' && __sky.game.course && __sky.game.course.id === 'sunrise' && __sky.game.simTime > 0.5", { timeout: 120000 });
+    assert.equal(await page.eval('__sky.game._holdDraw'), false, 'the new race draws');
+    assert.equal(await page.eval('__sky.game._warming'), 0);
+  }, { wait: RACE });
+  await withPage('?debug=1&manual=1&autostart=1&mute=1&course=sunrise&seed=7&quality=high&bots=1&laps=1', async (page) => {
+    await page.eval("__sky.game.setQuality('low'); 1");
+    assert.equal(await page.eval('__sky.game._holdDraw'), false, 'manual mode: a harness draws by hand, so nothing is ever held');
+  }, { wait: RACE });
+});
+
+// ---- R2-E-04 / R2-E-05
+
+test('R2-E-04: a second race on the same course re-links only the programs three keys by per-race shader ids (about a third), not all of them', async () => {
+  await withPage('?debug=1&manual=1&autostart=1&mute=1&course=redrock&seed=7&quality=high&bots=3&laps=1', async (page) => {
+    const first = await J(page, '__sky.game.renderer.info.programs.length');
+    assert.ok(first >= 40, `the first race linked its programs (${first})`);
+    const r = await JA(page, `(async () => {
+      const g = __sky.game, before = new Set(g.renderer.info.programs), t = performance.now();
+      await __sky.start({ courseId: 'redrock', seed: 8, bots: 3, laps: 1 });
+      const fresh = g.renderer.info.programs.filter((p) => !before.has(p)).length;
+      return { fresh, total: g.renderer.info.programs.length, kept: g._kept.size };
+    })()`);
+    assert.ok(r.kept >= first * 0.4, `programs are held across the race change (${r.kept} of ${first})`);
+    assert.ok(r.total <= first + 3, `the program count does not grow race over race (${first} -> ${r.total}; programs keyed by per-race shader ids must not be held, leak.test.mjs)`);
+    // ShaderMaterial programs (water, terrain...) are keyed by shader-source ids that three frees with their last material, so about a fifth are still rebuilt (14 of 68 on Redrock)
+    assert.ok(r.fresh <= first * 0.35, `the second race linked ${r.fresh} new programs (a rebuilt-from-scratch race links ${first})`);
+    assert.deepEqual(page.errors(), []);
+  }, { wait: RACE });
+});
+
+test('R2-E-04: held programs are forgotten when the context is lost', async () => {
+  await withPage('?debug=1&manual=1&autostart=1&mute=1&course=sunrise&seed=7&quality=low&bots=1&laps=1', async (page) => {
+    await page.eval('__sky.game.keepPrograms(); 1');
+    assert.ok(await page.eval('__sky.game._kept.size') > 10);
+    await page.eval("window.__ext = __sky.game.renderer.getContext().getExtension('WEBGL_lose_context'); __ext.loseContext(); 1");
+    await page.waitFor('__sky.game.contextLost === true', { timeout: 10000 });
+    assert.equal(await page.eval('__sky.game._kept.size'), 0, 'the programs died with the context; their handles are dropped');
+    await page.eval('__ext.restoreContext(); 1');
+    await page.waitFor('__sky.game.contextLost === false', { timeout: 10000 });
+    assert.deepEqual(page.errors(), []);
+  }, { wait: RACE });
+});
+
+test('R2-E-05: the shadow pass has met every depth variant and the speed pass has been drawn once by the time the race goes live (neon, high): nothing links in the first 14 s', async () => {
+  await withPage('?debug=1&autostart=1&mute=1&autopilot=1&course=neon&seed=7&quality=high&bots=7&laps=2', async (page) => {
+    const r = await JA(page, `(async () => {
+      const g = __sky.game, seen = new Set(g.renderer.info.programs.map((p) => p.cacheKey)), late = [], t0 = performance.now(), s0 = g.simTime;
+      while (g.simTime - s0 < 14 && performance.now() - t0 < 90000) {
+        await new Promise((res) => requestAnimationFrame(res));
+        for (const p of g.renderer.info.programs) if (!seen.has(p.cacheKey)) { seen.add(p.cacheKey); late.push({ sim: +g.simTime.toFixed(1), key: p.cacheKey.slice(0, 60) }); }
+      }
+      return { late, simmed: g.simTime - s0 };
+    })()`);
+    assert.ok(r.simmed >= 14, `the race ran 14 s (${r.simmed})`);
+    assert.deepEqual(r.late, [], 'no program was linked after go');
+    assert.deepEqual(page.errors(), []);
+  }, { wait: RACE, timeout: 120000 });
+});
+
 // ---- E-28
 
 test('E-28: the quality preset reaches texture anisotropy', async () => {
@@ -786,7 +900,7 @@ test('E-28: Settings has a Controller vibration toggle (default on) that really 
 
 const PROGRAM_LOGS = `(() => { window.__plogs = []; const P = WebGL2RenderingContext.prototype, o = P.getProgramInfoLog; P.getProgramInfoLog = function (p) { const l = o.call(this, p); if (l && l.length) window.__plogs.push(l.slice(0, 200)); return l; }; })()`;
 
-for (const [course, quality] of [['sunrise', 'high'], ['redrock', 'high'], ['redrock', 'low']]) {
+for (const [course, quality] of [['sunrise', 'high'], ['redrock', 'high'], ['redrock', 'low'], ['redrock', 'med']]) {      // med: the only preset with the FXAA pass (R2-E-01 nit)
   test(`V-35: ${course} on ${quality}: the scene's shaders are compiled behind the loading screen, with no console warnings and no shader logs`, async () => {
     const logWarnings = [];
     await withPage(`?debug=1&manual=1&autostart=1&mute=1&course=${course}&seed=7&bots=7&quality=${quality}`, async (page) => {

@@ -41,18 +41,20 @@ for (const run of RUNS) {
     for (let i = 0; i < 80 && (await J('__sky.game.race.state')) !== 'racing'; i++) await page.eval('__sky.sim(5)');      // the countdown, up to GO
     assert.equal(await J('__sky.game.race.state'), 'racing', 'the race starts');
     if (!run.auto) await page.key('ShiftLeft', { type: 'down' });
-    const series = []; let deck = null;
+    const series = [], decks = [];
     for (let k = 1; k <= 6; k++) {                                                                                         // GO + 0.1 .. 0.6 s, the pale window
       series.push(await J('(()=>{ __sky.step(6, 1); return __glare.now(); })()'));
-      if (k === 2) deck = await J('__glare.deck()');                                                                       // GO + 0.2 s, where the old frame was palest
+      if (k <= 4) decks.push(await J('__glare.deck()'));                                                                   // GO + 0.1 .. 0.4 s, while the craft is on the deck (after that the camera leaves it and boost streaks fill the frame)
     }
+    const measurable = decks.every((d) => d && d.ratio != null), deck = measurable ? decks.reduce((a, b) => (b.ratio < a.ratio ? b : a)) : null;   // the worst window
     if (!run.auto) await page.key('ShiftLeft', { type: 'up' });
     const white = Math.max(...series.map((s) => s.white)), bright = Math.max(...series.map((s) => s.bright));
-    t.diagnostic(`${run.craft}: white ${series.map((s) => s.white).join(' ')} (max ${white} %), bright ${series.map((s) => s.bright).join(' ')} (max ${bright} %); craft vs deck ${JSON.stringify(deck)}`);
+    t.diagnostic(`${run.craft}: white ${series.map((s) => s.white).join(' ')} (max ${white} %), bright ${series.map((s) => s.bright).join(' ')} (max ${bright} %); craft vs deck, per window ${decks.map((d) => d && d.ratio).join(' ')}, worst ${JSON.stringify(deck)}`);
     const problems = [];                                                                                                   // every check is reported, not just the first to fail
     if (!(white <= WHITE_MAX)) problems.push(`white pixels reach ${white} % of the frame (limit ${WHITE_MAX} %)`);
     if (!(bright <= BRIGHT_MAX)) problems.push(`bright pixels reach ${bright} % of the frame (limit ${BRIGHT_MAX} %)`);
-    if (!(deck && deck.ratio >= DECK_RATIO_MIN)) problems.push(`the craft reads ${deck && deck.ratio}:1 against the deck (needs ${DECK_RATIO_MIN}:1): ${JSON.stringify(deck)}`);
+    if (!measurable) problems.push(`the craft or the deck was not measurable in a window: ${JSON.stringify(decks)}`);
+    else if (!(deck.ratio >= DECK_RATIO_MIN)) problems.push(`the craft reads ${deck.ratio}:1 against the deck in its worst window of GO + 0.1 .. 0.4 s (needs ${DECK_RATIO_MIN}:1): ${JSON.stringify(decks)}`);
     problems.push(...(await J('__sky.errors')).map((e) => `console error: ${e}`));
     assert.deepEqual(problems, [], 'the GO frame must not be pale');
   });
