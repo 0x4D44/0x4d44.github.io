@@ -80,7 +80,7 @@ export const RACE = {
   respawnProgEff: 0.1,     // ...and only if net progress is also under this fraction of the path flown in the window (vertical loops credit about 0.2)
   respawnProgSpeed: 15, respawnProgT: 5, // stuck by PROGRESS: under 15 m/s of course progress for 5 s (decaying timer) respawns, however the speed bounces
   assistDrag: 0,           // (d) the human's speed multiplier x (1 - assistDrag * smoothed keyboard-guide weight, 0..0.85); 0 = off
-  idleDrag: 0,             // hands-off rule: fraction of the human's pace removed at full idle (no key for 14 s); eases in over 8-14 s (0 = off)
+  idleDrag: 0.19,             // hands-off rule: fraction of the human's pace removed at full idle (no key for 14 s); eases in over 8-14 s (0 = off)
   idleRelease: 3,          // idleCruise falls at this rate per second once any key is down (full release in ~0.3 s)
   manualRespawnGap: 1.5,   // s after any respawn before a manual one is accepted again
   gridClearance: 8,      // m between a craft's lowest collision surface and the ground / deck at the grid

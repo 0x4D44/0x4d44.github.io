@@ -123,7 +123,7 @@ test('sim: lap-time band (Normal): the fastest flying lap is >= 55 s and the med
 
 test('sim: no AI grinds the launch deck, its lip or its rim in the first 10 s of racing, on any course (world agent)', () => {
   // The grid used to bump at the line (two columns 24-40 m apart), the bumped craft stalled and sank, and the deck's rear/front lip (5 m under the path,
-  // read by the collision code as a column flank) tumbled it 1.7 s in. Now the deck sits 10 m under the path and the grid columns are 60 m apart.
+  // read by the collision code as a column flank) tumbled it 1.7 s in. Now the deck sits 8 m under the path and the grid columns are 60 m apart.
   // Counted: every racer:graze (1 point) and ground / hazard hit (2 points) of an AI over the deck footprint grown by 60 m, in the first 10 s of the
   // race clock. Seeds are fixed; the result is deterministic.
   const bad = [];

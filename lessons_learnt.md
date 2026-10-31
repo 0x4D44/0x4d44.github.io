@@ -134,6 +134,57 @@ and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
   Setting renderer.shadowMap.type = THREE.PCFSoftShadowMap logs "PCFSoftShadowMap has been removed. Using PCFShadowMap
   instead." Set THREE.PCFShadowMap directly.
 
+- 2026-10-31 - Bulk key-bot sweeps pinned the CPU at 100 percent; cap at 12 processes, idle priority (keybot-node.mjs)
+  60 below-normal node sweeps filled a 28-thread box. Run sweeps with SKY_PRIORITY=idle and a runner that keeps at most 12 busy. Also
+  sweep from a copy of the tree: a worker editing src/race mid-sweep produced respawn storms and three invalid sweeps.
+
+- 2026-10-31 - The brain's airbrake costs a guided craft 27 s a race; a key bot must not copy it (keybot-node.mjs:CFG.assist)
+  Decomposed on 8 races per variant: no airbrake 206 s, everything on 233 s, hands 217 s. Boost is worth only about 6.7 s a race. A bot
+  that copies every AI-brain button measures the brain's braking, not a person.
+
+- 2026-10-31 - Hands-off beat steering because the rubber band and guide helped an idle craft (race/race.js:speedMulFor)
+  A keybot tap pilot finished last on Normal while a craft with no key finished 1st or 2nd. The guide now keeps a share of authority under
+  held keys, and idleCruise slows a craft after 8-14 s without a key. Tune with keybot-node.mjs modes tap, track, hands, assist, 16+ races per cell.
+
+- 2026-10-31 - A per-axis guide hand-back fought a held bank key; use one fade from the larger key (flight/guide.js:blend)
+  Holding D alone left the pitch axis idle, so the guide pushed the nose out of the bank and the turn was a quarter of the guide-off turn.
+  A test that holds roll and pitch together cannot see it: test each key alone.
+
+- 2026-10-31 - A hazard edge at the avoid margin made the guide chatter and left the line (flight/guide.js:blend avoid margin)
+  A sphere hazard 28 m off the line, margin 34 m, flipped the avoid target every few steps (roll -0.5, +0.9, -1.0). Margin 14 to 6 fixed the
+  Falcon; Sprite and Bulldog on sunrise still hit it. A continuous push scaled by miss distance is the real fix (see scratchpad.md).
+
+- 2026-10-30 - Page.waitFor never resolves on an object result: wrap the expression in !!(...) (tests/tools/chrome.mjs:Page.waitFor)
+  eval() uses returnByValue, so an expression that yields a class instance throws on serialisation, the helper swallows it and retries until
+  the timeout. A 60 s waitFor timeout on a page that loaded fine means this, not a slow page.
+
+- 2026-10-30 - A grid slot 5 m over the ground put a Falcon 1.4 m over the Sunrise deck, so any sink hit it (race/race.js:buildGrid)
+  Craft radius is 2.75-3.6 m, so 5 m above the ground is not clearance. buildGrid now lifts every racer to ground-or-deck + radius +
+  RACE.gridClearance (8 m), and the keyboard guide refuses to descend when its own track clears the ground by less than GUIDE.groundMargin.
+
+- 2026-10-30 - A held module request keeps the load event from firing; use a raw Page.navigate (core.test.mjs:withPage raw)
+  A harness Page.goto that waits for load never returns while a module request is held. Fetch.enable with a URL pattern holds matching
+  requests until Fetch.continueRequest, which is how the "module never arrives" overlay is tested: navigate raw, then poll for the card.
+
+- 2026-10-30 - localStorage is shared by every tab of one Chrome profile and a closing tab commits late (core.test.mjs:withPage)
+  Clear it per tab in an init script (Page.addScriptToEvaluateOnNewDocument) before the first navigation.
+
+- 2026-10-30 - QUALITY[name] accepts inherited names such as constructor; look presets up with Object.hasOwn (config.js:resolveQualityId)
+  Any object used as a lookup table keyed by a user-supplied string (URL parameter, saved setting) needs Object.hasOwn or a Map in front of it.
+
+- 2026-10-30 - Windows node --import with an absolute path needs a file:// URL (pathToFileURL(path).href)
+  Tools that build the --import argument from a scratch folder must convert it; the relative ./skyblitz/tests/register.mjs form is fine.
+
+- 2026-10-30 - Three's PMREM shader spams X4122/X3595 warnings; compile it once at boot, muted (craft/post.js:warmPmrem)
+  The warnings come from PMREMGGXConvolution (PMREMGenerator.fromScene, reached from world/sky.js:78), not from our shaders. warmPmrem()
+  compiles it first through quietShaderWarnings (craft/env.js), so sky.js stays quiet only by that ordering; the V-35 test in core.test.mjs
+  fails on any program info log or console warning. Wrap any new PMREM call site in quietShaderWarnings.
+
+- 2026-10-30 - A regression test resting on a chaotic whole-race scenario survived its own mutation (race.test.mjs:R1-4)
+  The first column-flank test depended on where a bot happened to fly; flankSlope: 1e9 left it green. The fix was a deterministic
+  stub-based unit case plus a control case that must NOT slide. Break every new test once before trusting it, and do not expect a whole
+  race to discriminate a single threshold.
+
 - 2026-10-29 - Headless Chrome still pointer-locks and clips the real mouse; stub it (chrome.mjs:NO_DESKTOP_GRABS)
   A Skyblitz test browser confined the user's real mouse (ClipCursor) even with --headless=new. Inject a stub for requestPointerLock,
   exitPointerLock, pointerLockElement and requestFullscreen with Page.addScriptToEvaluateOnNewDocument before the first navigation, and keep

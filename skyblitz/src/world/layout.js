@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import { PathData } from './path.js';
 
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-const CLEAR = +(process.env.W_CLEAR || 10);             // path height above the launch deck. 5 m left a racer 1-3 m under the line (a bump, a stall, a banked turn) scraping the deck's rear lip,
+const CLEAR = 8;              // path height above the launch deck. 5 m left a racer 1-3 m under the line (a bump, a stall, a banked turn) scraping the deck's rear lip,
                                // which reads as a column flank and tumbles it: the finish-approach grinds and the 1.7 s lip crashes
-const GRID_HALF = +(process.env.W_GRID || 30);         // half the lateral gap between the two grid columns (m)
+const GRID_HALF = 30;         // half the lateral gap between the two grid columns (m)
 const GRID_CLEAR = 5;          // a craft on the start grid sits this far over the deck (it climbs to the path after GO)
 const DECK_SKIRT = 90;       // reach (m) of the 45 degree slope around the launch deck
 const BLEND = 70;             // length of the straight junction blend at both ends of a shortcut branch (see Branch)

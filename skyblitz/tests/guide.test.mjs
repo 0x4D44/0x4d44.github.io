@@ -102,9 +102,18 @@ test('R2-P-02 hand-back: with the safety net on, a hard 1.5 s D still turns >= 0
   }
 });
 
+test('P-01 sunrise: an idle guided falcon flies 60 s of the default course without a single tumble (the hazard at s 1450 is passed, not chattered at)', async () => {
+  // measured: margin 14 made the target flip as the sphere sat on the avoidance edge (roll -0.5 / +0.9 / -1.0 in turn), the craft left the line by 80-90 m and hit the ridge at s 1470
+  for (const id of ['sunrise', 'redrock']) {
+    const on = await idleFlight(id, { keyGuide: true }, 60);
+    assert.equal(on.tum, 0, `${id}: 60 s idle with the guide on tumbled ${on.tum} times (s ${on.s.toFixed(0)}, lateral ${on.lat.toFixed(0)})`);
+  }
+});
+
 test('R2-P-02 residual: a held key still receives >= 0.15 x of the guide\'s own command (killed by residual 0)', async () => {
   const w = async (key, cfg) => { const r = await rig('redrock', 'falcon'), fs = r.p.flight; const fr = {}; r.course.frameAt(r.p.s, fr);
-    fs.pos.addScaledVector(fr.right, 30); fs.pos.y += 40; r.p.prev.pos.copy(fs.pos); r.race.onTeleport(r.p); r.guide.reset();
+    // placed by construction, not relative to the grid slot: 60 m right of the centre line at the player's own s, 40 m up (guide roll command ~ -0.37 on redrock)
+    fs.pos.copy(fr.pos).addScaledVector(fr.right, 60); fs.pos.y += 40; r.p.prev.pos.copy(fs.pos); r.race.onTeleport(r.p); r.guide.reset();
     const wt = r.guide.blend(r.game, fs, key, 0, r.out, cfg); return { w: wt, roll: r.out.roll }; };
   const idle = await w(0, NONET), held = await w(0.98, NONET);
   assert.ok(idle.w > 0.3, `idle guide weight ${idle.w}`);

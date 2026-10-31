@@ -112,7 +112,7 @@ export function pilotAvoid(fs, target, hazards, outTarget, opts) {
     let sx = -lx, sy = -ly; const sl = Math.hypot(sx, sy);
     if (sl < 1) { sx = 1; sy = 0; } else { sx /= sl; sy /= sl; }
     const push = (need - off) + 6;
-    outTarget.copy(fs.pos).addScaledVector(fs.forward, Math.max(ahead, 40) + 40).addScaledVector(fs.right, sx * (off + push)).addScaledVector(fs.up, sy * (off + push));
+    outTarget.copy(fs.pos).addScaledVector(fs.forward, opts?.tight ? Math.max(ahead * opts.tight, 30) : Math.max(ahead, 40) + 40).addScaledVector(fs.right, sx * (off + push)).addScaledVector(fs.up, sy * (off + push));
   }
   return hit;
 }
