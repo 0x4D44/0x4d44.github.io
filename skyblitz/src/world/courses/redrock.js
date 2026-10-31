@@ -66,12 +66,12 @@ export const redrockDef = (() => {
     sectors: ['bend', 'arch', 'spireEntry', 'bulge'],
     gateSpacing: 255,
     branches: [{
-      id: 'slot', name: 'Slot Canyon Shortcut', from: 'slotA', to: 'slotB', hw: 44, hh: 48, risk: 0.55, taper: 120,
+      id: 'slot', name: 'Slot Canyon Shortcut', from: 'slotA', to: 'slotB', hw: 40, hh: 44, risk: 0.55, taper: 120,
       points: [[-335, 114, -1020], [-345, 106, -850], [-365, 102, -670], [-420, 100, -470]],
       marks: { slot: 1 },
     }],
     boost: [
-      { branch: 0, u: 130, count: 7, gap: 120, radius: 17, weave: 6, power: 1.6, duration: 2.0 },   // slot canyon: rewarded line
+      { branch: 0, u: 130, count: 5, gap: 150, radius: 17, weave: 6, power: 1.5, duration: 1.5 },   // slot canyon: rewarded line
       { mark: 'eyeLead', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'spireEntry', offset: -150, count: 2, gap: 50, weave: 20, radius: 20, power: 1.35, duration: 1.5 },
       { mark: 'esses', offset: -80, count: 2, gap: 70, weave: 18, radius: 20 },

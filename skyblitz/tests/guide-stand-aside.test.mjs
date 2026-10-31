@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { createFakeGame, loadCourseHeadless, makeRace } from './helpers/fake-game.mjs';
 import { createControls } from '../src/controls.js';
 import { createGuide } from '../src/flight/guide.js';
+import * as THREE from 'three';
 import { basisQuat } from '../src/world/layout.js';
 
 const DT = 1 / 60;
@@ -46,8 +47,11 @@ test('P-01: a keyboard loop (pitch held from level flight, guide on) completes a
   const r = await rig('sunrise'); let loops = 0, tum = 0;
   r.game.events.on('racer:stunt', (d) => { if (d.kind === 'loop' && d.racer === r.p) loops++; });
   r.game.events.on('racer:tumble', () => tum++);
-  const fr = {}; r.course.frameAt(2000, fr); put(r, fr, 0, 0, 100, 120);
-  for (let i = 0; i < 60 * 6; i++) {
+  // truly level flight: upright, horizontal heading along the course there (frame 2000 itself is banked / inverted, which the roll axis of the old per-axis hand-back used to right)
+  const fr = {}; r.course.frameAt(2000, fr);
+  const up = new THREE.Vector3(0, 1, 0), tan = new THREE.Vector3(fr.tangent.x, 0, fr.tangent.z).normalize();
+  put(r, { pos: fr.pos, tangent: tan, up, right: new THREE.Vector3().crossVectors(tan, up).normalize() }, 0, 0, 100, 20);
+  for (let i = 0; i < 60 * 10; i++) {
     r.guide.blend(r.game, r.p.flight, 0, 1, r.out); r.c.roll = r.out.roll; r.c.pitch = r.out.pitch;
     r.race.fixedUpdate(DT, r.c); r.game.simTime += DT;
   }

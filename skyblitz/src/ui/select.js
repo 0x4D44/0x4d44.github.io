@@ -28,8 +28,9 @@ export const TIPS = [
   'Last place gets the strongest items. Comebacks are always possible.',
   'The airbrake tightens turns when you are coming in too hot.',
 ];
-/** The controls the player is using, for wording that names a control: a connected gamepad wins (the aircraft screen's hint does the same), then the touch controls once they are active, else the keyboard. */
-export const inputKind = (touch, pad) => (pad ? 'pad' : touch ? 'touch' : 'keys');
+/** The controls the player is using, for wording that names a control: the device that last sent input (flight/input.js `lastDevice`: 'keyboard' | 'pad' | 'touch') as the
+ *  'keys' | 'pad' | 'touch' that TIPS and tipAt read. A gamepad that is merely plugged in does not count, and neither does a touch screen that has been left alone (R2-P-05). Anything else reads as the keyboard. */
+export const inputKind = (lastDevice) => (lastDevice === 'pad' || lastDevice === 'touch' ? lastDevice : 'keys');
 const padOn = () => typeof navigator !== 'undefined' && !!navigator.getGamepads && [...navigator.getGamepads()].some((x) => x && x.connected);
 /** The i-th loading tip as text for the current settings and controls (`device`: 'keys' | 'touch' | 'pad'; anything else reads as 'keys'). */
 export const tipAt = (i, settings, device) => { const t = TIPS[((i % TIPS.length) + TIPS.length) % TIPS.length], d = device === 'touch' || device === 'pad' ? device : 'keys'; return typeof t === 'function' ? t(settings, d) : t; };
@@ -202,7 +203,8 @@ export function optionsScreen(ui) {
   const diff = seg(ui, 'Difficulty', [{ v: 'easy', t: 'Easy' }, { v: 'normal', t: 'Normal' }, { v: 'hard', t: 'Hard' }, { v: 'expert', t: 'Expert' }], () => ui.flow.difficulty, (v) => { ui.flow.difficulty = v; refresh(); }, 'opt-diff');
   const laps = seg(ui, 'Laps', [{ v: 1, t: '1' }, { v: 3, t: '3' }, { v: 5, t: '5' }], () => ui.flow.laps, (v) => { ui.flow.laps = v; refresh(); }, 'opt-laps');
   const desc = h('p', { class: 'opt-desc' });
-  const D = { easy: 'Relaxed rivals and generous items. Great for learning the courses.', normal: 'Rivals race properly. Fair fights, close finishes.', hard: 'Sharper racing lines, smarter item use, tighter gaps.', expert: 'The full field at its best. Almost no mistakes.' };
+  // What each level promises is only what the rivals do (they are the one thing the level changes for sure), in words that do not claim a result: no "fair fights", no "tighter gaps".
+  const D = { easy: 'Relaxed rivals. Good for learning the courses.', normal: 'Rivals race properly. Fly clean and you can win.', hard: 'Rivals fly the line and fight for it.', expert: 'The full field at its best. Almost no mistakes.' };
   const go = btn('Start race', () => ui.launch(), { cls: 'primary big', cue: 'ui:confirm', ico: MISC.flag });
   const el = h('div', { class: 'scr options' }, header('RACE OPTIONS'), h('div', { class: 'panel opts' }, sum, diff, laps, desc), footer(ui, [go]));
   function refresh() { diff.sync(); laps.sync(); desc.textContent = D[ui.flow.difficulty]; }
@@ -225,13 +227,16 @@ export function optionsScreen(ui) {
 
 // ------------------------------------------------------------------ loading
 export function loadingScreen(ui) {
-  const fill = h('i'), label = h('div', { class: 'ld-l' }, 'Preparing'), tip = h('p', { class: 'ld-tip' }), where = h('div', { class: 'ld-w skew' }), pct = h('b', { class: 'ld-p' }, '0%');
-  const el = h('div', { class: 'scr loading', role: 'status', 'aria-live': 'polite' }, h('div', { class: 'ld-in' }, where, h('h2', { class: 'ld-h' }, 'LOADING'), h('div', { class: 'ld-bar' }, fill), h('div', { class: 'ld-row' }, label, pct), h('div', { class: 'ld-tipbox' }, h('small', null, 'PRO TIP'), tip)));
+  const fill = h('i'), label = h('div', { class: 'ld-l' }, 'Preparing'), tip = h('p', { class: 'ld-tip' }), where = h('div', { class: 'ld-w skew' }), pct = h('b', { class: 'ld-p' }, '0%'), head = h('h2', { class: 'ld-h' }, 'LOADING');
+  const el = h('div', { class: 'scr loading', role: 'status', 'aria-live': 'polite' }, h('div', { class: 'ld-in' }, where, head, h('div', { class: 'ld-bar' }, fill), h('div', { class: 'ld-row' }, label, pct), h('div', { class: 'ld-tipbox' }, h('small', null, 'PRO TIP'), tip)));
   let tipI = 0, timer = 0, off = null;
-  const setTip = () => { tip.textContent = tipAt(tipI++, ui.game.settings, inputKind(!!ui.game.input?.touchActive, padOn())); tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); };
+  const setTip = () => { tip.textContent = tipAt(tipI++, ui.game.settings, inputKind(ui.game.input?.lastDevice)); tip.classList.remove('in'); void tip.offsetWidth; tip.classList.add('in'); };
   return {
     el,
-    enter() {
+    // enter({ heading }): this screen owns its heading ('LOADING'); a visit for another reason (ui.quit: 'RETURNING TO THE HANGAR') passes its own text, so that text cannot outlive the visit (R2-V-02).
+    enter(p) {
+      clearInterval(timer); off?.();   // goto() of the screen already showing only calls enter(): one timer and one progress listener, not one more per call
+      head.textContent = p?.heading || 'LOADING'; label.textContent = 'Preparing';
       const f = ui.flow, c = COURSES.find((x) => x.id === f.course), a = AIRCRAFT.find((x) => x.id === f.craft);
       where.textContent = `${c?.name || ''}${a ? '  /  ' + a.name : ''}`;
       tipI = Math.floor(Math.random() * TIPS.length); setTip(); timer = setInterval(setTip, 3200);

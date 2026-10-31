@@ -5,8 +5,9 @@ import * as THREE from 'three';
 import { h, fmtTime, ordinal, clamp } from './dom.js';
 import { ITEM_ICONS, MISC } from './icons.js';
 import { ITEMS } from '../race/balance.js';
-import { Feed, feedText, hitEntry, launchEntry } from './hud-feed.js';
-import { layoutPlates } from './hud-layout.js';
+import { Feed, feedText, feedHardMax, hitEntry, launchEntry, passEntry } from './hud-feed.js';
+import { layoutPlates, lockLabelSide } from './hud-layout.js';
+import { smokeTexture } from './hud-smoke.js';
 import { rocketHint } from './rocket-hint.js';
 
 const STUNT = { loop: 'LOOP', roll: 'ROLL', barrel: 'BARREL ROLL', inverted: 'INVERTED', nearmiss: 'NEAR MISS', shortcut: 'SHORTCUT!' };
@@ -20,15 +21,19 @@ const PLATE_POOL = 6;         // nameplate elements; layoutPlates shows at most 
 const SMOKE_MAX = 0.7;        // smoke fog at its densest (P-15): under the 0.75 cap, so the track still shows through it
 const SMOKE_CALM = 0.4;       // ... with "Reduce flashing & motion" on (the OS reduced-motion preference sets that setting: game.js onReducedMotion)
 const CAM_NAMES = { chase: 'CHASE', far: 'FAR', low: 'LOW', nose: 'NOSE' };
-const _v = new THREE.Vector3();
+const _v = new THREE.Vector3(), _c = new THREE.Vector3();
+const CRAFT_PAD = 6;          // px of air round the player's craft that the lock reticle's name keeps clear (R2 P-18)
+const CRAFT_EVERY = 90;       // ms between two measurements of the craft's screen rectangle (about 10k vertices); the chase camera holds the craft nearly still on the screen
+const AUTO_FROM = 8;          // s with no key before the notice shows: race.js speedMulFor eases the keyboard-guided craft to a slower pace over smoothstep(8, 14, input.handsOffT) (R2 T7)
 
 export class Hud {
   constructor(ui) {
     this.ui = ui; this.game = ui.game; this.c = {}; this.t10 = 0; this.t30 = 0; this.map = null; this.popups = [];
-    this.feed = new Feed(); this.feedEls = new Map(); this.tally = new Map(); this.clock = 0;
-    this.lockT = 0; this.warnT = 0; this.warnDist = 999; this.warnTti = null; this.warnRate = 0; this.warnEvade = false; this.warnEvadeT = 0;
+    this.feed = new Feed({ hardMax: feedHardMax(window.innerHeight) }); this.feedEls = new Map(); this.tally = new Map(); this.clock = 0;   // R2-V-11: four pinned lines at most on a short screen
+    this.lockT = 0; this.warnT = 0; this.warnDist = 999; this.warnTti = null; this.warnRate = 0; this.warnEvade = false; this.warnEvadeT = 0; this.warnCue = false; this.warnMissile = null;
     this.lockTarget = null; this.lockProg = 0; this.lockedBy = null; this.lockedByT = 0; this.lockedByProg = 0;
     this.finishT = 0; this.camPending = false; this._zones = null; this._zonesT = 0; this._claim = 0; this._rm = null;
+    this._lm = null; this._side = 'below'; this._cr = { l: 0, t: 0, r: 0, b: 0 }; this._csc = { x: 0, y: 0, z: 0 }; this._crModel = null; this._crT = -1e9; this._crOk = false;   // the reticle's size, the side its name sits on, the player's craft rectangle (R2 P-18)
     this.smokeT = 0; this.smokeDur = 0; this.smokeA = 0;   // P-15: seconds of fog left on the event's own clock, the blind time the event announced, and the fog's current strength (0..1)
     this.build(); this.listen();
   }
@@ -59,6 +64,9 @@ export class Hud {
     // bottom-left: speed / altitude
     this.spd = h('b', null, '0'); this.alt = h('i', null, '0');
     el.append(h('div', { class: 'hud-speed skew' }, h('div', { class: 'spd' }, this.spd, h('small', null, 'km/h')), h('div', { class: 'alt' }, 'ALT ', this.alt, ' m')));
+    // the hands-off notice (R2 T7): the keyboard guide is flying a player who has pressed no key for AUTO_FROM s, and the race eases the craft to a slower pace until one is pressed; a calm plate above the speed box says so
+    this.autoEl = h('div', { class: 'hud-auto' }, h('div', { class: 'auto-in' }, h('b', null, 'AUTO-CRUISE'), ' · ', h('span', null, 'press a key to take over')));   // (the dot stays on the first line; the sentence wraps as a block)
+    el.append(this.autoEl);
     // bottom-centre: boost + item
     this.segs = []; const bar = h('div', { class: 'boost-bar' });
     for (let i = 0; i < SEGS; i++) { const s = h('i'); this.segs.push(s); bar.append(s); }
@@ -89,7 +97,7 @@ export class Hud {
     this.warnArrow = h('div', { class: 'warn-arrow' }); this.lockArrow = h('div', { class: 'lockon-arrow' });
     this.warn = h('div', { class: 'hud-warn', style: 'display:none' }, h('div', { class: 'warn-stack' }, this.warnTxt, this.lockTxt), this.rollEl, this.warnArrow, this.lockArrow);
     // lock reticle on the rival we are locking, with its name
-    this.reticle = h('div', { class: 'hud-lock', style: 'display:none', html: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" class="lk-bg"/><circle cx="50" cy="50" r="40" class="lk-fg" pathLength="100"/><path d="M50 4v14M50 82v14M4 50h14M82 50h14" class="lk-x"/></svg><span class="lk-name"></span>' });
+    this.reticle = h('div', { class: 'hud-lock', 'data-side': 'below', style: 'display:none', html: '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" class="lk-bg"/><circle cx="50" cy="50" r="40" class="lk-fg" pathLength="100"/><path d="M50 4v14M50 82v14M4 50h14M82 50h14" class="lk-x"/></svg><span class="lk-name"></span>' });
     this.lockFg = this.reticle.querySelector('.lk-fg'); this.lockLbl = this.reticle.querySelector('.lk-name');
     el.append(this.warn, this.reticle);
     // finish panel
@@ -102,10 +110,10 @@ export class Hud {
   show(on) { this.el.style.display = on ? '' : 'none'; if (!on) this.clearTransient(); }
   clearTransient() {
     this.stack.replaceChildren(); this.popups.length = 0; this.tally.clear(); this.cd.textContent = ''; this.cdHint.textContent = ''; this.banner.textContent = ''; this.banner.className = 'hud-banner';
-    this.warn.style.display = 'none'; this.reticle.style.display = 'none'; this.warnT = 0; this.warnEvadeT = 0; this.lockT = 0; this.lockedBy = null; this.lockedByT = 0; this.camPending = false;
-    this.note.classList.remove('on'); this.feed.clear(); this.feedEls.clear(); this.tickEl.replaceChildren();
+    this.warn.style.display = 'none'; this.reticle.style.display = 'none'; this.warnT = 0; this.warnEvadeT = 0; this.warnCue = false; this.warnMissile = null; this.lockT = 0; this.lockedBy = null; this.lockedByT = 0; this.camPending = false;
+    this.note.classList.remove('on'); this.autoEl.classList.remove('on'); this.feed.clear(); this.feedEls.clear(); this.tickEl.replaceChildren();
     for (const f of [this.dmg, this.emp, this.flash]) f.classList.remove('go');   // V-17: a shown-again HUD must not replay the last race's flashes
-    this.smokeT = this.smokeDur = this.smokeA = 0; this.smoke.style.opacity = '0';   // ... nor the last race's fog (P-15)
+    this.smokeT = this.smokeDur = this.smokeA = 0; this.smoke.style.opacity = '0'; this.smoke.classList.remove('drift');   // ... nor the last race's fog (P-15)
     for (const p of this.plates) { p.el.style.display = 'none'; p.id = -1; p.on = false; }
     this.finishBox.style.display = 'none'; this.wrong.style.display = 'none'; this.respawn.style.display = 'none'; this.c = {}; this._zones = null;
   }
@@ -118,7 +126,7 @@ export class Hud {
       this.buildMap(race?.course || g.course); this.c = {}; this.finishBox.style.display = 'none'; this.banner.textContent = ''; this.deltaT = 0;
       this.update(0, g); this.drawMap();   // V-31: the first thing drawn already shows this race's lap count, place, altitude and map, not the template values
     });
-    ev.on('game:resize', () => { for (const p of this.plates) p.w = 0; this._zones = null; });
+    ev.on('game:resize', ({ h } = {}) => { for (const p of this.plates) p.w = 0; this._zones = null; this.feed.o.hardMax = feedHardMax(h || window.innerHeight); });
     ev.on('race:countdown', ({ n }) => { this.pop(this.cd, String(n), 'cd-pop'); this.cdHint.textContent = n <= 2 ? rocketHint() : ''; });
     ev.on('race:go', () => { this.pop(this.cd, 'GO!', 'cd-go'); this.cdHint.textContent = ''; clearTimeout(this._cdT); this._cdT = setTimeout(() => { this.cd.textContent = ''; }, 1000); });
     ev.on('race:rocketStart', ({ racer, perfect }) => { if (me(racer)) this.stunt(perfect ? 'PERFECT START!' : 'GOOD START', perfect ? '#ffd02e' : '#29d3ff'); });
@@ -127,7 +135,7 @@ export class Hud {
     ev.on('race:finish', ({ racer, place }) => { if (me(racer)) { this.flashBanner(`FINISH! ${ordinal(place)}`, 'finish', 4); this.finishT = 0; } else if (racer && g.player && place <= 3) this.say(`${racer.name} finished ${ordinal(place)}`); });
     ev.on('race:missed', ({ racer, what }) => { if (me(racer)) this.flashBanner(what === 'loop' ? 'MISSED THE LOOP' : `MISSED THE ${String(what || 'section').toUpperCase()}`, 'missed', 2.2); });   // E-08: the relock skipped a required section, no credit given
     ev.on('race:position', ({ racer, place, prev }) => { if (me(racer) && prev && place !== prev) { this.posDelta.textContent = place < prev ? '▲' : '▼'; this.posDelta.className = 'pos-d ' + (place < prev ? 'up' : 'down'); this.deltaT = 2.2; } });
-    ev.on('race:overtake', ({ racer, passed }) => { if (me(racer)) this.say(`You passed ${passed?.name}`); else if (me(passed)) this.say(`${racer?.name} passed you`); });
+    ev.on('race:overtake', (e) => { const f = passEntry(e, me); if (f) this.addFeed(f); });   // R2-V-11: the player's passes are one counted line (hud-feed.js)
     ev.on('race:wrongway', ({ racer, on }) => { if (me(racer)) this.wrong.style.display = on ? '' : 'none'; });
     ev.on('race:respawn', ({ racer }) => { if (me(racer)) { this.respawn.style.display = ''; clearTimeout(this._rsT); this._rsT = setTimeout(() => { this.respawn.style.display = 'none'; }, 1400); } });
     ev.on('gate:pass', ({ racer, perfect }) => { if (me(racer) && perfect) this.stunt('PERFECT GATE', '#29d3ff'); });
@@ -141,8 +149,10 @@ export class Hud {
     ev.on('missile:evaded', ({ target, by }) => { if (me(target) && by !== 'shield') this.stunt(by === 'barrel' ? 'EVADED!' : 'MISSILE EVADED', '#4dff9d'); });
     ev.on('missile:warn', ({ target, missile, dist, tti, evade, interval }) => {
       if (!me(target)) return;
+      if (missile !== this.warnMissile) this.warnCue = false;   // R2-P-08: a new missile starts a new wait for the ROLL! cue
       this.warnT = 0.75; this.warnDist = dist; this.warnMissile = missile; this.warnTti = Number.isFinite(tti) ? tti : null; this.warnRate = Number.isFinite(interval) ? interval : 0;
       this.warnEvade = !!evade; this.warnEvadeT = evade ? 0.45 : 0;   // P-14: while a barrel roll would break the lock, say so; each ping renews the cue
+      if (evade) this.warnCue = true;
     });
     ev.on('missile:lock', ({ owner, target, progress, targetName }) => {
       if (me(owner)) { this.lockT = 0.4; this.lockTarget = target; this.lockProg = progress; this.lockName = targetName || target?.name || ''; }
@@ -294,7 +304,7 @@ export class Hud {
     if (this.feed.tick(dt)) this.syncFeed();
     for (const l of this.feed.lines) this.feedEls.get(l.id)?.classList.toggle('fade', l.ttl - l.age < 1);
     if (this.camPending) { this.camPending = false; const nm = game.state === 'race' ? CAM_NAMES[game.cameraRig?.mode] : null; if (nm) this.showNote('CAMERA: ' + nm); }   // the rig only cycles during a race (camera.js)
-    this.updateAlerts(dt, p); this.updateSmoke(dt, p);
+    this.updateAlerts(dt, p); this.updateSmoke(dt, p); this.updateAuto(game, p, race);
     this.lockT -= dt; this.updatePlates(game, p, race);
     // finish panel
     if (game.state === 'finish' || p.finished) { this.finishT += dt; if (this.finishT > 0.3 && Math.floor(this.finishT * 4) !== c.fin) { c.fin = Math.floor(this.finishT * 4); this.updateFinish(race, p); } }
@@ -313,7 +323,23 @@ export class Hud {
     const calm = !!this.game.settings.reduceFlash, dur = this.smokeDur;
     const want = dur > 0 ? clamp(Math.max(this.smokeT, p.blind || 0) / dur, 0, 1) : 0;
     this.smokeA = want > this.smokeA ? Math.min(want, this.smokeA + dt / (calm ? 0.6 : 0.15)) : want;
+    if (this.smokeA > 0 && this.smokeTex === undefined) {   // R2-V-17: the cloud texture is made the first time the fog is needed (a few ms, once), not at every load
+      this.smokeTex = smokeTexture();
+      if (this.smokeTex) this.smoke.style.setProperty('--smoke-tex', `url(${this.smokeTex})`);
+    }
     this.set('smoke', Math.round(this.smokeA * (calm ? SMOKE_CALM : SMOKE_MAX) * 100), (v) => { this.smoke.style.opacity = (v / 100).toFixed(2); });
+    // the puffs drift only where motion is welcome and the frame has time to spare: not with Reduce flashing & motion, not on the Low quality tier (a still cloud there)
+    this.set('smokeDrift', this.smokeA > 0 && !calm && this.game.qualityId !== 'low', (v) => this.smoke.classList.toggle('drift', v));
+  }
+
+  /**
+   * R2 T7: the hands-off notice. `game.input.handsOffT` (flight/input.js) is the seconds the keyboard guide has flown with no key pressed (it stays 0 for a pad, touch, Pro, a tumble: anything
+   * that is not guided flight). From AUTO_FROM s of it race.js eases the craft to a slower pace until any key is pressed; the plate shows over the same span, in a running race only, and goes
+   * the frame after a key resets the timer (CSS fades it over 0.25 s). No sound, no motion.
+   */
+  updateAuto(game, p, race) {
+    const on = game.state === 'race' && race.state === 'racing' && !p.finished && (game.input?.handsOffT || 0) >= AUTO_FROM;
+    this.set('auto', on, (v) => { this.autoEl.classList.toggle('on', v); this._zones = null; });
   }
 
   /** Alert column for this frame: missile warning (+ ROLL cue while a barrel roll would break it) and lock-on warning, each shown only while its timer runs. */
@@ -330,23 +356,29 @@ export class Hud {
       this.lockArrow.style.display = v & 2 ? '' : 'none';
       this._zones = null;
     });
-    if (miss) this.updateWarn();
+    if (miss) this.updateWarn(p);
     if (lock) this.updateLockOn(p);
   }
-  updateWarn() {
+  updateWarn(p) {
     const w = this.warn, d = this.warnDist, tti = this.warnTti;
     // P-14: intensity follows the time to impact when the missile reports one (distance otherwise): blink at the ping rate, bigger and redder text, "CLOSE" under 1.8 s
     const near = tti != null ? clamp(1 - tti / 4, 0, 1) : clamp(1 - d / 400, 0, 1), close = tti != null ? tti < 1.8 : d < 160;
     w.style.setProperty('--rate', clamp(this.warnRate || 0.9 - near * 0.65, 0.25, 0.9).toFixed(2) + 's');
     w.style.setProperty('--near', near.toFixed(2));
     w.classList.toggle('close', close);
-    this.warnTxt.lastChild.textContent = close ? 'MISSILE CLOSE!' : 'MISSILE!';
+    // R2-P-08: a roll only evades from the moment the ROLL! cue shows (about half a second before impact); "CLOSE" shows from tti 1.8 s, and a roll begun on it
+    // fails every time (4 of 4 in the browser). So while the cue is still to come the line says to wait for it; once the cue has shown (or a roll is under way,
+    // or no roll is possible: cooldown, tumble, EMP, stall), it is plain MISSILE CLOSE!. A warning that carries no time to impact has no cue to wait for.
+    const wait = close && tti != null && !this.warnCue && !(this.warnEvadeT > 0) && this.canRoll(p);
+    this.warnTxt.lastChild.textContent = close ? (wait ? 'MISSILE CLOSE: WAIT FOR ROLL!' : 'MISSILE CLOSE!') : 'MISSILE!';
     const m = this.warnMissile?.pos, cam = this.game.camera;
     if (m) {
       cam.updateMatrixWorld(); _v.copy(m).applyMatrix4(cam.matrixWorldInverse);
       const a = Math.atan2(_v.x, _v.y + 1e-3); this.warnArrow.style.display = ''; this.warnArrow.style.transform = `rotate(${a}rad) translateY(-26vmin)`;
     } else this.warnArrow.style.display = 'none';
   }
+  /** Could the player start a barrel roll this instant? (items.js: no cooldown, not rolling, not tumbling, not stalled, not EMP'd.) */
+  canRoll(p) { const it = this.game.race?.items; return it?.canRoll ? !!it.canRoll(p) : true; }
   /** V-37: a rival is locking on. The text names it; the arrow sits on a ring round the screen centre at its bearing from the player's heading (up = ahead, down = behind). */
   updateLockOn(p) {
     const o = this.lockedBy, fs = p.flight, locked = this.lockedByProg >= 1;
@@ -367,11 +399,13 @@ export class Hud {
     let rz = null;
     if (this.lockT > 0 && this.lockTarget && this.project((this.lockTarget.render?.pos || this.lockTarget.flight.pos), scr)) {
       const locked = this.lockProg >= 1;
-      if (this.reticle.style.display === 'none') this._rm = null;
+      if (this.reticle.style.display === 'none') { this._rm = null; this._side = 'below'; this.reticle.dataset.side = 'below'; }   // each lock starts with its name under the ring
       this.reticle.style.display = ''; this.reticle.style.transform = `translate(${scr.x.toFixed(0)}px,${scr.y.toFixed(0)}px) translate(-50%,-50%)`;
       this.lockFg.style.strokeDashoffset = (100 - this.lockProg * 100).toFixed(1); this.reticle.classList.toggle('locked', locked);
       this.set('lockLbl', (locked ? 'LOCKED: ' : '') + this.lockName, (v) => { this.lockLbl.textContent = v; this._rm = null; });
+      const zs = this.zones();   // first: a refresh of the zones clears the reticle's measured box, which is measured again just below
       if (!this._rm) this.measureReticle();
+      if (this.placeLabel(scr.x, scr.y, p, zs)) this.measureReticle();   // the name moved to another side of the ring: the box the nameplates avoid moved with it
       const m = this._rm; rz = this._rz || (this._rz = { l: 0, t: 0, r: 0, b: 0 });
       rz.l = scr.x + m.l; rz.t = scr.y + m.t; rz.r = scr.x + m.r; rz.b = scr.y + m.b;
     } else if (this.reticle.style.display !== 'none') this.reticle.style.display = 'none';
@@ -404,6 +438,38 @@ export class Hud {
   measureReticle() {
     const a = this.reticle.getBoundingClientRect(), b = this.lockLbl.getBoundingClientRect(), cx = a.left + a.width / 2, cy = a.top + a.height / 2;
     this._rm = { l: Math.min(a.left, b.left) - cx, t: Math.min(a.top, b.top) - cy, r: Math.max(a.right, b.right) - cx, b: Math.max(a.bottom, b.bottom) - cy };
+    this._lm = { w: b.width, h: b.height, r: a.width / 2 };   // the name's size and the ring box's half-size (the same for every side)
+  }
+  /**
+   * R2 P-18: the player's craft on the screen: every vertex of its visible meshes projected through the camera, with CRAFT_PAD of air. (A box round the craft is no use: the wing
+   * tips and tail are the near corners, which project far wider than the craft is, and the name then has no free side.) Measured every CRAFT_EVERY ms, not every frame.
+   * null when a vertex is behind the camera (the nose view: no craft to keep clear) or the craft has no meshes (headless).
+   */
+  craftRect(p) {
+    const m = p.model; if (!m) return null;
+    const now = performance.now();
+    if (this._crModel === m && now - this._crT < CRAFT_EVERY) return this._crOk ? this._cr : null;
+    this._crModel = m; this._crT = now; this._crOk = false;
+    this.game.camera.updateMatrixWorld(); m.updateWorldMatrix(true, true);
+    const sc = this._csc, cr = this._cr; let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity, behind = false;
+    m.traverse((o) => {
+      const pos = o.isMesh && o.visible && o.geometry?.attributes.position; if (!pos || behind) return;
+      for (let i = 0; i < pos.count; i++) {
+        _c.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld); this.project(_c, sc);
+        if (sc.z >= 1) { behind = true; return; }
+        if (sc.x < l) l = sc.x; if (sc.x > r) r = sc.x; if (sc.y < t) t = sc.y; if (sc.y > b) b = sc.y;
+      }
+    });
+    if (behind || !(l < r)) return null;
+    cr.l = l - CRAFT_PAD; cr.t = t - CRAFT_PAD; cr.r = r + CRAFT_PAD; cr.b = b + CRAFT_PAD; this._crOk = true;
+    return cr;
+  }
+  /** Put the lock reticle's name on the side of the ring that keeps it off the player's craft (hud-layout.js lockLabelSide). True when the side changed. */
+  placeLabel(x, y, p, zones) {
+    const m = this._lm; if (!m) return false;
+    const g = this.game, side = lockLabelSide({ x, y, r: m.r }, { w: m.w, h: m.h }, this.craftRect(p), zones, g.width, g.height, this._side);
+    if (side === this._side) return false;
+    this._side = side; this.reticle.dataset.side = side; return true;
   }
   /** Rectangles the nameplates must stay out of: the HUD panels, the alerts and the touch buttons. Re-measured at 5 Hz (it reads layout), not every frame. */
   zones() {
@@ -414,6 +480,7 @@ export class Hud {
       '.warn-txt', '.warn-roll', '.lockon-txt', '.hud-note', '.hud-wrong'].map((s) => this.el.querySelector(s)));
     const add = (e) => { const r = e.getBoundingClientRect(); if (r.width > 1 && r.height > 1) out.push({ l: r.left, t: r.top, r: r.right, b: r.bottom }); };
     for (const e of els) if (e) add(e);
+    if (this.autoEl.classList.contains('on')) add(this.autoEl);   // R2 T7: only while it shows (hidden, it still has a box)
     const touch = document.getElementById('sb-touch');
     if (touch && touch.style.display !== 'none') for (const b of touch.children) if (b.textContent.trim()) add(b);
     return out;

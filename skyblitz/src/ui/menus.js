@@ -12,6 +12,34 @@ export function btn(label, onClick, opts = {}) {
 export function header(title, sub) { return h('header', { class: 'hdr' }, h('h2', { class: 'skew' }, h('span', null, title)), sub ? h('p', null, sub) : null); }
 export function footer(ui, extra = [], backLabel = 'Back') { return h('footer', { class: 'ftr' }, btn(backLabel, () => ui.back(), { cls: 'ghost back', cue: 'ui:back' }), h('div', { class: 'ftr-r' }, extra)); }
 
+// ---------------------------------------------------------------- the first-race card and the Controls screen: which rows, which words
+/** What the first-race card teaches, found by NAME and not by place in the list (flight/input.js reorders and adds rows; the old `rows.slice(0, 7)` lost "Use item" to the 8th place, R2-V-03).
+ *  Each name is a pattern over the ACTION text (second item) of a bindingsText() row. A row that answers several names (touch "Boost, cannon, use item") shows once; airbrake, camera,
+ *  look back and respawn stay on the Controls screen. tests/ui.test.mjs runs every name against the real bindingsText() of each device, so a reworded row fails there instead of vanishing from the card. */
+export const HINT_ROWS = [
+  ['pitch', /^(nose (down|up)|pitch|steer)\b/i], ['bank', /\bbank\b/i], ['roll', /^barrel roll\b(?!:)/i],   // (not the "Barrel roll: off (enable in Settings)" row)
+  ['boost', /\bboost\b/i], ['cannon', /\bcannon\b/i], ['item', /\buse item\b(?! backwards)/i], ['pause', /^pause\b/i],
+];
+export function hintRows(rows) {
+  const out = [];
+  for (const [, re] of HINT_ROWS) for (const r of rows) if (re.test(r[1]) && !out.includes(r)) out.push(r);
+  return out;
+}
+const DEVICE_GROUP = { keyboard: 'Keyboard', pad: 'Gamepad', touch: 'Touch' };
+/** The bindingsText() group of a device (input.lastDevice: 'keyboard' | 'pad' | 'touch'), found by its name; the keyboard's for anything else. */
+export const hintGroup = (groups, device) => groups.find((g) => g.group === DEVICE_GROUP[device]) || groups.find((g) => g.group === 'Keyboard') || groups[0];
+/** True when the keyboard flight guide is what the player flies with: Standard assist and the Steering assist setting on (flight/guide.js turns it off for Pro and for keyGuide === false). */
+export const guideOn = (settings) => settings.assist !== 'pro' && settings.keyGuide !== false;
+/** What the keyboard's steering assist does, both halves in plain words: it flies the course while the keys are idle (flight/guide.js), and a player who leaves the keys alone for long is slowed (race/race.js: the hands-off rule, 8 to 14 s). */
+export const STEER_ON = 'Standard assist flies the course for you when you are not steering; hold a key to take over. Hands off for long and it cruises slower.';
+/** The keyboard steering assist in one note that is true for these settings (R2-P-04). `where` is the Controls screen: a second line says how to change it (the first-race card has no room for that).
+ *  Only the 'on' text mentions the slowing: it is the guide's idle time that triggers it (input.handsOffT counts only while the guide flies), so the off and Pro texts must not promise or threaten it. */
+export function assistLine(settings, where = false) {
+  if (settings.assist === 'pro') return 'Pro assist: hands-on. The plane does not steer for you.';
+  if (settings.keyGuide === false) return 'Steering assist is off: the plane levels itself, but you do the steering.' + (where ? '\nSwitch it on in Settings.' : '');
+  return STEER_ON + (where ? '\nSwitch this off in Settings.' : '');
+}
+
 export function titleScreen(ui) {
   const logo = h('div', { class: 'logo' }, h('div', { class: 'logo-top' }, 'AIR RACING GRAND PRIX'),
     h('h1', { 'aria-label': 'Skyblitz' }, h('span', { class: 'l1' }, 'SKY'), h('span', { class: 'l2' }, 'BLITZ')),
@@ -34,7 +62,7 @@ export function mainScreen(ui) {
   add('Settings', () => ui.goto('settings', { back: 'main' }), { ico: MISC.gear });
   add('Controls', () => ui.goto('controls', { back: 'main' }), { ico: MISC.pad });
   add('Credits', () => ui.goto('credits', { back: 'main' }), { ico: MISC.heart });
-  const el = h('div', { class: 'scr main' }, h('div', { class: 'main-logo skew' }, h('b', null, 'SKY'), h('b', null, 'BLITZ')), list, h('div', { class: 'main-foot' }, 'A Mario-Kart-meets-Star-Fox air race, built for the Almanac.'));
+  const el = h('div', { class: 'scr main' }, h('div', { class: 'main-logo skew' }, h('b', null, 'SKY'), h('b', null, 'BLITZ')), list, h('div', { class: 'main-foot' }, 'Arcade air racing: loops, barrel rolls, shortcuts and a rack of power-ups.'));
   return {
     el, enter() {
       const label = gpLabel(ui.save.gp);   // "Race 2 of 4 - 2nd, 25 pts" (totals is an object keyed by pilot name)
@@ -80,6 +108,7 @@ export function settingsScreen(ui) {
     slider(ui, 'Effects volume', 'sfxVolume', 0, 1, 0.05, (v) => Math.round(v * 100) + '%'),
     seg(ui, 'Pitch controls', [{ v: 'flight', t: 'Flight (push = nose down)' }, { v: 'arcade', t: 'Arcade (push = nose up)' }], () => S().pitchMode, (v) => ui.setSetting('pitchMode', v), 'pitch'),
     seg(ui, 'Flight assist', [{ v: 'standard', t: 'Standard (auto-level)' }, { v: 'pro', t: 'Pro (hands-on)' }], () => S().assist, (v) => ui.setSetting('assist', v), 'assist'),
+    toggle(ui, 'Steering assist (keyboard)', 'keyGuide', 'Standard assist only: the plane flies the course while you are not steering, and cruises slower if you stay hands-off. Off: it still levels itself and you steer'),
     slider(ui, 'Camera shake', 'shake', 0, 1, 0.05, (v) => (v === 0 ? 'Off' : Math.round(v * 100) + '%')),
     seg(ui, 'Default difficulty', [{ v: 'easy', t: 'Easy' }, { v: 'normal', t: 'Normal' }, { v: 'hard', t: 'Hard' }, { v: 'expert', t: 'Expert' }], () => S().difficulty, (v) => ui.setSetting('difficulty', v), 'diff'),
     toggle(ui, 'Double-tap bank key = barrel roll', 'doubleTapRoll', 'Off by default: Q / E always roll. Double-tapping A / D can fire by accident while steering'),
@@ -98,7 +127,9 @@ export function controlsScreen(ui) {
     el, enter() {
       body.replaceChildren();
       for (const grp of ui.game.input.bindingsText()) {
-        body.append(h('section', { class: 'cgrp' }, h('h3', null, grp.group), h('dl', null, grp.rows.map(([k, a]) => [h('dt', null, (/ or /.test(k) ? [k] : k.split(/ \/ |, /)).map((x) => h('kbd', null, x))), h('dd', null, a)]))));
+        // the keyboard group ends with what Standard assist does for a keyboard player and how to switch it (R2-P-04); it follows the current settings, so it is true after a change in Settings
+        body.append(h('section', { class: 'cgrp' }, h('h3', null, grp.group), h('dl', null, grp.rows.map(([k, a]) => [h('dt', null, (/ or /.test(k) ? [k] : k.split(/ \/ |, /)).map((x) => h('kbd', null, x))), h('dd', null, a)])),
+          grp.group === 'Keyboard' ? h('p', { class: 'assist-note' }, assistLine(ui.game.settings, true)) : null));
       }
       body.append(h('p', { class: 'tip' }, 'Tip: bank to turn, pull to loop. A barrel roll dodges missiles (Q / E, LB / RB, or the ROLL buttons). Boost and stunts fill the meter.'));
     }, back: (p) => p?.back || 'main',

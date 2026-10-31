@@ -101,7 +101,7 @@ input[type=range]::-moz-range-thumb { width: 1.2em; height: 1.5em; background: #
 .ctrls { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22em), 1fr)); gap: 1.2em; align-content: start; max-width: 80em; }
 .cgrp dl { display: grid; grid-template-columns: max-content 1fr; gap: .45em .9em; margin: 0; align-items: center; } .cgrp dt { display: flex; gap: .3em; flex-wrap: wrap; } .cgrp dd { margin: 0; color: #dbe6ff; font-weight: 600; }
 kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; background: linear-gradient(180deg, #fff, #c9d6f5); color: #0b1530; border-bottom: .2em solid #7f90c4; white-space: nowrap; }
-.tip { grid-column: 1 / -1; color: var(--yellow); font-weight: 700; margin: 0; }
+.tip { grid-column: 1 / -1; color: var(--yellow); font-weight: 700; margin: 0; } .assist-note { margin: .8em 0 0; color: var(--yellow); font-weight: 700; white-space: pre-line; }   /* the steering-assist note at the foot of the keyboard group (R2-P-04): what it does, then (a new line) where to change it. Not a .tip: the touch check reads the first .tip of the screen */
 .credits .panel { max-width: 50em; } .credits ul { padding-left: 1.2em; line-height: 1.55; font-weight: 600; }
 /* tiny Markdown subset on the credits screen (dom.js mdNodes): headings, paragraphs, lists, link chips, code, rules; long URLs wrap, nothing scrolls sideways */
 .md { margin-top: 1.1em; } .md h3 { margin: 0 0 .5em; } .md h4, .md h5 { margin: 1.3em 0 .3em; font: 800 .92em var(--body); letter-spacing: .05em; color: var(--yellow); overflow-wrap: anywhere; }
@@ -138,6 +138,13 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .info.fit4 { padding-top: .45em; padding-bottom: .45em; gap: .2em; } .info.fit4 .stats { gap: .1em; }
 .info.fit5 .ac-cls { display: none; }
 .info.fit6 .liv-l { display: none; } .info.fit6 .sw.on { transform: skewX(-12deg); }   /* with the livery name gone the lifted, scaled swatch would ride up over the last stat row (568x320) */
+/* R2-V-04: a stat row is icon + label + bar + number, and the label column takes up to 7em before the bar gets what is left: on a tablet held upright (768x1024: a 275 px panel) that was 6 px, a slash.
+   The panel is a size container; narrower than 16em (about 336 px at the largest type) a stat is two lines, icon + label + number and then the bar across the whole row, so a bar is never a stub. */
+.info { container: info / inline-size; }
+@container info (max-width: 16em) {
+  .stat { grid-template-columns: 1.4em minmax(0, 1fr) auto; row-gap: .15em; }
+  .stat .st-bar { grid-column: 1 / -1; grid-row: 2; }
+}
 
 /* ---------------------------------------------------------------- course select */
 .cards { scrollbar-width: thin; scrollbar-color: var(--orange) transparent; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15em), 1fr)); gap: 1em; align-content: start; grid-auto-rows: max-content; padding: .8em .6em 1em .4em; }
@@ -178,7 +185,13 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .scr.pause, .scr.hint { background: rgba(4, 8, 24, .62); align-items: center; justify-content: center; padding-top: 3.5em; }
 .pause-panel, .hint-panel { width: min(26em, 100%); display: flex; flex-direction: column; gap: .8em; align-items: stretch; max-height: 100%; overflow-y: auto; overflow-x: hidden; padding-right: 1.6em; } .pause-panel h2, .hint-panel h2 { align-self: flex-start; font-size: 1.5em; }
 .hint-panel { width: min(34em, 100%); } .hint-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: .4em; } .hint-list li { display: flex; justify-content: space-between; gap: 1em; font-weight: 700; padding: .25em 0; border-bottom: .06em solid rgba(143, 176, 255, .2); } .hint-list b { color: var(--yellow); flex: none; } .hint-list span { text-align: right; color: #dbe6ff; }
-.toast { position: absolute; left: 50%; bottom: 14%; transform: translateX(-50%); pointer-events: none; padding: .6em 1.2em; border-radius: .5em; background: linear-gradient(90deg, #c2183f, #ff5f7e); font-weight: 800; max-width: 90%; text-align: center; box-shadow: 0 .4em 1em rgba(0, 0, 0, .5); z-index: 5; } .toast[hidden] { display: none; }
+.hint-note { margin: 0; color: var(--yellow); font-weight: 700; font-size: .92em; line-height: 1.3; }   /* R2-P-04: what the keyboard's steering assist does, under the rows */
+.toast { position: absolute; left: 50%; bottom: calc(14% + 1.5em); transform: translateX(-50%); pointer-events: none; padding: .6em 1.2em; border-radius: .5em; background: linear-gradient(90deg, #c2183f, #ff5f7e); font-weight: 800; width: max-content; max-width: min(90%, 36em); text-align: center; box-shadow: 0 .4em 1em rgba(0, 0, 0, .5); z-index: 5; } .toast[hidden] { display: none; }
+.toast.toast-note { background: linear-gradient(90deg, #24379a, #2c43b0); border: .1em solid rgba(155, 184, 255, .8); font-size: 1.05em; line-height: 1.3; }   /* ui.notice(): something to know, not something that went wrong (no red, no error sound) */
+/* on a touch screen the BOOST / FIRE / ITEM / BRAKE buttons fill the lower right (from about 76% of the width on a phone on its side): the note ends before them, and upright it moves up under the HUD rows
+   (where the camera tick goes) so that no button sits on its words */
+.touch .toast { max-width: min(52%, 36em); }
+@media (orientation: portrait) { .touch .toast { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 13.4em); max-width: min(90%, 36em); } }
 .fps { position: absolute; left: 120px; top: 4px; padding: .1em .6em; font: 800 .75em ui-monospace, Consolas, monospace; background: rgba(0, 0, 0, .55); border-radius: .3em; pointer-events: none; z-index: 4; } .fps[hidden] { display: none; }
 
 /* ---------------------------------------------------------------- HUD */
@@ -213,7 +226,8 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .hud-cdwrap { position: absolute; top: 22%; display: flex; flex-direction: column; align-items: center; max-width: 94vw; }   /* digit and rocket-start hint in one column: they cannot overlap each other or drift apart (V-21) */
 .hud-cd { font-size: clamp(5em, 22vmin, 14em); line-height: 1; color: #fff; -webkit-text-stroke: .03em #07102a; text-shadow: 0 .06em 0 var(--pink), 0 .12em .5em rgba(0, 0, 0, .5); } .cd-pop { animation: cdPop 1s ease-out forwards; } .cd-go { color: var(--yellow); animation: cdGo .9s ease-out forwards; }
 @keyframes cdPop { 0% { transform: scale(2.2); opacity: 0; } 20% { transform: scale(1); opacity: 1; } 80% { opacity: 1; } 100% { transform: scale(.85); opacity: .2; } } @keyframes cdGo { 0% { transform: scale(.5); opacity: 0; } 25% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
-.hud-cdhint { margin-top: .2em; font: 900 1.1em var(--disp); letter-spacing: .1em; color: var(--yellow); text-align: center; padding: 0 1em; animation: blink 1s infinite; }
+.hud-cdhint { margin-top: .3em; font: 900 1.1em var(--disp); letter-spacing: .1em; color: var(--yellow); text-align: center; padding: .3em 1em .35em; max-width: 28em; text-wrap: balance; background: rgba(5, 10, 30, .82); border: .1em solid rgba(255, 208, 46, .6); border-radius: .35em; animation: hintGlow 1s ease-in-out infinite; }
+.hud-cdhint:empty { display: none; } @keyframes hintGlow { 50% { box-shadow: 0 0 .9em rgba(255, 208, 46, .55); } }   /* R2-V-09: a dark plate (4.5:1 against the brightest sky, sunrise; hud-dom measures it) and a glow that never touches the text's opacity: the old blink dropped the whole hint to 25% twice a second */
 .hud-banner { position: absolute; top: 21%; font-size: clamp(2.2em, 10vmin, 6em); letter-spacing: .06em; white-space: nowrap; color: #fff; opacity: 0; transform: scale(.6); text-transform: uppercase; } .hud-banner.on { opacity: 1; transform: none; animation: bannerIn .6s cubic-bezier(.2, 1.4, .3, 1); } .hud-banner.final { color: var(--orange); text-shadow: 0 .06em 0 #5a1a00, 0 0 1em rgba(255, 138, 31, .8); } .hud-banner.finish { color: var(--yellow); text-shadow: 0 .06em 0 #5a3a00, 0 0 1em rgba(255, 208, 46, .8); }
 .hud-banner.missed { color: var(--pink); font-size: clamp(1.6em, 6vmin, 3.2em); text-shadow: 0 .06em 0 #4a0a26, 0 0 1em rgba(255, 61, 154, .7); }   /* E-08: "MISSED THE LOOP", one size down so it fits a phone */
 @keyframes bannerIn { from { transform: scale(2.4); opacity: 0; } }
@@ -225,16 +239,24 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 .hud-wrong { position: absolute; top: 40%; padding: .15em 1em; font-size: clamp(1.8em, 7vmin, 4em); color: #fff; background: rgba(220, 30, 60, .8); border-radius: .2em; animation: blink .5s infinite; } .hud-respawn { position: absolute; top: 56%; font-size: 1.6em; color: var(--cyan); animation: blink .6s infinite; }
 .hud-warn { position: absolute; inset: 0; display: flex; justify-content: center; align-items: flex-start; --rate: .8s; } .warn-stack { margin-top: 15vh; display: flex; flex-direction: column; align-items: center; gap: .3em; } .warn-txt { display: flex; align-items: center; gap: .4em; padding: .1em .8em; border-radius: .25em; background: rgba(210, 20, 40, .82); color: #fff; font-size: clamp(1.1em, 3.4vmin, 1.9em); animation: blink var(--rate) infinite; transform: scale(calc(.9 + var(--near, 0) * .3)); }   /* the banner grows and blinks faster as the missile closes (P-14) */ .warn-txt .ico, .warn-txt svg { width: 1.4em; height: 1.4em; } .hud-warn.close .warn-txt { background: #ff1a3c; box-shadow: 0 0 1.4em #ff1a3c; }
 .warn-roll { position: absolute; left: 50%; top: 36%; transform: translateX(-50%); padding: .02em .6em .06em; border-radius: .2em; font-size: clamp(2em, 8vmin, 4.2em); line-height: 1; letter-spacing: .04em; color: #2a1200; text-shadow: none; background: linear-gradient(180deg, #ffe66b, #ff9a1f); box-shadow: 0 0 1em rgba(255, 176, 32, .85); animation: rollPulse .3s ease-in-out infinite alternate; } @keyframes rollPulse { to { transform: translateX(-50%) scale(1.1); } }   /* P-14: a barrel roll breaks this lock right now */
+.warn-txt { max-width: 78vw; } .warn-txt b { text-align: center; }   /* R2-P-08: "MISSILE CLOSE: WAIT FOR ROLL!" wraps onto two lines on a phone and stays on the screen (the banner grows to 1.2x as the missile nears) */
 .lockon-txt { display: flex; align-items: center; gap: .4em; padding: .08em .8em; border-radius: .25em; white-space: nowrap; background: rgba(255, 150, 20, .88); color: #1a0c00; text-shadow: none; font-size: clamp(.95em, 2.6vmin, 1.5em); } .lockon-txt svg { width: 1.3em; height: 1.3em; } .lockon-txt.locked { background: #ff1a3c; color: #fff; box-shadow: 0 0 1.2em #ff1a3c; animation: blink .35s infinite; }   /* V-37: a rival is locking on to you */
 .lockon-arrow { position: absolute; left: 0; top: 0; width: 0; height: 0; margin: -1.1em 0 0 -1em; border-left: 1em solid transparent; border-right: 1em solid transparent; border-bottom: 2.2em solid #ffb020; filter: drop-shadow(0 0 .5em #ff9a00); transform-origin: 50% 50%; } .lockon-arrow.locked { border-bottom-color: #ff2a4a; filter: drop-shadow(0 0 .5em #f00); animation: blink .35s infinite; }
 .warn-arrow { position: absolute; left: 50%; top: 50%; width: 0; height: 0; margin: -1.4em 0 0 -1.2em; border-left: 1.2em solid transparent; border-right: 1.2em solid transparent; border-bottom: 2.8em solid #ff2a4a; filter: drop-shadow(0 0 .5em #f00); animation: blink var(--rate) infinite; transform-origin: 50% 50%; }
 .hud-lock { position: absolute; left: 0; top: 0; width: clamp(60px, 11vmin, 120px); height: clamp(60px, 11vmin, 120px); will-change: transform; } .hud-lock svg { width: 100%; height: 100%; } .lk-bg { fill: none; stroke: rgba(255, 255, 255, .35); stroke-width: 4; } .lk-fg { fill: none; stroke: #ffd02e; stroke-width: 7; stroke-dasharray: 100; transform: rotate(-90deg); transform-origin: 50% 50%; stroke-linecap: round; } .lk-x { stroke: #ffd02e; stroke-width: 5; } .hud-lock.locked .lk-fg, .hud-lock.locked .lk-x { stroke: #ff2a4a; } .hud-lock.locked { animation: blink .25s infinite; }
 .lk-name { position: absolute; left: 50%; top: 100%; transform: translateX(-50%); margin-top: .1em; padding: .02em .6em; border-radius: .2em; font: 900 italic .8em var(--disp); white-space: nowrap; color: #fff; background: rgba(5, 10, 30, .72); } .hud-lock.locked .lk-name { background: #ff2a4a; }   /* P-14: the reticle names its target */
+.hud-lock[data-side="above"] .lk-name { top: auto; bottom: 100%; margin: 0 0 .1em; } .hud-lock[data-side="right"] .lk-name { top: 50%; left: 100%; margin: 0 0 0 .15em; transform: translateY(-50%); } .hud-lock[data-side="left"] .lk-name { top: 50%; left: auto; right: 100%; margin: 0 .15em 0 0; transform: translateY(-50%); }   /* R2 P-18: hud.js moves the name off the player's craft (hud-layout.js lockLabelSide) */
 .hud-plates { position: absolute; inset: 0; }   /* under every panel (DOM order), above the screen flashes */
 .nameplate { position: absolute; left: 0; top: 0; padding: .05em .7em; font-size: .8em; color: #fff; background: rgba(5, 10, 30, .6); border-bottom: .15em solid var(--c, #fff); border-radius: .2em; white-space: nowrap; will-change: transform, opacity; }
 .fx { position: absolute; inset: 0; opacity: 0; } .fx.go { animation: fxGo .7s ease-out; } @keyframes fxGo { 0% { opacity: var(--a, .6); } 100% { opacity: 0; } }
 .fx-dmg { background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 30, 30, .85)); } .fx-emp { background: repeating-linear-gradient(0deg, rgba(120, 90, 255, .3) 0 .3em, transparent .3em .6em), radial-gradient(ellipse at center, rgba(160, 120, 255, .15), rgba(110, 80, 255, .7)); } .fx-flash { background: #fff; }
-.fx-smoke { background: radial-gradient(ellipse 90% 80% at 50% 56%, #a3abb8 0%, #70788a 50%, #3b4150 100%); }   /* P-15: the smoke fog; hud.js sets its opacity every frame (cap 0.75); it is the first child of .hud, so every panel draws over it */
+.fx-smoke { overflow: hidden; background: var(--smoke-tex, none) 0 0 / 62vmax 62vmax, radial-gradient(ellipse 90% 80% at 50% 56%, #a3abb8 0%, #70788a 55%, #4a5162 100%); }   /* P-15: the smoke fog; hud.js sets its opacity every frame (cap 0.75); it is the first child of .hud, so every panel draws over it */
+/* R2-V-17: it reads as smoke, not as a dimmed screen: three layers of one soft cloud texture (hud-smoke.js makes it once in a canvas, `--smoke-tex`, no asset) over a grey haze, at three scales; hud.js adds `drift` (the two top layers
+   slide and turn slowly, on the compositor) except with Reduce flashing & motion and on the Low tier, where the cloud holds still */
+.fx-smoke::before, .fx-smoke::after { content: ''; position: absolute; inset: -25%; background: var(--smoke-tex, none) 0 0 / 90vmax 90vmax; opacity: .5; }
+.fx-smoke::after { background-size: 40vmax 40vmax; background-position: 30% 40%; opacity: .45; }
+.fx-smoke.drift::before { animation: smokeA 26s linear infinite; } .fx-smoke.drift::after { animation: smokeB 16s linear infinite; }
+@keyframes smokeA { to { transform: translate3d(-9%, 6%, 0) rotate(5deg); } } @keyframes smokeB { to { transform: translate3d(8%, -5%, 0) rotate(-4deg); } }
 .hud-finish { position: absolute; right: max(.8em, env(safe-area-inset-right)); top: 34%; width: min(18em, 46vw); padding: .5em .9em; background: rgba(6, 12, 34, .82); border: .12em solid rgba(143, 176, 255, .6); border-radius: .4em; font-style: normal; } .fin-t { font: 900 italic .8em var(--disp); letter-spacing: .15em; color: var(--yellow); } .hud-finish ol { list-style: none; margin: .3em 0 0; padding: 0; font: 800 .75em var(--body); } .hud-finish li { display: grid; grid-template-columns: 1.4em 1fr auto; gap: .4em; padding: .12em 0; } .hud-finish li.me { color: var(--orange); } .hud-finish em { font-style: normal; color: var(--muted); }
 
 /* ---------------------------------------------------------------- responsive */
@@ -286,7 +308,7 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
   .touch .hud-cdwrap, .touch .hud-banner { top: max(22%, calc(env(safe-area-inset-top, 0px) + 12.2em)); }   /* below the readouts on a short phone */
   .touch .warn-stack { margin-top: max(15vh, calc(env(safe-area-inset-top, 0px) + 12.2em)); }
 }
-@media (max-width: 400px) { .hud-cdhint { font-size: .92em; letter-spacing: .06em; } }   /* the rocket-start hint takes two lines on a narrow phone, not three */
+@media (max-width: 400px) { .hud-cdhint { font-size: .92em; letter-spacing: .06em; line-height: 1.15; margin-top: .1em; padding: .25em .7em .3em; } }   /* the rocket-start hint takes two lines on a narrow phone, three on a 320 px one: a tight plate, so even the three-line one ends above the ROLL buttons (V-24, 320 x 568) */
 @media (max-width: 340px) { .hud-top { left: 112px; } .hud-lapbox { padding: .2em .4em; } .hud-time { font-size: 1em; } }   /* 320 px wide: the LAP box ended under the CAM button */
 @media (orientation: landscape) and (min-width: 761px) {   /* touch, wide enough to show the feed: its lines sat on the right ROLL button (src/flight/input.js: right 150px, top 26%, 52 px + border); they start below that button's row instead (V-24, two lines in the matrix) */
   .touch .hud-ticker { position: absolute; right: 0; top: calc(26vh - env(safe-area-inset-top, 0px) + 8px); }
@@ -300,6 +322,33 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
   .touch .hud-ticker { margin-right: calc(88px + 1em); }   /* a tablet shows the feed, and the minimap sits where its first line goes (under the position box): the lines run to the minimap's left (V-24: the matrix puts two lines on screen) */
   .touch .hud-note { top: calc(env(safe-area-inset-top, 0px) + 13em); }
 }
+/* R2-V-10: landscape touch. The left thumb rests on the floating stick (bottom-left 48% x 62%, src/flight/input.js), so the speed box, the boost bar, the item box and the shield move to the top
+   as in portrait: one cluster right of the Almanac pill (speed + item on top, boost bar + shield under them), clear of the `< ROLL` button (112 px from the left, from 26% of the height down), the
+   LAP box and the minimap (left, under the pill). On a screen up to 760 px wide the LAP box is left-aligned right of the pill, so the cluster starts after it. `.hud-bottom` stops being a box
+   (display: contents) so its three children are placed one by one; every size is in em of the cluster's own font (capped at 15 px, so a tablet gets a phone-sized cluster, not a big one). */
+@media (orientation: landscape) {
+  .touch { --rx: 116px; --cf: min(1em, 15px); }   /* the skewed speed box reaches 4 px left of its edge: 116 keeps its corner clear of the 109 px pill */
+  .touch .hud-bottom { display: contents; }
+  .touch .hud-speed, .touch .hud-bc, .touch .hud-item, .touch .hud-shield { position: absolute; font-size: var(--cf); bottom: auto; }
+  .touch .hud-speed { left: var(--rx); top: max(.7em, env(safe-area-inset-top)); width: 8.4em; padding: .1em .6em .15em .4em; } .touch .hud-speed .spd b { font-size: 2.1em; min-width: 1.9em; }
+  .touch .hud-item { left: calc(var(--rx) + 8.9em); top: max(.7em, env(safe-area-inset-top)); }
+  .touch .hud-bc { left: var(--rx); top: calc(max(.7em, env(safe-area-inset-top)) + 3.75em); width: 7em; max-width: none; }
+  .touch .hud-shield { left: calc(var(--rx) + 7.6em); top: calc(max(.7em, env(safe-area-inset-top)) + 3.8em); }
+  .touch .hud-heat { position: absolute; right: 0; top: .1em; width: 3.2em; font-size: 1em; gap: 0; } .touch .hud-heat span { display: none; } .touch .heat { height: .5em; }   /* the cannon heat shares the BOOST label's row: no third row to run into the `< ROLL` button */
+}
+@media (orientation: landscape) and (max-width: 760px) { .touch { --rx: 240px; } }   /* after the left-aligned LAP box (it ends about 230 px from the left) */
+@media (orientation: landscape) and (max-height: 340px) { .touch { --cf: min(.82em, 12px); } }   /* 568 x 320: the `> ROLL` button starts at 26% = 83 px, so the cluster is smaller */
+/* R2 T7: the hands-off notice. From 8 s with no key (input.handsOffT) the keyboard guide flies alone and race.js eases the craft to a slower pace until any key is pressed; this plate says so. Calm: no motion, no flashing, no sound;
+   it fades in and out over .25 s (with "Reduce flashing" or reduced motion it just switches). It sits above the speed box (--spd-h is that box's height). The touch layouts moved the speed box to the top, so there it drops to the
+   corner the box left: a thumb on the stick or a pad never shows it, and the first key press ends it. */
+.hud-auto { --spd-h: 4.7em; position: absolute; left: max(.8em, env(safe-area-inset-left)); bottom: calc(max(.8em, env(safe-area-inset-bottom)) + var(--spd-h) + .5em); max-width: min(25em, calc(100vw - 1.6em)); opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility 0s linear .25s; }
+.hud-auto.on { opacity: 1; visibility: visible; transition: opacity .25s ease, visibility 0s; }
+.auto-in { padding: .3em .8em .35em; font: 800 .8em var(--body); font-style: normal; letter-spacing: .05em; line-height: 1.3; color: #cfe0ff; background: rgba(5, 10, 30, .8); border: .12em solid rgba(143, 176, 255, .5); border-radius: .4em; } .auto-in b { color: #fff; letter-spacing: .1em; } .auto-in span { display: inline-block; }   /* one line where it fits; else the name and its dot, then the sentence */
+@media (max-width: 760px) { .hud-auto { --spd-h: 3.7em; max-width: calc(60vw - 1.6em); } }   /* the boost bar and the item box take the right 40% of a narrow window */
+.touch .hud-auto { bottom: max(.8em, env(safe-area-inset-bottom)); }
+@media (orientation: portrait) { .touch .hud-auto { max-width: calc(100vw - 230px); } }   /* FIRE and BOOST (flight/input.js: 98 + 4 + 84 px, 14 px from the right edge) start 200 px from the right edge */
+.calm .hud-auto, .calm .hud-auto.on { transition: none; }
+@media (prefers-reduced-motion: reduce) { .hud-auto, .hud-auto.on { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .warn-roll, .lockon-txt.locked, .lockon-arrow.locked, .hud-ticker li.bump { animation: none; } .hud-note.on { animation: fadeOnly 1.1s forwards; } }
 .calm .warn-roll, .calm .lockon-txt.locked, .calm .lockon-arrow.locked, .calm .hud-ticker li.bump { animation: none; } .calm .hud-note.on { animation: fadeOnly 1.1s forwards; }
 
@@ -385,4 +434,47 @@ kbd { font: 800 .85em var(--body); padding: .15em .55em; border-radius: .35em; b
 @media (max-height: 460px) and (orientation: landscape) {
   .hint-panel { width: min(44em, 100%); gap: .4em; } .hint-panel h2 { font-size: 1.2em; }
   .hint-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .1em 1.4em; } .hint-list li { padding: .1em 0; font-size: .85em; }
+}
+
+/* ================================================================ round 2: short landscape windows, results, course, options and pause (R2-V-05 to R2-V-08)
+   A phone on its side is 300 to 460 px tall, and the Almanac pill covers x < 112, y < 44. Instead of leaving 2.9em of every screen empty under the pill, the header of a screen with one sits to the
+   right of it (x >= 112) and the content starts just below the pill: some 35 px more to use, which is what the options, results and course screens were short of. */
+.res-line { display: none; margin: 0; flex: none; flex-wrap: wrap; align-items: baseline; column-gap: .8em; height: 1.5em; overflow: hidden; font-size: .9em; font-weight: 800; color: #dbe6ff; white-space: nowrap; }
+.res-line > b:first-child { color: var(--yellow); font: 900 italic 1em var(--disp); letter-spacing: .06em; } .res-line span b { color: var(--yellow); }   /* the whole of YOUR RACE in one row: an item that does not fit wraps below and is clipped, never cut in half */
+@media (orientation: landscape) and (max-height: 460px) {
+  .scr:is(.aircraft, .course, .options, .results, .podium-scr, .settings, .controls, .credits) { padding-top: calc(env(safe-area-inset-top, 0px) + .45em); }
+  .scr:is(.aircraft, .course, .options, .results, .podium-scr, .settings, .controls, .credits) > .hdr { padding-left: calc(116px - max(1.1em, env(safe-area-inset-left))); min-height: calc(44px - .45em - env(safe-area-inset-top, 0px)); }
+  /* results: the title and the course line share a row, YOUR RACE is one line under it (the panel is hidden), the rows are tighter; select.js scrolls the player's own row into view */
+  .scr.results .hdr { display: flex; align-items: center; flex-wrap: wrap; column-gap: .9em; } .scr.results .hdr .hdr-sub { margin: 0; }
+  .scr.results .res-stats { display: none; } .scr.results .res-line { display: flex; }
+  .scr.results .record { font-size: 1em; padding: .1em .9em; }
+  .scr.results .tbl { font-size: .88em; } .scr.results .tbl td { padding-top: .1em; padding-bottom: .1em; } .scr.results .tbl .medal { width: 1.4em; height: 1.4em; }
+  /* course select: map + name, two by two */
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: .5em .8em; align-content: stretch; padding: .65em .6em .45em .4em; }   /* the top is room for the lifted, outlined card (.sel: up .25em, outline .32em) */
+  .card { flex-direction: row; } .card-map { flex: none; width: 40%; height: 100%; aspect-ratio: auto; } .map { object-fit: contain; }
+  .card-b { flex: 1; min-width: 0; padding: .3em .6em; justify-content: center; gap: .15em; } .card h3 { font-size: .92em; line-height: 1.1; }
+  .card .meta .chip, .card p, .card .recs { display: none; } .card .stars { margin-left: 0; }
+  /* race options: the two choices side by side, so the screen fits and nothing scrolls the header up under the pill */
+  .scr.options .opts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3em 2em; align-items: end; padding: .6em 1em; }
+  .scr.options .opt-sum, .scr.options .opt-desc { grid-column: 1 / -1; } .scr.options .opt-sum { font-size: 1.05em; margin: 0; } .scr.options .opt-desc { margin: .2em 0 0; }
+  .scr.options .row { grid-template-columns: minmax(0, 1fr); gap: .2em; padding: .1em 0; border-bottom: 0; }
+}
+/* pause under 400 px tall: Resume across the top, the four others two by two, so Quit to menu is whole and needs no scroll */
+@media (max-height: 400px) {
+  .pause-panel { width: min(34em, 100%); gap: .5em; padding-top: .6em; padding-bottom: .7em; }
+  .pause-panel .menu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5em .8em; width: 100%; overflow: visible; padding: .2em .6em .4em .2em; }
+  .pause-panel .menu .btn:first-child { grid-column: 1 / -1; } .pause-panel .menu .btn.big { font-size: 1.1em; padding: .35em 1em; }
+}
+/* R2-V-08, Grand Prix results on a laptop-size window (1280x720: the championship showed 2 of its 8 rows, under the stats panel): from 700 px tall the stats panel gives way to the one-line
+   YOUR RACE, and the two tables stand side by side at the height of the body, each scrolling inside itself only if it must. Up to 860 px tall the header is one row and the rows are tighter, so
+   all eight rows of both tables show at 1280x720 and 1366x768 (plain results too: the 8th row sat 41 px below the fold at 1280x720). */
+@media (orientation: landscape) and (min-width: 1001px) and (min-height: 700px) and (max-height: 1000px) {
+  .scr.results.gp .res-stats { display: none; } .scr.results.gp .res-line { display: flex; }
+  .scr.results.gp .res-body { overflow: hidden; align-items: stretch; grid-template-rows: minmax(0, 1fr); }
+  .scr.results.gp .res-t, .scr.results.gp .res-side { min-height: 0; } .scr.results.gp .res-t { overflow-y: auto; } .scr.results.gp .res-gp { flex: 1 1 0; min-height: 0; overflow-y: auto; }
+}
+@media (orientation: landscape) and (min-width: 1001px) and (max-height: 860px) {
+  .scr.results .hdr { display: flex; align-items: center; flex-wrap: wrap; column-gap: .9em; } .scr.results .hdr .hdr-sub { margin: 0; }
+  .scr.results .tbl td { padding-top: .12em; padding-bottom: .12em; } .scr.results .tbl .medal { width: 1.45em; height: 1.45em; }
+  .scr.results .res-gp { padding-top: .6em; padding-bottom: .5em; } .scr.results .res-gp h3 { margin-bottom: .15em; } .scr.results .c-pt.big { font-size: 1.05em; line-height: 1.1; }
 }

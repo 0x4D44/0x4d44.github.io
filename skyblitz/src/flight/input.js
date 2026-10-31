@@ -8,7 +8,10 @@ import { createControls, resetControls } from '../controls.js';
 import { SIM_DT } from '../config.js';
 
 const KEY_ROLL_MAX = 0.98;   // keys never reach the 0.99 'full stick' that Pro assist reads as a continuous roll (a keyboard has no half stick)
-const DOUBLE_TAP = 0.22;      // s between two presses of A / D for a barrel roll
+// every code the game binds in a race (flight/input.js onDown): these are default-prevented while racing, with or without Ctrl / Meta / Alt
+const BOUND = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyF', 'KeyX', 'KeyB', 'KeyV', 'KeyC', 'KeyP', 'KeyR', 'Space', 'Enter', 'Tab', 'Escape', 'ShiftLeft', 'ShiftRight']);
+const RESPAWN_HOLD = 0.6;    // s the respawn key (R / pad Back) is held before 'input:respawn' fires
+const DOUBLE_TAP = 0.22;     // s between two presses of A / D for a barrel roll
 const clamp = (x, a, b) => (x < a ? a : x > b ? b : x);
 const approach = (cur, target, rate, dt) => { const d = target - cur, m = rate * dt; return Math.abs(d) <= m ? target : cur + Math.sign(d) * m; };
 const dead = (x, dz) => { const a = Math.abs(x); if (a <= dz) return 0; const n = (a - dz) / (1 - dz); return Math.sign(x) * (n * (0.6 + 0.4 * n)); };
@@ -17,7 +20,7 @@ export function createInput(game) {
   const keys = new Set(), latched = new Set(), lastDown = {}, c = createControls();
   const guide = createGuide(), gOut = { roll: 0, pitch: 0 };
   const flying = () => !game.paused && (game.state == null || game.state === 'race' || game.state === 'finish' || game.state === 'demo');
-  const st = { pitch: 0, roll: 0, padBarrel: 0, padItem: false, padPrev: [], menuKey: false, tapBarrel: 0, touchBarrel: 0, touchItem: false, tick: 0, touchOn: false };
+  const st = { pitch: 0, roll: 0, padBarrel: 0, padItem: false, padPrev: [], padAct: {}, nrm: null, padWarnId: "", respawnT: 0, respawnDone: false, keyEdge: false, menuKey: false, tapBarrel: 0, touchBarrel: 0, touchItem: false, tick: 0, touchOn: false };
   const touch = { root: null, ids: {}, stick: { id: -1, ox: 0, oy: 0, x: 0, y: 0 }, held: { boost: false, fire: false, brake: false, back: false, look: false }, built: false, visible: false };
   const emit = (n) => game.events?.emit?.(n, {});
   const isField = (e) => { const t = e.target; return t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable); };
@@ -25,6 +28,13 @@ export function createInput(game) {
 
   const input = {
     enabled: true, controls: c, pad: { connected: false, id: '' }, touchActive: false,
+    /** 'keyboard' | 'pad' | 'touch': the device that last sent input (a key press, a pad stick / button, a touch). Tips and hint rows read this. */
+    lastDevice: 'keyboard',
+    /** 'standard' | 'dinput' (a pad whose mapping is not standard, read through the DirectInput layout; the UI shows a notice on 'input:padunmapped' { id, mapping }) | '' (no pad) */
+    padMapping: '',
+    /** s the keyboard guide has flown with no key pressed at all (0 when the guide is not flying: pad / touch, Pro, guide off, not racing, tumbling). The race reads it. */
+    handsOffT: 0,
+    guide,      // the keyboard flight guide (tests spy on guide.blend)
     init() {},
     enable(on) {
       this.enabled = !!on;
@@ -37,11 +47,11 @@ export function createInput(game) {
         { group: 'Keyboard', rows: [
           [fl ? 'W / Up' : 'S / Down', 'Nose down (push)'], [fl ? 'S / Down' : 'W / Up', 'Nose up (pull)'],
           ['A / Left, D / Right', 'Bank left / right'], ['Q / E', 'Barrel roll (dodges missiles)'],
-          ['Shift', 'Boost'], ['Ctrl / X', 'Airbrake'], ['Space', 'Cannon'], ['F / Enter', 'Use item (hold B for backwards)'],
-          ['V', 'Look back'], ['C', 'Change camera'], ['Esc / P', 'Pause'], ['Double-tap A or D', game.settings?.doubleTapRoll ? 'Barrel roll: ON (Settings)' : 'Barrel roll: off (enable in Settings)'] ] },
+          ['Shift', 'Boost'], ['X', 'Airbrake'], ['Space', 'Cannon'], ['F / Enter', 'Use item (hold B for backwards)'],
+          ['V', 'Look back'], ['C', 'Change camera'], ['Esc / P', 'Pause'], ['Hold R', 'Respawn on the course'], ['Double-tap A or D', game.settings?.doubleTapRoll ? 'Barrel roll: ON (Settings)' : 'Barrel roll: off (enable in Settings)'] ] },
         { group: 'Gamepad', rows: [
           ['Left stick', fl ? 'Pitch (up = nose down) and bank' : 'Pitch (up = nose up) and bank'], ['Right trigger', 'Boost'], ['Left trigger', 'Airbrake'],
-          ['LB / RB', 'Barrel roll left / right'], ['A', 'Use item'], ['B', 'Use item backwards'], ['X', 'Cannon'], ['Y', 'Change camera'], ['Right stick click', 'Look back'], ['Start', 'Pause'] ] },
+          ['LB / RB', 'Barrel roll left / right'], ['A', 'Use item'], ['B', 'Use item backwards'], ['X', 'Cannon'], ['Y', 'Change camera'], ['Right stick click', 'Look back'], ['Start', 'Pause'], ['Hold Back', 'Respawn on the course'] ] },
         { group: 'Touch', rows: [
           ['Left thumb: drag', 'Steer (pitch and bank)'], ['BOOST / FIRE / ITEM', 'Boost, cannon, use item'], ['< ROLL / > ROLL', 'Barrel roll left / right'], ['BRAKE', 'Airbrake'], ['CAM', 'Change camera (top right)'], ['II', 'Pause (top right)'] ] },
       ];
@@ -49,7 +59,7 @@ export function createInput(game) {
     sample() {
       st.tick++;
       const dt = SIM_DT, ps = pitchSign();
-      if (!this.enabled) { resetControls(c); latched.clear(); return c; }
+      if (!this.enabled) { resetControls(c); latched.clear(); input.handsOffT = 0; return c; }
       const axis = (neg, pos) => (neg.some((k) => keys.has(k)) ? -1 : 0) + (pos.some((k) => keys.has(k)) ? 1 : 0);
       // keyboard: short ramps so a tap is a nudge and a hold is a full input
       const pullKey = axis(['KeyW', 'ArrowUp'], ['KeyS', 'ArrowDown']);            // +1 = S / Down
@@ -58,7 +68,7 @@ export function createInput(game) {
       st.roll = approach(st.roll, kr * KEY_ROLL_MAX, kr === 0 ? 12 : 8, dt);
       let pitch = st.pitch, roll = st.roll, yaw = 0;
       let boost = keys.has('ShiftLeft') || keys.has('ShiftRight');
-      let brake = keys.has('ControlLeft') || keys.has('ControlRight') || keys.has('KeyX') ? 1 : 0;
+      let brake = keys.has('KeyX') ? 1 : 0;      // V-2: no Ctrl in the defaults (Ctrl+W / S / D / F / A are browser shortcuts)
       let fire = keys.has('Space'), itemBack = keys.has('KeyB'), look = keys.has('KeyV');
       let barrel = latched.has('KeyQ') ? -1 : latched.has('KeyE') ? 1 : st.tapBarrel;
       let item = latched.has('KeyF') || latched.has('Enter');
@@ -67,6 +77,8 @@ export function createInput(game) {
       // gamepad
       const gp = readPad();
       if (gp) {
+        // R2-P-05: a connected pad only takes over once it is used (a stick past 0.3 or a button down); a key press hands the device back
+        if (gp.buttons.some((b) => b && b.pressed) || (gp.axes || []).some((a) => Math.abs(a) > 0.3)) input.lastDevice = 'pad';
         const lx = dead(gp.axes[0] || 0, 0.12), ly = dead(gp.axes[1] || 0, 0.12), rx = dead(gp.axes[2] || 0, 0.15);
         if (lx !== 0) roll = lx;
         if (ly !== 0) pitch = clamp(ly * ps, -1, 1);                                // stick down = pull
@@ -97,8 +109,20 @@ export function createInput(game) {
         if (touch.held.back) itemBack = true;
       }
 
-      // keyboard only (no pad, no touch): the guide steers towards the middle of the course while the keys are idle or tapped (Standard assist)
-      if (!gp && !(touch.built && touch.visible) && game.player?.flight && game.course) { guide.blend(game, game.player.flight, roll, pitch, gOut); roll = gOut.roll; pitch = gOut.pitch; }
+      // T5: hold R (or pad Back) for RESPAWN_HOLD s while racing: one 'input:respawn' per hold
+      const wantRespawn = keys.has('KeyR') || (!!gp && !!gp.buttons[8]?.pressed);
+      if (wantRespawn && game.state === 'race' && (!game.race || game.race.state === 'racing')) {
+        st.respawnT += dt;
+        if (st.respawnT >= RESPAWN_HOLD && !st.respawnDone) { st.respawnDone = true; game.events?.emit?.('input:respawn', { source: keys.has('KeyR') ? 'keyboard' : 'pad' }); }
+      } else { st.respawnT = 0; st.respawnDone = false; }
+
+      // keyboard last used (R2-P-05: not merely 'no pad plugged in'): the guide steers towards the middle of the course while the keys are idle or tapped (Standard assist)
+      // T9: handsOffT = seconds the guide has flown with NO key pressed at all (any bound or unbound key, even a tap inside this frame); 0 whenever the guide is not flying
+      const anyKey = keys.size > 0 || latched.size > 0 || st.keyEdge || barrel !== 0 || boost || fire || item || itemBack || look || brake > 0 || roll !== 0 || pitch !== 0;
+      st.keyEdge = false;
+      let w = 0;
+      if (input.lastDevice === 'keyboard' && game.player?.flight && game.course) { w = guide.blend(game, game.player.flight, roll, pitch, gOut); roll = gOut.roll; pitch = gOut.pitch; }
+      input.handsOffT = w > 0 && !anyKey ? input.handsOffT + dt : 0;
       c.pitch = clamp(pitch, -1, 1); c.roll = clamp(roll, -1, 1); c.yaw = clamp(yaw, -1, 1);
       c.boost = boost; c.airbrake = brake; c.fire = fire; c.itemBack = itemBack; c.lookBack = look;
       c.barrel = barrel; c.item = item;
@@ -111,7 +135,9 @@ export function createInput(game) {
   const onDown = (e) => {
     if (isField(e) && e.code !== 'Escape') return;
     const code = e.code;
-    if (code === 'Space' || code.startsWith('Arrow') || code === 'Tab') { if (input.enabled && game.state === 'race') e.preventDefault(); }
+    // V-2: in a race every key the game binds is ours, even with Ctrl / Meta / Alt held (the browser will not let a page cancel Ctrl+W / T / N, which is why no default binding uses Ctrl)
+    if (BOUND.has(code) || code.startsWith('Arrow')) { if (input.enabled && game.state === 'race' && e.cancelable !== false) e.preventDefault(); }
+    input.lastDevice = 'keyboard';
     if (e.repeat) return;
     if (code === 'Escape' || code === 'KeyP') emit('input:pause');
     if (!input.enabled || st.menuKey) return;   // E-03: a key pressed in a menu (or the one that closed it) is never a flight input
@@ -139,15 +165,46 @@ export function createInput(game) {
     addEventListener('blur', reset);
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', () => { if (document.hidden) reset(); });
     addEventListener('gamepadconnected', (e) => { input.pad.connected = true; input.pad.id = e.gamepad?.id || ''; });
-    addEventListener('gamepaddisconnected', () => { input.pad.connected = !!readPad(); });
+    addEventListener('gamepaddisconnected', (e) => {
+      if (e?.gamepad) delete st.padAct[e.gamepad.index]; st.padPrev = []; input.pad.connected = !!readPad();
+      if (!input.pad.connected) { input.padMapping = ''; st.padWarnId = ''; if (input.lastDevice === 'pad') input.lastDevice = 'keyboard'; }   // hot-unplug: keys (and the guide) take over at once
+    });
   }
 
   // ---------------- gamepad ----------------
   function readPad() {
     if (typeof navigator === 'undefined' || !navigator.getGamepads) return null;
     const list = navigator.getGamepads();
-    for (let i = 0; i < list.length; i++) { const g = list[i]; if (g && g.connected) { input.pad.connected = true; input.pad.id = g.id; return g; } }
-    input.pad.connected = false; return null;
+    // R2-P-02 (pad): the pad that most recently produced input wins (a stick past 0.3 or a button down stamps it); with none active, the first connected one
+    const now = performance.now(); let best = null, bestAct = -1, first = null;
+    for (let i = 0; i < list.length; i++) {
+      const g = list[i]; if (!g || !g.connected) continue;
+      first ||= g;
+      if ((g.buttons || []).some((b) => b && b.pressed) || (g.axes || []).some((a) => Math.abs(a) > 0.3)) st.padAct[g.index ?? i] = now;
+      const act = st.padAct[g.index ?? i] ?? -1;
+      if (act > bestAct) { bestAct = act; best = g; }
+    }
+    best ||= first;
+    if (!best) { input.pad.connected = false; return null; }
+    input.pad.connected = true; input.pad.id = best.id;
+    return normPad(best);
+  }
+  // A pad whose mapping is not 'standard' is read through a known DirectInput layout (sticks 0-1 and 3 or 2, triggers on axes 2 / 5 when there are six or more axes,
+  // Back / Start / right-stick click at 6 / 7 / 9) and flagged once: input.padMapping = 'dinput' and an 'input:padunmapped' event ({ id, mapping }) for the UI notice.
+  function normPad(g) {
+    if (g.mapping === 'standard') { input.padMapping = 'standard'; return g; }
+    const n = st.nrm ||= { axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })), connected: true, mapping: 'dinput' };
+    const ax = g.axes || [], six = ax.length >= 6, trig = (a) => clamp(((ax[a] ?? -1) + 1) / 2, 0, 1);
+    n.id = g.id; n.index = g.index; n.vibrationActuator = g.vibrationActuator;
+    n.axes[0] = ax[0] || 0; n.axes[1] = ax[1] || 0; n.axes[2] = (six ? ax[3] : ax[2]) || 0; n.axes[3] = (six ? ax[4] : ax[3]) || 0;
+    for (const b of n.buttons) { b.pressed = false; b.value = 0; }
+    const src = g.buttons || [], set = (to, from) => { const s = src[from]; if (s) { n.buttons[to].pressed = !!s.pressed; n.buttons[to].value = s.value ?? (s.pressed ? 1 : 0); } };
+    if (six) {                                                       // DirectInput 360 layout: triggers are axes 2 / 5, Back 6, Start 7, stick clicks 8 / 9
+      for (const [to, from] of [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [8, 6], [9, 7], [10, 8], [11, 9]]) set(to, from);
+      const lt = trig(2), rt = trig(5); n.buttons[6].value = lt; n.buttons[6].pressed = lt > 0.5; n.buttons[7].value = rt; n.buttons[7].pressed = rt > 0.5;
+    } else for (let i = 0; i < 12; i++) set(i, i);                   // four axes: the buttons are taken to follow the standard order
+    if (input.padMapping !== 'dinput' || st.padWarnId !== g.id) { input.padMapping = 'dinput'; st.padWarnId = g.id; game.events?.emit?.('input:padunmapped', { id: g.id, mapping: g.mapping || '' }); }
+    return n;
   }
   // rumble on hits / tumbles of the player
   game.events?.on?.('racer:hit', ({ racer, severity = 0.5 }) => { if (racer && racer === game.player) rumble(120 + 380 * clamp(severity, 0, 1), 0.3 + 0.7 * severity, 0.5 + 0.5 * severity); });
@@ -175,7 +232,7 @@ export function createInput(game) {
     base.appendChild(knob); root.appendChild(zone); root.appendChild(base);
     const R = 62, s = touch.stick;
     zone.addEventListener('pointerdown', (e) => {
-      if (s.id >= 0) return; zone.setPointerCapture?.(e.pointerId); s.id = e.pointerId; s.ox = e.clientX; s.oy = e.clientY; s.x = 0; s.y = 0;
+      input.lastDevice = 'touch'; if (s.id >= 0) return; zone.setPointerCapture?.(e.pointerId); s.id = e.pointerId; s.ox = e.clientX; s.oy = e.clientY; s.x = 0; s.y = 0;
       base.style.display = 'block'; base.style.left = e.clientX + 'px'; base.style.top = e.clientY + 'px'; knob.style.transform = 'translate(0,0)'; e.preventDefault();
     });
     zone.addEventListener('pointermove', (e) => {
@@ -188,7 +245,7 @@ export function createInput(game) {
     const btn = (label, css, hold, tap, color) => {
       const b = document.createElement('div'); b.textContent = label;
       b.style.cssText = `position:absolute;pointer-events:auto;touch-action:none;display:flex;align-items:center;justify-content:center;font:900 italic 15px system-ui,sans-serif;letter-spacing:.04em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);border-radius:50%;border:3px solid rgba(255,255,255,.7);background:${color};opacity:.82;${css}`;
-      const on = (e) => { e.preventDefault(); b.style.opacity = '1'; b.style.transform = 'scale(.94)'; if (hold) touch.held[hold] = true; if (tap) tap(); };
+      const on = (e) => { input.lastDevice = 'touch'; e.preventDefault(); b.style.opacity = '1'; b.style.transform = 'scale(.94)'; if (hold) touch.held[hold] = true; if (tap) tap(); };
       const off = (e) => { b.style.opacity = '.82'; b.style.transform = ''; if (hold) touch.held[hold] = false; };
       b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
       root.appendChild(b); return b;
@@ -222,7 +279,7 @@ export function createInput(game) {
     if (touch.root) touch.root.style.display = touch.visible ? 'block' : 'none';
     if (!touch.visible) { touch.stick.id = -1; touch.stick.x = touch.stick.y = 0; for (const k in touch.held) touch.held[k] = false; }
   }
-  function enableTouch() { if (st.touchOn) return; st.touchOn = true; input.touchActive = true; showTouch(game.state === 'race' || game.state === 'finish'); }
+  function enableTouch() { if (st.touchOn) return; st.touchOn = true; input.touchActive = true; input.lastDevice = 'touch'; showTouch(game.state === 'race' || game.state === 'finish'); }
   if (typeof addEventListener === 'function') {
     addEventListener('touchstart', () => enableTouch(), { passive: true, once: true });
     if (wantTouch()) enableTouch();

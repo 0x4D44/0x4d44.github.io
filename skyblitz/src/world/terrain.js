@@ -2,7 +2,9 @@
 // Patches are built from the same height function the course uses for groundHeight() so visuals and collision agree.
 import * as THREE from 'three';
 
-export function buildPatch(height, rect, { minH = -48, skirt = false, skirtDrop = 40 } = {}) {
+/** sinkFrom (m, optional): below this height the mesh is steepened (y = sinkFrom + (h - sinkFrom) * sinkK) so the rim where cells are dropped (minH) lies
+ *  far under the water instead of showing through the shallows as a cell-aligned sawtooth (R2-V-14). Heights used for normals stay the real ones. */
+export function buildPatch(height, rect, { minH = -48, skirt = false, skirtDrop = 40, sinkFrom = null, sinkK = 4 } = {}) {
   const { x0, z0, x1, z1, cell } = rect;
   const nx = Math.max(2, Math.round((x1 - x0) / cell)), nz = Math.max(2, Math.round((z1 - z0) / cell));
   const dx = (x1 - x0) / nx, dz = (z1 - z0) / nz;
@@ -12,7 +14,7 @@ export function buildPatch(height, rect, { minH = -48, skirt = false, skirtDrop 
   const pos = new Float32Array(vx * vz * 3), nor = new Float32Array(vx * vz * 3);
   for (let j = 0; j < vz; j++) for (let i = 0; i < vx; i++) {
     const k = j * vx + i, x = x0 + i * dx, z = z0 + j * dz;
-    pos[k * 3] = x; pos[k * 3 + 1] = H[k]; pos[k * 3 + 2] = z;
+    pos[k * 3] = x; pos[k * 3 + 1] = sinkFrom != null && H[k] < sinkFrom ? sinkFrom + (H[k] - sinkFrom) * sinkK : H[k]; pos[k * 3 + 2] = z;
     const hl = height(x - dx, z), hr = height(x + dx, z), hd = height(x, z - dz), hu = height(x, z + dz);
     const ax = hl - hr, az = hd - hu, ay = 2 * dx, l = Math.hypot(ax, ay, az * (dx / dz)) || 1;
     nor[k * 3] = ax / l; nor[k * 3 + 1] = ay / l; nor[k * 3 + 2] = az * (dx / dz) / l;

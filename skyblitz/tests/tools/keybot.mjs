@@ -8,6 +8,9 @@
 //        [--port 8100] [--w 1280] [--h 720] [--noise 0]
 // --pwm tap: weak commands are taps whose length is their strength (a person); --pwm sd: sigma-delta pulse train every step; --pwm track: key
 // state chosen each step so the sim's ramped input follows the wanted value (the ideal keyboard player, an upper bound for any person).
+// --pwm none presses NO roll / pitch key; --buttons 0|1 (default 1) says whether the brain's boost / fire / airbrake / item / barrel keys are pressed.
+// So the hands-off player (no key at all) is `--pwm none --buttons 0`, and the Standard-assist player who only manages boost and items is `--pwm none --buttons 1`.
+// Node twin of this tool (no browser, 4 s a race, modes tap / track / hands / assist, summary of mean place): skyblitz/tests/tools/keybot-node.mjs.
 // --mode autopilot flies the same craft with the analog AI (the reference lap). Writes <dir>/keybot-<course>.json (+ shot-NN.jpg), prints a
 // summary, exit code 1 on console errors. Headless, below-normal priority (chrome.mjs).
 import { launchChrome } from './chrome.mjs';
@@ -17,7 +20,7 @@ import { join } from 'node:path';
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 && i + 1 < process.argv.length ? process.argv[i + 1] : d; };
 const o = {
   course: arg('course', 'sunrise'), out: arg('out'), laps: arg('laps', '1'), seed: arg('seed', '7'), diff: arg('diff', 'normal'), craft: arg('craft', 'falcon'),
-  bots: arg('bots', '7'), interval: +arg('interval', 0.1), delay: +arg('delay', 0.12), dead: +arg('dead', 0.12), mode: arg('mode', 'keys'), pwm: arg('pwm', 'tap'), nodouble: arg('nodouble', '0') === '1' ? 1 : 0,
+  bots: arg('bots', '7'), interval: +arg('interval', 0.1), delay: +arg('delay', 0.12), dead: +arg('dead', 0.12), mode: arg('mode', 'keys'), pwm: arg('pwm', 'tap'), buttons: arg('buttons', '1') !== '0', nodouble: arg('nodouble', '0') === '1' ? 1 : 0,
   max: +arg('max', 400), shots: +arg('shots', 5), port: arg('port', '8100'), w: +arg('w', 1280), h: +arg('h', 720), noise: +arg('noise', 0),
 };
 if (!o.out) { console.error('usage: keybot.mjs --course <id> --out <dir> [options] (see file header)'); process.exit(2); }
@@ -57,7 +60,7 @@ try {
   for (let guard = 0; guard < 800; guard++) {
     const st = await J('(()=>{const r=__sky.game.race;return {s:r.state,t:+(r.cd-1.2).toFixed(3)}})()');
     if (st.s === 'racing') break;
-    if (o.mode === 'keys' && st.s === 'countdown' && st.t <= 0.3 && !held.has('ShiftLeft')) await setKeys(new Set(['ShiftLeft']));
+    if (o.mode === 'keys' && o.buttons && st.s === 'countdown' && st.t <= 0.3 && !held.has('ShiftLeft')) await setKeys(new Set(['ShiftLeft']));
     await page.eval(`__sky.step(${st.s === 'countdown' && st.t < 1 ? 2 : 10}, 10)`);
   }
   await setKeys(new Set());
@@ -81,11 +84,11 @@ try {
       } else if (o.pwm === 'sd') {                     // sigma-delta pulse train: average key state = the analog command, every sim step (ignores the ramp)
         const sd = (v, ax, neg, pos) => { sdAcc[ax] += v + noise(); if (sdAcc[ax] >= 0.5) { want.add(pos); sdAcc[ax] -= 1; } else if (sdAcc[ax] <= -0.5) { want.add(neg); sdAcc[ax] += 1; } };
         sd(a.r, 'r', 'KeyA', 'KeyD'); sd(a.p, 'p', 'KeyW', 'KeyS');
-      } else { axis(a.r, 'KeyA', 'KeyD'); axis(a.p, 'KeyW', 'KeyS'); }   // 'flight' pitch mode: S / Down = pull = nose up
-      if (a.boost) want.add('ShiftLeft'); if (a.fire) want.add('Space'); if (a.brake) want.add('KeyX');
+      } else if (o.pwm !== 'none') { axis(a.r, 'KeyA', 'KeyD'); axis(a.p, 'KeyW', 'KeyS'); }   // 'flight' pitch mode: S / Down = pull = nose up
+      if (o.buttons) { if (a.boost) want.add('ShiftLeft'); if (a.fire) want.add('Space'); if (a.brake) want.add('KeyX'); }
       await setKeys(want);
-      if (a.item) await tap('KeyF');
-      if (a.barrel) await tap(a.barrel < 0 ? 'KeyQ' : 'KeyE');
+      if (o.buttons && a.item) await tap('KeyF');
+      if (o.buttons && a.barrel) await tap(a.barrel < 0 ? 'KeyQ' : 'KeyE');
       let done = 0;
       for (const [key, hold] of part.sort((x, y) => x[1] - y[1])) {      // release each tap at its own length
         if (hold > done) { await advance(hold - done); done = hold; }

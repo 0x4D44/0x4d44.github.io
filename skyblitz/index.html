@@ -9,25 +9,33 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1a33'/%3E%3Cpath d='M8 36 32 10l24 26-12-4-12 22-12-22z' fill='%23ffb020'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 <script>
-/* Boot watchdog (E-11). The game is a graph of ES modules: one that fails to download (a stale or missing file right after a deploy) leaves a
-   blank page with nothing in the console. This classic script runs first and owns the one failure overlay. window.__skyBoot.ready() is called
-   by src/main.js once Game.init() has finished; window.__skyBoot.fail(msg, {reload}) is Game.fail's route (no WebGL). */
+/* Boot watchdog (E-11, R2-E-03). The game is a graph of ES modules: one that fails to download (a stale or missing file right after a deploy) leaves a
+   blank page with nothing in the console. This classic script runs first and owns the one overlay. window.__skyBoot.ready() is called by
+   src/main.js once Game.init() has finished; window.__skyBoot.fail(msg, {reload}) is Game.fail's route (no WebGL).
+   A slow connection is not a failure: after 8 s without a start the overlay says "Still loading" (no Reload button) and goes away by itself when the
+   game starts. "Failed to load" is said only when a module script errors, a module import rejects, or no file has finished downloading for 30 s. */
 (function () {
-  var done = false, hard = false, el = null;
-  function show(title, body, reload, isHard) {
+  var done = false, hard = false, el = null, state = '', timer = 0;
+  var T = window.__skyBootTimings || {};                // tests shorten the clocks (Page.addScriptToEvaluateOnNewDocument)
+  var SOFT = T.soft || 8000, STALL = T.stall || 30000, TICK = T.tick || 500, t0 = Date.now(), lastGrow = t0;
+  // a file finishing downloading is the sign of life (the observer, not getEntriesByType: that buffer stops at 250 entries and the game loads more)
+  try { new PerformanceObserver(function (l) { if (l.getEntries().length) lastGrow = Date.now(); }).observe({ type: 'resource' }); } catch (e) { /* no observer: the clock alone */ }
+  function show(title, body, reload, isHard, busy) {
     if (hard) return;                                   // the first fatal message stays
-    if (done && !isHard) return;                        // a soft warning that lost the race against a successful start
-    if (!document.body) { document.addEventListener('DOMContentLoaded', function () { show(title, body, reload, isHard); }); return; }
+    if (done && !isHard) return;                        // a soft message that lost the race against a successful start
+    if (!document.body) { document.addEventListener('DOMContentLoaded', function () { show(title, body, reload, isHard, busy); }); return; }
     hard = !!isHard;
     if (!el) {
       el = document.createElement('div');
-      el.id = 'sb-boot'; el.setAttribute('role', 'alert');
+      el.id = 'sb-boot';
       el.style.cssText = 'position:fixed;top:0;right:0;bottom:0;left:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;box-sizing:border-box;background:#0b1a33;color:#fff;font:600 18px/1.4 system-ui,sans-serif;text-align:center';
       document.body.appendChild(el);
     }
+    el.setAttribute('role', busy ? 'status' : 'alert');
     el.innerHTML = '';
     var h = document.createElement('div'); h.style.cssText = 'font-size:24px;font-weight:800'; h.textContent = title; el.appendChild(h);
     if (body) { var p = document.createElement('div'); p.style.cssText = 'font-weight:500;max-width:34em;opacity:.85'; p.textContent = body; el.appendChild(p); }
+    if (busy) { var bar = document.createElement('div'); bar.className = 'bar'; bar.appendChild(document.createElement('i')); el.appendChild(bar); }
     if (reload) {
       var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Reload';
       b.style.cssText = 'font:700 16px system-ui,sans-serif;padding:10px 24px;border:0;border-radius:8px;background:#ffb020;color:#0b1a33;cursor:pointer';
@@ -46,9 +54,32 @@
     if (t && t.tagName === 'SCRIPT' && t.type === 'module') show(LOAD, 'A game file did not download or is out of date. Reload the page to try again.', true, true);
     else if (e.filename && /\/src\/[^?#]*\.js/.test(e.filename)) show(LOAD, 'A game file could not be run. Reload the page to try again.', true, true);
   }, true);
-  var timer = setTimeout(function () { if (!done) show(LOAD, 'Skyblitz has not started after 8 seconds. Reload the page to try again.', true, false); }, 8000);
+  // a dynamic import that rejects before the game is up (nothing else catches it)
+  window.addEventListener('unhandledrejection', function (e) {
+    if (done) return;
+    var r = e.reason, m = String((r && r.message) || r || '');
+    if (/dynamically imported module|importing a module script failed|error loading dynamically/i.test(m)) show(LOAD, 'A game file did not download or is out of date. Reload the page to try again.', true, true);
+  });
+  // Not started yet: "still loading" after SOFT; the failure wording only when nothing has finished downloading for STALL (and it turns back into "still loading" if downloads resume)
+  function tick() {
+    if (done) return;
+    var now = Date.now(), want = now - lastGrow >= STALL ? 'stalled' : now - t0 >= SOFT ? 'soft' : '';
+    if (want !== state) {
+      state = want;
+      if (want === 'stalled') show(LOAD, 'Nothing has downloaded for ' + Math.round(STALL / 1000) + ' seconds. Check the connection, then reload the page.', true, false);
+      else if (want === 'soft') show('Still loading...', 'Skyblitz is a big download on a slow connection. It starts by itself when it has arrived.', false, false, true);
+    }
+    timer = setTimeout(tick, TICK);
+  }
+  timer = setTimeout(tick, TICK);
 })();
 </script>
+<style>
+#sb-boot .bar { width: min(240px, 60vw); height: 4px; border-radius: 2px; background: rgba(255, 255, 255, .18); overflow: hidden; }
+#sb-boot .bar i { display: block; width: 40%; height: 100%; border-radius: 2px; background: #ffb020; }
+@media (prefers-reduced-motion: no-preference) { #sb-boot .bar i { animation: sb-sweep 1.4s ease-in-out infinite; } }
+@keyframes sb-sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+</style>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
 </head>
 <body>

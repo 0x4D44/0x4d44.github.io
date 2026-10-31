@@ -7,7 +7,7 @@
 // Additions (race agent): radius, lock{target,progress}, empT, blind, overheated, wrongWay, draft{on,target,t}, rb (rubber factor), lastS.
 import * as THREE from 'three';
 import { GRID_SIZE } from '../config.js';
-import { clamp } from '../util.js';
+import { clamp, smoothstep } from '../util.js';
 import { createControls, copyControls } from '../controls.js';
 import { createFlightState, resetFlightState, stepFlight, startBoost, addBoostMeter } from '../flight/flight.js';
 import { buildAircraft, updateAircraft, disposeAircraft } from '../craft/aircraft.js';
@@ -62,7 +62,18 @@ export class Race {
     this.meanCruise = this.racers.reduce((a, x) => a + x.flight.params.cruise, 0) / this.racers.length;
     this.items = new ItemSystem(this);
     for (const r of this.racers) { if (r.isAI) r.rb = this.difficulty.aiSpeed; r.ai = createAI(this, r, r.pilot || AUTO_PILOT, this.difficulty); syncProgress(this, r); r.prev.pos.copy(r.flight.pos); }
+    // manual respawn (held R / pad Back, emitted by the input layer): the human goes back to the last good point exactly like an automatic respawn
+    this._offManual = game.events.on('input:respawn', (d) => this.manualRespawn(d?.racer));
     game.events.emit('race:ready', { race: this });
+  }
+
+  /** Human-requested respawn. Only while racing, only the human (or a racer named in the payload), not within RACE.manualRespawnGap s of the last respawn. */
+  manualRespawn(racer = this.player) {
+    const r = racer || this.player;
+    if (!r || this.state !== 'racing' || r.finished || this.demo) return false;
+    if (r.lastRespawnClock != null && this.clock - r.lastRespawnClock < RACE.manualRespawnGap) return false;
+    this.respawn(r, 'manual');
+    return true;
   }
 
   buildGrid(cfg) {
@@ -89,6 +100,12 @@ export class Race {
       used.add(craft); const n = (count[craft] = (count[craft] || 0) + 1) - 1;
       let livery = (n + PILOTS.indexOf(pilot)) % 3; if (craft === playerCraft && livery === (cfg.livery || 0) % 3) livery = (livery + 1) % 3;
       this.racers.push(makeRacer(game, id++, getAircraft(craft), livery, false, pilot, grid[slot]));
+    }
+    // every craft starts with at least RACE.gridClearance m between its lowest collision surface and the ground / deck (the path sits only 5 m over the deck,
+    // which left a 3.6 m-radius Falcon 1.4 m from contact, so a small sink after GO scraped it)
+    for (const r of this.racers) {
+      const p = r.flight.pos, floor = this.course.groundHeight(p.x, p.z) + r.radius + RACE.gridClearance;
+      if (p.y < floor) { p.y = floor; r.prev.pos.copy(p); r.render.pos.copy(p); }
     }
   }
 
@@ -164,6 +181,8 @@ export class Race {
     else { let sum = 0; for (const o of this.racers) sum += o.dist; ref = sum / this.racers.length; }
     const f = clamp((ref - r.dist) / d.rubberRange, -1, 1);              // + when behind the reference
     let target = 1;
+    // hands-off rule: a craft the keyboard guide has flown with no key down for 8-14 s gets no help (leaders are not held back, no catch-up): the band is for players who play
+    const idle = smoothstep(8, 14, this.game.input?.handsOffT || 0);
     if (r.isAI) {
       // pace AIs toward the human's craft (or the field average) so a manta and a sprite race each other, keeping 60 % of the craft identity
       const cruise = r.flight.params.cruise || RACE.cruiseRef;
@@ -171,17 +190,27 @@ export class Race {
       const norm = (cruise + (refC - cruise) * RACE.cruiseNorm) / cruise;
       target = d.aiSpeed * norm * (f > 0 ? 1 + d.rubber * f : 1 + d.rubber * 0.6 * f);
       if (f < 0 && this.player && !this.player.finished) {                // far ahead of a human who is still racing: ease off so a slower human stays in touch
-        const slowed = target * (1 - aheadSlowFor(r.dist - this.player.dist, d));
+        const slowed = target * (1 - aheadSlowFor(r.dist - this.player.dist, d) * (1 - idle));
         target = Math.max(slowed, Math.min(target, RACE.aheadFloor * norm));
       }
     } else if (r.place >= 4) {
       // catch-up for the human: measured against the best AI (never against the player's own distance, which is always 0 away)
       let lead = -Infinity; for (const o of this.racers) if (o !== r && o.dist > lead) lead = o.dist;
       const g = clamp((lead - r.dist) / d.rubberRange, 0, 1);
-      if (g > 0) target = 1 + d.playerHelp * g;
+      if (g > 0) target = 1 + d.playerHelp * g * (1 - idle);
     }
     r.rb += (target - r.rb) * Math.min(1, dt * 1.2);                      // smoothed: never a visible jump
     let m = r.rb + r.draftBonus;
+    if (!r.isAI) {                                                        // auto-cruise: the hands-off penalty eases in with the 8-14 s smoothstep and releases within ~0.3 s of any key (HUD reads r.idleCruise, 0..1)
+      const c = r.idleCruise || 0, dc = idle - c;
+      r.idleCruise = c + (dc > 0 ? dc : Math.max(dc, -RACE.idleRelease * dt));
+      if (RACE.idleDrag) m *= 1 - RACE.idleDrag * r.idleCruise;
+    }
+    if (!r.isAI && RACE.assistDrag) {                                     // assist drag: the keyboard guide keeps you safe, flying yourself is faster (continuous, so no cliff at the hands-off timer)
+      const w = this.game.input?.guide?.active || 0;
+      r.assistW = (r.assistW || 0) + (w - (r.assistW || 0)) * Math.min(1, dt * 2);   // smoothed here: the guide's weight flickers frame to frame
+      m *= 1 - RACE.assistDrag * r.assistW;
+    }
     if (r.empT > 0) m *= 0.8;
     if (r.launchLock > 0) m *= 0.55 + 0.45 * (1 - r.launchLock / 1.3);
     return m;
@@ -388,7 +417,22 @@ export class Race {
     for (const r of this.racers) {
       if (r.finished) continue;
       const fs = r.flight;
-      r.stuckT = fs.speed < 12 && this.clock > 2 && r.tumble <= 0 ? r.stuckT + dt : 0;
+      // stuck = barely moving along the course: slow in speed OR in PROGRESS (a craft pinned against a flank bounces between 10 and 19 m/s but goes nowhere).
+      // The timers decay instead of resetting, so a bouncing craft still accumulates; a craft that flies free drains them at half rate.
+      const live = this.clock > 2 && r.tumble <= 0;
+      r.stuckT = live && fs.speed < 12 ? r.stuckT + dt : Math.max(0, r.stuckT - dt * 0.5);
+      // progress is judged NET over a window: a craft grinding on a flank makes `dist` jitter by a few metres each tick, which defeats any per-tick rate
+      // ...and against the path actually flown (odometer): a vertical loop credits only about 0.2 m of course distance per metre flown, so a slow pilot in a loop makes
+      // < 75 m in 5 s while flying fine; a trapped craft makes about 0 m for any distance flown
+      r.odo = (r.odo || 0) + fs.speed * dt;
+      if (!live || (r.isAI && !RACE.progressAI) || r.onBranch >= 0 || r.debt > 0) r.progH = null;           // a shortcut credits its distance at the exit (debt), so it is not a grind either
+      else {
+        const H = r.progH || (r.progH = []);
+        if (!H.length || this.clock - H[H.length - 1].t >= 0.5) H.push({ t: this.clock, d: r.dist, o: r.odo });
+        while (H.length > 1 && this.clock - H[1].t >= RACE.respawnProgT) H.shift();         // keep the newest sample that is at least respawnProgT old as the window start
+        const net = r.dist - H[0].d;
+        if (this.clock - H[0].t >= RACE.respawnProgT && net < RACE.respawnProgSpeed * RACE.respawnProgT && net < RACE.respawnProgEff * (r.odo - H[0].o)) { this.respawn(r, 'stuck'); continue; }
+      }
       if (r.stuckT > RACE.respawnStuckT) { this.respawn(r, 'stuck'); continue; }
       if (r.contactRun > RACE.respawnScrapeT) { this.respawn(r, 'scrape'); continue; }                    // riding a wall / rooftop for seconds: put it back on the line
       if ((this.frame + r.id) % 6 === 0 && r.onBranch < 0) {
@@ -413,6 +457,24 @@ export class Race {
 
   respawn(r, reason) {
     const course = this.course, fs = r.flight, L = course.length;
+    // E-08 / R2-E-02: the good point is inside a vertical loop but the craft really is past its exit (it flew the straight line under the loop and the hinted
+    // projection stayed on the loop): say so and put it back at the loop entry, not 50-100 m into the loop
+    if (r.lastGoodBranch < 0 && course.marks) {
+      const wd = (d) => { d %= L; return d > L / 2 ? d - L : d < -L / 2 ? d + L : d; };
+      for (const k in course.marks) {
+        if (!k.endsWith('Entry')) continue;
+        const nm = k.slice(0, -5), entry = course.marks[k], exit = course.marks[nm + 'Exit'];
+        if (exit == null) continue;
+        const inside = wd(r.lastGoodS - entry), span = wd(exit - entry);
+        if (inside < -20 || inside > span + 30) continue;
+        const tp = Object.assign({}, r.proj); course.project(fs.pos, null, tp);
+        if (wd(tp.s - exit) > 0 && wd(tp.s - exit) < L / 2) {
+          r.lastGoodDist -= Math.max(0, inside); r.lastGoodS = entry;
+          this.game.events.emit('race:missed', { racer: r, what: 'loop', name: nm });
+        }
+        break;
+      }
+    }
     // branch-aware anchor: a racer last good inside a shortcut comes back on that shortcut's centreline, not at the mouth
     const gb = r.lastGoodBranch >= 0 ? course.branches[r.lastGoodBranch] : null;
     if (gb) gb.frameAt(Math.max(0, r.lastGoodU - 10), _f); else course.frameAt(r.lastGoodS - 10, _f);
@@ -420,12 +482,13 @@ export class Race {
     const meter = fs.boost.meter;
     resetFlightState(fs, pos, quat, fs.params.cruise * 0.6);
     fs.boost.meter = meter;
-    r.tumble = 0; r.invuln = 3; r.stuckT = 0; r.highT = 0; r.contactRun = 0; r.lostT = 0; r.wrongWay = false; r.wrongT = 0; r.progSpeed = 0;
+    r.tumble = 0; r.invuln = 3; r.stuckT = 0; r.progH = null; r.highT = 0; r.contactRun = 0; r.lostT = 0; r.wrongWay = false; r.wrongT = 0; r.progSpeed = 0;
     r.prev.pos.copy(pos); r.prev.quat.copy(quat); r.render.pos.copy(pos); r.render.quat.copy(quat);
     reanchor(this, r, gb ? { branch: gb.index, u: Math.max(0, r.lastGoodU - 10), s: r.lastGoodS } : null);
     let back = r.s - r.lastGoodS; if (back > L / 2) back -= L; else if (back < -L / 2) back += L;
     r.dist = r.lastGoodDist + back;                                     // the same (dist - s) as at the last good moment, wherever it happens
     r.debt = gb && r.onBranch === r.lastGoodBranch ? r.lastGoodDebt : 0;
+    r.lastRespawnClock = this.clock;
     this.stats.respawns++;
     this.game.events.emit('race:respawn', { racer: r, reason });
   }
@@ -453,6 +516,7 @@ export class Race {
   }
 
   dispose() {
+    this._offManual?.(); this._offManual = null;
     for (const r of this.racers) {
       if (!this.game.headless) { this.game.fx?.detachRacer?.(r); this.game.audio?.detachRacer?.(r); }
       r.model.parent?.remove(r.model);

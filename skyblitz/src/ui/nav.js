@@ -72,8 +72,13 @@ export class Nav {
   poll(dt) {
     const ui = this.ui; if (!navigator.getGamepads) return;
     let gp = null; for (const g of navigator.getGamepads()) if (g && g.connected) { gp = g; break; }
-    const P = this.pad; if (!gp) { P.prev.length = 0; return; }
+    const P = this.pad; if (!gp) { P.prev.length = 0; P.act = false; return; }
     const b = (i) => !!gp.buttons[i]?.pressed, edge = (i) => b(i) && !P.prev[i];
+    // R2-P-05: the menus are where a pad player starts, and flight/input.js only reads the pad once a race is flying, so the first-race card and the loading tips would still talk about the keyboard.
+    // A pad button or stick (past 0.3, as there) coming into use is the pad taking the device; on the rising edge only, so a stick held while a key is pressed does not take it back.
+    const act = gp.buttons.some((x) => x && x.pressed) || (gp.axes || []).some((a) => Math.abs(a) > 0.3);
+    if (act && !P.act && ui.game.input) ui.game.input.lastDevice = 'pad';
+    P.act = act;
     const open = ui.menuOpen(), paused = ui.game.paused && ui.game.state === 'race';
     if (open) {
       if (!document.activeElement || !this.items().includes(document.activeElement)) this.ensureFocus();

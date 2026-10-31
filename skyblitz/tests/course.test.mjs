@@ -310,13 +310,27 @@ for (const id of IDS) {
       lay.frameAt(s, f);
       for (let a = -1.6; a <= 1.6; a += 0.4) {
         const x = f.pos.x + f.right.x * a * f.halfWidth + (s % 7) * 0.61, z = f.pos.z + f.right.z * a * f.halfWidth + (s % 5) * 0.43;
-        if (lay._onDeck(x, z)) continue;
-        max = Math.max(max, Math.abs(lay.groundHeight(x, z) - lay.heightFn(x, z))); n++;
+        if (lay._onDeck(x, z) || lay.groundHeight(x, z) > lay.heightFn(x, z) + 1e-6) continue;       // the deck and its side skirt are overrides, tested separately
+        max =Math.max(max, Math.abs(lay.groundHeight(x, z) - lay.heightFn(x, z))); n++;
       }
     }
     assert.ok(n > 500);
     assert.ok(max <= 0.5, `max baked-vs-analytic error ${max.toFixed(2)} m`);
     if (def.bakeCell) assert.ok(lay._bakeTiles.size > 20, 'the bake was actually used');
+  });
+
+  test(`${id}: the launch deck has no vertical flank: ground falls at most 45 degrees away from its edges (R2-P-03 pocket)`, () => {
+    // A craft that drifted under the deck top beside the deck (the corridor ellipse reaches 40-50 m below it) used to graze a 145 m vertical wall
+    // for minutes. Both sides: the ground at d metres outside the edge must be at least deckY - d (the terrain may be higher). The ends are the
+    // run-in and the launch lip that the flight path itself crosses, so they stay as they were.
+    const c = lay.startCfg, tx = lay._dx, tz = lay._dz, rx = -tz, rz = tx;
+    const at = (a, b) => lay.groundHeight(lay._sx + tx * a + rx * b, lay._sz + tz * a + rz * b);
+    for (const d of [2, 6, 12, 20, 30, 45, 60]) for (const t of [-c.back + 10, -c.back / 2, 0, c.fwd - 10]) {
+      for (const sg of [-1, 1]) assert.ok(at(t, sg * (c.halfW + d)) >= lay.deckY - d - 0.5, `side ${sg} d=${d} a=${t}: ground ${at(t, sg * (c.halfW + d)).toFixed(0)} vs ${(lay.deckY - d).toFixed(0)}`);
+    }
+    // and the pocket from the report: a point 7 m beside the deck edge, 34 m under the deck top, is inside the slope (the craft is lifted out) or above it
+    const free = at(-60, c.halfW + 7) < lay.deckY - 34;
+    assert.ok(!free || at(-60, c.halfW + 7) >= lay.deckY - 7 - 0.5);
   });
 
   test(`${id}: collide: ground, hazard, wall; clear air returns false`, () => {

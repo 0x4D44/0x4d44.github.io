@@ -6,13 +6,15 @@ import { h, ordinal } from './dom.js';
 import { loadSave, writeSave, recordResult } from './save.js';
 import { Nav } from './nav.js';
 import { Hud } from './hud.js';
-import { titleScreen, mainScreen, settingsScreen, controlsScreen, creditsScreen, pauseScreen, btn } from './menus.js';
+import { titleScreen, mainScreen, settingsScreen, controlsScreen, creditsScreen, pauseScreen, btn, hintRows, hintGroup, guideOn, assistLine } from './menus.js';
 import { aircraftScreen, courseScreen, optionsScreen, loadingScreen } from './select.js';
 import { resultsScreen, podiumScreen } from './results.js';
 import { DEFAULT_SETTINGS } from '../config.js';
 import { COURSES } from '../world/courses/index.js';
 
 const GP_ORDER = ['sunrise', 'redrock', 'neon', 'frost'];
+export const NOTICE_MS = 7000;   // long enough to read one line of 70 characters twice
+export const PAD_NOTICE = 'Controller not recognised: using the default layout. Check Controls.';
 
 export class UI {
   constructor(game) {
@@ -38,12 +40,19 @@ export class UI {
     ev.on('game:resume', () => { if (this.hintOpen) return; if (this.cur && this.cur.name !== 'loading') this.hideAll(); });
     ev.on('game:raceStart', () => this.onRaceStart());
     ev.on('game:error', ({ error }) => { this.toast('Something went wrong: ' + (error?.message || 'unknown error')); if (this.cur?.name === 'loading') this.goto('main'); });
+    ev.on('input:padunmapped', () => this.notice(PAD_NOTICE));   // flight/input.js, once per connect: a pad whose mapping is not 'standard' is read through the DirectInput layout; the Controls screen lists the buttons
     ev.on('settings:change', ({ key }) => { if (key === 'reduceFlash' || key === 'showFps') this.applySettingsClasses(); });
     addEventListener('keydown', (e) => { if (this.cur?.name === 'title' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey && e.code !== 'Escape' && !/^(Shift|Control|Alt|Meta|F\d+|Tab)/.test(e.code)) { e.preventDefault(); this.goto('main'); } }, true);
   }
 
   cue(name) { this.game.events.emit(name, {}); }
-  toast(msg, ms = 3500) { this.toastEl.textContent = msg; this.toastEl.hidden = false; clearTimeout(this._tT); this._tT = setTimeout(() => { this.toastEl.hidden = true; }, ms); this.cue('ui:error'); }
+  toast(msg, ms = 3500, calm = false) {
+    const t = this.toastEl; t.textContent = msg; t.hidden = false; t.classList.toggle('toast-note', calm); t.setAttribute('role', calm ? 'status' : 'alert');   // (not `info`: that is the aircraft details panel, and its flex column and size container would squeeze the toast to a 5 px strip)
+    clearTimeout(this._tT); this._tT = setTimeout(() => { t.hidden = true; }, ms);
+    if (!calm) this.cue('ui:error');
+  }
+  /** One line the player should know, that is no error: the toast without the red and without the error sound, up a little longer. */
+  notice(msg, ms = NOTICE_MS) { this.toast(msg, ms, true); }
 
   // ------------------------------------------------------------------ router
   activeRoot() { return this.cur && !this.cur.el.hidden ? this.cur.el : null; }
@@ -96,7 +105,7 @@ export class UI {
     g.saveSettings();
   }
   resetSettings() {
-    for (const k of ['masterVolume', 'musicVolume', 'sfxVolume', 'pitchMode', 'assist', 'shake', 'showFps', 'doubleTapRoll', 'reduceFlash', 'rumble', 'difficulty']) this.setSetting(k, DEFAULT_SETTINGS[k]);
+    for (const k of ['masterVolume', 'musicVolume', 'sfxVolume', 'pitchMode', 'assist', 'keyGuide', 'shake', 'showFps', 'doubleTapRoll', 'reduceFlash', 'rumble', 'difficulty']) this.setSetting(k, DEFAULT_SETTINGS[k]);
     this.setSetting('quality', DEFAULT_SETTINGS.quality);
     this.screens.settings.enter?.(); this.cue('ui:click');
   }
@@ -143,16 +152,23 @@ export class UI {
   quit(toMain) {
     const g = this.game; this.afterTitle = toMain ? 'main' : null; this.pending = null; this.hintOpen = false;
     if (g.paused) g.setPaused(false);
-    this.hud.show(false); this.goto('loading'); this.screens.loading.el.querySelector('.ld-h').textContent = 'RETURNING TO THE HANGAR';
+    this.hud.show(false); this.goto('loading', { heading: 'RETURNING TO THE HANGAR' });   // the loading screen owns its heading and takes this one for this visit only (R2-V-02)
     g.quit();
   }
   makeHint() {
     const g = this.game;
-    const list = h('ul', { class: 'hint-list' });
+    const list = h('ul', { class: 'hint-list' }), note = h('p', { class: 'hint-note', hidden: true });
     const go = btn('Got it - let\'s race', () => this.dismissHint(), { cls: 'primary big', first: true, cue: 'ui:confirm' });
-    const el = h('div', { class: 'scr hint' }, h('div', { class: 'panel hint-panel' }, h('h2', { class: 'skew' }, h('span', null, 'BEFORE YOU FLY')), list, go));
+    const el = h('div', { class: 'scr hint' }, h('div', { class: 'panel hint-panel' }, h('h2', { class: 'skew' }, h('span', null, 'BEFORE YOU FLY')), list, note, go));
     return { el, transparent: true, back: () => { this.dismissHint(); return null; },
-      enter() { list.replaceChildren(...g.input.bindingsText()[g.input.touchActive ? 2 : 0].rows.slice(0, g.input.touchActive ? 4 : 7).map(([k, a]) => h('li', null, h('b', null, k), h('span', null, a)))); } };
+      enter() {
+        // the rows are the ones the device in use has (the last one to send input: keyboard, pad or touch), picked by name so none is lost to the order (R2-V-03)
+        const dev = g.input.lastDevice;
+        list.replaceChildren(...hintRows(hintGroup(g.input.bindingsText(), dev).rows).map(([k, a]) => h('li', null, h('b', null, k), h('span', null, a))));
+        // the keyboard's steering assist is told here only when it is what this player flies with (R2-P-04): not for a pad or touch, and not when it is off or Pro
+        const steers = dev !== 'pad' && dev !== 'touch' && guideOn(g.settings);
+        note.textContent = steers ? assistLine(g.settings) : ''; note.hidden = !steers;
+      } };
   }
   dismissHint() { this.hintOpen = false; this.save.hintsSeen = true; writeSave(this.save); this.hideAll(); this.game.setPaused(false); }
   onRaceStart() {

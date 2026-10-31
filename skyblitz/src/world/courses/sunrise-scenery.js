@@ -42,8 +42,10 @@ export async function buildScenery(course, game, progress, yieldFrame) {
   const group = new THREE.Group(); group.name = 'terrain';
   const geos = [];
   for (const I of def.islands) {
-    const ext = I.r * 1.55, cell = Math.max(8, Math.round(I.r / 36)) * terrainCellScale(q);       // V-23: the terrain mesh follows the quality preset
-    const g = buildPatch(course.heightFn, { x0: I.x - ext, z0: I.z - ext, x1: I.x + ext, z1: I.z + ext, cell });
+    // R2-V-14: the lagoon shelf (floor above the -48 m mesh cut) runs out to 1.82 r on the big isles (the coast is domain-warped); a patch cut at 1.55 r ended the floor in a straight hole edge
+    // that showed through the shallows as a pale sawtooth. 1.9 r keeps every patch rim over floor the mesh cut already drops (Low's water is opaque: nothing shows through, 1.55 r stays).
+    const ext = I.r * (q.water === 'full' ? 1.9 : 1.55), cell = Math.max(8, Math.round(I.r / 36)) * terrainCellScale(q);       // V-23: the terrain mesh follows the quality preset
+    const g = buildPatch(course.heightFn, { x0: I.x - ext, z0: I.z - ext, x1: I.x + ext, z1: I.z + ext, cell }, { sinkFrom: -30 });
     if (!g.index.count) { g.dispose(); continue; }
     const m = new THREE.Mesh(g, mat); m.receiveShadow = true; m.castShadow = true; group.add(m); geos.push(g);
   }

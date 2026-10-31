@@ -174,7 +174,7 @@ function stepOnce(fs, c, h, ctx) {
     pT = fs.tumble.dir * 8.5 * s; qT = 2.4 * Math.sin(fs.t * 9) * s; rT = 1.6 * Math.cos(fs.t * 7) * s;
     k.q = qT; k.r = rT; k.p = pT;                       // no smoothing lag: starts and stops cleanly
     fs.tumble.t -= h;
-    if (fs.tumble.t <= 0) { fs.tumble.t = 0; k.recover = p.tumbleRecover + 0.45; }
+    if (fs.tumble.t <= 0) { fs.tumble.t = 0; k.recover = p.tumbleRecover + 0.8; }
   } else {
     const a = 1 - Math.exp(-13 * h);
     k.q += (qT - k.q) * a; k.p += (pT - k.p) * (1 - Math.exp(-15 * h)); k.r += (rT - k.r) * a;
@@ -230,7 +230,7 @@ function stepOnce(fs, c, h, ctx) {
   if (v < vt) {
     const rec = k.recover > 0 && !boosting;                                       // just out of a tumble: engines spool back up fast
     const lim = boosting ? p.accel * power / FLIGHT.meterBoostPower : p.thrust * speedMul * (rec ? 3 : 1);
-    acc = clamp((boosting ? 1.4 : rec ? 2.2 : 0.45) * (vt - v), 0, lim);
+    acc = clamp((boosting ? 1.4 : rec ? 3.2 : 0.45) * (vt - v), 0, lim);
   } else acc = -0.4 * (v - vt) - 0.0006 * (v - vt) * (v - vt);
   acc -= gs * fs.forward.y * (fs.forward.y > 0 ? 1 + 0.6 * fs.forward.y : 1 - 0.3 * fs.forward.y);   // dives gain speed, climbs lose it (steep climbs bleed hardest)
   acc -= (0.02 * Math.abs(k.q) + 0.012 * Math.abs(rotY)) * v;                    // induced drag from pulling / turning
