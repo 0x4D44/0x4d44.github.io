@@ -21,10 +21,18 @@ await T.run(async () => {
   const srv = await serveDbg(SITE, "T3, walkAt3, camAt3, orbitPose, WALLS, wallPieces, COLUMNS, ITEMS, itemBox, itemDef, OPENINGS, doorGeom, FLOOR_TOP, ROOMS, INN, G3, MAT3");
   const br = await launch({ width: 1200, height: 800, args: gpuArgs() });
   try {
-    const page = await br.newPage(`${srv.base}/${PAGE}`);
+    // long tasks (> 50 ms) of the main thread from the first byte: the warm-up's shader compiles show up here as hitches in the drafting
+    const page = await br.newPage(`${srv.base}/${PAGE}`, { init: "window.__lt = []; try { new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__lt.push(Math.round(e.duration)); }).observe({ type: 'longtask', buffered: true }); } catch (e) {}" });
     const ready = await waitReady(page, 30000), g3 = await state3D(page);
     T.check("page ready", ready && g3.ok, g3.detail);
     const film = await readFilm(page);
+    // the warm-up (a few seconds of slices after three.js arrives) must not freeze the drafting for long: turning the lamps on changes every lit shader, and compiling
+    // that on the main thread was one 3.9 s stall (the programs are now built in parallel, first). A timing check: it reports, PTB_STRICT_TIMING=1 makes it fail.
+    let warm = false;
+    for (let i = 0; i < 240 && !warm; i++) { warm = await page.eval("window.__tl.g3.warm === true").catch(() => false); if (!warm) await delay(250); }
+    const lt = await page.eval("JSON.stringify(window.__lt || [])").then(JSON.parse), longest = lt.reduce((a, b) => Math.max(a, b), 0);
+    T.check("the warm-up finishes", warm);
+    T.soft(`the warm-up never freezes the main thread for more than ${TOUR.warmMaxMs} ms`, longest <= TOUR.warmMaxMs, `longest ${longest} ms of ${lt.length} long task(s)`, process.env.PTB_STRICT_TIMING === "1");
 
     // ---- everything that is a number on the camera track, measured in the page in one pass (1/60 s steps from Z to the end of the film)
     const M = JSON.parse(await page.eval(`(() => {

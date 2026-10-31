@@ -3155,7 +3155,19 @@ function warm3D() {
     try { renderFrame(cx, cv.width, cv.height, ts[i++]); } catch (e) { console.warn('3D warm-up stopped', e); done(false); return; }
     setTimeout(slice, 30);
   };
-  setTimeout(slice, 150);
+  // The tour's ten lamps change the number of lights, so every lit material needs a second shader program: on the first draw with the lamps on that is one
+  // 3.9 s stall (measured), in the middle of the drafting. Ask for those programs first, with the scene as it stands when the lamps are up, and let the GPU
+  // process build them in parallel: the main thread keeps playing. The wait is bounded, and a refusal only means the stall comes back.
+  const lamps = () => {
+    if (G3.lost || !T3.tourT) { setTimeout(slice, 0); return; }
+    let next = () => { next = () => {}; setTimeout(slice, 30); };
+    const giveUp = setTimeout(() => next(), 20000);
+    try {
+      update3D(T3.tourT.roof[1] + 0.3);
+      G3.renderer.compileAsync(G3.scene, G3.camera).catch((e) => console.warn('3D lamp warm-up failed', e)).then(() => { clearTimeout(giveUp); next(); });
+    } catch (e) { console.warn('3D lamp warm-up skipped', e); clearTimeout(giveUp); next(); }
+  };
+  setTimeout(lamps, 150);
 }
 
 (function boot() {

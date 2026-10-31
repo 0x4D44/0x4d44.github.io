@@ -139,6 +139,7 @@ export const TOUR = {
   maxYaw: 60, maxPitch: 12,   // deg/s: pans are steady (the walk's peak is 55 and 9.5)
   lens: [40, 70],             // deg, vertical field of view once the dive is over
   clear: 0.25,                // m: inside, the eye is never closer than this to a wall, a column, a piece of furniture it could hit or an open door leaf (the walk's closest is 0.31)
+  warmMaxMs: 2000,            // the longest main-thread task while the page warms up its shaders (about 1.1 to 1.3 s; 3.9 s when the lamp programs compile on the main thread)
   tagMargin: 0.5,             // a room tag fades for this long at each end: the room must be on screen while it is fully shown
   door: {                     // the front door, seen straight on: the middle of the frame is the dark leaf while it is shut and the lit corridor once it is open
     shutAt: 6.4, openAt: 8.6, box: [0.46, 0.4, 0.54, 0.6],      // frame fractions x0, y0, x1, y1
