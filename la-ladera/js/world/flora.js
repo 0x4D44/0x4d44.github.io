@@ -1,9 +1,10 @@
-// Trees, palms, bananas, shrubs, agaves, grass tufts, bougainvillea drapes and potted plants. All foliage is alpha-tested cards from
-// the sprite atlas (one material), trunks are tubes. Groups props.flora.<i>.<j> and props.tufts.<i>.<j> (50 m chunks).
+// The instanced Blender library replaces visual geometry when a complete species has loaded.
+// Procedural cards/tubes remain the fallback; their RNG and collider paths run unchanged.
 import { card, tube, V } from './mk.js';
 import { TILE } from './sprites.js';
 import { OCC } from './occupancy.js';
 import { ss, vnoise, pointInPoly, polyDistPoint } from './geom.js';
+import { vegetationBuilder } from './vegetation.js';
 
 const rgb = (h) => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
 const lerpc = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
@@ -29,8 +30,9 @@ const BARK = { broad: [0.36, 0.28, 0.22], euca: [0.6, 0.56, 0.49], palm: [0.55, 
 
 // ---------------------------------------------------------------------------------------------------- trees
 export function broadTree(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z);
+  const r = o.rng, gy = K.H(x, z);
   const h = o.h ?? r.range(5.5, 8), cr = o.crown ?? r.range(2.6, 3.6), tr = o.trunk ?? r.range(0.14, 0.2), lean = r.range(-0.25, 0.25), lean2 = r.range(-0.25, 0.25);
+  const b = vegetationBuilder(K, 'almendro', x, gy, z, { height: h, width: cr * 2 });
   const top = [x + lean, gy + h * 0.62, z + lean2], base = o.leaf ?? rgb(0x6f9a44);
   const bark = BARK.broad;
   tube(b, 'bark_trunk', [x, gy - 0.25, z], top, tr, tr * 0.62, 7, { colFn: (i) => scale(bark, 0.85 + 0.25 * ((i * 37) % 5) / 5) });
@@ -44,7 +46,8 @@ export function broadTree(K, x, z, o = {}) {
 }
 
 export function eucalyptus(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = o.h ?? r.range(11, 17), tr = r.range(0.16, 0.24), lean = r.range(-0.9, 0.9), lz = r.range(-0.9, 0.9);
+  const r = o.rng, gy = K.H(x, z), h = o.h ?? r.range(11, 17), tr = r.range(0.16, 0.24), lean = r.range(-0.9, 0.9), lz = r.range(-0.9, 0.9);
+  const b = vegetationBuilder(K, 'eucalyptus', x, gy, z, { height: h, width: 6 });
   const top = [x + lean, gy + h, z + lz];
   tube(b, 'bark_euca', [x, gy - 0.3, z], top, tr, tr * 0.38, 7, { colFn: (i) => scale(BARK.euca, 0.82 + 0.3 * ((i * 53) % 7) / 7) });
   for (let i = 0; i < 4; i++) {
@@ -58,7 +61,8 @@ export function eucalyptus(K, x, z, o = {}) {
 }
 
 export function palm(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = o.h ?? r.range(8, 13), tr = 0.17, lean = r.range(-0.4, 0.4), lz = r.range(-0.4, 0.4);
+  const r = o.rng, gy = K.H(x, z), h = o.h ?? r.range(8, 13), tr = 0.17, lean = r.range(-0.4, 0.4), lz = r.range(-0.4, 0.4);
+  const b = vegetationBuilder(K, 'palm', x, gy, z, { height: h + 1.2, width: 7.6 });
   const segs = Math.ceil(h / 0.8);
   for (let i = 0; i < segs; i++) {
     const t0 = i / segs, t1 = (i + 1) / segs, bend = (t) => [x + lean * t * t, gy + h * t - (i === 0 ? 0.25 : 0), z + lz * t * t];
@@ -81,7 +85,8 @@ export function palm(K, x, z, o = {}) {
 }
 
 export function cypress(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = o.h ?? r.range(6, 9.5), w = h * 0.34, uv = K.atlas ? K.atlas.uv(TILE.CYPRESS) : [0, 0, 1, 1];
+  const r = o.rng, gy = K.H(x, z), h = o.h ?? r.range(6, 9.5), w = h * 0.34, uv = K.atlas ? K.atlas.uv(TILE.CYPRESS) : [0, 0, 1, 1];
+  const b = vegetationBuilder(K, 'cypress', x, gy, z, { height: h, width: w });
   const n = 3, rot = r.range(0, 3);
   for (let i = 0; i < n; i++) {
     const yaw = rot + (i * Math.PI) / n, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
@@ -92,7 +97,8 @@ export function cypress(K, x, z, o = {}) {
 }
 
 export function banana(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = r.range(1.7, 2.7), uv = K.atlas ? K.atlas.uv(TILE.BANANA) : [0, 0, 1, 1];
+  const r = o.rng, gy = K.H(x, z), h = r.range(1.7, 2.7), uv = K.atlas ? K.atlas.uv(TILE.BANANA) : [0, 0, 1, 1];
+  const b = vegetationBuilder(K, 'banana', x, gy, z, { height: h + 1.4, width: 4.5 });
   tube(b, 'bark_trunk', [x, gy - 0.1, z], [x, gy + h, z], 0.13, 0.08, 6, { col: [0.55, 0.62, 0.38] });
   const n = r.int(6, 8);
   for (let i = 0; i < n; i++) {
@@ -104,13 +110,15 @@ export function banana(K, x, z, o = {}) {
 
 // ---------------------------------------------------------------------------------------------------- low plants
 export function shrub(K, x, z, o = {}) {
-  const r = o.rng, b = K.b(o.kind ?? 'floralow', x, z, { cast: false }), gy = K.H(x, z) + (o.dy ?? 0), s = o.size ?? r.range(0.7, 1.2), tile = o.tile ?? TILE.SHRUB;
+  const r = o.rng, gy = K.H(x, z) + (o.dy ?? 0), s = o.size ?? r.range(0.7, 1.2), tile = o.tile ?? TILE.SHRUB;
+  const b = vegetationBuilder(K, o.flowers ? 'flower_bed' : 'leafy_shrub', x, gy, z, { height: s, width: s * 1.4 }, o.kind ?? 'floralow', { cast: false });
   canopy(K, b, tile, [x, gy + s * 0.45, z], s * 0.7, s * 0.45, s * 0.7, o.cards ?? 6, s * 0.95, r, o.leaf ?? rgb(0x7ca24d), { inner: 0.4, alt: o.alt, mat: 'foliage_low' });
   if (o.flowers) canopy(K, b, TILE.FLOWERS, [x, gy + s * 0.8, z], s * 0.5, s * 0.2, s * 0.5, 3, s * 0.8, r, rgb(0xffffff), { inner: 0.5, mat: 'foliage_low' });
 }
 
 export function agave(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), uv = K.atlas ? K.atlas.uv(TILE.AGAVE) : [0, 0, 1, 1], rot = r.range(0, 3);
+  const r = o.rng, gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), uv = K.atlas ? K.atlas.uv(TILE.AGAVE) : [0, 0, 1, 1], rot = r.range(0, 3);
+  const b = vegetationBuilder(K, 'agave', x, gy, z, { height: s, width: s * 1.3, ry: rot }, 'floralow', { cast: false });
   for (let i = 0; i < 3; i++) {
     const yaw = rot + (i * Math.PI) / 3, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
     card(b, 'foliage_low', [x, gy - 0.05, z], right, [0, 1, 0], s * 1.3, s, uv, scale(rgb(0xc9e0d3), r.range(0.85, 1.05)), V.nrm([Math.sin(yaw), 0.8, Math.cos(yaw)]));
@@ -118,8 +126,9 @@ export function agave(K, x, z, o = {}) {
 }
 
 export function tuft(K, x, z, rng, big = 1) {
-  const b = K.b('tufts', x, z, { cast: false }), gy = K.H(x, z), uv = K.atlas ? K.atlas.uv(rng.chance(0.18) ? TILE.REED : TILE.TUFT) : [0, 0, 1, 1];
+  const gy = K.H(x, z), uv = K.atlas ? K.atlas.uv(rng.chance(0.18) ? TILE.REED : TILE.TUFT) : [0, 0, 1, 1];
   const s = rng.range(0.7, 1.25) * big, rot = rng.range(0, 3), col = scale(rgb(0xdce8b0), rng.range(0.8, 1.1));
+  const b = vegetationBuilder(K, 'wild_grass', x, gy, z, { height: s * 0.8, width: s * 1.3, ry: rot }, 'tufts', { cast: false });
   for (let i = 0; i < 2; i++) {
     const yaw = rot + (i * Math.PI) / 2, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
     card(b, 'foliage_low', [x, gy - 0.04, z], right, [0, 1, 0], s * 1.3, s * 0.8, uv, col, [0, 1, 0]);
@@ -127,7 +136,8 @@ export function tuft(K, x, z, rng, big = 1) {
 }
 
 export function pottedPlant(K, x, z, rng, solid = true) {
-  const b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = rng.range(0.5, 0.8);
+  const gy = K.H(x, z), s = rng.range(0.5, 0.8);
+  const b = vegetationBuilder(K, rng.fork('model').chance(0.5) ? 'potted_fern' : 'potted_succulent', x, gy, z, { height: 0.34 + s, width: 0.6 }, 'floralow', { cast: false });
   tube(b, 'pot_clay', [x, gy, z], [x, gy + 0.34, z], 0.17, 0.23, 8, { col: scale(rgb(0xc8683c), rng.range(0.85, 1.1)), caps: true });
   canopy(K, b, rng.chance(0.5) ? TILE.FLOWERS : TILE.SHRUB, [x, gy + 0.34 + s * 0.4, z], s * 0.5, s * 0.4, s * 0.5, 4, s * 0.9, rng, rgb(0xd8e8c8), { inner: 0.3, mat: 'foliage_low' });
   if (solid) K.post(x, z, 0.24, 0.9);
@@ -143,7 +153,9 @@ export function drape(K, pts, rng, o = {}) {
     if (acc < next) continue;
     acc = 0; next = (o.step ?? 2.2) * rng.range(0.5, 2.0);
     if (rng.chance(0.3)) continue;
-    const b = K.b('floralow', p.x, p.z, { cast: false }), hang = Math.max(0.6, rng.range(0.7, 1.5) * (o.hang ?? 1.4)), w = rng.range(1.2, 2.8);
+    const hang = Math.max(0.6, rng.range(0.7, 1.5) * (o.hang ?? 1.4)), w = rng.range(1.2, 2.8);
+    const b = vegetationBuilder(K, tile === TILE.VINE ? 'climbing_vine' : 'bougainvillea', p.x + p.nx * 0.14, p.y - hang + 0.12, p.z + p.nz * 0.14,
+      { height: hang, width: w, depth: 0.28, ry: Math.atan2(p.nx, p.nz) }, 'floralow', { cast: false });
     const right = V.nrm([q.x - p.x, 0, q.z - p.z]), col = scale(rgb(o.hex ?? 0xffffff), rng.range(0.85, 1.1));
     card(b, 'foliage_low', [p.x + p.nx * 0.14, p.y - hang + 0.12, p.z + p.nz * 0.14], right, [0, 1, 0], w, hang, uv, col, V.nrm([p.nx, 0.35, p.nz]));
   }

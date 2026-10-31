@@ -14,6 +14,7 @@ import { makeSignAtlas, buildSigns } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
 import { fitNav } from './navfit.js';
+import { initVegetation, dressVegetation } from './vegetation.js';
 
 export async function buildProps(ctx) {
   const plan = ctx.plan;
@@ -50,6 +51,7 @@ export async function buildProps(ctx) {
     if (K.signs) { const m = ctx.mat('world_sign'); m.map = K.signs.texture; m.needsUpdate = true; ctx.world.signAtlas = true; }
     if (makeSignAtlas.errors?.length) ctx.errors?.push({ stage: 'props', item: 'signs.paint', message: makeSignAtlas.errors.join(' | ') });
   });
+  await step('vegetation-assets', () => initVegetation(K));
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
   await step('poles', () => buildPoles(K));          // before the flora: poles and lamps claim their ground first
   await step('vehicles', () => buildVehicles(K));
@@ -58,6 +60,7 @@ export async function buildProps(ctx) {
   await step('hill', () => buildHill(K));            // the huerta, the roadside cross, boulders, a yard clothes line
   await step('flora', () => buildFlora(K));
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
+  await step('vegetation-dressing', () => { dressVegetation(K); K.vegetation?.finalize(); });
   await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks
   await step('navfit', () => { ctx.world.navFit = fitNav(ctx); });   // every collider exists now: drop the nav edges a prop blocks (people read plan.nav after this)
   await step('discoveries', () => buildDiscoveries(K));

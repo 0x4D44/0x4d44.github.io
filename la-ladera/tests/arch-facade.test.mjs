@@ -66,6 +66,10 @@ test('balconies and miradores belong to a front window, stay clear of each other
   each((bp, tag) => {
     const S = bp.shell, bal = bp.facade.filter((r) => r.kind === 'balcony' || r.kind === 'mirador'), sign = bp.facade.find((r) => r.kind === 'sign');
     for (const r of bal) {
+      if (r.kind === 'balcony') {
+        assert.equal(typeof r.planter, 'boolean', `${tag}: vegetation needs the existing planter reservation`);
+        assert.equal(typeof r.laundry, 'boolean', `${tag}: vegetation needs the existing laundry reservation`);
+      }
       const w = bp.windows.find((q) => q.id === r.window);
       if (!w || w.side !== 'front' || w.floor < 1) { problems.push(`${tag}: ${r.kind} has no upper front window (${r.window})`); continue; }
       if (r.u0 > w.x - w.w / 2 + 0.01 || r.u1 < w.x + w.w / 2 - 0.01) problems.push(`${tag}: ${r.kind} u${r.u0}..${r.u1} does not span its window ${w.id}`);

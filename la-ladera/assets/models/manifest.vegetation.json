@@ -1,0 +1,1568 @@
+{
+  "version": 1,
+  "generator": "tools/blender/veg_build.py",
+  "seed": 20261031,
+  "species": [
+    "eucalyptus",
+    "cypress",
+    "palm",
+    "banana",
+    "almendro",
+    "agave",
+    "bougainvillea",
+    "potted_fern",
+    "potted_succulent",
+    "climbing_vine",
+    "window_box",
+    "flower_bed",
+    "wild_grass",
+    "leafy_shrub"
+  ],
+  "trees": [
+    "eucalyptus",
+    "cypress",
+    "palm",
+    "banana",
+    "almendro"
+  ],
+  "wind": {
+    "attribute": "COLOR_0",
+    "channel": "a",
+    "encoding": "linear [0,1], 0=rigid; RGB=linear albedo; alpha is not opacity"
+  },
+  "atlas": {
+    "path": "vegetation/billboards.png",
+    "width": 2560,
+    "height": 512,
+    "bytes": 149366,
+    "sha256": "1073e91f47c9ee242fd017685dc3ee8186c71628b500354129feca27901438e4",
+    "tiles": {
+      "eucalyptus": [
+        0.0,
+        0,
+        0.2,
+        1
+      ],
+      "cypress": [
+        0.2,
+        0,
+        0.4,
+        1
+      ],
+      "palm": [
+        0.4,
+        0,
+        0.6,
+        1
+      ],
+      "banana": [
+        0.6,
+        0,
+        0.8,
+        1
+      ],
+      "almendro": [
+        0.8,
+        0,
+        1.0,
+        1
+      ]
+    },
+    "source": "Orthographic raster of generated LOD0 geometry; no third-party image assets."
+  },
+  "totalBytes": 1603946,
+  "totalBytesIncludes": "glbs+atlas",
+  "files": [
+    {
+      "glb": "vegetation/eucalyptus.glb",
+      "bytes": 168308,
+      "sha256": "946653a0bfece5f4f47e03f07a39275f3b956d8dff4922bd497781c137a51237",
+      "assets": {
+        "veg_eucalyptus_lod0": {
+          "node": "veg_eucalyptus_lod0",
+          "species": "eucalyptus",
+          "lod": 0,
+          "triangles": 2144,
+          "bounds": {
+            "min": [
+              -2.7423684426077983,
+              0.0,
+              -2.8395141330212357
+            ],
+            "max": [
+              2.741818354890457,
+              7.519848157893637,
+              2.4709321605505226
+            ]
+          },
+          "size": [
+            5.484186797498255,
+            7.519848157893637,
+            5.310446293571758
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_eucalyptus_lod1": {
+          "node": "veg_eucalyptus_lod1",
+          "species": "eucalyptus",
+          "lod": 1,
+          "triangles": 600,
+          "bounds": {
+            "min": [
+              -2.4656320238413385,
+              0.0,
+              -2.624594975874066
+            ],
+            "max": [
+              2.5863563252670216,
+              7.514744459478146,
+              2.348688247630798
+            ]
+          },
+          "size": [
+            5.05198834910836,
+            7.514744459478146,
+            4.973283223504865
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_eucalyptus_lod2": {
+          "node": "veg_eucalyptus_lod2",
+          "species": "eucalyptus",
+          "lod": 2,
+          "triangles": 116,
+          "bounds": {
+            "min": [
+              -2.7954786560635725,
+              0.0,
+              -2.8373648586163838
+            ],
+            "max": [
+              2.6091491954546653,
+              7.010052386180515,
+              2.783933183321674
+            ]
+          },
+          "size": [
+            5.404627851518238,
+            7.010052386180515,
+            5.621298041938058
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_eucalyptus_billboard": {
+          "node": "veg_eucalyptus_billboard",
+          "species": "eucalyptus",
+          "lod": "billboard",
+          "triangles": 2,
+          "bounds": {
+            "min": [
+              -3.013564493033536,
+              0,
+              0
+            ],
+            "max": [
+              3.0130144053161945,
+              7.89170878108618,
+              0
+            ]
+          },
+          "size": [
+            6.02657889834973,
+            7.89170878108618,
+            0
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0,
+          "atlasTile": [
+            0.0,
+            0,
+            0.2,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "glb": "vegetation/cypress.glb",
+      "bytes": 149260,
+      "sha256": "6c2ce87ea4cc469631478f6d505832b1a4561aea403055189a5be74740ef016e",
+      "assets": {
+        "veg_cypress_lod0": {
+          "node": "veg_cypress_lod0",
+          "species": "cypress",
+          "lod": 0,
+          "triangles": 1868,
+          "bounds": {
+            "min": [
+              -1.3606736752479933,
+              0.0,
+              -1.1434246269101946
+            ],
+            "max": [
+              1.4199358182081536,
+              7.7674782531170115,
+              1.3174429777114276
+            ]
+          },
+          "size": [
+            2.780609493456147,
+            7.7674782531170115,
+            2.4608676046216225
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_cypress_lod1": {
+          "node": "veg_cypress_lod1",
+          "species": "cypress",
+          "lod": 1,
+          "triangles": 560,
+          "bounds": {
+            "min": [
+              -1.2988872823255313,
+              0.0,
+              -1.1434246269101946
+            ],
+            "max": [
+              1.4199358182081536,
+              7.734125770753456,
+              1.2576196336175685
+            ]
+          },
+          "size": [
+            2.718823100533685,
+            7.734125770753456,
+            2.401044260527763
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_cypress_lod2": {
+          "node": "veg_cypress_lod2",
+          "species": "cypress",
+          "lod": 2,
+          "triangles": 116,
+          "bounds": {
+            "min": [
+              -1.098257481995332,
+              0.0,
+              -0.6933913059218145
+            ],
+            "max": [
+              1.1674358182081537,
+              7.89158957548469,
+              1.0340612608431357
+            ]
+          },
+          "size": [
+            2.265693300203486,
+            7.89158957548469,
+            1.72745256676495
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_cypress_billboard": {
+          "node": "veg_cypress_billboard",
+          "species": "cypress",
+          "lod": "billboard",
+          "triangles": 2,
+          "bounds": {
+            "min": [
+              -1.498176342506814,
+              0,
+              0
+            ],
+            "max": [
+              1.557438485466974,
+              8.151584320578841,
+              0
+            ]
+          },
+          "size": [
+            3.055614827973788,
+            8.151584320578841,
+            0
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0,
+          "atlasTile": [
+            0.2,
+            0,
+            0.4,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "glb": "vegetation/palm.glb",
+      "bytes": 134916,
+      "sha256": "8fa210e6312d2efd0affa2299961e364d3635df5718a790ddc3e0e926802ab8c",
+      "assets": {
+        "veg_palm_lod0": {
+          "node": "veg_palm_lod0",
+          "species": "palm",
+          "lod": 0,
+          "triangles": 1952,
+          "bounds": {
+            "min": [
+              -3.0022209344577955,
+              0.0,
+              -2.8820345970277823
+            ],
+            "max": [
+              3.6664212408992585,
+              7.904543935762181,
+              3.259265018252432
+            ]
+          },
+          "size": [
+            6.6686421753570535,
+            7.904543935762181,
+            6.141299615280214
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_palm_lod1": {
+          "node": "veg_palm_lod1",
+          "species": "palm",
+          "lod": 1,
+          "triangles": 636,
+          "bounds": {
+            "min": [
+              -2.9802922581222226,
+              0.0,
+              -2.88166641584426
+            ],
+            "max": [
+              3.550679934454352,
+              7.7277514568503305,
+              3.0041467212320168
+            ]
+          },
+          "size": [
+            6.5309721925765745,
+            7.7277514568503305,
+            5.885813137076276
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_palm_lod2": {
+          "node": "veg_palm_lod2",
+          "species": "palm",
+          "lod": 2,
+          "triangles": 116,
+          "bounds": {
+            "min": [
+              -2.8431909805583544,
+              0.0,
+              -3.18349199558839
+            ],
+            "max": [
+              3.695634918996538,
+              7.346383140421194,
+              3.52349199558839
+            ]
+          },
+          "size": [
+            6.538825899554892,
+            7.346383140421194,
+            6.70698399117678
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_palm_billboard": {
+          "node": "veg_palm_billboard",
+          "species": "palm",
+          "lod": "billboard",
+          "triangles": 2,
+          "bounds": {
+            "min": [
+              -3.3319889541183088,
+              0,
+              0
+            ],
+            "max": [
+              3.996189260559772,
+              8.295427976541628,
+              0
+            ]
+          },
+          "size": [
+            7.328178214678081,
+            8.295427976541628,
+            0
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0,
+          "atlasTile": [
+            0.4,
+            0,
+            0.6,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "glb": "vegetation/banana.glb",
+      "bytes": 209056,
+      "sha256": "1e152d030f1c4d216765e45ca6d9740153c767414c4cf9b9b49942da775d09e6",
+      "assets": {
+        "veg_banana_lod0": {
+          "node": "veg_banana_lod0",
+          "species": "banana",
+          "lod": 0,
+          "triangles": 1964,
+          "bounds": {
+            "min": [
+              -1.933893975095769,
+              0.0,
+              -2.0360942692352357
+            ],
+            "max": [
+              2.1330587517855513,
+              3.197077105856856,
+              1.8233828591521646
+            ]
+          },
+          "size": [
+            4.06695272688132,
+            3.197077105856856,
+            3.8594771283874003
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_banana_lod1": {
+          "node": "veg_banana_lod1",
+          "species": "banana",
+          "lod": 1,
+          "triangles": 552,
+          "bounds": {
+            "min": [
+              -1.9318715534451916,
+              0.0,
+              -2.0338893061022096
+            ],
+            "max": [
+              2.06,
+              3.1983846061909706,
+              1.8209007664743948
+            ]
+          },
+          "size": [
+            3.9918715534451916,
+            3.1983846061909706,
+            3.8547900725766047
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_banana_lod2": {
+          "node": "veg_banana_lod2",
+          "species": "banana",
+          "lod": 2,
+          "triangles": 100,
+          "bounds": {
+            "min": [
+              -1.5619128322503697,
+              0.0,
+              -2.0338893061022096
+            ],
+            "max": [
+              2.06,
+              3.185880354366823,
+              1.8209007664743948
+            ]
+          },
+          "size": [
+            3.62191283225037,
+            3.185880354366823,
+            3.8547900725766047
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_banana_billboard": {
+          "node": "veg_banana_billboard",
+          "species": "banana",
+          "lod": "billboard",
+          "triangles": 2,
+          "bounds": {
+            "min": [
+              -2.1350070220294604,
+              0,
+              0
+            ],
+            "max": [
+              2.3341717987192427,
+              3.35517432537725,
+              0
+            ]
+          },
+          "size": [
+            4.469178820748703,
+            3.35517432537725,
+            0
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0,
+          "atlasTile": [
+            0.6,
+            0,
+            0.8,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "glb": "vegetation/almendro.glb",
+      "bytes": 172564,
+      "sha256": "5c17e6186c1f87fa5f0687f2e903f87be7ccbc9599db713569aa308235e24d00",
+      "assets": {
+        "veg_almendro_lod0": {
+          "node": "veg_almendro_lod0",
+          "species": "almendro",
+          "lod": 0,
+          "triangles": 2144,
+          "bounds": {
+            "min": [
+              -3.891825942109498,
+              0.0,
+              -3.417181741421462
+            ],
+            "max": [
+              3.815313709560517,
+              6.466707751832583,
+              3.4098201755464834
+            ]
+          },
+          "size": [
+            7.7071396516700155,
+            6.466707751832583,
+            6.827001916967945
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_almendro_lod1": {
+          "node": "veg_almendro_lod1",
+          "species": "almendro",
+          "lod": 1,
+          "triangles": 592,
+          "bounds": {
+            "min": [
+              -4.033170105360413,
+              0.0,
+              -3.533815322050626
+            ],
+            "max": [
+              3.639854074501542,
+              6.367632264259209,
+              3.4644294439054537
+            ]
+          },
+          "size": [
+            7.6730241798619545,
+            6.367632264259209,
+            6.99824476595608
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_almendro_lod2": {
+          "node": "veg_almendro_lod2",
+          "species": "almendro",
+          "lod": 2,
+          "triangles": 116,
+          "bounds": {
+            "min": [
+              -3.9480666899439614,
+              0.0,
+              -3.6278910206463726
+            ],
+            "max": [
+              3.289734733699627,
+              5.970586498146128,
+              3.2308324049359203
+            ]
+          },
+          "size": [
+            7.237801423643589,
+            5.970586498146128,
+            6.858723425582292
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_almendro_billboard": {
+          "node": "veg_almendro_billboard",
+          "species": "almendro",
+          "lod": "billboard",
+          "triangles": 2,
+          "bounds": {
+            "min": [
+              -4.272948232576696,
+              0,
+              0
+            ],
+            "max": [
+              4.196436000027716,
+              6.786490003296832,
+              0
+            ]
+          },
+          "size": [
+            8.469384232604412,
+            6.786490003296832,
+            0
+          ],
+          "tags": [
+            "vegetation",
+            "tree"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0,
+          "atlasTile": [
+            0.8,
+            0,
+            1.0,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "glb": "vegetation/agave.glb",
+      "bytes": 34292,
+      "sha256": "4b640d05b70e110117de7c0a0f9e4758f1ed16cb2bcebc152bfa5991705de2e6",
+      "assets": {
+        "veg_agave_lod0": {
+          "node": "veg_agave_lod0",
+          "species": "agave",
+          "lod": 0,
+          "triangles": 550,
+          "bounds": {
+            "min": [
+              -1.049100973126587,
+              0.0,
+              -1.0459801858452416
+            ],
+            "max": [
+              0.986296667353817,
+              0.6854340146959954,
+              1.001861161395926
+            ]
+          },
+          "size": [
+            2.035397640480404,
+            0.6854340146959954,
+            2.0478413472411674
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_agave_lod1": {
+          "node": "veg_agave_lod1",
+          "species": "agave",
+          "lod": 1,
+          "triangles": 130,
+          "bounds": {
+            "min": [
+              -0.8370083751539898,
+              0.0,
+              -1.0459801858452416
+            ],
+            "max": [
+              0.986296667353817,
+              0.6854340146959954,
+              1.001861161395926
+            ]
+          },
+          "size": [
+            1.823305042507807,
+            0.6854340146959954,
+            2.0478413472411674
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_agave_lod2": {
+          "node": "veg_agave_lod2",
+          "species": "agave",
+          "lod": 2,
+          "triangles": 12,
+          "bounds": {
+            "min": [
+              -0.8370083751539898,
+              0.0,
+              -1.0459801858452416
+            ],
+            "max": [
+              0.8859339586368966,
+              0.6854340146959954,
+              0.5741687743965038
+            ]
+          },
+          "size": [
+            1.7229423337908865,
+            0.6854340146959954,
+            1.6201489602417454
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        }
+      }
+    },
+    {
+      "glb": "vegetation/bougainvillea.glb",
+      "bytes": 124092,
+      "sha256": "a203298cf52a6bdf3247eb0e51e6908c274ca4dd6f2a4315ef2d50793b376146",
+      "assets": {
+        "veg_bougainvillea_lod0": {
+          "node": "veg_bougainvillea_lod0",
+          "species": "bougainvillea",
+          "lod": 0,
+          "triangles": 1692,
+          "bounds": {
+            "min": [
+              -0.9369767260035577,
+              0.0,
+              -1.1563915223447978
+            ],
+            "max": [
+              1.0286180317177078,
+              1.480403277442705,
+              0.9351945202159806
+            ]
+          },
+          "size": [
+            1.9655947577212656,
+            1.480403277442705,
+            2.0915860425607784
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_bougainvillea_lod1": {
+          "node": "veg_bougainvillea_lod1",
+          "species": "bougainvillea",
+          "lod": 1,
+          "triangles": 520,
+          "bounds": {
+            "min": [
+              -0.870821280279998,
+              0.0,
+              -1.0426780420363027
+            ],
+            "max": [
+              1.0001332026125875,
+              1.4488025401665712,
+              0.8912000126181985
+            ]
+          },
+          "size": [
+            1.8709544828925855,
+            1.4488025401665712,
+            1.9338780546545011
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_bougainvillea_lod2": {
+          "node": "veg_bougainvillea_lod2",
+          "species": "bougainvillea",
+          "lod": 2,
+          "triangles": 88,
+          "bounds": {
+            "min": [
+              -0.9226650170740239,
+              0.0,
+              -0.44090423578125315
+            ],
+            "max": [
+              0.8485935425631554,
+              1.2936944754562238,
+              0.6688190454956484
+            ]
+          },
+          "size": [
+            1.7712585596371793,
+            1.2936944754562238,
+            1.1097232812769016
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        }
+      }
+    },
+    {
+      "glb": "vegetation/potted_fern.glb",
+      "bytes": 93600,
+      "sha256": "7c3088407ae18f5176be39be4f628c897fc1dca8ca3a42998d155952abd27daa",
+      "assets": {
+        "veg_potted_fern_lod0": {
+          "node": "veg_potted_fern_lod0",
+          "species": "potted_fern",
+          "lod": 0,
+          "triangles": 1260,
+          "bounds": {
+            "min": [
+              -0.6125041433797956,
+              0.0,
+              -0.7337788633860277
+            ],
+            "max": [
+              0.7034604800519658,
+              0.9867670918755552,
+              0.6131031714759453
+            ]
+          },
+          "size": [
+            1.3159646234317615,
+            0.9867670918755552,
+            1.346882034861973
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.46
+        },
+        "veg_potted_fern_lod1": {
+          "node": "veg_potted_fern_lod1",
+          "species": "potted_fern",
+          "lod": 1,
+          "triangles": 432,
+          "bounds": {
+            "min": [
+              -0.5368419052366701,
+              0.0,
+              -0.7337788633860277
+            ],
+            "max": [
+              0.6002225791108398,
+              0.9752235064378546,
+              0.5394445658864628
+            ]
+          },
+          "size": [
+            1.1370644843475097,
+            0.9752235064378546,
+            1.2732234292724907
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.46
+        },
+        "veg_potted_fern_lod2": {
+          "node": "veg_potted_fern_lod2",
+          "species": "potted_fern",
+          "lod": 2,
+          "triangles": 162,
+          "bounds": {
+            "min": [
+              -0.5368419052366701,
+              0.0,
+              -0.7337788633860277
+            ],
+            "max": [
+              0.6002225791108398,
+              0.9880695710809115,
+              0.49417262355766195
+            ]
+          },
+          "size": [
+            1.1370644843475097,
+            0.9880695710809115,
+            1.2279514869436896
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.46
+        }
+      }
+    },
+    {
+      "glb": "vegetation/potted_succulent.glb",
+      "bytes": 43632,
+      "sha256": "63e4b5acbb97cdd00c6df4611bf5d40552472ac857e03a3bb1d16d0f7bc9c959",
+      "assets": {
+        "veg_potted_succulent_lod0": {
+          "node": "veg_potted_succulent_lod0",
+          "species": "potted_succulent",
+          "lod": 0,
+          "triangles": 720,
+          "bounds": {
+            "min": [
+              -0.430131401032378,
+              0.0,
+              -0.42885188052914847
+            ],
+            "max": [
+              0.40438165061524683,
+              0.6810279460253581,
+              0.4107630910068585
+            ]
+          },
+          "size": [
+            0.8345130516476249,
+            0.6810279460253581,
+            0.839614971536007
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.4
+        },
+        "veg_potted_succulent_lod1": {
+          "node": "veg_potted_succulent_lod1",
+          "species": "potted_succulent",
+          "lod": 1,
+          "triangles": 236,
+          "bounds": {
+            "min": [
+              -0.3431734424451609,
+              0.0,
+              -0.42885188052914847
+            ],
+            "max": [
+              0.40438165061524683,
+              0.6810279460253581,
+              0.4107630910068585
+            ]
+          },
+          "size": [
+            0.7475550930604078,
+            0.6810279460253581,
+            0.839614971536007
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.4
+        },
+        "veg_potted_succulent_lod2": {
+          "node": "veg_potted_succulent_lod2",
+          "species": "potted_succulent",
+          "lod": 2,
+          "triangles": 74,
+          "bounds": {
+            "min": [
+              -0.3431734424451609,
+              0.0,
+              -0.42885188052914847
+            ],
+            "max": [
+              0.3632329496426557,
+              0.6810279460253581,
+              0.23540923404729874
+            ]
+          },
+          "size": [
+            0.7064063920878165,
+            0.6810279460253581,
+            0.6642611145764472
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.4
+        }
+      }
+    },
+    {
+      "glb": "vegetation/climbing_vine.glb",
+      "bytes": 66656,
+      "sha256": "32d8dfb4b78e23173cc7f81b574bba9c261c044fec224ae99bac2dd1aa0b6c99",
+      "assets": {
+        "veg_climbing_vine_lod0": {
+          "node": "veg_climbing_vine_lod0",
+          "species": "climbing_vine",
+          "lod": 0,
+          "triangles": 964,
+          "bounds": {
+            "min": [
+              -0.7114731954310172,
+              0.0,
+              -0.06239832857617532
+            ],
+            "max": [
+              0.8595941139532227,
+              2.7483580349460683,
+              0.32310257310520624
+            ]
+          },
+          "size": [
+            1.5710673093842398,
+            2.7483580349460683,
+            0.38550090168138157
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_climbing_vine_lod1": {
+          "node": "veg_climbing_vine_lod1",
+          "species": "climbing_vine",
+          "lod": 1,
+          "triangles": 336,
+          "bounds": {
+            "min": [
+              -0.6268218847716329,
+              0.0,
+              -0.05133981594900985
+            ],
+            "max": [
+              0.5327315437838814,
+              2.7124658817532215,
+              0.3110831231764103
+            ]
+          },
+          "size": [
+            1.1595534285555145,
+            2.7124658817532215,
+            0.3624229391254201
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_climbing_vine_lod2": {
+          "node": "veg_climbing_vine_lod2",
+          "species": "climbing_vine",
+          "lod": 2,
+          "triangles": 76,
+          "bounds": {
+            "min": [
+              -0.21028345508128182,
+              0.0,
+              -0.0007942711503598262
+            ],
+            "max": [
+              0.3840009099591115,
+              2.502805257153347,
+              0.3110831231764103
+            ]
+          },
+          "size": [
+            0.5942843650403933,
+            2.502805257153347,
+            0.31187739432677014
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        }
+      }
+    },
+    {
+      "glb": "vegetation/window_box.glb",
+      "bytes": 46620,
+      "sha256": "1ca93591002909c48ad12336d82d4df0a64298248b11f792d980e99c0a69d7c4",
+      "assets": {
+        "veg_window_box_lod0": {
+          "node": "veg_window_box_lod0",
+          "species": "window_box",
+          "lod": 0,
+          "triangles": 508,
+          "bounds": {
+            "min": [
+              -0.6241931727344115,
+              0.0,
+              -0.26237135509905446
+            ],
+            "max": [
+              0.5948283999894242,
+              0.5323546316768185,
+              0.2827541802101232
+            ]
+          },
+          "size": [
+            1.2190215727238356,
+            0.5323546316768185,
+            0.5451255353091777
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.22
+        },
+        "veg_window_box_lod1": {
+          "node": "veg_window_box_lod1",
+          "species": "window_box",
+          "lod": 1,
+          "triangles": 188,
+          "bounds": {
+            "min": [
+              -0.6241931727344115,
+              0.0,
+              -0.19362490413896793
+            ],
+            "max": [
+              0.5948283999894242,
+              0.5323546316768185,
+              0.21956250467559185
+            ]
+          },
+          "size": [
+            1.2190215727238356,
+            0.5323546316768185,
+            0.4131874088145598
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.22
+        },
+        "veg_window_box_lod2": {
+          "node": "veg_window_box_lod2",
+          "species": "window_box",
+          "lod": 2,
+          "triangles": 68,
+          "bounds": {
+            "min": [
+              -0.5,
+              0.0,
+              -0.14
+            ],
+            "max": [
+              0.5,
+              0.5188359143119854,
+              0.18348445299267785
+            ]
+          },
+          "size": [
+            1.0,
+            0.5188359143119854,
+            0.32348445299267786
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.22
+        }
+      }
+    },
+    {
+      "glb": "vegetation/flower_bed.glb",
+      "bytes": 107436,
+      "sha256": "050675aadb6741fcb668ecdd588449164449d9560c7284ae0cd31110887157a2",
+      "assets": {
+        "veg_flower_bed_lod0": {
+          "node": "veg_flower_bed_lod0",
+          "species": "flower_bed",
+          "lod": 0,
+          "triangles": 1418,
+          "bounds": {
+            "min": [
+              -0.7777533059221162,
+              0.0,
+              -0.46480545546516194
+            ],
+            "max": [
+              0.8241302825575134,
+              0.508144546442902,
+              0.4597221310021178
+            ]
+          },
+          "size": [
+            1.6018835884796296,
+            0.508144546442902,
+            0.9245275864672797
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.12
+        },
+        "veg_flower_bed_lod1": {
+          "node": "veg_flower_bed_lod1",
+          "species": "flower_bed",
+          "lod": 1,
+          "triangles": 402,
+          "bounds": {
+            "min": [
+              -0.8117391458206819,
+              0.0,
+              -0.48442247695161345
+            ],
+            "max": [
+              0.75,
+              0.5060076059363179,
+              0.42821536076514044
+            ]
+          },
+          "size": [
+            1.561739145820682,
+            0.5060076059363179,
+            0.9126378377167539
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.12
+        },
+        "veg_flower_bed_lod2": {
+          "node": "veg_flower_bed_lod2",
+          "species": "flower_bed",
+          "lod": 2,
+          "triangles": 92,
+          "bounds": {
+            "min": [
+              -0.8196159125220234,
+              0.0,
+              -0.4
+            ],
+            "max": [
+              0.75,
+              0.46268371036264705,
+              0.4
+            ]
+          },
+          "size": [
+            1.5696159125220235,
+            0.46268371036264705,
+            0.8
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0.12
+        }
+      }
+    },
+    {
+      "glb": "vegetation/wild_grass.glb",
+      "bytes": 31600,
+      "sha256": "20f1d26a4237fd5e85f4468a15eb424f2d905833f3c3f0909293f9bee51cceb9",
+      "assets": {
+        "veg_wild_grass_lod0": {
+          "node": "veg_wild_grass_lod0",
+          "species": "wild_grass",
+          "lod": 0,
+          "triangles": 285,
+          "bounds": {
+            "min": [
+              -0.44324321713748566,
+              0,
+              -0.42969059131596377
+            ],
+            "max": [
+              0.39908242749669853,
+              0.526022876372406,
+              0.41019699382262753
+            ]
+          },
+          "size": [
+            0.8423256446341842,
+            0.526022876372406,
+            0.8398875851385913
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_wild_grass_lod1": {
+          "node": "veg_wild_grass_lod1",
+          "species": "wild_grass",
+          "lod": 1,
+          "triangles": 84,
+          "bounds": {
+            "min": [
+              -0.44324321713748566,
+              0,
+              -0.42969059131596377
+            ],
+            "max": [
+              0.39908242749669853,
+              0.5183050297485368,
+              0.3114073407779697
+            ]
+          },
+          "size": [
+            0.8423256446341842,
+            0.5183050297485368,
+            0.7410979320939335
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_wild_grass_lod2": {
+          "node": "veg_wild_grass_lod2",
+          "species": "wild_grass",
+          "lod": 2,
+          "triangles": 21,
+          "bounds": {
+            "min": [
+              -0.2038838727291828,
+              0,
+              -0.4035940668166865
+            ],
+            "max": [
+              0.3662645149043527,
+              0.5183050297485368,
+              0.2802676122714551
+            ]
+          },
+          "size": [
+            0.5701483876335355,
+            0.5183050297485368,
+            0.6838616790881415
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        }
+      }
+    },
+    {
+      "glb": "vegetation/leafy_shrub.glb",
+      "bytes": 72548,
+      "sha256": "06bb690b73918133c623aa72b4ceade169c0cf8bb2ae3a1bbaadcbfd4c7e873b",
+      "assets": {
+        "veg_leafy_shrub_lod0": {
+          "node": "veg_leafy_shrub_lod0",
+          "species": "leafy_shrub",
+          "lod": 0,
+          "triangles": 948,
+          "bounds": {
+            "min": [
+              -1.021136069152468,
+              0.0,
+              -1.1354997422892483
+            ],
+            "max": [
+              1.1238742921323588,
+              1.4695073272422718,
+              0.961615286049673
+            ]
+          },
+          "size": [
+            2.145010361284827,
+            1.4695073272422718,
+            2.097115028338921
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_leafy_shrub_lod1": {
+          "node": "veg_leafy_shrub_lod1",
+          "species": "leafy_shrub",
+          "lod": 1,
+          "triangles": 360,
+          "bounds": {
+            "min": [
+              -0.8461021525931879,
+              0.0,
+              -1.0255345870382953
+            ],
+            "max": [
+              0.972946464320797,
+              1.4726913902506387,
+              0.9451571307370361
+            ]
+          },
+          "size": [
+            1.8190486169139848,
+            1.4726913902506387,
+            1.9706917177753314
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        },
+        "veg_leafy_shrub_lod2": {
+          "node": "veg_leafy_shrub_lod2",
+          "species": "leafy_shrub",
+          "lod": 2,
+          "triangles": 72,
+          "bounds": {
+            "min": [
+              -0.892966374418569,
+              0.0,
+              -0.2984813932911308
+            ],
+            "max": [
+              0.931426168434725,
+              1.1071206843836439,
+              0.9152094416097201
+            ]
+          },
+          "size": [
+            1.8243925428532939,
+            1.1071206843836439,
+            1.2136908349008508
+          ],
+          "tags": [
+            "vegetation",
+            "plant"
+          ],
+          "wind": "COLOR_0.a",
+          "rigidHeight": 0
+        }
+      }
+    }
+  ]
+}

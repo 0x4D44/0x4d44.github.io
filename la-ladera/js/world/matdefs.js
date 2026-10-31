@@ -20,6 +20,9 @@ export default {
   bark_euca: { color: 0xffffff, rough: 0.95, tex: false },
   bark_palm: { color: 0xffffff, rough: 0.9, tex: false },
   pot_clay: { color: 0xffffff, rough: 0.9, tex: false },
+  // Generated GLBs: baked linear RGB albedo, alpha decoded separately into windWeight.
+  flora_vertex: { color: 0xffffff, rough: 0.92, side: 'double', tex: false, env: 0.35 },
+  flora_billboard: { color: 0xffffff, rough: 1, alphaTest: 0.35, side: 'double', tex: false, uv: 'unit', env: 0.35 },
 
   // ---- painted signage: ONE atlas (murals, gate boards, plaques, hand signs, chalk) painted at boot by world/signs.js and bound in props.js.
   // Alpha-tested so the chalk hopscotch needs no blending; A2's `sign_atlas` (shop fascias) is a different material with its own canvas.
