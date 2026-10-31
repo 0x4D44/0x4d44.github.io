@@ -34,6 +34,8 @@
     "test:audio-compression": "node --test audio-compression/tests/validate-static.mjs && node audio-compression/tests/browser.test.mjs && node --check audio-compression/assets/dsp.js && node --check audio-compression/assets/audio.js && node --check audio-compression/assets/site.js && node --check data.js",
     "test:mos-6502": "node --test mos-6502/tests/cpu.test.mjs mos-6502/tests/asm.test.mjs mos-6502/tests/content.test.mjs mos-6502/tests/validate-static.mjs mos-6502/tests/conformance.test.mjs && node mos-6502/tests/browser.test.mjs && node --check mos-6502/cpu.js && node --check mos-6502/asm.js && node --check mos-6502/content.js && node --check mos-6502/lab.js && node --check mos-6502/app.js && node --check data.js",
     "test:f1gp-internals": "node --test f1gp-internals/tests/validate-static.mjs && node f1gp-internals/tests/browser.test.mjs && node --check f1gp-internals/chapters.js && node --check data.js",
-    "test:skyblitz": "node --import ./skyblitz/tests/register.mjs --test --test-concurrency=1 \"skyblitz/tests/*.test.mjs\" && node skyblitz/tests/validate-static.mjs && node --check data.js"
+    "test:skyblitz": "node --import ./skyblitz/tests/register.mjs --test --test-concurrency=1 \"skyblitz/tests/*.test.mjs\" && node skyblitz/tests/validate-static.mjs && node --check data.js",
+    "test:plan-to-build": "node plan-to-build/tests/run.mjs",
+    "test:plan-to-build:full": "node plan-to-build/tests/run.mjs --full --mutations"
   }
 }
