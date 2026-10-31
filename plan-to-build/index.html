@@ -1837,7 +1837,6 @@ function film3D() {
     col: [S + 5.0, S + 9.8], wall: [S + 9.4, S + 21.4], ins: [S + 19.9, S + 25.9], lint: [S + 25.6, S + 30.2], win: [S + 30.4, S + 34.0],
     door: [S + 33.4, S + 39.0], floor: [S + 38.4, S + 45.0], paint: [S + 45.0, S + 45.0 + P], fx: [S + 45.0 + P, S + 50.2 + P], furn: [S + 50.2 + P, S + 65.2 + P],
   });
-  T3.end = S + 74.0 + P;
   // each room is plastered and painted in turn (build3d reads T3.paintT; the shader paints every face that looks into the room)
   const PO = ['LIVING', 'KITCHEN', 'CORRIDOR', 'BED 1', 'BATH', 'BED 2', 'STUDY'], PS = [0.6, 1.9, 3.0, 4.1, 5.1, 6.1, 7.0];
   T3.paintT = {};
@@ -1950,6 +1949,78 @@ function film3D() {
   key(70.0 + P, 6.0, 0.6, -4.5, 476, 42, 16.5, 38);
   key(74.0 + P, 6.0, 0.6, -4.5, 516, 36, 17.5, 38);
   T3.cam = K.sort((a, b) => a[0] - b[0]);
+
+  // ---------------------------------------------------------------- the tour: a first-person walk through the finished apartment
+  // The roof comes down as the camera leaves the orbit, the camera drops to the front door D01, the door swings open and the walk begins. A key is an eye
+  // (plan mm, optionally a height in m), a point to look at (or a heading) and a lens; the first key IS the orbit's last pose, so the hand-over is a standing one.
+  // The living room cannot be crossed (its furniture leaves gaps of 175 to 340 mm), so the walk enters it from the corridor end through D02 and shows it from there.
+  const Z = S + 74.0 + P, EYE = FLOOR_TOP + 1.6;
+  T3.tourT = { roof: [Z + 0.3, Z + 2.7], shut: [Z + 1.2, Z + 2.2], open: [Z + 6.6, Z + 8.0], lights: Z - 0.01 };
+  const WK = [], oL = K[K.length - 1][1], oP = orbitPose(oL);
+  let hdPrev = 90 + oL.az;                                                   // an orbit with azimuth az looks along the plan heading 90 + az (0 = east, 90 = north)
+  WK.push([Z, { ex: oP.ex, ey: oP.ey, ez: oP.ez, hd: hdPrev, pd: oL.el, lp: oL.lp }]);
+  const turn = (hd) => { while (hd - hdPrev > 180) hd -= 360; while (hd - hdPrev < -180) hd += 360; return (hdPrev = hd); };       // the short way round from the last key
+  const wk = (dt, E, L, fov) => {
+    const ex = E[0] / 1000, ez = -E[1] / 1000, ey = E[2] === undefined ? EYE : E[2];
+    let hd, pd;
+    if (L.length === undefined) { hd = turn(L.hd); pd = L.pd || 0; }
+    else {
+      const dx = L[0] / 1000 - ex, dz = -L[1] / 1000 - ez, dy = (L[2] === undefined ? EYE - 0.1 : L[2]) - ey;
+      hd = turn(Math.atan2(-dz, dx) / DEG); pd = -Math.atan2(dy, Math.hypot(dx, dz)) / DEG;
+    }
+    WK.push([Z + dt, { ex, ey, ez, hd, pd, lp: Math.log(Math.tan(fov * DEG / 2)) }]);
+  };
+  // down from the orbit to the front door, which opens
+  wk(2.6, [17000, 14000, 8.5], [9500, 4600, 1.0], 44);
+  wk(4.8, [17200, 7600, 3.2], [11500, 4660, 1.4], 54);
+  wk(6.4, [15000, 4660, 1.7], [11000, 4660, 1.55], 60);
+  wk(7.4, [14450, 4660], { hd: 180, pd: 1.5 }, 62);
+  // in through D01; a look into the study through D07
+  wk(9.0, [12150, 4620], { hd: 180, pd: 1.5 }, 62);
+  wk(10.2, [11550, 4600], { hd: 168, pd: 2.5 }, 63);
+  wk(11.3, [11000, 4600], { hd: 125, pd: 3 }, 64);
+  wk(12.3, [10800, 4600], { hd: 100, pd: 3 }, 65);
+  wk(13.3, [10650, 4600], { hd: 98, pd: 3 }, 65);
+  wk(14.8, [10250, 4570], { hd: 170, pd: 2 }, 62);
+  wk(15.8, [9900, 4500], { hd: 205, pd: 2 }, 63);
+  // the kitchen through D03: in on the cooker run, a slow turn to the east window, then out backwards through the door (always east of the open leaf)
+  wk(16.8, [9700, 4300], { hd: 244, pd: 2.5 }, 63);
+  wk(17.9, [9640, 3900], { hd: 268, pd: 3 }, 64);
+  wk(19.3, [9600, 3350], { hd: 276, pd: 2.5 }, 64);
+  wk(20.8, [9540, 2900], { hd: 303, pd: 3 }, 64);
+  wk(22.2, [9520, 2800], { hd: 308, pd: 3 }, 64);
+  wk(23.6, [9570, 3300], { hd: 288, pd: 3 }, 63);
+  wk(24.9, [9640, 3850], { hd: 272, pd: 2.5 }, 63);
+  wk(26.1, [9640, 4300], { hd: 250, pd: 2.5 }, 62);
+  wk(27.4, [9350, 4450], { hd: 195, pd: 2 }, 62);
+  wk(28.6, [8900, 4440], { hd: 176, pd: 2 }, 62);
+  // west along the corridor looking sideways, slowly past each open door and quickly between them: BED 2, the bath, BED 1
+  wk(30.0, [8200, 4430], { hd: 168, pd: 2 }, 63);
+  wk(31.0, [7650, 4430], { hd: 130, pd: 3 }, 64);
+  wk(32.3, [7000, 4510], { hd: 100, pd: 3 }, 65);
+  wk(33.5, [6350, 4545], { hd: 96, pd: 3 }, 65);
+  wk(34.8, [5600, 4580], { hd: 96, pd: 3 }, 65);
+  wk(35.8, [4900, 4595], { hd: 96, pd: 3 }, 65);
+  wk(36.7, [3900, 4600], { hd: 99, pd: 3 }, 65);
+  wk(37.9, [3250, 4600], { hd: 103, pd: 3 }, 65);
+  wk(38.9, [2800, 4590], { hd: 125, pd: 3 }, 64);
+  wk(40.1, [2300, 4570], { hd: 172, pd: 2 }, 63);
+  // and into the living room through D02, the longest view of the apartment
+  wk(41.3, [1850, 4480], { hd: 232, pd: 2.5 }, 64);
+  wk(42.5, [1650, 4150], { hd: 272, pd: 3 }, 66);
+  wk(43.8, [1680, 3650], { hd: 320, pd: 3.5 }, 66);
+  wk(45.2, [1850, 3320], { hd: 354, pd: 3 }, 66);
+  wk(51.5, [2250, 3250], { hd: 359, pd: 3 }, 66);
+  T3.walk = WK;
+  T3.end = WK[WK.length - 1][0];
+  T3.cmdOut = Z + 7.6;                                                       // the command line leaves once the door is open
+  T3.titleT = Z + 44.8;                                                      // the end title arrives as the walk reaches its last view and slows down
+  // room tags: the name and floor area of the room the walk is in
+  const tag = (id, a, b) => T3.tags.push({ t0: Z + a, t1: Z + b, name: id, area: ROOM_BY_ID[id].area.toFixed(1) + ' m²' });
+  T3.tags = [];
+  tag('CORRIDOR', 9.4, 10.8); tag('STUDY', 11.2, 14.4); tag('KITCHEN', 17.0, 27.0); tag('BED 2', 31.4, 33.4); tag('BATH', 33.9, 35.7); tag('BED 1', 37.0, 38.9); tag('LIVING', 43.0, 51.5);
+  ch(73.4 + P, '20', 'WALK-THROUGH', '3DWALK  ·  eye height 1.6 m  ·  in through the front door, room by room');
+  seg(73.4 + P, () => { cmd('3DWALK', { dur: 0.45, dw: 0.1 }); info('Press ESC or ENTER to exit, or right-click to display shortcut-menu.'); info('Walk settings:  eye height 1600  ·  step 1.4 m/s  ·  lens 62°'); });
   mark('3D film');
 }
 
@@ -1989,6 +2060,19 @@ const CAM_KEYS = ['tx', 'ty', 'tz', 'az', 'el', 'H', 'lp'];
 function camAt3(t) {
   const K = T3.cam, out = {};
   for (const k of CAM_KEYS) out[k] = splineZ(K.map((q) => [q[0], q[1][k]]), t);
+  return out;
+}
+// where an orbit camera stands (three coordinates, metres) and how it looks down: azimuth az turns the horizontal view to (-sin az, -cos az)
+function orbitPose(c) {
+  const az = c.az * DEG, el = c.el * DEG, dist = c.H / (2 * Math.exp(c.lp)), hx = -Math.sin(az), hz = -Math.cos(az);
+  return { ex: c.tx - hx * Math.cos(el) * dist, ey: c.ty + Math.sin(el) * dist, ez: c.tz - hz * Math.cos(el) * dist, hx, hz, el, dist };
+}
+// T3.walk = [[t, {ex,ey,ez, hd,pd, lp}], ...]   the first-person track after the orbit: the eye (m), the heading in the plan (deg: 0 east, 90 north, unwrapped),
+// the pitch (deg, down is positive) and the lens. Heading and pitch are splined as angles, so a turn of the head is a steady pan.
+const WALK_KEYS = ['ex', 'ey', 'ez', 'hd', 'pd', 'lp'];
+function walkAt3(t) {
+  const K = T3.walk, out = {};
+  for (const k of WALK_KEYS) out[k] = splineZ(K.map((q) => [q[0], q[1][k]]), t);
   return out;
 }
 
@@ -2153,6 +2237,7 @@ const FURN3 = {
   bedA: ['#e9e6e0', .96, 0], bedB: ['#7f9b97', .96, 0], bookA: ['#a23b3b', .8, 0], bookB: ['#2c5a86', .8, 0], bookC: ['#d6ac45', .8, 0],
   pot: ['#8a5a3c', .85, 0], leaf: ['#3f7d44', .7, 0], leaf2: ['#5f9a4c', .7, 0], rugA2: ['#d8cab0', 1, 0], rugB2: ['#a86d52', 1, 0],
   tv: ['#0c0d10', .3, .3], door: ['#f3f2ee', .38, 0], doorE: ['#2e3844', .45, .1], pvc: ['#f4f5f6', .4, 0], sill: ['#c9c6bf', .35, 0],
+  roofE: ['#9a9b97', .92, 0], roofT: ['#7f817f', .9, 0], ceil: ['#f4f2ed', .94, 0],
 };
 function canvasTex(w, h, draw, srgb = true) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
@@ -2179,6 +2264,7 @@ function mat3(name) {
   else if (name === 'glassD') m = std({ color: 0x1d2a31, roughness: .06, metalness: .2, transparent: true, opacity: .6, depthWrite: false });
   else if (name === 'glass') m = std({ color: 0xbfe0ee, roughness: .04, metalness: 0, transparent: true, opacity: .2, depthWrite: false, envMapIntensity: 1.6 });
   else if (name === 'lampsh') m = std({ color: 0xf6ecd4, emissive: 0xffc67a, emissiveIntensity: .75, roughness: .9 });
+  else if (name === 'fitting') m = std({ color: 0xf6ecd4, emissive: 0xffe3b8, emissiveIntensity: 1.4, roughness: .9 });
   else { const q = FURN3[name] || ['#cccccc', .6, 0]; m = std({ color: new THREE.Color(q[0]), roughness: q[1], metalness: q[2] }); }
   if (CUT_PLAIN.has(name)) { m.clippingPlanes = [G3.clip]; m.clipShadows = true; if (name !== 'glass') m.side = THREE.DoubleSide; }
   MAT3[name] = m;
@@ -2267,14 +2353,22 @@ function render3D(ctx, W, H, t, vp, slide) {
   const { renderer, camera, scene, glc } = G3;
   if (G3.W !== W || G3.H !== H) { renderer.setSize(W, H, false); G3.W = W; G3.H = H; }
   update3D(t);
-  const c = camAt3(t), S = W / DW;
-  const az = c.az * DEG, el = c.el * DEG, tanH = Math.exp(c.lp), fov = 2 * Math.atan(tanH) / DEG, dist = c.H / (2 * tanH);
-  const hx = -Math.sin(az), hz = -Math.cos(az);                               // horizontal forward
-  const tgt = new THREE.Vector3(c.tx, c.ty, c.tz);
-  camera.position.set(tgt.x - hx * Math.cos(el) * dist, tgt.y + Math.sin(el) * dist, tgt.z - hz * Math.cos(el) * dist);
-  camera.up.set(hx * Math.sin(el), Math.cos(el), hz * Math.sin(el));
-  camera.lookAt(tgt);
-  camera.fov = fov; camera.aspect = W / H; camera.near = clamp(dist * 0.04, 0.05, 18); camera.far = dist * 2 + 90;
+  const S = W / DW;
+  if (T3.walk && t >= T3.walk[0][0]) {                                        // the tour: an eye at head height, turning its head
+    const w = walkAt3(t), hd = w.hd * DEG, pd = w.pd * DEG, cp = Math.cos(pd);
+    const dc = Math.hypot(w.ex - 6, w.ey - 1, w.ez + 4.5);                    // from the middle of the plan: the depth range follows the distance to the building
+    camera.position.set(w.ex, w.ey, w.ez);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(w.ex + Math.cos(hd) * cp, w.ey - Math.sin(pd), w.ez - Math.sin(hd) * cp);
+    camera.fov = 2 * Math.atan(Math.exp(w.lp)) / DEG; camera.near = clamp(0.0016 * dc * dc, 0.05, 1); camera.far = dc * 2 + 90;
+  } else {
+    const c = camAt3(t), o = orbitPose(c);
+    camera.position.set(o.ex, o.ey, o.ez);
+    camera.up.set(o.hx * Math.sin(o.el), Math.cos(o.el), o.hz * Math.sin(o.el));
+    camera.lookAt(c.tx, c.ty, c.tz);
+    camera.fov = 2 * Math.atan(Math.exp(c.lp)) / DEG; camera.near = clamp(o.dist * 0.04, 0.05, 18); camera.far = o.dist * 2 + 90;
+  }
+  camera.aspect = W / H;
   const pcy = (vp.y + vp.h / 2) * S;                                          // keep the target at the centre of the (growing) viewport
   camera.setViewOffset(W, H, 0, -(pcy - H / 2), W, H);
   camera.updateProjectionMatrix();
@@ -2479,13 +2573,45 @@ function build3Construction() {
         const pp = prog3(t, t0, t0 + 0.4), sw = prog3(t, t0 + 0.7, t0 + 1.9);
         d.g.visible = pp > 0;
         d.g.scale.set(1, Math.max(1e-3, easeOutBack(pp)), 1);
-        d.g.rotation.y = d.a0 + d.dl * (easeOut(sw) + 0.035 * Math.sin(Math.PI * sw * 2.2) * (1 - sw));
+        let sv = easeOut(sw) + 0.035 * Math.sin(Math.PI * sw * 2.2) * (1 - sw);
+        if (o.t === 'entry') {                                                 // the front door: shut again under the new roof, and opened for the tour
+          const sh = prog3(t, T3.tourT.shut[0], T3.tourT.shut[1]), op = prog3(t, T3.tourT.open[0], T3.tourT.open[1]);
+          sv = t < T3.tourT.open[0] ? sv * (1 - easeIO(sh)) : easeOut(op) + 0.035 * Math.sin(Math.PI * op * 2.2) * (1 - op);
+        }
+        d.g.rotation.y = d.a0 + d.dl * sv;
       });
     }
   });
 
   // ---- 7. plaster, then paint: one progress value per room, read by the block shader (PAINT_GLSL)
   G3.anims.push((t) => { ROOMS.forEach((rm, i) => { const w = T3.paintT[rm.id]; PAINTU.value[i] = prog3(t, w[0], w[1]); }); });
+
+  // ---- 8. the roof: one slab over the whole footprint, set down on the walls as the tour begins. Its underside is the white ceiling of every room.
+  {
+    const ov = 0.1, th = 0.22, y0 = 2.801, r = INSO;                         // 1 mm over the wall tops; the columns (2.81) end inside it
+    const w = (r[2] - r[0]) / 1000 + 2 * ov, d = (r[3] - r[1]) / 1000 + 2 * ov;
+    const e = mat3('roofE'), roof = new THREE.Mesh(boxGeo(w, th, d), [e, e, mat3('roofT'), mat3('ceil'), e, e]);       // +x -x +y -y +z -z
+    roof.position.set((r[0] + r[2]) / 2000, y0 + th / 2, -(r[1] + r[3]) / 2000);
+    roof.castShadow = true; roof.receiveShadow = true; roof.visible = false; root.add(roof);
+    const [a, b] = T3.tourT.roof;
+    G3.anims.push((t) => { const p = prog3(t, a, b); roof.visible = p > 0; roof.position.y = y0 + th / 2 + 9 * (1 - easeOut(p)); });
+  }
+
+  // ---- 9. the lights of the rooms: a warm point light under the ceiling (no shadows), on from the start of the tour, with a round fitting at the ceiling
+  {
+    const spots = [];
+    for (const rm of ROOMS) {
+      const n = rm.id === 'LIVING' ? 2 : rm.id === 'CORRIDOR' ? 3 : 1, w = rW(rm.r), cy = rCY(rm.r);
+      for (let i = 0; i < n; i++) spots.push([rm.r[0] + w * (i + 0.5) / n, cy]);
+    }
+    const fit = cacheGeo('fitting', () => new THREE.CylinderGeometry(0.17, 0.17, 0.035, 32)), lamps = [];
+    for (const [x, y] of spots) {
+      const L = new THREE.PointLight(0xffd9a8, 5.5, 5.5, 2);
+      L.position.set(x / 1000, 2.5, -y / 1000); L.visible = false; root.add(L); lamps.push(L);
+      const f = new THREE.Mesh(fit, mat3('fitting')); f.position.set(x / 1000, 2.78, -y / 1000); f.visible = false; root.add(f); lamps.push(f);
+    }
+    G3.anims.push((t) => { const on = t >= T3.tourT.lights; for (const q of lamps) q.visible = on; });
+  }
 }
 
 
@@ -2574,6 +2700,24 @@ function drawCaptions(ctx, t, vp, mul = 1) {
     ctx.restore();
   }
 }
+// the tour names the room it is in: its name and floor area on a small plate, top left
+function drawRoomTag(ctx, t) {
+  for (const g of T3.tags) {
+    if (t < g.t0 || t > g.t1) continue;
+    const a = smooth(clamp((t - g.t0) / 0.5)) * (1 - smooth(clamp((t - (g.t1 - 0.5)) / 0.5)));
+    if (a <= 0.01) continue;
+    ctx.save(); ctx.globalAlpha = a;
+    ctx.font = `600 14px ${FONT_UI}`; const w1 = ctx.measureText(g.name).width;
+    ctx.font = `400 11.5px ${FONT_UI}`; const w2 = ctx.measureText(g.area).width;
+    const h = 30, w = 16 + w1 + 14 + w2 + 14, x = 24, y = 32 + (1 - a) * 6;
+    ctx.fillStyle = 'rgba(14,18,23,.8)'; ctx.beginPath(); rrPath(ctx, x, y, x + w, y + h, 6); ctx.fill();
+    ctx.strokeStyle = '#3a4654'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = PAL.acc; ctx.fillRect(x + 7, y + 7, 3, h - 14);
+    fillTxt(ctx, g.name, x + 16, y + h / 2 + 0.5, 14, '#f2f5f8', 'left', FONT_UI, 600);
+    fillTxt(ctx, g.area, x + 16 + w1 + 14, y + h / 2 + 1, 11.5, '#93a0b0', 'left');
+    ctx.restore();
+  }
+}
 function drawIntro(ctx, t) {
   const a = 1 - smooth(clamp((t - 1.9) / 1.0));
   if (a <= 0) return;
@@ -2590,7 +2734,7 @@ function drawIntro(ctx, t) {
 
 // the last seconds of the 3D film: a quiet title over the finished apartment
 function drawEnd(ctx, t) {
-  const a = smooth(clamp((t - (T3.end - 6.6)) / 1.0));
+  const a = smooth(clamp((t - T3.titleT) / 1.0));
   if (a <= 0.01) return;
   ctx.save();
   const g = ctx.createLinearGradient(0, DH * 0.55, 0, DH); g.addColorStop(0, 'rgba(9,11,14,0)'); g.addColorStop(1, `rgba(9,11,14,${0.7 * a})`);
@@ -2629,12 +2773,14 @@ function renderFrame(ctx, W, H, t, opt = {}) {
     render3D(ctx, W, H, t, vp, slide);
     ctx.restore();
   }
-  const lbl = in3D && t >= T3.swap + 1.4 ? '[–][SW Isometric][Realistic]' : '[–][Top][2D Wireframe]';
+  const walking = T3.walk && t >= T3.walk[0][0];
+  const lbl = in3D && t >= T3.swap + 1.4 ? (walking ? '[–][Perspective][Realistic]' : '[–][SW Isometric][Realistic]') : '[–][Top][2D Wireframe]';
   drawViewportDecor(ctx, vp, t, 1 - slide, lbl, 1 - 0.25 * slide);
   drawChrome(ctx, t, slide, { cursorW });
-  const cmdA = in3D ? 1 - smooth(clamp((t - (T3.end - 7.4)) / 0.9)) : 1;      // the command line leaves before the end title arrives
+  const cmdA = in3D ? 1 - smooth(clamp((t - T3.cmdOut) / 0.9)) : 1;           // the command line leaves once the walk is under way, well before the end title
   if (cmdA > 0.01) { ctx.save(); ctx.globalAlpha = cmdA; drawCmdLine(ctx, t, slide); ctx.restore(); }
   drawCaptions(ctx, t, vp);
+  if (in3D) drawRoomTag(ctx, t);
   if (t < INTRO) drawIntro(ctx, t);
   if (in3D) drawEnd(ctx, t);
   if (opt.fade !== false) {                                  // fade to black at the very end
