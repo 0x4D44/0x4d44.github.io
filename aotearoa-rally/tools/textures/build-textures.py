@@ -13,8 +13,9 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from specs import SPECS
 
-NORMAL_ALSO = {"gnd_grass", "gnd_schist", "gnd_limestone"}  # plus every road_*
-MAX_JPG =600 * 1024
+NORMAL_ALSO = {"gnd_grass2", "gnd_schist", "gnd_limestone"}  # plus every road_* and rock_*
+MAX_JPG = 600 * 1024
+MAX_ROCK_JPG = 300 * 1024  # rock tiles: 1024 px, aim well under the 600 KB repo cap
 MAX_WEBP = 300 * 1024
 
 
@@ -68,10 +69,10 @@ def restore_contrast(out, ref):
     return out
 
 
-def save_jpg(im, path, q=85):
+def save_jpg(im, path, q=85, limit=MAX_JPG):
     while True:
         im.save(path, "JPEG", quality=q, optimize=True, progressive=True)
-        if os.path.getsize(path) <= MAX_JPG or q <= 60:
+        if os.path.getsize(path) <= limit or q <= 50:
             return q
         q -= 4
 
@@ -104,9 +105,9 @@ def build_tile(name, raw, out, kind, size):
     a = restore_contrast(a, ref)
     a = a.clip(0, 255)
     img = Image.fromarray(a.round().astype(np.uint8))
-    save_jpg(img, os.path.join(out, name + ".jpg"))
+    save_jpg(img, os.path.join(out, name + ".jpg"), 85, MAX_ROCK_JPG if kind == "rock" else MAX_JPG)
     nfile = None
-    if kind == "road" or name in NORMAL_ALSO:
+    if kind in ("road", "rock") or name in NORMAL_ALSO:
         nfile = name + "_n.jpg"
         save_jpg(normal_map(a), os.path.join(out, nfile), 85)
     return name + ".jpg", nfile, False

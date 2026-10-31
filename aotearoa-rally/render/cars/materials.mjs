@@ -194,7 +194,7 @@ export function createCarMaterials(THREE, U, livery, atlasTexture, grain = null)
   lampBase.customProgramCacheKey = () => "car-lamp";
   const lamps = lampBase;
   const interior = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, map: grain || null, roughness: 0.74, metalness: 0.05, emissive: 0x14151a, side: THREE.DoubleSide });
-  const liner = new THREE.MeshBasicMaterial({ color: 0x1b1c20, side: THREE.DoubleSide }); // headlining and pillar trim seen from inside the cabin: unlit, so no sun or shadow can wash it pale
+  const liner = new THREE.MeshBasicMaterial({ color: 0x2a2c32, side: THREE.DoubleSide }); // headlining and pillar trim seen from inside the cabin: unlit, so no sun or shadow can wash it pale
   const helmet = new THREE.MeshPhysicalMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.25, metalness: 0.2, clearcoat: 1, clearcoatRoughness: 0.05 });
   const wheelTrim = new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.9, metalness: 0.0 });
   const tyre = patchMaterial(new THREE.MeshStandardMaterial({ vertexColors: true, color: 0xffffff, roughness: 0.92, metalness: 0 }), U, { mode: "wheel", damage: false });

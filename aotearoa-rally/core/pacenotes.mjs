@@ -202,7 +202,8 @@ export function buildPacenotes(c, opts = {}) {
     const a = out[k], b = out[k + 1];
     const first = a.kind === "corner" || a.kind === "hairpin" || a.kind === "crest";
     const second = b.kind === "corner" || b.kind === "hairpin";
-    if (first && second && b.s - (a.s + a.length) < 45) {
+    const same = a.kind === "corner" && b.kind === "corner" && a.dir === b.dir && a.severity === b.severity;
+    if (first && second && !same && b.s - (a.s + a.length) < 45) {
       if (!a.modifiers.includes("into")) a.modifiers.push("into");
     }
   }
@@ -277,7 +278,13 @@ export function buildPacenotes(c, opts = {}) {
     if (n.kind === "corner" || n.kind === "hairpin" || n.kind === "crest") {
       const chain = [n];
       let q = k;
-      while (out[q].modifiers.includes("into") && out[q + 1] && chain.length < 3 && (out[q + 1].kind === "corner" || out[q + 1].kind === "hairpin")) {
+      const pieceOf = (cn) => (cn.kind === "crest" ? (cn.modifiers.includes("blind") ? "crest, caution" : "over crest") : soloPhrase(cn).join(", "));
+      const canJoin = (nx) => {
+        const last = chain[chain.length - 1];
+        if (pieceOf(last) === pieceOf(nx)) return false; // never "left five, into left five"
+        return [...chain, nx].map(pieceOf).join(", into ").split(/\s+/).length <= 8; // short enough to say in one breath
+      };
+      while (out[q].modifiers.includes("into") && out[q + 1] && chain.length < 3 && (out[q + 1].kind === "corner" || out[q + 1].kind === "hairpin") && canJoin(out[q + 1])) {
         q++;
         chain.push(out[q]);
       }
@@ -322,6 +329,15 @@ export function buildPacenotes(c, opts = {}) {
       default: break;
     }
     if (n.kind === "straight" || n.kind === "start") n.icon = "straight";
+  }
+  // never say the same thing twice running within 100 m: the repeat becomes "Again, ..."
+  {
+    let prev = null;
+    for (const n of out) {
+      if (!n.speak || n.chained) continue;
+      if (prev && prev.speak === n.speak && n.s - prev.s < 100 + prev.length) n.speak = `Again, ${n.speak.charAt(0).toLowerCase()}${n.speak.slice(1)}`;
+      prev = n;
+    }
   }
   for (const n of out) {
     n.lead = makeLead(n.s);

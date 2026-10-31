@@ -74,7 +74,7 @@ export function cabinRing(d, t) {
 /** Station values of the greenhouse loft, with the glass / pillar boundaries as exact stations. */
 export function ghStations(d) {
   const c = d.cabin;
-  const bT = c.rs + (c.re - c.rs) * 0.38;
+  const bT = c.bt ?? c.rs + (c.re - c.rs) * 0.38;
   const tG1 = c.re + (c.t1 - c.re) * ({ saloon: 0.3, hatch: 0.45, kit: 0.3, coupe: 0.35 }[d.S.kind] ?? 0.3);
   const keys = [c.t0, c.t0 + 0.012, c.rs, c.re, tG1, c.t1 - 0.014, c.t1];
   if (c.bPillar) keys.push(bT - 0.014, bT + 0.014);
@@ -344,9 +344,22 @@ function buildDetails(THREE, spec, d, B, tub) {
       a.push([sd * x, y - 0.004, z]); b.push([sd * x, y + 0.004, z]);
     }
     if (a.length > 1) trim.strip(sd > 0 ? b : a, sd > 0 ? a : b, 0x050506);
-    const hT = d.S.doors === 4 ? tB - 0.035 : tB + 0.02;
-    const hy = d.topC(hT) - 0.12, hz = d.zAt(hT);
-    trim.box(0.025, 0.026, 0.12, sd * (Math.abs(sideX(d, hT, hy)) + 0.012), hy, hz, 0x131316);
+    for (const hT of d.S.doors === 4 ? [d.cabin.bt - 0.04, d.cabin.bt + 0.05] : [tB + 0.02]) {
+      const hy = d.topC(hT) - 0.12, hz = d.zAt(hT);
+      trim.box(0.025, 0.026, 0.12, sd * (Math.abs(sideX(d, hT, hy)) + 0.012), hy, hz, 0x131316);
+    }
+    if (d.cabin.boot) { // boot lid: a shut line across the deck and down each quarter, so the rear reads as a separate third box
+      const tl = d.cabin.boot, { ring, yb } = tubRing(d, tl), z = d.zAt(tl);
+      const a = [], b = [];
+      for (let k = 0; k < K / 2 + 1; k++) {
+        const q = ring[k];
+        if (q[1] < yb + 0.22) continue;
+        if (inArch(d, sd * q[0], q[1], z, 0.1)) continue;
+        a.push([sd * (Math.abs(q[0]) + 0.003), q[1] + 0.002, z - 0.005]);
+        b.push([sd * (Math.abs(q[0]) + 0.003), q[1] + 0.002, z + 0.005]);
+      }
+      if (a.length > 1) trim.strip(sd > 0 ? a : b, sd > 0 ? b : a, 0x050506);
+    }
     // wing mirror: small housing on a short stalk from the door top at the A-pillar foot
     const mt = d.cabin.t0 + 0.03, mz = d.zAt(mt) + 0.06, my0 = d.topC(mt);
     const wbm = d.hw * d.widC(mt) * d.cabin.w;

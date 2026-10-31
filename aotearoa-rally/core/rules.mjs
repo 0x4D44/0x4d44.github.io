@@ -54,6 +54,7 @@ export function createRun({ stage, vehicle, difficulty = "pro", par = null, coun
     nextCheckpoint: 1,
     lastCheckpointS: 0,
     respawns: 0,
+    assisted: false, // set by the test API (teleport, finishRun): the run is not a real drive, so no record, ghost or deltas
     falseStart: false,
     dnfReason: null,
     finishTime: null,
@@ -123,6 +124,7 @@ export function createRun({ stage, vehicle, difficulty = "pro", par = null, coun
       if (run.status !== "running") return run.status;
 
       run.time += dt;
+      run._curS = state.s;
       run._respawnCool = Math.max(0, run._respawnCool - dt);
 
       // checkpoints / finish
@@ -205,9 +207,16 @@ export function createRun({ stage, vehicle, difficulty = "pro", par = null, coun
       if (reason && run._respawnCool <= 0) run.respawn(reason);
       return run.status;
     },
-    /** Put the car back on the road at the last checkpoint with a time penalty. */
+    /** Put the car back on the centreline close to where it left the road (never behind the last checkpoint), with a time penalty.
+     *  A second respawn within 20 s and 40 m of the previous one steps back a further 30 m, so a bank cannot trap the car in a loop. */
     respawn(reason = "manual") {
-      const s = clamp(run.lastCheckpointS + (run.lastCheckpointS > 0 ? 3 : 0), 0, stage.lengthM);
+      const floorS = run.lastCheckpointS + (run.lastCheckpointS > 0 ? 3 : 0);
+      const here = Number.isFinite(run._curS) ? run._curS : floorS;
+      let target = Math.max(floorS, here - 15);
+      const prev = run._lastRespawn;
+      if (prev && run.time - prev.t < 20 && Math.abs(here - prev.s) < 40) target = Math.max(floorS, Math.min(target, prev.s - 30));
+      const s = clamp(target, 0, stage.lengthM);
+      run._lastRespawn = { t: run.time, s };
       const sm = stage.sample(s, {});
       const pose = s <= 0 && stage.startPose ? { ...stage.startPose } : { x: sm.x, y: sm.y + 0.3, z: sm.z, yaw: yawOfDir(sm.tx, sm.tz) };
       vehicle.reset(pose, 0, stage);
@@ -239,6 +248,7 @@ export function createRun({ stage, vehicle, difficulty = "pro", par = null, coun
         splits: run.splits.map((s) => ({ ...s })),
         penalties: run.penalties.map((p) => ({ ...p })),
         respawns: run.respawns,
+        assisted: run.assisted,
         falseStart: run.falseStart,
         dnfReason: run.dnfReason,
       };

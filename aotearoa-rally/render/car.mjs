@@ -1,6 +1,7 @@
 // Car visual: lofted procedural rally cars (huia, kea, takahe, piwakawaka). Public API per CONTRACTS.md s5.
-import { dimsFor } from "./cars/profiles.mjs";
+import { dimsFor, eyePoints } from "./cars/profiles.mjs";
 import { buildBody } from "./cars/body.mjs";
+import { cabinVolume } from "./cars/layout.mjs";
 import { buildTyre, buildRim, buildCaliper } from "./cars/wheels.mjs";
 import { buildInterior, drawGauges } from "./cars/interior.mjs";
 import { drawLivery, ATLAS_W, ATLAS_H } from "./cars/livery.mjs";
@@ -8,6 +9,7 @@ import { createUniforms, createCarMaterials } from "./cars/materials.mjs";
 import { Geo } from "./cars/geo.mjs";
 import { clamp, clamp01, smoothstep, lerp, damp } from "../core/mathx.mjs";
 import { SURFACE } from "../core/surfaces.mjs";
+import { makeRng } from "../core/rng.mjs";
 
 /**
  * How a wheel on surface `surf` dirties the body. Pure. Returns { rate, spray, colour } where rate is the dirt (0..1) gained per
@@ -34,6 +36,10 @@ function makeCanvas(w, h) {
 
 export function createCarVisual(THREE, spec, opts = {}) {
   const d = dimsFor(spec);
+  const cabVol = cabinVolume(d);
+  // distance from the driver's eye to the windscreen base (+ a margin): the plane the lens droplets are drawn at in the cockpit view,
+  // so everything nearer (headliner, pillars, dash, wheel) hides them and only the glass opening shows them
+  const glassDist = (() => { const e = eyePoints(spec).cockpit; return Math.hypot(e[1] - cabVol.yb, e[2] - cabVol.zb) + 0.15; })();
   const cg = spec.cgHeight || 0.5;
   const liveries = spec.liveries && spec.liveries.length ? spec.liveries : [{ name: "Stock", body: 0xcc2222, accent: 0xffffff, number: 7, sponsor: "" }];
   let liveryIdx = clamp(opts.livery | 0, 0, liveries.length - 1);
@@ -59,7 +65,8 @@ export function createCarVisual(THREE, spec, opts = {}) {
     const c = grainCanvas.getContext("2d");
     c.fillStyle = "#d8d8d8"; c.fillRect(0, 0, 128, 128);
     for (let y = 0; y < 128; y += 4) for (let x = 0; x < 128; x += 4) { const v = ((x / 4 + y / 4) & 1) ? 232 : 188; c.fillStyle = `rgb(${v},${v},${v})`; c.fillRect(x, y, 4, 4); }
-    for (let i = 0; i < 900; i++) { const v = 150 + Math.random() * 90 | 0; c.fillStyle = `rgba(${v},${v},${v},0.5)`; c.fillRect(Math.random() * 128, Math.random() * 128, 1, 1); }
+    const grng = makeRng(0x6a13);
+    for (let i = 0; i < 900; i++) { const v = 150 + grng.next() * 90 | 0; c.fillStyle = `rgba(${v},${v},${v},0.5)`; c.fillRect(grng.next() * 128, grng.next() * 128, 1, 1); }
   }
   const grain = new THREE.CanvasTexture(grainCanvas); grain.wrapS = grain.wrapT = THREE.RepeatWrapping; grain.repeat.set(2, 2); grain.colorSpace = THREE.SRGBColorSpace;
   const M = createCarMaterials(THREE, U, livery, atlas, grain);
@@ -289,8 +296,13 @@ export function createCarVisual(THREE, spec, opts = {}) {
       if (S.bonnetPop > 0.05) bonnetPivot.rotation.x = S.bonnetPop + Math.sin(S.time * 14) * 0.015 * clamp01(Math.abs(st.speed || 0) / 25) * S.bonnetPop;
       if (st.damage && !S.dmgFed) api.setDamage(st.damage);
       if (st.damage && (S.dmgStamp !== st.damage.total)) { S.dmgStamp = st.damage.total; api.setDamage(st.damage); }
-      // rpm-linked: slight engine shake in body (cosmetic) is skipped to keep the pose exact
-      void env;
+      // cockpit view: hand the renderer the cabin volume (rig space, plus the world->rig matrix) so weather particles are culled
+      // inside it. Any other view switches the cull off.
+      if (env) {
+        const cb = env.cabin || (env.cabin = { on: false, inv: new THREE.Matrix4(), vol: cabVol, glassDist: glassDist });
+        cb.on = S.view === "cockpit";
+        if (cb.on) { root.updateMatrixWorld(true); cb.inv.copy(rig.matrixWorld).invert(); }
+      }
     },
 
     setDamage(dmg) {
@@ -330,6 +342,7 @@ export function createCarVisual(THREE, spec, opts = {}) {
       glassMesh.visible = !inCar;
       cabinMesh.visible = m !== "bonnet"; // pillars and roof panels would only sit in the lens
       cabinMesh.material = m === "cockpit" ? M.liner : M.paint; // from the driver's seat the greenhouse is dark headlining, not sunlit paint
+      bodyMesh.visible = m !== "cockpit"; // the outer shell (roof skin, scuttle, wings) only fills the lens from inside; the interior mesh is the dash and the cabin
       lampMesh.visible = m !== "bonnet"; // lamp lenses read as bubbles on the bonnet edge
       // bonnet view sits at the base of the windscreen: the cabin furniture would only sit in front of the lens
       interiorMesh.visible = m !== "bonnet";

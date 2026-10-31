@@ -10,7 +10,7 @@ import { SURFACE } from "../core/surfaces.mjs";
 import { makeTestStage } from "./dynamics-testtrack.mjs";
 
 const DT = 1 / 120;
-const STAGES = (process.env.KB_STAGES || "waitomo,coromandel,fiordland").split(",");
+const STAGES = (process.env.KB_STAGES || "waitomo,coromandel,fiordland,remarkables,otago,whakarewarewa").split(",");
 const SECONDS = +(process.env.KB_SECONDS || 40);
 
 /** Digital driver: steering is +-1 or 0 (small dead band), target = centreline point 0.6 s ahead,

@@ -17,13 +17,15 @@ const GRADE_SHADER = {
       vec2 c = vUv - 0.5;
       float r = length(c * vec2(uAspect, 1.0));
       vec3 col;
-      if (uSpeed > 0.015) {
-        float k = uSpeed * 0.055;
+      // radial blur only above ~110 km/h (uSpeed = (kmh - 60) / 140), 40 % of the old strength, weighted to the screen edge
+      float sb = clamp((uSpeed - 0.357) / 0.643, 0.0, 1.0);
+      if (sb > 0.01) {
+        float k = sb * 0.022;
         col = vec3(0.0); float tot = 0.0;
         for (int i = 0; i < 7; i++) {
           float f = float(i) / 6.0;
           float w = 1.0 - f * 0.55;
-          col += texture2D(tDiffuse, vUv - c * k * f * smoothstep(0.12, 0.7, r) * 2.0).rgb * w; tot += w;
+          col += texture2D(tDiffuse, vUv - c * k * f * smoothstep(0.3, 0.85, r) * 2.0).rgb * w; tot += w;
         }
         col /= tot;
       } else col = texture2D(tDiffuse, vUv).rgb;

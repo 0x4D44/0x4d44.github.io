@@ -43,13 +43,6 @@
    "size": 1024,
    "meters": 3.0
   },
-  "gnd_grass": {
-   "file": "gnd_grass.jpg",
-   "normal": "gnd_grass_n.jpg",
-   "alpha": false,
-   "size": 1024,
-   "meters": 6.0
-  },
   "gnd_tussock": {
    "file": "gnd_tussock.jpg",
    "normal": null,
@@ -105,6 +98,76 @@
    "alpha": false,
    "size": 1024,
    "meters": 6.0
+  },
+  "gnd_grass2": {
+   "file": "gnd_grass2.jpg",
+   "normal": "gnd_grass2_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 6.0
+  },
+  "rock_schist": {
+   "file": "rock_schist.jpg",
+   "normal": "rock_schist_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 4.0
+  },
+  "rock_limestone": {
+   "file": "rock_limestone.jpg",
+   "normal": "rock_limestone_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 4.0
+  },
+  "rock_volcanic": {
+   "file": "rock_volcanic.jpg",
+   "normal": "rock_volcanic_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 4.0
+  },
+  "rock_coastal": {
+   "file": "rock_coastal.jpg",
+   "normal": "rock_coastal_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 4.0
+  },
+  "rock_fiord": {
+   "file": "rock_fiord.jpg",
+   "normal": "rock_fiord_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 4.0
+  },
+  "rock_cliff": {
+   "file": "rock_cliff.jpg",
+   "normal": "rock_cliff_n.jpg",
+   "alpha": false,
+   "size": 1024,
+   "meters": 4.0
+  },
+  "wool_fleece": {
+   "file": "wool_fleece.jpg",
+   "normal": null,
+   "alpha": false,
+   "size": 512,
+   "meters": 0.5
+  },
+  "foliage_toetoe": {
+   "file": "foliage_toetoe.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
+  },
+  "foliage_pohutukawa": {
+   "file": "foliage_pohutukawa.webp",
+   "normal": null,
+   "alpha": true,
+   "size": 512,
+   "meters": 1.0
   },
   "bark_redwood": {
    "file": "bark_redwood.jpg",

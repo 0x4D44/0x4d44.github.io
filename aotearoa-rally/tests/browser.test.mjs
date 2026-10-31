@@ -140,8 +140,13 @@ test("plays Waitomo with the bot to the finish: plausible time, results, replay 
     const gaps = await g.evalAsync("[...document.querySelectorAll('#screens .sheet tbody tr')].map((r) => r.children[3].textContent.trim())");
     assert.equal(gaps.filter((x) => x === "Leader").length, 1, "exactly one row is the stage leader: " + gaps.join(","));
     await g.screenshot(join(SHOT_DIR, "results-960.png"));
+    // finishRun is an API shortcut: the run is marked assisted, so it must not fake a personal best, a ghost or the record banner
     const best = await g.evalAsync("window.__AR__.career().profile.best.waitomo && window.__AR__.career().profile.best.waitomo.huia");
-    assert.ok(Math.abs(best - st.total) < 0.01, "best time recorded");
+    assert.ok(!best, "an assisted run records no personal best, got " + best);
+    assert.equal(await g.evalAsync("window.__AR__._G.lastResult.assisted"), true);
+    const txt = await g.eval("document.querySelector('#screens').textContent");
+    assert.match(txt, /Assisted run/);
+    assert.doesNotMatch(txt, /New personal best/);
     // Watch replay -> Back must land on the results screen again (not the main menu)
     await click(g, "Watch replay"); await on(g, "replay");
     assert.match(await g.eval("document.querySelector('.rb-time').textContent"), /^\d+:\d\d\.\d$/, "replay time is M:SS.s");

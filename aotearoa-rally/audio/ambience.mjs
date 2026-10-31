@@ -4,6 +4,11 @@ import { clamp, clamp01 } from "../core/mathx.mjs";
 import { ambiencePlan } from "./params.mjs";
 import { loopNoise, tone, burst, sT } from "./mixer.mjs";
 
+// The start-line crowd is a murmur under the engine, not a bed over it: at full level it set the full-mix idle centroid on the line
+export const CROWD_BASE = 0.05;
+export const BED_IDLE = 0.02; // bed level at standstill (1 at speed)
+export const bedLevel = (speed) => BED_IDLE + (1 - BED_IDLE) * clamp01(Math.abs(speed || 0) / 12);
+
 export function createAmbience(ctx, out) {
   const rng = makeRng("ambience-synth");
   const T = () => ctx.currentTime;
@@ -19,6 +24,10 @@ export function createAmbience(ctx, out) {
   const windA = layer("pink", "bandpass", 380, 0.5);
   const surf = layer("pink", "lowpass", 900, 0.4);
   const stream = layer("white", "bandpass", 1500, 0.8);
+  // the band-pass skirts of white noise left a hiss floor: a third of the standing-still ambience magnitude sat above 3 kHz
+  // (12 % above 8 kHz), which read as a car-independent 2.5-3 kHz centroid at idle. Water stays, the air goes.
+  const streamLP = ctx.createBiquadFilter(); streamLP.type = "lowpass"; streamLP.frequency.value = 3000; streamLP.Q.value = 0.6;
+  stream.f.disconnect(); stream.f.connect(streamLP); streamLP.connect(stream.g);
   const roar = layer("brown", "lowpass", 320, 0.5);
   const steam = layer("white", "highpass", 3200, 0.5);
   const crowd = layer("pink", "bandpass", 520, 0.6);
@@ -28,6 +37,11 @@ export function createAmbience(ctx, out) {
   const lfos = [];
   const swell = ctx.createGain(); swell.gain.value = 1; // multiplies surf
   surf.g.disconnect(); surf.g.connect(swell); swell.connect(out);
+  // The continuous bed (everything but crowd and birds) is cut while standing still: it is broadband and car-independent, and at idle it
+  // set the full-mix centroid (about 1.3 kHz for every car). It returns with road speed (full by about 12 m/s).
+  const bedG = ctx.createGain(); bedG.gain.value = BED_IDLE; bedG.connect(out);
+  for (const l of [rain, rainLow, windA, stream, roar, steam]) { l.g.disconnect(); l.g.connect(bedG); }
+  swell.disconnect(); swell.connect(bedG);
   lfos.push(lfo(0.11, 0.55, swell.gain));
   lfos.push(lfo(0.07, 90, windA.f.frequency));
   lfos.push(lfo(0.19, 0.05, windA.g.gain));
@@ -36,7 +50,7 @@ export function createAmbience(ctx, out) {
   const ins2 = ctx.createOscillator(); ins2.type = "sine"; ins2.frequency.value = 5200;
   const insG = ctx.createGain(); insG.gain.value = 0;
   const insAM = ctx.createGain(); insAM.gain.value = 0.5;
-  ins.connect(insAM); ins2.connect(insAM); insAM.connect(insG); insG.connect(out);
+  ins.connect(insAM); ins2.connect(insAM); insAM.connect(insG); insG.connect(bedG);
   const amO = ctx.createOscillator(); amO.type = "square"; amO.frequency.value = 38;
   const amD = ctx.createGain(); amD.gain.value = 0.35; amO.connect(amD); amD.connect(insAM.gain);
   ins.start(); ins2.start(); amO.start();
@@ -95,6 +109,7 @@ export function createAmbience(ctx, out) {
     update(dt, p, view, stage) {
       const t = T();
       flushChirps(3);
+      sT(bedG.gain, bedLevel(p.speed), t, 0.4);
       // rain louder in cockpit-ish low-passed form handled by the bus; add roof drum there
       sT(rainLow.g.gain, plan.rain * (0.1 + 0.2 * (view ? view.cockpit : 0)), t, 0.3);
       // birds
@@ -113,8 +128,8 @@ export function createAmbience(ctx, out) {
       const s = p.s || 0, L = stage && stage.lengthM ? stage.lengthM : 1e9;
       const near = Math.max(1 - s / 90, 1 - Math.abs(L - s) / 90, 0);
       crowdLevel = clamp01(near);
-      sT(crowd.g.gain, crowdLevel * 0.06, t, 0.4);
-      sT(crowd2.g.gain, crowdLevel * 0.035, t, 0.4);
+      sT(crowd.g.gain, crowdLevel * 0.06 * CROWD_BASE, t, 0.4);
+      sT(crowd2.g.gain, crowdLevel * 0.035 * CROWD_BASE, t, 0.4);
       cheerT -= dt;
       if (crowdLevel > 0.3 && cheerT <= 0) {
         cheerT = rng.range(2.5, 6);

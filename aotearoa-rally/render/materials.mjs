@@ -78,14 +78,16 @@ export const ATLAS_CELLS = [
   "gnd_limestone", "gnd_moss_rock", "foliage_fern", "foliage_pine",
   "foliage_broadleaf", "foliage_flax", "foliage_grass", "white",
   "fabric", "planks", "metal", "gnd_leaf",
+  "wool_fleece", "foliage_toetoe", "foliage_pohutukawa", "rock_stage",
 ];
+const ATLAS_ROWS = 5;
 const ATLAS_PAD = 0.012;
 
 /** UV rectangle for a named atlas cell: [u0, v0, u1, v1] (v up). */
 export function atlasCell(name) {
   const i = Math.max(0, ATLAS_CELLS.indexOf(name));
   const col = i % 4, row = Math.floor(i / 4);
-  return [col / 4 + ATLAS_PAD, 1 - (row + 1) / 4 + ATLAS_PAD, (col + 1) / 4 - ATLAS_PAD, 1 - row / 4 - ATLAS_PAD];
+  return [col / 4 + ATLAS_PAD, 1 - (row + 1) / ATLAS_ROWS + ATLAS_PAD / 1.25, (col + 1) / 4 - ATLAS_PAD, 1 - row / ATLAS_ROWS - ATLAS_PAD / 1.25];
 }
 
 function drawMisc(g, name, S) {
@@ -113,11 +115,11 @@ function drawMisc(g, name, S) {
 }
 
 /** Build the shared 4x4 prop atlas (canvas texture) from the texture set. */
-export function buildPropAtlas(THREE, textures, { cell = 256, anisotropy = 4 } = {}) {
-  const S = cell * 4;
-  const canvas = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(S, S) : Object.assign(document.createElement("canvas"), { width: S, height: S });
+export function buildPropAtlas(THREE, textures, { cell = 256, anisotropy = 4, rock = null } = {}) {
+  const S = cell * 4, SH = cell * ATLAS_ROWS;
+  const canvas = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(S, SH) : Object.assign(document.createElement("canvas"), { width: S, height: SH });
   const g = canvas.getContext("2d");
-  g.clearRect(0, 0, S, S);
+  g.clearRect(0, 0, S, SH);
   ATLAS_CELLS.forEach((name, i) => {
     const cx = (i % 4) * cell, cy = Math.floor(i / 4) * cell;
     g.save();
@@ -125,10 +127,12 @@ export function buildPropAtlas(THREE, textures, { cell = 256, anisotropy = 4 } =
     if (["white", "fabric", "planks", "metal"].includes(name)) {
       g.translate(cx, cy); drawMisc(g, name, cell);
     } else {
-      const src = textures.source(name);
+      // the stage's own rock photo stands in for the generic rock cells (and fills the dedicated one)
+      const useRock = rock && (name === "gnd_schist" || name === "gnd_limestone" || name === "rock_stage");
+      const src = textures.source(useRock ? rock : name === "rock_stage" ? "gnd_schist" : name);
       const bark = name.startsWith("bark_");
-      const rock = name.startsWith("gnd_");
-      if (bark || rock) { // 2x2 tiling inside the cell so surfaces are not stretched
+      const tiled = name.startsWith("gnd_") || name === "rock_stage" || name === "wool_fleece";
+      if (bark || tiled) { // 2x2 tiling inside the cell so surfaces are not stretched
         const h = cell / 2;
         for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) g.drawImage(src, cx + a * h, cy + b * h, h, h);
       } else {
@@ -145,6 +149,49 @@ export function buildPropAtlas(THREE, textures, { cell = 256, anisotropy = 4 } =
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
   tex.needsUpdate = true;
   return tex;
+}
+
+// ------------------------------------------------------------------ rock material
+
+/** Boulders, tors and rock walls: the stage's rock photo mapped triplanar in WORLD space at its native tile size (about 4 m,
+ *  roughly 250 px/m), so a 10 m wall carries real detail instead of one stretched tile, plus a broad low-frequency layer
+ *  (about 27 m) that breaks the repeat. Vertex colour (palette tint) multiplies the photo. */
+export function createRockMaterial(THREE, tex, SU, meters = 4) {
+  const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.93, metalness: 0, envMapIntensity: 0.7 });
+  const U = { tRockP: { value: tex }, uRockTile: { value: 1 / meters } };
+  m.onBeforeCompile = (shader) => {
+    patchCommon(shader, SU);
+    Object.assign(shader.uniforms, U);
+    shader.fragmentShader = shader.fragmentShader
+      .replace("//AR_END", "uniform sampler2D tRockP; uniform float uRockTile;\n")
+      .replace("#include <map_fragment>", /* glsl */ `
+        {
+          vec3 wnR = normalize(inverseTransformDirection(normalize(vNormal), viewMatrix));
+          vec3 bwR = pow(abs(wnR), vec3(4.0)); bwR /= (bwR.x + bwR.y + bwR.z);
+          vec3 pR = vWPos * uRockTile;
+          // biplanar: the two strongest projections only (the third weight is negligible after the pow(4) sharpening)
+          bool xM = bwR.x >= bwR.y && bwR.x >= bwR.z, yM = !xM && bwR.y >= bwR.z;
+          vec2 c1 = xM ? pR.zy : (yM ? pR.xz : pR.xy);
+          float w1 = xM ? bwR.x : (yM ? bwR.y : bwR.z);
+          vec2 c2 = xM ? (bwR.y >= bwR.z ? pR.xz : pR.xy) : (yM ? (bwR.x >= bwR.z ? pR.zy : pR.xy) : (bwR.x >= bwR.y ? pR.zy : pR.xz));
+          float w2 = xM ? max(bwR.y, bwR.z) : (yM ? max(bwR.x, bwR.z) : max(bwR.x, bwR.y));
+          vec3 rr = (texture2D(tRockP, c1).rgb * w1 + texture2D(tRockP, c2).rgb * w2) / (w1 + w2);
+          // broad layer (about 27 m): low-frequency luminance only, one tap on the dominant axis
+          vec3 pB = vWPos * (uRockTile * 0.15);
+          vec3 rb = bwR.x > max(bwR.y, bwR.z) ? texture2D(tRockP, pB.zy + 0.31).rgb : (bwR.y > bwR.z ? texture2D(tRockP, pB.xz).rgb : texture2D(tRockP, pB.xy + 0.77).rgb);
+          rr *= 0.55 + 1.0 * dot(rb, vec3(0.299, 0.587, 0.114));
+          diffuseColor.rgb *= rr;
+        }`)
+      .replace("#include <normal_fragment_maps>", /* glsl */ `#include <normal_fragment_maps>
+        {
+          vec3 wn = inverseTransformDirection(normal, viewMatrix);
+          diffuseColor.rgb *= 1.0 - 0.3 * uWet;
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.9, 0.94, 1.0), uSnow * smoothstep(0.3, 0.75, wn.y));
+        }`)
+      .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor *= 1.0 - 0.4 * uWet;");
+  };
+  m.customProgramCacheKey = () => "ar-rock";
+  return m;
 }
 
 // ------------------------------------------------------------------ prop material
@@ -228,7 +275,7 @@ export function createWaterMaterial(THREE, SU, { color = 0x3f5d58, detail = true
           vec2 sl = (lg * fa + hg * fb) * 0.22;
           vec3 wn = normalize(vec3(-sl.x, 1.0, -sl.y));
           normal = normalize((viewMatrix * vec4(wn, 0.0)).xyz);
-          diffuseColor.a = mix(diffuseColor.a, 1.0, smoothstep(40.0, 160.0, wd)); // distant water is opaque: no seabed walls showing through
+          diffuseColor.a = mix(diffuseColor.a, 1.0, smoothstep(18.0, 70.0, wd)); // distant water is opaque (the seabed ends at the chunk-grid edge: no visible rectangle): no seabed walls showing through
           diffuseColor.a *= smoothstep(0.0, 0.35, vEdge);
           diffuseColor.rgb += vec3(0.05) * smoothstep(0.62, 0.8, l0 + h0) * fb * (1.0 - uNight);
         }`);

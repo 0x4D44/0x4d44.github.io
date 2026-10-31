@@ -67,7 +67,7 @@ test("texture manifest: every entry exists, size limits, total weight", () => {
   }
   assert.ok(total <= 24 * 1024 * 1024, `total ${total} <= 24 MB`);
   // shipped set must cover what the renderer asks for (missing ones fall back to procedural, so only warn-level: require roads+key ground)
-  for (const n of ["road_gravel", "road_dirt", "road_tarmac", "road_mud", "road_snow", "road_pumice", "gnd_grass", "gnd_leaf", "bark_redwood", "foliage_pine"]) {
+  for (const n of ["road_gravel", "road_dirt", "road_tarmac", "road_mud", "road_snow", "road_pumice", "gnd_grass2", "gnd_leaf", "bark_redwood", "foliage_pine"]) {
     assert.ok(mf.textures[n], `manifest has ${n}`);
   }
   for (const n of ALL_TEX_NAMES) assert.ok(typeof n === "string" && n.length > 3);

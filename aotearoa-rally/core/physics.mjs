@@ -86,8 +86,17 @@ const DYN_SCALARS = [
   "px", "py", "pz", "qw", "qx", "qy", "qz", "vx", "vy", "vz", "wx", "wy", "wz",
   "rpm", "gear", "boost", "thr", "brk", "hb", "steerIn", "steerAng", "analogT", "shiftT", "shiftLock", "cutT", "prevThr",
   "prevUp", "prevDown", "airT", "airMinVy", "flipT", "collided", "distance", "wgCool", "limCool", "impCool", "boCool", "splashCool",
-  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir",
+  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir", "axLP", "holdT", "kick", "kickCool",
 ];
+
+// Longitudinal load transfer, exaggerated on purpose (see the wheel loop): fast filter, a slow reference that turns a
+// lift or brake stab into a transient kick, and a small sustained part so long braking keeps a little rotation.
+const LAND_SOAK = 3.5;
+const LT_TAU = 0.1, LT_SUS = 0.03, LT_KICK = 24, LT_KCAP = 0.25, LT_SURF = 3;
+const SA0 = 0.12, SA1 = 0.3; // throttle feathering starts at a 7 deg body slip (it was 17 deg): a digital throttle cannot hold a power slide
+const TA0 = 0.12, TA1 = 0.08; // RWD traction aid: slip ratio where the throttle starts to close, and the band to full cut
+const LT_ARM_THR = 0.6, LT_ARM_T = 0.3, LT_FIRE_THR = 0.35, LT_COOL = 0.6, LT_KICK_TAU = 0.3;
+const LT_GAIN_FWD = 2.5, LT_GAIN_AWD = 1.6, LT_GAIN_RWD = 5;
 
 export function createVehicle(spec, options = {}) {
   const opts = {
@@ -136,6 +145,9 @@ export function createVehicle(spec, options = {}) {
   const tq = curveTable(eng.torqueCurve);
   const nGears = spec.gears.length;
   const dt0 = 1 / 120;
+
+  // lift-off rotation gain by drivetrain (FWD mild, AWD moderate, RWD strongest); spec.handling.liftRotate overrides
+  const ltGain = spec.handling && spec.handling.liftRotate !== undefined ? spec.handling.liftRotate : (spec.drivetrain === "AWD" ? LT_GAIN_AWD : spec.drivetrain === "FWD" ? LT_GAIN_FWD : LT_GAIN_RWD);
 
   // box (for obstacle/wall collisions): z positive = back
   const zFront = -(aF + 0.95);
@@ -407,6 +419,9 @@ export function createVehicle(spec, options = {}) {
         const corr = Math.min(0.35, pen * 0.8);
         D.px += nx * corr * 0.6; D.py += ny * corr * 0.6; D.pz += nz * corr * 0.6;
         const closing = impulse(nx, ny, nz, rxw, ryw, rzw, 0.1, 0.18, 1);
+        // a bank soaks the car's energy, it is not a ramp: what the face deflects upward is mostly lost, so a hit at speed
+        // scrubs along and up a little instead of launching off the top
+        if (D.vy > 2.5 && ny < 0.77) D.vy = 2.5 + (D.vy - 2.5) * 0.25;
         if (closing > 0.2) registerImpact(closing, wx, wz, "terrain", null);
         else impDiss = 0;
       } else {
@@ -424,14 +439,14 @@ export function createVehicle(spec, options = {}) {
         const fz = n.z * fn - (tvz / (tl + 1e-9)) * ff;
         fxs += fx; fys += fy; fzs += fz;
         txs += ryw * fz - rzw * fy; tys += rzw * fx - rxw * fz; tzs += rxw * fy - ryw * fx;
-        if (i < NB_LOW && vn < -2.5 && D.boCool <= 0 && ((i === 8) || (i < 6))) {
+        if (i < NB_LOW && vn < -3.5 && D.boCool <= 0 && ((i === 8) || (i < 6))) {
           const e = ev("impact");
           if (e) { e.strength = clamp01(-vn / 16); e.zone = "under"; e.x = wx; e.z = wz; e.kind = "terrain"; }
-          dmg.impact("under", 0.5 * m * vn * vn * 0.12, b[0], b[2]);
+          dmg.impact("under", 0.5 * m * vn * vn * (uy > 0.8 ? 0.05 : 0.12), b[0], b[2]); // a flat landing that bottoms the car out is cheap; a nose or side landing is not
           D.boCool = 0.25; D.collided = 0;
         }
         if (tl > 4 && fn > 3000) {
-          dmg.scrape(i < 6 && b[2] < 0 ? "front" : "rear", 0.0000035 * tl * fn * dt);
+          dmg.scrape(i < 6 && b[2] < 0 ? "front" : "rear", 0.0000035 * tl * fn * dt * (uy > 0.8 ? 0.2 : 1)); // an upright car skimming its sump over a crest or landing is a scuff, not a wreck
         }
       }
     }
@@ -532,8 +547,11 @@ export function createVehicle(spec, options = {}) {
       let cut = clamp((ms - 0.16) / 0.35, 0, 1);
       // slide angle is meaningless at crawl speed (a car spun round by an impact): ease the cut in with speed
       const sa = Math.abs(state.slideAngle);
-      if (sa > 0.3) cut = Math.max(cut, clamp((sa - 0.3) / 0.5, 0, 1) * 0.8 * clamp((state.speed - 4) / 6, 0, 1));
+      if (sa > SA0) cut = Math.max(cut, clamp((sa - SA0) / SA1, 0, 1) * 0.8 * clamp((state.speed - 4) / 6, 0, 1));
       cut *= Math.min(0.85, opts.assist * 2.2);
+      // keyboard traction aid: a digital pedal is all-or-nothing, so a rear-drive car sits at 40% slip on full throttle.
+      // Close the throttle on the driven-wheel slip ratio (a hard, narrow band) so it settles near the peak of the tyre curve
+      if (dtype === "RWD") cut = Math.max(cut, clamp((ms - TA0) / TA1, 0, 1) * 0.95 * Math.min(1, opts.assist / 0.35) * clamp((state.speed - 2) / 3, 0, 1)); // slip ratio means nothing from a standstill: launch stays free
       thrEff *= 1 - cut;
     }
   }
@@ -588,7 +606,7 @@ export function createVehicle(spec, options = {}) {
     }
     D.thr = 0; D.brk = 0; D.hb = 0; D.steerIn = 0; D.steerAng = 0; D.analogT = 0; D.shiftT = 0; D.shiftLock = 0; D.cutT = 0;
     D.boost = 0; D.prevThr = 0; D.airT = 0; D.airMinVy = 0; D.flipT = 0; D.wgCool = 0; D.limCool = 0; D.impCool = 0; D.boCool = 0;
-    D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
+    D.axLP = 0; D.holdT = 0; D.kick = 0; D.kickCool = 0; D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
     D.gear = 1;
     if (opts.auto) {
       let g = 1;
@@ -675,6 +693,25 @@ export function createVehicle(spec, options = {}) {
     if (D.shiftT > 0) D.shiftT -= dt;
     D.collided += dt; if (D.collided > 99) D.collided = 99;
     softClock += dt;
+
+    // low-passed longitudinal tyre force per mass (drive, engine braking, brakes; not cornering scrub) feeding the
+    // tyre-load transfer below, so a lift or a brake stab shifts weight forward and the tail lets go
+    {
+      const fxSum = W[0].fx + W[1].fx + W[2].fx + W[3].fx;
+      D.axLP += (fxSum / m - D.axLP) * Math.min(1, dt / LT_TAU);
+      // One-shot lift-off kick: only a genuine corner-entry lift fires it (throttle was held high for a while, the wheel is
+      // turned, the last kick is over). A digital throttle chattering on and off never re-arms it.
+      D.kickCool -= dt;
+      D.kick *= Math.exp(-dt / LT_KICK_TAU);
+      if (D.thr > LT_ARM_THR) D.holdT += dt;
+      else if (D.thr < LT_FIRE_THR) {
+        if (D.holdT > LT_ARM_T && D.kickCool <= 0 && spd > 8) {
+          D.kick = clamp((Math.abs(D.steerIn) - 0.05) / 0.15, 0, 1);
+          if (D.kick > 0) D.kickCool = LT_COOL;
+        }
+        D.holdT = 0;
+      }
+    }
 
     processInput(dt, input, fs, stage);
 
@@ -783,6 +820,8 @@ export function createVehicle(spec, options = {}) {
     // surface drag + rolling per wheel computed below
     let totalLoad = 0;
     let powerSkid = 0;
+    // the extra transfer fades out as the body slip angle passes ~7 deg: it starts a rotation, it never winds one up
+    const ltFade = clamp(1 - (Math.abs(Math.atan2(ls, Math.abs(fs) + 0.5)) - 0.12) / 0.25, 0, 1);
     // ground velocity of each wheel is needed; compute forces
     const dmgSusp = state.damage.suspension;
     for (let i = 0; i < 4; i++) {
@@ -820,6 +859,15 @@ export function createVehicle(spec, options = {}) {
       }
       w.fz = fz;
       totalLoad += fz;
+      // tyre load only (body forces keep fz): exaggerated longitudinal load transfer. Under braking or a lift the front
+      // axle gains and the rear axle loses load, so the rear lets go and the car rotates; stronger on loose surfaces.
+      let fzT = fz;
+      if (fz > 1) {
+        const lm = Math.min(2, 1 + LT_SURF * (1 - clamp(SURFACE_INFO[w.surf].mu, 0.4, 1)));
+        const dLT = clamp(-(Math.min(0, D.axLP * LT_SUS) - LT_KICK * LT_KCAP * D.kick) * m * cg / wb * 0.5 * ltGain * lm * ltFade, -0.5 * w.loadRef, 0.5 * w.loadRef);
+        fzT = fz + (w.front ? dLT : -dLT);
+        if (fzT < 1) fzT = 1;
+      }
       // contact point velocity
       const cx = w.cx, cy = w.cy, cz = w.cz;
       const rxw = cx - D.px, ryw = cy - D.py, rzw = cz - D.pz;
@@ -849,7 +897,7 @@ export function createVehicle(spec, options = {}) {
       w.dFx = 0; w.fxTyre = 0;
       if (fz > 1) {
         const grip = tyreGrip[w.surf] * sgTab[w.surf] * (w.front ? spec.handling.gripFront : spec.handling.gripRear) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
-        const o = tyreForce(fz, vxw, vyw, Wom[i] * Rw, w.surf, grip, w.loadRef, Rw);
+        const o = tyreForce(fzT, vxw, vyw, Wom[i] * Rw, w.surf, grip, w.loadRef, Rw);
         fxT = o.fx; fyT = o.fy;
         // stiction safety: forces must not overshoot the slip velocity in one step
         const lim = (m * 0.125) / dt;
@@ -1134,7 +1182,11 @@ export function createVehicle(spec, options = {}) {
         if (st > 0.05) {
           const e = ev("landing");
           if (e) e.strength = st;
-          dmg.landing(st);
+          // damage follows the speed the suspension could not absorb (its travel soaks up ~3.5 m/s) and how flat the car
+          // lands; a clean wheels-down landing at 100-140 km/h is cheap, a nose or side landing is not
+          const flat = clamp01((uy - 0.55) / 0.4);
+          const eff = clamp01((-D.airMinVy - LAND_SOAK) / (11 - LAND_SOAK)) * (1 + 2.5 * (1 - flat));
+          dmg.landing(Math.min(1, eff));
           s.collided = 0; D.collided = 0;
         }
       }

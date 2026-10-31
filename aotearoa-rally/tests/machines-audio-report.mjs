@@ -13,10 +13,22 @@ const out = resolve(a.out || join(tmpdir(), "ar-audio-report"));
 mkdirSync(out, { recursive: true });
 const run = (args) => spawnSync(process.execPath, args, { stdio: ["ignore", "inherit", "inherit"], timeout: 600000 }).status;
 let bad = 0;
+const idleEngine = {};
 for (const id of Object.keys(CARS)) {
   console.log(`\n=== ${id}: engine clips`);
   bad += run(["tests/machines-audio-evidence.mjs", `--out=${join(out, id)}`, `--car=${id}`, "--clips=idle,sweep,shift,turbo"]) ? 1 : 0;
+  // engine-only idle centroid: ambience, effects and voice buses muted, so it measures the engine and nothing shared between cars
+  const r = spawnSync(process.execPath, ["tests/machines-audio-evidence.mjs", `--out=${join(out, id)}`, `--car=${id}`, "--clips=idle", "--mute=ambience,effects,voice"], { encoding: "utf8", timeout: 600000, stdio: ["ignore", "pipe", "inherit"] });
+  const row = (r.stdout || "").split("\n").find((l) => l.startsWith("idle "));
+  idleEngine[id] = row ? Number(row.trim().split(/\s+/).at(-2)) : NaN;
+  if (!Number.isFinite(idleEngine[id])) bad++;
 }
+console.log("\n############ ENGINE-ONLY IDLE CENTROID (Hz; target < 1500, any two cars >= 15 % apart) ############");
+for (const [id, hz] of Object.entries(idleEngine)) console.log(`  ${id.padEnd(12)} ${String(hz).padStart(6)} Hz`);
+const hzs = Object.values(idleEngine).filter(Number.isFinite).sort((x, y) => x - y);
+let minGap = Infinity; for (let i = 1; i < hzs.length; i++) minGap = Math.min(minGap, hzs[i] / hzs[i - 1] - 1);
+console.log(`  smallest gap between two cars: ${(minGap * 100).toFixed(0)} %  ${hzs.every((h) => h < 1500) && minGap >= 0.15 ? "OK" : "FAIL"}`);
+if (!(hzs.every((h) => h < 1500) && minGap >= 0.15)) bad++;
 console.log("\n=== impact + surfaces");
 bad += run(["tests/machines-audio-evidence.mjs", `--out=${join(out, "fx")}`, "--clips=impact,gravel,tarmac"]) ? 1 : 0;
 console.log("\n=== co-driver timing");

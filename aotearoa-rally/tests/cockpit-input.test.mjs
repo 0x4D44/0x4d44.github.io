@@ -125,6 +125,29 @@ test("gamepad: analogue triggers, stick with dead-zone, bumpers and buttons", ()
   inp.dispose();
 });
 
+test("a gamepad that disconnects fires padlost once (event, and a vanished poll entry), never without a pad first", () => {
+  const seen = [];
+  const t = new EventTarget();
+  let gp = pad([0, 0, 0, 0], {});
+  const inp = createInput({ target: t, onAction: (a) => seen.push(a), getGamepads: () => [gp] });
+  inp.poll(1 / 60);
+  gp = null;
+  inp.poll(1 / 60); inp.poll(1 / 60);
+  assert.deepEqual(seen, ["padlost"], "polled pad vanished: one padlost");
+  gp = pad([0, 0, 0, 0], {}); inp.poll(1 / 60);
+  t.dispatchEvent(new Event("gamepaddisconnected"));
+  t.dispatchEvent(new Event("gamepaddisconnected"));
+  assert.deepEqual(seen, ["padlost", "padlost"], "event path: one padlost");
+  assert.equal(inp.gamepadConnected, false);
+  inp.dispose();
+  const none = [];
+  const t2 = new EventTarget();
+  const i2 = createInput({ target: t2, onAction: (a) => none.push(a), getGamepads: () => [] });
+  i2.poll(1 / 60); t2.dispatchEvent(new Event("gamepaddisconnected"));
+  assert.deepEqual(none, [], "no pad ever connected: nothing fires");
+  i2.dispose();
+});
+
 test("touch zone and tilt mapping", () => {
   assert.equal(mapTouchSteer(150, 100, 100), 0);
   assert.ok(mapTouchSteer(100, 100, 100) <= -0.99);

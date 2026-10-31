@@ -178,12 +178,18 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
   T.addEventListener("keyup", onKeyUp);
   if (typeof window !== "undefined" && T !== window) window.addEventListener("blur", onBlur);
   else T.addEventListener("blur", onBlur);
+  let hadPad = false; // a pad was live: losing it (event or a vanished poll entry) fires "padlost" once so the game can pause
   const onPad = (e) => {
     info.gamepadConnected = true;
+    hadPad = true;
     void e;
   };
+  const lostPad = () => {
+    info.gamepadConnected = false;
+    if (hadPad) { hadPad = false; fire("padlost"); }
+  };
   T.addEventListener("gamepadconnected", onPad);
-  T.addEventListener("gamepaddisconnected", () => (info.gamepadConnected = false));
+  T.addEventListener("gamepaddisconnected", lostPad);
 
   const readPads = getGamepads || (() => (typeof navigator !== "undefined" && navigator.getGamepads ? navigator.getGamepads() : []));
   let tiltListener = null;
@@ -259,7 +265,7 @@ export function createInput({ target, onPause, onAction, getGamepads, storage, i
       let gp = null;
       const pads = readPads() || [];
       for (let i = 0; i < pads.length; i++) if (pads[i] && pads[i].connected !== false) { gp = pads[i]; break; }
-      info.gamepadConnected = !!gp;
+      if (gp) { info.gamepadConnected = true; hadPad = true; } else lostPad();
       if (gp && enabled) {
         const m = mapGamepad(gp, pad);
         const active = Math.abs(m.steer) > 0.02 || m.throttle > 0.02 || m.brake > 0.02 || m.handbrake;

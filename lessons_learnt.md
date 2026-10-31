@@ -11,6 +11,90 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-30 - A browser key proxy is load-noisy: same code gave 9 % and 0 % off-road (tests/harness.mjs:keyDown)
+  The kbdrive proxy injects real CDP key events at wall-clock times against a live rAF loop, so box load (other lanes'
+  Chrome, other sessions) changes the latency and the result. One run per cell under load showed a regression that two
+  quiet repeats did not (coromandel kea 9.3 % off-road with damage, then 0.0 %). Tune on a node-side replica with many
+  seeds, confirm in Chrome twice, and serialise timing runs across lanes with a lock file (.scratch/chrome.lock).
+
+- 2026-10-30 - A grip change moves par times and the cornering floor: rerun calibrate-par (core/cars.mjs:surfGrip)
+  Lowering Huia's tarmac grip from 0.87 to 0.845 for keyboard handling put its steady-state peak at 0.79 g, under the
+  0.8 g floor in tests/dynamics-physics.test.mjs, and every grip change shifts the bot laps behind core/partimes.mjs
+  (tests/dynamics-bot.test.mjs fails until tests/calibrate-par.mjs is rerun). Fix the grip, never the floor.
+
+- 2026-10-30 - Codex image generation works from the lead session, not from a lane subagent (tools/textures/gen-raw.py)
+  WORLD's subagent reported it could not call codex exec; the same command run from the lead session painted all ten
+  textures (rocks, toetoe, pohutukawa, wool, grass) in one pass. Generate the raw PNGs from the lead into the worktree
+  .scratch, then let the lane process them with tools/textures/build-textures.py.
+
+- 2026-10-30 - Warm the garage with renderer.compileAsync, not a blocking compile (ui/showroom.mjs:warm)
+  A synchronous pre-warm at boot only moves the stall: the page froze for seconds and the first garage open still
+  hitched. compileAsync with KHR_parallel_shader_compile links off the main thread; gate the showroom fade-in on it
+  and let the loading bar move meanwhile.
+
+- 2026-10-30 - A Node global in a shipped module imports fine in node and throws in Chrome (core/physics.mjs:LT_KICK)
+  DYNAMICS left process.env tuning hooks in physics.mjs mid-retune. node --check and a node import() passed; in Chrome
+  the module threw a ReferenceError, game.mjs:tryImport returned null and the game said "physics/cars module missing"
+  for every lane's browser run. Keep tuning knobs out of shipped modules (sweep on a scratch copy), and prove a core
+  change with one hidden-Chrome startStage, not only the node suite.
+
+- 2026-10-29 - Classify a hitch by what grew that frame, not by its wall-clock length (render/renderer.mjs:getStats)
+  The box is shared and often at 100% CPU, so a 90 ms frame can be somebody else's build. Log programs, geometries and
+  textures per frame: a frame where one of them grows is ours (a late compile or upload), a long frame where none grows
+  is load. Fix the first kind; report the second kind as noise with the box load beside it.
+
+- 2026-10-29 - Compile shaders under the render target the game really draws into (render/renderer.mjs:warmup)
+  renderer.compile against the canvas built programs with different cache keys from the half-float HDR target the scene
+  renders into, so a cold-cache first frame still froze 8 to 12 s inside getProgramInfoLog (synchronous link) behind a
+  finished-looking overlay. Compile under the real targets and yield a frame per step (warmup onProgress) so the bar
+  moves. Prove it by comparing the live program count after warm-up with the count after 60 s of play: they must match.
+
+- 2026-10-29 - Under vsync no frame beats 16.7 ms, so scale-up-when-fast never fires (render/quality.mjs:createGovernor)
+  The old governor raised the render scale only when the average frame time fell below 0.78x the target. On a 60 Hz
+  display that cannot happen, so one bad moment pinned quality low for the rest of the run. The governor now probes: after
+  probeMs of frames at or under 1.05x target it steps the scale up, and if the probe degrades within 3 s it reverts and
+  doubles the wait (cap probeMaxMs). tests/world-quality-governor.test.mjs drives it with synthetic frame times.
+
+- 2026-10-29 - Git Bash tar reads "H:" as a remote host; pass --force-local (scratch snapshots via git archive | tar)
+  tar -xf H:/path fails with "Cannot connect to H: resolve failed". Use tar --force-local -xf <file> -C <dir>.
+  node --import also needs a file:/// URL for a script path on Windows; a plain H:/ path is rejected.
+
+- 2026-10-29 - A NaN in the bloom input blacks the whole frame with no console error (render/road.mjs:makeRoadMaterial)
+  exp(-along*0.3) overflowed to Infinity for a car far behind the glow (after a teleport or an R respawn); times a
+  zero smoothstep it gave NaN, and bloom smeared it over the image at quality medium and high. The HUD stayed live
+  and nothing was logged. tests/harness.mjs:luma() reads the canvas page-side in the same task as a render, and the
+  browser suite checks the view is not black after a teleport at speed. A drawImage of a WebGL canvas without
+  preserveDrawingBuffer reads black at any other time, so judge pictures from screenshots, not from that sample.
+
+- 2026-10-29 - A stale rAF stamp after a long block fakes a hitch (core/frameclock.mjs:createFrameClock)
+  The shader warm-up blocks the main thread for 5 to 7 s behind the loading overlay (cold cache, real GPU). A rAF
+  callback queued before the block still ran after it, stamped with the old time; the loop set last = that stamp,
+  so the next frame saw dt = the block and __AR__.perf().worstFrameMs read 5.8 s in play. The clock now ignores a
+  stamp that is not newer than its last accepted time, and reset() starts it fresh after the block. Found with a
+  page-side rAF + longtask recorder: the block is warm-up's gl.finish(), covered by the overlay.
+
+- 2026-10-29 - codex exec paints textures: save the PNG into -C dir, run four at once (tools/textures/gen-raw.py:run)
+  deltic timeout 280 codex exec --json --skip-git-repo-check -C <dir> -s workspace-write -c approval_policy=never
+  -m gpt-6.1-sol -c model_reasoning_effort=medium "<one-line prompt>" </dev/null. Say "no text, no letters" in
+  every prompt, then crop/tile/convert with Pillow (tools/textures/build-textures.py). PROMPTS.md next to each
+  tool records the prompts, as the licence note requires.
+
+- 2026-10-29 - The responsive test samples at 450 ms and sees only our loading overlay (tests/responsive.test.mjs:delay)
+  For aotearoa-rally that makes the 129-document pass blind to the menu, briefing and HUD. The game's own
+  tests/browser.test.mjs measures scrollWidth and the Almanac pill on the real screens at 390x844; keep both.
+
+- 2026-10-29 - An OfflineAudioContext render over 3 s hung on an undefined updater call (audio/surface.mjs:api.ping)
+  The MACHINES lane traced the hang to surface.mjs calling api.ping, which the returned API did not define; the
+  browser and the box were fine. When an offline render never resolves, look for a throw in the per-block updater
+  before blaming WebAudio. tests/machines-audio-report.mjs now renders and measures idle, sweep and surfaces.
+
+- 2026-10-29 - Headless Chrome fps needs real-GPU flags; the extension tab throttles rAF (tests/harness.mjs:openGame)
+  Default headless flags give SwiftShader (software GL), so frame times are far worse than a player sees. On the
+  RTX box add --use-angle=d3d11 --enable-gpu-rasterization --disable-gpu-vsync --disable-frame-rate-limit
+  (measured 400-700 fps at 1080p high on otago and fiordland). The Claude-in-Chrome tab throttles
+  requestAnimationFrame to about 1.3 per second even on a static page (about.html), so a 3 fps reading there says
+  nothing about the game. Add --disable-gpu-shader-disk-cache to emulate a first visit.
+
 - 2026-10-31 - TV advert dulls under ACES: plan-to-build/index.html:mat3 screen sets toneMapped=false (tv.test.mjs)
   Read TVAD back through a scratch canvas (willReadFrequently): getImageData on the live GPU canvas hashed the same picture differently
   and logged a console warning. The ad is painted by adFrame(u), a pure function of u, so seeking back repaints the same picture.

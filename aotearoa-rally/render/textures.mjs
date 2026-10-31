@@ -4,15 +4,27 @@ import { hash2 } from "../core/rng.mjs";
 
 export const TEX_NAMES = {
   road: ["road_gravel", "road_dirt", "road_tarmac", "road_mud", "road_snow", "road_pumice"],
-  ground: ["gnd_grass", "gnd_tussock", "gnd_leaf", "gnd_schist", "gnd_limestone", "gnd_moss_rock", "gnd_sand", "gnd_snow", "gnd_fern"],
+  ground: ["gnd_grass2", "gnd_tussock", "gnd_leaf", "gnd_schist", "gnd_limestone", "gnd_moss_rock", "gnd_sand", "gnd_snow", "gnd_fern"],
   bark: ["bark_redwood", "bark_beech", "bark_pine"],
   foliage: ["foliage_fern", "foliage_pine", "foliage_broadleaf", "foliage_flax", "foliage_grass"],
+  // loaded only for the stage that uses them (see stageTextures / ensure)
+  rock: ["rock_schist", "rock_limestone", "rock_volcanic", "rock_coastal", "rock_fiord", "rock_cliff"],
+  lazyOther: ["wool_fleece", "foliage_toetoe", "foliage_pohutukawa"],
 };
+export const LAZY_TEX = new Set([...TEX_NAMES.rock, ...TEX_NAMES.lazyOther]);
+export const BIOME_ROCK = { pasture: "rock_limestone", redwood: "rock_volcanic", coast: "rock_coastal", tussock: "rock_schist", alpine: "rock_cliff", rainforest: "rock_fiord" };
+/** The lazy textures a stage needs: its biome rock, plus fleece for sheep country and the coastal foliage cards. */
+export function stageTextures(biome) {
+  const out = [BIOME_ROCK[biome] ?? "rock_limestone"];
+  if (biome === "pasture" || biome === "coast" || biome === "tussock") out.push("wool_fleece");
+  if (biome === "coast") out.push("foliage_toetoe", "foliage_pohutukawa");
+  return out;
+}
 export const ALL_TEX_NAMES = [...TEX_NAMES.road, ...TEX_NAMES.ground, ...TEX_NAMES.bark, ...TEX_NAMES.foliage];
 
 const BASE_COLOR = {
   road_gravel: 0x8d8576, road_dirt: 0x8f7656, road_tarmac: 0x4d4d50, road_mud: 0x4a3a2b, road_snow: 0xdfe7ef, road_pumice: 0xcdbf9f,
-  gnd_grass: 0x5f8a3a, gnd_tussock: 0xa9945a, gnd_leaf: 0x5b4630, gnd_schist: 0x6f736a, gnd_limestone: 0xb9b5a3,
+  gnd_grass2: 0x6a9a3a, rock_schist: 0x6f737a, rock_limestone: 0xb9b5a3, rock_volcanic: 0x4a3a30, rock_coastal: 0xa87a50, rock_fiord: 0x4a4e4a, rock_cliff: 0x70756d, wool_fleece: 0xe4dccb, gnd_tussock: 0xa9945a, gnd_leaf: 0x5b4630, gnd_schist: 0x6f736a, gnd_limestone: 0xb9b5a3,
   gnd_moss_rock: 0x4c5a3c, gnd_sand: 0xcdb98a, gnd_snow: 0xf2f6fa, gnd_fern: 0x3f6a34,
   bark_redwood: 0x6b3d26, bark_beech: 0x5d5648, bark_pine: 0x7a5a40,
 };
@@ -47,7 +59,7 @@ export function proceduralCanvas(name, size = 128) {
   const seed = name.length * 131 + name.charCodeAt(name.length - 1);
   const bark = name.startsWith("bark_");
   const gravel = name === "road_gravel" || name === "road_pumice" || name === "gnd_sand";
-  const grass = name === "gnd_grass" || name === "gnd_tussock" || name === "gnd_fern";
+  const grass = name === "gnd_grass2" || name === "gnd_tussock" || name === "gnd_fern";
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = x / size, v = y / size;
@@ -134,9 +146,11 @@ export async function loadTextureSet(THREE, { quality = "high", anisotropy = 4, 
     const r = await fetch(base + "manifest.json", { cache: "no-cache" });
     if (r.ok) manifest = await r.json();
   } catch { /* procedural only */ }
-  const entries = manifest?.textures ? Object.entries(manifest.textures) : [];
+  const all = manifest?.textures ? Object.entries(manifest.textures) : [];
+  const entries = all.filter(([n]) => !LAZY_TEX.has(n)); // stage-specific ones are fetched by ensure()
+  const lazyEntries = new Map(all.filter(([n]) => LAZY_TEX.has(n)));
   let done = 0;
-  const tasks = entries.map(async ([name, e]) => {
+  const loadOne = async (name, e) => {
     try {
       let img = await loadImage(base + e.file);
       if (texScale < 1 && !e.alpha) img = halve(img);
@@ -150,10 +164,8 @@ export async function loadTextureSet(THREE, { quality = "high", anisotropy = 4, 
         } catch { /* no normal */ }
       }
     } catch { /* leave to fallback */ }
-    done++;
-    onProgress?.(done / Math.max(1, entries.length), "textures");
-  });
-  await Promise.all(tasks);
+  };
+  await Promise.all(entries.map(async ([name, e]) => { await loadOne(name, e); done++; onProgress?.(done / Math.max(1, entries.length), "textures"); }));
 
   const mk = (img, srgb) => {
     const t = new THREE.Texture(img);
@@ -168,6 +180,10 @@ export async function loadTextureSet(THREE, { quality = "high", anisotropy = 4, 
   };
   const api = {
     real,
+    /** Fetch stage-specific textures (idempotent). Call before building the materials that read them. */
+    async ensure(names) {
+      await Promise.all(names.filter((n) => lazyEntries.has(n) && !real.has(n)).map((n) => loadOne(n, lazyEntries.get(n))));
+    },
     isReal: (n) => real.has(n),
     meters: (n) => meters.get(n) ?? (n.startsWith("road_") ? 3 : n.startsWith("bark_") || n.startsWith("foliage_") ? 1.5 : 6),
     /** Drawable (Image/canvas) for atlases. */
@@ -185,7 +201,7 @@ export async function loadTextureSet(THREE, { quality = "high", anisotropy = 4, 
       if (!cache.has(k)) cache.set(k, mk(normals.get(n), false));
       return cache.get(k);
     },
-    setAnisotropy(a) { for (const t of cache.values()) { t.anisotropy = a; } },
+    setAnisotropy(a) { anisotropy = a; for (const t of cache.values()) { t.anisotropy = a; } },
     dispose() { for (const t of cache.values()) t.dispose(); cache.clear(); },
   };
   return api;

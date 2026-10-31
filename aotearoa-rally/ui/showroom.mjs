@@ -34,6 +34,20 @@ export function createShowroom(canvas, createCarVisual) {
   scene.add(pivot);
   let car = null, raf = 0, running = false, angle = 0.6, drag = false, lastX = 0, idle = 0, reduced = false;
   let last = performance.now();
+  // Shader compile never happens inside render(): with KHR_parallel_shader_compile the GPU process compiles while the main
+  // thread stays free (compileAsync); frame() waits for `ready`. Without the extension there is nothing to wait on.
+  const parallel = !!(renderer.extensions && renderer.extensions.has && renderer.extensions.has("KHR_parallel_shader_compile"));
+  let ready = !parallel, gen = 0, pending = Promise.resolve();
+  canvas.style.transition = "opacity .3s ease";
+  canvas.style.opacity = ready ? "1" : "0";
+  function compile() {
+    if (!parallel) return Promise.resolve();
+    const mine = ++gen;
+    ready = false;
+    const done = () => { if (mine === gen) { ready = true; canvas.style.opacity = "1"; } };
+    pending = Promise.resolve().then(() => renderer.compileAsync(scene, cam)).then(done, done);
+    return pending;
+  }
 
   function resize() {
     const w = canvas.clientWidth || 300, h = canvas.clientHeight || 200;
@@ -46,6 +60,7 @@ export function createShowroom(canvas, createCarVisual) {
   function frame(now) {
     if (!running) return;
     raf = requestAnimationFrame(frame);
+    if (!ready) { last = now; return; }
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     if (!drag && !reduced) angle += dt * 0.35;
@@ -80,6 +95,7 @@ export function createShowroom(canvas, createCarVisual) {
         car.setShowroom && car.setShowroom(true);
         car.object3d.position.y = Number.isFinite(car.groundOffset) ? car.groundOffset : 0; // tyres at y = 0
         pivot.add(car.object3d);
+        if (running) compile();
       } catch (e) {
         car = null;
         console.error("showroom car failed", e);
@@ -92,6 +108,7 @@ export function createShowroom(canvas, createCarVisual) {
       if (running) return;
       running = true;
       resize();
+      compile();
       last = performance.now();
       raf = requestAnimationFrame(frame);
       window.addEventListener("resize", resize);
@@ -102,7 +119,20 @@ export function createShowroom(canvas, createCarVisual) {
       window.removeEventListener("resize", resize);
     },
     resize,
+    /** Compile the programs of each {spec, livery} in turn without blocking the main thread; resolves to the program count. */
+    async warm(list) {
+      if (!parallel) return -1;
+      for (const w of list) {
+        api.setCar(w.spec, w.livery || 0);
+        await compile();
+        await new Promise((r) => setTimeout(r, 0)); // yield between cars
+      }
+      return renderer.info.programs ? renderer.info.programs.length : 0;
+    },
+    get parallel() { return parallel; },
+    programCount() { return renderer.info.programs ? renderer.info.programs.length : 0; },
     dispose() {
+      gen++;
       api.stop();
       if (car) { car.dispose && car.dispose(); car = null; }
       floor.geometry.dispose(); floor.material.dispose(); ring.geometry.dispose(); ring.material.dispose();

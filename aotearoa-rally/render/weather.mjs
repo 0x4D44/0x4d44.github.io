@@ -4,6 +4,7 @@
 const PARTICLE_VERT = /* glsl */ `
 attribute vec3 aSeed; attribute vec2 aCorner;
 uniform vec3 uCam; uniform vec3 uVel; uniform vec3 uStreak; uniform float uNear; uniform vec3 uBox; uniform float uTime; uniform float uSize; uniform float uLen; uniform float uSway;
+uniform float uCabinOn; uniform mat4 uCabinInv; uniform vec4 uCabinA; uniform vec4 uCabinB;
 varying vec2 vC; varying float vFade; varying float vDist;
 void main(){
   vec3 base = aSeed * uBox;
@@ -30,6 +31,13 @@ void main(){
   // fade at the box boundary and very near the camera
   vec3 rel = (p - uCam) / (uBox * 0.5);
   vFade = (1.0 - smoothstep(0.7, 1.0, max(abs(rel.x), max(abs(rel.y), abs(rel.z))))) * smoothstep(uNear * 0.35, uNear, d);
+  // cockpit view: nothing is drawn inside the cabin volume (behind the windscreen, under the roof): it would float over the headliner
+  if (uCabinOn > 0.5) {
+    vec3 l = (uCabinInv * vec4(p, 1.0)).xyz;
+    float t = clamp((l.y - uCabinB.y) / (uCabinB.w - uCabinB.y), 0.0, 1.0);
+    float zs = uCabinB.x + (uCabinB.z - uCabinB.x) * t;
+    if (abs(l.x) < uCabinA.x && l.y > uCabinA.y && l.y < uCabinA.z && l.z > zs && l.z < uCabinA.w) vFade = 0.0;
+  }
   gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
 }`;
 
@@ -57,7 +65,7 @@ void main(){
   float ph = fract(uTime * (0.9 + 0.6 * aSeed.z) + aSeed.y * 7.0);
   vec2 off = (aSeed.xz * 2.0 - 1.0) * uRadius;
   vec3 c = vec3(uCenter.x + off.x, uGroundY + 0.03, uCenter.z + off.y);
-  float s = 0.05 + ph * 0.24;
+  float s = (0.04 + ph * 0.24) * (0.55 + 0.9 * fract(aSeed.x * 37.1 + aSeed.z * 11.3)); // random final radius
   vC = aCorner; vPh = ph;
   // fades: born soft, dies slowly, thins out toward the edge of the patch and with camera distance
   float dist = length(c - cameraPosition);
@@ -74,7 +82,7 @@ void main(){
   // thin gaussian ring whose width follows the quad's pixel footprint, plus a faint inner echo; no hard edge anywhere
   float w = max(0.2, fwidth(r) * 2.2);
   float ring = exp(-pow((r - 0.72) / w, 2.0)) + 0.35 * exp(-pow((r - 0.42) / (w * 1.2), 2.0)) * smoothstep(0.15, 0.5, vPh);
-  float a = ring * smoothstep(1.0, 0.8, r) * vA * uAlpha * 0.6;
+  float a = ring * smoothstep(1.0, 0.8, r) * vA * uAlpha * 0.45;
   if (a < 0.006) discard;
   gl_FragColor = vec4(uColor, a);
 }`;
@@ -119,7 +127,18 @@ export function createWeather(THREE, { SU, getCfg }) {
     uCam: { value: new THREE.Vector3() }, uVel: { value: new THREE.Vector3(0, -9, 0) }, uBox: { value: new THREE.Vector3(26, 17, 26) },
     uStreak: { value: new THREE.Vector3(0, -1, 0) }, uNear: { value: 5 }, uTime: { value: 0 }, uSize: { value: 0.016 }, uLen: { value: 0.9 }, uSway: { value: 0.6 },
     uColor: { value: new THREE.Color(0.72, 0.78, 0.86) }, uAlpha: { value: 0.35 }, uLight: { value: 1 },
+    uCabinOn: { value: 0 }, uCabinInv: { value: new THREE.Matrix4() }, uCabinA: { value: new THREE.Vector4() }, uCabinB: { value: new THREE.Vector4() },
   });
+  const setCabin = (cabin) => {
+    for (const u of [rainU, snowU]) {
+      const on = !!(cabin && cabin.on);
+      u.uCabinOn.value = on ? 1 : 0;
+      if (!on) continue;
+      const v = cabin.vol;
+      u.uCabinInv.value.copy(cabin.inv);
+      u.uCabinA.value.set(v.hw, v.ymin, v.ymax, v.zRear); u.uCabinB.value.set(v.zb, v.yb, v.zh, v.yh);
+    }
+  };
   const rainU = common();
   const snowU = common();
   snowU.uVel.value.set(0.6, -1.4, 0.3); snowU.uSize.value = 0.07; snowU.uAlpha.value = 1.0; snowU.uNear.value = 4.5;
@@ -176,8 +195,9 @@ export function createWeather(THREE, { SU, getCfg }) {
       return state;
     },
     /** lightLevel 0..1.2: scene brightness so rain/snow are not glowing at night. */
-    update(dt, time, camPos, carPos, carVel, lightLevel, fogColor) {
+    update(dt, time, camPos, carPos, carVel, lightLevel, fogColor, cabin) {
       if (!rain) return;
+      setCabin(cabin);
       SU.uTime.value = time;
       state.flash = 0;
       if (state.storm) {

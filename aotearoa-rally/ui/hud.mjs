@@ -49,7 +49,7 @@ export function createHud(root) {
   el.dot = h("i", { style: { position: "absolute", top: "0", width: "2px", bottom: "0", background: "#ffc81e", boxShadow: "0 0 6px #ffc81e", left: "0" } });
   el.fill = h("i", { style: { position: "absolute", top: "0", bottom: "0", left: "0", width: "0", background: "linear-gradient(90deg, rgba(255,200,30,.05), rgba(255,200,30,.34))", mixBlendMode: "screen" } });
   el.progWrap = h("div", { class: "h-prog hud-glass" }, el.prog, el.fill, el.dot);
-  el.pen = h("div", { class: "h-hint" });
+  el.pen = h("div", { class: "h-hint h-pen" });
   root.append(h("div", { class: "h-top" }, el.time, h("div", { class: "h-delta" }, el.dPB, el.dRiv), el.progWrap, el.pen));
   // minimap
   el.mini = h("canvas");
@@ -247,7 +247,9 @@ export function createHud(root) {
           g2.stroke();
           g2.fill();
         }
-        if (run && run.status === "running") {
+        if (run && run.status === "running" && run.assisted) {
+          set("dpb", el.dPB, null, fnDelta); set("dr", el.dRiv, null, fnDelta); // teleported: the clock no longer matches the position
+        } else if (run && run.status === "running") {
           this.deltas(run.time + run.penaltyTotal, state.s);
         }
         this.notesUpdate(state.s);
@@ -328,7 +330,7 @@ export function createHud(root) {
           row.dataset.icon = n.icon;
           row.firstChild.innerHTML = glyphSvg(n.icon);
         }
-        row.children[1].textContent = n.text;
+        row.children[1].textContent = n.text.replace(/\bdont\b/gi, "don't"); // the pacenote text (STAGES) says "dont cut"
         row.children[2].textContent = Math.max(0, Math.round((n.s - s) / 10) * 10) + " m";
       }
     },

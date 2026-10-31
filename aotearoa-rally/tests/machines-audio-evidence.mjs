@@ -9,6 +9,7 @@ import os from "node:os"; os.setPriority(0, os.constants.priority.PRIORITY_LOW);
 // (a "click" detector), spectral centroid, and for idle/sweep the measured fundamental versus the model's fundamental.
 // --mute renders with the named buses silenced, to attribute a click to a bus.
 import { mkdir, writeFile } from "node:fs/promises";
+import { mag, db, spectralCentroid, modelPitchCheck } from "./audio-analysis.mjs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { deflateSync } from "node:zlib";
@@ -24,32 +25,7 @@ const CLIPS = args.clips ? String(args.clips).split(",") : ALL;
 const MUTE = args.mute ? String(args.mute).split(",") : [];
 const TIMEOUT = Number(args.timeout || 60000);
 
-function fft(re, im) {
-  const n = re.length;
-  for (let i = 1, j = 0; i < n; i++) { let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
-  for (let len = 2; len <= n; len <<= 1) {
-    const ang = (-2 * Math.PI) / len, wr = Math.cos(ang), wi = Math.sin(ang);
-    for (let i = 0; i < n; i += len) {
-      let cr = 1, ci = 0;
-      for (let j = 0; j < len / 2; j++) {
-        const a = i + j, b = i + j + len / 2;
-        const vr = re[b] * cr - im[b] * ci, vi = re[b] * ci + im[b] * cr;
-        re[b] = re[a] - vr; im[b] = im[a] - vi; re[a] += vr; im[a] += vi;
-        const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
-      }
-    }
-  }
-}
-function mag(x, start, n) {
-  const re = new Float64Array(n), im = new Float64Array(n);
-  for (let i = 0; i < n; i++) re[i] = (x[start + i] || 0) * (0.5 - 0.5 * Math.cos((2 * Math.PI * i) / n));
-  fft(re, im);
-  const m = new Float64Array(n / 2);
-  for (let i = 0; i < n / 2; i++) m[i] = Math.hypot(re[i], im[i]);
-  return m;
-}
 const f32 = (b64) => { const b = Buffer.from(b64, "base64"); return new Float32Array(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)); };
-const db = (v) => (v > 1e-9 ? 20 * Math.log10(v) : -180);
 
 function metrics(L, R, sr) {
   let peak = 0, sum = 0, dc = 0, run = 0, longest = 0, jump = 0, jumpAt = 0, nan = 0;
@@ -75,32 +51,25 @@ function metrics(L, R, sr) {
     const score = d / (Math.sqrt(s2 / Math.max(1, c)) + 1e-6);
     if (score > click) { click = score; clickAt = i; }
   }
-  const N = 4096;
-  let cen = 0, tot = 0;
-  const frames = Math.max(1, Math.floor((n - N) / N));
-  for (let f = 0; f < frames; f++) { const m = mag(L, f * N, N); for (let k = 1; k < m.length; k++) { cen += m[k] * k; tot += m[k]; } }
   return {
     peakDb: +db(peak).toFixed(1), peakR: +pkR.toFixed(3), peak: +peak.toFixed(3), rmsDb: +db(Math.sqrt(sum / n)).toFixed(1), dc: +(dc / n).toExponential(1),
     clippedRun: longest, maxJump: +jump.toFixed(3), maxJumpAtMs: +((jumpAt / sr) * 1000).toFixed(1), clickScore: +click.toFixed(1), clickAtMs: +((clickAt / sr) * 1000).toFixed(1), nan,
-    centroidHz: Math.round((cen / (tot || 1)) * (sr / N)),
+    centroidHz: spectralCentroid(L, sr),
   };
 }
 
 function fundamentals(L, sr, rpmAt, spec, dur) {
-  const N = 8192, chr = engineCharacter(spec), e = spec.engine;
-  const out = [];
+  // Model-frequency check, NOT an unconstrained peak pick: for each window, how far above its neighbouring bins the energy at the
+  // model firing frequency f and at 2f stands (dB). peakHz is the unconstrained strongest bin, printed only for comparison: on a
+  // clean synthetic pulse train it already reads 2f for some rates (see tests/machines-audio-analysis.test.mjs), so a peakHz
+  // that is not f is NOT evidence that the engine fails to track rpm. halfDb (f/2) is reported but never judged: a V8 lope or
+  // flat-four burble legitimately carries sub-harmonic energy there.
+  const chr = engineCharacter(spec), e = spec.engine, out = [];
   for (let w = 0; w < rpmAt.length; w++) {
     const t = ((w + 0.5) * dur) / rpmAt.length;
-    const start = Math.max(0, Math.floor(t * sr - N / 2));
-    const m = mag(L, start, N);
-    let best = 0, bi = 0;
-    const lo = Math.floor((20 * N) / sr), hi = Math.ceil((600 * N) / sr);
-    for (let k = lo; k < hi; k++) if (m[k] > best) { best = m[k]; bi = k; }
-    const meas = (bi * sr) / N;
     const model = engineVoice(rpmAt[w], 1, 0, e.idleRpm, e.redline, chr).fundHz;
-    // energy (dB) at the firing frequency f0 and at f0/2 and 2*f0: a healthy engine has f0 >= f0/2 (no octave-low sub)
-    const at = (hz) => { const k = Math.round((hz * N) / sr); let b = 0; for (let q = k - 1; q <= k + 1; q++) b = Math.max(b, m[q] || 0); return +db(b / N).toFixed(1); };
-    out.push({ t: +t.toFixed(2), rpm: Math.round(rpmAt[w]), measHz: Math.round(meas), modelHz: Math.round(model), halfDb: at(model / 2), f0Db: at(model), f2Db: at(model * 2) });
+    const c = modelPitchCheck(L, sr, t * sr, model);
+    out.push({ t: +t.toFixed(2), rpm: Math.round(rpmAt[w]), modelHz: Math.round(model), f0Db: c.f0Db, f2Db: c.f2Db, tracks: Math.max(c.f0Db, c.f2Db) >= 10, halfDb: c.halfDb, peakHz: c.peakHz });
   }
   return out;
 }
@@ -166,7 +135,15 @@ for (const clip of CLIPS) {
     console.log(JSON.stringify({ clip, error: killed ? "TIMEOUT (60 s)" : String(e.message || e) }));
   } finally { clearTimeout(timer); await h.close(); }
 }
-console.log("\nclip      peakdB  rmsdB   dc        clipRun  maxJump  jump@ms  click  click@ms centroid  renderMs");
+// Click score = largest adjacent-sample jump / RMS of the jumps within +-512 samples. A pulse-train engine scores 4-12 on a clean
+// clip by construction (its pulse edges are steep). Round-4 baseline: the worst clean clip (no discrete event, no mute) over four cars
+// x idle/sweep/turbo/gravel/tarmac was 12.4 (takahe sweep). A clip is flagged only above 1.5 x that, so the column means
+// "a click well outside what the engine's own pulses produce", not "any peak".
+const CLICK_BASELINE = 12.4, CLICK_LIMIT = +(1.5 * CLICK_BASELINE).toFixed(1);
+console.log(`\nclip      peakdB  rmsdB   dc        clipRun  maxJump  jump@ms  click  click@ms centroid  renderMs   (click flagged above ${CLICK_LIMIT}; baseline ${CLICK_BASELINE})`);
 for (const r of rows) console.log(`${r.clip.padEnd(9)} ${String(r.peakDb).padStart(6)} ${String(r.rmsDb).padStart(6)}  ${String(r.dc).padEnd(9)} ${String(r.clippedRun).padStart(7)} ${String(r.maxJump).padStart(8)} ${String(r.maxJumpAtMs).padStart(8)} ${String(r.clickScore).padStart(6)} ${String(r.clickAtMs).padStart(8)} ${String(r.centroidHz).padStart(8)} ${String(r.renderMs).padStart(9)}`);
+const flagged = rows.filter((r) => r.clickScore > CLICK_LIMIT);
+console.log(flagged.length ? `CLICK FLAGGED: ${flagged.map((r) => `${r.clip} ${r.clickScore}@${r.clickAtMs}ms`).join(", ")}` : "click: none above the limit");
+console.log("pitch column: f0Db / f2Db = dB the line at the MODEL firing frequency f / 2f stands above its neighbouring bins (tracks = max >= 10). halfDb (f/2) is informational: a V8 lope or flat-four burble legitimately has sub-harmonic energy there. peakHz is the unconstrained peak pick and is NOT a rpm-tracking verdict (it reads 2f on a clean synthetic train).");
 console.log("files in", OUT);
 process.exit(0);

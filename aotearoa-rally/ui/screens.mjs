@@ -105,7 +105,7 @@ export function createScreens(root, ctx) {
         h("div", { class: "kicker" }, "Main menu"),
         status,
         h("div", { class: "menu-list" }, items),
-        h("div", { class: "screen-foot" }, h("span", { class: "muted", style: { fontSize: "12px", letterSpacing: ".12em" } }, "↑↓ select · Enter confirm · Esc back")),
+        h("div", { class: "screen-foot" }, h("span", { class: "muted kbd-hint", style: { fontSize: "12px", letterSpacing: ".12em" } }, "↑↓ select · Enter confirm · Esc back")),
       ], "keyart");
     },
 
@@ -147,16 +147,24 @@ export function createScreens(root, ctx) {
       const step = (d) => { idx = (idx + d + carIds.length) % carIds.length; lv = 0; ctx.sfx && ctx.sfx("click"); redraw(); };
       showroom.append(h("button", { class: "arrow l btn", type: "button", "aria-label": "Previous car", onclick: () => step(-1) }, "◀"), h("button", { class: "arrow r btn", type: "button", "aria-label": "Next car", onclick: () => step(1) }, "▶"));
       mount("car", "plain", [
-        head(title, "Garage"),
+        head(title === "Garage" ? "Pick a car and a livery" : title, "Garage"),
         h("div", { class: "car-layout" }, showroom, info),
         h("div", { class: "screen-foot" }, backBtn(onBack, backLabel), h("span", { class: "spacer" }), btn(confirmLabel, () => onConfirm(carIds[idx], lv), "primary", { "data-focus": "1" })),
       ]);
-      sr = ctx.createShowroom ? ctx.createShowroom(canvas) : null;
-      if (sr) { sr.start(); } else showroom.append(h("p", { class: "muted", style: { position: "absolute", inset: "auto 12px 12px" } }, "3D preview unavailable"));
       redraw();
+      // Paint the garage chrome first, then build the renderer and the car in separate tasks so no single task
+      // runs long; the showroom fades its canvas in once its own compileAsync has resolved.
+      let dead = false;
+      setTimeout(() => {
+        if (dead) return;
+        sr = ctx.createShowroom ? ctx.createShowroom(canvas) : null;
+        if (!sr) { showroom.append(h("p", { class: "muted", style: { position: "absolute", inset: "auto 12px 12px" } }, "3D preview unavailable")); return; }
+        sr.start();
+        setTimeout(() => { if (!dead && sr) sr.setCar(spec(), lv); }, 0);
+      }, 0);
       const onKey = (e) => { if (e.key === "[" ) step(-1); if (e.key === "]") step(1); };
       window.addEventListener("keydown", onKey);
-      cleanup = () => { window.removeEventListener("keydown", onKey); sr && sr.dispose(); };
+      cleanup = () => { dead = true; window.removeEventListener("keydown", onKey); sr && sr.dispose(); };
     },
 
     // ---------------------------------------------------------------- stage select
@@ -238,7 +246,8 @@ export function createScreens(root, ctx) {
       const me = sheet && sheet.find((r) => r.player);
       const splitEls = (result.splits || []).filter((s) => s.index < (result.splits.length)).map((s, i) => {
         const b = bestSplits && bestSplits[s.index];
-        const delta = b != null ? s.time - b : null;
+        const delta = b != null && !result.assisted ? s.time - b : null;
+        if (result.assisted) return h("div", null, h("span", { class: "muted" }, s.name || `Split ${i + 1}`), h("span", { class: "num muted" }, "-"));
         return h("div", null, h("span", { class: "muted" }, s.name || `Split ${i + 1}`), h("span", { class: "num" }, fmtTime(s.time, true), delta != null ? h("span", { class: delta <= 0 ? " gain" : " loss" }, " " + fmtDelta(delta)) : null));
       });
       const trial = mode === "trial";
@@ -255,7 +264,8 @@ export function createScreens(root, ctx) {
         h("div", { class: "res-hero" },
           h("div", null, h("div", { class: "kicker" }, dnf ? "Result" : "Stage time"), h("div", { class: "big-time" }, dnf ? "DNF" : fmtTime(result.total)),
             h("div", { class: "chips", style: { marginTop: "8px" } },
-              isBest ? h("span", { class: "badge" }, "New personal best") : null,
+              isBest && !result.assisted ? h("span", { class: "badge" }, "New personal best") : null,
+              result.assisted ? h("span", { class: "chip" }, "Assisted run: no record") : null,
               vsBest != null && !isBest ? h("span", { class: "chip" }, `${fmtDelta(vsBest)} to your best`) : null,
               result.penaltyTotal ? h("span", { class: "chip" }, `Includes +${result.penaltyTotal.toFixed(0)} s penalties`) : null,
               me && !trial ? h("span", { class: "chip hot" }, `Position ${me.position} of ${sheet.length}`) : null,

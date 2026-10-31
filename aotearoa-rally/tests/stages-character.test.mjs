@@ -8,7 +8,7 @@ import { SURFACE } from "../core/surfaces.mjs";
 const BREAK = process.env.STAGES_BREAK || "";
 const stages = {};
 for (const id of STAGE_IDS) stages[id] = buildStage(id);
-const GRADES = { waitomo: 0.09, whakarewarewa: 0.12, coromandel: 0.14, otago: 0.08, remarkables: 0.18, fiordland: 0.11 };
+const GRADES = { waitomo: 0.12, whakarewarewa: 0.12, coromandel: 0.14, otago: 0.08, remarkables: 0.18, fiordland: 0.11 };
 if (BREAK === "straight") for (let i = 600; i < 1400; i++) stages.otago.curv[i] = 0;
 if (BREAK === "pitch") stages.waitomo.slope[700] += 0.08;
 if (BREAK === "grade-flat") for (const id of STAGE_IDS) stages[id].maxGrade = 0.145;
@@ -38,6 +38,10 @@ for (const id of STAGE_IDS) {
     }
   });
 }
+
+test("the briefing length (def.lengthTarget) is the built length", () => {
+  for (const id of STAGE_IDS) assert.ok(Math.abs(stages[id].lengthM - stages[id].def.lengthTarget) <= 10, `${id}: built ${stages[id].lengthM} m vs lengthTarget ${stages[id].def.lengthTarget}`);
+});
 
 test("the six stages have at least five distinct max grades", () => {
   const set = new Set(STAGE_IDS.map((id) => stages[id].maxGrade));

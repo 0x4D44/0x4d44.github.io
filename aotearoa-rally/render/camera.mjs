@@ -27,8 +27,8 @@ export function speedFov(baseFov, speedKmh, boost = 0) {
 /** Chase distance / height as the car speeds up (the camera pulls back and rises a touch). */
 export function chaseArm(speedKmh, far = false, aspect = 1.78) {
   const t = clamp(speedKmh / 200, 0, 1), p = portraitK(aspect);
-  const a = far ? { dist: lerp(11, 15, t), height: lerp(4.4, 5.6, t) } : { dist: lerp(5.4, 7.2, t), height: lerp(1.85, 2.25, t) };
-  return { dist: a.dist * (1 + 0.25 * p), height: a.height * (1 + 0.55 * p) };
+  const a = far ? { dist: lerp(11, 15, t), height: lerp(4.4, 5.6, t) } : { dist: lerp(6.4, 6.9, t), height: lerp(2.0, 2.2, t) };
+  return { dist: a.dist * (1 + 0.1 * p), height: a.height * (1 + 0.35 * p) };
 }
 
 /** 0 for landscape / desktop, rising to 1 for tall portrait phones (aspect <= ~0.5): drives the portrait framing. */
@@ -200,6 +200,7 @@ export function createCameraRig(THREE, camera) {
   const dummy = new THREE.Object3D();
   let mode = "chase";
   let spec = null;
+  let chasePrev = null;
   const sx = { x: 0, v: 0 }, sy = { x: 0, v: 0 }, sz = { x: 0, v: 0 };
   let head = 0, lookBias = 0, fov = 62, shake = 0, thump = { x: 0, v: 0 }, roll = 0, time = 0;
   let baseOff = null, lastGroundY = 0, headInit = false, inited = false;
@@ -229,7 +230,7 @@ export function createCameraRig(THREE, camera) {
       if (!CAMERA_MODES.includes(m)) return;
       mode = m;
       shot.t = 99;
-      fpInit = false; inited = false; headInit = false;
+      fpInit = false; inited = false; headInit = false; chasePrev = null;
     },
     cycle() {
       api.setMode(CAMERA_MODES[(CAMERA_MODES.indexOf(mode) + 1) % CAMERA_MODES.length]);
@@ -310,7 +311,7 @@ export function createCameraRig(THREE, camera) {
       if (snapNow || !headInit) { head = ht; headInit = true; }
       else head = head + wrapPi(ht - head) * (1 - Math.exp(-4.2 * dt));
       const fx = -Math.sin(head), fz = -Math.cos(head);
-      const lookAhead = (eff === "far" ? 5 : 7 + spd * 0.12) * (1 - 0.75 * pk);
+      const lookAhead = (eff === "far" ? 5 : 7 + spd * 0.12) * (1 + 1.5 * pk);
       const tx = st.x, tz = st.z;
       const bias = clamp((st.yawRate || 0) * 0.55, -0.8, 0.8);
       lookBias = damp(lookBias, bias, 3, dt);
@@ -318,8 +319,13 @@ export function createCameraRig(THREE, camera) {
       placeChaseCamera({ heightAt, obstaclesNear, car: carBox, head, kmh, far: eff === "far", pitch: st.pitch, aspect }, des);
       if (snapNow) { sx.x = des.x; sy.x = des.y; sz.x = des.z; sx.v = sy.v = sz.v = 0; }
       else {
+        // Springs smooth the pose RELATIVE to the car: moving the spring state with the car removes the speed-proportional
+        // lag (0.2 s x speed = 12 m at 216 km/h) that made the lens trail far behind at speed and sit close at a standstill.
+        if (chasePrev) { sx.x += st.x - chasePrev.x; sz.x += st.z - chasePrev.z; }
         springStep(sx, des.x, 10, 1, dt); springStep(sz, des.z, 10, 1, dt); springStep(sy, des.y, 7, 1, dt);
       }
+      if (!chasePrev) chasePrev = { x: 0, z: 0 };
+      chasePrev.x = st.x; chasePrev.z = st.z;
       camera.position.set(sx.x, sy.x + thump.x * 0.3 + shakeN(0) * lowShake * 0.35, sz.x);
       // Keep a minimum horizontal distance (low speed, respawn, slow spring catch-up) so the wing never fills the frame.
       enforceMinChaseDistance(camera.position, st.x, st.z, arm.dist, fx, fz);
@@ -332,12 +338,22 @@ export function createCameraRig(THREE, camera) {
       const rx = Math.cos(head), rz = -Math.sin(head);
       look.x = tx + fx * lookAhead + rx * lookBias * lookAhead * 0.5;
       look.z = tz + fz * lookAhead + rz * lookBias * lookAhead * 0.5;
-      look.y = gy + 1.1 - 2.2 * pk; // portrait: aim lower so the car rides in the upper-middle of the tall frame
+      look.y = gy + 1.1;
+      if (pk > 0) {
+        // Portrait: seat the car in the lower third (ndc y about -0.45) so the road ahead fills the upper two thirds. The optical
+        // axis is pitched to the car's own depression angle minus the angle that lifts it to that frame position.
+        const cdx = st.x - camera.position.x, cdz = st.z - camera.position.z, D = Math.max(1, Math.hypot(cdx, cdz));
+        const thC = Math.atan2(camera.position.y - (gy + 0.8), D);
+        const halfT = Math.tan(((eff === "far" ? 50 : 62) + 26 * pk) * Math.PI / 360);
+        const phi = thC - Math.atan(0.32 * halfT * pk);
+        const D2 = Math.max(1, Math.hypot(look.x - camera.position.x, look.z - camera.position.z));
+        look.y = camera.position.y - Math.tan(phi) * D2;
+      }
       camera.up.set(0, 1, 0);
       camera.lookAt(look.x, look.y, look.z);
       roll = damp(roll, clamp(-(st.yawRate || 0) * 0.025 * Math.min(1, spd / 20), -0.08, 0.08), 3, dt);
       camera.rotateZ(roll + shakeN(1) * lowShake * 0.03);
-      tFov = speedFov(eff === "far" ? 50 : 62, kmh, opts.fovBoost || 0);
+      tFov = (eff === "far" ? speedFov(50, kmh, opts.fovBoost || 0) : speedFov(62, kmh * 0.4, opts.fovBoost || 0)) + 26 * pk; // portrait: taller vertical FOV keeps the horizontal field from becoming a telephoto slit // chase: gentle widening so the car's size stays steady
     } else if (eff === "bumper" || eff === "bonnet" || eff === "cockpit") {
       E.set(st.pitch || 0, yaw, -(st.roll || 0), "YXZ");
       Q.setFromEuler(E);

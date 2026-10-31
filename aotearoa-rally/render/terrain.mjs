@@ -1,14 +1,15 @@
 // Chunked LOD terrain with a splat shader (biome ground textures blended by slope/height/noise,
 // road-edge blend, macro variation, bump-from-albedo detail, wetness and snow).
 import { patchCommon } from "./materials.mjs";
+import { BIOME_ROCK } from "./textures.mjs";
 import {
   CHUNK_SIZE, LOD_QUADS, chunkGrid, chunkKey, selectLod, skirtDepth, chunkDistance, gridIndices,
 } from "./quality.mjs";
 
 const BIOME_TEX = {
-  pasture: { A: "gnd_grass", B: "gnd_grass", rock: "gnd_limestone", spec: "road_dirt", mode: 3 },
+  pasture: { A: "gnd_grass2", B: "gnd_grass2", rock: "gnd_limestone", spec: "road_dirt", mode: 3 },
   redwood: { A: "gnd_leaf", B: "gnd_fern", rock: "gnd_moss_rock", spec: "road_pumice", mode: 3 },
-  coast: { A: "gnd_grass", B: "gnd_tussock", rock: "gnd_schist", spec: "gnd_sand", mode: 2 },
+  coast: { A: "gnd_grass2", B: "gnd_tussock", rock: "gnd_schist", spec: "gnd_sand", mode: 2 },
   tussock: { A: "gnd_tussock", B: "gnd_tussock", rock: "gnd_schist", spec: "road_dirt", mode: 3 },
   alpine: { A: "gnd_tussock", B: "gnd_moss_rock", rock: "gnd_schist", spec: "gnd_snow", mode: 1 },
   rainforest: { A: "gnd_fern", B: "gnd_leaf", rock: "gnd_moss_rock", spec: "gnd_moss_rock", mode: 0 },
@@ -56,9 +57,18 @@ vec3 arAlbedo(out float rockOut){
   rockOut = rockW;
   {
     vec3 bw = pow(abs(wn), vec3(4.0)); bw /= (bw.x + bw.y + bw.z);
-    vec3 r = texture2D(tRock, vWPos.zy * uScale.z).rgb * bw.x + texture2D(tRock, vWPos.xy * uScale.z).rgb * bw.z + texture2D(tRock, vWPos.xz * uScale.z).rgb * bw.y;
-    r = arTint(r, uColRock, 0.35) * (0.85 + 0.3 * nLo);
-    col = mix(col, r, rockW);
+    if (rockW > 0.01) {
+      // the stage's own rock photo, triplanar at its native ~4 m tile (about 250 px/m), plus a broad 27 m layer that breaks the repeat
+      vec3 sc = vec3(uScale.z);
+      vec3 r = texture2D(tRock, vWPos.zy * sc.x).rgb * bw.x + texture2D(tRock, vWPos.xy * sc.y).rgb * bw.z + texture2D(tRock, vWPos.xz * sc.z).rgb * bw.y;
+      // the broad layer is a low-frequency luminance modulation: one tap on the dominant axis is enough
+      vec3 rb = bw.x > max(bw.y, bw.z) ? texture2D(tRock, vWPos.zy * sc.x * 0.15 + 0.31).rgb : (bw.y > bw.z ? texture2D(tRock, vWPos.xz * sc.z * 0.15).rgb : texture2D(tRock, vWPos.xy * sc.y * 0.15 + 0.77).rgb);
+      r *= 0.55 + 1.0 * dot(rb, vec3(0.299, 0.587, 0.114));
+      float strat = vnoise(vec2(vWPos.y * 0.9 + nLo * 5.0, (vWPos.x + vWPos.z) * 0.02));
+      r *= 0.88 + 0.24 * strat;
+      r = arTint(r, uColRock, 0.12) * (0.9 + 0.2 * nLo);
+      col = mix(col, r, rockW);
+    }
   }
 
   // road-edge blend: bare dirt / gravel strip, a little darker grass next to the road
@@ -67,6 +77,12 @@ vec3 arAlbedo(out float rockOut){
   col = mix(col, uColEdge * (0.75 + 0.5 * nHi), edge * (1.0 - rockW * 0.8) * 0.55);
 
   // macro variation to break tiling
+  // macro colour variation: slow drifts between lush and sun-bleached pasture so the ground never reads as one repeating tile
+  {
+    float mv = vnoise(p * 0.0021 + 3.0), mv2 = vnoise(p * 0.0075 + 11.0);
+    col = mix(col, col * vec3(1.18, 1.04, 0.72), smoothstep(0.38, 0.66, mv) * 0.55 * (1.0 - rockW));
+    col *= 0.9 + 0.2 * mv2;
+  }
   col *= 0.82 + 0.36 * nLo;
   col *= 0.92 + 0.16 * nMid;
   return col;
@@ -82,13 +98,14 @@ function makeTerrainMaterial(THREE, SU, textures, stage, cfg) {
   const mtr = (n) => 1 / Math.max(0.5, textures.meters(n));
   const b = stage.bounds;
   const range = Math.max(10, b.maxY - b.minY);
+  const rockName = BIOME_ROCK[biome] ?? bt.rock;
   let spec = new THREE.Vector4(0, 0, 0, 0);
   if (bt.mode === 1) spec.set(1, b.minY + range * 0.5, b.minY + range * 0.72, 0);
   else if (bt.mode === 2) spec.set(2, b.minY + range * 0.04, b.minY + range * 0.14, 0);
   else spec.set(bt.mode, 0, 1, 0);
   const U = {
-    tA: { value: tex(bt.A) }, tB: { value: tex(bt.B) }, tRock: { value: tex(bt.rock) }, tSpec: { value: tex(bt.spec) },
-    uScale: { value: new THREE.Vector4(mtr(bt.A), mtr(bt.B), mtr(bt.rock) * 0.8, mtr(bt.spec)) },
+    tA: { value: tex(bt.A) }, tB: { value: tex(bt.B) }, tRock: { value: tex(rockName) }, tSpec: { value: tex(bt.spec) },
+    uScale: { value: new THREE.Vector4(mtr(bt.A), mtr(bt.B), mtr(rockName), mtr(bt.spec)) },
     uColA: { value: col(pal.grass, 0x6b8a3a) }, uColB: { value: col(pal.grass2, 0x8d9a4a) },
     uColRock: { value: col(pal.rock, 0x8a8a80) }, uColSpec: { value: col(pal.dirtEdge, 0x8b7455) },
     uColEdge: { value: col(pal.dirtEdge, 0x8b7455) },
@@ -129,7 +146,7 @@ function makeTerrainMaterial(THREE, SU, textures, stage, cfg) {
           vec3 sX = normalize(sx), sY = normalize(sy);
           vec3 R1 = cross(sY, normal), R2 = cross(normal, sX);
           float fDet = dot(sX, R1);
-          vec2 dH = vec2(dFdx(arLuma), dFdy(arLuma)) * 3.2 * bk * (1.0 - arSnow * 0.7);
+          vec2 dH = vec2(dFdx(arLuma), dFdy(arLuma)) * 1.5 * bk * (1.0 - arSnow * 0.7) * (1.0 - 0.9 * arRock);
           vec3 vGrad = sign(fDet) * (dH.x * R1 + dH.y * R2);
           normal = normalize(abs(fDet) * normal - vGrad);
         }`);
@@ -138,6 +155,8 @@ function makeTerrainMaterial(THREE, SU, textures, stage, cfg) {
   m.userData.uniforms = U;
   return m;
 }
+
+const ROAD_SINK = 0.12;
 
 export function createTerrain(THREE, { SU, textures, getCfg }) {
   const group = new THREE.Group();
@@ -187,6 +206,9 @@ export function createTerrain(THREE, { SU, textures, getCfg }) {
           hintS = r.s;
           const wi = wid[Math.min(N - 1, Math.max(0, Math.round(r.s / ds)))] * 0.5;
           road[v] = Math.max(0, Math.min(40, r.dist - wi));
+          // sink the drawn ground under the road ribbon (its crown, bank and the coarse mesh's rounding poked up to 7 cm through the
+          // tarmac at hairpins): 12 cm inside the road width, fading out over the next 3 m
+          { const t = Math.min(1, Math.max(0, (road[v] - 0.5) / 2.5)); pos[v * 3 + 1] -= ROAD_SINK * (1 - t * t * (3 - 2 * t)); }
         } else road[v] = lod <= 2 && canProject ? 0 : 40;
       }
       yield;

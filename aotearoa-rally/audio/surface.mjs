@@ -7,8 +7,8 @@ import { loopNoise, tone, burst, sT } from "./mixer.mjs";
 
 // roll / slide chain per category: [noiseKind, filterType, freq, Q, gainScale]
 const CFG = {
-  tarmac: { roll: ["pink", "bandpass", 1100, 0.6, 0.20], slide: ["white", "bandpass", 1500, 0.9, 0.22] },
-  gravel: { roll: ["gravel", "lowpass", 4200, 0.6, 0.34], slide: ["gravel", "bandpass", 1800, 0.5, 0.5] },
+  tarmac: { roll: ["pink", "bandpass", 2400, 0.8, 0.1], slide: ["white", "bandpass", 2600, 1.1, 0.2] }, // smooth, narrow, high hiss
+  gravel: { roll: ["gravel", "lowpass", 2600, 0.6, 0.5], slide: ["gravel", "bandpass", 1500, 0.5, 0.62] }, // pebble crackle, dark, plus a low rumble (below)
   dirt: { roll: ["brown", "lowpass", 1600, 0.6, 0.45], slide: ["gravel", "lowpass", 2600, 0.6, 0.36] },
   mud: { roll: ["brown", "lowpass", 700, 0.8, 0.5], slide: ["pink", "bandpass", 420, 2.2, 0.6] },
   snow: { roll: ["pink", "lowpass", 1700, 0.5, 0.16], slide: ["white", "highpass", 2800, 0.5, 0.18] },
@@ -30,6 +30,12 @@ export function createSurface(ctx, out) {
     return { src, f, g, scale: cfg[4], base: cfg[2] };
   };
   for (const k of NOISE_CATS) chains[k] = { roll: mkChain(CFG[k].roll), slide: mkChain(CFG[k].slide) };
+
+  // low rumble under loose surfaces: brown noise, low-passed, follows the loose-surface roll level
+  const rum = loopNoise(ctx, "brown", 1.2);
+  const rumF = ctx.createBiquadFilter(); rumF.type = "lowpass"; rumF.frequency.value = 220; rumF.Q.value = 0.7;
+  const rumG = ctx.createGain(); rumG.gain.value = 0;
+  rum.connect(rumF); rumF.connect(rumG); rumG.connect(out); rum.start(0, 0.7);
 
   // tarmac squeal
   const sq1 = ctx.createOscillator(); sq1.type = "triangle"; sq1.frequency.value = 900;
@@ -74,6 +80,7 @@ export function createSurface(ctx, out) {
         // pitch up with speed
         sT(c.roll.f.frequency, c.roll.base * (0.7 + 0.8 * clamp(Math.abs(p.speed) / 40, 0, 1)), t, 0.1);
       }
+      sT(rumG.gain, (m.roll.gravel + m.roll.dirt + 0.6 * m.roll.mud + 0.3 * m.roll.grass) * 0.9 * vs, t, 0.08);
       sT(sqG.gain, m.squeal * 0.07 * vs, t, 0.04);
       const sf = 780 + 650 * clamp(m.skidMax, 0, 1) + 3 * Math.abs(p.speed);
       sT(sq1.frequency, sf, t, 0.05); sT(sq2.frequency, sf * 1.49, t, 0.05); sT(sqF.frequency, sf * 1.3, t, 0.05);
@@ -103,7 +110,7 @@ export function createSurface(ctx, out) {
     },
     dispose() {
       for (const k of NOISE_CATS) { try { chains[k].roll.src.stop(); chains[k].slide.src.stop(); } catch { /* */ } }
-      try { sq1.stop(); sq2.stop(); wind.stop(); for (const v of pingV) v.o.stop(); } catch { /* */ }
+      try { sq1.stop(); sq2.stop(); wind.stop(); rum.stop(); for (const v of pingV) v.o.stop(); } catch { /* */ }
     },
   };
   return api;
