@@ -11,6 +11,12 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-31 - A stop or turn key overshoots on splineZ: pre-aim the key before it (plan-to-build/index.html:splineZ)
+  splineZ takes each interior tangent as the centred difference of its neighbours, so a key whose neighbours lie on one side of it still
+  carries a slope. The door approach keyed on the door axis swayed 166 mm across it and dipped 49 mm; the study hold swung 4.7 deg past
+  its heading and whipped back. Key the dive from beside and above the door (6.4: 15300, 5000, 1.85) so the path lands on the axis with
+  the slope near zero, and measure min/max of every channel after a re-key (scratchpad approach2.mjs idea: replay splineZ on the keys).
+
 - 2026-10-31 - Lights switched on in one frame pop: ramp intensity from 0 (plan-to-build/index.html:build3Construction)
   A light counts in every lit material's shader only while it is visible, so the first draft that showed the 10 ceiling lamps at the hand-off
   popped over the still-open building. The lamps are made hidden, shown when the ramp starts (Z+0.8) and brought 0 -> 5.5 with the roof

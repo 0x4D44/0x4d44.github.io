@@ -1973,8 +1973,8 @@ function film3D() {
   // down from the orbit to the front door, which opens
   wk(2.6, [17000, 14000, 8.5], [9500, 4600, 1.0], 44);
   wk(4.8, [17200, 7600, 3.2], [11500, 4660, 1.4], 54);
-  wk(6.4, [15000, 4660, 1.7], [11000, 4660, 1.55], 60);
-  wk(7.4, [14450, 4660], { hd: 180, pd: 1.5 }, 62);
+  wk(6.4, [15300, 5000, 1.85], [11000, 4660, 1.55], 60);                     // still above and off to the side: the dive settles onto the door axis without swaying across it
+  wk(7.4, [14300, 4660], { hd: 180, pd: 1.5 }, 62);
   // in through D01; a look into the study through D07
   wk(9.0, [12150, 4620], { hd: 180, pd: 1.5 }, 62);
   wk(10.2, [11550, 4600], { hd: 168, pd: 2.5 }, 63);
@@ -2018,7 +2018,8 @@ function film3D() {
   // room tags: the name and floor area of the room the walk is in
   const tag = (id, a, b) => T3.tags.push({ t0: Z + a, t1: Z + b, name: id, area: ROOM_BY_ID[id].area.toFixed(1) + ' m²' });
   T3.tags = [];
-  tag('CORRIDOR', 9.4, 10.8); tag('STUDY', 11.2, 14.4); tag('KITCHEN', 17.0, 27.0); tag('BED 2', 31.4, 33.4); tag('BATH', 33.9, 35.7); tag('BED 1', 37.0, 38.9); tag('LIVING', 43.0, 51.5);
+  // (a tag fades for 0.5 s at each end: the camera must be looking into its room for the 0.5 s .. t1 - 0.5 s in between; tests/tour.test.mjs checks it)
+  tag('CORRIDOR', 8.8, 10.9); tag('STUDY', 11.3, 13.7); tag('KITCHEN', 17.0, 26.6); tag('BED 2', 31.2, 33.3); tag('BATH', 33.9, 35.7); tag('BED 1', 36.9, 38.7); tag('LIVING', 43.0, 51.5);
   ch(73.4 + P, '20', 'WALK-THROUGH', '3DWALK  ·  eye height 1.6 m  ·  in through the front door, room by room');
   seg(73.4 + P, () => { cmd('3DWALK', { dur: 0.45, dw: 0.1 }); info('Press ESC or ENTER to exit, or right-click to display shortcut-menu.'); info('Walk settings:  eye height 1600  ·  step 0.5 m/s  ·  lens 64°'); });
   mark('3D film');
@@ -2610,11 +2611,11 @@ function build3Construction() {
       L.position.set(x / 1000, 2.5, -y / 1000); L.visible = false; root.add(L); lamps.push(L);
       const f = new THREE.Mesh(fit, fm); f.position.set(x / 1000, 2.78, -y / 1000); f.visible = false; root.add(f); fits.push(f);
     }
-    const [a, b] = T3.tourT.lights;
+    const [a, b] = T3.tourT.lights, [r0, r1] = T3.tourT.roof, covered = (r0 + r1) / 2;
     G3.anims.push((t) => {                                                     // from zero, so the lamps never pop: a light only counts in the shader while it is on
       const k = easeIO(prog3(t, a, b));
       for (const L of lamps) { L.visible = k > 0; L.intensity = 5.5 * k; }
-      for (const f of fits) f.visible = k > 0;
+      for (const f of fits) f.visible = k > 0 && t >= covered;                 // the fittings wait until the roof is over them: the dive still sees under it before that
       fm.emissiveIntensity = 1.4 * k;
     });
   }

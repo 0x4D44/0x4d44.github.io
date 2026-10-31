@@ -11,8 +11,8 @@
 
 // ---- the film as a whole
 export const FILM = {
-  chapters: 19,            // player chips. 18 -> 19 when PLASTER & PAINT was added; the next chapter makes it 20
-  seconds: 200.93,         // T_END = S + 83 s. 12,056 frames at 60 fps
+  chapters: 20,            // player chips. 18 -> 19 when PLASTER & PAINT was added, 19 -> 20 with the WALK-THROUGH (the tour); a facade would make it 21
+  seconds: 252.43,         // T_END = S + 83 s (the HOME orbit ends) + 51.5 s (the tour). 15,146 frames at 60 fps
   secondsTol: 0.01,
 };
 
@@ -87,7 +87,7 @@ export const JAMB = {
 // ---- the player (player.test.mjs)
 export const PLAYER = {
   // times for "the same t renders the same picture, even after seeking away"; film is { S, T, chapters }
-  determinismTimes: (film) => [40, film.S + AT.determinism, 150.5, 185, film.T - 0.3],
+  determinismTimes: (film) => [40, film.S + AT.determinism, 150.5, 185, film.T - 30, film.T - 0.3],     // film.T - 30 is in the kitchen, film.T - 0.3 in the living room: both in the tour
   stepTime: (film) => film.S + AT.determinism + 0.05,       // 50 ms after the second of those: far above the determinism tolerance
   // the chips the click test presses: the first, the first 3D chapter, FLOORS, PLASTER & PAINT, and the last. Found by name, so inserting a chapter keeps them right.
   chips: (film) => {
@@ -117,3 +117,31 @@ export const EXPORT = {
 
 // ---- the catalogue entry (catalog.test.mjs)
 export const CATALOG = { slug: "plan-to-build" };
+
+// ---- the first-person tour (tour.test.mjs). Z = the moment the HOME orbit ends and the walk begins: T3.walk[0][0] = S + 83 s. Times below are seconds after Z.
+export const TOUR = {
+  chapter: "WALK-THROUGH",    // the chip that opens the tour (found by name); it starts within [Z - 1, Z]
+  seconds: 51.5,              // the tour's length: Z to the end of the film
+  roof: [0.3, 2.7],           // the roof slab drops onto the walls ...
+  lights: [0.8, 2.6],         // ... the ceiling lamps come up from zero while it shuts the sun out ...
+  shut: [1.2, 2.2],           // ... the front door D01 closes under it ...
+  open: [6.6, 8.0],           // ... and swings open for the walk
+  roofUnder: 2.801,           // m: the underside of the roof, 1 mm over the wall tops (STOREY 2.8)
+  lamps: 10, lampPeak: 5.5,   // ceiling lights: LIVING 2, CORRIDOR 3, one in each other room; point light intensity at full
+  lampStep: 0.2,              // the largest change of a lamp's intensity in one frame: the ramp is smooth (its steepest slope is 0.15 a frame)
+  lampFirst: 0.05,            // a lamp first counts (visible) at no more than this intensity: it never pops on
+  down: 9.0,                  // by now the dive has settled (between 7.4 and 9.0 the eye dips 19 mm under head height and comes back) and stays at head height for the rest of the film
+  eye: 1.646, eyeTol: 0.002,  // m: floor top 0.046 + 1.6
+  inside: 10,                 // from now on the eye is inside the apartment (D01 is open from 8.0, the eye passes it at 9)
+  handoffTol: 1e-6,           // the walk's first pose is the orbit's last pose (m, deg, lens)
+  maxStep: 0.12,              // m: the most the eye moves in one frame (the dive peaks at 0.102 m = 6.1 m/s)
+  maxSpeedInside: 1.4,        // m/s inside (the walk moves at 0.3 to 0.6)
+  maxYaw: 60, maxPitch: 12,   // deg/s: pans are steady (the walk's peak is 55 and 9.5)
+  lens: [40, 70],             // deg, vertical field of view once the dive is over
+  clear: 0.25,                // m: inside, the eye is never closer than this to a wall, a column, a piece of furniture it could hit or an open door leaf (the walk's closest is 0.31)
+  tagMargin: 0.5,             // a room tag fades for this long at each end: the room must be on screen while it is fully shown
+  door: {                     // the front door, seen straight on: the middle of the frame is the dark leaf while it is shut and the lit corridor once it is open
+    shutAt: 6.4, openAt: 8.6, box: [0.46, 0.4, 0.54, 0.6],      // frame fractions x0, y0, x1, y1
+    shutMax: 90, openMin: 120,                                  // mean luminance (0..255) of that box
+  },
+};
