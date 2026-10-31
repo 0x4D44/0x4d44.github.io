@@ -109,8 +109,20 @@ test('sim: AI contact time stays low on every course (share of racer-seconds in 
 });
 
 // E-23: the average-speed bound above allows an 18 s Sunrise lap; this is the lap-time band (Normal, seed 7, 3 laps, every racer's laps)
+// R3-C4: neon's fastest lap came from the one racer that flew the billboard shortcut (54.5 s at the round-2 commit, under the floor); the shortcut's five boost rings are
+// 1.2x for 0.6 s now (were 1.3x for 1.0 s). Each run is deterministic per seed, but a seed's fastest lap swings by several seconds with who takes the shortcut.
+test('sim: neon\'s billboard shortcut leaves the fastest Normal lap clear of the 55 s floor (>= 56 s on seeds 7 and 5)', () => {
+  for (const seed of [7, 5]) {
+    const fastest = Math.min(...run('neon', { laps: 3, seed }).race.racers.flatMap((r) => r.lapTimes.slice(1)));
+    assert.ok(fastest >= 56, `neon seed ${seed}: fastest lap ${fastest.toFixed(2)} s (floor 55, margin wanted 56)`);
+  }
+});
+
+// R3 (lead): two misses were hidden behind the old neon-only todo and are pre-existing on trunk (same numbers on the round-2 tree): sunrise's fastest lap is the autopilot
+// player's shortcut lap (52.6 s, every AI lap is 61.5 s or more) and redrock's median is the AI pack (85.7 s). Neon is now strict in its own test above. Fix by trimming the
+// sunrise shortcut saving ~3 s and speeding the redrock AI ~1 % (retune the keyboard difficulty gate with it), or by one reviewed band number.
 test('sim: lap-time band (Normal): the fastest flying lap is >= 55 s and the median lap <= 85 s on every course',
-  { todo: 'neon Normal fastest lap is 54.5 s until the world agent trims the shortcut saving (the lap depends on whether a bot takes the shortcut)' }, () => {
+  { todo: 'sunrise fastest lap 52.6 s (< 55) and redrock median 85.7 s (> 85) are open on trunk; see scratchpad.md 2026-10-31' }, () => {
   const bad = [];
   for (const id of COURSES) {
     const laps = run(id, { laps: 3, seed: 7 }).race.racers.flatMap((r) => r.lapTimes.slice(1)).sort((a, b) => a - b);

@@ -6,10 +6,10 @@ import { createControls } from '../src/controls.js';
 import { createGuide } from '../src/flight/guide.js';
 
 const DT = 1 / 60;
-async function idleFlight(id, settings, secs, keys = {}) {
+async function idleFlight(id, settings, secs, keys = {}, craft = 'falcon') {
   const course = await loadCourseHeadless(createFakeGame({ seed: 1 }), id);
   const game = createFakeGame({ seed: 1, settings: { assist: 'standard', ...settings } }); game.course = course;
-  const race = makeRace(game, course, { difficulty: 'normal', craftId: 'falcon', laps: 1, bots: 0, mode: 'quick', seed: 1 });
+  const race = makeRace(game, course, { difficulty: 'normal', craftId: craft, laps: 1, bots: 0, mode: 'quick', seed: 1 });
   const p = race.player, c = createControls(), guide = createGuide(), out = { roll: 0, pitch: 0 };
   let tum = 0, wMax = 0; game.events.on('racer:tumble', () => tum++);
   let n = 0; while (race.state !== 'racing' && n < 1000) { race.fixedUpdate(DT, c); game.simTime += DT; n++; }
@@ -108,6 +108,31 @@ test('P-01 sunrise: an idle guided falcon flies 60 s of the default course witho
     const on = await idleFlight(id, { keyGuide: true }, 60);
     assert.equal(on.tum, 0, `${id}: 60 s idle with the guide on tumbled ${on.tum} times (s ${on.s.toFixed(0)}, lateral ${on.lat.toFixed(0)})`);
   }
+});
+
+test('R3-F1 sunrise: hands off, every craft passes the sphere at s 1450 without a tumble (the binary avoid chattered at its edge: Sprite 14.2 s, Bulldog 14.4 s)', async () => {
+  // measured before the fix (sunrise, no keys): the push flipped on and off as the sphere crossed the avoid edge, the target swung left / right every few frames
+  // (roll +0.37 / -0.48 / +0.67 / -1.0) and the craft left the track side by 60 m into the sphere. The lane-space continuous push has no edge.
+  for (const craft of ['sprite', 'bulldog', 'manta', 'comet']) {
+    const on = await idleFlight('sunrise', { keyGuide: true }, 22, {}, craft);
+    assert.equal(on.tum, 0, `${craft}: 22 s hands-off on sunrise tumbled ${on.tum} times (s ${on.s.toFixed(0)}, lateral ${on.lat.toFixed(0)})`);
+  }
+});
+
+test('R3-F1 continuity: the guide command is a continuous function of how close the line passes a hazard (no step at the avoid edge)', async () => {
+  const r = await rig('redrock', 'falcon'), fs = r.p.flight, pr = { s: 0, lateral: 0, vertical: 0, dist: 0, branch: -1, u: 0 };
+  for (let i = 0; i < 90; i++) step(r);    // off the grid, flying
+  const dir = fs.vel.clone().normalize(), right = fs.right.clone(), roll = [];
+  for (let L = -56; L <= 56; L += 1) {
+    const pos = fs.pos.clone().addScaledVector(dir, 70).addScaledVector(right, L); r.course.project(pos, r.p.s + 70, pr);
+    r.course.hazards.length = 0; r.course.hazards.push({ s: pr.s, pos, radius: 18, branch: -1, column: false });
+    r.guide.reset(); r.guide.blend(r.game, fs, 0, 0, r.out); roll.push({ L, roll: r.out.roll, off: pr.lateral - r.p.lateral });
+  }
+  // the one place the command may flip is the dead-centre tie (the hazard exactly on the lane: either side is as good); everywhere else it must move smoothly
+  let worst = 0, at = 0; for (let i = 1; i < roll.length; i++) { if (Math.abs(roll[i].off) < 9 || Math.abs(roll[i - 1].off) < 9) continue; const d = Math.abs(roll[i].roll - roll[i - 1].roll); if (d > worst) { worst = d; at = i; } }
+  // measured: 0.19 at most (planLane's own 0.1 x half-width lane steps); the old binary edge stepped the roll by more than 1
+  assert.ok(worst < 0.3, `largest step ${worst.toFixed(3)} in roll between hazard offsets ${roll[at - 1].L} and ${roll[at].L} m (roll ${roll[at - 1].roll.toFixed(2)} -> ${roll[at].roll.toFixed(2)})`);
+  assert.ok(Math.max(...roll.map((x) => x.roll)) - Math.min(...roll.map((x) => x.roll)) > 0.3, 'the hazard changes the command at all');
 });
 
 test('R2-P-02 residual: a held key still receives >= 0.15 x of the guide\'s own command (killed by residual 0)', async () => {

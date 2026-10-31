@@ -207,7 +207,8 @@ for (const [f, text] of texts) {
   const assign = (texts.get(join(srcDir, "game.js")) ?? "").match(/renderer\.debug\.checkShaderErrors\s*=\s*([^;]+);/);
   check(Boolean(assign) && /^[\w\s.!()'"|&,?:]+$/.test(assign[1]), "game.js assigns renderer.debug.checkShaderErrors a plain expression");
   if (assign && /^[\w\s.!()'"|&,?:]+$/.test(assign[1])) {
-    const verdict = (manual, flags) => { try { return Boolean(new Function(`return (${assign[1]});`).call({ manual, params: { has: (k) => flags.includes(k) } })); } catch { return undefined; } };
+    // `debugFlag` (debug.js: `?debug` unless it is debug=0 / false / off / no, R2-E-13) is given to the expression as a stub that reads the flag list the same way
+    const verdict = (manual, flags) => { try { return Boolean(new Function("debugFlag", `return (${assign[1]});`).call({ manual, params: { has: (k) => flags.includes(k) } }, (p) => p.has("debug"))); } catch { return undefined; } };
     check(verdict(false, []) === false, "game.js turns the synchronous shader-link check off for players (renderer.debug.checkShaderErrors must be false on a bare URL)");
     check(verdict(true, []) === true && verdict(false, ["debug"]) === true, "game.js keeps the shader-link check on for ?manual and ?debug runs (renderer.debug.checkShaderErrors)");
   }

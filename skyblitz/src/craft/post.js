@@ -69,6 +69,8 @@ const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
 export function createPost(game) {
   let composer = null, bloom = null, speedPass = null, gradePass = null, aaPass = null, renderPass = null, outPass = null;
   let built = null;                        // quality signature the composer was built for
+  let fxaaLinked = false;                  // the FXAA pass has been rendered once (its program is linked and cached for the session)
+  let forceSpeed = false;                 // true for the game's hidden warm-up frame: the speed pass draws once so its program is linked before the race
   let W = 1, H = 1, PR = 1;
   const S = { speed: 0, boost: 0, tumble: 0, flash: 0, fr: 1, fg: 1, fb: 1, time: 0, flashMax: 1 };
   const offs = [];
@@ -157,6 +159,7 @@ export function createPost(game) {
 
   const api = {
     init() { listen(); },
+    forceSpeed(on) { forceSpeed = !!on; if (speedPass) speedPass.enabled = forceSpeed || speedPass.enabled; },
     setQuality() { warmPmrem(); build(); },
     resize(w, h, pr) {
       W = w; H = h; PR = pr;
@@ -182,7 +185,7 @@ export function createPost(game) {
       const mot = reduce ? 0.2 : 1;
       const blur = (0.005 * S.speed * S.speed + 0.017 * S.boost + 0.012 * S.tumble) * mot;
       const ca = Math.min(0.0011, 0.0004 * S.speed + 0.0022 * S.boost + 0.002 * S.tumble + S.flash * 0.003) * (reduce ? 0.15 : 1);   // capped: the rocket-start GO must not fringe rings/deck edges
-      if (speedPass) { speedPass.enabled = blur > 0.0008 || ca > 0.0003; speedPass.uniforms.uBlur.value = blur; speedPass.uniforms.uCA.value = ca; }
+      if (speedPass) { speedPass.enabled = forceSpeed || blur > 0.0008 || ca > 0.0003; speedPass.uniforms.uBlur.value = blur; speedPass.uniforms.uCA.value = ca; }
       const u = gradePass.uniforms;
       u.uFlash.value.set(S.fr, S.fg, S.fb, S.flash); u.uTime.value = S.time; u.uBoost.value = S.boost * (reduce ? 0.3 : 1);
       u.uGrain.value = game.q.id === 'low' ? 0 : 0.012;
@@ -193,7 +196,10 @@ export function createPost(game) {
       if (!composer) { game.renderer.render(game.scene, game.camera); return; }
       renderPass.camera = game.camera; renderPass.scene = game.scene;
       const info = game.renderer.info; info.autoReset = false; info.reset();   // report the whole frame, not just the last pass
-      composer.render();
+      if (aaPass && !fxaaLinked && game.q.aa === 'fxaa') {   // the first FXAA link logs three's own X3595 / X4000 on a checked (debug) page, like the PMREM shader (V-35)
+        fxaaLinked = true;
+        quietShaderWarnings(game.renderer, () => composer.render());
+      } else composer.render();
       info.autoReset = true;
     },
     /** Trigger a manual screen flash (r,g,b 0..1, alpha 0..1). */

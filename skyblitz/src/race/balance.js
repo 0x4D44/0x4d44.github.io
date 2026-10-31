@@ -55,7 +55,7 @@ export function rollItem(rng, place, n) {
 export const DIFFICULTY = {
   easy:   { id: 'easy', shortcutBias: -0.12, finishExtra: 60,   aiSpeed: 0.67, aiSkill: 0.55, rubber: 0.06, rubberRange: 650, aheadSlow: 0.25, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.25 },
   normal: { id: 'normal', shortcutBias: 0, finishExtra: 40, aiSpeed: 0.77, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, aheadSlow: 0.20, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.06 },
-  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.79, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, aheadSlow: 0.04, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
+  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.87, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, aheadSlow: 0.04, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
   expert: { id: 'expert', shortcutBias: 0.12, aiSpeed: 0.996, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, aheadSlow: 0, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
 };
 

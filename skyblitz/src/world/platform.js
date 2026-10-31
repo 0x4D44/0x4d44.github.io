@@ -11,7 +11,7 @@ const THEMES = {
     stripe: '#27c4b0', chev: 'rgba(250,228,186,0.95)', glow: [5, 2.6, 0.5] },
   neon: { name: 'glass', deck: 'glass', deckColor: 0xffffff, deckRough: 0.1, deckMetal: 0.7, deckGlow: 0.85, hull: 0x090b16, hullRough: 0.18, hullMetal: 0.9, leg: 0x131a2e, legRough: 0.2, legMetal: 0.85, accent: 0x35e8ff, accentGlow: 2.2,
     stripe: '#2ee6ff', chev: 'rgba(255,70,200,0.95)', glow: [0.5, 3.0, 5], decalGlow: 1.0 },
-  frost: { name: 'ice', deck: 'ice', deckColor: 0xffffff, deckRough: 0.5, deckMetal: 0.05, deckIbl: 0.3, hull: 0x4f86b8, hullRough: 0.3, hullMetal: 0.1, leg: 0xa7d6f5, legRough: 0.22, legMetal: 0.08, accent: 0x66f0ff, accentGlow: 1.4,
+  frost: { name: 'ice', deck: 'ice', deckColor: 0x8a98ae, deckRough: 0.5, deckMetal: 0.05, deckIbl: 0.2, hull: 0x4f86b8, hullRough: 0.3, hullMetal: 0.1, leg: 0xa7d6f5, legRough: 0.22, legMetal: 0.08, accent: 0x66f0ff, accentGlow: 1.4,
     stripe: '#1d78b8', chev: 'rgba(24,110,176,0.92)', glow: [1.2, 3.6, 5], decalGlow: 0.35 },
   default: { name: 'steel', deck: 'metal', deckColor: 0xb8c0c8, deckRough: 0.62, deckMetal: 0.45, hull: 0x3a424c, hullRough: 0.55, hullMetal: 0.65, leg: 0x3a424c, legRough: 0.55, legMetal: 0.65, accent: 0xff6a1a, accentGlow: 0,
     stripe: '#f2b61c', chev: 'rgba(255,200,40,0.9)', glow: [5, 3.2, 0.6] },
