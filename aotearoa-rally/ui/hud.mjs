@@ -4,6 +4,7 @@
 import { h, glyphSvg, svgNode, fmtTime, fmtDelta } from "./dom.mjs";
 import { drawMinimap, minimapPoint, drawProgressBase } from "./charts.mjs";
 import { SURFACE_INFO } from "../core/surfaces.mjs";
+import { stuckHintFor } from "./stuck.mjs";
 
 const GA0 = 150, GA1 = 390, GCX = 145, GCY = 138, GR = 112;
 const pol = (a, r) => [GCX + Math.cos((a * Math.PI) / 180) * r, GCY + Math.sin((a * Math.PI) / 180) * r];
@@ -59,6 +60,10 @@ export function createHud(root) {
   root.append(el.miniWrap);
   el.fps = h("div", { class: "h-fps", hidden: true });
   root.append(el.fps);
+  // stuck hint: out of flow (moves nothing), fades in and out
+  el.stuck = h("div", { class: "h-stuck hud-glass", "aria-live": "polite" });
+  root.append(el.stuck);
+  let getBindings = null;
   // pace notes
   el.notes = h("div", { class: "h-notes" });
   root.append(el.notes);
@@ -190,8 +195,11 @@ export function createHud(root) {
       el.hint.hidden = !text;
       el.hint.textContent = text || "";
     },
+    /** fn() returns the current input bindings, so the hint names the keys the player actually uses */
+    setBindingsSource(fn) { getBindings = fn; },
     reset() {
       for (const k of Object.keys(cache)) delete cache[k];
+      el.stuck.classList.remove("on");
       el.warn.hidden = true;
       el.banner.hidden = true;
       el.count.hidden = true;
@@ -210,6 +218,7 @@ export function createHud(root) {
       const spdR = Math.round(spd);
       set("spd", el.speed, spdR);
       set("spdw", el.speed, spdR >= 100 ? 3 : 2, (n, w) => n.classList.toggle("w3", w === 3)); // shrink-to-fit: three digits get a smaller face so they stay inside the dial numerals
+      set("stuck", el.stuck, !!state.stuck, (n, v) => { if (v) n.textContent = stuckHintFor(state, getBindings ? getBindings() : null); n.classList.toggle("on", v); });
       const g = state.gear;
       set("gear", el.gear, g < 0 ? "R" : g === 0 ? "N" : String(g));
       const rpmN = Math.round(state.rpm / 50) * 50;

@@ -5,6 +5,7 @@ import { createSharedUniforms, createWaterMaterial } from "./materials.mjs";
 import { createTerrain } from "./terrain.mjs";
 import { createRoad } from "./road.mjs";
 import { createScenery } from "./scenery.mjs";
+import { createAdverts } from "./adverts.mjs";
 import { createSky, createLighting, sunDirection } from "./sky.mjs";
 import { createWeather, fogFactor } from "./weather.mjs";
 import { createSplash, sprayAmount, inWaterSpan } from "./splash.mjs";
@@ -70,6 +71,7 @@ export async function createWorld(canvas, opts = {}) {
   const lighting = createLighting(THREE, scene, getCfg);
   const weather = createWeather(THREE, { SU, getCfg });
   const splash = createSplash(THREE);
+  const adverts = createAdverts(THREE, { scene, getCfg, anisotropy: cfg.anisotropy });
   const sea = createSea(THREE, SU, createWaterMaterial);
   const post = createPost(THREE, renderer, scene, camera);
   scene.add(sky.mesh, terrain.group, road.group, scenery.group, weather.group, splash.group, sea.group, dynamicRoot);
@@ -87,7 +89,7 @@ export async function createWorld(canvas, opts = {}) {
   // ---------------------------------------------------------------- state
   const S = {
     stage: null, def: null, time: 0, cssW: 960, cssH: 540, dpr: 1, scale: 1, pr: 1,
-    lastRender: 0, ring: new Float32Array(120), ringN: 0, ringHead: 0, scratch: new Float32Array(120), fpsEma: 60, msEma: 16.7,
+    busy: 0, hitch: { max: 0, n33: 0, n50: 0 }, lastRender: 0, ring: new Float32Array(120), ringN: 0, ringHead: 0, scratch: new Float32Array(120), fpsEma: 60, msEma: 16.7,
     carYaw: 0, carPos: new THREE.Vector3(), lastQualityChange: 0, baseDensity: 0.001, weatherOverride: null,
     sunDir: new THREE.Vector3(0, 1, 0), speed01: 0, camPos: new THREE.Vector3(), envRT: null, mood: { day: 1, wetSky: 0, mist: 0 }, ready: false,
     frameStart: 0, lastTris: 0,
@@ -115,13 +117,19 @@ export async function createWorld(canvas, opts = {}) {
     camera.far = Math.min(cfg.viewDist, terrain.viewDist || cfg.viewDist) + 400;
     camera.updateProjectionMatrix();
     if (S.stage && !silent) {
-      terrain.refreshQuality(); road.refreshQuality(); scenery.refreshQuality(); weather.rebuild();
+      terrain.refreshQuality(); road.refreshQuality(); scenery.refreshQuality(); adverts.refreshQuality(); weather.rebuild();
       weather.setWeather(S.def.environment, S.weatherOverride);
       sky.setEnvironment(S.def.environment, S.sunDir, S.mood);
       configureFog();
       applyGrade();
     }
     S.lastQualityChange = performance.now();
+    // a tier change swaps materials and shadow variants: compile them in parallel (compileAsync) and hold the frame
+    // meanwhile, instead of a 1-1.5 s synchronous compile inside the first frame that uses them (SHIP-02)
+    if (S.stage && !silent && S.ready) {
+      S.busy++;
+      warmup({ draw: false }).catch(() => {}).finally(() => { S.busy--; S.lastRender = 0; });
+    }
   }
 
   function applyGrade() {
@@ -215,6 +223,7 @@ export async function createWorld(canvas, opts = {}) {
     sea.setStage(stage, stage.def.biome, Math.min(getCfg().viewDist, 1600));
     onProgress(0.5, "scenery");
     await scenery.setStage(stage);
+    await adverts.setStage(stage);
     const sp = stage.startPose ?? { x: stage.px[0], y: stage.py[0], z: stage.pz[0], yaw: 0 };
     S.carPos.set(sp.x, sp.y, sp.z); S.carYaw = sp.yaw;
     camera.position.set(sp.x + Math.sin(sp.yaw) * 6, sp.y + 2.4, sp.z + Math.cos(sp.yaw) * 6);
@@ -231,7 +240,7 @@ export async function createWorld(canvas, opts = {}) {
 
   function disposeStage() {
     S.ready = false;
-    terrain.disposeStage(); road.disposeStage(); scenery.disposeStage(); sea.dispose();
+    terrain.disposeStage(); road.disposeStage(); scenery.disposeStage(); adverts.disposeStage(); sea.dispose();
     S.envRT?.dispose(); S.envRT = null; scene.environment = null;
     S.stage = null;
   }
@@ -290,7 +299,7 @@ export async function createWorld(canvas, opts = {}) {
    *  Call after the game has attached the car visual and FX. */
   const rafYield = () => new Promise((res) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => res()) : setTimeout(res, 0)));
   /** warmup({ onProgress(fraction 0..1) }): fires between awaited steps, with an rAF yield after each so the overlay repaints. */
-  async function warmup({ onProgress } = {}) {
+  async function warmup({ onProgress, draw = true } = {}) {
     if (!S.stage) return;
     const step = async (f) => { onProgress?.(f); await rafYield(); };
     await step(0);
@@ -303,9 +312,9 @@ export async function createWorld(canvas, opts = {}) {
       try { await post.compileAsync(scene, camera, () => { n++; onProgress?.(Math.min(0.7, 0.1 + 0.2 * n)); }); } catch { /* ignore */ }
       await step(0.75);
       renderer.shadowMap.needsUpdate = true;
-      if (post.enabled) post.render(0.016); else renderer.render(scene, camera);
+      if (draw) { if (post.enabled) post.render(0.016); else renderer.render(scene, camera); }
       await step(0.9);
-      await gpuIdle();
+      if (draw) await gpuIdle();
       await step(1);
     } finally { restore(); renderer.info.reset(); S.lastRender = 0; }
   }
@@ -315,6 +324,7 @@ export async function createWorld(canvas, opts = {}) {
     const now = performance.now();
     if (S.lastRender) {
       const ms = now - S.lastRender;
+      if (ms > 33 && ms < 5000) { S.hitch.n33++; if (ms > 50) S.hitch.n50++; if (ms > S.hitch.max) S.hitch.max = ms; }
       if (ms < 1000) {
         S.ring[S.ringHead] = ms; S.ringHead = (S.ringHead + 1) % S.ring.length; if (S.ringN < S.ring.length) S.ringN++;
         S.msEma += (ms - S.msEma) * 0.08; S.fpsEma = 1000 / Math.max(1, S.msEma);
@@ -335,6 +345,7 @@ export async function createWorld(canvas, opts = {}) {
       }
     }
     S.lastRender = now;
+    if (S.busy > 0) return; // quality change compiling in the background: keep the last frame on screen
     renderer.info.reset();
     if (!S.stage) { renderer.render(scene, camera); return; }
     post.setDynamic(S.time, S.speed01);
@@ -357,6 +368,7 @@ export async function createWorld(canvas, opts = {}) {
       drawCalls: info.render.calls, triangles: info.render.triangles,
       geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0,
       resolutionScale: Math.round(S.scale * 100) / 100,
+      hitchMaxMs: Math.round(S.hitch.max), hitches33: S.hitch.n33, hitches50: S.hitch.n50,
       tier, instances: scenery.stats.instances, terrainChunks: terrain.chunks.size,
     };
   }
@@ -372,13 +384,15 @@ export async function createWorld(canvas, opts = {}) {
       governor.reset(); S.scale = 1; governor.scale = 1;
       applyQuality(requested === "auto" ? autoTier : requested, false);
     },
+    /** Zero the frame-hitch counters (max gap, count over 33 ms and over 50 ms between rendered frames). */
+    resetHitches() { S.hitch.max = 0; S.hitch.n33 = 0; S.hitch.n50 = 0; },
     setGovernor(on) { governor.enabled = !!on; if (!on) { S.scale = 1; governor.scale = 1; applySize(); } },
     markSkid(wheelIndex, contact, yaw, intensity, surfaceId) { road.markSkid(wheelIndex, contact, yaw, intensity, surfaceId); },
     addDecal(kind, ...a) { if (kind === "skid") road.markSkid(...a); },
     clearSkids() { road.clearSkids(); },
     /** Contract amendment: renderer-owned lights/stage bits for tooling. */
     get sharedUniforms() { return SU; },
-    get stageObjects() { return { terrain, road, scenery, sky, lighting, weather, post }; },
+    get stageObjects() { return { terrain, road, scenery, adverts, sky, lighting, weather, post }; },
     dispose() {
       disposeStage();
       post.dispose(); weather.dispose(); splash.dispose(); sky.dispose(); lighting.dispose(); textures.dispose();

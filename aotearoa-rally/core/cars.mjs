@@ -5,6 +5,9 @@
 
 export const CAR_IDS = ["huia", "kea", "takahe", "piwakawaka"];
 
+/** The one car sponsor, on every car, livery, rival and screen. */
+export const SPONSOR = "0x4d44 software";
+
 const mk = (o) => o;
 
 const SG_KEYS = { gravel: 0, dirt: 1, tarmac: 2, mud: 3, snow: 4, pumice: 5 };
@@ -51,13 +54,13 @@ export const CARS = {
     clutchTorque: 900,
     suspension: { spring: 46000, damper: 4300, travel: 0.23, antiRollFront: 16000, antiRollRear: 9000 },
     aero: { cd: 0.36, area: 2.0, downforce: 0.22 },
-    surfGrip: { gravel: 0.975, dirt: 0.99, tarmac: 0.855, mud: 1.03, snow: 1.05, pumice: 1.0 },
-    handling: { gripFront: 1.0, gripRear: 1.0 },
+    surfGrip: { gravel: 0.975, dirt: 0.99, tarmac: 0.852, mud: 1.03, snow: 1.05, pumice: 1.0 },
+    handling: { gripFront: 1.01, gripRear: 1.0, frontLoose: 1.05 },
     stats: { power: 8, grip: 8, handling: 7, acceleration: 8, toughness: 7 },
     liveries: [
-      { name: "Forest Works", body: 0xf2f0e8, accent: 0x1c6b4a, number: 1, sponsor: "Ridgeline Supplies" },
-      { name: "Harbour Blue", body: 0x1b3b6f, accent: 0xf2c230, number: 2, sponsor: "Cobalt Sound Labs" },
-      { name: "Greenstone Racing", body: 0x2f7d5d, accent: 0xeeeeee, number: 3, sponsor: "Wavecrest Fuel Co." },
+      { name: "Forest Works", body: 0xf2f0e8, accent: 0x1c6b4a, number: 1, sponsor: SPONSOR },
+      { name: "Harbour Blue", body: 0x1b3b6f, accent: 0xf2c230, number: 2, sponsor: SPONSOR },
+      { name: "Greenstone Racing", body: 0x2f7d5d, accent: 0xeeeeee, number: 3, sponsor: SPONSOR },
     ],
   }),
   kea: mk({
@@ -95,12 +98,12 @@ export const CARS = {
     suspension: { spring: 41000, damper: 3500, travel: 0.22, antiRollFront: 10000, antiRollRear: 5000 },
     aero: { cd: 0.37, area: 1.9, downforce: 0.1 },
     surfGrip: { gravel: 0.97, dirt: 1.0, tarmac: 0.885, mud: 1.08, snow: 1.06, pumice: 1.08 },
-    handling: { gripFront: 1.04, gripRear: 0.95, liftRotate: 1.2 },
+    handling: { gripFront: 1.04, gripRear: 0.95, liftRotate: 1.3 },
     stats: { power: 7, grip: 7, handling: 9, acceleration: 8, toughness: 5 },
     liveries: [
-      { name: "Alpine Parrot", body: 0xe86a1c, accent: 0x1a1a1a, number: 4, sponsor: "Brightcell Drinks" },
-      { name: "Glacier Pack", body: 0xdfeaf2, accent: 0xd02a2a, number: 5, sponsor: "Frostline Coolers" },
-      { name: "Night Kea", body: 0x1a1d24, accent: 0x7be0c2, number: 6, sponsor: "Skylink Wireless" },
+      { name: "Alpine Parrot", body: 0xe86a1c, accent: 0x1a1a1a, number: 4, sponsor: SPONSOR },
+      { name: "Glacier Pack", body: 0xdfeaf2, accent: 0xd02a2a, number: 5, sponsor: SPONSOR },
+      { name: "Night Kea", body: 0x1a1d24, accent: 0x7be0c2, number: 6, sponsor: SPONSOR },
     ],
   }),
   takahe: mk({
@@ -138,12 +141,12 @@ export const CARS = {
     suspension: { spring: 38000, damper: 3300, travel: 0.22, antiRollFront: 12000, antiRollRear: 6000 },
     aero: { cd: 0.33, area: 1.8, downforce: 0.14 },
     surfGrip: { gravel: 1.03, dirt: 0.94, tarmac: 1.04, mud: 0.91, snow: 0.955, pumice: 0.97 },
-    handling: { gripFront: 1.05, gripRear: 0.99 },
+    handling: { gripFront: 1.05, gripRear: 1.0, frontLoose: 1.0 },
     stats: { power: 5, grip: 7, handling: 8, acceleration: 6, toughness: 6 },
     liveries: [
-      { name: "Blue Takahē", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: "Trailhead Outfitters" },
-      { name: "Red Tussock", body: 0xc22a2a, accent: 0xf0e2b0, number: 8, sponsor: "Copperfield Mutual" },
-      { name: "Flax Green", body: 0x6aa84f, accent: 0x222222, number: 9, sponsor: "Greenleaf Gear" },
+      { name: "Blue Takahē", body: 0x1646a8, accent: 0x6fd0c0, number: 7, sponsor: SPONSOR },
+      { name: "Red Tussock", body: 0xc22a2a, accent: 0xf0e2b0, number: 8, sponsor: SPONSOR },
+      { name: "Flax Green", body: 0x6aa84f, accent: 0x222222, number: 9, sponsor: SPONSOR },
     ],
   }),
   piwakawaka: mk({
@@ -184,9 +187,9 @@ export const CARS = {
     handling: { gripFront: 1.0, gripRear: 0.97 },
     stats: { power: 9, grip: 6, handling: 6, acceleration: 7, toughness: 6 },
     liveries: [
-      { name: "Fantail Gold", body: 0xe4b21c, accent: 0x14141c, number: 10, sponsor: "Goldcrust Bakery" },
-      { name: "Pacific Silver", body: 0xb9c2cc, accent: 0x1b6fa8, number: 11, sponsor: "Longhaul Freight Group" },
-      { name: "Ember", body: 0x8a1f1a, accent: 0xf0c36a, number: 12, sponsor: "Cinderpot Foods" },
+      { name: "Fantail Gold", body: 0xe4b21c, accent: 0x14141c, number: 10, sponsor: SPONSOR },
+      { name: "Pacific Silver", body: 0xb9c2cc, accent: 0x1b6fa8, number: 11, sponsor: SPONSOR },
+      { name: "Ember", body: 0x8a1f1a, accent: 0xf0c36a, number: 12, sponsor: SPONSOR },
     ],
   }),
 };

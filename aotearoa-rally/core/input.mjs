@@ -26,7 +26,7 @@ export const ACTIONS = Object.keys(DEFAULT_BINDINGS);
 export const ACTION_LABELS = {
   steerLeft: "Steer left", steerRight: "Steer right", throttle: "Throttle", brake: "Brake / reverse",
   handbrake: "Handbrake", gearUp: "Gear up", gearDown: "Gear down", camera: "Change camera",
-  reset: "Back to checkpoint", pause: "Pause", hud: "Hide HUD", restart: "Restart (single stage and trial)",
+  reset: "Respawn on road", pause: "Pause", hud: "Hide HUD", restart: "Restart (single stage and trial)",
 };
 
 export const DEFAULT_PAD = Object.freeze({
@@ -52,13 +52,14 @@ export function shapeAxis(v, deadzone = 0.14, curve = 1.6) {
  * @param {number} speed    m/s (sign ignored)
  * @param {number} dt       seconds
  */
-export const KEY_STEER = Object.freeze({ fullSpeed: 45, lockAtSpeed: 0.55, windOn: [4.2, 1.8], centre: [9, 14] });
+export const KEY_STEER = Object.freeze({ fullSpeed: 45, lockAtSpeed: 0.7, windOn: [10, 7], windSlow: [5, 3.5], fastTo: 0.5, centre: [9, 14] });
 export function shapeKeySteer(current, dir, speed, dt) {
   const f = clamp(Math.abs(Number.isFinite(speed) ? speed : 0) / KEY_STEER.fullSpeed, 0, 1);
   const lerp = (a, b) => a + (b - a) * f;
   const target = dir * lerp(1, KEY_STEER.lockAtSpeed);
   const winding = dir !== 0 && (current === 0 || Math.sign(current) === dir) && Math.abs(target) >= Math.abs(current);
-  const rate = winding ? lerp(...KEY_STEER.windOn) : lerp(...KEY_STEER.centre);
+  // a tap bites at once (fast wind-on up to half the lock), the rest of the lock comes on gently so a held key stays controllable
+  const rate = winding ? (Math.abs(current) < KEY_STEER.fastTo * Math.abs(target) ? lerp(...KEY_STEER.windOn) : lerp(...KEY_STEER.windSlow)) : lerp(...KEY_STEER.centre);
   return approach(current, target, rate * dt);
 }
 

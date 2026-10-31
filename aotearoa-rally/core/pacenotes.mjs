@@ -8,7 +8,7 @@ export const leadDistance = (v) => clamp(v * 2.6, 40, 220);
 export const leadS = (note, v) => note.s - leadDistance(v);
 
 const NUM = ["zero", "one", "two", "three", "four", "five", "six"];
-const SURF_NAME = { 0: "gravel", 1: "hard pack", 2: "tarmac", 3: "mud", 4: "snow", 5: "pumice", 12: "water" };
+const SURF_NAME = { 0: "gravel", 1: "packed dirt", 2: "tarmac", 3: "mud", 4: "snow", 5: "pumice", 12: "water" };
 
 /** severity grade from corner radius (m) */
 export function gradeOfRadius(r) {
@@ -196,6 +196,15 @@ export function buildPacenotes(c, opts = {}) {
     if (!changed) break;
   }
   out.sort((a, b) => a.s - b.s);
+  // a cave call stands clear of the corner before it: space it 30 m after that corner ends (while it still fits in the cave)
+  for (let k = 1; k < out.length; k++) {
+    const n = out[k];
+    if (!n._cave) continue;
+    const p = out[k - 1];
+    const want = p.s + p.length + 30;
+    if (isCorner(p) && n.s < want && want < n.s + n.length - 60) { n.length -= want - n.s; n.s = want; }
+  }
+  out.sort((a, b) => a.s - b.s);
 
   // ---------------- chaining ("into")
   for (let k = 0; k < out.length - 1; k++) {
@@ -236,10 +245,11 @@ export function buildPacenotes(c, opts = {}) {
     const m = n.modifiers;
     if (n.kind === "hairpin") return `HAIRPIN ${n.dir === "left" ? "L" : "R"}${m.includes("dont_cut") ? " dont cut" : ""}`;
     if (n.kind === "corner") {
-      let t = `${n.dir === "left" ? "L" : "R"}${n.severity}`;
+      const tg = m.includes("tightens") && n._gIn > n.severity; // same numbers as the spoken call
+      let t = `${n.dir === "left" ? "L" : "R"}${tg ? n._gIn : n.severity}`;
       if (m.includes("long")) t += " long";
       if (m.includes("short")) t += " short";
-      if (m.includes("tightens")) t += n._gIn > n.severity ? ` tightens ${n.severity}` : " tightens";
+      if (m.includes("tightens")) t += tg ? ` tightens ${n.severity}` : " tightens";
       if (m.includes("opens")) t += " opens";
       if (m.includes("dont_cut")) t += " dont cut";
       return t;

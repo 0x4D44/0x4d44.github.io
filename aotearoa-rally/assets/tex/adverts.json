@@ -1,0 +1,183 @@
+{
+ "file": "adverts.webp",
+ "size": [
+  2048,
+  1024
+ ],
+ "cell": [
+  512,
+  256
+ ],
+ "cols": 4,
+ "rows": 4,
+ "ads": [
+  {
+   "id": "house",
+   "slug": null,
+   "title": "0x4d44 software",
+   "cell": 0,
+   "rect": [
+    0,
+    0,
+    512,
+    256
+   ]
+  },
+  {
+   "id": "skyblitz",
+   "slug": "skyblitz",
+   "title": "SKYBLITZ",
+   "cell": 1,
+   "rect": [
+    512,
+    0,
+    1024,
+    256
+   ]
+  },
+  {
+   "id": "kart",
+   "slug": "kart-racing",
+   "title": "KART RACING",
+   "cell": 2,
+   "rect": [
+    1024,
+    0,
+    1536,
+    256
+   ]
+  },
+  {
+   "id": "nightcab",
+   "slug": "night-cab",
+   "title": "THE NIGHT CAB",
+   "cell": 3,
+   "rect": [
+    1536,
+    0,
+    2048,
+    256
+   ]
+  },
+  {
+   "id": "ironvertex",
+   "slug": "iron-vertex",
+   "title": "IRON VERTEX",
+   "cell": 4,
+   "rect": [
+    0,
+    256,
+    512,
+    512
+   ]
+  },
+  {
+   "id": "subway",
+   "slug": "glasgow-subway",
+   "title": "GLASGOW SUBWAY",
+   "cell": 5,
+   "rect": [
+    512,
+    256,
+    1024,
+    512
+   ]
+  },
+  {
+   "id": "instruments",
+   "slug": "instruments",
+   "title": "INSTRUMENTS",
+   "cell": 6,
+   "rect": [
+    1024,
+    256,
+    1536,
+    512
+   ]
+  },
+  {
+   "id": "blackhole",
+   "slug": "black-holes",
+   "title": "BLACK HOLES",
+   "cell": 7,
+   "rect": [
+    1536,
+    256,
+    2048,
+    512
+   ]
+  },
+  {
+   "id": "chip",
+   "slug": "mos-6502",
+   "title": "MOS 6502",
+   "cell": 8,
+   "rect": [
+    0,
+    512,
+    512,
+    768
+   ]
+  },
+  {
+   "id": "class55",
+   "slug": "class-55",
+   "title": "CLASS 55",
+   "cell": 9,
+   "rect": [
+    512,
+    512,
+    1024,
+    768
+   ]
+  },
+  {
+   "id": "tidecall",
+   "slug": "tidecall",
+   "title": "TIDECALL",
+   "cell": 10,
+   "rect": [
+    1024,
+    512,
+    1536,
+    768
+   ]
+  },
+  {
+   "id": "kitchen",
+   "slug": "recipes",
+   "title": "RECIPES",
+   "cell": 11,
+   "rect": [
+    1536,
+    512,
+    2048,
+    768
+   ]
+  },
+  {
+   "id": "blueprint",
+   "slug": "plan-to-build",
+   "title": "PLAN TO BUILD",
+   "cell": 12,
+   "rect": [
+    0,
+    768,
+    512,
+    1024
+   ]
+  },
+  {
+   "id": "attractor",
+   "slug": "strange-attractors",
+   "title": "STRANGE ATTRACTORS",
+   "cell": 13,
+   "rect": [
+    512,
+    768,
+    1024,
+    1024
+   ]
+  }
+ ]
+}

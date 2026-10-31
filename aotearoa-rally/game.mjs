@@ -151,6 +151,7 @@ const carIds = () => (G.mods.cars ? G.mods.cars.CAR_IDS : ["huia"]);
 // ---------------------------------------------------------------- UI objects
 const screensRoot = $("screens");
 const hud = createHud($("hud"));
+hud.setBindingsSource(() => input.bindings); // the stuck hint names the player's own keys
 let nav = null;
 const sfx = (name) => { if (G.audio && !opts.mute) try { G.audio.playUI(name); } catch { /* audio optional */ } };
 
@@ -511,7 +512,7 @@ function onRunEvents() {
       }
       case "respawn": {
         const pen = G.run.penalties[G.run.penalties.length - 1] || {};
-        hud.banner(`${e.reason === "no_progress" ? "No progress: back to checkpoint" : "Back at checkpoint"} +${pen.seconds || 10} s`, "bad", 2600);
+        hud.banner(`${e.reason === "no_progress" ? "No progress: back on the road" : "Back on the road"} +${pen.seconds || 10} s`, "bad", 2600);
         if (G.rig) G.rig.snap(G.vehicle.state, G.stage);
         afterJump(e.s);
         break;
@@ -962,6 +963,7 @@ Object.assign(AR, {
   setBot(on) {
     needStage();
     G.botOn = !!on;
+    if (on && G.run) G.run.assisted = true; // a bot-driven run is not a record, however it was switched on
     if (on && !G.bot) makeBot();
     return G.botOn;
   },

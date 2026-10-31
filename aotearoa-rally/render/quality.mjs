@@ -76,7 +76,7 @@ export const QUALITY = {
     terrainLod: [120, 260, 520], viewDist: 900, terrainSeg: 48, chunkBuildPerFrame: 1,
     density: { tree: 0.55, mid: 0.7, small: 0.4 }, distMul: 0.55, detailTex: false, anisotropy: 2,
     rain: 2600, snow: 1600, envSize: 64, alphaToCoverage: false, grain: 0, texScale: 0.5,
-    headlightsSpot: true, maxPropInstances: 5000, waterDetail: false,
+    adverts: 0, headlightsSpot: true, maxPropInstances: 5000, waterDetail: false,
   },
   medium: {
     pixelRatioCap: 1.25, resScale: 1, post: true, msaa: 0, bloom: true, grade: true,
@@ -84,7 +84,7 @@ export const QUALITY = {
     terrainLod: [150, 330, 680], viewDist: 1300, terrainSeg: 64, chunkBuildPerFrame: 1,
     density: { tree: 0.8, mid: 0.9, small: 0.7 }, distMul: 0.8, detailTex: true, anisotropy: 4,
     rain: 4600, snow: 2800, envSize: 128, alphaToCoverage: false, grain: 0.5, texScale: 1,
-    headlightsSpot: true, maxPropInstances: 9000, waterDetail: true,
+    adverts: 0.6, headlightsSpot: true, maxPropInstances: 9000, waterDetail: true,
   },
   high: {
     pixelRatioCap: 1.5, resScale: 1, post: true, msaa: 4, bloom: true, grade: true,
@@ -92,7 +92,7 @@ export const QUALITY = {
     terrainLod: [190, 400, 800], viewDist: 1700, terrainSeg: 64, chunkBuildPerFrame: 2,
     density: { tree: 1, mid: 1, small: 1 }, distMul: 1, detailTex: true, anisotropy: 8,
     rain: 7000, snow: 4200, envSize: 256, alphaToCoverage: true, grain: 1, texScale: 1,
-    headlightsSpot: true, maxPropInstances: 14000, waterDetail: true,
+    adverts: 1, headlightsSpot: true, maxPropInstances: 14000, waterDetail: true,
   },
   ultra: {
     pixelRatioCap: 2, resScale: 1, post: true, msaa: 4, bloom: true, grade: true,
@@ -100,7 +100,7 @@ export const QUALITY = {
     terrainLod: [240, 480, 950], viewDist: 2100, terrainSeg: 64, chunkBuildPerFrame: 2,
     density: { tree: 1, mid: 1, small: 1 }, distMul: 1.25, detailTex: true, anisotropy: 16,
     rain: 10000, snow: 6000, envSize: 256, alphaToCoverage: true, grain: 1, texScale: 1,
-    headlightsSpot: true, maxPropInstances: 20000, waterDetail: true,
+    adverts: 1, headlightsSpot: true, maxPropInstances: 20000, waterDetail: true,
   },
 };
 

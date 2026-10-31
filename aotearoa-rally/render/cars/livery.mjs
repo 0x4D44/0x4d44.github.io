@@ -1,6 +1,7 @@
 // Livery atlas (2048x1024 canvas): left side | right side / top | front+rear. Planar UV projection (pure) +
-// canvas painting (browser). Sponsors are fictional.
+// canvas painting (browser). The one sponsor is core/cars.mjs SPONSOR.
 import { sideSlots } from "./profiles.mjs";
+import { SPONSOR } from "../../core/cars.mjs";
 export const ATLAS_W = 2048, ATLAS_H = 1024;
 const TILE = 1024, TILE_H = 512, MARGIN = 0.06, TOPY = 1.55;
 
@@ -29,7 +30,6 @@ export function liveryUV(d, x, y, z, nx, ny, nz) {
 
 const hex = (n) => "#" + (n >>> 0).toString(16).padStart(6, "0").slice(-6);
 const lum = (n) => (((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) / 255;
-const SPONSORS2 = ["RIMU OIL", "KOWHAI TYRES", "NGAIO MUTUAL", "MANUKA PARTS", "TAWA FREIGHT"];
 
 function rr(ctx, x, y, w, h, r) {
   ctx.beginPath();
@@ -44,12 +44,20 @@ export function drawLivery(canvas, d, spec, livery, number) {
   const body = hex(livery.body), accent = hex(livery.accent);
   const ink = lum(livery.body) > 0.55 ? "#101216" : "#f4f4f2";
   const ppm = ppmOf(d);
+  // The sponsor always sits on a plate in the opposite tone to its ink, outlined in the ink, so it reads on any livery colour.
+  const plateFill = lum(livery.body) > 0.55 ? "#f7f7f4" : "#15171b";
+  const plate = (px) => {
+    const w = ctx.measureText(SPONSOR).width, pad = px * 0.28;
+    ctx.fillStyle = plateFill; rr(ctx, -w / 2 - pad, -px * 0.84 - pad * 0.4, w + 2 * pad, px * 1.12 + pad * 0.8, px * 0.18); ctx.fill();
+    ctx.lineWidth = px * 0.07; ctx.strokeStyle = ink; ctx.stroke();
+  };
   // maxW (px, optional): shrink the text until it fits, so a long sponsor name is scaled, never clipped.
   const txt = (s, x, y, px, col, align = "left", skew = -0.12, maxW = 0) => {
     ctx.save(); ctx.translate(x, y); ctx.transform(1, 0, skew, 1, 0, 0);
-    const face = `"Arial Black", Impact, "Segoe UI", Arial, sans-serif`;
+    const face = s === SPONSOR ? `"Consolas", "Courier New", monospace` : `"Arial Black", Impact, "Segoe UI", Arial, sans-serif`;
     ctx.font = `900 ${px}px ${face}`;
-    if (maxW > 0 && s) { const w = ctx.measureText(s).width; if (w > maxW) { px *= maxW / w; ctx.font = `900 ${px}px ${face}`; } }
+    if (maxW > 0 && s) { const w = ctx.measureText(s).width * (s === SPONSOR ? 1.06 : 1); if (w > maxW) { px *= maxW / w; ctx.font = `900 ${px}px ${face}`; } }
+    if (s === SPONSOR) plate(px);
     ctx.textAlign = align; ctx.textBaseline = "alphabetic"; ctx.fillStyle = col; ctx.fillText(s, 0, 0); ctx.restore();
   };
   // Text on the top tile: that tile maps u = z (towards the rear) and v = x, i.e. it is mirrored as seen from above, so
@@ -57,9 +65,10 @@ export function drawLivery(canvas, d, spec, livery, number) {
   // behind the car looking forward (the chase and bonnet views), upright, not mirrored.
   const txtTop = (s, x, y, px, col, align = "center", skew = 0, maxW = 0) => {
     ctx.save(); ctx.translate(x, y); ctx.transform(0, 1, 1, 0, 0, 0);
-    const face = `"Arial Black", Impact, "Segoe UI", Arial, sans-serif`;
+    const face = s === SPONSOR ? `"Consolas", "Courier New", monospace` : `"Arial Black", Impact, "Segoe UI", Arial, sans-serif`;
     ctx.font = `900 ${px}px ${face}`;
-    if (maxW > 0 && s) { const w = ctx.measureText(s).width; if (w > maxW) { px *= maxW / w; ctx.font = `900 ${px}px ${face}`; } }
+    if (maxW > 0 && s) { const w = ctx.measureText(s).width * (s === SPONSOR ? 1.06 : 1); if (w > maxW) { px *= maxW / w; ctx.font = `900 ${px}px ${face}`; } }
+    if (s === SPONSOR) plate(px);
     ctx.textAlign = align; ctx.textBaseline = "alphabetic"; ctx.fillStyle = col; ctx.fillText(s, 0, 0); ctx.restore();
   };
   ctx.fillStyle = body; ctx.fillRect(0, 0, ATLAS_W, ATLAS_H);
@@ -114,7 +123,7 @@ export function drawLivery(canvas, d, spec, livery, number) {
     ctx.lineWidth = 0.014 * ppm; ctx.strokeStyle = accent; ctx.stroke();
     txt(String(number), px + 0.0, py + 0.1 * ppm, 0.3 * ppm, "#111", "center", 0);
     // sponsor on the rear quarter + second sponsor lower on the front door sill
-    const sponsor = (livery.sponsor || "").toUpperCase();
+    const sponsor = SPONSOR;
     // text sits where the flank is near vertical (below the shoulder, where the planar projection stays on the side tile)
     const slot = (yHint, extra) => {
       const first = sideSlots(d, yHint - 0.04, yHint + 0.04, extra)[0];
@@ -122,12 +131,12 @@ export function drawLivery(canvas, d, spec, livery, number) {
       const lows = [first[0] + 0.1, (first[0] + first[1]) / 2, first[1] - 0.1].map((q) => d.topC(d.tAt(d.zF + q)));
       const y = Math.max(0.34, Math.min(yHint, Math.min(...lows) - 0.2));
       const s = sideSlots(d, y - 0.04, y + 0.04, extra)[0] || first;
-      return { c: (s[0] + s[1]) / 2, w: s[1] - s[0] - 0.1, y };
+      return { c: (s[0] + s[1]) / 2, w: s[1] - s[0] - 0.04, y };
     };
     const s1 = slot(0.66, [[doorXd - 0.24, doorXd + 0.24]]);
-    if (s1) txt(sponsor, X(s1.c), Y(s1.y), 0.095 * ppm, ink, "center", -0.12, s1.w * ppm);
+    if (s1) txt(sponsor, X(s1.c), Y(s1.y), 0.2 * ppm, ink, "center", -0.12, s1.w * ppm);
     const s2 = slot(0.27, []);
-    if (s2) txt(SPONSORS2[(number | 0) % SPONSORS2.length], X(s2.c), Y(s2.y), 0.06 * ppm, ink, "center", -0.12, s2.w * ppm);
+    if (s2) txt(SPONSOR, X(s2.c), Y(s2.y), 0.15 * ppm, ink, "center", -0.12, s2.w * ppm);
     ctx.restore();
   }
 
@@ -149,8 +158,7 @@ export function drawLivery(canvas, d, spec, livery, number) {
   txtTop(String(number), TX(bz), TV(0) + 0.1 * ppm, 0.3 * ppm, "#111", "center", 0);
   const rz = d.zAt((d.cabin.rs + d.cabin.re) / 2);
   ctx.save(); ctx.translate(TX(rz), TV(0)); ctx.transform(0, 1, 1, 0, 0, 0); ctx.fillStyle = ink; ctx.font = `900 ${0.34 * ppm}px "Arial Black", Impact, Arial, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(number), 0, 0); ctx.restore();
-  if (d.S.scoop !== "bonnet") txtTop((livery.sponsor || "").toUpperCase(), TX(d.zAt(bn1 - 0.04)), TV(0), 0.07 * ppm, ink, "center", 0, d.W * ppm * 0.5);
-  txtTop(SPONSORS2[((number | 0) + 1) % SPONSORS2.length], TX(d.zAt(0.9)), TV(-0.38), 0.08 * ppm, ink, "center", 0, 0.5 * ppm);
+  txtTop(SPONSOR, TX(d.zAt(bn1 - 0.1)), TV(0), 0.2 * ppm, ink, "center", 0, d.W * ppm * 0.8);
   ctx.restore();
 
   // ---- end tile: front | rear
@@ -167,7 +175,7 @@ export function drawLivery(canvas, d, spec, livery, number) {
   // left-aligned text), scaled to fit the central 56 % of the width.
   const endW = d.W * ppm * 0.56;
   txt(String(number), TILE + (d.hw + 0.1) * ppm, EY(0.72), 0.2 * ppm, ink, "center", 0, endW);
-  txt((livery.sponsor || "").toUpperCase(), TILE + 512 + (d.hw + 0.1) * ppm, EY(0.62), 0.08 * ppm, ink, "center", 0, endW);
+  txt(SPONSOR, TILE + 512 + (d.hw + 0.1) * ppm, EY(0.62), 0.2 * ppm, ink, "center", 0, d.W * ppm * 0.6);
   ctx.restore();
 
   // fade the lowest part of each side towards darker rocker panels
