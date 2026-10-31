@@ -33,6 +33,23 @@ export function rankVoices(voices) {
 
 export function voiceGender(v) { const n = v.name || ''; return FEMALE.test(n) ? 'f' : MALE.test(n) ? 'm' : '?'; }
 
+const MAN_ON_A_WOMANS_VOICE = 0.72, WOMAN_ON_A_MANS_VOICE = 1.3, DEEPEST = 0.55;       // (below DEEPEST an engine only rumbles)
+/**
+ * The pitch to speak a person's lines with on `voice`. A browser with no Spanish speech packs has one or two voices ("Google español", "Google español de Estados
+ * Unidos": women's voices with no gendered name, so voiceGender() is '?'): everybody would sound like the same woman. A man (not a boy) on a voice that is not a man's
+ * is lowered by about a third, a woman on a man's voice raised by a third: the sexes still sound different when the browser has only one voice to give.
+ * `voice` null = no voice at all (the babble): treated as unknown.
+ */
+export function pitchFor(voice, { gender = '?', age = 'adult', pitch = 1 } = {}) {
+  const vg = voice ? voiceGender(voice) : '?';
+  let p = pitch;
+  if (age !== 'kid') {
+    if (gender === 'm' && vg !== 'm') p = Math.max(DEEPEST, pitch * MAN_ON_A_WOMANS_VOICE);
+    else if (gender === 'f' && vg === 'm') p = pitch * WOMAN_ON_A_MANS_VOICE;
+  }
+  return Math.max(0.1, Math.min(2, p));
+}
+
 /** Choose a voice for an NPC: best language group, preferring the NPC's gender, spread by `seed` over equal candidates. */
 export function pickVoice(ranked, { gender = '?', seed = 0, preferURI = null } = {}) {
   if (!ranked.length) return null;
@@ -127,7 +144,7 @@ export class Speech {
   estimate(text) { return Math.max(900, text.length * 62 + 500); }
 
   /**
-   * Speak one line. opts: { pitch, rate, gender, seed, lang }. Returns { done: Promise, cancel() }.
+   * Speak one line. opts: { pitch, rate, gender, age, seed, lang } (personas.js voiceFor). Returns { done: Promise, cancel() }.
    * `done` resolves with 'spoken' (TTS finished), 'fallback' (no voice: timed subtitle + blips) or 'cancelled'.
    */
   speak(text, opts = {}) {
@@ -144,19 +161,19 @@ export class Speech {
     if (!ss || !this.ranked.length) {
       if (!ss) this.reason = 'unsupported'; else this.reason = 'novoice';
       this._notice(); rec.mode = 'fallback';
-      const ms = this._blips(text, opts.pitch ?? 1); rec.timer = setTimeout(() => rec.finish('fallback'), ms); return rec;
+      const ms = this._blips(text, pitchFor(null, opts)); rec.timer = setTimeout(() => rec.finish('fallback'), ms); return rec;
     }
     try {
       const u = new SpeechSynthesisUtterance(text);
       const v = pickVoice(this.ranked, { gender: opts.gender ?? '?', seed: opts.seed ?? 0, preferURI: this.voiceURI });
       if (v) { u.voice = v; u.lang = v.lang; } else u.lang = opts.lang ?? 'es-CO';
-      u.pitch = Math.max(0.1, Math.min(2, opts.pitch ?? 1)); u.rate = Math.max(0.5, Math.min(1.6, opts.rate ?? 1)); u.volume = Math.max(0, Math.min(1, this.volume));
+      u.pitch = pitchFor(v, opts); u.rate = Math.max(0.5, Math.min(1.6, opts.rate ?? 1)); u.volume = Math.max(0, Math.min(1, this.volume));
       rec.mode = 'tts'; rec.voice = v ? v.name : null;
       u.onend = () => rec.finish('spoken');
       u.onerror = (e) => {
         if (rec.cancelled || e?.error === 'canceled' || e?.error === 'interrupted') { rec.finish('cancelled'); return; }
         this.reason = (e?.error === 'not-allowed') ? 'blocked' : 'error'; this._notice(); rec.mode = 'fallback';
-        const ms = this._blips(text, opts.pitch ?? 1); rec.timer = setTimeout(() => rec.finish('fallback'), ms);
+        const ms = this._blips(text, pitchFor(null, opts)); rec.timer = setTimeout(() => rec.finish('fallback'), ms);
       };
       // Chrome drops a speak() issued in the same tick as cancel(): defer a hair. Watchdog covers engines that never fire `end`.
       setTimeout(() => { if (rec.cancelled || rec.ended) return; try { this.synth().speak(u); } catch { rec.finish('fallback'); } }, 30);

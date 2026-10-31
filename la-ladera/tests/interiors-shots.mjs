@@ -1,6 +1,7 @@
 // Room screenshots at eye height (1.64 m) through the real page (headless, quiet box: chrome.mjs only).
 //   node la-ladera/tests/interiors-shots.mjs auto [outDir]          one shot per room type / shop type (first rooms with enough furniture)
 //   node la-ladera/tests/interiors-shots.mjs spec.json [outDir]     [{ "bid": "L07", "room": "L07.f0.r2", "tag": "papeleria", "view": 0 }]   view = corner 0..3 (default: the best free one)
+//   node la-ladera/tests/interiors-shots.mjs door [outDir] [shop,shop]   one shot per shop type from its street door (0.55 m inside, eye height, looking straight in)
 //   node la-ladera/tests/interiors-shots.mjs list                   print every room (building, kind, shop, type, area, furniture count) and exit
 //   node la-ladera/tests/interiors-shots.mjs showcase [outDir] [keys,csv] [perRow]   a studio: the models in rows on a wood floor (all models when no keys), one shot per row
 // Env: W, H (default 1280x720). Prints a JSON report (shots, console errors, draw calls). LOOK at the JPEGs: this tool judges nothing by itself.
@@ -38,6 +39,21 @@ window.__a3 = {
     __ladera.teleport(wx, wz, { y: fy, yaw, pitch: -0.1 });
     __ladera.step(45);                                   // 0.75 s: the light pool fades in (about 10% per frame) and visibility settles
     return { corner: pick.i, ok: pick.ok, pos: [wx, fy, wz], yaw };
+  },
+  // The view a customer has from the street door: 0.55 m inside the room's door, looking straight in along the door's normal.
+  doorView(bid, rid, lookAt = 0.9) {
+    const ctx = __ladera.ctx, bp = ctx.buildings.get(bid), r = bp.rooms.find((x) => x.id === rid), { x0, x1, z0, z1 } = r.rect;
+    const doors = (bp.doors ?? []).filter((d) => d.rooms?.includes(rid));
+    const d = doors.find((x) => x.rooms.some((q) => !q)) ?? doors[0];
+    if (!d) return null;
+    const inside = (x, z) => x > x0 && x < x1 && z > z0 && z < z1;
+    const sg = [1, -1].find((s) => inside(d.x + d.nx * s * 0.55, d.z + d.nz * s * 0.55)) ?? 1;
+    const lx = d.x + d.nx * sg * 0.55, lz = d.z + d.nz * sg * 0.55, fy = (bp.lot.y ?? 0) + (r.y ?? 0);
+    const [wx, , wz] = bp.frame.toWorld(lx, 0, lz), [tx, , tz] = bp.frame.toWorld(lx + d.nx * sg * 4, 0, lz + d.nz * sg * 4);
+    const yaw = Math.atan2(-(tx - wx), -(tz - wz));
+    __ladera.teleport(wx, wz, { y: fy, yaw, pitch: Math.atan2(lookAt - 1.64, 4) });
+    __ladera.step(45);
+    return { door: d.id, kind: d.kind, pos: [wx, fy, wz], yaw };
   },
   // A studio: the world is hidden, the chosen catalogue keys stand in rows on a wood floor in front of a plain wall (real lights, real materials, the real furniture path).
   async showcase(keys, perRow = 5, tintAt = 0, hour = 12) {
@@ -117,6 +133,12 @@ try {
       report.shots.push({ file, keys: r.keys });
     }
     spec = [];
+  } else if (mode === 'door') {                                   // one shot per shop type from its street door (the first shop of each type with enough furniture)
+    spec = []; const seen = new Set(), only = (process.argv[4] ?? '').split(',').filter(Boolean);
+    for (const r of list) {
+      if (!r.shop || !(r.type === 'shop' || r.role === 'shop') || r.n < 5 || seen.has(r.shop) || (only.length && !only.includes(r.shop))) continue;
+      seen.add(r.shop); spec.push({ ...r, tag: 'door-' + r.shop, door: true });
+    }
   } else if (mode === 'auto') {
     spec = []; const seen = new Set();
     const want = (r) => {
@@ -133,7 +155,8 @@ try {
   for (const s of spec) {
     const bid = s.bid, rid = s.room;
     try {
-      const v = await p.eval(`__a3.view(${JSON.stringify(bid)}, ${JSON.stringify(rid)}, ${s.view ?? 'null'})`);
+      const v = await p.eval(s.door ? `__a3.doorView(${JSON.stringify(bid)}, ${JSON.stringify(rid)}, ${+(process.env.AT ?? 0.9)})` : `__a3.view(${JSON.stringify(bid)}, ${JSON.stringify(rid)}, ${s.view ?? 'null'})`);
+      if (!v) { report.shots.push({ bid, room: rid, error: 'no door on this room' }); continue; }
       const file = `${outDir}/${s.tag ?? rid}-${bid}.jpg`.replace(/[:\s]/g, '_');
       await p.canvasShot(file, { w: W, h: H });
       report.shots.push({ file, bid, room: rid, type: s.type, n: s.n, kind: s.kind, shop: s.shop, corner: v.corner, ok: v.ok });

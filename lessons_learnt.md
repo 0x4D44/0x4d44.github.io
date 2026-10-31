@@ -11,6 +11,60 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-31 - A guard timer armed by the test before fires inside the next one: wait it out (la-ladera/tests/ui-flow.test.mjs)
+  flow.js guardRelock() pauses 0.6 s after a talk ends or Esc closes a panel if the pointer is not back. The ui-flow tests share one page, so the guard armed when
+  the talk test ended fired in the middle of the refused-re-lock test, paused the game with the very same toast and hid a MISSING guard on the Esc path (that mutant
+  passed). The test now waits 700 ms in the game, pointer granted, before it starts; the mutant fails. Check a timer-driven test against its mutant, in the file run.
+
+- 2026-10-31 - A rule pinned in two test files: grep the key, not the file (la-ladera/js/ui/flow.js:closePanel)
+  R2c-016 (Esc from a panel returns to the game): the sheet named the ui-flow hotkeys assertion, but ui-reader's journal test said "Esc in the journal is the old
+  Esc: the pause menu" too, and went red only when the dependent files ran after the change. Grep every tests/*.mjs for the key and the old outcome before
+  calling the flip done. The ui-flow tests share ONE page: a red test that ends on a panel or the pause card turned tests 7-14 red from one cause, so a test
+  that can end open registers t.after(backToPlay) (tests/ui-flow.test.mjs) and the first red in a run is the real one.
+
+- 2026-10-31 - A label set just before a blocking call is never drawn: await paintFrame() (la-ladera/js/core/util.js)
+  The warm-up frame blocks the page 4-8 s in ONE call: the stage set "Calentando..." and froze before the browser could draw it, with the bar at 97 % (the
+  stage weighed 3 of 110). A stage flagged as blocking in core/bootbar.js now awaits paintFrame() (an animation frame plus the task after it; 100 ms cap, a
+  hidden tab gets no frame). tests/engine-bootcard.test.mjs hooks gl.finish() and asks whether the label had been handed over by then. Also hold the engine's
+  loop until the warm-up is done (startEngine(ctx, { hold: true }) then ctx.startLoop()): its first real frame is the heaviest one and used to freeze the card.
+
+- 2026-10-31 - A reload reads 1 GB of garbage, not a leak: force a GC before judging (la-ladera/tests/engine-heap.test.mjs)
+  A same-tab reload showed 1.06 GB at ready against 0.43 GB on the first boot; after HeapProfiler.collectGarbage the live heap is 82 MB on every boot. A boot
+  allocates ~12 GB of short-lived objects (interior layout ~6 GB, the mesh builders' arrays 1.6 GB) and a reload starts on top of the old page's uncollected
+  heap. The test budgets the live set after a GC (130 MB) and a first boot's peak (900 MB), not the number the tab reports.
+
+- 2026-10-31 - replaceChildren(null) writes the text 'null': filter falsy children (la-ladera/js/ui/reader.js:paint)
+  An English-only sheet has no Spanish block and a page may have no date, so the reader printed a literal "null" line (R2c-011, a major). Spread a filtered
+  array: replaceChildren(...[a, b].filter(Boolean)). tests/ui-reader.test.mjs fails on it.
+
+- 2026-10-30 - Window and door frames drew faces nobody sees; dropping them halved frame_paint (la-ladera/js/arch/shellwin.js)
+  Every face of a frame that touches a jamb, a bar, the head, the sill or the wall is invisible: a plain window frame went 48 -> 24 triangles, a
+  casing 30 -> 12, frame_paint 202 k -> 93 k at spawn (calls -8, whole frame -0.18 M) with a pixel difference under 0.22/255. `tests/arch-diet.test.mjs`
+  pins both what must be there (soffit, jamb edges, both faces of each post) and what must not. Measure the fattest family before cutting anything.
+
+- 2026-10-30 - The sun pass never draws up-facing faces, so floors and terrain tiles need no castShadow (la-ladera/js/core/shadowpolicy.js)
+  three.js writes only the faces that look away from the sun into the shadow map: a floor (looks up) never wrote anything, so NO_CAST for floor/screed
+  materials and the 64 terrain tiles saves 23-41 calls and 0.17-0.36 M triangles a view at zero visible change. Ceilings must keep casting (their
+  underside shades a room; the roof's top face draws nothing); a shorter shadow distance saves nothing because a 128 m chunk is drawn whole when its
+  sphere touches the frustum. `?castall` restores the old behaviour for a before/after.
+
+- 2026-10-30 - Uncapped render cost is a lottery on a shared box: the same view read 3.6 to 20 ms (la-ladera/tests/metrics.mjs:MEASURE_JS)
+  The gate is the mean of 30 renders after gl.finish; with builders running it swings 5x. Gate on a QUIET box. The tool now also reports the best of five
+  12-frame windows (costMinMs, worst_cost_min_ms) next to the gated mean so a noisy run can be read honestly; frames are CPU/submission bound, not fill bound.
+
+- 2026-10-30 - Identity-frame tests hid a local-vs-world bug; test via the page (la-ladera/js/interiors/containers.js:scan)
+  deferContainers built each building's wake-up circle from building-local pivots and scan() compared it with the player's WORLD position, so no
+  cupboard ever woke in the real page while 30 node tests passed (their synthetic plans have an identity frame and they called activate() by hand).
+  Fix: bp.frame.toWorld(cx, 0, cz). tests/interiors-page.test.mjs drives the real path (enter a building, E on the crosshair) and failed red first.
+
+- 2026-10-30 - ?mergespan=N is the draw-call lever: 96 to 128 cut spawn calls 26%, +5% triangles (la-ladera/js/core/merge.js)
+  Measured on one tree, spawn / door-L09 calls: 1181 / 1227 at span 96, 875 / 899 at 128, 715 / 719 at 160 (triangles 2.34 / 2.46 / 2.48 M). The sun
+  shadow pass alone was 314 of the 1180 spawn calls. Baking closed door leaves into the L##.ext chunks saved another 258 (la-ladera/js/arch/leafbake.js).
+  Measure these before trimming individual meshes.
+
+- 2026-10-30 - shot.mjs step out paths are cwd-relative and eval results used to be dropped (la-ladera/tests/shot.mjs)
+  A --steps file's out paths resolve against the current directory, not --out. Before 2026-10-30 the value an eval returned was never printed, so
+  probes looked like they did nothing; it is now in report.results (step order). Never return a three.js object from an eval (44 MB of JSON came back once).
 - 2026-10-30 - A browser key proxy is load-noisy: same code gave 9 % and 0 % off-road (tests/harness.mjs:keyDown)
   The kbdrive proxy injects real CDP key events at wall-clock times against a live rAF loop, so box load (other lanes'
   Chrome, other sessions) changes the latency and the result. One run per cell under load showed a regression that two

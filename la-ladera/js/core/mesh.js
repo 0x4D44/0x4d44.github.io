@@ -13,6 +13,7 @@
 //  * matKey = material name, optionally tinted: 'plaster_a' or 'plaster_a#d9a441'.
 import * as THREE from 'three';
 import { mergeStatic } from './merge.js';
+import { castsShadow, groupCasts } from './shadowpolicy.js';
 
 const _c = new THREE.Color();
 const UP = [0, 1, 0];
@@ -147,8 +148,9 @@ export class MeshBuilder {
     this.box(mats, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0), o);
   }
 
-  /** Upright cylinder/cone frustum with smooth side normals. o: { r1 (top radius), caps:true, col, seg } */
+  /** Upright cylinder/cone frustum with smooth side normals. o: { r1 (top radius), caps:true, col, seg }. A height that is not above 0 adds nothing (it gave NaN normals: R1-011). */
   cyl(matKey, cx, cy, cz, r, h, seg = 12, o = {}) {
+    if (!(h > 0)) return;
     const acc = this._acc(matKey), r1 = o.r1 ?? r, col = rgb(o.col), [ou, ov] = this.uvOff;
     const slope = (r - r1) / h, base = acc.pos.length / 3;
     for (let i = 0; i <= seg; i++) {
@@ -251,7 +253,7 @@ export class MeshBuilder {
       g.computeBoundingSphere(); g.computeBoundingBox();
       const mesh = new THREE.Mesh(g, ctx.mat(key));
       mesh.name = `${o.name ?? 'batch'}:${key}`;
-      mesh.castShadow = o.cast ?? true; mesh.receiveShadow = o.receive ?? true;
+      mesh.castShadow = (o.cast ?? true) && (ctx.opts?.castAll === true || castsShadow(key)); mesh.receiveShadow = o.receive ?? true;       // castsShadow: core/shadowpolicy.js
       mesh.matrixAutoUpdate = false; mesh.updateMatrix();
       mesh.userData.matKey = key; mesh.userData.groupId = o.name;
       parent.add(mesh); out.push(mesh);
@@ -272,7 +274,7 @@ export class Batcher {
     if (!g) {
       const obj = new THREE.Group(); obj.name = id;
       (o.parent ?? this.ctx.scene).add(obj);
-      g = { id, obj, builder: new MeshBuilder(), cast: o.cast ?? true, receive: o.receive ?? true, meshes: [] };
+      g = { id, obj, builder: new MeshBuilder(), cast: o.cast ?? (this.ctx.opts?.castAll === true || groupCasts(id)), receive: o.receive ?? true, meshes: [] };   // groupCasts: core/shadowpolicy.js
       this.groups.set(id, g);
     }
     return g;

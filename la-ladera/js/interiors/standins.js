@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { hashStr } from '../core/rng.js';
 import { DECALS } from './decals.js';
+import { layoutOf, drawOpenable } from './carcass.js';
 
 // ------------------------------------------------------------------ small helpers
 export const u01 = (id, i = 0) => ((hashStr(String(id) + '#' + i) >>> 0) % 100003) / 100003;
@@ -43,21 +44,62 @@ const norm = (mat, col) => {
   return [mat, col];
 };
 
+// Triangle diet. Nobody counts the sides of a 3 cm bulb, and nobody sees the underside of what stands on the floor or the back of what hangs on a wall: the Pen
+// thins round things by their size and leaves out the faces that are always hidden (the record says whether the piece stands against a wall: `wallSide`).
+const lodSeg = (rad, seg) => Math.min(seg, rad <= 0.03 ? 5 : rad <= 0.06 ? 6 : rad <= 0.12 ? 8 : rad <= 0.25 ? 10 : 12);
+const lodSphere = (rx, seg) => (rx <= 0.045 ? Math.min(seg, 5) : rx <= 0.08 ? Math.min(seg, 6) : seg);
+/** An upright cylinder / frustum like MeshBuilder.cyl, but each cap can be left out (the underside of something standing on a surface, the top of a ceiling fixture). */
+const _cyc = new THREE.Color();
+function cylinder(b, key, cx, cy, cz, r, h, seg, col, r1, top, bottom) {
+  const acc = b._acc(key), ou = b.uvOff[0], ov = b.uvOff[1];
+  let cc = [1, 1, 1]; if (col != null) { _cyc.setHex(col); cc = [_cyc.r, _cyc.g, _cyc.b]; }                  // the same linear colour MeshBuilder writes
+  const slope = (r - r1) / h, base = acc.pos.length / 3;
+  for (let i = 0; i <= seg; i++) {
+    const a = (i / seg) * Math.PI * 2, cs = Math.cos(a), sn = Math.sin(a), l = Math.hypot(cs, slope, sn) || 1, nn = [cs / l, slope / l, sn / l], u = a * r + ou;
+    b.vert(acc, [cx + cs * r, cy, cz + sn * r], nn, u, ov, cc);
+    b.vert(acc, [cx + cs * r1, cy + h, cz + sn * r1], nn, u, h + ov, cc);
+  }
+  for (let i = 0; i < seg; i++) { const a = base + i * 2; acc.idx.push(a, a + 1, a + 3, a, a + 3, a + 2); }
+  b.tris += seg * 2;
+  for (const [yy, rr, up] of [[cy + h, r1, true], [cy, r, false]]) {
+    if (rr <= 1e-4 || (up ? !top : !bottom)) continue;
+    const nn = up ? [0, 1, 0] : [0, -1, 0], c0 = b.vert(acc, [cx, yy, cz], nn, ou, ov, cc);
+    for (let i = 0; i <= seg; i++) { const a = (i / seg) * Math.PI * 2; b.vert(acc, [cx + Math.cos(a) * rr, yy, cz + Math.sin(a) * rr], nn, Math.cos(a) * rr + ou, Math.sin(a) * rr + ov, cc); }
+    for (let i = 0; i < seg; i++) { if (up) acc.idx.push(c0, c0 + i + 2, c0 + i + 1); else acc.idx.push(c0, c0 + i + 1, c0 + i + 2); }
+    b.tris += seg;
+  }
+}
+
 /** Draws in item-local space onto a MeshBuilder whose base pose is the building's frame. */
-class Pen {
+export class Pen {
   constructor(b, r, c) {
     this.b = b; this.r = r; this.c = c; this.id = r.id;
     this.x = r.x; this.z = r.z; this.ry = r.ry ?? 0; this.cs = Math.cos(this.ry); this.sn = Math.sin(this.ry);
     this.W = (r.kind === 'wall' && r.w) ? r.w : c.size[0]; this.H = (r.kind === 'wall' && r.h) ? r.h : c.size[1]; this.D = c.size[2];
     this.y0 = r.kind === 'ceil' ? r.y - c.size[1] : r.y;
     this.n = 0;
+    this.rests = r.kind !== 'wall' && r.kind !== 'ceil';                            // its parts at ly = 0 touch the floor (or the surface it stands on): their underside is never seen
+    this.back = r.kind === 'wall' || !!r.wallSide;                                   // the face of a part flush with the back plane is against the wall
+  }
+  /** The faces that can never be seen, added to what the caller already skips. */
+  hide(ly, lz, sy, sz, skip, ry) {
+    let s = skip;
+    const add = (f) => { if (!s) s = [f]; else if (!s.includes(f)) s = [...s, f]; };
+    if (this.rests && ly < 0.004) add('ny');
+    if (this.r.kind === 'ceil' && ly + sy > this.c.size[1] - 0.004) add('py');
+    if (this.back && ry === 0 && lz - sz / 2 < -this.D / 2 + 0.014) add('nz');
+    return s;
   }
   X(lx, lz) { return this.x + lx * this.cs + lz * this.sn; }
   Z(lx, lz) { return this.z - lx * this.sn + lz * this.cs; }
+  /** Snapshot of how many indices every material has so far; `since(snapshot)` = the index ranges the draw calls in between wrote (parts that move later). */
+  mark() { const m = new Map(); for (const [k, a] of this.b.accs) m.set(k, a.idx.length); return m; }
+  since(m) { const out = []; for (const [k, a] of this.b.accs) { const from = m.get(k) ?? 0; if (a.idx.length > from) out.push({ key: k, from, to: a.idx.length }); } return out; }
   /** Box: centre (lx,lz), bottom at ly, size sx,sy,sz. skip = faces to leave out ('ny' under things standing on the floor). */
   box(mat, lx, ly, lz, sx, sy, sz, col, skip, ry = 0) {
     if (!(sx > 0 && sy > 0 && sz > 0)) return;
     [mat, col] = norm(mat, col);
+    skip = this.hide(ly, lz, sy, sz, skip, ry);
     this.b.box(mat, this.X(lx, lz), this.y0 + ly + sy / 2, this.Z(lx, lz), sx, sy, sz, { ry: this.ry + ry, col, skip });
     this.n++;
   }
@@ -65,13 +107,17 @@ class Pen {
   cyl(mat, lx, ly, lz, rad, h, seg = 10, col, r1, caps) {
     if (!(rad > 0 && h > 0)) return;
     [mat, col] = norm(mat, col);
-    this.b.cyl(mat, this.X(lx, lz), this.y0 + ly, this.Z(lx, lz), rad, h, seg, { r1, col, caps });
+    seg = lodSeg(rad, seg);
+    // caps: false / 'none' = open tube, 'top' / 'bottom' = that cap only; by default both, except the underside of what stands on a surface and the top of a ceiling fixture
+    cylinder(this.b, mat, this.X(lx, lz), this.y0 + ly, this.Z(lx, lz), rad, h, seg, col, r1 ?? rad,
+      caps !== false && caps !== 'none' && caps !== 'bottom' && this.r.kind !== 'ceil', caps !== false && caps !== 'none' && caps !== 'top' && !(this.rests && ly < 0.004));
     this.n++;
   }
   /** Horizontal cylinder (axis 'x' or 'z' of the item), centred at (lx,ly,lz): wheels, pipes, rolls. */
   hcyl(mat, lx, ly, lz, rad, len, axis = 'x', seg = 10, col) {
     if (!(rad > 0 && len > 0)) return;
     [mat, col] = norm(mat, col);
+    seg = lodSeg(rad, seg);
     const key = `c${rad}|${len}|${seg}`;
     let g = GEO.get(key); if (!g) GEO.set(key, g = new THREE.CylinderGeometry(rad, rad, len, seg, 1));
     const m = _M.makeRotationY(this.ry).multiply(axis === 'x' ? _RZ : _RX).setPosition(this.X(lx, lz), this.y0 + ly, this.Z(lx, lz));
@@ -82,11 +128,26 @@ class Pen {
   sphere(mat, lx, ly, lz, rx, ry = rx, rz = rx, col, seg = 8) {
     if (!(rx > 0)) return;
     [mat, col] = norm(mat, col);
+    seg = lodSphere(rx, seg);
     const key = `s${seg}`;
     let g = GEO.get(key); if (!g) GEO.set(key, g = new THREE.SphereGeometry(1, seg, Math.max(4, seg - 2)));
     const m = _M.makeRotationY(this.ry).multiply(_S.makeScale(rx, ry, rz)).setPosition(this.X(lx, lz), this.y0 + ly, this.Z(lx, lz));
     this.b.geometry(mat, g, m, { col });
     this.n++;
+  }
+  /** A flat round face on the item's front (a clock dial): a fan of `seg` triangles facing +z, centred at (lx, ly, lz). */
+  discZ(mat, lx, ly, lz, rad, seg, col) {
+    if (!(rad > 0)) return;
+    [mat, col] = norm(mat, col);
+    const b = this.b, acc = b._acc(mat), nrm = [this.sn, 0, this.cs], cx = this.X(lx, lz), cz = this.Z(lx, lz), cy = this.y0 + ly;
+    let cc = [1, 1, 1]; if (col != null) { _cyc.setHex(col); cc = [_cyc.r, _cyc.g, _cyc.b]; }
+    const c0 = b.vert(acc, [cx, cy, cz], nrm, 0.5, 0.5, cc);
+    for (let i = 0; i <= seg; i++) {
+      const a = (i / seg) * Math.PI * 2, dx = Math.cos(a) * rad, dy = Math.sin(a) * rad;
+      b.vert(acc, [cx + dx * this.cs, cy + dy, cz - dx * this.sn], nrm, 0.5 + Math.cos(a) * 0.5, 0.5 + Math.sin(a) * 0.5, cc);
+    }
+    for (let i = 0; i < seg; i++) acc.idx.push(c0, c0 + i + 1, c0 + i + 2);
+    b.tris += seg; this.n++;
   }
   /** Picture quad on the item's front (+z) face with explicit UVs: centre lx, bottom ly, depth lz, size w x h, uv = [u0, v0, u1, v1] (v0 = bottom edge). */
   quadUV(mat, lx, ly, lz, w, h, uv) {
@@ -174,6 +235,12 @@ S.cabinet = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1], doors = c.doors ?? 0, n = r.name;
   let col = T ?? NAMECOL[n];
   if (n === 'speaker') { P.flat(0, 0, 0, W, H, D, col, NY); P.cyl(FLAT, 0, 0.12, D / 2, 0.12, 0.012, 14, 0x3a3a3c); P.cyl(FLAT, 0, 0.55, D / 2, 0.1, 0.012, 14, 0x3a3a3c); return; }
+  const lay = layoutOf(c);
+  if (lay) {                                                                                  // wardrobes, nightstands, tv stands, pantries, lockers: a hollow carcass and real fronts (carcass.js)
+    drawOpenable(P, c, col, lay);
+    if (H > 1.2 && n !== 'locker_pair') P.box(c.mat, 0, H, 0, W + 0.02, 0.03, D + 0.02, col ? mul(col, 0.85) : undefined);
+    return;
+  }
   P.box(c.mat, 0, 0, 0, W, H, D, col, NY);
   if (H > 1.2) P.box(c.mat, 0, H, 0, W + 0.02, 0.03, D + 0.02, col ? mul(col, 0.85) : undefined);
   const dn = Math.max(1, doors || 2);
@@ -186,7 +253,12 @@ S.cabinet = (P, c, T, r) => {
   if (n === 'tv_stand') P.box('metal_dark', 0, 0.16, D / 2 + 0.003, W * 0.5, 0.2, 0.004, BLACK);
 };
 S.dresser = (P, c, T, r) => {
-  const { W, D } = P, H = c.size[1], col = T ?? NAMECOL[r.name], tall = H > 0.7;
+  const { W, D } = P, H = c.size[1], col = T ?? NAMECOL[r.name], tall = H > 0.7, lay = layoutOf(c);
+  if (lay) {                                                                                  // drawers that really open (carcass.js)
+    drawOpenable(P, c, col, lay);
+    P.box(c.mat, 0, H, 0, W + 0.02, 0.025, D + 0.02, col ? mul(col, 0.8) : undefined);
+    return;
+  }
   P.box(c.mat, 0, 0, 0, W, H, D, col, NY);
   if (c.tags.includes('tools')) { P.box('metal_dark', 0, H - 0.04, D / 2 - 0.01, W - 0.04, 0.04, 0.06); }
   const rows = tall ? 4 : 3, dh = (H - 0.14) / rows;
@@ -198,8 +270,12 @@ S.dresser = (P, c, T, r) => {
 };
 S.wallunit = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1], col = T;
-  P.box(c.mat, 0, 0, 0, W, 0.75, D, col, NY);                                     // lower cabinet
-  for (let i = 1; i < 3; i++) P.box('metal_dark', -W / 2 + W * i / 3, 0.04, D / 2 + 0.002, 0.012, 0.67, 0.004);
+  const lay = layoutOf(c);
+  if (lay) drawOpenable(P, c, col, lay);                                          // lower cabinet: three real doors
+  else {
+    P.box(c.mat, 0, 0, 0, W, 0.75, D, col, NY);                                   // lower cabinet
+    for (let i = 1; i < 3; i++) P.box('metal_dark', -W / 2 + W * i / 3, 0.04, D / 2 + 0.002, 0.012, 0.67, 0.004);
+  }
   P.box(c.mat, 0, 0.75, 0, W, 0.04, D, col ? mul(col, 0.8) : undefined);
   P.box(c.mat, -W / 2 + 0.02, 0.79, 0, 0.04, H - 0.79, D, col);                   // upper open shelves
   P.box(c.mat, W / 2 - 0.02, 0.79, 0, 0.04, H - 0.79, D, col);
@@ -234,7 +310,13 @@ S.shelf = (P, c, T, r) => {
   }
 };
 S.vitrine = (P, c, T, r) => {
-  const { W, D } = P, H = c.size[1], col = T;
+  const { W, D } = P, H = c.size[1], col = T, lay = layoutOf(c);
+  if (lay) {                                                                      // glass doors over a cupboard: both really open (carcass.js); the trinkets stay on the shelves
+    drawOpenable(P, c, col, lay);
+    const ys = lay.slots[0].surf;
+    for (let k = 0; k < 3; k++) for (let j = 0; j < 3; j++) P.flat(-W * 0.3 + j * W * 0.3, ys[k].y, 0, 0.1, 0.14 + u01(P.id, k * 3 + j) * 0.1, 0.1, pick([0xe4dccb, 0xc8a040, 0xd8d0c0, 0x7a8a9a, 0xc23a30], P.id, k * 3 + j));
+    return;
+  }
   P.box(c.mat, 0, 0, 0, W, 0.7, D, col, NY);
   P.box(c.mat, -W / 2 + 0.02, 0.7, 0, 0.04, H - 0.7, D, col);
   P.box(c.mat, W / 2 - 0.02, 0.7, 0, 0.04, H - 0.7, D, col);
@@ -248,7 +330,8 @@ S.vitrine = (P, c, T, r) => {
   P.box('metal_dark', 0, 0.06, D / 2 + 0.002, 0.012, 0.58, 0.004);
 };
 S.chest = (P, c, T) => {
-  const { W, D } = P, H = c.size[1];
+  const { W, D } = P, H = c.size[1], lay = layoutOf(c);
+  if (lay) { drawOpenable(P, c, T, lay); P.box('metal_chrome', 0, H * 0.55 - 0.1, D / 2 + 0.012, 0.06, 0.05, 0.02); return; }          // a hollow trunk with a lid that lifts
   P.box(c.mat, 0, 0, 0, W, H - 0.06, D, T, NY);
   P.box(c.mat, 0, H - 0.06, 0, W + 0.02, 0.06, D + 0.02, T ? mul(T, 0.85) : undefined);
   for (const sx of [-1, 1]) P.box('metal_dark', sx * W * 0.32, 0, D / 2 + 0.003, 0.05, H, 0.006);
@@ -399,8 +482,12 @@ S.tableRound = (P, c, T, r) => {
 S.desk = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1], col = T ?? undefined;
   P.box(c.mat, 0, H - 0.04, 0, W, 0.04, D, col);
-  P.box(c.mat, -W / 2 + 0.2, 0, 0.0, 0.38, H - 0.04, D - 0.04, col ? mul(col, 0.92) : undefined, NY);   // drawer pedestal
-  for (let i = 0; i < 3; i++) { P.box('metal_dark', -W / 2 + 0.2, 0.1 + i * 0.2, D / 2 - 0.018, 0.34, 0.008, 0.004); P.box('metal_chrome', -W / 2 + 0.2, 0.17 + i * 0.2, D / 2 - 0.01, 0.1, 0.014, 0.02); }
+  const lay = layoutOf(c);
+  if (lay) drawOpenable(P, c, col ? mul(col, 0.92) : undefined, lay);                                    // the drawer pedestal: three drawers that open (carcass.js)
+  else {
+    P.box(c.mat, -W / 2 + 0.2, 0, 0.0, 0.38, H - 0.04, D - 0.04, col ? mul(col, 0.92) : undefined, NY);   // drawer pedestal
+    for (let i = 0; i < 3; i++) { P.box('metal_dark', -W / 2 + 0.2, 0.1 + i * 0.2, D / 2 - 0.018, 0.34, 0.008, 0.004); P.box('metal_chrome', -W / 2 + 0.2, 0.17 + i * 0.2, D / 2 - 0.01, 0.1, 0.014, 0.02); }
+  }
   P.box(c.mat, W / 2 - 0.03, 0, 0.0, 0.04, H - 0.04, D - 0.04, col, NY);
   P.box(c.mat, 0, 0.25, -D / 2 + 0.01, W - 0.4, H - 0.3, 0.02, col);                                      // modesty panel
 };
@@ -424,10 +511,10 @@ S.stove = (P, c) => {
   const { W, D } = P, H = c.size[1];
   P.box(c.mat, 0, 0, 0, W, H - 0.04, D, undefined, NY);
   P.box('metal_dark', 0, H - 0.04, 0, W, 0.04, D);
-  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) P.cyl('metal_dark', sx * W * 0.22, H, sz * D * 0.2, 0.07, 0.02, 10, 0x3a3a3c);
+  for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) P.cyl('metal_dark', sx * W * 0.22, H, sz * D * 0.2, 0.07, 0.02, 10, 0x3a3a3c, undefined, 'top');       // a burner sits on the hob: only its top shows
   P.box('glass', 0, 0.12, D / 2 + 0.002, W - 0.14, H - 0.36, 0.008, 0x303236);
   P.box('metal_chrome', 0, H - 0.2, D / 2 + 0.02, W - 0.16, 0.02, 0.025);
-  for (let i = -2; i <= 2; i++) P.cyl('metal_dark', i * 0.1, H - 0.14, D / 2, 0.018, 0.02, 6);
+  for (let i = -2; i <= 2; i++) P.cyl('metal_dark', i * 0.1, H - 0.14, D / 2, 0.018, 0.02, 6, undefined, undefined, 'top');
 };
 S.cylinder = (P, c, T, r) => {
   const n = r.name, rad = Math.min(P.W, P.D) / 2, H = c.size[1];
@@ -441,12 +528,17 @@ S.cylinder = (P, c, T, r) => {
   if (n === 'pot_stack') { P.cyl('metal_steel', 0, 0, 0, rad, 0.12, 10); P.cyl('metal_steel', 0, 0.12, 0, rad * 0.8, 0.1, 10); P.cyl('metal_steel', 0, 0.22, 0, rad * 0.6, 0.08, 10); return; }
   if (n === 'kettle') { P.cyl('metal_steel', 0, 0, 0, rad * 0.9, H * 0.7, 10, undefined, rad * 0.6); P.box('metal_dark', rad * 0.9, H * 0.4, 0, 0.06, 0.04, 0.03); P.box('metal_dark', 0, H * 0.7, 0, rad * 1.1, 0.025, 0.02); return; }
   if (n === 'thermos_set') { for (let i = 0; i < 2; i++) { P.cyl(FLAT, -0.07 + i * 0.14, 0, 0, 0.055, H - 0.03 * i, 10, i ? 0xc23a30 : 0x2f6fbf); P.cyl('metal_chrome', -0.07 + i * 0.14, H - 0.03 * i, 0, 0.05, 0.03, 10); } return; }
-  if (n === 'fruit_bowl') { P.cyl('ceramic_white', 0, 0, 0, rad, 0.08, 12, 0xe8e0cc, rad * 0.5); for (let i = 0; i < 5; i++) P.sphere(i % 2 ? 'food_mango' : 'food_banana', Math.cos(i * 1.3) * 0.06, 0.1, Math.sin(i * 1.3) * 0.06, 0.05); return; }
-  if (n === 'bread_basket') { P.cyl('wood_pine', 0, 0, 0, rad, 0.1, 10, 0xc89a62, rad * 0.8); for (let i = 0; i < 4; i++) P.sphere('food_bread', -0.09 + i * 0.06, 0.12, (i % 2) * 0.04, 0.05, 0.035, 0.04); return; }
+  if (n === 'fruit_bowl') { P.cyl('ceramic_white', 0, 0, 0, rad, 0.08, 10, 0xe8e0cc, rad * 0.5); for (let i = 0; i < 5; i++) P.sphere(i % 2 ? 'food_mango' : 'food_banana', Math.cos(i * 1.3) * 0.06, 0.1, Math.sin(i * 1.3) * 0.06, 0.05, 0.05, 0.05, undefined, 6); return; }
+  if (n === 'bread_basket') { P.cyl('wood_pine', 0, 0, 0, rad, 0.1, 10, 0xc89a62, rad * 0.8); for (let i = 0; i < 4; i++) P.sphere('food_bread', -0.09 + i * 0.06, 0.12, (i % 2) * 0.04, 0.05, 0.035, 0.04, undefined, 6); return; }
   P.cyl(c.mat, 0, 0, 0, rad, H, 10, col);
 };
 S.fridge = (P, c, T, r) => {
-  const { W, D } = P, H = c.size[1], n = r.name, col = T ?? (n.includes('drinks') ? 0xd8e4ee : undefined);
+  const { W, D } = P, H = c.size[1], n = r.name, col = T ?? (n.includes('drinks') ? 0xd8e4ee : undefined), lay = layoutOf(c);
+  if (lay) {                                                                                               // a fridge OPENS: freezer door over the main door (carcass.js); the magnets ride on the freezer door
+    P.box('metal_dark', 0, 0, 0, W - 0.06, 0.03, D - 0.06);
+    drawOpenable(P, c, col, lay);
+    return;
+  }
   P.box(c.mat, 0, 0.03, 0, W, H - 0.03, D, col, NY);
   P.box('metal_dark', 0, 0, 0, W - 0.06, 0.03, D - 0.06);
   if (n === 'washing_machine') { P.hcyl(FLAT, 0, H * 0.4, D / 2 + 0.004, 0.2, 0.012, 'z', 16, 0xc8ccd0); P.hcyl(FLAT, 0, H * 0.4, D / 2 + 0.008, 0.16, 0.008, 'z', 16, 0x3a4a5a); P.box('metal_dark', 0, H - 0.14, D / 2 + 0.002, W - 0.1, 0.1, 0.004, 0x3a3a3c); return; }
@@ -459,15 +551,18 @@ S.fridge = (P, c, T, r) => {
   if (r.flags?.magnets) for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W * 0.2 + u * W * 0.4, H * 0.55 + i * 0.1, D / 2 + 0.006, 0.05 + u * 0.04, 0.05, 0.01, pick([0xd23a32, 0x2f6fbf, 0xe8c332, 0x2f9a58, 0xf0efe8], P.id, i)); }
 };
 S.sinkunit = (P, c, T) => {
-  const { W, D } = P, H = c.size[1];
-  P.box(c.mat, 0, 0, 0, W, H - 0.04, D, T ?? undefined, NY);
-  for (let i = 1; i < 3; i++) P.box('metal_dark', -W / 2 + W * i / 3, 0.05, D / 2 + 0.002, 0.012, H - 0.14, 0.004);
+  const { W, D } = P, H = c.size[1], lay = layoutOf(c);
+  if (lay) drawOpenable(P, c, T ?? undefined, lay);                                                       // cupboards under the sink: one door per 0.6 m (carcass.js)
+  else {
+    P.box(c.mat, 0, 0, 0, W, H - 0.04, D, T ?? undefined, NY);
+    for (let i = 1; i < 3; i++) P.box('metal_dark', -W / 2 + W * i / 3, 0.05, D / 2 + 0.002, 0.012, H - 0.14, 0.004);
+  }
   P.box('metal_steel', 0, H - 0.04, 0, W + 0.02, 0.04, D + 0.02);
   P.box('metal_dark', -W * 0.15, H - 0.0, 0.0, W * 0.4, 0.004, D * 0.6, 0x55595c);                       // basin hollow (dark)
   P.box('metal_chrome', -W * 0.15, H, -D / 2 + 0.08, 0.03, 0.2, 0.03);
   P.box('metal_chrome', -W * 0.15, H + 0.17, -D / 2 + 0.13, 0.025, 0.025, 0.1);
   P.flat(W * 0.32, H, 0.02, 0.28, 0.03, 0.4, 0xe4e0d4);                                                    // drainer
-  for (let i = 0; i < 3; i++) P.box('metal_chrome', -W / 2 + W * (i + 0.5) / 3 + 0.12, H * 0.55, D / 2 + 0.012, 0.016, 0.1, 0.02);
+  if (!lay) for (let i = 0; i < 3; i++) P.box('metal_chrome', -W / 2 + W * (i + 0.5) / 3 + 0.12, H * 0.55, D / 2 + 0.012, 0.016, 0.1, 0.02);
 };
 const GOODS_BY_COUNTER = {
   pharmacy_counter: [0xf0efe8, 0x2f6fbf, 0x2f9a58, 0xd23a32], bread_case_glass: [0xc98a4a, 0xe8d0b0, 0xa8683a], fridge_meat: [0xa8403c, 0xc25a50, 0xe8d0b0],
@@ -475,35 +570,48 @@ const GOODS_BY_COUNTER = {
 };
 S.counter = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1], n = r.name, glass = !!c.glass, col = T ?? undefined, d = (k) => (col ? mul(col, k) : undefined);
+  const lay = layoutOf(c);
   if (c.tags.includes('kitchen')) {
-    P.box(c.mat, 0, 0, 0, W, H - 0.04, D, col, NY);
-    const k = Math.max(1, Math.round(W / 0.6));
-    for (let i = 1; i < k; i++) P.box('metal_dark', -W / 2 + W * i / k, 0.05, D / 2 + 0.002, 0.012, H - 0.14, 0.004);
-    for (let i = 0; i < k; i++) P.box('metal_chrome', -W / 2 + W * (i + 0.5) / k + 0.1, H * 0.62, D / 2 + 0.012, 0.016, 0.1, 0.02);
+    if (lay) drawOpenable(P, c, col, lay);                                                                 // one cupboard door per 0.6 m (carcass.js)
+    else {
+      P.box(c.mat, 0, 0, 0, W, H - 0.04, D, col, NY);
+      const k = Math.max(1, Math.round(W / 0.6));
+      for (let i = 1; i < k; i++) P.box('metal_dark', -W / 2 + W * i / k, 0.05, D / 2 + 0.002, 0.012, H - 0.14, 0.004);
+      for (let i = 0; i < k; i++) P.box('metal_chrome', -W / 2 + W * (i + 0.5) / k + 0.1, H * 0.62, D / 2 + 0.012, 0.016, 0.1, 0.02);
+    }
     P.box('formica', 0, H - 0.04, 0, W + 0.02, 0.04, D + 0.02, 0xd8d0c0);
     return;
   }
   if (n === 'barber_station') {
-    P.box(c.mat, 0, 0, 0, W, H - 0.05, D, col, NY);
-    for (let i = 1; i < 4; i++) P.box('metal_dark', -W / 2 + W * i / 4, 0.05, D / 2 + 0.002, 0.012, H - 0.15, 0.004);
+    if (lay) drawOpenable(P, c, col, lay);                                                                 // a solid stand with two real drawers
+    else {
+      P.box(c.mat, 0, 0, 0, W, H - 0.05, D, col, NY);
+      for (let i = 1; i < 4; i++) P.box('metal_dark', -W / 2 + W * i / 4, 0.05, D / 2 + 0.002, 0.012, H - 0.15, 0.004);
+    }
     P.box('formica', 0, H - 0.05, 0, W + 0.02, 0.05, D + 0.02, 0xe8e0d0);
     for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.1 + u * 0.08, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
     return;
   }
-  // shop counters: solid body at the shopkeeper side, glass case at the customer side
-  P.box(c.mat, 0, 0, 0, W, 0.62, D, col, NY);
+  // shop counters: solid body at the shopkeeper side, glass case at the customer side; the cash drawer (one real drawer) is on the customer's side
+  if (lay) drawOpenable(P, c, col, lay); else P.box(c.mat, 0, 0, 0, W, 0.62, D, col, NY);
   P.box(c.mat, 0, 0.62, -D / 2 + 0.12, W, H - 0.62, 0.24, d(0.9));
   if (glass) {
     P.box('glass', 0, 0.62, 0.1, W - 0.06, H - 0.62 - 0.02, D - 0.3);
     P.box('metal_chrome', 0, 0.62, 0.1, W - 0.04, 0.012, D - 0.28);
     const pal = GOODS_BY_COUNTER[n] ?? GOODS_BY_COUNTER.shop_counter_glass;
-    for (let i = 0; i < 6; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.2 + i * (W - 0.4) / 5.5, 0.64, 0.1, 0.12 + u * 0.08, 0.08 + u * 0.14, 0.12, pick(pal, P.id, i)); }
+    for (let i = 0; i < 6; i++) {
+      const u = u01(P.id, i), x = -W / 2 + 0.2 + i * (W - 0.4) / 5.5, col = pick(pal, P.id, i);
+      if (n === 'bread_case_glass') { if (i % 3 === 2) P.sphere(FLAT, x, 0.69, 0.1, 0.07 + u * 0.02, 0.04, 0.07 + u * 0.02, col); else P.hcyl(FLAT, x, 0.68, 0.1, 0.036 + u * 0.01, 0.3, 'z', 8, col); }       // loaves and round rolls
+      else if (n === 'fridge_meat') P.sphere(FLAT, x, 0.67, 0.1, 0.06 + u * 0.025, 0.03, 0.05 + u * 0.02, col);                                                                                       // steaks and joints
+      else P.flat(x, 0.64, 0.1, 0.12 + u * 0.08, 0.08 + u * 0.14, 0.12, col);
+    }
   } else P.box(c.mat, 0, H - 0.04, 0, W + 0.04, 0.04, D + 0.04, d(0.8));
   P.box(c.mat, 0, H - 0.01, 0, W + 0.04, 0.03, D + 0.04, d(0.75));
   P.box('metal_dark', 0, 0.06, D / 2 + 0.002, W - 0.1, 0.01, 0.004);
 };
 S.upper = (P, c, T) => {
-  const { W, D } = P, H = c.size[1];
+  const { W, D } = P, H = c.size[1], lay = layoutOf(c);
+  if (lay) { drawOpenable(P, c, T ?? undefined, lay); return; }                                           // wall cupboards: a pair of real doors (carcass.js)
   P.box(c.mat, 0, 0, 0, W, H, D, T ?? undefined);
   const k = Math.max(2, Math.round(W / 0.45));
   for (let i = 1; i < k; i++) P.box('metal_dark', -W / 2 + W * i / k, 0.03, D / 2 + 0.002, 0.012, H - 0.06, 0.004);
@@ -538,7 +646,7 @@ S.rack = (P, c, T, r) => {
   for (let k = 0; k < rows; k++) {
     const ly = 0.08 + k * (H - 0.12) / rows;
     P.box(mat, 0, ly, 0, W, 0.025, D, col);
-    if (tags.includes('bread')) for (let j = 0; j < 4; j++) P.flat(-W / 2 + 0.12 + j * (W - 0.2) / 3.4, ly + 0.025, 0.0, 0.16, 0.07, 0.3, pick([0xc98a4a, 0xa8683a, 0xe8d0b0], P.id, k * 4 + j));
+    if (tags.includes('bread')) for (let j = 0; j < 4; j++) P.hcyl(FLAT, -W / 2 + 0.1 + j * (W - 0.2) / 3.1, ly + 0.025 + 0.04, 0.0, 0.04, 0.34, 'z', 8, pick([0xc98a4a, 0xa8683a, 0xd8a460, 0xe0b878], P.id, k * 4 + j));      // loaves, baguette-end towards the customer
     else if (tags.includes('modista')) for (let j = 0; j < 3; j++) P.flat(-W / 2 + 0.2 + j * (W - 0.3) / 2.6, ly + 0.025, 0.0, 0.2, 0.2, 0.34, pick([0xb23a2a, 0x2f6fbf, 0xe8c332, 0x2f9a58, 0xf0efe8, 0x6a2a52], P.id, k * 3 + j));
     else if (tags.includes('papeleria')) for (let j = 0; j < 4; j++) P.flat(-W / 2 + 0.1 + j * 0.09, ly + 0.025, 0.0, 0.07, 0.16, 0.2, pick([0xd23a32, 0x2f6fbf, 0xe8c332, 0x2f9a58], P.id, k * 4 + j));
   }
@@ -638,7 +746,7 @@ S.lamp = (P, c, T, r) => {
 };
 S.bulb = (P, c) => {
   const H = c.size[1];
-  P.box('metal_dark', 0, H - 0.1, 0, 0.012, 0.1, 0.012, 0x15171b);
+  P.box('metal_dark', 0, H - 0.1, 0, 0.012, 0.1, 0.012, 0x15171b, ['nx', 'nz', 'ny']);                          // the cord: two of its faces are all anyone sees
   P.cyl('metal_dark', 0, H - 0.14, 0, 0.022, 0.05, 6, 0x2a2a2c);
   P.cyl('bulb_glow', 0, 0, 0, 0.032, 0.1, 8, undefined, 0.022);
 };
@@ -657,10 +765,10 @@ S.pc = (P, c) => {
 };
 S.clock = (P, c) => {
   const rad = Math.min(P.W, P.H) / 2;
-  P.hcyl('wood_dark', 0, rad, -0.004, rad, 0.036, 'z', 14);
-  P.hcyl(FLAT, 0, rad, 0.016, rad * 0.86, 0.006, 'z', 14, 0xf4f0e6);
-  P.box(FLAT, 0, rad, 0.02, 0.012, rad * 0.7, 0.004, 0x1c1c1e);
-  P.box(FLAT, rad * 0.22, rad - 0.006, 0.02, rad * 0.5, 0.012, 0.004, 0x1c1c1e);
+  P.hcyl('wood_dark', 0, rad, -0.004, rad, 0.036, 'z', 8);                                // the rim
+  P.discZ(FLAT, 0, rad, 0.0145, rad * 0.86, 8, 0xf4f0e6);                                   // the dial: a fan on the rim's face
+  P.box(FLAT, 0, rad, 0.02, 0.012, rad * 0.7, 0.004, 0x1c1c1e, ['nx', 'nz', 'ny', 'py']);   // the hands: a front and a side are all that shows
+  P.box(FLAT, rad * 0.22, rad - 0.006, 0.02, rad * 0.5, 0.012, 0.004, 0x1c1c1e, ['nx', 'nz', 'ny', 'py']);
 };
 
 // ---- religion and decor
@@ -717,28 +825,49 @@ S.plant = (P, c, T, r) => {
   const potH = n === 'plant_bucket' ? 0.34 : n === 'plant_big' ? 0.42 : n === 'plant_hanging' ? 0.18 : n === 'plant_tin' ? 0.16 : 0.3;
   const hang = r.kind === 'ceil', y0 = hang ? H - potH : 0;
   P.cyl(n === 'plant_bucket' ? FLAT : n === 'plant_tin' ? 'metal_painted' : 'clay_terracotta', 0, y0, 0, W * 0.4, potH, 10, n === 'plant_bucket' ? (T ?? pick([0xd23a32, 0x2f6fbf, 0xe8c332], P.id)) : pot, W * 0.5);
-  P.cyl('soil', 0, y0 + potH - 0.01, 0, W * 0.38, 0.012, 10, undefined, undefined, false);
   const leaves = n === 'plant_big' ? 9 : 6, green = [0x4a8a3a, 0x3a7a30, 0x5a9a44];
-  for (let i = 0; i < leaves; i++) {
+  for (let i = 0; i < leaves; i++) {                                               // a leaf is its two broad faces and its tip (the thin edges are not seen); the soil under the pot's lid is not drawn
     const a = i * 2.4 + u01(P.id, i), rr = (0.12 + u01(P.id, 10 + i) * 0.14) * (n === 'plant_big' ? 1.3 : 1), hh = (H - potH) * (0.5 + u01(P.id, 20 + i) * 0.5);
-    P.box('leaf_green', Math.cos(a) * rr * 0.5, y0 + potH, Math.sin(a) * rr * 0.5, 0.03, hh, 0.16 + u01(P.id, 30 + i) * 0.08, pick(green, P.id, i), undefined, a);
+    P.box('leaf_green', Math.cos(a) * rr * 0.5, y0 + potH, Math.sin(a) * rr * 0.5, 0.03, hh, 0.16 + u01(P.id, 30 + i) * 0.08, pick(green, P.id, i), ['pz', 'nz', 'ny'], a);
   }
   if (n === 'plant_pot_clay' || n === 'plant_bucket') for (let i = 0; i < 3; i++) P.flat(Math.cos(i * 2.1) * 0.1, y0 + potH + (H - potH) * 0.7, Math.sin(i * 2.1) * 0.1, 0.05, 0.05, 0.05, pick([0xc8302a, 0xe8c030, 0xd9a0a8], P.id, i));
 };
 
 // ---- shops
+// What a shelf holds, by trade (`goods`: the catalogue's, or the shop fit-out's through record flags). `shapes` are picked per item so a shelf is not one block colour:
+// cans, bottles and boxes for the grocer, loaves for the baker, shoes and shoe boxes for the cobbler, paint tins for the ironmonger.
 const GOODS = {
-  tienda: { pal: [0xd23a32, 0xe8c332, 0x2f6fbf, 0x2f9a58, 0xf0efe8, 0xc98a4a], w: [0.07, 0.14], h: [0.12, 0.26], d: 0.8 },
-  ferre: { pal: [0xb23a2a, 0x2f6fbf, 0xe8c332, 0x6a7a62, 0x8a8a8a, 0xd8d0c0], w: [0.1, 0.2], h: [0.1, 0.22], d: 0.8 },
-  pharma: { pal: [0xf0efe8, 0x2f6fbf, 0x2f9a58, 0xd23a32, 0xe8c332, 0xd9a0a8], w: [0.05, 0.1], h: [0.07, 0.15], d: 0.8 },
+  tienda: { pal: [0xd23a32, 0xe8c332, 0x2f6fbf, 0x2f9a58, 0xf0efe8, 0xc98a4a], w: [0.07, 0.14], h: [0.12, 0.26], d: 0.8, shapes: ['box', 'can', 'bottle', 'box', 'can'] },
+  ferre: { pal: [0xb23a2a, 0x2f6fbf, 0xe8c332, 0x6a7a62, 0x8a8a8a, 0xd8d0c0], w: [0.1, 0.2], h: [0.1, 0.22], d: 0.8, shapes: ['paint', 'box', 'paint', 'can'] },
+  pharma: { pal: [0xf0efe8, 0x2f6fbf, 0x2f9a58, 0xd23a32, 0xe8c332, 0xd9a0a8], w: [0.05, 0.1], h: [0.07, 0.15], d: 0.8, shapes: ['box', 'bottle', 'box'] },
   papel: { pal: [0xd23a32, 0x2f6fbf, 0xe8c332, 0x2f9a58, 0xf0efe8, 0xd9a0a8], w: [0.04, 0.09], h: [0.16, 0.24], d: 0.7 },
-  shoes: { pal: [0x2a2a2c, 0x6b4226, 0xd23a32, 0xe8e4da, 0x2f5f9a, 0xd4a830], w: [0.2, 0.26], h: [0.09, 0.13], d: 0.8 },
+  shoes: { pal: [0x2a2a2c, 0x6b4226, 0xd23a32, 0xe8e4da, 0x2f5f9a, 0xd4a830], w: [0.24, 0.3], h: [0.09, 0.13], d: 0.8, shapes: ['shoe', 'shoe', 'shoebox'] },
+  bread: { pal: [0xc98a4a, 0xd8a460, 0xa8683a, 0xe0b878, 0xb87a40], w: [0.09, 0.13], h: [0.07, 0.1], d: 0.8, shapes: ['loaf'] },
   fabric: { pal: [0xb23a2a, 0x2f6fbf, 0xe8c332, 0x2f9a58, 0x6a2a52, 0xf0efe8, 0xd9a0a8], w: [0.14, 0.2], h: [0.26, 0.34], d: 0.9 },
-  cafe: { pal: [0xe4dccb, 0x6b4226, 0xc23a30, 0xd4a830, 0x2f6fbf], w: [0.08, 0.14], h: [0.1, 0.24], d: 0.6 },
+  cafe: { pal: [0xe4dccb, 0x6b4226, 0xc23a30, 0xd4a830, 0x2f6fbf], w: [0.08, 0.14], h: [0.1, 0.24], d: 0.6, shapes: ['box', 'can', 'box'] },
   parts: { pal: [0x2a2a2c, 0xb23a2a, 0xc8ccd0, 0xe8c332, 0x2f5f9a], w: [0.12, 0.22], h: [0.1, 0.2], d: 0.8 },
 };
+const GOODS_HIDDEN = ['ny', 'nz'];              // a box on a shelf board shows neither its underside nor its back (the shelf's back panel is right behind it)
+/** One item of goods standing on a shelf board: centre x, base y, depth offset z, slot width w and height h, depth `dp`. */
+function drawGood(P, shape, x, y, z, w, h, dp, col, u, i) {
+  switch (shape) {
+    case 'can': P.cyl(FLAT, x, y, z, w * 0.42, h, 8, col); break;
+    case 'paint': P.cyl(FLAT, x, y, z, w * 0.4, h, 8, col); P.cyl(FLAT, x, y + h, z, w * 0.34, 0.014, 8, 0xc8ccd0); break;
+    case 'bottle': { const r = Math.min(w, 0.08) * 0.38; P.cyl(FLAT, x, y, z, r, h * 0.72, 8, col); P.cyl(FLAT, x, y + h * 0.72, z, r * 0.4, h * 0.28, 6, mix(col, 0xffffff, 0.45)); break; }
+    case 'loaf': { const rad = Math.min(w * 0.46, h * 0.5 + 0.015); P.hcyl(FLAT, x, y + rad, z, rad, dp * 0.85, 'z', 8, col); break; }
+    case 'shoe': {                                                               // seen from the side: the sole, the heel and instep, a lower toe cap
+      const s = u > 0.5 ? 1 : -1;
+      P.flat(x, y, z, w, 0.022, dp * 0.42, 0x2a2a2c);
+      P.flat(x - s * w * 0.17, y + 0.022, z, w * 0.5, h * 0.85, dp * 0.38, col);
+      P.flat(x + s * w * 0.22, y + 0.022, z, w * 0.36, h * 0.48, dp * 0.38, col);
+      break;
+    }
+    case 'shoebox': P.flat(x, y, z, w, h * 1.1, dp * 0.55, pick([0xb08a5a, 0xd23a32, 0xe8e4da, 0x2f5f9a], P.id, i), GOODS_HIDDEN); break;
+    default: P.flat(x, y, z, w, h, dp, col, GOODS_HIDDEN);
+  }
+}
 S.shopshelf = (P, c, T, r) => {
-  const { W, D } = P, H = c.size[1], g = c.goods, col = T ?? undefined, G = GOODS[g] ?? GOODS.tienda;
+  const { W, D } = P, H = c.size[1], g = r.flags?.goods ?? c.goods, col = T ?? undefined, G = GOODS[g] ?? GOODS.tienda;
   if (g === 'chips') {                                                          // wire spinner of hanging snack bags
     P.box('metal_dark', 0, 0, -D / 2 + 0.01, W, H, 0.02, undefined, NY);
     for (const sx of [-1, 1]) P.box('metal_dark', sx * (W / 2 - 0.015), 0, 0, 0.03, H, D, undefined, NY);
@@ -758,8 +887,9 @@ S.shopshelf = (P, c, T, r) => {
     while (x < W / 2 - 0.1 && j < 14) {
       const u = u01(P.id, k * 17 + j), w = G.w[0] + u * (G.w[1] - G.w[0]), h = Math.min(slotH, G.h[0] + u01(P.id, 99 + k * 17 + j) * (G.h[1] - G.h[0]));
       if (x + w > W / 2 - 0.05) break;
-      if (g === 'fabric') P.cyl(FLAT, x + w / 2, ly + 0.03, 0, w / 2, Math.min(slotH, 0.3), 8, pick(G.pal, P.id, k * 17 + j));
-      else P.flat(x + w / 2, ly + 0.03, D * 0.05 * (u - 0.5), w, h, D * G.d * 0.8, pick(G.pal, P.id, k * 17 + j));
+      const i = k * 17 + j, tone = pick(G.pal, P.id, i);
+      if (g === 'fabric') P.cyl(FLAT, x + w / 2, ly + 0.03, 0, w / 2, Math.min(slotH, 0.3), 8, tone);
+      else drawGood(P, G.shapes ? pick(G.shapes, P.id, 200 + i) : 'box', x + w / 2, ly + 0.03, D * 0.05 * (u - 0.5), w, h, D * G.d * 0.8, tone, u, i);
       x += w + 0.012; j++;
     }
   }
@@ -989,14 +1119,19 @@ S.cage = (P, c) => {
   P.sphere('feather_canary', -0.03, H * 0.32 + 0.04, 0, 0.035, 0.035, 0.03);
   P.sphere('feather_canary', 0.0, H * 0.32 + 0.06, 0, 0.022, 0.022, 0.022);
 };
-S.cat = (P, c) => {
-  const col = pick([0x2a2a2c, 0xc8a070, 0x8a8a88, 0xd8d0c0, 0xb8703a], P.id), dk = mul(col, 0.7);
-  P.sphere('fur_cat', 0, 0.12, -0.07, 0.085, 0.12, 0.1, col);                       // haunches and chest
-  P.sphere('fur_cat', 0, 0.2, 0.03, 0.07, 0.1, 0.07, col);
-  P.sphere('fur_cat', 0, 0.28, 0.06, 0.055, 0.05, 0.05, col);                       // head
-  for (const sx of [-1, 1]) { P.box('fur_cat', sx * 0.035, 0.31, 0.06, 0.022, 0.04, 0.015, dk); P.box('fur_cat', sx * 0.03, 0.0, 0.1, 0.03, 0.12, 0.03, col); }
-  P.flat(0, 0.268, 0.108, 0.02, 0.012, 0.006, 0xd9a0a8);
-  P.box('fur_cat', 0.07, 0.0, -0.08, 0.04, 0.03, 0.16, dk, undefined, 0.5);         // tail curled round the feet
+S.cat = (P, c) => {                                                                  // a sitting cat in profile-readable parts: pear-shaped seat, upright chest, a head WIDER than its neck, pointed ears, a tail
+  const col = pick([0x2a2a2c, 0xc8a070, 0x8a8a88, 0xd8d0c0, 0xb8703a], P.id), dk = mul(col, 0.62), lt = mix(col, 0xf2ecdc, 0.4);
+  P.sphere('fur_cat', 0, 0.085, -0.045, 0.092, 0.085, 0.105, col);                   // haunches
+  P.sphere('fur_cat', 0, 0.165, 0.005, 0.062, 0.1, 0.06, col);                       // chest and neck
+  P.sphere('fur_cat', 0, 0.245, 0.035, 0.056, 0.047, 0.05, col);                     // head
+  for (const sx of [-1, 1]) {
+    P.cyl('fur_cat', sx * 0.034, 0.268, 0.028, 0.02, 0.042, 3, dk, 0.002);           // ears: three-sided cones
+    P.box('fur_cat', sx * 0.027, 0.0, 0.062, 0.024, 0.15, 0.03, lt);                 // front legs
+    P.flat(sx * 0.022, 0.236, 0.082, 0.014, 0.01, 0.006, 0x2a5a2a);                  // eyes
+  }
+  P.flat(0, 0.222, 0.087, 0.012, 0.009, 0.006, 0xd9a0a8);                            // nose
+  P.box('fur_cat', 0.07, 0.0, -0.1, 0.034, 0.034, 0.17, dk, undefined, 0.3);         // the tail along the floor ...
+  P.box('fur_cat', 0.082, 0.0, 0.03, 0.034, 0.034, 0.12, dk, undefined, -0.5);       // ... curling round the paws
 };
 S.dog = (P, c) => {
   const col = pick([0xc8a070, 0x6b4226, 0x2a2a2c, 0xd8d0c0], P.id);
@@ -1057,8 +1192,16 @@ S.decal = (P, c, T, r) => {
   else if (kind === 'shop' || kind === 'school' || kind === 'clinic' || kind === 'notice' || kind === 'notes' || kind === 'document') { for (let i = 0; i < 4; i++) P.flat(0, H * (0.15 + i * 0.19), z, W * (0.8 - (i % 2) * 0.2), H * 0.06, 0.003, id === 'chalkboard' || id === 'menu_board' ? 0xe8e8e0 : 0x3a3a3c); }
 };
 
+// ---- garments (the adult clothing library, garments.js): while the models are not loaded a garment is a cloth patch in its own colour, so an untidy room still reads as untidy
+S.garment = (P, c, T) => {
+  const { W, H, D } = P, col = T ?? 0xe8e1cf;
+  if (c.state === 'hung') P.flat(0, H * 0.04, 0, W * 0.8, H * 0.92, Math.max(0.02, D * 0.6), col);              // hangs from its top edge: a thin panel
+  else if (c.state === 'folded') P.flat(0, 0, 0, W * 0.9, H, D * 0.9, col);
+  else P.flat(0, 0, 0, W * 0.78, Math.max(0.02, H * 0.8), D * 0.78, col);                                        // flat: the heap of cloth in the middle of its outline
+};
+
 // ---- entry
-const generic = (P, c, T) => { P.box(c.mat ?? FLAT, 0, 0, 0, P.W, P.H, P.D, T ?? undefined, c.wall || c.ceil ? undefined : NY); };
+const generic =(P, c, T) => { P.box(c.mat ?? FLAT, 0, 0, 0, P.W, P.H, P.D, T ?? undefined, c.wall || c.ceil ? undefined : NY); };
 
 // The palettes were written for NEUTRAL textures; dark or strongly coloured library textures (wood, vinyl) would turn near-black when multiplied
 // by a dark tint, so those are lifted towards white first.

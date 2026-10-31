@@ -4,7 +4,7 @@
 import { tube, card } from './mk.js';
 import { OCC } from './occupancy.js';
 import { TILE } from './sprites.js';
-import { wire } from './poles.js';
+import { strand, stringable } from './poles.js';
 import { handBoard } from './signs.js';
 import { localToWorld } from './kit.js';
 
@@ -191,9 +191,10 @@ function clothesLine(K, R, lot, stats) {
   if (!site) return false;
   const [x, z] = site, half = 2.8, laundry = K.one('laundry', { cast: false }), wb = K.one('wires', { cast: false });
   const A = [x - ax[0] * half, z - ax[1] * half], B = [x + ax[0] * half, z + ax[1] * half], ya = H(A[0], A[1]) + 2.15, yb = H(B[0], B[1]) + 2.15;
+  if (!stringable(K.ctx, [A[0], ya, A[1]], [B[0], yb, B[1]], 0.18)) return false;      // a line that would go through a house is not hung (nor are its posts)
   const pb = K.b('feature', x, z);
   for (const [p, y0] of [[A, ya], [B, yb]]) { tube(pb, 'wood_pine', [p[0], y0 - 2.25, p[1]], [p[0], y0 + 0.1, p[1]], 0.05, 0.04, 5, { col: [0.5, 0.4, 0.28], caps: true }); K.post(p[0], p[1], 0.07, 2.3); occ.take(p[0], p[1], 0.4); }
-  wire(wb, [A[0], ya, A[1]], [B[0], yb, B[1]], 0.18, 0.016, 8);
+  strand(K.ctx, 'yard', { lot: lot.id }, wb, [A[0], ya, A[1]], [B[0], yb, B[1]], 0.18, 0.016, 8);
   const len = 2 * half, m = Math.floor(len / 0.62), ry = Math.atan2(-(B[1] - A[1]), B[0] - A[0]);
   for (let g = 0; g < m; g++) {
     if (!R.chance(0.82)) continue;

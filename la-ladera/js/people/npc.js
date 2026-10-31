@@ -6,6 +6,7 @@
 //   walk     following `path` (waypoints) with physics, steering around people
 //   talk     in conversation with the player: stopped, facing them
 //   sleep    parked (hidden) - used for people inside buildings that nobody can see
+import { tailsTwin, TAIL_R, TAIL_SLOW } from './twins.js';
 const TAU = Math.PI * 2;
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d <= -Math.PI) d += TAU; return d; };
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -31,8 +32,14 @@ export class Npc {
     this.sitH = null;                    // seat height above the floor while seated (the view lowers the root)
     this.prop = null;                    // 'broom' | 'bundle' | 'basket' | null: what they hold
     this.carry = false;                  // walking with a load (walk_carry)
-    this.away = false; this.awayWhy = null; this.inLot = null;   // hidden inside a building: 'sleep' | 'school' | 'work'
+    this.away = false; this.awayWhy = null; this.inLot = null;   // hidden inside a building: 'sleep' | 'school' | 'work' | 'home' (a stay at home) | 'visit' (the clinic, the hall)
+    this.stayUntil = 0;                  // a 'home' or 'visit' stay ends at this world time
+    this.justIn = -1e9;                  // world time of the last step through a door into a building (homelife.js: somebody who has just come in walks on to their place when the player is looking)
+    this.downAt = 0;                     // world time before which somebody whose stay is over is still on the stairs: the brain lets them out of the door after it (homelife.js dismiss)
+    this.scene = null;                   // homelife.js: the place and the doing of somebody drawn inside a building (null: hidden, or outdoors)
+    this.lieH = null;                    // height of the bed under somebody lying on it (the view lays the body down); null: not lying
     this.spot = null; this.block = null; this.activity = null; this.convo = null; this.talkVariant = 0;
+    this.gate = null;                    // the inner door (indoor.js waypoint `door`) this walker is holding open
   }
 
   get x() { return this.st.x; } get y() { return this.st.y; } get z() { return this.st.z; }
@@ -42,17 +49,20 @@ export class Npc {
 
   /** Stand and play logical animation `act` for `secs` of world time, then run `then(npc, w)` or (without one) ask the brain what next. */
   stand(w, act = 'idle', secs = 5, face = null, then = null) {
-    this.mode = 'idle'; this.act = act; this.until = w.t + secs; this.path = null; this.moving = false; this.speed = 0; this.then = then;
+    this.dropGate(w); this.mode = 'idle'; this.act = act; this.until = w.t + secs; this.path = null; this.moving = false; this.speed = 0; this.then = then;
     if (face != null) this.targetRy = face;
   }
 
   /** Walk a list of waypoints [{x,z,y?}] then call `arrive(npc, w)`. */
   walk(w, pts, arrive = null, speed = null) {
     if (!pts?.length) { this.stand(w, 'idle', 1); return false; }
-    this.path = pts; this.pi = 0; this.mode = 'walk'; this.arrive = arrive; this.speed = speed ?? this.speedBase * (0.92 + this.rng.next() * 0.16); this.then = null;
+    this.dropGate(w); this.path = pts; this.pi = 0; this.mode = 'walk'; this.arrive = arrive; this.speed = speed ?? this.speedBase * (0.92 + this.rng.next() * 0.16); this.then = null;
     this.stuckT = 0; this.checkT = 0; this.lastX = this.st.x; this.lastZ = this.st.z; this.moving = true; this.act = 'walk';
     return true;
   }
+
+  /** Let go of the inner door this walker was holding open (it closes a moment later unless somebody else needs it). */
+  dropGate(w) { if (this.gate) { const g = this.gate; this.gate = null; w?.doors?.release?.(g, this.id); } }
 
   /** Called by the World when the player starts/stops talking to this NPC. */
   beginTalk(w, who) {
@@ -103,14 +113,17 @@ export class Npc {
     const s = this.st, pt = this.path?.[this.pi];
     if (!pt) { this._arrived(w); return; }
     let dx = pt.x - s.x, dz = pt.z - s.z, d = Math.hypot(dx, dz);
-    const last = this.pi === this.path.length - 1, reach = last ? 0.28 : 0.55;
-    if (d < reach) { this.pi++; if (this.pi >= this.path.length) { this._arrived(w); return; } return; }
+    const last = this.pi === this.path.length - 1, reach = last ? 0.28 : pt.tight ? 0.32 : 0.55;           // indoor routes (indoor.js) hug the furniture: no corner cutting
+    const dp = pt.door ? pt : this.path[this.pi + 1]?.door ? this.path[this.pi + 1] : null;                   // an inner door is the next point, or the one after it (the step before the door)
+    if (dp && this.gate !== dp.door && Math.hypot(dp.x - s.x, dp.z - s.z) < 2.6) { this.dropGate(w); this.gate = dp.door; w.doors?.hold?.(dp.door, this.id); }       // open it as we come near
+    if (d < reach) { if (pt.door) this.dropGate(w); this.pi++; if (this.pi >= this.path.length) { this._arrived(w); return; } return; }
     let ux = dx / d, uz = dz / d, sp = this.speed;
-    // steering: separate from others and from the player
+    // steering: separate from others and from the player; hold back for a twin who walks my way in front of me (twins.js: two of one character do not walk side by side, R3-006)
     let fx = 0, fz = 0, slow = 1;
-    const nb = w.near(this, 1.25);
+    const nb = w.near(this, TAIL_R);
     for (let i = 0; i < nb.length; i++) {
       const o = nb[i], ox = s.x - o.x, oz = s.z - o.z, od = Math.hypot(ox, oz) || 0.01, R = o.isPlayer ? 1.15 : 0.95;
+      if (tailsTwin(this, o, ux, uz)) slow = Math.min(slow, TAIL_SLOW);
       if (od < R) {
         const k = (R - od) / R; fx += (ox / od) * k * 1.9; fz += (oz / od) * k * 1.9;
         const ahead = ux * (-ox) + uz * (-oz);                             // other is in front of me

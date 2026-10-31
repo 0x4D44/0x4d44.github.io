@@ -83,7 +83,7 @@ export const SAY = {
     ['Cajones con medias sueltas, un cepillo de pelo y una estampita de San Judas.', 'Drawers of loose socks, a hairbrush and a holy card of Saint Jude.'],
   ],
   tap: [
-    ['Abres el grifo: sale un hilito de agua. Hoy sí hay agua; mañana no se sabe.', 'You open the tap: a thin thread of water. There is water today; tomorrow, who knows.'],
+    ['Abres la llave: sale un hilito de agua. Hoy sí hay agua; mañana no se sabe.', 'You open the tap: a thin thread of water. There is water today; tomorrow, who knows.'],
     ['El agua sale fría y con aire. Llenas un balde por si acaso.', 'The water comes out cold and spluttering. You fill a bucket just in case.'],
   ],
   toilet: [
@@ -144,10 +144,28 @@ export const SAY = {
     ['Apuntes pegados con cinta: fórmulas, fechas y un «¡TÚ PUEDES!» subrayado dos veces.', 'Notes taped up: formulas, dates and a "YOU CAN DO IT!" underlined twice.'],
   ],
   chores: [
-    ['Lista de oficios: lunes barre Camila, martes lava Juan, miércoles cocina mamá.', 'Chore chart: Monday Camila sweeps, Tuesday Juan washes up, Wednesday mum cooks.'],
+    ['Lista de oficios: lunes barre el mayor, martes lava el menor, miércoles cocina mamá.', 'Chore chart: Monday the eldest sweeps, Tuesday the youngest washes up, Wednesday mum cooks.'],
   ],
   notice_rent: [
     ['«Se arrienda pieza con baño. Preguntar por doña Elvira». Hay un teléfono anotado a mano.', '"Room with bathroom for rent. Ask for doña Elvira." A phone number is handwritten.'],
+  ],
+  notice_dog: [
+    ['«Se perdió perrita criolla, responde a Canela». Alguien dibujó una patica en una esquina del papel.', '"Lost: a mixed-breed female dog, answers to Canela." Someone drew a small paw in the corner of the paper.'],
+  ],
+  notice_agua: [
+    ['«El jueves no hay agua, de ocho a cuatro». Alguien agregó con esfero: «Llenen las canecas hoy».', '"No water on Thursday, eight to four." Someone added in pen: "Fill the barrels today."'],
+  ],
+  notice_junta: [
+    ['La Junta de Acción Comunal cita a reunión el domingo: se habla del alumbrado y de la cancha.', 'The community council calls a meeting on Sunday: the street lights and the football pitch are on the agenda.'],
+  ],
+  notice_basura: [
+    ['Los días de la basura son martes y viernes. Alguien subrayó «después de las seis» tres veces.', 'Rubbish days are Tuesday and Friday. Someone underlined "after six" three times.'],
+  ],
+  picture_nino: [
+    ['El Divino Niño, con los brazos abiertos y la túnica rosada. Tiene una veladora pequeña al lado.', 'The Divine Child, arms open, in a pink tunic. A small votive candle burns beside it.'],
+  ],
+  picture_chiqui: [
+    ['Nuestra Señora de Chiquinquirá, la patrona de Colombia, con el marco dorado ya descascarado.', 'Our Lady of Chiquinquirá, patron of Colombia, in a gilt frame that is flaking.'],
   ],
   calendar: [
     ['El calendario marca octubre; el día de la quincena tiene un círculo rojo.', 'The calendar shows October; payday is circled in red.'],
@@ -187,6 +205,33 @@ export const SAY = {
   ],
   price_list: [
     ['Lista de precios escrita a mano: los números están tachados y corregidos.', 'A handwritten price list: the numbers are crossed out and corrected.'],
+  ],
+  price_meat: [
+    ['Precios por libra: la carne molida a $13.000, la costilla a $14.500. Nada de fiado los lunes.', 'Prices per pound: ground beef at $13,000, ribs at $14,500. No credit on Mondays.'],
+  ],
+  price_bread: [
+    ['El pan de bono a $1.200, la almojábana a $1.500 y el pan francés, a $400. Pregunte por lo recién salido.', 'Pan de bono at $1,200, almojábana at $1,500 and French bread at $400. Ask for what just came out of the oven.'],
+  ],
+  price_hair: [
+    ['Corte de caballero $12.000, barba $6.000 y niños $8.000. Con turno los sábados.', "Men's cut $12,000, beard $6,000 and children $8,000. Appointments on Saturdays."],
+  ],
+  price_ferre: [
+    ['El bulto de cemento a $32.000 y el galón de pintura a $58.000; los clavos se venden por libra.', 'A bag of cement at $32,000 and a gallon of paint at $58,000; nails are sold by the pound.'],
+  ],
+  price_papel: [
+    ['Fotocopias a $100, impresiones a $300 y el cuaderno de cien hojas a $4.500.', 'Photocopies at $100, prints at $300 and the 100-page notebook at $4,500.'],
+  ],
+  price_shoes: [
+    ['Media suela a $18.000, tacón a $8.000 y la limpiada a $3.000. Los zapatos se recogen en tres días.', 'Half sole at $18,000, heel at $8,000 and a polish at $3,000. Shoes are ready in three days.'],
+  ],
+  price_minutos: [
+    ['Un minuto a celular cuesta $200; a Venezuela, $450. La hora de internet, $2.000.', 'A minute to a mobile costs $200; to Venezuela, $450. An hour of internet, $2,000.'],
+  ],
+  price_modista: [
+    ['Ruedo de pantalón $6.000, cierre nuevo $10.000. Un vestido a medida tarda dos semanas.', 'Trouser hem $6,000, new zip $10,000. A made-to-measure dress takes two weeks.'],
+  ],
+  price_taller: [
+    ['Cambio de aceite $25.000, pinchazo $8.000. Las motos se entregan antes de que cierren las calles.', 'Oil change $25,000, puncture $8,000. Motorbikes are handed back before the streets close.'],
   ],
   menu_board: [
     ['El menú del día: sopa, seco y jugo. Todo por poca plata.', 'The set menu: soup, main course and juice. All for very little.'],
@@ -278,6 +323,8 @@ export const STORY_ALIAS = {
   sofa_3_fabric: 'sofa_3_vinyl', sofa_2_vinyl: 'sofa_3_vinyl', sofa_2_fabric: 'sofa_3_vinyl', table_formica_6: 'table_formica_4', plant_big: 'plant_pot_clay',
   bed_single_metal: 'bed_single', lamp_table: 'lamp_floor', radio_boombox: 'radio_old', rug_small: 'rug_big', 'decal:kids_drawing_b': 'decal:kids_drawing_a',
 };
+for (let i = 1; i <= 6; i++) STORY_ALIAS['decal:kids_draw_' + i] = 'decal:kids_drawing_a';         // the generated variants of decals.js tell their family's story
+for (let i = 1; i <= 4; i++) STORY_ALIAS['decal:art_coast_' + i] = 'decal:picture_coast';
 /** How likely an object is picked as a home's story: 3 = unusual and charming, 1 = something every house has. */
 export const STORY_WEIGHT = {
   altar_home: 3, cage_canary: 3, guitar_lean: 3, rocking_chair: 3, sewing_machine: 3, pigeon_loft: 3, 'decal:exam_notes': 3, 'decal:photo_wedding': 3, desk_student: 3,

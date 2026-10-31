@@ -15,8 +15,11 @@ import * as THREE from 'three';
 export const MERGED_GROUP = 'merged';
 // Measured on the 200 m barrio (RTX 5070 Ti, 1280x720, spawn view; chunks / calls incl. shadow pass / triangles / ms per frame):
 //   none 1300 / 1932 / 1.02 M / ~13   48 m: 618 / 977 / 1.08 M / 10.9   64 m: 441 / 725 / 1.14 M / 8.0   96 m: 292 / 518 / 1.16 M / 6.9
-//   128 m: 208 / 399 / 1.25 M / 6.9   200 m: 108 / 270 / 1.36 M / 5.4. Calls dominate the frame, triangles barely move: 96 m is the knee.
-export const DEFAULT_SPAN = 96;
+//   128 m: 208 / 399 / 1.25 M / 6.9   200 m: 108 / 270 / 1.36 M / 5.4. Calls dominate the frame, triangles barely move: 96 m was the knee.
+// Re-measured on the full barrio (people, interiors, door leaves baked; 1920x1080, ?mergespan=N, six boots interleaved 96/128, chunks / calls / triangles; 96 -> 128):
+//   spawn 336 -> 210 / 1185 -> 886 / 2.31 M -> 2.45 M (+6 %), door-L09 1240 -> 917 / 2.30 M -> 2.43 M. Frame cost, on a box other agents had saturated (wall floor over 3 x 360 frames
+//   per view): spawn 12.1 -> 9.9 ms, virgen 13.5 -> 11.0, door-L02 11.7 -> 10.0, door-L09 13.3 -> 9.8: lower in every view, so 128 m is the knee now.
+export const DEFAULT_SPAN = 128;
 const ATTRS = ['position', 'normal', 'uv', 'color'];
 const SIZE = { position: 3, normal: 3, uv: 2, color: 3 };
 const IDENTITY = new THREE.Matrix4();

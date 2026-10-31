@@ -144,20 +144,24 @@ function crows(K, ctx, actors, extra, R, stats) {
 }
 
 // ---------------------------------------------------------------------------------------------------- dogs
-const DOG_TAN = { coat: [0.74, 0.57, 0.35], chest: [0.93, 0.9, 0.84], paw: [0.92, 0.88, 0.8], ear: [0.38, 0.25, 0.15], tail: [0.74, 0.57, 0.35], tip: [0.95, 0.92, 0.88] };
+// (the coat was linear [0.74 0.57 0.35] = sRGB 225 200 163: in full sun the sleeping dog read as a cream blob, R1-012)
+const DOG_TAN = { coat: [0.46, 0.27, 0.12], chest: [0.82, 0.74, 0.58], paw: [0.86, 0.8, 0.68], ear: [0.17, 0.09, 0.05], tail: [0.46, 0.27, 0.12], tip: [0.88, 0.82, 0.68] };
 const DOG_BLACK = { coat: [0.16, 0.15, 0.15], chest: [0.9, 0.88, 0.84], paw: [0.9, 0.86, 0.78], ear: [0.1, 0.09, 0.09], tail: [0.16, 0.15, 0.15], tip: [0.16, 0.15, 0.15] };
 
 /** A dog lying down. Awake factor a (0..1) lifts the head, turns it to the person and wags the tail. */
 function dog(K, ctx, actors, o) {
   const { x, z, ry, pal } = o, gy = K.H(x, z), nose = [0.08, 0.07, 0.07];
+  // the torso is shaded round its girth: a dark saddle on the back, the coat on the flanks, the pale chest colour under the belly (tube side i of 8 runs from +z round through up at 2)
+  const girth = (i) => { const s = Math.sin((i / 8) * TAU), k = sstep((s + 0.7) / 1.5), back = 1 - 0.3 * Math.max(0, s); return pal.chest.map((c, j) => (c + (pal.coat[j] - c) * k) * back); };
   const body = make(ctx, 'dog.body', (b) => {
-    tube(b, 'fur', [-0.3, 0.16, 0], [0.2, 0.17, 0], 0.15, 0.17, 8, { col: pal.coat });
-    tube(b, 'fur', [-0.3, 0.17, 0], [-0.1, 0.17, 0], 0.16, 0.16, 8, { col: pal.coat, caps: false });
+    tube(b, 'fur', [-0.3, 0.16, 0], [0.2, 0.17, 0], 0.15, 0.17, 8, { colFn: girth });
+    tube(b, 'fur', [-0.3, 0.17, 0], [-0.1, 0.17, 0], 0.16, 0.16, 8, { colFn: girth, caps: false });
     tube(b, 'fur', [0.14, 0.17, 0], [0.3, 0.15, 0], 0.17, 0.12, 8, { col: pal.chest, caps: false });
     for (const s of [-1, 1]) {
       tube(b, 'fur', [0.3, 0.07, s * 0.09], [0.55, 0.05, s * 0.1], 0.05, 0.042, 6, { col: pal.coat });
       tube(b, 'fur', [0.52, 0.045, s * 0.1], [0.62, 0.04, s * 0.1], 0.048, 0.04, 6, { col: pal.paw });
       tube(b, 'fur', [-0.3, 0.09, s * 0.17], [-0.08, 0.06, s * 0.18], 0.075, 0.055, 6, { col: pal.coat });
+      tube(b, 'fur', [-0.12, 0.05, s * 0.18], [0.0, 0.04, s * 0.2], 0.04, 0.036, 6, { col: pal.paw });                           // the hind paw, tucked under the flank
     }
   }, { cast: true });
   const head = make(ctx, 'dog.head', (b) => {
@@ -198,8 +202,9 @@ function dog(K, ctx, actors, o) {
 function sleepingDog(K, ctx, actors, extra, R, stats) {
   const sp = K.plan.spawn;
   let at = null;
-  for (const [ox, oz] of [[6, -4.5], [10, -4], [2, -6], [-14, -5], [16, -3]]) {
-    at = K.spot(sp.x + ox, sp.z + oz, { r: 0.75, maxR: 7, mask: FREE_EDGE, nav: 1.0, slope: 0.25, gap: 1.0 });
+  // the first two are in the arrival fan, 6-7 m up the street from the spawn: a dog asleep in the sun is the first living thing the player sees
+  for (const [ox, oz, maxR] of [[2.4, -6.6, 2.5], [-2.6, -6.2, 2.5], [6, -4.5, 7], [10, -4, 7], [2, -6, 7], [-14, -5, 7], [16, -3, 7]]) {
+    at = K.spot(sp.x + ox, sp.z + oz, { r: 0.75, maxR, mask: FREE_EDGE, nav: 1.0, slope: 0.25, gap: 1.0, skip: 'arrival' });
     if (at) break;
   }
   if (!at) return;
@@ -337,7 +342,7 @@ function swing(K, ctx, actors, extra, R, stats) {
   }
   if (!site) return;
   const { tx, tz, px, pz, ang } = site, gy = K.H(px, pz), top = gy + 3.5, L = 2.55, b = K.b('feature', px, pz);
-  tube(b, 'bark_trunk', [tx, gy + 3.25, tz], [px, top, pz], 0.1, 0.07, 6, { col: [0.36, 0.28, 0.22] });
+  tube(b, 'bark_trunk', [tx, gy + 3.25, tz], [px, top, pz], 0.1, 0.07, 6, { col: [1.5, 2.5, 3.2], turns: 1, vper: Math.PI * 0.17 });       // the swatch (flora.js BARK) wraps once round the branch
   const pivot = new THREE.Group(); pivot.position.set(px, top, pz); pivot.rotation.y = -ang;      // local x runs along the branch, so the tyre swings across it (local y/z plane)
   const sw = new THREE.Group(); pivot.add(sw);
   const rig = make(ctx, 'swing.rig', (m) => {

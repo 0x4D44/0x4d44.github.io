@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { Batcher } from '../js/core/mesh.js';
-import { planChunks, mergeStatic, MERGED_GROUP } from '../js/core/merge.js';
+import { planChunks, mergeStatic, MERGED_GROUP, DEFAULT_SPAN } from '../js/core/merge.js';
 
 function world() {
   const mats = new Map();
@@ -89,6 +89,23 @@ test('planChunks: only the vertex budget exceeded splits by vertices, not by gap
   const at = (id, x, v) => ({ id, x0: x - 1, x1: x + 1, z0: -1, z1: 1, cx: x, cz: 0, v });
   const leaves = planChunks([at(1, 0, 40000), at(2, 3, 40000), at(3, 6, 40000), at(4, 9, 40000)], { maxSpan: 1000, maxVerts: 90000 });
   assert.deepEqual(leaves.map((l) => l.map((i) => i.id)), [[1, 2], [3, 4]], 'each chunk holds 80000 vertices');
+});
+
+test('planChunks: the defaults are 128 m and 60 000 vertices (1920x1080, full barrio: span 96 -> 128 cut the spawn view from 1185 to 886 draw calls for +6 % triangles, and the frame floor fell in all four views)', () => {
+  assert.equal(DEFAULT_SPAN, 128);
+  const items = randomItems(600, 11, 400, 9000), leaves = planChunks(items);
+  assert.deepEqual(leaves.flat().map((i) => i.id).sort((a, b) => a - b), items.map((i) => i.id), 'a partition: nothing lost, nothing twice');
+  for (const leaf of leaves) {
+    if (leaf.length < 2) continue;
+    const w = Math.max(...leaf.map((i) => i.x1)) - Math.min(...leaf.map((i) => i.x0)), d = Math.max(...leaf.map((i) => i.z1)) - Math.min(...leaf.map((i) => i.z0));
+    assert.ok(w <= 128 && d <= 128, `chunk spans ${w.toFixed(1)} x ${d.toFixed(1)} m`);
+    assert.ok(leaf.reduce((a, i) => a + i.v, 0) <= 60000, 'chunk vertex count');
+  }
+  // two villages 100 m apart: one chunk at the default (a 96 m span would have cut them), and the span still cuts at 128 + a bit
+  const at = (id, x) => ({ id, x0: x - 1, x1: x + 1, z0: -1, z1: 1, cx: x, cz: 0, v: 24 });
+  assert.deepEqual(planChunks([at('a', 0), at('b', 50), at('c', 100)]).map((l) => l.map((i) => i.id)), [['a', 'b', 'c']], 'a 102 m row is one chunk at the default');
+  assert.equal(planChunks([at('a', 0), at('b', 50), at('c', 100)], { maxSpan: 96 }).length, 2, 'and two at 96 m');
+  assert.equal(planChunks([at('a', 0), at('b', 60), at('c', 130)]).length, 2, 'a 132 m row is cut at the default');
 });
 
 // ---- mergeStatic on a real Batcher ------------------------------------------------------------------------------------------------

@@ -2,6 +2,7 @@
 // the sprite atlas (one material), trunks are tubes. Groups props.flora.<i>.<j> and props.tufts.<i>.<j> (50 m chunks).
 import { card, tube, V } from './mk.js';
 import { TILE } from './sprites.js';
+import { sprig, hasSheet, CELL, MAT as CARDS } from './cards.js';
 import { OCC } from './occupancy.js';
 import { ss, vnoise, pointInPoly, polyDistPoint } from './geom.js';
 
@@ -25,44 +26,115 @@ function canopy(K, b, tile, c0, rx, ry, rz, n, size, r, base, o = {}) {
   }
 }
 
-const BARK = { broad: [0.36, 0.28, 0.22], euca: [0.6, 0.56, 0.49], palm: [0.55, 0.5, 0.42] };
+/**
+ * Photographed eucalyptus sprays (the sheet's cell 0), each HUNG by the tip of its twig from a point in an ellipsoid, the leaves drooping below it: a gum tree's crown is curtains of these.
+ * Turned any way round the tree, swung a little off plumb, mirrored half the time. The lighting normal is the crown's (out and up), as the painted canopy's.
+ */
+function sprays(b, c0, rx, ry, rz, n, size, r, o = {}) {
+  for (let i = 0; i < n; i++) {
+    const u = r.range(-0.25, 1), phi = r.range(0, Math.PI * 2), k = Math.sqrt(1 - u * u), rad = Math.cbrt(r.range(0.3, 1));
+    const dx = k * Math.cos(phi) * rad, dy = u * rad, dz = k * Math.sin(phi) * rad;
+    const yaw = r.range(0, Math.PI), swing = r.range(-0.2, 0.3), fwd = [Math.sin(yaw), 0, Math.cos(yaw)], right = [Math.cos(yaw), 0, -Math.sin(yaw)];
+    const up = V.nrm([fwd[0] * Math.sin(swing), Math.cos(swing), fwd[2] * Math.sin(swing)]);
+    const shade = (0.66 + 0.34 * (dy * 0.5 + 0.5) + r.range(-0.06, 0.06)) * (o.gain ?? 1);
+    sprig(b, CARDS, CELL.EUCA, [c0[0] + dx * rx, c0[1] + dy * ry, c0[2] + dz * rz], up, right, size * r.range(0.85, 1.2), [shade, shade, shade], V.nrm([dx, dy * 0.8 + 0.45, dz]), { mirror: r.chance(0.5) });
+  }
+}
+
+/**
+ * Photographed branches of a broadleaf almendro (cell 4), each GROWING from a foot inside the crown outward and a little up (the crown's ellipsoid centre `c0`, radii rx ry rz), rolled any way
+ * round its own axis, so a crown is a ball of leafy boughs. The foot is a tenth to two fifths of the way out and the branch is about `size` long: its tip comes out a little past the old crown's surface.
+ */
+function boughs(b, c0, rx, ry, rz, n, size, r, o = {}) {
+  for (let i = 0; i < n; i++) {
+    const dy = r.range(-0.4, 0.85), k = Math.sqrt(1 - dy * dy), phi = r.range(0, Math.PI * 2), rad = r.range(0.08, 0.4);
+    const dx = k * Math.cos(phi), dz = k * Math.sin(phi), foot = [c0[0] + dx * rad * rx, c0[1] + dy * rad * ry, c0[2] + dz * rad * rz];
+    const up = V.nrm([dx, dy + 0.25, dz]), s0 = V.nrm(V.cross(up, [0, 1, 0])), u0 = V.cross(s0, up), roll = r.range(0, Math.PI * 2);
+    const right = V.nrm(V.add(V.mul(s0, Math.cos(roll)), V.mul(u0, Math.sin(roll))));
+    const shade = (0.66 + 0.34 * (dy * 0.5 + 0.5) + r.range(-0.06, 0.06)) * (o.gain ?? 1), t = o.tint ?? [1, 1, 1];
+    sprig(b, CARDS, CELL.BROADLEAF, foot, up, right, size * r.range(0.85, 1.1), [shade * t[0], shade * t[1], shade * t[2]], V.nrm([dx, dy * 0.8 + 0.45, dz]), { mirror: r.chance(0.5) });
+  }
+}
+
+// Trunks wear A1's bark swatches (matdefs.js), so a vertex colour is a TINT on the swatch, not the bark's colour: `bark_dark` averages sRGB 97 66 51 (linear lum 0.07),
+// hence tints above 1 for the broadleaf and the palm; the stub of a palm's crown is the green of its boots.
+const BARK = { broad: [1.5, 2.5, 3.2], palm: [2.2, 3.8, 4.8], boots: [1.4, 4.6, 3.6] };
+
+/**
+ * One piece of a textured trunk, a tube from a to c: the swatch (`aspect` = its height over its width) wraps once round the tube and keeps its proportions, so the swatch's
+ * height is 2 pi r x aspect of trunk. `v0` is where the last piece of this trunk ended; returns where the next one starts.
+ */
+export function trunk(b, mat, a, c, r0, r1, seg, o = {}, v0 = 0, aspect = 1) {
+  const per = Math.PI * (r0 + r1) * aspect;
+  tube(b, mat, a, c, r0, r1, seg, { turns: 1, vper: per, v0, ...o });
+  return v0 + V.len(V.sub(c, a)) / per;
+}
 
 // ---------------------------------------------------------------------------------------------------- trees
+const TREE_GREEN = rgb(0x6f9a44);                                          // the leaf green of a broadleaf tree unless it is told another (the hillside's own trees vary it)
 export function broadTree(K, x, z, o = {}) {
   const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z);
   const h = o.h ?? r.range(5.5, 8), cr = o.crown ?? r.range(2.6, 3.6), tr = o.trunk ?? r.range(0.14, 0.2), lean = r.range(-0.25, 0.25), lean2 = r.range(-0.25, 0.25);
-  const top = [x + lean, gy + h * 0.62, z + lean2], base = o.leaf ?? rgb(0x6f9a44);
+  const top = [x + lean, gy + h * 0.62, z + lean2], base = o.leaf ?? TREE_GREEN;
   const bark = BARK.broad;
-  tube(b, 'bark_trunk', [x, gy - 0.25, z], top, tr, tr * 0.62, 7, { colFn: (i) => scale(bark, 0.85 + 0.25 * ((i * 37) % 5) / 5) });
+  trunk(b, 'bark_trunk', [x, gy - 0.25, z], top, tr, tr * 0.62, 7, { colFn: (i) => scale(bark, 0.85 + 0.25 * ((i * 37) % 5) / 5) });
   for (let i = 0; i < 3; i++) {                       // limbs
     const a = r.range(0, 6.28), out = cr * r.range(0.45, 0.7), end = [top[0] + Math.cos(a) * out, top[1] + h * r.range(0.14, 0.25), top[2] + Math.sin(a) * out];
-    tube(b, 'bark_trunk', [top[0], top[1] - 0.3, top[2]], end, tr * 0.5, tr * 0.22, 5, { col: scale(bark, 0.95), caps: false });
+    trunk(b, 'bark_trunk', [top[0], top[1] - 0.3, top[2]], end, tr * 0.5, tr * 0.22, 5, { col: scale(bark, 0.95), caps: false });
   }
-  canopy(K, b, o.tile ?? TILE.BROADLEAF, [top[0], gy + h * 0.78, top[2]], cr, cr * 0.62, cr * 0.92, o.cards ?? 24, cr * 0.95, r, base, { alt: o.alt });
+  if (K.leafCards && !o.tile) boughs(b, [top[0], gy + h * 0.78, top[2]], cr, cr * 0.62, cr * 0.92, o.cards ?? 24, cr, r, { tint: base.map((c, k) => c / TREE_GREEN[k]) });   // (the sheet's boughs are green on their own: a tree's own `leaf` only tints them, by how far it is from the usual green)
+  else canopy(K, b, o.tile ?? TILE.BROADLEAF, [top[0], gy + h * 0.78, top[2]], cr, cr * 0.62, cr * 0.92, o.cards ?? 24, cr * 0.95, r, base, { alt: o.alt });
   K.post(x, z, tr + 0.08, 4);
   K.occ.take(x, z, tr + 0.6);
 }
 
+// Eucalyptus bark: A1's swatch (pale grey-cream, tan and rust, average sRGB 180 156 138) carries the colour; the tint dirties it: plain, a warmer strip, a brown scar, and a dark
+// damp foot (barkAt). The first version was one straight pole of [0.6 0.56 0.49] (sRGB 203 198 188): from the viewpoint it read as a white lamp post with a tuft on top (R1-012).
+const EUCA = { pale: [0.86, 0.84, 0.8], strip: [1.0, 0.92, 0.8], scar: [0.55, 0.46, 0.4] };
+/** the colour of side `side` of trunk ring `node`, `t` of the way up: a hash (salted per tree) picks scar / strip / plain, the foot is held dark and fades up over the first third */
+const barkAt = (t, node, side, salt) => {
+  const h = ((side * 7 + (node + salt) * 8 + 6) % 11) / 11, c = h < 0.2 ? EUCA.scar : h < 0.5 ? EUCA.strip : EUCA.pale;
+  return scale(c, (0.45 + 0.55 * ss(0, 0.34, t)) * (0.88 + 0.24 * ((side * 53 + (node + salt) * 29) % 7) / 7));
+};
+
 export function eucalyptus(K, x, z, o = {}) {
   const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = o.h ?? r.range(11, 17), tr = r.range(0.16, 0.24), lean = r.range(-0.9, 0.9), lz = r.range(-0.9, 0.9);
-  const top = [x + lean, gy + h, z + lz];
-  tube(b, 'bark_euca', [x, gy - 0.3, z], top, tr, tr * 0.38, 7, { colFn: (i) => scale(BARK.euca, 0.82 + 0.3 * ((i * 53) % 7) / 7) });
-  for (let i = 0; i < 4; i++) {
-    const a = r.range(0, 6.28), s = r.range(1.4, 2.4), y0 = gy + h * r.range(0.62, 0.8);
-    const p0 = [x + lean * (y0 - gy) / h, y0, z + lz * (y0 - gy) / h];
-    tube(b, 'bark_euca', p0, [p0[0] + Math.cos(a) * s, y0 + r.range(1.2, 2.4), p0[2] + Math.sin(a) * s], tr * 0.34, tr * 0.14, 5, { col: scale(BARK.euca, 0.92), caps: false });
+  const wob = r.range(0.35, 0.85), ph = r.range(0, 6.28), salt = r.int(0, 10);
+  // the trunk: a chain of short tubes on a slow S-curve, flared at the foot, each ring coloured on its own so the bark mottles and fades along the length
+  const at = (t) => [x + lean * t + wob * t * Math.sin(ph + t * 4.2), gy + h * t, z + lz * t + wob * t * Math.cos(ph + t * 3.6)];
+  const n = Math.max(5, Math.round(h / 2.3)), rad = (t) => tr * (1 - 0.62 * t) * (1 + 0.55 * Math.max(0, 1 - t / 0.12));
+  let v = 0;
+  for (let k = 0; k < n; k++) {
+    const t0 = k / n, t1 = (k + 1) / n, p0 = at(t0), p1 = at(t1);
+    if (k === 0) p0[1] -= 0.3;
+    v = trunk(b, 'bark_euca', p0, p1, rad(t0), rad(t1), 7, { colFn: (i) => barkAt(t0, k, i, salt), colFnEnd: (i) => barkAt(t1, k + 1, i, salt), caps: k === n - 1 }, v, 2);       // the swatch is 1 : 2
   }
-  canopy(K, b, TILE.EUCA, [top[0], top[1] - 1.2, top[2]], 3.0, 2.4, 3.0, 17, 2.6, r, rgb(o.leafHex ?? 0xb5cfb0), { droop: true, hang: true, tall: 1.7, alt: rgb(0x8ca98b) });
-  K.post(x, z, tr + 0.06, 5);
+  // limbs from the upper trunk, each carrying its own tuft of leaves, and one crown on the leader
+  const heads = [];
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * 6.28 + r.range(-0.5, 0.5), t0 = r.range(0.58, 0.84), p0 = at(t0), s = r.range(1.5, 2.9) * (1.1 - 0.4 * t0), p1 = [p0[0] + Math.cos(a) * s, p0[1] + r.range(1.0, 2.6), p0[2] + Math.sin(a) * s];
+    trunk(b, 'bark_euca', p0, p1, rad(t0) * 0.7, tr * 0.12, 5, { col: scale(EUCA.pale, 0.95), caps: false }, 0, 2);
+    heads.push(p1);
+  }
+  const top = at(1), leaf = rgb(o.leafHex ?? 0xb5cfb0), alt = rgb(0x8ca98b);
+  if (K.leafCards) {                                                    // photographed sprays hung by their twig tips: 12 on the leader and 4 on each limb, 32 cards for the 34 they replace
+    sprays(b, [top[0], top[1] + 0.1, top[2]], 2.2, 1.25, 2.2, 12, 2.9, r);
+    for (const p of heads) sprays(b, [p[0], p[1] + 0.2, p[2]], 1.4, 0.8, 1.4, 4, 2.5, r);
+  } else {
+    canopy(K, b, TILE.EUCA, [top[0], top[1] - 0.9, top[2]], 2.3, 1.9, 2.3, 9, 2.5, r, leaf, { droop: true, hang: true, tall: 1.7, alt });
+    for (const p of heads) canopy(K, b, TILE.EUCA, [p[0], p[1] - 0.2, p[2]], 1.6, 1.2, 1.6, 5, 2.2, r, leaf, { droop: true, hang: true, tall: 1.7, alt });
+  }
+  K.post(x, z, tr * 1.3 + 0.05, 5);
   K.occ.take(x, z, 0.8);
 }
 
 export function palm(K, x, z, o = {}) {
   const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = o.h ?? r.range(8, 13), tr = 0.17, lean = r.range(-0.4, 0.4), lz = r.range(-0.4, 0.4);
   const segs = Math.ceil(h / 0.8);
+  let v = 0;
   for (let i = 0; i < segs; i++) {
-    const t0 = i / segs, t1 = (i + 1) / segs, bend = (t) => [x + lean * t * t, gy + h * t - (i === 0 ? 0.25 : 0), z + lz * t * t];
-    tube(b, 'bark_palm', bend(t0), bend(t1), tr * (1 - 0.3 * t0), tr * (1 - 0.3 * t1), 6, { col: scale(BARK.palm, i % 2 ? 0.86 : 1.05), caps: i === segs - 1 });
+    const t0 = i / segs, t1 = (i + 1) / segs, bend = (t) => [x + lean * t * t, gy + h * t - (t === 0 ? 0.25 : 0), z + lz * t * t];     // only the foot sinks: the piece above starts where this one ends
+    v = trunk(b, 'bark_palm', bend(t0), bend(t1), tr * (1 - 0.3 * t0), tr * (1 - 0.3 * t1), 6, { col: scale(BARK.palm, i % 2 ? 0.86 : 1.05), caps: i === segs - 1 }, v);
   }
   const top = [x + lean, gy + h, z + lz], uv = K.atlas ? K.atlas.uv(TILE.FROND) : [0, 0, 1, 1], n = 13;
   const uvLo = [uv[0], uv[1], uv[2], (uv[1] + uv[3]) / 2], uvHi = [uv[0], (uv[1] + uv[3]) / 2, uv[2], uv[3]];
@@ -76,7 +148,7 @@ export function palm(K, x, z, o = {}) {
     card(b, 'foliage', p1, rollRight(d1), d1, len * 1.5, len, uvLo, col, nrm);
     card(b, 'foliage', p2, rollRight(d2), d2, len * 1.2, len, uvHi, col, nrm);
   }
-  tube(b, 'bark_trunk', [top[0], top[1] - 0.2, top[2]], [top[0], top[1] + 0.35, top[2]], 0.18, 0.12, 6, { col: [0.3, 0.36, 0.2] });
+  trunk(b, 'bark_trunk', [top[0], top[1] - 0.2, top[2]], [top[0], top[1] + 0.35, top[2]], 0.18, 0.12, 6, { col: BARK.boots });
   K.post(x, z, tr + 0.08, 4); K.occ.take(x, z, 0.7);
 }
 
@@ -84,16 +156,31 @@ export function cypress(K, x, z, o = {}) {
   const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = o.h ?? r.range(6, 9.5), w = h * 0.34, uv = K.atlas ? K.atlas.uv(TILE.CYPRESS) : [0, 0, 1, 1];
   const n = 3, rot = r.range(0, 3);
   for (let i = 0; i < n; i++) {
-    const yaw = rot + (i * Math.PI) / n, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage_low', [x, gy - 0.1, z], right, [0, 1, 0], w * 1.25, h, uv, scale(rgb(0xc4dcc0), r.range(0.85, 1.08)), V.nrm([Math.sin(yaw), 0.55, Math.cos(yaw)]));
+    const yaw = rot + (i * Math.PI) / n, right = [Math.cos(yaw), 0, -Math.sin(yaw)], nrm = V.nrm([Math.sin(yaw), 0.55, Math.cos(yaw)]);
+    if (K.leafCards) { const g = r.range(0.85, 1.08); sprig(b, CARDS, CELL.CYPRESS, [x, gy - 0.1, z], [0, 1, 0], right, h, [g, g, g], nrm, { squash: 0.7, mirror: i === 1 }); }   // a photographed plume, slimmed to a cypress's column
+    else card(b, 'foliage_low', [x, gy - 0.1, z], right, [0, 1, 0], w * 1.25, h, uv, scale(rgb(0xc4dcc0), r.range(0.85, 1.08)), nrm);
   }
-  tube(b, 'bark_trunk', [x, gy - 0.2, z], [x, gy + 0.7, z], 0.14, 0.1, 5, { col: scale(BARK.broad, 0.6) });
+  trunk(b, 'bark_trunk', [x, gy - 0.2, z], [x, gy + 0.7, z], 0.14, 0.1, 5, { col: scale(BARK.broad, 0.6) });
   K.post(x, z, 0.28, 4); K.occ.take(x, z, 0.8);
+}
+
+/**
+ * A banana pseudostem: stacked rings 30 cm tall on A1's sheath swatch (green to beige, dry streaks), tinted cream at the foot and green under the crown, every third ring a
+ * darker leaf scar, dark dry-sheath streaks down some sides.
+ */
+function pseudostem(b, x, gy, z, h, r0, r1) {
+  const n = Math.max(4, Math.round(h / 0.3));
+  let v = 0;
+  for (let k = 0; k < n; k++) {
+    const t0 = k / n, t1 = (k + 1) / n, scar = k % 3 === 2, g = lerpc([1.0, 1.0, 1.1], [0.6, 1.15, 0.9], Math.min(1, t0 * 1.15)), bump = scar ? 0.012 : 0;
+    v = trunk(b, 'trunk_banana', [x, gy + h * t0 - (k === 0 ? 0.1 : 0), z], [x, gy + h * t1, z], r0 + (r1 - r0) * t0 + bump, r0 + (r1 - r0) * t1 + bump, 7,
+      { colFn: (i) => (scar ? scale(g, 0.55) : (i * 5 + k * 3) % 7 === 0 ? scale(g, 0.62) : g), caps: k === n - 1 }, v, 2);                      // the swatch is 1 : 2
+  }
 }
 
 export function banana(K, x, z, o = {}) {
   const r = o.rng, b = K.b('flora', x, z), gy = K.H(x, z), h = r.range(1.7, 2.7), uv = K.atlas ? K.atlas.uv(TILE.BANANA) : [0, 0, 1, 1];
-  tube(b, 'bark_trunk', [x, gy - 0.1, z], [x, gy + h, z], 0.13, 0.08, 6, { col: [0.55, 0.62, 0.38] });
+  pseudostem(b, x, gy, z, h, 0.17, 0.09);
   const n = r.int(6, 8);
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + r.range(-0.3, 0.3), tau = r.range(0.7, 1.25), len = r.range(2.0, 2.9);
@@ -109,11 +196,21 @@ export function shrub(K, x, z, o = {}) {
   if (o.flowers) canopy(K, b, TILE.FLOWERS, [x, gy + s * 0.8, z], s * 0.5, s * 0.2, s * 0.5, 3, s * 0.8, r, rgb(0xffffff), { inner: 0.5, mat: 'foliage_low' });
 }
 
+/** An agave rosette of real blades: three rings (upright heart, a middle ring, a drooping outer ring), each a pointed lance with a widest middle, grey-green at the foot and blue-grey at the tip. */
 export function agave(K, x, z, o = {}) {
-  const r = o.rng, b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), uv = K.atlas ? K.atlas.uv(TILE.AGAVE) : [0, 0, 1, 1], rot = r.range(0, 3);
-  for (let i = 0; i < 3; i++) {
-    const yaw = rot + (i * Math.PI) / 3, right = [Math.cos(yaw), 0, -Math.sin(yaw)];
-    card(b, 'foliage_low', [x, gy - 0.05, z], right, [0, 1, 0], s * 1.3, s, uv, scale(rgb(0xc9e0d3), r.range(0.85, 1.05)), V.nrm([Math.sin(yaw), 0.8, Math.cos(yaw)]));
+  const r = o.rng, b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), rot = r.range(0, 6.28);
+  const lo = scale([0.3, 0.46, 0.34], r.range(0.85, 1.1)), hi = scale([0.5, 0.68, 0.66], r.range(0.9, 1.1));
+  for (const [n, tilt, len, wid] of [[4, 0.14, 0.62, 0.075], [6, 0.62, 0.86, 0.1], [8, 1.12, 0.98, 0.11]]) {
+    for (let i = 0; i < n; i++) {
+      const a = rot + (i / n) * Math.PI * 2 + r.range(-0.25, 0.25) + tilt, t = tilt * r.range(0.85, 1.15), L = s * len * r.range(0.85, 1.1), w = s * wid;
+      const dir = [Math.sin(t) * Math.cos(a), Math.cos(t), Math.sin(t) * Math.sin(a)], side = [-Math.sin(a), 0, Math.cos(a)];
+      const p0 = [x + dir[0] * 0.05, gy + 0.02, z + dir[2] * 0.05], pm = V.add(p0, V.mul(dir, L * 0.45)), tip = V.add(V.add(p0, V.mul(dir, L)), [0, -0.1 * L * Math.min(1.2, t), 0]);
+      const bl = V.sub(p0, V.mul(side, w * 0.55)), br = V.add(p0, V.mul(side, w * 0.55)), ml = V.sub(pm, V.mul(side, w)), mr = V.add(pm, V.mul(side, w));
+      for (const flip of [false, true]) {                                      // both faces: the rosette is seen from above and from the side
+        const T = (p, q, u, c) => (flip ? b.tri('plaster_a', p, u, q, { col: c }) : b.tri('plaster_a', p, q, u, { col: c }));
+        T(bl, br, mr, lo); T(bl, mr, ml, lo); T(ml, mr, tip, hi);
+      }
+    }
   }
 }
 
@@ -152,8 +249,19 @@ export function drape(K, pts, rng, o = {}) {
 // ---------------------------------------------------------------------------------------------------- placement
 export function buildFlora(K) {
   const plan = K.plan, occ = K.occ, R = K.rng('flora'), dirt = K.ctx.world?.masks?.dirt;
-  const sp = { n: 0, euca: 0, palm: 0, broad: 0, cypress: 0, banana: 0, shrub: 0, agave: 0, tuft: 0, pots: 0, drape: 0 };
+  K.leafCards = hasSheet(K.ctx);                                          // the eucalyptus, cypress and broadleaf crowns wear the photographed sheet when it is there (cards.js), the painted atlas when it is not
+  // The cut-out keeps its 0.5 threshold (the shadow pass and the profiles without MSAA use it as it is); on the high profile's 4x MSAA the same edge is also written as coverage,
+  // so the leaves are anti-aliased instead of stair-stepped (side by side on the same views: smoother edges, the same area).
+  if (K.leafCards) K.ctx.mat(CARDS).alphaToCoverage = true;
+  const sp = { n: 0, euca: 0, palm: 0, broad: 0, cypress: 0, banana: 0, shrub: 0, agave: 0, tuft: 0, pots: 0, drape: 0, rim: 0 };
   const free = (x, z, r, mask = BLOCK) => occ.clear(x, z, r, mask) && !occ.overlaps(x, z, r * 0.8);
+  // the viewpoint's fan (dress.js mirador): a point inside it keeps only plants lower than a person's eye
+  const view = K.ctx.world?.view;
+  const inView = (x, z) => {
+    if (!view) return false;
+    const vx = x - view.x, vz = z - view.z, d = vx * view.dx + vz * view.dz;
+    return d > -3 && d < view.reach && Math.abs(vx * view.dz - vz * view.dx) < view.apex + Math.max(0, d) * Math.tan(view.half);
+  };
 
   // ---- plaza trees (inside planters)
   for (const pl of plan.plazas) {
@@ -211,6 +319,10 @@ export function buildFlora(K) {
     if (sc.next() > dens * 0.55) continue;
     if (occ.slope(x, z) > 0.55) continue;
     const r = sc.fork('c' + sp.n);
+    if (inView(x, z)) {                                                   // the view from the mirador: agaves and shrubs, no tree, no banana
+      if (free(x, z, 1.3)) { if (r.chance(0.45)) agave(K, x, z, { rng: r }), sp.agave++; else shrub(K, x, z, { rng: r, flowers: r.chance(0.4) }), sp.shrub++; sp.n++; }
+      continue;
+    }
     if (north > 0.5 && free(x, z, 2.4)) {
       if (r.chance(0.62)) eucalyptus(K, x, z, { rng: r }), sp.euca++; else cypress(K, x, z, { rng: r }), sp.cypress++;
       sp.n++;
@@ -227,6 +339,37 @@ export function buildFlora(K) {
       else if (k < 0.62) agave(K, x, z, { rng: r }), sp.agave++;
       else shrub(K, x, z, { rng: r, flowers: r.chance(0.4) }), sp.shrub++;
       sp.n++;
+    }
+  }
+
+  // ---- the rim (R1-D02): a belt of trees and a low hedge 1 to 6.5 m inside the perimeter wall, so the open grass of the outer third ends in planting and not in a bare wall
+  const rim = R.fork('rim'), EDGE = 99.2;
+  for (const side of ['n', 'e', 'w', 's']) {
+    const rr = rim.fork(side), at = (s, d) => (side === 'n' ? [s, -EDGE + d] : side === 's' ? [s, EDGE - d] : side === 'e' ? [EDGE - d, s] : [-EDGE + d, s]);
+    for (let s = -96; s < 96; s += 3.6) {
+      const [x, z] = at(s + rr.range(0, 2.4), rr.range(2.2, 6.5)), r = rr.fork('t' + sp.n);
+      if (occ.slope(x, z) > 0.55 || (side === 's' && z > EDGE - 2)) continue;
+      const hedge = at(s + rr.range(0, 2.4), rr.range(0.9, 1.7));
+      if (free(hedge[0], hedge[1], 0.8)) { shrub(K, hedge[0], hedge[1], { rng: r.fork('h'), size: r.range(1.0, 1.6), flowers: r.chance(0.45) }); sp.shrub++; sp.rim++; }
+      if (inView(x, z)) { if (free(x, z, 1.2)) { agave(K, x, z, { rng: r }); sp.agave++; sp.rim++; sp.n++; } continue; }
+      const k = r.next();
+      if (side === 'n') { if (!free(x, z, 2.4)) continue; if (k < 0.55) eucalyptus(K, x, z, { rng: r }), sp.euca++; else cypress(K, x, z, { rng: r }), sp.cypress++; }
+      else if (side === 'e') { if (!free(x, z, 2.0)) continue; if (k < 0.4) banana(K, x, z, { rng: r }), sp.banana++; else if (k < 0.6) eucalyptus(K, x, z, { rng: r }), sp.euca++; else broadTree(K, x, z, { rng: r }), sp.broad++; }
+      else if (side === 'w') { if (!free(x, z, 1.8)) continue; if (k < 0.3) agave(K, x, z, { rng: r }), sp.agave++; else if (k < 0.45) cypress(K, x, z, { rng: r }), sp.cypress++; else broadTree(K, x, z, { rng: r, h: r.range(4.8, 7) }), sp.broad++; }
+      else { if (!free(x, z, 2.0)) continue; if (k < 0.4) cypress(K, x, z, { rng: r }), sp.cypress++; else if (k < 0.75) broadTree(K, x, z, { rng: r }), sp.broad++; else palm(K, x, z, { rng: r }), sp.palm++; }
+      sp.rim++; sp.n++;
+    }
+  }
+
+  // ---- the view's frame: a cypress on each side of the axis, a dozen metres out, so the opening between them reads as a picture (the first free spot of four)
+  if (view) {
+    const ax = -view.dz, az = view.dx;
+    for (const side of [-1, 1]) {
+      for (const [d, lat] of [[11, 6.8], [12.5, 7.4], [9.5, 6.4], [13, 8.2]]) {
+        const x = view.x + view.dx * d + ax * lat * side, z = view.z + view.dz * d + az * lat * side;
+        if (!free(x, z, 1.4)) continue;
+        cypress(K, x, z, { rng: R.fork('frame' + side), h: 8.4 }); sp.cypress++; sp.n++; break;
+      }
     }
   }
 
@@ -247,7 +390,7 @@ export function buildFlora(K) {
     // cut wall (sign > 0): face on the edge looking at the structure, crest = upper ground; fill wall: face on the outer line, crest = structure level
     const pts = run.S.map((s) => (run.sign > 0
       ? { x: s.x, z: s.z, nx: -s.nx, nz: -s.nz, y: s.outer + 0.02 }
-      : { x: s.x + s.nx * run.B, z: s.z + s.nz * run.B, nx: s.nx, nz: s.nz, y: s.inner + 0.02 }));
+      : { x: s.x + s.nx * s.W, z: s.z + s.nz * s.W, nx: s.nx, nz: s.nz, y: s.inner + 0.02 }));
     drape(K, pts, dr, { tile: dr.chance(0.55) ? TILE.BOUGAIN : TILE.VINE, step: 2.4, hang: Math.min(1.4, run.tall * 0.6) });
     sp.drape++;
   }

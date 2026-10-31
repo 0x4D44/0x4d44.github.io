@@ -128,7 +128,7 @@ export function checkPlan(plan, opts = {}) {
 
   // ---- lots
   stats.lots = lots.length;
-  if (lots.length < 40 || lots.length > 52) bad('lots.count', `${lots.length} lots (want ~42-50)`);
+  if (lots.length < 40 || lots.length > 160) bad('lots.count', `${lots.length} lots (want 40-160: the 49 hand-authored plus the infill)`);
   const ids = new Set();
   for (const l of lots) {
     const tag = l.id ?? '?';

@@ -5,8 +5,8 @@ import assert from 'node:assert/strict';
 import { LOT_KINDS, SHOP_TYPES } from '../js/core/vocab.js';
 import { ANCHOR_KINDS } from '../js/core/registries.js';
 import { checkPlan } from './plan-oracle.mjs';
-import { footprint, polyDistPoint } from '../js/world/geom.js';
-import { SEED, makePlan, checkLots, plinthErrors, gradeErrors, navErrors, spawnErrors, placeErrors } from './world-lib.mjs';
+import { footprint, gapBetween, polyDistPoint } from '../js/world/geom.js';
+import { SEED, HAND_LOTS, makePlan, checkLots, plinthErrors, gradeErrors, navErrors, spawnErrors, placeErrors, ledgeSides, infillErrors } from './world-lib.mjs';
 
 const { plan } = makePlan(SEED);
 const strip = (p) => JSON.parse(JSON.stringify({ lots: p.lots, streets: p.streets, plazas: p.plazas, nav: p.nav, pois: p.pois, landmarks: p.landmarks, areas: p.areas, spawn: p.spawn, warnings: p.warnings }));
@@ -15,7 +15,9 @@ test('the plan is deterministic per seed and differs in the details for another 
   const again = makePlan(SEED).plan, other = makePlan(SEED + 1).plan;
   assert.deepEqual(strip(again), strip(plan));
   for (let i = 0; i < 400; i++) { const x = ((i * 37) % 200) - 100, z = ((i * 91) % 200) - 100; assert.equal(again.heightAt(x, z), plan.heightAt(x, z)); }
-  assert.deepEqual(other.lots.map((l) => [l.id, l.kind, l.w, l.d, l.shop ?? null]), plan.lots.map((l) => [l.id, l.kind, l.w, l.d, l.shop ?? null]), 'ids, kinds, sizes, shops are fixed per slot');
+  const slot = (l) => [l.id, l.kind, l.w, l.d, l.shop ?? null];
+  assert.deepEqual(other.lots.slice(0, HAND_LOTS).map(slot), plan.lots.slice(0, HAND_LOTS).map(slot), 'ids, kinds, sizes, shops of the hand-authored lots are fixed per slot');
+  assert.notDeepEqual(other.lots.slice(HAND_LOTS).map(slot), plan.lots.slice(HAND_LOTS).map(slot), 'the infill is drawn from the seed');
   assert.notDeepEqual(other.lots.map((l) => l.name), plan.lots.map((l) => l.name), 'names depend on the seed');
 });
 
@@ -24,8 +26,8 @@ test('the lead oracle accepts the plan', () => {
   assert.deepEqual(r.violations, []);
 });
 
-test('lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names', () => {
-  assert.ok(plan.lots.length >= 42 && plan.lots.length <= 50, `${plan.lots.length} lots`);
+test('lot mix: 90-160 lots, every kind, >= 12 shops over >= 10 shop types, unique names', () => {
+  assert.ok(plan.lots.length >= 90 && plan.lots.length <= 160, `${plan.lots.length} lots`);
   for (const k of LOT_KINDS) assert.ok(plan.lots.some((l) => l.kind === k), `no ${k}`);
   const shops = plan.lots.filter((l) => l.shop);
   assert.ok(shops.length >= 12, `${shops.length} shops`);
@@ -37,6 +39,13 @@ test('lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique
 test('lots do not overlap, intrude into streets or plazas, or leave the plot', () => {
   assert.deepEqual(checkLots(plan), []);
   assert.deepEqual(plan.warnings, []);
+  for (const seed of [SEED + 1, SEED + 2, SEED + 7]) {              // the infill is drawn from the seed: other seeds must be just as clean (SEED + 2 and + 7 once left a 5.4-5.6 m nav edge)
+    const q = makePlan(seed).plan;
+    assert.deepEqual(checkLots(q), [], `seed ${seed}`);
+    assert.deepEqual(q.warnings, [], `seed ${seed}`);
+    assert.deepEqual(infillErrors(q, { digest: false }), [], `seed ${seed}`);
+    assert.deepEqual(navErrors(q), [], `seed ${seed}`);
+  }
 });
 
 test('TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported', () => {
@@ -46,6 +55,34 @@ test('TEETH: a lot dragged into the street, onto a neighbour or off the plot is 
   assert.ok(checkLots(b).some((m) => m.includes('out of the plot')));
   const c = makePlan(SEED).plan; c.lots[7].z = c.lots[6].z; c.lots[7].x = c.lots[6].x + 1; // on top of a neighbour
   assert.ok(checkLots(c).some((m) => m.includes('overlaps')));
+});
+
+test('density: L00-L48 come first and unchanged, the infill follows on real streets, and lots share a party wall or leave a walkable passage', () => {
+  assert.deepEqual(infillErrors(plan), []);
+  const fill = plan.lots.slice(HAND_LOTS), kinds = new Set(fill.map((l) => l.kind));
+  assert.ok(kinds.size >= 6, `the infill has only ${kinds.size} kinds`);
+  assert.ok(fill.filter((l) => l.shop).length >= 10, 'the infill carries shops');
+  const fps = plan.lots.map((l) => footprint(l)); let passages = 0;
+  for (let i = HAND_LOTS; i < plan.lots.length; i++) if (fps.some((f, j) => { if (j === i) return false; const g = gapBetween(fps[i], f); return g >= 1.15 && g <= 2.6; })) passages++;
+  assert.ok(passages >= 20, `${passages} infill lots stand beside a 1.15-2.6 m passage`);
+});
+
+test('TEETH: a thinned plan, a moved hand-authored lot, a slit between lots or lots out of order are reported', () => {
+  const thin = makePlan(SEED).plan; thin.lots.length = HAND_LOTS;
+  assert.ok(infillErrors(thin).some((m) => m.includes('only')));
+  const moved = makePlan(SEED).plan; moved.lots[7].x += 0.5;
+  assert.ok(infillErrors(moved).some((m) => m.includes('hand-authored lots changed')));
+  const swapped = makePlan(SEED).plan; [swapped.lots[60], swapped.lots[61]] = [swapped.lots[61], swapped.lots[60]];
+  assert.ok(infillErrors(swapped).some((m) => m.includes('has id')));
+  const slit = makePlan(SEED).plan, fp = slit.lots.map((l) => footprint(l));   // pull one lot of a touching pair 0.6 m away from its neighbour
+  let pair = null;
+  for (let i = HAND_LOTS; i < slit.lots.length && !pair; i++) for (let j = i + 1; j < slit.lots.length && !pair; j++) if (gapBetween(fp[i], fp[j]) <= 0.08) pair = [i, j];
+  assert.ok(pair, 'the infill has party walls');
+  const [a, b] = [slit.lots[pair[0]], slit.lots[pair[1]]], len = Math.hypot(b.x - a.x, b.z - a.z);
+  b.x += (b.x - a.x) / len * 0.6; b.z += (b.z - a.z) / len * 0.6;
+  assert.ok(infillErrors(slit).some((m) => m.includes('slit')));
+  const lone = makePlan(SEED).plan; lone.lots[70].row = 'S1:3r';
+  assert.ok(infillErrors(lone).some((m) => m.includes('not in an infill row')));
 });
 
 test('plinth rule and entrance ground heights', () => {
@@ -92,8 +129,23 @@ test('pois, landmarks, areas and street names have the shape and Spanish names t
 });
 
 test('TEETH: a bad poi kind, an unknown building and an English name are reported', () => {
-  const p = makePlan(SEED).plan; p.pois[0].kind = 'dance'; p.pois[1].building = 'L99'; p.lots[0].name = 'The Corner Shop'; p.landmarks[0].en = p.landmarks[0].name;
+  const p = makePlan(SEED).plan; p.pois[0].kind = 'dance'; p.pois[1].building = 'L999'; p.lots[0].name = 'The Corner Shop'; p.landmarks[0].en = p.landmarks[0].name;
   assert.ok(placeErrors(p, ANCHOR_KINDS).length >= 4);
+});
+
+test('no poi stands at a drop: plaza benches stand back from a fill rim, and a lean spot beside a wall is withdrawn (A4, round 1)', () => {
+  const benches = plan.pois.filter((q) => q.kind === 'bench' && (q.tags ?? []).includes('plaza')), leans = plan.pois.filter((q) => q.kind === 'lean');
+  assert.ok(benches.length >= 6 && leans.length >= 60, `${benches.length} plaza benches, ${leans.length} lean spots`);
+  assert.deepEqual(plan.pois.filter((q) => ledgeSides(plan, q)).map((q) => q.id), []);
+});
+
+test('TEETH: a plaza bench pushed back against a fill rim is reported as standing at a drop', () => {
+  const p = makePlan(SEED).plan, back = (q, d) => { q.x += -Math.sin(q.ry) * d; q.z += -Math.cos(q.ry) * d; q.y = p.heightAt(q.x, q.z); };      // the bench's back is local -z
+  const benches = p.pois.filter((q) => q.kind === 'bench' && (q.tags ?? []).includes('plaza'));
+  assert.deepEqual(placeErrors(p, ANCHOR_KINDS), []);
+  for (const q of benches) back(q, 0.4);
+  const bad = placeErrors(p, ANCHOR_KINDS).filter((m) => /falls 0\.5 m/.test(m));
+  assert.ok(bad.length >= 1, 'a bench back at the old 0.6 m inset on the P2 south rim has a drop beside it');
 });
 
 /** Cells steeper than 0.9 (cliffs) that are not within ~1.4 m of a lot, plaza or street: natural terrain must never be a cliff. */

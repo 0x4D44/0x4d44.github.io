@@ -21,6 +21,19 @@ export async function yieldFrame() {
   }
 }
 
+/**
+ * Resolve once the page has been painted since this call: the next animation frame has run and the task after it has started. Used before a call that will block the
+ * page for seconds (the boot's warm-up frame), so the card shows what is about to happen. A hidden tab never gets a frame: after `maxMs` it goes on anyway (the wait
+ * polls with message-channel tasks, which hidden tabs do not clamp the way they clamp timers).
+ */
+export async function paintFrame(maxMs = 100) {
+  if (typeof requestAnimationFrame !== 'function') { await tick(); return; }
+  let painted = false;
+  requestAnimationFrame(() => { tick().then(() => { painted = true; }); });
+  const t0 = performance.now();
+  while (!painted && performance.now() - t0 < maxMs) await tick();
+}
+
 export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const smooth = (t) => t * t * (3 - 2 * t);

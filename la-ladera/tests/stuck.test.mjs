@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Physics, wallsRect, floorRect } from '../js/core/physics.js';
-import { analyze } from './stuck-lib.mjs';
+import { analyze, probePoint } from './stuck-lib.mjs';
 
 // A 24 x 24 m test plot in the middle of the world: flat ground at y = 0, a ring of walls so the probe is bounded.
 function world(build) {
@@ -31,6 +31,9 @@ test('a 1.2 m deep pit is a trap (you can fall in but never climb out)', () => {
   const r = run(P);
   assert.ok(r.trapNodes > 10, `trap nodes ${r.trapNodes}`);
   assert.ok(r.traps.some((t) => Math.abs(t.at[0] - 6) < 1.5 && Math.abs(t.at[1]) < 1.5), JSON.stringify(r.traps.slice(0, 2)));
+  const pit = r.traps.find((t) => Math.abs(t.at[0] - 6) < 1.5 && Math.abs(t.at[1]) < 1.5);
+  // the entry says how the search got in: the first node of the pit, reached by a move from a node on the level ground, and the chain runs back to the spawn
+  assert.ok(pit.entry.length >= 2 && pit.entry[0].at[1] === -1.2 && pit.entry[1].at[1] === 0 && /^(walk|hop|jump)/.test(pit.entry[0].by), JSON.stringify(pit.entry));
 });
 
 test('a 0.35 m kerb is not a trap (step up and down both work)', () => {
@@ -127,4 +130,34 @@ test('jump arcs: an island across a 1.5 m moat is reachable and returnable (walk
   assert.equal(withArcs.missingCount, 0, 'the island is reached by a jump and left again by one: ' + JSON.stringify(withArcs.missing));
   assert.ok(withArcs.trapNodes > 10, `the moat (1.2 m deep, more than a 0.66 m jump) is still a trap: ${withArcs.trapNodes}`);
   assert.equal(run(mk(), { buildings: [bp], arcs: false }).missingCount, 1, 'without jump arcs the island cannot be reached at all');
+});
+
+test('probePoint: a trap cluster is judged from its first real node, not from the middle of its box (the middle of a moat is the island inside it)', () => {
+  const P = new Physics();
+  P.setTerrain((x, z) => { const d = Math.max(Math.abs(x - 6), Math.abs(z)); return d >= 1 && d < 2.5 ? -1.2 : 0; });
+  P.addWalls(wallsRect(0, 0, 24, 24, 0, -5, 5, 0.1));
+  const moat = run(P).traps[0];
+  assert.ok(Math.abs(moat.at[0] - 6) < 0.5 && Math.abs(moat.at[1]) < 0.5, `the box centre of the moat ring is the island: ${JSON.stringify(moat.at)}`);
+  assert.ok(P.groundAt(moat.at[0], moat.at[1], 1e3) - moat.y[0] > 1, 'so a player put at that centre would stand on the island, 1.2 m above the trap (the old probe: "misplaced")');
+  const p = probePoint(moat);
+  assert.ok(p.y < -1 && Math.abs(P.groundAt(p.x, p.z, 1e3) - p.y) < 0.05, `the probe point is on the moat floor: ${JSON.stringify(p)}`);
+  assert.deepEqual(probePoint({ at: [1, 2], y: [3, 4] }), { x: 1, y: 3, z: 2 }, 'a sweep file without `entry` falls back to the centre and the lowest height');
+});
+
+test('a roof door is judged by its landing: a pot on the exact outside point hides nothing, a landing shut in by a terrace item is still reported (TEETH: the same pot at an ordinary door is reported)', () => {
+  // the walker starts in the caseta (z > 5); its partition has a 2 m doorway at x 6..8 onto the deck (z < 5). The outside point is 1.0 m beyond the door line,
+  // so the caseta floor just behind the door (z >= 5.2) is within 1.5 m of it too: only the "outside side of the door" condition keeps that from counting as a landing.
+  const bp = (kind) => ({ id: 'T', bounds: { x0: 5, x1: 9, z0: 3, z1: 9 }, frame: { toWorld: (x, y, z) => [x, y, z], toLocal: (x, y, z) => [x, y, z] }, rooms: [],
+    entrances: [{ id: 'T.e2', kind, inside: [7, 0, 5.9], outside: [7, 0, 4.0] }] });
+  const mk = (item) => world((p) => {
+    p.addWalls([{ x1: -12, z1: 5, x2: 6, z2: 5, t: 0.1, y0: 0, y1: 3 }, { x1: 8, z1: 5, x2: 12, z2: 5, t: 0.1, y0: 0, y1: 3 }]);
+    item?.(p);
+  });
+  const pot = (p) => p.addWalls(wallsRect(7, 4.0, 0.5, 0.5, 0, -5, 5, 0.01));                                        // a hollow outline round the outside point: nobody steps into it
+  const shut = (p) => p.addWall({ x1: 5.5, z1: 4.85, x2: 8.5, z2: 4.85, t: 0.1, y0: 0, y1: 3 });                    // a rack hard against the doorway: nobody gets out onto the deck
+  const missing = (kind, item) => run(mk(item), { spawn: { x: 7, z: 7 }, buildings: [bp(kind)] }).missing.map((m) => m.what + ' ' + m.id);
+  assert.deepEqual(missing('roof'), [], 'an open deck: nothing missing');
+  assert.deepEqual(missing('roof', pot), [], 'a pot on the outside point: the landing beside it is reachable, so the door is fine');
+  assert.deepEqual(missing('roof', shut), ['entrance.outside T.e2'], 'a landing shut in by a rack: the deck behind it cannot be reached');
+  assert.deepEqual(missing('door', pot), ['entrance.outside T.e2'], 'TEETH: an ordinary door keeps the exact-point rule, and the pot hides its outside point');
 });

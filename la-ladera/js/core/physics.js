@@ -13,6 +13,8 @@
 //   * steep terrain (gradient > maxSlope) cannot be climbed.
 const WALL_CLEAR = 0.4;
 const CELL = 4;
+const NB = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];                 // the eight neighbours of a grid node (_pocket)
+const RESCUE_K = 20;                                                                                 // rescue(): 20 steps of 0.12 m = a pocket of up to 2.4 m is "shut in"
 
 export class Physics {
   constructor() {
@@ -21,6 +23,7 @@ export class Physics {
     this.walls = []; this.floors = [];
     this.doors = new Map();           // doorId -> [walls]
     this._r = { best: 0, lowest: 0, blocked: false };
+    this._seen = new Map();           // _pocket's visited grids, one per search size
   }
 
   setTerrain(fn) { this.terrain = fn; }
@@ -216,7 +219,7 @@ export class Physics {
   move(s, dx, dz, dt, o = {}) {
     const R = o.radius ?? 0.3, H = o.height ?? 1.78, STEP = o.stepUp ?? 0.5, SL = o.maxSlope ?? 0.9, G = o.gravity ?? 9.8;
     s.blocked = false;
-    const dist = Math.hypot(dx, dz), n = dist > 1e-6 ? Math.ceil(dist / 0.1) : 0;
+    const dist = Math.hypot(dx, dz), n = dist > 1e-6 ? Math.ceil(dist / 0.1) : 0, x0 = s.x, z0 = s.z;
     const tx = n ? dx / n : 0, tz = n ? dz / n : 0;
     for (let i = 0; i < n; i++) {
       if (this._step(s, s.x + tx, s.z + tz, R, H, STEP, SL)) continue;
@@ -224,10 +227,13 @@ export class Physics {
       const okz = Math.abs(tz) > 1e-7 && this._step(s, s.x, s.z + tz, R, H, STEP, SL);
       if (!okx && !okz) {
         s.blocked = true;
-        if (this._pocket(s.x, s.z, s.y, R, H, STEP, SL) && this._unstick(s, dx, dz, R, H, STEP, SL)) continue;   // wedged, not just against a wall: out, then walk on
+        if (this._escape(s, dx, dz, R, H, STEP, SL)) continue;                       // shut in, not just against a wall: out, then walk on
         break;
       }
     }
+    // Asked to walk, yet pushed back to where it stood (a wall in front of it, or a sliver between two outlines where every step is pushed back, not
+    // refused): is it shut in?
+    if (n && !s.blocked && Math.hypot(s.x - x0, s.z - z0) < 0.25 * dist) this._escape(s, dx, dz, R, H, STEP, SL);
     // vertical
     const f = this._surf(s.x, s.z, s.y, STEP, H);
     const ground = f.best > -Infinity ? f.best : f.lowest;
@@ -266,13 +272,52 @@ export class Physics {
     return true;
   }
 
-  /** True when a character at (x,z) can take no step of 0.12 m in any of eight directions: wedged inside wall zones, not merely standing against a wall. */
-  _pocket(x, z, y, R, H, STEP, SL) {
-    for (let k = 0; k < 8; k++) {
-      const a = k * Math.PI / 4;
-      if (this._stepPos(y, x + 0.12 * Math.cos(a), z + 0.12 * Math.sin(a), R, H, STEP, SL)) return false;
+  /**
+   * A character that cannot get on: standing INSIDE a wall zone (a jump landed it in a piece of furniture's footprint, a door shut on it)? Then out at
+   * once (_unstick from the nearest spot). Otherwise shut in a pocket (_pocket)? Then out beyond it. true = it was put outside. What was found at a spot
+   * is remembered while the character stays on it (room to go on, or no way out), so a walker pressing on a wall for minutes costs one search, not one a frame.
+   * Why the first case needs no probe: the probe steps 0.12 m and a push-out throws a character across a thin wall, so from 7 cm inside a thin outline the
+   * probe's step ended on the far side of the wall, in the open: "room to go on". The 0.04 m steps of a frame never cross the wall line, are pushed
+   * back and refused: the player was frozen for good (A5, and the L21 / L16 spots of tests/stuck.mjs).
+   */
+  _escape(s, dx, dz, R, H, STEP, SL) {
+    const m = this._seen_at?.get(s);
+    if (m && m[0] === s.x && m[1] === s.z && m[2] === s.y) return false;
+    if (this._overlaps(s.x, s.z, s.y, R, H)) { if (this._unstick(s, dx, dz, R, H, STEP, SL)) return true; }
+    else {
+      const reach = this._pocket(s.x, s.z, s.y, R, H, STEP, SL);
+      if (reach !== null && this._unstick(s, dx, dz, R, H, STEP, SL, reach + 0.12)) return true;
     }
-    return true;
+    (this._seen_at ??= new WeakMap()).set(s, [s.x, s.z, s.y]);
+    return false;
+  }
+
+  /**
+   * Is a character at (x,z) shut in? It walks the free space round the character in steps of 0.12 m (where a step really ends, push-out included)
+   * and gives up the moment it gets K steps (0.84 m) away. null = there is room to go on (an ordinary wall, a lane, a room); else how far the pocket
+   * reaches from (x,z), in metres: a character wedged inside furniture's wall zones (0), or in a sliver between two outlines. Eight trials per spot
+   * it can stand on, about 60 in the open; a pocket as big as the search allows costs at most a couple of thousand (K = 20: about ten thousand).
+   */
+  _pocket(x, z, y, R, H, STEP, SL, K = 7) {
+    const D = 0.12, W = 2 * K + 1, px = [x], pz = [z];
+    let seen = this._seen.get(K);
+    if (!seen) this._seen.set(K, seen = new Uint8Array(W * W));
+    seen.fill(0); seen[K * W + K] = 1;
+    let reach = 0;
+    while (px.length) {
+      const cx = px.pop(), cz = pz.pop();
+      for (const [di, dj] of NB) {
+        const p = this._stepPos(y, cx + di * D, cz + dj * D, R, H, STEP, SL);
+        if (!p) continue;
+        const a = Math.round((p[0] - x) / D) + K, b = Math.round((p[1] - z) / D) + K;
+        if (a <= 0 || b <= 0 || a >= W - 1 || b >= W - 1) return null;                // got 0.84 m away: there is room
+        if (seen[b * W + a]) continue;
+        seen[b * W + a] = 1;
+        reach = Math.max(reach, Math.hypot(p[0] - x, p[1] - z));
+        px.push(p[0]); pz.push(p[1]);
+      }
+    }
+    return reach;
   }
 
   /** A spot to stand on: free of every wall zone, on the same floor as the feet, not under a low ceiling, not on a slope too steep to climb. */
@@ -284,23 +329,51 @@ export class Physics {
   }
 
   /**
-   * A character with no way to move (a jump landed it inside a piece of furniture's wall zone, a door shut on it, the push-out threw it into a
-   * second zone) is put on the nearest standable spot within 1.6 m on the same floor, preferring the heading it was walking. Never across a wall
-   * that stands 2 m or more above its feet (a room wall, a shut door): furniture outlines are crossed, rooms are not. Counted in s.unstuck.
+   * A character shut in a pocket (a jump landed it inside a piece of furniture's wall zone, a door shut on it, the push-out threw it into a second
+   * zone, a sliver between two outlines) is put on the nearest standable spot beyond the pocket (`from` m away or more) and within 1.6 m, on the same
+   * floor, preferring the heading it was walking. Never across a wall that stands 2 m or more above its feet (a room wall, a shut door): furniture
+   * outlines are crossed, rooms are not (`cross`: any wall is crossed, rescue()'s last resort). `to` = how far to look. Counted in s.unstuck.
    */
-  _unstick(s, dx, dz, R, H, STEP, SL) {
+  _unstick(s, dx, dz, R, H, STEP, SL, from = 0, to = 1.65, cross = false) {
     const l = Math.hypot(dx, dz) || 1, hx = dx / l, hz = dz / l, ang = [];
     for (let k = 0; k < 24; k++) ang.push((k * Math.PI) / 12);
     ang.sort((a, b) => Math.cos(b) * hx + Math.sin(b) * hz - (Math.cos(a) * hx + Math.sin(a) * hz));
-    for (let r = 0.1; r < 1.65; r += 0.1) {
+    for (let r = Math.max(0.1, from); r < to; r += 0.1) {
       for (const a of ang) {
         const x = s.x + r * Math.cos(a), z = s.z + r * Math.sin(a);
-        if (!this._standable(x, z, s.y, R, H, STEP, SL) || this.segmentBlocked(s.x, s.z, x, z, s.y, H, null, 2.0)) continue;
+        if (!this._standable(x, z, s.y, R, H, STEP, SL) || (!cross && this.segmentBlocked(s.x, s.z, x, z, s.y, H, null, 2.0))) continue;
         s.x = x; s.z = z; s.unstuck = (s.unstuck ?? 0) + 1;
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * The safety net behind "I hold a key and nothing moves" (the player's stall timer calls it): is the character really shut in, and if so put it
+   * outside. Wider than the automatic escape in move(): it looks 2.4 m round (not 0.84 m), counts every shut door as open (a door is a way out, not a
+   * trap: a room with a shut door is no pocket) and may put the character up to 2.4 m past the pocket's far edge, never across a wall that stands 2 m
+   * or more above its feet (a room wall, a shut door). (dx,dz) = the way it wants to go: it is put on that side when it can be. Only when that finds no
+   * spot is a room wall crossed, as the last resort: a sealed closet or stall (a room nobody gave a door) is a modelling error, and a player shut in one
+   * for good is worse than a player put through its wall.
+   * Returns 'free' (room to go on: a wall, a shut door, a big room; nothing done), 'moved' (put outside, counted in s.unstuck), 'crossed' (put outside,
+   * through a room wall, counted) or 'shut' (shut in and no standable spot within 2.4 m past the pocket, even through walls: nothing done; the caller
+   * tells the player about the pause menu's way out).
+   */
+  rescue(s, dx = 0, dz = 0, o = {}) {
+    const R = o.radius ?? 0.3, H = o.height ?? 1.78, STEP = o.stepUp ?? 0.5, SL = o.maxSlope ?? 0.9;
+    const reach = this._withDoorsOpen(() => (this._overlaps(s.x, s.z, s.y, R, H) ? 0 : this._pocket(s.x, s.z, s.y, R, H, STEP, SL, RESCUE_K)));   // inside a wall zone: shut in (the probe would hop a thin wall)
+    if (reach === null) return 'free';
+    const from = reach + 0.12, to = reach + 2.4;
+    if (this._unstick(s, dx, dz, R, H, STEP, SL, from, to)) return 'moved';
+    return this._unstick(s, dx, dz, R, H, STEP, SL, from, to, true) ? 'crossed' : 'shut';
+  }
+
+  /** Run fn with every shut door open, then shut them again. */
+  _withDoorsOpen(fn) {
+    const shut = [];
+    for (const a of this.doors.values()) for (const w of a) if (w.on) { w.on = false; shut.push(w); }
+    try { return fn(); } finally { for (const w of shut) w.on = true; }
   }
 
   stats() { return { walls: this.walls.length, floors: this.floors.length, cells: this.cells.size, doors: this.doors.size }; }

@@ -74,7 +74,10 @@ export class LightPool {
       for (let i = 0; i < n; i++) {
         const l = cands[i].l;
         if (slots.some((s) => s.src === l)) continue;
-        const free = slots.find((s) => !s.src) ?? slots.find((s) => !s.want && s.cur < 0.04);
+        // a slot is free when empty or faded out; after a teleport (snap) every slot that lost its light is free at once: they all jump below,
+        // otherwise the street lamps of the old place hold the pool for ~0.5 s and the new room stands dark for its first frames.
+        // Only the first `active` slots count (the medium / low profiles run 6 / 4 lights): a light put in a switched-off slot would be killed below.
+        const live = this.active, free = slots.find((s, k) => k < live && !s.src) ?? slots.find((s, k) => k < live && !s.want && (snap || s.cur < 0.04));
         if (free) { free.src = l; free.cur = 0; free.want = 1; }
       }
     }

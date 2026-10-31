@@ -2,7 +2,7 @@
 // interaction targeting and the discovery check keep working exactly as before; this system puts the view on the seat, a seated eye height
 // above the cushion, facing the way the seat faces. Any walking key (or E with nothing targeted) stands you up again.
 //   ctx.interiorSit = { active: null | { building, eye:[x,y,z], yaw, stand:[x,z], since } }
-const MOVE = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'ControlLeft', 'KeyC'];
+const MOVE = ['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyC'];   // no Ctrl: it is not a game key (Ctrl+W closes the tab)
 const EYE_ABOVE_SEAT = 0.64, FORWARD = 0.12;
 
 function install(ctx) {
@@ -19,12 +19,14 @@ function install(ctx) {
   return S;
 }
 
-/** Sit on a seat: `spec` = { building, seat:[x,y,z] (floor point under the hips, world), seatH, ry (world facing of the sitter), stand:[x,z] }. */
+/** Sit on a seat: `spec` = { building, seat:[x,y,z] (floor point under the hips, world), seatH, ry (world facing of the sitter), stand:[x,z] (only used when the player has no position) }.
+ *  The body stays where it is, and "walked away" is measured from THERE: a seat is offered from up to 1.9 m, so measuring from the seat's own interaction point stood a distant sitter up at once. */
 export function sitDown(ctx, spec) {
   const S = ctx.interiorSit ?? install(ctx), p = ctx.player;
   if (!p || S.active) return false;
   const s = Math.sin(spec.ry), c = Math.cos(spec.ry);
-  S.active = { building: spec.building, stand: spec.stand, since: 0, eye: [spec.seat[0] + s * FORWARD, spec.seat[1] + spec.seatH + EYE_ABOVE_SEAT, spec.seat[2] + c * FORWARD] };
+  const here = p.s ? [p.s.x, p.s.z] : spec.stand;
+  S.active = { building: spec.building, stand: here, since: 0, eye: [spec.seat[0] + s * FORWARD, spec.seat[1] + spec.seatH + EYE_ABOVE_SEAT, spec.seat[2] + c * FORWARD] };
   p.setLook?.(spec.ry + Math.PI, -0.06);
   ctx.ui?.toast?.('Te sientas un rato. Camina para levantarte.', 2600);
   return true;

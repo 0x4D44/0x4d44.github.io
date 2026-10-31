@@ -41,7 +41,10 @@ const ROWS = [
   [10,  0xffa457, 2.85, 0x3a64aa, 0xe8b88e, 0x94aad0, 0x806247, 1.05, 1.05, 0.96, 0.0034, 0.45, 0.70, 0.00, 2.20, 0.28, 1.08],
   [20,  0xffc88c, 3.35, 0x3478c0, 0xb7cadb, 0x9db8de, 0x84704f, 1.10, 1.10, 0.95, 0.0030, 0.25, 0.60, 0.00, 2.60, 0.22, 1.05],
   [40,  0xffe5c6, 3.70, 0x2c76ca, 0xa9c8e8, 0xa6c2e8, 0x8a7a5a, 1.15, 1.15, 0.94, 0.0028, 0.12, 0.55, 0.00, 3.00, 0.20, 1.03],
-  [75,  0xfff3e4, 3.90, 0x2670d0, 0xa6c6ea, 0xaec8ec, 0x8a7a5a, 1.20, 1.20, 0.94, 0.0027, 0.08, 0.55, 0.00, 3.20, 0.20, 1.02],
+  // High sun (11-14 h: 55 to 71 degrees). R1-D14: the rows used to stay as they were at 40 degrees (a fill of 1.2 against a sun of 3.9), so noon was a flat pale picture. Now the sun is stronger, the sky light
+  // and the IBL fill weaker (deeper shadow under the eaves and the balconies), the air is clearer and the horizon bluer. Every row up to 40 degrees (morning, evening, golden hour) is as it was.
+  [55,  0xfff0dc, 3.95, 0x2970cc, 0xa3c4e9, 0xa9c4e9, 0x8a7a5a, 1.07, 1.07, 0.935, 0.0025, 0.10, 0.55, 0.00, 3.10, 0.20, 1.04],
+  [75,  0xfff3e4, 4.25, 0x1f68d0, 0x9bbfec, 0xa2c0ec, 0x8a7a5a, 1.00, 1.00, 0.93, 0.0023, 0.08, 0.55, 0.00, 3.20, 0.20, 1.07],
 ].map((r) => ({
   el: r[0], sun: new THREE.Color(r[1]), sunI: r[2], zen: new THREE.Color(r[3]), hor: new THREE.Color(r[4]), hemiS: new THREE.Color(r[5]),
   hemiG: new THREE.Color(r[6]), hemiI: r[7], envI: r[8], exp: r[9], fog: r[10], glow: r[11], cloud: r[12], stars: r[13], bloomT: r[14], bloomS: r[15], sat: r[16],
@@ -49,19 +52,46 @@ const ROWS = [
 const NUM = ['sunI', 'hemiI', 'envI', 'exp', 'fog', 'glow', 'cloud', 'stars', 'bloomT', 'bloomS', 'sat'];
 const COL = ['sun', 'zen', 'hor', 'hemiS', 'hemiG'];
 
-/** Interpolated palette row for a sun elevation in degrees (written into `out`). Pure apart from `out`. */
-export function samplePalette(elDeg, out = null) {
+// Morning and evening are not mirror images. The same sun height gives a different sky. After the cool night the valley air is still and damp:
+// pale blue-white mist, a whiter low sun (a thin gold, not orange), a clear blue zenith, a bluish but bright fill, softer contrast. At the end of
+// the day the same height is warm and dusty: amber haze, an orange sun that glows wider through the dust, and a warm grey fill (a blue fill on
+// warm light turns cement and paving to ice). `col` entries are [target colour, how far the row moves toward it, 0..1]; `num` entries multiply.
+const col = (hex, k) => [new THREE.Color(hex), k];
+const MOOD = {
+  morning: {
+    col: { sun: col(0xffe0b4, 0.55), zen: col(0x3f86d8, 0.45), hor: col(0xb9cfe8, 0.72), hemiS: col(0xa8c2ea, 0.40), hemiG: col(0x8a826c, 0.30) },
+    num: { sunI: 0.85, hemiI: 1.12, envI: 1.08, fog: 1.5, glow: 0.8, cloud: 1.15, sat: 0.95 },
+  },
+  evening: {
+    col: { sun: col(0xff8a3a, 0.45), zen: col(0x405a8a, 0.35), hor: col(0xe3a06b, 0.55), hemiS: col(0xb4a8b0, 0.55), hemiG: col(0x8f6a48, 0.40) },
+    num: { sunI: 1.05, hemiI: 0.98, envI: 0.96, fog: 1.2, glow: 1.2, cloud: 1.05, sat: 1.0 },
+  },
+};
+/** How much of the morning / evening mood a sun elevation (degrees) gets: none in the deep night, full from just above the horizon through the golden hour, none by mid-morning. */
+export const moodWeight = (elDeg) => sstep(-9, 6, elDeg) * (1 - sstep(10, 45, elDeg));
+
+/**
+ * Interpolated palette row for a sun elevation in degrees (written into `out`). `mood`: -1 = the sun is rising (morning), +1 = it is setting
+ * (evening), 0 = the plain rows; values in between blend. Pure apart from `out`.
+ */
+export function samplePalette(elDeg, out = null, mood = 0) {
   out ??= { sun: new THREE.Color(), zen: new THREE.Color(), hor: new THREE.Color(), hemiS: new THREE.Color(), hemiG: new THREE.Color() };
   let i = 0;
   while (i < ROWS.length - 2 && elDeg > ROWS[i + 1].el) i++;
   const a = ROWS[i], b = ROWS[i + 1], t = clamp((elDeg - a.el) / (b.el - a.el), 0, 1), s = t * t * (3 - 2 * t);
   for (const k of NUM) out[k] = a[k] + (b[k] - a[k]) * s;
   for (const k of COL) out[k].copy(a[k]).lerp(b[k], s);
+  const w = mood === 0 ? 0 : moodWeight(elDeg), sunUp = sstep(-9, -4, elDeg);                // (the rows keep a black sun below -9 deg: nothing to tint there)
+  if (w > 0) for (const [m, amt] of [[MOOD.morning, clamp(-mood, 0, 1) * w], [MOOD.evening, clamp(mood, 0, 1) * w]]) {
+    if (amt <= 0) continue;
+    for (const k of COL) out[k].lerp(m.col[k][0], m.col[k][1] * amt * (k === 'sun' ? sunUp : 1));
+    for (const k in m.num) out[k] *= 1 + (m.num[k] - 1) * amt;
+  }
   return out;
 }
 
 /** Indoor / outdoor render settings (blended by look.indoor). */
-const INDOOR = { hemi: 0.17, env: 0.10, exposure: 1.22 };
+const INDOOR = { hemi: 0.17, env: 0.10, exposure: 1.22, exposureMax: 1.3, bloomT: 3.0, bloomS: 0.18 };
 /** When the clock runs (settings.timeFlow): game minutes per real second (a full day = 48 real minutes). */
 const FLOW_MIN_PER_SEC = 0.5;
 
@@ -128,7 +158,7 @@ export class Look {
     const c = celestial(h, SITE.dec, SITE.lat, this._cel), m = celestial(h + 12, 5, SITE.lat, this._moon);
     st.sunDir.set(c.x, c.y, c.z).normalize(); st.moonDir.set(m.x, m.y, m.z).normalize();
     st.elDeg = c.elDeg; st.moonEl = m.elDeg;
-    samplePalette(c.elDeg, this.pal);
+    samplePalette(c.elDeg, this.pal, h < 12 ? -1 : 1);                      // the same sun height looks different in the morning and in the evening
     const p = this.pal;
     st.night = 1 - sstep(-5, 7, c.elDeg); st.day = 1 - st.night;
     ctx.night = st.night; ctx.sunDir = st.sunDir; ctx.moonDir = st.moonDir; ctx.sunEl = c.elDeg;
@@ -151,7 +181,11 @@ export class Look {
     this.hemi.color.copy(p.hemiS); this.hemi.groundColor.copy(p.hemiG);
     this.hemi.intensity = p.hemiI * (1 + (INDOOR.hemi - 1) * ind);
     scene.environmentIntensity = p.envI * (1 + (INDOOR.env - 1) * ind);
-    this.renderer.toneMappingExposure = p.exp * (1 + (INDOOR.exposure - 1) * ind);
+    // A lit room needs no night boost: the dark streets are why the night exposure is high (1.55), and in a room it blows a lamp's hot spot on the ceiling
+    // into a veil. So indoors: a bit brighter than a dim day, never above exposureMax, and the bloom of the daytime (high threshold, gentle).
+    this.renderer.toneMappingExposure = p.exp + (Math.min(p.exp * INDOOR.exposure, INDOOR.exposureMax) - p.exp) * ind;
+    st.bloomThreshold = p.bloomT + (Math.max(p.bloomT, INDOOR.bloomT) - p.bloomT) * ind;
+    st.bloomStrength = p.bloomS + (Math.min(p.bloomS, INDOOR.bloomS) - p.bloomS) * ind;
     scene.fog.color.copy(p.hor); scene.fog.density = p.fog * (1 - 0.35 * ind);
     su.uZenith.value.copy(p.zen); su.uHorizon.value.copy(p.hor);
     su.uGround.value.copy(p.hor).multiplyScalar(0.28);

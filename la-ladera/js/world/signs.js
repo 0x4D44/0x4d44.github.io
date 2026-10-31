@@ -1,7 +1,8 @@
-// Outdoor lettering and paint (A5): three murals on the tall retaining walls, the welcome boards on the gate arch, a blue street-name plaque on an iron
-// post at the start of every street, hand-painted boards (garden, eggs, thanks) and the chalk hopscotch on the Almendros plaza. Shop fascias, blades,
-// ghost signs and posters are A2's (arch/signs.js, material `sign_atlas`); this is the other, separate atlas: material `world_sign`.
-// One 2048 x 1024 atlas painted at boot (Canvas2D -> DataTexture, rows flipped so v = 1 - y/H, like the foliage atlas). Under Node there is no canvas:
+// Outdoor lettering and paint (A5): three murals painted straight onto the tall retaining walls (6-8 m wide, 3 m+ tall, weathered, ragged brush edge, no frame),
+// the welcome boards on the gate arch, a blue street-name plaque on an iron post at the start of every street, hand-painted boards (garden, eggs, thanks) and the
+// chalk hopscotch on the Almendros plaza. Shop fascias, blades, ghost signs and posters are A2's (arch/signs.js, material `sign_atlas`); this is the other,
+// separate pair of atlases: material `world_sign` (2048 x 1024: boards, plaques, chalk, the posters and tags of the perimeter walls) and `world_mural` (1024 x 1560: the three paintings, 1024 x 512 each).
+// Painted at boot (Canvas2D -> DataTexture, rows flipped so v = 1 - y/H, like the foliage atlas). Under Node there is no canvas:
 // K.signs stays null and every panel is a flat tinted board, so the placement code (and its tests) run the same everywhere.
 import * as THREE from 'three';
 import { OCC } from './occupancy.js';
@@ -13,15 +14,29 @@ const FONT = '"Arial Black", "Segoe UI Black", Impact, "Helvetica Neue", Arial, 
 const HAND = '"Segoe Print", "Bradley Hand", "Comic Sans MS", "Marker Felt", cursive';
 const FLAT = { mural: [0.55, 0.45, 0.4], gate: [0.92, 0.88, 0.72], plaque: [0.12, 0.3, 0.62], hand: [0.72, 0.6, 0.4], rayuela: [0.92, 0.92, 0.88] };
 
-/** region of the atlas per key: [x, y, w, h] in canvas pixels (8 px gutters between regions) */
+/** region of the sign atlas per key: [x, y, w, h] in canvas pixels (8 px gutters between regions). The murals have an atlas of their own (below). */
 const REGION = {
-  'mural.condor': [8, 8, 640, 320], 'mural.fiesta': [664, 8, 640, 320], 'mural.cerro': [1320, 8, 640, 320],
-  'gate.in': [8, 344, 1000, 128], 'gate.out': [1032, 344, 1000, 128],
-  'hand.huerta': [8, 488, 500, 128], 'hand.huevos': [524, 488, 500, 128], 'hand.gracias': [1040, 488, 500, 128],
-  'rayuela': [1872, 632, 140, 360],
+  'gate.in': [8, 8, 1000, 128], 'gate.out': [1032, 8, 1000, 128],
+  'hand.huerta': [8, 152, 500, 128], 'hand.huevos': [524, 152, 500, 128], 'hand.gracias': [1040, 152, 500, 128], 'hand.mirador': [1556, 152, 480, 128],
+  'rayuela': [1872, 296, 140, 360],
 };
-const plaqueRegion = (i) => [8 + (i % 7) * 264, 632 + Math.floor(i / 7) * 72, 256, 64];
-const regionOf = (key) => (key.startsWith('plaque.') ? plaqueRegion(+key.slice(7)) : REGION[key]);
+const PLAQUES = 28;                                                     // 7 to a row, 4 rows: the street-name plaques (plaque i = street i)
+const plaqueRegion = (i) => (i >= 0 && i < PLAQUES ? [8 + (i % 7) * 264, 296 + Math.floor(i / 7) * 72, 256, 64] : undefined);
+// R1-D02: what is pasted and sprayed on the inside of the perimeter wall, in the rows under the plaques: paper posters (216 x 312 px, 0.34 x 0.49 m) and sprayed tags (300 x 150 px, 0.9 x 0.45 m).
+// How many of each there are is the length of POSTERS and TAG_ART below (PAPERS, TAGS), so a region exists exactly for a painted key.
+const paperRegion = (i) => (i >= 0 && i < PAPERS ? [8 + i * 224, 696, 216, 312] : undefined);
+const tagRegion = (i) => (i >= 0 && i < TAGS ? [8 + PAPERS * 224 + i * 308, 696, 300, 150] : undefined);
+const regionOf = (key) => (key.startsWith('plaque.') ? plaqueRegion(+key.slice(7)) : key.startsWith('poster.') ? paperRegion(+key.slice(7)) : key.startsWith('tag.') ? tagRegion(+key.slice(4)) : REGION[key]);
+
+// the murals: one 1024 x 512 region each, stacked with 8 px gutters (in the order of ART below)
+const MW = 1024, MH = 512, MGAP = 8;
+const muralRegion = (key) => { const i = ART.findIndex((a) => a.key === key); return i < 0 ? undefined : [0, i * (MH + MGAP), MW, MH]; };
+/** [u0, vBottom, u1, vTop] of a region of a W x H atlas, half a texel inside; a key with no region is a bug, so it throws with the key's name */
+const uvIn = (reg, W, H, key) => {
+  if (!reg) throw new Error(`sign atlas: no region for "${key}"`);
+  const [x, y, w, h] = reg, e = 0.75;
+  return [(x + e) / W, 1 - (y + h - e) / H, (x + w - e) / W, 1 - (y + e) / H];
+};
 
 // ---------------------------------------------------------------------------------------------------- painting helpers
 function makeCanvas(w, h) {
@@ -48,13 +63,12 @@ function banner(g, w, y, h, s, bg, fg, edge) {
   poly(g, [[20, y + 3], [w - 20, y + 3], [w - 33, y + h / 2], [w - 20, y + h - 3], [20, y + h - 3], [33, y + h / 2]], bg);
   const sz = fit(g, s, w - 120, h * 0.6, 12); text(g, s, w / 2, y + h / 2 + 1, sz, fg);
 }
-function frame(g, w, h) {
-  g.strokeStyle = '#f1e7cf'; g.lineWidth = 14; g.strokeRect(7, 7, w - 14, h - 14);
-  g.strokeStyle = '#2a2220'; g.lineWidth = 3; g.strokeRect(14.5, 14.5, w - 29, h - 29);
-}
+/** The banner of a mural painted on the part `v` = { x0, w } of its 640 x 320 scene (a picture narrower than 2:1 shows only that part), so its ends are not cropped. */
+function viewBanner(g, v, ...a) { g.save(); g.translate(v.x0, 0); banner(g, v.w, ...a); g.restore(); }
+const FULL = { x0: 0, w: 640 };
 
-// ---------------------------------------------------------------------------------------------------- the murals (640 x 320)
-function paintCondor(g, w, h) {
+// ---------------------------------------------------------------------------------------------------- the murals (drawn on 640 x 320, painted at 1.6x onto 1024 x 512, then weathered)
+function paintCondor(g, w, h, v = FULL) {
   const sky = g.createLinearGradient(0, 0, 0, h);
   sky.addColorStop(0, '#173a73'); sky.addColorStop(0.5, '#c9573a'); sky.addColorStop(0.78, '#f2a43e'); sky.addColorStop(1, '#f7d070');
   g.fillStyle = sky; g.fillRect(0, 0, w, h);
@@ -97,11 +111,10 @@ function paintCondor(g, w, h) {
     const hh = 22 + ((i * 7) % 5) * 6; g.fillStyle = hc[i % hc.length]; g.fillRect(x, 284 - hh, 38, hh + 40);
     g.fillStyle = '#21202b'; g.fillRect(x + 8, 284 - hh + 7, 8, 10); g.fillRect(x + 22, 284 - hh + 7, 8, 10);
   }
-  banner(g, w, 268, 44, 'LIBRES COMO EL CÓNDOR', '#f4ecd8', '#4a1f1f', '#2a2220');
-  frame(g, w, h);
+  viewBanner(g, v, 268, 44, 'LIBRES COMO EL CÓNDOR', '#f4ecd8', '#4a1f1f', '#2a2220');
 }
 
-function paintFiesta(g, w, h) {
+function paintFiesta(g, w, h, v = FULL) {
   const R = rng32(7);
   const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#0a2f4a'); bg.addColorStop(0.6, '#116a78'); bg.addColorStop(1, '#1c8a7a');
   g.fillStyle = bg; g.fillRect(0, 0, w, h);
@@ -133,11 +146,10 @@ function paintFiesta(g, w, h) {
   dancer(120, '#e63946', '#ffd166', '#06d6a0', 0); dancer(262, '#8338ec', '#ff9f1c', '#ffd166', 1);
   dancer(404, '#06a77d', '#f72585', '#ffd23f', 0); dancer(540, '#ff6b35', '#4cc9f0', '#f7f7f7', 1);
   for (let i = 0; i < 70; i++) { g.fillStyle = cols[i % cols.length]; circle(g, R() * w, 60 + R() * 200, 1.6 + R() * 2.4); }
-  banner(g, w, 276, 38, 'FIESTA DE LA LADERA', '#ffd23f', '#7b1e3a', '#2a2220');
-  frame(g, w, h);
+  viewBanner(g, v, 276, 38, 'FIESTA DE LA LADERA', '#ffd23f', '#7b1e3a', '#2a2220');
 }
 
-function paintCerro(g, w, h) {
+function paintCerro(g, w, h, v = FULL) {
   const R = rng32(11);
   const sky = g.createLinearGradient(0, 0, 0, h); sky.addColorStop(0, '#7cc4ec'); sky.addColorStop(1, '#e9f4d4'); g.fillStyle = sky; g.fillRect(0, 0, w, h);
   g.fillStyle = '#ffe566'; circle(g, 76, 66, 32); g.strokeStyle = '#ffd23f'; g.lineWidth = 5; g.lineCap = 'round';
@@ -158,8 +170,72 @@ function paintCerro(g, w, h) {
   g.fillStyle = '#6b4a2f'; g.fillRect(578, 150, 12, 70);
   g.fillStyle = '#2f7d3a'; circle(g, 584, 130, 38); circle(g, 556, 150, 26); circle(g, 612, 148, 26);
   g.fillStyle = '#f28c28'; for (const [x, y] of [[570, 118], [598, 126], [560, 150], [612, 152], [585, 142], [578, 98]]) circle(g, x, y, 5);
-  banner(g, w, 272, 40, 'LA LADERA ES NUESTRA', '#fff3c4', '#1f5f3a', '#2a2220');
-  frame(g, w, h);
+  viewBanner(g, v, 272, 40, 'LA LADERA ES NUESTRA', '#fff3c4', '#1f5f3a', '#2a2220');
+}
+
+/**
+ * The three paintings: atlas key, discovery id and texts, painter, the scene x (of 640) to keep centred when the picture is narrower than 2:1, weathering seed.
+ * Order = their order in the mural atlas and, tallest first, the order they are given the walls.
+ */
+const ART = [
+  { key: 'mural.condor', id: 'condor', name: 'El Cóndor del Cerro', en: 'A condor wider than the street itself, crossing the sun over the mountains: "Free as the condor".', paint: paintCondor, focus: 350, seed: 311 },
+  { key: 'mural.fiesta', id: 'fiesta', name: 'La Fiesta de la Ladera', en: 'Four dancers in wide polleras under paper bunting; the neighbours repaint the colours every year before the feast.', paint: paintFiesta, focus: 330, seed: 312 },
+  { key: 'mural.cerro', id: 'cerro', name: 'El Cerro Verde', en: 'The hill the way its children draw it: green, with a house on every step. "The hillside is ours".', paint: paintCerro, focus: 400, seed: 313 },
+];
+
+/**
+ * Years of sun, rain and splashes on a painting of w x h px (region-local coordinates, clipped to its region): sun fade (strongest at the top), plaster grain, dark rain
+ * streaks, a damp dirty foot, flecks and peeled patches where the paint is gone (pale plaster, rimmed in shadow) and a hand-ragged edge (alpha 0: the wall shows
+ * beyond it) instead of a frame.
+ */
+function weather(g, w, h, seed) {
+  const R = rng32(seed);
+  const fade = g.createLinearGradient(0, 0, 0, h);
+  fade.addColorStop(0, 'rgba(228,216,192,0.24)'); fade.addColorStop(0.55, 'rgba(228,216,192,0.09)'); fade.addColorStop(1, 'rgba(228,216,192,0.02)');
+  g.fillStyle = fade; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < 5200; i++) { g.fillStyle = R() < 0.5 ? 'rgba(255,250,235,0.10)' : 'rgba(30,24,20,0.10)'; g.fillRect(R() * w, R() * h, 1 + R() * 2.2, 1 + R() * 2.2); }
+  for (let i = 0; i < 34; i++) {                                               // rain runs: from the top edge, or from a spot where water gathers
+    const x = R() * w, y0 = R() < 0.6 ? R() * 30 : R() * h * 0.5, len = 70 + R() * 230, sw = 2 + R() * 6;
+    const gr = g.createLinearGradient(0, y0, 0, y0 + len);
+    gr.addColorStop(0, 'rgba(36,30,26,0)'); gr.addColorStop(0.18, 'rgba(36,30,26,0.22)'); gr.addColorStop(1, 'rgba(36,30,26,0)');
+    g.fillStyle = gr; g.fillRect(x, y0, sw, len);
+  }
+  const foot = g.createLinearGradient(0, h - 96, 0, h);                      // mud and splash at the foot
+  foot.addColorStop(0, 'rgba(66,54,42,0)'); foot.addColorStop(1, 'rgba(66,54,42,0.5)');
+  g.fillStyle = foot; g.fillRect(0, h - 96, w, 96);
+  for (let i = 0; i < 170; i++) { g.fillStyle = 'rgba(60,48,36,0.32)'; circle(g, R() * w, h - R() * R() * 130, 1 + R() * 3.2); }
+  // Paint lost shows the plaster under it: pale specks and patches with a shadowed rim (a hole to the wall behind read as dark stones stuck on the picture, because
+  // the wall behind is rubble). Only the ragged outer edge below is cut to nothing.
+  for (let i = 0; i < 760; i++) {
+    const x = R() * w, y = R() * h, edge = Math.min(x, w - x, y, h - y);
+    if (R() > 0.2 + 0.8 * Math.max(0, 1 - edge / 170)) continue;              // flecks gather near the edges and the foot
+    g.fillStyle = R() < 0.75 ? 'rgba(206,196,176,0.9)' : 'rgba(150,138,120,0.8)'; g.fillRect(x, y, 1 + R() * 3.5, 1 + R() * 3.5);
+  }
+  for (let i = 0; i < 9; i++) {                                                // peeled patches with ragged outlines, mostly in the lower two thirds
+    const cx = R() * w, cy = h * (0.3 + 0.7 * R()), rr = 8 + R() * 17, n = 9 + Math.floor(R() * 4);
+    g.beginPath();
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2, q = rr * (0.5 + 0.5 * R()), x = cx + Math.cos(a) * q * 1.5, y = cy + Math.sin(a) * q;
+      if (k) g.lineTo(x, y); else g.moveTo(x, y);
+    }
+    g.closePath(); g.fillStyle = 'rgba(204,194,174,0.95)'; g.fill();           // bare plaster
+    g.lineWidth = 2; g.strokeStyle = 'rgba(92,78,62,0.5)'; g.stroke();         // the lifted paint's rim, in shadow
+    g.fillStyle = 'rgba(120,106,90,0.18)'; g.fillRect(cx - rr * 1.2, cy + rr * 0.45, rr * 2.4, rr * 0.5);   // a damp stain along its lower side
+  }
+  g.globalCompositeOperation = 'destination-out';                              // the hand-ragged outer edge: cut to nothing, so the wall shows beyond it
+  const ragged = (amp, along, pts) => {                                         // cut the outside of one edge along a jittered line: pts(t, depth) -> [x, y]
+    const ph1 = R() * 6.3, ph2 = R() * 6.3, steps = Math.ceil(along / 5);
+    const line = [];
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps, base = 0.4 + 0.6 * (0.5 + 0.25 * Math.sin(t * 17 + ph1) + 0.25 * Math.sin(t * 41 + ph2)), bite = R() < 0.02 ? 0.5 + R() * 0.6 : 0;
+      line.push(pts(t, amp * (base * (0.55 + 0.45 * R()) + bite)));
+    }
+    g.beginPath(); line.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    const [ex, ey] = pts(1, -60), [sx, sy] = pts(0, -60); g.lineTo(ex, ey); g.lineTo(sx, sy); g.closePath(); g.fillStyle = '#000'; g.fill();
+  };
+  ragged(18, w, (t, d) => [t * w, d]); ragged(9, w, (t, d) => [t * w, h - d]);       // top, bottom (short: the banner sits just above it)
+  ragged(18, h, (t, d) => [d, t * h]); ragged(18, h, (t, d) => [w - d, t * h]);      // left, right
+  g.globalCompositeOperation = 'source-over';
 }
 
 // ---------------------------------------------------------------------------------------------------- boards and plaques
@@ -199,6 +275,72 @@ function paintGracias(g, w, h) {
   const a = fit(g, 'GRACIAS POR LOS FAVORES', w - 50, 40, 14); text(g, 'GRACIAS POR LOS FAVORES', w / 2, 62, a, '#f5efe0');
   const b = fit(g, 'RECIBIDOS · FAM. QUISPE', w - 50, 36, 14); text(g, 'RECIBIDOS · FAM. QUISPE', w / 2, 100, b, '#f5efe0');
 }
+/** The board on the viewpoint tower (R1-D18): deep green enamel, a cream rule, the name in cream and the height in hand lettering, a little rust at the corners where the water runs. */
+function paintMirador(g, w, h) {
+  const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#2b5c45'); bg.addColorStop(1, '#1c4631'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+  g.strokeStyle = '#efe6cc'; g.lineWidth = 6; g.strokeRect(7, 7, w - 14, h - 14);
+  const sz = fit(g, 'MIRADOR', w - 70, 74, 20); text(g, 'MIRADOR', w / 2, h * 0.4, sz, '#f7f1de', { stroke: '#10281c', sw: 3 });
+  const s2 = fit(g, 'del Cielo · 10 m · suba despacio', w - 70, 26, 10, HAND); text(g, 'del Cielo · 10 m · suba despacio', w / 2, h * 0.8, s2, '#f2c94c', { fam: HAND });
+  const R = rng32(4411);
+  for (let i = 0; i < 5; i++) {                                                // rust runs from the corners and the lower edge
+    const x = i < 2 ? 12 + R() * 40 : w - 12 - R() * 40, len = 18 + R() * 40, gr = g.createLinearGradient(0, h - len, 0, h);
+    gr.addColorStop(0, 'rgba(150,84,40,0)'); gr.addColorStop(1, 'rgba(150,84,40,0.55)'); g.fillStyle = gr; g.fillRect(x, h - len, 2 + R() * 4, len);
+  }
+  for (let i = 0; i < 40; i++) { g.fillStyle = R() < 0.5 ? 'rgba(239,230,204,0.18)' : 'rgba(10,26,18,0.22)'; g.fillRect(R() * w, R() * h, 1 + R() * 2.4, 1 + R() * 2.4); }
+}
+/** Paper that has stood a season on a wall (R1-D02): rain runs, a fold, flecks, one corner torn off and the bottom edge frayed (cut to nothing: the wall shows through). */
+function wornPaper(g, w, h, seed) {
+  const R = rng32(seed);
+  for (let i = 0; i < 26; i++) {
+    const x = R() * w, y0 = R() * h * 0.5, len = 40 + R() * 140, gr = g.createLinearGradient(0, y0, 0, y0 + len);
+    gr.addColorStop(0, 'rgba(60,48,36,0)'); gr.addColorStop(0.2, 'rgba(60,48,36,0.22)'); gr.addColorStop(1, 'rgba(60,48,36,0)'); g.fillStyle = gr; g.fillRect(x, y0, 2 + R() * 4, len);
+  }
+  g.strokeStyle = 'rgba(80,70,60,0.28)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, h * 0.5); g.lineTo(w, h * 0.5 + 3); g.stroke();
+  for (let i = 0; i < 90; i++) { g.fillStyle = R() < 0.5 ? 'rgba(255,255,250,0.16)' : 'rgba(40,30,22,0.18)'; g.fillRect(R() * w, R() * h, 1 + R() * 3, 1 + R() * 3); }
+  g.globalCompositeOperation = 'destination-out';
+  const cx = R() < 0.5 ? 0 : w, cy = R() < 0.5 ? 0 : h, s = 26 + R() * 34;
+  poly(g, [[cx, cy], [cx + (cx ? -s : s), cy], [cx, cy + (cy ? -s * 1.3 : s * 1.3)]], '#000');
+  for (let x = 0; x < w; x += 9) { const d = R() * R() * 14; g.fillStyle = '#000'; g.fillRect(x, h - d, 9, d); }
+  g.globalCompositeOperation = 'source-over';
+}
+const POSTERS = [
+  (g, w, h) => {                                                                                            // a house for sale
+    g.fillStyle = '#f4efe0'; g.fillRect(0, 0, w, h); g.fillStyle = '#c0261d'; g.fillRect(0, 0, w, 76);
+    text(g, 'SE VENDE', w / 2, 40, fit(g, 'SE VENDE', w - 24, 46, 12), '#fff'); text(g, 'CASA', w / 2, 112, 38, '#222'); text(g, '3 PISOS', w / 2, 152, 34, '#222');
+    g.fillStyle = '#222'; g.fillRect(24, 190, w - 48, 3); text(g, 'trato directo', w / 2, 224, 22, '#444', { fam: HAND }); text(g, 'cel. 300 555 0142', w / 2, 266, fit(g, 'cel. 300 555 0142', w - 24, 24, 10), '#c0261d');
+  },
+  (g, w, h) => {                                                                                            // the barrio party
+    const bg = g.createLinearGradient(0, 0, 0, h); bg.addColorStop(0, '#f2c230'); bg.addColorStop(1, '#e9772b'); g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    text(g, 'GRAN', w / 2, 38, 32, '#1d3f77'); text(g, 'FIESTA', w / 2, 92, fit(g, 'FIESTA', w - 20, 62, 20), '#1d3f77', { stroke: '#fff', sw: 3 }); text(g, 'DEL BARRIO', w / 2, 142, fit(g, 'DEL BARRIO', w - 24, 34, 12), '#b3261e');
+    for (const [x, y, c] of [[40, 196, '#1d3f77'], [100, 214, '#b3261e'], [160, 192, '#2a7a45']]) { g.fillStyle = c; circle(g, x, y, 22); }
+    text(g, 'sábado · 8 pm', w / 2, 262, fit(g, 'sábado · 8 pm', w - 24, 26, 10, HAND), '#1d3f77', { fam: HAND }); text(g, 'cumbia y parrilla', w / 2, 292, fit(g, 'cumbia y parrilla', w - 24, 20, 10, HAND), '#1d3f77', { fam: HAND });
+  },
+  (g, w, h) => {                                                                                            // a lost dog
+    g.fillStyle = '#f7f7f2'; g.fillRect(0, 0, w, h); text(g, 'SE BUSCA', w / 2, 42, fit(g, 'SE BUSCA', w - 24, 50, 12), '#111');
+    g.fillStyle = '#6b4a2f'; g.beginPath(); g.ellipse(100, 190, 58, 34, 0, 0, Math.PI * 2); g.fill(); circle(g, 52, 150, 28); poly(g, [[34, 132], [24, 168], [48, 150]], '#4a3320'); poly(g, [[70, 130], [88, 160], [64, 154]], '#4a3320');
+    g.fillRect(64, 214, 12, 44); g.fillRect(124, 214, 12, 44); g.fillStyle = '#111'; circle(g, 46, 146, 4);
+    text(g, 'PIRATA', w / 2, 98, fit(g, 'PIRATA', w - 24, 30, 10), '#222'); text(g, 'recompensa', w / 2, 286, fit(g, 'recompensa', w - 24, 26, 10, HAND), '#b3261e', { fam: HAND });
+  },
+  (g, w, h) => {                                                                                            // an election list
+    g.fillStyle = '#2a7a45'; g.fillRect(0, 0, w, h); g.fillStyle = '#f4efe0'; g.fillRect(14, 14, w - 28, h - 28); g.fillStyle = '#2a7a45'; g.fillRect(14, 14, w - 28, 120);
+    text(g, 'VOTE', w / 2, 74, fit(g, 'VOTE', w - 50, 78, 20), '#f4efe0'); text(g, 'LISTA 7', w / 2, 178, fit(g, 'LISTA 7', w - 40, 52, 14), '#b3261e');
+    text(g, 'trabajo', w / 2, 236, 28, '#222', { fam: HAND }); text(g, 'agua y luz', w / 2, 274, 28, '#222', { fam: HAND });
+  },
+];
+export const PAPERS = POSTERS.length;
+const paintPoster = (i) => (g, w, h) => { POSTERS[i](g, w, h); wornPaper(g, w, h, 770 + i); };
+/** A tag sprayed on a wall (no ground: the wall shows round the letters), with a swoosh under it and drips off its lower edge. */
+function paintTag(word, fill, edge, seed) {
+  return (g, w, h) => {
+    g.clearRect(0, 0, w, h);
+    const R = rng32(seed), sz = fit(g, word, w - 40, 96, 24, HAND);
+    text(g, word, w / 2, h * 0.48, sz, fill, { fam: HAND, stroke: edge, sw: Math.max(4, sz * 0.08) });
+    g.strokeStyle = fill; g.lineWidth = 6; g.lineCap = 'round'; g.beginPath(); g.moveTo(24, h * 0.86); g.quadraticCurveTo(w / 2, h * 0.99, w - 24, h * 0.8); g.stroke();
+    for (let i = 0; i < 7; i++) { const x = 40 + R() * (w - 80), y0 = h * 0.6, len = 14 + R() * 36; g.fillStyle = fill; g.fillRect(x, y0, 3, len); circle(g, x + 1.5, y0 + len, 3.2); }
+  };
+}
+const TAG_ART = [{ word: 'ZETA', fill: '#d8352a', edge: '#f4f4ee', seed: 31 }, { word: 'LOS PIBES', fill: '#1c3f9e', edge: '#f4f4ee', seed: 32 }];
+export const TAGS = TAG_ART.length;
 function paintPlaque(name) {
   const m = /^(\S+)\s+(.*)$/.exec(name ?? '') ?? [null, '', name ?? ''];
   const kind = m[1].toUpperCase(), rest = m[2].toUpperCase();
@@ -227,39 +369,71 @@ function paintRayuela(g, w, h) {
   text(g, 'CIELO', w / 2, y - 16, 20, ink, { fam: HAND });
 }
 
-/** Paint every sign of the world once. Browser only (null under Node). `plan.streets[i].name` becomes plaque i. */
-export function makeSignAtlas(plan) {
-  const cv = makeCanvas(AW, AH); if (!cv) return null;
-  const g = cv.getContext('2d', { willReadFrequently: true }); if (!g) return null;
-  g.clearRect(0, 0, AW, AH);
+/** The boards painted into the sign atlas: [key, painter] for the gate, the hand signs, the chalk and one plaque per street (plaque i = street i). */
+function signItems(plan) {
   const items = [
-    ['mural.condor', paintCondor], ['mural.fiesta', paintFiesta], ['mural.cerro', paintCerro],
     ['gate.in', paintGate('BIENVENIDOS A LA LADERA', 'barrio de gente buena y de cerro alto')],
     ['gate.out', paintGate('VAYA CON DIOS · VUELVA PRONTO', 'gracias por la visita')],
-    ['hand.huerta', paintHuerta], ['hand.huevos', paintHuevos], ['hand.gracias', paintGracias], ['rayuela', paintRayuela],
+    ['hand.huerta', paintHuerta], ['hand.huevos', paintHuevos], ['hand.gracias', paintGracias], ['hand.mirador', paintMirador], ['rayuela', paintRayuela],
   ];
-  (plan?.streets ?? []).slice(0, 21).forEach((st, i) => items.push([`plaque.${i}`, paintPlaque(st.name)]));
+  (plan?.streets ?? []).slice(0, PLAQUES).forEach((st, i) => items.push([`plaque.${i}`, paintPlaque(st.name)]));
+  for (let i = 0; i < PAPERS; i++) items.push([`poster.${i}`, paintPoster(i)]);
+  TAG_ART.forEach((t, i) => items.push([`tag.${i}`, paintTag(t.word, t.fill, t.edge, t.seed)]));
+  return items;
+}
+/** Every key of the sign atlas for this plan, and of the mural atlas: each has exactly one region (a test holds the geometry code to this list). */
+export const signKeys = (plan) => signItems(plan).map(([key]) => key);
+export const muralKeys = () => ART.map((a) => a.key);
+
+/** Paint each [key, painter] into its region of g (clipped, origin at the region's corner). A key with no region, or a painter that throws, leaves a note in makeSignAtlas.errors. */
+function paintRegions(g, items, regionFor) {
   for (const [key, paint] of items) {
-    const [x, y, w, h] = regionOf(key);
+    const reg = regionFor(key);
+    if (!reg) { (makeSignAtlas.errors ??= []).push(`${key}: no region in the atlas`); continue; }
+    const [x, y, w, h] = reg;
     g.save(); g.beginPath(); g.rect(x, y, w, h); g.clip(); g.translate(x, y);
-    try { paint(g, w, h); } catch (e) { g.fillStyle = '#c8c0b0'; g.fillRect(0, 0, w, h); (makeSignAtlas.errors ??= []).push(`${key}: ${e?.message ?? e}`); }
+    try { paint(g, w, h); } catch (e) { g.globalCompositeOperation = 'source-over'; g.fillStyle = '#c8c0b0'; g.fillRect(0, 0, w, h); (makeSignAtlas.errors ??= []).push(`${key}: ${e?.message ?? e}`); }
     g.restore();
   }
-  const d = g.getImageData(0, 0, AW, AH).data, out = new Uint8Array(AW * AH * 4), row = AW * 4;
-  for (let y = 0; y < AH; y++) {
-    const src = y * row, dst = (AH - 1 - y) * row;
+}
+
+/** A canvas as a DataTexture, rows flipped so v = 1 - y/H. Texels with no paint keep the colour `bare` (chalk, wall) so the mips do not darken the edges. */
+function toTexture(g, W, H, bare) {
+  const d = g.getImageData(0, 0, W, H).data, out = new Uint8Array(W * H * 4), row = W * 4;
+  for (let y = 0; y < H; y++) {
+    const src = y * row, dst = (H - 1 - y) * row;
     for (let i = 0; i < row; i += 4) {
-      if (d[src + i + 3] < 10) { out[dst + i] = 236; out[dst + i + 1] = 236; out[dst + i + 2] = 228; out[dst + i + 3] = 0; }          // transparent texels keep a chalk colour so mips do not darken the lines
+      if (d[src + i + 3] < 10) { out[dst + i] = bare[0]; out[dst + i + 1] = bare[1]; out[dst + i + 2] = bare[2]; out[dst + i + 3] = 0; }
       else { out[dst + i] = d[src + i]; out[dst + i + 1] = d[src + i + 1]; out[dst + i + 2] = d[src + i + 2]; out[dst + i + 3] = d[src + i + 3]; }
     }
   }
-  const tex = new THREE.DataTexture(out, AW, AH, THREE.RGBAFormat);
+  const tex = new THREE.DataTexture(out, W, H, THREE.RGBAFormat);
   tex.colorSpace = THREE.SRGBColorSpace; tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter;
   tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; tex.anisotropy = 8; tex.needsUpdate = true;
+  return tex;
+}
+
+/**
+ * Paint every sign of the world once. Browser only (null under Node). `plan.streets[i].name` becomes plaque i.
+ * `murals` = planMurals(K): the shape (width / height) of the wall each painting was given, so a picture on a squarer wall shows the middle of its scene instead of
+ * being squeezed; without it every picture is the full 2:1 scene.
+ * Returns { texture, uv(key), mural: { texture, uv(key) } }: the boards atlas and the mural atlas, each uv() = [u0, vBottom, u1, vTop] of a region, half a texel inside.
+ */
+export function makeSignAtlas(plan, murals = []) {
+  const MAH = ART.length * (MH + MGAP), cv = makeCanvas(AW, AH), mc = makeCanvas(MW, MAH); if (!cv || !mc) return null;
+  const g = cv.getContext('2d', { willReadFrequently: true }), mg = mc.getContext('2d', { willReadFrequently: true }); if (!g || !mg) return null;
+  g.clearRect(0, 0, AW, AH); mg.clearRect(0, 0, MW, MAH);
+  paintRegions(g, signItems(plan), regionOf);
+  const picture = (a, i) => (c, w, h) => {                                       // the scene is 640 x 320; a wall squarer than 2:1 shows the part of it around the focus, stretched to fill the region
+    const m = murals[i], cw = m ? Math.max(320, Math.min(640, 320 * (m.W / m.h))) : 640, x0 = Math.max(0, Math.min(640 - cw, a.focus - cw / 2));
+    c.save(); c.scale(w / cw, h / 320); c.translate(-x0, 0); a.paint(c, 640, 320, { x0, w: cw }); c.restore();
+    weather(c, w, h, a.seed);
+  };
+  paintRegions(mg, ART.map((a, i) => [a.key, picture(a, i)]), muralRegion);
   return {
-    texture: tex, canvas: cv,
-    /** [u0, vBottom, u1, vTop] of a region, half a texel inside */
-    uv(key) { const [x, y, w, h] = regionOf(key), e = 0.75; return [(x + e) / AW, 1 - (y + h - e) / AH, (x + w - e) / AW, 1 - (y + e) / AH]; },
+    texture: toTexture(g, AW, AH, [236, 236, 228]), canvas: cv,
+    uv: (key) => uvIn(regionOf(key), AW, AH, key),
+    mural: { texture: toTexture(mg, MW, MAH, [150, 142, 130]), canvas: mc, uv: (key) => uvIn(muralRegion(key), MW, MAH, key) },
   };
 }
 
@@ -274,6 +448,20 @@ export function panel(K, b, key, cx, cz, ox, oz, w, yl, yr, h) {
   b.quad('world_sign', [cx - rx * hw, yl, cz - rz * hw], [cx + rx * hw, yr, cz + rz * hw], [cx + rx * hw, yr + h, cz + rz * hw], [cx - rx * hw, yl + h, cz - rz * hw], { uv: [r[0], r[1], r[2], r[1], r[2], r[3], r[0], r[3]], col });
 }
 
+/**
+ * A painting on a wall that bends gently: one flat quad per step of `pts` = [{ x, y, z }] (the bottom edge, in front of the wall, ordered left to right as the viewer sees
+ * it), h tall; u runs 0..1 with the arc length, v up the height. Every quad is wound counter-clockwise seen from the street (BL, BR, TR, TL), or the wall culls it.
+ */
+export function wallPanel(K, b, key, pts, h) {
+  const A = K.signs?.mural, r = A ? A.uv(key) : [0, 0, 1, 1], col = A ? [1, 1, 1] : FLAT.mural, cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
+  const u = (i) => r[0] + (r[2] - r[0]) * (cum[i] / cum[cum.length - 1]);
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const p = pts[i], q = pts[i + 1], u0 = u(i), u1 = u(i + 1);
+    b.quad('world_mural', [p.x, p.y, p.z], [q.x, q.y, q.z], [q.x, q.y + h, q.z], [p.x, p.y + h, p.z], { uv: [u0, r[1], u1, r[1], u1, r[3], u0, r[3]], col });
+  }
+}
+
 /** A hand-painted board hung on a post / fence at (x, y, z), facing (ox, oz): backing plank plus the painted face. w wide, height from the atlas ratio. */
 export function handBoard(K, key, x, y, z, ox, oz, w = 0.9) {
   const b = K.one('signs', { cast: false }), h = w * 128 / 500, ry = Math.atan2(ox, oz);
@@ -281,71 +469,189 @@ export function handBoard(K, key, x, y, z, ox, oz, w = 0.9) {
   panel(K, b, key, x + ox * 0.004, z + oz * 0.004, ox, oz, w, y - h / 2, y - h / 2, h);
 }
 
-/** Straight stretches of the tall cut walls along streets: the best (tallest) mural-sized stretch of each run. */
-function muralSites(K) {
-  const runs = K.ctx.world?.wallRuns ?? [], sites = [];
+const LIFT = 0.35, PITCH = 0.5, OFF = 0.045, GAP = 0.3;      // the painting starts LIFT above the street edge of the wall (kerb, mud line); a quad every PITCH m; OFF in front of the wall face; GAP between two paintings of a wall
+const MIN_H = 3.0, MIN_W = 3.6, MAX_W = 8.0, FLATTEST = 2.2, BIG = 6.0;  // a painting is at least 3 m tall and 3.6 m wide, at most 8 m wide, and never flatter than 2.2 : 1; the two main ones want BIG m
+const FINE = 0.05, REACH = 0.55;                                // the walls in front of a street wall are looked at every FINE m, and a hung point clears all of them within REACH (a little over one strip) of it
+
+/** Every wall face of every run as a segment { run, a, b: its ends in plan, ta, tb: the height of its cap there }: a cut wall's face is on the street edge, a fill wall's at the foot of its ramp. */
+function faceSegments(runs) {
+  const segs = [];
   for (const run of runs) {
-    if (run.sign <= 0 || !(run.src === 'street' || run.src.startsWith('plaza')) || run.tall < 1.6) continue;
+    const cut = run.sign > 0, top = (s) => (cut ? s.outer : s.inner) + 0.02, at = (s) => { const f = cut ? 0 : s.W; return [s.x + s.nx * f, s.z + s.nz * f]; };
+    for (let i = 0; i + 1 < run.S.length; i++) {
+      const p = run.S[i], q = run.S[i + 1], [ax, az] = at(p), [bx, bz] = at(q);
+      segs.push({ run, ax, az, bx, bz, ta: top(p), tb: top(q) });
+    }
+  }
+  return segs;
+}
+
+/**
+ * Where the front-most wall face stands at a point `s` of a cut wall (unit normal, street edge at s.x, s.z): the lot pads above a street carry fill walls of their own
+ * whose faces stand 0 to 0.4 m in front of the street wall's, so a painting hung on the street wall's face disappears behind them. Casts a ray from the face toward the
+ * street (1.2 m) through the `near` segments of the other runs: front = how far the farthest full wall stands out, cap = the lowest cap among the walls it hangs on
+ * (a wall that stops lower than the street wall's cap lowers the painting's top); a kerb under the painting's foot is ignored.
+ */
+function frontAt(s, near) {
+  const ox = -s.nx, oz = -s.nz;
+  let front = 0, cap = s.outer, hit = null;
+  for (const g of near) {
+    const dx = g.bx - g.ax, dz = g.bz - g.az, den = ox * dz - oz * dx;
+    if (Math.abs(den) < 1e-9) continue;
+    const t = ((g.ax - s.x) * dz - (g.az - s.z) * dx) / den, u = ((g.ax - s.x) * oz - (g.az - s.z) * ox) / den;
+    if (t < 0.02 || t > 1.2 || u < 0 || u > 1) continue;
+    const top = g.ta + (g.tb - g.ta) * u;
+    if (top <= s.inner + LIFT + 0.05) continue;
+    if (t > front) front = t;
+    cap = Math.min(cap, top - 0.02);
+    if (!hit?.includes(g.run)) (hit ??= []).push(g.run);
+  }
+  return { front, cap, hit };
+}
+
+/**
+ * Every place on the tall cut walls along streets and plazas that holds a painting: W wide (arc length, 3.6 to 8 m) and h tall = the whole height between the
+ * painting's bottom edge (LIFT above the street edge of the wall, never over a step of more than 30 cm in 0.5 m) and the lowest cap of the walls it hangs on (less 3 cm),
+ * at least 3 m, never flatter than 2.2 : 1 (a window taller than wide gets a square picture), and the wall turns less than about 36 degrees along it. Each window
+ * carries `pts` = the wall samples (x, z, unit normal, inner, outer, and front / cap from frontAt) every PITCH m along it. Widths in steps of 0.4 m, starts every 0.5 m.
+ */
+export function muralWindows(K) {
+  const runs = K.ctx.world?.wallRuns ?? [], out = [];
+  let segs = null;
+  for (const run of runs) {
+    if (run.sign <= 0 || !(run.src === 'street' || run.src.startsWith('plaza')) || run.tall < MIN_H + LIFT + 0.03) continue;
     const S = run.S, cum = [0];
     for (let i = 1; i < S.length; i++) cum.push(cum[i - 1] + Math.hypot(S[i].x - S[i - 1].x, S[i].z - S[i - 1].z));
     const total = cum[cum.length - 1];
-    const at = (d) => {
+    const x0 = Math.min(...S.map((s) => s.x)) - 3, x1 = Math.max(...S.map((s) => s.x)) + 3, z0 = Math.min(...S.map((s) => s.z)) - 3, z1 = Math.max(...S.map((s) => s.z)) + 3;
+    const near = (segs ??= faceSegments(runs)).filter((g) => g.run !== run && Math.max(g.ax, g.bx) > x0 && Math.min(g.ax, g.bx) < x1 && Math.max(g.az, g.bz) > z0 && Math.min(g.az, g.bz) < z1);
+    const base = (d) => {
       let i = 0; while (i + 2 < S.length && cum[i + 1] < d) i++;
       const a = S[i], c = S[i + 1], t = Math.max(0, Math.min(1, (d - cum[i]) / ((cum[i + 1] - cum[i]) || 1)));
-      const m = (k) => a[k] + (c[k] - a[k]) * t;
-      return { x: m('x'), z: m('z'), nx: m('nx'), nz: m('nz'), inner: m('inner'), outer: m('outer') };
+      const m = (k) => a[k] + (c[k] - a[k]) * t, s = { x: m('x'), z: m('z'), nx: m('nx'), nz: m('nz'), inner: m('inner'), outer: m('outer') }, l = Math.hypot(s.nx, s.nz) || 1;
+      s.nx /= l; s.nz /= l;
+      return Object.assign(s, frontAt(s, near));
     };
-    let best = null;
-    for (const h of [2.4, 2.2, 2.0, 1.8, 1.6, 1.4]) {
-      const w = 2 * h;
-      for (let d0 = 0; d0 + w <= total + 1e-6; d0 += 0.5) {
-        const P = at(d0), Q = at(d0 + w), len = Math.hypot(Q.x - P.x, Q.z - P.z) || 1;
-        let ok = true, margin = 9;
-        for (let k = 0; k <= 10 && ok; k++) {
-          const t = k / 10, s = at(d0 + w * t), yb = P.inner + (Q.inner - P.inner) * t + 0.4;
-          const dev = Math.abs((s.x - P.x) * (Q.z - P.z) - (s.z - P.z) * (Q.x - P.x)) / len;
-          margin = Math.min(margin, s.outer - 0.03 - (yb + h));
-          if (dev > 0.09 || s.inner + 0.12 > yb || margin < 0) ok = false;
-        }
-        if (!ok) continue;
-        if (!best || h > best.h + 1e-6 || (Math.abs(h - best.h) < 1e-6 && margin > best.margin + 0.05)) best = { run, P, Q, h, w, margin };
+    // A lot wall ends in a corner or a jog between two points of the painting, and a straight quad from one point to the next would cut through it (the condor's seam:
+    // a stone corner stood 3 mm proud of the paint over the whole height). So a point stands out as far as ANY wall face within REACH of it along the window (both strips
+    // it belongs to), seen on a FINE lattice, and takes the lowest cap of them: a chord between two such points clears every face between them.
+    const lat = new Map(), fine = (i) => { let v = lat.get(i); if (!v) lat.set(i, (v = base(i * FINE))); return v; };
+    const at = (d, lo, hi) => {
+      const s = base(d), hit = new Set(s.hit ?? []);
+      for (let i = Math.ceil(Math.max(lo, d - REACH, 0) / FINE - 1e-9); i * FINE <= Math.min(hi, d + REACH, total) + 1e-9; i++) {
+        const f = fine(i);
+        if (f.front > s.front) s.front = f.front;
+        if (f.cap < s.cap) s.cap = f.cap;
+        for (const r of f.hit ?? []) hit.add(r);
       }
-      if (best) break;                                                       // tallest size that fits this run
+      s.hit = hit.size ? [...hit] : null;
+      return s;
+    };
+    const fits = [];
+    for (let W = MAX_W; W > MIN_W - 1e-6; W -= 0.4) {
+      const n = Math.round(W / PITCH);
+      for (let d0 = 0; d0 + W <= total + 1e-6; d0 += 0.5) {
+        const pts = []; let mx = 0, mz = 0;
+        for (let k = 0; k <= n; k++) { const s = at(d0 + (W * k) / n, d0, d0 + W); pts.push(s); mx += s.nx; mz += s.nz; }
+        const ml = Math.hypot(mx, mz) || 1; mx /= ml; mz /= ml;
+        let room = Infinity;                                                  // the height the walls give the painting
+        for (let k = 0; k <= n; k++) {
+          const s = pts[k];
+          room = Math.min(room, s.cap - 0.03 - s.inner - LIFT);
+          if (room < MIN_H || s.nx * mx + s.nz * mz < 0.95 || (k && Math.abs(s.inner - pts[k - 1].inner) > 0.3)) { room = -1; break; }
+        }
+        const h = Math.min(room, W);
+        if (room >= MIN_H && W / h <= FLATTEST) fits.push({ run, W, h, d0, area: W * h, pts });
+      }
     }
-    if (best) sites.push(best);
+    out.push(...fits);
   }
-  return sites.sort((a, b) => b.h - a.h || b.margin - a.margin);
+  return out;
+}
+
+/**
+ * The walls of the three paintings: the set of up to ART.length windows, no two overlapping on a wall (GAP apart), that gives the most paintings, then the most
+ * of them (two at most) 6 m wide or more (the two big ones are meant to be mural-sized), then the most paint, largest first (so the broadest picture, the condor, gets the
+ * biggest wall). Exhaustive over the windows (thinned to about 240 by an even stride when there are more: a few million combinations at most).
+ */
+export function planMurals(K) {
+  let cands = muralWindows(K).sort((a, c) => c.area - a.area || a.d0 - c.d0 || a.W - c.W);
+  if (cands.length > 240) { const stride = cands.length / 240; cands = Array.from({ length: 240 }, (_, i) => cands[Math.floor(i * stride)]); }
+  const free = (a, c) => a.run !== c.run || a.d0 + a.W + GAP <= c.d0 || c.d0 + c.W + GAP <= a.d0;
+  const big = (set) => Math.min(2, set.filter((q) => q.W >= BIG - 1e-9).length);
+  let best = [], bestArea = 0, bestBig = 0;
+  const rec = (from, chosen, area) => {
+    const b = big(chosen);
+    if (chosen.length > best.length || (chosen.length === best.length && (b > bestBig || (b === bestBig && area > bestArea + 1e-9)))) { best = chosen.slice(); bestArea = area; bestBig = b; }
+    if (chosen.length === ART.length) return;
+    for (let i = from; i < cands.length; i++) {
+      if (!chosen.every((q) => free(q, cands[i]))) continue;
+      chosen.push(cands[i]); rec(i + 1, chosen, area + cands[i].area); chosen.pop();
+    }
+  };
+  rec(0, [], 0);
+  return best.sort((a, c) => c.area - a.area || a.d0 - c.d0).map(hang);
+}
+
+/**
+ * The gentlest surface that is nowhere behind a face: the lowest concave curve above the fronts along a painting (its two ends stay), found by lifting every
+ * point to the mean of its neighbours until none is below it. A lot wall ends in a step of up to 0.4 m; a picture hung on every face as it comes would bend
+ * and tilt round each one (up to 20 degrees a step), a painted wall does not. The painting stands up to about 10 cm off the lower stretches instead.
+ */
+function gentle(front) {
+  const f = front.slice();
+  for (let it = 0; it < 400; it++) {
+    let lifted = false;
+    for (let k = 1; k + 1 < f.length; k++) { const m = (f[k - 1] + f[k + 1]) / 2; if (m > f[k] + 1e-6) { f[k] = m; lifted = true; } }
+    if (!lifted) break;
+  }
+  return f;
+}
+
+/**
+ * A chosen window made ready to hang: `pts` = the painting's bottom edge OFF in front of the front-most face (x, z, y, the cap above it, front = how far out of the
+ * street wall's face it stands, the runs it hangs on, the wall's normal), ordered left to right as the viewer sees it (their right is (oz, -ox)); (ox, oz) = the way
+ * it looks, toward the street; (vx, vz) = the viewer's spot.
+ */
+function hang(p) {
+  let ox = -p.pts.reduce((s, q) => s + q.nx, 0), oz = -p.pts.reduce((s, q) => s + q.nz, 0);
+  const nl = Math.hypot(ox, oz) || 1; ox /= nl; oz /= nl;
+  const fr = gentle(p.pts.map((s) => s.front));
+  const pts = p.pts.map((s, k) => ({ x: s.x - s.nx * (fr[k] + OFF), z: s.z - s.nz * (fr[k] + OFF), y: s.inner + LIFT, cap: s.cap, front: fr[k], hit: s.hit, nx: s.nx, nz: s.nz }));
+  const last = pts[pts.length - 1];
+  if ((last.x - pts[0].x) * oz - (last.z - pts[0].z) * ox < 0) pts.reverse();
+  const c = pts[pts.length >> 1];
+  return { ...p, pts, ox, oz, vx: c.x + ox * 2.4, vz: c.z + oz * 2.4 };
+}
+
+/**
+ * Keeps the street in front of every painting open: a row of discs 2.4 m out, about 1 m radius each and touching, along its whole width, claimed before the poles,
+ * benches, parked vehicles and (later) trees take their ground. (Three discs of 1.2 m at a third of the width overlapped one another, so `take` refused the middle
+ * one: the spot a visitor stands on.) Where two paintings hang side by side on a bending wall, the end discs of their rows overlap: the later one shrinks until it
+ * fits and takes what the first left.
+ */
+export function claimMurals(K) {
+  for (const m of K.murals ??= planMurals(K)) {
+    const n = Math.max(1, Math.round(m.W / 2.05)), step = m.W / n, r = Math.min(1.0, step / 2 - 0.02);
+    for (let k = 0; k < n; k++) {
+      const t = (k - (n - 1) / 2) * step, x = m.vx + m.oz * t, z = m.vz - m.ox * t;
+      for (let rr = r; rr >= 0.45; rr -= 0.1) if (K.occ.take(x, z, rr)) break;
+    }
+  }
 }
 
 export function buildSigns(K) {
   const { ctx, plan, occ, H } = K, W = ctx.world, b = K.one('signs', { cast: false });
   const stats = { murals: 0, plaques: 0, boards: 0, hopscotch: 0 }, extra = (W.extra ??= []);
 
-  // ---- 1. the three murals
-  const ART = [
-    ['mural.condor', 'condor', 'El Cóndor del Cerro', 'A condor wider than the street itself, crossing the sun over the mountains: "Free as the condor".'],
-    ['mural.fiesta', 'fiesta', 'La Fiesta de la Ladera', 'Four dancers in wide polleras under paper bunting; the neighbours repaint the colours every year before the feast.'],
-    ['mural.cerro', 'cerro', 'El Cerro Verde', 'The hill the way its children draw it: green, with a house on every step. "The hillside is ours".'],
-  ];
-  const picked = [];
-  for (const site of muralSites(K)) {
-    if (picked.length >= ART.length) break;
-    const cx = (site.P.x + site.Q.x) / 2, cz = (site.P.z + site.Q.z) / 2;
-    if (picked.some((q) => Math.hypot(q.cx - cx, q.cz - cz) < 38)) continue;
-    picked.push({ ...site, cx, cz });
-  }
-  picked.forEach((p, i) => {
-    const [key, id, name, en] = ART[i], { P, Q, h, w } = p, len = Math.hypot(Q.x - P.x, Q.z - P.z) || 1;
-    let ox = -(P.nx + Q.nx) / 2, oz = -(P.nz + Q.nz) / 2;                       // toward the street: opposite the wall's outward normal
-    const nl = Math.hypot(ox, oz) || 1; ox /= nl; oz /= nl;
-    const cx = p.cx + ox * 0.045, cz = p.cz + oz * 0.045;
-    const flip = (Q.x - P.x) * oz - (Q.z - P.z) * ox < 0;                         // is Q on the viewer's left? then the left edge sits at Q
-    panel(K, b, key, cx, cz, ox, oz, Math.min(w, len), (flip ? Q : P).inner + 0.4, (flip ? P : Q).inner + 0.4, h);
-    // the viewer's spot, kept clear of trees (flora runs after this step)
-    const vx = p.cx + ox * 2.4, vz = p.cz + oz * 2.4;
-    occ.take(vx, vz, 1.2);
-    (W.muralRuns ??= new Set()).add(p.run);
-    extra.push({ id, name, en, kind: 'mural', x: vx, z: vz, y: H(vx, vz), radius: 5.2, dy: 3.2, face: [+ox.toFixed(3), +oz.toFixed(3)] });   // face: the way the painting looks (toward the street)
+  // ---- 1. the three murals: 3 m and taller, 3.6 to 8 m wide, painted straight on the tall street walls (no frame, weathered, ragged edge)
+  (K.murals ??= planMurals(K)).forEach((p, i) => {
+    const { key, id, name, en } = ART[i], { W: w, h, pts, ox, oz, vx, vz } = p;
+    wallPanel(K, b, key, pts, h);
+    const muralRuns = (W.muralRuns ??= new Set());                                                   // the flora hangs no vine on a wall with a painting on it, nor on the pad walls it hangs in front of
+    muralRuns.add(p.run); for (const s of pts) for (const r of s.hit ?? []) muralRuns.add(r);
+    (W.muralList ??= []).push({ id, key, run: p.run, w, h, ox: +ox.toFixed(4), oz: +oz.toFixed(4), pts });
+    extra.push({ id, name, en, kind: 'mural', x: vx, z: vz, y: H(vx, vz), radius: 6, dy: 3.2, face: [+ox.toFixed(3), +oz.toFixed(3)] });   // face: the way the painting looks (toward the street)
     stats.murals++;
   });
 
@@ -361,7 +667,7 @@ export function buildSigns(K) {
 
   // ---- 3. street-name plaques on iron posts
   const plaqueAt = [];
-  plan.streets.forEach((st, i) => {
+  plan.streets.slice(0, PLAQUES).forEach((st, i) => {                         // (the atlas has room for PLAQUES names)
     const d = st._d, hw = st.width / 2, L = st.len ?? d.cum[d.cum.length - 1];
     const ss = [1.6, 3.2, 5, L - 1.6, L - 3.2, 7.5, L - 5];
     for (const s of ss) {

@@ -8,15 +8,24 @@ handed to Blender (X, -Z, Y) and exported with the glTF exporter (+Y up) so the 
   rises to y = H (ceiling fixtures hang from y = H: build.js puts that top against the ceiling).
   every child mesh is named  <key>-<flag>-...-<n>  and uses ONE library material (the glTF material NAME is the core/matlib.js name, no textures are embedded).
   flags:  tint  = the part takes the record's tint colour (its vertex colours, if any, are shades that multiply it)
-          made / unmade = the bed variants; alt0..altN = alternatives of which one is drawn (picked by the record id); magnets = only when the record asks.
+          made / unmade = the bed variants; pa0..paN (and pb, pc...) = alternative channels picked by the record id; magnets = only when the record asks.
   a part without the `tint` flag keeps its own vertex colours (COLOR_0, linear) - small coloured things are drawn with plastic_solid + colour, so a
   building still costs one draw call per material.
 """
-import bpy, math, os, sys, json
+import bpy, math, os, sys, json, re, itertools
 from collections import OrderedDict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))                     # la-ladera/
+MIN_ROUND = float(os.environ.get('FURN_MIN_ROUND', 0.014))             # edge radii below this (m) are left sharp: invisible from a person's eye, and 9x the triangles
+LATHE_K = float(os.environ.get('FURN_LATHE_K', 0.72))                  # the segment counts a builder asks for are scaled by this (the budget: ~2.4 M triangles in the heaviest view), never below 8 / 5
+TOP_ALLOW = 0.25                                                           # a till, a scale, a bottle may stand this far above the catalogue height (m)
+MAX_TRIS = 2500                                                            # triangles of one drawing of an asset (the stand-in test caps a stand-in at the same figure)
+
+
+def seg(n, lo=8):
+    """A segment count after the level of detail: scaled by LATHE_K, but never under `lo` and never over what the builder asked for."""
+    return n if n <= lo else min(n, max(lo, int(round(n * LATHE_K))))
 
 
 def argv_after_dashes():
@@ -247,33 +256,40 @@ class Asset:
         g.add(P2, N2, uv, tris, col)
 
     # lx,lz = centre of the part in the item's footprint, ly = its bottom; sizes sx,sy,sz.  r = edge radius, m = steps (1 = 2 segments per edge)
+    # A rounded box costs 9x the triangles of a sharp one (m = 1: 108 against 12), and a radius under MIN_ROUND is not visible from a person's eye.
     def box(self, mat, lx, ly, lz, sx, sy, sz, col=None, tint=False, r=0.0, m=1, ry=0.0, rx=0.0, rz=0.0, skip=(), flags=()):
         if not (sx > 0 and sy > 0 and sz > 0): return
+        if r < MIN_ROUND: r = 0.0
+        if ly <= 0.002 and not (rx or rz) and 'ny' not in skip: skip = tuple(skip) + ('ny',)                 # standing on the floor: its underside is never seen
         self._emit(mat, rbox_geo(sx / 2, sy / 2, sz / 2, r, m, skip), col, tint, flags, (rx, ry, rz), (lx, ly + sy / 2, lz))
 
     def cyl(self, mat, lx, ly, lz, rad, h, n=14, r1=None, col=None, tint=False, caps=True, ry=0.0, rx=0.0, rz=0.0, flags=(), crease=40.0):
         r1 = rad if r1 is None else r1
         prof = ([(0.0, 0.0)] if caps else []) + [(rad, 0.0), (r1, h)] + ([(0.0, h)] if (caps and r1 > 0) else [])
-        self._emit(mat, lathe_geo(prof, n, crease), col, tint, flags, (rx, ry, rz), (lx, ly, lz))
+        if caps and ly <= 0.002 and not (rx or rz): prof = prof[1:]                                              # standing on the floor: no disc under it
+        self._emit(mat, lathe_geo(prof, seg(n), crease), col, tint, flags, (rx, ry, rz), (lx, ly, lz))
 
     def hcyl(self, mat, lx, ly, lz, rad, length, axis='x', n=12, col=None, tint=False, r1=None, flags=(), caps=True):
         """Horizontal bar centred at (lx, ly, lz); axis 'x' or 'z'.  r1 = radius at the +axis end."""
         rot = (0, 0, -math.pi / 2) if axis == 'x' else (math.pi / 2, 0, 0)
         r1 = rad if r1 is None else r1
         prof = ([(0.0, -length / 2)] if caps else []) + [(rad, -length / 2), (r1, length / 2)] + ([(0.0, length / 2)] if (caps and r1 > 0) else [])
-        self._emit(mat, lathe_geo(prof, n), col, tint, flags, rot, (lx, ly, lz))
+        self._emit(mat, lathe_geo(prof, seg(n)), col, tint, flags, rot, (lx, ly, lz))
 
     def sph(self, mat, lx, ly, lz, rx, ry=None, rz=None, n=12, col=None, tint=False, flags=(), rot=(0, 0, 0)):
         ry = rx if ry is None else ry; rz = rx if rz is None else rz
-        k = max(4, n // 2)
+        k = max(3, n // 3)
         prof = [(math.cos(-math.pi / 2 + math.pi * i / k) * 0.999999, math.sin(-math.pi / 2 + math.pi * i / k)) for i in range(k + 1)]
-        self._emit(mat, lathe_geo(prof, n, 90.0), col, tint, flags, rot, (lx, ly, lz), (rx, ry, rz))
+        self._emit(mat, lathe_geo(prof, seg(n, 6), 90.0), col, tint, flags, rot, (lx, ly, lz), (rx, ry, rz))
 
-    def lathe(self, mat, lx, ly, lz, profile, n=16, col=None, tint=False, crease=40.0, flags=(), rot=(0, 0, 0), scl=None):
-        self._emit(mat, lathe_geo(profile, n, crease), col, tint, flags, rot, (lx, ly, lz), scl)
+    def lathe(self, mat, lx, ly, lz, profile, n=16, col=None, tint=False, crease=40.0, flags=(), rot=(0, 0, 0), scl=None, drop0=False, hero=False):
+        """drop0: the profile starts with a flat disc (0, y) -> (r, y) that is never seen (it lies on the floor, or under something): leave it out.  Done on its own for a lathe on the floor.
+        hero: a round outline that is looked at from close by (a toilet seat, a lamp shade): the segment count is kept as asked."""
+        if (drop0 or (ly <= 0.002 and not any(rot))) and len(profile) > 2 and profile[0][0] == 0 and abs(profile[1][1] - profile[0][1]) < 1e-6: profile = profile[1:]
+        self._emit(mat, lathe_geo(profile, n if hero else seg(n), crease), col, tint, flags, rot, (lx, ly, lz), scl)
 
     def tube(self, mat, pts, rad, n=6, col=None, tint=False, flags=(), caps=True):
-        self._emit(mat, tube_geo(pts, rad, n, caps), col, tint, flags)
+        self._emit(mat, tube_geo(pts, rad, seg(n, 5), caps), col, tint, flags)
 
     def legs4(self, mat, w, d, h, t=0.04, inset=0.03, lz=0.0, col=None, tint=False, round_=False, r1=None, flags=()):
         for sx in (-1, 1):
@@ -286,6 +302,31 @@ class Asset:
     def bounds(self):
         return [self.lo[k] for k in range(3)], [self.hi[k] for k in range(3)]
 
+    def drawn_tris(self):
+        """Triangles of the heaviest single drawing of this asset.  Variant parts are alternatives: build.js draws a made OR an unmade bed
+        and ONE alternative per channel (flags p<letter><k>), so the file holds more triangles than any one bed ever draws."""
+        chans = {}
+        for (_mat, _tint, flags), _g in self.groups.items():
+            for f in flags:
+                mm = re.fullmatch(r'p([a-z])(\d+)', f)
+                if mm: chans.setdefault(mm.group(1), set()).add(int(mm.group(2)))
+        order = sorted(chans)
+        best = 0
+        for state in ('made', 'unmade'):
+            for pick in itertools.product(*[sorted(chans[ch]) for ch in order]):
+                chosen = dict(zip(order, pick))
+                n = 0
+                for (_mat, _tint, flags), g in self.groups.items():
+                    ok = True
+                    for f in flags:
+                        mm = re.fullmatch(r'p([a-z])(\d+)', f)
+                        if f == 'made' and state != 'made': ok = False
+                        elif f == 'unmade' and state != 'unmade': ok = False
+                        elif mm and chosen[mm.group(1)] != int(mm.group(2)): ok = False
+                    if ok: n += len(g.I)
+                best = max(best, n)
+        return best
+
 
 # ---------------------------------------------------------------------------------------------------------------- registry
 BUILDERS = OrderedDict()                                                   # key -> (theme, fn)
@@ -293,7 +334,10 @@ BUILDERS = OrderedDict()                                                   # key
 
 def asset(theme, *keys):
     def deco(fn):
-        for k in keys: BUILDERS[k] = (theme, fn)
+        for k in keys:
+            if k in BUILDERS:
+                raise ValueError('Duplicate furniture builder: ' + k)
+            BUILDERS[k] = (theme, fn)
         return fn
     return deco
 
@@ -346,6 +390,8 @@ def build_objects(a, scene_col):
 
 
 def export_glb(path):
+    import logging
+    logging.disable(logging.INFO)                                                  # the exporter logs one line per mesh
     kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_materials='EXPORT', export_image_format='NONE',
               export_vertex_color='ACTIVE', export_cameras=False, export_lights=False, export_normals=True, export_texcoords=True)
     try:

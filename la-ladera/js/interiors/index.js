@@ -1,32 +1,35 @@
 // INTERIORS (A3): entry points used by main.js.
-//   loadInteriorAssets(ctx)   preload the furniture GLBs (stand-in boxes are used for anything not loaded)
+//   loadInteriorAssets(ctx)   preload the furniture GLBs and the clothes' (stand-in boxes and cloth patches are used for anything not loaded)
 //   furnishBuilding(ctx, bp)  PURE DATA: finishes, furniture list, blocker walls, anchors, lights, interactables, discoveries
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
 import { Layout, resetUid } from './layout.js';
 import { freePoint, snapStand } from './reach.js';
 import { CATALOG, seatOffsets } from './catalog.js';
-import { makeHousehold, finishRoom } from './household.js';
+import { finishRoom, householdForRoom, furnishRng, roomsInOrder } from './household.js';
 import * as R from './rooms.js';
 import { shopRoom } from './shops.js';
 import * as S from './special.js';
 import { wallsRect } from '../core/physics.js';
-import { makeRng, hashStr } from '../core/rng.js';
 import { collectStories } from './stories.js';
-import { buildInterior as buildMeshes, loadInteriorAssets as preload } from './build.js';
+import { dressRooms } from './garments.js';
+import { buildInterior as buildMeshes, loadInteriorAssets as preload, loadGarmentAssets } from './build.js';
 
-export const loadInteriorAssets = (ctx) => preload(ctx);
+/** The page's entry: the furniture's models and the clothes' come down together (two sets, build.js: the furniture tests call `preload` alone and see only the furniture). */
+export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx)]); };
 export const buildInterior = (ctx, bp) => buildMeshes(ctx, bp);
 
 const PI = Math.PI;
-const OCC = { family: 'family', elder: 'elder', shopkeeper: 'shopkeeper' };
+export const BLOCK_MIN_H = 1.1;
 
 /** Which furnisher handles this room? */
 function pickFurnisher(bp, room, L) {
   const t = room.type, k = bp.lot?.kind, area = L.W * L.D;
   if (t === 'chapel' || (k === 'chapel' && (t === 'hall' || t === 'living'))) return S.chapel;
-  if (t === 'classroom' || (k === 'school' && (t === 'living' || t === 'dining' || t === 'shop'))) return S.classroom;
-  if (k === 'school' && t === 'bedroom') return area > 24 ? S.classroom : R.office;       // A2 types the upper-floor classrooms 'bedroom'
-  if (k === 'school' && t === 'patio') return S.schoolyard;
+  if (t === 'classroom') return S.classroom;
+  if (k === 'school') {                                                                       // classrooms, lavatories, the staff room, halls and galleries, the yard: furnished by what they are (special.js)
+    const f = S.schoolFurnisher(room, area); if (f) return f;
+    if (t === 'bedroom') return R.office;
+  }
   if (k === 'clinic') {
     if (t === 'hall' || t === 'living' || t === 'dining' || t === 'entry' || t === 'shop') return area >= 6 ? S.clinicWaiting : R.circulation;
     if (t === 'bedroom' || t === 'office') return S.clinicExam;
@@ -57,31 +60,46 @@ function makeEnv(ctx, bp, rng) {
   const E = {
     ctx, bp, rng, lot, hhs: new Map(), states: new Map(), notes: [],
     state(hh) { let s = this.states.get(hh.id); if (!s) this.states.set(hh.id, s = { beds: 0 }); return s; },
-    householdFor(room) {
-      let flat = 'all';
-      if (lot.kind === 'apartments') flat = `f${room.floor}${room.flat ?? room.unit ?? ''}`;
-      else if (lot.kind === 'tenement') flat = room.type === 'bedroom' || room.type === 'living' ? room.id : 'shared';
-      const key = `${bp.id}.${flat}.${room.occupant ?? ''}`;
-      let hh = this.hhs.get(key);
-      if (!hh) {
-        const kind = OCC[room.occupant] ?? (room.occupant === 'young' ? (rng.fork(key).chance(0.5) ? 'couple' : 'students') : undefined);
-        hh = makeHousehold(rng, lot, key, { kind });
-        this.hhs.set(key, hh);
-      }
-      return hh;
-    },
+    householdFor(room) { return householdForRoom(rng, bp, room, this.hhs, ctx); },
   };
   return E;
 }
 
 // ------------------------------------------------------------------ anchors
+/** How far from a sleeper's anchor the nearest floor a body can stand on may be (m): the stuck probe wants a standing node within 1.4 m of every anchor and its nodes are 0.3 m apart. */
+export const SLEEP_REACH = 1.0;
+/** Where on a bed the sleeper lies, in the bed's frame: the middle, unless the nearest floor a body can stand on is farther than `SLEEP_REACH` from it (a bed reached from its foot only is
+ *  1.26 m and more from its middle: 75 of the barrio's 282 beds were over 1.05 m, and the probe's 0.3 m lattice found no node within 1.4 m of two of them). Then the least slide toward that floor
+ *  that brings it in range, as far as the mattress holds a body: across it up to the width less 0.28 m, along it up to 0.3 m (the feet over the end), 0.5 m in all (the anchor stays within
+ *  0.6 m of the bed's middle: interiors-data 'anchors'). Else the slide that gets nearest. */
+export function sleepSpot(L, it, conn) {
+  const r = L.r, cw = L.W / conn.nx, ch = L.D / conn.nz, R = 1.7, spots = [];
+  const i0 = Math.max(0, Math.floor((it.x - R - r.x0) / cw)), i1 = Math.min(conn.nx - 1, Math.floor((it.x + R - r.x0) / cw));
+  const j0 = Math.max(0, Math.floor((it.z - R - r.z0) / ch)), j1 = Math.min(conn.nz - 1, Math.floor((it.z + R - r.z0) / ch));
+  for (let iz = j0; iz <= j1; iz++) for (let ix = i0; ix <= i1; ix++) if (conn.comp[iz * conn.nx + ix] === conn.main) spots.push([r.x0 + (ix + 0.5) * cw, r.z0 + (iz + 0.5) * ch]);
+  if (!spots.length || conn.main < 0) return [0, 0];
+  const reach = (lx, lz) => { const [x, z] = L.rel(it, lx, lz); let m = Infinity; for (const [sx, sz] of spots) m = Math.min(m, Math.hypot(sx - x, sz - z)); return m; };
+  const d0 = reach(0, 0);
+  if (d0 <= SLEEP_REACH) return [0, 0];
+  const lat = Math.max(0, it.w / 2 - 0.28);
+  let ok = null, near = { d: d0, lx: 0, lz: 0 };
+  for (let lx = -lat; lx <= lat + 1e-9; lx += 0.05) for (let lz = -0.3; lz <= 0.3 + 1e-9; lz += 0.05) {
+    const cost = Math.hypot(lx, lz); if (cost > 0.5) continue;
+    const d = reach(lx, lz);
+    if (d <= SLEEP_REACH && (!ok || cost < ok.cost)) ok = { cost, lx, lz };
+    if (d < near.d - 1e-9) near = { d, lx, lz };
+  }
+  const pick = ok ?? near;
+  return [+pick.lx.toFixed(3), +pick.lz.toFixed(3)];
+}
+
 function emitAnchors(E, room, L, hh) {
   const { bp, ctx } = E, fr = bp.frame, rotY = bp.lot.rotY ?? 0;
   const fy = bp.lot.y + (room.y ?? 0);
-  const conn = L.connectivity();
+  const conn = L.connectivity(0.34);                       // the body's own width (0.3 m radius) plus a hand: a 0.75 m gap between a sink and a fridge is a way through for a cook
   const A = (kind, lx0, lz0, lry, extra = {}) => {
     let lx = lx0, lz = lz0;
-    if (extra.raw) { if (!L.inMainRegion(lx0, lz0, conn, Math.ceil((extra.rad ?? 1) / 0.1))) return null; }            // seats and beds must be reachable from a door
+    if (extra.raw) { if (!L.inMainRegion(...(extra.chk ?? [lx0, lz0]), conn, Math.ceil((extra.rad ?? 1) / 0.1))) return null; }            // seats and beds must be reachable from a door (a bed: from the middle of it, not from where the sleeper lies)
     else { const p = snapStand(L, lx0, lz0, conn); if (!p) return null; [lx, lz] = p; }   // standing spots must be free floor
     const [wx, , wz] = fr.toWorld(lx, 0, lz);
     const a = ctx.addAnchor({ kind, x: +wx.toFixed(3), y: +(fy + (extra.dy ?? 0)).toFixed(3), z: +wz.toFixed(3), ry: +(rotY + lry).toFixed(4), building: bp.id, room: room.id, tags: extra.tags ?? [], capacity: 1, seatH: extra.seatH, owner: extra.owner, item: extra.item });
@@ -107,9 +125,9 @@ function emitAnchors(E, room, L, hh) {
       }
     }
     if (c.arch === 'bed' || c.arch === 'cot' || c.arch === 'mattress' || c.arch === 'bunk' || c.arch === 'crib') {
-      const [sx, sz] = L.rel(it, 0, 0.0);
-      A('sleep', sx, sz, it.ry, { seatH: c.arch === 'bunk' ? 0.55 : Math.min(c.bh ?? 0.5, 0.62), tags: ['bed', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8 });
-      if (c.arch === 'bunk') A('sleep', sx, sz, it.ry, { seatH: 1.35, tags: ['bed', 'upper', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8 });
+      const [sx, sz] = L.rel(it, ...sleepSpot(L, it, conn)), chk = [it.x, it.z];
+      A('sleep', sx, sz, it.ry, { seatH: c.arch === 'bunk' ? 0.55 : Math.min(c.bh ?? 0.5, 0.62), tags: ['bed', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
+      if (c.arch === 'bunk') A('sleep', sx, sz, it.ry, { seatH: 1.35, tags: ['bed', 'upper', it.name], owner: hh.id, raw: true, rad: Math.hypot(it.w, it.d) / 2 + 0.8, chk });
       const [bx, bz] = L.rel(it, it.w / 2 + 0.4, it.d / 4);
       if (c.arch !== 'crib') A('stand', bx, bz, it.ry - PI / 2, { tags: ['bedside'] });
     }
@@ -178,14 +196,14 @@ function emitLights(E, room, L, hh, recs) {
 export function furnishBuilding(ctx, bp) {
   if (bp.interior) return;
   const lot = bp.lot ?? {};
-  // own stream: independent of how much the other modules drew from ctx.rng (stable per world seed + lot)
-  const rng = makeRng((hashStr('furnish:' + bp.id) ^ (ctx.seed >>> 0) ^ ((lot.seed ?? 0) >>> 0)) >>> 0);
+  // own stream: independent of how much the other modules drew from ctx.rng (stable per world seed + lot); it is only ever forked, so contents.js can replay the households
+  const rng = furnishRng(ctx, bp);
   resetUid();
   bp.furniture ??= []; bp.anchors ??= []; bp.lights ??= [];
   bp.colliders ??= { walls: [], floors: [] }; bp.colliders.walls ??= [];
   const E = makeEnv(ctx, bp, rng);
   const interior = bp.interior = { hh: [], rooms: {}, inter: [], layouts: new Map(), shopType: null };
-  const rooms = [...(bp.rooms ?? [])].sort((a, b) => (a.floor - b.floor) || (a.id < b.id ? -1 : 1));
+  const rooms = roomsInOrder(bp), built = [];
   for (const room of rooms) {
     const hh = E.householdFor(room);
     finishRoom(room, hh, rng, bp);
@@ -194,16 +212,33 @@ export function furnishBuilding(ctx, bp) {
     E.shopType = null;
     if (L.W < 0.35 || L.D < 0.35) { interior.rooms[room.id] = { items: 0, skipped: true }; continue; }
     // noFurnish: A2 keeps stair cores empty -> bulb + notice only; strips under 0.9 m get wall-hung things only
-    try { (room.noFurnish ? R.lightOnly : strip ? R.thin : pickFurnisher(bp, room, L))(L, E, hh); } catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
-    const removed = L.heal();
+    try {
+      const furnisher = room.noFurnish ? R.lightOnly : strip ? R.thin : pickFurnisher(bp, room, L);
+      furnisher(L, E, hh);
+      R.ensureFixtures(L, E, hh, furnisher);                   // the toilet, sink, stove, fridge or bed this room is defined by, however small the plan made it
+    } catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
+    let removed = L.heal(), bedroll = null;
+    try { bedroll = R.ensureSleep(L, E, hh); if (bedroll) removed = removed.concat(L.heal([bedroll])); }       // a bedroom whose bed healing took out still gets somewhere to sleep
+    catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
+    try { removed = removed.concat(L.curePockets({ protect: bedroll ? [bedroll] : [] })); }                    // no dead-end lane or niche between 0.55 and 0.85 m is left for a walker to wedge in (layout.js `pockets`)
+    catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'pockets ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     interior.layouts.set(room.id, L);
     interior.rooms[room.id] = { type: room.type, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };
+    built.push({ room, hh, L });
+  }
+  // a home whose kitchens are all too small for a fridge keeps it in the dining or living room (every room is furnished by now, so the lanes it must keep are known)
+  if (bp.lot?.kind && !['chapel', 'school', 'clinic', 'hall'].includes(bp.lot.kind) && !(E.shopType ?? lot.shop)) R.ensureHomeFridge(built);
+  // every room is furnished: which of them are untidy, and the clothes that lie about (garments.js: the beds are made or unmade to match, nothing else moves)
+  try { interior.garments = dressRooms(E, built); }
+  catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', building: bp.id, message: 'garments ' + String(e?.message ?? e), stack: e?.stack }); console.error('[garments]', bp.id, e); }
+  for (const { room, hh, L } of built) {
     // records
     for (const it of L.items) {
       const rec = {
         id: it.id, name: it.name, room: room.id, kind: it.ceil ? 'ceil' : it.top ? 'top' : it.wall ? 'wall' : 'floor',
         x: it.x, y: +((it.y ?? 0).toFixed(3)), z: it.z, ry: it.ry, w: it.w, d: it.d, h: it.h, tint: it.tint, flags: it.flags ?? null,
         parent: it.parent?.id ?? null, decal: it.c.decal ?? null, tags: it.tags, block: !!it.block, prio: it.prio,
+        wallSide: it.wallSide ?? null,                                                    // the wall its back is against (the stand-in leaves that face out: standins.js Pen.hide)
       };
       it.rec = rec; bp.furniture.push(rec);
     }
@@ -211,7 +246,9 @@ export function furnishBuilding(ctx, bp) {
     const cy = bp.lot.y + (room.y ?? 0), rotY = bp.lot.rotY ?? 0;
     for (const it of L.blockers()) {
       const [wx, , wz] = bp.frame.toWorld(it.x, 0, it.z);
-      const hh1 = Math.min(Math.max(it.bh ?? it.h, 0.6), 1.9);
+      // never lower than 1.1 m: the player's jump (0.66 m apex) clears any wall whose top is under feet + 0.4, so a 0.6 m bed, a toilet or a chair outline
+      // could be hopped INTO and the player ended up in a pocket between two outlines (R2-001/002). The wall is invisible; the furniture mesh is what is drawn.
+      const hh1 = Math.min(Math.max(it.bh ?? it.h, BLOCK_MIN_H), 1.9);
       bp.colliders.walls.push(...wallsRect(wx, wz, Math.max(it.w, 0.1), Math.max(it.d, 0.1), rotY + it.ry, cy, cy + hh1, 0.01, { id: it.id, furniture: true }));
     }
     emitAnchors(E, room, L, hh);

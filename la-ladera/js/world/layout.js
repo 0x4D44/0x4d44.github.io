@@ -57,7 +57,7 @@ export const ITEMS = [
   // summit
   { type: 'plaza', id: 'P4', name: 'Plazoleta de la Capilla', en: 'Chapel Square', kind: 'plaza', rect: [4.25, -67.55, 20, 11, 0.166], yFrom: 'S1' },
   st({ id: 'S15', name: 'Camino del Mirador', en: 'Viewpoint Path', kind: 'path', width: 2.4, surface: 'dirt', lamps: true,
-    corners: [[14.6, -70.2], [24, -79], [26, -86]], radii: [0, 8, 0], from0: 'P4' }),
+    corners: [[14.6, -70.2], [24, -79], [26, -86]], radii: [0, 8, 0], from0: 'P4', y1: 31.5 }),     // y1: the path climbs 3.5 m to the viewpoint, which stands 2.5 m above the summit plateau (R1-002: from level ground nothing is below you)
   { type: 'plaza', id: 'P5', name: 'Mirador del Cielo', en: 'Sky Viewpoint', kind: 'mirador', rect: [26, -91, 20, 8, 0], yFrom: 'S15' },
 
   // the court on the bottom shelf and its pocket links
@@ -112,3 +112,54 @@ export const ROWS = [
   // ---- chapel on its square
   { st: 'P4', at: [2.1, -80.65], ry: 0.166, items: [I(11, 14, 1, 'chapel')] },
 ];
+
+// INFILL. Everything above is placed first and never moves (L00-L48 keep their ids and places). Then every run of frontage the rows leave empty is filled with
+// lots drawn from a MENU (plan.js `fillLeg`): { st, legs (default all), sides (default both: +1 right of travel, -1 left), menu, gapP (chance of a 1.3-2.4 m passage
+// after a lot), s0 }. A lot is only placed where it is clear of every street, plaza and lot, and its pad is not a huge cut or fill; so the order of the entries is
+// the order in which the street runs claim the ground.
+export const FILL = [
+  { st: 'S2', menu: 'shops' },
+  { st: 'S1', legs: [0, 1], menu: 'shops' },
+  { st: 'S5', menu: 'homes' },
+  { st: 'S6', menu: 'homes' },
+  { st: 'S1', legs: [2, 3, 4, 5, 6, 7], menu: 'homes' },
+  { st: 'S9', menu: 'alley' },
+  { st: 'S12', menu: 'alley' },
+];
+
+// KEEP: ground the infill leaves open because another module builds on it. A disc of radius r (m) centred `along` m along the facade (the lot's local +x) and `out` m
+// further out from the door of a hand-authored lot; no infill lot comes within r of that point.
+export const KEEP = [
+  // r covers the 1.5 m clear circle of the bench, the 0.35 m lot margin and the 3 m cut or fill band a neighbour's pad would add around it
+  { lot: 'L44', along: 3.5, out: 0, r: 8.5, why: 'life.js welding: the bench, the half-built gate and the sparks in the alley beside the workshop' },
+];
+
+// MENUS: { kind, shops (a shop is drawn from the list, the least used first), w:[min, max] (rounded to 0.5 m), d:[depths, deepest first: the first that fits the
+// band between two streets wins], fl: n | [min, max], wt }. Sizes stay inside what the shell and interior generators already build for the rows above.
+const SHOPS = ['tienda', 'panaderia', 'fruver', 'carniceria', 'peluqueria', 'papeleria', 'drogueria', 'restaurante', 'minutos', 'modista', 'zapateria', 'cafe', 'ferreteria'];
+export const MENUS = {
+  shops: [        // the lower town: a shop with the family's home above, apartment blocks, plain houses
+    { kind: 'shophouse', shops: SHOPS, w: [4.5, 6], d: [10, 9.5, 9], fl: [2, 3], wt: 7 },
+    { kind: 'apartments', w: [7, 9.5], d: [10, 9.5, 9], fl: [3, 4], wt: 2.5 },
+    { kind: 'house', w: [5, 6.5], d: [10, 9, 8], fl: [2, 3], wt: 2 },
+    { kind: 'cornerstore', shops: ['tienda', 'cafe'], w: [6, 7], d: [9, 8, 7], fl: [2, 3], wt: 1.2 },
+    { kind: 'rowhouse', w: [4.4, 4.6], d: [9, 8.5], fl: 2, wt: 1.5 },
+  ],
+  homes: [        // the middle of the hill: houses, terraces of rowhouses, blocks of flats, self-builds in progress, a shop now and then
+    { kind: 'house', w: [5, 6.5], d: [10, 9, 8, 7], fl: [1, 3], wt: 4 },
+    { kind: 'rowhouse', w: [4.4, 4.6], d: [9, 8.5], fl: 2, wt: 3 },
+    { kind: 'apartments', w: [7, 9.5], d: [10, 9.5, 9], fl: [3, 4], wt: 2 },
+    { kind: 'unfinished', w: [5, 6], d: [10, 9.5, 9], fl: 3, wt: 2 },
+    { kind: 'shophouse', shops: SHOPS, w: [4.5, 6], d: [10, 9.5, 9], fl: [2, 3], wt: 1.5 },
+    { kind: 'courtyard', w: [9, 9.5], d: [11, 10], fl: 2, wt: 0.8 },
+    { kind: 'tenement', w: [10, 10.5], d: [11, 10], fl: 3, wt: 0.6 },
+  ],
+  alley: [        // the narrow lanes: low and close
+    { kind: 'rowhouse', w: [4.4, 4.6], d: [9, 8.5], fl: 2, wt: 3 },
+    { kind: 'house', w: [5, 6.5], d: [10, 9, 8, 7], fl: [1, 3], wt: 3 },
+    { kind: 'unfinished', w: [5, 6], d: [10, 9.5, 9], fl: 3, wt: 2.5 },
+    { kind: 'courtyard', w: [9, 9.5], d: [11, 10], fl: 2, wt: 1 },
+    { kind: 'tenement', w: [10, 10.5], d: [11, 10], fl: 3, wt: 1 },
+    { kind: 'apartments', w: [7, 9.5], d: [10, 9.5, 9], fl: [3, 4], wt: 1 },
+  ],
+};

@@ -10,7 +10,8 @@ export function installTouch(ctx) {
   const mk = (tag, cls, parent, attrs = {}) => { const e = document.createElement(tag); if (cls) e.className = cls; for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); parent?.appendChild(e); return e; };
   const root = mk('div', 'hidden', document.body, { id: 'touch', 'aria-hidden': 'true' });
   const zl = mk('div', 'zone l', root), zr = mk('div', 'zone r', root);
-  const base = mk('div', 'stick hidden', root), thumb = mk('i', '', base);
+  const base = mk('div', 'stick idle', root, { 'data-label': 'caminar' }), thumb = mk('i', '', base);
+  const lookHint = mk('div', 'lookhint', root); lookHint.textContent = 'arrastra para mirar';
   const bUse = mk('button', 'tbtn use', root, { type: 'button', tabindex: '-1' }), bJump = mk('button', 'tbtn jump', root, { type: 'button', tabindex: '-1' }), bCrouch = mk('button', 'tbtn crouch', root, { type: 'button', tabindex: '-1' });
   bUse.textContent = 'E'; bJump.textContent = '⤒'; bCrouch.textContent = '⤓';
   const inp = () => ctx.player?.input;
@@ -23,21 +24,27 @@ export function installTouch(ctx) {
     p.s = Math.cos(a) * k; p.f = -Math.sin(a) * k; p.sprint = m > 0.96;
     thumb.style.transform = `translate(${Math.cos(a) * m * R}px, ${Math.sin(a) * m * R}px)`;
   };
-  const endStick = () => { sid = null; base.classList.add('hidden'); const p = inp(); if (p) { p.f = p.s = 0; p.sprint = false; } };
+  // the stick is always on screen: a faint ring at the thumb's rest point (bottom left), which jumps under the finger while it is down (R-touch: "where is the stick?")
+  const rest = () => { base.style.left = `${Math.round(Math.max(76, Math.min(104, innerWidth * 0.2)))}px`; base.style.top = `${Math.max(120, innerHeight - 92)}px`; };
+  const endStick = () => { sid = null; base.classList.add('idle'); rest(); thumb.style.transform = ''; const p = inp(); if (p) { p.f = p.s = 0; p.sprint = false; } };
+  rest(); addEventListener('resize', () => { if (sid == null) rest(); });
   zl.addEventListener('pointerdown', (e) => {
     if (sid != null) return;
     sid = e.pointerId; ox = e.clientX; oy = e.clientY; zl.setPointerCapture(sid);
-    base.style.left = `${ox}px`; base.style.top = `${oy}px`; base.classList.remove('hidden'); setStick(0, 0);
+    base.style.left = `${ox}px`; base.style.top = `${oy}px`; base.classList.remove('idle'); setStick(0, 0);
   });
   zl.addEventListener('pointermove', (e) => { if (e.pointerId === sid) setStick(e.clientX - ox, e.clientY - oy); });
   for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) zl.addEventListener(t, (e) => { if (e.pointerId === sid) endStick(); });
 
   // ---- look -------------------------------------------------------------------------------------------------------------------
   let lid = null, lx = 0, ly = 0;
+  const dropHint = () => lookHint.classList.add('gone');
+  setTimeout(dropHint, 12000);
   zr.addEventListener('pointerdown', (e) => { if (lid != null) return; lid = e.pointerId; lx = e.clientX; ly = e.clientY; zr.setPointerCapture(lid); });
   zr.addEventListener('pointermove', (e) => {
     if (e.pointerId !== lid || !ctx.running || !ctx.player) return;
     ctx.player.mdx += (e.clientX - lx) * LOOK; ctx.player.mdy += (e.clientY - ly) * LOOK; lx = e.clientX; ly = e.clientY;
+    dropHint();
   });
   for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) zr.addEventListener(t, (e) => { if (e.pointerId === lid) lid = null; });
 
@@ -51,7 +58,12 @@ export function installTouch(ctx) {
   hold(bJump, 'jump');
   bCrouch.addEventListener('pointerdown', (e) => { e.preventDefault(); const p = inp(); if (p) { p.crouch = !p.crouch; bCrouch.classList.toggle('on', p.crouch); } });
 
-  // only while playing; a dialogue (player.lock) hides the sticks so the reply buttons are reachable
+  // a conversation: body.talking hides the stick and the buttons, takes the look zones off the card and drops the subtitle to the bottom, so the answers card has the
+  // thumbs' room (css/ladera.css); the stick lets go of whatever it held
+  ctx.events.on('player:lock', ({ reason }) => { if (reason === 'dialogue') { document.body.classList.add('talking'); endStick(); lid = null; dropHint(); } });
+  ctx.events.on('player:unlock', ({ reason }) => { if (reason === 'dialogue') document.body.classList.remove('talking'); });
+
+  // only while playing
   ctx.events.on('mode', ({ mode }) => {
     root.classList.toggle('hidden', mode !== 'play');
     if (mode !== 'play') { endStick(); lid = null; const p = inp(); if (p) { p.jump = p.crouch = false; } bJump.classList.remove('on'); bCrouch.classList.remove('on'); }

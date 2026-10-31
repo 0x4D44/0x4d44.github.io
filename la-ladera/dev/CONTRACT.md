@@ -172,9 +172,9 @@ blocks (retaining walls, low stair soffits = head bump); surfaces above the head
   Prompts are **Spanish** verbs: 'Abrir puerta', 'Cerrar puerta', 'Hablar con Doña Rosa', 'Sentarse'... Pressing E on a door toggles it with a 0.35 s swing; walking into a closed door never needs a click (bump-open is optional).
 * `ctx.lights.add({ x,y,z, color, intensity, distance, kind:'ceiling'|'lamp'|'window'|'street'|'candle'|'tv', building?, room?, flicker? })` - the engine keeps a small pool of real lights on the nearest ones.
 * `ctx.discover.register({ id, name:'Spanish name', en:'one English line', x,y,z, radius:3, kind })` - 3 to 6 per module (target >= 24 in the world): murals, shrines, views, hidden courtyards, odd rooms, a rooftop pigeon loft, a barber with a cat.
-* Events (`ctx.events`): `player:enter/exit/floor`, `door:toggle`, `npc:talk`, `npc:line`, `discover`, `time:change`, `stage`.
+* Events (`ctx.events`): `player:enter/exit/floor`, `player:lock` / `player:unlock` `{ reason }` (a hold on the player began / ended: 'dialogue' for a conversation), `door:toggle`, `npc:talk`, `npc:line`, `discover`, `time:change`, `stage`.
 * Time: `ctx.hour`, `ctx.setHour(h)`, `ctx.night` (0 day .. 1 night, engine-maintained). Window glow: use the emissive material `window_lit` (A2 declares it); the engine drives its intensity from `ctx.night`.
-* UI helpers (engine): `ctx.ui.prompt(text)`, `ctx.ui.subtitle({who,es,en})`, `ctx.ui.toast(text)`. `ctx.player.lock('dialogue')/unlock('dialogue')` freezes movement + look (keyboard-driven dialogues; do not exit pointer lock).
+* UI helpers (engine): `ctx.ui.prompt(text)`, `ctx.ui.subtitle({who,es,en})`, `ctx.ui.toast(text)`. `ctx.player.lock('dialogue')/unlock('dialogue')` freezes movement + look (keyboard-driven dialogues). While 'dialogue' is held `ui/flow.js` LETS GO of the pointer lock on purpose (a real browser eats Esc while the pointer is locked: no keydown, only a lost lock), so Esc, Q and 1-4 arrive as keys; at `unlock('dialogue')` it asks for the pointer back, and if the browser refuses it shows the pause card. On a phone (`body.talking`) the stick and buttons hide for the talk. Your dialogue code needs nothing extra: lock, talk, unlock.
 
 ### 5.6 ctx fields
 `ctx.THREE ctx.opts ctx.config ctx.seed ctx.rng ctx.events ctx.physics ctx.mat(key) ctx.matlib ctx.batch ctx.assets ctx.interact ctx.lights ctx.discover ctx.anchors ctx.addAnchor ctx.addSystem(name, fn(dt,ctx), order) ctx.scene ctx.camera ctx.renderer ctx.player ctx.plan ctx.buildings ctx.people ctx.ui ctx.hour ctx.night ctx.quality ctx.errors ctx.yield()`.
@@ -190,7 +190,7 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
   Unknown names render magenta and warn once - run the page and read the console.
 * Vertex colours multiply the texture: use them for dirt/AO gradients (`cols` per corner on quads) and subtle per-building variation. All batched geometry has them.
 * Winding/normals: `quad(a,b,c,d)` corners are counter-clockwise seen from the FRONT face. Outside faces visible, inside faces of walls visible from inside rooms.
-* Shadows: static meshes cast + receive by default; the engine decides per group. Keep tiny decor off the shadow pass by putting it in a group with `{cast:false}` (`ctx.batch.group(id,{cast:false})`).
+* Shadows: static meshes cast + receive by default; the engine decides per group. Keep tiny decor off the shadow pass by putting it in a group with `{cast:false}` (`ctx.batch.group(id,{cast:false})`). The floor and screed materials never cast, whatever the group says, and the terrain tile groups (`world.terrain.<i>.<j>`) do not unless they ask for it (`js/core/shadowpolicy.js`, with the measurement behind it: a shadow map draws only faces that look AWAY from the sun, and a floor looks up). Ceilings, walls, glass, frames and roofs must keep casting (the same measurement shows each one's shadow); `?castall` restores the old behaviour for a before / after.
 * GLB assets from Blender (see 7): `ctx.assets.place(builder, name, matrix, o)` bakes them into the batch so a hundred sofas still cost one draw call per material.
 
 ## 7. Tools and recipes

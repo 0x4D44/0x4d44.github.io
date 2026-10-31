@@ -1,6 +1,6 @@
 // Standing spots in a furnished room (shared by the anchors in index.js and the interactables / discoveries in stories.js):
 // a point is standable when it is inside the room (0.3 m off the walls), clear of furniture and stair openings, and connected to a door.
-import { obbDist } from './layout.js';
+import { obbDist, segObb } from './layout.js';
 
 /** The free floor point nearest the room centre that is at least `clear` metres from every blocker (or null). */
 export function freePoint(L, clear = 0.55, conn = L.connectivity()) {
@@ -17,25 +17,31 @@ export function freePoint(L, clear = 0.55, conn = L.connectivity()) {
 }
 
 /** Is (x,z) a place a person can stand: inside the room (0.3 m off the walls), clear of furniture and stair openings? */
-export function standable(L, x, z, conn, clear = 0.27) {
-  const r = L.r;
-  if (x < r.x0 + 0.3 || x > r.x1 - 0.3 || z < r.z0 + 0.3 || z > r.z1 - 0.3) return false;
-  for (const k of L.keep) if (k.why?.startsWith('stair') && x > k.x0 - 0.15 && x < k.x1 + 0.15 && z > k.z0 - 0.15 && z < k.z1 + 0.15) return false;
-  for (const it of L.blockers()) if (obbDist(it.ob, x, z) < clear) return false;
-  return L.inMainRegion(x, z, conn, 4);                 // and connected to the doors (no walled-off pockets)
+export const standable = (L, x, z, conn, clear) => L.standable(x, z, conn, clear);       // (layout.js owns it: its own `_accessOk` asks whether a cook can stand at a stove)
+
+/** Where a person can stand to use a slot of the piece `rec`: building-frame points 0.55 to 1.3 m in front of the slot's front plane, clear of furniture, connected to the doors and SEEING the front
+ *  (nearest to 1 m first). containers.js asks it for every front it registers; contents.js asks it, before anything is built, which kinds of container a household can really open (R4-118).
+ *  Seeing is the kernel's own sight line (core/interact.js `_tryShaped`): a body sweep from the eye (1.6 m) toward the middle of the front that stops `lead` short of it, which no other piece may cross
+ *  (a privacy screen, a table, a chair stood between the spot and a desk's drawers: a spot behind it is a place to stand, not a place to open the drawers from). */
+export function standSpots(bp, rec, slot, conn) {
+  const L = bp.interior?.layouts?.get(rec.room); if (!L) return [];
+  conn ??= L.connectivity();
+  const cs = Math.cos(rec.ry ?? 0), sn = Math.sin(rec.ry ?? 0), r = slot.rect, cx = (r.x0 + r.x1) / 2, out = [];
+  const bl = (lx, lz) => [rec.x + lx * cs + lz * sn, rec.z - lx * sn + lz * cs];
+  const [fx, fz] = bl(cx, slot.zf + 0.02), eye = (L.room?.y ?? 0) + EYE, fy = (rec.kind === 'ceil' ? rec.y - rec.h : rec.y) + (r.y0 + r.y1) / 2, lead = rec.kind === 'wall' ? LEAD_WALL : LEAD;      // (a record's y is the building's: the room's floor level and up)
+  const others = L.blockers().filter((it) => it.id !== rec.id);
+  for (const d of [1.0, 1.15, 0.85, 1.3, 0.7, 0.55]) for (const s of [0, -0.25, 0.25, -0.5, 0.5]) {
+    const [bx, bz] = bl(cx + s, slot.zf + d);
+    if (!standable(L, bx, bz, conn, 0.3)) continue;
+    const t = Math.hypot(Math.hypot(fx - bx, fz - bz), eye - fy), k = t > lead ? (t - lead) / t : 0, ex = bx + (fx - bx) * k, ez = bz + (fz - bz) * k;      // (the sweep covers `k` of the way: the ray's own length less the lead, flattened by the pitch)
+    if (!others.some((it) => segObb(it.ob, bx, bz, ex, ez))) out.push([bx, bz]);
+  }
+  return out;
 }
+const EYE = 1.6, LEAD = 0.35, LEAD_WALL = 0.75;                 // (the eye of a standing person, and the leads containers.js gives the target of a closed front: the cupboard over a counter looks from further back)
 
 /** Nearest standable point to (x,z) within `rad` metres, or null. */
-export function snapStand(L, x, z, conn, rad = 0.9) {
-  if (standable(L, x, z, conn)) return [x, z];
-  let best = null, bd = Infinity;
-  for (let dx = -rad; dx <= rad + 1e-6; dx += 0.1) for (let dz = -rad; dz <= rad + 1e-6; dz += 0.1) {
-    const d = Math.hypot(dx, dz);
-    if (d >= bd || d > rad || !standable(L, x + dx, z + dz, conn)) continue;
-    best = [x + dx, z + dz]; bd = d;
-  }
-  return best;
-}
+export const snapStand = (L, x, z, conn, rad) => L.snapStand(x, z, conn, rad);
 
 /**
  * A spot just OUTSIDE an item's outline from where a person can use it (the interaction targeting rejects a target whose line of sight

@@ -56,6 +56,15 @@ function directions(n) {
   return out.map((v) => v.applyEuler(e));
 }
 
+/** Does a ray that hit nothing leave through the roof plane inside one of the building's patios (the only hole a closed roof has)? */
+function skyOverPatio(bp, o, d) {
+  if (!(d.y > 0) || !bp.shell.patios?.length) return false;
+  const l = bp.frame.toLocal(o.x, o.y, o.z), l2 = bp.frame.toLocal(o.x + d.x, o.y + d.y, o.z + d.z), dy = l2[1] - l[1];
+  if (!(dy > 1e-9)) return false;
+  const t = (bp.shell.F * bp.shell.fh - l[1]) / dy, x = l[0] + (l2[0] - l[0]) * t, z = l[2] + (l2[2] - l[2]) * t;
+  return bp.shell.patios.some((p) => x >= p.rect.x0 - 1e-6 && x <= p.rect.x1 + 1e-6 && z >= p.rect.z0 - 1e-6 && z <= p.rect.z1 + 1e-6);
+}
+
 test('the shell is closed: a ray from inside any enclosed room always hits wall, floor, ceiling, glass or door leaf', { timeout: 300000 }, () => {
   const dirs = directions(26), rc = new THREE.Raycaster(), problems = [];
   rc.far = 120;
@@ -77,7 +86,8 @@ test('the shell is closed: a ray from inside any enclosed room always hits wall,
           rays++;
           rc.set(o, d);
           if (!rc.intersectObjects(meshes, false).length) {
-            const far = [...Array(600).keys()].map((i) => bp.frame.toLocal(o.x + d.x * i * 0.1, o.y + d.y * i * 0.1, o.z + d.z * i * 0.1)).find((p) => p[0] < bp.shell.outer.x0 - 0.3 || p[0] > bp.shell.outer.x1 + 0.3 || p[2] < bp.shell.outer.z0 - 0.3 || p[2] > bp.shell.outer.z1 + 0.3 || p[1] > bp.shell.F * bp.shell.fh + 4);
+            if (skyOverPatio(bp, o, d)) continue;                                   // a patio is open to the sky by design: a ray that climbs out of it is no leak
+            const far =[...Array(600).keys()].map((i) => bp.frame.toLocal(o.x + d.x * i * 0.1, o.y + d.y * i * 0.1, o.z + d.z * i * 0.1)).find((p) => p[0] < bp.shell.outer.x0 - 0.3 || p[0] > bp.shell.outer.x1 + 0.3 || p[2] < bp.shell.outer.z0 - 0.3 || p[2] > bp.shell.outer.z1 + 0.3 || p[1] > bp.shell.F * bp.shell.fh + 4);
             leaks.push(`${r.id} (${r.type}) from local ${x.toFixed(1)},${(r.y + 1.2).toFixed(1)},${z.toFixed(1)} dir ${d.x.toFixed(2)},${d.y.toFixed(2)},${d.z.toFixed(2)} leaves at ${far ? far.map((v) => v.toFixed(1)).join(',') : '?'}`);
           }
         }

@@ -65,13 +65,15 @@ test('rooms never overlap and every floor point is a room, a stair void or a par
 test('human-scale dimensions (doors, ceilings, windows, stairs)', () => {
   for (const bp of bps) {
     const sh = bp.shell;
-    assert.ok(sh.h >= 2.4 && sh.h <= 2.9, `${bp.id} ceiling ${sh.h}`);
+    const [lo, hi] = bp.lot.kind === 'chapel' ? [4.0, 5.2] : [2.4, 2.9];            // a chapel's nave is a tall room (R1-D06 / R4-115: 2.9 m over a 10.5 m nave read as a box)
+    assert.ok(sh.h >= lo && sh.h <= hi, `${bp.id} ceiling ${sh.h}`);
     for (const d of bp.doors) {
       if (d.kind === 'arch') { assert.ok(d.w >= 0.9 && d.w <= 3.5 && d.h >= 2.0 && d.h <= 2.6, `${d.id} arch ${d.w}x${d.h}`); continue; }
       if (d.kind === 'interior') assert.ok(d.w >= 0.8 - 1e-9 && d.w <= 0.9 + 1e-9 && d.h >= 2.0 && d.h <= 2.1 + 1e-9, `${d.id} interior door ${d.w}x${d.h}`);
-      else if (d.kind === 'exterior') {                                // a chapel's door is a tall double leaf
+      else if (d.kind === 'exterior') {                                // a chapel's door is a tall double leaf under an arch (review R1-009: at least 1.6 m wide)
         const big = bp.lot.kind === 'chapel' && d.entrance === 'main';
-        assert.ok(d.w >= 0.9 && d.w <= (big ? 1.4 : 1.1) && d.h >= 2.0 && d.h <= (big ? 2.5 : 2.2), `${d.id} exterior door ${d.w}x${d.h}`);
+        if (big) assert.ok(d.double === true && d.w >= 1.6 && d.w <= 2.0 && d.h >= 2.3 && d.h <= 2.6, `${d.id} chapel door ${d.w}x${d.h} double=${d.double}`);
+        else assert.ok(d.w >= 0.9 && d.w <= 1.1 && d.h >= 2.0 && d.h <= 2.2 && !d.double, `${d.id} exterior door ${d.w}x${d.h}`);
       }
       else if (d.kind === 'shutter') assert.ok(d.w >= 1.6 && d.w <= 3.2 && d.h >= 2.1 && d.h <= 2.5, `${d.id} shutter ${d.w}x${d.h}`);
     }

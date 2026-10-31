@@ -19,6 +19,8 @@ SKIN = ['#f0c8a0', '#e0ad82', '#c88b5e', '#a66c42', '#85512f', '#66391f', '#4a2a
 HAIR = ['#17120e', '#3a281c', '#6d4a2c', '#a87a43', '#d8b86c', '#8c8c8c', '#d0d0d0', '#7a2f1a', '#241812']
 SEAT_TOP = 0.445          # train bench cushion top above the floor (m)
 SEAT_HIP = 0.53           # seated hip-joint height above the floor (m)
+FRINGE = 0.73             # R3-007: where the ends of a fringe stop (fraction of the head height above the chin); the painted brows span 0.61 to 0.66, so they show
+FRINGE_SHORT = 0.74
 
 BONES = ['hips', 'spine', 'chest', 'neck', 'head', 'clavicle_l', 'clavicle_r', 'upperarm_l', 'upperarm_r', 'forearm_l', 'forearm_r', 'hand_l', 'hand_r',
          'fingers_l', 'fingers_r', 'thigh_l', 'thigh_r', 'shin_l', 'shin_r', 'foot_l', 'foot_r']
@@ -304,11 +306,14 @@ def build_person(pd):
     if pd.get('inner') and outer:    # shirt/collar visible at the neck opening
         loft(pb, [ring(0, lean(P['nbase']) - 0.01 + 0.012, z, rx, ry, 20) for z, rx, ry in ((P['trap'] + 0.0, 0.07 * k, 0.062 * k), (P['nbase'] + 0.025, 0.056 * k, 0.05 * k))], 'neck', pd['inner'], cap_top=False, cap_bot=False)
     if pd.get('vest'):
+        # R3-019: the vest and its bands tore into grey blocks from behind. The vest was a 14-gon that stood 3 mm FORWARD of the torso's 20-gon centre, so at the middle of the back (a vertex of the
+        # torso, the middle of a facet of the vest) it cleared the shirt by 0.4 mm and the shirt came through in patches; the bands, 6 mm forward, cleared it by 0.7 mm. Same 20 segments as the torso
+        # (so the vertices meet), no forward shift, and the clearances are measured from the shirt: the vest 6 mm clear of it at the back as at the front, the bands 5 mm clear of the vest.
         fab('mesh')
-        loft(pb, [r_ for r_ in [ring(0, rows[i][3] + lean(rows[i][0]) + 0.003, rows[i][0], rows[i][1] * 1.075, rows[i][2] * 1.07, 14) for i in range(3, 13)]], 'torso', pd['vest'], cap_top=False, cap_bot=False)
+        loft(pb, [r_ for r_ in [ring(0, rows[i][3] + lean(rows[i][0]), rows[i][0], rows[i][1] * 1.075, rows[i][2] * 1.07, 20) for i in range(3, 13)]], 'torso', pd['vest'], cap_top=False, cap_bot=False)
         fab('reflective')
-        for zi in (6, 9):       # reflective bands stand 4 mm clear of the vest (at 0.7 mm they z-fought with it: white slashes on a dark vest)
-            loft(pb, [ring(0, rows[i][3] + lean(rows[i][0]) + 0.006, rows[i][0], rows[i][1] * 1.105, rows[i][2] * 1.10, 14) for i in (zi, zi + 1)], 'torso', '#c9cdd1', cap_top=False, cap_bot=False)
+        for zi in (6, 9):       # reflective bands stand 5 mm clear of the vest (at 0.7 mm they z-fought with it: white slashes on a dark vest)
+            loft(pb, [ring(0, rows[i][3] + lean(rows[i][0]), rows[i][0], rows[i][1] * 1.12, rows[i][2] * 1.12, 20) for i in (zi, zi + 1)], 'torso', '#c9cdd1', cap_top=False, cap_bot=False)
     # ---- shirt details: collar flaps, a button placket and a belt on the tucked-in waist (they are what makes a shirt read as a shirt, not a tube)
     def chest_pt(z_, xs_, off=0.0):
         r_ = rows_at(rows, z_); e_ = max(0.0, 1.0 - (xs_ / (r_[1] * layer)) ** 2)
@@ -318,6 +323,9 @@ def build_person(pd):
         for sg_ in (-1, 1):
             vv_ = [pb.V(p_, 'torso') for p_ in (chest_pt(nb_ + 0.002, sg_ * 0.022 * k, 0.011), chest_pt(nb_ + 0.004, sg_ * 0.058 * k, 0.012), chest_pt(nb_ - 0.040 * k, sg_ * 0.070 * k, 0.009), chest_pt(zv_, sg_ * 0.008 * k, 0.007))]
             pb.F(vv_, top, False); pb.F(vv_[::-1], top, False)
+        # R3-007: the open V of the collar showed the neck column (skin) ending in a floating quad above the white shirt front, which read as a coloured tab at the neck.
+        # A skin patch lies on the chest from the top of the V down to its point, so the neck runs into the V.
+        pb.F([pb.V(p_, 'torso') for p_ in (chest_pt(nb_ + 0.004, -0.030 * k, 0.0035), chest_pt(nb_ + 0.004, 0.030 * k, 0.0035), chest_pt(zv_ + 0.003, 0.006 * k, 0.0035), chest_pt(zv_ + 0.003, -0.006 * k, 0.0035))], skin, False)
         zl_ = [zv_ - (zv_ - (waist_z + 0.012)) * j_ / 7.0 for j_ in range(8)]
         loft(pb, [ring(0, rows_at(rows, z_)[3] + lean(z_), z_, rows_at(rows, z_)[1] * layer + 0.0035, rows_at(rows, z_)[2] * layer + 0.0035, 3, a0=math.radians(86), a1=math.radians(94), closed=False) for z_ in zl_], 'torso', top, closed=False, cap_top=False, cap_bot=False)
         fab('plastic')
@@ -445,7 +453,18 @@ def build_person(pd):
         ncy_ = lean(P['nbase']) * 0.7; nb_ = P['nbase']
         coll = pd.get('collar') or top
         # (about 40 % lower than before: at 2.4 cm it read as a turtleneck on every T-shirt)
-        loft(pb, [ring(0, ncy_ - 0.004, nb_ - 0.012, 0.0668 * k, 0.0600 * k, 20), ring(0, ncy_ - 0.002, nb_ - 0.003, 0.0636 * k, 0.0578 * k, 20), ring(0, ncy_ - 0.001, nb_ + 0.004, 0.0600 * k, 0.0556 * k, 20), ring(0, ncy_ + 0.000, nb_ + 0.006, 0.0584 * k, 0.0545 * k, 20)], 'neck', coll, cap_top=False, cap_bot=False)
+        # R3-007: the band follows the neck column's own centre and radii. It used to be centred 4 mm behind the neck and nearly flush with it at the top, so the column hid it at the
+        # front and back and only two flat tabs (a skin-coloured band, a red square under another tint) showed at the sides above the shoulders.
+        z0n_ = nb_ - 0.03; z1n_ = nb_ + 0.03 * k
+        def neck_at(z):          # the neck column's centre and radii at height z: the first two rings of `nrings` below
+            t_ = clamp01((z - z0n_) / (z1n_ - z0n_))
+            return ncy_ + 0.004 * t_, (0.062 + (0.054 - 0.062) * t_) * k, (0.058 + (0.051 - 0.058) * t_) * k
+        nbr_ = []
+        # (the neck column starts at nbase - 0.03 and the torso's top lies below that at the front, so the band straddles that junction: its lower rings are buried in the shirt)
+        for dz_, ex_ in ((-0.050, 0.0125), (-0.032, 0.0090), (-0.016, 0.0070), (-0.004, 0.0050)):
+            cy_, rx_, ry_ = neck_at(nb_ + dz_)
+            nbr_.append(ring(0, cy_, nb_ + dz_, rx_ + ex_, ry_ + ex_, 20))
+        loft(pb, nbr_, 'neck', coll, cap_top=False, cap_bot=False)
     # ---------------- neck + head
     ncy = lean(P['nbase']) * 0.7
     nrings = [ring(0, ncy, P['nbase'] - 0.03, 0.062 * k, 0.058 * k, 20), ring(0, ncy + 0.004, P['nbase'] + 0.03 * k, 0.054 * k, 0.051 * k, 20), ring(0, ncy + 0.010, P['chin'] + hh * 0.10, 0.054 * k, 0.054 * k, 20), ring(0, ncy + 0.026 * k, P['chin'] + hh * 0.30, 0.066 * k, 0.074 * k, 20)]
@@ -529,7 +548,9 @@ def build_person(pd):
         ec = (ex, ysurf - 0.62 * er, eye_z)
         uvf = (lambda co, ec=ec, er=er: ((co.x - ec[0]) / (2 * er * 1.12) + 0.5, (co.z - ec[2]) / (2 * er) + 0.5))
         sphere(pb, ec, er * 1.12, er, er, 'head', '#ffffff', 12, 7, smooth=True, uv=uvf, fab_='eye')
-        zone(pb, ec, er * 1.09, 'head', 0.06, math.acos(0.16), 14, 3, fab_='face')          # upper lid
+        # R3-007: the upper lid came down to 0.16 of the ball's radius above its centre, over two thirds of the top half of every iris (every face looked half asleep). Its edge now
+        # stands at 0.35 (a relaxed open eye: the lid just covers the top of the iris); the lash line painted on the face tile moves up with it (people_tex.py LID_UP).
+        zone(pb, ec, er * 1.09, 'head', 0.06, math.acos(0.35), 14, 3, fab_='face')          # upper lid
         zone(pb, ec, er * 1.09, 'head', math.acos(-0.46), math.pi - 0.06, 14, 3, fab_='face')   # lower lid
     # ---------------- hair: skull-hugging cap (hairline shaped per angle, strand texture) + alpha-tested hair cards (strand clumps) for length / fringe / silhouette
     hcol = HAIR[pd['hair'][0]]; style = pd['hair'][1]
@@ -579,13 +600,13 @@ def build_person(pd):
             va = 1.0 - (ty + i / (n_ - 1)) * 0.25; vb = 1.0 - (ty + (i + 1) / (n_ - 1)) * 0.25
             ua, ub = tx * 0.25 + 0.004, (tx + 1) * 0.25 - 0.004
             pb.F((L[i], R[i], R[i + 1], L[i + 1]), hexc, True, uv=[(ua, va), (ub, va), (ub, vb), (ua, vb)], fab_='hair_card')
-    def cards_ring(angs, f0, f1, off0, flare, nseg, wid, layers=1, jitter=0.0, lenvar=0.15):
+    def cards_ring(angs, f0, f1, off0, flare, nseg, wid, layers=1, jitter=0.0, lenvar=0.15, colstep=10):
         """solid hair volume: smooth-shaded shell over an arc of the head, per-column clump relief + uneven lengths, tapering to rounded ends"""
         # arcs may wrap past 360: unwrap relative to the first angle
         al = list(angs)
         if max(al) - min(al) > math.pi: al = [x + 2 * math.pi if x < math.radians(90) else x for x in al]
         al = sorted(al); a0, a1 = al[0] - math.radians(6), al[-1] + math.radians(6)
-        ncol = max(8, int((a1 - a0) / math.radians(10)))
+        ncol = max(8, int((a1 - a0) / math.radians(colstep)))
         for L_ in range(layers):
             phase = rng_h.uniform(0, 6.28); lens = []
             for i in range(ncol + 1):
@@ -619,12 +640,21 @@ def build_person(pd):
         rowsc = [r_ for r_ in crv(ctrl, 22) if (r_[0] - P['chin']) / hh >= 0.30]
         if style == 'receding': rowsc = [r_ for r_ in rowsc if (r_[0] - P['chin']) / hh <= 0.80]       # open crown: the scalp shows
         rgs = []
+        # R3-007 (helmet-like hair): the cap was one smooth shell. Its thickness now swells and dips from column to column (strand clumps / locks running from the crown
+        # to the ends, a few millimetres), fading to nothing at the hairline and at the crown so the edge and the top stay clean. Own random stream: the clump
+        # relief of the shells below (rng_h) is unchanged.
+        rng_l_ = random.Random(zlib.crc32(pd['id'].encode()) ^ 0x2F6B); ph1_ = rng_l_.uniform(0, 6.28); ph2_ = rng_l_.uniform(0, 6.28)
+        lock_on_ = (not hat_) and style != 'buzz'
         for row in rowsc:
             f = (row[0] - P['chin']) / hh; pts_ = []
             for i in range(HN):
                 ang = 2 * math.pi * i / HN; phi = ((ang - math.pi / 2 + math.pi) % (2 * math.pi)) - math.pi
                 ff = max(f, hairline(phi, style))
-                pts_.append(hair_point(ang, ff, th * (1.0 + 0.5 * max(0.0, (ff - 0.8) * 5))))
+                lk_ = 1.0
+                if lock_on_: lk_ = 1.0 + 0.24 * (0.6 * math.sin(i * 2.1 + 3.0 * ff + ph1_) + 0.4 * math.sin(i * 4.7 + 1.9 * ff + ph2_)) * clamp01((f - hairline(phi, style)) / 0.12) * (1.0 - clamp01((f - 0.88) / 0.12))
+                hx_, hy_, hz_ = hair_point(ang, ff, th * (1.0 + 0.5 * max(0.0, (ff - 0.8) * 5)) * lk_)
+                if not hat_: hz_ += 0.9 * th * max(0.0, (f - 0.90) / 0.10) ** 1.5       # R3-007: the top rows stand a little above the skull; the hair cap and the skull's own cap were coplanar and a skin disc shone through the crown
+                pts_.append((hx_, hy_, hz_))
             rgs.append(pts_)
         loft(pb, rgs, 'head', hcol, cap_top=(style != 'receding'), cap_bot=False, closed=True)
         fr = math.radians(90)
@@ -632,7 +662,9 @@ def build_person(pd):
         side_l = [math.radians(a_) for a_ in (150, 165, 180)]; side_r = [math.radians(a_) for a_ in (0, 15, 30)]
         if style == 'short' and not hat_:
             # fringe tufts along the front hairline + short layers at the nape / sides
-            cards_ring([fr + math.radians(d) for d in range(-40, 41, 16)], 0.86, 0.66, 0.002, 0.03, 3, 0.055, 1, 0.05, 0.1)
+            # (R3-007: the fringe ended at 0.66 of the head height, below the painted brows (0.62 to 0.66), so every fringed head had no brows, and its length varied +-10 %, which
+            # made a saw of teeth 3 cm deep. It now ends at 0.74, clear of the brows, with +-4 % in columns half as wide.)
+            cards_ring([fr + math.radians(d) for d in range(-40, 41, 16)], 0.86, FRINGE_SHORT, 0.002, 0.03, 3, 0.055, 1, 0.05, 0.04, 6)
         if style == 'curly':
             for a_ in range(0, 360, 36):
                 ca, sa = math.cos(math.radians(a_)), math.sin(math.radians(a_))
@@ -644,24 +676,24 @@ def build_person(pd):
                 sphere(pb, (ca * r_[1] * 1.5, r_[3] + sa * r_[2] * 1.5, zc_f(0.98)), 0.036 * k, 0.036 * k, 0.030 * k, 'head', hcol, 7, 4)
             sphere(pb, (0, hy0, zc_f(1.02)), 0.05 * k, 0.05 * k, 0.04 * k, 'head', hcol, 8, 4)
         if style == 'bob':
-            cards_ring(back + side_l + side_r, 0.76, 0.10, 0.004, 0.14, 5, 0.085, 1, 0.04, 0.06)
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.64, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.1)
+            cards_ring(back + side_l + side_r, 0.76, 0.10, 0.004, 0.14, 5, 0.085, 1, 0.04, 0.04, 7)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.04, 6)
         if style == 'long':
-            cards_ring(back + side_l + side_r, 0.76, -1.05, 0.004, 0.12, 8, 0.095, 1, 0.04, 0.12)
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.58, 0.004, 0.05, 3, 0.065, 1, 0.04, 0.1)
+            cards_ring(back + side_l + side_r, 0.76, -1.05, 0.004, 0.12, 8, 0.095, 1, 0.04, 0.05, 7)       # (R3-007: the ends varied +-12 % = +-3 cm, a torn-paper edge; now +-5 % in narrower columns)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE - 0.01, 0.004, 0.05, 3, 0.065, 1, 0.04, 0.04, 6)
         if style == 'pony':
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.64, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.1)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE, 0.004, 0.04, 3, 0.06, 1, 0.04, 0.04, 6)
             base = hair_point(math.radians(270), 0.78, th + 0.012)
             for j, wob in ((0, 0.0), (-1, -0.012), (1, 0.012)):
                 pts = [(base[0] + j * 0.010, base[1] + 0.004, base[2] + 0.004), (base[0] + j * 0.016 + wob * 0.3, base[1] - 0.05 * hh, base[2] - 0.12 * hh), (base[0] + j * 0.022 + wob, base[1] - 0.085 * hh, base[2] - 0.46 * hh), (base[0] + j * 0.020 + wob * 1.4, base[1] - 0.07 * hh, base[2] - 0.80 * hh), (base[0] + j * 0.020 + wob, base[1] - 0.05 * hh, base[2] - 1.0 * hh)]
                 tube_pts(pb, pts, [0.034 * k, 0.046 * k, 0.042 * k, 0.028 * k, 0.008 * k] if j == 0 else [0.024 * k, 0.034 * k, 0.030 * k, 0.020 * k, 0.006 * k], 'head', hcol, n=12)
             sphere(pb, base, 0.022 * k, 0.022 * k, 0.018 * k, 'head', '#d03a5a', 6, 3, fab_='rubber')
         if style == 'bun':
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.66, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.1)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.04, 6)
             sphere(pb, (0, hy0 - ctrl[7][2] * 0.9, zc_f(1.02)), 0.055 * k, 0.055 * k, 0.048 * k, 'head', hcol, 10, 6)
         if style == 'sidepart':        # short, swept across the brow from a side parting
-            cards_ring([fr + math.radians(d) for d in range(-56, 25, 16)], 0.88, 0.60, 0.004, 0.05, 3, 0.062, 1, 0.05, 0.12)
-            cards_ring([fr + math.radians(d) for d in range(30, 71, 20)], 0.84, 0.72, 0.003, 0.03, 3, 0.055, 1, 0.03, 0.08)
+            cards_ring([fr + math.radians(d) for d in range(-56, 25, 16)], 0.88, FRINGE - 0.03, 0.004, 0.05, 3, 0.062, 1, 0.05, 0.05, 6)
+            cards_ring([fr + math.radians(d) for d in range(30, 71, 20)], 0.84, 0.74, 0.003, 0.03, 3, 0.055, 1, 0.03, 0.04, 6)
         if style == 'slick':           # combed straight back, a little length over the collar
             cards_ring(back, 0.74, 0.36, 0.004, 0.06, 4, 0.09, 1, 0.03, 0.08)
         if style == 'receding':        # elder man: thin crown, tufts above the ears and at the nape (two separate arcs: one call over both sides ran a band across the face)
@@ -669,11 +701,11 @@ def build_person(pd):
             cards_ring(side_r, 0.62, 0.40, 0.004, 0.04, 3, 0.07, 1, 0.04, 0.1)
             cards_ring(back, 0.52, 0.30, 0.004, 0.05, 3, 0.09, 1, 0.03, 0.08)
         if style == 'topknot':         # hair gathered high at the front of the crown
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.70, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.1)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE + 0.01, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.04, 6)
             sphere(pb, (0, hy0 + ctrl[7][2] * 0.25, zc_f(1.07)), 0.046 * k, 0.046 * k, 0.050 * k, 'head', hcol, 10, 6)
             sphere(pb, (0, hy0 + ctrl[7][2] * 0.25, zc_f(0.97)), 0.030 * k, 0.030 * k, 0.020 * k, 'head', '#d03a5a', 6, 3, fab_='rubber')
         if style == 'braid':           # one plait down the back, over a smooth skull cap and fringe
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.66, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.1)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.04, 6)
             b0 = hair_point(math.radians(270), 0.55, th + 0.010)
             for i_ in range(11):
                 zz_ = b0[2] - i_ * 0.050 * k; rt_ = rows_at(rows, zz_)
@@ -681,7 +713,7 @@ def build_person(pd):
                 sphere(pb, ((0.007 if i_ % 2 else -0.007) * k, yy_, zz_), 0.021 * k * (1.0 - 0.025 * i_), 0.019 * k, 0.030 * k, 'chest' if zz_ < P['nbase'] else 'head', hcol, 7, 4)
             sphere(pb, (0, yy_, zz_ - 0.032 * k), 0.016 * k, 0.016 * k, 0.014 * k, 'chest', '#d03a5a', 6, 3, fab_='rubber')
         if style == 'pigtails':        # two bunches at the sides, tied with bobbles
-            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, 0.66, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.1)
+            cards_ring([fr + math.radians(d) for d in range(-36, 37, 18)], 0.84, FRINGE, 0.004, 0.03, 3, 0.06, 1, 0.04, 0.04, 6)
             for sg_ in (-1, 1):
                 b0 = hair_point(math.radians(90 + sg_ * 78), 0.62, th + 0.012)
                 pts = [(b0[0], b0[1] - 0.004, b0[2]), (b0[0] + sg_ * 0.030 * k, b0[1] - 0.010, b0[2] - 0.10 * hh), (b0[0] + sg_ * 0.040 * k, b0[1] - 0.016, b0[2] - 0.34 * hh), (b0[0] + sg_ * 0.036 * k, b0[1] - 0.020, b0[2] - 0.56 * hh), (b0[0] + sg_ * 0.032 * k, b0[1] - 0.024, b0[2] - 0.70 * hh)]
@@ -779,9 +811,19 @@ def build_person(pd):
                 sphere(pb, (kb[0], kb[1] - 0.004, kb[2]), 0.016 * k, 0.014 * k, 0.016 * k, 'head', hc, 6, 4)
     fab('plastic')
     if pd.get('glasses'):
+        # R3-007: the rims were horizontal rings (ring() lies in the XY plane), so from the front the glasses were one black bar above the eyes. Now an upright oval rim in front of each
+        # eye, a bridge over the nose and two arms that bow out round the head to the ears.
+        fab('plastic')
+        angs_g = [2 * math.pi * i_ / 16 for i_ in range(16)]
         for sg in (-1, 1):
-            loft(pb, [ring(sg * 0.036 * k, hy0 + ctrl[4][2] + 0.012, zc_f(0.54), 0.021 * k, 0.003, 10), ring(sg * 0.036 * k, hy0 + ctrl[4][2] + 0.016, zc_f(0.54), 0.021 * k, 0.003, 10)], 'head', '#1a1a1a', cap_top=False, cap_bot=False)
-        pb.F([pb.V((-0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.55)), 'head'), pb.V((0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.55)), 'head'), pb.V((0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.54)), 'head'), pb.V((-0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.54)), 'head')], '#1a1a1a', False)
+            ex_g = sg * 0.140 * hh; yg_ = skull_y(ex_g, eye_z) + 0.022 * hh + 0.011
+            rim_o = [(ex_g + 0.100 * hh * math.cos(a_), yg_, eye_z + 0.078 * hh * math.sin(a_)) for a_ in angs_g]
+            rim_i = [(ex_g + (0.100 * hh - 0.0028) * math.cos(a_), yg_, eye_z + (0.078 * hh - 0.0028) * math.sin(a_)) for a_ in angs_g]
+            loft(pb, [rim_o, rim_i], 'head', '#1a1a1a', cap_top=False, cap_bot=False)
+            loft(pb, [rim_i, rim_o], 'head', '#1a1a1a', cap_top=False, cap_bot=False)
+            rg_ = row_at(eye_z); ra_ = row_at(P['chin'] + 0.46 * hh)
+            tube_pts(pb, [(ex_g + sg * 0.100 * hh, yg_, eye_z + 0.02 * hh), (sg * (rg_[1] + 0.004), rg_[3] + 0.45 * rg_[2], eye_z + 0.02 * hh), (sg * (ra_[1] + 0.003 * hh), ra_[3] - 0.03 * hh, P['chin'] + 0.48 * hh)], [0.0016, 0.0016, 0.0016], 'head', '#1a1a1a', n=6)
+        qbox(pb, (0, yg_ + 0.002, eye_z + 0.024 * hh), (0.082 * hh, 0.005, 0.009), 'head', '#1a1a1a')
     fab(TOPF)
     # ---------------- arms (clothing sleeve layer over the arm, skin beyond the sleeve)
     sh = P['sh']; shw = P['shw']
@@ -818,7 +860,8 @@ def build_person(pd):
         pass   # (deltoid sphere removed: it z-fought with the sleeve)
         # hand: palm + 4 fingers + thumb (fingers hang straight; the `fingers` bone curls them)
         hl = 0.108 * H; hw_ = 0.043 * k * child_f
-        loft(pb, [ring(sx, 0.0, wrist + 0.030, rf * 0.70, rf * 0.52, 8), ring(sx, 0.0, wrist - 0.02 * k, hw_, 0.020 * k, 8), ring(sx, 0.0, wrist - hl * 0.42, hw_ * 0.98, 0.018 * k, 8), ring(sx, 0.0, wrist - hl * 0.50, hw_ * 0.90, 0.014 * k, 8)], 'hand' + sd, skin, cap_top=True, cap_bot=False)       # (starts inside the forearm: no gap at the wrist)
+        # (R3-007: 12 sides instead of 8 on the palm and 8 instead of 6 on the fingers: the facets of an octagonal palm showed at the 1 m of a sell or a talk)
+        loft(pb, [ring(sx, 0.0, wrist + 0.030, rf * 0.70, rf * 0.52, 12), ring(sx, 0.0, wrist - 0.02 * k, hw_, 0.020 * k, 12), ring(sx, 0.0, wrist - hl * 0.42, hw_ * 0.98, 0.018 * k, 12), ring(sx, 0.0, wrist - hl * 0.50, hw_ * 0.90, 0.014 * k, 12)], 'hand' + sd, skin, cap_top=True, cap_bot=False)       # (starts inside the forearm: no gap at the wrist)
         fl = [0.46, 0.52, 0.48, 0.38]
         for fi in range(4):
             fx = sx + (fi - 1.5) * hw_ * 0.46
@@ -826,9 +869,9 @@ def build_person(pd):
             cu = 1.0 + 0.22 * fi                                           # relaxed curl: pinky side curls a little more
             # four fingers lying together and curling toward the palm (they used to hang straight and apart, like a rake)
             pts = [(fx, 0.002, z0), (fx, 0.012 * cu, z0 - hl * fl[fi] * 0.50), (fx, 0.032 * cu, z0 - hl * fl[fi] * 0.84)]
-            tube_pts(pb, pts, [0.0114 * k * child_f, 0.0104 * k * child_f, 0.0078 * k * child_f], 'fingers' + sd, skin, n=6)
+            tube_pts(pb, pts, [0.0114 * k * child_f, 0.0104 * k * child_f, 0.0078 * k * child_f], 'fingers' + sd, skin, n=8)
         th_pts = [(sx - sg * hw_ * 0.95, 0.012 * k, wrist - hl * 0.10), (sx - sg * hw_ * 1.04, 0.022 * k, wrist - hl * 0.28), (sx - sg * hw_ * 0.92, 0.034 * k, wrist - hl * 0.42)]
-        tube_pts(pb, th_pts, [0.0125 * k * child_f, 0.0115 * k * child_f, 0.0085 * k * child_f], 'fingers' + sd, skin, n=6)
+        tube_pts(pb, th_pts, [0.0125 * k * child_f, 0.0115 * k * child_f, 0.0085 * k * child_f], 'fingers' + sd, skin, n=8)
     fab(BOTF)
     # ---------------- legs (trousers layer) + shoes
     hx = hipw * 0.52
@@ -929,7 +972,18 @@ def build_person(pd):
         # (height above the hem, flare over the body, margin over the thigh): the margin has to beat the 4-6 mm the cloth wrinkle pass pushes the thigh and the hem by
         for dz_, fl_, mg_ in ((0.085, 0.0, -0.004), (0.055, 0.003, 0.003), (0.025, 0.010, 0.009), (0.0, 0.015, 0.012), (-0.013, 0.017, 0.014)):
             z_ = zc_ + dz_; r_ = rows_at(rows, z_)
-            hr_.append(ring(0, r_[3] + lean(z_), z_, max(r_[1] * layer + fl_, th_out(z_) + mg_), r_[2] * layer + fl_ * 0.8, 20))
+            rx_ = max(r_[1] * layer + fl_, th_out(z_) + mg_); ry_ = r_[2] * layer + fl_ * 0.8
+            # R3-007: the two thigh tubes (circles round x = +-hx) must lie inside the ring's ellipse, in front and behind as well as at the sides: at the front of each thigh the ring
+            # was narrower than the leg, and the trouser cloth showed through the hem as dark wedges
+            R_ = th_out(z_) - hx + 0.012
+            rx_ = max(rx_, hx + R_)          # the circle's outermost point (a = 0) is only reachable by widening x: growing ry_ alone never gets it inside (a slim top over wide thighs blew ry_ up to a flat skirt-like disc)
+            for _ in range(40):
+                if all(((hx + R_ * math.cos(a_)) / rx_) ** 2 + (R_ * math.sin(a_) / ry_) ** 2 <= 1.0 for a_ in [i_ * math.pi / 12 for i_ in range(25)]): break
+                ry_ *= 1.03
+            else:
+                print('HEM-WARN thigh circle not inside the hem ring', pd['id'], round(z_, 3), round(rx_, 3), round(ry_, 3))
+            ry_ = min(ry_, r_[2] * layer + fl_ * 0.8 + 0.07)
+            hr_.append(ring(0, r_[3] + lean(z_), z_, rx_, ry_, 20))
         loft(pb, hr_, 'torso', top, cap_top=False, cap_bot=False)
     # ---------------- scarf, bags
     if pd.get('scarf'):
@@ -1246,16 +1300,20 @@ def clip_defs():
         p = ph * TAU; d = idle_a(ph)
         d['spine'] = [('x', -0.07), ('y', -0.02 * s_(p))]
         d['head'] = [('x', -0.45 + 0.03 * s_(2 * p)), ('z', 0.03 * s_(p))]
-        d['upperarm_r'] = [('x', 0.80), ('y', 0.10)]; d['forearm_r'] = [('x', 1.85 + 0.03 * s_(2 * p))]
-        d['upperarm_l'] = [('x', 0.80), ('y', -0.12)]; d['forearm_l'] = [('x', 1.70 + 0.03 * s_(2 * p + 1))]
-        d['hand_r'] = [('x', 0.25)]; d['hand_l'] = [('x', 0.25)]
-        d['fingers_r'] = [('x', 0.55 + 0.35 * max(0, s_(6 * p)))]; d['fingers_l'] = [('x', 0.45)]
+        # both hands in front of the lower chest with a phone between them (R3-004: it used to be both palms up at shoulder height, no phone: "frisked"). Solved on the rig
+        # (.scratch/a4/phone_solve.py): elbows 21 cm out beside the ribs, finger bases at (+-0.053, 1.084, -0.30) in the glTF frame; the hands carry the runtime phone prop (js/people/props.js)
+        d['upperarm_r'] = [('x', 0.043), ('y', -0.083), ('z', 0.445)]; d['forearm_r'] = [('x', 1.952 + 0.02 * s_(2 * p))]
+        d['upperarm_l'] = [('x', 0.066), ('y', 0.080), ('z', -0.490)]; d['forearm_l'] = [('x', 1.932 + 0.02 * s_(2 * p + 1))]
+        d['hand_r'] = []; d['hand_l'] = []
+        d['fingers_r'] = [('x', 0.95 + 0.12 * max(0, s_(6 * p)))]; d['fingers_l'] = [('x', 0.95 + 0.10 * max(0, s_(5 * p + 1)))]       # the fingers wrap the phone, the thumbs tap
         return d
     C['phone_stand'] = (96, phone_stand)
     def phone_call(ph):
         p = ph * TAU; d = idle_a(ph)
         d['head'] = [('z', 0.05 * s_(p)), ('y', 0.14)]
-        d['upperarm_r'] = [('x', 0.55), ('y', 0.30)]; d['forearm_r'] = [('x', 2.25 + 0.02 * s_(2 * p))]; d['hand_r'] = [('y', 0.25)]
+        # the right hand used to hang 22 cm in front of the chin ("hand to the mouth"); now it cradles the lower half of the phone with the top at the right ear
+        # (solved on the rig, .scratch/a4/call_solve.py: elbow forward, wrist 10 cm in front of the shoulder, finger tips 4 cm from the ear)
+        d['upperarm_r'] = [('x', 0.909), ('y', -0.269), ('z', -0.023)]; d['forearm_r'] = [('x', 2.78 + 0.02 * s_(2 * p))]; d['hand_r'] = [('y', 0.25)]
         d['fingers_r'] = [('x', 0.6)]
         d['spine'] = [('y', 0.03 * s_(p)), ('x', 0.01)]
         return d
@@ -1295,8 +1353,10 @@ def clip_defs():
     def sit_phone(ph):
         p = ph * TAU; d = sit_base(p)
         d['head'] = [('x', -0.5 + 0.03 * s_(2 * p))]; d['spine'] = [('x', -0.10)]
-        d['upperarm_r'] = [('x', 0.60), ('y', 0.08)]; d['forearm_r'] = [('x', 1.65)]; d['upperarm_l'] = [('x', 0.60), ('y', -0.10)]; d['forearm_l'] = [('x', 1.55)]
-        d['fingers_r'] = [('x', 0.55 + 0.35 * max(0, s_(6 * p)))]
+        # the same two-handed hold as phone_stand (same arm angles, so the one `phone` prop sits right in both): hands together in front of the belly, thumbs tapping
+        d['upperarm_r'] = [('x', 0.043), ('y', -0.083), ('z', 0.445)]; d['forearm_r'] = [('x', 1.952 + 0.02 * s_(2 * p))]
+        d['upperarm_l'] = [('x', 0.066), ('y', 0.080), ('z', -0.490)]; d['forearm_l'] = [('x', 1.932 + 0.02 * s_(2 * p + 1))]
+        d['fingers_r'] = [('x', 0.95 + 0.12 * max(0, s_(6 * p)))]; d['fingers_l'] = [('x', 0.95 + 0.10 * max(0, s_(5 * p + 1)))]
         return d
     C['sit_phone'] = (96, sit_phone)
     def sit_look(ph):
@@ -1373,10 +1433,12 @@ def clip_defs():
     C['cook'] = (72, cook)
     def sell(ph):
         p = ph * TAU; d = idle_a(ph)
-        k = max(0.0, s_(p)) ** 2                                   # hands out toward the customer, then back
-        d['upperarm_r'] = [('x', 0.40 + 0.30 * k), ('y', 0.14)]; d['forearm_r'] = [('x', 0.95 + 0.45 * k)]; d['hand_r'] = [('x', -0.2 * k)]; d['fingers_r'] = [('x', 0.1)]
-        d['upperarm_l'] = [('x', 0.34 + 0.10 * k), ('y', -0.12)]; d['forearm_l'] = [('x', 0.90)]
-        d['head'] = [('x', -0.05 + 0.08 * s_(2 * p)), ('z', 0.06 * s_(p))]; d['spine'] = [('x', -0.04 - 0.03 * k)]
+        # R3-010: it used to hold BOTH arms straight out, level and rigid, like a sleepwalker. Now the right hand rests on the counter, lifts once per loop to give or take something and goes
+        # back; the left arm hangs relaxed with the elbow a little bent; a nod goes with the handover.
+        k = max(0.0, s_(p - 0.5)) ** 2
+        d['upperarm_r'] = [('x', 0.26 + 0.26 * k), ('y', 0.16 - 0.09 * k)]; d['forearm_r'] = [('x', 1.20 - 0.32 * k)]; d['hand_r'] = [('x', -0.10 * k)]; d['fingers_r'] = [('x', 0.18 - 0.10 * k)]
+        d['upperarm_l'] = [('x', 0.10 + 0.03 * s_(p + 1.0)), ('y', -0.08)]; d['forearm_l'] = [('x', 0.55 + 0.05 * s_(p + 1.0))]; d['fingers_l'] = [('x', 0.30)]
+        d['head'] = [('x', -0.04 - 0.10 * k), ('z', 0.05 * s_(p))]; d['spine'] = [('x', -0.03 - 0.02 * k)]
         return d
     C['sell'] = (96, sell)
     def carry_arms(d):
@@ -1504,7 +1566,11 @@ def vertex_shade(co, fb, fold_v, P):
         if fb == 'denim': m *= 1.0 + 0.14 * math.exp(-((co.z - P['knee']) / 0.11) ** 2) * (0.55 + 0.45 * mnoise.noise(Vector((co.x * 30, co.y * 30, co.z * 30))))
     elif fb == 'skin':
         m *= 1.0 + 0.03 * mnoise.noise(Vector((co.x * 40, co.y * 40, co.z * 30)))
-    elif fb in ('hair', 'hair_card'):
+    elif fb == 'hair':
+        # R3-007: strands run down the head, so the shade changes from column to column and slowly along the strand (it was speckle at 1 cm, which read as noise on a smooth cap)
+        a_ = math.atan2(co.y, co.x)
+        m *= 0.80 + 0.36 * (0.5 + 0.5 * mnoise.noise(Vector((a_ * 4.2, 3.1, co.z * 5.0))))
+    elif fb == 'hair_card':
         m *= 0.86 + 0.28 * (0.5 + 0.5 * mnoise.noise(Vector((co.x * 90, co.y * 90, co.z * 70))))
     return max(0.55, min(1.35, m))
 

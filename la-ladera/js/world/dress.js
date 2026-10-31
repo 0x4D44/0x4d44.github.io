@@ -1,13 +1,15 @@
 // Public-space dressing: safety rails and parapets along fill edges, plaza benches, the bus shelter, the Virgin's shrine, the court
-// (fence + goals), the viewpoint (parapet, coin telescope, payphone), the lit summit cross, planters around the plaza trees.
+// (fence, futsal goals, basketball hoops), the viewpoint (parapet, coin telescope, payphone), the lit summit cross, planters around the plaza trees.
 // Groups: props.rails / props.benches / props.feature (shadow casters) and props.fence (alpha chain-link).
 import { tube } from './mk.js';
 import { OCC } from './occupancy.js';
 import { pointInPoly, segDist } from './geom.js';
 import { localToWorld } from './kit.js';
 import { PLAZA_BAND } from './plan.js';
+import { courtFence } from './courtside.js';
 import { shrub } from './flora.js';
 import { TILE } from './sprites.js';
+import { buildTower } from './tower.js';
 
 const rgb = (h) => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
 const W = [1, 1, 1];
@@ -176,15 +178,12 @@ function shrine(K, stats) {
   stats.shrine = 1;
 }
 
-// ---------------------------------------------------------------------------------------------------- court: chain-link fence + goals
+// ---------------------------------------------------------------------------------------------------- court: chain-link fence, goals, hoops
 function court(K, stats) {
   const pl = K.plan.plazas.find((p) => p.kind === 'court'); if (!pl) return;
-  const P = localToWorld(pl.cx, pl.cz, pl.ry), hw = pl.w / 2, hd = pl.d / 2, y = pl.y, H = 3.2, exits = exitsOf(K, pl);
-  // a cut bank on the north side: the fence sits on top of the retaining wall there
-  const nx = Math.sin(pl.ry), nz = -Math.cos(pl.ry);                      // local -z in world
-  const cutN = K.H(pl.cx + nx * (hd + 2.4), pl.cz + nz * (hd + 2.4)) - K.H(pl.cx + nx * (hd - 0.2), pl.cz + nz * (hd - 0.2)) > 0.4;
-  const zn = cutN ? -(hd + PLAZA_BAND + 0.15) : -(hd - 0.3);
-  const corners = [[-(hw - 0.3), zn], [hw - 0.3, zn], [hw - 0.3, hd - 0.3], [-(hw - 0.3), hd - 0.3]];
+  const P = localToWorld(pl.cx, pl.cz, pl.ry), hw = pl.w / 2, y = pl.y, H = 3.2, exits = exitsOf(K, pl);
+  // the outline (courtside.js lays the nav strip for the benches and leans round the outside of it): a cut bank on the north side puts the fence on top of the retaining wall there
+  const fc = courtFence(K.plan, pl, PLAZA_BAND), corners = [[fc.xw, fc.zn], [fc.xe, fc.zn], [fc.xe, fc.zs], [fc.xw, fc.zs]];
   const fence = K.one('fence', { cast: false });
   const post = K.b('feature', pl.cx, pl.cz);
   for (let e = 0; e < 4; e++) {
@@ -225,8 +224,33 @@ function court(K, stats) {
     fence.quad('fence_mesh', [b1x, y + 0.25, b1z], [b2x, y + 0.25, b2z], [b2x, y, b2z], [b1x, y, b1z], { uv: [0, 0, 7.5, 0, 7.5, 0.6, 0, 0.6], col: W });
     for (const [px, pz] of [[a1x, a1z], [a2x, a2z]]) K.post(px, pz, 0.06, gh, y);
   }
-  K.ctx.world.court = { x: pl.cx, z: pl.cz, y, w: pl.w, d: pl.d };
-  stats.court = 1;
+  // the cancha is shared with basketball: over each goal a pole just inside the end fence carries a 1.8 x 1.05 m board (target square painted on it),
+  // the rim at 3.05 m, 0.15 m off the board, and a short net. The exits are all on the south side, so nothing here stands in a gap.
+  const rimR = 0.225, ORANGE = [0.95, 0.32, 0.06], BOARD = [0.93, 0.93, 0.9], NET = 12, yr = y + 3.05;
+  let hoops = 0;
+  for (const sgn of [-1, 1]) {
+    const at = (d, lz = 0) => P(sgn * d, lz), dPole = hw - 0.5, dBoard = hw - 0.95, dFace = dBoard - 0.0285, dRim = dBoard - 0.15 - rimR;
+    const [px, pz] = at(dPole), [bx, bz] = at(dBoard), [fx, fz] = at(dFace), [rx, rz] = at(dRim + rimR);
+    tube(bf, 'galvanised', [px, y, pz], [px, y + 3.75, pz], 0.08, 0.065, 8, { col: W });
+    for (const h of [3.2, 3.6]) tube(bf, 'galvanised', [px, y + h, pz], [bx, y + h, bz], 0.03, 0.03, 5, { col: W, caps: false });   // two arms to the back of the board
+    bf.box('plastic_bin', bx, y + 3.425, bz, 0.05, 1.05, 1.8, { ry: pl.ry, col: BOARD });
+    // the painted target square (0.59 x 0.45 m, bottom edge level with the rim) as four 6 mm strips on the face
+    for (const [lz, yy, sy, sz] of [[0, 3.48, 0.04, 0.59], [0, 3.07, 0.04, 0.59], [0.275, 3.275, 0.37, 0.04], [-0.275, 3.275, 0.37, 0.04]]) {
+      const [sx, sz2] = at(dFace, lz);
+      bf.box('plastic_bin', sx, y + yy, sz2, 0.006, sy, sz, { ry: pl.ry, col: ORANGE });
+    }
+    for (let i = 0; i < NET; i++) {
+      const a0 = (i / NET) * Math.PI * 2, a1 = ((i + 1) / NET) * Math.PI * 2;
+      const ring = (a, r) => P(sgn * dRim + r * Math.cos(a), r * Math.sin(a)), [x0, z0] = ring(a0, rimR), [x1, z1] = ring(a1, rimR), [n0x, n0z] = ring(a0, 0.12), [n1x, n1z] = ring(a1, 0.12);
+      tube(bf, 'plastic_bin', [x0, yr, z0], [x1, yr, z1], 0.013, 0.013, 4, { col: ORANGE, caps: false });
+      fence.quad('fence_mesh', [n0x, yr - 0.42, n0z], [n1x, yr - 0.42, n1z], [x1, yr, z1], [x0, yr, z0], { uv: [0, 0, 1.8, 0, 1.8, 8.4, 0, 8.4], col: W });
+    }
+    tube(bf, 'plastic_bin', [fx, yr + 0.02, fz], [rx, yr, rz], 0.015, 0.015, 4, { col: ORANGE, caps: false });                    // the bracket from the board to the rim
+    K.post(px, pz, 0.09, 3.75, y);
+    hoops++;
+  }
+  K.ctx.world.court = { x: pl.cx, z: pl.cz, y, w: pl.w, d: pl.d, hoops };
+  stats.court = 1; stats.hoops = hoops;
 }
 
 // ---------------------------------------------------------------------------------------------------- the viewpoint
@@ -234,6 +258,10 @@ function mirador(K, stats) {
   const pl = K.plan.plazas.find((p) => p.kind === 'mirador'); if (!pl) return;
   const P = localToWorld(pl.cx, pl.cz, pl.ry), hw = pl.w / 2, hd = pl.d / 2, y = pl.y, exits = exitsOf(K, pl);
   const b = K.b('feature', pl.cx, pl.cz), zS = hd - 0.22;
+  // the view itself: a fan opening south from the parapet, 8 m wide at the rim and about 70 degrees across, 60 m deep. flora.js plants nothing taller than a shrub in it
+  // (an eucalyptus 8 m from the edge stood in the repro shot: from the viewpoint the barrio was one white trunk and a wall of leaves, R1-002)
+  const [sx0, sz0] = P(0, hd), [sx1, sz1] = P(0, hd + 1);
+  K.ctx.world.view = { x: sx0, z: sz0, dx: sx1 - sx0, dz: sz1 - sz0, half: 0.61, reach: 60, apex: 8 };
   // balustrade along the south edge (the view): low parapet, pillars every ~3 m, open where a path crosses
   const x0 = -hw + 0.25, x1 = hw - 0.25, nP = Math.max(2, Math.round((x1 - x0) / 3.2)), step = (x1 - x0) / nP;
   const wallMat = 'plaster_rough#e3d9c6';
@@ -282,6 +310,7 @@ function mirador(K, stats) {
     K.post(px, pz, 0.16, 1.9, gy);
     K.ctx.world.payphone = { x: px, y: gy + 1.4, z: pz };
   }
+  buildTower(K, stats);                                               // R1-D01: the roofs round the plaza stand as high as the eye, so the real view is from the tower beside it
   stats.mirador = 1;
 }
 
@@ -334,7 +363,7 @@ function cross(K, stats) {
 }
 
 export function buildDress(K) {
-  const stats = { rails: 0, benches: 0, shelters: 0, shrine: 0, fenceM: 0, court: 0, mirador: 0, cross: 0, planters: 0, rings: 0 };
+  const stats = { rails: 0, benches: 0, shelters: 0, shrine: 0, fenceM: 0, court: 0, hoops: 0, mirador: 0, tower: 0, cross: 0, planters: 0, pinched: 0, rings: 0 };
   K.ctx.world.dress = stats;
   for (const f of [railings, benches, busShelter, shrine, court, mirador, pila, cross]) {
     try { f(K, stats); } catch (e) { console.error(`[dress.${f.name}]`, e); K.ctx.errors?.push({ stage: 'props', item: 'dress.' + f.name, message: String(e?.message ?? e), stack: e?.stack }); }
@@ -343,6 +372,7 @@ export function buildDress(K) {
 }
 
 // ---------------------------------------------------------------------------------------------------- planters (after the flora)
+const WAY_IN = 0.9, PINCH = 1.0;     // a planter (zone 0.675 m) stands on a way into its plaza at this distance from the way, and against a retaining wall's guard line at this one
 export function buildPlanters(K) {
   const stats = K.ctx.world.dress ?? {}, R = K.rng('planters');
   for (const [x, z, spec] of K.ctx.world.plazaTrees ?? []) {                  // a raised stone ring around each plaza tree
@@ -351,12 +381,17 @@ export function buildPlanters(K) {
     b.cyl('ground_dirt', x, y + 0.36, z, r - 0.1, 0.03, 10, { col: [0.55, 0.5, 0.45] });
     stats.rings++;
   }
+  const guards = (K.ctx.physics?.walls ?? []).filter((w) => w.id === 'guard');             // the retaining walls' invisible lines (walls.js): they exist before the props do
+  const nearGuard = (x, z, r) => guards.some((w) => segDist(x, z, [w.x1, w.z1], [w.x2, w.z2]) < r);
   for (const pl of K.plan.plazas) {
     if (pl.kind !== 'plaza') continue;
-    const P = localToWorld(pl.cx, pl.cz, pl.ry), hw = pl.w / 2 - 0.55, hd = pl.d / 2 - 0.55;
+    const P = localToWorld(pl.cx, pl.cz, pl.ry), hw = pl.w / 2 - 0.55, hd = pl.d / 2 - 0.55, wayIn = exitsOf(K, pl);
     for (const [lx, lz] of [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]]) {
       const [x, z] = P(lx, lz);
       if (!pointInPoly(pl.poly, x, z) || !K.occ.clear(x, z, 0.6, OCC.STAIR | OCC.DOOR | OCC.ROAD) || K.occ.overlaps(x, z, 0.9)) continue;
+      // a corner the street walks into, beside the end of a retaining wall: the planter and the wall's zone (0.35 m round the end of its line) shut the way between them, and everyone who
+      // cuts the corner pushes against the pair (A4's soak: 61 % of its unstick events were at the Plazoleta de los Almendros' north-west corner). The corner stays open.
+      if (wayIn(x, z, WAY_IN) && nearGuard(x, z, PINCH)) { stats.pinched++; continue; }
       const y = K.H(x, z), b = K.b('benches', x, z, { cast: false });
       b.box('plaster_rough#e8dcc4', x, y + 0.23, z, 0.85, 0.46, 0.85, { ry: pl.ry, col: W });
       b.box('ground_dirt', x, y + 0.465, z, 0.7, 0.02, 0.7, { ry: pl.ry, col: [0.5, 0.45, 0.4], skip: ['ny'] });

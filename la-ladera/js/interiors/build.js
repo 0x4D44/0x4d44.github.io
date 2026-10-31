@@ -9,16 +9,39 @@ import * as THREE from 'three';
 import { CATALOG } from './catalog.js';
 import { decalDef } from './decals.js';
 import { drawStandin, setAtlas, tintFor, u01 } from './standins.js';
+import { layoutOf } from './carcass.js';
+import { foldMaterials } from './fold.js';
+import { deferContainers } from './containers.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
 import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
+import { GARMENT_KEYS, registerGarmentAssets, garmentsOff } from './garments.js';
 
 const M = new THREE.Matrix4(), S = new THREE.Matrix4();
 const MAX_REPORTED = 12;
 
-/** Preload the GLBs of every catalogue key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). */
+const disposeParts = (parts) => { for (const p of parts) { p.geometry.dispose(); for (const g of p.tinted.values()) g.dispose(); } };
+
+/** Preload the GLBs of `names` (catalogue keys that have an asset) and add the keys that loaded and have drawable parts to `into`. A file that fails to download is a warning from the asset loader; its keys keep their stand-ins. */
+async function preloadModels(ctx, names, into) {
+  const a = ctx.assets;
+  try { await a.preload(names); } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'preload ' + String(e?.message ?? e) }); }
+  for (const n of names) {
+    const e = a.meta(n);
+    if (!e || !a.loaded?.has(e.glb)) continue;
+    try {
+      // Loading a shared file does not prove that this particular named asset exists and is drawable.
+      if (glbParts(ctx, n).length) into.add(n);
+    } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', name: n, message: 'model fallback: ' + String(e?.message ?? e) }); }
+  }
+}
+
+/** Preload the GLBs of every furniture key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). The clothes load apart (loadGarmentAssets). */
 export async function loadInteriorAssets(ctx) {
   ctx.interiorGlb = new Set();
+  // A retry may replace a previously failed model. Do not retain flattened parts from an older load.
+  for (const parts of ctx.interiorGlbParts?.values() ?? []) disposeParts(parts);
+  ctx.interiorGlbParts = new Map();
   try {
     const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
     if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
@@ -26,13 +49,45 @@ export async function loadInteriorAssets(ctx) {
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
   const a = ctx.assets;
   if (!a?.names) return;
-  const names = a.names().filter((n) => CATALOG[n]);
+  const names = a.names().filter((n) => CATALOG[n] && !CATALOG[n].garment);        // (a clothes key registered by an earlier loadGarmentAssets is not a furniture root)
   if (!names.length) return;
-  try { await a.preload(names); } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'preload ' + String(e?.message ?? e) }); }
-  for (const n of names) { const e = a.meta(n); if (e && a.loaded?.has(e.glb)) ctx.interiorGlb.add(n); }
+  await preloadModels(ctx, names, ctx.interiorGlb);
+}
+
+/**
+ * The clothes (garments.js). Their models are a library of their own (assets/models/garments, manifest.garments.json; assets/models/manifest.json does not list it), so they are registered
+ * here, each key pointed at its LOD file, and loaded into a set of their own, `ctx.garmentGlb`: `ctx.interiorGlb` stays the furniture's, one entry per key of the furniture catalogue
+ * (the furniture tests hold it to that). A record whose key is in either set draws from its model; anything else keeps its stand-in (a patch of cloth), so a file that is missing or
+ * broken costs the look of the clothes and never the room. Nothing is requested when the clothes are switched off (`?garments=0`: there are no records to draw).
+ */
+export async function loadGarmentAssets(ctx) {
+  for (const k of GARMENT_KEYS) { const parts = ctx.interiorGlbParts?.get(k); if (parts) { disposeParts(parts); ctx.interiorGlbParts.delete(k); } }
+  ctx.garmentGlb = new Set();
+  if (garmentsOff() || !registerGarmentAssets(ctx)) return;
+  await preloadModels(ctx, GARMENT_KEYS, ctx.garmentGlb);
 }
 
 const _tc = new THREE.Color();
+
+/** Reject a broken part before any vertices are appended to a building. Checked once per loaded asset. */
+function checkPart(geometry, name) {
+  const p = geometry?.attributes?.position;
+  if (!p || p.itemSize !== 3 || p.count < 3) throw new Error(`${name}: missing mesh positions`);
+  for (const [key, width] of [['position', 3], ['normal', 3], ['uv', 2], ['color', 3]]) {
+    const a = geometry.attributes[key];
+    if (!a) continue;
+    if (a.count !== p.count || a.itemSize < width) throw new Error(`${name}: invalid ${key} attribute`);
+    for (let i = 0; i < a.count; i++) for (let k = 0; k < width; k++) {
+      if (!Number.isFinite(a.getComponent(i, k))) throw new Error(`${name}: non-finite ${key}`);
+    }
+  }
+  const index = geometry.index, count = index?.count ?? p.count;
+  if (!count || count % 3) throw new Error(`${name}: invalid triangle indices`);
+  if (index) for (let i = 0; i < count; i++) {
+    const k = index.getX(i);
+    if (!Number.isInteger(k) || k < 0 || k >= p.count) throw new Error(`${name}: index outside mesh`);
+  }
+}
 
 /**
  * The drawable parts of one asset, read once from its loaded GLB (tools/blender/furn_lib.py names them `<key>-<flag>-...-<n>`):
@@ -49,22 +104,29 @@ export function glbParts(ctx, name) {
   parts = [];
   const e = ctx.assets.meta(name), gl = e && ctx.assets.loaded.get(e.glb), node = gl?.scene.getObjectByName(e.node);
   if (node) {
+    node.updateWorldMatrix(true, true);
     const inv = new THREE.Matrix4().copy(node.matrixWorld).invert(), mm = new THREE.Matrix4();
-    node.traverse((o) => {
+    try { node.traverse((o) => {
       if (!o.isMesh) return;
       const geometry = o.geometry.clone().applyMatrix4(mm.multiplyMatrices(inv, o.matrixWorld));
+      const matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      try {
+        checkPart(geometry, o.name);
+        if (!matKey || matKey === 'missing_asset' || (ctx.matlib?.has && !ctx.matlib.has(matKey))) throw new Error(`${o.name}: unknown material '${matKey}'`);
+      } catch (e) { geometry.dispose(); throw e; }
       const flags = o.name.split('-').slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
       parts.push({
-        geometry, matKey: (Array.isArray(o.material) ? o.material[0] : o.material).name || 'missing_asset', colored: !!geometry.attributes.color,
+        geometry, matKey, colored: !!geometry.attributes.color,
         tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
         ch: pick ? pick[1] : null, k: pick ? +pick[2] : 0, tinted: new Map(),
       });
-    });
+    }); } catch (e) { for (const p of parts) p.geometry.dispose(); throw e; }
     const n = {};                                                                    // alternatives per channel = highest index + 1
     for (const p of parts) if (p.ch) n[p.ch] = Math.max(n[p.ch] ?? 0, p.k + 1);
     for (const p of parts) p.choices = p.ch ? n[p.ch] : 0;
   }
-  cache.set(name, parts);
+  // Missing nodes are not cached: a later successful load can replace the stand-in.
+  if (parts.length) cache.set(name, parts);
   return parts;
 }
 
@@ -84,23 +146,25 @@ function tintedGeometry(p, tint) {
 function drawGlb(ctx, b, rec, c) {
   const parts = glbParts(ctx, rec.name);
   if (!parts.length) return 0;
-  M.makeRotationY(rec.ry ?? 0).setPosition(rec.x, rec.kind === 'ceil' ? rec.y - c.size[1] : rec.y, rec.z);       // ceiling fixtures: rec.y is the ceiling, the model stands on y = 0 like every other
+  // ceiling fixtures: rec.y is the ceiling, the model stands on y = 0 like every other; a hung garment's model hangs from y = 0 (its top edge), its record's y is its bottom
+  M.makeRotationY(rec.ry ?? 0).setPosition(rec.x, rec.kind === 'ceil' ? rec.y - c.size[1] : c.hang ? rec.y + c.size[1] : rec.y, rec.z);
   if (rec.kind === 'wall' && ((rec.w && Math.abs(rec.w - c.size[0]) > 0.02) || (rec.h && Math.abs(rec.h - c.size[1]) > 0.02))) {
     M.multiply(S.makeScale(rec.w ? rec.w / c.size[0] : 1, rec.h ? rec.h / c.size[1] : 1, 1));          // stretched hangings (clothesline)
   }
   const tint = rec.tint == null ? null : tintFor(c, rec.tint), unmade = !!rec.flags?.unmade;
   const chosen = {};
-  let n = 0;
+  const draws = [];
   for (const p of parts) {
     if (p.made && unmade) continue;
     if (p.unmade && !unmade) continue;
     if (p.magnets && !rec.flags?.magnets) continue;
     if (p.ch) { chosen[p.ch] ??= Math.floor(u01(rec.id, 11 + p.ch.charCodeAt(0)) * p.choices) % p.choices; if (chosen[p.ch] !== p.k) continue; }
     const shaded = p.tint && tint != null && p.colored;
-    b.geometry(p.matKey, shaded ? tintedGeometry(p, tint) : p.geometry, M, { col: p.tint && !p.colored && tint != null ? tint : undefined });
-    n++;
+    draws.push({ p, geometry: shaded ? tintedGeometry(p, tint) : p.geometry, col: p.tint && !p.colored && tint != null ? tint : undefined });
   }
-  return n;
+  // Prepare every selected part (including tint copies) before writing any of them.
+  for (const { p, geometry, col } of draws) b.geometry(p.matKey, geometry, M, { col });
+  return draws.length;
 }
 
 /**
@@ -114,14 +178,23 @@ export function buildInterior(ctx, bp) {
   const group = ctx.batch.group(id, { cast: false, receive: true });
   const b = group.builder;
   b.setBasePose(lot.x ?? 0, lot.y ?? 0, lot.z ?? 0, lot.rotY ?? 0);
-  const glb = ctx.interiorGlb, st = { records: recs.length, glb: 0, standin: 0, prims: 0, failed: 0 };
+  b.fronts = undefined;                                                            // the closed fronts the carcass drawer logs for containers.js (one building per call)
+  const st = { records: recs.length, glb: 0, standin: 0, prims: 0, failed: 0 };
   let reported = 0;
   for (const rec of recs) {
     const c = rec.decal ? decalDef(rec.decal) : CATALOG[rec.name];
     if (!c) { st.failed++; continue; }
     try {
       let n = 0;
-      if (glb?.has(rec.name)) n = drawGlb(ctx, b, rec, c);
+      const models = ctx.interiorGlb?.has(rec.name) ? ctx.interiorGlb : ctx.garmentGlb?.has(rec.name) ? ctx.garmentGlb : null;       // the furniture's loaded models, or the clothes'
+      if (models && !layoutOf(c)) {                     // a piece that OPENS is drawn by carcass.js (a hero GLB has no movable parts yet)
+        try { n = drawGlb(ctx, b, rec, c); }
+        catch (e) {
+          // A malformed GLB must not leave a hole in an otherwise furnished room.
+          models.delete(rec.name);
+          if (reported++ < MAX_REPORTED) (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, name: rec.name, message: 'model fallback: ' + String(e?.message ?? e) });
+        }
+      }
       if (n) st.glb++; else { n = drawStandin(b, rec, c); st.standin++; }
       st.prims += n;
     } catch (e) {
@@ -134,7 +207,10 @@ export function buildInterior(ctx, bp) {
     st.fans = buildRotors(ctx, bp, group, recs, CATALOG);
     st.tvs = buildTvGlow(ctx, bp, b, recs, CATALOG);
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'dressing ' + String(e?.message ?? e), stack: e?.stack }); }
+  st.folded = foldMaterials(b);                                                    // the rare materials move into a neighbour's mesh: fewer draw calls (fold.js)
   st.tris = b.tris; st.materials = b.accs.size;
   ctx.batch.flush(id);
+  try { st.fronts = deferContainers(ctx, bp, group, b.fronts); }                   // nothing is made now: the scan in containers.js activates the building when the player is near
+  catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'containers ' + String(e?.message ?? e), stack: e?.stack }); }
   if (bp.interior) bp.interior.stats = st;
 }

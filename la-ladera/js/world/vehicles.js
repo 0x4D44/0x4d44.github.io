@@ -4,6 +4,9 @@ import { tube, quadOut } from './mk.js';
 import { OCC } from './occupancy.js';
 import { pointAt, project } from './geom.js';
 
+/** footprints [width, length] of the placed things, the one source for their colliders and for the arrival-view test */
+export const SIZE = { car: [1.75, 3.9], buseta: [2.2, 7.5], moto: [0.62, 1.95], bike: [0.5, 1.7], cart: [1.5, 0.9], bin: [0.5, 0.6] };
+
 const rgb = (h) => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255];
 const TYRE = [0.07, 0.07, 0.08], CHROME = [0.78, 0.8, 0.82], BLACK = [0.1, 0.1, 0.11], WHITE = [1, 1, 1], PLATE = [0.96, 0.8, 0.12];
 const shade = (c, k) => [Math.min(1, c[0] * k), Math.min(1, c[1] * k), Math.min(1, c[2] * k)];
@@ -39,9 +42,30 @@ function frustum(b, mat, y0, y1, z0, z1, w0, w1, col, skipBottom = true) {
   if (!skipBottom) b.quad(mat, A[0], A[1], A[2], A[3], o);
 }
 
-function wheel(b, x, y, z, r, w) {
-  tube(b, 'tyre', [x - w / 2, y, z], [x + w / 2, y, z], r, r, 12, { col: TYRE });
-  tube(b, 'chrome', [x - w / 2 - 0.005, y, z], [x + w / 2 + 0.005, y, z], r * 0.58, r * 0.58, 8, { col: CHROME, caps: true });
+/**
+ * A wheel with its axle along x through (x,y,z): a rounded tyre (five rings make the barrel, so it is no longer a flat disc), flat sidewalls, and either a hub cap
+ * (cars, carts, bins) or `o.spokes`: a chrome rim ring, a hub and crossed spokes on both faces (motorbikes, bicycles; R1-012 "motorbikes flat slabs with disc wheels").
+ */
+function wheel(b, x, y, z, r, w, o = {}) {
+  const h = w / 2, seg = r > 0.2 ? 16 : 10, ring = [[-h, 0.86], [-h * 0.5, 0.975], [0, 1], [h * 0.5, 0.975], [h, 0.86]];
+  for (let i = 0; i + 1 < ring.length; i++) tube(b, 'tyre', [x + ring[i][0], y, z], [x + ring[i + 1][0], y, z], r * ring[i][1], r * ring[i + 1][1], seg, { col: TYRE, caps: i === 0 || i === ring.length - 2 });
+  if (!o.spokes) { tube(b, 'chrome', [x - h - 0.005, y, z], [x + h + 0.005, y, z], r * 0.58, r * 0.58, 8, { col: CHROME, caps: true }); return; }
+  const rim = r * 0.62, hub = Math.min(0.05, r * 0.16), n = r > 0.25 ? 10 : 8;
+  tube(b, 'chrome', [x - h - 0.014, y, z], [x + h + 0.014, y, z], hub, hub, 8, { col: CHROME, caps: true });                    // the hub
+  for (const s of [-1, 1]) {
+    const xs = x + s * (h + 0.004);
+    tube(b, 'chrome', [xs, y, z], [xs + s * 0.005, y, z], rim, rim * 0.9, seg, { col: CHROME, caps: false });                     // the rim: a bright ring on the black sidewall
+    for (let i = 0; i < n; i++) {                                                                                                  // crossed spokes, hub flange to rim, each one leaning a little the other way
+      const a = (i / n) * Math.PI * 2, c = (i % 2 ? 1 : -1) * 0.22, p = [xs + s * 0.006, y + Math.cos(a) * hub, z + Math.sin(a) * hub], q = [xs + s * 0.006, y + Math.cos(a + c) * rim * 0.96, z + Math.sin(a + c) * rim * 0.96];
+      tube(b, 'chrome', p, q, 0.0035, 0.0035, 3, { col: CHROME, caps: false });
+    }
+  }
+}
+
+/** A mudguard: a strip 2*hw wide arching over a wheel (axle height y, at z) at radius R from angle a0 to a1 (0 = straight up, positive = toward the front). */
+function mudguard(b, y, z, R, hw, a0, a1, col, n = 6) {
+  const P = (a, sx) => [sx * hw, y + Math.cos(a) * R, z + Math.sin(a) * R], c = [0, y, z];
+  for (let i = 0; i < n; i++) { const t0 = a0 + ((a1 - a0) * i) / n, t1 = a0 + ((a1 - a0) * (i + 1)) / n; quadOut(b, 'car_paint', P(t0, -1), P(t1, -1), P(t1, 1), P(t0, 1), c, { col }); }
 }
 
 // ---------------------------------------------------------------------------------------------------- the vehicles
@@ -89,8 +113,9 @@ export function car(K, b, x, y, z, ry, pitch, o) {
 export function moto(K, b, x, y, z, ry, pitch, o) {
   const c1 = rgb(o.hex), c2 = rgb(o.hex2 ?? 0x1c1c20), steel = [0.55, 0.57, 0.6];
   posed(K, b, x, y, z, ry, pitch, () => {
-    wheel(b, 0, 0.3, 0.66, 0.3, 0.09); wheel(b, 0, 0.3, -0.66, 0.3, 0.12);
-    tube(b, 'chrome', [0.052, 0.3, 0.66], [0.058, 0.3, 0.66], 0.12, 0.12, 12, { col: CHROME, caps: true });                   // brake disc
+    wheel(b, 0, 0.3, 0.66, 0.3, 0.09, { spokes: true }); wheel(b, 0, 0.3, -0.66, 0.3, 0.12, { spokes: true });
+    tube(b, 'chrome', [0.056, 0.3, 0.66], [0.06, 0.3, 0.66], 0.115, 0.115, 12, { col: shade(CHROME, 0.9), caps: true });       // brake disc
+    tube(b, 'chrome', [-0.074, 0.3, -0.66], [-0.078, 0.3, -0.66], 0.085, 0.085, 12, { col: shade(CHROME, 0.8), caps: true });  // rear sprocket
     // frame + engine
     tube(b, 'bumper', [0, 0.93, 0.42], [0, 0.5, -0.02], 0.03, 0.03, 5, { col: [0.16, 0.16, 0.17], caps: false });            // backbone
     tube(b, 'bumper', [0, 0.5, -0.02], [0, 0.76, -0.55], 0.028, 0.028, 5, { col: [0.16, 0.16, 0.17], caps: false });          // seat rail
@@ -113,18 +138,27 @@ export function moto(K, b, x, y, z, ry, pitch, o) {
     tube(b, 'car_paint', [0, 0.97, 0.46], [0, 0.97, 0.56], 0.09, 0.085, 10, { col: c1 });
     tube(b, 'light_head', [0, 0.97, 0.561], [0, 0.97, 0.566], 0.075, 0.075, 10, { col: WHITE });
     b.box('bumper', 0, 1.07, 0.35, 0.14, 0.08, 0.08, { col: BLACK });
-    b.box('car_paint', 0, 0.66, 0.66, 0.1, 0.03, 0.56, { col: c2 });                                                            // front fender
-    // tank, seat, side panels, tail
-    tube(b, 'car_paint', [0, 0.88, 0.4], [0, 0.84, 0.0], 0.1, 0.115, 10, { col: c1 });
-    b.box('chrome', 0, 0.98, 0.2, 0.06, 0.012, 0.06, { col: CHROME });                                                           // fuel cap
-    b.box('seat', 0, 0.84, -0.32, 0.2, 0.07, 0.6, { col: BLACK }); b.box('seat', 0, 0.87, -0.64, 0.16, 0.07, 0.24, { col: BLACK });
+    mudguard(b, 0.3, 0.66, 0.345, 0.058, -0.35, 1.25, c2);                                                                      // front mudguard, arching over the wheel
+    for (const sx of [-1, 1]) tube(b, 'chrome', [sx * 0.058, 0.64, 0.55], [sx * 0.058, 0.62, 0.62], 0.008, 0.008, 4, { col: CHROME, caps: false });   // its stays
+    // tank (a tapering teardrop, narrow at the steering head, broad where the knees grip), dual seat rising to the tail, and the two-tone bodywork under it
+    loft(b, 'car_paint', [
+      { z: 0.43, y0: 0.9, y1: 1.0, hw: 0.05 }, { z: 0.34, y0: 0.84, y1: 1.035, hw: 0.11 }, { z: 0.14, y0: 0.82, y1: 1.02, hw: 0.135 }, { z: -0.08, y0: 0.8, y1: 0.96, hw: 0.115 }, { z: -0.17, y0: 0.8, y1: 0.9, hw: 0.08 },
+    ], c1);
+    b.box('chrome', 0, 1.04, 0.2, 0.06, 0.012, 0.06, { col: CHROME });                                                           // fuel cap
+    loft(b, 'seat', [
+      { z: -0.06, y0: 0.8, y1: 0.89, hw: 0.075 }, { z: -0.22, y0: 0.79, y1: 0.905, hw: 0.115 }, { z: -0.55, y0: 0.8, y1: 0.92, hw: 0.115 }, { z: -0.78, y0: 0.82, y1: 0.935, hw: 0.085 }, { z: -0.9, y0: 0.84, y1: 0.935, hw: 0.06 },
+    ], BLACK);
+    loft(b, 'car_paint', [
+      { z: -0.1, y0: 0.58, y1: 0.795, hw: 0.1 }, { z: -0.4, y0: 0.56, y1: 0.795, hw: 0.13 }, { z: -0.75, y0: 0.64, y1: 0.815, hw: 0.105 }, { z: -0.93, y0: 0.7, y1: 0.835, hw: 0.075 },
+    ], c2);
     for (const sx of [-1, 1]) {
-      b.box('car_paint', sx * 0.1, 0.64, -0.32, 0.045, 0.2, 0.4, { col: c2 });                                                   // side panels
+      b.box('bumper', sx * 0.13, 0.55, 0.0, 0.03, 0.18, 0.26, { col: [0.2, 0.2, 0.21] });                                          // the engine side covers
       b.box('chrome', sx * 0.2, 0.3, -0.05, 0.1, 0.02, 0.05, { col: CHROME });                                                   // foot pegs
     }
-    b.box('car_paint', 0, 0.72, -0.84, 0.14, 0.03, 0.34, { col: c2 });                                                           // rear fender
-    b.box('light_tail', 0, 0.78, -1.0, 0.1, 0.05, 0.03, { col: WHITE }); b.box('sign_route', 0, 0.66, -1.01, 0.18, 0.12, 0.012, { col: PLATE });
-    tube(b, 'chrome', [0.1, 0.84, -0.72], [0.1, 0.9, -0.95], 0.012, 0.012, 4, { col: CHROME, caps: false });                    // grab rail
+    b.box('light_tail', 0, 0.78, -0.96, 0.12, 0.06, 0.03, { col: WHITE });
+    b.box('bumper', 0, 0.7, -0.98, 0.04, 0.12, 0.03, { col: BLACK });                                                            // plate bracket
+    b.box('sign_route', 0, 0.62, -1.0, 0.18, 0.12, 0.012, { col: PLATE });
+    for (const sx of [-1, 1]) { b.box('light_head', sx * 0.15, 0.95, 0.5, 0.05, 0.04, 0.05, { col: [1, 0.55, 0.1] }); b.box('light_tail', sx * 0.09, 0.74, -0.98, 0.04, 0.04, 0.04, { col: [1, 0.55, 0.1] }); }   // indicators
     // exhaust, shock, stand
     tube(b, 'chrome', [0.11, 0.33, 0.12], [0.13, 0.27, -0.35], 0.022, 0.022, 6, { col: CHROME, caps: false });
     tube(b, 'chrome', [0.13, 0.28, -0.3], [0.14, 0.4, -0.95], 0.045, 0.042, 8, { col: shade(CHROME, 0.85), caps: true });
@@ -136,11 +170,17 @@ export function moto(K, b, x, y, z, ry, pitch, o) {
 export function bicycle(K, b, x, y, z, ry, pitch, o) {
   const body = rgb(o.hex);
   posed(K, b, x, y, z, ry, pitch, () => {
-    wheel(b, 0, 0.33, 0.55, 0.33, 0.04); wheel(b, 0, 0.33, -0.55, 0.33, 0.04);
+    wheel(b, 0, 0.33, 0.55, 0.33, 0.04, { spokes: true }); wheel(b, 0, 0.33, -0.55, 0.33, 0.04, { spokes: true });
     tube(b, 'car_paint', [0, 0.33, -0.55], [0, 0.78, -0.18], 0.02, 0.02, 4, { col: body, caps: false });
     tube(b, 'car_paint', [0, 0.78, -0.18], [0, 0.85, 0.42], 0.02, 0.02, 4, { col: body, caps: false });
     tube(b, 'car_paint', [0, 0.33, 0.55], [0, 0.85, 0.42], 0.02, 0.02, 4, { col: body, caps: false });
-    b.box('seat', 0, 0.9, -0.2, 0.1, 0.04, 0.2, { col: BLACK }); b.box('chrome', 0, 0.98, 0.42, 0.5, 0.025, 0.025, { col: CHROME });
+    tube(b, 'car_paint', [0, 0.78, -0.18], [0, 0.3, -0.04], 0.02, 0.02, 4, { col: body, caps: false });                       // seat tube
+    tube(b, 'car_paint', [0, 0.85, 0.42], [0, 0.3, -0.04], 0.022, 0.022, 4, { col: body, caps: false });                      // down tube
+    tube(b, 'car_paint', [0, 0.3, -0.04], [0, 0.33, -0.55], 0.016, 0.016, 4, { col: body, caps: false });                     // chain stay
+    tube(b, 'chrome', [0, 0.78, -0.18], [0, 0.9, -0.2], 0.012, 0.012, 4, { col: CHROME, caps: false });                       // seat post
+    tube(b, 'chrome', [-0.09, 0.24, -0.04], [0.09, 0.36, -0.04], 0.01, 0.01, 4, { col: CHROME, caps: false });                // cranks
+    for (const [sx, py] of [[-1, 0.24], [1, 0.36]]) b.box('bumper', sx * 0.1, py, -0.04, 0.08, 0.018, 0.1, { col: BLACK });  // pedals
+    b.box('seat', 0, 0.91, -0.2, 0.1, 0.04, 0.2, { col: BLACK }); b.box('chrome', 0, 0.98, 0.42, 0.5, 0.025, 0.025, { col: CHROME });
   });
 }
 
@@ -179,15 +219,43 @@ export function vendorCart(K, b, x, y, z, ry, kind, r) {
     const ub = rgb(r.pick([0xd8402a, 0x2a6ab0, 0xf2c230, 0x3a9a5a]));
     tube(b, 'iron_black', [0, 0.9, -0.3], [0, 2.35, -0.3], 0.02, 0.02, 4, { col: BLACK, caps: false });
     b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.18, 12, { r1: 0.04, col: ub, caps: false });
-    b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.0, 12, { r1: 0.0, col: ub, caps: false });
+    b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.012, 12, { r1: 1.25, col: shade(ub, 0.8) });                       // the underside: a thin disc (a zero-height frustum has NaN side normals, and one NaN pixel blanks a block of the frame through the bloom blur)
   });
 }
+
+// the outline of a tied sack, bottom to neck: [height fraction, radius fraction]. It sits flat, bulges low (the weight settles), slumps in at the shoulder and is gathered into a knot.
+const SACK = [[0, 0.5], [0.12, 0.88], [0.34, 1], [0.58, 0.9], [0.78, 0.6], [0.92, 0.3], [1, 0.1]];
+
+/** A tied rubbish sack: ten sides, lumpy radius, a slumped belly and a gathered neck with a knot and a loose ear (R1-012 "rubbish bags faceted blobs": they were seven-sided cones). */
+function sack(b, cx, y, cz, s, col, r) {
+  const acc = b._acc('bag'), seg = 10, w = s * r.range(0.55, 0.7), hgt = s * r.range(0.95, 1.2), lean = r.range(-0.12, 0.12), lz = r.range(-0.12, 0.12), base = acc.pos.length / 3;
+  for (let k = 0; k < SACK.length; k++) {
+    const [t, rf] = SACK[k], slope = k + 1 < SACK.length ? (SACK[k + 1][1] - rf) / Math.max(0.01, SACK[k + 1][0] - t) : -1;
+    for (let i = 0; i <= seg; i++) {
+      const a = (i / seg) * Math.PI * 2, lump = 1 + 0.16 * Math.sin(a * 2 + k * 1.7 + cx * 9) + 0.07 * Math.sin(a * 3 + cz * 7), rr = w * rf * lump, shade = 1 + 0.6 * (lump - 1);   // lump and shade are the same at i = 0 and i = seg: the seam closes, and the creases catch the light
+      const n = [Math.cos(a), -(w / hgt) * slope, Math.sin(a)], l = Math.hypot(...n);
+      b.vert(acc, [cx + Math.cos(a) * rr + lean * t * hgt, y + t * hgt, cz + Math.sin(a) * rr + lz * t * hgt], [n[0] / l, n[1] / l, n[2] / l], i / seg, t, [Math.min(1, col[0] * shade), Math.min(1, col[1] * shade), Math.min(1, col[2] * shade)]);
+    }
+  }
+  for (let k = 0; k + 1 < SACK.length; k++) for (let i = 0; i < seg; i++) {
+    const p = base + k * (seg + 1) + i, q = p + seg + 1;
+    acc.idx.push(p, q, q + 1, p, q + 1, p + 1);
+  }
+  b.tris += (SACK.length - 1) * seg * 2;
+  const top = [cx + lean * hgt, y + hgt, cz + lz * hgt];
+  tube(b, 'bag', top, [top[0] + lean * 0.3, top[1] + 0.09, top[2] + lz * 0.3], w * 0.14, w * 0.07, 5, { col, caps: true });                      // the knot
+  b.quad('bag', [top[0], top[1] + 0.07, top[2]], [top[0] + w * 0.35, top[1] + 0.02, top[2] + w * 0.1], [top[0] + w * 0.3, top[1] - 0.05, top[2] + w * 0.12], [top[0], top[1] - 0.01, top[2]], { col });   // the loose ear
+  b.quad('bag', [top[0], top[1] - 0.01, top[2]], [top[0] + w * 0.3, top[1] - 0.05, top[2] + w * 0.12], [top[0] + w * 0.35, top[1] + 0.02, top[2] + w * 0.1], [top[0], top[1] + 0.07, top[2]], { col });
+}
+
+// bin-bag colours in LINEAR light (a hex run through rgb() is read as linear, so 0x2a5a30 came out mint): black, black, white, dark green, dark blue
+const SACKS = [[0.012, 0.012, 0.014], [0.012, 0.012, 0.014], [0.6, 0.6, 0.56], [0.025, 0.1, 0.04], [0.02, 0.04, 0.11]];
 
 export function rubbish(K, b, x, z, r) {
   const y = K.H(x, z), n = r.int(3, 6);
   for (let i = 0; i < n; i++) {
-    const px = x + r.range(-0.35, 0.35), pz = z + r.range(-0.3, 0.3), s = r.range(0.3, 0.5), col = rgb(r.pick([0x161618, 0x161618, 0xe8e8e0, 0x2a5a30]));
-    b.cyl('bag', px, y + 0.0, pz, s * 0.55, s * 0.9, 7, { r1: s * 0.28, col });
+    const px = x + r.range(-0.35, 0.35), pz = z + r.range(-0.3, 0.3), s = r.range(0.7, 1.0);
+    sack(b, px, y - 0.01, pz, s * 0.55, r.pick(SACKS), r);
   }
 }
 
@@ -245,7 +313,7 @@ export function buildVehicles(K) {
       if (!okSpot(st, x, z, x, z, 1.9, 4.1, ry)) continue;
       const taxi = rr.chance(0.18), y = H(x, z) + 0.04, pitch = pitchOf(x, z, ry);
       car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: taxi ? 0xf2c21b : rr.pick(carCols), taxi });
-      K.rect(x, z, 1.75, 3.9, ry, 1.5, y);
+      K.rect(x, z, ...SIZE.car, ry, 1.5, y, 0.05, true);                      // solid: no inside to be shut in (the taxi at (56.3, -6.8) held a walker)
       occ.take(x, z, 2.1); placed++; stats.cars++; if (taxi) stats.taxis++; rec(taxi ? 'taxi' : 'car', x, z, ry);
     }
   }
@@ -261,7 +329,7 @@ export function buildVehicles(K) {
           if (!okSpot(s1, x, z, x, z, 2.4, 7.8, ry, 0.4) || !occ.clear(x, z, 0.5, OCC.DOOR)) continue;
           const y = H(x, z) + 0.04;
           buseta(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rr.pick([0x2a6ab0, 0xd8402a, 0x3a9a5a]), stripe: 0xf2c230 });
-          K.rect(x, z, 2.2, 7.5, ry, 2.6, y); occ.take(x, z, 4); stats.busetas++; rec('buseta', x, z, ry); done = true; break;
+          K.rect(x, z, ...SIZE.buseta, ry, 2.6, y, 0.05, true); occ.take(x, z, 4); stats.busetas++; rec('buseta', x, z, ry); done = true; break;
         }
       }
     }
@@ -274,8 +342,8 @@ export function buildVehicles(K) {
     const x = lot.x + u * c + hd * s, z = lot.z - u * s + hd * c, ry = lot.rotY + Math.PI / 2 + rm.range(-0.5, 0.5);
     if (!occ.clear(x, z, 0.5, OCC.DOOR | OCC.STAIR | OCC.PLAZA | OCC.NAV | OCC.STEEP) || !occ.clear(x, z, 0, OCC.LOT) || occ.overlaps(x, z, 0.8)) continue;
     const y = H(x, z) + 0.02;
-    if (rm.chance(0.8)) { const [h1, h2] = rm.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: h1, hex2: h2 }); K.rect(x, z, 0.62, 1.95, ry, 1.0, y); stats.motos++; rec('moto', x, z, ry); }
-    else { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: rm.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, 0.5, 1.7, ry, 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
+    if (rm.chance(0.8)) { const [h1, h2] = rm.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: h1, hex2: h2 }); K.rect(x, z, ...SIZE.moto, ry, 1.0, y); stats.motos++; rec('moto', x, z, ry); }
+    else { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: rm.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, ...SIZE.bike, ry, 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
     occ.take(x, z, 0.9);
   }
   // ... and parked along the edge of every street (on the pavement strip where there is one), pointing either way
@@ -287,8 +355,8 @@ export function buildVehicles(K) {
       const x = q.x - q.tz * off * sd, z = q.z + q.tx * off * sd, ry = Math.atan2(q.tx, q.tz) + (rk.chance(0.5) ? 0 : Math.PI) + rk.range(-0.12, 0.12);
       if (!okSpot(st, x, z, x, z, 0.8, 2.0, ry, 0.4) || !occ.clear(x, z, 0.5, OCC.DOOR | OCC.NAV)) continue;
       const y = H(x, z) + 0.02, bike = rk.chance(0.12);
-      if (bike) { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rk.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, 0.5, 1.7, ry, 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
-      else { const [h1, h2] = rk.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: h1, hex2: h2 }); K.rect(x, z, 0.62, 1.95, ry, 1.0, y); stats.motos++; rec('moto', x, z, ry); }
+      if (bike) { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rk.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, ...SIZE.bike, ry, 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
+      else { const [h1, h2] = rk.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: h1, hex2: h2 }); K.rect(x, z, ...SIZE.moto, ry, 1.0, y); stats.motos++; rec('moto', x, z, ry); }
       occ.take(x, z, 1.1); placed++;
     }
   }
@@ -300,7 +368,7 @@ export function buildVehicles(K) {
     const kind = /fruit/.test(t) ? 'fruit' : rc.pick(['tinto', 'arepas']);
     if (!occ.clear(p.x, p.z, 0.4, OCC.STAIR | OCC.LOT) || occ.overlaps(p.x, p.z, 1)) continue;
     vendorCart(K, K.b('vehicles', p.x, p.z), p.x, H(p.x, p.z), p.z, p.ry + Math.PI / 2, kind, rc);
-    K.rect(p.x, p.z, 1.5, 0.9, p.ry + Math.PI / 2, 1.1); occ.take(p.x, p.z, 1.2); stats.carts++;
+    K.rect(p.x, p.z, ...SIZE.cart, p.ry + Math.PI / 2, 1.1); occ.take(p.x, p.z, 1.2); stats.carts++; rec('cart', p.x, p.z, p.ry + Math.PI / 2);
   }
   // ---- bins, rubbish sacks, gas cylinders beside shops and at corners
   const rb = R.fork('bins');
@@ -310,14 +378,14 @@ export function buildVehicles(K) {
     if (rb.chance(0.35)) {
       const u = lot.entrance.u + (rb.chance(0.5) ? 1 : -1) * (lot.w / 2 - 0.5), [x, z] = at(Math.max(-lot.w / 2 + 0.4, Math.min(lot.w / 2 - 0.4, u)));
       if (occ.clear(x, z, 0.35, OCC.DOOR | OCC.STAIR | OCC.PLAZA | OCC.NAV | OCC.STEEP) && occ.clear(x, z, 0, OCC.LOT) && !occ.overlaps(x, z, 0.5)) {
-        if (rb.chance(0.55)) { rubbish(K, K.b('vehicles', x, z, { cast: false }), x, z, rb); stats.rubbish++; }
-        else { bin(K, K.b('vehicles', x, z), x, z, lot.rotY, rb.pick([0x2f6b3a, 0x2a4a7a, 0x555a60])); K.rect(x, z, 0.5, 0.6, lot.rotY, 1.0); stats.bins++; }
+        if (rb.chance(0.55)) { rubbish(K, K.b('vehicles', x, z, { cast: false }), x, z, rb); stats.rubbish++; rec('rubbish', x, z, 0); }
+        else { bin(K, K.b('vehicles', x, z), x, z, lot.rotY, rb.pick([0x2f6b3a, 0x2a4a7a, 0x555a60])); K.rect(x, z, ...SIZE.bin, lot.rotY, 1.0); stats.bins++; rec('bin', x, z, lot.rotY); }
         occ.take(x, z, 0.5);
       }
     }
     if ((lot.shop === 'ferreteria' || lot.shop === 'tienda' || lot.shop === 'restaurante' || lot.shop === 'taller') && rb.chance(0.85)) {
       const u = lot.entrance.u + (lot.entrance.u > 0 ? -1 : 1) * (lot.w / 2 - 0.9), [x, z] = at(Math.max(-lot.w / 2 + 0.7, Math.min(lot.w / 2 - 0.7, u)));
-      if (occ.clear(x, z, 0.45, OCC.DOOR | OCC.STAIR | OCC.PLAZA | OCC.NAV | OCC.STEEP) && occ.clear(x, z, 0, OCC.LOT) && !occ.overlaps(x, z, 0.8)) { gasCylinders(K, K.b('vehicles', x, z), x, z, lot.rotY, rb); occ.take(x, z, 0.8); stats.cylinders++; }
+      if (occ.clear(x, z, 0.45, OCC.DOOR | OCC.STAIR | OCC.PLAZA | OCC.NAV | OCC.STEEP) && occ.clear(x, z, 0, OCC.LOT) && !occ.overlaps(x, z, 0.8)) { gasCylinders(K, K.b('vehicles', x, z), x, z, lot.rotY, rb); occ.take(x, z, 0.8); stats.cylinders++; rec('cylinders', x, z, lot.rotY); }
     }
   }
   ctx.world && (ctx.world.vehicles = stats);

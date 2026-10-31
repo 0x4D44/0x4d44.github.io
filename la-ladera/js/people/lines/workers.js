@@ -20,8 +20,9 @@ export default {
 
   maestra: {
     topics: ['mood', 'job', 'family', 'barrio', 'news', 'tip', 'where'],
+    act_class: [['Un momento, estamos en clase. ¿En qué le puedo ayudar?', "Just a moment, we're in class. How can I help you?"], ['Pase, pase, pero en silencio, que están haciendo una prueba.', "Come in, come in, but quietly, they're taking a test."]],
     greet_m: [['Buenos días. Voy para el colegio, hoy toca examen.', "Good morning. I'm off to school, there's an exam today."], ['¡Buenos días! Los niños ya deben estar esperando.', 'Good morning! The children must be waiting already.']],
-    greet_a: [['Buenas tardes. Acabo de salir de clase, estoy afónica de tanto hablar.', "Good afternoon. I've just come out of class, I'm hoarse from so much talking."], ['¡Buenas! Voy a calificar unos cuadernos.', "Hello! I'm going to grade some notebooks."]],
+    greet_a: [['Buenas tardes. Acabo de salir de clase, estoy afónica de tanto hablar.', "Good afternoon. I've just come out of class, I'm hoarse from so much talking.", { from: 12.8 }], ['¡Buenas! Voy a calificar unos cuadernos.', "Hello! I'm going to grade some notebooks."]],      // (out of class only once the school day is over: schedule.js SCHOOL.end)
     greet_e: [['Buenas noches. Todavía me falta preparar la clase de mañana.', "Good evening. I still have to prepare tomorrow's class."], ['Buenas noches. Esta hora es la única en que tengo paz para leer.', 'Good evening. This is the only hour I have peace to read.']],
     greet_n: [['Uy, qué hora de andar por ahí. Yo vengo de calificar hasta tarde.', "Oh, what an hour to be out. I'm coming from grading until late."]],
     again: [['Otra vez por aquí. ¿Trajo la tarea?', 'Back again. Did you bring your homework?'], ['Qué gusto ver{lo} de nuevo. Siempre hay tiempo para una pregunta.', "Nice to see you again. There's always time for a question."]],
@@ -31,7 +32,7 @@ export default {
     barrio: [['Aquí los niños aprenden a leer mirando los letreros de las tiendas. Cada calle es un salón.', 'Here children learn to read from the shop signs. Every street is a classroom.'], ['Cuando llueve, los niños llegan con los zapatos embarrados, pero con la tarea hecha.', 'When it rains the children arrive with muddy shoes, but with the homework done.']],
     news: [['El colegio prepara la feria de ciencias. Los niños ya hicieron un volcán.', 'The school is preparing the science fair. The children have already made a volcano.'], ['Hablan de pintar la escuela. Ojalá no sea solo de palabra.', "There's talk of painting the school. Hopefully it's not just talk."]],
     tip: [['Si pasa por la escuela, mire el mural del patio. Lo pintaron los niños de quinto.', 'If you pass by the school, look at the mural in the yard. The fifth-graders painted it.']],
-    bye: [['Hasta luego. ¡Y siga estudiando, que nunca es tarde!', "See you later. And keep studying, it's never too late!"], ['Que le vaya muy bien. Con permiso, que el timbre me espera.', 'Take care. Excuse me, the bell is waiting for me.']],
+    bye: [['Hasta luego. ¡Y siga estudiando, que nunca es tarde!', "See you later. And keep studying, it's never too late!"], ['Que le vaya muy bien. Con permiso, que el timbre me espera.', 'Take care. Excuse me, the bell is waiting for me.', { to: 12.8 }], ['Que le vaya muy bien. Con permiso, que me esperan unos cuadernos por calificar.', 'Take care. Excuse me, a pile of notebooks is waiting for me to grade.', { from: 12.8 }]],   // (the bell only while school is on)
   },
 
   enfermera: {
@@ -47,13 +48,13 @@ export default {
     barrio: [['Aquí casi todos los abuelos tienen la tensión alta. Les repito que caminen y coman menos sal.', 'Almost all the grandparents here have high blood pressure. I keep telling them to walk and eat less salt.'], ['Con tantas escaleras, este barrio tiene los corazones más fuertes de la ciudad.', 'With so many stairs, this barrio has the strongest hearts in the city.']],
     news: [['El sábado viene la brigada de vacunación. Avíseles a los vecinos, por favor.', 'On Saturday the vaccination drive comes. Please tell the neighbours.'], ['Con la lluvia suben los casos de gripa. Abríguese bien.', 'With the rain, flu cases go up. Wrap up well.']],
     tip: [['Si se siente mal, pase por el puesto de salud. No espere a que se ponga peor.', "If you feel unwell, go by the health post. Don't wait until it gets worse."]],
-    bye: [['Que se mejore y se cuide. Hasta luego.', 'Get well and take care. See you later.'], ['Con permiso, que me esperan en una casa. ¡Hasta luego!', "Excuse me, they're waiting for me at a house. See you later!"]],
+    bye: [['Cuídese y tome mucha agua, que el sol es duro. Hasta luego.', 'Take care and drink plenty of water, the sun is harsh. See you later.'], ['Con permiso, que me esperan en una casa. ¡Hasta luego!', "Excuse me, they're waiting for me at a house. See you later!"]],
   },
 
   mototaxista: {
     topics: ['mood', 'job', 'family', 'barrio', 'news', 'tip', 'where'],
     greet_m: [['¡Buenos días! ¿{Lo} llevo? Subo hasta la parte alta en tres minutos.', 'Good morning! Shall I take you? I get to the top in three minutes.'], ['Buenos días. La moto lista y el casco limpio, ¿para dónde va?', 'Good morning. The bike is ready and the helmet clean, where are you headed?']],
-    greet_a: [['Buenas tardes. Hoy estuvo flojo el día, ¿{lo} llevo?', 'Good afternoon. Today was slow, shall I take you?'], ['¡Buenas! Con este solazo la gente prefiere irse en moto que caminar.', 'Hey! With this strong sun people prefer a bike to walking.']],
+    greet_a: [['Buenas tardes. Hoy estuvo flojo el día, ¿{lo} llevo?', 'Good afternoon. Today was slow, shall I take you?'], ['¡Buenas! Con este solazo la gente prefiere irse en moto que caminar.', 'Hey! With this strong sun people prefer a bike to walking.', { to: 16.5 }]],
     greet_e: [['Buenas noches. A esta hora la moto es la mejor idea, con tanta escalera.', 'Good evening. At this hour the bike is the best idea, with so many stairs.'], ['Buenas noches. Ya casi cierro la jornada, pero {lo} llevo si va cerca.', "Good evening. I'm nearly done for the day, but I'll take you if it's close."]],
     greet_n: [['Uy, a esta hora la moto es lo único que sube. ¿{Lo} llevo?', 'Oh, at this hour the bike is the only thing going up. Shall I take you?']],
     again: [['Otra vez por aquí. ¿Ahora sí {lo} llevo?', 'Back again. Shall I take you this time?'], ['Ya nos vimos. La moto sigue esperando.', "We've met. The bike is still waiting."]],
@@ -103,6 +104,6 @@ export default {
     barrio: [['Esta capilla la levantamos con bazares y rifas. Cada ladrillo tiene una oración.', 'We raised this chapel with bazaars and raffles. Every brick has a prayer.'], ['En diciembre hacemos la novena con villancicos y buñuelos. Venga.', 'In December we hold the novena with carols and buñuelos. Come along.']],
     news: [['El cura dice que van a pintar la capilla. Falta la plata, pero Dios proveerá.', 'The priest says they will paint the chapel. The money is lacking, but God will provide.'], ['El domingo hay primera comunión. Los niños estrenan trajes blancos.', 'On Sunday there is first communion. The children wear new white outfits.']],
     tip: [['Entre a la capilla un momento. La luz que entra por la ventana a las cinco es un milagro.', 'Step into the chapel for a moment. The light through the window at five is a miracle.']],
-    bye: [['Dios lo bendiga, {mijo}. Que la Virgen lo acompañe.', 'God bless you, dear. May the Virgin go with you.'], ['Vaya con Dios. Y no se olvide de rezar.', "Go with God. And don't forget to pray."]],
+    bye: [['Dios {lo} bendiga, {mijo}. Que la Virgen {lo} acompañe.', 'God bless you, dear. May the Virgin go with you.'], ['Vaya con Dios. Y no se olvide de rezar.', "Go with God. And don't forget to pray."]],
   },
 };

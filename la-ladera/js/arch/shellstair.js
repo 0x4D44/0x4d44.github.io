@@ -1,6 +1,5 @@
 // Stair meshes (the dogleg core of stairs.js): treads, risers, soffits, half landings, divider, nook panel, handrails, and the balustrades
 // of every guard in the plan. Colliders are floor ramps (colliders.js); these meshes only have to agree with them to within a few cm.
-import { STAIR } from './stairs.js';
 import { lin, mulc, qd, bar, hash01 } from './mb.js';
 
 const SOFFIT = 0.19;                                           // thickness of the stair waist below the nosing line
@@ -14,7 +13,7 @@ export function buildStairs(G) {
 
 function stairCore(G, c) {
   const { S, b } = G;
-  const { FW, DIV, LH } = STAIR, { nh, rise, run, lfl, across } = c, fh = S.fh;
+  const { fw: FW, div: DIV, lh: LH, nh, rise, run, lfl, across } = c, fh = S.fh;                 // the core's own widths: a school's stair is wider than a house's
   const uB = FW + DIV, P = c.P, Sx = c.S[0], Sz = c.S[1];
   const up = [0, 1, 0], dn = [0, -1, 0];
   const treadCol = [0.92, 0.9, 0.86], riserCol = [0.8, 0.78, 0.74], soffitCol = lin(0xe9e4d6);

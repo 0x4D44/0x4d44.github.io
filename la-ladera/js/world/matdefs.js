@@ -16,14 +16,21 @@ export default {
   foliage: { color: 0xffffff, rough: 0.85, alphaTest: 0.42, side: 'double', tex: false, env: 0.35 },
   // the same atlas for low plants (tufts, reeds, shrubs, agaves, bananas, cypresses, drapes), lit as if every card faced the sky: no black back faces by night (props.js patches the normal)
   foliage_low: { color: 0xffffff, rough: 0.9, alphaTest: 0.42, side: 'double', tex: false, env: 0.3 },
-  bark_trunk: { color: 0xffffff, rough: 0.95, tex: false },
-  bark_euca: { color: 0xffffff, rough: 0.95, tex: false },
-  bark_palm: { color: 0xffffff, rough: 0.9, tex: false },
+  // the tree crowns (eucalyptus, cypress, broadleaf almendro): photographed sprays cut out on assets/textures/foliage_cards.png, 4 x 2 cells of 512 px (world/cards.js knows the cells). Unit uvs (the
+  // sheet is clamped, never repeated), a 0.5 cut-out: the sheet's alpha is a hard mask, so the cut-out keeps its area down the mip chain. No `desc`: the texture factory leaves it alone.
+  foliage_cards: { color: 0xffffff, rough: 0.85, alphaTest: 0.5, side: 'double', uv: 'unit', tex: 'foliage_cards', env: 0.35 },
+  // trunks wear A1's bark swatches (assets/textures): the tubes carry UVs in swatch repeats, one wrap round the trunk, and a vertex tint that darkens the foot and mottles the rings
+  // (flora.js, mk.js tube turns / vper / v0). No `desc`, so the texture factory leaves them alone.
+  bark_trunk: { color: 0xffffff, rough: 0.95, tex: 'bark_dark' },
+  bark_euca: { color: 0xffffff, rough: 0.95, tex: 'bark_eucalyptus' },
+  bark_palm: { color: 0xffffff, rough: 0.9, tex: 'bark_dark' },
+  trunk_banana: { color: 0xffffff, rough: 0.8, tex: 'trunk_banana' },
   pot_clay: { color: 0xffffff, rough: 0.9, tex: false },
 
-  // ---- painted signage: ONE atlas (murals, gate boards, plaques, hand signs, chalk) painted at boot by world/signs.js and bound in props.js.
-  // Alpha-tested so the chalk hopscotch needs no blending; A2's `sign_atlas` (shop fascias) is a different material with its own canvas.
+  // ---- painted signage: two atlases painted at boot by world/signs.js and bound in props.js: boards, plaques, chalk (world_sign) and the three wall murals (world_mural).
+  // Alpha-tested so the chalk hopscotch and the ragged edge of a mural need no blending; A2's `sign_atlas` (shop fascias) is a different material with its own canvas.
   world_sign: { color: 0xffffff, rough: 0.78, alphaTest: 0.4, tex: false, env: 0.4 },
+  world_mural: { color: 0xffffff, rough: 0.92, alphaTest: 0.4, tex: false, env: 0.15 },
   // animal parts and cloth for the living props (life.js): flat colours tinted per vertex
   fur: { color: 0xffffff, rough: 0.95, tex: false },
 

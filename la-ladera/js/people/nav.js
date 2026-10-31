@@ -34,7 +34,7 @@ export class NavGraph {
   pos(i) { return this.nodes[i]; }
   get size() { return this.nodes.length; }
 
-  /** Nearest node to (x,z) within maxD (default: unlimited); optional y penalty so stairs above/below are not mixed up. */
+  /** Nearest node to (x,z) within maxD (default: unlimited); optional y penalty (1 m of height counts as 3 m of distance) so a person on the street below a plaza is not given the plaza above. */
   nearest(x, z, maxD = Infinity, y = null) {
     let best = -1, bd = maxD * maxD;
     const r = Math.min(40, Math.max(1, Math.ceil(Math.min(maxD, 200) / this.cell)));
@@ -43,7 +43,7 @@ export class NavGraph {
       for (let i = cx - ring; i <= cx + ring; i++) for (let j = cz - ring; j <= cz + ring; j++) {
         if (Math.max(Math.abs(i - cx), Math.abs(j - cz)) !== ring) continue;
         const c = this.grid.get(i * 100003 + j); if (!c) continue;
-        for (const n of c) { const N = this.nodes[n]; let d = dist2(x, z, N.x, N.z); if (y != null) d += ((N.y - y) * 1.5) ** 2; if (d < bd) { bd = d; best = n; } }
+        for (const n of c) { const N = this.nodes[n]; let d = dist2(x, z, N.x, N.z); if (y != null) d += ((N.y - y) * 3) ** 2; if (d < bd) { bd = d; best = n; } }
       }
       if (best >= 0 && ring * this.cell > Math.sqrt(bd) + this.cell) break;
     }

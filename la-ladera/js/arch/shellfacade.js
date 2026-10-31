@@ -3,9 +3,10 @@
 // boxes, painted ghost signs and posters, and the roof kit (water tanks, dishes, antennas, pigeon lofts, laundry lines, rebar stubs). Chapel,
 // school and clinic get their identity pieces (bell gable, cross, flag). Every choice is a hash of the building id, so no two neighbours repeat.
 // Draw-call diet: only materials the shell already uses, plus `sign_atlas` (one canvas for all lettering, see signs.js).
-import { lin, mulc, mixc, qd, hash01 } from './mb.js';
+import { lin, mulc, mixc, qd, hash01, triFacing, bar } from './mb.js';
 import { CASETA_H } from './roof.js';
-import { signText, signColours, hexToLin, GHOST_COUNT, POSTER_COUNT } from './signs.js';
+import { signText, signColours, hexToLin, GHOST_COUNT, posterSetOf, handPainted, HAND_BG } from './signs.js';
+import { weatherFacade } from './weather.js';
 
 const UP = [0, 1, 0];
 const crs = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
@@ -15,6 +16,16 @@ const SIDES = ['front', 'back', 'left', 'right'];
 const AWNING = [[0xb8201c, 0xf4ead0], [0x1f5fa8, 0xf4efe0], [0x2e8b57, 0xf4efe0], [0xf2c200, 0xb8201c], [0x7a2f8c, 0xf2e8d0], [0xe8702a, 0xf4efe0], [0x0e7c86, 0xf4efe0]];
 const CLOTH = [0xe8e2d0, 0xc8281e, 0x2f6fbf, 0xf2c200, 0xe07ab0, 0x3aa89a, 0xf4f4f0, 0x8a5a34, 0x7a2f8c, 0xe8702a];
 const hx = (n) => lin(n);
+/** Shop type -> what its owner hangs on a rail beside the shutter: [colours, item width, item height]. Types not listed hang nothing. */
+const GOODS = {
+  tienda: [[0xe8702a, 0xf2c200, 0xc8281e, 0x2f6fbf, 0x2e8b57], 0.11, 0.26],        // bags of snacks
+  zapateria: [[0x3a2a1e, 0x6b4426, 0xb8201c, 0xe8e2d0], 0.12, 0.2],               // pairs of shoes
+  modista: [[0xe07ab0, 0x3aa89a, 0xf4f4f0, 0x7a2f8c, 0xf2c200], 0.2, 0.5],         // garments
+  fruver: [[0xe8702a, 0xc8281e, 0x8fbf3a, 0xf2c200], 0.14, 0.2],                   // nets of fruit
+  carniceria: [[0x9a2a24, 0xc65a4a, 0xe0b8a8], 0.1, 0.34],                         // sausages and cuts
+  ferreteria: [[0x45494c, 0x8a5a34, 0xb8201c, 0x9aa0a4], 0.1, 0.32],              // tools and rope
+  papeleria: [[0xf2c200, 0x2f6fbf, 0xc8281e, 0x2e8b57], 0.12, 0.2],               // notebooks and balloons
+};
 
 /** Frames of the four exterior planes: outward normal, plane offset, span, and (u, y, off) -> local point. u runs along x (front/back) or z (left/right). */
 function frames(S) {
@@ -56,17 +67,18 @@ function makeKit(G) {
     shopDoor, mainDoor, kind, finished, shops, flats, inst, terrace, trimCol,
     courses: !finished || inst ? 'none' : h(1) < 0.5 ? 'slab' : h(1) < 0.8 ? 'cornice' : 'none',
     pilasters: finished && terrace && h(2) < 0.32,
-    awning: shops && h(3) < 0.62, awnPair: AWNING[Math.floor(h(4) * AWNING.length) % AWNING.length],
+    awning: shops && h(3) < 0.62, awnTin: h(33) < 0.3, awnPair: AWNING[Math.floor(h(4) * AWNING.length) % AWNING.length],
     canopy: !shops && !!mainDoor && finished && h(5) < 0.35,
     blade: shops && h(6) < 0.55, bladeEnd: h(7) < 0.5 ? -1 : 1,
     balconies: finished ? (flats ? Math.max(nb, S.F > 2 ? 2 * (S.F - 1) : 2) : nb) : 0, railStyle: h(8) < 0.5 ? 'bars' : h(8) < 0.78 ? 'mixed' : 'solid',
-    planters: h(9) < 0.6, laundry: h(10) < 0.4, ac: finished && (flats || inst || shops) ? (h(11) < 0.55 ? 1 + Math.floor(h(12) * 3) : 0) : (h(11) < 0.15 ? 1 : 0),
-    pipe: finished && h(13) < 0.5, pipeSide: h(14) < 0.5 ? -1 : 1, meter: finished && !!mainDoor && h(15) < 0.7,
-    poster: finished && shops && h(16) < 0.6, ghost: finished && h(17) < 0.38, ghostIdx: Math.floor(h(18) * GHOST_COUNT), posterIdx: Math.floor(h(19) * POSTER_COUNT),
+    planters: h(9) < 0.6, laundry: h(10) < 0.4, ac: kind === 'chapel' ? 0 : finished && (flats || inst || shops) ? (h(11) < 0.8 ? 1 + Math.floor(h(12) * 3) : 0) : (h(11) < 0.4 ? 1 : 0),
+    goods: shops && !!GOODS[lot.shop] && h(30) < 0.55,
+    pipe: finished && h(13) < 0.5, pipeSide: h(14) < 0.5 ? -1 : 1, meter: finished && !!mainDoor && h(15) < 0.85, cable: finished && !inst && h(36) < 0.85, meterN: flats ? 2 + Math.floor(h(16) * 3) : h(16) < 0.25 ? 2 : 1,
+    posters: finished ? posterSetOf(G.ctx, lot) : [], ghost: finished && h(17) < 0.38, ghostIdx: Math.floor(h(18) * GHOST_COUNT),
     tank: terrace && (kind === 'apartments' ? h(20) < 0.95 : h(20) < 0.6), tankBlue: h(21) < 0.4, dish: h(22) < 0.5, antenna: h(23) < 0.35, loft: h(24) < 0.14,
     line: terrace && h(25) < 0.55, rebar: finished && terrace && !inst && h(26) < 0.36,
     mirador: finished && !inst && h(27) < 0.4,                                                            // this building closes some of its balconies in glass
-    cuarto: finished && terrace && !inst && kind !== 'apartments' && h(28) < 0.6 && !S.roofLayer?.caseta && !S.roofWalkable,   // a room on the unreachable roof, set back from the street
+    cuarto: finished && terrace && !inst && kind !== 'apartments' && h(28) < 0.6 && !S.roofLayer?.caseta && !S.roofWalkable && !S.patios.length,   // a room on the unreachable roof, set back from the street (not over a patio)
   };
 }
 
@@ -110,6 +122,14 @@ function awning(G, kit) {
   if (d && kit.awning && kit.limit >= d.h + 0.4) {
     const hh = (n) => hash01(G.bp.id, 430 + n), ya = d.h + 0.42, drop = 0.34 + 0.06 * hh(1), proj = 0.62 + 0.28 * hh(2);
     const w = Math.min(d.w + 0.9, S.W - 0.3), ua = clamp(d.x - w / 2, -S.W / 2 + 0.12, S.W / 2 - 0.12 - w), ub = ua + w;
+    if (kit.awnTin) {                                                           // a lean-to of zinc sheet instead of striped cloth: one grey slope, a lip, two arms (no new material)
+      const tp = proj + 0.3, td = drop + 0.14, zinc = mixc(hx(0x9aa0a4), G.fs.trim, 0.12), A = [ua, ya, D2 + 0.01], B = [ub, ya, D2 + 0.01], C = [ub, ya - td, D2 + tp], E = [ua, ya - td, D2 + tp];
+      qd(b, 'door_metal', A, B, C, E, [0, tp, td], { col: zinc }); qd(b, 'door_metal', A, B, C, E, [0, -tp, -td], { col: mulc(zinc, 0.55) });
+      b.box('rail_metal', (ua + ub) / 2, ya - td - 0.03, D2 + tp, w, 0.06, 0.04, { col: hx(0x2b2e31) });
+      for (const u of [ua + 0.04, ub - 0.04]) b.box('rail_metal', u, ya - td * 0.5 - 0.1, D2 + tp * 0.5, 0.025, 0.025, tp, { col: hx(0x2b2e31) });
+      G.rec('awning', 'front', ua, ub, ya - td - 0.06, ya, tp, { style: 'tin' });
+      return;
+    }
     const n = Math.max(4, Math.round(w / 0.2) & ~1), [c0, c1] = kit.awnPair.map(hx), want = [0, proj, drop], under = [0, -proj, -drop];
     for (let i = 0; i < n; i++) {
       const u0 = ua + (w * i) / n, u1 = ua + (w * (i + 1)) / n, col = i % 2 ? c1 : c0;
@@ -132,7 +152,7 @@ function awning(G, kit) {
 /** Where the lettered fascia goes (over the shop shutter, else the main door); balconies keep clear of its span. */
 function signGeo(G, kit) {
   const { S, lot } = G, t = signText(lot), d = kit.shopDoor ?? kit.mainDoor;
-  if (!t || !d) return null;
+  if (!t || !d || kit.kind === 'chapel') return null;                              // (a chapel has its name painted on the wall instead of a shop board: `chapel`)
   const shop = d.kind === 'shutter', y0 = d.h + (shop ? 0.42 : 0.4);
   // 4:1 boards; under a low roof (a one-storey shop, the gable end of a kiosk) the board shrinks to fit between the shutter cassette and the top of the wall
   let bh = clamp(shop ? d.w + 1.1 : 2.8, 1.8, Math.min(3.9, S.W - 0.4)) / 4, bw = bh * 4, u = d.x;
@@ -148,11 +168,12 @@ function signGeo(G, kit) {
 function signs(G, kit) {
   const { S, lot } = G, A = G.ctx.signAtlas, sg = kit.sign;
   if (!sg) return;
-  const { t, d, bw, bh, u, y } = sg, c = signColours(lot), flat = hexToLin(c.bg), D2 = S.D / 2;
-  fbox(G, 'front', u, y, 0.03, bw + 0.1, bh + 0.1, 0.06, 'frame_paint', mulc(G.fs.metal, 1.3));
+  const { t, d, bw, bh, u, y } = sg, c = signColours(lot), D2 = S.D / 2, hand = handPainted(lot), flat = hexToLin(hand ? HAND_BG : c.bg);
+  // a hand-painted name is on a whitewashed render panel, not in a metal frame: a thin plaster slab (proud of the string course) with the lettering on it
+  if (hand) fbox(G, 'front', u, y, 0.025, bw + 0.08, bh + 0.08, 0.05, 'plaster_a', hexToLin(HAND_BG)); else fbox(G, 'front', u, y, 0.03, bw + 0.1, bh + 0.1, 0.06, 'frame_paint', mulc(G.fs.metal, 1.3));
   const rect = A?.uv?.[`board:${lot.id}`] ?? null;
-  plate(G, 'sign_atlas', [u, y, D2 + 0.065], [0, 0, 1], bw, bh, rect ? [1, 1, 1] : flat, rect);
-  G.rec('sign', 'front', sg.u0, sg.u1, y - bh / 2 - 0.05, sg.top, 0.07);
+  plate(G, 'sign_atlas', [u, y, D2 + (hand ? 0.056 : 0.065)], [0, 0, 1], bw, bh, rect ? [1, 1, 1] : flat, rect);
+  G.rec('sign', 'front', sg.u0, sg.u1, y - bh / 2 - 0.05, sg.top, hand ? 0.06 : 0.07, hand ? { hand: true } : undefined);
   const ubl = kit.bladeEnd * (S.W / 2 - 0.22), ybl = Math.min(d.h + 0.95, kit.limitAt(ubl - 0.05, ubl + 0.05) - 0.42);   // a blade sign must clear the shutter cassette and stay under the wall top
   if (kit.blade && t.blade && !S.party[kit.bladeEnd < 0 ? 'left' : 'right'] && ybl - 0.3 >= d.h + 0.33) {                  // blade sign sticking out of the facade at one end
     const ub = ubl, yb = ybl, bz = 0.62, br = A?.uv?.[`blade:${lot.id}`] ?? null, col = br ? [1, 1, 1] : flat;
@@ -235,24 +256,84 @@ function balconies(G, kit) {
 }
 
 // ---- things stuck to the wall ----------------------------------------------------------------------------------------------------------------
+/** The paint of an air-conditioner: a white that has seen some years (twice as likely), cream, grey, yellowed, brown. */
+const AC_COL = [[0.86, 0.87, 0.86], [0.86, 0.87, 0.86], [0.84, 0.8, 0.7], [0.66, 0.68, 0.7], [0.78, 0.74, 0.58], [0.58, 0.5, 0.42]];
+/** The look of one air-conditioner, a hash of its window's id: a split condenser, a compact one or a boxed window unit; its colour; and whether a line-set runs up the wall from it. */
+export function acLook(id) {
+  const t = hash01(String(id), 33);
+  return { type: t < 0.5 ? 'split' : t < 0.78 ? 'mini' : 'window', col: AC_COL[Math.floor(hash01(String(id), 34) * AC_COL.length) % AC_COL.length], lineSet: hash01(String(id), 35) < 0.6 };
+}
+/** How far a unit's body reaches below its mounting height (`acUnit`'s `y0`), by kind. */
+const AC_FOOT = { split: 0.37, mini: 0.32, window: 0.4 };
+/** The bare wall a unit keeps between its foot and a shop board under it, and how far up the wall it may climb to find that room. */
+const AC_CLEAR = 0.45, AC_LIFT = 0.8;
+/** A round fan opening on the front: a dark eight-sided disc of radius r at depth `o` from the wall, and a lighter hub 4 mm in front of it. */
+function fan(G, u, y, o, r, dark, hub) {
+  for (const [rr, off, col] of [[r, o, dark], [r * 0.26, o + 0.004, hub]]) {
+    const c = G.FR.front.at(u, y, off), p = (i) => [c[0] + Math.cos((i / 8) * Math.PI * 2) * rr, c[1] + Math.sin((i / 8) * Math.PI * 2) * rr, c[2]];
+    for (let i = 0; i < 8; i++) triFacing(G.b, 'rail_metal', c, p(i), p(i + 1), [0, 0, 1], { col });
+  }
+}
+/** Draw one unit centred `u` along the front at height `y`; returns its half width. `toward` (+1 / -1) is the way to the window it serves (the line-set climbs on that side). */
+function acUnit(G, u, y, look, toward, busy) {
+  const { type, col } = look, dark = hx(0x303336), brk = hx(0x2b2e31), hub = hx(0x8a8f94);
+  let hw = 0.4, y0 = y - 0.37;
+  if (type === 'split') {                                                           // the condenser: a box with a round fan behind a dark guard, a louvred vent strip, two brackets under it
+    fbox(G, 'front', u, y, 0.19, 0.8, 0.56, 0.3, 'door_metal', col);
+    fan(G, u - 0.13, y, 0.345, 0.19, dark, hub);
+    fbox(G, 'front', u + 0.27, y, 0.345, 0.18, 0.4, 0.01, 'rail_metal', hx(0x45494c));
+    for (let i = 0; i < 4; i++) plate(G, 'door_metal', G.FR.front.at(u + 0.27, y - 0.15 + i * 0.1, 0.353), [0, 0, 1], 0.16, 0.03, mulc(col, 0.92));          // slats of the casing's colour over the dark vent
+    for (const sg of [-1, 1]) fbox(G, 'front', u + sg * 0.3, y - 0.34, 0.14, 0.04, 0.04, 0.28, 'rail_metal', brk);
+  } else if (type === 'mini') {                                                     // a compact condenser: a small box with a round fan (an eight-sided disc and its hub), two brackets
+    hw = 0.34; y0 = y - 0.32;
+    fbox(G, 'front', u, y, 0.14, 0.58, 0.46, 0.22, 'door_metal', col);
+    fan(G, u - 0.04, y, 0.255, 0.17, dark, hub);
+    for (const sg of [-1, 1]) fbox(G, 'front', u + sg * 0.22, y - 0.28, 0.12, 0.04, 0.04, 0.24, 'rail_metal', brk);
+  } else {                                                                          // a window unit built into the wall: a box with louvres and a panel, a rendered band round the hole, a drip tube
+    hw = 0.36; y0 = y - 0.4;
+    fbox(G, 'front', u, y, 0.17, 0.66, 0.42, 0.34, 'door_metal', col);
+    const P = (dx, dy, w, h, c, o) => plate(G, 'rail_metal', G.FR.front.at(u + dx, y + dy, o), [0, 0, 1], w, h, c);
+    P(-0.05, 0, 0.5, 0.3, dark, 0.345);
+    for (let i = 0; i < 4; i++) plate(G, 'door_metal', G.FR.front.at(u - 0.05, y - 0.105 + i * 0.07, 0.348), [0, 0, 1], 0.5, 0.04, mulc(col, 0.95));          // 4 cm slats of the casing's own colour over the dark opening: they still read as slats from the street
+    P(0.26, 0.1, 0.1, 0.07, hx(0x4a4e52), 0.345);
+    for (const [dx, dy, w, h] of [[0, 0.255, 0.74, 0.05], [0, -0.255, 0.74, 0.05], [-0.345, 0, 0.05, 0.46], [0.345, 0, 0.05, 0.46]]) plate(G, 'plaster_a', G.FR.front.at(u + dx, y + dy, 0.012), [0, 0, 1], w, h, [0.72, 0.7, 0.66]);
+    const t = G.FR.front.at(u + 0.26, y - 0.4, 0.05); G.b.cyl('tank_plastic', t[0], t[1], t[2], 0.012, 0.19, 5, { col: hx(0xdcdad0), caps: false });
+  }
+  let y1 = y + 0.28;
+  if (type === 'split' && look.lineSet) {                                           // the refrigerant line-set: a white duct up the wall toward the window, ending in a hole
+    const up = u + toward * 0.28;
+    if (!busy('front', up - 0.08, up + 0.08, y + 0.28, y + 0.72)) {
+      fbox(G, 'front', up, y + 0.5, 0.03, 0.055, 0.44, 0.03, 'door_metal', mulc(col, 1.04), ['nz']);
+      plate(G, 'rail_metal', G.FR.front.at(up, y + 0.69, 0.047), [0, 0, 1], 0.07, 0.07, hx(0x1a1b1c));
+      y1 = y + 0.72;
+    }
+  }
+  return { hw, y0, y1 };
+}
+
 function wallFurniture(G, kit) {
   const { S, b, bp, ctx } = G, D2 = S.D / 2, A = ctx.signAtlas, hh = (n) => hash01(bp.id, 450 + n);
-  const busy = (side, u0, u1, y0, y1) => bp.windows.some((w) => w.side === side && (w.z !== undefined) && (side === 'front' || side === 'back' ? w.x : w.z) + w.w / 2 + 0.2 > u0 && (side === 'front' || side === 'back' ? w.x : w.z) - w.w / 2 - 0.2 < u1 && w.floor * S.fh + w.y + w.h + 0.2 > y0 && w.floor * S.fh + w.y - 0.2 < y1)
-    || bp.doors.some((d) => d.ext && d.side === side && (side === 'front' || side === 'back' ? d.x : d.z) + d.w / 2 + 0.2 > u0 && (side === 'front' || side === 'back' ? d.x : d.z) - d.w / 2 - 0.2 < u1 && d.floor * S.fh + d.h + 0.2 > y0 && d.floor * S.fh - 0.2 < y1);
+  const busy = (side, u0, u1, y0, y1, every) => bp.windows.some((w) => w.side === side && (w.z !== undefined) && (side === 'front' || side === 'back' ? w.x : w.z) + w.w / 2 + 0.2 > u0 && (side === 'front' || side === 'back' ? w.x : w.z) - w.w / 2 - 0.2 < u1 && w.floor * S.fh + w.y + w.h + 0.2 > y0 && w.floor * S.fh + w.y - 0.2 < y1)
+    || bp.doors.some((d) => d.ext && d.side === side && (side === 'front' || side === 'back' ? d.x : d.z) + d.w / 2 + 0.2 > u0 && (side === 'front' || side === 'back' ? d.x : d.z) - d.w / 2 - 0.2 < u1 && d.floor * S.fh + d.h + 0.2 > y0 && d.floor * S.fh - 0.2 < y1)
+    || G.recs.some((r) => r.side === side && (every || ['ac', 'meter', 'pipe', 'poster', 'goods'].includes(r.kind)) && r.u1 + 0.05 > u0 && r.u0 - 0.05 < u1 && r.y1 > y0 && r.y0 < y1);   // what this function already put up (`every`: whatever is on the wall)
   // split air-conditioner condensers under upper (or institution ground-floor) windows
   let nac = 0;
   const wins = bp.windows.filter((w) => w.side === 'front' && (w.floor >= 1 || kit.inst) && w.w >= 0.9 && !(G.balc ?? []).some((q) => q.w === w)).sort((p, q) => hash01(p.id, 31) - hash01(q.id, 31));
+  /** The top of the shop board (or blade) that hangs under a unit centred `uu` whose foot is at `yb`, or -Infinity. A unit keeps AC_CLEAR of bare wall above it: a box never sits on a board, and the drip has room to run. */
+  const boardUnder = (uu, yb) => G.recs.reduce((m, r) => (r.side === 'front' && (r.kind === 'sign' || r.kind === 'blade') && r.u1 + 0.05 > uu - 0.45 && r.u0 - 0.05 < uu + 0.45 && r.y0 < yb ? Math.max(m, r.y1) : m), -Infinity);
   for (const w of wins) {
     if (nac >= kit.ac) break;
-    const yk = w.floor * S.fh, y = yk + 0.95, sgn = hash01(w.id, 32) < 0.5 ? -1 : 1;
-    // beside the window (clear of its 0.2 m margin and of every other opening), on whichever side is free
-    const u = [sgn, -sgn].map((s) => clamp(w.x + s * (w.w / 2 + 0.67), -S.W / 2 + 0.55, S.W / 2 - 0.55)).find((uu) => !busy('front', uu - 0.45, uu + 0.45, y - 0.4, y + 0.4));
-    if (u === undefined) continue;
-    fbox(G, 'front', u, y, 0.19, 0.8, 0.56, 0.3, 'door_metal', [0.86, 0.87, 0.86]);
-    const fp = G.FR.front.at(u - 0.13, y, 0.345); plate(G, 'rail_metal', fp, [0, 0, 1], 0.38, 0.38, hx(0x303336));
-    fbox(G, 'front', u + 0.27, y, 0.345, 0.18, 0.4, 0.01, 'rail_metal', hx(0x45494c));
-    for (const sg of [-1, 1]) fbox(G, 'front', u + sg * 0.3, y - 0.34, 0.14, 0.04, 0.04, 0.28, 'rail_metal', hx(0x2b2e31));
-    G.rec('ac', 'front', u - 0.4, u + 0.4, y - 0.37, y + 0.28, 0.35);
+    const yk = w.floor * S.fh, sgn = hash01(w.id, 32) < 0.5 ? -1 : 1, look = acLook(w.id), foot = AC_FOOT[look.type];
+    // beside the window (clear of its 0.2 m margin and of every other opening), on whichever side is free, at sill height or as far up the wall as the board under it makes it
+    let at = null;
+    for (let lift = 0; lift < AC_LIFT + 1e-9 && !at; lift += 0.1) {
+      const y = yk + 0.95 + lift;
+      const u = [sgn, -sgn].map((s) => clamp(w.x + s * (w.w / 2 + 0.67), -S.W / 2 + 0.55, S.W / 2 - 0.55)).find((uu) => !busy('front', uu - 0.45, uu + 0.45, y - 0.4, y + 0.4) && boardUnder(uu, y - foot) + AC_CLEAR <= y - foot + 1e-9);
+      if (u !== undefined) at = { u, y };
+    }
+    if (!at) continue;
+    const { u, y } = at, { hw, y0, y1 } = acUnit(G, u, y, look, w.x > u ? 1 : -1, busy);
+    G.rec('ac', 'front', u - hw, u + hw, y0, y1, 0.35, { look: look.type, col: look.col.map((c) => +c.toFixed(2)) });
     nac++;
   }
   // drainpipe at one end of the front (and its brackets)
@@ -264,27 +345,63 @@ function wallFurniture(G, kit) {
       G.rec('pipe', 'front', u - 0.05, u + 0.05, 0.12, top, 0.1);
     }
   }
-  // electricity meter box and its conduit beside the door
-  if (kit.meter && kit.mainDoor) {
-    const m = kit.mainDoor, sg = hash01(bp.id, 460) < 0.5 ? -1 : 1, u = m.x + sg * (m.w / 2 + 0.42);
-    if (Math.abs(u) < S.W / 2 - 0.3 && !busy('front', u - 0.2, u + 0.2, 1.0, 2.0)) {
-      const cTop = Math.min(2.75, kit.limitAt(u - 0.15, u + 0.15)), cLen = cTop - 1.7;  // the conduit runs up to the eaves and ends under the wall top
-      fbox(G, 'front', u, 1.5, 0.07, 0.3, 0.4, 0.14, 'door_metal', [0.78, 0.8, 0.8]); fbox(G, 'front', u, 1.5, 0.15, 0.2, 0.28, 0.02, 'rail_metal', hx(0x3a3d40));
-      fbox(G, 'front', u, 1.7 + cLen / 2, 0.03, 0.03, cLen, 0.03, 'rail_metal', hx(0x25272a));
-      G.rec('meter', 'front', u - 0.15, u + 0.15, 1.3, cTop, 0.15);
+  // the shop's stock hung out beside the shutter: a rail on the wall and bags / shoes / garments / nets on it, on the side with more wall
+  if (kit.goods && kit.shopDoor) {
+    const d = kit.shopDoor, [cols, iw, ih] = GOODS[G.lot.shop], yR = 1.95, n0 = 4 + Math.floor(hh(40) * 3);
+    const side = [-1, 1].map((sg) => ({ sg, room: sg < 0 ? d.x - d.w / 2 + S.W / 2 : S.W / 2 - d.x - d.w / 2 })).sort((p, q) => q.room - p.room || p.sg - q.sg);
+    for (const { sg, room } of side) {
+      const railW = Math.min(0.7, room - 0.22 - 0.12);                           // from the shutter surround (0.22 m) to the corner (0.12 m)
+      if (railW < 0.4) continue;
+      const u = d.x + sg * (d.w / 2 + 0.22 + railW / 2), n = Math.max(3, Math.round((n0 * railW) / 0.7));
+      if (busy('front', u - railW / 2, u + railW / 2, yR - ih - 0.1, yR + 0.08)) continue;
+      b.box('rail_metal', ...G.FR.front.at(u, yR, 0.07), railW, 0.02, 0.03, { col: hx(0x2b2e31) });
+      for (const x of [-railW / 2 + 0.03, railW / 2 - 0.03]) fbox(G, 'front', u + x, yR - 0.02, 0.035, 0.03, 0.05, 0.05, 'rail_metal', hx(0x2b2e31));
+      for (let i = 0; i < n; i++) {
+        const c = hx(cols[Math.floor(hh(41 + i) * cols.length) % cols.length]), w = iw * (0.85 + 0.3 * hh(50 + i)), hgt = ih * (0.8 + 0.4 * hh(60 + i)), x = -railW / 2 + 0.07 + ((railW - 0.14) * (i + 0.5)) / n;
+        fbox(G, 'front', u + x, yR - 0.05 - hgt / 2, 0.1, Math.min(w, (railW - 0.14) / n), hgt, 0.05, 'plaster_a', c);
+      }
+      G.rec('goods', 'front', u - railW / 2, u + railW / 2, yR - ih * 1.2 - 0.05, yR + 0.04, 0.14, { shop: G.lot.shop });
+      break;
     }
   }
-  // posters beside the shop shutter, and a painted ghost sign on a blank upper wall
-  if (kit.poster && kit.shopDoor) {                                               // bills pasted beside the shutter: toward the middle of the facade first, else the other side
-    const d = kit.shopDoor, toward = d.x > 0 ? -1 : 1;
+  // electricity meter box and its conduit beside the door: one box on a house (a pair now and then), a bank of 2-4 on a block of flats, one per household
+  if (kit.meter && kit.mainDoor) {
+    const m = kit.mainDoor, gap = 0.34, uAt = (sg) => m.x + sg * (m.w / 2 + 0.42);
+    const hold = (sg) => { let k = kit.meterN; while (k > 1 && Math.abs(uAt(sg) + sg * (k - 1) * gap) >= S.W / 2 - 0.3) k--; return k; };      // as many as the wall beside the door holds
+    const pref = hash01(bp.id, 460) < 0.5 ? -1 : 1, sg = hold(-pref) > hold(pref) ? -pref : pref, u = uAt(sg), n = hold(sg);                // the hashed side, unless the other holds the whole bank
+    const uEnd = u + sg * (n - 1) * gap, lo = Math.min(u, uEnd) - 0.2, hi = Math.max(u, uEnd) + 0.2;
+    const cTop = Math.min(2.75, kit.limitAt(lo + 0.05, hi - 0.05)), cLen = cTop - 1.7;  // the conduit runs up to the eaves and ends under the wall top
+    if (Math.abs(u) < S.W / 2 - 0.3 && !busy('front', lo, hi, 1.0, 2.0)) {
+      for (let i = 0; i < n; i++) {
+        const ui = u + sg * i * gap;
+        fbox(G, 'front', ui, 1.5, 0.07, 0.3, 0.4, 0.14, 'door_metal', [0.78, 0.8, 0.8]); fbox(G, 'front', ui, 1.5, 0.15, 0.2, 0.28, 0.02, 'rail_metal', hx(0x3a3d40));
+      }
+      if (n > 1) fbox(G, 'front', (u + uEnd) / 2, 1.74, 0.03, Math.abs(uEnd - u) + 0.1, 0.03, 0.03, 'rail_metal', hx(0x25272a));      // the bus conduit over the bank
+      fbox(G, 'front', u, 1.7 + cLen / 2, 0.03, 0.03, cLen, 0.03, 'rail_metal', hx(0x25272a));
+      G.rec('meter', 'front', lo + 0.05, hi - 0.05, 1.3, cTop, 0.15, { boxes: n });
+      kit.meterAt = { u, sg, cTop };
+    }
+  }
+  // bills beside the door (which ones: signs.js `assignPosters`, so that no street wears one set), and a painted ghost sign on a blank upper wall
+  if (kit.posters.length && (kit.shopDoor || kit.mainDoor)) {                     // pasted toward the middle of the facade first, else the other side, else on a bare side wall near the street
+    const d = kit.shopDoor ?? kit.mainDoor, toward = d.x > 0 ? -1 : 1, set = kit.posters;
     let nposter = 0;
-    for (const side of [toward, -toward]) for (let i = 0; i < 2 && nposter < 2; i++) {
-      const u = d.x + side * (d.w / 2 + 0.45 + i * 0.5), pi = (kit.posterIdx + nposter * 3) % POSTER_COUNT;
-      if (Math.abs(u) > S.W / 2 - 0.3 || busy('front', u - 0.2, u + 0.2, 1.1, 2.0)) continue;
-      const r = A?.uv?.[`poster:${pi}`] ?? null, py = 1.45 + 0.1 * hash01(bp.id, 470 + nposter);
-      plate(G, 'sign_atlas', G.FR.front.at(u, py, 0.012), [0, 0, 1], 0.34, 0.48, r ? [1, 1, 1] : hx([0xe8702a, 0xf2c200, 0x2f6fbf][pi % 3]), r);
-      G.rec('poster', 'front', u - 0.17, u + 0.17, py - 0.24, py + 0.24, 0.012);
+    const paste = (side, u) => {
+      const pi = set[nposter], r = A?.uv?.[`poster:${pi}`] ?? null, py = 1.4 + 0.3 * hash01(bp.id, 470 + nposter), pw = 0.3 + 0.08 * hash01(bp.id, 474 + nposter), ph = pw * 1.4;
+      plate(G, 'sign_atlas', G.FR[side].at(u, py, 0.012), G.FR[side].n, pw, ph, r ? [1, 1, 1] : hx([0xe8702a, 0xf2c200, 0x2f6fbf][pi % 3]), r);
+      G.rec('poster', side, u - pw / 2, u + pw / 2, py - ph / 2, py + ph / 2, 0.012, { index: pi });
       nposter++;
+    };
+    for (const side of [toward, -toward]) for (let i = 0; i < 3 && nposter < set.length; i++) {
+      const u = d.x + side * (d.w / 2 + 0.45 + i * 0.5);
+      if (Math.abs(u) <= S.W / 2 - 0.3 && !busy('front', u - 0.2, u + 0.2, 1.1, 2.0)) paste('front', u);
+    }
+    for (const side of ['left', 'right']) {                                       // a narrow shopfront is all door and shutter: the rest go on a side wall that is not a party wall (u is the depth along it, + toward the street)
+      if (S.party[side]) continue;
+      for (let i = 0; i < 3 && nposter < set.length; i++) {
+        const u = G.FR[side].span / 2 - 0.8 - i * 0.55;
+        if (!busy(side, u - 0.2, u + 0.2, 1.1, 2.0)) paste(side, u);
+      }
     }
   }
   if (kit.ghost) {                                                                // a faded painted advert on a blank upper stretch of wall (side walls first: they are the blank ones)
@@ -301,6 +418,27 @@ function wallFurniture(G, kit) {
         G.rec('ghost', side, u - pw / 2, u + pw / 2, yc - ph / 2, yc + ph / 2, 0.012);
         placed = true;
       }
+    }
+  }
+  // the overhead service, on the wall: from a corner of the front to the meter's conduit (the far corner if the wall is clear, else the near one), a black bundle held by white clips
+  // every 0.7 m and a thinner TV cable under it, at the top of the ground floor or just under the first slab; it never crosses an opening, a board, an awning or a balcony
+  if (kit.cable && kit.meterAt) {
+    const uM = kit.meterAt.u, corner = (sgn) => sgn * (S.W / 2 - (kit.pilasters ? 0.36 : 0.08)), yTop = Math.min(kit.limit, S.fh) - S.slab - 0.2;          // (under the string course or the cornice, which are 0.2 m deep and not recorded)
+    const clear = (u0, u1, y0, y1) => !bp.windows.some((w) => w.side === 'front' && Math.abs(w.x - (u0 + u1) / 2) < w.w / 2 + 0.12 + (u1 - u0) / 2 && w.floor * S.fh + w.y + w.h + 0.12 > y0 && w.floor * S.fh + w.y - 0.12 < y1)
+      && !bp.doors.some((d) => d.ext && d.side === 'front' && Math.abs(d.x - (u0 + u1) / 2) < d.w / 2 + 0.14 + (u1 - u0) / 2 && d.floor * S.fh + d.h + 0.14 > y0 && d.floor * S.fh - 0.1 < y1)
+      && !G.recs.some((r) => r.side === 'front' && r.kind !== 'meter' && r.u1 + 0.03 > u0 && r.u0 - 0.03 < u1 && r.y1 + 0.03 > y0 && r.y0 - 0.03 < y1);        // (the meter's own conduit is where it ends)
+    let run = null;
+    for (const uEnd of [corner(uM > 0 ? -1 : 1), corner(uM > 0 ? 1 : -1)]) for (const yE of [yTop, yTop - 0.12]) {
+      if (run) break;
+      const ua = Math.min(uEnd, uM), ub = Math.max(uEnd, uM);
+      if (ub - ua >= 0.7 && yE > 2.15 && clear(ua, ub, yE - 0.1, yE + 0.03)) run = { ua, ub, yE };
+    }
+    if (run) {
+      const { ua, ub, yE } = run, len = ub - ua, x0 = (ua + ub) / 2, nClip = Math.max(2, Math.floor(len / 0.7));
+      fbox(G, 'front', x0, yE, 0.014, len, 0.03, 0.026, 'rail_metal', hx(0x1b1c1e), ['nz', 'nx', 'px']);
+      fbox(G, 'front', x0, yE - 0.055, 0.01, len, 0.016, 0.018, 'rail_metal', hx(0x6a6d70), ['nz', 'nx', 'px']);
+      for (let i = 0; i < nClip; i++) fbox(G, 'front', ua + (len * (i + 0.5)) / nClip, yE - 0.025, 0.017, 0.034, 0.1, 0.032, 'door_metal', [0.88, 0.88, 0.85], ['nz']);
+      G.rec('cable', 'front', ua, ub, yE - 0.1, yE + 0.02, 0.04, { clips: nClip });
     }
   }
 }
@@ -328,7 +466,22 @@ function antenna(G, x, y, z) {
 function tank(G, x, y, z, blue, stand) {
   const { b } = G, col = blue ? hx(0x2c5f8f) : hx(0x1d2024), r = 0.47;
   let y0 = y;
-  if (stand) {
+  if (stand === 'tower') {                                                          // a steel tower 1.9 m high: four legs, cross bracing on the two faces that look out, a ladder up the back
+    const steel = hx(0x2f3235), hgt = 1.9;
+    for (const [dx, dz] of [[-0.48, -0.48], [0.48, -0.48], [0.48, 0.48], [-0.48, 0.48]]) b.box('rail_metal', x + dx, y + hgt / 2 + 0.05, z + dz, 0.07, hgt, 0.07, { col: steel, skip: ['ny'] });
+    for (const [p0, p1] of [[[-0.48, 0.3, 0.48], [0.48, 1.6, 0.48]], [[0.48, 0.3, 0.48], [-0.48, 1.6, 0.48]], [[0.48, 0.3, -0.48], [0.48, 1.6, 0.48]], [[0.48, 0.3, 0.48], [0.48, 1.6, -0.48]]]) {
+      bar(b, 'rail_metal', [x + p0[0], y + p0[1], z + p0[2]], [x + p1[0], y + p1[1], z + p1[2]], 0.03, 0.03, { col: steel });
+    }
+    b.box('rail_metal', x, y + 1.97, z, 1.06, 0.06, 1.06, { col: steel });
+    for (const dx of [-0.15, 0.15]) b.box('rail_metal', x + dx, y + hgt / 2 + 0.05, z - 0.53, 0.03, hgt, 0.03, { col: steel, skip: ['ny'] });
+    for (let i = 0; i < 6; i++) b.box('rail_metal', x, y + 0.25 + i * 0.3, z - 0.53, 0.3, 0.025, 0.025, { col: steel });
+    b.box('concrete_bare', x, y + 0.04, z, 1.1, 0.08, 1.1, { col: [0.88, 0.88, 0.86] });
+    y0 = y + 2.0;
+  } else if (stand === 'plinth') {                                                  // a rendered block plinth with a cap slab: the tank sits at the height of a first-floor sill
+    b.box('concrete_bare', x, y + 0.45, z, 1.1, 0.9, 1.1, { col: [0.84, 0.82, 0.78] });
+    b.box('concrete_bare', x, y + 0.93, z, 1.2, 0.06, 1.2, { col: [0.9, 0.9, 0.88] });
+    y0 = y + 0.96;
+  } else if (stand) {
     b.box('concrete_bare', x, y + 0.05, z, 1.1, 0.1, 1.1, { col: [0.88, 0.88, 0.86] });
     for (const [dx, dz] of [[-0.48, -0.48], [0.48, -0.48], [0.48, 0.48], [-0.48, 0.48]]) b.box('rail_metal', x + dx, y + 0.55, z + dz, 0.07, 0.9, 0.07, { col: hx(0x2f3235) });
     b.box('rail_metal', x, y + 1.02, z, 1.06, 0.06, 1.06, { col: hx(0x2f3235) });
@@ -429,7 +582,11 @@ function terraceKit(G, kit) {
     const I = S.inner, cu = kit.cuarto ? cuarto(G, kit) : null;
     if (kit.tank) {
       if (cu?.flat) tank(G, cu.cx + (hv(3) - 0.5) * (cu.w - 1.6), cu.top, cu.cz, tankBlue, false);                 // on the slab of the room
-      else if (!cu) tank(G, I.x0 + 1.0 + (I.x1 - I.x0 - 2.0) * hv(3), yF, I.z0 + 0.95, tankBlue, true);          // on its stand against the back parapet
+      else if (!cu) {                                                                // on its stand against the back parapet: legs, a steel tower or a block plinth, and now and then two tanks side by side
+        const style = hv(7) < 0.45 ? 'frame' : hv(7) < 0.75 ? 'tower' : 'plinth', pair = I.x1 - I.x0 >= 4.6 && hv(8) < 0.3, x = pair ? I.x0 + 1.8 + (I.x1 - I.x0 - 3.6) * hv(3) : I.x0 + 1.0 + (I.x1 - I.x0 - 2.0) * hv(3);
+        for (const dx of pair ? [-0.65, 0.65] : [0]) tank(G, x + dx, yF, I.z0 + 0.95, tankBlue, style);
+        G.bp.roofKit = { tank: style, tanks: pair ? 2 : 1 };
+      }
     }
     if (kit.dish) dish(G, I.x1 - 0.6, yF + ph + 0.05, S.D / 2 - S.te / 2, hv(4) * 6.28, hx(0xd8d8d4));            // on the coping of the front parapet
   }
@@ -458,6 +615,55 @@ function tileKit(G, kit) {
 }
 
 // ---- identity of the special buildings --------------------------------------------------------------------------------------------------
+/**
+ * The front of the chapel around its double door: a round arch of voussoirs in the trim colour over the leaves with a dark fanlight inside it (spokes, impost blocks, a
+ * keystone), a statue in an arched niche on each side of the door, and the parish name painted straight on the wall above (decal atlas `parish:<lot>`, signs.js).
+ * Everything is recorded on `bp.facade` (`portal`, `niche`, `name`) so that nothing else is hung on it.
+ */
+function chapelPortal(G, kit, d, trim) {
+  const { S, b, lot, bp } = G, D2 = S.D / 2, cx = d.x, cy = d.h + 0.06, ri = d.w / 2 + 0.02, ro = ri + 0.2, N = 12;
+  const P = (x, y, o) => [x, y, D2 + o], arc = (r, a, c = [cx, cy]) => [c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r], ink = hx(0x1f2a54), dark = [0.03, 0.04, 0.07];
+  // the arch: alternate voussoirs a shade apart, a dark fanlight in the ring, spokes, springers, a keystone
+  for (let i = 0; i < N; i++) {
+    const a0 = (Math.PI * i) / N, a1 = (Math.PI * (i + 1)) / N, A = arc(ri, a0), B = arc(ro, a0), C = arc(ro, a1), E = arc(ri, a1);
+    qd(b, 'frame_paint', P(A[0], A[1], 0.025), P(B[0], B[1], 0.025), P(C[0], C[1], 0.025), P(E[0], E[1], 0.025), [0, 0, 1], { col: mulc(trim, i % 2 ? 0.92 : 1) });
+    b.tri('frame_paint', P(cx, cy, 0.012), P(A[0], A[1], 0.012), P(E[0], E[1], 0.012), { col: dark });
+  }
+  for (let i = 1; i < 6; i++) { const a = (Math.PI * i) / 6, A = arc(0.04, a), B = arc(ri, a), t = [Math.cos(a + 1.5708) * 0.012, Math.sin(a + 1.5708) * 0.012]; qd(b, 'frame_paint', P(A[0] - t[0], A[1] - t[1], 0.02), P(B[0] - t[0], B[1] - t[1], 0.02), P(B[0] + t[0], B[1] + t[1], 0.02), P(A[0] + t[0], A[1] + t[1], 0.02), [0, 0, 1], { col: trim }); }
+  for (const sg of [-1, 1]) fbox(G, 'front', cx + sg * (ri + 0.1), cy, 0.045, 0.26, 0.1, 0.07, 'plaster_a', trim);
+  fbox(G, 'front', cx, cy + ro + 0.05, 0.045, 0.2, 0.22, 0.07, 'concrete_bare', [0.9, 0.9, 0.88]);
+  G.rec('portal', 'front', cx - ro - 0.15, cx + ro + 0.15, 0, cy + ro + 0.2, 0.07);
+  // a statue in an arched niche beside the door (not where a window already is)
+  const nw = 0.7, y0 = 1.05, nh = 1.5, ya = y0 + nh - nw / 2;
+  for (const sg of [-1, 1]) {
+    const u = cx + sg * (d.w / 2 + 1.35);
+    if (Math.abs(u) > S.W / 2 - 0.9 || bp.windows.some((w) => w.side === 'front' && w.floor === 0 && Math.abs(w.x - u) < w.w / 2 + nw / 2 + 0.3)) continue;
+    const hw = nw / 2, c = [u, ya];
+    qd(b, 'frame_paint', P(u - hw, y0, 0.02), P(u + hw, y0, 0.02), P(u + hw, ya, 0.02), P(u - hw, ya, 0.02), [0, 0, 1], { col: dark });             // the recess
+    for (let i = 0; i < 8; i++) { const a0 = (Math.PI * i) / 8, a1 = (Math.PI * (i + 1)) / 8, A = arc(hw, a0, c), E = arc(hw, a1, c), B = arc(hw + 0.07, a0, c), C = arc(hw + 0.07, a1, c);
+      b.tri('frame_paint', P(u, ya, 0.02), P(A[0], A[1], 0.02), P(E[0], E[1], 0.02), { col: dark });
+      qd(b, 'frame_paint', P(A[0], A[1], 0.03), P(B[0], B[1], 0.03), P(C[0], C[1], 0.03), P(E[0], E[1], 0.03), [0, 0, 1], { col: mulc(trim, i % 2 ? 0.92 : 1) }); }
+    for (const s2 of [-1, 1]) fbox(G, 'front', u + s2 * (hw + 0.035), (y0 + ya) / 2, 0.035, 0.07, ya - y0, 0.06, 'plaster_a', trim);
+    fbox(G, 'front', u, y0 - 0.03, 0.05, nw + 0.18, 0.06, 0.12, 'concrete_bare', [0.9, 0.9, 0.88]);                                                    // the sill
+    const f = G.FR.front.at(u, y0 + 0.04, 0.09), mantle = hash01(lot.id, 701 + (sg > 0 ? 1 : 0)) < 0.5 ? [0.05, 0.12, 0.45] : [0.32, 0.05, 0.05];
+    b.cyl('plaster_a', f[0], f[1], f[2], 0.14, 0.06, 8, { col: [0.62, 0.6, 0.56], caps: true });                                                        // plinth
+    b.cyl('plaster_a', f[0], f[1] + 0.06, f[2] - 0.012, 0.16, 0.62, 8, { r1: 0.06, col: mantle, caps: false });                                         // the cloak, a coloured edge round the robe
+    b.cyl('plaster_a', f[0], f[1] + 0.06, f[2] + 0.014, 0.115, 0.58, 8, { r1: 0.04, col: [0.95, 0.94, 0.9], caps: true });                              // the robe
+    b.cyl('plaster_a', f[0], f[1] + 0.62, f[2] + 0.01, 0.05, 0.11, 8, { r1: 0.042, col: [0.93, 0.8, 0.68], caps: true });                               // the head
+    for (let i = 0; i < 10; i++) { const a0 = (Math.PI * 2 * i) / 10, a1 = (Math.PI * 2 * (i + 1)) / 10, h0 = [f[0], f[1] + 0.69, f[2] - 0.03];          // a gold halo behind the head
+      b.tri('frame_paint', h0, [h0[0] + Math.cos(a0) * 0.1, h0[1] + Math.sin(a0) * 0.1, h0[2]], [h0[0] + Math.cos(a1) * 0.1, h0[1] + Math.sin(a1) * 0.1, h0[2]], { col: [0.9, 0.62, 0.12] }); }
+    G.rec('niche', 'front', u - hw - 0.1, u + hw + 0.1, y0 - 0.06, ya + hw + 0.1, 0.1);
+  }
+  // the parish name, painted on the wall between the arch and the round window
+  const pw = 4.2, ph = pw * (112 / 512), py = cy + ro + 0.2 + ph / 2, rect = G.ctx.decalAtlas?.uv?.[`parish:${lot.id}`] ?? null;
+  if (rect) {
+    const c = G.FR.front.at(cx, py, 0.008);
+    G.b.quad('wall_decal', [c[0] - pw / 2, c[1] - ph / 2, c[2]], [c[0] + pw / 2, c[1] - ph / 2, c[2]], [c[0] + pw / 2, c[1] + ph / 2, c[2]], [c[0] - pw / 2, c[1] + ph / 2, c[2]],
+      { uv: [rect[0], rect[1], rect[2], rect[1], rect[2], rect[3], rect[0], rect[3]], col: ink });
+  }
+  G.rec('name', 'front', cx - pw / 2, cx + pw / 2, py - ph / 2, py + ph / 2, 0.008);
+}
+
 function chapel(G, kit) {
   const { S, b, rm, bp } = G, g = rm.gable, D2 = S.D / 2, yF = S.F * S.fh, trim = hx(0xf2efe6);
   if (!g) return;
@@ -475,12 +681,9 @@ function chapel(G, kit) {
     const ry = yF + 1.3, rp = (x, y, o) => [x, y, D2 + o], N = 14;
     for (const [r, m, c, o] of [[0.62, 'frame_paint', trim, 0.018], [0.44, 'window_lit', [1, 1, 1], 0.03]]) for (let i = 0; i < N; i++) { const a0 = (i / N) * 6.2832, a1 = ((i + 1) / N) * 6.2832; b.tri(m, rp(0, ry, o), rp(Math.cos(a0) * r, ry + Math.sin(a0) * r, o), rp(Math.cos(a1) * r, ry + Math.sin(a1) * r, o), { col: c }); }
     b.box('frame_paint', 0, ry, D2 + 0.04, 0.88, 0.035, 0.02, { col: trim }); b.box('frame_paint', 0, ry, D2 + 0.04, 0.035, 0.88, 0.02, { col: trim });
+    G.rec('rose', 'front', -0.7, 0.7, ry - 0.7, ry + 0.7, 0.05);
   }
-  if (d) {                                                                         // lunette over the door
-    const r = d.w / 2 + 0.1, N = 10, p = (x, y) => [x, y, D2 + 0.02];
-    for (let i = 0; i < N; i++) { const a0 = Math.PI * i / N, a1 = Math.PI * (i + 1) / N; b.tri('frame_paint', p(d.x, d.h + 0.075), p(d.x + Math.cos(a0) * r, d.h + 0.075 + Math.sin(a0) * r), p(d.x + Math.cos(a1) * r, d.h + 0.075 + Math.sin(a1) * r), { col: trim }); }
-    fbox(G, 'front', d.x, d.h + 0.075 + r + 0.05, 0.03, 0.16, 0.14, 0.05, 'concrete_bare', [0.9, 0.9, 0.88]);
-  }
+  if (d) chapelPortal(G, kit, d, trim);
   for (const side of ['left', 'right']) if (!S.party[side]) {                      // buttresses along the nave
     const n = Math.max(2, Math.round(S.D / 3.6));
     for (let i = 0; i <= n; i++) fbox(G, side, -S.D / 2 + 0.3 + ((S.D - 0.6) * i) / n, yF / 2 + 0.15, 0.1, 0.46, yF + 0.3, 0.2, 'plaster_a', trim);
@@ -524,4 +727,5 @@ export function buildFacade(G) {
   balconies(G, kit); wallFurniture(G, kit);
   if (G.S.roofStyle === 'terrace') terraceKit(G, kit); else if (G.S.roofStyle === 'tile') tileKit(G, kit);
   if (kit.kind === 'chapel') chapel(G, kit); else if (kit.kind === 'school') school(G, kit); else if (kit.kind === 'clinic') clinic(G, kit);
+  weatherFacade(G, kit);                                                                   // last: every mark keeps clear of what is already on the wall (weather.js)
 }

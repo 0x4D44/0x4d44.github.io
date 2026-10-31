@@ -7,6 +7,7 @@
 //   lock(reason) / unlock(reason) / locked   freeze movement + look (dialogue, menus)        input {f,s,sprint,jump,crouch}  programmatic input
 //   teleport(x, z, {y|floor, yaw, pitch})    setLook(yaw, pitch)      attach(canvas)      update(dt)
 // Events emitted: player:step {foot,surface,speed,sprint,crouch,x,y,z}  player:land {speed,surface}  player:jump  player:teleport {x,y,z}
+//                 player:unstuck {x,y,z,how: 'moved' | 'crossed'}  (the stall net put the player outside a pocket: see _stallNet)
 //                 player:enter {buildingId,floor}  player:exit {buildingId}  player:floor {buildingId,floor}
 import * as THREE from 'three';
 import { CONFIG } from '../core/config.js';
@@ -19,6 +20,15 @@ const ACCEL = 13, DECEL = 12, AIR = 2.4;              // velocity smoothing rate
 const COYOTE = 0.12, JUMP_BUFFER = 0.14, JUMP_COOL = 0.22;
 const STRIDE = { walk: 0.72, sprint: 1.05, crouch: 0.5 };   // metres per footstep
 const wrap = (a) => (a > Math.PI ? a - Math.PI * 2 : a < -Math.PI ? a + Math.PI * 2 : a);
+const STALL_TIME = 1.2, STALL_DIST = 0.1, STALL_IDLE = 0.5, STALL_HINT_EVERY = 20;   // the stall net: seconds held, metres that count as "got somewhere", seconds of released keys that reset it, seconds between hints
+const PORTRAIT_FOV_MAX = 90;                           // vertical degrees: wider than this on a tall narrow screen is a fisheye (review R2-007)
+
+/** Vertical field of view for a screen shape: the setting in landscape; on a tall narrow screen it is widened (up to 1.35x: little shows sideways) but never
+ *  above 90 degrees, sprint kick included. */
+export function viewFov(base, aspect, kick = 0) {
+  const v = base * (aspect < 1 ? clamp(1 + (1 - aspect) * 0.85, 1, 1.35) : 1) + kick;
+  return aspect < 1 ? Math.min(v, PORTRAIT_FOV_MAX) : v;
+}
 
 /** World-space footprint of a lot that has no BuildingPlan footprint yet (rectangle w x d at (x,z), rotated rotY). */
 function lotFootprint(l) {
@@ -50,6 +60,7 @@ export class Player {
     this.mdx = 0; this.mdy = 0; this.skipMove = 0; this.dragOnly = false; this.lockErrors = 0;
     this.jumpPrev = false; this.jumpBuf = 0; this.jumpCool = 0; this.sinceGround = 0; this.lastVy = 0;
     this.stride = 0; this.foot = 0; this.safe = { x: 0, y: 0, z: 0, t: 0 }; this.warnedBounds = false;
+    this._stall = { x: 0, z: 0, t: 0, idle: 0, done: false, clock: 0, hintAt: -1e9 };            // the stall net's anchor and timers (_stallNet)
     this.eye = new THREE.Vector3(); this._dir = new THREE.Vector3();
     this.surfaces = new SurfaceMap(null); this._surfAt = { x: 1e9, z: 1e9 };
     this._blds = null; this.canvas = null;
@@ -57,8 +68,9 @@ export class Player {
 
   get pos() { return this.s; }
   get eyeY() { return this.camY + CONFIG.PLAYER.eye - (CONFIG.PLAYER.eye - CONFIG.PLAYER.crouchEye) * this.crouch; }
-  lock(reason = 'lock') { this.locks.add(reason); }
-  unlock(reason = 'lock') { this.locks.delete(reason); }
+  /** Hold the player (a conversation: 'dialogue'). Events 'player:lock' / 'player:unlock' { reason } on a change; ui/flow.js lets go of the pointer for a talk. */
+  lock(reason = 'lock') { if (this.locks.has(reason)) return; this.locks.add(reason); this.ctx.events?.emit('player:lock', { reason }); }
+  unlock(reason = 'lock') { if (this.locks.delete(reason)) this.ctx.events?.emit('player:unlock', { reason }); }
   get locked() { return this.locks.size > 0; }
 
   setLook(yaw, pitch = this.pitch) { this.yaw = wrap(yaw); this.pitch = clamp(pitch, -PITCH, PITCH); }
@@ -74,6 +86,7 @@ export class Player {
     this.crouch = 0; this.crouching = false;
     ph.move(s, 0, 0, 0.001);
     this.camY = s.y; this.safe = { x: s.x, y: s.y, z: s.z, t: 0 };
+    this._stall.t = this._stall.idle = 0; this._stall.done = false;
     this._locate(true);
     this._place();
     this.ctx.events.emit('player:teleport', { x: s.x, y: s.y, z: s.z });
@@ -82,7 +95,10 @@ export class Player {
   /** Request pointer lock with raw (unaccelerated) mouse input where the browser supports it. */
   lockPointer() {
     const c = this.canvas; if (!c?.requestPointerLock) return;
-    const plain = () => { try { c.requestPointerLock(); } catch { /* denied */ } };
+    // Chrome answers with a promise that REJECTS when the lock is refused (a re-lock within about a second of Esc, a lock after a talk): every promise gets a catch, or the
+    // refusal is an 'Uncaught (in promise) DOMException' in the console (rubric cap C1, R2c-012). A refusal is no error here: pointerlockerror counts it, the flow shows its pause card.
+    const quiet = (p) => { try { p?.catch?.(() => {}); } catch { /* not a promise */ } };
+    const plain = () => { try { quiet(c.requestPointerLock()); } catch { /* denied */ } };
     try { const p = c.requestPointerLock({ unadjustedMovement: true }); if (p && p.catch) p.catch(plain); } catch { plain(); }
   }
   get pointerLocked() { return document.pointerLockElement === this.canvas; }
@@ -116,7 +132,7 @@ export class Player {
     });
     canvas.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || !ctx.running) return;
-      if (!this.pointerLocked && !ctx.opts.autostart && !this.dragOnly) this.lockPointer();
+      if (!this.pointerLocked && !this.locked && !ctx.opts.autostart && !this.dragOnly) this.lockPointer();    // not during a talk: a held pointer eats Esc (ui/flow.js)
       else if (this.pointerLocked && !this.locked) ctx.interact.use();
     });
   }
@@ -174,6 +190,37 @@ export class Player {
     this.surface = this.surfaces.kind(s.x, s.z, { indoors: this.indoors, room: this.room, onFloorPatch: sa.id != null && !sa.terrain });
   }
 
+  /**
+   * The net under every pocket nobody drew a way out of (review R2 found eight by walking into them): movement keys held and the body not 0.1 m from where
+   * it was 1.2 s ago. Then the kernel is asked whether it is really shut in (not just against a wall, a shut door or the corner of a big room: those answer
+   * 'free' and nothing happens, once per spot). Shut in: put outside, on the side it was walking to, with a toast (through a room wall only when there is
+   * no other way: a sealed closet is a modelling error); with no standable spot near at all, a hint (at most every 20 s) about the pause menu's
+   * 'Volver al punto de partida'.
+   * Frames in the air count (a trapped player hops), the check itself waits for the ground. Keys released for 0.5 s (a conversation locks the keys: the same)
+   * or a seat start it over; so does any move of 0.1 m.
+   * Returns true when the player was moved.
+   */
+  _stallNet(dt, want, tx, tz, H) {
+    const s = this.s, st = this._stall, ctx = this.ctx, P = CONFIG.PLAYER;
+    st.clock += dt;
+    if (Math.hypot(s.x - st.x, s.z - st.z) > STALL_DIST || ctx.interiorSit?.active) { st.x = s.x; st.z = s.z; st.t = st.idle = 0; st.done = false; return false; }
+    if (!want) { if ((st.idle += dt) > STALL_IDLE) { st.t = 0; st.done = false; } return false; }
+    st.idle = 0; st.t += dt;
+    if (st.done || st.t < STALL_TIME || !s.onGround) return false;
+    st.done = true;
+    const how = ctx.physics.rescue(s, tx, tz, { radius: P.radius, height: H, stepUp: P.stepUp, maxSlope: P.maxSlope });
+    if (how === 'free') return false;
+    if (how === 'shut') {
+      if (st.clock - st.hintAt > STALL_HINT_EVERY) { st.hintAt = st.clock; ctx.ui.toast('Estás atrapado. Abre el menú con Esc y elige «Volver al punto de partida».', 6000); }
+      return false;
+    }
+    this.vx = this.vz = 0; this.safe = { x: s.x, y: s.y, z: s.z, t: 0 };
+    st.x = s.x; st.z = s.z; st.t = 0; st.done = false;
+    ctx.ui.toast('Te desatascaste', 2200);
+    ctx.events.emit('player:unstuck', { x: s.x, y: s.y, z: s.z, how });
+    return true;
+  }
+
   // ---- per frame -----------------------------------------------------------------------------------------------------------
   update(dt) {
     const ctx = this.ctx, P = CONFIG.PLAYER, st = ctx.settings?.v ?? {}, s = this.s, k = this.keys, inp = this.input, ph = ctx.physics;
@@ -196,7 +243,7 @@ export class Player {
       side = ax('KeyA', 'KeyD') + ax('ArrowLeft', 'ArrowRight') + inp.s;
       sprintWant = k.has('ShiftLeft') || k.has('ShiftRight') || inp.sprint;
       jumpHeld = k.has('Space') || inp.jump;
-      crouchWant = k.has('KeyC') || k.has('ControlLeft') || inp.crouch;
+      crouchWant = k.has('KeyC') || inp.crouch;          // C only: Ctrl is the browser's (Ctrl+W closes the tab and a page cannot stop it)
     }
     const len = Math.hypot(f, side); if (len > 1) { f /= len; side /= len; }
 
@@ -213,7 +260,8 @@ export class Player {
     const tx = (-sy * f + cy * side) * top, tz = (-cy * f - sy * side) * top;
     const rate = s.onGround ? (f || side ? ACCEL : DECEL) : AIR, a = 1 - Math.exp(-rate * dt);
     this.vx += (tx - this.vx) * a; this.vz += (tz - this.vz) * a;
-    const x0 = s.x, z0 = s.z, wasGround = s.onGround;
+    let x0 = s.x, z0 = s.z;
+    const wasGround = s.onGround;
 
     // jump: edge-triggered with a short buffer before landing and a grace period after leaving a ledge
     const pressed = jumpHeld && !this.jumpPrev; this.jumpPrev = jumpHeld;
@@ -228,6 +276,7 @@ export class Player {
     this.lastVy = s.vy;
     ph.move(s, this.vx * dt, this.vz * dt, dt, { radius: P.radius, height: H, stepUp: P.stepUp, maxSlope: P.maxSlope, gravity: P.gravity });
     if (s.blocked && dt > 0) { this.vx = (s.x - x0) / dt; this.vz = (s.z - z0) / dt; }            // slide along walls instead of pushing into them
+    if (this._stallNet(dt, f !== 0 || side !== 0, tx, tz, H)) { x0 = s.x; z0 = s.z; }            // put outside a pocket: that jump is no walking (no footsteps, no speed)
 
     // the barrio ends at the plot edge (beyond it the world is scenery)
     const lim = CONFIG.HALF - 1.0;
@@ -274,7 +323,7 @@ export class Player {
     const yb = Math.sin(this.bob * 2) * amp, xb = Math.cos(this.bob) * amp * 0.55;
     this.fovKick += ((sprinting && hs > 3 ? 5 : 0) - this.fovKick) * (1 - Math.exp(-dt * 6));
     const cam = ctx.camera, aspect = cam.aspect || 1.78;
-    const fov = (st.fov ?? 72) * (aspect < 1 ? clamp(1 + (1 - aspect) * 0.85, 1, 1.35) : 1) + this.fovKick;
+    const fov = viewFov(st.fov ?? 72, aspect, this.fovKick);
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
     const strafeV = this.vx * cy - this.vz * sy;
     this.roll += ((-strafeV * 0.0022) - this.roll) * (1 - Math.exp(-dt * 8));
@@ -284,7 +333,7 @@ export class Player {
     cam.getWorldDirection(this._dir);
 
     ctx.interact.update(this.eye, this._dir);
-    ctx.ui.prompt(ctx.interact.prompt());
+    ctx.ui.prompt(locked ? null : ctx.interact.prompt());           // a dialogue, a panel or a menu owns the keyboard: no "E ..." over the face of the person talking
     ctx.discover.check(s.x, s.y, s.z);
   }
 }

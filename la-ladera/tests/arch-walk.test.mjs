@@ -146,3 +146,28 @@ test('walking straight through a door line works (door opens, player passes, wal
   assert.ok(Math.abs(s2.y - e.inside[1]) < 0.05, `player ends on the ground floor (y ${s2.y})`);
   ph.setDoor(d.id, false);
 });
+
+test('a roof door has an outside of its own: the terrace beside it, at the level of its sill, and the player walks it in and out', () => {
+  const ph = ctx.physics, P = { radius: 0.3, height: 1.78, stepUp: 0.5, maxSlope: 0.9, gravity: 9.8 };
+  const problems = []; let count = 0;
+  for (const bp of bps) {
+    for (const e of bp.entrances.filter((q) => q.kind === 'roof')) {
+      count++;
+      const d = bp.doors.find((q) => q.id === e.doorId);
+      openAllDoors(ctx, bp, false);
+      if (Math.abs(e.outside[1] - e.inside[1]) > 0.02) problems.push(`${bp.id} ${e.id}: outside y ${e.outside[1]} is not the level of the door (${e.inside[1]})`);
+      const at = { x: e.outside[0], z: e.outside[2], y: e.outside[1], vy: 0, onGround: true };
+      for (let i = 0; i < 30; i++) ph.move(at, 0, 0, 1 / 60, P);
+      if (Math.abs(at.y - e.outside[1]) > 0.1) problems.push(`${bp.id} ${e.id}: nothing to stand on at the outside point (settles to y ${at.y.toFixed(2)}, not ${e.outside[1]})`);
+      ph.setDoor(d.id, true);
+      const w = { x: e.outside[0], z: e.outside[2], y: e.outside[1], vy: 0, onGround: true }, dx = e.inside[0] - e.outside[0], dz = e.inside[2] - e.outside[2];
+      for (let i = 0; i < 40; i++) ph.move(w, dx / 40, dz / 40, 1 / 60, P);
+      // `inside` is a point of the landing a body can stand on (plan.js makeEntrances: 0.55 m in; the landing is ~0.75 m deep before the stair guard, so 1 m in stood on the guard
+      // for 25 of the 64 roof doors, and the stuck sweep found no node within its 0.45 m of L65.e1): the walk ends on it
+      if (Math.hypot(w.x - e.inside[0], w.z - e.inside[2]) > 0.15 || Math.abs(w.y - e.inside[1]) > 0.1) problems.push(`${bp.id} ${e.id}: the open door does not let the player from the terrace to the landing (ends ${w.x.toFixed(2)}, ${w.y.toFixed(2)}, ${w.z.toFixed(2)})`);
+      ph.setDoor(d.id, false);
+    }
+  }
+  assert.ok(count >= 5, `only ${count} roof doors in the test lots`);
+  assert.deepEqual(problems, []);
+});

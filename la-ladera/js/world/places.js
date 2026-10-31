@@ -16,6 +16,12 @@ export function buildPlaces(plan, rng) {
     pois.push(p); return p;
   };
   const at = (lot, lx, lz) => { const c = Math.cos(lot.rotY), s = Math.sin(lot.rotY); return [lot.x + lx * c + lz * s, lot.z - lx * s + lz * c]; };
+  // a seat or a lean spot with a drop of 0.5 m or more within 0.65 m (a cut or fill wall, a plaza rim) puts the walker on an edge: such a spot steps back, or goes
+  const ledge = (x, z) => {
+    const y = H(x, z);
+    for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; if (H(x + Math.cos(a) * 0.65, z + Math.sin(a) * 0.65) < y - 0.5) return true; }
+    return false;
+  };
 
   // ---- per lot: doorstep, shop front, lean spot
   lots.forEach((lot, i) => {
@@ -28,8 +34,10 @@ export function buildPlaces(plan, rng) {
       add('vend', vx, vz, lot.rotY + Math.PI, { building: lot.id, tags: ['shop:' + lot.shop, 'stand:' + lot.shop] });
     }
     if (lot.w >= 5) {
-      const side = u > 0 ? -1 : 1, [lx, lz] = at(lot, u + side * Math.max(1.8, lot.w / 2 - 0.9), hd + 0.5);
-      add('lean', lx, lz, lot.rotY + Math.PI, { building: lot.id, tags: ['wall'] });
+      // beside the door, on the first spot along the front that has no drop beside it (nearer the wall last); none: nobody leans here
+      const side = u > 0 ? -1 : 1, d0 = Math.max(1.8, lot.w / 2 - 0.9);
+      const spot = [[d0, 0.5], [d0 + 0.6, 0.5], [d0 - 0.4, 0.5], [d0, 0.35], [d0 + 1.2, 0.5]].map(([d, f]) => at(lot, u + side * d, hd + f)).find(([x, z]) => free(x, z) && !ledge(x, z));
+      if (spot) add('lean', spot[0], spot[1], lot.rotY + Math.PI, { building: lot.id, tags: ['wall'] });
     }
     if (i % 3 === 1) {
       const [cx, cz] = at(lot, u + (R.chance(0.5) ? 1 : -1) * 1.2, hd + 1.5);
@@ -56,7 +64,8 @@ export function buildPlaces(plan, rng) {
       for (let k = 0; k < nb; k++) {
         let lx = (k - (nb - 1) / 2) * (pl.w / nb) * 0.9, side = k % 2 ? 1 : -1;
         if (pl.id === 'P1') lx = [-3.6, -3.9, 3.6, 3.9][k];     // the north centre stays free for the shrine, the south centre for the stair
-        const [x, z] = P(lx, side * (hd - 0.6));          // back against the edge; the nav ring runs 1.2 m in, clear of the bench front
+        // back against the edge (0.6 m in; the nav ring runs 1.2 m in, clear of the bench front), or 1.0 / 1.3 m in where the rim is a drop
+        const inset = [0.6, 1.0, 1.3].find((i) => !ledge(...P(lx, side * (hd - i)))) ?? 0.6, [x, z] = P(lx, side * (hd - inset));
         add('bench', x, z, side > 0 ? Math.PI : 0, { tags: ['plaza'] });
       }
       const [x1, z1] = P(-hw * 0.4, 0); add('chat', x1, z1, 0.6, { tags: ['plaza', 'neighbours'] });

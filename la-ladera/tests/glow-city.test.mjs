@@ -18,6 +18,19 @@ test('the city is deterministic for a seed and changes with the seed', () => {
   const other = farCityLights({ far, density, seed: plan.seed + 1 });
   assert.notDeepEqual(other.slice(0, 20), real.slice(0, 20));
   assert.ok(Math.abs(other.length - real.length) < real.length * 0.2, `another seed gives a similar size (${other.length} vs ${real.length})`);
+  // the seed decides WHICH cells are lit, not only where inside a cell the light stands: two seeds share well under half of their lit 12 m cells
+  const cells = (list) => new Set(list.map((p) => `${Math.floor(p.x / 12)},${Math.floor(p.z / 12)}`));
+  const a = cells(real), b = cells(other), both = [...a].filter((k) => b.has(k)).length, jaccard = both / (a.size + b.size - both);
+  assert.ok(jaccard < 0.45, `lit cells shared between two seeds: ${(jaccard * 100).toFixed(0)}% (an unseeded selection shares ~60%, a seeded one ~30%)`);
+});
+
+test('the plot stays free of far lights whatever the density says, and the lights start right outside it', () => {
+  const all = farCityLights({ far, density: () => 1, seed: 3, max: 1e6 });
+  assert.ok(all.length > 5000, `${all.length} lights on a fully built-up land`);
+  const inside = all.filter((p) => Math.abs(p.x) < 108 && Math.abs(p.z) < 108);
+  assert.equal(inside.length, 0, `${inside.length} lights inside the plot (the plot has its own lamps)`);
+  const edge = Math.min(...all.map((p) => Math.max(Math.abs(p.x), Math.abs(p.z))));
+  assert.ok(edge < 125, `the first light stands ${edge.toFixed(0)} m from the plot centre: the free zone must not grow past the wall`);
 });
 
 test('a few thousand lights, none in the plot, every one above the ground and inside the camera range', (t) => {

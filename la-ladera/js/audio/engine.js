@@ -12,9 +12,9 @@
 // headless automation the same graph is built on an OfflineAudioContext that is never rendered ("dry" mode): every code path runs, no audio
 // device is opened, nothing is heard. `selfTest()` renders short offline scenes through the very same graph and measures them.
 import { SR, reverbIR } from './dsp.js';
-import { render } from './library.js';
+import { render, furnKind } from './library.js';
 import { BEDS } from './beds.js';
-import { SURFACES } from './foley.js';
+import { SURFACES, FURN_KINDS, FIND_SOUNDS } from './foley.js';
 import { computeMix, buildEmitters, pickEmitters, heightRange, strokesForHour, activity, pickStream, nightFromHour, zoneAt } from './mix.js';
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -25,7 +25,12 @@ const TAU = Math.PI * 2;
 /** Engine-level balance on top of each bed's own loudness (all beds are normalised to a similar RMS in beds.js). */
 export const BED_TRIM = { wind: 0.80, traffic: 0.65, crickets: 0.80, murmur: 0.95, children: 0.85 };
 const OUTDOOR_BEDS = Object.keys(BED_TRIM);
-const FOOT_GAIN = 0.5, MAX_SHOTS = 26, MAX_VOICES = 6;
+/**
+ * How loud a footstep is: its sample (foley.js normalises each surface to its own `level`, 0.27-0.63) times this. A walking step is about 9.5 dB quieter than it was at 0.5
+ * (R2c: "very loud"); the stance factors sit on top, a sprint a little louder and a crouch much softer. A landing is `FOOT_GAIN` too (onLand). Checked by tests/audio-steps.test.mjs.
+ */
+export const FOOT_GAIN = 0.19, FOOT_STANCE = { walk: 1, sprint: 1.3, crouch: 0.4 };
+const MAX_SHOTS = 26, MAX_VOICES = 6;
 const airCutoff = (d) => clamp(14000 / (1 + d / 35), 900, 14000);        // air takes the highs out of distant sounds
 const setPos = (n, x, y, z) => { x = fin(x); y = fin(y); z = fin(z); if (n.positionX) { n.positionX.value = x; n.positionY.value = y; n.positionZ.value = z; } else n.setPosition?.(x, y, z); };
 
@@ -94,7 +99,7 @@ export class AudioEngine {
     this.volume = 0.8; this.modeScale = 0.3; this.duckTalk = 1; this.indoor = 0; this.override = null; this.gains = {};
     this.beds = {}; this.voices = new Map(); this.emitters = []; this.emitterKey = ''; this.range = null; this.crowd = 0.3; this.activeShots = 0;
     this.stepN = 0; this.lastBird = -1; this.bell = { clock: 0, devotion: 45, prevHour: null, last: -99, queued: 0, strokes: 0 };
-    this.stats = { steps: 0, lands: 0, jumps: 0, doors: 0, shots: 0, bells: 0, chimes: 0, ticks: 0, dropped: 0, blocked: 0 };
+    this.stats = { steps: 0, lands: 0, jumps: 0, doors: 0, furn: 0, finds: 0, sheets: 0, shots: 0, bells: 0, chimes: 0, ticks: 0, dropped: 0, blocked: 0 };
     this.lastMix = null; this.zoneId = null; this.listener = { x: 0, y: 0, z: 0 };
   }
 
@@ -145,7 +150,9 @@ export class AudioEngine {
     for (const s of SURFACES) for (let i = 0; i < 4; i++) rest.push(`step:${s}:${i}`);
     for (const s of SURFACES) for (let i = 0; i < 2; i++) rest.push(`land:${s}:${i}`);
     for (const b of ['court', 'tv', 'radio', 'sizzle', 'workshop']) rest.push(`bed:${b}`);
-    rest.push('door:open:0', 'door:close:0', 'door:open:1', 'door:close:1', 'shutter:open', 'shutter:close', 'rustle:0', 'rustle:1', 'paper:0', 'paper:1');
+    rest.push('door:open:0', 'door:close:0', 'door:open:1', 'door:close:1', 'shutter:open', 'shutter:close', 'rustle:0', 'rustle:1', 'paper:0', 'paper:1', 'sheet:0', 'sheet:1');
+    for (const f of FURN_KINDS) for (const k of ['open', 'close']) for (let v = 0; v < 2; v++) rest.push(`furn:${f}:${k}:${v}`);       // a first drawer must not be silent: the bank drops a play while it renders
+    for (const c of FIND_SOUNDS) rest.push(`find:${c}`);
     for (let s = 0; s < 6; s++) for (let t = 0; t < 2; t++) rest.push(`bird:${s}:${t}`);
     rest.push('dog:0', 'dog:1', 'horn:0', 'horn:1');
     return [...new Set([...first, ...rest])];
@@ -244,13 +251,22 @@ export class AudioEngine {
   chime() { this.stats.chimes++; return this.play('chime', { gain: 0.55, bus: 'uiBus' }); }
   tick() { this.stats.ticks++; return this.play('tick', { gain: 0.4, bus: 'uiBus', rate: 0.97 + 0.06 * this.rnd() }); }
   paper() { return this.play(`paper:${this.rnd() < 0.5 ? 0 : 1}`, { gain: 0.5, bus: 'uiBus' }); }
+  /** A whole sheet unfolded or lifted out of a drawer: the reader opening (a menu swish, `paper`, would be too small). */
+  sheet() { this.stats.sheets++; return this.play(`sheet:${this.rnd() < 0.5 ? 0 : 1}`, { gain: 0.6, bus: 'uiBus' }); }
+  /** A special find, with the 'Hallazgo' toast (ui/flow.js): the collection's own ting (coins, watches, jewels, oddities), and the discovery chime behind the rarer ones. */
+  find(o = {}) {
+    this.stats.finds++;
+    const c = FIND_SOUNDS.includes(o?.collection) ? o.collection : 'coins', a = this.play(`find:${c}`, { gain: 0.8, bus: 'uiBus' });
+    if (fin(o?.rarity, 1) >= 3) this.play('chime', { gain: 0.3, bus: 'uiBus', when: 0.2 });
+    return a;
+  }
 
   // ---- gameplay events -----------------------------------------------------------------------------------------------------------------------
   onStep(e) {
     this.stats.steps++;
     const surface = SURFACES.includes(e?.surface) ? e.surface : 'concrete', sprint = !!e?.sprint, crouch = !!e?.crouch, speed = fin(e?.speed, 2.5);
     const v = (this.stepN++ + Math.floor(this.rnd() * 2)) % 4;
-    this.play(`step:${surface}:${v}`, { gain: FOOT_GAIN * (crouch ? 0.5 : sprint ? 1.25 : 1) * clamp(speed / 2.8, 0.7, 1.15), rate: (sprint ? 1.04 : 1) * (0.95 + 0.1 * this.rnd()) });
+    this.play(`step:${surface}:${v}`, { gain: FOOT_GAIN * (crouch ? FOOT_STANCE.crouch : sprint ? FOOT_STANCE.sprint : FOOT_STANCE.walk) * clamp(speed / 2.8, 0.7, 1.15), rate: (sprint ? 1.04 : 1) * (0.95 + 0.1 * this.rnd()) });
   }
   onLand(e) {
     this.stats.lands++;
@@ -266,13 +282,23 @@ export class AudioEngine {
     const key = st.kind === 'shutter' ? `shutter:${e.open ? 'open' : 'close'}` : `door:${e.open ? 'open' : 'close'}:${this.rnd() < 0.5 ? 0 : 1}`;
     this.playAt(key, x, y, z, { bus: 'sfxBus', gain: e.by === 'player' ? 1.1 : 0.9, ref: 3, rate: 0.97 + 0.06 * this.rnd(), lp: this._blockedBetween(x, z) ? 700 : 18000 });
   }
+  /**
+   * A drawer, a door or a lid of a piece of furniture moved (interiors/containers.js: { kind: drawer | door | lid | fridge, group: the furniture, x, y, z }). Placed at the piece,
+   * dulled when a wall is in the way, silent beyond 40 m. `open` is false for the close event, which A3 sends when the shutting starts (the sample's shut lands 0.3 s later).
+   */
+  onContainer(e, open) {
+    const x = e?.x, y = e?.y, z = e?.z; if (![x, y, z].every(Number.isFinite)) return null;
+    const L = this.listener; if (Math.hypot(x - L.x, y - L.y, z - L.z) > 40) return null;
+    this.stats.furn++;
+    return this.playAt(`furn:${furnKind(e.kind, e.group)}:${open ? 'open' : 'close'}:${this.rnd() < 0.5 ? 0 : 1}`, x, y, z, { bus: 'sfxBus', gain: 1, ref: 1.5, rate: 0.97 + 0.06 * this.rnd(), lp: this._blockedBetween(x, z) ? 700 : 18000 });
+  }
   /** play = full, paused / a panel = half and dull, title / loading = a third: enough to hear the volume slider move. */
   _applyMode(m) {
     this.modeScale = m === 'play' ? 1 : m === 'paused' || m === 'panel' ? 0.5 : 0.3;
     this._master();
     if (this.n.bedLP) this._set(this.n.bedLP.frequency, this._bedCutoff(), 0.3);
   }
-  onMode(e) { this._applyMode(e?.mode); if (e?.mode === 'panel') this.paper(); }
+  onMode(e) { this._applyMode(e?.mode); if (e?.mode === 'panel') { if (this.ctx?.flow?.current === 'reader') this.sheet(); else this.paper(); } }
   onTalk(on) { this.duckTalk = on ? 0.5 : 1; if (this.n.duck) this._set(this.n.duck.gain, this.duckTalk, 0.25); }
   _bedCutoff() { const out = 16000 * Math.pow(700 / 16000, this.indoor); return this.modeScale < 1 && this.modeScale > 0.35 ? Math.min(out, 2200) : out; }
 

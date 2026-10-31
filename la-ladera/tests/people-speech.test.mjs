@@ -3,7 +3,8 @@
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/people-speech.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { langRank, rankVoices, pickVoice, voiceGender, Speech, LANG_RANK } from '../js/people/speech.js';
+import { langRank, rankVoices, pickVoice, voiceGender, pitchFor, Speech, LANG_RANK } from '../js/people/speech.js';
+import { voiceFor, AGE } from '../js/people/personas.js';
 
 const V = (name, lang, local = true) => ({ name, lang, localService: local, voiceURI: name });
 
@@ -59,6 +60,36 @@ test('speak(): utterance uses the best Spanish voice, its language, and the pers
     const u = b.spoken[0]; assert.equal(u.text, 'Buenas tardes, ¿cómo le va?'); assert.equal(u.lang, 'es-CO'); assert.equal(u.voice.name, 'Paola');
     assert.ok(Math.abs(u.pitch - 1.38) < 1e-9 && Math.abs(u.rate - 1.06) < 1e-9, `pitch ${u.pitch} rate ${u.rate}`);
     assert.equal(rec.mode, 'tts'); sp.cancel();
+  } finally { b.restore(); }
+});
+
+test('one voice for everybody (Chrome with no Spanish speech packs: "Google español", women, no gendered name): men are deeper, grandfathers deepest, boys and women untouched', async () => {
+  const google = rankVoices([V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)]);
+  assert.equal(voiceGender(google[0]), '?', 'the premise: neither name says a gender'); assert.equal(google[0].name, 'Google español de Estados Unidos', 'and es-US is the one everybody gets');
+  const ids = Array.from({ length: 60 }, (_, i) => 'n' + i), P = (g, a) => ids.map((id) => pitchFor(google[0], voiceFor(id, g, a)));
+  const men = P('m', 'adult'), women = P('f', 'adult'), elders = P('m', 'elder'), grandmas = P('f', 'elder'), boys = P('m', 'kid'), girls = P('f', 'kid');
+  assert.ok(Math.max(...men) <= 0.76, `a man at ${Math.max(...men).toFixed(2)}`); assert.ok(Math.min(...men) >= 0.55);
+  assert.ok(Math.min(...women) >= 0.88, `a woman at ${Math.min(...women).toFixed(2)}`);
+  assert.ok(Math.min(...women) - Math.max(...men) >= 0.14, 'the sexes do not overlap on one voice');
+  assert.ok(Math.max(...elders) < Math.min(...men) + 0.05 && Math.max(...elders) <= 0.66, `a grandfather at ${Math.max(...elders).toFixed(2)}`); assert.ok(Math.min(...elders) >= 0.55);
+  const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+  assert.ok(mean(grandmas) < mean(women) - 0.1, 'a grandmother is deeper than a woman (on average: every voice has its own spread)'); assert.ok(Math.min(...boys) >= 1.1 && Math.min(...girls) >= 1.1, 'children are high, boys included');
+  assert.ok(Math.min(...boys) >= Math.min(...girls) * 0.9);
+  assert.ok(AGE.kid.pitch - AGE.elder.pitch >= 0.55, 'the spread by age is wide');
+  // a voice that IS a man's keeps the man's pitch; a woman on a man's voice is raised; a named woman's voice is left alone
+  const raul = V('Microsoft Raul', 'es-MX'), sabina = V('Microsoft Sabina', 'es-MX');
+  const vm = voiceFor('n7', 'm', 'adult'), vf = voiceFor('n7', 'f', 'adult');
+  assert.equal(pitchFor(raul, vm), vm.pitch); assert.ok(pitchFor(raul, vf) > vf.pitch * 1.25); assert.equal(pitchFor(sabina, vf), vf.pitch); assert.ok(pitchFor(sabina, vm) < vm.pitch * 0.75);
+  assert.equal(pitchFor(raul, voiceFor('n7', 'f', 'kid')), voiceFor('n7', 'f', 'kid').pitch, 'a girl is not raised on a man\'s voice');
+  assert.equal(pitchFor(null, { pitch: 1, gender: 'm' }), 0.72, 'no voice at all (the babble): a man is lower than a woman'); assert.equal(pitchFor(google[0], { pitch: 1 }), 1, 'a reader without a sex or age is untouched');
+  // the utterance carries it
+  const b = fakeBrowser({ voices: [V('Google español', 'es-ES', false), V('Google español de Estados Unidos', 'es-US', false)] });
+  try {
+    const sp = new Speech({ ui: toasts() }).init(), say = async (o) => { const n = b.spoken.length; sp.speak('Buenas tardes.', o); await new Promise((r) => setTimeout(r, 70)); return b.spoken[n]; };
+    const um = await say(vm), uf = await say(vf), ub = await say(voiceFor('n7', 'm', 'kid'));
+    assert.equal(um.voice.name, 'Google español de Estados Unidos'); assert.equal(uf.voice.name, um.voice.name, 'the one voice');
+    assert.ok(Math.abs(um.pitch - pitchFor(google[0], vm)) < 1e-9 && um.pitch < 0.8, `the man's utterance at ${um.pitch}`); assert.ok(uf.pitch >= 0.9 && ub.pitch >= 1.2, `woman ${uf.pitch}, boy ${ub.pitch}`);
+    assert.ok(uf.pitch - um.pitch >= 0.2, 'on the same voice the woman is clearly higher'); sp.cancel();
   } finally { b.restore(); }
 });
 

@@ -6,7 +6,7 @@ const KINDS = ['vista', 'mirador', 'shrine', 'object', 'story', 'nature', 'mural
 
 const wallDist = (w, x, z) => {                                       // from a point to a collider's surface
   const dx = w.x2 - w.x1, dz = w.z2 - w.z1, l2 = dx * dx + dz * dz, t = l2 > 1e-9 ? Math.max(0, Math.min(1, ((x - w.x1) * dx + (z - w.z1) * dz) / l2)) : 0;
-  return Math.hypot(x - (w.x1 + t * dx), z - (w.z1 + t * dz)) - (w.t ?? 0) / 2;
+  return Math.hypot(x - (w.x1 + t * dx), z - (w.z1 + t * dz)) - (w.t ?? 0);
 };
 
 /**
@@ -33,6 +33,7 @@ export function buildDiscoveries(K) {
 
   if (W.cross) add('cruz', 'La Cruz de la Cumbre', 'The summit cross, lit all night: the whole barrio steers by it.', 'vista', W.cross.x, W.cross.z, { radius: 9, dy: 8, y: W.cross.y });
   const mir = lm('mirador'); if (mir) add('mirador', 'El Mirador del Cielo', 'A balustrade over every roof of the barrio, and the valley behind.', 'mirador', mir.x, mir.z + 2.4, { radius: 5 });
+  if (W.tower) add('torre', 'La torre del mirador', 'Ten metres of bare concrete up an outside stair, and no lift: from the deck the roofs of the barrio step down to the valley and the lights of the city.', 'mirador', W.tower.x, W.tower.z, { radius: 2.6, y: W.tower.deckY, dy: 1.6 });
   if (W.telescope) add('telescopio', 'El telescopio de monedas', 'A coin telescope bolted to the viewpoint rail; the coin slot has been jammed for years.', 'object', W.telescope.x, W.telescope.z, { radius: 2.4 });
   if (W.payphone) add('telefono', 'El teléfono público', 'A payphone that still sells minutes, with a line of numbers scratched into the hood.', 'object', W.payphone.x, W.payphone.z, { radius: 2.4 });
   if (W.shrine) add('virgen', 'La Virgen del Carmen', 'A neighbours\' shrine: candles, plastic flowers and a blue niche, kept by hand for decades.', 'shrine', W.shrine.front[0], W.shrine.front[1], { radius: 3.2 });

@@ -39,6 +39,13 @@ export function deriveWalls(S) {
       if (!wl) { S.notes.push(`door ${d.id} has no wall`); continue; }
       wl.openings.push({ kind: d.kind === 'arch' ? 'arch' : d.kind === 'shutter' ? 'shutter' : 'door', u0: c - d.w / 2, u1: c + d.w / 2, y0: 0, y1: d.h, ref: d.id });
     }
+    // arcades: window-like openings in interior walls (onto a patio); the collider keeps the wall whole
+    for (const a of S.arcades) {
+      if (a.floor !== k) continue;
+      const wl = list.find((w) => !w.ext && w.dir === a.wall.dir && Math.abs(w.at - a.wall.at) < 0.02 && a.u >= w.a0 - 1e-6 && a.u <= w.a1 + 1e-6);
+      if (!wl) { S.notes.push(`arcade ${a.id} has no wall`); continue; }
+      wl.openings.push({ kind: 'arcade', u0: a.u - a.w / 2, u1: a.u + a.w / 2, y0: a.y, y1: a.y + a.h, ref: a.id });
+    }
     // windows
     for (const w of S.windows) {
       if (w.floor !== k) continue;

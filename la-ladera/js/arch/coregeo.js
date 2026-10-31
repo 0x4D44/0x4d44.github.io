@@ -16,7 +16,7 @@ export function coreGeo(S, style = 'home', o = {}) {
   const coreLeft = o.coreLeft ?? (S.party.left && !S.party.right ? true : S.party.right && !S.party.left ? false : S.rng.chance(0.5));
   const g = { cd, style, coreLeft, orient: 'z', back: null, flip: false };
   const restW = Wi - across - ti;
-  const dfIdeal = style === 'column' ? clamp(0.34 * Di, 2.2, o.entryMax ?? 3.4) : clamp(0.38 * Di, 2.8, 4.8);
+  const dfIdeal = o.df ?? (style === 'column' ? clamp(0.34 * Di, 2.2, o.entryMax ?? 3.4) : clamp(0.38 * Di, 2.8, 4.8));      // `o.df`: a layout that wants its own front depth (rowhouses)
   if (Di >= along + ti + 2.0 && restW >= 1.5) {
     let df = dfIdeal, Dr = Di - df - ti, back = 0;
     if (Dr < along) { df = Di - ti - along; Dr = along; }

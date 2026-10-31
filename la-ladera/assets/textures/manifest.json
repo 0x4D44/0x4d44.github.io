@@ -431,8 +431,51 @@
    "tileScale": 0.976,
    "avg": "#dadada",
    "size": 512
+  },
+  "bark_eucalyptus": {
+   "map": "bark_eucalyptus.jpg",
+   "tileScale": 1.0,
+   "avg": "#b49c8a",
+   "size": 1024,
+   "w": 512,
+   "h": 1024
+  },
+  "foliage_cards": {
+   "map": "foliage_cards.png",
+   "tileScale": 1.0,
+   "avg": "#767948",
+   "size": 2048,
+   "w": 2048,
+   "h": 1024,
+   "alpha": true,
+   "cells": [
+    "eucalyptus",
+    "cypress",
+    "banana leaf",
+    "agave",
+    "broadleaf almendro",
+    "bougainvillea",
+    "flower bed",
+    "wildflower tuft"
+   ]
+  },
+  "trunk_banana": {
+   "map": "trunk_banana.jpg",
+   "tileScale": 1.0,
+   "avg": "#a28d5e",
+   "size": 512,
+   "w": 256,
+   "h": 512
+  },
+  "bark_dark": {
+   "map": "bark_dark.jpg",
+   "tileScale": 1.0,
+   "avg": "#614233",
+   "size": 512,
+   "w": 512,
+   "h": 512
   }
  },
  "version": 2,
- "generated": "2026-10-29T15:04:35.673Z"
+ "generated": "2026-10-30T08:54:46.393925Z"
 }

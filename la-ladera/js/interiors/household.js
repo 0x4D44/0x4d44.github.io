@@ -2,6 +2,8 @@
 // across loads and every neighbour differs.
 
 import { PAL } from './catalog.js';
+import { makeRng, hashStr } from '../core/rng.js';
+import { WOMEN, MEN, BOYS, GIRLS, SURNAMES } from './names.js';
 
 export const WALL_PAINTS = [
   { n: 'menta', c: 0x93d3b2, d: 0x3f8a6c }, { n: 'cielo', c: 0x93c4ea, d: 0x3a6f9c }, { n: 'durazno', c: 0xf5bd96, d: 0xb85f3a },
@@ -14,12 +16,22 @@ const CERAMIC_TINTS = [0xf1ead8, 0xd7dcd9, 0xe8d3c0, 0xe4c9a8, 0xdfe6dc];
 const BATH_TINTS = [0xcfe3ea, 0xdbe8d4, 0xf2e4e6, 0xe9f0f0, 0xf1ead8];
 const TRIM_TINTS = [0xf6f3ea, 0xf6f3ea, 0xf6f3ea, 0x6b4a32, 0x2f3a45];
 
-export const NAMES = {
-  women: ['Rosalba', 'Gilma', 'Amparo', 'Luz Marina', 'Nubia', 'Marleny', 'Esperanza', 'Consuelo', 'Ligia', 'Carmenza', 'Edilma', 'Fanny'],
-  men: ['Hernán', 'Alirio', 'Ramiro', 'Gonzalo', 'Libardo', 'Aníbal', 'Evelio', 'Jairo', 'Octavio', 'Wilson', 'Néstor', 'Duván'],
-  kids: ['Santiago', 'Valentina', 'Mateo', 'Sofía', 'Juan David', 'Camila', 'Sebastián', 'Isabella', 'Samuel', 'Luciana', 'Andrés', 'Mariana'],
-  surnames: ['Restrepo', 'Gómez', 'Ramírez', 'Moreno', 'Quintero', 'Cárdenas', 'Mosquera', 'Chará', 'Cuéllar', 'Tovar', 'Palacios', 'Ochoa', 'Valencia', 'Pineda', 'Cano', 'Arboleda'],
-};
+/** The pools (names.js). `kids` alternates a boy and a girl, so the parity of a name's place tells its gender. */
+export const NAMES = { women: WOMEN, men: MEN, kids: BOYS.flatMap((b, i) => (GIRLS[i] ? [b, GIRLS[i]] : [])), surnames: SURNAMES };
+const GIRL = new Set(GIRLS);
+
+const books = new Map();
+/** The pools shuffled once per world seed. A household takes the name at its own place in the barrio, so no name comes round again before the pool is used up. */
+function nameBook(seed) {
+  const s = seed >>> 0;
+  let b = books.get(s);
+  if (!b) {
+    const r = makeRng((hashStr('first-names') ^ s) >>> 0);
+    b = { women: r.shuffle([...WOMEN]), men: r.shuffle([...MEN]), boys: r.shuffle([...BOYS]), girls: r.shuffle([...GIRLS]), sur: r.shuffle([...SURNAMES]), young: r.shuffle([...NAMES.kids]) };   // (`young` last: the shuffles above stay where they were)
+    books.set(s, b);
+  }
+  return b;
+}
 // generic football colours: no crests, no real clubs
 export const TEAMS = [
   { a: 0xc8302a, b: 0xf2f2ee, n: 'rojiblancos' }, { a: 0x2c7a3f, b: 0xf2f2ee, n: 'verdiblancos' }, { a: 0xe8c332, b: 0x2a4f9a, n: 'amarillo y azul' },
@@ -27,20 +39,35 @@ export const TEAMS = [
 ];
 
 const pickW = (rng, table) => rng.weighted(table, (t) => t[1])[0];
+/** The two children's names: two draws from the stream whatever happens next (so every later draw of the household is where it always was) decide each child's gender; with a
+ *  `book` the names themselves are the household's place in the barrio in that gender's shuffled list (two girls take places half a list apart: never the same name). */
+const kidNames = (r, book, at, student = null) => {
+  const kid = r.pick(NAMES.kids), kid2 = r.pick(NAMES.kids.filter((k) => k !== kid));
+  if (!book) return { kid, kid2 };
+  // The two grown-ups of a student flat are named from the children's lists too (born in the 2000s), and unlike a child's name theirs are counted among the barrio's ADULTS: so a student
+  // flat takes the next two names of the one shuffled list of all the children's names by its place among the STUDENT flats (80 flats before a name comes round, and the pool has 160).
+  if (student != null) return { kid: book.young[(2 * student) % book.young.length], kid2: book.young[(2 * student + 1) % book.young.length] };
+  const list = (n) => (GIRL.has(n) ? book.girls : book.boys), a = list(kid), b = list(kid2);
+  return { kid: a[at % a.length], kid2: b[(at + (a === b ? b.length >> 1 : 0)) % b.length] };
+};
+
+/** The kind of household a lot's own people are (the household's first draw, from `hrng` = rng.fork('hh:' + key); a shop home when `shop`). */
+function lotKind(hrng, lot, shop) {
+  const lk = lot.kind;
+  if (shop || lk === 'shophouse' || lk === 'cornerstore' || lk === 'kiosk') return 'shopkeeper';
+  if (lk === 'apartments') return pickW(hrng, [['family', 4], ['couple', 3], ['students', 2], ['elder', 3]]);
+  if (lk === 'tenement') return pickW(hrng, [['family', 3], ['elder', 3], ['students', 3], ['couple', 2]]);
+  return pickW(hrng, [['family', 6], ['elder', 2], ['couple', 2], ['students', 1]]);
+}
 
 /**
- * One household. key = what makes it unique (building id + flat/room). o: { kind?: forced persona, shop?: bool }
+ * One household. key = what makes it unique (building id + flat/room). o: { kind?: forced persona, shop?: bool, at?: the household's place among all the barrio's (positionOf), student?:
+ * a student flat's place among the student flats (studentOf), seed?: the world seed }. With `at` the names are handed out without replacement; without it (a test's own household) they
+ * are drawn at random from the pools.
  */
 export function makeHousehold(rng, lot, key, o = {}) {
   const hrng = rng.fork('hh:' + key);
-  let kind = o.kind;
-  if (!kind) {
-    const lk = lot.kind;
-    if (o.shop || lk === 'shophouse' || lk === 'cornerstore' || lk === 'kiosk') kind = 'shopkeeper';
-    else if (lk === 'apartments') kind = pickW(hrng, [['family', 4], ['couple', 3], ['students', 2], ['elder', 3]]);
-    else if (lk === 'tenement') kind = pickW(hrng, [['family', 3], ['elder', 3], ['students', 3], ['couple', 2]]);
-    else kind = pickW(hrng, [['family', 6], ['elder', 2], ['couple', 2], ['students', 1]]);
-  }
+  const kind = o.kind || lotKind(hrng, lot, o.shop);
   const income = hrng.chance(kind === 'shopkeeper' ? 0.6 : lot.kind === 'apartments' ? 0.55 : lot.kind === 'tenement' ? 0.12 : 0.4) ? 1 : 0;
   const kids = kind === 'family' || kind === 'shopkeeper' ? hrng.int(1, 3) : 0;
   const babies = kids > 0 && hrng.chance(0.22);
@@ -53,7 +80,9 @@ export function makeHousehold(rng, lot, key, o = {}) {
   const hobby = hrng.pick(kind === 'students' ? ['football', 'music', 'reading'] : kind === 'elder' ? ['plants', 'sewing', 'radio', 'pigeons'] : ['football', 'music', 'plants', 'reading', 'cooking', 'sewing']);
   const team = hrng.pick(TEAMS);
   const paints = hrng.shuffle([...WALL_PAINTS]);
-  const w = hrng.pick(NAMES.women), m = hrng.pick(NAMES.men), sur = hrng.pick(NAMES.surnames);
+  const book = o.at == null ? null : nameBook(o.seed ?? 0), at = o.at ?? 0;
+  let w = hrng.pick(NAMES.women), m = hrng.pick(NAMES.men), sur = hrng.pick(NAMES.surnames);        // (drawn either way: the rest of the household does not depend on how the names are given)
+  if (book) { w = book.women[at % book.women.length]; m = book.men[at % book.men.length]; sur = book.sur[at % book.sur.length]; }
   const tints = {};                                   // one colour per upholstery/plastic family so a home looks coordinated
   for (const k of Object.keys(PAL)) if (k !== 'none') tints[k] = hrng.pick(PAL[k]);
   tints.white = 0xf2f0ea;
@@ -70,9 +99,81 @@ export function makeHousehold(rng, lot, key, o = {}) {
     crochet: kind === 'elder' || hrng.chance(0.3), tvBig: income === 1 && hrng.chance(0.7), rustic: hrng.chance(0.2),
     paint: { pub: paints[0], bed: paints[1], bed2: paints[2], kit: paints[3] }, tints,
     floorPub, floorBed, ceramicTint: hrng.pick(CERAMIC_TINTS), bathTint: hrng.pick(BATH_TINTS), trimTint: hrng.pick(TRIM_TINTS),
-    names: { woman: w, man: m, sur, don: 'don ' + m, dona: 'doña ' + w, kid: hrng.pick(NAMES.kids), kid2: hrng.pick(NAMES.kids) },
+    names: { woman: w, man: m, sur, don: 'don ' + m, dona: 'doña ' + w, ...kidNames(hrng, book, at, kind === 'students' ? o.student : null) },
     seed: hrng.int(1, 1e9),
   };
+}
+
+const OCC = { family: 'family', elder: 'elder', shopkeeper: 'shopkeeper' };
+/** The stream every household and finish of a building is drawn from: stable per world seed and lot. Furnishing only forks it (it never draws from it), so a
+ *  household can be re-derived without furnishing the building (contents.js plans the whole barrio that way, whatever has been furnished so far). */
+export const furnishRng = (ctx, bp) => makeRng((hashStr('furnish:' + bp.id) ^ (ctx.seed >>> 0) ^ (((bp.lot ?? {}).seed ?? 0) >>> 0)) >>> 0);
+/** The rooms of a building in the order they are furnished. */
+export const roomsInOrder = (bp) => [...(bp.rooms ?? [])].sort((a, b) => (a.floor - b.floor) || (a.id < b.id ? -1 : 1));
+
+/** The household a room belongs to: one per house, per flat of an apartment block, per cuarto of a tenement ... (a string; the households of a building are its distinct keys). */
+function householdKey(bp, room) {
+  const lot = bp.lot ?? {};
+  let flat = 'all';
+  if (lot.kind === 'apartments') flat = `f${room.floor}${room.flat ?? room.unit ?? ''}`;
+  else if (lot.kind === 'tenement') flat = room.type === 'bedroom' || room.type === 'living' ? room.id : 'shared';
+  return `${bp.id}.${flat}.${room.occupant ?? ''}`;
+}
+const rosters = new WeakMap();
+/** What the occupant of a room makes the household (undefined: the household draws its own kind from its lot, `lotKind`). */
+const occupantKind = (rng, room, key) => OCC[room.occupant] ?? (room.occupant === 'young' ? (rng.fork(key).chance(0.5) ? 'couple' : 'students') : undefined);
+/** Every household of the barrio in its place: `at` (0, 1, 2 ... over all of them) and `young` (0, 1, 2 ... over the student flats alone). Built once per ctx.buildings. */
+function rosterOf(ctx) {
+  const B = ctx.buildings;
+  let r = rosters.get(B);
+  if (!r || r.size !== B.size) {
+    const at = new Map(), young = new Map();
+    for (const b of [...B.values()].sort((x, y) => (x.id < y.id ? -1 : x.id > y.id ? 1 : 0))) {
+      try {
+        const rng = furnishRng(ctx, b);
+        for (const room of roomsInOrder(b)) {
+          const k = householdKey(b, room);
+          if (at.has(k)) continue;
+          at.set(k, at.size);
+          // (asked of the very streams furnishing asks, so the roster and the households agree on who is a student)
+          if ((occupantKind(rng, room, k) ?? lotKind(rng.fork('hh:' + k), b.lot ?? {}, false)) === 'students') young.set(k, young.size);
+        }
+      } catch { /* reported where the building is furnished */ }
+    }
+    rosters.set(B, r = { size: B.size, at, young });
+  }
+  return r;
+}
+/**
+ * Where a household stands among every household of the barrio: the buildings of `ctx.buildings` in id order, their households in the order furnishing meets them (0, 1, 2 ...).
+ * household.js gives each its names by this place, so a first name is used again only after the pool is used up. null for a building that is not one of ctx.buildings (a test's own
+ * plan): its names are drawn at random. A building whose rooms cannot be read (a broken plan) takes no place and costs the others none.
+ */
+export function positionOf(ctx, bp, key) {
+  if (!ctx?.buildings?.has?.(bp.id)) return null;
+  return rosterOf(ctx).at.get(key) ?? null;
+}
+/** Where a STUDENT flat stands among the student flats of the barrio (0, 1, 2 ...), or null for any other household: the two names of a student flat are the next two unused ones. */
+export function studentOf(ctx, bp, key) {
+  if (!ctx?.buildings?.has?.(bp.id)) return null;
+  return rosterOf(ctx).young.get(key) ?? null;
+}
+
+/** Who lives in `room` (one household per house, per flat of an apartment block, per cuarto of a tenement ...). `hhs` (a Map) caches them by key; `ctx` gives the household its place. */
+export function householdForRoom(rng, bp, room, hhs, ctx = null) {
+  const lot = bp.lot ?? {}, key = householdKey(bp, room);
+  let hh = hhs.get(key);
+  if (!hh) {
+    hh = makeHousehold(rng, lot, key, { kind: occupantKind(rng, room, key), at: positionOf(ctx, bp, key), student: studentOf(ctx, bp, key), seed: ctx?.seed });
+    hhs.set(key, hh);
+  }
+  return hh;
+}
+/** Every household of a building WITHOUT furnishing it: what furnishBuilding puts in `bp.interior.hh` (same keys, same order, same values). */
+export function householdsOf(ctx, bp) {
+  const rng = furnishRng(ctx, bp), hhs = new Map();
+  for (const room of roomsInOrder(bp)) householdForRoom(rng, bp, room, hhs, ctx);
+  return [...hhs.values()];
 }
 
 /** Pick the tint for a floor material (most textures are left untinted; plain ceramic gets a gentle tint). */

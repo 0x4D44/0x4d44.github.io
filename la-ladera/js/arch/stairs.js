@@ -10,20 +10,23 @@
 import { R, rectMinusRects } from './geom.js';
 
 export const STAIR = { RUN: 0.27, FW: 0.95, DIV: 0.12, LDG: 1.0, LH: 1.0 };
+/** The stair of a public building (the school): flights 1.4 m wide, a landing and a half landing at least as deep as a flight is wide. LDG and LH are the layout's to set (it knows the depth it has). */
+export const STAIR_WIDE = { RUN: 0.27, FW: 1.4, DIV: 0.12, LDG: 1.6, LH: 1.5 };
 
-export function coreDims(fh) {
+/** Dimensions of the dogleg core for floor-to-floor height `fh`; `style` is one of the STAIR tables above (a layout may pass its own LDG / LH). */
+export function coreDims(fh, style = STAIR) {
   const n = 2 * Math.max(7, Math.min(9, Math.round(fh / 0.36))), nh = n / 2;
-  const lfl = (nh - 1) * STAIR.RUN;
-  return { n, nh, rise: fh / n, run: STAIR.RUN, lfl, across: 2 * STAIR.FW + STAIR.DIV, along: STAIR.LDG + lfl + STAIR.LH };
+  const lfl = (nh - 1) * style.RUN;
+  return { n, nh, rise: fh / n, run: style.RUN, lfl, fw: style.FW, div: style.DIV, ldg: style.LDG, lh: style.LH, across: 2 * style.FW + style.DIV, along: style.LDG + lfl + style.LH };
 }
 
 /**
  * origin = [x,z] of the corner (u=0, s=0) on the landing edge; U,S = axis-aligned unit vectors (across, along the flights).
  * nUp = number of floor transitions served (0..nUp-1); fh = floor-to-floor; y0 = local y of floor 0.
  */
-export function makeCore({ origin, U, S, fh, nUp, floors, roof, y0 = 0 }) {
-  const d = coreDims(fh), { n, nh, rise, run, lfl } = d;
-  const { FW, DIV, LDG, LH } = STAIR, across = d.across;
+export function makeCore({ origin, U, S, fh, nUp, floors, roof, y0 = 0, style = STAIR }) {
+  const d = coreDims(fh, style), { n, nh, rise, run, lfl } = d;
+  const { fw: FW, div: DIV, ldg: LDG, lh: LH } = d, across = d.across;
   const P = (u, s) => [origin[0] + U[0] * u + S[0] * s, origin[1] + U[1] * u + S[1] * s];
   const rect = (u0, s0, u1, s1) => {
     const a = P(u0, s0), b = P(u1, s1);
@@ -59,11 +62,27 @@ export function makeCore({ origin, U, S, fh, nUp, floors, roof, y0 = 0 }) {
     const yt = y0 + nUp * fh;
     guards.push({ floor: nUp, p1: P(0, 0.04), p2: P(FW, 0.04), y0: yt, y1: yt + 1.0, rail: true });
   }
+  const inRect = (r, x, z) => x >= r.x0 - 1e-6 && x <= r.x1 + 1e-6 && z >= r.z0 - 1e-6 && z <= r.z1 + 1e-6;
   return {
     ...d, origin, U, S, P, rect: whole, landing, voidRect, flights, halfLandings, dividers, nooks, guards, paths, stairs, nUp,
     /** Slab holes: floors 1..nUp get the void rect (roof floor index = `floors`). */
     holeAt(k) { return k >= 1 && k <= nUp ? voidRect : null; },
     landingAt(k) { return k >= 0 && k <= nUp ? landing : null; },
+    /**
+     * Every height (building-local y) a person can stand at over the plan point (x, z): the landing of each floor, the treads of a flight (a ramp through the tread tops, a
+     * little high rather than low) and a half landing. Windows and posters in a stair wall hang from these, not from the storey (openings.js `stairClear`).
+     */
+    surfacesAt(x, z) {
+      const out = [];
+      if (inRect(landing, x, z)) for (let k = 0; k <= nUp; k++) out.push(y0 + k * fh);
+      for (const f of flights) {
+        if (!inRect(f.rect, x, z)) continue;
+        const dx = f.to[0] - f.from[0], dz = f.to[1] - f.from[1], t = ((x - f.from[0]) * dx + (z - f.from[1]) * dz) / (dx * dx + dz * dz);
+        out.push(f.yFrom + Math.max(0, Math.min(1, t)) * (f.yTo - f.yFrom));
+      }
+      for (const h of halfLandings) if (inRect(h.rect, x, z)) out.push(h.y);
+      return out;
+    },
   };
 }
 

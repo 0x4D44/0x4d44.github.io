@@ -17,11 +17,11 @@ export function installDebug(ctx) {
         onGround: s?.onGround, blocked: s?.blocked, hour: ctx.hour, building: p?.building ?? null,
         indoors: p?.indoors ?? null, floor: p?.floor ?? null, room: p?.room?.id ?? null, surface: p?.surface ?? null,
         fps: st.fps, frameMs: st.frameMs, drawCalls: st.drawCalls ?? info?.render.calls, triangles: st.triangles ?? info?.render.triangles,
-        geometries: info?.memory.geometries, textures: info?.memory.textures, programs: info?.programs?.length,
+        geometries: info?.memory.geometries, textures: info?.memory.textures, programs: info?.programs?.length, warm: ctx.warm ?? null,
         quality: ctx.quality, qualityMode: ctx.qualityMode, night: r2(ctx.night ?? 0), sunEl: r2(ctx.sunEl ?? 0),
         pool: ctx.pool?.stats?.(), glow: ctx.glow?.stats?.() ?? null, visibility: ctx.visibility?.stats?.(), merge: ctx.batch?.mergeInfo ?? null, post: ctx.post ? { active: ctx.post.active, profile: ctx.post.name } : null,
         reversedZ: !!ctx.renderer?.capabilities?.reversedDepthBuffer, msaa: ctx.post?.profile?.samples ?? 0,
-        buildings: ctx.buildings.size, anchors: ctx.anchors.length, lights: ctx.lights.list.length, discoveries: [ctx.discover.found.size, ctx.discover.total],
+        buildings: ctx.buildings.size, anchors: ctx.anchors.length, lights: ctx.lights.list.length, discoveries: [ctx.discover.count, ctx.discover.total], finds: ctx.discover.finds, reader: ctx.reader?.state?.() ?? null,
         npcs: ctx.people?.list?.().length ?? 0, errors: ctx.errors.length, timings: ctx.timings, physics: ctx.physics.stats(), audio: ctx.audio?.state?.() ?? null,
         target: ctx.interact.target ? { id: ctx.interact.target.id, kind: ctx.interact.target.kind, prompt: ctx.interact.prompt() } : null,
       };

@@ -4,9 +4,14 @@
 //            ?debug  ?hour=17.2  ?seed=N  ?lots=L00,L02 (only these lots)  ?skip=props,people,furnish,interiors,world
 //            ?preserve (preserveDrawingBuffer)  ?dpr=1  ?shadows=0  ?aa=0  ?post=0 (no bloom/grade: emergency look)
 //            ?quality=low|medium|high|auto  ?timescale=N (game minutes per real second; 0 freezes the clock)
-//            ?skip=merge (keep one mesh per group x material: debugging only)  ?mergespan=N (largest merged chunk in metres, default 96)
+//            ?skip=merge (keep one mesh per group x material: debugging only)  ?mergespan=N (largest merged chunk in metres, default 128)
+//            ?skiphidden=0 (update the matrices of hidden interiors and unseen people too: debugging only; engine/visibility.js)
+//            ?castall (floors and terrain tiles cast into the sun's shadow map again, as before core/shadowpolicy.js: before / after only)
 import { createContext } from './core/ctx.js';
+import { BootBar, STAGES, CREEP_TICK_MS } from './core/bootbar.js';
+import { paintFrame } from './core/util.js';
 import { initEngine, startEngine } from './engine/index.js';
+import { warmUp } from './engine/warm.js';
 import { createSettings } from './engine/settings.js';
 import { installUI, createFlow } from './ui/index.js';
 import { initAudio } from './audio/index.js';
@@ -23,21 +28,14 @@ const num = (k) => (q.has(k) && q.get(k) !== '' && Number.isFinite(+q.get(k)) ? 
 const opts = {
   seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
-  debug: q.has('debug'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'),
-  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0',
+  debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'),
+  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0',
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
 
 const $ = (id) => document.getElementById(id);
-// [stage, relative weight of the loading bar, what the title card says while it runs]
-const STAGES = [
-  ['engine', 3, 'Encendiendo la luz…'], ['materials', 6, 'Mezclando pinturas y materiales…'], ['assets', 8, 'Trayendo muebles y vecinos…'],
-  ['plan', 6, 'Trazando calles y escaleras…'], ['world', 10, 'Levantando el cerro…'], ['arch', 6, 'Pensando cada casa…'],
-  ['furnish', 7, 'Amueblando los cuartos…'], ['colliders', 3, 'Poniendo las paredes en su sitio…'], ['build', 28, 'Construyendo casas y tiendas…'],
-  ['props', 8, 'Plantando árboles y postes…'], ['flush', 8, 'Juntándolo todo…'], ['glow', 1, 'Encendiendo las farolas…'], ['people', 10, 'Despertando a los vecinos…'], ['start', 3, 'Casi listo…'],
-];
-const TOTAL = STAGES.reduce((a, s) => a + s[1], 0);
+// The stages, their weights on the loading bar and what the card says while each runs: core/bootbar.js (which also makes a silent stage creep so the bar never looks hung)
 const HINTS = [
   'Todas las puertas se abren. Entra a las tiendas, a las casas y sube a las terrazas.',
   'Saluda a los vecinos con la tecla E: tienen rutinas y cuentan cosas del barrio.',
@@ -77,26 +75,29 @@ async function boot() {
   const flow = createFlow(ctx);
   initAudio(ctx);
 
-  let acc = 0, hint = 0;
+  let hint = 0;
   const bar = $('loadbar'), fill = bar?.firstElementChild, msg = $('loadmsg'), hintEl = $('loadhint');
-  const setBar = (frac) => { const p = Math.max(0, Math.min(1, frac)); if (fill) fill.style.width = `${Math.round(p * 100)}%`; bar?.setAttribute('aria-valuenow', String(Math.round(p * 100))); };
-  const progress = (label, sub = 0, w = 0) => { setBar((acc + sub * w) / TOTAL); if (msg && label) msg.textContent = label; };
+  const bb = new BootBar(STAGES);
+  const setBar = (frac = bb.fraction) => { const p = Math.max(0, Math.min(1, frac)); if (fill) fill.style.width = `${Math.round(p * 100)}%`; bar?.setAttribute('aria-valuenow', String(Math.round(p * 100))); };
+  const say = (label) => { if (msg && label) msg.textContent = label; };
   const nextHint = () => { if (hintEl) hintEl.textContent = HINTS[hint++ % HINTS.length]; };
   nextHint(); const hintTimer = setInterval(nextHint, 4200);
-  let cur = STAGES[0];
-  ctx.progress = (sub, label) => progress(label ?? cur[2], sub, cur[1]);
+  ctx.progress = (sub, label) => { bb.report(sub, performance.now()); setBar(); say(label ?? bb.cur[2]); };
+  // a stage that only waits (a download, the warm-up frame) reports nothing: the bar creeps inside its share so the card never looks hung (core/bootbar.js, R2c-013)
+  const creepTimer = setInterval(() => { if (bb.tick(performance.now())) setBar(); }, CREEP_TICK_MS);
 
   const stage = async (name, fn) => {
-    cur = STAGES.find((s) => s[0] === name) ?? [name, 1, name];
-    if (opts.skip.has(name)) { acc += cur[1]; return; }
-    ctx.stage = name; progress(cur[2], 0, cur[1]); const t0 = performance.now();
+    const row = bb.begin(name, performance.now());
+    if (opts.skip.has(name)) { bb.end(); return; }
+    ctx.stage = name; say(row[2]); setBar();
+    if (row[3]) await paintFrame();            // a stage that blocks the page for seconds in one call (warm): the card shows what it is doing before the page freezes
+    const t0 = performance.now();
     try { await fn(); } catch (e) {
       if (e instanceof NoGL) throw e;
       console.error(`[stage ${name}]`, e);
       ctx.errors.push({ stage: name, message: String(e?.message ?? e), stack: e?.stack });
     }
-    ctx.timings[name] = Math.round(performance.now() - t0); acc += cur[1];
-    progress(null, 0, 0);
+    ctx.timings[name] = Math.round(performance.now() - t0); bb.end(); setBar();
     ctx.events.emit('stage', { name, ms: ctx.timings[name] });
     await ctx.yield();
   };
@@ -107,10 +108,15 @@ async function boot() {
         console.error(`[${label} ${items[i]?.id ?? i}]`, e);
         ctx.errors.push({ stage: ctx.stage, item: items[i]?.id ?? i, message: String(e?.message ?? e), stack: e?.stack });
       }
-      progress(null, (i + 1) / items.length, cur[1]);
+      bb.report((i + 1) / items.length, performance.now()); setBar();
       await ctx.yield();
     }
   };
+  // The two people models are the biggest download of the boot (9.5 MB): they start as soon as the furniture is in and come down while the rooms are furnished and the
+  // houses built, instead of after the houses with the connection idle in between. The 'people' stage waits for them. (Measured at 8 Mbit/s and 120 ms: they are in
+  // ~2.7 s sooner; the whole boot is bound by the ~27 MB it downloads, so its end moved by less than the run-to-run noise.)
+  let peopleLoad = null;
+  const startPeople = () => { if (!peopleLoad) { peopleLoad = loadPeople(ctx); peopleLoad.catch(() => {}); } return peopleLoad; };   // the stage's own await reports a failure
 
   const t0 = performance.now();
   try {
@@ -126,6 +132,7 @@ async function boot() {
     await stage('arch', () => each(ctx.plan?.lots ?? [], (lot) => { ctx.buildings.set(lot.id, planBuilding(ctx, lot)); }, 'planBuilding'));
     await stage('furnish', async () => {
       await loadInteriorAssets(ctx);
+      if (!opts.skip.has('people')) startPeople();
       await each([...ctx.buildings.values()], (bp) => furnishBuilding(ctx, bp), 'furnishBuilding');
     });
     await stage('colliders', () => { for (const bp of ctx.buildings.values()) ctx.physics.add(bp.colliders ?? {}); });
@@ -140,7 +147,7 @@ async function boot() {
     });
     // every lamp is registered by now: one sprite each, and the far city on the hillsides round the plot (engine/glow.js)
     await stage('glow', () => ctx.glow?.finalize({ far: ctx.plan?._far, density: (x, z) => urbanDensity(ctx.plan, x, z), seed: ctx.plan?.seed }));
-    await stage('people', async () => { await loadPeople(ctx); spawnPeople(ctx); });
+    await stage('people', async () => { await startPeople(); spawnPeople(ctx); });
     await stage('start', async () => {
       // Textures are requested as materials are made and download alongside the build. Draw the first frame only once they are in: on a slow link
       // the world would otherwise show flat colours and pop when the images land. Bounded, so one stuck request cannot hold the page forever.
@@ -149,10 +156,14 @@ async function boot() {
         const tick = setInterval(() => ctx.progress?.(1 - lib.pending / total, `Cargando texturas (${lib.pending})…`), 200);
         try { await Promise.race([lib.whenReady(), new Promise((r) => setTimeout(r, 25000))]); } finally { clearInterval(tick); }
       }
-      startEngine(ctx);
+      startEngine(ctx, { hold: true });                         // the player and the camera are in place; the animation frames wait for the warm-up (below)
     });
-  } finally { clearInterval(hintTimer); }
-  progress('Listo', 1, 0); setBar(1);
+    // every program, texture and geometry the game will ever draw is made now, behind the title card, instead of in the frame where the player walks into a house
+    // (engine/warm.js; ?skip=warm leaves it out)
+    await stage('warm', () => { ctx.warm = warmUp(ctx); });
+    ctx.startLoop?.();                                          // the first animation frame comes after the warm-up frame, not before it (R2c-013: it was the longest freeze of the boot, drawn with the card unpainted)
+  } finally { clearInterval(hintTimer); clearInterval(creepTimer); }
+  say('Listo'); setBar(1);
   ctx.timings.total = Math.round(performance.now() - t0);
   ctx.booted = true;
   api.bootDone = true; api.bootMs = ctx.timings.total;

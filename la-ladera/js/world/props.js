@@ -2,7 +2,7 @@
 // beyond the plot, outdoor discoveries. Runs after the buildings exist (stage 'props'), before the batcher flush.
 // Groups: props.<kind>.<i>.<j> (50 m chunks) or props.<kind>. Every module is isolated: one failing step is logged, the rest still run.
 import { buildOccupancy } from './occupancy.js';
-import { makeKit } from './kit.js';
+import { makeKit, claimSpawnView } from './kit.js';
 import { makeFoliageAtlas, makeFenceTexture } from './sprites.js';
 import { buildFlora } from './flora.js';
 import { buildPoles } from './poles.js';
@@ -10,7 +10,8 @@ import { buildVehicles } from './vehicles.js';
 import { buildDress, buildPlanters } from './dress.js';
 import { buildDiscoveries } from './discover.js';
 import { buildBoundary } from './periphery.js';
-import { makeSignAtlas, buildSigns } from './signs.js';
+import { buildVista } from './vista.js';
+import { makeSignAtlas, buildSigns, planMurals, claimMurals } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
 import { fitNav } from './navfit.js';
@@ -46,11 +47,18 @@ export async function buildProps(ctx) {
     low.needsUpdate = true;
     const ft = makeFenceTexture(ctx.THREE);
     if (ft) { const m = ctx.mat('fence_mesh'); m.map = ft; m.transparent = true; m.alphaTest = 0.12; m.needsUpdate = true; }
-    K.signs = makeSignAtlas(plan);                    // murals, gate boards, plaques, hand signs, chalk (browser only; null under Node: flat boards)
-    if (K.signs) { const m = ctx.mat('world_sign'); m.map = K.signs.texture; m.needsUpdate = true; ctx.world.signAtlas = true; }
+    K.murals = planMurals(K);                         // the wall of each painting (buildSigns hangs them; the atlas crops each picture to its wall's shape)
+    K.signs = makeSignAtlas(plan, K.murals);          // gate boards, plaques, hand signs, chalk + the three murals (browser only; null under Node: flat boards)
+    if (K.signs) {
+      for (const [key, tex] of [['world_sign', K.signs.texture], ['world_mural', K.signs.mural.texture]]) { const m = ctx.mat(key); m.map = tex; m.needsUpdate = true; }
+      ctx.world.signAtlas = true;
+    }
     if (makeSignAtlas.errors?.length) ctx.errors?.push({ stage: 'props', item: 'signs.paint', message: makeSignAtlas.errors.join(' | ') });
   });
+  await step('murals', () => claimMurals(K));        // the ground in front of the three murals, before anything is parked, planted or stood on it
+  await step('arrival', () => { ctx.world.arrivalClaims = claimSpawnView(K); });   // the fan ahead of the spawn: no vehicle, bin or planter stands in the first frame
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
+  await step('vista', () => buildVista(K));          // the city beyond the rim: far houses, a church, towers, the TV mast, and their lit windows (ctx.glow)
   await step('poles', () => buildPoles(K));          // before the flora: poles and lamps claim their ground first
   await step('vehicles', () => buildVehicles(K));
   await step('dress', () => buildDress(K));          // before the flora too: benches, the shrine and the shelter keep their ground

@@ -4,8 +4,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { furnishedBatch, physicsFor, roomOf } from './interiors-lib.mjs';
+import { Interact, EXACT } from '../js/core/interact.js';
 import { obbDist } from '../js/interiors/layout.js';
-import { clockWords } from '../js/interiors/stories.js';
+import { standable } from '../js/interiors/reach.js';
+import { clockWords, collectInteractables } from '../js/interiors/stories.js';
+import { makeRng, hashStr } from '../js/core/rng.js';
 import { setFan, fanOn } from '../js/interiors/anim.js';
 import { sitDown, ensureSit, isSitting, stand } from '../js/interiors/sit.js';
 import { SAY, STORY, SHOP_STORY, PLACE_STORY } from '../js/interiors/stories_text.js';
@@ -20,11 +23,11 @@ function sabotageWorld(w) {
   const D = [...w.ctx.discover.items.values()], I = [...w.ctx.interact.items.values()].filter((i) => i.id.startsWith('int:'));
   if (SAB === 'nostory') w.ctx.discover.items.clear();
   if (SAB === 'badname') D[0].name = 'The fridge corner';
-  if (SAB === 'english') I.find((i) => i.prompt === 'Abrir la nevera').prompt = 'Open the fridge';
+  if (SAB === 'english') I.find((i) => i.prompt === 'Destapar la olla').prompt = 'Open the pot';
   if (SAB === 'offfloor') D[0].y += 1.4;                    // half way between two floors
   if (SAB === 'inside') {                                   // drop a target into the middle of a blocker
-    const i = I.find((x) => x.kind === 'object' && x.prompt === 'Abrir la nevera'), bp = w.bps.find((b) => b.id === i.building);
-    const f = bp.furniture.find((r) => r.name === 'fridge' || r.name === 'fridge_small');
+    const i = I.find((x) => x.kind === 'object' && x.prompt === 'Destapar la olla'), bp = w.bps.find((b) => b.id === i.building);
+    const f = bp.furniture.find((r) => r.name === 'stove_gas');
     const [wx, , wz] = bp.frame.toWorld(f.x, 0, f.z); i.x = wx; i.z = wz;
   }
 }
@@ -64,6 +67,15 @@ test('the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), 
     }
   }
   report(problems, 'discovery problems');
+});
+
+test('census: every interior discovery of the real barrio has a title of its own; a story told in a home or a shop carries the name of its lot', () => {
+  const D = [...real.ctx.discover.items.values()], count = new Map(), lotName = new Map(real.bps.map((b) => [b.id, b.lot?.name]));
+  for (const d of D) count.set(d.name, (count.get(d.name) ?? 0) + 1);
+  const rep = [...count].filter(([, k]) => k > 1).map(([n, k]) => `${k}x ${n}`);
+  assert.equal(rep.length, 0, `${rep.length} titles are used by more than one discovery (of ${D.length}):\n  ${rep.slice(0, 12).join('\n  ')}`);
+  const placed = D.filter((d) => lotName.get(d.building) && d.name.endsWith(` · ${lotName.get(d.building)}`)).length;
+  assert.ok(placed >= 0.6 * D.length, `only ${placed} of ${D.length} titles say where the story was found`);
 });
 
 test('each discovery stands on a floor of its own building, inside a room, on free floor', () => {
@@ -130,6 +142,30 @@ test('interactables are on free floor in front of their object and can really be
   report(problems, 'untargetable interactables');
 });
 
+test('an object nobody can see from any standing spot is not registered (a coop behind a parapet, a target walled into a pocket): collectInteractables checks the sight line itself', async () => {
+  const w = await furnishedBatch({ n: 10 });                                              // its own world: the test walls a target in
+  const { ctx } = w, mine = (b) => [...ctx.interact.items.values()].filter((i) => i.id.startsWith('int:') && i.building === b.id);
+  const bp = w.bps.find((b) => mine(b).filter((i) => i.kind === 'object').length >= 4);
+  assert.ok(bp, 'a building with four objects to play with');
+  const rngFor = () => makeRng((hashStr('stories:' + bp.id) ^ ((ctx.seed ?? 0) >>> 0)) >>> 0).fork('act');
+  const redo = () => { for (const i of mine(bp)) ctx.interact.unregister(i.id); return collectInteractables(ctx, bp, rngFor()); };
+  const victim = mine(bp).filter((i) => i.kind === 'object')[0];
+  redo();
+  assert.ok(ctx.interact.items.has(victim.id), 'control: with the walls as they are, the same pass registers the same object again');
+  assert.equal(bp.interior.stories.unseen, 0, 'control: nothing is unseen in an ordinary building');
+  const [lx, ly, lz] = bp.frame.toLocal(victim.x, victim.y, victim.z), room = bp.rooms.find((r) => lx >= r.rect.x0 - 0.01 && lx <= r.rect.x1 + 0.01 && lz >= r.rect.z0 - 0.01 && lz <= r.rect.z1 + 0.01 && ly >= (r.y ?? 0) - 0.05 && ly <= (r.y ?? 0) + (r.h ?? 2.6) + 0.05);
+  const fy = bp.lot.y + (room.y ?? 0), h = 0.18, x = victim.x, z = victim.z;
+  for (const [x1, z1, x2, z2] of [[x - h, z - h, x + h, z - h], [x + h, z - h, x + h, z + h], [x + h, z + h, x - h, z + h], [x - h, z + h, x - h, z - h]]) bp.colliders.walls.push({ x1, z1, x2, z2, t: 0.05, y0: fy, y1: fy + 1.9, id: 'test-cage' });
+  const before = mine(bp).length, n = redo();
+  assert.equal(ctx.interact.items.has(victim.id), false, `${victim.id} stands in a cage: nobody sees it, so it is not offered`);
+  assert.ok(bp.interior.stories.unseen >= 1, 'the pass counts what it dropped');
+  assert.ok(n >= before - 4, `the others are still offered (${n} of ${before}; a neighbour whose own sight line crosses the cage may go with it)`);
+  bp.colliders.walls.length -= 4;                                                           // a low wall (a curb, a counter top under 0.44 m above the feet) does not hide anything
+  for (const [x1, z1, x2, z2] of [[x - h, z - h, x + h, z - h], [x + h, z - h, x + h, z + h], [x + h, z + h, x - h, z + h], [x - h, z + h, x - h, z - h]]) bp.colliders.walls.push({ x1, z1, x2, z2, t: 0.05, y0: fy, y1: fy + 0.3, id: 'test-curb' });
+  redo();
+  assert.ok(ctx.interact.items.has(victim.id), 'a 0.3 m curb around it hides nothing at eye level');
+});
+
 test('every reachable seat can be sat on; the sofas and armchairs of each home are offered', () => {
   for (const [name, w] of worlds) {
     const sits = ours(w).filter((i) => i.kind === 'sit');
@@ -140,6 +176,56 @@ test('every reachable seat can be sat on; the sofas and armchairs of each home a
     const without = homes.filter((b) => !sits.some((i) => i.building === b.id)).map((b) => b.id);
     report(without, `${name}: buildings with a sofa but no 'Sentarse'`);
   }
+});
+
+test('targeting (R4-009): 1 to 1.3 m in front of a seat, looking at it, E offers "Sentarse" - never a fan, clock, mirror or picture', () => {
+  const problems = []; let tried = 0, skipped = 0, walled = 0;
+  for (const [name, w] of worlds) {
+    const byB = new Map(w.bps.map((b) => [b.id, b])), phs = new Map();
+    for (const seat of ours(w).filter((i) => i.kind === 'sit')) {
+      const bp = byB.get(seat.building), [, itemId, tail] = seat.id.split(':');
+      const a = bp.anchors.find((x) => x.item === itemId && 'sit' + (x.id ?? '') === tail);
+      if (!a) { problems.push(`${name} ${seat.id}: no anchor`); continue; }
+      const room = bp.rooms.find((r) => r.id === a.room), L = bp.interior.layouts.get(room.id), conn = L.connectivity();
+      let ph = phs.get(bp.id); if (!ph) phs.set(bp.id, ph = physicsFor(bp));
+      const f = [Math.sin(a.ry), Math.cos(a.ry)], side = [f[1], -f[0]];
+      let spot = null, cut = false;                             // a free spot 1 to 1.3 m in front of the seat that SEES the seat's interaction point (the first one found)
+      for (const d of [1.1, 1.0, 1.2, 1.3]) for (const s of [0, -0.3, 0.3]) {
+        if (spot) break;
+        const wx = a.x + f[0] * d + side[0] * s, wz = a.z + f[1] * d + side[1] * s, [lx, , lz] = bp.frame.toLocal(wx, a.y, wz);
+        if (lx < room.rect.x0 + 0.35 || lx > room.rect.x1 - 0.35 || lz < room.rect.z0 + 0.35 || lz > room.rect.z1 - 0.35) continue;
+        if (!standable(L, lx, lz, conn, 0.3)) continue;                                      // a spot a person can reach (not a walled-off pocket between a sofa and an armchair)
+        // a desk row in between: the kernel never offers what it cannot see. The sight line runs from the eye to where the view ray enters the seat's own box
+        // (minus the lead the target asks for: the body's width), not to the seat's centre, which is inside the outline of the piece itself
+        let endX = seat.x, endZ = seat.z;
+        if (typeof seat.hit === 'function') {
+          const e = { x: wx, y: a.y + 1.64, z: wz }, dl = Math.hypot(a.x - wx, a.y + (a.seatH ?? 0.45) + 0.15 - e.y, a.z - wz);
+          const v = { x: (a.x - wx) / dl, y: (a.y + (a.seatH ?? 0.45) + 0.15 - e.y) / dl, z: (a.z - wz) / dl }, t = seat.hit(null, seat, e, v);
+          if (!(t >= 0)) continue;
+          const tt = t > (seat.lead ?? 0.08) ? t - (seat.lead ?? 0.08) : 0;
+          endX = e.x + v.x * tt; endZ = e.z + v.z * tt;
+        }
+        if (ph.segmentBlocked(wx, wz, endX, endZ, a.y + 1.64 - 1.4, 1.2)) { cut = true; continue; }
+        spot = [wx, wz];
+      }
+      if (!spot) { if (cut) walled++; else skipped++; continue; }
+      tried++;
+      const ictx = { physics: ph, player: null }, inter = new Interact(ictx);              // the real targeting, with this building's own interactables
+      for (const x of ours(w)) if (x.building === bp.id) inter.register({ ...x });         // register() (not items.set): the kernel scans its dyn list and 4 m grid, not the map
+      const eye = { x: spot[0], y: a.y + 1.64, z: spot[1] }, tx = a.x, ty = a.y + (a.seatH ?? 0.45) + 0.15, tz = a.z;
+      const dl = Math.hypot(tx - eye.x, ty - eye.y, tz - eye.z), dir = { x: (tx - eye.x) / dl, y: (ty - eye.y) / dl, z: (tz - eye.z) / dl };
+      ictx.player = { eye, _dir: dir, pitch: Math.asin(dir.y) };                           // what the player object offers the interactables' enabled() tests
+      const got = inter.update(eye, dir);
+      if (got && got.kind !== 'sit' && typeof seat.hit === 'function') {                    // the kernel's own rule: a point target dead ahead and NEARER than the seat is what the player looks at (a fridge in front of a stool)
+        const dx = got.x - eye.x, dy = got.y - eye.y, dz = got.z - eye.z, d = Math.hypot(dx, dy, dz), cos = (dx * dir.x + dy * dir.y + dz * dir.z) / (d || 1);
+        if (!got.hit && cos >= EXACT && d * cos < seat.hit(null, seat, eye, dir)) { tried--; walled++; continue; }
+      }
+      if (got?.kind !== 'sit') problems.push(`${name} ${bp.id} ${itemId}: E offers ${got ? JSON.stringify(promptOf(w, got)) + ' (' + got.id + ')' : 'nothing'} instead of Sentarse`);
+    }
+  }
+  assert.ok(tried >= 20, `only ${tried} seats had a free spot in front (${skipped} skipped, ${walled} walled off by furniture)`);
+  assert.ok(walled <= 0.1 * (tried + walled), `${walled} of ${tried + walled} seats cannot be seen from any free spot in front (desks between): the seat is not offered from the open side`);
+  report(problems, `of ${tried} seats lose E to something else`);
 });
 
 test('stories are deterministic: the same plan tells the same stories', async () => {
@@ -202,4 +288,11 @@ test('sitting: the camera moves to the seat, any walking key stands up, E stands
   keys.delete('KeyE'); tick(); keys.add('KeyE'); ctx.interact.target = null; tick(); assert.equal(isSitting(ctx), false, 'E with nothing targeted stands up');
   keys.clear(); sitDown(ctx, { building: 'B', seat: [5, 10, 6], seatH: 0.45, ry: 0, stand: [5, 5] }); tick(0.4); player.s.x = 7; tick(); assert.equal(isSitting(ctx), false, 'walking away stands up');
   assert.equal(stand(ctx), false);
+  // R4-001: a seat is offered from up to 1.9 m away and its interaction point is NOT where the player stands: sitting from 1.5 m must hold, and W still stands up
+  keys.clear(); player.s.x = 5; player.s.z = 5;
+  assert.equal(sitDown(ctx, { building: 'B', seat: [5, 10, 6], seatH: 0.45, ry: 0, stand: [6.5, 5] }), true);
+  for (let k = 0; k < 30; k++) tick(0.1);
+  assert.equal(isSitting(ctx), true, 'sat down from 1.5 m away: still sitting 3 s later');
+  keys.add('KeyW'); tick(); assert.equal(isSitting(ctx), false, 'W stands up');
+  keys.clear(); sitDown(ctx, { building: 'B', seat: [5, 10, 6], seatH: 0.45, ry: 0, stand: [6.5, 5] }); tick(0.4); player.s.z = 5.8; tick(); assert.equal(isSitting(ctx), false, 'walking 0.8 m from the sitting spot stands up');
 });

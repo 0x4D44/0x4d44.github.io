@@ -10,6 +10,10 @@ export default {
     desc: 'painted pressed sheet steel filling the whole image edge to edge: fine vertical stiffening ribs, a few rivet heads, light neutral grey paint (it will be tinted any colour) scratched and chipped to rust-brown in patches, faint drips; no frame, no handle, seamless flat surface' },
   shutter_steel: { color: 0x8c9296, rough: 0.5, metal: 0.5, tile: 0.8, prio: 2,
     desc: 'galvanised steel roll-up shop shutter (persiana metalica enrollable) seen straight on: tight horizontal interlocking slats about 8 cm tall, dull grey with dents, rust streaks at the bottom edge, scratches and a faint chalk scribble' },
+  // Shop shutters of every look (shutters.js): slat relief is real geometry, the colour (galvanised, green, blue, yellow, rust red...) is the vertex tint, so
+  // ONE light neutral material serves them all. It borrows A1's metal_painted map until a texture of its own lands: drop `tex` then.
+  shutter_slats: { color: 0xdcdfe0, rough: 0.5, metal: 0.45, tile: 1.0, prio: 2, tintable: true, tex: 'metal_painted',
+    desc: 'painted or galvanised roll-up shop shutter seen straight on, tight horizontal interlocking slats about 8 cm tall, very light neutral grey (it will be tinted green, blue, yellow, rust red or left galvanised), faint dents, scratches, chalk marks and flaking paint, rust at the bottom edge, seamless' },
   frame_paint: { color: 0xeae6dc, rough: 0.55, tile: 0.8, prio: 3, tintable: true,
     desc: 'smooth enamel-painted timber trim seen straight on, very light neutral colour (it will be tinted any colour), fine brush marks, small chips showing grey primer and bare wood at the corners, a hairline crack' },
 
@@ -27,6 +31,11 @@ export default {
   // ---- exterior lettering: a runtime canvas atlas painted by arch/signs.js (shop fascias, blade signs, ghost signs, posters). Without a canvas
   // (Node) the material is plain white and the signs are flat boards tinted by vertex colour.
   sign_atlas: { color: 0xffffff, rough: 0.8, uv: 'unit', tex: false },
+
+  // ---- weathering decals (arch/weather.js): thin alpha quads 8 mm off the outside of a wall (rising damp, rain streaks, peeling paint, repair patches, cracks, soot,
+  // rust, salts, graffiti), textured from a runtime canvas atlas that replaces this entry at load. The definition below is what Node and a failed atlas get: faint flat
+  // patches tinted by vertex colour. They never cast a shadow (shell.js turns it off: a shadow pass has no alpha).
+  wall_decal: { color: 0xffffff, rough: 0.92, uv: 'unit', tex: false, alpha: 0.45, depthWrite: false, env: 0.4 },
 
   // ---- roofs ------------------------------------------------------------------------------------------------------------
   roof_terrace: { color: 0x9a968d, rough: 0.95, tile: 3, prio: 2,
