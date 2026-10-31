@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "material": "laundry",
+  "colourSpace": "srgb",
+  "atlas": {
+    "file": "prints.png",
+    "size": [256, 256],
+    "grid": [4, 4],
+    "tileOrder": "column,row from the image top-left",
+    "binding": "Optional external full-colour atlas; use a white material multiplier, preserve vertex fold shading, and inset each UV tile by two pixels. With no atlas, use the variant colour as the laundry material tint.",
+    "embeddedInGlb": false
+  },
+  "variants": {
+    "plain_cream": { "label": "Algodón crudo", "color": "#e8e1cf", "pattern": "plain", "tile": [0, 0], "roughness": 0.95 },
+    "plain_navy": { "label": "Azul lavado", "color": "#344760", "pattern": "plain", "tile": [1, 0], "roughness": 0.95 },
+    "plain_charcoal": { "label": "Gris carbón", "color": "#414249", "pattern": "plain", "tile": [2, 0], "roughness": 0.95 },
+    "plain_coral": { "label": "Coral suave", "color": "#c87870", "pattern": "plain", "tile": [3, 0], "roughness": 0.95 },
+    "plain_teal": { "label": "Verde azulado", "color": "#4b8981", "pattern": "plain", "tile": [0, 1], "roughness": 0.95 },
+    "plain_lavender": { "label": "Lavanda", "color": "#a89cb8", "pattern": "plain", "tile": [1, 1], "roughness": 0.95 },
+    "stripe_navy": { "label": "Rayas azul y crudo", "color": "#344760", "accent": "#eee8da", "pattern": "stripe", "tile": [2, 1], "roughness": 0.95 },
+    "stripe_teal": { "label": "Rayas verde y crema", "color": "#4b8981", "accent": "#e9dfc9", "pattern": "stripe", "tile": [3, 1], "roughness": 0.95 },
+    "floral_cream": { "label": "Flores pequeñas sobre crudo", "color": "#e8e1cf", "accent": "#b8696a", "leaf": "#657d60", "pattern": "floral", "tile": [0, 2], "roughness": 0.95 },
+    "floral_teal": { "label": "Flores claras sobre verde", "color": "#4b8981", "accent": "#efe4ca", "leaf": "#a8b794", "pattern": "floral", "tile": [1, 2], "roughness": 0.95 },
+    "football_blue_white": { "label": "Franjas azul y blanco", "color": "#366696", "accent": "#f0ece0", "pattern": "football", "tile": [2, 2], "roughness": 0.95 },
+    "football_red_white": { "label": "Franjas rojo y blanco", "color": "#b54f4b", "accent": "#f0ece0", "pattern": "football", "tile": [3, 2], "roughness": 0.95 },
+    "football_green_yellow": { "label": "Franjas verde y amarillo", "color": "#397456", "accent": "#e3bd56", "pattern": "football", "tile": [0, 3], "roughness": 0.95 },
+    "football_burgundy_navy": { "label": "Franjas vino y azul", "color": "#884857", "accent": "#344760", "pattern": "football", "tile": [1, 3], "roughness": 0.95 },
+    "straw_natural": { "label": "Paja natural", "color": "#c4a169", "accent": "#a78654", "pattern": "weave", "tile": [2, 3], "roughness": 0.95 },
+    "straw_pale": { "label": "Paja clara", "color": "#ddc69c", "accent": "#bca77d", "pattern": "weave", "tile": [3, 3], "roughness": 0.95 }
+  },
+  "provenance": "Original generated colours and print motifs. Football-colour bands have no badges, sponsors, player names or copied kit graphics. These are art choices, not claims about local dress."
+}

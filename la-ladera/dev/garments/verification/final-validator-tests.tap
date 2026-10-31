@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: complete library requires all 23 adult garments and 67 applicable object states
+ok 1 - complete library requires all 23 adult garments and 67 applicable object states
+  ---
+  duration_ms: 22.483248
+  type: 'test'
+  ...
+# Subtest: partial mode validates a development subset but cannot masquerade as complete
+ok 2 - partial mode validates a development subset but cannot masquerade as complete
+  ---
+  duration_ms: 6.960347
+  type: 'test'
+  ...
+# Subtest: missing generated GLB fails, restoring its real bytes recovers the library
+ok 3 - missing generated GLB fails, restoring its real bytes recovers the library
+  ---
+  duration_ms: 15.054444
+  type: 'test'
+  ...
+# Subtest: missing a required state cannot be hidden by an otherwise valid manifest
+ok 4 - missing a required state cannot be hidden by an otherwise valid manifest
+  ---
+  duration_ms: 19.95117
+  type: 'test'
+  ...
+# Subtest: unlisted model files and unlisted scene roots fail complete mode
+ok 5 - unlisted model files and unlisted scene roots fail complete mode
+  ---
+  duration_ms: 15.92698
+  type: 'test'
+  ...
+# Subtest: recolouring metadata cannot silently name an unknown material
+ok 6 - recolouring metadata cannot silently name an unknown material
+  ---
+  duration_ms: 1.014359
+  type: 'test'
+  ...
+# Subtest: embedded textures, skins and animations are forbidden
+ok 7 - embedded textures, skins and animations are forbidden
+  ---
+  duration_ms: 0.472542
+  type: 'test'
+  ...
+# Subtest: binary corruption is read from accessor bytes, including NaN and invalid indices
+ok 8 - binary corruption is read from accessor bytes, including NaN and invalid indices
+  ---
+  duration_ms: 1.946526
+  type: 'test'
+  ...
+# Subtest: degenerate triangles and stale accessor bounds are rejected
+ok 9 - degenerate triangles and stale accessor bounds are rejected
+  ---
+  duration_ms: 0.715229
+  type: 'test'
+  ...
+# Subtest: missing normals, UVs and colours cannot become invisible bad exports
+ok 10 - missing normals, UVs and colours cannot become invisible bad exports
+  ---
+  duration_ms: 2.676978
+  type: 'test'
+  ...
+# Subtest: truncated files, buffer overreads and scene cycles fail cleanly
+ok 11 - truncated files, buffer overreads and scene cycles fail cleanly
+  ---
+  duration_ms: 0.560546
+  type: 'test'
+  ...
+# Subtest: measurement includes child transforms and rejects moved asset origins
+ok 12 - measurement includes child transforms and rejects moved asset origins
+  ---
+  duration_ms: 0.790522
+  type: 'test'
+  ...
+# Subtest: metadata bounds and footprint are independently compared with geometry
+ok 13 - metadata bounds and footprint are independently compared with geometry
+  ---
+  duration_ms: 24.000627
+  type: 'test'
+  ...
+# Subtest: LOD must be both under its cap and a meaningful simplification
+ok 14 - LOD must be both under its cap and a meaningful simplification
+  ---
+  duration_ms: 9.523933
+  type: 'test'
+  ...
+# Subtest: triangle limits cannot be raised in manifest data
+ok 15 - triangle limits cannot be raised in manifest data
+  ---
+  duration_ms: 10.869213
+  type: 'test'
+  ...
+# Subtest: all runtime files count towards the byte budget, including unreferenced data
+ok 16 - all runtime files count towards the byte budget, including unreferenced data
+  ---
+  duration_ms: 10.311902
+  type: 'test'
+  ...
+# Subtest: unsafe referenced paths cannot escape the model directory
+ok 17 - unsafe referenced paths cannot escape the model directory
+  ---
+  duration_ms: 9.270912
+  type: 'test'
+  ...
+# Subtest: adult scope and applicable state exceptions are required
+ok 18 - adult scope and applicable state exceptions are required
+  ---
+  duration_ms: 14.064601
+  type: 'test'
+  ...
+# Subtest: provenance IDs and furniture catalogue bindings must resolve to existing contracts
+ok 19 - provenance IDs and furniture catalogue bindings must resolve to existing contracts
+  ---
+  duration_ms: 9.350621
+  type: 'test'
+  ...
+# Subtest: assortments reject incompatible states and unknown palette variants
+ok 20 - assortments reject incompatible states and unknown palette variants
+  ---
+  duration_ms: 9.258934
+  type: 'test'
+  ...
+# Subtest: stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+ok 21 - stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+  ---
+  duration_ms: 12.552692
+  type: 'test'
+  ...
+# Subtest: the checked-in garment library satisfies the complete export contract
+ok 22 - the checked-in garment library satisfies the complete export contract
+  ---
+  duration_ms: 147.762657
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 383.072687

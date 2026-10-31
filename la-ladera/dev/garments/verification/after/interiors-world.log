@@ -1,0 +1,407 @@
+TAP version 13
+# \# interiors: 42 buildings, 5811 records; meshes/building median 23 max 31; triangles median 12812 max 45614; stand-in primitives 34051
+# Subtest: every catalogue archetype has a stand-in drawer
+ok 1 - every catalogue archetype has a stand-in drawer
+  ---
+  duration_ms: 0.836883
+  type: 'test'
+  ...
+# Subtest: a stand-in stays inside its footprint box and below its catalogue height
+ok 2 - a stand-in stays inside its footprint box and below its catalogue height
+  ---
+  duration_ms: 70.86162
+  type: 'test'
+  ...
+# Subtest: interior meshes: library materials only, finite, inside the rooms, bounded draw calls
+ok 3 - interior meshes: library materials only, finite, inside the rooms, bounded draw calls
+  ---
+  duration_ms: 1214.142682
+  type: 'test'
+  ...
+# Subtest: furnishing raises no errors and every building gets furniture
+ok 4 - furnishing raises no errors and every building gets furniture
+  ---
+  duration_ms: 0.81555
+  type: 'test'
+  ...
+# Subtest: furniture lies inside its room and never overlaps other furniture
+ok 5 - furniture lies inside its room and never overlaps other furniture
+  ---
+  duration_ms: 14.44796
+  type: 'test'
+  ...
+# Subtest: doors and stairs keep >= 0.7 m clear in front of them
+ok 6 - doors and stairs keep >= 0.7 m clear in front of them
+  ---
+  duration_ms: 11.72315
+  type: 'test'
+  ...
+# Subtest: the first 3 m inside every street door stay free of furniture
+ok 7 - the first 3 m inside every street door stay free of furniture
+  ---
+  duration_ms: 15.792938
+  type: 'test'
+  ...
+# Subtest: every non-circulation room has >= 3 pieces of furniture or decor
+ok 8 - every non-circulation room has >= 3 pieces of furniture or decor
+  ---
+  duration_ms: 1.92342
+  type: 'test'
+  ...
+# Subtest: homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)
+ok 9 - homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)
+  ---
+  duration_ms: 2818.42689
+  type: 'test'
+  ...
+# Subtest: anchors: every seat, bed, stove and shop counter has one; anchors stand in free space
+ok 10 - anchors: every seat, bed, stove and shop counter has one; anchors stand in free space
+  ---
+  duration_ms: 24.120517
+  type: 'test'
+  ...
+# Subtest: rooms get a finish made of known materials
+ok 11 - rooms get a finish made of known materials
+  ---
+  duration_ms: 0.896172
+  type: 'test'
+  ...
+# Subtest: catalogue names used by furniture records all exist; lights carry the contract fields
+ok 12 - catalogue names used by furniture records all exist; lights carry the contract fields
+  ---
+  duration_ms: 1.756439
+  type: 'test'
+  ...
+# Subtest: furnishing is deterministic for a given seed and differs between seeds
+ok 13 - furnishing is deterministic for a given seed and differs between seeds
+  ---
+  duration_ms: 3111.461223
+  type: 'test'
+  ...
+# Subtest: the same lot seed always yields the same household regardless of other buildings
+ok 14 - the same lot seed always yields the same household regardless of other buildings
+  ---
+  duration_ms: 1525.745312
+  type: 'test'
+  ...
+# Subtest: the synthetic plans themselves are fully walkable (so a failure below is the furniture)
+ok 15 - the synthetic plans themselves are fully walkable (so a failure below is the furniture)
+  ---
+  duration_ms: 2413.382121
+  type: 'test'
+  ...
+# Subtest: furnished rooms, door landings and stairs stay reachable from the street
+ok 16 - furnished rooms, door landings and stairs stay reachable from the street
+  ---
+  duration_ms: 20.966831
+  type: 'test'
+  ...
+# Subtest: walking the found paths with physics.move() never gets blocked
+ok 17 - walking the found paths with physics.move() never gets blocked
+  ---
+  duration_ms: 5.652795
+  type: 'test'
+  ...
+# Subtest: every standing anchor (cook, counter, sweep, greet...) is connected to a door
+ok 18 - every standing anchor (cook, counter, sweep, greet...) is connected to a door
+  ---
+  duration_ms: 5.860879
+  type: 'test'
+  ...
+# Subtest: no errors while telling stories, and every building has interactables
+ok 19 - no errors while telling stories, and every building has interactables
+  ---
+  duration_ms: 5.142847
+  type: 'test'
+  ...
+# Subtest: the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line
+ok 20 - the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line
+  ---
+  duration_ms: 0.966027
+  type: 'test'
+  ...
+# Subtest: each discovery stands on a floor of its own building, inside a room, on free floor
+ok 21 - each discovery stands on a floor of its own building, inside a room, on free floor
+  ---
+  duration_ms: 1.855058
+  type: 'test'
+  ...
+# Subtest: every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks
+ok 22 - every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks
+  ---
+  duration_ms: 6.39148
+  type: 'test'
+  ...
+# Subtest: interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)
+ok 23 - interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)
+  ---
+  duration_ms: 99.162061
+  type: 'test'
+  ...
+# Subtest: every reachable seat can be sat on; the sofas and armchairs of each home are offered
+ok 24 - every reachable seat can be sat on; the sofas and armchairs of each home are offered
+  ---
+  duration_ms: 4.195396
+  type: 'test'
+  ...
+# Subtest: stories are deterministic: the same plan tells the same stories
+ok 25 - stories are deterministic: the same plan tells the same stories
+  ---
+  duration_ms: 1698.470993
+  type: 'test'
+  ...
+# Subtest: texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story
+ok 26 - texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story
+  ---
+  duration_ms: 1.96287
+  type: 'test'
+  ...
+# Subtest: clock words: Spanish time of day in words
+ok 27 - clock words: Spanish time of day in words
+  ---
+  duration_ms: 1.623419
+  type: 'test'
+  ...
+# Subtest: ceiling fans: switching changes the target speed and the prompt follows
+ok 28 - ceiling fans: switching changes the target speed and the prompt follows
+  ---
+  duration_ms: 0.286182
+  type: 'test'
+  ...
+# Subtest: sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted
+ok 29 - sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted
+  ---
+  duration_ms: 1.028551
+  type: 'test'
+  ...
+# Subtest: the build is clean: no module error, no unknown material, every group flushed
+ok 30 - the build is clean: no module error, no unknown material, every group flushed
+  ---
+  duration_ms: 1.381794
+  type: 'test'
+  ...
+# Subtest: discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+ok 31 - discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+  ---
+  duration_ms: 0.46399
+  type: 'test'
+  ...
+# Subtest: discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+ok 32 - discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+  ---
+  duration_ms: 1.276956
+  type: 'test'
+  ...
+# Subtest: TEETH: a point on a lot wall counts as "pushed by a collider"
+ok 33 - TEETH: a point on a lot wall counts as "pushed by a collider"
+  ---
+  duration_ms: 1.401464
+  type: 'test'
+  ...
+# Subtest: the signage and the living props all got a place (counts, not just "no error")
+ok 34 - the signage and the living props all got a place (counts, not just "no error")
+  ---
+  duration_ms: 0.295596
+  type: 'test'
+  ...
+# Subtest: the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+ok 35 - the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+  ---
+  duration_ms: 4.70749
+  type: 'test'
+  ...
+# Subtest: the murals hang on tall cut walls and the flora leaves those walls bare
+ok 36 - the murals hang on tall cut walls and the flora leaves those walls bare
+  ---
+  duration_ms: 0.166722
+  type: 'test'
+  ...
+# Subtest: determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+ok 37 - determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+  ---
+  duration_ms: 1352.528301
+  type: 'test'
+  ...
+# Subtest: perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+ok 38 - perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+  ---
+  duration_ms: 50.627454
+  type: 'test'
+  ...
+# Subtest: nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+ok 39 - nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+  ---
+  duration_ms: 25.298443
+  type: 'test'
+  ...
+# Subtest: TEETH: a prop collider across a nav edge is found by the same walk
+ok 40 - TEETH: a prop collider across a nav edge is found by the same walk
+  ---
+  duration_ms: 4.884768
+  type: 'test'
+  ...
+# Subtest: TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+ok 41 - TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+  ---
+  duration_ms: 13.96467
+  type: 'test'
+  ...
+# Subtest: settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+ok 42 - settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+  ---
+  duration_ms: 1.075903
+  type: 'test'
+  ...
+# Subtest: budget: the batched world stays inside the draw and triangle allowance
+ok 43 - budget: the batched world stays inside the draw and triangle allowance
+  ---
+  duration_ms: 0.66986
+  type: 'test'
+  ...
+# Subtest: every nav node stands on ground that matches its y and is not inside a lot
+ok 44 - every nav node stands on ground that matches its y and is not inside a lot
+  ---
+  duration_ms: 2.485108
+  type: 'test'
+  ...
+# Subtest: the plan itself dropped no unwalkable nav edge
+ok 45 - the plan itself dropped no unwalkable nav edge
+  ---
+  duration_ms: 0.141834
+  type: 'test'
+  ...
+# Subtest: every nav edge can be walked in both directions
+ok 46 - every nav edge can be walked in both directions
+  ---
+  duration_ms: 41.69381
+  type: 'test'
+  ...
+# Subtest: the spawn reaches every door node by walking the nav graph (one component)
+ok 47 - the spawn reaches every door node by walking the nav graph (one component)
+  ---
+  duration_ms: 1.162713
+  type: 'test'
+  ...
+# Subtest: TEETH: a wall across an edge is detected as blocked
+ok 48 - TEETH: a wall across an edge is detected as blocked
+  ---
+  duration_ms: 2.122331
+  type: 'test'
+  ...
+# Subtest: TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+ok 49 - TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+  ---
+  duration_ms: 0.357049
+  type: 'test'
+  ...
+# Subtest: the plan is deterministic per seed and differs in the details for another seed
+ok 50 - the plan is deterministic per seed and differs in the details for another seed
+  ---
+  duration_ms: 503.521825
+  type: 'test'
+  ...
+# Subtest: the lead oracle accepts the plan
+ok 51 - the lead oracle accepts the plan
+  ---
+  duration_ms: 105.939563
+  type: 'test'
+  ...
+# Subtest: lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+ok 52 - lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+  ---
+  duration_ms: 0.566194
+  type: 'test'
+  ...
+# Subtest: lots do not overlap, intrude into streets or plazas, or leave the plot
+ok 53 - lots do not overlap, intrude into streets or plazas, or leave the plot
+  ---
+  duration_ms: 35.649865
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+ok 54 - TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+  ---
+  duration_ms: 488.368152
+  type: 'test'
+  ...
+# Subtest: plinth rule and entrance ground heights
+ok 55 - plinth rule and entrance ground heights
+  ---
+  duration_ms: 2.377215
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot whose y no longer matches the height field is reported
+ok 56 - TEETH: a lot whose y no longer matches the height field is reported
+  ---
+  duration_ms: 163.006413
+  type: 'test'
+  ...
+# Subtest: gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+ok 57 - gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+  ---
+  duration_ms: 6.93574
+  type: 'test'
+  ...
+# Subtest: TEETH: a step in the height field is reported as a gradient error
+ok 58 - TEETH: a step in the height field is reported as a gradient error
+  ---
+  duration_ms: 239.629847
+  type: 'test'
+  ...
+# Subtest: nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+ok 59 - nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+  ---
+  duration_ms: 1.77747
+  type: 'test'
+  ...
+# Subtest: TEETH: cutting nav edges or moving a door node is reported
+ok 60 - TEETH: cutting nav edges or moving a door node is reported
+  ---
+  duration_ms: 229.029851
+  type: 'test'
+  ...
+# Subtest: spawn is walkable, low on the hill, outside every lot and looks up
+ok 61 - spawn is walkable, low on the hill, outside every lot and looks up
+  ---
+  duration_ms: 0.385441
+  type: 'test'
+  ...
+# Subtest: TEETH: a spawn inside a lot or looking downhill is reported
+ok 62 - TEETH: a spawn inside a lot or looking downhill is reported
+  ---
+  duration_ms: 127.360764
+  type: 'test'
+  ...
+# Subtest: pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+ok 63 - pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+  ---
+  duration_ms: 1.576518
+  type: 'test'
+  ...
+# Subtest: TEETH: a bad poi kind, an unknown building and an English name are reported
+ok 64 - TEETH: a bad poi kind, an unknown building and an English name are reported
+  ---
+  duration_ms: 129.785175
+  type: 'test'
+  ...
+# Subtest: TEETH: a spike in open terrain is reported as an unexplained cliff
+ok 65 - TEETH: a spike in open terrain is reported as an unexplained cliff
+  ---
+  duration_ms: 138.101007
+  type: 'test'
+  ...
+# Subtest: heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+ok 66 - heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+  ---
+  duration_ms: 44.156695
+  type: 'test'
+  ...
+1..66
+# tests 66
+# suites 0
+# pass 66
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36101.555911

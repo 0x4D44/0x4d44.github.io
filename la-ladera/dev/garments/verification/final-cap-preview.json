@@ -1,0 +1,19 @@
+{
+  "ok": true,
+  "test": "isolated cap-only regeneration",
+  "states": [
+    "garment_cap_hung",
+    "garment_cap_flat"
+  ],
+  "glbFiles": [
+    "garments/garments_hung.glb",
+    "garments/garments_hung_lod.glb",
+    "garments/garments_flat.glb",
+    "garments/garments_flat_lod.glb"
+  ],
+  "runtimeBytes": 60315,
+  "maxTriangles": 288,
+  "maxLodTriangles": 89,
+  "matchesFullLibraryDimensionsAndTriangleCounts": true,
+  "blender": "4.5.9 LTS"
+}

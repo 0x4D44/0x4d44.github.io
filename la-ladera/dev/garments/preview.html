@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>La Ladera · garment object review</title>
+  <script type="importmap">
+  {"imports":{"three":"../../vendor/three/build/three.module.min.js","three/addons/":"../../vendor/three/examples/jsm/"}}
+  </script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;padding:24px;background:#eee9df;color:#282d2c;font:15px system-ui,sans-serif}
+    header{max-width:1000px;margin:0 auto 16px}h1{font-size:25px;margin:0 0 6px}p{margin:0;color:#626962;line-height:1.5}
+    #status{font:12px ui-monospace,monospace;margin:12px 0;white-space:pre-wrap}#review{display:block;max-width:100%;height:auto;margin:auto;background:#f6f3ec}
+    #gl{position:fixed;left:0;top:0;visibility:hidden;pointer-events:none}#error{white-space:pre-wrap;color:#9b312c}
+  </style>
+</head>
+<body>
+  <header><h1>La Ladera · garment objects</h1><p>Adult clothing asset review. Fixture assemblies are previews; this page does not place clothing in the game.</p><div id="status">Loading catalogue…</div><pre id="error"></pre></header>
+  <canvas id="gl"></canvas><img id="review" alt="Headless render of the selected garment asset">
+  <script type="module" src="./preview.js"></script>
+</body>
+</html>

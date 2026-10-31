@@ -1,0 +1,54 @@
+{
+  "scope": "Part A data-only library; the game does not register or request garment GLBs",
+  "unavailableMode": "CDP Network.setBlockedURLs, applied before navigating the game",
+  "viewport": [
+    800,
+    450
+  ],
+  "failures": [],
+  "controlAsset": {
+    "glb": "garments/garments_folded.glb",
+    "bytes": 537044
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "blockedPatterns": [
+    "*garments_*.glb",
+    "*/assets/models/garments/*.glb",
+    "http://127.0.0.1:35751/la-ladera/assets/models/garments/garments_folded.glb"
+  ],
+  "boot": {
+    "ready": true,
+    "seconds": 22.42,
+    "stateErrors": 0,
+    "stateErrorDetails": [],
+    "pageErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x376c01476300]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:35751/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x376c01476300]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:35751/la-ladera/index.html?autostart&manual&dpr=1"
+    ],
+    "networkErrors": [],
+    "garmentRequests": [],
+    "drawCalls": 1075,
+    "triangles": 1529993
+  },
+  "positiveControl": {
+    "rejected": true,
+    "name": "TypeError",
+    "message": "Failed to fetch",
+    "networkErrors": [
+      "FAILED  http://127.0.0.1:35751/la-ladera/assets/models/garments/garments_folded.glb"
+    ],
+    "requestRecorded": true,
+    "loadingFailures": [
+      {
+        "errorText": "",
+        "blockedReason": "inspector",
+        "canceled": false,
+        "type": "Fetch"
+      }
+    ],
+    "blockedByInspector": true
+  },
+  "passed": true
+}

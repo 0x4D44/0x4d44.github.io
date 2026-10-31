@@ -1,0 +1,18 @@
+{
+  "baseCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "runtimeJSFiles": 140,
+  "changed": [],
+  "added": [],
+  "manifests": {
+    "la-ladera/assets/models/manifest.json": {
+      "unchanged": true,
+      "sha256": "5f8018002254f1e45cd162a535fededf7932af315aafa8b08c51e52b952e9ae3"
+    },
+    "la-ladera/assets/textures/manifest.json": {
+      "unchanged": true,
+      "sha256": "9eace7b60f13fbc54292e274c8692a592050f4a6e901de47c46fceeb3bb65835"
+    }
+  },
+  "registeredGarments": false,
+  "passed": true
+}

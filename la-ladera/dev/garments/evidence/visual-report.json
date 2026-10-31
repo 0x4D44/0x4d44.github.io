@@ -1,0 +1,3979 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-31T12:45:03.605Z",
+  "manifest": "la-ladera/assets/models/manifest.garments.json",
+  "manifestSha256": "e747b9385eba8be601bb937a18e3db8ed887c65d1b115e6af3babdc4af7852f2",
+  "sourceHashes": {
+    "la-ladera/assets/models/garments/assortments.json": "670a2b3d9aca725750c4910618cca94b57021a436017a837d23671a4659c7464",
+    "la-ladera/assets/models/garments/garments_flat.glb": "c746334409f06244b8ac429ac23865515d7e52c47faa90787c6a6cb6b5c45580",
+    "la-ladera/assets/models/garments/garments_flat_lod.glb": "775484694bc57d6c8601d1bc933f067f83bd42fd74844b47abefede74d29a6dc",
+    "la-ladera/assets/models/garments/garments_folded.glb": "df127642c10af9d1a9b2491381c1ee38d9b54d22398247123a3cc80a33f97bd9",
+    "la-ladera/assets/models/garments/garments_folded_lod.glb": "b61a66966f7b5e66784843b4273b08aa1a55d368a4bb8466400f9b33e8f0c180",
+    "la-ladera/assets/models/garments/garments_hung.glb": "f272909d6f3c0e7b9d2b28d561cd3c738763df600f3dc7d466a0889b48db4cbb",
+    "la-ladera/assets/models/garments/garments_hung_lod.glb": "b7c16f1a3d64f3c6084a52426a762ce51487dcc98a7d875d8cd8bcd24d00d453",
+    "la-ladera/assets/models/garments/palette.json": "b10e6788aa16b6b8fdbef279aa471a6903478f6fee3f8b523b4abfae88c30213",
+    "la-ladera/assets/models/garments/prints.png": "505f2f691eba28343aa00afc5a89836aedf98713b42e68f8400928b014935827",
+    "la-ladera/assets/models/manifest.garments.json": "e747b9385eba8be601bb937a18e3db8ed887c65d1b115e6af3babdc4af7852f2",
+    "la-ladera/tools/blender/garments.catalog.json": "09b4cc2be009c9b9e06172654a93d315a402fee0b1d59fd55c88894d6465f845"
+  },
+  "previewOnly": true,
+  "quick": false,
+  "only": [],
+  "fixturesOnly": false,
+  "items": [
+    {
+      "key": "garment_swimsuit_onepiece_folded",
+      "garment": "swimsuit_onepiece",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_swimsuit_onepiece_folded",
+      "bounds": {
+        "min": [
+          -0.1497,
+          0,
+          -0.20524
+        ],
+        "max": [
+          0.1497,
+          0.04854,
+          0.20524
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 771,
+      "meshes": 1,
+      "occupancy": 0.30286,
+      "opaquePixels": 4962,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 771,
+      "screenshot": "items/garment_swimsuit_onepiece_folded.jpg"
+    },
+    {
+      "key": "garment_swim_trunks_folded",
+      "garment": "swim_trunks",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_swim_trunks_folded",
+      "bounds": {
+        "min": [
+          -0.16221,
+          0,
+          -0.11735
+        ],
+        "max": [
+          0.16221,
+          0.04826,
+          0.11735
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.35864,
+      "opaquePixels": 5876,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_swim_trunks_folded.jpg"
+    },
+    {
+      "key": "garment_bikini_top_folded",
+      "garment": "bikini_top",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_bikini_top_folded",
+      "bounds": {
+        "min": [
+          -0.12526,
+          0,
+          -0.09216
+        ],
+        "max": [
+          0.12526,
+          0.06114,
+          0.09216
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.25781,
+      "opaquePixels": 4224,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bikini_top_folded.jpg"
+    },
+    {
+      "key": "garment_bikini_bottom_folded",
+      "garment": "bikini_bottom",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_bikini_bottom_folded",
+      "bounds": {
+        "min": [
+          -0.1279,
+          0,
+          -0.0774
+        ],
+        "max": [
+          0.1279,
+          0.03943,
+          0.0774
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.33575,
+      "opaquePixels": 5501,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bikini_bottom_folded.jpg"
+    },
+    {
+      "key": "garment_crop_top_folded",
+      "garment": "crop_top",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_coral",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_crop_top_folded",
+      "bounds": {
+        "min": [
+          -0.21481,
+          0,
+          -0.10338
+        ],
+        "max": [
+          0.21481,
+          0.04881,
+          0.10338
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.25385,
+      "opaquePixels": 4159,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_crop_top_folded.jpg"
+    },
+    {
+      "key": "garment_tshirt_folded",
+      "garment": "tshirt",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "stripe_navy",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_tshirt_folded",
+      "bounds": {
+        "min": [
+          -0.21722,
+          0,
+          -0.18846
+        ],
+        "max": [
+          0.21722,
+          0.04761,
+          0.18846
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.34625,
+      "opaquePixels": 5673,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_tshirt_folded.jpg"
+    },
+    {
+      "key": "garment_shorts_folded",
+      "garment": "shorts",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_shorts_folded",
+      "bounds": {
+        "min": [
+          -0.14222,
+          0,
+          -0.11754
+        ],
+        "max": [
+          0.14222,
+          0.04842,
+          0.11754
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 771,
+      "meshes": 1,
+      "occupancy": 0.38586,
+      "opaquePixels": 6322,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 771,
+      "screenshot": "items/garment_shorts_folded.jpg"
+    },
+    {
+      "key": "garment_leggings_folded",
+      "garment": "leggings",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_leggings_folded",
+      "bounds": {
+        "min": [
+          -0.10285,
+          0,
+          -0.1625
+        ],
+        "max": [
+          0.10285,
+          0.05435,
+          0.1625
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 770,
+      "meshes": 1,
+      "occupancy": 0.28772,
+      "opaquePixels": 4714,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 770,
+      "screenshot": "items/garment_leggings_folded.jpg"
+    },
+    {
+      "key": "garment_sun_hat_folded",
+      "garment": "sun_hat",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_sun_hat_folded",
+      "bounds": {
+        "min": [
+          -0.13098,
+          0,
+          -0.16503
+        ],
+        "max": [
+          0.13098,
+          0.07083,
+          0.16503
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 288,
+      "meshes": 1,
+      "occupancy": 0.25574,
+      "opaquePixels": 4190,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 288,
+      "screenshot": "items/garment_sun_hat_folded.jpg"
+    },
+    {
+      "key": "garment_bra_folded",
+      "garment": "bra",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_bra_folded",
+      "bounds": {
+        "min": [
+          -0.1489,
+          0,
+          -0.07225
+        ],
+        "max": [
+          0.1489,
+          0.06119,
+          0.07225
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.23651,
+      "opaquePixels": 3875,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bra_folded.jpg"
+    },
+    {
+      "key": "garment_underwear_folded",
+      "garment": "underwear",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_underwear_folded",
+      "bounds": {
+        "min": [
+          -0.13411,
+          0,
+          -0.08548
+        ],
+        "max": [
+          0.13411,
+          0.03943,
+          0.08548
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.34784,
+      "opaquePixels": 5699,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_underwear_folded.jpg"
+    },
+    {
+      "key": "garment_panties_folded",
+      "garment": "panties",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_coral",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_panties_folded",
+      "bounds": {
+        "min": [
+          -0.1248,
+          0,
+          -0.06404
+        ],
+        "max": [
+          0.1248,
+          0.03861,
+          0.06404
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.30988,
+      "opaquePixels": 5077,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_panties_folded.jpg"
+    },
+    {
+      "key": "garment_thong_folded",
+      "garment": "thong",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_thong_folded",
+      "bounds": {
+        "min": [
+          -0.1186,
+          0,
+          -0.06891
+        ],
+        "max": [
+          0.1186,
+          0.03937,
+          0.06891
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.31659,
+      "opaquePixels": 5187,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_thong_folded.jpg"
+    },
+    {
+      "key": "garment_knickers_folded",
+      "garment": "knickers",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_knickers_folded",
+      "bounds": {
+        "min": [
+          -0.1341,
+          0,
+          -0.08014
+        ],
+        "max": [
+          0.1341,
+          0.03919,
+          0.08014
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 771,
+      "meshes": 1,
+      "occupancy": 0.33539,
+      "opaquePixels": 5495,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 771,
+      "screenshot": "items/garment_knickers_folded.jpg"
+    },
+    {
+      "key": "garment_high_leg_knickers_folded",
+      "garment": "high_leg_knickers",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_high_leg_knickers_folded",
+      "bounds": {
+        "min": [
+          -0.131,
+          0,
+          -0.08809
+        ],
+        "max": [
+          0.131,
+          0.04321,
+          0.08809
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.35278,
+      "opaquePixels": 5780,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_high_leg_knickers_folded.jpg"
+    },
+    {
+      "key": "garment_briefs_folded",
+      "garment": "briefs",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_briefs_folded",
+      "bounds": {
+        "min": [
+          -0.13721,
+          0,
+          -0.08281
+        ],
+        "max": [
+          0.13721,
+          0.03933,
+          0.08281
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.3374,
+      "opaquePixels": 5528,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_briefs_folded.jpg"
+    },
+    {
+      "key": "garment_boxers_folded",
+      "garment": "boxers",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_boxers_folded",
+      "bounds": {
+        "min": [
+          -0.13222,
+          0,
+          -0.09628
+        ],
+        "max": [
+          0.13222,
+          0.04858,
+          0.09628
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.37115,
+      "opaquePixels": 6081,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_boxers_folded.jpg"
+    },
+    {
+      "key": "garment_sock_single_folded",
+      "garment": "sock_single",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_sock_single_folded",
+      "bounds": {
+        "min": [
+          -0.08456,
+          0,
+          -0.09915
+        ],
+        "max": [
+          0.08456,
+          0.04554,
+          0.09915
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.27063,
+      "opaquePixels": 4434,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_sock_single_folded.jpg"
+    },
+    {
+      "key": "garment_socks_pair_folded",
+      "garment": "socks_pair",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_socks_pair_folded",
+      "bounds": {
+        "min": [
+          -0.08462,
+          0,
+          -0.10438
+        ],
+        "max": [
+          0.08462,
+          0.05384,
+          0.10438
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.2915,
+      "opaquePixels": 4776,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_socks_pair_folded.jpg"
+    },
+    {
+      "key": "garment_tights_folded",
+      "garment": "tights",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_tights_folded",
+      "bounds": {
+        "min": [
+          -0.09459,
+          0,
+          -0.17525
+        ],
+        "max": [
+          0.09459,
+          0.05531,
+          0.17525
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.25757,
+      "opaquePixels": 4220,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_tights_folded.jpg"
+    },
+    {
+      "key": "garment_nightdress_folded",
+      "garment": "nightdress",
+      "state": "folded",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_folded.glb",
+      "node": "garment_nightdress_folded",
+      "bounds": {
+        "min": [
+          -0.17218,
+          0,
+          -0.16406
+        ],
+        "max": [
+          0.17218,
+          0.05534,
+          0.16406
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 771,
+      "meshes": 1,
+      "occupancy": 0.39294,
+      "opaquePixels": 6438,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 771,
+      "screenshot": "items/garment_nightdress_folded.jpg"
+    },
+    {
+      "key": "garment_swimsuit_onepiece_hung",
+      "garment": "swimsuit_onepiece",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_swimsuit_onepiece_hung",
+      "bounds": {
+        "min": [
+          -0.22971,
+          -0.76313,
+          -0.02125
+        ],
+        "max": [
+          0.22971,
+          0,
+          0.02125
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 426,
+      "meshes": 1,
+      "occupancy": 0.22217,
+      "opaquePixels": 3640,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 426,
+      "screenshot": "items/garment_swimsuit_onepiece_hung.jpg"
+    },
+    {
+      "key": "garment_swim_trunks_hung",
+      "garment": "swim_trunks",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_swim_trunks_hung",
+      "bounds": {
+        "min": [
+          -0.24625,
+          -0.43339,
+          -0.01877
+        ],
+        "max": [
+          0.24625,
+          0,
+          0.01877
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            -0.36838,
+            0.11877
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 488,
+      "meshes": 1,
+      "occupancy": 0.59369,
+      "opaquePixels": 9727,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 488,
+      "screenshot": "items/garment_swim_trunks_hung.jpg"
+    },
+    {
+      "key": "garment_bikini_top_hung",
+      "garment": "bikini_top",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_bikini_top_hung",
+      "bounds": {
+        "min": [
+          -0.24107,
+          -0.24702,
+          -0.02665
+        ],
+        "max": [
+          0.24107,
+          0,
+          0.02665
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.17859,
+      "opaquePixels": 2926,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bikini_top_hung.jpg"
+    },
+    {
+      "key": "garment_bikini_bottom_hung",
+      "garment": "bikini_bottom",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_bikini_bottom_hung",
+      "bounds": {
+        "min": [
+          -0.1958,
+          -0.28299,
+          -0.01936
+        ],
+        "max": [
+          0.1958,
+          0,
+          0.01936
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 366,
+      "meshes": 1,
+      "occupancy": 0.37341,
+      "opaquePixels": 6118,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 366,
+      "screenshot": "items/garment_bikini_bottom_hung.jpg"
+    },
+    {
+      "key": "garment_crop_top_hung",
+      "garment": "crop_top",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_coral",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_crop_top_hung",
+      "bounds": {
+        "min": [
+          -0.31528,
+          -0.37958,
+          -0.02003
+        ],
+        "max": [
+          0.31528,
+          0,
+          0.02003
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 472,
+      "meshes": 1,
+      "occupancy": 0.38599,
+      "opaquePixels": 6324,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 472,
+      "screenshot": "items/garment_crop_top_hung.jpg"
+    },
+    {
+      "key": "garment_tshirt_hung",
+      "garment": "tshirt",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "stripe_navy",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_tshirt_hung",
+      "bounds": {
+        "min": [
+          -0.41743,
+          -0.69916,
+          -0.02468
+        ],
+        "max": [
+          0.41743,
+          0,
+          0.02468
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 376,
+      "meshes": 1,
+      "occupancy": 0.45111,
+      "opaquePixels": 7391,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 376,
+      "screenshot": "items/garment_tshirt_hung.jpg"
+    },
+    {
+      "key": "garment_shorts_hung",
+      "garment": "shorts",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_shorts_hung",
+      "bounds": {
+        "min": [
+          -0.26585,
+          -0.43341,
+          -0.0189
+        ],
+        "max": [
+          0.26585,
+          0,
+          0.0189
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            -0.36839,
+            0.1189
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 494,
+      "meshes": 1,
+      "occupancy": 0.60632,
+      "opaquePixels": 9934,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 494,
+      "screenshot": "items/garment_shorts_hung.jpg"
+    },
+    {
+      "key": "garment_leggings_hung",
+      "garment": "leggings",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_leggings_hung",
+      "bounds": {
+        "min": [
+          -0.18728,
+          -0.97302,
+          -0.01987
+        ],
+        "max": [
+          0.18728,
+          0,
+          0.01987
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            -0.82706,
+            0.11987
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 476,
+      "meshes": 1,
+      "occupancy": 0.18604,
+      "opaquePixels": 3048,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 476,
+      "screenshot": "items/garment_leggings_hung.jpg"
+    },
+    {
+      "key": "garment_sun_hat_hung",
+      "garment": "sun_hat",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_sun_hat_hung",
+      "bounds": {
+        "min": [
+          -0.177,
+          -0.39294,
+          -0.0898
+        ],
+        "max": [
+          0.177,
+          0,
+          0.0898
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 288,
+      "meshes": 1,
+      "occupancy": 0.39392,
+      "opaquePixels": 6454,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 288,
+      "screenshot": "items/garment_sun_hat_hung.jpg"
+    },
+    {
+      "key": "garment_straw_hat_hung",
+      "garment": "straw_hat",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "straw_natural",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_straw_hat_hung",
+      "bounds": {
+        "min": [
+          -0.205,
+          -0.4551,
+          -0.07208
+        ],
+        "max": [
+          0.205,
+          0,
+          0.07208
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 336,
+      "meshes": 1,
+      "occupancy": 0.39996,
+      "opaquePixels": 6553,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 336,
+      "screenshot": "items/garment_straw_hat_hung.jpg"
+    },
+    {
+      "key": "garment_cap_hung",
+      "garment": "cap",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_cap_hung",
+      "bounds": {
+        "min": [
+          -0.118,
+          -0.31644,
+          -0.0799
+        ],
+        "max": [
+          0.118,
+          0,
+          0.0799
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 288,
+      "meshes": 1,
+      "occupancy": 0.31775,
+      "opaquePixels": 5206,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 288,
+      "screenshot": "items/garment_cap_hung.jpg"
+    },
+    {
+      "key": "garment_bra_hung",
+      "garment": "bra",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_bra_hung",
+      "bounds": {
+        "min": [
+          -0.28605,
+          -0.21835,
+          -0.04106
+        ],
+        "max": [
+          0.28605,
+          0,
+          0.04106
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.14557,
+      "opaquePixels": 2385,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bra_hung.jpg"
+    },
+    {
+      "key": "garment_underwear_hung",
+      "garment": "underwear",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_underwear_hung",
+      "bounds": {
+        "min": [
+          -0.20512,
+          -0.31348,
+          -0.02069
+        ],
+        "max": [
+          0.20512,
+          0,
+          0.02069
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 394,
+      "meshes": 1,
+      "occupancy": 0.44244,
+      "opaquePixels": 7249,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 394,
+      "screenshot": "items/garment_underwear_hung.jpg"
+    },
+    {
+      "key": "garment_panties_hung",
+      "garment": "panties",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_coral",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_panties_hung",
+      "bounds": {
+        "min": [
+          -0.19076,
+          -0.23303,
+          -0.01933
+        ],
+        "max": [
+          0.19076,
+          0,
+          0.01933
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 366,
+      "meshes": 1,
+      "occupancy": 0.31763,
+      "opaquePixels": 5204,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 366,
+      "screenshot": "items/garment_panties_hung.jpg"
+    },
+    {
+      "key": "garment_thong_hung",
+      "garment": "thong",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_thong_hung",
+      "bounds": {
+        "min": [
+          -0.18054,
+          -0.25308,
+          -0.01935
+        ],
+        "max": [
+          0.18054,
+          0,
+          0.01935
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 362,
+      "meshes": 1,
+      "occupancy": 0.33783,
+      "opaquePixels": 5535,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 362,
+      "screenshot": "items/garment_thong_hung.jpg"
+    },
+    {
+      "key": "garment_knickers_hung",
+      "garment": "knickers",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_knickers_hung",
+      "bounds": {
+        "min": [
+          -0.20364,
+          -0.2932,
+          -0.02069
+        ],
+        "max": [
+          0.20364,
+          0,
+          0.02069
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 378,
+      "meshes": 1,
+      "occupancy": 0.39716,
+      "opaquePixels": 6507,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 378,
+      "screenshot": "items/garment_knickers_hung.jpg"
+    },
+    {
+      "key": "garment_high_leg_knickers_hung",
+      "garment": "high_leg_knickers",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_high_leg_knickers_hung",
+      "bounds": {
+        "min": [
+          -0.20013,
+          -0.32281,
+          -0.01933
+        ],
+        "max": [
+          0.20013,
+          0,
+          0.01933
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 370,
+      "meshes": 1,
+      "occupancy": 0.42767,
+      "opaquePixels": 7007,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 370,
+      "screenshot": "items/garment_high_leg_knickers_hung.jpg"
+    },
+    {
+      "key": "garment_briefs_hung",
+      "garment": "briefs",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_briefs_hung",
+      "bounds": {
+        "min": [
+          -0.21075,
+          -0.30321,
+          -0.01912
+        ],
+        "max": [
+          0.21075,
+          0,
+          0.01912
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 390,
+      "meshes": 1,
+      "occupancy": 0.40527,
+      "opaquePixels": 6640,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 390,
+      "screenshot": "items/garment_briefs_hung.jpg"
+    },
+    {
+      "key": "garment_boxers_hung",
+      "garment": "boxers",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_boxers_hung",
+      "bounds": {
+        "min": [
+          -0.25262,
+          -0.3536,
+          -0.01942
+        ],
+        "max": [
+          0.25262,
+          0,
+          0.01942
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            -0.30056,
+            0.11942
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 490,
+      "meshes": 1,
+      "occupancy": 0.526,
+      "opaquePixels": 8618,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 490,
+      "screenshot": "items/garment_boxers_hung.jpg"
+    },
+    {
+      "key": "garment_sock_single_hung",
+      "garment": "sock_single",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_sock_single_hung",
+      "bounds": {
+        "min": [
+          -0.10631,
+          -0.35865,
+          -0.02101
+        ],
+        "max": [
+          0.10631,
+          0,
+          0.02101
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 362,
+      "meshes": 1,
+      "occupancy": 0.21924,
+      "opaquePixels": 3592,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 362,
+      "screenshot": "items/garment_sock_single_hung.jpg"
+    },
+    {
+      "key": "garment_socks_pair_hung",
+      "garment": "socks_pair",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_socks_pair_hung",
+      "bounds": {
+        "min": [
+          -0.14924,
+          -0.37788,
+          -0.02995
+        ],
+        "max": [
+          0.14924,
+          0,
+          0.02995
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 408,
+      "meshes": 1,
+      "occupancy": 0.31183,
+      "opaquePixels": 5109,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 408,
+      "screenshot": "items/garment_socks_pair_hung.jpg"
+    },
+    {
+      "key": "garment_tights_hung",
+      "garment": "tights",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_tights_hung",
+      "bounds": {
+        "min": [
+          -0.17814,
+          -1.05261,
+          -0.01919
+        ],
+        "max": [
+          0.17814,
+          0,
+          0.01919
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            -0.89472,
+            0.11919
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 470,
+      "meshes": 1,
+      "occupancy": 0.14124,
+      "opaquePixels": 2314,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 470,
+      "screenshot": "items/garment_tights_hung.jpg"
+    },
+    {
+      "key": "garment_nightdress_hung",
+      "garment": "nightdress",
+      "state": "hung",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_nightdress_hung",
+      "bounds": {
+        "min": [
+          -0.33096,
+          -0.97348,
+          -0.02134
+        ],
+        "max": [
+          0.33096,
+          0,
+          0.02134
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 442,
+      "meshes": 1,
+      "occupancy": 0.29749,
+      "opaquePixels": 4874,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 442,
+      "screenshot": "items/garment_nightdress_hung.jpg"
+    },
+    {
+      "key": "garment_swimsuit_onepiece_flat",
+      "garment": "swimsuit_onepiece",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_swimsuit_onepiece_flat",
+      "bounds": {
+        "min": [
+          -0.23177,
+          0,
+          -0.38058
+        ],
+        "max": [
+          0.23177,
+          0.0272,
+          0.38058
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 426,
+      "meshes": 1,
+      "occupancy": 0.20728,
+      "opaquePixels": 3396,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 426,
+      "screenshot": "items/garment_swimsuit_onepiece_flat.jpg"
+    },
+    {
+      "key": "garment_swim_trunks_flat",
+      "garment": "swim_trunks",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_swim_trunks_flat",
+      "bounds": {
+        "min": [
+          -0.2465,
+          0,
+          -0.21452
+        ],
+        "max": [
+          0.2465,
+          0.0273,
+          0.21452
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            0.1273,
+            0.15017
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 488,
+      "meshes": 1,
+      "occupancy": 0.49329,
+      "opaquePixels": 8082,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 488,
+      "screenshot": "items/garment_swim_trunks_flat.jpg"
+    },
+    {
+      "key": "garment_bikini_top_flat",
+      "garment": "bikini_top",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_bikini_top_flat",
+      "bounds": {
+        "min": [
+          -0.24108,
+          0,
+          -0.12252
+        ],
+        "max": [
+          0.24108,
+          0.02839,
+          0.12252
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.16541,
+      "opaquePixels": 2710,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bikini_top_flat.jpg"
+    },
+    {
+      "key": "garment_bikini_bottom_flat",
+      "garment": "bikini_bottom",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_bikini_bottom_flat",
+      "bounds": {
+        "min": [
+          -0.19646,
+          0,
+          -0.13939
+        ],
+        "max": [
+          0.19646,
+          0.02725,
+          0.13939
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 366,
+      "meshes": 1,
+      "occupancy": 0.30688,
+      "opaquePixels": 5028,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 366,
+      "screenshot": "items/garment_bikini_bottom_flat.jpg"
+    },
+    {
+      "key": "garment_crop_top_flat",
+      "garment": "crop_top",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_coral",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_crop_top_flat",
+      "bounds": {
+        "min": [
+          -0.31597,
+          0,
+          -0.18818
+        ],
+        "max": [
+          0.31597,
+          0.02687,
+          0.18818
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 472,
+      "meshes": 1,
+      "occupancy": 0.32294,
+      "opaquePixels": 5291,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 472,
+      "screenshot": "items/garment_crop_top_flat.jpg"
+    },
+    {
+      "key": "garment_tshirt_flat",
+      "garment": "tshirt",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "stripe_navy",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_tshirt_flat",
+      "bounds": {
+        "min": [
+          -0.42131,
+          0,
+          -0.34857
+        ],
+        "max": [
+          0.42131,
+          0.02642,
+          0.34857
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 376,
+      "meshes": 1,
+      "occupancy": 0.35364,
+      "opaquePixels": 5794,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 376,
+      "screenshot": "items/garment_tshirt_flat.jpg"
+    },
+    {
+      "key": "garment_shorts_flat",
+      "garment": "shorts",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_shorts_flat",
+      "bounds": {
+        "min": [
+          -0.26614,
+          0,
+          -0.2149
+        ],
+        "max": [
+          0.26614,
+          0.02514,
+          0.2149
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            0.12514,
+            0.15043
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 494,
+      "meshes": 1,
+      "occupancy": 0.48669,
+      "opaquePixels": 7974,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 494,
+      "screenshot": "items/garment_shorts_flat.jpg"
+    },
+    {
+      "key": "garment_leggings_flat",
+      "garment": "leggings",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_leggings_flat",
+      "bounds": {
+        "min": [
+          -0.18828,
+          0,
+          -0.48548
+        ],
+        "max": [
+          0.18828,
+          0.02503,
+          0.48548
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            0.12503,
+            0.33983
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 476,
+      "meshes": 1,
+      "occupancy": 0.18317,
+      "opaquePixels": 3001,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 476,
+      "screenshot": "items/garment_leggings_flat.jpg"
+    },
+    {
+      "key": "garment_sun_hat_flat",
+      "garment": "sun_hat",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_sun_hat_flat",
+      "bounds": {
+        "min": [
+          -0.177,
+          0,
+          -0.19647
+        ],
+        "max": [
+          0.177,
+          0.1796,
+          0.19647
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 288,
+      "meshes": 1,
+      "occupancy": 0.21814,
+      "opaquePixels": 3574,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 288,
+      "screenshot": "items/garment_sun_hat_flat.jpg"
+    },
+    {
+      "key": "garment_straw_hat_flat",
+      "garment": "straw_hat",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "straw_natural",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_straw_hat_flat",
+      "bounds": {
+        "min": [
+          -0.205,
+          0,
+          -0.22755
+        ],
+        "max": [
+          0.205,
+          0.14417,
+          0.22755
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 336,
+      "meshes": 1,
+      "occupancy": 0.24213,
+      "opaquePixels": 3967,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 336,
+      "screenshot": "items/garment_straw_hat_flat.jpg"
+    },
+    {
+      "key": "garment_cap_flat",
+      "garment": "cap",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_cap_flat",
+      "bounds": {
+        "min": [
+          -0.118,
+          0,
+          -0.15822
+        ],
+        "max": [
+          0.118,
+          0.1598,
+          0.15822
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 288,
+      "meshes": 1,
+      "occupancy": 0.21582,
+      "opaquePixels": 3536,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 288,
+      "screenshot": "items/garment_cap_flat.jpg"
+    },
+    {
+      "key": "garment_bra_flat",
+      "garment": "bra",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_bra_flat",
+      "bounds": {
+        "min": [
+          -0.28606,
+          0,
+          -0.10809
+        ],
+        "max": [
+          0.28606,
+          0.03187,
+          0.10809
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.15363,
+      "opaquePixels": 2517,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bra_flat.jpg"
+    },
+    {
+      "key": "garment_underwear_flat",
+      "garment": "underwear",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_underwear_flat",
+      "bounds": {
+        "min": [
+          -0.20646,
+          0,
+          -0.1546
+        ],
+        "max": [
+          0.20646,
+          0.02712,
+          0.1546
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 394,
+      "meshes": 1,
+      "occupancy": 0.36145,
+      "opaquePixels": 5922,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 394,
+      "screenshot": "items/garment_underwear_flat.jpg"
+    },
+    {
+      "key": "garment_panties_flat",
+      "garment": "panties",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_coral",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_panties_flat",
+      "bounds": {
+        "min": [
+          -0.1915,
+          0,
+          -0.11418
+        ],
+        "max": [
+          0.1915,
+          0.02714,
+          0.11418
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 366,
+      "meshes": 1,
+      "occupancy": 0.26746,
+      "opaquePixels": 4382,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 366,
+      "screenshot": "items/garment_panties_flat.jpg"
+    },
+    {
+      "key": "garment_thong_flat",
+      "garment": "thong",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_thong_flat",
+      "bounds": {
+        "min": [
+          -0.18117,
+          0,
+          -0.12333
+        ],
+        "max": [
+          0.18117,
+          0.02746,
+          0.12333
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 362,
+      "meshes": 1,
+      "occupancy": 0.27631,
+      "opaquePixels": 4527,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 362,
+      "screenshot": "items/garment_thong_flat.jpg"
+    },
+    {
+      "key": "garment_knickers_flat",
+      "garment": "knickers",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_knickers_flat",
+      "bounds": {
+        "min": [
+          -0.20234,
+          0,
+          -0.14454
+        ],
+        "max": [
+          0.20234,
+          0.04077,
+          0.14454
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 378,
+      "meshes": 1,
+      "occupancy": 0.3327,
+      "opaquePixels": 5451,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 378,
+      "screenshot": "items/garment_knickers_flat.jpg"
+    },
+    {
+      "key": "garment_high_leg_knickers_flat",
+      "garment": "high_leg_knickers",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_high_leg_knickers_flat",
+      "bounds": {
+        "min": [
+          -0.19642,
+          0,
+          -0.15956
+        ],
+        "max": [
+          0.19642,
+          0.0448,
+          0.15956
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 370,
+      "meshes": 1,
+      "occupancy": 0.35504,
+      "opaquePixels": 5817,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 370,
+      "screenshot": "items/garment_high_leg_knickers_flat.jpg"
+    },
+    {
+      "key": "garment_briefs_flat",
+      "garment": "briefs",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_briefs_flat",
+      "bounds": {
+        "min": [
+          -0.21129,
+          0,
+          -0.14958
+        ],
+        "max": [
+          0.21129,
+          0.02655,
+          0.14958
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 390,
+      "meshes": 1,
+      "occupancy": 0.33447,
+      "opaquePixels": 5480,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 390,
+      "screenshot": "items/garment_briefs_flat.jpg"
+    },
+    {
+      "key": "garment_boxers_flat",
+      "garment": "boxers",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_navy",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_boxers_flat",
+      "bounds": {
+        "min": [
+          -0.25031,
+          0,
+          -0.17478
+        ],
+        "max": [
+          0.25031,
+          0.02552,
+          0.17478
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            0.12552,
+            0.12235
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 490,
+      "meshes": 1,
+      "occupancy": 0.4458,
+      "opaquePixels": 7304,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 490,
+      "screenshot": "items/garment_boxers_flat.jpg"
+    },
+    {
+      "key": "garment_sock_single_flat",
+      "garment": "sock_single",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_sock_single_flat",
+      "bounds": {
+        "min": [
+          -0.1159,
+          0,
+          -0.1798
+        ],
+        "max": [
+          0.1159,
+          0.02556,
+          0.1798
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 362,
+      "meshes": 1,
+      "occupancy": 0.20941,
+      "opaquePixels": 3431,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 362,
+      "screenshot": "items/garment_sock_single_flat.jpg"
+    },
+    {
+      "key": "garment_socks_pair_flat",
+      "garment": "socks_pair",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_socks_pair_flat",
+      "bounds": {
+        "min": [
+          -0.15521,
+          0,
+          -0.18965
+        ],
+        "max": [
+          0.15521,
+          0.03153,
+          0.18965
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 408,
+      "meshes": 1,
+      "occupancy": 0.28473,
+      "opaquePixels": 4665,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 408,
+      "screenshot": "items/garment_socks_pair_flat.jpg"
+    },
+    {
+      "key": "garment_tights_flat",
+      "garment": "tights",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_tights_flat",
+      "bounds": {
+        "min": [
+          -0.17754,
+          0,
+          -0.5262
+        ],
+        "max": [
+          0.17754,
+          0.02578,
+          0.5262
+        ]
+      },
+      "geometryChecks": [
+        {
+          "name": "open-space-between-legs",
+          "pass": true,
+          "rayOrigin": [
+            0,
+            0.12578,
+            0.36834
+          ],
+          "hits": 0
+        }
+      ],
+      "triangles": 470,
+      "meshes": 1,
+      "occupancy": 0.1405,
+      "opaquePixels": 2302,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 470,
+      "screenshot": "items/garment_tights_flat.jpg"
+    },
+    {
+      "key": "garment_nightdress_flat",
+      "garment": "nightdress",
+      "state": "flat",
+      "lod": false,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_flat.glb",
+      "node": "garment_nightdress_flat",
+      "bounds": {
+        "min": [
+          -0.33114,
+          0,
+          -0.48583
+        ],
+        "max": [
+          0.33114,
+          0.02649,
+          0.48583
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 442,
+      "meshes": 1,
+      "occupancy": 0.27216,
+      "opaquePixels": 4459,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 442,
+      "screenshot": "items/garment_nightdress_flat.jpg"
+    }
+  ],
+  "fixtures": [
+    {
+      "kind": "drawer",
+      "recipe": "drawer_daily_tops",
+      "previewOnly": true,
+      "bounds": {
+        "min": [
+          -0.615,
+          0,
+          -0.2475
+        ],
+        "max": [
+          0.615,
+          0.18,
+          0.284
+        ]
+      },
+      "garmentInstances": 4,
+      "garmentTriangles": 3087,
+      "items": [
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "stripe_navy",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_crop_top_folded",
+          "variant": "plain_coral",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "stripe_navy",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_shorts_folded",
+          "variant": "plain_teal",
+          "triangles": 771,
+          "count": 1
+        }
+      ],
+      "occupancy": 0.42444,
+      "opaquePixels": 6954,
+      "visibleMeshes": 10,
+      "calls": 10,
+      "renderedTriangles": 3179,
+      "screenshot": "fixtures/drawer.jpg"
+    },
+    {
+      "kind": "wardrobe",
+      "recipe": "wardrobe_daily",
+      "previewOnly": true,
+      "bounds": {
+        "min": [
+          -1,
+          0,
+          -0.52
+        ],
+        "max": [
+          1,
+          2.125,
+          0.5
+        ]
+      },
+      "garmentInstances": 5,
+      "garmentTriangles": 2260,
+      "items": [
+        {
+          "key": "garment_tshirt_hung",
+          "variant": "plain_cream",
+          "triangles": 376,
+          "count": 1
+        },
+        {
+          "key": "garment_crop_top_hung",
+          "variant": "plain_teal",
+          "triangles": 472,
+          "count": 1
+        },
+        {
+          "key": "garment_shorts_hung",
+          "variant": "plain_navy",
+          "triangles": 494,
+          "count": 1
+        },
+        {
+          "key": "garment_leggings_hung",
+          "variant": "plain_charcoal",
+          "triangles": 476,
+          "count": 1
+        },
+        {
+          "key": "garment_nightdress_hung",
+          "variant": "floral_cream",
+          "triangles": 442,
+          "count": 1
+        }
+      ],
+      "occupancy": 0.36908,
+      "opaquePixels": 6047,
+      "visibleMeshes": 67,
+      "calls": 67,
+      "renderedTriangles": 4124,
+      "screenshot": "fixtures/wardrobe.jpg"
+    },
+    {
+      "kind": "washing_line",
+      "recipe": "washing_line_daily",
+      "previewOnly": true,
+      "bounds": {
+        "min": [
+          -1.52882,
+          0,
+          -0.12
+        ],
+        "max": [
+          1.52882,
+          2.05,
+          0.12
+        ]
+      },
+      "garmentInstances": 4,
+      "garmentTriangles": 1640,
+      "items": [
+        {
+          "key": "garment_tshirt_hung",
+          "variant": "football_green_yellow",
+          "triangles": 376,
+          "count": 1
+        },
+        {
+          "key": "garment_shorts_hung",
+          "variant": "plain_teal",
+          "triangles": 494,
+          "count": 1
+        },
+        {
+          "key": "garment_socks_pair_hung",
+          "variant": "plain_cream",
+          "triangles": 408,
+          "count": 1
+        },
+        {
+          "key": "garment_sock_single_hung",
+          "variant": "plain_navy",
+          "triangles": 362,
+          "count": 1
+        }
+      ],
+      "occupancy": 0.11938,
+      "opaquePixels": 1956,
+      "visibleMeshes": 35,
+      "calls": 35,
+      "renderedTriangles": 2452,
+      "screenshot": "fixtures/washing_line.jpg"
+    },
+    {
+      "kind": "shop_shelf",
+      "recipe": "shop_folded_basics",
+      "previewOnly": true,
+      "bounds": {
+        "min": [
+          -0.69,
+          0,
+          -0.2575
+        ],
+        "max": [
+          0.69,
+          1.82,
+          0.245
+        ]
+      },
+      "garmentInstances": 14,
+      "garmentTriangles": 10804,
+      "items": [
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_blue_white",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_blue_white",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_blue_white",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_red_white",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_red_white",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_burgundy_navy",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_tshirt_folded",
+          "variant": "football_burgundy_navy",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_leggings_folded",
+          "variant": "plain_charcoal",
+          "triangles": 770,
+          "count": 1
+        },
+        {
+          "key": "garment_leggings_folded",
+          "variant": "plain_charcoal",
+          "triangles": 770,
+          "count": 1
+        },
+        {
+          "key": "garment_socks_pair_folded",
+          "variant": "plain_cream",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_socks_pair_folded",
+          "variant": "plain_cream",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_socks_pair_folded",
+          "variant": "plain_cream",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_boxers_folded",
+          "variant": "stripe_navy",
+          "triangles": 772,
+          "count": 1
+        },
+        {
+          "key": "garment_boxers_folded",
+          "variant": "stripe_navy",
+          "triangles": 772,
+          "count": 1
+        }
+      ],
+      "occupancy": 0.29022,
+      "opaquePixels": 4755,
+      "visibleMeshes": 21,
+      "calls": 21,
+      "renderedTriangles": 10888,
+      "screenshot": "fixtures/shop_shelf.jpg"
+    }
+  ],
+  "contacts": [
+    {
+      "state": "folded",
+      "count": 21,
+      "screenshot": "contact-folded.jpg"
+    },
+    {
+      "state": "hung",
+      "count": 23,
+      "screenshot": "contact-hung.jpg"
+    },
+    {
+      "state": "flat",
+      "count": 23,
+      "screenshot": "contact-flat.jpg"
+    }
+  ],
+  "lod": [
+    {
+      "key": "garment_tshirt_hung",
+      "garment": "tshirt",
+      "state": "hung",
+      "lod": true,
+      "view": "front",
+      "variant": "stripe_navy",
+      "glb": "garments/garments_hung_lod.glb",
+      "node": "garment_tshirt_hung_lod",
+      "bounds": {
+        "min": [
+          -0.41646,
+          -0.69675,
+          -0.02335
+        ],
+        "max": [
+          0.41646,
+          0,
+          0.02335
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 119,
+      "meshes": 1,
+      "occupancy": 0.45105,
+      "opaquePixels": 7390,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 119,
+      "screenshot": "items/garment_tshirt_hung_lod.jpg"
+    },
+    {
+      "key": "garment_swimsuit_onepiece_flat",
+      "garment": "swimsuit_onepiece",
+      "state": "flat",
+      "lod": true,
+      "view": "front",
+      "variant": "plain_teal",
+      "glb": "garments/garments_flat_lod.glb",
+      "node": "garment_swimsuit_onepiece_flat_lod",
+      "bounds": {
+        "min": [
+          -0.23158,
+          0,
+          -0.3801
+        ],
+        "max": [
+          0.23158,
+          0.02716,
+          0.3801
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 136,
+      "meshes": 1,
+      "occupancy": 0.20691,
+      "opaquePixels": 3390,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 136,
+      "screenshot": "items/garment_swimsuit_onepiece_flat_lod.jpg"
+    },
+    {
+      "key": "garment_leggings_folded",
+      "garment": "leggings",
+      "state": "folded",
+      "lod": true,
+      "view": "front",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_folded_lod.glb",
+      "node": "garment_leggings_folded_lod",
+      "bounds": {
+        "min": [
+          -0.10755,
+          0,
+          -0.16288
+        ],
+        "max": [
+          0.10755,
+          0.05409,
+          0.16288
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 211,
+      "meshes": 1,
+      "occupancy": 0.27594,
+      "opaquePixels": 4521,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 211,
+      "screenshot": "items/garment_leggings_folded_lod.jpg"
+    },
+    {
+      "key": "garment_straw_hat_flat",
+      "garment": "straw_hat",
+      "state": "flat",
+      "lod": true,
+      "view": "front",
+      "variant": "straw_natural",
+      "glb": "garments/garments_flat_lod.glb",
+      "node": "garment_straw_hat_flat_lod",
+      "bounds": {
+        "min": [
+          -0.205,
+          0,
+          -0.22755
+        ],
+        "max": [
+          0.205,
+          0.14312,
+          0.22755
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 106,
+      "meshes": 1,
+      "occupancy": 0.24304,
+      "opaquePixels": 3982,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 106,
+      "screenshot": "items/garment_straw_hat_flat_lod.jpg"
+    },
+    {
+      "key": "garment_knickers_hung",
+      "garment": "knickers",
+      "state": "hung",
+      "lod": true,
+      "view": "front",
+      "variant": "floral_cream",
+      "glb": "garments/garments_hung_lod.glb",
+      "node": "garment_knickers_hung_lod",
+      "bounds": {
+        "min": [
+          -0.20323,
+          -0.29102,
+          -0.01897
+        ],
+        "max": [
+          0.20323,
+          0,
+          0.01897
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 120,
+      "meshes": 1,
+      "occupancy": 0.39441,
+      "opaquePixels": 6462,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 120,
+      "screenshot": "items/garment_knickers_hung_lod.jpg"
+    },
+    {
+      "key": "garment_socks_pair_flat",
+      "garment": "socks_pair",
+      "state": "flat",
+      "lod": true,
+      "view": "front",
+      "variant": "plain_cream",
+      "glb": "garments/garments_flat_lod.glb",
+      "node": "garment_socks_pair_flat_lod",
+      "bounds": {
+        "min": [
+          -0.15442,
+          0,
+          -0.18855
+        ],
+        "max": [
+          0.15442,
+          0.03153,
+          0.18855
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 130,
+      "meshes": 1,
+      "occupancy": 0.28412,
+      "opaquePixels": 4655,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 130,
+      "screenshot": "items/garment_socks_pair_flat_lod.jpg"
+    }
+  ],
+  "backViews": [
+    {
+      "key": "garment_thong_hung",
+      "garment": "thong",
+      "state": "hung",
+      "lod": false,
+      "view": "back",
+      "variant": "plain_charcoal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_thong_hung",
+      "bounds": {
+        "min": [
+          -0.18054,
+          -0.25308,
+          -0.01935
+        ],
+        "max": [
+          0.18054,
+          0,
+          0.01935
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 362,
+      "meshes": 1,
+      "occupancy": 0.33569,
+      "opaquePixels": 5500,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 362,
+      "screenshot": "items/garment_thong_hung_back.jpg"
+    },
+    {
+      "key": "garment_bra_hung",
+      "garment": "bra",
+      "state": "hung",
+      "lod": false,
+      "view": "back",
+      "variant": "plain_cream",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_bra_hung",
+      "bounds": {
+        "min": [
+          -0.28605,
+          -0.21835,
+          -0.04106
+        ],
+        "max": [
+          0.28605,
+          0,
+          0.04106
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.15277,
+      "opaquePixels": 2503,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bra_hung_back.jpg"
+    },
+    {
+      "key": "garment_bikini_top_hung",
+      "garment": "bikini_top",
+      "state": "hung",
+      "lod": false,
+      "view": "back",
+      "variant": "plain_teal",
+      "glb": "garments/garments_hung.glb",
+      "node": "garment_bikini_top_hung",
+      "bounds": {
+        "min": [
+          -0.24107,
+          -0.24702,
+          -0.02665
+        ],
+        "max": [
+          0.24107,
+          0,
+          0.02665
+        ]
+      },
+      "geometryChecks": [],
+      "triangles": 772,
+      "meshes": 1,
+      "occupancy": 0.18396,
+      "opaquePixels": 3014,
+      "visibleMeshes": 1,
+      "calls": 1,
+      "renderedTriangles": 772,
+      "screenshot": "items/garment_bikini_top_hung_back.jpg"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "items/garment_swimsuit_onepiece_folded.jpg",
+      "bytes": 24869,
+      "sha256": "bfb8e4968c7302e42e33158aa4e80b27ab40d8c5d8a92688bb9c6b59b363995d"
+    },
+    {
+      "file": "items/garment_swim_trunks_folded.jpg",
+      "bytes": 25148,
+      "sha256": "adb436c9e7617969022e288529f1ab5879cf7a9088cbb34108348048825be161"
+    },
+    {
+      "file": "items/garment_bikini_top_folded.jpg",
+      "bytes": 28234,
+      "sha256": "d89e9908737338803316aeaba93ec241f7fe4b166754efc8d98430548a0d9ff4"
+    },
+    {
+      "file": "items/garment_bikini_bottom_folded.jpg",
+      "bytes": 24400,
+      "sha256": "cb244a7a13c55b93818dd057a891299a20d6e362031e3461ed0519e18cc2ca33"
+    },
+    {
+      "file": "items/garment_crop_top_folded.jpg",
+      "bytes": 20631,
+      "sha256": "ee367bdc3c8b8a18ec643c4e602484dda93bab73e815f130c331f63c7258efee"
+    },
+    {
+      "file": "items/garment_tshirt_folded.jpg",
+      "bytes": 22888,
+      "sha256": "eb873fb0a1204689885ce494d14476b2134cbe29c4329d74079348f266e6fb5e"
+    },
+    {
+      "file": "items/garment_shorts_folded.jpg",
+      "bytes": 24388,
+      "sha256": "f1570c0d2919a3380a4ae88733e3edd282b5f841a0e853248ac7682b37ddc437"
+    },
+    {
+      "file": "items/garment_leggings_folded.jpg",
+      "bytes": 22111,
+      "sha256": "3ea42698c51e249fbbd89809aaf42ce7eb74c39ffe1802a1c07f87cf58582c93"
+    },
+    {
+      "file": "items/garment_sun_hat_folded.jpg",
+      "bytes": 16504,
+      "sha256": "a72ccdd6787801973709533fefdab1b6a9d7e69173e4d6693e8c4c90104ea42d"
+    },
+    {
+      "file": "items/garment_bra_folded.jpg",
+      "bytes": 20663,
+      "sha256": "3563ce1a76b1156921328cacc09f6165d2c17ae4882a0d91a12d786ae9dc5e3c"
+    },
+    {
+      "file": "items/garment_underwear_folded.jpg",
+      "bytes": 20246,
+      "sha256": "d091acea93d24d03c39a2b47fee73ecbc0fe8ebabdc778b8b13112d766554a7f"
+    },
+    {
+      "file": "items/garment_panties_folded.jpg",
+      "bytes": 22589,
+      "sha256": "503ae910f329fe4dc420fe5024e4cdeb84a1ee44f32b90a5f25834b264be09d0"
+    },
+    {
+      "file": "items/garment_thong_folded.jpg",
+      "bytes": 20402,
+      "sha256": "ba404ddb4bc765f8e6e290bb21871b009b9afbf196bf07bd016d2393124f7ffa"
+    },
+    {
+      "file": "items/garment_knickers_folded.jpg",
+      "bytes": 21110,
+      "sha256": "d90e8c72e11d80d6c603df786496ce0b52e95052e3a1998f144fadba5ff05acd"
+    },
+    {
+      "file": "items/garment_high_leg_knickers_folded.jpg",
+      "bytes": 21744,
+      "sha256": "06635606ed4bb909dc83eca7bd34c3561ad8f0ef677406e1bb530ea8c2a432f8"
+    },
+    {
+      "file": "items/garment_briefs_folded.jpg",
+      "bytes": 22831,
+      "sha256": "d0e5e8b6b5b2dfff7c33bc716f7872894742d20301c7c98cffe8df9f59d7d2a5"
+    },
+    {
+      "file": "items/garment_boxers_folded.jpg",
+      "bytes": 25183,
+      "sha256": "4902a727a3c2c0a1ab61d98a030e49c59d0a3cf086a21a1556404d81686a4dd5"
+    },
+    {
+      "file": "items/garment_sock_single_folded.jpg",
+      "bytes": 17995,
+      "sha256": "3b3e5a3526e7ad8de8d3aa2310317fc185aaf8879c78e26544cc7aaea15a6eeb"
+    },
+    {
+      "file": "items/garment_socks_pair_folded.jpg",
+      "bytes": 18668,
+      "sha256": "d8bb1cf0f1f0158f0131e9068d9fe757891c0d6b86a90c628db8bf3294892118"
+    },
+    {
+      "file": "items/garment_tights_folded.jpg",
+      "bytes": 22850,
+      "sha256": "a07bdf8fcd5da8ce949c918eeef7ba1f7c2cda53286ef6922f65e95d635c458d"
+    },
+    {
+      "file": "items/garment_nightdress_folded.jpg",
+      "bytes": 18441,
+      "sha256": "9ff352dc9a1a87e4e6deb75a1699e99741249ef6885f0ab8e7257549fae1e022"
+    },
+    {
+      "file": "items/garment_swimsuit_onepiece_hung.jpg",
+      "bytes": 22178,
+      "sha256": "b5ae76742c4d9631e87befa0626f641bbb1c1d2c57c4f5508e01b1f554211ab6"
+    },
+    {
+      "file": "items/garment_swim_trunks_hung.jpg",
+      "bytes": 25356,
+      "sha256": "90bb8da2b1f7f6e287fd8d33eef66fe7d159e4af05435486c2e86820518fc8ce"
+    },
+    {
+      "file": "items/garment_bikini_top_hung.jpg",
+      "bytes": 24734,
+      "sha256": "ff9048824d3bad11ce7a47fcba95396972560e3dbbdb30dad1d54a1f7328ea8c"
+    },
+    {
+      "file": "items/garment_bikini_bottom_hung.jpg",
+      "bytes": 23873,
+      "sha256": "fabf1b02e86beadca3ee47e92c3ce8c76515d6978a61c284075ea9336b7b62dc"
+    },
+    {
+      "file": "items/garment_crop_top_hung.jpg",
+      "bytes": 22586,
+      "sha256": "f1750027ae749e0cdc2f50ad4cedb21dae8d8b844f0408d6e08698179b46d753"
+    },
+    {
+      "file": "items/garment_tshirt_hung.jpg",
+      "bytes": 24058,
+      "sha256": "72ef9b5107a7153b55065f025fd7ac6eb66cfb54263ff22198fa2715b7d37d69"
+    },
+    {
+      "file": "items/garment_shorts_hung.jpg",
+      "bytes": 24651,
+      "sha256": "d40e3b6ecf6011a2a08fec2d5db6b82fc2fc1f2c0784b7578b4f087b805261ff"
+    },
+    {
+      "file": "items/garment_leggings_hung.jpg",
+      "bytes": 18412,
+      "sha256": "892972fe0108e3e338a7c62140233427e8d62a34fff50091e2b62b3fee8f6428"
+    },
+    {
+      "file": "items/garment_sun_hat_hung.jpg",
+      "bytes": 20265,
+      "sha256": "62782dc0d4c428033d9b569857e7dfe5c7dfb3e3dd32871e67a8495fe4078c51"
+    },
+    {
+      "file": "items/garment_straw_hat_hung.jpg",
+      "bytes": 23885,
+      "sha256": "07ce91257224aaa22862929f49464c6a2ed025fc1d15cf54a952c518e07bae88"
+    },
+    {
+      "file": "items/garment_cap_hung.jpg",
+      "bytes": 20414,
+      "sha256": "99444a37e33e624ffc1e67bcee2e4958f61201a0cc8021a96302915e3b6b05af"
+    },
+    {
+      "file": "items/garment_bra_hung.jpg",
+      "bytes": 17620,
+      "sha256": "62833032b21e864a9b508543cc918085f38274be87253db9dd6123876d7e5554"
+    },
+    {
+      "file": "items/garment_underwear_hung.jpg",
+      "bytes": 21304,
+      "sha256": "74417cd15a8195d68cff4a1468886fa15321af681c62a211ecb2557e770cdbab"
+    },
+    {
+      "file": "items/garment_panties_hung.jpg",
+      "bytes": 22035,
+      "sha256": "048d154f8d864f1c516438e998111ad050ef2d6bd6895820b22d3705267863b7"
+    },
+    {
+      "file": "items/garment_thong_hung.jpg",
+      "bytes": 20670,
+      "sha256": "fcc766b47f78367d83555b5cd8f1e771d2b879df0e83008dd4a7015a2c64e9e2"
+    },
+    {
+      "file": "items/garment_knickers_hung.jpg",
+      "bytes": 22280,
+      "sha256": "d9263a79bcfb9369cd41a91172059044de6de5d78f783748588e615b4d0fd1d0"
+    },
+    {
+      "file": "items/garment_high_leg_knickers_hung.jpg",
+      "bytes": 23267,
+      "sha256": "eafafa56361d48aef3b5d3cd89719f7ee75cc316a0e4a3880f9d420fb193a814"
+    },
+    {
+      "file": "items/garment_briefs_hung.jpg",
+      "bytes": 21960,
+      "sha256": "40f8f5bd21cd7f3cfad9c2990adae2cfb8a73b21422d11d5b55ac84316f86b1e"
+    },
+    {
+      "file": "items/garment_boxers_hung.jpg",
+      "bytes": 24182,
+      "sha256": "b28a5204fbd72601e1d6678facc6fab9e97a3b1653b36bbcc598a0784b8f0b3e"
+    },
+    {
+      "file": "items/garment_sock_single_hung.jpg",
+      "bytes": 16894,
+      "sha256": "ea64d009f76e7540822b0f9ca722e7706b504b42718ff7b1fd1281b76b8bca00"
+    },
+    {
+      "file": "items/garment_socks_pair_hung.jpg",
+      "bytes": 18523,
+      "sha256": "10672f2272f6fb310a24d97187ce0225fc740580a0336ba5674a0bec69b1664b"
+    },
+    {
+      "file": "items/garment_tights_hung.jpg",
+      "bytes": 18565,
+      "sha256": "c5eead12366b8a8d59b9023f6e5a972e451945739e2c30d764bc4cef7b8a9e7e"
+    },
+    {
+      "file": "items/garment_nightdress_hung.jpg",
+      "bytes": 20103,
+      "sha256": "75944e78a3cfae8d9341795b763432b8f94e3d1789fda728c164f81d2b37fdd6"
+    },
+    {
+      "file": "items/garment_swimsuit_onepiece_flat.jpg",
+      "bytes": 21492,
+      "sha256": "6fc24d58bd2824015665775d5bb98d1c843a3bb03384c9e631a8607df20360eb"
+    },
+    {
+      "file": "items/garment_swim_trunks_flat.jpg",
+      "bytes": 26341,
+      "sha256": "bde002068e97b28111d76d730378c60807b6d5eaefada91e4171156c58fc019d"
+    },
+    {
+      "file": "items/garment_bikini_top_flat.jpg",
+      "bytes": 24326,
+      "sha256": "cc814510890eb137996639e029af8d7fdcac5dd81d1324a6baf613fa9f3cdd76"
+    },
+    {
+      "file": "items/garment_bikini_bottom_flat.jpg",
+      "bytes": 23021,
+      "sha256": "94872ed4bd4cd52c48d977f95922f96b8a01710bd0aa63eba55922341e3ea936"
+    },
+    {
+      "file": "items/garment_crop_top_flat.jpg",
+      "bytes": 20874,
+      "sha256": "67221956206f77071723259d751ec38fc6e84cb50fd5fb260e014c98efc3f905"
+    },
+    {
+      "file": "items/garment_tshirt_flat.jpg",
+      "bytes": 24887,
+      "sha256": "543166b240abbe38b6da81fcb886c9791575402ea14e89710d1d4f4a175626a8"
+    },
+    {
+      "file": "items/garment_shorts_flat.jpg",
+      "bytes": 25361,
+      "sha256": "b8858aa4bff15e66ca68b3abca9bd35e209a2c7f31c13143b2306f346390fe1a"
+    },
+    {
+      "file": "items/garment_leggings_flat.jpg",
+      "bytes": 19793,
+      "sha256": "a97ff5821446d5a0d983b3da56f7d610812b86789f8d8e90edb3e01c660b4efe"
+    },
+    {
+      "file": "items/garment_sun_hat_flat.jpg",
+      "bytes": 15903,
+      "sha256": "6f0c18817901083f640b13068b2cefb7ececcededf7f848252afd3cad76f02cf"
+    },
+    {
+      "file": "items/garment_straw_hat_flat.jpg",
+      "bytes": 19735,
+      "sha256": "073635ebe7ca0110d1bb0ec89d4f153fd4db069f912b3382c6a8745213a0e012"
+    },
+    {
+      "file": "items/garment_cap_flat.jpg",
+      "bytes": 18449,
+      "sha256": "5334044a49d63b2b0c39f28820fc766e4009e581c0ee29afff4f7187bd883938"
+    },
+    {
+      "file": "items/garment_bra_flat.jpg",
+      "bytes": 16389,
+      "sha256": "93ded3adc682545b3af158da8fb1719bd76e0afb695c8e693d3c920ebaad9c03"
+    },
+    {
+      "file": "items/garment_underwear_flat.jpg",
+      "bytes": 19234,
+      "sha256": "1d36a040509eaaffc6e7570e876d44224e259301455bd84e3943d0fa7c12c147"
+    },
+    {
+      "file": "items/garment_panties_flat.jpg",
+      "bytes": 20757,
+      "sha256": "5ac98c2100c4be6f45dc1351ced5582b302bc482333d3f126df5975d896cd79e"
+    },
+    {
+      "file": "items/garment_thong_flat.jpg",
+      "bytes": 20016,
+      "sha256": "2fb748d51dc6c2efe60708148397e623a635322232025b6d4d1ab6ae32e92862"
+    },
+    {
+      "file": "items/garment_knickers_flat.jpg",
+      "bytes": 20128,
+      "sha256": "17767f2b8b920d49c7890ae541c0f71cb91af0d8a603f369bf2261f03568be9c"
+    },
+    {
+      "file": "items/garment_high_leg_knickers_flat.jpg",
+      "bytes": 21046,
+      "sha256": "668733b7e51f5177f8ead1cb092095899eabc1e6fa06434fbf9611fe37567065"
+    },
+    {
+      "file": "items/garment_briefs_flat.jpg",
+      "bytes": 21916,
+      "sha256": "7f4df1ddb31423dce05dc9546e3f487a3114e92fef0b6a9121fa52f9e5312372"
+    },
+    {
+      "file": "items/garment_boxers_flat.jpg",
+      "bytes": 25087,
+      "sha256": "fd2e8b85fd5ffa2f42840b8d9c39ef0b7c422257d1cc8ffb52eea3d44e1bf0d3"
+    },
+    {
+      "file": "items/garment_sock_single_flat.jpg",
+      "bytes": 15627,
+      "sha256": "ff86e6f2a0c0f4dbf17312499e8a4ce54bf534ada7c147fac934dd4297a52cc1"
+    },
+    {
+      "file": "items/garment_socks_pair_flat.jpg",
+      "bytes": 16949,
+      "sha256": "eed2a5c4b437b6d04ddb7ac00c5f0052abc84f683d9c46d3d86b08fbc34f2eec"
+    },
+    {
+      "file": "items/garment_tights_flat.jpg",
+      "bytes": 20090,
+      "sha256": "3fb5ab63c8c2ef072e564695e0f6dc462506487f43123bad80eeeb1abaf0511b"
+    },
+    {
+      "file": "items/garment_nightdress_flat.jpg",
+      "bytes": 18669,
+      "sha256": "c2980646977788c429a08f816e2baa2502f5cbe498c34f46ccf3861d12d93be7"
+    },
+    {
+      "file": "contact-folded.jpg",
+      "bytes": 174640,
+      "sha256": "24b03d76b16b0e7706035b23be5e779823226ab8bc98c541586b162d3cb6b2b0"
+    },
+    {
+      "file": "contact-hung.jpg",
+      "bytes": 187526,
+      "sha256": "479cb61bfcf22a4a7cf02285a7853cde0fa1762afb52ac776cf97764d92dbb00"
+    },
+    {
+      "file": "contact-flat.jpg",
+      "bytes": 174599,
+      "sha256": "72cfb80d3e2893a21d92130bf11a01d6fca9f70c906afc5def3ac08833cbbc67"
+    },
+    {
+      "file": "palette.jpg",
+      "bytes": 111774,
+      "sha256": "d75c64d23e77a0a3ccf8b43c1d1bb20ba40805cec43bd8d0eb7c39bc96efd575"
+    },
+    {
+      "file": "items/garment_tshirt_hung_lod.jpg",
+      "bytes": 25367,
+      "sha256": "7c7f1046e13838ffeeacc88ba8739eb2cd734115c826a0175c21a5d8b17d053b"
+    },
+    {
+      "file": "items/garment_swimsuit_onepiece_flat_lod.jpg",
+      "bytes": 21723,
+      "sha256": "da11b966bacc85549956ed855d86f2003ea314e7eedd473fe249cdc0dd23be8f"
+    },
+    {
+      "file": "items/garment_leggings_folded_lod.jpg",
+      "bytes": 22417,
+      "sha256": "94a33ff48496b2cfd035cd6917c6de188b1f0d1608e3713fac095458b683887c"
+    },
+    {
+      "file": "items/garment_straw_hat_flat_lod.jpg",
+      "bytes": 19928,
+      "sha256": "761e6db13fb49f0b7ac100e2fb4a2a70407744ec1f726437ee1bd1b8e71d7961"
+    },
+    {
+      "file": "items/garment_knickers_hung_lod.jpg",
+      "bytes": 21173,
+      "sha256": "7cef02d1ee09ab8d8d574c4b2d0812dbb95a4cbabebaddd02f7af7943c1dc17d"
+    },
+    {
+      "file": "items/garment_socks_pair_flat_lod.jpg",
+      "bytes": 17410,
+      "sha256": "cefc8fae15d4dcbb6e92a061af147d28b7d407767442006e9f0f0cfc4954c0d8"
+    },
+    {
+      "file": "contact-lod.jpg",
+      "bytes": 100777,
+      "sha256": "c5c2a3d32562c0b927b69f7bccb6057fcc73de5eb41f7c8d31d15a2a682cb13f"
+    },
+    {
+      "file": "items/garment_thong_hung_back.jpg",
+      "bytes": 21259,
+      "sha256": "304cb69f6b4fca692943aa3dab8afe015e9c2cc7d51df5969929f7dbf407c203"
+    },
+    {
+      "file": "items/garment_bra_hung_back.jpg",
+      "bytes": 18515,
+      "sha256": "10741361b3f2b14588ebc4331de6ec835d1bae40345746109d86a486522e0b83"
+    },
+    {
+      "file": "items/garment_bikini_top_hung_back.jpg",
+      "bytes": 24997,
+      "sha256": "e3bc565adac044c91045c85879cf1f6255530e3da3b1cc67b6f030485907d3e6"
+    },
+    {
+      "file": "contact-back.jpg",
+      "bytes": 36278,
+      "sha256": "0e15b05aa8d663292f1d23c6bbdaa91d775daf6f49e601ba502f36bb5daf29af"
+    },
+    {
+      "file": "fixtures/drawer.jpg",
+      "bytes": 63895,
+      "sha256": "9abd7c09626e505b223f4d0e8d6e682db152c8bba1d9c8609438c3484ec49cd6"
+    },
+    {
+      "file": "fixtures/wardrobe.jpg",
+      "bytes": 50818,
+      "sha256": "34f268f035c030c0820655f569e3601979e7ae5bf721dfbce7308a37bac1c05d"
+    },
+    {
+      "file": "fixtures/washing_line.jpg",
+      "bytes": 46880,
+      "sha256": "3707b647d4ac01dfd65d506e82ec15207308e420756d02bee1d2c919bd13bf68"
+    },
+    {
+      "file": "fixtures/shop_shelf.jpg",
+      "bytes": 59272,
+      "sha256": "482e960ba854cb7b425babea4e97a8a329acf6cd2ccb21caa2d02b589949754e"
+    }
+  ],
+  "initial": {
+    "entries": [
+      {
+        "key": "garment_swimsuit_onepiece_folded",
+        "state": "folded",
+        "garment": "swimsuit_onepiece",
+        "variants": [
+          "plain_teal",
+          "plain_navy",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_swim_trunks_folded",
+        "state": "folded",
+        "garment": "swim_trunks",
+        "variants": [
+          "plain_navy",
+          "plain_coral",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_bikini_top_folded",
+        "state": "folded",
+        "garment": "bikini_top",
+        "variants": [
+          "plain_teal",
+          "plain_coral",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_bikini_bottom_folded",
+        "state": "folded",
+        "garment": "bikini_bottom",
+        "variants": [
+          "plain_teal",
+          "plain_coral",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_crop_top_folded",
+        "state": "folded",
+        "garment": "crop_top",
+        "variants": [
+          "plain_coral",
+          "plain_teal",
+          "stripe_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_tshirt_folded",
+        "state": "folded",
+        "garment": "tshirt",
+        "variants": [
+          "plain_cream",
+          "plain_navy",
+          "plain_teal",
+          "stripe_navy",
+          "stripe_teal",
+          "football_blue_white",
+          "football_red_white",
+          "football_green_yellow",
+          "football_burgundy_navy"
+        ]
+      },
+      {
+        "key": "garment_shorts_folded",
+        "state": "folded",
+        "garment": "shorts",
+        "variants": [
+          "plain_navy",
+          "plain_charcoal",
+          "plain_teal",
+          "football_blue_white",
+          "football_green_yellow"
+        ]
+      },
+      {
+        "key": "garment_leggings_folded",
+        "state": "folded",
+        "garment": "leggings",
+        "variants": [
+          "plain_charcoal",
+          "plain_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_sun_hat_folded",
+        "state": "folded",
+        "garment": "sun_hat",
+        "variants": [
+          "plain_cream",
+          "plain_coral",
+          "plain_teal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_bra_folded",
+        "state": "folded",
+        "garment": "bra",
+        "variants": [
+          "plain_cream",
+          "plain_lavender",
+          "plain_charcoal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_underwear_folded",
+        "state": "folded",
+        "garment": "underwear",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy"
+        ]
+      },
+      {
+        "key": "garment_panties_folded",
+        "state": "folded",
+        "garment": "panties",
+        "variants": [
+          "plain_coral",
+          "plain_lavender",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_thong_folded",
+        "state": "folded",
+        "garment": "thong",
+        "variants": [
+          "plain_charcoal",
+          "plain_lavender",
+          "plain_coral"
+        ]
+      },
+      {
+        "key": "garment_knickers_folded",
+        "state": "folded",
+        "garment": "knickers",
+        "variants": [
+          "plain_cream",
+          "plain_lavender",
+          "floral_cream",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_high_leg_knickers_folded",
+        "state": "folded",
+        "garment": "high_leg_knickers",
+        "variants": [
+          "plain_coral",
+          "plain_cream",
+          "plain_teal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_briefs_folded",
+        "state": "folded",
+        "garment": "briefs",
+        "variants": [
+          "plain_navy",
+          "plain_charcoal",
+          "plain_cream",
+          "stripe_navy"
+        ]
+      },
+      {
+        "key": "garment_boxers_folded",
+        "state": "folded",
+        "garment": "boxers",
+        "variants": [
+          "plain_navy",
+          "stripe_navy",
+          "stripe_teal",
+          "plain_coral"
+        ]
+      },
+      {
+        "key": "garment_sock_single_folded",
+        "state": "folded",
+        "garment": "sock_single",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_socks_pair_folded",
+        "state": "folded",
+        "garment": "socks_pair",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_tights_folded",
+        "state": "folded",
+        "garment": "tights",
+        "variants": [
+          "plain_charcoal",
+          "plain_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_nightdress_folded",
+        "state": "folded",
+        "garment": "nightdress",
+        "variants": [
+          "plain_lavender",
+          "plain_cream",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_swimsuit_onepiece_hung",
+        "state": "hung",
+        "garment": "swimsuit_onepiece",
+        "variants": [
+          "plain_teal",
+          "plain_navy",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_swim_trunks_hung",
+        "state": "hung",
+        "garment": "swim_trunks",
+        "variants": [
+          "plain_navy",
+          "plain_coral",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_bikini_top_hung",
+        "state": "hung",
+        "garment": "bikini_top",
+        "variants": [
+          "plain_teal",
+          "plain_coral",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_bikini_bottom_hung",
+        "state": "hung",
+        "garment": "bikini_bottom",
+        "variants": [
+          "plain_teal",
+          "plain_coral",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_crop_top_hung",
+        "state": "hung",
+        "garment": "crop_top",
+        "variants": [
+          "plain_coral",
+          "plain_teal",
+          "stripe_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_tshirt_hung",
+        "state": "hung",
+        "garment": "tshirt",
+        "variants": [
+          "plain_cream",
+          "plain_navy",
+          "plain_teal",
+          "stripe_navy",
+          "stripe_teal",
+          "football_blue_white",
+          "football_red_white",
+          "football_green_yellow",
+          "football_burgundy_navy"
+        ]
+      },
+      {
+        "key": "garment_shorts_hung",
+        "state": "hung",
+        "garment": "shorts",
+        "variants": [
+          "plain_navy",
+          "plain_charcoal",
+          "plain_teal",
+          "football_blue_white",
+          "football_green_yellow"
+        ]
+      },
+      {
+        "key": "garment_leggings_hung",
+        "state": "hung",
+        "garment": "leggings",
+        "variants": [
+          "plain_charcoal",
+          "plain_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_sun_hat_hung",
+        "state": "hung",
+        "garment": "sun_hat",
+        "variants": [
+          "plain_cream",
+          "plain_coral",
+          "plain_teal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_straw_hat_hung",
+        "state": "hung",
+        "garment": "straw_hat",
+        "variants": [
+          "straw_natural",
+          "straw_pale"
+        ]
+      },
+      {
+        "key": "garment_cap_hung",
+        "state": "hung",
+        "garment": "cap",
+        "variants": [
+          "plain_navy",
+          "plain_coral",
+          "plain_charcoal",
+          "football_burgundy_navy"
+        ]
+      },
+      {
+        "key": "garment_bra_hung",
+        "state": "hung",
+        "garment": "bra",
+        "variants": [
+          "plain_cream",
+          "plain_lavender",
+          "plain_charcoal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_underwear_hung",
+        "state": "hung",
+        "garment": "underwear",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy"
+        ]
+      },
+      {
+        "key": "garment_panties_hung",
+        "state": "hung",
+        "garment": "panties",
+        "variants": [
+          "plain_coral",
+          "plain_lavender",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_thong_hung",
+        "state": "hung",
+        "garment": "thong",
+        "variants": [
+          "plain_charcoal",
+          "plain_lavender",
+          "plain_coral"
+        ]
+      },
+      {
+        "key": "garment_knickers_hung",
+        "state": "hung",
+        "garment": "knickers",
+        "variants": [
+          "plain_cream",
+          "plain_lavender",
+          "floral_cream",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_high_leg_knickers_hung",
+        "state": "hung",
+        "garment": "high_leg_knickers",
+        "variants": [
+          "plain_coral",
+          "plain_cream",
+          "plain_teal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_briefs_hung",
+        "state": "hung",
+        "garment": "briefs",
+        "variants": [
+          "plain_navy",
+          "plain_charcoal",
+          "plain_cream",
+          "stripe_navy"
+        ]
+      },
+      {
+        "key": "garment_boxers_hung",
+        "state": "hung",
+        "garment": "boxers",
+        "variants": [
+          "plain_navy",
+          "stripe_navy",
+          "stripe_teal",
+          "plain_coral"
+        ]
+      },
+      {
+        "key": "garment_sock_single_hung",
+        "state": "hung",
+        "garment": "sock_single",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_socks_pair_hung",
+        "state": "hung",
+        "garment": "socks_pair",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_tights_hung",
+        "state": "hung",
+        "garment": "tights",
+        "variants": [
+          "plain_charcoal",
+          "plain_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_nightdress_hung",
+        "state": "hung",
+        "garment": "nightdress",
+        "variants": [
+          "plain_lavender",
+          "plain_cream",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_swimsuit_onepiece_flat",
+        "state": "flat",
+        "garment": "swimsuit_onepiece",
+        "variants": [
+          "plain_teal",
+          "plain_navy",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_swim_trunks_flat",
+        "state": "flat",
+        "garment": "swim_trunks",
+        "variants": [
+          "plain_navy",
+          "plain_coral",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_bikini_top_flat",
+        "state": "flat",
+        "garment": "bikini_top",
+        "variants": [
+          "plain_teal",
+          "plain_coral",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_bikini_bottom_flat",
+        "state": "flat",
+        "garment": "bikini_bottom",
+        "variants": [
+          "plain_teal",
+          "plain_coral",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_crop_top_flat",
+        "state": "flat",
+        "garment": "crop_top",
+        "variants": [
+          "plain_coral",
+          "plain_teal",
+          "stripe_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_tshirt_flat",
+        "state": "flat",
+        "garment": "tshirt",
+        "variants": [
+          "plain_cream",
+          "plain_navy",
+          "plain_teal",
+          "stripe_navy",
+          "stripe_teal",
+          "football_blue_white",
+          "football_red_white",
+          "football_green_yellow",
+          "football_burgundy_navy"
+        ]
+      },
+      {
+        "key": "garment_shorts_flat",
+        "state": "flat",
+        "garment": "shorts",
+        "variants": [
+          "plain_navy",
+          "plain_charcoal",
+          "plain_teal",
+          "football_blue_white",
+          "football_green_yellow"
+        ]
+      },
+      {
+        "key": "garment_leggings_flat",
+        "state": "flat",
+        "garment": "leggings",
+        "variants": [
+          "plain_charcoal",
+          "plain_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_sun_hat_flat",
+        "state": "flat",
+        "garment": "sun_hat",
+        "variants": [
+          "plain_cream",
+          "plain_coral",
+          "plain_teal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_straw_hat_flat",
+        "state": "flat",
+        "garment": "straw_hat",
+        "variants": [
+          "straw_natural",
+          "straw_pale"
+        ]
+      },
+      {
+        "key": "garment_cap_flat",
+        "state": "flat",
+        "garment": "cap",
+        "variants": [
+          "plain_navy",
+          "plain_coral",
+          "plain_charcoal",
+          "football_burgundy_navy"
+        ]
+      },
+      {
+        "key": "garment_bra_flat",
+        "state": "flat",
+        "garment": "bra",
+        "variants": [
+          "plain_cream",
+          "plain_lavender",
+          "plain_charcoal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_underwear_flat",
+        "state": "flat",
+        "garment": "underwear",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy"
+        ]
+      },
+      {
+        "key": "garment_panties_flat",
+        "state": "flat",
+        "garment": "panties",
+        "variants": [
+          "plain_coral",
+          "plain_lavender",
+          "floral_cream",
+          "floral_teal"
+        ]
+      },
+      {
+        "key": "garment_thong_flat",
+        "state": "flat",
+        "garment": "thong",
+        "variants": [
+          "plain_charcoal",
+          "plain_lavender",
+          "plain_coral"
+        ]
+      },
+      {
+        "key": "garment_knickers_flat",
+        "state": "flat",
+        "garment": "knickers",
+        "variants": [
+          "plain_cream",
+          "plain_lavender",
+          "floral_cream",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_high_leg_knickers_flat",
+        "state": "flat",
+        "garment": "high_leg_knickers",
+        "variants": [
+          "plain_coral",
+          "plain_cream",
+          "plain_teal",
+          "floral_cream"
+        ]
+      },
+      {
+        "key": "garment_briefs_flat",
+        "state": "flat",
+        "garment": "briefs",
+        "variants": [
+          "plain_navy",
+          "plain_charcoal",
+          "plain_cream",
+          "stripe_navy"
+        ]
+      },
+      {
+        "key": "garment_boxers_flat",
+        "state": "flat",
+        "garment": "boxers",
+        "variants": [
+          "plain_navy",
+          "stripe_navy",
+          "stripe_teal",
+          "plain_coral"
+        ]
+      },
+      {
+        "key": "garment_sock_single_flat",
+        "state": "flat",
+        "garment": "sock_single",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_socks_pair_flat",
+        "state": "flat",
+        "garment": "socks_pair",
+        "variants": [
+          "plain_cream",
+          "plain_charcoal",
+          "plain_navy",
+          "stripe_teal"
+        ]
+      },
+      {
+        "key": "garment_tights_flat",
+        "state": "flat",
+        "garment": "tights",
+        "variants": [
+          "plain_charcoal",
+          "plain_navy",
+          "plain_lavender"
+        ]
+      },
+      {
+        "key": "garment_nightdress_flat",
+        "state": "flat",
+        "garment": "nightdress",
+        "variants": [
+          "plain_lavender",
+          "plain_cream",
+          "floral_cream",
+          "floral_teal"
+        ]
+      }
+    ],
+    "atlasLoaded": true,
+    "material": "laundry",
+    "manifest": "/la-ladera/assets/models/manifest.garments.json",
+    "revision": "180"
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "loadedFiles": [
+    "http://127.0.0.1:44057/la-ladera/assets/models/garments/garments_folded.glb",
+    "http://127.0.0.1:44057/la-ladera/assets/models/garments/garments_hung.glb",
+    "http://127.0.0.1:44057/la-ladera/assets/models/garments/garments_flat.glb",
+    "http://127.0.0.1:44057/la-ladera/assets/models/garments/garments_hung_lod.glb",
+    "http://127.0.0.1:44057/la-ladera/assets/models/garments/garments_flat_lod.glb",
+    "http://127.0.0.1:44057/la-ladera/assets/models/garments/garments_folded_lod.glb"
+  ],
+  "browser": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x1d04005c4e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44057/la-ladera/dev/garments/preview.html?manifest=%2Fla-ladera%2Fassets%2Fmodels%2Fmanifest.garments.json",
+      "[warning] [.WebGL-0x1d04005c4e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44057/la-ladera/dev/garments/preview.html?manifest=%2Fla-ladera%2Fassets%2Fmodels%2Fmanifest.garments.json",
+      "[warning] [.WebGL-0x1d04005c4e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44057/la-ladera/dev/garments/preview.html?manifest=%2Fla-ladera%2Fassets%2Fmodels%2Fmanifest.garments.json",
+      "[warning] [.WebGL-0x1d04005c4e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:44057/la-ladera/dev/garments/preview.html?manifest=%2Fla-ladera%2Fassets%2Fmodels%2Fmanifest.garments.json"
+    ]
+  },
+  "pass": true,
+  "complete": true
+}

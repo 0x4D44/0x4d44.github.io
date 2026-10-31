@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "adultOnly": true,
+  "status": "Data recipes only; not registered with game loaders or placed in the live world.",
+  "baseCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "placementPolicy": {
+    "targetAge": "adult",
+    "excludeChildRoomsAndFigures": true,
+    "requireExplicitAdultContext": true,
+    "fit": "Use each state asset's measured size and footprint; reject an item that does not fit the selected shelf, drawer or hanging space.",
+    "selection": "Each binding is an alternative stock recipe for a suitable container, not an instruction to populate every listed catalogue key.",
+    "stacking": "Folded items may stack using measured height with a small clearance. Do not overlap hanging or laid-flat garments.",
+    "fallback": "Keep the existing procedural cloth or washing-line rectangles whenever an asset or its manifest is unavailable.",
+    "lod": "Select the matching manifest LOD for distant display; do not add both detail levels to the same scene."
+  },
+  "bindings": [
+    {
+      "id": "drawer_daily_tops", "kind": "drawer", "label": "Cajón de camisetas", "catalogueKeys": ["dresser_4", "dresser_low"],
+      "items": [
+        { "asset": "garment_tshirt_folded", "variant": "stripe_navy", "count": 2 },
+        { "asset": "garment_crop_top_folded", "variant": "plain_coral", "count": 1 },
+        { "asset": "garment_shorts_folded", "variant": "plain_teal", "count": 1 }
+      ]
+    },
+    {
+      "id": "drawer_soft_underwear", "kind": "drawer", "label": "Cajón de ropa interior", "catalogueKeys": ["dresser_4", "dresser_low"],
+      "items": [
+        { "asset": "garment_bra_folded", "variant": "plain_lavender", "count": 1 },
+        { "asset": "garment_knickers_folded", "variant": "floral_cream", "count": 2 },
+        { "asset": "garment_high_leg_knickers_folded", "variant": "plain_teal", "count": 1 },
+        { "asset": "garment_panties_folded", "variant": "plain_coral", "count": 1 },
+        { "asset": "garment_thong_folded", "variant": "plain_lavender", "count": 1 }
+      ]
+    },
+    {
+      "id": "drawer_underwear_basics", "kind": "drawer", "label": "Cajón de básicos", "catalogueKeys": ["dresser_4", "dresser_low"],
+      "items": [
+        { "asset": "garment_underwear_folded", "variant": "plain_cream", "count": 2 },
+        { "asset": "garment_briefs_folded", "variant": "plain_navy", "count": 2 },
+        { "asset": "garment_boxers_folded", "variant": "stripe_teal", "count": 1 },
+        { "asset": "garment_socks_pair_folded", "variant": "plain_charcoal", "count": 2 },
+        { "asset": "garment_sock_single_folded", "variant": "plain_cream", "count": 1 },
+        { "asset": "garment_tights_folded", "variant": "plain_charcoal", "count": 1 }
+      ]
+    },
+    {
+      "id": "drawer_swimwear", "kind": "drawer", "label": "Cajón de ropa de baño", "catalogueKeys": ["dresser_4", "dresser_low"],
+      "context": "Occasional stored swimwear; this recipe does not imply a pool or swimming destination exists in the barrio.",
+      "items": [
+        { "asset": "garment_swimsuit_onepiece_folded", "variant": "plain_teal", "count": 1 },
+        { "asset": "garment_swim_trunks_folded", "variant": "plain_navy", "count": 1 },
+        { "asset": "garment_bikini_top_folded", "variant": "floral_teal", "count": 1, "setId": "bikini_floral_teal" },
+        { "asset": "garment_bikini_bottom_folded", "variant": "floral_teal", "count": 1, "setId": "bikini_floral_teal" }
+      ]
+    },
+    {
+      "id": "wardrobe_daily", "kind": "wardrobe", "label": "Ropa de diario", "catalogueKeys": ["wardrobe_2", "wardrobe_3", "wardrobe_metal"],
+      "items": [
+        { "asset": "garment_tshirt_hung", "variant": "plain_cream", "count": 1, "support": "hanger" },
+        { "asset": "garment_crop_top_hung", "variant": "plain_teal", "count": 1, "support": "hanger" },
+        { "asset": "garment_shorts_hung", "variant": "plain_navy", "count": 1, "support": "waist_clips" },
+        { "asset": "garment_leggings_hung", "variant": "plain_charcoal", "count": 1, "support": "waist_clips" },
+        { "asset": "garment_nightdress_hung", "variant": "floral_cream", "count": 1, "support": "hanger" }
+      ]
+    },
+    {
+      "id": "wardrobe_hat_shelf", "kind": "wardrobe", "label": "Sombreros y gorra", "catalogueKeys": ["wardrobe_2", "wardrobe_3"],
+      "items": [
+        { "asset": "garment_sun_hat_folded", "variant": "plain_coral", "count": 1, "support": "shelf" },
+        { "asset": "garment_straw_hat_flat", "variant": "straw_natural", "count": 1, "support": "shelf" },
+        { "asset": "garment_cap_flat", "variant": "plain_navy", "count": 1, "support": "shelf" }
+      ]
+    },
+    {
+      "id": "washing_line_daily", "kind": "washing_line", "label": "Tendido de diario", "catalogueKeys": ["clothesline", "drying_rack"],
+      "items": [
+        { "asset": "garment_tshirt_hung", "variant": "football_green_yellow", "count": 1, "support": "shoulder_pegs" },
+        { "asset": "garment_shorts_hung", "variant": "plain_teal", "count": 1, "support": "waist_pegs" },
+        { "asset": "garment_socks_pair_hung", "variant": "plain_cream", "count": 1, "support": "cuff_pegs" },
+        { "asset": "garment_sock_single_hung", "variant": "plain_navy", "count": 1, "support": "cuff_peg" }
+      ]
+    },
+    {
+      "id": "washing_line_delicates", "kind": "washing_line", "label": "Tendido de prendas delicadas", "catalogueKeys": ["clothesline", "drying_rack"],
+      "items": [
+        { "asset": "garment_bra_hung", "variant": "plain_cream", "count": 1, "support": "strap_pegs" },
+        { "asset": "garment_knickers_hung", "variant": "plain_lavender", "count": 1, "support": "waist_pegs" },
+        { "asset": "garment_high_leg_knickers_hung", "variant": "plain_teal", "count": 1, "support": "waist_pegs" },
+        { "asset": "garment_underwear_hung", "variant": "plain_cream", "count": 1, "support": "waist_pegs" }
+      ]
+    },
+    {
+      "id": "shop_folded_basics", "kind": "shop_shelf", "label": "Básicos doblados", "catalogueKeys": ["shelf_fabric", "shelf_tienda", "shop_counter_wood"],
+      "context": "Adult stock selected by a future shop-data consumer; these host keys are verified furniture identifiers, not a claim of existing clothing-shop placement.",
+      "items": [
+        { "asset": "garment_tshirt_folded", "variant": "football_blue_white", "count": 3 },
+        { "asset": "garment_tshirt_folded", "variant": "football_red_white", "count": 2 },
+        { "asset": "garment_tshirt_folded", "variant": "football_burgundy_navy", "count": 2 },
+        { "asset": "garment_leggings_folded", "variant": "plain_charcoal", "count": 2 },
+        { "asset": "garment_socks_pair_folded", "variant": "plain_cream", "count": 3 },
+        { "asset": "garment_boxers_folded", "variant": "stripe_navy", "count": 2 }
+      ]
+    },
+    {
+      "id": "shop_flat_swimwear", "kind": "shop_shelf", "label": "Muestra de ropa de baño", "catalogueKeys": ["shop_counter_wood", "cutting_table"],
+      "items": [
+        { "asset": "garment_bikini_top_flat", "variant": "floral_cream", "count": 1, "setId": "bikini_floral_cream" },
+        { "asset": "garment_bikini_bottom_flat", "variant": "floral_cream", "count": 1, "setId": "bikini_floral_cream" },
+        { "asset": "garment_swim_trunks_folded", "variant": "stripe_teal", "count": 2 },
+        { "asset": "garment_swimsuit_onepiece_folded", "variant": "plain_navy", "count": 1 }
+      ]
+    },
+    {
+      "id": "shop_sleepwear", "kind": "shop_shelf", "label": "Ropa para dormir", "catalogueKeys": ["shelf_fabric", "shop_counter_wood"],
+      "items": [
+        { "asset": "garment_nightdress_folded", "variant": "plain_lavender", "count": 2 },
+        { "asset": "garment_nightdress_folded", "variant": "floral_teal", "count": 1 },
+        { "asset": "garment_tights_folded", "variant": "plain_navy", "count": 2 }
+      ]
+    },
+    {
+      "id": "shop_hats", "kind": "shop_shelf", "label": "Sombreros", "catalogueKeys": ["shelf_fabric", "shop_counter_wood"],
+      "items": [
+        { "asset": "garment_sun_hat_flat", "variant": "floral_cream", "count": 1 },
+        { "asset": "garment_straw_hat_flat", "variant": "straw_pale", "count": 1 },
+        { "asset": "garment_cap_flat", "variant": "plain_coral", "count": 2 }
+      ]
+    }
+  ],
+  "findIds": [],
+  "deferredBindings": [
+    { "file": "dev/FEATURE-DRAWERS.md", "reason": "Absent from the verified main baseline; drawer-slot and discovery rules cannot yet be checked against this feature specification." },
+    { "file": "js/interiors/contents.js", "reason": "Absent from the verified main baseline; no contents-pool identifiers have been invented or wired into game code." },
+    { "file": "js/interiors/finds.js", "reason": "Absent from the verified main baseline; findIds remains empty until real adult-clothing find identifiers can be verified." },
+    { "file": "js/world/props.js", "reason": "Outdoor washing lines remain procedural. The clothesline and drying_rack catalogue keys identify suitable existing types, not exact world-line instances." },
+    { "file": "js/people/*", "reason": "Part B requires the new figures to land first. This object-only data does not assign clothes to people or change any child outfit." }
+  ]
+}

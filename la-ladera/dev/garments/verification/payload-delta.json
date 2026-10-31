@@ -1,0 +1,10 @@
+{
+  "baseCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "baseShippedBytes": 18340621,
+  "baseShippedMiB": 17.490979194641113,
+  "addedLibraryBytes": 1840059,
+  "afterShippedBytes": 20180680,
+  "afterShippedMiB": 19.24579620361328,
+  "highTriangles": 35694,
+  "lodTriangles": 10539
+}

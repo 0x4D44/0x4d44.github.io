@@ -1,0 +1,4674 @@
+{
+  "schemaVersion": 1,
+  "set": "garments",
+  "adultOnly": true,
+  "scope": "objects-only",
+  "baseCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "catalogue": "../../tools/blender/garments.catalog.json",
+  "files": [
+    {
+      "glb": "garments/garments_folded.glb",
+      "sha256": "df127642c10af9d1a9b2491381c1ee38d9b54d22398247123a3cc80a33f97bd9",
+      "assets": {
+        "garment_swimsuit_onepiece_folded": {
+          "node": "garment_swimsuit_onepiece_folded",
+          "garment": "swimsuit_onepiece",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2993922,
+            0.0485393,
+            0.410479
+          ],
+          "footprint": [
+            0.2993922,
+            0.410479
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1496961,
+              0.0,
+              -0.2052395
+            ],
+            "max": [
+              0.1496961,
+              0.0485393,
+              0.2052395
+            ]
+          },
+          "triangles": 771,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_navy",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_swimsuit_onepiece_folded_lod",
+            "size": [
+              0.3038624,
+              0.0508759,
+              0.410032
+            ],
+            "footprint": [
+              0.3038624,
+              0.410032
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1519312,
+                0.0,
+                -0.205016
+              ],
+              "max": [
+                0.1519312,
+                0.0508759,
+                0.205016
+              ]
+            },
+            "triangles": 211,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_swim_trunks_folded": {
+          "node": "garment_swim_trunks_folded",
+          "garment": "swim_trunks",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.3244224,
+            0.0482634,
+            0.2347034
+          ],
+          "footprint": [
+            0.3244224,
+            0.2347034
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1622112,
+              0.0,
+              -0.1173517
+            ],
+            "max": [
+              0.1622112,
+              0.0482634,
+              0.1173517
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_coral",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_swim_trunks_folded_lod",
+            "size": [
+              0.3264824,
+              0.0473595,
+              0.2337698
+            ],
+            "footprint": [
+              0.3264824,
+              0.2337698
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1632412,
+                0.0,
+                -0.1168849
+              ],
+              "max": [
+                0.1632412,
+                0.0473595,
+                0.1168849
+              ]
+            },
+            "triangles": 211,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bikini_top_folded": {
+          "node": "garment_bikini_top_folded",
+          "garment": "bikini_top",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2505206,
+            0.0611385,
+            0.1843124
+          ],
+          "footprint": [
+            0.2505206,
+            0.1843124
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1252603,
+              0.0,
+              -0.0921562
+            ],
+            "max": [
+              0.1252603,
+              0.0611385,
+              0.0921562
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_coral",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_bikini_top_folded_lod",
+            "size": [
+              0.2505206,
+              0.0604583,
+              0.183317
+            ],
+            "footprint": [
+              0.2505206,
+              0.183317
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1252603,
+                0.0,
+                -0.0916585
+              ],
+              "max": [
+                0.1252603,
+                0.0604583,
+                0.0916585
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bikini_bottom_folded": {
+          "node": "garment_bikini_bottom_folded",
+          "garment": "bikini_bottom",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2558044,
+            0.0394315,
+            0.1548054
+          ],
+          "footprint": [
+            0.2558044,
+            0.1548054
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1279022,
+              0.0,
+              -0.0774027
+            ],
+            "max": [
+              0.1279022,
+              0.0394315,
+              0.0774027
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_coral",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_bikini_bottom_folded_lod",
+            "size": [
+              0.2566362,
+              0.0394067,
+              0.1555978
+            ],
+            "footprint": [
+              0.2566362,
+              0.1555978
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1283181,
+                0.0,
+                -0.0777989
+              ],
+              "max": [
+                0.1283181,
+                0.0394067,
+                0.0777989
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_crop_top_folded": {
+          "node": "garment_crop_top_folded",
+          "garment": "crop_top",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.4296148,
+            0.0488102,
+            0.2067534
+          ],
+          "footprint": [
+            0.4296148,
+            0.2067534
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2148074,
+              0.0,
+              -0.1033767
+            ],
+            "max": [
+              0.2148074,
+              0.0488102,
+              0.1033767
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_teal",
+            "stripe_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_crop_top_folded_lod",
+            "size": [
+              0.4308086,
+              0.0445017,
+              0.2065868
+            ],
+            "footprint": [
+              0.4308086,
+              0.2065868
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2154043,
+                0.0,
+                -0.1032934
+              ],
+              "max": [
+                0.2154043,
+                0.0445017,
+                0.1032934
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_tshirt_folded": {
+          "node": "garment_tshirt_folded",
+          "garment": "tshirt",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.434431,
+            0.0476146,
+            0.376924
+          ],
+          "footprint": [
+            0.434431,
+            0.376924
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2172155,
+              0.0,
+              -0.188462
+            ],
+            "max": [
+              0.2172155,
+              0.0476146,
+              0.188462
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_navy",
+            "plain_teal",
+            "stripe_navy",
+            "stripe_teal",
+            "football_blue_white",
+            "football_red_white",
+            "football_green_yellow",
+            "football_burgundy_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_tshirt_folded_lod",
+            "size": [
+              0.4345344,
+              0.0452001,
+              0.3771552
+            ],
+            "footprint": [
+              0.4345344,
+              0.3771552
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2172672,
+                0.0,
+                -0.1885776
+              ],
+              "max": [
+                0.2172672,
+                0.0452001,
+                0.1885776
+              ]
+            },
+            "triangles": 211,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_shorts_folded": {
+          "node": "garment_shorts_folded",
+          "garment": "shorts",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2844326,
+            0.0484198,
+            0.23507
+          ],
+          "footprint": [
+            0.2844326,
+            0.23507
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1422163,
+              0.0,
+              -0.117535
+            ],
+            "max": [
+              0.1422163,
+              0.0484198,
+              0.117535
+            ]
+          },
+          "triangles": 771,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_charcoal",
+            "plain_teal",
+            "football_blue_white",
+            "football_green_yellow"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_shorts_folded_lod",
+            "size": [
+              0.2888388,
+              0.0465118,
+              0.2340202
+            ],
+            "footprint": [
+              0.2888388,
+              0.2340202
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1444194,
+                0.0,
+                -0.1170101
+              ],
+              "max": [
+                0.1444194,
+                0.0465118,
+                0.1170101
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_leggings_folded": {
+          "node": "garment_leggings_folded",
+          "garment": "leggings",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2057098,
+            0.0543485,
+            0.3250076
+          ],
+          "footprint": [
+            0.2057098,
+            0.3250076
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1028549,
+              0.0,
+              -0.1625038
+            ],
+            "max": [
+              0.1028549,
+              0.0543485,
+              0.1625038
+            ]
+          },
+          "triangles": 770,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_leggings_folded_lod",
+            "size": [
+              0.2150974,
+              0.0540883,
+              0.3257506
+            ],
+            "footprint": [
+              0.2150974,
+              0.3257506
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1075487,
+                0.0,
+                -0.1628753
+              ],
+              "max": [
+                0.1075487,
+                0.0540883,
+                0.1628753
+              ]
+            },
+            "triangles": 211,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_sun_hat_folded": {
+          "node": "garment_sun_hat_folded",
+          "garment": "sun_hat",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.26196,
+            0.0708297,
+            0.3300696
+          ],
+          "footprint": [
+            0.26196,
+            0.3300696
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.13098,
+              0.0,
+              -0.1650348
+            ],
+            "max": [
+              0.13098,
+              0.0708297,
+              0.1650348
+            ]
+          },
+          "triangles": 288,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_coral",
+            "plain_teal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_sun_hat_folded_lod",
+            "size": [
+              0.2618984,
+              0.0702746,
+              0.3300696
+            ],
+            "footprint": [
+              0.2618984,
+              0.3300696
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1309492,
+                0.0,
+                -0.1650348
+              ],
+              "max": [
+                0.1309492,
+                0.0702746,
+                0.1650348
+              ]
+            },
+            "triangles": 89,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bra_folded": {
+          "node": "garment_bra_folded",
+          "garment": "bra",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.297801,
+            0.0611906,
+            0.1444966
+          ],
+          "footprint": [
+            0.297801,
+            0.1444966
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1489005,
+              0.0,
+              -0.0722483
+            ],
+            "max": [
+              0.1489005,
+              0.0611906,
+              0.0722483
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_lavender",
+            "plain_charcoal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_bra_folded_lod",
+            "size": [
+              0.2972266,
+              0.0604621,
+              0.1444966
+            ],
+            "footprint": [
+              0.2972266,
+              0.1444966
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1486133,
+                0.0,
+                -0.0722483
+              ],
+              "max": [
+                0.1486133,
+                0.0604621,
+                0.0722483
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_underwear_folded": {
+          "node": "garment_underwear_folded",
+          "garment": "underwear",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2682178,
+            0.0394264,
+            0.170956
+          ],
+          "footprint": [
+            0.2682178,
+            0.170956
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1341089,
+              0.0,
+              -0.085478
+            ],
+            "max": [
+              0.1341089,
+              0.0394264,
+              0.085478
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_underwear_folded_lod",
+            "size": [
+              0.2690234,
+              0.0397773,
+              0.1709168
+            ],
+            "footprint": [
+              0.2690234,
+              0.1709168
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1345117,
+                0.0,
+                -0.0854584
+              ],
+              "max": [
+                0.1345117,
+                0.0397773,
+                0.0854584
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_panties_folded": {
+          "node": "garment_panties_folded",
+          "garment": "panties",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2496026,
+            0.0386097,
+            0.128082
+          ],
+          "footprint": [
+            0.2496026,
+            0.128082
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1248013,
+              0.0,
+              -0.064041
+            ],
+            "max": [
+              0.1248013,
+              0.0386097,
+              0.064041
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_lavender",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_panties_folded_lod",
+            "size": [
+              0.2501376,
+              0.0384215,
+              0.128571
+            ],
+            "footprint": [
+              0.2501376,
+              0.128571
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1250688,
+                0.0,
+                -0.0642855
+              ],
+              "max": [
+                0.1250688,
+                0.0384215,
+                0.0642855
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_thong_folded": {
+          "node": "garment_thong_folded",
+          "garment": "thong",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2372,
+            0.0393683,
+            0.137825
+          ],
+          "footprint": [
+            0.2372,
+            0.137825
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1186,
+              0.0,
+              -0.0689125
+            ],
+            "max": [
+              0.1186,
+              0.0393683,
+              0.0689125
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_lavender",
+            "plain_coral"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_thong_folded_lod",
+            "size": [
+              0.2383822,
+              0.0375203,
+              0.1385922
+            ],
+            "footprint": [
+              0.2383822,
+              0.1385922
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1191911,
+                0.0,
+                -0.0692961
+              ],
+              "max": [
+                0.1191911,
+                0.0375203,
+                0.0692961
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_knickers_folded": {
+          "node": "garment_knickers_folded",
+          "garment": "knickers",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2682046,
+            0.0391937,
+            0.1602734
+          ],
+          "footprint": [
+            0.2682046,
+            0.1602734
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1341023,
+              0.0,
+              -0.0801367
+            ],
+            "max": [
+              0.1341023,
+              0.0391937,
+              0.0801367
+            ]
+          },
+          "triangles": 771,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_lavender",
+            "floral_cream",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_knickers_folded_lod",
+            "size": [
+              0.2689416,
+              0.0390726,
+              0.160846
+            ],
+            "footprint": [
+              0.2689416,
+              0.160846
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1344708,
+                0.0,
+                -0.080423
+              ],
+              "max": [
+                0.1344708,
+                0.0390726,
+                0.080423
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_high_leg_knickers_folded": {
+          "node": "garment_high_leg_knickers_folded",
+          "garment": "high_leg_knickers",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.262,
+            0.0432068,
+            0.1761844
+          ],
+          "footprint": [
+            0.262,
+            0.1761844
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.131,
+              0.0,
+              -0.0880922
+            ],
+            "max": [
+              0.131,
+              0.0432068,
+              0.0880922
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_cream",
+            "plain_teal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_high_leg_knickers_folded_lod",
+            "size": [
+              0.2630156,
+              0.0435301,
+              0.1771432
+            ],
+            "footprint": [
+              0.2630156,
+              0.1771432
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1315078,
+                0.0,
+                -0.0885716
+              ],
+              "max": [
+                0.1315078,
+                0.0435301,
+                0.0885716
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_briefs_folded": {
+          "node": "garment_briefs_folded",
+          "garment": "briefs",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.2744128,
+            0.0393284,
+            0.165611
+          ],
+          "footprint": [
+            0.2744128,
+            0.165611
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1372064,
+              0.0,
+              -0.0828055
+            ],
+            "max": [
+              0.1372064,
+              0.0393284,
+              0.0828055
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_charcoal",
+            "plain_cream",
+            "stripe_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_briefs_folded_lod",
+            "size": [
+              0.2751528,
+              0.0404018,
+              0.166926
+            ],
+            "footprint": [
+              0.2751528,
+              0.166926
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1375764,
+                0.0,
+                -0.083463
+              ],
+              "max": [
+                0.1375764,
+                0.0404018,
+                0.083463
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_boxers_folded": {
+          "node": "garment_boxers_folded",
+          "garment": "boxers",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.264447,
+            0.0485823,
+            0.1925516
+          ],
+          "footprint": [
+            0.264447,
+            0.1925516
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1322235,
+              0.0,
+              -0.0962758
+            ],
+            "max": [
+              0.1322235,
+              0.0485823,
+              0.0962758
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "stripe_navy",
+            "stripe_teal",
+            "plain_coral"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_boxers_folded_lod",
+            "size": [
+              0.2673592,
+              0.0479547,
+              0.1920924
+            ],
+            "footprint": [
+              0.2673592,
+              0.1920924
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1336796,
+                0.0,
+                -0.0960462
+              ],
+              "max": [
+                0.1336796,
+                0.0479547,
+                0.0960462
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_sock_single_folded": {
+          "node": "garment_sock_single_folded",
+          "garment": "sock_single",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.1691104,
+            0.0455386,
+            0.1983032
+          ],
+          "footprint": [
+            0.1691104,
+            0.1983032
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.0845552,
+              0.0,
+              -0.0991516
+            ],
+            "max": [
+              0.0845552,
+              0.0455386,
+              0.0991516
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_sock_single_folded_lod",
+            "size": [
+              0.1698052,
+              0.0453917,
+              0.1985402
+            ],
+            "footprint": [
+              0.1698052,
+              0.1985402
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.0849026,
+                0.0,
+                -0.0992701
+              ],
+              "max": [
+                0.0849026,
+                0.0453917,
+                0.0992701
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_socks_pair_folded": {
+          "node": "garment_socks_pair_folded",
+          "garment": "socks_pair",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.1692434,
+            0.0538425,
+            0.208756
+          ],
+          "footprint": [
+            0.1692434,
+            0.208756
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.0846217,
+              0.0,
+              -0.104378
+            ],
+            "max": [
+              0.0846217,
+              0.0538425,
+              0.104378
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_socks_pair_folded_lod",
+            "size": [
+              0.1730534,
+              0.0530175,
+              0.2088978
+            ],
+            "footprint": [
+              0.1730534,
+              0.2088978
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.0865267,
+                0.0,
+                -0.1044489
+              ],
+              "max": [
+                0.0865267,
+                0.0530175,
+                0.1044489
+              ]
+            },
+            "triangles": 211,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_tights_folded": {
+          "node": "garment_tights_folded",
+          "garment": "tights",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.1891776,
+            0.0553143,
+            0.3504958
+          ],
+          "footprint": [
+            0.1891776,
+            0.3504958
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.0945888,
+              0.0,
+              -0.1752479
+            ],
+            "max": [
+              0.0945888,
+              0.0553143,
+              0.1752479
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_tights_folded_lod",
+            "size": [
+              0.1893106,
+              0.0524101,
+              0.350578
+            ],
+            "footprint": [
+              0.1893106,
+              0.350578
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.0946553,
+                0.0,
+                -0.175289
+              ],
+              "max": [
+                0.0946553,
+                0.0524101,
+                0.175289
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_nightdress_folded": {
+          "node": "garment_nightdress_folded",
+          "garment": "nightdress",
+          "state": "folded",
+          "adultOnly": true,
+          "size": [
+            0.3443612,
+            0.0553441,
+            0.3281172
+          ],
+          "footprint": [
+            0.3443612,
+            0.3281172
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1721806,
+              0.0,
+              -0.1640586
+            ],
+            "max": [
+              0.1721806,
+              0.0553441,
+              0.1640586
+            ]
+          },
+          "triangles": 771,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_lavender",
+            "plain_cream",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_folded_lod.glb",
+            "node": "garment_nightdress_folded_lod",
+            "size": [
+              0.347204,
+              0.0519962,
+              0.3299132
+            ],
+            "footprint": [
+              0.347204,
+              0.3299132
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.173602,
+                0.0,
+                -0.1649566
+              ],
+              "max": [
+                0.173602,
+                0.0519962,
+                0.1649566
+              ]
+            },
+            "triangles": 211,
+            "materials": [
+              "laundry"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "glb": "garments/garments_hung.glb",
+      "sha256": "f272909d6f3c0e7b9d2b28d561cd3c738763df600f3dc7d466a0889b48db4cbb",
+      "assets": {
+        "garment_swimsuit_onepiece_hung": {
+          "node": "garment_swimsuit_onepiece_hung",
+          "garment": "swimsuit_onepiece",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.4594116,
+            0.7631276,
+            0.0424992
+          ],
+          "footprint": [
+            0.4594116,
+            0.0424992
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2297058,
+              -0.7631276,
+              -0.0212496
+            ],
+            "max": [
+              0.2297058,
+              0.0,
+              0.0212496
+            ]
+          },
+          "triangles": 426,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_navy",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_swimsuit_onepiece_hung_lod",
+            "size": [
+              0.4575888,
+              0.7609589,
+              0.0402418
+            ],
+            "footprint": [
+              0.4575888,
+              0.0402418
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2287944,
+                -0.7609589,
+                -0.0201209
+              ],
+              "max": [
+                0.2287944,
+                0.0,
+                0.0201209
+              ]
+            },
+            "triangles": 136,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_swim_trunks_hung": {
+          "node": "garment_swim_trunks_hung",
+          "garment": "swim_trunks",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.4924984,
+            0.4333907,
+            0.0375348
+          ],
+          "footprint": [
+            0.4924984,
+            0.0375348
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2462492,
+              -0.4333907,
+              -0.0187674
+            ],
+            "max": [
+              0.2462492,
+              0.0,
+              0.0187674
+            ]
+          },
+          "triangles": 488,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_coral",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_swim_trunks_hung_lod",
+            "size": [
+              0.4904086,
+              0.4312303,
+              0.0361826
+            ],
+            "footprint": [
+              0.4904086,
+              0.0361826
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2452043,
+                -0.4312303,
+                -0.0180913
+              ],
+              "max": [
+                0.2452043,
+                0.0,
+                0.0180913
+              ]
+            },
+            "triangles": 156,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bikini_top_hung": {
+          "node": "garment_bikini_top_hung",
+          "garment": "bikini_top",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.4821418,
+            0.2470206,
+            0.0532958
+          ],
+          "footprint": [
+            0.4821418,
+            0.0532958
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2410709,
+              -0.2470206,
+              -0.0266479
+            ],
+            "max": [
+              0.2410709,
+              0.0,
+              0.0266479
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_coral",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_bikini_top_hung_lod",
+            "size": [
+              0.4800404,
+              0.2448461,
+              0.0518382
+            ],
+            "footprint": [
+              0.4800404,
+              0.0518382
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2400202,
+                -0.2448461,
+                -0.0259191
+              ],
+              "max": [
+                0.2400202,
+                0.0,
+                0.0259191
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bikini_bottom_hung": {
+          "node": "garment_bikini_bottom_hung",
+          "garment": "bikini_bottom",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.391608,
+            0.2829947,
+            0.0387102
+          ],
+          "footprint": [
+            0.391608,
+            0.0387102
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.195804,
+              -0.2829947,
+              -0.0193551
+            ],
+            "max": [
+              0.195804,
+              0.0,
+              0.0193551
+            ]
+          },
+          "triangles": 366,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_coral",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_bikini_bottom_hung_lod",
+            "size": [
+              0.3866386,
+              0.2808265,
+              0.0372994
+            ],
+            "footprint": [
+              0.3866386,
+              0.0372994
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1933193,
+                -0.2808265,
+                -0.0186497
+              ],
+              "max": [
+                0.1933193,
+                0.0,
+                0.0186497
+              ]
+            },
+            "triangles": 115,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_crop_top_hung": {
+          "node": "garment_crop_top_hung",
+          "garment": "crop_top",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.6305596,
+            0.3795812,
+            0.0400664
+          ],
+          "footprint": [
+            0.6305596,
+            0.0400664
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.3152798,
+              -0.3795812,
+              -0.0200332
+            ],
+            "max": [
+              0.3152798,
+              0.0,
+              0.0200332
+            ]
+          },
+          "triangles": 472,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_teal",
+            "stripe_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_crop_top_hung_lod",
+            "size": [
+              0.6284962,
+              0.3786391,
+              0.0400664
+            ],
+            "footprint": [
+              0.6284962,
+              0.0400664
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.3142481,
+                -0.3786391,
+                -0.0200332
+              ],
+              "max": [
+                0.3142481,
+                0.0,
+                0.0200332
+              ]
+            },
+            "triangles": 152,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_tshirt_hung": {
+          "node": "garment_tshirt_hung",
+          "garment": "tshirt",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.8348578,
+            0.6991557,
+            0.049354
+          ],
+          "footprint": [
+            0.8348578,
+            0.049354
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.4174289,
+              -0.6991557,
+              -0.024677
+            ],
+            "max": [
+              0.4174289,
+              0.0,
+              0.024677
+            ]
+          },
+          "triangles": 376,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_navy",
+            "plain_teal",
+            "stripe_navy",
+            "stripe_teal",
+            "football_blue_white",
+            "football_red_white",
+            "football_green_yellow",
+            "football_burgundy_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_tshirt_hung_lod",
+            "size": [
+              0.8329262,
+              0.6967497,
+              0.0467014
+            ],
+            "footprint": [
+              0.8329262,
+              0.0467014
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.4164631,
+                -0.6967497,
+                -0.0233507
+              ],
+              "max": [
+                0.4164631,
+                0.0,
+                0.0233507
+              ]
+            },
+            "triangles": 119,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_shorts_hung": {
+          "node": "garment_shorts_hung",
+          "garment": "shorts",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.53169,
+            0.4334053,
+            0.0377998
+          ],
+          "footprint": [
+            0.53169,
+            0.0377998
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.265845,
+              -0.4334053,
+              -0.0188999
+            ],
+            "max": [
+              0.265845,
+              0.0,
+              0.0188999
+            ]
+          },
+          "triangles": 494,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_charcoal",
+            "plain_teal",
+            "football_blue_white",
+            "football_green_yellow"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_shorts_hung_lod",
+            "size": [
+              0.5295948,
+              0.4312478,
+              0.0360484
+            ],
+            "footprint": [
+              0.5295948,
+              0.0360484
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2647974,
+                -0.4312478,
+                -0.0180242
+              ],
+              "max": [
+                0.2647974,
+                0.0,
+                0.0180242
+              ]
+            },
+            "triangles": 158,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_leggings_hung": {
+          "node": "garment_leggings_hung",
+          "garment": "leggings",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.3745532,
+            0.973016,
+            0.0397304
+          ],
+          "footprint": [
+            0.3745532,
+            0.0397304
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.1872766,
+              -0.973016,
+              -0.0198652
+            ],
+            "max": [
+              0.1872766,
+              0.0,
+              0.0198652
+            ]
+          },
+          "triangles": 476,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_leggings_hung_lod",
+            "size": [
+              0.3725154,
+              0.9708641,
+              0.0379498
+            ],
+            "footprint": [
+              0.3725154,
+              0.0379498
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1862577,
+                -0.9708641,
+                -0.0189749
+              ],
+              "max": [
+                0.1862577,
+                0.0,
+                0.0189749
+              ]
+            },
+            "triangles": 152,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_sun_hat_hung": {
+          "node": "garment_sun_hat_hung",
+          "garment": "sun_hat",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.354,
+            0.39294,
+            0.179598
+          ],
+          "footprint": [
+            0.354,
+            0.179598
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.177,
+              -0.39294,
+              -0.089799
+            ],
+            "max": [
+              0.177,
+              0.0,
+              0.089799
+            ]
+          },
+          "triangles": 288,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_coral",
+            "plain_teal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_sun_hat_hung_lod",
+            "size": [
+              0.354,
+              0.39294,
+              0.1796886
+            ],
+            "footprint": [
+              0.354,
+              0.1796886
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.177,
+                -0.39294,
+                -0.0898443
+              ],
+              "max": [
+                0.177,
+                0.0,
+                0.0898443
+              ]
+            },
+            "triangles": 89,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_straw_hat_hung": {
+          "node": "garment_straw_hat_hung",
+          "garment": "straw_hat",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.41,
+            0.4551,
+            0.1441666
+          ],
+          "footprint": [
+            0.41,
+            0.1441666
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.205,
+              -0.4551,
+              -0.0720833
+            ],
+            "max": [
+              0.205,
+              0.0,
+              0.0720833
+            ]
+          },
+          "triangles": 336,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "straw_natural",
+            "straw_pale"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_straw_hat_hung_lod",
+            "size": [
+              0.41,
+              0.4551,
+              0.1431166
+            ],
+            "footprint": [
+              0.41,
+              0.1431166
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.205,
+                -0.4551,
+                -0.0715583
+              ],
+              "max": [
+                0.205,
+                0.0,
+                0.0715583
+              ]
+            },
+            "triangles": 106,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_cap_hung": {
+          "node": "garment_cap_hung",
+          "garment": "cap",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.236,
+            0.31644,
+            0.1598
+          ],
+          "footprint": [
+            0.236,
+            0.1598
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.118,
+              -0.31644,
+              -0.0799
+            ],
+            "max": [
+              0.118,
+              0.0,
+              0.0799
+            ]
+          },
+          "triangles": 288,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_coral",
+            "plain_charcoal",
+            "football_burgundy_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_cap_hung_lod",
+            "size": [
+              0.236096,
+              0.3160953,
+              0.1589752
+            ],
+            "footprint": [
+              0.236096,
+              0.1589752
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.118048,
+                -0.3160953,
+                -0.0794876
+              ],
+              "max": [
+                0.118048,
+                0.0,
+                0.0794876
+              ]
+            },
+            "triangles": 88,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bra_hung": {
+          "node": "garment_bra_hung",
+          "garment": "bra",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.5720984,
+            0.2183525,
+            0.0821214
+          ],
+          "footprint": [
+            0.5720984,
+            0.0821214
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2860492,
+              -0.2183525,
+              -0.0410607
+            ],
+            "max": [
+              0.2860492,
+              0.0,
+              0.0410607
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_lavender",
+            "plain_charcoal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_bra_hung_lod",
+            "size": [
+              0.5700274,
+              0.2146154,
+              0.0721996
+            ],
+            "footprint": [
+              0.5700274,
+              0.0721996
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2850137,
+                -0.2146154,
+                -0.0360998
+              ],
+              "max": [
+                0.2850137,
+                0.0,
+                0.0360998
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_underwear_hung": {
+          "node": "garment_underwear_hung",
+          "garment": "underwear",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.4102398,
+            0.313478,
+            0.0413846
+          ],
+          "footprint": [
+            0.4102398,
+            0.0413846
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2051199,
+              -0.313478,
+              -0.0206923
+            ],
+            "max": [
+              0.2051199,
+              0.0,
+              0.0206923
+            ]
+          },
+          "triangles": 394,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_underwear_hung_lod",
+            "size": [
+              0.4084414,
+              0.3113369,
+              0.0366334
+            ],
+            "footprint": [
+              0.4084414,
+              0.0366334
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2042207,
+                -0.3113369,
+                -0.0183167
+              ],
+              "max": [
+                0.2042207,
+                0.0,
+                0.0183167
+              ]
+            },
+            "triangles": 125,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_panties_hung": {
+          "node": "garment_panties_hung",
+          "garment": "panties",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.3815118,
+            0.2330309,
+            0.0386654
+          ],
+          "footprint": [
+            0.3815118,
+            0.0386654
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.1907559,
+              -0.2330309,
+              -0.0193327
+            ],
+            "max": [
+              0.1907559,
+              0.0,
+              0.0193327
+            ]
+          },
+          "triangles": 366,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_lavender",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_panties_hung_lod",
+            "size": [
+              0.3794124,
+              0.2308652,
+              0.0363404
+            ],
+            "footprint": [
+              0.3794124,
+              0.0363404
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1897062,
+                -0.2308652,
+                -0.0181702
+              ],
+              "max": [
+                0.1897062,
+                0.0,
+                0.0181702
+              ]
+            },
+            "triangles": 115,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_thong_hung": {
+          "node": "garment_thong_hung",
+          "garment": "thong",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.3610814,
+            0.2530847,
+            0.0387004
+          ],
+          "footprint": [
+            0.3610814,
+            0.0387004
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.1805407,
+              -0.2530847,
+              -0.0193502
+            ],
+            "max": [
+              0.1805407,
+              0.0,
+              0.0193502
+            ]
+          },
+          "triangles": 362,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_lavender",
+            "plain_coral"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_thong_hung_lod",
+            "size": [
+              0.3575438,
+              0.2520776,
+              0.0352342
+            ],
+            "footprint": [
+              0.3575438,
+              0.0352342
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1787719,
+                -0.2520776,
+                -0.0176171
+              ],
+              "max": [
+                0.1787719,
+                0.0,
+                0.0176171
+              ]
+            },
+            "triangles": 115,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_knickers_hung": {
+          "node": "garment_knickers_hung",
+          "garment": "knickers",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.407279,
+            0.293197,
+            0.04138
+          ],
+          "footprint": [
+            0.407279,
+            0.04138
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2036395,
+              -0.293197,
+              -0.02069
+            ],
+            "max": [
+              0.2036395,
+              0.0,
+              0.02069
+            ]
+          },
+          "triangles": 378,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_lavender",
+            "floral_cream",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_knickers_hung_lod",
+            "size": [
+              0.4064568,
+              0.2910236,
+              0.0379332
+            ],
+            "footprint": [
+              0.4064568,
+              0.0379332
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2032284,
+                -0.2910236,
+                -0.0189666
+              ],
+              "max": [
+                0.2032284,
+                0.0,
+                0.0189666
+              ]
+            },
+            "triangles": 120,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_high_leg_knickers_hung": {
+          "node": "garment_high_leg_knickers_hung",
+          "garment": "high_leg_knickers",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.4002598,
+            0.3228142,
+            0.0386528
+          ],
+          "footprint": [
+            0.4002598,
+            0.0386528
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2001299,
+              -0.3228142,
+              -0.0193264
+            ],
+            "max": [
+              0.2001299,
+              0.0,
+              0.0193264
+            ]
+          },
+          "triangles": 370,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_cream",
+            "plain_teal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_high_leg_knickers_hung_lod",
+            "size": [
+              0.3997036,
+              0.3206647,
+              0.0355334
+            ],
+            "footprint": [
+              0.3997036,
+              0.0355334
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1998518,
+                -0.3206647,
+                -0.0177667
+              ],
+              "max": [
+                0.1998518,
+                0.0,
+                0.0177667
+              ]
+            },
+            "triangles": 116,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_briefs_hung": {
+          "node": "garment_briefs_hung",
+          "garment": "briefs",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.4215074,
+            0.3032143,
+            0.03823
+          ],
+          "footprint": [
+            0.4215074,
+            0.03823
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.2107537,
+              -0.3032143,
+              -0.019115
+            ],
+            "max": [
+              0.2107537,
+              0.0,
+              0.019115
+            ]
+          },
+          "triangles": 390,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_charcoal",
+            "plain_cream",
+            "stripe_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_briefs_hung_lod",
+            "size": [
+              0.419447,
+              0.3010176,
+              0.036476
+            ],
+            "footprint": [
+              0.419447,
+              0.036476
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.2097235,
+                -0.3010176,
+                -0.018238
+              ],
+              "max": [
+                0.2097235,
+                0.0,
+                0.018238
+              ]
+            },
+            "triangles": 124,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_boxers_hung": {
+          "node": "garment_boxers_hung",
+          "garment": "boxers",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.505246,
+            0.3536016,
+            0.038845
+          ],
+          "footprint": [
+            0.505246,
+            0.038845
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.252623,
+              -0.3536016,
+              -0.0194225
+            ],
+            "max": [
+              0.252623,
+              0.0,
+              0.0194225
+            ]
+          },
+          "triangles": 490,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "stripe_navy",
+            "stripe_teal",
+            "plain_coral"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_boxers_hung_lod",
+            "size": [
+              0.501702,
+              0.3514737,
+              0.0354384
+            ],
+            "footprint": [
+              0.501702,
+              0.0354384
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.250851,
+                -0.3514737,
+                -0.0177192
+              ],
+              "max": [
+                0.250851,
+                0.0,
+                0.0177192
+              ]
+            },
+            "triangles": 158,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_sock_single_hung": {
+          "node": "garment_sock_single_hung",
+          "garment": "sock_single",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.2126208,
+            0.3586506,
+            0.042029
+          ],
+          "footprint": [
+            0.2126208,
+            0.042029
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.1063104,
+              -0.3586506,
+              -0.0210145
+            ],
+            "max": [
+              0.1063104,
+              0.0,
+              0.0210145
+            ]
+          },
+          "triangles": 362,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_sock_single_hung_lod",
+            "size": [
+              0.206655,
+              0.3564824,
+              0.0397746
+            ],
+            "footprint": [
+              0.206655,
+              0.0397746
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1033275,
+                -0.3564824,
+                -0.0198873
+              ],
+              "max": [
+                0.1033275,
+                0.0,
+                0.0198873
+              ]
+            },
+            "triangles": 115,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_socks_pair_hung": {
+          "node": "garment_socks_pair_hung",
+          "garment": "socks_pair",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.2984742,
+            0.3778786,
+            0.0599092
+          ],
+          "footprint": [
+            0.2984742,
+            0.0599092
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.1492371,
+              -0.3778786,
+              -0.0299546
+            ],
+            "max": [
+              0.1492371,
+              0.0,
+              0.0299546
+            ]
+          },
+          "triangles": 408,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_socks_pair_hung_lod",
+            "size": [
+              0.2963538,
+              0.3758967,
+              0.0436512
+            ],
+            "footprint": [
+              0.2963538,
+              0.0436512
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1481769,
+                -0.3758967,
+                -0.0218256
+              ],
+              "max": [
+                0.1481769,
+                0.0,
+                0.0218256
+              ]
+            },
+            "triangles": 130,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_tights_hung": {
+          "node": "garment_tights_hung",
+          "garment": "tights",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.3562816,
+            1.0526067,
+            0.0383762
+          ],
+          "footprint": [
+            0.3562816,
+            0.0383762
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.1781408,
+              -1.0526067,
+              -0.0191881
+            ],
+            "max": [
+              0.1781408,
+              0.0,
+              0.0191881
+            ]
+          },
+          "triangles": 470,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_tights_hung_lod",
+            "size": [
+              0.354093,
+              1.0504479,
+              0.0347714
+            ],
+            "footprint": [
+              0.354093,
+              0.0347714
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.1770465,
+                -1.0504479,
+                -0.0173857
+              ],
+              "max": [
+                0.1770465,
+                0.0,
+                0.0173857
+              ]
+            },
+            "triangles": 150,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_nightdress_hung": {
+          "node": "garment_nightdress_hung",
+          "garment": "nightdress",
+          "state": "hung",
+          "adultOnly": true,
+          "size": [
+            0.6619112,
+            0.9734821,
+            0.0426708
+          ],
+          "footprint": [
+            0.6619112,
+            0.0426708
+          ],
+          "origin": "hang-point",
+          "bounds": {
+            "min": [
+              -0.3309556,
+              -0.9734821,
+              -0.0213354
+            ],
+            "max": [
+              0.3309556,
+              0.0,
+              0.0213354
+            ]
+          },
+          "triangles": 442,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_lavender",
+            "plain_cream",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_hung_lod.glb",
+            "node": "garment_nightdress_hung_lod",
+            "size": [
+              0.6597672,
+              0.9715713,
+              0.041273
+            ],
+            "footprint": [
+              0.6597672,
+              0.041273
+            ],
+            "origin": "hang-point",
+            "bounds": {
+              "min": [
+                -0.3298836,
+                -0.9715713,
+                -0.0206365
+              ],
+              "max": [
+                0.3298836,
+                0.0,
+                0.0206365
+              ]
+            },
+            "triangles": 141,
+            "materials": [
+              "laundry"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "glb": "garments/garments_flat.glb",
+      "sha256": "c746334409f06244b8ac429ac23865515d7e52c47faa90787c6a6cb6b5c45580",
+      "assets": {
+        "garment_swimsuit_onepiece_flat": {
+          "node": "garment_swimsuit_onepiece_flat",
+          "garment": "swimsuit_onepiece",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.4635434,
+            0.0271972,
+            0.761162
+          ],
+          "footprint": [
+            0.4635434,
+            0.761162
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2317717,
+              0.0,
+              -0.380581
+            ],
+            "max": [
+              0.2317717,
+              0.0271972,
+              0.380581
+            ]
+          },
+          "triangles": 426,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_navy",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_swimsuit_onepiece_flat_lod",
+            "size": [
+              0.4631508,
+              0.0271567,
+              0.7602038
+            ],
+            "footprint": [
+              0.4631508,
+              0.7602038
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2315754,
+                0.0,
+                -0.3801019
+              ],
+              "max": [
+                0.2315754,
+                0.0271567,
+                0.3801019
+              ]
+            },
+            "triangles": 136,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_swim_trunks_flat": {
+          "node": "garment_swim_trunks_flat",
+          "garment": "swim_trunks",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.4930054,
+            0.0272962,
+            0.429048
+          ],
+          "footprint": [
+            0.4930054,
+            0.429048
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2465027,
+              0.0,
+              -0.214524
+            ],
+            "max": [
+              0.2465027,
+              0.0272962,
+              0.214524
+            ]
+          },
+          "triangles": 488,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_coral",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_swim_trunks_flat_lod",
+            "size": [
+              0.4919602,
+              0.0246215,
+              0.4290448
+            ],
+            "footprint": [
+              0.4919602,
+              0.4290448
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2459801,
+                0.0,
+                -0.2145224
+              ],
+              "max": [
+                0.2459801,
+                0.0246215,
+                0.2145224
+              ]
+            },
+            "triangles": 157,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bikini_top_flat": {
+          "node": "garment_bikini_top_flat",
+          "garment": "bikini_top",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.4821696,
+            0.0283905,
+            0.245043
+          ],
+          "footprint": [
+            0.4821696,
+            0.245043
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2410848,
+              0.0,
+              -0.1225215
+            ],
+            "max": [
+              0.2410848,
+              0.0283905,
+              0.1225215
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_coral",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_bikini_top_flat_lod",
+            "size": [
+              0.4811364,
+              0.0295036,
+              0.244007
+            ],
+            "footprint": [
+              0.4811364,
+              0.244007
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2405682,
+                0.0,
+                -0.1220035
+              ],
+              "max": [
+                0.2405682,
+                0.0295036,
+                0.1220035
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bikini_bottom_flat": {
+          "node": "garment_bikini_bottom_flat",
+          "garment": "bikini_bottom",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.39292,
+            0.0272468,
+            0.2787838
+          ],
+          "footprint": [
+            0.39292,
+            0.2787838
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.19646,
+              0.0,
+              -0.1393919
+            ],
+            "max": [
+              0.19646,
+              0.0272468,
+              0.1393919
+            ]
+          },
+          "triangles": 366,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_teal",
+            "plain_coral",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_bikini_bottom_flat_lod",
+            "size": [
+              0.3915776,
+              0.0268966,
+              0.2787838
+            ],
+            "footprint": [
+              0.3915776,
+              0.2787838
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1957888,
+                0.0,
+                -0.1393919
+              ],
+              "max": [
+                0.1957888,
+                0.0268966,
+                0.1393919
+              ]
+            },
+            "triangles": 116,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_crop_top_flat": {
+          "node": "garment_crop_top_flat",
+          "garment": "crop_top",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.631941,
+            0.0268662,
+            0.3763588
+          ],
+          "footprint": [
+            0.631941,
+            0.3763588
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.3159705,
+              0.0,
+              -0.1881794
+            ],
+            "max": [
+              0.3159705,
+              0.0268662,
+              0.1881794
+            ]
+          },
+          "triangles": 472,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_teal",
+            "stripe_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_crop_top_flat_lod",
+            "size": [
+              0.631941,
+              0.0275494,
+              0.3763588
+            ],
+            "footprint": [
+              0.631941,
+              0.3763588
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.3159705,
+                0.0,
+                -0.1881794
+              ],
+              "max": [
+                0.3159705,
+                0.0275494,
+                0.1881794
+              ]
+            },
+            "triangles": 152,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_tshirt_flat": {
+          "node": "garment_tshirt_flat",
+          "garment": "tshirt",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.8426228,
+            0.0264186,
+            0.6971484
+          ],
+          "footprint": [
+            0.8426228,
+            0.6971484
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.4213114,
+              0.0,
+              -0.3485742
+            ],
+            "max": [
+              0.4213114,
+              0.0264186,
+              0.3485742
+            ]
+          },
+          "triangles": 376,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_navy",
+            "plain_teal",
+            "stripe_navy",
+            "stripe_teal",
+            "football_blue_white",
+            "football_red_white",
+            "football_green_yellow",
+            "football_burgundy_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_tshirt_flat_lod",
+            "size": [
+              0.8417312,
+              0.0272313,
+              0.6971484
+            ],
+            "footprint": [
+              0.8417312,
+              0.6971484
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.4208656,
+                0.0,
+                -0.3485742
+              ],
+              "max": [
+                0.4208656,
+                0.0272313,
+                0.3485742
+              ]
+            },
+            "triangles": 119,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_shorts_flat": {
+          "node": "garment_shorts_flat",
+          "garment": "shorts",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.5322832,
+            0.0251368,
+            0.4297976
+          ],
+          "footprint": [
+            0.5322832,
+            0.4297976
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2661416,
+              0.0,
+              -0.2148988
+            ],
+            "max": [
+              0.2661416,
+              0.0251368,
+              0.2148988
+            ]
+          },
+          "triangles": 494,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_charcoal",
+            "plain_teal",
+            "football_blue_white",
+            "football_green_yellow"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_shorts_flat_lod",
+            "size": [
+              0.5322832,
+              0.0254598,
+              0.4297976
+            ],
+            "footprint": [
+              0.5322832,
+              0.4297976
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2661416,
+                0.0,
+                -0.2148988
+              ],
+              "max": [
+                0.2661416,
+                0.0254598,
+                0.2148988
+              ]
+            },
+            "triangles": 159,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_leggings_flat": {
+          "node": "garment_leggings_flat",
+          "garment": "leggings",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.376569,
+            0.025026,
+            0.97095
+          ],
+          "footprint": [
+            0.376569,
+            0.97095
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1882845,
+              0.0,
+              -0.485475
+            ],
+            "max": [
+              0.1882845,
+              0.025026,
+              0.485475
+            ]
+          },
+          "triangles": 476,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_leggings_flat_lod",
+            "size": [
+              0.376569,
+              0.0248175,
+              0.97095
+            ],
+            "footprint": [
+              0.376569,
+              0.97095
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1882845,
+                0.0,
+                -0.485475
+              ],
+              "max": [
+                0.1882845,
+                0.0248175,
+                0.485475
+              ]
+            },
+            "triangles": 152,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_sun_hat_flat": {
+          "node": "garment_sun_hat_flat",
+          "garment": "sun_hat",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.354,
+            0.179598,
+            0.39294
+          ],
+          "footprint": [
+            0.354,
+            0.39294
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.177,
+              0.0,
+              -0.19647
+            ],
+            "max": [
+              0.177,
+              0.179598,
+              0.19647
+            ]
+          },
+          "triangles": 288,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_coral",
+            "plain_teal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_sun_hat_flat_lod",
+            "size": [
+              0.354,
+              0.1796886,
+              0.39294
+            ],
+            "footprint": [
+              0.354,
+              0.39294
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.177,
+                0.0,
+                -0.19647
+              ],
+              "max": [
+                0.177,
+                0.1796886,
+                0.19647
+              ]
+            },
+            "triangles": 89,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_straw_hat_flat": {
+          "node": "garment_straw_hat_flat",
+          "garment": "straw_hat",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.41,
+            0.1441667,
+            0.4551
+          ],
+          "footprint": [
+            0.41,
+            0.4551
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.205,
+              0.0,
+              -0.22755
+            ],
+            "max": [
+              0.205,
+              0.1441667,
+              0.22755
+            ]
+          },
+          "triangles": 336,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "straw_natural",
+            "straw_pale"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_straw_hat_flat_lod",
+            "size": [
+              0.41,
+              0.1431166,
+              0.4551
+            ],
+            "footprint": [
+              0.41,
+              0.4551
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.205,
+                0.0,
+                -0.22755
+              ],
+              "max": [
+                0.205,
+                0.1431166,
+                0.22755
+              ]
+            },
+            "triangles": 106,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_cap_flat": {
+          "node": "garment_cap_flat",
+          "garment": "cap",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.236,
+            0.1598,
+            0.31644
+          ],
+          "footprint": [
+            0.236,
+            0.31644
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.118,
+              0.0,
+              -0.15822
+            ],
+            "max": [
+              0.118,
+              0.1598,
+              0.15822
+            ]
+          },
+          "triangles": 288,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_coral",
+            "plain_charcoal",
+            "football_burgundy_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_cap_flat_lod",
+            "size": [
+              0.236096,
+              0.1586723,
+              0.3160952
+            ],
+            "footprint": [
+              0.236096,
+              0.3160952
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.118048,
+                0.0,
+                -0.1580476
+              ],
+              "max": [
+                0.118048,
+                0.1586723,
+                0.1580476
+              ]
+            },
+            "triangles": 89,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_bra_flat": {
+          "node": "garment_bra_flat",
+          "garment": "bra",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.5721264,
+            0.0318673,
+            0.2161894
+          ],
+          "footprint": [
+            0.5721264,
+            0.2161894
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2860632,
+              0.0,
+              -0.1080947
+            ],
+            "max": [
+              0.2860632,
+              0.0318673,
+              0.1080947
+            ]
+          },
+          "triangles": 772,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_lavender",
+            "plain_charcoal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_bra_flat_lod",
+            "size": [
+              0.571111,
+              0.0264547,
+              0.2153638
+            ],
+            "footprint": [
+              0.571111,
+              0.2153638
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2855555,
+                0.0,
+                -0.1076819
+              ],
+              "max": [
+                0.2855555,
+                0.0264547,
+                0.1076819
+              ]
+            },
+            "triangles": 212,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_underwear_flat": {
+          "node": "garment_underwear_flat",
+          "garment": "underwear",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.4129264,
+            0.0271237,
+            0.3092058
+          ],
+          "footprint": [
+            0.4129264,
+            0.3092058
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2064632,
+              0.0,
+              -0.1546029
+            ],
+            "max": [
+              0.2064632,
+              0.0271237,
+              0.1546029
+            ]
+          },
+          "triangles": 394,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_underwear_flat_lod",
+            "size": [
+              0.410814,
+              0.0268941,
+              0.3081576
+            ],
+            "footprint": [
+              0.410814,
+              0.3081576
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.205407,
+                0.0,
+                -0.1540788
+              ],
+              "max": [
+                0.205407,
+                0.0268941,
+                0.1540788
+              ]
+            },
+            "triangles": 125,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_panties_flat": {
+          "node": "garment_panties_flat",
+          "garment": "panties",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.3830042,
+            0.0271374,
+            0.2283574
+          ],
+          "footprint": [
+            0.3830042,
+            0.2283574
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1915021,
+              0.0,
+              -0.1141787
+            ],
+            "max": [
+              0.1915021,
+              0.0271374,
+              0.1141787
+            ]
+          },
+          "triangles": 366,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_lavender",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_panties_flat_lod",
+            "size": [
+              0.3830042,
+              0.0271374,
+              0.2261748
+            ],
+            "footprint": [
+              0.3830042,
+              0.2261748
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1915021,
+                0.0,
+                -0.1130874
+              ],
+              "max": [
+                0.1915021,
+                0.0271374,
+                0.1130874
+              ]
+            },
+            "triangles": 116,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_thong_flat": {
+          "node": "garment_thong_flat",
+          "garment": "thong",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.3623468,
+            0.027457,
+            0.2466502
+          ],
+          "footprint": [
+            0.3623468,
+            0.2466502
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1811734,
+              0.0,
+              -0.1233251
+            ],
+            "max": [
+              0.1811734,
+              0.027457,
+              0.1233251
+            ]
+          },
+          "triangles": 362,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_lavender",
+            "plain_coral"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_thong_flat_lod",
+            "size": [
+              0.3619718,
+              0.0270106,
+              0.2466502
+            ],
+            "footprint": [
+              0.3619718,
+              0.2466502
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1809859,
+                0.0,
+                -0.1233251
+              ],
+              "max": [
+                0.1809859,
+                0.0270106,
+                0.1233251
+              ]
+            },
+            "triangles": 115,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_knickers_flat": {
+          "node": "garment_knickers_flat",
+          "garment": "knickers",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.4046708,
+            0.040767,
+            0.2890798
+          ],
+          "footprint": [
+            0.4046708,
+            0.2890798
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2023354,
+              0.0,
+              -0.1445399
+            ],
+            "max": [
+              0.2023354,
+              0.040767,
+              0.1445399
+            ]
+          },
+          "triangles": 378,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_lavender",
+            "floral_cream",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_knickers_flat_lod",
+            "size": [
+              0.4036186,
+              0.0400234,
+              0.2879154
+            ],
+            "footprint": [
+              0.4036186,
+              0.2879154
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2018093,
+                0.0,
+                -0.1439577
+              ],
+              "max": [
+                0.2018093,
+                0.0400234,
+                0.1439577
+              ]
+            },
+            "triangles": 120,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_high_leg_knickers_flat": {
+          "node": "garment_high_leg_knickers_flat",
+          "garment": "high_leg_knickers",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.3928426,
+            0.044801,
+            0.319117
+          ],
+          "footprint": [
+            0.3928426,
+            0.319117
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1964213,
+              0.0,
+              -0.1595585
+            ],
+            "max": [
+              0.1964213,
+              0.044801,
+              0.1595585
+            ]
+          },
+          "triangles": 370,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_coral",
+            "plain_cream",
+            "plain_teal",
+            "floral_cream"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_high_leg_knickers_flat_lod",
+            "size": [
+              0.390637,
+              0.0424812,
+              0.3170898
+            ],
+            "footprint": [
+              0.390637,
+              0.3170898
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1953185,
+                0.0,
+                -0.1585449
+              ],
+              "max": [
+                0.1953185,
+                0.0424812,
+                0.1585449
+              ]
+            },
+            "triangles": 117,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_briefs_flat": {
+          "node": "garment_briefs_flat",
+          "garment": "briefs",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.4225744,
+            0.0265524,
+            0.2991588
+          ],
+          "footprint": [
+            0.4225744,
+            0.2991588
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2112872,
+              0.0,
+              -0.1495794
+            ],
+            "max": [
+              0.2112872,
+              0.0265524,
+              0.1495794
+            ]
+          },
+          "triangles": 390,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "plain_charcoal",
+            "plain_cream",
+            "stripe_navy"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_briefs_flat_lod",
+            "size": [
+              0.4215136,
+              0.0272831,
+              0.2980588
+            ],
+            "footprint": [
+              0.4215136,
+              0.2980588
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2107568,
+                0.0,
+                -0.1490294
+              ],
+              "max": [
+                0.2107568,
+                0.0272831,
+                0.1490294
+              ]
+            },
+            "triangles": 124,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_boxers_flat": {
+          "node": "garment_boxers_flat",
+          "garment": "boxers",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.5006178,
+            0.0255197,
+            0.3495622
+          ],
+          "footprint": [
+            0.5006178,
+            0.3495622
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.2503089,
+              0.0,
+              -0.1747811
+            ],
+            "max": [
+              0.2503089,
+              0.0255197,
+              0.1747811
+            ]
+          },
+          "triangles": 490,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_navy",
+            "stripe_navy",
+            "stripe_teal",
+            "plain_coral"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_boxers_flat_lod",
+            "size": [
+              0.4996116,
+              0.0255197,
+              0.34956
+            ],
+            "footprint": [
+              0.4996116,
+              0.34956
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.2498058,
+                0.0,
+                -0.17478
+              ],
+              "max": [
+                0.2498058,
+                0.0255197,
+                0.17478
+              ]
+            },
+            "triangles": 158,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_sock_single_flat": {
+          "node": "garment_sock_single_flat",
+          "garment": "sock_single",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.2317922,
+            0.0255578,
+            0.3595968
+          ],
+          "footprint": [
+            0.2317922,
+            0.3595968
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1158961,
+              0.0,
+              -0.1797984
+            ],
+            "max": [
+              0.1158961,
+              0.0255578,
+              0.1797984
+            ]
+          },
+          "triangles": 362,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_sock_single_flat_lod",
+            "size": [
+              0.2317922,
+              0.0252593,
+              0.3594332
+            ],
+            "footprint": [
+              0.2317922,
+              0.3594332
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1158961,
+                0.0,
+                -0.1797166
+              ],
+              "max": [
+                0.1158961,
+                0.0252593,
+                0.1797166
+              ]
+            },
+            "triangles": 115,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_socks_pair_flat": {
+          "node": "garment_socks_pair_flat",
+          "garment": "socks_pair",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.3104254,
+            0.031528,
+            0.3793034
+          ],
+          "footprint": [
+            0.3104254,
+            0.3793034
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1552127,
+              0.0,
+              -0.1896517
+            ],
+            "max": [
+              0.1552127,
+              0.031528,
+              0.1896517
+            ]
+          },
+          "triangles": 408,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_cream",
+            "plain_charcoal",
+            "plain_navy",
+            "stripe_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_socks_pair_flat_lod",
+            "size": [
+              0.3088344,
+              0.031528,
+              0.3771028
+            ],
+            "footprint": [
+              0.3088344,
+              0.3771028
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1544172,
+                0.0,
+                -0.1885514
+              ],
+              "max": [
+                0.1544172,
+                0.031528,
+                0.1885514
+              ]
+            },
+            "triangles": 130,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_tights_flat": {
+          "node": "garment_tights_flat",
+          "garment": "tights",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.3550816,
+            0.0257809,
+            1.052406
+          ],
+          "footprint": [
+            0.3550816,
+            1.052406
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.1775408,
+              0.0,
+              -0.526203
+            ],
+            "max": [
+              0.1775408,
+              0.0257809,
+              0.526203
+            ]
+          },
+          "triangles": 470,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_charcoal",
+            "plain_navy",
+            "plain_lavender"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_tights_flat_lod",
+            "size": [
+              0.3550816,
+              0.0257228,
+              1.0515094
+            ],
+            "footprint": [
+              0.3550816,
+              1.0515094
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.1775408,
+                0.0,
+                -0.5257547
+              ],
+              "max": [
+                0.1775408,
+                0.0257228,
+                0.5257547
+              ]
+            },
+            "triangles": 151,
+            "materials": [
+              "laundry"
+            ]
+          }
+        },
+        "garment_nightdress_flat": {
+          "node": "garment_nightdress_flat",
+          "garment": "nightdress",
+          "state": "flat",
+          "adultOnly": true,
+          "size": [
+            0.6622786,
+            0.0264881,
+            0.9716606
+          ],
+          "footprint": [
+            0.6622786,
+            0.9716606
+          ],
+          "origin": "floor-centre",
+          "bounds": {
+            "min": [
+              -0.3311393,
+              0.0,
+              -0.4858303
+            ],
+            "max": [
+              0.3311393,
+              0.0264881,
+              0.4858303
+            ]
+          },
+          "triangles": 442,
+          "materials": [
+            "laundry"
+          ],
+          "variants": [
+            "plain_lavender",
+            "plain_cream",
+            "floral_cream",
+            "floral_teal"
+          ],
+          "drawCalls": 1,
+          "lod": {
+            "glb": "garments/garments_flat_lod.glb",
+            "node": "garment_nightdress_flat_lod",
+            "size": [
+              0.6622786,
+              0.0279371,
+              0.9716604
+            ],
+            "footprint": [
+              0.6622786,
+              0.9716604
+            ],
+            "origin": "floor-centre",
+            "bounds": {
+              "min": [
+                -0.3311393,
+                0.0,
+                -0.4858302
+              ],
+              "max": [
+                0.3311393,
+                0.0279371,
+                0.4858302
+              ]
+            },
+            "triangles": 142,
+            "materials": [
+              "laundry"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "atlas": {
+    "file": "garments/prints.png",
+    "width": 256,
+    "height": 256,
+    "embedded": false
+  },
+  "palette": "garments/palette.json",
+  "assortments": "garments/assortments.json",
+  "limits": {
+    "triangles": 800,
+    "lodTriangles": 240,
+    "runtimeBytes": 2000000
+  },
+  "clothBake": {
+    "blender": "4.5.9 LTS",
+    "frames": 22,
+    "sequential": true,
+    "quality": 5,
+    "staticOnly": true
+  },
+  "lodPolicy": {
+    "switchDistanceMetres": 8,
+    "cullDistanceMetres": 30,
+    "tinyItemsCullDistanceMetres": 16,
+    "maxConcurrentDetailItems": 24,
+    "note": "Placement data only; production runtime is unchanged."
+  }
+}
