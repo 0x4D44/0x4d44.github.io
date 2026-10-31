@@ -431,6 +431,11 @@
    "tileScale": 0.976,
    "avg": "#dadada",
    "size": 512
+  },
+  "goods_labels": {
+   "map": "goods_labels.png",
+   "size": 1024,
+    "source": "authored: goods_atlas.py; invented Spanish brands"
   }
  },
  "version": 2,

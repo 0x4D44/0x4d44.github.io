@@ -1,0 +1,1376 @@
+{
+ "version": 1,
+ "atlas": {
+  "file": "goods_labels.png",
+  "width": 1024,
+  "height": 1024,
+  "labels": [
+   {
+    "id": "conservas",
+    "brand": "VALDELUMBRE",
+    "product": "CONSERVAS",
+    "rect": [
+     0,
+     0,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "granos",
+    "brand": "GRANOVIENTO",
+    "product": "GRANOS SELECTOS",
+    "rect": [
+     256,
+     0,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "leche",
+    "brand": "NUBELAR",
+    "product": "LECHE",
+    "rect": [
+     512,
+     0,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "jugo",
+    "brand": "HUERTAZUL",
+    "product": "JUGO DE FRUTA",
+    "rect": [
+     768,
+     0,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "aceite",
+    "brand": "OLIVISCUMBRE",
+    "product": "ACEITE",
+    "rect": [
+     0,
+     256,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "gaseosa",
+    "brand": "BRISACUMBRE",
+    "product": "GASEOSA",
+    "rect": [
+     256,
+     256,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "cafe",
+    "brand": "MONTELOMA",
+    "product": "CAFÉ MOLIDO",
+    "rect": [
+     512,
+     256,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "azucar",
+    "brand": "DULCEVIENTO",
+    "product": "AZÚCAR",
+    "rect": [
+     768,
+     256,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "harina",
+    "brand": "PANBRISA",
+    "product": "HARINA",
+    "rect": [
+     0,
+     512,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "chips",
+    "brand": "CRUJICUMBRE",
+    "product": "PAPAS CRUJIENTES",
+    "rect": [
+     256,
+     512,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "botica",
+    "brand": "CLARALOMA",
+    "product": "CUIDADO DIARIO",
+    "rect": [
+     512,
+     512,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "vendas",
+    "brand": "COTOLUNA",
+    "product": "VENDAS",
+    "rect": [
+     768,
+     512,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "pintura",
+    "brand": "COLORALBA",
+    "product": "PINTURA",
+    "rect": [
+     0,
+     768,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "papel",
+    "brand": "CUADERNUBE",
+    "product": "CUADERNO",
+    "rect": [
+     256,
+     768,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "periodico",
+    "brand": "LA VOZ DEL PELDAÑO",
+    "product": "EL BARRIO FLORECE",
+    "rect": [
+     512,
+     768,
+     256,
+     256
+    ]
+   },
+   {
+    "id": "juguetes",
+    "brand": "BRINCALOMA",
+    "product": "JUGUETES",
+    "rect": [
+     768,
+     768,
+     256,
+     256
+    ]
+   }
+  ]
+ },
+ "files": [
+  {
+   "glb": "goods/goods.glb",
+   "assets": {
+    "goods_apple": {
+     "node": "goods_apple",
+     "size": [
+      0.095,
+      0.115,
+      0.095
+     ],
+     "footprint": [
+      0.095,
+      0.095
+     ],
+     "category": "fruit",
+     "tags": [
+      "goods",
+      "fruit"
+     ],
+     "triangles": 148,
+     "lodNode": "goods_apple__lod1",
+     "lodTriangles": 52
+    },
+    "goods_orange": {
+     "node": "goods_orange",
+     "size": [
+      0.1,
+      0.1,
+      0.1
+     ],
+     "footprint": [
+      0.1,
+      0.1
+     ],
+     "category": "fruit",
+     "tags": [
+      "goods",
+      "fruit"
+     ],
+     "triangles": 104,
+     "lodNode": "goods_orange__lod1",
+     "lodTriangles": 36
+    },
+    "goods_banana_bunch": {
+     "node": "goods_banana_bunch",
+     "size": [
+      0.21,
+      0.14,
+      0.18
+     ],
+     "footprint": [
+      0.21,
+      0.18
+     ],
+     "category": "fruit",
+     "tags": [
+      "goods",
+      "fruit"
+     ],
+     "triangles": 280,
+     "lodNode": "goods_banana_bunch__lod1",
+     "lodTriangles": 112
+    },
+    "goods_pear": {
+     "node": "goods_pear",
+     "size": [
+      0.09,
+      0.15,
+      0.09
+     ],
+     "footprint": [
+      0.09,
+      0.09
+     ],
+     "category": "fruit",
+     "tags": [
+      "goods",
+      "fruit"
+     ],
+     "triangles": 148,
+     "lodNode": "goods_pear__lod1",
+     "lodTriangles": 52
+    },
+    "goods_grapes": {
+     "node": "goods_grapes",
+     "size": [
+      0.13,
+      0.18,
+      0.13
+     ],
+     "footprint": [
+      0.13,
+      0.13
+     ],
+     "category": "fruit",
+     "tags": [
+      "goods",
+      "fruit"
+     ],
+     "triangles": 268,
+     "lodNode": "goods_grapes__lod1",
+     "lodTriangles": 112
+    },
+    "goods_watermelon_slice": {
+     "node": "goods_watermelon_slice",
+     "size": [
+      0.25,
+      0.135,
+      0.09
+     ],
+     "footprint": [
+      0.25,
+      0.09
+     ],
+     "category": "fruit",
+     "tags": [
+      "goods",
+      "fruit"
+     ],
+     "triangles": 36,
+     "lodNode": "goods_watermelon_slice__lod1",
+     "lodTriangles": 32
+    },
+    "goods_tomato": {
+     "node": "goods_tomato",
+     "size": [
+      0.105,
+      0.1,
+      0.105
+     ],
+     "footprint": [
+      0.105,
+      0.105
+     ],
+     "category": "vegetable",
+     "tags": [
+      "goods",
+      "vegetable"
+     ],
+     "triangles": 116,
+     "lodNode": "goods_tomato__lod1",
+     "lodTriangles": 52
+    },
+    "goods_carrots": {
+     "node": "goods_carrots",
+     "size": [
+      0.2,
+      0.075,
+      0.26
+     ],
+     "footprint": [
+      0.2,
+      0.26
+     ],
+     "category": "vegetable",
+     "tags": [
+      "goods",
+      "vegetable"
+     ],
+     "triangles": 156,
+     "lodNode": "goods_carrots__lod1",
+     "lodTriangles": 72
+    },
+    "goods_pepper": {
+     "node": "goods_pepper",
+     "size": [
+      0.105,
+      0.13,
+      0.1
+     ],
+     "footprint": [
+      0.105,
+      0.1
+     ],
+     "category": "vegetable",
+     "tags": [
+      "goods",
+      "vegetable"
+     ],
+     "triangles": 168,
+     "lodNode": "goods_pepper__lod1",
+     "lodTriangles": 52
+    },
+    "goods_aubergine": {
+     "node": "goods_aubergine",
+     "size": [
+      0.08,
+      0.08,
+      0.22
+     ],
+     "footprint": [
+      0.08,
+      0.22
+     ],
+     "category": "vegetable",
+     "tags": [
+      "goods",
+      "vegetable"
+     ],
+     "triangles": 112,
+     "lodNode": "goods_aubergine__lod1",
+     "lodTriangles": 52
+    },
+    "goods_cabbage": {
+     "node": "goods_cabbage",
+     "size": [
+      0.18,
+      0.15,
+      0.18
+     ],
+     "footprint": [
+      0.18,
+      0.18
+     ],
+     "category": "vegetable",
+     "tags": [
+      "goods",
+      "vegetable"
+     ],
+     "triangles": 152,
+     "lodNode": "goods_cabbage__lod1",
+     "lodTriangles": 36
+    },
+    "goods_potato": {
+     "node": "goods_potato",
+     "size": [
+      0.1,
+      0.085,
+      0.13
+     ],
+     "footprint": [
+      0.1,
+      0.13
+     ],
+     "category": "vegetable",
+     "tags": [
+      "goods",
+      "vegetable"
+     ],
+     "triangles": 92,
+     "lodNode": "goods_potato__lod1",
+     "lodTriangles": 36
+    },
+    "goods_baguette": {
+     "node": "goods_baguette",
+     "size": [
+      0.1,
+      0.09,
+      0.4
+     ],
+     "footprint": [
+      0.1,
+      0.4
+     ],
+     "category": "bread",
+     "tags": [
+      "goods",
+      "bread"
+     ],
+     "triangles": 200,
+     "lodNode": "goods_baguette__lod1",
+     "lodTriangles": 36
+    },
+    "goods_round_loaf": {
+     "node": "goods_round_loaf",
+     "size": [
+      0.23,
+      0.13,
+      0.23
+     ],
+     "footprint": [
+      0.23,
+      0.23
+     ],
+     "category": "bread",
+     "tags": [
+      "goods",
+      "bread"
+     ],
+     "triangles": 140,
+     "lodNode": "goods_round_loaf__lod1",
+     "lodTriangles": 36
+    },
+    "goods_bread_roll": {
+     "node": "goods_bread_roll",
+     "size": [
+      0.14,
+      0.08,
+      0.11
+     ],
+     "footprint": [
+      0.14,
+      0.11
+     ],
+     "category": "bread",
+     "tags": [
+      "goods",
+      "bread"
+     ],
+     "triangles": 110,
+     "lodNode": "goods_bread_roll__lod1",
+     "lodTriangles": 36
+    },
+    "goods_croissant": {
+     "node": "goods_croissant",
+     "size": [
+      0.15,
+      0.08,
+      0.11
+     ],
+     "footprint": [
+      0.15,
+      0.11
+     ],
+     "category": "bread",
+     "tags": [
+      "goods",
+      "bread"
+     ],
+     "triangles": 166,
+     "lodNode": "goods_croissant__lod1",
+     "lodTriangles": 32
+    },
+    "goods_cheese_wedge": {
+     "node": "goods_cheese_wedge",
+     "size": [
+      0.19,
+      0.12,
+      0.15
+     ],
+     "footprint": [
+      0.19,
+      0.15
+     ],
+     "category": "cheese",
+     "tags": [
+      "goods",
+      "cheese"
+     ],
+     "triangles": 25,
+     "lodNode": "goods_cheese_wedge__lod1",
+     "lodTriangles": 10
+    },
+    "goods_cheese_wheel": {
+     "node": "goods_cheese_wheel",
+     "size": [
+      0.21,
+      0.09,
+      0.21
+     ],
+     "footprint": [
+      0.21,
+      0.21
+     ],
+     "category": "cheese",
+     "tags": [
+      "goods",
+      "cheese"
+     ],
+     "triangles": 121,
+     "lodNode": "goods_cheese_wheel__lod1",
+     "lodTriangles": 48
+    },
+    "goods_preserves_jar": {
+     "node": "goods_preserves_jar",
+     "size": [
+      0.095,
+      0.16,
+      0.095
+     ],
+     "footprint": [
+      0.095,
+      0.095
+     ],
+     "category": "jar",
+     "tags": [
+      "goods",
+      "jar"
+     ],
+     "labelId": "conservas",
+     "triangles": 158,
+     "lodNode": "goods_preserves_jar__lod1",
+     "lodTriangles": 84
+    },
+    "goods_pickles_jar": {
+     "node": "goods_pickles_jar",
+     "size": [
+      0.1,
+      0.18,
+      0.1
+     ],
+     "footprint": [
+      0.1,
+      0.1
+     ],
+     "category": "jar",
+     "tags": [
+      "goods",
+      "jar"
+     ],
+     "labelId": "conservas",
+     "triangles": 158,
+     "lodNode": "goods_pickles_jar__lod1",
+     "lodTriangles": 84
+    },
+    "goods_beans_tin": {
+     "node": "goods_beans_tin",
+     "size": [
+      0.095,
+      0.13,
+      0.095
+     ],
+     "footprint": [
+      0.095,
+      0.095
+     ],
+     "category": "tin",
+     "tags": [
+      "goods",
+      "tin"
+     ],
+     "labelId": "conservas",
+     "triangles": 156,
+     "lodNode": "goods_beans_tin__lod1",
+     "lodTriangles": 24
+    },
+    "goods_fish_tin": {
+     "node": "goods_fish_tin",
+     "size": [
+      0.13,
+      0.045,
+      0.08
+     ],
+     "footprint": [
+      0.13,
+      0.08
+     ],
+     "category": "tin",
+     "tags": [
+      "goods",
+      "tin"
+     ],
+     "labelId": "conservas",
+     "triangles": 122,
+     "lodNode": "goods_fish_tin__lod1",
+     "lodTriangles": 12
+    },
+    "goods_milk_bottle": {
+     "node": "goods_milk_bottle",
+     "size": [
+      0.085,
+      0.245,
+      0.085
+     ],
+     "footprint": [
+      0.085,
+      0.085
+     ],
+     "category": "bottle",
+     "tags": [
+      "goods",
+      "bottle"
+     ],
+     "labelId": "leche",
+     "triangles": 164,
+     "lodNode": "goods_milk_bottle__lod1",
+     "lodTriangles": 48
+    },
+    "goods_juice_bottle": {
+     "node": "goods_juice_bottle",
+     "size": [
+      0.085,
+      0.25,
+      0.085
+     ],
+     "footprint": [
+      0.085,
+      0.085
+     ],
+     "category": "bottle",
+     "tags": [
+      "goods",
+      "bottle"
+     ],
+     "labelId": "jugo",
+     "triangles": 164,
+     "lodNode": "goods_juice_bottle__lod1",
+     "lodTriangles": 48
+    },
+    "goods_oil_bottle": {
+     "node": "goods_oil_bottle",
+     "size": [
+      0.08,
+      0.28,
+      0.08
+     ],
+     "footprint": [
+      0.08,
+      0.08
+     ],
+     "category": "bottle",
+     "tags": [
+      "goods",
+      "bottle"
+     ],
+     "labelId": "aceite",
+     "triangles": 164,
+     "lodNode": "goods_oil_bottle__lod1",
+     "lodTriangles": 48
+    },
+    "goods_soda_bottle": {
+     "node": "goods_soda_bottle",
+     "size": [
+      0.08,
+      0.25,
+      0.08
+     ],
+     "footprint": [
+      0.08,
+      0.08
+     ],
+     "category": "bottle",
+     "tags": [
+      "goods",
+      "bottle"
+     ],
+     "labelId": "gaseosa",
+     "triangles": 164,
+     "lodNode": "goods_soda_bottle__lod1",
+     "lodTriangles": 48
+    },
+    "goods_rice_sack": {
+     "node": "goods_rice_sack",
+     "size": [
+      0.22,
+      0.29,
+      0.15
+     ],
+     "footprint": [
+      0.22,
+      0.15
+     ],
+     "category": "sack",
+     "tags": [
+      "goods",
+      "sack"
+     ],
+     "labelId": "granos",
+     "triangles": 250,
+     "lodNode": "goods_rice_sack__lod1",
+     "lodTriangles": 48
+    },
+    "goods_coffee_sack": {
+     "node": "goods_coffee_sack",
+     "size": [
+      0.23,
+      0.3,
+      0.16
+     ],
+     "footprint": [
+      0.23,
+      0.16
+     ],
+     "category": "sack",
+     "tags": [
+      "goods",
+      "sack"
+     ],
+     "labelId": "cafe",
+     "triangles": 250,
+     "lodNode": "goods_coffee_sack__lod1",
+     "lodTriangles": 48
+    },
+    "goods_beans_sack": {
+     "node": "goods_beans_sack",
+     "size": [
+      0.22,
+      0.28,
+      0.15
+     ],
+     "footprint": [
+      0.22,
+      0.15
+     ],
+     "category": "sack",
+     "tags": [
+      "goods",
+      "sack"
+     ],
+     "labelId": "granos",
+     "triangles": 250,
+     "lodNode": "goods_beans_sack__lod1",
+     "lodTriangles": 48
+    },
+    "goods_steak": {
+     "node": "goods_steak",
+     "size": [
+      0.18,
+      0.04,
+      0.14
+     ],
+     "footprint": [
+      0.18,
+      0.14
+     ],
+     "category": "meat",
+     "tags": [
+      "goods",
+      "meat"
+     ],
+     "triangles": 100,
+     "lodNode": "goods_steak__lod1",
+     "lodTriangles": 64
+    },
+    "goods_sausages": {
+     "node": "goods_sausages",
+     "size": [
+      0.18,
+      0.05,
+      0.15
+     ],
+     "footprint": [
+      0.18,
+      0.15
+     ],
+     "category": "meat",
+     "tags": [
+      "goods",
+      "meat"
+     ],
+     "triangles": 162,
+     "lodNode": "goods_sausages__lod1",
+     "lodTriangles": 72
+    },
+    "goods_chicken": {
+     "node": "goods_chicken",
+     "size": [
+      0.21,
+      0.14,
+      0.24
+     ],
+     "footprint": [
+      0.21,
+      0.24
+     ],
+     "category": "meat",
+     "tags": [
+      "goods",
+      "meat"
+     ],
+     "triangles": 224,
+     "lodNode": "goods_chicken__lod1",
+     "lodTriangles": 84
+    },
+    "goods_flower_bunch": {
+     "node": "goods_flower_bunch",
+     "size": [
+      0.18,
+      0.33,
+      0.18
+     ],
+     "footprint": [
+      0.18,
+      0.18
+     ],
+     "category": "flower",
+     "tags": [
+      "goods",
+      "flower"
+     ],
+     "triangles": 264,
+     "lodNode": "goods_flower_bunch__lod1",
+     "lodTriangles": 96
+    },
+    "goods_potted_flower": {
+     "node": "goods_potted_flower",
+     "size": [
+      0.17,
+      0.28,
+      0.17
+     ],
+     "footprint": [
+      0.17,
+      0.17
+     ],
+     "category": "flower",
+     "tags": [
+      "goods",
+      "flower"
+     ],
+     "triangles": 324,
+     "lodNode": "goods_potted_flower__lod1",
+     "lodTriangles": 124
+    },
+    "goods_newspaper": {
+     "node": "goods_newspaper",
+     "size": [
+      0.25,
+      0.065,
+      0.33
+     ],
+     "footprint": [
+      0.25,
+      0.33
+     ],
+     "category": "newspaper",
+     "tags": [
+      "goods",
+      "newspaper"
+     ],
+     "labelId": "periodico",
+     "triangles": 50,
+     "lodNode": "goods_newspaper__lod1",
+     "lodTriangles": 12
+    },
+    "goods_exercise_book": {
+     "node": "goods_exercise_book",
+     "size": [
+      0.19,
+      0.035,
+      0.26
+     ],
+     "footprint": [
+      0.19,
+      0.26
+     ],
+     "category": "stationery",
+     "tags": [
+      "goods",
+      "stationery"
+     ],
+     "labelId": "papel",
+     "triangles": 26,
+     "lodNode": "goods_exercise_book__lod1",
+     "lodTriangles": 12
+    },
+    "goods_shoe_pair": {
+     "node": "goods_shoe_pair",
+     "size": [
+      0.24,
+      0.12,
+      0.31
+     ],
+     "footprint": [
+      0.24,
+      0.31
+     ],
+     "category": "shoes",
+     "tags": [
+      "goods",
+      "shoes"
+     ],
+     "triangles": 128,
+     "lodNode": "goods_shoe_pair__lod1",
+     "lodTriangles": 104
+    },
+    "goods_sandal_pair": {
+     "node": "goods_sandal_pair",
+     "size": [
+      0.23,
+      0.06,
+      0.29
+     ],
+     "footprint": [
+      0.23,
+      0.29
+     ],
+     "category": "shoes",
+     "tags": [
+      "goods",
+      "shoes"
+     ],
+     "triangles": 104,
+     "lodNode": "goods_sandal_pair__lod1",
+     "lodTriangles": 32
+    },
+    "goods_toy_car": {
+     "node": "goods_toy_car",
+     "size": [
+      0.14,
+      0.075,
+      0.08
+     ],
+     "footprint": [
+      0.14,
+      0.08
+     ],
+     "category": "toy",
+     "tags": [
+      "goods",
+      "toy"
+     ],
+     "triangles": 272,
+     "lodNode": "goods_toy_car__lod1",
+     "lodTriangles": 88
+    },
+    "goods_toy_bear": {
+     "node": "goods_toy_bear",
+     "size": [
+      0.14,
+      0.19,
+      0.1
+     ],
+     "footprint": [
+      0.14,
+      0.1
+     ],
+     "category": "toy",
+     "tags": [
+      "goods",
+      "toy"
+     ],
+     "triangles": 268,
+     "lodNode": "goods_toy_bear__lod1",
+     "lodTriangles": 96
+    },
+    "goods_wooden_blocks": {
+     "node": "goods_wooden_blocks",
+     "size": [
+      0.16,
+      0.12,
+      0.13
+     ],
+     "footprint": [
+      0.16,
+      0.13
+     ],
+     "category": "toy",
+     "tags": [
+      "goods",
+      "toy"
+     ],
+     "labelId": "juguetes",
+     "triangles": 326,
+     "lodNode": "goods_wooden_blocks__lod1",
+     "lodTriangles": 36
+    },
+    "goods_hammer": {
+     "node": "goods_hammer",
+     "size": [
+      0.13,
+      0.03,
+      0.28
+     ],
+     "footprint": [
+      0.13,
+      0.28
+     ],
+     "category": "hardware",
+     "tags": [
+      "goods",
+      "hardware"
+     ],
+     "triangles": 84,
+     "lodNode": "goods_hammer__lod1",
+     "lodTriangles": 32
+    },
+    "goods_pliers": {
+     "node": "goods_pliers",
+     "size": [
+      0.095,
+      0.025,
+      0.21
+     ],
+     "footprint": [
+      0.095,
+      0.21
+     ],
+     "category": "hardware",
+     "tags": [
+      "goods",
+      "hardware"
+     ],
+     "triangles": 176,
+     "lodNode": "goods_pliers__lod1",
+     "lodTriangles": 112
+    },
+    "goods_paint_tin": {
+     "node": "goods_paint_tin",
+     "size": [
+      0.13,
+      0.15,
+      0.13
+     ],
+     "footprint": [
+      0.13,
+      0.13
+     ],
+     "category": "hardware",
+     "tags": [
+      "goods",
+      "hardware"
+     ],
+     "labelId": "pintura",
+     "triangles": 204,
+     "lodNode": "goods_paint_tin__lod1",
+     "lodTriangles": 24
+    },
+    "goods_rope_coil": {
+     "node": "goods_rope_coil",
+     "size": [
+      0.16,
+      0.035,
+      0.16
+     ],
+     "footprint": [
+      0.16,
+      0.16
+     ],
+     "category": "hardware",
+     "tags": [
+      "goods",
+      "hardware"
+     ],
+     "triangles": 264,
+     "lodNode": "goods_rope_coil__lod1",
+     "lodTriangles": 64
+    },
+    "goods_remedy_box": {
+     "node": "goods_remedy_box",
+     "size": [
+      0.095,
+      0.16,
+      0.045
+     ],
+     "footprint": [
+      0.095,
+      0.045
+     ],
+     "category": "pharmacy",
+     "tags": [
+      "goods",
+      "pharmacy"
+     ],
+     "labelId": "botica",
+     "triangles": 122,
+     "lodNode": "goods_remedy_box__lod1",
+     "lodTriangles": 12
+    },
+    "goods_bandage_box": {
+     "node": "goods_bandage_box",
+     "size": [
+      0.1,
+      0.14,
+      0.06
+     ],
+     "footprint": [
+      0.1,
+      0.06
+     ],
+     "category": "pharmacy",
+     "tags": [
+      "goods",
+      "pharmacy"
+     ],
+     "labelId": "vendas",
+     "triangles": 122,
+     "lodNode": "goods_bandage_box__lod1",
+     "lodTriangles": 12
+    },
+    "goods_tonic_bottle": {
+     "node": "goods_tonic_bottle",
+     "size": [
+      0.07,
+      0.18,
+      0.07
+     ],
+     "footprint": [
+      0.07,
+      0.07
+     ],
+     "category": "pharmacy",
+     "tags": [
+      "goods",
+      "pharmacy"
+     ],
+     "labelId": "botica",
+     "triangles": 164,
+     "lodNode": "goods_tonic_bottle__lod1",
+     "lodTriangles": 48
+    },
+    "goods_cup_saucer": {
+     "node": "goods_cup_saucer",
+     "size": [
+      0.18,
+      0.12,
+      0.18
+     ],
+     "footprint": [
+      0.18,
+      0.18
+     ],
+     "category": "cafe",
+     "tags": [
+      "goods",
+      "cafe"
+     ],
+     "triangles": 266,
+     "lodNode": "goods_cup_saucer__lod1",
+     "lodTriangles": 142
+    },
+    "goods_takeaway_cup": {
+     "node": "goods_takeaway_cup",
+     "size": [
+      0.1,
+      0.16,
+      0.1
+     ],
+     "footprint": [
+      0.1,
+      0.1
+     ],
+     "category": "cafe",
+     "tags": [
+      "goods",
+      "cafe"
+     ],
+     "labelId": "cafe",
+     "triangles": 136,
+     "lodNode": "goods_takeaway_cup__lod1",
+     "lodTriangles": 60
+    },
+    "goods_coffee_bag": {
+     "node": "goods_coffee_bag",
+     "size": [
+      0.1,
+      0.19,
+      0.065
+     ],
+     "footprint": [
+      0.1,
+      0.065
+     ],
+     "category": "cafe",
+     "tags": [
+      "goods",
+      "cafe"
+     ],
+     "labelId": "cafe",
+     "triangles": 100,
+     "lodNode": "goods_coffee_bag__lod1",
+     "lodTriangles": 38
+    },
+    "goods_sugar_jar": {
+     "node": "goods_sugar_jar",
+     "size": [
+      0.1,
+      0.15,
+      0.1
+     ],
+     "footprint": [
+      0.1,
+      0.1
+     ],
+     "category": "cafe",
+     "tags": [
+      "goods",
+      "cafe"
+     ],
+     "labelId": "azucar",
+     "triangles": 158,
+     "lodNode": "goods_sugar_jar__lod1",
+     "lodTriangles": 84
+    },
+    "goods_chips_bag": {
+     "node": "goods_chips_bag",
+     "size": [
+      0.13,
+      0.22,
+      0.055
+     ],
+     "footprint": [
+      0.13,
+      0.055
+     ],
+     "category": "snacks",
+     "tags": [
+      "goods",
+      "snacks"
+     ],
+     "labelId": "chips",
+     "triangles": 100,
+     "lodNode": "goods_chips_bag__lod1",
+     "lodTriangles": 38
+    },
+    "goods_flour_bag": {
+     "node": "goods_flour_bag",
+     "size": [
+      0.12,
+      0.18,
+      0.08
+     ],
+     "footprint": [
+      0.12,
+      0.08
+     ],
+     "category": "sack",
+     "tags": [
+      "goods",
+      "sack"
+     ],
+     "labelId": "harina",
+     "triangles": 100,
+     "lodNode": "goods_flour_bag__lod1",
+     "lodTriangles": 38
+    },
+    "goods_fabric_stack": {
+     "node": "goods_fabric_stack",
+     "size": [
+      0.25,
+      0.09,
+      0.2
+     ],
+     "footprint": [
+      0.25,
+      0.2
+     ],
+     "category": "fabric",
+     "tags": [
+      "goods",
+      "fabric"
+     ],
+     "triangles": 324,
+     "lodNode": "goods_fabric_stack__lod1",
+     "lodTriangles": 36
+    },
+    "goods_thread_spool": {
+     "node": "goods_thread_spool",
+     "size": [
+      0.065,
+      0.1,
+      0.065
+     ],
+     "footprint": [
+      0.065,
+      0.065
+     ],
+     "category": "fabric",
+     "tags": [
+      "goods",
+      "fabric"
+     ],
+     "triangles": 208,
+     "lodNode": "goods_thread_spool__lod1",
+     "lodTriangles": 72
+    },
+    "goods_pencil_bundle": {
+     "node": "goods_pencil_bundle",
+     "size": [
+      0.075,
+      0.02,
+      0.18
+     ],
+     "footprint": [
+      0.075,
+      0.18
+     ],
+     "category": "stationery",
+     "tags": [
+      "goods",
+      "stationery"
+     ],
+     "triangles": 252,
+     "lodNode": "goods_pencil_bundle__lod1",
+     "lodTriangles": 96
+    },
+    "goods_toy_ball": {
+     "node": "goods_toy_ball",
+     "size": [
+      0.12,
+      0.12,
+      0.12
+     ],
+     "footprint": [
+      0.12,
+      0.12
+     ],
+     "category": "toy",
+     "tags": [
+      "goods",
+      "toy"
+     ],
+     "triangles": 80,
+     "lodNode": "goods_toy_ball__lod1",
+     "lodTriangles": 36
+    }
+   }
+  }
+ ]
+}

@@ -8,6 +8,8 @@
 //  * Finish materials (floor_*, wall_*, ceiling_*) are also read by A2 through `room.finish`.
 //  * `decal_atlas` is a runtime canvas texture built by interiors/decals.js (posters, calendars, notes, menus...).
 export default {
+  goods_surface: { color: 0xffffff, rough: 0.72, tex: false, vertexColors: true, desc: 'shared vertex-coloured surfaces of small shop goods' },
+  goods_label: { color: 0xffffff, rough: 0.75, uv: 'unit', tex: 'goods_labels', vertexColors: true, desc: 'single atlas of invented Spanish shop product labels' },
   // ---------------------------------------------------------------- floors
   floor_tile_checker: { color: 0xcdbb9c, rough: 0.55, tile: 1.2, prio: 1, desc: 'cream and dark-brown ceramic checkerboard floor tiles about 30 cm square with thin dirty grout lines, slightly dull and scuffed, seen from straight above, flat even light' },
   floor_tile_terracotta: { color: 0xb4663c, rough: 0.8, tile: 1.2, prio: 1, desc: 'handmade terracotta clay floor tiles about 30 cm square, orange-brown with natural colour variation, dark grout, waxed and worn surface, seen from straight above, flat even light' },

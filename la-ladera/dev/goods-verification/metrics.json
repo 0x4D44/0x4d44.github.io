@@ -1,0 +1,86 @@
+{
+ "size": [
+  640,
+  360
+ ],
+ "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+ "boot": {
+  "seconds": 24.1,
+  "stages": {
+   "engine": 73,
+   "materials": 52,
+   "assets": 58,
+   "plan": 284,
+   "worldParts": {
+    "terrain": 469,
+    "surfaces": 49,
+    "stairs": 42,
+    "retaining": 48,
+    "perimeter": 0
+   },
+   "world": 708,
+   "arch": 75,
+   "furnish": 3405,
+   "colliders": 10,
+   "build": 1839,
+   "propParts": {
+    "occupancy": 105,
+    "atlas": 219,
+    "boundary": 7,
+    "poles": 33,
+    "vehicles": 54,
+    "dress": 10,
+    "signs": 6,
+    "hill": 23,
+    "flora": 61,
+    "planters": 1,
+    "life": 14,
+    "navfit": 27,
+    "discoveries": 24
+   },
+   "props": 597,
+   "flush": 208,
+   "glow": 33,
+   "peopleSpawn": 68,
+   "people": 655,
+   "start": 4124,
+   "total": 23701
+  },
+  "errors": 0
+ },
+ "views": [
+  {
+   "id": "spawn",
+   "pos": [
+    -6.5,
+    0.22,
+    92.5
+   ],
+   "median": 16.7,
+   "p95": 16.8,
+   "max": 16.8,
+   "costMs": 19.29,
+   "calls": 1077,
+   "tris": 1535253,
+   "geoms": 861,
+   "textures": 149
+  }
+ ],
+ "soak": {},
+ "counts": {},
+ "failures": [
+  "spawn: uncapped render cost 19.29 ms > 12",
+  "metrics run crashed: Error: CDP timeout: Runtime.evaluate |     at Timeout._onTimeout (file:///workspace/scratch/9b781b988b01/la-ladera-goods/la-ladera/tests/chrome.mjs:174:79) |     at listOnTimeout (node:internal/timers:685:17)"
+ ],
+ "baselineMedian": 16.7,
+ "summary": {
+  "boot_s": 24.1,
+  "views": 1,
+  "blank_page_frame_ms": 16.7,
+  "frame_ms_median_of_medians": 16.7,
+  "worst_median": 16.7,
+  "worst_cost_ms": 19.29,
+  "max_calls": 1077,
+  "max_tris": 1535253
+ }
+}

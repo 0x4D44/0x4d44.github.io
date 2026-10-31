@@ -1,0 +1,19 @@
+# goods: 58 models + 58 LODs, 16 atlas labels, 1266492 bytes; max 326/142 triangles
+✔ complete goods release has every real model, LOD and atlas within the inclusive payload budget (173.684223ms)
+✔ the same shipped GLBs parse in Three.js and supply usable near and far nodes (65.572183ms)
+✔ real goods batch to at most two room materials and switch near/far/culled at world-relative distances (70.385792ms)
+✔ binary reader rejects truncated data, invalid accessor counts, NaNs and indices beyond the vertices (2.964571ms)
+✔ binary validation detects false bounds, inward triangle winding and the strict 400-triangle ceiling (6.231589ms)
+✔ unknown materials, embedded textures and duplicate node names cannot pass binary validation (0.856211ms)
+✔ --complete rejects declared assets with no GLB file or absent named roots (85.182418ms)
+✔ complete validation measures child-node transforms and ignores false triangle-count promises (134.916445ms)
+✔ complete validation requires the real decoded atlas and its shared texture registration (177.628151ms)
+✔ payload accounting includes unlisted files and rejects a library over two million bytes (52.088468ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 797.223757

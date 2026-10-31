@@ -1,0 +1,18 @@
+✔ assortment data covers every shop, requested fixture and goods family (18.719621ms)
+✔ all assortments fit their shelves at metre scale, without overlaps, at arbitrary fixture rotations (83.144179ms)
+✔ shallow and multirow shelves turn deep articles without shrinking them (0.312681ms)
+✔ a till or other top prop reserves its full volume, including on a rotated counter (10.553255ms)
+✔ editing data changes stock; missing, oversized and too-tall goods are safely omitted (0.385161ms)
+✔ every catalogue article can actually fit at least one fixture in its declared assortment (15.210258ms)
+✔ post-layout stock planning leaves furniture and collisions unchanged and respects room shop type (4.07762ms)
+✔ a manifest entry without its loaded file, near node or far node never replaces procedural stock (2.194099ms)
+✔ malformed mesh data falls back instead of inserting corrupt goods into a building (0.68294ms)
+✔ a partially loaded assortment falls back atomically per fixture, and a failed atlas keeps procedural stock (0.942151ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 150.948885

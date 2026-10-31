@@ -1,0 +1,269 @@
+{
+  "baseline": false,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "size": [
+    1280,
+    720
+  ],
+  "shots": [
+    {
+      "shop": "tienda",
+      "building": "L01",
+      "room": "L01.f0.r0",
+      "fixture": "shelf_tienda",
+      "fixtureId": "L01.f0.r0.i1",
+      "position": [
+        56.58045034005574,
+        0.7,
+        79.38500732022719
+      ],
+      "target": [
+        56.57999417795656,
+        2,
+        81.58500727293541
+      ],
+      "eyeHeight": 1.64,
+      "goodsInRoom": 139,
+      "goodsOnFixture": 39,
+      "goodsStats": {
+        "planned": 139,
+        "drawn": 139,
+        "fixtures": 5,
+        "rooms": 1,
+        "nearTriangles": 22407,
+        "farTriangles": 6578,
+        "nearCalls": 2,
+        "farCalls": 1,
+        "nearDistance": 8,
+        "cullDistance": 22
+      },
+      "drawCalls": 354,
+      "triangles": 698146,
+      "quality": "high",
+      "file": "tienda.jpg"
+    },
+    {
+      "shop": "panaderia",
+      "building": "L02",
+      "room": "L02.f0.r2",
+      "fixture": "bread_rack",
+      "fixtureId": "L02.f0.r2.i18w",
+      "position": [
+        32.80999995436895,
+        0.6,
+        80.59755191895188
+      ],
+      "target": [
+        30.61,
+        1.705,
+        80.598
+      ],
+      "eyeHeight": 1.64,
+      "goodsInRoom": 97,
+      "goodsOnFixture": 22,
+      "goodsStats": {
+        "planned": 97,
+        "drawn": 97,
+        "fixtures": 5,
+        "rooms": 1,
+        "nearTriangles": 13476,
+        "farTriangles": 3752,
+        "nearCalls": 2,
+        "farCalls": 1,
+        "nearDistance": 8,
+        "cullDistance": 22
+      },
+      "drawCalls": 719,
+      "triangles": 1231837,
+      "quality": "high",
+      "file": "panaderia.jpg"
+    },
+    {
+      "shop": "fruver",
+      "building": "L03",
+      "room": "L03.f0.r2",
+      "fixture": "crate_stack_mango",
+      "fixtureId": "L03.f0.r2.i131",
+      "position": [
+        24.824999970962057,
+        0.6,
+        78.82971485751483
+      ],
+      "target": [
+        23.425,
+        1.12,
+        78.83000000000001
+      ],
+      "eyeHeight": 1.64,
+      "goodsInRoom": 80,
+      "goodsOnFixture": 10,
+      "goodsStats": {
+        "planned": 80,
+        "drawn": 80,
+        "fixtures": 7,
+        "rooms": 1,
+        "nearTriangles": 11448,
+        "farTriangles": 4332,
+        "nearCalls": 1,
+        "farCalls": 1,
+        "nearDistance": 8,
+        "cullDistance": 22
+      },
+      "drawCalls": 509,
+      "triangles": 1047981,
+      "quality": "high",
+      "file": "fruver.jpg"
+    },
+    {
+      "shop": "ferreteria",
+      "building": "L41",
+      "room": "L41.f0.r2",
+      "fixture": "shelf_ferre",
+      "fixtureId": "L41.f0.r2.i13i",
+      "position": [
+        37.42256373394738,
+        24.65,
+        -41.440591742523445
+      ],
+      "target": [
+        39.582892541491645,
+        25.95,
+        -41.024683767973315
+      ],
+      "eyeHeight": 1.64,
+      "goodsInRoom": 140,
+      "goodsOnFixture": 35,
+      "goodsStats": {
+        "planned": 140,
+        "drawn": 140,
+        "fixtures": 4,
+        "rooms": 1,
+        "nearTriangles": 26096,
+        "farTriangles": 7168,
+        "nearCalls": 2,
+        "farCalls": 1,
+        "nearDistance": 8,
+        "cullDistance": 22
+      },
+      "drawCalls": 472,
+      "triangles": 885591,
+      "quality": "high",
+      "file": "ferreteria.jpg"
+    },
+    {
+      "shop": "drogueria",
+      "building": "L08",
+      "room": "L08.f0.r2",
+      "fixture": "shelf_pharma",
+      "fixtureId": "L08.f0.r2.i16l",
+      "position": [
+        -12.199999954368948,
+        0.6,
+        78.69755191895187
+      ],
+      "target": [
+        -10,
+        1.9,
+        78.69800000000001
+      ],
+      "eyeHeight": 1.64,
+      "goodsInRoom": 152,
+      "goodsOnFixture": 44,
+      "goodsStats": {
+        "planned": 152,
+        "drawn": 152,
+        "fixtures": 4,
+        "rooms": 1,
+        "nearTriangles": 20224,
+        "farTriangles": 3264,
+        "nearCalls": 2,
+        "farCalls": 1,
+        "nearDistance": 8,
+        "cullDistance": 22
+      },
+      "drawCalls": 630,
+      "triangles": 1182684,
+      "quality": "high",
+      "file": "drogueria.jpg"
+    }
+  ],
+  "bootErrors": [],
+  "assets": {
+    "catalogueKeys": 58,
+    "atlasReady": true,
+    "keys": [
+      "goods_apple",
+      "goods_orange",
+      "goods_banana_bunch",
+      "goods_pear",
+      "goods_grapes",
+      "goods_watermelon_slice",
+      "goods_tomato",
+      "goods_carrots",
+      "goods_pepper",
+      "goods_aubergine",
+      "goods_cabbage",
+      "goods_potato",
+      "goods_baguette",
+      "goods_round_loaf",
+      "goods_bread_roll",
+      "goods_croissant",
+      "goods_cheese_wedge",
+      "goods_cheese_wheel",
+      "goods_preserves_jar",
+      "goods_pickles_jar",
+      "goods_beans_tin",
+      "goods_fish_tin",
+      "goods_milk_bottle",
+      "goods_juice_bottle",
+      "goods_oil_bottle",
+      "goods_soda_bottle",
+      "goods_rice_sack",
+      "goods_coffee_sack",
+      "goods_beans_sack",
+      "goods_steak",
+      "goods_sausages",
+      "goods_chicken",
+      "goods_flower_bunch",
+      "goods_potted_flower",
+      "goods_newspaper",
+      "goods_exercise_book",
+      "goods_shoe_pair",
+      "goods_sandal_pair",
+      "goods_toy_car",
+      "goods_toy_bear",
+      "goods_wooden_blocks",
+      "goods_hammer",
+      "goods_pliers",
+      "goods_paint_tin",
+      "goods_rope_coil",
+      "goods_remedy_box",
+      "goods_bandage_box",
+      "goods_tonic_bottle",
+      "goods_cup_saucer",
+      "goods_takeaway_cup",
+      "goods_coffee_bag",
+      "goods_sugar_jar",
+      "goods_chips_bag",
+      "goods_flour_bag",
+      "goods_fabric_stack",
+      "goods_thread_spool",
+      "goods_pencil_bundle",
+      "goods_toy_ball"
+    ],
+    "missing": [],
+    "nearDistance": 8,
+    "cullDistance": 22
+  },
+  "browser": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x255c00183200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:34759/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x255c00183200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:34759/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x255c00183200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:34759/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x255c00183200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:34759/la-ladera/index.html?autostart&manual&dpr=1"
+    ]
+  }
+}

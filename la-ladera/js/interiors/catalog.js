@@ -10,6 +10,8 @@
 // Options: arch (stand-in archetype), tags, clear:[front,back,side] free space needed, seat:[seatH,n], bh (blocker height),
 //          block:false (never blocks), cols (tint palette key), mat (primary material), y (hang height), dyn (animated kind).
 
+import { GOODS_CATALOG } from './goods-catalog.js';
+
 export const PAL = {
   wood: [0x8a5a3a, 0x6b4226, 0xa87445, 0x4e3524, 0xc89a62],
   plastic: [0xf0efe8, 0xd23a32, 0x2f6fbf, 0x2f9a58, 0xe8c332, 0x2a2a2a],
@@ -272,6 +274,11 @@ add('rug_small', 0.9, 0.02, 0.6, 'rug', 'rug decor', { cols: 'none', mat: 'rug_w
 add('rug_big', 2.0, 0.02, 1.4, 'rug', 'rug decor living', { cols: 'none', mat: 'rug_woven', block: false });
 add('doormat', 0.6, 0.02, 0.4, 'rug', 'rug doormat entry', { cols: 'none', mat: 'rug_woven', block: false });
 add('curtain_window', 1.2, 1.4, 0.08, 'curtain', 'decor curtain window', { wall: true, y: 0.9, cols: 'bedding', mat: 'curtain_fabric', block: false });
+
+// Goods have shelf-sized footprints and no floor blockers. Their source metadata is regenerated with the GLBs.
+for (const [name, c] of Object.entries(GOODS_CATALOG)) {
+  add(name, ...c.size, 'smallbox', c.tags.join(' '), { ...c, top: true, block: false, mat: 'goods_surface', cols: 'none' });
+}
 
 // ------------------------------------------------------------------ helpers
 export const names = () => Object.keys(CATALOG);

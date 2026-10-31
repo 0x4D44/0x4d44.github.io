@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "method": {
+    "runner": "tests/goods-budget.mjs",
+    "mode": "manual geometry only",
+    "size": [
+      640,
+      360
+    ],
+    "quality": "high",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "viewpoints": {
+      "source": "tests/metrics.mjs",
+      "expression": "VIEWS_JS",
+      "sha256": "514999d7e9f62c74e9044514baa4abbae916ca84d44cf210143fad15696fbb24",
+      "selection": "slice(0, 40)",
+      "matchingIdsAndPositions": true
+    },
+    "goodsMeasurement": "onBeforeRender submissions after frustum culling; record counts describe the submitted room batch. Unsubmitted LOD rooms are omitted from near/far totals.",
+    "timingAssessed": false,
+    "requiredUncappedMs": 12
+  },
+  "limits": {
+    "views": 40,
+    "triangles": 2500000,
+    "calls": 1800
+  },
+  "sourceReports": {
+    "before": {
+      "file": "budget-before.json",
+      "sha256": "222cf15a8315bf37839f184f1c1a53cb521272245083a497fb2dc86de94af1cf"
+    },
+    "after": {
+      "file": "budget-after.json",
+      "sha256": "cd73cd56e445b3a36c8915d4cb0d20a7af8216f39b0b40ffaa6b683cf3d6417c"
+    }
+  },
+  "summary": {
+    "before": {
+      "views": 40,
+      "maxTriangles": 1660899,
+      "maxCalls": 1144,
+      "maxSubmittedGoodsTriangles": 0,
+      "viewsWithNearGoods": 0,
+      "viewsWithFarGoods": 0,
+      "geometryPassed": true,
+      "timingAssessed": false
+    },
+    "after": {
+      "views": 40,
+      "maxTriangles": 1661311,
+      "maxCalls": 1146,
+      "maxSubmittedGoodsTriangles": 22434,
+      "viewsWithNearGoods": 8,
+      "viewsWithFarGoods": 13,
+      "geometryPassed": true,
+      "timingAssessed": false
+    },
+    "deltaOfMaxima": {
+      "triangles": 412,
+      "calls": 2
+    },
+    "largestPairedTriangleIncrease": {
+      "view": "street-n183",
+      "triangles": 20634
+    },
+    "largestPairedCallIncrease": {
+      "views": [
+        "door-L02",
+        "interior-L02-shophouse"
+      ],
+      "calls": 3
+    },
+    "timingReport": "metrics.json",
+    "timingStatus": "failed and incomplete; 1 of 40 views measured",
+    "targetGpuTimingCertified": false
+  },
+  "assets": {
+    "ready": 58,
+    "missing": [],
+    "atlasReady": true,
+    "nearDistance": 8,
+    "cullDistance": 22
+  },
+  "failures": {
+    "before": [],
+    "after": []
+  },
+  "browser": {
+    "before": {
+      "errors": [],
+      "networkErrors": [],
+      "consoleErrors": [],
+      "unknownMaterials": [],
+      "contextLostViews": 0,
+      "consoleWarningCount": 4,
+      "consoleWarningKind": "SwiftShader GL Driver GPU stall due to ReadPixels"
+    },
+    "after": {
+      "errors": [],
+      "networkErrors": [],
+      "consoleErrors": [],
+      "unknownMaterials": [],
+      "contextLostViews": 0,
+      "consoleWarningCount": 4,
+      "consoleWarningKind": "SwiftShader GL Driver GPU stall due to ReadPixels"
+    }
+  },
+  "views": [
+    {"id":"spawn","before":{"triangles":1529993,"calls":1075},"after":{"triangles":1535253,"calls":1077},"delta":{"triangles":5260,"calls":2},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":2,"records":262,"meshes":2,"triangles":10024},"culledRooms":4,"parentHiddenRooms":8}},
+    {"id":"ridge-looking-south","before":{"triangles":1190072,"calls":771},"after":{"triangles":1190072,"calls":771},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"valley-looking-north","before":{"triangles":1323715,"calls":827},"after":{"triangles":1317541,"calls":829},"delta":{"triangles":-6174,"calls":2},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":2,"records":169,"meshes":2,"triangles":8466},"culledRooms":4,"parentHiddenRooms":10}},
+    {"id":"street-n0","before":{"triangles":1323715,"calls":827},"after":{"triangles":1317541,"calls":829},"delta":{"triangles":-6174,"calls":2},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":2,"records":169,"meshes":2,"triangles":8466},"culledRooms":4,"parentHiddenRooms":10}},
+    {"id":"street-n61","before":{"triangles":1361126,"calls":729},"after":{"triangles":1361126,"calls":729},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"street-n122","before":{"triangles":977870,"calls":566},"after":{"triangles":977870,"calls":566},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"street-n183","before":{"triangles":1553780,"calls":839},"after":{"triangles":1574414,"calls":841},"delta":{"triangles":20634,"calls":2},"goods":{"near":{"rooms":1,"records":139,"meshes":2,"triangles":22434},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":3,"parentHiddenRooms":11}},
+    {"id":"street-n244","before":{"triangles":1379745,"calls":830},"after":{"triangles":1381725,"calls":831},"delta":{"triangles":1980,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":46,"meshes":1,"triangles":2340},"culledRooms":1,"parentHiddenRooms":14}},
+    {"id":"street-n305","before":{"triangles":1322463,"calls":825},"after":{"triangles":1322463,"calls":825},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"street-n366","before":{"triangles":821746,"calls":488},"after":{"triangles":821482,"calls":488},"delta":{"triangles":-264,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":1,"parentHiddenRooms":14}},
+    {"id":"street-n427","before":{"triangles":1402542,"calls":799},"after":{"triangles":1402542,"calls":799},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"street-n488","before":{"triangles":704455,"calls":434},"after":{"triangles":704455,"calls":434},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"plaza-P1","before":{"triangles":1404319,"calls":696},"after":{"triangles":1404319,"calls":696},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":1,"parentHiddenRooms":14}},
+    {"id":"plaza-P2","before":{"triangles":1498892,"calls":831},"after":{"triangles":1500872,"calls":832},"delta":{"triangles":1980,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":46,"meshes":1,"triangles":2340},"culledRooms":1,"parentHiddenRooms":13}},
+    {"id":"plaza-P4","before":{"triangles":1231494,"calls":773},"after":{"triangles":1231494,"calls":773},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"landmark-mirador","before":{"triangles":411141,"calls":269},"after":{"triangles":411141,"calls":269},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"landmark-virgen","before":{"triangles":1288097,"calls":789},"after":{"triangles":1285541,"calls":789},"delta":{"triangles":-2556,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":3,"parentHiddenRooms":13}},
+    {"id":"landmark-almendros","before":{"triangles":1168525,"calls":702},"after":{"triangles":1171705,"calls":703},"delta":{"triangles":3180,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":59,"meshes":1,"triangles":3936},"culledRooms":1,"parentHiddenRooms":13}},
+    {"id":"landmark-cancha","before":{"triangles":664669,"calls":330},"after":{"triangles":664669,"calls":330},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"door-L00","before":{"triangles":628971,"calls":328},"after":{"triangles":633737,"calls":329},"delta":{"triangles":4766,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":139,"meshes":1,"triangles":6578},"culledRooms":3,"parentHiddenRooms":10}},
+    {"id":"door-L01","before":{"triangles":712217,"calls":368},"after":{"triangles":732812,"calls":370},"delta":{"triangles":20595,"calls":2},"goods":{"near":{"rooms":1,"records":139,"meshes":2,"triangles":22407},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":3,"parentHiddenRooms":10}},
+    {"id":"door-L02","before":{"triangles":1464312,"calls":936},"after":{"triangles":1469484,"calls":939},"delta":{"triangles":5172,"calls":3},"goods":{"near":{"rooms":1,"records":97,"meshes":2,"triangles":13476},"far":{"rooms":1,"records":80,"meshes":1,"triangles":4332},"culledRooms":2,"parentHiddenRooms":7}},
+    {"id":"door-L06","before":{"triangles":1660899,"calls":1144},"after":{"triangles":1661311,"calls":1146},"delta":{"triangles":412,"calls":2},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":2,"records":125,"meshes":2,"triangles":7816},"culledRooms":4,"parentHiddenRooms":4}},
+    {"id":"door-L09","before":{"triangles":1486327,"calls":976},"after":{"triangles":1484059,"calls":976},"delta":{"triangles":-2268,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":1,"parentHiddenRooms":13}},
+    {"id":"door-L10","before":{"triangles":1491495,"calls":963},"after":{"triangles":1489227,"calls":963},"delta":{"triangles":-2268,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":1,"parentHiddenRooms":14}},
+    {"id":"door-L11","before":{"triangles":670739,"calls":382},"after":{"triangles":675431,"calls":383},"delta":{"triangles":4692,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":89,"meshes":1,"triangles":5988},"culledRooms":3,"parentHiddenRooms":6}},
+    {"id":"door-L12","before":{"triangles":685825,"calls":405},"after":{"triangles":700007,"calls":407},"delta":{"triangles":14182,"calls":2},"goods":{"near":{"rooms":1,"records":89,"meshes":2,"triangles":15478},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":2,"parentHiddenRooms":6}},
+    {"id":"interior-L00-school","before":{"triangles":614847,"calls":316},"after":{"triangles":614847,"calls":316},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":14}},
+    {"id":"interior-L01-kiosk","before":{"triangles":684955,"calls":353},"after":{"triangles":705550,"calls":355},"delta":{"triangles":20595,"calls":2},"goods":{"near":{"rooms":1,"records":139,"meshes":2,"triangles":22407},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":15}},
+    {"id":"interior-L02-shophouse","before":{"triangles":1379834,"calls":773},"after":{"triangles":1385066,"calls":776},"delta":{"triangles":5232,"calls":3},"goods":{"near":{"rooms":1,"records":97,"meshes":2,"triangles":13476},"far":{"rooms":1,"records":80,"meshes":1,"triangles":4332},"culledRooms":0,"parentHiddenRooms":11}},
+    {"id":"interior-L06-apartments","before":{"triangles":1548259,"calls":870},"after":{"triangles":1552523,"calls":871},"delta":{"triangles":4264,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":110,"meshes":1,"triangles":6760},"culledRooms":0,"parentHiddenRooms":11}},
+    {"id":"interior-L09-clinic","before":{"triangles":1496676,"calls":936},"after":{"triangles":1494408,"calls":936},"delta":{"triangles":-2268,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":15}},
+    {"id":"interior-L10-hall","before":{"triangles":1475810,"calls":916},"after":{"triangles":1473542,"calls":916},"delta":{"triangles":-2268,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":15}},
+    {"id":"interior-L11-workshop","before":{"triangles":641929,"calls":346},"after":{"triangles":640633,"calls":346},"delta":{"triangles":-1296,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":10}},
+    {"id":"interior-L12-cornerstore","before":{"triangles":655661,"calls":354},"after":{"triangles":669843,"calls":356},"delta":{"triangles":14182,"calls":2},"goods":{"near":{"rooms":1,"records":89,"meshes":2,"triangles":15478},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":9}},
+    {"id":"interior-L13-house","before":{"triangles":665621,"calls":373},"after":{"triangles":679803,"calls":375},"delta":{"triangles":14182,"calls":2},"goods":{"near":{"rooms":1,"records":89,"meshes":2,"triangles":15478},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":8}},
+    {"id":"interior-L18-unfinished","before":{"triangles":1517654,"calls":794},"after":{"triangles":1516898,"calls":794},"delta":{"triangles":-756,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":11}},
+    {"id":"interior-L24-rowhouse","before":{"triangles":1039113,"calls":604},"after":{"triangles":1040109,"calls":605},"delta":{"triangles":996,"calls":1},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":1,"records":152,"meshes":1,"triangles":3264},"culledRooms":0,"parentHiddenRooms":14}},
+    {"id":"interior-L34-tenement","before":{"triangles":1246462,"calls":671},"after":{"triangles":1246462,"calls":671},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}},
+    {"id":"interior-L35-courtyard","before":{"triangles":1314621,"calls":701},"after":{"triangles":1314621,"calls":701},"delta":{"triangles":0,"calls":0},"goods":{"near":{"rooms":0,"records":0,"meshes":0,"triangles":0},"far":{"rooms":0,"records":0,"meshes":0,"triangles":0},"culledRooms":0,"parentHiddenRooms":16}}
+  ]
+}

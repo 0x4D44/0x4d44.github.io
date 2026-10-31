@@ -13,6 +13,7 @@ import { wallsRect } from '../core/physics.js';
 import { makeRng, hashStr } from '../core/rng.js';
 import { collectStories } from './stories.js';
 import { buildInterior as buildMeshes, loadInteriorAssets as preload } from './build.js';
+import { planShopGoods } from './goods.js';
 
 export const loadInteriorAssets = (ctx) => preload(ctx);
 export const buildInterior = (ctx, bp) => buildMeshes(ctx, bp);
@@ -197,7 +198,7 @@ export function furnishBuilding(ctx, bp) {
     try { (room.noFurnish ? R.lightOnly : strip ? R.thin : pickFurnisher(bp, room, L))(L, E, hh); } catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     const removed = L.heal();
     interior.layouts.set(room.id, L);
-    interior.rooms[room.id] = { type: room.type, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };
+    interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };
     // records
     for (const it of L.items) {
       const rec = {
@@ -219,5 +220,6 @@ export function furnishBuilding(ctx, bp) {
   }
   interior.hh = [...E.hhs.values()];
   interior.shopType = E.shopType ?? lot.shop ?? null;
+  planShopGoods(bp);
   collectStories(ctx, bp, E);
 }

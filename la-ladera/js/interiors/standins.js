@@ -411,7 +411,7 @@ S.bench2 = (P, c, T, r) => {
   P.box(c.mat, 0, 0.22, 0, W - 0.1, 0.04, D - 0.1, col);
   P.box('metal_dark', W * 0.34, H, -D * 0.2, 0.12, 0.1, 0.1);                                             // vice
   P.flat(-W * 0.2, H, 0.0, 0.3, 0.04, 0.2, 0x8a7456);
-  if (r.name.includes('cobbler')) for (let i = 0; i < 3; i++) P.flat(-0.5 + i * 0.12, H, -0.15, 0.1, 0.08, 0.1, 0x2a2a2c);
+  if (r.name.includes('cobbler') && !r.flags?.stockReplaced) for (let i = 0; i < 3; i++) P.flat(-0.5 + i * 0.12, H, -0.15, 0.1, 0.08, 0.1, 0x2a2a2c);
 };
 S.ironing = (P, c) => {
   const { W, D } = P, H = c.size[1];
@@ -487,7 +487,7 @@ S.counter = (P, c, T, r) => {
     P.box(c.mat, 0, 0, 0, W, H - 0.05, D, col, NY);
     for (let i = 1; i < 4; i++) P.box('metal_dark', -W / 2 + W * i / 4, 0.05, D / 2 + 0.002, 0.012, H - 0.15, 0.004);
     P.box('formica', 0, H - 0.05, 0, W + 0.02, 0.05, D + 0.02, 0xe8e0d0);
-    for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.1 + u * 0.08, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
+    if (!r.flags?.stockReplaced) for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.1 + u * 0.08, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
     return;
   }
   // shop counters: solid body at the shopkeeper side, glass case at the customer side
@@ -497,7 +497,7 @@ S.counter = (P, c, T, r) => {
     P.box('glass', 0, 0.62, 0.1, W - 0.06, H - 0.62 - 0.02, D - 0.3);
     P.box('metal_chrome', 0, 0.62, 0.1, W - 0.04, 0.012, D - 0.28);
     const pal = GOODS_BY_COUNTER[n] ?? GOODS_BY_COUNTER.shop_counter_glass;
-    for (let i = 0; i < 6; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.2 + i * (W - 0.4) / 5.5, 0.64, 0.1, 0.12 + u * 0.08, 0.08 + u * 0.14, 0.12, pick(pal, P.id, i)); }
+    if (!r.flags?.stockReplaced) for (let i = 0; i < 6; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.2 + i * (W - 0.4) / 5.5, 0.64, 0.1, 0.12 + u * 0.08, 0.08 + u * 0.14, 0.12, pick(pal, P.id, i)); }
   } else P.box(c.mat, 0, H - 0.04, 0, W + 0.04, 0.04, D + 0.04, d(0.8));
   P.box(c.mat, 0, H - 0.01, 0, W + 0.04, 0.03, D + 0.04, d(0.75));
   P.box('metal_dark', 0, 0.06, D / 2 + 0.002, W - 0.1, 0.01, 0.004);
@@ -538,6 +538,7 @@ S.rack = (P, c, T, r) => {
   for (let k = 0; k < rows; k++) {
     const ly = 0.08 + k * (H - 0.12) / rows;
     P.box(mat, 0, ly, 0, W, 0.025, D, col);
+    if (r.flags?.stockReplaced) continue;
     if (tags.includes('bread')) for (let j = 0; j < 4; j++) P.flat(-W / 2 + 0.12 + j * (W - 0.2) / 3.4, ly + 0.025, 0.0, 0.16, 0.07, 0.3, pick([0xc98a4a, 0xa8683a, 0xe8d0b0], P.id, k * 4 + j));
     else if (tags.includes('modista')) for (let j = 0; j < 3; j++) P.flat(-W / 2 + 0.2 + j * (W - 0.3) / 2.6, ly + 0.025, 0.0, 0.2, 0.2, 0.34, pick([0xb23a2a, 0x2f6fbf, 0xe8c332, 0x2f9a58, 0xf0efe8, 0x6a2a52], P.id, k * 3 + j));
     else if (tags.includes('papeleria')) for (let j = 0; j < 4; j++) P.flat(-W / 2 + 0.1 + j * 0.09, ly + 0.025, 0.0, 0.07, 0.16, 0.2, pick([0xd23a32, 0x2f6fbf, 0xe8c332, 0x2f9a58], P.id, k * 4 + j));
@@ -742,7 +743,9 @@ S.shopshelf = (P, c, T, r) => {
   if (g === 'chips') {                                                          // wire spinner of hanging snack bags
     P.box('metal_dark', 0, 0, -D / 2 + 0.01, W, H, 0.02, undefined, NY);
     for (const sx of [-1, 1]) P.box('metal_dark', sx * (W / 2 - 0.015), 0, 0, 0.03, H, D, undefined, NY);
-    for (let k = 0; k < 6; k++) for (let j = 0; j < 3; j++) P.flat(-W / 2 + 0.1 + j * (W - 0.2) / 2.2, 0.25 + k * 0.24, -D / 2 + 0.08, 0.14, 0.2, 0.05, pick([0xd23a32, 0xe8c332, 0x2f6fbf, 0x2f9a58, 0xf0efe8, 0xe8832a], P.id, k * 3 + j));
+    if (r.flags?.stockReplaced) {
+      for (let k = 0; k < 6; k++) P.box('metal_dark', 0, 0.44 + k * 0.24, -D / 2 + 0.06, W - 0.05, 0.01, 0.01);
+    } else for (let k = 0; k < 6; k++) for (let j = 0; j < 3; j++) P.flat(-W / 2 + 0.1 + j * (W - 0.2) / 2.2, 0.25 + k * 0.24, -D / 2 + 0.08, 0.14, 0.2, 0.05, pick([0xd23a32, 0xe8c332, 0x2f6fbf, 0x2f9a58, 0xf0efe8, 0xe8832a], P.id, k * 3 + j));
     return;
   }
   P.box(c.mat, -W / 2 + 0.02, 0, 0, 0.04, H, D, col, NY);
@@ -753,6 +756,7 @@ S.shopshelf = (P, c, T, r) => {
     const ly = k === rows ? H - 0.03 : k === 0 ? 0.06 : 0.06 + (H - 0.09) * k / rows;
     P.box(c.mat, 0, ly, 0, W - 0.08, 0.03, D, col);
     if (k === rows) break;
+    if (r.flags?.stockReplaced) continue;
     const slotH = (H - 0.09) / rows - 0.04;
     let x = -W / 2 + 0.07, j = 0;
     while (x < W / 2 - 0.1 && j < 14) {
@@ -771,13 +775,13 @@ S.crates = (P, c, T, r) => {
     const y = k * ch;
     P.box('wood_pine', 0, y, 0, W, ch, D, undefined, k ? undefined : NY);
     P.box('wood_dark', 0, y + ch * 0.45, D / 2 + 0.002, W - 0.04, 0.02, 0.004);
-    if (c.fruit) {
+    if (c.fruit && !r.flags?.stockReplaced) {
       const top = k === stack - 1 || stack === 1;
       for (let j = 0; j < (top ? 9 : 5); j++) { const u = u01(P.id, k * 11 + j); P.sphere(c.fruit, -W * 0.34 + (j % 3) * W * 0.34, y + ch + 0.01, -D * 0.28 + Math.floor(j / 3) * D * 0.28, 0.065 + u * 0.01, 0.05, 0.065 + u * 0.01); }
     }
   }
 };
-S.fruitstand = (P, c) => {
+S.fruitstand = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1];
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) P.box('wood_pine', sx * (W / 2 - 0.04), 0, sz * (D / 2 - 0.04), 0.06, H * 0.7, 0.06, undefined, NY);
   for (let k = 0; k < 2; k++) {
@@ -785,16 +789,16 @@ S.fruitstand = (P, c) => {
     P.box('wood_pine', 0, y, k * -0.1, W, 0.04, dd);
     P.box('wood_pine', 0, y + 0.04, dd / 2 - 0.1 + k * -0.1, W, 0.08, 0.03);
     const fr = k ? ['food_mango', 'food_lulo', 'food_tomato'] : ['food_banana', 'food_tomato', 'food_veg'];
-    for (let j = 0; j < 12; j++) { const u = u01(P.id, k * 20 + j); P.sphere(fr[j % 3], -W / 2 + 0.15 + (j % 6) * (W - 0.3) / 5, y + 0.1, -dd * 0.25 + Math.floor(j / 6) * dd * 0.45 - k * 0.1, 0.07 + u * 0.015, 0.055, 0.07); }
+    if (!r.flags?.stockReplaced) for (let j = 0; j < 12; j++) { const u = u01(P.id, k * 20 + j); P.sphere(fr[j % 3], -W / 2 + 0.15 + (j % 6) * (W - 0.3) / 5, y + 0.1, -dd * 0.25 + Math.floor(j / 6) * dd * 0.45 - k * 0.1, 0.07 + u * 0.015, 0.055, 0.07); }
   }
   P.box('curtain_fabric', 0, H * 0.7, -D / 2 + 0.02, W, H * 0.3, 0.02, 0x2f9a58);                         // awning strip
 };
-S.chopblock = (P, c) => {
+S.chopblock = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1];
   P.box('wood_pine', 0, 0, 0, W - 0.1, H - 0.2, D - 0.1, 0xb8905a, NY);
   P.box('wood_pine', 0, H - 0.2, 0, W, 0.2, D, 0xc8a070);
   P.box('metal_steel', 0.1, H, 0.05, 0.22, 0.02, 0.08); P.box('wood_dark', -0.04, H, 0.05, 0.12, 0.025, 0.03);
-  P.flat(-0.2, H, -0.1, 0.2, 0.03, 0.14, 0xa8403c);
+  if (!r.flags?.stockReplaced) P.flat(-0.2, H, -0.1, 0.2, 0.03, 0.14, 0xa8403c);
 };
 S.oven = (P, c) => {
   const { W, D } = P, H = c.size[1];

@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "complete": true,
+  "assets": 58,
+  "lods": 58,
+  "categories": [
+    "bottle",
+    "bread",
+    "cafe",
+    "cheese",
+    "fabric",
+    "flower",
+    "fruit",
+    "hardware",
+    "jar",
+    "meat",
+    "newspaper",
+    "pharmacy",
+    "sack",
+    "shoes",
+    "snacks",
+    "stationery",
+    "tin",
+    "toy",
+    "vegetable"
+  ],
+  "bytes": 1266492,
+  "budget": 2000000,
+  "files": [
+    {
+      "path": "assets/models/manifest.goods.json",
+      "bytes": 22958
+    },
+    {
+      "path": "js/interiors/goods-catalog.js",
+      "bytes": 12879
+    },
+    {
+      "path": "js/interiors/goods-assortments.js",
+      "bytes": 6615
+    },
+    {
+      "path": "assets/models/goods/goods.glb",
+      "bytes": 917940
+    },
+    {
+      "path": "assets/textures/goods_labels.png",
+      "bytes": 306100
+    }
+  ],
+  "maxTriangles": 326,
+  "maxLodTriangles": 142,
+  "errors": [],
+  "warnings": [],
+  "shops": 14,
+  "fixtures": 32,
+  "atlas": {
+    "file": "goods_labels.png",
+    "dimensions": [
+      1024,
+      1024
+    ],
+    "labels": 16
+  }
+}

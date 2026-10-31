@@ -1,0 +1,185 @@
+TAP version 13
+# \# interiors: 42 buildings, 5811 records; meshes/building median 23 max 31; triangles median 12812 max 45614; stand-in primitives 34051
+# Subtest: every catalogue archetype has a stand-in drawer
+ok 1 - every catalogue archetype has a stand-in drawer
+  ---
+  duration_ms: 0.998025
+  type: 'test'
+  ...
+# Subtest: a stand-in stays inside its footprint box and below its catalogue height
+ok 2 - a stand-in stays inside its footprint box and below its catalogue height
+  ---
+  duration_ms: 141.383257
+  type: 'test'
+  ...
+# Subtest: interior meshes: library materials only, finite, inside the rooms, bounded draw calls
+ok 3 - interior meshes: library materials only, finite, inside the rooms, bounded draw calls
+  ---
+  duration_ms: 1423.309455
+  type: 'test'
+  ...
+# Subtest: furnishing raises no errors and every building gets furniture
+ok 4 - furnishing raises no errors and every building gets furniture
+  ---
+  duration_ms: 1.131907
+  type: 'test'
+  ...
+# Subtest: furniture lies inside its room and never overlaps other furniture
+ok 5 - furniture lies inside its room and never overlaps other furniture
+  ---
+  duration_ms: 35.730557
+  type: 'test'
+  ...
+# Subtest: doors and stairs keep >= 0.7 m clear in front of them
+ok 6 - doors and stairs keep >= 0.7 m clear in front of them
+  ---
+  duration_ms: 19.438756
+  type: 'test'
+  ...
+# Subtest: the first 3 m inside every street door stay free of furniture
+ok 7 - the first 3 m inside every street door stay free of furniture
+  ---
+  duration_ms: 6.064495
+  type: 'test'
+  ...
+# Subtest: every non-circulation room has >= 3 pieces of furniture or decor
+ok 8 - every non-circulation room has >= 3 pieces of furniture or decor
+  ---
+  duration_ms: 1.222384
+  type: 'test'
+  ...
+# Subtest: homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)
+ok 9 - homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)
+  ---
+  duration_ms: 5079.466621
+  type: 'test'
+  ...
+# Subtest: anchors: every seat, bed, stove and shop counter has one; anchors stand in free space
+ok 10 - anchors: every seat, bed, stove and shop counter has one; anchors stand in free space
+  ---
+  duration_ms: 10.819638
+  type: 'test'
+  ...
+# Subtest: rooms get a finish made of known materials
+ok 11 - rooms get a finish made of known materials
+  ---
+  duration_ms: 0.779146
+  type: 'test'
+  ...
+# Subtest: catalogue names used by furniture records all exist; lights carry the contract fields
+ok 12 - catalogue names used by furniture records all exist; lights carry the contract fields
+  ---
+  duration_ms: 2.21493
+  type: 'test'
+  ...
+# Subtest: furnishing is deterministic for a given seed and differs between seeds
+ok 13 - furnishing is deterministic for a given seed and differs between seeds
+  ---
+  duration_ms: 3694.830816
+  type: 'test'
+  ...
+# Subtest: the same lot seed always yields the same household regardless of other buildings
+ok 14 - the same lot seed always yields the same household regardless of other buildings
+  ---
+  duration_ms: 2302.501599
+  type: 'test'
+  ...
+# Subtest: the synthetic plans themselves are fully walkable (so a failure below is the furniture)
+ok 15 - the synthetic plans themselves are fully walkable (so a failure below is the furniture)
+  ---
+  duration_ms: 3541.605627
+  type: 'test'
+  ...
+# Subtest: furnished rooms, door landings and stairs stay reachable from the street
+ok 16 - furnished rooms, door landings and stairs stay reachable from the street
+  ---
+  duration_ms: 10.207074
+  type: 'test'
+  ...
+# Subtest: walking the found paths with physics.move() never gets blocked
+ok 17 - walking the found paths with physics.move() never gets blocked
+  ---
+  duration_ms: 11.713446
+  type: 'test'
+  ...
+# Subtest: every standing anchor (cook, counter, sweep, greet...) is connected to a door
+ok 18 - every standing anchor (cook, counter, sweep, greet...) is connected to a door
+  ---
+  duration_ms: 12.354943
+  type: 'test'
+  ...
+# Subtest: no errors while telling stories, and every building has interactables
+ok 19 - no errors while telling stories, and every building has interactables
+  ---
+  duration_ms: 1.058276
+  type: 'test'
+  ...
+# Subtest: the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line
+ok 20 - the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line
+  ---
+  duration_ms: 0.954931
+  type: 'test'
+  ...
+# Subtest: each discovery stands on a floor of its own building, inside a room, on free floor
+ok 21 - each discovery stands on a floor of its own building, inside a room, on free floor
+  ---
+  duration_ms: 6.737871
+  type: 'test'
+  ...
+# Subtest: every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks
+ok 22 - every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks
+  ---
+  duration_ms: 2.835006
+  type: 'test'
+  ...
+# Subtest: interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)
+ok 23 - interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)
+  ---
+  duration_ms: 79.673581
+  type: 'test'
+  ...
+# Subtest: every reachable seat can be sat on; the sofas and armchairs of each home are offered
+ok 24 - every reachable seat can be sat on; the sofas and armchairs of each home are offered
+  ---
+  duration_ms: 2.647503
+  type: 'test'
+  ...
+# Subtest: stories are deterministic: the same plan tells the same stories
+ok 25 - stories are deterministic: the same plan tells the same stories
+  ---
+  duration_ms: 2855.58527
+  type: 'test'
+  ...
+# Subtest: texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story
+ok 26 - texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story
+  ---
+  duration_ms: 2.407231
+  type: 'test'
+  ...
+# Subtest: clock words: Spanish time of day in words
+ok 27 - clock words: Spanish time of day in words
+  ---
+  duration_ms: 1.197677
+  type: 'test'
+  ...
+# Subtest: ceiling fans: switching changes the target speed and the prompt follows
+ok 28 - ceiling fans: switching changes the target speed and the prompt follows
+  ---
+  duration_ms: 0.275766
+  type: 'test'
+  ...
+# Subtest: sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted
+ok 29 - sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted
+  ---
+  duration_ms: 1.097965
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 44619.242377

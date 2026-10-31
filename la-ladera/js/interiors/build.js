@@ -12,6 +12,7 @@ import { drawStandin, setAtlas, tintFor, u01 } from './standins.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
 import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
+import { prepareGoodsAssets, buildGoods } from './goods-render.js';
 
 const M = new THREE.Matrix4(), S = new THREE.Matrix4();
 const MAX_REPORTED = 12;
@@ -19,6 +20,7 @@ const MAX_REPORTED = 12;
 /** Preload the GLBs of every catalogue key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). */
 export async function loadInteriorAssets(ctx) {
   ctx.interiorGlb = new Set();
+  ctx.goodsAssets = { atlasReady: false, keys: [], missing: [] };
   try {
     const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
     if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
@@ -30,6 +32,7 @@ export async function loadInteriorAssets(ctx) {
   if (!names.length) return;
   try { await a.preload(names); } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'preload ' + String(e?.message ?? e) }); }
   for (const n of names) { const e = a.meta(n); if (e && a.loaded?.has(e.glb)) ctx.interiorGlb.add(n); }
+  await prepareGoodsAssets(ctx);
 }
 
 const _tc = new THREE.Color();
@@ -39,6 +42,7 @@ const _tc = new THREE.Color();
  *   tint            the part takes the record's tint (its vertex colours, if it has any, are shades that multiply the tint)
  *   made / unmade   drawn only for a made / an unmade bed (rec.flags.unmade)
  *   magnets         drawn only when the record asks for fridge magnets (rec.flags.magnets)
+ *   stock           optional procedural stock in a furniture GLB; omitted only when the goods library supplied the whole fixture
  *   p<a-z><k>       one of several alternatives of channel <a-z>: exactly one k is drawn, picked by the record id
  * Anything else is always drawn. A part keeps its own library material (the glTF material name) and its own vertex colours.
  */
@@ -56,7 +60,7 @@ export function glbParts(ctx, name) {
       const flags = o.name.split('-').slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
       parts.push({
         geometry, matKey: (Array.isArray(o.material) ? o.material[0] : o.material).name || 'missing_asset', colored: !!geometry.attributes.color,
-        tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
+        tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'), stock: flags.includes('stock'),
         ch: pick ? pick[1] : null, k: pick ? +pick[2] : 0, tinted: new Map(),
       });
     });
@@ -92,6 +96,7 @@ function drawGlb(ctx, b, rec, c) {
   const chosen = {};
   let n = 0;
   for (const p of parts) {
+    if (p.stock && rec.flags?.stockReplaced) continue;
     if (p.made && unmade) continue;
     if (p.unmade && !unmade) continue;
     if (p.magnets && !rec.flags?.magnets) continue;
@@ -115,14 +120,19 @@ export function buildInterior(ctx, bp) {
   const b = group.builder;
   b.setBasePose(lot.x ?? 0, lot.y ?? 0, lot.z ?? 0, lot.rotY ?? 0);
   const glb = ctx.interiorGlb, st = { records: recs.length, glb: 0, standin: 0, prims: 0, failed: 0 };
+  const goods = buildGoods(ctx, bp, group);
+  st.goods = goods.stats;
   let reported = 0;
   for (const rec of recs) {
     const c = rec.decal ? decalDef(rec.decal) : CATALOG[rec.name];
     if (!c) { st.failed++; continue; }
     try {
       let n = 0;
-      if (glb?.has(rec.name)) n = drawGlb(ctx, b, rec, c);
-      if (n) st.glb++; else { n = drawStandin(b, rec, c); st.standin++; }
+      const rendered = goods.replaced.has(rec.id) ? { ...rec, flags: { ...rec.flags, stockReplaced: true } } : rec;
+      if (glb?.has(rec.name)) n = drawGlb(ctx, b, rendered, c);
+      if (n) st.glb++; else {
+        n = drawStandin(b, rendered, c); st.standin++;
+      }
       st.prims += n;
     } catch (e) {
       st.failed++;
