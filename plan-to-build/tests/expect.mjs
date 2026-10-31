@@ -11,8 +11,8 @@
 
 // ---- the film as a whole
 export const FILM = {
-  chapters: 20,            // player chips. 18 -> 19 when PLASTER & PAINT was added, 19 -> 20 with the WALK-THROUGH (the tour); a facade would make it 21
-  seconds: 252.43,         // T_END = S + 83 s (the HOME orbit ends) + 51.5 s (the tour). 15,146 frames at 60 fps
+  chapters: 21,            // player chips. 18 -> 19 when PLASTER & PAINT was added, 19 -> 20 with the WALK-THROUGH (the tour), 20 -> 21 with the FACADE (inserted before the tour)
+  seconds: 266.93,         // T_END = S + 83 s (the HOME orbit ends) + 14.5 s (the facade lap) + 51.5 s (the tour). 16,016 frames at 60 fps
   secondsTol: 0.01,
 };
 
@@ -118,7 +118,28 @@ export const EXPORT = {
 // ---- the catalogue entry (catalog.test.mjs)
 export const CATALOG = { slug: "plan-to-build" };
 
-// ---- the first-person tour (tour.test.mjs). Z = the moment the HOME orbit ends and the walk begins: T3.walk[0][0] = S + 83 s. Times below are seconds after Z.
+// ---- the facade (facade.test.mjs): mineral render over the insulation and cedar boarding in panels, on every elevation. Times are seconds after S + 83 (the HOME orbit ends).
+export const FACADE = {
+  chapter: "FACADE",         // the chip that opens it (found by name); it starts at S + 83
+  after: 83,                 // seconds after S at which the facade starts: the end of the HOME orbit
+  seconds: 14.5,             // one lap of the building; the tour starts when it ends
+  lapDegrees: 360,           // the camera goes once round and ends on the pose it began with, so the hand-over to the tour does not move
+  order: ["N", "W", "S", "E"],   // the elevations are worked in the order the camera meets them
+  windowMin: 4,              // each elevation takes at least this long (s)
+  panelMin: 600,             // mm: a cedar panel narrower than this is a strip, not a panel
+  clear: 150,                // mm: a panel edge stands at least this far from an opening, or the board ends look cut through it
+  share: [0.15, 0.7],        // the cedar share of every elevation's length: both finishes show on every face
+  sampleY: 2.5,              // m: the height at which the render and the cedar are sampled (above the window heads, under the roof)
+  plinthY: 0.15,             // m: the height at which the plinth is sampled
+  plinthTop: 0.3,            // m: the top of the dark plinth
+  sampleMin: 600,            // mm: a stretch of an elevation shorter than this is not sampled
+  chromaCedar: 50, chromaRender: 45,   // channel spread (max - min of r, g, b, 0..255): cedar is clearly coloured, render is nearly white
+  lumRender: 140, lumPlinthMax: 85,    // render is at least this bright, the plinth at most this dark (0..255)
+  apart: 60,                 // render and cedar of one elevation differ by at least this much (sum of channel differences) once finished, and by under 25 before
+  together: 25,
+};
+
+// ---- the first-person tour (tour.test.mjs). Z = the moment the facade lap ends and the walk begins: T3.walk[0][0] = S + 83 + 14.5 s. Times below are seconds after Z.
 export const TOUR = {
   chapter: "WALK-THROUGH",    // the chip that opens the tour (found by name); it starts within [Z - 1, Z]
   seconds: 51.5,              // the tour's length: Z to the end of the film
