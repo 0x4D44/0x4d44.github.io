@@ -138,37 +138,39 @@ function shrine(K, stats) {
   if (!best) return;
   const ry = Math.atan2(-best.nx, -best.nz), P = localToWorld(best.x, best.z, ry), y = pl.y, b = K.b('feature', best.x, best.z);
   const box = (mat, lx, ly, lz, sx, sy, sz) => { const [x, z] = P(lx, lz); b.box(mat, x, y + ly, z, sx, sy, sz, { ry, col: W }); };
-  box('stone_wall', 0, 0.275, 0, 1.9, 0.55, 0.8);                                // plinth
-  box('plaster_a#f1ece0', 0, 1.7, -0.275, 1.5, 2.3, 0.25);                       // white wall behind
-  box('plaster_a#9fc4e8', 0, 1.375, -0.14, 0.95, 1.65, 0.03);                    // blue niche
-  { const [x, z] = P(0, -0.14), [x2, z2] = P(0, -0.125); tube(b, 'plaster_a#9fc4e8', [x, y + 2.2, z], [x2, y + 2.2, z2], 0.475, 0.475, 14, { col: W }); }
-  box('plaster_a#f1ece0', 0.84, 0.95, -0.02, 0.16, 0.8, 0.5); box('plaster_a#f1ece0', -0.84, 0.95, -0.02, 0.16, 0.8, 0.5);   // low wings
-  box('roof_tile_clay', 0, 2.95, -0.1, 2.1, 0.12, 0.95);                          // roof
-  box('plaster_a#f1ece0', 0, 3.1, -0.1, 0.1, 0.22, 0.1);
-  box('iron_black', 0, 3.38, -0.1, 0.05, 0.4, 0.05); box('iron_black', 0, 3.45, -0.1, 0.26, 0.05, 0.05);   // little iron cross
-  // statue on a pedestal: robe, blue mantle, head, gold halo
-  box('plaster_a#e8e2d4', 0, 0.68, -0.04, 0.5, 0.26, 0.34);
-  {
-    const [x, z] = P(0, -0.04), top = y + 0.81;
-    b.cyl('plaster_a#f5f2ea', x, top, z, 0.24, 0.8, 10, { r1: 0.085, col: W });
-    b.cyl('plaster_a#6f93c9', x, top + 0.04, z, 0.255, 0.62, 10, { r1: 0.11, col: W });
-    b.cyl('plaster_a#e8c8a8', x, top + 0.78, z, 0.07, 0.15, 8, { col: W });
-    const [h0x, h0z] = P(0, -0.1), [h1x, h1z] = P(0, -0.09);
-    tube(b, 'gold', [h0x, top + 0.9, h0z], [h1x, top + 0.9, h1z], 0.19, 0.19, 14, { col: W });
+  if (!K.ctx.clutter?.fit('clutter_shrine', best.x, y, best.z, ry, [1.9, 3.5, 0.95], { scene: 'plaza' })) {
+    box('stone_wall', 0, 0.275, 0, 1.9, 0.55, 0.8);                                // plinth
+    box('plaster_a#f1ece0', 0, 1.7, -0.275, 1.5, 2.3, 0.25);                       // white wall behind
+    box('plaster_a#9fc4e8', 0, 1.375, -0.14, 0.95, 1.65, 0.03);                    // blue niche
+    { const [x, z] = P(0, -0.14), [x2, z2] = P(0, -0.125); tube(b, 'plaster_a#9fc4e8', [x, y + 2.2, z], [x2, y + 2.2, z2], 0.475, 0.475, 14, { col: W }); }
+    box('plaster_a#f1ece0', 0.84, 0.95, -0.02, 0.16, 0.8, 0.5); box('plaster_a#f1ece0', -0.84, 0.95, -0.02, 0.16, 0.8, 0.5);   // low wings
+    box('roof_tile_clay', 0, 2.95, -0.1, 2.1, 0.12, 0.95);                          // roof
+    box('plaster_a#f1ece0', 0, 3.1, -0.1, 0.1, 0.22, 0.1);
+    box('iron_black', 0, 3.38, -0.1, 0.05, 0.4, 0.05); box('iron_black', 0, 3.45, -0.1, 0.26, 0.05, 0.05);   // little iron cross
+    // statue on a pedestal: robe, blue mantle, head, gold halo
+    box('plaster_a#e8e2d4', 0, 0.68, -0.04, 0.5, 0.26, 0.34);
+    {
+      const [x, z] = P(0, -0.04), top = y + 0.81;
+      b.cyl('plaster_a#f5f2ea', x, top, z, 0.24, 0.8, 10, { r1: 0.085, col: W });
+      b.cyl('plaster_a#6f93c9', x, top + 0.04, z, 0.255, 0.62, 10, { r1: 0.11, col: W });
+      b.cyl('plaster_a#e8c8a8', x, top + 0.78, z, 0.07, 0.15, 8, { col: W });
+      const [h0x, h0z] = P(0, -0.1), [h1x, h1z] = P(0, -0.09);
+      tube(b, 'gold', [h0x, top + 0.9, h0z], [h1x, top + 0.9, h1z], 0.19, 0.19, 14, { col: W });
+    }
+    // iron grille in front of the niche, candles and flowers on the ledge
+    for (let i = -6; i <= 6; i++) { const [x, z] = P(i * 0.14, 0.34); tube(b, 'iron_black', [x, y + 0.55, z], [x, y + 1.85, z], 0.011, 0.011, 4, { col: W, caps: false }); }
+    box('iron_black', 0, 1.85, 0.34, 1.7, 0.03, 0.03); box('iron_black', 0, 0.6, 0.34, 1.7, 0.03, 0.03); box('iron_black', 0, 1.2, 0.34, 1.7, 0.02, 0.02);
+    for (let i = 0; i < 6; i++) {
+      const [x, z] = P(-0.62 + i * 0.25, 0.2); b.cyl('candle_wax', x, y + 0.55, z, 0.024, 0.12 + (i % 3) * 0.03, 6, { col: W });
+      b.cyl('candle_flame', x, y + 0.67 + (i % 3) * 0.03, z, 0.009, 0.03, 4, { col: W });
+    }
+    for (const sx of [-0.7, 0.7]) {
+      const [x, z] = P(sx, 0.16);
+      b.cyl('plaster_a#d8d0c0', x, y + 0.55, z, 0.07, 0.2, 8, { r1: 0.05, col: W });
+      shrub(K, x, z, { rng: K.rng('shrine:' + sx), size: 0.4, flowers: true, dy: 0.7, cards: 4, tile: TILE.FLOWERS, leaf: rgb(0xffffff) });
+    }
+    { const [x, z] = P(0, 0.62); b.box('stone_wall', x, y + 0.04, z, 1.3, 0.08, 0.3, { ry, col: W }); }   // a step to kneel on
   }
-  // iron grille in front of the niche, candles and flowers on the ledge
-  for (let i = -6; i <= 6; i++) { const [x, z] = P(i * 0.14, 0.34); tube(b, 'iron_black', [x, y + 0.55, z], [x, y + 1.85, z], 0.011, 0.011, 4, { col: W, caps: false }); }
-  box('iron_black', 0, 1.85, 0.34, 1.7, 0.03, 0.03); box('iron_black', 0, 0.6, 0.34, 1.7, 0.03, 0.03); box('iron_black', 0, 1.2, 0.34, 1.7, 0.02, 0.02);
-  for (let i = 0; i < 6; i++) {
-    const [x, z] = P(-0.62 + i * 0.25, 0.2); b.cyl('candle_wax', x, y + 0.55, z, 0.024, 0.12 + (i % 3) * 0.03, 6, { col: W });
-    b.cyl('candle_flame', x, y + 0.67 + (i % 3) * 0.03, z, 0.009, 0.03, 4, { col: W });
-  }
-  for (const sx of [-0.7, 0.7]) {
-    const [x, z] = P(sx, 0.16);
-    b.cyl('plaster_a#d8d0c0', x, y + 0.55, z, 0.07, 0.2, 8, { r1: 0.05, col: W });
-    shrub(K, x, z, { rng: K.rng('shrine:' + sx), size: 0.4, flowers: true, dy: 0.7, cards: 4, tile: TILE.FLOWERS, leaf: rgb(0xffffff) });
-  }
-  { const [x, z] = P(0, 0.62); b.box('stone_wall', x, y + 0.04, z, 1.3, 0.08, 0.3, { ry, col: W }); }   // a step to kneel on
   K.rect(...P(0, 0), 1.9, 0.8, ry, 3.0, y); K.occ.take(...P(0, 0.1), 1.3);
   const [lx, lz] = P(0, 0.5);
   K.ctx.lights.add({ x: lx, y: y + 1.0, z: lz, color: 0xffb060, intensity: 3.2, distance: 6, kind: 'candle', flicker: 0.5 });

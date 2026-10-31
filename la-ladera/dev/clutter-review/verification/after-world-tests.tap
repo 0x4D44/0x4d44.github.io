@@ -1,0 +1,442 @@
+TAP version 13
+# Subtest: the facade is dressed without a fault, and every kind of dressing really shows up on the real barrio
+ok 1 - the facade is dressed without a fault, and every kind of dressing really shows up on the real barrio
+  ---
+  duration_ms: 2.091915
+  type: 'test'
+  ...
+# Subtest: nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias and blade signs keep clear of every opening
+ok 2 - nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias and blade signs keep clear of every opening
+  ---
+  duration_ms: 1.322174
+  type: 'test'
+  ...
+# Subtest: awnings and door canopies hang over their door but never over a window
+ok 3 - awnings and door canopies hang over their door but never over a window
+  ---
+  duration_ms: 0.373503
+  type: 'test'
+  ...
+# Subtest: balconies and miradores belong to a front window, stay clear of each other and of the shop fascia, and fit under the next slab
+ok 4 - balconies and miradores belong to a front window, stay clear of each other and of the shop fascia, and fit under the next slab
+  ---
+  duration_ms: 0.4504
+  type: 'test'
+  ...
+# Subtest: everything stands within reach of its wall and below the parapet line; rooftop rooms sit inside the roof, set back from the street
+ok 5 - everything stands within reach of its wall and below the parapet line; rooftop rooms sit inside the roof, set back from the street
+  ---
+  duration_ms: 5.554367
+  type: 'test'
+  ...
+# Subtest: every lot that is named like a shop or an institution gets lettering over its door, and lettering is deterministic
+ok 6 - every lot that is named like a shop or an institution gets lettering over its door, and lettering is deterministic
+  ---
+  duration_ms: 3.022899
+  type: 'test'
+  ...
+# Subtest: the same lots dress identically twice (no Math.random, no state leaking between builds)
+ok 7 - the same lots dress identically twice (no Math.random, no state leaking between builds)
+  ---
+  duration_ms: 339.405979
+  type: 'test'
+  ...
+# Subtest: without a canvas (Node) the atlas is absent and the signs fall back to flat boards: no crash, no atlas material
+ok 8 - without a canvas (Node) the atlas is absent and the signs fall back to flat boards: no crash, no atlas material
+  ---
+  duration_ms: 0.708779
+  type: 'test'
+  ...
+# Subtest: a sign painter that throws leaves the atlas standing, writes nothing to the console, and is reported through ctx.errors
+ok 9 - a sign painter that throws leaves the atlas standing, writes nothing to the console, and is reported through ctx.errors
+  ---
+  duration_ms: 11.089274
+  type: 'test'
+  ...
+# Subtest: complete clutter library ships all 19 requested families and cheaper LODs under the byte budget
+ok 10 - complete clutter library ships all 19 requested families and cheaper LODs under the byte budget
+  ---
+  duration_ms: 111.298898
+  type: 'test'
+  ...
+# Subtest: exported bin, shutter and sign decals select their intended atlas cells and remain upright
+ok 11 - exported bin, shutter and sign decals select their intended atlas cells and remain upright
+  ---
+  duration_ms: 146.952898
+  type: 'test'
+  ...
+# Subtest: TEETH: Blender-style vertical UV reversal is caught even though every UV remains inside 0..1
+ok 12 - TEETH: Blender-style vertical UV reversal is caught even though every UV remains inside 0..1
+  ---
+  duration_ms: 131.455767
+  type: 'test'
+  ...
+# Subtest: TEETH: a manifest with no generated library cannot pass complete mode
+ok 13 - TEETH: a manifest with no generated library cannot pass complete mode
+  ---
+  duration_ms: 10.484512
+  type: 'test'
+  ...
+# Subtest: TEETH: missing GLB is detected even when all catalogue entries still exist
+ok 14 - TEETH: missing GLB is detected even when all catalogue entries still exist
+  ---
+  duration_ms: 7.742988
+  type: 'test'
+  ...
+# Subtest: TEETH: material names must resolve through the actual library definitions
+ok 15 - TEETH: material names must resolve through the actual library definitions
+  ---
+  duration_ms: 11.009034
+  type: 'test'
+  ...
+# Subtest: TEETH: GLB textures are forbidden even when their URI is external
+ok 16 - TEETH: GLB textures are forbidden even when their URI is external
+  ---
+  duration_ms: 8.312015
+  type: 'test'
+  ...
+# Subtest: TEETH: corrupt binary positions are caught independently of plausible accessor min/max
+ok 17 - TEETH: corrupt binary positions are caught independently of plausible accessor min/max
+  ---
+  duration_ms: 16.888871
+  type: 'test'
+  ...
+# Subtest: TEETH: forged accessor bounds cannot hide geometry outside the footprint
+ok 18 - TEETH: forged accessor bounds cannot hide geometry outside the footprint
+  ---
+  duration_ms: 13.981316
+  type: 'test'
+  ...
+# Subtest: TEETH: invalid index ranges are rejected rather than counted as triangles
+ok 19 - TEETH: invalid index ranges are rejected rather than counted as triangles
+  ---
+  duration_ms: 13.373179
+  type: 'test'
+  ...
+# Subtest: TEETH: manifest triangle counts are independently measured
+ok 20 - TEETH: manifest triangle counts are independently measured
+  ---
+  duration_ms: 126.475015
+  type: 'test'
+  ...
+# Subtest: TEETH: actual over-budget geometry fails even with truthful manifest triangle counts
+ok 21 - TEETH: actual over-budget geometry fails even with truthful manifest triangle counts
+  ---
+  duration_ms: 122.106126
+  type: 'test'
+  ...
+# Subtest: TEETH: a too-small declared footprint fails even when geometry itself is valid
+ok 22 - TEETH: a too-small declared footprint fails even when geometry itself is valid
+  ---
+  duration_ms: 120.1665
+  type: 'test'
+  ...
+# Subtest: TEETH: missing LOD and runtime registration cannot pass the complete gate
+ok 23 - TEETH: missing LOD and runtime registration cannot pass the complete gate
+  ---
+  duration_ms: 78.729552
+  type: 'test'
+  ...
+# Subtest: TEETH: an LOD that repeats the full-detail tyre is rejected using measured triangle counts
+ok 24 - TEETH: an LOD that repeats the full-detail tyre is rejected using measured triangle counts
+  ---
+  duration_ms: 112.442031
+  type: 'test'
+  ...
+# Subtest: TEETH: a removed atlas or a second texture fails validation
+ok 25 - TEETH: a removed atlas or a second texture fails validation
+  ---
+  duration_ms: 76.255039
+  type: 'test'
+  ...
+# Subtest: TEETH: corrupt atlas image bytes fail even when PNG dimensions remain correct
+ok 26 - TEETH: corrupt atlas image bytes fail even when PNG dimensions remain correct
+  ---
+  duration_ms: 81.390089
+  type: 'test'
+  ...
+# Subtest: TEETH: unregistered payload bytes count towards the strict 2 MB budget
+ok 27 - TEETH: unregistered payload bytes count towards the strict 2 MB budget
+  ---
+  duration_ms: 56.158576
+  type: 'test'
+  ...
+# Subtest: TEETH: catalogue paths cannot escape the model directory
+ok 28 - TEETH: catalogue paths cannot escape the model directory
+  ---
+  duration_ms: 5.028895
+  type: 'test'
+  ...
+# Subtest: a manifest without its loaded GLB preserves the procedural bin; disabled clutter makes no load request
+ok 29 - a manifest without its loaded GLB preserves the procedural bin; disabled clutter makes no load request
+  ---
+  duration_ms: 21.240875
+  type: 'test'
+  ...
+# Subtest: an absent LOD node prevents replacement even when the near node and manifest entry are present
+ok 30 - an absent LOD node prevents replacement even when the near node and manifest entry are present
+  ---
+  duration_ms: 58.986381
+  type: 'test'
+  ...
+# Subtest: real clutter switches near -> low -> hidden; instance slots never draw both LODs and distant teleports refresh immediately
+ok 31 - real clutter switches near -> low -> hidden; instance slots never draw both LODs and distant teleports refresh immediately
+  ---
+  duration_ms: 60.141914
+  type: 'test'
+  ...
+# Subtest: building fixtures retain their world location and support height after replacing procedural meshes
+ok 32 - building fixtures retain their world location and support height after replacing procedural meshes
+  ---
+  duration_ms: 39.84978
+  type: 'test'
+  ...
+# Subtest: parked helmets use the actual seat surface for both level shop-front bikes and sloping kerb bikes
+ok 33 - parked helmets use the actual seat surface for both level shop-front bikes and sloping kerb bikes
+  ---
+  duration_ms: 33.164998
+  type: 'test'
+  ...
+# Subtest: new ground clutter keeps full footprints clear of doors and nav lanes, and blank wall panels exclude all openings
+ok 34 - new ground clutter keeps full footprints clear of doors and nav lanes, and blank wall panels exclude all openings
+  ---
+  duration_ms: 650.538937
+  type: 'test'
+  ...
+# Subtest: poster and graffiti UVs all stay inside separate atlas gutters
+ok 35 - poster and graffiti UVs all stay inside separate atlas gutters
+  ---
+  duration_ms: 6.547125
+  type: 'test'
+  ...
+# Subtest: the build is clean: no module error, no unknown material, every group flushed
+ok 36 - the build is clean: no module error, no unknown material, every group flushed
+  ---
+  duration_ms: 2.939644
+  type: 'test'
+  ...
+# Subtest: discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+ok 37 - discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+  ---
+  duration_ms: 0.448116
+  type: 'test'
+  ...
+# Subtest: discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+ok 38 - discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+  ---
+  duration_ms: 1.988849
+  type: 'test'
+  ...
+# Subtest: TEETH: a point on a lot wall counts as "pushed by a collider"
+ok 39 - TEETH: a point on a lot wall counts as "pushed by a collider"
+  ---
+  duration_ms: 1.350436
+  type: 'test'
+  ...
+# Subtest: the signage and the living props all got a place (counts, not just "no error")
+ok 40 - the signage and the living props all got a place (counts, not just "no error")
+  ---
+  duration_ms: 13.794053
+  type: 'test'
+  ...
+# Subtest: the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+ok 41 - the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+  ---
+  duration_ms: 4.472546
+  type: 'test'
+  ...
+# Subtest: the murals hang on tall cut walls and the flora leaves those walls bare
+ok 42 - the murals hang on tall cut walls and the flora leaves those walls bare
+  ---
+  duration_ms: 0.395566
+  type: 'test'
+  ...
+# Subtest: determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+ok 43 - determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+  ---
+  duration_ms: 1276.764335
+  type: 'test'
+  ...
+# Subtest: perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+ok 44 - perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+  ---
+  duration_ms: 26.752355
+  type: 'test'
+  ...
+# Subtest: nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+ok 45 - nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+  ---
+  duration_ms: 21.277599
+  type: 'test'
+  ...
+# Subtest: TEETH: a prop collider across a nav edge is found by the same walk
+ok 46 - TEETH: a prop collider across a nav edge is found by the same walk
+  ---
+  duration_ms: 1.152298
+  type: 'test'
+  ...
+# Subtest: TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+ok 47 - TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+  ---
+  duration_ms: 11.075133
+  type: 'test'
+  ...
+# Subtest: settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+ok 48 - settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+  ---
+  duration_ms: 1.003334
+  type: 'test'
+  ...
+# Subtest: budget: the batched world stays inside the draw and triangle allowance
+ok 49 - budget: the batched world stays inside the draw and triangle allowance
+  ---
+  duration_ms: 0.666986
+  type: 'test'
+  ...
+# Subtest: every nav node stands on ground that matches its y and is not inside a lot
+ok 50 - every nav node stands on ground that matches its y and is not inside a lot
+  ---
+  duration_ms: 9.341869
+  type: 'test'
+  ...
+# Subtest: the plan itself dropped no unwalkable nav edge
+ok 51 - the plan itself dropped no unwalkable nav edge
+  ---
+  duration_ms: 0.34455
+  type: 'test'
+  ...
+# Subtest: every nav edge can be walked in both directions
+ok 52 - every nav edge can be walked in both directions
+  ---
+  duration_ms: 34.900184
+  type: 'test'
+  ...
+# Subtest: the spawn reaches every door node by walking the nav graph (one component)
+ok 53 - the spawn reaches every door node by walking the nav graph (one component)
+  ---
+  duration_ms: 0.960719
+  type: 'test'
+  ...
+# Subtest: TEETH: a wall across an edge is detected as blocked
+ok 54 - TEETH: a wall across an edge is detected as blocked
+  ---
+  duration_ms: 16.885015
+  type: 'test'
+  ...
+# Subtest: TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+ok 55 - TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+  ---
+  duration_ms: 0.452332
+  type: 'test'
+  ...
+# Subtest: the plan is deterministic per seed and differs in the details for another seed
+ok 56 - the plan is deterministic per seed and differs in the details for another seed
+  ---
+  duration_ms: 968.919967
+  type: 'test'
+  ...
+# Subtest: the lead oracle accepts the plan
+ok 57 - the lead oracle accepts the plan
+  ---
+  duration_ms: 198.111557
+  type: 'test'
+  ...
+# Subtest: lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+ok 58 - lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+  ---
+  duration_ms: 4.607107
+  type: 'test'
+  ...
+# Subtest: lots do not overlap, intrude into streets or plazas, or leave the plot
+ok 59 - lots do not overlap, intrude into streets or plazas, or leave the plot
+  ---
+  duration_ms: 32.018748
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+ok 60 - TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+  ---
+  duration_ms: 769.573195
+  type: 'test'
+  ...
+# Subtest: plinth rule and entrance ground heights
+ok 61 - plinth rule and entrance ground heights
+  ---
+  duration_ms: 6.693425
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot whose y no longer matches the height field is reported
+ok 62 - TEETH: a lot whose y no longer matches the height field is reported
+  ---
+  duration_ms: 272.117646
+  type: 'test'
+  ...
+# Subtest: gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+ok 63 - gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+  ---
+  duration_ms: 1.044706
+  type: 'test'
+  ...
+# Subtest: TEETH: a step in the height field is reported as a gradient error
+ok 64 - TEETH: a step in the height field is reported as a gradient error
+  ---
+  duration_ms: 168.81979
+  type: 'test'
+  ...
+# Subtest: nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+ok 65 - nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+  ---
+  duration_ms: 3.048387
+  type: 'test'
+  ...
+# Subtest: TEETH: cutting nav edges or moving a door node is reported
+ok 66 - TEETH: cutting nav edges or moving a door node is reported
+  ---
+  duration_ms: 199.198575
+  type: 'test'
+  ...
+# Subtest: spawn is walkable, low on the hill, outside every lot and looks up
+ok 67 - spawn is walkable, low on the hill, outside every lot and looks up
+  ---
+  duration_ms: 0.350048
+  type: 'test'
+  ...
+# Subtest: TEETH: a spawn inside a lot or looking downhill is reported
+ok 68 - TEETH: a spawn inside a lot or looking downhill is reported
+  ---
+  duration_ms: 101.520165
+  type: 'test'
+  ...
+# Subtest: pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+ok 69 - pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+  ---
+  duration_ms: 1.203805
+  type: 'test'
+  ...
+# Subtest: TEETH: a bad poi kind, an unknown building and an English name are reported
+ok 70 - TEETH: a bad poi kind, an unknown building and an English name are reported
+  ---
+  duration_ms: 98.246197
+  type: 'test'
+  ...
+# Subtest: TEETH: a spike in open terrain is reported as an unexplained cliff
+ok 71 - TEETH: a spike in open terrain is reported as an unexplained cliff
+  ---
+  duration_ms: 166.108352
+  type: 'test'
+  ...
+# Subtest: heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+ok 72 - heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+  ---
+  duration_ms: 43.359245
+  type: 'test'
+  ...
+1..72
+# tests 72
+# suites 0
+# pass 72
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15526.932248

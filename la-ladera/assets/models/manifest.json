@@ -1,1 +1,1 @@
-{ "files": ["manifest.arch.json", "manifest.furniture.json", "manifest.people.json", "manifest.world.json"] }
+{ "files": ["manifest.arch.json", "manifest.furniture.json", "manifest.people.json", "manifest.world.json", "manifest.clutter.json"] }

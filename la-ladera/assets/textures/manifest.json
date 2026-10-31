@@ -1,5 +1,9 @@
 {
  "textures": {
+  "clutter_decal": {
+   "map": "clutter/decals.png",
+   "size": [1024, 512]
+  },
   "brick_clay_hollow": {
    "map": "brick_clay_hollow.jpg",
    "normal": "brick_clay_hollow_n.jpg",

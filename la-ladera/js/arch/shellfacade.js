@@ -5,6 +5,7 @@
 // Draw-call diet: only materials the shell already uses, plus `sign_atlas` (one canvas for all lettering, see signs.js).
 import { lin, mulc, mixc, qd, hash01 } from './mb.js';
 import { CASETA_H } from './roof.js';
+import { buildingClutter } from '../world/clutter.js';
 import { signText, signColours, hexToLin, GHOST_COUNT, POSTER_COUNT } from './signs.js';
 
 const UP = [0, 1, 0];
@@ -307,6 +308,7 @@ function wallFurniture(G, kit) {
 
 // ---- the roof kit -------------------------------------------------------------------------------------------------------------------------------
 function dish(G, x, y, z, yaw, tint) {
+  if (buildingClutter(G, 'clutter_dish', x, y, z, yaw, { size: [0.72, 0.96, 0.72] })) return;
   const { b } = G, dir = [Math.sin(yaw), 0, Math.cos(yaw)], n = nrm([dir[0] * 0.75, 0.66, dir[2] * 0.75]);
   b.cyl('rail_metal', x, y, z, 0.03, 0.5, 6, { col: hx(0x6b6e70), caps: false });
   const c = [x, y + 0.56, z], e1 = nrm(crs(n, UP)), e2 = crs(n, e1), r = 0.3, N = 10, ring = [];
@@ -334,6 +336,7 @@ function tank(G, x, y, z, blue, stand) {
     b.box('rail_metal', x, y + 1.02, z, 1.06, 0.06, 1.06, { col: hx(0x2f3235) });
     y0 = y + 1.05;
   } else b.box('concrete_bare', x, y + 0.04, z, 1.0, 0.08, 1.0, { col: [0.88, 0.88, 0.86] }), y0 = y + 0.08;
+  if (buildingClutter(G, blue ? 'clutter_tank_blue' : 'clutter_tank_black', x, y0, z, 0, { size: [1.02, 1.14, 1.02] })) return;
   b.cyl('tank_plastic', x, y0, z, r, 0.92, 14, { r1: r * 0.94, col });
   b.cyl('tank_plastic', x, y0 + 0.92, z, r * 0.94, 0.16, 14, { r1: r * 0.3, col, caps: false });
   b.cyl('tank_plastic', x, y0 + 1.07, z, 0.15, 0.07, 8, { col: mulc(col, 1.5) });
@@ -372,6 +375,8 @@ function launderLine(G, kit) {
     const len = Math.min(run[1] - run[0], 3.2 + 1.8 * hv(1)), u0 = run[0] + (run[1] - run[0] - len) * hv(2), fr = G.FR[side], inset = S.te + 0.05, yl = yF + 1.92;
     const at = (u, y, o) => fr.at(u, y, -inset - o);
     const alongX = side === 'front' || side === 'back';
+    const mid = at(u0 + len / 2, yF, 0);
+    if (buildingClutter(G, 'clutter_washing_line', mid[0], yF, mid[2], alongX ? 0 : Math.PI / 2, { size: [len, 1.96, 0.3] })) return;
     for (const u of [u0, u0 + len]) { const p = at(u, yF + 1.0, 0); b.box('rail_metal', p[0], p[1], p[2], 0.045, 2.0, 0.045, { col: hx(0x6b6e70) }); }
     const m = at(u0 + len / 2, yl, 0); b.box('rail_metal', m[0], m[1], m[2], alongX ? len : 0.008, 0.008, alongX ? 0.008 : len, { col: hx(0x9a9c9e) });
     const n = 3 + Math.floor(hv(3) * 4);

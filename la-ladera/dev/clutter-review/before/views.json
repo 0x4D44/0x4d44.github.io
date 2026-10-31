@@ -1,0 +1,96 @@
+{
+  "viewport": [
+    1280,
+    720
+  ],
+  "query": "autostart&manual&hour=17.2&quality=high&audio=0",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "views": [
+    {
+      "id": "alley",
+      "pose": {
+        "id": "alley",
+        "x": -9,
+        "y": 16.43,
+        "z": -1.4,
+        "description": "Central cross-alley, looking west along the workshop fronts.",
+        "yaw": 1.5093353709121307,
+        "pitch": -0.07433726773828218
+      },
+      "camera": [
+        -9,
+        18.0699902,
+        -1.4
+      ],
+      "triangles": 1224611,
+      "drawCalls": 697,
+      "quality": "high",
+      "clutter": null,
+      "image": "alley.jpg"
+    },
+    {
+      "id": "rooftop",
+      "pose": {
+        "id": "rooftop",
+        "x": 35.5,
+        "y": 9.8,
+        "z": 87.8,
+        "description": "Rooftop L02: washing, ribbed tank and satellite dish.",
+        "yaw": 0.5942137038004344,
+        "pitch": -0.30788676972251994
+      },
+      "camera": [
+        35.5,
+        11.4399902,
+        87.8
+      ],
+      "triangles": 1553517,
+      "drawCalls": 1068,
+      "quality": "high",
+      "clutter": null,
+      "image": "rooftop.jpg"
+    },
+    {
+      "id": "plaza",
+      "pose": {
+        "id": "plaza",
+        "x": 3.5,
+        "y": 28,
+        "z": -64.5,
+        "description": "Chapel square: market umbrella and seating near the northwest edge.",
+        "yaw": 0.9868083002199204,
+        "pitch": -0.05783432897632469
+      },
+      "camera": [
+        3.5,
+        29.64,
+        -64.5
+      ],
+      "triangles": 676952,
+      "drawCalls": 418,
+      "quality": "high",
+      "clutter": null,
+      "image": "plaza.jpg"
+    }
+  ],
+  "failures": [],
+  "console": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0"
+    ]
+  },
+  "buildErrors": [],
+  "loadedClutter": null,
+  "captureWarnings": [
+    "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x1adc00afa000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:42231/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0"
+  ]
+}

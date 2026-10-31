@@ -55,38 +55,39 @@ export function buildPoles(K) {
   // ---- 2. pole + fittings
   poles.forEach((p, k) => {
     const b = K.b('poles', p.x, p.z), r = R.fork('pole' + k), top = p.gy + POLE_H;
-    const col = (i) => [0.7 + 0.06 * ((i * 7) % 3), 0.69 + 0.05 * ((i * 5) % 3), 0.65];
-    tube(b, 'concrete_bare', [p.x, p.gy - 0.3, p.z], [p.x, top, p.z], 0.135, 0.085, 8, { colFn: col });
-    const ry = Math.atan2(-p.nz, p.nx);                       // arm runs across the street direction... along the normal
-    const armY = top - 0.45;
-    b.box('galvanised', p.x, armY, p.z, 1.7, 0.08, 0.1, { ry });
-    b.box('galvanised', p.x, armY - 0.55, p.z, 0.08, 0.08, 0.7, { ry });          // diagonal-ish stay (reads as a brace)
-    p.ins = [];
-    for (const o of [-0.72, 0, 0.72]) {
-      const ix = p.x + p.nx * o, iz = p.z + p.nz * o;
-      b.cyl('insulator', ix, armY + 0.04, iz, 0.045, 0.2, 6, { r1: 0.025, col: [1, 1, 1] });
-      p.ins.push([ix, armY + 0.26, iz]);
-    }
-    // lower telecom bracket
-    const lowY = top - 2.1;
-    b.box('galvanised', p.x, lowY, p.z, 1.0, 0.07, 0.07, { ry });
+    const ry = Math.atan2(-p.nz, p.nx), armY = top - 0.45, lowY = top - 2.1;
+    // Keep the original span, service-drop and pigeon anchors regardless of which geometry supplies the pole.
+    p.ins = [-0.72, 0, 0.72].map((o) => [p.x + p.nx * o, armY + 0.26, p.z + p.nz * o]);
     p.low = [[p.x - p.nx * 0.42, lowY - 0.05, p.z - p.nz * 0.42], [p.x + p.nx * 0.42, lowY - 0.05, p.z + p.nz * 0.42]];
-    // junction box + conduit
-    b.box('iron_black', p.x + p.nx * 0.16, p.gy + 2.3, p.z + p.nz * 0.16, 0.26, 0.38, 0.14, { ry: ry + Math.PI / 2 });
-    tube(b, 'iron_black', [p.x + p.nx * 0.13, p.gy + 2.5, p.z + p.nz * 0.13], [p.x + p.nx * 0.13, top - 0.7, p.z + p.nz * 0.13], 0.018, 0.018, 4, { caps: false });
-    if (k % 3 === 1) {                                                                 // pole-top transformer
-      const tx = p.x + p.nx * 0.42, tz = p.z + p.nz * 0.42;
-      b.cyl('galvanised', tx, top - 2.2, tz, 0.27, 0.85, 10, { col: [0.78, 0.8, 0.8] });
-      b.cyl('iron_black', tx, top - 1.35, tz, 0.2, 0.1, 8, { col: [0.3, 0.3, 0.32] });
-      b.box('galvanised', p.x + p.nx * 0.2, top - 1.8, p.z + p.nz * 0.2, 0.55, 0.06, 0.06, { ry });
-      stats.transformers++;
+    const model = ctx.clutter?.place(k % 4 === 3 ? 'clutter_pole_wood' : 'clutter_pole_concrete', p.x, p.gy, p.z, ry, { scene: 'street' });
+    if (!model) {
+      const col = (i) => [0.7 + 0.06 * ((i * 7) % 3), 0.69 + 0.05 * ((i * 5) % 3), 0.65];
+      tube(b, 'concrete_bare', [p.x, p.gy - 0.3, p.z], [p.x, top, p.z], 0.135, 0.085, 8, { colFn: col });
+      b.box('galvanised', p.x, armY, p.z, 1.7, 0.08, 0.1, { ry });
+      b.box('galvanised', p.x, armY - 0.55, p.z, 0.08, 0.08, 0.7, { ry });          // diagonal-ish stay (reads as a brace)
+      for (const o of [-0.72, 0, 0.72]) {
+        const ix = p.x + p.nx * o, iz = p.z + p.nz * o;
+        b.cyl('insulator', ix, armY + 0.04, iz, 0.045, 0.2, 6, { r1: 0.025, col: [1, 1, 1] });
+      }
+      // lower telecom bracket
+      b.box('galvanised', p.x, lowY, p.z, 1.0, 0.07, 0.07, { ry });
+      // junction box + conduit
+      b.box('iron_black', p.x + p.nx * 0.16, p.gy + 2.3, p.z + p.nz * 0.16, 0.26, 0.38, 0.14, { ry: ry + Math.PI / 2 });
+      tube(b, 'iron_black', [p.x + p.nx * 0.13, p.gy + 2.5, p.z + p.nz * 0.13], [p.x + p.nx * 0.13, top - 0.7, p.z + p.nz * 0.13], 0.018, 0.018, 4, { caps: false });
+      if (k % 3 === 1) {                                                                 // pole-top transformer
+        const tx = p.x + p.nx * 0.42, tz = p.z + p.nz * 0.42;
+        b.cyl('galvanised', tx, top - 2.2, tz, 0.27, 0.85, 10, { col: [0.78, 0.8, 0.8] });
+        b.cyl('iron_black', tx, top - 1.35, tz, 0.2, 0.1, 8, { col: [0.3, 0.3, 0.32] });
+        b.box('galvanised', p.x + p.nx * 0.2, top - 1.8, p.z + p.nz * 0.2, 0.55, 0.06, 0.06, { ry });
+      }
+      // flyers wrapped on the pole at eye height
+      const fcols = [[0.95, 0.9, 0.5], [0.92, 0.92, 0.95], [0.9, 0.55, 0.5], [0.6, 0.8, 0.9]];
+      for (let f = 0; f < 3; f++) {
+        const a = r.range(0, 6.28), y = p.gy + r.range(1.2, 2.0), w = r.range(0.14, 0.22), h = r.range(0.2, 0.3), cx = p.x + Math.cos(a) * 0.14, cz = p.z + Math.sin(a) * 0.14;
+        b.box('paper_flyer', cx, y, cz, w, h, 0.012, { ry: -a + Math.PI / 2, col: r.pick(fcols) });
+      }
     }
-    // flyers wrapped on the pole at eye height
-    const fcols = [[0.95, 0.9, 0.5], [0.92, 0.92, 0.95], [0.9, 0.55, 0.5], [0.6, 0.8, 0.9]];
-    for (let f = 0; f < 3; f++) {
-      const a = r.range(0, 6.28), y = p.gy + r.range(1.2, 2.0), w = r.range(0.14, 0.22), h = r.range(0.2, 0.3), cx = p.x + Math.cos(a) * 0.14, cz = p.z + Math.sin(a) * 0.14;
-      b.box('paper_flyer', cx, y, cz, w, h, 0.012, { ry: -a + Math.PI / 2, col: r.pick(fcols) });
-    }
+    if (k % 3 === 1) stats.transformers++;
     K.post(p.x, p.z, 0.16, 4);
     occ.take(p.x, p.z, 0.4);
     stats.poles++;

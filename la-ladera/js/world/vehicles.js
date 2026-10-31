@@ -25,6 +25,7 @@ function loft(b, mat, S, col, caps = true) {
 function posed(K, b, x, y, z, ry, pitch, fn) {
   const T = K.ctx.THREE, m = new T.Matrix4().makeRotationFromEuler(new T.Euler(-pitch, ry, 0, 'YXZ')).setPosition(x, y, z);
   b.setBase(m); fn(); b.setBase(new T.Matrix4());
+  return m;
 }
 
 /** Box with the top face narrower and shifted: a car's greenhouse. z0 = [back,front] at the bottom, z1 at the top, half widths w0/w1. */
@@ -88,7 +89,7 @@ export function car(K, b, x, y, z, ry, pitch, o) {
 /** A 125-200 cc street bike: frame, tank, two-tone plastics, telescopic fork, bars with mirrors, lamp, exhaust, swingarm. `hex2` = side panels / fender. */
 export function moto(K, b, x, y, z, ry, pitch, o) {
   const c1 = rgb(o.hex), c2 = rgb(o.hex2 ?? 0x1c1c20), steel = [0.55, 0.57, 0.6];
-  posed(K, b, x, y, z, ry, pitch, () => {
+  const pose = posed(K, b, x, y, z, ry, pitch, () => {
     wheel(b, 0, 0.3, 0.66, 0.3, 0.09); wheel(b, 0, 0.3, -0.66, 0.3, 0.12);
     tube(b, 'chrome', [0.052, 0.3, 0.66], [0.058, 0.3, 0.66], 0.12, 0.12, 12, { col: CHROME, caps: true });                   // brake disc
     // frame + engine
@@ -131,6 +132,11 @@ export function moto(K, b, x, y, z, ry, pitch, o) {
     tube(b, 'iron_black', [-0.09, 0.7, -0.45], [-0.09, 0.4, -0.3], 0.018, 0.018, 5, { col: [0.5, 0.1, 0.1], caps: false });
     tube(b, 'bumper', [-0.1, 0.36, -0.05], [-0.3, 0.06, 0.02], 0.014, 0.014, 4, { col: BLACK, caps: false });                   // side stand
   });
+  // A later helmet must sit on this exact transformed seat, including pitch and the body's lateral displacement.
+  // Shop-front motos are level; kerb motos follow the road. Re-deriving either pose from rounded vehicle-list data floats helmets.
+  const seat = new K.ctx.THREE.Vector3(0, 0.875, -0.32).applyMatrix4(pose);
+  K.ctx.world ??= {};
+  (K.ctx.world.motoSeats ??= []).push({ x: seat.x, y: seat.y, z: seat.z, yaw: ry, pitch });
 }
 
 export function bicycle(K, b, x, y, z, ry, pitch, o) {
@@ -177,9 +183,11 @@ export function vendorCart(K, b, x, y, z, ry, kind, r) {
     else if (kind === 'minutos') { b.box('wood_dark', 0, 1.2, -0.3, 1.2, 0.5, 0.05, { col: wood }); for (let i = 0; i < 4; i++) b.box('iron_black', -0.45 + i * 0.3, 1.0, 0.1, 0.1, 0.05, 0.16, { col: BLACK }); }
     // umbrella
     const ub = rgb(r.pick([0xd8402a, 0x2a6ab0, 0xf2c230, 0x3a9a5a]));
-    tube(b, 'iron_black', [0, 0.9, -0.3], [0, 2.35, -0.3], 0.02, 0.02, 4, { col: BLACK, caps: false });
-    b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.18, 12, { r1: 0.04, col: ub, caps: false });
-    b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.0, 12, { r1: 0.0, col: ub, caps: false });
+    if (!K.ctx.clutter?.fit('clutter_umbrella', x - Math.sin(ry) * 0.3, y, z - Math.cos(ry) * 0.3, ry, [2.5, 2.38, 2.5], { scene: 'plaza' })) {
+      tube(b, 'iron_black', [0, 0.9, -0.3], [0, 2.35, -0.3], 0.02, 0.02, 4, { col: BLACK, caps: false });
+      b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.18, 12, { r1: 0.04, col: ub, caps: false });
+      b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.0, 12, { r1: 0.0, col: ub, caps: false });
+    }
   });
 }
 
@@ -193,6 +201,7 @@ export function rubbish(K, b, x, z, r) {
 
 export function bin(K, b, x, z, ry, hex = 0x2f6b3a) {
   const y = K.H(x, z);
+  if (K.ctx.clutter?.fit('clutter_bin_wheelie', x, y, z, ry, [0.5, 0.98, 0.6], { scene: 'alley' })) return;
   posed(K, b, x, y, z, ry, 0, () => {
     b.box('plastic_bin', 0, 0.45, 0, 0.48, 0.9, 0.55, { col: rgb(hex) });
     b.box('plastic_bin', 0, 0.93, -0.02, 0.5, 0.06, 0.58, { col: rgb(hex).map((c) => c * 0.85) });
@@ -204,6 +213,7 @@ export function gasCylinders(K, b, x, z, ry, r) {
   const y = K.H(x, z), n = r.int(3, 5);
   for (let i = 0; i < n; i++) {
     const px = x + Math.cos(ry) * (i - n / 2) * 0.36, pz = z - Math.sin(ry) * (i - n / 2) * 0.36, col = rgb(r.pick([0xe8c030, 0xe8c030, 0xd8402a, 0x2a6ab0]));
+    if (K.ctx.clutter?.fit('clutter_gas_cylinder', px, y, pz, ry, [0.3, 0.72, 0.3], { scene: 'alley' })) continue;
     b.cyl('car_paint', px, y, pz, 0.15, 0.58, 10, { r1: 0.15, col });
     b.cyl('car_paint', px, y + 0.58, pz, 0.15, 0.08, 10, { r1: 0.05, col });
     b.cyl('iron_black', px, y + 0.66, pz, 0.04, 0.06, 6, { col: BLACK });

@@ -5,6 +5,7 @@
 //            ?preserve (preserveDrawingBuffer)  ?dpr=1  ?shadows=0  ?aa=0  ?post=0 (no bloom/grade: emergency look)
 //            ?quality=low|medium|high|auto  ?timescale=N (game minutes per real second; 0 freezes the clock)
 //            ?skip=merge (keep one mesh per group x material: debugging only)  ?mergespan=N (largest merged chunk in metres, default 96)
+//            ?clutter=0 (original procedural exterior props; useful for comparisons and the asset fallback check)
 import { createContext } from './core/ctx.js';
 import { initEngine, startEngine } from './engine/index.js';
 import { createSettings } from './engine/settings.js';
@@ -13,6 +14,7 @@ import { initAudio } from './audio/index.js';
 import { generatePlan } from './world/plan.js';
 import { buildWorld } from './world/terrain.js';
 import { buildProps } from './world/props.js';
+import { loadClutter } from './world/clutter.js';
 import { urbanDensity } from './world/periphery.js';
 import { planBuilding, buildBuilding } from './arch/index.js';
 import { loadInteriorAssets, furnishBuilding, buildInterior } from './interiors/index.js';
@@ -24,7 +26,7 @@ const opts = {
   seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
   debug: q.has('debug'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'),
-  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0',
+  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', clutter: q.get('clutter') !== '0',
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
@@ -116,7 +118,7 @@ async function boot() {
   try {
     await stage('engine', () => { initEngine(ctx); if (!ctx.renderer) throw new NoGL('no renderer'); });
     await stage('materials', () => ctx.matlib.init());
-    await stage('assets', () => ctx.assets.init());
+    await stage('assets', async () => { await ctx.assets.init(); await loadClutter(ctx); });
     await stage('plan', () => {
       ctx.plan = generatePlan(ctx);
       ctx.physics.setTerrain(ctx.plan.heightAt);
@@ -135,6 +137,7 @@ async function boot() {
     }, 'buildBuilding'));
     await stage('props', () => buildProps(ctx));
     await stage('flush', () => {
+      ctx.clutter?.finalize();
       ctx.batch.flushAll();
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
     });

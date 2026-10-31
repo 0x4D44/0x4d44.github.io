@@ -1,0 +1,29 @@
+[
+  {
+    "id": "alley",
+    "x": -9,
+    "y": 16.43,
+    "z": -1.4,
+    "description": "Central cross-alley, looking west along the workshop fronts.",
+    "yaw": 1.5093353709121307,
+    "pitch": -0.07433726773828218
+  },
+  {
+    "id": "rooftop",
+    "x": 35.5,
+    "y": 9.8,
+    "z": 87.8,
+    "description": "Rooftop L02: washing, ribbed tank and satellite dish.",
+    "yaw": 0.5942137038004344,
+    "pitch": -0.30788676972251994
+  },
+  {
+    "id": "plaza",
+    "x": 3.5,
+    "y": 28,
+    "z": -64.5,
+    "description": "Chapel square: market umbrella and seating near the northwest edge.",
+    "yaw": 0.9868083002199204,
+    "pitch": -0.05783432897632469
+  }
+]

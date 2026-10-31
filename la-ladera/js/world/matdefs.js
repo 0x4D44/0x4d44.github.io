@@ -24,6 +24,8 @@ export default {
   // ---- painted signage: ONE atlas (murals, gate boards, plaques, hand signs, chalk) painted at boot by world/signs.js and bound in props.js.
   // Alpha-tested so the chalk hopscotch needs no blending; A2's `sign_atlas` (shop fascias) is a different material with its own canvas.
   world_sign: { color: 0xffffff, rough: 0.78, alphaTest: 0.4, tex: false, env: 0.4 },
+  // One external atlas for the Blender clutter's flyers, signs and original wall graffiti (never embedded in GLBs).
+  clutter_decal: { color: 0xffffff, rough: 0.92, uv: 'unit', alphaTest: 0.4, tex: 'clutter_decal', env: 0.3 },
   // animal parts and cloth for the living props (life.js): flat colours tinted per vertex
   fur: { color: 0xffffff, rough: 0.95, tex: false },
 
