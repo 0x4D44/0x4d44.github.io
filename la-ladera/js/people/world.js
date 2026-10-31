@@ -228,6 +228,14 @@ export class PeopleWorld {
     return out;
   }
 
+  /** Optional asset followers share this world's clock, graph, physics and Npc path walker.
+   * They are not inhabitants: no casting, dialogue, schedule, or extra simulation system. */
+  addPathFollower(update) {
+    const followers = this._pathFollowers ??= new Set();
+    followers.add(update);
+    return () => followers.delete(update);
+  }
+
   update(dt) {
     const ctx = this.ctx, pl = ctx.player; if (!this.ready || !pl) return;
     dt = Math.min(dt, 0.1); this.t += dt; this.syncPlayer();
@@ -245,6 +253,7 @@ export class PeopleWorld {
       this._syncView(n, dt);
       if (tick) this.brain.tick(n, ctx.hour, this);
     }
+    for (const update of this._pathFollowers ?? []) update(dt, this);
     this.talk.update(dt);
   }
 

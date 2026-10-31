@@ -1,0 +1,347 @@
+{
+  "manifestSHA256": "00f7c7d3e04670297db4526ae55dd5f30bc1d41dcc17fa27a9dd42ae29d57913",
+  "size": [
+    960,
+    540
+  ],
+  "query": "autostart&manual&shadows=0&post=0&dpr=1",
+  "purpose": "Real-world animal integration capture; not a default-quality performance result.",
+  "failures": [],
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "state": {
+    "boot": true,
+    "timings": {
+      "engine": 145,
+      "materials": 37,
+      "assets": 113,
+      "plan": 195,
+      "worldParts": {
+        "terrain": 603,
+        "surfaces": 70,
+        "stairs": 34,
+        "retaining": 45,
+        "perimeter": 0
+      },
+      "world": 855,
+      "arch": 64,
+      "furnish": 4558,
+      "colliders": 10,
+      "build": 2603,
+      "propParts": {
+        "occupancy": 63,
+        "atlas": 586,
+        "boundary": 15,
+        "poles": 83,
+        "vehicles": 68,
+        "dress": 28,
+        "signs": 8,
+        "hill": 18,
+        "flora": 99,
+        "planters": 6,
+        "life": 31,
+        "navfit": 20,
+        "discoveries": 11
+      },
+      "props": 1129,
+      "flush": 321,
+      "glow": 66,
+      "peopleSpawn": 79,
+      "people": 834,
+      "start": 6235,
+      "total": 17331
+    },
+    "errors": [],
+    "people": 73
+  },
+  "render": {
+    "pos": [
+      -6.5,
+      0.22,
+      92.5
+    ],
+    "yaw": 0,
+    "pitch": 0,
+    "onGround": true,
+    "blocked": false,
+    "hour": 17.200000000000003,
+    "building": null,
+    "indoors": false,
+    "floor": 0,
+    "room": null,
+    "surface": "dirt",
+    "fps": 0,
+    "frameMs": 0,
+    "drawCalls": 854,
+    "triangles": 1006545,
+    "geometries": 820,
+    "textures": 129,
+    "programs": 22,
+    "quality": "high",
+    "qualityMode": "auto",
+    "night": 0,
+    "sunEl": 10.25,
+    "pool": {
+      "max": 8,
+      "active": 8,
+      "lit": 0
+    },
+    "glow": {
+      "street": 46,
+      "far": 2727,
+      "extra": 0,
+      "drawn": false,
+      "points": 2773
+    },
+    "visibility": {
+      "intGroups": 49,
+      "intShown": 15
+    },
+    "merge": {
+      "before": 3074,
+      "after": 1810,
+      "candidates": 1769,
+      "fused": 1506,
+      "removed": 1506,
+      "chunks": 242,
+      "tris": 658146,
+      "ms": 265.7
+    },
+    "post": {
+      "active": false,
+      "profile": "high"
+    },
+    "reversedZ": true,
+    "msaa": 4,
+    "buildings": 49,
+    "anchors": 1927,
+    "lights": 878,
+    "discoveries": [
+      0,
+      111
+    ],
+    "npcs": 73,
+    "errors": 0,
+    "timings": {
+      "engine": 145,
+      "materials": 37,
+      "assets": 113,
+      "plan": 195,
+      "worldParts": {
+        "terrain": 603,
+        "surfaces": 70,
+        "stairs": 34,
+        "retaining": 45,
+        "perimeter": 0
+      },
+      "world": 855,
+      "arch": 64,
+      "furnish": 4558,
+      "colliders": 10,
+      "build": 2603,
+      "propParts": {
+        "occupancy": 63,
+        "atlas": 586,
+        "boundary": 15,
+        "poles": 83,
+        "vehicles": 68,
+        "dress": 28,
+        "signs": 8,
+        "hill": 18,
+        "flora": 99,
+        "planters": 6,
+        "life": 31,
+        "navfit": 20,
+        "discoveries": 11
+      },
+      "props": 1129,
+      "flush": 321,
+      "glow": 66,
+      "peopleSpawn": 79,
+      "people": 834,
+      "start": 6235,
+      "total": 17331
+    },
+    "physics": {
+      "walls": 15093,
+      "floors": 814,
+      "cells": 1584,
+      "doors": 517
+    },
+    "audio": {
+      "mode": "idle",
+      "ctxState": null,
+      "sampleRate": null,
+      "volume": 0.8,
+      "modeScale": 1,
+      "indoor": 0,
+      "zone": null,
+      "alt": null,
+      "master": null,
+      "beds": {},
+      "bedCutoff": null,
+      "crowd": 0.3,
+      "voices": [],
+      "emitters": 0,
+      "activeShots": 0,
+      "stats": {
+        "steps": 0,
+        "lands": 0,
+        "jumps": 0,
+        "doors": 0,
+        "shots": 0,
+        "bells": 0,
+        "chimes": 0,
+        "ticks": 0,
+        "dropped": 0,
+        "blocked": 0
+      },
+      "samples": {
+        "ready": 0,
+        "pending": 0,
+        "requested": 0,
+        "ms": 0,
+        "via": null,
+        "errors": []
+      },
+      "bell": {
+        "clock": 0,
+        "next": 45,
+        "rung": 0
+      },
+      "errors": []
+    },
+    "target": null
+  },
+  "animals": [
+    {
+      "id": "animal:dog:0",
+      "species": "dog",
+      "x": -0.9,
+      "y": 0.42233052849769726,
+      "z": 86.1,
+      "clip": "idle",
+      "visible": true,
+      "lod": false,
+      "caged": false
+    },
+    {
+      "id": "animal:cat:1",
+      "species": "cat",
+      "x": 8.5,
+      "y": 0.33276596665382385,
+      "z": 88,
+      "clip": "idle",
+      "visible": true,
+      "lod": false,
+      "caged": false
+    },
+    {
+      "id": "animal:pigeon:2",
+      "species": "pigeon",
+      "x": -6.5,
+      "y": 1.2523771524429321,
+      "z": 75.25,
+      "clip": "idle",
+      "visible": true,
+      "lod": false,
+      "caged": false
+    },
+    {
+      "id": "animal:hen:3",
+      "species": "hen",
+      "x": 18,
+      "y": 0.3514028787612915,
+      "z": 88,
+      "clip": "idle",
+      "visible": true,
+      "lod": true,
+      "caged": false
+    },
+    {
+      "id": "animal:mule:4",
+      "species": "mule",
+      "x": -4.33,
+      "y": 2.097451234817505,
+      "z": 61.66,
+      "clip": "idle",
+      "visible": true,
+      "lod": true,
+      "caged": false
+    },
+    {
+      "id": "animal:parrot_caged:5",
+      "species": "parrot_caged",
+      "x": -46,
+      "y": 0.2980046701431274,
+      "z": 89.47,
+      "clip": "idle",
+      "visible": true,
+      "lod": true,
+      "caged": true
+    },
+    {
+      "id": "animal:canary_caged:6",
+      "species": "canary_caged",
+      "x": 18.817218797878283,
+      "y": 6.949999809265137,
+      "z": 49.579703705201936,
+      "clip": "idle",
+      "visible": true,
+      "lod": true,
+      "caged": true
+    },
+    {
+      "id": "animal:dog:7",
+      "species": "dog",
+      "x": -46.73,
+      "y": 4.747180157470703,
+      "z": 51.26,
+      "clip": "idle",
+      "visible": true,
+      "lod": true,
+      "caged": false
+    },
+    {
+      "id": "animal:cat:8",
+      "species": "cat",
+      "x": 34.8,
+      "y": 6.85865364074707,
+      "z": 40,
+      "clip": "idle",
+      "visible": true,
+      "lod": true,
+      "caged": false
+    },
+    {
+      "id": "animal:pigeon:9",
+      "species": "pigeon",
+      "x": 2.19,
+      "y": 11.743714370727538,
+      "z": 18.99,
+      "clip": "idle",
+      "visible": false,
+      "lod": true,
+      "caged": false
+    }
+  ],
+  "stats": {
+    "count": 10,
+    "visible": 9,
+    "near": 3,
+    "maxNear": 6,
+    "triangles": 5003,
+    "drawCalls": 11,
+    "triangleCeiling": 19200
+  },
+  "screenshot": {
+    "file": "world-spawn.jpg",
+    "sha256": "3a93c88e43d72e8e3c30a19d3496e1c1a8abd489b8d4d4fc9af92ad71f7a1b83"
+  },
+  "page": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "ok": true
+}

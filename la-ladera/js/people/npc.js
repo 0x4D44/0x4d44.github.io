@@ -16,7 +16,7 @@ export class Npc {
   constructor(o) {
     Object.assign(this, {
       id: '', name: null, persona: 'vecina', bank: 'vecina', role: '', age: 'adult', gender: 'm', charId: '', voice: null, rng: null, meta: null,
-      home: null, speedBase: 1.3, lane: 0,
+      home: null, speedBase: 1.3, lane: 0, body: BODY,
     }, o);
     this.st = { x: 0, y: 0, z: 0, vy: 0, onGround: true, blocked: false };
     this.ry = 0; this.targetRy = 0; this.mode = 'idle'; this.act = 'idle'; this.actArg = null; this.until = 0;
@@ -96,7 +96,7 @@ export class Npc {
   }
 
   _ground(dt, w) {
-    const s = this.st; w.physics.move(s, 0, 0, dt, BODY);
+    const s = this.st; w.physics.move(s, 0, 0, dt, this.body);
   }
 
   _walk(dt, w) {
@@ -124,7 +124,7 @@ export class Npc {
     const turn = Math.abs(angDiff(this.ry, this.targetRy));
     const go = turn > 1.3 ? 0.25 : 1;                                       // pivot before striding off
     s.blocked = false;
-    w.physics.move(s, vx * go * dt, vz * go * dt, dt, BODY);
+    w.physics.move(s, vx * go * dt, vz * go * dt, dt, this.body);
     this.moving = true; this.curSpeed = vl * go;
     // stuck detection: little net progress for a while
     this.checkT += dt;

@@ -1,0 +1,3997 @@
+{
+  "kind": "actual WebGL animal GLB pose captures",
+  "manifest": "la-ladera/assets/models/manifest.animals.json",
+  "shots": [
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "dog-idle-a.jpg",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "933914d7",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -1.0728836041806744e-8,
+          -0.7926070860534448
+        ],
+        "max": [
+          0.20005536019802095,
+          1.0352219036961472,
+          0.776418653425861
+        ]
+      },
+      "sourceGLB": "animals/dog.glb",
+      "sha256": "f2204c6c6ea8ad5ed11dd1994d4ef3c634232ac766fa65dc6cc4ee56c5ea44bf",
+      "bytes": 42440
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.875,
+      "duration": 2.4000000953674316,
+      "file": "dog-idle-b.jpg",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "61f2f700",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -1.0728836041806744e-8,
+          -0.7924350462108752
+        ],
+        "max": [
+          0.20005536019802095,
+          1.0442326299185447,
+          0.7754024063492233
+        ]
+      },
+      "sourceGLB": "animals/dog.glb",
+      "sha256": "2a73287ee385bcb3c71b380f3d8af97e614dcaabdac2e78a79ea779f6e1277f4",
+      "bytes": 42823
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 1,
+      "file": "dog-walk-a.jpg",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "f6f45932",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -0.0012031483351287592,
+          -0.798271754389951
+        ],
+        "max": [
+          0.20005536019802095,
+          1.0363769579446105,
+          0.7775575421948051
+        ]
+      },
+      "sourceGLB": "animals/dog.glb",
+      "sha256": "7d7580a18d348e943fd0e1b511749d13b62db49fe09ff4da6277a119bbe4249e",
+      "bytes": 42789
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 1,
+      "file": "dog-walk-b.jpg",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "0ee3e578",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          0.00487512494903386,
+          -0.7948479137087958
+        ],
+        "max": [
+          0.20005536019802095,
+          1.0399999713897705,
+          0.7767302160605187
+        ]
+      },
+      "sourceGLB": "animals/dog.glb",
+      "sha256": "49970831d2c4bfbdb01adb4565f24c63321b62d83e13320fbb19b6b5836de507",
+      "bytes": 43016
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "dog-eat-a.jpg",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "405aeab7",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -1.0728836041806744e-8,
+          -0.8011938992065855
+        ],
+        "max": [
+          0.20005536019802095,
+          0.941596529006958,
+          0.6098367949180903
+        ]
+      },
+      "sourceGLB": "animals/dog.glb",
+      "sha256": "ed217b7a0f5412e8e97ec69fa19a339cbf41dc68bb8ba3b3e652bee9b34457bd",
+      "bytes": 41585
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.875,
+      "duration": 1.600000023841858,
+      "file": "dog-eat-b.jpg",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "051206d8",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -1.0728836041806744e-8,
+          -0.8011260918700063
+        ],
+        "max": [
+          0.20005536019802095,
+          0.941596529006958,
+          0.6504571013159832
+        ]
+      },
+      "sourceGLB": "animals/dog.glb",
+      "sha256": "9c7d552fb0f2922530cafb4952a8d24084fff7eb02acb3a1dc772bbf0f403b12",
+      "bytes": 41680
+    },
+    {
+      "key": "dog",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.88,
+      "duration": 1.600000023841858,
+      "file": "dog-far.jpg",
+      "triangles": 287,
+      "meshes": 1,
+      "skinnedMeshes": 0,
+      "vertices": 340,
+      "materials": [
+        "fur"
+      ],
+      "signature": "b4caed27",
+      "bounds": {
+        "min": [
+          -0.21480000019073486,
+          0,
+          -0.8015859723091125
+        ],
+        "max": [
+          0.21480000019073486,
+          1.0399999618530273,
+          0.7642313241958618
+        ]
+      },
+      "sourceGLB": "animals/dog_lod.glb"
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "cat-idle-a.jpg",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "e1aa505a",
+      "bounds": {
+        "min": [
+          -0.14960573141580316,
+          3.5762786898541066e-9,
+          -0.3729024459183738
+        ],
+        "max": [
+          0.17051388117483862,
+          0.8905399917652344,
+          0.5109437799958536
+        ]
+      },
+      "sourceGLB": "animals/cat.glb",
+      "sha256": "dc01f7fb1c68db703c3d3a22ebd91a368655caa4559aec227d2aef0418f6f017",
+      "bytes": 41867
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "cat-idle-b.jpg",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "9fc7fa67",
+      "bounds": {
+        "min": [
+          -0.1745430473454601,
+          3.5762786898541066e-9,
+          -0.3706910898242445
+        ],
+        "max": [
+          0.14402885087115613,
+          0.8876717206450265,
+          0.5095555325824246
+        ]
+      },
+      "sourceGLB": "animals/cat.glb",
+      "sha256": "461d2c5e7d2547f35ddca6d3b55f5c1a132cf80881b6c927d6a9530853c56ea3",
+      "bytes": 42054
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 1,
+      "file": "cat-walk-a.jpg",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "7d0262a6",
+      "bounds": {
+        "min": [
+          -0.15788658575428652,
+          -0.003867801110342156,
+          -0.37445652929253864
+        ],
+        "max": [
+          0.16224996425109262,
+          0.8894554455280304,
+          0.5121813349862522
+        ]
+      },
+      "sourceGLB": "animals/cat.glb",
+      "sha256": "cca642d223e5c20b6e7979204455b1aad7593dcda1775161a8abeeb51f390229",
+      "bytes": 42255
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 1,
+      "file": "cat-walk-b.jpg",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "62f3ea52",
+      "bounds": {
+        "min": [
+          -0.16307677362671807,
+          -0.0019357082475274512,
+          -0.3645580573708642
+        ],
+        "max": [
+          0.15701075598571074,
+          0.8894554455280304,
+          0.5109574316321012
+        ]
+      },
+      "sourceGLB": "animals/cat.glb",
+      "sha256": "88dfa59f4d77e07d00495b311df1f4bfac86b1831c2829ce98961b5683cf1bcc",
+      "bytes": 42176
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "cat-eat-a.jpg",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "657e6991",
+      "bounds": {
+        "min": [
+          -0.15733850393965326,
+          3.5762786898541066e-9,
+          -0.37227203562086797
+        ],
+        "max": [
+          0.1627817986361029,
+          0.8894554455280304,
+          0.4702473115802801
+        ]
+      },
+      "sourceGLB": "animals/cat.glb",
+      "sha256": "416fb2ff907427d0124cb599b29d43cd3ae600ce29dbb50fc9fd43a282c79930",
+      "bytes": 40782
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.875,
+      "duration": 1.600000023841858,
+      "file": "cat-eat-b.jpg",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "89649395",
+      "bounds": {
+        "min": [
+          -0.16272969707592905,
+          3.5762786898541066e-9,
+          -0.36894163133736907
+        ],
+        "max": [
+          0.15737299537534918,
+          0.8894554455280304,
+          0.4943709835964064
+        ]
+      },
+      "sourceGLB": "animals/cat.glb",
+      "sha256": "5197841128bf3f815df349b0732f91ba6a6814144334e96ce28c45541f23ea36",
+      "bytes": 40944
+    },
+    {
+      "key": "cat",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.88,
+      "duration": 1.600000023841858,
+      "file": "cat-far.jpg",
+      "triangles": 288,
+      "meshes": 1,
+      "skinnedMeshes": 0,
+      "vertices": 342,
+      "materials": [
+        "fur"
+      ],
+      "signature": "f953bb53",
+      "bounds": {
+        "min": [
+          -0.13099999725818634,
+          0,
+          -0.3672829568386078
+        ],
+        "max": [
+          0.13099999725818634,
+          0.8757966756820679,
+          0.508081316947937
+        ]
+      },
+      "sourceGLB": "animals/cat_lod.glb"
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "pigeon-idle-a.jpg",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "9d959fa8",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -3.0045296806058275e-9,
+          -0.3015420087968538
+        ],
+        "max": [
+          0.10214990982413291,
+          0.3387089957053278,
+          0.19845703560027117
+        ]
+      },
+      "sourceGLB": "animals/pigeon.glb",
+      "sha256": "6e2f553382ff982cb8d075fb242103517f95e526af5c8db66690e678b80b7344",
+      "bytes": 38270
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "pigeon-idle-b.jpg",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "c9a1a2db",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -3.0045296806058275e-9,
+          -0.2985002418272461
+        ],
+        "max": [
+          0.10214990982413291,
+          0.3398241702557287,
+          0.19629801640904362
+        ]
+      },
+      "sourceGLB": "animals/pigeon.glb",
+      "sha256": "e2d590af56e3070c77697c6a020216855a95cdc513731233ca26064467b51d96",
+      "bytes": 38383
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 0.800000011920929,
+      "file": "pigeon-walk-a.jpg",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "56803c27",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -0.006611850463423503,
+          -0.30165854244777757
+        ],
+        "max": [
+          0.10214990982413291,
+          0.3363509306986549,
+          0.20484489085219695
+        ]
+      },
+      "sourceGLB": "animals/pigeon.glb",
+      "sha256": "9c2693af82d819ee42308a3adb4b4e575c6c82ea1a5496e8c6d22e44c03e7ea9",
+      "bytes": 37993
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "pigeon-walk-b.jpg",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "26457954",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -0.00812805746030258,
+          -0.2982687100000248
+        ],
+        "max": [
+          0.10214990982413291,
+          0.339276406525663,
+          0.19863679744331
+        ]
+      },
+      "sourceGLB": "animals/pigeon.glb",
+      "sha256": "380d9ca3d8e41f41ecd19520056a5e61dcd4771520535a2a86bd41a7575a8617",
+      "bytes": 38311
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "pigeon-eat-a.jpg",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "894a68ea",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -0.004011403321616369,
+          -0.21354205585089592
+        ],
+        "max": [
+          0.10214990982413291,
+          0.2943976624834749,
+          0.26336416286957465
+        ]
+      },
+      "sourceGLB": "animals/pigeon.glb",
+      "sha256": "048af7b7338f715ef80304be9e755157ca622e064604061d5b91c12b5f90ae7e",
+      "bytes": 40727
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "pigeon-eat-b.jpg",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "a1c10ac9",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -2.8444001459737578e-9,
+          -0.21665766968986644
+        ],
+        "max": [
+          0.10214990982413291,
+          0.29374574768437456,
+          0.2774705114048895
+        ]
+      },
+      "sourceGLB": "animals/pigeon.glb",
+      "sha256": "6ae9f29f30049da03740cf549d7276323b2a0193eeb81507e9441fb9e373f17a",
+      "bytes": 40688
+    },
+    {
+      "key": "pigeon",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.38,
+      "duration": 1.600000023841858,
+      "file": "pigeon-far.jpg",
+      "triangles": 146,
+      "meshes": 1,
+      "skinnedMeshes": 0,
+      "vertices": 190,
+      "materials": [
+        "fur"
+      ],
+      "signature": "d4d3007f",
+      "bounds": {
+        "min": [
+          -0.09280868619680405,
+          0,
+          -0.28850001096725464
+        ],
+        "max": [
+          0.09772095084190369,
+          0.33191317319869995,
+          0.19863680005073547
+        ]
+      },
+      "sourceGLB": "animals/pigeon_lod.glb"
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "hen-idle-a.jpg",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "2f076cc4",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -3.555990946146892e-9,
+          -0.38887479637611605
+        ],
+        "max": [
+          0.1759247459769249,
+          0.5942218986389984,
+          0.30086974178634696
+        ]
+      },
+      "sourceGLB": "animals/hen.glb",
+      "sha256": "55099d05f4f7967aa51f39252582093de3641173fe83502942f6db0a29da0820",
+      "bytes": 38628
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "hen-idle-b.jpg",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "348c76d4",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -3.555990946146892e-9,
+          -0.4020767181236392
+        ],
+        "max": [
+          0.1759247459769249,
+          0.5977953694527984,
+          0.297869699135047
+        ]
+      },
+      "sourceGLB": "animals/hen.glb",
+      "sha256": "d1228c546dd978edd8c1fca5974b5e4bedf131795f5642508dab9b0bda3bf3c9",
+      "bytes": 38631
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 0.800000011920929,
+      "file": "hen-walk-a.jpg",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "edfe4a8c",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -0.00960964017195478,
+          -0.38823638096363877
+        ],
+        "max": [
+          0.1759247459769249,
+          0.5884875425177141,
+          0.31274329738380746
+        ]
+      },
+      "sourceGLB": "animals/hen.glb",
+      "sha256": "5115d4b166b8b25d424d313b8f86c6de6ee7e474aedb4555054940cfeea24263",
+      "bytes": 38644
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "hen-walk-b.jpg",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "eedc08e0",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -0.010891193828227327,
+          -0.40289062580584994
+        ],
+        "max": [
+          0.1759247459769249,
+          0.5958971321083084,
+          0.30107199902209036
+        ]
+      },
+      "sourceGLB": "animals/hen.glb",
+      "sha256": "dfbadcb83b535ab89c22ed2311e5836d4e55d3cc7090c6b8258b7c6ee40a78fb",
+      "bytes": 38579
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "hen-eat-a.jpg",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "0255894e",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -6.127256951815596e-9,
+          -0.15711112549959533
+        ],
+        "max": [
+          0.1759247459769249,
+          0.6161940653707743,
+          0.4435513709483106
+        ]
+      },
+      "sourceGLB": "animals/hen.glb",
+      "sha256": "54172a61851a52f4dd947517102039b31ec59ebda3efa5ed7f88f4a130a36b3d",
+      "bytes": 39603
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "hen-eat-b.jpg",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "da4e03fe",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -3.2467862010054915e-9,
+          -0.16481481024864397
+        ],
+        "max": [
+          0.1759247459769249,
+          0.6175304164298082,
+          0.47680044499514784
+        ]
+      },
+      "sourceGLB": "animals/hen.glb",
+      "sha256": "28af6f7a32d643b37b7b96698fd843e3fdbf52fe6fc39ecda59f0b3a66b9e37c",
+      "bytes": 39449
+    },
+    {
+      "key": "hen",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.38,
+      "duration": 1.600000023841858,
+      "file": "hen-far.jpg",
+      "triangles": 194,
+      "meshes": 1,
+      "skinnedMeshes": 0,
+      "vertices": 238,
+      "materials": [
+        "fur"
+      ],
+      "signature": "f45a98cf",
+      "bounds": {
+        "min": [
+          -0.15983718633651733,
+          0,
+          -0.3787499964237213
+        ],
+        "max": [
+          0.1682972013950348,
+          0.5842795968055725,
+          0.30107200145721436
+        ]
+      },
+      "sourceGLB": "animals/hen_lod.glb"
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "mule-idle-a.jpg",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "a108ef31",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          0,
+          -0.8466264387403958
+        ],
+        "max": [
+          0.3323375594615936,
+          2.301238642890535,
+          1.3282194669157081
+        ]
+      },
+      "sourceGLB": "animals/mule.glb",
+      "sha256": "dd2eadb98a9b738790e36bdc7a7de23d8144e5988c1ed6e831a064ed11eee5e7",
+      "bytes": 39528
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.375,
+      "duration": 2.4000000953674316,
+      "file": "mule-idle-b.jpg",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "94a6a191",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          0,
+          -0.8417080137847717
+        ],
+        "max": [
+          0.3323375594615936,
+          2.300913903559556,
+          1.328229639413196
+        ]
+      },
+      "sourceGLB": "animals/mule.glb",
+      "sha256": "0764b40650a3b6ba4e51693bfdda759aa9683d0dd3362b8a195cd364273fbbb8",
+      "bytes": 39551
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 1.2000000476837158,
+      "file": "mule-walk-a.jpg",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "d210107c",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          -0.008066658807656082,
+          -0.8475840734433352
+        ],
+        "max": [
+          0.3323375594615936,
+          2.2980475661215802,
+          1.3292562505484065
+        ]
+      },
+      "sourceGLB": "animals/mule.glb",
+      "sha256": "27f7afb9b1608084073c1337fa104fa00547b3e0a84341123381e2d36867af0c",
+      "bytes": 39963
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 1.2000000476837158,
+      "file": "mule-walk-b.jpg",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "5c91e156",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          -0.004425074263881255,
+          -0.8451761557437132
+        ],
+        "max": [
+          0.3323375594615936,
+          2.2991206077154986,
+          1.329686642150355
+        ]
+      },
+      "sourceGLB": "animals/mule.glb",
+      "sha256": "d63be97f4f6c53347d50896cc6a848a9e7c96899be47f2fb2bdb42a4c5311a41",
+      "bytes": 39851
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "mule-eat-a.jpg",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "850fa613",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          0,
+          -0.8497036538530657
+        ],
+        "max": [
+          0.3323375594615936,
+          1.495000009536743,
+          1.278280306383331
+        ]
+      },
+      "sourceGLB": "animals/mule.glb",
+      "sha256": "606b928aa47ae3e926e86bb01b5cd66abbc5d3fc24a33dcb6e9215bc974bfdf3",
+      "bytes": 38098
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.875,
+      "duration": 1.600000023841858,
+      "file": "mule-eat-b.jpg",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "64422231",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          0,
+          -0.8497036539855352
+        ],
+        "max": [
+          0.3323375594615936,
+          1.495000009536743,
+          1.3483153572089774
+        ]
+      },
+      "sourceGLB": "animals/mule.glb",
+      "sha256": "9f8d20f05a05cce46dd916e49a7072e9c5fbf17d94666782652bc7a57f0df94d",
+      "bytes": 37915
+    },
+    {
+      "key": "mule",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.88,
+      "duration": 1.600000023841858,
+      "file": "mule-far.jpg",
+      "triangles": 288,
+      "meshes": 1,
+      "skinnedMeshes": 0,
+      "vertices": 350,
+      "materials": [
+        "fur"
+      ],
+      "signature": "6085afba",
+      "bounds": {
+        "min": [
+          -0.3594000041484833,
+          0,
+          -0.8446411490440369
+        ],
+        "max": [
+          0.3594000041484833,
+          2.2899999618530273,
+          1.3093758821487427
+        ]
+      },
+      "sourceGLB": "animals/mule_lod.glb"
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "parrot_caged-idle-a.jpg",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "19787175",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged.glb",
+      "sha256": "ab8979395c9fd59adf2d3e8f8498efe6079a3d70a5e2d21b3fa5b328708747fa",
+      "bytes": 47889
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "parrot_caged-idle-b.jpg",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "7f0d9d9b",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged.glb",
+      "sha256": "b7b90b86138b1e959e16a29613847dcb5ba0a9767ebaedaf94101bf7a1a406d1",
+      "bytes": 47883
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 0.800000011920929,
+      "file": "parrot_caged-walk-a.jpg",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "c8cb661d",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged.glb",
+      "sha256": "252282ad1bc59542171f570a80c1d38fad422164b9c5bc183110f849bb82ca90",
+      "bytes": 47965
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "parrot_caged-walk-b.jpg",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "727d163d",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged.glb",
+      "sha256": "ab6753b963f3118772da16af48261edf6c518dd7084fc6ab971443db336633cb",
+      "bytes": 48031
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "parrot_caged-eat-a.jpg",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "662c206d",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged.glb",
+      "sha256": "a02d556405391ef7050ea619fd874b77587143b891a651c08683800b6f8a4d80",
+      "bytes": 47584
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "parrot_caged-eat-b.jpg",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "29dc49e6",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged.glb",
+      "sha256": "5a72c758c8c73db220088ac32b318db8a3dfcaa110cbb9f102eadeb98db0add5",
+      "bytes": 47709
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.38,
+      "duration": 1.600000023841858,
+      "file": "parrot_caged-far.jpg",
+      "triangles": 266,
+      "meshes": 2,
+      "skinnedMeshes": 0,
+      "vertices": 298,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "3a1671f0",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35407787561416626,
+          1.8096320629119873,
+          0.3499999940395355
+        ]
+      },
+      "sourceGLB": "animals/parrot_caged_lod.glb"
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.125,
+      "duration": 2.4000000953674316,
+      "file": "canary_caged-idle-a.jpg",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "076fa817",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      },
+      "sourceGLB": "animals/canary_caged.glb",
+      "sha256": "89a99d81eb989f4c8ce5c222648feab922da4f33f4330e3b316f891644f66227",
+      "bytes": 45497
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "canary_caged-idle-b.jpg",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "45d16e55",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      },
+      "sourceGLB": "animals/canary_caged.glb",
+      "sha256": "5be8173e026270e9fd344ba9ce1b208f3534072b44ce14666c48e7b07e89b2e4",
+      "bytes": 45518
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.125,
+      "duration": 0.800000011920929,
+      "file": "canary_caged-walk-a.jpg",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "6be9a7aa",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      },
+      "sourceGLB": "animals/canary_caged.glb",
+      "sha256": "4d6aa5521a1cc545f8e0b4d24392437e00234188e9f0509cd489b9432c59d0c6",
+      "bytes": 45622
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "canary_caged-walk-b.jpg",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "426c37a8",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      },
+      "sourceGLB": "animals/canary_caged.glb",
+      "sha256": "538768d201d554fafd40d0a2bc351c8ada8507fb7049520f82a5712510885759",
+      "bytes": 45622
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.125,
+      "duration": 1.600000023841858,
+      "file": "canary_caged-eat-a.jpg",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "3401cfa1",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      },
+      "sourceGLB": "animals/canary_caged.glb",
+      "sha256": "d3d32ec53f30197b56ff38a0bbbcf889c5614379b010a25bc0f3bd83e26869e1",
+      "bytes": 45484
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "canary_caged-eat-b.jpg",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "49e7931e",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      },
+      "sourceGLB": "animals/canary_caged.glb",
+      "sha256": "a9f0d1301186b924408cd3dd62b8e48ea782873043134e182aa6c25f3730ad86",
+      "bytes": 45472
+    },
+    {
+      "key": "canary_caged",
+      "lod": "far",
+      "clip": "eat",
+      "phase": 0.38,
+      "duration": 1.600000023841858,
+      "file": "canary_caged-far.jpg",
+      "triangles": 266,
+      "meshes": 2,
+      "skinnedMeshes": 0,
+      "vertices": 296,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "373d7956",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2750937342643738,
+          1.5987368822097778,
+          0.27000001072883606
+        ]
+      },
+      "sourceGLB": "animals/canary_caged_lod.glb"
+    },
+    {
+      "file": "contact-sheet.jpg",
+      "cards": 21,
+      "width": 1440,
+      "height": 2130
+    }
+  ],
+  "motion": [
+    {
+      "key": "dog",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.875
+      ],
+      "signatures": [
+        "933914d7",
+        "61f2f700"
+      ],
+      "maxDisplacementMetres": 0.18071354084332686,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "933914d7",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "1517e4a0",
+          "maxDisplacementMetres": 0.09095496533834398,
+          "rmsDisplacementMetres": 0.021016454573901104
+        },
+        {
+          "phase": 0.25,
+          "signature": "a5ed24fb",
+          "maxDisplacementMetres": 0.08514392572488898,
+          "rmsDisplacementMetres": 0.01852817911677756
+        },
+        {
+          "phase": 0.375,
+          "signature": "a0966247",
+          "maxDisplacementMetres": 0.1726409836776666,
+          "rmsDisplacementMetres": 0.03675998218959932
+        },
+        {
+          "phase": 0.5,
+          "signature": "1517e4a0",
+          "maxDisplacementMetres": 0.09095496533834399,
+          "rmsDisplacementMetres": 0.021016454573901108
+        },
+        {
+          "phase": 0.625,
+          "signature": "494dec6e",
+          "maxDisplacementMetres": 0.05081008477262534,
+          "rmsDisplacementMetres": 0.01713986804602381
+        },
+        {
+          "phase": 0.75,
+          "signature": "6b92a092",
+          "maxDisplacementMetres": 0.09695217660635036,
+          "rmsDisplacementMetres": 0.028876989292047378
+        },
+        {
+          "phase": 0.875,
+          "signature": "61f2f700",
+          "maxDisplacementMetres": 0.18071354084332686,
+          "rmsDisplacementMetres": 0.04179349191121397
+        }
+      ]
+    },
+    {
+      "key": "dog",
+      "clip": "walk",
+      "duration": 1,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "f6f45932",
+        "0ee3e578"
+      ],
+      "maxDisplacementMetres": 0.29303081992506597,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "f6f45932",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "1517e4a0",
+          "maxDisplacementMetres": 0.1455036968663536,
+          "rmsDisplacementMetres": 0.06100768540741298
+        },
+        {
+          "phase": 0.25,
+          "signature": "5616d4d4",
+          "maxDisplacementMetres": 0.06040465008420273,
+          "rmsDisplacementMetres": 0.02562489139401505
+        },
+        {
+          "phase": 0.375,
+          "signature": "12df23bb",
+          "maxDisplacementMetres": 0.024491365684579706,
+          "rmsDisplacementMetres": 0.008458622634106544
+        },
+        {
+          "phase": 0.5,
+          "signature": "1517e4a0",
+          "maxDisplacementMetres": 0.1455036968663536,
+          "rmsDisplacementMetres": 0.06100768540741298
+        },
+        {
+          "phase": 0.625,
+          "signature": "9d488d9d",
+          "maxDisplacementMetres": 0.2337014339677202,
+          "rmsDisplacementMetres": 0.11877443733787836
+        },
+        {
+          "phase": 0.75,
+          "signature": "0ee3e578",
+          "maxDisplacementMetres": 0.29303081992506597,
+          "rmsDisplacementMetres": 0.1429603898341576
+        },
+        {
+          "phase": 0.875,
+          "signature": "d76e504f",
+          "maxDisplacementMetres": 0.2337014339677202,
+          "rmsDisplacementMetres": 0.11908022565672757
+        }
+      ]
+    },
+    {
+      "key": "dog",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.875
+      ],
+      "signatures": [
+        "405aeab7",
+        "051206d8"
+      ],
+      "maxDisplacementMetres": 0.08141799696661894,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "405aeab7",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "4d0d698b",
+          "maxDisplacementMetres": 0.040605462082952425,
+          "rmsDisplacementMetres": 0.016702434905285658
+        },
+        {
+          "phase": 0.25,
+          "signature": "a9e1cce0",
+          "maxDisplacementMetres": 0.0402356477605195,
+          "rmsDisplacementMetres": 0.016128489245161068
+        },
+        {
+          "phase": 0.375,
+          "signature": "12dddc62",
+          "maxDisplacementMetres": 0.08047875675574209,
+          "rmsDisplacementMetres": 0.032063630231359934
+        },
+        {
+          "phase": 0.5,
+          "signature": "4d0d698b",
+          "maxDisplacementMetres": 0.040605462082952425,
+          "rmsDisplacementMetres": 0.016702434905285658
+        },
+        {
+          "phase": 0.625,
+          "signature": "fb25201f",
+          "maxDisplacementMetres": 0.03914198393885407,
+          "rmsDisplacementMetres": 0.009260913658527017
+        },
+        {
+          "phase": 0.75,
+          "signature": "00cc9956",
+          "maxDisplacementMetres": 0.047239732770093586,
+          "rmsDisplacementMetres": 0.01960324837462789
+        },
+        {
+          "phase": 0.875,
+          "signature": "051206d8",
+          "maxDisplacementMetres": 0.08141799696661894,
+          "rmsDisplacementMetres": 0.03343551243728034
+        }
+      ]
+    },
+    {
+      "key": "cat",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "e1aa505a",
+        "9fc7fa67"
+      ],
+      "maxDisplacementMetres": 0.039664474845227886,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "e1aa505a",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "0c494fa7",
+          "maxDisplacementMetres": 0.016687273486313044,
+          "rmsDisplacementMetres": 0.006390378957923421
+        },
+        {
+          "phase": 0.25,
+          "signature": "92872c02",
+          "maxDisplacementMetres": 0.012038792800542144,
+          "rmsDisplacementMetres": 0.003726359550765763
+        },
+        {
+          "phase": 0.375,
+          "signature": "5c7ac2b2",
+          "maxDisplacementMetres": 0.021477228885258434,
+          "rmsDisplacementMetres": 0.0044493433506445365
+        },
+        {
+          "phase": 0.5,
+          "signature": "0c494fa7",
+          "maxDisplacementMetres": 0.016687273486313044,
+          "rmsDisplacementMetres": 0.006390378957923421
+        },
+        {
+          "phase": 0.625,
+          "signature": "1dae40ae",
+          "maxDisplacementMetres": 0.03279125069650376,
+          "rmsDisplacementMetres": 0.012807393595460664
+        },
+        {
+          "phase": 0.75,
+          "signature": "9fc7fa67",
+          "maxDisplacementMetres": 0.039664474845227886,
+          "rmsDisplacementMetres": 0.015222159484428748
+        },
+        {
+          "phase": 0.875,
+          "signature": "6b89204b",
+          "maxDisplacementMetres": 0.033278277749849615,
+          "rmsDisplacementMetres": 0.01279440947298147
+        }
+      ]
+    },
+    {
+      "key": "cat",
+      "clip": "walk",
+      "duration": 1,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "7d0262a6",
+        "62f3ea52"
+      ],
+      "maxDisplacementMetres": 0.18240559758836153,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "7d0262a6",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "0c494fa7",
+          "maxDisplacementMetres": 0.08981183861615409,
+          "rmsDisplacementMetres": 0.03528290447035584
+        },
+        {
+          "phase": 0.25,
+          "signature": "5a40cd8b",
+          "maxDisplacementMetres": 0.0372846381354189,
+          "rmsDisplacementMetres": 0.014960310646176166
+        },
+        {
+          "phase": 0.375,
+          "signature": "e740bcdb",
+          "maxDisplacementMetres": 0.016612126927140272,
+          "rmsDisplacementMetres": 0.006486793606417968
+        },
+        {
+          "phase": 0.5,
+          "signature": "0c494fa7",
+          "maxDisplacementMetres": 0.08981183861615409,
+          "rmsDisplacementMetres": 0.03528290447035583
+        },
+        {
+          "phase": 0.625,
+          "signature": "0c3fbcf8",
+          "maxDisplacementMetres": 0.14567099045946544,
+          "rmsDisplacementMetres": 0.0695252054056669
+        },
+        {
+          "phase": 0.75,
+          "signature": "62f3ea52",
+          "maxDisplacementMetres": 0.18240559758836153,
+          "rmsDisplacementMetres": 0.08388990077504876
+        },
+        {
+          "phase": 0.875,
+          "signature": "f0ee1b7d",
+          "maxDisplacementMetres": 0.14567099045946544,
+          "rmsDisplacementMetres": 0.06982225367872219
+        }
+      ]
+    },
+    {
+      "key": "cat",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.875
+      ],
+      "signatures": [
+        "657e6991",
+        "89649395"
+      ],
+      "maxDisplacementMetres": 0.05623740440397259,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "657e6991",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "431bfc6a",
+          "maxDisplacementMetres": 0.028275683279824583,
+          "rmsDisplacementMetres": 0.012398295855768493
+        },
+        {
+          "phase": 0.25,
+          "signature": "7d18c3eb",
+          "maxDisplacementMetres": 0.02738946293581685,
+          "rmsDisplacementMetres": 0.012348262127405573
+        },
+        {
+          "phase": 0.375,
+          "signature": "2b842336",
+          "maxDisplacementMetres": 0.053527973274849434,
+          "rmsDisplacementMetres": 0.024581994717854935
+        },
+        {
+          "phase": 0.5,
+          "signature": "431bfc6a",
+          "maxDisplacementMetres": 0.028275683279824583,
+          "rmsDisplacementMetres": 0.012398295855768493
+        },
+        {
+          "phase": 0.625,
+          "signature": "9d063690",
+          "maxDisplacementMetres": 0.011311094899832244,
+          "rmsDisplacementMetres": 0.0034966017381475732
+        },
+        {
+          "phase": 0.75,
+          "signature": "4d019deb",
+          "maxDisplacementMetres": 0.030271193367591598,
+          "rmsDisplacementMetres": 0.012944672317844321
+        },
+        {
+          "phase": 0.875,
+          "signature": "89649395",
+          "maxDisplacementMetres": 0.05623740440397259,
+          "rmsDisplacementMetres": 0.024770840639053
+        }
+      ]
+    },
+    {
+      "key": "pigeon",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "9d959fa8",
+        "c9a1a2db"
+      ],
+      "maxDisplacementMetres": 0.0319784207849796,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "9d959fa8",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "7e25492b",
+          "maxDisplacementMetres": 0.012853483725060448,
+          "rmsDisplacementMetres": 0.003772627820583513
+        },
+        {
+          "phase": 0.25,
+          "signature": "d10f5025",
+          "maxDisplacementMetres": 0.006375709257829424,
+          "rmsDisplacementMetres": 0.002333423634322656
+        },
+        {
+          "phase": 0.375,
+          "signature": "03b70fb0",
+          "maxDisplacementMetres": 0.007056150995234069,
+          "rmsDisplacementMetres": 0.0024834182877450303
+        },
+        {
+          "phase": 0.5,
+          "signature": "7e25492b",
+          "maxDisplacementMetres": 0.012853483725060446,
+          "rmsDisplacementMetres": 0.003772627820583514
+        },
+        {
+          "phase": 0.625,
+          "signature": "38698bd9",
+          "maxDisplacementMetres": 0.02713788363634218,
+          "rmsDisplacementMetres": 0.007970239517832723
+        },
+        {
+          "phase": 0.75,
+          "signature": "c9a1a2db",
+          "maxDisplacementMetres": 0.0319784207849796,
+          "rmsDisplacementMetres": 0.00928889067872813
+        },
+        {
+          "phase": 0.875,
+          "signature": "129037c8",
+          "maxDisplacementMetres": 0.02569801910329991,
+          "rmsDisplacementMetres": 0.0075268418089363765
+        }
+      ]
+    },
+    {
+      "key": "pigeon",
+      "clip": "walk",
+      "duration": 0.800000011920929,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "56803c27",
+        "26457954"
+      ],
+      "maxDisplacementMetres": 0.05275746290149722,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "56803c27",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "7e25492b",
+          "maxDisplacementMetres": 0.022157072478366104,
+          "rmsDisplacementMetres": 0.008826240101443932
+        },
+        {
+          "phase": 0.25,
+          "signature": "4499b078",
+          "maxDisplacementMetres": 0.009199484704563629,
+          "rmsDisplacementMetres": 0.005234975124271131
+        },
+        {
+          "phase": 0.375,
+          "signature": "9156dff1",
+          "maxDisplacementMetres": 0.016573476177521612,
+          "rmsDisplacementMetres": 0.008199316955958854
+        },
+        {
+          "phase": 0.5,
+          "signature": "7e25492b",
+          "maxDisplacementMetres": 0.022157072478366104,
+          "rmsDisplacementMetres": 0.008826240101443932
+        },
+        {
+          "phase": 0.625,
+          "signature": "bac5b12e",
+          "maxDisplacementMetres": 0.043935523133581955,
+          "rmsDisplacementMetres": 0.01549277261761197
+        },
+        {
+          "phase": 0.75,
+          "signature": "26457954",
+          "maxDisplacementMetres": 0.05275746290149722,
+          "rmsDisplacementMetres": 0.019054976084894953
+        },
+        {
+          "phase": 0.875,
+          "signature": "0fbdd26c",
+          "maxDisplacementMetres": 0.04393551767353992,
+          "rmsDisplacementMetres": 0.017528683129747084
+        }
+      ]
+    },
+    {
+      "key": "pigeon",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.375
+      ],
+      "signatures": [
+        "894a68ea",
+        "a1c10ac9"
+      ],
+      "maxDisplacementMetres": 0.11022925141704905,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "894a68ea",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "047cac96",
+          "maxDisplacementMetres": 0.055091030021557345,
+          "rmsDisplacementMetres": 0.021392442683172457
+        },
+        {
+          "phase": 0.25,
+          "signature": "047cac96",
+          "maxDisplacementMetres": 0.055091030021557345,
+          "rmsDisplacementMetres": 0.021392442683172457
+        },
+        {
+          "phase": 0.375,
+          "signature": "a1c10ac9",
+          "maxDisplacementMetres": 0.11022925141704905,
+          "rmsDisplacementMetres": 0.043252432008104864
+        },
+        {
+          "phase": 0.5,
+          "signature": "047cac96",
+          "maxDisplacementMetres": 0.055091030021557345,
+          "rmsDisplacementMetres": 0.021392442683172457
+        },
+        {
+          "phase": 0.625,
+          "signature": "f7507748",
+          "maxDisplacementMetres": 4.042768082335609e-9,
+          "rmsDisplacementMetres": 1.5556873986315863e-9
+        },
+        {
+          "phase": 0.75,
+          "signature": "047cac96",
+          "maxDisplacementMetres": 0.055091021748430766,
+          "rmsDisplacementMetres": 0.021392439439545188
+        },
+        {
+          "phase": 0.875,
+          "signature": "009d67d8",
+          "maxDisplacementMetres": 0.11022924331818787,
+          "rmsDisplacementMetres": 0.043252428758428316
+        }
+      ]
+    },
+    {
+      "key": "hen",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "2f076cc4",
+        "348c76d4"
+      ],
+      "maxDisplacementMetres": 0.04365170187437756,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "2f076cc4",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "4100b7a4",
+          "maxDisplacementMetres": 0.017530761772998803,
+          "rmsDisplacementMetres": 0.006110933346478248
+        },
+        {
+          "phase": 0.25,
+          "signature": "b741ba70",
+          "maxDisplacementMetres": 0.00951583557920215,
+          "rmsDisplacementMetres": 0.003719285940979904
+        },
+        {
+          "phase": 0.375,
+          "signature": "9fe44110",
+          "maxDisplacementMetres": 0.013505336693152386,
+          "rmsDisplacementMetres": 0.004840303764636737
+        },
+        {
+          "phase": 0.5,
+          "signature": "4100b7a4",
+          "maxDisplacementMetres": 0.0175307617729988,
+          "rmsDisplacementMetres": 0.006110933346478248
+        },
+        {
+          "phase": 0.625,
+          "signature": "35d67f21",
+          "maxDisplacementMetres": 0.03707091806475548,
+          "rmsDisplacementMetres": 0.012133902165436765
+        },
+        {
+          "phase": 0.75,
+          "signature": "348c76d4",
+          "maxDisplacementMetres": 0.04365170187437756,
+          "rmsDisplacementMetres": 0.014326837944040254
+        },
+        {
+          "phase": 0.875,
+          "signature": "dda6a296",
+          "maxDisplacementMetres": 0.03504988895461238,
+          "rmsDisplacementMetres": 0.01210083137388185
+        }
+      ]
+    },
+    {
+      "key": "hen",
+      "clip": "walk",
+      "duration": 0.800000011920929,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "edfe4a8c",
+        "eedc08e0"
+      ],
+      "maxDisplacementMetres": 0.09827854205287528,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "edfe4a8c",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "4100b7a4",
+          "maxDisplacementMetres": 0.04127500944083327,
+          "rmsDisplacementMetres": 0.01594394073894031
+        },
+        {
+          "phase": 0.25,
+          "signature": "7921971b",
+          "maxDisplacementMetres": 0.017137138419455366,
+          "rmsDisplacementMetres": 0.01059510871481935
+        },
+        {
+          "phase": 0.375,
+          "signature": "a2c828d0",
+          "maxDisplacementMetres": 0.03201522129617245,
+          "rmsDisplacementMetres": 0.01816259839173199
+        },
+        {
+          "phase": 0.5,
+          "signature": "4100b7a4",
+          "maxDisplacementMetres": 0.04127500944083326,
+          "rmsDisplacementMetres": 0.01594394073894031
+        },
+        {
+          "phase": 0.625,
+          "signature": "6c370e9d",
+          "maxDisplacementMetres": 0.08184470822565407,
+          "rmsDisplacementMetres": 0.02597565789200632
+        },
+        {
+          "phase": 0.75,
+          "signature": "eedc08e0",
+          "maxDisplacementMetres": 0.09827854205287528,
+          "rmsDisplacementMetres": 0.03249468424276703
+        },
+        {
+          "phase": 0.875,
+          "signature": "b224c520",
+          "maxDisplacementMetres": 0.08184469805448694,
+          "rmsDisplacementMetres": 0.031695655324536595
+        }
+      ]
+    },
+    {
+      "key": "hen",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.375
+      ],
+      "signatures": [
+        "0255894e",
+        "da4e03fe"
+      ],
+      "maxDisplacementMetres": 0.21140145589679338,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "0255894e",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "645f163f",
+          "maxDisplacementMetres": 0.10641852479129828,
+          "rmsDisplacementMetres": 0.044543500604368035
+        },
+        {
+          "phase": 0.25,
+          "signature": "645f163f",
+          "maxDisplacementMetres": 0.10641852479129828,
+          "rmsDisplacementMetres": 0.044543500604368035
+        },
+        {
+          "phase": 0.375,
+          "signature": "da4e03fe",
+          "maxDisplacementMetres": 0.21140145589679338,
+          "rmsDisplacementMetres": 0.08934908793871324
+        },
+        {
+          "phase": 0.5,
+          "signature": "645f163f",
+          "maxDisplacementMetres": 0.10641852479129828,
+          "rmsDisplacementMetres": 0.044543500604368035
+        },
+        {
+          "phase": 0.625,
+          "signature": "33a13648",
+          "maxDisplacementMetres": 7.869404637797769e-9,
+          "rmsDisplacementMetres": 3.2675343563942074e-9
+        },
+        {
+          "phase": 0.75,
+          "signature": "645f163f",
+          "maxDisplacementMetres": 0.10641850892773795,
+          "rmsDisplacementMetres": 0.044543493905566146
+        },
+        {
+          "phase": 0.875,
+          "signature": "3e2ea935",
+          "maxDisplacementMetres": 0.21140144058492974,
+          "rmsDisplacementMetres": 0.08934908132641652
+        }
+      ]
+    },
+    {
+      "key": "mule",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.375
+      ],
+      "signatures": [
+        "a108ef31",
+        "94a6a191"
+      ],
+      "maxDisplacementMetres": 0.10071688378995028,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "a108ef31",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "81107ac5",
+          "maxDisplacementMetres": 0.041373260907390234,
+          "rmsDisplacementMetres": 0.014894209137356057
+        },
+        {
+          "phase": 0.25,
+          "signature": "512a62dc",
+          "maxDisplacementMetres": 0.05529325663485434,
+          "rmsDisplacementMetres": 0.013505038249524646
+        },
+        {
+          "phase": 0.375,
+          "signature": "94a6a191",
+          "maxDisplacementMetres": 0.10071688378995028,
+          "rmsDisplacementMetres": 0.022010539613918995
+        },
+        {
+          "phase": 0.5,
+          "signature": "81107ac5",
+          "maxDisplacementMetres": 0.04137326090739023,
+          "rmsDisplacementMetres": 0.01489420913735606
+        },
+        {
+          "phase": 0.625,
+          "signature": "986f6b38",
+          "maxDisplacementMetres": 0.08254755442767386,
+          "rmsDisplacementMetres": 0.026445658093197183
+        },
+        {
+          "phase": 0.75,
+          "signature": "deefcb0e",
+          "maxDisplacementMetres": 0.09966749545418478,
+          "rmsDisplacementMetres": 0.030925975552412582
+        },
+        {
+          "phase": 0.875,
+          "signature": "cdf6e947",
+          "maxDisplacementMetres": 0.08268683393390015,
+          "rmsDisplacementMetres": 0.02970384097351741
+        }
+      ]
+    },
+    {
+      "key": "mule",
+      "clip": "walk",
+      "duration": 1.2000000476837158,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "d210107c",
+        "5c91e156"
+      ],
+      "maxDisplacementMetres": 0.4204393661513878,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "d210107c",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "81107ac5",
+          "maxDisplacementMetres": 0.21788580088458423,
+          "rmsDisplacementMetres": 0.08257979130498537
+        },
+        {
+          "phase": 0.25,
+          "signature": "edf20e3c",
+          "maxDisplacementMetres": 0.09037350517350938,
+          "rmsDisplacementMetres": 0.03508091839056065
+        },
+        {
+          "phase": 0.375,
+          "signature": "3bc79a07",
+          "maxDisplacementMetres": 0.042662791262494774,
+          "rmsDisplacementMetres": 0.016674474209977183
+        },
+        {
+          "phase": 0.5,
+          "signature": "81107ac5",
+          "maxDisplacementMetres": 0.21788580088458423,
+          "rmsDisplacementMetres": 0.08257979130498536
+        },
+        {
+          "phase": 0.625,
+          "signature": "a90aa74b",
+          "maxDisplacementMetres": 0.3307185603975974,
+          "rmsDisplacementMetres": 0.1586386448108956
+        },
+        {
+          "phase": 0.75,
+          "signature": "5c91e156",
+          "maxDisplacementMetres": 0.4204393661513878,
+          "rmsDisplacementMetres": 0.1912957679034824
+        },
+        {
+          "phase": 0.875,
+          "signature": "541503b4",
+          "maxDisplacementMetres": 0.33071847545531147,
+          "rmsDisplacementMetres": 0.15951065895600625
+        }
+      ]
+    },
+    {
+      "key": "mule",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.875
+      ],
+      "signatures": [
+        "850fa613",
+        "64422231"
+      ],
+      "maxDisplacementMetres": 0.15744540407955196,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "850fa613",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "8abfdbe7",
+          "maxDisplacementMetres": 0.07916104692782136,
+          "rmsDisplacementMetres": 0.035744577264120725
+        },
+        {
+          "phase": 0.25,
+          "signature": "c10d36e3",
+          "maxDisplacementMetres": 0.07765407823337907,
+          "rmsDisplacementMetres": 0.03560196915078925
+        },
+        {
+          "phase": 0.375,
+          "signature": "84e53076",
+          "maxDisplacementMetres": 0.15274985331658472,
+          "rmsDisplacementMetres": 0.07101902989890252
+        },
+        {
+          "phase": 0.5,
+          "signature": "8abfdbe7",
+          "maxDisplacementMetres": 0.07916104692782136,
+          "rmsDisplacementMetres": 0.035744577264120725
+        },
+        {
+          "phase": 0.625,
+          "signature": "f645a8d3",
+          "maxDisplacementMetres": 0.022601360532712805,
+          "rmsDisplacementMetres": 0.007707594374569264
+        },
+        {
+          "phase": 0.75,
+          "signature": "635e7458",
+          "maxDisplacementMetres": 0.08256006646780249,
+          "rmsDisplacementMetres": 0.03673523284203873
+        },
+        {
+          "phase": 0.875,
+          "signature": "64422231",
+          "maxDisplacementMetres": 0.15744540407955196,
+          "rmsDisplacementMetres": 0.07141763093906468
+        }
+      ]
+    },
+    {
+      "key": "parrot_caged",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "19787175",
+        "7f0d9d9b"
+      ],
+      "maxDisplacementMetres": 0.039817946249661514,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "19787175",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "b508660a",
+          "maxDisplacementMetres": 0.017155448949270277,
+          "rmsDisplacementMetres": 0.003537334071552667
+        },
+        {
+          "phase": 0.25,
+          "signature": "fe0896fe",
+          "maxDisplacementMetres": 0.00874744413410515,
+          "rmsDisplacementMetres": 0.0021022647184980566
+        },
+        {
+          "phase": 0.375,
+          "signature": "76e4a3a5",
+          "maxDisplacementMetres": 0.009906109265003989,
+          "rmsDisplacementMetres": 0.0023777386779461405
+        },
+        {
+          "phase": 0.5,
+          "signature": "b508660a",
+          "maxDisplacementMetres": 0.01715544894927027,
+          "rmsDisplacementMetres": 0.003537334071552667
+        },
+        {
+          "phase": 0.625,
+          "signature": "ad25e9a0",
+          "maxDisplacementMetres": 0.0322983085095115,
+          "rmsDisplacementMetres": 0.007254552403827326
+        },
+        {
+          "phase": 0.75,
+          "signature": "7f0d9d9b",
+          "maxDisplacementMetres": 0.039817946249661514,
+          "rmsDisplacementMetres": 0.008538508282949943
+        },
+        {
+          "phase": 0.875,
+          "signature": "22a734cd",
+          "maxDisplacementMetres": 0.03415802995401664,
+          "rmsDisplacementMetres": 0.00705021295874819
+        }
+      ]
+    },
+    {
+      "key": "parrot_caged",
+      "clip": "walk",
+      "duration": 0.800000011920929,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "c8cb661d",
+        "727d163d"
+      ],
+      "maxDisplacementMetres": 0.05420981066753001,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "c8cb661d",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "b508660a",
+          "maxDisplacementMetres": 0.022767029306196618,
+          "rmsDisplacementMetres": 0.005159222073800825
+        },
+        {
+          "phase": 0.25,
+          "signature": "cf35c8ce",
+          "maxDisplacementMetres": 0.009474832682460087,
+          "rmsDisplacementMetres": 0.0034642883086467564
+        },
+        {
+          "phase": 0.375,
+          "signature": "b55daef3",
+          "maxDisplacementMetres": 0.018904055973588255,
+          "rmsDisplacementMetres": 0.005958857077852294
+        },
+        {
+          "phase": 0.5,
+          "signature": "b508660a",
+          "maxDisplacementMetres": 0.022767029306196618,
+          "rmsDisplacementMetres": 0.005159222073800823
+        },
+        {
+          "phase": 0.625,
+          "signature": "921d46ec",
+          "maxDisplacementMetres": 0.04514501379828049,
+          "rmsDisplacementMetres": 0.008341103269085272
+        },
+        {
+          "phase": 0.75,
+          "signature": "727d163d",
+          "maxDisplacementMetres": 0.05420981066753001,
+          "rmsDisplacementMetres": 0.010459629043899904
+        },
+        {
+          "phase": 0.875,
+          "signature": "1433df46",
+          "maxDisplacementMetres": 0.045145008187930206,
+          "rmsDisplacementMetres": 0.010250949167776422
+        }
+      ]
+    },
+    {
+      "key": "parrot_caged",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.375
+      ],
+      "signatures": [
+        "662c206d",
+        "29dc49e6"
+      ],
+      "maxDisplacementMetres": 0.13682499033320317,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "662c206d",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "129992ca",
+          "maxDisplacementMetres": 0.0676710037968505,
+          "rmsDisplacementMetres": 0.015008553625535178
+        },
+        {
+          "phase": 0.25,
+          "signature": "129992ca",
+          "maxDisplacementMetres": 0.0676710037968505,
+          "rmsDisplacementMetres": 0.015008553625535178
+        },
+        {
+          "phase": 0.375,
+          "signature": "29dc49e6",
+          "maxDisplacementMetres": 0.13682499033320317,
+          "rmsDisplacementMetres": 0.030640331756454003
+        },
+        {
+          "phase": 0.5,
+          "signature": "129992ca",
+          "maxDisplacementMetres": 0.0676710037968505,
+          "rmsDisplacementMetres": 0.015008553625535178
+        },
+        {
+          "phase": 0.625,
+          "signature": "662c206d",
+          "maxDisplacementMetres": 4.9095405229811914e-9,
+          "rmsDisplacementMetres": 1.0802947593119064e-9
+        },
+        {
+          "phase": 0.75,
+          "signature": "82c2f6ff",
+          "maxDisplacementMetres": 0.06767099352458304,
+          "rmsDisplacementMetres": 0.01500855132757257
+        },
+        {
+          "phase": 0.875,
+          "signature": "29dc49e6",
+          "maxDisplacementMetres": 0.13682498007508456,
+          "rmsDisplacementMetres": 0.03064032941143782
+        }
+      ]
+    },
+    {
+      "key": "canary_caged",
+      "clip": "idle",
+      "duration": 2.4000000953674316,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "076fa817",
+        "45d16e55"
+      ],
+      "maxDisplacementMetres": 0.02339295676595485,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "076fa817",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "7b7930f7",
+          "maxDisplacementMetres": 0.009425024950352079,
+          "rmsDisplacementMetres": 0.0016167852748071529
+        },
+        {
+          "phase": 0.25,
+          "signature": "b60d25d3",
+          "maxDisplacementMetres": 0.004575492924394675,
+          "rmsDisplacementMetres": 0.001006414629920447
+        },
+        {
+          "phase": 0.375,
+          "signature": "fca4af8c",
+          "maxDisplacementMetres": 0.005128271868843904,
+          "rmsDisplacementMetres": 0.001104173367340045
+        },
+        {
+          "phase": 0.5,
+          "signature": "7b7930f7",
+          "maxDisplacementMetres": 0.009425024950352077,
+          "rmsDisplacementMetres": 0.0016167852748071529
+        },
+        {
+          "phase": 0.625,
+          "signature": "dcda8282",
+          "maxDisplacementMetres": 0.019789357664346655,
+          "rmsDisplacementMetres": 0.0033976410343278525
+        },
+        {
+          "phase": 0.75,
+          "signature": "45d16e55",
+          "maxDisplacementMetres": 0.02339295676595485,
+          "rmsDisplacementMetres": 0.003963042548225642
+        },
+        {
+          "phase": 0.875,
+          "signature": "41d57975",
+          "maxDisplacementMetres": 0.018841119217602068,
+          "rmsDisplacementMetres": 0.0032238841023529887
+        }
+      ]
+    },
+    {
+      "key": "canary_caged",
+      "clip": "walk",
+      "duration": 0.800000011920929,
+      "phases": [
+        0.125,
+        0.75
+      ],
+      "signatures": [
+        "6be9a7aa",
+        "426c37a8"
+      ],
+      "maxDisplacementMetres": 0.03694699596233931,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "6be9a7aa",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "7b7930f7",
+          "maxDisplacementMetres": 0.015516994608401133,
+          "rmsDisplacementMetres": 0.0035033757510041694
+        },
+        {
+          "phase": 0.25,
+          "signature": "3b46422b",
+          "maxDisplacementMetres": 0.00644256386759377,
+          "rmsDisplacementMetres": 0.0019887136829484773
+        },
+        {
+          "phase": 0.375,
+          "signature": "513906b2",
+          "maxDisplacementMetres": 0.00990057973144527,
+          "rmsDisplacementMetres": 0.0029718634004212933
+        },
+        {
+          "phase": 0.5,
+          "signature": "7b7930f7",
+          "maxDisplacementMetres": 0.015516994608401133,
+          "rmsDisplacementMetres": 0.0035033757510041694
+        },
+        {
+          "phase": 0.625,
+          "signature": "d5ba826b",
+          "maxDisplacementMetres": 0.030768833574323588,
+          "rmsDisplacementMetres": 0.006287458881579878
+        },
+        {
+          "phase": 0.75,
+          "signature": "426c37a8",
+          "maxDisplacementMetres": 0.03694699596233931,
+          "rmsDisplacementMetres": 0.007696370629094701
+        },
+        {
+          "phase": 0.875,
+          "signature": "6ecc9e33",
+          "maxDisplacementMetres": 0.030768829750558387,
+          "rmsDisplacementMetres": 0.006954430251448281
+        }
+      ]
+    },
+    {
+      "key": "canary_caged",
+      "clip": "eat",
+      "duration": 1.600000023841858,
+      "phases": [
+        0.125,
+        0.375
+      ],
+      "signatures": [
+        "3401cfa1",
+        "49e7931e"
+      ],
+      "maxDisplacementMetres": 0.07181269758171578,
+      "samples": [
+        {
+          "phase": 0.125,
+          "signature": "3401cfa1",
+          "maxDisplacementMetres": 0,
+          "rmsDisplacementMetres": 0
+        },
+        {
+          "phase": 0,
+          "signature": "c597173d",
+          "maxDisplacementMetres": 0.03608670118827586,
+          "rmsDisplacementMetres": 0.008078947718425626
+        },
+        {
+          "phase": 0.25,
+          "signature": "c597173d",
+          "maxDisplacementMetres": 0.03608670118827586,
+          "rmsDisplacementMetres": 0.008078947718425626
+        },
+        {
+          "phase": 0.375,
+          "signature": "49e7931e",
+          "maxDisplacementMetres": 0.07181269758171578,
+          "rmsDisplacementMetres": 0.016339883611050744
+        },
+        {
+          "phase": 0.5,
+          "signature": "c597173d",
+          "maxDisplacementMetres": 0.03608670118827586,
+          "rmsDisplacementMetres": 0.008078947718425626
+        },
+        {
+          "phase": 0.625,
+          "signature": "3401cfa1",
+          "maxDisplacementMetres": 2.662491238396635e-9,
+          "rmsDisplacementMetres": 5.870177507362878e-10
+        },
+        {
+          "phase": 0.75,
+          "signature": "c597173d",
+          "maxDisplacementMetres": 0.036086695798125915,
+          "rmsDisplacementMetres": 0.008078946492757819
+        },
+        {
+          "phase": 0.875,
+          "signature": "49e7931e",
+          "maxDisplacementMetres": 0.07181269236413454,
+          "rmsDisplacementMetres": 0.01633988238317696
+        }
+      ]
+    }
+  ],
+  "assets": {
+    "dog": {
+      "glb": {
+        "path": "animals/dog.glb",
+        "bytes": 59924,
+        "sha256": "916ae2886e20aac150cea28def8014e7f399fe1adc8b3bedee43d525cfabb158"
+      },
+      "lod": {
+        "path": "animals/dog_lod.glb",
+        "bytes": 15360,
+        "sha256": "bbbec2aab89571174902fef2e0662723aec5672e121718f4fab7c4735be1161d"
+      },
+      "near": {
+        "key": "dog",
+        "lod": "near",
+        "clip": "idle",
+        "phase": 0.38,
+        "duration": 2.4000000953674316,
+        "file": "animals/dog.glb",
+        "triangles": 1148,
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "vertices": 982,
+        "materials": [
+          "fur"
+        ],
+        "signature": "799a309d",
+        "bounds": {
+          "min": [
+            -0.20005536019802095,
+            -1.0728836041806744e-8,
+            -0.79488360842711
+          ],
+          "max": [
+            0.20005536019802095,
+            1.0407882080169855,
+            0.7763999616344208
+          ]
+        }
+      },
+      "far": {
+        "key": "dog",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.88,
+        "duration": 1.600000023841858,
+        "file": "animals/dog_lod.glb",
+        "triangles": 287,
+        "meshes": 1,
+        "skinnedMeshes": 0,
+        "vertices": 340,
+        "materials": [
+          "fur"
+        ],
+        "signature": "b4caed27",
+        "bounds": {
+          "min": [
+            -0.21480000019073486,
+            0,
+            -0.8015859723091125
+          ],
+          "max": [
+            0.21480000019073486,
+            1.0399999618530273,
+            0.7642313241958618
+          ]
+        }
+      }
+    },
+    "cat": {
+      "glb": {
+        "path": "animals/cat.glb",
+        "bytes": 63296,
+        "sha256": "b26be05c63196e5609f4048caf03552a996ba335ec6b8e3799088b4443d221ca"
+      },
+      "lod": {
+        "path": "animals/cat_lod.glb",
+        "bytes": 15436,
+        "sha256": "ab046bdb2c67297fc5275f6d5c011ef9c017e5a8480d121aa03fc44b321ca756"
+      },
+      "near": {
+        "key": "cat",
+        "lod": "near",
+        "clip": "eat",
+        "phase": 0.88,
+        "duration": 1.600000023841858,
+        "file": "animals/cat.glb",
+        "triangles": 1202,
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "vertices": 1051,
+        "materials": [
+          "fur"
+        ],
+        "signature": "f63f4769",
+        "bounds": {
+          "min": [
+            -0.16262464407037205,
+            3.5762786898541066e-9,
+            -0.36898258747580265
+          ],
+          "max": [
+            0.15748312684278057,
+            0.8894554455280304,
+            0.4939675544433671
+          ]
+        }
+      },
+      "far": {
+        "key": "cat",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.88,
+        "duration": 1.600000023841858,
+        "file": "animals/cat_lod.glb",
+        "triangles": 288,
+        "meshes": 1,
+        "skinnedMeshes": 0,
+        "vertices": 342,
+        "materials": [
+          "fur"
+        ],
+        "signature": "f953bb53",
+        "bounds": {
+          "min": [
+            -0.13099999725818634,
+            0,
+            -0.3672829568386078
+          ],
+          "max": [
+            0.13099999725818634,
+            0.8757966756820679,
+            0.508081316947937
+          ]
+        }
+      }
+    },
+    "pigeon": {
+      "glb": {
+        "path": "animals/pigeon.glb",
+        "bytes": 55232,
+        "sha256": "a562bb16b0e7f40b258090c874c3a76aaec567b6e035d61fc4c33820630e402f"
+      },
+      "lod": {
+        "path": "animals/pigeon_lod.glb",
+        "bytes": 9120,
+        "sha256": "7ca6091100f56475806557b5fb1fb6c47016d4da446ae9ffb344879155c0bd2b"
+      },
+      "near": {
+        "key": "pigeon",
+        "lod": "near",
+        "clip": "eat",
+        "phase": 0.88,
+        "duration": 1.600000023841858,
+        "file": "animals/pigeon.glb",
+        "triangles": 1064,
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "vertices": 918,
+        "materials": [
+          "fur"
+        ],
+        "signature": "9439fdc9",
+        "bounds": {
+          "min": [
+            -0.10214990982413291,
+            -2.8568130500117306e-9,
+            -0.21660718355256095
+          ],
+          "max": [
+            0.10214990982413291,
+            0.29358078381957164,
+            0.27748965482014415
+          ]
+        }
+      },
+      "far": {
+        "key": "pigeon",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/pigeon_lod.glb",
+        "triangles": 146,
+        "meshes": 1,
+        "skinnedMeshes": 0,
+        "vertices": 190,
+        "materials": [
+          "fur"
+        ],
+        "signature": "d4d3007f",
+        "bounds": {
+          "min": [
+            -0.09280868619680405,
+            0,
+            -0.28850001096725464
+          ],
+          "max": [
+            0.09772095084190369,
+            0.33191317319869995,
+            0.19863680005073547
+          ]
+        }
+      }
+    },
+    "hen": {
+      "glb": {
+        "path": "animals/hen.glb",
+        "bytes": 66172,
+        "sha256": "dd9562e5c34fddc4f0b388029396dbbabcc3397deef8ae3a092d308c5abea40a"
+      },
+      "lod": {
+        "path": "animals/hen_lod.glb",
+        "bytes": 11124,
+        "sha256": "738386d8a6dfe2bfa27c8e2099f05d23bdd578f253ac502419692f920b8704ce"
+      },
+      "near": {
+        "key": "hen",
+        "lod": "near",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/hen.glb",
+        "triangles": 1312,
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "vertices": 1134,
+        "materials": [
+          "fur"
+        ],
+        "signature": "f8ebdd75",
+        "bounds": {
+          "min": [
+            -0.1759247459769249,
+            -3.2707549169064265e-9,
+            -0.16466646104601798
+          ],
+          "max": [
+            0.1759247459769249,
+            0.6175277040236644,
+            0.4771373055220045
+          ]
+        }
+      },
+      "far": {
+        "key": "hen",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/hen_lod.glb",
+        "triangles": 194,
+        "meshes": 1,
+        "skinnedMeshes": 0,
+        "vertices": 238,
+        "materials": [
+          "fur"
+        ],
+        "signature": "f45a98cf",
+        "bounds": {
+          "min": [
+            -0.15983718633651733,
+            0,
+            -0.3787499964237213
+          ],
+          "max": [
+            0.1682972013950348,
+            0.5842795968055725,
+            0.30107200145721436
+          ]
+        }
+      }
+    },
+    "mule": {
+      "glb": {
+        "path": "animals/mule.glb",
+        "bytes": 68008,
+        "sha256": "c370afcbc4cb1a0532e9cec55f547fb09b1126c0e7cdbfa3ff766508cea043f7"
+      },
+      "lod": {
+        "path": "animals/mule_lod.glb",
+        "bytes": 15724,
+        "sha256": "f12b36d2b8a9a61902d37b6e767ad057cc40e183a1486779e08074d979e17106"
+      },
+      "near": {
+        "key": "mule",
+        "lod": "near",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/mule.glb",
+        "triangles": 1380,
+        "meshes": 1,
+        "skinnedMeshes": 1,
+        "vertices": 1134,
+        "materials": [
+          "fur"
+        ],
+        "signature": "6dda2887",
+        "bounds": {
+          "min": [
+            -0.3323375594615936,
+            0,
+            -0.8497268863795633
+          ],
+          "max": [
+            0.3323375594615936,
+            1.495000009536743,
+            1.3471270402890263
+          ]
+        }
+      },
+      "far": {
+        "key": "mule",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.88,
+        "duration": 1.600000023841858,
+        "file": "animals/mule_lod.glb",
+        "triangles": 288,
+        "meshes": 1,
+        "skinnedMeshes": 0,
+        "vertices": 350,
+        "materials": [
+          "fur"
+        ],
+        "signature": "6085afba",
+        "bounds": {
+          "min": [
+            -0.3594000041484833,
+            0,
+            -0.8446411490440369
+          ],
+          "max": [
+            0.3594000041484833,
+            2.2899999618530273,
+            1.3093758821487427
+          ]
+        }
+      }
+    },
+    "parrot_caged": {
+      "glb": {
+        "path": "animals/parrot_caged.glb",
+        "bytes": 98884,
+        "sha256": "ddd38276057c54603194d683b72e5218f84371a851dc4530214f45d41e3fd7b0"
+      },
+      "lod": {
+        "path": "animals/parrot_caged_lod.glb",
+        "bytes": 14852,
+        "sha256": "3af1ed4eaf15b44d25017cfeb389bdab94dbd7f80a0613085789a0d0b6a92754"
+      },
+      "near": {
+        "key": "parrot_caged",
+        "lod": "near",
+        "clip": "eat",
+        "phase": 0.88,
+        "duration": 1.600000023841858,
+        "file": "animals/parrot_caged.glb",
+        "triangles": 2136,
+        "meshes": 2,
+        "skinnedMeshes": 2,
+        "vertices": 1730,
+        "materials": [
+          "fur",
+          "galvanised"
+        ],
+        "signature": "cbf4a794",
+        "bounds": {
+          "min": [
+            -0.3499999940395355,
+            0,
+            -0.3499999940395355
+          ],
+          "max": [
+            0.35447824001312256,
+            1.8931678533554077,
+            0.35499998927116394
+          ]
+        }
+      },
+      "far": {
+        "key": "parrot_caged",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/parrot_caged_lod.glb",
+        "triangles": 266,
+        "meshes": 2,
+        "skinnedMeshes": 0,
+        "vertices": 298,
+        "materials": [
+          "fur",
+          "galvanised"
+        ],
+        "signature": "3a1671f0",
+        "bounds": {
+          "min": [
+            -0.3499999940395355,
+            0,
+            -0.3499999940395355
+          ],
+          "max": [
+            0.35407787561416626,
+            1.8096320629119873,
+            0.3499999940395355
+          ]
+        }
+      }
+    },
+    "canary_caged": {
+      "glb": {
+        "path": "animals/canary_caged.glb",
+        "bytes": 91964,
+        "sha256": "b1b959d887b22976a85d21cd09d7491382ddf3cea50190253b9aaa0127607168"
+      },
+      "lod": {
+        "path": "animals/canary_caged_lod.glb",
+        "bytes": 14752,
+        "sha256": "099f9eedc28b73621a853cdc159d2bf9f959a49d35f4fad979efb2afa23c7f76"
+      },
+      "near": {
+        "key": "canary_caged",
+        "lod": "near",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/canary_caged.glb",
+        "triangles": 1984,
+        "meshes": 2,
+        "skinnedMeshes": 2,
+        "vertices": 1594,
+        "materials": [
+          "fur",
+          "galvanised"
+        ],
+        "signature": "4661cc14",
+        "bounds": {
+          "min": [
+            -0.27000001072883606,
+            0,
+            -0.27000001072883606
+          ],
+          "max": [
+            0.2755938470363617,
+            1.6827114820480347,
+            0.2750000059604645
+          ]
+        }
+      },
+      "far": {
+        "key": "canary_caged",
+        "lod": "far",
+        "clip": "eat",
+        "phase": 0.38,
+        "duration": 1.600000023841858,
+        "file": "animals/canary_caged_lod.glb",
+        "triangles": 266,
+        "meshes": 2,
+        "skinnedMeshes": 0,
+        "vertices": 296,
+        "materials": [
+          "fur",
+          "galvanised"
+        ],
+        "signature": "373d7956",
+        "bounds": {
+          "min": [
+            -0.27000001072883606,
+            0,
+            -0.27000001072883606
+          ],
+          "max": [
+            0.2750937342643738,
+            1.5987368822097778,
+            0.27000001072883606
+          ]
+        }
+      }
+    }
+  },
+  "checks": {
+    "allSevenAnimals": true,
+    "allThreeClipsMoveGeometry": true,
+    "twoDifferentPosesPerClip": true,
+    "nearBudget": true,
+    "farBudget": true,
+    "completeContactSheet": true,
+    "cleanBrowser": true
+  },
+  "manifestSHA256": "00f7c7d3e04670297db4526ae55dd5f30bc1d41dcc17fa27a9dd42ae29d57913",
+  "boot": {
+    "keys": [
+      "dog",
+      "cat",
+      "pigeon",
+      "hen",
+      "mule",
+      "parrot_caged",
+      "canary_caged"
+    ],
+    "clips": [
+      "idle",
+      "walk",
+      "eat"
+    ],
+    "materialWarnings": [],
+    "manifest": "../assets/models/manifest.animals.json"
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "contact": [
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.875,
+      "duration": 2.4000000953674316,
+      "file": "animals/dog.glb",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "61f2f700",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -1.0728836041806744e-8,
+          -0.7924350462108752
+        ],
+        "max": [
+          0.20005536019802095,
+          1.0442326299185447,
+          0.7754024063492233
+        ]
+      }
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 1,
+      "file": "animals/dog.glb",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "0ee3e578",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          0.00487512494903386,
+          -0.7948479137087958
+        ],
+        "max": [
+          0.20005536019802095,
+          1.0399999713897705,
+          0.7767302160605187
+        ]
+      }
+    },
+    {
+      "key": "dog",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.875,
+      "duration": 1.600000023841858,
+      "file": "animals/dog.glb",
+      "triangles": 1148,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 982,
+      "materials": [
+        "fur"
+      ],
+      "signature": "051206d8",
+      "bounds": {
+        "min": [
+          -0.20005536019802095,
+          -1.0728836041806744e-8,
+          -0.8011260918700063
+        ],
+        "max": [
+          0.20005536019802095,
+          0.941596529006958,
+          0.6504571013159832
+        ]
+      }
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "animals/cat.glb",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "9fc7fa67",
+      "bounds": {
+        "min": [
+          -0.1745430473454601,
+          3.5762786898541066e-9,
+          -0.3706910898242445
+        ],
+        "max": [
+          0.14402885087115613,
+          0.8876717206450265,
+          0.5095555325824246
+        ]
+      }
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 1,
+      "file": "animals/cat.glb",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "62f3ea52",
+      "bounds": {
+        "min": [
+          -0.16307677362671807,
+          -0.0019357082475274512,
+          -0.3645580573708642
+        ],
+        "max": [
+          0.15701075598571074,
+          0.8894554455280304,
+          0.5109574316321012
+        ]
+      }
+    },
+    {
+      "key": "cat",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.875,
+      "duration": 1.600000023841858,
+      "file": "animals/cat.glb",
+      "triangles": 1202,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1051,
+      "materials": [
+        "fur"
+      ],
+      "signature": "89649395",
+      "bounds": {
+        "min": [
+          -0.16272969707592905,
+          3.5762786898541066e-9,
+          -0.36894163133736907
+        ],
+        "max": [
+          0.15737299537534918,
+          0.8894554455280304,
+          0.4943709835964064
+        ]
+      }
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "animals/pigeon.glb",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "c9a1a2db",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -3.0045296806058275e-9,
+          -0.2985002418272461
+        ],
+        "max": [
+          0.10214990982413291,
+          0.3398241702557287,
+          0.19629801640904362
+        ]
+      }
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "animals/pigeon.glb",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "26457954",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -0.00812805746030258,
+          -0.2982687100000248
+        ],
+        "max": [
+          0.10214990982413291,
+          0.339276406525663,
+          0.19863679744331
+        ]
+      }
+    },
+    {
+      "key": "pigeon",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "animals/pigeon.glb",
+      "triangles": 1064,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 918,
+      "materials": [
+        "fur"
+      ],
+      "signature": "a1c10ac9",
+      "bounds": {
+        "min": [
+          -0.10214990982413291,
+          -2.8444001459737578e-9,
+          -0.21665766968986644
+        ],
+        "max": [
+          0.10214990982413291,
+          0.29374574768437456,
+          0.2774705114048895
+        ]
+      }
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "animals/hen.glb",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "348c76d4",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -3.555990946146892e-9,
+          -0.4020767181236392
+        ],
+        "max": [
+          0.1759247459769249,
+          0.5977953694527984,
+          0.297869699135047
+        ]
+      }
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "animals/hen.glb",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "eedc08e0",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -0.010891193828227327,
+          -0.40289062580584994
+        ],
+        "max": [
+          0.1759247459769249,
+          0.5958971321083084,
+          0.30107199902209036
+        ]
+      }
+    },
+    {
+      "key": "hen",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "animals/hen.glb",
+      "triangles": 1312,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "da4e03fe",
+      "bounds": {
+        "min": [
+          -0.1759247459769249,
+          -3.2467862010054915e-9,
+          -0.16481481024864397
+        ],
+        "max": [
+          0.1759247459769249,
+          0.6175304164298082,
+          0.47680044499514784
+        ]
+      }
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.375,
+      "duration": 2.4000000953674316,
+      "file": "animals/mule.glb",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "94a6a191",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          0,
+          -0.8417080137847717
+        ],
+        "max": [
+          0.3323375594615936,
+          2.300913903559556,
+          1.328229639413196
+        ]
+      }
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 1.2000000476837158,
+      "file": "animals/mule.glb",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "5c91e156",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          -0.004425074263881255,
+          -0.8451761557437132
+        ],
+        "max": [
+          0.3323375594615936,
+          2.2991206077154986,
+          1.329686642150355
+        ]
+      }
+    },
+    {
+      "key": "mule",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.875,
+      "duration": 1.600000023841858,
+      "file": "animals/mule.glb",
+      "triangles": 1380,
+      "meshes": 1,
+      "skinnedMeshes": 1,
+      "vertices": 1134,
+      "materials": [
+        "fur"
+      ],
+      "signature": "64422231",
+      "bounds": {
+        "min": [
+          -0.3323375594615936,
+          0,
+          -0.8497036539855352
+        ],
+        "max": [
+          0.3323375594615936,
+          1.495000009536743,
+          1.3483153572089774
+        ]
+      }
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "animals/parrot_caged.glb",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "7f0d9d9b",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      }
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "animals/parrot_caged.glb",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "727d163d",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      }
+    },
+    {
+      "key": "parrot_caged",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "animals/parrot_caged.glb",
+      "triangles": 2136,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1730,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "29dc49e6",
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.35447824001312256,
+          1.8931678533554077,
+          0.35499998927116394
+        ]
+      }
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "idle",
+      "phase": 0.75,
+      "duration": 2.4000000953674316,
+      "file": "animals/canary_caged.glb",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "45d16e55",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      }
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "walk",
+      "phase": 0.75,
+      "duration": 0.800000011920929,
+      "file": "animals/canary_caged.glb",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "426c37a8",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      }
+    },
+    {
+      "key": "canary_caged",
+      "lod": "near",
+      "clip": "eat",
+      "phase": 0.375,
+      "duration": 1.600000023841858,
+      "file": "animals/canary_caged.glb",
+      "triangles": 1984,
+      "meshes": 2,
+      "skinnedMeshes": 2,
+      "vertices": 1594,
+      "materials": [
+        "fur",
+        "galvanised"
+      ],
+      "signature": "49e7931e",
+      "bounds": {
+        "min": [
+          -0.27000001072883606,
+          0,
+          -0.27000001072883606
+        ],
+        "max": [
+          0.2755938470363617,
+          1.6827114820480347,
+          0.2750000059604645
+        ]
+      }
+    }
+  ],
+  "counters": {
+    "views": 21,
+    "calls": 75,
+    "triangles": 61398,
+    "materialWarnings": []
+  },
+  "page": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "ok": true
+}

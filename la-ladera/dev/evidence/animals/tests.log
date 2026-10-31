@@ -1,0 +1,65 @@
+La Ladera animal branch verification — 31 October 2026
+Copied from the three passed logs for this task; no tests were rerun to create this record.
+
+Animal asset tests
+Command: node la-ladera/tests/animals-assets.test.mjs
+
+✔ the shipped seven-species library passes the complete byte-level delivery gate (200.441821ms)
+✔ a complete independent fixture passes and a missing/empty library only passes fallback mode (25.054015ms)
+✔ complete mode rejects absent species, missing LODs, inaccurate metadata and absent credits (21.879337ms)
+✔ the library budget includes all shipped animal files, not just manifest-listed GLBs (10.343679ms)
+✔ texture-free means neither image bytes nor material texture references nor external buffers (2.688114ms)
+✔ malformed envelopes, cyclic hierarchies, out-of-range indices and NaN vertices fail (26.480576ms)
+✔ a far LOD cannot hide more than 300 triangles in repeated visible mesh nodes (5.592293ms)
+✔ skin joint indices and weights are checked in the actual vertex data (1.576878ms)
+✔ clip names cannot disguise static poses, broken loops or invalid target nodes (2.828486ms)
+✔ manifest traversal and an unregistered asset cannot bypass the delivered file set (14.916646ms)
+✔ actual GLB reader and validator agree on payload byte size (5.015924ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 324.138431
+
+Animal runtime tests
+Command: node --import ./la-ladera/tests/register.mjs la-ladera/tests/animals-runtime.test.mjs
+
+✔ missing manifest, missing GLB and malformed clips leave the original world untouched (18.477817ms)
+✔ optional loading times out without attaching a late library (6.502057ms)
+✔ default optional requests are aborted on timeout (5.636611ms)
+✔ all species are loaded atomically and clones have independent poses and shared materials (18.574994ms)
+✔ people retain their existing BODY and movement when no animal override is supplied (9.354789ms)
+✔ animal path hook uses existing A*, waypoints, Npc walker, and arrival continuation (3.788703ms)
+✔ successful loading attaches one passive callback, keeps people/RNG/physics unchanged and places all species (36.633098ms)
+✔ LOD follows the camera in three dimensions even when the player stays elsewhere (4.852909ms)
+✔ absent or disabled people world does not fetch or create a substitute simulation (1.059898ms)
+✔ skip=animals preserves the baseline without fetching the manifest (2.168751ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 119.152771
+
+Existing people and world test files
+Command: node --import ./la-ladera/tests/register.mjs --test --test-concurrency=1 la-ladera/tests/people-*.test.mjs la-ladera/tests/world-*.test.mjs
+
+✔ la-ladera/tests/people-bank.test.mjs (2260.815114ms)
+✔ la-ladera/tests/people-dialogue.test.mjs (2377.578204ms)
+✔ la-ladera/tests/people-speech.test.mjs (545.434407ms)
+✔ la-ladera/tests/world-mesh.test.mjs (7336.266878ms)
+✔ la-ladera/tests/world-nav.test.mjs (839.179405ms)
+✔ la-ladera/tests/world-plan.test.mjs (4499.279622ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17877.970986

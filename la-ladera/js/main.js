@@ -5,6 +5,7 @@
 //            ?preserve (preserveDrawingBuffer)  ?dpr=1  ?shadows=0  ?aa=0  ?post=0 (no bloom/grade: emergency look)
 //            ?quality=low|medium|high|auto  ?timescale=N (game minutes per real second; 0 freezes the clock)
 //            ?skip=merge (keep one mesh per group x material: debugging only)  ?mergespan=N (largest merged chunk in metres, default 96)
+//            ?skip=animals (preserve the original ambient world); skip=people also skips its animal path followers
 import { createContext } from './core/ctx.js';
 import { initEngine, startEngine } from './engine/index.js';
 import { createSettings } from './engine/settings.js';
@@ -17,6 +18,7 @@ import { urbanDensity } from './world/periphery.js';
 import { planBuilding, buildBuilding } from './arch/index.js';
 import { loadInteriorAssets, furnishBuilding, buildInterior } from './interiors/index.js';
 import { loadPeople, spawnPeople } from './people/index.js';
+import { loadAnimals } from './animals/index.js';
 
 const q = new URLSearchParams(location.search);
 const num = (k) => (q.has(k) && q.get(k) !== '' && Number.isFinite(+q.get(k)) ? +q.get(k) : undefined);
@@ -140,7 +142,7 @@ async function boot() {
     });
     // every lamp is registered by now: one sprite each, and the far city on the hillsides round the plot (engine/glow.js)
     await stage('glow', () => ctx.glow?.finalize({ far: ctx.plan?._far, density: (x, z) => urbanDensity(ctx.plan, x, z), seed: ctx.plan?.seed }));
-    await stage('people', async () => { await loadPeople(ctx); spawnPeople(ctx); });
+    await stage('people', async () => { await loadPeople(ctx); spawnPeople(ctx); await loadAnimals(ctx); });
     await stage('start', async () => {
       // Textures are requested as materials are made and download alongside the build. Draw the first frame only once they are in: on a slow link
       // the world would otherwise show flat colours and pop when the images land. Bounded, so one stuck request cannot hold the page forever.

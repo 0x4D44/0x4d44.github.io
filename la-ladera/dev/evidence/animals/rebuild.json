@@ -1,0 +1,86 @@
+{
+  "blender": "4.5.3 LTS",
+  "files": [
+    {
+      "path": "manifest.animals.json",
+      "match": true,
+      "sha256": "00f7c7d3e04670297db4526ae55dd5f30bc1d41dcc17fa27a9dd42ae29d57913"
+    },
+    {
+      "path": "animals/CREDITS.md",
+      "match": true,
+      "sha256": "fb1daad526dde031dedfb78164cd4db12dc6f1ab995dfac06172b004cf4ffb63"
+    },
+    {
+      "path": "animals/canary_caged.glb",
+      "match": true,
+      "sha256": "b1b959d887b22976a85d21cd09d7491382ddf3cea50190253b9aaa0127607168"
+    },
+    {
+      "path": "animals/canary_caged_lod.glb",
+      "match": true,
+      "sha256": "099f9eedc28b73621a853cdc159d2bf9f959a49d35f4fad979efb2afa23c7f76"
+    },
+    {
+      "path": "animals/cat.glb",
+      "match": true,
+      "sha256": "b26be05c63196e5609f4048caf03552a996ba335ec6b8e3799088b4443d221ca"
+    },
+    {
+      "path": "animals/cat_lod.glb",
+      "match": true,
+      "sha256": "ab046bdb2c67297fc5275f6d5c011ef9c017e5a8480d121aa03fc44b321ca756"
+    },
+    {
+      "path": "animals/dog.glb",
+      "match": true,
+      "sha256": "916ae2886e20aac150cea28def8014e7f399fe1adc8b3bedee43d525cfabb158"
+    },
+    {
+      "path": "animals/dog_lod.glb",
+      "match": true,
+      "sha256": "bbbec2aab89571174902fef2e0662723aec5672e121718f4fab7c4735be1161d"
+    },
+    {
+      "path": "animals/hen.glb",
+      "match": true,
+      "sha256": "dd9562e5c34fddc4f0b388029396dbbabcc3397deef8ae3a092d308c5abea40a"
+    },
+    {
+      "path": "animals/hen_lod.glb",
+      "match": true,
+      "sha256": "738386d8a6dfe2bfa27c8e2099f05d23bdd578f253ac502419692f920b8704ce"
+    },
+    {
+      "path": "animals/mule.glb",
+      "match": true,
+      "sha256": "c370afcbc4cb1a0532e9cec55f547fb09b1126c0e7cdbfa3ff766508cea043f7"
+    },
+    {
+      "path": "animals/mule_lod.glb",
+      "match": true,
+      "sha256": "f12b36d2b8a9a61902d37b6e767ad057cc40e183a1486779e08074d979e17106"
+    },
+    {
+      "path": "animals/parrot_caged.glb",
+      "match": true,
+      "sha256": "ddd38276057c54603194d683b72e5218f84371a851dc4530214f45d41e3fd7b0"
+    },
+    {
+      "path": "animals/parrot_caged_lod.glb",
+      "match": true,
+      "sha256": "3af1ed4eaf15b44d25017cfeb389bdab94dbd7f80a0613085789a0d0b6a92754"
+    },
+    {
+      "path": "animals/pigeon.glb",
+      "match": true,
+      "sha256": "a562bb16b0e7f40b258090c874c3a76aaec567b6e035d61fc4c33820630e402f"
+    },
+    {
+      "path": "animals/pigeon_lod.glb",
+      "match": true,
+      "sha256": "7ca6091100f56475806557b5fb1fb6c47016d4da446ae9ffb344879155c0bd2b"
+    }
+  ],
+  "byteIdentical": true
+}

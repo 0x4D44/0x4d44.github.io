@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Animal study · La Ladera</title>
+  <link rel="icon" href="data:,">
+  <script type="importmap">
+  { "imports": { "three": "../vendor/three/build/three.module.min.js", "three/addons/": "../vendor/three/examples/jsm/" } }
+  </script>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #29352f; background: #f4f1eb; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    #canvas-root { position: fixed; inset: 0; pointer-events: none; }
+    #canvas-root canvas { display: block; width: 100%; height: 100%; }
+    main { position: relative; max-width: 1520px; margin: 0 auto; padding: 24px 32px 22px; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; padding: 0 0 18px; border-bottom: 1px solid #c8cfc3; }
+    .eyebrow { margin: 0 0 5px; font-size: 10px; text-transform: uppercase; letter-spacing: .22em; color: #6a766a; font-weight: 700; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 31px; font-weight: 400; line-height: 1.16; }
+    #subtitle { max-width: 540px; margin: 0; font-size: 12px; line-height: 1.6; color: #617064; text-align: right; }
+    #controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 16px 0; }
+    label { font-size: 12px; }
+    select, button { font: inherit; font-size: 12px; border: 1px solid #bdc8b9; border-radius: 4px; padding: 8px 11px; background: #faf9f5; color: #29352f; }
+    button { cursor: pointer; }
+    #phase { width: 160px; vertical-align: middle; }
+    #status { color: #617064; font-size: 12px; margin-left: auto; }
+    #views { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 18px; }
+    figure { margin: 0; border: 1px solid #d2d7cb; }
+    .viewport { height: min(64vh, 640px); }
+    figcaption { display: flex; justify-content: space-between; gap: 10px; min-height: 53px; padding: 11px 15px; background: #faf9f5; border-top: 1px solid #d2d7cb; align-items: center; }
+    .animal-name { display: block; font-size: 14px; font-weight: 650; }
+    .clip-label { display: block; margin-top: 3px; font-size: 11px; color: #677465; }
+    .counts { font-size: 11px; color: #677465; text-align: right; font-variant-numeric: tabular-nums; line-height: 1.6; }
+    footer { display: flex; justify-content: space-between; gap: 25px; margin-top: 14px; font-size: 10px; color: #697467; line-height: 1.6; }
+    #fatal { white-space: pre-wrap; background: #fbe8e3; padding: 20px; color: #7b2d25; }
+    body.contact #views { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    body.contact .viewport { height: 202px; }
+    body.contact figcaption { min-height: 55px; padding: 9px 12px; }
+    body.contact .animal-name { font-size: 13px; }
+    body.capture #controls { display: none; }
+    body.capture:not(.contact) .viewport { height: calc(100vh - 245px); min-height: 250px; }
+    @media (max-width: 700px) {
+      main { padding: 20px 16px; }
+      header { display: block; }
+      #subtitle { text-align: left; margin-top: 10px; }
+      body.contact #views { grid-template-columns: 1fr; }
+      #status { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-root" aria-hidden="true"></div>
+  <main>
+    <header>
+      <div><p class="eyebrow">La Ladera / Animal library</p><h1 id="title">Animal study</h1></div>
+      <p id="subtitle">Real GLB geometry, library materials and animation clips.<br>Daylight studio · no textures · no world simulation</p>
+    </header>
+    <div id="controls">
+      <label>Animal <select id="animal" aria-label="Animal"></select></label>
+      <label>Clip <select id="clip"><option>idle</option><option>walk</option><option>eat</option></select></label>
+      <label>LOD <select id="lod"><option value="near">Near</option><option value="far">Far</option></select></label>
+      <label>Phase <input type="range" id="phase" min="0" max="0.99" step="0.01" value="0.375"></label>
+      <button id="play" type="button">Play</button>
+      <button id="contact" type="button">Contact sheet</button>
+      <span id="status">Loading manifest…</span>
+    </div>
+    <div id="views"></div>
+    <pre id="fatal" hidden></pre>
+    <footer><span id="footer-left">Original low-poly animals · metre scale · +Z forward</span><span>La Ladera · deterministic pose review</span></footer>
+  </main>
+  <script type="module" src="animals.js"></script>
+</body>
+</html>
