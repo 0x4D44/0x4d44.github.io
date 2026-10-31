@@ -3,6 +3,14 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
+- [ ] 2026-10-31 — `plan-to-build/index.html:film3D` (the tour's `wk` keys): polish the independent review left as it is. (1) Z+35.3 to 36.9: between
+  BATH and BED 1 the head faces the corridor's blank north wall 0.5 m away for about 1.6 s (no room is in view); a heading of about 150 on the
+  35.8 key looks down the corridor but needs a slower pan (it would be 67 deg/s over one second). (2) Z+38.9 to 41.0: the pan crosses the
+  corridor's west end wall and its dark window. (3) The study hold (keys 12.3 and 13.3) drifts 4.7 deg past its heading and whips back, peak
+  yaw 55 deg/s at Z+14.1; a monotone (Fritsch-Carlson) spline for `walkAt3` alone would make it a real hold and remove every overshoot, but it
+  re-times the whole walk, so every frame and clearance needs another look. (4) The last key (2250, 3250) is 45 mm from the corner of the
+  sideboard top (0.83 m, below the eye: nothing clips and none of it is in view).
+
 - [ ] 2026-10-31 — `plan-to-build/index.html:mat3` (`glassD`): the walk's windows look out on the dark drawing sheet, so every window is a
   grey rectangle. A sky and horizon gradient behind the glass during the walk would lift every room shot. It needs a scene.background (or a
   large backdrop) that only shows once `T3.walk` starts, and a look at where the ground plane ends so no edge shows from the corridor windows.

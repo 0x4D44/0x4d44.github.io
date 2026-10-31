@@ -1,5 +1,5 @@
 // Runs the plan-to-build regression suites one after another (one Chrome at a time), each in its own node process with its own time limit, and prints a table.
-//   node plan-to-build/tests/run.mjs                    order, zfight, paint, jamb, catalog, player
+//   node plan-to-build/tests/run.mjs                    order, zfight, paint, jamb, catalog, player, tour
 //   node plan-to-build/tests/run.mjs --full             ... and review and export (the independent review's checks and the MP4 export: slower, and export needs ffmpeg)
 //   node plan-to-build/tests/run.mjs --mutations        ... and mutations (undo each fix on a copy of the page: every guard must fail)
 //   node plan-to-build/tests/run.mjs --only order,jamb  just these suites (names as in the table; --list prints them)
@@ -30,6 +30,7 @@ const SUITES = [
   { name: "jamb",      group: "default",   secs: 360,  what: "window jambs do not shimmer" },
   { name: "catalog",   group: "default",   secs: 60,   what: "the almanac entry" },
   { name: "player",    group: "default",   secs: 360,  what: "the player, the chapters, determinism" },
+  { name: "tour",      group: "default",   secs: 300,  what: "the first-person tour: roof, lamps, front door, camera track, room tags" },
   { name: "review",    group: "full",      secs: 900,  what: "the independent review's checks" },
   { name: "export",    group: "full",      secs: 1800, what: "the MP4 export (needs ffmpeg and ffprobe)" },
   { name: "mutations", group: "mutations", secs: 1800, what: "every guard fails when its fix is undone" },
