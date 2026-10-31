@@ -14,6 +14,7 @@ import { makeSignAtlas, buildSigns } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
 import { fitNav } from './navfit.js';
+import { buildVista } from './vista.js';
 
 export async function buildProps(ctx) {
   const plan = ctx.plan;
@@ -50,6 +51,7 @@ export async function buildProps(ctx) {
     if (K.signs) { const m = ctx.mat('world_sign'); m.map = K.signs.texture; m.needsUpdate = true; ctx.world.signAtlas = true; }
     if (makeSignAtlas.errors?.length) ctx.errors?.push({ stage: 'props', item: 'signs.paint', message: makeSignAtlas.errors.join(' | ') });
   });
+  await step('vista', () => buildVista(ctx));        // optional GLB kit; existing far terrain/lights remain the fallback
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
   await step('poles', () => buildPoles(K));          // before the flora: poles and lamps claim their ground first
   await step('vehicles', () => buildVehicles(K));

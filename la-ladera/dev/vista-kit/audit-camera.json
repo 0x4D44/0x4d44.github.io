@@ -1,0 +1,7 @@
+[
+  {
+    "eval": "__ladera.teleport(96, -40, {y:44}); __ladera.lookAt(164, 24, 0); __ladera.step(1); __ladera.ctx.world.vistaController.update(0, true); __ladera.render();",
+    "out": "la-ladera/dev/vista-kit/after/east-edge-audit.jpg",
+    "page": true
+  }
+]

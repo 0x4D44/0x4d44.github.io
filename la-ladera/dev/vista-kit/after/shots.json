@@ -1,0 +1,157 @@
+{
+  "size": [
+    960,
+    540
+  ],
+  "manual": true,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "views": [
+    {
+      "id": "spawn",
+      "pos": [
+        -6.5,
+        0.22,
+        92.5
+      ],
+      "tris": 1545223,
+      "calls": 1158,
+      "errors": 0,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 191,
+        "far": 1932,
+        "culledDetails": 137,
+        "activeTriangles": 59998,
+        "activeDrawCalls": 274
+      },
+      "withoutVista": {
+        "tris": 1529993,
+        "calls": 1075
+      },
+      "vistaTris": 15230,
+      "vistaCalls": 83
+    },
+    {
+      "id": "ridge-looking-south",
+      "pos": [
+        26,
+        29.07,
+        -86
+      ],
+      "tris": 1230540,
+      "calls": 940,
+      "errors": 0,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 179,
+        "far": 1945,
+        "culledDetails": 136,
+        "activeTriangles": 60000,
+        "activeDrawCalls": 262
+      },
+      "withoutVista": {
+        "tris": 1190072,
+        "calls": 771
+      },
+      "vistaTris": 40468,
+      "vistaCalls": 169
+    },
+    {
+      "id": "valley-looking-north",
+      "pos": [
+        46,
+        0.13,
+        99
+      ],
+      "tris": 1352685,
+      "calls": 938,
+      "errors": 0,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 204,
+        "far": 1916,
+        "culledDetails": 140,
+        "activeTriangles": 60000,
+        "activeDrawCalls": 254
+      },
+      "withoutVista": {
+        "tris": 1323715,
+        "calls": 827
+      },
+      "vistaTris": 28970,
+      "vistaCalls": 111
+    },
+    {
+      "id": "valley-looking-south",
+      "pos": [
+        46,
+        0.13,
+        99
+      ],
+      "tris": 483381,
+      "calls": 348,
+      "errors": 0,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 204,
+        "far": 1916,
+        "culledDetails": 140,
+        "activeTriangles": 60000,
+        "activeDrawCalls": 254
+      },
+      "withoutVista": {
+        "tris": 457155,
+        "calls": 242
+      },
+      "vistaTris": 26226,
+      "vistaCalls": 106
+    }
+  ],
+  "failures": [],
+  "console": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  }
+}

@@ -8,6 +8,12 @@ import { ss, vnoise, lerp, project, resample, pointAt } from './geom.js';
 import { HALF } from './field.js';
 import { ribbon } from './mk.js';
 
+// Both the mesh builder and placement sampler use these exact cell grids.
+const FAR_TERRAIN_GRIDS = Object.freeze([
+  { name: 'far', inner: HALF, outer: 300, tile: 100, cells: 20 },
+  { name: 'farB', inner: 300, outer: 750, tile: 150, cells: 10 },
+]);
+
 // ---------------------------------------------------------------------------------------------------- the road that leaves the plot
 function catmull(ctrl, per = 8) {
   const P = [ctrl[0], ...ctrl, ctrl[ctrl.length - 1]], out = [];
@@ -74,6 +80,76 @@ export function makeFarHeight(plan) {
   return far;
 }
 
+/** The rendered, piecewise-linear ground, including its Float32 vertex heights.
+ * `minimum(corners)` clips a convex footprint against the actual terrain triangles:
+ * it includes interior grid vertices and every perimeter/triangle intersection.
+ * At a ring seam it considers both meshes, rather than assuming their edges agree.
+ */
+export function makeFarTerrainSampler(plan, far = plan._far ?? makeFarHeight(plan)) {
+  const heights = new Map();
+  const vertex = (x, z) => {
+    const key = `${x}:${z}`;
+    if (!heights.has(key)) heights.set(key, Math.fround(far(x, z)));
+    return heights.get(key);
+  };
+  const inCell = (x, z, x0, z0, step) => {
+    const u = (x - x0) / step, v = (z - z0) / step;
+    // buildFarTerrain's a,c,d / a,d,e2 diagonal, not bilinear interpolation.
+    return v >= u
+      ? (1 - v) * vertex(x0, z0) + (v - u) * vertex(x0, z0 + step) + u * vertex(x0 + step, z0 + step)
+      : (1 - u) * vertex(x0, z0) + v * vertex(x0 + step, z0 + step) + (u - v) * vertex(x0 + step, z0);
+  };
+  const sample = (x, z) => {
+    const d = Math.max(Math.abs(x), Math.abs(z));
+    const g = FAR_TERRAIN_GRIDS.find((q) => d >= q.inner && d <= q.outer);
+    if (!g) return NaN; // the playable plot and land outside the far mesh are not this surface
+    const step = g.tile / g.cells;
+    let x0 = Math.min(g.outer - step, Math.floor(x / step) * step), z0 = Math.min(g.outer - step, Math.floor(z / step) * step);
+    if (x0 >= -g.inner && x0 < g.inner && z0 >= -g.inner && z0 < g.inner) {
+      if (x === -g.inner) x0 -= step;
+      else if (z === -g.inner) z0 -= step;
+    }
+    return inCell(x, z, x0, z0, step);
+  };
+  const clip = (polygon, triangle) => {
+    let out = polygon;
+    for (let i = 0; i < 3 && out.length; i++) {
+      const a = triangle[i], b = triangle[(i + 1) % 3];
+      const side = (p) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+      const input = out; out = [];
+      let previous = input[input.length - 1], pd = side(previous);
+      for (const p of input) {
+        const d = side(p), inside = d <= 1e-9, previousInside = pd <= 1e-9;
+        if (inside !== previousInside) {
+          const t = pd / (pd - d);
+          out.push([previous[0] + t * (p[0] - previous[0]), previous[1] + t * (p[1] - previous[1])]);
+        }
+        if (inside) out.push(p);
+        previous = p; pd = d;
+      }
+    }
+    return out;
+  };
+  sample.minimum = (corners) => {
+    const xs = corners.map((p) => p[0]), zs = corners.map((p) => p[1]);
+    let minimum = Infinity;
+    for (const g of FAR_TERRAIN_GRIDS) {
+      const step = g.tile / g.cells, n = g.outer / step, inner = g.inner / step;
+      const i0 = Math.max(-n, Math.ceil(Math.min(...xs) / step) - 1), i1 = Math.min(n - 1, Math.floor(Math.max(...xs) / step));
+      const j0 = Math.max(-n, Math.ceil(Math.min(...zs) / step) - 1), j1 = Math.min(n - 1, Math.floor(Math.max(...zs) / step));
+      for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+        if (i >= -inner && i < inner && j >= -inner && j < inner) continue;
+        const x = i * step, z = j * step, a = [x, z], c = [x, z + step], d = [x + step, z + step], e = [x + step, z];
+        for (const triangle of [[a, c, d], [a, d, e]]) for (const p of clip(corners, triangle)) {
+          minimum = Math.min(minimum, inCell(p[0], p[1], x, z, step));
+        }
+      }
+    }
+    return minimum;
+  };
+  return sample;
+}
+
 // ---------------------------------------------------------------------------------------------------- far terrain
 export function buildFarTerrain(ctx, plan, GRASS = 'grass_patchy') {
   const far = plan._far ?? (plan._far = makeFarHeight(plan)), seed = plan.seed;
@@ -113,15 +189,12 @@ export function buildFarTerrain(ctx, plan, GRASS = 'grass_patchy') {
     skirt(line((k) => [k, 0]), [0, 0, -1]); skirt(line((k) => [k, cells]), [0, 0, 1]); skirt(line((k) => [0, k]), [-1, 0, 0]); skirt(line((k) => [cells, k]), [1, 0, 0]);
     ctx.batch.flush(id);
   };
-  // ring A: 100 m tiles, 5 m cells, +-300 m except the plot itself
-  for (let tj = -3; tj < 3; tj++) for (let ti = -3; ti < 3; ti++) {
-    if (ti >= -1 && ti < 1 && tj >= -1 && tj < 1) continue;
-    tile(`world.terrain.far.${ti + 3}.${tj + 3}`, ti * 100, tj * 100, 100, 20);
-  }
-  // ring B: 150 m tiles, 15 m cells, +-750 m except ring A
-  for (let tj = -5; tj < 5; tj++) for (let ti = -5; ti < 5; ti++) {
-    if (ti >= -2 && ti < 2 && tj >= -2 && tj < 2) continue;
-    tile(`world.terrain.farB.${ti + 5}.${tj + 5}`, ti * 150, tj * 150, 150, 10);
+  for (const g of FAR_TERRAIN_GRIDS) {
+    const n = g.outer / g.tile, inner = g.inner / g.tile;
+    for (let tj = -n; tj < n; tj++) for (let ti = -n; ti < n; ti++) {
+      if (ti >= -inner && ti < inner && tj >= -inner && tj < inner) continue;
+      tile(`world.terrain.${g.name}.${ti + n}.${tj + n}`, ti * g.tile, tj * g.tile, g.tile, g.cells);
+    }
   }
 }
 

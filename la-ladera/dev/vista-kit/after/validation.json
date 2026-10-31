@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "complete": true,
+  "root": "/workspace/scratch/04f2c5adc7f4/la-ladera-repo/la-ladera/assets/models",
+  "errors": [],
+  "warnings": [],
+  "pieces": 48,
+  "assets": 96,
+  "files": 4,
+  "bytes": 725997,
+  "categories": {
+    "facade": 12,
+    "roof": 8,
+    "tank": 4,
+    "rebar": 4,
+    "stair": 4,
+    "retaining": 6,
+    "balcony": 4,
+    "washing": 6
+  },
+  "nearTriangles": 6958,
+  "farTriangles": 1278
+}

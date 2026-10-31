@@ -1,0 +1,682 @@
+{
+ "size": [
+  960,
+  540
+ ],
+ "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+ "boot": {
+  "seconds": 13.8,
+  "stages": {
+   "engine": 27,
+   "materials": 13,
+   "assets": 25,
+   "plan": 158,
+   "worldParts": {
+    "terrain": 439,
+    "surfaces": 64,
+    "stairs": 53,
+    "retaining": 33,
+    "perimeter": 0
+   },
+   "world": 654,
+   "arch": 45,
+   "furnish": 2062,
+   "colliders": 16,
+   "build": 796,
+   "propParts": {
+    "occupancy": 45,
+    "atlas": 130,
+    "boundary": 6,
+    "poles": 30,
+    "vehicles": 27,
+    "dress": 7,
+    "signs": 5,
+    "hill": 7,
+    "flora": 37,
+    "planters": 1,
+    "life": 10,
+    "navfit": 15,
+    "discoveries": 5
+   },
+   "props": 354,
+   "flush": 97,
+   "glow": 16,
+   "peopleSpawn": 42,
+   "people": 268,
+   "start": 4564,
+   "total": 13575
+  },
+  "errors": 0,
+  "console": {
+   "errors": 0,
+   "warnings": 4,
+   "pageErrors": 0,
+   "net404": 0
+  },
+  "consoleSample": [
+   "[warning] [.WebGL-0x1704001eb400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:34911/la-ladera/index.html?autostart&manual&dpr=1",
+   "[warning] [.WebGL-0x1704001eb400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:34911/la-ladera/index.html?autostart&manual&dpr=1",
+   "[warning] [.WebGL-0x1704001eb400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:34911/la-ladera/index.html?autostart&manual&dpr=1",
+   "[warning] [.WebGL-0x1704001eb400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:34911/la-ladera/index.html?autostart&manual&dpr=1"
+  ]
+ },
+ "views": [
+  {
+   "id": "spawn",
+   "pos": [
+    -6.5,
+    0.22,
+    92.5
+   ],
+   "median": 16.7,
+   "p95": 16.8,
+   "max": 16.8,
+   "costMs": 14.61,
+   "calls": 1075,
+   "tris": 1529993,
+   "geoms": 859,
+   "textures": 149,
+   "vista": null
+  },
+  {
+   "id": "ridge-looking-south",
+   "pos": [
+    26,
+    29.07,
+    -86
+   ],
+   "median": 16.7,
+   "p95": 16.7,
+   "max": 16.8,
+   "costMs": 19.23,
+   "calls": 771,
+   "tris": 1190072,
+   "geoms": 981,
+   "textures": 168,
+   "vista": null
+  },
+  {
+   "id": "valley-looking-north",
+   "pos": [
+    46,
+    0.12,
+    100
+   ],
+   "median": 16.7,
+   "p95": 16.7,
+   "max": 16.8,
+   "costMs": 11.71,
+   "calls": 827,
+   "tris": 1323715,
+   "geoms": 1110,
+   "textures": 173,
+   "vista": null
+  }
+ ],
+ "soak": {
+  "simSeconds": 98,
+  "targets": 3,
+  "legs": 118,
+  "unreachable": 0,
+  "stuck": [],
+  "nan": 0,
+  "fell": 0,
+  "doorsUsed": 0,
+  "renders": 65,
+  "maxY": 19.09,
+  "minY": 0.22,
+  "console": {
+   "errors": 0,
+   "warnings": 0,
+   "net404": 0,
+   "sample": []
+  }
+ },
+ "counts": {},
+ "failures": [
+  "spawn: uncapped render cost 14.61 ms > 12",
+  "ridge-looking-south: uncapped render cost 19.23 ms > 12",
+  "console warnings: 4",
+  "metrics run crashed: Error: CDP timeout: Runtime.evaluate |     at Timeout._onTimeout (file:///workspace/scratch/04f2c5adc7f4/la-ladera-repo/la-ladera/tests/chrome.mjs:174:79) |     at listOnTimeout (node:internal/timers:685:17)"
+ ],
+ "sourceRoot": "/workspace/scratch/04f2c5adc7f4/la-ladera-baseline",
+ "capture": "page",
+ "geometryViews": [
+  {
+   "id": "spawn",
+   "pos": [
+    -6.5,
+    0.22,
+    92.5
+   ],
+   "calls": 1075,
+   "tris": 1503809,
+   "geoms": 1110,
+   "textures": 173,
+   "errors": 0
+  },
+  {
+   "id": "ridge-looking-south",
+   "pos": [
+    26,
+    29.07,
+    -86
+   ],
+   "calls": 771,
+   "tris": 1190072,
+   "geoms": 1110,
+   "textures": 173,
+   "errors": 0
+  },
+  {
+   "id": "valley-looking-north",
+   "pos": [
+    46,
+    0.13,
+    99
+   ],
+   "calls": 827,
+   "tris": 1323715,
+   "geoms": 1110,
+   "textures": 173,
+   "errors": 0
+  },
+  {
+   "id": "street-n0",
+   "pos": [
+    46,
+    0.13,
+    99
+   ],
+   "calls": 828,
+   "tris": 1325303,
+   "geoms": 1111,
+   "textures": 173,
+   "errors": 0
+  },
+  {
+   "id": "street-n61",
+   "pos": [
+    -7.46,
+    11.2,
+    21.32
+   ],
+   "calls": 732,
+   "tris": 1370883,
+   "geoms": 1251,
+   "textures": 173,
+   "errors": 0
+  },
+  {
+   "id": "street-n122",
+   "pos": [
+    -37.31,
+    27.51,
+    -49.78
+   ],
+   "calls": 565,
+   "tris": 970088,
+   "geoms": 1287,
+   "textures": 176,
+   "errors": 0
+  },
+  {
+   "id": "street-n183",
+   "pos": [
+    -6.5,
+    2.69,
+    55.94
+   ],
+   "calls": 839,
+   "tris": 1553780,
+   "geoms": 1376,
+   "textures": 177,
+   "errors": 0
+  },
+  {
+   "id": "street-n244",
+   "pos": [
+    41,
+    5.67,
+    47.51
+   ],
+   "calls": 832,
+   "tris": 1382921,
+   "geoms": 1522,
+   "textures": 177,
+   "errors": 0
+  },
+  {
+   "id": "street-n305",
+   "pos": [
+    -20,
+    12.63,
+    12.62
+   ],
+   "calls": 824,
+   "tris": 1322463,
+   "geoms": 1702,
+   "textures": 177,
+   "errors": 0
+  },
+  {
+   "id": "street-n366",
+   "pos": [
+    14,
+    24.81,
+    -34.63
+   ],
+   "calls": 488,
+   "tris": 821746,
+   "geoms": 1744,
+   "textures": 177,
+   "errors": 0
+  },
+  {
+   "id": "street-n427",
+   "pos": [
+    -65.68,
+    0.25,
+    83.3
+   ],
+   "calls": 799,
+   "tris": 1395873,
+   "geoms": 1755,
+   "textures": 184,
+   "errors": 0
+  },
+  {
+   "id": "street-n488",
+   "pos": [
+    6.25,
+    28,
+    -73.03
+   ],
+   "calls": 434,
+   "tris": 704455,
+   "geoms": 1757,
+   "textures": 184,
+   "errors": 0
+  },
+  {
+   "id": "plaza-P1",
+   "pos": [
+    -6.5,
+    6.48,
+    41.4
+   ],
+   "calls": 699,
+   "tris": 1421936,
+   "geoms": 1757,
+   "textures": 184,
+   "errors": 0
+  },
+  {
+   "id": "plaza-P2",
+   "pos": [
+    20,
+    6.95,
+    47.2
+   ],
+   "calls": 831,
+   "tris": 1485720,
+   "geoms": 1764,
+   "textures": 184,
+   "errors": 0
+  },
+  {
+   "id": "plaza-P4",
+   "pos": [
+    4.25,
+    28,
+    -67.55
+   ],
+   "calls": 773,
+   "tris": 1231494,
+   "geoms": 1771,
+   "textures": 184,
+   "errors": 0
+  },
+  {
+   "id": "landmark-mirador",
+   "pos": [
+    24.35,
+    29.11,
+    -85.23
+   ],
+   "calls": 270,
+   "tris": 411141,
+   "geoms": 1771,
+   "textures": 184,
+   "errors": 0
+  },
+  {
+   "id": "landmark-virgen",
+   "pos": [
+    -5.57,
+    7.45,
+    35.47
+   ],
+   "calls": 789,
+   "tris": 1288097,
+   "geoms": 1873,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "landmark-almendros",
+   "pos": [
+    17.66,
+    6.94,
+    41.68
+   ],
+   "calls": 704,
+   "tris": 1178077,
+   "geoms": 2005,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "landmark-cancha",
+   "pos": [
+    -54.4,
+    0.25,
+    72.45
+   ],
+   "calls": 330,
+   "tris": 664669,
+   "geoms": 2008,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L00",
+   "pos": [
+    49.4,
+    0.33,
+    91.02
+   ],
+   "calls": 328,
+   "tris": 628971,
+   "geoms": 2020,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L01",
+   "pos": [
+    49.4,
+    0.56,
+    80
+   ],
+   "calls": 367,
+   "tris": 703929,
+   "geoms": 2020,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L02",
+   "pos": [
+    31.41,
+    0.46,
+    86.1
+   ],
+   "calls": 938,
+   "tris": 1474017,
+   "geoms": 2023,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L06",
+   "pos": [
+    6.1,
+    0.43,
+    86.1
+   ],
+   "calls": 1145,
+   "tris": 1663133,
+   "geoms": 2029,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L09",
+   "pos": [
+    -22.78,
+    0.45,
+    86.1
+   ],
+   "calls": 976,
+   "tris": 1473573,
+   "geoms": 2076,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L10",
+   "pos": [
+    -26.58,
+    0.45,
+    86.1
+   ],
+   "calls": 964,
+   "tris": 1480328,
+   "geoms": 2076,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L11",
+   "pos": [
+    30.23,
+    0.46,
+    89.9
+   ],
+   "calls": 382,
+   "tris": 670739,
+   "geoms": 2134,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "door-L12",
+   "pos": [
+    25.31,
+    0.46,
+    89.9
+   ],
+   "calls": 405,
+   "tris": 685825,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L00-school",
+   "pos": [
+    51.71,
+    0.5,
+    91.02
+   ],
+   "calls": 316,
+   "tris": 614847,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L01-kiosk",
+   "pos": [
+    51.71,
+    0.7,
+    80
+   ],
+   "calls": 353,
+   "tris": 684955,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L02-shophouse",
+   "pos": [
+    31.41,
+    0.6,
+    83.79
+   ],
+   "calls": 774,
+   "tris": 1381424,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L06-apartments",
+   "pos": [
+    6.1,
+    0.6,
+    83.79
+   ],
+   "calls": 869,
+   "tris": 1535448,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L09-clinic",
+   "pos": [
+    -22.78,
+    0.6,
+    83.79
+   ],
+   "calls": 935,
+   "tris": 1482816,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L10-hall",
+   "pos": [
+    -26.58,
+    0.6,
+    83.79
+   ],
+   "calls": 917,
+   "tris": 1464132,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L11-workshop",
+   "pos": [
+    30.23,
+    0.6,
+    92.21
+   ],
+   "calls": 346,
+   "tris": 641929,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L12-cornerstore",
+   "pos": [
+    25.31,
+    0.6,
+    92.21
+   ],
+   "calls": 354,
+   "tris": 655661,
+   "geoms": 2164,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L13-house",
+   "pos": [
+    19.5,
+    0.6,
+    92.21
+   ],
+   "calls": 373,
+   "tris": 665621,
+   "geoms": 2174,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L18-unfinished",
+   "pos": [
+    18.71,
+    1.4,
+    61.43
+   ],
+   "calls": 793,
+   "tris": 1528850,
+   "geoms": 2174,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L24-rowhouse",
+   "pos": [
+    -15.82,
+    2.95,
+    64.72
+   ],
+   "calls": 602,
+   "tris": 1022975,
+   "geoms": 2174,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L34-tenement",
+   "pos": [
+    1.87,
+    16.5,
+    -3.92
+   ],
+   "calls": 669,
+   "tris": 1244873,
+   "geoms": 2176,
+   "textures": 185,
+   "errors": 0
+  },
+  {
+   "id": "interior-L35-courtyard",
+   "pos": [
+    -5.76,
+    16.6,
+    -4.4
+   ],
+   "calls": 701,
+   "tris": 1314621,
+   "geoms": 2176,
+   "textures": 185,
+   "errors": 0
+  }
+ ],
+ "baselineMedian": 16.7,
+ "summary": {
+  "boot_s": 13.8,
+  "views": 3,
+  "blank_page_frame_ms": 16.7,
+  "frame_ms_median_of_medians": 16.7,
+  "worst_median": 16.7,
+  "worst_cost_ms": 19.23,
+  "max_calls": 1075,
+  "max_tris": 1529993
+ },
+ "geometrySummary": {
+  "views": 40,
+  "max_calls": 1145,
+  "max_tris": 1663133
+ }
+}

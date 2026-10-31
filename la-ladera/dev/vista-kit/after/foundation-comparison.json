@@ -1,0 +1,2083 @@
+{
+  "houses": 578,
+  "terraces": 116,
+  "instances": 2260,
+  "farTriangles": 41968,
+  "changedFoundations": 403,
+  "changedFirstStoreys": 267,
+  "changedRetaining": 136,
+  "maxExtension": 0.6021699999999939,
+  "maxRenderedTopChange": 7.105427357601002e-15,
+  "maxDeclaredTopChange": 7.105427357601002e-15,
+  "allHorizontalAndOtherPieceFieldsUnchanged": true,
+  "allOtherPiecesIdentical": true,
+  "lod": [
+    {
+      "name": "spawn",
+      "position": {
+        "x": -6.5,
+        "y": 1.8599999999999999,
+        "z": 92.5
+      },
+      "triangles": 58348,
+      "modesUnchanged": true
+    },
+    {
+      "name": "ridge",
+      "position": {
+        "x": 26,
+        "y": 30.71,
+        "z": -86
+      },
+      "triangles": 60000,
+      "modesUnchanged": true
+    },
+    {
+      "name": "valley",
+      "position": {
+        "x": 46,
+        "y": 1.7599999999999998,
+        "z": 100
+      },
+      "triangles": 60000,
+      "modesUnchanged": true
+    },
+    {
+      "name": "east",
+      "position": {
+        "x": 95,
+        "y": 16.64,
+        "z": 0
+      },
+      "triangles": 60000,
+      "modesUnchanged": true
+    },
+    {
+      "name": "west",
+      "position": {
+        "x": -95,
+        "y": 16.64,
+        "z": 0
+      },
+      "triangles": 60000,
+      "modesUnchanged": true
+    }
+  ],
+  "changed": [
+    {
+      "id": "terrace-0-h3-floor0",
+      "category": "facade",
+      "extension": 0.17520999999999987
+    },
+    {
+      "id": "terrace-0-h4-floor0",
+      "category": "facade",
+      "extension": 0.1047400000000005
+    },
+    {
+      "id": "terrace-0-h4-retaining",
+      "category": "retaining",
+      "extension": 0.11446999999999985
+    },
+    {
+      "id": "terrace-0-h5-floor0",
+      "category": "facade",
+      "extension": 0.02474000000000043
+    },
+    {
+      "id": "terrace-1-h3-floor0",
+      "category": "facade",
+      "extension": 0.046769999999999534
+    },
+    {
+      "id": "terrace-1-h4-retaining",
+      "category": "retaining",
+      "extension": 0.0003600000000005821
+    },
+    {
+      "id": "terrace-2-h1-floor0",
+      "category": "facade",
+      "extension": 0.01185000000000258
+    },
+    {
+      "id": "terrace-2-h2-floor0",
+      "category": "facade",
+      "extension": 0.00666000000000011
+    },
+    {
+      "id": "terrace-2-h2-retaining",
+      "category": "retaining",
+      "extension": 0.005560000000002674
+    },
+    {
+      "id": "terrace-2-h3-floor0",
+      "category": "facade",
+      "extension": 0.006930000000000547
+    },
+    {
+      "id": "terrace-2-h4-floor0",
+      "category": "facade",
+      "extension": 0.008379999999998944
+    },
+    {
+      "id": "terrace-2-h4-retaining",
+      "category": "retaining",
+      "extension": 0.009309999999999263
+    },
+    {
+      "id": "terrace-5-h0-retaining",
+      "category": "retaining",
+      "extension": 0.0008400000000001739
+    },
+    {
+      "id": "terrace-5-h1-floor0",
+      "category": "facade",
+      "extension": 0.013220000000000454
+    },
+    {
+      "id": "terrace-5-h2-floor0",
+      "category": "facade",
+      "extension": 0.007800000000003138
+    },
+    {
+      "id": "terrace-5-h2-retaining",
+      "category": "retaining",
+      "extension": 0.007909999999998973
+    },
+    {
+      "id": "terrace-5-h4-floor0",
+      "category": "facade",
+      "extension": 0.002300000000001745
+    },
+    {
+      "id": "terrace-5-h4-retaining",
+      "category": "retaining",
+      "extension": 0.0024999999999977263
+    },
+    {
+      "id": "terrace-6-h2-floor0",
+      "category": "facade",
+      "extension": 0.09702999999999662
+    },
+    {
+      "id": "terrace-6-h2-retaining",
+      "category": "retaining",
+      "extension": 0.09067000000000291
+    },
+    {
+      "id": "terrace-9-h0-floor0",
+      "category": "facade",
+      "extension": 0.031759999999998456
+    },
+    {
+      "id": "terrace-9-h0-retaining",
+      "category": "retaining",
+      "extension": 0.030280000000004748
+    },
+    {
+      "id": "terrace-9-h1-floor0",
+      "category": "facade",
+      "extension": 0.012750000000004036
+    },
+    {
+      "id": "terrace-9-h2-retaining",
+      "category": "retaining",
+      "extension": 0.011909999999993204
+    },
+    {
+      "id": "terrace-10-h0-floor0",
+      "category": "facade",
+      "extension": 0.035820000000000185
+    },
+    {
+      "id": "terrace-10-h0-retaining",
+      "category": "retaining",
+      "extension": 0.035680000000000156
+    },
+    {
+      "id": "terrace-10-h1-floor0",
+      "category": "facade",
+      "extension": 0.06663999999999959
+    },
+    {
+      "id": "terrace-10-h2-floor0",
+      "category": "facade",
+      "extension": 0.04450999999999983
+    },
+    {
+      "id": "terrace-10-h2-retaining",
+      "category": "retaining",
+      "extension": 0.042159999999999975
+    },
+    {
+      "id": "terrace-12-h1-floor0",
+      "category": "facade",
+      "extension": 0.021580000000000155
+    },
+    {
+      "id": "terrace-12-h2-floor0",
+      "category": "facade",
+      "extension": 0.02641999999999811
+    },
+    {
+      "id": "terrace-12-h2-retaining",
+      "category": "retaining",
+      "extension": 0.026899999999997704
+    },
+    {
+      "id": "terrace-12-h3-floor0",
+      "category": "facade",
+      "extension": 0.012489999999999668
+    },
+    {
+      "id": "terrace-12-h4-floor0",
+      "category": "facade",
+      "extension": 0.039970000000003836
+    },
+    {
+      "id": "terrace-12-h4-retaining",
+      "category": "retaining",
+      "extension": 0.03596000000000288
+    },
+    {
+      "id": "terrace-13-h0-floor0",
+      "category": "facade",
+      "extension": 0.13235
+    },
+    {
+      "id": "terrace-13-h0-retaining",
+      "category": "retaining",
+      "extension": 0.13929000000000002
+    },
+    {
+      "id": "terrace-13-h1-floor0",
+      "category": "facade",
+      "extension": 0.036189999999999944
+    },
+    {
+      "id": "terrace-13-h2-floor0",
+      "category": "facade",
+      "extension": 0.09402999999999995
+    },
+    {
+      "id": "terrace-13-h2-retaining",
+      "category": "retaining",
+      "extension": 0.09521000000000002
+    },
+    {
+      "id": "terrace-13-h3-floor0",
+      "category": "facade",
+      "extension": 0.2598699999999998
+    },
+    {
+      "id": "terrace-13-h4-floor0",
+      "category": "facade",
+      "extension": 0.07982
+    },
+    {
+      "id": "terrace-13-h4-retaining",
+      "category": "retaining",
+      "extension": 0.07913999999999999
+    },
+    {
+      "id": "terrace-13-h5-floor0",
+      "category": "facade",
+      "extension": 0.06115000000000004
+    },
+    {
+      "id": "terrace-14-h0-floor0",
+      "category": "facade",
+      "extension": 0.08776999999999902
+    },
+    {
+      "id": "terrace-14-h0-retaining",
+      "category": "retaining",
+      "extension": 0.0825100000000063
+    },
+    {
+      "id": "terrace-14-h1-floor0",
+      "category": "facade",
+      "extension": 0.04080000000000439
+    },
+    {
+      "id": "terrace-14-h2-floor0",
+      "category": "facade",
+      "extension": 0.026050000000005014
+    },
+    {
+      "id": "terrace-14-h2-retaining",
+      "category": "retaining",
+      "extension": 0.023749999999999716
+    },
+    {
+      "id": "terrace-15-h1-floor0",
+      "category": "facade",
+      "extension": 0.036549999999998306
+    },
+    {
+      "id": "terrace-16-h0-floor0",
+      "category": "facade",
+      "extension": 0.03280000000000172
+    },
+    {
+      "id": "terrace-16-h0-retaining",
+      "category": "retaining",
+      "extension": 0.046599999999997976
+    },
+    {
+      "id": "terrace-17-h0-floor0",
+      "category": "facade",
+      "extension": 0.25160999999999945
+    },
+    {
+      "id": "terrace-17-h0-retaining",
+      "category": "retaining",
+      "extension": 0.24274999999999913
+    },
+    {
+      "id": "terrace-17-h1-floor0",
+      "category": "facade",
+      "extension": 0.2631799999999984
+    },
+    {
+      "id": "terrace-17-h2-floor0",
+      "category": "facade",
+      "extension": 0.08232000000000017
+    },
+    {
+      "id": "terrace-17-h2-retaining",
+      "category": "retaining",
+      "extension": 0.08082999999999974
+    },
+    {
+      "id": "terrace-18-h0-floor0",
+      "category": "facade",
+      "extension": 0.00262999999999991
+    },
+    {
+      "id": "terrace-18-h0-retaining",
+      "category": "retaining",
+      "extension": 0.006739999999997082
+    },
+    {
+      "id": "terrace-18-h2-floor0",
+      "category": "facade",
+      "extension": 0.004480000000000928
+    },
+    {
+      "id": "terrace-18-h2-retaining",
+      "category": "retaining",
+      "extension": 0.0032500000000013074
+    },
+    {
+      "id": "terrace-18-h3-floor0",
+      "category": "facade",
+      "extension": 0.010359999999998593
+    },
+    {
+      "id": "terrace-19-h0-floor0",
+      "category": "facade",
+      "extension": 0.05713000000000079
+    },
+    {
+      "id": "terrace-19-h0-retaining",
+      "category": "retaining",
+      "extension": 0.08994000000000035
+    },
+    {
+      "id": "terrace-19-h1-floor0",
+      "category": "facade",
+      "extension": 0.08552999999999855
+    },
+    {
+      "id": "terrace-19-h2-floor0",
+      "category": "facade",
+      "extension": 0.014409999999999812
+    },
+    {
+      "id": "terrace-19-h2-retaining",
+      "category": "retaining",
+      "extension": 0.020810000000000883
+    },
+    {
+      "id": "terrace-20-h0-floor0",
+      "category": "facade",
+      "extension": 0.05320999999999998
+    },
+    {
+      "id": "terrace-20-h0-retaining",
+      "category": "retaining",
+      "extension": 0.04654000000000025
+    },
+    {
+      "id": "terrace-20-h1-floor0",
+      "category": "facade",
+      "extension": 0.0689700000000002
+    },
+    {
+      "id": "terrace-20-h2-floor0",
+      "category": "facade",
+      "extension": 0.0796099999999953
+    },
+    {
+      "id": "terrace-20-h2-retaining",
+      "category": "retaining",
+      "extension": 0.06974999999999909
+    },
+    {
+      "id": "terrace-20-h3-floor0",
+      "category": "facade",
+      "extension": 0.09427000000000163
+    },
+    {
+      "id": "terrace-20-h4-floor0",
+      "category": "facade",
+      "extension": 0.053359999999997854
+    },
+    {
+      "id": "terrace-20-h4-retaining",
+      "category": "retaining",
+      "extension": 0.042869999999993524
+    },
+    {
+      "id": "terrace-20-h5-floor0",
+      "category": "facade",
+      "extension": 0.06654999999999944
+    },
+    {
+      "id": "terrace-21-h0-floor0",
+      "category": "facade",
+      "extension": 0.09872999999999976
+    },
+    {
+      "id": "terrace-21-h0-retaining",
+      "category": "retaining",
+      "extension": 0.08912999999999993
+    },
+    {
+      "id": "terrace-22-h2-floor0",
+      "category": "facade",
+      "extension": 0.01810000000000045
+    },
+    {
+      "id": "terrace-22-h2-retaining",
+      "category": "retaining",
+      "extension": 0.0194700000000001
+    },
+    {
+      "id": "terrace-23-h0-floor0",
+      "category": "facade",
+      "extension": 0.03684999999999938
+    },
+    {
+      "id": "terrace-23-h0-retaining",
+      "category": "retaining",
+      "extension": 0.04281999999999897
+    },
+    {
+      "id": "terrace-23-h1-floor0",
+      "category": "facade",
+      "extension": 0.12177000000000149
+    },
+    {
+      "id": "terrace-24-h2-floor0",
+      "category": "facade",
+      "extension": 0.044180000000000774
+    },
+    {
+      "id": "terrace-24-h2-retaining",
+      "category": "retaining",
+      "extension": 0.048560000000001935
+    },
+    {
+      "id": "terrace-24-h3-floor0",
+      "category": "facade",
+      "extension": 0.03219999999999956
+    },
+    {
+      "id": "terrace-26-h3-floor0",
+      "category": "facade",
+      "extension": 0.022619999999999973
+    },
+    {
+      "id": "terrace-27-h1-floor0",
+      "category": "facade",
+      "extension": 0.07155999999999985
+    },
+    {
+      "id": "terrace-27-h2-floor0",
+      "category": "facade",
+      "extension": 0.0957599999999994
+    },
+    {
+      "id": "terrace-27-h2-retaining",
+      "category": "retaining",
+      "extension": 0.09416000000000047
+    },
+    {
+      "id": "terrace-28-h0-floor0",
+      "category": "facade",
+      "extension": 0.05783000000000005
+    },
+    {
+      "id": "terrace-28-h0-retaining",
+      "category": "retaining",
+      "extension": 0.06338999999999961
+    },
+    {
+      "id": "terrace-28-h1-floor0",
+      "category": "facade",
+      "extension": 0.03744999999999976
+    },
+    {
+      "id": "terrace-28-h2-floor0",
+      "category": "facade",
+      "extension": 0.008690000000000087
+    },
+    {
+      "id": "terrace-28-h2-retaining",
+      "category": "retaining",
+      "extension": 0.007989999999999942
+    },
+    {
+      "id": "terrace-29-h2-floor0",
+      "category": "facade",
+      "extension": 0.0027200000000036084
+    },
+    {
+      "id": "terrace-29-h2-retaining",
+      "category": "retaining",
+      "extension": 0.0006800000000026785
+    },
+    {
+      "id": "terrace-29-h3-floor0",
+      "category": "facade",
+      "extension": 0.019870000000004495
+    },
+    {
+      "id": "terrace-29-h4-floor0",
+      "category": "facade",
+      "extension": 0.014229999999997744
+    },
+    {
+      "id": "terrace-29-h4-retaining",
+      "category": "retaining",
+      "extension": 0.013170000000002346
+    },
+    {
+      "id": "terrace-29-h5-floor0",
+      "category": "facade",
+      "extension": 0.012520000000002085
+    },
+    {
+      "id": "terrace-30-h0-floor0",
+      "category": "facade",
+      "extension": 0.25603000000000264
+    },
+    {
+      "id": "terrace-30-h0-retaining",
+      "category": "retaining",
+      "extension": 0.23597999999999786
+    },
+    {
+      "id": "terrace-30-h1-floor0",
+      "category": "facade",
+      "extension": 0.11903999999999826
+    },
+    {
+      "id": "terrace-30-h2-floor0",
+      "category": "facade",
+      "extension": 0.06094999999999828
+    },
+    {
+      "id": "terrace-30-h2-retaining",
+      "category": "retaining",
+      "extension": 0.04017999999999944
+    },
+    {
+      "id": "terrace-30-h3-floor0",
+      "category": "facade",
+      "extension": 0.08061000000000007
+    },
+    {
+      "id": "terrace-31-h0-floor0",
+      "category": "facade",
+      "extension": 0.030540000000000234
+    },
+    {
+      "id": "terrace-31-h0-retaining",
+      "category": "retaining",
+      "extension": 0.037439999999998363
+    },
+    {
+      "id": "terrace-31-h1-floor0",
+      "category": "facade",
+      "extension": 0.008020000000000138
+    },
+    {
+      "id": "terrace-31-h2-floor0",
+      "category": "facade",
+      "extension": 0.027810000000000556
+    },
+    {
+      "id": "terrace-32-h3-floor0",
+      "category": "facade",
+      "extension": 0.008229999999999293
+    },
+    {
+      "id": "terrace-33-h2-floor0",
+      "category": "facade",
+      "extension": 0.014599999999999724
+    },
+    {
+      "id": "terrace-33-h2-retaining",
+      "category": "retaining",
+      "extension": 0.013590000000000657
+    },
+    {
+      "id": "terrace-33-h3-floor0",
+      "category": "facade",
+      "extension": 0.05444999999999922
+    },
+    {
+      "id": "terrace-33-h4-floor0",
+      "category": "facade",
+      "extension": 0.05198999999999998
+    },
+    {
+      "id": "terrace-33-h4-retaining",
+      "category": "retaining",
+      "extension": 0.053640000000001464
+    },
+    {
+      "id": "terrace-34-h0-floor0",
+      "category": "facade",
+      "extension": 0.20606999999999687
+    },
+    {
+      "id": "terrace-34-h0-retaining",
+      "category": "retaining",
+      "extension": 0.18456999999999368
+    },
+    {
+      "id": "terrace-34-h1-floor0",
+      "category": "facade",
+      "extension": 0.18693999999999988
+    },
+    {
+      "id": "terrace-34-h2-floor0",
+      "category": "facade",
+      "extension": 0.19751999999999725
+    },
+    {
+      "id": "terrace-34-h2-retaining",
+      "category": "retaining",
+      "extension": 0.1862300000000019
+    },
+    {
+      "id": "terrace-34-h3-floor0",
+      "category": "facade",
+      "extension": 0.2301700000000011
+    },
+    {
+      "id": "terrace-34-h4-floor0",
+      "category": "facade",
+      "extension": 0.1738499999999945
+    },
+    {
+      "id": "terrace-34-h4-retaining",
+      "category": "retaining",
+      "extension": 0.16219999999999857
+    },
+    {
+      "id": "terrace-35-h1-floor0",
+      "category": "facade",
+      "extension": 0.0014200000000030855
+    },
+    {
+      "id": "terrace-39-h0-floor0",
+      "category": "facade",
+      "extension": 0.006750000000000256
+    },
+    {
+      "id": "terrace-39-h0-retaining",
+      "category": "retaining",
+      "extension": 0.008160000000000167
+    },
+    {
+      "id": "terrace-39-h1-floor0",
+      "category": "facade",
+      "extension": 0.005910000000000082
+    },
+    {
+      "id": "terrace-39-h2-floor0",
+      "category": "facade",
+      "extension": 0.004799999999999471
+    },
+    {
+      "id": "terrace-39-h2-retaining",
+      "category": "retaining",
+      "extension": 0.0063600000000008095
+    },
+    {
+      "id": "terrace-39-h3-floor0",
+      "category": "facade",
+      "extension": 0.010780000000000456
+    },
+    {
+      "id": "terrace-40-h1-floor0",
+      "category": "facade",
+      "extension": 0.10557999999999979
+    },
+    {
+      "id": "terrace-40-h2-floor0",
+      "category": "facade",
+      "extension": 0.16118000000000166
+    },
+    {
+      "id": "terrace-40-h2-retaining",
+      "category": "retaining",
+      "extension": 0.16743000000000308
+    },
+    {
+      "id": "terrace-41-h0-floor0",
+      "category": "facade",
+      "extension": 0.10266999999999982
+    },
+    {
+      "id": "terrace-41-h0-retaining",
+      "category": "retaining",
+      "extension": 0.10201999999999956
+    },
+    {
+      "id": "terrace-41-h1-floor0",
+      "category": "facade",
+      "extension": 0.057800000000000296
+    },
+    {
+      "id": "terrace-41-h4-floor0",
+      "category": "facade",
+      "extension": 0.06510000000000105
+    },
+    {
+      "id": "terrace-41-h4-retaining",
+      "category": "retaining",
+      "extension": 0.06325999999999965
+    },
+    {
+      "id": "terrace-44-h0-floor0",
+      "category": "facade",
+      "extension": 0.15238000000000085
+    },
+    {
+      "id": "terrace-44-h0-retaining",
+      "category": "retaining",
+      "extension": 0.1510899999999964
+    },
+    {
+      "id": "terrace-44-h1-floor0",
+      "category": "facade",
+      "extension": 0.6021699999999939
+    },
+    {
+      "id": "terrace-44-h2-floor0",
+      "category": "facade",
+      "extension": 0.5116799999999984
+    },
+    {
+      "id": "terrace-44-h2-retaining",
+      "category": "retaining",
+      "extension": 0.5134400000000028
+    },
+    {
+      "id": "terrace-44-h3-floor0",
+      "category": "facade",
+      "extension": 0.45949999999999847
+    },
+    {
+      "id": "terrace-45-h4-floor0",
+      "category": "facade",
+      "extension": 0.0010799999999981935
+    },
+    {
+      "id": "terrace-47-h0-floor0",
+      "category": "facade",
+      "extension": 0.4799499999999952
+    },
+    {
+      "id": "terrace-47-h0-retaining",
+      "category": "retaining",
+      "extension": 0.34022999999999826
+    },
+    {
+      "id": "terrace-47-h1-floor0",
+      "category": "facade",
+      "extension": 0.4220899999999972
+    },
+    {
+      "id": "terrace-47-h2-floor0",
+      "category": "facade",
+      "extension": 0.3445899999999966
+    },
+    {
+      "id": "terrace-47-h2-retaining",
+      "category": "retaining",
+      "extension": 0.16188999999999965
+    },
+    {
+      "id": "terrace-47-h3-floor0",
+      "category": "facade",
+      "extension": 0.2716300000000018
+    },
+    {
+      "id": "terrace-47-h4-floor0",
+      "category": "facade",
+      "extension": 0.20122999999999536
+    },
+    {
+      "id": "terrace-47-h4-retaining",
+      "category": "retaining",
+      "extension": 0.12502000000000635
+    },
+    {
+      "id": "terrace-48-h1-floor0",
+      "category": "facade",
+      "extension": 0.06408999999999998
+    },
+    {
+      "id": "terrace-48-h2-floor0",
+      "category": "facade",
+      "extension": 0.07811999999999997
+    },
+    {
+      "id": "terrace-48-h2-retaining",
+      "category": "retaining",
+      "extension": 0.08354000000000017
+    },
+    {
+      "id": "terrace-49-h0-floor0",
+      "category": "facade",
+      "extension": 0.07859999999999978
+    },
+    {
+      "id": "terrace-49-h0-retaining",
+      "category": "retaining",
+      "extension": 0.07088000000000072
+    },
+    {
+      "id": "terrace-49-h1-floor0",
+      "category": "facade",
+      "extension": 0.1576000000000004
+    },
+    {
+      "id": "terrace-49-h2-floor0",
+      "category": "facade",
+      "extension": 0.1069899999999997
+    },
+    {
+      "id": "terrace-49-h2-retaining",
+      "category": "retaining",
+      "extension": 0.10036000000000023
+    },
+    {
+      "id": "terrace-49-h3-floor0",
+      "category": "facade",
+      "extension": 0.019379999999999953
+    },
+    {
+      "id": "terrace-50-h2-floor0",
+      "category": "facade",
+      "extension": 0.19297000000000075
+    },
+    {
+      "id": "terrace-50-h2-retaining",
+      "category": "retaining",
+      "extension": 0.18212000000000028
+    },
+    {
+      "id": "terrace-50-h3-floor0",
+      "category": "facade",
+      "extension": 0.19936000000000043
+    },
+    {
+      "id": "terrace-52-h0-floor0",
+      "category": "facade",
+      "extension": 0.19527000000000072
+    },
+    {
+      "id": "terrace-52-h0-retaining",
+      "category": "retaining",
+      "extension": 0.2021499999999996
+    },
+    {
+      "id": "terrace-52-h1-floor0",
+      "category": "facade",
+      "extension": 0.15758000000000294
+    },
+    {
+      "id": "terrace-52-h2-floor0",
+      "category": "facade",
+      "extension": 0.24373999999999896
+    },
+    {
+      "id": "terrace-52-h2-retaining",
+      "category": "retaining",
+      "extension": 0.28518000000000043
+    },
+    {
+      "id": "terrace-52-h3-floor0",
+      "category": "facade",
+      "extension": 0.3120800000000017
+    },
+    {
+      "id": "terrace-53-h1-floor0",
+      "category": "facade",
+      "extension": 0.01544999999999419
+    },
+    {
+      "id": "terrace-53-h2-floor0",
+      "category": "facade",
+      "extension": 0.006129999999998859
+    },
+    {
+      "id": "terrace-53-h2-retaining",
+      "category": "retaining",
+      "extension": 0.003869999999999152
+    },
+    {
+      "id": "terrace-54-h0-floor0",
+      "category": "facade",
+      "extension": 0.030749999999999944
+    },
+    {
+      "id": "terrace-54-h0-retaining",
+      "category": "retaining",
+      "extension": 0.02954000000000001
+    },
+    {
+      "id": "terrace-55-h0-floor0",
+      "category": "facade",
+      "extension": 0.009679999999999467
+    },
+    {
+      "id": "terrace-55-h0-retaining",
+      "category": "retaining",
+      "extension": 0.006640000000000867
+    },
+    {
+      "id": "terrace-55-h1-floor0",
+      "category": "facade",
+      "extension": 0.02012000000000036
+    },
+    {
+      "id": "terrace-55-h2-floor0",
+      "category": "facade",
+      "extension": 0.026980000000000004
+    },
+    {
+      "id": "terrace-55-h2-retaining",
+      "category": "retaining",
+      "extension": 0.01973999999999876
+    },
+    {
+      "id": "terrace-55-h3-floor0",
+      "category": "facade",
+      "extension": 0.020810000000000883
+    },
+    {
+      "id": "terrace-56-h1-floor0",
+      "category": "facade",
+      "extension": 0.039680000000000604
+    },
+    {
+      "id": "terrace-56-h2-floor0",
+      "category": "facade",
+      "extension": 0.06123999999999796
+    },
+    {
+      "id": "terrace-56-h2-retaining",
+      "category": "retaining",
+      "extension": 0.05893999999999977
+    },
+    {
+      "id": "terrace-56-h3-floor0",
+      "category": "facade",
+      "extension": 0.057190000000005625
+    },
+    {
+      "id": "terrace-56-h4-floor0",
+      "category": "facade",
+      "extension": 0.05841999999999814
+    },
+    {
+      "id": "terrace-56-h4-retaining",
+      "category": "retaining",
+      "extension": 0.05375000000000085
+    },
+    {
+      "id": "terrace-58-h2-floor0",
+      "category": "facade",
+      "extension": 0.01659000000000077
+    },
+    {
+      "id": "terrace-58-h2-retaining",
+      "category": "retaining",
+      "extension": 0.0219699999999996
+    },
+    {
+      "id": "terrace-58-h3-floor0",
+      "category": "facade",
+      "extension": 0.008369999999999322
+    },
+    {
+      "id": "terrace-59-h1-floor0",
+      "category": "facade",
+      "extension": 0.2048599999999965
+    },
+    {
+      "id": "terrace-59-h2-floor0",
+      "category": "facade",
+      "extension": 0.13412999999999897
+    },
+    {
+      "id": "terrace-59-h2-retaining",
+      "category": "retaining",
+      "extension": 0.22016999999999598
+    },
+    {
+      "id": "terrace-59-h3-floor0",
+      "category": "facade",
+      "extension": 0.023150000000001114
+    },
+    {
+      "id": "terrace-59-h4-floor0",
+      "category": "facade",
+      "extension": 0.3138500000000022
+    },
+    {
+      "id": "terrace-59-h4-retaining",
+      "category": "retaining",
+      "extension": 0.28634999999999877
+    },
+    {
+      "id": "terrace-59-h5-floor0",
+      "category": "facade",
+      "extension": 0.4313500000000019
+    },
+    {
+      "id": "terrace-60-h0-floor0",
+      "category": "facade",
+      "extension": 0.010310000000000485
+    },
+    {
+      "id": "terrace-60-h0-retaining",
+      "category": "retaining",
+      "extension": 0.0306500000000014
+    },
+    {
+      "id": "terrace-60-h1-floor0",
+      "category": "facade",
+      "extension": 0.05461999999999989
+    },
+    {
+      "id": "terrace-60-h3-floor0",
+      "category": "facade",
+      "extension": 0.0030999999999998806
+    },
+    {
+      "id": "terrace-60-h4-floor0",
+      "category": "facade",
+      "extension": 0.020640000000000214
+    },
+    {
+      "id": "terrace-60-h4-retaining",
+      "category": "retaining",
+      "extension": 0.02558000000000149
+    },
+    {
+      "id": "terrace-60-h5-floor0",
+      "category": "facade",
+      "extension": 0.05767999999999773
+    },
+    {
+      "id": "terrace-61-h0-floor0",
+      "category": "facade",
+      "extension": 0.17404000000000508
+    },
+    {
+      "id": "terrace-61-h0-retaining",
+      "category": "retaining",
+      "extension": 0.1842100000000002
+    },
+    {
+      "id": "terrace-61-h1-floor0",
+      "category": "facade",
+      "extension": 0.3480600000000038
+    },
+    {
+      "id": "terrace-61-h2-floor0",
+      "category": "facade",
+      "extension": 0.5887600000000006
+    },
+    {
+      "id": "terrace-61-h2-retaining",
+      "category": "retaining",
+      "extension": 0.597050000000003
+    },
+    {
+      "id": "terrace-61-h3-floor0",
+      "category": "facade",
+      "extension": 0.14242000000000132
+    },
+    {
+      "id": "terrace-61-h4-floor0",
+      "category": "facade",
+      "extension": 0.1924100000000024
+    },
+    {
+      "id": "terrace-61-h4-retaining",
+      "category": "retaining",
+      "extension": 0.1968299999999985
+    },
+    {
+      "id": "terrace-61-h5-floor0",
+      "category": "facade",
+      "extension": 0.15595000000000425
+    },
+    {
+      "id": "terrace-62-h0-floor0",
+      "category": "facade",
+      "extension": 0.06225000000000236
+    },
+    {
+      "id": "terrace-62-h0-retaining",
+      "category": "retaining",
+      "extension": 0.0442600000000013
+    },
+    {
+      "id": "terrace-62-h1-floor0",
+      "category": "facade",
+      "extension": 0.1160199999999989
+    },
+    {
+      "id": "terrace-62-h2-floor0",
+      "category": "facade",
+      "extension": 0.09162999999999855
+    },
+    {
+      "id": "terrace-62-h2-retaining",
+      "category": "retaining",
+      "extension": 0.05433000000000021
+    },
+    {
+      "id": "terrace-62-h5-floor0",
+      "category": "facade",
+      "extension": 0.040030000000001564
+    },
+    {
+      "id": "terrace-63-h0-floor0",
+      "category": "facade",
+      "extension": 0.2555800000000019
+    },
+    {
+      "id": "terrace-63-h0-retaining",
+      "category": "retaining",
+      "extension": 0.24718000000000018
+    },
+    {
+      "id": "terrace-63-h1-floor0",
+      "category": "facade",
+      "extension": 0.3083600000000004
+    },
+    {
+      "id": "terrace-63-h2-floor0",
+      "category": "facade",
+      "extension": 0.11972000000000094
+    },
+    {
+      "id": "terrace-63-h2-retaining",
+      "category": "retaining",
+      "extension": 0.1381900000000016
+    },
+    {
+      "id": "terrace-63-h3-floor0",
+      "category": "facade",
+      "extension": 0.04664000000000357
+    },
+    {
+      "id": "terrace-63-h4-floor0",
+      "category": "facade",
+      "extension": 0.008440000000000225
+    },
+    {
+      "id": "terrace-63-h4-retaining",
+      "category": "retaining",
+      "extension": 0.0078099999999992065
+    },
+    {
+      "id": "terrace-63-h5-floor0",
+      "category": "facade",
+      "extension": 0.006520000000001858
+    },
+    {
+      "id": "terrace-64-h0-floor0",
+      "category": "facade",
+      "extension": 0.008739999999999526
+    },
+    {
+      "id": "terrace-64-h0-retaining",
+      "category": "retaining",
+      "extension": 0.004570000000001073
+    },
+    {
+      "id": "terrace-64-h1-floor0",
+      "category": "facade",
+      "extension": 0.005110000000001946
+    },
+    {
+      "id": "terrace-64-h2-floor0",
+      "category": "facade",
+      "extension": 0.0013199999999997658
+    },
+    {
+      "id": "terrace-64-h3-floor0",
+      "category": "facade",
+      "extension": 0.018240000000002254
+    },
+    {
+      "id": "terrace-65-h0-floor0",
+      "category": "facade",
+      "extension": 0.023500000000002075
+    },
+    {
+      "id": "terrace-65-h0-retaining",
+      "category": "retaining",
+      "extension": 0.02728999999999715
+    },
+    {
+      "id": "terrace-65-h1-floor0",
+      "category": "facade",
+      "extension": 0.01126999999999967
+    },
+    {
+      "id": "terrace-65-h2-floor0",
+      "category": "facade",
+      "extension": 0.011299999999998533
+    },
+    {
+      "id": "terrace-65-h2-retaining",
+      "category": "retaining",
+      "extension": 0.004989999999999384
+    },
+    {
+      "id": "terrace-67-h0-floor0",
+      "category": "facade",
+      "extension": 0.024139999999999162
+    },
+    {
+      "id": "terrace-67-h0-retaining",
+      "category": "retaining",
+      "extension": 0.02160999999999902
+    },
+    {
+      "id": "terrace-67-h1-floor0",
+      "category": "facade",
+      "extension": 0.03393999999999764
+    },
+    {
+      "id": "terrace-67-h2-floor0",
+      "category": "facade",
+      "extension": 0.00788000000000011
+    },
+    {
+      "id": "terrace-67-h2-retaining",
+      "category": "retaining",
+      "extension": 0.005299999999998306
+    },
+    {
+      "id": "terrace-67-h3-floor0",
+      "category": "facade",
+      "extension": 0.017830000000000013
+    },
+    {
+      "id": "terrace-68-h0-retaining",
+      "category": "retaining",
+      "extension": 0.01141999999999399
+    },
+    {
+      "id": "terrace-69-h0-floor0",
+      "category": "facade",
+      "extension": 0.23086999999999946
+    },
+    {
+      "id": "terrace-69-h0-retaining",
+      "category": "retaining",
+      "extension": 0.2402799999999985
+    },
+    {
+      "id": "terrace-69-h1-floor0",
+      "category": "facade",
+      "extension": 0.07129000000000119
+    },
+    {
+      "id": "terrace-71-h0-floor0",
+      "category": "facade",
+      "extension": 0.025760000000000005
+    },
+    {
+      "id": "terrace-71-h0-retaining",
+      "category": "retaining",
+      "extension": 0.04265000000000008
+    },
+    {
+      "id": "terrace-71-h3-floor0",
+      "category": "facade",
+      "extension": 0.0151299999999992
+    },
+    {
+      "id": "terrace-73-h4-floor0",
+      "category": "facade",
+      "extension": 0.019060000000000077
+    },
+    {
+      "id": "terrace-73-h4-retaining",
+      "category": "retaining",
+      "extension": 0.013970000000000038
+    },
+    {
+      "id": "terrace-74-h3-floor0",
+      "category": "facade",
+      "extension": 0.06955
+    },
+    {
+      "id": "terrace-74-h4-floor0",
+      "category": "facade",
+      "extension": 0.07448000000000032
+    },
+    {
+      "id": "terrace-74-h4-retaining",
+      "category": "retaining",
+      "extension": 0.07670999999999983
+    },
+    {
+      "id": "terrace-75-h0-floor0",
+      "category": "facade",
+      "extension": 0.20042999999999722
+    },
+    {
+      "id": "terrace-75-h0-retaining",
+      "category": "retaining",
+      "extension": 0.1904299999999992
+    },
+    {
+      "id": "terrace-75-h1-floor0",
+      "category": "facade",
+      "extension": 0.16980000000000217
+    },
+    {
+      "id": "terrace-75-h2-floor0",
+      "category": "facade",
+      "extension": 0.15030000000000143
+    },
+    {
+      "id": "terrace-75-h2-retaining",
+      "category": "retaining",
+      "extension": 0.14115000000000322
+    },
+    {
+      "id": "terrace-75-h3-floor0",
+      "category": "facade",
+      "extension": 0.19328000000000145
+    },
+    {
+      "id": "terrace-75-h4-floor0",
+      "category": "facade",
+      "extension": 0.2083200000000005
+    },
+    {
+      "id": "terrace-75-h4-retaining",
+      "category": "retaining",
+      "extension": 0.1985599999999934
+    },
+    {
+      "id": "terrace-75-h5-floor0",
+      "category": "facade",
+      "extension": 0.20660000000000167
+    },
+    {
+      "id": "terrace-76-h0-retaining",
+      "category": "retaining",
+      "extension": 0.008389999999998565
+    },
+    {
+      "id": "terrace-76-h1-floor0",
+      "category": "facade",
+      "extension": 0.0044699999999977535
+    },
+    {
+      "id": "terrace-78-h0-floor0",
+      "category": "facade",
+      "extension": 0.06568999999999647
+    },
+    {
+      "id": "terrace-78-h0-retaining",
+      "category": "retaining",
+      "extension": 0.04431999999999903
+    },
+    {
+      "id": "terrace-78-h1-floor0",
+      "category": "facade",
+      "extension": 0.11444000000000187
+    },
+    {
+      "id": "terrace-78-h2-floor0",
+      "category": "facade",
+      "extension": 0.21681999999999846
+    },
+    {
+      "id": "terrace-78-h2-retaining",
+      "category": "retaining",
+      "extension": 0.18563999999999936
+    },
+    {
+      "id": "terrace-78-h3-floor0",
+      "category": "facade",
+      "extension": 0.337139999999998
+    },
+    {
+      "id": "terrace-78-h4-floor0",
+      "category": "facade",
+      "extension": 0.23525000000000063
+    },
+    {
+      "id": "terrace-78-h4-retaining",
+      "category": "retaining",
+      "extension": 0.2152500000000046
+    },
+    {
+      "id": "terrace-78-h5-floor0",
+      "category": "facade",
+      "extension": 0.07633000000000578
+    },
+    {
+      "id": "terrace-79-h4-floor0",
+      "category": "facade",
+      "extension": 0.03617000000000026
+    },
+    {
+      "id": "terrace-79-h4-retaining",
+      "category": "retaining",
+      "extension": 0.06651000000000096
+    },
+    {
+      "id": "terrace-81-h3-floor0",
+      "category": "facade",
+      "extension": 0.0693999999999999
+    },
+    {
+      "id": "terrace-82-h0-floor0",
+      "category": "facade",
+      "extension": 0.16552999999999685
+    },
+    {
+      "id": "terrace-82-h0-retaining",
+      "category": "retaining",
+      "extension": 0.24375999999999465
+    },
+    {
+      "id": "terrace-82-h1-floor0",
+      "category": "facade",
+      "extension": 0.02319999999999567
+    },
+    {
+      "id": "terrace-82-h2-floor0",
+      "category": "facade",
+      "extension": 0.022129999999997096
+    },
+    {
+      "id": "terrace-82-h2-retaining",
+      "category": "retaining",
+      "extension": 0.1379000000000019
+    },
+    {
+      "id": "terrace-82-h3-floor0",
+      "category": "facade",
+      "extension": 0.02494999999999692
+    },
+    {
+      "id": "terrace-83-h5-floor0",
+      "category": "facade",
+      "extension": 0.01646000000000014
+    },
+    {
+      "id": "terrace-84-h1-floor0",
+      "category": "facade",
+      "extension": 0.08236000000000132
+    },
+    {
+      "id": "terrace-84-h2-floor0",
+      "category": "facade",
+      "extension": 0.0869800000000005
+    },
+    {
+      "id": "terrace-84-h2-retaining",
+      "category": "retaining",
+      "extension": 0.08181000000000083
+    },
+    {
+      "id": "terrace-84-h3-floor0",
+      "category": "facade",
+      "extension": 0.21912999999999982
+    },
+    {
+      "id": "terrace-85-h0-floor0",
+      "category": "facade",
+      "extension": 0.12369999999999948
+    },
+    {
+      "id": "terrace-85-h0-retaining",
+      "category": "retaining",
+      "extension": 0.03882000000000119
+    },
+    {
+      "id": "terrace-85-h1-floor0",
+      "category": "facade",
+      "extension": 0.1875400000000056
+    },
+    {
+      "id": "terrace-85-h2-floor0",
+      "category": "facade",
+      "extension": 0.19063000000000585
+    },
+    {
+      "id": "terrace-85-h2-retaining",
+      "category": "retaining",
+      "extension": 0.14771999999999963
+    },
+    {
+      "id": "terrace-85-h3-floor0",
+      "category": "facade",
+      "extension": 0.1769000000000034
+    },
+    {
+      "id": "terrace-85-h4-floor0",
+      "category": "facade",
+      "extension": 0.17631000000000085
+    },
+    {
+      "id": "terrace-85-h4-retaining",
+      "category": "retaining",
+      "extension": 0.06454000000000093
+    },
+    {
+      "id": "terrace-85-h5-floor0",
+      "category": "facade",
+      "extension": 0.19267999999999574
+    },
+    {
+      "id": "terrace-86-h0-floor0",
+      "category": "facade",
+      "extension": 0.08743000000000123
+    },
+    {
+      "id": "terrace-86-h0-retaining",
+      "category": "retaining",
+      "extension": 0.0940499999999993
+    },
+    {
+      "id": "terrace-86-h3-floor0",
+      "category": "facade",
+      "extension": 0.003600000000002268
+    },
+    {
+      "id": "terrace-87-h5-floor0",
+      "category": "facade",
+      "extension": 0.09928999999999988
+    },
+    {
+      "id": "terrace-88-h5-floor0",
+      "category": "facade",
+      "extension": 0.04779999999999873
+    },
+    {
+      "id": "terrace-89-h0-floor0",
+      "category": "facade",
+      "extension": 0.1525700000000001
+    },
+    {
+      "id": "terrace-89-h0-retaining",
+      "category": "retaining",
+      "extension": 0.14808
+    },
+    {
+      "id": "terrace-89-h1-floor0",
+      "category": "facade",
+      "extension": 0.03636999999999979
+    },
+    {
+      "id": "terrace-89-h2-floor0",
+      "category": "facade",
+      "extension": 0.05064000000000002
+    },
+    {
+      "id": "terrace-89-h2-retaining",
+      "category": "retaining",
+      "extension": 0.05181999999999998
+    },
+    {
+      "id": "terrace-89-h3-floor0",
+      "category": "facade",
+      "extension": 0.08308000000000004
+    },
+    {
+      "id": "terrace-89-h4-floor0",
+      "category": "facade",
+      "extension": 0.04394000000000009
+    },
+    {
+      "id": "terrace-89-h4-retaining",
+      "category": "retaining",
+      "extension": 0.061390000000000056
+    },
+    {
+      "id": "terrace-90-h4-floor0",
+      "category": "facade",
+      "extension": 0.013600000000000279
+    },
+    {
+      "id": "terrace-90-h4-retaining",
+      "category": "retaining",
+      "extension": 0.009070000000001244
+    },
+    {
+      "id": "terrace-91-h0-floor0",
+      "category": "facade",
+      "extension": 0.2217400000000005
+    },
+    {
+      "id": "terrace-91-h0-retaining",
+      "category": "retaining",
+      "extension": 0.23128999999999778
+    },
+    {
+      "id": "terrace-91-h1-floor0",
+      "category": "facade",
+      "extension": 0.03732000000000113
+    },
+    {
+      "id": "terrace-91-h2-floor0",
+      "category": "facade",
+      "extension": 0.0845400000000005
+    },
+    {
+      "id": "terrace-91-h2-retaining",
+      "category": "retaining",
+      "extension": 0.08669000000000082
+    },
+    {
+      "id": "terrace-91-h3-floor0",
+      "category": "facade",
+      "extension": 0.16223000000000098
+    },
+    {
+      "id": "terrace-91-h4-floor0",
+      "category": "facade",
+      "extension": 0.280149999999999
+    },
+    {
+      "id": "terrace-91-h4-retaining",
+      "category": "retaining",
+      "extension": 0.2878099999999968
+    },
+    {
+      "id": "terrace-91-h5-floor0",
+      "category": "facade",
+      "extension": 0.34029999999999916
+    },
+    {
+      "id": "terrace-92-h3-floor0",
+      "category": "facade",
+      "extension": 0.0862400000000001
+    },
+    {
+      "id": "terrace-92-h4-floor0",
+      "category": "facade",
+      "extension": 0.05485999999999791
+    },
+    {
+      "id": "terrace-92-h4-retaining",
+      "category": "retaining",
+      "extension": 0.036659999999997694
+    },
+    {
+      "id": "terrace-94-h1-floor0",
+      "category": "facade",
+      "extension": 0.006719999999999615
+    },
+    {
+      "id": "terrace-94-h4-floor0",
+      "category": "facade",
+      "extension": 0.0023300000000006094
+    },
+    {
+      "id": "terrace-94-h4-retaining",
+      "category": "retaining",
+      "extension": 0.0023100000000013665
+    },
+    {
+      "id": "terrace-94-h5-floor0",
+      "category": "facade",
+      "extension": 0.016719999999999402
+    },
+    {
+      "id": "terrace-95-h4-floor0",
+      "category": "facade",
+      "extension": 0.0010599999999998388
+    },
+    {
+      "id": "terrace-96-h1-floor0",
+      "category": "facade",
+      "extension": 0.0038200000000010448
+    },
+    {
+      "id": "terrace-96-h2-floor0",
+      "category": "facade",
+      "extension": 0.003930000000000433
+    },
+    {
+      "id": "terrace-96-h2-retaining",
+      "category": "retaining",
+      "extension": 0.002000000000000668
+    },
+    {
+      "id": "terrace-96-h3-floor0",
+      "category": "facade",
+      "extension": 0.005279999999999063
+    },
+    {
+      "id": "terrace-97-h0-floor0",
+      "category": "facade",
+      "extension": 0.014310000000000045
+    },
+    {
+      "id": "terrace-97-h0-retaining",
+      "category": "retaining",
+      "extension": 0.012879999999999114
+    },
+    {
+      "id": "terrace-97-h1-floor0",
+      "category": "facade",
+      "extension": 0.001580000000000581
+    },
+    {
+      "id": "terrace-97-h4-floor0",
+      "category": "facade",
+      "extension": 0.006389999999999674
+    },
+    {
+      "id": "terrace-97-h4-retaining",
+      "category": "retaining",
+      "extension": 0.008180000000000298
+    },
+    {
+      "id": "terrace-97-h5-floor0",
+      "category": "facade",
+      "extension": 0.011779999999999902
+    },
+    {
+      "id": "terrace-98-h4-floor0",
+      "category": "facade",
+      "extension": 0.0010700000000021248
+    },
+    {
+      "id": "terrace-98-h4-retaining",
+      "category": "retaining",
+      "extension": 0.0007800000000024454
+    },
+    {
+      "id": "terrace-98-h5-floor0",
+      "category": "facade",
+      "extension": 0.011430000000000717
+    },
+    {
+      "id": "terrace-99-h4-retaining",
+      "category": "retaining",
+      "extension": 0.002940000000002385
+    },
+    {
+      "id": "terrace-100-h5-floor0",
+      "category": "facade",
+      "extension": 0.008780000000001564
+    },
+    {
+      "id": "terrace-101-h0-floor0",
+      "category": "facade",
+      "extension": 0.03230999999999984
+    },
+    {
+      "id": "terrace-101-h0-retaining",
+      "category": "retaining",
+      "extension": 0.02613000000000021
+    },
+    {
+      "id": "terrace-101-h1-floor0",
+      "category": "facade",
+      "extension": 0.018599999999999284
+    },
+    {
+      "id": "terrace-101-h4-floor0",
+      "category": "facade",
+      "extension": 0.04969999999999963
+    },
+    {
+      "id": "terrace-101-h4-retaining",
+      "category": "retaining",
+      "extension": 0.007080000000000197
+    },
+    {
+      "id": "terrace-104-h0-retaining",
+      "category": "retaining",
+      "extension": 0.01828999999999681
+    },
+    {
+      "id": "terrace-104-h2-retaining",
+      "category": "retaining",
+      "extension": 0.0012399999999992417
+    },
+    {
+      "id": "terrace-105-h1-floor0",
+      "category": "facade",
+      "extension": 0.030990000000002738
+    },
+    {
+      "id": "terrace-105-h2-floor0",
+      "category": "facade",
+      "extension": 0.03603999999999985
+    },
+    {
+      "id": "terrace-105-h2-retaining",
+      "category": "retaining",
+      "extension": 0.028620000000003643
+    },
+    {
+      "id": "terrace-105-h3-floor0",
+      "category": "facade",
+      "extension": 0.054479999999998086
+    },
+    {
+      "id": "terrace-106-h0-floor0",
+      "category": "facade",
+      "extension": 0.0004500000000007276
+    },
+    {
+      "id": "terrace-106-h0-retaining",
+      "category": "retaining",
+      "extension": 0.003129999999998745
+    },
+    {
+      "id": "terrace-106-h3-floor0",
+      "category": "facade",
+      "extension": 0.0024599999999992406
+    },
+    {
+      "id": "terrace-107-h0-floor0",
+      "category": "facade",
+      "extension": 0.06859999999999644
+    },
+    {
+      "id": "terrace-107-h0-retaining",
+      "category": "retaining",
+      "extension": 0.07085999999999615
+    },
+    {
+      "id": "terrace-107-h1-floor0",
+      "category": "facade",
+      "extension": 0.04673999999999978
+    },
+    {
+      "id": "terrace-107-h2-floor0",
+      "category": "facade",
+      "extension": 0.023279999999999745
+    },
+    {
+      "id": "terrace-107-h2-retaining",
+      "category": "retaining",
+      "extension": 0.02459999999999951
+    },
+    {
+      "id": "terrace-108-h0-floor0",
+      "category": "facade",
+      "extension": 0.02902000000000271
+    },
+    {
+      "id": "terrace-108-h0-retaining",
+      "category": "retaining",
+      "extension": 0.03006000000000597
+    },
+    {
+      "id": "terrace-108-h1-floor0",
+      "category": "facade",
+      "extension": 0.04001000000000232
+    },
+    {
+      "id": "terrace-108-h2-floor0",
+      "category": "facade",
+      "extension": 0.03602000000000061
+    },
+    {
+      "id": "terrace-108-h2-retaining",
+      "category": "retaining",
+      "extension": 0.042149999999999466
+    },
+    {
+      "id": "terrace-108-h3-floor0",
+      "category": "facade",
+      "extension": 0.06465999999999639
+    },
+    {
+      "id": "terrace-109-h0-floor0",
+      "category": "facade",
+      "extension": 0.037889999999997315
+    },
+    {
+      "id": "terrace-109-h0-retaining",
+      "category": "retaining",
+      "extension": 0.032150000000001455
+    },
+    {
+      "id": "terrace-109-h1-floor0",
+      "category": "facade",
+      "extension": 0.008269999999996003
+    },
+    {
+      "id": "terrace-109-h3-floor0",
+      "category": "facade",
+      "extension": 0.027849999999993713
+    },
+    {
+      "id": "terrace-109-h4-floor0",
+      "category": "facade",
+      "extension": 0.04477999999999582
+    },
+    {
+      "id": "terrace-109-h4-retaining",
+      "category": "retaining",
+      "extension": 0.03824000000000183
+    },
+    {
+      "id": "terrace-110-h0-floor0",
+      "category": "facade",
+      "extension": 0.029710000000001457
+    },
+    {
+      "id": "terrace-110-h0-retaining",
+      "category": "retaining",
+      "extension": 0.02306000000000097
+    },
+    {
+      "id": "terrace-110-h1-floor0",
+      "category": "facade",
+      "extension": 0.00408000000000186
+    },
+    {
+      "id": "terrace-111-h1-floor0",
+      "category": "facade",
+      "extension": 0.01407999999999987
+    },
+    {
+      "id": "terrace-111-h2-floor0",
+      "category": "facade",
+      "extension": 0.021369999999997447
+    },
+    {
+      "id": "terrace-111-h2-retaining",
+      "category": "retaining",
+      "extension": 0.009180000000000632
+    },
+    {
+      "id": "terrace-111-h3-floor0",
+      "category": "facade",
+      "extension": 0.06703999999999866
+    },
+    {
+      "id": "terrace-112-h0-floor0",
+      "category": "facade",
+      "extension": 0.0011099999999970578
+    },
+    {
+      "id": "terrace-112-h2-floor0",
+      "category": "facade",
+      "extension": 0.0024799999999984834
+    },
+    {
+      "id": "terrace-112-h3-floor0",
+      "category": "facade",
+      "extension": 0.005099999999998772
+    },
+    {
+      "id": "terrace-112-h4-floor0",
+      "category": "facade",
+      "extension": 0.0009599999999991837
+    },
+    {
+      "id": "terrace-113-h0-floor0",
+      "category": "facade",
+      "extension": 0.012230000000002406
+    },
+    {
+      "id": "terrace-113-h3-floor0",
+      "category": "facade",
+      "extension": 0.004340000000006228
+    },
+    {
+      "id": "terrace-114-h0-floor0",
+      "category": "facade",
+      "extension": 0.008429999999997051
+    },
+    {
+      "id": "terrace-114-h1-floor0",
+      "category": "facade",
+      "extension": 0.0010199999999969123
+    },
+    {
+      "id": "terrace-114-h2-floor0",
+      "category": "facade",
+      "extension": 0.08631999999999351
+    },
+    {
+      "id": "terrace-114-h3-floor0",
+      "category": "facade",
+      "extension": 0.05293999999999954
+    },
+    {
+      "id": "terrace-115-h0-floor0",
+      "category": "facade",
+      "extension": 0.027250000000002217
+    },
+    {
+      "id": "terrace-115-h0-retaining",
+      "category": "retaining",
+      "extension": 0.03748000000000218
+    },
+    {
+      "id": "terrace-115-h1-floor0",
+      "category": "facade",
+      "extension": 0.038280000000000314
+    },
+    {
+      "id": "terrace-115-h2-floor0",
+      "category": "facade",
+      "extension": 0.040009999999995216
+    },
+    {
+      "id": "terrace-115-h2-retaining",
+      "category": "retaining",
+      "extension": 0.049349999999996896
+    },
+    {
+      "id": "terrace-115-h3-floor0",
+      "category": "facade",
+      "extension": 0.027880000000003236
+    }
+  ]
+}
