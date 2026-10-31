@@ -11,6 +11,21 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-31 - Lights switched on in one frame pop: ramp intensity from 0 (plan-to-build/index.html:build3Construction)
+  A light counts in every lit material's shader only while it is visible, so the first draft that showed the 10 ceiling lamps at the hand-off
+  popped over the still-open building. The lamps are made hidden, shown when the ramp starts (Z+0.8) and brought 0 -> 5.5 with the roof
+  closing; warm3D draws every 2 s up to T_END, so the lights-on variant is compiled before the first play (first draw max 10 ms).
+
+- 2026-10-31 - Walk camera near plane must follow the distance to the building (plan-to-build/index.html:render3D)
+  A fixed near plane either cuts into the 1.6 m eye in a room (needs 0.05) or z-fights the 2 mm clearances (column pad, frame clear) seen
+  from 25 m (needs 1). near = clamp(0.0016 dc^2, 0.05, 1) and far = 2 dc + 90, dc = eye distance from the plan centre: equal to the orbit's
+  0.04 * distance at the hand-off, so nothing changes at t = Z.
+
+- 2026-10-31 - Unwrap walk headings before splining or a 360 wrap spins the camera (plan-to-build/index.html:film3D wk)
+  splineZ interpolates every channel as a plain number. wk() keeps the previous heading and takes the equivalent angle within 180 deg of it
+  (turn()), so a pan is the short way round and steady. The first key is the orbit's heading 90 + az; az runs to 516 deg, so the walk starts
+  at 606 deg, which is harmless: only differences matter.
+
 - 2026-10-29 - Windows serves any path case, Pages does not: check exact-case paths (la-ladera/tests/live-paths.mjs)
   A request for /la-ladera/Assets/textures/asphalt.jpg is answered 200 by the local dev server (self-test of the tool) and would 404 on GitHub
   Pages (Linux). live-paths.test.mjs scans imports, import map, index.html, css url() and manifests against directory listings with exact case;

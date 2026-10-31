@@ -3,6 +3,10 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
+- [ ] 2026-10-31 — `plan-to-build/index.html:mat3` (`glassD`): the walk's windows look out on the dark drawing sheet, so every window is a
+  grey rectangle. A sky and horizon gradient behind the glass during the walk would lift every room shot. It needs a scene.background (or a
+  large backdrop) that only shows once `T3.walk` starts, and a look at where the ground plane ends so no edge shows from the corridor windows.
+
 - [x] 2026-07-30 — `wifi-cartographer/index.html` is the one document in the repo with no
   `<script defer src="/almanac-back.js"></script>` (126 of 127 carry it, checked by grep over
   `*/index.html`). Catalog links open in the same tab, so a reader who opens it has no way
