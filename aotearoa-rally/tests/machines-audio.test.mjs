@@ -44,8 +44,12 @@ test("engine voice: pitch up with rpm; gain and brightness never decrease with l
 });
 
 test("per-car character differs (cylinders, turbo whistle only on turbo cars)", () => {
-  assert.equal(engineCharacter(CARS.piwakawaka).cyl, 6);
-  assert.equal(engineCharacter(CARS.huia).cyl, 4);
+  // round 4: true firing orders per car (V8, inline-five, flat-four, four) and three exhaust resonances each
+  assert.equal(engineCharacter(CARS.piwakawaka).cyl, 8);
+  assert.equal(engineCharacter(CARS.huia).cyl, 5);
+  assert.equal(engineCharacter(CARS.kea).cyl, 4);
+  assert.equal(engineCharacter(CARS.takahe).cyl, 4);
+  for (const id of ["huia", "kea", "takahe", "piwakawaka"]) assert.equal(engineCharacter(CARS[id]).res.length, 3);
   assert.ok(engineCharacter(CARS.huia).turboWhistle > 0);
   assert.equal(engineCharacter(CARS.takahe).turboWhistle, 0);
 });

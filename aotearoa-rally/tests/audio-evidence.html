@@ -11,6 +11,8 @@ const wheels = (surf, slip, load = 4000) => [0, 1, 2, 3].map(() => ({ grounded: 
 // Each scenario: (t, spec) -> { rpm, throttle, boost, speed, gear, slip, surf, events[] } for time t in seconds.
 const SCEN = {
   idle: (t, sp) => ({ rpm: sp.engine.idleRpm, throttle: 0, boost: 0, speed: 0, gear: 1 }),
+  // the same rpm for every car (3000, half throttle, standing): isolates the engine's own timbre for the cross-car spread check
+  rpm3k: () => ({ rpm: 3000, throttle: 0.5, boost: 0, speed: 0, gear: 1 }),
   sweep: (t, sp) => { const k = Math.min(1, t / 1.9); return { rpm: sp.engine.idleRpm + (sp.engine.redline - sp.engine.idleRpm) * k, throttle: 1, boost: Math.min(1, k * 1.5), speed: 4 + 36 * k, gear: 2 }; },
   shift: (t, sp) => { const r = sp.engine.redline; return { rpm: t < 0.6 ? r * 0.9 : t < 0.85 ? r * 0.5 : r * 0.55, throttle: t < 0.6 ? 1 : t < 0.85 ? 0 : 1, boost: 0.6, speed: 30, gear: t < 0.6 ? 2 : 3, ev: [[0.6, { t: "shift", from: 2, to: 3 }]] }; },
   turbo: (t, sp) => { const r = sp.engine.redline; return { rpm: r * (t < 0.9 ? 0.7 : 0.6), throttle: t < 0.9 ? 1 : 0, boost: t < 0.9 ? 1 : Math.max(0, 1 - (t - 0.9) * 3), speed: 30, gear: 3, ev: [[1.0, { t: "wastegate" }]] }; },
@@ -30,7 +32,7 @@ window.renderClip = async (name, car = "huia", opts = {}) => {
   audio.setCarSpec(spec);
   audio.setStage({ biome: "rainforest", environment: { weather: { type: "clear", intensity: 0 }, timeOfDay: 14, windStrength: 0.3 } });
   for (const m of opts.mute || []) audio.mixer[m + "Bus"].gain.value = 0;
-  const st = { rpm: 0, throttle: 0, boost: 0, speed: 0, gear: 1, wheels: wheels(SURFACE.GRAVEL, 0), events: [], s: 20, damage: { engine: opts.dead ? 1 : 0 } };
+  const st = { rpm: 0, throttle: 0, boost: 0, speed: 0, gear: 1, wheels: wheels(SURFACE.GRAVEL, 0), events: [], s: opts.s ?? 20, damage: { engine: opts.dead ? 1 : 0 } };
   const scen = SCEN[name];
   if (!scen) throw new Error("unknown clip " + name);
   const hz = opts.hz || 30;
@@ -42,7 +44,7 @@ window.renderClip = async (name, car = "huia", opts = {}) => {
     const p = scen(t, spec);
     st.rpm = p.rpm; st.throttle = p.throttle; st.boost = p.boost; st.speed = p.speed; st.gear = p.gear;
     st.wheels = wheels(p.surf ?? SURFACE.GRAVEL, p.slip || 0);
-    st.s = 20 + t * p.speed;
+    st.s = (opts.s ?? 20) + t * p.speed;
     st.events.length = 0;
     for (const [te, ev] of p.ev || []) if (t >= te && !fired.has(te)) { fired.add(te); st.events.push(ev); }
     if (name === "codriver" && t >= 0.2 && !fired.has("c")) { fired.add("c"); audio.sfx.beepCall(ctx.currentTime); calls++; }

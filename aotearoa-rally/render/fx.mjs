@@ -340,11 +340,11 @@ export function createFX(THREE, world) {
   const systems = [soft, hard, glow];
 
   // ---- rain on glass overlay (child of camera)
-  const lensUni = { uTime: { value: 0 }, uRain: { value: 0 }, uAspect: { value: 1.7 }, uWipe: { value: 0 }, uWiperOn: { value: 0 }, uTint: { value: new THREE.Vector3(0.7, 0.8, 0.9) } };
+  const lensUni = { uTime: { value: 0 }, uRain: { value: 0 }, uAspect: { value: 1.7 }, uWipe: { value: 0 }, uWiperOn: { value: 0 }, uNdcZ: { value: 0 }, uTint: { value: new THREE.Vector3(0.7, 0.8, 0.9) } };
   const lensGeo = new THREE.PlaneGeometry(2, 2);
   const lensMat = new THREE.ShaderMaterial({
     uniforms: lensUni, transparent: true, depthTest: false, depthWrite: false,
-    vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
+    vertexShader: "varying vec2 vUv; uniform float uNdcZ; void main(){ vUv = uv; gl_Position = vec4(position.xy, uNdcZ, 1.0); }",
     fragmentShader: LENS_FRAG,
   });
   const lens = new THREE.Mesh(lensGeo, lensMat);
@@ -690,6 +690,14 @@ export function createFX(THREE, world) {
       lensUni.uRain.value = amount;
       lensUni.uWiperOn.value = camMode === "bonnet" && rain > 0.1 ? 1 : 0;
       lensUni.uAspect.value = camera && camera.aspect ? camera.aspect : 1.7;
+      // cockpit: droplets live on the windscreen glass, not on the lens. Draw the quad at the glass distance with the depth test on,
+      // so the headliner, pillars, dash and wheel (all nearer) hide them.
+      const cab = env.cabin && env.cabin.on ? env.cabin : null;
+      lensMat.depthTest = !!cab;
+      if (cab && camera) {
+        const n = camera.near, f = camera.far, D = cab.glassDist;
+        lensUni.uNdcZ.value = ((f + n) / (f - n) * D - (2 * f * n) / (f - n)) / D;
+      } else lensUni.uNdcZ.value = 0;
       const t = env.fogColor !== undefined ? toRGB(env.fogColor, rgb) : null;
       if (t) lensUni.uTint.value.set(0.4 + t[0] * 0.5, 0.45 + t[1] * 0.5, 0.5 + t[2] * 0.5);
     }

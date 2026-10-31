@@ -1,7 +1,8 @@
 // Scenery: procedural geometry for every PROP_KIND, instanced through ONE atlas material,
 // streamed from a spatial hash with per-instance distance LOD, culling, density thinning,
 // wind sway (vertex shader), steam plumes and waterfalls.
-import { createPropMaterial, buildPropAtlas, atlasCell, patchCommon, GLSL_NOISE } from "./materials.mjs";
+import { createPropMaterial, createRockMaterial, buildPropAtlas, atlasCell, patchCommon, GLSL_NOISE } from "./materials.mjs";
+import { BIOME_ROCK } from "./textures.mjs";
 import { PROP_TABLE, PROP_KIND_LIST, propLod, keepProp } from "./quality.mjs";
 
 const TAU = Math.PI * 2;
@@ -42,11 +43,11 @@ class MB {
   tri(a, b, c) { this.i.push(a, b, c); }
   quadIdx(a, b, c, d) { this.i.push(a, b, c, c, b, d); }
   /** card: base point p, direction dir, side vector (unit), width w, length h, outward normal n, droop (world vec), 3 rows. */
-  card(px, py, pz, dx, dy, dz, sx, sy, sz, w, h, n, droop, swayAmt = 1, rows = 2) {
+  card(px, py, pz, dx, dy, dz, sx, sy, sz, w, h, n, droop, swayAmt = 1, rows = 2, taper0 = true) {
     const base = this.p.length / 3;
     for (let r = 0; r <= rows; r++) {
       const t = r / rows;
-      const taper = t < 0.5 ? 0.45 + t * 1.1 : 1.0 - (t - 0.5) * 0.9; // widest at mid
+      const taper = !taper0 ? 1 : t < 0.5 ? 0.45 + t * 1.1 : 1.0 - (t - 0.5) * 0.9; // widest at mid
       const hw = (w * 0.5) * taper;
       const bx = px + dx * h * t + droop[0] * t * t, by = py + dy * h * t + droop[1] * t * t, bz = pz + dz * h * t + droop[2] * t * t;
       const sw = swayAmt * this.sw(by) * (0.5 + 0.5 * t);
@@ -298,7 +299,7 @@ function blobTree(mb, P, o, lod) { // LOD2: vertex-colour silhouette
 }
 
 function broadleaf(mb, P, o, lod, v) {
-  const { H, trunkH, trunkR, crownR, crownY, clusters, cardSize, lean = 0, tint = 1, bark = "bark_beech", cardCell = "foliage_broadleaf", red = 0, limbs = 4, flat = 0.62, stems = 1, spread = 0.72, arch = 0.5 } = o;
+  const { H, trunkH, trunkR, crownR, crownY, clusters, cardSize, lean = 0, tint = 1, bark = "bark_beech", cardCell = "foliage_broadleaf", red = 0, limbs = 4, flat = 0.62, stems = 1, spread = 0.72, arch = 0.5, photo = false, greenMix = 0 } = o;
   mb.sway((y) => Math.pow(Math.max(0, y / H), 1.5));
   const R = (k, q = 0) => hs(k * 17 + q, v + 41);
   // every crown cluster sits on a branch: collect anchors while the branches are built, then hang foliage on them
@@ -351,9 +352,13 @@ function broadleaf(mb, P, o, lod, v) {
       const dx = Math.sin(az) * Math.cos(tilt), dz = Math.cos(az) * Math.cos(tilt), dy = Math.sin(tilt);
       const sz = cardSize * (lod === 0 ? 1.45 : 2.1) * (0.8 + R(k, q + 12) * 0.5);
       const isRed = red && R(k * 3 + q, 13) < red;
-      if (isRed) mb.colorV(P.accent, 1.2);
+      const leafy = photo && R(k * 5 + q, 21) < greenMix; // dense dark-green crown cards between the flowering ones
+      if (photo) mb.cellName(leafy ? "foliage_broadleaf" : cardCell);
+      if (leafy) mb.colorV(R(k, q + 3) < 0.5 ? P.f1 : P.f2, (0.62 + 0.3 * R(k + 9, q)) * (0.7 + 0.25 * outward + 0.2 * hgt));
+      else if (photo) { const kk = (0.62 + 0.3 * R(k, q + 3) + 0.18 * hgt) * tint; mb.color(kk, kk, kk * 0.96); }
+      else if (isRed) mb.colorV(P.accent, 1.2);
       else mb.colorV(R(k, q + 3) < 0.5 ? P.f1 : P.f2, (0.74 + 0.4 * R(k + 9, q)) * tint * (0.7 + 0.25 * outward + 0.2 * hgt));
-      mb.card(cx - dx * sz * 0.45, cy - dy * sz * 0.45, cz - dz * sz * 0.45, dx, dy, dz, dz, 0, -dx, sz, sz, nn, [0, -sz * 0.22, 0], 1, 1);
+      mb.card(cx - dx * sz * 0.45, cy - dy * sz * 0.45, cz - dz * sz * 0.45, dx, dy, dz, dz, 0, -dx, sz, sz, nn, [0, -sz * 0.22, 0], 1, 1, !photo);
     }
   }
 }
@@ -365,7 +370,7 @@ function palmLike(mb, P, o, lod, v) { // tree fern / cabbage tree heads
     const ang = (s / stems) * TAU + v, off = stems > 1 ? 0.9 + 0.5 * s : 0;
     const ox = Math.sin(ang) * off * 0.5, oz = Math.cos(ang) * off * 0.5;
     const sh = H * (stems > 1 ? 0.7 + 0.3 * hs(s, v) : 1);
-    mb.cellName(bark).colorV(P.trunk, stems > 1 ? 0.9 : 0.55);
+    mb.cellName(bark).colorV(P.trunkD, stems > 1 ? 1.0 : 0.7);
     mb.limb([[0, 0, 0], [ox * 0.5, sh * 0.5, oz * 0.5], [ox, sh, oz]], trunkR, trunkR * 0.8, lod === 0 ? 7 : 5, { tile: 2 });
     mb.cellName(cell);
     const nf = lod === 0 ? fronds : Math.ceil(fronds * 0.55);
@@ -405,7 +410,7 @@ function rockKind(mb, P, o, lod, v) {
     const sc = k === 0 ? 1 : 0.45 + 0.35 * hs(k, v);
     const tall = k === 0 ? 1 : 0.7 + 0.6 * hs(k, v + 3);
     mb.at(Math.sin(a) * d, ry * sc * 0.25, Math.cos(a) * d, (hs(k, v + 8) - 0.5) * 0.12, hs(k, v) * TAU, (hs(k, v + 9) - 0.5) * 0.12);
-    mb.colorV(P.rock, tint * (0.8 + 0.3 * hs(k, v + 4)));
+    mb.colorV(P.rock, tint * 1.35 * (0.8 + 0.3 * hs(k, v + 4)));
     mb.rock(rx * sc * (0.85 + 0.3 * hs(k, v + 5)), ry * sc * tall, rz * sc * (0.85 + 0.3 * hs(k, v + 6)), v * 7 + k * 3.7, s, rough, 0, { ...shape, lean: (shape.lean ?? 0) * (hs(k, v + 7) - 0.5) * 2 });
     mb.pop();
   }
@@ -494,28 +499,30 @@ const BUILD = {
   beech: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 21, trunkR: 0.38, crownR: 6, crownY: 13, conifer: false }, lod)
     : broadleaf(mb, P, { H: 21, trunkH: 9, trunkR: 0.45, crownR: 6.4, crownY: 14, clusters: 24, cardSize: 3.0, tint: 0.95, bark: "bark_beech", limbs: 5 }, lod, v),
   pohutukawa: (mb, P, lod, v) => lod === 2 ? blobTree(mb, P, { H: 10, trunkR: 0.6, crownR: 6.5, crownY: 6, conifer: false }, lod)
-    : broadleaf(mb, P, { H: 10, trunkH: 2.4, trunkR: 0.62, crownR: 7.2, crownY: 5.0, clusters: 34, cardSize: 2.7, tint: 0.7, bark: "bark_beech", limbs: 8, lean: 1.0, red: 0.12, flat: 0.42, stems: 2, spread: 0.85, arch: 0.25 }, lod, v),
+    : broadleaf(mb, P, { H: 10, trunkH: 2.4, trunkR: 0.62, crownR: 7.2, crownY: 5.0, clusters: 40, cardSize: 3.4, tint: 0.95, bark: "bark_beech", cardCell: "foliage_pohutukawa", photo: true, greenMix: 0.62, limbs: 8, lean: 1.0, flat: 0.42, stems: 2, spread: 0.85, arch: 0.25 }, lod, v),
   tree_fern: (mb, P, lod, v) => lod === 2 ? (mb.sway(0.4), mb.cellName("white").colorV(P.trunkD, 0.7), mb.cyl(0.12, 0.1, 3.6, 4), mb.colorV(P.f1d, 1), mb.at(0, 3.5, 0), mb.ellipsoid(2, 0.7, 2, 6, 3), mb.pop())
     : palmLike(mb, P, { H: 3.8, headY: 3.8, trunkR: 0.14, fronds: 11, frondL: 2.4, frondW: 1.1, cell: "foliage_fern", tint: 0.95 }, lod, v),
   cabbage_tree: (mb, P, lod, v) => lod === 2 ? (mb.sway(0.4), mb.cellName("white").colorV(P.trunkD, 1), mb.cyl(0.22, 0.14, 5, 4), mb.colorV(P.f2d, 1.05), mb.at(0, 5.6, 0), mb.ellipsoid(1.8, 1.1, 1.8, 6, 3), mb.pop())
-    : palmLike(mb, P, { H: 6, headY: 5, trunkR: 0.22, fronds: 14, frondL: 1.7, frondW: 0.5, cell: "foliage_flax", droop: 0.25, bark: "bark_pine", tint: 1.05, stems: 3 }, lod, v),
+    : palmLike(mb, P, { H: 6, headY: 5, trunkR: 0.22, fronds: 24, frondL: 1.9, frondW: 0.62, cell: "foliage_flax", droop: 0.3, bark: "bark_pine", tint: 1.0, stems: 3 }, lod, v),
   flax: (mb, P, lod, v) => bladeClump(mb, P, { n: 16, h: 1.7, w: 0.42, cell: "foliage_flax", spread: 0.55, tint: 1, droop: 0.5 }, lod, v),
-  toetoe: (mb, P, lod, v) => {
-    bladeClump(mb, P, { n: 14, h: 1.8, w: 0.3, cell: "foliage_flax", spread: 0.6, tint: 1.1, droop: 0.55, col2: P.f2 }, lod, v);
-    if (lod === 0) for (let k = 0; k < 6; k++) {
-      const az = (k / 6) * TAU + v, lean = 0.35 + 0.3 * hs(k, v), hgt = 2.2 + hs(k, v + 2);
-      mb.cellName("white").color(0.78, 0.7, 0.5);
-      mb.limb([[0, 0, 0], [Math.sin(az) * lean * 0.5, hgt * 0.6, Math.cos(az) * lean * 0.5], [Math.sin(az) * lean, hgt, Math.cos(az) * lean]], 0.012, 0.008, 4, { tile: 3 });
-      mb.color(0.93, 0.89, 0.78); mb.at(Math.sin(az) * lean, hgt - 0.28, Math.cos(az) * lean, 0.25 * Math.cos(az), 0, 0.25 * Math.sin(az)); mb.ellipsoid(0.07, 0.34, 0.07, 5, 4, 1.2); mb.pop();
+  toetoe: (mb, P, lod, v) => { // 3-5 crossed upright alpha cards of the photographed plant; random scale, turn, flip and tint
+    mb.sway((y) => Math.min(1, y / 2.4) * 1.1);
+    mb.cellName("foliage_toetoe");
+    const n = lod === 0 ? 4 : 3;
+    for (let k = 0; k < n; k++) {
+      const az = (k / n) * Math.PI + (hs(k, v) - 0.5) * 0.5, sc = 0.7 + 0.4 * hs(k, v + 3), flip = hs(k, v + 6) < 0.5 ? -1 : 1;
+      const sx = Math.cos(az) * flip, sz = -Math.sin(az) * flip, kk = 0.8 + 0.25 * hs(k, v + 9);
+      mb.color(kk, kk * (0.98 + 0.04 * hs(k, v + 2)), kk * 0.92);
+      mb.card(0, 0, 0, 0, 1, 0, sx, 0, sz, 3.4 * sc, 3.4 * sc, [Math.sin(az), 0.35, Math.cos(az)], [0.25 * Math.sin(az), 0, 0.25 * Math.cos(az)], 1, 3, false);
     }
   },
   tussock: (mb, P, lod, v) => bladeClump(mb, P, { n: 28, h: 0.95, w: 0.24, cell: "foliage_grass", spread: 0.6, tint: 1.2, droop: 0.55, col2: P.g2, grassy: true }, lod, v),
   grass_tuft: (mb, P, lod, v) => bladeClump(mb, P, { n: 9, h: 0.55, w: 0.28, cell: "foliage_grass", spread: 0.4, tint: 1.1, droop: 0.25, grassy: true }, lod, v),
   fern: (mb, P, lod, v) => bladeClump(mb, P, { n: 9, h: 1.0, w: 0.55, cell: "foliage_fern", spread: 0.8, tint: 0.95, droop: 0.55, flatten: 0.3 }, lod, v),
   shrub: (mb, P, lod, v) => broadleaf(mb, P, { H: 1.6, trunkH: 0.3, trunkR: 0.05, crownR: 0.95, crownY: 0.8, clusters: lod === 0 ? 10 : 5, cardSize: 0.8, tint: 0.95, bark: "bark_beech", limbs: 0 }, lod, v),
-  boulder: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.0, ry: 1.0, rz: 0.85, cell: "gnd_schist", sub: 2, rough: 0.55, count: 2, cluster: 0.45, shape: { facet: 0.4 } }, lod, v),
-  limestone: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.7, ry: 3.0, rz: 1.45, cell: "gnd_limestone", sub: 2, rough: 0.62, count: 4, cluster: 0.8, tint: 0.85, shape: { blocky: 0.85, strata: 1, facet: 0.55, top: 0.8, lean: 0.25 } }, lod, v),
-  schist: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.9, ry: 2.5, rz: 1.6, cell: "gnd_schist", sub: 2, rough: 0.6, count: 3, cluster: 0.6, shape: { blocky: 0.45, strata: 0.7, facet: 0.5, top: 0.88 } }, lod, v),
+  boulder: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.0, ry: 1.0, rz: 0.85, cell: "rock_stage", sub: 3, rough: 0.5, count: 2, cluster: 0.45, shape: { facet: 0.2 } }, lod, v),
+  limestone: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.7, ry: 3.0, rz: 1.45, cell: "rock_stage", sub: 2, rough: 0.62, count: 4, cluster: 0.8, tint: 0.85, shape: { blocky: 0.85, strata: 1, facet: 0.55, top: 0.8, lean: 0.25 } }, lod, v),
+  schist: (mb, P, lod, v) => rockKind(mb, P, { rx: 1.9, ry: 2.5, rz: 1.6, cell: "rock_stage", sub: 2, rough: 0.6, count: 3, cluster: 0.6, shape: { blocky: 0.45, strata: 0.7, facet: 0.5, top: 0.88 } }, lod, v),
   log: (mb, P) => { mb.cellName("bark_beech").colorV(P.trunk, 0.9); mb.at(0, 0.35, 0, 0, 0, Math.PI / 2); mb.cyl(0.34, 0.3, 4.6, 8, { cap: true }); mb.pop(); mb.cellName("white").color(0.72, 0.6, 0.42); mb.at(-0.0, 0.35, 0, 0, 0, Math.PI / 2); mb.ellipsoid(0.01, 0.01, 0.01, 3, 2); mb.pop(); },
   stump: (mb, P) => { mb.cellName("bark_pine").colorV(P.trunk, 0.9); mb.cyl(0.42, 0.34, 0.65, 9, { cap: true }); mb.cellName("white").color(0.72, 0.6, 0.44); mb.at(0, 0.655, 0); mb.ellipsoid(0.34, 0.01, 0.34, 8, 2); mb.pop(); },
   fence_post: (mb, P) => { mb.cellName("planks").color(0.75, 0.62, 0.45); mb.cyl(0.07, 0.06, 1.25, 6, { tile: 3 }); mb.cellName("white").color(0.55, 0.45, 0.32); mb.at(0, 1.25, 0); mb.ellipsoid(0.06, 0.03, 0.06, 5, 2); mb.pop(); },
@@ -593,11 +600,24 @@ const BUILD = {
     for (const y of [0.55, 0.95]) { mb.at(0, y, 0); mb.box(0.1, 0.1, 3.1, { yBase: false }); mb.pop(); }
   },
   culvert: (mb, P) => { mb.cellName("white"); mb.color(0.6, 0.6, 0.58); mb.at(0, 0.0, 0); mb.box(2.6, 1.4, 0.5); mb.pop(); mb.color(0.07, 0.07, 0.08); mb.at(0, 0.5, 0.26); mb.ellipsoid(0.55, 0.5, 0.01, 8, 4); mb.pop(); },
-  sheep: (mb, P, lod, v) => {
+  sheep: (mb, P, lod, v) => { // woolly body of overlapping lumps, dark head and ears, four legs, tail; variants differ in size, tone and head angle
     mb.sway(0); mb.cellName("fabric");
-    mb.color(0.9, 0.88, 0.8); mb.at(0, 0.58, 0); mb.ellipsoid(0.34, 0.3, 0.55, 8, 5); mb.pop();
-    mb.color(0.18, 0.15, 0.13); mb.at(0, 0.7, 0.62); mb.ellipsoid(0.1, 0.12, 0.17, 6, 4); mb.pop();
-    mb.color(0.25, 0.2, 0.18); for (const x of [-0.16, 0.16]) for (const z of [-0.35, 0.35]) { mb.at(x, 0, z); mb.cyl(0.035, 0.03, 0.4, 4); mb.pop(); }
+    const sc = 0.9 + 0.2 * hs(v, 3), tone = 0.82 + 0.16 * hs(v, 5), dark = v % 3 === 2;
+    mb.at(0, 0, 0, 0, hs(v, 9) * 0.3 - 0.15, 0, sc);
+    const wool = (x, y, z, rx, ry, rz, t) => { mb.cellName("wool_fleece"); mb.color(tone * t, tone * t * 0.97, tone * t * 0.9); mb.at(x, y, z); mb.ellipsoid(rx, ry, rz, lod === 0 ? 7 : 5, lod === 0 ? 5 : 3); mb.pop(); };
+    wool(0, 0.62, 0, 0.36, 0.33, 0.58, 1.0);
+    wool(0.17, 0.7, 0.22, 0.2, 0.2, 0.24, 1.06); wool(-0.17, 0.7, 0.22, 0.2, 0.2, 0.24, 0.98);
+    wool(0.17, 0.68, -0.25, 0.2, 0.2, 0.25, 0.95); wool(-0.17, 0.7, -0.25, 0.2, 0.2, 0.25, 1.03);
+    wool(0, 0.8, 0, 0.26, 0.17, 0.4, 1.08); wool(0, 0.7, 0.45, 0.22, 0.2, 0.18, 1.0);
+    const skin = dark ? [0.1, 0.09, 0.08] : [0.2, 0.17, 0.15];
+    mb.cellName("fabric");
+    mb.color(...skin);
+    mb.at(0, 0.72, 0.66, 0.35 + 0.25 * hs(v, 7), 0, 0); mb.ellipsoid(0.1, 0.13, 0.19, 6, 4); mb.pop(); // head
+    for (const sd of [-1, 1]) { mb.at(sd * 0.13, 0.8, 0.62, 0, 0, sd * 0.9); mb.ellipsoid(0.12, 0.03, 0.05, 4, 2); mb.pop(); } // ears
+    mb.color(skin[0] * 1.2, skin[1] * 1.2, skin[2] * 1.2);
+    for (const x of [-0.17, 0.17]) for (const z of [-0.36, 0.38]) { mb.at(x, 0, z); mb.cyl(0.04, 0.032, 0.42, 5); mb.pop(); }
+    wool(0, 0.62, -0.55, 0.1, 0.1, 0.1, 0.9); // tail tuft
+    mb.pop();
   },
   cow: (mb, P, lod, v) => {
     mb.sway(0); mb.cellName("fabric");
@@ -652,7 +672,7 @@ function fallbackBox(mb) { mb.cellName("white"); mb.color(0.9, 0.2, 0.9); mb.box
 export function createScenery(THREE, { SU, textures, getCfg }) {
   const group = new THREE.Group();
   group.name = "scenery";
-  let atlas = null, mat = null;
+  let atlas = null, mat = null, rockMat = null;
   let stage = null, P = null;
   const meshes = new Map(); // key -> { mesh, kind, lod, tri, cap }
   // baked-style ambient occlusion: soft dark blobs on the ground under trees and rocks (one instanced draw call)
@@ -680,7 +700,9 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   const colTmp = new THREE.Color();
 
   const SPAN = { fence_wire: { l: 1 }, tape_barrier: { l: 6 }, guardrail: { l: 6 }, bridge_rail: { l: 3 }, bridge_deck: { w: 5.4, l: 12 }, cattlegrid: { w: 6.6, l: 3.0 }, culvert: { w: 2.6 }, banner_arch: { w: 10.8 } };
-  const VARIANTS = { pine: 2, redwood: 2, beech: 2, macrocarpa: 2, pohutukawa: 2, kauri: 1, boulder: 2, limestone: 2, schist: 2, spectator: 8, spectator_group: 4, car_parked: 3, haybale: 2, cow: 2, flag: 3, tent: 3, tyre_stack: 2, tree_fern: 2, cabbage_tree: 2, flax: 2, tussock: 2, fern: 2, toetoe: 1 };
+  const VARIANTS = { pine: 2, redwood: 2, beech: 2, macrocarpa: 2, pohutukawa: 2, kauri: 1, boulder: 4, limestone: 3, schist: 3, spectator: 8, spectator_group: 4, car_parked: 3, haybale: 2, cow: 2, sheep: 3, flag: 3, tent: 3, tyre_stack: 2, tree_fern: 2, cabbage_tree: 2, flax: 2, tussock: 2, fern: 2, toetoe: 2 };
+
+  const ROCK_KINDS = new Set(["boulder", "limestone", "schist"]);
 
   function geometryFor(kind, v, lod) {
     const key = kind + "|" + v + "|" + lod;
@@ -734,7 +756,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     let e = meshes.get(key);
     if (e) { if (cap > e.cap) { /* capacity is fixed at creation from total count */ } return e; }
     const g = geometryFor(kind, v, lod);
-    const mesh = new THREE.InstancedMesh(g, mat, cap);
+    const mesh = new THREE.InstancedMesh(g, rockMat && ROCK_KINDS.has(kind) ? rockMat : mat, cap);
     mesh.count = 0;
     mesh.frustumCulled = false;
     mesh.matrixAutoUpdate = false;
@@ -767,8 +789,10 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
       stage = st;
       const cfg = getCfg();
       P = paletteFor(THREE, palette ?? st.def.palette);
-      atlas = buildPropAtlas(THREE, textures, { cell: cfg.texScale < 1 ? 256 : 512, anisotropy: cfg.anisotropy });
+      atlas = buildPropAtlas(THREE, textures, { cell: cfg.texScale < 1 ? 256 : 512, anisotropy: cfg.anisotropy, rock: BIOME_ROCK[st.def.biome] && textures.isReal(BIOME_ROCK[st.def.biome]) ? BIOME_ROCK[st.def.biome] : null });
       mat = createPropMaterial(THREE, atlas, SU, { alphaToCoverage: cfg.alphaToCoverage });
+      const rn = BIOME_ROCK[st.def.biome];
+      rockMat = rn && textures.isReal(rn) ? createRockMaterial(THREE, textures.get(rn), SU, textures.meters(rn)) : null;
       const props = (st.props ?? []).concat(groundCover(st, st.def.biome));
       const n = props.length;
       X = new Float32Array(n); Y = new Float32Array(n); Z = new Float32Array(n); R = new Float32Array(n); S = new Float32Array(n);
@@ -835,7 +859,7 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
       for (const f of falls) { group.remove(f); f.geometry.dispose(); f.material.dispose(); }
       falls.length = 0;
       if (wires) { group.remove(wires); wires.geometry.dispose(); wires.material.dispose(); wires = null; }
-      atlas?.dispose(); mat?.dispose(); atlas = mat = null; stage = null; cellMap = new Map();
+      atlas?.dispose(); mat?.dispose(); rockMat?.dispose(); atlas = mat = rockMat = null; stage = null; cellMap = new Map();
     },
     refreshQuality() {
       if (!stage) return;
@@ -1107,5 +1131,11 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
   return api;
 }
 
+/** Build one prop geometry outside a stage (tests, tooling). */
+export function buildPropGeometry(T, kind, v, lod, palette = {}) {
+  const mb = new MB(T); mb.seed = v;
+  BUILD[kind](mb, paletteFor(T, palette), lod, v);
+  return mb.toGeometry();
+}
 export const SCENERY_BUILDERS = Object.keys(BUILD);
 export { PROP_KIND_LIST };

@@ -18,6 +18,25 @@ export const speechBudget = (v) => Math.max(1.5, lookahead(v) / Math.max(Math.ab
 export const callStart = (noteS, baseAt, text, v) => Math.max(baseAt - leadExtra(text, v), noteS - Math.max(MAX_LEAD_S * Math.abs(v || 0), 25));
 
 const stripInto = (t) => t.replace(/^\s*into\s+/i, "");
+const clauseKey = (c) => stripInto(c).toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+/** Collapse adjacent identical clauses ("left five, into left five" -> "left five"). Pure; keeps the first occurrence's separator. */
+export function dedupeClauses(text) {
+  text = String(text || "").replace(/\s*,\s*into\s+caution\b/gi, ". Caution"); // a caution is its own short sentence, never "into caution"
+  const parts = text.split(/(\s*[,.]\s*)/); // clause, sep, clause, sep, ...
+  const out = []; let prev = null;
+  for (let i = 0; i < parts.length; i += 2) {
+    const c = parts[i], sep = parts[i + 1] || "", key = clauseKey(c);
+    if (key && key === prev) { continue; }
+    out.push(c, sep); if (key) prev = key;
+  }
+  return out.join("").replace(/\s*[,.]\s*$/, "").replace(/\s+/g, " ").trim();
+}
+/** Join two spoken clauses: "caution" is its own short sentence, everything else chains with "into". */
+export function joinClauses(text, nextSpeak) {
+  const nx = stripInto(nextSpeak);
+  if (/^caution\b/i.test(nx)) return text.replace(/[,.\s]+$/, "") + ". " + nx.charAt(0).toUpperCase() + nx.slice(1);
+  return text + (/\binto\b\s*$/i.test(text) ? " " : ", into ") + lowerFirst(nx);
+}
 function lowerFirst(t) { return t ? t.charAt(0).toLowerCase() + t.slice(1) : t; }
 
 /**
@@ -55,7 +74,7 @@ export function createScheduler(opts = {}) {
       while (group.length < maxMerge && j < notes.length) {
         const m = notes[j];
         if (m.s - end > gap || m.kind === "start" || m.kind === "finish" || !m.speak) break;
-        const cand = text + (/\binto\b\s*$/i.test(text) ? " " : ", into ") + lowerFirst(stripInto(m.speak));
+        const cand = dedupeClauses(joinClauses(text, m.speak));
         // never merge beyond what can be said before the first feature arrives (split into two calls instead)
         if (speechSeconds(cand, speechRate(v)) > speechBudget(v)) break;
         text = cand;
@@ -70,7 +89,7 @@ export function createScheduler(opts = {}) {
       next = j;
       headS = n.s;
       if (group.length > 1) st.merged += group.length - 1;
-      queue.push({ jump: s - Math.max(fullAt, 0) > 25, text: text.replace(/\s+/g, " ").trim(), s: n.s, end: n.s, notes: group, sev: Math.min(...group.map((g) => g.severity || 6)) });
+      queue.push({ jump: s - Math.max(fullAt, 0) > 25, text: dedupeClauses(text.replace(/\s+/g, " ").trim()), s: n.s, end: n.s, notes: group, sev: Math.min(...group.map((g) => g.severity || 6)) });
       while (queue.length > maxQueue) {
         // drop the least urgent (highest severity number = flatter) of the older items, keep the nearest
         let k = 0;
@@ -119,7 +138,7 @@ export function createScheduler(opts = {}) {
       if (!queue.length) return null;
       const it = queue.shift();
       st.spoken++;
-      return { text: it.text, rate: speechRate(v), note: it.notes[0], merged: it.notes.length, s: it.s };
+      return { text: dedupeClauses(it.text), rate: speechRate(v), note: it.notes[0], merged: it.notes.length, s: it.s };
     },
   };
 }

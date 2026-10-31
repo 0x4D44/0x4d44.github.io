@@ -1,6 +1,6 @@
 // World renderer: createWorld(canvas, opts) -> world (see CONTRACTS.md section 4).
 import * as THREE from "three";
-import { loadTextureSet } from "./textures.mjs";
+import { loadTextureSet, stageTextures } from "./textures.mjs";
 import { createSharedUniforms, createWaterMaterial } from "./materials.mjs";
 import { createTerrain } from "./terrain.mjs";
 import { createRoad } from "./road.mjs";
@@ -206,6 +206,7 @@ export async function createWorld(canvas, opts = {}) {
     rebuildEnvMap();
     applyGrade();
     onProgress(0.4, "terrain");
+    await textures.ensure(stageTextures(stage.def.biome)); // this stage's rock, fleece and coastal foliage cards only
     terrain.setStage(stage);
     camera.far = Math.min(cfg.viewDist, terrain.viewDist) + 400;
     camera.updateProjectionMatrix();
@@ -258,7 +259,7 @@ export async function createWorld(canvas, opts = {}) {
     road.setCar(S.carPos.x, S.carPos.z, S.fx ?? 0, S.fz ?? 0);
     scenery.update(camera, S.time);
     sea.update(S.camPos);
-    weather.update(dt, S.time, S.camPos, S.carPos, cv, 0.6 + 0.55 * S.mood.day * (1 - 0.35 * w.rainAmt), S.def.environment.fogColor);
+    weather.update(dt, S.time, S.camPos, S.carPos, cv, 0.6 + 0.55 * S.mood.day * (1 - 0.35 * w.rainAmt), S.def.environment.fogColor, environment.cabin);
     splash.update(S.time, S.carPos, cv, S.carPos.y - 0.2, sprayAmount(inWaterSpan(S.stage.water, S.carPos.x, S.carPos.z), SU.uWet.value, spd), 0.6 + 0.55 * S.mood.day);
     lighting.update(S.carPos, S.carYaw, spd, weather.state.flash);
     sky.update(S.time, S.camPos, { x: weather.wind.x * weather.wind.strength * 4, z: weather.wind.z * weather.wind.strength * 4 }, weather.state.flash);

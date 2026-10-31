@@ -235,6 +235,9 @@ body.reduced-motion .h-warn { animation: none; }
 .h-banner { font-size: clamp(18px, 3vw, 30px); font-weight: 900; text-transform: uppercase; letter-spacing: .08em; padding: 4px 22px; animation: scr-in .25s both; }
 .h-count { font-size: clamp(96px, 22vw, 240px); line-height: .9; font-weight: 900; font-style: italic; color: var(--kowhai); text-shadow: 0 0 40px rgba(255, 200, 30, .5), 0 4px 0 #6a4d00; }
 .h-count.go { color: var(--good); text-shadow: 0 0 40px rgba(95, 224, 138, .5); }
+.h-hint.h-pen { justify-self: center; font-weight: 800; font-size: 14px; letter-spacing: .12em; color: #ffd2c4; background: rgba(8, 18, 12, .78); border: 1px solid rgba(255, 120, 90, .55); padding: 2px 12px; text-shadow: 0 1px 3px #000; }
+.h-hint.h-pen:empty { display: none; }
+@media (pointer: coarse) { .kbd-hint { display: none; } }
 .h-hint { font-size: 13px; letter-spacing: .16em; text-transform: uppercase; color: var(--silver); }
 
 /* touch controls */
@@ -382,3 +385,8 @@ body.reduced-motion .load-tip span { animation: none; display: none; } body.redu
   .tc-gears { left: calc(10px + var(--safe-l)); bottom: calc(92px + var(--safe-b)); gap: 6px; }
   .tc-cam { right: calc(10px + var(--safe-r)); bottom: calc(120px + var(--safe-b)); }
 }
+
+/* service area: the repair and setup rows scroll in their own region, so the pinned footer never covers one (R-PLAY D7) */
+.screen[data-screen="service"] { overflow: hidden; }
+.screen[data-screen="service"] > .service { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+.screen[data-screen="service"] > .screen-foot { position: static; margin: 0; padding: 8px 0 0; background: none; flex: 0 0 auto; }

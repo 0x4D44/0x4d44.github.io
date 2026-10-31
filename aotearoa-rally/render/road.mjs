@@ -126,6 +126,8 @@ function makeRoadMaterial(THREE, SU, textures, stage, cfg) {
         rrough = mix(rrough, 0.3, wetAmt * 0.7);
         rrough = mix(rrough, 0.035, pud);
         nTS.xy *= 1.0 - pud * 0.9;
+        // snow cover: the whole road whitens (ruts stay darker), more on the verge
+        { float sc = clamp(uSnow * 1.2, 0.0, 0.92) * (1.0 - 0.55 * rut) * (1.0 - 0.45 * wTar) * (0.8 + 0.2 * smoothstep(0.2, 1.0, aLatM)); rc = mix(rc, vec3(0.86, 0.9, 0.96) * (0.9 + 0.1 * nz), sc); rrough = mix(rrough, 0.6, sc); }
         // snow dust on the verge shoulder
         rc = mix(rc, vec3(0.88, 0.92, 0.98), uSnow * 0.35 * smoothstep(0.4, 1.0, aLatM) * (1.0 - wts[4] / max(tot, 1e-4)));
         { vec3 vdW = normalize(cameraPosition - vWPos); float frn = pow(1.0 - clamp(vdW.y, 0.0, 1.0), 3.0); float wr = uWet * (0.55 + 0.45 * pud); diffuseColor.rgb = diffuseColor.rgb * rc + fogColor * frn * wr * 0.5; }
@@ -137,10 +139,10 @@ function makeRoadMaterial(THREE, SU, textures, stage, cfg) {
           // along is clamped: ahead of the car it is large and negative, and exp(-along * 0.3) overflowed to +Inf there,
           // so Inf * smoothstep(..)=0 gave NaN that bloom then spread over the whole frame once the car had a heading.
           float alongP = clamp(along, 0.0, 60.0);
-          float tlw = (abs(lat) - 0.7) / (0.1 + 0.03 * alongP);
-          float tl = exp(-tlw * tlw) * smoothstep(1.0, 2.6, along) * exp(-alongP * 0.3) * (0.55 + 0.45 * sin(alongP * 7.0 + lat * 3.0));
+          float tlw = (abs(lat) - 0.7) / (0.12 + 0.05 * alongP);
+          float tl = exp(-tlw * tlw) * smoothstep(1.0, 2.6, along) * exp(-alongP * 0.12) * (0.8 + 0.2 * sin(alongP * 2.0 + lat * 3.0));
           float wetR = smoothstep(0.35, 0.9, uWet);
-          totalEmissiveRadiance += vec3(0.75, 0.07, 0.04) * tl * wetR * (0.35 + 0.5 * uNight) * step(0.5, length(fw));
+          totalEmissiveRadiance += vec3(0.75, 0.07, 0.04) * tl * wetR * (0.12 + 0.2 * uNight) * step(0.5, length(fw));
         }`)
       .replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\nroughnessFactor = arRough;")
       .replace("#include <normal_fragment_maps>", /* glsl */ `#include <normal_fragment_maps>

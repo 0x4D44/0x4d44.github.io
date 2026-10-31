@@ -1,21 +1,16 @@
 // Cockpit: dash, seats, harnesses, roll cage, crew (suits + helmets), steering wheel, instrument cluster.
 import { Geo } from "./geo.mjs";
 import { cabinRing } from "./body.mjs";
-import { cockpitEyeY } from "./profiles.mjs";
+import { cockpitLayout } from "./layout.mjs";
 
 export function buildInterior(THREE, spec, d, livery) {
   const I = new Geo(THREE), H = new Geo(THREE), H2 = new Geo(THREE), SW = new Geo(THREE), CREW = new Geo(THREE);
   const cab = d.cabin;
-  const zD = d.zAt(cab.t0) + 0.06; // dash front
+  const L = cockpitLayout(d);
+  const zD = L.zD; // dash front
   const hwC = d.hw * cab.w * 0.92;
-  // seats: move forward / shorten the back until the head rests sit under the (sloping) roof and inside the side walls
-  let ZS = d.seatZ;
-  const hrRoom = (zs) => cabinRing(d, d.tAt(zs + 0.47)).yTop - 0.06 - (d.sill + 1.04);
-  for (let k = 0; k < 8 && hrRoom(ZS) < 0; k++) ZS -= 0.02;
-  const hrDrop = Math.max(0, -hrRoom(ZS)) + 0.0;
-  const wallX = (t, y) => { const { ring } = cabinRing(d, t); for (let k = 0; k < ring.length / 2; k++) { const a = ring[k], b = ring[k + 1]; if (a[1] <= y && b[1] >= y && b[1] > a[1]) return a[0] + (b[0] - a[0]) * ((y - a[1]) / (b[1] - a[1])); } return ring[0][0]; };
-  let seatW = 0.36;
-  while (seatW > 0.22 && seatW + 0.25 > wallX(d.tAt(ZS + 0.47), d.sill + 0.96 - hrDrop + 0.08) - 0.03) seatW -= 0.01;
+  const ZS = L.ZS, hrDrop = L.hrDrop;
+  const seatW = L.seatW;
   const topY = d.topC(cab.t0) - 0.05;
   const suit = livery.accent, suit2 = livery.body;
   const DARK = 0x2a2c32, MID = 0x40434a, SEAT = 0x323a52, HARN = 0xc9231f, CAGE = 0x1c1d20;
@@ -26,26 +21,27 @@ export function buildInterior(THREE, spec, d, livery) {
   for (const sd of [-1, 1]) I.box(0.05, 0.38, d.zAt(cab.re) - zD + 0.1, sd * (hwC - 0.02), d.sill + 0.42, (zD + d.zAt(cab.re)) / 2, MID); // door cards
   // dash: a padded top that rolls from the scuttle to a soft lip (smooth-shaded extrusion), a raised instrument pod in front of the
   // driver, a centre stack with a small amber read-out. Plastics pin their uv to one flat texel so the cabin weave never stripes them.
-  const wheelPos = { x: 0.36, y: cockpitEyeY(d) - 0.26, z: zD + 0.6 };
-  const gaugePos = { x: wheelPos.x, y: wheelPos.y + 0.1, z: wheelPos.z - 0.3, w: 0.34, h: 0.17, tilt: -0.28 };
+  const wheelPos = { x: L.wheel.x, y: L.wheel.y, z: L.wheel.z };
+  const dk = L.dashDepth / 0.535, dz = (o) => zD + o * dk; // dash offsets scale with the dash depth (shallow on short cabins)
+  const gaugePos = { x: wheelPos.x, y: wheelPos.y + 0.1, z: Math.min(wheelPos.z - 0.1, Math.max(dz(0.25), wheelPos.z - 0.3)), w: 0.34, h: 0.17, tilt: -0.28 };
   I.fixUV = [0.002, 0.002];
   const DASH = 0x1d1e22, TRIM = 0x2a2b30;
-  I.extrude([[zD, topY - 0.2], [zD + 0.5, topY - 0.2], [zD + 0.535, topY - 0.09], [zD + 0.47, topY - 0.025], [zD + 0.3, topY + 0.008], [zD + 0.08, topY + 0.006], [zD - 0.02, topY - 0.04]], -hwC * 0.95, hwC * 0.95, DASH);
+  I.extrude([[zD, topY - 0.2], [dz(0.5), topY - 0.2], [dz(0.535), topY - 0.09], [dz(0.47), topY - 0.025], [dz(0.3), topY + 0.008], [dz(0.08), topY + 0.006], [zD - 0.02, topY - 0.04]], -hwC * 0.95, hwC * 0.95, DASH);
   // instrument pod: a hooded housing on the driver's side carrying the gauge face (drawn live in car.mjs)
   const pz0 = gaugePos.z - 0.16, pz1 = gaugePos.z - 0.006, py1 = gaugePos.y + gaugePos.h / 2 + 0.035;
   I.extrude([[pz0, topY - 0.05], [pz1, topY - 0.05], [pz1 + 0.01, gaugePos.y - gaugePos.h / 2 - 0.02], [pz1 - 0.02, py1], [pz0 + 0.04, py1 + 0.012], [pz0, py1 - 0.03]], gaugePos.x - gaugePos.w / 2 - 0.03, gaugePos.x + gaugePos.w / 2 + 0.03, 0x121316);
-  I.box(0.3, 0.2, 0.1, 0, topY - 0.2, zD + 0.47, TRIM); // centre stack
-  I.box(0.1, 0.026, 0.01, 0, topY - 0.13, zD + 0.526, 0x6a4a14); // amber read-out
-  for (let k = 0; k < 4; k++) I.cyl(0.014, 0.014, 0.012, -0.09 + k * 0.06, topY - 0.22, zD + 0.526, 0x0c0c0e, Math.PI / 2, 0, 0, 12); // knobs
-  I.box(0.46, 0.012, 0.24, 0.36, topY + 0.006, zD + 0.2, 0x08080a); // anti-glare mat
+  I.box(0.3, 0.2, 0.1, 0, topY - 0.2, dz(0.47), TRIM); // centre stack
+  I.box(0.1, 0.026, 0.01, 0, topY - 0.13, dz(0.526), 0x6a4a14); // amber read-out
+  for (let k = 0; k < 4; k++) I.cyl(0.014, 0.014, 0.012, -0.09 + k * 0.06, topY - 0.22, dz(0.526), 0x0c0c0e, Math.PI / 2, 0, 0, 12); // knobs
+  I.box(0.46, 0.012, 0.24, 0.36, topY + 0.006, dz(0.2), 0x08080a); // anti-glare mat
   I.fixUV = null;
-  I.box(0.1, 0.24, 0.08, 0, d.sill + 0.42, zD + 0.8, 0x101012); // gear lever base
-  I.cyl(0.012, 0.012, 0.22, 0, d.sill + 0.5, zD + 0.83, 0xaaaaaa, -0.2, 0, 0, 8); // gear lever
-  I.sphere(0.028, 0, d.sill + 0.61, zD + 0.86, 0x111111);
-  I.cyl(0.014, 0.014, 0.26, 0.17, d.sill + 0.32, zD + 1.0, 0x222222, 1.2, 0, 0, 8); // handbrake
+  I.box(0.1, 0.24, 0.08, 0, d.sill + 0.42, wheelPos.z + 0.3, 0x101012); // gear lever base
+  I.cyl(0.012, 0.012, 0.22, 0, d.sill + 0.5, wheelPos.z + 0.33, 0xaaaaaa, -0.2, 0, 0, 8); // gear lever
+  I.sphere(0.028, 0, d.sill + 0.61, wheelPos.z + 0.36, 0x111111);
+  I.cyl(0.014, 0.014, 0.26, 0.17, d.sill + 0.32, wheelPos.z + 0.5, 0x222222, 1.2, 0, 0, 8); // handbrake
   // pedals
-  for (const [x, w] of [[0.3, 0.07], [0.37, 0.05], [0.44, 0.05]]) I.box(w, 0.04, 0.05, x, d.sill + 0.32, zD + 0.55, 0x2e2e32, -0.5);
-  I.box(0.08, 0.1, 0.02, 0.3, d.sill + 0.24, zD + 0.55, 0x777777);
+  for (const [x, w] of [[0.3, 0.07], [0.37, 0.05], [0.44, 0.05]]) I.box(w, 0.04, 0.05, x, d.sill + 0.32, wheelPos.z - 0.08, 0x2e2e32, -0.5);
+  I.box(0.08, 0.1, 0.02, 0.3, d.sill + 0.24, wheelPos.z - 0.08, 0x777777);
   // co-driver kit: rally computer + footwell extinguisher
   I.box(0.12, 0.06, 0.06, -0.18, d.sill + 0.37, ZS - 0.1, 0x151518);
   I.cyl(0.04, 0.04, 0.2, -0.46, d.sill + 0.28, ZS - 0.22, 0xc01c18, 0, 0, 0, 10);
@@ -92,7 +88,10 @@ export function buildInterior(THREE, spec, d, livery) {
   // main hoop
   T([[-w, bY, zMain], [-w, rY - 0.12, zMain], [-w * 0.93, rY, zMain], [w * 0.93, rY, zMain], [w, rY - 0.12, zMain], [w, bY, zMain]]);
   // front hoop (A pillars)
-  T([[-w, bY, zA + 0.02], [-w, topY + 0.1, zA + 0.04], [-w * 0.86, rY - 0.05, zRs - 0.02], [w * 0.86, rY - 0.05, zRs - 0.02], [w, topY + 0.1, zA + 0.04], [w, bY, zA + 0.02]]);
+  // On a cabin where the driver sits close under the header (short, raked screen), the cross-bar would hang in the lens: build the two
+  // A-pillar legs only and let them run into the roof rails.
+  if (L.eye.z - (zRs - 0.02) >= 0.7) T([[-w, bY, zA + 0.02], [-w, topY + 0.1, zA + 0.04], [-w * 0.86, rY - 0.05, zRs - 0.02], [w * 0.86, rY - 0.05, zRs - 0.02], [w, topY + 0.1, zA + 0.04], [w, bY, zA + 0.02]]);
+  else for (const sd of [-1, 1]) T([[sd * w, bY, zA + 0.02], [sd * w, topY + 0.1, zA + 0.04], [sd * w * 0.86, rY - 0.05, zRs - 0.02]]);
   for (const sd of [-1, 1]) {
     T([[sd * w * 0.86, rY - 0.05, zRs - 0.02], [sd * w * 0.93, rY, zMain]]); // roof rails
     T([[sd * w, bY + 0.05, zA + 0.04], [sd * w, rY - 0.2, zMain]]); // door top bar
@@ -108,12 +107,12 @@ export function buildInterior(THREE, spec, d, livery) {
   const crew = [{ x: seatW, driver: true }, { x: -seatW, driver: false }];
   const eyeY = d.eye.y;
   for (const c of crew) {
-    const hx = c.x, hy = eyeY + 0.02, hz = ZS + 0.2;
+    const hx = c.x, hy = c.driver ? L.eye.y - 0.04 : eyeY + 0.02, hz = L.headZ;
     // torso, hips, legs
     CREW.sphere(0.2, hx, d.sill + 0.7, ZS + 0.25, suit, 1.0, 1.25, 0.8);
     CREW.sphere(0.17, hx, d.sill + 0.42, ZS + 0.18, suit2, 1.1, 0.7, 1.2);
     for (const lx of [-1, 1]) {
-      CREW.tube([[hx + lx * 0.1, d.sill + 0.4, ZS + 0.1], [hx + lx * 0.12, d.sill + 0.55, ZS - 0.28], [hx + lx * 0.1, d.sill + 0.34, zD + 0.58]], 0.05, suit2, 8, true);
+      CREW.tube([[hx + lx * 0.1, d.sill + 0.4, ZS + 0.1], [hx + lx * 0.12, d.sill + 0.55, ZS - 0.28], [hx + lx * 0.1, d.sill + 0.34, wheelPos.z - 0.08]], 0.05, suit2, 8, true);
     }
     CREW.sphere(0.07, hx, hy - 0.2, hz + 0.0, 0x222222, 1.4, 0.8, 1); // neck/collar
     // arms
@@ -152,10 +151,13 @@ export function buildInterior(THREE, spec, d, livery) {
   I.fixUV = [0.002, 0.002];
   I.cyl(0.03, 0.03, 0.4, wheelPos.x, wheelPos.y - 0.12, wheelPos.z - 0.14, 0x111113, 1.1, 0, 0, 14);
   // interior mirror under the roof header, centred: housing, a dark glass face turned to the driver, and a short stalk
-  const mz = d.zAt(cab.rs) - 0.01, my = d.roof - 0.17;
-  I.cyl(0.007, 0.007, 0.08, 0, my + 0.07, mz - 0.01, 0x15161a, 0, 0, 0, 8);
-  I.box(0.22, 0.062, 0.03, 0, my, mz, 0x15161a);
-  I.box(0.2, 0.046, 0.004, 0, my, mz + 0.017, 0x56626e);
+  const mz = d.zAt(cab.rs) - 0.01, my = d.roof - 0.1;
+  // a short cabin (the V8 coupe) puts the header 0.27 m from the driver's eye, where the housing fills the top-left of the lens: no mirror there
+  if (Math.hypot(L.eye.x, my - L.eye.y, mz - L.eye.z) >= 0.5) {
+    I.cyl(0.007, 0.007, 0.08, 0, my + 0.07, mz - 0.01, 0x15161a, 0, 0, 0, 8);
+    I.box(0.22, 0.062, 0.03, 0, my, mz, 0x15161a);
+    I.box(0.2, 0.046, 0.004, 0, my, mz + 0.017, 0x56626e);
+  }
   I.fixUV = null;
 
   return { interior: I.build(), helmets: H.build(), wheel: SW.build(), crew: CREW.build(), wheelPos, gaugePos, zD, topY };

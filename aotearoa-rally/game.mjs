@@ -79,7 +79,8 @@ let opts = career.options;
 // ---------------------------------------------------------------- loading overlay
 function setProgress(p, label) {
   const f = $("load-fill"), l = $("load-label");
-  if (f) f.style.transform = `scaleX(${clamp(p, 0, 1).toFixed(3)})`; // compositor-driven: keeps animating while the main thread is busy
+  // a full bar is set without the .25 s tween, so the label never says "Ready" over a bar that is still on its way (R-LOOK D7)
+  if (f) { f.style.transition = p >= 1 ? "none" : ""; f.style.transform = `scaleX(${clamp(p, 0, 1).toFixed(3)})`; } // compositor-driven: keeps animating while the main thread is busy
   if (l && label) l.textContent = label;
 }
 const TIPS = [
@@ -193,6 +194,7 @@ function applyTouchVisibility() {
 }
 function onAction(a) {
   if (a === "hud") { if (G.playing || G.replay) hud.toggleHidden(); return; }
+  if (a === "padlost") { if (G.playing && !G.paused && !G.finishing) { pauseGame(); toast("Controller disconnected", "bad", 3000); } return; }
   if (!G.playing && !G.replay) return;
   if (a === "camera") cycleCamera();
   else if (a === "reset") recover();
@@ -574,7 +576,7 @@ function showResults() {
   const dnf = result.status === "dnf";
   let isBest = false, previousBest = null;
   const bestSplitsBefore = career.bestSplits(G.stageId, G.carId);
-  if (!dnf) {
+  if (!dnf && !result.assisted) {
     const splitTimes = [0, ...result.splits.map((s) => s.time)];
     const r = career.recordBest(G.stageId, G.carId, result.total, splitTimes);
     isBest = r.isBest; previousBest = r.previous;
@@ -886,6 +888,7 @@ function frame(now) {
   let dt = clock.tick(now);
   if (!(dt > 0)) return;
   if (now < (G.watchUntil || 0) && dt * 1000 > (AR.worstFrameMs || 0)) { AR.worstFrameMs = Math.round(dt * 1000); AR.worstFrameAtMs = Math.round(now - (G.watchUntil - 3000)); AR.frameIdx = G.fpsN; }
+  G.rawDt = Math.min(dt, 1); // wall-clock frame time: the end-of-run pause is a presentation delay, not sim time
   dt = Math.min(dt, 0.1);
   G.fpsAcc += dt; G.fpsN++;
   if (G.fpsAcc >= 0.5) { G.fps = G.fpsN / G.fpsAcc; G.fpsAcc = 0; G.fpsN = 0; }
@@ -913,7 +916,7 @@ function frame(now) {
     hud.update(G.vehicle.state, G.run, G.fps);
     const st = G.run.status;
     if ((st === "finished" || st === "dnf") && !G.finishing) endRunSoon();
-    if (G.finishing) { G.endTimer -= dt; if (G.endTimer <= 0) { G.finishing = false; showResults(); } }
+    if (G.finishing) { G.endTimer -= G.rawDt || dt; if (G.endTimer <= 0) { G.finishing = false; showResults(); } }
     G.world.render();
   } catch (e) {
     console.error("frame error: " + (e && e.stack ? e.stack : e));
@@ -950,7 +953,7 @@ Object.assign(AR, {
     G.vehicle.reset({ x, y: st.heightAt(x, z) + 0.4, z, yaw }, speedKmh / 3.6, st);
     G.vehicle.state.events.length = 0;
     if (G.rig) G.rig.snap(G.vehicle.state, st);
-    if (G.run.status === "running" || G.run.status === "countdown") { G.run._stuck = 0; G.run._wrong = 0; G.run._off = 0; G.run._flip = 0; }
+    if (G.run.status === "running" || G.run.status === "countdown") { G.run._stuck = 0; G.run._wrong = 0; G.run._off = 0; G.run._flip = 0; G.run.assisted = true; G.run._curS = G.vehicle.state.s; }
     G.carVis.update(G.vehicle.state, DT, G.world.environment);
     if (G.bot && G.bot.reset) G.bot.reset();
     afterJump(G.vehicle.state.s);
@@ -965,15 +968,13 @@ Object.assign(AR, {
   stepSim(n, dt = DT) {
     needStage();
     const inp = pollInput(1 / 60);
-    let i = 0;
-    const idt = dt;
-    for (; i < n; i++) {
-      if (idt !== DT) { /* custom dt is applied to physics through repeated fixed steps */ }
+    // `dt` is the simulated time of one call step: it is split into whole fixed physics steps (n steps of DT when omitted)
+    const steps = dt === DT ? n : Math.max(1, Math.round((n * dt) / DT));
+    for (let i = 0; i < steps; i++) {
       simStep(inp);
       inp.gearUp = inp.gearDown = false;
-      if (G.run.status === "finished" || G.run.status === "dnf") { /* keep stepping to let the car roll out */ }
     }
-    G.time += n * DT;
+    G.time += steps * DT;
     onRunEvents();
     return AR.state();
   },
@@ -1020,6 +1021,7 @@ Object.assign(AR, {
     if (!G.bot) makeBot();
     const prevBot = G.botOn;
     G.botOn = true;
+    G.run.assisted = true; // a bot-driven finish through the API is not a record
     if (G.run.status === "ready" || G.run.status === "countdown") G.run.skipCountdown(G.vehicle.state);
     let n = 0;
     const max = Math.ceil(maxSeconds / DT);
@@ -1057,6 +1059,24 @@ Object.assign(AR, {
 });
 
 // ---------------------------------------------------------------- boot
+/** The garage showroom compiles its own shaders (3.9-6 s of getProgramInfoLog on a real GPU if done inside render()).
+ *  Once the title is up and the page idle, compile every car's programs on a detached canvas with compileAsync (the GPU
+ *  process works, the main thread does not), so the driver has them cached when the garage opens. Silent when the
+ *  extension is missing. The showroom itself also never renders before its own compileAsync resolves. */
+async function warmShowroomIdle() {
+  let sr = null;
+  try {
+    if (!G.mods.car || !G.mods.cars || params.get("nomenu") === "1") return;
+    sr = createShowroom(document.createElement("canvas"), G.mods.car.createCarVisual);
+    if (!sr || !sr.parallel) return;
+    AR.showroomWarm = { programsBefore: sr.programCount(), done: false };
+    const list = carIds().map((id) => ({ spec: cars()[id], livery: 0 }));
+    AR.showroomWarm.programs = await sr.warm(list);
+    AR.showroomWarm.done = true;
+  } catch (e) { console.warn("showroom warm-up skipped: " + (e && e.message)); } // allow-console-warn
+  finally { try { sr && sr.dispose(); } catch { /* ok */ } }
+}
+
 async function boot() {
   const noGL = !webgl2Ok();
   document.body.classList.toggle("reduced-motion", !!opts.reducedMotion);
@@ -1105,5 +1125,6 @@ async function boot() {
   if (params.get("title") !== "1" && (navigator.webdriver || params.get("menu") === "1" || params.get("nomenu") === "1")) showMainMenu(); // nomenu with a bad stage lands here: straight to the menu
   else screens.title({ version: VERSION, onStart: () => { unlock(); showMainMenu(); } });
   resolveReady(true);
+  setTimeout(() => { (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => { warmShowroomIdle(); }, { timeout: 3000 }); }, 1500);
 }
 boot().catch((e) => { console.error("boot failed: " + (e && e.stack ? e.stack : e)); rejectReady(e); hideLoading(); });

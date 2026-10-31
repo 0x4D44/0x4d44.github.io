@@ -116,17 +116,19 @@ test("off-road and corridor warnings follow lateral offset", () => {
   assert.equal(run.warnings.offRoad, false);
 });
 
-test("stuck car respawns at the last checkpoint with a penalty", () => {
+test("stuck car respawns near where it stopped (15 m back, never behind the checkpoint) with a penalty", () => {
   const { run, vehicle, stage } = mk("pro");
   goRunning(run, vehicle);
-  vehicle.state.s = 300; vehicle.state.z = -300; vehicle.state.speed = 12;
-  run.update(0.1, vehicle.state); // passes split 1 at 250
-  assert.equal(run.lastCheckpointS, 250);
+  vehicle.state.s = 600; vehicle.state.z = -600; vehicle.state.speed = 12;
+  run.update(0.1, vehicle.state); // passes splits 1 and 2 (last at 500)
+  assert.equal(run.lastCheckpointS, 500);
   vehicle.state.speed = 0;
   advance(run, vehicle, RULES.stuckGrace + RULES.stuckSeconds + 1);
   assert.equal(run.respawns, 1);
   assert.equal(vehicle.resets.length, 1);
-  assert.ok(Math.abs(-vehicle.resets[0].pose.z - 253) < 0.001, "placed just past the checkpoint");
+  const rs = -vehicle.resets[0].pose.z;
+  assert.ok(rs >= 600 - 25 && rs <= 600 && rs >= run.lastCheckpointS, "respawn s " + rs + " is within 25 m of where it stopped, not behind the split");
+  assert.ok(Math.abs(rs - 585) < 0.001);
   assert.equal(vehicle.resets[0].stage, stage);
   assert.equal(run.penalties.at(-1).kind, "stuck");
   assert.equal(run.penaltyTotal, RULES.respawnPenalty.pro);
@@ -146,13 +148,41 @@ test("flipped car respawns, and cooldown stops respawn loops", () => {
   assert.equal(run.respawns, 2);
 });
 
-test("manual recover adds a penalty and resets the car to the start when no checkpoint passed", () => {
+test("manual recover adds a penalty and puts the car 15 m back on the road (the start pose near the start)", () => {
   const { run, vehicle } = mk("rookie");
   goRunning(run, vehicle);
   vehicle.state.s = 80; run.update(0.1, vehicle.state);
   run.respawn("reset");
-  assert.equal(vehicle.resets[0].pose.z, 0);
+  assert.equal(vehicle.resets[0].pose.z, -65);
+  assert.equal(vehicle.resets[0].speed, 0);
   assert.equal(run.penaltyTotal, RULES.respawnPenalty.rookie);
+  const b = mk("rookie");
+  goRunning(b.run, b.vehicle);
+  b.vehicle.state.s = 10; b.run.update(0.1, b.vehicle.state);
+  b.run.respawn("reset");
+  assert.equal(b.vehicle.resets[0].pose.z, 0, "clamped to the start");
+});
+
+test("respawn loop guard: a second respawn within 20 s and 40 m steps back a further 30 m, never behind the split", () => {
+  const { run, vehicle } = mk("pro");
+  goRunning(run, vehicle);
+  vehicle.state.s = 400; vehicle.state.z = -400; run.update(0.1, vehicle.state); // split 1 at 250
+  run.respawn("manual");
+  assert.equal(-vehicle.resets[0].pose.z, 385);
+  vehicle.state.s = 390; run.update(0.1, vehicle.state);
+  run.respawn("manual");
+  assert.equal(-vehicle.resets[1].pose.z, 355, "385 - 30");
+  vehicle.state.s = 360; run.update(0.1, vehicle.state);
+  run.respawn("manual");
+  assert.equal(-vehicle.resets[2].pose.z, 325);
+  for (let i = 0; i < 6; i++) { vehicle.state.s = -vehicle.resets.at(-1).pose.z + 5; run.update(0.1, vehicle.state); run.respawn("manual"); }
+  assert.ok(vehicle.resets.every((r) => -r.pose.z >= 253), "never behind the last checkpoint");
+  // outside the window: a later respawn is a plain 15 m back
+  advance(run, vehicle, 25);
+  vehicle.state.s = 700; vehicle.state.z = -700; vehicle.state.speed = 12; run.update(0.1, vehicle.state);
+  run.respawn("manual");
+  assert.equal(-vehicle.resets.at(-1).pose.z, 685);
+  assert.equal(run.penaltyTotal, RULES.respawnPenalty.pro * run.respawns, "penalty unchanged per respawn");
 });
 
 test("total damage of 1 is a DNF and has an infinite result time", () => {

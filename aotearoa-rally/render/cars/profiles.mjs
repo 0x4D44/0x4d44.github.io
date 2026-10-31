@@ -1,6 +1,7 @@
 // Pure data + curve maths describing the four cars' shapes. No THREE, no DOM (unit-testable).
 // Model space: origin at the centre of mass projected on the ground (y = 0 is the ground), -Z forward.
 import { clamp } from "../../core/mathx.mjs";
+import { cockpitLayout } from "./layout.mjs";
 
 /** Monotone cubic (PCHIP-like) interpolation through [[x,y],...] sorted by x. */
 export function curve(pts) {
@@ -24,9 +25,9 @@ export function curve(pts) {
 const SHAPES = {
   huia: {
     kind: "saloon", doors: 4, bonnetT: [0.075, 0.33], bumper: [0.075, 0.07],
-    top: [[0, 0.56], [0.03, 0.66], [0.08, 0.76], [0.2, 0.86], [0.33, 0.92], [0.55, 0.94], [0.82, 0.96], [0.94, 0.95], [1, 0.84]],
+    top: [[0, 0.56], [0.03, 0.66], [0.08, 0.76], [0.2, 0.86], [0.33, 0.92], [0.55, 0.94], [0.82, 0.965], [0.95, 0.955], [1, 0.86]],
     wid: [[0, 0.74], [0.03, 0.9], [0.1, 0.985], [0.2, 1], [0.8, 1], [0.93, 0.97], [1, 0.84]],
-    cab: { t0: 0.335, rs: 0.5, re: 0.7, t1: 0.815, roof: 1.395, w: 0.76, bPillar: true, tum: 0.2 },
+    cab: { t0: 0.335, rs: 0.5, re: 0.715, t1: 0.795, roof: 1.395, w: 0.76, bPillar: true, tum: 0.2, bt: 0.535, boot: 0.835 },
     sill: 0.2, wing: "gt", scoop: "bonnet", roofScoop: true, nTop: 3.4, lamp: "round", spotBar: true,
     rim: 0x8a8d92, spokes: 10, rimStyle: "mesh",
   },
@@ -96,11 +97,11 @@ export function eyePoints(spec) {
   const d = dimsFor(spec);
   // bonnet: centred, low, just inside the base of the windscreen (bonnet, wipers, mirrors and A-pillars frame the view, road clear);
   // cockpit: the driver's eye (steering wheel and cage visible); bumper: low in front of the grille.
-  const t0 = d.cabin.t0 + 0.02;
+  const t0 = d.cabin.t0 + 0.02, L = cockpitLayout(d);
   return {
     bonnet: [0.0, d.topC(t0) + 0.22, d.zAt(t0) + 0.65],
     // driver's eye: half a metre behind the steering wheel (wheel x / y / z as built in interior.mjs), under the roof
-    cockpit: [0.36, cockpitEyeY(d), d.zAt(d.cabin.t0) + 0.06 + 0.6 + 0.5],
+    cockpit: [L.eye.x, L.eye.y, L.eye.z],
     bumper: [d.bumperEye.x, d.bumperEye.y, d.bumperEye.z],
   };
 }
@@ -122,7 +123,8 @@ export function clampSeverity(v) { return clamp(Number.isFinite(v) ? v : 0, 0, 1
 /** Station values (t) of the door shut lines: shared by the body (gaps) and the livery (so text never crosses one). */
 export function doorLinesT(d) {
   const t0 = d.cabin.t0 + 0.012, tB = d.cabin.rs + (d.cabin.re - d.cabin.rs) * 0.38;
-  return d.S.doors === 4 ? [t0 + 0.0, (t0 + tB) / 2 + 0.01, tB + 0.005, d.cabin.re + 0.01] : [t0 + 0.02, tB + 0.08, d.cabin.re - 0.02];
+  const bt = d.cabin.bt;
+  return d.S.doors === 4 ? [t0 + 0.0, bt - 0.007, bt + 0.009, d.cabin.re + 0.012] : [t0 + 0.02, tB + 0.08, d.cabin.re - 0.02];
 }
 
 /**

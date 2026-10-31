@@ -17,7 +17,7 @@ export const STAGE_DEFS = {
   waitomo: {
     id: "waitomo", number: 1, name: "Waitomo Ridge", region: "Waikato", island: "North",
     blurb: "Fast rolling pasture above the glowworm caves, where long crests hide the next corner and limestone bluffs crowd the road. Early mist lingers in the hollows as you chase the morning light across the farmland.",
-    lengthTarget: 3800, difficulty: 2, biome: "pasture",
+    lengthTarget: 3934, difficulty: 2, biome: "pasture",
     environment: {
       timeOfDay: 8.5, sunAzimuth: 1.75, sunElevation: 0.46, sunColor: hex(0xfff0d0), sunIntensity: 2.6,
       skyTop: hex(0x5f94d8), skyHorizon: hex(0xcfe3f0), fogColor: hex(0xd5e2e8),
@@ -77,7 +77,7 @@ export const STAGE_DEFS = {
   remarkables: {
     id: "remarkables", number: 5, name: "Remarkables Pass", region: "Queenstown", island: "South",
     blurb: "A relentless switchback climb up bare rock walls with the valley falling away beside your wheels. Gravel turns to snow and ice near the summit, and the cloud closes in.",
-    lengthTarget: 4400, difficulty: 5, biome: "alpine",
+    lengthTarget: 4584, difficulty: 5, biome: "alpine",
     environment: {
       timeOfDay: 10, sunAzimuth: 0.35, sunElevation: 0.26, sunColor: hex(0xdfe8f5), sunIntensity: 1.0,
       skyTop: hex(0x7f95ad), skyHorizon: hex(0xc4ced8), fogColor: hex(0xc6d0da),
@@ -92,7 +92,7 @@ export const STAGE_DEFS = {
   fiordland: {
     id: "fiordland", number: 6, name: "Fiordland Rain", region: "Milford", island: "South",
     blurb: "Beech rainforest closes over a narrow, greasy road at dusk, with waterfalls pouring off the valley walls and fords crossing the track. Headlights cut the rain as you thread a one-lane bridge in the dark.",
-    lengthTarget: 5300, difficulty: 5, biome: "rainforest",
+    lengthTarget: 5328, difficulty: 5, biome: "rainforest",
     environment: {
       timeOfDay: 20.75, sunAzimuth: 4.89, sunElevation: -0.07, sunColor: hex(0x6a7aa8), sunIntensity: 0.35,
       skyTop: hex(0x0b1220), skyHorizon: hex(0x2a3646), fogColor: hex(0x1a2430),
@@ -130,13 +130,13 @@ const TW = (rows, f = 0.55) => W(rows.map((r) => (typeof r[0] === "number" ? [r[
 
 // --- 1. Waitomo Ridge: fast, rolling, long crests, a few medium corners to keep you honest ---------
 STAGE_DESIGNS.waitomo = {
-  maxSlope: 0.09,
-  bearing0: 80, surf0: SF.GRAVEL, verge0: SF.GRASS, width: 7.2, length: 3800, roll: [3.2, 170],
+  maxSlope: 0.12,
+  bearing0: 80, surf0: SF.GRAVEL, verge0: SF.GRASS, width: 7.2, length: 3800, roll: [5, 140],
   items: [
     H(96), mark("start"), S(110), camber(90, 2.4),
     ...W([
       [100, 105, 40],
-      crest(1.1, 22), S(60),
+      crest(2.0, 24), S(60),
       [62, 115, 40],
       [40, 100, 40],
       [85, 40, 40],
@@ -145,16 +145,16 @@ STAGE_DESIGNS.waitomo = {
       [210, 17, 40, "R"],
       tunnel(120), S(150), [250, 90, 30],
     ]),
-    H(150), camber(70, 2.6), R(75, 60, 48), S(30), nocut(), L(32, 95), S(40),
+    H(190), camber(70, 2.6), R(75, 60, 48), S(30), nocut(), L(32, 95), S(40),
     ...W([[75, 100, 100]]),
-    mark("mid1"), SURF(SF.PACKED_DIRT), H(112),
+    mark("mid1"), SURF(SF.PACKED_DIRT), H(118),
     ...W([
       [50, 150, 100],
-      crest(1.3, 26), S(70),
+      crest(2.2, 28), S(70),
       [85, 95, 60],
       [60, 85, 25], [95, 85, 25], [65, 85, 60],
     ]),
-    H(90), camber(60, -1.4), R(60, 70, 40), S(80),
+    H(74), camber(60, -1.4), R(60, 70, 40), S(80),
     ...W([[100, 100, 40]]),
     grid(), S(60),
     ...W([
@@ -164,7 +164,7 @@ STAGE_DESIGNS.waitomo = {
       [70, 36, 40],
       [115, 45, 60],
       [85, 105, 80],
-      crest(1.2, 24), S(80),
+      crest(2.0, 24), dip(1.4, 16), S(80),
       [110, 130, 60],
       [75, 70, 50],
       S(40), crest(1.0, 20), S(60),
