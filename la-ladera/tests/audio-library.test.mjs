@@ -11,7 +11,7 @@ import * as L from '../js/audio/library.js';
 import * as F from '../js/audio/foley.js';
 import { BEDS } from '../js/audio/beds.js';
 import { SR, peak, rms, mean, finite } from '../js/audio/dsp.js';
-import { bandShare, centroid, peakFreq, stepStats, windowRms } from './audio-lib.mjs';
+import { acPitch, bandShare, centroid, peakFreq, stepStats, windowRms } from './audio-lib.mjs';
 
 const KEYS = L.keys(), cache = new Map();
 const get = (k) => { let x = cache.get(k); if (!x) cache.set(k, x = L.render(k)); return x; };
@@ -24,7 +24,7 @@ test('the key list: unique, complete, and every bed, surface and event has its s
   assert.ok(KEYS.length >= 90 && KEYS.length <= 140, 'count ' + KEYS.length);
   for (const b of BEDS) assert.ok(KEYS.includes('bed:' + b), 'bed ' + b);
   for (const s of F.SURFACES) for (const v of [0, 1, 2, 3]) assert.ok(KEYS.includes(`step:${s}:${v}`) && (v > 1 || KEYS.includes(`land:${s}:${v}`)), `${s} ${v}`);
-  for (const k of ['tick', 'chime', 'bell', 'shutter:open', 'shutter:close', 'door:open:0', 'door:close:1', 'rustle:0', 'paper:1', 'dog:0', 'horn:1', 'bird:5:1']) assert.ok(KEYS.includes(k), k);
+  for (const k of ['tick', 'chime', 'bell', 'shutter:open', 'shutter:close', 'door:open:0', 'door:close:1', 'rustle:0', 'paper:1', 'dog:0', 'horn:1', 'bird:5:1', 'sheet:1', 'furn:wardrobe:close:1', 'furn:till:open:0', 'find:coins', 'find:oddities']) assert.ok(KEYS.includes(k), k);
   assert.deepEqual(KEYS.filter(L.isLoop), BEDS.map((b) => 'bed:' + b), 'only the beds loop');
   assert.throws(() => L.render('nothing:here'), /unknown sound/);
   assert.throws(() => L.render('bed:nothing'), /unknown bed/);
@@ -118,6 +118,112 @@ test('doors: the latch clicks as it opens, the thud lands as it closes; shutters
   assert.ok(windowRms(sc, 0.75, 0.95) > 3 * windowRms(sc, 0, 0.1), 'closing: the slats rattle down and bang on the sill at the end');
 });
 
+test('cloth and paper: short swishes that swell and die away, with no thump in them, a different one each time', () => {
+  for (const [k, len, lo, hi, share] of [['rustle', 0.2, 600, 3200, 0.65], ['paper', 0.16, 1800, 7000, 0.7]]) {
+    const a = get(`${k}:0`), b = get(`${k}:1`), t = a.length / SR;
+    assert.ok(Math.abs(t - len) < 0.01, `${k}: ${t.toFixed(3)} s`);
+    assert.ok(bandShare(a, lo, hi) > share, `${k}: its energy sits between ${lo} and ${hi} Hz (${(bandShare(a, lo, hi) * 100).toFixed(0)} %)`);
+    assert.ok(bandShare(a, 0, 300) < 0.02, `${k}: nothing below 300 Hz (a swish, not a thump)`);
+    const head = windowRms(a, 0, t * 0.1), mid = windowRms(a, t * 0.2, t * 0.8), tail = windowRms(a, t * 0.9, t);
+    assert.ok(mid > 3 * head && mid > 3 * tail, `${k}: swells in and dies away (${head.toFixed(3)} .. ${mid.toFixed(3)} .. ${tail.toFixed(3)})`);
+    assert.ok(a.some((v, i) => v !== b[i]), `${k}: the two variants are different sounds`);
+  }
+  assert.ok(centroid(get('paper:0')) > 1.4 * centroid(get('rustle:0')), 'paper is brighter than cloth');
+});
+
+// ---- the drawers feature (dev/FEATURE-DRAWERS.md): a sheet out of a drawer, the furniture itself, the ting of a find ------------------------------------------
+/** Start (s) of the loudest 25 ms of x: where the bang of a shut lands. */
+const loudAt = (x, w = 0.025) => { let best = -1, at = 0; for (let t = 0; t + w <= x.length / SR; t += 0.005) { const v = windowRms(x, t, t + w); if (v > best) { best = v; at = t; } } return at; };
+const FURN = F.FURN_KINDS.flatMap((k) => ['open', 'close'].map((d) => [k, d]));
+
+test('the furniture and find sounds are in the library, bad names throw, and every container kind of the interiors maps to a sample', () => {
+  for (const [k, d] of FURN) for (const v of [0, 1]) assert.ok(KEYS.includes(`furn:${k}:${d}:${v}`), `furn:${k}:${d}:${v}`);
+  for (const c of ['coins', 'watches', 'jewels', 'oddities']) assert.ok(KEYS.includes(`find:${c}`) && F.FIND_SOUNDS.includes(c), c);
+  assert.deepEqual([...F.FIND_SOUNDS].sort(), ['coins', 'jewels', 'oddities', 'watches'], 'one sound for each collection shelf');
+  assert.ok(KEYS.includes('sheet:0') && KEYS.includes('sheet:1'));
+  for (const bad of ['furn:nothing:open:0', 'furn:drawer:sideways:0', 'furn:drawer', 'find:nothing', 'find']) assert.throws(() => L.render(bad), /unknown sound/, bad);
+  // interiors/containers.js: kind = the part that moved, group = the furniture
+  const want = { 'drawer nightstand': 'drawer', 'drawer dresser': 'drawer', 'drawer desk': 'drawer', 'drawer kitchen': 'drawer', 'drawer counter': 'till', 'drawer locker': 'drawerm', 'drawer toolcab': 'drawerm', 'drawer filing': 'drawerm',
+    'drawer medcab': 'drawerm', 'door wardrobe': 'wardrobe', 'door pantry': 'cupboard', 'door kitchen': 'cupboard', 'door wallunit': 'cupboard', 'door tvstand': 'cupboard', 'door vitrine': 'cupboard', 'door nightstand': 'cupboard',
+    'door locker': 'locker', 'door medcab': 'locker', 'door toolcab': 'locker', 'lid chest': 'lid', 'lid dresser': 'lid', 'drawer chest': 'lid', 'door chest': 'lid', 'fridge fridge': 'fridge', 'door fridge': 'fridge' };
+  for (const [pair, sample] of Object.entries(want)) { const [kind, group] = pair.split(' '); assert.equal(L.furnKind(kind, group), sample, pair); }
+  for (const kind of ['drawer', 'door', 'lid', 'fridge']) for (const group of ['nightstand', 'dresser', 'wardrobe', 'chest', 'tvstand', 'wallunit', 'vitrine', 'pantry', 'kitchen', 'fridge', 'desk', 'counter', 'locker', 'medcab', 'toolcab', 'filing', undefined]) {
+    const s = L.furnKind(kind, group); assert.ok(F.FURN_KINDS.includes(s), `${kind} ${group} -> ${s}`); assert.ok(KEYS.includes(`furn:${s}:open:0`), s);
+  }
+});
+
+test('furniture reads on small speakers, two takes differ, an opening differs from a closing, and every close lands its bang as the 0.3 s move ends', () => {
+  for (const [k, d] of FURN) {
+    const a = get(`furn:${k}:${d}:0`), b = get(`furn:${k}:${d}:1`), t = a.length / SR;
+    assert.ok(t >= 0.45 && t <= 1.0, `${k} ${d}: ${t.toFixed(2)} s`);
+    assert.ok(bandShare(a, 0, 150) < 0.55, `${k} ${d}: ${(bandShare(a, 0, 150) * 100).toFixed(0)} % of the power is below 150 Hz (a laptop plays none of it)`);
+    assert.ok(centroid(a) > 400 && centroid(a) < 4500, `${k} ${d}: centroid ${centroid(a).toFixed(0)}`);
+    assert.ok(a.length !== b.length || a.some((v, i) => v !== b[i]), `${k} ${d}: both takes are the same sound`);
+    if (d === 'close') {
+      const at = loudAt(a); assert.ok(at >= 0.22 && at <= 0.34, `${k} close: the loudest moment is at ${at.toFixed(3)} s, not where the piece shuts (0.26 s)`);
+      assert.ok(windowRms(a, 0.24, 0.34) > 3 * windowRms(a, 0, 0.15), `${k} close: the shut (${windowRms(a, 0.24, 0.34).toFixed(3)}) must stand out from the swing before it (${windowRms(a, 0, 0.15).toFixed(3)})`);
+    }
+  }
+  for (const k of F.FURN_KINDS) { const o = get(`furn:${k}:open:0`), c = get(`furn:${k}:close:0`); assert.ok(o.length !== c.length || o.some((v, i) => v !== c[i]), `${k}: open and close are the same sound`); }
+});
+
+test('each kind of furniture sounds like itself: wooden or metal runners, a deep hinge or a light latch, a till that rings', () => {
+  const o = (k) => get(`furn:${k}:open:0`), c = (k) => get(`furn:${k}:close:0`);
+  assert.ok(centroid(o('drawerm')) > 2 * centroid(o('drawer')), `metal runners are brighter than wood: ${centroid(o('drawerm')).toFixed(0)} vs ${centroid(o('drawer')).toFixed(0)}`);
+  assert.ok(centroid(c('drawerm')) > 2 * centroid(c('drawer')), 'and so are the shuts');
+  assert.ok(windowRms(o('drawer'), 0.24, 0.32) > 1.5 * windowRms(o('drawer'), 0.03, 0.2), 'a drawer pulled out ends with a knock at its stop, louder than the runners');
+  assert.ok(windowRms(c('drawer'), 0.24, 0.32) > 3 * windowRms(c('drawer'), 0.03, 0.2), 'and one pushed in with a thump');
+  assert.ok(windowRms(o('wardrobe'), 0.25, 0.55) > 5 * windowRms(o('cupboard'), 0.25, 0.55), 'a wardrobe hinge keeps creaking, a cupboard latch lets go and is done');
+  assert.ok(windowRms(o('wardrobe'), 0.4, 0.55) > 0.15 * windowRms(o('wardrobe'), 0, 0.04), 'the wardrobe is still creaking half a second in, well after its latch (' + windowRms(o('wardrobe'), 0.4, 0.55).toFixed(3) + ')');
+  assert.ok(centroid(o('wardrobe')) < 0.6 * centroid(o('cupboard')), `the wardrobe is the deeper voice: ${centroid(o('wardrobe')).toFixed(0)} vs ${centroid(o('cupboard')).toFixed(0)}`);
+  assert.ok(windowRms(o('locker'), 0, 0.04) > 5 * windowRms(o('locker'), 0.1, 0.2), 'a metal door opens with one clack');
+  assert.ok(centroid(c('locker')) > 1.8 * centroid(c('cupboard')), 'and shuts with a clang, not a thump');
+  assert.ok(windowRms(o('lid'), 0.28, 0.4) > 2 * windowRms(o('lid'), 0.1, 0.25), 'a chest lid creaks up and knocks against its stop');
+  assert.ok(centroid(o('lid')) < centroid(o('fridge')) && centroid(o('lid')) < centroid(o('cupboard')), 'a chest is the dullest of all');
+  assert.ok(bandShare(o('fridge'), 3000, 11025) > 0.2 && windowRms(o('fridge'), 0, 0.03) > 5 * windowRms(o('fridge'), 0.45, 0.55), 'a fridge door breaks its seal with a pop and a breath of cold air');
+  assert.ok(Math.abs(peakFreq(o('till'), 2300, 3000, SR, 4096) - 2637) < 120, 'a shop till rings its small bell (E7) as it opens: ' + peakFreq(o('till'), 2300, 3000, SR, 4096));
+  assert.ok(bandShare(o('till'), 2500, 2800) > 5 * bandShare(c('till'), 2500, 2800), 'and shuts without the bell');
+  assert.ok(windowRms(o('till'), 0.45, 0.7) > 0.03 && windowRms(c('till'), 0.45, 0.7) < 0.005, `the bell is still ringing after the clack (${windowRms(o('till'), 0.45, 0.7).toFixed(3)}), the shut leaves silence (${windowRms(c('till'), 0.45, 0.7).toFixed(4)})`);
+});
+
+test('the sheet of a reader: longer and crinklier than a menu swish, nothing below 300 Hz', () => {
+  for (const v of [0, 1]) {
+    const x = get(`sheet:${v}`), t = x.length / SR;
+    assert.ok(t >= 0.35 && t <= 0.6 && t > 2.5 * get('paper:0').length / SR, `sheet ${v}: ${t.toFixed(2)} s`);
+    assert.ok(bandShare(x, 0, 300) < 0.02 && bandShare(x, 1000, 7000) > 0.9, `sheet ${v}: ${(bandShare(x, 0, 300) * 100).toFixed(1)} % below 300 Hz, ${(bandShare(x, 1000, 7000) * 100).toFixed(0)} % between 1 and 7 kHz`);
+    const head = windowRms(x, 0, t * 0.1), mid = windowRms(x, t * 0.3, t * 0.7), tail = windowRms(x, t * 0.92, t);
+    assert.ok(mid > 3 * head && mid > 3 * tail, `sheet ${v}: swells in and dies away (${head.toFixed(3)} .. ${mid.toFixed(3)} .. ${tail.toFixed(3)})`);
+  }
+  assert.ok(get('sheet:0').some((v, i) => v !== get('sheet:1')[i]), 'the two takes differ');
+  const [s0, s1] = [get('sheet:0'), get('sheet:1')]; let sab = 0, saa = 0, sbb = 0;
+  for (let i = 0; i < Math.min(s0.length, s1.length); i++) { sab += s0[i] * s1[i]; saa += s0[i] * s0[i]; sbb += s1[i] * s1[i]; }
+  assert.ok(Math.abs(sab / Math.sqrt(saa * sbb)) < 0.3, `the two takes are two recordings, not one noise under two envelopes (correlation ${(sab / Math.sqrt(saa * sbb)).toFixed(2)})`);
+  assert.ok(get('sheet:0').some((v, i) => v !== get('paper:0')[i]) && centroid(get('sheet:0')) > 2000, 'a sheet is not a paper swish');
+});
+
+test('the four finds have a voice each: a coin rings at 2.2 kHz, a watch ticks four times and rings a bell, a jewel sparkles high, an oddity bloops low', () => {
+  const coins = get('find:coins'), watch = get('find:watches'), jewel = get('find:jewels'), odd = get('find:oddities');
+  for (const k of F.FIND_SOUNDS) { const t = get(`find:${k}`).length / SR; assert.ok(t >= 0.9 && t <= 1.8, `${k}: ${t.toFixed(2)} s`); }
+  const pf = (x, a, b, lo = 300, hi = 9000, n = 1024) => peakFreq(x.subarray(Math.round(a * SR), Math.round(b * SR)), lo, hi, SR, n);
+  assert.ok(Math.abs(peakFreq(coins, 1500, 4000, SR, 8192) - 2150) < 120 && bandShare(coins, 2000, 2800) > 0.7, `a gold coin rings near 2.2 kHz: ${peakFreq(coins, 1500, 4000, SR, 8192).toFixed(0)}`);
+  assert.ok(windowRms(coins, 0.5, 0.7) < 0.3 * windowRms(coins, 0, 0.2) && windowRms(coins, 0.5, 0.7) > 0.002, 'and settles');
+  // watch: tick (1350 Hz) tock (1000 Hz) tick tock, 0.16 s apart with silence between, then the bell at A6
+  for (const [i, f] of [1350, 1000, 1350, 1000].entries()) {
+    const t = 0.08 + 0.16 * i;
+    assert.ok(windowRms(watch, t, t + 0.02) > 0.03 && windowRms(watch, t + 0.07, t + 0.14) < 0.005, `tick ${i + 1}: loud at ${t.toFixed(2)} s and quiet right after`);
+    assert.ok(Math.abs(pf(watch, t, t + 0.045, 700, 1700) - f) < 80, `tick ${i + 1} at ${f} Hz: ${pf(watch, t, t + 0.045, 700, 1700).toFixed(0)}`);
+  }
+  assert.ok(Math.abs(peakFreq(watch.subarray(Math.round(0.8 * SR)), 1400, 2200, SR, 8192) - 1760) < 50 && windowRms(watch, 0.8, 0.82) > 2 * windowRms(watch, 0.08, 0.1), 'the little alarm bell (A6), louder than the ticks');
+  assert.ok(bandShare(jewel, 3000, 11025) > 0.7 && Math.abs(peakFreq(jewel, 2500, 4000, SR, 8192) - 3136) < 40, `a jewel sparkles above 3 kHz (G7): ${(bandShare(jewel, 3000, 11025) * 100).toFixed(0)} %`);
+  assert.ok(centroid(odd) < 1500 && bandShare(odd, 0, 1000) > 0.85, `an oddity stays low and round: centroid ${centroid(odd).toFixed(0)}`);
+  assert.ok(Math.abs(pf(odd, 0, 0.12, 300, 1200, 2048) - 523) < 25 && Math.abs(pf(odd, 0.14, 0.24, 300, 1200, 2048) - 784) < 40 && Math.abs(pf(odd, 0.27, 0.38, 300, 1200, 2048) - 659) < 40, 'three notes: C5, G5, E5');
+  const cents = F.FIND_SOUNDS.map((k) => [k, centroid(get(`find:${k}`))]);
+  for (let i = 0; i < cents.length; i++) for (let j = i + 1; j < cents.length; j++) {
+    const hi = Math.max(cents[i][1], cents[j][1]), lo = Math.min(cents[i][1], cents[j][1]);
+    assert.ok(hi / lo > 1.15, `${cents[i][0]} (${cents[i][1].toFixed(0)} Hz) and ${cents[j][0]} (${cents[j][1].toFixed(0)} Hz) sound too alike`);
+  }
+});
+
 test('the chapel bell: a G4 strike with a hum an octave down, a long inharmonic ring and a quiet end', () => {
   const b = get('bell');
   assert.ok(Math.abs(peakFreq(b, 300, 500, SR, 32768) - 392) < 4, 'strike note ' + peakFreq(b, 300, 500, SR, 32768));
@@ -138,6 +244,8 @@ test('chime, tick, birds, dogs and horns sit where their pitch should', () => {
   }
   assert.ok(get('bird:0:0').some((v, i) => v !== get('bird:0:1')[i]) || get('bird:0:0').length !== get('bird:0:1').length, 'takes differ');
   for (const i of [0, 1]) { const f = peakFreq(get(`dog:${i}`), 100, 3000, SR, 2048); assert.ok(f > 450 && f < 900, `dog ${i}: ${f}`); }
+  // the spectrum above shows the throat (formants at 500 and 1200 Hz); the bark's own pitch is what tells a small dog from a mastiff
+  for (const i of [0, 1]) { const p = acPitch(get(`dog:${i}`), 0.01, 0.04, 90, 700); assert.ok(p.f > 250 && p.f < 440 && p.strength > 0.5, `dog ${i}: its voice is ${p.f.toFixed(0)} Hz (strength ${p.strength.toFixed(2)}): a small dog's 300-400, not a big one's 120`); }
   assert.ok(peakFreq(get('horn:0'), 100, 3000, SR, 2048) > 600 && peakFreq(get('horn:0'), 100, 3000, SR, 2048) < 900, 'motorbike pip');
   assert.ok(peakFreq(get('horn:1'), 100, 3000, SR, 2048) > 350 && peakFreq(get('horn:1'), 100, 3000, SR, 2048) < 600, 'car horn');
 });

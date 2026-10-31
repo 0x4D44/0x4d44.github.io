@@ -37,6 +37,26 @@ export function resolveRoof(S) {
 }
 
 /** After the layout: build the roof layer. */
+/** `r` minus one rect as bands across the plot first (behind it, in front of it), then what is left of the middle strip beside it. */
+function bandsMinusRect(r, h) {
+  const ix0 = Math.max(r.x0, h.x0), ix1 = Math.min(r.x1, h.x1), iz0 = Math.max(r.z0, h.z0), iz1 = Math.min(r.z1, h.z1), out = [], e = 1e-6;
+  if (ix1 - ix0 <= e || iz1 - iz0 <= e) return [R(r.x0, r.z0, r.x1, r.z1)];
+  if (iz0 - r.z0 > e) out.push(R(r.x0, r.z0, r.x1, iz0));
+  if (r.z1 - iz1 > e) out.push(R(r.x0, iz1, r.x1, r.z1));
+  if (ix0 - r.x0 > e) out.push(R(r.x0, iz0, ix0, iz1));
+  if (r.x1 - ix1 > e) out.push(R(ix1, iz0, r.x1, iz1));
+  return out;
+}
+
+/**
+ * A block of flats' roof rooms (the caseta landing and the terraces) take the household tag of the top floor's first flat. Nobody lives on the roof, but interiors/household.js keys every
+ * room by its floor, unit and occupant: left untagged they would be a household of their own, one with no bedroom, and the cast would give it residents with no bed.
+ */
+function inheritFlat(S, rooms) {
+  const home = S.rooms.find((r) => r.floor === S.F - 1 && r.unit);
+  if (home) for (const r of rooms) { r.unit = home.unit; r.occupant = home.occupant; }
+}
+
 export function planRoof(S) {
   const F = S.F, fd = S.floorsData[F];
   const rl = S.roofLayer = { style: S.roofStyle, walkable: S.roofWalkable, parapetH: S.roofStyle === 'terrace' ? (S.roofWalkable ? PARAPET_H : 0.7) : 0, caseta: null, terraceRooms: [] };
@@ -63,9 +83,22 @@ export function planRoof(S) {
   const outerC = R(cr.x0 - T, cr.z0 - T, cr.x1 + T, cr.z1 + T);
   const landing = S.addRoom(F, 'landing', c.landing, { core: true, noFurnish: true }); landing.h = CASETA_H; landing.stair = S.lot.id + '.s0';
   fd.voids.push({ rect: R(c.voidRect.x0, c.voidRect.z0, c.voidRect.x1, c.voidRect.z1), owner: landing.id, core: true });
-  const pieces = rectMinusRects(S.inner, [outerC]).filter((p) => rw(p) >= 0.7 && rd(p) >= 0.7);
+  const holes = S.patios.map((p) => p.rect);                                         // the open courts below: a hole in the roof, fenced like any drop
+  const keep = (p) => rw(p) >= 0.7 && rd(p) >= 0.7, smallest = (ps) => Math.min(...ps.map((p) => rw(p) * rd(p)));
+  let pieces = rectMinusRects(S.inner, [outerC, ...holes]).filter(keep);
+  // a stair head that stands mid-depth (a bathroom strip behind the stair) leaves a sliver of roof behind it when the roof is cut in strips down the plot: cut it in bands across the plot instead when that leaves no small piece
+  if (!holes.length && pieces.length && smallest(pieces) < 4.0) {
+    const alt = bandsMinusRect(S.inner, outerC).filter(keep);
+    if (alt.length && smallest(alt) >= 4.5) pieces = alt;
+  }
   const terraces = pieces.map((p) => { const r = S.addRoom(F, 'terrace', p, { outdoor: true }); r.h = 3.0; return r; });
   rl.terraceRooms = terraces.map((r) => r.id);
+  inheritFlat(S, [landing, ...terraces]);
+  const yRoof = F * S.fh;
+  for (const h of holes) {
+    const edge = (x1, z1, x2, z2) => S.guards.push({ floor: F, p1: [x1, z1], p2: [x2, z2], y0: yRoof, y1: yRoof + PARAPET_H, rail: true });
+    edge(h.x0, h.z0, h.x1, h.z0); edge(h.x1, h.z0, h.x1, h.z1); edge(h.x1, h.z1, h.x0, h.z1); edge(h.x0, h.z1, h.x0, h.z0);
+  }
   const id = (n) => `${S.lot.id}.f${F}.cw${n}`;
   const walls = [
     { id: id(0), floor: F, dir: 'x', at: cr.z0 - T / 2, a0: cr.x0 - T, a1: cr.x1 + T, t: T, ext: true, side: 'north', openings: [] },

@@ -4,11 +4,17 @@
 //
 // Conventions (all assets):
 //   origin = centre of the footprint on the floor (floor items), +z = FRONT (the side a person uses), +y up.
-//   wall items : origin = bottom-centre of the BACK face; hung at height `y` (default per item).  `wall:true`
+//   wall items : origin = centre of the footprint (its back face at z = -D/2) with the item's bottom at the hang height `y` (default per item).  `wall:true`
 //   top items  : stand on a surface (origin = bottom-centre); `top:true`
-//   ceiling    : origin = top-centre (hangs down); `ceil:true`
+//   ceiling    : origin = centre of the footprint; the item hangs from the ceiling, so its base is at (ceiling - H).  `ceil:true`
+//                (a GLB is modelled standing on y = 0 like every other item; build.js lowers it by H)
 // Options: arch (stand-in archetype), tags, clear:[front,back,side] free space needed, seat:[seatH,n], bh (blocker height),
-//          block:false (never blocks), cols (tint palette key), mat (primary material), y (hang height), dyn (animated kind).
+//          block:false (never blocks), cols (tint palette key), mat (primary material), y (hang height), dyn (animated kind),
+//          topAdd (what a thing lying on this piece is raised above the catalogue height `size[1]`: a bed's headboard or a chair's back stand above the sheet or the seat),
+//          hang (the model's origin is its hang point, the TOP edge: a hung garment; the record's y stays the bottom, like every wall item).
+// What the clothes add (topAdd, the garment_* keys) is HIDDEN from the furniture pipeline's view of this object: see "the clothes" below.
+
+import { GARMENTS, STATES } from './garments_data.js';
 
 export const PAL = {
   wood: [0x8a5a3a, 0x6b4226, 0xa87445, 0x4e3524, 0xc89a62],
@@ -58,8 +64,8 @@ add('stool_bar', 0.36, 0.72, 0.36, 'stool', 'seat stool bar', { seat: [0.68, 1],
 add('stool_plastic', 0.32, 0.42, 0.32, 'stool', 'seat stool plastic', { seat: [0.42, 1], cols: 'plastic', mat: 'plastic_solid' });
 add('pouf', 0.42, 0.4, 0.42, 'stool', 'seat pouf', { seat: [0.4, 1], cols: 'fabric', mat: 'fabric_sofa' });
 add('bench_wood', 1.4, 0.46, 0.38, 'bench', 'seat bench wood', { seat: [0.46, 3], cols: 'wood', mat: 'wood_pine' });
-add('bench_pew', 2.2, 0.95, 0.6, 'pew', 'seat bench pew chapel', { seat: [0.45, 4], clear: [0.5, 0, 0], cols: 'wood', mat: 'wood_dark' });
-add('bench_pew_short', 1.6, 0.95, 0.6, 'pew', 'seat bench pew chapel', { seat: [0.45, 3], clear: [0.5, 0, 0], cols: 'wood', mat: 'wood_dark' });
+add('bench_pew', 2.2, 0.95, 0.6, 'pew', 'seat bench pew chapel', { seat: [0.45, 4], clear: [0.5, 0, 0], cols: 'wood', mat: 'wood_pine' });
+add('bench_pew_short', 1.6, 0.95, 0.6, 'pew', 'seat bench pew chapel', { seat: [0.45, 3], clear: [0.5, 0, 0], cols: 'wood', mat: 'wood_pine' });
 add('waiting_row', 1.6, 0.85, 0.55, 'waiting', 'seat bench waiting clinic', { seat: [0.45, 3], cols: 'metal', mat: 'metal_painted' });
 add('barber_chair', 0.7, 1.1, 0.95, 'barber', 'seat barber shop', { seat: [0.55, 1], clear: [0.8, 0.8, 0.5], cols: 'vinyl', mat: 'vinyl_sofa' });
 add('office_chair', 0.56, 0.95, 0.56, 'chair', 'seat chair office', { seat: [0.47, 1], cols: 'plastic', mat: 'plastic_solid' });
@@ -115,6 +121,7 @@ add('gas_cylinder', 0.32, 0.62, 0.32, 'cylinder', 'kitchen gas pipeta', { cols: 
 add('fridge', 0.65, 1.7, 0.68, 'fridge', 'kitchen fridge', { clear: [0.7, 0, 0.05], cols: 'white', mat: 'enamel_white' });
 add('fridge_small', 0.5, 0.85, 0.55, 'fridge', 'kitchen fridge small', { clear: [0.6, 0, 0.05], cols: 'white', mat: 'enamel_white' });
 add('sink_kitchen', 1.2, 0.92, 0.55, 'sinkunit', 'kitchen sink counter', { clear: [0.7, 0, 0], cols: 'paint', mat: 'wood_painted' });
+add('sink_small', 0.6, 0.92, 0.5, 'sinkunit', 'kitchen sink small', { clear: [0.6, 0, 0], cols: 'paint', mat: 'wood_painted' });                    // a one-bowl sink for the 4 m2 kitchens of the rowhouses
 add('counter_base', 0.6, 0.9, 0.6, 'counter', 'kitchen counter', { clear: [0.7, 0, 0], cols: 'paint', mat: 'wood_painted' });
 add('counter_base_long', 1.8, 0.92, 0.6, 'counter', 'kitchen counter', { clear: [0.7, 0, 0], cols: 'paint', mat: 'wood_painted' });
 add('kitchen_upper', 0.9, 0.7, 0.34, 'upper', 'kitchen upper cabinet', { wall: true, y: 1.45, cols: 'paint', mat: 'wood_painted', bh: 0.7 });
@@ -132,6 +139,7 @@ add('toilet', 0.4, 0.78, 0.7, 'toilet', 'bath toilet', { clear: [0.55, 0, 0.2], 
 add('basin_pedestal', 0.5, 0.85, 0.42, 'basin', 'bath basin', { clear: [0.55, 0, 0.1], cols: 'white', mat: 'ceramic_white' });
 add('basin_vanity', 0.6, 0.85, 0.45, 'basin', 'bath basin vanity', { clear: [0.55, 0, 0.1], cols: 'white', mat: 'ceramic_white' });
 add('shower_tray', 0.9, 2.1, 0.9, 'shower', 'bath shower electric', { clear: [0.4, 0, 0], cols: 'white', mat: 'wall_tile' });
+add('shower_small', 0.72, 2.1, 0.72, 'shower', 'bath shower electric small', { clear: [0.3, 0, 0], cols: 'white', mat: 'wall_tile' });             // the corner stall of a 1.9 x 1.7 m bathroom
 add('shower_head_electric', 0.2, 0.5, 0.2, 'smallbox', 'bath shower head heater decor', { wall: true, y: 1.85, cols: 'white', mat: 'plastic_solid', block: false });
 add('mirror_bath', 0.5, 0.7, 0.03, 'mirror', 'bath mirror decor', { wall: true, y: 1.2, cols: 'none', mat: 'mirror', block: false });
 add('towel_rail', 0.6, 0.15, 0.1, 'hooks', 'bath towel decor', { wall: true, y: 1.1, cols: 'bedding', mat: 'towel_terry', block: false });
@@ -166,8 +174,8 @@ add('vase_flowers', 0.2, 0.4, 0.2, 'vase', 'decor flowers vase', { top: true, co
 add('crucifix_wall', 0.3, 0.5, 0.05, 'cross', 'religion crucifix decor', { wall: true, y: 1.9, block: false, cols: 'wood', mat: 'wood_dark' });
 add('crucifix_large', 0.6, 1.0, 0.1, 'cross', 'religion crucifix chapel decor', { wall: true, y: 2.0, block: false, cols: 'wood', mat: 'wood_dark' });
 add('altar_main', 2.0, 1.1, 0.7, 'altarMain', 'religion altar chapel', { clear: [0.8, 0, 0.3], cols: 'white', mat: 'wood_painted' });
-add('lectern', 0.5, 1.25, 0.45, 'lectern', 'religion lectern chapel', { clear: [0.5, 0, 0.2], cols: 'wood', mat: 'wood_dark' });
-add('kneeler', 1.2, 0.4, 0.4, 'bench', 'religion kneeler chapel', { cols: 'wood', mat: 'wood_dark' });
+add('lectern', 0.5, 1.25, 0.45, 'lectern', 'religion lectern chapel', { clear: [0.5, 0, 0.2], cols: 'wood', mat: 'wood_pine' });
+add('kneeler', 1.2, 0.4, 0.4, 'bench', 'religion kneeler chapel', { cols: 'wood', mat: 'wood_pine' });
 add('candle_rack', 0.7, 1.1, 0.45, 'rack', 'religion candles votive chapel', { clear: [0.6, 0, 0.1], cols: 'metal', mat: 'metal_dark' });
 add('statue_saint_large', 0.5, 1.5, 0.4, 'statueBig', 'religion statue chapel', { clear: [0.5, 0, 0.1], cols: 'none', mat: 'plaster_statue' });
 add('mirror_wall', 0.6, 0.8, 0.03, 'mirror', 'decor mirror', { wall: true, y: 1.15, block: false, cols: 'none', mat: 'mirror' });
@@ -273,11 +281,34 @@ add('rug_big', 2.0, 0.02, 1.4, 'rug', 'rug decor living', { cols: 'none', mat: '
 add('doormat', 0.6, 0.02, 0.4, 'rug', 'rug doormat entry', { cols: 'none', mat: 'rug_woven', block: false });
 add('curtain_window', 1.2, 1.4, 0.08, 'curtain', 'decor curtain window', { wall: true, y: 0.9, cols: 'bedding', mat: 'curtain_fabric', block: false });
 
+// ------------------------------------------------------------------ the clothes (garments.js): what they add here, hidden
+// The furniture pipeline reads this object whole: `Object.keys` (one Blender model for every key it finds) and `JSON.stringify` (the catalogue hash in
+// assets/models/manifest.furniture.json, tools/blender/furn_validate.mjs). The clothes are not furniture, their models are their own library (assets/models/garments, loaded apart:
+// build.js loadGarmentAssets), so everything added below is NON-ENUMERABLE: `CATALOG[key]`, `get` and `in` see it; `Object.keys`, `names`, `byTag`, spreads and `JSON.stringify` do not.
+const hide = (o, k, value) => Object.defineProperty(o, k, { value, enumerable: false, writable: true, configurable: true });
+
+// The surface a small thing lies on. A bed's catalogue height is its headboard's, a chair's its back's, so what lies on them is raised to the sheet / the seat: `topAdd`.
+const SHEET = { bed_single: 0.57, bed_single_metal: 0.59, bed_double: 0.57, bed_double_wood: 0.57, mattress_floor: 0.16 };            // the made blanket's top in the hero models (assets/models/heroes)
+for (const [k, y] of Object.entries(SHEET)) hide(CATALOG[k], 'topAdd', y - CATALOG[k].size[1]);
+for (const c of Object.values(CATALOG)) if (c.seat && ['chair', 'stool', 'sofa', 'armchair', 'bench'].includes(c.arch) && c.topAdd == null) hide(c, 'topAdd', c.seat[0] - c.size[1]);
+
+// One key per garment model state (assets/models/garments, the adult clothing library): garment_<id>_<flat|folded|hung>, sized as the library's model. Flat and folded ones lie on a surface
+// or the floor (origin = the middle of the underside); a hung one is a wall item whose model hangs from its top edge (`hang`): the record's y is its bottom, build.js lifts the model by its
+// height. Never blocking, never a hiding place.
+for (const [id, g] of Object.entries(GARMENTS)) for (const state of STATES) {
+  if (!g[state]) continue;
+  const [w, h, d] = g[state], key = `garment_${id}_${state}`;
+  add(key, w, h, d, 'garment', `garment clothes ${id} ${state}`, {
+    cols: 'none', mat: 'laundry', block: false, garment: id, state, ...(state === 'hung' ? { wall: true, hang: true, y: Math.round((1.78 - h) * 1000) / 1000 } : {}),
+  });
+  Object.defineProperty(CATALOG, key, { enumerable: false });
+}
+
 // ------------------------------------------------------------------ helpers
 export const names = () => Object.keys(CATALOG);
 export const get = (name) => CATALOG[name];
 export const byTag = (tag) => Object.values(CATALOG).filter((c) => c.tags.includes(tag)).map((c) => c.name);
-export const isFloorBlocker = (c) => !c.wall && !c.ceil && !c.top && c.block !== false;
+export const isFloorBlocker = (c) => !c.wall && !c.ceil && c.top !== true && c.block !== false;
 /** Seat positions (item-local x offsets, along the width) for a seating item. */
 export function seatOffsets(c) {
   const n = c.seat?.[1] ?? 0; if (!n) return [];

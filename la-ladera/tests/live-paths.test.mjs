@@ -72,7 +72,8 @@ test('exactCase sees a wrong-case path that Windows would accept', () => {
 test('checkSource flags a wrong-case import, a missing file, a bare specifier and a missing asset (and passes the right ones)', () => {
   const f = join(ROOT, 'js', 'people', 'x.js');
   assert.deepEqual(checkSource(f, "import { CONFIG } from '../core/config.js';\nimport * as THREE from 'three';\nexport * from './dialogue.js';\nconst m = await import('../core/mesh.js');"), []);
-  assert.match(checkSource(f, "import { CONFIG } from '../Core/config.js';").join(), /another letter case/);
+  // Case-sensitive hosts reject the path at existence-check time; Windows finds it and then rejects its case.
+  assert.match(checkSource(f, "import { CONFIG } from '../Core/config.js';").join(), /(another letter case|does not exist)/);
   assert.match(checkSource(f, "import { x } from '../core/nope.js';").join(), /does not exist/);
   assert.match(checkSource(f, "import x from 'lodash';").join(), /bare import/);
   assert.match(checkSource(f, "const u = './assets/textures/Asphalt.jpg';").join(), /(another letter case|does not exist)/);

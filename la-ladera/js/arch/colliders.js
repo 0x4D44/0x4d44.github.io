@@ -51,6 +51,8 @@ export function buildColliders(S) {
 
   // entry steps in front of ground-floor doors (their tops are walkable; the player climbs them like any other floor patch)
   for (const [i, st] of (S.steps ?? []).entries()) floors.push({ pts: wpoly(st.rect), y: y0w + st.y1, id: `${S.lot.id}.step${i}` });
+  // raised floors inside a room (the stage of a hall): walkable on top, climbed the same way
+  for (const [i, p] of (S.platforms ?? []).entries()) floors.push({ pts: wpoly(p.rect), y: y0w + p.floor * S.fh + p.h, id: `${S.lot.id}.platform${i}` });
 
   // stairs
   const c = S.core;

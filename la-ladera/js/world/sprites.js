@@ -47,16 +47,34 @@ function broadleaf(g, r, o = {}) {
   }
 }
 
+/** One sickle leaf hanging from (x, y): length L, bulge W, its tip pulled `bend` sideways, turned `tilt` from straight down, with a pale midrib. */
+function sickle(g, x, y, tilt, L, W, bend, col) {
+  g.save(); g.translate(x, y); g.rotate(tilt);
+  g.fillStyle = hex(col);
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(W + bend * 0.5, L * 0.5, bend, L); g.quadraticCurveTo(-W * 0.25 + bend * 0.5, L * 0.5, 0, 0); g.fill();
+  g.strokeStyle = hex(mixc(col, 0xe8f0d8, 0.5)); g.globalAlpha = 0.55; g.lineWidth = 0.8;
+  g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(W * 0.3 + bend * 0.5, L * 0.5, bend, L); g.stroke(); g.globalAlpha = 1;
+  g.restore();
+}
+
+/** A weeping eucalyptus spray (R1-D04: the old tile was 38 fat grey strokes, "cards of hanging strips"): thin twigs hang from the branch across the top and each carries
+ *  a couple of hundred small sickle leaves, blue-green on top and darker under, longer toward the tip. The card is 1.7 times taller than wide, so the leaves stretch. */
 function eucalyptus(g, r) {
-  const pal = [0x6f8c70, 0x84a283, 0x9bb59a, 0x5f7c62, 0x8aa89c, 0xa9bfa2];
-  g.lineCap = 'round';
-  for (let i = 0; i < 38; i++) {
-    const x0 = r.range(0.18, 0.82) * T, y0 = r.range(0.04, 0.4) * T, len = r.range(0.38, 0.62) * T, sway = r.range(-0.14, 0.14) * T;
-    const c = r.pick(pal);
-    g.strokeStyle = hex(c); g.lineWidth = r.range(5, 8.5);
-    g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(x0 + sway * 0.4, y0 + len * 0.45, x0 + sway, y0 + len); g.stroke();
-    g.strokeStyle = hex(mixc(c, 0xdfe8cc, 0.45)); g.lineWidth = 1.6; g.globalAlpha = 0.7;
-    g.beginPath(); g.moveTo(x0, y0); g.quadraticCurveTo(x0 + sway * 0.4, y0 + len * 0.45, x0 + sway, y0 + len); g.stroke(); g.globalAlpha = 1;
+  const pal = [0x4f6f5c, 0x62846e, 0x78997e, 0x8fb08f, 0xa8c4a2], twigs = 12;
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (let pass = 0; pass < 2; pass++) for (let k = 0; k < twigs; k++) {
+    const x0 = T * (0.07 + 0.86 * (k + r.range(0.15, 0.85)) / twigs), y0 = T * r.range(0.02, 0.08), len = T * r.range(0.52, 0.9), sway = T * r.range(-0.09, 0.09), ph = r.range(0, 6);
+    const tw = (t) => [x0 + sway * t * t + Math.sin(t * 6 + ph) * 2.5, y0 + len * t];
+    if (pass === 0) {
+      g.strokeStyle = hex(0x66543f); g.lineWidth = r.range(1.3, 2.2);
+      g.beginPath(); g.moveTo(...tw(0)); for (let t = 0.05; t <= 1.001; t += 0.05) g.lineTo(...tw(t)); g.stroke();
+    }
+    const nl = Math.round(len / 4.4);
+    for (let i = 1; i <= nl; i++) {
+      const t = i / nl, [x, y] = tw(t), side = (i + k) % 2 ? 1 : -1, lo = pass === 0;
+      const L = T * r.range(0.04, 0.068) * (0.75 + 0.5 * t), idx = Math.max(0, Math.min(4, Math.floor((lo ? 0.05 : 0.4) * 5 + r.next() * (lo ? 2.4 : 2.6) + (1 - t) * 0.6)));
+      sickle(g, x + side * r.range(0, 2), y, side * r.range(0.2, 0.8), L, r.range(2.6, 4.2), side * r.range(2, 6), pal[idx]);
+    }
   }
   g.strokeStyle = hex(0x6d5f50); g.lineWidth = 4;
   g.beginPath(); g.moveTo(0.1 * T, 0.03 * T); g.quadraticCurveTo(0.5 * T, 0.12 * T, 0.92 * T, 0.02 * T); g.stroke();
@@ -124,14 +142,35 @@ function tuft(g, r) {
   }
 }
 
+/** One flower head at (x, y), radius about s: six petals with a shaded back row, a yellow eye with a dark heart. */
+function bloom(g, x, y, s, col) {
+  const n = 6, rot = x * 0.37 + y * 0.21;
+  g.fillStyle = hex(mixc(col, 0x000000, 0.3));
+  for (let k = 0; k < n; k++) { const th = (k / n) * 6.283 + rot; g.beginPath(); g.ellipse(x + Math.cos(th) * s * 0.5, y + Math.sin(th) * s * 0.5 + s * 0.12, s * 0.52, s * 0.31, th, 0, 6.283); g.fill(); }
+  g.fillStyle = hex(col);
+  for (let k = 0; k < n; k++) { const th = (k / n) * 6.283 + rot; g.beginPath(); g.ellipse(x + Math.cos(th) * s * 0.48, y + Math.sin(th) * s * 0.48, s * 0.5, s * 0.29, th, 0, 6.283); g.fill(); }
+  g.fillStyle = hex(0xeab524); g.beginPath(); g.arc(x, y, s * 0.27, 0, 6.283); g.fill();
+  g.fillStyle = hex(0x7a4a14); g.beginPath(); g.arc(x + s * 0.04, y + s * 0.04, s * 0.11, 0, 6.283); g.fill();
+}
+
+/** A flower bed (R1-D04: "dark blobs with confetti dots"): a low mound of bright leaves, dark under and light on top, and six clusters of marigold, geranium and
+ *  daisy heads, one colour to a cluster, each head with its own petals. */
 function flowers(g, r) {
-  broadleaf(g, r, { n: 70, size: 0.075, spread: 0.4, pal: [0x35602a, 0x4b7a32, 0x5f8f3b] });
-  const cols = [0xd83a2a, 0xf2c230, 0xf4f0e6, 0x8a4fc0, 0xf08030, 0xf06a9a, 0xe8505b];
-  for (let i = 0; i < 46; i++) {
-    const a = r.range(0, 6.28), d = Math.sqrt(r.next()) * 0.4 * T, x = T / 2 + Math.cos(a) * d, y = T * 0.42 + Math.sin(a) * d * 0.7, c = r.pick(cols), s = r.range(5, 9);
-    g.fillStyle = hex(c);
-    for (let k = 0; k < 5; k++) { const th = k * 1.256 + r.range(0, 1); g.beginPath(); g.arc(x + Math.cos(th) * s * 0.6, y + Math.sin(th) * s * 0.6, s * 0.5, 0, 6.28); g.fill(); }
-    g.fillStyle = hex(0xf4d36a); g.beginPath(); g.arc(x, y, s * 0.35, 0, 6.28); g.fill();
+  const greens = [0x33582a, 0x437232, 0x558a3b, 0x6c9f46, 0x88b454];
+  g.fillStyle = hex(0x244020);                                                           // a dark core, so the gaps between leaves are shade
+  g.beginPath(); g.ellipse(T / 2, T * 0.66, T * 0.34, T * 0.2, 0, 0, 6.283); g.fill();
+  for (let i = 0; i < 170; i++) {
+    const a = r.range(0, Math.PI * 2), d = Math.sqrt(r.next()) * 0.46 * T, x = T / 2 + Math.cos(a) * d, y = T * 0.64 + Math.sin(a) * d * 0.6;
+    const up = 1 - y / T, k = Math.max(0, Math.min(4, Math.round((0.1 + up * 0.5 + r.range(-0.2, 0.3)) * 4)));
+    leaf(g, x, y, r.range(-1.1, 1.1) + (x < T / 2 ? -0.3 : 0.3), r.range(20, 32), r.range(7, 11), greens[k], mixc(greens[k], 0x172b10, 0.4));
+  }
+  const cols = [0xf08a1c, 0xf5c21f, 0xd9301f, 0xe96a98, 0xf4efe3, 0x8a5cc4, 0xf2a02a];
+  for (let c = 0; c < 6; c++) {
+    const col = r.pick(cols), cx = T / 2 + r.range(-0.28, 0.28) * T, cy = T * 0.56 + r.range(-0.1, 0.1) * T;
+    for (let i = r.int(4, 7); i > 0; i--) {
+      const x = cx + r.range(-0.13, 0.13) * T, y = cy + r.range(-0.1, 0.1) * T;
+      bloom(g, x, y, r.range(7.5, 12), mixc(col, r.chance(0.5) ? 0xffffff : 0x000000, r.range(0, 0.18)));
+    }
   }
 }
 
@@ -150,14 +189,27 @@ function agave(g, r) {
   }
 }
 
+const CYPRESS_ASPECT = 0.425;       // a cypress card is 0.425 times as wide as it is tall (flora.js cypress): the tile is painted in world proportions, x stretched by 1 / this
+
+/** An Italian cypress (R1-D04: the old tile was 620 round dots, "polka-dot cones"): a dark flame of upswept sprays, shaded from the left foot to the lit right tip. */
 function cypress(g, r) {
-  const pal = [0x2a4a2c, 0x33603a, 0x3f7244, 0x4f8750, 0x62984f];
-  // t = 0 at the tip, 1 at the base: a flame whose width grows to ~0.4 of the tile and stays full to the very bottom
-  for (let i = 0; i < 620; i++) {
-    const t = Math.pow(r.next(), 0.85), y = T * (0.02 + 0.97 * t), prof = 0.5 * Math.min(1, 0.12 + 1.15 * Math.sin(Math.min(1, t * 1.15) * Math.PI / 2)) * 0.8;
-    const x = T / 2 + r.range(-1, 1) * T * prof * 0.5, c = pal[Math.min(4, Math.max(0, Math.floor(r.next() * 3 + (1 - t) * 2.2)))];
-    g.fillStyle = hex(c); g.beginPath(); g.ellipse(x, y, r.range(7, 13), r.range(8, 15), r.range(-0.5, 0.5), 0, 6.28); g.fill();
+  const pal = [0x1f3b25, 0x2a4a2c, 0x33603a, 0x3f7244, 0x4f8750, 0x62984f, 0x7aa85a];
+  g.save(); g.translate(T / 2, 0); g.scale(1 / CYPRESS_ASPECT, 1);                       // x in metres-ish, y down from the tip: both in the same unit
+  const V0 = 18, hw = (v) => { const t = (v - V0) / (T - V0); return 30 * Math.min(1, Math.pow(Math.sin(Math.min(1, Math.max(0, t) * 2.2) * Math.PI / 2), 0.9)) * (1 - 0.2 * Math.max(0, t - 0.86) / 0.14); };   // the tip sits below the tile's top edge
+  g.fillStyle = hex(0x1b3320);                                                           // the flame in deep green, so the gaps between sprays are shade, not sky
+  g.beginPath(); g.moveTo(0, V0);
+  for (let v = V0; v <= T - 4; v += 6) g.lineTo(hw(v) * 0.92, v);
+  for (let v = T - 4; v >= V0; v -= 6) g.lineTo(-hw(v) * 0.92, v);
+  g.fill();
+  g.lineCap = 'round';
+  for (let i = 0; i < 1100; i++) {
+    const t = Math.pow(r.next(), 0.85), v = V0 + (T - V0 - 3) * t, w = hw(v), x = r.range(-1, 1) * w * 0.95, side = w > 1 ? x / w : 0;
+    const lit = 0.45 + 0.28 * side + 0.2 * (1 - t) + r.range(-0.18, 0.18), idx = Math.max(0, Math.min(pal.length - 1, Math.round(lit * (pal.length - 1))));
+    const a = -Math.PI / 2 + side * 0.5 + r.range(-0.35, 0.35), len = r.range(8, 15), cx = Math.cos(a) * len, cz = Math.sin(a) * len;
+    g.strokeStyle = hex(pal[idx]); g.lineWidth = r.range(2.2, 3.8);
+    g.beginPath(); g.moveTo(x, v); g.quadraticCurveTo(x + cx * 0.5 + r.range(-1.5, 1.5), v + cz * 0.5, x + cx, v + cz); g.stroke();
   }
+  g.restore();
 }
 
 /** Ivy / hanging vine: wavy vertical strands carrying leaves, dense at the top, ragged at the bottom. */
@@ -200,6 +252,9 @@ const PAINT = [
   (g, r) => broadleaf(g, r, { n: 300, size: 0.075, spread: 0.46, pal: [0x35582a, 0x466e32, 0x5a8539, 0x6f9a44] }), cypress, vine, reed, flowering,
 ];
 
+/** Paint one tile on `g`, whose origin is the tile's top-left corner, from the stream the atlas gives that tile. The atlas calls this, and so can a test with a recording context. */
+export function paintTile(g, tile, rng) { PAINT[tile](g, rng.fork('sprite:' + tile)); }
+
 /** Chain-link: a 64 px tile of diamond mesh, transparent between the wires (repeats every 0.4 m). Null without a canvas. */
 export function makeFenceTexture(THREE) {
   const cv = makeCanvas(64, 64); if (!cv) return null;
@@ -224,11 +279,11 @@ export function makeFoliageAtlas(THREE, rng) {
   const cv = makeCanvas(SZ, SZ); if (!cv) return null;
   const g = cv.getContext('2d', { willReadFrequently: true }); if (!g) return null;
   g.clearRect(0, 0, SZ, SZ);
-  PAINT.forEach((paint, i) => {
-    const col = i % 4, row = Math.floor(i / 4), r = rng.fork('sprite:' + i);
+  for (let i = 0; i < PAINT.length; i++) {
+    const col = i % 4, row = Math.floor(i / 4);
     g.save(); g.translate(col * T, row * T); g.beginPath(); g.rect(2, 2, T - 4, T - 4); g.clip();
-    paint(g, r); g.restore();
-  });
+    paintTile(g, i, rng); g.restore();
+  }
   const img = g.getImageData(0, 0, SZ, SZ), d = img.data, out = new Uint8Array(SZ * SZ * 4);
   // average colour per tile (opaque texels) -> written into transparent texels; rows flipped so v = 1 - y/SZ
   const avg = [];

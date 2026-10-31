@@ -96,13 +96,15 @@ test('gestured: a real gesture starts the engine DRY under automation and the mi
     const st0 = await A('__ladera.ctx.audio.state().stats');
     await A('__ladera.teleport(-6.5, 92.5, { yaw: 0, pitch: 0 }); __ladera.walk(1, 0, 3)');                   // real footfalls from the player
     await A('__ladera.walk(0, 0, 0.7, { jump: true }); __ladera.walk(0, 0, 1.5)');                              // a jump and its landing
-    const door = await A(`(() => { const c = __ladera.ctx; for (const [id, st] of c.archDoors.entries()) if (st.geo && st.kind !== 'arch') { __ladera.teleport(st.geo.cx + 2, st.geo.cz + 2); __ladera.step(2); c.events.emit('door:toggle', { doorId: id, open: true, by: 'player' }); return id; } return null; })()`);
+    // the neighbours open doors of their own while the world steps: the count is read around the player's toggle alone, with nothing simulated in between
+    const door = await A(`(() => { const c = __ladera.ctx, n = () => c.audio.state().stats.doors; for (const [id, st] of c.archDoors.entries()) if (st.geo && st.kind !== 'arch') { __ladera.teleport(st.geo.cx + 2, st.geo.cz + 2); __ladera.step(2); const d0 = n(); c.events.emit('door:toggle', { doorId: id, open: true, by: 'player' }); return { id, counted: n() - d0 }; } return null; })()`);
     assert.ok(door, 'the scene has a door to open');
-    await A('__ladera.ctx.audio.chime(); __ladera.ctx.audio.tick(); __ladera.ctx.audio.paper(); __ladera.ctx.events.emit("npc:talk", {}); __ladera.ctx.events.emit("npc:end", {})');
+    // the UI sounds are counted around their own calls, like the door: a discovery on the way (the sleeping dog by the first door) chimes too, and that is the game's, not this call's
+    const ui = await A(`(() => { const c = __ladera.ctx, a = c.audio, s = () => a.state().stats, s0 = s(); a.chime(); a.tick(); a.paper(); c.events.emit('npc:talk', {}); c.events.emit('npc:end', {}); const s1 = s(); return { chimes: s1.chimes - s0.chimes, ticks: s1.ticks - s0.ticks }; })()`);
     const st1 = await A('__ladera.ctx.audio.state()');
     assert.ok(st1.stats.steps - st0.steps >= 4, `footsteps: ${st1.stats.steps - st0.steps}`);
     assert.ok(st1.stats.jumps - st0.jumps >= 1, 'jump'); assert.ok(st1.stats.lands - st0.lands >= 1, 'landing');
-    assert.equal(st1.stats.doors - st0.doors, 1, 'the door in earshot'); assert.equal(st1.stats.chimes - st0.chimes, 1); assert.equal(st1.stats.ticks - st0.ticks, 1);
+    assert.equal(door.counted, 1, 'the door in earshot'); assert.ok(st1.stats.doors - st0.doors >= 1, 'and it stays counted'); assert.equal(ui.chimes, 1, 'one chime() is one chime'); assert.equal(ui.ticks, 1, 'one tick() is one tick');
     assert.ok(st1.samples.ready >= 9 && st1.samples.via === 'worker', JSON.stringify(st1.samples));
     assert.ok(await A(`!!__ladera.ctx.audio.play('chime', { bus: 'uiBus' })`), 'a ready sample plays');
     assert.deepEqual(st1.errors, []); assert.deepEqual(st1.samples.errors, []);
@@ -156,6 +158,92 @@ test('gestured: a real gesture starts the engine DRY under automation and the mi
     assert.ok(close(m.title, play * 0.3), 'title ' + m.title); assert.ok(close(m.play, play), 'back to play ' + m.play);
     assert.deepEqual(await A('__ladera.ctx.audio.state().errors'), []);
     clean('while mixing');
+  });
+});
+
+// ---- the drawers feature: furniture, the reader's paper and the ting of a find sound by themselves, from the events alone -----------------------------------
+test('furniture: containers, the reader and the finds sound by themselves (placed at the piece, dulled by a wall, silent when far, safe on a bad event)', T, async (t) => {
+  await boot('autostart&manual');
+  await gesture();
+  const NEED = ['sheet:0', 'sheet:1', 'paper:0', 'paper:1', 'chime', 'find:coins', 'find:watches', 'find:jewels', 'find:oddities'];
+  for (const k of ['drawer', 'drawerm', 'till', 'wardrobe', 'cupboard', 'locker', 'lid', 'fridge']) for (const d of ['open', 'close']) for (const v of [0, 1]) NEED.push(`furn:${k}:${d}:${v}`);
+  await A(`void __ladera.ctx.audio.engine.bank.prefetch(${JSON.stringify(NEED)})`);
+  await page.waitFor(ready(NEED), 240000);
+  await A(`(() => { __ladera.teleport(-6.5, 92.5, { yaw: 0, pitch: 0 }); __ladera.setHour(12); for (let i = 0; i < 6; i++) __ladera.step(6, 1 / 30);
+    const e = __ladera.ctx.audio.engine; e.__rec = []; e._blockedBetween = () => false;                          // every call to play() is written down; no wall in the way unless a test says so
+    const p = e.play.bind(e); e.play = (k, o) => { const s = p(k, o); e.__rec.push({ k, bus: o?.bus ?? null, lp: o?.lp ?? null, pos: o?.pos ?? null, when: o?.when ?? null, ok: !!s }); return s; }; })()`);
+  /** Run js, return what the engine played meanwhile (key, bus, lowpass, position, whether it really started), its counters and its errors. */
+  const take = (js) => A(`(() => { const e = __ladera.ctx.audio.engine; e.__rec.length = 0; const s0 = { ...e.stats }; ${js}; const L = e.listener;
+    return { rec: e.__rec.map((r) => ({ ...r, d: r.pos ? Math.hypot(r.pos[0] - L.x, r.pos[1] - L.y, r.pos[2] - L.z) : null })), furn: e.stats.furn - s0.furn, finds: e.stats.finds - s0.finds, sheets: e.stats.sheets - s0.sheets, errors: e.errors.slice(), shots: e.activeShots, dropped: e.stats.dropped - s0.dropped }; })()`);
+  /** Let the voices of the last test die out: the engine keeps at most 26 shots in flight and drops the rest (as it should), and these tests fire them faster than any player could. */
+  const calm = () => page.waitFor('__ladera.ctx.audio.engine.activeShots === 0', 30000);
+  const emit = (type, o, dist = 2) => `(() => { const L = __ladera.ctx.audio.engine.listener; __ladera.ctx.events.emit(${JSON.stringify(type)}, Object.assign({ id: 'test:c', building: 'T', x: L.x + ${dist}, y: L.y - 0.4, z: L.z }, ${JSON.stringify(o)})); })()`;
+
+  await t.test('containers: each piece of furniture has its own sound, open and close differ, placed at the piece on the effects bus', async () => {
+    await calm();
+    const table = [['door', 'wardrobe', 'wardrobe'], ['door', 'pantry', 'cupboard'], ['door', 'medcab', 'locker'], ['drawer', 'dresser', 'drawer'], ['drawer', 'counter', 'till'], ['drawer', 'toolcab', 'drawerm'], ['lid', 'chest', 'lid'], ['fridge', 'fridge', 'fridge']];
+    let n = 0;
+    for (const [kind, group, sample] of table) for (const dir of ['open', 'close']) {
+      const r = await take(emit(`container:${dir}`, { kind, group })); n++;
+      assert.equal(r.rec.length, 1, `${kind} ${group} ${dir}: ${JSON.stringify(r.rec)}`);
+      const p = r.rec[0];
+      assert.match(p.k, new RegExp(`^furn:${sample}:${dir}:[01]$`), `${kind} ${group} ${dir} plays ${p.k}`);
+      assert.equal(p.bus, 'sfxBus'); assert.equal(p.ok, true, `${p.k} did not start`); assert.ok(Math.abs(p.d - 2.06) < 0.1, `placed ${p.d?.toFixed(2)} m from the listener, the piece is 2.06 m away`);
+      assert.ok(p.lp > 10000, `an open room: lowpass ${p.lp}`); assert.equal(r.furn, 1); assert.deepEqual(r.errors, []);
+    }
+    assert.equal(n, 16);
+  });
+
+  await t.test('containers: a wall in the way dulls it, beyond 40 m it is not played at all, a bad event does nothing and breaks nothing', async () => {
+    await calm();
+    const blocked = await take(`__ladera.ctx.audio.engine._blockedBetween = () => true; ${emit('container:open', { kind: 'door', group: 'wardrobe' }, 4)}`);
+    await A('__ladera.ctx.audio.engine._blockedBetween = () => false');
+    assert.equal(blocked.rec.length, 1); assert.ok(blocked.rec[0].lp <= 800, `behind a wall: lowpass ${blocked.rec[0].lp}`);
+    const clear = await take(emit('container:open', { kind: 'door', group: 'wardrobe' }, 4)); assert.ok(clear.rec[0].lp > 10000, 'in the same room: ' + clear.rec[0].lp);
+    const near = await take(emit('container:open', { kind: 'drawer', group: 'dresser' }, 36)); assert.equal(near.rec.length, 1, '36 m away is still in earshot'); assert.equal(near.furn, 1);
+    const far = await take(emit('container:open', { kind: 'drawer', group: 'dresser' }, 45)); assert.deepEqual(far.rec, [], '45 m away'); assert.equal(far.furn, 0, 'and not even counted');
+    const bad = await take(`const ev = __ladera.ctx.events; ev.emit('container:open', null); ev.emit('container:close', undefined); ev.emit('container:open', {}); ev.emit('container:open', { x: 'a', y: 1, z: 2 });
+      ev.emit('container:close', { x: NaN, y: 0, z: 0 }); ev.emit('container:open', { x: 1, y: 1 }); ev.emit('container:close', { x: 1, y: 1, z: Infinity })`);
+    assert.deepEqual(bad.rec, []); assert.equal(bad.furn, 0); assert.deepEqual(bad.errors, []);
+    const odd = await take(emit('container:open', { kind: 'nonsense', group: 'nonsense' })); assert.equal(odd.rec.length, 1, 'an unknown piece still makes a sound'); assert.match(odd.rec[0].k, /^furn:(cupboard|drawer|locker|wardrobe|lid|fridge|till|drawerm):open:[01]$/);
+    clean('after furniture events');
+  });
+
+  await t.test('reader: opening it unfolds a sheet, a page turn swishes, closing is quiet, the journal keeps the menu swish', async () => {
+    await calm();
+    const doc = `{ id: 'test:doc', kind: 'letter', title: 'Carta', who: 'Ana', pages: [{ es: 'Uno' }, { es: 'Dos' }, { es: 'Tres' }] }`;
+    const open = await take(`__ladera.ctx.reader.open(${doc})`);
+    assert.equal(await A('__ladera.ctx.reader.state().open'), true);
+    assert.equal(open.rec.length, 1, JSON.stringify(open.rec)); assert.match(open.rec[0].k, /^sheet:[01]$/); assert.equal(open.rec[0].bus, 'uiBus'); assert.equal(open.rec[0].ok, true); assert.equal(open.sheets, 1);
+    const turn = await take('__ladera.ctx.reader.next()'); assert.equal(turn.rec.length, 1, JSON.stringify(turn.rec)); assert.match(turn.rec[0].k, /^paper:[01]$/); assert.equal(turn.rec[0].ok, true);
+    const back = await take('__ladera.ctx.reader.prev()'); assert.equal(back.rec.length, 1); assert.match(back.rec[0].k, /^paper:[01]$/, 'a page back swishes too');
+    const edge = await take('__ladera.ctx.reader.prev()'); assert.deepEqual(edge.rec, [], 'the first page has no page before it: nothing turns, nothing sounds');
+    const shut = await take('__ladera.ctx.reader.close()'); assert.equal(await A('__ladera.ctx.mode'), 'play'); assert.deepEqual(shut.rec, [], 'closing back into the game is quiet');
+    const jr = await take('__ladera.ctx.flow.openPanel("journal")'); assert.equal(jr.rec.length, 1, JSON.stringify(jr.rec)); assert.match(jr.rec[0].k, /^paper:[01]$/, 'the journal is a menu: the small swish');
+    const again = await take(`__ladera.ctx.reader.open(${doc}, { back: 'journal' })`); assert.equal(again.rec.length, 1, JSON.stringify(again.rec)); assert.match(again.rec[0].k, /^sheet:[01]$/, 'a paper opened from the journal unfolds a sheet');
+    await A('__ladera.ctx.reader.close(); if (__ladera.ctx.flow.current) __ladera.ctx.flow.closePanel(); if (__ladera.ctx.mode !== "play") __ladera.ctx.flow.resume?.()');
+    assert.equal(await A('__ladera.ctx.mode'), 'play'); assert.deepEqual((await take('0')).errors, []);
+    clean('after the reader');
+  });
+
+  await t.test('finds: each collection has its ting, the rare ones add the discovery chime a moment later, the toast asks for it, a bad call is safe', async () => {
+    await calm();
+    const mark = (id, o) => take(`__ladera.ctx.discover.mark(Object.assign({ id: ${JSON.stringify(id)}, kind: 'hallazgo', name: 'Cosa', en: 'Thing' }, ${JSON.stringify(o)}))`);
+    for (const col of ['coins', 'watches', 'jewels', 'oddities']) {
+      const r = await mark(`test:find:${col}`, { collection: col, rarity: 1 });
+      assert.equal(r.finds, 1, `${col}: counted`); assert.deepEqual(r.rec.map((x) => x.k), [`find:${col}`], `${col}: ${JSON.stringify(r.rec)}`); assert.equal(r.rec[0].bus, 'uiBus'); assert.equal(r.rec[0].ok, true, `${col}: the ting did not start (${r.shots} voices in flight, ${r.dropped} dropped) ${JSON.stringify(r.rec)}`);
+    }
+    const rare = await mark('test:find:rare', { collection: 'watches', rarity: 3 });
+    assert.deepEqual(rare.rec.map((x) => x.k), ['find:watches', 'chime'], JSON.stringify(rare.rec)); assert.ok(rare.rec[1].when > 0.1 && rare.rec[1].when < 0.4, 'the chime follows the ting: ' + rare.rec[1].when);
+    const direct = await take(`const a = __ladera.ctx.audio; a.find({ collection: 'jewels', rarity: 2 }); a.find({ collection: 'nonsense' }); a.find(); a.find(null); a.sheet()`);
+    assert.deepEqual(direct.rec.map((x) => x.k).filter((k) => !/^sheet/.test(k)), ['find:jewels', 'find:coins', 'find:coins', 'find:coins'], JSON.stringify(direct.rec)); assert.equal(direct.finds, 4); assert.equal(direct.sheets, 1); assert.deepEqual(direct.errors, []);
+    clean('after the finds');
+  });
+
+  await t.test('samples: the furniture, sheet and find sounds are on the list rendered ahead of time (so the first drawer is not silent)', async () => {
+    const w = await A(`(() => { const e = __ladera.ctx.audio.engine, was = e.o.full; e.o.full = true; try { return e._wanted(); } finally { e.o.full = was; } })()`);
+    const missing = NEED.filter((k) => !w.includes(k)); assert.deepEqual(missing, [], 'rendered ahead of the first use');
+    assert.deepEqual(await A('__ladera.ctx.audio.state().samples.errors'), []); assert.deepEqual(await A('__ladera.ctx.audio.state().errors'), []);
   });
 });
 

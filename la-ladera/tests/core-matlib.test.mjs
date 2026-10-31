@@ -89,6 +89,17 @@ test('whenReady() waits for every requested image and resolves when a download f
   } finally { console.warn = warn; }
 });
 
+test('materials that tile one image the same way share one texture object; another tile size makes another', () => {
+  const l = lib(), a = l.get('plaster_a'), tinted = l.get('plaster_a#d9a441');
+  assert.equal(tinted.map, a.map, 'a tint of a textured material reuses the tiled map (one GPU texture, not one per material)');
+  assert.equal(tinted.normalMap, a.normalMap);
+  const base = l.tex.get('plaster_a.jpg:s'), v1 = l._variant(base, 0.37, false), v2 = l._variant(base, 0.37, false), v3 = l._variant(base, 0.5, false), c1 = l._variant(base, 0.37, true);
+  assert.equal(v1, v2, 'same image, same repeat: the same object');
+  assert.notEqual(v1, v3, 'another repeat: another object');
+  assert.notEqual(v1, c1, 'clamped (a decal) and repeating are different textures');
+  assert.equal(l.variants.get(base).length, new Set(l.variants.get(base)).size, 'no variant is registered twice');
+});
+
 test('an untextured material and a tint of a textured one never touch the loader twice', () => {
   const l = lib(); l.get('plaster_a'); const n = l.loader.waiting.length;
   l.get('plaster_a#d9a441'); l.get('plaster_a');

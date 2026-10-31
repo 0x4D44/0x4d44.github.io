@@ -49,6 +49,7 @@ Scores need **evidence** (screenshot paths, coordinates, repro commands, measure
 | C8 | More than 20 % of non-circulation rooms contain fewer than 3 furniture/decor items | Cat 3 <= 6 |
 | C9 | Visible T-pose, sliding feet, or NPC clipping through walls in > 10 % of sampled NPC observations | Cat 4 <= 6 |
 | C10 | Fewer than 40 enterable buildings, or fewer than 60 NPCs, or fewer than 24 discoveries | the relevant category (1, 4, 9) <= 7 |
+| C11 | (added at the user's request, `dev/FEATURE-DRAWERS.md`) A visitor cannot, within 5 minutes of play and with the real mouse and E key, open a wardrobe or drawer, read a diary or letter in the reader, and pick up one special find (gold coin, watch, frilly knickers, ...); or the diaries do not show the residents' lives (loves, hopes, dreams, problems) in correct Spanish | cat 3 <= 7, cat 9 <= 7 (cat 5 <= 7 if the Spanish is wrong) |
 
 ## 4. Reviewer protocol (adversarial)
 

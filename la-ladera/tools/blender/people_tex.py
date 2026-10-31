@@ -250,25 +250,32 @@ def paint_face2(pd, SKIN, HAIR, seed):
     eye_v = 0.50
     for sg in (-1, 1):
         cx = U(0.5 + sg * 0.194); cy = V(eye_v)
+        # R3-007 LID_UP: the modelled upper lid edge moved up from 0.16 to 0.35 of the eyeball radius (people_build.py), i.e. 0.012 of the head height; the upper lash line and the crease move with it
+        cyu = V(eye_v + 0.012)
         # lid crease + upper lid shadow + lash line + lower lid line
-        d.arc((cx - 0.085 * S, cy - 0.056 * S, cx + 0.085 * S, cy - 0.004 * S), 200, 340, fill=tuple(int(c * 0.62) for c in base) + (170,), width=4)
-        d.arc((cx - 0.070 * S, cy - 0.011 * S, cx + 0.070 * S, cy + 0.011 * S), 190, 350, fill=(24, 18, 16, 235), width=int(S * (0.011 if fem else 0.0075)))
+        d.arc((cx - 0.085 * S, cyu - 0.056 * S, cx + 0.085 * S, cyu - 0.004 * S), 200, 340, fill=tuple(int(c * 0.62) for c in base) + (170,), width=4)
+        d.arc((cx - 0.070 * S, cyu - 0.011 * S, cx + 0.070 * S, cyu + 0.011 * S), 190, 350, fill=(24, 18, 16, 235), width=int(S * (0.011 if fem else 0.0075)))
         d.arc((cx - 0.066 * S, cy - 0.026 * S, cx + 0.066 * S, cy + 0.026 * S), 15, 165, fill=tuple(int(c * 0.72) for c in base) + (150,), width=3)
         if fem or pd['kind'] in ('girl',):       # lashes
             for t in np.linspace(200, 340, 12):
                 a = math.radians(t); r0x, r0y = 0.070 * S, 0.011 * S
-                x0, y0 = cx + r0x * math.cos(a), cy + r0y * math.sin(a)
+                x0, y0 = cx + r0x * math.cos(a), cyu + r0y * math.sin(a)
                 d.line((x0, y0, x0 + 10 * math.cos(a) * (0.7 if sg > 0 else 0.7) + sg * 2, y0 + 10 * math.sin(a)), fill=(24, 18, 16, 220), width=2)
-        # brows: tapered strokes of individual hairs
+        # brows: a soft tapered mass (thick at the inner end, thin at the tail) with strokes of individual hairs over it.
+        # R3-007: they were 110 strokes 2 px wide, which blurred away at 1 m: a face with no brows (and the fringe hid them anyway, see people_build.py FRINGE).
         rng = np.random.default_rng(seed + 7 + sg)
-        bw = 0.16 * S * (0.9 if fem else 1.08); by = V(eye_v + (0.135 if not fem else 0.145))
-        thick = 0.022 * S * (0.7 if fem else 1.0)
-        for _ in range(110):
-            t = rng.uniform(0, 1); x = cx - bw / 2 + t * bw
-            arch = -math.sin(t * math.pi) * 0.012 * S + (0.016 * S * (t - 0.5) * (-sg) * 0)
-            y = by + arch + rng.normal(0, thick * 0.35) * (1 - 0.4 * t if sg > 0 else 0.6 + 0.4 * t)
-            l = rng.uniform(5, 11); ang = -0.35 + 0.5 * (t if sg > 0 else 1 - t) + rng.normal(0, 0.1)
-            d.line((x, y, x + l * math.cos(ang) * sg * -1 * -1, y + l * math.sin(ang) * -1 * 0.3), fill=hair + (190,), width=2)
+        bw = 0.16 * S * (0.9 if fem else 1.08); by = V(eye_v + (0.115 if not fem else 0.125))
+        thick = 0.030 * S * (0.72 if fem else 1.0)
+        prof = lambda t: thick * (1.0 - 0.62 * t ** 1.4) * (0.6 + 0.4 * min(1.0, t * 6))
+        cen = lambda t: (cx - sg * bw / 2 + sg * t * bw, by - math.sin(0.12 + t * 0.78 * math.pi) * 0.016 * S + 0.010 * S * t)
+        ts = np.linspace(0, 1, 14)
+        top_ = [(cen(t)[0], cen(t)[1] - prof(t) / 2) for t in ts]; bot_ = [(cen(t)[0], cen(t)[1] + prof(t) / 2) for t in ts]
+        d.polygon(top_ + bot_[::-1], fill=hair + (105,))
+        for _ in range(170):
+            t = rng.uniform(0, 1); x, y = cen(t)
+            y += rng.normal(0, prof(t) * 0.22)
+            l = rng.uniform(8, 16); ang = -0.30 + 0.45 * t + rng.normal(0, 0.12)
+            d.line((x, y, x + l * math.cos(ang) * sg, y + l * math.sin(ang) * 0.35), fill=hair + (225,), width=3)
     # nose: alar creases + nostrils + tip shading
     nx, ny = U(0.5), V(0.318)
     for sg in (-1, 1):

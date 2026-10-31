@@ -61,6 +61,12 @@ export function buildNav(plan, plazaById) {
     for (let k = 0; k <= n; k++) { const s = (L * k) / n; if (!A.some((a) => Math.abs(a - s) < 0.9 && k !== 0 && k !== n)) list.push(s); }
     for (const a of A) list.push(clamp(a, 0, L));
     list.sort((a, b) => a - b);
+    // a regular node dropped beside an anchor on each side of a run (door, junction) can leave a gap longer than a walker's graph wants: split any gap past the limit
+    const lim = st.kind === 'stair' ? 2.4 : 5.2;
+    for (let k = list.length - 1; k > 0; k--) {
+      const gap = list[k] - list[k - 1], parts = Math.ceil(gap / lim);
+      for (let q = parts - 1; q >= 1; q--) list.splice(k, 0, list[k - 1] + (gap * q) / parts);
+    }
     const chain = []; let prev = null;
     for (const s of list) {
       const p = pointAt(st._d.pts, st._d.cum, s);

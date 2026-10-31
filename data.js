@@ -2056,7 +2056,7 @@ window.ESSAYS = [
   {
     slug: "la-ladera",
     title: "La Ladera",
-    tagline: "A hillside barrio you can walk into: steep stairways, stacked houses, shops, courtyards and rooftop terraces on 200 m of Andean slope. Every door opens onto a furnished home, and the neighbours answer in Spanish. First person, WASD and mouse. Three.js, Blender models, Codex-made textures, browser speech.",
+    tagline: "A hillside barrio you can walk into: steep stairways, stacked houses, shops and rooftop terraces on 200 m of Andean slope. Every door opens onto a furnished home with drawers full of diaries and small treasures, and the neighbours answer in Spanish. First person; Three.js, Blender, Codex textures, browser speech.",
     url: "https://0x4d44.github.io/la-ladera/",
     illustration: "ill-ladera",
     date: "2026-10-29T18:00:00",

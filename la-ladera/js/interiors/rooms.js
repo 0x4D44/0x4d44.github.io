@@ -2,41 +2,46 @@
 // Real-world logic: bed head to the wall with access on a side, sofa facing the TV, counter run on the longest free wall,
 // stove beside a gas cylinder, toilet/shower/basin with front clearance, chairs tucked around tables, decor hung clear of doors/windows.
 import { CATALOG } from './catalog.js';
+import { KNEEHOLE } from './carcass.js';
 import { opposite, wallInfo, wallPoint, WALLS } from './layout.js';
 import { decalDef } from './decals.js';
+import { art, clock, mirror, notice } from './decor.js';
 
 const PI = Math.PI;
 /** Hang a decal by id. */
 export const D = (L, id, walls, o = {}) => L.hang('decal:' + id, walls ?? 'any', { def: decalDef(id), ...o });
 
 // ---------------------------------------------------------------- wall galleries and household clutter (density)
-const POOLS = {
-  art: ['picture_landscape', 'picture_coast', 'picture_flowers'],
-  family: ['photo_family_a', 'photo_family_b', 'photo_wedding', 'photo_collage', 'photo_grad'],
-  faith: ['picture_virgin', 'picture_heart', 'picture_saint', 'blessing'],
-  cal: ['calendar_pharma', 'calendar_church', 'calendar_tienda'],
-  kids: ['kids_drawing_a', 'kids_drawing_b'],
-  sport: ['poster_football_a', 'poster_football_b', 'poster_football_c'],
-};
-/** What a room's walls may carry, as a shuffled list: plain names are decals, '@name' are catalogue wall items (clock, mirror, shelf). */
+/** What a room's walls may carry, in the order they are tried: '#pool' is one decal of a decor.js pool that no wall of the building shows yet, '@name' a catalogue wall item (the clock and the
+ *  mirror are rationed over the barrio, decor.js), anything else a decal by id. */
 function gallerySeq(L, hh, type) {
   const rng = L.rng, s = [];
-  const add = (list, n = 1) => { const a = rng.shuffle([...list]); for (let i = 0; i < n && i < a.length; i++) s.push(a[i]); };
+  const add = (pool, n = 1) => { for (let i = 0; i < n; i++) s.push('#' + pool); };
+  const faith = (n = 1) => { for (let i = 0; i < n; i++) s.push(rng.chance(0.65) ? '#faithPic' : '#blessing'); };
   switch (type) {
     case 'bedroom':
-      add(POOLS.art); add(POOLS.family, 2); if (hh.religious > 0.35) add(POOLS.faith); if (hh.kids) add(POOLS.kids, 2); if (hh.teen || hh.kind === 'students') add(POOLS.sport);
-      s.push('@mirror_wall', '@clock_wall'); add(POOLS.cal); break;
+      add('art'); add('family', 2); if (hh.religious > 0.35) faith(); if (hh.kids) add('kids', 2); if (hh.teen || hh.kind === 'students') add('sport');
+      s.push('@mirror_wall', '@clock_wall'); add('cal'); break;
     case 'kitchen':
-      add(POOLS.cal, 2); s.push('chores', '@clock_wall', '@shelf_wall'); if (hh.religious > 0.4) add(POOLS.faith); break;
+      add('cal', 2); s.push('chores', '@clock_wall', '@shelf_wall'); if (hh.religious > 0.4) faith(); break;
     case 'dining':
-      add(POOLS.art, 2); add(POOLS.family); if (hh.religious > 0.3) add(POOLS.faith); add(POOLS.cal); s.push('@clock_wall', '@mirror_wall'); break;
+      add('art', 2); add('family'); if (hh.religious > 0.3) faith(); add('cal'); s.push('@clock_wall', '@mirror_wall'); break;
     case 'office':
-      s.push('diploma', '@clock_wall'); add(POOLS.cal, 2); add(POOLS.art); break;
+      s.push('diploma', '@clock_wall'); add('cal', 2); add('art'); break;
     default:                                                                        // living, entry, hall, corridor
-      add(POOLS.art, 2); add(POOLS.family, 2); if (hh.religious > 0.3) add(POOLS.faith, 2); add(POOLS.cal); s.push('@clock_wall', '@mirror_wall');
-      if (hh.hobby === 'football') add(POOLS.sport); if (hh.kids) add(POOLS.kids); s.push('@shelf_wall');
+      add('art', 2); add('family', 2); if (hh.religious > 0.3) faith(2); add('cal'); s.push('@clock_wall', '@mirror_wall');
+      if (hh.hobby === 'football') add('sport'); if (hh.kids) add('kids'); s.push('@shelf_wall');
   }
   return s;
+}
+/** One entry of a gallery sequence on wall `w` (null when it does not fit or is not allowed here). */
+function hangEntry(L, E, name, w, o) {
+  if (name[0] === '#') return art(L, E, name.slice(1), w, o);
+  if (name === '@clock_wall') return clock(L, E, w, o);
+  if (name === '@mirror_wall') return mirror(L, E, w, o);
+  if (name === 'chores') return art(L, E, ['chores'], w, { ...o, cap: 0.25 });
+  if (name === 'diploma') return art(L, E, ['diploma'], w, { ...o, cap: 0.5 });
+  return name[0] === '@' ? L.hang(name.slice(1), w, o) : D(L, name, w, o);
 }
 /**
  * A wall with nothing on it reads as bare paint. Give every wall with a usable stretch (>= 1 m between doors and windows) a share of pictures,
@@ -56,7 +61,7 @@ export function dressWalls(L, E, hh, o = {}) {
     const fr = rng.shuffle([0.5, 0.2, 0.8, 0.35, 0.65]);
     for (let k = have, tries = 0; k < target && tries < 8; tries++) {
       const name = seq[ix++ % seq.length], at = fr[k % fr.length];
-      const it = name[0] === '@' ? L.hang(name.slice(1), w, { at, jitter: 0.15 }) : D(L, name, w, { at, jitter: 0.15 });
+      const it = hangEntry(L, E, name, w, { at, jitter: 0.15 });
       if (it) { k++; placed++; }
     }
   }
@@ -78,6 +83,212 @@ export function clutter(L, E, hh, o = {}) {
 const any = (...fns) => { for (const f of fns) { const r = f(); if (r) return r; } return null; };
 const floorArea = (L) => L.W * L.D;
 const nm = (arr, rng) => arr[Math.floor(rng.next() * arr.length)];
+
+// ---------------------------------------------------------------- the fixtures a room is defined by
+/** Placement rungs for what a room cannot be without (the toilet of a bathroom, the sink of a kitchen, the bed of a bedroom): the strict layout first, then
+ *  the window zones, the clearance in front of things, the walking-lane test and the margin of the door sweep give way, one at a time. A2's plans have 1.6 x 1.7 m
+ *  bathrooms and 1.9 x 2.1 m kitchens with a door that sweeps a metre into the room: the strict rules leave no wall for a shower or a sink there. */
+const RUNGS = [
+  {},
+  { winOk: true },
+  { winOk: true, noClear: true },
+  { winOk: true, noClear: true, noConn: true },
+  { winOk: true, noClear: true, noConn: true, keepLateral: 0.05 },      // the door's own width always stays clear (data test: 0.7 m in front of every door)
+];
+const HOLD = new Set(['stove', 'bed', 'cot', 'bunk', 'mattress', 'mattress_up']);   // the space in front of a stove and beside a bed is what makes them usable: it never gives way
+export function placeEssential(L, names, o = {}) {
+  const { walls = 'any', alongToo = false, maxRung = RUNGS.length, ...opts } = o;
+  for (const along of alongToo ? [false, true] : [false]) for (const [k, r] of RUNGS.entries()) {
+    if (k >= maxRung) break;                                                                                  // rungs 0..maxRung-1 only: the ones that cut a room's lanes are dear
+    if (k === 2 && !along)for (const b of L.items) if (b.floor && b.zones?.length && !HOLD.has(b.c.arch)) b.zones = [];        // the clearance in front of what is already there gives way too
+    for (const name of names) {
+      const it = L.wall(name, walls, { prio: 0, ...opts, ...r, along });
+      if (it) { if (r.noClear) it.zones = []; return it; }
+    }
+  }
+  return null;
+}
+/** placeEssential, and when even the last rung fails, the household's clutter (prio >= 2: a bucket, a drying rack, a stool, the bin in the corner of a 3 m2 bathroom)
+ *  makes room one piece at a time. Standing things that nobody collides with (`block: false`: a bin, a pair of shoes) are clutter too: they still take the floor
+ *  the next piece needs, and `valid()` refuses an overlap with them. Rugs and mats (under 5 cm) never get in the way. */
+export function placeEvicting(L, names, o = {}) {
+  let it = placeEssential(L, names, o);
+  for (let k = 0; !it && k < 8; k++) {
+    const victim = L.items.filter((i) => i.floor && i.prio >= 2 && (i.block || i.c.size[1] >= 0.05)).sort((a, b) => (b.prio - a.prio) || (b.w * b.d - a.w * a.d))[0];
+    if (!victim) break;
+    L.remove(victim);
+    it = placeEssential(L, names, o);
+  }
+  return it;
+}
+
+// ---------------------------------------------------------------- the fixture solver
+/** One fixture a room is defined by: the catalogue names that will do (best first) and the wall() options to place it with. */
+export const slot = (names, o = {}) => ({ names, o });
+/** Relaxations for the solver, gentlest first. `sweep`: the door keep-outs shrink to the leaf's real sweep (Layout.sweepKeeps) and, with `keepLateral`, to the door's own
+ *  width: a cupboard may stand against the jamb, nothing stands in the opening or under the leaf. */
+const SOLVE_RUNGS = [
+  { o: {} },
+  { o: { winOk: true } },
+  { o: { winOk: true, keepLateral: 0.05 }, sweep: true },
+  { o: { winOk: true, keepLateral: 0.05, noClear: true }, sweep: true },
+  { o: { winOk: true, keepLateral: 0.05, noClear: true, noConn: true }, sweep: true },
+];
+const permutations = (a) => (a.length <= 1 ? [a] : a.flatMap((x, i) => permutations([...a.slice(0, i), ...a.slice(i + 1)]).map((p) => [x, ...p])));
+/**
+ * Place every slot at once, depth first over the wall poses of each. A greedy order (the shower in the corner, then the toilet in the best spot, then whatever wall is left
+ * for the basin) leaves the last piece nothing in a 2.0 x 1.4 m bathroom whose door takes most of one wall; a search finds the arrangement that holds all of them. The gentlest
+ * rung that works wins; `o.maxRung` stops short of the rungs that cut a room's lanes (a kitchen or a bedroom with two doors). The room should hold nothing else (call
+ * L.clear() first). Returns the placed items in slot order, or null with the room as it was. `o.budget` caps the poses tried per rung, `o.fan` the poses tried per piece
+ * (the tests turn both down to see which rooms need the search).
+ */
+export function solveFixtures(L, slots, o = {}) {
+  const top = Math.min(o.maxRung ?? SOLVE_RUNGS.length - 1, SOLVE_RUNGS.length - 1), maxNodes = o.budget ?? 120, fan = o.fan ?? 6;
+  const keeps = L.keep, size = (s) => Math.max(...s.names.map((n) => CATALOG[n].size[0] * CATALOG[n].size[2]));
+  const biggestFirst = slots.slice().sort((a, b) => size(b) - size(a));
+  try {
+    for (let k = 0; k <= top; k++) {
+      const rung = SOLVE_RUNGS[k];
+      L.keep = keeps;
+      if (rung.sweep) L.sweepKeeps();
+      let nodes = 0, start = L.checks ?? 0;
+      const spent = () => nodes > maxNodes || (L.checks ?? 0) - start > 40 * maxNodes;      // poses committed, and poses merely tried (a rejected pose is cheap: 40 per node)
+      const dfs = (order, i) => {
+        if (i === order.length) return [];
+        const { names, o: so } = order[i];
+        for (const name of names) for (const along of so.alongToo ? [false, true] : [false]) {
+          let n = 0;
+          for (const it of L.wallPoses(name, 'any', { prio: 0, ...so, ...rung.o, along })) {
+            nodes++;
+            L._commit(it, {}); if (rung.o.noClear) it.zones = [];
+            const rest = dfs(order, i + 1);
+            if (rest) return [it, ...rest];
+            L.remove(it);
+            if (++n >= fan || spent()) break;
+          }
+          if (spent()) return null;
+        }
+        return null;
+      };
+      for (const order of permutations(biggestFirst)) {
+        const got = dfs(order, 0);
+        if (got) return slots.map((s) => got[order.indexOf(s)]);
+        nodes = 0; start = L.checks ?? 0;                  // each order gets its own budget; the rungs that cut lanes try the biggest piece first only
+        if (k >= 4) break;
+      }
+    }
+    return null;
+  } finally { L.keep = keeps; }
+}
+const hasItem = (L, re) => L.items.some((i) => re.test(i.name));
+export const REAL_BED = /^bed_(single|single_metal|double|double_wood|bunk|cot)$/;
+export const SHOWER = /^shower_(tray|small)$/;
+const BASIN = /^basin_/;
+const SINK = /^sink_|^lavadero$/;
+const bathFixtures = (L) => hasItem(L, SHOWER) && hasItem(L, /^toilet$/) && hasItem(L, BASIN);
+/** The three pieces a bathroom is defined by, as solver slots (shower, toilet, basin). */
+export const bathSlots = (hh) => [slot(['shower_tray', 'shower_small'], { at: 'corner' }), slot(['toilet'], { at: 'center' }), slot(hh.income ? ['basin_vanity', 'basin_pedestal'] : ['basin_pedestal'])];
+/** The three pieces a kitchen is defined by, as solver slots (stove, sink, fridge; the small ones under 5.5 m2). */
+export const kitchenSlots = (L) => { const small = floorArea(L) < 5.5; return [slot(['stove_gas']), slot(small ? ['sink_small', 'sink_kitchen'] : ['sink_kitchen', 'sink_small']), slot(small ? ['fridge_small'] : ['fridge', 'fridge_small'])]; };
+/** A bathroom the furnisher could not complete: clear it and let the solver find the arrangement of shower, toilet and basin the plan's room really holds, then dress it. */
+function repackBathroom(L, E, hh) {
+  const snap = L.snapshot();
+  L.clear();
+  const got = solveFixtures(L, bathSlots(hh));
+  if (!got) { L.restore(snap); return false; }
+  bathroomDress(L, E, hh, got[0], got[2]);
+  return true;
+}
+/** Bathroom: a toilet, a basin and a shower (tray + the electric head on the wall), whatever the plan gave. */
+function ensureBathroom(L, E, hh) {
+  if (!bathFixtures(L) && repackBathroom(L, E, hh)) { ensureShowerHead(L); return; }
+  if (!hasItem(L, SHOWER)) placeEvicting(L, ['shower_tray', 'shower_small'], { at: 'corner' });
+  if (!hasItem(L, /^toilet$/)) placeEvicting(L, ['toilet'], {});
+  if (!hasItem(L, BASIN)) placeEvicting(L, hh.income ? ['basin_vanity', 'basin_pedestal'] : ['basin_pedestal'], {});
+  ensureShowerHead(L);
+}
+/** The electric head on the wall by the tray: beside it on the tray's wall; else up over the tray itself (a corner whose two walls the windows and the door take, or a tray flush to a wall
+ *  too short to pass it); else on any wall, then lower. */
+function ensureShowerHead(L) {
+  const sh = L.items.find((i) => SHOWER.test(i.name));
+  if (!sh || hasItem(L, /^shower_head_electric$/)) return;
+  const o = { near: [sh.x, sh.z], nearW: 8, y: 1.9, w: 0.2, h: 0.25 };
+  any(() => L.hang('shower_head_electric', sh.wallSide, o), () => L.hang('shower_head_electric', sh.wallSide, { ...o, inside: sh }),
+    () => L.hang('shower_head_electric', 'any', o), () => L.hang('shower_head_electric', 'any', { ...o, y: 1.75 }));
+}
+/** A kitchen without its stove or sink: clear it, let the solver put both on the walls the plan's room has (the run of counters is dressed around them afterwards). */
+function repackKitchen(L, E, hh) {
+  const snap = L.snapshot(), needBoth = !hasItem(L, /^stove_/) || !hasItem(L, SINK), slots = kitchenSlots(L);
+  L.clear();
+  let got = solveFixtures(L, slots, { maxRung: 3 });
+  if (!got && needBoth) got = solveFixtures(L, slots.slice(0, 2), { maxRung: 3 });
+  if (!got) { L.restore(snap); return false; }
+  const f = got[2]; if (f) f.flags = { magnets: true };
+  kitchenDress(L, E, hh, [got[0]]);
+  return true;
+}
+/** Kitchen: a stove, a sink and a fridge. */
+function ensureKitchen(L, E, hh) {
+  const small = floorArea(L) < 5.5;
+  if (!hasItem(L, /^stove_/) || !hasItem(L, SINK) || !hasItem(L, /^fridge/)) repackKitchen(L, E, hh);
+  if (!hasItem(L, /^stove_/)) placeEvicting(L, ['stove_gas'], {});
+  if (!hasItem(L, SINK)) placeEvicting(L, small ? ['sink_small', 'sink_kitchen'] : ['sink_kitchen', 'sink_small'], {});
+  if (!hasItem(L, /^fridge/)) { const f = placeEvicting(L, small ? ['fridge_small'] : ['fridge', 'fridge_small'], {}); if (f) f.flags = { magnets: true }; }
+}
+/** A bedroom without a real bed: clear it and let the solver find one pose that leaves every door its lane, then dress the room around it. Null when none does. */
+function repackBedroom(L, E, hh) {
+  const snap = L.snapshot();
+  L.clear();
+  const got = solveFixtures(L, [slot(L.role === 'kids' ? ['bed_bunk', 'bed_single', 'bed_single_metal', 'bed_cot'] : ['bed_single', 'bed_single_metal', 'bed_cot'], { awayDoors: true, alongToo: true })], { maxRung: 3 });
+  if (!got) { L.restore(snap); return null; }
+  got[0].flags = { unmade: L.rng.chance(1 - hh.tidy) };
+  bedroomDress(L, E, hh, L.role, got[0]);
+  return got[0];
+}
+/** Bedroom: a real bed (a frame, not a mattress leaned on the wall) when the plan left room for one. */
+function ensureBedroom(L, E, hh) {
+  if (hasItem(L, REAL_BED)) return;
+  if (repackBedroom(L, E, hh)) return;
+  if (L.role === 'study') return;                                                                                    // a study keeps whatever its furnisher gave it
+  const lean = L.items.filter((i) => i.name === 'mattress_leaning' || i.name === 'mattress_floor');
+  for (const m of lean) L.remove(m);
+  const names = L.role === 'kids' ? ['bed_bunk', 'bed_single', 'bed_single_metal', 'bed_cot'] : ['bed_single', 'bed_single_metal', 'bed_cot'];
+  const b = placeEvicting(L, names, { awayDoors: true, alongToo: true });
+  if (b) { b.flags = { unmade: L.rng.chance(1 - hh.tidy) }; return; }
+  for (const m of lean) L.items.push(m);                                                                             // nothing fits: the mattress stays exactly where it was
+}
+const SLEEPS = new Set(['bed', 'cot', 'bunk', 'mattress', 'mattress_up']);
+/** After heal(): a bedroom (not a study) whose bed the healing took out, or that never had room for one, gets a mattress stood on its edge: somewhere to sleep that
+ *  a three-door cell of 4 m2 can hold. Returns the mattress (so the caller heals again without it) or null. */
+export function ensureSleep(L, E, hh) {
+  if (L.room.type !== 'bedroom' || !L.role || L.role === 'study' || L.W < 0.9 || L.D < 0.9) return null;
+  if (L.items.some((i) => i.floor && SLEEPS.has(i.c.arch))) return null;
+  const m = placeEvicting(L, ['mattress_leaning'], {});
+  if (m) m.flags = { unmade: false };
+  return m;
+}
+/** Called after a home furnisher: the defining fixtures of the room are there or the plan really has no wall for them. */
+export function ensureFixtures(L, E, hh, furnisher) {
+  if (L.W < 0.9 || L.D < 0.9) return;
+  if (furnisher === bathroom) ensureBathroom(L, E, hh);
+  else if (furnisher === kitchen) ensureKitchen(L, E, hh);
+  else if (furnisher === bedroom) ensureBedroom(L, E, hh);
+}
+/**
+ * Every home has a fridge. When no kitchen could hold one (a 1.6 m wide rowhouse kitchen with the stove and the sink along its only free wall) it stands in the dining room,
+ * the living room or the hall, as it does in a house that size. Strict placement only (the walking lanes stay, so the heal pass of the room has no reason to take it out).
+ * `built`: [{ room, L }] of the whole building, after every room is furnished. Returns the room that took it, or null.
+ */
+export function ensureHomeFridge(built) {
+  if (built.some((b) => hasItem(b.L, /^fridge/))) return null;
+  for (const type of ['kitchen', 'dining', 'living', 'hall', 'entry']) {
+    for (const b of built.filter((x) => x.room.type === type && x.L.W >= 0.9 && x.L.D >= 0.9 && !x.L.room.outdoor)) {
+      const f = placeEssential(b.L, ['fridge', 'fridge_small'], { maxRung: 2 });
+      if (f) { f.flags = { magnets: true }; return b; }
+    }
+  }
+  return null;
+}
 
 /** Chairs tucked around a table (n of them, as many as fit). */
 export function chairsAround(L, table, n, names, o = {}) {
@@ -121,13 +332,16 @@ export function ceilingFixture(L, E, hh, kind) {
     L.fixture = { x: cx, z: cz, kind: 'fan', color: 0xffe2b0, i: 6.5, d: 6.5 };
   } else if (tube) {
     L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 });
-    L.fixture = { x: cx, z: cz, kind: 'tube', color: 0xeaf2ff, i: 9, d: 7.5 };
+    L.fixture = { x: cx, z: cz, kind: 'tube', color: TUBE_WARM, i: 9, d: 7.5 };
   } else {
     L.ceil('bulb_bare', cx, cz);
     L.fixture = { x: cx, z: cz, kind: 'bulb', color: 0xffd9a0, i: 6, d: 6.5 };
   }
   moreLights(L, tube ? 'tube' : 'bulb');
 }
+/** The tint of a ceiling tube (a shop's, a clinic's, a classroom's, a living room's): a warm-white tube of about 3200 K. It was a 7400 K blue-white (0xeaf2ff) and a shop lit by it read cold from
+ *  the street at night, bluer and flatter than the warm window glow over it (R1-D19). */
+export const TUBE_WARM = 0xffba80;
 /** Big rooms (> 30 m2) get a grid of ceiling lights, one per ~4.5 m, instead of one in the middle (a dark hall with a bright patch). Extra fixtures are in L.extra. */
 export function moreLights(L, kind) {
   const area = floorArea(L); if (area <= 30 || L.room.outdoor) return;
@@ -138,19 +352,18 @@ export function moreLights(L, kind) {
     if (Math.hypot(x - cx, z - cz) < 1.4 || L.extra.length >= 8) continue;
     if (L.items.some((c) => c.ceil && Math.hypot(c.x - x, c.z - z) < 1.0)) continue;        // not on top of a fan or another fixture
     if (!L.ceil(tube ? 'light_tube' : 'bulb_bare', x, z, { ry: L.W > L.D ? 0 : PI / 2 })) continue;
-    L.extra.push({ x, z, kind: tube ? 'tube' : 'bulb', color: tube ? 0xeaf2ff : 0xffd9a0, i: tube ? 8 : 5.5, d: 6.5 });
+    L.extra.push({ x, z, kind: tube ? 'tube' : 'bulb', color: tube ? TUBE_WARM : 0xffd9a0, i: tube ? 8 : 5.5, d: 6.5 });
   }
 }
 
 // ---------------------------------------------------------------- decoration helpers
-function frames(L, E, hh, n, ids) {
+function frames(L, E, hh, n, pool) {
   let k = 0;
-  for (const id of ids) { if (k >= n) break; if (D(L, id, 'any')) k++; }
+  for (let i = 0; i < n + 2 && k < n; i++) if (art(L, E, pool, 'any')) k++;
   return k;
 }
 function religiousWall(L, E, hh, over) {
-  const pic = L.rng.chance(0.5) ? 'picture_virgin' : 'picture_heart';
-  const p = D(L, pic, over ? over.wallSide : 'any', over ? { over, y: Math.max(1.5, over.h + 0.1) } : {});
+  const p = art(L, E, 'faithPic', over ? over.wallSide : 'any', over ? { over, y: Math.max(1.5, over.h + 0.1) } : {});
   if (!p) return null;
   if (L.rng.chance(0.55)) L.hang('crucifix_wall', p.wallSide, { near: [p.x, p.z], nearW: 4, y: 1.9 });
   return p;
@@ -159,13 +372,13 @@ function religiousWall(L, E, hh, over) {
 export function fillMin(L, E, hh, min = 4) {
   const rng = L.rng, deco = () => L.items.filter((i) => !i.ceil || i.name === 'fan_ceiling' || i.name === 'plant_hanging').length;
   const tries = [
-    () => D(L, nm(['picture_landscape', 'picture_flowers', 'picture_coast'], rng), 'any'),
-    () => L.hang('clock_wall', 'any', {}),
-    () => D(L, nm(['photo_family_a', 'photo_family_b'], rng), 'any'),
-    () => D(L, nm(['calendar_pharma', 'calendar_church', 'calendar_tienda'], rng), 'any'),
+    () => art(L, E, 'art', 'any'),
+    () => clock(L, E, 'any', {}),
+    () => art(L, E, 'family', 'any'),
+    () => art(L, E, 'cal', 'any'),
     () => L.wall('plant_pot_clay', 'any', { at: 'corner', prio: 2 }),
     () => L.wall('box_cardboard_m', 'any', { at: 'corner', prio: 2 }),
-    () => L.hang('mirror_wall', 'any', {}),
+    () => mirror(L, E, 'any', {}),
     () => L.wall('plant_bucket', 'any', { at: 'corner', prio: 2 }),
     () => L.free('shoes_pair', { rad: 3, prio: 2 }),
     () => L.hang('shelf_wall', 'any', {}),
@@ -234,14 +447,14 @@ export function living(L, E, hh) {
   if (hh.hobby === 'music') L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 });
   if (hh.kids) L.free('toy_pile', { rad: 3, near: coffee ?? undefined, prio: 2 });
   // wall decor
-  frames(L, E, hh, 2, ['photo_family_a', 'photo_family_b', 'photo_wedding']);
-  D(L, rng.pick(['picture_landscape', 'picture_flowers', 'picture_coast']), 'any');
-  L.hang('clock_wall', 'any', {});
+  frames(L, E, hh, 2, 'family');
+  art(L, E, 'art', 'any');
+  clock(L, E, 'any', {});
   if (!altar && hh.religious > 0.3) religiousWall(L, E, hh, null);
-  D(L, rng.pick(['calendar_pharma', 'calendar_church', 'calendar_tienda']), 'any');
-  if (hh.hobby === 'football' && rng.chance(0.7)) D(L, rng.pick(['poster_football_a', 'poster_football_b', 'poster_football_c']), 'any');
-  if (rng.chance(0.4)) D(L, 'blessing', 'any');
-  if (rng.chance(0.4)) L.hang('mirror_wall', 'any', {});
+  art(L, E, 'cal', 'any');
+  if (hh.hobby === 'football' && rng.chance(0.7)) art(L, E, 'sport', 'any');
+  if (rng.chance(0.4)) art(L, E, 'blessing', 'any');
+  if (rng.chance(0.5)) mirror(L, E, 'any', {});
   ceilingFixture(L, E, hh, 'bulb');
   if (area > 17) diningSet(L, E, hh, true);
   E.living = { sofa, tv, stand, altar, coffee };
@@ -270,10 +483,10 @@ export function dining(L, E, hh) {
   any(() => L.wall(rng.chance(0.5) ? 'display_cabinet' : 'dresser_low', 'any', { prio: 1, awayDoors: true }));
   const side = L.find('dresser_low') ?? L.find('display_cabinet');
   if (side && side.c.size[1] < 1.2) { L.top(side, 'knickknacks', { at: 'center' }); L.top(side, 'photo_frames', { at: 'left' }); }
-  D(L, rng.pick(['picture_landscape', 'picture_flowers', 'picture_coast']), 'any');
-  L.hang('clock_wall', 'any', {});
-  D(L, rng.pick(['calendar_pharma', 'calendar_church']), 'any');
-  if (hh.religious > 0.4) D(L, 'blessing', 'any');
+  art(L, E, 'art', 'any');
+  clock(L, E, 'any', {});
+  art(L, E, 'cal', 'any');
+  if (hh.religious > 0.4) art(L, E, 'blessing', 'any');
   any(() => L.wall('plant_pot_clay', 'any', { at: 'corner', prio: 2 }));
   if (L.W * L.D > 9) any(() => L.wall('fridge_small', 'any', { prio: 2 }));
   ceilingFixture(L, E, hh, 'bulb');
@@ -295,6 +508,7 @@ export function kitchen(L, E, hh) {
     else if (len >= 3.4) seq = rng.pick([['fridge', 'counter_base', 'stove_gas', 'sink_kitchen'], ['sink_kitchen', 'counter_base', 'stove_gas', 'fridge']]);
     else if (len >= 2.5) seq = rng.pick([['stove_gas', 'counter_base', 'sink_kitchen'], ['sink_kitchen', 'stove_gas', 'counter_base']]);
     else if (len >= 1.75) seq = ['stove_gas', 'sink_kitchen'];
+    else if (len >= 1.25) seq = ['stove_gas', 'sink_small'];
     else if (len >= 0.8) seq = ['stove_gas'];
     else continue;
     run = L.run(w.wall, seq, { fromEnd: rng.chance(0.5), prio: 0, skipMissing: true });
@@ -317,7 +531,12 @@ export function kitchen(L, E, hh) {
     if (!L.find('sink_kitchen')) any(() => L.wall('sink_kitchen', 'any', { prio: 0 }), () => L.wall('counter_base', 'any', { prio: 0 }));
     if (!L.find('fridge') && area >= 3.2) L.wall('fridge', 'any', { prio: 1 });
   }
-  const stove = L.find('stove_gas'), sink = L.find('sink_kitchen');
+  kitchenDress(L, E, hh, run);
+}
+/** Everything a kitchen has besides the run of stove and sink: the L-shaped second run, cylinder, things on the counters, uppers, table, bin and walls. `run`: what stands on the main wall. */
+function kitchenDress(L, E, hh, run) {
+  const rng = L.rng, area = floorArea(L);
+  const stove = L.find('stove_gas'), sink = L.find('sink_kitchen') ?? L.find('sink_small');
   // second run (L-shape) on a free adjacent wall when there is room
   if (area >= 7) {
     const used = run[0]?.wallSide;
@@ -327,6 +546,8 @@ export function kitchen(L, E, hh) {
       if (extra.length) break;
     }
   }
+  // a tall cupboard for the dry goods in the kitchens that have the wall for it (the 'pantry' pool and the papers kept in a pantry)
+  if (area >= 7.5) any(() => L.wall('pantry_cabinet', 'any', { prio: 2, awayDoors: true }));
   // gas cylinder beside the stove
   if (stove) any(() => L.wall('gas_cylinder', stove.wallSide ?? 'any', { near: stove, nearW: 6, at: 'corner', prio: 1 }), () => L.wall('gas_cylinder', 'any', { near: stove, nearW: 6, prio: 1 }));
   // things on the stove / counters
@@ -352,10 +573,10 @@ export function kitchen(L, E, hh) {
   if (hh.income) any(() => L.wall('washing_machine', 'any', { at: 'corner', prio: 2 }));
   L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
   if (hh.pets.includes('cat') && rng.chance(0.6)) L.free('cat_sitting', { rad: 3, prio: 2 });
-  D(L, rng.pick(['calendar_pharma', 'calendar_tienda', 'chores']), 'any');
-  L.hang('clock_wall', 'any', {});
+  if (!(rng.chance(0.3) && art(L, E, ['chores'], 'any', { cap: 0.25 }))) art(L, E, 'cal', 'any');
+  clock(L, E, 'any', {});
   if (rng.chance(0.5)) L.hang('shelf_wall', 'any', { y: 1.55 });
-  if (rng.chance(0.5)) D(L, 'blessing', 'any');
+  if (rng.chance(0.5)) art(L, E, 'blessing', 'any');
   ceilingFixture(L, E, hh, 'tube');
   dressWalls(L, E, hh, { type: 'kitchen', max: 2 });
   fillMin(L, E, hh, 6);
@@ -365,7 +586,7 @@ export function kitchen(L, E, hh) {
 function bedroomRole(E, hh) {
   const st = E.state(hh), i = st.beds++;
   switch (hh.kind) {
-    case 'elder': return i === 0 ? 'elder' : i === 1 ? 'guest' : 'storage';
+    case 'elder': return i === 0 ? 'elder' : 'guest';
     case 'couple': return i === 0 ? 'master' : i === 1 ? 'study' : 'guest';
     case 'students': return 'student';
     default:
@@ -406,49 +627,59 @@ export function bedroom(L, E, hh) {
       if (area >= 8 && rng.chance(0.7)) beds.push(placeBed(L, E, hh, ['bed_single', 'mattress_floor'], { sideNeed: 0.2 }));
       break;
     }
-    case 'study': beds = []; break;
-    case 'storage': beds = [placeBed(L, E, hh, ['mattress_floor'])]; break;
+    case 'study': beds = [placeBed(L, E, hh, ['bed_single', 'bed_cot'], { sideNeed: 0.3 })]; break;        // a study with a guest bed: every bedroom has a real one
+    case 'storage': beds = [placeBed(L, E, hh, ['bed_single_metal', 'bed_single'], { sideNeed: 0.2 })]; break;
     default: beds = [placeBed(L, E, hh, single)];
   }
   beds = beds.filter(Boolean);
-  if (!beds.length && role !== 'study') {                       // the plan left no room for the bed this role wants: any bed beats an empty bedroom
+  if (!beds.length) {                                           // the plan left no room for the bed this role wants: any bed beats an empty bedroom
     const small = ['bed_single', 'bed_single_metal', 'mattress_floor'];
     let b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
     if (!b && L.relaxKeeps(0.7)) b = placeBed(L, E, hh, small, { sideNeed: 0.2 });
     if (!b) b = any(() => L.wall('mattress_leaning', 'any', { prio: 1 }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true }), () => L.wall('mattress_leaning', 'any', { prio: 1, noClear: true, keepLateral: 0.05 }));
     if (b) beds = [b];
   }
-  const bed = beds[0];
+  bedroomDress(L, E, hh, role, beds[0]);
+}
+/** Everything a bedroom has besides its bed: nightstands and lamps, storage, the study corner, a rug, wall decor, clutter. */
+function bedroomDress(L, E, hh, role, bed) {
+  const rng = L.rng, area = floorArea(L);
   // nightstands, lamp, crib
   if (bed && area >= 6) {
     const ns = hh.income ? 'nightstand_b' : 'nightstand_a';
     const ln = L.atRel(ns, bed, -(bed.w / 2 + 0.22), -(bed.d / 2) + 0.2, 0, { prio: 2 });
     const rn = bed.w > 1.2 ? L.atRel(ns, bed, bed.w / 2 + 0.22, -(bed.d / 2) + 0.2, 0, { prio: 2 }) : null;
-    for (const n of [ln, rn].filter(Boolean)) { if (rng.chance(0.7)) L.top(n, 'lamp_table', { at: 'center' }); else L.top(n, 'photo_frames', { at: 'center' }); }
+    for (const n of [ln, rn].filter(Boolean)) { n.attach = bed; if (rng.chance(0.7)) L.top(n, 'lamp_table', { at: 'center' }); else L.top(n, 'photo_frames', { at: 'center' }); }
     if (ln && !L.items.some((i) => i.parent === ln)) L.top(ln, 'radio_old', { at: 'center' });
   }
   if ((role === 'master') && hh.babies) any(() => L.wall('bed_crib', 'any', { prio: 1, awayDoors: true }));
-  // storage
-  if (area >= 6.5 || role === 'student') {
-    const wn = area >= 10 && role === 'master' ? 'wardrobe_3' : 'wardrobe_2';
-    any(() => L.wall(wn, 'any', { at: 'corner', prio: 1, awayDoors: true }), () => L.wall('wardrobe_2', 'any', { prio: 1, awayDoors: true }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }));
-  }
-  if (area >= 8.5) any(() => L.wall('dresser_4', 'any', { prio: 2, awayDoors: true }));
-  // study corner
-  if (role === 'teen' || role === 'student' || role === 'study' || role === 'child') {
+  // study corner: the desk comes before the storage (the wardrobe and the dresser take the walls that are left: a student's room without its desk is no student's room)
+  const study = role === 'teen' || role === 'student' || role === 'study' || role === 'child';
+  if (study) {
     const desk = any(() => L.wall(role === 'study' ? 'desk_wood' : 'desk_student', 'any', { at: 'window', prio: 1, awayDoors: true }), () => L.wall('desk_student', 'any', { prio: 1 }));
     if (desk) {
-      const ch = L.at(hh.plastic ? 'chair_plastic' : 'chair_wood', ...L.rel(desk, 0, desk.d / 2 + 0.3), desk.ry + PI, { prio: 2 }) ?? L.free('chair_wood', { near: L.rel(desk, 0, desk.d / 2 + 0.3), rad: 0.5, prio: 2 });
+      const ch = L.at(hh.plastic ? 'chair_plastic' : 'chair_wood', ...L.rel(desk, KNEEHOLE, desk.d / 2 + 0.3), desk.ry + PI, { prio: 2, tuck: desk }) ?? L.free('chair_wood', { near: L.rel(desk, KNEEHOLE, desk.d / 2 + 0.3), rad: 0.5, prio: 2, tuck: desk });
       if (ch) ch.flags = { pulled: true };
       L.top(desk, role === 'student' ? 'pc_set' : 'books_stack', { at: 'left' });
       if (role !== 'student') L.top(desk, 'lamp_table', { at: 'right' });
       D(L, 'exam_notes', desk.wallSide, { near: [desk.x, desk.z], nearW: 3, y: 1.15, jitter: 0.1 });
       desk.flags = { study: true };
     }
-    if (area >= 8) L.wall('bookshelf', 'any', { prio: 2 });
   }
-  if (role === 'kids' || role === 'child') { L.free('toy_pile', { rad: 3, prio: 2 }); if (rng.chance(0.7)) L.free('school_bag', { rad: 3, prio: 2 }); D(L, rng.pick(['kids_drawing_a', 'kids_drawing_b']), 'any'); if (rng.chance(0.6)) D(L, rng.pick(['kids_drawing_a', 'kids_drawing_b']), 'any'); }
-  if (role === 'teen' || role === 'student') { if (hh.hobby === 'football' || rng.chance(0.4)) D(L, rng.pick(['poster_football_a', 'poster_football_b', 'poster_football_c']), 'any'); else D(L, 'poster_music', 'any'); if (hh.hobby === 'music') L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 }); }
+  // storage
+  if (area >= 6.5 || role === 'student') {
+    const wn = area >= 10 && role === 'master' ? 'wardrobe_3' : 'wardrobe_2';
+    any(() => L.wall(wn, 'any', { at: 'corner', prio: 1, awayDoors: true }), () => L.wall('wardrobe_2', 'any', { prio: 1, awayDoors: true }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }));
+  }
+  if (area >= 8.5) any(() => L.wall('dresser_4', 'any', { prio: 2, awayDoors: true }));
+  if (study && area >= 8) L.wall('bookshelf', 'any', { prio: 2 });
+  // a bedroom too small or too crowded for a wardrobe still has somewhere to keep clothes: a trunk, else a metal wardrobe, else pegs and a shelf on the wall (no bedroom of the barrio is bare of storage).
+  // It comes after the study corner: a child's desk is worth more than a trunk, and a trunk placed first took the desk's wall in the small study rooms (the barrio lost most of its study desks).
+  const keeps = () => L.items.some((i) => /^(wardrobe|dresser|chest_trunk|coat_rack)/.test(i.name));
+  if (!keeps()) any(() => L.wall('chest_trunk', 'any', { prio: 1, awayDoors: true }), () => L.wall('chest_trunk', 'any', { prio: 1 }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }));
+  if (!keeps()) { L.hang('coat_rack_wall', 'any', { y: 1.6 }); L.hang('shelf_wall', 'any', { y: 1.5 }); }
+  if (role === 'kids' || role === 'child') { L.free('toy_pile', { rad: 3, prio: 2 }); if (rng.chance(0.7)) L.free('school_bag', { rad: 3, prio: 2 }); art(L, E, 'kids', 'any'); if (rng.chance(0.6)) art(L, E, 'kids', 'any'); }
+  if (role === 'teen' || role === 'student') { if (hh.hobby === 'football' || rng.chance(0.4)) art(L, E, 'sport', 'any'); else art(L, E, 'music', 'any'); if (hh.hobby === 'music') L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 }); }
   if (role === 'elder' && hh.altar) {
     const altar = L.wall('altar_home', 'any', { at: 'corner', prio: 1 });
     if (altar) { L.top(altar, 'statue_virgin', { at: 'center' }); L.top(altar, 'candles_set', { at: 'left' }); altar.flags = { altar: true }; religiousWall(L, E, hh, altar); }
@@ -459,13 +690,13 @@ export function bedroom(L, E, hh) {
   // wall decor
   if (bed) {
     if (hh.religious > 0.35) L.hang('crucifix_wall', bed.wallSide, { over: bed, y: 1.75 });
-    else if (rng.chance(0.6)) D(L, rng.pick(['picture_landscape', 'picture_flowers']), bed.wallSide, { over: bed, y: 1.4 });
+    else if (rng.chance(0.6)) art(L, E, 'art', bed.wallSide, { over: bed, y: 1.4 });
   }
-  if (rng.chance(0.6)) frames(L, E, hh, 1, ['photo_family_a', 'photo_family_b', 'photo_grad']);
-  if (rng.chance(0.5)) L.hang('mirror_wall', 'any', {});
-  if (role !== 'storage') L.hang('clock_wall', 'any', {});
+  if (rng.chance(0.6)) frames(L, E, hh, 1, 'family');
+  if (rng.chance(0.5)) mirror(L, E, 'any', {});
+  if (role !== 'storage') clock(L, E, 'any', {});
   L.free('shoes_pair', { rad: 3, prio: 2 });
-  if (rng.chance(0.4)) any(() => L.wall('chest_trunk', 'any', { prio: 2 }));
+  if (rng.chance(0.4) && !L.find('chest_trunk')) any(() => L.wall('chest_trunk', 'any', { prio: 2 }));       // (one trunk to a room: the last resort above may have put it already)
   if (area >= 6 && rng.chance(0.7)) any(() => L.wall(rng.chance(0.5) ? 'plant_pot_clay' : 'plant_big', 'any', { at: 'corner', prio: 2 }));
   ceilingFixture(L, E, hh, 'bulb');
   dressWalls(L, E, hh, { type: 'bedroom' });
@@ -476,9 +707,14 @@ export function bedroom(L, E, hh) {
 // ---------------------------------------------------------------- BATHROOM
 export function bathroom(L, E, hh) {
   const rng = L.rng;
-  const shower = any(() => L.wall('shower_tray', 'any', { at: 'corner', awayDoors: true, prio: 0 }), () => L.wall('shower_tray', 'any', { prio: 0 }));
+  const shower = any(() => L.wall('shower_tray', 'any', { at: 'corner', awayDoors: true, prio: 0 }), () => L.wall('shower_small', 'any', { at: 'corner', awayDoors: true, prio: 0 }),
+    () => L.wall('shower_tray', 'any', { prio: 0 }), () => L.wall('shower_small', 'any', { prio: 0 }));
   const toilet = any(() => L.wall('toilet', shower ? [opposite(shower.wallSide), ...['-z', '+z', '-x', '+x'].filter((w) => w !== shower.wallSide && w !== opposite(shower.wallSide))] : 'any', { at: 'center', prio: 0, awayDoors: true }), () => L.wall('toilet', 'any', { prio: 0 }));
   const basin = any(() => L.wall(hh.income ? 'basin_vanity' : 'basin_pedestal', 'any', { prio: 0, near: toilet ?? undefined, nearW: 0.6 }), () => L.wall('basin_pedestal', 'any', { prio: 0 }));
+  bathroomDress(L, E, hh, shower, basin);
+}
+/** What a bathroom has besides its three fixtures: the shower head, mirror and towel rail, bin, bucket, shelf and bulb. */
+function bathroomDress(L, E, hh, shower, basin) {
   if (shower) L.hang('shower_head_electric', shower.wallSide, { near: [shower.x, shower.z], nearW: 8, y: 1.9, w: 0.2, h: 0.25 });
   if (basin) L.hang('mirror_bath', basin.wallSide, { over: basin, y: 1.25 });
   if (basin) L.hang('towel_rail', 'any', { near: [basin.x, basin.z], nearW: 1, y: 1.15 });
@@ -499,19 +735,22 @@ export function thin(L, E, hh) {
     : t === 'bathroom' ? ['mirror_bath', 'towel_rail', 'shelf_wall']
       : t === 'backroom' || t === 'office' ? ['shelf_wall', 'shelf_wall', 'tool_pegboard', 'clock_wall']
         : ['shelf_wall', 'coat_rack_wall', 'clock_wall', 'mirror_wall'];
-  for (const n of hangs) { L.hang(n, long, {}) || L.hang(n, 'any', {}); }
-  for (const n of hangs.slice(0, 2)) L.hang(n, 'any', { y: (CATALOG[n]?.y ?? 1.4) - 0.5 });      // a second row where the wall is long enough
-  if (t === 'kitchen') D(L, 'calendar_tienda', 'any'); else D(L, 'blessing', 'any');
-  D(L, 'notice_rent', 'any'); D(L, 'calendar_pharma', 'any');
+  const put = (n, walls, o = {}) => (n === 'clock_wall' ? clock(L, E, walls, o) : n === 'mirror_wall' ? mirror(L, E, walls, o) : L.hang(n, walls, o));
+  for (const n of hangs) { put(n, long) || put(n, 'any'); }
+  for (const n of hangs.slice(0, 2)) put(n, 'any', { y: (CATALOG[n]?.y ?? 1.4) - 0.5 });          // a second row where the wall is long enough
+  if (t !== 'bathroom') {
+    art(L, E, t === 'kitchen' ? 'cal' : 'blessing', 'any');
+    if (L.rng.chance(0.6)) notice(L, E, 'any'); else art(L, E, 'cal', 'any');
+  }
   if (!L.room.outdoor) { L.ceil('bulb_bare', cx, cz); L.fixture = { x: cx, z: cz, kind: 'bulb', color: 0xffd9a0, i: 5, d: 5 }; }
 }
 
 /** Rooms A2 keeps empty (stair cores): a bulb, a notice or two, nothing on the floor. */
 export function lightOnly(L, E, hh) {
   L.circulation = true;
-  const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
+  const [cx, cz] = L.sw?.lamp ?? [(L.r.x0 + L.r.x1) / 2, (L.r.z0 + L.r.z1) / 2];           // a stair core's lamp hangs over its landing, not over the divider between the lanes
   if (!L.room.outdoor) { L.ceil('bulb_bare', cx, cz); L.fixture = { x: cx, z: cz, kind: 'bulb', color: 0xffd9a0, i: 5.5, d: 6 }; }
-  D(L, 'notice_rent', 'any'); if (L.rng.chance(0.6)) D(L, 'picture_virgin', 'any'); if (L.rng.chance(0.4)) D(L, 'poster_football_a', 'any');
+  notice(L, E, 'any'); if (L.rng.chance(0.5)) art(L, E, 'faithPic', 'any'); if (L.rng.chance(0.35)) art(L, E, 'sport', 'any');
 }
 
 export function circulation(L, E, hh) {
@@ -519,8 +758,8 @@ export function circulation(L, E, hh) {
   const rng = L.rng, t = L.room.type, area = floorArea(L);
   const exterior = L.landings.some((l) => (E.bp.doors ?? []).find((d) => d.id === l.door)?.kind === 'exterior');
   if (t === 'stairwell' || t === 'landing') {
-    if (rng.chance(0.6)) D(L, rng.pick(['picture_virgin', 'picture_landscape', 'notice_rent', 'calendar_church']), 'any');
-    L.hang('clock_wall', 'any', {});
+    if (rng.chance(0.6)) { const k = rng.int(0, 3); if (k === 0) art(L, E, 'faithPic', 'any'); else if (k === 1) art(L, E, 'art', 'any'); else if (k === 2) notice(L, E, 'any'); else art(L, E, 'cal', 'any'); }
+    clock(L, E, 'any', {});
     if (area > 3) any(() => L.wall('plant_bucket', 'any', { at: 'corner', prio: 2 }));
     ceilingFixture(L, E, hh, rng.chance(0.5) ? 'tube' : 'bulb');
     return;
@@ -530,9 +769,9 @@ export function circulation(L, E, hh) {
     if (exterior || rng.chance(0.5)) any(() => L.wall('doormat', 'any', { prio: 2 }), () => null);
   }
   L.hang('coat_rack_wall', 'any', { y: 1.55 });
-  if (rng.chance(0.7)) L.hang('mirror_wall', 'any', {});
-  if (hh.religious > 0.3) D(L, rng.chance(0.5) ? 'blessing' : 'picture_virgin', 'any');
-  D(L, rng.pick(['picture_landscape', 'photo_family_a', 'calendar_tienda']), 'any');
+  if (rng.chance(0.7)) mirror(L, E, 'any', {});
+  if (hh.religious > 0.3) art(L, E, rng.chance(0.5) ? 'blessing' : 'faithPic', 'any');
+  art(L, E, rng.pick(['art', 'family', 'cal']), 'any');
   if (area >= 4) any(() => L.wall(rng.chance(0.5) ? 'plant_pot_clay' : 'side_table', 'any', { at: 'corner', prio: 2 }));
   if (hh.kids && exterior) L.free('school_bag', { rad: 3, prio: 2 });
   L.free('shoes_pair', { rad: 3, prio: 2 });
@@ -588,12 +827,12 @@ export function laundry(L, E, hh) {
 }
 export function office(L, E, hh) {
   const d = any(() => L.wall('desk_office', 'any', { at: 'window', prio: 0 }), () => L.wall('desk_wood', 'any', { prio: 0 }));
-  if (d) { L.top(d, 'pc_set', { at: 'left' }); L.top(d, 'phone_landline', { at: 'right' }); L.at('office_chair', ...L.rel(d, 0, d.d / 2 + 0.4), d.ry + PI, { prio: 2 }); }
+  if (d) { L.top(d, 'pc_set', { at: 'left' }); L.top(d, 'phone_landline', { at: 'right' }); L.at('office_chair', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); }
   L.wall('filing_cabinet', 'any', { at: 'corner', prio: 1 }); L.wall('bookshelf', 'any', { prio: 1 });
   chairsAround(L, d, 0, ['chair_wood']);
   const vis = any(() => L.free('chair_plastic', { rad: 2.6, prio: 2 })); void vis;
   L.free('trash_bin', { rad: 3, prio: 2 });
-  D(L, 'diploma', 'any'); D(L, 'calendar_tienda', 'any'); L.hang('clock_wall', 'any', {});
+  art(L, E, ['diploma'], 'any', { cap: 0.5 }); art(L, E, 'cal', 'any'); clock(L, E, 'any', {});
   ceilingFixture(L, E, hh, 'tube'); fillMin(L, E, hh, 6);
 }
 export function garage(L, E, hh) {
@@ -611,6 +850,6 @@ export function backroom(L, E, hh) {
   L.wall('broom', 'any', { at: 'corner', prio: 2 });
   if (rng.chance(0.6)) L.wall('chair_plastic', 'any', { prio: 2 });
   if (rng.chance(0.4)) L.wall('fridge', 'any', { prio: 2 });
-  D(L, 'calendar_tienda', 'any'); L.hang('clock_wall', 'any', {});
+  art(L, E, 'cal', 'any'); clock(L, E, 'any', {});
   ceilingFixture(L, E, hh, 'tube'); fillMin(L, E, hh, 5);
 }

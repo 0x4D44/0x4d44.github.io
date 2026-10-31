@@ -1,12 +1,14 @@
 // PERIPHERY (A5): the land around the 200 x 200 m plot and the plot's own rim.
 //   makeFarHeight(plan)   the ground outside the plot (mountain wall behind, side ridges, a valley in front, the road that leaves at the
 //                         foot of S1), continuous with plan.heightAt at the edge. Pure data: runs under node.
-//   buildFarTerrain(ctx)  world.terrain.far.* (100 m tiles at 5 m up to +-300 m) and world.terrain.farB.* (150 m tiles at 15 m up to +-750 m)
+//   buildFarTerrain(ctx)  group world.terrain.far, ONE mesh: 100 m tiles at 5 m up to +-300 m and 150 m tiles at 15 m up to +-750 m
 //   buildBoundary(K)      the visible perimeter: block / brick / stone walls and zinc fences, pilasters, a welcome arch with a lowered barrier
 //                         at the end of the entry road, the road leaving the plot. The physics walls (terrain.js buildPerimeter) stay 0.35 m inside.
 import { ss, vnoise, lerp, project, resample, pointAt } from './geom.js';
 import { HALF } from './field.js';
 import { ribbon } from './mk.js';
+import { panel, PAPERS, TAGS } from './signs.js';
+import { drape } from './flora.js';
 
 // ---------------------------------------------------------------------------------------------------- the road that leaves the plot
 function catmull(ctrl, per = 8) {
@@ -89,8 +91,11 @@ export function buildFarTerrain(ctx, plan, GRASS = 'grass_patchy') {
     const k = 1 + 0.07 * m;
     return [Math.min(1, r * k), Math.min(1, g * k), Math.min(1, b * k)];
   };
-  const tile = (id, x0, z0, size, cells) => {
-    const b = ctx.batch.builder(id, { cast: false }), acc = b._acc(GRASS), step = size / cells, ix = (i, j) => j * (cells + 1) + i;
+  // ONE mesh for the whole far land (about 48 k vertices, 42 k triangles, no shadows): as 116 tiles of 100-150 m each was a draw call (the merge pass leaves
+  // anything wider than its 96 m span alone), 54 of them in the spawn view, for a few triangles each
+  const b = ctx.batch.builder('world.terrain.far', { cast: false }), acc = b._acc(GRASS);
+  const tile = (x0, z0, size, cells) => {
+    const step = size / cells, ix = (i, j) => j * (cells + 1) + i;
     const V = new Int32Array((cells + 1) ** 2), hs = new Float32Array((cells + 1) ** 2);
     for (let j = 0; j <= cells; j++) for (let i = 0; i <= cells; i++) {
       const x = x0 + i * step, z = z0 + j * step, h = far(x, z), e = Math.max(1.5, step * 0.6);
@@ -111,36 +116,61 @@ export function buildFarTerrain(ctx, plan, GRASS = 'grass_patchy') {
     };
     const line = (f) => Array.from({ length: cells + 1 }, (_, k) => f(k));
     skirt(line((k) => [k, 0]), [0, 0, -1]); skirt(line((k) => [k, cells]), [0, 0, 1]); skirt(line((k) => [0, k]), [-1, 0, 0]); skirt(line((k) => [cells, k]), [1, 0, 0]);
-    ctx.batch.flush(id);
   };
   // ring A: 100 m tiles, 5 m cells, +-300 m except the plot itself
   for (let tj = -3; tj < 3; tj++) for (let ti = -3; ti < 3; ti++) {
     if (ti >= -1 && ti < 1 && tj >= -1 && tj < 1) continue;
-    tile(`world.terrain.far.${ti + 3}.${tj + 3}`, ti * 100, tj * 100, 100, 20);
+    tile(ti * 100, tj * 100, 100, 20);
   }
   // ring B: 150 m tiles, 15 m cells, +-750 m except ring A
   for (let tj = -5; tj < 5; tj++) for (let ti = -5; ti < 5; ti++) {
     if (ti >= -2 && ti < 2 && tj >= -2 && tj < 2) continue;
-    tile(`world.terrain.farB.${ti + 5}.${tj + 5}`, ti * 150, tj * 150, 150, 10);
+    tile(ti * 150, tj * 150, 150, 10);
   }
+  ctx.batch.flush('world.terrain.far');
 }
 
 // ---------------------------------------------------------------------------------------------------- boundary
 const WALL_TINTS = ['d9c7a0', 'cfd8c4', 'e6c9b4', 'c9d3d8', 'e3d79a', 'd8b8a8'];
 
-/** One run of wall: kind decides material and height. Returns nothing; adds boxes to builder b. */
-function wallPanel(b, kind, tint, cx, cz, sx, sz, g0, g1, g2, rnd) {
+const IN = { s: [0, -1], n: [0, 1], e: [-1, 0], w: [1, 0] };            // the way the middle of the plot lies from each side of the wall: the normal of its inside face
+const INSIDE_FACE = { s: 'nz', n: 'pz', e: 'nx', w: 'px' };            // which face of the panel's box that is
+const FACE_IN = 0.2;                                                    // the inside face lies this far off a panel's axis (the wall is 0.4 m thick)
+const wallMat = (kind, tint) => ({ block: `plaster_rough#${tint}`, brick: 'brick_red_solid', stone: 'stone_wall', zinc: 'corrugated_zinc' }[kind]);
+
+/** One run of wall: kind decides material and height. Returns { yt: its top, c: its own tone }; adds boxes to builder b, all but the face on the plot's side (`inside`, drawn by insideFace). */
+function wallPanel(b, kind, tint, cx, cz, sx, sz, g0, g1, g2, rnd, inside) {
   const lo = Math.min(g0, g1, g2), hi = Math.max(g0, g1, g2), h = { block: 2.4, brick: 2.2, stone: 1.9, zinc: 2.1 }[kind];
   const yb = lo - 0.4, yt = hi + h, c = rnd ? 0.94 + 0.1 * rnd : 1;
-  const mat = { block: `plaster_rough#${tint}`, brick: 'brick_red_solid', stone: 'stone_wall', zinc: 'corrugated_zinc' }[kind];
-  b.box(mat, cx, (yb + yt) / 2, cz, sx, yt - yb, sz, { col: [c, c, c], skip: ['ny'] });
+  b.box(wallMat(kind, tint), cx, (yb + yt) / 2, cz, sx, yt - yb, sz, { col: [c, c, c], skip: inside ? ['ny', inside] : ['ny'] });
   if (kind !== 'zinc') b.box('concrete_bare', cx, yt + 0.045, cz, sx + (sx > sz ? 0 : 0.14), 0.09, sz + (sx > sz ? 0.14 : 0), { skip: ['ny'] });
-  return yt;
+  return { yt, c };
+}
+
+/**
+ * R1-D02: the face of a 2 m panel that looks into the plot, as a grid of quads whose corners are toned: a damp, dark foot that fades by a metre, blotches of dirt above (a plain
+ * flat colour a panel, wall after wall, read as a blank screen). `p0` -> `p1` the panel's line on the wall's axis, `n` the inside normal, `c` the panel's own tone, yt its top, H the ground.
+ */
+function insideFace(b, mat, kind, c, p0, p1, n, yt, H, seed) {
+  const COLS = 2, OFF = [-0.3, 0.35, 1.0], DAMP = [0.55, 0.68, 0.94, 1.0];
+  const d = [(p1[0] - p0[0]) / 2, (p1[1] - p0[1]) / 2], fwd = d[0] * n[1] - d[1] * n[0] > 0;                    // does along-the-wall run to the viewer's right (right = (nz, -nx))
+  const at = (j) => [p0[0] + (p1[0] - p0[0]) * (j / COLS) + n[0] * FACE_IN, p0[1] + (p1[1] - p0[1]) * (j / COLS) + n[1] * FACE_IN];
+  const ys = (j) => { const [x, z] = at(j), g = H(x, z); return [g + OFF[0], g + OFF[1], g + OFF[2], yt]; };
+  const tone = (j, i, y) => {
+    const [x, z] = at(j), t = c * DAMP[i] * (1 + 0.08 * vnoise(x + z * 1.7, y, 1.7, seed));
+    return kind === 'zinc' ? [t, t * 0.94, t * 0.88] : [t, t * 0.985, t * 0.955];                               // dirt is a little warm; rust on the zinc
+  };
+  for (let j = 0; j < COLS; j++) {
+    const l = fwd ? j : j + 1, r = fwd ? j + 1 : j, L = at(l), Rt = at(r), yl = ys(l), yr = ys(r);               // the corners on the viewer's left and right
+    for (let i = 0; i < 3; i++) {
+      b.quad(mat, [L[0], yl[i], L[1]], [Rt[0], yr[i], Rt[1]], [Rt[0], yr[i + 1], Rt[1]], [L[0], yl[i + 1], L[1]], { cols: [tone(l, i, yl[i]), tone(r, i, yr[i]), tone(r, i + 1, yr[i + 1]), tone(l, i + 1, yl[i + 1])] });
+    }
+  }
 }
 
 export function buildBoundary(K) {
   const { ctx, plan, H } = K, R = K.rng('boundary'), far = plan._far ?? (plan._far = makeFarHeight(plan));
-  const E = HALF - 0.45, T = 0.4, stats = { wallM: 0, gateM: 0, panels: 0, runs: { block: 0, brick: 0, stone: 0, zinc: 0 } };
+  const E = HALF - 0.45, T = 0.4, stats = { wallM: 0, gateM: 0, panels: 0, runs: { block: 0, brick: 0, stone: 0, zinc: 0 }, posters: 0, tags: 0, papers: [] };
   const gate = { x: far.road.x0, z: Math.min(HALF - 0.5, far.road.z0 - 0.5), half: 5.4 };
   const sides = [
     { id: 's', axis: 'x', at: E },        // z = +E (the entry road side)
@@ -149,18 +179,30 @@ export function buildBoundary(K) {
     { id: 'w', axis: 'z', at: -E },
   ];
   const kinds = ['block', 'block', 'brick', 'stone', 'zinc', 'block', 'brick'];
+  const dress = ctx.batch.builder('props.boundary.dress', { cast: false }), D = K.rng('boundary.dress');             // what is pasted, sprayed and hung on the inside (its own random stream: the walls stay as they were)
   for (const sd of sides) {
-    const b = ctx.batch.builder(`props.boundary.${sd.id}`), r = R.fork(sd.id);
+    const b = ctx.batch.builder(`props.boundary.${sd.id}`), r = R.fork(sd.id), dr = D.fork(sd.id), n = IN[sd.id], crests = [[]];            // crests: the top of each unbroken run of wall (the gate breaks the south side in two)
     let kind = r.pick(kinds), tint = r.pick(WALL_TINTS), left = 0;
     for (let s = -HALF + 0.2; s < HALF - 0.2; s += 2) {
-      const mid = s + 1;
-      if (sd.id === 's' && Math.abs(mid - gate.x) < gate.half) continue;
+      const mid = s + 1, crest = crests.at(-1);
+      if (sd.id === 's' && Math.abs(mid - gate.x) < gate.half) { if (crest.length) crests.push([]); continue; }
       if (left <= 0) { kind = r.pick(kinds); tint = r.pick(WALL_TINTS); left = r.range(14, 38); }
       left -= 2;
       const p0 = sd.axis === 'x' ? [s, sd.at] : [sd.at, s], p1 = sd.axis === 'x' ? [s + 2, sd.at] : [sd.at, s + 2], pm = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
       const sx = sd.axis === 'x' ? 2.02 : T, sz = sd.axis === 'x' ? T : 2.02;
-      wallPanel(b, kind, tint, pm[0], pm[1], sx, sz, H(p0[0], p0[1]), H(p1[0], p1[1]), H(pm[0], pm[1]), r.next());
+      const { yt, c } = wallPanel(b, kind, tint, pm[0], pm[1], sx, sz, H(p0[0], p0[1]), H(p1[0], p1[1]), H(pm[0], pm[1]), r.next(), INSIDE_FACE[sd.id]);
       stats.panels++; stats.wallM += 2; stats.runs[kind] += 2;
+      insideFace(b, wallMat(kind, tint), kind, c, p0, p1, n, yt, H, plan.seed + 41);
+      crest.push({ x: pm[0] + n[0] * 0.2, z: pm[1] + n[1] * 0.2, nx: n[0], nz: n[1], y: yt });
+      if (dr.chance(0.2)) {                                                                                       // a poster or a tag, a metre or so along the panel, at hand height, a little crooked
+        const tag = dr.chance(0.4), key = tag ? `tag.${Math.floor(dr.next() * TAGS)}` : `poster.${Math.floor(dr.next() * PAPERS)}`, pw = tag ? 0.9 : 0.34, ph = tag ? 0.45 : 0.49, u = 0.5 + dr.next();
+        const x = p0[0] + (p1[0] - p0[0]) * (u / 2) + n[0] * (FACE_IN + 0.012), z = p0[1] + (p1[1] - p0[1]) * (u / 2) + n[1] * (FACE_IN + 0.012);
+        const yb = Math.min(H(x, z) + (tag ? 0.7 : 1.05) + dr.next() * 0.35, yt - ph - 0.2), tilt = (dr.next() - 0.5) * (tag ? 0.1 : 0.05);
+        if (Math.abs(sd.axis === 'x' ? x : z) + pw / 2 < E - FACE_IN) {                                          // not at the corner, where the next wall's box would bury it
+          panel(K, dress, key, x, z, n[0], n[1], pw, yb, yb + tilt, ph);
+          stats[tag ? 'tags' : 'posters']++; stats.papers.push(key);
+        }
+      }
       // a pilaster every 4 m (thicker, a little taller)
       if (Math.round(s / 2) % 2 === 0) {
         const lo = Math.min(H(p0[0], p0[1]), H(pm[0], pm[1])), yt = Math.max(H(p0[0], p0[1]), H(pm[0], pm[1])) + { block: 2.55, brick: 2.35, stone: 2.05, zinc: 2.3 }[kind];
@@ -168,6 +210,7 @@ export function buildBoundary(K) {
         b.box(mat, p0[0], (lo - 0.4 + yt) / 2, p0[1], sd.axis === 'x' ? 0.34 : T + 0.22, yt - lo + 0.4, sd.axis === 'x' ? T + 0.22 : 0.34, { skip: ['ny'] });
       }
     }
+    crests.forEach((cr, i) => drape(K, cr, dr.fork('vine' + i), { step: 4.5 }));                                  // bougainvillea hung over the crest on the plot's side, every few panels
   }
   // ---- the welcome arch over the entry road, with the barrier lowered across it
   const g = ctx.batch.builder('props.boundary.gate'), gx = gate.x, gz = gate.z, y0 = H(gx, gz);

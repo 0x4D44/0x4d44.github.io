@@ -1,13 +1,13 @@
 // ENVIRONMENT (A5): buildWorld builds the ground and everything that is part of the public space shell:
 // terrain tiles (25 m, 0.5 m grid), street surfaces, kerbs, stairs + rails, retaining walls, plazas/court/mirador floors,
 // perimeter colliders. Props, flora, poles, vehicles, signage and the periphery live in props.js.
-// Groups: world.terrain.<i>.<j>, world.terrain.far.<i>.<j>, world.streets, world.stairs, world.walls, world.plazas.
+// Groups: world.terrain.<i>.<j>, world.terrain.far (the whole far land, one mesh), world.streets, world.stairs, world.walls, world.plazas.
 import { ss, vnoise, segDist, pointInPoly, polyDistPoint, footprint } from './geom.js';
 import { HALF, CELL, N } from './field.js';
 import { BAND, PAD_BAND } from './plan.js';
 import { buildSurfaces } from './surfaces.js';
 import { buildStairs } from './stairs.js';
-import { buildRetaining } from './walls.js';
+import { buildRetaining, findWallRuns, findCorners, wallNodes } from './walls.js';
 import { buildFarTerrain } from './periphery.js';
 
 const TILE = 25, CPT = TILE / CELL;          // 8 x 8 tiles of 50 x 50 cells
@@ -28,10 +28,11 @@ export async function buildWorld(ctx) {
   };
   const masks = makeMasks(plan);
   ctx.world = { masks, times };
+  await step('walls', () => { ctx.world.wallRuns = findWallRuns(plan); ctx.world.wallCorners = findCorners(ctx.world.wallRuns); });   // before the terrain: its mesh lowers the lattice nodes inside every wall box
   await step('terrain', () => buildTerrain(ctx, plan, masks));
   await step('surfaces', () => buildSurfaces(ctx, plan));
   await step('stairs', () => buildStairs(ctx, plan));
-  await step('retaining', () => buildRetaining(ctx, plan));
+  await step('retaining', () => buildRetaining(ctx, plan, ctx.world.wallRuns, ctx.world.wallCorners));
   await step('perimeter', () => buildPerimeter(ctx));
   ctx.timings && (ctx.timings.worldParts = times);
 }
@@ -73,6 +74,9 @@ function buildTerrain(ctx, plan, masks) {
     const k = j * N + i, h = H(-HALF + i * CELL, -HALF + j * CELL);
     G0[k] = h; G[k] = h - (carve[k] === 2 ? CARVE_STAIR : carve[k] === 1 ? CARVE : 0);
   }
+  // inside a wall box the mesh sits on the lower ground (see walls.js wallNodes): the box hides it, and no wedge of the ramp shows in front of the face
+  wallNodes(ctx.world.wallRuns, ctx.world.wallCorners, N, HALF, (k, level) => { if (level < G[k]) G[k] = level; });
+  ctx.world.grid = G;                                                                  // the heights the mesh is built from (tests read the surface off it)
   const at = (i, j) => G0[Math.min(N - 1, Math.max(0, j)) * N + Math.min(N - 1, Math.max(0, i))];
   const slope = new Float32Array(N * N), dirt = new Float32Array(N * N);
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -89,7 +93,9 @@ function buildTerrain(ctx, plan, masks) {
     const x = -HALF + i * CELL, z = -HALF + j * CELL, y = G0[j * N + i];
     const n = vnoise(x, z, 11, seed) * 0.5 + vnoise(x, z, 3.1, seed + 3) * 0.3 + 0.2 * vnoise(x, z, 0.9, seed + 9);
     const dry = ss(10, 28, y), k = 1 + 0.13 * n;
-    if (isDirt) return [Math.min(1, (0.88 + 0.05 * dry) * k), Math.min(1, 0.86 * k), Math.min(1, 0.82 * k)];
+    // ground_dirt.jpg is a saturated terracotta (mean sRGB 143 97 68): left alone it reads as red mulch across every plateau (R1-007), so the red is held back and
+    // green and blue are lifted above 1 (a vertex colour is a plain multiplier) toward a dusty tan, about sRGB 133 106 80
+    if (isDirt) return [(0.9 + 0.05 * dry) * k, 1.26 * k, 1.46 * k];
     return [Math.min(1, (0.92 + 0.12 * dry) * k), Math.min(1, (1.0 - 0.02 * dry) * k), Math.min(1, (0.8 - 0.1 * dry) * k)];
   };
   const normal = (i, j) => {

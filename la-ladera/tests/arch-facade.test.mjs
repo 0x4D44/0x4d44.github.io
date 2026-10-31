@@ -11,7 +11,7 @@ import { buildBuilding } from '../js/arch/index.js';
 import { makeRoofModel } from '../js/arch/shellroof.js';
 import { signText, signColours, paintSignAtlas, ensureSignAtlas, GHOST_COUNT, POSTER_COUNT } from '../js/arch/signs.js';
 
-const real = await buildData({ furnish: false });
+const real = await buildData({ furnish: false, seed: process.env.ARCH_SEED ? Number(process.env.ARCH_SEED) : undefined });   // ARCH_SEED: stress another plan; the default is the barrio
 for (const bp of real.buildings) buildBuilding(real.ctx, bp);
 const synth = planAll(testLots(), undefined, true, 0.4, 0);
 for (const bp of synth.bps) buildBuilding(synth.ctx, bp);
@@ -27,7 +27,7 @@ function openings(bp, side) {
 }
 const hit = (r, o, tol = 0.02) => r.u1 > o.u0 + tol && r.u0 < o.u1 - tol && r.y1 > o.y0 + tol && r.y0 < o.y1 - tol;
 const each = (fn) => { for (const [label, , bps] of SETS) for (const bp of bps) fn(bp, `${label} ${bp.id} (${bp.lot.kind})`); };
-const REQUIRED = ['sign', 'balcony', 'mirador', 'ac', 'pipe', 'meter', 'ghost', 'awning', 'blade', 'poster', 'canopy', 'roofroom'];
+const REQUIRED = ['sign', 'balcony', 'mirador', 'ac', 'pipe', 'meter', 'ghost', 'awning', 'blade', 'poster', 'canopy', 'roofroom', 'goods'];
 
 test('the facade is dressed without a fault, and every kind of dressing really shows up on the real barrio', () => {
   for (const [label, ctx] of SETS) assert.deepEqual((ctx.errors ?? []).filter((e) => e.stage === 'arch'), [], `${label}: arch errors`);
@@ -37,11 +37,11 @@ test('the facade is dressed without a fault, and every kind of dressing really s
   for (const bp of real.buildings) assert.ok(Array.isArray(bp.facade), `${bp.id}: bp.facade missing`);
 });
 
-test('nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias and blade signs keep clear of every opening', () => {
+test('nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias, blade signs and hung goods keep clear of every opening', () => {
   const problems = [];
   each((bp, tag) => {
     for (const r of bp.facade) {
-      if (!['ac', 'pipe', 'meter', 'poster', 'ghost', 'sign', 'blade'].includes(r.kind)) continue;
+      if (!['ac', 'pipe', 'meter', 'poster', 'ghost', 'sign', 'blade', 'goods'].includes(r.kind)) continue;
       const o = openings(bp, r.side).find((q) => hit(r, q));
       if (o) problems.push(`${tag}: ${r.kind} u${r.u0}..${r.u1} y${r.y0}..${r.y1} covers ${o.kind} ${o.id} u${o.u0.toFixed(2)}..${o.u1.toFixed(2)} y${o.y0.toFixed(2)}..${o.y1.toFixed(2)}`);
     }
@@ -102,10 +102,10 @@ test('everything stands within reach of its wall and below the parapet line; roo
   assert.deepEqual(problems, []);
 });
 
-test('every lot that is named like a shop or an institution gets lettering over its door, and lettering is deterministic', () => {
+test('every lot that is named like a shop or an institution gets lettering over its door (a chapel: the parish name painted on the wall, no shop board), and lettering is deterministic', () => {
   const missing = [];
   for (const bp of real.buildings) {
-    const t = signText(bp.lot), has = bp.facade.some((r) => r.kind === 'sign');
+    const kinds = new Set(bp.facade.map((r) => r.kind)), t = signText(bp.lot), has = bp.lot.kind === 'chapel' ? kinds.has('name') && !kinds.has('sign') : kinds.has('sign');
     if (t && !has) missing.push(`${bp.id} (${bp.lot.kind} '${bp.lot.name}')`);
     if (!t && has) missing.push(`${bp.id} has a sign but no text`);
     if (t) {

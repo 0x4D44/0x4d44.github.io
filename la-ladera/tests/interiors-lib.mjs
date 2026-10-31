@@ -1,6 +1,7 @@
 // Shared helpers for the INTERIORS tests (tests/interiors-*.test.mjs): build + furnish a batch of buildings under Node,
 // OBB geometry from the public furniture records, and a physics-kernel reachability walker.
 //   A3_PLANS=real   also run against A2's real plans when they have rooms (default: synthetic only)
+//   A3_PLANS=lots   also run against A2's own test lots (every lot kind, sizes, floors, party walls); A3_PLANS=real,lots for both
 //   A3_SABOTAGE=<kind> corrupt the data on purpose so a test must FAIL (kinds: see sabotage())
 import { createContext } from '../js/core/ctx.js';
 import { Physics } from '../js/core/physics.js';
@@ -18,17 +19,37 @@ export async function newCtx(seed = 7) {
   return ctx;
 }
 
-/** Furnish `n` synthetic buildings (or the given plans). Returns { ctx, bps }. */
+/** A2's own test lots (tests/arch-lib.mjs `testLots`: every lot kind, with size, floor, party-wall and door variations), planned by A2's planner under ids 'A00'.. and furnished into `ctx`. */
+async function furnishedLots(ctx, o = {}) {
+  const { testLots, planAll } = await import('./arch-lib.mjs');
+  const lots = testLots().filter((l) => !o.kinds || o.kinds.includes(l.kind)).map((l) => ({ ...l, id: 'A' + l.id.slice(1) }));
+  const { bps } = planAll(lots, o.seed, false);
+  for (const bp of bps) { ctx.buildings.set(bp.id, bp); furnishBuilding(ctx, bp); }
+  return bps;
+}
+
+/**
+ * Furnish `n` synthetic buildings (or the given plans). Returns { ctx, bps }.
+ *   real: true            A2's real plans for the generated world (also A3_PLANS=real)
+ *   lots: 'only' | 'add'  A2's test lots (`kinds` narrows them): 'only' returns just those, 'add' (also A3_PLANS=lots) appends them to whatever else was asked for
+ */
 export async function furnishedBatch(o = {}) {
-  if ((o.real ?? process.env.A3_PLANS === 'real') && !o.bps) {          // A2's real plans for the generated world
+  const plans = (process.env.A3_PLANS ?? '').split(',');                    // A3_PLANS=real | lots | real,lots
+  const lots = o.lots ?? (plans.includes('lots') ? 'add' : null);
+  if (lots === 'only' && !o.bps) { const ctx = await newCtx(o.seed ?? 7); return { ctx, bps: await furnishedLots(ctx, o) }; }
+  let w;
+  if ((o.real ?? plans.includes('real')) && !o.bps) {          // A2's real plans for the generated world
     const { buildData } = await import('./headless.mjs');
     const { ctx, buildings } = await buildData({ seed: o.seed, furnish: true, colliders: false });
-    return { ctx, bps: o.n ? buildings.slice(0, o.n) : buildings };
+    w = { ctx, bps: o.n ? buildings.slice(0, o.n) : buildings };
+  } else {
+    const ctx = await newCtx(o.seed ?? 7);
+    const bps = o.bps ?? genBatch(o.n ?? 40, o.planSeed ?? 3);
+    for (const bp of bps) { ctx.buildings.set(bp.id, bp); furnishBuilding(ctx, bp); }
+    w = { ctx, bps };
   }
-  const ctx = await newCtx(o.seed ?? 7);
-  const bps = o.bps ?? genBatch(o.n ?? 40, o.planSeed ?? 3);
-  for (const bp of bps) { ctx.buildings.set(bp.id, bp); furnishBuilding(ctx, bp); }
-  return { ctx, bps };
+  if (lots === 'add' && !o.bps) w.bps = [...w.bps, ...await furnishedLots(w.ctx, o)];
+  return w;
 }
 
 // ---------------------------------------------------------------- geometry from public records

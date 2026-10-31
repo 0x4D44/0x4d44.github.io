@@ -8,9 +8,9 @@ export default {
   glass: { color: 0xcfe3ee, rough: 0.04, metal: 0, alpha: 0.22, tex: false, vertexColors: false, env: 1.5, side: 'double' },
 
   // ---- ground ---------------------------------------------------------------------------------------------------
-  ground_dirt: { color: 0x8a6a4a, rough: 1, tile: 3, prio: 1, desc: 'packed reddish-brown hillside earth with small stones, dry roots and patchy dry grass, top-down' },
+  ground_dirt: { color: 0x8a6a4a, rough: 1, tile: 3, tri: true, prio: 1, desc: 'packed reddish-brown hillside earth with small stones, dry roots and patchy dry grass, top-down' },
   dirt_path: { color: 0x8c6c4c, rough: 1, tile: 3, prio: 1, desc: 'compacted ochre-brown earth footpath worn smooth in the middle, scattered pebbles, small dry weeds at the edges, top-down' },
-  grass_patchy: { color: 0x7b8a47, rough: 1, tile: 4, prio: 1, desc: 'patchy Andean hillside grass, kikuyu green mixed with straw-yellow tufts and bare reddish soil patches, top-down' },
+  grass_patchy: { color: 0x7b8a47, rough: 1, tile: 4, tri: true, prio: 1, desc: 'patchy Andean hillside grass, kikuyu green mixed with straw-yellow tufts and bare reddish soil patches, top-down' },
   asphalt: { color: 0x4a4a4c, rough: 0.95, tile: 3, prio: 1, desc: 'worn dark-grey asphalt road surface, fine aggregate, tyre-polished patches, hairline cracks and a few tar-filled repairs, top-down' },
   cobble_stone: { color: 0x77746c, rough: 0.9, tile: 1.5, prio: 1, desc: 'old rounded river-stone cobbles (adoquin, piedra bola) in grey, brown and ochre, soil and moss in the joints, top-down' },
 

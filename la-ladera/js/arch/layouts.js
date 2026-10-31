@@ -1,39 +1,12 @@
 // Per-kind room layouts. Each layout(S) fills S with rooms/doors/core for every floor. Pure data.
-import { T_INT, R, cutSouth, cutNorth, cutEast, cutWest, cutX, rw, rd, rcx, rcz, clamp, rectMinusRects } from './geom.js';
+import { T_INT, R, cutSouth, cutX, cutWest, cutEast, rw, rd, rcx, rcz, clamp, rectMinusRects } from './geom.js';
 import { coreGeo } from './coregeo.js';
 import { coreDims } from './stairs.js';
+import { stack, carveBath, entranceU, wallLen } from './layouthelp.js';
+import { planCourtyard, planTenement, planSchool, planClinic, planHall } from './layouts_special.js';
+import { NAVE_H, LOW_H, DAIS_H, DAIS_D, DAIS_HALF } from './chapel_interior.js';
 
 const ti = T_INT;
-
-/** Split `rect` (south -> north) into stacked rooms: specs [[type, depth|null, opts?], ...]; null/last = remainder. */
-function stack(S, k, rect, specs) {
-  const out = []; let cur = rect;
-  for (let i = 0; i < specs.length; i++) {
-    const [type, d, o] = specs[i];
-    if (i === specs.length - 1 || d == null) { out.push(S.addRoom(k, type, cur, o)); break; }
-    const [rest, strip] = cutSouth(cur, d);
-    out.push(S.addRoom(k, type, strip, o)); cur = rest;
-  }
-  return out;
-}
-
-/** Carve a bathroom out of `room` (its rect shrinks); returns the new bathroom room. */
-function carveBath(S, room, k, awaySide) {
-  const r = room.rect, bw = 1.55, bd = 1.7;
-  // classic rule: beside the room when it is wide enough, else across its back wall; but never leave a sliver (< 1.4 m) behind:
-  // when the classic choice does, take the other cut if that leaves more
-  const left = (beside) => (beside ? Math.min(rw(r) - bw - ti, rd(r)) : Math.min(rw(r), rd(r) - bd - ti));
-  let beside = rw(r) >= bw + ti + 1.9;
-  if (left(beside) < 1.4 && left(!beside) > left(beside)) beside = !beside;
-  if (beside) {
-    const [a, b] = awaySide === 'east' ? cutEast(r, bw) : cutWest(r, bw);
-    room.rect = awaySide === 'east' ? a : b;
-    return S.addRoom(k, 'bathroom', awaySide === 'east' ? b : a);
-  }
-  const [bath, rest] = cutNorth(r, bd);
-  room.rect = rest;
-  return S.addRoom(k, 'bathroom', bath);
-}
 
 const landingAt = (S) => (S.core ? S.core.landing : null);
 
@@ -54,8 +27,8 @@ function homeFloor(S, g, k, role) {
   }
   const Rb = g.restB, Dr = rd(Rb);
   let south, north;
-  if (Dr >= 4.9) {
-    const ds = clamp(Dr * 0.5 - 0.1, 2.4, 3.6);
+  if (Dr >= 4.9 && !(g.upOne && !pub)) {                                                 // `upOne`: upstairs, one long room beside the stair instead of two small ones
+    const ds = g.dd ?? clamp(Dr * 0.5 - 0.1, 2.4, 3.6);
     [south, north] = stack(S, k, Rb, [[pub ? 'dining' : 'bedroom', ds], [pub ? 'kitchen' : 'bedroom', null]]);
   } else { south = north = S.addRoom(k, pub ? 'kitchen' : 'bedroom', Rb); }
   const bath = g.back ? S.addRoom(k, 'bathroom', g.back) : carveBath(S, north, k, away);
@@ -63,8 +36,11 @@ function homeFloor(S, g, k, role) {
     S.link(front, core, pub ? { kind: 'arch', w: 1.3, atX: rcx(core.rect) } : { atX: rcx(core.rect) });
     S.link(core, south, { atZ: rcz(lz) });
   }
-  S.link(front, south, pub ? { kind: 'arch', w: 1.2 } : {});
-  if (south !== north) S.link(south, north);
+  // The middle room of a private floor is under 2 m wide: doors in the centre of both short walls would cut it into a 0.9 m aisle and two 0.5 m strips with no room for a bed,
+  // so both go to the end the stair door is on (`link` clamps an infinite `at` to the wall's 0.1 m margin) and the far strip stays free (R4-103).
+  const hug = pub ? {} : { atX: g.coreLeft ? -Infinity : Infinity };
+  S.link(front, south, pub ? { kind: 'arch', w: 1.2 } : hug);
+  if (south !== north) S.link(south, north, hug);
   S.link(north, bath);
   return { front, core, rooms: [south, north, bath] };
 }
@@ -101,8 +77,6 @@ export function layoutKiosk(S) {
   S.extDoor(room, 'front', 0, { kind: 'shutter', w: clamp(rw(S.inner) - 0.9, 1.6, 2.4), h: 2.2, entrance: 'shop' });
 }
 
-function entranceU(S) { const e = S.lot.entrance; return e && e.side === 'front' ? (e.u ?? 0) : 0; }
-
 /** Respect the unmet-core fallback: if the core does not fit, drop to a single storey. */
 function geoOrDegrade(S, style, o) {
   const g = coreGeo(S, style, o);
@@ -110,8 +84,8 @@ function geoOrDegrade(S, style, o) {
   return g;
 }
 
-export function layoutHouse(S) {
-  const g = S.nUp ? geoOrDegrade(S, 'home') : null;
+export function layoutHouse(S, geo) {
+  const g = geo ?? (S.nUp ? geoOrDegrade(S, 'home') : null);
   if (!g) {
     const sala = flatHome(S, 0);
     S.extDoor(sala, 'front', entranceU(S), { entrance: 'main' });
@@ -123,6 +97,88 @@ export function layoutHouse(S) {
     const r = homeFloor(S, g, k, role);
     if (k === 0) S.extDoor(r.front, 'front', entranceU(S), { entrance: 'main' });
   }
+}
+
+// ---- rowhouse (R4-007) ----------------------------------------------------------------------------------------------------------------------------
+const ROW_DF_MIN = 2.5, ROW_BD_MIN = 1.4, ROW_BD_MAX = 2.0, ROW_SLACK_MAX = 5.6;   // shortest front room; depth range of the bathroom strip behind the stair; front room + strip beyond which the house proportions apply
+const ROW_KITCHEN_MIN = 5.0, ROW_BEDROOM_MIN = 5.0, ROW_DINING_DEPTH_MIN = 2.1;      // m2 of a kitchen, of a bedroom beside the stair; m of the shortest dining room
+
+/**
+ * The geometry of a rowhouse: the house plan with its bathroom in a strip BEHIND the stair, so the rest column (beside the stair) holds a dining room and a kitchen of at least
+ * 5 m2 instead of a kitchen and a bath at 4 m2 each, and upstairs two bedrooms (or, by lot, one long one) instead of a 4 m2 cell. The strip's depth (1.4-2.0 m) and with it the
+ * front room's (2.5 m up) vary by lot, the stair sits against the party wall (or either side), and the kitchen takes the depth it needs (a narrow lot gets a smaller dining room
+ * and, upstairs, one long bedroom instead of a second one under 5 m2). A deeper plot (front room + strip over 5.6 m) keeps the house plan's own proportions (front room at 38%
+ * of the depth, a strip behind the stair from what is left). A plot too small for a strip (null) keeps the plain house plan.
+ */
+function rowhouseGeo(S) {
+  if (!S.nUp) return null;
+  const { inner } = S, cd = coreDims(S.fh), Wi = rw(inner), Di = rd(inner), slack = Di - cd.along - 2 * ti;       // front room + bathroom strip share this depth
+  if (Wi - cd.across - ti < 1.6 || slack < ROW_DF_MIN + ROW_BD_MIN - 1e-9) return null;
+  const R = S.rng.fork('rowhouse'), stock = slack > ROW_SLACK_MAX;
+  const coreLeft = S.party.left && !S.party.right ? true : S.party.right && !S.party.left ? false : R.chance(0.5);
+  const bd = R.range(ROW_BD_MIN, Math.max(ROW_BD_MIN, Math.min(ROW_BD_MAX, slack - ROW_DF_MIN))), oneDraw = R.next();
+  const g = coreGeo(S, 'home', stock ? { coreLeft } : { coreLeft, df: slack - bd, backMin: bd - 1e-6 });
+  if (!g || g.fail || !g.back || (!stock && Math.abs(rd(g.back) - bd) > 1e-6)) return null;
+  const Dr = rd(g.restB), W = rw(g.restB), dk = Math.max((Dr - ti) / 2, ROW_KITCHEN_MIN / W), dd = Dr - ti - dk;          // kitchen (the back room) and dining room (the front one) depths
+  if (dd < ROW_DINING_DEPTH_MIN) return null;
+  g.dd = dd;
+  g.upOne = oneDraw < 0.35 || W * dd < ROW_BEDROOM_MIN;
+  return g;
+}
+
+const FLAT_BED_W = 1.9, FLAT_LIVING_AREA = 6.0;     // the narrowest bedroom (m) and the smallest split-plan living room (m2) a flat is planned with
+
+/**
+ * The one home floor of a shop with a single storey above it (shop, home, roof): a flat. A home needs a bedroom of its own, and this floor held a living room, a kitchen and a
+ * bathroom (17 of the barrio's shop homes had nowhere to sleep). The bedroom belongs to the shopkeeper's household (`occupant: 'shopkeeper'`, the shop's own), so the keeper has a bed.
+ * Three plans, by what the lot gives:
+ *  - a rest column deep enough for two rooms (5 m, and the bedroom at least FLAT_BED_W wide: that is 5.5 m2 and more for every lot the planner takes, 7 to 12 m deep and 4.2 to 10 m
+ *    wide), the bath in its own strip behind the stair: the kitchen beside the stair (the hub: the landing's door and the living room's arch open onto it), the bedroom behind it
+ *    and the bath off the bedroom; the whole front band stays the living room;
+ *  - a front band that takes both (the front band cut at its middle, so each room has a window bay of its own; the living room above the stair, at least the stair column's width
+ *    and FLAT_LIVING_AREA m2, the bedroom at least FLAT_BED_W wide): [living | bedroom], the bedroom's door onto the living room at the stair end; the rest column is the kitchen
+ *    (or dining room and kitchen) and the bath as in any home;
+ *  - else a studio: the whole front band is the bedroom, its door on the landing, and the kitchen (or a living room beside the stair) is where the home sits.
+ */
+function flatFloor(S, g, k) {
+  const core = S.coreRooms[k], lz = landingAt(S), Rb = g.restB, Dr = rd(Rb), away = g.coreLeft ? 'east' : 'west', own = { occupant: 'shopkeeper' };
+  const ds = clamp(Dr * 0.5 - 0.1, 2.4, 3.6), restSide = g.coreLeft ? 'right' : 'left';
+  const lit = (r) => { r.needsWindow = true; return r; };                  // genWindows lights a flagged room whose bays left it without glass (openings.js lightFlagged)
+  // (the bedroom behind the kitchen has the back wall and the side wall of the rest column to look out of: not when both are party walls)
+  if (g.back && Dr >= 4.9 && rw(Rb) >= FLAT_BED_W - 1e-9 && !(S.party.back && S.party[restSide])) {
+    const living = lit(S.addRoom(k, 'living', g.front));
+    const [kit, bed] = stack(S, k, Rb, [['kitchen', ds], ['bedroom', null, own]]);
+    lit(bed);
+    const bath = S.addRoom(k, 'bathroom', g.back);
+    S.link(living, core, { kind: 'arch', w: 1.3, atX: rcx(core.rect) });
+    S.link(core, kit, { atZ: rcz(lz) });
+    S.link(living, kit, { kind: 'arch', w: 1.2 });
+    S.link(kit, bed, { atX: g.coreLeft ? -Infinity : Infinity });
+    S.link(bed, bath);
+    return;
+  }
+  const fw = rw(g.front), fd = rd(g.front), across = rw(core.rect);
+  const wA = Math.max(across + 0.3, fw / 2 - ti / 2), wB = fw - wA - ti;
+  const split = wB >= FLAT_BED_W - 1e-9 && wA * fd >= FLAT_LIVING_AREA;
+  let living = null, bedroom;
+  if (split) {
+    const [p, q] = g.coreLeft ? cutWest(g.front, wA) : cutEast(g.front, wA);
+    living = lit(S.addRoom(k, 'living', g.coreLeft ? p : q));
+    bedroom = lit(S.addRoom(k, 'bedroom', g.coreLeft ? q : p, own));
+  } else bedroom = lit(S.addRoom(k, 'bedroom', g.front, own));
+  let south, north;
+  if (Dr >= 4.9) [south, north] = stack(S, k, Rb, [[split ? 'dining' : 'living', ds], ['kitchen', null]]);
+  else south = north = S.addRoom(k, 'kitchen', Rb);
+  const bath = g.back ? S.addRoom(k, 'bathroom', g.back) : carveBath(S, north, k, away);
+  if (split) {
+    S.link(living, core, { kind: 'arch', w: 1.3, atX: rcx(core.rect) });
+    S.link(living, bedroom, { atZ: -Infinity });
+    const len = wallLen(living, south);
+    if (len >= 1.5) S.link(living, south, { kind: 'arch', w: Math.min(1.2, len - 0.3) });
+  } else S.link(core, bedroom, { atX: rcx(core.rect) });
+  S.link(core, south, { atZ: rcz(lz) });
+  if (south !== north) S.link(south, north);
+  S.link(north, bath);
 }
 
 /** Shop below, home above. Ground floor = columns [entry | core | back] + [shop | backroom]. */
@@ -171,32 +227,60 @@ export function layoutShopHouse(S) {
   const shopU = e && e.side === 'front' && e.u != null && e.u >= shopR.x0 && e.u <= shopR.x1 ? e.u : rcx(shopR);
   S.extDoor(shop, 'front', shopU, { kind: 'shutter', w: sw, h: 2.2, entrance: 'shop' });
   S.extDoor(entry, 'front', rcx(entry.rect), { entrance: 'main' });
-  // upper floors: home
-  for (let k = 1; k < S.F; k++) homeFloor(S, g, k, k === 1 ? 'public' : 'private');
+  // upper floors: home. One storey above the shop is a flat (flatFloor: a home needs a bedroom); a taller one has its living floor and the private floors above it
+  if (S.F === 2) flatFloor(S, g, 1);
+  else for (let k = 1; k < S.F; k++) homeFloor(S, g, k, k === 1 ? 'public' : 'private');
 }
 
-/** Block of flats: [unit | hall+core | unit] on every floor. */
+/** Narrowest a flat may be when it has the floor to itself (beside the hall and stair column); two to a floor need 2.8 m each. */
+const FLAT_ALONE_MIN = 3.4;
+/** Who lives in a flat (interiors/household.js turns it into the household's kind): drawn per flat, weighted like the barrio's own mix of families, couples and students, and elders. */
+const FLAT_OCC = [['family', 4], ['young', 5], ['elder', 3]];
+
+/**
+ * Block of flats: a hall + stair column, and beside it on every floor ONE flat (a narrow lot: [flat | column] or [column | flat]) or TWO ([flat | column | flat], a lot that gives
+ * each 2.8 m or more). The column is the building's own: the street door opens into its hall on the ground floor and the stair is the one stair, so it serves every flat; a flat
+ * opens onto the hall by ONE door and holds all of its rooms on its own floor (living, bedroom, kitchen, bath: a flat never has to borrow a bedroom from another floor or
+ * unit). Every room of a flat carries the flat's `unit` and `occupant`, which interiors/household.js turns into ONE household per flat; the hall and the stair of a floor
+ * carry those of its first flat, so they make no household of their own (one with no bedroom). A lot too small for even one flat (under 5.5 m inside, or 8.4 m deep) is planned as a house.
+ */
 export function layoutApartments(S) {
-  const { inner } = S, Wi = rw(inner), Di = rd(inner), cd = coreDims(S.fh);
-  // a unit is living (>= 3.0) + bedroom (>= 2.8) + kitchen/bath band (>= 2.4) front to back; a shallower plot is planned as a house
-  if (!S.nUp || Wi < cd.across + 2 * ti + 5.6 || Di < cd.along + ti + 3 || Di < 3.0 + 2.8 + 2.4 + 2 * ti) { return layoutHouse(S); }
-  const cw = cd.across, wu = (Wi - cw - 2 * ti) / 2;
-  const left = R(inner.x0, inner.z0, inner.x0 + wu, inner.z1), mid = R(left.x1 + ti, inner.z0, left.x1 + ti + cw, inner.z1), right = R(mid.x1 + ti, inner.z0, inner.x1, inner.z1);
+  const { inner } = S, Wi = rw(inner), Di = rd(inner), cd = coreDims(S.fh), cw = cd.across;
+  const two = Wi >= cw + 2 * ti + 5.6;
+  // a flat is living (>= 3.0) + bedroom (>= 2.8) + kitchen/bath band (>= 2.4) front to back; a shallower plot is planned as a house
+  if (!S.nUp || (!two && Wi < cw + ti + FLAT_ALONE_MIN) || Di < cd.along + ti + 3 || Di < 3.0 + 2.8 + 2.4 + 2 * ti) { return layoutHouse(S); }
+  let mid, flats;                                             // the column, and each flat's rect with the side its bath goes to (away from the hall)
+  if (two) {
+    const wu = (Wi - cw - 2 * ti) / 2, left = R(inner.x0, inner.z0, inner.x0 + wu, inner.z1);
+    mid = R(left.x1 + ti, inner.z0, left.x1 + ti + cw, inner.z1);
+    flats = [[left, 'west'], [R(mid.x1 + ti, inner.z0, inner.x1, inner.z1), 'east']];
+  } else {
+    // the column against a party wall (the flat keeps its windows), else on the side the lot's street door is on
+    const colLeft = S.party.left && !S.party.right ? true : S.party.right && !S.party.left ? false : entranceU(S) <= 0;
+    mid = colLeft ? R(inner.x0, inner.z0, inner.x0 + cw, inner.z1) : R(inner.x1 - cw, inner.z0, inner.x1, inner.z1);
+    flats = [colLeft ? [R(mid.x1 + ti, inner.z0, inner.x1, inner.z1), 'east'] : [R(inner.x0, inner.z0, mid.x0 - ti, inner.z1), 'west']];
+  }
   const df = Di - cd.along - ti;
   const [upper, hallRect] = cutSouth(mid, df);
   S.placeCore(upper, 'z', false); S.addCoreRooms();
-  const units = [left, right];
+  const orng = S.rng.fork('flats'), ds = clamp(0.34 * Di, 3.0, 4.2), dd = clamp(0.3 * Di, 2.8, 3.6);
   for (let k = 0; k < S.F; k++) {
     const hall = S.addRoom(k, k === 0 ? 'entry' : 'hall', hallRect);
     const core = S.coreRooms[k];
     S.link(hall, core, { kind: 'arch', w: 1.3, atX: rcx(core.rect) });
-    for (const [ui, u] of units.entries()) {
-      const ds = clamp(0.34 * Di, 3.0, 4.2), dd = clamp(0.3 * Di, 2.8, 3.6);
-      const [sala, dorm, cocina] = stack(S, k, u, [['living', ds], ['bedroom', dd, { occupant: ui ? 'young' : 'family' }], ['kitchen', null]]);
-      const bath = carveBath(S, cocina, k, ui ? 'east' : 'west');
+    let first = null;
+    flats.forEach(([u, away], ui) => {
+      const o = { unit: 'ab'[ui], occupant: orng.weighted(FLAT_OCC, (t) => t[1])[0] };
+      first ??= o;
+      const [sala, dorm, cocina] = stack(S, k, u, [['living', ds, o], ['bedroom', dd, o], ['kitchen', null, o]]);
+      const bath = carveBath(S, cocina, k, away);
+      bath.unit = o.unit; bath.occupant = o.occupant;
       S.link(hall, sala, { atZ: sala.rect.z1 - 1.0 });
       S.link(sala, dorm); S.link(dorm, cocina); S.link(cocina, bath);
-    }
+    });
+    // the hall and the stair are nobody's home but must be in a household (interiors/household.js keys every room): the floor's first flat's, so the block has no household
+    // without a bedroom (a resident cast into one would have no bed of their own)
+    for (const r of [hall, core]) { r.unit = first.unit; r.occupant = first.occupant; }
     if (k === 0) S.extDoor(hall, 'front', rcx(hallRect), { entrance: 'main', w: 1.0 });
   }
 }
@@ -222,15 +306,25 @@ export function layoutUnfinished(S) {
 export function layoutChapel(S) {
   const { inner } = S, Di = rd(inner), Wi = rw(inner);
   if (S.F > 1 || Di < 7 || Wi < 4.6) return layoutHouse(S);
+  // a nave is tall: the plan's 4.2 m storey grows to NAVE_H + 0.3 so a flat pine ceiling with beams sits at NAVE_H under the roof (chapel_interior.js dresses it);
+  // the sacristy and the bathroom keep the ordinary 2.9 m ceiling under the same walls
+  S.fh = NAVE_H + 0.3; S.h = NAVE_H; S.slab = 0.3;
+  for (const fd of S.floorsData) { fd.y = fd.index * S.fh; fd.h = S.h; }
   const bd = clamp(Di * 0.2, 2.4, 3.2);
   const [back, front] = cutSouth(inner, Di - bd - ti);
   const nave = S.addRoom(0, 'chapel', front, { name: 'Capilla' });
+  nave.finish.ceiling = 'ceiling_pine#e0c9a8';
   const [sacR, bathR] = cutX(back, back.x0 + clamp(rw(back) * 0.64, 2.6, 7.5));
   const sacristy = S.addRoom(0, 'office', sacR, { name: 'Sacristía' });
   const bath = S.addRoom(0, 'bathroom', bathR);
-  S.link(nave, sacristy, { atX: rcx(sacR) });
+  sacristy.h = bath.h = LOW_H;
+  S.link(nave, sacristy, { atX: sacR.x0 + 1.1 });                                                          // by the west corner: the altar and its dais keep the middle of the back wall
   S.link(sacristy, bath);
-  S.extDoor(nave, 'front', 0, { entrance: 'main', w: 1.3, h: 2.4 });
+  const hw = Math.min(DAIS_HALF, rw(front) / 2 - 0.9);                                                      // the sanctuary: one step up along the back wall (chapel_interior.js lays the floor, the altar and the retablo on it)
+  const dais = R((front.x0 + front.x1) / 2 - hw, front.z0, (front.x0 + front.x1) / 2 + hw, front.z0 + DAIS_D);
+  S.platforms.push({ room: nave.id, floor: 0, rect: dais, h: DAIS_H });
+  S.chapel = { room: nave.id, dais };
+  S.extDoor(nave, 'front', 0, { entrance: 'main', w: 1.8, h: 2.5, double: true });                     // a double door under an arch (shellfacade `chapel`)
 }
 
 /** Taller: the shop-house plan with a workshop (not a shop) at the street, behind a roll-up door. */
@@ -239,7 +333,10 @@ export function layoutWorkshop(S) {
   for (const r of S.rooms) if (r.type === 'shop') { r.type = 'workshop'; r.name = 'Taller'; r.zone = 'public'; }
 }
 
+/** A special plan returns false when the lot does not suit it (S untouched): the house plan takes over. */
+const orHouse = (plan) => (S) => { if (!plan(S)) layoutHouse(S); };
+
 export const LAYOUTS = {
-  house: layoutHouse, rowhouse: layoutHouse, shophouse: layoutShopHouse, cornerstore: layoutShopHouse, apartments: layoutApartments, unfinished: layoutUnfinished,
-  kiosk: layoutKiosk, chapel: layoutChapel, workshop: layoutWorkshop,
+  house: layoutHouse, rowhouse: (S) => layoutHouse(S, rowhouseGeo(S) ?? undefined), shophouse: layoutShopHouse, cornerstore: layoutShopHouse, apartments: layoutApartments, unfinished: layoutUnfinished,
+  kiosk: layoutKiosk, chapel: layoutChapel, workshop: layoutWorkshop, courtyard: orHouse(planCourtyard), tenement: orHouse(planTenement), school: orHouse(planSchool), clinic: orHouse(planClinic), hall: orHouse(planHall),
 };

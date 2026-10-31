@@ -43,6 +43,14 @@ const board = (c) => (g, w, h) => {
   txt(g, c.title, w / 2, h * (c.sub ? 0.38 : 0.5), big, { w: 'bold', f: c.f ?? F.slab, c: c.fg, max: w * 0.9 });
   if (c.sub) txt(g, c.sub, w / 2, h * 0.74, Math.min(h * 0.17, w / (c.sub.length * 0.5)), { c: c.fg2 ?? c.fg, f: c.f2 ?? F.sans, max: w * 0.9 });
 };
+/** A hand-lettered price board for one trade: red title, a line under it, then `rows` of [what, price] (the font shrinks until every row fits). */
+const priceBoard = (title, sub, rows) => (g, w, h) => {
+  bg(g, w, h, '#f6f0d8'); border(g, w, h, 'rgba(120,90,50,0.35)', Math.max(2, w * 0.02));
+  txt(g, title, w / 2, h * 0.065, h * 0.06, { w: 'bold', f: F.slab, c: '#b02a1a', max: w * 0.88 });
+  txt(g, sub, w / 2, h * 0.122, h * 0.038, { f: F.hand, c: '#5a4a3a', max: w * 0.88 });
+  line(g, w * 0.06, h * 0.158, w * 0.94, h * 0.158, '#b02a1a', 3);
+  table(g, rows, w * 0.08, h * 0.225, w * 0.84, h * 0.092, h * 0.06, { f: F.hand, c: '#222' });
+};
 const calendar = (head, sub, col, month = 'OCTUBRE 2026') => (g, w, h) => {
   bg(g, w, h, '#f4efe0'); rect(g, 0, 0, w, h * 0.42, col);
   txt(g, head, w / 2, h * 0.11, h * 0.065, { w: 'bold', c: '#fff', max: w * 0.9 }); txt(g, sub, w / 2, h * 0.22, h * 0.045, { c: '#fff', f: F.serif, max: w * 0.9 });
@@ -156,15 +164,49 @@ const PAINT = {
     bg(g, w, h, '#f6f0d8'); txt(g, 'LISTA DE PRECIOS', w / 2, h * 0.07, h * 0.065, { w: 'bold', f: F.slab, c: '#b02a1a', max: w * 0.9 }); line(g, w * 0.06, h * 0.13, w * 0.94, h * 0.13, '#b02a1a', 3);
     table(g, [['Arroz (libra)', '$2.800'], ['Huevo (unidad)', '$600'], ['Panela', '$3.500'], ['Leche (bolsa)', '$3.600'], ['Aceite (litro)', '$11.000'], ['Café (libra)', '$9.500'], ['Gaseosa 1,5 L', '$5.500'], ['Papa (libra)', '$1.800']], w * 0.08, h * 0.2, w * 0.84, h * 0.095, h * 0.062, { f: F.hand, c: '#222' });
   },
+  price_meat: priceBoard('CARNICERÍA', 'Precio por libra', [['Carne molida', '$13.000'], ['Lomo de res', '$22.000'], ['Costilla de res', '$14.500'], ['Costilla de cerdo', '$15.000'], ['Chicharrón', '$16.000'], ['Pollo entero', '$7.800'], ['Pechuga', '$11.500'], ['Chorizo (unidad)', '$2.500']]),
+  price_bread: priceBoard('PANADERÍA', 'Recién horneado', [['Pan francés', '$400'], ['Pan de bono', '$1.200'], ['Almojábana', '$1.500'], ['Buñuelo', '$1.200'], ['Pan de queso', '$1.800'], ['Mogolla integral', '$900'], ['Croissant', '$2.800'], ['Torta (porción)', '$3.500']]),
+  price_hair: priceBoard('PELUQUERÍA', 'Tarifas', [['Corte caballero', '$12.000'], ['Corte dama', '$20.000'], ['Corte niño', '$8.000'], ['Barba', '$6.000'], ['Cejas', '$4.000'], ['Tinte', '$35.000'], ['Alisado', '$60.000'], ['Peinado', '$15.000']]),
+  price_ferre: priceBoard('FERRETERÍA', 'Precios de hoy', [['Cemento (bulto)', '$32.000'], ['Varilla 3/8', '$18.500'], ['Tubo PVC 1/2"', '$9.000'], ['Pintura (galón)', '$58.000'], ['Martillo', '$22.000'], ['Clavos (libra)', '$4.500'], ['Bombillo LED', '$5.000'], ['Candado', '$12.000']]),
+  price_papel: priceBoard('PAPELERÍA', 'Útiles y copias', [['Cuaderno 100 h.', '$4.500'], ['Lápiz', '$800'], ['Esfero', '$1.000'], ['Resma carta', '$16.000'], ['Fotocopia', '$100'], ['Impresión', '$300'], ['Colores x12', '$6.500'], ['Cartulina', '$1.200']]),
+  price_shoes: priceBoard('ZAPATERÍA', 'Arreglos', [['Media suela', '$18.000'], ['Tacón (par)', '$8.000'], ['Cremallera', '$12.000'], ['Pegar suela', '$10.000'], ['Limpiada', '$3.000'], ['Cordones (par)', '$2.000'], ['Tintura', '$15.000'], ['Plantillas', '$7.000']]),
+  price_minutos: priceBoard('MINUTOS', 'Tarifas por minuto', [['A celular', '$200'], ['A fijo', '$100'], ['A Venezuela', '$450'], ['A España', '$500'], ['Internet (hora)', '$2.000'], ['Recarga mínima', '$2.000'], ['Impresión', '$300'], ['Fotocopia', '$100']]),
+  price_modista: priceBoard('MODISTA', 'Arreglos y confección', [['Ruedo de pantalón', '$6.000'], ['Cambio de cierre', '$10.000'], ['Entallar camisa', '$12.000'], ['Arreglo de falda', '$8.000'], ['Vestido a medida', '$90.000'], ['Uniforme escolar', '$45.000'], ['Bordado', '$15.000'], ['Botones', '$1.000']]),
+  price_taller: priceBoard('TALLER', 'Servicio de motos', [['Cambio de aceite', '$25.000'], ['Pinchazo', '$8.000'], ['Kit de arrastre', '$60.000'], ['Frenos', '$30.000'], ['Sincronización', '$55.000'], ['Lavado', '$10.000'], ['Bujía', '$12.000'], ['Revisión', '$15.000']]),
+  barber_pole(g, w, h) {                                                       // the striped pole of every barber, behind glass
+    bg(g, w, h, '#2a2a30'); const cap = h * 0.09;
+    g.save(); g.beginPath(); g.rect(w * 0.1, cap, w * 0.8, h - 2 * cap); g.clip(); rect(g, 0, cap, w, h - 2 * cap, '#f4f0e8');
+    const P = h * 0.2;
+    for (let k = -3; k < 8; k++) for (const [off, col] of [[0, '#c82a2a'], [P / 2, '#2f5fa8']]) { const y = cap + k * P + off; poly(g, [[0, y], [w, y - w * 0.9], [w, y - w * 0.9 + P * 0.25], [0, y + P * 0.25]], col); }
+    g.restore();
+    const gr = g.createLinearGradient(w * 0.1, 0, w * 0.9, 0); gr.addColorStop(0, 'rgba(0,0,0,0.35)'); gr.addColorStop(0.3, 'rgba(255,255,255,0.3)'); gr.addColorStop(0.6, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.4)');
+    g.fillStyle = gr; g.fillRect(w * 0.1, cap, w * 0.8, h - 2 * cap);
+    rect(g, 0, 0, w, cap, '#b8b8bc'); rect(g, 0, h - cap, w, cap, '#b8b8bc'); rect(g, 0, cap * 0.8, w, cap * 0.25, '#7a7a7e'); rect(g, 0, h - cap * 1.05, w, cap * 0.25, '#7a7a7e');
+  },
   menu_board(g, w, h) {
     bg(g, w, h, '#2a2e2a'); border(g, w, h, '#6b4226', w * 0.04); txt(g, 'MENÚ DEL DÍA', w / 2, h * 0.09, h * 0.075, { f: F.hand, w: 'bold', c: '#f4f0e0', max: w * 0.8 }); line(g, w * 0.1, h * 0.15, w * 0.9, h * 0.15, 'rgba(255,255,255,0.7)', 3);
     table(g, [['Sancocho de gallina', '$14.000'], ['Bandeja paisa', '$18.000'], ['Sopa + seco', '$12.000'], ['Arepa con queso', '$3.500'], ['Jugo natural', '$3.500'], ['Tinto', '$1.200']], w * 0.1, h * 0.25, w * 0.8, h * 0.115, h * 0.058, { f: F.hand, c: '#f4f0e0' });
     txt(g, '¡Pregunte por el fríjol!', w / 2, h * 0.93, h * 0.055, { f: F.hand, c: '#f2d050', max: w * 0.8 });
   },
+  sign_tienda: board({ bg: '#b8321e', fg: '#fff1c0', fg2: '#ffe08a', title: 'TIENDA', sub: 'De todo un poco', border: '#f2d050' }),
+  sign_fruver: board({ bg: '#2f7a3a', fg: '#fff6c8', fg2: '#ffe27a', title: 'FRUTAS Y VERDURAS', sub: 'Fresco del campo', border: '#e8c030' }),
+  sign_carne: board({ bg: '#8a1c1c', fg: '#fff1e0', fg2: '#ffd9b0', title: 'CARNICERÍA', sub: 'Carne fresca todos los días', border: '#e8d0b0' }),
+  sign_resto: board({ bg: '#7a4a1a', fg: '#ffe9a8', fg2: '#ffffff', title: 'RESTAURANTE', sub: 'Almuerzos · Sancocho · Bandeja', border: '#f2d050' }),
+  sign_papel: board({ bg: '#1f5fa8', fg: '#ffffff', fg2: '#ffe27a', title: 'PAPELERÍA', sub: 'Útiles · Copias · Impresiones', border: '#ffe27a' }),
+  sign_modista: board({ bg: '#8a2a62', fg: '#fff0f6', fg2: '#ffd0e8', title: 'MODISTA', sub: 'Arreglos y confección', border: '#ffd0e8' }),
+  sign_zapa: board({ bg: '#3a2a1c', fg: '#ffe9a8', fg2: '#f4e8d0', title: 'ZAPATERÍA', sub: 'Remontamos su calzado', border: '#c8a050' }),
+  sign_taller: board({ bg: '#2a2a2e', fg: '#ffd23a', fg2: '#e8e8e8', title: 'TALLER DE MOTOS', sub: 'Mecánica · Frenos · Llantas', border: '#ffd23a' }),
   sign_tinto: board({ bg: '#2a1c14', fg: '#f2d050', fg2: '#f4e8d0', title: 'TINTO', sub: '$1.200 · pan y buñuelo', border: '#6b4226' }),
   sign_pan: board({ bg: '#7a3a1a', fg: '#f8e0a0', fg2: '#f4e8d0', title: 'PANADERÍA', sub: 'Pan caliente todo el día', border: '#d8a050', f: F.serif, f2: F.serif }),
   sign_pharma(g, w, h) { bg(g, w, h, '#f6f6f2'); rect(g, w * 0.38, h * 0.12, w * 0.24, h * 0.52, '#2f9a58'); rect(g, w * 0.2, h * 0.3, w * 0.6, h * 0.2, '#2f9a58'); txt(g, 'DROGUERÍA', w / 2, h * 0.8, h * 0.13, { w: 'bold', c: '#1f7a3e', max: w * 0.9 }); txt(g, 'San José', w / 2, h * 0.93, h * 0.08, { c: '#444', max: w * 0.9 }); },
-  sign_barber(g, w, h) { bg(g, w, h, '#1c2a48'); border(g, w, h, '#e8e4da', h * 0.05); txt(g, 'PELUQUERÍA', w / 2, h * 0.32, h * 0.22, { f: F.slab, c: '#f4f0e0', max: w * 0.84 }); txt(g, 'Cortes · Barba · Tintes', w / 2, h * 0.62, h * 0.12, { c: '#e8c030', max: w * 0.84 }); for (let i = 0; i < 6; i++) poly(g, [[w * (0.1 + i * 0.03), h * 0.8], [w * (0.13 + i * 0.03), h * 0.8], [w * (0.17 + i * 0.03), h * 0.92], [w * (0.14 + i * 0.03), h * 0.92]], i % 2 ? '#c82a2a' : '#f4f0e0'); },
+  sign_barber(g, w, h) {
+    bg(g, w, h, '#15264a'); border(g, w, h, '#f4f0e4', h * 0.05);
+    txt(g, 'PELUQUERÍA', w / 2, h * 0.34, h * 0.3, { f: F.slab, c: '#ffffff', max: w * 0.86 }); txt(g, 'Cortes · Barba · Tintes', w / 2, h * 0.62, h * 0.13, { c: '#f2c230', w: 'bold', max: w * 0.84 });
+    const n = 12, sw = w * 0.84 / n, y0 = h * 0.76, hh = h * 0.13;                       // red, white and blue barber stripes along the foot of the sign
+    g.save(); g.beginPath(); g.rect(w * 0.08, y0, w * 0.84, hh); g.clip();
+    for (let i = -2; i < n + 2; i++) { const x = w * 0.08 + i * sw; poly(g, [[x, y0 + hh], [x + sw, y0 + hh], [x + sw + hh * 0.7, y0], [x + hh * 0.7, y0]], ['#d42a2a', '#f4f0e8', '#2f5fa8'][((i % 3) + 3) % 3]); }
+    g.restore();
+  },
   sign_minutos: board({ bg: '#1c2a48', fg: '#ffffff', fg2: '#e8c030', title: 'MINUTOS', sub: 'Llamadas · Datos · Recargas', border: '#e8c030' }),
   sign_ferre: board({ bg: '#2a2a2a', fg: '#f2c030', fg2: '#f4f0e0', title: 'FERRETERÍA', sub: 'Todo para su obra', border: '#f2c030' }),
   chalkboard(g, w, h) {
@@ -204,6 +246,112 @@ function football(g, w, h, c1, c2, title, sub) {
   [[0.22, 0.58, '#d8a020'], [0.4, 0.64, '#d8a020'], [0.6, 0.57, '#2f6fbf'], [0.78, 0.65, '#2f6fbf']].forEach(([x, y, c]) => { circ(g, w * x, h * (y - 0.07), h * 0.025, '#d8a880'); rect(g, w * x - h * 0.02, h * (y - 0.045), h * 0.04, h * 0.05, c); rect(g, w * x - h * 0.02, h * (y + 0.005), h * 0.04, h * 0.05, '#222'); });
   circ(g, w * 0.5, h * 0.66, h * 0.013, '#fff'); lines(g, sub.split('\n'), w / 2, h * 0.82, h * 0.075, h * 0.052, { c: '#f4f0e0', w: 'bold', max: w * 0.9 });
 }
+
+// ------------------------------------------------------------------ generated families (decals.js `gen`): one painter per number, each from its own seeded stream
+const rngOf = (seed) => { let s = Math.imul(seed + 1, 2654435761) >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; };
+const pickOf = (r, a) => a[Math.floor(r() * a.length)];
+const SHIRTS = ['#a83a3a', '#2f5f9a', '#3a7a4a', '#c8a030', '#7a3a7a', '#e0e0d8', '#d8703a', '#2a2a30', '#d86a8a', '#4a8a9a'];
+const SKINS = ['#a8785a', '#c89a78', '#e0b890', '#8a5a3e', '#d0a07c'];
+const HAIRS = ['#2a1c14', '#1c1008', '#4a2c18', '#c8c0b0', '#6a4a2a'];
+const TONES = [['#d8c098', '#8a6a48'], ['#c8d0d8', '#6a7a88'], ['#e0c8a0', '#9a7a50'], ['#c8d4b8', '#6a7a58'], ['#d8b8a8', '#8a5a48'], ['#d0c8d8', '#6a5a78'], ['#e8dcc0', '#9a8458']];
+const CAPTIONS = ['Navidad 2011', 'Primera comunión', 'Cumpleaños de mamá', 'Paseo al río', 'Día de la madre', 'Año nuevo 2015', 'El bautizo', 'Los quince años', 'Fiesta de grado', 'Con los primos', 'La finca de los tíos', 'Semana Santa 2012'];
+const famPhoto = (i) => (g, w, h) => {
+  const r = rngOf(i), n = 2 + Math.floor(r() * 3);
+  const people = Array.from({ length: n }, (_, j) => ({ shirt: pickOf(r, SHIRTS), skin: pickOf(r, SKINS), hair: pickOf(r, HAIRS), k: j === n - 1 && r() < 0.5 ? 0.7 : 0.85 + r() * 0.2 }));
+  photo(people, pickOf(r, TONES), CAPTIONS[(i * 5) % CAPTIONS.length])(g, w, h);
+};
+const SKIES = [['#7aa8d8', '#f0e0b8'], ['#f0a868', '#f8e0b0'], ['#a8c0d8', '#e8e8e0'], ['#5a7aa8', '#d8c8a8'], ['#e8c0a0', '#f4e4c8']];
+const landscapeV = (i) => (g, w, h) => {
+  const r = rngOf(i + 100), sky = pickOf(r, SKIES);
+  grad(g, w, h, [[0, sky[0]], [0.55, sky[1]]]); circ(g, w * (0.2 + r() * 0.6), h * (0.16 + r() * 0.12), h * (0.06 + r() * 0.04), r() < 0.7 ? '#fbe078' : '#f4f0e0');
+  const ridge = (base, amp, col) => { const pts = [[0, h]]; for (let k = 0; k <= 8; k++) pts.push([w * k / 8, h * (base - amp * r())]); pts.push([w, h]); poly(g, pts, col); };
+  ridge(0.62, 0.3, pickOf(r, ['#5a6a8a', '#6a7a9a', '#4a5a7a'])); ridge(0.78, 0.2, pickOf(r, ['#4a8a48', '#5a9a50', '#6a8a40'])); ridge(0.95, 0.12, pickOf(r, ['#3a6a38', '#4a7a30']));
+  if (r() < 0.6) { const x = w * (0.3 + r() * 0.4), y = h * 0.8; rect(g, x, y, w * 0.08, h * 0.06, '#e8e0d0'); poly(g, [[x - w * 0.015, y], [x + w * 0.04, y - h * 0.06], [x + w * 0.095, y]], pickOf(r, ['#a8402a', '#8a3a2a', '#b85a30'])); }
+  if (r() < 0.5) for (let t = 0; t < 3; t++) { const x = w * (0.1 + r() * 0.8), y = h * (0.86 + r() * 0.08); rect(g, x, y - h * 0.08, w * 0.012, h * 0.08, '#5a3a1c'); circ(g, x + w * 0.006, y - h * 0.1, w * 0.035, '#2a6a30'); }
+};
+const coastV = (i) => (g, w, h) => {
+  const r = rngOf(i + 200), warm = pickOf(r, [['#f0a868', '#f8d8a0'], ['#e8806a', '#f8c8a0'], ['#a8c8e8', '#f4ecd0'], ['#f0c870', '#f8e8b8']]);
+  grad(g, w, h, [[0, warm[0]], [0.45, warm[1]], [0.46, pickOf(r, ['#3a8ac0', '#2a7aa8', '#3a9ab0'])], [1, '#1c5a8a']]); circ(g, w * (0.2 + r() * 0.6), h * (0.3 + r() * 0.1), h * 0.09, '#fff2c0'); rect(g, 0, h * 0.82, w, h * 0.18, '#e8d098');
+  if (r() < 0.6) { const x = w * (0.55 + r() * 0.25), y = h * 0.62; poly(g, [[x, y], [x, y - h * 0.22], [x + w * 0.12, y]], '#f4f0e0'); rect(g, x - w * 0.04, y, w * 0.2, h * 0.025, '#6a3a1c'); }
+  const px = w * (0.12 + r() * 0.3); line(g, px, h * 0.9, px + w * 0.05, h * 0.5, '#5a3a1c', w * 0.02);
+  for (let k = 0; k < 6; k++) { const a = -2.6 + k * 0.5; line(g, px + w * 0.05, h * 0.5, px + w * 0.05 + Math.cos(a) * w * 0.14, h * 0.5 + Math.sin(a) * h * 0.14 + h * 0.06, '#2a7a38', w * 0.016); }
+};
+const flowersV = (i) => (g, w, h) => {
+  const r = rngOf(i + 300), ground = pickOf(r, [['#e8e0cc', '#c8b890'], ['#d8e4e0', '#a8bcb0'], ['#f0dcd0', '#d0a890']]), pal = pickOf(r, [['#d83a3a', '#f0c030', '#f0f0e8', '#e87aa0'], ['#e8a020', '#f8d848', '#c85a1a', '#f0f0e8'], ['#7a4ab8', '#e87aa0', '#f0f0e8', '#4a6ad0']]);
+  grad(g, w, h, [[0, ground[0]], [1, ground[1]]]); rect(g, w * 0.34, h * 0.66, w * 0.32, h * 0.26, pickOf(r, ['#5a7aa8', '#a8503a', '#4a8a6a', '#8a5a9a'])); rect(g, w * 0.3, h * 0.64, w * 0.4, h * 0.04, 'rgba(0,0,0,0.22)');
+  const n = 7 + Math.floor(r() * 5);
+  for (let k = 0; k < n; k++) { const a = -0.9 + k * (1.8 / (n - 1)), x = w * 0.5 + Math.sin(a) * w * 0.3, y = h * 0.32 + Math.cos(a * 1.4) * h * 0.1 + (k % 3) * h * 0.04; line(g, w * 0.5, h * 0.66, x, y, '#3a7a38', w * 0.014); circ(g, x, y, w * (0.05 + r() * 0.03), pal[k % 4]); circ(g, x, y, w * 0.022, '#8a4a1a'); }
+};
+/** A child's drawing, one subject per number, in wobbly crayon with its own title. */
+const kidsDraw = (i) => (g, w, h) => {
+  const r = rngOf(i + 400), sub = (i - 1) % 6, sun = () => { circ(g, w * 0.84, h * 0.14, w * 0.08, '#f8c818'); rays(g, w * 0.84, h * 0.14, w * 0.1, w * 0.15, 9, '#f8c818'); };
+  bg(g, w, h, pickOf(r, ['#f6f2e6', '#f4f0e0', '#faf6ea'])); rect(g, 0, h * 0.74, w, h * 0.12, pickOf(r, ['#58b848', '#68c058', '#8ac060'])); rect(g, 0, h * 0.86, w, h * 0.14, '#faf6ea');
+  const title = ['MI PERRO', 'EL ARCOÍRIS', 'MI CARRO', 'MI MAMÁ', 'EL PEZ', 'MI ESCUELA'][sub];
+  if (sub === 0) { sun(); g.fillStyle = '#8a5a2a'; g.beginPath(); g.ellipse(w * 0.5, h * 0.62, w * 0.24, h * 0.1, 0, 0, Math.PI * 2); g.fill(); circ(g, w * 0.76, h * 0.54, w * 0.09, '#8a5a2a'); poly(g, [[w * 0.7, h * 0.47], [w * 0.68, h * 0.38], [w * 0.74, h * 0.46]], '#5a3a18'); [0.34, 0.42, 0.58, 0.64].forEach((x) => line(g, w * x, h * 0.68, w * x, h * 0.8, '#5a3a18', 4)); line(g, w * 0.26, h * 0.58, w * 0.18, h * 0.5, '#8a5a2a', 5); }
+  if (sub === 1) { ['#e83a3a', '#f08a20', '#f8d818', '#58b848', '#3a6ad0', '#8a3aa8'].forEach((c, k) => { g.strokeStyle = c; g.lineWidth = w * 0.035; g.beginPath(); g.arc(w * 0.5, h * 0.8, w * (0.42 - k * 0.04), Math.PI, 0); g.stroke(); }); circ(g, w * 0.14, h * 0.74, w * 0.07, '#fff'); circ(g, w * 0.86, h * 0.74, w * 0.07, '#fff'); }
+  if (sub === 2) { sun(); rect(g, w * 0.14, h * 0.5, w * 0.72, h * 0.18, pickOf(r, ['#e83a3a', '#3a6ad0', '#f08a20'])); rect(g, w * 0.3, h * 0.38, w * 0.38, h * 0.14, '#e8c0a0'); rect(g, w * 0.34, h * 0.41, w * 0.12, h * 0.08, '#a8d8f0'); rect(g, w * 0.52, h * 0.41, w * 0.12, h * 0.08, '#a8d8f0'); circ(g, w * 0.3, h * 0.7, w * 0.08, '#222'); circ(g, w * 0.7, h * 0.7, w * 0.08, '#222'); }
+  if (sub === 3) { poly(g, [[w * 0.5, h * 0.32], [w * 0.28, h * 0.76], [w * 0.72, h * 0.76]], pickOf(r, ['#d83a8a', '#3a6ad0', '#e8a020'])); circ(g, w * 0.5, h * 0.26, w * 0.09, '#e8c8a0'); g.fillStyle = '#5a3a18'; g.beginPath(); g.arc(w * 0.5, h * 0.24, w * 0.1, Math.PI, 0); g.fill(); line(g, w * 0.36, h * 0.5, w * 0.2, h * 0.6, '#e8c8a0', 5); line(g, w * 0.64, h * 0.5, w * 0.8, h * 0.6, '#e8c8a0', 5); heart(g, w * 0.84, h * 0.2, w * 0.08, '#e83a3a'); }
+  if (sub === 4) { rect(g, 0, 0, w, h * 0.78, '#a8d8f0'); g.fillStyle = '#f08a20'; g.beginPath(); g.ellipse(w * 0.46, h * 0.46, w * 0.24, h * 0.12, 0, 0, Math.PI * 2); g.fill(); poly(g, [[w * 0.68, h * 0.46], [w * 0.86, h * 0.34], [w * 0.86, h * 0.58]], '#f08a20'); circ(g, w * 0.34, h * 0.43, w * 0.025, '#222'); for (let k = 0; k < 4; k++) circ(g, w * (0.12 + k * 0.06), h * (0.7 - k * 0.12), w * 0.02, 'rgba(255,255,255,0.8)'); }
+  if (sub === 5) { sun(); rect(g, w * 0.16, h * 0.42, w * 0.68, h * 0.34, '#f0c070'); poly(g, [[w * 0.1, h * 0.42], [w * 0.5, h * 0.22], [w * 0.9, h * 0.42]], '#c8402a'); rect(g, w * 0.44, h * 0.56, w * 0.12, h * 0.2, '#8a5a2a'); [0.22, 0.66].forEach((x) => rect(g, w * x, h * 0.5, w * 0.12, h * 0.1, '#a8d8f0')); line(g, w * 0.5, h * 0.22, w * 0.5, h * 0.1, '#222', 3); poly(g, [[w * 0.5, h * 0.1], [w * 0.68, h * 0.14], [w * 0.5, h * 0.18]], '#f8d020'); }
+  txt(g, title, w / 2, h * 0.94, h * 0.08, { f: F.hand, c: pickOf(r, ['#c82a2a', '#2a5ac0', '#2a8a3a']), w: 'bold', max: w * 0.9 });
+};
+/** A framed plaque of lettering: two lines on a ground, a border. */
+const plaque = (l1, l2, c) => (g, w, h) => {
+  bg(g, w, h, c.bg); border(g, w, h, c.bd, h * 0.08); txt(g, l1, w / 2, h * 0.34, h * 0.17, { f: F.serif, w: 'bold', c: c.a, max: w * 0.84 }); txt(g, l2, w / 2, h * 0.68, h * 0.2, { f: F.serif, w: 'bold', c: c.b, max: w * 0.84 });
+};
+const sponsor = (head, sub, col) => calendar(head, sub, col);
+/** A notice on a stair: red or blue frame, a heading, lines of hand-written text, tear-off tabs along the foot when it is an offer. */
+const noticeOf = (c) => (g, w, h) => {
+  bg(g, w, h, c.bg ?? '#f4f0e0'); border(g, w, h, c.col, Math.max(3, w * 0.04));
+  txt(g, c.h1, w / 2, h * 0.13, h * 0.1, { f: F.slab, c: c.col, max: w * 0.86 }); txt(g, c.h2, w / 2, h * 0.27, h * 0.11, { f: F.slab, c: c.col, max: w * 0.86 });
+  lines(g, c.rows, w / 2, h * 0.47, h * 0.12, h * 0.072, { c: '#222', w: 'bold', max: w * 0.86 });
+  if (c.tabs) for (let i = 0; i < 6; i++) { const x = w * (0.1 + i * 0.14); rect(g, x, h * 0.8, w * 0.1, h * 0.15, '#e6dcc0'); line(g, x + w * 0.05, h * 0.82, x + w * 0.05, h * 0.93, '#a89870', 1); }
+};
+const PIC_NINO = (g, w, h) => {
+  grad(g, w, h, [[0, '#8ab8e8'], [0.7, '#f4ecd0'], [1, '#e8d8a8']]); rays(g, w / 2, h * 0.34, w * 0.18, w * 0.9, 26, 'rgba(255,215,120,0.4)');
+  poly(g, [[w * 0.36, h * 0.46], [w * 0.64, h * 0.46], [w * 0.74, h * 0.84], [w * 0.26, h * 0.84]], '#e87aa0'); rect(g, w * 0.34, h * 0.6, w * 0.32, h * 0.045, '#2c58a8');
+  line(g, w * 0.37, h * 0.5, w * 0.2, h * 0.58, '#f0c8a0', w * 0.04); line(g, w * 0.63, h * 0.5, w * 0.8, h * 0.58, '#f0c8a0', w * 0.04);
+  circ(g, w / 2, h * 0.34, w * 0.14, '#f0c8a0'); g.fillStyle = '#6a4a2a'; for (let k = 0; k < 7; k++) { g.beginPath(); g.arc(w * (0.4 + k * 0.033), h * 0.23 + (k % 2) * h * 0.01, w * 0.035, 0, Math.PI * 2); g.fill(); }
+  g.lineWidth = w * 0.014; circ(g, w / 2, h * 0.3, w * 0.2, null, '#e8b830');
+  rect(g, 0, h * 0.88, w, h * 0.12, '#3a2a1c'); txt(g, 'DIVINO NIÑO', w / 2, h * 0.94, h * 0.06, { w: 'bold', c: '#f2d050', max: w * 0.92 });
+};
+const PIC_CHIQUI = (g, w, h) => {
+  grad(g, w, h, [[0, '#24243a'], [1, '#4a3a2a']]); rays(g, w / 2, h * 0.36, w * 0.2, w, 30, 'rgba(255,215,120,0.28)');
+  poly(g, [[w * 0.5, h * 0.2], [w * 0.2, h * 0.84], [w * 0.8, h * 0.84]], '#3a58a8'); poly(g, [[w * 0.5, h * 0.2], [w * 0.38, h * 0.84], [w * 0.62, h * 0.84]], '#d8b840');
+  circ(g, w / 2, h * 0.27, w * 0.08, '#d8b088'); g.fillStyle = '#d8b840'; g.beginPath(); g.moveTo(w * 0.4, h * 0.2); g.lineTo(w * 0.44, h * 0.12); g.lineTo(w * 0.5, h * 0.17); g.lineTo(w * 0.56, h * 0.12); g.lineTo(w * 0.6, h * 0.2); g.closePath(); g.fill();
+  circ(g, w * 0.5, h * 0.55, w * 0.06, '#e8c8a0'); rect(g, 0, h * 0.86, w, h * 0.14, '#1c1410'); txt(g, 'N. S. DE CHIQUINQUIRÁ', w / 2, h * 0.93, h * 0.052, { w: 'bold', c: '#f2d050', max: w * 0.92 });
+};
+Object.assign(PAINT, {
+  picture_nino: PIC_NINO, picture_chiqui: PIC_CHIQUI,
+  poster_football_d(g, w, h) { football(g, w, h, '#c8302a', '#f4f0e0', 'CLÁSICO\nDE LA LOMA', 'Real Montaña vs. La Cumbre\nDomingo 10 a. m.'); },
+  poster_football_e(g, w, h) { football(g, w, h, '#1f5fa8', '#ffe27a', 'TORNEO\nRELÁMPAGO', 'Inscripciones abiertas\nSalón comunal'); },
+  poster_football_f(g, w, h) { football(g, w, h, '#7a3a8a', '#f4f0e0', 'ESCUELA DE\nFÚTBOL', 'Niños de 6 a 12 años\nMartes y jueves 4 p. m.'); },
+  poster_music_2(g, w, h) {
+    grad(g, w, h, [[0, '#1c5a7a'], [1, '#e8a020']]); rays(g, w / 2, h * 0.4, w * 0.15, w, 30, 'rgba(255,255,255,0.15)'); txt(g, 'FIESTAS', w / 2, h * 0.16, h * 0.14, { f: F.slab, c: '#fff', max: w * 0.9 }); txt(g, 'DEL BARRIO', w / 2, h * 0.3, h * 0.12, { f: F.slab, c: '#ffe070', max: w * 0.9 });
+    ['★', '♫', '★'].forEach((n, i) => txt(g, n, w * (0.25 + i * 0.25), h * (0.5 + (i % 2) * 0.08), h * 0.14, { c: '#fff' })); lines(g, ['Sábado desde las 4 p. m.', 'Orquesta · Comida · Juegos', 'Plazoleta de la Virgen'], w / 2, h * 0.74, h * 0.07, h * 0.05, { c: '#fff', w: 'bold', max: w * 0.9 });
+  },
+  calendar_ferre: sponsor('FERRETERÍA EL CONSTRUCTOR', 'Todo para su obra', '#d89a1a'),
+  calendar_pan: sponsor('PANADERÍA LA ESPIGA', 'El pan de cada día', '#a8602a'),
+  calendar_carne: sponsor('CARNES EL CORRAL', 'Fresca y al mejor precio', '#a82a2a'),
+  calendar_funeraria: sponsor('FUNERARIA LOS OLIVOS', 'Acompañándolos siempre', '#3a4a6a'),
+  calendar_coop: sponsor('COOPERATIVA SAN FRANCISCO', 'Ahorre con nosotros', '#2a7a8a'),
+  calendar_loteria: sponsor('LOTERÍA LA ABUNDANCIA', 'Juegue los martes', '#7a3a8a'),
+  calendar_repuestos: sponsor('REPUESTOS EL RÁPIDO', 'Motos y bicicletas', '#2a2a2e'),
+  calendar_optica: sponsor('ÓPTICA VISIÓN', 'Examen de la vista gratis', '#2a5aa8'),
+  calendar_agua: sponsor('AGUA CRISTALINA', 'Pida su botellón', '#3a9ac0'),
+  notice_dog: noticeOf({ col: '#c8501a', h1: 'SE PERDIÓ', h2: 'PERRITA', rows: ['Criolla, color café', 'Responde a «Canela»', 'Se agradece la ayuda', '310 555 0187'], tabs: true }),
+  notice_agua: noticeOf({ col: '#1f5fa8', h1: 'AVISO', h2: 'SIN AGUA', rows: ['El jueves de 8 a. m.', 'a 4 p. m. por arreglos', 'Guarde agua en tanques', 'Acueducto del barrio'] }),
+  notice_junta: noticeOf({ col: '#2f7a3a', h1: 'JUNTA COMUNAL', h2: 'REUNIÓN', rows: ['Domingo 10 a. m.', 'Salón comunal', 'Tema: el alumbrado', '¡Venga y opine!'] }),
+  notice_basura: noticeOf({ col: '#7a4a1a', h1: 'BASURA', h2: 'MARTES Y VIERNES', rows: ['Saque la bolsa', 'después de las 6 p. m.', 'No la deje en la escalera', 'Gracias, vecinos'] }),
+});
+for (let i = 1; i <= 10; i++) PAINT['photo_fam_' + i] = famPhoto(i);
+for (let i = 1; i <= 4; i++) { PAINT['art_land_' + i] = landscapeV(i); PAINT['art_coast_' + i] = coastV(i); PAINT['art_flow_' + i] = flowersV(i); }
+for (let i = 1; i <= 6; i++) PAINT['kids_draw_' + i] = kidsDraw(i);
+[['DIOS BENDIGA', 'ESTA CASA', { bg: '#e8f0e0', bd: '#4a7a3a', a: '#2a5a2a', b: '#a82a2a' }], ['CRISTO ES EL CENTRO', 'DE ESTE HOGAR', { bg: '#f4ecd8', bd: '#2c58a8', a: '#2c58a8', b: '#5a3a1c' }], ['AQUÍ SE REZA', 'EN FAMILIA', { bg: '#f0e0e0', bd: '#8a2a2a', a: '#8a2a2a', b: '#3a2a1c' }]]
+  .forEach(([a, b, c], i) => { PAINT['blessing_' + (i + 1)] = plaque(a, b, c); });
+
+/** The decals that have a painter (the test: every decal of decals.js is painted). */
+export const paintedIds = () => Object.keys(DECALS).filter((id) => PAINT[id]);
 
 // ------------------------------------------------------------------ packing and texture
 /** Paint the atlas. Returns { texture, uv: { id: [u0, v0, u1, v1] }, ppm, used } (v0 = bottom edge) or null without a DOM canvas. */

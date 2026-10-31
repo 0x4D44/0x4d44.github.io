@@ -10,6 +10,7 @@ export async function loadPeople(ctx) {
   const world = new PeopleWorld(ctx);
   worlds.set(ctx, world);
   ctx.people = world.api;
+  if (typeof window !== 'undefined') (window.__ladera ??= {}).lookAtNpc = (id, o) => world.lookAtNpc(id, o);       // reviewers: stand in front of a person, aimed at the face (dev/REVIEWER-BRIEF.md)
   await world.load();
 }
 

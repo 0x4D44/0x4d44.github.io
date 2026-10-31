@@ -9,13 +9,22 @@ import { Npc } from './npc.js';
 import { NavGraph } from './nav.js';
 import { PERSONAS, voiceFor } from './personas.js';
 import { planCast } from './cast.js';
-import { Brain } from './brain_v2.js';
+import { Brain } from './brain.js';
 import { Spots } from './spots.js';
 import { Doors } from './doors.js';
 import { Indoor } from './indoor.js';
+import { Reactions } from './reactions.js';
+import { Classroom } from './classroom.js';
+import { Homelife } from './homelife.js';
+import { pickArrivals } from './arrival.js';
+import { blockAt } from './schedule.js';
+import { householdsOf } from '../interiors/household.js';
 import { makeRng } from '../core/rng.js';
 
 export const TIER0 = 28, TIER1 = 70;     // full-rate simulation / 20 Hz / 5 Hz
+export const SEAT_TOP = 0.445;           // seat height the sit clips were authored for (people_build.py SEAT_TOP); a person on a higher or lower seat is moved up or down by the difference
+const POCKET_CELLS = 150;                // a closed slot of up to 6 m2 (0.2 m cells) behind a counter is a keeper's post, not another room
+const LOOK_CLEAR = 0.42;                 // lookPose: a bystander this near the line of sight (the aim capsule's 0.34 m radius plus a hand) is in the way (core/interact.js PERSON_R)
 
 /** Places people can be asked about. plan.landmarks when A5 supplies enough of them, else derived from plazas / civic lots / shops. */
 export function collectLandmarks(plan) {
@@ -34,14 +43,36 @@ export function collectLandmarks(plan) {
 
 const dist2d = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
+/**
+ * Standing at (x, z) with the feet at y: is there ground under the person and under every point `m` metres round (a lane offset, a push from a neighbour or a
+ * step must not take it over an edge)? Only a DROP counts (every surface there is more than 0.5 m below y); a higher surface is a bank or a wall and stops a walker.
+ */
+export function ledgeSafe(ph, x, z, y, m = 0.65) {
+  if (!ph?.heightsAt) return true;
+  const ground = (px, pz) => { const hs = ph.heightsAt(px, pz); if (!hs.length) return true; for (let i = 0; i < hs.length; i++) if (hs[i] >= y - 0.5) return true; return false; };
+  if (!ground(x, z)) return false;
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; if (!ground(x + Math.cos(a) * m, z + Math.sin(a) * m)) return false; }
+  return true;
+}
+
+/**
+ * May somebody stand at (x, z) with the feet at y, `r` metres of body clear: no wall or prop of the world within `r` (a tree trunk is a wall of its own thickness), the same level as y
+ * (a step up or down is another place), and no drop beside it? What `Spots.fit` asks of a corner it moves.
+ */
+export function standClear(ph, x, z, y, r = 0.26) {
+  if (ph?._overlaps?.(x, z, y, r, 1.5)) return false;
+  if (ph?.groundAt && Math.abs(ph.groundAt(x, z, y + 0.8) - y) > 0.3) return false;
+  return ledgeSafe(ph, x, z, y);
+}
+
 export class PeopleSim {
   constructor(ctx) {
     this.ctx = ctx; this.t = 0; this.npcs = []; this.byId = new Map();
     this.rng = makeRng(ctx.seed ?? 1).fork('people');
     this.physics = ctx.physics; this.brain = new Brain(this);
     this.player = { x: 0, y: 0, z: 0, yaw: 0, isPlayer: true };
-    this.nav = null; this.landmarks = []; this.comp = null; this.mainComp = 0; this.spots = null; this.doors = null; this.indoor = null; this.lots = null;
-    this.shops = new Map(); this.cast = [];
+    this.nav = null; this.landmarks = []; this.comp = null; this.mainComp = 0; this.spots = null; this.doors = null; this.indoor = null; this.lots = null; this._reach = new Map(); this._fp = null;
+    this.shops = new Map(); this.cast = []; this.reactions = null; this.classroom = null; this.homelife = null;
     this._grid = new Map(); this._near = []; this._cs = 3; this.clockT = 0; this._later = [];
     this.simVisible = true;          // Node tests: "visible" = within 35 m of the player (the world replaces this with the camera frustum)
     this.faults = [];                // exceptions caught in the frame loop (one bad person must not stop the barrio); tests assert it stays empty
@@ -50,6 +81,13 @@ export class PeopleSim {
 
   get hour() { return this.ctx.hour ?? 12; }
   inMain(i) { return this.comp ? this.comp[i] === this.mainComp : true; }
+  /** Is there a way to the outdoor place `s`? A walker ends at the node nearest it (brain.goPoint) and goes straight on: false when a wall as tall as a fence (or a room wall) stands across that last leg. A place with no node in range is kept: goPoint refuses it as before. */
+  wayTo(s) {
+    const nav = this.nav, to = nav.nearest(s.x, s.z, 16, s.y);
+    if (to < 0) return true;
+    const N = nav.nodes[to];
+    return !this.physics?.segmentBlocked?.(N.x, N.z, s.x, s.z, Math.min(N.y, s.y), 1.6, null, 2.0);
+  }
   setPlayer(x, y, z, yaw = 0) { const P = this.player; P.x = x; P.y = y; P.z = z; P.yaw = yaw; }
 
   // ---- building the cast ---------------------------------------------------------------------------------------------------------
@@ -61,27 +99,46 @@ export class PeopleSim {
     const { comp, sizes } = nav.components(); this.comp = comp; this.mainComp = sizes.indexOf(Math.max(...sizes));
     this.landmarks = collectLandmarks(plan);
     this.spots = new Spots({ plan, anchors: ctx.anchors ?? [], buildings: ctx.buildings ?? new Map() });
-    this.doors = new Doors(this); this.indoor = new Indoor(this);
-    this._indexLots(plan); this._makeShops(plan);
-    const cast = this.cast = planCast({ plan, charMetas, rng: this.rng.fork('cast'), count });
+    this.spotsMoved = this.spots.fit((x, z, s, r) => standClear(this.physics, x, z, s.y, r));         // the corners the props landed on (the page builds the people after the props)
+    this.spotsCut = this.spots.screen((s) => this.wayTo(s));                                           // the places the fence of the court shuts off from the street graph
+    this.doors = new Doors(this); this.indoor = new Indoor(this); this.reactions = new Reactions(this);
+    this._indexLots(plan); this._makeShops(plan); this.classroom = new Classroom(this); this.homelife = new Homelife(this);
+    const cast = this.cast = planCast({ plan, charMetas, rng: this.rng.fork('cast'), count, households: this._households(plan) });
     const mainNodes = nav.nodes.filter((nd) => this.inMain(nd.i)), sp = plan.spawn ?? { x: 0, z: 0 };
     const sites = plan.lots.filter((l) => l.kind === 'unfinished'); let obreros = 0;
+    const bench = plan.lots.find((l) => l.kind === 'workshop'); if (bench) sites.unshift(bench);       // the first workman is at the bench of the workshop, the rest on the building sites
     for (let i = 0; i < cast.length; i++) {
       const npc = this._makeNpc(cast[i], charMetas.get(cast[i].charId), mainNodes);
       if (npc.persona === 'obrero' && sites.length) npc.siteLotId = sites[obreros++ % sites.length].id;
       this.npcs.push(npc); this.byId.set(npc.id, npc);
     }
-    // the first frame of the day: everybody where they would be at this hour; a few of them within sight of the arrival point so the barrio is alive at once
+    // the first frame of the day: everybody where they would be at this hour; four of them in the fan the player looks along (one walking away, one standing, two talking) and a fifth within
+    // sight of the arrival point, so the middle distance of the first frame is alive at once (arrival.js: A5's hero-shot order)
     this._rebuildGrid();
+    const arrivals = pickArrivals(this.npcs, this.hour, blockAt, sp);
     for (let i = 0; i < this.npcs.length; i++) {
       const n = this.npcs[i];
       this.placeNpc(n, n.homePos.x, n.homePos.z, n.homePos.y, 0);
       n.dist = dist2d(n.st, sp);
-      this.brain.start(n, i < 5 ? { x: sp.x, z: sp.z, min: 9, max: 34 } : null);
+      this.brain.start(n, arrivals.get(n) ?? null);
       this.onNpcCreated?.(n);
     }
     this.ready = true;
     return true;
+  }
+
+  /**
+   * Map<lotId, hh[]>: the interiors' households of every lot (bp.interior.hh once the building is furnished, else replayed from the seed without furnishing it: the same households
+   * either way), so a resident carries the name of the member of the household they live in and a diary that says "Camila" is about the girl who lives there.
+   */
+  _households(plan) {
+    const out = new Map(), B = this.ctx.buildings;
+    if (!B?.get) return out;
+    for (const lot of plan.lots ?? []) {
+      const bp = B.get(lot.id); if (!bp) continue;
+      try { const hhs = bp.interior?.hh ?? householdsOf(this.ctx, bp); if (hhs?.length) out.set(lot.id, hhs); } catch (e) { this._fault(null, e); }
+    }
+    return out;
   }
 
   _makeNpc(c, meta, mainNodes) {
@@ -96,6 +153,7 @@ export class PeopleSim {
       rng: r.fork('life'), voice: voiceFor(c.id, gender, age), speedBase: meta.walkSpeedMps, lane: 0.55 + r.next() * 0.7,
     });
     npc.roleLabel = c.role; npc.variant = c.variant; npc.appearance = c.appearance; npc.shopName = shopLot?.name; npc.homeLotId = homeLot?.id ?? null; npc.shopLotId = shopLot?.id ?? null;
+    npc.household = c.household ?? null;       // { id, role, lot, matched }: which household of js/interiors/household.js this person is a member of (null: none known)
     npc.homeNode = homeNode; npc.homePos = { x: hx, y: hy ?? plan.heightAt?.(hx, hz) ?? 0, z: hz };
     npc.routine = p.routine; npc.jit = [r.next(), r.next(), r.next()];
     npc.idleVariant = r.chance(0.5) ? 'idle_a' : 'idle_b';
@@ -126,16 +184,67 @@ export class PeopleSim {
         const a = custs[0], fx = Math.sin(a.ry), fz = Math.cos(a.ry);
         for (const d of [1.7, 1.6, 1.8, 1.5, 1.9]) { const x = a.x + fx * d, z = a.z + fz * d; if (free(x, z, a.y)) { post = { x, y: a.y, z, ry: a.ry + Math.PI }; break; } }
       }
-      if (!post) { const v = S.inside(lot.id, 'vend')[0] ?? S.list('vend').find((s) => s.building === lot.id); if (v) post = { x: v.x, y: v.y, z: v.z, ry: v.ry }; }
+      if (!post) { const v = S.inside(lot.id, 'vend')[0] ?? S.inside(lot.id, 'work')[0]; if (v) post = { x: v.x, y: v.y, z: v.z, ry: v.ry }; }          // a stall or a workbench inside; never a street spot outside (the keeper would be out of the shop)
       if (!post && ent?.inside) {           // last resort: just inside the door, facing the street
         const dx = ent.inside.x - ent.outside.x, dz = ent.inside.z - ent.outside.z, l = Math.hypot(dx, dz) || 1;
         post = { x: ent.inside.x + (dx / l) * 1.0, y: ent.inside.y, z: ent.inside.z + (dz / l) * 1.0, ry: Math.atan2(-dx, -dz) };
       }
       if (!post) continue;
+      // the keeper must stand on flat floor (not in the stairwell of the house above the shop) and be able to walk to the door, a customer to the counter:
+      // a post that fails is moved to the nearest spot that does not; a closed slot behind the counter stays the post but the keeper never leaves it (`sealed`)
+      let sealed = false;
+      const reach = ent?.inside ? this.reach(ent) : null;
+      if (reach) {
+        const y = ent.inside.y, flat = (p) => Indoor.flat(ph, p.x, p.z, y) && this.lotAt(p.x, p.z) === lot.id;      // on flat floor INSIDE the building
+        custs = custs.filter((a) => flat(a) && this.indoor.canReach(reach, a));
+        const flatPost = flat(post), inFurniture = !!ph._overlaps?.(post.x, post.z, post.y, 0.25, 1.5);      // (a post on the seamstress's chair: the walker is pushed off the chair's outline for ever, L31)
+        if (!flatPost || inFurniture || !this.indoor.canReach(reach, post)) {
+          const own = flatPost ? this.indoor.reachable(lot.id, post, y) : null;                    // the pocket the post sits in
+          if (own && own.count <= POCKET_CELLS) sealed = true;                                      // a slot behind the counter, closed on all sides: the keeper is placed there and stays
+          else {
+            const alt = this._reachablePost(lot.id, reach, post, custs, y);
+            if (alt) post = alt;
+            else post = { x: ent.inside.x, y, z: ent.inside.z, ry: Math.atan2(ent.outside.x - ent.inside.x, ent.outside.z - ent.inside.z) };       // last resort: just inside the door, facing the street
+          }
+        }
+      }
+      if (custs[0] && dist2d(custs[0], post) <= 3.6) {              // a keeper faces the customers, whichever way the stall or the counter anchor was authored (L03's vend anchor faced 84 degrees off the first customer spot)
+        const want = Math.atan2(custs[0].x - post.x, custs[0].z - post.z), off = Math.atan2(Math.sin(want - post.ry), Math.cos(want - post.ry));
+        if (Math.abs(off) > 0.6) post = { ...post, ry: want };
+      }
       let cpoint = custs[0] ? { x: custs[0].x, y: custs[0].y, z: custs[0].z, ry: custs[0].ry } : null;
       if (!cpoint && ent?.inside) cpoint = { x: ent.inside.x, y: ent.inside.y, z: ent.inside.z, ry: post.ry + Math.PI };
-      this.shops.set(lot.id, { lot: lot.id, type: lot.shop, name: lot.name, open: false, keeper: null, post, cust: custs, cpoint: cpoint ?? post, ent });
+      this.shops.set(lot.id, { lot: lot.id, type: lot.shop, name: lot.name, open: false, keeper: null, post, cust: custs, cpoint: cpoint ?? post, ent, sealed });
     }
+  }
+
+  /** The region of a building a person coming in at entrance `ent` can walk to (cached): see indoor.js. */
+  reach(ent) {
+    const key = ent.lot + '|' + ent.id; let r = this._reach.get(key);
+    if (r === undefined) { r = this.indoor.reachable(ent.lot, ent.inside, ent.inside.y); this._reach.set(key, r); }
+    return r;
+  }
+  canReach(ent, p) { return !ent?.inside || this.indoor.canReach(this.reach(ent), p); }
+
+  /**
+   * The nearest spot to `ideal` (a ring search, 0.5 to 3.5 m) on flat floor that the door can reach and that is 1.1 m clear of every customer spot, facing the first.
+   * The room of the customers (no door in between) comes first; null when the building offers none.
+   */
+  _reachablePost(lotId, reach, ideal, custs, y) {
+    const ph = this.physics, face = custs[0] ?? null, room = face ? this.indoor.reachable(lotId, face, y, false) : null;
+    for (const within of room ? [room, null] : [null]) {
+      let best = null, bs = 1e9;
+      for (let r = 0.5; r <= 3.5; r += 0.3) for (let a = 0; a < 24; a++) {
+        const th = (a / 24) * Math.PI * 2, x = ideal.x + Math.cos(th) * r, z = ideal.z + Math.sin(th) * r;
+        if (ph._overlaps?.(x, z, y, 0.26, 1.5) || !Indoor.flat(ph, x, z, y) || this.lotAt(x, z) !== lotId || !this.indoor.canReach(reach, { x, z })) continue;
+        if (within && !this.indoor.canReach(within, { x, z })) continue;
+        if (custs.some((c) => Math.hypot(x - c.x, z - c.z) < 1.1)) continue;
+        const dc = face ? Math.hypot(x - face.x, z - face.z) : 1.7, score = r + Math.abs(dc - 1.7) * 0.5;
+        if (score < bs) { bs = score; best = { x, y, z, ry: face ? Math.atan2(face.x - x, face.z - z) : ideal.ry }; }
+      }
+      if (best) return best;
+    }
+    return null;
   }
 
   // ---- placing --------------------------------------------------------------------------------------------------------------------
@@ -157,6 +266,29 @@ export class PeopleSim {
     if (was) this.onAway?.(n, false);
   }
 
+  /** The lot whose building footprint holds (x, z), or null: is somebody indoors? (recovery must not send a person over the street graph from inside a shop) */
+  lotAt(x, z) {
+    if (!this._fp) {
+      this._fp = [];
+      for (const [id, bp] of this.ctx.buildings ?? []) {
+        const fp = bp?.footprint; if (!fp?.length) continue;
+        let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+        for (const [px, pz] of fp) { x0 = Math.min(x0, px); x1 = Math.max(x1, px); z0 = Math.min(z0, pz); z1 = Math.max(z1, pz); }
+        this._fp.push({ id, fp, x0, x1, z0, z1 });
+      }
+    }
+    for (const b of this._fp) {
+      if (x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1) continue;
+      let c = false;
+      for (let i = 0, j = b.fp.length - 1; i < b.fp.length; j = i++) {
+        const [ax, az] = b.fp[i], [bx, bz] = b.fp[j];
+        if ((az > z) !== (bz > z) && x < ((bx - ax) * (z - az)) / (bz - az) + ax) c = !c;
+      }
+      if (c) return b.id;
+    }
+    return null;
+  }
+
   /** May this person be moved without anybody noticing (not in view, not close)? */
   canSnap(n) { return !n.visible && (n.dist ?? 1e9) > 25; }
   /** Is this point out of the player's sight (the world refines this with the camera frustum)? */
@@ -168,21 +300,47 @@ export class PeopleSim {
   onAway(n, away) { /* world: hide or show the view */ }
   beforeStep(dt) { /* world: frustum */ }
   afterStep(dt) { /* world: dialogue */ }
+  /** Is the player in a conversation (the world answers from the dialogue; a reaction never talks over one)? */
+  get talkBusy() { return false; }
+  /** A resident noticed the player opening a container and says `line` ({ es, en, pool, hold }): the world shows the subtitle and speaks it; under Node reactions.log has it. */
+  onReact(n, line, ev) { /* world: subtitle + voice */ }
 
-  /** Graph path (node indices) -> waypoints with a "keep to your right" lane offset. */
+  /**
+   * Graph path (node indices) -> waypoints with a "keep to your right" lane offset. A lane offset never leads over a drop, into a solid or across a wall: the offset point goes back towards its
+   * node while it is over a drop or inside a cart, a planter or a trunk, and where the leg to or from it still crosses a wall (a bench beside the edge of the graph, whose end supports stand in
+   * the lane: eight people a day were pushed against one for four seconds) the walker keeps to the graph itself, which the world has proved clear.
+   */
   waypoints(npc, idx) {
     const N = this.nav.nodes; let list = idx;
     if (list.length > 1) {                                       // already past the first node? start at the second
       const a = N[list[0]], b = N[list[1]], ex = b.x - a.x, ez = b.z - a.z;
       if ((npc.x - a.x) * ex + (npc.z - a.z) * ez > 0.5 * (ex * ex + ez * ez)) list = list.slice(1);
     }
-    const out = [];
+    const out = [], nodes = [], moved = [];
     for (let k = 0; k < list.length; k++) {
       const nd = N[list[k]], p = N[list[Math.max(0, k - 1)]], q = N[list[Math.min(list.length - 1, k + 1)]];
       let tx = q.x - p.x, tz = q.z - p.z; const tl = Math.hypot(tx, tz);
       let off = nd.kind === 'stair' || p.kind === 'stair' || q.kind === 'stair' ? 0 : Math.min(npc.lane, Math.max(0, (nd.w ?? 2) - 0.9));
       if (tl < 1e-6) off = 0; else { tx /= tl; tz /= tl; }
-      out.push({ x: nd.x - tz * off, z: nd.z + tx * off, y: nd.y });
+      let px = nd.x - tz * off, pz = nd.z + tx * off;
+      const room = (x, z) => ledgeSafe(this.physics, x, z, nd.y) && !this.physics?._overlaps?.(x, z, nd.y, 0.3, 1.5);
+      if (off > 0 && !room(px, pz)) {                                         // a plaza node near its edge: the lane would put the walker over the drop (it fell 3 m and could not get back), or inside a vendor's cart, a planter, a trunk
+        for (const f of [0.6, 0.3, 0]) { px = nd.x - tz * off * f; pz = nd.z + tx * off * f; if (f === 0 || room(px, pz)) break; }
+      }
+      out.push({ x: px, z: pz, y: nd.y }); nodes.push(nd); moved.push(px !== nd.x || pz !== nd.z);
+    }
+    const ph = this.physics;
+    if (ph?.segmentBlocked && moved.some(Boolean)) {                           // the legs a lane offset made: any across a wall goes back to the graph
+      const crosses = (a, b) => ph.segmentBlocked(a.x, a.z, b.x, b.z, Math.min(a.y ?? b.y, b.y) + 0.2, 1.4);        // (the wall filter of physics.move: a top 0.4 m above the feet or more, a bottom under the head)
+      const home = (k) => { out[k].x = nodes[k].x; out[k].z = nodes[k].z; moved[k] = false; };
+      for (let pass = 0, changed = true; pass < 3 && changed; pass++) {
+        changed = false;
+        for (let k = 0, prev = { x: npc.x, z: npc.z, y: npc.y }; k < out.length; prev = out[k++]) {
+          if (!(moved[k] || (k > 0 && moved[k - 1])) || !crosses(prev, out[k])) continue;
+          if (moved[k]) { home(k); changed = true; }
+          if (k > 0 && moved[k - 1]) { home(k - 1); changed = true; }
+        }
+      }
     }
     return out;
   }
@@ -234,7 +392,7 @@ export class PeopleSim {
         if (tick) this.brain.tick(n, hour, this);
       } catch (e) { this._fault(n, e); }
     }
-    try { this.doors?.update(); this._runLater(); } catch (e) { this._fault(null, e); }
+    try { this.doors?.update(); this._runLater(); this.classroom?.update(); this.homelife?.update(); } catch (e) { this._fault(null, e); }
     this.afterStep?.(dt);
   }
 
@@ -276,6 +434,65 @@ export class PeopleSim {
     return best;
   }
 
+  /** Where a person's eyes are as they are DRAWN now: standing, or lowered onto the seat they sit on (the sit clips rotate the limbs, the game lowers the root). */
+  headOf(n) {
+    const m = n.meta ?? {}, eye = m.eyeHeightM ?? 1.55;
+    if (n.lieH != null) { const len = (m.heightM ?? 1.7) / 2; return { x: n.st.x - Math.sin(n.ry) * len, y: n.st.y + n.lieH + 0.25, z: n.st.z - Math.cos(n.ry) * len }; }       // asleep: the head at the head of the bed
+    const up = n.sitH != null ? (n.sitH - SEAT_TOP) + (m.seatedEyeHeightM ?? eye - 0.24) : eye;
+    return { x: n.st.x, y: n.st.y + up, z: n.st.z };
+  }
+
+  /**
+   * Reviewer helper: where to stand, and where to look, to see the face of `id` (the nearest person when null) from about `o.dist` m (default 1.3).
+   * Tries the front of the person first, then round them, nearer and farther; a place counts when it is ground at their level, clear of walls and furniture,
+   * with headroom, and nothing solid (a room wall, a shut door) between the eyes and the face. A place with another person on the line of sight, or within a
+   * body's width of the spot itself (two neighbours chatting face to face: the front of one is the back of the other), only counts when nothing better exists
+   * (the crosshair would rest on the bystander, R3-003).
+   * -> { ok: true, id, head:{x,y,z}, feet:{x,y,z}, eye, yaw, pitch, dist, bearing } with yaw/pitch in the player's convention (yaw 0 looks to -z), or { ok: false, reason }.
+   */
+  lookPose(id = null, o = {}) {
+    const n = id ? this.byId.get(id) : this.nearestNpc();
+    if (!n) return { ok: false, reason: id ? `no such person: ${id}` : 'nobody is about' };
+    if (n.away) return { ok: false, reason: `${n.id} is indoors (${n.awayWhy ?? 'away'}) and not drawn`, id: n.id };
+    const ph = this.physics, want = o.dist ?? 1.3, eye = o.eye ?? 1.64, head = this.headOf(n), ry = n.ry;
+    const turns = [0, 0.4, -0.4, 0.8, -0.8, 1.3, -1.3, 1.9, -1.9, Math.PI];                   // radians round the person, 0 = straight in front of them
+    let crowded = null;                                                                       // the first place that works but has a bystander in the way
+    for (const d of [want, want * 0.8, want * 0.62, want * 1.25, want * 1.45]) {
+      for (const a of turns) {
+        const x = head.x + Math.sin(ry + a) * d, z = head.z + Math.cos(ry + a) * d;
+        let fy = null;                                                                          // the floor at the person's level, not the storey above or below
+        for (const h of ph.heightsAt(x, z)) if (Math.abs(h - n.st.y) <= 0.6 && (fy == null || Math.abs(h - n.st.y) < Math.abs(fy - n.st.y))) fy = h;
+        if (fy == null) continue;
+        if (ph._overlaps?.(x, z, fy, 0.3, 1.78) || (ph.canStand && !ph.canStand(x, z, fy))) continue;
+        const y0 = Math.min(fy, n.st.y);
+        if (ph.segmentBlocked(x, z, head.x, head.z, y0, Math.max(fy + eye, head.y) - y0 + 0.05, null, 1.5)) continue;
+        const dx = head.x - x, dz = head.z - z, h = Math.hypot(dx, dz);
+        const pose = { ok: true, id: n.id, head, feet: { x, y: fy, z }, eye: fy + eye, yaw: Math.atan2(-dx, -dz), pitch: Math.atan2(head.y - (fy + eye), h), dist: +h.toFixed(2), bearing: a };
+        if (this._bystander(n, x, z, head)) { crowded ??= pose; continue; }
+        return pose;
+      }
+    }
+    if (crowded) return crowded;
+    return { ok: false, reason: `no clear place to stand within ${(want * 1.45).toFixed(1)} m of ${n.id}`, id: n.id };
+  }
+
+  /**
+   * True when, standing at (x, z) and looking at `head`, the body of another person (a disc of LOOK_CLEAR m) is entered before the body of `n` (by more than 5 cm), or the player
+   * would stand inside it. Someone behind `n`, beside them, or behind the player is no obstacle; someone exactly where `n` is (two children on the same spot of the
+   * court) is entered at the same distance, so not in the way either: no place can tell them apart.
+   */
+  _bystander(n, x, z, head) {
+    const dx = head.x - x, dz = head.z - z, L = Math.hypot(dx, dz) || 1e-9, ux = dx / L, uz = dz / L, R2 = LOOK_CLEAR * LOOK_CLEAR;
+    for (const m of this.npcs) {
+      if (m === n || m.away || Math.abs(m.st.y - n.st.y) > 1.2) continue;
+      const px = m.st.x - x, pz = m.st.z - z, s = px * ux + pz * uz, lat = px * uz - pz * ux;
+      if (lat * lat >= R2) continue;
+      const half = Math.sqrt(R2 - lat * lat);                                                 // the line crosses their disc between s - half and s + half
+      if (s + half > 0 && Math.max(0, s - half) < L - LOOK_CLEAR - 0.05) return true;
+    }
+    return false;
+  }
+
   getSimStats() {
     let walking = 0, talking = 0, away = 0, maxStuck = 0, stuckTotal = 0, unstuck = 0; const tiers = [0, 0, 0], acts = {}, blocks = {};
     for (const n of this.npcs) {
@@ -286,7 +503,7 @@ export class PeopleSim {
       const a = n.mode === 'walk' ? 'walk' : n.act; acts[a] = (acts[a] ?? 0) + 1;
     }
     let open = 0; for (const s of this.shops.values()) if (s.open) open++;
-    return { npcs: this.npcs.length, walking, talking, away, tiers, maxStuck: +maxStuck.toFixed(1), stuckTotal: +stuckTotal.toFixed(1), unstuck, acts, blocks, shops: this.shops.size, shopsOpen: open,
+    return { npcs: this.npcs.length, walking, talking, away, indoors: this.homelife?.drawn.size ?? 0, tiers, maxStuck: +maxStuck.toFixed(1), stuckTotal: +stuckTotal.toFixed(1), unstuck, acts, blocks, shops: this.shops.size, shopsOpen: open,
       doorRequests: this.doors?.requests ?? 0, faults: this.faults.length, navNodes: this.nav?.size ?? 0, fallbackNav: !!this.nav?.fallback, landmarks: this.landmarks.length };
   }
 }

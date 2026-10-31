@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as D from '../js/audio/dsp.js';
-import { bandShare, centroid, settledRms, sine, stepStats } from './audio-lib.mjs';
+import { acPitch, bandShare, centroid, settledRms, sine, stepStats } from './audio-lib.mjs';
 
 const { SR } = D;
 const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
@@ -90,6 +90,18 @@ test('filters are stable at awkward settings (cutoff near Nyquist, tiny Q, low c
     const y = D.applyBiquad(D.whiteNoise(SR, D.rng(5)), D.biquad(type, f, q));
     assert.ok(D.finite(y) && D.peak(y) < 100, `${type} ${f} Hz Q ${q}`);
   }
+});
+test('a cutoff outside 10 Hz .. 0.49 x the sample rate is clamped into it, so a recipe can never ask for a broken filter', () => {
+  for (const type of ['lp', 'hp', 'bp', 'notch', 'peak']) {
+    assert.deepEqual(D.biquad(type, 1e6, 0.9, 3), D.biquad(type, SR * 0.49, 0.9, 3), `${type}: far above Nyquist = the highest allowed cutoff`);
+    assert.deepEqual(D.biquad(type, SR, 0.9, 3), D.biquad(type, SR * 0.49, 0.9, 3), `${type}: at the sample rate`);
+    assert.deepEqual(D.biquad(type, -40, 0.9, 3), D.biquad(type, 10, 0.9, 3), `${type}: below zero = the lowest allowed cutoff`);
+    for (const f of [0, 1, 40000, 1e6]) {
+      const y = D.applyBiquad(D.whiteNoise(SR >> 1, D.rng(7)), D.biquad(type, f, 2, 6));
+      assert.ok(D.finite(y) && D.peak(y) < 100, `${type} at ${f} Hz stays finite and bounded`);
+    }
+  }
+  assert.ok(gainAt((x) => D.applyBiquad(x, D.biquad('lp', 1e6, 0.7071)), 1000) > 0.95, 'a lowpass with an absurd cutoff lets the audible range through');
 });
 test('sweepBandpass follows a moving centre and stays finite', () => {
   const x = D.whiteNoise(SR * 2, D.rng(3)), y = D.sweepBandpass(x, (t) => (t < 1 ? 600 : 3000), 6);
@@ -184,4 +196,11 @@ test('reverbIR: two decorrelated channels, decaying tail, early reflections wher
 
 test('stepStats helper itself: a pure tone has smooth steps', () => {
   const s = stepStats(sine(100, 1)); assert.ok(s.max < 0.05 && s.seam < 0.06);
+});
+
+test('acPitch helper itself: reads the fundamental of a tone and of a tone with strong overtones, and rates noise as unvoiced', () => {
+  for (const f of [150, 300, 420]) { const p = acPitch(sine(f, 0.3), 0.02, 0.05, 90, 700); assert.ok(Math.abs(p.f - f) < f * 0.03 && p.strength > 0.9, `${f} Hz: ${p.f.toFixed(1)} (${p.strength.toFixed(2)})`); }
+  const rich = Float32Array.from({ length: SR >> 1 }, (_, i) => Math.sin(2 * Math.PI * 200 * i / SR) + 1.2 * Math.sin(2 * Math.PI * 600 * i / SR) + 0.8 * Math.sin(2 * Math.PI * 1000 * i / SR));
+  assert.ok(Math.abs(acPitch(rich, 0.02, 0.06, 90, 700).f - 200) < 6, 'the fundamental, not the loudest overtone');
+  assert.ok(acPitch(D.whiteNoise(SR >> 1, D.rng(2)), 0.02, 0.06, 90, 700).strength < 0.3, 'noise has no pitch');
 });

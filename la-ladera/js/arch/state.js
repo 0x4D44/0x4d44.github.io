@@ -39,6 +39,9 @@ export class PlanState {
     this.roofStyle = 'terrace'; this.roofWalkable = false; this.roofAccess = !!lot.roofAccess;
     this.openTop = false;               // unfinished: the top floor is an open skeleton
     this.notes = []; this.guards = []; this.walls = []; this.coreRooms = []; this.foundY = -0.5; this.roofLayer = null;
+    this.patios = [];                   // open-air courts: [{ id (the ground-floor patio room), rect }] with a void through every storey above
+    this.arcades = [];                  // openings in interior walls that are not doors: grilled windows and arcade bays onto a patio
+    this.platforms = [];                // raised floors inside a room (a stage): [{ room, floor, rect, h }], walkable on top, climbed like a step
     this.seq = { door: 0, win: 0 };
     for (let i = 0; i <= this.F; i++) this.floorsData.push({ index: i, y: i * this.fh, h: this.h, rooms: [], voids: [], extWalls: [] });
   }
@@ -48,25 +51,28 @@ export class PlanState {
   /** The layout could not fit stairs: fall back to a single storey (keeps the plan valid). */
   degrade(why) {
     this.notes.push('degraded: ' + why);
-    this.F = 1; this.nUp = 0; this.roofAccess = false; this.core = null; this.coreRooms = [];
-    this.rooms.length = 0; this.doors.length = 0; this.windows.length = 0; this.seq = { door: 0, win: 0 };
+    this.F = 1; this.nUp = 0; this.roofAccess = false; this.core = null; this.coreRooms = []; this.stairStyle = undefined;
+    this.rooms.length = 0; this.doors.length = 0; this.windows.length = 0; this.patios.length = 0; this.arcades.length = 0; this.platforms.length = 0; this.seq = { door: 0, win: 0 };
     this.floorsData = [0, 1].map((i) => ({ index: i, y: i * this.fh, h: this.h, rooms: [], voids: [], extWalls: [] }));
   }
 
-  /** Create the stair core so its whole clear rect equals `rect` (the layout allots exactly coreDims().across x along). */
+  /**
+   * Create the stair core so its whole clear rect equals `rect` (the layout allots exactly coreDims().across x along).
+   * A layout that wants a stair other than the house one (the school's, 1.4 m wide) sets `this.stairStyle` before it calls this, and sizes `rect` from coreDims(fh, style).
+   */
   placeCore(rect, orient = 'z', flip = false) {
-    const cd = coreDims(this.fh);
+    const style = this.stairStyle, cd = coreDims(this.fh, style), ld = cd.ldg;
     // orient 'z': across = x, flights run along z; landing at the south (z1) end, flights go north.
     let origin, U, Sdir;
     if (orient === 'z') {
-      origin = flip ? [rect.x0, rect.z0 + 1.0] : [rect.x0, rect.z1 - 1.0];
+      origin = flip ? [rect.x0, rect.z0 + ld] : [rect.x0, rect.z1 - ld];
       U = [1, 0]; Sdir = flip ? [0, 1] : [0, -1];
     } else {
-      origin = flip ? [rect.x0 + 1.0, rect.z0] : [rect.x1 - 1.0, rect.z0];
+      origin = flip ? [rect.x0 + ld, rect.z0] : [rect.x1 - ld, rect.z0];
       U = [0, 1]; Sdir = flip ? [1, 0] : [-1, 0];
     }
     const floors = this.F;
-    this.core = makeCore({ origin, U, S: Sdir, fh: this.fh, nUp: this.nUp, floors, roof: this.roofAccess && !this.openTop });
+    this.core = makeCore({ origin, U, S: Sdir, fh: this.fh, nUp: this.nUp, floors, roof: this.roofAccess && !this.openTop, style });
     // sanity: the produced rect must equal the allotted rect
     const c = this.core.rect;
     if (Math.abs(c.x0 - rect.x0) > 1e-3 || Math.abs(c.x1 - rect.x1) > 1e-3 || Math.abs(c.z0 - rect.z0) > 1e-3 || Math.abs(c.z1 - rect.z1) > 1e-3) {
@@ -101,11 +107,42 @@ export class PlanState {
     if (o.noFurnish) room.noFurnish = true;
     if (o.core) room.core = true;
     if (o.tag) room.tag = o.tag;
+    if (o.unit) room.unit = o.unit;                         // the flat of a block this room belongs to ('a', 'b'): interiors/household.js keys a household by floor + unit + occupant
     this.rooms.push(room); f.rooms.push(room.id);
     return room;
   }
 
   roomById(id) { return this.rooms.find((r) => r.id === id); }
+
+  /**
+   * An open-air patio: a `patio` room at ground level plus a void through every storey above it, the roof included (floors 1..F). Only a flat roof can
+   * take the hole, so the building gets a terrace roof. The walls round it come from the neighbouring rooms like any other partition.
+   */
+  addPatio(rect, o = {}) {
+    const room = this.addRoom(0, 'patio', rect, { outdoor: true, ...o });
+    for (let k = 1; k <= this.F; k++) this.floorsData[k].voids.push({ rect: rcopy(rect), owner: room.id, patio: true });
+    this.patios.push({ id: room.id, rect: rcopy(rect) });
+    this.roofStyle = 'terrace';
+    return room;
+  }
+
+  /**
+   * A window-like opening in the interior wall between `room` and `other` (a rect: the patio, or the void over it). o: { at (coordinate along the wall), w, sill, h, grille }.
+   * It never carries a collider (the wall stays solid, so nobody falls into the void) and is not a door (no leaf, no graph edge): it only lets the eye through.
+   * Returns the record, or null when the shared wall is too short for the opening.
+   */
+  arcade(room, other, o = {}) {
+    const sw = sharedWall(room.rect, other);
+    if (!sw) throw new Error(`arcade: ${room.id} does not touch the rect`);
+    const w = Math.min(o.w ?? 1.4, sw.a1 - sw.a0 - 0.4);
+    if (w < 0.5) return null;
+    const lo = sw.a0 + 0.2 + w / 2, hi = sw.a1 - 0.2 - w / 2;
+    const u = clamp(o.at ?? (sw.a0 + sw.a1) / 2, lo, hi);
+    const sill = o.sill ?? 0.95, h = o.h ?? 1.25;
+    const rec = { id: `${this.lot.id}.a${this.arcades.length}`, room: room.id, floor: room.floor, u: round2(u), w: round2(w), y: round2(sill), h: round2(h), grille: !!o.grille, wall: { dir: sw.dir, at: sw.at, t: sw.t } };
+    this.arcades.push(rec);
+    return rec;
+  }
 
   /**
    * Interior connection between two ADJACENT rooms (a -> b). o: { kind:'door'|'arch', w, at (absolute coord along the wall), hinge, swing, mat, h }
@@ -180,6 +217,7 @@ export class PlanState {
       floor: room.floor, wall: { dir: side === 'front' || side === 'back' ? 'x' : 'z', at: side === 'front' ? D / 2 - te / 2 : side === 'back' ? -D / 2 + te / 2 : side === 'left' ? -W / 2 + te / 2 : W / 2 - te / 2, t: te },
       side, ext: true, entrance: o.entrance ?? 'main',
     };
+    if (o.double) door.double = true;                                // two leaves, each w / 2 wide, hinged at the two jambs (doors.js)
     this.doors.push(door); room.doors.push(id);
     return door;
   }

@@ -4,9 +4,13 @@
 import { tube, V } from './mk.js';
 import { OCC } from './occupancy.js';
 import { pointAt, footprint, pointInPoly, segDist } from './geom.js';
+import { inSpawnFan } from './kit.js';
+import { volumesOf } from './volumes.js';
 
 const POLE_H = 8.6;
+const FACE_GAP = 0.05;       // m a cable end stands off the face of a building (the facade bundles keep 0.07)
 const WIRE = 'wire_dark';
+const HERO = { depth: 42, half: (42 * Math.PI) / 180 };      // the street the first frame looks up: the Paseo between the two shop rows
 
 /** Droopy cable between two points: parabola sag, drawn as two crossed ribbons (double-sided material) so it reads from any side. */
 export function wire(b, a, c, sag, w = 0.03, segs) {
@@ -20,14 +24,44 @@ export function wire(b, a, c, sag, w = 0.03, segs) {
   }
 }
 
+/** Can the cable a -> c (a parabola with `sag` m of droop) hang there without going through a building or its roof? (volumes.js) */
+export const stringable = (ctx, a, c, sag) => volumesOf(ctx).through(a, c, sag).length === 0;
+
+/**
+ * A cable that is drawn and written down: ctx.world.cables = [{ kind, a, c, sag, ...tag }], kind = span (pole to pole) | drop (pole to a facade) | alley (facade to facade across a lane) | laundry | facade (along a
+ * lane) | yard (hill.js). One funnel for everything strung through the air: a cable that would go through a building is not strung (nothing drawn, nothing written down, false returned), so the caller drops
+ * what hangs on it (an end bracket, the washing) or tries another way. tests/world-cables.test.mjs reads the cables against the buildings.
+ */
+export function strand(ctx, kind, tag, b, a, c, sag, w, segs) {
+  if (!stringable(ctx, a, c, sag)) return false;
+  wire(b, a, c, sag, w, segs);
+  if (ctx.world) (ctx.world.cables ??= []).push({ kind, ...tag, a, c, sag });
+  return true;
+}
+
 const lotTopOf = (K, lot) => K.ctx.buildings?.get?.(lot.id)?.bounds?.y1 ?? lot.y + lot.floors * (lot.fh ?? 2.8) + 0.6;
 
 export function buildPoles(K) {
   const { plan, occ, ctx, H } = K, R = K.rng('poles');
   const lotFps = plan.lots.map((l) => ({ lot: l, poly: footprint(l, 0) }));
+  lotFps.forEach((f) => { f.cx = f.poly.reduce((s, p) => s + p[0], 0) / f.poly.length; f.cz = f.poly.reduce((s, p) => s + p[1], 0) / f.poly.length; });
   const lotAt = (x, z) => { for (const f of lotFps) if (pointInPoly(f.poly, x, z)) return f.lot; return null; };
-  const poles = [], stats = { poles: 0, spans: 0, drops: 0, lamps: 0, lanterns: 0, alleyWires: 0, laundry: 0, transformers: 0 };
+  const poles = [], stats = { poles: 0, spans: 0, drops: 0, lamps: 0, lanterns: 0, alleyWires: 0, laundry: 0, heroLines: 0, transformers: 0, refused: 0 };
   const lampBuilder = K.one('lamps', { cast: false }), wires = K.one('wires', { cast: false });
+  /** String a cable (poles.strand); one that would go through a building is counted and left out. */
+  const put = (kind, tag, b, a, c, sag, w, segs) => { const ok = strand(ctx, kind, tag, b, a, c, sag, w, segs); if (!ok) stats.refused++; return ok; };
+  /**
+   * Where a cable meets the face of the building on `lot`: from `h`, the point the ray from the street found inside the lot, back toward the street (the unit vector bx, bz) until it stands `gap` m clear of the
+   * building's outline. The lot rectangle only roughly is the building: its outline can lie a few cm inside it or outside it, and an end that is 3 cm in the wall is buried. null when it takes over a metre.
+   */
+  const stand = (lot, h, bx, bz, gap = FACE_GAP) => {
+    const poly = ctx.buildings?.get?.(lot.id)?.footprint ?? lotFps.find((f) => f.lot === lot).poly;
+    for (let i = 0; i <= 100; i++) {
+      const x = h.x + bx * 0.01 * i, z = h.z + bz * 0.01 * i;
+      if (!pointInPoly(poly, x, z) && Math.min(...poly.map((p, k) => segDist(x, z, p, poly[(k + 1) % poly.length]))) >= gap - 1e-6) return [x, z];
+    }
+    return null;
+  };
 
   const busStop = plan.pois.filter((q) => (q.tags ?? []).includes('busstop'));
   // ---- 1. pole positions along roads and streets
@@ -43,7 +77,7 @@ export function buildPoles(K) {
           if (!occ.clear(x, z, 0, OCC.LOT | OCC.STAIR | OCC.PLAZA) || !occ.clear(x, z, 0.5, OCC.DOOR | OCC.STAIR) || occ.slope(x, z) > 0.45) continue;
           if (poles.some((p) => Math.hypot(p.x - x, p.z - z) < 7)) continue;
           if (busStop.some((q) => Math.hypot(q.x - x, q.z - z) < 6.5)) continue;                // the shelter and the parked buseta need this stretch
-          poles.push({ x, z, gy: H(x, z), st, tx: q.tx, tz: q.tz, nx, nz, s: s + dsh, idx: idx++ });
+          poles.push({ x, z, gy: H(x, z), st, tx: q.tx, tz: q.tz, nx, nz, s: s + dsh, idx: idx++, k: poles.length });
           placed = true; side = -sd; break;
         }
         if (placed) break;
@@ -103,16 +137,18 @@ export function buildPoles(K) {
     }
   });
 
-  // ---- 3. cable runs between consecutive poles (and to the nearest pole of another street at junctions)
+  // ---- 3. cable runs between consecutive poles (and to the nearest pole of another street at junctions). Each of a pair's wires hangs only where it clears the houses: a run across a block is left out
+  // whole, a low wire that would clip the corner of a roof alone.
   const linked = new Set(), link = (a, c) => {
     const key = a.x < c.x ? `${a.x},${a.z}|${c.x},${c.z}` : `${c.x},${c.z}|${a.x},${a.z}`;
     if (linked.has(key)) return; linked.add(key);
-    const L = Math.hypot(a.x - c.x, a.z - c.z), b = wires, sag = Math.max(0.15, L * 0.016);
-    for (let i = 0; i < 3; i++) wire(b, a.ins[i], c.ins[i], sag, 0.032);
-    if (ctx.world) (ctx.world.cableSpans ??= []).push({ a: a.ins[1], c: c.ins[1], sag, L });      // the middle wire: pigeons sit on it (life.js)
-    wire(b, a.low[0], c.low[0], sag * 1.5, 0.05); wire(b, a.low[1], c.low[1], sag * 1.7, 0.04);
-    if (L > 10) wire(b, [a.low[0][0], a.low[0][1] - 0.35, a.low[0][2]], [c.low[1][0], c.low[1][1] - 0.5, c.low[1][2]], sag * 1.9, 0.026);   // a sagging dead cable
-    stats.spans++;
+    const L = Math.hypot(a.x - c.x, a.z - c.z), b = wires, sag = Math.max(0.15, L * 0.016), tag = { poles: [a.k, c.k], street: a.st.id };
+    const strung = [];
+    for (let i = 0; i < 3; i++) strung.push(put('span', tag, b, a.ins[i], c.ins[i], sag, 0.032));
+    if (strung[1] && ctx.world) (ctx.world.cableSpans ??= []).push({ a: a.ins[1], c: c.ins[1], sag, L });      // the middle wire: pigeons sit on it (life.js)
+    strung.push(put('span', tag, b, a.low[0], c.low[0], sag * 1.5, 0.05), put('span', tag, b, a.low[1], c.low[1], sag * 1.7, 0.04));
+    if (L > 10) strung.push(put('span', tag, b, [a.low[0][0], a.low[0][1] - 0.35, a.low[0][2]], [c.low[1][0], c.low[1][1] - 0.5, c.low[1][2]], sag * 1.9, 0.026));   // a sagging dead cable
+    if (strung.some(Boolean)) stats.spans++;
   };
   for (const st of plan.streets) {
     const row = poles.filter((p) => p.st === st).sort((u, v) => u.s - v.s);
@@ -124,28 +160,34 @@ export function buildPoles(K) {
     if (best) link(p, best);
   }
 
-  // ---- 4. service drops from the poles to the nearest facade
+  // ---- 4. service drops from the poles to the nearest facade, one per house. The end is on the outer side of the wall; a drop that would go through a house on the way (a pole beside a house cannot reach
+  // its far wall) is left for the next house.
   poles.forEach((p, k) => {
-    const r = R.fork('drop' + k), n = r.int(1, 3), used = new Set();
-    for (let i = 0; i < n; i++) {
+    const r = R.fork('drop' + k), cands = [], n = r.int(1, 3);
+    let i = 0;                                                                              // the drops this pole has had a house for
+    for (const f of lotFps) {                                                            // per house its nearest facade 2 .. 17 m off
       let best = null, bd = 17;
-      for (const f of lotFps) {
-        if (used.has(f.lot.id)) continue;
-        for (let e = 0; e < f.poly.length; e++) {
-          const a = f.poly[e], c = f.poly[(e + 1) % f.poly.length], dd = segDist(p.x, p.z, a, c);
-          if (dd < bd && dd > 2.0) { bd = dd; best = { lot: f.lot, a, c }; }
-        }
+      for (let e = 0; e < f.poly.length; e++) {
+        const a = f.poly[e], c = f.poly[(e + 1) % f.poly.length], dd = segDist(p.x, p.z, a, c);
+        if (!(dd < bd && dd > 2.0)) continue;
+        const vx = c[0] - a[0], vz = c[1] - a[1], hl = Math.hypot(vx, vz) || 1;
+        let ox = -vz / hl, oz = vx / hl;
+        if ((a[0] + vx / 2 - f.cx) * ox + (a[1] + vz / 2 - f.cz) * oz < 0) { ox = -ox; oz = -oz; }          // out of the house
+        bd = dd; best = { lot: f.lot, a, c, ox, oz, dd };
       }
-      if (!best) break;
-      used.add(best.lot.id);
+      if (best) cands.push(best);
+    }
+    cands.sort((u, v) => u.dd - v.dd);
+    for (const best of cands) {
+      if (i >= n) break;
       const vx = best.c[0] - best.a[0], vz = best.c[1] - best.a[1], l2 = vx * vx + vz * vz || 1, u = Math.max(0.12, Math.min(0.88, ((p.x - best.a[0]) * vx + (p.z - best.a[1]) * vz) / l2));
-      const hx = best.a[0] + vx * u, hz = best.a[1] + vz * u, hl = Math.sqrt(l2), ox = -vz / hl, oz = vx / hl;
-      const sgn = (p.x - hx) * ox + (p.z - hz) * oz >= 0 ? 1 : -1, ax = hx + ox * sgn * 0.06, az = hz + oz * sgn * 0.06;
-      const gy = H(hx, hz), top = lotTopOf(K, best.lot), ay = Math.min(p.gy + 6.4, Math.max(gy + 3.4, top - 0.7));
-      if (top - gy < 3.6) continue;
-      wire(wires, i % 2 ? p.low[0] : p.ins[1], [ax, ay, az], Math.max(0.12, bd * 0.018), 0.026);
-      wires.box('iron_black', ax + ox * sgn * 0.02, ay, az + oz * sgn * 0.02, 0.1, 0.1, 0.14, { ry: Math.atan2(-oz * sgn, ox * sgn) });
-      stats.drops++;
+      const hx = best.a[0] + vx * u, hz = best.a[1] + vz * u, { ox, oz } = best, end = stand(best.lot, { x: hx, z: hz }, ox, oz);
+      if (!end) continue;
+      const [ax, az] = end, gy = H(hx, hz), top = lotTopOf(K, best.lot), ay = Math.min(p.gy + 6.4, Math.max(gy + 3.4, top - 0.7));
+      if (top - gy < 3.6) { i++; continue; }
+      if (!put('drop', { poles: [p.k], lot: best.lot.id }, wires, i % 2 ? p.low[0] : p.ins[1], [ax, ay, az], Math.max(0.12, best.dd * 0.018), 0.026)) continue;
+      wires.box('iron_black', ax + ox * 0.02, ay, az + oz * 0.02, 0.1, 0.1, 0.14, { ry: Math.atan2(-oz, ox) });
+      stats.drops++; i++;
     }
   });
 
@@ -161,12 +203,14 @@ export function buildPoles(K) {
       if (!A || !B || A.lot === B.lot) continue;
       const gy = H(q.x, q.z), top = Math.min(lotTopOf(K, A.lot), lotTopOf(K, B.lot)) - gy;
       if (top < 4.0) continue;
-      const isLine = isAlley && r.chance(0.5), y = gy + (isLine ? r.range(3.1, 3.6) : Math.min(top - 0.7, r.range(4.3, 5.4)));
-      const a = [A.x + nx * -0.0, y + r.range(-0.15, 0.15), A.z], c = [B.x, y + r.range(-0.15, 0.15), B.z];
-      const off = (v, sgn) => [v[0] - nx * 0.05 * sgn, v[1], v[2] - nz * 0.05 * sgn];
-      const pa = off(a, 1), pc = off(c, -1);
+      const hero = st.kind === 'path' && inSpawnFan(plan, q.x, q.z, 0, HERO);               // every span of the Paseo in the first frame is a washing line (a postcard, not bare cables)
+      const isLine = hero || (isAlley && r.chance(0.5)), y = gy + (isLine ? r.range(3.1, 3.6) : Math.min(top - 0.7, r.range(4.3, 5.4)));
+      const ya = y + r.range(-0.15, 0.15), yc = y + r.range(-0.15, 0.15);
+      const ea = stand(A.lot, A, -nx, -nz), ec = stand(B.lot, B, nx, nz);                    // both ends on the faces, a hand's breadth off them
+      if (!ea || !ec) continue;
+      const pa = [ea[0], ya, ea[1]], pc = [ec[0], yc, ec[1]];
       if (isLine) {
-        wire(laundry, pa, pc, 0.14, 0.014, 8);
+        if (!put('laundry', { street: st.id, lots: [A.lot.id, B.lot.id] }, laundry, pa, pc, 0.14, 0.014, 8)) continue;    // a line that would go through a house hangs no washing
         const len = Math.hypot(pc[0] - pa[0], pc[2] - pa[2]), m = Math.max(2, Math.floor(len / 0.75));
         for (let g = 0; g < m; g++) {
           if (!r.chance(0.78)) continue;
@@ -176,9 +220,11 @@ export function buildPoles(K) {
           laundry.quad('laundry', [x - hx, yy - h, z - hz], [x + bx, yy - h * 0.97, z + bz], [x, yy, z], [x - hx, yy, z - hz], { col, uv: [0, 0, 1, 0, 1, 1, 0, 1] });
           laundry.quad('laundry', [x + bx, yy - h * 0.97, z + bz], [x + hx, yy - h, z + hz], [x + hx, yy, z + hz], [x, yy, z], { col: [col[0] * 0.9, col[1] * 0.9, col[2] * 0.9], uv: [0, 0, 1, 0, 1, 1, 0, 1] });
         }
-        stats.laundry++;
+        stats.laundry++; if (hero) stats.heroLines++;
       } else {
-        for (let i = 0; i < r.int(2, 3); i++) wire(wires, [pa[0], pa[1] + i * 0.1, pa[2]], [pc[0], pc[1] + i * 0.1, pc[2]], 0.28 + 0.05 * i, 0.026);
+        let strung = 0;
+        for (let i = 0; i < r.int(2, 3); i++) if (put('alley', { street: st.id, lots: [A.lot.id, B.lot.id] }, wires, [pa[0], pa[1] + i * 0.1, pa[2]], [pc[0], pc[1] + i * 0.1, pc[2]], 0.28 + 0.05 * i, 0.026)) strung++;
+        if (!strung) continue;
         wires.box('iron_black', pa[0], pa[1], pa[2], 0.12, 0.12, 0.16, { ry: Math.atan2(-nz, nx) }); wires.box('iron_black', pc[0], pc[1], pc[2], 0.12, 0.12, 0.16, { ry: Math.atan2(-nz, nx) });
         stats.alleyWires++;
       }
@@ -190,11 +236,13 @@ export function buildPoles(K) {
         for (let s = 1.5; s < L - 1; s += 5) {
           const q = pointAt(d.pts, d.cum, s), nx = -q.tz * sd, nz = q.tx * sd, A = hit(q.x, q.z, nx, nz, hw + 1.3);
           if (!A) { prev = null; continue; }
-          const gy = H(A.x, A.z), top = lotTopOf(K, A.lot) - gy;
-          const cur = { x: A.x - nx * 0.07, z: A.z - nz * 0.07, y: gy + Math.min(top - 0.6, r.range(3.7, 4.8)), top };
+          const gy = H(A.x, A.z), top = lotTopOf(K, A.lot) - gy, face = stand(A.lot, A, -nx, -nz, 0.07);
+          if (!face) { prev = null; continue; }
+          const cur = { x: face[0], z: face[1], y: gy + Math.min(top - 0.6, r.range(3.7, 4.8)), top, lot: A.lot };
           if (prev && top > 4.2 && Math.hypot(cur.x - prev.x, cur.z - prev.z) < 7) {
-            for (let i = 0; i < r.int(1, 2); i++) wire(wires, [prev.x, prev.y - i * 0.09, prev.z], [cur.x, cur.y - i * 0.09, cur.z], 0.16 + 0.04 * i, 0.028);
-            wires.box('iron_black', cur.x, cur.y, cur.z, 0.1, 0.1, 0.1, { ry: 0 }); stats.alleyWires++;
+            let strung = 0;
+            for (let i = 0; i < r.int(1, 2); i++) if (put('facade', { street: st.id, lots: [prev.lot.id, A.lot.id] }, wires, [prev.x, prev.y - i * 0.09, prev.z], [cur.x, cur.y - i * 0.09, cur.z], 0.16 + 0.04 * i, 0.028)) strung++;
+            if (strung) { wires.box('iron_black', cur.x, cur.y, cur.z, 0.1, 0.1, 0.1, { ry: 0 }); stats.alleyWires++; }
           }
           prev = cur;
         }

@@ -3,14 +3,17 @@
 // building-local coordinates and placed by MeshBuilder.setBasePose. Tints are vertex colours so each material is ONE mesh per building.
 import { rectMinusRects } from './geom.js';
 import { roomFinish, facadeStyle } from './finish.js';
-import { lin, mulc, mixc, prod, faceQuad, flat, qd, hash01, OUT } from './mb.js';
+import { lin, mulc, mixc, prod, faceQuad, flat, qd, hash01, OUT, wbox, triFacing, archPts } from './mb.js';
 import { CASETA_H, CASETA_T, PRETIL_H } from './roof.js';
 import { makeRoofModel, buildRoof } from './shellroof.js';
-import { buildWindows, buildDoorFrames, buildEntrySteps } from './shellwin.js';
+import { buildWindows, buildDoorFrames, buildEntrySteps, archRise } from './shellwin.js';
 import { buildStairs } from './shellstair.js';
 import { buildDoorLeaves } from './doors.js';
+import { shopfrontOf } from './shutters.js';
 import { buildFacade } from './shellfacade.js';
 import { ensureSignAtlas } from './signs.js';
+import { ensureDecalAtlas } from './weather.js';
+import { buildChapelInterior } from './chapel_interior.js';
 
 const FOUND_COL = lin(0xb9b5ab);
 
@@ -43,8 +46,9 @@ export function makeG(ctx, bp) {
   b.setBasePose(lot.x, lot.y, lot.z, lot.rotY);
   b.uvOff = [hash01(bp.id, 1) * 7, hash01(bp.id, 2) * 7];
   const byId = new Map(bp.rooms.map((r) => [r.id, r]));
-  const G = { ctx, bp, S, b, lot, byId, fs: facadeStyle(bp), fins: new Map(), cells: [], winById: new Map(bp.windows.map((w) => [w.id, w])), doorById: new Map(bp.doors.map((d) => [d.id, d])) };
+  const G = { ctx, bp, S, b, lot, byId, fs: facadeStyle(bp), fins: new Map(), cells: [], winById: new Map(bp.windows.map((w) => [w.id, w])), doorById: new Map(bp.doors.map((d) => [d.id, d])), arcById: new Map((S.arcades ?? []).map((a) => [a.id, a])) };
   G.fin = (room) => { if (!room) return G.defFin ??= roomFinish({ id: 'none', type: 'hall', finish: {} }, bp); let f = G.fins.get(room.id); if (!f) G.fins.set(room.id, f = roomFinish(room, bp)); return f; };
+  G.shopLook = () => (G.look ??= shopfrontOf(ctx, lot));                  // the lot's shopfront (shutters.js): one look for every shop door of the building
   for (let k = 0; k <= S.F; k++) {
     const fd = S.floorsData[k], cells = [];
     for (const id of fd.rooms) { const r = byId.get(id); cells.push({ rect: r.rect, room: r, void: false }); }
@@ -149,17 +153,39 @@ function reveals(G, wl) {
       if (uA === uB) qd(b, m, P(uA, w0, yA), P(uA, w1, yA), P(uA, w1, yB), P(uA, w0, yB), nrm, { col: c });
       else qd(b, m, P(uA, w0, yA), P(uB, w0, yA), P(uB, w1, yA), P(uA, w1, yA), nrm, { col: c });
     };
-    const piece = (m, c, w0, w1) => {
-      quad(m, c, w0, w1, dv, u0, u0, ya, yb);                                        // jamb at u0 looks along +u
-      quad(m, c, w0, w1, [-dv[0], 0, -dv[2]], u1, u1, ya, yb);                       // jamb at u1 looks along -u
-      quad(m, c, w0, w1, [0, -1, 0], u0, u1, yb, yb);                                // head looks down
-      if (o.kind === 'window') quad(m, c, w0, w1, [0, 1, 0], u0, u1, ya, ya);        // sill (doors have thresholds instead)
+    const piece = (m, c, w0, w1, rise = 0) => {
+      quad(m, c, w0, w1, dv, u0, u0, ya, yb - rise);                                 // jamb at u0 looks along +u
+      quad(m, c, w0, w1, [-dv[0], 0, -dv[2]], u1, u1, ya, yb - rise);                // jamb at u1 looks along -u
+      if (!rise) quad(m, c, w0, w1, [0, -1, 0], u0, u1, yb, yb);                     // head looks down
+      else {                                                                         // a round head: the soffit is a strip of the arch, looking in toward its centre
+        const pts = archPts(u0, u1, yb, rise), hw2 = ((u1 - u0) / 2) ** 2, rs2 = rise * rise;
+        for (let i = 0; i + 1 < pts.length; i++) {
+          const a = pts[i], d = pts[i + 1], mu = (a[0] + d[0]) / 2 - (u0 + u1) / 2, my = (a[1] + d[1]) / 2 - (yb - rise), nu = -mu / hw2, ny = -my / rs2, l = Math.hypot(nu, ny) || 1;
+          qd(b, m, P(a[0], w0, a[1]), P(d[0], w0, d[1]), P(d[0], w1, d[1]), P(a[0], w1, a[1]), [(dv[0] * nu) / l, ny / l, (dv[2] * nu) / l], { col: c });
+        }
+      }
+      if (o.kind === 'window' || o.kind === 'arcade') quad(m, c, w0, w1, [0, 1, 0], u0, u1, ya, ya);   // sill (doors have thresholds instead)
+    };
+    /** The two top corners of a round-headed opening, filled in the plane `w` of a wall face (the face looks along `face` * the wall's normal). */
+    const spandrels = (m, c, w, face, rise) => {
+      const pts = archPts(u0, u1, yb, rise), K = (pts.length - 1) / 2, want = wl.dir === 'x' ? [0, 0, face] : [face, 0, 0];
+      for (const [corner, from, to] of [[u0, 0, K], [u1, K, 2 * K]]) for (let j = from; j < to; j++) triFacing(b, m, P(corner, w, yb), P(pts[j][0], w, pts[j][1]), P(pts[j + 1][0], w, pts[j + 1][1]), want, { col: c });
     };
     if (o.kind === 'window') {
-      const win = G.winById.get(o.ref), room = win ? G.byId.get(win.room) : null, fin = G.fin(room);
+      const win = G.winById.get(o.ref), room = win ? G.byId.get(win.room) : null, fin = G.fin(room), rise = archRise(win);
       const wf = s * (t / 2 - 0.1);                                                  // frame plane, 0.10 m in from the outer face
-      piece(caseta ? 'plaster_rough' : fs.m, mulc(fs.wall, 0.92), s * t / 2, wf);
-      piece(fin.wall.m, mulc(fin.wall.c, 0.97), wf, -s * t / 2);
+      const mo = caseta ? 'plaster_rough' : fs.m, co = mulc(fs.wall, 0.92), mi = fin.wall.m, ci = mulc(fin.wall.c, 0.97);
+      piece(mo, co, s * t / 2, wf, rise);
+      piece(mi, ci, wf, -s * t / 2, rise);
+      if (rise) { spandrels(mo, co, s * t / 2, s, rise); spandrels(mi, ci, -s * t / 2, -s, rise); }   // wall in the corners above the arch, on the street face and the room face
+    } else if (o.kind === 'arcade') {                                                // a bay in a wall onto a patio: reveal, sill and (some) an iron grille
+      const a = G.arcById.get(o.ref), fin = G.fin(a ? G.byId.get(a.room) : null);
+      piece(fin.wall.m, mulc(fin.wall.c, 0.95), -t / 2, t / 2);
+      if (a?.grille) {
+        const n = Math.max(3, Math.round((u1 - u0) / 0.12)), col = fs.metal;
+        for (let i = 0; i <= n; i++) wbox(b, 'grille_iron', wl.dir, u0 + ((u1 - u0) * i) / n, (ya + yb) / 2, wl.at, 0.014, yb - ya, 0.014, col, ['py', 'ny']);
+        for (const yy of [ya + 0.03, (ya + yb) / 2, yb - 0.03]) wbox(b, 'grille_iron', wl.dir, (u0 + u1) / 2, yy, wl.at, u1 - u0, 0.022, 0.022, col);
+      }
     } else {
       const d = G.doorById.get(o.ref);
       const r1 = d?.rooms?.[1] ? G.byId.get(d.rooms[1]) : null, fin = G.fin(r1 ?? G.byId.get(d?.rooms?.[0]));
@@ -207,9 +233,9 @@ function floorsAndCeilings(G) {
 function voidEdges(G) {
   const { S, b } = G;
   for (let k = 1; k <= S.F; k++) {
-    if (k === S.F && !S.roofWalkable) continue;
     const yk = k * S.fh;
     for (const v of S.floorsData[k].voids) {
+      if (k === S.F && !S.roofWalkable && !v.patio) continue;                 // a closed roof hides the stair void's edge, but a patio is open to the sky
       const q = v.rect, fin = G.fin(G.byId.get(v.owner)), y0 = yk - S.slab, c = fin.wall.c, m = fin.wall.m;
       const e = [[q.x0, q.z0, q.x1, q.z0, [0, 0, 1]], [q.x1, q.z0, q.x1, q.z1, [-1, 0, 0]], [q.x1, q.z1, q.x0, q.z1, [0, 0, -1]], [q.x0, q.z1, q.x0, q.z0, [1, 0, 0]]];
       for (const [xa, za, xb, zb, n] of e) qd(b, m, [xa, y0, za], [xb, y0, zb], [xb, yk, zb], [xa, yk, za], n, { col: c });
@@ -219,6 +245,8 @@ function voidEdges(G) {
 
 export function buildBuilding(ctx, bp) {
   const G = makeG(ctx, bp), { S } = G;
+  const shopDoors = bp.doors.filter((d) => d.kind === 'shutter');
+  if (shopDoors.length) { const l = G.shopLook(); bp.shopfront = { style: l.style, tone: l.tone, key: l.key, doorIds: shopDoors.map((d) => d.id) }; }
   G.rm = makeRoofModel(G);
   for (const wl of S.walls) {
     if (wl.ext) outerFace(G, wl);
@@ -238,15 +266,16 @@ export function buildBuilding(ctx, bp) {
   buildEntrySteps(G);
   buildRoof(G);
   dressFacade(G);
-  ctx.batch.flush(bp.id + '.ext');
+  for (const m of ctx.batch.flush(bp.id + '.ext')) if (m.userData.matKey === 'wall_decal') m.castShadow = false;       // weathering decals: a shadow pass has no alpha, a quad would cast a full rectangle
   buildDoorLeaves(G);
+  if (S.chapel) { try { buildChapelInterior(ctx, bp); } catch (e) { (ctx.errors ??= []).push({ stage: 'arch', building: bp.id, message: 'chapel interior ' + String(e?.message ?? e), stack: e?.stack }); } }
 }
 
 /** Facade language (shellfacade.js): decoration only. A fault in it is reported and the bare shell still ships. `ctx.noFacade = true` skips it (A/B measurements). */
 function dressFacade(G) {
   const { ctx, bp, b } = G, t0 = b.tris;
   if (ctx.noFacade) { bp.shell.facadeTris = 0; return; }
-  try { ensureSignAtlas(ctx); buildFacade(G); } catch (e) {
+  try { ensureSignAtlas(ctx); ensureDecalAtlas(ctx); buildFacade(G); } catch (e) {
     (ctx.errors ??= []).push({ stage: 'arch', building: bp.id, message: 'facade ' + String(e?.message ?? e), stack: e?.stack });
   }
   bp.shell.facadeTris = b.tris - t0;

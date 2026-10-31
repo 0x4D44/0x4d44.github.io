@@ -7,6 +7,7 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch } from './chrome.mjs';
+import { NO_CAST } from '../js/core/shadowpolicy.js';
 
 const W = 48, H = 27;
 // Budgets from the lead's brief: draw calls INCLUDE the shadow pass and every post pass; A3's interiors and A4's crowd still have to fit.
@@ -30,6 +31,12 @@ const SIGS = `(() => {
   });
 })()`;
 const EXT = `(() => { const g = document.createElement('canvas').getContext('webgl2'); return !!g && !!g.getExtension('EXT_clip_control'); })()`;
+// Who casts into the sun's shadow map, by material (a tint suffix `#hex` follows its material) and the terrain tile groups (core/shadowpolicy.js).
+const AUDIT = `(() => {
+  const ctx = __ladera.ctx, tiles = [...ctx.batch.groups].filter(([id]) => /^world\\.terrain\\.\\d+\\.\\d+$/.test(id)), casting = {}, total = {};
+  ctx.scene.traverse((o) => { if (!o.isMesh) return; const k = String(o.userData?.matKey ?? '').split('#')[0]; total[k] = (total[k] ?? 0) + 1; if (o.castShadow) casting[k] = (casting[k] ?? 0) + 1; });
+  return { terrainGroups: tiles.length, terrainCast: tiles.filter(([, g]) => g.cast).length, casting, total };
+})()`;
 
 const luma = (d, i) => (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
 const meanLuma = (d) => { let s = 0; for (let i = 0; i < d.length; i += 4) s += luma(d, i); return s / (d.length / 4); };
@@ -41,11 +48,11 @@ const maxCellDiff = (a, b) => { let m = 0; for (let i = 0; i < a.length; i += 4)
 const edgeEnergy = (d) => { let s = 0, n = 0; for (let y = 0; y < H; y++) for (let x = 0; x + 1 < W; x++) { s += Math.abs(luma(d, (y * W + x) * 4) - luma(d, (y * W + x + 1) * 4)); n++; } return 255 * s / n; };
 const view = (name) => VIEWS.findIndex((v) => v[0] === name);
 
-let b, on, off, raw;
+let b, on, off, raw, ca;
 async function load(query) {
   const page = await b.open(`la-ladera/index.html?${query}`);
   const state = await page.eval('(() => { const s = __ladera.state(); return { reversedZ: s.reversedZ, errors: s.errors, merge: s.merge, meshes: __ladera.ctx.batch.stats().meshes }; })()');
-  return { ...state, ext: await page.eval(EXT), views: await page.eval(SIGS), problems: page.summary() };
+  return { ...state, ext: await page.eval(EXT), audit: await page.eval(AUDIT), views: await page.eval(SIGS), problems: page.summary() };
 }
 
 before(async () => {
@@ -53,6 +60,7 @@ before(async () => {
   on = await load('autostart&manual');            // the default: reversed-Z wherever the GPU allows it, static meshes merged
   off = await load('autostart&manual&rdb=0');     // reference 1: standard depth
   raw = await load('autostart&manual&skip=merge'); // reference 2: one mesh per group x material, as the modules made them
+  ca = await load('autostart&manual&castall');    // reference 3: floors and terrain tiles cast into the sun's shadow map, as before core/shadowpolicy.js
 });
 after(async () => { await b?.close(); });
 
@@ -92,6 +100,30 @@ test(`budgets: at most ${MAX_CALLS} draw calls (shadow + post included) and ${MA
   assert.ok(on.views[view('spawn')].calls < raw.views[view('spawn')].calls * 0.6, 'merging must cut the spawn view by at least 40 %');
 });
 
+test('the shadow policy reaches the real scene: no floor or screed mesh and none of the 64 terrain tiles casts, the walls, ceilings, glass, frames and grilles still do (as many as before), and ?castall puts the floors and tiles back', () => {
+  const A = on.audit, C = ca.audit;
+  assert.equal(A.terrainGroups, 64, 'the 8 x 8 terrain tiles'); assert.equal(A.terrainCast, 0, 'no tile casts'); assert.equal(C.terrainCast, 64, '?castall: every tile casts');
+  for (const k of NO_CAST) assert.equal(A.casting[k] ?? 0, 0, `${k}: ${A.casting[k]} of ${A.total[k]} meshes cast`);
+  assert.ok(A.total.cement_screed > 0 && (C.casting.cement_screed ?? 0) > 0, `the audit sees the screed floors (${A.total.cement_screed}) and ?castall makes them cast (${C.casting.cement_screed}): the check is not vacuous`);
+  for (const k of ['wall_paint', 'plaster_a', 'ceiling_white', 'glass', 'frame_paint', 'rail_metal', 'grille_iron']) {
+    assert.ok((A.casting[k] ?? 0) > 0, `${k} still casts (${A.casting[k] ?? 0} of ${A.total[k] ?? 0} meshes)`);
+    assert.equal(A.casting[k], C.casting[k], `${k}: the same number of casting meshes as ?castall`);
+  }
+});
+
+test('the sun pass is lighter with the policy and the frame is the same: fewer calls and triangles than ?castall in every view, spawn by 15 calls and 8 % of the triangles', (t) => {
+  VIEWS.forEach(([name], i) => {
+    const a = on.views[i], c = ca.views[i], mad = meanAbsDiff(a.sig, c.sig), mx = maxCellDiff(a.sig, c.sig);
+    t.diagnostic(`${name}: ${a.calls} calls ${(a.tris / 1e6).toFixed(3)} M against ${c.calls} calls ${(c.tris / 1e6).toFixed(3)} M with ?castall; meanAbsDiff ${mad.toFixed(2)} maxCell ${mx.toFixed(1)}`);
+    assert.ok(a.calls < c.calls && a.tris < c.tris, `${name}: ${a.calls} calls and ${a.tris} triangles against ${c.calls} and ${c.tris} with ?castall`);
+    assert.ok(mad < 1, `${name}: mean difference ${mad.toFixed(2)} / 255 against ?castall (a run of the same scene is 0.00)`);
+    assert.ok(mx < 20, `${name}: one cell differs by ${mx.toFixed(1)} / 255 against ?castall (a run of the same scene is 0)`);
+  });
+  const s = view('spawn');
+  assert.ok(on.views[s].calls <= ca.views[s].calls - 15, `spawn: ${on.views[s].calls} calls against ${ca.views[s].calls}`);
+  assert.ok(on.views[s].tris <= ca.views[s].tris * 0.92, `spawn: ${on.views[s].tris} triangles against ${ca.views[s].tris}`);
+});
+
 test('daytime frames show the street and the facades, not a smooth haze', (t) => {
   for (const name of ['spawn', 'downhill']) {
     const e = edgeEnergy(on.views[view(name)].sig);
@@ -107,8 +139,8 @@ test('exposure stays in a readable range: day bright, night dark but not black',
   assert.ok(lum.night > 0.05 && lum.night < 0.3, `night mean luma ${lum.night.toFixed(3)} (was 0.005 when it rendered black)`);
 });
 
-test('all three loads boot clean: no errors, warnings or 404s', () => {
-  for (const [name, r] of [['default', on], ['rdb=0', off], ['skip=merge', raw]]) {
+test('all four loads boot clean: no errors, warnings or 404s', () => {
+  for (const [name, r] of [['default', on], ['rdb=0', off], ['skip=merge', raw], ['castall', ca]]) {
     assert.equal(r.errors, 0, `${name}: ctx.errors`);
     assert.deepEqual(r.problems, { errors: [], netErrors: [], consoleErrors: [], consoleWarnings: [] }, name);
   }

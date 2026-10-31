@@ -1,12 +1,18 @@
 // Conversation orchestrator: locks the player, turns the NPC, drives the dialogue engine, subtitles + speech + panel.
 //   talk.begin(npc) -> true | false;   talk.pick(id);   talk.skip();   talk.leave();   talk.update(dt)
 // Events: 'npc:talk' {id,name,persona} at the start, 'npc:line' {id,name,es,en} for every spoken line, 'npc:end' {id}.
-import { Dialogue } from './dialogue.js';
+import { Dialogue, newLineMemory } from './dialogue.js';
 import { BANK } from './lines/index.js';
 
 const TAU = Math.PI * 2;
 const angDiff = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d <= -Math.PI) d += TAU; return d; };
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+
+/**
+ * What the person was doing when the player stopped them. beginTalk() puts them in the 'talk' pose and overwrites `act`, so the answer is read BEFORE
+ * it (or from the saved state when they are already stopped); the listening half of a chat between two neighbours was chatting too.
+ */
+export const actBefore = (npc) => { const a = npc.mode === 'talk' ? npc.prevMode?.act ?? 'idle' : npc.act; return a === 'listen' ? 'talk' : a; };
 
 export class Talk {
   constructor(world) {
@@ -20,15 +26,17 @@ export class Talk {
   /** Start talking to `npc`. Returns false when busy or the player does not exist yet. */
   begin(npc) {
     const w = this.w, ctx = this.ctx, pl = ctx.player;
-    if (this.npc || !pl || !npc || npc.away) return false;
+    if (this.npc || !pl || !npc || npc.away || npc.act === 'sleep') return false;               // (somebody asleep in bed is not stopped for a chat)
     this.npc = npc; const tok = ++this.token; this.count++;
     clearTimeout(this.subTimer);
     pl.lock('dialogue');
     w.syncPlayer();
+    const act = actBefore(npc);
     npc.beginTalk(w.svc, w.player);
     this.dlg = new Dialogue({
-      npc: { id: npc.id, persona: npc.bank, name: npc.display, mem: npc.mem, x: npc.x, z: npc.z, shopName: npc.shopName, gender: npc.gender, act: npc.act },
+      npc: { id: npc.id, persona: npc.bank, name: npc.display, mem: npc.mem, x: npc.x, z: npc.z, shopName: npc.shopName, gender: npc.gender, age: npc.age, act },
       bank: BANK, rng: npc.rng, hour: ctx.hour, address: ctx.settings?.v?.address === 'f' ? 'f' : 'm',      // how the player is addressed (settings; default masculine)
+      memory: (w.lineMemory ??= newLineMemory()),                          // what anybody in the barrio has said this session: two people of one persona never say the same line while there are others
       world: { landmarks: w.landmarks, discoveries: this._discoveries(), player: { x: pl.s.x, y: pl.s.y, z: pl.s.z, yaw: pl.yaw } },
     });
     this.ui.show({ name: npc.display, role: npc.roleLabel }, { onPick: (id) => this.pick(id), onSkip: () => this.skip(), onLeave: () => this.leave() });
@@ -39,7 +47,7 @@ export class Talk {
 
   _discoveries() {
     const d = this.ctx.discover; if (!d) return [];
-    return [...d.items.values()].map((x) => ({ id: x.id, name: x.name, en: x.en, x: x.x, y: x.y, z: x.z, found: d.found.has(x.id) }));
+    return [...d.items.values()].map((x) => ({ id: x.id, name: x.name, en: x.en, kind: x.kind, building: x.building ?? null, x: x.x, y: x.y, z: x.z, found: d.found.has(x.id) }));
   }
 
   _show(step, tok) {

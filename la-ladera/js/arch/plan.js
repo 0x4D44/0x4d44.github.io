@@ -53,9 +53,12 @@ function makeEntrances(S, ctx) {
   if (!shopFirst) doors.sort((a, b) => (a.entrance === 'main' ? 0 : 1) - (b.entrance === 'main' ? 0 : 1) || (order[a.entrance] ?? 5) - (order[b.entrance] ?? 5));
   doors.forEach((d, i) => {
     const t = S.te / 2 + 1.2;
-    const o = fr.toWorld(d.x - d.nx * t, d.y, d.z - d.nz * t), n = fr.toWorld(d.x + d.nx * 1.0, d.y, d.z + d.nz * 1.0);
+    // `inside` is a point a body can stand on. The caseta landing behind a roof door is only about 0.75 m deep before the stair guard, so 1.0 m in stood on the guard for 25 of the
+    // 64 roof doors (the stuck sweep found no node within 0.45 m of L65.e1): a roof door's point is 0.55 m in, the middle of the standable run.
+    const inD = d.roof ? 0.55 : 1.0;
+    const o = fr.toWorld(d.x - d.nx * t, d.y, d.z - d.nz * t), n = fr.toWorld(d.x + d.nx * inD, d.y, d.z + d.nz * inD);
     const dir = fr.dir(-d.nx, -d.nz), ry = Math.atan2(dir[0], dir[1]);
-    const yOut = ph ? ph(o[0], o[2]) : S.lot.y;
+    const yOut = d.roof ? o[1] : ph ? ph(o[0], o[2]) : S.lot.y;      // a roof door opens onto the terrace beside it, at its own level (not the terrain 8 m below)
     out.push({ id: `${S.lot.id}.e${i}`, doorId: d.id, kind: d.entrance ?? 'main', outside: [round2(o[0]), round2(Number.isFinite(yOut) ? yOut : S.lot.y), round2(o[2])], inside: [round2(n[0]), round2(n[1]), round2(n[2])], yawIn: ry, ry });
   });
   return out;
@@ -75,8 +78,8 @@ export function planBuilding(ctx, lot) {
   const fr = S.frame, fp = footprintOf(S);
   const xs = fp.map((p) => p[0]), zs = fp.map((p) => p[1]);
   const topExtra = S.roofStyle === 'terrace' ? 3.2 : S.roofStyle === 'unfinished' ? 2.5 : S.fh * 0.7;
-  const floors = S.floorsData.slice(0, S.F).map((f) => ({ index: f.index, y: f.y, h: f.h, rooms: f.rooms.slice(), voids: f.voids.map((v) => ({ ...v.rect, owner: v.owner })), open: !!f.open }));
-  if (S.roofLayer?.walkable && !S.openTop) floors.push({ index: S.F, y: S.F * S.fh, h: 3.0, rooms: S.floorsData[S.F].rooms.slice(), voids: S.floorsData[S.F].voids.map((v) => ({ ...v.rect, owner: v.owner })), roof: true });
+  const floors = S.floorsData.slice(0, S.F).map((f) => ({ index: f.index, y: f.y, h: f.h, rooms: f.rooms.slice(), voids: f.voids.map((v) => ({ ...v.rect, owner: v.owner, ...(v.patio ? { patio: true } : {}) })), open: !!f.open }));
+  if (S.roofLayer?.walkable && !S.openTop) floors.push({ index: S.F, y: S.F * S.fh, h: 3.0, rooms: S.floorsData[S.F].rooms.slice(), voids: S.floorsData[S.F].voids.map((v) => ({ ...v.rect, owner: v.owner, ...(v.patio ? { patio: true } : {}) })), roof: true });
   const stairs = (S.core?.stairs ?? []).map((s, i) => ({ id: `${lot.id}.s${i}`, ...s }));
   const roofY = S.openTop ? (S.F - 1) * S.fh : S.F * S.fh;
   const bp = {
@@ -89,7 +92,8 @@ export function planBuilding(ctx, lot) {
     shell: {
       kind: S.kind, F: S.F, fh: S.fh, h: S.h, slab: S.slab, W: S.W, D: S.D, te: S.te, ti: S.ti, outer: S.outer, inner: S.inner, party: S.party,
       walls: S.walls, core: S.core, roofLayer: S.roofLayer, roofStyle: S.roofStyle, roofWalkable: S.roofWalkable, openTop: S.openTop,
-      guards: S.guards, foundY: S.foundY, floorsData: S.floorsData, notes: S.notes, steps: S.steps,
+      guards: S.guards, foundY: S.foundY, floorsData: S.floorsData, notes: S.notes, steps: S.steps, patios: S.patios, arcades: S.arcades, platforms: S.platforms,
+      ...(S.chapel ? { chapel: S.chapel } : {}),                                       // the nave and its dais (layouts.js layoutChapel): chapel_interior.js draws on it
     },
   };
   return bp;

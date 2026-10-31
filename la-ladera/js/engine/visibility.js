@@ -4,16 +4,77 @@
 //  * Interior meshes never cast into the sun's shadow map (sunlight reaches rooms only through windows; furniture shadows there are not
 //    worth a second pass over every sofa).
 //  * Hysteresis (show at R, hide at R + 3) so a building does not flicker while the player stands on the threshold.
+//  * Hidden subtrees keep their matrices: three draws nothing under a hidden object, yet Object3D.updateMatrixWorld still walks every object below it,
+//    every frame. The interiors alone are 6000 objects of the 10000 in the scene, and the people hide whoever is out of sight. See skipHidden().
 import * as THREE from 'three';
 
 export const INT_RANGE = 28;
 const INDOOR_OTHERS = 14;
 const HYST = 3;
+const BIG_GROUP = 16, BIG_FAMILY = 8;                   // a top-level group with >= 16 children of >= 8 objects each is a crowd (people): its hidden children are skipped too
+const OBJ_UMW = THREE.Object3D.prototype.updateMatrixWorld;
+
+/**
+ * Make `parent` pass over its hidden children when it updates world matrices. three never draws (or shadows) anything below an object with visible = false, but
+ * Object3D.updateMatrixWorld recurses into it regardless; a child skipped here is remembered and gets ONE forced update (its whole subtree) on the first frame it
+ * is visible again, so the picture cannot differ. The only observable change: matrixWorld of an object inside a hidden subtree is the one it had when it was last
+ * drawn (nothing in the game reads it: door, container and NPC code move local transforms, and getWorldPosition & co. refresh the parent chain themselves).
+ * Idempotent. `parent.userData.skipHidden` = { on, stale, skipped }; switch `on` off through setSkipHidden() so nothing stays stale.
+ */
+function skipHidden(parent) {
+  if (parent.userData.skipHidden) return parent.userData.skipHidden;
+  const st = parent.userData.skipHidden = { on: true, stale: new Set(), skipped: 0, parent };
+  const run = [], revive = [];
+  parent.updateMatrixWorld = function (force) {
+    if (!st.on) return OBJ_UMW.call(this, force);
+    const all = this.children, stale = st.stale; run.length = revive.length = 0;
+    for (let i = 0; i < all.length; i++) {
+      const c = all[i];
+      if (!c.visible) stale.add(c);
+      else if (stale.size > 0 && stale.delete(c)) revive.push(c);
+      else run.push(c);
+    }
+    if (stale.size > all.length) for (const c of stale) if (c.parent !== this) stale.delete(c);          // a removed child must not be kept alive here
+    st.skipped = stale.size;
+    this.children = run;
+    try { OBJ_UMW.call(this, force); } finally { this.children = all; }
+    for (let i = 0; i < revive.length; i++) revive[i].updateMatrixWorld(true);
+    run.length = revive.length = 0;
+  };
+  return st;
+}
+/** Turn the hidden-subtree skip of one parent on or off; off first brings every skipped child up to date. */
+function setSkipHidden(st, on) {
+  if (st.on === on) return;
+  if (!on) { st.on = false; for (const c of st.stale) if (c.parent === st.parent) c.updateMatrixWorld(true); st.stale.clear(); st.skipped = 0; } else st.on = true;
+}
 
 export class Visibility {
   constructor(ctx) {
-    this.ctx = ctx; this.ints = []; this.acc = 1; this.lx = 1e9; this.lz = 1e9; this.ly = 1e9; this.shown = 0; this.p = new THREE.Vector3();
+    this.ctx = ctx; this.ints = []; this.acc = 1; this.lx = 1e9; this.lz = 1e9; this.ly = 1e9; this.shown = 0; this.p = new THREE.Vector3(); this.skips = [];
   }
+
+  /** Hidden-subtree matrix skip on the scene and on every crowd-like top-level group. `on` = false turns them all off (the A/B switch of the tests and ?skiphidden=0). */
+  skipHiddenMatrices(on = true) {
+    const scene = this.ctx.scene;
+    if (!this.skips.length) { scene.updateMatrixWorld(true); }            // one complete pass: every matrix is valid before hidden subtrees stop being walked
+    const sts = [skipHidden(scene)];
+    for (const c of scene.children) {
+      let st = c.userData.skipHidden;
+      if (!st) {
+        const kids = c.children.length; if (kids < BIG_GROUP) continue;
+        let total = 0; c.traverse(() => { total++; });
+        if (total < BIG_FAMILY * kids) continue;                          // a crowd's children carry whole skeletons; a building's carry a mesh or two
+        st = skipHidden(c);
+      }
+      sts.push(st);
+    }
+    this.skips = sts;
+    for (const st of sts) setSkipHidden(st, on);
+    return sts.length;
+  }
+  /** Objects whose matrices are being skipped right now (hidden children of the scene and of the crowds). */
+  skippedNow() { let n = 0; for (const st of this.skips) n += st.skipped; return n; }
 
   /** Scan the batch groups once every stage has flushed (cheap; safe to call again after late additions). */
   collect() {
@@ -31,6 +92,7 @@ export class Visibility {
       ints.push({ id, bid: id.slice(0, -4), obj: g.obj, box, on: true });
     }
     this.acc = 1;
+    this.skipHiddenMatrices(this.ctx.opts.skipHidden !== false);
     return ints.length;
   }
 
@@ -54,5 +116,5 @@ export class Visibility {
     this.shown = shown;
   }
 
-  stats() { return { intGroups: this.ints.length, intShown: this.shown }; }
+  stats() { return { intGroups: this.ints.length, intShown: this.shown, matrixSkipped: this.skippedNow() }; }
 }

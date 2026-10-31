@@ -3,6 +3,7 @@
 // (open concrete deck with columns and sprouting rebar). Local frame: y = floor-index * fh.
 import { CASETA_H, CASETA_T, PRETIL_H } from './roof.js';
 import { lin, mulc, mixc, qd, faceQuad, flat, bar, hash01 } from './mb.js';
+import { rectMinusRects } from './geom.js';
 
 export function makeRoofModel(G) {
   const { S, bp } = G, yF = S.F * S.fh, O = S.outer;
@@ -47,8 +48,13 @@ function terraceRoof(G) {
   box(G, 'concrete_bare', 0, yF + ph + 0.025, O.z0 + te / 2, S.W + 2 * cp, 0.05, ct, [0.95, 0.95, 0.93]);
   box(G, 'concrete_bare', O.x0 + te / 2, yF + ph + 0.025, 0, ct, 0.05, S.D - 2 * te, [0.95, 0.95, 0.93]);
   box(G, 'concrete_bare', O.x1 - te / 2, yF + ph + 0.025, 0, ct, 0.05, S.D - 2 * te, [0.95, 0.95, 0.93]);
-  if (!S.roofWalkable) {                                                          // the visible roof surface (walkable ones draw their rooms)
-    flat(b, 'roof_terrace', I.x0, I.z0, I.x1, I.z1, yF, true, { col: [1, 1, 1] });
+  if (!S.roofWalkable) {                                                          // the visible roof surface (walkable ones draw their rooms), open over the patios
+    for (const p of rectMinusRects(I, S.patios.map((q) => q.rect))) flat(b, 'roof_terrace', p.x0, p.z0, p.x1, p.z1, yF, true, { col: [1, 1, 1] });
+  }
+  for (const q of S.patios) {                                                     // a low curb round each hole in the roof
+    const p = q.rect, h = 0.22, t = 0.16, cx = (p.x0 + p.x1) / 2, cz = (p.z0 + p.z1) / 2, col = [0.93, 0.93, 0.9];
+    box(G, 'concrete_bare', cx, yF + h / 2, p.z0 - t / 2, p.x1 - p.x0 + 2 * t, h, t, col); box(G, 'concrete_bare', cx, yF + h / 2, p.z1 + t / 2, p.x1 - p.x0 + 2 * t, h, t, col);
+    box(G, 'concrete_bare', p.x0 - t / 2, yF + h / 2, cz, t, h, p.z1 - p.z0, col); box(G, 'concrete_bare', p.x1 + t / 2, yF + h / 2, cz, t, h, p.z1 - p.z0, col);
   }
   // caseta roof slab over the stair head
   const cas = S.roofLayer?.caseta;

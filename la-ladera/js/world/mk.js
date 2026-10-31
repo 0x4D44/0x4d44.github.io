@@ -78,26 +78,28 @@ export function beam(b, mat, a, c, w, h, o = {}) {
 
 /**
  * Round tube between two points with smooth normals (poles, trunks, wheels, pipes). r0 at a, r1 at c.
- * o: { col | colFn(ringIndex) -> [r,g,b], caps:true, uvTurns (u repeats per metre of circumference) }
+ * o: { col | colFn(ringIndex) -> [r,g,b], colFnEnd(ringIndex) (the colours of the ring at c, so a trunk fades along its length; default = colFn), caps:true,
+ *      turns (a textured trunk: u runs 0..turns once round the tube, so the swatch wraps without a seam; default u is the circumference in metres),
+ *      vper (metres of length per unit of v, default 1: pass the swatch's height in metres to keep its proportions), v0 (v at a: chain the tubes of one trunk, so the bark does not restart at every joint) }
  */
 export function tube(b, mat, a, c, r0, r1 = r0, seg = 8, o = {}) {
   const acc = b._acc(mat), d = sub(c, a), L = len(d) || 1e-6, t = mul(d, 1 / L);
   let s = cross(t, [0, 1, 0]); s = len(s) < 1e-4 ? [1, 0, 0] : nrm(s);
-  const u = cross(s, t), base = acc.pos.length / 3, slope = (r0 - r1) / L, circ = Math.PI * 2 * Math.max(r0, r1);
-  const colAt = (i) => (o.colFn ? o.colFn(i) : o.col ?? [1, 1, 1]);
+  const u = cross(s, t), base = acc.pos.length / 3, slope = (r0 - r1) / L, circ = o.turns ?? Math.PI * 2 * Math.max(r0, r1), v0 = o.v0 ?? 0, v1 = v0 + L / (o.vper ?? 1);
+  const colAt = (i) => (o.colFn ? o.colFn(i) : o.col ?? [1, 1, 1]), colEnd = (i) => (o.colFnEnd ? o.colFnEnd(i) : colAt(i));
   for (let i = 0; i <= seg; i++) {
     const th = (i / seg) * Math.PI * 2, radial = add(mul(s, Math.cos(th)), mul(u, Math.sin(th)));
-    const n = nrm(add(radial, mul(t, slope))), col = colAt(i % seg);
-    b.vert(acc, add(a, mul(radial, r0)), n, (i / seg) * circ, 0, col);
-    b.vert(acc, add(c, mul(radial, r1)), n, (i / seg) * circ, L, col);
+    const n = nrm(add(radial, mul(t, slope)));
+    b.vert(acc, add(a, mul(radial, r0)), n, (i / seg) * circ, v0, colAt(i % seg));
+    b.vert(acc, add(c, mul(radial, r1)), n, (i / seg) * circ, v1, colEnd(i % seg));
   }
   for (let i = 0; i < seg; i++) { const k = base + i * 2; acc.idx.push(k, k + 1, k + 3, k, k + 3, k + 2); }
   b.tris += seg * 2;
   if (o.caps !== false) {
-    for (const [p, r, sgn] of [[c, r1, 1], [a, r0, -1]]) {
+    for (const [p, r, sgn, cf] of [[c, r1, 1, colEnd], [a, r0, -1, colAt]]) {
       if (r <= 1e-4) continue;
-      const n = mul(t, sgn), c0 = b.vert(acc, p, n, 0, 0, colAt(0));
-      for (let i = 0; i <= seg; i++) { const th = (i / seg) * Math.PI * 2; b.vert(acc, add(p, mul(add(mul(s, Math.cos(th)), mul(u, Math.sin(th))), r)), n, Math.cos(th) * r, Math.sin(th) * r, colAt(i % seg)); }
+      const n = mul(t, sgn), c0 = b.vert(acc, p, n, 0, 0, cf(0));
+      for (let i = 0; i <= seg; i++) { const th = (i / seg) * Math.PI * 2; b.vert(acc, add(p, mul(add(mul(s, Math.cos(th)), mul(u, Math.sin(th))), r)), n, Math.cos(th) * r, Math.sin(th) * r, cf(i % seg)); }
       for (let i = 0; i < seg; i++) { if (sgn > 0) acc.idx.push(c0, c0 + i + 2, c0 + i + 1); else acc.idx.push(c0, c0 + i + 1, c0 + i + 2); }
       b.tris += seg;
     }

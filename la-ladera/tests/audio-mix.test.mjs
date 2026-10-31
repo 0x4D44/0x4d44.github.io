@@ -82,6 +82,9 @@ test('mix: day and night swap the crickets for the birds, the children and the n
   assert.equal(mixAt(20, 47, { hour: 5, night: 0.8 }).beds.children, 0, 'and not at five in the morning');
   assert.ok(day.beds.murmur > night.beds.murmur && night.beds.murmur >= 0, 'fewer voices at night');
   assert.ok(mixAt(20, 47, { hour: 3, night: 1 }).beds.murmur < 0.5 * day.beds.murmur, 'nearly none at 3 am');
+  // the children go in with the light, not only with the clock: at 19.2 h their hours are not quite over but the sun has gone
+  const dusk = mixAt(20, 47, { hour: 19.2 }), light = mixAt(20, 47, { hour: 19.2, night: 0 });
+  assert.ok(dusk.beds.children > 0 && dusk.beds.children < 0.35 * light.beds.children, `at dusk the children are called in: ${dusk.beds.children.toFixed(3)} against ${light.beds.children.toFixed(3)} in full light`);
 });
 
 test('mix: a crowd raises the neighbours and the children; an empty street quietens them', () => {
@@ -104,6 +107,8 @@ test('heightRange samples the terrain\'s 5th..95th percentile', () => {
   assert.ok(r.hi - r.lo > 20 && r.hi - r.lo < 40 && r.lo >= 0 && r.hi < 40, JSON.stringify(r));
   assert.deepEqual(M.heightRange(() => NaN), { lo: 0, hi: 30 }, 'no valid terrain: a sane default');
   const flat = M.heightRange(() => 5); assert.ok(flat.hi > flat.lo, 'a flat plain never divides by zero');
+  const spiky = M.heightRange((x, z) => (x === 0 && z === 0 ? 500 : x === 8 && z === 8 ? -300 : 10 + x / 16 + z / 32));
+  assert.ok(spiky.hi < 25 && spiky.lo > -5 && spiky.hi > 15 && spiky.lo < 5, `a mast and a pit do not stretch the range: ${JSON.stringify(spiky)}`);
 });
 
 // ---- emitters ---------------------------------------------------------------------------------------------------------------------------------
@@ -127,6 +132,9 @@ test('emitters: the landmarks that make noise, plus households, at most one of e
   assert.ok(a.filter((e) => e.building && e.id.startsWith('tv:')).length > 3 && a.filter((e) => e.kind === 'cook').length > 3, 'a fair share of the households have a tv and a stove');
   for (const e of a) { assert.ok(Number.isFinite(e.x + e.y + e.z) && e.max > e.ref && e.gain > 0 && e.bed, e.id); }
   assert.deepEqual(M.buildEmitters(null, []), [], 'no plan, no emitters');
+  const crowded = M.buildEmitters(plan, Array.from({ length: 30 }, (_, i) => ({ id: 'c' + i, kind: i % 2 ? 'tv' : 'cook', x: i, y: 0, z: 60, building: 'BIG' })));
+  assert.equal(crowded.filter((e) => e.kind === 'tv').length, 1, 'fifteen televisions in one building are one television');
+  assert.equal(crowded.filter((e) => e.kind === 'cook').length, 1, 'and fifteen stoves one stove');
 });
 
 test('emitterScore: loudest at the source, fading with distance, gone past its range or out of its hours', () => {
@@ -134,6 +142,8 @@ test('emitterScore: loudest at the source, fading with distance, gone past its r
   const s = (d, h = 20) => M.emitterScore(tv, d, 0, 0, h);
   assert.ok(s(0) > s(2) && s(2) > s(6) && s(6) > s(15) && s(15) > 0, 'monotone');
   assert.equal(s(tv.max + 1), 0); assert.equal(s(5, 4), 0, 'a television is off at 4 am');
+  assert.equal(s(2, 16.1), 0, 'one that has just come on (3 % of its evening) is still silent, not a whisper that takes a voice from the rest');
+  assert.ok(s(2, 16.5) > 0.3 * s(2, 20), 'half-way through its switch-on it is clearly audible');
   assert.ok(s(1.5) <= tv.gain + 1e-9 && s(0) <= tv.gain + 1e-9, 'never louder than its gain');
   const crowd = { id: 'c', kind: 'court', x: 0, y: 0, z: 0, ...M.EMITTER.court };
   assert.ok(M.emitterScore(crowd, 60, 0, 0, 17) > M.emitterScore(tv, 60, 0, 0, 17), 'a court carries across the barrio, a television does not');

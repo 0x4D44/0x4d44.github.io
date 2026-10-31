@@ -5,10 +5,11 @@
 import { PALETTE } from '../core/config.js';
 import { clamp, lerp, ss, dist, unit, cumLen, project, fillet, resample, pointInPoly, polyDistPoint, gapBetween, footprint } from './geom.js';
 import { HALF, CELL, N, makeBaseTerrain, createField } from './field.js';
-import { ITEMS, ROWS } from './layout.js';
+import { ITEMS, ROWS, FILL, MENUS, KEEP } from './layout.js';
 import { makeNamer } from './names.js';
 import { buildNav } from './nav.js';
 import { buildPlaces } from './places.js';
+import { linkCourtSide } from './courtside.js';
 
 const round05 = (v) => Math.round(v * 20) / 20;
 const GMAX = { road: 0.10, street: 0.09, alley: 0.17, path: 0.19 };
@@ -176,20 +177,48 @@ export function generatePlan(ctx) {
   }
 
   // ---- lots from the frontage rows
-  const lots = [], warnings = [], placed = [];
+  const lots = [], warnings = [], placed = [], keep = [];
   const palettes = PALETTE.facade;
   let lastPal = [];
-  const blocked = (fp, others, rowId) => {
-    for (const p of fp) if (Math.abs(p[0]) > 98.6 || Math.abs(p[1]) > 98.6) return true;
+  // `strict` (the infill) = { front, gap, street, stair, plaza }: another street keeps `street` m (a stair `stair` m) clear of the wall, a plaza `plaza` m, and
+  // a neighbour is either touching (a party wall, |gap| <= 0.06) or `gap` m away: no 0.1-1 m slit between two buildings that nobody can walk and everything falls into.
+  const blocked = (fp, others, rowId, strict = null) => {
+    for (const p of fp) if (Math.abs(p[0]) > 98.6 || Math.abs(p[1]) > 98.6) return 'bounds';
     const xs = fp.map((p) => p[0]), zs = fp.map((p) => p[1]), x0 = Math.min(...xs), x1 = Math.max(...xs), z0 = Math.min(...zs), z1 = Math.max(...zs);
-    for (const st of streets) {
-      const m = st.width / 2 + 0.3;
-      if (x1 < st._bb[0] - m || x0 > st._bb[2] + m || z1 < st._bb[1] - m || z0 > st._bb[3] + m) continue;
-      for (const q of st._d.pts) if (q[0] > x0 - m && q[0] < x1 + m && q[1] > z0 - m && q[1] < z1 + m && polyDistPoint(fp, q[0], q[1]) < m) return true;
+    if (strict) {
+      for (const k of keep) if (polyDistPoint(fp, k.x, k.z) < k.r) return 'keep ' + k.lot;
+      const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, r = Math.hypot(x1 - x0, z1 - z0) / 2;
+      for (const o of others) {
+        if (Math.hypot(o.cx - cx, o.cz - cz) > o.r + r + strict.gap) continue;
+        const g = gapBetween(fp, o.fp);
+        if (g < strict.gap && !(o.rowId === rowId && Math.abs(g) <= 0.02)) return 'lot';
+      }
     }
-    for (const pl of plazas) if (gapBetween(fp, pl.poly) < 0.3) return true;
-    for (const o of others) { const g = gapBetween(fp, o.fp); if (g < 0.3 && !(o.rowId === rowId && g > -0.05)) return true; }
+    for (const st of streets) {
+      const m = st.width / 2 + (!strict ? 0.3 : st.id === strict.front ? 0.5 : st.kind === 'stair' ? strict.stair : strict.street);
+      if (x1 < st._bb[0] - m || x0 > st._bb[2] + m || z1 < st._bb[1] - m || z0 > st._bb[3] + m) continue;
+      for (const q of st._d.pts) if (q[0] > x0 - m && q[0] < x1 + m && q[1] > z0 - m && q[1] < z1 + m && polyDistPoint(fp, q[0], q[1]) < m) return 'street ' + st.id;
+    }
+    for (const pl of plazas) if (gapBetween(fp, pl.poly) < (strict ? strict.plaza : 0.3)) return 'plaza';
+    if (!strict) for (const o of others) { const g = gapBetween(fp, o.fp); if (g < 0.3 && !(o.rowId === rowId && g > -0.05)) return true; }
     return false;
+  };
+  // One lot, shared by the hand-authored rows and the infill. The draws from `lr` are part of the plan's determinism (floors, palette, door offset, name,
+  // roof access, roof, balconies, in that order), so a lot's look never depends on the lots that come after it.
+  const commit = (i, lr, floors, rowId, front, o, kind, shop, w, d, cx, cz, rotY, fp) => {
+    placed.push({ fp, rowId, cx, cz, r: Math.hypot(w, d) / 2 });
+    let pal; for (let tries = 0; tries < 8; tries++) { pal = lr.pick(palettes); if (!lastPal.includes(pal)) break; }
+    lastPal.push(pal); if (lastPal.length > 3) lastPal.shift();
+    const roofs = kind === 'unfinished' ? ['unfinished'] : kind === 'chapel' ? ['tile'] : ['terrace', 'terrace', 'corrugated', 'tile'];
+    const u = o.u ?? (w >= 5.5 && kind !== 'kiosk' ? clamp(lr.range(-1, 1) * (w / 2 - 1.3), -(w / 2 - 1.3), w / 2 - 1.3) * (shop ? 0.4 : 1) : 0);
+    lots.push({
+      id: 'L' + String(i).padStart(2, '0'), name: o.name ?? nameLot(kind, shop, lr, i, !!o.more), kind, x: +cx.toFixed(3), y: 0, z: +cz.toFixed(3), rotY: +rotY.toFixed(5),
+      w, d, floors, fh: FLOORS_H[kind] ?? 2.8, front,
+      entrance: { side: 'front', u: +u.toFixed(2) }, party: { left: false, right: false, back: false },
+      ...(shop ? { shop } : {}), roofAccess: o.roofAccess ?? (floors >= 2 && kind !== 'chapel' && lr.chance(0.75)),
+      style: { palette: pal, roof: o.roof ?? lr.pick(roofs), balconies: floors >= 2 && kind !== 'chapel' ? lr.int(0, Math.min(3, floors)) : 0, notes: o.notes ?? '' },
+      seed: (seed * 31 + 1000 + i * 7919) >>> 0, row: rowId,
+    });
   };
   for (const row of ROWS) {
     const rowId = row.id ?? row.st + ':' + (row.leg ?? 'at') + (row.side ?? '') + ':' + (row.s0 ?? 0);
@@ -224,21 +253,77 @@ export function generatePlan(ctx) {
         s += 0.25;
       }
       if (tries >= 200) warnings.push(`row ${rowId}: could not place ${kind} ${w}x${d}`);
-      placed.push({ fp, rowId });
-      let pal; for (let tries = 0; tries < 8; tries++) { pal = lr.pick(palettes); if (!lastPal.includes(pal)) break; }
-      lastPal.push(pal); if (lastPal.length > 3) lastPal.shift();
-      const roofs = kind === 'unfinished' ? ['unfinished'] : kind === 'chapel' ? ['tile'] : ['terrace', 'terrace', 'corrugated', 'tile'];
-      const u = o.u ?? (w >= 5.5 && kind !== 'kiosk' ? clamp(lr.range(-1, 1) * (w / 2 - 1.3), -(w / 2 - 1.3), w / 2 - 1.3) * (shop ? 0.4 : 1) : 0);
-      lots.push({
-        id: 'L' + String(i).padStart(2, '0'), name: o.name ?? nameLot(kind, shop, lr, i), kind, x: +cx.toFixed(3), y: 0, z: +cz.toFixed(3), rotY: +rotY.toFixed(5),
-        w, d, floors, fh: FLOORS_H[kind] ?? 2.8, front: row.st,
-        entrance: { side: 'front', u: +u.toFixed(2) }, party: { left: false, right: false, back: false },
-        ...(shop ? { shop } : {}), roofAccess: o.roofAccess ?? (floors >= 2 && kind !== 'chapel' && lr.chance(0.75)),
-        style: { palette: pal, roof: o.roof ?? lr.pick(roofs), balconies: floors >= 2 && kind !== 'chapel' ? lr.int(0, Math.min(3, floors)) : 0, notes: o.notes ?? '' },
-        seed: (seed * 31 + 1000 + i * 7919) >>> 0, row: rowId,
-      });
+      commit(i, lr, floors, rowId, row.st, o, kind, shop, w, d, cx, cz, rotY, fp);
       s += w;
     }
+  }
+
+  // ---- infill (layout.js FILL + MENUS): the frontage the hand-authored rows leave empty is filled, leg by leg and side by side, with lots drawn from a menu.
+  // A lot goes at the first spot along the chord (sliding up to 5 m, then a narrower width, then a shallower depth) where it is clear of every street, plaza and
+  // lot and its pad is not a huge cut or fill; a spot where nothing fits is skipped. Lots of one run touch (party walls), now and then with a 1.3-2.4 m gap
+  // between them (a walkable passage). The rows above are placed first and never move, so L00-L48 keep their ids, places and looks.
+  const used = new Map(); for (const l of lots) if (l.shop) used.set(l.shop, (used.get(l.shop) ?? 0) + 1);
+  for (const k of KEEP) {                                          // ground another module builds on (layout.js KEEP): a disc `along` m along the facade from a hand-authored lot's door
+    const l = lots.find((q) => q.id === k.lot); if (!l) throw new Error('keep: unknown lot ' + k.lot);
+    const c = Math.cos(l.rotY), s = Math.sin(l.rotY), lx = l.entrance.u + (k.along ?? 0), lz = l.d / 2 + 1.2 + (k.out ?? 0);
+    keep.push({ lot: k.lot, r: k.r, x: l.x + lx * c + lz * s, z: l.z - lx * s + lz * c });
+  }
+  const specOf = (menu, fr) => {
+    let r = fr.range(0, menu.reduce((a, m) => a + m.wt, 0)), m = menu[menu.length - 1];
+    for (const e of menu) if ((r -= e.wt) < 0) { m = e; break; }
+    let shop = null;
+    if (m.shops) for (let k = 0; k < 3; k++) { const c = fr.pick(m.shops); if (shop == null || (used.get(c) ?? 0) < (used.get(shop) ?? 0)) shop = c; }   // the least used of three draws
+    return { m, w: Math.round(fr.range(m.w[0], m.w[1]) * 2) / 2, shop };
+  };
+  const padOK = (st, arc, cx, cz, rot, w, d) => {                  // the pad level (the street at the door + 0.25 - 0.3) against the base terrain under the footprint
+    const c = Math.cos(rot), s = Math.sin(rot), pad = round05(yAtDense(st._d, arc) + 0.25) - 0.3;
+    let hi = -1e9, lo = 1e9;
+    for (const [lx, lz] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2], [0, -d / 2], [0, 0]]) {
+      const y = T(cx + lx * c + lz * s, cz - lx * s + lz * c); if (y > hi) hi = y; if (y < lo) lo = y;
+    }
+    return hi - pad <= 4.2 && pad - lo <= 4.6;
+  };
+  const frontOK = (st, cx, cz, rot, w, d) => {                    // the street really runs along the front (a hairpin's curve leaves the chord): each doorstep is 0.1-1.1 m inside the kerb line
+    const c = Math.cos(rot), s = Math.sin(rot), hw = st.width / 2, lz = d / 2 + 1.2;
+    for (const lx of [-w / 2 + 0.3, -(w / 2 - 1.3), 0, w / 2 - 1.3, w / 2 - 0.3]) {
+      const dist = project(st._d.pts, st._d.cum, cx + lx * c + lz * s, cz - lx * s + lz * c).d;
+      if (dist < hw - 1.1 || dist > hw - 0.1) return false;
+    }
+    return true;
+  };
+  const fillLeg = (st, leg, side, menu, f) => {
+    const A = st._raw[leg], B = st._raw[leg + 1], len = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (len < 6) return;
+    const t = unit(B[0] - A[0], B[1] - A[1]), right = [-t[1], t[0]], n = side > 0 ? right : [-right[0], -right[1]], F = st.width / 2 + 0.6;
+    const rowId = `${st.id}:${leg}${side > 0 ? 'r' : 'l'}:fill`, fr = rng.fork('fill:' + rowId), rot = Math.atan2(-n[0], -n[1]);
+    const sA = project(st._d.pts, st._d.cum, A[0], A[1]).s, strict = { front: st.id, gap: 1.2, street: 1.0, stair: 1.4, plaza: 1.5 }, end = len + 1.5;
+    let s = f.s0 ?? 0.5, guard = 0;
+    while (s < end - 3.5 && guard++ < 120) {
+      const spec = specOf(menu, fr), m = spec.m, widths = [...new Set([spec.w, Math.max(m.w[0], spec.w - 1), m.w[0]])];
+      let done = false;
+      for (let k = 0; k <= 10 && !done; k++) for (const w of widths) {
+        const cs = s + k * 0.5 + w / 2;
+        if (cs + w / 2 > end) continue;
+        for (const d of m.d) {
+          const cx = A[0] + t[0] * cs + n[0] * (F + d / 2), cz = A[1] + t[1] * cs + n[1] * (F + d / 2);
+          if (!padOK(st, sA + cs, cx, cz, rot, w, d)) continue;
+          const fp = footprint({ x: cx, z: cz, rotY: rot, w, d });
+          if (blocked(fp, placed, rowId, strict) || !frontOK(st, cx, cz, rot, w, d)) continue;
+          const i = lots.length, lr = rng.fork('lot:' + i), floors = Array.isArray(m.fl) ? lr.int(m.fl[0], m.fl[1]) : m.fl;
+          commit(i, lr, floors, rowId, st.id, { more: true }, m.kind, spec.shop, w, d, cx, cz, rot, fp);
+          if (spec.shop) used.set(spec.shop, (used.get(spec.shop) ?? 0) + 1);
+          s += k * 0.5 + w + (fr.chance(f.gapP ?? 0.1) ? fr.range(1.3, 2.4) : 0);
+          done = true; break;
+        }
+        if (done) break;
+      }
+      if (!done) s += 2;
+    }
+  };
+  for (const f of FILL) {
+    const st = byId.get(f.st); if (!st) throw new Error('fill: unknown street ' + f.st);
+    const menu = MENUS[f.menu]; if (!menu) throw new Error('fill: unknown menu ' + f.menu);
+    for (const leg of f.legs ?? st._raw.slice(1).map((_, k) => k)) for (const side of f.sides ?? [1, -1]) fillLeg(st, leg, side, menu, f);
   }
 
   // door positions (world) and lot elevations from the front street profile
@@ -354,6 +439,7 @@ export function generatePlan(ctx) {
   Object.defineProperty(plan, '_joiners', { value: joiners, enumerable: false });
   buildNav(plan, plazaById);
   buildPlaces(plan, rng);
+  linkCourtSide(plan, PLAZA_BAND);                                  // the way to the benches and leans outside the court's fence (the nodes go on after the ones above)
   plan.spawn.y = +heightAt(plan.spawn.x, plan.spawn.z).toFixed(2);
   return plan;
 }

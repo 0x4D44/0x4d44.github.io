@@ -14,6 +14,7 @@
 //   tex   - texture basename in the manifest (default: the material's own name); false = never textured
 //   desc  - plain-language brief for the texture generator (what the real-world surface looks like)
 //   prio  - 1|2|3 generation order for the texture factory (1 = needed first)
+//   tri   - true: steep faces read the colour map from the side (engine/triplanar.js; ground_dirt, grass_patchy), for ground whose UVs are planar x-z
 //   glow  - emissive intensity at FULL NIGHT (the engine drives emissiveIntensity = glow * ctx.night); `window_lit` defaults to 2.4
 // The manifest entry may carry `tileScale` (< 1 when the processed swatch covers less than `tile` metres): repeat = 1 / (tile * tileScale).
 import * as THREE from 'three';
@@ -22,6 +23,7 @@ import world from '../world/matdefs.js';
 import arch from '../arch/matdefs.js';
 import interiors from '../interiors/matdefs.js';
 import people from '../people/matdefs.js';
+import { triplanar } from '../engine/triplanar.js';
 
 export const ALL_DEFS = { ...engine, ...world, ...arch, ...interiors, ...people };
 export const DEF_OWNERS = Object.fromEntries([['engine', engine], ['world', world], ['arch', arch], ['interiors', interiors], ['people', people]]
@@ -111,6 +113,7 @@ export class MaterialLib {
       if (tex.rough) m.roughnessMap = bind(tex.rough, false);
       if (tex.map && d.alphaFromMap) m.transparent = true;
     }
+    if (d.tri) triplanar(m);
     this.cache.set(key, m);
     return m;
   }

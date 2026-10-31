@@ -3,8 +3,9 @@
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/people-dialogue.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { BANK } from '../js/people/lines/index.js';
-import { Dialogue, withArticle, theEn, polish, clockLine, directionsTo, period, takeLine } from '../js/people/dialogue.js';
+import { Dialogue, withArticle, theEn, polish, clockLine, directionsTo, period, takeLine, inWindow, fillTokens, newLineMemory } from '../js/people/dialogue.js';
 import { makeRng } from '../js/core/rng.js';
 import { buildData } from './headless.mjs';
 
@@ -30,7 +31,20 @@ test('withArticle: every landmark and shop name of the real plan gets the right 
   for (const [name, art] of Object.entries(want)) assert.equal(withArticle(name), `${art} ${name}`, name);
   const { plan } = await buildData({ furnish: false, colliders: false });
   for (const l of plan.landmarks) assert.ok(/^(el|la|los|las) /.test(withArticle(l.name)), l.name);
-  for (const lot of plan.lots.filter((x) => x.shop)) assert.ok(want[lot.name], `shop lot '${lot.name}' is missing from the article table of this test`);
+  // every shop name the world can make (both pools of js/world/names.js, not only the ones this seed drew): the article follows the generic first word, written down here by hand
+  const HEAD = {
+    Panadería: 'la', Pan: 'el', Fruver: 'el', Frutas: 'las', Verduras: 'las', Carnicería: 'la', Carnes: 'las', Peluquería: 'la', Barbería: 'la', Salón: 'el', Ferretería: 'la', Depósito: 'el',
+    Droguería: 'la', Café: 'el', Tinto: 'el', Cafetería: 'la', Restaurante: 'el', Corrientazo: 'el', Asadero: 'el', Papelería: 'la', Minutos: 'los', Internet: 'el', Cabinas: 'las',
+    Modistería: 'la', Confecciones: 'las', Arreglos: 'los', Zapatería: 'la', Remontadora: 'la', Taller: 'el', Mecánica: 'la', Tienda: 'la', Miscelánea: 'la', Minimercado: 'el',
+  };
+  const namesSrc = readFileSync(new URL('../js/world/names.js', import.meta.url), 'utf8');
+  const pools = ['SHOP', 'SHOP_MORE'].flatMap((k) => [...(new RegExp(`const ${k} = \\{([\\s\\S]*?)\\n\\};`).exec(namesSrc)?.[1] ?? '').matchAll(/'([^']+)'/g)].map((m) => m[1]));
+  assert.ok(pools.length >= 90, `${pools.length} shop names in the pools of names.js`);
+  for (const name of new Set([...pools, ...plan.lots.filter((x) => x.shop).map((l) => l.name)])) {
+    const art = want[name] ?? HEAD[name.split(/\s+/)[0]];
+    assert.ok(art, `the first word of the shop name '${name}' is not in the article table of this test: decide its article`);
+    assert.equal(withArticle(name), `${art} ${name}`, name);
+  }
   assert.equal(withArticle('el Parque'), 'el Parque', 'a name that carries its article keeps it');
   assert.equal(theEn('Sky Viewpoint', 'viewpoint'), 'the Sky Viewpoint'); assert.equal(theEn('Calle del Sol', 'street'), 'Calle del Sol');
 });
@@ -133,6 +147,104 @@ test('the hint no longer says "a el" and starts every sentence with a capital', 
   assert.fail('no seed produced the discovery hint');
 });
 
+// ---- the tips ("anything worth seeing?"): public places only, short names, said by kind ----------------------------------------------------------------
+const LONG = 'The big bed was a wedding gift; a heart is scratched into the headboard.';
+const D = (id, name, en, kind, x, z, o = {}) => ({ id, name, en, kind, x, y: 2, z, found: false, ...o });
+const PRIVATE = [
+  D('int:L02:3', 'La cama de matrimonio', LONG, 'story', 1, -3, { building: 'L02' }),
+  D('x:7', 'Los Tornillos por unidad', 'Screws by the unit, counted out of a jar.', 'object', 2, -4, { building: 'L05' }),                       // a building says so, whatever its id
+  D('int:L09:1', 'El cuarto del hijo mayor', 'The eldest son kept his football cards under the mattress.', 'story', 3, -2),                         // the id says so, whatever else is missing
+  D('cont:L02:k:1', 'El escurridor', 'A dish rack with one plate that nobody dares to wash.', 'object', 2, -2, { building: 'L02' }),
+  D('find:1', 'El peine de carey', 'A tortoiseshell comb.', 'hallazgo', 1, -1),
+];
+const PUBLIC = [
+  D('w.cruz', 'La Cruz de la Cumbre', 'The summit cross, lit all night: the whole barrio steers by it.', 'vista', 30, -40),
+  D('w.perro', 'El perro dormido', 'A street dog asleep in the sun on the warm paving; he lifts his head, thinks it over, and decides you are fine.', 'nature', 36, -30),
+  D('w.rayuela', 'La rayuela', 'A hopscotch in chalk, redrawn every week by whoever is small enough to care.', 'object', -30, -35),
+  D('w.virgen', 'La Virgen del Carmen', "A neighbours' shrine: candles, plastic flowers and a blue niche.", 'shrine', 25, 25),
+  D('w.cancha', 'La Cancha El Cerro', 'The futsal court: every afternoon begins with arguments over the teams.', 'story', -25, 30),
+];
+const tips = (discoveries, seeds = 60) => {
+  const out = [];
+  for (let seed = 1; seed <= seeds; seed++) { const d = dlg('vecino', { gender: 'm', discoveries, seed }); d.open(); out.push(d.pick('tip').line); }
+  return out;
+};
+
+test('the tips only name public places and things: never a bed, a child\'s room or a drawer in somebody\'s home, nor a find', () => {
+  const lines = tips([...PRIVATE, ...PUBLIC]);
+  for (const l of lines) {
+    assert.doesNotMatch(l.es, /cama|Tornillos|cuarto|escurridor|peine/i, l.es); assert.doesNotMatch(l.en, /bed|screws|room|dish rack|comb/i, l.en);
+    assert.match(l.es, /Cruz de la Cumbre|perro dormido|rayuela|Virgen del Carmen|Cancha El Cerro/, l.es);
+  }
+  assert.equal(dlg('vecino', { discoveries: PRIVATE }).hint(), null, 'nothing public left to tell: no hint (the generic tip pool answers)');
+  const generic = dlg('vecino', { discoveries: PRIVATE, seed: 3 }); generic.open(); const g = generic.pick('tip').line;
+  assert.doesNotMatch(g.es, /cama|Tornillos|cuarto|escurridor|peine/i); assert.ok(g.es.length > 20, 'the shared tip pool answers instead');
+  for (const l of tips(PUBLIC.map((p) => ({ ...p, found: true })), 10)) assert.doesNotMatch(l.es, /Cruz de la Cumbre|perro dormido|rayuela|Virgen del Carmen|Cancha El Cerro/, 'a place already found is not recommended');
+});
+
+test('the tips say a short name in English (not the journal sentence), with no capital in the middle and no double full stop', () => {
+  const lines = tips(PUBLIC, 80), all = lines.map((l) => l.en).join('\n');
+  for (const l of lines) {
+    for (const p of PUBLIC) assert.ok(!l.en.includes(p.en.replace(/\.$/, '')) && !l.en.includes(p.en.slice(0, 30)), `the journal sentence was pasted: ${l.en}`);
+    assert.doesNotMatch(l.en, /\.\./, l.en); assert.doesNotMatch(l.en, /\bis about the same level/, l.en);
+    assert.match(l.en, /^(They say it's worth stopping to look at|If you like looking, don't miss|If I were you I'd have a look at|Drop by|If you're out for a walk, don't miss|They say it's worth seeing|Go and see|It's worth seeing|Don't miss|Take a look at|If you like nature, look at|If you like animals, look at|It's worth looking at|If you like art, don't miss) (the|Lantern|Canelo|Don|Doña|El) [a-z]/, l.en);
+    assert.doesNotMatch(l.en, /\b(it is|It is|you are|I am)\b/, `English keeps its contractions: ${l.en}`);
+    assert.match(l.en, /\. It's (uphill|downhill|at about the same level), /, l.en);
+  }
+  for (const w of ['the summit cross', 'the sleeping street dog', 'the hopscotch', 'the shrine of the Virgin of Carmen', 'the futsal court']) assert.ok(all.includes(w), `"${w}" is said`);
+  // a discovery the table does not know: the Spanish name, as a proper name (a sentence is not a name); a short English name is used as it is
+  const NEW = [D('w.nuevo', 'El Mural Nuevo', 'A long wall, repainted by the whole school: every child signed a corner of it.', 'mural', 20, -30)], NEW2 = [D('w.otro', 'El Puente', 'Wooden Bridge', 'vista', 20, -30)];
+  for (const l of tips(NEW, 12)) { assert.match(l.es, /(ver|Fíjese en|no se pierda) el Mural Nuevo\./, l.es); assert.match(l.en, / El Mural Nuevo\. It's /, l.en); }
+  for (const l of tips(NEW2, 12)) { assert.match(l.es, / (al|el) Puente\./, l.es); assert.match(l.en, / the Wooden Bridge\. It's /, l.en); }
+});
+
+test('the tips are said by kind: a view is looked at, a place is dropped by, a shrine is seen, an animal is noticed', () => {
+  const say = (item, seeds = 80) => tips([item], seeds).map((l) => l.es).join('\n');
+  const view = say(PUBLIC[0]), nature = say(PUBLIC[1]), shrine = say(PUBLIC[3]), place = say(PUBLIC[4]);
+  assert.match(view, /asomarse a la Cruz/); assert.doesNotMatch(view, /Pase por|Pase a ver|Fíjese en/);
+  assert.match(nature, /Fíjese en el perro dormido/); assert.doesNotMatch(nature, /asomarse|Pase por|Pase a ver/);
+  assert.match(shrine, /Pase a ver la Virgen del Carmen/); assert.doesNotMatch(shrine, /asomarse|Pase por|Fíjese en/);
+  assert.match(place, /Pase por la Cancha El Cerro/); assert.doesNotMatch(place, /asomarse|Fíjese en|Pase a ver/);
+  for (const t of [view, nature, shrine, place]) { assert.doesNotMatch(t, / a el | de el /); assert.doesNotMatch(t, /[a-záéíóúñ,] (La|El|Los|Las) (Cruz|Virgen)/); }
+  // the table can say a kind is wrong: the kite is registered as a 'vista', but nobody "looks out over" a kite
+  const kite = say(D('w.cometa', 'La cometa del mirador', 'A red-and-yellow kite on a long string tied to a stake at the viewpoint.', 'vista', 20, -30));
+  assert.match(kite, /Fíjese en la cometa del mirador/); assert.doesNotMatch(kite, /asomarse|Si le gusta mirar/);
+});
+
+test('where: nobody is sent to the shop they stand in, nor to a place a few steps away (the rest still come, nearest first)', () => {
+  const LMS = [
+    { id: 'panaderia', name: 'Panadería La Esperanza', en: 'Bakery', kind: 'shop', x: 60, y: 2, z: 60 },                    // his own shop (named), though he stands far from the point
+    { id: 'busstop', name: 'Parada del Bus', en: 'Bus Stop', kind: 'busstop', x: 8, y: 2, z: 5 },                            // a few steps away
+    { id: 'cancha30', name: 'Cancha El Cerro', en: 'El Cerro Court', kind: 'court', x: 30, y: 2, z: 0 },                     // far enough
+    LM[0], LM[1], LM[2],
+  ];
+  const ask = (seed, o = {}) => {
+    const d = new Dialogue({ npc: { id: 'n1', persona: 'panaderia', name: 'Don Jorge', gender: 'm', shopName: 'Panadería La Esperanza', x: 0, z: -1.5, mem: null }, bank: BANK, rng: makeRng(seed), hour: 10, world: { landmarks: o.landmarks ?? LMS, player: here, discoveries: [] } });
+    d.open(); return d.pick('where').choices.map((c) => c.id).filter((id) => id.startsWith('lm:'));
+  };
+  for (let seed = 1; seed <= 60; seed++) {
+    const ids = ask(seed);
+    assert.ok(ids.length >= 3, ids.join()); assert.ok(!ids.includes('lm:panaderia'), 'his own shop'); assert.ok(!ids.includes('lm:busstop'), 'a place 9 m away');
+    assert.ok(ids.includes('lm:cancha30'), 'a place 30 m away is a fine answer: the nearest of the rest');
+  }
+  const tiny = [{ id: 'a', name: 'Calle A', en: 'A Street', kind: 'street', x: 5, y: 2, z: 0 }, { id: 'b', name: 'Calle B', en: 'B Street', kind: 'street', x: 0, y: 2, z: 9 }];
+  assert.deepEqual(ask(1, { landmarks: tiny }).sort(), ['lm:a', 'lm:b'], 'when everything is near, something is still offered');
+});
+
+test('directions in English read as sentences: "is at about the same level", "the Bus Stop"', async () => {
+  const rng = makeRng(2), y2 = (lm) => directionsTo({ y: 2, ...lm }, here, rng);
+  const level = y2({ name: 'Panadería La Esperanza', en: 'Bakery', kind: 'shop', x: 0, z: -30 });
+  assert.match(level.en, /^The Bakery is at about the same level, about a block away, straight ahead\.$/);
+  assert.match(directionsTo({ name: 'Panadería', en: 'Bakery', x: 0, y: 2, z: -30 }, here, rng, { short: true }).en, /^It's at about the same level, about a block away, straight ahead\.$/);
+  assert.match(y2({ name: 'Parada del Bus', en: 'Bus Stop', kind: 'busstop', x: 0, z: -30 }).en, /^The Bus Stop is /); assert.equal(theEn('Bus Stop', 'busstop'), 'the Bus Stop');
+  assert.match(y2({ name: 'Calle del Sol', en: 'Sun Street', kind: 'street', x: 0, z: -30 }).en, /^Sun Street is /, 'a street keeps its name without an article');
+  const { plan } = await buildData({ furnish: false, colliders: false });
+  for (const lm of plan.landmarks) for (const yaw of [0, 1.6, 3.1, 4.7]) for (const y of [-6, 2, 12]) {
+    const en = directionsTo({ ...lm, y: lm.y ?? 0 }, { x: 0, y: (lm.y ?? 0) + y - 2, z: 0, yaw }, rng).en;
+    assert.match(en, /^(The |Sun |Commerce |Virgin |Lantern |El |La |Los |Las )[A-Z]?[^.]* is (at about the same level|uphill|downhill), (right there|about a block away|a couple of blocks away|quite far), (straight ahead|on your right|on your left|back the way you came)\.$/, `${lm.id}: ${en}`);
+  }
+});
+
 test('how the player is addressed follows settings.address (default masculine), the speaker\'s own gender forms follow the NPC', () => {
   const saw = (address, gender = 'f') => {
     const out = [];
@@ -154,4 +266,44 @@ test('takeLine: unused lines first, then the pool starts over', () => {
   const pool = [['a', 'a'], ['b', 'b'], ['c', 'c']], used = new Set(), rng = makeRng(1);
   const first = [takeLine(pool, used, rng), takeLine(pool, used, rng), takeLine(pool, used, rng)].map((x) => x[0]).sort();
   assert.deepEqual(first, ['a', 'b', 'c']); assert.ok(takeLine(pool, used, rng), 'an exhausted pool starts over instead of returning nothing'); assert.equal(takeLine([], used, rng), null);
+});
+
+// ---- R3-018: wording and the hour ---------------------------------------------------------------------------------------------------------------
+test('theEn: a name that opens with a Spanish article keeps it ("El Cerro School", not "the El Cerro School"); the rest take "the"', () => {
+  assert.equal(theEn('El Cerro School', 'school'), 'El Cerro School'); assert.equal(theEn('La Esperanza Bakery', 'shop'), 'La Esperanza Bakery'); assert.equal(theEn('Los Almendros Plaza', 'plaza'), 'Los Almendros Plaza');
+  assert.equal(theEn('School', 'school'), 'the School'); assert.equal(theEn('Lantern Alley', 'street'), 'Lantern Alley'); assert.equal(theEn('Elm Court', 'court'), 'the Elm Court', 'a word that only begins with the letters "el" is not an article');
+  const y2 = directionsTo({ name: 'Escuela El Cerro', en: 'El Cerro School', kind: 'school', x: 0, y: 2, z: -30 }, here, makeRng(2));
+  assert.match(y2.en, /^El Cerro School is /, y2.en); assert.doesNotMatch(y2.en, /\bthe El\b|\bThe El\b/i);
+});
+
+test('a line of a pool can carry an hour window { from, to }: lunch is asked until three o\'clock, tea after it, the blazing sun only until half past four', () => {
+  assert.equal(inWindow(undefined, 3), true); assert.equal(inWindow({ to: 15 }, 14.99), true); assert.equal(inWindow({ to: 15 }, 15), false); assert.equal(inWindow({ from: 15 }, 15), true); assert.equal(inWindow({ from: 15 }, 14.9), false);
+  const greetings = (persona, hour, n = 60) => { const out = new Set(); for (let s = 1; s <= n; s++) out.add(dlg(persona, { hour, seed: s, gender: persona === 'vecino' ? 'm' : 'f' }).open().line.es); return [...out].join(' | '); };
+  for (const persona of ['vecina', 'vecino']) {
+    assert.match(greetings(persona, 13), /almorz/, `${persona} asks at one o'clock whether you have had lunch`);
+    assert.doesNotMatch(greetings(persona, 17.2), /almorz/, `${persona} does not ask it at seventeen past five`);
+    assert.match(greetings(persona, 17.2), /onces|luz|fresquito/, `${persona} says something of the hour instead`);
+    assert.doesNotMatch(greetings(persona, 17.2), /solazo/, `${persona}: no blazing sun at seventeen past five`);
+    assert.doesNotMatch(greetings(persona, 13), /onces/, `${persona}: no tea at one o'clock`);
+  }
+  for (const [persona, pool] of Object.entries(BANK.personas)) for (const l of pool.greet_a ?? []) if (/almorz/.test(l[0])) assert.ok(l[2]?.to <= 15, `${persona}: "${l[0]}" is asked after lunch`);
+});
+
+test('the barrio\'s round of greetings starts over when everything that can be said at this hour has been said, and does not open with the line just said', () => {
+  const valid = (pool) => (pool ?? []).filter((l) => inWindow(l[2], 17.2)).length, N = valid(BANK.personas.vecina.greet_a) + valid(BANK.shared.greet_a);
+  assert.ok(valid(BANK.personas.vecina.greet_a) >= 2 && valid(BANK.personas.vecina.greet_a) < BANK.personas.vecina.greet_a.length, 'the premise: some of the persona\'s lines are out of hour');
+  for (let s = 1; s <= 40; s++) {
+    const memory = newLineMemory(), say = (k) => new Dialogue({ npc: { id: 'n' + k, persona: 'vecina', name: 'Rosa', gender: 'f', mem: null }, bank: BANK, rng: makeRng(s * 100 + k), hour: 17.2, world: { landmarks: LM, player: here, discoveries: [] }, address: 'm', memory }).open().line.es;
+    const said = []; for (let k = 0; k < 2 * N - 1; k++) said.push(say(k));
+    assert.equal(new Set(said.slice(0, N)).size, N, `seed ${s}: ${N} neighbours, ${N} different greetings (the barrio does not repeat itself until it has said them all)`);
+    assert.ok(!said.slice(N).includes(said[N - 1]), `seed ${s}: the next round does not open with the line just said`);
+    assert.equal(new Set(said.slice(N)).size, N - 1, `seed ${s}: and the round after it says the other ${N - 1} once each, not the two lines of the persona over and over`);
+  }
+});
+
+test('"Mi señora" is "my wife" in English and "mi esposo" is "my husband": the English follows the speaker\'s gender like the Spanish', () => {
+  const all = Object.values(BANK.personas).flatMap((p) => p.family ?? []), mine = all.find((l) => /^\{Mi señora\|Mi esposo\}/.test(l[0])); assert.ok(mine, 'the family line of the shop exists');
+  const m = fillTokens({ es: mine[0], en: mine[1] }, { gender: 'm' }), f = fillTokens({ es: mine[0], en: mine[1] }, { gender: 'f' });
+  assert.match(m.es, /^Mi señora trae/); assert.match(m.en, /^My wife brings/); assert.match(f.es, /^Mi esposo trae/); assert.match(f.en, /^My husband brings/);
+  for (const p of Object.values(BANK.personas)) for (const [k, pool] of Object.entries(p)) if (Array.isArray(pool)) for (const l of pool) if (Array.isArray(l) && typeof l[1] === 'string') assert.doesNotMatch(l[1], /\bMy spouse\b|\bmy spouse\b|nearly hung me up|\bworth a look at\b/, `${k}: ${l[1]}`);
 });

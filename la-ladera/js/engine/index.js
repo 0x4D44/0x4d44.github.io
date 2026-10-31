@@ -154,8 +154,12 @@ export function initEngine(ctx) {
   installDebug(ctx);
 }
 
-/** After every stage has run: create the player, start the loop. */
-export function startEngine(ctx) {
+/**
+ * After every stage has run: create the player, start the loop. With `hold` the loop is built but not started: ctx.startLoop() starts it. main.js holds it through the
+ * warm-up frame, because the first animation frame is the heaviest real frame of the game (it compiles and uploads what the camera sees) and has to come after the
+ * warm-up has done that behind the card, not before it with the card's message still unpainted (review R2c-013). `?manual` has no loop: it draws one frame here.
+ */
+export function startEngine(ctx, { hold = false } = {}) {
   const { renderer, look, post, pool, visibility, settings } = ctx;
   const player = new Player(ctx);
   ctx.player = player;
@@ -200,6 +204,8 @@ export function startEngine(ctx) {
     if (!ctx.opts.manual) requestAnimationFrame(frame);
   };
   ctx.running = !!ctx.running;
-  if (!ctx.opts.manual) requestAnimationFrame((t) => { last = t; frame(t); });
-  else { ctx.step(0.016); ctx.render(); }
+  let looping = false;
+  ctx.startLoop = () => { if (looping || ctx.opts.manual) return; looping = true; requestAnimationFrame((t) => { last = t; frame(t); }); };
+  if (ctx.opts.manual) { ctx.step(0.016); ctx.render(); }
+  else if (!hold) ctx.startLoop();
 }

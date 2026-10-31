@@ -4,7 +4,8 @@
 //        [--w 1280] [--h 720] [--page] [--gpu auto|swiftshader|gpu] [--json]
 // Several shots in one boot: repeat --eval/--out pairs in order, or use --steps steps.json:
 //   [ { "eval": "__ladera.teleport(0,30,{yaw:0})", "out": "a.jpg" }, { "eval": "__ladera.walk(1,0,3)", "out": "b.jpg" } ]
-// Prints a JSON report (state, console errors, 404s). Exit code 1 if the page threw or had console errors.
+// Prints a JSON report (state, console errors, 404s, `results` = what each --eval returned). Exit code 1 if the page threw or had console errors.
+// Step `out` paths are relative to the current directory, not to --out.
 import { launch } from './chrome.mjs';
 import { readFile } from 'node:fs/promises';
 
@@ -22,7 +23,7 @@ try {
   report.renderer = await b.renderer();
   const p = await b.open(`${slug}/index.html?${q}`);
   for (const s of steps) {
-    if (s.eval) await p.eval(s.eval);
+    if (s.eval) { const r = await p.eval(s.eval); if (r != null) (report.results ??= []).push(r); }   // what an eval returned (the last expression), in step order
     if (s.out) {
       if (full || s.page) await p.pageShot(s.out); else await p.canvasShot(s.out, { w, h });
       report.shots.push(s.out);

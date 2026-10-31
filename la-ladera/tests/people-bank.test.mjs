@@ -9,7 +9,7 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BANK, countLines } from '../js/people/lines/index.js';
 import { BANK_GENDER } from '../js/people/lines/genders.js';
-import { PERSONAS, SHOP_PERSONAS, COMMUNITY_PERSONAS, bankOf, bankGender, bankFits, genderOf } from '../js/people/personas.js';
+import { PERSONAS, SHOP_PERSONAS, COMMUNITY_PERSONAS, bankOf, bankGender, bankFits, genderOf, roleLabel } from '../js/people/personas.js';
 import { planCast, unusedBanks } from '../js/people/cast.js';
 import { fillTokens, Dialogue, TOPIC_MENU, TOPIC_MENU_TU, FORMS } from '../js/people/dialogue.js';
 import { makeRng } from '../js/core/rng.js';
@@ -58,6 +58,16 @@ test('a masculine bank is never cast with a woman, nor a feminine bank with a ma
   for (const k of Object.keys(BANK_GENDER)) assert.ok(BANK.personas[k], `BANK_GENDER names a bank that does not exist: ${k}`);
 });
 
+test('a role label under the name names a job: not the shop type ("Fruver") nor a thing ("papelera" is a wastepaper basket, "cafetera" a coffee maker)', () => {
+  const notAJob = /^(fruver|papelera|cafetera|papelería|droguería|minutos|taller|tienda|cafetero)$/i;
+  for (const [id, p] of Object.entries(PERSONAS)) {
+    assert.equal(p.role.length, 2, `${id}: [masculine, feminine]`);
+    for (const r of p.role) { assert.ok(!notAJob.test(r), `${id}: '${r}' is not a job`); assert.ok(r.length >= 4 && r.length <= 26, `${id}: '${r}' (${r.length} characters) does not fit the panel header`); assert.ok(/^[A-ZÁÉÍÓÚÑ]/.test(r), `${id}: '${r}' starts with a capital`); }
+  }
+  assert.equal(roleLabel('fruver', 'm'), 'Frutero'); assert.equal(roleLabel('fruver', 'f'), 'Frutera');
+  assert.equal(roleLabel('papeleria', 'f'), 'Dependiente de papelería'); assert.equal(roleLabel('cafe', 'f'), 'Dueña del café'); assert.equal(roleLabel('tienda', 'f'), 'Tendera');
+});
+
 test('every character a persona lists exists in the shipped library and has the persona gender', () => {
   for (const [id, p] of Object.entries(PERSONAS)) {
     assert.ok(p.chars.length, `${id} lists no characters`);
@@ -65,6 +75,13 @@ test('every character a persona lists exists in the shipped library and has the 
       const m = CHARS.get(c); assert.ok(m, `${id}: unknown character ${c}`);
       if (p.gender === 'f' || p.gender === 'm') assert.equal(genderOf(m.tags), p.gender, `${id}: ${c} is not ${p.gender}`);
     }
+  }
+});
+
+test('every shop persona has a man and a woman to cast, so a shop called after "Don X" or "Doña Y" always gets that person behind its counter', () => {
+  assert.ok(SHOP_PERSONAS.length >= 14, `${SHOP_PERSONAS.length} shop personas`);
+  for (const id of SHOP_PERSONAS) for (const g of ['m', 'f']) {
+    assert.ok(PERSONAS[id].chars.some((c) => CHARS.has(c) && genderOf(CHARS.get(c).tags) === g), `${id}: no ${g === 'm' ? 'man' : 'woman'} in the character list`);
   }
 });
 
@@ -139,14 +156,40 @@ test('the typography check itself catches a seeded fault', () => {
 });
 
 // ---- player gender (settings.address) ---------------------------------------------------------------------------------------------------------------
-test('lines never hard-code how the player is addressed: they use tokens', () => {
+/** Spanish with a hard-coded word for the player: `lo` / `la` standing for the player ("Dios lo bendiga": use {lo}), address forms, vocatives. Tokens are blanked first. */
+const CLITIC = /\b(lo|la)\s+(acompañe|acompañen|cuide|cuiden|bendiga|bendigan|proteja|protejan|guarde|guarden|ilumine|ayude|ayuden)\b/i;
+function hardCoded(es) {
+  const out = [];
+  if (/\b(mijo|mija|mijito|mijita|bienvenid[oa]s?|verlo|verla|verle|verte)\b/i.test(es)) out.push('hard-coded address form');
+  if (/(^|[,¡¿]\s*)(señor|señora|vecin[oa]|amig[oa]|compadre|comadre)\s*[.,!?]/i.test(es) || /^(señor|señora|vecin[oa]|amig[oa]),/i.test(es)) out.push('hard-coded vocative');
+  if (CLITIC.test(es)) out.push('hard-coded lo/la for the player (a woman is "Dios la bendiga": write {lo})');
+  return out;
+}
+test('lines never hard-code how the player is addressed: they use tokens (address forms, vocatives and the lo / la of a blessing)', () => {
   const bad = [];
   for (const l of LINES) {
     const es = l.es.replace(/\{[^{}]*\}/g, '{}');                                  // a token is exactly what we want to see
-    if (/\b(mijo|mija|mijito|mijita|bienvenid[oa]s?|verlo|verla|verle|verte)\b/i.test(es)) bad.push(`${l.where}: hard-coded address form: ${l.es}`);
-    if (/(^|[,¡¿]\s*)(señor|señora|vecin[oa]|amig[oa]|compadre|comadre)\s*[.,!?]/i.test(es) || /^(señor|señora|vecin[oa]|amig[oa]),/i.test(es)) bad.push(`${l.where}: hard-coded vocative: ${es}`);
+    for (const p of hardCoded(es)) bad.push(`${l.where}: ${p}: ${l.es}`);
   }
   assert.deepEqual(bad.slice(0, 25), []);
+  // the check itself: the faults the review found are flagged, the tokens that mend them are not
+  for (const s of ['Dios lo bendiga, {mijo}. Que la Virgen lo acompañe.', 'Que la Virgen lo cuide. Vuelva.', 'Dios la acompañe, {mijo}.', 'Qué pena, {mijo}, Dios lo guarde.', 'Que el Niño Jesús la proteja.']) assert.ok(hardCoded(s.replace(/\{[^{}]*\}/g, '{}')).length >= 1, `not flagged: ${s}`);
+  for (const s of ['Dios {lo} bendiga, {mijo}. Que la Virgen {lo} acompañe.', 'Que la Virgen {lo} cuide.', 'Se lo dejo listo esta tarde.', 'Deme, lo miro.', 'Si Dios quiere, mañana. Dios lo sabe.', 'Que Dios la tenga en su gloria.']) assert.deepEqual(hardCoded(s.replace(/\{[^{}]*\}/g, '{}')), [], `flagged: ${s}`);
+});
+
+test('what a native speaker caught: one player is not a crowd, a greeting is not doubled, strangers get usted, "solecito", the answer fits the menu entry', () => {
+  const bad = [];
+  for (const l of LINES) {
+    const es = l.es;
+    if (/\b(miren|oigan|vengan|pasen|entren|siéntense|sigan|vayan|escuchen|esperen|cuídense)\b/i.test(es)) bad.push(`${l.where}: a plural imperative to one person: ${es}`);
+    if (/^¡?(buenas|quiubo|hola|qué más)\b[^.!?]*[.,!]\s*¡?buen(os días|as tardes|as noches)\b/i.test(es)) bad.push(`${l.where}: the greeting is said twice: ${es}`);
+    if (/\bsolcito\b/i.test(es)) bad.push(`${l.where}: Colombians say "solecito": ${es}`);
+    if ((l.owner === 'nino' || l.owner === 'adolescente') && /\b(parce|parcero|parcera|mano|bro)\b/i.test(es)) bad.push(`${l.where}: slang for a friend, said to a stranger who is addressed with usted: ${es}`);
+    if (l.owner === 'enfermera' && /\bmejor(e|ar)\b/i.test(es)) bad.push(`${l.where}: "get well" said to a healthy person: ${es}`);
+    if (l.owner === 'nino' && l.pool === 'job' && !/\bjueg|\bjug/i.test(es)) bad.push(`${l.where}: the menu entry asks what they are playing, the answer is not a game: ${es}`);
+  }
+  assert.deepEqual(bad.slice(0, 25), []);
+  assert.match(BANK.personas.nino.menu.job[0], /jugando/, 'the premise of the last check: the kid job entry asks what they are playing');
 });
 
 test('the player-address tokens follow settings.address and `joven` never changes', () => {

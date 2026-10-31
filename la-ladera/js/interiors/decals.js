@@ -36,13 +36,32 @@ export const DECALS = {
   chores: { w: 0.30, h: 0.40, y: 1.3, frame: null, kind: 'notice' },
   // shops
   price_list: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_meat: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },                  // the same board, written for the trade
+  price_bread: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_hair: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_ferre: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_papel: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_shoes: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_minutos: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_modista: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
+  price_taller: { w: 0.50, h: 0.70, y: 1.3, frame: null, kind: 'shop' },
   menu_board: { w: 0.90, h: 1.10, y: 0.95, frame: 0x3a2a1c, kind: 'shop' },
-  sign_tinto: { w: 0.50, h: 0.30, y: 1.7, frame: 0x3a2a1c, kind: 'shop' },
-  sign_pan: { w: 0.70, h: 0.30, y: 1.9, frame: 0x6b4226, kind: 'shop' },
-  sign_pharma: { w: 0.34, h: 0.34, y: 1.9, frame: null, kind: 'shop' },
-  sign_barber: { w: 0.60, h: 0.40, y: 1.7, frame: 0x2f3a45, kind: 'shop' },
-  sign_minutos: { w: 0.70, h: 0.30, y: 1.9, frame: 0x2f3a45, kind: 'shop' },
-  sign_ferre: { w: 0.70, h: 0.30, y: 2.0, frame: 0x3a2a1c, kind: 'shop' },
+  // every trade's own lettering (shops.js hangs it on the wall a customer faces from the street door, over the back door when the room is tall enough: y 2.2 + h <= ceiling)
+  sign_tienda: { w: 0.90, h: 0.34, y: 1.9, frame: 0x6b4226, kind: 'shop' },
+  sign_fruver: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
+  sign_carne: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
+  sign_resto: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
+  sign_papel: { w: 0.90, h: 0.34, y: 1.9, frame: 0x2f3a45, kind: 'shop' },
+  sign_modista: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
+  sign_zapa: { w: 0.90, h: 0.34, y: 1.9, frame: 0x3a2a1c, kind: 'shop' },
+  sign_taller: { w: 0.90, h: 0.34, y: 1.9, frame: 0x2f3a45, kind: 'shop' },
+  sign_tinto: { w: 0.80, h: 0.34, y: 1.7, frame: 0x3a2a1c, kind: 'shop' },
+  sign_pan: { w: 0.90, h: 0.34, y: 1.9, frame: 0x6b4226, kind: 'shop' },
+  sign_pharma: { w: 0.44, h: 0.44, y: 1.9, frame: null, kind: 'shop' },
+  sign_barber: { w: 0.90, h: 0.40, y: 1.65, frame: 0x2f3a45, kind: 'shop' },
+  barber_pole: { w: 0.16, h: 0.62, y: 1.25, frame: null, kind: 'shop' },               // the striped pole of every barber
+  sign_minutos: { w: 0.90, h: 0.34, y: 1.9, frame: 0x2f3a45, kind: 'shop' },
+  sign_ferre: { w: 0.90, h: 0.34, y: 2.0, frame: 0x3a2a1c, kind: 'shop' },
   // school and clinic
   chalkboard: { w: 2.40, h: 1.10, y: 0.95, frame: 0x6b4226, kind: 'school', big: true },
   alphabet_chart: { w: 1.20, h: 0.50, y: 1.7, frame: null, kind: 'school' },
@@ -53,6 +72,39 @@ export const DECALS = {
   health_poster: { w: 0.50, h: 0.70, y: 1.2, frame: null, kind: 'clinic' },
   vaccines: { w: 0.50, h: 0.60, y: 1.2, frame: null, kind: 'clinic' },
 };
+// Generated families: enough different pictures of each kind that no two homes, and no two rooms of one house, hang the same one (decor.js picks without repeating inside a building;
+// atlas.js paints each from its number). The first member of a family is the hand-made one above.
+const FR = [0x4e3524, 0x8a5a3a, 0xc8a050, 0x2f3a45, 0x6b4226, 0x3a2a1c];
+const gen = (prefix, n, make) => { for (let i = 1; i <= n; i++) DECALS[`${prefix}_${i}`] = make(i); };
+gen('photo_fam', 10, (i) => { const k = i % 3; return { w: k === 0 ? 0.27 : k === 1 ? 0.36 : 0.30, h: k === 0 ? 0.36 : k === 1 ? 0.27 : 0.30, y: 1.4 + 0.03 * k, frame: FR[i % FR.length], kind: 'photo' }; });
+gen('art_land', 4, (i) => ({ w: i % 2 ? 0.62 : 0.50, h: i % 2 ? 0.44 : 0.36, y: 1.4, frame: FR[(i + 1) % FR.length], kind: 'art' }));
+gen('art_coast', 4, (i) => ({ w: i % 2 ? 0.56 : 0.46, h: i % 2 ? 0.40 : 0.34, y: 1.4, frame: FR[(i + 2) % FR.length], kind: 'art' }));
+gen('art_flow', 4, (i) => ({ w: i % 2 ? 0.44 : 0.36, h: i % 2 ? 0.58 : 0.46, y: 1.35, frame: FR[(i + 3) % FR.length], kind: 'art' }));
+gen('kids_draw', 6, (i) => ({ w: i % 2 ? 0.32 : 0.42, h: i % 2 ? 0.42 : 0.30, y: i % 2 ? 1.0 : 1.05, frame: null, kind: 'kids' }));
+gen('blessing', 3, () => ({ w: 0.42, h: 0.22, y: 1.75, frame: 0x6b4226, kind: 'religion' }));                  // blessing_1..3 next to the hand-made `blessing`
+Object.assign(DECALS, {
+  picture_nino: { w: 0.34, h: 0.46, y: 1.38, frame: 0x6b4226, kind: 'religion' },                              // the Divino Niño of the 20 de Julio, in a great many Colombian homes
+  picture_chiqui: { w: 0.36, h: 0.48, y: 1.38, frame: 0x3a2a1c, kind: 'religion' },                            // Nuestra Señora de Chiquinquirá, patron of Colombia
+  poster_football_d: { w: 0.50, h: 0.70, y: 1.2, frame: null, kind: 'poster' },
+  poster_football_e: { w: 0.70, h: 0.50, y: 1.3, frame: null, kind: 'poster' },
+  poster_football_f: { w: 0.50, h: 0.70, y: 1.2, frame: null, kind: 'poster' },
+  poster_music_2: { w: 0.50, h: 0.70, y: 1.2, frame: null, kind: 'poster' },
+  // calendars the trades hand out at New Year: a house hangs the one from the shop it buys at
+  calendar_ferre: { w: 0.30, h: 0.42, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_pan: { w: 0.28, h: 0.40, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_carne: { w: 0.30, h: 0.40, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_funeraria: { w: 0.28, h: 0.42, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_coop: { w: 0.30, h: 0.44, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_loteria: { w: 0.28, h: 0.40, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_repuestos: { w: 0.30, h: 0.42, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_optica: { w: 0.28, h: 0.42, y: 1.45, frame: null, kind: 'calendar' },
+  calendar_agua: { w: 0.30, h: 0.40, y: 1.45, frame: null, kind: 'calendar' },
+  // the notices of a stair: not every one is the room for rent
+  notice_dog: { w: 0.24, h: 0.32, y: 1.35, frame: null, kind: 'notice' },
+  notice_agua: { w: 0.24, h: 0.32, y: 1.35, frame: null, kind: 'notice' },
+  notice_junta: { w: 0.24, h: 0.32, y: 1.35, frame: null, kind: 'notice' },
+  notice_basura: { w: 0.24, h: 0.32, y: 1.35, frame: null, kind: 'notice' },
+});
 export const decalIds = Object.keys(DECALS);
 /** Catalogue-shaped definition for Layout.hang(). */
 export function decalDef(id) {

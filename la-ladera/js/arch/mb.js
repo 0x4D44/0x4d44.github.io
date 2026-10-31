@@ -37,6 +37,18 @@ export function qd(b, key, a, bb, c, d, want, o = {}) {
   } else b.quad(key, a, bb, c, d, o);
 }
 
+/** Triangle a,b,c wound so that the face looks along `want` (a direction vector), whatever order the points came in. */
+export function triFacing(b, key, a, bb, c, want, o = {}) {
+  const n = cross(sub(bb, a), sub(c, a));
+  if (dot(n, want) < 0) b.tri(key, a, c, bb, o); else b.tri(key, a, bb, c, o);
+}
+
+/** The points of an arched head over an opening u0..u1 whose top is at yb: [u, y] from the springing on the left over the apex to the springing on the right (a half circle when the rise is half the width, else a half ellipse). */
+export function archPts(u0, u1, yb, rise, n = 12) {
+  const hw = (u1 - u0) / 2, uc = (u0 + u1) / 2, ys = yb - rise;
+  return Array.from({ length: n + 1 }, (_, i) => { const a = Math.PI - (Math.PI * i) / n; return [uc + hw * Math.cos(a), ys + rise * Math.sin(a)]; });
+}
+
 /**
  * Vertical quad on a wall face. dir 'x': the face runs along x at z=plane; dir 'z': along z at x=plane. side = +1/-1 = which way the
  * face looks (+z/-z for dir x, +x/-x for dir z). The face spans u0..u1 along the wall; y0a/y0b = bottom height at u0/u1, y1a/y1b = top.

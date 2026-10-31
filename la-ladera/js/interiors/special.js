@@ -1,9 +1,12 @@
 // Special rooms: chapel, classroom, clinic (waiting / exam), community hall, workshop, one-room tenement homes, building-site rooms.
 import { CATALOG } from './catalog.js';
+import { KNEEHOLE } from './carcass.js';
 import { opposite, wallInfo, wallPoint, mkObb } from './layout.js';
 import { decalDef } from './decals.js';
-import { D, chairsAround, fillMin, outdoor, moreLights } from './rooms.js';
+import { D, chairsAround, fillMin, moreLights, ceilingFixture, TUBE_WARM } from './rooms.js';
+import { art, clock, own } from './decor.js';
 import { SHOP_FITOUTS } from './shops.js';
+import { chapelFurnish } from '../arch/chapel_interior.js';
 
 const PI = Math.PI;
 const any = (...fns) => { for (const f of fns) { const r = f(); if (r) return r; } return null; };
@@ -23,6 +26,7 @@ function headWalls(L, preferWindowless = false) {
 const headWall = (L, preferWindowless = false) => headWalls(L, preferWindowless)[0];
 
 export function chapel(L, E, hh) {
+  if (chapelFurnish(L, E, hh, { D, fillMin, moreLights })) return;                  // A2's nave (arch/chapel_interior.js): altar on the back wall, clean pew rows, 14 Stations as geometry; the code below is the fallback
   const rng = L.rng;
   let hw = headWall(L), altar = null;
   for (const w of headWalls(L)) { altar = L.wall('altar_main', w, { at: 'center', prio: 0, winOk: true }); if (altar) { hw = w; break; } }
@@ -70,11 +74,27 @@ export function chapel(L, E, hh) {
   fillMin(L, E, hh, 8);
 }
 
+/**
+ * The board of a classroom and the wall it hangs on: the first head wall (windowless first) that takes a board, 2.4 m wide (less on a short wall), then 2.0, 1.6 and 1.2 m where a window
+ * or door cuts the stretch. A room of desks without a board is not a class, so a wall that takes none lets the next one try (the front classroom upstairs in L00 had no board: its
+ * windowless wall is cut by a window and a fixed 2.4 m did not fit). The desks and the teacher's desk face the wall the board went on.
+ */
+function classBoard(L) {
+  const walls = headWalls(L, true);
+  for (const bw of walls) {
+    const wi = wallInfo(L.r, bw), first = Math.min(2.4, wi.hi - wi.lo - 0.8);
+    for (const bl of [first, ...[2.0, 1.6, 1.2].filter((w) => w < first - 0.05)]) {
+      if (bl < 1.2) continue;
+      const h = bl * 1.1 / 2.4;
+      if (D(L, 'chalkboard', bw, { w: bl, h, def: { ...decalDef('chalkboard'), size: [bl, h, 0.025] }, at: 'center', jitter: 0.01 })) return { bw, wi };
+    }
+  }
+  return { bw: walls[0], wi: wallInfo(L.r, walls[0]) };
+}
+
 export function classroom(L, E, hh) {
-  const rng = L.rng, bw = headWall(L, true), wi = wallInfo(L.r, bw);
-  const len = wi.hi - wi.lo, depth = wi.ax === 'x' ? L.D : L.W;
-  const bl = Math.min(2.4, len - 0.8);
-  D(L, 'chalkboard', bw, { w: bl, h: bl * 1.1 / 2.4, def: { ...decalDef('chalkboard'), size: [bl, bl * 1.1 / 2.4, 0.025] }, at: 'center', jitter: 0.01 });
+  const rng = L.rng, { bw, wi } = classBoard(L);
+  const depth = wi.ax === 'x' ? L.D : L.W;
   const td = any(() => L.at('desk_teacher', ...wallPoint(L.r, bw, wi.lo + 1.0 + 0.65, 0.8), wi.ry + PI, { prio: 0 }), () => L.wall('desk_teacher', 'any', { prio: 0, awayDoors: true }));
   if (td) { L.at('chair_wood', ...L.rel(td, 0, -(td.d / 2 + 0.35)), td.ry, { prio: 2 }); L.top(td, 'books_stack', { at: 'left' }); L.top(td, 'photo_frames', { at: 'right' }); }
   // student desks: columns in pairs with aisles, rows facing the board
@@ -82,9 +102,9 @@ export function classroom(L, E, hh) {
   const ry = wi.ry + PI;
   const cols = []; let u = wi.lo + 0.55;
   while (u + dw < wi.hi - 0.4) { cols.push(u + dw / 2); u += dw + ((cols.length % 2) ? 0.8 : 0.02); }
-  const startD = 2.0;
+  const shallow = depth < 5.2, startD = shallow ? 1.85 : 2.0, back = shallow ? 0.45 : 0.55;        // the teacher's desk and the 0.6 m in front of it end 1.73 m from the board; a shallow room starts its rows just past that
   let n = 0;
-  for (let t = startD; t + dd < depth - 0.55; t += dd + 0.12) for (const cu of cols) {
+  for (let t = startD; t + dd < depth - back; t += dd + 0.12) for (const cu of cols) {
     const [x, z] = wallPoint(L.r, bw, cu, t + dd / 2);
     const d = L.at(dn, x, z, ry, { prio: 1 });
     if (d) { n++; if (rng.chance(0.25)) { const p = L.top(d, 'books_stack', { at: 'center' }); void p; } }
@@ -93,15 +113,18 @@ export function classroom(L, E, hh) {
   any(() => L.wall('bookshelf', 'any', { prio: 2, awayDoors: true }));
   L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
   D(L, 'alphabet_chart', 'any', { y: 1.65 }); D(L, 'flag_co', 'any', { y: 1.7 }); D(L, 'times_table', 'any'); D(L, 'schedule', 'any');
-  D(L, 'kids_drawing_a', 'any'); D(L, 'kids_drawing_b', 'any'); D(L, 'kids_drawing_a', 'any'); L.hang('clock_wall', 'any', {}); L.hang('coat_rack_wall', 'any', { y: 1.2 });
+  art(L, E, 'kids', 'any'); art(L, E, 'kids', 'any'); art(L, E, 'kids', 'any'); L.hang('clock_wall', 'any', {}); L.hang('coat_rack_wall', 'any', { y: 1.2 });
   L.free('school_bag', { rad: 4, prio: 2 });
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 });
-  L.fixture = { x: cx, z: cz, kind: 'tube', color: 0xeaf2ff, i: 10, d: 9 };
+  L.fixture = { x: cx, z: cz, kind: 'tube', color: TUBE_WARM, i: 10, d: 9 };
   moreLights(L, 'tube');
   E.classroomDesks = (E.classroomDesks ?? 0) + n;
   fillMin(L, E, hh, 10);
 }
+
+/** A clinic poster, at most two of a kind in the whole building: a clinic of six rooms is not papered with one eye chart (R4-114). */
+const poster = (L, E, id) => { const n = (E.posters ??= {}); if ((n[id] ?? 0) >= 2) return null; const d = D(L, id, 'any'); if (d) n[id] = (n[id] ?? 0) + 1; return d; };
 
 export function clinicWaiting(L, E, hh) {
   const rng = L.rng;
@@ -109,28 +132,27 @@ export function clinicWaiting(L, E, hh) {
   if (c) { L.top(c, 'pc_set', { at: 'left' }); L.top(c, 'phone_landline', { at: 'right' }); c.flags = { counter: true }; E.shop = { counter: c, clinic: true }; }
   for (let k = 0; k < 2; k++) any(() => L.wall('waiting_row', 'any', { prio: 1, awayDoors: true }));
   const st = any(() => L.wall('side_table', 'any', { prio: 2, at: 'corner' })); if (st) L.top(st, 'books_stack', { at: 'center' });
-  any(() => L.wall('wheelbarrow', 'any', { prio: 3 }) && null);
-  any(() => L.free('wheelchair', { rad: 3, prio: 2 }));
+  any(() => L.free('wheelchair', { rad: 3, prio: 2 }));                                      // (no wheelbarrow: that is a hardware shop's, not a waiting room's)
   L.wall('plant_pot_clay', 'any', { prio: 2, at: 'corner' });
   L.wall('water_stand', 'any', { prio: 2, at: 'corner' });
-  D(L, 'health_poster', 'any'); D(L, 'vaccines', 'any'); D(L, 'calendar_pharma', 'any'); D(L, 'blessing', 'any'); L.hang('clock_wall', 'any', {});
+  poster(L, E, 'health_poster'); poster(L, E, 'vaccines'); own(L, E, 'calendar_pharma', 'any'); art(L, E, 'blessing', 'any'); L.hang('clock_wall', 'any', {});
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 });
-  L.fixture = { x: cx, z: cz, kind: 'tube', color: 0xeaf6ff, i: 10, d: 8 };
+  L.fixture = { x: cx, z: cz, kind: 'tube', color: TUBE_WARM, i: 10, d: 8 };
   fillMin(L, E, hh, 8);
 }
 export function clinicExam(L, E, hh) {
   const bed = any(() => L.wall('exam_bed', 'any', { prio: 0, awayDoors: true, sideNeed: 0.6 }), () => L.wall('exam_bed', 'any', { prio: 0 }));
   if (bed) bed.flags = { exam: true };
   const d = any(() => L.wall('desk_office', 'any', { prio: 1, awayDoors: true }), () => L.wall('desk_wood', 'any', { prio: 1 }));
-  if (d) { L.top(d, 'pc_set', { at: 'left' }); L.top(d, 'books_stack', { at: 'right' }); L.at('office_chair', ...L.rel(d, 0, d.d / 2 + 0.4), d.ry + PI, { prio: 2 }); }
+  if (d) { L.top(d, 'pc_set', { at: 'left' }); L.top(d, 'books_stack', { at: 'right' }); L.at('office_chair', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); }
   any(() => L.wall('med_cabinet', 'any', { prio: 1 })); any(() => L.wall('medical_scale', 'any', { prio: 2, at: 'corner' }));
-  any(() => L.wall('basin_pedestal', 'any', { prio: 2 })); any(() => L.free('privacy_screen', { rad: 2, prio: 2 })); any(() => L.free('iv_stand', { rad: 3, prio: 2 }));
+  any(() => L.wall('basin_pedestal', 'any', { prio: 2 })); any(() => L.free('privacy_screen', { near: bed ?? undefined, rad: 2, prio: 2, ...(bed && { rys: [bed.ry + PI / 2, bed.ry - PI / 2] }) })); any(() => L.free('iv_stand', { near: bed ?? undefined, rad: 3, prio: 2 }));       // (beside the couch they are for, and ALONG it: a screen in the middle of a small room stood between the desk and everyone, and one across the couch's end ran in front of the desk's drawers)
   any(() => L.wall('chair_metal', 'any', { prio: 2 }));
-  D(L, 'eye_chart', 'any'); D(L, 'health_poster', 'any'); D(L, 'diploma', 'any'); L.hang('clock_wall', 'any', {});
+  poster(L, E, 'eye_chart'); poster(L, E, 'health_poster'); art(L, E, ['diploma'], 'any'); L.hang('clock_wall', 'any', {});
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 });
-  L.fixture = { x: cx, z: cz, kind: 'tube', color: 0xeaf6ff, i: 10, d: 7 };
+  L.fixture = { x: cx, z: cz, kind: 'tube', color: TUBE_WARM, i: 10, d: 7 };
   fillMin(L, E, hh, 8);
 }
 
@@ -142,7 +164,7 @@ export function hall(L, E, hh) {
   for (let k = 0; k < 3; k++) L.wall('chair_plastic', 'any', { prio: 2, jitter: 1 });
   any(() => L.wall('bench_wood', 'any', { prio: 2, awayDoors: true }));
   L.wall('speaker', 'any', { prio: 2, at: 'corner' }); L.free('football', { rad: 4, prio: 2 }); L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
-  D(L, 'poster_football_c', 'any'); D(L, 'poster_football_a', 'any'); D(L, 'schedule', 'any'); D(L, 'photo_collage', 'any'); D(L, 'flag_co', 'any', { y: 1.8 }); L.hang('clock_wall', 'any', {});
+  art(L, E, 'sport', 'any'); art(L, E, 'sport', 'any'); D(L, 'schedule', 'any'); art(L, E, 'family', 'any'); D(L, 'flag_co', 'any', { y: 1.8 }); L.hang('clock_wall', 'any', {});
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('fan_ceiling', cx, cz); L.fixture = { x: cx, z: cz, kind: 'fan', color: 0xffe2b0, i: 8, d: 9 };
   moreLights(L, 'bulb');
@@ -173,9 +195,9 @@ export function studio(L, E, hh) {
   const stand = any(() => L.wall('tv_stand', 'any', { prio: 2, awayDoors: true }), () => L.wall('side_table', 'any', { prio: 2 }));
   if (stand) L.top(stand, hh.income ? 'tv_flat' : 'tv_crt', { at: 'center' });
   L.wall('fan_stand', 'any', { at: 'corner', prio: 2 }); L.wall('drying_rack', 'any', { prio: 2 }); L.wall('bucket_big', 'any', { prio: 2, at: 'corner' });
-  if (hh.altar) { const a = L.wall('altar_home', 'any', { at: 'corner', prio: 2 }); if (a) { L.top(a, 'statue_virgin', { at: 'center' }); L.top(a, 'candles_set', { at: 'left' }); a.flags = { altar: true }; D(L, 'picture_virgin', a.wallSide, { over: a, y: 1.5 }); } }
+  if (hh.altar) { const a = L.wall('altar_home', 'any', { at: 'corner', prio: 2 }); if (a) { L.top(a, 'statue_virgin', { at: 'center' }); L.top(a, 'candles_set', { at: 'left' }); a.flags = { altar: true }; art(L, E, 'faithPic', a.wallSide, { over: a, y: 1.5 }); } }
   L.hang('clothesline', 'any', { y: 1.45, w: Math.min(2.0, Math.max(L.W, L.D) - 0.8), def: { ...CATALOG.clothesline, size: [Math.min(2.0, Math.max(L.W, L.D) - 0.8), 0.55, 0.05] } });
-  D(L, 'photo_family_a', 'any'); D(L, 'calendar_tienda', 'any'); D(L, 'blessing', 'any'); L.hang('crucifix_wall', 'any', {}); L.hang('clock_wall', 'any', {});
+  art(L, E, 'family', 'any'); art(L, E, 'cal', 'any'); art(L, E, 'blessing', 'any'); L.hang('crucifix_wall', 'any', {}); clock(L, E, 'any', {});
   L.free('shoes_pair', { rad: 3, prio: 2 });
   const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
   L.ceil('bulb_bare', cx, cz); L.fixture = { x: cx, z: cz, kind: 'bulb', color: 0xffd9a0, i: 5.5, d: 6 };
@@ -194,10 +216,158 @@ export function construction(L, E, hh) {
   fillMin(L, E, hh, 4);
 }
 
+// ---------------------------------------------------------------- the rest of a school (the lead's round-4 list: 'furnishing follows the replans')
+// A school lot's rooms are furnished by what they are, not where A2 puts them: `schoolFurnisher` routes by type and, for offices, by name, so a replan that moves, resizes or adds rooms
+// of these kinds still furnishes them as a school. None of these leaves a household's shoe rack, shoes, family photographs or washing line behind.
+
+/** The furnisher of a room of a school, or null (furnished as before: a house-plan fallback's kitchen, say). */
+export function schoolFurnisher(room, area) {
+  const t = room.type, name = room.name ?? '';
+  if (t === 'classroom' || t === 'living' || t === 'dining' || t === 'shop') return classroom;      // living, dining, shop: a lot too narrow for the school plan, planned as a house
+  if (t === 'bedroom' && area > 24) return classroom;
+  if (t === 'patio') return schoolyard;
+  if (t === 'bathroom') return schoolToilets;
+  if (t === 'hall' || t === 'entry' || t === 'corridor') return schoolHall;
+  if (t === 'office') return /profesor|docente|maestr/i.test(name) ? staffRoom : /bibliot/i.test(name) ? library : /computaci|inform[aá]tica|sistemas/i.test(name) ? computerRoom : /m[uú]sica/i.test(name) ? musicRoom : null;      // (the secretary's office, Secretaría, is an office: the desk, computer, telephone and files of the generic recipe)
+  return null;
+}
+
+/** Enough on the walls and floor that a room is not bare, from things a school has (`fillMin` also reaches for shoes and family photographs). */
+function schoolFill(L, E, min) {
+  const deco = () => L.items.filter((i) => !i.ceil).length;
+  const tries = [() => art(L, E, 'kids', 'any'), () => L.hang('clock_wall', 'any', {}), () => D(L, 'schedule', 'any'), () => L.wall('plant_pot_clay', 'any', { at: 'corner', prio: 2 }),
+    () => art(L, E, 'notice', 'any'), () => art(L, E, 'cal', 'any'), () => L.wall('trash_bin', 'any', { at: 'corner', prio: 2 }), () => D(L, 'flag_co', 'any', { y: 1.8 })];
+  for (let g = 0; g < 10 && deco() < min; g++) tries[g % tries.length]();
+}
+const centreLight = (L, kind, color, i, d) => {
+  const cx = (L.r.x0 + L.r.x1) / 2, cz = (L.r.z0 + L.r.z1) / 2;
+  if (kind === 'tube') L.ceil('light_tube', cx, cz, { ry: L.W > L.D ? 0 : PI / 2 }); else L.ceil('bulb_bare', cx, cz);
+  L.fixture = { x: cx, z: cz, kind, color, i, d };
+  moreLights(L, kind);
+};
+
+/** The children's lavatory (Baño de niños / de niñas): toilets side by side, basins under mirrors, a bin and a mop bucket; no shower, no towel rail. */
+export function schoolToilets(L, E, hh) {
+  const area = L.W * L.D, want = area >= 9 ? 3 : 2, wcs = [], basins = [];
+  for (let k = 0; k < want; k++) {
+    const prev = wcs[wcs.length - 1];
+    const t = any(() => L.wall('toilet', prev ? prev.wallSide : 'any', { prio: 0, awayDoors: true, near: prev ? [prev.x, prev.z] : undefined, nearW: 2 }), () => L.wall('toilet', 'any', { prio: k ? 1 : 0, awayDoors: true }));
+    if (t) wcs.push(t);
+  }
+  for (let k = 0; k < 2; k++) {
+    const prev = basins[basins.length - 1];
+    const b = any(() => L.wall('basin_pedestal', prev ? prev.wallSide : 'any', { prio: 0, near: prev ? [prev.x, prev.z] : wcs[0] ? [wcs[0].x, wcs[0].z] : undefined, nearW: 1.5 }), () => L.wall('basin_pedestal', 'any', { prio: 1 }));
+    if (b) basins.push(b);
+  }
+  for (const b of basins) L.hang('mirror_bath', b.wallSide, { over: b, y: 1.25 });
+  if (basins.length && !L.items.some((i) => i.name === 'mirror_bath')) L.hang('mirror_bath', 'any', { near: [basins[0].x, basins[0].z], nearW: 2, y: 1.25 });
+  L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
+  any(() => L.wall('mop_bucket', 'any', { at: 'corner', prio: 2 }));
+  art(L, E, ['chores'], 'any');                                                       // the cleaning rota hangs in one lavatory of the school, not in both (decor.js: a building hangs a notice once)
+  centreLight(L, 'bulb', 0xffd9a0, 5.5, 6);
+}
+
+/** The staff room (Sala de profesores): a table with chairs round it, a tinto corner, pigeonholes, a timetable and the notices. */
+export function staffRoom(L, E, hh) {
+  const area = L.W * L.D, wide = Math.min(L.W, L.D) >= 3.8;                          // a narrow staff room (2.1 to 3.5 m) has its table against a wall and the chairs on its open side
+  if (area >= 9) { const d = any(() => L.wall('desk_wood', 'any', { at: 'window', prio: 2 })); if (d) { L.top(d, 'pc_set', { at: 'left' }); L.at('chair_wood', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); } }       // (the marking desk first, with its chair: the table and the chairs round it take what is left)
+  const t = any(() => (wide ? L.free('table_wood_6', { rad: Math.max(L.W, L.D) / 2, prio: 0 }) : null), () => L.wall('table_formica_4', 'any', { prio: 0, awayDoors: true }), () => L.wall('folding_table', 'any', { prio: 0, awayDoors: true }));
+  if (t) { chairsAround(L, t, area >= 12 ? 6 : 4, ['chair_wood', 'chair_plastic']); L.top(t, 'books_stack', { at: 'left' }); L.top(t, 'thermos_set', { at: 'right' }); }
+  any(() => L.wall('bench_wood', 'any', { prio: 2, awayDoors: true }));
+  const side = any(() => L.wall('side_table', 'any', { at: 'corner', prio: 1 }));
+  if (side) { L.top(side, 'kettle', { at: 'left' }); L.top(side, 'thermos_set', { at: 'right' }); }
+  any(() => L.wall('cubby_shelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('bookshelf_low', 'any', { prio: 1 }));
+  any(() => L.wall('bookshelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('filing_cabinet', 'any', { prio: 1 }));
+  any(() => L.wall('water_stand', 'any', { at: 'corner', prio: 2 }));
+  L.hang('coat_rack_wall', 'any', { y: 1.55 });
+  D(L, 'schedule', 'any'); art(L, E, 'notice', 'any'); art(L, E, ['diploma'], 'any'); art(L, E, 'cal', 'any'); L.hang('clock_wall', 'any', {});
+  if (L.rng.chance(0.5)) art(L, E, 'faithPic', 'any');
+  ceilingFixture(L, E, hh, 'tube');
+  schoolFill(L, E, 8);
+}
+
+/** The library (Biblioteca): shelves round the walls, a reading table with chairs, a librarian's desk. */
+export function library(L, E, hh) {
+  const area = L.W * L.D;
+  const librarian = () => { const d = any(() => L.wall('desk_wood', 'any', { prio: 1, awayDoors: true })); if (d) { L.top(d, 'books_stack', { at: 'right' }); L.at('chair_wood', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); } };
+  if (area >= 12) librarian();                                                                    // a library of any size has the desk and its chair first (the shelves and the reading table take what is left); a small one gives the table the floor first
+  for (let k = 0; k < Math.min(4, 1 + Math.floor(area / 4)); k++) any(() => L.wall(k % 2 ? 'bookshelf_low' : 'bookshelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('bookshelf', 'any', { prio: 1 }));
+  const t = any(() => L.free('table_wood_6', { rad: Math.max(L.W, L.D) / 2, prio: 1 }), () => L.free('table_formica_4', { rad: Math.max(L.W, L.D) / 2, prio: 1 }));
+  if (t) { chairsAround(L, t, 4, ['chair_wood', 'chair_plastic']); L.top(t, 'books_stack', { at: 'center' }); }
+  if (area < 12) librarian();
+  art(L, E, ['poster_map'], 'any'); art(L, E, 'kids', 'any'); L.hang('clock_wall', 'any', {});          // (a school with two reading rooms hangs its map once)
+  L.wall('plant_pot_clay', 'any', { at: 'corner', prio: 2 });
+  ceilingFixture(L, E, hh, 'tube');
+  schoolFill(L, E, 7);
+}
+
+/** The computer room (Sala de computación): a workstation (desk, computer, chair) along each wall, the teacher's desk, a printer. */
+export function computerRoom(L, E, hh) {
+  const area = L.W * L.D, want = Math.max(3, Math.min(8, Math.floor(area / 2.2)));
+  const td = any(() => L.wall('desk_teacher', 'any', { prio: 0, awayDoors: true }));
+  if (td) { L.top(td, 'pc_set', { at: 'left' }); L.at('office_chair', ...L.rel(td, KNEEHOLE, td.d / 2 + 0.4), td.ry + PI, { prio: 2, tuck: td }); }
+  let first = null;
+  for (let k = 0; k < want; k++) {
+    const d = any(() => L.wall('desk_student', 'any', { prio: 1, awayDoors: true }));
+    if (!d) break;
+    first ??= d;
+    L.top(d, 'pc_set', { at: 'right' });                                            // (over the knee-hole, where the chair is: the pedestal's end is left for the printer, and for the drawers)
+    L.at('chair_plastic', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.35), d.ry + PI, { prio: 2, tuck: d });
+  }
+  if (first) L.top(first, 'printer', { at: 'left' });
+  any(() => L.wall('filing_cabinet', 'any', { at: 'corner', prio: 2 }));
+  D(L, 'schedule', 'any'); art(L, E, 'notice', 'any'); L.hang('clock_wall', 'any', {});
+  ceilingFixture(L, E, hh, 'tube');
+  schoolFill(L, E, 6);
+}
+
+/** The music room (Sala de música): the board on the front wall, rows of chairs facing it, the teacher's stool beside it, the shelf of instruments with a boombox on it, guitars and a speaker against the walls, the music posters. */
+export function musicRoom(L, E, hh) {
+  const rng = L.rng, { bw, wi } = classBoard(L), depth = wi.ax === 'x' ? L.D : L.W, ry = wi.ry + PI, seat = rng.chance(0.5) ? 'chair_plastic' : 'chair_wood';
+  any(() => L.at('stool_wood', ...wallPoint(L.r, bw, wi.hi - 0.7, 0.8), wi.ry, { prio: 2 }));                      // the teacher sits beside the board, facing the class
+  for (let t = 1.7, row = 0; t < depth - 0.9 && row < 3; t += 0.8, row++) for (let u = wi.lo + 0.7, k = 0; u < wi.hi - 0.6 && k < 6; u += 0.7, k++) {
+    const [x, z] = wallPoint(L.r, bw, u, t);
+    L.at(seat, x, z, ry, { prio: 1 });
+  }
+  const cub = any(() => L.wall('cubby_shelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('bookshelf_low', 'any', { prio: 1 }));
+  if (cub) L.top(cub, 'radio_boombox', { at: 'center' });
+  any(() => L.wall('bookshelf', 'any', { prio: 2, awayDoors: true }));
+  for (let k = 0; k < 2; k++) L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 });
+  L.wall('speaker', 'any', { at: 'corner', prio: 2 });
+  art(L, E, 'music', 'any'); art(L, E, 'music', 'any'); D(L, 'schedule', 'any'); art(L, E, 'kids', 'any'); L.hang('clock_wall', 'any', {});
+  ceilingFixture(L, E, hh, 'tube');
+  schoolFill(L, E, 6);
+}
+
+/** The entrance hall (Vestíbulo, Zaguán, Pasillo) and the galleries round the yard: a bench, the children's coat hooks and bags, the flag, the timetable, notices and drawings. */
+export function schoolHall(L, E, hh) {
+  L.circulation = true;
+  const t = L.room.type, area = L.W * L.D, gallery = t === 'corridor';
+  const exterior = L.landings.some((l) => (E.bp.doors ?? []).find((d) => d.id === l.door)?.kind === 'exterior');
+  if (exterior) any(() => L.wall('doormat', 'any', { prio: 2 }));
+  if (area >= 6) for (let k = 0; k < (area >= 16 ? 2 : 1); k++) any(() => L.wall('bench_wood', 'any', { prio: 1, awayDoors: true }));
+  if (!gallery && area >= 12) any(() => L.wall('trophy_case', 'any', { prio: 1, awayDoors: true }));
+  L.hang('coat_rack_wall', 'any', { y: 1.2 });
+  L.free('school_bag', { rad: 3, prio: 2 });
+  any(() => L.wall('water_stand', 'any', { at: 'corner', prio: 2 }));
+  if (area >= 8) any(() => L.wall('plant_pot_clay', 'any', { at: 'corner', prio: 2 }));
+  if (!gallery) D(L, 'flag_co', 'any', { y: 1.8 });
+  D(L, 'schedule', 'any'); art(L, E, 'notice', 'any'); art(L, E, 'kids', 'any'); if (!gallery) art(L, E, ['photo_grad', 'diploma'], 'any');
+  L.hang('clock_wall', 'any', {});
+  if (L.rng.chance(0.4)) art(L, E, 'faithPic', 'any');
+  centreLight(L, area > 14 ? 'tube' : 'bulb', area > 14 ? TUBE_WARM : 0xffd9a0, 6, 7);
+  schoolFill(L, E, 4);
+}
+
+/** The yard: benches, plants, a football, the water jug, the flag and the children's drawings; a trough to wash at, but no washing line, machine or canary. */
 export function schoolyard(L, E, hh) {
-  outdoor(L, E, hh);
-  for (let k = 0; k < 2; k++) L.wall('bench_wood', 'any', { prio: 2, jitter: 1 });
+  const rng = L.rng, area = L.W * L.D;
+  L.circulation = false;
+  any(() => L.wall('lavadero', 'any', { at: 'corner', prio: 1 }));
+  for (let k = 0; k < Math.min(5, 2 + Math.floor(area / 8)); k++) L.wall(rng.pick(['plant_bucket', 'plant_pot_clay', 'plant_big', 'plant_pot_clay']), 'any', { prio: 2, jitter: 1 });
+  for (let k = 0; k < (area > 30 ? 3 : 2); k++) L.wall('bench_wood', 'any', { prio: 2, jitter: 1 });
   L.free('football', { rad: 4, prio: 2 }); L.wall('water_stand', 'any', { prio: 2, at: 'corner' });
-  D(L, 'flag_co', 'any', { y: 1.9 }); D(L, 'kids_drawing_a', 'any');
+  L.wall('trash_bin', 'any', { at: 'corner', prio: 2 }); L.wall('broom', 'any', { at: 'corner', prio: 2 });
+  D(L, 'flag_co', 'any', { y: 1.9 }); art(L, E, 'kids', 'any');
 }
 void mkObb;

@@ -60,7 +60,9 @@ const MEASURE_JS = `(async () => {
   const ctx = __ladera.ctx, gl = ctx.renderer.getContext(); ctx.render(); gl.finish();
   const t0 = performance.now(); for (let i = 0; i < 30; i++) ctx.render(); gl.finish();
   const cost = (performance.now() - t0) / 30, st = __ladera.state();
-  return { median: ts[ts.length >> 1], p95: ts[Math.floor(ts.length * 0.95)], max: ts[ts.length - 1], cost, calls: st.drawCalls, tris: st.triangles, geoms: st.geometries, tex: st.textures, building: st.building };
+  // The gate is the mean above; on a shared box the same view swings 3.6-20 ms, so the best of five 12-frame windows is reported beside it (not gated).
+  let costMin = Infinity; for (let w = 0; w < 5; w++) { const a = performance.now(); for (let i = 0; i < 12; i++) ctx.render(); gl.finish(); costMin = Math.min(costMin, (performance.now() - a) / 12); }
+  return { median: ts[ts.length >> 1], p95: ts[Math.floor(ts.length * 0.95)], max: ts[ts.length - 1], cost, costMin, calls: st.drawCalls, tris: st.triangles, geoms: st.geometries, tex: st.textures, building: st.building };
 })()`;
 
 // The harness's own cadence: rAF intervals on a page with nothing on it.
@@ -145,7 +147,7 @@ try {
     if (!v.building) await p.eval(`__ladera.look(${v.yaw}, -0.02)`);
     await p.eval('__ladera.step(40)');
     const m = await p.eval(MEASURE_JS, 120000);
-    const row = { id: v.id, pos: state?.pos, median: fmt(m.median), p95: fmt(m.p95), max: fmt(m.max), costMs: fmt(m.cost, 2), calls: m.calls, tris: m.tris, geoms: m.geoms, textures: m.tex };
+    const row = { id: v.id, pos: state?.pos, median: fmt(m.median), p95: fmt(m.p95), max: fmt(m.max), costMs: fmt(m.cost, 2), costMinMs: fmt(m.costMin, 2), calls: m.calls, tris: m.tris, geoms: m.geoms, textures: m.tex };
     report.views.push(row);
     if (SHOTS) await p.canvasShot(`${SHOTS}/${v.id}.jpg`, { w: 1280 });
     if (row.median > FRAME_GATE) fail(`${v.id}: median frame ${row.median} ms > ${fmt(FRAME_GATE)} (harness blank-page cadence ${report.baselineMedian} + ${FRAME_SLACK})`);
@@ -195,6 +197,7 @@ report.summary = {
   frame_ms_median_of_medians: report.views.length ? fmt(med(report.views.map((v) => v.median))) : null,
   worst_median: report.views.length ? Math.max(...report.views.map((v) => v.median)) : null,
   worst_cost_ms: report.views.length ? Math.max(...report.views.map((v) => v.costMs)) : null,
+  worst_cost_min_ms: report.views.length ? Math.max(...report.views.map((v) => v.costMinMs)) : null,
   max_calls: report.views.length ? Math.max(...report.views.map((v) => v.calls)) : null,
   max_tris: report.views.length ? Math.max(...report.views.map((v) => v.tris)) : null,
 };

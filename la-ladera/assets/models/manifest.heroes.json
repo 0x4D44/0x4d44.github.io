@@ -1,0 +1,590 @@
+{
+  "files": [
+    {
+      "glb": "heroes/furn_living.glb",
+      "assets": {
+        "sofa_3_vinyl": {
+          "node": "sofa_3_vinyl",
+          "tags": [
+            "seat",
+            "sofa",
+            "vinyl"
+          ],
+          "footprint": [
+            2,
+            0.9
+          ]
+        },
+        "sofa_3_fabric": {
+          "node": "sofa_3_fabric",
+          "tags": [
+            "seat",
+            "sofa",
+            "fabric"
+          ],
+          "footprint": [
+            1.9,
+            0.92
+          ]
+        },
+        "sofa_2_fabric": {
+          "node": "sofa_2_fabric",
+          "tags": [
+            "seat",
+            "sofa",
+            "fabric"
+          ],
+          "footprint": [
+            1.5,
+            0.88
+          ]
+        },
+        "sofa_2_vinyl": {
+          "node": "sofa_2_vinyl",
+          "tags": [
+            "seat",
+            "sofa",
+            "vinyl"
+          ],
+          "footprint": [
+            1.5,
+            0.88
+          ]
+        },
+        "armchair_vinyl": {
+          "node": "armchair_vinyl",
+          "tags": [
+            "seat",
+            "armchair",
+            "vinyl"
+          ],
+          "footprint": [
+            0.85,
+            0.85
+          ]
+        },
+        "armchair_fabric": {
+          "node": "armchair_fabric",
+          "tags": [
+            "seat",
+            "armchair",
+            "fabric"
+          ],
+          "footprint": [
+            0.8,
+            0.82
+          ]
+        },
+        "chair_plastic": {
+          "node": "chair_plastic",
+          "tags": [
+            "seat",
+            "chair",
+            "plastic"
+          ],
+          "footprint": [
+            0.45,
+            0.5
+          ]
+        },
+        "chair_plastic_arm": {
+          "node": "chair_plastic_arm",
+          "tags": [
+            "seat",
+            "chair",
+            "plastic",
+            "arm"
+          ],
+          "footprint": [
+            0.55,
+            0.55
+          ]
+        },
+        "chair_wood": {
+          "node": "chair_wood",
+          "tags": [
+            "seat",
+            "chair",
+            "wood"
+          ],
+          "footprint": [
+            0.44,
+            0.46
+          ]
+        },
+        "chair_wood_padded": {
+          "node": "chair_wood_padded",
+          "tags": [
+            "seat",
+            "chair",
+            "wood",
+            "padded"
+          ],
+          "footprint": [
+            0.45,
+            0.48
+          ]
+        },
+        "table_plastic": {
+          "node": "table_plastic",
+          "tags": [
+            "table",
+            "plastic"
+          ],
+          "footprint": [
+            0.85,
+            0.85
+          ]
+        },
+        "table_formica_4": {
+          "node": "table_formica_4",
+          "tags": [
+            "table",
+            "formica",
+            "kitchen"
+          ],
+          "footprint": [
+            1,
+            0.7
+          ]
+        },
+        "table_formica_6": {
+          "node": "table_formica_6",
+          "tags": [
+            "table",
+            "formica",
+            "dining"
+          ],
+          "footprint": [
+            1.4,
+            0.8
+          ]
+        },
+        "table_wood_6": {
+          "node": "table_wood_6",
+          "tags": [
+            "table",
+            "wood",
+            "dining"
+          ],
+          "footprint": [
+            1.6,
+            0.85
+          ]
+        },
+        "tv_stand": {
+          "node": "tv_stand",
+          "tags": [
+            "storage",
+            "tvstand",
+            "living"
+          ],
+          "footprint": [
+            1.2,
+            0.4
+          ]
+        },
+        "tv_flat": {
+          "node": "tv_flat",
+          "tags": [
+            "tv",
+            "screen",
+            "electronics"
+          ],
+          "footprint": [
+            0.78,
+            0.1
+          ]
+        },
+        "tv_wall": {
+          "node": "tv_wall",
+          "tags": [
+            "tv",
+            "screen",
+            "electronics",
+            "wall"
+          ],
+          "footprint": [
+            0.9,
+            0.08
+          ]
+        },
+        "tv_crt": {
+          "node": "tv_crt",
+          "tags": [
+            "tv",
+            "screen",
+            "electronics",
+            "crt"
+          ],
+          "footprint": [
+            0.55,
+            0.4
+          ]
+        },
+        "lamp_floor": {
+          "node": "lamp_floor",
+          "tags": [
+            "light",
+            "lamp",
+            "floor"
+          ],
+          "footprint": [
+            0.35,
+            0.35
+          ]
+        },
+        "lamp_table": {
+          "node": "lamp_table",
+          "tags": [
+            "light",
+            "lamp",
+            "table"
+          ],
+          "footprint": [
+            0.25,
+            0.25
+          ]
+        },
+        "fan_ceiling": {
+          "node": "fan_ceiling",
+          "tags": [
+            "fan",
+            "ceiling",
+            "dyn"
+          ],
+          "footprint": [
+            1.1,
+            1.1
+          ]
+        }
+      }
+    },
+    {
+      "glb": "heroes/furn_home.glb",
+      "assets": {
+        "bed_single": {
+          "node": "bed_single",
+          "tags": [
+            "bed",
+            "sleep",
+            "single"
+          ],
+          "footprint": [
+            0.9,
+            1.9
+          ]
+        },
+        "bed_double": {
+          "node": "bed_double",
+          "tags": [
+            "bed",
+            "sleep",
+            "double"
+          ],
+          "footprint": [
+            1.4,
+            1.9
+          ]
+        },
+        "bed_double_wood": {
+          "node": "bed_double_wood",
+          "tags": [
+            "bed",
+            "sleep",
+            "double"
+          ],
+          "footprint": [
+            1.55,
+            2
+          ]
+        },
+        "bed_single_metal": {
+          "node": "bed_single_metal",
+          "tags": [
+            "bed",
+            "sleep",
+            "single",
+            "metal"
+          ],
+          "footprint": [
+            0.95,
+            1.95
+          ]
+        },
+        "wardrobe_2": {
+          "node": "wardrobe_2",
+          "tags": [
+            "storage",
+            "wardrobe",
+            "bedroom"
+          ],
+          "footprint": [
+            1,
+            0.55
+          ]
+        },
+        "wardrobe_3": {
+          "node": "wardrobe_3",
+          "tags": [
+            "storage",
+            "wardrobe",
+            "bedroom"
+          ],
+          "footprint": [
+            1.5,
+            0.56
+          ]
+        },
+        "dresser_4": {
+          "node": "dresser_4",
+          "tags": [
+            "storage",
+            "dresser",
+            "bedroom"
+          ],
+          "footprint": [
+            0.9,
+            0.45
+          ]
+        },
+        "nightstand_a": {
+          "node": "nightstand_a",
+          "tags": [
+            "storage",
+            "nightstand"
+          ],
+          "footprint": [
+            0.42,
+            0.38
+          ]
+        },
+        "stove_gas": {
+          "node": "stove_gas",
+          "tags": [
+            "kitchen",
+            "stove",
+            "gas"
+          ],
+          "footprint": [
+            0.6,
+            0.62
+          ]
+        },
+        "fridge": {
+          "node": "fridge",
+          "tags": [
+            "kitchen",
+            "fridge"
+          ],
+          "footprint": [
+            0.65,
+            0.68
+          ]
+        },
+        "counter_base": {
+          "node": "counter_base",
+          "tags": [
+            "kitchen",
+            "counter"
+          ],
+          "footprint": [
+            0.6,
+            0.6
+          ]
+        },
+        "counter_base_long": {
+          "node": "counter_base_long",
+          "tags": [
+            "kitchen",
+            "counter"
+          ],
+          "footprint": [
+            1.8,
+            0.6
+          ]
+        },
+        "sink_kitchen": {
+          "node": "sink_kitchen",
+          "tags": [
+            "kitchen",
+            "sink",
+            "counter"
+          ],
+          "footprint": [
+            1.2,
+            0.55
+          ]
+        },
+        "kitchen_upper": {
+          "node": "kitchen_upper",
+          "tags": [
+            "kitchen",
+            "upper",
+            "cabinet"
+          ],
+          "footprint": [
+            0.9,
+            0.34
+          ]
+        },
+        "toilet": {
+          "node": "toilet",
+          "tags": [
+            "bath",
+            "toilet"
+          ],
+          "footprint": [
+            0.4,
+            0.7
+          ]
+        },
+        "basin_pedestal": {
+          "node": "basin_pedestal",
+          "tags": [
+            "bath",
+            "basin"
+          ],
+          "footprint": [
+            0.5,
+            0.42
+          ]
+        },
+        "basin_vanity": {
+          "node": "basin_vanity",
+          "tags": [
+            "bath",
+            "basin",
+            "vanity"
+          ],
+          "footprint": [
+            0.6,
+            0.45
+          ]
+        }
+      }
+    },
+    {
+      "glb": "heroes/furn_shop.glb",
+      "assets": {
+        "shop_counter_glass": {
+          "node": "shop_counter_glass",
+          "tags": [
+            "shop",
+            "counter",
+            "glass",
+            "tienda",
+            "drogueria"
+          ],
+          "footprint": [
+            1.8,
+            0.6
+          ]
+        },
+        "pharmacy_counter": {
+          "node": "pharmacy_counter",
+          "tags": [
+            "shop",
+            "counter",
+            "glass",
+            "drogueria"
+          ],
+          "footprint": [
+            2,
+            0.6
+          ]
+        },
+        "bread_case_glass": {
+          "node": "bread_case_glass",
+          "tags": [
+            "shop",
+            "case",
+            "glass",
+            "bread",
+            "panaderia"
+          ],
+          "footprint": [
+            1.6,
+            0.7
+          ]
+        },
+        "fridge_meat": {
+          "node": "fridge_meat",
+          "tags": [
+            "shop",
+            "fridge",
+            "display",
+            "carniceria"
+          ],
+          "footprint": [
+            1.8,
+            0.8
+          ]
+        },
+        "shop_counter_wood": {
+          "node": "shop_counter_wood",
+          "tags": [
+            "shop",
+            "counter",
+            "wood",
+            "ferreteria",
+            "papeleria"
+          ],
+          "footprint": [
+            2,
+            0.65
+          ]
+        },
+        "shop_counter_short": {
+          "node": "shop_counter_short",
+          "tags": [
+            "shop",
+            "counter",
+            "small"
+          ],
+          "footprint": [
+            1.2,
+            0.6
+          ]
+        },
+        "cafe_counter": {
+          "node": "cafe_counter",
+          "tags": [
+            "shop",
+            "counter",
+            "cafe",
+            "restaurante"
+          ],
+          "footprint": [
+            2,
+            0.65
+          ]
+        },
+        "bookshelf": {
+          "node": "bookshelf",
+          "tags": [
+            "storage",
+            "shelf",
+            "books"
+          ],
+          "footprint": [
+            0.8,
+            0.3
+          ]
+        },
+        "bookshelf_low": {
+          "node": "bookshelf_low",
+          "tags": [
+            "storage",
+            "shelf",
+            "books"
+          ],
+          "footprint": [
+            0.9,
+            0.3
+          ]
+        }
+      }
+    }
+  ]
+}

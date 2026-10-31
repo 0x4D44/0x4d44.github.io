@@ -11,6 +11,9 @@
 //   traps    reachable from the spawn but with no way back (pit, walled terrace, one-way drop ...)
 //   boundary reachable positions within 1 m of the plot edge (the player can walk off the map)
 //   missing  required places (entrances, rooms, roofs, POIs, nav nodes, anchors) with no spawn-reachable AND return-capable node
+//            A `kind: 'roof'` entrance (the caseta door onto the roof deck) is judged by its LANDING: any return-capable node within 1.5 m of its `outside` point and
+//            on the outside side of the door. The exact point is often the middle of a pot, a rack or a tank on the terrace (a hollow outline nobody can step into),
+//            which says nothing about the door; a landing nobody can stand on (the door shut in by a terrace item) is still reported. (R2a-011: ten such doors.)
 const ARC_JUMP = 3.6, ARC_SPEEDS = [2.3, 5.0];       // CONFIG.PLAYER jump, walk, sprint
 const R2 = Math.SQRT1_2;
 const DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [R2, R2], [R2, -R2], [-R2, R2], [-R2, -R2]];
@@ -24,6 +27,7 @@ export function analyze(o) {
 
   const ci = (v) => Math.round((v - LO) / CELL);
   const nodeOf = new Map(), cellNodes = new Map(), nx = [], ny = [], nz = [], efrom = [], eto = [], queue = [];
+  const par = [], how = [];                       // the search tree: the node each node was first reached from, and by which move (walk, hop, jump at 2.3 or 5 m/s)
   const addNode = (x, y, z) => {
     const i = ci(x), j = ci(z);
     if (i < 0 || j < 0 || i >= N || j >= N) return -1;
@@ -64,13 +68,13 @@ export function analyze(o) {
   while (head < queue.length) {
     const id = queue[head++];
     for (const [dx, dz] of DIRS) {
-      let to = tryMove(id, dx, dz, 0);
-      if (to < 0) to = tryMove(id, dx, dz, 0.6);                               // hop over a low obstacle
-      if (to >= 0 && to !== id) { efrom.push(id); eto.push(to); }
+      let to = tryMove(id, dx, dz, 0), kind = 'walk';
+      if (to < 0) { to = tryMove(id, dx, dz, 0.6); kind = 'hop'; }               // hop over a low obstacle
+      if (to >= 0 && to !== id) { efrom.push(id); eto.push(to); if (par[to] === undefined && to !== spawnId) { par[to] = id; how[to] = kind; } }
       const drop = to >= 0 && ny[to] < ny[id] - 0.5;                           // a step off a ledge is one-way; a jump may clear the gap instead
       if (ARCS && (to < 0 || drop)) for (const speed of ARC_SPEEDS) {                    // walking is blocked (or falls) this way: try a jump at walk and sprint speed
         const a = tryArc(id, dx, dz, speed);
-        if (a >= 0 && a !== id) { efrom.push(id); eto.push(a); }
+        if (a >= 0 && a !== id) { efrom.push(id); eto.push(a); if (par[a] === undefined && a !== spawnId) { par[a] = id; how[a] = `jump ${speed} m/s`; } }
       }
     }
     if (head % 50000 === 0) log(`  ... ${head} nodes expanded, ${nx.length} found`);
@@ -108,7 +112,10 @@ export function analyze(o) {
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9, y0 = 1e9, y1 = -1e9;
     for (const v of comp) { x0 = Math.min(x0, nx[v]); x1 = Math.max(x1, nx[v]); z0 = Math.min(z0, nz[v]); z1 = Math.max(z1, nz[v]); y0 = Math.min(y0, ny[v]); y1 = Math.max(y1, ny[v]); }
     const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, b = buildings.find((bp) => mx >= bp.bounds.x0 && mx <= bp.bounds.x1 && mz >= bp.bounds.z0 && mz <= bp.bounds.z1);
-    return { cells: comp.length, area_m2: +(comp.length * CELL * CELL).toFixed(1), bbox: [+x0.toFixed(1), +z0.toFixed(1), +x1.toFixed(1), +z1.toFixed(1)], y: [+y0.toFixed(2), +y1.toFixed(2)], at: [+mx.toFixed(1), +mz.toFixed(1)], building: b?.id ?? null };
+    // how the search got in: the cluster's first node and the moves before it (position, move), newest first, up to 4
+    const at3 = (v) => [nx[v], ny[v], nz[v]].map((q) => +q.toFixed(2)), chain = [];
+    for (let v = comp.reduce((m, u) => (u < m ? u : m)), k = 0; v !== undefined && k < 4; v = par[v], k++) chain.push({ at: at3(v), by: how[v] ?? 'spawn' });
+    return { cells: comp.length, area_m2: +(comp.length * CELL * CELL).toFixed(1), bbox: [+x0.toFixed(1), +z0.toFixed(1), +x1.toFixed(1), +z1.toFixed(1)], y: [+y0.toFixed(2), +y1.toFixed(2)], at: [+mx.toFixed(1), +mz.toFixed(1)], building: b?.id ?? null, entry: chain };
   };
   const trapIds = []; for (let v = 0; v < V; v++) if (!back[v]) trapIds.push(v);
   const edgeIds = []; for (let v = 0; v < V; v++) if (Math.min(nx[v] - LO, HI - nx[v], nz[v] - LO, HI - nz[v]) < 1.0) edgeIds.push(v);
@@ -116,11 +123,14 @@ export function analyze(o) {
 
   // required places: a node that is reachable from the spawn AND can return to it
   const missing = [];
-  const near = (what, id, x, y, z, rad, tolH) => {
+  const near = (what, id, x, y, z, rad, tolH, side = null) => {
+    if (Math.min(x - LO, HI - x, z - LO, HI - z) < 1.0) return;   // beyond the perimeter wall by design (the entry road's first node): no one can stand there
     const i0 = ci(x), j0 = ci(z), r = Math.ceil(rad / CELL);
     let ok = false;
     for (let j = j0 - r; j <= j0 + r && !ok; j++) for (let i = i0 - r; i <= i0 + r && !ok; i++) {
-      for (const n of cellNodes.get(j * N + i) ?? []) if (back[n] && Math.abs(ny[n] - y) <= tolH && Math.hypot(nx[n] - x, nz[n] - z) <= rad) { ok = true; break; }
+      for (const n of cellNodes.get(j * N + i) ?? []) {
+        if (back[n] && Math.abs(ny[n] - y) <= tolH && Math.hypot(nx[n] - x, nz[n] - z) <= rad && (!side || (nx[n] - side.mx) * side.dx + (nz[n] - side.mz) * side.dz > 0)) { ok = true; break; }
+      }
     }
     if (!ok) missing.push({ what, id, x: +x.toFixed(2), y: +y.toFixed(2), z: +z.toFixed(2) });
   };
@@ -133,7 +143,10 @@ export function analyze(o) {
   };
   for (const bp of buildings) {
     for (const e of bp.entrances ?? []) {
-      near('entrance.outside', e.id ?? bp.id, e.outside[0], e.outside[1], e.outside[2], 0.45, 0.5);
+      if (e.kind === 'roof') {                         // the landing: a node on the outside side of the door, within 1.5 m of the point
+        const dx = e.outside[0] - e.inside[0], dz = e.outside[2] - e.inside[2], l = Math.hypot(dx, dz) || 1;
+        near('entrance.outside', e.id ?? bp.id, e.outside[0], e.outside[1], e.outside[2], 1.5, 0.5, { mx: (e.outside[0] + e.inside[0]) / 2, mz: (e.outside[2] + e.inside[2]) / 2, dx: dx / l, dz: dz / l });
+      } else near('entrance.outside', e.id ?? bp.id, e.outside[0], e.outside[1], e.outside[2], 0.45, 0.5);
       near('entrance.inside', e.id ?? bp.id, e.inside[0], e.inside[1], e.inside[2], 0.45, 0.5);
     }
     const f = bp.frame;
@@ -159,6 +172,17 @@ export function analyze(o) {
     trapClusters: traps.length, traps, boundaryClusters: boundary.length, boundary,
     missingCount: missing.length, missing, maxList: MAXLIST,
   };
+}
+
+/**
+ * Where to put a real player to judge a trap cluster (trapcheck.mjs): the first node the search reached in it, a position the kernel really accepted
+ * and the way a walker would have come in. Never the bounding-box centre `at`: a ring, a sliver between two walls or an L-shaped pocket has a centre
+ * that is a wall zone, another floor or the island inside the moat, and a player put there is "stuck" or "misplaced" for a reason that has nothing to do
+ * with the pocket. Older JSON without `entry` falls back to the centre and its lowest height.
+ */
+export function probePoint(t) {
+  const e = t.entry?.[0]?.at;
+  return e ? { x: e[0], y: e[1], z: e[2] } : { x: t.at[0], y: t.y[0], z: t.at[1] };
 }
 
 /** Trim lists for printing. */
