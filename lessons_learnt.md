@@ -11,6 +11,30 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-10-31 - Measure key-tap latency, not just held-key radius: a slow wind-on felt like no steering (core/input.mjs:shapeKeySteer)
+  Held-key radius was always near the grip limit, yet the owner said left did nothing: the key chain wound on at 1.8/s at
+  speed and capped lock at 0.55, so a tap moved the wheels 2 degrees in 120 ms. Fast to half lock, slow after, fixed it
+  (tests/dynamics-keysteer.test.mjs pins front angle at 120 ms and yaw within 250 ms). A speed-aware lock cap helped one
+  replica driver and broke hairpins for another: test fixes against two different drivers.
+
+- 2026-10-31 - A synchronous quality change recompiles all shaders and freezes 1.5-5 s (render/renderer.mjs:applyQuality)
+  Switching tier mid-stage ran world.setQuality inline. It now warms the new tier in the background with
+  warmup({draw:false}) and render() holds the last frame meanwhile (Fiordland 3.9 s freeze became a 150 ms gap).
+
+- 2026-10-31 - Judge a stall against a bare-page control in the same Chrome before blaming the scene (tests/harness.mjs)
+  Whakarewarewa high showed 100-370 ms stalls every 5 s, and the title menu in the same browser showed the same ones while
+  46-54 Chrome processes ran. A quiet-box 90 s run after the far shadow cascade moved to every third frame had 0 frames
+  over 33 ms. Always run the control and record box load before bisecting renderer code.
+
+- 2026-10-31 - A car "stuck" after a hit was wedged between trees, not on a bank (core/physics.mjs:state.stuck)
+  The Waitomo s=1300 repro hits macrocarpa trunks and ends nose-in with throttle held. state.stuck now raises after 1 s
+  pinned, drive is capped and the car is eased out along the contact normal, and the HUD hints brake to reverse or R.
+  Extra bounce on hard obstacles broke the tree-hit-no-bounce test: leave that alone.
+
+- 2026-10-31 - python -I hides user-site Pillow: use plain python for the texture and advert builds (tools/textures/build-adverts.py)
+  Pillow installed per user is invisible under isolated mode, so the build fails with ModuleNotFoundError. Codex posters
+  are text-free on purpose; titles are composited by the build so no AI lettering reaches the page.
+
 - 2026-11-01 - THREE.LOD re-picks its level by camera distance at draw time: turn autoUpdate off for the warm frame (la-ladera/js/engine/warm.js:warmUp)
   "Everything visible" in a warm-up frame is not "everything drawn": the shop goods are LODs whose near level (the only one that shows the label atlas) appears under 8 m, so the atlas
   was first uploaded in the first frame inside a kiosk (engine-warm test red). Materials created lazily (the inspect library when a drawer opened) hitch the same way: build them at boot.

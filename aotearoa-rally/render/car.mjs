@@ -10,6 +10,7 @@ import { Geo } from "./cars/geo.mjs";
 import { clamp, clamp01, smoothstep, lerp, damp } from "../core/mathx.mjs";
 import { SURFACE } from "../core/surfaces.mjs";
 import { makeRng } from "../core/rng.mjs";
+import { SPONSOR } from "../core/cars.mjs";
 
 /**
  * How a wheel on surface `surf` dirties the body. Pure. Returns { rate, spray, colour } where rate is the dirt (0..1) gained per
@@ -41,7 +42,7 @@ export function createCarVisual(THREE, spec, opts = {}) {
   // so everything nearer (headliner, pillars, dash, wheel) hides them and only the glass opening shows them
   const glassDist = (() => { const e = eyePoints(spec).cockpit; return Math.hypot(e[1] - cabVol.yb, e[2] - cabVol.zb) + 0.15; })();
   const cg = spec.cgHeight || 0.5;
-  const liveries = spec.liveries && spec.liveries.length ? spec.liveries : [{ name: "Stock", body: 0xcc2222, accent: 0xffffff, number: 7, sponsor: "" }];
+  const liveries = spec.liveries && spec.liveries.length ? spec.liveries : [{ name: "Stock", body: 0xcc2222, accent: 0xffffff, number: 7, sponsor: SPONSOR }];
   let liveryIdx = clamp(opts.livery | 0, 0, liveries.length - 1);
   let livery = liveries[liveryIdx];
   let number = opts.number ?? livery.number ?? 1;

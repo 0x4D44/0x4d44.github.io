@@ -390,3 +390,26 @@ body.reduced-motion .load-tip span { animation: none; display: none; } body.redu
 .screen[data-screen="service"] { overflow: hidden; }
 .screen[data-screen="service"] > .service { flex: 1 1 auto; min-height: 0; overflow-y: auto; align-content: start; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
 .screen[data-screen="service"] > .screen-foot { position: static; margin: 0; padding: 8px 0 0; background: none; flex: 0 0 auto; }
+
+/* service area: a visible cue while rows are still hidden below the fold (R-SHIP SHIP-03) */
+.scroll-cue { flex: 0 0 auto; align-self: stretch; margin: 0; padding: 7px 0 3px; border: 0; background: linear-gradient(180deg, transparent, rgba(255, 200, 30, .14)); color: var(--kowhai); font: inherit; font-size: 12px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; text-align: center; cursor: pointer; }
+.scroll-cue[hidden] { display: none; }
+
+/* ---------- short landscape (844x390): briefing tyre and difficulty buttons, and the pause menu, fit above the footer (R-PLAY D7) ---------- */
+@media (max-height: 480px) and (min-width: 561px) {
+  [data-screen="briefing"] .brief { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  [data-screen="briefing"] .brief .charts, [data-screen="briefing"] .brief .notes-sample, [data-screen="briefing"] .brief .panel, [data-screen="briefing"] .brief p, [data-screen="briefing"] .brief .chips { display: none; }
+  [data-screen="briefing"] .brief > div:first-child { flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+  [data-screen="briefing"] .brief > div:first-child > .facts { flex: 1 1 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .modal { padding: 12px 16px; gap: 6px; width: min(640px, 100%); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-self: start; margin-block: 0; }
+  .modal > .kicker, .modal > .h1, .modal > .hint-foot, .modal > p { grid-column: 1 / -1; margin: 0 !important; }
+  .modal > .h1 { font-size: 22px; }
+  .modal .btn { min-height: 38px; padding-block: 4px; }
+}
+
+/* stuck hint (state.stuck): out of flow, so it can never shift the HUD; fades in and out */
+.h-stuck { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); max-width: min(92vw, 560px); padding: 4px 14px; text-align: center; font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--silver); pointer-events: none; opacity: 0; transition: opacity .35s ease; }
+.h-stuck.on { opacity: 1; }
+.h-stuck:empty { display: none; }
+body.reduced-motion .h-stuck { transition: none; }
+@media (max-height: 520px) and (orientation: landscape) { .h-stuck { top: 56%; font-size: 12px; } }

@@ -222,6 +222,8 @@ export function createLighting(THREE, scene, getCfg) {
     return l;
   });
 
+  const FAR_EVERY = 3, farAt = { x: 1e9, z: 1e9 };
+  let farFrame = 0, farDirty = true;
   const L = new THREE.Vector3(0, 1, 0), right = new THREE.Vector3(), up = new THREE.Vector3(), tmp = new THREE.Vector3(), tgt = new THREE.Vector3();
   const state = { range: 60, size: 2048, cascadeOn: false, baseIntensity: 3, moonMix: 0, headOn: false, flash: 0 };
 
@@ -236,6 +238,7 @@ export function createLighting(THREE, scene, getCfg) {
     c.left = -range; c.right = range; c.top = range; c.bottom = -range; c.near = 1; c.far = 520;
     c.updateProjectionMatrix();
     cascade.castShadow = cascadeOn && enabled;
+    farDirty = true;
     if (cascadeOn) {
       const cs = Math.max(1024, size);
       if (cascade.shadow.mapSize.x !== cs) { cascade.shadow.mapSize.set(cs, cs); cascade.shadow.map?.dispose(); cascade.shadow.map = null; }
@@ -292,6 +295,11 @@ export function createLighting(THREE, scene, getCfg) {
         const cu = Math.round((carPos.x * up.x + carPos.y * up.y + carPos.z * up.z) / ctexel) * ctexel;
         cascade.target.position.set(0, 0, 0).addScaledVector(right, cr).addScaledVector(up, cu).addScaledVector(L, l);
         cascade.position.copy(cascade.target.position).addScaledVector(L, 420);
+        // the far cascade covers 400+ m and is world-anchored (texel-snapped), so it only needs re-rendering every few frames;
+        // a jump (teleport, respawn, stage start) forces a refresh. Halves the shadow-pass cost of the second 4096 map.
+        const sh = cascade.shadow, jx = carPos.x - farAt.x, jz = carPos.z - farAt.z;
+        sh.autoUpdate = false;
+        if (!(farFrame++ % FAR_EVERY) || jx * jx + jz * jz > 40 * 40 || farDirty) { sh.needsUpdate = true; farAt.x = carPos.x; farAt.z = carPos.z; farDirty = false; }
         cascade.intensity = 1; // shadow-only helper: its light colour is zeroed in the patched shader chunk (see patchShadowCascade)
         cascade.target.updateMatrixWorld();
       }

@@ -227,7 +227,7 @@ export function createScreens(root, ctx) {
       const champ = mode === "championship";
       const items = [
         btn("Resume", onResume, "primary", { "data-focus": "1", "data-back": "1" }),
-        btn(h("span", null, "Back to checkpoint ", h("span", { class: "hint" }, `(+${recoverPenalty} s)`)), onRecover),
+        btn(h("span", null, "Respawn on road ", h("span", { class: "hint" }, `(+${recoverPenalty} s)`)), onRecover),
       ];
       if (!champ && onRestart) items.push(btn(mode === "trial" ? "Restart trial" : "Restart stage", onRestart));
       items.push(btn("Options", onOptions));
@@ -295,6 +295,7 @@ export function createScreens(root, ctx) {
     service({ nextDef, spec, onDone, onSave }) {
       const champ = career.championship;
       const wrap = h("div", { class: "service" });
+      const cue = h("button", { type: "button", class: "scroll-cue", "aria-label": "Scroll down for more rows: bodywork, suspension, brake bias", tabindex: "-1", onclick: () => wrap.scrollBy({ top: Math.max(120, wrap.clientHeight * 0.7), behavior: "smooth" }) }, "More below ▾");
       const budgetEl = h("div", { class: "budget" });
       const partsEl = h("div");
       const setupEl = h("div");
@@ -336,8 +337,14 @@ export function createScreens(root, ctx) {
         h("div", { class: "panel" }, h("div", { class: "kicker" }, "Repair budget"), budgetEl, h("p", { class: "muted", style: { fontSize: "13px" } }, "Mechanics have limited minutes. Spend them where the car is hurt most; unspent time is lost."), partsEl),
         h("div", { style: { display: "flex", flexDirection: "column", gap: "12px" } }, h("div", { class: "panel", style: { textAlign: "center" } }, h("div", { class: "kicker" }, spec ? spec.name : "Car"), sil), h("div", { class: "panel" }, h("div", { class: "kicker" }, "Setup"), setupEl)));
       mount("service", "plain", [head("Service area", `Next: ${nextDef ? nextDef.name : ""}`, nextDef ? h("div", { class: "chips" }, h("span", { class: "chip hot" }, WEATHER[nextDef.environment.weather.type]), h("span", { class: "chip" }, timeWord(nextDef.environment.timeOfDay)), h("span", { class: "chip" }, `Suggested tyres: ${ctx.recommendedTyre ? ctx.recommendedTyre(nextDef) : "gravel"}`)) : null), wrap,
+        cue,
         h("div", { class: "screen-foot" }, btn("Save & quit", onSave, "ghost", { "data-back": "1" }), h("span", { class: "spacer" }), btn("Go to the start line", onDone, "primary", { "data-focus": "1" }))]);
       refresh();
+      // the repair and setup rows scroll inside .service: show a cue while rows are hidden below the fold, and hide it at the end
+      const syncCue = () => { cue.hidden = wrap.scrollHeight - wrap.scrollTop - wrap.clientHeight <= 4; };
+      wrap.addEventListener("scroll", syncCue, { passive: true });
+      window.addEventListener("resize", syncCue);
+      requestAnimationFrame(syncCue); setTimeout(syncCue, 450);
     },
 
     // ---------------------------------------------------------------- podium
@@ -482,7 +489,7 @@ export function createScreens(root, ctx) {
     credits({ onBack, version }) {
       mount("credits", "plain", [head("Made in Aotearoa", "Credits"),
         h("div", { class: "howto" },
-          h("div", { class: "panel" }, h("h2", { class: "h2" }, "Game"), h("p", null, `Aotearoa Rally ${version}. Six New Zealand stages, four fictional cars and the whole soundtrack are made in code: the roads, terrain, car models, engine and surface audio, and the driving physics are procedural geometry, audio synthesis and simulation running in your browser. The textures, the key art and the stage and loading pictures were generated with an AI image generator and then processed for this game. No real car makes, sponsors or rally brands are used.`)),
+          h("div", { class: "panel" }, h("h2", { class: "h2" }, "Game"), h("p", null, `Aotearoa Rally ${version}. Six New Zealand stages, four fictional cars and the whole soundtrack are made in code: the roads, terrain, car models, engine and surface audio, and the driving physics are procedural geometry, audio synthesis and simulation running in your browser. The textures, the key art and the stage and loading pictures were generated with an AI image generator and then processed for this game. No real car makes or rally brands are used; every car carries one sponsor, 0x4d44 software, the author of this almanac.`)),
           h("div", { class: "panel" }, h("h2", { class: "h2" }, "Licences"), h("p", null, "Three.js r186, MIT licence, © three.js authors (vendor/THREE-LICENSE.txt). Image prompts and the processing steps are logged in tools/ui-art/PROMPTS.md."), h("p", { class: "muted" }, "Fonts: your system's own condensed sans-serif; nothing is downloaded at runtime.")),
           h("div", { class: "panel" }, h("h2", { class: "h2" }, "Te reo"), h("p", null, "Names such as Huia, Kea, Takahē and Pīwakawaka are native birds of Aotearoa. Stage names are real places; the courses are fictional.")),
         ),

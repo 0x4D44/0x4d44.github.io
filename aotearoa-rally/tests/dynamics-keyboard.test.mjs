@@ -4,6 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { CARS, CAR_IDS } from "../core/cars.mjs";
 import { createVehicle } from "../core/physics.mjs";
+import { shapeKeySteer } from "../core/input.mjs";
 import { createBot, bestTyreFor } from "../core/bot.mjs";
 import { buildStage } from "../core/stage.mjs";
 import { SURFACE } from "../core/surfaces.mjs";
@@ -21,7 +22,7 @@ export function keyboardRun(st, carId, seconds, opts = {}) {
   const bot = createBot(st, v, { skill: 1 });
   const safe = bot.speedProfile;
   const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
-  let off = 0, offMax = 0, offRun = 0, flips = 0, impacts = 0, steerPrev = 0;
+  let off = 0, offMax = 0, offRun = 0, flips = 0, impacts = 0, steerPrev = 0, kb = 0;
   const n = Math.round(seconds / DT);
   for (let i = 0; i < n; i++) {
     const s = v.state;
@@ -32,7 +33,9 @@ export function keyboardRun(st, carId, seconds, opts = {}) {
     const fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), rx = Math.cos(s.yaw), rz = -Math.sin(s.yaw);
     const alpha = Math.atan2(dx * rx + dz * rz, Math.max(0.1, dx * fx + dz * fz));
     const band = opts.band === undefined ? 0.03 : opts.band;
-    inp.steer = alpha > band ? 1 : alpha < -band ? -1 : 0;
+    // the key goes through the same shaping the game applies (core/input.mjs shapeKeySteer), not straight in as +-1
+    kb = shapeKeySteer(kb, alpha > band ? 1 : alpha < -band ? -1 : 0, sp, DT);
+    inp.steer = opts.rawKeys ? (alpha > band ? 1 : alpha < -band ? -1 : 0) : kb;
     const vs = safe[Math.min(st.N - 1, Math.max(0, Math.round(s.s / st.ds)))];
     inp.throttle = sp > 0.9 * vs ? 0 : 1;
     v.step(DT, inp, st);

@@ -29,7 +29,7 @@ test("mud: every car reaches 100 km/h within 25 s, slower than on gravel", () =>
   }
 });
 
-// simulated keyboard: a key held for `hold` s, pressed at t0, ramped as core/input.mjs does (4.2/s in, 9/s out)
+// simulated keyboard: a key held for `hold` s, pressed at t0, ramped as core/input.mjs does (4.2/s in, 9/s out: the round-3 shaping, kept as a fixed stress input)
 function keyboardRun(id, kmh, pattern, seconds = 6, surf = SURFACE.GRAVEL, throttle = 1) {
   const { st, v } = mk(id, surf, surf === SURFACE.TARMAC ? "tarmac" : "gravel");
   v.reset(st.startPose, kmh / 3.6, st);

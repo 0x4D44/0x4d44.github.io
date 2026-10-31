@@ -78,7 +78,7 @@ function makeState() {
     events: [],
     flipped: false, collided: 99, distance: 0,
     // additive extras
-    gLat: 0, gLong: 0, handbrake: 0, shifting: false, engineTorque: 0, wheelspin: 0, slide: 0, upY: 1, surfaceKey: "gravel",
+    gLat: 0, gLong: 0, handbrake: 0, shifting: false, engineTorque: 0, wheelspin: 0, slide: 0, upY: 1, stuck: false, surfaceKey: "gravel",
   };
 }
 
@@ -86,12 +86,17 @@ const DYN_SCALARS = [
   "px", "py", "pz", "qw", "qx", "qy", "qz", "vx", "vy", "vz", "wx", "wy", "wz",
   "rpm", "gear", "boost", "thr", "brk", "hb", "steerIn", "steerAng", "analogT", "shiftT", "shiftLock", "cutT", "prevThr",
   "prevUp", "prevDown", "airT", "airMinVy", "flipT", "collided", "distance", "wgCool", "limCool", "impCool", "boCool", "splashCool",
-  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir", "axLP", "holdT", "kick", "kickCool",
+  "needAlign", "hbHold", "lastAx", "lastAz", "lastAy", "hintS", "fresh", "wasAir", "axLP", "holdT", "kick", "kickCool", "pinT", "cnx", "cnz", "cnAge",
 ];
 
 // Longitudinal load transfer, exaggerated on purpose (see the wheel loop): fast filter, a slow reference that turns a
 // lift or brake stab into a transient kick, and a small sustained part so long braking keeps a little rotation.
 const LAND_SOAK = 3.5;
+// walls (banks, verges): a little bounce and a slippery face so a hit leaves the car free to steer out; a pinned car is helped out
+const WALL_E = 0.22, WALL_MUT = 0.08;
+const PIN_SPEED = 1.5, PIN_AFTER = 1.0, PIN_THR = 0.25, PIN_PUSH = 8, PIN_SEP = 4;
+const FRONT_LOOSE = 1.08;
+const LOOSE_SURF = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]; // by SURFACE id: gravel, dirt, (tarmac), mud, snow, pumice
 const LT_TAU = 0.1, LT_SUS = 0.03, LT_KICK = 24, LT_KCAP = 0.25, LT_SURF = 3;
 const SA0 = 0.12, SA1 = 0.3; // throttle feathering starts at a 7 deg body slip (it was 17 deg): a digital throttle cannot hold a power slide
 const TA0 = 0.12, TA1 = 0.08; // RWD traction aid: slip ratio where the throttle starts to close, and the band to full cut
@@ -147,6 +152,8 @@ export function createVehicle(spec, options = {}) {
   const dt0 = 1 / 120;
 
   // lift-off rotation gain by drivetrain (FWD mild, AWD moderate, RWD strongest); spec.handling.liftRotate overrides
+  // front-axle grip on loose ground only (gravel, dirt, mud, snow, pumice): keeps the nose biting for a keyboard driver; fades in with the steering angle so straight-line braking is unchanged; tarmac untouched
+  const frontLoose = spec.handling && spec.handling.frontLoose !== undefined ? spec.handling.frontLoose : FRONT_LOOSE;
   const ltGain = spec.handling && spec.handling.liftRotate !== undefined ? spec.handling.liftRotate : (spec.drivetrain === "AWD" ? LT_GAIN_AWD : spec.drivetrain === "FWD" ? LT_GAIN_FWD : LT_GAIN_RWD);
 
   // box (for obstacle/wall collisions): z positive = back
@@ -375,11 +382,12 @@ export function createVehicle(spec, options = {}) {
       const cwx = cxw + cuu * rx2 + cww * fx2, cwz = czw + cuu * rz2 + cww * fz2;
       const hard = o.hardness === undefined ? 0.6 : o.hardness;
       const scale = hard >= 0.6 ? 1 : Math.max(0.05, hard * 1.1); // signs, posts, bales, tyre stacks give way: they shed a fraction of the closing speed
-      const e = 0.01 + 0.1 * hard;
+      const e = 0.01 + 0.1 * hard
       const corr = (0.15 + 0.8 * scale) * pen;
       const cap = corr > 0.3 ? 0.3 : corr;
       D.px += nxw * cap; D.pz += nzw * cap;
       const closing = impulse(nxw, 0, nzw, cwx - D.px, (D.py - cg * 0.4 + 0.3) - D.py, cwz - D.pz, e, 0.25 + 0.2 * hard, scale);
+      if (hard >= 0.6) { D.cnx = nxw; D.cnz = nzw; D.cnAge = 0; }
       if (closing > 0.15) registerImpact(closing, cwx, cwz, o.kind || "obstacle", null);
       else impDiss = 0;
     }
@@ -418,7 +426,8 @@ export function createVehicle(spec, options = {}) {
         if (pen > 0.5 && n.y >= 0.77) { /* deep burial: push up */ }
         const corr = Math.min(0.35, pen * 0.8);
         D.px += nx * corr * 0.6; D.py += ny * corr * 0.6; D.pz += nz * corr * 0.6;
-        const closing = impulse(nx, ny, nz, rxw, ryw, rzw, 0.1, 0.18, 1);
+        const closing = impulse(nx, ny, nz, rxw, ryw, rzw, WALL_E, WALL_MUT, 1);
+        { const hl = Math.hypot(nx, nz); if (hl > 0.2) { D.cnx = nx / hl; D.cnz = nz / hl; D.cnAge = 0; } }
         // a bank soaks the car's energy, it is not a ramp: what the face deflects upward is mostly lost, so a hit at speed
         // scrubs along and up a little instead of launching off the top
         if (D.vy > 2.5 && ny < 0.77) D.vy = 2.5 + (D.vy - 2.5) * 0.25;
@@ -537,6 +546,7 @@ export function createVehicle(spec, options = {}) {
     D.hb += clamp(inHb - D.hb, -10 * dt, 14 * dt);
     if (tThr === 0 && D.thr < 0.003) D.thr = 0;
     thrEff = D.thr; brkEff = D.brk; hbEff = D.hb;
+    if (D.pinT > PIN_AFTER && thrEff > PIN_THR) thrEff = PIN_THR;
     // traction / stability assist: feather the throttle when driven wheels spin or the tail steps out
     if (opts.assist > 0 && thrEff > 0.05 && D.gear !== 0) {
       // mean slip of the driven wheels (not the worst one): a single unloaded or damaged wheel stuck spinning after
@@ -606,7 +616,7 @@ export function createVehicle(spec, options = {}) {
     }
     D.thr = 0; D.brk = 0; D.hb = 0; D.steerIn = 0; D.steerAng = 0; D.analogT = 0; D.shiftT = 0; D.shiftLock = 0; D.cutT = 0;
     D.boost = 0; D.prevThr = 0; D.airT = 0; D.airMinVy = 0; D.flipT = 0; D.wgCool = 0; D.limCool = 0; D.impCool = 0; D.boCool = 0;
-    D.axLP = 0; D.holdT = 0; D.kick = 0; D.kickCool = 0; D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
+    D.pinT = 0; D.cnx = 0; D.cnz = 0; D.cnAge = 9; D.axLP = 0; D.holdT = 0; D.kick = 0; D.kickCool = 0; D.splashCool = 0; D.wasAir = 0; D.hintS = pose.hintS || 0; softHit.clear();
     D.gear = 1;
     if (opts.auto) {
       let g = 1;
@@ -657,6 +667,7 @@ export function createVehicle(spec, options = {}) {
     s.clutch = D.shiftT > 0 ? 0 : (D.clutchSlip ? 0.5 : 1);
     s.shifting = D.shiftT > 0;
     s.upY = uy;
+    s.stuck = D.pinT > PIN_AFTER;
     s.distance = D.distance;
     s.collided = D.collided;
     for (let i = 0; i < 4; i++) {
@@ -896,7 +907,7 @@ export function createVehicle(spec, options = {}) {
       let fxT = 0, fyT = 0;
       w.dFx = 0; w.fxTyre = 0;
       if (fz > 1) {
-        const grip = tyreGrip[w.surf] * sgTab[w.surf] * (w.front ? spec.handling.gripFront : spec.handling.gripRear) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
+        const grip = tyreGrip[w.surf] * sgTab[w.surf] * (w.front ? spec.handling.gripFront * (LOOSE_SURF[w.surf] ? 1 + (frontLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) : 1) : spec.handling.gripRear) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
         const o = tyreForce(fzT, vxw, vyw, Wom[i] * Rw, w.surf, grip, w.loadRef, Rw);
         fxT = o.fx; fyT = o.fy;
         // stiction safety: forces must not overshoot the slip velocity in one step
@@ -1166,6 +1177,12 @@ export function createVehicle(spec, options = {}) {
     axes();
     terrainPass(stage, dt);
     wallPass(stage);
+    {
+      // pinned-car aid: throttle held, nearly stopped, touching a wall for a while -> cap the drive (no digging in) and ease the car off along the contact normal
+      D.cnAge += dt;
+      if (D.thr > 0.5 && Math.abs(s.speed) < PIN_SPEED && D.cnAge < 1.0) D.pinT += dt; else D.pinT = Math.max(0, D.pinT - 0.5 * dt);
+      if (D.pinT > PIN_AFTER && D.vx * D.cnx + D.vz * D.cnz < PIN_SEP) { D.vx += D.cnx * PIN_PUSH * dt; D.vz += D.cnz * PIN_PUSH * dt; } // ease off the wall to ~2 m/s, no more
+    }
     // road width test
     {
       const wi = stage.width ? stage.width[Math.min(stage.N - 1, Math.max(0, Math.round(prj.s / stage.ds)))] : 6;

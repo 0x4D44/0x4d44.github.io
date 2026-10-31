@@ -669,6 +669,19 @@ const BUILD = {
 function fallbackBox(mb) { mb.cellName("white"); mb.color(0.9, 0.2, 0.9); mb.box(1, 1, 1); }
 
 // ---------------------------------------------------------------- scenery system
+const ringCache = new Map();
+/** Cells within radius cr of the camera cell, nearest first, as parallel typed arrays (computed once per radius). */
+export function ringOrder(cr) {
+  let r = ringCache.get(cr);
+  if (r) return r;
+  const list = [];
+  for (let dz = -cr; dz <= cr; dz++) for (let dx = -cr; dx <= cr; dx++) { const d2 = dx * dx + dz * dz; if (d2 <= cr * cr) list.push([d2, dx, dz]); }
+  list.sort((a, b) => a[0] - b[0]);
+  r = { n: list.length, d2: Int32Array.from(list, (e) => e[0]), dx: Int32Array.from(list, (e) => e[1]), dz: Int32Array.from(list, (e) => e[2]) };
+  ringCache.set(cr, r);
+  return r;
+}
+
 export function createScenery(THREE, { SU, textures, getCfg }) {
   const group = new THREE.Group();
   group.name = "scenery";
@@ -892,16 +905,11 @@ export function createScenery(THREE, { SU, textures, getCfg }) {
     const budget = cfg.maxPropInstances;
     const dens = cfg.density;
     // ring order: near cells first
-    const order = [];
-    for (let dz = -cr; dz <= cr; dz++) for (let dx = -cr; dx <= cr; dx++) {
-      const d2 = dx * dx + dz * dz;
-      if (d2 <= cr * cr) order.push([d2, dx, dz]);
-    }
-    order.sort((a, b) => a[0] - b[0]);
+    const order = ringOrder(cr); // cached per radius: building and sorting thousands of tuples every rebuild was GC churn on the main thread
     const swMat = m4.elements;
-    for (let oi = 0; oi < order.length && total < budget; oi++) {
-      const [, dx, dz] = order[oi];
-      if (!crossed && Math.sqrt(order[oi][0]) * cell > 80) { crossed = true; for (const e of meshes.values()) e.nS = e.n; }
+    for (let oi = 0; oi < order.n && total < budget; oi++) {
+      const dx = order.dx[oi], dz = order.dz[oi];
+      if (!crossed && Math.sqrt(order.d2[oi]) * cell > 80) { crossed = true; for (const e of meshes.values()) e.nS = e.n; }
       const arr = cellMap.get((ccx + dx + 4096) * 8192 + (ccz + dz + 4096));
       if (!arr) continue;
       for (let a = 0; a < arr.length; a++) {

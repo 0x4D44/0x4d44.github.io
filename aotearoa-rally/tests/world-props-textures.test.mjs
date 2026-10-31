@@ -72,7 +72,7 @@ test("texture manifest: every entry exists, size limits, total weight", () => {
   }
   for (const n of ALL_TEX_NAMES) assert.ok(typeof n === "string" && n.length > 3);
   // no orphan files
-  const listed = new Set(["manifest.json"]);
+  const listed = new Set(["manifest.json", "adverts.json", "adverts.webp"]); // the roadside-advert atlas is loaded by render/adverts.mjs, not through the manifest
   for (const e of Object.values(mf.textures)) { listed.add(e.file); if (e.normal) listed.add(e.normal); }
   const onDisk = (readdirSyncSafe(dir)).filter((f) => !f.startsWith("car-"));
   for (const f of onDisk) assert.ok(listed.has(f), `orphan texture file ${f}`);

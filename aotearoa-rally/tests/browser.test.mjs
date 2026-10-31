@@ -283,7 +283,7 @@ test("championship pause has no restart; Retire asks first and scores a DNF; Esc
     await on(g, "pause");
     const btns = await g.evalAsync("window.__AR__.buttons()");
     assert.ok(!btns.some((b) => /restart/i.test(b)), "no restart in a championship: " + btns.join("|"));
-    assert.ok(btns.some((b) => /retire/i.test(b)) && btns.some((b) => /checkpoint/i.test(b)), btns.join("|"));
+    assert.ok(btns.some((b) => /retire/i.test(b)) && btns.some((b) => /respawn on road/i.test(b)), btns.join("|"));
     await g.keyPress("Escape"); // the pause key resumes
     await g.waitFor("window.__AR__.paused() === false");
     await g.keyPress("Escape"); await on(g, "pause");
