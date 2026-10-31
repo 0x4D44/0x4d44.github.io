@@ -15,7 +15,7 @@ const ROOT = process.env.HUD_ROOT || '';
 const SRC = ROOT ? join(ROOT, 'skyblitz', 'src') : join(import.meta.dirname, '..', 'src');
 const mod = (f) => import(pathToFileURL(join(SRC, f)).href);
 const { Feed, FEED, hitEntry, launchEntry, passEntry, feedText, feedHardMax } = await mod('ui/hud-feed.js');
-const { layoutPlates, PLATE, lockLabelSide, lockLabelBox } = await mod('ui/hud-layout.js');
+const { layoutPlates, PLATE, lockLabelSide, lockLabelBox, lockLabelPush, LOCK_PUSH } = await mod('ui/hud-layout.js');
 const { rocketHint, rocketTip } = await mod('ui/rocket-hint.js');
 const { RACE } = await mod('race/balance.js');
 const { popupText } = await mod('ui/hud.js');
@@ -136,6 +136,12 @@ check('P-18 (round 2): lockLabelSide puts the target\'s name on a side of the lo
   assert.ok(['below', 'above', 'right', 'left'].includes(side({ x: 640, y: 360 }, huge)), 'everything covered: still answers');
   assert.equal(side({ x: 1250, y: 300 }, craft), 'left', 'at the right edge the name goes to the other side');
   assert.equal(side({ x: 640, y: 690 }, { l: 500, t: 480, r: 780, b: 600 }), 'above', 'under the ring is off the bottom of the screen');
+  // no side is free (a wide craft right at the ring): the name slides out along its side until it clears the craft's edge
+  const wide = { l: 480, t: 340, r: 800, b: 540 }, ring = { x: 640, y: 440, r: 40 };
+  const s = side(ring, wide), push = lockLabelPush(s, ring, label, wide);
+  assert.ok(push > 0 && push % LOCK_PUSH.step === 0, 'the name needs a slide: ' + push);
+  assert.ok(!hits(lockLabelBox(s, ring, label, 3 + push), wide), `after sliding ${push} px the ${s} box is clear of the craft`);
+  assert.equal(lockLabelPush('below', { x: 640, y: 300, r: 40 }, label, craft), 0, 'clear already: no slide'); assert.equal(lockLabelPush('below', ring, label, null), 0, 'no craft: no slide');
 });
 
 check('E-02: the countdown hint and the loading tip state the rule race.js applies (a fresh press in the last RACE.rocketWindow seconds)', async () => {
@@ -319,7 +325,7 @@ if (process.env.HUD_PURE_ONLY) { /* the browser checks below are skipped */ } el
     const r = await page.eval(`(async () => { const { g, hud } = __t, ais = __t.ais(); __t.clear(); __t.quiet();
       const box = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom }; };
       const run = async (hands) => { g.input.handsOffT = hands; hud.update(0.016, g);
-        __t.place(ais[0], -0.72, -0.5, 70); for (const o of ais.slice(1)) __t.place(o, 0.1, 0.1, 900);   // the one rival whose plate would sit where the hands-off plate goes: low on the left
+        __t.place(ais[0], -0.72, -0.63, 70); for (const o of ais.slice(1)) __t.place(o, 0.1, 0.1, 900);   // the one rival whose plate would sit where the hands-off plate goes: low on the left
         for (let i = 0; i < 3; i++) { g.input.handsOffT = hands; g.renderFrame(1, 0); await new Promise((res) => setTimeout(res, 100)); }
         const plate = box(hud.autoEl), shown = [...document.querySelectorAll('.nameplate')].filter((e) => e.style.display !== 'none').map((e) => ({ n: e.textContent, ...box(e) }));
         return { plate, shown, on: hud.autoEl.classList.contains('on'), mine: shown.filter((s) => s.n === ais[0].name) }; };

@@ -6,7 +6,7 @@ import { h, fmtTime, ordinal, clamp } from './dom.js';
 import { ITEM_ICONS, MISC } from './icons.js';
 import { ITEMS } from '../race/balance.js';
 import { Feed, feedText, feedHardMax, hitEntry, launchEntry, passEntry } from './hud-feed.js';
-import { layoutPlates, lockLabelSide } from './hud-layout.js';
+import { layoutPlates, lockLabelSide, lockLabelPush } from './hud-layout.js';
 import { smokeTexture } from './hud-smoke.js';
 import { rocketHint } from './rocket-hint.js';
 
@@ -399,7 +399,7 @@ export class Hud {
     let rz = null;
     if (this.lockT > 0 && this.lockTarget && this.project((this.lockTarget.render?.pos || this.lockTarget.flight.pos), scr)) {
       const locked = this.lockProg >= 1;
-      if (this.reticle.style.display === 'none') { this._rm = null; this._side = 'below'; this.reticle.dataset.side = 'below'; }   // each lock starts with its name under the ring
+      if (this.reticle.style.display === 'none') { this._rm = null; this._side = 'below'; this._push = 0; this.reticle.dataset.side = 'below'; this.reticle.style.setProperty('--lp', '0px'); }   // each lock starts with its name under the ring
       this.reticle.style.display = ''; this.reticle.style.transform = `translate(${scr.x.toFixed(0)}px,${scr.y.toFixed(0)}px) translate(-50%,-50%)`;
       this.lockFg.style.strokeDashoffset = (100 - this.lockProg * 100).toFixed(1); this.reticle.classList.toggle('locked', locked);
       this.set('lockLbl', (locked ? 'LOCKED: ' : '') + this.lockName, (v) => { this.lockLbl.textContent = v; this._rm = null; });
@@ -468,8 +468,9 @@ export class Hud {
   placeLabel(x, y, p, zones) {
     const m = this._lm; if (!m) return false;
     const g = this.game, side = lockLabelSide({ x, y, r: m.r }, { w: m.w, h: m.h }, this.craftRect(p), zones, g.width, g.height, this._side);
-    if (side === this._side) return false;
-    this._side = side; this.reticle.dataset.side = side; return true;
+    const push = lockLabelPush(side, { x, y, r: m.r }, { w: m.w, h: m.h }, this.craftRect(p));
+    if (side === this._side && push === this._push) return false;
+    this._side = side; this._push = push; this.reticle.dataset.side = side; this.reticle.style.setProperty('--lp', push + 'px'); return true;
   }
   /** Rectangles the nameplates must stay out of: the HUD panels, the alerts and the touch buttons. Re-measured at 5 Hz (it reads layout), not every frame. */
   zones() {

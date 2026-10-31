@@ -18,10 +18,10 @@ window.ESSAYS = [
   {
     slug: "skyblitz",
     title: "SKYBLITZ",
-    tagline: "An arcade air-racing Grand Prix: eight pilots, four courses from a tropical archipelago to aurora glaciers, loops, barrel rolls, shortcuts, ten power-ups and AI rivals that fight back. Three.js, synthesised audio and ferrosintesis-rendered music; keyboard, gamepad or touch; no build.",
+    tagline: "An arcade air-racing Grand Prix: eight pilots, four courses from a tropical archipelago to aurora glaciers, loops, barrel rolls, shortcuts, ten power-ups and AI rivals that fight back. Three.js, synthesised audio and ferrosintesis-rendered music; keyboard, gamepad or touch; no build. Early build: still being tuned.",
     url: "https://0x4d44.github.io/skyblitz/",
     illustration: "ill-skyblitz",
-    date: "2026-10-29T18:00:00",
+    date: "2026-10-31T11:00:00",
     year: 2026,
     tags: ["games", "simulation", "transport"],
     real: true,

@@ -220,3 +220,17 @@ human-invoked review triages these — don't fix them inline.
   paint.md`, "The tour"). Nothing is built. It needs Arthur's go on the design first: ceilings, interior lights, a
   first-person camera mode, a smaller near plane, the entry door D01 opening, a hand-authored path, and the end title moved
   after it. Painted interior walls (done) were its prerequisite.
+
+- [ ] 2026-10-31 — `skyblitz/src/flight/guide.js:blend` (avoid margin): a sphere hazard at sunrise s 1450 still makes the idle
+  guided Sprite and Bulldog tumble at about 14 s (seed independent). Margin 14 -> 6 fixed the Falcon only; a 1.2 s hysteresis,
+  a world-horizontal dodge and a remembered side were tried and reverted. Replace the binary avoid with a continuous push scaled
+  by miss distance. Repro: `CRAFT=sprite COURSES=sunrise SEEDS=1,7,3` with `.scratch/fl/idlediag.mjs` (not committed).
+- [ ] 2026-10-31 — `skyblitz/tests/core.test.mjs` (V-8 live media change, R2-V-01 demo race): fixed delays, failed once or twice per
+  full run under load and passed alone. Replace the delays with polling.
+- [ ] 2026-10-31 — Core dropped these round-2 items: R2-V-16 (preset-change freeze, warm path cut Redrock High to Low from 2294 to
+  301 ms in a probe but was untested), the Neon shadow depth `uv` variant warm-up, program reuse across races (R2-E-04), the FXAA
+  Med log (R2-E-01 nit), and `debug.js` treating `?debug=0` / `?quality=` as the debug gate (R2-E-13).
+- [ ] 2026-10-31 — `skyblitz/tests/sim.test.mjs` neon lap-band `todo`: Normal fastest lap 54.5 s against the 55 s floor depends on
+  whether a bot takes the shortcut; trim the neon shortcut saving or loosen by one reviewed number.
+- [ ] 2026-10-31 — Frost GO frame: white pixels 2.65 % and bright 22.4 % pass, but craft-to-deck contrast is 1.4, not the 3:1 I asked
+  for (`skyblitz/src/world/platform.js` deckIbl). Needs a look by eye on the next visual pass.

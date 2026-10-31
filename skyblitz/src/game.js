@@ -24,20 +24,6 @@ const nextPaint = (ms = 250) => new Promise((resolve) => {
   requestAnimationFrame(() => setTimeout(() => { clearTimeout(t); resolve(); }, 0));
 });
 
-/** three draws every shadow caster with ONE shared depth material and copies the caster's `map` onto it first. The draw re-picks its program whenever the
- *  run switches between instanced and plain meshes, and the program key includes whether a map is set at that moment. Which casters sit inside the shadow
- *  frustum decides which switches happen, so a `uv` variant of the depth program was built wherever a frame first met a plain map-caster straight after an
- *  instanced one: a 127-132 ms frame seven seconds into a Neon race, although the hidden warm-up frame had drawn every caster once (R2-E-05). Without an
- *  alpha test the map cannot change the depth, so it is dropped here and the shared material only ever has its map-less variants. (Alpha-tested casters get
- *  their own cloned material from three and keep their map.) */
-function dropIdleDepthMaps(renderer) {
-  const draw = renderer.renderBufferDirect;
-  renderer.renderBufferDirect = function (camera, scene, geometry, material, object, group) {
-    if (material.isMeshDepthMaterial && material.map && !material.alphaTest) material.map = null;
-    return draw.call(this, camera, scene, geometry, material, object, group);
-  };
-}
-
 function loadSettings(reducedMotion) {
   let stored = null;
   try { stored = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch { /* corrupt blob or storage blocked: defaults */ }
@@ -64,8 +50,7 @@ export class Game {
     this.gov = null; this.costMeter = new CostMeter(); this.gpuTimer = null;   // auto-quality (E-05): see governor.js
     this.contextLost = false;                                                   // E-12
     this._loadToken = 0; this.ready = false;
-    this._warming = 0; this._applyT = 0; this._applying = false;                // programs compiling (the loop holds off, R2-V-16); the "Applying" notice timer and flag
-    this._warmFrame = false;                                                    // true during the hidden warm-up frame
+    this._warming = 0;                                                          // warm-ups in progress
     this.COURSES = COURSES;
   }
 
@@ -75,7 +60,6 @@ export class Game {
       renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: false, alpha: false, stencil: false, powerPreference: 'high-performance' });
     } catch (e) { this.fail('WebGL2 is not available in this browser.'); e.skyShown = true; throw e; }
     this.renderer = renderer;
-    dropIdleDepthMaps(renderer);
     this.coarse = matchMedia('(pointer: coarse)').matches;
     // E-12: a lost context (driver reset, GPU process crash, sleep) leaves the race running blind. preventDefault asks the browser to restore it.
     this.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.onContextLost(); });
@@ -289,46 +273,20 @@ export class Game {
   hiddenFrame() {
     const forced = [];
     this.scene.traverse((o) => { if (o.frustumCulled && (o.isMesh || o.isPoints || o.isLine || o.isSprite)) { o.frustumCulled = false; forced.push(o); } });
-    this._warmFrame = true;
-    try { this.renderFrame(0, 0); } finally { this._warmFrame = false; for (const o of forced) o.frustumCulled = true; }
+    try { this.renderFrame(0, 0); } finally { for (const o of forced) o.frustumCulled = true; }
   }
 
   /** compileAsync of everything the game draws, raced against 5 s (a driver without parallel compile, or a stuck one, must not hold the game up). The programs are
    *  built for the way the game really draws, because a program's key includes the target's colour space and tone mapping: the scene into the composer's float
    *  target, NOT the canvas (a bare compileAsync built 38 programs that were never used while the hidden frame then linked 37 others on the spot; Sunrise / High,
-   *  Neon 41 + 37), and the post chain, which is not in the scene and so used to link one program after another inside the first frame, each pass as a quad in a
-   *  throwaway scene (see postScenes). */
+   *  Neon 41 + 37). The post chain is not in the scene: the hidden frame that follows builds it. */
   async compileScene() {
-    const jobs = [this.compileTo(this.scene, this.post?.composer?.readBuffer || null)];
-    for (const [scene, target] of this.postScenes()) jobs.push(this.compileTo(scene, target));
-    let timer;
-    try { await Promise.race([Promise.all(jobs), new Promise((res) => { timer = setTimeout(res, 5000); })]); } finally { clearTimeout(timer); }
-  }
-
-  /** The programs are built (and their keys made) synchronously, inside the compileAsync call: the target only has to be set for that call. */
-  compileTo(scene, target) {
-    const r = this.renderer;
-    r.setRenderTarget(target);
-    try { return r.compileAsync(scene, this.camera); } finally { r.setRenderTarget(null); }
-  }
-
-  /** The post chain's shader materials as two throwaway scenes of quads, with the target each draws into: [scene, target]. Only the last pass draws to the canvas
-   *  (SMAA: its blend step; its edge and weight steps use targets). OutputPass is left to its first render: it sets its defines (tone mapping, sRGB) only then, so a
-   *  program made earlier would not be the one it uses. */
-  postScenes() {
-    const composer = this.post?.composer; if (!composer) return [];
-    const passes = composer.passes, last = passes[passes.length - 1], geo = new THREE.BufferGeometry();
-    const rt = new THREE.Scene(), screen = new THREE.Scene(), seen = new Set();
-    for (const pass of passes) {
-      for (const v of Object.values(pass)) {
-        for (const m of Array.isArray(v) ? v : [v]) {
-          if (!m?.isShaderMaterial || m.isRawShaderMaterial || seen.has(m)) continue;
-          seen.add(m);
-          (pass === last && (m === pass.material || m === pass._materialBlend) ? screen : rt).add(new THREE.Mesh(geo, m));
-        }
-      }
-    }
-    return [[rt, composer.readBuffer], [screen, null]];
+    const r = this.renderer, rt = this.post?.composer?.readBuffer || null;
+    let timer, p;
+    if (rt) r.setRenderTarget(rt);
+    try { p = r.compileAsync(this.scene, this.camera); }       // the programs are built (and their keys made) synchronously, inside this call
+    finally { if (rt) r.setRenderTarget(null); }
+    try { await Promise.race([p, new Promise((res) => { timer = setTimeout(res, 5000); })]); } finally { clearTimeout(timer); }
   }
 
   disposeRace() {
@@ -347,36 +305,9 @@ export class Game {
     if (!keepScale) this.autoScale = 1;
     this.assets?.setAniso?.(this.q.aniso);
     this.post?.setQuality?.(this.q);
-    // R2-V-16: with a race on screen (Settings from the pause menu, or over the title's demo) the new preset's programs used to compile inside the next frame, a
-    // 0.2-1.3 s freeze of the menu. They are built in parallel first: the old frame stays up, the loop holds off, and the resize (which clears the canvas) follows.
-    const warm = !this.manual && !!this.race && !this.contextLost && !!this.renderer.compileAsync;
-    if (!warm) this.resize();
+    this.resize();
     if (keepScale) this.gov?.applied(this.qualityId, this.q.renderScale); else this.gov?.reset(this.qualityId, this.q.renderScale);
     if (!silent) this.events.emit('settings:change', { key: 'quality', value: id });
-    if (warm) this.warmAfterChange();
-  }
-
-  /** R2-V-16: compile the new preset's scene programs without blocking, then resize and run the hidden frame once (it builds the post chain, which compileAsync
-   *  cannot see). A slow compile shows "Applying graphics settings..." (only after 250 ms: a fast one must not flash it). Several changes in a row share one finish. */
-  async warmAfterChange() {
-    this._warming++;
-    clearTimeout(this._applyT);
-    this._applyT = setTimeout(() => { this._applying = true; this.notice('Applying graphics settings...'); }, 250);
-    try {
-      this.course?.update(0, this);                     // the sun's castShadow follows the preset in update(): compile with the light state the next frame will have, not the old one
-      await this.compileScene();
-    } catch { /* the first frame pays instead */ }
-    finally {
-      this._warming--;
-      if (!this._warming) {
-        clearTimeout(this._applyT);
-        if (!this.contextLost) {
-          this.resize();
-          try { this.hiddenFrame(); } catch { /* the first frame pays instead */ }
-        }
-        if (this._applying) { this._applying = false; if (!this.contextLost) this.notice(null); }
-      }
-    }
   }
 
   /** E-05: the governor wants another preset; it is applied between races only. */
@@ -407,11 +338,6 @@ export class Game {
     if (this.contextLost) { this.lastT = now; return; }   // E-12: no sim and no drawing while the GL context is gone
     let dt = now - this.lastT; this.lastT = now;
     if (!(dt > 0)) return;
-    if (this._warming > 0) {                              // programs are linking in parallel: drawing now would wait for them on the spot (R2-V-16). The menu and the sound keep going.
-      const h = Math.min(dt, 0.1);
-      this.audio.update(h, this); this.music.update(h, this); this.ui.update(h, this);
-      return;
-    }
     const interval = dt;
     if (dt > 0.25) dt = 0.25;
     const t0 = performance.now();
@@ -455,16 +381,8 @@ export class Game {
     this.music.update(dt, this);
     this.ui.update(dt, this);
     this.post.update(dt, this);
-    if (this._warmFrame) this.warmSpeedPass();
     this.post.render(dt);
     gpu?.end();
-  }
-
-  /** The speed / fringe pass is off until the craft is fast or a flash fires, and the first flash is the GO one: its program used to be built on the frame the
-   *  race started (R2-E-05). The hidden frame switches it on for that one render; the next post.update puts it back. */
-  warmSpeedPass() {
-    const pass = this.post?.composer?.passes?.find((p) => p.uniforms?.uBlur);
-    if (pass) pass.enabled = true;
   }
 
   /** Auto-quality (E-05 / V-9), one rendered frame. `interval` is the frame interval (s); the decision is made on the frame's COST (governor.js):

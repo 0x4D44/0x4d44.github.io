@@ -22,7 +22,7 @@ export const GUIDE = {
   netStrength: 1, netLo: 0.45,   // safety net: weight floor under held keys = netStrength * smoothstep(netLo, 1, risk)
   closeLo: 4, closeHi: 24,  // m of clearance the predicted track loses against the ground under it now: the net sees terrain only when this closes (0 level, 1 a plunge)
   intentPitch: 0.7, intentT: 0.2,   // pitch held past this for this long while the track is not closing on the ground = a loop: netStrength and residual stand down
-  residual: 0.35,           // share of the normal guide weight that stays on under held keys (a person who steers keeps most of the authority)
+  residual: 0.35,         // share of the normal guide weight that stays on under held keys (a person who steers keeps most of the authority)
   floor: 0.5,              // guide weight in plain safe flight (a gentle drift back to the middle)
 };
 
@@ -138,7 +138,7 @@ export function createGuide() {
         const e = avoidPool[avoidList.length] ||= { pos: new THREE.Vector3(), radius: 0 };
         e.pos.copy(h.pos); if (h.column) e.pos.y = fs.pos.y; e.radius = (h.radius || 15) + 6; avoidList.push(e);
       }
-      if (avoidList.length) { avoiding = pilotAvoid(fs, _t, avoidList, _bt, { lookAhead: 1.6, margin: 14 }); if (avoiding) _t.copy(_bt); }
+      if (avoidList.length) { avoiding = pilotAvoid(fs, _t, avoidList, _bt, { lookAhead: 1.6, margin: 6, tight: 0.4 }); if (avoiding) _t.copy(_bt); }
     }
     pilotSteer(fs, _t, _o, { aggressiveness: cfg.aggr });
     // how bad is the player's own line? predicted tube position, terrain and hazards a moment ahead; fine lines (shortcut mouths, loops, corner cutting) cost nothing
