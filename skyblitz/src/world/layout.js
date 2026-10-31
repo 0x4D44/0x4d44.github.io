@@ -5,8 +5,12 @@ import * as THREE from 'three';
 import { PathData } from './path.js';
 
 const smooth = (t) => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
-const CLEAR = 5;               // path height above the launch deck
-const BLEND = 70;              // length of the straight junction blend at both ends of a shortcut branch (see Branch)
+const CLEAR = +(process.env.W_CLEAR || 10);             // path height above the launch deck. 5 m left a racer 1-3 m under the line (a bump, a stall, a banked turn) scraping the deck's rear lip,
+                               // which reads as a column flank and tumbles it: the finish-approach grinds and the 1.7 s lip crashes
+const GRID_HALF = +(process.env.W_GRID || 30);         // half the lateral gap between the two grid columns (m)
+const GRID_CLEAR = 5;          // a craft on the start grid sits this far over the deck (it climbs to the path after GO)
+const DECK_SKIRT = 90;       // reach (m) of the 45 degree slope around the launch deck
+const BLEND = 70;             // length of the straight junction blend at both ends of a shortcut branch (see Branch)
 const _m = new THREE.Matrix4(), _a = new THREE.Vector3();
 
 export function basisQuat(f, out = new THREE.Quaternion()) {
@@ -31,6 +35,14 @@ export class Branch {
       upStart: f0.up, upEnd: f1.up, hwStart: f0.halfWidth, hhStart: f0.halfHeight, hwEnd: f1.halfWidth, hhEnd: f1.halfHeight, taper: bdef.taper ?? 150,
     });
     this.length = this.path.length; this.blend = Math.min(BLEND, this.length * 0.25, this.span * 0.25); this.enter = this.blend + 60; this.halfWidth = bdef.hw ?? 50; this.halfHeight = bdef.hh ?? 40;
+    // capture starts where the branch axis has left the main axis by 55 m: a racer flying the main line (or a skipper wandering 20 m off it) can never be taken in
+    {
+      const tmp = {}, fb = {};
+      for (let u = this.blend + 40; u < this.length * 0.35; u += 5) {
+        this.path.frameAt(u, fb); mp.project(fb.pos, this.fromS + u, tmp);
+        if (tmp.dist >= 55) { this.enter = Math.max(this.enter, u); break; }
+      }
+    }
     this.marks = {};
     for (const k in bdef.marks || {}) this.marks[k] = this.path.sAtParam(bdef.marks[k] + 3);   // index 0 = first user point (after ghost, junction, join)
     this.gates = [];
@@ -81,7 +93,7 @@ export class CourseLayout {
     for (let j = 0; j <= 16; j++) for (let i = 0; i <= 16; i++) t[j * 17 + i] = this.heightFn(x0 + i * c, z0 + j * c);
     // a cell whose centre the bilinear patch misses by more than 0.35 m (cliff rim, pillar flank) sends the whole tile back to the analytic function
     let worst = 0;
-    for (let j = 0; j < 16 && worst <= 0.35; j++) for (let i = 0; i < 16; i++) {
+    for (let j = 0; j < 16 && worst <= 0.35; j += 2) for (let i = 0; i < 16; i += 2) {
       const k = j * 17 + i, mid = (t[k] + t[k + 1] + t[k + 17] + t[k + 18]) / 4;
       worst = Math.max(worst, Math.abs(mid - this.heightFn(x0 + (i + 0.5) * c, z0 + (j + 0.5) * c)));
       if (worst > 0.35) break;
@@ -196,8 +208,13 @@ export class CourseLayout {
   }
   groundHeight(x, z) {
     const h = this._bakeC ? this._baked(x, z) : this.heightFn(x, z);
-    if (this._onDeck(x, z)) return Math.max(h, this.deckY);
-    return h;
+    const a = (x - this._sx) * this._dx + (z - this._sz) * this._dz, b = -(x - this._sx) * this._dz + (z - this._sz) * this._dx, c = this.startCfg;
+    const da = a < -c.back ? -c.back - a : a > c.fwd ? a - c.fwd : 0, db = Math.abs(b) > c.halfW ? Math.abs(b) - c.halfW : 0;
+    if (da === 0 && db === 0) return Math.max(h, this.deckY);
+    // The deck's flank is a 45 degree skirt, not a cliff: a craft that drifts below the deck top beside it (the corridor ellipse reaches 40-50 m
+    // under the deck there) is lifted and slid up the slope by ground contact instead of grazing a vertical wall for minutes (R2-P-03).
+    // Sides only: the ends are the run-in and the launch lip, which the flight path itself crosses.
+    return da === 0 && db < DECK_SKIRT ? Math.max(h, this.deckY - db) : h;
   }
 
   startGrid(n) {
@@ -207,8 +224,8 @@ export class CourseLayout {
       const row = i >> 1, col = i & 1 ? 1 : -1;
       const back = 26 + row * 38 + (col > 0 ? 12 : 0);                  // staggered like a road-race grid
       this.path.frameAt(-back, f);
-      const lat = col * Math.min(20, f.halfWidth * 0.2);
-      const pos = f.pos.clone().addScaledVector(f.right, lat); pos.y = this.deckY + CLEAR;
+      const lat = col * Math.min(GRID_HALF, f.halfWidth * 0.3);
+      const pos = f.pos.clone().addScaledVector(f.right, lat); pos.y = this.deckY + GRID_CLEAR;
       out.push({ pos, quat: basisQuat(f, q).clone(), slot: i });
     }
     void rows;
@@ -290,6 +307,10 @@ export class CourseLayout {
     spec.forEach((v, ci) => {
       let s = typeof v === 'string' ? this.marks[v] : v * L;
       for (const b of this.branches) if (s > b.fromS - 60 && s < b.toS + 60) s = b.fromS - 130;   // keep orbs out of the shortcut mouth
+      // The run-in is banked: a side orb swings tens of metres below the path, which beside the launch deck is inside the deck block, and the weaving AI
+      // dives into the deck end (redrock, neon, frost finish approach: minutes of grinding). Keep clusters off the deck and its last 110 m of approach.
+      const deckFrom = L - this.startCfg.back - 110;
+      if (s > deckFrom) s = deckFrom;
       const f = this.path.frameAt(s, {});
       const hw = Math.min(f.halfWidth, 90) * 0.55, hh = f.halfHeight * 0.2, cnt = 4;
       this.itemClusters.push(s);

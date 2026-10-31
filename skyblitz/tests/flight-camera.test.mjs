@@ -147,3 +147,17 @@ test('P-20: in a hard bank the chase camera eases back, rises and looks into the
   const lead = look.dot(side) * Math.sign(-S.fs.right.y);
   assert.ok(lead > 0.12, `view not led into the turn: ${lead}`);
 });
+
+test('V-13: in portrait (390x844) the craft sits at 38-48 % of the screen height from the top, above the touch buttons; landscape is unchanged (craft below the centre)', () => {
+  const heightFrac = (aspect) => {
+    const S = setup(); S.camera.aspect = aspect; S.camera.updateProjectionMatrix(); const c = createControls();
+    for (let i = 0; i < 180; i++) frame(S, c);
+    S.camera.updateMatrixWorld(true);
+    const ndc = S.racer.render.pos.clone().project(S.camera); return { y: (1 - ndc.y) / 2, x: ndc.x };
+  };
+  const port = heightFrac(390 / 844), land = heightFrac(16 / 9), tab = heightFrac(768 / 1024);
+  assert.ok(port.y > 0.38 && port.y < 0.48, `portrait craft at ${(port.y * 100).toFixed(0)} % from the top`);
+  assert.ok(land.y > 0.55 && land.y < 0.75, `landscape craft at ${(land.y * 100).toFixed(0)} %`);
+  assert.ok(tab.y < land.y && tab.y > port.y, `a tablet portrait sits in between (${(tab.y * 100).toFixed(0)} %)`);
+  assert.ok(Math.abs(port.x) < 0.1, 'still centred sideways');
+});

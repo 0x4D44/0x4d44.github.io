@@ -74,7 +74,7 @@ const NO_SOUND = {
   'game:loading': 'loading screen: UI only', 'game:error': 'error toast: UI plays ui:error itself', 'game:resize': 'layout only', 'game:loadProgress': 'loading bar only',
   'race:missed': 'ticker text only', 'sector:pass': 'internal progress marker', 'race:position': 'HUD number only (overtake has the sound)', 'shortcut:exit': 'entering is the cue',
   'game:autoquality': 'quality governor notice: UI only', 'game:contextlost': 'GL context loss: the overlay explains it, audio keeps running', 'game:contextrestored': 'GL context back: UI only',
-  'smoke:blind': 'a rival lost its lock in smoke: the smoke:deploy cue already played, HUD text only',
+  'smoke:blind': 'a racer is blinded in smoke: the smoke:deploy cue already played, the HUD draws the fog overlay (fx-smoke), no extra sound',
   'drone:expire': 'drone has no end cue', 'input:pause': 'the pause UI plays its own ui:* sound', 'game:state': 'handled indirectly (resets + music routing)',
 };
 

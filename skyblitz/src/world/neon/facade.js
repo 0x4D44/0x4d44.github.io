@@ -45,6 +45,8 @@ void main(){
     col = vec3(0.05, 0.05, 0.07);
   } else if (vLN.y > 0.5) {                                    // roofs
     float g = step(0.5, fract(vM.x * 0.09 + seed)) * step(0.5, fract(vM.z * 0.09 + seed * 0.7));
+    float rf = max(length(vec2(dFdx(vM.x), dFdy(vM.x))), length(vec2(dFdx(vM.z), dFdy(vM.z)))) * 0.09;
+    g = mix(g, 0.25, smoothstep(0.08, 0.3, rf));                                  // roof checker fades to its mean with distance
     col = vec3(0.02, 0.022, 0.034) + g * vec3(0.012, 0.012, 0.02);
     col += uMoonCol * 0.05 * max(N.y, 0.0);
   } else {
@@ -52,7 +54,7 @@ void main(){
     vec2 uvc = vec2(u / 32.0 + floor(seed * 8.0) / 8.0, vWorld.y / 30.0 + floor(fract(seed * 3.7) * 8.0) / 8.0);
     vec2 cellO = vec2(mod(cell, 4.0), 3.0 - floor(cell / 4.0)) / 4.0;
     vec2 g = (fract(uvc) * 0.96 + 0.02) / 4.0;
-    vec2 dx = dFdx(uvc) * 0.96 / 4.0, dy = dFdy(uvc) * 0.96 / 4.0;
+    vec2 dx = dFdx(uvc) * 0.96 * 2.2 / 4.0, dy = dFdy(uvc) * 0.96 * 2.2 / 4.0;   // x2.2: blur a little earlier so window edges lose contrast before they crawl
     vec3 alb = textureGrad(tAlb, cellO + g, dx, dy).rgb;
     vec3 em = textureGrad(tEmi, cellO + g, dx, dy).rgb;
     vec3 glow = mix(vec3(1.0, 0.3, 0.55), vec3(1.0, 0.62, 0.22), fract(seed * 3.7));
@@ -64,11 +66,11 @@ void main(){
     col = alb * light * 0.38;
     vec2 win = floor(uvc * 8.0);
     float fw = max(length(dFdx(uvc * 8.0)), length(dFdy(uvc * 8.0)));
-    float aa = smoothstep(0.09, 0.34, fw);
+    float aa = smoothstep(0.07, 0.26, fw);
     float on = mix(step(h21(win + seed * 13.1), lit), lit, aa);
     emi = em * on * uEmi;
     // far away the texture's own window pattern is below a pixel: replace it by its mip average so nothing crawls
-    emi = mix(emi, textureLod(tEmi, cellO + vec2(0.125, 0.125), 5.0).rgb * lit * uEmi * 1.6 + vec3(0.04, 0.03, 0.05) * lit, smoothstep(0.35, 0.9, fw));
+    emi = mix(emi, textureLod(tEmi, cellO + vec2(0.125, 0.125), 5.0).rgb * lit * uEmi * 1.6 + vec3(0.04, 0.03, 0.05) * lit, smoothstep(0.2, 0.6, fw));
     float fl = step(0.985, h21(win * 1.7 + floor(uTime * 0.4 + seed))) * (1.0 - aa);
     emi *= 1.0 - 0.85 * fl;
     // neon roof trim on a share of the buildings

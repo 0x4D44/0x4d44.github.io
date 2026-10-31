@@ -27,13 +27,19 @@ export function resultsScreen(ui) {
   const table = h('div', { class: 'panel scroll res-t' });
   const gpBox = h('div', { class: 'panel scroll res-gp' });
   const stats = h('div', { class: 'panel res-stats' });
+  const line = h('p', { class: 'res-line' });   // YOUR RACE in one line: shown (and the panel above hidden) where the panel would not fit, see style.css (R2-V-05)
   const actions = h('footer', { class: 'ftr res-act' });
-  const el = h('div', { class: 'scr results' }, h('header', { class: 'hdr' }, title, sub), banner, h('div', { class: 'res-body' }, table, h('div', { class: 'res-side' }, stats, gpBox)), actions);
+  const body = h('div', { class: 'res-body' }, table, h('div', { class: 'res-side' }, stats, gpBox));
+  const el = h('div', { class: 'scr results' }, h('header', { class: 'hdr' }, title, sub), banner, line, body, actions);
+  // R2-V-05: on a short window the table is a few rows tall and the player's row (the 6th, say) sat below them, behind a scroll nobody knew to make. The body starts at the top (the screen is kept between
+  // visits) and the row is brought into view as the screen opens, and again a frame later when the layout has settled (the screen slides in). Nothing moves when the whole table fits.
+  const showMe = () => { table.querySelector('tr.me')?.scrollIntoView?.({ block: 'nearest' }); };
   return {
     el,
     enter() {
       const R = ui.lastResults; if (!R) { actions.replaceChildren(btn('Main menu', () => ui.quit(true), { cls: 'primary', first: true })); return; }
       const f = ui.flow, gp = f.mode === 'gp', course = COURSES.find((c) => c.id === R.courseId);
+      el.classList.toggle('gp', gp);
       title.firstChild.textContent = gp ? `RACE ${R.gpIndex + 1} / 4 RESULTS` : f.mode === 'trial' ? 'TIME TRIAL' : 'RESULTS';
       sub.textContent = [course?.name, R.laps + (R.laps === 1 ? ' lap' : ' laps'), R.difficulty].filter(Boolean).join(' - ');
       table.replaceChildren(resultTable(R.rows));
@@ -44,8 +50,9 @@ export function resultsScreen(ui) {
       if (f.mode === 'trial' && me?.best != null) rec.push(R.rec?.prevLap != null ? `Lap delta ${me.best - R.rec.prevLap <= 0 ? '' : '+'}${(me.best - R.rec.prevLap).toFixed(3)}s vs your best` : 'First time set');
       banner.style.display = rec.length ? '' : 'none'; banner.replaceChildren(...rec.map((t, i) => h('span', { class: i ? 'sm' : '' }, (i ? '' : ''), t)));
       const st = R.stats || {};
-      stats.replaceChildren(h('h3', null, 'YOUR RACE'), h('dl', null,
-        ...[['Position', me ? ordinal(me.place) : '-'], ['Stunts', st.stunts ?? 0], ['Perfect gates', st.perfectGates ?? 0], ['Shortcuts', st.shortcuts ?? 0], ['Near misses', st.nearMisses ?? 0], ['Hits dealt', st.hitsDealt ?? 0], ['Hits taken', st.hitsTaken ?? 0], ['Overtakes', st.overtakes ?? 0]].flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])));
+      const mine = [['Position', me ? ordinal(me.place) : '-'], ['Stunts', st.stunts ?? 0], ['Perfect gates', st.perfectGates ?? 0], ['Shortcuts', st.shortcuts ?? 0], ['Near misses', st.nearMisses ?? 0], ['Hits dealt', st.hitsDealt ?? 0], ['Hits taken', st.hitsTaken ?? 0], ['Overtakes', st.overtakes ?? 0]];
+      stats.replaceChildren(h('h3', null, 'YOUR RACE'), h('dl', null, ...mine.flatMap(([k, v]) => [h('dt', null, k), h('dd', null, v)])));
+      line.replaceChildren(h('b', null, 'YOUR RACE'), ...mine.map(([k, v]) => h('span', null, k + ' ', h('b', null, v))));
       gpBox.style.display = gp ? '' : 'none';
       if (gp) gpBox.replaceChildren(h('h3', null, 'CHAMPIONSHIP'), gpTable(ui.gpStandings()));
       const lastRace = gp && R.gpIndex >= 3;
@@ -55,6 +62,7 @@ export function resultsScreen(ui) {
       if (!gp) bs.push(btn('Change aircraft', () => ui.startFlow(f.mode), {}));
       bs.push(btn('Quit to menu', () => ui.quit(true), { cls: 'ghost', cue: 'ui:back' }));
       actions.replaceChildren(...bs);
+      body.scrollTop = 0; showMe(); requestAnimationFrame(showMe);
     },
     back: () => { ui.quit(true); return null; },
   };

@@ -36,7 +36,7 @@ void main(){
   float st = smoothstep(0.30, 0.48, abs(fract(a) - 0.5));
   float far = smoothstep(30.0, 300.0, vDist);                 // looking down a loop or a straight, a dozen far rings overlap on screen: their stripes must not pile up into one bloom blob
   vec3 c = vCol * (1.1 - 0.15 * far + 2.2 * st * (1.0 - 0.8 * far)) + vec3(0.35) * vFres * (1.0 - 0.7 * far);
-  c *= mix(0.12, 1.0, smoothstep(6.0, 60.0, vDist));          // a ring right at the lens must not white-out the frame through bloom
+  c *= mix(0.12, 1.0, smoothstep(8.0, 120.0, vDist));         // a ring near the lens must not white-out the frame through bloom: at GO the swoop starts 20-60 m from the first gates and, ramped over 6-60 m, they were 5.8 of the 6.9 % white pixels on Frost (R2-V-15)
   gl_FragColor = vec4(c, 1.0);` + TAIL_F + `}`;
 
 // Lane chevrons: flat arrowheads lying in the path plane (they read like guidance painted on an air road) that tilt about the lateral axis

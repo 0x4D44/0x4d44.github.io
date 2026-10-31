@@ -392,3 +392,20 @@ test('P-07: a zoom climb pushed over into a dive (never on its back) pays no LOO
     assert.equal(loops, 0, `${id}: climb + push-over is not a loop`);
   }
 });
+
+test('R2-P-07 (F13): the boost meter refills passively while cruising, and the sprite refills faster than the bulldog', () => {
+  const refill = (id) => { const fs = make(id); fs.boost.meter = 20; run(fs, ctl(), 5); return fs.boost.meter - 20; };
+  const sprite = refill('sprite'), bulldog = refill('bulldog');
+  assert.ok(bulldog > 1, `the bulldog's meter refills at all (+${bulldog.toFixed(1)} in 5 s)`);
+  assert.ok(sprite > bulldog * 1.2, `the sprite refills faster (+${sprite.toFixed(1)} vs +${bulldog.toFixed(1)})`);
+});
+
+test('R2-P-06 (T10): after any tumble the craft is back to >= 95 % of cruise within 3 s of the tumble ending (all 6 craft, 0.8 / 1.2 / 1.7 s tumbles: the damage table spans 0.8 to 1.7 s)', () => {
+  // measured (1.0 s tumble, cruise start): 1.9 .. 2.4 s after the tumble ends (2.5 .. 3.4 s after the hit)
+  for (const a of AIRCRAFT) for (const secs of [0.8, 1.2, 1.7]) {
+    const fs = make(a.id, undefined, new THREE.Vector3(0, 900, 0)); run(fs, ctl(), 5);
+    applyTumble(fs, secs); let end = null, t95 = null;
+    run(fs, ctl(), secs + 6, undefined, (f, t) => { if (end === null && f.tumble.t <= 0) end = t; if (t95 === null && end !== null && f.speed >= 0.95 * f.params.cruise) t95 = t; });
+    assert.ok(end !== null && t95 !== null && t95 - end <= 3, `${a.id} ${secs} s tumble: 95 % of cruise ${t95 === null ? 'never' : (t95 - end).toFixed(2) + ' s'} after it ends`);
+  }
+});

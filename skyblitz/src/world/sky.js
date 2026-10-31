@@ -1,6 +1,9 @@
 // Sky dome (gradient, sun disc + glow, procedural cloud deck, stars, aurora) + PMREM environment + billboard cloud puffs. Owner: world agent.
 import * as THREE from 'three';
 
+/** Default glow around the sun: [broad amplitude, broad exponent, tight amplitude, tight exponent]. A course may set `environment.sunGlow` to tame it (R2-V-15: Sunrise); the sea reflects the same glow. */
+export const SUN_GLOW = [0.28, 6, 0.45, 40];
+
 const SKY_VS = `
 varying vec3 vDir;
 void main(){
@@ -10,6 +13,7 @@ void main(){
 }`;
 const SKY_FS = `
 uniform vec3 uTop, uMid, uHorizon, uBelow, uSunDir, uSunColor;
+uniform vec4 uGlow;                          // glow around the sun: (broad amplitude, broad exponent, tight amplitude, tight exponent); env.sunGlow
 uniform float uNight, uTime, uCloud, uAurora, uSunSize;
 uniform vec3 uCloudLit, uCloudShade;
 uniform sampler2D tStars, tAurora;
@@ -27,7 +31,7 @@ void main(){
   col = mix(col, uBelow, smoothstep(0.0, -0.18, y));
   float sd = max(dot(d, uSunDir), 0.0);
   // warm glow toward the sun, tight disc
-  col += uSunColor * (pow(sd, 6.0) * 0.28 + pow(sd, 40.0) * 0.45) * (1.0 - uNight * 0.6);
+  col += uSunColor * (pow(sd, uGlow.y) * uGlow.x + pow(sd, uGlow.w) * uGlow.z) * (1.0 - uNight * 0.6);
   float disc = smoothstep(uSunSize, uSunSize * 0.82, 1.0 - sd);
   col += uSunColor * disc * 9.0 * (1.0 - uNight);
   // stars
@@ -62,7 +66,7 @@ void main(){
 export function createSkyDome(env, game, opts = {}) {
   const u = {
     uTop: { value: env.skyTop }, uMid: { value: env.skyMid ?? env.skyTop.clone().lerp(env.skyHorizon, 0.55) }, uHorizon: { value: env.skyHorizon },
-    uBelow: { value: env.fogColor }, uSunDir: { value: env.sunDir }, uSunColor: { value: env.sunColor },
+    uBelow: { value: env.fogColor }, uSunDir: { value: env.sunDir }, uSunColor: { value: env.sunColor }, uGlow: { value: new THREE.Vector4(...(env.sunGlow ?? SUN_GLOW)) },
     uNight: { value: env.night ? 1 : 0 }, uTime: { value: 0 }, uCloud: { value: opts.cloudDeck ?? 0.6 }, uAurora: { value: opts.aurora ?? 0 }, uSunSize: { value: opts.sunSize ?? 0.0009 },
     uCloudLit: { value: opts.cloudLit ?? new THREE.Color(1.0, 0.93, 0.85) }, uCloudShade: { value: opts.cloudShade ?? new THREE.Color(0.55, 0.5, 0.6) },
     tStars: { value: game.assets.tex('stars') }, tAurora: { value: game.assets.tex('aurora') },

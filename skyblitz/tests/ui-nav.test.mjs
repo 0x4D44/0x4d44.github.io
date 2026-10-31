@@ -80,6 +80,7 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
             subShown: !!sm && getComputedStyle(sm).display !== 'none' && sr.width > 0 && sr.height > 0, subInside: !!sr && sr.top >= br.top - 1 && sr.bottom <= br.bottom + 1 && sr.left >= br.left - 1 && sr.right <= br.right + 1, subBelow: !!sr && sr.top >= lr.bottom - 2,
             wrapped: bs.filter((b) => lines(b.querySelector('.btn-t')) > 1 || (b.querySelector('small') && lines(b.querySelector('small')) > 1)).map((b) => b.textContent.trim()),
             menuScrolls: menu.scrollHeight > menu.clientHeight + 1, scrScrolls: scr.scrollHeight > scr.clientHeight + 1,
+            foot: (() => { const f = scr.querySelector('.main-foot'), fr = f && f.getBoundingClientRect(); return f ? { text: f.textContent, inView: fr.width > 0 && fr.left >= -1 && fr.right <= innerWidth + 1 && fr.top >= 0 && fr.bottom <= innerHeight + 1, hits: bs.filter((b) => { const r = b.getBoundingClientRect(); return r.left < fr.right && r.right > fr.left && r.top < fr.bottom && r.bottom > fr.top; }).length } : null; })(),
             off: bs.filter((b) => { const r = b.getBoundingClientRect(); return r.top < -1 || r.bottom > innerHeight + 1 || r.left < -1 || r.right > innerWidth + 1; }).map((b) => b.textContent.trim().slice(0, 14)),
             overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth };
         })()`);
@@ -92,6 +93,9 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
         if (w <= 760) assert.ok(m.subBelow, 'on a narrow screen the line sits under the label (side by side it does not fit): ' + at);
         assert.deepEqual(m.wrapped, [], 'no label wraps: ' + at); assert.ok(!m.menuScrolls && !m.scrScrolls, 'the menu needs no scrollbar: ' + at);
         assert.deepEqual(m.off, [], 'every entry is on screen: ' + at); assert.ok(m.overflowX <= 1, 'no sideways scroll: ' + at);
+        // R2-V-12: the footer describes the game in its own words (it named two other games), and it stays on screen, clear of the entries, at every size
+        assert.ok(m.foot && m.foot.text.length >= 20 && !/Mario|Star ?Fox|Nintendo/i.test(m.foot.text), 'the footer is the game\'s own words, no third-party game names: ' + at);
+        assert.ok(m.foot.inView && m.foot.hits === 0, 'the footer is on screen and clear of the entries: ' + at);
       }
     } finally { await page.eval(`__sky.game.ui.save.gp = null`); }
   });
@@ -141,7 +145,7 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     }
   });
 
-  check('aircraft: the details panel never scrolls on a short landscape window, for any aircraft, keeps its name, bars and swatches, and refits when the window changes (round 3)', async () => {
+  check('aircraft: the details panel never scrolls on a short landscape window, for any aircraft, keeps its name, bars and swatches, and refits when the window changes (round 3); the bars are at least 40 px wide at every size, tablets upright included (R2-V-04)', async () => {
     // The panel (.info) stacks class chip, name, tagline, six stat bars, livery name and swatches. It used to scroll on every landscape phone: 12 px past its box at 844x390, 15 at 812x375, 30 at 640x360, 79 at 1024x600.
     // select.js fit() now takes room back in steps (spacing, tagline, bar icons, ...) only while the content is taller than the panel. Per aircraft (the stage's next arrow steps through them): scrollHeight - clientHeight is 0.
     const panel = () => page.eval(`(async () => {
@@ -151,7 +155,8 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
         await new Promise((r) => setTimeout(r, 220));   // longer than the swatches' .12 s transform transition, so the selected one is measured where it settles
         const ib = info.getBoundingClientRect(), sw = [...info.querySelectorAll('.sw')], inside = (e) => { const b = e.getBoundingClientRect(); return b.top >= ib.top - 1 && b.bottom <= ib.bottom + 1; };
         const stats = [...info.querySelectorAll('.stat')], lastBar = stats[stats.length - 1].getBoundingClientRect(), swTop = Math.min(...sw.map((e) => e.getBoundingClientRect().top));   // as drawn: the selected swatch is lifted and scaled
-        out.push({ who: info.querySelector('.ac-name').textContent, over: info.scrollHeight - info.clientHeight, nameOn: shown(info.querySelector('.ac-name')), bars: stats.filter((e) => shown(e) && inside(e)).length,
+        // barW: the narrowest bar as laid out (offsetWidth, not the bounding box: the bars are skewed, which makes a zero-width bar measure 6 px wide, a slash: R2-V-04)
+        out.push({ who: info.querySelector('.ac-name').textContent, over: info.scrollHeight - info.clientHeight, nameOn: shown(info.querySelector('.ac-name')), bars: stats.filter((e) => shown(e) && inside(e)).length, barW: Math.min(...stats.map((e) => e.querySelector('.st-bar').offsetWidth)),
           swatches: sw.length, swIn: sw.filter(inside).length, clear: +(swTop - lastBar.bottom).toFixed(1), chip: shown(info.querySelector('.ac-cls')), tag: shown(info.querySelector('.ac-tag')), liv: shown(info.querySelector('.liv-l')),
           fit: (info.className.match(/fit\\d/g) || []).length });
         next.click();
@@ -159,11 +164,13 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
       return out;
     })()`);
     const open = async (w, h) => { await page.setViewport(w, h, { dpr: 1 }); await delay(300); await page.eval(`__sky.game.ui.startFlow('quick')`); await page.waitFor(`!!document.querySelector('.scr.aircraft .info .sw')`, { timeout: 20000 }); await delay(400); };
-    for (const [w, h] of [[844, 390], [812, 375], [667, 375], [640, 360], [568, 320], [896, 414], [932, 430], [800, 480], [1024, 600], [1280, 720], [390, 844]]) {
+    // 768x1024 and 820x1180 are tablets held upright: the details panel is 275 / 295 px wide there (R2-V-04: the bars were 0 px wide, a slash)
+    for (const [w, h] of [[844, 390], [812, 375], [667, 375], [640, 360], [568, 320], [896, 414], [932, 430], [800, 480], [1024, 600], [1280, 720], [390, 844], [768, 1024], [820, 1180]]) {
       await open(w, h);
       const rows = await panel(); assert.ok(rows.length >= 2, 'the aircraft screen lists its aircraft: ' + rows.length);
       for (const r of rows) {
         const at = `${w}x${h} ${r.who}: ${JSON.stringify(r)}`;
+        assert.ok(r.barW >= 40, `a stat bar is ${r.barW} px wide, under 40 (at 768x1024 the label column took the whole row and the bars were 0 px: a slash with only the number left): ` + at);
         assert.ok(r.over <= 0, 'the details panel scrolls by ' + r.over + ' px (a scrollbar over the stat bars on a phone): ' + at);
         assert.ok(r.nameOn && r.bars === 6, 'the aircraft name and all six stat bars stay on show, inside the panel: ' + at);
         assert.ok(r.swatches >= 2 && r.swIn === r.swatches, 'every livery swatch stays inside the panel: ' + at);
@@ -178,8 +185,11 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     // the panel refits when the window changes under it (a rotation) and gives the room back, without leaving the screen
     const now = () => page.eval(`(() => { const i = document.querySelector('.scr.aircraft .info'); return { over: i.scrollHeight - i.clientHeight, tag: getComputedStyle(i.querySelector('.ac-tag')).display !== 'none', fit: (i.className.match(/fit\\d/g) || []).length }; })()`);
     await open(1280, 720); let s = await now(); assert.ok(s.over <= 0 && s.tag, 'at 1280x720 the panel fits with its tagline: ' + JSON.stringify(s));
+    // 568x320 is a window where a step is always needed. (844x390 used to be one, until R2-V-07 moved the header up beside the pill: the panel then gains 26 px and fits with no step at all, which is checked next.)
+    await page.setViewport(568, 320, { dpr: 1 }); await delay(600); s = await now();
+    assert.ok(s.over <= 0 && !s.tag && s.fit >= 1, 'turned to 568x320 under the open screen, the panel refits by itself (no scrollbar, tagline given up, at least one step taken): ' + JSON.stringify(s));
     await page.setViewport(844, 390, { dpr: 1 }); await delay(600); s = await now();
-    assert.ok(s.over <= 0 && !s.tag && s.fit >= 1, 'turned to 844x390 under the open screen, the panel refits by itself (no scrollbar, tagline given up): ' + JSON.stringify(s));
+    assert.ok(s.over <= 0 && !s.tag, 'turned on to 844x390 it still fits (the tagline is left out of the short-landscape layout by the stylesheet): ' + JSON.stringify(s));
     await page.setViewport(1280, 720, { dpr: 1 }); await delay(600); s = await now();
     assert.ok(s.over <= 0 && s.tag, 'and back at 1280x720 it gives the room back (the tagline returns): ' + JSON.stringify(s));
   });
@@ -248,6 +258,15 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     await press('ArrowDown'); s = await at(); assert.ok(/Start race/.test(s.label) && s.footer, 'Down from the last row lands on Start race: ' + JSON.stringify(s));
     await press('ArrowLeft'); s = await at(); assert.ok(/Back/.test(s.label) && s.footer, 'Left along the footer row moves to Back: ' + JSON.stringify(s));
     await press('ArrowRight'); s = await at(); assert.ok(/Start race/.test(s.label), 'and Right moves back to Start race: ' + JSON.stringify(s));
+  });
+
+  check('race options: each difficulty has its own one-line description, in plain words about the rivals (difficulty copy)', async () => {
+    await goto('options');
+    const pick = async (i) => { await page.eval(`document.querySelectorAll('.scr.options .opt[data-id=opt-diff]')[${i}].click()`); await delay(150); return page.eval(`document.querySelector('.scr.options .opt-desc').textContent`); };
+    const got = {}; for (const [i, id] of ['easy', 'normal', 'hard', 'expert'].entries()) got[id] = await pick(i);
+    assert.equal(got.easy, 'Relaxed rivals. Good for learning the courses.'); assert.equal(got.normal, 'Rivals race properly. Fly clean and you can win.'); assert.equal(got.hard, 'Rivals fly the line and fight for it.');
+    assert.ok(got.expert.length > 10, 'Expert keeps a description of its own: ' + got.expert); assert.equal(new Set(Object.values(got)).size, 4, 'four different descriptions: ' + JSON.stringify(got));
+    await pick(1);   // back to Normal, the default
   });
 
   check('settings, controls, credits: reachable in <=2 arrows from first focus; Escape returns to the opener', async () => {
@@ -426,21 +445,90 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     } finally { await fresh({ clear: true }); }
   }, { own: true });
 
-  check('loading screen: the tips name the controls this device has - keys, then a first touch, then a gamepad on top of it (V-30 follow-up)', async () => {
+  check('loading screen: the tips name the controls of the device last used (input.lastDevice) - keys, a first touch, a pad button, a key again; a pad that is merely plugged in changes nothing (V-30 follow-up, R2-V-03)', async () => {
     const KEY = /Q \/ E|Hold B/, PAD = /LB \/ RB|right trigger|Press B instead/, SCREEN = /the ROLL buttons|the BOOST button|Tap ITEM/;
+    const isKeys = (t) => t.some((x) => /Q \/ E/.test(x)) && t.some((x) => /Hold B/.test(x)) && t.some((x) => /Tap BOOST in/.test(x)) && !t.some((x) => SCREEN.test(x) || PAD.test(x));
+    const isTouch = (t) => t.some((x) => /the ROLL buttons/.test(x)) && t.some((x) => /the BOOST button/.test(x)) && t.some((x) => /Tap ITEM/.test(x)) && !t.some((x) => KEY.test(x) || PAD.test(x));
+    const isPad = (t) => t.some((x) => /\(LB \/ RB\)/.test(x)) && t.some((x) => /right trigger/.test(x)) && t.some((x) => /Press B instead/.test(x)) && !t.some((x) => KEY.test(x) || SCREEN.test(x));
+    const dev = () => page.eval(`__sky.game.input.lastDevice`);
     try {
       await fresh({ clear: true });
-      let t = await loadingTips();
-      assert.ok(t.some((x) => /Q \/ E/.test(x)) && t.some((x) => /Hold B/.test(x)) && t.some((x) => /Tap BOOST in/.test(x)) && !t.some((x) => SCREEN.test(x) || PAD.test(x)), 'keyboard and mouse: key words only ' + JSON.stringify(t));
+      assert.equal(await dev(), 'keyboard', 'premise: a fresh page reads as the keyboard');
+      let t = await loadingTips(); assert.ok(isKeys(t), 'keyboard and mouse: key words only ' + JSON.stringify(t));
       await page.s('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
       await page.s('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 5, y: 700, id: 1 }] }); await page.s('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await delay(500);   // the first touch
-      assert.ok(await page.eval(`__sky.game.input.touchActive`), 'premise: the first touch made the controls touch controls');
-      t = await loadingTips();
-      assert.ok(t.some((x) => /the ROLL buttons/.test(x)) && t.some((x) => /the BOOST button/.test(x)) && t.some((x) => /Tap ITEM/.test(x)) && !t.some((x) => KEY.test(x) || PAD.test(x)), 'after a first touch: the on-screen buttons, no key ' + JSON.stringify(t));
-      await fakePad();
-      t = await loadingTips();
-      assert.ok(t.some((x) => /\(LB \/ RB\)/.test(x)) && t.some((x) => /right trigger/.test(x)) && t.some((x) => /Press B instead/.test(x)) && !t.some((x) => KEY.test(x) || SCREEN.test(x)), 'a pad on top of the touch screen: the pad buttons ' + JSON.stringify(t));
+      assert.ok(await page.eval(`__sky.game.input.touchActive`), 'premise: the first touch made the controls touch controls'); assert.equal(await dev(), 'touch');
+      t = await loadingTips(); assert.ok(isTouch(t), 'after a first touch: the on-screen buttons, no key ' + JSON.stringify(t));
+      await fakePad(); await delay(400);
+      t = await loadingTips(); assert.equal(await dev(), 'touch', 'a pad that is only plugged in does not take the device over');
+      assert.ok(isTouch(t), 'a pad that is only plugged in says nothing: the touch words stay (a connected pad used to win over the device being used) ' + JSON.stringify(t));
+      await padBtn(3);   // Y: no menu use of its own, so this only says "the pad is being used"
+      assert.equal(await dev(), 'pad', 'a press on the pad makes it the device in use'); t = await loadingTips(); assert.ok(isPad(t), 'after a pad button: the pad buttons ' + JSON.stringify(t));
+      await page.key('ShiftLeft'); await delay(200);
+      assert.equal(await dev(), 'keyboard', 'a key makes the keyboard the device in use again'); t = await loadingTips(); assert.ok(isKeys(t), 'after a key: key words again, with a pad still plugged in ' + JSON.stringify(t));
     } finally { await page.s('Emulation.setTouchEmulationEnabled', { enabled: false }).catch(() => {}); await fresh({ clear: true }); }
+  }, { own: true });
+
+  check('loading screen: it keeps its own heading, LOADING; Quit shows RETURNING TO THE HANGAR for that one visit, and the next race says LOADING again (R2-V-02)', async () => {
+    try {
+      await fresh({ clear: true }); await noHint();
+      // the heading each visit to the loading screen shows, read as the screen opens (enter() sets it at once)
+      await page.eval(`(() => { const u = __sky.game.ui, open = u.goto.bind(u); window.__ld = []; u.goto = (name, p) => { const r = open(name, p); if (name === 'loading') window.__ld.push(document.querySelector('.scr.loading .ld-h').textContent); return r; }; })()`);
+      const heads = async () => (await page.eval(`window.__ld.slice()`)).filter((x, i, a) => x !== a[i - 1]);   // one entry per run of the same heading
+      const race = async () => { await page.eval(`(() => { const u = __sky.game.ui; u.startFlow('quick'); u.flow.course = 'sunrise'; u.flow.laps = 1; u.launch(); })()`); await page.waitFor(`__sky.game.state === 'race'`, { timeout: 120000 }); };
+      await race(); assert.deepEqual(await heads(), ['LOADING'], 'a race loads under LOADING');
+      await page.eval(`__sky.game.ui.quit(true)`);   // Quit to menu
+      await page.waitFor(`__sky.game.ui.cur && __sky.game.ui.cur.name === 'main'`, { timeout: 60000 }); await delay(400);
+      assert.deepEqual(await heads(), ['LOADING', 'RETURNING TO THE HANGAR'], 'quitting says where the player is going');
+      await race();
+      assert.deepEqual(await heads(), ['LOADING', 'RETURNING TO THE HANGAR', 'LOADING'], 'the next race is back to LOADING (the quit heading used to stay on the screen for good)');
+      assert.equal(await page.eval(`document.querySelector('.scr.loading .ld-h').textContent`), 'LOADING', 'and that is what the element shows');
+    } finally { await fresh({ clear: true }); }
+  }, { own: true });
+
+  check('first-race hint: the rows are the ones of the device in use, found by name; F / Enter is the item on the keyboard; the steering-assist note shows for the keyboard only while the assist is on, and the card never scrolls (R2-V-03 / R2-P-04)', async () => {
+    const card = () => page.eval(`(() => { const p = document.querySelector('.scr.hint .hint-panel'), n = p.querySelector('.hint-note'), go = p.querySelector('.btn').getBoundingClientRect(), pr = p.getBoundingClientRect();
+      return { keys: [...p.querySelectorAll('.hint-list li')].map((li) => li.firstChild.textContent), acts: [...p.querySelectorAll('.hint-list li')].map((li) => li.lastChild.textContent), note: n.hidden ? null : n.textContent, over: p.scrollHeight - p.clientHeight, goIn: go.bottom <= innerHeight + 1 && go.bottom <= pr.bottom + 1 }; })()`);
+    const open = async (device, settings = {}) => { await page.eval(`(() => { const u = __sky.game.ui, g = __sky.game; g.input.lastDevice = ${JSON.stringify(device)}; for (const [k, v] of Object.entries(${JSON.stringify(settings)})) u.setSetting(k, v); u.goto('main'); u.goto('hint'); })()`); await delay(500); return card(); };
+    try {
+      await fresh({ clear: true });
+      let c = await open('keyboard');
+      assert.deepEqual(c.keys, ['W / Up', 'S / Down', 'A / Left, D / Right', 'Q / E', 'Shift', 'Space', 'F / Enter', 'Esc / P'], 'keyboard: the eight things a first-timer needs, the item on F / Enter (it was the 8th row and was cut off): ' + JSON.stringify(c));
+      assert.ok(/^Use item/.test(c.acts[6]), 'F / Enter uses an item: ' + JSON.stringify(c.acts));
+      assert.ok(c.note && /flies the course for you when you are not steering/.test(c.note) && /hold a key to take over/.test(c.note) && /Hands off for long and it cruises slower/.test(c.note), 'the keyboard card tells what the steering assist does and what hands-off costs: ' + JSON.stringify(c.note));
+      assert.ok(!/Settings/.test(c.note), 'and has no room for where to change it: ' + c.note);
+      for (const [w, h] of [[1280, 720], [390, 844], [844, 390], [812, 375], [600, 300]]) {
+        await page.setViewport(w, h, { dpr: 1 }); await delay(300); c = await open('keyboard');
+        assert.ok(c.over <= 1 && c.goIn && c.keys.length === 8, `${w}x${h}: all eight rows, the note and the button fit the card without a scrollbar: ${JSON.stringify(c)}`);
+      }
+      await page.setViewport(1280, 720, { dpr: 1 });
+      c = await open('pad'); assert.deepEqual(c.keys, ['Left stick', 'LB / RB', 'Right trigger', 'X', 'A', 'Start'], 'gamepad: the pad rows, A (not B) for the item: ' + JSON.stringify(c)); assert.equal(c.note, null, 'no keyboard steering note for a pad');
+      c = await open('touch'); assert.deepEqual(c.keys, ['Left thumb: drag', '< ROLL / > ROLL', 'BOOST / FIRE / ITEM', 'II'], 'touch: the on-screen controls, and no respawn row that does not exist: ' + JSON.stringify(c)); assert.equal(c.note, null, 'no keyboard steering note for touch');
+      c = await open('keyboard', { keyGuide: false }); assert.equal(c.note, null, 'the steering assist is off: the card does not describe it');
+      c = await open('keyboard', { keyGuide: true, assist: 'pro' }); assert.equal(c.note, null, 'Pro assist never steers: the card does not describe it');
+      c = await open('keyboard', { assist: 'standard' }); assert.ok(c.note && /flies the course/.test(c.note), 'Standard with the assist on: described again');
+    } finally { await fresh({ clear: true }); }
+  }, { own: true });
+
+  check('settings: the Steering assist (keyboard) row is on by default, a key switches it, a reload keeps it, Reset restores it, and the Controls note follows it (R2-P-04)', async () => {
+    const row = `document.querySelector('.scr.settings .toggle[aria-label="Steering assist (keyboard)"]')`;
+    const shown = () => page.eval(`(() => { const t = ${row}; return t ? { checked: t.getAttribute('aria-checked'), text: t.textContent } : null; })()`);
+    const stored = () => page.eval(`JSON.parse(localStorage.getItem('skyblitz.settings.v1') || '{}').keyGuide`);
+    const note = async () => { await page.eval(`(() => { const u = __sky.game.ui; u.goto('main'); u.goto('controls', { back: 'main' }); })()`); await delay(500); return page.eval(`(() => { const n = document.querySelector('.scr.controls .assist-note'); return n ? n.textContent : null; })()`); };
+    const openSettings = async () => { await page.eval(`(() => { const u = __sky.game.ui; u.goto('main'); u.goto('settings', { back: 'main' }); })()`); await delay(500); };
+    try {
+      await fresh({ clear: true }); await openSettings();
+      assert.deepEqual(await shown(), { checked: 'true', text: 'ON' }, 'on by default'); assert.equal(await page.eval(`__sky.game.settings.keyGuide`), true);
+      await page.eval(`${row}.focus()`); await press('Enter');
+      assert.equal(await page.eval(`__sky.game.settings.keyGuide`), false, 'Enter switches it off'); assert.deepEqual(await shown(), { checked: 'false', text: 'OFF' }); assert.equal(await stored(), false, 'and it is saved');
+      await fresh();   // a new page, the same profile
+      assert.equal(await page.eval(`__sky.game.settings.keyGuide`), false, 'a reload keeps it off'); await openSettings(); assert.deepEqual(await shown(), { checked: 'false', text: 'OFF' }, 'and the row shows it');
+      let t = await note(); assert.ok(/^Steering assist is off/.test(t) && /\nSwitch it on in Settings\.$/.test(t) && !/flies the course|cruises slower/.test(t), 'the Controls screen says it is off, and where to switch it on: ' + JSON.stringify(t));
+      await openSettings(); await page.eval(`[...document.querySelectorAll('.scr.settings .btn')].find((b) => /Reset/.test(b.textContent)).focus()`); await press('Enter');
+      assert.equal(await page.eval(`__sky.game.settings.keyGuide`), true, 'Reset to defaults switches it back on'); assert.deepEqual(await shown(), { checked: 'true', text: 'ON' }); assert.equal(await stored(), true);
+      t = await note(); assert.equal(t, 'Standard assist flies the course for you when you are not steering; hold a key to take over. Hands off for long and it cruises slower.\nSwitch this off in Settings.', 'on: what it does and what hands-off costs, then where to change it, as two lines');
+      await page.eval(`__sky.game.ui.setSetting('assist', 'pro')`); t = await note(); assert.ok(/^Pro assist: hands-on/.test(t) && !/flies the course|cruises slower/.test(t), 'Pro: hands-on, whatever the switch says: ' + JSON.stringify(t));
+    } finally { await fresh({ clear: true }); }
   }, { own: true });
 
   const raceReady =() => page.waitFor(`__sky.game.state === 'race'`, { timeout: 120000 });
@@ -498,6 +586,93 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     }
   });
 
+  // ---- round 2: short landscape windows (R2-V-05 to R2-V-07) and the Grand Prix table on a laptop window (R2-V-08)
+  // A results screen with the eight rows of a race, the player in place `me`; as a Grand Prix race (gp) it also carries the championship.
+  const RES_OTHERS = [['Nova Kim', '#e6212b', 'Falcon F-1'], ['Rosa Vega', '#ff7bc0', 'Comet X'], ['Mika Tanaka', '#18b8b0', 'Kestrel'], ['Ace Hardcastle', '#2f7bff', 'Bulldog'], ['Zed', '#ffcf1f', 'Wasp'], ['Pip Moreau', '#5bd16a', 'Manta'], ['Dutch Bergman', '#6f8f3a', 'Anvil']];
+  const resultsRows = (me) => { const o = RES_OTHERS.slice(); return Array.from({ length: 8 }, (_, i) => { const p = i + 1, x = p === me ? ['You', '#ffd02e', 'Falcon F-1'] : o.shift(); return { place: p, name: x[0], color: x[1], craft: x[2], time: 90 + p * 1.7, best: 30 + p * 0.4, points: Math.max(0, 9 - p), me: p === me }; }); };
+  const openResults = async ({ gp = false, me = 6, rec = false } = {}) => {
+    const rows = resultsRows(me), pending = Object.fromEntries(rows.map((r) => [r.name, { pts: r.points, win: r.place === 1 ? 1 : 0, color: r.color, isPlayer: r.me }]));
+    await page.eval(`(() => { const u = __sky.game.ui; u.goto('main'); u.flow = { mode: ${gp ? "'gp'" : "'quick'"}, craft: 'falcon', course: 'sunrise', difficulty: 'normal', laps: 3 };
+      u.gp = ${gp ? `{ race: 1, totals: ${JSON.stringify(GP_TOTALS)} }` : 'null'}; u.pending = ${gp ? JSON.stringify(pending) : 'null'};
+      u.lastResults = { rows: ${JSON.stringify(rows)}, rec: ${rec ? '{ newRace: true, newLap: true }' : 'null'}, stats: { stunts: 4, perfectGates: 7, shortcuts: 1, nearMisses: 2, hitsDealt: 3, hitsTaken: 1, overtakes: 5 }, courseId: 'sunrise', laps: 3, difficulty: 'normal', gpIndex: ${gp ? 1 : 0} };
+      u.goto('results'); })()`);
+    await delay(900);   // the screen slides in (0.35 s) and the player's row is brought into view a frame after that
+  };
+  const resultsView = () => page.eval(`(() => {
+    const scr = document.querySelector('.scr.results'), body = scr.querySelector('.res-body'), br = body.getBoundingClientRect(), q = (s) => scr.querySelector(s), shown = (e) => !!e && e.offsetParent !== null && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0;
+    const inBody = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.top >= br.top - 1 && r.bottom <= br.bottom + 1 && r.top >= 0 && r.bottom <= innerHeight + 1; };
+    const me = q('.res-t tbody tr.me'), line = q('.res-line'), lr = shown(line) ? line.getBoundingClientRect() : null, btns = [...scr.querySelectorAll('.res-act .btn')];
+    const whole = lr ? [...line.children].filter((c) => { const r = c.getBoundingClientRect(); return r.right <= lr.right + 1 && r.top >= lr.top - 1 && r.bottom <= lr.bottom + 1; }).map((c) => c.textContent.trim()) : [];
+    return { scrOver: scr.scrollHeight - scr.clientHeight, scrTop: scr.scrollTop, me: !!me && inBody(me), raceRows: [...scr.querySelectorAll('.res-t tbody tr')].filter(inBody).length, gpRows: [...scr.querySelectorAll('.res-gp tbody tr')].filter(inBody).length,
+      line: !!lr, lineWhole: whole, stats: shown(q('.res-stats')), btnsIn: btns.length > 0 && btns.every((b) => { const r = b.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight + 1 && r.left >= 0 && r.right <= innerWidth + 1; }),
+      h2Left: Math.round(q('.hdr h2').getBoundingClientRect().left), xo: document.documentElement.scrollWidth - document.documentElement.clientWidth, bodyOver: body.scrollHeight - body.clientHeight };
+  })()`);
+
+  check('results: on a short landscape window the player\'s own row, YOUR RACE (one line) and the buttons are on screen without scrolling the screen, whether the player came 6th or last (R2-V-05)', async () => {
+    for (const [w, h] of [[844, 390], [812, 375], [640, 360], [600, 300]]) {
+      await page.setViewport(w, h, { dpr: 1 }); await delay(300);
+      for (const [gp, me] of [[false, 6], [false, 8], [true, 6]]) {
+        await openResults({ gp, me });
+        const v = await resultsView(), at = `${w}x${h} ${gp ? 'Grand Prix' : 'race'}, you ${me}th: ${JSON.stringify(v)}`;
+        assert.ok(v.me, 'the player\'s own row is in view (it sat below the fold, behind a scroll nobody knew to make): ' + at);
+        assert.ok(v.line && v.lineWhole[0] === 'YOUR RACE' && v.lineWhole[1] === `Position ${me}th` && v.lineWhole.length >= 5, 'YOUR RACE is one line, the position first, and no item is cut in half: ' + at);
+        assert.equal(v.stats, false, 'the tall YOUR RACE panel gives way to the line here: ' + at);
+        assert.ok(v.scrOver <= 1 && v.scrTop === 0, 'the screen itself does not scroll (that would carry the title under the Almanac pill): ' + at);
+        assert.ok(v.btnsIn, 'the buttons are on screen: ' + at); assert.ok(v.h2Left >= 112, 'the title starts right of the pill (x >= 112): ' + at); assert.ok(v.xo <= 1, 'no sideways scroll: ' + at);
+      }
+    }
+  });
+
+  check('results: a Grand Prix shows all eight rows of the race table AND of the championship at 1280x720, 1366x768 and the other laptop windows; a plain race shows its eight (R2-V-08)', async () => {
+    for (const [w, h] of [[1280, 720], [1366, 768], [1280, 700], [1280, 800], [1024, 768], [1440, 900], [1920, 1080]]) {
+      await page.setViewport(w, h, { dpr: 1 }); await delay(300);
+      await openResults({ gp: true });
+      let v = await resultsView(), at = `${w}x${h} Grand Prix: ${JSON.stringify(v)}`;
+      assert.equal(v.raceRows, 8, 'all eight rows of the race table: ' + at); assert.equal(v.gpRows, 8, 'all eight rows of the championship (it showed 2 of 8 at 1280x720): ' + at);
+      assert.ok(v.me && v.btnsIn && v.bodyOver <= 1, 'the player\'s row and the buttons are in view and the body does not scroll: ' + at); assert.ok(v.xo <= 1, at);
+      await openResults({ gp: false });
+      v = await resultsView(); at = `${w}x${h} race: ${JSON.stringify(v)}`;
+      assert.equal(v.raceRows, 8, 'all eight rows of a plain race (the 8th was 41 px under the fold at 1280x720): ' + at); assert.ok(v.stats && v.btnsIn && v.bodyOver <= 1, 'with the YOUR RACE panel beside it: ' + at);
+    }
+  });
+
+  check('course select: on a short landscape window the cards are compact (map and name), two by two, with every name whole (R2-V-06)', async () => {
+    for (const [w, h] of [[844, 390], [812, 375], [640, 360], [600, 300], [568, 320]]) {
+      await page.setViewport(w, h, { dpr: 1 }); await delay(300); await openCourse(); await delay(500);
+      const m = await page.eval(`(() => { const scr = document.querySelector('.scr.course'), g = scr.querySelector('.cards'), gr = g.getBoundingClientRect(), cs = [...scr.querySelectorAll('.card')], R = (e) => { const r = e.getBoundingClientRect(); return { l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height }; };
+        const back = scr.querySelector('.ftr .btn').getBoundingClientRect();
+        return { cards: cs.map(R), inside: cs.every((c) => { const r = R(c); return r.t >= gr.top - 1 && r.b <= gr.bottom + 1 && r.l >= gr.left - 1 && r.r <= gr.right + 1; }), scrolls: g.scrollHeight > g.clientHeight + 1, scrOver: scr.scrollHeight - scr.clientHeight, scrTop: scr.scrollTop,
+          names: cs.map((c) => { const h3 = c.querySelector('h3'), hr = h3.getBoundingClientRect(), cr = c.getBoundingClientRect(); return { t: h3.textContent, whole: h3.scrollWidth <= h3.clientWidth + 1 && hr.left >= cr.left - 1 && hr.right <= cr.right + 1 && hr.top >= cr.top - 1 && hr.bottom <= cr.bottom + 1 }; }),
+          map: cs.map((c) => { const r = c.querySelector('.card-map').getBoundingClientRect(); return Math.round(Math.min(r.width, r.height)); }), backIn: back.bottom <= innerHeight + 1 && back.top >= 0, h2Left: Math.round(scr.querySelector('.hdr h2').getBoundingClientRect().left), xo: document.documentElement.scrollWidth - document.documentElement.clientWidth }; })()`);
+      const at = `${w}x${h}: ${JSON.stringify(m)}`, c = m.cards;
+      assert.equal(c.length, 4, at);
+      assert.ok(Math.abs(c[0].l - c[2].l) < 8 && Math.abs(c[1].l - c[3].l) < 8 && c[1].l > c[0].r - 8, 'two columns: ' + at); assert.ok(c[2].t >= c[0].b - 8 && Math.abs(c[0].t - c[1].t) < 12, 'two rows: ' + at);
+      assert.ok(m.inside && !m.scrolls && m.scrOver <= 1 && m.scrTop === 0, 'every card is whole inside its box and nothing scrolls: ' + at);
+      assert.deepEqual(m.names.filter((n) => !n.whole).map((n) => n.t), [], 'every course name is whole, not cut off: ' + at);
+      assert.ok(m.map.every((s) => s >= 60), 'every card still has its map, at least 60 px: ' + at); assert.ok(m.backIn, 'Back is on screen: ' + at); assert.ok(m.h2Left >= 112 && m.xo <= 1, 'title clear of the pill, no sideways scroll: ' + at);
+    }
+  });
+
+  check('race options and pause on a short landscape window: the title is clear of the pill, no key press scrolls the screen up under it, and Quit to menu is whole (R2-V-07)', async () => {
+    for (const [w, h] of [[844, 390], [812, 375], [640, 360], [600, 300]]) {
+      await page.setViewport(w, h, { dpr: 1 }); await delay(300);
+      await page.eval(`(() => { document.activeElement && document.activeElement.blur(); const u = __sky.game.ui; u.startFlow('quick'); u.after('aircraft'); u.after('course'); })()`); await delay(800);
+      const view = () => page.eval(`(() => { const scr = document.querySelector('.scr.options'), R = (e) => e.getBoundingClientRect(), ctl = [...scr.querySelectorAll('.btn, .opt')].filter((e) => R(e).width > 0);
+        return { screen: __sky.game.ui.cur.name, scrOver: scr.scrollHeight - scr.clientHeight, scrTop: scr.scrollTop, h2Left: Math.round(R(scr.querySelector('.hdr h2')).left), underPill: ctl.filter((e) => R(e).left < 112 && R(e).top < 44).length,
+          off: ctl.filter((e) => { const r = R(e); return r.top < 0 || r.bottom > innerHeight + 1 || r.left < 0 || r.right > innerWidth + 1; }).map((e) => e.textContent.trim()), xo: document.documentElement.scrollWidth - document.documentElement.clientWidth }; })()`);
+      let v = await view(), at = `${w}x${h} options: ${JSON.stringify(v)}`;
+      assert.equal(v.screen, 'options', at); assert.ok(v.scrOver <= 1 && v.scrTop === 0, 'the options fit the window, nothing scrolls: ' + at); assert.ok(v.h2Left >= 112 && v.underPill === 0, 'title and controls clear of the pill: ' + at);
+      assert.deepEqual(v.off, [], 'every control is on screen: ' + at); assert.ok(v.xo <= 1, at);
+      for (const k of ['ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp']) { await press(k); v = await view(); assert.ok(v.screen === 'options' && v.scrTop === 0, `${at}: after ${k} the screen has not scrolled (focus used to scroll it up under the pill): ${JSON.stringify(v)}`); }
+      await page.eval(`(() => { const u = __sky.game.ui; u.goto('main'); u.goto('pause'); })()`); await delay(700);
+      const p = await page.eval(`(() => { const scr = document.querySelector('.scr.pause'), panel = scr.querySelector('.pause-panel'), pr = panel.getBoundingClientRect(), bs = [...panel.querySelectorAll('.btn')];
+        return { labels: bs.map((b) => b.textContent.trim()), whole: bs.map((b) => { const r = b.getBoundingClientRect(); return r.width > 0 && r.top >= pr.top - 1 && r.bottom <= pr.bottom + 1 && r.top >= 0 && r.bottom <= innerHeight + 1 && r.left >= 0 && r.right <= innerWidth + 1; }), panelOver: panel.scrollHeight - panel.clientHeight, scrOver: scr.scrollHeight - scr.clientHeight }; })()`);
+      const pat = `${w}x${h} pause: ${JSON.stringify(p)}`;
+      assert.deepEqual(p.labels, ['Resume', 'Restart race', 'Settings', 'Controls', 'Quit to menu'], pat); assert.deepEqual(p.whole, [true, true, true, true, true], 'all five entries are whole, Quit to menu too: ' + pat);
+      assert.ok(p.panelOver <= 1 && p.scrOver <= 1, 'the pause panel does not scroll: ' + pat);
+    }
+  });
+
   check('U-2: no menu screen is drawn during a race; only results after it; U-3: stunt popups merge and never overlap', async () => {
     await page.goto(GAME + '?debug=1&manual=1&autostart=1&mute=1&laps=1&bots=3&course=sunrise');
     await page.waitFor('window.__sky && __sky.ready && __sky.game.state === "race"', { timeout: 100000 });
@@ -549,6 +724,41 @@ test.after(async () => { await chrome.close(); await srv?.close(); });
     s = await state(); assert.notEqual(s.screen, 'pause', 'A on Resume closes the pause screen: ' + JSON.stringify(s));
     await delay(500); assert.ok((await page.eval(`__sky.game.simTime`)) > sim0, 'the simulation runs again after A on Resume');
     assert.equal(await page.eval(`__sky.game.state`), 'race', 'still in the race');
+  }, { own: true });
+
+  // The notice flight asks for (input:padunmapped) is drawn as a calm toast: one short line of plain words, no error colour or sound, a real width (not a strip), clear of the pill, gone after its time.
+  const toastView = () => page.eval(`(() => { const t = document.querySelector('.toast'), r = t.getBoundingClientRect(), s = getComputedStyle(t);
+    return { shown: !t.hidden && r.width > 0, text: t.textContent, cls: t.className, role: t.getAttribute('role'), l: r.left, t: r.top, r: r.right, b: r.bottom, w: r.width, h: r.height, vw: innerWidth, vh: innerHeight, n: document.querySelectorAll('.toast').length, err: window.__err | 0, fs: parseFloat(s.fontSize) }; })()`);
+  const NOTICE = /^Controller not recognised: using the default layout\. Check Controls\.$/;
+  check('gamepad: the unrecognised-controller notice (input:padunmapped) is one short calm line, readable on desktop and touch sizes, makes no error sound, does not stack, and goes away (pad notice)', async () => {
+    await fresh({ clear: true });
+    await page.eval(`(() => { window.__err = 0; __sky.game.events.on('ui:error', () => { window.__err++; }); })()`);
+    const say = async () => { await page.eval(`__sky.game.events.emit('input:padunmapped', { id: 'Generic USB Gamepad (Vendor: 0079 Product: 0006)', mapping: '' })`); await delay(300); return toastView(); };
+    for (const [w, h, touch] of [[1280, 720, false], [1920, 1080, false], [844, 390, true], [390, 844, true], [768, 1024, true]]) {
+      await page.setViewport(w, h, { dpr: 1 }); await page.eval(`document.getElementById('ui').classList.toggle('touch', ${touch})`); await delay(300);
+      let v = await say(), at = `${w}x${h}${touch ? ' touch' : ''}: ${JSON.stringify(v)}`;
+      assert.ok(v.shown, 'the notice is on screen: ' + at); assert.match(v.text, NOTICE, at); assert.ok(/\btoast-note\b/.test(v.cls) && v.role === 'status', 'a calm note, not the red alert: ' + at); assert.equal(v.err, 0, 'no error sound: ' + at);
+      assert.ok(v.l >= 0 && v.r <= v.vw && v.t >= 0 && v.b <= v.vh, 'inside the window: ' + at); assert.ok(!(v.l < 112 && v.t < 44), 'clear of the Almanac pill: ' + at);
+      assert.ok(v.w >= Math.min(260, v.vw * 0.5) && v.h <= v.fs * 5.5, 'a readable box of at most three lines (it was squeezed into a 5 px column, then into half the window): ' + at); assert.ok(v.fs >= 14, 'type at least 14 px: ' + at);
+      if (touch && w > h) assert.ok(v.r <= v.vw * 0.78, 'on a phone on its side the note ends before the BOOST / FIRE / ITEM / BRAKE buttons (they start at about 76% of the width): ' + at);
+      if (touch && w <= h) assert.ok(v.b <= v.vh * 0.45, 'held upright the note sits up under the HUD rows, not in the lower right where the buttons are: ' + at);
+      v = await say(); assert.equal(v.n, 1, 'a second event does not stack another toast: ' + at);
+      await page.eval(`__sky.game.ui.notice('later', 120)`); await delay(500); v = await toastView(); assert.equal(v.shown, false, 'and it goes away after its time: ' + at);
+    }
+    await page.eval(`__sky.game.ui.toast('Something broke')`); let v = await toastView();
+    assert.ok(v.shown && !/toast-note/.test(v.cls) && v.role === 'alert' && v.err === 1, 'the red alert toast is still an alert and still sounds: ' + JSON.stringify(v));
+    await page.setViewport(1280, 720, { dpr: 1 }); await page.eval(`document.getElementById('ui').classList.remove('touch')`);
+  }, { own: true });
+
+  check('gamepad: a controller that is not standard-mapped is read through the default layout, tells the player once, and the notice shows (pad notice, end to end)', async () => {
+    await page.goto(GAME + '?debug=1&manual=1&autostart=1&mute=1&laps=1&bots=3&course=sunrise'); await page.waitFor('window.__sky && __sky.ready && __sky.game.state === "race"', { timeout: 100000 });
+    await page.eval(`(() => { window.__pu = 0; __sky.game.events.on('input:padunmapped', () => { window.__pu++; });
+      window.__pad = { connected: true, id: 'Generic USB Gamepad (Vendor: 0079 Product: 0006)', index: 0, mapping: '', timestamp: 0, axes: [0, 0, 0, 0, 0, 0], buttons: Array.from({ length: 12 }, () => ({ pressed: false, value: 0 })) }; navigator.getGamepads = () => [window.__pad]; })()`);
+    for (let i = 0; i < 6; i++) await page.eval(`__sky.game.input.sample()`);
+    await delay(300);
+    const r = await page.eval(`({ pu: window.__pu, mapping: __sky.game.input.padMapping })`), v = await toastView();
+    assert.equal(r.pu, 1, 'the event comes once per connect, not once per frame: ' + JSON.stringify(r)); assert.equal(r.mapping, 'dinput');
+    assert.ok(v.shown && NOTICE.test(v.text) && /toast-note/.test(v.cls), 'and the player is told, calmly: ' + JSON.stringify(v));
   }, { own: true });
 
   check('touch: on-screen controls usable and clear of the HUD at 844x390 and 390x844', async () => {

@@ -86,8 +86,6 @@ function createHazardVehicles(course, game) {
   const grp = new THREE.Group(); grp.name = 'traffic';
   const disp = [];
   const own = (o) => { disp.push(o); return o; };
-  const glow = (c, k) => own(new THREE.MeshBasicMaterial({ color: new THREE.Color(c).multiplyScalar(k), toneMapped: false }));
-  const amber = glow(0xffa022, 3.6), red = glow(0xff2a20, 3.2);
   const boxG = own(new THREE.BoxGeometry(1, 1, 1)), sphG = own(new THREE.SphereGeometry(1, 20, 12));
   const mk = (g, mat, sx, sy, sz, x, y, z) => { const o = new THREE.Mesh(g, mat); o.scale.set(sx, sy, sz); o.position.set(x, y, z); return o; };
   // Every vehicle is baked into three meshes: lit body+glass, emissive lights (vertex colours) and the blinking strobe.
@@ -96,6 +94,10 @@ function createHazardVehicles(course, game) {
   const glowMat = own(new THREE.MeshBasicMaterial({ vertexColors: true, color: 0xffffff, toneMapped: false }));
   const C = (hex, k = 1) => new THREE.Color(hex).multiplyScalar(k);
   const bodyC = C(0x20243a), glassC = C(0x0a1020), amberC = C(0xffa022, 3.6), cyanC = C(0x35e8ff, 3.2), whiteC = C(0xfff2dc, 3.4), redC = C(0xff2a20, 3.2), pinkC = C(0xff3fc8, 3.0);
+  // The blinking strobes use the SAME vertex-colour program as the lights (colour baked into the box), not a material of their own:
+  // three's compile() skips invisible objects, so a strobe material that is hidden at warm-up compiled mid-race (R2-E-05).
+  const strobeGeo = (col) => { const g = boxG.clone(), a = new Float32Array(g.attributes.position.count * 3); for (let i = 0; i < a.length; i += 3) { a[i] = col.r; a[i + 1] = col.g; a[i + 2] = col.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); return own(g); };
+  const amber = strobeGeo(amberC), red = strobeGeo(redC);
   const bake = (specs) => {
     const lit = [], gl = [];
     for (const [geo, col, glowing, sx, sy, sz, x, y, z] of specs) {
@@ -112,9 +114,9 @@ function createHazardVehicles(course, game) {
   const blimpGeo = bake([
     [sphG, bodyC, false, 8.4, 8.4, 19, 0, 0, 0], [boxG, glassC, false, 3, 2.4, 8, 0, -9.0, -1], [boxG, pinkC, true, 0.5, 5.6, 14, 8.55, 0.2, 0], [boxG, cyanC, true, 0.5, 5.6, 14, -8.55, 0.2, 0],
     [boxG, bodyC, false, 0.5, 8, 6, 0, 3.5, 17], [boxG, bodyC, false, 8, 0.5, 6, 0, 0, 17], [boxG, redC, true, 1, 1, 1, 0, 9.5, 0], [boxG, whiteC, true, 1, 1, 1, 0, 0.5, -19]]);
-  const vehicle = (geos, strobeMat, sx, sy, sz, x, y, z) => {
+  const vehicle = (geos, strobeG, sx, sy, sz, x, y, z) => {
     const g = new THREE.Group(); g.add(new THREE.Mesh(geos.lit, litMat), new THREE.Mesh(geos.glow, glowMat));
-    const st = mk(boxG, strobeMat, sx, sy, sz, x, y, z); g.add(st); g.userData.strobe = st; return g;
+    const st = mk(strobeG, glowMat, sx, sy, sz, x, y, z); g.add(st); g.userData.strobe = st; return g;
   };
   const hover = () => vehicle(hoverGeo, amber, 0.9, 0.9, 0.9, 0, 2.0, 0.5);
   const blimp = () => vehicle(blimpGeo, red, 1.4, 1.4, 1.4, 0, -10.6, -1);

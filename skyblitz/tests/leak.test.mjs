@@ -15,7 +15,7 @@ import { startStaticServer } from './tools/static-server.mjs';
 
 let BASE = process.env.SKY_URL || '';
 const COURSES = (process.env.LEAK_COURSES || 'redrock,sunrise,neon,frost').split(',');
-const RACES = Math.max(4, Number(process.env.LEAK_RACES || 5));
+const RACES = Math.max(4, Number(process.env.LEAK_RACES || 7));          // 7: six deltas after the warm-up race for the median
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // live WebGL object counters (create* minus delete*), installed before any page script runs
@@ -39,11 +39,15 @@ test.before(async () => {
 test.after(async () => { await chrome?.close(); await srv?.close(); });
 
 const J = async (expr) => JSON.parse(await page.eval(`JSON.stringify(${expr})`));
+// usedSize is the JS heap only. Typed arrays (bake tiles, attributes, particle buffers: this game's main data) keep their bytes in ArrayBuffer backing
+// stores outside it, so a disposed race that retains 0.5 MB of Float64Array was invisible (R2-E-12, mutation L1): add backingStorageSize.
 async function heapMB() {
   try { await page.s('HeapProfiler.enable'); } catch { /* already on */ }
   for (let k = 0; k < 2; k++) { await page.s('HeapProfiler.collectGarbage'); await delay(150); }
-  return +((await page.s('Runtime.getHeapUsage')).usedSize / 1048576).toFixed(2);
+  const h = await page.s('Runtime.getHeapUsage');
+  return +(((h.usedSize || 0) + (h.backingStorageSize || 0)) / 1048576).toFixed(2);
 }
+const median = (a) => { const s = [...a].sort((x, y) => x - y), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
 async function liveObjects() {
   const out = {};
   for (const [key, cls] of Object.entries(CLASSES)) {
@@ -63,9 +67,13 @@ async function runToDone() {
   throw new Error('race did not finish');
 }
 
-for (const course of COURSES) {
-  test(`${course}: ${RACES} consecutive races leave GL buffers, textures and heap flat`, { timeout: 1200000 }, async (t) => {
-    await page.goto(`${BASE}/?` + new URLSearchParams({ manual: 1, mute: 1, debug: 1, quality: 'low' }), { timeout: 90000 });
+// every course at Low (cheap, fast), plus one course at High, the desktop default: shadows, bloom, SMAA, full water and the High-only scenery
+// never went through a dispose cycle (R2-E-12). LEAK_HIGH=none skips it, LEAK_HIGH=neon picks another course.
+const RUNS = COURSES.map((course) => ({ course, quality: 'low' }));
+if ((process.env.LEAK_HIGH || 'redrock') !== 'none') RUNS.push({ course: process.env.LEAK_HIGH || 'redrock', quality: 'high' });
+for (const { course, quality } of RUNS) {
+  test(`${course}${quality === 'high' ? ' (High preset)' : ''}: ${RACES} consecutive races leave GL buffers, textures and heap flat`, { timeout: 1200000 }, async (t) => {
+    await page.goto(`${BASE}/?` + new URLSearchParams({ manual: 1, mute: 1, debug: 1, quality }), { timeout: 90000 });
     await page.waitFor('window.__sky && __sky.ready && __sky.game.state==="title"', { timeout: 120000 });
     await page.eval('__sky.step(120, 6)');
     const running = [], disposed = [];
@@ -105,7 +113,13 @@ for (const course of COURSES) {
     // is 0.91 MB V8 code (bytecode and feedback vectors of functions that warm up as the races repeat), 0.05 MB Chrome performance-entry buffers and 2 KB of game
     // objects (65 Objects, 26 Arrays). That warm-up measures 0.10-0.20 MB per race; the leak this test was written for grew 0.55 MB per race (redrock, 11.1 -> 13.3 MB
     // in 4 races), so the limit sits between them, and the live-object counts above carry the sharp check.
+    // R2-E-12: the figure is JS heap + ArrayBuffer backing stores, and the verdict is the MEDIAN per-race delta over the races after the warm-up race (a
+    // one-off lump from a lazily created pool cannot decide it), against 0.15 MB: baseline medians are 0.03-0.10 MB per race (mutation L4, 0.26 MB of
+    // small objects per race, and L1, 0.5 MB of Float64Array per race, must go red).
     const heaps = disposed.slice(a).map((s) => s.heap), perRace = slope(heaps);
+    const deltas = heaps.slice(1).map((v, i) => +(v - heaps[i]).toFixed(2)), med = median(deltas);
+    t.diagnostic(`${course} heap+backing per race: slope ${perRace.toFixed(3)} MB, median delta ${med.toFixed(3)} MB, deltas ${deltas.join(' ')}`);
+    assert.ok(med < 0.15, `heap + backing stores after GC grow by a median ${med.toFixed(2)} MB per race (${heaps.join(' -> ')} MB)`);
     assert.ok(perRace < 0.3, `heap after GC grows ${perRace.toFixed(2)} MB per race (${heaps.join(' -> ')} MB)`);
     assert.equal(disposed[b].errors, 0, '__sky.errors stays empty');
   });

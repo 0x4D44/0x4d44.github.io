@@ -5,6 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGovernor, CostMeter, GOV, PRESET_ORDER, lowerPreset, higherPreset } from '../src/governor.js';
+import { GpuTimer } from '../src/gpu-timer.js';
 import { defaultSettings, resolveSettings, settingsToStore, resolveQualityId, REDUCED_MOTION_DEFAULTS, MOTION_KEYS, QUALITY } from '../src/config.js';
 import { DEBUG_PARAMS, MAX_ERRORS, debugEnabled } from '../src/debug.js';
 import { launchChrome } from './tools/chrome.mjs';
@@ -133,6 +134,115 @@ test('governor: reset() restarts from the player\'s pick; applied() keeps the sc
   assert.equal(g.state.upLocked, false);
 });
 
+/** Like drive(), with the frame interval (a number, or a function of time) and the GPU-timer flag under test control (R2-E-01). */
+function driveAt(secs, dtOf, costFn, { gpuKnown = true, ...opts } = {}) {
+  const g = createGovernor({ preset: 'high', renderScale: 1, ...opts });
+  g.hold(4);
+  const acts = [];
+  for (let t = 0; t < secs;) {
+    const dt = typeof dtOf === 'function' ? dtOf(t) : dtOf;
+    t += dt;
+    const a = g.frame(costFn(t, g.state.scale), dt, gpuKnown);
+    if (a) acts.push({ t: +t.toFixed(1), ...a });
+  }
+  return { g, acts, scales: acts.filter((a) => a.type === 'scale'), presets: acts.filter((a) => a.type === 'preset') };
+}
+
+test('governor R2-E-01: below 10 fps it still acts (5 fps, 600 ms of GPU work a frame: down to the floor, then a lower preset)', () => {
+  const r = driveAt(120, 0.2, () => 600);
+  assert.ok(r.scales.length >= 1 && r.scales[0].t < 20, `a first step down within 20 s: ${JSON.stringify(r.acts)}`);
+  assert.equal(r.g.state.scale, 0.6, 'ends at the floor');
+  assert.equal(r.presets.length, 1, 'and asks for one lower preset');
+  assert.equal(r.presets[0].preset, 'med');
+});
+
+test('governor R2-E-01: a slow machine whose frames straddle the 250 ms stall limit still acts (a third of the frames are "long")', () => {
+  const r = driveAt(120, (t) => 0.12 + 0.2 * wobble(t), () => 600);       // 120-320 ms
+  assert.ok(r.scales.length >= 1 && r.g.state.scale < 1, JSON.stringify(r.acts));
+});
+
+test('governor R2-E-01: at 2 fps the window stretches back to minSamples frames instead of waiting for 30 frames in 3 s', () => {
+  const r = driveAt(240, 0.5, () => 1500);
+  assert.ok(r.scales.length >= 1 && r.scales[0].t < 30, `a first step down within 30 s: ${JSON.stringify(r.acts)}`);
+});
+
+test('governor R2-E-01: a long frame is a stall in a normal run and a cost on a slow machine; after wake() it is a stall again', () => {
+  const g = createGovernor({}); g.hold(0);
+  for (let i = 0; i < 100; i++) g.frame(5, 1 / 60);
+  const t0 = g.state.t;
+  g.frame(900, 1.5);
+  assert.equal(g.state.t, t0, 'a lone 1.5 s frame among 60 Hz frames is a stall: governor time does not advance');
+  const slow = createGovernor({}); slow.hold(0);
+  for (let i = 0; i < 100; i++) slow.frame(600, 0.2);
+  const t1 = slow.state.t;
+  slow.frame(1500, 1.5);
+  assert.ok(Math.abs(slow.state.t - (t1 + 1.5)) < 1e-3, `on a machine that is slow on every frame a 1.5 s frame is its cost: governor time advanced ${t1} -> ${slow.state.t}`);
+  slow.wake();
+  const t2 = slow.state.t;
+  slow.frame(1500, 1.5);
+  assert.equal(slow.state.t, t2, 'right after wake() (the tab was hidden) the same frame is a stall');
+  const gone = createGovernor({}); gone.hold(0);
+  for (let i = 0; i < 100; i++) gone.frame(600, 0.2);
+  const t3 = gone.state.t;
+  gone.frame(5000, 3);
+  assert.equal(gone.state.t, t3, 'a frame over maxSlowDt (a sleep, a debugger) is a stall even on a slow machine');
+});
+
+test('governor R2-E-01: without a GPU timer the frame interval counts (40 ms between frames over 4 ms of CPU steps down); at 60 Hz, at 50 Hz, or with the timer it does not', () => {
+  const slow = driveAt(90, 0.04, () => 4, { gpuKnown: false });
+  assert.ok(slow.scales.length >= 1 && slow.scales[0].t < 20 && slow.g.state.scale <= 0.8, `steps down early, two at once: ${JSON.stringify(slow.acts)}`);
+  assert.deepEqual(driveAt(300, 1 / 60, () => 4, { gpuKnown: false }).acts, [], '60 Hz, no timer: nothing');
+  assert.deepEqual(driveAt(300, 0.02, () => 4, { gpuKnown: false }).acts, [], '50 Hz, no timer: nothing');
+  assert.deepEqual(driveAt(300, 0.04, () => 4, { gpuKnown: true }).acts, [], 'a timer that says the GPU is idle: the interval is not a cost (a display capped at 25 fps)');
+});
+
+test('governor R2-E-01: no GPU timer: the scale comes back once the interval is under 19 ms, and not while it sits in the 19-22 ms dead band', () => {
+  const back = driveAt(240, (t) => (t < 40 ? 0.04 : 1 / 60), () => 4, { gpuKnown: false });
+  assert.ok(back.scales.some((a) => a.scale < 1) && back.g.state.scale === 1, `down, then back to full: ${JSON.stringify(back.acts)}`);
+  const stay = driveAt(240, (t) => (t < 40 ? 0.04 : 0.021), () => 4, { gpuKnown: false });
+  const low = stay.g.state.scale;
+  assert.ok(low < 1, 'it did step down');
+  assert.deepEqual(stay.scales.filter((a) => a.t > 45 && a.scale > low), [], 'no step up at a 21 ms interval');
+});
+
+test('governor R2-E-16: one step up from a quiet median can never reach the overload line, whatever the preset floor (no headroom check needed)', () => {
+  for (const id of PRESET_ORDER) {
+    const floor = drive(60, () => 30, { preset: id, renderScale: QUALITY[id].renderScale }).g.state.scale;       // where an overloaded run ends up
+    const worst = GOV.upMs * ((floor + GOV.stepUp) / floor) ** 2;                                                   // cost follows pixels
+    assert.ok(worst < GOV.downMs, `${id}: floor ${floor}, a quiet ${GOV.upMs} ms median can only reach ${worst.toFixed(2)} ms after one step up (line ${GOV.downMs})`);
+  }
+});
+
+/** A WebGL2 stand-in with just the timer-query calls. `next.ms` is the GPU time the next query will report; `disjoint` makes the driver void it. */
+function fakeGl({ ext = true } = {}) {
+  const next = { ms: 2, disjoint: false };
+  const gl = {
+    next, QUERY_RESULT_AVAILABLE: 1, QUERY_RESULT: 2,
+    getExtension: (n) => (ext && n === 'EXT_disjoint_timer_query_webgl2' ? { TIME_ELAPSED_EXT: 3, GPU_DISJOINT_EXT: 4 } : null),
+    createQuery: () => ({}), beginQuery() {}, endQuery() {}, deleteQuery() {},
+    getQueryParameter: (q, p) => (p === 1 ? true : next.ms * 1e6), getParameter: () => next.disjoint,      // a result is whatever `next` says when it is polled
+  };
+  return gl;
+}
+const timerFrame = (t) => { t.begin(); t.end(); t.begin(); t.end(); };      // begin() polls the queries that are still pending
+
+test('gpu timer: live only once a real reading has arrived; a very slow GPU frame (3.5 s) is read, a garbage one (0, 6 s, a disjoint query) is not', () => {
+  const none = new GpuTimer(fakeGl({ ext: false }));
+  timerFrame(none);
+  assert.deepEqual([none.supported, none.live, none.ms], [false, false, 0], 'no extension: no timer');
+  const gl = fakeGl(), t = new GpuTimer(gl);
+  assert.deepEqual([t.supported, t.live], [true, false], 'the extension exists but nothing has been read yet');
+  gl.next.ms = 2.5; timerFrame(t);
+  assert.deepEqual([t.live, t.ms], [true, 2.5]);
+  gl.next.ms = 3500; timerFrame(t);
+  assert.equal(t.ms, 3500, 'a software renderer at under 1 fps: its real frame time is kept (the old 1 s cut-off dropped it)');
+  for (const bad of [0, 6000]) { gl.next.ms = bad; timerFrame(t); assert.equal(t.ms, 3500, `${bad} ms is dropped`); }
+  gl.next.ms = 9; gl.next.disjoint = true; timerFrame(t);
+  assert.equal(t.ms, 3500, 'a disjoint query is dropped');
+  const idle = new GpuTimer(fakeGl()); idle.dead = true;
+  assert.deepEqual([idle.supported, idle.live], [false, false], 'a timer that threw is dead');
+});
+
 test('cost meter: a 144 Hz display and catch-up frames cost the same as 60 Hz (one sim step + one render)', () => {
   const m60 = new CostMeter(), m144 = new CostMeter(), mLate = new CostMeter();
   let c60, c144, cl;
@@ -253,6 +363,24 @@ async function withPage(query, fn, { setup, wait = READY, timeout = 90000, raw =
   } finally { await page.close(); }
 }
 
+/** Holds every request whose URL matches `pattern` (CDP Fetch) until `release()`, after which new requests go straight through; with `delayMs` each one is
+ *  passed on that long after it was made instead (a slow network). `ids`: the requests being held. */
+function holdRequests(pattern, { delayMs = null } = {}) {
+  const h = { ids: [], open: false, page: null };
+  h.setup = async (page) => {
+    h.page = page;
+    page.cdp.on((m) => {
+      if (m.sessionId !== page.sid || m.method !== 'Fetch.requestPaused') return;
+      const requestId = m.params.requestId, go = () => page.s('Fetch.continueRequest', { requestId }).catch(() => {});
+      if (delayMs != null) setTimeout(go, delayMs); else if (h.open) go(); else h.ids.push(requestId);
+    });
+    await page.s('Fetch.enable', { patterns: [{ urlPattern: pattern, requestStage: 'Request' }] });
+  };
+  h.release = async () => { h.open = true; for (const requestId of h.ids.splice(0)) await h.page.s('Fetch.continueRequest', { requestId }).catch(() => {}); };
+  return h;
+}
+const holdScenery = () => holdRequests('*src/world/courses/*-scenery.js*');     // the demo race's build waits on one of these
+
 // ---- E-29
 
 test('E-29: a bare URL (and ?mute alone) exposes no test surface and leaves console.error alone', async () => {
@@ -291,24 +419,84 @@ test('E-11: a game module that fails to download gives a "failed to load" overla
   }, { wait: null, setup: async (page) => { await page.s('Network.enable'); await page.s('Network.setBlockedURLs', { urls: ['*src/race/items.js'] }); } });
 });
 
-test('E-11: a module request that never finishes shows the "has not started" message after 8 s, and the message goes away when the game does start', async () => {
-  let held = null, t0 = 0;
+// R2-E-03: a slow connection is not a failure. The clocks are shortened through window.__skyBootTimings (index.html reads it before anything else runs).
+const OVERLAY = `(() => { const a = document.getElementById('sb-boot'); return a && { text: a.innerText, role: a.getAttribute('role'), buttons: [...a.querySelectorAll('button')].map((b) => b.textContent) }; })()`;
+const bootTimings = (t) => ({ source: `window.__skyBootTimings = ${JSON.stringify(t)};` });
+
+test('E-11 / R2-E-03: a module request that is slow to arrive shows "Still loading" (no failure wording, no Reload button) after the soft time, and the message goes away when the game does start', async () => {
+  const hold = holdRequests('*src/race/items.js*');
+  let t0 = 0;
   await withPage('?mute=1', async (page) => {
     await page.waitFor(ALERT, { timeout: 20000 });
-    const o = await J(page, `(() => { const a = document.getElementById('sb-boot'); return { text: a.innerText, buttons: [...a.querySelectorAll('button')].map((b) => b.textContent) }; })()`);
-    assert.ok(Date.now() - t0 >= 7000, `not before the 8 s mark (${Date.now() - t0} ms after the navigation)`);
-    assert.match(o.text, /Skyblitz failed to load/); assert.match(o.text, /has not started after 8 seconds/); assert.deepEqual(o.buttons, ['Reload']);
-    assert.ok(held, 'the request was held');
-    await page.s('Fetch.continueRequest', { requestId: held });                  // the slow network finally delivers
+    const o = await J(page, OVERLAY);
+    assert.ok(Date.now() - t0 >= 1300, `not before the soft time (${Date.now() - t0} ms after the navigation)`);
+    assert.match(o.text, /Still loading/); assert.doesNotMatch(o.text, /fail|error|reload/i, 'a slow load is not a failure'); assert.deepEqual(o.buttons, []); assert.equal(o.role, 'status');
+    await delay(2500);                                                           // long after the soft time, well inside the stall time: it stays that way
+    assert.match((await J(page, OVERLAY)).text, /Still loading/);
+    assert.ok(hold.ids.length >= 1, 'the request was held');
+    await hold.release();                                                        // the slow network finally delivers
     await page.waitFor(TITLE, { timeout: 60000 });
     assert.equal(await page.eval(ALERT), false, 'the soft message is withdrawn once the game is running');
   }, {
     wait: null, raw: true,
-    setup: async (page) => {
-      page.cdp.on((m) => { if (m.sessionId === page.sid && m.method === 'Fetch.requestPaused') held = m.params.requestId; });
-      await page.s('Fetch.enable', { patterns: [{ urlPattern: '*src/race/items.js*', requestStage: 'Request' }] });
-      t0 = Date.now();
-    },
+    setup: async (page) => { await page.s('Page.addScriptToEvaluateOnNewDocument', bootTimings({ soft: 1500, stall: 60000 })); await hold.setup(page); t0 = Date.now(); },
+  });
+});
+
+test('R2-E-03: when no file has finished downloading for the stall time the overlay says it failed and offers Reload; the game starting still removes it', async () => {
+  const hold = holdRequests('*src/race/items.js*');
+  let t0 = 0;
+  await withPage('?mute=1', async (page) => {
+    await page.waitFor(`/Still loading/.test(document.getElementById('sb-boot')?.innerText || '')`, { timeout: 20000 });
+    await page.waitFor(`/failed to load/.test(document.getElementById('sb-boot')?.innerText || '')`, { timeout: 20000 });
+    const o = await J(page, OVERLAY);
+    assert.ok(Date.now() - t0 >= 3000, `not before the stall time (${Date.now() - t0} ms after the navigation)`);
+    assert.match(o.text, /Skyblitz failed to load/); assert.match(o.text, /Nothing has downloaded for 3 seconds/); assert.deepEqual(o.buttons, ['Reload']); assert.equal(o.role, 'alert');
+    await hold.release();
+    await page.waitFor(TITLE, { timeout: 60000 });
+    assert.equal(await page.eval(ALERT), false, 'withdrawn once the game is running');
+  }, {
+    wait: null, raw: true,
+    setup: async (page) => { await page.s('Page.addScriptToEvaluateOnNewDocument', bootTimings({ soft: 1000, stall: 3000 })); await hold.setup(page); t0 = Date.now(); },
+  });
+});
+
+test('R2-E-03: a load that is slow but keeps making progress (every file 0.8 s late, the whole start longer than the stall time) is never called a failure', async () => {
+  const slow = holdRequests('*src/*.js*', { delayMs: 800 });
+  const t0 = Date.now(); let took = 0;
+  await withPage('?mute=1', async (page) => {
+    const texts = new Set();
+    for (;;) {                                                                    // watch the overlay until the title is up
+      const s = await J(page, `({ title: ${TITLE}, o: ${OVERLAY} })`).catch(() => null);
+      if (s?.o) texts.add(s.o.text.split('\n')[0]);
+      if (s?.title) break;
+      assert.ok(Date.now() - t0 < 90000, 'the game started');
+      await delay(150);
+    }
+    took = Date.now() - t0;
+    assert.ok(took > 3500, `the load really was slower than the stall time (${took} ms against 2500)`);
+    assert.ok(texts.has('Still loading...'), `the soft message was shown: ${[...texts]}`);
+    assert.ok(![...texts].some((t) => /fail/i.test(t)), `no failure wording while files keep arriving: ${[...texts]}`);
+    assert.equal(await page.eval(ALERT), false);
+  }, {
+    wait: null, raw: true,
+    setup: async (page) => { await page.s('Page.addScriptToEvaluateOnNewDocument', bootTimings({ soft: 1000, stall: 2500 })); await slow.setup(page); },
+  });
+});
+
+test('R2-E-03: a dynamic import that rejects before the game is up shows the failure card; an unrelated rejection does not', async () => {
+  const hold = holdRequests('*src/race/items.js*');
+  await withPage('?mute=1', async (page) => {
+    await delay(500);
+    await page.eval("Promise.reject(new Error('boom')); 1"); await delay(300);
+    assert.equal(await page.eval(ALERT), false, 'an unrelated rejection is not a load failure');
+    await page.eval("Promise.reject(new TypeError('Failed to fetch dynamically imported module: http://x/y.js')); 1");
+    await page.waitFor(ALERT, { timeout: 5000 });
+    const o = await J(page, OVERLAY);
+    assert.match(o.text, /Skyblitz failed to load/); assert.match(o.text, /did not download/); assert.deepEqual(o.buttons, ['Reload']);
+  }, {
+    wait: null, raw: true,
+    setup: async (page) => { await page.s('Page.addScriptToEvaluateOnNewDocument', bootTimings({ soft: 60000, stall: 60000 })); await hold.setup(page); },
   });
 });
 
@@ -323,7 +511,7 @@ test('E-11: without WebGL the page keeps its "WebGL2 is not available" message (
 
 // ---- E-12
 
-test('E-12: losing the WebGL context pauses the race and shows a notice; restoring it resumes; nothing throws', async () => {
+test('E-12 / R2-V-18: losing the WebGL context pauses the race and shows a notice; restoring it leaves the race paused on the pause menu with Resume focused (no restart mid-air); Resume flies on; nothing throws', async () => {
   await withPage('?debug=1&autostart=1&mute=1&course=sunrise&seed=7', async (page) => {
     await page.waitFor("__sky.game.state === 'race' && __sky.game.simTime > 0.5", { timeout: 90000 });
     const snap = () => J(page, `(() => { const g = __sky.game; return { lost: g.contextLost, paused: g.paused, sim: g.simTime, frame: g.frame, notice: document.getElementById('sb-notice')?.innerText ?? null, screen: document.getElementById('ui').dataset.screen }; })()`);
@@ -343,9 +531,15 @@ test('E-12: losing the WebGL context pauses the race and shows a notice; restori
     assert.equal((await snap()).paused, true, 'resuming into a blank frame is refused');
     await page.eval('__ext.restoreContext(); 1');
     await page.waitFor('__sky.game.contextLost === false', { timeout: 10000 });
-    await page.waitFor(`__sky.game.simTime > ${b.sim + 0.5}`, { timeout: 15000 });
+    await delay(1500);                                                                    // long enough for an automatic resume (the old behaviour) to show itself
     const c = await snap();
-    assert.equal(c.paused, false, 'resumed'); assert.equal(c.notice, null, 'notice removed'); assert.ok(c.frame > b.frame + 10, 'drawing again');
+    assert.equal(c.paused, true, 'still paused: the race does not restart mid-air'); assert.equal(c.screen, 'pause'); assert.equal(c.notice, null, 'notice removed');
+    assert.equal(c.sim, b.sim, 'the simulation has not moved'); assert.ok(c.frame > b.frame + 10, 'drawing again');
+    const f = await J(page, `(() => { const a = document.activeElement; return { tag: a && a.tagName, text: a ? a.textContent.trim() : '', inPause: !!a && !!a.closest('[data-screen=pause]') }; })()`);
+    assert.equal(f.tag, 'BUTTON'); assert.match(f.text, /^Resume/, 'Resume has the focus'); assert.equal(f.inPause, true);
+    await page.key('Enter');                                                              // the player's answer
+    await page.waitFor(`__sky.game.simTime > ${b.sim + 0.5}`, { timeout: 15000 });
+    assert.equal((await snap()).paused, false, 'Resume flies on');
     assert.deepEqual(page.errors(), []);
   });
 });
@@ -362,6 +556,40 @@ test('E-12: a race the player had paused stays paused after the context comes ba
     assert.equal(await page.eval("document.getElementById('sb-notice')"), null);
     assert.deepEqual(page.errors(), []);
   });
+});
+
+// ---- R2-V-01
+
+const CANVAS_OPACITY = "getComputedStyle(document.querySelector('canvas')).opacity";
+
+test('R2-V-01: on a first load the title is up before the demo race is built (canvas held back), and the scene fades in behind it afterwards', async () => {
+  const hold = holdScenery();
+  await withPage('?debug=1&mute=1', async (page) => {
+    await page.waitFor(TITLE, { timeout: 30000 });
+    const a = await J(page, `({ race: !!__sky.game.race, state: __sky.game.state, op: ${CANVAS_OPACITY}, overlay: !!document.getElementById('sb-boot') })`);
+    assert.deepEqual(a, { race: false, state: 'title', op: '0', overlay: false }, 'the title screen is showing while the demo race is still waiting for its scenery; the half-built scene is not');
+    await hold.release();
+    await page.waitFor('!!__sky.game.race', { timeout: 60000 });
+    await page.waitFor(`${CANVAS_OPACITY} === '1'`, { timeout: 10000 });
+    const b = await J(page, `({ state: __sky.game.state, screen: __sky.game.ui.cur && __sky.game.ui.cur.name, inline: document.querySelector('canvas').style.opacity, demo: !!__sky.game.race.demo })`);
+    assert.deepEqual(b, { state: 'title', screen: 'title', inline: '', demo: true }, 'the demo runs behind the title, which is still the screen');
+    assert.deepEqual(page.errors(), []);
+  }, { wait: null, setup: hold.setup });
+});
+
+test('R2-V-01: a race the player starts while the demo is still being built wins: the demo steps aside, the canvas is not left hidden, the title does not come back over the race', async () => {
+  const hold = holdScenery();
+  await withPage('?debug=1&mute=1', async (page) => {
+    await page.waitFor(TITLE, { timeout: 30000 });
+    await page.eval("window.__states = []; __sky.game.events.on('game:state', (e) => window.__states.push(e.to)); 1");
+    await page.eval("window.__mine = __sky.start({ courseId: 'sunrise', craftId: 'falcon', seed: 7, bots: 1, laps: 1 }); 1");       // the player picks Quick Race before the title demo exists
+    await hold.release();
+    await page.waitFor("__sky.game.state === 'race' && !!__sky.game.race && !__sky.game.race.demo", { timeout: 90000 });
+    await delay(2500);                                                                                          // long enough for the superseded demo build to finish and report
+    const r = await J(page, `({ state: __sky.game.state, screen: __sky.game.ui.cur && __sky.game.ui.cur.name, demo: !!__sky.game.race.demo, op: ${CANVAS_OPACITY}, inline: document.querySelector('canvas').style.opacity, course: __sky.game.course && __sky.game.course.id, states: window.__states })`);
+    assert.deepEqual(r, { state: 'race', screen: null, demo: false, op: '1', inline: '', course: 'sunrise', states: ['loading', 'race'] }, 'the superseded demo never put the title state back over the player\'s loading race');
+    assert.deepEqual(page.errors(), []);
+  }, { wait: null, setup: hold.setup });
 });
 
 // ---- V-8
@@ -477,6 +705,31 @@ test('E-05: the real loop feeds the cost meter (and the GPU timer where the brow
     assert.equal(p.gov.changes, 0); assert.equal(p.scale, 1); assert.equal(p.q, 'high');
     assert.deepEqual(page.errors(), []);
   });
+});
+
+test('R2-E-01: the game tells the governor whether a GPU timer is reading: without one a 40 ms frame interval over 2 ms of CPU work is overload, with one it is a slow display', async () => {
+  await withPage('?manual=1&autostart=1&mute=1&quality=auto&course=sunrise&seed=7&bots=7', async (page) => {
+    assert.equal(await page.eval('!!__sky.game.gpuTimer && __sky.game.gpuTimer.live'), false, 'manual mode never runs the GPU timer, so there is no reading');
+    assert.deepEqual((await feed(page, 60, 2, { hz: 60 })).acts, [], '60 Hz over 2 ms of work: nothing');
+    const slow = await feed(page, 40, 2, { hz: 25 });
+    assert.ok(slow.acts.length >= 1 && slow.scale < 1, `no GPU timer, a frame every 40 ms: ${JSON.stringify(slow.acts)}`);
+    assert.equal(slow.gov.gpuKnown, false); assert.ok(slow.gov.medDt > 30, `median interval ${slow.gov.medDt} ms`);
+    await page.eval("__sky.quality('auto'); __sky.game.gpuTimer = { live: true, ms: 2, supported: true }; 1");       // full scale again, and a timer that reads 2 ms of GPU work
+    const fast = await feed(page, 60, 2, { hz: 25 });
+    assert.deepEqual(fast.acts, [], 'with a GPU timer the same frames are a display that runs at 25 Hz, not a load');
+    assert.equal(fast.gov.gpuKnown, true); assert.equal(fast.scale, 1);
+    await page.eval("__sky.game.gpuTimer = { live: false, ms: 0, supported: true }; 1");                             // a timer that exists but has not read anything yet is no timer
+    assert.ok((await feed(page, 40, 2, { hz: 25 })).acts.length >= 1, 'an extension that has produced no reading does not count');
+    // a hidden or shown tab: the first long frame after it is a stall, however slow the frames before it were
+    const tNow = () => page.eval('__sky.governor().t'), long = () => page.eval('__sky.game.governorFrame(1.5, 900, 1, 0); 1');
+    await feed(page, 20, 600, { hz: 5 });                                                                            // a machine that is slow on every frame
+    const t0 = await tNow(); await long();
+    assert.ok(await tNow() - t0 > 1.4, 'a 1.5 s frame on a machine that is slow on every frame is its cost');
+    await page.eval("document.dispatchEvent(new Event('visibilitychange')); 1");
+    const t1 = await tNow(); await long();
+    assert.equal(await tNow(), t1, 'after a visibility change the same frame is a stall');
+    assert.deepEqual(page.errors(), []);
+  }, { wait: RACE });
 });
 
 // ---- E-28

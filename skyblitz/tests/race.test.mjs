@@ -60,7 +60,7 @@ test('countdown emits 3,2,1 then GO and holds the grid still', () => {
   void game;
 });
 
-test('rocket start: boost pressed in the last 0.4 s is perfect/good; holding early stalls', () => {
+test('rocket start: boost pressed in the last 0.5 s is perfect/good; holding early stalls', () => {
   // perfect: press at ~0.1 s before GO
   let { race, rec } = fresh(5);
   const c = createControls();
@@ -249,6 +249,56 @@ test('ahead-slowdown: an AI far ahead of a still-racing human eases off in propo
   const a = (() => { race.player.dist = 1000; ai.dist = 1600; ai.rb = 0.9; for (let i = 0; i < 600; i++) race.speedMulFor(ai, 1 / 60); return ai.rb; })();
   race.player.dist = 1000; ai.dist = 1000 + RACE.aheadDead + 50; ai.rb = 0.9; for (let i = 0; i < 600; i++) race.speedMulFor(ai, 1 / 60);
   assert.ok(Math.abs(a - ai.rb) < 0.02, `expert has no ahead-slowdown: ${a} vs ${ai.rb}`);
+});
+
+test('R-T1 hands-off rule: with no key down for 14 s the leader is not held back and the human gets no catch-up; at 0 s both apply', () => {
+  const { race, game } = fresh(32, { difficulty: 'normal' }); go(race, null);
+  const ai = race.racers.find((x) => x.isAI), me = race.player;
+  const settle = (handsOffT, who) => {
+    game.input = handsOffT == null ? undefined : { handsOffT };
+    me.dist = 1000; ai.dist = 1000 + 1200; me.place = 6; who.rb = 0.9;               // the AI is 1200 m ahead of a human in 6th
+    for (let i = 0; i < 600; i++) race.speedMulFor(who, 1 / 60);
+    return who.rb;
+  };
+  const aiPlay = settle(0, ai), aiIdle = settle(20, ai), aiHalf = settle(11, ai);
+  assert.ok(aiIdle > aiPlay + 0.01, `a leader is not held back for a hands-off human: ${aiIdle} vs ${aiPlay}`);
+  assert.ok(aiHalf > aiPlay && aiHalf < aiIdle, `smooth in between: ${aiPlay} < ${aiHalf} < ${aiIdle}`);
+  const mePlay = settle(0, me), meIdle = settle(20, me);
+  assert.ok(mePlay > 1.02 && meIdle < 1.001, `playerHelp applies to a playing human (${mePlay}) and not to a hands-off one (${meIdle})`);
+
+  assert.ok(Math.abs(settle(null, me) - mePlay) < 1e-9, 'no input object behaves like handsOffT 0');
+});
+
+test('R-T2 auto-cruise: the human loses idleDrag of the pace after 14 s with no key, eased in over 8-14 s, released within 0.4 s of a key; player.idleCruise (0..1) exposes it; the AI is never touched', () => {
+  const { race, game } = fresh(34, { difficulty: 'normal' }); go(race, null);
+  const me = race.player, ai = race.racers.find((x) => x.isAI);
+  assert.ok(RACE.idleDrag > 0 && RACE.idleDrag <= 0.25, `shipped idleDrag stays a modest cost: ${RACE.idleDrag}`);
+  const run = (who, t, steps) => { game.input = { handsOffT: t }; let m = 1; for (let i = 0; i < steps; i++) m = race.speedMulFor(who, 1 / 60); return m; };
+  const reset = (who) => { who.idleCruise = 0; who.rb = 1; me.place = 1; };
+  reset(me); const play = run(me, 0, 300);
+  assert.equal(me.idleCruise, 0, 'a playing human has no auto-cruise');
+  reset(me); const mid = run(me, 11, 300), midC = me.idleCruise;
+  reset(me); const idle = run(me, 20, 300);
+  assert.ok(me.idleCruise > 0.999, `full idle -> idleCruise 1 (${me.idleCruise})`);
+  assert.ok(Math.abs(idle - play * (1 - RACE.idleDrag)) < 0.005, `full idle removes idleDrag: ${play} -> ${idle}`);
+  assert.ok(midC > 0.2 && midC < 0.8 && mid < play && mid > idle, `eased in between: ${play} > ${mid} > ${idle} (idleCruise ${midC})`);
+  run(me, 0, 20);                                                                   // a key goes down: 1/3 s
+  assert.ok(me.idleCruise < 0.01, `released within 0.4 s of a key: ${me.idleCruise}`);
+  ai.rb = 1; run(ai, 20, 300); assert.equal(ai.idleCruise, undefined, 'the AI has no auto-cruise');
+});
+
+test('assist drag (d): the human speed multiplier falls by assistDrag x the smoothed guide weight; 0 when the drag is 0 or the guide is idle; the AI is never touched', () => {
+  const { race, game } = fresh(33, { difficulty: 'normal' }); go(race, null);
+  const me = race.player, ai = race.racers.find((x) => x.isAI);
+  const mult = (who, w, drag) => { RACE.assistDrag = drag; game.input = { guide: { active: w } }; who.assistW = 0; who.rb = 1; me.place = 1; let m = 1; for (let i = 0; i < 300; i++) m = race.speedMulFor(who, 1 / 60); return m; };
+  try {
+    const off = mult(me, 0.85, 0), on = mult(me, 0.85, 0.2), idle = mult(me, 0, 0.2), aiOn = mult(ai, 0.85, 0.2), aiOff = mult(ai, 0.85, 0);
+    assert.ok(Math.abs(on - off * (1 - 0.2 * 0.85)) < 0.01, `drag 0.2 x weight 0.85 removes 17 %: ${off} -> ${on}`);
+    assert.ok(Math.abs(idle - off) < 1e-6, 'a guide at rest costs nothing');
+    assert.ok(Math.abs(aiOn - aiOff) < 1e-9, 'the AI is not dragged');
+    const half = (() => { RACE.assistDrag = 0.2; game.input = { guide: { active: 0.85 } }; me.assistW = 0; me.rb = 1; let m = 1; for (let i = 0; i < 6; i++) m = race.speedMulFor(me, 1 / 60); return m; })();
+    assert.ok(half > on && half < off + 1e-9, `the cost is smoothed, not a step: ${half} between ${on} and ${off}`);
+  } finally { RACE.assistDrag = 0; }
 });
 
 test('drafting: tailing a faster-or-equal racer charges a slingshot and emits racer:draft', () => {
@@ -548,6 +598,32 @@ test('E-08 a relock that jumps over a vertical loop emits race:missed (no credit
   assert.ok(p.dist - d0 < 200, 'no credit for the skipped loop: ' + (p.dist - d0));
 });
 
+test('R2-E-02 a REAL loop cut (flown in, then the straight line under the loop; no projection stub) says MISSED THE LOOP and respawns at the loop entry', async () => {
+  const game = createFakeGame({ seed: 54 });
+  const c = await loadCourseHeadless(game, 'sunrise');
+  const loops = Object.keys(c.marks).filter((k) => k.endsWith('Entry') && c.marks[k.slice(0, -5) + 'Exit'] != null);
+  assert.ok(loops.length > 0, 'sunrise has a loop');
+  for (const key of loops) {
+    const nm = key.slice(0, -5), entry = c.marks[nm + 'Entry'], exit = c.marks[nm + 'Exit'];
+    const rec = recordEvents(game);
+    const race = makeRace(game, c, { seed: 54, bots: 0, mode: 'trial' });
+    stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+    const p = race.player; race.autopilot = false; neutralAI(p);
+    const fr = {}; c.frameAt(entry + 20, fr);                                       // flown to the loop entry on the centre line: the good point is inside the loop
+    p.flight.pos.copy(fr.pos); p.flight.quat.copy(basisQuat(fr)); p.flight.vel.copy(fr.tangent).multiplyScalar(90); p.flight.speed = 90; p.prev.pos.copy(fr.pos); race.onTeleport(p); p.dist = p.s;
+    autoMark(race, p);
+    assert.ok(Math.abs(p.lastGoodS - (entry + 20)) < 15, `${nm}: good point inside the loop`);
+    c.frameAt(exit + 60, fr); p.flight.pos.copy(fr.pos);                           // then the straight line under the loop: the craft is 60 m past the exit
+    const d0 = p.dist;
+    race.respawn(p, 'scrape');
+    const missed = rec.log.filter((e) => e.type === 'race:missed' && e.payload.what === 'loop' && e.payload.racer === p);
+    assert.equal(missed.length, 1, `${nm}: race:missed fired`);
+    assert.ok(Math.abs(p.s - (entry - 10)) < 12, `${nm}: respawned at the loop entry, s ${p.s.toFixed(0)} vs ${(entry - 10).toFixed(0)}`);
+    assert.ok(p.dist <= d0 - 0, `${nm}: no distance credit for the skipped loop`);
+    rec.off();
+  }
+});
+
 test('R1-1 shortcut take probability rises with difficulty (Easy < Normal < Hard < Expert) and Normal sits in 40-70 %', () => {
   for (const [shortcuts, risk, sk, place] of [[0.6, 0.55, 0.7, 4], [0.5, 0.5, 0.7, 4], [0.25, 0.55, 0.6, 1], [0.85, 0.55, 0.5, 3]]) {
     const ds = ['easy', 'normal', 'hard', 'expert'];
@@ -560,8 +636,8 @@ test('R1-1 shortcut take probability rises with difficulty (Easy < Normal < Hard
   assert.ok(mid >= 0.4 && mid <= 0.7, 'a typical pilot at Normal takes the shortcut 40-70 %: ' + mid.toFixed(2));
 });
 
-test('R1-2 finishExtra: Easy keeps the race open finishTimeout + 25 s after the human finishes, Normal exactly finishTimeout', () => {
-  for (const [diff, extra] of [['easy', 25], ['normal', 0], ['hard', 0], ['expert', 0]]) {
+test('R1-2 finishExtra: Easy keeps the race open finishTimeout + 60 s and Normal + 40 s after the human finishes (a slow field), Hard and Expert exactly finishTimeout', () => {
+  for (const [diff, extra] of [['easy', 60], ['normal', 40], ['hard', 0], ['expert', 0]]) {
     const { race } = fresh(52, { bots: 1, difficulty: diff });
     go(race, null);
     race.finishRacer(race.player, 100); race.flushFinishers();
@@ -644,4 +720,146 @@ test('R1-5 smoke: redrock Normal seed 2, 3 laps has no glitch burst and no respa
   const res = simulate(game, c, { difficulty: 'normal', laps: 3, seed: 2 }, { maxSeconds: 420 });
   assert.ok(res.race.stats.glitches <= 2, 'glitches ' + res.race.stats.glitches);
   assert.equal(res.race.stats.respawns, 0, 'respawns');
+});
+
+test('R2-P-01b grid clearance: every craft x course x grid slot, idle controls and no guide, keeps >= 6 m of clearance for the first 5 s of racing and never hits the ground', async () => {
+  const { AIRCRAFT } = await import('../src/craft/roster.js');
+  for (const cid of ['sunrise', 'redrock', 'neon', 'frost']) {
+    const c = await loadCourseHeadless(createFakeGame({ seed: 1 }), cid);
+    for (const craft of AIRCRAFT) {
+      const game = createFakeGame({ seed: 5 }); const rec = recordEvents(game);
+      const race = makeRace(game, c, { seed: 5, difficulty: 'normal', craftId: craft.id, bots: 7, laps: 3 });
+      race.racers.forEach((r) => neutralAI(r)); race.autopilot = false;
+      const clear = (r) => r.flight.pos.y - c.groundHeight(r.flight.pos.x, r.flight.pos.z) - r.radius;
+      let worst = 1e9, who = '';
+      for (const r of race.racers) { const k = clear(r); if (k < worst) { worst = k; who = `${r.name} slot ${r.slot}`; } }
+      assert.ok(worst >= RACE.gridClearance - 1e-6, `${cid}/${craft.id}: grid clearance ${worst.toFixed(2)} m (${who})`);
+      stepRace(race, { seconds: 8, controls: createControls(), until: (x) => x.state === 'racing' });
+      const t0 = race.clock;
+      while (race.clock - t0 < 5) {
+        stepRace(race, { steps: 1, controls: createControls() });
+        for (const r of race.racers) { const k = clear(r); if (k < worst) { worst = k; who = `${r.name} slot ${r.slot} t ${(race.clock - t0).toFixed(1)}`; } }
+      }
+      assert.ok(worst >= 6, `${cid}/${craft.id}: clearance fell to ${worst.toFixed(2)} m (${who})`);
+      assert.equal(rec.log.filter((e) => e.type === 'racer:hit' && e.payload.kind === 'ground').length, 0, `${cid}/${craft.id}: ground hit`);
+    }
+  }
+});
+
+test('R2-P-03 stuck by PROGRESS: a craft pinned at one spot whose speed bounces 9-19 m/s respawns within 6 s; one that keeps moving at 20 m/s of progress does not', () => {
+  const { race, rec } = fresh(71, { bots: 0, mode: 'trial', difficulty: 'normal' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  stepRace(race, { seconds: 3, controls: createControls() });
+  let t = 0, got = null; const s = 1500; let d0 = 0;
+  place(race, p, s, 0, 0, 14); d0 = p.dist;
+  while (t < 6 && !got) {
+    stepRace(race, { steps: 1, controls: createControls() }); t += SIM_DT; p.dist = d0;
+    got = rec.log.find((e) => e.type === 'race:respawn');
+    if (!got) place(race, p, s, 0, 0, 14 + 5 * Math.sin(t * 6 * Math.PI * 2));   // pinned: same spot every tick, speed bouncing 9..19 about 3 times a second
+  }
+  assert.ok(got, 'pinned craft respawned within 6 s'); assert.equal(got.payload.reason, 'stuck');
+  // control: same speed bounce but real progress of 20 m/s along the course: no respawn
+  const b = fresh(72, { bots: 0, mode: 'trial', difficulty: 'normal' });
+  stepRace(b.race, { seconds: 8, until: (x) => x.state === 'racing' });
+  b.race.autopilot = false; neutralAI(b.race.player); stepRace(b.race, { seconds: 3, controls: createControls() });
+  let s2 = 1500, t2 = 0; place(b.race, b.race.player, s2, 0, 0, 14);
+  while (t2 < 10) { stepRace(b.race, { steps: 1, controls: createControls() }); t2 += SIM_DT; s2 += 20 * SIM_DT; place(b.race, b.race.player, s2, 0, 0, 14 + 5 * Math.sin(t2 * 6 * Math.PI * 2)); }
+  assert.equal(b.rec.log.filter((e) => e.type === 'race:respawn').length, 0, 'a craft that makes progress is left alone');
+});
+
+test('R2-P-03b grinding trap (hands-off sunrise s 5804, 280 s): progress jitters +-3 m per tick with no net movement; the NET progress over 5 s respawns it', () => {
+  const { race, rec } = fresh(74, { bots: 0, mode: 'trial', difficulty: 'normal' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  stepRace(race, { seconds: 3, controls: createControls() });
+  const s = 1500; place(race, p, s, 0, 0, 14); const d0 = p.dist;
+  let i = 0, got = null;
+  while (i < 60 * 8 && !got) {
+    stepRace(race, { steps: 1, controls: createControls() });
+    // two ticks "forward" 1.5 m (90 m/s of per-tick progress, which a rate rule that decays on fast ticks forgives) then one snap back 3 m: zero net
+    p.dist = d0 + [1.5, 3, 0][i % 3];
+    i++; got = rec.log.find((e) => e.type === 'race:respawn');
+    if (!got) place(race, p, s, 0, 0, 14 + 5 * Math.sin(i * 0.2));
+  }
+  assert.ok(got && got.payload.reason === 'stuck', 'respawned as stuck within 8 s');
+});
+
+test('R2-P-03c loops are not a grind: flying every vertical loop of every course at cruise (about 0.2 m of course distance credited per metre flown) never respawns the human as stuck', async () => {
+  for (const cid of ['sunrise', 'redrock', 'neon', 'frost']) {
+    const c = await loadCourseHeadless(createFakeGame({ seed: 1 }), cid);
+    const loops = Object.keys(c.marks).filter((k) => k.endsWith('Entry') && c.marks[k.slice(0, -5) + 'Exit'] != null);
+    for (const key of loops) {
+      const nm = key.slice(0, -5), entry = c.marks[nm + 'Entry'], exit = c.marks[nm + 'Exit'];
+      const game = createFakeGame({ seed: 90 }); const rec = recordEvents(game);
+      const race = makeRace(game, c, { seed: 90, bots: 0, mode: 'trial', difficulty: 'normal' });
+      stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+      const p = race.player; race.autopilot = false; neutralAI(p);
+      stepRace(race, { seconds: 3, controls: createControls() });
+      const put = (s, speed) => { c.frameAt(s, f); p.flight.pos.copy(f.pos); p.flight.quat.copy(basisQuat(f)); p.flight.vel.copy(f.tangent).multiplyScalar(speed); p.flight.speed = speed; p.prev.pos.copy(f.pos); race.onTeleport(p); };
+      let s = entry - 30; put(s, 70); p.dist = p.s; const d0 = p.dist; let t = 0;
+      while (s < exit + 30) {
+        s += 14 * SIM_DT; t += SIM_DT;                                         // 14 m/s of course distance while the craft is flying 70 m/s along the loop
+        stepRace(race, { steps: 1, controls: createControls() }); put(s, 70);
+        p.dist = d0 + (s - (entry - 30));
+      }
+      assert.ok(t > 20, `${cid}/${nm}: the loop took ${t.toFixed(0)} s, long enough for several 5 s windows`);
+      assert.equal(rec.log.filter((e) => e.type === 'race:respawn' && e.payload.reason === 'stuck').length, 0, `${cid}/${nm}: no stuck respawn while flying the loop`);
+    }
+  }
+});
+
+test('R2-P-03 manual respawn: input:respawn puts the human back at the last good point with the automatic penalty, only while racing and not twice in a row', () => {
+  const { race, game, rec } = fresh(73, { bots: 1, difficulty: 'normal' });
+  game.events.emit('input:respawn', {});
+  assert.equal(rec.log.filter((e) => e.type === 'race:respawn').length, 0, 'ignored on the grid / countdown');
+  go(race, null);
+  const p = race.player; stepRace(race, { seconds: 4, controls: createControls() });
+  place(race, p, 2400, 300, 0, 80);                                  // far off the line, last good point stays near the start
+  const good = p.lastGoodS;
+  game.events.emit('input:respawn', {});
+  const rs = rec.log.filter((e) => e.type === 'race:respawn');
+  assert.equal(rs.length, 1); assert.equal(rs[0].payload.reason, 'manual'); assert.equal(rs[0].payload.racer, p);
+  assert.ok(Math.abs(p.s - (good - 10)) < 25, `back at the last good point: s ${p.s.toFixed(0)} vs ${(good - 10).toFixed(0)}`);
+  assert.ok(p.invuln > 2.5 && p.flight.speed > 0, 'same invulnerability and speed as the automatic respawn');
+  game.events.emit('input:respawn', {});
+  assert.equal(rec.log.filter((e) => e.type === 'race:respawn').length, 1, 'not again within the gap');
+  stepRace(race, { seconds: RACE.manualRespawnGap + 0.2, controls: createControls() });
+  game.events.emit('input:respawn', {});
+  assert.equal(rec.log.filter((e) => e.type === 'race:respawn').length, 2, 'accepted again after the gap');
+  race.dispose(); game.events.emit('input:respawn', {});
+  assert.equal(rec.log.filter((e) => e.type === 'race:respawn').length, 2, 'no listener after dispose');
+});
+
+// R2-E-07: the good-mark that checkRespawns makes ITSELF (no manual markGood), on a branch and during a glitch
+const onBranchAt = (race, br, u) => {
+  const p = race.player, fr = {}; br.frameAt(u, fr);
+  p.flight.pos.copy(fr.pos); p.flight.quat.copy(basisQuat(fr)); p.flight.vel.copy(fr.tangent).multiplyScalar(90); p.flight.speed = 90; p.prev.pos.copy(fr.pos);
+  p.proj.branch = br.index; p.proj.u = u; p.proj.s = br.sOf(u); p.proj.lateral = 0; p.proj.vertical = 0;
+  p.s = p.lastS = p.proj.s; p.lateral = 0; p.vertical = 0; p.onBranch = p.lastBranch = br.index; p.dist = p.s; p.debt = 0; p.glitchT = 0;
+};
+const autoMark = (race, p) => { race.frame = 6 - (p.id % 6); race.checkRespawns(SIM_DT); };   // the (frame + id) % 6 gate opens on this call
+
+test('R2-E-07 (E01d) checkRespawns marks a racer flying down the middle of a shortcut as good by itself, so a later crash respawns inside the shortcut', () => {
+  const { race } = fresh(81, { bots: 0, mode: 'trial', difficulty: 'normal' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  const br = course.branches[0]; assert.ok(br, 'sunrise has a shortcut');
+  onBranchAt(race, br, 0.4 * br.length);
+  autoMark(race, p);
+  assert.equal(p.lastGoodBranch, br.index, 'the automatic mark is on the branch');
+  onBranchAt(race, br, Math.min(br.length - 5, 0.4 * br.length + 120));            // fly on, then crash into the wall: no markGood by hand
+  race.respawn(p, 'scrape');
+  assert.equal(p.onBranch, br.index, 'respawned on the shortcut, not at its mouth');
+});
+
+test('R2-E-07 (E01c) a projection glitch never moves the good-mark', () => {
+  const { race } = fresh(82, { bots: 0, mode: 'trial', difficulty: 'normal' });
+  stepRace(race, { seconds: 8, until: (x) => x.state === 'racing' });
+  const p = race.player; race.autopilot = false; neutralAI(p);
+  place(race, p, 1500, 0, 0, 90); p.dist = p.s; autoMark(race, p);
+  const good = p.lastGoodS; assert.ok(Math.abs(good - p.s) < 10, 'marked while healthy');
+  place(race, p, 1800, 0, 0, 90); p.glitchT = 0.5;                                  // a glitch: s holds a wrong projection while dist is frozen
+  autoMark(race, p);
+  assert.equal(p.lastGoodS, good, 'lastGoodS did not move during the glitch');
 });

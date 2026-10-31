@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { clamp, damp, smoothstep } from '../util.js';
 
+const PORTRAIT_DROP = 18;      // m the look point drops below its landscape position at full portrait (aspect <= 0.55)
 const MODES = ['chase', 'far', 'low', 'nose'];
 const RIG = {                       // back / up distances (m, for a ~11 m wingspan craft), look-ahead, base fov
   chase: { back: 14.5, up: 4.2, look: 34, fov: 72, lag: 6.0 },
@@ -163,6 +164,10 @@ export function createCameraRig(game) {
       if (lb > 0) v.look.lerp(P, lb);
       if (mode !== 'nose') v.look.addScaledVector(v.right, clamp(s.lean * 9, -9, 9) * (1 - lb));
       if (bk) { v.side.copy(v.right).setY(0); if (v.side.lengthSq() > 1e-6) v.look.addScaledVector(v.side.normalize(), bk * 16 * size * (1 - lb)); }
+      // V-13: in portrait the touch buttons cover the lower third and the craft sat there. Aim the camera below the look point so the craft rises to ~42 % of the screen height
+      // (from the top); landscape (aspect >= 0.95) is untouched.
+      const port = mode === 'nose' ? 0 : 1 - smoothstep(0.55, 0.95, game.camera?.aspect || 1);
+      if (port > 0) v.look.addScaledVector(v.sup, -port * PORTRAIT_DROP * (rg.look / 34) * (1 - lb));
       v.pos.copy(v.tmp);
       v.tmpUp.copy(v.sup);
       if (mode !== 'nose' && !fromOrbit) this.pullIn(dt, P, snap);

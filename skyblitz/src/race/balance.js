@@ -53,9 +53,9 @@ export function rollItem(rng, place, n) {
 // aheadSlow  max slowdown of an AI far AHEAD of the human (fraction): 0 within RACE.aheadDead m of gap, full rubberRange m beyond that;
 //            never takes the AI below RACE.aheadFloor of its craft's cruise
 export const DIFFICULTY = {
-  easy:   { id: 'easy', shortcutBias: -0.12, finishExtra: 25,   aiSpeed: 0.67, aiSkill: 0.55, rubber: 0.06, rubberRange: 650, aheadSlow: 0.25, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.25 },
-  normal: { id: 'normal', shortcutBias: 0, aiSpeed: 0.86, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, aheadSlow: 0.14, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.12 },
-  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.90, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, aheadSlow: 0.04, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
+  easy:   { id: 'easy', shortcutBias: -0.12, finishExtra: 60,   aiSpeed: 0.67, aiSkill: 0.55, rubber: 0.06, rubberRange: 650, aheadSlow: 0.25, mistakes: 1.7, reaction: 0.55, aggro: 0.6,  playerHelp: 0.25 },
+  normal: { id: 'normal', shortcutBias: 0, finishExtra: 40, aiSpeed: 0.77, aiSkill: 0.75, rubber: 0.06, rubberRange: 450, aheadSlow: 0.20, mistakes: 1.0, reaction: 0.35, aggro: 0.85, playerHelp: 0.06 },
+  hard:   { id: 'hard', shortcutBias: 0.08,   aiSpeed: 0.79, aiSkill: 0.90, rubber: 0.05, rubberRange: 400, aheadSlow: 0.04, mistakes: 0.6, reaction: 0.22, aggro: 1.0,  playerHelp: 0 },
   expert: { id: 'expert', shortcutBias: 0.12, aiSpeed: 0.996, aiSkill: 1.00, rubber: 0.04, rubberRange: 350, aheadSlow: 0, mistakes: 0.35, reaction: 0.12, aggro: 1.15, playerHelp: 0 },
 };
 
@@ -76,7 +76,15 @@ export const RACE = {
   respawnScrapeT: 3.5, respawnStuckT: 3, respawnLostT: 2.5, respawnHighM: 150, respawnHighT: 1,
   draftRange: 85, draftCone: 0.14, draftTime: 1.6, // slipstream: metres behind, wake half-width grows 0.14 m per m behind, seconds to charge a slingshot
   cruiseRef: 100,          // fallback reference cruise (m/s)
-  aheadDead: 150,          // metres an AI may lead the human before the ahead-slowdown starts
+  progressAI: true,        // apply the net-progress respawn to the AI too
+  respawnProgEff: 0.1,     // ...and only if net progress is also under this fraction of the path flown in the window (vertical loops credit about 0.2)
+  respawnProgSpeed: 15, respawnProgT: 5, // stuck by PROGRESS: under 15 m/s of course progress for 5 s (decaying timer) respawns, however the speed bounces
+  assistDrag: 0,           // (d) the human's speed multiplier x (1 - assistDrag * smoothed keyboard-guide weight, 0..0.85); 0 = off
+  idleDrag: 0,             // hands-off rule: fraction of the human's pace removed at full idle (no key for 14 s); eases in over 8-14 s (0 = off)
+  idleRelease: 3,          // idleCruise falls at this rate per second once any key is down (full release in ~0.3 s)
+  manualRespawnGap: 1.5,   // s after any respawn before a manual one is accepted again
+  gridClearance: 8,      // m between a craft's lowest collision surface and the ground / deck at the grid
+  aheadDead: 150,         // metres an AI may lead the human before the ahead-slowdown starts
   aheadFloor: 0.65,        // the ahead-slowdown never takes an AI below this fraction of its craft's cruise
   cruiseNorm: 0.4,        // how far AI cruise is pulled toward the human's craft (0 = raw stats, 1 = identical)
 };

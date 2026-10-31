@@ -11,7 +11,7 @@ const THEMES = {
     stripe: '#27c4b0', chev: 'rgba(250,228,186,0.95)', glow: [5, 2.6, 0.5] },
   neon: { name: 'glass', deck: 'glass', deckColor: 0xffffff, deckRough: 0.1, deckMetal: 0.7, deckGlow: 0.85, hull: 0x090b16, hullRough: 0.18, hullMetal: 0.9, leg: 0x131a2e, legRough: 0.2, legMetal: 0.85, accent: 0x35e8ff, accentGlow: 2.2,
     stripe: '#2ee6ff', chev: 'rgba(255,70,200,0.95)', glow: [0.5, 3.0, 5], decalGlow: 1.0 },
-  frost: { name: 'ice', deck: 'ice', deckColor: 0xffffff, deckRough: 0.34, deckMetal: 0.05, hull: 0x4f86b8, hullRough: 0.3, hullMetal: 0.1, leg: 0xa7d6f5, legRough: 0.22, legMetal: 0.08, accent: 0x66f0ff, accentGlow: 1.4,
+  frost: { name: 'ice', deck: 'ice', deckColor: 0xffffff, deckRough: 0.5, deckMetal: 0.05, deckIbl: 0.3, hull: 0x4f86b8, hullRough: 0.3, hullMetal: 0.1, leg: 0xa7d6f5, legRough: 0.22, legMetal: 0.08, accent: 0x66f0ff, accentGlow: 1.4,
     stripe: '#1d78b8', chev: 'rgba(24,110,176,0.92)', glow: [1.2, 3.6, 5], decalGlow: 0.35 },
   default: { name: 'steel', deck: 'metal', deckColor: 0xb8c0c8, deckRough: 0.62, deckMetal: 0.45, hull: 0x3a424c, hullRough: 0.55, hullMetal: 0.65, leg: 0x3a424c, legRough: 0.55, legMetal: 0.65, accent: 0xff6a1a, accentGlow: 0,
     stripe: '#f2b61c', chev: 'rgba(255,200,40,0.9)', glow: [5, 3.2, 0.6] },
@@ -41,10 +41,10 @@ function makeDeckTexture(kind) {
     g.fillStyle = 'rgba(70,110,190,0.10)'; g.fillRect(0, 0, S, S);
     g.strokeStyle = 'rgba(60,230,255,0.9)'; g.lineWidth = 2; for (let i = 0; i <= S; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, S); g.moveTo(0, i); g.lineTo(S, i); g.stroke(); }
     g.strokeStyle = 'rgba(255,60,200,0.55)'; g.lineWidth = 1; for (let i = 32; i < S; i += 64) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i, S); g.stroke(); }
-  } else {                                                                                  // ice
-    g.fillStyle = '#9ccaea'; g.fillRect(0, 0, S, S);
-    for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(255,255,255,${0.08 + rnd() * 0.2})`; g.fillRect(rnd() * S, rnd() * S, 1 + rnd() * 10, 1 + rnd() * 3); }
-    g.strokeStyle = 'rgba(46,104,166,0.6)'; g.lineWidth = 1.4;
+  } else {                                                                                  // ice: deep glacial blue with pale frost flecks and cracks (R2-V-15: the old pale #9ccaea deck, lit by the sky and bloomed, read as a white sheet that swallowed the craft at GO)
+    g.fillStyle = '#2b6aa0'; g.fillRect(0, 0, S, S);
+    for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(255,255,255,${0.05 + rnd() * 0.14})`; g.fillRect(rnd() * S, rnd() * S, 1 + rnd() * 10, 1 + rnd() * 3); }
+    g.strokeStyle = 'rgba(140,208,255,0.42)'; g.lineWidth = 1.4;
     for (let i = 0; i < 22; i++) { let x = rnd() * S, y = rnd() * S; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 6; k++) { x += (rnd() - 0.5) * 50; y += (rnd() - 0.5) * 50; g.lineTo(((x % S) + S) % S, ((y % S) + S) % S); } g.stroke(); }
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
@@ -130,7 +130,19 @@ export function buildPlatform(course, game) {
   const deckTex = th.deck === 'metal' ? game.assets.tex('metal_deck') : makeDeckTexture(th.deck);
   if (th.deck !== 'metal') disposables.push(deckTex);
   const deckMat = new THREE.MeshStandardMaterial({ map: deckTex, color: th.deckColor, roughness: th.deckRough, metalness: th.deckMetal });
-  if (th.deckGlow) { deckMat.emissive = new THREE.Color(0xffffff); deckMat.emissiveMap = deckTex; deckMat.emissiveIntensity = th.deckGlow; }
+  if (th.deckGlow) { deckMat.emissive = new THREE.Color(0xffffff); deckMat.emissiveMap = deckTex; deckMat.emissiveIntensity = th.deckGlow;
+    // R2-V-13: thin glowing grid lines crawl at distance (0.17 % of pixels for a 3 cm move at the Neon finish): sample coarser mips with distance so they fade to their mean
+    deckMat.onBeforeCompile = (sh) => {
+      sh.fragmentShader = sh.fragmentShader.replace('void main() {', 'void main() {\n  float deckBias = smoothstep(6.0, 100.0, length(vViewPosition)) * 3.5;')
+        .replace('#include <map_fragment>', THREE.ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', 'texture2D( map, vMapUv, deckBias )'))
+        .replace('#include <emissivemap_fragment>', THREE.ShaderChunk.emissivemap_fragment.replace('texture2D( emissiveMap, vEmissiveMapUv )', 'texture2D( emissiveMap, vEmissiveMapUv, deckBias )'));
+    };
+  }
+  if (th.deckIbl != null) {                                    // R2-V-15: a glossy deck mirrors the pale sky horizon at the grazing angles of the GO swoop; scale its image-based specular (this deck only)
+    const prev = deckMat.onBeforeCompile;
+    deckMat.onBeforeCompile = (sh, rd) => { prev?.call(deckMat, sh, rd); sh.fragmentShader = sh.fragmentShader.replace('#include <lights_fragment_end>', `#include <lights_fragment_end>\n  reflectedLight.indirectSpecular *= ${th.deckIbl.toFixed(3)};`); };
+    deckMat.customProgramCacheKey = () => `deckibl${th.deckIbl}`;
+  }
   const hullMat = new THREE.MeshStandardMaterial({ color: th.hull, roughness: th.hullRough, metalness: th.hullMetal });
   // the gantry dithers away as the GO camera swoops into it (V-14): the legs from 90 m, the crossbar / banner / lamps only inside 40 m
   const legMat = distanceFade(new THREE.MeshStandardMaterial({ color: th.leg, roughness: th.legRough, metalness: th.legMetal }), FADE_LEG);

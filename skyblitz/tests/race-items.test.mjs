@@ -589,3 +589,27 @@ test('triple (AI): the hold clock restarts after each shot, so an unlocked follo
   assert.ok(shots[0] >= 12, `first unlocked shot only after the patience wait: ${shots[0]}`);
   assert.ok(shots[1] - shots[0] > 5, `second unlocked shot waits again, not 0.1-0.2 s later: gap ${shots[1] - shots[0]}`);
 });
+
+test('R2-E-09 missile intercept: interceptT is the closed-form root, and the aim point handed to the course guidance is target + v * interceptT', () => {
+  const { items } = arena(61, { bots: 1 });
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  // known geometry: body at the origin, speed 180; target 300 m ahead flying across at 100 m/s: (v^2 - sp^2) t^2 + 2 (p.v) t + p^2 = 0  ->  t = |p| / sqrt(sp^2 - v^2)
+  const t1 = items.interceptT(V(0, 0, 0), 180, V(300, 0, 0), V(0, 100, 0), 10);
+  assert.ok(Math.abs(t1 - 300 / Math.sqrt(180 * 180 - 100 * 100)) < 1e-9, `crossing target: ${t1}`);
+  // a target flying away along the line: t = gap / (sp - v); the cap bounds it
+  const t2 = items.interceptT(V(0, 0, 0), 180, V(400, 0, 0), V(150, 0, 0), 100);
+  assert.ok(Math.abs(t2 - 400 / 30) < 1e-9, `receding target: ${t2}`);
+  assert.equal(items.interceptT(V(0, 0, 0), 180, V(400, 0, 0), V(150, 0, 0), 1.2), 1.2, 'capped at leadMax');
+  assert.equal(items.interceptT(V(0, 0, 0), 100, V(300, 0, 0), V(100, 0, 0), 5), 5, 'a target as fast as the body: lead by the gap, capped');
+  // the aim point in a real scene: a target carried down the course frame at 100 m/s
+  const { race, target, items: it2, owner } = missileArena(25, 200);
+  const m = it2.missiles[0], real = it2.courseAim.bind(it2); let seen = null;
+  it2.courseAim = (mm, tgt, sign, look, lead, ...rest) => { if (lead && !seen) seen = { lead: lead.clone(), mp: mm.pos.clone(), sp: mm.speed, tp: tgt.flight.pos.clone(), tv: tgt.flight.vel.clone() }; return real(mm, tgt, sign, look, lead, ...rest); };
+  run(race, () => !!seen, 1);
+  assert.ok(seen, 'the guidance received a lead point');
+  const t = it2.interceptT(seen.mp, Math.max(seen.sp, 1), seen.tp, seen.tv, W.missile.leadMax);
+  const want = seen.tp.clone().addScaledVector(seen.tv, t);
+  assert.ok(seen.lead.distanceTo(want) < 1e-6, `aim point = target + v * interceptT: off by ${seen.lead.distanceTo(want)}`);
+  assert.ok(seen.lead.distanceTo(seen.tp) > 0.5 * W.missile.leadMax * seen.tv.length(), 'and it is genuinely ahead of the target, not on it');
+  void m; void owner; void target;
+});

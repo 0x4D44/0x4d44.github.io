@@ -2,7 +2,9 @@
 // Markdown subset behind the credits screen and the aircraft-screen stat bars (no DOM needed).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fmtTime, ordinal, mod, clamp, parseMd, parseInline } from '../src/ui/dom.js';
 import { loadSave, writeSave, recordResult, bestFor, gpLabel } from '../src/ui/save.js';
 
@@ -64,7 +66,7 @@ test('E-20 / U1: settings written by the settings screen come back on the next p
   mem.clear();
   const first = new Game(null);
   assert.equal(first.settings.masterVolume, DEFAULT_SETTINGS.masterVolume, 'a first run gets the defaults');
-  const picks = { masterVolume: 0.4, musicVolume: 0.2, sfxVolume: 0.3, showFps: !DEFAULT_SETTINGS.showFps, doubleTapRoll: !DEFAULT_SETTINGS.doubleTapRoll, quality: DEFAULT_SETTINGS.quality === 'low' ? 'med' : 'low' };
+  const picks = { masterVolume: 0.4, musicVolume: 0.2, sfxVolume: 0.3, showFps: !DEFAULT_SETTINGS.showFps, doubleTapRoll: !DEFAULT_SETTINGS.doubleTapRoll, keyGuide: !DEFAULT_SETTINGS.keyGuide, quality: DEFAULT_SETTINGS.quality === 'low' ? 'med' : 'low' };   // keyGuide: the Steering assist row (R2-P-04)
   for (const k in picks) assert.notEqual(picks[k], DEFAULT_SETTINGS[k], `${k}: the test value differs from the default, so a missed reload shows`);
   Object.assign(first.settings, picks); first.saveSettings();
   assert.ok(mem.get(SETTINGS_KEY), 'saveSettings wrote the blob');
@@ -150,9 +152,105 @@ test('loading tips on the keyboard keep their wording, and anything unknown read
   assert.ok(caps('Keyboard').includes('Q / E') && rows('Keyboard').some(([k, a]) => /F \/ Enter/.test(k) && /hold B/.test(a)), `the Controls screen lists Q / E and Hold B: ${caps('Keyboard')}`);
 });
 
-test('input kind for the tips: a connected pad wins over the touch controls (as on the aircraft screen), touch over the keyboard', async () => {
+test('input kind for the tips: the device that last sent input decides (R2-P-05); a plugged-in pad or a touch screen left alone does not', async () => {
   const { inputKind } = await tipKit();
-  assert.deepEqual([[false, false], [true, false], [false, true], [true, true]].map(([t, p]) => inputKind(t, p)), ['keys', 'touch', 'pad', 'pad']);
+  assert.deepEqual(['keyboard', 'pad', 'touch'].map(inputKind), ['keys', 'pad', 'touch'], 'input.lastDevice values map to the words tipAt reads');
+  for (const d of [undefined, null, '', 'mouse', 'KEYBOARD', true, 1]) assert.equal(inputKind(d), 'keys', `${JSON.stringify(d)} reads as the keyboard`);
+  assert.equal(inputKind('keyboard', true), 'keys', 'a second argument (the old "pad connected" flag) no longer wins over the device in use');
+  assert.equal(inputKind(undefined, true), 'keys', 'a connected pad on its own says nothing');
+});
+
+// R2-V-03 / R2-P-04: the first-race card picks its rows by name from the rows the Controls screen prints, for the device in use, and says what the keyboard steering assist does.
+async function hintKit() {
+  const menus = await import('../src/ui/menus.js'), { rows, caps } = await tipKit();
+  const groups = ['Keyboard', 'Gamepad', 'Touch'].map((group) => ({ group, rows: rows(group) }));
+  return { ...menus, groups, rows, caps };
+}
+const NOT_ON_THE_CARD = /airbrake|camera|look back|respawn|^use item backwards$|barrel roll: /i;   // (the keyboard's own item row says "(hold B for backwards)": that one is the item row)
+test('R2-V-03: the first-race card finds every row it teaches by name, for each device, in the real Controls rows', async () => {
+  const { HINT_ROWS, hintRows, groups } = await hintKit();
+  assert.deepEqual(HINT_ROWS.map(([n]) => n), ['pitch', 'bank', 'roll', 'boost', 'cannon', 'item', 'pause'], 'the seven things a first-timer is told');
+  for (const g of groups) {
+    for (const [name, re] of HINT_ROWS) assert.ok(g.rows.some((r) => re.test(r[1])), `${g.group}: no Controls row answers "${name}" (${re}); rows: ${g.rows.map((r) => r[1]).join(' | ')}`);
+    const card = hintRows(g.rows);
+    assert.equal(new Set(card).size, card.length, `${g.group}: a row that answers two names shows once`);
+    for (const r of card) { assert.ok(g.rows.includes(r), `${g.group}: only real rows`); assert.doesNotMatch(r[1], NOT_ON_THE_CARD, `${g.group}: not a card row: ${r[1]}`); }
+    assert.ok(card.some((r) => /use item|boost, cannon, use item/i.test(r[1])), `${g.group}: the card tells how to use an item (the 8th keyboard row used to be cut off)`);
+    assert.ok(card.some((r) => /^pause\b/i.test(r[1])), `${g.group}: and how to pause`);
+  }
+  const kb = hintRows(groups[0].rows), keysOf = (c) => c.map((r) => r[0]);
+  assert.ok(keysOf(kb).some((k) => /F \/ Enter/.test(k)), 'keyboard: F / Enter uses an item: ' + keysOf(kb)); assert.equal(kb.length, 8, 'keyboard: nose down, nose up, bank, roll, boost, cannon, item, pause: ' + keysOf(kb));
+  const pad = hintRows(groups[1].rows); assert.deepEqual(keysOf(pad), ['Left stick', 'LB / RB', 'Right trigger', 'X', 'A', 'Start'], 'gamepad: the pad buttons, A (not B) for the item');
+  const touch = hintRows(groups[2].rows); assert.deepEqual(keysOf(touch), ['Left thumb: drag', '< ROLL / > ROLL', 'BOOST / FIRE / ITEM', 'II'], 'touch: the on-screen controls');
+});
+
+test('R2-V-03: the card follows the rows by name, not by place (a row added, moved or dropped elsewhere changes nothing)', async () => {
+  const { hintRows, groups } = await hintKit();
+  for (const g of groups) {
+    const base = hintRows(g.rows).map((r) => r.join('|')).sort();
+    assert.deepEqual(hintRows([['Hold Z', 'Brand new row'], ...g.rows.slice().reverse(), ['Q', 'Another']]).map((r) => r.join('|')).sort(), base, `${g.group}: reversed, with new rows at both ends`);
+    const withoutAir = g.rows.filter((r) => !/airbrake/i.test(r[1]));
+    assert.deepEqual(hintRows(withoutAir).map((r) => r.join('|')).sort(), base, `${g.group}: dropping the airbrake row (the 6th) does not shift anything`);
+  }
+  assert.deepEqual(hintRows([]), [], 'no rows, no card rows');
+});
+
+test('R2-V-03: the card shows the group of the device in use (input.lastDevice), the keyboard for anything else', async () => {
+  const { hintGroup, groups } = await hintKit();
+  assert.deepEqual(['keyboard', 'pad', 'touch'].map((d) => hintGroup(groups, d).group), ['Keyboard', 'Gamepad', 'Touch']);
+  for (const d of [undefined, null, '', 'mouse', 'Pad']) assert.equal(hintGroup(groups, d).group, 'Keyboard', `${JSON.stringify(d)} reads as the keyboard`);
+  assert.equal(hintGroup(groups.slice().reverse(), 'pad').group, 'Gamepad', 'found by its name, not its place');
+  assert.equal(hintGroup([{ group: 'Gamepad', rows: [] }], 'touch').group, 'Gamepad', 'a missing group falls back to the first one rather than failing');
+});
+
+test('R2-P-04: the steering-assist note is true for the settings it describes: what it does and the hands-off slowing, only while it is on', async () => {
+  const { assistLine, guideOn, STEER_ON } = await hintKit(), { DEFAULT_SETTINGS } = await import('../src/config.js');
+  assert.equal(DEFAULT_SETTINGS.keyGuide, true, 'the premise: the keyboard guide is on by default'); assert.equal(DEFAULT_SETTINGS.assist, 'standard');
+  assert.equal(guideOn(DEFAULT_SETTINGS), true); assert.equal(guideOn({ assist: 'standard', keyGuide: true }), true);
+  assert.equal(guideOn({ assist: 'standard', keyGuide: false }), false, 'Standard with the steering assist off does not steer'); assert.equal(guideOn({ assist: 'pro', keyGuide: true }), false, 'Pro never steers (flight/guide.js)');
+  assert.equal(guideOn({ assist: 'standard' }), true, 'a settings object without the key reads as the default (on)');
+  const on = assistLine(DEFAULT_SETTINGS);
+  assert.equal(on, STEER_ON); assert.match(on, /flies the course for you when you are not steering/); assert.match(on, /hold a key to take over/);
+  assert.match(on, /Hands off for long and it cruises slower\./, 'the race slows a player who leaves the keys alone for long (race.js, the hands-off rule): the note says so, in plain words');
+  assert.doesNotMatch(on, /Settings/, 'the card has no room for where to change it');
+  const onWhere = assistLine(DEFAULT_SETTINGS, true);
+  assert.equal(onWhere, STEER_ON + '\nSwitch this off in Settings.', 'the Controls screen adds a second line: where to change it');
+  const off = assistLine({ assist: 'standard', keyGuide: false }, true);
+  assert.match(off, /Steering assist is off/); assert.match(off, /levels itself/); assert.match(off, /\nSwitch it on in Settings/); assert.doesNotMatch(off, /flies the course|cruises slower/, 'it must not promise what is switched off, nor threaten what only the assist triggers');
+  const pro = assistLine({ assist: 'pro', keyGuide: true }, true);
+  assert.match(pro, /Pro assist: hands-on/); assert.doesNotMatch(pro, /flies the course|cruises slower/, 'Pro does not steer, whatever keyGuide says');
+  for (const [name, t] of [['card', on], ['Controls on', onWhere], ['Controls off', off], ['Controls Pro', pro]]) {
+    assert.ok(t.split('\n').length <= 2, `${name}: at most two lines`); assert.ok(t.split('\n').every((l) => l.length <= 140), `${name}: short lines`);
+    assert.doesNotMatch(t, /guide|blend|keyGuide|assist mode|handsOff/i, `${name}: plain words, no internal names`);
+  }
+  assert.equal(on.includes('\n'), false, 'the card note is one line of text (no break)');
+});
+
+// The unrecognised-controller notice (flight/input.js emits input:padunmapped once per connect): a calm toast, in plain words, that points at the Controls screen.
+test('pad notice: notice() is a calm toast (status role, its own class, no error sound) and toast() stays the red alert; the pad text is short and plain', async () => {
+  const { UI, PAD_NOTICE, NOTICE_MS } = await import('../src/ui/ui.js');
+  const cues = [], cls = new Set(), attrs = {};
+  const ui = Object.create(UI.prototype);
+  ui.game = { events: { emit: (n) => cues.push(n) } };
+  ui.toastEl = { textContent: '', hidden: true, classList: { toggle: (c, on) => (on ? cls.add(c) : cls.delete(c)) }, setAttribute: (k, v) => { attrs[k] = v; } };
+  try {
+    ui.notice('Hello', 20);
+    assert.equal(ui.toastEl.hidden, false); assert.equal(ui.toastEl.textContent, 'Hello'); assert.ok(cls.has('toast-note')); assert.equal(attrs.role, 'status'); assert.deepEqual(cues, [], 'a notice is no error: no ui:error sound');
+    await new Promise((r) => setTimeout(r, 80)); assert.equal(ui.toastEl.hidden, true, 'and it goes away after its time');
+    ui.toast('Boom', 20); assert.equal(cls.has('toast-note'), false); assert.equal(attrs.role, 'alert'); assert.deepEqual(cues, ['ui:error'], 'an error toast still sounds');
+  } finally { clearTimeout(ui._tT); }
+  assert.match(PAD_NOTICE, /^Controller not recognised: using the default layout\. Check Controls\.$/); assert.ok(PAD_NOTICE.length <= 80, 'one short line');
+  assert.doesNotMatch(PAD_NOTICE, /dinput|directinput|mapping|standard|gamepad api/i, 'plain words, no internal names');
+  assert.ok(NOTICE_MS >= 5000 && NOTICE_MS <= 15000, 'on screen long enough to read twice, not so long it nags: ' + NOTICE_MS);
+  const css = readFileSync(new URL('../style.css', import.meta.url), 'utf8');
+  assert.match(css, /\.toast\.toast-note\s*\{/, 'the calm look is styled'); assert.doesNotMatch(css, /\.toast\.info\b/, 'the class is not `info`: that is the aircraft details panel, whose flex column and size container squeezed the toast to a 5 px strip');
+});
+
+test('R2-V-12: no third-party game name in the shipped game files (the main footer used to name two)', () => {
+  const root = fileURLToPath(new URL('../', import.meta.url)), files = [];
+  (function walk(dir) { for (const e of readdirSync(dir, { withFileTypes: true })) { if (e.name === 'tests' || e.name === 'node_modules') continue; const p = join(dir, e.name); if (e.isDirectory()) walk(p); else if (/\.(js|mjs|html|css|md|json|txt)$/.test(e.name)) files.push(p); } })(root);
+  assert.ok(files.length > 50, 'the scan found the game: ' + files.length);
+  assert.deepEqual(files.filter((f) => /Mario|Star\s?Fox|Nintendo/i.test(readFileSync(f, 'utf8'))), [], 'copy describes the game in its own words');
 });
 
 test('V-29: parseMd reads the Markdown subset the credits use', () => {

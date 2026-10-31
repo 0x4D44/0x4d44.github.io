@@ -40,6 +40,8 @@ export function sunriseHeight(x, z) {
   let h = -60;
   for (const I of ISLANDS) {
     const dx = x - I.x, dz = z - I.z;
+    // far-field reject (exact): the warped radius is hypot * (1 + 0.9 w) / r with w = fbm - 0.5 in [-0.5, 0.5], so d >= hypot * 0.55 / r
+    if (Math.hypot(dx, dz) * 0.55 >= I.r * 1.45) continue;
     // domain-warped radius for irregular coastlines
     const w = fbm(x * 0.0035 + I.x * 0.001, z * 0.0035) - 0.5;
     const d = Math.hypot(dx, dz) * (1 + w * 0.9) / I.r;
@@ -54,8 +56,7 @@ export function sunriseHeight(x, z) {
     const edgeK = Math.min(1, Math.max(0, (1.45 - d) / 0.5)), edgeS = edgeK * edgeK * (3 - 2 * edgeK);
     h = Math.max(h, -60 + (Math.max(shelf, core + shelf * 0.2 * (1 - t)) + 60) * edgeS);
   }
-  const gd = gorgeDist(x, z);
-  if (gd < 70 && h > -6) { const c = Math.min(1, Math.max(0, (gd - 30) / 38)); const cc = c * c * (3 - 2 * c); h = -6 + (h + 6) * cc; }
+  if (h > -6) { const gd = gorgeDist(x, z); if (gd < 70) { const c = Math.min(1, Math.max(0, (gd - 30) / 38)); const cc = c * c * (3 - 2 * c); h = -6 + (h + 6) * cc; } }
   return h;
 }
 
@@ -103,12 +104,12 @@ export const sunriseDef = (() => {
     items: ['ridge', 'eastTurn', 'slalom', 'bay', 'deckBack'].map((m) => m),
     sectors: ['sweepEnd', 'eastTurn', 'slalom', 'bay'],
     branches: [{
-      id: 'cave', name: 'Sea-Cave Shortcut', from: 'branchA', to: 'branchB', hw: 50, hh: 44, risk: 0.5,
+      id: 'cave', name: 'Sea-Cave Shortcut', from: 'branchA', to: 'branchB', hw: 44, hh: 40, risk: 0.5,
       points: [[985, 545, 60], [900, 560, 58], [784, 504, 56], [627, 504, 56, null, 42, 38], [470, 538, 56], [330, 570, 56]].map(([x, z, y, ...r]) => [x, y, z, ...r]),
       marks: { cave: 3 },
     }],
     boost: [
-      { branch: 0, u: 130, count: 6, gap: 120, radius: 18, weave: 6, power: 1.7, duration: 2.0 },   // cave: a rewarded line, tight enough to need flying
+      { branch: 0, u: 130, count: 5, gap: 150, radius: 18, weave: 6, power: 1.3, duration: 1.0 },   // cave: a rewarded line, tight enough to need flying
       { mark: 'loopEntry', offset: -230, count: 3, gap: 45, radius: 22, power: 1.4, duration: 1.6 },
       { mark: 'ridge', offset: -60, count: 2, gap: 50, weave: 22, radius: 20, power: 1.3, duration: 1.2 },
       { mark: 'eastTurn', offset: 160, count: 2, gap: 60, weave: 24, radius: 20 },
@@ -128,8 +129,11 @@ export const sunriseDef = (() => {
       return {
         sunDir: new THREE.Vector3(0.62, 0.2, -0.76).normalize(), sunColor: new THREE.Color(0xffc690), sunIntensity: 3.4,
         skyTop: new THREE.Color(0x2d6ad8), skyHorizon: new THREE.Color(0xffb995), skyMid: new THREE.Color(0x7fb6ee), fogColor: new THREE.Color(0xf2c0a4),
-        fogDensity: 0.00022, exposure: 1.0, night: false, ambientGround: new THREE.Color(0x2a6a78),
-        bloom: { strength: 0.55, threshold: 0.9, radius: 0.6 }, grade: { saturation: 1.14, contrast: 1.07, vignette: 0.25, tint: new THREE.Color(1.03, 0.99, 0.95) },
+        // R2-V-15: flying toward the low sun washed the frame (and the craft) white. Narrower, weaker sun glow in the sky and on the sea, a tighter glitter path, a touch less
+        // exposure and bloom; the disc, the warm horizon and the glitter path stay (golden hour). Desktop / touch frames facing the sun lose 55-80 % of their white pixels.
+        sunGlow: [0.14, 10, 0.30, 56], sunGlint: [220, 3.0, 24, 0.10], sunGlitter: [16, 1.6, 0.05],
+        fogDensity: 0.00022, exposure: 0.92, night: false, ambientGround: new THREE.Color(0x2a6a78),
+        bloom: { strength: 0.41, threshold: 0.9, radius: 0.6 }, grade: { saturation: 1.14, contrast: 1.07, vignette: 0.25, tint: new THREE.Color(1.03, 0.99, 0.95) },
       };
     },
   };
