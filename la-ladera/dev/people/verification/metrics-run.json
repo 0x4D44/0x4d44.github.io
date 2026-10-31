@@ -1,0 +1,62 @@
+{
+  "checkedAt": "2026-10-31T13:25:10.250822+00:00",
+  "command": "CHROME_PATH=<headless-shell> node la-ladera/tools/nice.mjs node la-ladera/tests/metrics.mjs --json la-ladera/dev/people/verification/metrics.json",
+  "exitCode": 1,
+  "defaults": {
+    "width": 1920,
+    "height": 1080,
+    "views": 40,
+    "soakSeconds": 60,
+    "costGateMs": 12,
+    "frameSlackMs": 1
+  },
+  "overriddenGateOptions": [],
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "completedViews": 0,
+  "failure": [
+    "metrics run crashed: Error: CDP timeout: Runtime.evaluate |     at Timeout._onTimeout (file:///workspace/scratch/46b1acb33d95/la-ladera-repo/la-ladera/tests/chrome.mjs:174:79) |     at listOnTimeout (node:internal/timers:685:17)"
+  ],
+  "inputAssets": {
+    "manifestSha256": "ec14eabfd72d6a7f6bab7c1222001695f7d60d2c82747e55ecd192dc9bca3f0e",
+    "files": [
+      {
+        "path": "assets/models/people/people.glb",
+        "bytes": 6282680,
+        "sha256": "2ac1342804c0777ba2a52218b5a903e150dd3e784ae78a96cfc69310a72ce82d"
+      },
+      {
+        "path": "assets/models/people/people_albedo.jpg",
+        "bytes": 463617,
+        "sha256": "b25512ac3ebc8bfc6bf85016bd25304437568def73d0914481b0a0df4ac7ab1e"
+      },
+      {
+        "path": "assets/models/people/people_lod.glb",
+        "bytes": 1962828,
+        "sha256": "1d39931501ce800c52eb307743337947a5b081f4316846ada58ab0959008ada6"
+      },
+      {
+        "path": "assets/models/people/people_meta.json",
+        "bytes": 42589,
+        "sha256": "c96c6330bb608f6f7df0a4a8ac8bbd31f6dfa79bfcf93c59e292e652b5ed41ee"
+      },
+      {
+        "path": "assets/models/people/people_normal.jpg",
+        "bytes": 514671,
+        "sha256": "6ae756cba263ac5b3b4da5cc0eae434d82820cfc6fc05c7d08750ee989d7b178"
+      },
+      {
+        "path": "assets/models/people/people_orm.jpg",
+        "bytes": 302836,
+        "sha256": "fc6b4f1a3555da7ed0b53b795185d0872ca5b6b44045aae1f761050555761196"
+      }
+    ]
+  },
+  "inputAssetsUnchanged": true,
+  "sourceHashes": {
+    "tests/metrics.mjs": "1d60c52eabff14a3da2829e3e62e8e41b5e04865f0e7fd52bf0df5b73042eae8",
+    "tests/chrome.mjs": "12006ffc31821cdc6d670a6963ab375b8a03a7501d258d935f75542afeced5cb",
+    "tools/nice.mjs": "2e821edf4ea3339eeb49360691c0e638736aaa73cc6bdf34723e2a4ab263b1a0"
+  },
+  "frameTimeCertified": false,
+  "note": "Unmodified base metrics also timed out before its first viewpoint on this SwiftShader machine. Manual geometry counts are separate and do not replace this gate."
+}

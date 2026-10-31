@@ -1,0 +1,68 @@
+{
+ "size": [
+  1920,
+  1080
+ ],
+ "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+ "boot": {
+  "seconds": 4.3,
+  "stages": {
+   "engine": 31,
+   "materials": 4,
+   "assets": 11,
+   "plan": 113,
+   "worldParts": {
+    "terrain": 226,
+    "surfaces": 35,
+    "stairs": 16,
+    "retaining": 16,
+    "perimeter": 0
+   },
+   "world": 324,
+   "arch": 37,
+   "furnish": 2026,
+   "colliders": 5,
+   "build": 722,
+   "propParts": {
+    "occupancy": 41,
+    "atlas": 94,
+    "boundary": 5,
+    "poles": 26,
+    "vehicles": 30,
+    "dress": 7,
+    "signs": 4,
+    "hill": 12,
+    "flora": 34,
+    "planters": 4,
+    "life": 9,
+    "navfit": 12,
+    "discoveries": 4
+   },
+   "props": 293,
+   "flush": 101,
+   "glow": 14,
+   "peopleSpawn": 47,
+   "people": 335,
+   "start": 5,
+   "total": 4077
+  },
+  "errors": 0
+ },
+ "views": [],
+ "soak": {},
+ "counts": {},
+ "failures": [
+  "metrics run crashed: Error: CDP timeout: Runtime.evaluate |     at Timeout._onTimeout (file:///workspace/scratch/46b1acb33d95/la-ladera-repo/la-ladera/tests/chrome.mjs:174:79) |     at listOnTimeout (node:internal/timers:685:17)"
+ ],
+ "baselineMedian": 16.7,
+ "summary": {
+  "boot_s": 4.3,
+  "views": 0,
+  "blank_page_frame_ms": 16.7,
+  "frame_ms_median_of_medians": null,
+  "worst_median": null,
+  "worst_cost_ms": null,
+  "max_calls": null,
+  "max_tris": null
+ }
+}

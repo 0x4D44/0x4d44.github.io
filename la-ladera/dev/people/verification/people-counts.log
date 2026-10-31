@@ -1,0 +1,52 @@
+spawn: 1075 calls, 1490218 triangles
+ridge-looking-south: 771 calls, 1171637 triangles
+valley-looking-north: 827 calls, 1298330 triangles
+street-n0: 827 calls, 1298330 triangles
+street-n61: 729 calls, 1334576 triangles
+street-n122: 566 calls, 951137 triangles
+street-n183: 839 calls, 1511519 triangles
+street-n244: 830 calls, 1350515 triangles
+street-n305: 825 calls, 1297862 triangles
+street-n366: 488 calls, 801174 triangles
+street-n427: 799 calls, 1380522 triangles
+street-n488: 434 calls, 688665 triangles
+plaza-P1: 696 calls, 1374336 triangles
+plaza-P2: 831 calls, 1453816 triangles
+plaza-P4: 773 calls, 1207904 triangles
+landmark-mirador: 269 calls, 403916 triangles
+landmark-virgen: 789 calls, 1233850 triangles
+landmark-almendros: 702 calls, 1132270 triangles
+landmark-cancha: 330 calls, 649876 triangles
+door-L00: 328 calls, 622865 triangles
+door-L01: 368 calls, 704202 triangles
+door-L02: 936 calls, 1425834 triangles
+door-L06: 1144 calls, 1605520 triangles
+door-L09: 976 calls, 1450567 triangles
+door-L10: 963 calls, 1453782 triangles
+door-L11: 382 calls, 658963 triangles
+door-L12: 405 calls, 673999 triangles
+interior-L00-school: 316 calls, 610848 triangles
+interior-L01-kiosk: 353 calls, 680956 triangles
+interior-L02-shophouse: 773 calls, 1342584 triangles
+interior-L06-apartments: 870 calls, 1492071 triangles
+interior-L09-clinic: 936 calls, 1459477 triangles
+interior-L10-hall: 916 calls, 1442415 triangles
+interior-L11-workshop: 346 calls, 632089 triangles
+interior-L12-cornerstore: 354 calls, 647730 triangles
+interior-L13-house: 373 calls, 657970 triangles
+interior-L18-unfinished: 794 calls, 1474378 triangles
+interior-L24-rowhouse: 604 calls, 992251 triangles
+interior-L34-tenement: 671 calls, 1202470 triangles
+interior-L35-courtyard: 701 calls, 1259126 triangles
+{
+  "ok": false,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "summary": {
+    "views": 40,
+    "maxCalls": 1144,
+    "maxTriangles": 1605520
+  },
+  "failures": [
+    "Unexpected page/console/network diagnostics"
+  ]
+}

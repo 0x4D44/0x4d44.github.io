@@ -1,0 +1,2120 @@
+{
+  "schema": 1,
+  "scope": "node-rest",
+  "startedAt": "2026-10-31T12:54:22.765Z",
+  "completedAt": "2026-10-31T12:56:57.903Z",
+  "nodeVersion": "v24.22.1",
+  "platform": "linux",
+  "architecture": "x64",
+  "complete": true,
+  "ok": false,
+  "execution": "Serial direct tool shell-to-Node entrypoints; tests/register.mjs lowers priority and resolves browser import aliases. No Node-to-Node child process.",
+  "commandPattern": "node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout <test-file>",
+  "availableFiles": 33,
+  "selectedFiles": [
+    "tests/arch-build.test.mjs",
+    "tests/arch-facade.test.mjs",
+    "tests/arch-plan.test.mjs",
+    "tests/arch-walk.test.mjs",
+    "tests/audio-dsp.test.mjs",
+    "tests/audio-library.test.mjs",
+    "tests/audio-mix.test.mjs",
+    "tests/core-matlib.test.mjs",
+    "tests/core-merge.test.mjs",
+    "tests/engine-physics.test.mjs",
+    "tests/glow-city.test.mjs",
+    "tests/interiors-build.test.mjs",
+    "tests/interiors-data.test.mjs",
+    "tests/interiors-reach.test.mjs",
+    "tests/interiors-stories.test.mjs",
+    "tests/live-paths.test.mjs",
+    "tests/nice.test.mjs",
+    "tests/physics.test.mjs",
+    "tests/plan-oracle.test.mjs",
+    "tests/smoke.data.test.mjs",
+    "tests/stuck.test.mjs",
+    "tests/world-mesh.test.mjs",
+    "tests/world-nav.test.mjs",
+    "tests/world-plan.test.mjs"
+  ],
+  "excludedBrowserFiles": [
+    "tests/audio-engine.test.mjs",
+    "tests/engine-render.test.mjs",
+    "tests/glow.test.mjs",
+    "tests/quiet-page.test.mjs",
+    "tests/ui-flow.test.mjs"
+  ],
+  "inputAssets": {
+    "manifestSha256": "5d937e9bc7f7411fa879fb19a633e72eb3648631fc2177a3bacc9c33847e256c",
+    "files": [
+      {
+        "path": "assets/models/people/people.glb",
+        "bytes": 6278280,
+        "sha256": "0f6f052f24d9bc246ceaad36cd1180799f00fd292bf22147cc16208d36e04119"
+      },
+      {
+        "path": "assets/models/people/people_albedo.jpg",
+        "bytes": 463617,
+        "sha256": "b25512ac3ebc8bfc6bf85016bd25304437568def73d0914481b0a0df4ac7ab1e"
+      },
+      {
+        "path": "assets/models/people/people_lod.glb",
+        "bytes": 1961364,
+        "sha256": "7c29c21a2db198eea2e6105941e3c7f4270718dec4835a1f171d23ef18e0a8f3"
+      },
+      {
+        "path": "assets/models/people/people_meta.json",
+        "bytes": 42589,
+        "sha256": "7e4415a3307ed0ab0a35b2af5386ba2924192b9bb24cafffd3cce68d845bdf36"
+      },
+      {
+        "path": "assets/models/people/people_normal.jpg",
+        "bytes": 514671,
+        "sha256": "6ae756cba263ac5b3b4da5cc0eae434d82820cfc6fc05c7d08750ee989d7b178"
+      },
+      {
+        "path": "assets/models/people/people_orm.jpg",
+        "bytes": 302836,
+        "sha256": "fc6b4f1a3555da7ed0b53b795185d0872ca5b6b44045aae1f761050555761196"
+      }
+    ]
+  },
+  "inputAssetsUnchanged": true,
+  "files": [
+    {
+      "file": "tests/arch-build.test.mjs",
+      "sourceSha256": "c84e72741e924bf5961377a15e9f37d305b101513330b9d515cfbffcb3eb3866",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/arch-build.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:54:22.765Z",
+      "completedAt": "2026-10-31T12:54:50.843Z",
+      "wallSeconds": 28.078,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 5,
+        "suites": 0,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "every building builds finite, bounded geometry: one mesh per material, sane triangle counts"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "the shell is closed: a ray from inside any enclosed room always hits wall, floor, ceiling, glass or door leaf"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "door leaves: one per swing door and shutter, two aim targets each, E toggles the collider and the events"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "door leaves swing in 0.35 s, follow door:request from NPCs, and report when they settle"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "walking into a closed door or shutter opens it after 0.25 s; sliding along it, standing, or being beside it does not"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/arch-facade.test.mjs",
+      "sourceSha256": "0243fcf162c1bc626030b90cb0cca925babb4754bc4e211ef354ada1565a4767",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/arch-facade.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:54:50.843Z",
+      "completedAt": "2026-10-31T12:54:52.914Z",
+      "wallSeconds": 2.071,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 9,
+        "suites": 0,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the facade is dressed without a fault, and every kind of dressing really shows up on the real barrio"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias and blade signs keep clear of every opening"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "awnings and door canopies hang over their door but never over a window"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "balconies and miradores belong to a front window, stay clear of each other and of the shop fascia, and fit under the next slab"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "everything stands within reach of its wall and below the parapet line; rooftop rooms sit inside the roof, set back from the street"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "every lot that is named like a shop or an institution gets lettering over its door, and lettering is deterministic"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "the same lots dress identically twice (no Math.random, no state leaking between builds)"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "without a canvas (Node) the atlas is absent and the signs fall back to flat boards: no crash, no atlas material"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "a sign painter that throws leaves the atlas standing, writes nothing to the console, and is reported through ctx.errors"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/arch-plan.test.mjs",
+      "sourceSha256": "0523a4e28733feb4c5968a9b13e366109ba7abd49309b5af1aba4231dfda18ec",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/arch-plan.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:54:52.914Z",
+      "completedAt": "2026-10-31T12:54:56.777Z",
+      "wallSeconds": 3.863,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 9,
+        "suites": 0,
+        "pass": 9,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "every LOT_KIND has at least one test lot and a plan"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "BuildingPlan shape (CONTRACT 5.2)"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "rooms never overlap and every floor point is a room, a stair void or a partition"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "human-scale dimensions (doors, ceilings, windows, stairs)"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "windows never sit on party walls and never overlap doors"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "stairs keep >= 2.0 m real headroom along every flight"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "wall colliders leave every doorway a corridor of w - 0.6 m for the R = 0.3 body (round caps included)"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "layout sweep: every layout plans at every plausible lot size (no throw, no sliver, every room reachable by doors and stairs)"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "planning is deterministic"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/arch-walk.test.mjs",
+      "sourceSha256": "272bfb7b2212ebb9e7b4df713962cfaff971730b82de77f8974d31773ae9d2c7",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/arch-walk.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:54:56.777Z",
+      "completedAt": "2026-10-31T12:55:02.823Z",
+      "wallSeconds": 6.046,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 6,
+        "suites": 0,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "every room, upper floor and walkable roof is reachable from the entrance by walking (doors open)"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "closed doors block: nothing inside is reachable until the doors open"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "entry steps carry the player over a sill 0.52 m above the street (more than one step-up), with human-scale risers"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "every doorway admits the R=0.3 player with +-0.11 m of lateral error, and the wall beside it still blocks"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "a walkable roof is a room, not a launch pad: no real jump (walk or sprint, 60 or 20 fps) clears its parapet or pretil"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "walking straight through a door line works (door opens, player passes, wall beside it blocks)"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/audio-dsp.test.mjs",
+      "sourceSha256": "28ad334475c5cf98f8e0e242734bedbe8af2e68ecf9921490253e503d92bb499",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/audio-dsp.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:02.823Z",
+      "completedAt": "2026-10-31T12:55:03.699Z",
+      "wallSeconds": 0.876,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 19,
+        "suites": 0,
+        "pass": 19,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "rng: same seed, same stream; other seed, other stream; always in [0, 1)"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "rng helpers: range / int inclusive bounds, pick, chance, gauss, fork"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "hashSeed is FNV-1a (32 bit): pinned, because every recipe seed comes from it"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "noise colours: white is flat, pink leans low, brown is mostly rumble; all zero-mean, bounded and seeded"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "lowpass passes below the cutoff and removes what is above it (-12 dB per octave)"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "highpass is the mirror image"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "bandpass peaks at its centre with constant 0 dB gain, and narrower Q is narrower"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "notch removes its centre and peak boosts it by the stated dB; unknown types throw"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "filters are stable at awkward settings (cutoff near Nyquist, tiny Q, low cutoff)"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "sweepBandpass follows a moving centre and stays finite"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "normalize sets the peak, leaves silence alone; gain / removeDC / softclip behave"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "normalizeRms: hits the loudness unless the peak cap binds, then respects the cap"
+        },
+        {
+          "ordinal": 13,
+          "status": "ok",
+          "name": "fade: starts and ends at exactly zero, and leaves the middle untouched"
+        },
+        {
+          "ordinal": 14,
+          "status": "ok",
+          "name": "addTo mixes with an offset, clips at both ends and applies the gain"
+        },
+        {
+          "ordinal": 15,
+          "status": "ok",
+          "name": "loopify: the wrap is an ordinary step, the cross-fade keeps the level, the result is the stated length"
+        },
+        {
+          "ordinal": 16,
+          "status": "ok",
+          "name": "lfo: smooth, bounded, seeded, and it really moves"
+        },
+        {
+          "ordinal": 17,
+          "status": "ok",
+          "name": "babble: seeded, finite, speech-band, syllabic; breath adds sibilance"
+        },
+        {
+          "ordinal": 18,
+          "status": "ok",
+          "name": "reverbIR: two decorrelated channels, decaying tail, early reflections where asked, finite, at the requested rate"
+        },
+        {
+          "ordinal": 19,
+          "status": "ok",
+          "name": "stepStats helper itself: a pure tone has smooth steps"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/audio-library.test.mjs",
+      "sourceSha256": "03a35bee3853fb80a49e228e7fff25e8ba909aa76e535e0a7a57e05e18d81ba5",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/audio-library.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:03.699Z",
+      "completedAt": "2026-10-31T12:55:08.530Z",
+      "wallSeconds": 4.831,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 12,
+        "suites": 0,
+        "pass": 12,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the key list: unique, complete, and every bed, surface and event has its samples"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "every sample is finite, not silent, not clipping, and has no DC offset"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "loudness: the loops sit at one level so a gain of 1 means the same everywhere; one-shots are not whispers"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "one-shots begin and end at exactly zero (no click on start or stop)"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "loops close without a seam: the wrap is no bigger a step than the waveform makes anywhere else"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "deterministic: a second render of every sample is identical (seeded, no Math.random)"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "the generation modules are pure: no DOM, no WebAudio, so they run in a worker and under Node"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "beds have the character of what they are"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "footsteps: every surface reads on small speakers, variants differ, hard surfaces are brighter than soft ones"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "doors: the latch clicks as it opens, the thud lands as it closes; shutters rattle for a second"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "the chapel bell: a G4 strike with a hum an octave down, a long inharmonic ring and a quiet end"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "chime, tick, birds, dogs and horns sit where their pitch should"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/audio-mix.test.mjs",
+      "sourceSha256": "490f6d5ad7733c4afd163ca730be9e48addeba1241e8bcd142b2711dc8f9960e",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/audio-mix.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:08.531Z",
+      "completedAt": "2026-10-31T12:55:09.256Z",
+      "wallSeconds": 0.725,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 15,
+        "suites": 0,
+        "pass": 15,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "geometry: distance to a polygon is 0 inside and the true distance outside; weights sum to one"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "zoneAt names the barrio's areas where the landmarks are"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "every zone has a full, finite, non-negative recipe"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "the day: dark by night, light by day, in one smooth step each way"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "activities follow the hours of a household and a street"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "mix: altitude trades traffic for wind"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "mix: day and night swap the crickets for the birds, the children and the neighbours"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "mix: a crowd raises the neighbours and the children; an empty street quietens them"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "mix: every output is finite and bounded, for any place, hour, altitude and crowd"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "heightRange samples the terrain's 5th..95th percentile"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "emitters: the landmarks that make noise, plus households, at most one of each kind per building, the same every time"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "emitterScore: loudest at the source, fading with distance, gone past its range or out of its hours"
+        },
+        {
+          "ordinal": 13,
+          "status": "ok",
+          "name": "pickEmitters: the loudest few, best first, with a bonus for the ones already sounding"
+        },
+        {
+          "ordinal": 14,
+          "status": "ok",
+          "name": "the bell: three for the Angelus, the hour (up to six) in daylight, silence at night"
+        },
+        {
+          "ordinal": 15,
+          "status": "ok",
+          "name": "pickStream: a seeded stream of numbers in range"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/core-matlib.test.mjs",
+      "sourceSha256": "075d32c326eb53de842cba9157e2f325b246a2b639254ff064316fb44eec3e28",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/core-matlib.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:09.256Z",
+      "completedAt": "2026-10-31T12:55:09.705Z",
+      "wallSeconds": 0.449,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 6,
+        "suites": 0,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "a tiled variant whose image has not arrived is not marked for update"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "the variants upload once the image arrives (version > 0, image present, shared with the base)"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "images arriving one at a time never leave a texture marked without its image"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "a variant made after its image arrived is uploaded straight away"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "whenReady() waits for every requested image and resolves when a download fails"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "an untextured material and a tint of a textured one never touch the loader twice"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/core-merge.test.mjs",
+      "sourceSha256": "3f4576dfd0c0603833eadbf867f5b912f4e632c45673da35974c8a0ad4bf47c7",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/core-merge.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:09.705Z",
+      "completedAt": "2026-10-31T12:55:10.281Z",
+      "wallSeconds": 0.576,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 10,
+        "suites": 0,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "planChunks: every item lands in exactly one chunk, and every multi-item chunk obeys the span and vertex limits"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "planChunks: deterministic, and an item larger than the limits stays alone without blocking the rest"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "planChunks: a wide span is cut at the widest empty gap, so near neighbours stay together and only the far outlier splits off"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "planChunks: only the vertex budget exceeded splits by vertices, not by gaps"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "mergeStatic fuses same-material meshes of nearby groups; a far group and other materials stay apart"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "mergeStatic leaves `.int` groups and their meshes exactly as they were"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "mergeStatic keeps every triangle: position, normal, uv and colour per vertex, per material and flag bucket"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "mergeStatic respects maxVerts and switches to 32-bit indices only when a chunk really needs them"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "mergeStatic leaves animated or special meshes alone: moved matrix, noMerge, hidden, transform on the parent"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "mergeStatic is idempotent and disposes the geometry it replaced, only that"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/engine-physics.test.mjs",
+      "sourceSha256": "3d575677dcb74cc65638c6fa5f3b3f3f442d5e7feb3a00832a35be67d5c8f2d5",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/engine-physics.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:10.282Z",
+      "completedAt": "2026-10-31T12:55:10.711Z",
+      "wallSeconds": 0.429,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 14,
+        "suites": 0,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "canStand: open air above the player is fine"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "canStand: a low soffit between crouched and standing head height blocks standing"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "canStand: a normal ceiling (2.4 m) and a soffit below crouch height behave"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "canStand: the body width counts (a soffit just off-centre still blocks)"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "canStand as a jump test: a 2.3 m ceiling forbids jumping, 3.2 m allows it"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "surfaceAt: terrain, stacked floors and the step-up limit"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "surfaceAt: a ramp reports its interpolated height"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "a character wedged inside wall zones is put on the nearest free spot, whichever way it tries to walk"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "it prefers the way it was walking"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "standing still is not moved, and walking into a wall is blocked, not teleported"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "furniture outlines are crossed to get out, a room wall is not"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "it never lands on another floor or on a slope it could not climb: not the drop, not the steep bank beside the pocket"
+        },
+        {
+          "ordinal": 13,
+          "status": "ok",
+          "name": "a slope too steep to climb stops the character; that is not a wedge, so it is not moved"
+        },
+        {
+          "ordinal": 14,
+          "status": "ok",
+          "name": "a long step (a slow frame) from a pocket relocates, then goes on along the heading"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/glow-city.test.mjs",
+      "sourceSha256": "200bd75e76ad4210df1cacb7884b85c8ada0c134a07b1d8a93f3fd17aa9aea1b",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/glow-city.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:10.711Z",
+      "completedAt": "2026-10-31T12:55:12.248Z",
+      "wallSeconds": 1.537,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 6,
+        "suites": 0,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the city is deterministic for a seed and changes with the seed"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "a few thousand lights, none in the plot, every one above the ground and inside the camera range"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "lights are scattered, not laid out on a lattice, and stand at different heights (street lamps, windows, roofs)"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "the lights sit where the land is built up: nothing on bare land, many more over the valley district than behind the hill"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "colours and switch-on times are mixed: sodium orange, warm white, cool white, and a dusk that takes a while"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "the cap holds: a city that would be larger is cut, not made slow"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/interiors-build.test.mjs",
+      "sourceSha256": "3fb1ad4ae2d174a14f8d38cab181e3218109bd0959b3e7d355fa7a642292b34c",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/interiors-build.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:12.248Z",
+      "completedAt": "2026-10-31T12:55:15.238Z",
+      "wallSeconds": 2.99,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 3,
+        "suites": 0,
+        "pass": 3,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "every catalogue archetype has a stand-in drawer"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "a stand-in stays inside its footprint box and below its catalogue height"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "interior meshes: library materials only, finite, inside the rooms, bounded draw calls"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/interiors-data.test.mjs",
+      "sourceSha256": "34597420a301cadd305198c05af53c1971ba937432e7ef39ebd24b3f20f1fdcf",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/interiors-data.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:15.239Z",
+      "completedAt": "2026-10-31T12:55:23.512Z",
+      "wallSeconds": 8.273,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 11,
+        "suites": 0,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "furnishing raises no errors and every building gets furniture"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "furniture lies inside its room and never overlaps other furniture"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "doors and stairs keep >= 0.7 m clear in front of them"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "the first 3 m inside every street door stay free of furniture"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "every non-circulation room has >= 3 pieces of furniture or decor"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "anchors: every seat, bed, stove and shop counter has one; anchors stand in free space"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "rooms get a finish made of known materials"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "catalogue names used by furniture records all exist; lights carry the contract fields"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "furnishing is deterministic for a given seed and differs between seeds"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "the same lot seed always yields the same household regardless of other buildings"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/interiors-reach.test.mjs",
+      "sourceSha256": "9a13cb73c67362dd5b234e464e07f8b83155a3f8e1994381a2bb1c2a1cc0bd69",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/interiors-reach.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:23.513Z",
+      "completedAt": "2026-10-31T12:55:27.708Z",
+      "wallSeconds": 4.195,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 4,
+        "suites": 0,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the synthetic plans themselves are fully walkable (so a failure below is the furniture)"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "furnished rooms, door landings and stairs stay reachable from the street"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "walking the found paths with physics.move() never gets blocked"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "every standing anchor (cook, counter, sweep, greet...) is connected to a door"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/interiors-stories.test.mjs",
+      "sourceSha256": "a867e775398728d920f61725c505d29d6631b00b069d4bb5dfdd168d87d0447a",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/interiors-stories.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:27.709Z",
+      "completedAt": "2026-10-31T12:55:33.916Z",
+      "wallSeconds": 6.207,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 11,
+        "suites": 0,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "no errors while telling stories, and every building has interactables"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "each discovery stands on a floor of its own building, inside a room, on free floor"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "every reachable seat can be sat on; the sofas and armchairs of each home are offered"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "stories are deterministic: the same plan tells the same stories"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "clock words: Spanish time of day in words"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "ceiling fans: switching changes the target speed and the prompt follows"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/live-paths.test.mjs",
+      "sourceSha256": "d3ad6268faf969c4604deb72f77b8c0e92eff0c4c811deccad4b844efe40bd6b",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/live-paths.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:33.917Z",
+      "completedAt": "2026-10-31T12:55:34.421Z",
+      "wallSeconds": 0.504,
+      "exitCode": 1,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 6,
+        "suites": 0,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "exactCase sees a wrong-case path that Windows would accept"
+        },
+        {
+          "ordinal": 2,
+          "status": "not ok",
+          "name": "checkSource flags a wrong-case import, a missing file, a bare specifier and a missing asset (and passes the right ones)"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "every module import and asset path named in js/ is exact-case and exists"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "index.html: every local reference and import-map target is exact-case and exists"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "css: every url() is exact-case and exists"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "every file the asset manifests name is exact-case and exists"
+        }
+      ],
+      "ok": false
+    },
+    {
+      "file": "tests/nice.test.mjs",
+      "sourceSha256": "c7da70bfc2547c0acb9354a7c4b2892c23850c0fae74dc0158c809e13313b1ef",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/nice.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:34.422Z",
+      "completedAt": "2026-10-31T12:55:35.351Z",
+      "wallSeconds": 0.929,
+      "exitCode": 1,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 7,
+        "suites": 0,
+        "pass": 0,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "not ok",
+          "name": "the wrapper starts its child below normal by default"
+        },
+        {
+          "ordinal": 2,
+          "status": "not ok",
+          "name": "--idle starts the child at idle priority"
+        },
+        {
+          "ordinal": 3,
+          "status": "not ok",
+          "name": "stdout, stderr and stdin pass through the wrapper (it pipes them so the child can never open a console window)"
+        },
+        {
+          "ordinal": 4,
+          "status": "not ok",
+          "name": "the child exit code is forwarded, and a missing command is 127"
+        },
+        {
+          "ordinal": 5,
+          "status": "not ok",
+          "name": "importing tests/nice.mjs lowers the importing process; LADERA_PRIO=normal opts out; idle sticks"
+        },
+        {
+          "ordinal": 6,
+          "status": "not ok",
+          "name": "every test/probe started with --import register.mjs runs below normal priority"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "a .cmd shim runs through the wrapper with its arguments intact (Windows) # SKIP"
+        }
+      ],
+      "ok": false
+    },
+    {
+      "file": "tests/physics.test.mjs",
+      "sourceSha256": "912719bdc601a12a31ca16bdbbb22b24ffa6e73cf4d580320a0dbac815307f62",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/physics.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:35.352Z",
+      "completedAt": "2026-10-31T12:55:35.826Z",
+      "wallSeconds": 0.474,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 11,
+        "suites": 0,
+        "pass": 11,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "flat ground: walking moves the requested distance"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "a wall blocks and the character slides along it"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "no tunnelling through a thin wall at low frame rate"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "door: closed blocks, open passes"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "curb 0.3 m is stepped; retaining wall 0.9 m blocks"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "stairs: ramp climbs to the upper floor, slab hole lets us through, head bump under the slab"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "head bump: a ramp that runs under a slab stops where the head would hit"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "falling off an edge lands on the lower surface"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "steep terrain cannot be climbed, gentle slope can"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "segmentBlocked sees walls and ignores a named door"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "wallsRect/floorRect helpers produce consistent shapes"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/plan-oracle.test.mjs",
+      "sourceSha256": "1a1202e2536181816212d753ca20b1ce3189920b2a14e820b56ac76b6f8841d1",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/plan-oracle.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:35.827Z",
+      "completedAt": "2026-10-31T12:55:38.393Z",
+      "wallSeconds": 2.566,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 38,
+        "suites": 0,
+        "pass": 38,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the clean synthetic plan passes every check"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "no plan at all -> shape"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "a lot lands on its neighbour -> lots.overlap"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "two lots 0.1 m apart with no party wall -> lots.gap"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "every lot is a house -> lots.kinds"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "a lot hangs off the map -> lots.bounds"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "too few lots -> lots.count"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "no shops -> shops.count"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "only three shop types -> shops.types"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "unknown shop type -> shops.type"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "entrance off the wall -> lots.entrance"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "a road at 15 % -> streets.gradient"
+        },
+        {
+          "ordinal": 13,
+          "status": "ok",
+          "name": "a street at 19.5 % -> streets.gradient"
+        },
+        {
+          "ordinal": 14,
+          "status": "ok",
+          "name": "a house standing in the road -> lots.onstreet"
+        },
+        {
+          "ordinal": 15,
+          "status": "ok",
+          "name": "a house standing in the alley -> lots.onstreet"
+        },
+        {
+          "ordinal": 16,
+          "status": "ok",
+          "name": "a house standing in a plaza -> lots.onplaza"
+        },
+        {
+          "ordinal": 17,
+          "status": "ok",
+          "name": "a door facing a street that does not exist -> lots.front"
+        },
+        {
+          "ordinal": 18,
+          "status": "ok",
+          "name": "a wall-eyed 6 m storey -> lots.fh"
+        },
+        {
+          "ordinal": 19,
+          "status": "ok",
+          "name": "a flat stairway -> streets.stair"
+        },
+        {
+          "ordinal": 20,
+          "status": "ok",
+          "name": "a stairway that is a 30 % ramp -> streets.stair"
+        },
+        {
+          "ordinal": 21,
+          "status": "ok",
+          "name": "a stairway at 78 % -> streets.stair"
+        },
+        {
+          "ordinal": 22,
+          "status": "ok",
+          "name": "no alleys -> streets.alley"
+        },
+        {
+          "ordinal": 23,
+          "status": "ok",
+          "name": "a nav island -> nav.connected"
+        },
+        {
+          "ordinal": 24,
+          "status": "ok",
+          "name": "a nav edge that climbs a wall -> nav.edge"
+        },
+        {
+          "ordinal": 25,
+          "status": "ok",
+          "name": "a nav node floating in the air -> nav.ground"
+        },
+        {
+          "ordinal": 26,
+          "status": "ok",
+          "name": "a door with no nav node near -> nav.coverage"
+        },
+        {
+          "ordinal": 27,
+          "status": "ok",
+          "name": "nav too sparse -> nav.density"
+        },
+        {
+          "ordinal": 28,
+          "status": "ok",
+          "name": "the spawn looks downhill -> spawn.look"
+        },
+        {
+          "ordinal": 29,
+          "status": "ok",
+          "name": "the spawn is at the top of the hill -> spawn.place"
+        },
+        {
+          "ordinal": 30,
+          "status": "ok",
+          "name": "lots sit on the raw terrain (no plinth) -> lots.plinth"
+        },
+        {
+          "ordinal": 31,
+          "status": "ok",
+          "name": "the door is 2 m above the street -> lots.doorground"
+        },
+        {
+          "ordinal": 32,
+          "status": "ok",
+          "name": "a flat world -> terrain.relief"
+        },
+        {
+          "ordinal": 33,
+          "status": "ok",
+          "name": "a world of cliffs -> terrain.cliffs"
+        },
+        {
+          "ordinal": 34,
+          "status": "ok",
+          "name": "two plazas only -> plazas.count"
+        },
+        {
+          "ordinal": 35,
+          "status": "ok",
+          "name": "a landmark with no English line -> landmarks.fields"
+        },
+        {
+          "ordinal": 36,
+          "status": "ok",
+          "name": "a poi with no facing -> pois.fields"
+        },
+        {
+          "ordinal": 37,
+          "status": "ok",
+          "name": "a stairway of flights and landings passes; a chapel may front a plaza and be 4.2 m high"
+        },
+        {
+          "ordinal": 38,
+          "status": "ok",
+          "name": "a party wall excuses a 0.1 m gap but not an interpenetration"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/smoke.data.test.mjs",
+      "sourceSha256": "f8fc922f6c26f65edc527bcdc78e78136aefc5948501642bf022a4e660034ca7",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/smoke.data.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:38.394Z",
+      "completedAt": "2026-10-31T12:55:41.510Z",
+      "wallSeconds": 3.116,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 1,
+        "suites": 0,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "data layers build under Node"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/stuck.test.mjs",
+      "sourceSha256": "6e2769c0b5745f3e4c1ae58d0e322bdf1273df46b11af6ce41dfb855585cac12",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/stuck.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:41.511Z",
+      "completedAt": "2026-10-31T12:55:43.902Z",
+      "wallSeconds": 2.391,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 10,
+        "suites": 0,
+        "pass": 10,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "open flat room inside a wall ring: no traps, no boundary exposure, nothing missing"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "a 1.2 m deep pit is a trap (you can fall in but never climb out)"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "a 0.35 m kerb is not a trap (step up and down both work)"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "open edge of the plot is reported as boundary exposure"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "a room sealed by walls is reported missing (unreachable required place)"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "the same room with a 0.9 m doorway is reachable"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "doorway width: 0.5 m gap blocks the 0.6 m character, 1.0 m gap passes"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "a 0.9 m wall can be hopped, a 1.4 m wall cannot"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "stairs: a flight to an upper slab with a hole is walkable both ways; without the hole headroom blocks"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "jump arcs: an island across a 1.5 m moat is reachable and returnable (walk-only search misses it); the moat itself stays a trap"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/world-mesh.test.mjs",
+      "sourceSha256": "dcf8e0013ff194ce0dd6a7d91641ad91a8c4e82d25d8670140ad5ec17da0fac4",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/world-mesh.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:43.903Z",
+      "completedAt": "2026-10-31T12:55:47.028Z",
+      "wallSeconds": 3.125,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 14,
+        "suites": 0,
+        "pass": 14,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the build is clean: no module error, no unknown material, every group flushed"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "discoveries the world placed itself stand on free ground: outside every lot, not inside a collider"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "TEETH: a point on a lot wall counts as \"pushed by a collider\""
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "the signage and the living props all got a place (counts, not just \"no error\")"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "the murals hang on tall cut walls and the flora leaves those walls bare"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "TEETH: a prop collider across a nav edge is found by the same walk"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link"
+        },
+        {
+          "ordinal": 13,
+          "status": "ok",
+          "name": "settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)"
+        },
+        {
+          "ordinal": 14,
+          "status": "ok",
+          "name": "budget: the batched world stays inside the draw and triangle allowance"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/world-nav.test.mjs",
+      "sourceSha256": "175289676572f545c5b90be38a452a11c5cb8b0ad2085cd3a930bc888542989a",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/world-nav.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:47.029Z",
+      "completedAt": "2026-10-31T12:55:47.707Z",
+      "wallSeconds": 0.678,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 6,
+        "suites": 0,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "every nav node stands on ground that matches its y and is not inside a lot"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "the plan itself dropped no unwalkable nav edge"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "every nav edge can be walked in both directions"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "the spawn reaches every door node by walking the nav graph (one component)"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "TEETH: a wall across an edge is detected as blocked"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "TEETH: a node placed on a lot wall fails the \"not pushed by a wall\" check"
+        }
+      ],
+      "ok": true
+    },
+    {
+      "file": "tests/world-plan.test.mjs",
+      "sourceSha256": "30b0a1ca1c6c7c2a366bc64827ab5f0cc1631b5bf51712dbc5d70fe71459cbec",
+      "command": [
+        "node",
+        "--import",
+        "./tests/register.mjs",
+        "--test-reporter=tap",
+        "--test-reporter-destination=stdout",
+        "tests/world-plan.test.mjs"
+      ],
+      "startedAt": "2026-10-31T12:55:47.708Z",
+      "completedAt": "2026-10-31T12:55:49.940Z",
+      "wallSeconds": 2.232,
+      "exitCode": 0,
+      "completeTap": true,
+      "truncated": false,
+      "tap": {
+        "tests": 17,
+        "suites": 0,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "topLevelCases": [
+        {
+          "ordinal": 1,
+          "status": "ok",
+          "name": "the plan is deterministic per seed and differs in the details for another seed"
+        },
+        {
+          "ordinal": 2,
+          "status": "ok",
+          "name": "the lead oracle accepts the plan"
+        },
+        {
+          "ordinal": 3,
+          "status": "ok",
+          "name": "lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names"
+        },
+        {
+          "ordinal": 4,
+          "status": "ok",
+          "name": "lots do not overlap, intrude into streets or plazas, or leave the plot"
+        },
+        {
+          "ordinal": 5,
+          "status": "ok",
+          "name": "TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported"
+        },
+        {
+          "ordinal": 6,
+          "status": "ok",
+          "name": "plinth rule and entrance ground heights"
+        },
+        {
+          "ordinal": 7,
+          "status": "ok",
+          "name": "TEETH: a lot whose y no longer matches the height field is reported"
+        },
+        {
+          "ordinal": 8,
+          "status": "ok",
+          "name": "gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings"
+        },
+        {
+          "ordinal": 9,
+          "status": "ok",
+          "name": "TEETH: a step in the height field is reported as a gradient error"
+        },
+        {
+          "ordinal": 10,
+          "status": "ok",
+          "name": "nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors"
+        },
+        {
+          "ordinal": 11,
+          "status": "ok",
+          "name": "TEETH: cutting nav edges or moving a door node is reported"
+        },
+        {
+          "ordinal": 12,
+          "status": "ok",
+          "name": "spawn is walkable, low on the hill, outside every lot and looks up"
+        },
+        {
+          "ordinal": 13,
+          "status": "ok",
+          "name": "TEETH: a spawn inside a lot or looking downhill is reported"
+        },
+        {
+          "ordinal": 14,
+          "status": "ok",
+          "name": "pois, landmarks, areas and street names have the shape and Spanish names the contract wants"
+        },
+        {
+          "ordinal": 15,
+          "status": "ok",
+          "name": "TEETH: a bad poi kind, an unknown building and an English name are reported"
+        },
+        {
+          "ordinal": 16,
+          "status": "ok",
+          "name": "TEETH: a spike in open terrain is reported as an unexplained cliff"
+        },
+        {
+          "ordinal": 17,
+          "status": "ok",
+          "name": "heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street"
+        }
+      ],
+      "ok": true
+    }
+  ],
+  "totals": {
+    "tests": 250,
+    "suites": 0,
+    "pass": 242,
+    "fail": 7,
+    "cancelled": 0,
+    "skipped": 1,
+    "todo": 0
+  },
+  "failureNotes": [
+    {
+      "file": "tests/live-paths.test.mjs",
+      "failedCases": 1,
+      "classification": "Pre-existing Windows-specific fixture expectation on a case-sensitive Linux filesystem",
+      "detail": "checkSource checks statSync before exactCase. The deliberately wrong ../Core/config.js path does not exist on Linux, so it reports does not exist; the fixture insists on another letter case. The five other checks, including all real JavaScript and manifest asset references, passed.",
+      "evidence": {
+        "wrongCaseExists": false,
+        "correctCaseExists": true
+      }
+    },
+    {
+      "file": "tests/nice.test.mjs",
+      "failedCases": 6,
+      "skippedCases": 1,
+      "classification": "Unchanged quiet-wrapper tests: five nested-process output failures and one POSIX missing-command exit-code mismatch",
+      "detail": "Five assertions receive empty captured output from nested Node processes here; an isolated spawnSync console.log probe returned EPERM with empty stdout/stderr. Separately, tools/nice.mjs returns the bare command on POSIX and maps its spawn error to126, while the existing missing-command fixture expects127. All six failures reproduce from untouched baseline files. The Windows .cmd-only case is skipped."
+    }
+  ],
+  "baselineSourceEvidence": {
+    "revision": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+    "command": "git diff --exit-code origin/main -- la-ladera/tests/live-paths.test.mjs la-ladera/tests/nice.test.mjs la-ladera/tests/nice.mjs la-ladera/tools/nice.mjs la-ladera/tests/register.mjs la-ladera/js/core/config.js",
+    "exitCode": 0,
+    "diff": "",
+    "sha256": {
+      "tests/live-paths.test.mjs": "d3ad6268faf969c4604deb72f77b8c0e92eff0c4c811deccad4b844efe40bd6b",
+      "tests/nice.test.mjs": "c7da70bfc2547c0acb9354a7c4b2892c23850c0fae74dc0158c809e13313b1ef",
+      "tests/nice.mjs": "41a1741c8194ea2b0b1fae395203e6483f3a06247d3c6b36a42dcb10640898de",
+      "tools/nice.mjs": "2e821edf4ea3339eeb49360691c0e638736aaa73cc6bdf34723e2a4ab263b1a0",
+      "tests/register.mjs": "479e393b2511d71a2e0d4153e053af4278ade90266edf0e51efe5f526e79f610",
+      "js/core/config.js": "21560aad20bf42c161892cf792767248a139095152ffbf5364fcd8c27f947a39"
+    }
+  },
+  "baselineReproduction": {
+    "report": "baseline-test-failures.json",
+    "log": "baseline-test-failures.log",
+    "sourceCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+    "reproducedAllSevenObservedFailures": true
+  },
+  "laterAssetVerification": {
+    "report": "people-tests.json",
+    "log": "people-tests.log",
+    "completedAt": "2026-10-31T13:11:35.654Z",
+    "manifestSha256": "ec14eabfd72d6a7f6bab7c1222001695f7d60d2c82747e55ecd192dc9bca3f0e",
+    "totals": {
+      "tests": 52,
+      "suites": 0,
+      "pass": 52,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "ok": true,
+    "note": "All four people files were rerun against the final generated near and far bundles. Original broader regression records and their asset snapshot are retained; these52 tests overlap that run and are not additional distinct cases. No other Node tests were rerun."
+  }
+}

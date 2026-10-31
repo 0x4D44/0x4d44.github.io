@@ -1,12 +1,19 @@
-"""Builds models/people.glb + models/people_meta.json  (REVISION 7: smooth organic people, true scale, shared rig + shared clip set).
-20 variants (men, women, elders, teens, boys, girls, staff).  One 1024x1024 atlas (face tiles 128 px + colour swatches) -> one material `people_atlas`.
+"""Build the 30 La Ladera residents, with a shared external PBR atlas and strict LOD budgets.
+CC0 MakeHuman-derived heads, authored wardrobes, 21 bones and the original 32 clips.
+Use --procedural to regenerate the original analytic figures without the derived head.
 Rig: 21 bones, identical names AND identical rest ORIENTATIONS for every person (arms/legs vertical, clavicles along X, feet along +Y) so a clip authored once
 plays on every person.  The glTF animations (`idle_a`, `walk`, ...) are ROTATION ONLY and are exported once (they bind by bone name on any clone).
 Blender: +Y forward, soles on z=0.  glTF: person faces -Z, origin under the soles."""
-import math, sys, os, random, json, zlib
+import math, sys, os, random, json, zlib, copy
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-ARGS = [a for a in (sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else sys.argv[1:])]
+# Blender owns every argument before -- (including --threads' numeric value).
+# With no separator the documented command builds the full cast.
+ARGS = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 LOD = '--lod' in ARGS
+PROCEDURAL = '--procedural' in ARGS
+REBAKE_CLIPS = '--rebake-clips' in ARGS
+NEAR_TRIS = 6200
+FAR_TRIS = 1450
 from people_lib import *
 OUTP = os.environ.get('PEOPLE_OUT') or OUT
 import people_tex as TX
@@ -60,10 +67,20 @@ PEOPLE = [
     dict(id='m_rapado', kind='teen', H=1.73, skin=5, build=1.0, hair=(0, 'buzz'), eye='#2a1a10', top='#c0392b', top_style='football', sleeve='short', bot_style='shorts', bot='#1b1b22', shoe=('trainer', '#e6e6e6', '#ffffff'), tags=['man', 'teen']),
 ]
 
+# Keep the original procedural recipes intact as a regeneration fallback. Runtime
+# ids, tags, bone placements, clips and recolouring slot semantics stay unchanged.
+if not PROCEDURAL:
+    from people_cast import customize_cast
+    PEOPLE = customize_cast(copy.deepcopy(PEOPLE))
+
+def skin_colour(pd): return pd.get('skin_hex', SKIN[pd['skin']])
+def hair_colour(pd): return pd.get('hair_hex', HAIR[pd['hair'][0]])
+
 # ------------------------------------------------------------------ geometry helpers
 CUR_FAB = ['cotton']
 def fab(n): CUR_FAB[0] = n
-SKINSET = set(SKIN); HAIRSET = set(HAIR)
+SKINSET = set(SKIN) | {skin_colour(p) for p in PEOPLE}
+HAIRSET = set(HAIR) | {hair_colour(p) for p in PEOPLE}
 class PB:
     def __init__(self):
         self.bm = bmesh.new(); self.vpart = []; self.fhex = []; self.fsmooth = []; self.fface = []; self.ffab = []; self.fuv = []
@@ -271,7 +288,7 @@ import zlib
 # ------------------------------------------------------------------ the person
 def build_person(pd):
     P = proportions(pd); H = P['H']; k = P['k']; fem = P['fem']; child = P['child']
-    pb = PB(); skin = SKIN[pd['skin']]
+    pb = PB(); skin = skin_colour(pd)
     stoop = pd.get('stoop', 0.0)
     kind = pd['kind']
     top = pd['top']; tst = pd['top_style']; bot = pd['bot']; bst = pd['bot_style']
@@ -328,6 +345,36 @@ def build_person(pd):
             fab('leather'); zb_ = waist_z - 0.012; r_b = rows_at(rows, zb_ + 0.012)
             loft(pb, [ring(0, r_b[3] + lean(zb_), zb_ + 0.030, r_b[1] * layer + 0.0045, r_b[2] * layer + 0.0045, 20), ring(0, r_b[3] + lean(zb_), zb_, r_b[1] * layer + 0.0045, r_b[2] * layer + 0.0045, 20)], 'torso', '#2a1a12', cap_top=False, cap_bot=False)
             rbox(pb, (0, r_b[3] + lean(zb_) + r_b[2] * layer + 0.0075, zb_ + 0.015), (0.040 * k, 0.008, 0.026 * k), 'torso', '#c8a44a', fab_='metal')
+    # Work overalls: a shaped bib, broad shoulder straps and a stitched chest
+    # pocket. They use the trouser slot, so recolouring keeps one coherent suit.
+    if pd.get('overalls'):
+        oc = pd['overalls']; fab('denim')
+        zs = [H * f for f in (.585, .64, .70, .755)]
+        left = [chest_pt(z, -0.068 * k, .014) for z in zs]
+        right = [chest_pt(z, .068 * k, .014) for z in zs]
+        for a, b, c, d in zip(left, right, right[1:], left[1:]):
+            pb.F([pb.V(q, 'torso') for q in (a, b, c, d)], oc, True, fab_='denim')
+        for sg in (-1, 1):
+            pts = [chest_pt(H * .75, sg * .052 * k, .018),
+                   chest_pt(P['sh'] - .025, sg * .064 * k, .015),
+                   (sg * .064 * k, lean(P['sh']) - .004, P['sh'] + .021)]
+            tube_pts(pb, pts, [.012 * k] * 3, 'torso', oc, n=4, fab_='denim')
+            sphere(pb, chest_pt(H * .744, sg * .052 * k, .023), .005 * k, .004 * k, .005 * k, 'torso', '#b4a085', 6, 3, fab_='metal')
+        for sg in (-1, 1):
+            tube_pts(pb, [chest_pt(H * .686, sg * .043 * k, .018), chest_pt(H * .724, sg * .043 * k, .018)], [.0018 * k] * 2, 'torso', '#b8a483', n=4, fab_='cotton')
+        tube_pts(pb, [chest_pt(H * .686, -.043 * k, .018), chest_pt(H * .686, .043 * k, .018)], [.0018 * k] * 2, 'torso', '#b8a483', n=4, fab_='cotton')
+    # Unbranded football trims and school pocket/badge. Small, readable accents
+    # are geometry in the same primitive, not extra decal draw calls.
+    if pd.get('shirt_trim'):
+        trim = pd['shirt_trim']
+        for sg in (-1, 1):
+            pts = [chest_pt(z, sg * .062 * k, .009) for z in (H * .65, H * .72, H * .78)]
+            tube_pts(pb, pts, [.006 * k] * 3, 'torso', trim, n=4, fab_='jersey')
+        z = H * .748
+        rbox(pb, chest_pt(z, -.095 * k, .012), (.025 * k, .006 * k, .035 * k), 'torso', trim, fab_='jersey')
+    if pd.get('school_trim'):
+        z = H * .735
+        rbox(pb, chest_pt(z, -.055 * k, .012), (.032 * k, .005 * k, .040 * k), 'torso', pd['school_trim'], fab_='cotton')
     fab('knit')
     if pd.get('cardigan'):
         loft(pb, [ring(0, rows[i][3] + lean(rows[i][0]) + 0.002, rows[i][0], rows[i][1] * 1.05, rows[i][2] * 1.05, 14) for i in range(4, 13)], 'torso', pd['cardigan'], cap_top=False, cap_bot=False)
@@ -449,90 +496,106 @@ def build_person(pd):
     # ---------------- neck + head
     ncy = lean(P['nbase']) * 0.7
     nrings = [ring(0, ncy, P['nbase'] - 0.03, 0.062 * k, 0.058 * k, 20), ring(0, ncy + 0.004, P['nbase'] + 0.03 * k, 0.054 * k, 0.051 * k, 20), ring(0, ncy + 0.010, P['chin'] + hh * 0.10, 0.054 * k, 0.054 * k, 20), ring(0, ncy + 0.026 * k, P['chin'] + hh * 0.30, 0.066 * k, 0.074 * k, 20)]
+    if not PROCEDURAL:
+        # The anatomical jaw is narrower than the old analytic head. End the
+        # neck inside its underside instead of flaring through the cheeks.
+        nrings = [nrings[0],
+                  ring(0, ncy + .004, P['nbase'] + .015 * k, .048 * k, .047 * k, 20),
+                  ring(0, lean(P['chin']) * .9 - .015 * k, P['chin'] + .06 * hh, .042 * k, .040 * k, 20)]
     loft(pb, nrings, 'neck', skin, cap_top=False, cap_bot=False)
     # head: skull profile (rx, ry, cy) over height fractions + sculpted face (analytic displacement of the front vertices)
-    male = not fem
-    hf = [0.0, 0.04, 0.12, 0.26, 0.46, 0.66, 0.82, 0.93, 1.0]
-    wscale = 1.0 if male else 0.94
-    if child: wscale = 1.03
-    hrx = [0.075, 0.150, 0.235, 0.305, 0.332, 0.338, 0.300, 0.210, 0.06]
-    hry = [0.080, 0.170, 0.285, 0.375, 0.420, 0.430, 0.390, 0.300, 0.10]
-    hcy = [0.33, 0.27, 0.17, 0.07, 0.01, 0.0, -0.01, -0.02, -0.02]
-    if not male or child:     # softer, rounder jaw
-        hrx[1] += 0.008; hrx[2] += 0.010; hry[2] -= 0.008
-    ctrl = [(P['chin'] + f * hh, hrx[i] * hh * wscale, hry[i] * hh, hcy[i] * hh + lean(P['chin']) * 0.9) for i, f in enumerate(hf)]
-    hrows = crv(ctrl, 22)
-    hrows_fine = crv(ctrl, 80)
     hy0 = lean(P['chin']) * 0.9
-    NH = 16
-    def hring(row, sc=1.0, dy=0.0, drx=0.0, dry=0.0):        # plain elliptical ring (hair / hats)
-        z, rx, ry, cy = row
-        return ring(0, cy + dy, z, rx * sc + drx, ry * sc + dry, NH)
-    G_ = lambda x, c, w: math.exp(-((x - c) / w) ** 2)
-    mfac = 1.0 if male else 0.0
-    def face_disp(X, Zv):
-        """outward (+y) displacement in head-heights at lateral X (in hh) and height fraction Zv (0 chin .. 1 crown)"""
-        d = 0.0
-        d += (0.016 + 0.014 * mfac) * G_(Zv, 0.600, 0.05) * G_(X, 0.0, 0.30)                       # brow ridge
-        d -= 0.014 * G_(Zv, 0.50, 0.055) * (G_(X, 0.14, 0.07) + G_(X, -0.14, 0.07))             # eye sockets
-        d += 0.022 * G_(Zv, 0.39, 0.09) * (G_(X, 0.25, 0.10) + G_(X, -0.25, 0.10))               # cheekbones
-        d -= (0.014 + 0.012 * mfac) * G_(Zv, 0.27, 0.07) * (G_(X, 0.27, 0.09) + G_(X, -0.27, 0.09))  # cheek hollows
-        d += 0.034 * G_(Zv, 0.19, 0.036) * G_(X, 0.0, 0.17)                                         # lips / muzzle
-        d -= 0.014 * G_(Zv, 0.165, 0.010) * G_(X, 0.0, 0.11)                                         # mouth groove
-        d += 0.030 * G_(Zv, 0.065, 0.050) * G_(X, 0.0, 0.12)                                         # chin
-        d += 0.014 * G_(Zv, 0.84, 0.12) * G_(X, 0.0, 0.25)                                           # forehead
-        d -= 0.012 * G_(Zv, 0.255, 0.030) * G_(X, 0.0, 0.10)                                          # philtrum / under nose
-        return d
-    def row_at(z):
-        return min(hrows_fine, key=lambda r_: abs(r_[0] - z))
-    def skull_y(x, z):
-        r_ = row_at(z)
-        return r_[3] + r_[2] * math.sqrt(max(0.0, 1 - (x / r_[1]) ** 2)) + face_disp(x / hh, (z - P['chin']) / hh) * hh
-    A0, A1 = math.radians(22), math.radians(158)
-    ANG = [A0 + (A1 - A0) * i / 19 for i in range(20)] + [A1 + (A0 + 2 * math.pi - A1) * j / 14 for j in range(1, 14)]
-    def skull_ring(row):
-        z, rx, ry, cy = row
-        out = []
-        Zv = (z - P['chin']) / hh
-        for th in ANG:
-            x = rx * math.cos(th); y = cy + ry * math.sin(th)
-            fw = max(0.0, min(1.0, (math.sin(th) - 0.15) / 0.55))
-            out.append((x, y + fw * face_disp(x / hh, Zv) * hh, z))
-        return out
-    NA = len(ANG)
-    def face_fn(r, i):
-        z = hrows[r][0]; f = (z - P['chin']) / hh
-        return (0.09 < f < 0.92) and (i < 19)
-    loft(pb, [skull_ring(r) for r in hrows], 'head', skin, cap_top=True, cap_bot=True, face_fn=face_fn)
-    # nose: bridge -> tip -> alae, rings embedded in the face (units of head height)
-    NOSE_C = [(0.55, 0.020, 0.000), (0.51, 0.027, 0.022), (0.46, 0.036, 0.058), (0.41, 0.047, 0.095), (0.36, 0.058, 0.122), (0.328, 0.066, 0.130), (0.305, 0.060, 0.110), (0.288, 0.050, 0.066), (0.280, 0.042, 0.020)]
-    NOSE = crv(NOSE_C, 14)
-    nrg = []
-    for v_, w_, d_ in NOSE:
-        zz = P['chin'] + v_ * hh; ys = skull_y(0.0, zz)
-        nrg.append(ring(0, ys - 0.016 * hh + d_ * hh * 0.5, zz, max(0.004, w_) * hh, max(0.002, d_) * hh * 0.5 + 0.006 * hh, 16))
-    loft(pb, nrg, 'head', skin, cap_top=True, cap_bot=True)
-    for sg in (-1, 1):
-        zz = P['chin'] + 0.318 * hh
-        sphere(pb, (sg * 0.056 * hh, skull_y(sg * 0.056 * hh, zz) + 0.036 * hh, zz), 0.028 * hh, 0.030 * hh, 0.026 * hh, 'head', skin, 8, 4)
-    # ears: flattened ellipsoid + lobe
-    for sg in (-1, 1):
-        rE = row_at(P['chin'] + 0.46 * hh)
-        sphere(pb, (sg * (rE[1] + 0.006 * hh), rE[3] - 0.03 * hh, P['chin'] + 0.47 * hh), 0.020 * hh, 0.075 * hh, 0.125 * hh, 'head', skin, 10, 6)
-        sphere(pb, (sg * (rE[1] + 0.008 * hh), rE[3] - 0.01 * hh, P['chin'] + 0.35 * hh), 0.016 * hh, 0.030 * hh, 0.038 * hh, 'head', skin, 6, 4)
-    # ---- eyes: modelled eyeballs (iris texture) + upper / lower lids that carry the lash line from the face tile
-    eye_z = P['chin'] + hh * 0.50
-    er = 0.058 * hh
-    for sg in (-1, 1):
-        ex = sg * 0.194 * 0.72 * hh
-        ysurf = skull_y(ex, eye_z)
-        ec = (ex, ysurf - 0.62 * er, eye_z)
-        uvf = (lambda co, ec=ec, er=er: ((co.x - ec[0]) / (2 * er * 1.12) + 0.5, (co.z - ec[2]) / (2 * er) + 0.5))
-        sphere(pb, ec, er * 1.12, er, er, 'head', '#ffffff', 12, 7, smooth=True, uv=uvf, fab_='eye')
-        zone(pb, ec, er * 1.09, 'head', 0.06, math.acos(0.16), 14, 3, fab_='face')          # upper lid
-        zone(pb, ec, er * 1.09, 'head', math.acos(-0.46), math.pi - 0.06, 14, 3, fab_='face')   # lower lid
+    if not PROCEDURAL:
+        from people_head import append_head
+        hd = append_head(pb, P, pd, skin, hy0=hy0, target_tris=1600)
+        ctrl, hrows = hd['ctrl'], hd['hrows']
+        row_at, skull_y = hd['row_at'], hd['skull_y']
+        def hring(row, sc=1.0, dy=0.0, drx=0.0, dry=0.0):
+            z, rx, ry, cy = row
+            return ring(0, cy + dy, z, rx * sc + drx, ry * sc + dry, 16)
+    else:
+        male = not fem
+        hf = [0.0, 0.04, 0.12, 0.26, 0.46, 0.66, 0.82, 0.93, 1.0]
+        wscale = 1.0 if male else 0.94
+        if child: wscale = 1.03
+        hrx = [0.075, 0.150, 0.235, 0.305, 0.332, 0.338, 0.300, 0.210, 0.06]
+        hry = [0.080, 0.170, 0.285, 0.375, 0.420, 0.430, 0.390, 0.300, 0.10]
+        hcy = [0.33, 0.27, 0.17, 0.07, 0.01, 0.0, -0.01, -0.02, -0.02]
+        if not male or child:     # softer, rounder jaw
+            hrx[1] += 0.008; hrx[2] += 0.010; hry[2] -= 0.008
+        ctrl = [(P['chin'] + f * hh, hrx[i] * hh * wscale, hry[i] * hh, hcy[i] * hh + lean(P['chin']) * 0.9) for i, f in enumerate(hf)]
+        hrows = crv(ctrl, 22)
+        hrows_fine = crv(ctrl, 80)
+        hy0 = lean(P['chin']) * 0.9
+        NH = 16
+        def hring(row, sc=1.0, dy=0.0, drx=0.0, dry=0.0):        # plain elliptical ring (hair / hats)
+            z, rx, ry, cy = row
+            return ring(0, cy + dy, z, rx * sc + drx, ry * sc + dry, NH)
+        G_ = lambda x, c, w: math.exp(-((x - c) / w) ** 2)
+        mfac = 1.0 if male else 0.0
+        def face_disp(X, Zv):
+            """outward (+y) displacement in head-heights at lateral X (in hh) and height fraction Zv (0 chin .. 1 crown)"""
+            d = 0.0
+            d += (0.016 + 0.014 * mfac) * G_(Zv, 0.600, 0.05) * G_(X, 0.0, 0.30)                       # brow ridge
+            d -= 0.014 * G_(Zv, 0.50, 0.055) * (G_(X, 0.14, 0.07) + G_(X, -0.14, 0.07))             # eye sockets
+            d += 0.022 * G_(Zv, 0.39, 0.09) * (G_(X, 0.25, 0.10) + G_(X, -0.25, 0.10))               # cheekbones
+            d -= (0.014 + 0.012 * mfac) * G_(Zv, 0.27, 0.07) * (G_(X, 0.27, 0.09) + G_(X, -0.27, 0.09))  # cheek hollows
+            d += 0.034 * G_(Zv, 0.19, 0.036) * G_(X, 0.0, 0.17)                                         # lips / muzzle
+            d -= 0.014 * G_(Zv, 0.165, 0.010) * G_(X, 0.0, 0.11)                                         # mouth groove
+            d += 0.030 * G_(Zv, 0.065, 0.050) * G_(X, 0.0, 0.12)                                         # chin
+            d += 0.014 * G_(Zv, 0.84, 0.12) * G_(X, 0.0, 0.25)                                           # forehead
+            d -= 0.012 * G_(Zv, 0.255, 0.030) * G_(X, 0.0, 0.10)                                          # philtrum / under nose
+            return d
+        def row_at(z):
+            return min(hrows_fine, key=lambda r_: abs(r_[0] - z))
+        def skull_y(x, z):
+            r_ = row_at(z)
+            return r_[3] + r_[2] * math.sqrt(max(0.0, 1 - (x / r_[1]) ** 2)) + face_disp(x / hh, (z - P['chin']) / hh) * hh
+        A0, A1 = math.radians(22), math.radians(158)
+        ANG = [A0 + (A1 - A0) * i / 19 for i in range(20)] + [A1 + (A0 + 2 * math.pi - A1) * j / 14 for j in range(1, 14)]
+        def skull_ring(row):
+            z, rx, ry, cy = row
+            out = []
+            Zv = (z - P['chin']) / hh
+            for th in ANG:
+                x = rx * math.cos(th); y = cy + ry * math.sin(th)
+                fw = max(0.0, min(1.0, (math.sin(th) - 0.15) / 0.55))
+                out.append((x, y + fw * face_disp(x / hh, Zv) * hh, z))
+            return out
+        NA = len(ANG)
+        def face_fn(r, i):
+            z = hrows[r][0]; f = (z - P['chin']) / hh
+            return (0.09 < f < 0.92) and (i < 19)
+        loft(pb, [skull_ring(r) for r in hrows], 'head', skin, cap_top=True, cap_bot=True, face_fn=face_fn)
+        # nose: bridge -> tip -> alae, rings embedded in the face (units of head height)
+        NOSE_C = [(0.55, 0.020, 0.000), (0.51, 0.027, 0.022), (0.46, 0.036, 0.058), (0.41, 0.047, 0.095), (0.36, 0.058, 0.122), (0.328, 0.066, 0.130), (0.305, 0.060, 0.110), (0.288, 0.050, 0.066), (0.280, 0.042, 0.020)]
+        NOSE = crv(NOSE_C, 14)
+        nrg = []
+        for v_, w_, d_ in NOSE:
+            zz = P['chin'] + v_ * hh; ys = skull_y(0.0, zz)
+            nrg.append(ring(0, ys - 0.016 * hh + d_ * hh * 0.5, zz, max(0.004, w_) * hh, max(0.002, d_) * hh * 0.5 + 0.006 * hh, 16))
+        loft(pb, nrg, 'head', skin, cap_top=True, cap_bot=True)
+        for sg in (-1, 1):
+            zz = P['chin'] + 0.318 * hh
+            sphere(pb, (sg * 0.056 * hh, skull_y(sg * 0.056 * hh, zz) + 0.036 * hh, zz), 0.028 * hh, 0.030 * hh, 0.026 * hh, 'head', skin, 8, 4)
+        # ears: flattened ellipsoid + lobe
+        for sg in (-1, 1):
+            rE = row_at(P['chin'] + 0.46 * hh)
+            sphere(pb, (sg * (rE[1] + 0.006 * hh), rE[3] - 0.03 * hh, P['chin'] + 0.47 * hh), 0.020 * hh, 0.075 * hh, 0.125 * hh, 'head', skin, 10, 6)
+            sphere(pb, (sg * (rE[1] + 0.008 * hh), rE[3] - 0.01 * hh, P['chin'] + 0.35 * hh), 0.016 * hh, 0.030 * hh, 0.038 * hh, 'head', skin, 6, 4)
+        # ---- eyes: modelled eyeballs (iris texture) + upper / lower lids that carry the lash line from the face tile
+        eye_z = P['chin'] + hh * 0.50
+        er = 0.058 * hh
+        for sg in (-1, 1):
+            ex = sg * 0.194 * 0.72 * hh
+            ysurf = skull_y(ex, eye_z)
+            ec = (ex, ysurf - 0.62 * er, eye_z)
+            uvf = (lambda co, ec=ec, er=er: ((co.x - ec[0]) / (2 * er * 1.12) + 0.5, (co.z - ec[2]) / (2 * er) + 0.5))
+            sphere(pb, ec, er * 1.12, er, er, 'head', '#ffffff', 12, 7, smooth=True, uv=uvf, fab_='eye')
+            zone(pb, ec, er * 1.09, 'head', 0.06, math.acos(0.16), 14, 3, fab_='face')          # upper lid
+            zone(pb, ec, er * 1.09, 'head', math.acos(-0.46), math.pi - 0.06, 14, 3, fab_='face')   # lower lid
     # ---------------- hair: skull-hugging cap (hairline shaped per angle, strand texture) + alpha-tested hair cards (strand clumps) for length / fringe / silhouette
-    hcol = HAIR[pd['hair'][0]]; style = pd['hair'][1]
+    hcol = hair_colour(pd); style = pd['hair'][1]
     zc_f = lambda f: P['chin'] + f * hh
     th = (0.007 if style == 'buzz' else 0.016) * k
     hat_off = th + 0.010 * k                    # every hat shell stands clear of the hair cap (it used to be thinner than the hair, which then poked through)
@@ -779,9 +842,27 @@ def build_person(pd):
                 sphere(pb, (kb[0], kb[1] - 0.004, kb[2]), 0.016 * k, 0.014 * k, 0.016 * k, 'head', hc, 6, 4)
     fab('plastic')
     if pd.get('glasses'):
-        for sg in (-1, 1):
-            loft(pb, [ring(sg * 0.036 * k, hy0 + ctrl[4][2] + 0.012, zc_f(0.54), 0.021 * k, 0.003, 10), ring(sg * 0.036 * k, hy0 + ctrl[4][2] + 0.016, zc_f(0.54), 0.021 * k, 0.003, 10)], 'head', '#1a1a1a', cap_top=False, cap_bot=False)
-        pb.F([pb.V((-0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.55)), 'head'), pb.V((0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.55)), 'head'), pb.V((0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.54)), 'head'), pb.V((-0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.54)), 'head')], '#1a1a1a', False)
+        if PROCEDURAL:
+            for sg in (-1, 1):
+                loft(pb, [ring(sg * 0.036 * k, hy0 + ctrl[4][2] + 0.012, zc_f(0.54), 0.021 * k, 0.003, 10), ring(sg * 0.036 * k, hy0 + ctrl[4][2] + 0.016, zc_f(0.54), 0.021 * k, 0.003, 10)], 'head', '#1a1a1a', cap_top=False, cap_bot=False)
+            pb.F([pb.V((-0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.55)), 'head'), pb.V((0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.55)), 'head'), pb.V((0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.54)), 'head'), pb.V((-0.015 * k, hy0 + ctrl[4][2] + 0.014, zc_f(0.54)), 'head')], '#1a1a1a', False)
+        else:
+            # Vertical XZ rims fitted to anatomical eye centres. The old XY
+            # rings were horizontal strips and did not surround the eyes.
+            for ex, ey, ez in hd['eye_centers']:
+                loops = []
+                for inset in (0, .009 * hh):
+                    rim = []
+                    for i in range(20):
+                        a = 2 * math.pi * i / 20
+                        x = ex + (.115 * hh - inset) * math.cos(a)
+                        z = ez + (.077 * hh - inset) * math.sin(a)
+                        rim.append((x, max(ey + .052 * hh, skull_y(x, z)) + .004 * k, z))
+                    loops.append(rim)
+                loft(pb, loops, 'head', '#38312c', cap_top=False, cap_bot=False, smooth=False, fab_='plastic')
+            ez = hd['eye_z'] + .020 * hh
+            gap = max(.010 * k, abs(hd['eye_centers'][1][0] - hd['eye_centers'][0][0]) - .215 * hh)
+            qbox(pb, (0, skull_y(0, ez) + .004 * k, ez), (gap, .003 * k, .0035 * k), 'head', '#38312c', fab_='plastic')
     fab(TOPF)
     # ---------------- arms (clothing sleeve layer over the arm, skin beyond the sleeve)
     sh = P['sh']; shw = P['shw']
@@ -880,7 +961,7 @@ def build_person(pd):
         # shoes: shaped loft along y + sole
         sst, sc_, sole_c = pd['shoe']
         sl_ = 0.265 * k * (0.82 if child else 1.0); sw_ = 0.052 * k * (0.9 if child else 1.0)
-        shoe_h = {'trainer': 0.082, 'shoe': 0.080, 'boot': 0.20}[sst] * k
+        shoe_h = {'trainer': 0.082, 'shoe': 0.080, 'boot': 0.20, 'sandal': 0.064}[sst] * k
         ysh = [-0.045 * k, -0.02 * k, 0.03 * k, 0.11 * k, 0.185 * k, sl_ * 0.92, sl_]
         rows_s = []; top_line = []
         for j, yy in enumerate(ysh):
@@ -891,7 +972,17 @@ def build_person(pd):
             if sst == 'boot' and j < 3: hgt = shoe_h * 0.6; zz = 0.028 * k + hgt * 0.5
             rows_s.append(ring(sg * hx, yy, zz, wid, 0.0 + 0.0, 14) if False else [(sg * hx + wid * math.cos(2 * math.pi * i / 10), yy, zz + hgt * 0.5 * math.sin(2 * math.pi * i / 10)) for i in range(10)])
             top_line.append((yy, zz + hgt * 0.5, wid))
-        loft(pb, rows_s, 'foot' + sd, sc_, cap_top=True, cap_bot=True)
+        loft(pb, rows_s, 'foot' + sd, skin if sst == 'sandal' else sc_, cap_top=True, cap_bot=True, fab_='skin' if sst == 'sandal' else None)
+        if sst == 'sandal':
+            # Exposed foot, two leather straps, an ankle strap and a flat sole.
+            # Feet stay on the original foot bone; no extra runtime attachment.
+            for sy_, width_ in ((.055, .024), (.151, .032)):
+                yy = sy_ * k
+                ztop = next((z0 + (z1 - z0) * (yy - y0) / (y1 - y0) for (y0, z0, _), (y1, z1, _) in zip(top_line, top_line[1:]) if y0 <= yy <= y1), .060 * k)
+                pts = [(sg * hx + dx * sw_, yy, .025 * k + (ztop - .025 * k) * math.sqrt(max(0, 1 - dx * dx)) + .003 * k) for dx in (-1, -.7, 0, .7, 1)]
+                vv = [[pb.V((x, y + d * width_ * k / 2, z), 'foot' + sd) for d in (-1, 1)] for x, y, z in pts]
+                for a, b in zip(vv, vv[1:]): pb.F((a[0], a[1], b[1], b[0]), sc_, True, fab_='leather')
+            loft(pb, [ring(sg * hx, 0, P['ankle'] + .008, r3 * 1.18, r3 * 1.18, 10), ring(sg * hx, 0, P['ankle'] + .023, r3 * 1.18, r3 * 1.18, 10)], 'shin' + sd, sc_, cap_top=False, cap_bot=False, fab_='leather')
         if sst in ('trainer', 'shoe', 'boot'):                       # laces across the instep
             lace = '#f2f2f2' if sst == 'trainer' else sc_
             for ly in (0.075, 0.100, 0.125, 0.150):
@@ -1599,6 +1690,7 @@ def fix_outward(bm):
 
 def build_people(only=None):
     reset()
+    os.makedirs(OUTP, exist_ok=True)
     root = group('people')
     objs = []
     plist = [p for p in PEOPLE if not only or p['id'] in only]
@@ -1628,11 +1720,12 @@ def build_people(only=None):
         mo.parent = ao
         mod = mo.modifiers.new('Armature', 'ARMATURE'); mod.object = ao
         objs.append((pd, pb, mo, ao, P, g, bd))
-    # ---- PBR pages (albedo / normal / ORM, 2048 px = 256 px cells; LOD pages 1024 px)
+    # ---- One shared PBR atlas layout (albedo / normal / ORM, 2048 px).
+    # No per-person textures and no separate hair material/draw call.
     A, Nn, O = TX.build_pages([o[0] for o in objs], SKIN, HAIR)
     imgs = {}
     if LOD:       # the LOD geometry is drawn with the full-detail material at run time (same UV layout): ship no textures
-        m = bpy.data.materials.new('people_pbr'); mh = bpy.data.materials.new('people_hair')
+        m = bpy.data.materials.new('people_pbr')
     else:
         for nm, arr in (('albedo', A), ('normal', Nn), ('orm', O)):
             path = os.path.join(SCRATCH, f'people_{nm}.png')
@@ -1641,13 +1734,12 @@ def build_people(only=None):
             if nm != 'albedo': img.colorspace_settings.name = 'Non-Color'
             imgs[nm] = img
         m = make_pbr_material(imgs)
-        mh = make_hair_material()
     meta = {}
     global CLIPS
     CLIPS = clip_defs()
     for idx, (pd, pb, mo, ao, P, g, bd) in enumerate(objs):
-        mo.data.materials.append(m); mo.data.materials.append(mh)
-        uvl = mo.data.uv_layers.new(name='UVMap')
+        mo.data.materials.append(m)
+        mo.data.uv_layers.new(name='UVMap')
         hh = P['hh']; chin = P['chin']
         me_ = mo.data
         # per-part cylinder axis + radius (for fabric UV projection)
@@ -1678,6 +1770,11 @@ def build_people(only=None):
         slot_meta = {}
         SLOT_NAME = {2: 'top', 3: 'bottom', 4: 'shoes', 5: 'hat', 6: 'accessory', 7: 'inner', 8: 'skin'}      # 8: every bare-skin polygon, the face tile included (the game shifts the tone per person)
         ca = me_.color_attributes.new('Col', 'FLOAT_COLOR', 'CORNER'); me_.color_attributes.active_color = ca
+        # Adding a corner color attribute can reallocate Blender's CustomData
+        # storage and invalidate an earlier UV-layer RNA handle. Resolve it only
+        # after all corner layers exist, otherwise assignments silently leave
+        # the default full-image UVs in the exported mesh (Blender 4.5).
+        uvl = me_.uv_layers['UVMap']
         for pi, poly in enumerate(me_.polygons):
             fb = pb.ffab[pi]; hexc = pb.fhex[pi]; uvspec = pb.fuv[pi]
             lis = list(poly.loop_indices)
@@ -1688,8 +1785,10 @@ def build_people(only=None):
                     u = min(0.995, max(0.005, 0.5 + co.x / (0.72 * hh))); v = min(0.995, max(0.005, (co.z - chin) / hh))
                     uvl.data[li].uv = cell_uv(cell, u, v)
             elif fb == 'hair_card':
-                poly.material_index = 1; tint = hex_tint(hexc, 1.45)
-                for li, uv_ in zip(lis, uvspec): uvl.data[li].uv = (uv_[0], uv_[1])
+                # The resident hairstyles use opaque sculpted clumps. Keep any
+                # legacy ribbon on the shared hair tile, never a second primitive.
+                poly.material_index = 0; tint = hex_tint(hexc, 1.45)
+                for li, uv_ in zip(lis, uvspec): uvl.data[li].uv = cell_uv(TX.cell_index('fab', fabidx['hair']), *uv_)
             elif fb.startswith('eye'):
                 poly.material_index = 0; tint = (1.0, 1.0, 1.0); cell = TX.cell_index('eye', eyecell)
                 for li, co in zip(lis, cos_):
@@ -1717,7 +1816,10 @@ def build_people(only=None):
                 qu, qv = QUANT.get(fb, (1, 1))
                 su = max(us_) - min(us_); sv = max(vs_) - min(vs_)
                 if su > 240 - qu or sv > 240 - qv:                     # very large face: shrink the pattern so it fits inside its cell
-                    sc_ = min((240 - qu) / max(su, 1e-6), (240 - qv) / max(sv, 1e-6)); uc = sum(us_) / len(us_); vc = sum(vs_) / len(vs_)
+                    sc_ = min((240 - qu) / max(su, 1e-6), (240 - qv) / max(sv, 1e-6))
+                    # Centre the bounds, not the vertex mean: an asymmetric
+                    # hood polygon otherwise projects beyond its atlas tile.
+                    uc = (min(us_) + max(us_)) * .5; vc = (min(vs_) + max(vs_)) * .5
                     for li, (uu, vv) in zip(lis, pts_):
                         uvl.data[li].uv = cell_px_uv(cell, 128 + (uu - uc) * sc_, 256 - (128 + (vv - vc) * sc_))
                 else:
@@ -1727,7 +1829,7 @@ def build_people(only=None):
                         uvl.data[li].uv = cell_px_uv(cell, 8 + uu - ku * Wu, 256 - (8 + vv - kv * Wv))
             if fb in ('skin', 'face'): slot = 8
             else: slot = 0 if (fb in FIXED_FAB or fb.startswith(('eye', 'tartan'))) else hexmap.get(hexc, 0)
-            if slot and SLOT_NAME[slot] not in slot_meta: slot_meta[SLOT_NAME[slot]] = dict(id=slot, hex=SKIN[pd['skin']] if slot == 8 else hexc, gain=FAB_GAIN.get('skin' if slot == 8 else fb, 1.25))
+            if slot and SLOT_NAME[slot] not in slot_meta: slot_meta[SLOT_NAME[slot]] = dict(id=slot, hex=skin_colour(pd) if slot == 8 else hexc, gain=FAB_GAIN.get('skin' if slot == 8 else fb, 1.25))
             alpha = 1.0 if slot == 0 else slot * 16.0 / 255.0
             for li in lis:
                 vi_ = me_.loops[li].vertex_index
@@ -1840,6 +1942,66 @@ def quantize_glb(path, hair_mask=True, color16=True):
     print('quantized', path, round(os.path.getsize(path) / 1e6, 2), 'MB')
 
 DRACO = os.environ.get('PEOPLE_DRACO', '1') != '0'
+def externalize_images(path):
+    """Store atlas images beside the bundle, then REMOVE their bytes from the GLB.
+
+    CharacterLibrary already supports ordinary glTF image URIs. This preserves
+    its material contract without touching the game loader or embedding an atlas
+    in every bundle. Unused buffer views are removed and every reference rebased.
+    """
+    j, binary = _read_glb(path)
+    removed = set()
+    for i, im in enumerate(j.get('images', [])):
+        if 'bufferView' not in im:
+            continue
+        vi = im.pop('bufferView'); view = j['bufferViews'][vi]
+        name = im.get('name', 'people_atlas_' + str(i))
+        ext = '.png' if im.get('mimeType') == 'image/png' else '.jpg'
+        file = name + ext
+        with open(os.path.join(OUTP, file), 'wb') as f:
+            start = view.get('byteOffset', 0)
+            f.write(binary[start:start + view['byteLength']])
+        im['uri'] = file
+        removed.add(vi)
+    if not removed:
+        return
+    remap = {}; views = []; out = bytearray()
+    for i, v in enumerate(j['bufferViews']):
+        if i in removed:
+            continue
+        while len(out) % 4: out.append(0)
+        remap[i] = len(views)
+        nv = dict(v, byteOffset=len(out), buffer=0)
+        start = v.get('byteOffset', 0)
+        out.extend(binary[start:start + v['byteLength']])
+        views.append(nv)
+    def refs(obj):
+        if isinstance(obj, dict):
+            for key, val in obj.items():
+                if key == 'bufferView': obj[key] = remap[val]
+                else: refs(val)
+        elif isinstance(obj, list):
+            for val in obj: refs(val)
+    refs(j)
+    j['bufferViews'] = views
+    j['buffers'] = [dict(byteLength=len(out))]
+    _write_glb(path, j, out)
+    if os.path.abspath(OUTP) == os.path.abspath(OUT):
+        # A registry entry lets the same material NAME resolve through matlib
+        # for non-character consumers. The unchanged CharacterLibrary loads the
+        # glTF material directly and shares these exact image URLs across cast.
+        manifest_path = os.path.join(ROOT, 'assets', 'textures', 'manifest.json')
+        with open(manifest_path, encoding='utf8') as f: manifest = json.load(f)
+        images = {im.get('name'): im['uri'] for im in j.get('images', [])}
+        manifest['textures']['people_pbr'] = dict(
+            map='../models/people/' + images['people_albedo'],
+            normal='../models/people/' + images['people_normal'],
+            rough='../models/people/' + images['people_orm'],
+            size=2048,
+        )
+        with open(manifest_path, 'w', encoding='utf8') as f:
+            json.dump(manifest, f, indent=1); f.write('\n')
+
 def finish_glb(path, hair_mask=True):
     """Draco build: geometry is already compressed by the exporter; only the material flags are patched (double sided cloth, alpha-tested hair cards)."""
     j, bin_ = _read_glb(path)
@@ -1853,7 +2015,7 @@ def export_people(meta):
     path = os.path.join(OUTP, 'people_lod.glb' if LOD else 'people.glb')
     bpy.ops.object.select_all(action='DESELECT')
     kw = dict(filepath=path, export_format='GLB', export_yup=True, export_apply=False, export_materials='EXPORT', export_image_format='JPEG', export_jpeg_quality=86, export_vertex_color='ACTIVE', export_cameras=False, export_lights=False,
-              export_skins=True, export_animations=True, export_animation_mode='NLA_TRACKS', export_frame_range=False, export_optimize_animation_size=True,
+              export_skins=True, export_animations=REBAKE_CLIPS and not LOD, export_animation_mode='NLA_TRACKS', export_frame_range=False, export_optimize_animation_size=True,
               export_force_sampling=True)
     if DRACO:      # Draco keeps 25 characters + LOD far under the 14 MB budget (js/people/rig.js decodes it with the vendored three.js Draco decoder)
         kw.update(export_draco_mesh_compression_enable=True, export_draco_mesh_compression_level=7, export_draco_position_quantization=14, export_draco_normal_quantization=10,
@@ -1866,6 +2028,117 @@ def export_people(meta):
     print(f'EXPORTED people.glb: {os.path.getsize(path)/1024:.0f} KB (draco={DRACO})')
     if DRACO: finish_glb(path)
     else: quantize_glb(path, color16=not LOD)
+    externalize_images(path)
+    if not LOD and not REBAKE_CLIPS:
+        from people_clips import append_clips
+        append_clips(path)
+
+def reduce_mesh(mo, ao, limit):
+    """Budget the actual mesh and preserve categorical recolouring alpha.
+
+    Collapse happens before export; joint weights remain Blender vertex groups.
+    Carry the colour slot and atlas tile through reduction as categorical face
+    material indices, then restore one shared material. A collapse may
+    extrapolate UVs; constrain them to the face's original tile, never a
+    neighbouring fabric or face tile.
+    No normals, textures, animation channels or rest skeletons are regenerated.
+    """
+    count = lambda: sum(len(p.vertices) - 2 for p in mo.data.polygons)
+    material = mo.data.materials[0]
+    col = mo.data.color_attributes['Col']
+    uv = mo.data.uv_layers['UVMap']
+    source_alpha = [corner.color[3] for corner in col.data]
+    source_uv = [tuple(corner.uv) for corner in uv.data]
+    regions = []; region_index = {}
+    face_regions = []
+    for poly in mo.data.polygons:
+        alphas = [source_alpha[li] for li in poly.loop_indices]
+        alpha = alphas[0]
+        slot = 0 if alpha > .9 else round(alpha * 255 / 16)
+        if slot not in (0, 2, 3, 4, 5, 6, 7, 8) or any(abs(a - alpha) > 1e-5 for a in alphas):
+            raise RuntimeError(f'{mo.name}: inconsistent source recolour slot')
+        coords = [source_uv[li] for li in poly.loop_indices]
+        cx, cy = (math.floor(sum(p[a] for p in coords) / len(coords) * TX.NCOL) for a in (0, 1))
+        if not (0 <= cx < TX.NCOL and 0 <= cy < TX.NCOL) or any(
+                not (cx / TX.NCOL - 1e-6 <= u <= (cx + 1) / TX.NCOL + 1e-6
+                     and cy / TX.NCOL - 1e-6 <= v <= (cy + 1) / TX.NCOL + 1e-6) for u, v in coords):
+            raise RuntimeError(f'{mo.name}: source face {poly.index} crosses atlas cells {cx},{cy}: {coords}')
+        key = (slot, cx, cy)
+        if key not in region_index:
+            region_index[key] = len(regions)
+            regions.append(key)
+        face_regions.append(region_index[key])
+    for _ in regions[1:]: mo.data.materials.append(material)
+    for poly, region in zip(mo.data.polygons, face_regions): poly.material_index = region
+    # Preserve near-view clothing boundaries and open garment hems. At the far
+    # budget, hard-locking these fine edges consumes the face/head silhouette's
+    # triangle allocation, so let the geometric reducer choose those details.
+    collapse_name = None
+    if limit > 1500:
+        edge_regions = {}
+        garment_tiles = set()
+        for i, name in enumerate(TX.FABRIC_ORDER):
+            if name not in ('skin', 'hair'):
+                row, column = TX.cell_rc(TX.cell_index('fab', i))
+                garment_tiles.add((column, TX.NCOL - 1 - row))
+        for poly in mo.data.polygons:
+            for edge in poly.edge_keys:
+                edge_regions.setdefault(tuple(sorted(edge)), []).append(poly.material_index)
+        keep = set()
+        for edge, adjacent in edge_regions.items():
+            if len(set(adjacent)) > 1 or (len(adjacent) == 1 and regions[adjacent[0]][1:] in garment_tiles):
+                keep.update(edge)
+        collapse_group = mo.vertex_groups.new(name='_people_reduce')
+        collapse_name = collapse_group.name
+        collapse_group.add(list(range(len(mo.data.vertices))), 1.0, 'REPLACE')
+        if keep: collapse_group.remove(sorted(keep))
+    mo.modifiers.remove(mo.modifiers['Armature'])
+    for attempt in range(4):
+        before = count()
+        if before <= limit: break
+        dm = mo.modifiers.new('people_budget', 'DECIMATE')
+        dm.decimate_type = 'COLLAPSE'
+        dm.ratio = min(.98, (limit - 18) / before)
+        dm.use_collapse_triangulate = True
+        # Zero weights lock seam vertices in Blender's collapse algorithm.
+        if collapse_name:
+            dm.vertex_group = collapse_name
+            dm.vertex_group_factor = 1.0
+        bpy.context.view_layer.objects.active = mo
+        bpy.ops.object.modifier_apply(modifier=dm.name)
+    if count() > limit:
+        raise RuntimeError(f'{mo.name}: {count()} triangles exceeds {limit}')
+    if collapse_name: mo.vertex_groups.remove(mo.vertex_groups[collapse_name])
+    # At the far budget tiny closed details can collapse to coincident triangles.
+    # Remove those explicitly before counting/export, rather than letting the
+    # glTF exporter silently repair the mesh after metadata has been recorded.
+    if mo.data.validate(clean_customdata=False):
+        print(mo.name, 'repaired mesh after reduction')
+    mo.data.update()
+    col = mo.data.color_attributes['Col']
+    uv = mo.data.uv_layers['UVMap']
+    pad = .5 / TX.PAGE
+    for poly in mo.data.polygons:
+        slot, cx, cy = regions[poly.material_index]
+        alpha = 1.0 if slot == 0 else slot * 16 / 255
+        for li in poly.loop_indices:
+            r, g, b, _ = col.data[li].color
+            col.data[li].color = (r, g, b, alpha)
+            u, v = uv.data[li].uv
+            uv.data[li].uv = (min((cx + 1) / TX.NCOL - pad, max(cx / TX.NCOL + pad, u)),
+                              min((cy + 1) / TX.NCOL - pad, max(cy / TX.NCOL + pad, v)))
+        poly.material_index = 0
+    mo.data.materials.clear()
+    mo.data.materials.append(material)
+    # Keep four normalized weights even when a collapse meets two limb regions.
+    for vertex in mo.data.vertices:
+        groups = sorted(((g.group, g.weight) for g in vertex.groups if g.weight > 1e-6), key=lambda g: -g[1])[:4]
+        total = sum(w for _, w in groups)
+        if not total: raise RuntimeError(f'{mo.name}: vertex without skin weights')
+        for group in mo.vertex_groups: group.remove([vertex.index])
+        for gi, weight in groups: mo.vertex_groups[gi].add([vertex.index], weight / total, 'REPLACE')
+    am = mo.modifiers.new('Armature', 'ARMATURE'); am.object = ao
+    return count()
 
 def fk_grips(P, bd):
     """Hand grip positions (relative to the root) for stand_hold_pole (right hand) and stand_hold_rail (left hand): forward kinematics of the clip poses."""
@@ -1873,21 +2146,16 @@ def fk_grips(P, bd):
 
 if __name__ == '__main__':
     only = [a for a in ARGS if not a.startswith('--')]
+    unknown = set(only) - {p['id'] for p in PEOPLE}
+    if unknown: raise ValueError('Unknown resident IDs: ' + ', '.join(sorted(unknown)))
     root, objs, meta, sw = build_people(only or None)
-    if LOD:      # LOD1: decimate every body (same rig / weights / names), 1024 px atlas, no clips (it binds to the full-detail skeleton at run time)
-        for pd, pb, mo, ao, P, g, bd in objs:
-            tris0 = sum(max(1, len(p_.vertices) - 2) for p_ in mo.data.polygons)
-            mo.modifiers.remove(mo.modifiers['Armature'])
-            dm = mo.modifiers.new('dec', 'DECIMATE'); dm.decimate_type = 'COLLAPSE'; dm.ratio = min(1.0, 1600.0 / tris0); dm.use_collapse_triangulate = True; dm.delimit = {'UV', 'MATERIAL'}
-            bpy.context.view_layer.objects.active = mo
-            bpy.ops.object.modifier_apply(modifier='dec')
-            am = mo.modifiers.new('Armature', 'ARMATURE'); am.object = ao
-            meta[pd['id']]['tris'] = sum(max(1, len(p_.vertices) - 2) for p_ in mo.data.polygons)
+    for pd, pb, mo, ao, P, g, bd in objs:
+        meta[pd['id']]['tris'] = reduce_mesh(mo, ao, FAR_TRIS if LOD else NEAR_TRIS)
     finalize_rigs(objs, meta)
     # author the shared clips ONCE (on the first armature); every person has identical bone names / rest orientations
     first = objs[0][3]
     names = list(CLIPS.keys()) if not LOD else []
-    for nme in names:
+    for nme in names if REBAKE_CLIPS else []:
         frames, fn = CLIPS[nme]
         pose_clip(first, nme, frames, fn)
     for pid, md in meta.items():
@@ -1898,7 +2166,7 @@ if __name__ == '__main__':
     export_people(meta)
     if LOD:
         sys.exit(0)
-    out = dict(note='Heights are total standing heights (soles = 0). Headroom rule: train centre-line headroom is 1.88 m, 1.68 m above the bench fronts (|x|=0.62), ~1.3 m at the seat backs; every person is <= 1.80 m so standing in the aisle never clips; seated heads top out at seatedHeadTopM above the floor. Seated: set the root so that root.y = seatFloorY - seatRootDropM (clips sit_* are rotation-only).',
-               lod=dict(file='people_lod.glb', trisPerPerson=1600, note='geometry only (no textures, no clips): same node names, skin and UV layout as people.glb, so js/people/rig.js swaps it into the full-detail skinned mesh beyond ~35 m. Same recolour slots (COLOR_0 alpha).'), seatTopM=SEAT_TOP, seatHipM=SEAT_HIP, loopClips=[c for c in names if c not in ONE_SHOT], oneShotClips=sorted(ONE_SHOT), fps=24,
+    out = dict(note='La Ladera residents. Metres, soles at zero, glTF faces -Z. Original 21-bone rest orientations and 32 rotation-only clips. Set seated root.y = seatFloorY - seatRootDropM. COLOR_0 alpha is the original garment slot id, never opacity. One shared external 2048px PBR atlas; no embedded images.',
+               lod=dict(file='people_lod.glb', trisPerPerson=FAR_TRIS, note='geometry only (no textures, no clips): same node names, joint order and UV layout as people.glb. The unchanged rig.js swaps it beyond 38m and returns to near within 32m. Same recolour slots.'), seatTopM=SEAT_TOP, seatHipM=SEAT_HIP, loopClips=[c for c in names if c not in ONE_SHOT], oneShotClips=sorted(ONE_SHOT), fps=24,
                clipFrames={n: CLIPS[n][0] for n in names}, people=list(meta.values()))
     json.dump(out, open(os.path.join(OUTP, 'people_meta.json'), 'w'), indent=1)

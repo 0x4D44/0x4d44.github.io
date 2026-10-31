@@ -1,0 +1,566 @@
+{
+  "purpose": "Geometry/draw-call counts only; no frame-time certification",
+  "checkedAt": "2026-10-31T13:12:35.005Z",
+  "size": [
+    1920,
+    1080
+  ],
+  "manual": true,
+  "assets": {
+    "people.glb": {
+      "bytes": 6282680,
+      "sha256": "2ac1342804c0777ba2a52218b5a903e150dd3e784ae78a96cfc69310a72ce82d"
+    },
+    "people_lod.glb": {
+      "bytes": 1962828,
+      "sha256": "1d39931501ce800c52eb307743337947a5b081f4316846ada58ab0959008ada6"
+    },
+    "people_meta.json": {
+      "bytes": 42589,
+      "sha256": "c96c6330bb608f6f7df0a4a8ac8bbd31f6dfa79bfcf93c59e292e652b5ed41ee"
+    }
+  },
+  "views": [
+    {
+      "id": "spawn",
+      "pos": [
+        -6.5,
+        0.22,
+        92.5
+      ],
+      "calls": 1075,
+      "tris": 1490218,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "ridge-looking-south",
+      "pos": [
+        26,
+        29.07,
+        -86
+      ],
+      "calls": 771,
+      "tris": 1171637,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "valley-looking-north",
+      "pos": [
+        46,
+        0.13,
+        99
+      ],
+      "calls": 827,
+      "tris": 1298330,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n0",
+      "pos": [
+        46,
+        0.13,
+        99
+      ],
+      "calls": 827,
+      "tris": 1298330,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n61",
+      "pos": [
+        -7.46,
+        11.2,
+        21.32
+      ],
+      "calls": 729,
+      "tris": 1334576,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n122",
+      "pos": [
+        -37.31,
+        27.51,
+        -49.78
+      ],
+      "calls": 566,
+      "tris": 951137,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n183",
+      "pos": [
+        -6.5,
+        2.69,
+        55.94
+      ],
+      "calls": 839,
+      "tris": 1511519,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n244",
+      "pos": [
+        41,
+        5.67,
+        47.51
+      ],
+      "calls": 830,
+      "tris": 1350515,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n305",
+      "pos": [
+        -20,
+        12.63,
+        12.62
+      ],
+      "calls": 825,
+      "tris": 1297862,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n366",
+      "pos": [
+        14,
+        24.81,
+        -34.63
+      ],
+      "calls": 488,
+      "tris": 801174,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n427",
+      "pos": [
+        -65.68,
+        0.25,
+        83.3
+      ],
+      "calls": 799,
+      "tris": 1380522,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "street-n488",
+      "pos": [
+        6.25,
+        28,
+        -73.03
+      ],
+      "calls": 434,
+      "tris": 688665,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "plaza-P1",
+      "pos": [
+        -6.5,
+        6.48,
+        41.4
+      ],
+      "calls": 696,
+      "tris": 1374336,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "plaza-P2",
+      "pos": [
+        20,
+        6.95,
+        47.2
+      ],
+      "calls": 831,
+      "tris": 1453816,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "plaza-P4",
+      "pos": [
+        4.25,
+        28,
+        -67.55
+      ],
+      "calls": 773,
+      "tris": 1207904,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "landmark-mirador",
+      "pos": [
+        24.35,
+        29.11,
+        -85.23
+      ],
+      "calls": 269,
+      "tris": 403916,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "landmark-virgen",
+      "pos": [
+        -5.57,
+        7.45,
+        35.47
+      ],
+      "calls": 789,
+      "tris": 1233850,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "landmark-almendros",
+      "pos": [
+        17.66,
+        6.94,
+        41.68
+      ],
+      "calls": 702,
+      "tris": 1132270,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "landmark-cancha",
+      "pos": [
+        -54.4,
+        0.25,
+        72.45
+      ],
+      "calls": 330,
+      "tris": 649876,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L00",
+      "pos": [
+        49.4,
+        0.33,
+        91.02
+      ],
+      "calls": 328,
+      "tris": 622865,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L01",
+      "pos": [
+        49.4,
+        0.56,
+        80
+      ],
+      "calls": 368,
+      "tris": 704202,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L02",
+      "pos": [
+        31.41,
+        0.46,
+        86.1
+      ],
+      "calls": 936,
+      "tris": 1425834,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L06",
+      "pos": [
+        6.1,
+        0.43,
+        86.1
+      ],
+      "calls": 1144,
+      "tris": 1605520,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L09",
+      "pos": [
+        -22.78,
+        0.45,
+        86.1
+      ],
+      "calls": 976,
+      "tris": 1450567,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L10",
+      "pos": [
+        -26.58,
+        0.45,
+        86.1
+      ],
+      "calls": 963,
+      "tris": 1453782,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L11",
+      "pos": [
+        30.23,
+        0.46,
+        89.9
+      ],
+      "calls": 382,
+      "tris": 658963,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "door-L12",
+      "pos": [
+        25.31,
+        0.46,
+        89.9
+      ],
+      "calls": 405,
+      "tris": 673999,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L00-school",
+      "pos": [
+        51.71,
+        0.5,
+        91.02
+      ],
+      "calls": 316,
+      "tris": 610848,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L01-kiosk",
+      "pos": [
+        51.71,
+        0.7,
+        80
+      ],
+      "calls": 353,
+      "tris": 680956,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L02-shophouse",
+      "pos": [
+        31.41,
+        0.6,
+        83.79
+      ],
+      "calls": 773,
+      "tris": 1342584,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L06-apartments",
+      "pos": [
+        6.1,
+        0.6,
+        83.79
+      ],
+      "calls": 870,
+      "tris": 1492071,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L09-clinic",
+      "pos": [
+        -22.78,
+        0.6,
+        83.79
+      ],
+      "calls": 936,
+      "tris": 1459477,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L10-hall",
+      "pos": [
+        -26.58,
+        0.6,
+        83.79
+      ],
+      "calls": 916,
+      "tris": 1442415,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L11-workshop",
+      "pos": [
+        30.23,
+        0.6,
+        92.21
+      ],
+      "calls": 346,
+      "tris": 632089,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L12-cornerstore",
+      "pos": [
+        25.31,
+        0.6,
+        92.21
+      ],
+      "calls": 354,
+      "tris": 647730,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L13-house",
+      "pos": [
+        19.5,
+        0.6,
+        92.21
+      ],
+      "calls": 373,
+      "tris": 657970,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L18-unfinished",
+      "pos": [
+        18.71,
+        1.4,
+        61.43
+      ],
+      "calls": 794,
+      "tris": 1474378,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L24-rowhouse",
+      "pos": [
+        -15.82,
+        2.95,
+        64.72
+      ],
+      "calls": 604,
+      "tris": 992251,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L34-tenement",
+      "pos": [
+        1.87,
+        16.5,
+        -3.92
+      ],
+      "calls": 671,
+      "tris": 1202470,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    },
+    {
+      "id": "interior-L35-courtyard",
+      "pos": [
+        -5.76,
+        16.6,
+        -4.4
+      ],
+      "calls": 701,
+      "tris": 1259126,
+      "quality": "high",
+      "npcs": 73,
+      "errors": 0
+    }
+  ],
+  "failures": [
+    "Unexpected page/console/network diagnostics"
+  ],
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "diagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x3ec4001d0400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:35005/la-ladera/index.html?autostart&manual",
+      "[warning] [.WebGL-0x3ec4001d0400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:35005/la-ladera/index.html?autostart&manual",
+      "[warning] [.WebGL-0x3ec4001d0400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:35005/la-ladera/index.html?autostart&manual",
+      "[warning] [.WebGL-0x3ec4001d0400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:35005/la-ladera/index.html?autostart&manual"
+    ]
+  },
+  "summary": {
+    "views": 40,
+    "maxCalls": 1144,
+    "maxTriangles": 1605520
+  },
+  "ok": false
+}

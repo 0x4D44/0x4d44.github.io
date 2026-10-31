@@ -1,0 +1,62 @@
+{
+  "checkedAt": "2026-10-31T13:21:06.664825+00:00",
+  "scope": "Full original procedural source recipes, near and far, built in an isolated PEOPLE_OUT; no automatic runtime fallback is implied.",
+  "blender": "4.5.4 LTS",
+  "quietWrapper": "tools/nice.mjs",
+  "flags": [
+    "--background",
+    "--factory-startup",
+    "--threads",
+    "2",
+    "--python-exit-code",
+    "1"
+  ],
+  "exports": [
+    {
+      "args": [
+        "--procedural"
+      ],
+      "exitCode": 0
+    },
+    {
+      "args": [
+        "--procedural",
+        "--lod"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "validator": [
+    "--root",
+    ".scratch/people-procedural-final/models",
+    "--complete",
+    "--json"
+  ],
+  "validatorExitCode": 0,
+  "people": 30,
+  "clips": 32,
+  "maxNearTriangles": 6182,
+  "maxFarTriangles": 1420,
+  "bytes": 8426362,
+  "productionHashes": {
+    "la-ladera/assets/models/manifest.people.json": "ec14eabfd72d6a7f6bab7c1222001695f7d60d2c82747e55ecd192dc9bca3f0e",
+    "la-ladera/assets/models/people/people.glb": "2ac1342804c0777ba2a52218b5a903e150dd3e784ae78a96cfc69310a72ce82d",
+    "la-ladera/assets/models/people/people_albedo.jpg": "b25512ac3ebc8bfc6bf85016bd25304437568def73d0914481b0a0df4ac7ab1e",
+    "la-ladera/assets/models/people/people_lod.glb": "1d39931501ce800c52eb307743337947a5b081f4316846ada58ab0959008ada6",
+    "la-ladera/assets/models/people/people_meta.json": "c96c6330bb608f6f7df0a4a8ac8bbd31f6dfa79bfcf93c59e292e652b5ed41ee",
+    "la-ladera/assets/models/people/people_normal.jpg": "6ae756cba263ac5b3b4da5cc0eae434d82820cfc6fc05c7d08750ee989d7b178",
+    "la-ladera/assets/models/people/people_orm.jpg": "fc6b4f1a3555da7ed0b53b795185d0872ca5b6b44045aae1f761050555761196",
+    "la-ladera/assets/textures/manifest.json": "f1ae135cc502d62128981472241d19dd288be3fd8628feca0761c53b182a4fe6"
+  },
+  "productionFilesUnchanged": true,
+  "sourceHashes": {
+    "people_build.py": "97e3a2800272837eabbab1aaaaed655a5a73504b128f305382c6299bdce58be9",
+    "people_tex.py": "29413b32551e30be0be751c498e66b46b588c0a202d9d8060065728a5d28b498",
+    "people_lib.py": "260778857e5e10be7ff4d917972b1a2a844b1d25431aa258b13c72aea51e6014",
+    "people_clips.py": "6decfc3a211f0ef479ca9cc7d0e60f054fa091e03c76bece5e09211a1a1bdacd",
+    "people_clips.json.gz": "d2684b989b016411b73d8427feb6cc02726177d4f48e5b16fee32c22fc679bbf",
+    "people_validate.mjs": "ed0b9eb2dceb2c1601430cd4394d859333cd25c5468270157db9f4254373beab",
+    "people_contract.json": "529cb3f6542efc23eb3e593afc4d5db7d16e49d2974f5b4c97909e1882777a02"
+  },
+  "ok": true
+}

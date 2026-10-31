@@ -1,5 +1,10 @@
-// Material definitions owned by the PEOPLE agent (skin, hair, cloth atlases...). People normally use their own
-// materials from the GLB; declare here only what should go through the shared library.
+// Shared material DATA. CharacterLibrary keeps its glTF material for
+// its skinned characters; other library users can resolve the same name/atlas.
 // Fields: see core/matlib.js.
 export default {
+  people_pbr: {
+    color: 0xffffff, rough: 1, metal: 0, uv: 'unit', tex: 'people_pbr',
+    side: 'double', vertexColors: true, env: 0.7,
+    desc: 'Shared resident skin, cloth and hair atlas. Authored by tools/blender/people_build.py.',
+  },
 };

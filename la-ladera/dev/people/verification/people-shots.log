@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "baseline": false,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "ids": 30,
+  "clips": 32,
+  "posedVertexChecks": 374784,
+  "sheets": [
+    "people-near.png",
+    "people-far.png"
+  ],
+  "boot": [
+    {
+      "missing": null,
+      "people": 73,
+      "active": true,
+      "errors": []
+    },
+    {
+      "missing": "people_lod.glb",
+      "people": 73,
+      "active": true,
+      "errors": []
+    },
+    {
+      "missing": "people.glb",
+      "people": 0,
+      "active": true,
+      "errors": [
+        {
+          "stage": "people",
+          "message": "Failed to fetch",
+          "stack": "TypeError: Failed to fetch\n    at bc.load (http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:266565)\n    at GLTFLoader.load (http://127.0.0.1:33355/la-ladera/vendor/three/examples/jsm/loaders/GLTFLoader.js:305:10)\n    at http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:265364\n    at new Promise (<anonymous>)\n    at GLTFLoader.loadAsync (http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:265336)\n    at CharacterLibrary.load (http://127.0.0.1:33355/la-ladera/js/people/rig.js:64:16)\n    at async PeopleWorld.load (http://127.0.0.1:33355/la-ladera/js/people/world.js:56:5)\n    at async loadPeople (http://127.0.0.1:33355/la-ladera/js/people/index.js:13:3)\n    at async http://127.0.0.1:33355/la-ladera/js/main.js:143:41\n    at async stage (http://127.0.0.1:33355/la-ladera/js/main.js:93:11)"
+        }
+      ]
+    }
+  ],
+  "failures": []
+}

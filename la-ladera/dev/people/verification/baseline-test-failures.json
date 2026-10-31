@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "sourceCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "completedAt": "2026-10-31T12:58:43.846Z",
+  "scope": "Targeted reproduction using untouched files copied with git show into a minimal separate baseline fixture. Only the seeded path diagnostic case and the quiet-wrapper tests were run; this is not a second full suite.",
+  "reproducedAllSevenObservedFailures": true,
+  "results": [
+    {
+      "file": "tests/live-paths.test.mjs",
+      "pattern": "checkSource flags",
+      "command": "node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout --test-name-pattern='checkSource flags' tests/live-paths.test.mjs",
+      "exitCode": 1,
+      "tap": {
+        "tests": 1,
+        "suites": 0,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      }
+    },
+    {
+      "file": "tests/nice.test.mjs",
+      "pattern": null,
+      "command": "node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout tests/nice.test.mjs",
+      "exitCode": 1,
+      "tap": {
+        "tests": 7,
+        "suites": 0,
+        "pass": 0,
+        "fail": 6,
+        "cancelled": 0,
+        "skipped": 1,
+        "todo": 0
+      }
+    }
+  ],
+  "sourceHashes": {
+    "tests/live-paths.test.mjs": "d3ad6268faf969c4604deb72f77b8c0e92eff0c4c811deccad4b844efe40bd6b",
+    "tests/nice.test.mjs": "c7da70bfc2547c0acb9354a7c4b2892c23850c0fae74dc0158c809e13313b1ef",
+    "tests/nice.mjs": "41a1741c8194ea2b0b1fae395203e6483f3a06247d3c6b36a42dcb10640898de",
+    "tools/nice.mjs": "2e821edf4ea3339eeb49360691c0e638736aaa73cc6bdf34723e2a4ab263b1a0",
+    "tests/register.mjs": "479e393b2511d71a2e0d4153e053af4278ade90266edf0e51efe5f526e79f610",
+    "tests/hooks.mjs": "9e56eb8fb21ae546f44c24d77faaaf76c9831d725d1c79436e8f813cb81ebabf",
+    "js/core/config.js": "21560aad20bf42c161892cf792767248a139095152ffbf5364fcd8c27f947a39",
+    "js/core/mesh.js": "b4e1ceacb18b85af31b83b355848e873db533605c7eb00929a648a4bb57e6acd",
+    "js/people/dialogue.js": "0b63d4bb627fd31d01c407a2e911d647e0b949021a62174187937de7e5261e2e",
+    "vendor/three/build/three.module.min.js": "e2b5ee6bccd38fd6d8a2428546b83c5f2426d84b152ef82be8055556e3b40eb6"
+  }
+}

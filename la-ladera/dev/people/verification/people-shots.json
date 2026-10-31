@@ -1,0 +1,2462 @@
+{
+  "baseline": false,
+  "checkedAt": "2026-10-31T13:10:54.608Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "assets": {
+    "baseline": false,
+    "expectedIds": [
+      "m_tendero",
+      "m_obrero",
+      "w_tendera",
+      "w_ama",
+      "w_elder",
+      "m_elder",
+      "b_boy",
+      "g_girl",
+      "t_boy",
+      "t_girl",
+      "m_afro",
+      "w_afro",
+      "m_panadero",
+      "w_cocinera",
+      "m_carnicero",
+      "w_peluquera",
+      "m_mecanico",
+      "w_farmaceutica",
+      "w_maestra",
+      "m_mototaxi",
+      "m_vendedor",
+      "m_abuelo",
+      "w_beata",
+      "b_escolar",
+      "g_escolar",
+      "m_joven",
+      "w_vecina",
+      "m_don",
+      "w_joven",
+      "m_rapado"
+    ],
+    "ids": [
+      "m_tendero",
+      "m_obrero",
+      "w_tendera",
+      "w_ama",
+      "w_elder",
+      "m_elder",
+      "b_boy",
+      "g_girl",
+      "t_boy",
+      "t_girl",
+      "m_afro",
+      "w_afro",
+      "m_panadero",
+      "w_cocinera",
+      "m_carnicero",
+      "w_peluquera",
+      "m_mecanico",
+      "w_farmaceutica",
+      "w_maestra",
+      "m_mototaxi",
+      "m_vendedor",
+      "m_abuelo",
+      "w_beata",
+      "b_escolar",
+      "g_escolar",
+      "m_joven",
+      "w_vecina",
+      "m_don",
+      "w_joven",
+      "m_rapado"
+    ],
+    "clips": [
+      "idle_a",
+      "idle_b",
+      "walk",
+      "walk_fast",
+      "walk_bag",
+      "walk_step",
+      "phone_stand",
+      "phone_call",
+      "talk",
+      "wave",
+      "point",
+      "sit_idle",
+      "sit_phone",
+      "sit_look",
+      "sit_cross_legs",
+      "stand_hold_pole",
+      "stand_hold_rail",
+      "turn_left",
+      "turn_right",
+      "kid_bounce",
+      "kid_fidget",
+      "talk_b",
+      "sweep",
+      "cook",
+      "sell",
+      "walk_carry",
+      "carry_stand",
+      "lean_wall",
+      "laundry",
+      "pray",
+      "sit_talk",
+      "run"
+    ],
+    "people": [
+      {
+        "id": "m_tendero",
+        "heightM": 1.679,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 10978,
+            "maxTriangleUVSpan": 0.116544,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1418,
+            "vertices": 2991,
+            "maxTriangleUVSpan": 0.116678,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e8c9a0",
+          "bottom": "#6a5a44",
+          "skin": "#a87452"
+        }
+      },
+      {
+        "id": "m_obrero",
+        "heightM": 1.696,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11150,
+            "maxTriangleUVSpan": 0.116823,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 3035,
+            "maxTriangleUVSpan": 0.116711,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#9b6b4a",
+          "bottom": "#3a3f4a",
+          "shoes": "#2a2a2e",
+          "hat": "#c8573c",
+          "skin": "#9e6c47"
+        }
+      },
+      {
+        "id": "w_tendera",
+        "heightM": 1.579,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 10376,
+            "maxTriangleUVSpan": 0.108388,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1432,
+            "vertices": 2909,
+            "maxTriangleUVSpan": 0.107889,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#f2c14e",
+          "bottom": "#6b6f78",
+          "shoes": "#b03060",
+          "skin": "#9e6c47"
+        }
+      },
+      {
+        "id": "w_ama",
+        "heightM": 1.559,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10881,
+            "maxTriangleUVSpan": 0.114349,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3042,
+            "maxTriangleUVSpan": 0.112362,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#3a7ca5"
+        }
+      },
+      {
+        "id": "w_elder",
+        "heightM": 1.544,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10962,
+            "maxTriangleUVSpan": 0.116724,
+            "recolourSlots": [
+              2,
+              4,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3060,
+            "maxTriangleUVSpan": 0.116724,
+            "recolourSlots": [
+              2,
+              4,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#b0a58a",
+          "inner": "#cfe3d6"
+        }
+      },
+      {
+        "id": "m_elder",
+        "heightM": 1.595,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10693,
+            "maxTriangleUVSpan": 0.116714,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3022,
+            "maxTriangleUVSpan": 0.116682,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#8a4a4a",
+          "bottom": "#5a6c8a",
+          "shoes": "#6b4a2a",
+          "inner": "#e8e0f0",
+          "skin": "#c0967b"
+        }
+      },
+      {
+        "id": "b_boy",
+        "heightM": 1.28,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10405,
+            "maxTriangleUVSpan": 0.11532,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 2835,
+            "maxTriangleUVSpan": 0.115139,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#c8573c",
+          "bottom": "#1f2430",
+          "skin": "#b58461"
+        }
+      },
+      {
+        "id": "g_girl",
+        "heightM": 1.2,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10613,
+            "maxTriangleUVSpan": 0.115055,
+            "recolourSlots": [
+              2,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 2935,
+            "maxTriangleUVSpan": 0.112291,
+            "recolourSlots": [
+              2,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#7bbf5a",
+          "shoes": "#2a2a2e",
+          "skin": "#b3825e"
+        }
+      },
+      {
+        "id": "t_boy",
+        "heightM": 1.722,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 11413,
+            "maxTriangleUVSpan": 0.116697,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3128,
+            "maxTriangleUVSpan": 0.116618,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#3a7ca5",
+          "bottom": "#5a6c8a",
+          "skin": "#82553b"
+        }
+      },
+      {
+        "id": "t_girl",
+        "heightM": 1.579,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11426,
+            "maxTriangleUVSpan": 0.115395,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3155,
+            "maxTriangleUVSpan": 0.115252,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e07a2f",
+          "accessory": "#4b6584",
+          "skin": "#af7b5b"
+        }
+      },
+      {
+        "id": "m_afro",
+        "heightM": 1.804,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 11442,
+            "maxTriangleUVSpan": 0.116683,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3108,
+            "maxTriangleUVSpan": 0.116597,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#d4a373",
+          "bottom": "#1f2430",
+          "skin": "#654432"
+        }
+      },
+      {
+        "id": "w_afro",
+        "heightM": 1.681,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11359,
+            "maxTriangleUVSpan": 0.116708,
+            "recolourSlots": [
+              2,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3029,
+            "maxTriangleUVSpan": 0.116794,
+            "recolourSlots": [
+              2,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e07a2f",
+          "skin": "#7e5239"
+        }
+      },
+      {
+        "id": "m_panadero",
+        "heightM": 1.771,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 11160,
+            "maxTriangleUVSpan": 0.116786,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3116,
+            "maxTriangleUVSpan": 0.116786,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#4b6584",
+          "skin": "#a67758"
+        }
+      },
+      {
+        "id": "w_cocinera",
+        "heightM": 1.559,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11165,
+            "maxTriangleUVSpan": 0.11678,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1431,
+            "vertices": 3034,
+            "maxTriangleUVSpan": 0.115123,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#e0609a",
+          "skin": "#966845"
+        }
+      },
+      {
+        "id": "m_carnicero",
+        "heightM": 1.694,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11208,
+            "maxTriangleUVSpan": 0.116776,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3098,
+            "maxTriangleUVSpan": 0.116765,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#d9a441",
+          "skin": "#b4886a"
+        }
+      },
+      {
+        "id": "w_peluquera",
+        "heightM": 1.639,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 10920,
+            "maxTriangleUVSpan": 0.113626,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3045,
+            "maxTriangleUVSpan": 0.113768,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#6fae8f",
+          "bottom": "#2f3e57",
+          "shoes": "#b03060",
+          "skin": "#cfa083"
+        }
+      },
+      {
+        "id": "m_mecanico",
+        "heightM": 1.714,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11236,
+            "maxTriangleUVSpan": 0.116737,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1417,
+            "vertices": 3062,
+            "maxTriangleUVSpan": 0.116809,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "skin": "#a97857"
+        }
+      },
+      {
+        "id": "w_farmaceutica",
+        "heightM": 1.647,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11021,
+            "maxTriangleUVSpan": 0.11661,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 3084,
+            "maxTriangleUVSpan": 0.116646,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "shoes": "#8a3b2a",
+          "skin": "#bc906f"
+        }
+      },
+      {
+        "id": "w_maestra",
+        "heightM": 1.619,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10851,
+            "maxTriangleUVSpan": 0.116815,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3022,
+            "maxTriangleUVSpan": 0.116926,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#d65f5f",
+          "accessory": "#d9a441",
+          "skin": "#bf9072"
+        }
+      },
+      {
+        "id": "m_mototaxi",
+        "heightM": 1.654,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 11073,
+            "maxTriangleUVSpan": 0.116632,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3073,
+            "maxTriangleUVSpan": 0.116632,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "shoes": "#b03060",
+          "skin": "#aa7250"
+        }
+      },
+      {
+        "id": "m_vendedor",
+        "heightM": 1.664,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11316,
+            "maxTriangleUVSpan": 0.115154,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1427,
+            "vertices": 3088,
+            "maxTriangleUVSpan": 0.115177,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#b03a48",
+          "hat": "#8a5a3a",
+          "skin": "#b07e58"
+        }
+      },
+      {
+        "id": "m_abuelo",
+        "heightM": 1.606,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11419,
+            "maxTriangleUVSpan": 0.116743,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1419,
+            "vertices": 3167,
+            "maxTriangleUVSpan": 0.116792,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#a08060",
+          "bottom": "#2b2b3a",
+          "hat": "#3a3a46",
+          "accessory": "#d9a441",
+          "skin": "#9b6d4b"
+        }
+      },
+      {
+        "id": "w_beata",
+        "heightM": 1.455,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10912,
+            "maxTriangleUVSpan": 0.116658,
+            "recolourSlots": [
+              2,
+              4,
+              5,
+              6,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 3063,
+            "maxTriangleUVSpan": 0.116647,
+            "recolourSlots": [
+              2,
+              4,
+              5,
+              6,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "skin": "#ae7d5d"
+        }
+      },
+      {
+        "id": "b_escolar",
+        "heightM": 1.3,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10959,
+            "maxTriangleUVSpan": 0.116716,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1419,
+            "vertices": 2955,
+            "maxTriangleUVSpan": 0.113065,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "skin": "#c79672"
+        }
+      },
+      {
+        "id": "g_escolar",
+        "heightM": 1.22,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11159,
+            "maxTriangleUVSpan": 0.116697,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1417,
+            "vertices": 2970,
+            "maxTriangleUVSpan": 0.113265,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#d9a441",
+          "skin": "#8a5e42"
+        }
+      },
+      {
+        "id": "m_joven",
+        "heightM": 1.749,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 11069,
+            "maxTriangleUVSpan": 0.115252,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3009,
+            "maxTriangleUVSpan": 0.11471,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#5a7fb0",
+          "bottom": "#3d4f3a",
+          "shoes": "#b03060",
+          "skin": "#a7724e"
+        }
+      },
+      {
+        "id": "w_vecina",
+        "heightM": 1.539,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10441,
+            "maxTriangleUVSpan": 0.11686,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2960,
+            "maxTriangleUVSpan": 0.116878,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e8c9a0",
+          "shoes": "#6b4a2a",
+          "skin": "#a97859"
+        }
+      },
+      {
+        "id": "m_don",
+        "heightM": 1.659,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 10936,
+            "maxTriangleUVSpan": 0.116482,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1419,
+            "vertices": 3055,
+            "maxTriangleUVSpan": 0.116593,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#c8573c",
+          "skin": "#b78c6d"
+        }
+      },
+      {
+        "id": "w_joven",
+        "heightM": 1.691,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6181,
+            "vertices": 11150,
+            "maxTriangleUVSpan": 0.115252,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3070,
+            "maxTriangleUVSpan": 0.115252,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#d4a373",
+          "bottom": "#1f2430",
+          "shoes": "#2a2a2e",
+          "accessory": "#202225",
+          "skin": "#8b5c40"
+        }
+      },
+      {
+        "id": "m_rapado",
+        "heightM": 1.709,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6182,
+            "vertices": 10652,
+            "maxTriangleUVSpan": 0.115072,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2985,
+            "maxTriangleUVSpan": 0.115281,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#c8573c",
+          "shoes": "#8a3b2a",
+          "skin": "#774b32"
+        }
+      }
+    ],
+    "posedVertexChecks": 374784
+  },
+  "sheets": [
+    {
+      "width": 1920,
+      "height": 1696,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "headshots": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "m_obrero",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_tendera",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "w_ama",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_elder",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_elder",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "b_boy",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "g_girl",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "t_boy",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "t_girl",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_afro",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "w_afro",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_panadero",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "w_cocinera",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_carnicero",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_peluquera",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "m_mecanico",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_farmaceutica",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_maestra",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_mototaxi",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "m_vendedor",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_abuelo",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_beata",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "b_escolar",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "g_escolar",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_joven",
+          "triangles": 6182,
+          "lod": 0
+        },
+        {
+          "id": "w_vecina",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_don",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "w_joven",
+          "triangles": 6181,
+          "lod": 0
+        },
+        {
+          "id": "m_rapado",
+          "triangles": 6182,
+          "lod": 0
+        }
+      ],
+      "pixels": [
+        {
+          "id": "m_tendero",
+          "darkPixels": 7678,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_obrero",
+          "darkPixels": 8112,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_tendera",
+          "darkPixels": 9201,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_ama",
+          "darkPixels": 4851,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_elder",
+          "darkPixels": 8490,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_elder",
+          "darkPixels": 9328,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_boy",
+          "darkPixels": 2664,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_girl",
+          "darkPixels": 4598,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_boy",
+          "darkPixels": 10735,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_girl",
+          "darkPixels": 5744,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_afro",
+          "darkPixels": 9676,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_afro",
+          "darkPixels": 9718,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_panadero",
+          "darkPixels": 4397,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_cocinera",
+          "darkPixels": 6113,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_carnicero",
+          "darkPixels": 2745,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_peluquera",
+          "darkPixels": 4419,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mecanico",
+          "darkPixels": 7922,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_farmaceutica",
+          "darkPixels": 2397,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_maestra",
+          "darkPixels": 7374,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mototaxi",
+          "darkPixels": 8875,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_vendedor",
+          "darkPixels": 5654,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_abuelo",
+          "darkPixels": 8277,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_beata",
+          "darkPixels": 8051,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_escolar",
+          "darkPixels": 3392,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_escolar",
+          "darkPixels": 2536,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_joven",
+          "darkPixels": 10754,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_vecina",
+          "darkPixels": 8779,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_don",
+          "darkPixels": 6820,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_joven",
+          "darkPixels": 6393,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_rapado",
+          "darkPixels": 10106,
+          "opaquePixels": 35700
+        }
+      ],
+      "path": "people-near.png"
+    },
+    {
+      "width": 1920,
+      "height": 1696,
+      "lod": 1,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "headshots": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "triangles": 1418,
+          "lod": 1
+        },
+        {
+          "id": "m_obrero",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "w_tendera",
+          "triangles": 1432,
+          "lod": 1
+        },
+        {
+          "id": "w_ama",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_elder",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_elder",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "b_boy",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "g_girl",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "t_boy",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "t_girl",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "m_afro",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_afro",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_panadero",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_cocinera",
+          "triangles": 1431,
+          "lod": 1
+        },
+        {
+          "id": "m_carnicero",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "w_peluquera",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_mecanico",
+          "triangles": 1417,
+          "lod": 1
+        },
+        {
+          "id": "w_farmaceutica",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "w_maestra",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_mototaxi",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_vendedor",
+          "triangles": 1427,
+          "lod": 1
+        },
+        {
+          "id": "m_abuelo",
+          "triangles": 1419,
+          "lod": 1
+        },
+        {
+          "id": "w_beata",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "b_escolar",
+          "triangles": 1419,
+          "lod": 1
+        },
+        {
+          "id": "g_escolar",
+          "triangles": 1417,
+          "lod": 1
+        },
+        {
+          "id": "m_joven",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "w_vecina",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_don",
+          "triangles": 1419,
+          "lod": 1
+        },
+        {
+          "id": "w_joven",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "m_rapado",
+          "triangles": 1423,
+          "lod": 1
+        }
+      ],
+      "pixels": [
+        {
+          "id": "m_tendero",
+          "darkPixels": 7410,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_obrero",
+          "darkPixels": 8074,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_tendera",
+          "darkPixels": 9145,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_ama",
+          "darkPixels": 4876,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_elder",
+          "darkPixels": 8429,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_elder",
+          "darkPixels": 9361,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_boy",
+          "darkPixels": 2725,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_girl",
+          "darkPixels": 4641,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_boy",
+          "darkPixels": 10507,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_girl",
+          "darkPixels": 5670,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_afro",
+          "darkPixels": 9184,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_afro",
+          "darkPixels": 9624,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_panadero",
+          "darkPixels": 4460,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_cocinera",
+          "darkPixels": 6383,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_carnicero",
+          "darkPixels": 2835,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_peluquera",
+          "darkPixels": 4516,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mecanico",
+          "darkPixels": 7596,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_farmaceutica",
+          "darkPixels": 2370,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_maestra",
+          "darkPixels": 7111,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mototaxi",
+          "darkPixels": 8818,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_vendedor",
+          "darkPixels": 5314,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_abuelo",
+          "darkPixels": 7996,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_beata",
+          "darkPixels": 8082,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_escolar",
+          "darkPixels": 3327,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_escolar",
+          "darkPixels": 2491,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_joven",
+          "darkPixels": 10664,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_vecina",
+          "darkPixels": 8699,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_don",
+          "darkPixels": 6741,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_joven",
+          "darkPixels": 6242,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_rapado",
+          "darkPixels": 10010,
+          "opaquePixels": 35700
+        }
+      ],
+      "path": "people-far.png"
+    }
+  ],
+  "boot": [
+    {
+      "missing": null,
+      "state": {
+        "pos": [
+          -6.5,
+          0.22,
+          92.5
+        ],
+        "yaw": 0,
+        "pitch": 0,
+        "onGround": true,
+        "blocked": false,
+        "hour": 17.200000000000003,
+        "building": null,
+        "indoors": false,
+        "floor": 0,
+        "room": null,
+        "surface": "dirt",
+        "fps": 0,
+        "frameMs": 0,
+        "drawCalls": 1075,
+        "triangles": 1490218,
+        "geometries": 859,
+        "textures": 149,
+        "programs": 37,
+        "quality": "high",
+        "qualityMode": "auto",
+        "night": 0,
+        "sunEl": 10.25,
+        "pool": {
+          "max": 8,
+          "active": 8,
+          "lit": 0
+        },
+        "glow": {
+          "street": 46,
+          "far": 2727,
+          "extra": 0,
+          "drawn": false,
+          "points": 2773
+        },
+        "visibility": {
+          "intGroups": 49,
+          "intShown": 15
+        },
+        "merge": {
+          "before": 3074,
+          "after": 1810,
+          "candidates": 1769,
+          "fused": 1506,
+          "removed": 1506,
+          "chunks": 242,
+          "tris": 658146,
+          "ms": 83.2
+        },
+        "post": {
+          "active": true,
+          "profile": "high"
+        },
+        "reversedZ": true,
+        "msaa": 4,
+        "buildings": 49,
+        "anchors": 1927,
+        "lights": 878,
+        "discoveries": [
+          0,
+          111
+        ],
+        "npcs": 73,
+        "errors": 0,
+        "timings": {
+          "engine": 25,
+          "materials": 20,
+          "assets": 12,
+          "plan": 118,
+          "worldParts": {
+            "terrain": 223,
+            "surfaces": 26,
+            "stairs": 11,
+            "retaining": 16,
+            "perimeter": 0
+          },
+          "world": 307,
+          "arch": 31,
+          "furnish": 2252,
+          "colliders": 18,
+          "build": 762,
+          "propParts": {
+            "occupancy": 54,
+            "atlas": 100,
+            "boundary": 6,
+            "poles": 20,
+            "vehicles": 25,
+            "dress": 9,
+            "signs": 4,
+            "hill": 8,
+            "flora": 50,
+            "planters": 1,
+            "life": 14,
+            "navfit": 30,
+            "discoveries": 9
+          },
+          "props": 336,
+          "flush": 105,
+          "glow": 24,
+          "peopleSpawn": 50,
+          "people": 340,
+          "start": 2957,
+          "total": 14891
+        },
+        "physics": {
+          "walls": 15093,
+          "floors": 814,
+          "cells": 1584,
+          "doors": 517
+        },
+        "audio": {
+          "mode": "idle",
+          "ctxState": null,
+          "sampleRate": null,
+          "volume": 0.8,
+          "modeScale": 1,
+          "indoor": 0,
+          "zone": null,
+          "alt": null,
+          "master": null,
+          "beds": {},
+          "bedCutoff": null,
+          "crowd": 0.3,
+          "voices": [],
+          "emitters": 0,
+          "activeShots": 0,
+          "stats": {
+            "steps": 0,
+            "lands": 0,
+            "jumps": 0,
+            "doors": 0,
+            "shots": 0,
+            "bells": 0,
+            "chimes": 0,
+            "ticks": 0,
+            "dropped": 0,
+            "blocked": 0
+          },
+          "samples": {
+            "ready": 0,
+            "pending": 0,
+            "requested": 0,
+            "ms": 0,
+            "via": null,
+            "errors": []
+          },
+          "bell": {
+            "clock": 0,
+            "next": 45,
+            "rung": 0
+          },
+          "errors": []
+        },
+        "target": null
+      },
+      "errors": [],
+      "people": 73,
+      "fatalHidden": true,
+      "active": true,
+      "quiet": true,
+      "diagnostics": {
+        "errors": [],
+        "netErrors": [],
+        "consoleErrors": [],
+        "consoleWarnings": []
+      }
+    },
+    {
+      "missing": "people_lod.glb",
+      "state": {
+        "pos": [
+          -6.5,
+          0.22,
+          92.5
+        ],
+        "yaw": 0,
+        "pitch": 0,
+        "onGround": true,
+        "blocked": false,
+        "hour": 17.200000000000003,
+        "building": null,
+        "indoors": false,
+        "floor": 0,
+        "room": null,
+        "surface": "dirt",
+        "fps": 0,
+        "frameMs": 0,
+        "drawCalls": 1075,
+        "triangles": 1623415,
+        "geometries": 859,
+        "textures": 149,
+        "programs": 37,
+        "quality": "high",
+        "qualityMode": "auto",
+        "night": 0,
+        "sunEl": 10.25,
+        "pool": {
+          "max": 8,
+          "active": 8,
+          "lit": 0
+        },
+        "glow": {
+          "street": 46,
+          "far": 2727,
+          "extra": 0,
+          "drawn": false,
+          "points": 2773
+        },
+        "visibility": {
+          "intGroups": 49,
+          "intShown": 15
+        },
+        "merge": {
+          "before": 3074,
+          "after": 1810,
+          "candidates": 1769,
+          "fused": 1506,
+          "removed": 1506,
+          "chunks": 242,
+          "tris": 658146,
+          "ms": 101.3
+        },
+        "post": {
+          "active": true,
+          "profile": "high"
+        },
+        "reversedZ": true,
+        "msaa": 4,
+        "buildings": 49,
+        "anchors": 1927,
+        "lights": 878,
+        "discoveries": [
+          0,
+          111
+        ],
+        "npcs": 73,
+        "errors": 0,
+        "timings": {
+          "engine": 16,
+          "materials": 12,
+          "assets": 32,
+          "plan": 155,
+          "worldParts": {
+            "terrain": 340,
+            "surfaces": 40,
+            "stairs": 15,
+            "retaining": 40,
+            "perimeter": 0
+          },
+          "world": 490,
+          "arch": 26,
+          "furnish": 2378,
+          "colliders": 5,
+          "build": 998,
+          "propParts": {
+            "occupancy": 58,
+            "atlas": 121,
+            "boundary": 21,
+            "poles": 31,
+            "vehicles": 29,
+            "dress": 6,
+            "signs": 4,
+            "hill": 9,
+            "flora": 37,
+            "planters": 1,
+            "life": 10,
+            "navfit": 15,
+            "discoveries": 14
+          },
+          "props": 391,
+          "flush": 123,
+          "glow": 21,
+          "peopleSpawn": 58,
+          "people": 456,
+          "start": 3642,
+          "total": 18686
+        },
+        "physics": {
+          "walls": 15093,
+          "floors": 814,
+          "cells": 1584,
+          "doors": 517
+        },
+        "audio": {
+          "mode": "idle",
+          "ctxState": null,
+          "sampleRate": null,
+          "volume": 0.8,
+          "modeScale": 1,
+          "indoor": 0,
+          "zone": null,
+          "alt": null,
+          "master": null,
+          "beds": {},
+          "bedCutoff": null,
+          "crowd": 0.3,
+          "voices": [],
+          "emitters": 0,
+          "activeShots": 0,
+          "stats": {
+            "steps": 0,
+            "lands": 0,
+            "jumps": 0,
+            "doors": 0,
+            "shots": 0,
+            "bells": 0,
+            "chimes": 0,
+            "ticks": 0,
+            "dropped": 0,
+            "blocked": 0
+          },
+          "samples": {
+            "ready": 0,
+            "pending": 0,
+            "requested": 0,
+            "ms": 0,
+            "via": null,
+            "errors": []
+          },
+          "bell": {
+            "clock": 0,
+            "next": 45,
+            "rung": 0
+          },
+          "errors": []
+        },
+        "target": null
+      },
+      "errors": [],
+      "people": 73,
+      "fatalHidden": true,
+      "active": true,
+      "quiet": true,
+      "diagnostics": {
+        "errors": [],
+        "netErrors": [
+          "FAILED  http://127.0.0.1:33355/la-ladera/assets/models/people/people_lod.glb"
+        ],
+        "consoleErrors": [],
+        "consoleWarnings": [
+          "[warning] [people] LOD file not loaded: Failed to fetch"
+        ]
+      }
+    },
+    {
+      "missing": "people.glb",
+      "state": {
+        "pos": [
+          -6.5,
+          0.22,
+          92.5
+        ],
+        "yaw": 0,
+        "pitch": 0,
+        "onGround": true,
+        "blocked": false,
+        "hour": 17.200000000000003,
+        "building": null,
+        "indoors": false,
+        "floor": 0,
+        "room": null,
+        "surface": "dirt",
+        "fps": 0,
+        "frameMs": 0,
+        "drawCalls": 1028,
+        "triangles": 1332889,
+        "geometries": 821,
+        "textures": 108,
+        "programs": 33,
+        "quality": "high",
+        "qualityMode": "auto",
+        "night": 0,
+        "sunEl": 10.25,
+        "pool": {
+          "max": 8,
+          "active": 8,
+          "lit": 0
+        },
+        "glow": {
+          "street": 46,
+          "far": 2727,
+          "extra": 0,
+          "drawn": false,
+          "points": 2773
+        },
+        "visibility": {
+          "intGroups": 49,
+          "intShown": 15
+        },
+        "merge": {
+          "before": 3074,
+          "after": 1810,
+          "candidates": 1769,
+          "fused": 1506,
+          "removed": 1506,
+          "chunks": 242,
+          "tris": 658146,
+          "ms": 86.2
+        },
+        "post": {
+          "active": true,
+          "profile": "high"
+        },
+        "reversedZ": true,
+        "msaa": 4,
+        "buildings": 49,
+        "anchors": 1927,
+        "lights": 878,
+        "discoveries": [
+          0,
+          111
+        ],
+        "npcs": 0,
+        "errors": 1,
+        "timings": {
+          "engine": 26,
+          "materials": 9,
+          "assets": 17,
+          "plan": 133,
+          "worldParts": {
+            "terrain": 349,
+            "surfaces": 52,
+            "stairs": 14,
+            "retaining": 13,
+            "perimeter": 0
+          },
+          "world": 482,
+          "arch": 13,
+          "furnish": 2144,
+          "colliders": 7,
+          "build": 926,
+          "propParts": {
+            "occupancy": 61,
+            "atlas": 144,
+            "boundary": 5,
+            "poles": 36,
+            "vehicles": 33,
+            "dress": 6,
+            "signs": 6,
+            "hill": 8,
+            "flora": 54,
+            "planters": 1,
+            "life": 11,
+            "navfit": 15,
+            "discoveries": 7
+          },
+          "props": 399,
+          "flush": 108,
+          "glow": 13,
+          "people": 8,
+          "start": 2573,
+          "total": 14954
+        },
+        "physics": {
+          "walls": 15093,
+          "floors": 814,
+          "cells": 1584,
+          "doors": 517
+        },
+        "audio": {
+          "mode": "idle",
+          "ctxState": null,
+          "sampleRate": null,
+          "volume": 0.8,
+          "modeScale": 1,
+          "indoor": 0,
+          "zone": null,
+          "alt": null,
+          "master": null,
+          "beds": {},
+          "bedCutoff": null,
+          "crowd": 0.3,
+          "voices": [],
+          "emitters": 0,
+          "activeShots": 0,
+          "stats": {
+            "steps": 0,
+            "lands": 0,
+            "jumps": 0,
+            "doors": 0,
+            "shots": 0,
+            "bells": 0,
+            "chimes": 0,
+            "ticks": 0,
+            "dropped": 0,
+            "blocked": 0
+          },
+          "samples": {
+            "ready": 0,
+            "pending": 0,
+            "requested": 0,
+            "ms": 0,
+            "via": null,
+            "errors": []
+          },
+          "bell": {
+            "clock": 0,
+            "next": 45,
+            "rung": 0
+          },
+          "errors": []
+        },
+        "target": null
+      },
+      "errors": [
+        {
+          "stage": "people",
+          "message": "Failed to fetch",
+          "stack": "TypeError: Failed to fetch\n    at bc.load (http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:266565)\n    at GLTFLoader.load (http://127.0.0.1:33355/la-ladera/vendor/three/examples/jsm/loaders/GLTFLoader.js:305:10)\n    at http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:265364\n    at new Promise (<anonymous>)\n    at GLTFLoader.loadAsync (http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:265336)\n    at CharacterLibrary.load (http://127.0.0.1:33355/la-ladera/js/people/rig.js:64:16)\n    at async PeopleWorld.load (http://127.0.0.1:33355/la-ladera/js/people/world.js:56:5)\n    at async loadPeople (http://127.0.0.1:33355/la-ladera/js/people/index.js:13:3)\n    at async http://127.0.0.1:33355/la-ladera/js/main.js:143:41\n    at async stage (http://127.0.0.1:33355/la-ladera/js/main.js:93:11)"
+        }
+      ],
+      "people": 0,
+      "fatalHidden": true,
+      "active": true,
+      "quiet": true,
+      "diagnostics": {
+        "errors": [],
+        "netErrors": [
+          "FAILED  http://127.0.0.1:33355/la-ladera/assets/models/people/people.glb"
+        ],
+        "consoleErrors": [
+          "[error] [stage people] TypeError: Failed to fetch\n    at bc.load (http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:266565)\n    at GLTFLoader.load (http://127.0.0.1:33355/la-ladera/vendor/three/examples/jsm/loaders/GLTFLoader.js:305:10)\n    at http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:265364\n    at new Promise (<anonymous>)\n    at GLTFLoader.loadAsync (http://127.0.0.1:33355/la-ladera/vendor/three/build/three.core.min.js:6:265336)\n    at CharacterLibrary.load (http://127.0.0.1:33355/la-ladera/js/people/rig.js:64:16)\n    at async PeopleWorld.load (http://127.0.0.1:33355/la-ladera/js/people/world.js:56:5)\n    at async loadPeople (http://127.0.0.1:33355/la-ladera/js/people/index.js:13:3)\n    at async http://127.0.0.1:33355/la-ladera/js/main.js:143:41\n    at async stage (http://127.0.0.1:33355/la-ladera/js/main.js:93:11)"
+        ],
+        "consoleWarnings": []
+      }
+    }
+  ],
+  "failures": [],
+  "assetHashes": {
+    "people.glb": {
+      "bytes": 6282680,
+      "sha256": "2ac1342804c0777ba2a52218b5a903e150dd3e784ae78a96cfc69310a72ce82d"
+    },
+    "people_albedo.jpg": {
+      "bytes": 463617,
+      "sha256": "b25512ac3ebc8bfc6bf85016bd25304437568def73d0914481b0a0df4ac7ab1e"
+    },
+    "people_lod.glb": {
+      "bytes": 1962828,
+      "sha256": "1d39931501ce800c52eb307743337947a5b081f4316846ada58ab0959008ada6"
+    },
+    "people_meta.json": {
+      "bytes": 42589,
+      "sha256": "c96c6330bb608f6f7df0a4a8ac8bbd31f6dfa79bfcf93c59e292e652b5ed41ee"
+    },
+    "people_normal.jpg": {
+      "bytes": 514671,
+      "sha256": "6ae756cba263ac5b3b4da5cc0eae434d82820cfc6fc05c7d08750ee989d7b178"
+    },
+    "people_orm.jpg": {
+      "bytes": 302836,
+      "sha256": "fc6b4f1a3555da7ed0b53b795185d0872ca5b6b44045aae1f761050555761196"
+    }
+  },
+  "galleryDiagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?",
+      "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?",
+      "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?",
+      "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?"
+    ]
+  },
+  "readbackWarnings": [
+    "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?",
+    "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?",
+    "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?",
+    "[warning] [.WebGL-0x301c001c0e00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:33355/la-ladera/tests/people-gallery.html?"
+  ],
+  "ok": true
+}

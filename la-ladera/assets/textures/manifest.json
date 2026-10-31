@@ -431,6 +431,12 @@
    "tileScale": 0.976,
    "avg": "#dadada",
    "size": 512
+  },
+  "people_pbr": {
+   "map": "../models/people/people_albedo.jpg",
+   "normal": "../models/people/people_normal.jpg",
+   "rough": "../models/people/people_orm.jpg",
+   "size": 2048
   }
  },
  "version": 2,

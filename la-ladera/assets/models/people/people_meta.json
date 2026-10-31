@@ -1,10 +1,9 @@
 {
- "note": "Heights are total standing heights (soles = 0). Headroom rule: train centre-line headroom is 1.88 m, 1.68 m above the bench fronts (|x|=0.62), ~1.3 m at the seat backs; every person is <= 1.80 m so standing in the aisle never clips; seated heads top out at seatedHeadTopM above the floor. Seated: set the root so that root.y = seatFloorY - seatRootDropM (clips sit_* are rotation-only).",
+ "note": "La Ladera residents. Metres, soles at zero, glTF faces -Z. Original 21-bone rest orientations and 32 rotation-only clips. Set seated root.y = seatFloorY - seatRootDropM. COLOR_0 alpha is the original garment slot id, never opacity. One shared external 2048px PBR atlas; no embedded images.",
  "lod": {
   "file": "people_lod.glb",
-  "trisPerPerson": 2200,
-  "atlasPx": 512,
-  "note": "same node names, rig and clips as people.glb; use beyond ~12 m (LOD0 people.glb nearer). Decimated: minor colour/UV artefacts possible on small details."
+  "trisPerPerson": 1450,
+  "note": "geometry only (no textures, no clips): same node names, joint order and UV layout as people.glb. The unchanged rig.js swaps it beyond 38m and returns to near within 32m. Same recolour slots."
  },
  "seatTopM": 0.445,
  "seatHipM": 0.53,
@@ -101,7 +100,7 @@
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.15,
    "runSpeedMps": 3.61,
-   "tris": 7726,
+   "tris": 6182,
    "slots": {
     "bottom": {
      "id": 3,
@@ -112,6 +111,11 @@
      "id": 2,
      "hex": "#e9e4d6",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#aa7857",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -165,28 +169,33 @@
    ],
    "skin": 2,
    "outfit": "trousers",
-   "heightM": 1.692,
+   "heightM": 1.696,
    "shoulderWidthM": 0.422,
    "eyeHeightM": 1.57,
    "seatRootDropM": 0.324,
    "seatedEyeHeightM": 1.247,
-   "seatedHeadTopM": 1.369,
+   "seatedHeadTopM": 1.372,
    "hipHeightM": 0.854,
    "legLengthM": 0.854,
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.14,
    "runSpeedMps": 3.6,
-   "tris": 8174,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
-     "hex": "#3d5b86",
-     "gain": 1.25
+     "hex": "#536878",
+     "gain": 1.35
     },
     "top": {
      "id": 2,
-     "hex": "#c8573c",
+     "hex": "#bf9474",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#ae7850",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -244,18 +253,18 @@
    ],
    "skin": 3,
    "outfit": "dress",
-   "heightM": 1.627,
+   "heightM": 1.579,
    "shoulderWidthM": 0.36,
    "eyeHeightM": 1.481,
    "seatRootDropM": 0.259,
    "seatedEyeHeightM": 1.222,
-   "seatedHeadTopM": 1.367,
+   "seatedHeadTopM": 1.32,
    "hipHeightM": 0.789,
    "legLengthM": 0.789,
    "walkSpeedMps": 1.23,
    "walkFastSpeedMps": 1.98,
    "runSpeedMps": 3.33,
-   "tris": 8004,
+   "tris": 6182,
    "slots": {
     "top": {
      "id": 2,
@@ -267,9 +276,14 @@
      "hex": "#3a3f4a",
      "gain": 1.25
     },
+    "skin": {
+     "id": 8,
+     "hex": "#a87550",
+     "gain": 1.0
+    },
     "shoes": {
      "id": 4,
-     "hex": "#2a1c14",
+     "hex": "#674835",
      "gain": 1.45
     }
    },
@@ -329,7 +343,7 @@
    "walkSpeedMps": 1.21,
    "walkFastSpeedMps": 1.96,
    "runSpeedMps": 3.29,
-   "tris": 8090,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
@@ -340,6 +354,11 @@
      "id": 2,
      "hex": "#e08aa0",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#bd8c69",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -402,7 +421,7 @@
    "walkSpeedMps": 1.17,
    "walkFastSpeedMps": 1.88,
    "runSpeedMps": 3.16,
-   "tris": 7964,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
@@ -413,6 +432,11 @@
      "id": 7,
      "hex": "#e8e0f0",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#80583f",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -464,7 +488,7 @@
    ],
    "skin": 2,
    "outfit": "trousers",
-   "heightM": 1.594,
+   "heightM": 1.595,
    "shoulderWidthM": 0.405,
    "eyeHeightM": 1.495,
    "seatRootDropM": 0.283,
@@ -475,17 +499,22 @@
    "walkSpeedMps": 1.27,
    "walkFastSpeedMps": 2.04,
    "runSpeedMps": 3.43,
-   "tris": 8064,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#8a5a3a",
+     "hex": "#6e737d",
      "gain": 1.25
     },
     "inner": {
      "id": 7,
-     "hex": "#d8d2c2",
+     "hex": "#d9c9af",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#c89d82",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -558,7 +587,7 @@
    "walkSpeedMps": 0.92,
    "walkFastSpeedMps": 1.48,
    "runSpeedMps": 2.48,
-   "tris": 7782,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
@@ -569,6 +598,11 @@
      "id": 2,
      "hex": "#f0d36a",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#bd8b67",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -625,18 +659,23 @@
    "eyeHeightM": 1.101,
    "seatRootDropM": 0.022,
    "seatedEyeHeightM": 1.079,
-   "seatedHeadTopM": 1.178,
+   "seatedHeadTopM": 1.179,
    "hipHeightM": 0.552,
    "legLengthM": 0.552,
    "walkSpeedMps": 0.86,
    "walkFastSpeedMps": 1.38,
    "runSpeedMps": 2.33,
-   "tris": 8364,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
      "hex": "#3a7ca5",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#b98965",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -688,28 +727,33 @@
    ],
    "skin": 4,
    "outfit": "trousers",
-   "heightM": 1.679,
+   "heightM": 1.722,
    "shoulderWidthM": 0.411,
    "eyeHeightM": 1.569,
    "seatRootDropM": 0.326,
    "seatedEyeHeightM": 1.243,
-   "seatedHeadTopM": 1.353,
+   "seatedHeadTopM": 1.396,
    "hipHeightM": 0.856,
    "legLengthM": 0.856,
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.15,
    "runSpeedMps": 3.61,
-   "tris": 8118,
+   "tris": 6182,
    "slots": {
     "bottom": {
      "id": 3,
      "hex": "#2f3e57",
-     "gain": 1.25
+     "gain": 1.35
     },
     "top": {
      "id": 2,
      "hex": "#1b3f9a",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#895c43",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -777,17 +821,22 @@
    "walkSpeedMps": 1.23,
    "walkFastSpeedMps": 1.98,
    "runSpeedMps": 3.33,
-   "tris": 8288,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
      "hex": "#2b2b3a",
-     "gain": 1.25
+     "gain": 1.35
     },
     "top": {
      "id": 2,
      "hex": "#e07aa0",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#b78160",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -855,17 +904,22 @@
    "walkSpeedMps": 1.4,
    "walkFastSpeedMps": 2.25,
    "runSpeedMps": 3.79,
-   "tris": 8926,
+   "tris": 6182,
    "slots": {
     "bottom": {
      "id": 3,
      "hex": "#2f3e57",
-     "gain": 1.25
+     "gain": 1.35
     },
     "top": {
      "id": 2,
      "hex": "#d9a441",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#694735",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -928,12 +982,17 @@
    "walkSpeedMps": 1.28,
    "walkFastSpeedMps": 2.06,
    "runSpeedMps": 3.46,
-   "tris": 9056,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
      "hex": "#c8573c",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#80563e",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -994,18 +1053,18 @@
    ],
    "skin": 3,
    "outfit": "trousers",
-   "heightM": 1.774,
+   "heightM": 1.771,
    "shoulderWidthM": 0.439,
    "eyeHeightM": 1.57,
    "seatRootDropM": 0.324,
    "seatedEyeHeightM": 1.247,
-   "seatedHeadTopM": 1.451,
+   "seatedHeadTopM": 1.447,
    "hipHeightM": 0.854,
    "legLengthM": 0.854,
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.14,
    "runSpeedMps": 3.6,
-   "tris": 8188,
+   "tris": 6182,
    "slots": {
     "bottom": {
      "id": 3,
@@ -1021,6 +1080,11 @@
      "id": 6,
      "hex": "#efe9d8",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#b48362",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -1094,7 +1158,7 @@
    "walkSpeedMps": 1.21,
    "walkFastSpeedMps": 1.96,
    "runSpeedMps": 3.29,
-   "tris": 8870,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
@@ -1111,9 +1175,14 @@
      "hex": "#e9e1c8",
      "gain": 1.25
     },
+    "skin": {
+     "id": 8,
+     "hex": "#a77550",
+     "gain": 1.0
+    },
     "shoes": {
      "id": 4,
-     "hex": "#2a1c14",
+     "hex": "#674835",
      "gain": 1.45
     }
    },
@@ -1175,7 +1244,7 @@
    "walkSpeedMps": 1.35,
    "walkFastSpeedMps": 2.17,
    "runSpeedMps": 3.65,
-   "tris": 8398,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
@@ -1191,6 +1260,11 @@
      "id": 6,
      "hex": "#c9ced6",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#c5997b",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -1257,17 +1331,22 @@
    "walkSpeedMps": 1.28,
    "walkFastSpeedMps": 2.06,
    "runSpeedMps": 3.46,
-   "tris": 8168,
+   "tris": 6182,
    "slots": {
     "bottom": {
      "id": 3,
      "hex": "#5a6c8a",
-     "gain": 1.25
+     "gain": 1.35
     },
     "top": {
      "id": 2,
      "hex": "#c8c0d8",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#d0a48a",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -1335,12 +1414,22 @@
    "walkSpeedMps": 1.36,
    "walkFastSpeedMps": 2.19,
    "runSpeedMps": 3.69,
-   "tris": 7918,
+   "tris": 6181,
    "slots": {
+    "bottom": {
+     "id": 3,
+     "hex": "#596c7a",
+     "gain": 1.25
+    },
     "top": {
      "id": 2,
-     "hex": "#6a8fb8",
+     "hex": "#b5afa1",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#ad7d5c",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -1412,7 +1501,7 @@
    "walkSpeedMps": 1.25,
    "walkFastSpeedMps": 2.01,
    "runSpeedMps": 3.37,
-   "tris": 8030,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
@@ -1423,6 +1512,11 @@
      "id": 7,
      "hex": "#5aa6a6",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#c39675",
+     "gain": 1.0
     },
     "bottom": {
      "id": 3,
@@ -1493,17 +1587,22 @@
    "walkSpeedMps": 1.26,
    "walkFastSpeedMps": 2.03,
    "runSpeedMps": 3.42,
-   "tris": 8244,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
      "hex": "#6a6a74",
-     "gain": 1.5
+     "gain": 1.25
     },
     "top": {
      "id": 2,
      "hex": "#a77fc0",
      "gain": 1.5
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#cc9f82",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -1574,12 +1673,12 @@
    "walkSpeedMps": 1.31,
    "walkFastSpeedMps": 2.12,
    "runSpeedMps": 3.56,
-   "tris": 8258,
+   "tris": 6182,
    "slots": {
     "bottom": {
      "id": 3,
      "hex": "#5a7aa8",
-     "gain": 1.25
+     "gain": 1.35
     },
     "top": {
      "id": 2,
@@ -1590,6 +1689,11 @@
      "id": 6,
      "hex": "#f08a1a",
      "gain": 1.15
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#ae7858",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -1648,18 +1752,18 @@
    ],
    "skin": 2,
    "outfit": "trousers",
-   "heightM": 1.668,
+   "heightM": 1.664,
    "shoulderWidthM": 0.413,
    "eyeHeightM": 1.533,
    "seatRootDropM": 0.303,
    "seatedEyeHeightM": 1.23,
-   "seatedHeadTopM": 1.364,
+   "seatedHeadTopM": 1.361,
    "hipHeightM": 0.833,
    "legLengthM": 0.833,
    "walkSpeedMps": 1.3,
    "walkFastSpeedMps": 2.09,
    "runSpeedMps": 3.52,
-   "tris": 7980,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
@@ -1671,6 +1775,11 @@
      "hex": "#f0e8d0",
      "gain": 1.25
     },
+    "skin": {
+     "id": 8,
+     "hex": "#b1805b",
+     "gain": 1.0
+    },
     "hat": {
      "id": 5,
      "hex": "#d6c08a",
@@ -1678,7 +1787,7 @@
     },
     "shoes": {
      "id": 4,
-     "hex": "#5a4030",
+     "hex": "#674835",
      "gain": 1.45
     }
    },
@@ -1726,18 +1835,18 @@
    ],
    "skin": 2,
    "outfit": "trousers",
-   "heightM": 1.609,
+   "heightM": 1.606,
    "shoulderWidthM": 0.4,
    "eyeHeightM": 1.477,
    "seatRootDropM": 0.273,
    "seatedEyeHeightM": 1.204,
-   "seatedHeadTopM": 1.337,
+   "seatedHeadTopM": 1.333,
    "hipHeightM": 0.803,
    "legLengthM": 0.803,
    "walkSpeedMps": 1.25,
    "walkFastSpeedMps": 2.02,
    "runSpeedMps": 3.39,
-   "tris": 8178,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
@@ -1753,6 +1862,11 @@
      "id": 6,
      "hex": "#8a5a34",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#a77855",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -1811,7 +1925,7 @@
    ],
    "skin": 3,
    "outfit": "dress",
-   "heightM": 1.454,
+   "heightM": 1.455,
    "shoulderWidthM": 0.336,
    "eyeHeightM": 1.364,
    "seatRootDropM": 0.197,
@@ -1822,17 +1936,22 @@
    "walkSpeedMps": 1.13,
    "walkFastSpeedMps": 1.83,
    "runSpeedMps": 3.07,
-   "tris": 8120,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#5a5a68",
+     "hex": "#69616e",
      "gain": 1.25
     },
     "inner": {
      "id": 7,
-     "hex": "#e8e8e8",
+     "hex": "#d8d0bf",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#b68565",
+     "gain": 1.0
     },
     "hat": {
      "id": 5,
@@ -1907,7 +2026,7 @@
    "walkSpeedMps": 0.93,
    "walkFastSpeedMps": 1.5,
    "runSpeedMps": 2.52,
-   "tris": 8270,
+   "tris": 6181,
    "slots": {
     "bottom": {
      "id": 3,
@@ -1918,6 +2037,11 @@
      "id": 2,
      "hex": "#f2f2f2",
      "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#c99c7c",
+     "gain": 1.0
     },
     "shoes": {
      "id": 4,
@@ -1987,7 +2111,7 @@
    "walkSpeedMps": 0.87,
    "walkFastSpeedMps": 1.41,
    "runSpeedMps": 2.37,
-   "tris": 8776,
+   "tris": 6181,
    "slots": {
     "top": {
      "id": 2,
@@ -1999,6 +2123,11 @@
      "hex": "#6a82b8",
      "gain": 1.25
     },
+    "skin": {
+     "id": 8,
+     "hex": "#986b4f",
+     "gain": 1.0
+    },
     "shoes": {
      "id": 4,
      "hex": "#2a2a2e",
@@ -2007,6 +2136,404 @@
     "accessory": {
      "id": 6,
      "hex": "#e0609a",
+     "gain": 1.25
+    }
+   },
+   "clips": [
+    "idle_a",
+    "idle_b",
+    "walk",
+    "walk_fast",
+    "walk_bag",
+    "walk_step",
+    "phone_stand",
+    "phone_call",
+    "talk",
+    "wave",
+    "point",
+    "sit_idle",
+    "sit_phone",
+    "sit_look",
+    "sit_cross_legs",
+    "stand_hold_pole",
+    "stand_hold_rail",
+    "turn_left",
+    "turn_right",
+    "kid_bounce",
+    "kid_fidget",
+    "talk_b",
+    "sweep",
+    "cook",
+    "sell",
+    "walk_carry",
+    "carry_stand",
+    "lean_wall",
+    "laundry",
+    "pray",
+    "sit_talk",
+    "run"
+   ]
+  },
+  {
+   "id": "m_joven",
+   "kind": "man",
+   "tags": [
+    "man",
+    "adult",
+    "young"
+   ],
+   "skin": 3,
+   "outfit": "trousers",
+   "heightM": 1.749,
+   "shoulderWidthM": 0.429,
+   "eyeHeightM": 1.641,
+   "seatRootDropM": 0.362,
+   "seatedEyeHeightM": 1.279,
+   "seatedHeadTopM": 1.387,
+   "hipHeightM": 0.892,
+   "legLengthM": 0.892,
+   "walkSpeedMps": 1.39,
+   "walkFastSpeedMps": 2.24,
+   "runSpeedMps": 3.76,
+   "tris": 6182,
+   "slots": {
+    "bottom": {
+     "id": 3,
+     "hex": "#3a4a66",
+     "gain": 1.35
+    },
+    "top": {
+     "id": 2,
+     "hex": "#2f7d5a",
+     "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#a97654",
+     "gain": 1.0
+    },
+    "shoes": {
+     "id": 4,
+     "hex": "#f2f2f2",
+     "gain": 1.25
+    }
+   },
+   "clips": [
+    "idle_a",
+    "idle_b",
+    "walk",
+    "walk_fast",
+    "walk_bag",
+    "walk_step",
+    "phone_stand",
+    "phone_call",
+    "talk",
+    "wave",
+    "point",
+    "sit_idle",
+    "sit_phone",
+    "sit_look",
+    "sit_cross_legs",
+    "stand_hold_pole",
+    "stand_hold_rail",
+    "turn_left",
+    "turn_right",
+    "kid_bounce",
+    "kid_fidget",
+    "talk_b",
+    "sweep",
+    "cook",
+    "sell",
+    "walk_carry",
+    "carry_stand",
+    "lean_wall",
+    "laundry",
+    "pray",
+    "sit_talk",
+    "run"
+   ]
+  },
+  {
+   "id": "w_vecina",
+   "kind": "woman",
+   "tags": [
+    "woman",
+    "adult",
+    "home"
+   ],
+   "skin": 3,
+   "outfit": "trousers",
+   "heightM": 1.539,
+   "shoulderWidthM": 0.376,
+   "eyeHeightM": 1.444,
+   "seatRootDropM": 0.239,
+   "seatedEyeHeightM": 1.204,
+   "seatedHeadTopM": 1.3,
+   "hipHeightM": 0.769,
+   "legLengthM": 0.769,
+   "walkSpeedMps": 1.2,
+   "walkFastSpeedMps": 1.93,
+   "runSpeedMps": 3.25,
+   "tris": 6181,
+   "slots": {
+    "bottom": {
+     "id": 3,
+     "hex": "#4a5a7a",
+     "gain": 1.25
+    },
+    "top": {
+     "id": 2,
+     "hex": "#8f9a5b",
+     "gain": 1.5
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#b17e5e",
+     "gain": 1.0
+    },
+    "shoes": {
+     "id": 4,
+     "hex": "#3a2a1e",
+     "gain": 1.45
+    }
+   },
+   "clips": [
+    "idle_a",
+    "idle_b",
+    "walk",
+    "walk_fast",
+    "walk_bag",
+    "walk_step",
+    "phone_stand",
+    "phone_call",
+    "talk",
+    "wave",
+    "point",
+    "sit_idle",
+    "sit_phone",
+    "sit_look",
+    "sit_cross_legs",
+    "stand_hold_pole",
+    "stand_hold_rail",
+    "turn_left",
+    "turn_right",
+    "kid_bounce",
+    "kid_fidget",
+    "talk_b",
+    "sweep",
+    "cook",
+    "sell",
+    "walk_carry",
+    "carry_stand",
+    "lean_wall",
+    "laundry",
+    "pray",
+    "sit_talk",
+    "run"
+   ]
+  },
+  {
+   "id": "m_don",
+   "kind": "man",
+   "tags": [
+    "man",
+    "adult"
+   ],
+   "skin": 2,
+   "outfit": "trousers",
+   "heightM": 1.659,
+   "shoulderWidthM": 0.458,
+   "eyeHeightM": 1.556,
+   "seatRootDropM": 0.316,
+   "seatedEyeHeightM": 1.24,
+   "seatedHeadTopM": 1.343,
+   "hipHeightM": 0.846,
+   "legLengthM": 0.846,
+   "walkSpeedMps": 1.32,
+   "walkFastSpeedMps": 2.12,
+   "runSpeedMps": 3.57,
+   "tris": 6181,
+   "slots": {
+    "bottom": {
+     "id": 3,
+     "hex": "#5a5a64",
+     "gain": 1.25
+    },
+    "top": {
+     "id": 2,
+     "hex": "#9bb0c8",
+     "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#c59777",
+     "gain": 1.0
+    },
+    "shoes": {
+     "id": 4,
+     "hex": "#2a1c14",
+     "gain": 1.45
+    }
+   },
+   "clips": [
+    "idle_a",
+    "idle_b",
+    "walk",
+    "walk_fast",
+    "walk_bag",
+    "walk_step",
+    "phone_stand",
+    "phone_call",
+    "talk",
+    "wave",
+    "point",
+    "sit_idle",
+    "sit_phone",
+    "sit_look",
+    "sit_cross_legs",
+    "stand_hold_pole",
+    "stand_hold_rail",
+    "turn_left",
+    "turn_right",
+    "kid_bounce",
+    "kid_fidget",
+    "talk_b",
+    "sweep",
+    "cook",
+    "sell",
+    "walk_carry",
+    "carry_stand",
+    "lean_wall",
+    "laundry",
+    "pray",
+    "sit_talk",
+    "run"
+   ]
+  },
+  {
+   "id": "w_joven",
+   "kind": "woman",
+   "tags": [
+    "woman",
+    "adult",
+    "young"
+   ],
+   "skin": 4,
+   "outfit": "trousers",
+   "heightM": 1.691,
+   "shoulderWidthM": 0.348,
+   "eyeHeightM": 1.528,
+   "seatRootDropM": 0.284,
+   "seatedEyeHeightM": 1.244,
+   "seatedHeadTopM": 1.407,
+   "hipHeightM": 0.814,
+   "legLengthM": 0.814,
+   "walkSpeedMps": 1.27,
+   "walkFastSpeedMps": 2.04,
+   "runSpeedMps": 3.44,
+   "tris": 6181,
+   "slots": {
+    "bottom": {
+     "id": 3,
+     "hex": "#3d5b86",
+     "gain": 1.35
+    },
+    "top": {
+     "id": 2,
+     "hex": "#f2c14e",
+     "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#946346",
+     "gain": 1.0
+    },
+    "shoes": {
+     "id": 4,
+     "hex": "#f2f2f2",
+     "gain": 1.25
+    },
+    "accessory": {
+     "id": 6,
+     "hex": "#7a4a2a",
+     "gain": 1.45
+    }
+   },
+   "clips": [
+    "idle_a",
+    "idle_b",
+    "walk",
+    "walk_fast",
+    "walk_bag",
+    "walk_step",
+    "phone_stand",
+    "phone_call",
+    "talk",
+    "wave",
+    "point",
+    "sit_idle",
+    "sit_phone",
+    "sit_look",
+    "sit_cross_legs",
+    "stand_hold_pole",
+    "stand_hold_rail",
+    "turn_left",
+    "turn_right",
+    "kid_bounce",
+    "kid_fidget",
+    "talk_b",
+    "sweep",
+    "cook",
+    "sell",
+    "walk_carry",
+    "carry_stand",
+    "lean_wall",
+    "laundry",
+    "pray",
+    "sit_talk",
+    "run"
+   ]
+  },
+  {
+   "id": "m_rapado",
+   "kind": "teen",
+   "tags": [
+    "man",
+    "teen"
+   ],
+   "skin": 5,
+   "outfit": "shorts",
+   "heightM": 1.709,
+   "shoulderWidthM": 0.429,
+   "eyeHeightM": 1.597,
+   "seatRootDropM": 0.342,
+   "seatedEyeHeightM": 1.256,
+   "seatedHeadTopM": 1.368,
+   "hipHeightM": 0.872,
+   "legLengthM": 0.872,
+   "walkSpeedMps": 1.36,
+   "walkFastSpeedMps": 2.19,
+   "runSpeedMps": 3.68,
+   "tris": 6182,
+   "slots": {
+    "bottom": {
+     "id": 3,
+     "hex": "#1b1b22",
+     "gain": 1.25
+    },
+    "top": {
+     "id": 2,
+     "hex": "#c0392b",
+     "gain": 1.25
+    },
+    "skin": {
+     "id": 8,
+     "hex": "#82553c",
+     "gain": 1.0
+    },
+    "shoes": {
+     "id": 4,
+     "hex": "#e6e6e6",
      "gain": 1.25
     }
    },

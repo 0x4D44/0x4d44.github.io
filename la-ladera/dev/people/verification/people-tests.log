@@ -1,0 +1,385 @@
+La Ladera people verification (final near and far bundles)
+Started: 2026-10-31T13:11:08.232Z
+Node: v24.22.1
+Asset manifest SHA-256: ec14eabfd72d6a7f6bab7c1222001695f7d60d2c82747e55ecd192dc9bca3f0e
+
+=== tests/people-assets.test.mjs ===
+Command: node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout tests/people-assets.test.mjs
+Started: 2026-10-31T13:11:16.669Z
+TAP version 13
+# Subtest: the asset contract freezes the original 30 IDs, 32 clips and 21-bone skin ABI
+ok 1 - the asset contract freezes the original 30 IDs, 32 clips and 21-bone skin ABI
+  ---
+  duration_ms: 1.341073
+  type: 'test'
+  ...
+# Subtest: GLB parser rejects truncation, dishonest lengths and bufferViews beyond the binary
+ok 2 - GLB parser rejects truncation, dishonest lengths and bufferViews beyond the binary
+  ---
+  duration_ms: 1.147871
+  type: 'test'
+  ...
+# Subtest: binary accessor reader honors stride and normalization and rejects overrun
+ok 3 - binary accessor reader honors stride and normalization and rejects overrun
+  ---
+  duration_ms: 0.35141
+  type: 'test'
+  ...
+# Subtest: all 672 original rotation tracks remain byte-exact after bone-name remapping
+ok 4 - all 672 original rotation tracks remain byte-exact after bone-name remapping
+  ---
+  duration_ms: 47.347116
+  type: 'test'
+  ...
+# Subtest: decoded geometry validation enforces actual triangle count and bounded indices
+ok 5 - decoded geometry validation enforces actual triangle count and bounded indices
+  ---
+  duration_ms: 0.80274
+  type: 'test'
+  ...
+# Subtest: in-range UVs spanning the entire atlas are rejected instead of smearing its cells
+ok 6 - in-range UVs spanning the entire atlas are rejected instead of smearing its cells
+  ---
+  duration_ms: 0.220783
+  type: 'test'
+  ...
+# Subtest: a tiny triangle straddling an atlas edge is rejected despite its small UV span
+ok 7 - a tiny triangle straddling an atlas edge is rejected despite its small UV span
+  ---
+  duration_ms: 0.334524
+  type: 'test'
+  ...
+# Subtest: invalid weights, foreign joints and interpolated garment-slot alpha cannot pass
+ok 8 - invalid weights, foreign joints and interpolated garment-slot alpha cannot pass
+  ---
+  duration_ms: 0.532232
+  type: 'test'
+  ...
+# Subtest: LOD swaps require the same joint ordinal, bind matrices and rest transforms
+ok 9 - LOD swaps require the same joint ordinal, bind matrices and rest transforms
+  ---
+  duration_ms: 1.010804
+  type: 'test'
+  ...
+# Subtest: manifest inventory rejects missing files, stale content and files outside assets
+ok 10 - manifest inventory rejects missing files, stale content and files outside assets
+  ---
+  duration_ms: 1.679083
+  type: 'test'
+  ...
+# Subtest: explicit manifest regeneration preserves the loader block and unrelated metadata
+ok 11 - explicit manifest regeneration preserves the loader block and unrelated metadata
+  ---
+  duration_ms: 2.286748
+  type: 'test'
+  ...
+# Subtest: a compressed mesh cannot fake its triangle budget through glTF accessor counts
+ok 12 - a compressed mesh cannot fake its triangle budget through glTF accessor counts
+  ---
+  duration_ms: 102.87469
+  type: 'test'
+  ...
+# Subtest: normal validation tolerates absent GLBs; --complete requires both actual bundles
+ok 13 - normal validation tolerates absent GLBs; --complete requires both actual bundles
+  ---
+  duration_ms: 12.265739
+  type: 'test'
+  ...
+# Subtest: the installed bundles, when present, satisfy the complete decoded asset gate
+ok 14 - the installed bundles, when present, satisfy the complete decoded asset gate
+  ---
+  duration_ms: 1977.678394
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2161.490349
+
+Exit: 0; TAP cases: 14; elapsed: 2.561s
+
+=== tests/people-bank.test.mjs ===
+Command: node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout tests/people-bank.test.mjs
+Started: 2026-10-31T13:11:19.230Z
+TAP version 13
+# Subtest: every persona resolves to a bank that exists
+ok 1 - every persona resolves to a bank that exists
+  ---
+  duration_ms: 0.996453
+  type: 'test'
+  ...
+# Subtest: every bank is cast by some persona (no written line is unreachable)
+ok 2 - every bank is cast by some persona (no written line is unreachable)
+  ---
+  duration_ms: 0.136646
+  type: 'test'
+  ...
+# Subtest: a masculine bank is never cast with a woman, nor a feminine bank with a man
+ok 3 - a masculine bank is never cast with a woman, nor a feminine bank with a man
+  ---
+  duration_ms: 0.256917
+  type: 'test'
+  ...
+# Subtest: every character a persona lists exists in the shipped library and has the persona gender
+ok 4 - every character a persona lists exists in the shipped library and has the persona gender
+  ---
+  duration_ms: 0.232741
+  type: 'test'
+  ...
+# Subtest: the default cast: >= 60 people, >= 30 distinct appearances, every bank spoken, the right gender per bank
+ok 5 - the default cast: >= 60 people, >= 30 distinct appearances, every bank spoken, the right gender per bank
+  ---
+  duration_ms: 369.908013
+  type: 'test'
+  ...
+# Subtest: bank size: >= 600 lines over >= 14 personas, >= 12 lines in each
+ok 6 - bank size: >= 600 lines over >= 14 personas, >= 12 lines in each
+  ---
+  duration_ms: 1.106108
+  type: 'test'
+  ...
+# Subtest: every line has Spanish and English; the English is English
+ok 7 - every line has Spanish and English; the English is English
+  ---
+  duration_ms: 2.79812
+  type: 'test'
+  ...
+# Subtest: every rendered line is clean Spanish typography (both speaker genders x both player-address settings)
+ok 8 - every rendered line is clean Spanish typography (both speaker genders x both player-address settings)
+  ---
+  duration_ms: 67.715014
+  type: 'test'
+  ...
+# Subtest: the typography check itself catches a seeded fault
+ok 9 - the typography check itself catches a seeded fault
+  ---
+  duration_ms: 0.657502
+  type: 'test'
+  ...
+# Subtest: lines never hard-code how the player is addressed: they use tokens
+ok 10 - lines never hard-code how the player is addressed: they use tokens
+  ---
+  duration_ms: 1.649999
+  type: 'test'
+  ...
+# Subtest: the player-address tokens follow settings.address and `joven` never changes
+ok 11 - the player-address tokens follow settings.address and `joven` never changes
+  ---
+  duration_ms: 0.373714
+  type: 'test'
+  ...
+# Subtest: neutral banks use {o|a} for gendered self-description (a shopkeeper of either gender speaks them)
+ok 12 - neutral banks use {o|a} for gendered self-description (a shopkeeper of either gender speaks them)
+  ---
+  duration_ms: 4.248016
+  type: 'test'
+  ...
+# Subtest: shops do not share template openings (greet_n / mood / news / again / bye)
+ok 13 - shops do not share template openings (greet_n / mood / news / again / bye)
+  ---
+  duration_ms: 7.30665
+  type: 'test'
+  ...
+# Subtest: no exact duplicate Spanish line across different banks
+ok 14 - no exact duplicate Spanish line across different banks
+  ---
+  duration_ms: 0.485322
+  type: 'test'
+  ...
+# Subtest: "Dicen que" is a seasoning, not a template
+ok 15 - "Dicen que" is a seasoning, not a template
+  ---
+  duration_ms: 0.224268
+  type: 'test'
+  ...
+# Subtest: English keeps its contractions: no stiff "do not / is not / I am / it is / you are"
+ok 16 - English keeps its contractions: no stiff "do not / is not / I am / it is / you are"
+  ---
+  duration_ms: 0.817994
+  type: 'test'
+  ...
+# Subtest: Colombian words, not Spanish ones
+ok 17 - Colombian words, not Spanish ones
+  ---
+  duration_ms: 0.423719
+  type: 'test'
+  ...
+# Subtest: kids and teens are addressed with tú in every menu entry of a full conversation
+ok 18 - kids and teens are addressed with tú in every menu entry of a full conversation
+  ---
+  duration_ms: 19.857889
+  type: 'test'
+  ...
+# Subtest: buying: the player asks the Colombian way ("¿Me regala ...?") and every shop sells three things with the price in words
+ok 19 - buying: the player asks the Colombian way ("¿Me regala ...?") and every shop sells three things with the price in words
+  ---
+  duration_ms: 0.622859
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 496.171286
+
+Exit: 0; TAP cases: 19; elapsed: 1.104s
+
+=== tests/people-dialogue.test.mjs ===
+Command: node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout tests/people-dialogue.test.mjs
+Started: 2026-10-31T13:11:20.334Z
+TAP version 13
+# Subtest: withArticle: every landmark and shop name of the real plan gets the right article
+ok 1 - withArticle: every landmark and shop name of the real plan gets the right article
+  ---
+  duration_ms: 252.244755
+  type: 'test'
+  ...
+# Subtest: polish: a + el, de + el, capital after a full stop, no doubled blanks; proper names keep "El"
+ok 2 - polish: a + el, de + el, capital after a full stop, no doubled blanks; proper names keep "El"
+  ---
+  duration_ms: 0.547045
+  type: 'test'
+  ...
+# Subtest: clockLine says the time the Colombian way
+ok 3 - clockLine says the time the Colombian way
+  ---
+  duration_ms: 0.306823
+  type: 'test'
+  ...
+# Subtest: directionsTo: side, distance, uphill and the article of the place
+ok 4 - directionsTo: side, distance, uphill and the article of the place
+  ---
+  duration_ms: 1.317737
+  type: 'test'
+  ...
+# Subtest: a conversation: greeting by hour, menu of <= 4 with a goodbye, never the same line twice, then a goodbye that ends it
+ok 5 - a conversation: greeting by hour, menu of <= 4 with a goodbye, never the same line twice, then a goodbye that ends it
+  ---
+  duration_ms: 2.354831
+  type: 'test'
+  ...
+# Subtest: memory: the second chat says "again" lines and uses fresh pool lines first
+ok 6 - memory: the second chat says "again" lines and uses fresh pool lines first
+  ---
+  duration_ms: 1.666824
+  type: 'test'
+  ...
+# Subtest: where: the menu lists landmarks (nearest first), the answer names the place with its article and says which way
+ok 7 - where: the menu lists landmarks (nearest first), the answer names the place with its article and says which way
+  ---
+  duration_ms: 1.638101
+  type: 'test'
+  ...
+# Subtest: buying: a shop sells, the reply carries the price and the step reports the purchase
+ok 8 - buying: a shop sells, the reply carries the price and the step reports the purchase
+  ---
+  duration_ms: 0.704783
+  type: 'test'
+  ...
+# Subtest: the hint no longer says "a el" and starts every sentence with a capital
+ok 9 - the hint no longer says "a el" and starts every sentence with a capital
+  ---
+  duration_ms: 1.174371
+  type: 'test'
+  ...
+# Subtest: how the player is addressed follows settings.address (default masculine), the speaker's own gender forms follow the NPC
+ok 10 - how the player is addressed follows settings.address (default masculine), the speaker's own gender forms follow the NPC
+  ---
+  duration_ms: 32.571973
+  type: 'test'
+  ...
+# Subtest: takeLine: unused lines first, then the pool starts over
+ok 11 - takeLine: unused lines first, then the pool starts over
+  ---
+  duration_ms: 1.12077
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 307.271294
+
+Exit: 0; TAP cases: 11; elapsed: 0.88s
+
+=== tests/people-speech.test.mjs ===
+Command: node --import ./tests/register.mjs --test-reporter=tap --test-reporter-destination=stdout tests/people-speech.test.mjs
+Started: 2026-10-31T13:11:21.215Z
+TAP version 13
+# Subtest: language rank: es-CO > es-MX > es-US > es-419 > es-AR > es-CL > es-ES > any other Spanish > not Spanish
+ok 1 - language rank: es-CO > es-MX > es-US > es-419 > es-AR > es-CL > es-ES > any other Spanish > not Spanish
+  ---
+  duration_ms: 14.602187
+  type: 'test'
+  ...
+# Subtest: rankVoices keeps Spanish voices only, best language first, local before network
+ok 2 - rankVoices keeps Spanish voices only, best language first, local before network
+  ---
+  duration_ms: 0.420384
+  type: 'test'
+  ...
+# Subtest: pickVoice stays in the best language group, prefers the speaker's gender and spreads people over the voices
+ok 3 - pickVoice stays in the best language group, prefers the speaker's gender and spreads people over the voices
+  ---
+  duration_ms: 5.967811
+  type: 'test'
+  ...
+# Subtest: speak(): utterance uses the best Spanish voice, its language, and the persona pitch and rate
+ok 4 - speak(): utterance uses the best Spanish voice, its language, and the persona pitch and rate
+  ---
+  duration_ms: 93.624689
+  type: 'test'
+  ...
+# Subtest: no Spanish voice: subtitles only, one explanation toast, no utterance, never a crash
+ok 5 - no Spanish voice: subtitles only, one explanation toast, no utterance, never a crash
+  ---
+  duration_ms: 1.564109
+  type: 'test'
+  ...
+# Subtest: AudioContext: only a trusted gesture (or earlier sticky activation) may create or resume one
+ok 6 - AudioContext: only a trusted gesture (or earlier sticky activation) may create or resume one
+  ---
+  duration_ms: 0.364219
+  type: 'test'
+  ...
+# Subtest: AudioContext: the game's own context is reused and ours is never created
+ok 7 - AudioContext: the game's own context is reused and ours is never created
+  ---
+  duration_ms: 0.445322
+  type: 'test'
+  ...
+# Subtest: the unlock listener ignores script-made events and keeps waiting for a real one
+ok 8 - the unlock listener ignores script-made events and keeps waiting for a real one
+  ---
+  duration_ms: 0.275034
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 131.247855
+
+Exit: 0; TAP cases: 8; elapsed: 0.592s
+
+Complete: 2026-10-31T13:11:35.654Z
+Assets unchanged: true
+Totals: {"tests":52,"suites":0,"pass":52,"fail":0,"cancelled":0,"skipped":0,"todo":0}
+Result: PASS
