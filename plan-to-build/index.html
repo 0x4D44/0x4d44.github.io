@@ -1955,7 +1955,7 @@ function film3D() {
   // (plan mm, optionally a height in m), a point to look at (or a heading) and a lens; the first key IS the orbit's last pose, so the hand-over is a standing one.
   // The living room cannot be crossed (its furniture leaves gaps of 175 to 340 mm), so the walk enters it from the corridor end through D02 and shows it from there.
   const Z = S + 74.0 + P, EYE = FLOOR_TOP + 1.6;
-  T3.tourT = { roof: [Z + 0.3, Z + 2.7], shut: [Z + 1.2, Z + 2.2], open: [Z + 6.6, Z + 8.0], lights: Z - 0.01 };
+  T3.tourT = { roof: [Z + 0.3, Z + 2.7], shut: [Z + 1.2, Z + 2.2], open: [Z + 6.6, Z + 8.0], lights: [Z + 0.8, Z + 2.6] };
   const WK = [], oL = K[K.length - 1][1], oP = orbitPose(oL);
   let hdPrev = 90 + oL.az;                                                   // an orbit with azimuth az looks along the plan heading 90 + az (0 = east, 90 = north)
   WK.push([Z, { ex: oP.ex, ey: oP.ey, ez: oP.ez, hd: hdPrev, pd: oL.el, lp: oL.lp }]);
@@ -2597,20 +2597,26 @@ function build3Construction() {
     G3.anims.push((t) => { const p = prog3(t, a, b); roof.visible = p > 0; roof.position.y = y0 + th / 2 + 9 * (1 - easeOut(p)); });
   }
 
-  // ---- 9. the lights of the rooms: a warm point light under the ceiling (no shadows), on from the start of the tour, with a round fitting at the ceiling
+  // ---- 9. the lights of the rooms: a warm point light under the ceiling (no shadows) with a round fitting at the ceiling, brought up as the roof shuts the sun out
   {
     const spots = [];
     for (const rm of ROOMS) {
       const n = rm.id === 'LIVING' ? 2 : rm.id === 'CORRIDOR' ? 3 : 1, w = rW(rm.r), cy = rCY(rm.r);
       for (let i = 0; i < n; i++) spots.push([rm.r[0] + w * (i + 0.5) / n, cy]);
     }
-    const fit = cacheGeo('fitting', () => new THREE.CylinderGeometry(0.17, 0.17, 0.035, 32)), lamps = [];
+    const fit = cacheGeo('fitting', () => new THREE.CylinderGeometry(0.17, 0.17, 0.035, 32)), fm = mat3('fitting'), lamps = [], fits = [];
     for (const [x, y] of spots) {
       const L = new THREE.PointLight(0xffd9a8, 5.5, 5.5, 2);
       L.position.set(x / 1000, 2.5, -y / 1000); L.visible = false; root.add(L); lamps.push(L);
-      const f = new THREE.Mesh(fit, mat3('fitting')); f.position.set(x / 1000, 2.78, -y / 1000); f.visible = false; root.add(f); lamps.push(f);
+      const f = new THREE.Mesh(fit, fm); f.position.set(x / 1000, 2.78, -y / 1000); f.visible = false; root.add(f); fits.push(f);
     }
-    G3.anims.push((t) => { const on = t >= T3.tourT.lights; for (const q of lamps) q.visible = on; });
+    const [a, b] = T3.tourT.lights;
+    G3.anims.push((t) => {                                                     // from zero, so the lamps never pop: a light only counts in the shader while it is on
+      const k = easeIO(prog3(t, a, b));
+      for (const L of lamps) { L.visible = k > 0; L.intensity = 5.5 * k; }
+      for (const f of fits) f.visible = k > 0;
+      fm.emissiveIntensity = 1.4 * k;
+    });
   }
 }
 
