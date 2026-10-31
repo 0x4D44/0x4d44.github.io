@@ -25,6 +25,20 @@ export function exactCase(abs) {
 }
 const isFile = (abs) => { try { return statSync(abs).isFile(); } catch { return false; } };
 const isDir = (abs) => { try { return statSync(abs).isDirectory(); } catch { return false; } };
+// Windows stat() accepts a wrong-case spelling; Linux stat() does not. Resolve
+// the spelling through directory entries so the diagnostic means the same thing
+// on both hosts, while preserving the exact-case rejection below.
+const fileWithOtherCase = (abs) => {
+  let dir = ROOT;
+  for (const part of relative(ROOT, abs).split(sep)) {
+    if (!part || part === '..') return false;
+    let names; try { names = readdirSync(dir); } catch { return false; }
+    const name = names.find((candidate) => candidate.toLowerCase() === part.toLowerCase());
+    if (!name) return false;
+    dir = join(dir, name);
+  }
+  return isFile(dir);
+};
 const walk = (dir, exts, out = []) => {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name);
@@ -49,7 +63,7 @@ export function checkSource(file, text) {
     else if (spec === 'three') abs = join(ROOT, MAP.three);
     else if (spec.startsWith('three/addons/')) abs = join(ROOT, MAP['three/addons/'], spec.slice('three/addons/'.length));
     else { bad.push(`bare import '${spec}' is not in the import map`); continue; }
-    if (!isFile(abs)) bad.push(`import '${spec}' does not exist`);
+    if (!isFile(abs)) bad.push(fileWithOtherCase(abs) ? `import '${spec}' exists only with another letter case` : `import '${spec}' does not exist`);
     else if (!exactCase(abs)) bad.push(`import '${spec}' exists only with another letter case`);
   }
   for (const m of text.matchAll(ASSET_RE)) {                                   // asset URLs resolve against the page (la-ladera/index.html), not the module

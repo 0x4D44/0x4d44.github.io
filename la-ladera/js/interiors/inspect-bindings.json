@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "status": "blocked-missing-drawer-baseline",
+  "sourceRevision": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "requiredSources": [
+    "dev/FEATURE-DRAWERS.md",
+    "js/interiors/finds.js",
+    "js/interiors/contents.js"
+  ],
+  "bindings": {},
+  "note": "The named drawer source files are absent from origin/main at sourceRevision. Asset keys below are new library keys, not claimed existing find IDs. Populate verified bindings only when the source revision is supplied.",
+  "assets": [
+    {
+      "key": "inspect_gold_coin",
+      "label": "Moneda del recuerdo",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_pocket_watch",
+      "label": "Reloj de bolsillo",
+      "category": "timepieces"
+    },
+    {
+      "key": "inspect_wristwatch",
+      "label": "Reloj de pulsera",
+      "category": "timepieces"
+    },
+    {
+      "key": "inspect_ring",
+      "label": "Anillo de esmeralda",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_locket",
+      "label": "Relicario con retrato",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_medal_sport",
+      "label": "Medalla del barrio",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_medal_service",
+      "label": "Medalla de una vida",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_rosary",
+      "label": "Rosario de madera",
+      "category": "devotion"
+    },
+    {
+      "key": "inspect_keys",
+      "label": "Llaves de casa",
+      "category": "household"
+    },
+    {
+      "key": "inspect_photo_family",
+      "label": "Foto de la familia",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_photo_portrait",
+      "label": "Retrato guardado",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_letter",
+      "label": "Una carta doblada",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_envelope",
+      "label": "Sobre con sello",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_diary",
+      "label": "Diario con broche",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_notebook",
+      "label": "Cuaderno de cuentas",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_recipe_cards",
+      "label": "Recetas de la abuela",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_banknotes",
+      "label": "Billetes de recuerdo",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_lottery_ticket",
+      "label": "Lotería de La Ladera",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_lace",
+      "label": "Encaje de domingo",
+      "category": "textiles"
+    },
+    {
+      "key": "inspect_knickers",
+      "label": "Los calzones de fiesta",
+      "category": "textiles"
+    },
+    {
+      "key": "inspect_toy_car",
+      "label": "Carrito de hojalata",
+      "category": "toys"
+    },
+    {
+      "key": "inspect_toy_top",
+      "label": "Trompo de colores",
+      "category": "toys"
+    },
+    {
+      "key": "inspect_toy_teddy",
+      "label": "Osito remendado",
+      "category": "toys"
+    },
+    {
+      "key": "inspect_harmonica",
+      "label": "Armónica del abuelo",
+      "category": "music"
+    }
+  ]
+}

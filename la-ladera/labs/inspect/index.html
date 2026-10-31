@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <base href="../../">
+  <title>La Ladera · Objetos encontrados</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; color: #eee7dc; background: #151a1c; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100svh; overflow: hidden; background: radial-gradient(ellipse at 50% 43%, #42433c 0%, #282d2a 40%, #151a1c 82%); }
+    header { position: absolute; z-index: 2; left: 34px; top: 27px; right: 34px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+    .brand { color: #d8b883; font-size: 12px; font-weight: 700; letter-spacing: .2em; }
+    .studio { color: #a3a99f; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    #stage { position: absolute; inset: 64px 14px 120px; touch-action: none; cursor: grab; }
+    #stage:active { cursor: grabbing; }
+    canvas { display: block; width: 100%; height: 100%; }
+    footer { position: absolute; z-index: 2; left: 34px; right: 34px; bottom: 31px; border-top: 1px solid #a6a89936; padding-top: 15px; }
+    .eyebrow { display: flex; justify-content: space-between; gap: 10px; color: #b2b8aa; font-size: 10px; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { margin: 8px 0 0; font-family: Georgia, serif; font-weight: 400; font-size: clamp(23px, 3.8vw, 32px); line-height: 1.15; }
+    #size { margin: 7px 0 0; color: #aab0a5; font-size: 11px; }
+    #controls { position: fixed; z-index: 3; top: 53px; right: 34px; display: flex; gap: 6px; flex-wrap: wrap; max-width: 85%; }
+    select, button { min-height: 32px; border: 1px solid #737a69; border-radius: 5px; padding: 5px 9px; background: #202820; color: #e7dfcf; font: inherit; font-size: 11px; }
+    button { cursor: pointer; }
+    #error { position: absolute; z-index: 4; inset: 35% 32px auto; color: #ffd4b7; white-space: pre-wrap; }
+    .capture #controls { display: none; }
+    .capture #stage { cursor: default; }
+    @media (max-width: 480px) { header { left: 20px; right: 20px; } footer { left: 20px; right: 20px; } .studio { font-size: 9px; } }
+  </style>
+  <script type="importmap">
+  { "imports": { "three": "./vendor/three/build/three.module.min.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+  </script>
+</head>
+<body>
+  <header><span class="brand">LA LADERA</span><span class="studio">Estudio de referencia</span></header>
+  <div id="stage" aria-label="Objeto tridimensional; arrastra para girarlo"></div>
+  <div id="controls">
+    <select id="object" aria-label="Objeto"></select>
+    <button id="turn" type="button">Dar la vuelta</button>
+    <button id="detail" type="button">Ver LOD</button>
+  </div>
+  <footer>
+    <div class="eyebrow"><span>Objetos encontrados</span><span id="view">Vista frontal</span></div>
+    <h1 id="title">Cargando…</h1>
+    <p id="size">Pequeñas historias de un barrio.</p>
+  </footer>
+  <pre id="error" hidden></pre>
+  <script type="module" src="labs/inspect/viewer.js"></script>
+</body>
+</html>

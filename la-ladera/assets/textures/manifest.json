@@ -1,5 +1,10 @@
 {
  "textures": {
+  "inspect_paper_atlas": {
+   "map": "inspect_paper_atlas.png",
+   "size": 2048,
+   "avg": "#c3b58d"
+  },
   "brick_clay_hollow": {
    "map": "brick_clay_hollow.jpg",
    "normal": "brick_clay_hollow_n.jpg",

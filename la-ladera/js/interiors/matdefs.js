@@ -105,6 +105,22 @@ export default {
 
   // ---------------------------------------------------------------- runtime decals (canvas atlas built in interiors/decals.js)
   decal_atlas: { color: 0xffffff, rough: 0.85, uv: 'unit', tex: false },
+  // Close-up finds use one shared paper atlas. GLBs retain material names only.
+  // The remaining inspect materials have no textures and accept linear vertex colours.
+  inspect_paper_atlas: { color: 0xffffff, rough: 0.88, uv: 'unit', tex: 'inspect_paper_atlas', vertexColors: false },
+  inspect_metal_atlas: { color: 0xffffff, rough: 0.36, metal: 0.72, uv: 'unit', tex: 'inspect_paper_atlas', vertexColors: false },
+  inspect_gold: { color: 0xd1ad54, rough: 0.31, metal: 0.8, tex: false },
+  inspect_brass: { color: 0xb89a5b, rough: 0.43, metal: 0.72, tex: false },
+  inspect_silver: { color: 0xc6cbd0, rough: 0.29, metal: 0.85, tex: false },
+  inspect_ink: { color: 0x292b30, rough: 0.62, tex: false },
+  inspect_enamel: { color: 0xf2ead7, rough: 0.27, metal: 0.04, tex: false },
+  inspect_leather: { color: 0x6d3a2c, rough: 0.76, tex: false },
+  inspect_cloth: { color: 0xffffff, rough: 0.96, tex: false, side: 'double' },
+  inspect_wood: { color: 0xc6955c, rough: 0.72, tex: false },
+  inspect_ribbon: { color: 0xffffff, rough: 0.83, tex: false, side: 'double' },
+  inspect_lace: { color: 0xf4eada, rough: 1, tex: false, side: 'double' },
+  inspect_gem: { color: 0x2b795b, rough: 0.13, metal: 0.18, tex: false },
+  inspect_dark: { color: 0x45403a, rough: 0.72, metal: 0.2, tex: false },
   // soft additive halo behind every TV (runtime canvas material seeded by interiors/anim.js makeTvGlowMaterial; the definition here is for the lint)
   tv_glow: { color: 0x6fa0ff, rough: 1, tex: false, alpha: 0.25 },
 };

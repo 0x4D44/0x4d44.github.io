@@ -1,0 +1,1602 @@
+{
+  "ok": true,
+  "complete": false,
+  "integrationStatus": "blocked-missing-drawer-baseline",
+  "errors": [],
+  "warnings": [
+    "missing source: dev/FEATURE-DRAWERS.md",
+    "missing source: js/interiors/finds.js",
+    "missing source: js/interiors/contents.js",
+    "no verified existing find/content ID bindings; asset library is not integrated",
+    "24 inspection assets lack verified existing ID bindings"
+  ],
+  "assets": [
+    {
+      "key": "inspect_gold_coin",
+      "glb": "inspect/inspect_gold_coin.glb",
+      "node": "inspect_gold_coin",
+      "triangles": 1488,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.01707500033080578,
+          -0.01707500033080578,
+          -0.0014649999793618917
+        ],
+        "max": [
+          0.01707500033080578,
+          0.01707500033080578,
+          0.0014649999793618917
+        ]
+      },
+      "materials": [
+        "inspect_gold",
+        "inspect_metal_atlas"
+      ],
+      "size": [
+        0.03415000066161156,
+        0.03415000066161156,
+        0.0029299999587237835
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_gold_coin_lod",
+      "glb": "inspect/inspect_gold_coin.glb",
+      "node": "inspect_gold_coin_lod",
+      "triangles": 160,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.017000000923871994,
+          -0.017000000923871994,
+          -0.001230000052601099
+        ],
+        "max": [
+          0.017000000923871994,
+          0.017000000923871994,
+          0.001230000052601099
+        ]
+      },
+      "materials": [
+        "inspect_gold",
+        "inspect_metal_atlas"
+      ],
+      "size": [
+        0.03400000184774399,
+        0.03400000184774399,
+        0.002460000105202198
+      ],
+      "lodOf": "inspect_gold_coin"
+    },
+    {
+      "key": "inspect_pocket_watch",
+      "glb": "inspect/inspect_pocket_watch.glb",
+      "node": "inspect_pocket_watch",
+      "triangles": 1664,
+      "drawCalls": 5,
+      "bounds": {
+        "min": [
+          -0.026000000536441803,
+          -0.0340999998152256,
+          -0.0052299038507044315
+        ],
+        "max": [
+          0.026000000536441803,
+          0.0340999998152256,
+          0.0052299038507044315
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "size": [
+        0.052000001072883606,
+        0.0681999996304512,
+        0.010459807701408863
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_pocket_watch_lod",
+      "glb": "inspect/inspect_pocket_watch.glb",
+      "node": "inspect_pocket_watch_lod",
+      "triangles": 508,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.026000000536441803,
+          -0.0340999998152256,
+          -0.005049999803304672
+        ],
+        "max": [
+          0.026000000536441803,
+          0.0340999998152256,
+          0.005049999803304672
+        ]
+      },
+      "materials": [
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_paper_atlas"
+      ],
+      "size": [
+        0.052000001072883606,
+        0.0681999996304512,
+        0.010099999606609344
+      ],
+      "lodOf": "inspect_pocket_watch"
+    },
+    {
+      "key": "inspect_wristwatch",
+      "glb": "inspect/inspect_wristwatch.glb",
+      "node": "inspect_wristwatch",
+      "triangles": 1512,
+      "drawCalls": 8,
+      "bounds": {
+        "min": [
+          -0.022749999538064003,
+          -0.08697321265935898,
+          -0.013500000350177288
+        ],
+        "max": [
+          0.022749999538064003,
+          0.08697321265935898,
+          0.013500000350177288
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_silver"
+      ],
+      "size": [
+        0.045499999076128006,
+        0.17394642531871796,
+        0.027000000700354576
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_wristwatch_lod",
+      "glb": "inspect/inspect_wristwatch.glb",
+      "node": "inspect_wristwatch_lod",
+      "triangles": 528,
+      "drawCalls": 5,
+      "bounds": {
+        "min": [
+          -0.022749999538064003,
+          -0.08697321265935898,
+          -0.013500000350177288
+        ],
+        "max": [
+          0.022749999538064003,
+          0.08697321265935898,
+          0.013500000350177288
+        ]
+      },
+      "materials": [
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_silver"
+      ],
+      "size": [
+        0.045499999076128006,
+        0.17394642531871796,
+        0.027000000700354576
+      ],
+      "lodOf": "inspect_wristwatch"
+    },
+    {
+      "key": "inspect_ring",
+      "glb": "inspect/inspect_ring.glb",
+      "node": "inspect_ring",
+      "triangles": 736,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.011500000022351742,
+          -0.014499999582767487,
+          -0.0031500000040978193
+        ],
+        "max": [
+          0.011500000022351742,
+          0.014499999582767487,
+          0.0031500000040978193
+        ]
+      },
+      "materials": [
+        "inspect_gem",
+        "inspect_gold"
+      ],
+      "size": [
+        0.023000000044703484,
+        0.028999999165534973,
+        0.006300000008195639
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_ring_lod",
+      "glb": "inspect/inspect_ring.glb",
+      "node": "inspect_ring_lod",
+      "triangles": 144,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.011500000022351742,
+          -0.014499999582767487,
+          -0.0031500000040978193
+        ],
+        "max": [
+          0.011500000022351742,
+          0.014499999582767487,
+          0.0031500000040978193
+        ]
+      },
+      "materials": [
+        "inspect_gem",
+        "inspect_gold"
+      ],
+      "size": [
+        0.023000000044703484,
+        0.028999999165534973,
+        0.006300000008195639
+      ],
+      "lodOf": "inspect_ring"
+    },
+    {
+      "key": "inspect_locket",
+      "glb": "inspect/inspect_locket.glb",
+      "node": "inspect_locket",
+      "triangles": 2416,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.03177255764603615,
+          -0.03867499902844429,
+          -0.002400000113993883
+        ],
+        "max": [
+          0.03177255764603615,
+          0.03867499902844429,
+          0.002400000113993883
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "size": [
+        0.0635451152920723,
+        0.07734999805688858,
+        0.004800000227987766
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_locket_lod",
+      "glb": "inspect/inspect_locket.glb",
+      "node": "inspect_locket_lod",
+      "triangles": 536,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.031325001269578934,
+          -0.038075000047683716,
+          -0.002050000010058284
+        ],
+        "max": [
+          0.031325001269578934,
+          0.038075000047683716,
+          0.002050000010058284
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "size": [
+        0.06265000253915787,
+        0.07615000009536743,
+        0.004100000020116568
+      ],
+      "lodOf": "inspect_locket"
+    },
+    {
+      "key": "inspect_medal_sport",
+      "glb": "inspect/inspect_medal_sport.glb",
+      "node": "inspect_medal_sport",
+      "triangles": 704,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.01899999938905239,
+          -0.04904999956488609,
+          -0.0030499999411404133
+        ],
+        "max": [
+          0.01899999938905239,
+          0.04904999956488609,
+          0.0030499999411404133
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.03799999877810478,
+        0.09809999912977219,
+        0.006099999882280827
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_medal_sport_lod",
+      "glb": "inspect/inspect_medal_sport.glb",
+      "node": "inspect_medal_sport_lod",
+      "triangles": 272,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.01899999938905239,
+          -0.04904999956488609,
+          -0.002300000051036477
+        ],
+        "max": [
+          0.01899999938905239,
+          0.04904999956488609,
+          0.002300000051036477
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.03799999877810478,
+        0.09809999912977219,
+        0.004600000102072954
+      ],
+      "lodOf": "inspect_medal_sport"
+    },
+    {
+      "key": "inspect_medal_service",
+      "glb": "inspect/inspect_medal_service.glb",
+      "node": "inspect_medal_service",
+      "triangles": 452,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.019021131098270416,
+          -0.04764017090201378,
+          -0.0030499999411404133
+        ],
+        "max": [
+          0.019021131098270416,
+          0.04764017090201378,
+          0.0030499999411404133
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.03804226219654083,
+        0.09528034180402756,
+        0.006099999882280827
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_medal_service_lod",
+      "glb": "inspect/inspect_medal_service.glb",
+      "node": "inspect_medal_service_lod",
+      "triangles": 180,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.019021131098270416,
+          -0.04764017090201378,
+          -0.002300000051036477
+        ],
+        "max": [
+          0.019021131098270416,
+          0.04764017090201378,
+          0.002300000051036477
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.03804226219654083,
+        0.09528034180402756,
+        0.004600000102072954
+      ],
+      "lodOf": "inspect_medal_service"
+    },
+    {
+      "key": "inspect_rosary",
+      "glb": "inspect/inspect_rosary.glb",
+      "node": "inspect_rosary",
+      "triangles": 1912,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.03999999538064003,
+          -0.08874999731779099,
+          -0.0029999969992786646
+        ],
+        "max": [
+          0.03999999538064003,
+          0.08874999731779099,
+          0.0029999969992786646
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_gold",
+        "inspect_wood"
+      ],
+      "size": [
+        0.07999999076128006,
+        0.17749999463558197,
+        0.005999993998557329
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_rosary_lod",
+      "glb": "inspect/inspect_rosary.glb",
+      "node": "inspect_rosary_lod",
+      "triangles": 684,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.03999999538064003,
+          -0.08835500478744507,
+          -0.0029999969992786646
+        ],
+        "max": [
+          0.03999999538064003,
+          0.08835500478744507,
+          0.0029999969992786646
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_wood"
+      ],
+      "size": [
+        0.07999999076128006,
+        0.17671000957489014,
+        0.005999993998557329
+      ],
+      "lodOf": "inspect_rosary"
+    },
+    {
+      "key": "inspect_keys",
+      "glb": "inspect/inspect_keys.glb",
+      "node": "inspect_keys",
+      "triangles": 912,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.02109558880329132,
+          -0.03062623366713524,
+          -0.003800000064074993
+        ],
+        "max": [
+          0.02109558880329132,
+          0.03062623366713524,
+          0.003800000064074993
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_silver"
+      ],
+      "size": [
+        0.04219117760658264,
+        0.06125246733427048,
+        0.007600000128149986
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_keys_lod",
+      "glb": "inspect/inspect_keys.glb",
+      "node": "inspect_keys_lod",
+      "triangles": 476,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.02109558880329132,
+          -0.03062623366713524,
+          -0.003800000064074993
+        ],
+        "max": [
+          0.02109558880329132,
+          0.03062623366713524,
+          0.003800000064074993
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_silver"
+      ],
+      "size": [
+        0.04219117760658264,
+        0.06125246733427048,
+        0.007600000128149986
+      ],
+      "lodOf": "inspect_keys"
+    },
+    {
+      "key": "inspect_photo_family",
+      "glb": "inspect/inspect_photo_family.glb",
+      "node": "inspect_photo_family",
+      "triangles": 164,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          -0.04500000178813934,
+          -0.002340739592909813
+        ],
+        "max": [
+          0.06499999761581421,
+          0.04500000178813934,
+          0.002340739592909813
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.12999999523162842,
+        0.09000000357627869,
+        0.004681479185819626
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_photo_family_lod",
+      "glb": "inspect/inspect_photo_family.glb",
+      "node": "inspect_photo_family_lod",
+      "triangles": 32,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          -0.04500000178813934,
+          -0.002374999923631549
+        ],
+        "max": [
+          0.06499999761581421,
+          0.04500000178813934,
+          0.002374999923631549
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.12999999523162842,
+        0.09000000357627869,
+        0.004749999847263098
+      ],
+      "lodOf": "inspect_photo_family"
+    },
+    {
+      "key": "inspect_photo_portrait",
+      "glb": "inspect/inspect_photo_portrait.glb",
+      "node": "inspect_photo_portrait",
+      "triangles": 164,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.03999999910593033,
+          -0.054999999701976776,
+          -0.002340739592909813
+        ],
+        "max": [
+          0.03999999910593033,
+          0.054999999701976776,
+          0.002340739592909813
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.07999999821186066,
+        0.10999999940395355,
+        0.004681479185819626
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_photo_portrait_lod",
+      "glb": "inspect/inspect_photo_portrait.glb",
+      "node": "inspect_photo_portrait_lod",
+      "triangles": 32,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.03999999910593033,
+          -0.054999999701976776,
+          -0.002374999923631549
+        ],
+        "max": [
+          0.03999999910593033,
+          0.054999999701976776,
+          0.002374999923631549
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.07999999821186066,
+        0.10999999940395355,
+        0.004749999847263098
+      ],
+      "lodOf": "inspect_photo_portrait"
+    },
+    {
+      "key": "inspect_letter",
+      "glb": "inspect/inspect_letter.glb",
+      "node": "inspect_letter",
+      "triangles": 256,
+      "drawCalls": 1,
+      "bounds": {
+        "min": [
+          -0.0949999988079071,
+          -0.1274999976158142,
+          -0.00278210686519742
+        ],
+        "max": [
+          0.0949999988079071,
+          0.1274999976158142,
+          0.00278210686519742
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas"
+      ],
+      "size": [
+        0.1899999976158142,
+        0.2549999952316284,
+        0.00556421373039484
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_letter_lod",
+      "glb": "inspect/inspect_letter.glb",
+      "node": "inspect_letter_lod",
+      "triangles": 16,
+      "drawCalls": 1,
+      "bounds": {
+        "min": [
+          -0.0949999988079071,
+          -0.1274999976158142,
+          -0.0024500000290572643
+        ],
+        "max": [
+          0.0949999988079071,
+          0.1274999976158142,
+          0.0024500000290572643
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas"
+      ],
+      "size": [
+        0.1899999976158142,
+        0.2549999952316284,
+        0.004900000058114529
+      ],
+      "lodOf": "inspect_letter"
+    },
+    {
+      "key": "inspect_envelope",
+      "glb": "inspect/inspect_envelope.glb",
+      "node": "inspect_envelope",
+      "triangles": 210,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.07750000059604645,
+          -0.05249999836087227,
+          -0.001079004374332726
+        ],
+        "max": [
+          0.07750000059604645,
+          0.05249999836087227,
+          0.001079004374332726
+        ]
+      },
+      "materials": [
+        "inspect_ink",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "size": [
+        0.1550000011920929,
+        0.10499999672174454,
+        0.002158008748665452
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_envelope_lod",
+      "glb": "inspect/inspect_envelope.glb",
+      "node": "inspect_envelope_lod",
+      "triangles": 40,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.07750000059604645,
+          -0.05249999836087227,
+          -0.0009850000496953726
+        ],
+        "max": [
+          0.07750000059604645,
+          0.05249999836087227,
+          0.0009850000496953726
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.1550000011920929,
+        0.10499999672174454,
+        0.001970000099390745
+      ],
+      "lodOf": "inspect_envelope"
+    },
+    {
+      "key": "inspect_diary",
+      "glb": "inspect/inspect_diary.glb",
+      "node": "inspect_diary",
+      "triangles": 674,
+      "drawCalls": 6,
+      "bounds": {
+        "min": [
+          -0.05674999952316284,
+          -0.08675000071525574,
+          -0.012875000014901161
+        ],
+        "max": [
+          0.05674999952316284,
+          0.08675000071525574,
+          0.012875000014901161
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "size": [
+        0.11349999904632568,
+        0.17350000143051147,
+        0.025750000029802322
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_diary_lod",
+      "glb": "inspect/inspect_diary.glb",
+      "node": "inspect_diary_lod",
+      "triangles": 74,
+      "drawCalls": 5,
+      "bounds": {
+        "min": [
+          -0.05649999901652336,
+          -0.08675000071525574,
+          -0.012875000014901161
+        ],
+        "max": [
+          0.05649999901652336,
+          0.08675000071525574,
+          0.012875000014901161
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "size": [
+        0.11299999803304672,
+        0.17350000143051147,
+        0.025750000029802322
+      ],
+      "lodOf": "inspect_diary"
+    },
+    {
+      "key": "inspect_notebook",
+      "glb": "inspect/inspect_notebook.glb",
+      "node": "inspect_notebook",
+      "triangles": 976,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.09399999678134918,
+          -0.06599999964237213,
+          -0.006974999792873859
+        ],
+        "max": [
+          0.09399999678134918,
+          0.06599999964237213,
+          0.006974999792873859
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "size": [
+        0.18799999356269836,
+        0.13199999928474426,
+        0.013949999585747719
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_notebook_lod",
+      "glb": "inspect/inspect_notebook.glb",
+      "node": "inspect_notebook_lod",
+      "triangles": 76,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.09399999678134918,
+          -0.06599999964237213,
+          -0.005499999970197678
+        ],
+        "max": [
+          0.09399999678134918,
+          0.06599999964237213,
+          0.005499999970197678
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.18799999356269836,
+        0.13199999928474426,
+        0.010999999940395355
+      ],
+      "lodOf": "inspect_notebook"
+    },
+    {
+      "key": "inspect_recipe_cards",
+      "glb": "inspect/inspect_recipe_cards.glb",
+      "node": "inspect_recipe_cards",
+      "triangles": 552,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.06684605032205582,
+          -0.04734952002763748,
+          -0.002437930554151535
+        ],
+        "max": [
+          0.06684605032205582,
+          0.04734952002763748,
+          0.002437930554151535
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "size": [
+        0.13369210064411163,
+        0.09469904005527496,
+        0.00487586110830307
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_recipe_cards_lod",
+      "glb": "inspect/inspect_recipe_cards.glb",
+      "node": "inspect_recipe_cards_lod",
+      "triangles": 100,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.06684605032205582,
+          -0.04733530431985855,
+          -0.002337499987334013
+        ],
+        "max": [
+          0.06684605032205582,
+          0.04733530431985855,
+          0.002337499987334013
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "size": [
+        0.13369210064411163,
+        0.0946706086397171,
+        0.004674999974668026
+      ],
+      "lodOf": "inspect_recipe_cards"
+    },
+    {
+      "key": "inspect_banknotes",
+      "glb": "inspect/inspect_banknotes.glb",
+      "node": "inspect_banknotes",
+      "triangles": 492,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.07431837171316147,
+          -0.036788906902074814,
+          -0.004123609513044357
+        ],
+        "max": [
+          0.07431837171316147,
+          0.036788906902074814,
+          0.004123609513044357
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.14863674342632294,
+        0.07357781380414963,
+        0.008247219026088715
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_banknotes_lod",
+      "glb": "inspect/inspect_banknotes.glb",
+      "node": "inspect_banknotes_lod",
+      "triangles": 64,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.07431837171316147,
+          -0.036788906902074814,
+          -0.0038250000216066837
+        ],
+        "max": [
+          0.07431837171316147,
+          0.036788906902074814,
+          0.0038250000216066837
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.14863674342632294,
+        0.07357781380414963,
+        0.0076500000432133675
+      ],
+      "lodOf": "inspect_banknotes"
+    },
+    {
+      "key": "inspect_lottery_ticket",
+      "glb": "inspect/inspect_lottery_ticket.glb",
+      "node": "inspect_lottery_ticket",
+      "triangles": 380,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.032499998807907104,
+          -0.06800000369548798,
+          -0.002340739592909813
+        ],
+        "max": [
+          0.032499998807907104,
+          0.06800000369548798,
+          0.002340739592909813
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.06499999761581421,
+        0.13600000739097595,
+        0.004681479185819626
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_lottery_ticket_lod",
+      "glb": "inspect/inspect_lottery_ticket.glb",
+      "node": "inspect_lottery_ticket_lod",
+      "triangles": 32,
+      "drawCalls": 2,
+      "bounds": {
+        "min": [
+          -0.032499998807907104,
+          -0.06750000268220901,
+          -0.002374999923631549
+        ],
+        "max": [
+          0.032499998807907104,
+          0.06750000268220901,
+          0.002374999923631549
+        ]
+      },
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "size": [
+        0.06499999761581421,
+        0.13500000536441803,
+        0.004749999847263098
+      ],
+      "lodOf": "inspect_lottery_ticket"
+    },
+    {
+      "key": "inspect_lace",
+      "glb": "inspect/inspect_lace.glb",
+      "node": "inspect_lace",
+      "triangles": 2112,
+      "drawCalls": 1,
+      "bounds": {
+        "min": [
+          -0.05369282141327858,
+          -0.05298265814781189,
+          -0.002635639626532793
+        ],
+        "max": [
+          0.05369282141327858,
+          0.05298265814781189,
+          0.002635639626532793
+        ]
+      },
+      "materials": [
+        "inspect_lace"
+      ],
+      "size": [
+        0.10738564282655716,
+        0.10596531629562378,
+        0.005271279253065586
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_lace_lod",
+      "glb": "inspect/inspect_lace.glb",
+      "node": "inspect_lace_lod",
+      "triangles": 624,
+      "drawCalls": 1,
+      "bounds": {
+        "min": [
+          -0.05369282141327858,
+          -0.05369282141327858,
+          -0.0026928202714771032
+        ],
+        "max": [
+          0.05369282141327858,
+          0.05369282141327858,
+          0.0026928202714771032
+        ]
+      },
+      "materials": [
+        "inspect_lace"
+      ],
+      "size": [
+        0.10738564282655716,
+        0.10738564282655716,
+        0.0053856405429542065
+      ],
+      "lodOf": "inspect_lace"
+    },
+    {
+      "key": "inspect_knickers",
+      "glb": "inspect/inspect_knickers.glb",
+      "node": "inspect_knickers",
+      "triangles": 2480,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.16054870188236237,
+          -0.11581999808549881,
+          -0.045384712517261505
+        ],
+        "max": [
+          0.16054870188236237,
+          0.11581999808549881,
+          0.045384712517261505
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_lace",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.32109740376472473,
+        0.23163999617099762,
+        0.09076942503452301
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_knickers_lod",
+      "glb": "inspect/inspect_knickers.glb",
+      "node": "inspect_knickers_lod",
+      "triangles": 560,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.1585884541273117,
+          -0.10570257157087326,
+          -0.04265410453081131
+        ],
+        "max": [
+          0.1585884541273117,
+          0.10570257157087326,
+          0.04265410453081131
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_lace",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.3171769082546234,
+        0.21140514314174652,
+        0.08530820906162262
+      ],
+      "lodOf": "inspect_knickers"
+    },
+    {
+      "key": "inspect_toy_car",
+      "glb": "inspect/inspect_toy_car.glb",
+      "node": "inspect_toy_car",
+      "triangles": 880,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.05025000125169754,
+          -0.02500000037252903,
+          -0.027410000562667847
+        ],
+        "max": [
+          0.05025000125169754,
+          0.02500000037252903,
+          0.027410000562667847
+        ]
+      },
+      "materials": [
+        "inspect_dark",
+        "inspect_enamel",
+        "inspect_silver"
+      ],
+      "size": [
+        0.10050000250339508,
+        0.05000000074505806,
+        0.05482000112533569
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_toy_car_lod",
+      "glb": "inspect/inspect_toy_car.glb",
+      "node": "inspect_toy_car_lod",
+      "triangles": 340,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.05000000074505806,
+          -0.02500000037252903,
+          -0.027410000562667847
+        ],
+        "max": [
+          0.05000000074505806,
+          0.02500000037252903,
+          0.027410000562667847
+        ]
+      },
+      "materials": [
+        "inspect_dark",
+        "inspect_enamel",
+        "inspect_silver"
+      ],
+      "size": [
+        0.10000000149011612,
+        0.05000000074505806,
+        0.05482000112533569
+      ],
+      "lodOf": "inspect_toy_car"
+    },
+    {
+      "key": "inspect_toy_top",
+      "glb": "inspect/inspect_toy_top.glb",
+      "node": "inspect_toy_top",
+      "triangles": 1048,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.04088329151272774,
+          -0.039500001817941666,
+          -0.03150000050663948
+        ],
+        "max": [
+          0.04088329151272774,
+          0.039500001817941666,
+          0.03150000050663948
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_enamel",
+        "inspect_silver",
+        "inspect_wood"
+      ],
+      "size": [
+        0.08176658302545547,
+        0.07900000363588333,
+        0.06300000101327896
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_toy_top_lod",
+      "glb": "inspect/inspect_toy_top.glb",
+      "node": "inspect_toy_top_lod",
+      "triangles": 434,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.04078660160303116,
+          -0.039500001817941666,
+          -0.03071022965013981
+        ],
+        "max": [
+          0.04078660160303116,
+          0.039500001817941666,
+          0.03071022965013981
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_enamel",
+        "inspect_silver",
+        "inspect_wood"
+      ],
+      "size": [
+        0.08157320320606232,
+        0.07900000363588333,
+        0.06142045930027962
+      ],
+      "lodOf": "inspect_toy_top"
+    },
+    {
+      "key": "inspect_toy_teddy",
+      "glb": "inspect/inspect_toy_teddy.glb",
+      "node": "inspect_toy_teddy",
+      "triangles": 1398,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.06080619618296623,
+          -0.07900000363588333,
+          -0.03149998560547829
+        ],
+        "max": [
+          0.06080619618296623,
+          0.07900000363588333,
+          0.03149998560547829
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.12161239236593246,
+        0.15800000727176666,
+        0.06299997121095657
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_toy_teddy_lod",
+      "glb": "inspect/inspect_toy_teddy.glb",
+      "node": "inspect_toy_teddy_lod",
+      "triangles": 408,
+      "drawCalls": 3,
+      "bounds": {
+        "min": [
+          -0.061030127108097076,
+          -0.07900000363588333,
+          -0.029691331088542938
+        ],
+        "max": [
+          0.061030127108097076,
+          0.07900000363588333,
+          0.029691331088542938
+        ]
+      },
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_ribbon"
+      ],
+      "size": [
+        0.12206025421619415,
+        0.15800000727176666,
+        0.059382662177085876
+      ],
+      "lodOf": "inspect_toy_teddy"
+    },
+    {
+      "key": "inspect_harmonica",
+      "glb": "inspect/inspect_harmonica.glb",
+      "node": "inspect_harmonica",
+      "triangles": 698,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.05400000140070915,
+          -0.011923612095415592,
+          -0.014750000089406967
+        ],
+        "max": [
+          0.05400000140070915,
+          0.011923612095415592,
+          0.014750000089406967
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_metal_atlas",
+        "inspect_silver"
+      ],
+      "size": [
+        0.1080000028014183,
+        0.023847224190831184,
+        0.029500000178813934
+      ],
+      "lodOf": null
+    },
+    {
+      "key": "inspect_harmonica_lod",
+      "glb": "inspect/inspect_harmonica.glb",
+      "node": "inspect_harmonica_lod",
+      "triangles": 290,
+      "drawCalls": 4,
+      "bounds": {
+        "min": [
+          -0.05400000140070915,
+          -0.011549999937415123,
+          -0.014750000089406967
+        ],
+        "max": [
+          0.05400000140070915,
+          0.011549999937415123,
+          0.014750000089406967
+        ]
+      },
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_metal_atlas",
+        "inspect_silver"
+      ],
+      "size": [
+        0.1080000028014183,
+        0.023099999874830246,
+        0.029500000178813934
+      ],
+      "lodOf": "inspect_harmonica"
+    }
+  ],
+  "totalBytes": 1732878,
+  "budgetBytes": 2000000,
+  "files": [
+    {
+      "path": "assets/models/manifest.inspect.json",
+      "bytes": 37573
+    },
+    {
+      "path": "js/interiors/inspect-bindings.json",
+      "bytes": 3185
+    },
+    {
+      "path": "assets/models/inspect/inspect_gold_coin.glb",
+      "bytes": 81764
+    },
+    {
+      "path": "assets/models/inspect/inspect_pocket_watch.glb",
+      "bytes": 80680
+    },
+    {
+      "path": "assets/models/inspect/inspect_wristwatch.glb",
+      "bytes": 92732
+    },
+    {
+      "path": "assets/models/inspect/inspect_ring.glb",
+      "bytes": 27872
+    },
+    {
+      "path": "assets/models/inspect/inspect_locket.glb",
+      "bytes": 97564
+    },
+    {
+      "path": "assets/models/inspect/inspect_medal_sport.glb",
+      "bytes": 44096
+    },
+    {
+      "path": "assets/models/inspect/inspect_medal_service.glb",
+      "bytes": 26832
+    },
+    {
+      "path": "assets/models/inspect/inspect_rosary.glb",
+      "bytes": 143380
+    },
+    {
+      "path": "assets/models/inspect/inspect_keys.glb",
+      "bytes": 46728
+    },
+    {
+      "path": "assets/models/inspect/inspect_photo_family.glb",
+      "bytes": 12548
+    },
+    {
+      "path": "assets/models/inspect/inspect_photo_portrait.glb",
+      "bytes": 12576
+    },
+    {
+      "path": "assets/models/inspect/inspect_letter.glb",
+      "bytes": 9732
+    },
+    {
+      "path": "assets/models/inspect/inspect_envelope.glb",
+      "bytes": 17300
+    },
+    {
+      "path": "assets/models/inspect/inspect_diary.glb",
+      "bytes": 44076
+    },
+    {
+      "path": "assets/models/inspect/inspect_notebook.glb",
+      "bytes": 37984
+    },
+    {
+      "path": "assets/models/inspect/inspect_recipe_cards.glb",
+      "bytes": 32012
+    },
+    {
+      "path": "assets/models/inspect/inspect_banknotes.glb",
+      "bytes": 27324
+    },
+    {
+      "path": "assets/models/inspect/inspect_lottery_ticket.glb",
+      "bytes": 27712
+    },
+    {
+      "path": "assets/models/inspect/inspect_lace.glb",
+      "bytes": 74676
+    },
+    {
+      "path": "assets/models/inspect/inspect_knickers.glb",
+      "bytes": 89140
+    },
+    {
+      "path": "assets/models/inspect/inspect_toy_car.glb",
+      "bytes": 71104
+    },
+    {
+      "path": "assets/models/inspect/inspect_toy_top.glb",
+      "bytes": 66652
+    },
+    {
+      "path": "assets/models/inspect/inspect_toy_teddy.glb",
+      "bytes": 99760
+    },
+    {
+      "path": "assets/models/inspect/inspect_harmonica.glb",
+      "bytes": 61812
+    },
+    {
+      "path": "assets/textures/inspect_paper_atlas.png",
+      "bytes": 362704
+    },
+    {
+      "path": "assets/textures/inspect_paper_atlas.json",
+      "bytes": 3360
+    }
+  ],
+  "verifiedBindings": 0,
+  "unbound": [
+    "inspect_gold_coin",
+    "inspect_pocket_watch",
+    "inspect_wristwatch",
+    "inspect_ring",
+    "inspect_locket",
+    "inspect_medal_sport",
+    "inspect_medal_service",
+    "inspect_rosary",
+    "inspect_keys",
+    "inspect_photo_family",
+    "inspect_photo_portrait",
+    "inspect_letter",
+    "inspect_envelope",
+    "inspect_diary",
+    "inspect_notebook",
+    "inspect_recipe_cards",
+    "inspect_banknotes",
+    "inspect_lottery_ticket",
+    "inspect_lace",
+    "inspect_knickers",
+    "inspect_toy_car",
+    "inspect_toy_top",
+    "inspect_toy_teddy",
+    "inspect_harmonica"
+  ]
+}

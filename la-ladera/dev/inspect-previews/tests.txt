@@ -1,0 +1,108 @@
+La Ladera inspect asset verification — 31 October 2026
+Base revision: 8fa06a5498555afc5dc2b636c06754a4a6b5882c
+Final manifest SHA-256: 3ba8f0a9933d0dc59836caad60e4947fe840a108a9efc504dd24f9f5a4b5dd81
+
+RELEVANT INTERIOR / MATERIAL / PATH SUITES
+59 passed. This includes an earlier run of the 18 inspect tests.
+The final medal geometry changes were followed by the separate 18-test rerun below.
+These are not 77 distinct tests, and this is not a full-suite result.
+
+✔ a tiled variant whose image has not arrived is not marked for update (10.870371ms)
+✔ the variants upload once the image arrives (version > 0, image present, shared with the base) (4.406459ms)
+✔ images arriving one at a time never leave a texture marked without its image (0.795901ms)
+✔ a variant made after its image arrived is uploaded straight away (0.835812ms)
+✔ whenReady() waits for every requested image and resolves when a download fails (0.796031ms)
+✔ an untextured material and a tint of a textured one never touch the loader twice (0.365001ms)
+✔ every catalogue archetype has a stand-in drawer (0.853327ms)
+✔ a stand-in stays inside its footprint box and below its catalogue height (119.387076ms)
+# interiors: 42 buildings, 5811 records; meshes/building median 23 max 31; triangles median 12812 max 45614; stand-in primitives 34051
+✔ interior meshes: library materials only, finite, inside the rooms, bounded draw calls (1850.980608ms)
+✔ furnishing raises no errors and every building gets furniture (0.27123ms)
+✔ furniture lies inside its room and never overlaps other furniture (15.794665ms)
+✔ doors and stairs keep >= 0.7 m clear in front of them (109.117399ms)
+✔ the first 3 m inside every street door stay free of furniture (21.973734ms)
+✔ every non-circulation room has >= 3 pieces of furniture or decor (3.680412ms)
+✔ homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans) (5305.618168ms)
+✔ anchors: every seat, bed, stove and shop counter has one; anchors stand in free space (25.94233ms)
+✔ rooms get a finish made of known materials (1.03457ms)
+✔ catalogue names used by furniture records all exist; lights carry the contract fields (5.098191ms)
+✔ furnishing is deterministic for a given seed and differs between seeds (7462.737308ms)
+✔ the same lot seed always yields the same household regardless of other buildings (1656.826256ms)
+✔ binary fixture: measurements include both asset roots and the actual draw count (2.664549ms)
+✔ binary fixture: truncated, wrong-version and oversized chunks are rejected (0.74256ms)
+✔ binary fixture: embedded and external texture/buffer resources are forbidden (1.365048ms)
+✔ binary fixture: out-of-range accessors and non-finite binary geometry cannot hide behind valid metadata (1.702388ms)
+✔ binary fixture: invalid indices, degenerate faces and reversed winding fail (0.88217ms)
+✔ binary fixture: material names and one-material child meshes match the runtime loader (0.452533ms)
+✔ binary fixture: missing white COLOR_0 is rejected when the material enables vertex colors (0.607356ms)
+✔ binary fixture: transforms, pivots, cycles and unlisted geometry are checked (2.047859ms)
+✔ binary fixture: atlas UVs must stay inside the sheet; ordinary metric UVs may repeat (1.797732ms)
+✔ fixture library: default validation proves file completeness but discloses the absent drawer baseline (35.447324ms)
+✔ fixture library: metadata cannot understate triangle counts or the byte budget (49.896887ms)
+✔ fixture library: an actual over-budget mesh fails even with matching advertised counts (25.771666ms)
+✔ fixture library: optional file digests and byte counts are checked against the shipped file (10.471584ms)
+✔ fixture library: missing LODs, missing files and orphan files fail (13.71773ms)
+✔ fixture library: corrupt PNGs and an unregistered atlas mapping fail (24.404849ms)
+✔ complete mode rejects missing source files and an empty binding map (2.058195ms)
+✔ complete mode verifies actual exported IDs instead of trusting a verified flag (148.04509ms)
+✔ shipped inspect library contains all 24 requested objects, measured LODs and the shared atlas (2105.256784ms)
+✔ the synthetic plans themselves are fully walkable (so a failure below is the furniture) (6323.511225ms)
+✔ furnished rooms, door landings and stairs stay reachable from the street (36.096491ms)
+✔ walking the found paths with physics.move() never gets blocked (75.606996ms)
+✔ every standing anchor (cook, counter, sweep, greet...) is connected to a door (65.351953ms)
+✔ no errors while telling stories, and every building has interactables (2.155641ms)
+✔ the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line (8.454932ms)
+✔ each discovery stands on a floor of its own building, inside a room, on free floor (10.153895ms)
+✔ every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks (7.904692ms)
+✔ interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline) (374.826371ms)
+✔ every reachable seat can be sat on; the sofas and armchairs of each home are offered (5.471852ms)
+✔ stories are deterministic: the same plan tells the same stories (4609.155855ms)
+✔ texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story (0.715719ms)
+✔ clock words: Spanish time of day in words (0.167893ms)
+✔ ceiling fans: switching changes the target speed and the prompt follows (0.199591ms)
+✔ sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted (0.525553ms)
+✔ exactCase sees a wrong-case path that Windows would accept (28.058944ms)
+✔ checkSource flags a wrong-case import, a missing file, a bare specifier and a missing asset (and passes the right ones) (270.46931ms)
+✔ every module import and asset path named in js/ is exact-case and exists (2031.177918ms)
+✔ index.html: every local reference and import-map target is exact-case and exists (57.422407ms)
+✔ css: every url() is exact-case and exists (44.767663ms)
+✔ every file the asset manifests name is exact-case and exists (203.344199ms)
+ℹ tests 59
+ℹ suites 0
+ℹ pass 59
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50248.137551
+
+FINAL GENERATED-ASSET REGRESSION RERUN
+Reproduction command: node --import ./la-ladera/tests/register.mjs --test --test-isolation=none la-ladera/tests/interiors-inspect.test.mjs
+18 passed after the final geometry changes.
+
+✔ binary fixture: measurements include both asset roots and the actual draw count (5.900468ms)
+✔ binary fixture: truncated, wrong-version and oversized chunks are rejected (0.956392ms)
+✔ binary fixture: embedded and external texture/buffer resources are forbidden (2.817108ms)
+✔ binary fixture: out-of-range accessors and non-finite binary geometry cannot hide behind valid metadata (2.490055ms)
+✔ binary fixture: invalid indices, degenerate faces and reversed winding fail (2.381842ms)
+✔ binary fixture: material names and one-material child meshes match the runtime loader (0.700807ms)
+✔ binary fixture: missing white COLOR_0 is rejected when the material enables vertex colors (1.418399ms)
+✔ binary fixture: transforms, pivots, cycles and unlisted geometry are checked (2.098374ms)
+✔ binary fixture: atlas UVs must stay inside the sheet; ordinary metric UVs may repeat (8.406046ms)
+✔ fixture library: default validation proves file completeness but discloses the absent drawer baseline (26.417012ms)
+✔ fixture library: metadata cannot understate triangle counts or the byte budget (19.739838ms)
+✔ fixture library: an actual over-budget mesh fails even with matching advertised counts (25.092099ms)
+✔ fixture library: optional file digests and byte counts are checked against the shipped file (3.221438ms)
+✔ fixture library: missing LODs, missing files and orphan files fail (3.864898ms)
+✔ fixture library: corrupt PNGs and an unregistered atlas mapping fail (3.014917ms)
+✔ complete mode rejects missing source files and an empty binding map (1.500553ms)
+✔ complete mode verifies actual exported IDs instead of trusting a verified flag (6.117515ms)
+✔ shipped inspect library contains all 24 requested objects, measured LODs and the shared atlas (353.786628ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 703.329381

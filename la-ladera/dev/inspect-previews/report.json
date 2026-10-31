@@ -1,0 +1,3610 @@
+{
+  "version": 1,
+  "sourceRevision": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "integrationStatus": "blocked-missing-drawer-baseline",
+  "actualGameInspectLightingVerified": false,
+  "scope": "Generated library in reference inspect studio; no game integration claim.",
+  "size": {
+    "width": 720,
+    "height": 720
+  },
+  "sourceHashes": {
+    "assets/models/inspect/inspect_banknotes.glb": {
+      "bytes": 27324,
+      "sha256": "bfcd24e5d6679a00b276fc4e99c3de74cf83ef0d9c6dc0cb468f649e5cc34740"
+    },
+    "assets/models/inspect/inspect_diary.glb": {
+      "bytes": 44076,
+      "sha256": "633a251122051a0957cf3ca8980db8e1c607e9b50c23df9faedbdeef42dca078"
+    },
+    "assets/models/inspect/inspect_envelope.glb": {
+      "bytes": 17300,
+      "sha256": "47a1f625955a035e0c0367601f8d45c5b7e99fc24a5afd06fccb1c41d9d03f98"
+    },
+    "assets/models/inspect/inspect_gold_coin.glb": {
+      "bytes": 81764,
+      "sha256": "238d0cf97a28d6323011d245b8894f6c1183a58fa1c3819f304a5a85a52e0799"
+    },
+    "assets/models/inspect/inspect_harmonica.glb": {
+      "bytes": 61812,
+      "sha256": "10d0c742348361c9dc34ec3f68fc121efd03d563811536e3ce77bff023c26575"
+    },
+    "assets/models/inspect/inspect_keys.glb": {
+      "bytes": 46728,
+      "sha256": "17f52001bac64c6e42380116664a7b106e305ade536db805cb2329c6259bf116"
+    },
+    "assets/models/inspect/inspect_knickers.glb": {
+      "bytes": 89140,
+      "sha256": "35fdbe185fbdc0541cb5836355d2f4e12c51c29e510168c5d7bc7c3313a85657"
+    },
+    "assets/models/inspect/inspect_lace.glb": {
+      "bytes": 74676,
+      "sha256": "a6ca3f7f04bb4a343dc75b6983b403785d730a12a1042db4eab8e85c0eb018f7"
+    },
+    "assets/models/inspect/inspect_letter.glb": {
+      "bytes": 9732,
+      "sha256": "18230a83f887e1cc3b53ba9b555aea2890f49262d5d10236a4225d001a29fd0b"
+    },
+    "assets/models/inspect/inspect_locket.glb": {
+      "bytes": 97564,
+      "sha256": "3b86068036ab75b9bd3604e085a28c0a1ed97c52107b305f70943bd148711e50"
+    },
+    "assets/models/inspect/inspect_lottery_ticket.glb": {
+      "bytes": 27712,
+      "sha256": "5afea8091f5abe79c1743c8ccc5cda1ed4c15132f9a404bd1a519f97418b1676"
+    },
+    "assets/models/inspect/inspect_medal_service.glb": {
+      "bytes": 26832,
+      "sha256": "811c7467e8ccdeeb79027a2efbea735957706dbdbe2402104d7252fcc67cb43a"
+    },
+    "assets/models/inspect/inspect_medal_sport.glb": {
+      "bytes": 44096,
+      "sha256": "053ca8cccfe38e83bd7600c56027779f46feb5423bfea7f1b4caaa920166c727"
+    },
+    "assets/models/inspect/inspect_notebook.glb": {
+      "bytes": 37984,
+      "sha256": "1920b05d8fced1cd7c00094189859c20ab98431941176aba92ad27e323a06a0f"
+    },
+    "assets/models/inspect/inspect_photo_family.glb": {
+      "bytes": 12548,
+      "sha256": "e40c6509c3e468870bb0dd5eed10103eae0c6d893f68178604b5ad0a248e98a5"
+    },
+    "assets/models/inspect/inspect_photo_portrait.glb": {
+      "bytes": 12576,
+      "sha256": "46d0e8dfd5577540d90663346addfa99dd5c91c4b2df754e18992d8c7b51daf0"
+    },
+    "assets/models/inspect/inspect_pocket_watch.glb": {
+      "bytes": 80680,
+      "sha256": "9e63833fdd7da3913969a25182f19f677f64c43e4b347154ba3f94b61a5a3946"
+    },
+    "assets/models/inspect/inspect_recipe_cards.glb": {
+      "bytes": 32012,
+      "sha256": "7a00f17243d84669c3ebede7af73fa8bcbaee03f85026558c6965bd92f5f0f4d"
+    },
+    "assets/models/inspect/inspect_ring.glb": {
+      "bytes": 27872,
+      "sha256": "61cdba3e9417d1a70ed1c36ee4f5712b2d331f4d083b109625635ea24621ca98"
+    },
+    "assets/models/inspect/inspect_rosary.glb": {
+      "bytes": 143380,
+      "sha256": "92d3a1872277a0e7c4e60bd5752e41430a7627ad71dcac8156e6eeb7ae425ede"
+    },
+    "assets/models/inspect/inspect_toy_car.glb": {
+      "bytes": 71104,
+      "sha256": "708f1e0e02ca763d06519cf8247963e75d28a3ab5185a1814566a78462550ddf"
+    },
+    "assets/models/inspect/inspect_toy_teddy.glb": {
+      "bytes": 99760,
+      "sha256": "1c73c46c215e2bf129c62354d68abbcf487137cc082e8612d29076d3e8a9958c"
+    },
+    "assets/models/inspect/inspect_toy_top.glb": {
+      "bytes": 66652,
+      "sha256": "fcc7c15ce6556e460f03e29fc0915d15e23e28bb1b31696a034f093f3c687a8a"
+    },
+    "assets/models/inspect/inspect_wristwatch.glb": {
+      "bytes": 92732,
+      "sha256": "ad4f5530fd3464c15fb4650c658a8f46837ef7c287f8f659ea771a3e51f34cc2"
+    },
+    "assets/models/manifest.inspect.json": {
+      "bytes": 37573,
+      "sha256": "3ba8f0a9933d0dc59836caad60e4947fe840a108a9efc504dd24f9f5a4b5dd81"
+    },
+    "assets/textures/inspect_paper_atlas.json": {
+      "bytes": 3360,
+      "sha256": "1894a4ea6a7a67edea911c69f5f649fe830d9dc8037d62ee789a56cbb0ca2354"
+    },
+    "assets/textures/inspect_paper_atlas.png": {
+      "bytes": 362704,
+      "sha256": "cbe68ccc54d79b140c9dec0fe4fbdb1e073d8d6074efac80114116ac7f80edbc"
+    },
+    "assets/textures/manifest.json": {
+      "bytes": 8858,
+      "sha256": "bab4c1c455b05014181fea6818c581bcceeab8f0befa042e5f2fd97d1fb678c0"
+    },
+    "js/core/assets.js": {
+      "bytes": 5490,
+      "sha256": "0a47987204b9d6cf0b61f2787d2a706c009fde9b11dc16a13c69ddea3d33766c"
+    },
+    "js/core/matlib.js": {
+      "bytes": 7026,
+      "sha256": "14164f29758bc65ee33161b6d679ade0773aae9d5c24296eb4e93afbfea5924f"
+    },
+    "js/interiors/inspect-bindings.json": {
+      "bytes": 3185,
+      "sha256": "99fd4a1b3fcf7e4bde1a830fee165886e60b9da842c1fb8d296ede6268a9eea4"
+    },
+    "js/interiors/matdefs.js": {
+      "bytes": 14421,
+      "sha256": "e14117e339fe7a847dbd4244f1f3bcb6058ad90f1feb2b6c255d6bef95c5ff6f"
+    },
+    "labs/inspect/index.html": {
+      "bytes": 3134,
+      "sha256": "3030b992e8a75886a9764100d9bfc1d2440fdcdfd54b4ce829969028b88d2429"
+    },
+    "labs/inspect/viewer.js": {
+      "bytes": 9886,
+      "sha256": "668550772f7b69cf933039aa20d433adc3ecc0f039db5cdb817f6972706afb00"
+    },
+    "tests/inspect-shots.mjs": {
+      "bytes": 6292,
+      "sha256": "bfbc9384cb043eda9eee48ad86d94172f09e082967f283736bcf0b222bbe1eff"
+    }
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "lighting": {
+    "id": "inspect-reference-studio-v1",
+    "actualGameInspectLightingVerified": false,
+    "description": "Warm key, cool fill, hemisphere and generated room reflections; reference lighting only.",
+    "key": {
+      "color": 16769461,
+      "intensity": 2.8,
+      "position": [
+        -2,
+        3,
+        4
+      ]
+    },
+    "fill": {
+      "color": 12113646,
+      "intensity": 1.2,
+      "position": [
+        3,
+        1,
+        2
+      ]
+    },
+    "rim": {
+      "color": 16766113,
+      "intensity": 2,
+      "position": [
+        -1,
+        2,
+        -3
+      ]
+    },
+    "hemisphere": {
+      "sky": 15002077,
+      "ground": 4932408,
+      "intensity": 1.1
+    },
+    "environment": {
+      "generator": "Three.js r180 RoomEnvironment",
+      "sigmaRadians": 0.02
+    },
+    "toneMapping": "ACESFilmic",
+    "exposure": 1.1,
+    "fov": 32,
+    "frontDirection": [
+      0.18,
+      0.22,
+      1
+    ],
+    "margin": 1.14
+  },
+  "objects": [
+    {
+      "key": "inspect_gold_coin",
+      "label": "Moneda del recuerdo",
+      "triangles": 1488,
+      "lod": "inspect_gold_coin_lod"
+    },
+    {
+      "key": "inspect_pocket_watch",
+      "label": "Reloj de bolsillo",
+      "triangles": 1664,
+      "lod": "inspect_pocket_watch_lod"
+    },
+    {
+      "key": "inspect_wristwatch",
+      "label": "Reloj de pulsera",
+      "triangles": 1512,
+      "lod": "inspect_wristwatch_lod"
+    },
+    {
+      "key": "inspect_ring",
+      "label": "Anillo de esmeralda",
+      "triangles": 736,
+      "lod": "inspect_ring_lod"
+    },
+    {
+      "key": "inspect_locket",
+      "label": "Relicario con retrato",
+      "triangles": 2416,
+      "lod": "inspect_locket_lod"
+    },
+    {
+      "key": "inspect_medal_sport",
+      "label": "Medalla del barrio",
+      "triangles": 704,
+      "lod": "inspect_medal_sport_lod"
+    },
+    {
+      "key": "inspect_medal_service",
+      "label": "Medalla de una vida",
+      "triangles": 452,
+      "lod": "inspect_medal_service_lod"
+    },
+    {
+      "key": "inspect_rosary",
+      "label": "Rosario de madera",
+      "triangles": 1912,
+      "lod": "inspect_rosary_lod"
+    },
+    {
+      "key": "inspect_keys",
+      "label": "Llaves de casa",
+      "triangles": 912,
+      "lod": "inspect_keys_lod"
+    },
+    {
+      "key": "inspect_photo_family",
+      "label": "Foto de la familia",
+      "triangles": 164,
+      "lod": "inspect_photo_family_lod"
+    },
+    {
+      "key": "inspect_photo_portrait",
+      "label": "Retrato guardado",
+      "triangles": 164,
+      "lod": "inspect_photo_portrait_lod"
+    },
+    {
+      "key": "inspect_letter",
+      "label": "Una carta doblada",
+      "triangles": 256,
+      "lod": "inspect_letter_lod"
+    },
+    {
+      "key": "inspect_envelope",
+      "label": "Sobre con sello",
+      "triangles": 210,
+      "lod": "inspect_envelope_lod"
+    },
+    {
+      "key": "inspect_diary",
+      "label": "Diario con broche",
+      "triangles": 674,
+      "lod": "inspect_diary_lod"
+    },
+    {
+      "key": "inspect_notebook",
+      "label": "Cuaderno de cuentas",
+      "triangles": 976,
+      "lod": "inspect_notebook_lod"
+    },
+    {
+      "key": "inspect_recipe_cards",
+      "label": "Recetas de la abuela",
+      "triangles": 552,
+      "lod": "inspect_recipe_cards_lod"
+    },
+    {
+      "key": "inspect_banknotes",
+      "label": "Billetes de recuerdo",
+      "triangles": 492,
+      "lod": "inspect_banknotes_lod"
+    },
+    {
+      "key": "inspect_lottery_ticket",
+      "label": "Lotería de La Ladera",
+      "triangles": 380,
+      "lod": "inspect_lottery_ticket_lod"
+    },
+    {
+      "key": "inspect_lace",
+      "label": "Encaje de domingo",
+      "triangles": 2112,
+      "lod": "inspect_lace_lod"
+    },
+    {
+      "key": "inspect_knickers",
+      "label": "Los calzones de fiesta",
+      "triangles": 2480,
+      "lod": "inspect_knickers_lod"
+    },
+    {
+      "key": "inspect_toy_car",
+      "label": "Carrito de hojalata",
+      "triangles": 880,
+      "lod": "inspect_toy_car_lod"
+    },
+    {
+      "key": "inspect_toy_top",
+      "label": "Trompo de colores",
+      "triangles": 1048,
+      "lod": "inspect_toy_top_lod"
+    },
+    {
+      "key": "inspect_toy_teddy",
+      "label": "Osito remendado",
+      "triangles": 1398,
+      "lod": "inspect_toy_teddy_lod"
+    },
+    {
+      "key": "inspect_harmonica",
+      "label": "Armónica del abuelo",
+      "triangles": 698,
+      "lod": "inspect_harmonica_lod"
+    }
+  ],
+  "shots": [
+    {
+      "file": "inspect_gold_coin-front.png",
+      "key": "inspect_gold_coin",
+      "selected": "inspect_gold_coin",
+      "lod": false,
+      "view": "front",
+      "label": "Moneda del recuerdo",
+      "bounds": {
+        "min": [
+          -0.01707500033080578,
+          -0.01707500033080578,
+          -0.0014649999793618917
+        ],
+        "max": [
+          0.01707500033080578,
+          0.01707500033080578,
+          0.0014649999793618917
+        ]
+      },
+      "triangles": 1488,
+      "drawCalls": 2,
+      "meshTriangles": 1488,
+      "meshes": 2,
+      "materials": [
+        "inspect_gold",
+        "inspect_metal_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.012268247458286367,
+          0.014994524671238891,
+          0.06815693032381315
+        ],
+        "fov": 32,
+        "near": 0.02247279695243417,
+        "far": 1
+      },
+      "bytes": 224901,
+      "sha256": "9e3af48839080cd8c049ed93b9f7191a1f75a1de5e714db1e0e4762218dfebeb"
+    },
+    {
+      "file": "inspect_gold_coin-back.png",
+      "key": "inspect_gold_coin",
+      "selected": "inspect_gold_coin",
+      "lod": false,
+      "view": "back",
+      "label": "Moneda del recuerdo",
+      "bounds": {
+        "min": [
+          -0.01707500033080578,
+          -0.01707500033080578,
+          -0.001464999979361894
+        ],
+        "max": [
+          0.01707500033080578,
+          0.01707500033080578,
+          0.0014649999793618935
+        ]
+      },
+      "triangles": 1488,
+      "drawCalls": 2,
+      "meshTriangles": 1488,
+      "meshes": 2,
+      "materials": [
+        "inspect_gold",
+        "inspect_metal_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.012268247458286367,
+          0.014994524671238891,
+          0.06815693032381315
+        ],
+        "fov": 32,
+        "near": 0.02247279695243417,
+        "far": 1
+      },
+      "bytes": 188737,
+      "sha256": "67e023696e75be1d566211cb58dabb801b6a9df4e3e5cc7f67223d18ed8998fe"
+    },
+    {
+      "file": "inspect_gold_coin-lod.png",
+      "key": "inspect_gold_coin",
+      "selected": "inspect_gold_coin_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Moneda del recuerdo",
+      "bounds": {
+        "min": [
+          -0.017000000923871994,
+          -0.017000000923871994,
+          -0.001230000052601099
+        ],
+        "max": [
+          0.017000000923871994,
+          0.017000000923871994,
+          0.001230000052601099
+        ]
+      },
+      "triangles": 160,
+      "drawCalls": 2,
+      "meshTriangles": 160,
+      "meshes": 2,
+      "materials": [
+        "inspect_gold",
+        "inspect_metal_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.012159224770172049,
+          0.01486127471909917,
+          0.06755124872317805
+        ],
+        "fov": 32,
+        "near": 0.022081161661290996,
+        "far": 1
+      },
+      "bytes": 192818,
+      "sha256": "3b87e7db0de8d54a363e372cc2db0229bc8706a3e1e61d1a7f39a7aa80014d75"
+    },
+    {
+      "file": "inspect_pocket_watch-front.png",
+      "key": "inspect_pocket_watch",
+      "selected": "inspect_pocket_watch",
+      "lod": false,
+      "view": "front",
+      "label": "Reloj de bolsillo",
+      "bounds": {
+        "min": [
+          -0.026000000536441803,
+          -0.0340999998152256,
+          -0.0052299038507044315
+        ],
+        "max": [
+          0.026000000536441803,
+          0.0340999998152256,
+          0.0052299038507044315
+        ]
+      },
+      "triangles": 1664,
+      "drawCalls": 5,
+      "meshTriangles": 1664,
+      "meshes": 5,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.024762809782999554,
+          0.030265656401443897,
+          0.13757116546110865
+        ],
+        "fov": 32,
+        "near": 0.05662289797269458,
+        "far": 1
+      },
+      "bytes": 199387,
+      "sha256": "5eec1932f17d1a3e0cc09ef5a299188acdca8c967a6a28a6c6208d3f6e7e72a1"
+    },
+    {
+      "file": "inspect_pocket_watch-back.png",
+      "key": "inspect_pocket_watch",
+      "selected": "inspect_pocket_watch",
+      "lod": false,
+      "view": "back",
+      "label": "Reloj de bolsillo",
+      "bounds": {
+        "min": [
+          -0.026000000536441803,
+          -0.0340999998152256,
+          -0.005229903850704435
+        ],
+        "max": [
+          0.026000000536441803,
+          0.0340999998152256,
+          0.005229903850704434
+        ]
+      },
+      "triangles": 1664,
+      "drawCalls": 5,
+      "meshTriangles": 1664,
+      "meshes": 5,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.024762809782999554,
+          0.030265656401443897,
+          0.13757116546110865
+        ],
+        "fov": 32,
+        "near": 0.05662289797269458,
+        "far": 1
+      },
+      "bytes": 170893,
+      "sha256": "4f705ca3cb3f0770d7d97ac470112c227fbe4d3527eb000f18c5f5155a60ad91"
+    },
+    {
+      "file": "inspect_pocket_watch-lod.png",
+      "key": "inspect_pocket_watch",
+      "selected": "inspect_pocket_watch_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Reloj de bolsillo",
+      "bounds": {
+        "min": [
+          -0.026000000536441803,
+          -0.0340999998152256,
+          -0.005049999803304672
+        ],
+        "max": [
+          0.026000000536441803,
+          0.0340999998152256,
+          0.005049999803304672
+        ]
+      },
+      "triangles": 508,
+      "drawCalls": 3,
+      "meshTriangles": 508,
+      "meshes": 3,
+      "materials": [
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.024707056552273135,
+          0.03019751356388939,
+          0.1372614252904063
+        ],
+        "fov": 32,
+        "near": 0.056343708954525284,
+        "far": 1
+      },
+      "bytes": 200226,
+      "sha256": "7d88b5d5eb86a7e4a55703ac19eaea0905fbc5639fac49b94b7534d6f4c8c5bb"
+    },
+    {
+      "file": "inspect_wristwatch-front.png",
+      "key": "inspect_wristwatch",
+      "selected": "inspect_wristwatch",
+      "lod": false,
+      "view": "front",
+      "label": "Reloj de pulsera",
+      "bounds": {
+        "min": [
+          -0.022749999538064003,
+          -0.08697321265935898,
+          -0.013500000350177288
+        ],
+        "max": [
+          0.022749999538064003,
+          0.08697321265935898,
+          0.013500000350177288
+        ]
+      },
+      "triangles": 1512,
+      "drawCalls": 8,
+      "meshTriangles": 1512,
+      "meshes": 8,
+      "materials": [
+        "inspect_brass",
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06210655125894609,
+          0.07590800709426744,
+          0.3450363958830338
+        ],
+        "fov": 32,
+        "near": 0.17689035569129563,
+        "far": 1
+      },
+      "bytes": 168936,
+      "sha256": "d787e80e8797f235f099346511f6590d2e3e268ad9cfaa2702ef82fba4399c7f"
+    },
+    {
+      "file": "inspect_wristwatch-back.png",
+      "key": "inspect_wristwatch",
+      "selected": "inspect_wristwatch",
+      "lod": false,
+      "view": "back",
+      "label": "Reloj de pulsera",
+      "bounds": {
+        "min": [
+          -0.022749999538064003,
+          -0.08697321265935898,
+          -0.013500000350177288
+        ],
+        "max": [
+          0.022749999538064003,
+          0.08697321265935898,
+          0.01350000035017729
+        ]
+      },
+      "triangles": 1512,
+      "drawCalls": 8,
+      "meshTriangles": 1512,
+      "meshes": 8,
+      "materials": [
+        "inspect_brass",
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06210655125894609,
+          0.07590800709426744,
+          0.3450363958830338
+        ],
+        "fov": 32,
+        "near": 0.17689035569129563,
+        "far": 1
+      },
+      "bytes": 157443,
+      "sha256": "27152afbb5358ac4fce42d34cb8f425669d5377c277dff3c2d90dd50e3c6416f"
+    },
+    {
+      "file": "inspect_wristwatch-lod.png",
+      "key": "inspect_wristwatch",
+      "selected": "inspect_wristwatch_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Reloj de pulsera",
+      "bounds": {
+        "min": [
+          -0.022749999538064003,
+          -0.08697321265935898,
+          -0.013500000350177288
+        ],
+        "max": [
+          0.022749999538064003,
+          0.08697321265935898,
+          0.013500000350177288
+        ]
+      },
+      "triangles": 528,
+      "drawCalls": 5,
+      "meshTriangles": 528,
+      "meshes": 5,
+      "materials": [
+        "inspect_gold",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06210655125894609,
+          0.07590800709426744,
+          0.3450363958830338
+        ],
+        "fov": 32,
+        "near": 0.17689035569129563,
+        "far": 1
+      },
+      "bytes": 165919,
+      "sha256": "04d59c2f0007efa19dee432cba476d1b32b1055f86327adff1d83e50c26ff864"
+    },
+    {
+      "file": "inspect_ring-front.png",
+      "key": "inspect_ring",
+      "selected": "inspect_ring",
+      "lod": false,
+      "view": "front",
+      "label": "Anillo de esmeralda",
+      "bounds": {
+        "min": [
+          -0.011500000022351742,
+          -0.014499999582767487,
+          -0.0031500000040978193
+        ],
+        "max": [
+          0.011500000022351742,
+          0.014499999582767487,
+          0.0031500000040978193
+        ]
+      },
+      "triangles": 736,
+      "drawCalls": 2,
+      "meshTriangles": 736,
+      "meshes": 2,
+      "materials": [
+        "inspect_gem",
+        "inspect_gold"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.010841439583994606,
+          0.013250648380437852,
+          0.06023021991108114
+        ],
+        "fov": 32,
+        "near": 0.025070420918051374,
+        "far": 1
+      },
+      "bytes": 175517,
+      "sha256": "92baf9c91acbc2b4d6e887de865919e0cf500181711df9d991444f571d602e92"
+    },
+    {
+      "file": "inspect_ring-back.png",
+      "key": "inspect_ring",
+      "selected": "inspect_ring",
+      "lod": false,
+      "view": "back",
+      "label": "Anillo de esmeralda",
+      "bounds": {
+        "min": [
+          -0.011500000022351742,
+          -0.014499999582767487,
+          -0.0031500000040978198
+        ],
+        "max": [
+          0.011500000022351742,
+          0.014499999582767487,
+          0.0031500000040978206
+        ]
+      },
+      "triangles": 736,
+      "drawCalls": 2,
+      "meshTriangles": 736,
+      "meshes": 2,
+      "materials": [
+        "inspect_gem",
+        "inspect_gold"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.010841439583994606,
+          0.013250648380437852,
+          0.06023021991108114
+        ],
+        "fov": 32,
+        "near": 0.025070420918051374,
+        "far": 1
+      },
+      "bytes": 179617,
+      "sha256": "ea2d6d0481f0484b0c2e552077c3a7ef7a593b79fd4a591c8ebaba79aed90242"
+    },
+    {
+      "file": "inspect_ring-lod.png",
+      "key": "inspect_ring",
+      "selected": "inspect_ring_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Anillo de esmeralda",
+      "bounds": {
+        "min": [
+          -0.011500000022351742,
+          -0.014499999582767487,
+          -0.0031500000040978193
+        ],
+        "max": [
+          0.011500000022351742,
+          0.014499999582767487,
+          0.0031500000040978193
+        ]
+      },
+      "triangles": 144,
+      "drawCalls": 2,
+      "meshTriangles": 144,
+      "meshes": 2,
+      "materials": [
+        "inspect_gem",
+        "inspect_gold"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.010841439583994606,
+          0.013250648380437852,
+          0.06023021991108114
+        ],
+        "fov": 32,
+        "near": 0.025070420918051374,
+        "far": 1
+      },
+      "bytes": 178864,
+      "sha256": "8cb8c45e88015f1200dc9df53fa98cc7e923b0a9aac161f88b3807c69333c8cc"
+    },
+    {
+      "file": "inspect_locket-front.png",
+      "key": "inspect_locket",
+      "selected": "inspect_locket",
+      "lod": false,
+      "view": "front",
+      "label": "Relicario con retrato",
+      "bounds": {
+        "min": [
+          -0.03177255764603615,
+          -0.03867499902844429,
+          -0.002400000113993883
+        ],
+        "max": [
+          0.03177255764603615,
+          0.03867499902844429,
+          0.002400000113993883
+        ]
+      },
+      "triangles": 2416,
+      "drawCalls": 4,
+      "meshTriangles": 2416,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.027624200958559025,
+          0.03376291228268325,
+          0.1534677831031057
+        ],
+        "fov": 32,
+        "near": 0.059327479993204216,
+        "far": 1
+      },
+      "bytes": 213771,
+      "sha256": "66cb602fe94baaceaadb02235679485c999e83460c3a6e828f9a62efabf6bd20"
+    },
+    {
+      "file": "inspect_locket-back.png",
+      "key": "inspect_locket",
+      "selected": "inspect_locket",
+      "lod": false,
+      "view": "back",
+      "label": "Relicario con retrato",
+      "bounds": {
+        "min": [
+          -0.03177255764603615,
+          -0.03867499902844429,
+          -0.002400000113993887
+        ],
+        "max": [
+          0.03177255764603615,
+          0.03867499902844429,
+          0.002400000113993887
+        ]
+      },
+      "triangles": 2416,
+      "drawCalls": 4,
+      "meshTriangles": 2416,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.027624200958559025,
+          0.03376291228268325,
+          0.1534677831031057
+        ],
+        "fov": 32,
+        "near": 0.059327479993204216,
+        "far": 1
+      },
+      "bytes": 168392,
+      "sha256": "277c2264c01a4caaff6d18b2ae3c869bf300caa96c594957ed3b83b184e77361"
+    },
+    {
+      "file": "inspect_locket-lod.png",
+      "key": "inspect_locket",
+      "selected": "inspect_locket_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Relicario con retrato",
+      "bounds": {
+        "min": [
+          -0.031325001269578934,
+          -0.038075000047683716,
+          -0.002050000010058284
+        ],
+        "max": [
+          0.031325001269578934,
+          0.038075000047683716,
+          0.002050000010058284
+        ]
+      },
+      "triangles": 536,
+      "drawCalls": 4,
+      "meshTriangles": 536,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.027188581589944534,
+          0.033230488609932204,
+          0.15104767549969186
+        ],
+        "fov": 32,
+        "near": 0.058336718127557335,
+        "far": 1
+      },
+      "bytes": 186128,
+      "sha256": "503dc3a429732586b2bd059c1565278fa4fe00d2e6814616bd8d7b84fdff55d7"
+    },
+    {
+      "file": "inspect_medal_sport-front.png",
+      "key": "inspect_medal_sport",
+      "selected": "inspect_medal_sport",
+      "lod": false,
+      "view": "front",
+      "label": "Medalla del barrio",
+      "bounds": {
+        "min": [
+          -0.01899999938905239,
+          -0.04904999956488609,
+          -0.0030499999411404133
+        ],
+        "max": [
+          0.01899999938905239,
+          0.04904999956488609,
+          0.0030499999411404133
+        ]
+      },
+      "triangles": 704,
+      "drawCalls": 4,
+      "meshTriangles": 704,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0349459848215691,
+          0.04271175922636223,
+          0.19414436011982833
+        ],
+        "fov": 32,
+        "near": 0.09645604130831127,
+        "far": 1
+      },
+      "bytes": 160363,
+      "sha256": "abdd630d95126ceb2f0a0017ee02638514a2822ebb8da364c113ec61d30a9d6d"
+    },
+    {
+      "file": "inspect_medal_sport-back.png",
+      "key": "inspect_medal_sport",
+      "selected": "inspect_medal_sport",
+      "lod": false,
+      "view": "back",
+      "label": "Medalla del barrio",
+      "bounds": {
+        "min": [
+          -0.01899999938905239,
+          -0.04904999956488609,
+          -0.003049999941140415
+        ],
+        "max": [
+          0.01899999938905239,
+          0.04904999956488609,
+          0.003049999941140415
+        ]
+      },
+      "triangles": 704,
+      "drawCalls": 4,
+      "meshTriangles": 704,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0349459848215691,
+          0.04271175922636223,
+          0.19414436011982833
+        ],
+        "fov": 32,
+        "near": 0.09645604130831127,
+        "far": 1
+      },
+      "bytes": 145302,
+      "sha256": "3eece43e0d13c038b23e97f21d947192a667fab23d8e648d2fb106d1194c56e8"
+    },
+    {
+      "file": "inspect_medal_sport-lod.png",
+      "key": "inspect_medal_sport",
+      "selected": "inspect_medal_sport_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Medalla del barrio",
+      "bounds": {
+        "min": [
+          -0.01899999938905239,
+          -0.04904999956488609,
+          -0.002300000051036477
+        ],
+        "max": [
+          0.01899999938905239,
+          0.04904999956488609,
+          0.002300000051036477
+        ]
+      },
+      "triangles": 272,
+      "drawCalls": 4,
+      "meshTriangles": 272,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_gold",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.034928598901198656,
+          0.042690509768131685,
+          0.19404777167332585
+        ],
+        "fov": 32,
+        "near": 0.09643180740298067,
+        "far": 1
+      },
+      "bytes": 160835,
+      "sha256": "af7a462d7ae0bcb64eef392ebb80c1fdf2fddf4e843830e1d6a08181bb88b373"
+    },
+    {
+      "file": "inspect_medal_service-front.png",
+      "key": "inspect_medal_service",
+      "selected": "inspect_medal_service",
+      "lod": false,
+      "view": "front",
+      "label": "Medalla de una vida",
+      "bounds": {
+        "min": [
+          -0.019021131098270416,
+          -0.04764017090201378,
+          -0.0030499999411404133
+        ],
+        "max": [
+          0.019021131098270416,
+          0.04764017090201378,
+          0.0030499999411404133
+        ]
+      },
+      "triangles": 452,
+      "drawCalls": 3,
+      "meshTriangles": 452,
+      "meshes": 3,
+      "materials": [
+        "inspect_brass",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03394594248080059,
+          0.04148948525431183,
+          0.18858856933778106
+        ],
+        "fov": 32,
+        "near": 0.09328424051897703,
+        "far": 1
+      },
+      "bytes": 154185,
+      "sha256": "f4f6facf8196b663c9311d5a754b6c8be1b68aef248a22339f1a4d1a0410c298"
+    },
+    {
+      "file": "inspect_medal_service-back.png",
+      "key": "inspect_medal_service",
+      "selected": "inspect_medal_service",
+      "lod": false,
+      "view": "back",
+      "label": "Medalla de una vida",
+      "bounds": {
+        "min": [
+          -0.019021131098270416,
+          -0.04764017090201378,
+          -0.0030499999411404146
+        ],
+        "max": [
+          0.019021131098270416,
+          0.04764017090201378,
+          0.0030499999411404155
+        ]
+      },
+      "triangles": 452,
+      "drawCalls": 3,
+      "meshTriangles": 452,
+      "meshes": 3,
+      "materials": [
+        "inspect_brass",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03394594248080059,
+          0.04148948525431183,
+          0.18858856933778106
+        ],
+        "fov": 32,
+        "near": 0.09328424051897703,
+        "far": 1
+      },
+      "bytes": 147522,
+      "sha256": "c5c67a4f42e1b1d2477cf90692608828f06207a87caec15cd394571f147c3ffe"
+    },
+    {
+      "file": "inspect_medal_service-lod.png",
+      "key": "inspect_medal_service",
+      "selected": "inspect_medal_service_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Medalla de una vida",
+      "bounds": {
+        "min": [
+          -0.019021131098270416,
+          -0.04764017090201378,
+          -0.002300000051036477
+        ],
+        "max": [
+          0.019021131098270416,
+          0.04764017090201378,
+          0.002300000051036477
+        ]
+      },
+      "triangles": 180,
+      "drawCalls": 3,
+      "meshTriangles": 180,
+      "meshes": 3,
+      "materials": [
+        "inspect_brass",
+        "inspect_metal_atlas",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03392855656043014,
+          0.041468235796081276,
+          0.18849198089127853
+        ],
+        "fov": 32,
+        "near": 0.09326193830860548,
+        "far": 1
+      },
+      "bytes": 155349,
+      "sha256": "94f2731ee9f4543a43e72d1b4ca5e667d9e1ac505649ff74952080b54b9b2ee3"
+    },
+    {
+      "file": "inspect_rosary-front.png",
+      "key": "inspect_rosary",
+      "selected": "inspect_rosary",
+      "lod": false,
+      "view": "front",
+      "label": "Rosario de madera",
+      "bounds": {
+        "min": [
+          -0.03999999538064003,
+          -0.08874999731779099,
+          -0.0029999969992786646
+        ],
+        "max": [
+          0.03999999538064003,
+          0.08874999731779099,
+          0.0029999969992786646
+        ]
+      },
+      "triangles": 1912,
+      "drawCalls": 4,
+      "meshTriangles": 1912,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_gold",
+        "inspect_wood"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06319557455814899,
+          0.077239035571071,
+          0.35108652532304996
+        ],
+        "fov": 32,
+        "near": 0.17020723199534507,
+        "far": 1
+      },
+      "bytes": 165106,
+      "sha256": "3bd7a87bd7955add9892a9c340a309ad237295bec247369db6a1d53390572317"
+    },
+    {
+      "file": "inspect_rosary-back.png",
+      "key": "inspect_rosary",
+      "selected": "inspect_rosary",
+      "lod": false,
+      "view": "back",
+      "label": "Rosario de madera",
+      "bounds": {
+        "min": [
+          -0.03999999538064003,
+          -0.08874999731779099,
+          -0.0029999969992786694
+        ],
+        "max": [
+          0.03999999538064003,
+          0.08874999731779099,
+          0.0029999969992786694
+        ]
+      },
+      "triangles": 1912,
+      "drawCalls": 4,
+      "meshTriangles": 1912,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_gold",
+        "inspect_wood"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06319557455814899,
+          0.077239035571071,
+          0.35108652532304996
+        ],
+        "fov": 32,
+        "near": 0.17020723199534507,
+        "far": 1
+      },
+      "bytes": 164289,
+      "sha256": "6c8769035e5a4d1a2735fe11e4744fb39d7027e355ef5ffb4a0538f0ec9781f8"
+    },
+    {
+      "file": "inspect_rosary-lod.png",
+      "key": "inspect_rosary",
+      "selected": "inspect_rosary_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Rosario de madera",
+      "bounds": {
+        "min": [
+          -0.03999999538064003,
+          -0.08835500478744507,
+          -0.0029999969992786646
+        ],
+        "max": [
+          0.03999999538064003,
+          0.08835500478744507,
+          0.0029999969992786646
+        ]
+      },
+      "triangles": 684,
+      "drawCalls": 3,
+      "meshTriangles": 684,
+      "meshes": 3,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_wood"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0629153674001059,
+          0.076896560155685,
+          0.34952981888947726
+        ],
+        "fov": 32,
+        "near": 0.16930845610625286,
+        "far": 1
+      },
+      "bytes": 160199,
+      "sha256": "8b4afaeccc6c0307c40f1a68c872cd7dd7530a11ebccb840c668700d12f641ce"
+    },
+    {
+      "file": "inspect_keys-front.png",
+      "key": "inspect_keys",
+      "selected": "inspect_keys",
+      "lod": false,
+      "view": "front",
+      "label": "Llaves de casa",
+      "bounds": {
+        "min": [
+          -0.02109558880329132,
+          -0.03062623366713524,
+          -0.003800000064074993
+        ],
+        "max": [
+          0.02109558880329132,
+          0.03062623366713524,
+          0.003800000064074993
+        ]
+      },
+      "triangles": 912,
+      "drawCalls": 3,
+      "meshTriangles": 912,
+      "meshes": 3,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.02190232064751268,
+          0.026769503013626603,
+          0.12167955915284821
+        ],
+        "fov": 32,
+        "near": 0.05173550148605424,
+        "far": 1
+      },
+      "bytes": 181559,
+      "sha256": "0c2a05bc9acebae286df03babd8f6ca1f6799de683a1b4d3e573805da2e66c58"
+    },
+    {
+      "file": "inspect_keys-back.png",
+      "key": "inspect_keys",
+      "selected": "inspect_keys",
+      "lod": false,
+      "view": "back",
+      "label": "Llaves de casa",
+      "bounds": {
+        "min": [
+          -0.02109558880329132,
+          -0.03062623366713524,
+          -0.0038000000640749957
+        ],
+        "max": [
+          0.02109558880329132,
+          0.03062623366713524,
+          0.0038000000640749957
+        ]
+      },
+      "triangles": 912,
+      "drawCalls": 3,
+      "meshTriangles": 912,
+      "meshes": 3,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.02190232064751268,
+          0.026769503013626603,
+          0.12167955915284821
+        ],
+        "fov": 32,
+        "near": 0.05173550148605424,
+        "far": 1
+      },
+      "bytes": 178747,
+      "sha256": "307661924dbfa4d3b605d71bf4bb3ce42b78ed22d011a5e9ba6a02db973b1081"
+    },
+    {
+      "file": "inspect_keys-lod.png",
+      "key": "inspect_keys",
+      "selected": "inspect_keys_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Llaves de casa",
+      "bounds": {
+        "min": [
+          -0.02109558880329132,
+          -0.03062623366713524,
+          -0.003800000064074993
+        ],
+        "max": [
+          0.02109558880329132,
+          0.03062623366713524,
+          0.003800000064074993
+        ]
+      },
+      "triangles": 476,
+      "drawCalls": 2,
+      "meshTriangles": 476,
+      "meshes": 2,
+      "materials": [
+        "inspect_brass",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.02190232064751268,
+          0.026769503013626603,
+          0.12167955915284821
+        ],
+        "fov": 32,
+        "near": 0.05173550148605424,
+        "far": 1
+      },
+      "bytes": 181670,
+      "sha256": "b2bcd45d0985f84a6e052955d338db738b5b663b9515aebcfa81a8dbebbc1088"
+    },
+    {
+      "file": "inspect_photo_family-front.png",
+      "key": "inspect_photo_family",
+      "selected": "inspect_photo_family",
+      "lod": false,
+      "view": "front",
+      "label": "Foto de la familia",
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          -0.04500000178813934,
+          -0.002340739592909813
+        ],
+        "max": [
+          0.06499999761581421,
+          0.04500000178813934,
+          0.002340739592909813
+        ]
+      },
+      "triangles": 164,
+      "drawCalls": 2,
+      "meshTriangles": 164,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03787408275419378,
+          0.04629054558845907,
+          0.21041157085663212
+        ],
+        "fov": 32,
+        "near": 0.060563919992331905,
+        "far": 1
+      },
+      "bytes": 135788,
+      "sha256": "a4ce91b92c89bdc64f3fbc9d6e7cf7961ae5cfb7385b2317911c0f273ee10a9f"
+    },
+    {
+      "file": "inspect_photo_family-back.png",
+      "key": "inspect_photo_family",
+      "selected": "inspect_photo_family",
+      "lod": false,
+      "view": "back",
+      "label": "Foto de la familia",
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          -0.04500000178813934,
+          -0.0023407395929098207
+        ],
+        "max": [
+          0.06499999761581421,
+          0.04500000178813934,
+          0.0023407395929098207
+        ]
+      },
+      "triangles": 164,
+      "drawCalls": 2,
+      "meshTriangles": 164,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03787408275419379,
+          0.046290545588459076,
+          0.21041157085663215
+        ],
+        "fov": 32,
+        "near": 0.06056391999233193,
+        "far": 1
+      },
+      "bytes": 100188,
+      "sha256": "81464cdd61bd1e3766995b0da2ff4cb6d0489242031ec94208be5c9ef94b71ac"
+    },
+    {
+      "file": "inspect_photo_family-lod.png",
+      "key": "inspect_photo_family",
+      "selected": "inspect_photo_family_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Foto de la familia",
+      "bounds": {
+        "min": [
+          -0.06499999761581421,
+          -0.04500000178813934,
+          -0.002374999923631549
+        ],
+        "max": [
+          0.06499999761581421,
+          0.04500000178813934,
+          0.002374999923631549
+        ]
+      },
+      "triangles": 32,
+      "drawCalls": 2,
+      "meshTriangles": 32,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03787655259401956,
+          0.046293564281579457,
+          0.21042529218899755
+        ],
+        "fov": 32,
+        "near": 0.06057614218225402,
+        "far": 1
+      },
+      "bytes": 136334,
+      "sha256": "6d2efcd84be880fae525b3e408c81cf548b1df94ba73427bdac814049add914c"
+    },
+    {
+      "file": "inspect_photo_portrait-front.png",
+      "key": "inspect_photo_portrait",
+      "selected": "inspect_photo_portrait",
+      "lod": false,
+      "view": "front",
+      "label": "Retrato guardado",
+      "bounds": {
+        "min": [
+          -0.03999999910593033,
+          -0.054999999701976776,
+          -0.002340739592909813
+        ],
+        "max": [
+          0.03999999910593033,
+          0.054999999701976776,
+          0.002340739592909813
+        ]
+      },
+      "triangles": 164,
+      "drawCalls": 2,
+      "meshTriangles": 164,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03923809026220348,
+          0.04795766587602647,
+          0.21798939034557488
+        ],
+        "fov": 32,
+        "near": 0.09052986294166221,
+        "far": 1
+      },
+      "bytes": 145881,
+      "sha256": "e1331b08629d676afcfd473e33d139cad40f11bcb36d2b07937322f76c4e3d81"
+    },
+    {
+      "file": "inspect_photo_portrait-back.png",
+      "key": "inspect_photo_portrait",
+      "selected": "inspect_photo_portrait",
+      "lod": false,
+      "view": "back",
+      "label": "Retrato guardado",
+      "bounds": {
+        "min": [
+          -0.03999999910593033,
+          -0.054999999701976776,
+          -0.0023407395929098177
+        ],
+        "max": [
+          0.03999999910593033,
+          0.054999999701976776,
+          0.0023407395929098177
+        ]
+      },
+      "triangles": 164,
+      "drawCalls": 2,
+      "meshTriangles": 164,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03923809026220347,
+          0.04795766587602646,
+          0.21798939034557485
+        ],
+        "fov": 32,
+        "near": 0.09052986294166218,
+        "far": 1
+      },
+      "bytes": 121998,
+      "sha256": "58e27296239189a905865627861bf2cabb993b600bd1c93333943398c95484ce"
+    },
+    {
+      "file": "inspect_photo_portrait-lod.png",
+      "key": "inspect_photo_portrait",
+      "selected": "inspect_photo_portrait_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Retrato guardado",
+      "bounds": {
+        "min": [
+          -0.03999999910593033,
+          -0.054999999701976776,
+          -0.002374999923631549
+        ],
+        "max": [
+          0.03999999910593033,
+          0.054999999701976776,
+          0.002374999923631549
+        ]
+      },
+      "triangles": 32,
+      "drawCalls": 2,
+      "meshTriangles": 32,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0392388844588289,
+          0.04795863656079088,
+          0.21799380254904943
+        ],
+        "fov": 32,
+        "near": 0.09053207569598373,
+        "far": 1
+      },
+      "bytes": 146456,
+      "sha256": "4e71b8dd44c6626b8aa2d5dab18062b56ca9134f89c84a558fc4b4c2db2f2ee0"
+    },
+    {
+      "file": "inspect_letter-front.png",
+      "key": "inspect_letter",
+      "selected": "inspect_letter",
+      "lod": false,
+      "view": "front",
+      "label": "Una carta doblada",
+      "bounds": {
+        "min": [
+          -0.0949999988079071,
+          -0.1274999976158142,
+          -0.00278210686519742
+        ],
+        "max": [
+          0.0949999988079071,
+          0.1274999976158142,
+          0.00278210686519742
+        ]
+      },
+      "triangles": 256,
+      "drawCalls": 1,
+      "meshTriangles": 256,
+      "meshes": 1,
+      "materials": [
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.09090921473649513,
+          0.11111126245571626,
+          0.5050511929805285
+        ],
+        "fov": 32,
+        "near": 0.20700871120757097,
+        "far": 1.1611594405104402
+      },
+      "bytes": 177998,
+      "sha256": "f928af7a913376a0709b173bc75d821441edaf84379951b3c72941fc45bd1fae"
+    },
+    {
+      "file": "inspect_letter-back.png",
+      "key": "inspect_letter",
+      "selected": "inspect_letter",
+      "lod": false,
+      "view": "back",
+      "label": "Una carta doblada",
+      "bounds": {
+        "min": [
+          -0.0949999988079071,
+          -0.1274999976158142,
+          -0.002782106865197432
+        ],
+        "max": [
+          0.0949999988079071,
+          0.1274999976158142,
+          0.002782106865197432
+        ]
+      },
+      "triangles": 256,
+      "drawCalls": 1,
+      "meshTriangles": 256,
+      "meshes": 1,
+      "materials": [
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.09090921473649513,
+          0.11111126245571626,
+          0.5050511929805285
+        ],
+        "fov": 32,
+        "near": 0.20700871120757097,
+        "far": 1.1611594405104402
+      },
+      "bytes": 118363,
+      "sha256": "49eefa8129a48b24225d76fec473944b4b47d6b389e60fa72714a344e2084520"
+    },
+    {
+      "file": "inspect_letter-lod.png",
+      "key": "inspect_letter",
+      "selected": "inspect_letter_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Una carta doblada",
+      "bounds": {
+        "min": [
+          -0.0949999988079071,
+          -0.1274999976158142,
+          -0.0024500000290572643
+        ],
+        "max": [
+          0.0949999988079071,
+          0.1274999976158142,
+          0.0024500000290572643
+        ]
+      },
+      "triangles": 16,
+      "drawCalls": 1,
+      "meshTriangles": 16,
+      "meshes": 1,
+      "materials": [
+        "inspect_paper_atlas"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0909015160913569,
+          0.11110185300054731,
+          0.5050084227297605
+        ],
+        "fov": 32,
+        "near": 0.20697517347925776,
+        "far": 1.1610931221440888
+      },
+      "bytes": 179368,
+      "sha256": "902c406cc039087252c3eb6935e792d49e89ed039aee16dd2920c985fb446345"
+    },
+    {
+      "file": "inspect_envelope-front.png",
+      "key": "inspect_envelope",
+      "selected": "inspect_envelope",
+      "lod": false,
+      "view": "front",
+      "label": "Sobre con sello",
+      "bounds": {
+        "min": [
+          -0.07750000059604645,
+          -0.05249999836087227,
+          -0.001079004374332726
+        ],
+        "max": [
+          0.07750000059604645,
+          0.05249999836087227,
+          0.001079004374332726
+        ]
+      },
+      "triangles": 210,
+      "drawCalls": 4,
+      "meshTriangles": 210,
+      "meshes": 4,
+      "materials": [
+        "inspect_ink",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04499187572578774,
+          0.05499007033151835,
+          0.24995486514326523
+        ],
+        "fov": 32,
+        "near": 0.07262801699532043,
+        "far": 1
+      },
+      "bytes": 150861,
+      "sha256": "8a24a28dd64a319925895db455b5302f83bdbb5695e5dd3667352bcfb8812369"
+    },
+    {
+      "file": "inspect_envelope-back.png",
+      "key": "inspect_envelope",
+      "selected": "inspect_envelope",
+      "lod": false,
+      "view": "back",
+      "label": "Sobre con sello",
+      "bounds": {
+        "min": [
+          -0.07750000059604645,
+          -0.05249999836087227,
+          -0.0010790043743327355
+        ],
+        "max": [
+          0.07750000059604645,
+          0.05249999836087227,
+          0.0010790043743327267
+        ]
+      },
+      "triangles": 210,
+      "drawCalls": 4,
+      "meshTriangles": 210,
+      "meshes": 4,
+      "materials": [
+        "inspect_ink",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04499187572578774,
+          0.05499007033151835,
+          0.24995486514326523
+        ],
+        "fov": 32,
+        "near": 0.07262801699532043,
+        "far": 1
+      },
+      "bytes": 101231,
+      "sha256": "81f5e87d87abdb46201bea7616c18631a3910a48a9755472293b3dfd11523f5f"
+    },
+    {
+      "file": "inspect_envelope-lod.png",
+      "key": "inspect_envelope",
+      "selected": "inspect_envelope_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Sobre con sello",
+      "bounds": {
+        "min": [
+          -0.07750000059604645,
+          -0.05249999836087227,
+          -0.0009850000496953726
+        ],
+        "max": [
+          0.07750000059604645,
+          0.05249999836087227,
+          0.0009850000496953726
+        ]
+      },
+      "triangles": 40,
+      "drawCalls": 2,
+      "meshTriangles": 40,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04498509891949624,
+          0.054981787568273176,
+          0.24991721621942353
+        ],
+        "fov": 32,
+        "near": 0.07259094920950929,
+        "far": 1
+      },
+      "bytes": 151060,
+      "sha256": "d9cb0a3efef6d48e549ef554e557225d9dba69a6f040a1577de2e71e8d744c27"
+    },
+    {
+      "file": "inspect_diary-front.png",
+      "key": "inspect_diary",
+      "selected": "inspect_diary",
+      "lod": false,
+      "view": "front",
+      "label": "Diario con broche",
+      "bounds": {
+        "min": [
+          -0.05674999952316284,
+          -0.08675000071525574,
+          -0.012875000014901161
+        ],
+        "max": [
+          0.05674999952316284,
+          0.08675000071525574,
+          0.012875000014901161
+        ]
+      },
+      "triangles": 674,
+      "drawCalls": 6,
+      "meshTriangles": 674,
+      "meshes": 6,
+      "materials": [
+        "inspect_brass",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.062339088409912646,
+          0.07619221916767101,
+          0.34632826894395913
+        ],
+        "fov": 32,
+        "near": 0.15112818054163699,
+        "far": 1
+      },
+      "bytes": 160108,
+      "sha256": "578a8b94448c11a3e9b2a04a6b92ab10f5e18b8864ed48b60916135d3bffdece"
+    },
+    {
+      "file": "inspect_diary-back.png",
+      "key": "inspect_diary",
+      "selected": "inspect_diary",
+      "lod": false,
+      "view": "back",
+      "label": "Diario con broche",
+      "bounds": {
+        "min": [
+          -0.05674999952316284,
+          -0.08675000071525574,
+          -0.012875000014901168
+        ],
+        "max": [
+          0.05674999952316284,
+          0.08675000071525574,
+          0.012875000014901168
+        ]
+      },
+      "triangles": 674,
+      "drawCalls": 6,
+      "meshTriangles": 674,
+      "meshes": 6,
+      "materials": [
+        "inspect_brass",
+        "inspect_ink",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06233908840991265,
+          0.07619221916767102,
+          0.3463282689439592
+        ],
+        "fov": 32,
+        "near": 0.15112818054163704,
+        "far": 1
+      },
+      "bytes": 117250,
+      "sha256": "adf4d33c57818eb7ed04505e8ed060929d9a88c9cf123f33826e47df67e0a076"
+    },
+    {
+      "file": "inspect_diary-lod.png",
+      "key": "inspect_diary",
+      "selected": "inspect_diary_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Diario con broche",
+      "bounds": {
+        "min": [
+          -0.05649999901652336,
+          -0.08675000071525574,
+          -0.012875000014901161
+        ],
+        "max": [
+          0.05649999901652336,
+          0.08675000071525574,
+          0.012875000014901161
+        ]
+      },
+      "triangles": 74,
+      "drawCalls": 5,
+      "meshTriangles": 74,
+      "meshes": 5,
+      "materials": [
+        "inspect_brass",
+        "inspect_leather",
+        "inspect_paper_atlas",
+        "inspect_ribbon",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06232514263991263,
+          0.07617517433767099,
+          0.34625079244395907
+        ],
+        "fov": 32,
+        "near": 0.15131884814362007,
+        "far": 1
+      },
+      "bytes": 154125,
+      "sha256": "44f91f896c4b592e63cbeff9bf5cd62d9170893757c4c24ce41c26e963719f56"
+    },
+    {
+      "file": "inspect_notebook-front.png",
+      "key": "inspect_notebook",
+      "selected": "inspect_notebook",
+      "lod": false,
+      "view": "front",
+      "label": "Cuaderno de cuentas",
+      "bounds": {
+        "min": [
+          -0.09399999678134918,
+          -0.06599999964237213,
+          -0.006974999792873859
+        ],
+        "max": [
+          0.09399999678134918,
+          0.06599999964237213,
+          0.006974999792873859
+        ]
+      },
+      "triangles": 976,
+      "drawCalls": 4,
+      "meshTriangles": 976,
+      "meshes": 4,
+      "materials": [
+        "inspect_cloth",
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.05506437095374555,
+          0.06730089783235567,
+          0.3059131719652531
+        ],
+        "fov": 32,
+        "near": 0.08789597170934424,
+        "far": 1
+      },
+      "bytes": 204277,
+      "sha256": "88a4e0d8a0abe20abbd1312d2115c29c90ce6b7313349b8f9ad7dab588b23c32"
+    },
+    {
+      "file": "inspect_notebook-back.png",
+      "key": "inspect_notebook",
+      "selected": "inspect_notebook",
+      "lod": false,
+      "view": "back",
+      "label": "Cuaderno de cuentas",
+      "bounds": {
+        "min": [
+          -0.09399999678134918,
+          -0.06599999964237213,
+          -0.00697499979287386
+        ],
+        "max": [
+          0.09399999678134918,
+          0.06599999964237213,
+          0.006974999792873871
+        ]
+      },
+      "triangles": 976,
+      "drawCalls": 4,
+      "meshTriangles": 976,
+      "meshes": 4,
+      "materials": [
+        "inspect_cloth",
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.05506437095374555,
+          0.06730089783235567,
+          0.3059131719652531
+        ],
+        "fov": 32,
+        "near": 0.08789597170934421,
+        "far": 1
+      },
+      "bytes": 84519,
+      "sha256": "c469441638e5e0cd97d5b9ee2ee5bf2c5870a5ff8f4f515e36f1da49212fc9fd"
+    },
+    {
+      "file": "inspect_notebook-lod.png",
+      "key": "inspect_notebook",
+      "selected": "inspect_notebook_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Cuaderno de cuentas",
+      "bounds": {
+        "min": [
+          -0.09399999678134918,
+          -0.06599999964237213,
+          -0.005499999970197678
+        ],
+        "max": [
+          0.09399999678134918,
+          0.06599999964237213,
+          0.005499999970197678
+        ]
+      },
+      "triangles": 76,
+      "drawCalls": 4,
+      "meshTriangles": 76,
+      "meshes": 4,
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.054958037674751686,
+          0.06717093493580761,
+          0.30532243152639826
+        ],
+        "fov": 32,
+        "near": 0.08744179532299823,
+        "far": 1
+      },
+      "bytes": 200577,
+      "sha256": "7dc2a8ecd71dae2745ace74a36e593f0b5482a1a8d63e4c867ca7e1295c298cf"
+    },
+    {
+      "file": "inspect_recipe_cards-front.png",
+      "key": "inspect_recipe_cards",
+      "selected": "inspect_recipe_cards",
+      "lod": false,
+      "view": "front",
+      "label": "Recetas de la abuela",
+      "bounds": {
+        "min": [
+          -0.06684605032205582,
+          -0.04734952002763748,
+          -0.002437930554151535
+        ],
+        "max": [
+          0.06684605032205582,
+          0.04734952002763748,
+          0.002437930554151535
+        ]
+      },
+      "triangles": 552,
+      "drawCalls": 3,
+      "meshTriangles": 552,
+      "meshes": 3,
+      "materials": [
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.038991210078244305,
+          0.04765592342896526,
+          0.21661783376802393
+        ],
+        "fov": 32,
+        "near": 0.0612929635119141,
+        "far": 1
+      },
+      "bytes": 188653,
+      "sha256": "75588ebdd1774b04dda7c7c7dbd2fd605198dd4006006a739bd7eb74140a6937"
+    },
+    {
+      "file": "inspect_recipe_cards-back.png",
+      "key": "inspect_recipe_cards",
+      "selected": "inspect_recipe_cards",
+      "lod": false,
+      "view": "back",
+      "label": "Recetas de la abuela",
+      "bounds": {
+        "min": [
+          -0.06684605032205582,
+          -0.04734952002763748,
+          -0.0024379305541515307
+        ],
+        "max": [
+          0.06684605032205582,
+          0.04734952002763748,
+          0.0024379305541515433
+        ]
+      },
+      "triangles": 552,
+      "drawCalls": 3,
+      "meshTriangles": 552,
+      "meshes": 3,
+      "materials": [
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.038991210078244305,
+          0.04765592342896526,
+          0.21661783376802393
+        ],
+        "fov": 32,
+        "near": 0.0612929635119141,
+        "far": 1
+      },
+      "bytes": 105717,
+      "sha256": "26693c905b06318a30946c0a684596b7ef23a26b6e4319ce45c974f860973581"
+    },
+    {
+      "file": "inspect_recipe_cards-lod.png",
+      "key": "inspect_recipe_cards",
+      "selected": "inspect_recipe_cards_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Recetas de la abuela",
+      "bounds": {
+        "min": [
+          -0.06684605032205582,
+          -0.04733530431985855,
+          -0.002337499987334013
+        ],
+        "max": [
+          0.06684605032205582,
+          0.04733530431985855,
+          0.002337499987334013
+        ]
+      },
+      "triangles": 100,
+      "drawCalls": 3,
+      "meshTriangles": 100,
+      "meshes": 3,
+      "materials": [
+        "inspect_paper_atlas",
+        "inspect_silver",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03898344914499491,
+          0.047646437843882665,
+          0.21657471747219392
+        ],
+        "fov": 32,
+        "near": 0.06127041694680513,
+        "far": 1
+      },
+      "bytes": 189990,
+      "sha256": "fc6f1bff94a7b5a30c25a72b9c223efe3f8a33d1790cc8118af5eadbfa0b1c57"
+    },
+    {
+      "file": "inspect_banknotes-front.png",
+      "key": "inspect_banknotes",
+      "selected": "inspect_banknotes",
+      "lod": false,
+      "view": "front",
+      "label": "Billetes de recuerdo",
+      "bounds": {
+        "min": [
+          -0.07431837171316147,
+          -0.036788906902074814,
+          -0.004123609513044357
+        ],
+        "max": [
+          0.07431837171316147,
+          0.036788906902074814,
+          0.004123609513044357
+        ]
+      },
+      "triangles": 492,
+      "drawCalls": 2,
+      "meshTriangles": 492,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0428708140268306,
+          0.05239766158834851,
+          0.23817118903794776
+        ],
+        "fov": 32,
+        "near": 0.08155042237806903,
+        "far": 1
+      },
+      "bytes": 201770,
+      "sha256": "7f5d24e0ba5bc83cafe869f7b82b212bdf15db5e2681c256721e0453bfa9ddc6"
+    },
+    {
+      "file": "inspect_banknotes-back.png",
+      "key": "inspect_banknotes",
+      "selected": "inspect_banknotes",
+      "lod": false,
+      "view": "back",
+      "label": "Billetes de recuerdo",
+      "bounds": {
+        "min": [
+          -0.07431837171316147,
+          -0.036788906902074814,
+          -0.004123609513044366
+        ],
+        "max": [
+          0.07431837171316147,
+          0.036788906902074814,
+          0.004123609513044366
+        ]
+      },
+      "triangles": 492,
+      "drawCalls": 2,
+      "meshTriangles": 492,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.0428708140268306,
+          0.05239766158834851,
+          0.23817118903794776
+        ],
+        "fov": 32,
+        "near": 0.08155042237806903,
+        "far": 1
+      },
+      "bytes": 200646,
+      "sha256": "ac02d27daa3ce0dd7d94f5766612715452adefbe9c846c5402b7b53d7180c0db"
+    },
+    {
+      "file": "inspect_banknotes-lod.png",
+      "key": "inspect_banknotes",
+      "selected": "inspect_banknotes_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Billetes de recuerdo",
+      "bounds": {
+        "min": [
+          -0.07431837171316147,
+          -0.036788906902074814,
+          -0.0038250000216066837
+        ],
+        "max": [
+          0.07431837171316147,
+          0.036788906902074814,
+          0.0038250000216066837
+        ]
+      },
+      "triangles": 64,
+      "drawCalls": 2,
+      "meshTriangles": 64,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04284928715891163,
+          0.0523713509720031,
+          0.2380515953272868
+        ],
+        "fov": 32,
+        "near": 0.0814546804935552,
+        "far": 1
+      },
+      "bytes": 204924,
+      "sha256": "434b0ffd20907062fb74defe2e10bb04efe5a665847fda340b6021b52b7ed248"
+    },
+    {
+      "file": "inspect_lottery_ticket-front.png",
+      "key": "inspect_lottery_ticket",
+      "selected": "inspect_lottery_ticket",
+      "lod": false,
+      "view": "front",
+      "label": "Lotería de La Ladera",
+      "bounds": {
+        "min": [
+          -0.032499998807907104,
+          -0.06800000369548798,
+          -0.002340739592909813
+        ],
+        "max": [
+          0.032499998807907104,
+          0.06800000369548798,
+          0.002340739592909813
+        ]
+      },
+      "triangles": 380,
+      "drawCalls": 2,
+      "meshTriangles": 380,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04842898056199152,
+          0.05919097624243407,
+          0.269049892011064
+        ],
+        "fov": 32,
+        "near": 0.12890083513389827,
+        "far": 1
+      },
+      "bytes": 177276,
+      "sha256": "d1cff51dd434829fcd1cd1d621a24f44bebc2d5e13078159ac1a52d0ec4bf4ef"
+    },
+    {
+      "file": "inspect_lottery_ticket-back.png",
+      "key": "inspect_lottery_ticket",
+      "selected": "inspect_lottery_ticket",
+      "lod": false,
+      "view": "back",
+      "label": "Lotería de La Ladera",
+      "bounds": {
+        "min": [
+          -0.032499998807907104,
+          -0.06800000369548798,
+          -0.002340739592909817
+        ],
+        "max": [
+          0.032499998807907104,
+          0.06800000369548798,
+          0.002340739592909817
+        ]
+      },
+      "triangles": 380,
+      "drawCalls": 2,
+      "meshTriangles": 380,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04842898056199152,
+          0.05919097624243407,
+          0.269049892011064
+        ],
+        "fov": 32,
+        "near": 0.12890083513389827,
+        "far": 1
+      },
+      "bytes": 138949,
+      "sha256": "6ef03f8e7e8e42d098a059b018b195589b86fba1c8e00b08ab5e03a96356a4eb"
+    },
+    {
+      "file": "inspect_lottery_ticket-lod.png",
+      "key": "inspect_lottery_ticket",
+      "selected": "inspect_lottery_ticket_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Lotería de La Ladera",
+      "bounds": {
+        "min": [
+          -0.032499998807907104,
+          -0.06750000268220901,
+          -0.002374999923631549
+        ],
+        "max": [
+          0.032499998807907104,
+          0.06750000268220901,
+          0.002374999923631549
+        ]
+      },
+      "triangles": 32,
+      "drawCalls": 2,
+      "meshTriangles": 32,
+      "meshes": 2,
+      "materials": [
+        "inspect_paper_atlas",
+        "paper"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.04807507472713314,
+          0.05875842466649606,
+          0.267083748484073
+        ],
+        "fov": 32,
+        "near": 0.12775583734297213,
+        "far": 1
+      },
+      "bytes": 175295,
+      "sha256": "523c71d29702a25bcc8e9b9b082e65d882b0f58834a9da71a3adc4a048f0e036"
+    },
+    {
+      "file": "inspect_lace-front.png",
+      "key": "inspect_lace",
+      "selected": "inspect_lace",
+      "lod": false,
+      "view": "front",
+      "label": "Encaje de domingo",
+      "bounds": {
+        "min": [
+          -0.05369282141327858,
+          -0.05298265814781189,
+          -0.002635639626532793
+        ],
+        "max": [
+          0.05369282141327858,
+          0.05298265814781189,
+          0.002635639626532793
+        ]
+      },
+      "triangles": 2112,
+      "drawCalls": 1,
+      "meshTriangles": 2112,
+      "meshes": 1,
+      "materials": [
+        "inspect_lace"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03787096204728781,
+          0.04628673139112954,
+          0.21039423359604337
+        ],
+        "fov": 32,
+        "near": 0.06777175219205625,
+        "far": 1
+      },
+      "bytes": 249197,
+      "sha256": "2518dd0168dd70d83a0945ce78462866544cfb6f22164951d122ad8985ec77ee"
+    },
+    {
+      "file": "inspect_lace-back.png",
+      "key": "inspect_lace",
+      "selected": "inspect_lace",
+      "lod": false,
+      "view": "back",
+      "label": "Encaje de domingo",
+      "bounds": {
+        "min": [
+          -0.05369282141327858,
+          -0.05298265814781189,
+          -0.0026356396265327996
+        ],
+        "max": [
+          0.05369282141327858,
+          0.05298265814781189,
+          0.0026356396265327996
+        ]
+      },
+      "triangles": 2112,
+      "drawCalls": 1,
+      "meshTriangles": 2112,
+      "meshes": 1,
+      "materials": [
+        "inspect_lace"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.037870962047287814,
+          0.04628673139112955,
+          0.2103942335960434
+        ],
+        "fov": 32,
+        "near": 0.06777175219205628,
+        "far": 1
+      },
+      "bytes": 248279,
+      "sha256": "015d19f1c8acdc469bbb31e44c243a99f9dc68abedc43a300a88b426b07c7cdb"
+    },
+    {
+      "file": "inspect_lace-lod.png",
+      "key": "inspect_lace",
+      "selected": "inspect_lace_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Encaje de domingo",
+      "bounds": {
+        "min": [
+          -0.05369282141327858,
+          -0.05369282141327858,
+          -0.0026928202714771032
+        ],
+        "max": [
+          0.05369282141327858,
+          0.05369282141327858,
+          0.0026928202714771032
+        ]
+      },
+      "triangles": 624,
+      "drawCalls": 1,
+      "meshTriangles": 624,
+      "meshes": 1,
+      "materials": [
+        "inspect_lace"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03837607640928375,
+          0.04690409338912458,
+          0.2132004244960208
+        ],
+        "fov": 32,
+        "near": 0.06968472802722683,
+        "far": 1
+      },
+      "bytes": 197927,
+      "sha256": "83073e11ed46570760b7558d0d093c3030649c1e24102b4dc3e0dbcc9eaf461f"
+    },
+    {
+      "file": "inspect_knickers-front.png",
+      "key": "inspect_knickers",
+      "selected": "inspect_knickers",
+      "lod": false,
+      "view": "front",
+      "label": "Los calzones de fiesta",
+      "bounds": {
+        "min": [
+          -0.16054870188236237,
+          -0.11581999808549881,
+          -0.045384712517261505
+        ],
+        "max": [
+          0.16054870188236237,
+          0.11581999808549881,
+          0.045384712517261505
+        ]
+      },
+      "triangles": 2480,
+      "drawCalls": 3,
+      "meshTriangles": 2480,
+      "meshes": 3,
+      "materials": [
+        "inspect_cloth",
+        "inspect_lace",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.09669621684645706,
+          0.11818426503455862,
+          0.5372012047025392
+        ],
+        "fov": 32,
+        "near": 0.15228102441481822,
+        "far": 1.370885747639211
+      },
+      "bytes": 133163,
+      "sha256": "5190d3f0217ed2a479e7efc14064616de8a6a697919d074c8b389922d3720175"
+    },
+    {
+      "file": "inspect_knickers-back.png",
+      "key": "inspect_knickers",
+      "selected": "inspect_knickers",
+      "lod": false,
+      "view": "back",
+      "label": "Los calzones de fiesta",
+      "bounds": {
+        "min": [
+          -0.16054870188236237,
+          -0.11581999808549881,
+          -0.045384712517261505
+        ],
+        "max": [
+          0.16054870188236237,
+          0.11581999808549881,
+          0.045384712517261526
+        ]
+      },
+      "triangles": 2480,
+      "drawCalls": 3,
+      "meshTriangles": 2480,
+      "meshes": 3,
+      "materials": [
+        "inspect_cloth",
+        "inspect_lace",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.09669621684645706,
+          0.11818426503455862,
+          0.5372012047025392
+        ],
+        "fov": 32,
+        "near": 0.15228102441481822,
+        "far": 1.370885747639211
+      },
+      "bytes": 128328,
+      "sha256": "6e44044085507afb6f3715237d013491fd67b743113c8084ba80026497cfaf49"
+    },
+    {
+      "file": "inspect_knickers-lod.png",
+      "key": "inspect_knickers",
+      "selected": "inspect_knickers_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Los calzones de fiesta",
+      "bounds": {
+        "min": [
+          -0.1585884541273117,
+          -0.10570257157087326,
+          -0.04265410453081131
+        ],
+        "max": [
+          0.1585884541273117,
+          0.10570257157087326,
+          0.04265410453081131
+        ]
+      },
+      "triangles": 560,
+      "drawCalls": 3,
+      "meshTriangles": 560,
+      "meshes": 3,
+      "materials": [
+        "inspect_cloth",
+        "inspect_lace",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.09491944527365102,
+          0.11601265533446237,
+          0.5273302515202835
+        ],
+        "fov": 32,
+        "near": 0.15761746059870735,
+        "far": 1.3294268930109963
+      },
+      "bytes": 109667,
+      "sha256": "c0c07fcc71bf77a5de3882bda616823fc95d503e9a4e5efd66f75a2a5a157ac5"
+    },
+    {
+      "file": "inspect_toy_car-front.png",
+      "key": "inspect_toy_car",
+      "selected": "inspect_toy_car",
+      "lod": false,
+      "view": "front",
+      "label": "Carrito de hojalata",
+      "bounds": {
+        "min": [
+          -0.05025000125169754,
+          -0.02500000037252903,
+          -0.027410000562667847
+        ],
+        "max": [
+          0.05025000125169754,
+          0.02500000037252903,
+          0.027410000562667847
+        ]
+      },
+      "triangles": 880,
+      "drawCalls": 3,
+      "meshTriangles": 880,
+      "meshes": 3,
+      "materials": [
+        "inspect_dark",
+        "inspect_enamel",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03293162231213974,
+          0.04024976060372634,
+          0.1829534572896652
+        ],
+        "fov": 32,
+        "near": 0.06527930783965377,
+        "far": 1
+      },
+      "bytes": 128961,
+      "sha256": "c4ff926a9cb6a55453666a4599b0c62a4f53aa4abde3e4c6c6074b1884cebdf8"
+    },
+    {
+      "file": "inspect_toy_car-back.png",
+      "key": "inspect_toy_car",
+      "selected": "inspect_toy_car",
+      "lod": false,
+      "view": "back",
+      "label": "Carrito de hojalata",
+      "bounds": {
+        "min": [
+          -0.05025000125169754,
+          -0.02500000037252903,
+          -0.027410000562667854
+        ],
+        "max": [
+          0.05025000125169754,
+          0.02500000037252903,
+          0.027410000562667854
+        ]
+      },
+      "triangles": 880,
+      "drawCalls": 3,
+      "meshTriangles": 880,
+      "meshes": 3,
+      "materials": [
+        "inspect_dark",
+        "inspect_enamel",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03293162231213974,
+          0.04024976060372634,
+          0.1829534572896652
+        ],
+        "fov": 32,
+        "near": 0.06527930783965377,
+        "far": 1
+      },
+      "bytes": 128326,
+      "sha256": "69f97033219a77acedfa70013b00574c420e51143c15455574caad539c988258"
+    },
+    {
+      "file": "inspect_toy_car-lod.png",
+      "key": "inspect_toy_car",
+      "selected": "inspect_toy_car_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Carrito de hojalata",
+      "bounds": {
+        "min": [
+          -0.05000000074505806,
+          -0.02500000037252903,
+          -0.027410000562667847
+        ],
+        "max": [
+          0.05000000074505806,
+          0.02500000037252903,
+          0.027410000562667847
+        ]
+      },
+      "triangles": 340,
+      "drawCalls": 3,
+      "meshTriangles": 340,
+      "meshes": 3,
+      "materials": [
+        "inspect_dark",
+        "inspect_enamel",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03280793187954249,
+          0.04009858340832972,
+          0.18226628821968052
+        ],
+        "fov": 32,
+        "near": 0.06496681434027232,
+        "far": 1
+      },
+      "bytes": 116536,
+      "sha256": "37cdc922641c31fb4ad06e67527d7f2536934f81f398729846939d5cb910f55f"
+    },
+    {
+      "file": "inspect_toy_top-front.png",
+      "key": "inspect_toy_top",
+      "selected": "inspect_toy_top",
+      "lod": false,
+      "view": "front",
+      "label": "Trompo de colores",
+      "bounds": {
+        "min": [
+          -0.04088329151272774,
+          -0.039500001817941666,
+          -0.03150000050663948
+        ],
+        "max": [
+          0.04088329151272774,
+          0.039500001817941666,
+          0.03150000050663948
+        ]
+      },
+      "triangles": 1048,
+      "drawCalls": 4,
+      "meshTriangles": 1048,
+      "meshes": 4,
+      "materials": [
+        "inspect_cloth",
+        "inspect_enamel",
+        "inspect_silver",
+        "inspect_wood"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03716933495420281,
+          0.045429187166247886,
+          0.20649630530112675
+        ],
+        "fov": 32,
+        "near": 0.0846929729440454,
+        "far": 1
+      },
+      "bytes": 145456,
+      "sha256": "d3a5418091d62c2593879cefd174e2c05c31f81d58d94808e03c0232de9d9574"
+    },
+    {
+      "file": "inspect_toy_top-back.png",
+      "key": "inspect_toy_top",
+      "selected": "inspect_toy_top",
+      "lod": false,
+      "view": "back",
+      "label": "Trompo de colores",
+      "bounds": {
+        "min": [
+          -0.04088329151272774,
+          -0.039500001817941666,
+          -0.03150000050663949
+        ],
+        "max": [
+          0.04088329151272774,
+          0.039500001817941666,
+          0.03150000050663949
+        ]
+      },
+      "triangles": 1048,
+      "drawCalls": 4,
+      "meshTriangles": 1048,
+      "meshes": 4,
+      "materials": [
+        "inspect_cloth",
+        "inspect_enamel",
+        "inspect_silver",
+        "inspect_wood"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.03716933495420282,
+          0.045429187166247886,
+          0.20649630530112678
+        ],
+        "fov": 32,
+        "near": 0.08469297294404543,
+        "far": 1
+      },
+      "bytes": 142887,
+      "sha256": "b82324a12ddafda9c6da910185cf13d6a172b1407f04187345336ef4fa132d6c"
+    },
+    {
+      "file": "inspect_toy_top-lod.png",
+      "key": "inspect_toy_top",
+      "selected": "inspect_toy_top_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Trompo de colores",
+      "bounds": {
+        "min": [
+          -0.04078660160303116,
+          -0.039500001817941666,
+          -0.03071022965013981
+        ],
+        "max": [
+          0.04078660160303116,
+          0.039500001817941666,
+          0.03071022965013981
+        ]
+      },
+      "triangles": 434,
+      "drawCalls": 4,
+      "meshTriangles": 434,
+      "meshes": 4,
+      "materials": [
+        "inspect_cloth",
+        "inspect_enamel",
+        "inspect_silver",
+        "inspect_wood"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.036919187073119364,
+          0.04512345086714589,
+          0.20510659485066313
+        ],
+        "fov": 32,
+        "near": 0.08412866152631282,
+        "far": 1
+      },
+      "bytes": 143926,
+      "sha256": "b4d53e83eb5889f4c6ff215a8235b0ffecf1d97af2f1cd84852a3b3dd170f052"
+    },
+    {
+      "file": "inspect_toy_teddy-front.png",
+      "key": "inspect_toy_teddy",
+      "selected": "inspect_toy_teddy",
+      "lod": false,
+      "view": "front",
+      "label": "Osito remendado",
+      "bounds": {
+        "min": [
+          -0.06080619618296623,
+          -0.07900000363588333,
+          -0.03149998560547829
+        ],
+        "max": [
+          0.06080619618296623,
+          0.07900000363588333,
+          0.03149998560547829
+        ]
+      },
+      "triangles": 1398,
+      "drawCalls": 3,
+      "meshTriangles": 1398,
+      "meshes": 3,
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06340741335017572,
+          0.07749794965021475,
+          0.3522634075009762
+        ],
+        "fov": 32,
+        "near": 0.1571190003712509,
+        "far": 1
+      },
+      "bytes": 178615,
+      "sha256": "6f6806c4a2099a5f5403d756756d09187bb1d5e1dba9abffb0e9aa1235d1974c"
+    },
+    {
+      "file": "inspect_toy_teddy-back.png",
+      "key": "inspect_toy_teddy",
+      "selected": "inspect_toy_teddy",
+      "lod": false,
+      "view": "back",
+      "label": "Osito remendado",
+      "bounds": {
+        "min": [
+          -0.06080619618296624,
+          -0.07900000363588333,
+          -0.03149998560547829
+        ],
+        "max": [
+          0.06080619618296624,
+          0.07900000363588333,
+          0.031499985605478294
+        ]
+      },
+      "triangles": 1398,
+      "drawCalls": 3,
+      "meshTriangles": 1398,
+      "meshes": 3,
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06340741335017572,
+          0.07749794965021475,
+          0.3522634075009762
+        ],
+        "fov": 32,
+        "near": 0.1571190003712509,
+        "far": 1
+      },
+      "bytes": 167330,
+      "sha256": "5786a2029b45ecf16e13c91d3a3fe7c77d8b1357062bdd3976629987aa2e6033"
+    },
+    {
+      "file": "inspect_toy_teddy-lod.png",
+      "key": "inspect_toy_teddy",
+      "selected": "inspect_toy_teddy_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Osito remendado",
+      "bounds": {
+        "min": [
+          -0.061030127108097076,
+          -0.07900000363588333,
+          -0.029691331088542938
+        ],
+        "max": [
+          0.061030127108097076,
+          0.07900000363588333,
+          0.029691331088542938
+        ]
+      },
+      "triangles": 408,
+      "drawCalls": 3,
+      "meshTriangles": 408,
+      "meshes": 3,
+      "materials": [
+        "inspect_cloth",
+        "inspect_dark",
+        "inspect_ribbon"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.06285939313075516,
+          0.07682814715981186,
+          0.34921885072641756
+        ],
+        "fov": 32,
+        "near": 0.15475298046337693,
+        "far": 1
+      },
+      "bytes": 173772,
+      "sha256": "751ed38c6695acbd5ec5b45db224e220c13407ab33946d9c8115da92cca89e46"
+    },
+    {
+      "file": "inspect_harmonica-front.png",
+      "key": "inspect_harmonica",
+      "selected": "inspect_harmonica",
+      "lod": false,
+      "view": "front",
+      "label": "Armónica del abuelo",
+      "bounds": {
+        "min": [
+          -0.05400000140070915,
+          -0.011923612095415592,
+          -0.014750000089406967
+        ],
+        "max": [
+          0.05400000140070915,
+          0.011923612095415592,
+          0.014750000089406967
+        ]
+      },
+      "triangles": 698,
+      "drawCalls": 4,
+      "meshTriangles": 698,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_metal_atlas",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.031454890273655355,
+          0.038444865890023217,
+          0.17474939040919643
+        ],
+        "fov": 32,
+        "near": 0.0672040650041013,
+        "far": 1
+      },
+      "bytes": 127714,
+      "sha256": "645074787f4365c8f4fbd4999a8c778085806bf9bbe09e5cc620897676f56838"
+    },
+    {
+      "file": "inspect_harmonica-back.png",
+      "key": "inspect_harmonica",
+      "selected": "inspect_harmonica",
+      "lod": false,
+      "view": "back",
+      "label": "Armónica del abuelo",
+      "bounds": {
+        "min": [
+          -0.05400000140070915,
+          -0.011923612095415592,
+          -0.014750000089406972
+        ],
+        "max": [
+          0.05400000140070915,
+          0.011923612095415592,
+          0.014750000089406974
+        ]
+      },
+      "triangles": 698,
+      "drawCalls": 4,
+      "meshTriangles": 698,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_metal_atlas",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.031454890273655355,
+          0.038444865890023217,
+          0.17474939040919643
+        ],
+        "fov": 32,
+        "near": 0.0672040650041013,
+        "far": 1
+      },
+      "bytes": 120406,
+      "sha256": "adb21fbb504a3efa9bd7d5aa0612d556b09769ee18a2b6b49adf086ca22fb6d5"
+    },
+    {
+      "file": "inspect_harmonica-lod.png",
+      "key": "inspect_harmonica",
+      "selected": "inspect_harmonica_lod",
+      "lod": true,
+      "view": "front",
+      "label": "Armónica del abuelo",
+      "bounds": {
+        "min": [
+          -0.05400000140070915,
+          -0.011549999937415123,
+          -0.014750000089406967
+        ],
+        "max": [
+          0.05400000140070915,
+          0.011549999937415123,
+          0.014750000089406967
+        ]
+      },
+      "triangles": 290,
+      "drawCalls": 4,
+      "meshTriangles": 290,
+      "meshes": 4,
+      "materials": [
+        "inspect_brass",
+        "inspect_dark",
+        "inspect_metal_atlas",
+        "inspect_silver"
+      ],
+      "viewport": {
+        "width": 692,
+        "height": 536
+      },
+      "camera": {
+        "position": [
+          0.031441201301174955,
+          0.03842813492365828,
+          0.17467334056208306
+        ],
+        "fov": 32,
+        "near": 0.06727833607896014,
+        "far": 1
+      },
+      "bytes": 110990,
+      "sha256": "905cf65679c90baa1319f4fb445fb5dc82d820d2c93a0a098303048b9baedf62"
+    }
+  ],
+  "errors": [],
+  "netErrors": [],
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "changedSourcesDuringCapture": [],
+  "complete": true,
+  "success": true
+}
