@@ -8,7 +8,7 @@
 // The anchors are written against the page as it ships. If the page is refactored, edit the anchors here and nowhere else.
 //
 // The first seven are derived from `git diff f7ee3dc 5fb49d8 -- plan-to-build/index.html` (f7ee3dc: the page before the flicker, rug and paint fixes);
-// the rest undo one decision of the first-person tour each.
+// the next eight undo one decision of the first-person tour each, and the last eight one decision of the facade.
 
 export const MUTANTS = [
   {
@@ -120,6 +120,64 @@ export const MUTANTS = [
     anchor: "tag('BED 2', 31.2, 33.3); tag('BATH', 33.9, 35.7); tag('BED 1', 36.9, 38.7);",
     replace: "tag('BED 1', 31.2, 33.3); tag('BATH', 33.9, 35.7); tag('BED 2', 36.9, 38.7);",
     guards: [{ file: "tour.test.mjs", fails: /BED [12]: the camera looks into that room/ }],
+  },
+
+  // ---- the facade (facade.test.mjs)
+  {
+    id: "facade-render-off",
+    what: "the insulation shader never calls the facade coat: every elevation stays bare yellow insulation",
+    anchor: "facadeCoat(diffuseColor.rgb, roughnessFactor);`,",
+    replace: "`,",
+    guards: [{ file: "facade.test.mjs", fails: /render is near white/ }],
+  },
+  {
+    id: "facade-cedar-off",
+    what: "the cedar boards never show: the panels stay render",
+    anchor: "float on = inP * (1. - smoothstep(fx - .012, fx + .012, along));",
+    replace: "float on = 0.;",
+    guards: [{ file: "facade.test.mjs", fails: /cedar is clearly coloured/ }],
+  },
+  {
+    id: "facade-no-plinth",
+    what: "no dark plinth: the render runs down to the ground",
+    anchor: "float pl = 1. - smoothstep(.296, .304, vWP.y);",
+    replace: "float pl = 0.;",
+    guards: [{ file: "facade.test.mjs", fails: /plinth is dark/ }],
+  },
+  {
+    id: "facade-panel-in-window",
+    what: "the south cedar bay starts at 5300: its edge cuts through the living-room glazing (4800 to 7200)",
+    anchor: "S: [[4300, 7700], [9400, 12350]],",
+    replace: "S: [[5300, 7700], [9400, 12350]],",
+    guards: [{ file: "facade.test.mjs", fails: /no panel edge cuts through an opening/ }],
+  },
+  {
+    id: "facade-all-cedar",
+    what: "the west elevation is all cedar: it no longer carries both finishes",
+    anchor: "W: [[5800, 9300]],",
+    replace: "W: [[-350, 9300]],",
+    guards: [{ file: "facade.test.mjs", fails: /both finishes show on every elevation/ }],
+  },
+  {
+    id: "facade-lap-open",
+    what: "the lap ends 10 degrees short of a full turn: the camera does not end on the pose it began with",
+    anchor: "key(74.0 + P + FAC, 6.0, 0.6, -4.5, 876, 36, 17.5, 38);",
+    replace: "key(74.0 + P + FAC, 6.0, 0.6, -4.5, 866, 36, 17.5, 38);",
+    guards: [{ file: "facade.test.mjs", fails: /one full turn/ }],
+  },
+  {
+    id: "facade-east-late",
+    what: "the east elevation is still being worked on when the lap ends",
+    anchor: "E: [9.0, 14.2] };",
+    replace: "E: [9.0, 40] };",
+    guards: [{ file: "facade.test.mjs", fails: /inside the lap|finished after/ }],
+  },
+  {
+    id: "facade-order",
+    what: "north and west swap their windows: the camera meets the north face first but the west is worked first",
+    anchor: "{ N: [0.2, 5.4], W: [3.2, 8.4],",
+    replace: "{ N: [3.2, 8.4], W: [0.2, 5.4],",
+    guards: [{ file: "facade.test.mjs", fails: /order the camera meets them/ }],
   },
 ];
 

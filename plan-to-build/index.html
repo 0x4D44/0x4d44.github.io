@@ -298,6 +298,16 @@ for (const rm of ROOMS) {
 const ROOM_BY_ID = Object.fromEntries(ROOMS.map((r) => [r.id, r]));
 const TOTAL_AREA = Math.round(ROOMS.reduce((s, r) => s + r.area, 0) * 10) / 10;
 
+// ---- the facade: mineral render over the insulation, and full-height cedar boarding in panels. Every elevation carries both; the corner panels wrap round.
+//      A panel is [from, to] in mm along its elevation (S and N: plan x, E and W: plan y). The edges stand in piers, never inside an opening (tests/facade.test.mjs).
+const FACADE = {
+  S: [[4300, 7700], [9400, 12350]],         // the living-room glazing in a cedar bay, and the kitchen corner (wraps on to E)
+  E: [[-350, 3000], [6100, 9300]],          // the kitchen corner, and the study corner (wraps on to N); the front door stands in render between them
+  N: [[-350, 3300], [9900, 12350]],         // the bedroom 1 corner (wraps on to W), and the study corner
+  W: [[5800, 9300]],                        // the bedroom 1 corner
+};
+const FACADE_IDS = ['S', 'E', 'N', 'W'];      // the order of uFacade and of the shader's panel table
+
 // ---- furniture and fixtures: type (see FT), centre, rotation (deg, CCW, 0 = front faces north), room
 //      fx = built-in (kitchen / bath): rises from the floor instead of dropping in
 const ITEMS = [];
@@ -1833,6 +1843,7 @@ function film3D() {
   D.sp = 1; D.cp = null;
   T3.swap = S; T3.fade = 0.6; T3.chrome0 = S + 0.8; T3.chrome1 = S + 2.6;
   const P = 9.0;                                                              // plaster & paint: after the floors, and everything from there on is this much later
+  const FAC = 14.5;                                                           // the facade: one lap of the building after HOME, and the tour is this much later still
   const ph = (T3.ph = {
     col: [S + 5.0, S + 9.8], wall: [S + 9.4, S + 21.4], ins: [S + 19.9, S + 25.9], lint: [S + 25.6, S + 30.2], win: [S + 30.4, S + 34.0],
     door: [S + 33.4, S + 39.0], floor: [S + 38.4, S + 45.0], paint: [S + 45.0, S + 45.0 + P], fx: [S + 45.0 + P, S + 50.2 + P], furn: [S + 50.2 + P, S + 65.2 + P],
@@ -1904,6 +1915,18 @@ function film3D() {
   seg(65.0 + P, () => { cmd('ERASE', { dur: 0.3, dw: 0.08 }); ask('Select objects:'); wait(0.2); info('1 found  (section plane)'); ask('Select objects:'); enter(0.1); endCmd(); });
   ch(66.2 + P, '19', 'HOME', ROOMS.length + ' rooms  ·  ' + TOTAL_AREA.toFixed(1) + ' m²  ·  ' + ITEMS.length + ' pieces, all from one drawing');
   seg(66.7 + P, () => { cmd('3DORBIT', { dur: 0.5, dw: 0.1 }); endCmd(); });
+  // the facade: each elevation is rendered from the plinth up, then its cedar panels are boarded, in the order the camera meets them (N, W, S, E)
+  const facRel = { N: [0.2, 5.4], W: [3.2, 8.4], S: [6.2, 11.4], E: [9.0, 14.2] };                // seconds after the orbit's end
+  T3.facT = Object.fromEntries(Object.entries(facRel).map(([id, w]) => [id, [S + 74.0 + P + w[0], S + 74.0 + P + w[1]]]));
+  ch(74.0 + P, '20', 'FACADE', 'mineral render on the insulation  ·  cedar boarding on battens  ·  four elevations');
+  seg(74.2 + P, () => {
+    cmd('-MATERIALATTACH', { dur: 0.6, dw: 0.1 });
+    ask('Enter material name:'); typeText('RENDER-MINERAL-WHITE', 0.5); enter(0.08);
+    ask('Enter material name:'); typeText('CEDAR-BOARD-140', 0.4); enter(0.08);
+    info('4 elevations  ·  plinth 300 in dark render  ·  ' + Object.values(FACADE).reduce((n, a) => n + a.length, 0) + ' cedar panels, the rest render');
+    endCmd();
+  });
+  for (const [id, nm] of [['N', 'NORTH'], ['W', 'WEST'], ['S', 'SOUTH'], ['E', 'EAST']]) seg(74.0 + P + facRel[id][0] + 0.3, () => info(nm.padEnd(6) + FACADE[id].length + ' cedar panel' + (FACADE[id].length > 1 ? 's' : '') + ', ' + (FACADE[id].reduce((s, p) => s + p[1] - p[0], 0) / 1000).toFixed(1) + ' m of boarding'));
   T3.cutT = { down: [S + 43.1, S + 44.6], up: [S + 66.2 + P, S + 67.8 + P] };       // the section plane lowers after SECTIONPLANE, lifts after ERASE
 
   // ---------------------------------------------------------------- the camera
@@ -1948,13 +1971,18 @@ function film3D() {
   key(66.2 + P, 6.0, 0.6, -4.5, 436, 54, 15.5, 38);
   key(70.0 + P, 6.0, 0.6, -4.5, 476, 42, 16.5, 38);
   key(74.0 + P, 6.0, 0.6, -4.5, 516, 36, 17.5, 38);
+  // the facade lap: once round the building (360 deg, so it ends on the pose it began with), lower and closer while the elevations are worked on
+  key(74.0 + P + FAC * 0.25, 6.0, 0.9, -4.5, 606, 29, 15.0, 38);
+  key(74.0 + P + FAC * 0.50, 6.0, 0.9, -4.5, 696, 26, 14.5, 38);
+  key(74.0 + P + FAC * 0.75, 6.0, 0.9, -4.5, 786, 29, 15.0, 38);
+  key(74.0 + P + FAC, 6.0, 0.6, -4.5, 876, 36, 17.5, 38);
   T3.cam = K.sort((a, b) => a[0] - b[0]);
 
   // ---------------------------------------------------------------- the tour: a first-person walk through the finished apartment
   // The roof comes down as the camera leaves the orbit, the camera drops to the front door D01, the door swings open and the walk begins. A key is an eye
   // (plan mm, optionally a height in m), a point to look at (or a heading) and a lens; the first key IS the orbit's last pose, so the hand-over is a standing one.
   // The living room cannot be crossed (its furniture leaves gaps of 175 to 340 mm), so the walk enters it from the corridor end through D02 and shows it from there.
-  const Z = S + 74.0 + P, EYE = FLOOR_TOP + 1.6;
+  const Z = S + 74.0 + P + FAC, EYE = FLOOR_TOP + 1.6;
   T3.tourT = { roof: [Z + 0.3, Z + 2.7], shut: [Z + 1.2, Z + 2.2], open: [Z + 6.6, Z + 8.0], lights: [Z + 0.8, Z + 2.6] };
   const WK = [], oL = K[K.length - 1][1], oP = orbitPose(oL);
   let hdPrev = 90 + oL.az;                                                   // an orbit with azimuth az looks along the plan heading 90 + az (0 = east, 90 = north)
@@ -2020,8 +2048,8 @@ function film3D() {
   T3.tags = [];
   // (a tag fades for 0.5 s at each end: the camera must be looking into its room for the 0.5 s .. t1 - 0.5 s in between; tests/tour.test.mjs checks it)
   tag('CORRIDOR', 8.8, 10.9); tag('STUDY', 11.3, 13.7); tag('KITCHEN', 17.0, 26.6); tag('BED 2', 31.2, 33.3); tag('BATH', 33.9, 35.7); tag('BED 1', 36.9, 38.7); tag('LIVING', 43.0, 51.5);
-  ch(73.4 + P, '20', 'WALK-THROUGH', '3DWALK  ·  eye height 1.6 m  ·  in through the front door, room by room');
-  seg(73.4 + P, () => { cmd('3DWALK', { dur: 0.45, dw: 0.1 }); info('Press ESC or ENTER to exit, or right-click to display shortcut-menu.'); info('Walk settings:  eye height 1600  ·  step 0.5 m/s  ·  lens 64°'); });
+  ch(73.4 + P + FAC, '21', 'WALK-THROUGH', '3DWALK  ·  eye height 1.6 m  ·  in through the front door, room by room');
+  seg(73.4 + P + FAC, () => { cmd('3DWALK', { dur: 0.45, dw: 0.1 }); info('Press ESC or ENTER to exit, or right-click to display shortcut-menu.'); info('Walk settings:  eye height 1600  ·  step 0.5 m/s  ·  lens 64°'); });
   mark('3D film');
 }
 
@@ -2121,6 +2149,86 @@ void paintWall(inout vec3 col, inout float rough){
 }`;
 })();
 
+// ---- the facade, on the insulation (SURF.insul calls facadeCoat). One progress value per elevation (FACADEU, in FACADE_IDS order, set from T3.facT by the build):
+//      the render rises from the plinth, then the cedar panels are boarded from one edge to the other. Faces that are not on the outer plane (the reveals of the openings,
+//      the sills and heads) are rendered too, white; the cedar stops at the face.
+const FACADEU = { value: new Float32Array(4) };
+const FACADE_GLSL = (() => {
+  const pan = FACADE_IDS.flatMap((id) => [0, 1, 2].map((i) => { const p = FACADE[id][i]; return p ? `vec2(${(p[0] / 1000).toFixed(3)}, ${(p[1] / 1000).toFixed(3)})` : 'vec2(0., 0.)'; }));
+  const m = (v) => (v / 1000).toFixed(3);
+  return `
+uniform float uFacade[4];
+const vec2 FC_PAN[12] = vec2[12](${pan.join(', ')});
+// the elevation a point belongs to: 0 S, 1 E, 2 N, 3 W; outer = it is on the outer plane of that elevation, looking out
+int facadeFace(vec3 p, vec3 n, out bool outer){
+  outer = true;
+  if (n.z > .7 && p.z > ${m(-INSO[1] - 6)}) return 0;
+  if (n.x > .7 && p.x > ${m(INSO[2] - 6)}) return 1;
+  if (n.z < -.7 && p.z < ${m(-INSO[3] + 6)}) return 2;
+  if (n.x < -.7 && p.x < ${m(INSO[0] + 6)}) return 3;
+  outer = false;
+  vec3 q = p - n * .004;
+  if (-q.z < ${m(OUT[1])}) return 0;
+  if (-q.z > ${m(OUT[3])}) return 2;
+  if (q.x > ${m(OUT[2])}) return 1;
+  if (q.x < ${m(OUT[0])}) return 3;
+  return -1;
+}
+void facadeCoat(inout vec3 col, inout float rough){
+  bool outer; int f = facadeFace(vWP, vWN, outer);
+  if (f < 0) return;
+  float fp = uFacade[f];
+  if (fp <= 0.) return;
+  float rp = clamp(fp / .55, 0., 1.), cp = clamp((fp - .4) / .6, 0., 1.);
+  float along = (f == 0 || f == 2) ? vWP.x : -vWP.z;
+  vec2 wuv = vec2(along, vWP.y), aa = fwidth(wuv) * .75 + 1e-5;
+  float lodN = 1. - smoothstep(.006, .016, max(aa.x, aa.y));
+  float y = vWP.y + .03 * sin(along * 7. + vWP.y * 3.) + .015 * sin(along * 19. - vWP.y * 13.);
+  float hr = rp >= 1. ? 9. : rp * 3.3;
+  float rendered = 1. - smoothstep(hr - .03, hr + .03, y);
+  float wet = hr > 8. ? 0. : smoothstep(hr - .12, hr - .02, y) * (1. - smoothstep(hr - .02, hr + .03, y));
+  bool isTop = abs(vWN.y) > .7;
+  // mineral render: warm white, a little mottled, and a dark plinth with a drip bead at 300
+  vec3 rend = sc(vec3(.90, .885, .835)) * (1. + .03 * lodN * (vn(wuv * 31.) - .5) + .035 * (vn(wuv * 2.3) - .5));
+  if (outer) {
+    float pl = 1. - smoothstep(.296, .304, vWP.y);
+    vec3 plinth = sc(vec3(.26, .27, .285)) * (1. + .05 * lodN * (vn(wuv * 47.) - .5));
+    rend = mix(rend, plinth, pl);
+    rend *= 1. - .55 * lineCov(abs(vWP.y - .305), .003, aa.y);
+  }
+  float rr = .93;
+  vec3 c = rend;
+  // cedar: vertical boards 140 wide, tongue and groove, in panels, boarded from the first edge to the last
+  if (outer && vWP.y > .3 && !isTop) {
+    float cedar = 0., edge = 9.;
+    for (int i = 0; i < 3; i++) {
+      vec2 pn = FC_PAN[f * 3 + i];
+      if (pn.y <= pn.x) continue;
+      float cpi = clamp((cp - .25 * float(i)) / .5, 0., 1.);
+      float fx = cpi >= 1. ? 99. : pn.x + cpi * (pn.y - pn.x);
+      float inP = step(pn.x, along) * step(along, pn.y);
+      edge = min(edge, inP > 0. ? 9. : min(abs(along - pn.x), abs(along - pn.y)));
+      float on = inP * (1. - smoothstep(fx - .012, fx + .012, along));
+      if (on <= 0.) continue;
+      float nb = max(1., floor((pn.y - pn.x) / .14 + .5)), bw = (pn.y - pn.x) / nb;
+      float loc = along - pn.x, id = floor(loc / bw), fb = loc - id * bw;
+      float groove = lineCov(min(fb, bw - fb), .0032, aa.x);
+      float lodG = 1. - smoothstep(.004, .012, aa.x);
+      vec3 w = sc(vec3(.64, .445, .27)) * (.8 + .36 * h21(vec2(id, float(f) + 7. * float(i))));
+      w *= 1. + .2 * lodG * (vn(vec2(loc * 95., vWP.y * 2.6)) - .5) + .1 * (vn(vec2(id * 3.1, vWP.y * .8)) - .5);
+      w *= 1. - .62 * groove;
+      w *= 1. - .35 * (1. - smoothstep(0., .012, min(loc, pn.y - along)));            // the board ends of a panel sit in a recess
+      c = mix(c, w, on); cedar = max(cedar, on);
+    }
+    c *= 1. - .22 * (1. - smoothstep(0., .03, edge)) * (1. - cedar);                  // the render next to a panel lies in its shadow
+    rr = mix(rr, .66, cedar);
+  }
+  c *= 1. - .1 * wet;
+  col = mix(col, c, rendered);
+  rough = mix(rough, mix(rr, .5, wet * .5), rendered);
+}`;
+})();
+
 // ---- procedural surfaces (GLSL, world-space so a wall that grows keeps its coursing).
 //      Every line and dot is filtered by the pixel footprint (fwidth), so nothing shimmers in motion or at a distance.
 const GLSL_LIB = `
@@ -2135,12 +2243,12 @@ float lineCov(float d, float hw, float aa){ return clamp((hw + aa - d) / (2. * a
 // cap: a flat colour (sRGB, "r,g,b") for the face a section cut leaves, so a cut solid reads as a solid (see CUTU)
 function patchMat(mat, key, body, cap) {
   mat.onBeforeCompile = (sh) => {
-    sh.uniforms.uCut = CUTU; sh.uniforms.uPaint = PAINTU;
+    sh.uniforms.uCut = CUTU; sh.uniforms.uPaint = PAINTU; sh.uniforms.uFacade = FACADEU;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;')
       .replace('#include <project_vertex>', '#include <project_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz; vWN = normalize(mat3(modelMatrix) * objectNormal);');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;\nuniform float uCut;\n' + GLSL_LIB + PAINT_GLSL)
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWP; varying vec3 vWN;\nuniform float uCut;\n' + GLSL_LIB + PAINT_GLSL + FACADE_GLSL)
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n{\n' + body + '\n}');
     if (cap) sh.fragmentShader = sh.fragmentShader.replace('#include <dithering_fragment>', 'if (vWN.y > .9 && abs(vWP.y - uCut) < .004) gl_FragColor = vec4(' + cap + ', 1.0);\n#include <dithering_fragment>');
   };
@@ -2189,7 +2297,8 @@ const SURF = {
       c = mix(c, sc(vec3(.9, .91, .92)), dowel * .9);
       diffuseColor.rgb = c * (1. - .5 * seam);
       roughnessFactor = .98;
-    }`,
+    }
+    facadeCoat(diffuseColor.rgb, roughnessFactor);`,
   concrete: `
     vec2 uv = wallUV(vWP, vWN);
     float aaB = fwidth(uv.x) / .15 + 1e-4, board = fract(uv.x / .15);
@@ -2586,6 +2695,9 @@ function build3Construction() {
 
   // ---- 7. plaster, then paint: one progress value per room, read by the block shader (PAINT_GLSL)
   G3.anims.push((t) => { ROOMS.forEach((rm, i) => { const w = T3.paintT[rm.id]; PAINTU.value[i] = prog3(t, w[0], w[1]); }); });
+
+  // ---- 7b. the facade: one progress value per elevation, read by the insulation shader (FACADE_GLSL)
+  G3.anims.push((t) => { FACADE_IDS.forEach((id, i) => { const w = T3.facT[id]; FACADEU.value[i] = prog3(t, w[0], w[1]); }); });
 
   // ---- 8. the roof: one slab over the whole footprint, set down on the walls as the tour begins. Its underside is the white ceiling of every room.
   {
