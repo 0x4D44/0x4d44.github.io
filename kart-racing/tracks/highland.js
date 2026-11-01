@@ -5,7 +5,7 @@ import { tartanCanvas, TARTAN_RED, TARTAN_BLUE, TARTAN_GREEN, toTexture } from "
 import { buildNature, silageBales } from "./highland-nature.js";
 import { buildStructs } from "./highland-structs.js";
 import { buildAds } from "./highland-ads.js";
-import { buildPiper } from "./highland-piper.js";
+import { buildPiper, buildGiantPiper } from "./highland-piper.js";
 
 const theme = {
   shoulder: 4.0, kerb: [0xb3202a, 0x16365f], wallBase: "#e6e1d2", wallAccent: "#9b1c24", wallText: ["HIGHLAND FLING", "APEX KARTS", "WEE DRAM", "MIND THE COOS"],
@@ -222,6 +222,7 @@ export default {
     buildStructs(H);
     buildAds(H);
     buildPiper(H);
+    buildGiantPiper(H);
 
     // ---- recolour the generic start-area flags in Scottish colours
     {
