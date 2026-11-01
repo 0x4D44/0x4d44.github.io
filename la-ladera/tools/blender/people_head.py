@@ -73,20 +73,32 @@ def _neck_rings():
 def _taper_neck(vertices, P, hy0):
     """Hide the source neck stump inside the existing procedural neck column.
 
-    Only the cut rim may move above the chin plane; this is still neck tissue,
-    not the jaw. Interior rings at/above the chin remain exact (the chin itself
-    is in ring two). Heights and all topology are unchanged.
+    The old-age morphs lift the back of the open cut above the chin. Pulling
+    that rim inward without lowering it leaves diagonal jaw-edge wedges. Keep
+    the complete cut below the chin and inside the neck, then ease the two
+    adjacent rows into it. Those rows also contain the back of the neck; they
+    must not form a second, flared collar outside the procedural column. A
+    front-facing mask preserves the chin and visible lower-jaw silhouette.
     """
     k = P["k"]
     rx, ry, cy = 0.042 * k * 0.97, 0.040 * k * 0.97, hy0 - 0.015 * k
     for i, ring in _neck_rings():
-        if ring and vertices[i, 2] >= P["chin"] - 1e-9:
-            continue
+        if ring == 0:
+            vertices[i, 2] = min(vertices[i, 2], P["chin"] - 0.045 * P["hh"])
         x, y = vertices[i, 0], vertices[i, 1] - cy
         radius = math.hypot(x / rx, y / ry)
         if radius <= 1.0:
             continue
-        blend = (1.0, 0.55, 0.20)[ring]
+        blend = 1.0
+        if ring:
+            # Old morphs retain a broad neck stump behind the jaw even when
+            # their cut rim is hidden. Contract that tissue continuously into
+            # the existing neck, but never pull the prominent chin backwards.
+            height = (vertices[i, 2] - P["chin"]) / P["hh"]
+            front = (vertices[i, 1] - hy0) / P["hh"]
+            t = min(1.0, max(0.0, (0.10 - height) / 0.10))
+            back = min(1.0, max(0.0, (0.27 - front) / 0.19))
+            blend = (0.90, 0.65)[ring - 1] * t * t * (3.0 - 2.0 * t) * back * back * (3.0 - 2.0 * back)
         scale = 1.0 - blend * (1.0 - 1.0 / radius)
         vertices[i, 0] = x * scale
         vertices[i, 1] = cy + y * scale
@@ -206,8 +218,15 @@ def _surface(vertices, faces, P, hy0):
             "row_at": row_at, "skull_y": front}
 
 
-def _decimated_shell(vertices, faces, lip_faces, target):
-    """Apply Blender's geometric decimator before adding any slot/UV data."""
+def _decimated_shell(vertices, faces, lip_faces, target, P, hy0):
+    """Reduce the shell without collapsing the sculpted vermilion or neck cut.
+
+    Material labels alone do not preserve a lip outline during a collapse: a
+    labelled polygon can stretch across the mouth and become a flat pink
+    wedge. Keep that small source patch exact, and favour jaw silhouette
+    samples over the broad, almost planar scalp. This still budgets the
+    evaluated result, before any UV, recolour or skinning data is attached.
+    """
     ids = sorted({i for f in faces for i in f})
     remap = {old: new for new, old in enumerate(ids)}
     mesh = bpy.data.meshes.new("head_source_temp")
@@ -219,6 +238,19 @@ def _decimated_shell(vertices, faces, lip_faces, target):
     bpy.context.scene.collection.objects.link(obj)
     modifier = obj.modifiers.new("head_budget", "DECIMATE")
     modifier.use_collapse_triangulate = True
+    preserve = {i for fi in lip_faces for i in faces[fi]}
+    preserve.update(i for i, ring in _neck_rings() if ring == 0)
+    priority = obj.vertex_groups.new(name="head_detail")
+    priority.add(list(range(len(ids))), 1.0, 'REPLACE')
+    jaw = [remap[i] for i in ids if i not in preserve
+           and P["chin"] - 0.02 * P["hh"] < vertices[i, 2] < P["chin"] + 0.32 * P["hh"]
+           and abs(vertices[i, 0]) > 0.16 * P["hh"]
+           and vertices[i, 1] > hy0 - 0.22 * P["hh"]]
+    if jaw:
+        priority.add(jaw, 0.15, 'REPLACE')
+    priority.remove([remap[i] for i in preserve if i in remap])
+    modifier.vertex_group = priority.name
+    modifier.vertex_group_factor = 1.0
     original = sum(len(f) - 2 for f in faces)
     modifier.ratio = min(1.0, target / original)
     try:
@@ -243,10 +275,60 @@ def _decimated_shell(vertices, faces, lip_faces, target):
         bpy.data.meshes.remove(mesh)
 
 
-def append_head(pb, P, pd, skin, *, hy0=0.0, target_tris=1600, brow_color=None):
+def _beard_tints(points, polys, P, pd, skin, hy0, far_lod):
+    """Continuous facial-hair pigment on the anatomical skin vertices.
+
+    Classifying whole triangles produces a sawtooth beard even on a correct
+    jaw. The shared corner-colour bake interpolates these vertex tints instead.
+    No overlaid shell, material border or disconnected geometry is introduced;
+    the skin's existing atlas cell, recolour slot and protected topology stay
+    intact. The retained lip patch and a narrow surrounding margin stay bare.
+    """
+    if not pd.get("beard"):
+        return {}
+    lips = {i for indices, material in polys if material for i in indices}
+    lip_points = np.asarray([points[i] for i in sorted(lips)])
+    skin_rgb = tuple(int(skin[i:i+2], 16) for i in (1, 3, 5))
+    hair = pd.get("hair_hex", "#292019")
+    hair_rgb = tuple(int(hair[i:i+2], 16) for i in (1, 3, 5))
+    hh = P["hh"]
+
+    def smooth(lo, hi, x):
+        t = max(0.0, min(1.0, (x - lo) / (hi - lo)))
+        return t * t * (3.0 - 2.0 * t)
+
+    tints = {}
+    for i, point in enumerate(points):
+        if i in lips:
+            continue
+        x, y, z = point
+        height = (z - P["chin"]) / hh
+        front = (y - hy0) / hh
+        width = min(1.0, abs(x) / (0.25 * hh))
+        cheek_line = 0.20 + 0.24 * width ** 1.4
+        feather = 0.085 if far_lod else 0.065
+        jaw = (smooth(-0.035, 0.055, height)
+               * (1.0 - smooth(cheek_line - feather, cheek_line + feather, height))
+               * smooth(0.015, 0.18, front))
+        moustache = (smooth(0.285, 0.325, height)
+                    * (1.0 - smooth(0.350, 0.390, height))
+                    * (1.0 - smooth(0.095, 0.160, abs(x) / hh))
+                    * smooth(0.25, 0.38, front))
+        coverage = 1.0 - (1.0 - jaw) * (1.0 - moustache)
+        distance = float(np.linalg.norm(lip_points - np.asarray(point), axis=1).min()) / hh
+        coverage *= 0.93 * smooth(0.005, 0.055, distance)
+        if coverage <= 0.001:
+            continue
+        tints[i] = "#%02x%02x%02x" % tuple(round(a + (b - a) * coverage) for a, b in zip(skin_rgb, hair_rgb))
+    return tints
+
+
+def append_head(pb, P, pd, skin, *, hy0=0.0, target_tris=1600, brow_color=None, far_lod=False):
     """Append an anatomical head, two eyes and brows; return hair-fitting helpers.
 
-    PB needs only V(co, 'head') and F(vertices, hex, smooth, fab_=..., uv=...).
+    PB provides V(co, 'head') and F(vertices, hex, smooth, fab_=..., uv=...).
+    Bearded heads also use its insertion-order vpart list and vertex_tints map
+    to pass smooth pigmentation to the shared corner-colour bake.
     All skin including sculpted lips uses the existing skin fabric, so a painted
     face tile cannot add a second set of eyes. Eyeballs use the existing eye tile.
     The requested triangle cap includes eyes and brows, not hair or hats.
@@ -260,13 +342,33 @@ def append_head(pb, P, pd, skin, *, hy0=0.0, target_tris=1600, brow_color=None):
     surface = _surface(fitted, faces, P, hy0)
     eye_tris = sum(len(f) - 2 for eye in data["eyes"] for f in eye)
     brow_tris = 24
-    points, polys = _decimated_shell(fitted, faces, set(data["lipFaces"]), target_tris - eye_tris - brow_tris)
+    points, polys = _decimated_shell(fitted, faces, set(data["lipFaces"]), target_tris - eye_tris - brow_tris, P, hy0)
+    vertex_base = len(pb.vpart) if pd.get("beard") else 0
     verts = [pb.V(p, "head") for p in points]
+    if pd.get("beard"):
+        pb.vertex_tints.update({vertex_base + i: colour for i, colour in
+                               _beard_tints(points, polys, P, pd, skin, hy0, far_lod).items()})
     lip = pd.get("lip_hex") or (pd.get("lips") if not P["child"] else None) or "#%02x%02x%02x" % tuple(
         max(0, min(255, round(int(skin[i:i+2], 16) * q)))
         for i, q in ((1, 0.87), (3, 0.72), (5, 0.76)))
+    # lipFaces comes from a volume-morph influence mask, which also includes
+    # skin below the lower lip. It is suitable for protecting the sculpt, not
+    # for painting every affected face pink. HM08 vertex 496 is the central
+    # lower-vermilion ridge; follow that morphed landmark and soften the colour
+    # into the surrounding skin, with a narrower outline at the corners.
+    lower_lip = fitted[data["sourceIndices"].index(496), 2]
+    lip_rgb = tuple(int(lip[i:i+2], 16) for i in (1, 3, 5))
+    skin_rgb = tuple(int(skin[i:i+2], 16) for i in (1, 3, 5))
     for indices, material in polys:
-        pb.F([verts[i] for i in indices], lip if material else skin, True, fab_="skin")
+        center = np.mean([points[i] for i in indices], axis=0)
+        colour = skin
+        if material:
+            corner = min(1.0, abs(center[0]) / (0.085 * P["hh"]))
+            edge = lower_lip - (0.010 - 0.008 * corner * corner) * P["hh"]
+            tint = min(1.0, max(0.0, (center[2] - edge) / (0.016 * P["hh"])))
+            tint = tint * tint * (3.0 - 2.0 * tint)
+            colour = "#%02x%02x%02x" % tuple(round(a + (b - a) * tint) for a, b in zip(skin_rgb, lip_rgb))
+        pb.F([verts[i] for i in indices], colour, True, fab_="skin")
     eye_centers = []
     for eye in data["eyes"]:
         ids = sorted({i for f in eye for i in f})

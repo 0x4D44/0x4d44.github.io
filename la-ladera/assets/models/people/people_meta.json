@@ -100,22 +100,22 @@
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.15,
    "runSpeedMps": 3.61,
-   "tris": 6181,
+   "tris": 7781,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#3a3f4a",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#e9e4d6",
+     "hex": "#d8c7a5",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#aa7857",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#3e4b56",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -180,17 +180,17 @@
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.14,
    "runSpeedMps": 3.6,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
+    "top": {
+     "id": 2,
+     "hex": "#ba8a61",
+     "gain": 1.25
+    },
     "bottom": {
      "id": 3,
      "hex": "#536878",
      "gain": 1.35
-    },
-    "top": {
-     "id": 2,
-     "hex": "#bf9474",
-     "gain": 1.25
     },
     "skin": {
      "id": 8,
@@ -264,16 +264,16 @@
    "walkSpeedMps": 1.23,
    "walkFastSpeedMps": 1.98,
    "runSpeedMps": 3.33,
-   "tris": 6181,
+   "tris": 7114,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#6fae8f",
+     "hex": "#6b907c",
      "gain": 1.5
     },
     "bottom": {
      "id": 3,
-     "hex": "#3a3f4a",
+     "hex": "#364d51",
      "gain": 1.25
     },
     "skin": {
@@ -343,22 +343,22 @@
    "walkSpeedMps": 1.21,
    "walkFastSpeedMps": 1.96,
    "runSpeedMps": 3.29,
-   "tris": 6181,
+   "tris": 7718,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#2b2b3a",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#e08aa0",
+     "hex": "#ba7480",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#bd8c69",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#363c49",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -421,16 +421,16 @@
    "walkSpeedMps": 1.17,
    "walkFastSpeedMps": 1.88,
    "runSpeedMps": 3.16,
-   "tris": 6181,
+   "tris": 6732,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#8f5fa8",
+     "hex": "#786b83",
      "gain": 1.25
     },
     "inner": {
      "id": 7,
-     "hex": "#e8e0f0",
+     "hex": "#d8cbbd",
      "gain": 1.25
     },
     "skin": {
@@ -499,16 +499,16 @@
    "walkSpeedMps": 1.27,
    "walkFastSpeedMps": 2.04,
    "runSpeedMps": 3.43,
-   "tris": 6181,
+   "tris": 7720,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#6e737d",
+     "hex": "#707a80",
      "gain": 1.25
     },
     "inner": {
      "id": 7,
-     "hex": "#d9c9af",
+     "hex": "#d6c9b5",
      "gain": 1.25
     },
     "skin": {
@@ -523,7 +523,7 @@
     },
     "bottom": {
      "id": 3,
-     "hex": "#4a4d52",
+     "hex": "#4c5155",
      "gain": 1.25
     },
     "shoes": {
@@ -587,22 +587,22 @@
    "walkSpeedMps": 0.92,
    "walkFastSpeedMps": 1.48,
    "runSpeedMps": 2.48,
-   "tris": 6181,
+   "tris": 7202,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#2a3d6b",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#f0d36a",
+     "hex": "#d9b85b",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#bd8b67",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#394c69",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -665,11 +665,11 @@
    "walkSpeedMps": 0.86,
    "walkFastSpeedMps": 1.38,
    "runSpeedMps": 2.33,
-   "tris": 6181,
+   "tris": 6796,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#3a7ca5",
+     "hex": "#588b96",
      "gain": 1.25
     },
     "skin": {
@@ -738,22 +738,22 @@
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.15,
    "runSpeedMps": 3.61,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#2f3e57",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#1b3f9a",
+     "hex": "#36516b",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#895c43",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#3c475c",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -821,22 +821,22 @@
    "walkSpeedMps": 1.23,
    "walkFastSpeedMps": 1.98,
    "runSpeedMps": 3.33,
-   "tris": 6182,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#2b2b3a",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#e07aa0",
+     "hex": "#bb7d86",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#b78160",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#414650",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -904,22 +904,22 @@
    "walkSpeedMps": 1.4,
    "walkFastSpeedMps": 2.25,
    "runSpeedMps": 3.79,
-   "tris": 6181,
+   "tris": 7781,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#2f3e57",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#d9a441",
+     "hex": "#c99b50",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#694735",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#3e4c60",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -982,11 +982,11 @@
    "walkSpeedMps": 1.28,
    "walkFastSpeedMps": 2.06,
    "runSpeedMps": 3.46,
-   "tris": 6182,
+   "tris": 7572,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#c8573c",
+     "hex": "#b56f55",
      "gain": 1.25
     },
     "skin": {
@@ -1064,21 +1064,16 @@
    "walkSpeedMps": 1.33,
    "walkFastSpeedMps": 2.14,
    "runSpeedMps": 3.6,
-   "tris": 6181,
+   "tris": 7744,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#c9c4b6",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#5a86a8",
+     "hex": "#688797",
      "gain": 1.25
     },
     "accessory": {
      "id": 6,
-     "hex": "#efe9d8",
+     "hex": "#e5dfce",
      "gain": 1.25
     },
     "skin": {
@@ -1089,6 +1084,11 @@
     "hat": {
      "id": 5,
      "hex": "#f6f4ee",
+     "gain": 1.25
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#b9b1a0",
      "gain": 1.25
     },
     "shoes": {
@@ -1158,21 +1158,21 @@
    "walkSpeedMps": 1.21,
    "walkFastSpeedMps": 1.96,
    "runSpeedMps": 3.29,
-   "tris": 6182,
+   "tris": 7554,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#d4725a",
+     "hex": "#ba7c65",
      "gain": 1.25
     },
     "bottom": {
      "id": 3,
-     "hex": "#4a5a7a",
+     "hex": "#526477",
      "gain": 1.25
     },
     "accessory": {
      "id": 6,
-     "hex": "#e9e1c8",
+     "hex": "#dfd4b9",
      "gain": 1.25
     },
     "skin": {
@@ -1244,27 +1244,32 @@
    "walkSpeedMps": 1.35,
    "walkFastSpeedMps": 2.17,
    "runSpeedMps": 3.65,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#6a7078",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#f2f2ee",
+     "hex": "#deddd4",
      "gain": 1.25
     },
     "accessory": {
      "id": 6,
-     "hex": "#c9ced6",
+     "hex": "#bdc6cb",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#c5997b",
      "gain": 1.0
+    },
+    "hat": {
+     "id": 5,
+     "hex": "#f2f2ee",
+     "gain": 1.25
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#68717a",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -1331,22 +1336,22 @@
    "walkSpeedMps": 1.28,
    "walkFastSpeedMps": 2.06,
    "runSpeedMps": 3.46,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#5a6c8a",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#c8c0d8",
+     "hex": "#ac9caf",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#d0a48a",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#61758d",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -1414,22 +1419,22 @@
    "walkSpeedMps": 1.36,
    "walkFastSpeedMps": 2.19,
    "runSpeedMps": 3.69,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#596c7a",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#b5afa1",
+     "hex": "#b8ae96",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#ad7d5c",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#596c7a",
+     "gain": 1.35
     },
     "hat": {
      "id": 5,
@@ -1501,16 +1506,16 @@
    "walkSpeedMps": 1.25,
    "walkFastSpeedMps": 2.01,
    "runSpeedMps": 3.37,
-   "tris": 6181,
+   "tris": 7781,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#f4f4f2",
+     "hex": "#e5e4dc",
      "gain": 1.25
     },
     "inner": {
      "id": 7,
-     "hex": "#5aa6a6",
+     "hex": "#6f9b98",
      "gain": 1.25
     },
     "skin": {
@@ -1520,7 +1525,7 @@
     },
     "bottom": {
      "id": 3,
-     "hex": "#8a96a8",
+     "hex": "#7d8c98",
      "gain": 1.25
     },
     "shoes": {
@@ -1587,22 +1592,22 @@
    "walkSpeedMps": 1.26,
    "walkFastSpeedMps": 2.03,
    "runSpeedMps": 3.42,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#6a6a74",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#a77fc0",
+     "hex": "#9a829f",
      "gain": 1.5
     },
     "skin": {
      "id": 8,
      "hex": "#cc9f82",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#62656c",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -1673,21 +1678,16 @@
    "walkSpeedMps": 1.31,
    "walkFastSpeedMps": 2.12,
    "runSpeedMps": 3.56,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#5a7aa8",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#8a8a92",
+     "hex": "#8b8d87",
      "gain": 1.25
     },
     "accessory": {
      "id": 6,
-     "hex": "#f08a1a",
+     "hex": "#df8e36",
      "gain": 1.15
     },
     "skin": {
@@ -1699,6 +1699,11 @@
      "id": 5,
      "hex": "#d8dce0",
      "gain": 1.1
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#5c7292",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -1763,16 +1768,11 @@
    "walkSpeedMps": 1.3,
    "walkFastSpeedMps": 2.09,
    "runSpeedMps": 3.52,
-   "tris": 6182,
+   "tris": 7781,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#8a7a5e",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#f0e8d0",
+     "hex": "#bac6b2",
      "gain": 1.25
     },
     "skin": {
@@ -1783,6 +1783,11 @@
     "hat": {
      "id": 5,
      "hex": "#d6c08a",
+     "gain": 1.25
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#8c7960",
      "gain": 1.25
     },
     "shoes": {
@@ -1846,16 +1851,11 @@
    "walkSpeedMps": 1.25,
    "walkFastSpeedMps": 2.02,
    "runSpeedMps": 3.39,
-   "tris": 6181,
+   "tris": 7781,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#6a6d72",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#d8d2c2",
+     "hex": "#c9c0a9",
      "gain": 1.25
     },
     "skin": {
@@ -1865,12 +1865,17 @@
     },
     "accessory": {
      "id": 6,
-     "hex": "#8a5a34",
+     "hex": "#8b684a",
      "gain": 1.25
     },
     "hat": {
      "id": 5,
      "hex": "#cdb88a",
+     "gain": 1.25
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#666b6f",
      "gain": 1.25
     },
     "shoes": {
@@ -1925,7 +1930,7 @@
    ],
    "skin": 3,
    "outfit": "dress",
-   "heightM": 1.455,
+   "heightM": 1.454,
    "shoulderWidthM": 0.336,
    "eyeHeightM": 1.364,
    "seatRootDropM": 0.197,
@@ -1936,16 +1941,16 @@
    "walkSpeedMps": 1.13,
    "walkFastSpeedMps": 1.83,
    "runSpeedMps": 3.07,
-   "tris": 6181,
+   "tris": 6840,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#69616e",
+     "hex": "#716875",
      "gain": 1.25
     },
     "inner": {
      "id": 7,
-     "hex": "#d8d0bf",
+     "hex": "#d5ccbb",
      "gain": 1.25
     },
     "skin": {
@@ -2026,22 +2031,22 @@
    "walkSpeedMps": 0.93,
    "walkFastSpeedMps": 1.5,
    "runSpeedMps": 2.52,
-   "tris": 6182,
+   "tris": 7781,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#6a82b8",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#f2f2f2",
+     "hex": "#e4e4da",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#c99c7c",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#647b9b",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -2111,11 +2116,11 @@
    "walkSpeedMps": 0.87,
    "walkFastSpeedMps": 1.41,
    "runSpeedMps": 2.37,
-   "tris": 6181,
+   "tris": 7637,
    "slots": {
     "top": {
      "id": 2,
-     "hex": "#f2f2f2",
+     "hex": "#e5e4d8",
      "gain": 1.25
     },
     "skin": {
@@ -2125,7 +2130,7 @@
     },
     "bottom": {
      "id": 3,
-     "hex": "#6a82b8",
+     "hex": "#647b9b",
      "gain": 1.25
     },
     "shoes": {
@@ -2195,22 +2200,22 @@
    "walkSpeedMps": 1.39,
    "walkFastSpeedMps": 2.24,
    "runSpeedMps": 3.76,
-   "tris": 6182,
+   "tris": 7752,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#3a4a66",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#2f7d5a",
+     "hex": "#4b826d",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#a97654",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#43546c",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -2274,22 +2279,22 @@
    "walkSpeedMps": 1.2,
    "walkFastSpeedMps": 1.93,
    "runSpeedMps": 3.25,
-   "tris": 6182,
+   "tris": 7654,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#4a5a7a",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#8f9a5b",
+     "hex": "#92936b",
      "gain": 1.5
     },
     "skin": {
      "id": 8,
      "hex": "#b17e5e",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#4f6379",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -2352,22 +2357,22 @@
    "walkSpeedMps": 1.32,
    "walkFastSpeedMps": 2.12,
    "runSpeedMps": 3.57,
-   "tris": 6181,
+   "tris": 7665,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#5a5a64",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#9bb0c8",
+     "hex": "#9bafb9",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#c59777",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#585962",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,
@@ -2431,22 +2436,22 @@
    "walkSpeedMps": 1.27,
    "walkFastSpeedMps": 2.04,
    "runSpeedMps": 3.44,
-   "tris": 6181,
+   "tris": 7782,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#3d5b86",
-     "gain": 1.35
-    },
     "top": {
      "id": 2,
-     "hex": "#f2c14e",
+     "hex": "#d1ae64",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#946346",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#4f6c8a",
+     "gain": 1.35
     },
     "shoes": {
      "id": 4,
@@ -2514,22 +2519,22 @@
    "walkSpeedMps": 1.36,
    "walkFastSpeedMps": 2.19,
    "runSpeedMps": 3.68,
-   "tris": 6182,
+   "tris": 7042,
    "slots": {
-    "bottom": {
-     "id": 3,
-     "hex": "#1b1b22",
-     "gain": 1.25
-    },
     "top": {
      "id": 2,
-     "hex": "#c0392b",
+     "hex": "#ae6355",
      "gain": 1.25
     },
     "skin": {
      "id": 8,
      "hex": "#82553c",
      "gain": 1.0
+    },
+    "bottom": {
+     "id": 3,
+     "hex": "#353a43",
+     "gain": 1.25
     },
     "shoes": {
      "id": 4,

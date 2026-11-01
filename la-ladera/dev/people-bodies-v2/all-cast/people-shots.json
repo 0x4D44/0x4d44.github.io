@@ -1,0 +1,1930 @@
+{
+  "baseline": false,
+  "checkedAt": "2026-11-01T06:24:22.497Z",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "assets": {
+    "baseline": false,
+    "expectedIds": [
+      "m_tendero",
+      "m_obrero",
+      "w_tendera",
+      "w_ama",
+      "w_elder",
+      "m_elder",
+      "b_boy",
+      "g_girl",
+      "t_boy",
+      "t_girl",
+      "m_afro",
+      "w_afro",
+      "m_panadero",
+      "w_cocinera",
+      "m_carnicero",
+      "w_peluquera",
+      "m_mecanico",
+      "w_farmaceutica",
+      "w_maestra",
+      "m_mototaxi",
+      "m_vendedor",
+      "m_abuelo",
+      "w_beata",
+      "b_escolar",
+      "g_escolar",
+      "m_joven",
+      "w_vecina",
+      "m_don",
+      "w_joven",
+      "m_rapado"
+    ],
+    "ids": [
+      "m_tendero",
+      "m_obrero",
+      "w_tendera",
+      "w_ama",
+      "w_elder",
+      "m_elder",
+      "b_boy",
+      "g_girl",
+      "t_boy",
+      "t_girl",
+      "m_afro",
+      "w_afro",
+      "m_panadero",
+      "w_cocinera",
+      "m_carnicero",
+      "w_peluquera",
+      "m_mecanico",
+      "w_farmaceutica",
+      "w_maestra",
+      "m_mototaxi",
+      "m_vendedor",
+      "m_abuelo",
+      "w_beata",
+      "b_escolar",
+      "g_escolar",
+      "m_joven",
+      "w_vecina",
+      "m_don",
+      "w_joven",
+      "m_rapado"
+    ],
+    "clips": [
+      "idle_a",
+      "idle_b",
+      "walk",
+      "walk_fast",
+      "walk_bag",
+      "walk_step",
+      "phone_stand",
+      "phone_call",
+      "talk",
+      "wave",
+      "point",
+      "sit_idle",
+      "sit_phone",
+      "sit_look",
+      "sit_cross_legs",
+      "stand_hold_pole",
+      "stand_hold_rail",
+      "turn_left",
+      "turn_right",
+      "kid_bounce",
+      "kid_fidget",
+      "talk_b",
+      "sweep",
+      "cook",
+      "sell",
+      "walk_carry",
+      "carry_stand",
+      "lean_wall",
+      "laundry",
+      "pray",
+      "sit_talk",
+      "run"
+    ],
+    "people": [
+      {
+        "id": "m_tendero",
+        "heightM": 1.693,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7781,
+            "vertices": 11734,
+            "maxTriangleUVSpan": 0.116897,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1418,
+            "vertices": 2713,
+            "maxTriangleUVSpan": 0.11679,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e8c9a0",
+          "bottom": "#6a5a44",
+          "skin": "#a87452"
+        }
+      },
+      {
+        "id": "m_obrero",
+        "heightM": 1.696,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 13131,
+            "maxTriangleUVSpan": 0.116738,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 2965,
+            "maxTriangleUVSpan": 0.116762,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#9b6b4a",
+          "bottom": "#3a3f4a",
+          "shoes": "#2a2a2e",
+          "hat": "#c8573c",
+          "skin": "#9e6c47"
+        }
+      },
+      {
+        "id": "w_tendera",
+        "heightM": 1.592,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7114,
+            "vertices": 11486,
+            "maxTriangleUVSpan": 0.113436,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2868,
+            "maxTriangleUVSpan": 0.11322,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#f2c14e",
+          "bottom": "#6b6f78",
+          "shoes": "#b03060",
+          "skin": "#9e6c47"
+        }
+      },
+      {
+        "id": "w_ama",
+        "heightM": 1.572,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7718,
+            "vertices": 11485,
+            "maxTriangleUVSpan": 0.115341,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2628,
+            "maxTriangleUVSpan": 0.115192,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#3a7ca5",
+          "bottom": "#6b6f78",
+          "skin": "#ad7f5f"
+        }
+      },
+      {
+        "id": "w_elder",
+        "heightM": 1.544,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6732,
+            "vertices": 11655,
+            "maxTriangleUVSpan": 0.113291,
+            "recolourSlots": [
+              2,
+              4,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2957,
+            "maxTriangleUVSpan": 0.116809,
+            "recolourSlots": [
+              2,
+              4,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#b0a58a",
+          "inner": "#cfe3d6"
+        }
+      },
+      {
+        "id": "m_elder",
+        "heightM": 1.595,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7720,
+            "vertices": 12352,
+            "maxTriangleUVSpan": 0.116679,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2925,
+            "maxTriangleUVSpan": 0.116682,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#8a4a4a",
+          "bottom": "#5a6c8a",
+          "shoes": "#6b4a2a",
+          "inner": "#e8e0f0",
+          "skin": "#c0967b"
+        }
+      },
+      {
+        "id": "b_boy",
+        "heightM": 1.29,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7202,
+            "vertices": 11694,
+            "maxTriangleUVSpan": 0.115336,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2869,
+            "maxTriangleUVSpan": 0.115132,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#c8573c",
+          "bottom": "#1f2430",
+          "skin": "#b58461"
+        }
+      },
+      {
+        "id": "g_girl",
+        "heightM": 1.209,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6796,
+            "vertices": 11503,
+            "maxTriangleUVSpan": 0.113342,
+            "recolourSlots": [
+              2,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2961,
+            "maxTriangleUVSpan": 0.116609,
+            "recolourSlots": [
+              2,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#7bbf5a",
+          "shoes": "#2a2a2e",
+          "skin": "#b3825e"
+        }
+      },
+      {
+        "id": "t_boy",
+        "heightM": 1.722,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 13703,
+            "maxTriangleUVSpan": 0.116645,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3036,
+            "maxTriangleUVSpan": 0.11883,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#4b6584",
+          "bottom": "#2b2b3a"
+        }
+      },
+      {
+        "id": "t_girl",
+        "heightM": 1.592,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 13491,
+            "maxTriangleUVSpan": 0.116669,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3192,
+            "maxTriangleUVSpan": 0.116891,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e07a2f",
+          "accessory": "#4b6584",
+          "skin": "#af7b5b"
+        }
+      },
+      {
+        "id": "m_afro",
+        "heightM": 1.804,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7781,
+            "vertices": 13527,
+            "maxTriangleUVSpan": 0.116631,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 3005,
+            "maxTriangleUVSpan": 0.117059,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#3a7ca5",
+          "shoes": "#2f4f7a",
+          "skin": "#62402d"
+        }
+      },
+      {
+        "id": "w_afro",
+        "heightM": 1.681,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7572,
+            "vertices": 13051,
+            "maxTriangleUVSpan": 0.116766,
+            "recolourSlots": [
+              2,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 2926,
+            "maxTriangleUVSpan": 0.116606,
+            "recolourSlots": [
+              2,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#e07a2f",
+          "skin": "#7e5239"
+        }
+      },
+      {
+        "id": "m_panadero",
+        "heightM": 1.771,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7744,
+            "vertices": 12865,
+            "maxTriangleUVSpan": 0.11524,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2999,
+            "maxTriangleUVSpan": 0.116786,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#4b6584",
+          "skin": "#a67758"
+        }
+      },
+      {
+        "id": "w_cocinera",
+        "heightM": 1.572,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7554,
+            "vertices": 11572,
+            "maxTriangleUVSpan": 0.116645,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2782,
+            "maxTriangleUVSpan": 0.115265,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#e0609a",
+          "skin": "#966845"
+        }
+      },
+      {
+        "id": "m_carnicero",
+        "heightM": 1.694,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 12955,
+            "maxTriangleUVSpan": 0.116694,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 2991,
+            "maxTriangleUVSpan": 0.116694,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#d9a441",
+          "skin": "#b4886a"
+        }
+      },
+      {
+        "id": "w_peluquera",
+        "heightM": 1.653,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 11839,
+            "maxTriangleUVSpan": 0.113457,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2740,
+            "maxTriangleUVSpan": 0.118916,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#6fae8f",
+          "bottom": "#2f3e57",
+          "shoes": "#b03060",
+          "skin": "#cfa083"
+        }
+      },
+      {
+        "id": "m_mecanico",
+        "heightM": 1.714,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 13123,
+            "maxTriangleUVSpan": 0.119864,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1417,
+            "vertices": 2944,
+            "maxTriangleUVSpan": 0.119914,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "skin": "#a97857"
+        }
+      },
+      {
+        "id": "w_farmaceutica",
+        "heightM": 1.647,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7781,
+            "vertices": 13006,
+            "maxTriangleUVSpan": 0.111786,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 3058,
+            "maxTriangleUVSpan": 0.11878,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "shoes": "#8a3b2a",
+          "skin": "#bc906f"
+        }
+      },
+      {
+        "id": "w_maestra",
+        "heightM": 1.633,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 12435,
+            "maxTriangleUVSpan": 0.116769,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 3011,
+            "maxTriangleUVSpan": 0.116845,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#d65f5f",
+          "accessory": "#d9a441",
+          "skin": "#bf9072"
+        }
+      },
+      {
+        "id": "m_mototaxi",
+        "heightM": 1.654,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 13274,
+            "maxTriangleUVSpan": 0.116632,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3043,
+            "maxTriangleUVSpan": 0.116665,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "shoes": "#b03060",
+          "skin": "#aa7250"
+        }
+      },
+      {
+        "id": "m_vendedor",
+        "heightM": 1.664,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7781,
+            "vertices": 12047,
+            "maxTriangleUVSpan": 0.101688,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1417,
+            "vertices": 2815,
+            "maxTriangleUVSpan": 0.113307,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#b03a48",
+          "hat": "#8a5a3a",
+          "skin": "#b07e58"
+        }
+      },
+      {
+        "id": "m_abuelo",
+        "heightM": 1.606,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7781,
+            "vertices": 12192,
+            "maxTriangleUVSpan": 0.116832,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1419,
+            "vertices": 2948,
+            "maxTriangleUVSpan": 0.11669,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#a08060",
+          "bottom": "#2b2b3a",
+          "hat": "#3a3a46",
+          "accessory": "#2e8b8b",
+          "skin": "#9d6e4b"
+        }
+      },
+      {
+        "id": "w_beata",
+        "heightM": 1.454,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 6840,
+            "vertices": 11676,
+            "maxTriangleUVSpan": 0.116676,
+            "recolourSlots": [
+              2,
+              4,
+              5,
+              6,
+              7,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1423,
+            "vertices": 2961,
+            "maxTriangleUVSpan": 0.116721,
+            "recolourSlots": [
+              2,
+              4,
+              5,
+              6,
+              7,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "skin": "#ae7d5d"
+        }
+      },
+      {
+        "id": "b_escolar",
+        "heightM": 1.31,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7781,
+            "vertices": 12946,
+            "maxTriangleUVSpan": 0.115335,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1418,
+            "vertices": 2923,
+            "maxTriangleUVSpan": 0.116724,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "skin": "#c79672"
+        }
+      },
+      {
+        "id": "g_escolar",
+        "heightM": 1.23,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7637,
+            "vertices": 12980,
+            "maxTriangleUVSpan": 0.115252,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1418,
+            "vertices": 2996,
+            "maxTriangleUVSpan": 0.116697,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "accessory": "#d9a441",
+          "skin": "#8a5e42"
+        }
+      },
+      {
+        "id": "m_joven",
+        "heightM": 1.764,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7752,
+            "vertices": 12873,
+            "maxTriangleUVSpan": 0.115232,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3020,
+            "maxTriangleUVSpan": 0.116697,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#7a4f8c",
+          "shoes": "#b03060",
+          "skin": "#a06c49"
+        }
+      },
+      {
+        "id": "w_vecina",
+        "heightM": 1.552,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7654,
+            "vertices": 11721,
+            "maxTriangleUVSpan": 0.101466,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1422,
+            "vertices": 2882,
+            "maxTriangleUVSpan": 0.116715,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#cfd2d6",
+          "skin": "#a77352"
+        }
+      },
+      {
+        "id": "m_don",
+        "heightM": 1.659,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7665,
+            "vertices": 11394,
+            "maxTriangleUVSpan": 0.11663,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1418,
+            "vertices": 2701,
+            "maxTriangleUVSpan": 0.116698,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#c8573c",
+          "skin": "#b78c6d"
+        }
+      },
+      {
+        "id": "w_joven",
+        "heightM": 1.691,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7782,
+            "vertices": 13049,
+            "maxTriangleUVSpan": 0.116588,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 3015,
+            "maxTriangleUVSpan": 0.118498,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              6,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#d4a373",
+          "bottom": "#1f2430",
+          "shoes": "#2a2a2e",
+          "accessory": "#202225",
+          "skin": "#8b5c40"
+        }
+      },
+      {
+        "id": "m_rapado",
+        "heightM": 1.716,
+        "lods": [
+          {
+            "lod": 0,
+            "triangles": 7042,
+            "vertices": 11881,
+            "maxTriangleUVSpan": 0.115352,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          },
+          {
+            "lod": 1,
+            "triangles": 1424,
+            "vertices": 2935,
+            "maxTriangleUVSpan": 0.11542,
+            "recolourSlots": [
+              2,
+              3,
+              4,
+              8,
+              16
+            ]
+          }
+        ],
+        "variant": {
+          "top": "#f2c14e",
+          "bottom": "#5a6c8a",
+          "skin": "#754c35"
+        }
+      }
+    ],
+    "posedVertexChecks": 374592
+  },
+  "sheets": [
+    {
+      "width": 1920,
+      "height": 1696,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "headshots": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "triangles": 7781,
+          "lod": 0
+        },
+        {
+          "id": "m_obrero",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "w_tendera",
+          "triangles": 7114,
+          "lod": 0
+        },
+        {
+          "id": "w_ama",
+          "triangles": 7718,
+          "lod": 0
+        },
+        {
+          "id": "w_elder",
+          "triangles": 6732,
+          "lod": 0
+        },
+        {
+          "id": "m_elder",
+          "triangles": 7720,
+          "lod": 0
+        },
+        {
+          "id": "b_boy",
+          "triangles": 7202,
+          "lod": 0
+        },
+        {
+          "id": "g_girl",
+          "triangles": 6796,
+          "lod": 0
+        },
+        {
+          "id": "t_boy",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "t_girl",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "m_afro",
+          "triangles": 7781,
+          "lod": 0
+        },
+        {
+          "id": "w_afro",
+          "triangles": 7572,
+          "lod": 0
+        },
+        {
+          "id": "m_panadero",
+          "triangles": 7744,
+          "lod": 0
+        },
+        {
+          "id": "w_cocinera",
+          "triangles": 7554,
+          "lod": 0
+        },
+        {
+          "id": "m_carnicero",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "w_peluquera",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "m_mecanico",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "w_farmaceutica",
+          "triangles": 7781,
+          "lod": 0
+        },
+        {
+          "id": "w_maestra",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "m_mototaxi",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "m_vendedor",
+          "triangles": 7781,
+          "lod": 0
+        },
+        {
+          "id": "m_abuelo",
+          "triangles": 7781,
+          "lod": 0
+        },
+        {
+          "id": "w_beata",
+          "triangles": 6840,
+          "lod": 0
+        },
+        {
+          "id": "b_escolar",
+          "triangles": 7781,
+          "lod": 0
+        },
+        {
+          "id": "g_escolar",
+          "triangles": 7637,
+          "lod": 0
+        },
+        {
+          "id": "m_joven",
+          "triangles": 7752,
+          "lod": 0
+        },
+        {
+          "id": "w_vecina",
+          "triangles": 7654,
+          "lod": 0
+        },
+        {
+          "id": "m_don",
+          "triangles": 7665,
+          "lod": 0
+        },
+        {
+          "id": "w_joven",
+          "triangles": 7782,
+          "lod": 0
+        },
+        {
+          "id": "m_rapado",
+          "triangles": 7042,
+          "lod": 0
+        }
+      ],
+      "pixels": [
+        {
+          "id": "m_tendero",
+          "darkPixels": 7057,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_obrero",
+          "darkPixels": 8036,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_tendera",
+          "darkPixels": 8840,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_ama",
+          "darkPixels": 5643,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_elder",
+          "darkPixels": 7898,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_elder",
+          "darkPixels": 8450,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_boy",
+          "darkPixels": 2554,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_girl",
+          "darkPixels": 4290,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_boy",
+          "darkPixels": 9820,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_girl",
+          "darkPixels": 6150,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_afro",
+          "darkPixels": 8245,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_afro",
+          "darkPixels": 8989,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_panadero",
+          "darkPixels": 3406,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_cocinera",
+          "darkPixels": 5552,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_carnicero",
+          "darkPixels": 2310,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_peluquera",
+          "darkPixels": 4793,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mecanico",
+          "darkPixels": 7121,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_farmaceutica",
+          "darkPixels": 2138,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_maestra",
+          "darkPixels": 6163,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mototaxi",
+          "darkPixels": 7874,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_vendedor",
+          "darkPixels": 5340,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_abuelo",
+          "darkPixels": 7991,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_beata",
+          "darkPixels": 7570,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_escolar",
+          "darkPixels": 3252,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_escolar",
+          "darkPixels": 3249,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_joven",
+          "darkPixels": 9847,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_vecina",
+          "darkPixels": 6692,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_don",
+          "darkPixels": 6542,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_joven",
+          "darkPixels": 6026,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_rapado",
+          "darkPixels": 9328,
+          "opaquePixels": 35700
+        }
+      ],
+      "path": "people-near.png"
+    },
+    {
+      "width": 1920,
+      "height": 1696,
+      "lod": 1,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "headshots": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "triangles": 1418,
+          "lod": 1
+        },
+        {
+          "id": "m_obrero",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "w_tendera",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_ama",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_elder",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_elder",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "b_boy",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "g_girl",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "t_boy",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "t_girl",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "m_afro",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_afro",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "m_panadero",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "w_cocinera",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_carnicero",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "w_peluquera",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "m_mecanico",
+          "triangles": 1417,
+          "lod": 1
+        },
+        {
+          "id": "w_farmaceutica",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "w_maestra",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "m_mototaxi",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "m_vendedor",
+          "triangles": 1417,
+          "lod": 1
+        },
+        {
+          "id": "m_abuelo",
+          "triangles": 1419,
+          "lod": 1
+        },
+        {
+          "id": "w_beata",
+          "triangles": 1423,
+          "lod": 1
+        },
+        {
+          "id": "b_escolar",
+          "triangles": 1418,
+          "lod": 1
+        },
+        {
+          "id": "g_escolar",
+          "triangles": 1418,
+          "lod": 1
+        },
+        {
+          "id": "m_joven",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "w_vecina",
+          "triangles": 1422,
+          "lod": 1
+        },
+        {
+          "id": "m_don",
+          "triangles": 1418,
+          "lod": 1
+        },
+        {
+          "id": "w_joven",
+          "triangles": 1424,
+          "lod": 1
+        },
+        {
+          "id": "m_rapado",
+          "triangles": 1424,
+          "lod": 1
+        }
+      ],
+      "pixels": [
+        {
+          "id": "m_tendero",
+          "darkPixels": 6877,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_obrero",
+          "darkPixels": 7730,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_tendera",
+          "darkPixels": 8692,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_ama",
+          "darkPixels": 5643,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_elder",
+          "darkPixels": 7834,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_elder",
+          "darkPixels": 8394,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_boy",
+          "darkPixels": 2632,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_girl",
+          "darkPixels": 4519,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_boy",
+          "darkPixels": 9430,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "t_girl",
+          "darkPixels": 5904,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_afro",
+          "darkPixels": 7503,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_afro",
+          "darkPixels": 9024,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_panadero",
+          "darkPixels": 3392,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_cocinera",
+          "darkPixels": 5652,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_carnicero",
+          "darkPixels": 2184,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_peluquera",
+          "darkPixels": 4736,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mecanico",
+          "darkPixels": 7004,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_farmaceutica",
+          "darkPixels": 2128,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_maestra",
+          "darkPixels": 5968,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_mototaxi",
+          "darkPixels": 7684,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_vendedor",
+          "darkPixels": 5248,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_abuelo",
+          "darkPixels": 7853,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_beata",
+          "darkPixels": 7546,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "b_escolar",
+          "darkPixels": 3293,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "g_escolar",
+          "darkPixels": 3223,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_joven",
+          "darkPixels": 9690,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_vecina",
+          "darkPixels": 6599,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_don",
+          "darkPixels": 6410,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "w_joven",
+          "darkPixels": 5519,
+          "opaquePixels": 35700
+        },
+        {
+          "id": "m_rapado",
+          "darkPixels": 9212,
+          "opaquePixels": 35700
+        }
+      ],
+      "path": "people-far.png"
+    }
+  ],
+  "boot": [],
+  "failures": [],
+  "assetHashes": {
+    "people.glb": {
+      "bytes": 6989112,
+      "sha256": "16006782aac014475115fcd749441e15f5954f585896fe0463eb99a34e265ef9"
+    },
+    "people_albedo.jpg": {
+      "bytes": 440913,
+      "sha256": "8354b8510453cf6029db8881a641df0c180aa4e98e627fe4a6402ca3f528fc95"
+    },
+    "people_lod.glb": {
+      "bytes": 1909016,
+      "sha256": "0a4818fcc4dd353beacd5b0752e65d19fcbbc04dd9ebdadf0f4def934283d214"
+    },
+    "people_meta.json": {
+      "bytes": 42675,
+      "sha256": "da5ec4d89b08a4cb9b3f451e73a21a7e60287b4dc70d4026d9299ae4ac8fc867"
+    },
+    "people_normal.jpg": {
+      "bytes": 452251,
+      "sha256": "81e4205d37d9b0f5a703b942210d5e1f0d3037fc8bf7ce3f0a07a5fa8bfefb5e"
+    },
+    "people_orm.jpg": {
+      "bytes": 75810,
+      "sha256": "20aa8d4f9acc7ea48d0ed14fc92f5244b4652d57c5856512539e785c3877120c"
+    }
+  },
+  "galleryDiagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?",
+      "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?",
+      "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?",
+      "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?"
+    ]
+  },
+  "readbackWarnings": [
+    "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?",
+    "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?",
+    "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?",
+    "[warning] [.WebGL-0x3eac008e7000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:37005/la-ladera/tests/people-gallery.html?"
+  ],
+  "ok": true
+}

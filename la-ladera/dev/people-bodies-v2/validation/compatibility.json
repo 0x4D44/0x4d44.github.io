@@ -1,0 +1,9 @@
+{
+  "base": "8f93ade042cdb4bfc1a796b889bbe39786241ebf",
+  "rigs": 30,
+  "bonesPerRig": 21,
+  "namedRestAndInverseBindsExact": true,
+  "clips": 32,
+  "rotationTracks": 672,
+  "rotationSha256": "24af871aaa2e54baf066004f122c39268fb84e241cdbbd86ba9c317420499c16"
+}
