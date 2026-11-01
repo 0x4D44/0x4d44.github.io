@@ -21,6 +21,7 @@ import { buildGoods } from './goods-render.js';
 
 const M = new THREE.Matrix4(), S = new THREE.Matrix4();
 const MAX_REPORTED = 12;
+const STEP_RECORDS = 6;                                                            // pieces drawn between two yields of buildInteriorSteps
 
 const disposeParts = (parts) => { for (const p of parts) { p.geometry.dispose(); for (const g of p.tinted.values()) g.dispose(); } };
 
@@ -38,18 +39,29 @@ async function preloadModels(ctx, names, into) {
   }
 }
 
-/** Preload the GLBs of every furniture key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). The clothes load apart (loadGarmentAssets). */
-export async function loadInteriorAssets(ctx) {
-  ctx.interiorGlb = new Set();
-  // A retry may replace a previously failed model. Do not retain flattened parts from an older load.
-  for (const parts of ctx.interiorGlbParts?.values() ?? []) disposeParts(parts);
-  ctx.interiorGlbParts = new Map();
+/**
+ * The decal atlas (ONE canvas of every poster and notice, 70-110 ms of painting in one call), the TV glow material and the TV screens' picture, browser only; made once. `?lazy=1` calls this behind the title card (main.js),
+ * so no frame of play carries it; the eager boot's `loadInteriorAssets` calls it as ever.
+ */
+export function prepareAtlas(ctx) {
+  if (ctx.interiorAtlasMade) return ctx.interiorAtlas ?? null;
+  ctx.interiorAtlasMade = true;
   try {
     const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
     if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
     makeTvGlowMaterial(ctx);
     makeTvScreens(ctx);
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
+  return ctx.interiorAtlas ?? null;
+}
+
+/** Preload the GLBs of every furniture key that has an asset; the keys that actually loaded are remembered on ctx.interiorGlb. Paints the decal atlas (browser only). The clothes load apart (loadGarmentAssets). */
+export async function loadInteriorAssets(ctx) {
+  ctx.interiorGlb = new Set();
+  // A retry may replace a previously failed model. Do not retain flattened parts from an older load.
+  for (const parts of ctx.interiorGlbParts?.values() ?? []) disposeParts(parts);
+  ctx.interiorGlbParts = new Map();
+  prepareAtlas(ctx);
   const a = ctx.assets;
   if (!a?.names) return;
   const names = a.names().filter((n) => CATALOG[n] && !CATALOG[n].garment && !CATALOG[n].ware);        // (a clothes key registered by an earlier loadGarmentAssets, and the shop goods, are not furniture roots: goods-render.js loadGoodsAssets)
@@ -191,8 +203,10 @@ function drawGlb(ctx, b, rec, c) {
 /**
  * Build the interior meshes of one building from `bp.furniture` (made by furnishBuilding). Safe to call once per building; it flushes its
  * own group straight away so the temporary vertex arrays of one building are released before the next one is built.
+ * It is a resumable job (a generator, yielding between the shop stock, every few pieces and before the flush) so that js/interiors/lazy.js can build a room's worth of
+ * furniture in time slices; `buildInterior` runs it to its end, the same code in the same order.
  */
-export function buildInterior(ctx, bp) {
+export function* buildInteriorSteps(ctx, bp) {
   const recs = bp.furniture;
   if (!recs?.length) return;
   const id = `${bp.id}.int`, lot = bp.lot ?? {};
@@ -203,8 +217,10 @@ export function buildInterior(ctx, bp) {
   const st = { records: recs.length, glb: 0, standin: 0, prims: 0, failed: 0 };
   const goods = buildGoods(ctx, bp, group);                                        // the shop stock first (goods.js plan, goods-render.js): a fixture it stocks is drawn without its own stock below
   st.goods = goods.stats;
-  let reported = 0;
+  let reported = 0, k = 0;
+  yield 'goods';
   for (const original of recs) {
+    if (++k % STEP_RECORDS === 0) yield 'records';
     const c = original.decal ? decalDef(original.decal) : CATALOG[original.name];
     if (!c) { st.failed++; continue; }
     const rec = goods.replaced.has(original.id) ? { ...original, flags: { ...original.flags, stockReplaced: true } } : original;       // (a copy: the plan stays pure data)
@@ -231,6 +247,7 @@ export function buildInterior(ctx, bp) {
     st.fans = buildRotors(ctx, bp, group, recs, CATALOG);
     st.tvs = buildTvGlow(ctx, bp, b, recs, CATALOG);
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'dressing ' + String(e?.message ?? e), stack: e?.stack }); }
+  yield 'dressing';
   st.folded = foldMaterials(b);                                                    // the rare materials move into a neighbour's mesh: fewer draw calls (fold.js)
   st.tris = b.tris; st.materials = b.accs.size;
   ctx.batch.flush(id);
@@ -238,3 +255,6 @@ export function buildInterior(ctx, bp) {
   catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, message: 'containers ' + String(e?.message ?? e), stack: e?.stack }); }
   if (bp.interior) bp.interior.stats = st;
 }
+
+/** Build one building's interior meshes, all of it, now (a full boot, the tests and the probes). */
+export function buildInterior(ctx, bp) { for (const _ of buildInteriorSteps(ctx, bp)); }     // eslint-disable-line no-unused-vars

@@ -116,6 +116,10 @@ class Page {
   /** Navigate and wait for the game to finish booting (window.__ladera.ready). */
   async goto(url, { ready = true, timeout = 240000 } = {}) {
     this.logs.length = this.errors.length = this.netErrors.length = 0;
+    // LADERA_LAZY=1: every la-ladera page boots through the lazy road (?lazy=1, dev/FEATURE-LAZY.md) and the test starts once the barrio has settled, so a page test that walks into houses meets the
+    // world an eager boot builds: the same test over the other road. A page that names `lazy=` itself keeps it.
+    const lazy = process.env.LADERA_LAZY === '1' && /la-ladera\/index\.html/.test(url) && !/[?&]lazy=/.test(url);
+    if (lazy) url += (url.includes('?') ? '&' : '?') + 'lazy=1';
     await this.send('Page.navigate', { url });
     await this.b.nice?.();                      // a navigation can start a new renderer: lower it too
     await this.waitFor('document.readyState === "complete"', 60000);
@@ -123,6 +127,10 @@ class Page {
       await this.waitFor('!!window.__ladera && !!window.__ladera.ready', 60000);
       const r = await this.send('Runtime.evaluate', { expression: 'window.__ladera.ready.then(() => true, (e) => String(e))', awaitPromise: true, returnByValue: true }, timeout);
       if (r.result.value !== true) throw new Error('boot failed: ' + JSON.stringify(r.result.value ?? r.exceptionDetails));
+      if (lazy) {                               // (`settle` also pumps the interiors, which nothing does between steps in a ?manual page)
+        const s = await this.send('Runtime.evaluate', { expression: 'window.__ladera.settle({ timeout: 300000 }).then(() => true, (e) => String(e))', awaitPromise: true, returnByValue: true }, timeout);
+        if (s.result.value !== true) throw new Error('lazy boot did not settle: ' + JSON.stringify(s.result.value ?? s.exceptionDetails));
+      }
     }
     return this;
   }

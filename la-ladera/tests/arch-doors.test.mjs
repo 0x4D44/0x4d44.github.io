@@ -339,6 +339,34 @@ test('the baked leaves of a door give way to the live leaf while it moves or sta
   }
 });
 
+test('a baked chunk whose every leaf stands open is not drawn (a mesh of degenerate triangles is a draw call for nothing); the first leaf to settle closed brings it back', () => {
+  for (const [label, ctx] of SETS) {
+    const sys = ctx.systems.find((s) => s.name === 'arch-doors'), dt = 1 / 60, request = (st, open) => ctx.events.emit('door:request', { doorId: st.id, open, by: 'npc' });
+    const byMesh = new Map();
+    for (const st of ctx.archDoors.values()) for (const r of st.bake ?? []) (byMesh.get(r.mesh) ?? byMesh.set(r.mesh, new Set()).get(r.mesh)).add(st);
+    const chunks = [...byMesh].sort((a, b) => a[1].size - b[1].size), single = chunks[0], multi = chunks.find(([, s]) => s.size >= 2);
+    assert.ok(single && multi, `${label}: a chunk of one door and a chunk of several to pick`);
+    for (const [mesh, set] of [single, multi]) {
+      const doors = [...set], last = doors.length - 1;
+      assert.equal(mesh.visible, true, `${label}: ${mesh.name} is drawn while its leaves stand closed`);
+      doors.forEach((st, i) => {
+        request(st, true);
+        assert.equal(mesh.visible, i < last, `${label}: ${mesh.name} with ${i + 1} of ${doors.length} leaves open is ${i < last ? 'still drawn (it has a closed leaf)' : 'out of the frame (nothing of it is left to draw)'}`);
+      });
+      for (let i = 0; i < 40; i++) sys.fn(dt);
+      assert.equal(mesh.visible, false, `${label}: ${mesh.name} stays out of the frame while every leaf stands open`);
+      request(doors[0], false);
+      for (let i = 0; i < 60; i++) sys.fn(dt);
+      assert.equal(mesh.visible, true, `${label}: ${mesh.name} is back the moment its first leaf has settled closed`);
+      for (const st of doors.slice(1)) request(st, false);
+      for (let i = 0; i < 60; i++) sys.fn(dt);
+      assert.equal(mesh.visible, true, `${label}: ${mesh.name} is drawn once all of its leaves are closed again`);
+      assert.equal(mesh.userData.bakedOpen, 0, `${label}: ${mesh.name} counts no open leaf any more`);
+      for (const st of doors) assert.ok(st.bakeHidden === false && pivotsOf(st).every((pv) => !drawn(pv)), `${label}: ${st.id} is baked again`);
+    }
+  }
+});
+
 test('the chapel double door: two leaves of half the opening, hinged at the two jambs, that open together to the same side a quarter turn', () => {
   for (const [tag, ctx, bp] of chapels) {
     const d = bp.doors.find((q) => q.entrance === 'main'), st = ctx.archDoors.get(d.id), sys = ctx.systems.find((s) => s.name === 'arch-doors'), pvs = pivotsOf(st);

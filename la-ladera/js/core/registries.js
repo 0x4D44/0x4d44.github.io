@@ -57,6 +57,10 @@ export class Discoveries {
   }
   /** The registered world discoveries ("N de M"): finds are not part of it. */
   get total() { let n = 0; for (const d of this.items.values()) if (!isFind(d)) n++; return n; }
+  /** False while a lazy boot is still furnishing (interiors/lazy.js): the interiors' discoveries are made when the data pass seals, so `total` counts the world's only until then. */
+  get settled() { return this.ctx.interiors?.sealed !== false; }
+  /** What "N de M" should print for M: the number once it is final, an ellipsis before (the optional UI hook; see dev/FEATURE-LAZY.md). */
+  get totalLabel() { return this.settled ? String(this.total) : '…'; }
   /** How many of those the player has found. */
   get count() { let n = 0; for (const id of this.found) { const d = this.items.get(id); if (d && !isFind(d)) n++; } return n; }
   /** How many finds the player has found. */
