@@ -24,6 +24,7 @@ export function installDebug(ctx) {
         buildings: ctx.buildings.size, anchors: ctx.anchors.length, lights: ctx.lights.list.length, discoveries: [ctx.discover.count, ctx.discover.total], finds: ctx.discover.finds, reader: ctx.reader?.state?.() ?? null,
         npcs: ctx.people?.list?.().length ?? 0, errors: ctx.errors.length, timings: ctx.timings, physics: ctx.physics.stats(), audio: ctx.audio?.state?.() ?? null,
         target: ctx.interact.target ? { id: ctx.interact.target.id, kind: ctx.interact.target.kind, prompt: ctx.interact.prompt() } : null,
+        interiors: ctx.interiors?.summary?.() ?? null, streams: ctx.staged ? { progress: +ctx.staged.progress.toFixed(3), done: ctx.staged.done, pending: ctx.staged.pending.map((u) => u.id) } : null,
       };
     },
     /** Put the player at (x,z). o: { floor: index into ascending surface list at that point (0 = lowest), y, yaw, pitch } (angles in radians). */
@@ -76,9 +77,25 @@ export function installDebug(ctx) {
     /** Teleport just inside a building's first entrance (or onto its lot centre), facing inward. */
     enter(id, i = 0) {
       const bp = ctx.buildings.get(id); if (!bp) throw new Error('no building ' + id);
+      ctx.interiors?.ensure(id);                                                                       // ?lazy=1: a probe that walks in gets the furnished room, not a bare one
       const e = bp.entrances?.[i];
       if (e) { const [x, y, z] = e.inside; P().teleport(x, z, { y, yaw: e.yawIn ?? 0 }); }
       else P().teleport(bp.lot.x, bp.lot.z, { y: bp.lot.y });
+      return api.state();
+    },
+    /**
+     * `?lazy=1`: make everything that is still to come NOW and wait for the queue (the packs, the people): the barrio as an eager boot has it. `ready` is the playable milestone and `settled` is the end of
+     * the queue; with `?manual` nothing pumps the interiors between steps, so this does. Resolves with the state.
+     */
+    async settle({ timeout = 180000 } = {}) {
+      const t0 = performance.now();
+      for (;;) {
+        ctx.interiors?.drain();
+        if (!ctx.staged || ctx.staged.done) break;
+        if (performance.now() - t0 > timeout) throw new Error('settle timed out, waiting for: ' + ctx.staged.pending.map((u) => u.id).join(', '));
+        await new Promise((r) => setTimeout(r, 40));
+      }
+      ctx.interiors?.drain();
       return api.state();
     },
     /** Spawn-independent list of NPCs (people module publishes ctx.people). */

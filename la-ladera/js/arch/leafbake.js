@@ -55,7 +55,7 @@ function makeChunk(items, parent, name, counter) {
     const mesh = new THREE.Mesh(geo, e.mat);
     mesh.name = `${name}:${e.matKey ?? e.mat.name ?? 'mat'}#${++counter.n}`;
     mesh.castShadow = e.cast; mesh.receiveShadow = e.recv; mesh.renderOrder = e.ro; mesh.matrixAutoUpdate = false; mesh.updateMatrix();
-    mesh.userData.matKey = e.matKey; mesh.userData.noMerge = true; mesh.userData.bakedLeaves = e.parts.length;
+    mesh.userData.matKey = e.matKey; mesh.userData.noMerge = true; mesh.userData.bakedLeaves = e.parts.length; mesh.userData.bakedOpen = 0;
     parent.add(mesh); made.push(mesh);
     for (const r of owned) (r.st.bake ??= []).push({ mesh, index, from: r.from, to: r.to, saved: null });
   }
@@ -96,18 +96,28 @@ export function bakeLeaves(ctx) {
   return made;
 }
 
-/** The door starts to move or stands open: its baked triangles vanish and the live leaf shows (a no-op for a door that was never baked). */
+/**
+ * The door starts to move or stands open: its baked triangles vanish and the live leaf shows (a no-op for a door that was never baked). A chunk whose every leaf stands open
+ * is a mesh of degenerate triangles: it leaves the frame, one draw call fewer (a lazy boot bakes every leaf closed before the shopkeepers are there; the 28 shop doors they open
+ * at the people's spawn left 12 such chunks behind).
+ */
 export function hideBaked(st) {
   if (!st.bake || st.bakeHidden) return;
-  for (const r of st.bake) { r.saved = r.index.array.slice(r.from, r.to); r.index.array.fill(0, r.from, r.to); touch(r.index, r.from, r.to - r.from); }
+  for (const r of st.bake) {
+    r.saved = r.index.array.slice(r.from, r.to); r.index.array.fill(0, r.from, r.to); touch(r.index, r.from, r.to - r.from);
+    const u = r.mesh.userData; if (++u.bakedOpen >= u.bakedLeaves) r.mesh.visible = false;
+  }
   st.bakeHidden = true;
   for (const pv of pivotsOf(st)) pv.visible = true;
 }
 
-/** The door has settled closed: the baked triangles come back and the live leaf hides. */
+/** The door has settled closed: the baked triangles come back and the live leaf hides (and the chunk is drawn again if it had left the frame). */
 export function showBaked(st) {
   if (!st.bake || !st.bakeHidden) return;
-  for (const r of st.bake) { r.index.array.set(r.saved, r.from); r.saved = null; touch(r.index, r.from, r.to - r.from); }
+  for (const r of st.bake) {
+    r.index.array.set(r.saved, r.from); r.saved = null; touch(r.index, r.from, r.to - r.from);
+    const u = r.mesh.userData; if (u.bakedOpen-- >= u.bakedLeaves) r.mesh.visible = true;
+  }
   st.bakeHidden = false;
   for (const pv of pivotsOf(st)) pv.visible = false;
 }
