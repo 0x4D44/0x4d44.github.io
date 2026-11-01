@@ -1,0 +1,873 @@
+{
+  "version": 1,
+  "assets": {
+    "substation_uk_tower_suspension": {
+      "family": "tower_suspension",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        10,
+        32,
+        6
+      ],
+      "footprint": [
+        10,
+        6
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice suspension tower with three crossarm levels, six pendant strings, earth-wire peak and concrete shoes.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -4.78427108,
+            15.76657719,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -4.47195444,
+            20.88546592,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -4.1596378,
+            25.6844241,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            4.82547164,
+            15.76657719,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            4.513155,
+            20.88546592,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            4.20083836,
+            25.6844241,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_uk_tower_tension": {
+      "family": "tower_tension",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        11.6,
+        34,
+        6.8
+      ],
+      "footprint": [
+        11.6,
+        6.8
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice tension/terminal tower with broad braced crossarms and six near-horizontal tension strings.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -5.62452709,
+            19.25564743,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -5.2602791,
+            24.69441804,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -4.8960311,
+            29.79326549,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            5.58310356,
+            19.25564743,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            5.21885556,
+            24.69441804,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            4.85460757,
+            29.79326549,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_uk_pole_mv": {
+      "family": "pole_mv",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        5,
+        13,
+        1.2
+      ],
+      "footprint": [
+        5,
+        1.2
+      ],
+      "pivots": [],
+      "description": "Wooden H-pole with steel crossarm and porcelain pin insulators.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -2.0,
+            13.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0.0,
+            13.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            2.0,
+            13.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_uk_pole_lv": {
+      "family": "pole_lv",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        2.4,
+        10,
+        0.65
+      ],
+      "footprint": [
+        2.4,
+        0.65
+      ],
+      "pivots": [],
+      "description": "Wooden distribution pole with steel crossarm and three pin insulators.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -0.96,
+            10.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0.0,
+            10.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            0.96,
+            10.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_uk_fence_panel": {
+      "family": "fence_panel",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        2.5,
+        2.7,
+        0.18
+      ],
+      "footprint": [
+        2.5,
+        0.18
+      ],
+      "pivots": [],
+      "description": "Green steel palisade panel with pointed anti-climb tips.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_fence_post": {
+      "family": "fence_post",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        0.18,
+        2.9,
+        0.18
+      ],
+      "footprint": [
+        0.18,
+        0.18
+      ],
+      "pivots": [],
+      "description": "Capped green steel perimeter post.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_outrigger": {
+      "family": "outrigger",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        0.16,
+        0.65,
+        0.55
+      ],
+      "footprint": [
+        0.16,
+        0.55
+      ],
+      "pivots": [],
+      "description": "Outward anti-climb arm and three short wire attachments.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_gate": {
+      "family": "gate",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        4,
+        2.8,
+        0.28
+      ],
+      "footprint": [
+        4,
+        0.28
+      ],
+      "pivots": [
+        "gate_leaf_left",
+        "gate_leaf_right"
+      ],
+      "description": "Two-leaf palisade vehicle gate with independently hinged leaves and latch.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_building_shell": {
+      "family": "building_shell",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        12,
+        4,
+        7
+      ],
+      "footprint": [
+        12,
+        7
+      ],
+      "pivots": [],
+      "description": "Brick control-building shell with a real front door opening and two front window apertures.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_building_door": {
+      "family": "building_door",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        1.5,
+        2.4,
+        0.12
+      ],
+      "footprint": [
+        1.5,
+        0.12
+      ],
+      "pivots": [
+        "door_hinge"
+      ],
+      "description": "Green louvred control-room steel door with hinge pivot, handle and individual ventilation slats.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_louvre": {
+      "family": "louvre",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        1.4,
+        0.8,
+        0.12
+      ],
+      "footprint": [
+        1.4,
+        0.12
+      ],
+      "pivots": [],
+      "description": "Framed ventilation louvre with individual sloping metal slats.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_window": {
+      "family": "window",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        1.6,
+        1.4,
+        0.12
+      ],
+      "footprint": [
+        1.6,
+        0.12
+      ],
+      "pivots": [
+        "window_hinge"
+      ],
+      "description": "Control-room window with metal mullions, shallow glass pane and lower opening-light hinge.",
+      "origin": "floor-centre"
+    },
+    "substation_uk_roof": {
+      "family": "roof",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        12.4,
+        0.22,
+        7.4
+      ],
+      "footprint": [
+        12.4,
+        7.4
+      ],
+      "pivots": [],
+      "description": "Shallow flat concrete roof slab with edge flashing and separated roofing seams.",
+      "origin": "floor-centre"
+    },
+    "substation_co_tower_suspension": {
+      "family": "tower_suspension",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        9.2,
+        30,
+        5.4
+      ],
+      "footprint": [
+        9.2,
+        5.4
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice suspension tower with three crossarm levels, six pendant strings, earth-wire peak and concrete shoes.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -4.38500069,
+            14.62692758,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -4.09864116,
+            19.42591954,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -3.81228162,
+            23.9249745,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            4.42606191,
+            14.62692758,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            4.13970237,
+            19.42591954,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            3.85334284,
+            23.9249745,
+            0.0
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_co_tower_tension": {
+      "family": "tower_tension",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        10.8,
+        32,
+        6.4
+      ],
+      "footprint": [
+        10.8,
+        6.4
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice tension/terminal tower with broad braced crossarms and six near-horizontal tension strings.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -5.22496565,
+            18.11589109,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -4.88668578,
+            23.23473007,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -4.54840592,
+            28.03364162,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            5.18364565,
+            18.11589109,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            4.84536578,
+            23.23473007,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            4.50708591,
+            28.03364162,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_co_pole_mv": {
+      "family": "pole_mv",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        5,
+        14,
+        1.2
+      ],
+      "footprint": [
+        5,
+        1.2
+      ],
+      "pivots": [],
+      "description": "Twin concrete H-pole with steel crossarms, insulators and humid weathering.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -2.0,
+            14.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0.0,
+            14.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            2.0,
+            14.0,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_co_pole_lv": {
+      "family": "pole_lv",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        2.4,
+        11.5,
+        0.65
+      ],
+      "footprint": [
+        2.4,
+        0.65
+      ],
+      "pivots": [],
+      "description": "Round tapered concrete distribution pole with crossarm and three porcelain pin insulators.",
+      "origin": "floor-centre",
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -0.96,
+            11.5,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0.0,
+            11.5,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            0.96,
+            11.5,
+            0.0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_co_fence_panel": {
+      "family": "fence_panel",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        2.5,
+        2.7,
+        0.3
+      ],
+      "footprint": [
+        2.5,
+        0.3
+      ],
+      "pivots": [],
+      "description": "Galvanised chain-link diamond mesh over a low algae-marked concrete plinth.",
+      "origin": "floor-centre"
+    },
+    "substation_co_fence_post": {
+      "family": "fence_post",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        0.22,
+        2.9,
+        0.22
+      ],
+      "footprint": [
+        0.22,
+        0.22
+      ],
+      "pivots": [],
+      "description": "Concrete perimeter post with galvanized fence clips.",
+      "origin": "floor-centre"
+    },
+    "substation_co_outrigger": {
+      "family": "outrigger",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        0.16,
+        0.65,
+        0.55
+      ],
+      "footprint": [
+        0.16,
+        0.55
+      ],
+      "pivots": [],
+      "description": "Galvanised outward barbed-wire arm with three barbed wire attachments.",
+      "origin": "floor-centre"
+    },
+    "substation_co_gate": {
+      "family": "gate",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        4,
+        2.8,
+        0.28
+      ],
+      "footprint": [
+        4,
+        0.28
+      ],
+      "pivots": [
+        "gate_leaf_left",
+        "gate_leaf_right"
+      ],
+      "description": "Two-leaf chain-link vehicle gate with independent hinges and a rusty centre latch.",
+      "origin": "floor-centre"
+    },
+    "substation_co_building_shell": {
+      "family": "building_shell",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        12,
+        4,
+        7
+      ],
+      "footprint": [
+        12,
+        7
+      ],
+      "pivots": [],
+      "description": "Rendered-block control-building shell with open door/window apertures, patched render and base algae.",
+      "origin": "floor-centre"
+    },
+    "substation_co_building_door": {
+      "family": "building_door",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        1.5,
+        2.4,
+        0.12
+      ],
+      "footprint": [
+        1.5,
+        0.12
+      ],
+      "pivots": [
+        "door_hinge"
+      ],
+      "description": "Weathered grey louvred control-room steel door with hinge pivot and individual ventilation slats.",
+      "origin": "floor-centre"
+    },
+    "substation_co_louvre": {
+      "family": "louvre",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        1.4,
+        0.8,
+        0.12
+      ],
+      "footprint": [
+        1.4,
+        0.12
+      ],
+      "pivots": [],
+      "description": "Framed ventilation louvre with individual sloping metal slats.",
+      "origin": "floor-centre"
+    },
+    "substation_co_window": {
+      "family": "window",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        1.6,
+        1.4,
+        0.12
+      ],
+      "footprint": [
+        1.6,
+        0.12
+      ],
+      "pivots": [
+        "window_hinge"
+      ],
+      "description": "Control-room window with metal mullions, shallow glass pane and lower opening-light hinge.",
+      "origin": "floor-centre"
+    },
+    "substation_co_roof": {
+      "family": "roof",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        12.4,
+        0.22,
+        7.4
+      ],
+      "footprint": [
+        12.4,
+        7.4
+      ],
+      "pivots": [],
+      "description": "Shallow flat concrete roof slab with edge flashing and separated roofing seams.",
+      "origin": "floor-centre"
+    }
+  }
+}

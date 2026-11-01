@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: Y01 both checked-in plans pass full metre and placement validation
+ok 1 - Y01 both checked-in plans pass full metre and placement validation
+  ---
+  duration_ms: 64.477019
+  type: 'test'
+  ...
+# Subtest: Y02 complete equipment inventory includes twins and twelve indoor panels
+ok 2 - Y02 complete equipment inventory includes twins and twelve indoor panels
+  ---
+  duration_ms: 1.887648
+  type: 'test'
+  ...
+# Subtest: Y03 parity permits explicit variant fields and rejects equipment drift
+ok 3 - Y03 parity permits explicit variant fields and rejects equipment drift
+  ---
+  duration_ms: 25.0109
+  type: 'test'
+  ...
+# Subtest: Y04 named future anchors and empty bilingual inspection slots are complete
+ok 4 - Y04 named future anchors and empty bilingual inspection slots are complete
+  ---
+  duration_ms: 34.50319
+  type: 'test'
+  ...
+# Subtest: Y05 complete route segments clear all conservative keep-outs and body radius
+ok 5 - Y05 complete route segments clear all conservative keep-outs and body radius
+  ---
+  duration_ms: 28.13743
+  type: 'test'
+  ...
+# Subtest: Y06 nav polygons enclose real envelopes and electrical exclusion margins
+ok 6 - Y06 nav polygons enclose real envelopes and electrical exclusion margins
+  ---
+  duration_ms: 32.129521
+  type: 'test'
+  ...
+# Subtest: Y07 route enters through the open gate with covered trenches and a building footprint
+ok 7 - Y07 route enters through the open gate with covered trenches and a building footprint
+  ---
+  duration_ms: 14.801271
+  type: 'test'
+  ...
+# Subtest: Y08 malformed schema, identity, bindings and placements are rejected
+ok 8 - Y08 malformed schema, identity, bindings and placements are rejected
+  ---
+  duration_ms: 69.552254
+  type: 'test'
+  ...
+# Subtest: Y09 exact segment polygon distance catches edge crossings and near misses
+ok 9 - Y09 exact segment polygon distance catches edge crossings and near misses
+  ---
+  duration_ms: 0.575475
+  type: 'test'
+  ...
+# Subtest: Y10 plan regeneration is deterministic from the catalogue across text line endings
+ok 10 - Y10 plan regeneration is deterministic from the catalogue across text line endings
+  ---
+  duration_ms: 23.838117
+  type: 'test'
+  ...
+# Subtest: Y11 line supports, catenary recipes and external anchors resolve for both yards
+ok 11 - Y11 line supports, catenary recipes and external anchors resolve for both yards
+  ---
+  duration_ms: 52.737181
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 441.246364
