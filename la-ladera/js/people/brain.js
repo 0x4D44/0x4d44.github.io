@@ -101,7 +101,7 @@ export class Brain {
     const from = nav.nearest(npc.x, npc.z, 40, npc.y), to = nav.nearest(p.x, p.z, o.snapD ?? 16, p.y);
     if (from < 0 || to < 0 || !W.inMain(to)) return false;
     const idx = nav.path(from, to); if (!idx) { npc.pathFails = (npc.pathFails ?? 0) + 1; return false; }
-    const pts = W.waypoints(npc, idx); pts.push({ x: p.x, z: p.z, y: p.y });
+    const pts = W.waypoints(npc, idx, p); pts.push({ x: p.x, z: p.z, y: p.y });         // (the leg to p is judged with the lane's: the end supports of a bench round the spot)
     return npc.walk(W, pts, arrive, this.speedFor(npc, o));
   }
 
@@ -110,7 +110,7 @@ export class Brain {
     const W = this.w, nav = W.nav, from = nav.nearest(a.x, a.z, 10, a.y), to = nav.nearest(b.x, b.z, snapD, b.y);
     if (from < 0 || to < 0 || !W.inMain(from) || !W.inMain(to)) return null;
     const idx = from === to ? [from] : nav.path(from, to); if (!idx) return null;
-    const pts = W.waypoints({ x: a.x, z: a.z, lane: npc.lane }, idx); pts.push({ x: b.x, z: b.z, y: b.y });
+    const pts = W.waypoints({ x: a.x, z: a.z, lane: npc.lane }, idx, b); pts.push({ x: b.x, z: b.z, y: b.y });
     return pts;
   }
 
