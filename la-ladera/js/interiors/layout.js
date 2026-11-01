@@ -372,6 +372,7 @@ export class Layout {
   valid(it, o = {}) {
     this.checks = (this.checks ?? 0) + 1;                // a solver's budget counts the poses it tried
     if (!this.inside(it.ob)) return false;
+    for (const k of o.clearOf ?? []) if (k.floor && obbOverlap(it.ob, k.ob, o.clearBy ?? 0.9)) return false;      // keeps `clearBy` m (0.9) off these pieces: two chairs 0.65 m apart make a niche a walker wedges in
     const flat = it.c.size[1] < 0.05;                    // rugs and mats: only avoid each other
     if (!flat) {
       if (this._keepHit(it.ob, o.keepLateral ?? 0) && !o.ignoreKeep) return false;
@@ -552,7 +553,7 @@ export class Layout {
     return false;
   }
 
-  /** Free-standing: search around a target, optionally facing a point/item. o: { near:[x,z]|item, rad, ry, face, step, prio, tint } */
+  /** Free-standing: search around a target, optionally facing a point/item. o: { near:[x,z]|item, rad, ry, face, step, prio, tint, clearOf: [item], clearBy: m } */
   free(name, o = {}) {
     const c = o.def ?? CATALOG[name]; if (!c) throw new Error('unknown catalogue item ' + name);
     const [tx, tz] = o.near ? this._pt(o.near) : [(this.r.x0 + this.r.x1) / 2, (this.r.z0 + this.r.z1) / 2];

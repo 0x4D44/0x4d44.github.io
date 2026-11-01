@@ -7,6 +7,8 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch } from './chrome.mjs';
+import { INSPECT } from '../js/interiors/inspect_data.js';
+import { GOODS_CATALOG } from '../js/interiors/goods-catalog.js';
 
 const TRIES = +(process.env.A3_TRIES || 24);
 let b, page;
@@ -107,13 +109,18 @@ test('a wardrobe: the crosshair finds its front, the prompt offers to open it, E
   await page.key('KeyE');
   const open = await L(`L.step(40); L.render(); const s = L.state(); const gh = S.leaves.map((lf) => lf.ghost?.group), ev = [];
     return { st: __a3.slotInfo(S.id), dc: s.drawCalls, tris: s.triangles, ghostVisible: gh.every((g) => g && g.visible), ghostMeshes: gh.reduce((n, g) => n + g.children.filter((m) => m.isMesh).length, 0),
-      contentMeshes: S.contentGroup ? S.contentGroup.children.filter((m) => m.isMesh).length : -1, prompt: __a3.prompt() };`);
+      contentMeshes: S.contentGroup ? S.contentGroup.children.filter((m) => m.isMesh).length : -1, prompt: __a3.prompt(),
+      contentKeys: S.contentGroup ? S.contentGroup.children.filter((m) => m.isMesh).map((m) => m.userData.matKey) : [], models: [...new Set(S.objs.filter((o) => o.model).map((o) => o.model.key))] };`);
   assert.equal(open.st.state, 'open', 'E did not open the wardrobe');
   assert.ok(open.st.objs >= 3, `${open.st.objs} things inside a wardrobe`);
   assert.equal(open.st.group, open.st.objs, 'one kernel target per thing inside');
   assert.ok(open.ghostVisible && open.ghostMeshes >= 1, 'no moving door in the scene');
-  assert.ok(open.contentMeshes >= 1 && open.contentMeshes <= 3, `${open.contentMeshes} meshes for the contents (budget: 3)`);
-  assert.ok(open.dc - closed.dc <= 6, `opening cost ${open.dc - closed.dc} draw calls (${closed.dc} -> ${open.dc})`);
+  // The stand-ins fold into at most 3 meshes, as ever. A close-inspection model (inspect.js) brings the materials of its own (a watch is gold, glass and paper), and an open
+  // drawer pays for those and nothing else: at most the draw calls the manifest records for each distinct model inside, one mesh per material, only while it is open.
+  const own = open.contentKeys.filter((k) => /^inspect_/.test(k)), bound = open.models.reduce((n, k) => n + INSPECT[k].calls, 0);
+  assert.ok(open.contentMeshes >= 1 && open.contentMeshes - own.length <= 3, `${open.contentMeshes - own.length} meshes for the stand-ins (budget: 3): ${open.contentKeys}`);
+  assert.ok(own.length <= bound, `${own.length} model meshes inside, the models inside (${open.models}) record ${bound} draw calls`);
+  assert.ok(open.dc - closed.dc <= 6 + own.length, `opening cost ${open.dc - closed.dc} draw calls (${closed.dc} -> ${open.dc}, ${own.length} of them models)`);
   console.log(`# wardrobe ${f.sid} in ${f.bid}: ${open.st.objs} things, draw calls ${closed.dc} -> ${open.dc} (ghost ${open.ghostMeshes} meshes, contents ${open.contentMeshes}), triangles ${closed.tris} -> ${open.tris}`);
   // aim at the things inside, one after the other, and examine the first PLAIN one that can be reached: a bilingual line (a find or a paper has a test of its own, and E on one is counted:
   // the new bedroom of L02 holds the medalla_campeon first of all, and marking it here made the find test below see two)
@@ -217,4 +224,56 @@ test('walking out of the DOOR closes everything that was open (the building stay
   assert.deepEqual(r.errors, [], 'the game logged errors');
   const sum = page.summary();
   assert.deepEqual([sum.errors, sum.netErrors, sum.consoleErrors], [[], [], []]);
+});
+
+test('a stocked shop: the goods library and its label atlas are loaded, every shop is stocked and drawn as LODs with the atlas decoded, and the counter of a stocked shop still takes the crosshair and E', async () => {
+  const keys = Object.keys(GOODS_CATALOG).length;
+  const pre = await kit(`
+    const c = __ladera.ctx, g = c.goodsAssets, shops = [...c.buildings.values()].filter((bp) => bp.goods?.length);
+    const lods = []; c.scene.traverse((o) => { if (o.isLOD && o.userData.goods) lods.push(o); });
+    const labelled = []; for (const lod of lods) for (const lv of lod.levels) lv.object.traverse((m) => { if (m.isMesh && m.material?.map) { const i = m.material.map.image; labelled.push(i?.naturalWidth ?? i?.width ?? 0); } });
+    return { atlas: g?.atlasReady, keys: g?.keys?.length, missing: g?.missing?.length, shops: shops.length, goods: shops.reduce((n, bp) => n + bp.goods.length, 0), lods: lods.length,
+      rooms: shops.reduce((n, bp) => n + new Set(bp.goods.map((x) => x.room)).size, 0), drawn: shops.reduce((n, bp) => n + (bp.interior.stats?.goods?.drawn ?? 0), 0), labelled: labelled.length, undecoded: labelled.filter((w) => !(w > 0)).length };`);
+  assert.deepEqual([pre.atlas, pre.keys, pre.missing], [true, keys, 0], `the goods library did not load in the page: ${JSON.stringify(pre)}`);
+  assert.ok(pre.shops >= 20 && pre.goods >= 1000, `${pre.shops} stocked shops, ${pre.goods} articles`);
+  assert.equal(pre.drawn, pre.goods, 'a planned article is not drawn');
+  assert.equal(pre.lods, pre.rooms, 'one LOD per stocked room');
+  assert.ok(pre.labelled > 0 && pre.undecoded === 0, `${pre.labelled} label meshes, ${pre.undecoded} without a decoded atlas`);
+  // The counter of a stocked shop, from the customer's side: the crosshair finds it (its cash drawer, or the counter itself: "Mirar el mostrador" has the higher priority from most spots), the
+  // stock on and in it takes no target of its own and hides none, E answers, and the LOD levels follow the distance.
+  const f = await kit(`
+    const L = __ladera, c = L.ctx, C = c.containers, { frontSpots } = await import('/la-ladera/js/interiors/containers.js');
+    for (const bp of c.buildings.values()) {
+      if (!bp.goods?.length || !C.pending.has(bp.id)) continue;
+      L.enter(bp.id); L.step(70);
+      for (const S of C.byBuilding.get(bp.id) ?? []) {
+        if (!/^(shop_counter|pharmacy_counter|cafe_counter)/.test(S.rec.name) || !S.reachable) continue;
+        const room = S.bp.rooms.find((r) => r.id === S.rec.room), p = S.pos;
+        for (const [bx, bz] of frontSpots(S)) {
+          const [x, y, z] = S.bp.frame.toWorld(bx, room?.y ?? 0, bz);
+          L.teleport(x, z, { y }); L.lookAt(p[0], p[1], p[2]); L.step(2);
+          const t = __a3.look();
+          if (t && (t.id === 'cont:' + S.id || t.id === 'int:' + S.rec.id)) return { bid: bp.id, sid: S.id, target: t.id };
+        }
+      }
+    }
+    return null;`);
+  assert.ok(f, 'no counter of a stocked shop could be put under the crosshair');
+  const L = (e) => kit(`const L = __ladera, c = L.ctx, C = c.containers, S = C.slots.get(${JSON.stringify(f.sid)}), bp = c.buildings.get(${JSON.stringify(f.bid)}); ${e}`);
+  const closed = await L(`L.render(); const s = L.state(); const lods = []; c.scene.traverse((o) => { if (o.isLOD && o.name.startsWith(bp.id + '.goods.')) lods.push(o); });
+    const p = new c.THREE.Vector3(), q = new c.THREE.Vector3(), seen = lods.map((o) => { o.getWorldPosition(p); c.camera.getWorldPosition(q); return { d: p.distanceTo(q), levels: o.levels.map((lv) => lv.object.visible) }; });
+    return { target: __a3.look()?.id, prompt: __a3.prompt(), goods: bp.goods.length, drawn: bp.interior.stats.goods.drawn, lods: lods.length, seen, dc: s.drawCalls, tris: s.triangles };`);
+  assert.equal(closed.target, f.target, 'the crosshair no longer finds the counter of a stocked shop');
+  assert.match(closed.prompt, /Abrir|Mirar/, `the prompt under the crosshair says ${JSON.stringify(closed.prompt)}`);
+  assert.ok(closed.lods >= 1 && closed.drawn === closed.goods, `${closed.lods} LODs, ${closed.drawn} of ${closed.goods} articles drawn in the shop`);
+  for (const s of closed.seen) {                                                                      // the LOD levels follow the distance: near below 8 m, the cheaper stock to 22 m
+    if (s.d < 7.5) assert.deepEqual(s.levels, [true, false, false], `goods ${s.d.toFixed(1)} m away: ${s.levels}`);
+    else if (s.d > 8.5 && s.d < 21) assert.deepEqual(s.levels, [false, true, false], `goods ${s.d.toFixed(1)} m away: ${s.levels}`);
+  }
+  await page.key('KeyE');
+  const after = await L(`L.step(40); L.render(); const s = L.state(), sub = document.getElementById('subtitle'); return { opened: C.slots.get(S.id)?.state === 'open', said: sub?.classList.contains('on') ? sub.innerText.length : 0, dc: s.drawCalls, errors: L.errors().length };`);
+  assert.ok(after.opened || after.said > 8, 'E on the counter of a stocked shop does nothing');
+  assert.equal(after.errors, 0);
+  console.log(`# stocked shop ${f.bid} (${closed.goods} articles in ${closed.lods} LOD${closed.lods > 1 ? 's' : ''}): the crosshair finds ${f.target}, E ${after.opened ? 'opens the drawer' : 'makes the counter speak'}; draw calls ${closed.dc} -> ${after.dc}, triangles ${closed.tris}; whole world ${pre.goods} articles in ${pre.shops} shops`);
+  await L(`C.close(S.id, true); L.step(2); return 1;`);
 });

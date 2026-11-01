@@ -1,0 +1,1228 @@
+{
+  "version": 1,
+  "complete": true,
+  "generator": "tools/blender/clutter_build.py",
+  "license": "CC0-1.0",
+  "atlas": {
+    "path": "../textures/clutter/decals.png",
+    "width": 1024,
+    "height": 512,
+    "material": "clutter_decal",
+    "tiles": {
+      "graffiti_barrio": [
+        0.0078125,
+        0.515625,
+        0.2421875,
+        0.984375
+      ],
+      "poster_agua": [
+        0.2578125,
+        0.515625,
+        0.4921875,
+        0.984375
+      ],
+      "poster_feria": [
+        0.5078125,
+        0.515625,
+        0.7421875,
+        0.984375
+      ],
+      "repair_sign": [
+        0.7578125,
+        0.515625,
+        0.9921875,
+        0.984375
+      ],
+      "graffiti_flor": [
+        0.0078125,
+        0.015625,
+        0.2421875,
+        0.484375
+      ],
+      "poster_baile": [
+        0.2578125,
+        0.015625,
+        0.4921875,
+        0.484375
+      ],
+      "no_basura": [
+        0.5078125,
+        0.015625,
+        0.7421875,
+        0.484375
+      ],
+      "tienda_sign": [
+        0.7578125,
+        0.015625,
+        0.9921875,
+        0.484375
+      ]
+    }
+  },
+  "files": [
+    {
+      "glb": "clutter/clutter.glb",
+      "assets": {
+        "clutter_pole_concrete": {
+          "node": "clutter_pole_concrete",
+          "tags": [
+            "clutter",
+            "pole"
+          ],
+          "size": [
+            2.4,
+            8.62,
+            1.4
+          ],
+          "footprint": [
+            2.4,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -1.1,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              1.1,
+              8.6,
+              0.284811
+            ]
+          },
+          "triangles": 616,
+          "parts": 4,
+          "lod1": "clutter_pole_concrete_lod1"
+        },
+        "clutter_pole_concrete_lod1": {
+          "node": "clutter_pole_concrete_lod1",
+          "tags": [
+            "clutter_lod",
+            "pole"
+          ],
+          "size": [
+            2.4,
+            8.62,
+            1.4
+          ],
+          "footprint": [
+            2.4,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -1.1,
+              0.0,
+              -0.135
+            ],
+            "max": [
+              1.1,
+              8.6,
+              0.135
+            ]
+          },
+          "triangles": 108,
+          "parts": 3
+        },
+        "clutter_pole_wood": {
+          "node": "clutter_pole_wood",
+          "tags": [
+            "clutter",
+            "pole"
+          ],
+          "size": [
+            2.4,
+            8.62,
+            1.4
+          ],
+          "footprint": [
+            2.4,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -1.1,
+              0.0,
+              -0.2
+            ],
+            "max": [
+              1.1,
+              8.6,
+              0.284811
+            ]
+          },
+          "triangles": 616,
+          "parts": 4,
+          "lod1": "clutter_pole_wood_lod1"
+        },
+        "clutter_pole_wood_lod1": {
+          "node": "clutter_pole_wood_lod1",
+          "tags": [
+            "clutter_lod",
+            "pole"
+          ],
+          "size": [
+            2.4,
+            8.62,
+            1.4
+          ],
+          "footprint": [
+            2.4,
+            1.4
+          ],
+          "bounds": {
+            "min": [
+              -1.1,
+              0.0,
+              -0.135
+            ],
+            "max": [
+              1.1,
+              8.6,
+              0.135
+            ]
+          },
+          "triangles": 108,
+          "parts": 3
+        },
+        "clutter_tank_black": {
+          "node": "clutter_tank_black",
+          "tags": [
+            "clutter",
+            "tank"
+          ],
+          "size": [
+            1.48,
+            1.7,
+            1.56
+          ],
+          "footprint": [
+            1.48,
+            1.56
+          ],
+          "bounds": {
+            "min": [
+              -0.68005,
+              0,
+              -0.663
+            ],
+            "max": [
+              0.68005,
+              1.6042,
+              0.757
+            ]
+          },
+          "triangles": 620,
+          "parts": 2,
+          "lod1": "clutter_tank_black_lod1"
+        },
+        "clutter_tank_black_lod1": {
+          "node": "clutter_tank_black_lod1",
+          "tags": [
+            "clutter_lod",
+            "tank"
+          ],
+          "size": [
+            1.48,
+            1.7,
+            1.56
+          ],
+          "footprint": [
+            1.48,
+            1.56
+          ],
+          "bounds": {
+            "min": [
+              -0.67,
+              0,
+              -0.67
+            ],
+            "max": [
+              0.67,
+              1.6137,
+              0.67
+            ]
+          },
+          "triangles": 96,
+          "parts": 1
+        },
+        "clutter_tank_blue": {
+          "node": "clutter_tank_blue",
+          "tags": [
+            "clutter",
+            "tank"
+          ],
+          "size": [
+            1.35,
+            1.52,
+            1.42
+          ],
+          "footprint": [
+            1.35,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.609,
+              0,
+              -0.593731
+            ],
+            "max": [
+              0.609,
+              1.435,
+              0.687
+            ]
+          },
+          "triangles": 620,
+          "parts": 2,
+          "lod1": "clutter_tank_blue_lod1"
+        },
+        "clutter_tank_blue_lod1": {
+          "node": "clutter_tank_blue_lod1",
+          "tags": [
+            "clutter_lod",
+            "tank"
+          ],
+          "size": [
+            1.35,
+            1.52,
+            1.42
+          ],
+          "footprint": [
+            1.35,
+            1.42
+          ],
+          "bounds": {
+            "min": [
+              -0.6,
+              0,
+              -0.6
+            ],
+            "max": [
+              0.6,
+              1.4355,
+              0.6
+            ]
+          },
+          "triangles": 96,
+          "parts": 1
+        },
+        "clutter_dish": {
+          "node": "clutter_dish",
+          "tags": [
+            "clutter",
+            "dish"
+          ],
+          "size": [
+            1.04,
+            1.42,
+            1.14
+          ],
+          "footprint": [
+            1.04,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.49,
+              0.0,
+              -0.203547
+            ],
+            "max": [
+              0.49,
+              1.239559,
+              0.497797
+            ]
+          },
+          "triangles": 316,
+          "parts": 3,
+          "lod1": "clutter_dish_lod1"
+        },
+        "clutter_dish_lod1": {
+          "node": "clutter_dish_lod1",
+          "tags": [
+            "clutter_lod",
+            "dish"
+          ],
+          "size": [
+            1.04,
+            1.42,
+            1.14
+          ],
+          "footprint": [
+            1.04,
+            1.14
+          ],
+          "bounds": {
+            "min": [
+              -0.48,
+              0.0,
+              -0.210956
+            ],
+            "max": [
+              0.48,
+              1.241359,
+              0.497797
+            ]
+          },
+          "triangles": 82,
+          "parts": 1
+        },
+        "clutter_washing_line": {
+          "node": "clutter_washing_line",
+          "tags": [
+            "clutter",
+            "washing_line"
+          ],
+          "size": [
+            4.72,
+            2.34,
+            0.36
+          ],
+          "footprint": [
+            4.72,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -2.35,
+              0.0,
+              -0.039508
+            ],
+            "max": [
+              2.35,
+              2.3,
+              0.063832
+            ]
+          },
+          "triangles": 277,
+          "parts": 4,
+          "lod1": "clutter_washing_line_lod1"
+        },
+        "clutter_washing_line_lod1": {
+          "node": "clutter_washing_line_lod1",
+          "tags": [
+            "clutter_lod",
+            "washing_line"
+          ],
+          "size": [
+            4.72,
+            2.34,
+            0.36
+          ],
+          "footprint": [
+            4.72,
+            0.36
+          ],
+          "bounds": {
+            "min": [
+              -2.281,
+              0.0,
+              -0.031
+            ],
+            "max": [
+              2.281,
+              2.3,
+              0.031
+            ]
+          },
+          "triangles": 66,
+          "parts": 3
+        },
+        "clutter_bin_wheelie": {
+          "node": "clutter_bin_wheelie",
+          "tags": [
+            "clutter",
+            "bin"
+          ],
+          "size": [
+            0.69,
+            1.04,
+            0.76
+          ],
+          "footprint": [
+            0.69,
+            0.76
+          ],
+          "bounds": {
+            "min": [
+              -0.32,
+              0.01,
+              -0.365
+            ],
+            "max": [
+              0.32,
+              1.0,
+              0.3625
+            ]
+          },
+          "triangles": 182,
+          "parts": 4,
+          "lod1": "clutter_bin_wheelie_lod1"
+        },
+        "clutter_bin_wheelie_lod1": {
+          "node": "clutter_bin_wheelie_lod1",
+          "tags": [
+            "clutter_lod",
+            "bin"
+          ],
+          "size": [
+            0.69,
+            1.04,
+            0.76
+          ],
+          "footprint": [
+            0.69,
+            0.76
+          ],
+          "bounds": {
+            "min": [
+              -0.32,
+              0.01,
+              -0.355
+            ],
+            "max": [
+              0.32,
+              0.97,
+              0.325
+            ]
+          },
+          "triangles": 64,
+          "parts": 2
+        },
+        "clutter_bin_metal": {
+          "node": "clutter_bin_metal",
+          "tags": [
+            "clutter",
+            "bin"
+          ],
+          "size": [
+            0.69,
+            0.86,
+            0.69
+          ],
+          "footprint": [
+            0.69,
+            0.69
+          ],
+          "bounds": {
+            "min": [
+              -0.325,
+              0,
+              -0.325
+            ],
+            "max": [
+              0.325,
+              0.840984,
+              0.325
+            ]
+          },
+          "triangles": 380,
+          "parts": 1,
+          "lod1": "clutter_bin_metal_lod1"
+        },
+        "clutter_bin_metal_lod1": {
+          "node": "clutter_bin_metal_lod1",
+          "tags": [
+            "clutter_lod",
+            "bin"
+          ],
+          "size": [
+            0.69,
+            0.86,
+            0.69
+          ],
+          "footprint": [
+            0.69,
+            0.69
+          ],
+          "bounds": {
+            "min": [
+              -0.32,
+              0.0,
+              -0.277128
+            ],
+            "max": [
+              0.32,
+              0.78,
+              0.277128
+            ]
+          },
+          "triangles": 48,
+          "parts": 1
+        },
+        "clutter_crate_wood": {
+          "node": "clutter_crate_wood",
+          "tags": [
+            "clutter",
+            "crate"
+          ],
+          "size": [
+            0.67,
+            0.49,
+            0.48
+          ],
+          "footprint": [
+            0.67,
+            0.48
+          ],
+          "bounds": {
+            "min": [
+              -0.315,
+              0.0,
+              -0.226
+            ],
+            "max": [
+              0.315,
+              0.47,
+              0.23
+            ]
+          },
+          "triangles": 252,
+          "parts": 2,
+          "lod1": "clutter_crate_wood_lod1"
+        },
+        "clutter_crate_wood_lod1": {
+          "node": "clutter_crate_wood_lod1",
+          "tags": [
+            "clutter_lod",
+            "crate"
+          ],
+          "size": [
+            0.67,
+            0.49,
+            0.48
+          ],
+          "footprint": [
+            0.67,
+            0.48
+          ],
+          "bounds": {
+            "min": [
+              -0.315,
+              0.0,
+              -0.226
+            ],
+            "max": [
+              0.315,
+              0.425,
+              0.226
+            ]
+          },
+          "triangles": 60,
+          "parts": 1
+        },
+        "clutter_crate_plastic": {
+          "node": "clutter_crate_plastic",
+          "tags": [
+            "clutter",
+            "crate"
+          ],
+          "size": [
+            0.61,
+            0.38,
+            0.43
+          ],
+          "footprint": [
+            0.61,
+            0.43
+          ],
+          "bounds": {
+            "min": [
+              -0.29,
+              0.0,
+              -0.205
+            ],
+            "max": [
+              0.29,
+              0.355,
+              0.205
+            ]
+          },
+          "triangles": 300,
+          "parts": 1,
+          "lod1": "clutter_crate_plastic_lod1"
+        },
+        "clutter_crate_plastic_lod1": {
+          "node": "clutter_crate_plastic_lod1",
+          "tags": [
+            "clutter_lod",
+            "crate"
+          ],
+          "size": [
+            0.61,
+            0.38,
+            0.43
+          ],
+          "footprint": [
+            0.61,
+            0.43
+          ],
+          "bounds": {
+            "min": [
+              -0.29,
+              0.0,
+              -0.2025
+            ],
+            "max": [
+              0.29,
+              0.335,
+              0.2025
+            ]
+          },
+          "triangles": 60,
+          "parts": 1
+        },
+        "clutter_tyre": {
+          "node": "clutter_tyre",
+          "tags": [
+            "clutter",
+            "tyre"
+          ],
+          "size": [
+            0.74,
+            0.27,
+            0.74
+          ],
+          "footprint": [
+            0.74,
+            0.74
+          ],
+          "bounds": {
+            "min": [
+              -0.352328,
+              0,
+              -0.352328
+            ],
+            "max": [
+              0.352328,
+              0.25,
+              0.352328
+            ]
+          },
+          "triangles": 400,
+          "parts": 1,
+          "lod1": "clutter_tyre_lod1"
+        },
+        "clutter_tyre_lod1": {
+          "node": "clutter_tyre_lod1",
+          "tags": [
+            "clutter_lod",
+            "tyre"
+          ],
+          "size": [
+            0.74,
+            0.27,
+            0.74
+          ],
+          "footprint": [
+            0.74,
+            0.74
+          ],
+          "bounds": {
+            "min": [
+              -0.335,
+              0,
+              -0.335
+            ],
+            "max": [
+              0.335,
+              0.25,
+              0.335
+            ]
+          },
+          "triangles": 80,
+          "parts": 1
+        },
+        "clutter_cone": {
+          "node": "clutter_cone",
+          "tags": [
+            "clutter",
+            "cone"
+          ],
+          "size": [
+            0.47,
+            0.78,
+            0.47
+          ],
+          "footprint": [
+            0.47,
+            0.47
+          ],
+          "bounds": {
+            "min": [
+              -0.22,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.22,
+              0.736,
+              0.22
+            ]
+          },
+          "triangles": 144,
+          "parts": 2,
+          "lod1": "clutter_cone_lod1"
+        },
+        "clutter_cone_lod1": {
+          "node": "clutter_cone_lod1",
+          "tags": [
+            "clutter_lod",
+            "cone"
+          ],
+          "size": [
+            0.47,
+            0.78,
+            0.47
+          ],
+          "footprint": [
+            0.47,
+            0.47
+          ],
+          "bounds": {
+            "min": [
+              -0.22,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.22,
+              0.715,
+              0.22
+            ]
+          },
+          "triangles": 32,
+          "parts": 2
+        },
+        "clutter_shrine": {
+          "node": "clutter_shrine",
+          "tags": [
+            "clutter",
+            "shrine"
+          ],
+          "size": [
+            0.8,
+            1.31,
+            0.46
+          ],
+          "footprint": [
+            0.8,
+            0.46
+          ],
+          "bounds": {
+            "min": [
+              -0.39,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.39,
+              1.28,
+              0.22
+            ]
+          },
+          "triangles": 236,
+          "parts": 4,
+          "lod1": "clutter_shrine_lod1"
+        },
+        "clutter_shrine_lod1": {
+          "node": "clutter_shrine_lod1",
+          "tags": [
+            "clutter_lod",
+            "shrine"
+          ],
+          "size": [
+            0.8,
+            1.31,
+            0.46
+          ],
+          "footprint": [
+            0.8,
+            0.46
+          ],
+          "bounds": {
+            "min": [
+              -0.39,
+              0.0,
+              -0.22
+            ],
+            "max": [
+              0.39,
+              1.28,
+              0.22
+            ]
+          },
+          "triangles": 84,
+          "parts": 2
+        },
+        "clutter_umbrella": {
+          "node": "clutter_umbrella",
+          "tags": [
+            "clutter",
+            "umbrella"
+          ],
+          "size": [
+            2.84,
+            2.69,
+            2.84
+          ],
+          "footprint": [
+            2.84,
+            2.84
+          ],
+          "bounds": {
+            "min": [
+              -1.37,
+              0.0,
+              -1.37
+            ],
+            "max": [
+              1.37,
+              2.64,
+              1.37
+            ]
+          },
+          "triangles": 220,
+          "parts": 3,
+          "lod1": "clutter_umbrella_lod1"
+        },
+        "clutter_umbrella_lod1": {
+          "node": "clutter_umbrella_lod1",
+          "tags": [
+            "clutter_lod",
+            "umbrella"
+          ],
+          "size": [
+            2.84,
+            2.69,
+            2.84
+          ],
+          "footprint": [
+            2.84,
+            2.84
+          ],
+          "bounds": {
+            "min": [
+              -1.37,
+              0.0,
+              -1.37
+            ],
+            "max": [
+              1.37,
+              2.64,
+              1.37
+            ]
+          },
+          "triangles": 36,
+          "parts": 3
+        },
+        "clutter_chair": {
+          "node": "clutter_chair",
+          "tags": [
+            "clutter",
+            "chair"
+          ],
+          "size": [
+            0.62,
+            0.92,
+            0.64
+          ],
+          "footprint": [
+            0.62,
+            0.64
+          ],
+          "bounds": {
+            "min": [
+              -0.288765,
+              0.004678,
+              -0.287601
+            ],
+            "max": [
+              0.288765,
+              0.872,
+              0.283799
+            ]
+          },
+          "triangles": 216,
+          "parts": 1,
+          "lod1": "clutter_chair_lod1"
+        },
+        "clutter_chair_lod1": {
+          "node": "clutter_chair_lod1",
+          "tags": [
+            "clutter_lod",
+            "chair"
+          ],
+          "size": [
+            0.62,
+            0.92,
+            0.64
+          ],
+          "footprint": [
+            0.62,
+            0.64
+          ],
+          "bounds": {
+            "min": [
+              -0.288765,
+              0.004678,
+              -0.283799
+            ],
+            "max": [
+              0.288765,
+              0.880585,
+              0.283799
+            ]
+          },
+          "triangles": 88,
+          "parts": 1
+        },
+        "clutter_shutter": {
+          "node": "clutter_shutter",
+          "tags": [
+            "clutter",
+            "shutter"
+          ],
+          "size": [
+            1.84,
+            2.33,
+            0.17
+          ],
+          "footprint": [
+            1.84,
+            0.17
+          ],
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.0575
+            ],
+            "max": [
+              0.9,
+              2.3,
+              0.076
+            ]
+          },
+          "triangles": 158,
+          "parts": 3,
+          "lod1": "clutter_shutter_lod1"
+        },
+        "clutter_shutter_lod1": {
+          "node": "clutter_shutter_lod1",
+          "tags": [
+            "clutter_lod",
+            "shutter"
+          ],
+          "size": [
+            1.84,
+            2.33,
+            0.17
+          ],
+          "footprint": [
+            1.84,
+            0.17
+          ],
+          "bounds": {
+            "min": [
+              -0.9,
+              0.0,
+              -0.0575
+            ],
+            "max": [
+              0.9,
+              2.3,
+              0.045
+            ]
+          },
+          "triangles": 36,
+          "parts": 1
+        },
+        "clutter_sign": {
+          "node": "clutter_sign",
+          "tags": [
+            "clutter",
+            "sign"
+          ],
+          "size": [
+            0.82,
+            1.12,
+            0.62
+          ],
+          "footprint": [
+            0.82,
+            0.62
+          ],
+          "bounds": {
+            "min": [
+              -0.38,
+              0.001682,
+              -0.304189
+            ],
+            "max": [
+              0.38,
+              1.086318,
+              0.304189
+            ]
+          },
+          "triangles": 114,
+          "parts": 3,
+          "lod1": "clutter_sign_lod1"
+        },
+        "clutter_sign_lod1": {
+          "node": "clutter_sign_lod1",
+          "tags": [
+            "clutter_lod",
+            "sign"
+          ],
+          "size": [
+            0.82,
+            1.12,
+            0.62
+          ],
+          "footprint": [
+            0.82,
+            0.62
+          ],
+          "bounds": {
+            "min": [
+              -0.36,
+              0.015895,
+              -0.24536
+            ],
+            "max": [
+              0.36,
+              1.044105,
+              0.24536
+            ]
+          },
+          "triangles": 24,
+          "parts": 1
+        },
+        "clutter_gas_cylinder": {
+          "node": "clutter_gas_cylinder",
+          "tags": [
+            "clutter",
+            "gas_cylinder"
+          ],
+          "size": [
+            0.4,
+            0.79,
+            0.4
+          ],
+          "footprint": [
+            0.4,
+            0.4
+          ],
+          "bounds": {
+            "min": [
+              -0.185,
+              0,
+              -0.185
+            ],
+            "max": [
+              0.185,
+              0.771,
+              0.188
+            ]
+          },
+          "triangles": 348,
+          "parts": 2,
+          "lod1": "clutter_gas_cylinder_lod1"
+        },
+        "clutter_gas_cylinder_lod1": {
+          "node": "clutter_gas_cylinder_lod1",
+          "tags": [
+            "clutter_lod",
+            "gas_cylinder"
+          ],
+          "size": [
+            0.4,
+            0.79,
+            0.4
+          ],
+          "footprint": [
+            0.4,
+            0.4
+          ],
+          "bounds": {
+            "min": [
+              -0.185,
+              0,
+              -0.160215
+            ],
+            "max": [
+              0.185,
+              0.76,
+              0.160215
+            ]
+          },
+          "triangles": 72,
+          "parts": 1
+        },
+        "clutter_helmet": {
+          "node": "clutter_helmet",
+          "tags": [
+            "clutter",
+            "helmet"
+          ],
+          "size": [
+            0.36,
+            0.31,
+            0.43
+          ],
+          "footprint": [
+            0.36,
+            0.43
+          ],
+          "bounds": {
+            "min": [
+              -0.174,
+              0.003,
+              -0.189994
+            ],
+            "max": [
+              0.174,
+              0.3,
+              0.2016
+            ]
+          },
+          "triangles": 282,
+          "parts": 4,
+          "lod1": "clutter_helmet_lod1"
+        },
+        "clutter_helmet_lod1": {
+          "node": "clutter_helmet_lod1",
+          "tags": [
+            "clutter_lod",
+            "helmet"
+          ],
+          "size": [
+            0.36,
+            0.31,
+            0.43
+          ],
+          "footprint": [
+            0.36,
+            0.43
+          ],
+          "bounds": {
+            "min": [
+              -0.174,
+              0.01,
+              -0.19488
+            ],
+            "max": [
+              0.174,
+              0.3,
+              0.19488
+            ]
+          },
+          "triangles": 56,
+          "parts": 1
+        }
+      }
+    }
+  ]
+}

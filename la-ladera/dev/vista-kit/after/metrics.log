@@ -1,0 +1,289 @@
+[metrics] launching headless Chrome
+[metrics] measuring blank-page cadence
+[metrics] booting game
+[metrics] boot complete: 11.9 s
+[metrics] view spawn: positioning and measuring
+[metrics] view spawn: simulation ready; sampling frame costs
+[metrics] view spawn: 1545223 triangles, 1158 calls, 13.71 ms uncapped
+[metrics] view spawn: capturing page
+[metrics] view spawn: capture complete
+[metrics] view ridge-looking-south: positioning and measuring
+[metrics] view ridge-looking-south: simulation ready; sampling frame costs
+[metrics] view ridge-looking-south: 1230540 triangles, 940 calls, 16.14 ms uncapped
+[metrics] view ridge-looking-south: capturing page
+[metrics] view ridge-looking-south: capture complete
+[metrics] view valley-looking-north: positioning and measuring
+[metrics] view valley-looking-north: simulation ready; sampling frame costs
+[metrics] view valley-looking-north: 1352685 triangles, 938 calls, 12.78 ms uncapped
+[metrics] view valley-looking-north: capturing page
+[metrics] view valley-looking-north: capture complete
+[metrics] geometry spawn: positioning and rendering once
+[metrics] geometry spawn: 1517561 triangles, 1155 calls
+[metrics] geometry ridge-looking-south: positioning and rendering once
+[metrics] geometry ridge-looking-south: 1230540 triangles, 940 calls
+[metrics] geometry valley-looking-north: positioning and rendering once
+[metrics] geometry valley-looking-north: 1352685 triangles, 938 calls
+[metrics] geometry street-n0: positioning and rendering once
+[metrics] geometry street-n0: 1354273 triangles, 939 calls
+[metrics] geometry street-n61: positioning and rendering once
+[metrics] geometry street-n61: 1383925 triangles, 802 calls
+[metrics] geometry street-n122: positioning and rendering once
+[metrics] geometry street-n122: 993416 triangles, 652 calls
+[metrics] geometry street-n183: positioning and rendering once
+[metrics] geometry street-n183: 1569508 triangles, 917 calls
+[metrics] geometry street-n244: positioning and rendering once
+[metrics] geometry street-n244: 1392397 triangles, 894 calls
+[metrics] geometry street-n305: positioning and rendering once
+[metrics] geometry street-n305: 1336011 triangles, 887 calls
+[metrics] geometry street-n366: positioning and rendering once
+[metrics] geometry street-n366: 842882 triangles, 577 calls
+[metrics] geometry street-n427: positioning and rendering once
+[metrics] geometry street-n427: 1411603 triangles, 893 calls
+[metrics] geometry street-n488: positioning and rendering once
+[metrics] geometry street-n488: 723831 triangles, 518 calls
+[metrics] geometry plaza-P1: positioning and rendering once
+[metrics] geometry plaza-P1: 1435326 triangles, 767 calls
+[metrics] geometry plaza-P2: positioning and rendering once
+[metrics] geometry plaza-P2: 1497722 triangles, 908 calls
+[metrics] geometry plaza-P4: positioning and rendering once
+[metrics] geometry plaza-P4: 1273266 triangles, 951 calls
+[metrics] geometry landmark-mirador: positioning and rendering once
+[metrics] geometry landmark-mirador: 433851 triangles, 348 calls
+[metrics] geometry landmark-virgen: positioning and rendering once
+[metrics] geometry landmark-virgen: 1314323 triangles, 895 calls
+[metrics] geometry landmark-almendros: positioning and rendering once
+[metrics] geometry landmark-almendros: 1208151 triangles, 819 calls
+[metrics] geometry landmark-cancha: positioning and rendering once
+[metrics] geometry landmark-cancha: 686113 triangles, 416 calls
+[metrics] geometry door-L00: positioning and rendering once
+[metrics] geometry door-L00: 654135 triangles, 404 calls
+[metrics] geometry door-L01: positioning and rendering once
+[metrics] geometry door-L01: 729093 triangles, 443 calls
+[metrics] geometry door-L02: positioning and rendering once
+[metrics] geometry door-L02: 1487541 triangles, 1021 calls
+[metrics] geometry door-L06: positioning and rendering once
+[metrics] geometry door-L06: 1676633 triangles, 1227 calls
+[metrics] geometry door-L09: positioning and rendering once
+[metrics] geometry door-L09: 1489655 triangles, 1057 calls
+[metrics] geometry door-L10: positioning and rendering once
+[metrics] geometry door-L10: 1497832 triangles, 1051 calls
+[metrics] geometry door-L11: positioning and rendering once
+[metrics] geometry door-L11: 696965 triangles, 488 calls
+[metrics] geometry door-L12: positioning and rendering once
+[metrics] geometry door-L12: 712051 triangles, 511 calls
+[metrics] geometry interior-L00-school: positioning and rendering once
+[metrics] geometry interior-L00-school: 640011 triangles, 392 calls
+[metrics] geometry interior-L01-kiosk: positioning and rendering once
+[metrics] geometry interior-L01-kiosk: 710117 triangles, 429 calls
+[metrics] geometry interior-L02-shophouse: positioning and rendering once
+[metrics] geometry interior-L02-shophouse: 1394586 triangles, 856 calls
+[metrics] geometry interior-L06-apartments: positioning and rendering once
+[metrics] geometry interior-L06-apartments: 1548564 triangles, 948 calls
+[metrics] geometry interior-L09-clinic: positioning and rendering once
+[metrics] geometry interior-L09-clinic: 1498620 triangles, 1017 calls
+[metrics] geometry interior-L10-hall: positioning and rendering once
+[metrics] geometry interior-L10-hall: 1481698 triangles, 1002 calls
+[metrics] geometry interior-L11-workshop: positioning and rendering once
+[metrics] geometry interior-L11-workshop: 668155 triangles, 452 calls
+[metrics] geometry interior-L12-cornerstore: positioning and rendering once
+[metrics] geometry interior-L12-cornerstore: 681887 triangles, 460 calls
+[metrics] geometry interior-L13-house: positioning and rendering once
+[metrics] geometry interior-L13-house: 691847 triangles, 479 calls
+[metrics] geometry interior-L18-unfinished: positioning and rendering once
+[metrics] geometry interior-L18-unfinished: 1545486 triangles, 879 calls
+[metrics] geometry interior-L24-rowhouse: positioning and rendering once
+[metrics] geometry interior-L24-rowhouse: 1049201 triangles, 708 calls
+[metrics] geometry interior-L34-tenement: positioning and rendering once
+[metrics] geometry interior-L34-tenement: 1264101 triangles, 740 calls
+[metrics] geometry interior-L35-courtyard: positioning and rendering once
+[metrics] geometry interior-L35-courtyard: 1332733 triangles, 771 calls
+[metrics] booting deterministic soak
+[metrics] soak complete: 98 simulated seconds
+{
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "summary": {
+    "boot_s": 11.9,
+    "views": 3,
+    "blank_page_frame_ms": 16.7,
+    "frame_ms_median_of_medians": 16.7,
+    "worst_median": 16.7,
+    "worst_cost_ms": 16.14,
+    "max_calls": 1158,
+    "max_tris": 1545223
+  },
+  "geometry": {
+    "views": 40,
+    "max_calls": 1227,
+    "max_tris": 1676633
+  },
+  "boot": {
+    "seconds": 11.9,
+    "console": {
+      "errors": 0,
+      "warnings": 4,
+      "pageErrors": 0,
+      "net404": 0
+    },
+    "sample": [
+      "[warning] [.WebGL-0x34dc001e6600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:46445/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x34dc001e6600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:46445/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x34dc001e6600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:46445/la-ladera/index.html?autostart&manual&dpr=1",
+      "[warning] [.WebGL-0x34dc001e6600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:46445/la-ladera/index.html?autostart&manual&dpr=1"
+    ]
+  },
+  "counts": {
+    "buildings": 49,
+    "withEntrance": 49,
+    "kinds": 14,
+    "rooms": 666,
+    "npcs": 73,
+    "discoveries": 111,
+    "anchors": 1927,
+    "lights": 878,
+    "npcFields": [
+      "id",
+      "name",
+      "display",
+      "persona",
+      "bank",
+      "role",
+      "char",
+      "appearance",
+      "shop",
+      "age",
+      "gender",
+      "x",
+      "y",
+      "z"
+    ]
+  },
+  "soak": {
+    "simSeconds": 98,
+    "targets": 3,
+    "legs": 118,
+    "unreachable": 0,
+    "stuck": [],
+    "nan": 0,
+    "fell": 0,
+    "doorsUsed": 0,
+    "renders": 65,
+    "maxY": 19.09,
+    "minY": 0.22,
+    "console": {
+      "errors": 0,
+      "warnings": 0,
+      "net404": 0,
+      "sample": []
+    }
+  },
+  "worstViews": [
+    {
+      "id": "ridge-looking-south",
+      "pos": [
+        26,
+        29.07,
+        -86
+      ],
+      "median": 16.7,
+      "p95": 16.7,
+      "max": 16.8,
+      "costMs": 16.14,
+      "calls": 940,
+      "tris": 1230540,
+      "geoms": 1037,
+      "textures": 168,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 179,
+        "far": 1945,
+        "culledDetails": 136,
+        "activeTriangles": 60000,
+        "activeDrawCalls": 262
+      }
+    },
+    {
+      "id": "spawn",
+      "pos": [
+        -6.5,
+        0.22,
+        92.5
+      ],
+      "median": 16.7,
+      "p95": 16.7,
+      "max": 16.8,
+      "costMs": 13.71,
+      "calls": 1158,
+      "tris": 1545223,
+      "geoms": 907,
+      "textures": 149,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 191,
+        "far": 1932,
+        "culledDetails": 137,
+        "activeTriangles": 59998,
+        "activeDrawCalls": 274
+      }
+    },
+    {
+      "id": "valley-looking-north",
+      "pos": [
+        46,
+        0.12,
+        100
+      ],
+      "median": 16.7,
+      "p95": 16.7,
+      "max": 16.8,
+      "costMs": 12.78,
+      "calls": 938,
+      "tris": 1352685,
+      "geoms": 1173,
+      "textures": 173,
+      "vista": {
+        "enabled": true,
+        "fallback": false,
+        "reason": null,
+        "pieces": 48,
+        "houses": 578,
+        "terraces": 116,
+        "instances": 2260,
+        "tiles": 17,
+        "buffers": 574,
+        "farTriangles": 41968,
+        "triangleLimit": 60000,
+        "near": 204,
+        "far": 1916,
+        "culledDetails": 140,
+        "activeTriangles": 60000,
+        "activeDrawCalls": 254
+      }
+    }
+  ],
+  "failures": [
+    "spawn: uncapped render cost 13.71 ms > 12",
+    "ridge-looking-south: uncapped render cost 16.14 ms > 12",
+    "valley-looking-north: uncapped render cost 12.78 ms > 12",
+    "console warnings: 4"
+  ]
+}

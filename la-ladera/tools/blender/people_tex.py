@@ -228,7 +228,7 @@ def eye_tile(col, seed=0):
 def paint_face2(pd, SKIN, HAIR, seed):
     S = CELL * 2
     def rgb(h): return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
-    base = np.array(rgb(SKIN[pd['skin']]), np.float32)
+    base = np.array(rgb(pd.get('skin_hex', SKIN[pd['skin']])), np.float32)
     # the face tile is full-colour: skin tone x subtle tonal variation
     n1 = fnoise(S, 1.5, seed); n2 = fnoise(S, 0.3, seed + 1)
     yy = np.linspace(0, 1, S)[:, None]; xx = np.linspace(0, 1, S)[None, :]
@@ -245,7 +245,7 @@ def paint_face2(pd, SKIN, HAIR, seed):
     img *= (1 + 0.04 * g(0.5, 0.15, 0.20, 0.10))[:, :, None]                    # forehead light
     im = Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im, 'RGBA')
     U = lambda u: u * S; V = lambda v: (1 - v) * S
-    hair = rgb(HAIR[pd['hair'][0]] if pd['hair'][1] != 'bald' else '#3a2a1e')
+    hair = rgb(pd.get('hair_hex', HAIR[pd['hair'][0]]) if pd['hair'][1] != 'bald' else '#3a2a1e')
     dark = tuple(int(c * 0.55) for c in base)
     eye_v = 0.50
     for sg in (-1, 1):

@@ -135,6 +135,18 @@ export class Pen {
     this.b.geometry(mat, g, m, { col });
     this.n++;
   }
+  /**
+   * A library model (inspect.js: core/assets.js `parts`, [{ geometry, matKey }] in the model's own space, pivot at the centre of its box) centred at piece-local (lx, ly, lz), scaled by `s` and
+   * posed: 'stand' as modelled, 'flat' turned a quarter about the width so its front faces up and its head points to the back (-z). Its parts keep their own materials and baked colours.
+   */
+  model(parts, lx, ly, lz, pose = 'flat', s = 1) {
+    _M.makeRotationY(this.ry);
+    if (pose !== 'stand') _M.multiply(_FLAT);
+    if (s !== 1) _M.multiply(_S.makeScale(s, s, s));
+    _M.setPosition(this.X(lx, lz), this.y0 + ly, this.Z(lx, lz));
+    for (const p of parts) this.b.geometry(p.matKey, p.geometry, _M);
+    this.n += parts.length;
+  }
   /** A flat round face on the item's front (a clock dial): a fan of `seg` triangles facing +z, centred at (lx, ly, lz). */
   discZ(mat, lx, ly, lz, rad, seg, col) {
     if (!(rad > 0)) return;
@@ -160,7 +172,7 @@ export class Pen {
 let ATLAS = null;
 export const setAtlas = (a) => { ATLAS = a; };
 const GEO = new Map(), _M = new THREE.Matrix4(), _S = new THREE.Matrix4();
-const _RZ = new THREE.Matrix4().makeRotationZ(Math.PI / 2), _RX = new THREE.Matrix4().makeRotationX(Math.PI / 2);
+const _RZ = new THREE.Matrix4().makeRotationZ(Math.PI / 2), _RX = new THREE.Matrix4().makeRotationX(Math.PI / 2), _FLAT = new THREE.Matrix4().makeRotationX(-Math.PI / 2);
 
 const NY = ['ny'];
 const legs4 = (P, mat, col, w, d, h, t = 0.04, inset = 0.03, lz = 0) => {
@@ -589,7 +601,7 @@ S.counter = (P, c, T, r) => {
       for (let i = 1; i < 4; i++) P.box('metal_dark', -W / 2 + W * i / 4, 0.05, D / 2 + 0.002, 0.012, H - 0.15, 0.004);
     }
     P.box('formica', 0, H - 0.05, 0, W + 0.02, 0.05, D + 0.02, 0xe8e0d0);
-    for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.1 + u * 0.08, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
+    if (!r.flags?.stockReplaced) for (let i = 0; i < 5; i++) { const u = u01(P.id, i); P.flat(-W / 2 + 0.15 + i * (W - 0.3) / 4, H, -0.02, 0.05 + u * 0.04, 0.1 + u * 0.08, 0.05, pick([0x2f5f9a, 0xc23a30, 0xe8e4da, 0x2f3a45], P.id, i)); }
     return;
   }
   // shop counters: solid body at the shopkeeper side, glass case at the customer side; the cash drawer (one real drawer) is on the customer's side
@@ -599,7 +611,7 @@ S.counter = (P, c, T, r) => {
     P.box('glass', 0, 0.62, 0.1, W - 0.06, H - 0.62 - 0.02, D - 0.3);
     P.box('metal_chrome', 0, 0.62, 0.1, W - 0.04, 0.012, D - 0.28);
     const pal = GOODS_BY_COUNTER[n] ?? GOODS_BY_COUNTER.shop_counter_glass;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < (r.flags?.stockReplaced ? 0 : 6); i++) {                                            // (the shop-goods library stocks the case instead: goods.js)
       const u = u01(P.id, i), x = -W / 2 + 0.2 + i * (W - 0.4) / 5.5, col = pick(pal, P.id, i);
       if (n === 'bread_case_glass') { if (i % 3 === 2) P.sphere(FLAT, x, 0.69, 0.1, 0.07 + u * 0.02, 0.04, 0.07 + u * 0.02, col); else P.hcyl(FLAT, x, 0.68, 0.1, 0.036 + u * 0.01, 0.3, 'z', 8, col); }       // loaves and round rolls
       else if (n === 'fridge_meat') P.sphere(FLAT, x, 0.67, 0.1, 0.06 + u * 0.025, 0.03, 0.05 + u * 0.02, col);                                                                                       // steaks and joints

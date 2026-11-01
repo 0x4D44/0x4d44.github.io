@@ -1,0 +1,45 @@
+✔ the build is clean: no module error, no unknown material, every group flushed (3.339927ms)
+✔ discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot (0.379823ms)
+✔ discoveries the world placed itself stand on free ground: outside every lot, not inside a collider (3.111853ms)
+✔ TEETH: a point on a lot wall counts as "pushed by a collider" (0.792545ms)
+✔ the signage and the living props all got a place (counts, not just "no error") (0.274804ms)
+✔ the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible) (4.523703ms)
+✔ the murals hang on tall cut walls and the flora leaves those walls bare (0.146561ms)
+✔ determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs (1447.301756ms)
+✔ perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do) (108.151299ms)
+✔ nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders (82.511606ms)
+✔ TEETH: a prop collider across a nav edge is found by the same walk (2.633462ms)
+✔ TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link (29.828436ms)
+✔ settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot) (11.536529ms)
+✔ budget: the batched world stays inside the draw and triangle allowance (1.403186ms)
+✔ every nav node stands on ground that matches its y and is not inside a lot (2.546651ms)
+✔ the plan itself dropped no unwalkable nav edge (0.116986ms)
+✔ every nav edge can be walked in both directions (50.248103ms)
+✔ the spawn reaches every door node by walking the nav graph (one component) (0.896032ms)
+✔ TEETH: a wall across an edge is detected as blocked (0.671082ms)
+✔ TEETH: a node placed on a lot wall fails the "not pushed by a wall" check (0.385602ms)
+✔ the plan is deterministic per seed and differs in the details for another seed (654.861801ms)
+✔ the lead oracle accepts the plan (106.787443ms)
+✔ lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names (0.740066ms)
+✔ lots do not overlap, intrude into streets or plazas, or leave the plot (41.263091ms)
+✔ TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported (1053.586029ms)
+✔ plinth rule and entrance ground heights (7.928718ms)
+✔ TEETH: a lot whose y no longer matches the height field is reported (183.440617ms)
+✔ gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings (0.873447ms)
+✔ TEETH: a step in the height field is reported as a gradient error (142.326841ms)
+✔ nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors (1.767977ms)
+✔ TEETH: cutting nav edges or moving a door node is reported (321.12405ms)
+✔ spawn is walkable, low on the hill, outside every lot and looks up (6.847017ms)
+✔ TEETH: a spawn inside a lot or looking downhill is reported (224.753694ms)
+✔ pois, landmarks, areas and street names have the shape and Spanish names the contract wants (1.089343ms)
+✔ TEETH: a bad poi kind, an unknown building and an English name are reported (259.829048ms)
+✔ TEETH: a spike in open terrain is reported as an unexplained cliff (210.29583ms)
+✔ heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street (32.527887ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10796.921993

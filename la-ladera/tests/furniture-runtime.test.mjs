@@ -54,7 +54,7 @@ const rawPositions = (group) => group.meshes.flatMap((m) => Array.from(m.geometr
 test('checked-in GLBs load as real furniture and render in furnished buildings', async () => {
   const ctx = ctxNew(), requests = [];
   await ctx.assets.init(readAssetJson);
-  const names = ctx.assets.names().filter((n) => CATALOG[n]);
+  const names = ctx.assets.names().filter((n) => CATALOG[n] && !CATALOG[n].ware);          // (the shop goods are in the registry and the catalogue, but they are stock, not furniture: goods-render.js loads them apart)
   assert.ok(names.length >= 120, `furniture manifest has ${names.length} assets; >= 120 required`);
   const parser = new GLTFLoader();
   ctx.assets.loader.loadAsync = async (path) => {

@@ -1,0 +1,411 @@
+clutter_pole_concrete               616 tris 4 materials
+clutter_pole_concrete_lod1          108 tris 3 materials
+clutter_pole_wood                   616 tris 4 materials
+clutter_pole_wood_lod1              108 tris 3 materials
+clutter_tank_black                  620 tris 2 materials
+clutter_tank_black_lod1              96 tris 1 materials
+clutter_tank_blue                   620 tris 2 materials
+clutter_tank_blue_lod1               96 tris 1 materials
+clutter_dish                        316 tris 3 materials
+clutter_dish_lod1                    82 tris 1 materials
+clutter_washing_line                277 tris 4 materials
+clutter_washing_line_lod1            66 tris 3 materials
+clutter_bin_wheelie                 182 tris 4 materials
+clutter_bin_wheelie_lod1             64 tris 2 materials
+clutter_bin_metal                   380 tris 1 materials
+clutter_bin_metal_lod1               48 tris 1 materials
+clutter_crate_wood                  252 tris 2 materials
+clutter_crate_wood_lod1              60 tris 1 materials
+clutter_crate_plastic               300 tris 1 materials
+clutter_crate_plastic_lod1           60 tris 1 materials
+clutter_tyre                        400 tris 1 materials
+clutter_tyre_lod1                    80 tris 1 materials
+clutter_cone                        144 tris 2 materials
+clutter_cone_lod1                    32 tris 2 materials
+clutter_shrine                      236 tris 4 materials
+clutter_shrine_lod1                  84 tris 2 materials
+clutter_umbrella                    220 tris 3 materials
+clutter_umbrella_lod1                36 tris 3 materials
+clutter_chair                       216 tris 1 materials
+clutter_chair_lod1                   88 tris 1 materials
+clutter_shutter                     158 tris 3 materials
+clutter_shutter_lod1                 36 tris 1 materials
+clutter_sign                        114 tris 3 materials
+clutter_sign_lod1                    24 tris 1 materials
+clutter_gas_cylinder                348 tris 2 materials
+clutter_gas_cylinder_lod1            72 tris 1 materials
+clutter_helmet                      282 tris 4 materials
+clutter_helmet_lod1                  56 tris 1 materials
+INFO Draco mesh compression is available, use library at /workspace/scratch/46b1acb33d95/tools-runtime/blender-4.5.4-linux-x64/4.5/scripts/addons_core/io_scene_gltf2/libextern_draco.so
+13:28:23 | INFO: Starting glTF 2.0 export
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete-3
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_concrete_lod1-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood-3
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_pole_wood_lod1-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tank_black-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tank_black-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tank_black_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tank_blue-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tank_blue-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tank_blue_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_dish-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_dish-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_dish-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_dish_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line-3
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_washing_line_lod1-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_wheelie-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_wheelie-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_wheelie-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_wheelie-3
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_wheelie_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_wheelie_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_metal-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_bin_metal_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_crate_wood-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_crate_wood-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_crate_wood_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_crate_plastic-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_crate_plastic_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tyre-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_tyre_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_cone-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_cone-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_cone_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_cone_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shrine-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shrine-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shrine-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shrine-3
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shrine_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shrine_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_umbrella-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_umbrella-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_umbrella-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_umbrella_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_umbrella_lod1-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_umbrella_lod1-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_chair-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_chair_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shutter-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shutter-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shutter-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_shutter_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_sign-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_sign-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_sign-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_sign_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_gas_cylinder-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_gas_cylinder-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_gas_cylinder_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_helmet-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_helmet-1
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_helmet-2
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_helmet-3
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Extracting primitive: clutter_helmet_lod1-0
+13:28:23 | INFO: Primitives created: 1
+13:28:23 | INFO: Finished glTF 2.0 export in 0.3692362308502197 s
+
+Exported 19 designs / 38 LOD nodes: 609,814 bytes including manifest + atlas
+clutter_pole_concrete               616 tris 4 materials
+clutter_pole_concrete_lod1          108 tris 3 materials
+clutter_pole_wood                   616 tris 4 materials
+clutter_pole_wood_lod1              108 tris 3 materials
+clutter_tank_black                  620 tris 2 materials
+clutter_tank_black_lod1              96 tris 1 materials
+clutter_tank_blue                   620 tris 2 materials
+clutter_tank_blue_lod1               96 tris 1 materials
+clutter_dish                        316 tris 3 materials
+clutter_dish_lod1                    82 tris 1 materials
+clutter_washing_line                277 tris 4 materials
+clutter_washing_line_lod1            66 tris 3 materials
+clutter_bin_wheelie                 182 tris 4 materials
+clutter_bin_wheelie_lod1             64 tris 2 materials
+clutter_bin_metal                   380 tris 1 materials
+clutter_bin_metal_lod1               48 tris 1 materials
+clutter_crate_wood                  252 tris 2 materials
+clutter_crate_wood_lod1              60 tris 1 materials
+clutter_crate_plastic               300 tris 1 materials
+clutter_crate_plastic_lod1           60 tris 1 materials
+clutter_tyre                        400 tris 1 materials
+clutter_tyre_lod1                    80 tris 1 materials
+clutter_cone                        144 tris 2 materials
+clutter_cone_lod1                    32 tris 2 materials
+clutter_shrine                      236 tris 4 materials
+clutter_shrine_lod1                  84 tris 2 materials
+clutter_umbrella                    220 tris 3 materials
+clutter_umbrella_lod1                36 tris 3 materials
+clutter_chair                       216 tris 1 materials
+clutter_chair_lod1                   88 tris 1 materials
+clutter_shutter                     158 tris 3 materials
+clutter_shutter_lod1                 36 tris 1 materials
+clutter_sign                        114 tris 3 materials
+clutter_sign_lod1                    24 tris 1 materials
+clutter_gas_cylinder                348 tris 2 materials
+clutter_gas_cylinder_lod1            72 tris 1 materials
+clutter_helmet                      282 tris 4 materials
+clutter_helmet_lod1                  56 tris 1 materials
+13:28:25 | INFO: Starting glTF 2.0 export
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete-3
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_concrete_lod1-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood-3
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_pole_wood_lod1-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tank_black-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tank_black-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tank_black_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tank_blue-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tank_blue-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tank_blue_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_dish-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_dish-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_dish-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_dish_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line-3
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_washing_line_lod1-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_wheelie-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_wheelie-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_wheelie-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_wheelie-3
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_wheelie_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_wheelie_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_metal-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_bin_metal_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_crate_wood-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_crate_wood-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_crate_wood_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_crate_plastic-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_crate_plastic_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tyre-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_tyre_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_cone-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_cone-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_cone_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_cone_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shrine-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shrine-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shrine-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shrine-3
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shrine_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shrine_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_umbrella-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_umbrella-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_umbrella-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_umbrella_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_umbrella_lod1-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_umbrella_lod1-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_chair-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_chair_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shutter-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shutter-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shutter-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_shutter_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_sign-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_sign-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_sign-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_sign_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_gas_cylinder-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_gas_cylinder-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_gas_cylinder_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_helmet-0
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_helmet-1
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_helmet-2
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_helmet-3
+13:28:25 | INFO: Primitives created: 1
+13:28:25 | INFO: Extracting primitive: clutter_helmet_lod1-0
+13:28:25 | INFO: Primitives created: 1
+13:28:26 | INFO: Finished glTF 2.0 export in 0.3289361000061035 s
+
+Exported 19 designs / 38 LOD nodes: 609,814 bytes including manifest + atlas
+REPRODUCIBLE clutter/clutter.glb 565756 bytes 2d020c6ca92ddbeec16819139cc44a5288fd8eba09a7eb7161e611a9e583c782
+REPRODUCIBLE manifest.clutter.json 24825 bytes 14aefe50b1b8ff3ab7910b04f59e4dcb2f4ee328a782206282e54778701e487d
+REPRODUCIBLE ../textures/clutter/decals.png 19233 bytes fca3ef60aaea3b94247126e97fff04aa9548917434cdc228de66b5fb81ee5b99
+Blender 4.5.4 LTS (hash b3efe983cc58 built 2025-10-28 01:32:34)
+
+Blender quit

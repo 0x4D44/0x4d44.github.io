@@ -20,6 +20,7 @@ import { foldMaterials } from './fold.js';
 import { standSpots } from './reach.js';
 import { Pen, tintFor } from './standins.js';
 import { makeContents, drawContent, examineLine, readDoc, findInfo, planBuilding, householdOf, TOTALS } from './contents.js';
+import { inspectParts } from './inspect.js';
 
 export const DUR = 0.3, DOOR_ANGLE = (100 * Math.PI) / 180, LID_ANGLE = (82 * Math.PI) / 180;   // a chest stands against a wall and its lid hinges at the back: past 90 degrees the lid is IN the wall (R4-112: at 105 it was 12 cm in)
 export const ACTIVATE = 10, DEACTIVATE = 16, SCAN = 0.25;       // metres from a building's nearest front; seconds between scans
@@ -382,6 +383,7 @@ function useObject(C, S, o, hh, ctx = C.ctx) {
 function buildContents(C, S) {
   if (S.contentGroup) { S.contentGroup.visible = true; return; }
   const { ctx } = C, mb = newBuilder(S.bp), P = new Pen(mb, S.rec, S.c), kind = S.slot.kind;
+  P.parts = (key) => inspectParts(ctx, key);                                             // the library models that have loaded (inspect.js); a thing whose model has not is drawn as its stand-in
   for (const o of S.objs) drawContent(P, o);
   foldMaterials(mb);                                                                     // fewer meshes while open (fold.js)
   const f0 = S.leaves[0].ghost, origin = kind === 'drawer' ? f0.pivot : new THREE.Vector3(...worldPoint(S, 0, 0, 0));

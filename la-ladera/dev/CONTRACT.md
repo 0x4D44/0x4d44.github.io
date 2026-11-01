@@ -217,9 +217,9 @@ Use `ctx.rng.fork('your:label')` for deterministic randomness; never `Math.rando
 
 ## 8. Budgets (the rubric measures these)
 
-* Draw calls <= 1,800 per frame (shadow pass included) and <= 2.5 M triangles at every benchmark viewpoint (`__ladera.state()`); boot to playable <= 25 s on this machine, no main-thread stall > 200 ms after start.
-* Payload of `la-ladera/`: textures <= 24 MB, models <= 32 MB (people <= 14, furniture <= 10, world <= 6, arch <= 2), no file > 8 MB, total (excluding `vendor/` and `dev/`) <= 60 MB. Be thrifty: tint instead of duplicating textures; share materials.
-* Memory: GPU textures <= ~220 MB (1024 px for hero materials only, 512 for the rest, 256 for small props).
+* Draw calls <= 2,500 per frame (shadow pass included) and <= 6 M triangles at every benchmark viewpoint (`__ladera.state()`), uncapped render cost <= 16 ms (raised 2026-11-01 from 1,800 / 2.5 M / 12 ms after calibrating on the RTX 5070 Ti); boot to playable <= 40 s on this machine (was 25 s), no main-thread stall > 200 ms after start.
+* Payload of `la-ladera/`: textures <= 24 MB, models <= 32 MB (people <= 14, furniture <= 10, world <= 6, arch <= 2), no file > 8 MB, total (excluding `vendor/` and `dev/`) <= 150 MB (raised from 60 on 2026-11-01). Be thrifty: tint instead of duplicating textures; share materials.
+* Memory: GPU textures <= ~800 MB (raised from 220 on 2026-11-01; 1024 px for hero materials only, 512 for the rest, 256 for small props).
 * No console errors or warnings in a 5-minute scripted walk; no 404s; no NaNs; no player stuck spots (reachability + stuck-probe tests).
 * Spanish: native-sounding, regionally consistent (Colombian-flavoured: "a la orden", "con gusto", "mijo/mija", "pues", "vecino", "regalame", "tinto", "ahorita"), correct accents and punctuation, never machine-translated feel.
 

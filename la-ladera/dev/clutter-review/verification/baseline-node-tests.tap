@@ -1,0 +1,1780 @@
+TAP version 13
+# Subtest: every building builds finite, bounded geometry: one mesh per material, sane triangle counts
+ok 1 - every building builds finite, bounded geometry: one mesh per material, sane triangle counts
+  ---
+  duration_ms: 53.2794
+  type: 'test'
+  ...
+# Subtest: the shell is closed: a ray from inside any enclosed room always hits wall, floor, ceiling, glass or door leaf
+ok 2 - the shell is closed: a ray from inside any enclosed room always hits wall, floor, ceiling, glass or door leaf
+  ---
+  duration_ms: 125148.000487
+  type: 'test'
+  ...
+# Subtest: door leaves: one per swing door and shutter, two aim targets each, E toggles the collider and the events
+ok 3 - door leaves: one per swing door and shutter, two aim targets each, E toggles the collider and the events
+  ---
+  duration_ms: 0.82254
+  type: 'test'
+  ...
+# Subtest: door leaves swing in 0.35 s, follow door:request from NPCs, and report when they settle
+ok 4 - door leaves swing in 0.35 s, follow door:request from NPCs, and report when they settle
+  ---
+  duration_ms: 16.233742
+  type: 'test'
+  ...
+# Subtest: walking into a closed door or shutter opens it after 0.25 s; sliding along it, standing, or being beside it does not
+ok 5 - walking into a closed door or shutter opens it after 0.25 s; sliding along it, standing, or being beside it does not
+  ---
+  duration_ms: 16.554106
+  type: 'test'
+  ...
+# Subtest: the facade is dressed without a fault, and every kind of dressing really shows up on the real barrio
+ok 6 - the facade is dressed without a fault, and every kind of dressing really shows up on the real barrio
+  ---
+  duration_ms: 2.45985
+  type: 'test'
+  ...
+# Subtest: nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias and blade signs keep clear of every opening
+ok 7 - nothing is stuck over a window or a door: units, pipes, meters, bills, ghost signs, fascias and blade signs keep clear of every opening
+  ---
+  duration_ms: 1.92309
+  type: 'test'
+  ...
+# Subtest: awnings and door canopies hang over their door but never over a window
+ok 8 - awnings and door canopies hang over their door but never over a window
+  ---
+  duration_ms: 0.447605
+  type: 'test'
+  ...
+# Subtest: balconies and miradores belong to a front window, stay clear of each other and of the shop fascia, and fit under the next slab
+ok 9 - balconies and miradores belong to a front window, stay clear of each other and of the shop fascia, and fit under the next slab
+  ---
+  duration_ms: 5.857934
+  type: 'test'
+  ...
+# Subtest: everything stands within reach of its wall and below the parapet line; rooftop rooms sit inside the roof, set back from the street
+ok 10 - everything stands within reach of its wall and below the parapet line; rooftop rooms sit inside the roof, set back from the street
+  ---
+  duration_ms: 2.111264
+  type: 'test'
+  ...
+# Subtest: every lot that is named like a shop or an institution gets lettering over its door, and lettering is deterministic
+ok 11 - every lot that is named like a shop or an institution gets lettering over its door, and lettering is deterministic
+  ---
+  duration_ms: 2.061358
+  type: 'test'
+  ...
+# Subtest: the same lots dress identically twice (no Math.random, no state leaking between builds)
+ok 12 - the same lots dress identically twice (no Math.random, no state leaking between builds)
+  ---
+  duration_ms: 540.134759
+  type: 'test'
+  ...
+# Subtest: without a canvas (Node) the atlas is absent and the signs fall back to flat boards: no crash, no atlas material
+ok 13 - without a canvas (Node) the atlas is absent and the signs fall back to flat boards: no crash, no atlas material
+  ---
+  duration_ms: 0.658804
+  type: 'test'
+  ...
+# Subtest: a sign painter that throws leaves the atlas standing, writes nothing to the console, and is reported through ctx.errors
+ok 14 - a sign painter that throws leaves the atlas standing, writes nothing to the console, and is reported through ctx.errors
+  ---
+  duration_ms: 19.773641
+  type: 'test'
+  ...
+# Subtest: every LOT_KIND has at least one test lot and a plan
+ok 15 - every LOT_KIND has at least one test lot and a plan
+  ---
+  duration_ms: 6.580534
+  type: 'test'
+  ...
+# Subtest: BuildingPlan shape (CONTRACT 5.2)
+ok 16 - BuildingPlan shape (CONTRACT 5.2)
+  ---
+  duration_ms: 6.572993
+  type: 'test'
+  ...
+# Subtest: rooms never overlap and every floor point is a room, a stair void or a partition
+ok 17 - rooms never overlap and every floor point is a room, a stair void or a partition
+  ---
+  duration_ms: 181.573231
+  type: 'test'
+  ...
+# Subtest: human-scale dimensions (doors, ceilings, windows, stairs)
+ok 18 - human-scale dimensions (doors, ceilings, windows, stairs)
+  ---
+  duration_ms: 1.476006
+  type: 'test'
+  ...
+# Subtest: windows never sit on party walls and never overlap doors
+ok 19 - windows never sit on party walls and never overlap doors
+  ---
+  duration_ms: 2.056922
+  type: 'test'
+  ...
+# Subtest: stairs keep >= 2.0 m real headroom along every flight
+ok 20 - stairs keep >= 2.0 m real headroom along every flight
+  ---
+  duration_ms: 11.869861
+  type: 'test'
+  ...
+# Subtest: wall colliders leave every doorway a corridor of w - 0.6 m for the R = 0.3 body (round caps included)
+ok 21 - wall colliders leave every doorway a corridor of w - 0.6 m for the R = 0.3 body (round caps included)
+  ---
+  duration_ms: 6.010374
+  type: 'test'
+  ...
+# Subtest: layout sweep: every layout plans at every plausible lot size (no throw, no sliver, every room reachable by doors and stairs)
+ok 22 - layout sweep: every layout plans at every plausible lot size (no throw, no sliver, every room reachable by doors and stairs)
+  ---
+  duration_ms: 6148.931961
+  type: 'test'
+  ...
+# Subtest: planning is deterministic
+ok 23 - planning is deterministic
+  ---
+  duration_ms: 37.740218
+  type: 'test'
+  ...
+# Subtest: every room, upper floor and walkable roof is reachable from the entrance by walking (doors open)
+ok 24 - every room, upper floor and walkable roof is reachable from the entrance by walking (doors open)
+  ---
+  duration_ms: 4046.252745
+  type: 'test'
+  ...
+# Subtest: closed doors block: nothing inside is reachable until the doors open
+ok 25 - closed doors block: nothing inside is reachable until the doors open
+  ---
+  duration_ms: 528.126538
+  type: 'test'
+  ...
+# Subtest: entry steps carry the player over a sill 0.52 m above the street (more than one step-up), with human-scale risers
+ok 26 - entry steps carry the player over a sill 0.52 m above the street (more than one step-up), with human-scale risers
+  ---
+  duration_ms: 3307.391905
+  type: 'test'
+  ...
+# Subtest: every doorway admits the R=0.3 player with +-0.11 m of lateral error, and the wall beside it still blocks
+ok 27 - every doorway admits the R=0.3 player with +-0.11 m of lateral error, and the wall beside it still blocks
+  ---
+  duration_ms: 170.395824
+  type: 'test'
+  ...
+# Subtest: a walkable roof is a room, not a launch pad: no real jump (walk or sprint, 60 or 20 fps) clears its parapet or pretil
+ok 28 - a walkable roof is a room, not a launch pad: no real jump (walk or sprint, 60 or 20 fps) clears its parapet or pretil
+  ---
+  duration_ms: 187.507075
+  type: 'test'
+  ...
+# Subtest: walking straight through a door line works (door opens, player passes, wall beside it blocks)
+ok 29 - walking straight through a door line works (door opens, player passes, wall beside it blocks)
+  ---
+  duration_ms: 0.473524
+  type: 'test'
+  ...
+# Subtest: rng: same seed, same stream; other seed, other stream; always in [0, 1)
+ok 30 - rng: same seed, same stream; other seed, other stream; always in [0, 1)
+  ---
+  duration_ms: 5.059271
+  type: 'test'
+  ...
+# Subtest: rng helpers: range / int inclusive bounds, pick, chance, gauss, fork
+ok 31 - rng helpers: range / int inclusive bounds, pick, chance, gauss, fork
+  ---
+  duration_ms: 18.480281
+  type: 'test'
+  ...
+# Subtest: hashSeed is FNV-1a (32 bit): pinned, because every recipe seed comes from it
+ok 32 - hashSeed is FNV-1a (32 bit): pinned, because every recipe seed comes from it
+  ---
+  duration_ms: 0.132289
+  type: 'test'
+  ...
+# Subtest: noise colours: white is flat, pink leans low, brown is mostly rumble; all zero-mean, bounded and seeded
+ok 33 - noise colours: white is flat, pink leans low, brown is mostly rumble; all zero-mean, bounded and seeded
+  ---
+  duration_ms: 134.79366
+  type: 'test'
+  ...
+# Subtest: lowpass passes below the cutoff and removes what is above it (-12 dB per octave)
+ok 34 - lowpass passes below the cutoff and removes what is above it (-12 dB per octave)
+  ---
+  duration_ms: 72.639953
+  type: 'test'
+  ...
+# Subtest: highpass is the mirror image
+ok 35 - highpass is the mirror image
+  ---
+  duration_ms: 42.165733
+  type: 'test'
+  ...
+# Subtest: bandpass peaks at its centre with constant 0 dB gain, and narrower Q is narrower
+ok 36 - bandpass peaks at its centre with constant 0 dB gain, and narrower Q is narrower
+  ---
+  duration_ms: 59.017923
+  type: 'test'
+  ...
+# Subtest: notch removes its centre and peak boosts it by the stated dB; unknown types throw
+ok 37 - notch removes its centre and peak boosts it by the stated dB; unknown types throw
+  ---
+  duration_ms: 31.131121
+  type: 'test'
+  ...
+# Subtest: filters are stable at awkward settings (cutoff near Nyquist, tiny Q, low cutoff)
+ok 38 - filters are stable at awkward settings (cutoff near Nyquist, tiny Q, low cutoff)
+  ---
+  duration_ms: 6.422146
+  type: 'test'
+  ...
+# Subtest: sweepBandpass follows a moving centre and stays finite
+ok 39 - sweepBandpass follows a moving centre and stays finite
+  ---
+  duration_ms: 26.013802
+  type: 'test'
+  ...
+# Subtest: normalize sets the peak, leaves silence alone; gain / removeDC / softclip behave
+ok 40 - normalize sets the peak, leaves silence alone; gain / removeDC / softclip behave
+  ---
+  duration_ms: 0.416328
+  type: 'test'
+  ...
+# Subtest: normalizeRms: hits the loudness unless the peak cap binds, then respects the cap
+ok 41 - normalizeRms: hits the loudness unless the peak cap binds, then respects the cap
+  ---
+  duration_ms: 34.967942
+  type: 'test'
+  ...
+# Subtest: fade: starts and ends at exactly zero, and leaves the middle untouched
+ok 42 - fade: starts and ends at exactly zero, and leaves the middle untouched
+  ---
+  duration_ms: 0.485602
+  type: 'test'
+  ...
+# Subtest: addTo mixes with an offset, clips at both ends and applies the gain
+ok 43 - addTo mixes with an offset, clips at both ends and applies the gain
+  ---
+  duration_ms: 0.210277
+  type: 'test'
+  ...
+# Subtest: loopify: the wrap is an ordinary step, the cross-fade keeps the level, the result is the stated length
+ok 44 - loopify: the wrap is an ordinary step, the cross-fade keeps the level, the result is the stated length
+  ---
+  duration_ms: 43.375647
+  type: 'test'
+  ...
+# Subtest: lfo: smooth, bounded, seeded, and it really moves
+ok 45 - lfo: smooth, bounded, seeded, and it really moves
+  ---
+  duration_ms: 199.699268
+  type: 'test'
+  ...
+# Subtest: babble: seeded, finite, speech-band, syllabic; breath adds sibilance
+ok 46 - babble: seeded, finite, speech-band, syllabic; breath adds sibilance
+  ---
+  duration_ms: 559.522021
+  type: 'test'
+  ...
+# Subtest: reverbIR: two decorrelated channels, decaying tail, early reflections where asked, finite, at the requested rate
+ok 47 - reverbIR: two decorrelated channels, decaying tail, early reflections where asked, finite, at the requested rate
+  ---
+  duration_ms: 211.212542
+  type: 'test'
+  ...
+# Subtest: stepStats helper itself: a pure tone has smooth steps
+ok 48 - stepStats helper itself: a pure tone has smooth steps
+  ---
+  duration_ms: 9.5619
+  type: 'test'
+  ...
+# Subtest: the key list: unique, complete, and every bed, surface and event has its samples
+ok 49 - the key list: unique, complete, and every bed, surface and event has its samples
+  ---
+  duration_ms: 3.517355
+  type: 'test'
+  ...
+# Subtest: every sample is finite, not silent, not clipping, and has no DC offset
+ok 50 - every sample is finite, not silent, not clipping, and has no DC offset
+  ---
+  duration_ms: 7382.929493
+  type: 'test'
+  ...
+# Subtest: loudness: the loops sit at one level so a gain of 1 means the same everywhere; one-shots are not whispers
+ok 51 - loudness: the loops sit at one level so a gain of 1 means the same everywhere; one-shots are not whispers
+  ---
+  duration_ms: 4.646708
+  type: 'test'
+  ...
+# Subtest: one-shots begin and end at exactly zero (no click on start or stop)
+ok 52 - one-shots begin and end at exactly zero (no click on start or stop)
+  ---
+  duration_ms: 4.030358
+  type: 'test'
+  ...
+# Subtest: loops close without a seam: the wrap is no bigger a step than the waveform makes anywhere else
+ok 53 - loops close without a seam: the wrap is no bigger a step than the waveform makes anywhere else
+  ---
+  duration_ms: 2058.159719
+  type: 'test'
+  ...
+# Subtest: deterministic: a second render of every sample is identical (seeded, no Math.random)
+ok 54 - deterministic: a second render of every sample is identical (seeded, no Math.random)
+  ---
+  duration_ms: 5513.579305
+  type: 'test'
+  ...
+# Subtest: the generation modules are pure: no DOM, no WebAudio, so they run in a worker and under Node
+ok 55 - the generation modules are pure: no DOM, no WebAudio, so they run in a worker and under Node
+  ---
+  duration_ms: 20.135787
+  type: 'test'
+  ...
+# Subtest: beds have the character of what they are
+ok 56 - beds have the character of what they are
+  ---
+  duration_ms: 4756.958646
+  type: 'test'
+  ...
+# Subtest: footsteps: every surface reads on small speakers, variants differ, hard surfaces are brighter than soft ones
+ok 57 - footsteps: every surface reads on small speakers, variants differ, hard surfaces are brighter than soft ones
+  ---
+  duration_ms: 905.09725
+  type: 'test'
+  ...
+# Subtest: doors: the latch clicks as it opens, the thud lands as it closes; shutters rattle for a second
+ok 58 - doors: the latch clicks as it opens, the thud lands as it closes; shutters rattle for a second
+  ---
+  duration_ms: 95.41475
+  type: 'test'
+  ...
+# Subtest: the chapel bell: a G4 strike with a hum an octave down, a long inharmonic ring and a quiet end
+ok 59 - the chapel bell: a G4 strike with a hum an octave down, a long inharmonic ring and a quiet end
+  ---
+  duration_ms: 3807.537937
+  type: 'test'
+  ...
+# Subtest: chime, tick, birds, dogs and horns sit where their pitch should
+ok 60 - chime, tick, birds, dogs and horns sit where their pitch should
+  ---
+  duration_ms: 166.536784
+  type: 'test'
+  ...
+# Subtest: geometry: distance to a polygon is 0 inside and the true distance outside; weights sum to one
+ok 61 - geometry: distance to a polygon is 0 inside and the true distance outside; weights sum to one
+  ---
+  duration_ms: 16.560196
+  type: 'test'
+  ...
+# Subtest: zoneAt names the barrio's areas where the landmarks are
+ok 62 - zoneAt names the barrio's areas where the landmarks are
+  ---
+  duration_ms: 0.594035
+  type: 'test'
+  ...
+# Subtest: every zone has a full, finite, non-negative recipe
+ok 63 - every zone has a full, finite, non-negative recipe
+  ---
+  duration_ms: 3.031753
+  type: 'test'
+  ...
+# Subtest: the day: dark by night, light by day, in one smooth step each way
+ok 64 - the day: dark by night, light by day, in one smooth step each way
+  ---
+  duration_ms: 2.899293
+  type: 'test'
+  ...
+# Subtest: activities follow the hours of a household and a street
+ok 65 - activities follow the hours of a household and a street
+  ---
+  duration_ms: 4.347257
+  type: 'test'
+  ...
+# Subtest: mix: altitude trades traffic for wind
+ok 66 - mix: altitude trades traffic for wind
+  ---
+  duration_ms: 0.514856
+  type: 'test'
+  ...
+# Subtest: mix: day and night swap the crickets for the birds, the children and the neighbours
+ok 67 - mix: day and night swap the crickets for the birds, the children and the neighbours
+  ---
+  duration_ms: 26.022741
+  type: 'test'
+  ...
+# Subtest: mix: a crowd raises the neighbours and the children; an empty street quietens them
+ok 68 - mix: a crowd raises the neighbours and the children; an empty street quietens them
+  ---
+  duration_ms: 0.823912
+  type: 'test'
+  ...
+# Subtest: mix: every output is finite and bounded, for any place, hour, altitude and crowd
+ok 69 - mix: every output is finite and bounded, for any place, hour, altitude and crowd
+  ---
+  duration_ms: 67.377486
+  type: 'test'
+  ...
+# Subtest: heightRange samples the terrain's 5th..95th percentile
+ok 70 - heightRange samples the terrain's 5th..95th percentile
+  ---
+  duration_ms: 23.547773
+  type: 'test'
+  ...
+# Subtest: emitters: the landmarks that make noise, plus households, at most one of each kind per building, the same every time
+ok 71 - emitters: the landmarks that make noise, plus households, at most one of each kind per building, the same every time
+  ---
+  duration_ms: 10.705726
+  type: 'test'
+  ...
+# Subtest: emitterScore: loudest at the source, fading with distance, gone past its range or out of its hours
+ok 72 - emitterScore: loudest at the source, fading with distance, gone past its range or out of its hours
+  ---
+  duration_ms: 4.479566
+  type: 'test'
+  ...
+# Subtest: pickEmitters: the loudest few, best first, with a bonus for the ones already sounding
+ok 73 - pickEmitters: the loudest few, best first, with a bonus for the ones already sounding
+  ---
+  duration_ms: 0.675599
+  type: 'test'
+  ...
+# Subtest: the bell: three for the Angelus, the hour (up to six) in daylight, silence at night
+ok 74 - the bell: three for the Angelus, the hour (up to six) in daylight, silence at night
+  ---
+  duration_ms: 0.294464
+  type: 'test'
+  ...
+# Subtest: pickStream: a seeded stream of numbers in range
+ok 75 - pickStream: a seeded stream of numbers in range
+  ---
+  duration_ms: 2.467482
+  type: 'test'
+  ...
+# Subtest: a tiled variant whose image has not arrived is not marked for update
+ok 76 - a tiled variant whose image has not arrived is not marked for update
+  ---
+  duration_ms: 3.156671
+  type: 'test'
+  ...
+# Subtest: the variants upload once the image arrives (version > 0, image present, shared with the base)
+ok 77 - the variants upload once the image arrives (version > 0, image present, shared with the base)
+  ---
+  duration_ms: 5.156837
+  type: 'test'
+  ...
+# Subtest: images arriving one at a time never leave a texture marked without its image
+ok 78 - images arriving one at a time never leave a texture marked without its image
+  ---
+  duration_ms: 0.66364
+  type: 'test'
+  ...
+# Subtest: a variant made after its image arrived is uploaded straight away
+ok 79 - a variant made after its image arrived is uploaded straight away
+  ---
+  duration_ms: 0.33095
+  type: 'test'
+  ...
+# Subtest: whenReady() waits for every requested image and resolves when a download fails
+ok 80 - whenReady() waits for every requested image and resolves when a download fails
+  ---
+  duration_ms: 9.140325
+  type: 'test'
+  ...
+# Subtest: an untextured material and a tint of a textured one never touch the loader twice
+ok 81 - an untextured material and a tint of a textured one never touch the loader twice
+  ---
+  duration_ms: 1.191938
+  type: 'test'
+  ...
+# Subtest: planChunks: every item lands in exactly one chunk, and every multi-item chunk obeys the span and vertex limits
+ok 82 - planChunks: every item lands in exactly one chunk, and every multi-item chunk obeys the span and vertex limits
+  ---
+  duration_ms: 69.023127
+  type: 'test'
+  ...
+# Subtest: planChunks: deterministic, and an item larger than the limits stays alone without blocking the rest
+ok 83 - planChunks: deterministic, and an item larger than the limits stays alone without blocking the rest
+  ---
+  duration_ms: 20.135568
+  type: 'test'
+  ...
+# Subtest: planChunks: a wide span is cut at the widest empty gap, so near neighbours stay together and only the far outlier splits off
+ok 84 - planChunks: a wide span is cut at the widest empty gap, so near neighbours stay together and only the far outlier splits off
+  ---
+  duration_ms: 0.615208
+  type: 'test'
+  ...
+# Subtest: planChunks: only the vertex budget exceeded splits by vertices, not by gaps
+ok 85 - planChunks: only the vertex budget exceeded splits by vertices, not by gaps
+  ---
+  duration_ms: 0.242045
+  type: 'test'
+  ...
+# Subtest: mergeStatic fuses same-material meshes of nearby groups; a far group and other materials stay apart
+ok 86 - mergeStatic fuses same-material meshes of nearby groups; a far group and other materials stay apart
+  ---
+  duration_ms: 58.174757
+  type: 'test'
+  ...
+# Subtest: mergeStatic leaves `.int` groups and their meshes exactly as they were
+ok 87 - mergeStatic leaves `.int` groups and their meshes exactly as they were
+  ---
+  duration_ms: 14.663535
+  type: 'test'
+  ...
+# Subtest: mergeStatic keeps every triangle: position, normal, uv and colour per vertex, per material and flag bucket
+ok 88 - mergeStatic keeps every triangle: position, normal, uv and colour per vertex, per material and flag bucket
+  ---
+  duration_ms: 31.693989
+  type: 'test'
+  ...
+# Subtest: mergeStatic respects maxVerts and switches to 32-bit indices only when a chunk really needs them
+ok 89 - mergeStatic respects maxVerts and switches to 32-bit indices only when a chunk really needs them
+  ---
+  duration_ms: 651.418378
+  type: 'test'
+  ...
+# Subtest: mergeStatic leaves animated or special meshes alone: moved matrix, noMerge, hidden, transform on the parent
+ok 90 - mergeStatic leaves animated or special meshes alone: moved matrix, noMerge, hidden, transform on the parent
+  ---
+  duration_ms: 12.5582
+  type: 'test'
+  ...
+# Subtest: mergeStatic is idempotent and disposes the geometry it replaced, only that
+ok 91 - mergeStatic is idempotent and disposes the geometry it replaced, only that
+  ---
+  duration_ms: 19.985071
+  type: 'test'
+  ...
+# Subtest: canStand: open air above the player is fine
+ok 92 - canStand: open air above the player is fine
+  ---
+  duration_ms: 6.599894
+  type: 'test'
+  ...
+# Subtest: canStand: a low soffit between crouched and standing head height blocks standing
+ok 93 - canStand: a low soffit between crouched and standing head height blocks standing
+  ---
+  duration_ms: 5.546786
+  type: 'test'
+  ...
+# Subtest: canStand: a normal ceiling (2.4 m) and a soffit below crouch height behave
+ok 94 - canStand: a normal ceiling (2.4 m) and a soffit below crouch height behave
+  ---
+  duration_ms: 0.45737
+  type: 'test'
+  ...
+# Subtest: canStand: the body width counts (a soffit just off-centre still blocks)
+ok 95 - canStand: the body width counts (a soffit just off-centre still blocks)
+  ---
+  duration_ms: 0.263197
+  type: 'test'
+  ...
+# Subtest: canStand as a jump test: a 2.3 m ceiling forbids jumping, 3.2 m allows it
+ok 96 - canStand as a jump test: a 2.3 m ceiling forbids jumping, 3.2 m allows it
+  ---
+  duration_ms: 0.285731
+  type: 'test'
+  ...
+# Subtest: surfaceAt: terrain, stacked floors and the step-up limit
+ok 97 - surfaceAt: terrain, stacked floors and the step-up limit
+  ---
+  duration_ms: 1.467764
+  type: 'test'
+  ...
+# Subtest: surfaceAt: a ramp reports its interpolated height
+ok 98 - surfaceAt: a ramp reports its interpolated height
+  ---
+  duration_ms: 4.981683
+  type: 'test'
+  ...
+# Subtest: a character wedged inside wall zones is put on the nearest free spot, whichever way it tries to walk
+ok 99 - a character wedged inside wall zones is put on the nearest free spot, whichever way it tries to walk
+  ---
+  duration_ms: 17.936791
+  type: 'test'
+  ...
+# Subtest: it prefers the way it was walking
+ok 100 - it prefers the way it was walking
+  ---
+  duration_ms: 1.178097
+  type: 'test'
+  ...
+# Subtest: standing still is not moved, and walking into a wall is blocked, not teleported
+ok 101 - standing still is not moved, and walking into a wall is blocked, not teleported
+  ---
+  duration_ms: 0.614397
+  type: 'test'
+  ...
+# Subtest: furniture outlines are crossed to get out, a room wall is not
+ok 102 - furniture outlines are crossed to get out, a room wall is not
+  ---
+  duration_ms: 14.756616
+  type: 'test'
+  ...
+# Subtest: it never lands on another floor or on a slope it could not climb: not the drop, not the steep bank beside the pocket
+ok 103 - it never lands on another floor or on a slope it could not climb: not the drop, not the steep bank beside the pocket
+  ---
+  duration_ms: 0.966949
+  type: 'test'
+  ...
+# Subtest: a slope too steep to climb stops the character; that is not a wedge, so it is not moved
+ok 104 - a slope too steep to climb stops the character; that is not a wedge, so it is not moved
+  ---
+  duration_ms: 0.461666
+  type: 'test'
+  ...
+# Subtest: a long step (a slow frame) from a pocket relocates, then goes on along the heading
+ok 105 - a long step (a slow frame) from a pocket relocates, then goes on along the heading
+  ---
+  duration_ms: 0.203707
+  type: 'test'
+  ...
+# Subtest: the city is deterministic for a seed and changes with the seed
+ok 106 - the city is deterministic for a seed and changes with the seed
+  ---
+  duration_ms: 1127.189499
+  type: 'test'
+  ...
+# Subtest: a few thousand lights, none in the plot, every one above the ground and inside the camera range
+ok 107 - a few thousand lights, none in the plot, every one above the ground and inside the camera range
+  ---
+  duration_ms: 610.445337
+  type: 'test'
+  ...
+# 2727 far-city lights
+# Subtest: lights are scattered, not laid out on a lattice, and stand at different heights (street lamps, windows, roofs)
+ok 108 - lights are scattered, not laid out on a lattice, and stand at different heights (street lamps, windows, roofs)
+  ---
+  duration_ms: 928.941605
+  type: 'test'
+  ...
+# Subtest: the lights sit where the land is built up: nothing on bare land, many more over the valley district than behind the hill
+ok 109 - the lights sit where the land is built up: nothing on bare land, many more over the valley district than behind the hill
+  ---
+  duration_ms: 32.530513
+  type: 'test'
+  ...
+# Subtest: colours and switch-on times are mixed: sodium orange, warm white, cool white, and a dusk that takes a while
+ok 110 - colours and switch-on times are mixed: sodium orange, warm white, cool white, and a dusk that takes a while
+  ---
+  duration_ms: 190.582452
+  type: 'test'
+  ...
+# Subtest: the cap holds: a city that would be larger is cut, not made slow
+ok 111 - the cap holds: a city that would be larger is cut, not made slow
+  ---
+  duration_ms: 0.873838
+  type: 'test'
+  ...
+# \# interiors: 42 buildings, 5811 records; meshes/building median 23 max 31; triangles median 12812 max 45614; stand-in primitives 34051
+# Subtest: every catalogue archetype has a stand-in drawer
+ok 112 - every catalogue archetype has a stand-in drawer
+  ---
+  duration_ms: 1.572192
+  type: 'test'
+  ...
+# Subtest: a stand-in stays inside its footprint box and below its catalogue height
+ok 113 - a stand-in stays inside its footprint box and below its catalogue height
+  ---
+  duration_ms: 163.506362
+  type: 'test'
+  ...
+# Subtest: interior meshes: library materials only, finite, inside the rooms, bounded draw calls
+ok 114 - interior meshes: library materials only, finite, inside the rooms, bounded draw calls
+  ---
+  duration_ms: 1741.583993
+  type: 'test'
+  ...
+# Subtest: furnishing raises no errors and every building gets furniture
+ok 115 - furnishing raises no errors and every building gets furniture
+  ---
+  duration_ms: 1.190175
+  type: 'test'
+  ...
+# Subtest: furniture lies inside its room and never overlaps other furniture
+ok 116 - furniture lies inside its room and never overlaps other furniture
+  ---
+  duration_ms: 52.296314
+  type: 'test'
+  ...
+# Subtest: doors and stairs keep >= 0.7 m clear in front of them
+ok 117 - doors and stairs keep >= 0.7 m clear in front of them
+  ---
+  duration_ms: 40.670571
+  type: 'test'
+  ...
+# Subtest: the first 3 m inside every street door stay free of furniture
+ok 118 - the first 3 m inside every street door stay free of furniture
+  ---
+  duration_ms: 4.870556
+  type: 'test'
+  ...
+# Subtest: every non-circulation room has >= 3 pieces of furniture or decor
+ok 119 - every non-circulation room has >= 3 pieces of furniture or decor
+  ---
+  duration_ms: 1.382966
+  type: 'test'
+  ...
+# Subtest: homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)
+ok 120 - homes are equipped: every kitchen has a stove, every bedroom but a study somewhere to sleep (synthetic and A2 plans)
+  ---
+  duration_ms: 6716.114262
+  type: 'test'
+  ...
+# Subtest: anchors: every seat, bed, stove and shop counter has one; anchors stand in free space
+ok 121 - anchors: every seat, bed, stove and shop counter has one; anchors stand in free space
+  ---
+  duration_ms: 34.787289
+  type: 'test'
+  ...
+# Subtest: rooms get a finish made of known materials
+ok 122 - rooms get a finish made of known materials
+  ---
+  duration_ms: 2.034799
+  type: 'test'
+  ...
+# Subtest: catalogue names used by furniture records all exist; lights carry the contract fields
+ok 123 - catalogue names used by furniture records all exist; lights carry the contract fields
+  ---
+  duration_ms: 8.016762
+  type: 'test'
+  ...
+# Subtest: furnishing is deterministic for a given seed and differs between seeds
+ok 124 - furnishing is deterministic for a given seed and differs between seeds
+  ---
+  duration_ms: 5839.615761
+  type: 'test'
+  ...
+# Subtest: the same lot seed always yields the same household regardless of other buildings
+ok 125 - the same lot seed always yields the same household regardless of other buildings
+  ---
+  duration_ms: 3495.071026
+  type: 'test'
+  ...
+# Subtest: the synthetic plans themselves are fully walkable (so a failure below is the furniture)
+ok 126 - the synthetic plans themselves are fully walkable (so a failure below is the furniture)
+  ---
+  duration_ms: 7283.836496
+  type: 'test'
+  ...
+# Subtest: furnished rooms, door landings and stairs stay reachable from the street
+ok 127 - furnished rooms, door landings and stairs stay reachable from the street
+  ---
+  duration_ms: 15.189228
+  type: 'test'
+  ...
+# Subtest: walking the found paths with physics.move() never gets blocked
+ok 128 - walking the found paths with physics.move() never gets blocked
+  ---
+  duration_ms: 37.574329
+  type: 'test'
+  ...
+# Subtest: every standing anchor (cook, counter, sweep, greet...) is connected to a door
+ok 129 - every standing anchor (cook, counter, sweep, greet...) is connected to a door
+  ---
+  duration_ms: 10.022196
+  type: 'test'
+  ...
+# Subtest: no errors while telling stories, and every building has interactables
+ok 130 - no errors while telling stories, and every building has interactables
+  ---
+  duration_ms: 1.315674
+  type: 'test'
+  ...
+# Subtest: the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line
+ok 131 - the world gets >= 24 interior discoveries (>= 12 on the synthetic batch), with Spanish names and an English line
+  ---
+  duration_ms: 3.017762
+  type: 'test'
+  ...
+# Subtest: each discovery stands on a floor of its own building, inside a room, on free floor
+ok 132 - each discovery stands on a floor of its own building, inside a room, on free floor
+  ---
+  duration_ms: 3.439748
+  type: 'test'
+  ...
+# Subtest: every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks
+ok 133 - every interior interactable has a Spanish prompt that starts with a verb, and a use() that speaks
+  ---
+  duration_ms: 3.678898
+  type: 'test'
+  ...
+# Subtest: interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)
+ok 134 - interactables are on free floor in front of their object and can really be targeted (sight line not cut by a furniture outline)
+  ---
+  duration_ms: 110.29228
+  type: 'test'
+  ...
+# Subtest: every reachable seat can be sat on; the sofas and armchairs of each home are offered
+ok 135 - every reachable seat can be sat on; the sofas and armchairs of each home are offered
+  ---
+  duration_ms: 10.977556
+  type: 'test'
+  ...
+# Subtest: stories are deterministic: the same plan tells the same stories
+ok 136 - stories are deterministic: the same plan tells the same stories
+  ---
+  duration_ms: 2070.873495
+  type: 'test'
+  ...
+# Subtest: texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story
+ok 137 - texts: every SAY / STORY entry is a Spanish line with an English gloss; every shop type and special place has a story
+  ---
+  duration_ms: 1.141792
+  type: 'test'
+  ...
+# Subtest: clock words: Spanish time of day in words
+ok 138 - clock words: Spanish time of day in words
+  ---
+  duration_ms: 1.083284
+  type: 'test'
+  ...
+# Subtest: ceiling fans: switching changes the target speed and the prompt follows
+ok 139 - ceiling fans: switching changes the target speed and the prompt follows
+  ---
+  duration_ms: 0.23218
+  type: 'test'
+  ...
+# Subtest: sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted
+ok 140 - sitting: the camera moves to the seat, any walking key stands up, E stands up only when nothing is targeted
+  ---
+  duration_ms: 0.56361
+  type: 'test'
+  ...
+# Subtest: exactCase sees a wrong-case path that Windows would accept
+ok 141 - exactCase sees a wrong-case path that Windows would accept
+  ---
+  duration_ms: 1.9299
+  type: 'test'
+  ...
+# Subtest: checkSource flags a wrong-case import, a missing file, a bare specifier and a missing asset (and passes the right ones)
+not ok 142 - checkSource flags a wrong-case import, a missing file, a bare specifier and a missing asset (and passes the right ones)
+  ---
+  duration_ms: 2.323004
+  type: 'test'
+  location: '/workspace/scratch/bdef5ac47306/baseline/la-ladera/tests/live-paths.test.mjs:72:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /another letter case/. Input:
+
+    "import '../Core/config.js' does not exist"
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: "import '../Core/config.js' does not exist"
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/bdef5ac47306/baseline/la-ladera/tests/live-paths.test.mjs:75:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+    Test.run (node:internal/test_runner/test:1467:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: every module import and asset path named in js/ is exact-case and exists
+ok 143 - every module import and asset path named in js/ is exact-case and exists
+  ---
+  duration_ms: 131.869357
+  type: 'test'
+  ...
+# Subtest: index.html: every local reference and import-map target is exact-case and exists
+ok 144 - index.html: every local reference and import-map target is exact-case and exists
+  ---
+  duration_ms: 3.000696
+  type: 'test'
+  ...
+# Subtest: css: every url() is exact-case and exists
+ok 145 - css: every url() is exact-case and exists
+  ---
+  duration_ms: 2.193148
+  type: 'test'
+  ...
+# Subtest: every file the asset manifests name is exact-case and exists
+ok 146 - every file the asset manifests name is exact-case and exists
+  ---
+  duration_ms: 61.671441
+  type: 'test'
+  ...
+# Subtest: the wrapper starts its child below normal by default
+ok 147 - the wrapper starts its child below normal by default
+  ---
+  duration_ms: 157.341144
+  type: 'test'
+  ...
+# Subtest: --idle starts the child at idle priority
+ok 148 - --idle starts the child at idle priority
+  ---
+  duration_ms: 226.540823
+  type: 'test'
+  ...
+# Subtest: stdout, stderr and stdin pass through the wrapper (it pipes them so the child can never open a console window)
+ok 149 - stdout, stderr and stdin pass through the wrapper (it pipes them so the child can never open a console window)
+  ---
+  duration_ms: 209.134937
+  type: 'test'
+  ...
+# Subtest: the child exit code is forwarded, and a missing command is 127
+not ok 150 - the child exit code is forwarded, and a missing command is 127
+  ---
+  duration_ms: 247.388465
+  type: 'test'
+  location: '/workspace/scratch/bdef5ac47306/baseline/la-ladera/tests/nice.test.mjs:41:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    126 !== 127
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 127
+  actual: 126
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/bdef5ac47306/baseline/la-ladera/tests/nice.test.mjs:43:10)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    Test.postRun (node:internal/test_runner/test:1542:19)
+    Test.run (node:internal/test_runner/test:1467:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+  ...
+# Subtest: importing tests/nice.mjs lowers the importing process; LADERA_PRIO=normal opts out; idle sticks
+ok 151 - importing tests/nice.mjs lowers the importing process; LADERA_PRIO=normal opts out; idle sticks
+  ---
+  duration_ms: 551.638398
+  type: 'test'
+  ...
+# Subtest: every test/probe started with --import register.mjs runs below normal priority
+ok 152 - every test/probe started with --import register.mjs runs below normal priority
+  ---
+  duration_ms: 368.858824
+  type: 'test'
+  ...
+# Subtest: a .cmd shim runs through the wrapper with its arguments intact (Windows)
+ok 153 - a .cmd shim runs through the wrapper with its arguments intact (Windows) # SKIP
+  ---
+  duration_ms: 0.123036
+  type: 'test'
+  ...
+# Subtest: every persona resolves to a bank that exists
+ok 154 - every persona resolves to a bank that exists
+  ---
+  duration_ms: 0.982352
+  type: 'test'
+  ...
+# Subtest: every bank is cast by some persona (no written line is unreachable)
+ok 155 - every bank is cast by some persona (no written line is unreachable)
+  ---
+  duration_ms: 0.283187
+  type: 'test'
+  ...
+# Subtest: a masculine bank is never cast with a woman, nor a feminine bank with a man
+ok 156 - a masculine bank is never cast with a woman, nor a feminine bank with a man
+  ---
+  duration_ms: 0.26525
+  type: 'test'
+  ...
+# Subtest: every character a persona lists exists in the shipped library and has the persona gender
+ok 157 - every character a persona lists exists in the shipped library and has the persona gender
+  ---
+  duration_ms: 1.728316
+  type: 'test'
+  ...
+# Subtest: the default cast: >= 60 people, >= 30 distinct appearances, every bank spoken, the right gender per bank
+ok 158 - the default cast: >= 60 people, >= 30 distinct appearances, every bank spoken, the right gender per bank
+  ---
+  duration_ms: 469.575392
+  type: 'test'
+  ...
+# Subtest: bank size: >= 600 lines over >= 14 personas, >= 12 lines in each
+ok 159 - bank size: >= 600 lines over >= 14 personas, >= 12 lines in each
+  ---
+  duration_ms: 2.608974
+  type: 'test'
+  ...
+# Subtest: every line has Spanish and English; the English is English
+ok 160 - every line has Spanish and English; the English is English
+  ---
+  duration_ms: 3.718057
+  type: 'test'
+  ...
+# Subtest: every rendered line is clean Spanish typography (both speaker genders x both player-address settings)
+ok 161 - every rendered line is clean Spanish typography (both speaker genders x both player-address settings)
+  ---
+  duration_ms: 26.571505
+  type: 'test'
+  ...
+# Subtest: the typography check itself catches a seeded fault
+ok 162 - the typography check itself catches a seeded fault
+  ---
+  duration_ms: 0.34518
+  type: 'test'
+  ...
+# Subtest: lines never hard-code how the player is addressed: they use tokens
+ok 163 - lines never hard-code how the player is addressed: they use tokens
+  ---
+  duration_ms: 1.04787
+  type: 'test'
+  ...
+# Subtest: the player-address tokens follow settings.address and `joven` never changes
+ok 164 - the player-address tokens follow settings.address and `joven` never changes
+  ---
+  duration_ms: 0.265561
+  type: 'test'
+  ...
+# Subtest: neutral banks use {o|a} for gendered self-description (a shopkeeper of either gender speaks them)
+ok 165 - neutral banks use {o|a} for gendered self-description (a shopkeeper of either gender speaks them)
+  ---
+  duration_ms: 0.79622
+  type: 'test'
+  ...
+# Subtest: shops do not share template openings (greet_n / mood / news / again / bye)
+ok 166 - shops do not share template openings (greet_n / mood / news / again / bye)
+  ---
+  duration_ms: 0.684693
+  type: 'test'
+  ...
+# Subtest: no exact duplicate Spanish line across different banks
+ok 167 - no exact duplicate Spanish line across different banks
+  ---
+  duration_ms: 10.044629
+  type: 'test'
+  ...
+# Subtest: "Dicen que" is a seasoning, not a template
+ok 168 - "Dicen que" is a seasoning, not a template
+  ---
+  duration_ms: 0.42434
+  type: 'test'
+  ...
+# Subtest: English keeps its contractions: no stiff "do not / is not / I am / it is / you are"
+ok 169 - English keeps its contractions: no stiff "do not / is not / I am / it is / you are"
+  ---
+  duration_ms: 1.000039
+  type: 'test'
+  ...
+# Subtest: Colombian words, not Spanish ones
+ok 170 - Colombian words, not Spanish ones
+  ---
+  duration_ms: 0.480084
+  type: 'test'
+  ...
+# Subtest: kids and teens are addressed with tú in every menu entry of a full conversation
+ok 171 - kids and teens are addressed with tú in every menu entry of a full conversation
+  ---
+  duration_ms: 5.456019
+  type: 'test'
+  ...
+# Subtest: buying: the player asks the Colombian way ("¿Me regala ...?") and every shop sells three things with the price in words
+ok 172 - buying: the player asks the Colombian way ("¿Me regala ...?") and every shop sells three things with the price in words
+  ---
+  duration_ms: 0.402747
+  type: 'test'
+  ...
+# Subtest: withArticle: every landmark and shop name of the real plan gets the right article
+ok 173 - withArticle: every landmark and shop name of the real plan gets the right article
+  ---
+  duration_ms: 184.552868
+  type: 'test'
+  ...
+# Subtest: polish: a + el, de + el, capital after a full stop, no doubled blanks; proper names keep "El"
+ok 174 - polish: a + el, de + el, capital after a full stop, no doubled blanks; proper names keep "El"
+  ---
+  duration_ms: 0.848119
+  type: 'test'
+  ...
+# Subtest: clockLine says the time the Colombian way
+ok 175 - clockLine says the time the Colombian way
+  ---
+  duration_ms: 0.320763
+  type: 'test'
+  ...
+# Subtest: directionsTo: side, distance, uphill and the article of the place
+ok 176 - directionsTo: side, distance, uphill and the article of the place
+  ---
+  duration_ms: 0.792715
+  type: 'test'
+  ...
+# Subtest: a conversation: greeting by hour, menu of <= 4 with a goodbye, never the same line twice, then a goodbye that ends it
+ok 177 - a conversation: greeting by hour, menu of <= 4 with a goodbye, never the same line twice, then a goodbye that ends it
+  ---
+  duration_ms: 2.040087
+  type: 'test'
+  ...
+# Subtest: memory: the second chat says "again" lines and uses fresh pool lines first
+ok 178 - memory: the second chat says "again" lines and uses fresh pool lines first
+  ---
+  duration_ms: 0.451962
+  type: 'test'
+  ...
+# Subtest: where: the menu lists landmarks (nearest first), the answer names the place with its article and says which way
+ok 179 - where: the menu lists landmarks (nearest first), the answer names the place with its article and says which way
+  ---
+  duration_ms: 0.509108
+  type: 'test'
+  ...
+# Subtest: buying: a shop sells, the reply carries the price and the step reports the purchase
+ok 180 - buying: a shop sells, the reply carries the price and the step reports the purchase
+  ---
+  duration_ms: 0.459863
+  type: 'test'
+  ...
+# Subtest: the hint no longer says "a el" and starts every sentence with a capital
+ok 181 - the hint no longer says "a el" and starts every sentence with a capital
+  ---
+  duration_ms: 0.488116
+  type: 'test'
+  ...
+# Subtest: how the player is addressed follows settings.address (default masculine), the speaker's own gender forms follow the NPC
+ok 182 - how the player is addressed follows settings.address (default masculine), the speaker's own gender forms follow the NPC
+  ---
+  duration_ms: 13.184204
+  type: 'test'
+  ...
+# Subtest: takeLine: unused lines first, then the pool starts over
+ok 183 - takeLine: unused lines first, then the pool starts over
+  ---
+  duration_ms: 1.664731
+  type: 'test'
+  ...
+# Subtest: language rank: es-CO > es-MX > es-US > es-419 > es-AR > es-CL > es-ES > any other Spanish > not Spanish
+ok 184 - language rank: es-CO > es-MX > es-US > es-419 > es-AR > es-CL > es-ES > any other Spanish > not Spanish
+  ---
+  duration_ms: 1.494504
+  type: 'test'
+  ...
+# Subtest: rankVoices keeps Spanish voices only, best language first, local before network
+ok 185 - rankVoices keeps Spanish voices only, best language first, local before network
+  ---
+  duration_ms: 0.222266
+  type: 'test'
+  ...
+# Subtest: pickVoice stays in the best language group, prefers the speaker's gender and spreads people over the voices
+ok 186 - pickVoice stays in the best language group, prefers the speaker's gender and spreads people over the voices
+  ---
+  duration_ms: 0.664102
+  type: 'test'
+  ...
+# Subtest: speak(): utterance uses the best Spanish voice, its language, and the persona pitch and rate
+ok 187 - speak(): utterance uses the best Spanish voice, its language, and the persona pitch and rate
+  ---
+  duration_ms: 101.054248
+  type: 'test'
+  ...
+# Subtest: no Spanish voice: subtitles only, one explanation toast, no utterance, never a crash
+ok 188 - no Spanish voice: subtitles only, one explanation toast, no utterance, never a crash
+  ---
+  duration_ms: 0.993528
+  type: 'test'
+  ...
+# Subtest: AudioContext: only a trusted gesture (or earlier sticky activation) may create or resume one
+ok 189 - AudioContext: only a trusted gesture (or earlier sticky activation) may create or resume one
+  ---
+  duration_ms: 0.302616
+  type: 'test'
+  ...
+# Subtest: AudioContext: the game's own context is reused and ours is never created
+ok 190 - AudioContext: the game's own context is reused and ours is never created
+  ---
+  duration_ms: 0.400524
+  type: 'test'
+  ...
+# Subtest: the unlock listener ignores script-made events and keeps waiting for a real one
+ok 191 - the unlock listener ignores script-made events and keeps waiting for a real one
+  ---
+  duration_ms: 0.337389
+  type: 'test'
+  ...
+# Subtest: flat ground: walking moves the requested distance
+ok 192 - flat ground: walking moves the requested distance
+  ---
+  duration_ms: 1.966025
+  type: 'test'
+  ...
+# Subtest: a wall blocks and the character slides along it
+ok 193 - a wall blocks and the character slides along it
+  ---
+  duration_ms: 0.657742
+  type: 'test'
+  ...
+# Subtest: no tunnelling through a thin wall at low frame rate
+ok 194 - no tunnelling through a thin wall at low frame rate
+  ---
+  duration_ms: 1.784511
+  type: 'test'
+  ...
+# Subtest: door: closed blocks, open passes
+ok 195 - door: closed blocks, open passes
+  ---
+  duration_ms: 0.692264
+  type: 'test'
+  ...
+# Subtest: curb 0.3 m is stepped; retaining wall 0.9 m blocks
+ok 196 - curb 0.3 m is stepped; retaining wall 0.9 m blocks
+  ---
+  duration_ms: 0.899737
+  type: 'test'
+  ...
+# Subtest: stairs: ramp climbs to the upper floor, slab hole lets us through, head bump under the slab
+ok 197 - stairs: ramp climbs to the upper floor, slab hole lets us through, head bump under the slab
+  ---
+  duration_ms: 5.697864
+  type: 'test'
+  ...
+# Subtest: head bump: a ramp that runs under a slab stops where the head would hit
+ok 198 - head bump: a ramp that runs under a slab stops where the head would hit
+  ---
+  duration_ms: 43.419865
+  type: 'test'
+  ...
+# Subtest: falling off an edge lands on the lower surface
+ok 199 - falling off an edge lands on the lower surface
+  ---
+  duration_ms: 0.558042
+  type: 'test'
+  ...
+# Subtest: steep terrain cannot be climbed, gentle slope can
+ok 200 - steep terrain cannot be climbed, gentle slope can
+  ---
+  duration_ms: 1.125348
+  type: 'test'
+  ...
+# Subtest: segmentBlocked sees walls and ignores a named door
+ok 201 - segmentBlocked sees walls and ignores a named door
+  ---
+  duration_ms: 0.648678
+  type: 'test'
+  ...
+# Subtest: wallsRect/floorRect helpers produce consistent shapes
+ok 202 - wallsRect/floorRect helpers produce consistent shapes
+  ---
+  duration_ms: 0.400654
+  type: 'test'
+  ...
+# Subtest: the clean synthetic plan passes every check
+ok 203 - the clean synthetic plan passes every check
+  ---
+  duration_ms: 65.773798
+  type: 'test'
+  ...
+# Subtest: no plan at all -> shape
+ok 204 - no plan at all -> shape
+  ---
+  duration_ms: 3.14299
+  type: 'test'
+  ...
+# Subtest: a lot lands on its neighbour -> lots.overlap
+ok 205 - a lot lands on its neighbour -> lots.overlap
+  ---
+  duration_ms: 40.060818
+  type: 'test'
+  ...
+# Subtest: two lots 0.1 m apart with no party wall -> lots.gap
+ok 206 - two lots 0.1 m apart with no party wall -> lots.gap
+  ---
+  duration_ms: 47.259336
+  type: 'test'
+  ...
+# Subtest: every lot is a house -> lots.kinds
+ok 207 - every lot is a house -> lots.kinds
+  ---
+  duration_ms: 39.335805
+  type: 'test'
+  ...
+# Subtest: a lot hangs off the map -> lots.bounds
+ok 208 - a lot hangs off the map -> lots.bounds
+  ---
+  duration_ms: 59.302529
+  type: 'test'
+  ...
+# Subtest: too few lots -> lots.count
+ok 209 - too few lots -> lots.count
+  ---
+  duration_ms: 27.713597
+  type: 'test'
+  ...
+# Subtest: no shops -> shops.count
+ok 210 - no shops -> shops.count
+  ---
+  duration_ms: 80.528576
+  type: 'test'
+  ...
+# Subtest: only three shop types -> shops.types
+ok 211 - only three shop types -> shops.types
+  ---
+  duration_ms: 268.211005
+  type: 'test'
+  ...
+# Subtest: unknown shop type -> shops.type
+ok 212 - unknown shop type -> shops.type
+  ---
+  duration_ms: 51.995578
+  type: 'test'
+  ...
+# Subtest: entrance off the wall -> lots.entrance
+ok 213 - entrance off the wall -> lots.entrance
+  ---
+  duration_ms: 34.165658
+  type: 'test'
+  ...
+# Subtest: a road at 15 % -> streets.gradient
+ok 214 - a road at 15 % -> streets.gradient
+  ---
+  duration_ms: 48.799779
+  type: 'test'
+  ...
+# Subtest: a street at 19.5 % -> streets.gradient
+ok 215 - a street at 19.5 % -> streets.gradient
+  ---
+  duration_ms: 31.234968
+  type: 'test'
+  ...
+# Subtest: a house standing in the road -> lots.onstreet
+ok 216 - a house standing in the road -> lots.onstreet
+  ---
+  duration_ms: 30.452257
+  type: 'test'
+  ...
+# Subtest: a house standing in the alley -> lots.onstreet
+ok 217 - a house standing in the alley -> lots.onstreet
+  ---
+  duration_ms: 40.603677
+  type: 'test'
+  ...
+# Subtest: a house standing in a plaza -> lots.onplaza
+ok 218 - a house standing in a plaza -> lots.onplaza
+  ---
+  duration_ms: 30.454301
+  type: 'test'
+  ...
+# Subtest: a door facing a street that does not exist -> lots.front
+ok 219 - a door facing a street that does not exist -> lots.front
+  ---
+  duration_ms: 31.06435
+  type: 'test'
+  ...
+# Subtest: a wall-eyed 6 m storey -> lots.fh
+ok 220 - a wall-eyed 6 m storey -> lots.fh
+  ---
+  duration_ms: 46.344326
+  type: 'test'
+  ...
+# Subtest: a flat stairway -> streets.stair
+ok 221 - a flat stairway -> streets.stair
+  ---
+  duration_ms: 64.81327
+  type: 'test'
+  ...
+# Subtest: a stairway that is a 30 % ramp -> streets.stair
+ok 222 - a stairway that is a 30 % ramp -> streets.stair
+  ---
+  duration_ms: 47.66027
+  type: 'test'
+  ...
+# Subtest: a stairway at 78 % -> streets.stair
+ok 223 - a stairway at 78 % -> streets.stair
+  ---
+  duration_ms: 32.249638
+  type: 'test'
+  ...
+# Subtest: no alleys -> streets.alley
+ok 224 - no alleys -> streets.alley
+  ---
+  duration_ms: 50.38858
+  type: 'test'
+  ...
+# Subtest: a nav island -> nav.connected
+ok 225 - a nav island -> nav.connected
+  ---
+  duration_ms: 52.636626
+  type: 'test'
+  ...
+# Subtest: a nav edge that climbs a wall -> nav.edge
+ok 226 - a nav edge that climbs a wall -> nav.edge
+  ---
+  duration_ms: 53.488901
+  type: 'test'
+  ...
+# Subtest: a nav node floating in the air -> nav.ground
+ok 227 - a nav node floating in the air -> nav.ground
+  ---
+  duration_ms: 45.593032
+  type: 'test'
+  ...
+# Subtest: a door with no nav node near -> nav.coverage
+ok 228 - a door with no nav node near -> nav.coverage
+  ---
+  duration_ms: 56.334773
+  type: 'test'
+  ...
+# Subtest: nav too sparse -> nav.density
+ok 229 - nav too sparse -> nav.density
+  ---
+  duration_ms: 73.125015
+  type: 'test'
+  ...
+# Subtest: the spawn looks downhill -> spawn.look
+ok 230 - the spawn looks downhill -> spawn.look
+  ---
+  duration_ms: 39.21295
+  type: 'test'
+  ...
+# Subtest: the spawn is at the top of the hill -> spawn.place
+ok 231 - the spawn is at the top of the hill -> spawn.place
+  ---
+  duration_ms: 36.004672
+  type: 'test'
+  ...
+# Subtest: lots sit on the raw terrain (no plinth) -> lots.plinth
+ok 232 - lots sit on the raw terrain (no plinth) -> lots.plinth
+  ---
+  duration_ms: 30.107788
+  type: 'test'
+  ...
+# Subtest: the door is 2 m above the street -> lots.doorground
+ok 233 - the door is 2 m above the street -> lots.doorground
+  ---
+  duration_ms: 31.748762
+  type: 'test'
+  ...
+# Subtest: a flat world -> terrain.relief
+ok 234 - a flat world -> terrain.relief
+  ---
+  duration_ms: 26.696003
+  type: 'test'
+  ...
+# Subtest: a world of cliffs -> terrain.cliffs
+ok 235 - a world of cliffs -> terrain.cliffs
+  ---
+  duration_ms: 47.23564
+  type: 'test'
+  ...
+# Subtest: two plazas only -> plazas.count
+ok 236 - two plazas only -> plazas.count
+  ---
+  duration_ms: 42.924929
+  type: 'test'
+  ...
+# Subtest: a landmark with no English line -> landmarks.fields
+ok 237 - a landmark with no English line -> landmarks.fields
+  ---
+  duration_ms: 64.341098
+  type: 'test'
+  ...
+# Subtest: a poi with no facing -> pois.fields
+ok 238 - a poi with no facing -> pois.fields
+  ---
+  duration_ms: 64.004059
+  type: 'test'
+  ...
+# Subtest: a stairway of flights and landings passes; a chapel may front a plaza and be 4.2 m high
+ok 239 - a stairway of flights and landings passes; a chapel may front a plaza and be 4.2 m high
+  ---
+  duration_ms: 135.615452
+  type: 'test'
+  ...
+# Subtest: a party wall excuses a 0.1 m gap but not an interpenetration
+ok 240 - a party wall excuses a 0.1 m gap but not an interpenetration
+  ---
+  duration_ms: 78.92208
+  type: 'test'
+  ...
+# Subtest: data layers build under Node
+ok 241 - data layers build under Node
+  ---
+  duration_ms: 3634.90732
+  type: 'test'
+  ...
+# Subtest: open flat room inside a wall ring: no traps, no boundary exposure, nothing missing
+ok 242 - open flat room inside a wall ring: no traps, no boundary exposure, nothing missing
+  ---
+  duration_ms: 105.701307
+  type: 'test'
+  ...
+# Subtest: a 1.2 m deep pit is a trap (you can fall in but never climb out)
+ok 243 - a 1.2 m deep pit is a trap (you can fall in but never climb out)
+  ---
+  duration_ms: 92.500508
+  type: 'test'
+  ...
+# Subtest: a 0.35 m kerb is not a trap (step up and down both work)
+ok 244 - a 0.35 m kerb is not a trap (step up and down both work)
+  ---
+  duration_ms: 66.512564
+  type: 'test'
+  ...
+# Subtest: open edge of the plot is reported as boundary exposure
+ok 245 - open edge of the plot is reported as boundary exposure
+  ---
+  duration_ms: 1697.350294
+  type: 'test'
+  ...
+# Subtest: a room sealed by walls is reported missing (unreachable required place)
+ok 246 - a room sealed by walls is reported missing (unreachable required place)
+  ---
+  duration_ms: 36.053029
+  type: 'test'
+  ...
+# Subtest: the same room with a 0.9 m doorway is reachable
+ok 247 - the same room with a 0.9 m doorway is reachable
+  ---
+  duration_ms: 101.236672
+  type: 'test'
+  ...
+# Subtest: doorway width: 0.5 m gap blocks the 0.6 m character, 1.0 m gap passes
+ok 248 - doorway width: 0.5 m gap blocks the 0.6 m character, 1.0 m gap passes
+  ---
+  duration_ms: 127.803892
+  type: 'test'
+  ...
+# Subtest: a 0.9 m wall can be hopped, a 1.4 m wall cannot
+ok 249 - a 0.9 m wall can be hopped, a 1.4 m wall cannot
+  ---
+  duration_ms: 208.812892
+  type: 'test'
+  ...
+# Subtest: stairs: a flight to an upper slab with a hole is walkable both ways; without the hole headroom blocks
+ok 250 - stairs: a flight to an upper slab with a hole is walkable both ways; without the hole headroom blocks
+  ---
+  duration_ms: 176.789625
+  type: 'test'
+  ...
+# Subtest: jump arcs: an island across a 1.5 m moat is reachable and returnable (walk-only search misses it); the moat itself stays a trap
+ok 251 - jump arcs: an island across a 1.5 m moat is reachable and returnable (walk-only search misses it); the moat itself stays a trap
+  ---
+  duration_ms: 248.249554
+  type: 'test'
+  ...
+# Subtest: the build is clean: no module error, no unknown material, every group flushed
+ok 252 - the build is clean: no module error, no unknown material, every group flushed
+  ---
+  duration_ms: 1.420182
+  type: 'test'
+  ...
+# Subtest: discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+ok 253 - discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+  ---
+  duration_ms: 0.34495
+  type: 'test'
+  ...
+# Subtest: discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+ok 254 - discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+  ---
+  duration_ms: 8.159336
+  type: 'test'
+  ...
+# Subtest: TEETH: a point on a lot wall counts as "pushed by a collider"
+ok 255 - TEETH: a point on a lot wall counts as "pushed by a collider"
+  ---
+  duration_ms: 1.450568
+  type: 'test'
+  ...
+# Subtest: the signage and the living props all got a place (counts, not just "no error")
+ok 256 - the signage and the living props all got a place (counts, not just "no error")
+  ---
+  duration_ms: 0.36435
+  type: 'test'
+  ...
+# Subtest: the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+ok 257 - the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+  ---
+  duration_ms: 7.827845
+  type: 'test'
+  ...
+# Subtest: the murals hang on tall cut walls and the flora leaves those walls bare
+ok 258 - the murals hang on tall cut walls and the flora leaves those walls bare
+  ---
+  duration_ms: 0.190277
+  type: 'test'
+  ...
+# Subtest: determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+ok 259 - determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+  ---
+  duration_ms: 1688.688293
+  type: 'test'
+  ...
+# Subtest: perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+ok 260 - perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+  ---
+  duration_ms: 52.088469
+  type: 'test'
+  ...
+# Subtest: nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+ok 261 - nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+  ---
+  duration_ms: 55.430058
+  type: 'test'
+  ...
+# Subtest: TEETH: a prop collider across a nav edge is found by the same walk
+ok 262 - TEETH: a prop collider across a nav edge is found by the same walk
+  ---
+  duration_ms: 1.80333
+  type: 'test'
+  ...
+# Subtest: TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+ok 263 - TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+  ---
+  duration_ms: 19.521643
+  type: 'test'
+  ...
+# Subtest: settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+ok 264 - settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+  ---
+  duration_ms: 2.421582
+  type: 'test'
+  ...
+# Subtest: budget: the batched world stays inside the draw and triangle allowance
+ok 265 - budget: the batched world stays inside the draw and triangle allowance
+  ---
+  duration_ms: 0.767047
+  type: 'test'
+  ...
+# Subtest: every nav node stands on ground that matches its y and is not inside a lot
+ok 266 - every nav node stands on ground that matches its y and is not inside a lot
+  ---
+  duration_ms: 7.621104
+  type: 'test'
+  ...
+# Subtest: the plan itself dropped no unwalkable nav edge
+ok 267 - the plan itself dropped no unwalkable nav edge
+  ---
+  duration_ms: 0.166862
+  type: 'test'
+  ...
+# Subtest: every nav edge can be walked in both directions
+ok 268 - every nav edge can be walked in both directions
+  ---
+  duration_ms: 72.502897
+  type: 'test'
+  ...
+# Subtest: the spawn reaches every door node by walking the nav graph (one component)
+ok 269 - the spawn reaches every door node by walking the nav graph (one component)
+  ---
+  duration_ms: 1.318979
+  type: 'test'
+  ...
+# Subtest: TEETH: a wall across an edge is detected as blocked
+ok 270 - TEETH: a wall across an edge is detected as blocked
+  ---
+  duration_ms: 5.557732
+  type: 'test'
+  ...
+# Subtest: TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+ok 271 - TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+  ---
+  duration_ms: 0.562018
+  type: 'test'
+  ...
+# Subtest: the plan is deterministic per seed and differs in the details for another seed
+ok 272 - the plan is deterministic per seed and differs in the details for another seed
+  ---
+  duration_ms: 412.933191
+  type: 'test'
+  ...
+# Subtest: the lead oracle accepts the plan
+ok 273 - the lead oracle accepts the plan
+  ---
+  duration_ms: 112.035713
+  type: 'test'
+  ...
+# Subtest: lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+ok 274 - lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+  ---
+  duration_ms: 0.551392
+  type: 'test'
+  ...
+# Subtest: lots do not overlap, intrude into streets or plazas, or leave the plot
+ok 275 - lots do not overlap, intrude into streets or plazas, or leave the plot
+  ---
+  duration_ms: 19.2545
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+ok 276 - TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+  ---
+  duration_ms: 369.531955
+  type: 'test'
+  ...
+# Subtest: plinth rule and entrance ground heights
+ok 277 - plinth rule and entrance ground heights
+  ---
+  duration_ms: 2.069982
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot whose y no longer matches the height field is reported
+ok 278 - TEETH: a lot whose y no longer matches the height field is reported
+  ---
+  duration_ms: 120.895785
+  type: 'test'
+  ...
+# Subtest: gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+ok 279 - gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+  ---
+  duration_ms: 0.945796
+  type: 'test'
+  ...
+# Subtest: TEETH: a step in the height field is reported as a gradient error
+ok 280 - TEETH: a step in the height field is reported as a gradient error
+  ---
+  duration_ms: 99.120234
+  type: 'test'
+  ...
+# Subtest: nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+ok 281 - nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+  ---
+  duration_ms: 1.922119
+  type: 'test'
+  ...
+# Subtest: TEETH: cutting nav edges or moving a door node is reported
+ok 282 - TEETH: cutting nav edges or moving a door node is reported
+  ---
+  duration_ms: 276.058953
+  type: 'test'
+  ...
+# Subtest: spawn is walkable, low on the hill, outside every lot and looks up
+ok 283 - spawn is walkable, low on the hill, outside every lot and looks up
+  ---
+  duration_ms: 4.428249
+  type: 'test'
+  ...
+# Subtest: TEETH: a spawn inside a lot or looking downhill is reported
+ok 284 - TEETH: a spawn inside a lot or looking downhill is reported
+  ---
+  duration_ms: 195.345511
+  type: 'test'
+  ...
+# Subtest: pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+ok 285 - pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+  ---
+  duration_ms: 1.822519
+  type: 'test'
+  ...
+# Subtest: TEETH: a bad poi kind, an unknown building and an English name are reported
+ok 286 - TEETH: a bad poi kind, an unknown building and an English name are reported
+  ---
+  duration_ms: 200.264449
+  type: 'test'
+  ...
+# Subtest: TEETH: a spike in open terrain is reported as an unexplained cliff
+ok 287 - TEETH: a spike in open terrain is reported as an unexplained cliff
+  ---
+  duration_ms: 223.243045
+  type: 'test'
+  ...
+# Subtest: heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+ok 288 - heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+  ---
+  duration_ms: 64.494771
+  type: 'test'
+  ...
+1..288
+# tests 288
+# suites 0
+# pass 285
+# fail 2
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 558792.192969

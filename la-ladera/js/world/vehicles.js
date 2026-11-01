@@ -11,6 +11,16 @@ const rgb = (h) => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) /
 const TYRE = [0.07, 0.07, 0.08], CHROME = [0.78, 0.8, 0.82], BLACK = [0.1, 0.1, 0.11], WHITE = [1, 1, 1], PLATE = [0.96, 0.8, 0.12];
 const shade = (c, k) => [Math.min(1, c[0] * k), Math.min(1, c[1] * k), Math.min(1, c[2] * k)];
 
+/** The motorbike's dual seat as lofted sections (rear to front reads z falling): the one source for its geometry and for the spot a parked helmet rests on. */
+const MOTO_SEAT = [
+  { z: -0.06, y0: 0.8, y1: 0.89, hw: 0.075 }, { z: -0.22, y0: 0.79, y1: 0.905, hw: 0.115 }, { z: -0.55, y0: 0.8, y1: 0.92, hw: 0.115 }, { z: -0.78, y0: 0.82, y1: 0.935, hw: 0.085 }, { z: -0.9, y0: 0.84, y1: 0.935, hw: 0.06 },
+];
+/** Where a helmet rests: the centre of the seat's long top face (sections 1 and 2) and that face's tilt, since the seat rises toward the tail (local frame, +z = front). */
+export const MOTO_SEAT_REST = (() => {
+  const a = MOTO_SEAT[1], c = MOTO_SEAT[2];
+  return { y: (a.y1 + c.y1) / 2, z: (a.z + c.z) / 2, tilt: Math.atan2(c.y1 - a.y1, a.z - c.z) };
+})();
+
 /** Loft along z (rear -> front) through rectangular sections {z,y0,y1,hw}: a car body, a tank, a roof. Bottoms are left open. */
 function loft(b, mat, S, col, caps = true) {
   const P = (s, sx, top) => [sx * s.hw, top ? s.y1 : s.y0, s.z];
@@ -28,6 +38,7 @@ function loft(b, mat, S, col, caps = true) {
 function posed(K, b, x, y, z, ry, pitch, fn) {
   const T = K.ctx.THREE, m = new T.Matrix4().makeRotationFromEuler(new T.Euler(-pitch, ry, 0, 'YXZ')).setPosition(x, y, z);
   b.setBase(m); fn(); b.setBase(new T.Matrix4());
+  return m;
 }
 
 /** Box with the top face narrower and shifted: a car's greenhouse. z0 = [back,front] at the bottom, z1 at the top, half widths w0/w1. */
@@ -112,7 +123,7 @@ export function car(K, b, x, y, z, ry, pitch, o) {
 /** A 125-200 cc street bike: frame, tank, two-tone plastics, telescopic fork, bars with mirrors, lamp, exhaust, swingarm. `hex2` = side panels / fender. */
 export function moto(K, b, x, y, z, ry, pitch, o) {
   const c1 = rgb(o.hex), c2 = rgb(o.hex2 ?? 0x1c1c20), steel = [0.55, 0.57, 0.6];
-  posed(K, b, x, y, z, ry, pitch, () => {
+  const pose = posed(K, b, x, y, z, ry, pitch, () => {
     wheel(b, 0, 0.3, 0.66, 0.3, 0.09, { spokes: true }); wheel(b, 0, 0.3, -0.66, 0.3, 0.12, { spokes: true });
     tube(b, 'chrome', [0.056, 0.3, 0.66], [0.06, 0.3, 0.66], 0.115, 0.115, 12, { col: shade(CHROME, 0.9), caps: true });       // brake disc
     tube(b, 'chrome', [-0.074, 0.3, -0.66], [-0.078, 0.3, -0.66], 0.085, 0.085, 12, { col: shade(CHROME, 0.8), caps: true });  // rear sprocket
@@ -145,9 +156,7 @@ export function moto(K, b, x, y, z, ry, pitch, o) {
       { z: 0.43, y0: 0.9, y1: 1.0, hw: 0.05 }, { z: 0.34, y0: 0.84, y1: 1.035, hw: 0.11 }, { z: 0.14, y0: 0.82, y1: 1.02, hw: 0.135 }, { z: -0.08, y0: 0.8, y1: 0.96, hw: 0.115 }, { z: -0.17, y0: 0.8, y1: 0.9, hw: 0.08 },
     ], c1);
     b.box('chrome', 0, 1.04, 0.2, 0.06, 0.012, 0.06, { col: CHROME });                                                           // fuel cap
-    loft(b, 'seat', [
-      { z: -0.06, y0: 0.8, y1: 0.89, hw: 0.075 }, { z: -0.22, y0: 0.79, y1: 0.905, hw: 0.115 }, { z: -0.55, y0: 0.8, y1: 0.92, hw: 0.115 }, { z: -0.78, y0: 0.82, y1: 0.935, hw: 0.085 }, { z: -0.9, y0: 0.84, y1: 0.935, hw: 0.06 },
-    ], BLACK);
+    loft(b, 'seat', MOTO_SEAT, BLACK);
     loft(b, 'car_paint', [
       { z: -0.1, y0: 0.58, y1: 0.795, hw: 0.1 }, { z: -0.4, y0: 0.56, y1: 0.795, hw: 0.13 }, { z: -0.75, y0: 0.64, y1: 0.815, hw: 0.105 }, { z: -0.93, y0: 0.7, y1: 0.835, hw: 0.075 },
     ], c2);
@@ -165,6 +174,12 @@ export function moto(K, b, x, y, z, ry, pitch, o) {
     tube(b, 'iron_black', [-0.09, 0.7, -0.45], [-0.09, 0.4, -0.3], 0.018, 0.018, 5, { col: [0.5, 0.1, 0.1], caps: false });
     tube(b, 'bumper', [-0.1, 0.36, -0.05], [-0.3, 0.06, 0.02], 0.014, 0.014, 4, { col: BLACK, caps: false });                   // side stand
   });
+  // A later helmet must sit on this exact transformed seat, including pitch and the body's lateral displacement.
+  // Shop-front motos are level; kerb motos follow the road. Re-deriving either pose from rounded vehicle-list data floats helmets.
+  // `pitch` is the helmet's own (the bike's less the seat's tilt: the dual seat rises to the tail, so a helmet laid flat on the bike would rock on it); `bikePitch` is the bike's.
+  const seat = new K.ctx.THREE.Vector3(0, MOTO_SEAT_REST.y, MOTO_SEAT_REST.z).applyMatrix4(pose);
+  K.ctx.world ??= {};
+  (K.ctx.world.motoSeats ??= []).push({ x: seat.x, y: seat.y, z: seat.z, yaw: ry, pitch: pitch - MOTO_SEAT_REST.tilt, bikePitch: pitch });
 }
 
 export function bicycle(K, b, x, y, z, ry, pitch, o) {
@@ -217,9 +232,11 @@ export function vendorCart(K, b, x, y, z, ry, kind, r) {
     else if (kind === 'minutos') { b.box('wood_dark', 0, 1.2, -0.3, 1.2, 0.5, 0.05, { col: wood }); for (let i = 0; i < 4; i++) b.box('iron_black', -0.45 + i * 0.3, 1.0, 0.1, 0.1, 0.05, 0.16, { col: BLACK }); }
     // umbrella
     const ub = rgb(r.pick([0xd8402a, 0x2a6ab0, 0xf2c230, 0x3a9a5a]));
-    tube(b, 'iron_black', [0, 0.9, -0.3], [0, 2.35, -0.3], 0.02, 0.02, 4, { col: BLACK, caps: false });
-    b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.18, 12, { r1: 0.04, col: ub, caps: false });
-    b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.012, 12, { r1: 1.25, col: shade(ub, 0.8) });                       // the underside: a thin disc (a zero-height frustum has NaN side normals, and one NaN pixel blanks a block of the frame through the bloom blur)
+    if (!K.ctx.clutter?.fit('clutter_umbrella', x - Math.sin(ry) * 0.3, y, z - Math.cos(ry) * 0.3, ry, [2.5, 2.38, 2.5], { scene: 'plaza' })) {
+      tube(b, 'iron_black', [0, 0.9, -0.3], [0, 2.35, -0.3], 0.02, 0.02, 4, { col: BLACK, caps: false });
+      b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.18, 12, { r1: 0.04, col: ub, caps: false });
+      b.cyl('car_paint', 0, 2.2, -0.3, 1.25, 0.012, 12, { r1: 1.25, col: shade(ub, 0.8) });                       // the underside: a thin disc (a zero-height frustum has NaN side normals, and one NaN pixel blanks a block of the frame through the bloom blur)
+    }
   });
 }
 
@@ -261,6 +278,7 @@ export function rubbish(K, b, x, z, r) {
 
 export function bin(K, b, x, z, ry, hex = 0x2f6b3a) {
   const y = K.H(x, z);
+  if (K.ctx.clutter?.fit('clutter_bin_wheelie', x, y, z, ry, [0.5, 0.98, 0.6], { scene: 'alley' })) return;
   posed(K, b, x, y, z, ry, 0, () => {
     b.box('plastic_bin', 0, 0.45, 0, 0.48, 0.9, 0.55, { col: rgb(hex) });
     b.box('plastic_bin', 0, 0.93, -0.02, 0.5, 0.06, 0.58, { col: rgb(hex).map((c) => c * 0.85) });
@@ -272,6 +290,7 @@ export function gasCylinders(K, b, x, z, ry, r) {
   const y = K.H(x, z), n = r.int(3, 5);
   for (let i = 0; i < n; i++) {
     const px = x + Math.cos(ry) * (i - n / 2) * 0.36, pz = z - Math.sin(ry) * (i - n / 2) * 0.36, col = rgb(r.pick([0xe8c030, 0xe8c030, 0xd8402a, 0x2a6ab0]));
+    if (K.ctx.clutter?.fit('clutter_gas_cylinder', px, y, pz, ry, [0.3, 0.72, 0.3], { scene: 'alley' })) continue;
     b.cyl('car_paint', px, y, pz, 0.15, 0.58, 10, { r1: 0.15, col });
     b.cyl('car_paint', px, y + 0.58, pz, 0.15, 0.08, 10, { r1: 0.05, col });
     b.cyl('iron_black', px, y + 0.66, pz, 0.04, 0.06, 6, { col: BLACK });

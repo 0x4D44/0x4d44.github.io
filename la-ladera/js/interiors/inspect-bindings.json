@@ -1,0 +1,425 @@
+{
+  "version": 1,
+  "status": "integrated",
+  "sourceRevision": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "requiredSources": [
+    "dev/FEATURE-DRAWERS.md",
+    "js/interiors/finds.js",
+    "js/interiors/contents.js"
+  ],
+  "bindings": {
+    "anillo_compromiso": {
+      "asset": "inspect_ring",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "armonica": {
+      "asset": "inspect_harmonica",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "calzones_abuela": {
+      "asset": "inspect_knickers",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "calzones_medias": {
+      "asset": "inspect_knickers",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "calzones_rosados": {
+      "asset": "inspect_knickers",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "carrito": {
+      "asset": "inspect_toy_car",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "carta_a_mama": {
+      "asset": "inspect_envelope",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_a_mi_yo": {
+      "asset": "inspect_letter",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_abuela": {
+      "asset": "inspect_envelope",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_gracias_doctora": {
+      "asset": "inspect_envelope",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_nino_dios": {
+      "asset": "inspect_letter",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_prision": {
+      "asset": "inspect_envelope",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_sin_enviar": {
+      "asset": "inspect_letter",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "carta_yeison": {
+      "asset": "inspect_envelope",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "confesion_vidrio": {
+      "asset": "inspect_letter",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "cuaderno_ahorro_mar": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "cuaderno_amparo": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "cuentas_del_mes": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_camila": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_gilma": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_jairo": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_luzmarina": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_nestor": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_rosalba": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dia_valentina": {
+      "asset": "inspect_diary",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "dolares_calcetin": {
+      "asset": "inspect_banknotes",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "fiado_gloria": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "libreta_chance": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "libreta_libardo": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "libro_citas": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "libro_puesto_salud": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "libro_taller": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "llavero_local": {
+      "asset": "inspect_keys",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "llaves_repuesto": {
+      "asset": "inspect_keys",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "loteria": {
+      "asset": "inspect_lottery_ticket",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "loteria_vencida": {
+      "asset": "inspect_lottery_ticket",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "medalla_campeon": {
+      "asset": "inspect_medal_sport",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "medalla_servicio": {
+      "asset": "inspect_medal_service",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "natillera": {
+      "asset": "inspect_notebook",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "nota_abuelo": {
+      "asset": "inspect_envelope",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "oro_alcancia": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "oro_centenario": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "oro_forro": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "oro_frasco": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "oro_napoleon": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "osito": {
+      "asset": "inspect_toy_teddy",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "plan_empanadas": {
+      "asset": "inspect_recipe_cards",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "promesa_escalinata": {
+      "asset": "inspect_letter",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "receta_secreta": {
+      "asset": "inspect_recipe_cards",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "recetas_consuelo": {
+      "asset": "inspect_recipe_cards",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "relicario": {
+      "asset": "inspect_locket",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "reloj_bolsillo": {
+      "asset": "inspect_pocket_watch",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "reloj_dedicatoria": {
+      "asset": "inspect_wristwatch",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "retratos": {
+      "asset": "inspect_photo_portrait",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "reverso_fotos": {
+      "asset": "inspect_photo_family",
+      "source": "js/interiors/papers.js",
+      "export": "PAPERS"
+    },
+    "rosario": {
+      "asset": "inspect_rosary",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "tapete": {
+      "asset": "inspect_lace",
+      "source": "js/interiors/props.js",
+      "export": "ITEMS"
+    },
+    "trompo_confiscado": {
+      "asset": "inspect_toy_top",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    }
+  },
+  "note": "Bound to the finds (finds.js FINDS), papers (papers.js PAPERS) and ordinary things (props.js ITEMS) of the game: each id is drawn as its model in the drawers (js/interiors/inspect.js; the numbers are mirrored in inspect_data.js by tools/inspect_data.mjs). Asset keys are library keys; the ids are the game's. A model stands for a thing only where it does not contradict the thing's own text (the colour, the year, the number of people in the photo).",
+  "assets": [
+    {
+      "key": "inspect_gold_coin",
+      "label": "Moneda del recuerdo",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_pocket_watch",
+      "label": "Reloj de bolsillo",
+      "category": "timepieces"
+    },
+    {
+      "key": "inspect_wristwatch",
+      "label": "Reloj de pulsera",
+      "category": "timepieces"
+    },
+    {
+      "key": "inspect_ring",
+      "label": "Anillo de esmeralda",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_locket",
+      "label": "Relicario con retrato",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_medal_sport",
+      "label": "Medalla del barrio",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_medal_service",
+      "label": "Medalla de una vida",
+      "category": "jewelry"
+    },
+    {
+      "key": "inspect_rosary",
+      "label": "Rosario de madera",
+      "category": "devotion"
+    },
+    {
+      "key": "inspect_keys",
+      "label": "Llaves de casa",
+      "category": "household"
+    },
+    {
+      "key": "inspect_photo_family",
+      "label": "Foto de la familia",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_photo_portrait",
+      "label": "Retrato guardado",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_letter",
+      "label": "Una carta doblada",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_envelope",
+      "label": "Sobre con sello",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_diary",
+      "label": "Diario con broche",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_notebook",
+      "label": "Cuaderno de cuentas",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_recipe_cards",
+      "label": "Recetas de la abuela",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_banknotes",
+      "label": "Billetes de recuerdo",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_lottery_ticket",
+      "label": "Lotería de La Ladera",
+      "category": "papers"
+    },
+    {
+      "key": "inspect_lace",
+      "label": "Encaje de domingo",
+      "category": "textiles"
+    },
+    {
+      "key": "inspect_knickers",
+      "label": "Los calzones de fiesta",
+      "category": "textiles"
+    },
+    {
+      "key": "inspect_toy_car",
+      "label": "Carrito de hojalata",
+      "category": "toys"
+    },
+    {
+      "key": "inspect_toy_top",
+      "label": "Trompo de colores",
+      "category": "toys"
+    },
+    {
+      "key": "inspect_toy_teddy",
+      "label": "Osito remendado",
+      "category": "toys"
+    },
+    {
+      "key": "inspect_harmonica",
+      "label": "Armónica del abuelo",
+      "category": "music"
+    }
+  ]
+}

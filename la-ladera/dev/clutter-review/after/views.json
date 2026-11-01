@@ -1,0 +1,214 @@
+{
+  "viewport": [
+    1280,
+    720
+  ],
+  "query": "autostart&manual&hour=17.2&quality=high&audio=0",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "views": [
+    {
+      "id": "alley",
+      "pose": {
+        "id": "alley",
+        "x": -9,
+        "y": 16.43,
+        "z": -1.4,
+        "description": "Central cross-alley, looking west along the workshop fronts.",
+        "yaw": 1.5093353709121307,
+        "pitch": -0.07433726773828218
+      },
+      "camera": [
+        -9,
+        18.0699902,
+        -1.4
+      ],
+      "triangles": 1214845,
+      "drawCalls": 707,
+      "quality": "high",
+      "clutter": {
+        "placed": 128,
+        "near": 17,
+        "far": 98,
+        "culled": 13,
+        "triangles": 14570,
+        "batches": 80,
+        "byKey": {
+          "clutter_tank_black": 14,
+          "clutter_dish": 20,
+          "clutter_washing_line": 21,
+          "clutter_tank_blue": 6,
+          "clutter_pole_concrete": 21,
+          "clutter_pole_wood": 6,
+          "clutter_umbrella": 2,
+          "clutter_bin_wheelie": 6,
+          "clutter_shrine": 1,
+          "clutter_crate_wood": 2,
+          "clutter_crate_plastic": 3,
+          "clutter_bin_metal": 2,
+          "clutter_tyre": 2,
+          "clutter_cone": 2,
+          "clutter_chair": 3,
+          "clutter_sign": 2,
+          "clutter_gas_cylinder": 1,
+          "clutter_helmet": 10,
+          "clutter_shutter": 4
+        },
+        "replacements": 96,
+        "additions": 32
+      },
+      "image": "alley.jpg"
+    },
+    {
+      "id": "rooftop",
+      "pose": {
+        "id": "rooftop",
+        "x": 35.5,
+        "y": 9.8,
+        "z": 87.8,
+        "description": "Rooftop L02: washing, ribbed tank and satellite dish.",
+        "yaw": 0.5942137038004344,
+        "pitch": -0.30788676972251994
+      },
+      "camera": [
+        35.5,
+        11.4399902,
+        87.8
+      ],
+      "triangles": 1543748,
+      "drawCalls": 1068,
+      "quality": "high",
+      "clutter": {
+        "placed": 128,
+        "near": 24,
+        "far": 75,
+        "culled": 29,
+        "triangles": 16469,
+        "batches": 80,
+        "byKey": {
+          "clutter_tank_black": 14,
+          "clutter_dish": 20,
+          "clutter_washing_line": 21,
+          "clutter_tank_blue": 6,
+          "clutter_pole_concrete": 21,
+          "clutter_pole_wood": 6,
+          "clutter_umbrella": 2,
+          "clutter_bin_wheelie": 6,
+          "clutter_shrine": 1,
+          "clutter_crate_wood": 2,
+          "clutter_crate_plastic": 3,
+          "clutter_bin_metal": 2,
+          "clutter_tyre": 2,
+          "clutter_cone": 2,
+          "clutter_chair": 3,
+          "clutter_sign": 2,
+          "clutter_gas_cylinder": 1,
+          "clutter_helmet": 10,
+          "clutter_shutter": 4
+        },
+        "replacements": 96,
+        "additions": 32
+      },
+      "image": "rooftop.jpg"
+    },
+    {
+      "id": "plaza",
+      "pose": {
+        "id": "plaza",
+        "x": 3.5,
+        "y": 28,
+        "z": -64.5,
+        "description": "Chapel square: market umbrella and seating near the northwest edge.",
+        "yaw": 0.9868083002199204,
+        "pitch": -0.05783432897632469
+      },
+      "camera": [
+        3.5,
+        29.64,
+        -64.5
+      ],
+      "triangles": 676184,
+      "drawCalls": 428,
+      "quality": "high",
+      "clutter": {
+        "placed": 128,
+        "near": 6,
+        "far": 71,
+        "culled": 51,
+        "triangles": 8388,
+        "batches": 80,
+        "byKey": {
+          "clutter_tank_black": 14,
+          "clutter_dish": 20,
+          "clutter_washing_line": 21,
+          "clutter_tank_blue": 6,
+          "clutter_pole_concrete": 21,
+          "clutter_pole_wood": 6,
+          "clutter_umbrella": 2,
+          "clutter_bin_wheelie": 6,
+          "clutter_shrine": 1,
+          "clutter_crate_wood": 2,
+          "clutter_crate_plastic": 3,
+          "clutter_bin_metal": 2,
+          "clutter_tyre": 2,
+          "clutter_cone": 2,
+          "clutter_chair": 3,
+          "clutter_sign": 2,
+          "clutter_gas_cylinder": 1,
+          "clutter_helmet": 10,
+          "clutter_shutter": 4
+        },
+        "replacements": 96,
+        "additions": 32
+      },
+      "image": "plaza.jpg"
+    }
+  ],
+  "failures": [],
+  "console": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0"
+    ]
+  },
+  "buildErrors": [],
+  "loadedClutter": {
+    "files": 1,
+    "paths": [
+      "clutter/clutter.glb"
+    ],
+    "failed": [],
+    "assets": 19,
+    "keys": [
+      "clutter_pole_concrete",
+      "clutter_pole_wood",
+      "clutter_tank_black",
+      "clutter_tank_blue",
+      "clutter_dish",
+      "clutter_washing_line",
+      "clutter_bin_wheelie",
+      "clutter_bin_metal",
+      "clutter_crate_wood",
+      "clutter_crate_plastic",
+      "clutter_tyre",
+      "clutter_cone",
+      "clutter_shrine",
+      "clutter_umbrella",
+      "clutter_chair",
+      "clutter_shutter",
+      "clutter_sign",
+      "clutter_gas_cylinder",
+      "clutter_helmet"
+    ]
+  },
+  "captureWarnings": [
+    "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x3f6c00169800]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:33973/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0"
+  ]
+}

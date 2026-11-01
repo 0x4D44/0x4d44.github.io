@@ -827,10 +827,12 @@ export function laundry(L, E, hh) {
 }
 export function office(L, E, hh) {
   const d = any(() => L.wall('desk_office', 'any', { at: 'window', prio: 0 }), () => L.wall('desk_wood', 'any', { prio: 0 }));
-  if (d) { L.top(d, 'pc_set', { at: 'left' }); L.top(d, 'phone_landline', { at: 'right' }); L.at('office_chair', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); }
+  let seat = null;
+  if (d) { L.top(d, 'pc_set', { at: 'left' }); L.top(d, 'phone_landline', { at: 'right' }); seat = L.at('office_chair', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); }
   L.wall('filing_cabinet', 'any', { at: 'corner', prio: 1 }); L.wall('bookshelf', 'any', { prio: 1 });
   chairsAround(L, d, 0, ['chair_wood']);
-  const vis = any(() => L.free('chair_plastic', { rad: 2.6, prio: 2 })); void vis;
+  // The visitor's chair keeps 0.9 m off the desk's own chair (the free search puts it beside it, 0.65 m away: a 0.6 m niche against the desk that the stuck sweep's walker jumps into and cannot leave, L48's office at (-0.5, -86)).
+  const vis = any(() => L.free('chair_plastic', { rad: 2.6, prio: 2, clearOf: seat ? [seat] : [] }), () => L.free('chair_plastic', { rad: 2.6, prio: 2 })); void vis;
   L.free('trash_bin', { rad: 3, prio: 2 });
   art(L, E, ['diploma'], 'any', { cap: 0.5 }); art(L, E, 'cal', 'any'); clock(L, E, 'any', {});
   ceilingFixture(L, E, hh, 'tube'); fillMin(L, E, hh, 6);

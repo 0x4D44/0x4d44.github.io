@@ -73,6 +73,24 @@ test('?manual stays a page with no animation loop: the end of the boot starts no
   assert.equal(r.n, 0, `${r.n} animation frame(s) drew a real frame in ?manual (at ${r.at.join(', ')} ms): ctx.startLoop() did not honour the flag`);
 });
 
+// A THREE.LOD chooses its level from the camera's distance as it is drawn, which undoes the warm-up's "everything visible": the shops' goods (interiors/goods-render.js) show their near level, the
+// only one with the label atlas, under 8 m, the cheaper stock to 22 m and nothing beyond; the nearest shop is 13 m from the spawn, so the near level was never drawn at boot and the label atlas
+// went up in the first frame inside the first shop that shows a labelled article (L01, the kiosk: "the first frame uploaded 1 texture(s)"). The warm-up draws every level of every LOD and
+// gives the LODs back their own choice.
+test('the warm-up draws every level of a LOD (a shop\'s goods are far from the camera at boot, and a LOD draws nothing that far) and hands each LOD back its own choice of level', async () => {
+  const s = await page.eval(`(() => {
+    const ctx = __ladera.ctx, r = ctx.renderer, lods = [], maps = new Set();
+    ctx.scene.traverse((o) => { if (o.isLOD) lods.push(o); });
+    for (const l of lods) l.traverse((m) => { if (m.isMesh && m.material?.map) maps.add(m.material.map); });
+    const onGpu = (t) => r.properties.has(t) && !!r.properties.get(t).__webglTexture;
+    return { lods: lods.length, manual: lods.filter((l) => !l.autoUpdate).length, maps: maps.size, undecoded: [...maps].filter((t) => !t.image).length, notOnGpu: [...maps].filter((t) => !onGpu(t)).length };
+  })()`);
+  assert.ok(s.lods >= 20, `${s.lods} LODs in the scene: the stocked shops are gone, so is this test's point`);
+  assert.equal(s.manual, 0, `${s.manual} LOD(s) still have autoUpdate off after the warm-up: they would show one level for ever`);
+  assert.ok(s.maps >= 1 && s.undecoded === 0, `${s.maps} label texture(s) on the goods, ${s.undecoded} without a decoded image`);
+  assert.equal(s.notOnGpu, 0, `${s.notOnGpu} of the ${s.maps} label texture(s) of the shops' goods are not on the GPU after the warm-up: the first frame inside a shop uploads them`);
+});
+
 test('the first frame inside L22, L31 and L40 (and a hall and a kiosk) compiles nothing and uploads no texture; the rooms add a few geometries of their own', async () => {
   for (const id of ['L22', 'L31', 'L40', 'L10', 'L01']) {
     const r = await page.eval(ENTER(id), 120000);
@@ -81,6 +99,36 @@ test('the first frame inside L22, L31 and L40 (and a hall and a kiosk) compiles 
     assert.equal(r.textures, 0, `${id} (${r.kind}): the first frame uploaded ${r.textures} texture(s)`);
     assert.ok(r.geometries <= 40, `${id} (${r.kind}): the first frame uploaded ${r.geometries} geometries (a drawer, a door: not a room)`);
   }
+});
+
+// The library models inside a drawer (interiors/inspect.js) are built when the drawer opens, and so were their materials: the first drawer with a notebook in it compiled a program (184 ms) and,
+// a moment later, uploaded the 2048 px paper atlas (30 ms; until then the paper was drawn without it). requestLateMaterials() makes the materials during the boot and the warm frame draws them.
+test('the first drawer opened with a paper-atlas model inside compiles nothing and uploads no texture: its materials and its atlas were made by the boot', async () => {
+  const r = await page.eval(`(async () => {
+    const L = __ladera, ctx = L.ctx, r = ctx.renderer, gl = r.getContext(), C = ctx.containers, onGpu = (t) => !!(t && r.properties.has(t) && r.properties.get(t).__webglTexture);
+    const atlas = ['inspect_paper_atlas', 'inspect_metal_atlas'].map((k) => ctx.matlib.cache.get(k)).filter(Boolean);
+    const boot = { made: atlas.length, decoded: atlas.filter((m) => m.map?.image).length, onGpu: atlas.filter((m) => onGpu(m.map)).length, late: ctx.warm?.late ?? 0 };
+    for (const bp of ctx.buildings.values()) {
+      if (!C.pending.has(bp.id)) continue;
+      L.enter(bp.id); L.step(70); ctx.render(); gl.finish();
+      for (const S of [...(C.byBuilding.get(bp.id) ?? [])]) {
+        const m0 = { p: r.info.programs.length, t: r.info.memory.textures };
+        C.open(S.id); L.step(30); ctx.render(); gl.finish();
+        const keys = S.contentGroup ? S.contentGroup.children.filter((m) => m.isMesh).map((m) => m.userData.matKey) : [];
+        const out = { boot, bid: bp.id, sid: S.id, keys, programs: r.info.programs.length - m0.p, textures: r.info.memory.textures - m0.t };
+        C.close(S.id, true);
+        if (keys.some((k) => /atlas/.test(k))) return out;
+      }
+    }
+    return { boot, none: true };
+  })()`, 300000);
+  assert.ok(!r.none, 'no drawer in the world holds a model with the paper atlas: this test has nothing to open');
+  assert.equal(r.programs, 0, `opening ${r.sid} (${r.keys}) compiled ${r.programs} program(s)`);
+  assert.equal(r.textures, 0, `opening ${r.sid} (${r.keys}) uploaded ${r.textures} texture(s)`);
+  // the atlas image arrives some time after the drawer's first frame, so "no texture uploaded" there proves little: it must be decoded and on the GPU before anybody opens a drawer
+  assert.ok(r.boot.made >= 1 && r.boot.decoded === r.boot.made, `${r.boot.made} atlas material(s) made at boot, ${r.boot.decoded} with a decoded image`);
+  assert.equal(r.boot.onGpu, r.boot.made, `the atlas is on the GPU after the warm-up: ${r.boot.onGpu} of ${r.boot.made}`);
+  assert.ok(r.boot.late >= 5, `the warm-up drew ${r.boot.late} late materials (the inspect models have more than that)`);
 });
 
 test('the console stayed clean', async () => {

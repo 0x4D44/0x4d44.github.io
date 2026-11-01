@@ -1,0 +1,3541 @@
+{
+  "schema": 1,
+  "sourceCommit": "8fa06a5498555afc5dc2b636c06754a4a6b5882c",
+  "note": "Compatibility baseline frozen from origin/main. The builder declares 30 IDs; only its first 25 were present in the checked-in GLBs/meta. Joint names/order and anatomical scale must remain compatible with the unchanged CharacterLibrary. Mesh extents may change with hair and clothing.",
+  "manifestPeople": {
+    "dir": "people/",
+    "glb": "people.glb",
+    "meta": "people_meta.json",
+    "lod": "people_lod.glb"
+  },
+  "bones": [
+    "hips",
+    "spine",
+    "chest",
+    "neck",
+    "head",
+    "clavicle_l",
+    "clavicle_r",
+    "upperarm_l",
+    "upperarm_r",
+    "forearm_l",
+    "forearm_r",
+    "hand_l",
+    "hand_r",
+    "fingers_l",
+    "fingers_r",
+    "thigh_l",
+    "thigh_r",
+    "shin_l",
+    "shin_r",
+    "foot_l",
+    "foot_r"
+  ],
+  "clips": [
+    "idle_a",
+    "idle_b",
+    "walk",
+    "walk_fast",
+    "walk_bag",
+    "walk_step",
+    "phone_stand",
+    "phone_call",
+    "talk",
+    "wave",
+    "point",
+    "sit_idle",
+    "sit_phone",
+    "sit_look",
+    "sit_cross_legs",
+    "stand_hold_pole",
+    "stand_hold_rail",
+    "turn_left",
+    "turn_right",
+    "kid_bounce",
+    "kid_fidget",
+    "talk_b",
+    "sweep",
+    "cook",
+    "sell",
+    "walk_carry",
+    "carry_stand",
+    "lean_wall",
+    "laundry",
+    "pray",
+    "sit_talk",
+    "run"
+  ],
+  "fps": 24,
+  "clipFrames": {
+    "idle_a": 96,
+    "idle_b": 120,
+    "walk": 24,
+    "walk_fast": 19,
+    "walk_bag": 24,
+    "walk_step": 28,
+    "phone_stand": 96,
+    "phone_call": 96,
+    "talk": 96,
+    "wave": 48,
+    "point": 48,
+    "sit_idle": 96,
+    "sit_phone": 96,
+    "sit_look": 120,
+    "sit_cross_legs": 96,
+    "stand_hold_pole": 96,
+    "stand_hold_rail": 96,
+    "turn_left": 36,
+    "turn_right": 36,
+    "kid_bounce": 24,
+    "kid_fidget": 96,
+    "talk_b": 120,
+    "sweep": 72,
+    "cook": 72,
+    "sell": 96,
+    "walk_carry": 24,
+    "carry_stand": 96,
+    "lean_wall": 120,
+    "laundry": 96,
+    "pray": 120,
+    "sit_talk": 96,
+    "run": 16
+  },
+  "oneShotClips": [
+    "turn_left",
+    "turn_right"
+  ],
+  "people": [
+    {
+      "id": "m_tendero",
+      "kind": "man",
+      "declaredHeightM": 1.7,
+      "tags": [
+        "man",
+        "adult",
+        "shop"
+      ],
+      "baseline": {
+        "heightM": 1.679,
+        "hipHeightM": 0.856,
+        "legLengthM": 0.856,
+        "seatRootDropM": 0.326,
+        "walkSpeedMps": 1.33,
+        "walkFastSpeedMps": 2.15,
+        "runSpeedMps": 3.61
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.816216,
+          0
+        ],
+        "spine": [
+          0,
+          0.1354545,
+          0
+        ],
+        "chest": [
+          0,
+          0.17472,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2386384,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1530158,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.31248,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.24528,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.09072,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2386384,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1530158,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.31248,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.24528,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.09072,
+          0
+        ],
+        "neck": [
+          0,
+          0.2920972,
+          0
+        ],
+        "head": [
+          0,
+          0.0539012,
+          0
+        ],
+        "thigh_l": [
+          -0.0871416,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.381276,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3879241,
+          0
+        ],
+        "thigh_r": [
+          0.0871416,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.381276,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3879241,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_obrero",
+      "kind": "man",
+      "declaredHeightM": 1.72,
+      "tags": [
+        "man",
+        "adult",
+        "work",
+        "builder"
+      ],
+      "baseline": {
+        "heightM": 1.692,
+        "hipHeightM": 0.854,
+        "legLengthM": 0.854,
+        "seatRootDropM": 0.324,
+        "walkSpeedMps": 1.33,
+        "walkFastSpeedMps": 2.14,
+        "runSpeedMps": 3.6
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.8136678,
+          0
+        ],
+        "spine": [
+          0,
+          0.1351705,
+          0
+        ],
+        "chest": [
+          0,
+          0.1742001,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2379282,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1489,
+          0
+        ],
+        "forearm_l": [
+          0.0,
+          0.31155,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.24455,
+          0.0
+        ],
+        "fingers_l": [
+          0,
+          0.0904499,
+          0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2379282,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1489,
+          0
+        ],
+        "forearm_r": [
+          -0.0,
+          0.31155,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.24455,
+          0.0
+        ],
+        "fingers_r": [
+          0,
+          0.0904499,
+          0.0
+        ],
+        "neck": [
+          0,
+          0.2912517,
+          0
+        ],
+        "head": [
+          0,
+          0.0537765,
+          0
+        ],
+        "thigh_l": [
+          -0.082745,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3801413,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3867338,
+          0
+        ],
+        "thigh_r": [
+          0.082745,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3801413,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3867338,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_tendera",
+      "kind": "woman",
+      "declaredHeightM": 1.6,
+      "tags": [
+        "woman",
+        "adult",
+        "shop"
+      ],
+      "baseline": {
+        "heightM": 1.627,
+        "hipHeightM": 0.789,
+        "legLengthM": 0.789,
+        "seatRootDropM": 0.259,
+        "walkSpeedMps": 1.23,
+        "walkFastSpeedMps": 1.98,
+        "runSpeedMps": 3.33
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7494508,
+          0
+        ],
+        "spine": [
+          0,
+          0.1297727,
+          0
+        ],
+        "chest": [
+          0,
+          0.1801201,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2244337,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1178359,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.2938799,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.23068,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08532,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2244337,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1178359,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.2938799,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.23068,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08532,
+          0
+        ],
+        "neck": [
+          0,
+          0.2751867,
+          0
+        ],
+        "head": [
+          0,
+          0.0514071,
+          0
+        ],
+        "thigh_l": [
+          -0.088856,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.35155,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3553501,
+          0
+        ],
+        "thigh_r": [
+          0.088856,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.35155,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3553501,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_ama",
+      "kind": "woman",
+      "declaredHeightM": 1.58,
+      "tags": [
+        "woman",
+        "adult",
+        "home"
+      ],
+      "baseline": {
+        "heightM": 1.559,
+        "hipHeightM": 0.779,
+        "legLengthM": 0.779,
+        "seatRootDropM": 0.249,
+        "walkSpeedMps": 1.21,
+        "walkFastSpeedMps": 1.96,
+        "runSpeedMps": 3.29
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7394577,
+          0
+        ],
+        "spine": [
+          0,
+          0.1286364,
+          0
+        ],
+        "chest": [
+          0,
+          0.17784,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2215928,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1187178,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.2901599,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.22776,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08424,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2215928,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1187178,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.2901599,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.22776,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08424,
+          0
+        ],
+        "neck": [
+          0,
+          0.2718046,
+          0
+        ],
+        "head": [
+          0,
+          0.0509082,
+          0
+        ],
+        "thigh_l": [
+          -0.091909,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3471,
+          0.0
+        ],
+        "foot_l": [
+          0,
+          0.3507001,
+          0
+        ],
+        "thigh_r": [
+          0.091909,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3471,
+          -0.0
+        ],
+        "foot_r": [
+          0,
+          0.3507001,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_elder",
+      "kind": "elder",
+      "declaredHeightM": 1.52,
+      "tags": [
+        "woman",
+        "elder"
+      ],
+      "baseline": {
+        "heightM": 1.544,
+        "hipHeightM": 0.749,
+        "legLengthM": 0.749,
+        "seatRootDropM": 0.219,
+        "walkSpeedMps": 1.17,
+        "walkFastSpeedMps": 1.88,
+        "runSpeedMps": 3.16
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7094786,
+          0
+        ],
+        "spine": [
+          0,
+          0.1252273,
+          0
+        ],
+        "chest": [
+          0,
+          0.171,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.21307,
+          0
+        ],
+        "upperarm_l": [
+          0.0,
+          0.1102493,
+          1e-07
+        ],
+        "forearm_l": [
+          -0.0,
+          0.2789998,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.219,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.081,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.21307,
+          0
+        ],
+        "upperarm_r": [
+          -0.0,
+          0.1102493,
+          1e-07
+        ],
+        "forearm_r": [
+          0.0,
+          0.2789998,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.219,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.081,
+          0
+        ],
+        "neck": [
+          0,
+          0.2616583,
+          0
+        ],
+        "head": [
+          0,
+          0.0494118,
+          0
+        ],
+        "thigh_l": [
+          -0.084357,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.33375,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.33675,
+          0
+        ],
+        "thigh_r": [
+          0.084357,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.33375,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.33675,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_elder",
+      "kind": "elder",
+      "declaredHeightM": 1.64,
+      "tags": [
+        "man",
+        "elder"
+      ],
+      "baseline": {
+        "heightM": 1.594,
+        "hipHeightM": 0.813,
+        "legLengthM": 0.813,
+        "seatRootDropM": 0.283,
+        "walkSpeedMps": 1.27,
+        "walkFastSpeedMps": 2.04,
+        "runSpeedMps": 3.43
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7728956,
+          0
+        ],
+        "spine": [
+          0,
+          0.130625,
+          0
+        ],
+        "chest": [
+          0,
+          0.16588,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2265645,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.14026,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.2966701,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.23287,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08613,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2265645,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.14026,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.2966701,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.23287,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08613,
+          0
+        ],
+        "neck": [
+          0,
+          0.2777233,
+          0
+        ],
+        "head": [
+          0,
+          0.0517812,
+          0
+        ],
+        "thigh_l": [
+          -0.078793,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3619852,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3676897,
+          0
+        ],
+        "thigh_r": [
+          0.078793,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3619852,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3676897,
+          0
+        ]
+      }
+    },
+    {
+      "id": "b_boy",
+      "kind": "boy",
+      "declaredHeightM": 1.3,
+      "tags": [
+        "boy",
+        "kid"
+      ],
+      "baseline": {
+        "heightM": 1.28,
+        "hipHeightM": 0.588,
+        "legLengthM": 0.588,
+        "seatRootDropM": 0.058,
+        "walkSpeedMps": 0.92,
+        "walkFastSpeedMps": 1.48,
+        "runSpeedMps": 2.48
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.548355,
+          0
+        ],
+        "spine": [
+          0,
+          0.1127273,
+          0
+        ],
+        "chest": [
+          0,
+          0.1971201,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.1516182,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1024,
+          0
+        ],
+        "forearm_l": [
+          0.0,
+          0.23808,
+          -0.0
+        ],
+        "hand_l": [
+          0,
+          0.18688,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.06912,
+          0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.1516182,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1024,
+          0
+        ],
+        "forearm_r": [
+          -0.0,
+          0.23808,
+          -0.0
+        ],
+        "hand_r": [
+          0,
+          0.18688,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.06912,
+          0.0
+        ],
+        "neck": [
+          0,
+          0.1942535,
+          0
+        ],
+        "head": [
+          0,
+          0.0439247,
+          0
+        ],
+        "thigh_l": [
+          -0.063232,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.262016,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.257184,
+          0
+        ],
+        "thigh_r": [
+          0.063232,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.262016,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.257184,
+          0
+        ]
+      }
+    },
+    {
+      "id": "g_girl",
+      "kind": "girl",
+      "declaredHeightM": 1.22,
+      "tags": [
+        "girl",
+        "kid"
+      ],
+      "baseline": {
+        "heightM": 1.2,
+        "hipHeightM": 0.552,
+        "legLengthM": 0.552,
+        "seatRootDropM": 0.022,
+        "walkSpeedMps": 0.86,
+        "walkFastSpeedMps": 1.38,
+        "runSpeedMps": 2.33
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.5115829,
+          0
+        ],
+        "spine": [
+          0,
+          0.1081818,
+          0
+        ],
+        "chest": [
+          0,
+          0.1848001,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.1183325,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.094,
+          1e-07
+        ],
+        "forearm_l": [
+          -0.0,
+          0.2232,
+          -0.0
+        ],
+        "hand_l": [
+          -0.0,
+          0.1752,
+          0
+        ],
+        "fingers_l": [
+          -0.0,
+          0.0647999,
+          -0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.1183325,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.094,
+          1e-07
+        ],
+        "forearm_r": [
+          0.0,
+          0.2232,
+          -0.0
+        ],
+        "hand_r": [
+          0.0,
+          0.1752,
+          0
+        ],
+        "fingers_r": [
+          0.0,
+          0.0647999,
+          -0.0
+        ],
+        "neck": [
+          0,
+          0.1588031,
+          0
+        ],
+        "head": [
+          0,
+          0.0419295,
+          0
+        ],
+        "thigh_l": [
+          -0.064272,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.24564,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.24036,
+          0
+        ],
+        "thigh_r": [
+          0.064272,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.24564,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.24036,
+          0
+        ]
+      }
+    },
+    {
+      "id": "t_boy",
+      "kind": "teen",
+      "declaredHeightM": 1.7,
+      "tags": [
+        "man",
+        "teen"
+      ],
+      "baseline": {
+        "heightM": 1.679,
+        "hipHeightM": 0.856,
+        "legLengthM": 0.856,
+        "seatRootDropM": 0.326,
+        "walkSpeedMps": 1.33,
+        "walkFastSpeedMps": 2.15,
+        "runSpeedMps": 3.61
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.816216,
+          0
+        ],
+        "spine": [
+          0,
+          0.1354545,
+          0
+        ],
+        "chest": [
+          0,
+          0.17472,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2256655,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1434883,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.3124801,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.24528,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.09072,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2256655,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1434883,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.3124801,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.24528,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.09072,
+          0
+        ],
+        "neck": [
+          0,
+          0.2791243,
+          0
+        ],
+        "head": [
+          0,
+          0.0539012,
+          0
+        ],
+        "thigh_l": [
+          -0.0763526,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.381276,
+          -0.0
+        ],
+        "foot_l": [
+          0,
+          0.3879241,
+          0
+        ],
+        "thigh_r": [
+          0.0763526,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.381276,
+          0.0
+        ],
+        "foot_r": [
+          0,
+          0.3879241,
+          0
+        ]
+      }
+    },
+    {
+      "id": "t_girl",
+      "kind": "teen",
+      "declaredHeightM": 1.6,
+      "tags": [
+        "woman",
+        "teen"
+      ],
+      "baseline": {
+        "heightM": 1.579,
+        "hipHeightM": 0.789,
+        "legLengthM": 0.789,
+        "seatRootDropM": 0.259,
+        "walkSpeedMps": 1.23,
+        "walkFastSpeedMps": 1.98,
+        "runSpeedMps": 3.33
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7494508,
+          0
+        ],
+        "spine": [
+          0,
+          0.1297727,
+          0
+        ],
+        "chest": [
+          0,
+          0.1801201,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2122329,
+          0
+        ],
+        "upperarm_l": [
+          -0.0,
+          0.108876,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.29388,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.23068,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08532,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2122329,
+          0
+        ],
+        "upperarm_r": [
+          0.0,
+          0.108876,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.29388,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.23068,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08532,
+          0
+        ],
+        "neck": [
+          0,
+          0.2629858,
+          0
+        ],
+        "head": [
+          0,
+          0.0514071,
+          0
+        ],
+        "thigh_l": [
+          -0.0761623,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.35155,
+          -0.0
+        ],
+        "foot_l": [
+          0,
+          0.3553501,
+          0
+        ],
+        "thigh_r": [
+          0.0761623,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.35155,
+          0.0
+        ],
+        "foot_r": [
+          0,
+          0.3553501,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_afro",
+      "kind": "man",
+      "declaredHeightM": 1.78,
+      "tags": [
+        "man",
+        "adult"
+      ],
+      "baseline": {
+        "heightM": 1.804,
+        "hipHeightM": 0.897,
+        "legLengthM": 0.897,
+        "seatRootDropM": 0.367,
+        "walkSpeedMps": 1.4,
+        "walkFastSpeedMps": 2.25,
+        "runSpeedMps": 3.79
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.8569882,
+          0
+        ],
+        "spine": [
+          0,
+          0.14,
+          0
+        ],
+        "chest": [
+          0,
+          0.18304,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2500021,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1618261,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.3273599,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.25696,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.09504,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2500021,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1618261,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.3273599,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.25696,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.09504,
+          0
+        ],
+        "neck": [
+          0,
+          0.3056257,
+          0
+        ],
+        "head": [
+          0,
+          0.0558965,
+          0
+        ],
+        "thigh_l": [
+          -0.0912912,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.399432,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.406968,
+          0
+        ],
+        "thigh_r": [
+          0.0912912,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.399432,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.406968,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_afro",
+      "kind": "woman",
+      "declaredHeightM": 1.66,
+      "tags": [
+        "woman",
+        "adult"
+      ],
+      "baseline": {
+        "heightM": 1.681,
+        "hipHeightM": 0.819,
+        "legLengthM": 0.819,
+        "seatRootDropM": 0.289,
+        "walkSpeedMps": 1.28,
+        "walkFastSpeedMps": 2.06,
+        "runSpeedMps": 3.46
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7794299,
+          0
+        ],
+        "spine": [
+          0,
+          0.1331819,
+          0
+        ],
+        "chest": [
+          0,
+          0.1869599,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2329566,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.12052,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.30504,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.23944,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08856,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2329566,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.12052,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.30504,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.23944,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08856,
+          0
+        ],
+        "neck": [
+          0,
+          0.285333,
+          0
+        ],
+        "head": [
+          0,
+          0.0529035,
+          0
+        ],
+        "thigh_l": [
+          -0.0878384,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3649,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3693,
+          0
+        ],
+        "thigh_r": [
+          0.0878384,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3649,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3693,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_panadero",
+      "kind": "man",
+      "declaredHeightM": 1.72,
+      "tags": [
+        "man",
+        "adult",
+        "shop",
+        "shop:panaderia",
+        "cook",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.774,
+        "hipHeightM": 0.854,
+        "legLengthM": 0.854,
+        "seatRootDropM": 0.324,
+        "walkSpeedMps": 1.33,
+        "walkFastSpeedMps": 2.14,
+        "runSpeedMps": 3.6
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.8136678,
+          0
+        ],
+        "spine": [
+          0,
+          0.1351705,
+          0
+        ],
+        "chest": [
+          0,
+          0.1742001,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2379282,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1572892,
+          0
+        ],
+        "forearm_l": [
+          0.0,
+          0.31155,
+          0
+        ],
+        "hand_l": [
+          0.0,
+          0.24455,
+          0.0
+        ],
+        "fingers_l": [
+          0.0,
+          0.0904499,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2379282,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1572892,
+          0
+        ],
+        "forearm_r": [
+          -0.0,
+          0.31155,
+          0
+        ],
+        "hand_r": [
+          -0.0,
+          0.24455,
+          0.0
+        ],
+        "fingers_r": [
+          -0.0,
+          0.0904499,
+          0
+        ],
+        "neck": [
+          0,
+          0.2912517,
+          0
+        ],
+        "head": [
+          0,
+          0.0537765,
+          0
+        ],
+        "thigh_l": [
+          -0.0926744,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3801413,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3867338,
+          0
+        ],
+        "thigh_r": [
+          0.0926744,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3801413,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3867338,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_cocinera",
+      "kind": "woman",
+      "declaredHeightM": 1.58,
+      "tags": [
+        "woman",
+        "adult",
+        "shop",
+        "shop:restaurante",
+        "shop:cafe",
+        "cook",
+        "vendor",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.559,
+        "hipHeightM": 0.779,
+        "legLengthM": 0.779,
+        "seatRootDropM": 0.249,
+        "walkSpeedMps": 1.21,
+        "walkFastSpeedMps": 1.96,
+        "runSpeedMps": 3.29
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7394577,
+          0
+        ],
+        "spine": [
+          0,
+          0.1286364,
+          0
+        ],
+        "chest": [
+          0,
+          0.17784,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2215928,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.119808,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.2901599,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.22776,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08424,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2215928,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.119808,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.2901599,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.22776,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08424,
+          0
+        ],
+        "neck": [
+          0,
+          0.2718046,
+          0
+        ],
+        "head": [
+          0,
+          0.0509082,
+          0
+        ],
+        "thigh_l": [
+          -0.09358,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3471,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3507001,
+          0
+        ],
+        "thigh_r": [
+          0.09358,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3471,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3507001,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_carnicero",
+      "kind": "man",
+      "declaredHeightM": 1.74,
+      "tags": [
+        "man",
+        "adult",
+        "shop",
+        "shop:carniceria",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.694,
+        "hipHeightM": 0.864,
+        "legLengthM": 0.864,
+        "seatRootDropM": 0.334,
+        "walkSpeedMps": 1.35,
+        "walkFastSpeedMps": 2.17,
+        "runSpeedMps": 3.65
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.8238608,
+          0
+        ],
+        "spine": [
+          0,
+          0.1363068,
+          0
+        ],
+        "chest": [
+          0,
+          0.17628,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2407691,
+          0
+        ],
+        "upperarm_l": [
+          0.0,
+          0.1662154,
+          1e-07
+        ],
+        "forearm_l": [
+          -0.0,
+          0.3152698,
+          -0.0
+        ],
+        "hand_l": [
+          -0.0,
+          0.2474699,
+          0
+        ],
+        "fingers_l": [
+          -0.0,
+          0.09153,
+          -0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2407691,
+          0
+        ],
+        "upperarm_r": [
+          -0.0,
+          0.1662154,
+          1e-07
+        ],
+        "forearm_r": [
+          0.0,
+          0.3152698,
+          -0.0
+        ],
+        "hand_r": [
+          0.0,
+          0.2474699,
+          0
+        ],
+        "fingers_r": [
+          0.0,
+          0.09153,
+          -0.0
+        ],
+        "neck": [
+          0,
+          0.2946339,
+          0
+        ],
+        "head": [
+          0,
+          0.0542753,
+          0
+        ],
+        "thigh_l": [
+          -0.1021543,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3846802,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3914948,
+          0
+        ],
+        "thigh_r": [
+          0.1021543,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3846802,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3914948,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_peluquera",
+      "kind": "woman",
+      "declaredHeightM": 1.66,
+      "tags": [
+        "woman",
+        "adult",
+        "shop",
+        "shop:peluqueria",
+        "shop:modista",
+        "shop:zapateria"
+      ],
+      "baseline": {
+        "heightM": 1.639,
+        "hipHeightM": 0.819,
+        "legLengthM": 0.819,
+        "seatRootDropM": 0.289,
+        "walkSpeedMps": 1.28,
+        "walkFastSpeedMps": 2.06,
+        "runSpeedMps": 3.46
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7794299,
+          0
+        ],
+        "spine": [
+          0,
+          0.1331819,
+          0
+        ],
+        "chest": [
+          0,
+          0.1869599,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2329566,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1180498,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.30504,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.23944,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.08856,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2329566,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1180498,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.30504,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.23944,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.08856,
+          0
+        ],
+        "neck": [
+          0,
+          0.285333,
+          0
+        ],
+        "head": [
+          0,
+          0.0529035,
+          0
+        ],
+        "thigh_l": [
+          -0.0843249,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3649,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3693,
+          0
+        ],
+        "thigh_r": [
+          0.0843249,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3649,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3693,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_mecanico",
+      "kind": "man",
+      "declaredHeightM": 1.76,
+      "tags": [
+        "man",
+        "adult",
+        "shop",
+        "shop:taller",
+        "shop:ferreteria",
+        "work",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.714,
+        "hipHeightM": 0.874,
+        "legLengthM": 0.874,
+        "seatRootDropM": 0.344,
+        "walkSpeedMps": 1.36,
+        "walkFastSpeedMps": 2.19,
+        "runSpeedMps": 3.69
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.8340538,
+          0
+        ],
+        "spine": [
+          0,
+          0.1374432,
+          0
+        ],
+        "chest": [
+          0,
+          0.17836,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.24361,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1604177,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.31899,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.25039,
+          0
+        ],
+        "fingers_l": [
+          0,
+          0.09261,
+          0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.24361,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1604177,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.31899,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.25039,
+          0
+        ],
+        "fingers_r": [
+          0,
+          0.09261,
+          0
+        ],
+        "neck": [
+          0,
+          0.298016,
+          0
+        ],
+        "head": [
+          0,
+          0.054774,
+          0
+        ],
+        "thigh_l": [
+          -0.0931931,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3892193,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3962557,
+          0
+        ],
+        "thigh_r": [
+          0.0931931,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3892193,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3962557,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_farmaceutica",
+      "kind": "woman",
+      "declaredHeightM": 1.62,
+      "tags": [
+        "woman",
+        "adult",
+        "shop",
+        "shop:drogueria",
+        "nurse",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.647,
+        "hipHeightM": 0.799,
+        "legLengthM": 0.799,
+        "seatRootDropM": 0.269,
+        "walkSpeedMps": 1.25,
+        "walkFastSpeedMps": 2.01,
+        "runSpeedMps": 3.37
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7594438,
+          0
+        ],
+        "spine": [
+          0,
+          0.1309091,
+          0
+        ],
+        "chest": [
+          0,
+          0.1824,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2272748,
+          0
+        ],
+        "upperarm_l": [
+          0.0,
+          0.1156024,
+          1e-07
+        ],
+        "forearm_l": [
+          -0.0,
+          0.2975999,
+          0
+        ],
+        "hand_l": [
+          -0.0,
+          0.2335998,
+          0
+        ],
+        "fingers_l": [
+          -0.0,
+          0.0864,
+          -0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2272748,
+          0
+        ],
+        "upperarm_r": [
+          -0.0,
+          0.1156024,
+          1e-07
+        ],
+        "forearm_r": [
+          0.0,
+          0.2975999,
+          0
+        ],
+        "hand_r": [
+          0.0,
+          0.2335998,
+          0
+        ],
+        "fingers_r": [
+          0.0,
+          0.0864,
+          -0.0
+        ],
+        "neck": [
+          0,
+          0.2785689,
+          0
+        ],
+        "head": [
+          0,
+          0.0519059,
+          0
+        ],
+        "thigh_l": [
+          -0.0839821,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.356,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.36,
+          0
+        ],
+        "thigh_r": [
+          0.0839821,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.356,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.36,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_maestra",
+      "kind": "woman",
+      "declaredHeightM": 1.64,
+      "tags": [
+        "woman",
+        "adult",
+        "teacher",
+        "shop:papeleria",
+        "shop:minutos"
+      ],
+      "baseline": {
+        "heightM": 1.619,
+        "hipHeightM": 0.809,
+        "legLengthM": 0.809,
+        "seatRootDropM": 0.279,
+        "walkSpeedMps": 1.26,
+        "walkFastSpeedMps": 2.03,
+        "runSpeedMps": 3.42
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7694368,
+          0
+        ],
+        "spine": [
+          0,
+          0.1320454,
+          0
+        ],
+        "chest": [
+          0,
+          0.18468,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2301157,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1168356,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.3013201,
+          0
+        ],
+        "hand_l": [
+          0,
+          0.23652,
+          0
+        ],
+        "fingers_l": [
+          -0.0,
+          0.0874799,
+          -0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2301157,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1168356,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.3013201,
+          0
+        ],
+        "hand_r": [
+          0,
+          0.23652,
+          0
+        ],
+        "fingers_r": [
+          0.0,
+          0.0874799,
+          -0.0
+        ],
+        "neck": [
+          0,
+          0.281951,
+          0
+        ],
+        "head": [
+          0,
+          0.0524046,
+          0
+        ],
+        "thigh_l": [
+          -0.0841642,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.36045,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.36465,
+          0
+        ],
+        "thigh_r": [
+          0.0841642,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.36045,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.36465,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_mototaxi",
+      "kind": "man",
+      "declaredHeightM": 1.7,
+      "tags": [
+        "man",
+        "adult",
+        "moto",
+        "work",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.654,
+        "hipHeightM": 0.843,
+        "legLengthM": 0.843,
+        "seatRootDropM": 0.313,
+        "walkSpeedMps": 1.31,
+        "walkFastSpeedMps": 2.12,
+        "runSpeedMps": 3.56
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.8034747,
+          0
+        ],
+        "spine": [
+          0,
+          0.134034,
+          0
+        ],
+        "chest": [
+          0,
+          0.17212,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2350873,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.14674,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.30783,
+          0
+        ],
+        "hand_l": [
+          -0.0,
+          0.24163,
+          0.0
+        ],
+        "fingers_l": [
+          0,
+          0.08937,
+          0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2350873,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.14674,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.30783,
+          0
+        ],
+        "hand_r": [
+          0.0,
+          0.24163,
+          0.0
+        ],
+        "fingers_r": [
+          0,
+          0.08937,
+          0.0
+        ],
+        "neck": [
+          0,
+          0.2878696,
+          0
+        ],
+        "head": [
+          0,
+          0.0532777,
+          0
+        ],
+        "thigh_l": [
+          -0.081757,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3756022,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3819727,
+          0
+        ],
+        "thigh_r": [
+          0.081757,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3756022,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3819727,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_vendedor",
+      "kind": "man",
+      "declaredHeightM": 1.68,
+      "tags": [
+        "man",
+        "adult",
+        "vendor",
+        "work"
+      ],
+      "baseline": {
+        "heightM": 1.668,
+        "hipHeightM": 0.833,
+        "legLengthM": 0.833,
+        "seatRootDropM": 0.303,
+        "walkSpeedMps": 1.3,
+        "walkFastSpeedMps": 2.09,
+        "runSpeedMps": 3.52
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7932817,
+          0
+        ],
+        "spine": [
+          0,
+          0.1328977,
+          0
+        ],
+        "chest": [
+          0,
+          0.1700399,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2322464,
+          0
+        ],
+        "upperarm_l": [
+          -0.0,
+          0.14458,
+          0
+        ],
+        "forearm_l": [
+          0,
+          0.3041101,
+          0
+        ],
+        "hand_l": [
+          -0.0,
+          0.2387098,
+          0.0
+        ],
+        "fingers_l": [
+          -0.0,
+          0.08829,
+          -0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2322464,
+          0
+        ],
+        "upperarm_r": [
+          0.0,
+          0.14458,
+          0
+        ],
+        "forearm_r": [
+          0,
+          0.3041101,
+          0
+        ],
+        "hand_r": [
+          0.0,
+          0.2387098,
+          0.0
+        ],
+        "fingers_r": [
+          0.0,
+          0.08829,
+          -0.0
+        ],
+        "neck": [
+          0,
+          0.2844875,
+          0
+        ],
+        "head": [
+          0,
+          0.0527788,
+          0
+        ],
+        "thigh_l": [
+          -0.080769,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3710633,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3772118,
+          0
+        ],
+        "thigh_r": [
+          0.080769,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3710633,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3772118,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_abuelo",
+      "kind": "elder",
+      "declaredHeightM": 1.62,
+      "tags": [
+        "man",
+        "elder"
+      ],
+      "baseline": {
+        "heightM": 1.609,
+        "hipHeightM": 0.803,
+        "legLengthM": 0.803,
+        "seatRootDropM": 0.273,
+        "walkSpeedMps": 1.25,
+        "walkFastSpeedMps": 2.02,
+        "runSpeedMps": 3.39
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.7627025,
+          0
+        ],
+        "spine": [
+          0,
+          0.1294886,
+          0
+        ],
+        "chest": [
+          0,
+          0.1637999,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2237235,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1381,
+          1e-07
+        ],
+        "forearm_l": [
+          -0.0,
+          0.2929498,
+          0
+        ],
+        "hand_l": [
+          -0.0,
+          0.2299499,
+          0
+        ],
+        "fingers_l": [
+          -0.0,
+          0.08505,
+          -0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2237235,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1381,
+          1e-07
+        ],
+        "forearm_r": [
+          0.0,
+          0.2929498,
+          0
+        ],
+        "hand_r": [
+          0.0,
+          0.2299499,
+          0
+        ],
+        "fingers_r": [
+          0.0,
+          0.08505,
+          -0.0
+        ],
+        "neck": [
+          0,
+          0.2743412,
+          0
+        ],
+        "head": [
+          0,
+          0.0512824,
+          0
+        ],
+        "thigh_l": [
+          -0.077805,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3574463,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3629287,
+          0
+        ],
+        "thigh_r": [
+          0.077805,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3574463,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3629287,
+          0
+        ]
+      }
+    },
+    {
+      "id": "w_beata",
+      "kind": "elder",
+      "declaredHeightM": 1.5,
+      "tags": [
+        "woman",
+        "elder",
+        "beata",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.454,
+        "hipHeightM": 0.727,
+        "legLengthM": 0.727,
+        "seatRootDropM": 0.197,
+        "walkSpeedMps": 1.13,
+        "walkFastSpeedMps": 1.83,
+        "runSpeedMps": 3.07
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.6869943,
+          0
+        ],
+        "spine": [
+          0,
+          0.1226705,
+          0
+        ],
+        "chest": [
+          0,
+          0.16587,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.2066779,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1059818,
+          -1e-07
+        ],
+        "forearm_l": [
+          0.0,
+          0.2706301,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.21243,
+          0.0
+        ],
+        "fingers_l": [
+          0,
+          0.0785701,
+          0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.2066779,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1059818,
+          -1e-07
+        ],
+        "forearm_r": [
+          -0.0,
+          0.2706301,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.21243,
+          0.0
+        ],
+        "fingers_r": [
+          0,
+          0.0785701,
+          0.0
+        ],
+        "neck": [
+          0,
+          0.2540485,
+          0
+        ],
+        "head": [
+          0,
+          0.0482894,
+          0
+        ],
+        "thigh_l": [
+          -0.0818263,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.3237376,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.3262875,
+          0
+        ],
+        "thigh_r": [
+          0.0818263,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.3237376,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.3262875,
+          0
+        ]
+      }
+    },
+    {
+      "id": "b_escolar",
+      "kind": "boy",
+      "declaredHeightM": 1.32,
+      "tags": [
+        "boy",
+        "kid",
+        "student",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.3,
+        "hipHeightM": 0.598,
+        "legLengthM": 0.598,
+        "seatRootDropM": 0.068,
+        "walkSpeedMps": 0.93,
+        "walkFastSpeedMps": 1.5,
+        "runSpeedMps": 2.52
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.5575481,
+          0
+        ],
+        "spine": [
+          0,
+          0.1138636,
+          0
+        ],
+        "chest": [
+          0,
+          0.2002,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.1539872,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.1045,
+          0
+        ],
+        "forearm_l": [
+          0.0,
+          0.2418,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.1898,
+          0.0
+        ],
+        "fingers_l": [
+          0,
+          0.0702,
+          0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.1539872,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.1045,
+          0
+        ],
+        "forearm_r": [
+          -0.0,
+          0.2418,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.1898,
+          0.0
+        ],
+        "fingers_r": [
+          0,
+          0.0702,
+          0.0
+        ],
+        "neck": [
+          0,
+          0.1971636,
+          0
+        ],
+        "head": [
+          0,
+          0.0444236,
+          0
+        ],
+        "thigh_l": [
+          -0.06422,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.26611,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.26139,
+          0
+        ],
+        "thigh_r": [
+          0.06422,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.26611,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.26139,
+          0
+        ]
+      }
+    },
+    {
+      "id": "g_escolar",
+      "kind": "girl",
+      "declaredHeightM": 1.24,
+      "tags": [
+        "girl",
+        "kid",
+        "student",
+        "uniform"
+      ],
+      "baseline": {
+        "heightM": 1.22,
+        "hipHeightM": 0.561,
+        "legLengthM": 0.561,
+        "seatRootDropM": 0.031,
+        "walkSpeedMps": 0.87,
+        "walkFastSpeedMps": 1.41,
+        "runSpeedMps": 2.37
+      },
+      "restTranslations": {
+        "hips": [
+          0,
+          0.5207759,
+          0
+        ],
+        "spine": [
+          0,
+          0.1093182,
+          0
+        ],
+        "chest": [
+          0,
+          0.18788,
+          0
+        ],
+        "clavicle_l": [
+          -0.02,
+          0.1203047,
+          0
+        ],
+        "upperarm_l": [
+          0,
+          0.0961,
+          1e-07
+        ],
+        "forearm_l": [
+          0.0,
+          0.22692,
+          0.0
+        ],
+        "hand_l": [
+          0,
+          0.17812,
+          0.0
+        ],
+        "fingers_l": [
+          0,
+          0.06588,
+          0.0
+        ],
+        "clavicle_r": [
+          0.02,
+          0.1203047,
+          0
+        ],
+        "upperarm_r": [
+          0,
+          0.0961,
+          1e-07
+        ],
+        "forearm_r": [
+          -0.0,
+          0.22692,
+          0.0
+        ],
+        "hand_r": [
+          0,
+          0.17812,
+          0.0
+        ],
+        "fingers_r": [
+          0,
+          0.06588,
+          0.0
+        ],
+        "neck": [
+          0,
+          0.1613165,
+          0
+        ],
+        "head": [
+          0,
+          0.0424283,
+          0
+        ],
+        "thigh_l": [
+          -0.0653432,
+          0.04,
+          0
+        ],
+        "shin_l": [
+          0,
+          0.249734,
+          0
+        ],
+        "foot_l": [
+          0,
+          0.244566,
+          0
+        ],
+        "thigh_r": [
+          0.0653432,
+          0.04,
+          0
+        ],
+        "shin_r": [
+          0,
+          0.249734,
+          0
+        ],
+        "foot_r": [
+          0,
+          0.244566,
+          0
+        ]
+      }
+    },
+    {
+      "id": "m_joven",
+      "kind": "man",
+      "declaredHeightM": 1.77,
+      "tags": [
+        "man",
+        "adult",
+        "young"
+      ]
+    },
+    {
+      "id": "w_vecina",
+      "kind": "woman",
+      "declaredHeightM": 1.56,
+      "tags": [
+        "woman",
+        "adult",
+        "home"
+      ]
+    },
+    {
+      "id": "m_don",
+      "kind": "man",
+      "declaredHeightM": 1.68,
+      "tags": [
+        "man",
+        "adult"
+      ]
+    },
+    {
+      "id": "w_joven",
+      "kind": "woman",
+      "declaredHeightM": 1.65,
+      "tags": [
+        "woman",
+        "adult",
+        "young"
+      ]
+    },
+    {
+      "id": "m_rapado",
+      "kind": "teen",
+      "declaredHeightM": 1.73,
+      "tags": [
+        "man",
+        "teen"
+      ]
+    }
+  ],
+  "jointOrder": [
+    "hips",
+    "spine",
+    "chest",
+    "clavicle_l",
+    "upperarm_l",
+    "forearm_l",
+    "hand_l",
+    "fingers_l",
+    "clavicle_r",
+    "upperarm_r",
+    "forearm_r",
+    "hand_r",
+    "fingers_r",
+    "neck",
+    "head",
+    "thigh_l",
+    "shin_l",
+    "foot_l",
+    "thigh_r",
+    "shin_r",
+    "foot_r"
+  ],
+  "restOrientation": {
+    "hips": {
+      "parent": null,
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "spine": {
+      "parent": "hips",
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "chest": {
+      "parent": "spine",
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "clavicle_l": {
+      "parent": "chest",
+      "rotation": [
+        -0.5,
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "upperarm_l": {
+      "parent": "clavicle_l",
+      "rotation": [
+        -0.5,
+        0.5,
+        -0.5,
+        0.5
+      ]
+    },
+    "forearm_l": {
+      "parent": "upperarm_l",
+      "rotation": [
+        -0.0,
+        0.0,
+        0,
+        1
+      ]
+    },
+    "hand_l": {
+      "parent": "forearm_l",
+      "rotation": [
+        0,
+        0.0,
+        0.0,
+        1
+      ]
+    },
+    "fingers_l": {
+      "parent": "hand_l",
+      "rotation": [
+        0,
+        0.0,
+        0.0,
+        1
+      ]
+    },
+    "clavicle_r": {
+      "parent": "chest",
+      "rotation": [
+        -0.5,
+        -0.5,
+        -0.5,
+        0.5
+      ]
+    },
+    "upperarm_r": {
+      "parent": "clavicle_r",
+      "rotation": [
+        -0.5,
+        -0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "forearm_r": {
+      "parent": "upperarm_r",
+      "rotation": [
+        -0.0,
+        -0.0,
+        0,
+        1
+      ]
+    },
+    "hand_r": {
+      "parent": "forearm_r",
+      "rotation": [
+        0,
+        -0.0,
+        -0.0,
+        1
+      ]
+    },
+    "fingers_r": {
+      "parent": "hand_r",
+      "rotation": [
+        0,
+        -0.0,
+        -0.0,
+        1
+      ]
+    },
+    "neck": {
+      "parent": "chest",
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "head": {
+      "parent": "neck",
+      "rotation": [
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    "thigh_l": {
+      "parent": "hips",
+      "rotation": [
+        1,
+        0,
+        -0.0,
+        0
+      ]
+    },
+    "shin_l": {
+      "parent": "thigh_l",
+      "rotation": [
+        0,
+        0.0,
+        0,
+        1
+      ]
+    },
+    "foot_l": {
+      "parent": "shin_l",
+      "rotation": [
+        0.7071068,
+        0,
+        0,
+        0.7071068
+      ]
+    },
+    "thigh_r": {
+      "parent": "hips",
+      "rotation": [
+        1,
+        0,
+        -0.0,
+        0
+      ]
+    },
+    "shin_r": {
+      "parent": "thigh_r",
+      "rotation": [
+        0,
+        0.0,
+        0,
+        1
+      ]
+    },
+    "foot_r": {
+      "parent": "shin_r",
+      "rotation": [
+        0.7071068,
+        0,
+        0,
+        0.7071068
+      ]
+    }
+  }
+}

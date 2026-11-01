@@ -1,0 +1,232 @@
+TAP version 13
+# Subtest: the build is clean: no module error, no unknown material, every group flushed
+ok 1 - the build is clean: no module error, no unknown material, every group flushed
+  ---
+  duration_ms: 1.633473
+  type: 'test'
+  ...
+# Subtest: discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+ok 2 - discoveries: at least 24 (the lead's gate), each with Spanish name, English line, valid kind and a spot inside the plot
+  ---
+  duration_ms: 0.419783
+  type: 'test'
+  ...
+# Subtest: discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+ok 3 - discoveries the world placed itself stand on free ground: outside every lot, not inside a collider
+  ---
+  duration_ms: 1.593163
+  type: 'test'
+  ...
+# Subtest: TEETH: a point on a lot wall counts as "pushed by a collider"
+ok 4 - TEETH: a point on a lot wall counts as "pushed by a collider"
+  ---
+  duration_ms: 1.16647
+  type: 'test'
+  ...
+# Subtest: the signage and the living props all got a place (counts, not just "no error")
+ok 5 - the signage and the living props all got a place (counts, not just "no error")
+  ---
+  duration_ms: 0.28498
+  type: 'test'
+  ...
+# Subtest: the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+ok 6 - the chalk hopscotch lies above the plaza paving (the paving tops out at plaza y + 0.02, its border band at + 0.028: chalk under it is invisible)
+  ---
+  duration_ms: 2.66556
+  type: 'test'
+  ...
+# Subtest: the murals hang on tall cut walls and the flora leaves those walls bare
+ok 7 - the murals hang on tall cut walls and the flora leaves those walls bare
+  ---
+  duration_ms: 0.153061
+  type: 'test'
+  ...
+# Subtest: determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+ok 8 - determinism: two builds of one seed agree on vehicles, discoveries, cables and geometry; another seed differs
+  ---
+  duration_ms: 1051.614455
+  type: 'test'
+  ...
+# Subtest: perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+ok 9 - perimeter: nobody walks out of the plot from any edge (TEETH: without the perimeter walls most walks do)
+  ---
+  duration_ms: 30.389442
+  type: 'test'
+  ...
+# Subtest: nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+ok 10 - nav fit: the edges a prop blocks are dropped without splitting the graph; every edge that remains walks both ways WITH the prop colliders
+  ---
+  duration_ms: 22.914579
+  type: 'test'
+  ...
+# Subtest: TEETH: a prop collider across a nav edge is found by the same walk
+ok 11 - TEETH: a prop collider across a nav edge is found by the same walk
+  ---
+  duration_ms: 1.130225
+  type: 'test'
+  ...
+# Subtest: TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+ok 12 - TEETH: fitNav drops a blocked edge that has another way round, and keeps (reports) one that is the only link
+  ---
+  duration_ms: 22.841368
+  type: 'test'
+  ...
+# Subtest: settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+ok 13 - settle: a discovery that sits inside its own object is moved beside it (TEETH: the post itself is not a free spot)
+  ---
+  duration_ms: 1.048351
+  type: 'test'
+  ...
+# Subtest: budget: the batched world stays inside the draw and triangle allowance
+ok 14 - budget: the batched world stays inside the draw and triangle allowance
+  ---
+  duration_ms: 0.756822
+  type: 'test'
+  ...
+# Subtest: every nav node stands on ground that matches its y and is not inside a lot
+ok 15 - every nav node stands on ground that matches its y and is not inside a lot
+  ---
+  duration_ms: 2.581023
+  type: 'test'
+  ...
+# Subtest: the plan itself dropped no unwalkable nav edge
+ok 16 - the plan itself dropped no unwalkable nav edge
+  ---
+  duration_ms: 0.11266
+  type: 'test'
+  ...
+# Subtest: every nav edge can be walked in both directions
+ok 17 - every nav edge can be walked in both directions
+  ---
+  duration_ms: 28.580194
+  type: 'test'
+  ...
+# Subtest: the spawn reaches every door node by walking the nav graph (one component)
+ok 18 - the spawn reaches every door node by walking the nav graph (one component)
+  ---
+  duration_ms: 1.139328
+  type: 'test'
+  ...
+# Subtest: TEETH: a wall across an edge is detected as blocked
+ok 19 - TEETH: a wall across an edge is detected as blocked
+  ---
+  duration_ms: 1.858163
+  type: 'test'
+  ...
+# Subtest: TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+ok 20 - TEETH: a node placed on a lot wall fails the "not pushed by a wall" check
+  ---
+  duration_ms: 0.385532
+  type: 'test'
+  ...
+# Subtest: the plan is deterministic per seed and differs in the details for another seed
+ok 21 - the plan is deterministic per seed and differs in the details for another seed
+  ---
+  duration_ms: 222.183737
+  type: 'test'
+  ...
+# Subtest: the lead oracle accepts the plan
+ok 22 - the lead oracle accepts the plan
+  ---
+  duration_ms: 48.365051
+  type: 'test'
+  ...
+# Subtest: lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+ok 23 - lot mix: 42-50 lots, every kind, >= 12 shops over >= 10 shop types, unique names
+  ---
+  duration_ms: 0.565693
+  type: 'test'
+  ...
+# Subtest: lots do not overlap, intrude into streets or plazas, or leave the plot
+ok 24 - lots do not overlap, intrude into streets or plazas, or leave the plot
+  ---
+  duration_ms: 11.529698
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+ok 25 - TEETH: a lot dragged into the street, onto a neighbour or off the plot is reported
+  ---
+  duration_ms: 272.308372
+  type: 'test'
+  ...
+# Subtest: plinth rule and entrance ground heights
+ok 26 - plinth rule and entrance ground heights
+  ---
+  duration_ms: 2.15498
+  type: 'test'
+  ...
+# Subtest: TEETH: a lot whose y no longer matches the height field is reported
+ok 27 - TEETH: a lot whose y no longer matches the height field is reported
+  ---
+  duration_ms: 111.685164
+  type: 'test'
+  ...
+# Subtest: gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+ok 28 - gradients: road/street <= 12 %, alley/path <= 22 %, stairs 50-70 % with ~0.17 risers and landings
+  ---
+  duration_ms: 0.905345
+  type: 'test'
+  ...
+# Subtest: TEETH: a step in the height field is reported as a gradient error
+ok 29 - TEETH: a step in the height field is reported as a gradient error
+  ---
+  duration_ms: 161.357355
+  type: 'test'
+  ...
+# Subtest: nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+ok 30 - nav graph: one component, a door node on every entrance, bounded edge lengths, plaza interiors
+  ---
+  duration_ms: 21.628398
+  type: 'test'
+  ...
+# Subtest: TEETH: cutting nav edges or moving a door node is reported
+ok 31 - TEETH: cutting nav edges or moving a door node is reported
+  ---
+  duration_ms: 282.530989
+  type: 'test'
+  ...
+# Subtest: spawn is walkable, low on the hill, outside every lot and looks up
+ok 32 - spawn is walkable, low on the hill, outside every lot and looks up
+  ---
+  duration_ms: 0.371561
+  type: 'test'
+  ...
+# Subtest: TEETH: a spawn inside a lot or looking downhill is reported
+ok 33 - TEETH: a spawn inside a lot or looking downhill is reported
+  ---
+  duration_ms: 121.816723
+  type: 'test'
+  ...
+# Subtest: pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+ok 34 - pois, landmarks, areas and street names have the shape and Spanish names the contract wants
+  ---
+  duration_ms: 1.32581
+  type: 'test'
+  ...
+# Subtest: TEETH: a bad poi kind, an unknown building and an English name are reported
+ok 35 - TEETH: a bad poi kind, an unknown building and an English name are reported
+  ---
+  duration_ms: 91.728347
+  type: 'test'
+  ...
+# Subtest: TEETH: a spike in open terrain is reported as an unexplained cliff
+ok 36 - TEETH: a spike in open terrain is reported as an unexplained cliff
+  ---
+  duration_ms: 125.999452
+  type: 'test'
+  ...
+# Subtest: heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+ok 37 - heightAt is finite over the plot, fast, and every cliff is a cut band beside a lot, plaza or street
+  ---
+  duration_ms: 38.841261
+  type: 'test'
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6331.824057

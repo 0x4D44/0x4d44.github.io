@@ -2,7 +2,8 @@
 //   node la-ladera/tests/payload.mjs [--json]      exit 1 when a budget is broken
 //
 // Budgets: textures <= 24 MB, models <= 32 MB (people <= 14, furniture <= 10, world <= 6, arch <= 2), no file > 8 MB,
-// shipped total (everything except vendor/, dev/, labs/, tests/, tools/) <= 60 MB, estimated GPU texture memory <= 220 MB.
+// shipped total (everything except vendor/, dev/, labs/, tests/, tools/) <= 150 MB, estimated GPU texture memory <= 800 MB
+// (were 60 / 220 until Arthur's kit proved able to carry more: an RTX 5070 Ti and an 18-core / 40-GPU MacBook Pro; tests/slownet.mjs still gates the load time).
 import './nice.mjs';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve, dirname, relative, extname, sep } from 'node:path';
@@ -57,7 +58,7 @@ for (const f of imgs) { const d = dims(f.path); if (d) gpu += d[0] * d[1] * 4 * 
 const rows = [
   ['textures', sum(tex) / MB, 24], ['models', sum(models) / MB, 32], ['models/people', sum(sub('people')) / MB, 14],
   ['models/furniture', sum(sub('furniture')) / MB, 10], ['models/world', sum(sub('world')) / MB, 6], ['models/arch', sum(sub('arch')) / MB, 2],
-  ['shipped total (excl. vendor,dev,labs,tests,tools)', sum(shipped) / MB, 60], ['estimated GPU texture memory', gpu / MB, 220],
+  ['shipped total (excl. vendor,dev,labs,tests,tools)', sum(shipped) / MB, 150], ['estimated GPU texture memory', gpu / MB, 800],
 ];
 const biggest = files.filter((f) => !f.rel.startsWith('vendor/')).sort((a, b) => b.size - a.size).slice(0, 8).map((f) => `${(f.size / MB).toFixed(2)} MB  ${f.rel}`);
 const over = files.filter((f) => f.size > 8 * MB && !f.rel.startsWith('vendor/')).map((f) => f.rel);

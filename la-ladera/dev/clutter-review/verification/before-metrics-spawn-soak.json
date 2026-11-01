@@ -1,0 +1,97 @@
+{
+ "size": [
+  1280,
+  720
+ ],
+ "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+ "boot": {
+  "seconds": 20,
+  "stages": {
+   "engine": 36,
+   "materials": 26,
+   "assets": 25,
+   "plan": 229,
+   "worldParts": {
+    "terrain": 453,
+    "surfaces": 65,
+    "stairs": 34,
+    "retaining": 31,
+    "perimeter": 0
+   },
+   "world": 645,
+   "arch": 71,
+   "furnish": 3630,
+   "colliders": 7,
+   "build": 1303,
+   "propParts": {
+    "occupancy": 68,
+    "atlas": 163,
+    "boundary": 12,
+    "poles": 22,
+    "vehicles": 27,
+    "dress": 10,
+    "signs": 4,
+    "hill": 8,
+    "flora": 39,
+    "planters": 1,
+    "life": 12,
+    "navfit": 21,
+    "discoveries": 21
+   },
+   "props": 426,
+   "flush": 123,
+   "glow": 22,
+   "peopleSpawn": 89,
+   "people": 505,
+   "start": 5668,
+   "total": 19563
+  },
+  "errors": 0,
+  "console": {
+   "errors": 0,
+   "warnings": 2,
+   "pageErrors": 0,
+   "net404": 0
+  },
+  "consoleSample": [
+   "[warning] [.WebGL-0x135c00177200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37139/la-ladera/index.html?autostart&manual&quality=high&hour=17.2&audio=0",
+   "[warning] [.WebGL-0x135c00177200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37139/la-ladera/index.html?autostart&manual&quality=high&hour=17.2&audio=0"
+  ]
+ },
+ "views": [
+  {
+   "id": "spawn",
+   "pos": [
+    -6.5,
+    0.22,
+    92.5
+   ],
+   "median": 16.7,
+   "p95": 16.8,
+   "max": 16.8,
+   "costMs": 17.59,
+   "calls": 1075,
+   "tris": 1529993,
+   "geoms": 859,
+   "textures": 149
+  }
+ ],
+ "soak": {},
+ "counts": {},
+ "failures": [
+  "spawn: uncapped render cost 17.59 ms > 12",
+  "console warnings: 2",
+  "metrics run crashed: Error: timeout waiting for: document.readyState === \"complete\" |     at Page.waitFor (file:///workspace/scratch/bdef5ac47306/baseline/la-ladera/tests/chrome.mjs:104:44) |     at async Page.goto (file:///workspace/scratch/bdef5ac47306/baseline/la-ladera/tests/chrome.mjs:113:5)"
+ ],
+ "baselineMedian": 16.7,
+ "summary": {
+  "boot_s": 20,
+  "views": 1,
+  "blank_page_frame_ms": 16.7,
+  "frame_ms_median_of_medians": 16.7,
+  "worst_median": 16.7,
+  "worst_cost_ms": 17.59,
+  "max_calls": 1075,
+  "max_tris": 1529993
+ }
+}

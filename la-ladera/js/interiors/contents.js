@@ -15,7 +15,8 @@ import { householdsOf } from './household.js';
 import { CATALOG } from './catalog.js';
 import { layoutOf, EYE_Y } from './carcass.js';
 import { standSpots } from './reach.js';
-import { ITEMS, whenOk, drawProp, findDims, paperLook, PAPER_PROMPT } from './props.js';
+import { ITEMS, whenOk, drawProp, findDims, wrapDims, paperLook, PAPER_PROMPT } from './props.js';
+import { modelFor } from './inspect.js';
 
 export { drawProp as drawContent };
 export const TOTALS = { papers: PAPERS.length, finds: FINDS.length };
@@ -232,19 +233,28 @@ export function makeContents(ctx, S) {
   const start = Math.floor(rng.next() * 7);
   // the paper and the find come first: they get the best spot and are never squeezed out
   const pid = S.plan?.paper, fid = S.plan?.find;
+  // A thing that inspect-bindings.json binds takes its library model's footprint first (inspect.js `modelFor`: from the manifest's numbers, so the packing never depends on what has loaded),
+  // then, if that does not fit at three sizes, the footprint of its old stand-in, as before: nothing is ever squeezed out for being a model.
   if (pid && paperById.has(pid)) {
-    const p = paperById.get(pid), base = paperLook(p.cover, `${S.id}|${pid}`);
-    for (const sc of [1, 0.75, 0.55]) {
-      const it = { ...base, w: base.w * sc, d: base.d * sc }, pos = pk.put(it, start); if (!pos) continue;
-      add({ ...it, cover: p.cover, paper: { id: pid, kind: p.kind, prompt: PAPER_PROMPT[p.kind] ?? 'Leer' }, line: ['Un papel doblado.', 'A folded paper.'] }, pos); break;
+    const p = paperById.get(pid), base = paperLook(p.cover, `${S.id}|${pid}`), tries = [];
+    for (const sc of [1, 0.8, 0.6]) { const m = modelFor(pid, null, sc); if (m) tries.push({ it: { ...base, w: m.w, h: m.h, d: m.d }, model: m }); }
+    for (const sc of [1, 0.75, 0.55]) tries.push({ it: { ...base, w: base.w * sc, d: base.d * sc } });
+    for (const { it, model } of tries) {
+      const pos = pk.put(it, start); if (!pos) continue;
+      add({ ...it, cover: p.cover, ...(model ? { model } : {}), paper: { id: pid, kind: p.kind, prompt: PAPER_PROMPT[p.kind] ?? 'Leer' }, line: ['Un papel doblado.', 'A folded paper.'] }, pos); break;
     }
   }
   if (fid && findById.has(fid)) {
-    const f = findById.get(fid), size = f.size ?? 0.04;
-    for (const [wrap, sc] of [[f.in ?? 'loose', 1], ['loose', 1], ['loose', 0.7], ['loose', 0.45]]) {
-      const sz = size * sc, d = findDims(f.shape, sz, wrap), pos = pk.put({ w: d.w, h: d.h, d: d.d }, start + 3);
+    const f = findById.get(fid), size = f.size ?? 0.04, own = f.in ?? 'loose', tries = [];
+    for (const [wrap, sc] of [[own, 1], ['loose', 1], ['loose', 0.75], ['loose', 0.55]]) { const m = modelFor(fid, size, sc); if (m) tries.push({ wrap, sc, m }); }
+    for (const [wrap, sc] of [[own, 1], ['loose', 1], ['loose', 0.7], ['loose', 0.45]]) tries.push({ wrap, sc });
+    for (const { wrap, sc, m } of tries) {
+      let d;
+      if (m) { const b = wrapDims(wrap); d = { w: Math.max(b ? b.w + 0.01 : 0, m.w), d: Math.max(b ? b.d + 0.01 : 0, m.d), h: (b?.h ?? 0) + m.h }; }          // the model rests on its base
+      else d = findDims(f.shape, size * sc, wrap);
+      const pos = pk.put({ w: d.w, h: d.h, d: d.d }, start + 3);
       if (!pos) continue;
-      add({ sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: sz, tint: f.tint ?? 0xe3b53b, wrap }, find: fid, who: 'Hallazgo', line: ['', ''] }, pos); break;
+      add({ sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: size * sc, tint: f.tint ?? 0xe3b53b, wrap }, ...(m ? { model: m } : {}), find: fid, who: 'Hallazgo', line: ['', ''] }, pos); break;
     }
   }
   // the ordinary things (a wide drawer holds more than a nightstand's: about one thing per 0.03 m2 of the tray that came out)
@@ -255,9 +265,10 @@ export function makeContents(ctx, S) {
   let got = 0;
   for (const { i } of cands) {
     if (got >= want) break;
-    const pos = pk.put({ w: i.w, h: i.h, d: i.d, hang: i.sh === 'hang' }, start + got);
+    const m = i.sh === 'hang' ? null : modelFor(i.id), at = m ? pk.put({ w: m.w, h: m.h, d: m.d }, start + got) : null;            // a bound thing: its model's footprint, else its own
+    const pos = at ?? pk.put({ w: i.w, h: i.h, d: i.d, hang: i.sh === 'hang' }, start + got);
     if (!pos) continue;
-    add({ sh: i.sh, col: vary(tint(i, hh), `${S.id}|${i.id}`), line: i.line, item: i.id }, pos); got++;
+    add({ sh: i.sh, col: vary(tint(i, hh), `${S.id}|${i.id}`), line: i.line, item: i.id, ...(at ? { model: m } : {}) }, pos); got++;
   }
   // a drawer wider than what lies in it does not keep everything in one corner: each row of things slides along the free width by a random share of it
   if (slot.kind === 'drawer' && !out.some((o) => o.row?.endsWith(':both'))) {

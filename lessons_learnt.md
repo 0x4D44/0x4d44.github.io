@@ -11,6 +11,23 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-01 - THREE.LOD re-picks its level by camera distance at draw time: turn autoUpdate off for the warm frame (la-ladera/js/engine/warm.js:warmUp)
+  "Everything visible" in a warm-up frame is not "everything drawn": the shop goods are LODs whose near level (the only one that shows the label atlas) appears under 8 m, so the atlas
+  was first uploaded in the first frame inside a kiosk (engine-warm test red). Materials created lazily (the inspect library when a drawer opened) hitch the same way: build them at boot.
+
+- 2026-11-01 - Layout.connectivity() cannot see a dead-end lane of 0.55 to 0.85 m: use pockets() (la-ladera/js/interiors/layout.js:pockets)
+  The walker is 0.6 m wide and the kernel lets it squeeze into a gap down to about 0.58 m, then it cannot get out; connectivity() floods at an inflation that treats every gap under 0.8 m as shut,
+  so such a lane was neither floor nor an orphan pocket. stuck.mjs found four of them (a bed centred in a room, a niche behind a bed). A "no dead ends" rule needs pockets(), not connectivity().
+
+- 2026-11-01 - Footstep loudness is the engine gain, not the sample: the library floor forbids quiet samples (la-ladera/js/audio/engine.js:FOOT_GAIN)
+  A sample peak under 0.25 fails audio-library.test.mjs, so "quieter" means a lower FOOT_GAIN, and a metallic tin sound came from narrow click and ring modes (2-5 kHz, Q 4), not from level.
+
+- 2026-11-01 - A committed test must not import from untracked labs/: run the suite on a git archive export (la-ladera/tests/interiors-garments.test.mjs)
+  The test passed in the worktree for days because labs/a3/garments_data.mjs sat on disk, and failed with ERR_MODULE_NOT_FOUND on the clean export. A real generator belongs in la-ladera/tools/.
+
+- 2026-11-01 - lessons_learnt.md is CRLF on origin/main but core.autocrlf=true stores LF: a merge then conflicts on every line (lessons_learnt.md:merge)
+  Abort and redo with `git merge --no-ff --no-commit -X ignore-cr-at-eol origin/main`, drop the markers, convert back with sed 's/$/\r/' and stage it with `git -c core.autocrlf=false add`.
+
 - 2026-10-31 - A guard timer armed by the test before fires inside the next one: wait it out (la-ladera/tests/ui-flow.test.mjs)
   flow.js guardRelock() pauses 0.6 s after a talk ends or Esc closes a panel if the pointer is not back. The ui-flow tests share one page, so the guard armed when
   the talk test ended fired in the middle of the refused-re-lock test, paused the game with the very same toast and hid a MISSING guard on the Esc path (that mutant

@@ -1,0 +1,546 @@
+{
+  "version": 1,
+  "license": "CC0-1.0",
+  "generator": "tools/blender/animals_build.py",
+  "credits": "animals/CREDITS.md",
+  "units": "metres",
+  "forward": "+Z",
+  "up": "+Y",
+  "budgetBytes": 2000000,
+  "animals": {
+    "dog": {
+      "name": "Perro callejero",
+      "speed": 0.7,
+      "radius": 0.2,
+      "height": 0.85,
+      "caged": false,
+      "glb": "animals/dog.glb",
+      "lod": "animals/dog_lod.glb",
+      "node": "dog",
+      "lodNode": "dog_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 1.0,
+        "eat": 1.6
+      },
+      "triangles": 1148,
+      "lodTriangles": 287,
+      "bytes": 59924,
+      "lodBytes": 15360,
+      "size": [
+        0.40011,
+        1.04,
+        1.57835
+      ],
+      "bounds": [
+        [
+          -0.200055,
+          0.0,
+          -0.801546
+        ],
+        [
+          0.200055,
+          1.04,
+          0.7768
+        ]
+      ],
+      "license": "CC0-1.0"
+    },
+    "cat": {
+      "name": "Gato de la escalera",
+      "speed": 0.48,
+      "radius": 0.13,
+      "height": 0.65,
+      "caged": false,
+      "glb": "animals/cat.glb",
+      "lod": "animals/cat_lod.glb",
+      "node": "cat",
+      "lodNode": "cat_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 1.0,
+        "eat": 1.6
+      },
+      "triangles": 1202,
+      "lodTriangles": 288,
+      "bytes": 63296,
+      "lodBytes": 15436,
+      "size": [
+        0.32016,
+        0.88946,
+        0.8816
+      ],
+      "bounds": [
+        [
+          -0.160059,
+          0.0,
+          -0.370691
+        ],
+        [
+          0.160102,
+          0.889455,
+          0.510913
+        ]
+      ],
+      "license": "CC0-1.0"
+    },
+    "pigeon": {
+      "name": "Paloma",
+      "speed": 0.26,
+      "radius": 0.1,
+      "height": 0.34,
+      "caged": false,
+      "glb": "animals/pigeon.glb",
+      "lod": "animals/pigeon_lod.glb",
+      "node": "pigeon",
+      "lodNode": "pigeon_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 0.8,
+        "eat": 1.6
+      },
+      "triangles": 1064,
+      "lodTriangles": 146,
+      "bytes": 55232,
+      "lodBytes": 9120,
+      "size": [
+        0.2043,
+        0.33928,
+        0.49904
+      ],
+      "bounds": [
+        [
+          -0.10215,
+          0.0,
+          -0.3004
+        ],
+        [
+          0.10215,
+          0.339276,
+          0.198637
+        ]
+      ],
+      "license": "CC0-1.0"
+    },
+    "hen": {
+      "name": "Gallina",
+      "speed": 0.28,
+      "radius": 0.18,
+      "height": 0.58,
+      "caged": false,
+      "glb": "animals/hen.glb",
+      "lod": "animals/hen_lod.glb",
+      "node": "hen",
+      "lodNode": "hen_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 0.8,
+        "eat": 1.6
+      },
+      "triangles": 1312,
+      "lodTriangles": 194,
+      "bytes": 66172,
+      "lodBytes": 11124,
+      "size": [
+        0.35185,
+        0.5959,
+        0.69557
+      ],
+      "bounds": [
+        [
+          -0.175925,
+          0.0,
+          -0.3945
+        ],
+        [
+          0.175925,
+          0.595897,
+          0.301072
+        ]
+      ],
+      "license": "CC0-1.0"
+    },
+    "mule": {
+      "name": "Mula",
+      "speed": 0.62,
+      "radius": 0.34,
+      "height": 1.95,
+      "caged": false,
+      "glb": "animals/mule.glb",
+      "lod": "animals/mule_lod.glb",
+      "node": "mule",
+      "lodNode": "mule_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 1.2,
+        "eat": 1.6
+      },
+      "triangles": 1380,
+      "lodTriangles": 288,
+      "bytes": 68008,
+      "lodBytes": 15724,
+      "size": [
+        0.66468,
+        2.29912,
+        2.1798
+      ],
+      "bounds": [
+        [
+          -0.332338,
+          0.0,
+          -0.85
+        ],
+        [
+          0.332338,
+          2.299121,
+          1.3298
+        ]
+      ],
+      "license": "CC0-1.0"
+    },
+    "parrot_caged": {
+      "name": "Loro en su jaula",
+      "speed": 0,
+      "radius": 0.38,
+      "height": 1.9,
+      "caged": true,
+      "glb": "animals/parrot_caged.glb",
+      "lod": "animals/parrot_caged_lod.glb",
+      "node": "parrot_caged",
+      "lodNode": "parrot_caged_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 0.8,
+        "eat": 1.6
+      },
+      "triangles": 2136,
+      "lodTriangles": 266,
+      "bytes": 98884,
+      "lodBytes": 14852,
+      "size": [
+        0.70448,
+        1.89317,
+        0.705
+      ],
+      "bounds": [
+        [
+          -0.35,
+          0.0,
+          -0.35
+        ],
+        [
+          0.354478,
+          1.893168,
+          0.355
+        ]
+      ],
+      "license": "CC0-1.0"
+    },
+    "canary_caged": {
+      "name": "Canario en su jaula",
+      "speed": 0,
+      "radius": 0.3,
+      "height": 1.7,
+      "caged": true,
+      "glb": "animals/canary_caged.glb",
+      "lod": "animals/canary_caged_lod.glb",
+      "node": "canary_caged",
+      "lodNode": "canary_caged_lod",
+      "clips": {
+        "idle": "idle",
+        "walk": "walk",
+        "eat": "eat"
+      },
+      "clipDurations": {
+        "idle": 2.4,
+        "walk": 0.8,
+        "eat": 1.6
+      },
+      "triangles": 1984,
+      "lodTriangles": 266,
+      "bytes": 91964,
+      "lodBytes": 14752,
+      "size": [
+        0.54559,
+        1.68271,
+        0.545
+      ],
+      "bounds": [
+        [
+          -0.27,
+          0.0,
+          -0.27
+        ],
+        [
+          0.275594,
+          1.682711,
+          0.275
+        ]
+      ],
+      "license": "CC0-1.0"
+    }
+  },
+  "files": [
+    {
+      "glb": "animals/dog.glb",
+      "assets": {
+        "dog": {
+          "node": "dog",
+          "tags": [
+            "animal",
+            "dog"
+          ],
+          "footprint": [
+            0.40011,
+            1.57835
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/dog_lod.glb",
+      "assets": {
+        "dog_lod": {
+          "node": "dog_lod",
+          "tags": [
+            "animal",
+            "dog",
+            "lod"
+          ],
+          "footprint": [
+            0.40011,
+            1.57835
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/cat.glb",
+      "assets": {
+        "cat": {
+          "node": "cat",
+          "tags": [
+            "animal",
+            "cat"
+          ],
+          "footprint": [
+            0.32016,
+            0.8816
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/cat_lod.glb",
+      "assets": {
+        "cat_lod": {
+          "node": "cat_lod",
+          "tags": [
+            "animal",
+            "cat",
+            "lod"
+          ],
+          "footprint": [
+            0.32016,
+            0.8816
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/pigeon.glb",
+      "assets": {
+        "pigeon": {
+          "node": "pigeon",
+          "tags": [
+            "animal",
+            "pigeon"
+          ],
+          "footprint": [
+            0.2043,
+            0.49904
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/pigeon_lod.glb",
+      "assets": {
+        "pigeon_lod": {
+          "node": "pigeon_lod",
+          "tags": [
+            "animal",
+            "pigeon",
+            "lod"
+          ],
+          "footprint": [
+            0.2043,
+            0.49904
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/hen.glb",
+      "assets": {
+        "hen": {
+          "node": "hen",
+          "tags": [
+            "animal",
+            "hen"
+          ],
+          "footprint": [
+            0.35185,
+            0.69557
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/hen_lod.glb",
+      "assets": {
+        "hen_lod": {
+          "node": "hen_lod",
+          "tags": [
+            "animal",
+            "hen",
+            "lod"
+          ],
+          "footprint": [
+            0.35185,
+            0.69557
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/mule.glb",
+      "assets": {
+        "mule": {
+          "node": "mule",
+          "tags": [
+            "animal",
+            "mule"
+          ],
+          "footprint": [
+            0.66468,
+            2.1798
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/mule_lod.glb",
+      "assets": {
+        "mule_lod": {
+          "node": "mule_lod",
+          "tags": [
+            "animal",
+            "mule",
+            "lod"
+          ],
+          "footprint": [
+            0.66468,
+            2.1798
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/parrot_caged.glb",
+      "assets": {
+        "parrot_caged": {
+          "node": "parrot_caged",
+          "tags": [
+            "animal",
+            "parrot_caged"
+          ],
+          "footprint": [
+            0.70448,
+            0.705
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/parrot_caged_lod.glb",
+      "assets": {
+        "parrot_caged_lod": {
+          "node": "parrot_caged_lod",
+          "tags": [
+            "animal",
+            "parrot_caged",
+            "lod"
+          ],
+          "footprint": [
+            0.70448,
+            0.705
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/canary_caged.glb",
+      "assets": {
+        "canary_caged": {
+          "node": "canary_caged",
+          "tags": [
+            "animal",
+            "canary_caged"
+          ],
+          "footprint": [
+            0.54559,
+            0.545
+          ]
+        }
+      }
+    },
+    {
+      "glb": "animals/canary_caged_lod.glb",
+      "assets": {
+        "canary_caged_lod": {
+          "node": "canary_caged_lod",
+          "tags": [
+            "animal",
+            "canary_caged",
+            "lod"
+          ],
+          "footprint": [
+            0.54559,
+            0.545
+          ]
+        }
+      }
+    }
+  ]
+}
