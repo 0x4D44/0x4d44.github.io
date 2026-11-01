@@ -1,0 +1,2 @@
+PASS substation --complete variants=co: 66 near + 66 far roots
+GLB 2583020/6000000 bytes; textures 2088644/8000000 bytes; RGBA8+mips 39146836/40000000 bytes; shared byte identity PASS

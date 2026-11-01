@@ -1,0 +1,2297 @@
+{
+  "version": 1,
+  "units": "metres",
+  "axes": "+Y up, +Z front",
+  "origin": "base-centre",
+  "assets": {
+    "substation_grid_transformer": {
+      "family": "transformer",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        6.8,
+        6.4,
+        5.4
+      ],
+      "footprint": [
+        6.8,
+        5.4
+      ],
+      "pivots": [
+        "marshalling_door",
+        "tapchanger_door",
+        "fan_0",
+        "fan_1",
+        "fan_2",
+        "fan_3"
+      ],
+      "description": "40 MVA oil-filled grid transformer: conservator, Buchholz relay, OLTC, 3 HV + 3 MV + neutral bushings, radiator banks, four fan rotors and marshalling kiosk.",
+      "mva": 40,
+      "pivotDefinitions": [
+        {
+          "name": "fan_0",
+          "position": [
+            -1.75,
+            1.52381,
+            2.42
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "fan_1",
+          "position": [
+            -0.6,
+            1.52381,
+            2.42
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "fan_2",
+          "position": [
+            0.6,
+            1.52381,
+            2.42
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "fan_3",
+          "position": [
+            1.75,
+            1.52381,
+            2.42
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "marshalling_door",
+          "position": [
+            2.03,
+            0.711111,
+            1.08
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "tapchanger_door",
+          "position": [
+            -2.65,
+            0.812698,
+            0.57
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ],
+      "requireInstancing": true
+    },
+    "substation_distribution_transformer": {
+      "family": "transformer",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        4.8,
+        4.5,
+        3.6
+      ],
+      "footprint": [
+        4.8,
+        3.6
+      ],
+      "pivots": [
+        "marshalling_door",
+        "tapchanger_door",
+        "fan_0",
+        "fan_1",
+        "fan_2",
+        "fan_3"
+      ],
+      "description": "15 MVA oil-filled distribution transformer, conservator, porcelain primary bushings and low-voltage cable box.",
+      "mva": 15,
+      "pivotDefinitions": [
+        {
+          "name": "fan_0",
+          "position": [
+            -1.235294,
+            1,
+            1.652222
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "fan_1",
+          "position": [
+            -0.423529,
+            1,
+            1.652222
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "fan_2",
+          "position": [
+            0.423529,
+            1,
+            1.652222
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "fan_3",
+          "position": [
+            1.235294,
+            1,
+            1.652222
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            6.283185
+          ]
+        },
+        {
+          "name": "marshalling_door",
+          "position": [
+            1.491765,
+            0.648148,
+            0.72
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "tapchanger_door",
+          "position": [
+            -1.929412,
+            0.740741,
+            0.38
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ],
+      "requireInstancing": true
+    },
+    "substation_oil_breaker_hv": {
+      "family": "breaker",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        3.6,
+        5,
+        2.7
+      ],
+      "footprint": [
+        3.6,
+        2.7
+      ],
+      "pivots": [
+        "mechanism_door"
+      ],
+      "description": "Outdoor dead-tank bulk-oil circuit breaker with three porcelain bushings, oil gauges and separate mechanism door.",
+      "pivotDefinitions": [
+        {
+          "name": "mechanism_door",
+          "position": [
+            -0.35,
+            0.444915,
+            1.29308
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_oil_breaker_mv": {
+      "family": "breaker",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        2.4,
+        2.9,
+        1.8
+      ],
+      "footprint": [
+        2.4,
+        1.8
+      ],
+      "pivots": [
+        "mechanism_door"
+      ],
+      "description": "Medium-voltage outdoor bulk-oil breaker with three phase bushings and operating mechanism.",
+      "pivotDefinitions": [
+        {
+          "name": "mechanism_door",
+          "position": [
+            -0.233333,
+            0.409825,
+            0.839576
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_breaker_truck": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.68,
+        1.15,
+        1
+      ],
+      "footprint": [
+        0.68,
+        1
+      ],
+      "pivots": [
+        "truck_handle"
+      ],
+      "description": "Withdrawable oil-breaker truck with three oil pots, six plug contacts and four small wheels.",
+      "pivotDefinitions": [
+        {
+          "name": "truck_handle",
+          "position": [
+            -0.27,
+            0.7,
+            0.477778
+          ],
+          "axis": [
+            1,
+            0,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_portal_gantry": {
+      "family": "switchgear",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        8,
+        8.6,
+        2
+      ],
+      "footprint": [
+        8,
+        2
+      ],
+      "pivots": [],
+      "description": "Bolted twin-leg lattice portal with three hanging tension-insulator strings and cable attachment eyes.",
+      "pivotDefinitions": []
+    },
+    "substation_disconnector_centre": {
+      "family": "switchgear",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        3.4,
+        3.7,
+        1.3
+      ],
+      "footprint": [
+        3.4,
+        1.3
+      ],
+      "pivots": [
+        "blade_left",
+        "blade_right"
+      ],
+      "description": "Centre-break disconnector on two porcelain columns; both blades pivot about the column axes.",
+      "pivotDefinitions": [
+        {
+          "name": "blade_left",
+          "position": [
+            -1.2,
+            3.651284,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "blade_right",
+          "position": [
+            1.2,
+            3.651284,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            -1.570796,
+            0
+          ]
+        }
+      ]
+    },
+    "substation_disconnector_pantograph": {
+      "family": "switchgear",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        2,
+        5.5,
+        1.5
+      ],
+      "footprint": [
+        2,
+        1.5
+      ],
+      "pivots": [
+        "pantograph_lower",
+        "pantograph_upper"
+      ],
+      "description": "Pantograph disconnector with lower scissor arms, upper linkage and contact shoe.",
+      "pivotDefinitions": [
+        {
+          "name": "pantograph_lower",
+          "position": [
+            -0.65,
+            3.24,
+            0
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "pantograph_upper",
+          "position": [
+            -0.65,
+            4.39,
+            0
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_current_transformer": {
+      "family": "instrument",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.9,
+        3.8,
+        0.9
+      ],
+      "footprint": [
+        0.9,
+        0.9
+      ],
+      "pivots": [],
+      "description": "Oil current transformer with porcelain column, terminal head, secondary box and bolted base.",
+      "pivotDefinitions": []
+    },
+    "substation_voltage_transformer": {
+      "family": "instrument",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.85,
+        4,
+        0.85
+      ],
+      "footprint": [
+        0.85,
+        0.85
+      ],
+      "pivots": [],
+      "description": "Capacitor voltage transformer with stacked porcelain capacitors and oil-filled electromagnetic base.",
+      "pivotDefinitions": []
+    },
+    "substation_surge_arrester": {
+      "family": "instrument",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.55,
+        3.7,
+        0.55
+      ],
+      "footprint": [
+        0.55,
+        0.55
+      ],
+      "pivots": [],
+      "description": "Brown porcelain surge arrester, upper terminal, earth strap and discharge counter.",
+      "pivotDefinitions": []
+    },
+    "substation_post_insulator": {
+      "family": "insulator",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.4,
+        1.65,
+        0.4
+      ],
+      "footprint": [
+        0.4,
+        0.4
+      ],
+      "pivots": [],
+      "description": "Flanged porcelain post insulator with twelve individual sheds.",
+      "pivotDefinitions": []
+    },
+    "substation_earth_switch": {
+      "family": "switchgear",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1.1,
+        1.8,
+        0.75
+      ],
+      "footprint": [
+        1.1,
+        0.75
+      ],
+      "pivots": [
+        "earth_blade"
+      ],
+      "description": "Earthing switch with rotating grounded knife, insulator and operating lever.",
+      "pivotDefinitions": [
+        {
+          "name": "earth_blade",
+          "position": [
+            -0.43,
+            0.219031,
+            0
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_busbar_tube": {
+      "family": "conductor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        6,
+        0.16,
+        0.16
+      ],
+      "footprint": [
+        6,
+        0.16
+      ],
+      "pivots": [],
+      "description": "Six-metre tubular aluminium busbar section with end collars; no long overhead line is baked.",
+      "pivotDefinitions": []
+    },
+    "substation_busbar_wire_segment": {
+      "family": "conductor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.04,
+        1,
+        0.04
+      ],
+      "footprint": [
+        0.04,
+        0.04
+      ],
+      "pivots": [],
+      "description": "One-metre straight wire unit along local +Y for catenary runtime instancing.",
+      "pivotDefinitions": []
+    },
+    "substation_bushing": {
+      "family": "insulator",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.45,
+        1.6,
+        0.45
+      ],
+      "footprint": [
+        0.45,
+        0.45
+      ],
+      "pivots": [],
+      "description": "Generic hollow porcelain bushing with terminal and mounting flange.",
+      "pivotDefinitions": []
+    },
+    "substation_insulator_disc": {
+      "family": "insulator",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.34,
+        0.17,
+        0.34
+      ],
+      "footprint": [
+        0.34,
+        0.34
+      ],
+      "pivots": [],
+      "description": "One cap-and-pin suspension-insulator unit; repeated units share actual mesh data.",
+      "pivotDefinitions": []
+    },
+    "substation_insulator_string": {
+      "family": "insulator",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.36,
+        2.4,
+        0.36
+      ],
+      "footprint": [
+        0.36,
+        0.36
+      ],
+      "pivots": [],
+      "description": "Twelve cap-and-pin discs with terminal shackles, supplied separately for line assemblies.",
+      "pivotDefinitions": [],
+      "requireInstancing": true
+    },
+    "substation_spacer": {
+      "family": "line_fitting",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.9,
+        0.14,
+        0.9
+      ],
+      "footprint": [
+        0.9,
+        0.9
+      ],
+      "pivots": [],
+      "description": "Four-conductor bundle spacer with central damper and four clamps.",
+      "pivotDefinitions": []
+    },
+    "substation_radiator_fin": {
+      "family": "transformer_fitting",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.08,
+        1.9,
+        0.72
+      ],
+      "footprint": [
+        0.08,
+        0.72
+      ],
+      "pivots": [],
+      "description": "Pressed steel radiator fin with rolled edges and upper/lower oil ports.",
+      "pivotDefinitions": []
+    },
+    "substation_switchboard_panel": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.8,
+        2.3,
+        1.25
+      ],
+      "footprint": [
+        0.8,
+        1.25
+      ],
+      "pivots": [
+        "upper_door",
+        "breaker_door"
+      ],
+      "description": "Metal-clad lower-voltage switchboard cubicle with two hinged doors, meters, relays and a mimic bus strip.",
+      "pivotDefinitions": [
+        {
+          "name": "breaker_door",
+          "position": [
+            -0.375,
+            0.06,
+            0.570611
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "upper_door",
+          "position": [
+            -0.375,
+            1.265,
+            0.570611
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_control_panel": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1,
+        2.2,
+        0.6
+      ],
+      "footprint": [
+        1,
+        0.6
+      ],
+      "pivots": [
+        "panel_door"
+      ],
+      "description": "Control-room protection panel with analog meters, relay windows, mimic strip and hinged door.",
+      "pivotDefinitions": [
+        {
+          "name": "panel_door",
+          "position": [
+            -0.475,
+            0.06,
+            0.249048
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_battery_bank": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1.9,
+        1.3,
+        0.65
+      ],
+      "footprint": [
+        1.9,
+        0.65
+      ],
+      "pivots": [],
+      "description": "Two-tier rack of station lead-acid cells with coloured terminal caps, links and spill trays.",
+      "pivotDefinitions": []
+    },
+    "substation_charger": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.7,
+        1.5,
+        0.65
+      ],
+      "footprint": [
+        0.7,
+        0.65
+      ],
+      "pivots": [
+        "charger_door"
+      ],
+      "description": "DC battery charger cabinet with vents, two analog meters and a service door.",
+      "pivotDefinitions": [
+        {
+          "name": "charger_door",
+          "position": [
+            -0.32,
+            0.06,
+            0.273976
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_desk": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1.5,
+        0.76,
+        0.75
+      ],
+      "footprint": [
+        1.5,
+        0.75
+      ],
+      "pivots": [
+        "desk_drawer"
+      ],
+      "description": "Worn control-room desk with drawer, cable opening and steel legs.",
+      "pivotDefinitions": [
+        {
+          "name": "desk_drawer",
+          "position": [
+            -0.57,
+            0.46,
+            0.2625
+          ],
+          "axis": [
+            0,
+            0,
+            1
+          ],
+          "motion": "translation",
+          "range": [
+            0,
+            0.35
+          ]
+        }
+      ]
+    },
+    "substation_chair": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.55,
+        0.9,
+        0.55
+      ],
+      "footprint": [
+        0.55,
+        0.55
+      ],
+      "pivots": [],
+      "description": "Plain padded control-room chair with steel legs and a separate seat anchor.",
+      "pivotDefinitions": []
+    },
+    "substation_schematic_board": {
+      "family": "indoor",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1.8,
+        1.2,
+        0.08
+      ],
+      "footprint": [
+        1.8,
+        0.08
+      ],
+      "pivots": [],
+      "description": "Framed wall-mounted single-line schematic with a variant atlas plate.",
+      "pivotDefinitions": []
+    },
+    "substation_trench_cover": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1.2,
+        0.09,
+        0.7
+      ],
+      "footprint": [
+        1.2,
+        0.7
+      ],
+      "pivots": [],
+      "description": "Liftable concrete cable-trench cover with twin recessed lifting eyes.",
+      "pivotDefinitions": []
+    },
+    "substation_transformer_bund": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        9,
+        0.6,
+        7.2
+      ],
+      "footprint": [
+        9,
+        7.2
+      ],
+      "pivots": [],
+      "description": "Open concrete oil bund, gravel floor, drain channel and accessible sump grate.",
+      "pivotDefinitions": []
+    },
+    "substation_fire_wall": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.35,
+        6,
+        7
+      ],
+      "footprint": [
+        0.35,
+        7
+      ],
+      "pivots": [],
+      "description": "Concrete separation wall with expansion joints and weathered footing.",
+      "pivotDefinitions": []
+    },
+    "substation_oil_store": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        3,
+        2.6,
+        2.4
+      ],
+      "footprint": [
+        3,
+        2.4
+      ],
+      "pivots": [
+        "oil_store_door"
+      ],
+      "description": "Roofed oil-store cage with ventilated sides, bunded floor, three drums and a hinged gate.",
+      "pivotDefinitions": [
+        {
+          "name": "oil_store_door",
+          "position": [
+            -1.42,
+            0.2,
+            1.143845
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_station_service_transformer": {
+      "family": "transformer",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        2,
+        2.1,
+        1.8
+      ],
+      "footprint": [
+        2,
+        1.8
+      ],
+      "pivots": [],
+      "description": "Small oil-filled station-service transformer with cooling ribs and cable terminations.",
+      "pivotDefinitions": []
+    },
+    "substation_floodlight_mast": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        2.4,
+        10,
+        0.65
+      ],
+      "footprint": [
+        2.4,
+        0.65
+      ],
+      "pivots": [
+        "lamp_left",
+        "lamp_right"
+      ],
+      "description": "Tapered steel mast with twin pivoting floodlights, access hatch, base plate and ladder cleats.",
+      "pivotDefinitions": [
+        {
+          "name": "lamp_left",
+          "position": [
+            -0.9,
+            9.4,
+            0
+          ],
+          "axis": [
+            1,
+            0,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "lamp_right",
+          "position": [
+            0.9,
+            9.4,
+            0
+          ],
+          "axis": [
+            1,
+            0,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_lightning_mast": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.6,
+        14,
+        0.6
+      ],
+      "footprint": [
+        0.6,
+        0.6
+      ],
+      "pivots": [],
+      "description": "Free-standing lightning mast with air terminal, flanged foot and earthing strap.",
+      "pivotDefinitions": []
+    },
+    "substation_earth_marker": {
+      "family": "site",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.25,
+        0.3,
+        0.25
+      ],
+      "footprint": [
+        0.25,
+        0.25
+      ],
+      "pivots": [],
+      "description": "Flush earthing inspection marker with bolted brass lid.",
+      "pivotDefinitions": []
+    },
+    "substation_hazard_board": {
+      "family": "sign",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        1.1,
+        2.3,
+        0.12
+      ],
+      "footprint": [
+        1.1,
+        0.12
+      ],
+      "pivots": [],
+      "description": "Freestanding primary electrical-hazard board with variant-language atlas face.",
+      "pivotDefinitions": []
+    },
+    "substation_tag_holder": {
+      "family": "sign",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.5,
+        0.36,
+        0.06
+      ],
+      "footprint": [
+        0.5,
+        0.06
+      ],
+      "pivots": [],
+      "description": "Riveted equipment tag plate holder with variant tag atlas face.",
+      "pivotDefinitions": []
+    },
+    "substation_gravel_tile": {
+      "family": "ground",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        2,
+        0.05,
+        2
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "pivots": [],
+      "description": "Two-metre gravel tile with a shallow slab and individually raised stones.",
+      "pivotDefinitions": []
+    },
+    "substation_concrete_tile": {
+      "family": "ground",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        2,
+        0.12,
+        2
+      ],
+      "footprint": [
+        2,
+        2
+      ],
+      "pivots": [],
+      "description": "Two-metre weathered concrete paving tile with edge joints and moss patches.",
+      "pivotDefinitions": []
+    },
+    "substation_dry_weeds": {
+      "family": "vegetation",
+      "shared": true,
+      "variant": "shared",
+      "size": [
+        0.5,
+        0.55,
+        0.5
+      ],
+      "footprint": [
+        0.5,
+        0.5
+      ],
+      "pivots": [],
+      "description": "Sparse dry weeds for Colombian gravel; individual narrow blades share the vegetation cell.",
+      "pivotDefinitions": []
+    },
+    "substation_uk_tower_suspension": {
+      "family": "tower_suspension",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        10,
+        32,
+        6
+      ],
+      "footprint": [
+        10,
+        6
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice suspension tower with three crossarm levels, six pendant strings, earth-wire peak and concrete shoes.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -4.78427108,
+            15.76657719,
+            0
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -4.47195444,
+            20.88546592,
+            0
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -4.1596378,
+            25.6844241,
+            0
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            4.82547164,
+            15.76657719,
+            0
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            4.513155,
+            20.88546592,
+            0
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            4.20083836,
+            25.6844241,
+            0
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_uk_tower_tension": {
+      "family": "tower_tension",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        11.6,
+        34,
+        6.8
+      ],
+      "footprint": [
+        11.6,
+        6.8
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice tension/terminal tower with broad braced crossarms and six near-horizontal tension strings.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -5.62452709,
+            19.25564743,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -5.2602791,
+            24.69441804,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -4.8960311,
+            29.79326549,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            5.58310356,
+            19.25564743,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            5.21885556,
+            24.69441804,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            4.85460757,
+            29.79326549,
+            2.35924268
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_uk_pole_mv": {
+      "family": "pole_mv",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        5,
+        13,
+        1.2
+      ],
+      "footprint": [
+        5,
+        1.2
+      ],
+      "pivots": [],
+      "description": "Wooden H-pole with steel crossarm and porcelain pin insulators.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -2,
+            13,
+            0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0,
+            13,
+            0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            2,
+            13,
+            0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_uk_pole_lv": {
+      "family": "pole_lv",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        2.4,
+        10,
+        0.65
+      ],
+      "footprint": [
+        2.4,
+        0.65
+      ],
+      "pivots": [],
+      "description": "Wooden distribution pole with steel crossarm and three pin insulators.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -0.96,
+            10,
+            0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0,
+            10,
+            0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            0.96,
+            10,
+            0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_uk_fence_panel": {
+      "family": "fence_panel",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        2.5,
+        2.7,
+        0.18
+      ],
+      "footprint": [
+        2.5,
+        0.18
+      ],
+      "pivots": [],
+      "description": "Green steel palisade panel with pointed anti-climb tips.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_uk_fence_post": {
+      "family": "fence_post",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        0.18,
+        2.9,
+        0.18
+      ],
+      "footprint": [
+        0.18,
+        0.18
+      ],
+      "pivots": [],
+      "description": "Capped green steel perimeter post.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_uk_outrigger": {
+      "family": "outrigger",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        0.16,
+        0.65,
+        0.55
+      ],
+      "footprint": [
+        0.16,
+        0.55
+      ],
+      "pivots": [],
+      "description": "Outward anti-climb arm and three short wire attachments.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_uk_gate": {
+      "family": "gate",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        4,
+        2.8,
+        0.28
+      ],
+      "footprint": [
+        4,
+        0.28
+      ],
+      "pivots": [
+        "gate_leaf_left",
+        "gate_leaf_right"
+      ],
+      "description": "Two-leaf palisade vehicle gate with independently hinged leaves and latch.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [
+        {
+          "name": "gate_leaf_left",
+          "position": [
+            -1.946472,
+            0,
+            -0.068372
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "gate_leaf_right",
+          "position": [
+            1.946472,
+            0,
+            -0.068372
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            -1.570796,
+            0
+          ]
+        }
+      ]
+    },
+    "substation_uk_building_shell": {
+      "family": "building_shell",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        12,
+        4,
+        7
+      ],
+      "footprint": [
+        12,
+        7
+      ],
+      "pivots": [],
+      "description": "Brick control-building shell with a real front door opening and two front window apertures.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_uk_building_door": {
+      "family": "building_door",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        1.5,
+        2.4,
+        0.12
+      ],
+      "footprint": [
+        1.5,
+        0.12
+      ],
+      "pivots": [
+        "door_hinge"
+      ],
+      "description": "Green louvred control-room steel door with hinge pivot, handle and individual ventilation slats.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [
+        {
+          "name": "door_hinge",
+          "position": [
+            -0.715798,
+            0,
+            -0.025
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_uk_louvre": {
+      "family": "louvre",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        1.4,
+        0.8,
+        0.12
+      ],
+      "footprint": [
+        1.4,
+        0.12
+      ],
+      "pivots": [],
+      "description": "Framed ventilation louvre with individual sloping metal slats.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_uk_window": {
+      "family": "window",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        1.6,
+        1.4,
+        0.12
+      ],
+      "footprint": [
+        1.6,
+        0.12
+      ],
+      "pivots": [
+        "window_hinge"
+      ],
+      "description": "Control-room window with metal mullions, shallow glass pane and lower opening-light hinge.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [
+        {
+          "name": "window_hinge",
+          "position": [
+            0,
+            1.4,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_uk_roof": {
+      "family": "roof",
+      "shared": false,
+      "variant": "uk",
+      "size": [
+        12.4,
+        0.22,
+        7.4
+      ],
+      "footprint": [
+        12.4,
+        7.4
+      ],
+      "pivots": [],
+      "description": "Shallow flat concrete roof slab with edge flashing and separated roofing seams.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_co_tower_suspension": {
+      "family": "tower_suspension",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        9.2,
+        30,
+        5.4
+      ],
+      "footprint": [
+        9.2,
+        5.4
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice suspension tower with three crossarm levels, six pendant strings, earth-wire peak and concrete shoes.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -4.38500069,
+            14.62692758,
+            0
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -4.09864116,
+            19.42591954,
+            0
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -3.81228162,
+            23.9249745,
+            0
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            4.42606191,
+            14.62692758,
+            0
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            4.13970237,
+            19.42591954,
+            0
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            3.85334284,
+            23.9249745,
+            0
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_co_tower_tension": {
+      "family": "tower_tension",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        10.8,
+        32,
+        6.4
+      ],
+      "footprint": [
+        10.8,
+        6.4
+      ],
+      "pivots": [],
+      "description": "Double-circuit lattice tension/terminal tower with broad braced crossarms and six near-horizontal tension strings.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -5.22496565,
+            18.11589109,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_0_-1"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            -4.88668578,
+            23.23473007,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_1_-1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            -4.54840592,
+            28.03364162,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_2_-1"
+        },
+        {
+          "name": "line_c2_p1",
+          "circuit": 1,
+          "phase": 0,
+          "position": [
+            5.18364565,
+            18.11589109,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_0_1"
+        },
+        {
+          "name": "line_c2_p2",
+          "circuit": 1,
+          "phase": 1,
+          "position": [
+            4.84536578,
+            23.23473007,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_1_1"
+        },
+        {
+          "name": "line_c2_p3",
+          "circuit": 1,
+          "phase": 2,
+          "position": [
+            4.50708591,
+            28.03364162,
+            2.34732991
+          ],
+          "sourcePivot": "insulator_string_2_1"
+        }
+      ]
+    },
+    "substation_co_pole_mv": {
+      "family": "pole_mv",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        5,
+        14,
+        1.2
+      ],
+      "footprint": [
+        5,
+        1.2
+      ],
+      "pivots": [],
+      "description": "Twin concrete H-pole with steel crossarms, insulators and humid weathering.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -2,
+            14,
+            0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0,
+            14,
+            0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            2,
+            14,
+            0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_co_pole_lv": {
+      "family": "pole_lv",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        2.4,
+        11.5,
+        0.65
+      ],
+      "footprint": [
+        2.4,
+        0.65
+      ],
+      "pivots": [],
+      "description": "Round tapered concrete distribution pole with crossarm and three porcelain pin insulators.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [],
+      "lineAnchors": [
+        {
+          "name": "line_c1_p1",
+          "circuit": 0,
+          "phase": 0,
+          "position": [
+            -0.96,
+            11.5,
+            0
+          ],
+          "sourcePivot": "pin_insulator_0"
+        },
+        {
+          "name": "line_c1_p2",
+          "circuit": 0,
+          "phase": 1,
+          "position": [
+            0,
+            11.5,
+            0
+          ],
+          "sourcePivot": "pin_insulator_1"
+        },
+        {
+          "name": "line_c1_p3",
+          "circuit": 0,
+          "phase": 2,
+          "position": [
+            0.96,
+            11.5,
+            0
+          ],
+          "sourcePivot": "pin_insulator_2"
+        }
+      ]
+    },
+    "substation_co_fence_panel": {
+      "family": "fence_panel",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        2.5,
+        2.7,
+        0.3
+      ],
+      "footprint": [
+        2.5,
+        0.3
+      ],
+      "pivots": [],
+      "description": "Galvanised chain-link diamond mesh over a low algae-marked concrete plinth.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_co_fence_post": {
+      "family": "fence_post",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        0.22,
+        2.9,
+        0.22
+      ],
+      "footprint": [
+        0.22,
+        0.22
+      ],
+      "pivots": [],
+      "description": "Concrete perimeter post with galvanized fence clips.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_co_outrigger": {
+      "family": "outrigger",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        0.16,
+        0.65,
+        0.55
+      ],
+      "footprint": [
+        0.16,
+        0.55
+      ],
+      "pivots": [],
+      "description": "Galvanised outward barbed-wire arm with three barbed wire attachments.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_co_gate": {
+      "family": "gate",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        4,
+        2.8,
+        0.28
+      ],
+      "footprint": [
+        4,
+        0.28
+      ],
+      "pivots": [
+        "gate_leaf_left",
+        "gate_leaf_right"
+      ],
+      "description": "Two-leaf chain-link vehicle gate with independent hinges and a rusty centre latch.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [
+        {
+          "name": "gate_leaf_left",
+          "position": [
+            -1.946472,
+            0,
+            -0.068372
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        },
+        {
+          "name": "gate_leaf_right",
+          "position": [
+            1.946472,
+            0,
+            -0.068372
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            -1.570796,
+            0
+          ]
+        }
+      ]
+    },
+    "substation_co_building_shell": {
+      "family": "building_shell",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        12,
+        4,
+        7
+      ],
+      "footprint": [
+        12,
+        7
+      ],
+      "pivots": [],
+      "description": "Rendered-block control-building shell with open door/window apertures, patched render and base algae.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_co_building_door": {
+      "family": "building_door",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        1.5,
+        2.4,
+        0.12
+      ],
+      "footprint": [
+        1.5,
+        0.12
+      ],
+      "pivots": [
+        "door_hinge"
+      ],
+      "description": "Weathered grey louvred control-room steel door with hinge pivot and individual ventilation slats.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [
+        {
+          "name": "door_hinge",
+          "position": [
+            -0.715798,
+            0,
+            -0.025
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_co_louvre": {
+      "family": "louvre",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        1.4,
+        0.8,
+        0.12
+      ],
+      "footprint": [
+        1.4,
+        0.12
+      ],
+      "pivots": [],
+      "description": "Framed ventilation louvre with individual sloping metal slats.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    },
+    "substation_co_window": {
+      "family": "window",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        1.6,
+        1.4,
+        0.12
+      ],
+      "footprint": [
+        1.6,
+        0.12
+      ],
+      "pivots": [
+        "window_hinge"
+      ],
+      "description": "Control-room window with metal mullions, shallow glass pane and lower opening-light hinge.",
+      "origin": "floor-centre",
+      "pivotDefinitions": [
+        {
+          "name": "window_hinge",
+          "position": [
+            0,
+            1.4,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "motion": "rotation",
+          "range": [
+            0,
+            1.570796
+          ]
+        }
+      ]
+    },
+    "substation_co_roof": {
+      "family": "roof",
+      "shared": false,
+      "variant": "co",
+      "size": [
+        12.4,
+        0.22,
+        7.4
+      ],
+      "footprint": [
+        12.4,
+        7.4
+      ],
+      "pivots": [],
+      "description": "Shallow flat concrete roof slab with edge flashing and separated roofing seams.",
+      "origin": "floor-centre",
+      "pivotDefinitions": []
+    }
+  }
+}

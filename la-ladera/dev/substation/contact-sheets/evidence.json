@@ -1,0 +1,621 @@
+{
+  "renderer": "Three.js r180; SwiftShader; hidden headless Chrome",
+  "cameraHeightMetres": 1.6,
+  "referenceFigureHeightMetres": 1.8,
+  "files": [
+    "items-01.jpg",
+    "items-02.jpg",
+    "items-03.jpg",
+    "items-04.jpg",
+    "items-05.jpg",
+    "items-06.jpg",
+    "items-07.jpg",
+    "items-08.jpg",
+    "items-09.jpg",
+    "items-10.jpg",
+    "items-11.jpg",
+    "uk-colombia.jpg",
+    "yard-uk.jpg",
+    "yard-co.jpg"
+  ],
+  "items": [
+    {
+      "key": "substation_grid_transformer",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 5528
+    },
+    {
+      "key": "substation_distribution_transformer",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 4508
+    },
+    {
+      "key": "substation_oil_breaker_hv",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2404
+    },
+    {
+      "key": "substation_oil_breaker_mv",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1900
+    },
+    {
+      "key": "substation_breaker_truck",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 674
+    },
+    {
+      "key": "substation_portal_gantry",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2844
+    },
+    {
+      "key": "substation_disconnector_centre",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1542
+    },
+    {
+      "key": "substation_disconnector_pantograph",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 882
+    },
+    {
+      "key": "substation_current_transformer",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 838
+    },
+    {
+      "key": "substation_voltage_transformer",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 838
+    },
+    {
+      "key": "substation_surge_arrester",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 838
+    },
+    {
+      "key": "substation_post_insulator",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 864
+    },
+    {
+      "key": "substation_earth_switch",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 538
+    },
+    {
+      "key": "substation_busbar_tube",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 144
+    },
+    {
+      "key": "substation_busbar_wire_segment",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 42
+    },
+    {
+      "key": "substation_bushing",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 640
+    },
+    {
+      "key": "substation_insulator_disc",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 56
+    },
+    {
+      "key": "substation_insulator_string",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 696
+    },
+    {
+      "key": "substation_spacer",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 312
+    },
+    {
+      "key": "substation_radiator_fin",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 34
+    },
+    {
+      "key": "substation_switchboard_panel",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 592
+    },
+    {
+      "key": "substation_control_panel",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 494
+    },
+    {
+      "key": "substation_battery_bank",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1228
+    },
+    {
+      "key": "substation_charger",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 378
+    },
+    {
+      "key": "substation_desk",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 162
+    },
+    {
+      "key": "substation_chair",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 128
+    },
+    {
+      "key": "substation_schematic_board",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 338
+    },
+    {
+      "key": "substation_trench_cover",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 66
+    },
+    {
+      "key": "substation_transformer_bund",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 202
+    },
+    {
+      "key": "substation_fire_wall",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 64
+    },
+    {
+      "key": "substation_oil_store",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 696
+    },
+    {
+      "key": "substation_station_service_transformer",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1458
+    },
+    {
+      "key": "substation_floodlight_mast",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 282
+    },
+    {
+      "key": "substation_lightning_mast",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 222
+    },
+    {
+      "key": "substation_earth_marker",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 118
+    },
+    {
+      "key": "substation_hazard_board",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 102
+    },
+    {
+      "key": "substation_tag_holder",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 108
+    },
+    {
+      "key": "substation_gravel_tile",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 190
+    },
+    {
+      "key": "substation_concrete_tile",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 70
+    },
+    {
+      "key": "substation_dry_weeds",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 384
+    },
+    {
+      "key": "substation_uk_tower_suspension",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2608
+    },
+    {
+      "key": "substation_uk_tower_tension",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2752
+    },
+    {
+      "key": "substation_uk_pole_mv",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1040
+    },
+    {
+      "key": "substation_uk_pole_lv",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 833
+    },
+    {
+      "key": "substation_uk_fence_panel",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 462
+    },
+    {
+      "key": "substation_uk_fence_post",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 148
+    },
+    {
+      "key": "substation_uk_outrigger",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 84
+    },
+    {
+      "key": "substation_uk_gate",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 860
+    },
+    {
+      "key": "substation_uk_building_shell",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2604
+    },
+    {
+      "key": "substation_uk_building_door",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 290
+    },
+    {
+      "key": "substation_uk_louvre",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 150
+    },
+    {
+      "key": "substation_uk_window",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 70
+    },
+    {
+      "key": "substation_uk_roof",
+      "variant": "uk",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 166
+    },
+    {
+      "key": "substation_co_tower_suspension",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2608
+    },
+    {
+      "key": "substation_co_tower_tension",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 2752
+    },
+    {
+      "key": "substation_co_pole_mv",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1280
+    },
+    {
+      "key": "substation_co_pole_lv",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 953
+    },
+    {
+      "key": "substation_co_fence_panel",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 462
+    },
+    {
+      "key": "substation_co_fence_post",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 148
+    },
+    {
+      "key": "substation_co_outrigger",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 102
+    },
+    {
+      "key": "substation_co_gate",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 1044
+    },
+    {
+      "key": "substation_co_building_shell",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 392
+    },
+    {
+      "key": "substation_co_building_door",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 290
+    },
+    {
+      "key": "substation_co_louvre",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 150
+    },
+    {
+      "key": "substation_co_window",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 70
+    },
+    {
+      "key": "substation_co_roof",
+      "variant": "co",
+      "lod": false,
+      "cameraHeightMetres": 1.6,
+      "figureHeightMetres": null,
+      "triangles": 190
+    }
+  ],
+  "sourcePins": {
+    "models": [
+      {
+        "glb": "substation/substation_co.glb",
+        "bytes": 467800,
+        "sha256": "bb6c5252892d49328674eb2f75f7f3834e4f34a9e2cc60e5777759c6f3676449"
+      },
+      {
+        "glb": "substation/substation_shared.glb",
+        "bytes": 1456816,
+        "sha256": "d86b40e03e50d2c623d23db596ff53ec88eff6bcb82fd183104333e97dc92326"
+      },
+      {
+        "glb": "substation/substation_uk.glb",
+        "bytes": 658404,
+        "sha256": "95c85e2f2cfb55c1bcde2f11810d05345f632c5d3dd1f71daa0b36d9a7aa7229"
+      }
+    ],
+    "atlas": {
+      "path": "../textures/substation/atlas.json",
+      "bytesLF": 52895,
+      "sha256LF": "f8597c8c13390fd3d5573f26aac4722d9ce6dacb48511f2c4d7630952469d274"
+    },
+    "plans": [
+      {
+        "variant": "uk",
+        "path": "tools/blender/substation-plan.uk.json",
+        "bytesLF": 175546,
+        "sha256LF": "ff92ba782037a108f6ffd553eae5fb7c6fa50b2310ef830158fc9d3e0d7a8bb2"
+      },
+      {
+        "variant": "co",
+        "path": "tools/blender/substation-plan.co.json",
+        "bytesLF": 175617,
+        "sha256LF": "f2d5e84959b45e39e43343d52c60338a87f4951d3299d1a2161e01b397c57a2a"
+      }
+    ]
+  },
+  "uk": {
+    "variant": "uk",
+    "equipmentInstances": 338,
+    "planSource": "substation-plan.uk.json"
+  },
+  "co": {
+    "variant": "co",
+    "equipmentInstances": 338,
+    "planSource": "substation-plan.co.json"
+  },
+  "diagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "rendererString": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "reviewMemoryAudit": {
+    "before": {
+      "geometries": 1697,
+      "textures": 6
+    },
+    "reviewRenderTargetsReleased": 1,
+    "after": {
+      "geometries": 1697,
+      "textures": 5
+    }
+  },
+  "renderMemory": {
+    "geometries": 1697,
+    "textures": 5
+  }
+}
