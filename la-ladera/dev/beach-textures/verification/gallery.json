@@ -1,0 +1,1438 @@
+{
+  "ok": true,
+  "node": "v22.16.0",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "threeRevision": "180",
+  "cameraHeightM": 1.6,
+  "figureHeightM": 1.8,
+  "figureBaseM": 0,
+  "entries": 25,
+  "views": 50,
+  "manifestSha256": "73dc461082e396b30b3cc429e0a93f699b046b6132be19de461553132a247ec4",
+  "manifestHashForm": "UTF-8 LF",
+  "sheets": [
+    {
+      "file": "eye-height-materials-1.png",
+      "width": 1200,
+      "height": 2900,
+      "bytes": 2656661,
+      "sha256": "c7e5b80bee9bf800050c6f326487c171d2f6be2ebd1c1af97d5e30c98e147764",
+      "ids": [
+        "sand_dry",
+        "sand_wet",
+        "seabed_sand",
+        "seabed_rock",
+        "rock_sea",
+        "seawall_concrete",
+        "promenade_pavers"
+      ]
+    },
+    {
+      "file": "eye-height-materials-2.png",
+      "width": 1200,
+      "height": 2500,
+      "bytes": 1946258,
+      "sha256": "e770fe35cf5f1b96f8d6ce73db882403cb426693841bfe2915b7076105733d9e",
+      "ids": [
+        "jetty_planks",
+        "pile_wood",
+        "rope_hemp",
+        "thatch_palm",
+        "canvas_stripe",
+        "boat_hull_paint"
+      ]
+    },
+    {
+      "file": "eye-height-atlases-1.png",
+      "width": 1200,
+      "height": 2100,
+      "bytes": 977500,
+      "sha256": "bcef7b54946b632fa1caf50298f448442a0e21d7e0622d324e7468bfba12cd9a",
+      "ids": [
+        "sails_kites",
+        "board_decks",
+        "towels_bags",
+        "signs_menus",
+        "boat_names"
+      ]
+    },
+    {
+      "file": "eye-height-atlases-2.png",
+      "width": 1200,
+      "height": 1700,
+      "bytes": 658890,
+      "sha256": "ec3294f1f74559a4526a9f5e82c048806e5cf8be1621f48e5125ff74dc1a73a1",
+      "ids": [
+        "gull_sprites",
+        "fish_sprites",
+        "crab_shells",
+        "seagrass_coral"
+      ]
+    },
+    {
+      "file": "eye-height-effects.png",
+      "width": 1200,
+      "height": 1300,
+      "bytes": 577670,
+      "sha256": "fe10d269f896eb8a6911997466aa39b73546acdf4c6ba919e285cf2c295370db",
+      "ids": [
+        "water_ripple_n",
+        "foam_noise",
+        "caustic_tile"
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "id": "sand_dry",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2.5,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/sand_dry.png",
+        "normal": "beach/sand_dry_n.png",
+        "rough": "beach/sand_dry_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "sand_dry",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2.5,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/sand_dry.png",
+        "normal": "beach/sand_dry_n.png",
+        "rough": "beach/sand_dry_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "sand_wet",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2.5,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/sand_wet.png",
+        "normal": "beach/sand_wet_n.png",
+        "rough": "beach/sand_wet_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "sand_wet",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2.5,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/sand_wet.png",
+        "normal": "beach/sand_wet_n.png",
+        "rough": "beach/sand_wet_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "seabed_sand",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 3,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/seabed_sand.png",
+        "normal": "beach/seabed_sand_n.png",
+        "rough": "beach/seabed_sand_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "seabed_sand",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 3,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/seabed_sand.png",
+        "normal": "beach/seabed_sand_n.png",
+        "rough": "beach/seabed_sand_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "seabed_rock",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 3,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/seabed_rock.png",
+        "normal": "beach/seabed_rock_n.png",
+        "rough": "beach/seabed_rock_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "seabed_rock",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 3,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/seabed_rock.png",
+        "normal": "beach/seabed_rock_n.png",
+        "rough": "beach/seabed_rock_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "rock_sea",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/rock_sea.png",
+        "normal": "beach/rock_sea_n.png",
+        "rough": "beach/rock_sea_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "rock_sea",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/rock_sea.png",
+        "normal": "beach/rock_sea_n.png",
+        "rough": "beach/rock_sea_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        1024
+      ]
+    },
+    {
+      "id": "seawall_concrete",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/seawall_concrete.png",
+        "normal": "beach/seawall_concrete_n.png",
+        "rough": "beach/seawall_concrete_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "seawall_concrete",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/seawall_concrete.png",
+        "normal": "beach/seawall_concrete_n.png",
+        "rough": "beach/seawall_concrete_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "promenade_pavers",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2.4,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/promenade_pavers.png",
+        "normal": "beach/promenade_pavers_n.png",
+        "rough": "beach/promenade_pavers_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "promenade_pavers",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2.4,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/promenade_pavers.png",
+        "normal": "beach/promenade_pavers_n.png",
+        "rough": "beach/promenade_pavers_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "jetty_planks",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/jetty_planks.png",
+        "normal": "beach/jetty_planks_n.png",
+        "rough": "beach/jetty_planks_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "jetty_planks",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 2,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/jetty_planks.png",
+        "normal": "beach/jetty_planks_n.png",
+        "rough": "beach/jetty_planks_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "pile_wood",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 1.5,
+      "repeatAxes": [
+        "x"
+      ],
+      "maps": {
+        "map": "beach/pile_wood.png",
+        "normal": "beach/pile_wood_n.png",
+        "rough": "beach/pile_wood_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "pile_wood",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 1.5,
+      "repeatAxes": [
+        "x"
+      ],
+      "maps": {
+        "map": "beach/pile_wood.png",
+        "normal": "beach/pile_wood_n.png",
+        "rough": "beach/pile_wood_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "rope_hemp",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        0.5,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 0.5,
+      "repeatAxes": [
+        "y"
+      ],
+      "maps": {
+        "map": "beach/rope_hemp.png",
+        "normal": "beach/rope_hemp_n.png",
+        "rough": "beach/rope_hemp_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "rope_hemp",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        0.5,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 0.5,
+      "repeatAxes": [
+        "y"
+      ],
+      "maps": {
+        "map": "beach/rope_hemp.png",
+        "normal": "beach/rope_hemp_n.png",
+        "rough": "beach/rope_hemp_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "thatch_palm",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 1.5,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/thatch_palm.png",
+        "normal": "beach/thatch_palm_n.png",
+        "rough": "beach/thatch_palm_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "thatch_palm",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 1.5,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/thatch_palm.png",
+        "normal": "beach/thatch_palm_n.png",
+        "rough": "beach/thatch_palm_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "canvas_stripe",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 1,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/canvas_stripe.png",
+        "normal": "beach/canvas_stripe_n.png",
+        "rough": "beach/canvas_stripe_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "canvas_stripe",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 1,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/canvas_stripe.png",
+        "normal": "beach/canvas_stripe_n.png",
+        "rough": "beach/canvas_stripe_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "boat_hull_paint",
+      "view": "front",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 3,
+      "repeatAxes": [
+        "x"
+      ],
+      "maps": {
+        "map": "beach/boat_hull_paint.png",
+        "normal": "beach/boat_hull_paint_n.png",
+        "rough": "beach/boat_hull_paint_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "boat_hull_paint",
+      "view": "oblique",
+      "kind": "material",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 3,
+      "repeatAxes": [
+        "x"
+      ],
+      "maps": {
+        "map": "beach/boat_hull_paint.png",
+        "normal": "beach/boat_hull_paint_n.png",
+        "rough": "beach/boat_hull_paint_r.png"
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "sails_kites",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/sails_kites.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        512
+      ]
+    },
+    {
+      "id": "sails_kites",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/sails_kites.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        512
+      ]
+    },
+    {
+      "id": "board_decks",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/board_decks.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        512
+      ]
+    },
+    {
+      "id": "board_decks",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/board_decks.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        512
+      ]
+    },
+    {
+      "id": "towels_bags",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/towels_bags.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "towels_bags",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/towels_bags.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "signs_menus",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/signs_menus.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        512
+      ]
+    },
+    {
+      "id": "signs_menus",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/signs_menus.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        1024,
+        512
+      ]
+    },
+    {
+      "id": "boat_names",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/boat_names.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "boat_names",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/boat_names.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "gull_sprites",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        0.75
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/gull_sprites.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        1024,
+        256
+      ]
+    },
+    {
+      "id": "gull_sprites",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        0.75
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/gull_sprites.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        1024,
+        256
+      ]
+    },
+    {
+      "id": "fish_sprites",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/fish_sprites.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "fish_sprites",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        1.5
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/fish_sprites.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        512,
+        256
+      ]
+    },
+    {
+      "id": "crab_shells",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/crab_shells.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "crab_shells",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/crab_shells.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "seagrass_coral",
+      "view": "front",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/seagrass_coral.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "seagrass_coral",
+      "view": "oblique",
+      "kind": "atlas",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        3
+      ],
+      "panelIsProofDisplay": true,
+      "tileM": null,
+      "repeatAxes": [],
+      "maps": {
+        "map": "beach/seagrass_coral.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        512,
+        512
+      ]
+    },
+    {
+      "id": "water_ripple_n",
+      "view": "front",
+      "kind": "effect",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 6,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/water_ripple_n.png",
+        "normal": "beach/water_ripple_n.png",
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "water_ripple_n",
+      "view": "oblique",
+      "kind": "effect",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 6,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/water_ripple_n.png",
+        "normal": "beach/water_ripple_n.png",
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "foam_noise",
+      "view": "front",
+      "kind": "effect",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 6,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/foam_noise.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "foam_noise",
+      "view": "oblique",
+      "kind": "effect",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 6,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/foam_noise.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": true,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "caustic_tile",
+      "view": "front",
+      "kind": "effect",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 4,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/caustic_tile.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        256,
+        256
+      ]
+    },
+    {
+      "id": "caustic_tile",
+      "view": "oblique",
+      "kind": "effect",
+      "cameraHeightM": 1.6,
+      "figureHeightM": 1.7999999964237212,
+      "figureBaseM": 8.940696724635266e-10,
+      "panelSizeM": [
+        3,
+        2.4
+      ],
+      "panelIsProofDisplay": false,
+      "tileM": 4,
+      "repeatAxes": [
+        "x",
+        "y"
+      ],
+      "maps": {
+        "map": "beach/caustic_tile.png",
+        "normal": null,
+        "rough": null
+      },
+      "alpha": false,
+      "dimensions": [
+        256,
+        256
+      ]
+    }
+  ],
+  "diagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "limitations": [
+    "Isolated texture review: no game integration, boot timing, world frame time or target hardware performance measured.",
+    "Atlas panels are enlarged proof displays; their panel dimensions are not suggested physical dimensions for atlas objects.",
+    "Generated PBR normals are derived surface detail, not measured photogrammetric geometry."
+  ]
+}

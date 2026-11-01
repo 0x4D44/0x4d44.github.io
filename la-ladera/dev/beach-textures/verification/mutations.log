@@ -1,0 +1,20 @@
+PASS baseline: 18/18 tests under Node 22.16.0
+PASS mutation [complete]: expected assertion red — complete requested pack decodes and fits byte/GPU budgets
+PASS mutation [png_filters]: expected assertion red — decoder reconstructs all five PNG filters and indexed alpha
+PASS mutation [png_damage]: expected assertion red — PNG decoder rejects corrupt CRC, truncation, illegal filters and trailing bytes
+PASS mutation [dimensions]: expected assertion red — decoded dimensions and power-of-two rules survive truthful re-pinning
+PASS mutation [sha_pins]: expected assertion red — a changed binary pin cannot silently pass
+PASS mutation [shifted_edge]: expected assertion red — shifting only one decoded edge fails even with fresh hashes and totals
+PASS mutation [alpha_pixels]: expected assertion red — an opaque backdrop fails the promised alpha contract after re-pinning
+PASS mutation [atlas_cells]: expected assertion red — overlapping occupied cells are rejected despite valid normalized UVs
+PASS mutation [spanish_text]: expected assertion red — Spanish metadata keeps the requested ñ and exact signs
+PASS mutation [provenance]: expected assertion red — every image needs original generation provenance and a source hash
+PASS mutation [payload_budget]: expected assertion red — extra files cannot hide outside declared totals or inflate the 8 MB limit
+PASS mutation [gpu_budget]: expected assertion red — GPU accounting includes full mip chains and a fixed non-overridable cap
+PASS mutation [lf_text_pins]: expected assertion red — CRLF checkout text validates against LF pins while real content changes fail
+PASS mutation [sign_proof]: expected assertion red — visual text proof must be a complete decoded rendered PNG, not just a declared filename
+PASS mutation [offline]: expected assertion red — new pack stays out of the active model and texture manifests
+PASS mutation [normal_data]: expected assertion red — normal PNGs contain unit forward-facing tangent vectors after re-pinning
+PASS mutation [missing_and_paths]: expected assertion red — complete mode rejects missing PNGs and paths outside the asset pack
+PASS mutation [animation_registration]: expected assertion red — matched animation anchors, loops and real transparent content bounds are enforced
+MUTATIONS OK: 18/18 intentionally broken inputs made their named tests fail; baseline remains unchanged
