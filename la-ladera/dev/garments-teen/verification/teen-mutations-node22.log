@@ -1,0 +1,23 @@
+KILLED missing-key: not ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+KILLED high-oversize: not ok 1 - teen acceptance: every piece is inside its real dimension range
+KILLED high-triangles: not ok 1 - teen acceptance: every piece stays within its high and LOD triangle budgets
+KILLED lod-oversize: not ok 1 - teen acceptance: every piece is inside its real dimension range
+KILLED lod-triangles: not ok 1 - teen acceptance: every piece stays within its high and LOD triangle budgets
+KILLED runtime-payload: not ok 1 - teen acceptance: complete generated payload stays under 3500000 bytes
+KILLED wrong-scope: not ok 1 - the checked-in teen library satisfies the extended independent validator
+KILLED collapsed-dress-length: not ok 1 - dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+KILLED missing-state-gate: not ok 1 - removing a real key makes the key acceptance test fail
+KILLED dimension-gate-highSize: not ok 1 - oversize real high piece makes the size acceptance test fail
+KILLED dimension-gate-lowSize: not ok 1 - oversize real LOD piece makes the size acceptance test fail
+KILLED triangle-gate-highTris: not ok 1 - extra real high triangle batches make the triangle acceptance test fail
+KILLED triangle-gate-lowTris: not ok 1 - extra real LOD triangle batches make the triangle acceptance test fail
+KILLED byte-gate: not ok 1 - extra payload makes the same byte-budget acceptance test fail
+KILLED reference-dimension-gate: not ok 1 - mutable catalogue and manifest cannot relax independent dimensions or budgets
+KILLED manifest-limit-gate: not ok 1 - mutable catalogue and manifest cannot relax independent dimensions or budgets
+KILLED unlisted-glb-gate: not ok 1 - unlisted teen GLBs are rejected instead of hiding inside the payload budget
+KILLED variant-list-gate: not ok 1 - malformed variant lists are reported without aborting validation
+KILLED cli-default-only-adult: not ok 1 - complete CLI validates all three libraries by default and honors explicit size selectors
+KILLED cli-breaks-legacy-builder: not ok 1 - complete CLI validates all three libraries by default and honors explicit size selectors
+KILLED missing-locker-recipe: not ok 1 - teen recipes cover both sizes with drawers, wardrobes and school lockers
+KILLED texture-page-gate: not ok 1 - extra teen texture pages are rejected even when the byte budget still passes
+PASS 22/22 meaningful mutants killed; 18/18 tests covered; restored suite green with no skips.

@@ -15,7 +15,7 @@ import { deferContainers } from './containers.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
 import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
-import { GARMENT_KEYS, registerGarmentAssets, garmentsOff } from './garments.js';
+import { ALL_GARMENT_KEYS, garmentKeysFor, registerGarmentAssets, garmentsOff } from './garments.js';
 import { GOODS_FIXTURES } from './goods-assortments.js';
 import { buildGoods } from './goods-render.js';
 
@@ -57,16 +57,18 @@ export async function loadInteriorAssets(ctx) {
 }
 
 /**
- * The clothes (garments.js). The adult and child packs have their own manifests (manifest.garments.json and manifest.garments-child.json; assets/models/manifest.json does not list them), so they are registered
+ * The clothes (garments.js). Each size library has its own manifest (assets/models/manifest.json does not list them), so they are registered
  * here, each key pointed at its LOD file, and loaded into a set of their own, `ctx.garmentGlb`: `ctx.interiorGlb` stays the furniture's, one entry per key of the furniture catalogue
  * (the furniture tests hold it to that). A record whose key is in either set draws from its model; anything else keeps its stand-in (a patch of cloth), so a file that is missing or
  * broken costs the look of the clothes and never the room. Nothing is requested when the clothes are switched off (`?garments=0`: there are no records to draw).
+ * The page keeps its adult/child preload. An explicit consumer can opt into teen with { sizeTags: ['teen'] }, or request all three libraries; this does not place anything.
  */
-export async function loadGarmentAssets(ctx) {
-  for (const k of GARMENT_KEYS) { const parts = ctx.interiorGlbParts?.get(k); if (parts) { disposeParts(parts); ctx.interiorGlbParts.delete(k); } }
+export async function loadGarmentAssets(ctx, options = {}) {
+  const keys = garmentKeysFor(options.sizeTags);
+  for (const k of ALL_GARMENT_KEYS) { const parts = ctx.interiorGlbParts?.get(k); if (parts) { disposeParts(parts); ctx.interiorGlbParts.delete(k); } }
   ctx.garmentGlb = new Set();
-  if (garmentsOff() || !registerGarmentAssets(ctx)) return;
-  await preloadModels(ctx, GARMENT_KEYS, ctx.garmentGlb);
+  if (garmentsOff() || !registerGarmentAssets(ctx, options)) return;
+  await preloadModels(ctx, keys, ctx.garmentGlb);
 }
 
 const _tc = new THREE.Color();

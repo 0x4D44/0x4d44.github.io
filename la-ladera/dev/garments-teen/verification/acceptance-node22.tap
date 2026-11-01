@@ -1,0 +1,446 @@
+TAP version 13
+# Subtest: teen acceptance: every required key and LOD exists in the generated GLB
+ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+  ---
+  duration_ms: 73.886336
+  type: 'test'
+  ...
+# Subtest: teen acceptance: every piece is inside its real dimension range
+ok 2 - teen acceptance: every piece is inside its real dimension range
+  ---
+  duration_ms: 51.410464
+  type: 'test'
+  ...
+# Subtest: teen acceptance: every piece stays within its high and LOD triangle budgets
+ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+  ---
+  duration_ms: 27.982149
+  type: 'test'
+  ...
+# Subtest: teen acceptance: complete generated payload stays under 3500000 bytes
+ok 4 - teen acceptance: complete generated payload stays under 3500000 bytes
+  ---
+  duration_ms: 0.676637
+  type: 'test'
+  ...
+# Subtest: the checked-in teen library satisfies the extended independent validator
+ok 5 - the checked-in teen library satisfies the extended independent validator
+  ---
+  duration_ms: 65.815095
+  type: 'test'
+  ...
+# Subtest: dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+ok 6 - dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+  ---
+  duration_ms: 23.076936
+  type: 'test'
+  ...
+# Subtest: removing a real key makes the key acceptance test fail
+ok 7 - removing a real key makes the key acceptance test fail
+  ---
+  duration_ms: 358.61185
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+# \# fail 2
+# Subtest: oversize real high piece makes the size acceptance test fail
+ok 8 - oversize real high piece makes the size acceptance test fail
+  ---
+  duration_ms: 349.313078
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+#   error: 'garment_teen_tshirt_cream_small_flat: longest side 1.764137 m outside expected 0.529200–0.646800 m'
+# \# fail 1
+# Subtest: oversize real LOD piece makes the size acceptance test fail
+ok 9 - oversize real LOD piece makes the size acceptance test fail
+  ---
+  duration_ms: 356.360987
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+#   error: 'garment_teen_tshirt_cream_small_flat LOD: longest side 1.764137 m outside expected 0.529200–0.646800 m'
+# \# fail 1
+# Subtest: extra real high triangle batches make the triangle acceptance test fail
+ok 10 - extra real high triangle batches make the triangle acceptance test fail
+  ---
+  duration_ms: 386.549141
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+#   error: 'garment_teen_tshirt_cream_small_flat: 928 triangles exceed 800'
+# \# fail 1
+# Subtest: extra real LOD triangle batches make the triangle acceptance test fail
+ok 11 - extra real LOD triangle batches make the triangle acceptance test fail
+  ---
+  duration_ms: 357.694546
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+#   error: 'garment_teen_tshirt_cream_small_flat LOD: 312 triangles exceed 240'
+# \# fail 1
+# Subtest: extra payload makes the same byte-budget acceptance test fail
+ok 12 - extra payload makes the same byte-budget acceptance test fail
+  ---
+  duration_ms: 404.428295
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 4 - teen acceptance: complete generated payload stays under 3500000 bytes
+#   error: 'teen runtime payload 4259920 exceeds 3500000 bytes'
+# \# fail 1
+# Subtest: mutable catalogue and manifest cannot relax independent dimensions or budgets
+ok 13 - mutable catalogue and manifest cannot relax independent dimensions or budgets
+  ---
+  duration_ms: 74.451975
+  type: 'test'
+  ...
+# Subtest: unlisted teen GLBs are rejected instead of hiding inside the payload budget
+ok 14 - unlisted teen GLBs are rejected instead of hiding inside the payload budget
+  ---
+  duration_ms: 49.239718
+  type: 'test'
+  ...
+# Subtest: malformed variant lists are reported without aborting validation
+ok 15 - malformed variant lists are reported without aborting validation
+  ---
+  duration_ms: 48.497898
+  type: 'test'
+  ...
+# Subtest: complete CLI validates all three libraries by default and honors explicit size selectors
+ok 16 - complete CLI validates all three libraries by default and honors explicit size selectors
+  ---
+  duration_ms: 1562.048721
+  type: 'test'
+  ...
+# Subtest: teen recipes cover both sizes with drawers, wardrobes and school lockers
+ok 17 - teen recipes cover both sizes with drawers, wardrobes and school lockers
+  ---
+  duration_ms: 1.848298
+  type: 'test'
+  ...
+# Subtest: extra teen texture pages are rejected even when the byte budget still passes
+ok 18 - extra teen texture pages are rejected even when the byte budget still passes
+  ---
+  duration_ms: 58.709602
+  type: 'test'
+  ...
+# Subtest: complete library requires all 23 adult garments and 67 applicable object states
+ok 19 - complete library requires all 23 adult garments and 67 applicable object states
+  ---
+  duration_ms: 23.661536
+  type: 'test'
+  ...
+# Subtest: partial mode validates a development subset but cannot masquerade as complete
+ok 20 - partial mode validates a development subset but cannot masquerade as complete
+  ---
+  duration_ms: 6.547992
+  type: 'test'
+  ...
+# Subtest: missing generated GLB fails, restoring its real bytes recovers the library
+ok 21 - missing generated GLB fails, restoring its real bytes recovers the library
+  ---
+  duration_ms: 21.506087
+  type: 'test'
+  ...
+# Subtest: missing a required state cannot be hidden by an otherwise valid manifest
+ok 22 - missing a required state cannot be hidden by an otherwise valid manifest
+  ---
+  duration_ms: 19.897508
+  type: 'test'
+  ...
+# Subtest: unlisted model files and unlisted scene roots fail complete mode
+ok 23 - unlisted model files and unlisted scene roots fail complete mode
+  ---
+  duration_ms: 18.835759
+  type: 'test'
+  ...
+# Subtest: recolouring metadata cannot silently name an unknown material
+ok 24 - recolouring metadata cannot silently name an unknown material
+  ---
+  duration_ms: 0.839251
+  type: 'test'
+  ...
+# Subtest: embedded textures, skins and animations are forbidden
+ok 25 - embedded textures, skins and animations are forbidden
+  ---
+  duration_ms: 1.040504
+  type: 'test'
+  ...
+# Subtest: binary corruption is read from accessor bytes, including NaN and invalid indices
+ok 26 - binary corruption is read from accessor bytes, including NaN and invalid indices
+  ---
+  duration_ms: 0.70537
+  type: 'test'
+  ...
+# Subtest: degenerate triangles and stale accessor bounds are rejected
+ok 27 - degenerate triangles and stale accessor bounds are rejected
+  ---
+  duration_ms: 0.410146
+  type: 'test'
+  ...
+# Subtest: missing normals, UVs and colours cannot become invisible bad exports
+ok 28 - missing normals, UVs and colours cannot become invisible bad exports
+  ---
+  duration_ms: 1.291481
+  type: 'test'
+  ...
+# Subtest: truncated files, buffer overreads and scene cycles fail cleanly
+ok 29 - truncated files, buffer overreads and scene cycles fail cleanly
+  ---
+  duration_ms: 0.549927
+  type: 'test'
+  ...
+# Subtest: measurement includes child transforms and rejects moved asset origins
+ok 30 - measurement includes child transforms and rejects moved asset origins
+  ---
+  duration_ms: 0.562316
+  type: 'test'
+  ...
+# Subtest: metadata bounds and footprint are independently compared with geometry
+ok 31 - metadata bounds and footprint are independently compared with geometry
+  ---
+  duration_ms: 16.546651
+  type: 'test'
+  ...
+# Subtest: LOD must be both under its cap and a meaningful simplification
+ok 32 - LOD must be both under its cap and a meaningful simplification
+  ---
+  duration_ms: 7.505191
+  type: 'test'
+  ...
+# Subtest: triangle limits cannot be raised in manifest data
+ok 33 - triangle limits cannot be raised in manifest data
+  ---
+  duration_ms: 9.041304
+  type: 'test'
+  ...
+# Subtest: all runtime files count towards the byte budget, including unreferenced data
+ok 34 - all runtime files count towards the byte budget, including unreferenced data
+  ---
+  duration_ms: 9.346649
+  type: 'test'
+  ...
+# Subtest: unsafe referenced paths cannot escape the model directory
+ok 35 - unsafe referenced paths cannot escape the model directory
+  ---
+  duration_ms: 9.79888
+  type: 'test'
+  ...
+# Subtest: adult scope and applicable state exceptions are required
+ok 36 - adult scope and applicable state exceptions are required
+  ---
+  duration_ms: 7.141805
+  type: 'test'
+  ...
+# Subtest: provenance IDs and furniture catalogue bindings must resolve to existing contracts
+ok 37 - provenance IDs and furniture catalogue bindings must resolve to existing contracts
+  ---
+  duration_ms: 6.779149
+  type: 'test'
+  ...
+# Subtest: assortments reject incompatible states and unknown palette variants
+ok 38 - assortments reject incompatible states and unknown palette variants
+  ---
+  duration_ms: 6.728353
+  type: 'test'
+  ...
+# Subtest: stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+ok 39 - stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+  ---
+  duration_ms: 10.526573
+  type: 'test'
+  ...
+# Subtest: the checked-in garment library satisfies the complete export contract
+ok 40 - the checked-in garment library satisfies the complete export contract
+  ---
+  duration_ms: 123.659174
+  type: 'test'
+  ...
+# Subtest: teen integration: registry keeps 29 styles and both sizes without aliases
+ok 41 - teen integration: registry keeps 29 styles and both sizes without aliases
+  ---
+  duration_ms: 3.753662
+  type: 'test'
+  ...
+# Subtest: teen integration: colours preserve both source palettes
+ok 42 - teen integration: colours preserve both source palettes
+  ---
+  duration_ms: 1.078461
+  type: 'test'
+  ...
+# Subtest: teen integration: loader and catalogue retain sizes and resolve every LOD node
+ok 43 - teen integration: loader and catalogue retain sizes and resolve every LOD node
+  ---
+  duration_ms: 147.031065
+  type: 'test'
+  ...
+# Subtest: teen integration: generator rejects wrong size metadata and aliases
+ok 44 - teen integration: generator rejects wrong size metadata and aliases
+  ---
+  duration_ms: 35.10425
+  type: 'test'
+  ...
+# Subtest: teen integration: generator rejects palette name collisions
+ok 45 - teen integration: generator rejects palette name collisions
+  ---
+  duration_ms: 5.859879
+  type: 'test'
+  ...
+# \# child garments: one shared 256x256 atlas, 349524 bytes RGBA8 including all mip levels; no additional texture allocation
+# Subtest: the committed data module is what the generator makes of the manifests (the drift guard)
+ok 46 - the committed data module is what the generator makes of the manifests (the drift guard)
+  ---
+  duration_ms: 5.665686
+  type: 'test'
+  ...
+# Subtest: the LOD models exist in the files the loader names (exact case), one node per garment key
+ok 47 - the LOD models exist in the files the loader names (exact case), one node per garment key
+  ---
+  duration_ms: 5.391985
+  type: 'test'
+  ...
+# Subtest: catalogue: every garment key is a flat, non-blocking piece of the library's size, and a hung one hangs
+ok 48 - catalogue: every garment key is a flat, non-blocking piece of the library's size, and a hung one hangs
+  ---
+  duration_ms: 0.719471
+  type: 'test'
+  ...
+# Subtest: assets: every key is pointed at its LOD file and node; a context without assets is left alone
+ok 49 - assets: every key is pointed at its LOD file and node; a context without assets is left alone
+  ---
+  duration_ms: 1.542148
+  type: 'test'
+  ...
+# Subtest: stand-ins: every garment draws a cloth patch inside its own box
+ok 50 - stand-ins: every garment draws a cloth patch inside its own box
+  ---
+  duration_ms: 8.445215
+  type: 'test'
+  ...
+# Subtest: child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10
+ok 51 - child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10
+  ---
+  duration_ms: 3.741954
+  type: 'test'
+  ...
+# Subtest: child library: independently decoded GLBs satisfy the complete 900-triangle contract and retain useful LODs
+ok 52 - child library: independently decoded GLBs satisfy the complete 900-triangle contract and retain useful LODs
+  ---
+  duration_ms: 182.104243
+  type: 'test'
+  ...
+# Subtest: child library: source dimensions are 60% adult length and actual exported tees keep that scale
+ok 53 - child library: source dimensions are 60% adult length and actual exported tees keep that scale
+  ---
+  duration_ms: 60.362928
+  type: 'test'
+  ...
+# Subtest: child library: one shared print atlas stays below six megabytes of GPU texture including mipmaps
+ok 54 - child library: one shared print atlas stays below six megabytes of GPU texture including mipmaps
+  ---
+  duration_ms: 1.519945
+  type: 'test'
+  ...
+# Subtest: furnishing raises no errors and the pass ran in every building
+ok 55 - furnishing raises no errors and the pass ran in every building
+  ---
+  duration_ms: 0.801925
+  type: 'test'
+  ...
+# Subtest: tidiness is a pure function of the building, the room and the household
+ok 56 - tidiness is a pure function of the building, the room and the household
+  ---
+  duration_ms: 0.508034
+  type: 'test'
+  ...
+# \# garments: 109 buildings, 1585 rooms; bedrooms (not a child's) 212: neat 32.55% lived 35.85% messy 31.60%; clothes in 80/104 homes, 490 garments
+# \# garments: 490 in the world, 62645 LOD triangles (128 each), heaviest building 2884
+# \# garments: 80 dressed interiors built from the GLBs; the busiest has 80923 triangles with its clothes (L78)
+# Subtest: the same seed gives the same clothes in the same places; another seed gives others; no other piece moves
+ok 57 - the same seed gives the same clothes in the same places; another seed gives others; no other piece moves
+  ---
+  duration_ms: 7189.106386
+  type: 'test'
+  ...
+# Subtest: over the 109 real buildings: neat, lived-in and messy bedrooms all occur; bathrooms vary; kitchens and living rooms are at most lived-in
+ok 58 - over the 109 real buildings: neat, lived-in and messy bedrooms all occur; bathrooms vary; kitchens and living rooms are at most lived-in
+  ---
+  duration_ms: 6.229485
+  type: 'test'
+  ...
+# Subtest: the household sets the mess: students leave more about than families, the elders' own rooms are never messy
+ok 59 - the household sets the mess: students leave more about than families, the elders' own rooms are never messy
+  ---
+  duration_ms: 1.443951
+  type: 'test'
+  ...
+# Subtest: shops, the clinic, the school, the chapel and the hall are neat: no clothes but a dressmaker's stock on its tables
+ok 60 - shops, the clinic, the school, the chapel and the hall are neat: no clothes but a dressmaker's stock on its tables
+  ---
+  duration_ms: 2.876013
+  type: 'test'
+  ...
+# Subtest: a child's room and a child's bed are never touched (the library is adult clothing)
+ok 61 - a child's room and a child's bed are never touched (the library is adult clothing)
+  ---
+  duration_ms: 7.691774
+  type: 'test'
+  ...
+# Subtest: the beds follow the room: made in a neat one, mostly unmade in a messy one
+ok 62 - the beds follow the room: made in a neat one, mostly unmade in a messy one
+  ---
+  duration_ms: 5.672538
+  type: 'test'
+  ...
+# Subtest: placement: a garment lies on a bed, a seat or a table, hangs on a wall, or lies on bare floor away from the furniture, the doors and the lanes
+ok 63 - placement: a garment lies on a bed, a seat or a table, hangs on a wall, or lies on bare floor away from the furniture, the doors and the lanes
+  ---
+  duration_ms: 43.968228
+  type: 'test'
+  ...
+# Subtest: budgets: at most 72 garments and 11000 triangles a building, 12 a bedroom; an interior already near its limit gets none
+ok 64 - budgets: at most 72 garments and 11000 triangles a building, 12 a bedroom; an interior already near its limit gets none
+  ---
+  duration_ms: 4.13788
+  type: 'test'
+  ...
+# Subtest: with the library's files: every garment loads and draws from its LOD model, its triangles are the ones the data counts, and no interior goes over 100000 because of its clothes
+ok 65 - with the library's files: every garment loads and draws from its LOD model, its triangles are the ones the data counts, and no interior goes over 100000 because of its clothes
+  ---
+  duration_ms: 4782.530966
+  type: 'test'
+  ...
+# Subtest: without the library's files: the game still boots, and every garment is drawn as a patch of cloth
+ok 66 - without the library's files: the game still boots, and every garment is drawn as a patch of cloth
+  ---
+  duration_ms: 1110.740202
+  type: 'test'
+  ...
+# Subtest: the clothes are invisible to the furniture pipeline: not in the keys it lists, not in the catalogue it hashes, not a property of the pieces it sizes
+ok 67 - the clothes are invisible to the furniture pipeline: not in the keys it lists, not in the catalogue it hashes, not a property of the pieces it sizes
+  ---
+  duration_ms: 4.546655
+  type: 'test'
+  ...
+# Subtest: the two loads are apart: the furniture load asks for no garment file and keeps no garment key; the clothes load fills ctx.garmentGlb and leaves ctx.interiorGlb alone; ?garments=0 asks for nothing
+ok 68 - the two loads are apart: the furniture load asks for no garment file and keeps no garment key; the clothes load fills ctx.garmentGlb and leaves ctx.interiorGlb alone; ?garments=0 asks for nothing
+  ---
+  duration_ms: 953.410867
+  type: 'test'
+  ...
+1..68
+# tests 68
+# suites 0
+# pass 68
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30544.055051

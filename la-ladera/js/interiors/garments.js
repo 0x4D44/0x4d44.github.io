@@ -23,20 +23,33 @@ export const uOf = (...parts) => (hashStr(parts.join('|')) >>> 0) / 4294967296;
 
 // ------------------------------------------------------------------ the models
 export const garmentKey = (id, state) => `garment_${id}_${state}`;
-/** Every applicable catalogue key in both garment sizes. */
-export const GARMENT_KEYS = Object.entries(GARMENTS).flatMap(([id, g]) => STATES.filter((s) => g[s]).map((s) => garmentKey(id, s)));
-/** The generated manifest paths keep adult and child packs separate. One-argument calls retain the adult path. */
+const DEFAULT_GARMENT_SIZES = Object.freeze(['adult', 'child']);
+/** Keys for explicitly selected size libraries. Teen packs are available before their placements are wired into the page. */
+export function garmentKeysFor(sizeTags = DEFAULT_GARMENT_SIZES) {
+  if (!Array.isArray(sizeTags) || sizeTags.some((tag) => !Object.hasOwn(GARMENT_FILES, tag))) throw new TypeError('garment sizeTags must name known libraries');
+  const selected = new Set(sizeTags);
+  return Object.entries(GARMENTS).filter(([, g]) => selected.has(g.sizeTag))
+    .flatMap(([id, g]) => STATES.filter((s) => g[s]).map((s) => garmentKey(id, s)));
+}
+/** The page's existing adult/child preload contract. New placement passes opt into teen explicitly. */
+export const GARMENT_KEYS = garmentKeysFor();
+/** Every applicable key, including both teen size classes, for explicit library consumers. */
+export const ALL_GARMENT_KEYS = garmentKeysFor(Object.keys(GARMENT_FILES));
+/** The generated manifest paths keep adult, child and teen packs separate. One-argument calls retain the adult path. */
 export const lodFile = (state, sizeTag = 'adult') => GARMENT_FILES[sizeTag]?.[state];
 /** Each size's `garments_<state>_lod.glb` holds its garments in that state, as nodes `<key>_lod` (the garment manifests' `lod`). Interiors are merged per building: no per-object
  *  switching, so every garment is drawn from its LOD (<= 240 triangles; the detailed models stay unloaded). */
-export function registerGarmentAssets(ctx) {
+export function registerGarmentAssets(ctx, { sizeTags = DEFAULT_GARMENT_SIZES } = {}) {
   const a = ctx?.assets;
   if (!a?.entries) return 0;
+  const selected = new Set(garmentKeysFor(sizeTags));
   let n = 0;
   for (const [id, g] of Object.entries(GARMENTS)) for (const state of STATES) {
     if (!g[state]) continue;
     const key = garmentKey(id, state);
-    a.entries.set(key, { ...a.entries.get(key), name: key, glb: lodFile(state, g.sizeTag), node: key + '_lod', sizeTag: g.sizeTag, tags: ['garment', g.sizeTag] });
+    if (!selected.has(key)) continue;
+    a.entries.set(key, { ...a.entries.get(key), name: key, glb: lodFile(state, g.sizeTag), node: key + '_lod', sizeTag: g.sizeTag,
+      ...(g.sizeClass ? { styleId: g.styleId, sizeClass: g.sizeClass } : {}), tags: ['garment', g.sizeTag, ...(g.sizeClass ? [g.sizeClass] : [])] });
     n++;
   }
   return n;

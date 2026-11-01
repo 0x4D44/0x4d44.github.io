@@ -1,0 +1,148 @@
+{
+  "ok": true,
+  "node": "v24.22.1",
+  "tests": 5,
+  "mutants": 10,
+  "killed": 10,
+  "originalFilesUnchanged": true,
+  "hashes": {
+    "tools/garments_data.mjs": "918b88905112943ac8dfd48d2ad4c5673fad81dd45d4f7cdea20796793001ba6",
+    "js/interiors/garments_data.js": "27db984a7e8bfdbb1d88e7c9611d2eff9b9b4eece7b00b2311de52783c6a2f2b",
+    "js/interiors/garments.js": "422a6d5b36f4d68f602667f36c153638cdf6fc6e038a19de1716bf0000d78d7c",
+    "js/interiors/catalog.js": "805ced450d636ec192cfff05a731fd4464f24ffd7ef124acb18bb981960ea2c7",
+    "js/interiors/build.js": "c7401959479b4e0651cc3c0757b322ee52dfeea5e748f6761eb34e6b6977ab64",
+    "tests/interiors-garments-teen.test.mjs": "02bffbf106f061c4b55518baf6e11d107ae09fdaf7e29f7ee785262e986a9919"
+  },
+  "results": [
+    {
+      "mutation": "registry size class",
+      "test": "teen integration: registry keeps 29 styles and both sizes without aliases",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: registry keeps 29 styles and both sizes without aliases",
+        "  error: |-",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "palette tint",
+      "test": "teen integration: colours preserve both source palettes",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: colours preserve both source palettes",
+        "  error: |-",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "loader size propagation",
+      "test": "teen integration: loader and catalogue retain sizes and resolve every LOD node",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: loader and catalogue retain sizes and resolve every LOD node",
+        "  error: |-",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "catalogue size propagation",
+      "test": "teen integration: loader and catalogue retain sizes and resolve every LOD node",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: loader and catalogue retain sizes and resolve every LOD node",
+        "  error: |-",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "explicit teen preload",
+      "test": "teen integration: loader and catalogue retain sizes and resolve every LOD node",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: loader and catalogue retain sizes and resolve every LOD node",
+        "  error: |-",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "stale teen mesh cleanup",
+      "test": "teen integration: loader and catalogue retain sizes and resolve every LOD node",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: loader and catalogue retain sizes and resolve every LOD node",
+        "  error: 'switching size libraries disposes stale teen mesh parts'",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "manifest size guard",
+      "test": "teen integration: generator rejects wrong size metadata and aliases",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: generator rejects wrong size metadata and aliases",
+        "  error: 'Missing expected exception: wrong manifest size'",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "asset size guard",
+      "test": "teen integration: generator rejects wrong size metadata and aliases",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: generator rejects wrong size metadata and aliases",
+        "  error: 'Missing expected exception: wrong asset size'",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "size class guard",
+      "test": "teen integration: generator rejects wrong size metadata and aliases",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: generator rejects wrong size metadata and aliases",
+        "  error: 'Missing expected exception: wrong size class'",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    },
+    {
+      "mutation": "palette collision guard",
+      "test": "teen integration: generator rejects palette name collisions",
+      "exitCode": 1,
+      "evidence": [
+        "not ok 1 - teen integration: generator rejects palette name collisions",
+        "  error: 'Missing expected exception: a teen tint must never replace an adult or child tint'",
+        "# tests 1",
+        "# pass 0",
+        "# fail 1",
+        "# skipped 0"
+      ]
+    }
+  ]
+}
