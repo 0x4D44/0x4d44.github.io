@@ -34,7 +34,7 @@ function PIPE_TUNE() {
   }
   return (_pipeEv = out);
 }
-const MIN_GAP = { bump: 0.06, wall: 0.08, hit: 0.1, "item-roll": 0.02, "ui-move": 0.03, "drift-level": 0.05, throw: 0.05 };
+const MIN_GAP = { bump: 0.06, wall: 0.08, hit: 0.1, "item-roll": 0.02, "ui-move": 0.03, "drift-level": 0.05, throw: 0.05, moo: 0.9, baa: 0.9 };
 
 function driveCurve(k, n = 1024) {
   const c = new Float32Array(n);
@@ -388,6 +388,18 @@ export class GameAudio {
         this._tone({ type: "sine", f0: 150, f1: 55, dur: 0.17, vol: 0.34 * s.gain, a: 0.003, pan: s.pan });
         this._noise({ dur: 0.1, vol: 0.2 * s.gain, a: 0.002, filt: { type: "lowpass", f0: 1200, f1: 250 }, pan: s.pan });
         this._tone({ type: "triangle", f0: 640, f1: 420, dur: 0.07, vol: 0.05 * s.gain, pan: s.pan });
+        break;
+      }
+      case "baa": {   // a startled sheep: a nasal, quavering bleat ("baaaa-aa")
+        this._tone({ type: "sawtooth", f0: 420, f1: 330, dur: 0.85, vol: 0.2, a: 0.03, d: 0.15, s: 0.8, r: 0.2, vib: { f: 26, depth: 38 }, filt: { type: "bandpass", f0: 1250, f1: 900, q: 3.5 }, send: 0.2, force: true });
+        this._tone({ type: "square", f0: 210, f1: 165, dur: 0.8, vol: 0.06, a: 0.03, s: 0.8, r: 0.2, vib: { f: 26, depth: 20 }, filt: { type: "lowpass", f0: 1500 }, force: true });
+        this._noise({ dur: 0.12, vol: 0.05, a: 0.005, filt: { type: "bandpass", f0: 2200, q: 1 }, force: true });
+        break;
+      }
+      case "moo": {   // a highland coo, thumped: a low sung "mmmOOOoo" with a wobble and a sagging pitch
+        this._tone({ type: "sawtooth", f0: 118, f1: 82, dur: 1.15, vol: 0.34, a: 0.12, d: 0.3, s: 0.7, r: 0.4, vib: { f: 5.5, depth: 9 }, filt: { type: "lowpass", f0: 420, f1: 1100, q: 3 }, send: 0.2, force: true });
+        this._tone({ type: "sawtooth", f0: 236, f1: 160, dur: 1.0, vol: 0.12, a: 0.15, d: 0.3, s: 0.6, r: 0.4, vib: { f: 5.5, depth: 14 }, filt: { type: "bandpass", f0: 650, f1: 420, q: 4 }, send: 0.2, force: true });
+        this._tone({ type: "sine", f0: 59, f1: 41, dur: 0.9, vol: 0.28, a: 0.1, d: 0.3, s: 0.5, r: 0.3, force: true });
         break;
       }
       case "wall": {
