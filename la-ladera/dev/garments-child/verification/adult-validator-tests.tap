@@ -1,0 +1,30 @@
+✔ complete library requires all 23 adult garments and 67 applicable object states (26.089275ms)
+✔ partial mode validates a development subset but cannot masquerade as complete (7.801013ms)
+✔ missing generated GLB fails, restoring its real bytes recovers the library (12.575007ms)
+✔ missing a required state cannot be hidden by an otherwise valid manifest (9.515559ms)
+✔ unlisted model files and unlisted scene roots fail complete mode (11.116266ms)
+✔ recolouring metadata cannot silently name an unknown material (0.686923ms)
+✔ embedded textures, skins and animations are forbidden (0.487913ms)
+✔ binary corruption is read from accessor bytes, including NaN and invalid indices (0.609346ms)
+✔ degenerate triangles and stale accessor bounds are rejected (1.516289ms)
+✔ missing normals, UVs and colours cannot become invisible bad exports (1.053703ms)
+✔ truncated files, buffer overreads and scene cycles fail cleanly (0.548685ms)
+✔ measurement includes child transforms and rejects moved asset origins (0.495665ms)
+✔ metadata bounds and footprint are independently compared with geometry (12.013203ms)
+✔ LOD must be both under its cap and a meaningful simplification (9.731673ms)
+✔ triangle limits cannot be raised in manifest data (7.739877ms)
+✔ all runtime files count towards the byte budget, including unreferenced data (8.005531ms)
+✔ unsafe referenced paths cannot escape the model directory (7.821434ms)
+✔ adult scope and applicable state exceptions are required (7.765049ms)
+✔ provenance IDs and furniture catalogue bindings must resolve to existing contracts (7.745419ms)
+✔ assortments reject incompatible states and unknown palette variants (6.619687ms)
+✔ stiff flat hats are allowed on a wardrobe shelf but other flat garments are not (10.876164ms)
+✔ the checked-in garment library satisfies the complete export contract (148.301349ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 342.106633

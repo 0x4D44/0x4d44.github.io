@@ -1,0 +1,152 @@
+TAP version 13
+# child garments: one shared 256x256 atlas, 349524 bytes RGBA8 including all mip levels; no additional texture allocation
+# Subtest: the committed data module is what the generator makes of the manifests (the drift guard)
+ok 1 - the committed data module is what the generator makes of the manifests (the drift guard)
+  ---
+  duration_ms: 5.140316
+  type: 'test'
+  ...
+# Subtest: the LOD models exist in the files the loader names (exact case), one node per garment key
+ok 2 - the LOD models exist in the files the loader names (exact case), one node per garment key
+  ---
+  duration_ms: 6.673481
+  type: 'test'
+  ...
+# Subtest: catalogue: every garment key is a flat, non-blocking piece of the library's size, and a hung one hangs
+ok 3 - catalogue: every garment key is a flat, non-blocking piece of the library's size, and a hung one hangs
+  ---
+  duration_ms: 0.576186
+  type: 'test'
+  ...
+# Subtest: assets: every key is pointed at its LOD file and node; a context without assets is left alone
+ok 4 - assets: every key is pointed at its LOD file and node; a context without assets is left alone
+  ---
+  duration_ms: 0.735135
+  type: 'test'
+  ...
+# Subtest: stand-ins: every garment draws a cloth patch inside its own box
+ok 5 - stand-ins: every garment draws a cloth patch inside its own box
+  ---
+  duration_ms: 6.15469
+  type: 'test'
+  ...
+# Subtest: child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10
+ok 6 - child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10
+  ---
+  duration_ms: 1.768969
+  type: 'test'
+  ...
+# Subtest: child library: independently decoded GLBs satisfy the complete 900-triangle contract and retain useful LODs
+ok 7 - child library: independently decoded GLBs satisfy the complete 900-triangle contract and retain useful LODs
+  ---
+  duration_ms: 158.975962
+  type: 'test'
+  ...
+# Subtest: child library: source dimensions are 60% adult length and actual exported tees keep that scale
+ok 8 - child library: source dimensions are 60% adult length and actual exported tees keep that scale
+  ---
+  duration_ms: 44.582921
+  type: 'test'
+  ...
+# Subtest: child library: one shared print atlas stays below six megabytes of GPU texture including mipmaps
+ok 9 - child library: one shared print atlas stays below six megabytes of GPU texture including mipmaps
+  ---
+  duration_ms: 0.926152
+  type: 'test'
+  ...
+# Subtest: furnishing raises no errors and the pass ran in every building
+ok 10 - furnishing raises no errors and the pass ran in every building
+  ---
+  duration_ms: 0.504588
+  type: 'test'
+  ...
+# Subtest: tidiness is a pure function of the building, the room and the household
+ok 11 - tidiness is a pure function of the building, the room and the household
+  ---
+  duration_ms: 0.780393
+  type: 'test'
+  ...
+# garments: 109 buildings, 1585 rooms; bedrooms (not a child's) 212: neat 32.55% lived 35.85% messy 31.60%; clothes in 80/104 homes, 490 garments
+# garments: 490 in the world, 62645 LOD triangles (128 each), heaviest building 2884
+# garments: 80 dressed interiors built from the GLBs; the busiest has 80923 triangles with its clothes (L78)
+# Subtest: the same seed gives the same clothes in the same places; another seed gives others; no other piece moves
+ok 12 - the same seed gives the same clothes in the same places; another seed gives others; no other piece moves
+  ---
+  duration_ms: 7951.48421
+  type: 'test'
+  ...
+# Subtest: over the 109 real buildings: neat, lived-in and messy bedrooms all occur; bathrooms vary; kitchens and living rooms are at most lived-in
+ok 13 - over the 109 real buildings: neat, lived-in and messy bedrooms all occur; bathrooms vary; kitchens and living rooms are at most lived-in
+  ---
+  duration_ms: 14.957361
+  type: 'test'
+  ...
+# Subtest: the household sets the mess: students leave more about than families, the elders' own rooms are never messy
+ok 14 - the household sets the mess: students leave more about than families, the elders' own rooms are never messy
+  ---
+  duration_ms: 1.328807
+  type: 'test'
+  ...
+# Subtest: shops, the clinic, the school, the chapel and the hall are neat: no clothes but a dressmaker's stock on its tables
+ok 15 - shops, the clinic, the school, the chapel and the hall are neat: no clothes but a dressmaker's stock on its tables
+  ---
+  duration_ms: 2.169511
+  type: 'test'
+  ...
+# Subtest: a child's room and a child's bed are never touched (the library is adult clothing)
+ok 16 - a child's room and a child's bed are never touched (the library is adult clothing)
+  ---
+  duration_ms: 8.7364
+  type: 'test'
+  ...
+# Subtest: the beds follow the room: made in a neat one, mostly unmade in a messy one
+ok 17 - the beds follow the room: made in a neat one, mostly unmade in a messy one
+  ---
+  duration_ms: 6.884978
+  type: 'test'
+  ...
+# Subtest: placement: a garment lies on a bed, a seat or a table, hangs on a wall, or lies on bare floor away from the furniture, the doors and the lanes
+ok 18 - placement: a garment lies on a bed, a seat or a table, hangs on a wall, or lies on bare floor away from the furniture, the doors and the lanes
+  ---
+  duration_ms: 67.705563
+  type: 'test'
+  ...
+# Subtest: budgets: at most 72 garments and 11000 triangles a building, 12 a bedroom; an interior already near its limit gets none
+ok 19 - budgets: at most 72 garments and 11000 triangles a building, 12 a bedroom; an interior already near its limit gets none
+  ---
+  duration_ms: 22.308931
+  type: 'test'
+  ...
+# Subtest: with the library's files: every garment loads and draws from its LOD model, its triangles are the ones the data counts, and no interior goes over 100000 because of its clothes
+ok 20 - with the library's files: every garment loads and draws from its LOD model, its triangles are the ones the data counts, and no interior goes over 100000 because of its clothes
+  ---
+  duration_ms: 5334.638037
+  type: 'test'
+  ...
+# Subtest: without the library's files: the game still boots, and every garment is drawn as a patch of cloth
+ok 21 - without the library's files: the game still boots, and every garment is drawn as a patch of cloth
+  ---
+  duration_ms: 1177.260045
+  type: 'test'
+  ...
+# Subtest: the clothes are invisible to the furniture pipeline: not in the keys it lists, not in the catalogue it hashes, not a property of the pieces it sizes
+ok 22 - the clothes are invisible to the furniture pipeline: not in the keys it lists, not in the catalogue it hashes, not a property of the pieces it sizes
+  ---
+  duration_ms: 2.374959
+  type: 'test'
+  ...
+# Subtest: the two loads are apart: the furniture load asks for no garment file and keeps no garment key; the clothes load fills ctx.garmentGlb and leaves ctx.interiorGlb alone; ?garments=0 asks for nothing
+ok 23 - the two loads are apart: the furniture load asks for no garment file and keeps no garment key; the clothes load fills ctx.garmentGlb and leaves ctx.interiorGlb alone; ?garments=0 asks for nothing
+  ---
+  duration_ms: 1290.88067
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 30149.137751

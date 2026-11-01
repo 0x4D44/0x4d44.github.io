@@ -1,0 +1,50 @@
+TAP version 13
+# Subtest: the committed data module is what the generator makes of the manifests (the drift guard)
+not ok 1 - the committed data module is what the generator makes of the manifests (the drift guard)
+  ---
+  duration_ms: 3.042572
+  type: 'test'
+  location: '/workspace/scratch/a98938c52ab3/repo/la-ladera/tests/interiors-garments.test.mjs:49:1'
+  failureType: 'testCodeFailure'
+  error: "garment_child_tshirt_flat: sizeTag must be 'child'"
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    garmentsDataModule (file:///workspace/scratch/a98938c52ab3/repo/la-ladera/tools/garments_data.mjs:30:119)
+    TestContext.<anonymous> (file:///workspace/scratch/a98938c52ab3/repo/la-ladera/tests/interiors-garments.test.mjs:51:22)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+# Subtest: child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10
+not ok 2 - child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10
+  ---
+  duration_ms: 1.734817
+  type: 'test'
+  location: '/workspace/scratch/a98938c52ab3/repo/la-ladera/tests/interiors-garments.test.mjs:129:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    garment_child_tshirt_flat
+
+    'adult' !== 'child'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'child'
+  actual: 'adult'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/scratch/a98938c52ab3/repo/la-ladera/tests/interiors-garments.test.mjs:151:14)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15542.501556

@@ -1,0 +1,27 @@
+{
+  "input": "la-ladera/assets/models/manifest.garments-child.json",
+  "asset": "garment_child_tshirt_flat",
+  "mutation": {
+    "sizeTag": {
+      "before": "child",
+      "broken": "adult"
+    }
+  },
+  "command": [
+    "node",
+    "--import",
+    "./la-ladera/tests/register.mjs",
+    "--test",
+    "--test-isolation=none",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "--test-name-pattern=the committed data module|child library: all 20",
+    "la-ladera/tests/interiors-garments.test.mjs"
+  ],
+  "exitCode": 1,
+  "expectedFailureDetected": true,
+  "originalSha256": "fb706cfa38f650aef677912ed1e3239fd4dd0ae50866642b1785eef1247be3e3",
+  "mutatedSha256": "3e50b125fa27686b6d672a25db850aa623e7335e058b204809ebd2451bed888b",
+  "restoredSha256": "fb706cfa38f650aef677912ed1e3239fd4dd0ae50866642b1785eef1247be3e3",
+  "restoredExactly": true
+}
