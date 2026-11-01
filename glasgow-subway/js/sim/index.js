@@ -5,7 +5,7 @@ import { Service, baselineRunTimes } from './service.js';
 import { stockFrom, notchToCmd } from './dynamics.js';
 import { buildSchedule, DIFFICULTY } from './rules.js';
 import { KMH, clamp, wrapL, fmtDist, fmtTime, mulberry32 } from './util.js';
-import { loadTrainTemplate, TrainView } from './trainview.js';
+import { loadTrainTemplate, TrainView, ledTailLamps } from './trainview.js';
 import { loadTunnelTemplate, TunnelView } from './tunnelview.js';
 import { buildStation, placeStation, stationHalfLength, PY } from './stationview.js';
 import { Walker } from './walker.js';
@@ -74,6 +74,7 @@ class Sim {
     try { r.setPixelRatio(this.quality === 'low' ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2)); } catch (e) {}
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene, { quality: this.quality });
     try { frontFaceSigns(trainTpl.scene, /^route_map_panel$/); } catch (e) {}   // exterior roundels: never mirrored from behind
+    try { ledTailLamps(THREE, trainTpl.scene); } catch (e) {}   // tail lamps: LED red, not tone-mapped pink
     this.trainTpl = trainTpl; this.views = {};
     this.trainView = new TrainView(THREE, trainTpl.scene, {}); this.views[this.line] = this.trainView;
     this.scene.add(this.trainView.root);
