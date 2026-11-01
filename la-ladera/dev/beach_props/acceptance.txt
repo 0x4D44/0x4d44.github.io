@@ -1,0 +1,782 @@
+Node version
+============
+22.16.0
+
+
+Complete independent validator
+==============================
+PASS beach props: 97 designs + 97 far LODs
+GLB 1,429,460 / 3,000,000 bytes; textures 2,473,749 / 6,000,000 bytes; 7 shared mesh resources
+  beach_props/beach_leisure.glb: 108 roots, 624,440 bytes
+  beach_props/beach_civic.glb: 60 roots, 589,088 bytes
+  beach_props/beach_shore.glb: 26 roots, 215,932 bytes
+
+
+Node22.16 acceptance tests
+==========================
+TAP version 13
+# Subtest: [complete] all requested near and far assets exist as actual GLB roots
+ok 1 - [complete] all requested near and far assets exist as actual GLB roots
+  ---
+  duration_ms: 833.782048
+  type: 'test'
+  ...
+# Subtest: [partial] complete mode requires a complete build
+ok 2 - [partial] complete mode requires a complete build
+  ---
+  duration_ms: 650.28609
+  type: 'test'
+  ...
+# Subtest: [lod-root] every near asset has its named independent far root
+ok 3 - [lod-root] every near asset has its named independent far root
+  ---
+  duration_ms: 721.392111
+  type: 'test'
+  ...
+# Subtest: [lf-text] catalogue pins accept CRLF checkout text and reject changed text
+ok 4 - [lf-text] catalogue pins accept CRLF checkout text and reject changed text
+  ---
+  duration_ms: 692.302107
+  type: 'test'
+  ...
+# Subtest: [glb-pin] SHA-256 pins match the exported bytes
+ok 5 - [glb-pin] SHA-256 pins match the exported bytes
+  ---
+  duration_ms: 578.548189
+  type: 'test'
+  ...
+# Subtest: [nan] actual decoded positions contain finite values
+ok 6 - [nan] actual decoded positions contain finite values
+  ---
+  duration_ms: 499.252151
+  type: 'test'
+  ...
+# Subtest: [accessor] accessors stay inside their buffer views
+ok 7 - [accessor] accessors stay inside their buffer views
+  ---
+  duration_ms: 430.483779
+  type: 'test'
+  ...
+# Subtest: [index] triangle indices reference real vertices
+ok 8 - [index] triangle indices reference real vertices
+  ---
+  duration_ms: 479.091737
+  type: 'test'
+  ...
+# Subtest: [bounds] binary position bounds match the advertised metre envelopes
+ok 9 - [bounds] binary position bounds match the advertised metre envelopes
+  ---
+  duration_ms: 515.775368
+  type: 'test'
+  ...
+# Subtest: [root-origin] scene roots have an identity base-centre transform
+ok 10 - [root-origin] scene roots have an identity base-centre transform
+  ---
+  duration_ms: 492.777427
+  type: 'test'
+  ...
+# Subtest: [normal] exported normals remain unit length
+ok 11 - [normal] exported normals remain unit length
+  ---
+  duration_ms: 396.889743
+  type: 'test'
+  ...
+# Subtest: [uv-range] all UV coordinates stay inside the unit atlas
+ok 12 - [uv-range] all UV coordinates stay inside the unit atlas
+  ---
+  duration_ms: 452.528686
+  type: 'test'
+  ...
+# Subtest: [uv-gutter] triangle UVs stay inside padded cells
+ok 13 - [uv-gutter] triangle UVs stay inside padded cells
+  ---
+  duration_ms: 532.264783
+  type: 'test'
+  ...
+# Subtest: [uv-design] atlas cells select each catalogue design with the correct V orientation
+ok 14 - [uv-design] atlas cells select each catalogue design with the correct V orientation
+  ---
+  duration_ms: 481.539761
+  type: 'test'
+  ...
+# Subtest: [near-cap] near meshes obey actual per-type triangle caps
+ok 15 - [near-cap] near meshes obey actual per-type triangle caps
+  ---
+  duration_ms: 499.192611
+  type: 'test'
+  ...
+# Subtest: [lod-ratio] every far LOD draws no more than forty percent of near triangles
+ok 16 - [lod-ratio] every far LOD draws no more than forty percent of near triangles
+  ---
+  duration_ms: 601.536215
+  type: 'test'
+  ...
+# Subtest: [materials] only the shared dormant PBR materials occur in texture-free GLBs
+ok 17 - [materials] only the shared dormant PBR materials occur in texture-free GLBs
+  ---
+  duration_ms: 560.913473
+  type: 'test'
+  ...
+# Subtest: [alpha] cutout nets and palm cards use double-sided alpha masking
+ok 18 - [alpha] cutout nets and palm cards use double-sided alpha masking
+  ---
+  duration_ms: 429.981909
+  type: 'test'
+  ...
+# Subtest: [net-twelve] the near volleyball alpha net is exactly twelve triangles
+ok 19 - [net-twelve] the near volleyball alpha net is exactly twelve triangles
+  ---
+  duration_ms: 599.733151
+  type: 'test'
+  ...
+# Subtest: [pivots] spinning and flapping parts retain independent drawable pivots
+ok 20 - [pivots] spinning and flapping parts retain independent drawable pivots
+  ---
+  duration_ms: 528.077822
+  type: 'test'
+  ...
+# Subtest: [anchors] seat anchors contain a usable position, yaw and positive seat height
+ok 21 - [anchors] seat anchors contain a usable position, yaw and positive seat height
+  ---
+  duration_ms: 569.028524
+  type: 'test'
+  ...
+# Subtest: [light-anchor] the bollard lamp provides its light position and colour
+ok 22 - [light-anchor] the bollard lamp provides its light position and colour
+  ---
+  duration_ms: 443.908937
+  type: 'test'
+  ...
+# Subtest: [keep-out] court, kiosk and tower navigation polygons are nondegenerate
+ok 23 - [keep-out] court, kiosk and tower navigation polygons are nondegenerate
+  ---
+  duration_ms: 419.729626
+  type: 'test'
+  ...
+# Subtest: [png] all PBR maps decode as CRC-checked PNG rasters
+ok 24 - [png] all PBR maps decode as CRC-checked PNG rasters
+  ---
+  duration_ms: 768.691168
+  type: 'test'
+  ...
+# Subtest: [texture-pin] PBR maps are individually SHA-256 pinned
+ok 25 - [texture-pin] PBR maps are individually SHA-256 pinned
+  ---
+  duration_ms: 525.198796
+  type: 'test'
+  ...
+# Subtest: [prints] the twelve towels use twelve distinct decoded print cells
+ok 26 - [prints] the twelve towels use twelve distinct decoded print cells
+  ---
+  duration_ms: 400.269517
+  type: 'test'
+  ...
+# Subtest: [signs] all ten Spanish signs retain their exact requested wording
+ok 27 - [signs] all ten Spanish signs retain their exact requested wording
+  ---
+  duration_ms: 508.176651
+  type: 'test'
+  ...
+# Subtest: [instances] repeated parts share actual glTF mesh resources
+ok 28 - [instances] repeated parts share actual glTF mesh resources
+  ---
+  duration_ms: 504.01251
+  type: 'test'
+  ...
+# Subtest: [roster] the independent required roster cannot shrink with the catalogue
+ok 29 - [roster] the independent required roster cannot shrink with the catalogue
+  ---
+  duration_ms: 507.212381
+  type: 'test'
+  ...
+# Subtest: [glb-budget] all generated model bytes count toward the three-megabyte limit
+ok 30 - [glb-budget] all generated model bytes count toward the three-megabyte limit
+  ---
+  duration_ms: 413.36525
+  type: 'test'
+  ...
+# Subtest: [texture-budget] all generated texture bytes count toward the six-megabyte limit
+ok 31 - [texture-budget] all generated texture bytes count toward the six-megabyte limit
+  ---
+  duration_ms: 393.973757
+  type: 'test'
+  ...
+# Subtest: [dormant] the runtime root manifest does not load this library
+ok 32 - [dormant] the runtime root manifest does not load this library
+  ---
+  duration_ms: 509.328533
+  type: 'test'
+  ...
+# Subtest: [hierarchy] every GLB node belongs to exactly one valid asset hierarchy
+ok 33 - [hierarchy] every GLB node belongs to exactly one valid asset hierarchy
+  ---
+  duration_ms: 494.846005
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 17469.12045
+
+
+Every-test mutation proof
+=========================
+Node 22.16.0; 33 beach-props acceptance tests with individually selected input mutations
+TAP version 13
+# Subtest: [complete] all requested near and far assets exist as actual GLB roots
+ok 1 - [complete] all requested near and far assets exist as actual GLB roots
+  ---
+  duration_ms: 935.654228
+  type: 'test'
+  ...
+# Subtest: [partial] complete mode requires a complete build
+ok 2 - [partial] complete mode requires a complete build
+  ---
+  duration_ms: 573.709028
+  type: 'test'
+  ...
+# Subtest: [lod-root] every near asset has its named independent far root
+ok 3 - [lod-root] every near asset has its named independent far root
+  ---
+  duration_ms: 494.639694
+  type: 'test'
+  ...
+# Subtest: [lf-text] catalogue pins accept CRLF checkout text and reject changed text
+ok 4 - [lf-text] catalogue pins accept CRLF checkout text and reject changed text
+  ---
+  duration_ms: 640.867275
+  type: 'test'
+  ...
+# Subtest: [glb-pin] SHA-256 pins match the exported bytes
+ok 5 - [glb-pin] SHA-256 pins match the exported bytes
+  ---
+  duration_ms: 764.661274
+  type: 'test'
+  ...
+# Subtest: [nan] actual decoded positions contain finite values
+ok 6 - [nan] actual decoded positions contain finite values
+  ---
+  duration_ms: 659.796215
+  type: 'test'
+  ...
+# Subtest: [accessor] accessors stay inside their buffer views
+ok 7 - [accessor] accessors stay inside their buffer views
+  ---
+  duration_ms: 610.886322
+  type: 'test'
+  ...
+# Subtest: [index] triangle indices reference real vertices
+ok 8 - [index] triangle indices reference real vertices
+  ---
+  duration_ms: 505.858091
+  type: 'test'
+  ...
+# Subtest: [bounds] binary position bounds match the advertised metre envelopes
+ok 9 - [bounds] binary position bounds match the advertised metre envelopes
+  ---
+  duration_ms: 594.476902
+  type: 'test'
+  ...
+# Subtest: [root-origin] scene roots have an identity base-centre transform
+ok 10 - [root-origin] scene roots have an identity base-centre transform
+  ---
+  duration_ms: 548.944979
+  type: 'test'
+  ...
+# Subtest: [normal] exported normals remain unit length
+ok 11 - [normal] exported normals remain unit length
+  ---
+  duration_ms: 598.075021
+  type: 'test'
+  ...
+# Subtest: [uv-range] all UV coordinates stay inside the unit atlas
+ok 12 - [uv-range] all UV coordinates stay inside the unit atlas
+  ---
+  duration_ms: 722.332761
+  type: 'test'
+  ...
+# Subtest: [uv-gutter] triangle UVs stay inside padded cells
+ok 13 - [uv-gutter] triangle UVs stay inside padded cells
+  ---
+  duration_ms: 674.668473
+  type: 'test'
+  ...
+# Subtest: [uv-design] atlas cells select each catalogue design with the correct V orientation
+ok 14 - [uv-design] atlas cells select each catalogue design with the correct V orientation
+  ---
+  duration_ms: 491.128372
+  type: 'test'
+  ...
+# Subtest: [near-cap] near meshes obey actual per-type triangle caps
+ok 15 - [near-cap] near meshes obey actual per-type triangle caps
+  ---
+  duration_ms: 561.841066
+  type: 'test'
+  ...
+# Subtest: [lod-ratio] every far LOD draws no more than forty percent of near triangles
+ok 16 - [lod-ratio] every far LOD draws no more than forty percent of near triangles
+  ---
+  duration_ms: 692.109113
+  type: 'test'
+  ...
+# Subtest: [materials] only the shared dormant PBR materials occur in texture-free GLBs
+ok 17 - [materials] only the shared dormant PBR materials occur in texture-free GLBs
+  ---
+  duration_ms: 645.959225
+  type: 'test'
+  ...
+# Subtest: [alpha] cutout nets and palm cards use double-sided alpha masking
+ok 18 - [alpha] cutout nets and palm cards use double-sided alpha masking
+  ---
+  duration_ms: 403.909711
+  type: 'test'
+  ...
+# Subtest: [net-twelve] the near volleyball alpha net is exactly twelve triangles
+ok 19 - [net-twelve] the near volleyball alpha net is exactly twelve triangles
+  ---
+  duration_ms: 476.627236
+  type: 'test'
+  ...
+# Subtest: [pivots] spinning and flapping parts retain independent drawable pivots
+ok 20 - [pivots] spinning and flapping parts retain independent drawable pivots
+  ---
+  duration_ms: 407.524233
+  type: 'test'
+  ...
+# Subtest: [anchors] seat anchors contain a usable position, yaw and positive seat height
+ok 21 - [anchors] seat anchors contain a usable position, yaw and positive seat height
+  ---
+  duration_ms: 472.288205
+  type: 'test'
+  ...
+# Subtest: [light-anchor] the bollard lamp provides its light position and colour
+ok 22 - [light-anchor] the bollard lamp provides its light position and colour
+  ---
+  duration_ms: 496.698627
+  type: 'test'
+  ...
+# Subtest: [keep-out] court, kiosk and tower navigation polygons are nondegenerate
+ok 23 - [keep-out] court, kiosk and tower navigation polygons are nondegenerate
+  ---
+  duration_ms: 590.14804
+  type: 'test'
+  ...
+# Subtest: [png] all PBR maps decode as CRC-checked PNG rasters
+ok 24 - [png] all PBR maps decode as CRC-checked PNG rasters
+  ---
+  duration_ms: 1112.589022
+  type: 'test'
+  ...
+# Subtest: [texture-pin] PBR maps are individually SHA-256 pinned
+ok 25 - [texture-pin] PBR maps are individually SHA-256 pinned
+  ---
+  duration_ms: 536.033192
+  type: 'test'
+  ...
+# Subtest: [prints] the twelve towels use twelve distinct decoded print cells
+ok 26 - [prints] the twelve towels use twelve distinct decoded print cells
+  ---
+  duration_ms: 723.587374
+  type: 'test'
+  ...
+# Subtest: [signs] all ten Spanish signs retain their exact requested wording
+ok 27 - [signs] all ten Spanish signs retain their exact requested wording
+  ---
+  duration_ms: 637.020449
+  type: 'test'
+  ...
+# Subtest: [instances] repeated parts share actual glTF mesh resources
+ok 28 - [instances] repeated parts share actual glTF mesh resources
+  ---
+  duration_ms: 496.896566
+  type: 'test'
+  ...
+# Subtest: [roster] the independent required roster cannot shrink with the catalogue
+ok 29 - [roster] the independent required roster cannot shrink with the catalogue
+  ---
+  duration_ms: 508.314658
+  type: 'test'
+  ...
+# Subtest: [glb-budget] all generated model bytes count toward the three-megabyte limit
+ok 30 - [glb-budget] all generated model bytes count toward the three-megabyte limit
+  ---
+  duration_ms: 529.042053
+  type: 'test'
+  ...
+# Subtest: [texture-budget] all generated texture bytes count toward the six-megabyte limit
+ok 31 - [texture-budget] all generated texture bytes count toward the six-megabyte limit
+  ---
+  duration_ms: 520.932272
+  type: 'test'
+  ...
+# Subtest: [dormant] the runtime root manifest does not load this library
+ok 32 - [dormant] the runtime root manifest does not load this library
+  ---
+  duration_ms: 636.681414
+  type: 'test'
+  ...
+# Subtest: [hierarchy] every GLB node belongs to exactly one valid asset hierarchy
+ok 33 - [hierarchy] every GLB node belongs to exactly one valid asset hierarchy
+  ---
+  duration_ms: 571.326432
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19886.252654
+KILLED [complete]: remove a generated GLB
+KILLED [partial]: mark manifest as a partial preview
+KILLED [lod-root]: rename one actual far root
+KILLED [lf-text]: change a description without repinning after CRLF conversion
+KILLED [glb-pin]: replace a GLB hash with zeros
+KILLED [nan]: write a binary NaN position and repin the GLB
+KILLED [accessor]: expand a POSITION accessor count beyond its bytes
+KILLED [index]: write a triangle index equal to vertex count
+KILLED [bounds]: move a real vertex 100 metres while leaving plausible metadata
+KILLED [root-origin]: translate a scene root above the floor
+KILLED [normal]: zero one vertex normal
+KILLED [uv-range]: write a UV coordinate of 1.25
+KILLED [uv-gutter]: move a UV into a cell boundary gutter
+KILLED [uv-design]: vertically reverse every UV in one GLB
+KILLED [near-cap]: repeat near draw primitives 100 times and update declared counts
+KILLED [lod-ratio]: increase one far mesh beyond forty percent with truthful metadata
+KILLED [materials]: insert an embedded or external texture
+KILLED [alpha]: switch cutout material from MASK to BLEND
+KILLED [net-twelve]: remove one indexed net triangle and truthfully update its total
+KILLED [pivots]: rename a required physical pivot
+KILLED [anchors]: set a seat height to minus one in both catalogue and manifest
+KILLED [light-anchor]: remove the lamp light anchor from catalogue and manifest
+KILLED [keep-out]: collapse a keep-out polygon to one line in catalogue and manifest
+KILLED [png]: corrupt an albedo PNG chunk byte
+KILLED [texture-pin]: replace the normal-map hash with zeros
+KILLED [prints]: copy one towel print over another and repin the PNG
+KILLED [signs]: remove the ñ from Zona de baño metadata
+KILLED [instances]: clone every multiply referenced mesh into per-node copies
+KILLED [roster]: remove the conch design from the catalogue and repin its text
+KILLED [glb-budget]: add an unregistered three-megabyte GLB payload
+KILLED [texture-budget]: add an unregistered six-megabyte texture payload
+KILLED [dormant]: register the offline manifest in the game root manifest
+KILLED [hierarchy]: append an unreferenced orphan node
+MUTATION PASS: 33/33; every new test passed valid input and failed its selected corrupted input.
+
+
+Repository payload gate
+=======================
+ok   textures                                                14.8 / 24 MB
+ok   models                                                  27.7 / 32 MB
+ok   models/people                                            9.4 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       45.5 / 150 MB
+ok   estimated GPU texture memory                           316.0 / 800 MB
+largest files:
+  6.60 MB  assets/models/people/people.glb
+  2.28 MB  assets/textures/foliage_cards.png
+  2.13 MB  assets/models/furniture/furn_shop.glb
+  1.86 MB  dev/people-bodies-v2/before/torso-hands.png
+  1.82 MB  assets/models/people/people_lod.glb
+  1.74 MB  assets/textures/beach_props/albedo.png
+  1.59 MB  dev/people-bodies-v2/after/torso-hands.png
+  1.51 MB  dev/people-bodies-v2/before/head-neck.png
+PAYLOAD OK
+
+
+Fresh archive + CRLF validator
+==============================
+PASS beach props: 97 designs + 97 far LODs
+GLB 1,429,460 / 3,000,000 bytes; textures 2,473,749 / 6,000,000 bytes; 7 shared mesh resources
+  beach_props/beach_leisure.glb: 108 roots, 624,440 bytes
+  beach_props/beach_civic.glb: 60 roots, 589,088 bytes
+  beach_props/beach_shore.glb: 26 roots, 215,932 bytes
+
+
+Fresh archive + CRLF tests
+==========================
+TAP version 13
+# Subtest: [complete] all requested near and far assets exist as actual GLB roots
+ok 1 - [complete] all requested near and far assets exist as actual GLB roots
+  ---
+  duration_ms: 527.980835
+  type: 'test'
+  ...
+# Subtest: [partial] complete mode requires a complete build
+ok 2 - [partial] complete mode requires a complete build
+  ---
+  duration_ms: 484.528494
+  type: 'test'
+  ...
+# Subtest: [lod-root] every near asset has its named independent far root
+ok 3 - [lod-root] every near asset has its named independent far root
+  ---
+  duration_ms: 364.90167
+  type: 'test'
+  ...
+# Subtest: [lf-text] catalogue pins accept CRLF checkout text and reject changed text
+ok 4 - [lf-text] catalogue pins accept CRLF checkout text and reject changed text
+  ---
+  duration_ms: 332.48227
+  type: 'test'
+  ...
+# Subtest: [glb-pin] SHA-256 pins match the exported bytes
+ok 5 - [glb-pin] SHA-256 pins match the exported bytes
+  ---
+  duration_ms: 362.355402
+  type: 'test'
+  ...
+# Subtest: [nan] actual decoded positions contain finite values
+ok 6 - [nan] actual decoded positions contain finite values
+  ---
+  duration_ms: 368.763411
+  type: 'test'
+  ...
+# Subtest: [accessor] accessors stay inside their buffer views
+ok 7 - [accessor] accessors stay inside their buffer views
+  ---
+  duration_ms: 420.03227
+  type: 'test'
+  ...
+# Subtest: [index] triangle indices reference real vertices
+ok 8 - [index] triangle indices reference real vertices
+  ---
+  duration_ms: 416.917212
+  type: 'test'
+  ...
+# Subtest: [bounds] binary position bounds match the advertised metre envelopes
+ok 9 - [bounds] binary position bounds match the advertised metre envelopes
+  ---
+  duration_ms: 398.620212
+  type: 'test'
+  ...
+# Subtest: [root-origin] scene roots have an identity base-centre transform
+ok 10 - [root-origin] scene roots have an identity base-centre transform
+  ---
+  duration_ms: 454.252783
+  type: 'test'
+  ...
+# Subtest: [normal] exported normals remain unit length
+ok 11 - [normal] exported normals remain unit length
+  ---
+  duration_ms: 357.580612
+  type: 'test'
+  ...
+# Subtest: [uv-range] all UV coordinates stay inside the unit atlas
+ok 12 - [uv-range] all UV coordinates stay inside the unit atlas
+  ---
+  duration_ms: 454.497321
+  type: 'test'
+  ...
+# Subtest: [uv-gutter] triangle UVs stay inside padded cells
+ok 13 - [uv-gutter] triangle UVs stay inside padded cells
+  ---
+  duration_ms: 390.101656
+  type: 'test'
+  ...
+# Subtest: [uv-design] atlas cells select each catalogue design with the correct V orientation
+ok 14 - [uv-design] atlas cells select each catalogue design with the correct V orientation
+  ---
+  duration_ms: 360.732162
+  type: 'test'
+  ...
+# Subtest: [near-cap] near meshes obey actual per-type triangle caps
+ok 15 - [near-cap] near meshes obey actual per-type triangle caps
+  ---
+  duration_ms: 359.724286
+  type: 'test'
+  ...
+# Subtest: [lod-ratio] every far LOD draws no more than forty percent of near triangles
+ok 16 - [lod-ratio] every far LOD draws no more than forty percent of near triangles
+  ---
+  duration_ms: 346.888249
+  type: 'test'
+  ...
+# Subtest: [materials] only the shared dormant PBR materials occur in texture-free GLBs
+ok 17 - [materials] only the shared dormant PBR materials occur in texture-free GLBs
+  ---
+  duration_ms: 345.088592
+  type: 'test'
+  ...
+# Subtest: [alpha] cutout nets and palm cards use double-sided alpha masking
+ok 18 - [alpha] cutout nets and palm cards use double-sided alpha masking
+  ---
+  duration_ms: 358.634633
+  type: 'test'
+  ...
+# Subtest: [net-twelve] the near volleyball alpha net is exactly twelve triangles
+ok 19 - [net-twelve] the near volleyball alpha net is exactly twelve triangles
+  ---
+  duration_ms: 373.602752
+  type: 'test'
+  ...
+# Subtest: [pivots] spinning and flapping parts retain independent drawable pivots
+ok 20 - [pivots] spinning and flapping parts retain independent drawable pivots
+  ---
+  duration_ms: 389.792126
+  type: 'test'
+  ...
+# Subtest: [anchors] seat anchors contain a usable position, yaw and positive seat height
+ok 21 - [anchors] seat anchors contain a usable position, yaw and positive seat height
+  ---
+  duration_ms: 401.539412
+  type: 'test'
+  ...
+# Subtest: [light-anchor] the bollard lamp provides its light position and colour
+ok 22 - [light-anchor] the bollard lamp provides its light position and colour
+  ---
+  duration_ms: 395.390878
+  type: 'test'
+  ...
+# Subtest: [keep-out] court, kiosk and tower navigation polygons are nondegenerate
+ok 23 - [keep-out] court, kiosk and tower navigation polygons are nondegenerate
+  ---
+  duration_ms: 468.977486
+  type: 'test'
+  ...
+# Subtest: [png] all PBR maps decode as CRC-checked PNG rasters
+ok 24 - [png] all PBR maps decode as CRC-checked PNG rasters
+  ---
+  duration_ms: 769.735574
+  type: 'test'
+  ...
+# Subtest: [texture-pin] PBR maps are individually SHA-256 pinned
+ok 25 - [texture-pin] PBR maps are individually SHA-256 pinned
+  ---
+  duration_ms: 431.60884
+  type: 'test'
+  ...
+# Subtest: [prints] the twelve towels use twelve distinct decoded print cells
+ok 26 - [prints] the twelve towels use twelve distinct decoded print cells
+  ---
+  duration_ms: 420.565903
+  type: 'test'
+  ...
+# Subtest: [signs] all ten Spanish signs retain their exact requested wording
+ok 27 - [signs] all ten Spanish signs retain their exact requested wording
+  ---
+  duration_ms: 414.318882
+  type: 'test'
+  ...
+# Subtest: [instances] repeated parts share actual glTF mesh resources
+ok 28 - [instances] repeated parts share actual glTF mesh resources
+  ---
+  duration_ms: 494.872201
+  type: 'test'
+  ...
+# Subtest: [roster] the independent required roster cannot shrink with the catalogue
+ok 29 - [roster] the independent required roster cannot shrink with the catalogue
+  ---
+  duration_ms: 479.592125
+  type: 'test'
+  ...
+# Subtest: [glb-budget] all generated model bytes count toward the three-megabyte limit
+ok 30 - [glb-budget] all generated model bytes count toward the three-megabyte limit
+  ---
+  duration_ms: 545.591298
+  type: 'test'
+  ...
+# Subtest: [texture-budget] all generated texture bytes count toward the six-megabyte limit
+ok 31 - [texture-budget] all generated texture bytes count toward the six-megabyte limit
+  ---
+  duration_ms: 442.338145
+  type: 'test'
+  ...
+# Subtest: [dormant] the runtime root manifest does not load this library
+ok 32 - [dormant] the runtime root manifest does not load this library
+  ---
+  duration_ms: 418.204623
+  type: 'test'
+  ...
+# Subtest: [hierarchy] every GLB node belongs to exactly one valid asset hierarchy
+ok 33 - [hierarchy] every GLB node belongs to exactly one valid asset hierarchy
+  ---
+  duration_ms: 486.337941
+  type: 'test'
+  ...
+1..33
+# tests 33
+# suites 0
+# pass 33
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14062.360978
+
+
+Fresh archive payload
+=====================
+ok   textures                                                14.8 / 24 MB
+ok   models                                                  27.8 / 32 MB
+ok   models/people                                            9.4 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       45.6 / 150 MB
+ok   estimated GPU texture memory                           316.0 / 800 MB
+largest files:
+  6.60 MB  assets/models/people/people.glb
+  2.28 MB  assets/textures/foliage_cards.png
+  2.13 MB  assets/models/furniture/furn_shop.glb
+  1.86 MB  dev/people-bodies-v2/before/torso-hands.png
+  1.82 MB  assets/models/people/people_lod.glb
+  1.74 MB  assets/textures/beach_props/albedo.png
+  1.59 MB  dev/people-bodies-v2/after/torso-hands.png
+  1.51 MB  dev/people-bodies-v2/before/head-neck.png
+PAYLOAD OK
+
+
+Installer failure-path checks
+=============================
+PASS partial-copy: all original model, texture and manifest paths/bytes restored; no partial targets or backup debris
+PASS install-rename: all original model, texture and manifest paths/bytes restored; no partial targets or backup debris
+PASS partial custom output guard: assets/preview_models rejected before writes (Filtered preview requires --out outside the production assets tree)
+PASS full custom output guard: assets/preview_models rejected before writes (Custom --out aliases a production library destination)
+Manifest SHA-256 at safety check: 3f0857458d58e8467915044bef7389dd44a69b70242deafeaf6081731dd32c42
+BUILD SAFETY PASS: copy failure, rename failure, partial preview guard, custom output collision guard
+
+
+Final visual evidence and repository payload
+============================================
+PASS visual evidence: 97 items, 194 views, 9 contact sheets + catalogue; all image/source SHA-256 pins and image decodes match
+CONTACT SHEETS: 97 items / 9 pages; eye height 1.6m; figure height 1.8m
+CATALOGUE: 4096x5672, 3,271,253 bytes
+All final pages and the catalogue were visually inspected. All ten image files fully decode and match review-index.json.
+
+ok   textures                                                14.8 / 24 MB
+ok   models                                                  27.7 / 32 MB
+ok   models/people                                            9.4 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       45.5 / 150 MB
+ok   estimated GPU texture memory                           316.0 / 800 MB
+largest files:
+  6.60 MB  assets/models/people/people.glb
+  3.29 MB  dev/beach_props/contact-08.png
+  3.24 MB  dev/beach_props/contact-07.png
+  3.16 MB  dev/beach_props/contact-02.png
+  3.12 MB  dev/beach_props/catalogue.jpg
+  3.11 MB  dev/beach_props/contact-04.png
+  2.99 MB  dev/beach_props/contact-03.png
+  2.90 MB  dev/beach_props/contact-05.png
+PAYLOAD OK
+
+
+Final base ancestry check
+==========================
+$ git rev-parse origin/main
+237a7ddbbc4a04ebcbe6fbc6c1bd87ef7651cca2
+$ git merge-base --is-ancestor 38542092094aaf0101cc9920fd8628fcdaf0ac35 origin/main
+exit 0
+la-ladera tree SHA at requested base and current origin/main: 711e0b8800e8e7d2576516acf088c31aa062eab5 (identical)
