@@ -160,9 +160,9 @@ export class App {
     const c = this.canvas;
     c.addEventListener('pointermove', (e) => { const r = c.getBoundingClientRect(); this.pointer.x = e.clientX - r.left; this.pointer.y = e.clientY - r.top; this.pointer.in = true; this.pointer.moved = true; this.pointer.touch = e.pointerType === 'touch'; });
     c.addEventListener('pointerleave', () => { this.pointer.in = false; this.setHover(null); this.emit('tubehover', null); });
-    c.addEventListener('pointerdown', (e) => { this.pointer.down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+    c.addEventListener('pointerdown', (e) => { if (this.state.sim) return; this.pointer.down = { x: e.clientX, y: e.clientY, t: performance.now() }; });
     c.addEventListener('pointerup', (e) => {
-      const d = this.pointer.down; this.pointer.down = null; if (!d) return;
+      const d = this.pointer.down; this.pointer.down = null; if (!d || this.state.sim) return;
       if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 500) return;
       const r = c.getBoundingClientRect(); const id = this.pickStation(e.clientX - r.left, e.clientY - r.top, e.pointerType === 'touch' ? 3 : 1);
       if (id) this.selectStation(id, { fly: true });
@@ -250,7 +250,7 @@ export class App {
     let mod;
     try { mod = await import(new URL('js/sim/index.js', this.base).href); } catch (e) { this.emit('toast', 'The driving simulator is not available yet.'); return; }
     if (mod.simAvailable && !mod.simAvailable()) { this.emit('toast', 'The driving simulator is not available on this device.'); return; }
-    this.state.sim = true; this.paused = true; document.body.classList.add('sim-active'); this.emit('sim', true);
+    this.state.sim = true; this.paused = true; this.rig.controls.enabled = false; document.body.classList.add('sim-active'); this.emit('sim', true);
     const hud = document.getElementById('simHud'); hud.hidden = false;
     let exited = false;
     const onExit = () => { if (exited) return; exited = true; this.exitSim(); };
@@ -265,7 +265,7 @@ export class App {
     r.setRenderTarget(null); r.setScissorTest(false); r.clippingPlanes = []; r.localClippingEnabled = false; r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.autoClear = true;
     r.setClearColor(0x000000, 1);
     const hud = document.getElementById('simHud'); hud.replaceChildren(); hud.hidden = true;
-    document.body.classList.remove('sim-active'); this.state.sim = false; this.rig.keys.clear();
+    document.body.classList.remove('sim-active'); this.state.sim = false; this.rig.controls.enabled = true; this.rig.keys.clear();
     this.env.renderer.setViewport(0, 0, this.w, this.h);
     this.resize(); this.env.refresh(); this.last = performance.now(); this.paused = false; this.emit('sim', false);
   }
