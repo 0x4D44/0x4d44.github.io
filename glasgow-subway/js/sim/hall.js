@@ -112,3 +112,13 @@ export function frontFaceSigns(root, skip = null) {
   });
   return n;
 }
+
+/** Ceiling height (hall frame, rail head = 0) above hall-frame x: mirrors ceil_z() in tools/assets_station.py */
+export function ceilingAtHallX(info, x) {
+  const soffit = info.ceilingY, hw = info.hallHalfWidth || [8, 8], hl = hw[0], hr = hw[1];
+  if (info.coved) {
+    const ax = Math.abs(x); if (ax <= 1.6 || (info.type === 'split' && x > 0)) return soffit;
+    const HWs = x < 0 ? hl : hr, u = Math.min(1, (ax - 1.6) / Math.max(0.01, HWs - 1.6)); return 2.3 + (soffit - 2.3) * Math.sqrt(Math.max(0, 1 - u * u));
+  }
+  const cxx = (hr - hl) / 2, aa = (hl + hr) / 2; return 2.9 + (soffit - 2.9) * Math.sqrt(Math.max(0, 1 - ((x - cxx) / aa) ** 2));
+}
