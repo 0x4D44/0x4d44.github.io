@@ -98,6 +98,10 @@ catalogue and all required furniture families/shop types must be represented.
 The furniture gate uses the stricter decimal **10,000,000-byte** total and
 **8,000,000-byte** per-file limits.
 
+`tests/furniture-legs.test.mjs` holds the legs to the seat: in the library and the hero set, every leg of the chairs and tables it lists (`MODELLED`) must run at
+least 3 mm up into its seat or top and stay inside that slab's footprint, and in the stand-ins (`js/interiors/standins.js`) every chair, stool and table leg must
+reach its seat or top. A chair or table whose legs you rebuild belongs in that list.
+
 With headless Chrome installed (`CHROME_PATH` may point at its executable):
 
 ```sh
