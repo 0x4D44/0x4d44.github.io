@@ -58,8 +58,8 @@ export default {
       if (hb < h) h += (hb - h) * sm(2, 40, q.t);
     }
     // steep wooded knolls at each end of the viaduct, so the line runs into a hillside (tunnel portals) instead of ending in the open
-    if (dz < 46) {
-      const V = VIADUCT, wz = 1 - sm(20, 46, dz);
+    if (dz < 90) {
+      const V = VIADUCT, wz = 1 - sm(40, 90, dz);
       if (_deckY == null) _deckY = track.locate({ x: V.cx, y: undefined, z: V.z }).y + V.rise;
       const top = _deckY + 9;
       const w = Math.max(sm(0, 1, (V.vx0 + 6 - x) / 18) * sm(V.vx0 - 70, V.vx0 - 35, x), sm(0, 1, (x - (V.vx1 - 6)) / 18) * (1 - sm(V.vx1 + 14, V.vx1 + 40, x))) * wz;

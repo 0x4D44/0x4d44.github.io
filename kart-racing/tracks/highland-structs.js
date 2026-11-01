@@ -176,7 +176,10 @@ export function buildStructs(H) {
     const sm = new THREE.Mesh(own(sk.geometry()), own(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }))); group.add(sm);
     // parapet coping stones on the wall tops along the bridge
     const cop = [];
-    for (let t = -HL + 1; t <= HL - 1; t += 2.4) for (const sg of [-1, 1]) { const p = c0.pos, y = roadY(t) + 1.15; cop.push(sbox(2.2, 0.5, 0.95, mat(p.x + tx * t + rx * sg * (wallDist + 0.28), y, p.z + tz * t + rz * sg * (wallDist + 0.28), 1, 1, 1, 0, Math.atan2(tx, tz), 0), tint())); }
+    for (let t = -HL + 1; t <= HL - 1; t += 2.4) {
+      const q = track.sample(s0 + t), qx = q.pos.x, qy = q.pos.y, qz = q.pos.z, qtx = q.tangent.x, qtz = q.tangent.z, qrx = q.right.x, qrz = q.right.z;   // per-block frame: the road curves over the bridge
+      for (const sg of [-1, 1]) cop.push(sbox(2.2, 0.5, 0.95, mat(qx + qrx * sg * (wallDist + 0.28), qy + 1.15, qz + qrz * sg * (wallDist + 0.28), 1, 1, 1, 0, Math.atan2(qtx, qtz), 0), tint()));
+    }
     group.add(new THREE.Mesh(own(bake(cop)), stoneMat));
     H.bridge = { s: s0, bed, crown, x: cx, z: cz };
   }
