@@ -14,7 +14,9 @@ import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
-import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, HALL_FULL } from './hall.js';
+import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
+import { cutStairHoles } from './stairs.js';
+import { Rats } from './rats.js';
 import { peopleVariants } from './kit.js';
 
 export function simAvailable() {
@@ -88,6 +90,7 @@ class Sim {
       this.crowd = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 14 : 36, this.quality, this.peopleLod) : new Crowd(THREE, lowQ ? 28 : 110, null);
       this.saloon = ok ? new AnimCrowd(THREE, this.SU, this.peopleGltf, lowQ ? 6 : 18, this.quality, this.peopleLod) : null; this.saloonDone = false;
       this.scene.add(this.crowd.group); }
+    this.rats = new Rats(THREE); this.rats.onEvent = (kind, r) => this._ratEvent(kind, r);
     this.sigMesh = this._makeSignal(); this.scene.add(this.sigMesh.group);
     this.walker = new Walker();
     this.audio = new SimAudio();
@@ -412,6 +415,18 @@ class Sim {
     const svc = this.svc, st = svc.stop;
     return -(svc.train.s - this.trainLen / 2 - (svc.targetU - st.cabOff));
   }
+  /** train centre (station-local z) once it stands on its stop mark. The queue forms where the doors WILL be: `_trainCentreZl()` while the train is still
+   *  approaching is 200 m up the line, and people sent there just pile up against the end of the platform. */
+  _stopCentreZl() { return this.trainLen / 2 - this.svc.stop.cabOff; }
+  /** where passengers leave and enter the platform: the stair portals on the platform the train stands at (halls), else the ramp axis at the platform end */
+  _exitPoints(v) {
+    const inf = v.info, A = v.anchors || {}, pl = v.ownPlat, out = [];
+    if (inf.hall && A.portals && A.portals.length) {
+      const on = pl ? A.portals.filter((q) => q.x > pl.x0 - 0.8 && q.x < pl.x1 + 0.8) : [];
+      for (const q of (on.length ? on : A.portals)) out.push({ x: q.x, z: q.z });
+    }
+    return out.length ? out : [{ x: inf.rc, z: inf.zE - 0.5 }];
+  }
   _nearestDoorZ() {
     const wz = this.walker.z - (this.ctxKind === 'station' ? this._trainCentreZl() : 0);
     let best = this.doorZ[1], bd = 1e9;
@@ -474,7 +489,10 @@ class Sim {
   }
   _toPlatform() {
     const v = this.activeStation, inf = v.info, pt = this._lastPortal || (v.anchors.portals || [])[0] || { x: inf.xcP, z: 0 };
-    return this._teleport(() => { const w = this.walker; const px = (inf.xe + inf.xo) / 2; w.place(px, Math.max(-20, Math.min(20, pt.z - Math.sign(pt.z || 1) * 1.8)), 0); w.y = inf.PY; this.look.yaw = 0; this.look.pitch = 0; });
+    return this._teleport(() => {      // back on the platform the stairs came down to, a couple of metres from their foot, facing away from them
+      const w = this.walker, dir = Math.sign(pt.z || 1), px = pt.stair ? pt.x : (inf.xe + inf.xo) / 2, yaw = dir > 0 ? 0 : Math.PI;
+      w.place(px, Math.max(-20, Math.min(20, pt.z - dir * 1.8)), yaw); w.y = inf.PY; this.look.yaw = yaw; this.look.pitch = 0;
+    });
   }
 
   _boardTrain() {
@@ -575,7 +593,7 @@ class Sim {
     if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
     if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
     if (this.hallLoading.has(id)) return this.hallLoading.get(id);
-    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { fixHallSigns(tpl, this.hallIndex.stations[id]); frontFaceSigns(tpl, /^route_map_panel$/); } catch (e) { console.warn('[sim] hall sign fix', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); cutStairHoles(this.THREE, tpl, hi); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
@@ -616,7 +634,7 @@ class Sim {
     const edge = 1.0; const lo = Math.min(inf.xe, inf.xo), hi = Math.max(inf.xe, inf.xo);
     v.crowdRect.x0 = inf.S > 0 ? inf.xe + edge : inf.xo + 0.4; v.crowdRect.x1 = inf.S > 0 ? inf.xo - 0.4 : inf.xe - edge;
     v.crowdN = Math.round(n * (v.info.hall && this.looks ? lookHints(this.looks.get(v.station.id)).crowd : 1));
-    if (v.info.hall) { const pl = v.anchors.hallPlat.find((q) => q.x0 === Math.min(inf.xe, inf.xo) || Math.abs((inf.S > 0 ? q.x0 : q.x1) - inf.xe) < 0.05) || v.anchors.hallPlat[0]; v.crowdRect = { x0: pl.x0 + 0.6, x1: pl.x1 - 0.6, z0: -20, z1: 20 }; if (inf.S > 0) v.crowdRect.x0 = pl.x0 + 1.0; else v.crowdRect.x1 = pl.x1 - 1.0; }
+    if (v.info.hall) { const pl = v.anchors.hallPlat.find((q) => q.x0 === Math.min(inf.xe, inf.xo) || Math.abs((inf.S > 0 ? q.x0 : q.x1) - inf.xe) < 0.05) || v.anchors.hallPlat[0]; v.ownPlat = pl; v.crowdRect = { x0: pl.x0 + 0.6, x1: pl.x1 - 0.6, z0: -20, z1: 20 }; if (inf.S > 0) v.crowdRect.x0 = pl.x0 + 1.0; else v.crowdRect.x1 = pl.x1 - 1.0; }
     // kit pieces (benches etc.) are procedural; kit used for the signal head
   }
 
@@ -639,7 +657,7 @@ class Sim {
         const inf = cur.info; const g = cur.group;
         this.crowd.group.position.copy(g.position); this.crowd.group.rotation.copy(g.rotation);
         if (this.crowd.setWorld) this.crowd.setWorld(cur.zones, cur.obstacles.filter((o) => o.tall || Math.abs(o.y - cur.info.PY) < 1.2));
-        this.crowd.populate(cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY));
+        this.crowd.populate(cur.crowdN, cur.crowdRect, inf.PY, cur.obstacles.filter((o) => !o.tall && o.y === inf.PY).concat(cur.crowdAvoid || []));
       }
     }
   }
@@ -858,7 +876,12 @@ class Sim {
           else if (nearEdge) msg = `The ${nm} train is in: walk to a door`;
         } }
       if (inf.hall && !this.context) {
-        for (const pt of (v.anchors.portals || [])) if (Math.hypot(w.x - pt.x, w.z - pt.z) < 1.7 && w.y < inf.PY + 0.5) { this.context = { kind: 'portal', pt }; msg = '<kbd>E</kbd> Take the stairs up to the ticket hall'; break; }
+        for (const pt of (v.anchors.portals || [])) {
+          const st = pt.stair, near = Math.hypot(w.x - pt.x, w.z - pt.z) < 1.7 && w.y < inf.PY + 0.5;
+          const on = !!st && w.x > st.x0 - 0.05 && w.x < st.x1 + 0.05 && w.z > st.z0 - 0.05 && w.z < st.z1 + 0.05;     // on the flight (or its landing)
+          if (on && (w.z - st.exitZ) * st.dir >= 0 && w.y > st.yTop - 0.3 && !this.fadeLock) this._toAccess(pt);       // reached the top: through to the ticket hall
+          if (near || on) { this.context = { kind: 'portal', pt }; msg = on ? '<kbd>E</kbd> Go up to the ticket hall' : '<kbd>E</kbd> Take the stairs up to the ticket hall'; break; }
+        }
         const ad = v.anchors.accessDoor;
         if (!this.context && ad && w.y < inf.PY + 0.6 && Math.hypot(w.x - ad.x, w.z - ad.z) < 1.8 && w.z < inf.rampZ0 + 2.4) { this.context = { kind: 'platform' }; msg = '<kbd>E</kbd> Go back down to the platform'; }
       }
@@ -866,7 +889,7 @@ class Sim {
       if (!this.context && Math.hypot(w.x - a.x, w.z - a.z) < 2.2 && w.y > a.y - 0.6) { this.context = { kind: 'street' }; msg = '<kbd>E</kbd> Go outside to the street'; }
       if (!this.context) {
         // facts caption
-        for (const p of (v.anchors.panels || [])) if (Math.abs(w.z - p.z) < 3.2 && Math.abs(w.x - p.x) < 4 && w.y < inf.PY + 0.5) { msg = `<b>${p.title}</b> ${p.body.slice(0, 160)}`; break; }
+        for (const p of (v.anchors.panels || [])) if (Math.abs(w.z - p.z) < 3.2 && Math.abs(w.x - p.x) < 7 && w.y < inf.PY + 0.5) { msg = `<b>${p.title}</b> ${p.body.slice(0, 160)}`; break; }
         if (!msg) for (const p of (v.anchors.conPanels || [])) if (w.y > inf.Hc - 0.5 && Math.abs(w.z - (p.z + 4.8)) < 3.5 && w.x > inf.rc + 4) { msg = p.body.slice(0, 160); break; }
       }
       if (v.info.hall && v.anchors.hallPlat && v.anchors.hallPlat.length > 1 && !this.context && w.y < inf.PY + 0.5) msg = (msg ? msg + '  ' : '') + '<kbd>X</kbd> Cross to the other platform';
@@ -940,8 +963,8 @@ class Sim {
       }
     }
     // platform people queue at the doors while the train arrives, then board when the doors open
-    if (sh.state === 'arriving' && !sh.queued && this.activeStation && this.crowd.queue) {
-      sh.queued = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl(), slots = [];
+    if (sh.state === 'arriving' && !sh.queued && this.activeStation && this.crowdFor && this.crowd.queue) {   // (crowdFor: the platform is populated - a queue of nobody would still use up this train)
+      sh.queued = true; const v = this.activeStation, inf = v.info, zc = this._stopCentreZl(), slots = [];
       for (let i = 0; i < this.doorZ.length; i++) for (const o of [-0.55, 0.55]) slots.push({ x: inf.xe + inf.S * (0.75 + 0.1 * (i % 2)), z: zc + this.doorZ[i] + o, yaw: inf.S > 0 ? Math.PI / 2 : -Math.PI / 2 });
       this.crowd.queue(Math.min(8, Math.round(v.crowdN * 0.3)), slots);
     }
@@ -949,11 +972,18 @@ class Sim {
     // passenger streams during dwell
     if (sh.state === 'dwell' && svc.doorsOpen && !sh.streamed && this.activeStation) {
       sh.streamed = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl();
-      const door = this.doorZ.slice(); const ramp = { x: inf.rc, z: inf.zE - 0.5 };
+      const door = this.doorZ.slice(), exits = this._exitPoints(v);   // exits: the stairs (hall) / ramp - passengers walk to and from THEM, never through the end wall
       const nAl = Math.min(10, Math.round(svc.pax.onboard * 0.12)), nBo0 = Math.min(10, Math.round(v.crowdN * 0.35));
       const boarded = this.crowd.board ? this.crowd.board((q) => { let bi = 0, bd = 1e9; this.doorZ.forEach((dz, k) => { const d = Math.abs(zc + dz - q.z); if (d < bd) { bd = d; bi = k; } }); return { x: inf.xe + inf.S * 0.15, z: zc + this.doorZ[bi] }; }) : 0, nBo = Math.max(0, nBo0 - boarded);
-      for (let i = 0; i < nAl; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.xe + inf.S * 0.4, z: zc + dz }, { x: inf.rc, z: inf.zE - 0.5 }, 1, inf.PY, inf.PY, 0.4); }
-      for (let i = 0; i < nBo; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.rc, z: zc + dz + (Math.random() - 0.5) * 3 }, { x: inf.xe + inf.S * 0.3, z: zc + dz }, 1, inf.PY, inf.PY, 0.6); }
+      const nearest = (pts, z) => pts.reduce((b, q) => (Math.abs(q.z - z) < Math.abs(b.z - z) ? q : b), pts[0]);
+      for (let i = 0; i < nAl; i++) {   // step off the train one after another (a batch stacked on one spot would shove itself apart) and head for the nearest stairs
+        const from = { x: inf.xe + inf.S * 0.4, z: zc + door[i % door.length] };
+        this.crowd.stream(from, nearest(exits, from.z), 1, inf.PY, inf.PY, 0.3, i * 0.9 + Math.random() * 0.4);
+      }
+      for (let i = 0; i < nBo; i++) {   // come down the stairs spread over the dwell, and make for one of the two doors nearest the stairs they used
+        const ex = exits[i % exits.length], doors = door.slice().sort((a, b) => Math.abs(zc + a - ex.z) - Math.abs(zc + b - ex.z));
+        this.crowd.stream(ex, { x: inf.xe + inf.S * 0.3, z: zc + doors[i % 2] }, 1, inf.PY, inf.PY, 0.4, 0.5 + i * 0.8 + Math.random() * 0.4);
+      }
     }
     if (sh.state !== 'dwell') sh.streamed = false;
   }
@@ -1003,7 +1033,7 @@ class Sim {
         const lv = v.group.userData.psdLeaves;
         if (lv && lv.length) { const open = svc.phase === 'station' && svc.idx === v.stopIdx && (svc.doors.L > 0.04 || svc.doors.R > 0.04); for (const m of lv) m.visible = !open; }
       }
-      this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position);
+      this.crowd.update(dt, this.time, (x, z, y) => y, this.camera.position); this._updateRats(this.paused || this._modalOpen ? 0 : dt);
       if (this.saloon) { const sv = this.mode === 'ride' || this.mode === 'explore'; this.saloon.setEnabled(sv); if (sv) { if (!this.saloonDone) this._populateSaloon(); this.saloon.update(dt, this.time, null, this.camera.position); } }
       this._signal(svc);
       this.tms.update(dt, svc.info(), this.mode);
@@ -1041,6 +1071,21 @@ class Sim {
     let late = null;
     if (this.mode === 'drive' && svc.schedule) { const sched = svc.schedule.arr[svc.idx] + svc.lap * svc.schedule.period + (svc.t0 || 0); late = svc.phase === 'station' ? (svc.stopStatus && svc.stopStatus.late) : Math.max(svc.t - sched, -999); if (late != null && svc.phase !== 'station' && late < 0) late = null; }
     this.hud.update(info, { title, distText, sub, late });
+  }
+
+  /** explore only: the occasional rat on the track bed of the station you are standing in (see rats.js) */
+  _updateRats(dt) {
+    const R = this.rats; if (!R) return;
+    const v = this.activeStation, on = this.mode === 'explore' && this.ctxKind === 'station' && v && v.info && v.info.hall;
+    if (!on) { if (R.view) R.detach(); return; }
+    R.attach(v);
+    const sh = this.shuttle, bg = this.bg, w = this.walker;
+    R.update(dt, { walker: { x: w.x, z: w.z, y: w.y }, own: { state: sh.state, timer: sh.timer }, other: bg && bg.mode === 'shuttle' && bg.sh ? { state: bg.sh.state, timer: bg.sh.timer } : null });
+  }
+  _ratEvent(kind, r) {
+    if (kind !== 'bolt' || !this.audio || !this.audio.squeak) return;
+    const w = this.walker, d = Math.hypot(w.x - r.x, w.z - r.z);
+    if (d < 16) this.audio.squeak(Math.min(1, 3 / Math.max(d, 1.5)));
   }
 
   _lightPool() {
@@ -1189,7 +1234,7 @@ class Sim {
       teleportWalker: (x, z) => this.walker.place(x, z), walker: () => this.walker, station: () => this.activeStation,
       shuttle: () => this.shuttle, openMenu: () => this.openMenu('menu'), errors: () => this.errors,
       stationView: async (i) => this._prepare(i),
-      peopleAudit: () => this._peopleAudit(),
+      peopleAudit: () => this._peopleAudit(), rats: () => this.rats,
       peopleBind: () => { const c = this.crowd, T = this.THREE; if (!c.chars) return null; let miss = 0, tracks = 0, lodMiss = 0; const bad = new Set();
         for (const lod of [false, true]) for (const ch of c.chars) { if (lod && !ch.lodNode) continue; const o = c._clone(ch, lod); const seen = new Set();
           for (const cat of Object.keys(ch.pools)) for (const clip of ch.pools[cat]) for (const k of clip.tracks) { const nm = k.name.replace(/\.(quaternion|position|scale)$/, ''); const key = nm; if (seen.has(key)) continue; seen.add(key); tracks++; if (!T.PropertyBinding.findNode(o, nm)) { lod ? lodMiss++ : miss++; bad.add(ch.id + ':' + nm); } } }
@@ -1221,7 +1266,7 @@ class Sim {
     removeEventListener('keydown', this._kd, true); removeEventListener('keyup', this._ku, true); removeEventListener('resize', this._onResize); removeEventListener('blur', this._blur);
     const c = this.canvas; c.removeEventListener('pointerdown', this._pd); c.removeEventListener('pointermove', this._pm); c.removeEventListener('pointerup', this._pu); c.removeEventListener('pointercancel', this._pu); document.removeEventListener('pointerlockchange', this._plc); document.removeEventListener('pointerlockerror', this._ple); this._releaseLock(); if (this._hintEl) this._hintEl.remove();
     try { if (document.pointerLockElement === c) document.exitPointerLock(); } catch (e) {}
-    this.audio.dispose(); this.hud.dispose();
+    this.audio.dispose(); this.hud.dispose(); if (this.rats) this.rats.dispose();
     for (const v of this.stationViews.values()) v.dispose();
     // geometries AND materials/textures (GLB maps, canvas textures) - otherwise every start/dispose cycle leaks ~27 GPU textures
     const texKeys = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap', 'alphaMap', 'bumpMap', 'lightMap'];

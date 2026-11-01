@@ -72,6 +72,17 @@ export class SimAudio {
       o.connect(g); g.connect(this.master); o.start(t + i * 0.22); o.stop(t + i * 0.22 + 0.25);
     });
   }
+  /** a rat's squeak: two quick, high chirps (vol 0..1, by distance) */
+  squeak(vol = 0.5) {
+    if (this.hidden) { this.blocked++; return; }
+    if (!this.started || !this.ctx || !this.master) return; const c = this.ctx, t = c.currentTime;
+    for (let i = 0; i < 2; i++) {
+      const o = c.createOscillator(), g = c.createGain(), f = 3300 + Math.random() * 900, t0 = t + i * 0.11;
+      o.type = 'sine'; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(f * 1.35, t0 + 0.05); o.frequency.exponentialRampToValueAtTime(f * 0.8, t0 + 0.09);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.05 * Math.max(0.1, Math.min(1, vol)), t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.09);
+      o.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + 0.1);
+    }
+  }
   speak(text) {
     if (this.hidden) { this.blocked++; return; }
     if (this.muted || !this.speechOn || !this.started) return;

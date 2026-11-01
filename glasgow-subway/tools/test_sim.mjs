@@ -242,22 +242,78 @@ try {
   ok('explore start: no one spawns within 2.5 m or in the near view cone of the walker', cl0.n > 5 && cl0.d >= 2.4 && cl0.front >= 3.4, JSON.stringify(cl0));
   p = await open(browser, 'mode=explore&station=buchanan-street');
   const portals = await ev(p, async () => {
-    const s = __sim, out = [];
+    const s = __sim, out = [], stairs = [];
     for (const line of ['outer', 'inner']) {
       await s.go({ mode: 'explore', station: 'buchanan-street', line });
       for (let i = 0; i < 15; i++) {
         const v = await s.stationView(i), inf = v.info, w = s.walker();
         if (!inf.hall) { out.push(v.station.name + ': no hall'); continue; }
         if (!v.anchors.portals.length) out.push(v.station.name + ': no portal');
-        for (const pt of v.anchors.portals) { w.setWorld(v.zones, v.obstacles); w.place(pt.x, pt.z, 0); if (w.heightAt(pt.x, pt.z, inf.PY) == null) out.push(v.station.name + ' portal off platform ' + pt.x.toFixed(1) + ',' + pt.z); }
+        for (const pt of v.anchors.portals) {
+          w.setWorld(v.zones, v.obstacles); w.place(pt.x, pt.z, 0); if (w.heightAt(pt.x, pt.z, inf.PY) == null) out.push(v.station.name + ' portal off platform ' + pt.x.toFixed(1) + ',' + pt.z);
+          // the way out is a real flight of steps: it must exist, rise through the ceiling, and be climbable with W held (pure walker maths, no teleport)
+          const sg = pt.stair, tag = `${v.station.name}/${line}@${pt.z > 0 ? '+' : '-'}z`;
+          if (!sg) { stairs.push(tag + ': no stairs'); continue; }
+          if (sg.yTop - inf.PY < 2.8 || sg.yTop - inf.PY > 4.2) stairs.push(tag + ': odd rise ' + (sg.yTop - inf.PY).toFixed(2));
+          w.setWorld(v.zones, v.obstacles); w.place(pt.x, pt.z - sg.dir * 3, sg.dir > 0 ? Math.PI : 0); let maxY = 0, off = 0;
+          for (let k = 0; k < 420; k++) { w.update(0.033, 1, 0); maxY = Math.max(maxY, w.y); if (w.y > inf.PY + 0.4 && (w.x < sg.x0 - 0.02 || w.x > sg.x1 + 0.02)) off++; }
+          if (maxY < sg.yTop - 0.2) stairs.push(tag + ': cannot climb (max y ' + maxY.toFixed(2) + ' of ' + sg.yTop.toFixed(2) + ')');
+          if (off) stairs.push(tag + ': left the flight sideways');
+          w.place(pt.x, pt.z - sg.dir * 3, sg.dir > 0 ? Math.PI : 0); for (let k = 0; k < 30; k++) w.update(0.033, -1, 0);   // backing off the foot must keep you on the platform
+          if (Math.abs(w.y - inf.PY) > 0.02) stairs.push(tag + ': not back on the platform floor after reversing');
+        }
         if (Math.abs(Math.abs(inf.xe) - 1.25) > 0.2) out.push(v.station.name + ' edge gap ' + inf.xe);
       }
     }
-    return out;
+    return { out, stairs };
   });
-  ok('every hall: platform edge matches the train and exit portals are walkable (both circles)', portals.length === 0, portals.slice(0, 4).join(' | '));
+  ok('every hall: platform edge matches the train and exit portals are walkable (both circles)', portals.out.length === 0, portals.out.slice(0, 4).join(' | '));
+  ok('every hall, both circles: each way out is a real staircase, climbable with W held, rising through the vault', portals.stairs.length === 0, portals.stairs.slice(0, 4).join(' | '));
   const pa = await ev(p, async () => { const bad = []; for (const id of ['govan', 'buchanan-street', 'cessnock', 'kelvinhall', 'st-enoch', 'hillhead']) { await __sim.go({ mode: 'explore', station: id, line: 'outer' }); __sim.render(); __sim.render(); const cl = __sim.crowdClearance(); if (cl.n > 3 && (cl.d < 2.4 || cl.front < 3)) bad.push(id + ': spawned ' + cl.d.toFixed(2) + ' m from the walker (front ' + cl.front.toFixed(1) + ')'); __sim.ff(8, 0.1); __sim.render(); __sim.render(); const a = __sim.peopleAudit(); if (a.platform < 3 || a.bad.length) bad.push(id + ':' + a.platform + ':' + a.bad.slice(0, 2).join(';')); } return bad; });
   ok('platform crowds (6 halls): nobody spawns within 2.4 m / the near view cone of the walker; soles on the platform, nobody inside furniture or each other', pa.length === 0, pa.join(' | '));
+  await p.close();
+  // ---------------------------------------------------------------- the stairs for real: climb with W through the full sim, reach the ticket hall, come back down
+  p = await open(browser, 'mode=explore&station=shields-road&line=outer');
+  const climb = await ev(p, async () => {
+    const s = __sim.sim, v = s.activeStation, pt = v.anchors.portals[0], w = s.walker, dir = pt.stair.dir, out = { ctxFoot: null };
+    w.place(pt.x, pt.z - dir * 1.0, dir > 0 ? Math.PI : 0); s.look.yaw = w.yaw; s.tick(0.033); s.sync(0.033); out.ctxFoot = s.context && s.context.kind;
+    w.place(pt.x, pt.z - dir * 4, dir > 0 ? Math.PI : 0); s.look.yaw = w.yaw; s.keys.add('w'); let maxY = 0, n = 0;
+    while (n++ < 1500 && !s.fadeLock) { s.tick(0.033); s.sync(0.033); maxY = Math.max(maxY, w.y); }
+    s.keys.delete('w'); out.maxY = maxY; out.top = pt.stair.yTop; out.fade = s.fadeLock; out.t = n * 0.033; return out;
+  });
+  ok('walking up the stairs reaches the top and hands over to the ticket hall (and a flight is offered 1 m before its foot)', climb.fade && climb.maxY > climb.top - 0.3 && climb.ctxFoot === 'portal', JSON.stringify(climb));
+  await p.waitForTimeout(1200);
+  const down = await ev(p, async () => { const s = __sim.sim; for (let i = 0; i < 10; i++) { s.tick(0.033); s.sync(0.033); } const a = { x: s.walker.x, y: s.walker.y }; await __sim.platform(); await new Promise((r) => setTimeout(r, 900)); for (let i = 0; i < 10; i++) { s.tick(0.033); s.sync(0.033); } const w = s.walker, pt = s.activeStation.anchors.portals[0]; return { access: a, x: w.x, z: w.z, y: w.y, pt: [pt.x, pt.z], PY: s.activeStation.info.PY }; });
+  ok('coming back down from the ticket hall lands on the platform beside the foot of the stairs, facing away', Math.abs(down.y - down.PY) < 0.02 && Math.abs(down.x - down.pt[0]) < 0.3 && Math.abs(down.z - down.pt[1]) < 3, JSON.stringify(down));
+  await ev(p, () => { const s = __sim.sim, pt = s.activeStation.anchors.portals[0], yaw = pt.stair.dir > 0 ? Math.PI : 0; s.walker.place(pt.x, pt.z - pt.stair.dir * 3.2, yaw); s.look.yaw = yaw; s.look.pitch = 0.12; s.tick(0.033); s.sync(0.033); });
+  await shot(p, '24_stairs_platform');
+  await p.close();
+  // ---------------------------------------------------------------- rats on the track bed
+  p = await open(browser, 'mode=explore&station=shields-road&line=outer');
+  const rat = await ev(p, async () => {
+    const s = __sim.sim, R = __sim.rats(); const out = {};
+    let n = 0; while (s.shuttle.state !== 'wait' && n++ < 8000) { s.tick(0.1); s.sync(0.05); }
+    { const inf = s.activeStation.info; s.walker.place((inf.xe + inf.xo) / 2, -12, 0); s.tick(0.05); s.sync(0.05); }   // mid-platform, far from the +z tunnel the test rats come out of
+    const quiet = () => { s.shuttle.state = 'wait'; s.shuttle.timer = 400; if (s.bg && s.bg.sh) { s.bg.sh.state = 'wait'; s.bg.sh.timer = 400; s.bg.mode = 'shuttle'; } };
+    quiet(); R.clear(); R.gap = 1e9; const r = R.spawn(0, 1); const seen = new Set(); let bad = 0, t = 0;
+    while (R.rats.includes(r) && t < 120) { quiet(); s.tick(0.05); s.sync(0.05); t += 0.05; seen.add(r.state); if (![r.x, r.z, r.yaw, r.speed].every(isFinite) || Math.abs(r.x) > 6 || Math.abs(r.z) > 34) bad++; }
+    out.life = { seen: [...seen], gone: !R.rats.includes(r), t: +t.toFixed(1), bad };
+    // the scheduler lets a visit happen now and then while the tracks are quiet (and never twice at once beyond a pair)
+    R.clear(); R.gap = 5; const v0 = R.stats.spawned; let maxLive = 0; for (let i = 0; i < 4000; i++) { quiet(); s.tick(0.1); s.sync(0.1); maxLive = Math.max(maxLive, R.rats.length); }
+    out.visits = R.stats.spawned - v0; out.maxLive = maxLive;
+    // never one on a track while that track's train is in: run the real shuttle cycle for a few minutes and watch
+    R.clear(); R.gap = 3; s.shuttle.state = 'wait'; s.shuttle.timer = 30; let viol = 0, trains = 0, lastSt = '', worst = '';
+    for (let i = 0; i < 6000; i++) { s.tick(0.1); s.sync(0.1); const st = s.shuttle.state; if (st !== lastSt) { if (st === 'arriving') trains++; lastSt = st; }
+      if (st === 'dwell' || st === 'leaving') for (const q of R.rats) if (q.track === 0) { viol++; worst = st + ' z=' + q.z.toFixed(1); }
+      if (st === 'arriving' && s.svc.distToStop < 60) for (const q of R.rats) if (q.track === 0) { viol++; worst = 'arriving ' + s.svc.distToStop.toFixed(0) + ' m out, z=' + q.z.toFixed(1); }
+      const bst = s.bg && s.bg.mode === 'shuttle' && s.bg.sh ? s.bg.sh.state : null;      // the other circle's train, on the other track
+      if (bst === 'dwell' || bst === 'leaving' || (bst === 'arriving' && s.bg.svc.distToStop < 60)) for (const q of R.rats) if (q.track === 1) { viol++; worst = 'other track, ' + bst + ' z=' + q.z.toFixed(1); } }
+    out.viol = viol; out.trains = trains; out.worst = worst;
+    return out;
+  });
+  ok('a rat runs out of a tunnel, sniffs about, bolts back into the tunnel and is gone (no NaN, stays in the pit)', rat.life.gone && rat.life.seen.includes('sniff') && rat.life.seen.includes('bolt') && rat.life.bad === 0, JSON.stringify(rat.life));
+  ok('rats visit now and then while the tracks are quiet (>=3 visits in 400 s, at most 3 out at once)', rat.visits >= 3 && rat.maxLive <= 3, `visits=${rat.visits} maxLive=${rat.maxLive}`);
+  ok('no rat is ever on a track while its train is in the station or within 60 m of it', rat.viol === 0 && rat.trains >= 2, `viol=${rat.viol} trains=${rat.trains} ${rat.worst}`);
   await p.close();
   // ---------------------------------------------------------------- swept volume: the train must never touch a solid station mesh
   p = await open(browser, 'mode=drive&station=buchanan-street');

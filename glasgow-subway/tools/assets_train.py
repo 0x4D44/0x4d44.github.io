@@ -180,12 +180,18 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
         build_bay(sal, P, a, bb, CFG, end_a=(bi > 0), end_b=(not wc and bi < len(bays) - 1))
         if bb - a > 0.6: benches.append((yc + s * a, yc + s * bb))
         if wc:
+            # Two folded tip-up seats per side in the free wall strip between the cab partition (inner face CAB_Y - 0.025) and the first door's edge
+            # (a - 0.05).  The strip is only ~0.83 m: the old layout (0.40 m frames at b - 0.3 / b - 0.75, b = CAB_Y - 0.2) put the second seat and the
+            # blue priority sign ~0.28 m INSIDE the doorway, so they showed through the open door.  Pack them flush against the partition instead.
+            sw_f, sw_p, gap = 0.36, 0.324, 0.03                 # frame / moquette panel widths along the car, gap between the two seats
+            hi = CAB_Y - 0.03
+            assert hi - 2 * sw_f - gap > a - 0.05, 'cab-end tip-up seats would overlap the doorway'
             for sg in (-1, 1):
                 for k in (0, 1):
-                    yy = b - 0.3 - k * 0.45
-                    sal.box(P(sg * (RI - 0.06), yy, FLOOR + 0.75), (0.05, 0.4, 0.40), 'plastic_dark')
-                    sal.box(P(sg * (RI - 0.09), yy, FLOOR + 0.75), (0.03, 0.36, 0.36), 'seat_moquette')
-            sal.box(P(RI - 0.04, b - 0.7, 1.55), (0.02, 0.3, 0.3), 'sign_blue')
+                    yy = hi - sw_f / 2 - k * (sw_f + gap)
+                    sal.box(P(sg * (RI - 0.06), yy, FLOOR + 0.75), (0.05, sw_f, 0.40), 'plastic_dark')
+                    sal.box(P(sg * (RI - 0.09), yy, FLOOR + 0.75), (0.03, sw_p, 0.36), 'seat_moquette')
+            sal.box(P(RI - 0.04, hi - sw_f / 2 - (sw_f + gap), 1.55), (0.02, 0.27, 0.3), 'sign_blue')
     # ---- orange poles at x=+-0.58, curved tops to the overhead rails at x=+-0.45
     pole_ys = []
     for d in DOORS:
@@ -443,9 +449,12 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
     cab.cyl(P(br, Y(0.60), DZ + 0.03), 0.055, 0.06, 'steel_dark', seg=14)                          # brake handle
     cab.cyl(P(br, Y(0.60), DZ + 0.10), 0.013, 0.12, 'steel_bright', seg=8)
     cab.box(P(br, Y(0.60), DZ + 0.17), (0.10, 0.03, 0.03), 'button_red')
+    # The button row and the emergency mushroom sit on the driver's RIGHT.  The rear cab is the front cab mirrored in x (x -> s*x): built as
+    # `DX + dxx + 0.35` / `0.72` the rear row landed at x = 0.97..1.24 - the red button poking through the +x body skin and the amber one floating
+    # 0.1 m outside the train beside the nose (two tiny red/yellow "lights" hovering next to the driver's cab).
     for dxx, mm in ((0.20, 'button_green'), (0.29, 'button_green'), (0.38, 'button_red'), (0.47, 'button_amber')):
-        cab.cyl(P(DX + dxx + 0.35, Y(0.56), DZ - 0.03), 0.022, 0.02, mm, seg=12)
-    cab.cyl(P(0.72, Y(0.56), DZ - 0.02), 0.035, 0.05, 'button_red', seg=14)
+        cab.cyl(P(s * (-0.42 + dxx + 0.35), Y(0.56), DZ - 0.03), 0.022, 0.02, mm, seg=12)
+    cab.cyl(P(0.72 * s, Y(0.56), DZ - 0.02), 0.035, 0.05, 'button_red', seg=14)
     cab.box(P(0, Y(1.2), 2.12), (0.0001, 0.0001, 0.0001), 'plastic_black') if False else None
     # driver's seat: cushion centre t=0.98, back t=1.18 (eyes ~1.0 m behind the glass)
     cab.cyl(P(DX, Y(0.98), FLOOR + 0.2), 0.05, 0.3, 'steel_dark', seg=8)
