@@ -54,8 +54,9 @@
  "minStandingNote": "an adult of 1.75 m can only stand where headroomVsX >= 1.80 i.e. |x| <= 0.35; head-bump zone otherwise",
  "gangway": {
   "width": 1.3,
-  "archApexY": 2.1,
-  "halfWidth": 0.65
+  "archApexY": 2.522,
+  "halfWidth": 0.65,
+  "fullHeight": true
  },
  "cab": {
   "eyeFront": [

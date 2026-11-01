@@ -19,7 +19,7 @@ button{cursor:pointer}
 .lab.xing{font-size:11px;color:#bfeaff;text-shadow:0 1px 4px #000;letter-spacing:.08em;text-transform:uppercase}
 body.sim-active #topbar,body.sim-active .dock,body.sim-active #sheet,body.sim-active #xraybar,body.sim-active #minimap,body.sim-active #labels,body.sim-active #drawer,body.sim-active #gauge,body.sim-active #caption,body.sim-active #tip{display:none!important}
 #simHud{position:fixed;inset:0;z-index:50;pointer-events:none}
-#simHud>*{pointer-events:auto}
+#simHud>*{pointer-events:none}   /* the HUD layer must not swallow mouse events: the sim canvas below needs them for mouse look (children opt back in) */
 
 /* top bar - first content starts right of the almanac pill (x>=116) */
 #topbar{position:fixed;top:0;left:0;right:0;height:48px;display:flex;align-items:center;gap:12px;padding:0 10px 0 120px;z-index:10;background:linear-gradient(180deg,rgba(14,15,18,.85),rgba(14,15,18,0));pointer-events:none}
