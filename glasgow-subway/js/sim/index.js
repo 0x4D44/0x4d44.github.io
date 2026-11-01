@@ -74,7 +74,8 @@ class Sim {
     try { r.setPixelRatio(this.quality === 'low' ? Math.min(devicePixelRatio || 1, 1) : Math.min(devicePixelRatio || 1, 2)); } catch (e) {}
     this.tunnel = new TunnelView(THREE, tunTpl, this.scene, { quality: this.quality });
     try { frontFaceSigns(trainTpl.scene, /^route_map_panel$/); } catch (e) {}   // exterior roundels: never mirrored from behind
-    this.trainView = new TrainView(THREE, trainTpl.scene, {});
+    this.trainTpl = trainTpl; this.views = {};
+    this.trainView = new TrainView(THREE, trainTpl.scene, {}); this.views[this.line] = this.trainView;
     this.scene.add(this.trainView.root);
     this.trainView.computeHeadroom(PY); if (this.walkable) this.trainView.setWalkable(this.walkable);
     this.trainLen = this.trainView.length; this.stock.lengthM = this.trainLen; this.doorZ = this.trainView.doorZ.length ? this.trainView.doorZ : [-8.15, -3.65, 3.65, 8.15];
@@ -183,8 +184,8 @@ class Sim {
   }
 
   // ------------------------------------------------------------------ line / service setup
-  setupLine(line, startIdx = 0) {
-    this.line = line; if (this.trainView) this.trainView.setDest(line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
+  /** per-line record: track, timetable, its train view, its service, hall layouts and (explore) shuttle state. Both circles always exist. */
+  _rec(line) {
     let rec = this.tracks[line];
     if (!rec) {
       const maxPlat = Math.max(...this.stations.map((s) => (s.platform && s.platform.lengthM) || 45), 45);
@@ -192,9 +193,20 @@ class Sim {
       const rt = baselineRunTimes(track, this.stock, this.stations);
       const dw = track.stops.map((s) => s.dwellS);
       const schedule = buildSchedule(rt, dw, 1.06, 0);
-      rec = this.tracks[line] = { track, schedule, runTimes: rt };
+      rec = this.tracks[line] = { line, track, schedule, runTimes: rt, svc: null, view: null, layouts: null, dock: null, mode: 'free', sh: { state: 'none', timer: 0, t: 0 } };
     }
-    this.track = rec.track; this.schedule = rec.schedule;
+    return rec;
+  }
+  /** each circle has its own train model (the cab TMS texture is shared; only the player's train shows its cab) */
+  _viewFor(line) {
+    if (this.views[line]) return this.views[line];
+    const tv = new TrainView(this.THREE, this.trainTpl.scene, {});
+    tv.computeHeadroom(PY); if (this.walkable) tv.setWalkable(this.walkable);
+    tv.setDest(line === 'outer' ? 'OUTER CIRCLE' : 'INNER CIRCLE');
+    this.tms.attach(tv); tv.buildCab(this.tms.tex, this.tms.tex2);
+    this.scene.add(tv.root); this.views[line] = tv; return tv;
+  }
+  _applyTrack() {
     // clear station views (side depends on line)
     for (const v of this.stationViews.values()) { this.scene.remove(v.group); v.dispose(); }
     this.stationViews.clear();
@@ -205,21 +217,101 @@ class Sim {
       return [wrapL(st.sc - half, this.track.length), wrapL(st.sc - half, this.track.length) + 2 * half];
     });
     this.tunnel.setSkips(spans); this.tunnel.track = null;
-    this.svc = this._newService(startIdx);
+  }
+  setupLine(line, startIdx = 0) {
+    this.line = line;
+    const rec = this._rec(line);
+    this.track = rec.track; this.schedule = rec.schedule;
+    this.trainView = this._viewFor(line); rec.view = this.trainView;
+    this._applyTrack();
+    this.svc = this._newService(startIdx); rec.svc = this.svc; rec.mode = 'player';
+    // the other circle runs too
+    const other = line === 'outer' ? 'inner' : 'outer', brec = this._rec(other);
+    this.bg = brec; brec.view = this._viewFor(other); brec.view.root.visible = false; brec.dock = null;
+    this._bgReset(this.mode === 'explore' ? 'explore' : 'free');
   }
 
-  _newService(idx, opts = {}) {
+  /** a Service for any line record (hall layouts decide which side the doors open) */
+  _newServiceFor(rec, idx, opts = {}) {
     const diff = this.sel.diff || this.diffId;
     const svc = new Service({
-      track: this.track, stock: this.stock, stations: this.stations, difficulty: diff, startIdx: idx, lineKey: this.line,
-      platformLen: 45, schedule: this.schedule, ato: !!opts.ato, autoDoors: !!opts.autoDoors, seed: 7 + idx,
+      track: rec.track, stock: this.stock, stations: this.stations, difficulty: diff, startIdx: idx, lineKey: rec.line,
+      platformLen: 45, schedule: rec.schedule, ato: !!opts.ato, autoDoors: !!opts.autoDoors, seed: 7 + idx + (rec.line === 'inner' ? 100 : 0),
     });
-    svc.t0 = svc.t - this.schedule.arr[idx];
+    svc.t0 = svc.t - rec.schedule.arr[idx];
     // hall layouts: choose hall orientation per stop so the platform side matches the data, then let that side drive the door rules
-    this.layouts = this.track.stops.map((st, i) => { const info = this.hallIndex && this.hallIndex.stations[st.station]; return info ? layoutFor(info, this.line, svc.sideOf[i]) : null; });
-    this.layouts.forEach((l, i) => { if (l) svc.sideOf[i] = l.S; });
+    rec.layouts = rec.track.stops.map((st, i) => { const info = this.hallIndex && this.hallIndex.stations[st.station]; return info ? layoutFor(info, rec.line, svc.sideOf[i]) : null; });
+    rec.layouts.forEach((l, i) => { if (l) svc.sideOf[i] = l.S; });
+    return svc;
+  }
+  _newService(idx, opts = {}) {
+    const rec = this._rec(this.line), svc = this._newServiceFor(rec, idx, opts);
+    this.layouts = rec.layouts; rec.svc = svc;
     svc.on((t, d) => this._onSvc(t, d));
     return svc;
+  }
+
+  // ------------------------------------------------------------------ the other circle
+  /** (re)start the other circle's train. explore: it comes and goes on its own headway; otherwise it free-runs its timetable (both trains standing in this station at the start) */
+  _bgReset(mode) {
+    const rec = this.bg; if (!rec || !this.svc) return;
+    const stId = this.svc.stop.station; let idx = rec.track.stops.findIndex((x) => x.station === stId); if (idx < 0) idx = 0;
+    rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null;
+    if (mode === 'explore') { rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 6 + Math.random() * 30, t: 0 }; rec.view.root.visible = false; }
+    else { rec.mode = 'free'; rec.sh = { state: 'free', timer: 0, t: 0 }; rec.svc.dwellT = Math.random() * 10; rec.view.root.visible = true; }
+  }
+  _bgStopIdx(stationId) { return Math.max(0, this.bg.track.stops.findIndex((x) => x.station === stationId)); }
+  /** the player stepped off at a station: the other circle's train now comes and goes there */
+  _bgToShuttle() {
+    const rec = this.bg; if (!rec) return; const stId = this.svc.stop.station, idx = this._bgStopIdx(stId);
+    rec.svc = this._newServiceFor(rec, idx, { ato: true, autoDoors: true }); rec.dock = null;
+    rec.mode = 'shuttle'; rec.sh = { state: 'wait', timer: 5 + Math.random() * 20, t: 0 }; rec.view.root.visible = false;
+  }
+  /** the player boarded: the other circle's train (wherever it is) resumes its timetable */
+  _bgToFree() {
+    const rec = this.bg; if (!rec) return; const stId = this.svc.stop.station, idx = this._bgStopIdx(stId), sh = rec.sh;
+    if (sh.state === 'wait' || sh.state === 'none') { rec.svc.placeApproaching(idx, 260 + Math.random() * 500, 12); rec.view.root.visible = true; }
+    rec.svc.ato = true; rec.svc.autoDoors = true; rec.svc.schedule = rec.schedule; rec.svc.t0 = rec.svc.t - rec.schedule.arr[rec.svc.idx];
+    rec.mode = 'free'; rec.sh = { state: 'free', timer: 0, t: 0 };
+  }
+  /** explore: the other circle's train arrives, dwells (doors open on its platform) and leaves, on its own random headway */
+  _bgShuttle(dt) {
+    const rec = this.bg, sh = rec.sh, svc = rec.svc, idx = this._bgStopIdx(this.track.stops[this.exploreIdx].station);
+    if (sh.state === 'wait') {
+      sh.timer -= dt;
+      if (sh.timer <= 0) { svc.schedule = null; svc.placeApproaching(idx, 220, 9); svc.ato = true; svc.autoDoors = true; svc._autoOpened = false; svc._autoClosed = false; rec.view.root.visible = true; sh.state = 'arriving'; }
+    } else if (sh.state === 'arriving') { if (svc.phase === 'station') sh.state = 'dwell'; }
+    else if (sh.state === 'dwell') { if (svc.phase !== 'station') { sh.state = 'leaving'; sh.t = 0; } }
+    else if (sh.state === 'leaving') { sh.t += dt; if (sh.t > 9) { rec.view.root.visible = false; sh.state = 'wait'; sh.timer = this.shuttle.headway * (0.7 + Math.random() * 0.5); svc.train.v = 0; } }
+  }
+  /** the other circle's train is placed in the hall's own second bore when it is at a station (the OSM track data does not line up with the hall to within a few metres), blending back to the track data away from it */
+  _bgDock() {
+    const rec = this.bg, svc = rec.svc, L = rec.track.length, sc0 = svc.train.s - this.trainLen / 2;
+    let best = null, bd = 1e9;
+    for (const st of rec.track.stops) { const d = Math.abs(wrapL(sc0 - st.sc + L / 2, L) - L / 2); if (d < bd) { bd = d; best = st; } }
+    let dock = null;
+    if (best && bd < 170) {
+      let v = null; for (const x of this.stationViews.values()) if (x.station && x.station.id === best.station) { v = x; break; }
+      if (v) { v.group.updateMatrixWorld(true); const T = this.THREE, o = new T.Vector3(v.info.otherTrackX, 0, 0), a = new T.Vector3(v.info.otherTrackX, 0, 1); v.group.localToWorld(o); v.group.localToWorld(a); dock = { stop: best, o, f: a.sub(o), view: v }; }
+    }
+    rec.dock = dock;
+  }
+  _bgTrack() {
+    if (this._bgT) return this._bgT; const self = this;
+    this._bgT = { pose(s, out = {}) {
+      const rec = self.bg, tr = rec.track, p = tr.pose(s, out), k = rec.dock; if (!k) return p;
+      const L = tr.length, d = wrapL(s - k.stop.sc + L / 2, L) - L / 2, w = Math.min(1, Math.max(0, (160 - Math.abs(d)) / 90)); if (w <= 0) return p;
+      p.x += (k.o.x + k.f.x * d - p.x) * w; p.y += (k.o.y + k.f.y * d - p.y) * w; p.z += (k.o.z + k.f.z * d - p.z) * w; return p; } };
+    return this._bgT;
+  }
+  _bgUpdateView(dt) {
+    const rec = this.bg; if (!rec || !rec.svc || !rec.view) return; const tv = rec.view;
+    const hidden = rec.mode === 'shuttle' && (rec.sh.state === 'wait' || rec.sh.state === 'none');
+    if (hidden || this.mode === 'street') { tv.root.visible = false; return; }
+    this._bgDock(); tv.place(this._bgTrack(), rec.svc.train.s); tv.setDriveCab(false); tv.setDoors(rec.svc.doors.L, rec.svc.doors.R);
+    const m = tv.cars[Math.floor(tv.cars.length / 2)].matrix.elements, c = this.camera.position;
+    tv.root.visible = Math.hypot(m[12] - c.x, m[13] - c.y, m[14] - c.z) < 420;
+    if (tv.root.visible && ((this._bgCullT = (this._bgCullT || 0) - dt) <= 0)) { this._bgCullT = 0.4; tv.cull(c, 'explore', this.quality === 'low'); }
   }
 
   _onSvc(type, d) {
@@ -254,6 +346,7 @@ class Sim {
     const mode = sel.mode || this.sel.mode;
     const idx2 = this.track.stops.findIndex((s) => s.station === this.sel.station);
     this.svc = this._newService(Math.max(0, idx2), { ato: mode !== 'drive', autoDoors: mode !== 'drive' });
+    this._bgReset(mode === 'explore' ? 'explore' : 'free');
     const svc = this.svc;
     this.shuttle.state = 'none'; this.crowd.clear(); this.crowdFor = null;
     this.tunnel.reset(); this.annDone = false;
@@ -283,7 +376,7 @@ class Sim {
     if (fresh) this.walker.place(0.0, -2.0, 0);
     this.look.yaw = 0; this.look.pitch = 0;
     this.scene.fog.density = 0.026;
-    this.hud.toast('Riding as a passenger. WASD to walk, N: get off at next stop, X: change circle at a station, E at the front: driver\'s cab.', 'info', 5);
+    this.hud.toast('Riding as a passenger. WASD to walk, N: get off at next stop, E at the front: driver\'s cab.', 'info', 5);
   }
 
   enterExplore(stopIdx, fromRide = false) {
@@ -386,7 +479,7 @@ class Sim {
   _boardTrain() {
     const svc = this.svc; this._setupTrainWalker();
     const dz = this._nearestDoorZ(); const inf = this.activeStation.info;
-    this.mode = 'ride'; this.ctxKind = 'train'; this.hud.setMode('ride');
+    this.mode = 'ride'; this.ctxKind = 'train'; this.hud.setMode('ride'); this._bgToFree();
     this.walker.place(inf.S * 0.45, dz, inf.S > 0 ? Math.PI / 2 : -Math.PI / 2);
     this.walker.yaw = -inf.S * -Math.PI / 2 * 0 + (inf.S > 0 ? Math.PI / 2 : -Math.PI / 2) * -1;
     svc.ato = true; svc.autoDoors = true; svc.dwellT = Math.max(svc.dwellT, svc.stop.dwellS - 5);
@@ -396,7 +489,7 @@ class Sim {
   _alight() {
     const idx = this.svc.idx; this.alightNext = false;
     const doorZ = this._nearestDoorZ();   // walker still in train-local space here
-    this.mode = 'explore'; this.ctxKind = 'station'; this.hud.setMode('explore');
+    this.mode = 'explore'; this.ctxKind = 'station'; this.hud.setMode('explore'); this._bgToShuttle();
     this.exploreIdx = idx; this.shuttle.idx = idx; this.shuttle.state = 'dwell'; this.shuttle.streamed = false; this.scene.fog.density = 0.006;
     const view = this._ensureStation(idx, true);
     this.walker.heightFn = null; this.walker.headroomFn = null; this.walker.setWorld(view.zones, view.obstacles); this.walker.eye = 1.52; this.walker.radius = 0.3; this.activeStation = view;
@@ -405,12 +498,40 @@ class Sim {
     this.svc.schedule = null; this.svc.ato = true; this.svc.autoDoors = true;
     this.hud.toast('Welcome to ' + this.svc.station.name, 'info', 3);
   }
-  /** Passenger: cross the platform and board the other circle's train at this station (outer <-> inner). */
-  changeTrains() {
-    const svc = this.svc; if (this.mode !== 'ride' || !svc || svc.phase !== 'station') { this.hud.toast('You can change trains while the train is standing at a station.', 'info', 3); return; }
-    const other = this.line === 'outer' ? 'inner' : 'outer';
-    this.hud.toast(`Changing to the ${other} circle at ${svc.station.name}...`, 'info', 3);
-    this.go({ mode: 'ride', line: other, station: svc.stop.station, diff: this.sel.diff });
+  /** where the other circle's train docks relative to the platforms (primary hall frame): the platform + edge nearest its track */
+  _bgPlat() {
+    const v = this.activeStation; if (!v || !v.info.hall || !v.anchors.hallPlat) return null; const ox = v.info.otherTrackX; let best = null;
+    for (const pl of v.anchors.hallPlat) for (const e of [pl.x0, pl.x1]) { const d = Math.abs(e - ox); if (d < 2.4 && (!best || d < best.d)) best = { pl, edge: e, d }; }
+    return best;
+  }
+  /** side-platform stations: the other platform is across the tracks - take the passage under them (fade + teleport) */
+  _crossPlatform() {
+    const v = this.activeStation, w = this.walker; if (!v || !v.info.hall || this.mode !== 'explore') return;
+    const P = v.anchors.hallPlat || [], cur = P.find((p) => w.x >= p.x0 - 0.2 && w.x <= p.x1 + 0.2), bp = this._bgPlat();
+    const tgt = (bp && cur !== bp.pl) ? bp.pl : (P.find((p) => p !== cur && !(bp && p === bp.pl)) || P.find((p) => p !== cur));
+    if (!tgt || tgt === cur) { this.hud.toast('This is an island platform: just walk across it to the other train.', 'info', 3); return; }
+    return this._teleport(() => { w.place((tgt.x0 + tgt.x1) / 2, w.z, w.yaw); w.y = v.info.PY; this.hud.toast('You cross to the other platform.', 'info', 2.5); });
+  }
+  /** step onto the other circle's train: it becomes the player's train (the one just left carries on as the other circle) */
+  async _boardOther() {
+    const bg = this.bg; if (this.fadeLock || !bg || bg.svc.phase !== 'station') return;
+    this.fadeLock = true; this.hud.setFade(true);
+    await new Promise((r) => setTimeout(r, 450));
+    try {
+      const old = this.tracks[this.line], nw = bg;
+      old.svc.listeners = []; nw.svc.listeners = [];
+      this.line = nw.line; this.track = nw.track; this.schedule = nw.schedule; this.svc = nw.svc; this.trainView = nw.view; this.layouts = nw.layouts; this.sel.line = nw.line;
+      nw.mode = 'player'; nw.sh = { state: 'none', timer: 0, t: 0 }; nw.dock = null; nw.svc.on((t, d) => this._onSvc(t, d));
+      this.bg = old; old.mode = 'free'; old.sh = { state: 'free', timer: 0, t: 0 }; old.dock = null; old.view.root.visible = true;
+      old.svc.ato = true; old.svc.autoDoors = true; old.svc.schedule = old.schedule; old.svc.t0 = old.svc.t - old.schedule.arr[old.svc.idx] + (old.svc.phase === 'station' ? old.svc.dwellT : 0);
+      nw.svc.schedule = nw.schedule; nw.svc.t0 = nw.svc.t - nw.schedule.arr[nw.svc.idx] + nw.svc.dwellT; nw.view.root.visible = true;
+      this._applyTrack(); this.crowd.clear(); this.crowdFor = null; if (this.saloon) { this.saloon.clear(); this.saloonDone = false; }
+      const i = nw.svc.idx, view = await this._prepare(i);
+      this.activeStation = view; this.ctxKind = 'station'; this.exploreIdx = i; this.shuttle.state = 'none';
+      const inf = view.info, w = this.walker; w.setWorld(view.zones, view.obstacles); w.heightFn = null; w.headroomFn = null; w.eye = 1.52; w.radius = 0.3;
+      w.place(inf.xe + inf.S * 0.9, this._trainCentreZl() + this.doorZ[1], 0);
+      this._boardTrain();
+    } finally { this.hud.setFade(false); this.fadeLock = false; }
   }
   _stepOut() { this._setupTrainWalker(); this.walker.place(0, this.doorZ[0], 0); this._alight(); }
   _takeCab() {
@@ -603,10 +724,10 @@ class Sim {
       else if (kk === 'c') { this.look.yaw = 0; this.look.pitch = -0.05; }
       else used = /^Arrow/.test(kk);
     } else if (this.mode === 'ride') {
-      if (kk === 'x') this.changeTrains();
-      else if (kk === 'n') { this.alightNext = !this.alightNext; this.hud.toast(this.alightNext ? 'You will get off at ' + this.svc.station.name : 'Staying on board', 'info'); }
+      if (kk === 'n') { this.alightNext = !this.alightNext; this.hud.toast(this.alightNext ? 'You will get off at ' + this.svc.station.name : 'Staying on board', 'info'); }
       else used = /^(w|a|s|d|Shift|Arrow.*)$/.test(kk);
-    } else used = /^(w|a|s|d|Shift|Arrow.*| )$/.test(kk);
+    } else if (this.mode === 'explore' && kk === 'x') { this._crossPlatform(); used = true; }
+    else used = /^(w|a|s|d|Shift|Arrow.*| )$/.test(kk);
     if (used) e.preventDefault();
   }
 
@@ -684,6 +805,7 @@ class Sim {
     else if (c.kind === 'descend') this.leaveStreet();
     else if (c.kind === 'cab') this._takeCab();
     else if (c.kind === 'alight') this._alight();
+    else if (c.kind === 'board2') this._boardOther();
     else if (c.kind === 'stepout') this._stepOut();
   }
 
@@ -698,6 +820,15 @@ class Sim {
         if (nearEdge && nearDoor) { this.context = { kind: 'board' }; msg = '<kbd>E</kbd> Board the train'; }
         else if (nearEdge) msg = 'Walk to a door to board';
       }
+      { const bg = this.bg, bp = this._bgPlat();
+        if (!this.context && bg && bg.mode === 'shuttle' && bg.svc.phase === 'station' && bg.svc.doorsOpen && bp) {
+          const zc = (bg.svc.train.s - this.trainLen / 2) - (bg.svc.targetU - bg.svc.stop.cabOff);
+          const nearEdge = Math.abs(w.x - bp.edge) < 2.4 && w.x >= bp.pl.x0 - 0.1 && w.x <= bp.pl.x1 + 0.1 && Math.abs(w.y - inf.PY) < 0.5;
+          const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - (zc + dz)) < 1.6);
+          const nm = bg.line === 'outer' ? 'outer circle (clockwise)' : 'inner circle (anticlockwise)';
+          if (nearEdge && nearDoor) { this.context = { kind: 'board2' }; msg = `<kbd>E</kbd> Board the ${nm} train`; }
+          else if (nearEdge) msg = `The ${nm} train is in: walk to a door`;
+        } }
       if (inf.hall && !this.context) {
         for (const pt of (v.anchors.portals || [])) if (Math.hypot(w.x - pt.x, w.z - pt.z) < 1.7 && w.y < inf.PY + 0.5) { this.context = { kind: 'portal', pt }; msg = '<kbd>E</kbd> Take the stairs up to the ticket hall'; break; }
         const ad = v.anchors.accessDoor;
@@ -710,6 +841,7 @@ class Sim {
         for (const p of (v.anchors.panels || [])) if (Math.abs(w.z - p.z) < 3.2 && Math.abs(w.x - p.x) < 4 && w.y < inf.PY + 0.5) { msg = `<b>${p.title}</b> ${p.body.slice(0, 160)}`; break; }
         if (!msg) for (const p of (v.anchors.conPanels || [])) if (w.y > inf.Hc - 0.5 && Math.abs(w.z - (p.z + 4.8)) < 3.5 && w.x > inf.rc + 4) { msg = p.body.slice(0, 160); break; }
       }
+      if (v.info.hall && v.anchors.hallPlat && v.anchors.hallPlat.length > 1 && !this.context && w.y < inf.PY + 0.5) msg = (msg ? msg + '  ' : '') + '<kbd>X</kbd> Cross to the other platform';
       if (!msg) { const sh = this.shuttle; if (sh.state === 'wait') msg = `Next train in ${fmtTime(sh.timer)}`; else if (sh.state === 'arriving') msg = `Train approaching ${fmtDist(Math.max(0, svc.distToStop))}`; }
     } else if (this.mode === 'ride') {
       if (w.z < -(this.trainLen / 2 - 2.6)) { this.context = { kind: 'cab' }; msg = '<kbd>E</kbd> Take the driver\'s seat'; }
@@ -717,7 +849,6 @@ class Sim {
         const nearDoor = this.doorZ.some((dz) => Math.abs(w.z - dz) < 1.6) && Math.abs(w.x) > 0.45;
         if (nearDoor) { this.context = { kind: 'alight' }; msg = `<kbd>E</kbd> Step off at ${svc.station.name}`; }
         else msg = `${svc.station.name}: walk to an open door and press E to get off`;
-        msg += `  <kbd>X</kbd> Change to the ${this.line === 'outer' ? 'inner' : 'outer'} circle`;
       } else if (this.alightNext) msg = `Getting off at ${svc.station.name}`;
     } else if (this.mode === 'street') {
       const st = this.street; if (Math.hypot(w.x - st.stair.x, w.z - st.stair.z) < 4.2) { this.context = { kind: 'descend' }; msg = '<kbd>E</kbd> Take the stairs down to the platform'; }
@@ -737,7 +868,9 @@ class Sim {
       if (this.mode === 'ride' && this.ctxKind === 'train' && svc.phase === 'station' && (svc.doors.L > 0.02 || svc.doors.R > 0.02)) obs = Math.abs(w.x) > 0.8 && this.doorZ.some((dz) => Math.abs(w.z - dz) < 0.62);
       if (obs && !svc.doorObstructed && !svc.doors.cmdL && !svc.doors.cmdR) this.hud.toast('Doors held - something is in the doorway', 'warn', 2.5);
       svc.doorObstructed = obs; }
-    for (let i = 0; i < n; i++) svc.update(h);
+    { const bg = this.bg, run = bg && bg.svc && this.mode !== 'street' && !(bg.mode === 'shuttle' && (bg.sh.state === 'wait' || bg.sh.state === 'none'));
+      for (let i = 0; i < n; i++) { svc.update(h); if (run) bg.svc.update(h); }
+      if (this.mode === 'explore' && bg && bg.mode === 'shuttle') this._bgShuttle(dt); }
     // walker
     const w = this.walker;
     if (this.mode !== 'drive') {
@@ -832,7 +965,7 @@ class Sim {
     if (underground) {
       if (this.crowd.setWalker) this.crowd.setWalker(this.walker.x, this.walker.z, this.walker.yaw, this.mode === 'explore');   // before the crowd is (re)populated
       this._mgrT = (this._mgrT || 0) - dt; if (this._mgrT <= 0) { this._mgrT = 0.4; this._manageStations(); }
-      this.trainView.place(track, tr.s); this.trainView.setDriveCab(this.mode === 'drive');
+      this.trainView.place(track, tr.s); this.trainView.setDriveCab(this.mode === 'drive'); this._bgUpdateView(dt);
       const d = svc.doors; this.trainView.setDoors(d.L, d.R);
       if (this.mode === 'explore') { if (this._tw !== 'x') { this.tunnel.setWindow(60, 45); this._tw = 'x'; } this.tunnel.update(track, track.stops[this.exploreIdx].sc); }
       else { if (this._tw !== 'd') { this.tunnel.setWindow(75, 22); this._tw = 'd'; } this.tunnel.update(track, this.mode === 'ride' ? tr.s - (this.walker.z - this.trainView.zMin) : tr.s - 1.8); }
@@ -1020,7 +1153,7 @@ class Sim {
     const self = this;
     window.__sim = {
       sim: this,
-      state: () => this.getState(), info: () => this.svc.info(), svc: () => this.svc,
+      state: () => this.getState(), bg: () => this.bg, boardOther: () => this._boardOther(), cross: () => this._crossPlatform(), info: () => this.svc.info(), svc: () => this.svc,
       go: (sel) => this.go(sel), tick: (dt) => this.tick(dt), ff: (s, st) => this.fastForward(s, st), sync: () => { this._mgrT = 0; this.sync(0.016); },
       ato: (on) => this.svc.setAto(on), key: (k, down = true) => this._key({ key: k, code: k, repeat: false, preventDefault() {}, target: document.body }, down),
       interact: () => this.interact(), context: () => this.context, mode: () => this.mode,
