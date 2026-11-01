@@ -1,7 +1,7 @@
 // Highland Fling - the kilted piper beside the start/finish arch. Appears (and plays) only on the player's FINAL lap.
 // Hook: track.onRaceStart(race, player, audio, game) is called by main.js when a race is created.
 import * as THREE from "three";
-import { TAU } from "./highland-geo.js";
+import { TAU, PIPER } from "./highland-geo.js";
 import { tartanCanvas, TARTAN_RED, toTexture } from "./highland-tex.js";
 
 // The kilted piper figure (metres, feet at y=0, facing +z). Shared by the finish-line piper and the giant roadside one.
@@ -45,7 +45,10 @@ function makeFigure(X, figure) {
   const kiltTop = new THREE.Mesh(own(new THREE.CylinderGeometry(0.255, 0.255, 0.02, 24)), tmat2); kiltTop.position.y = 1.06; figure.add(kiltTop);
   const sporran = [ball(0, 0.88, 0.31, 0.1, 0xe8e2d4, 1, 1.3, 0.7), box(0, 1.02, 0.28, 0.12, 0.05, 0.05, GOLD)];
   for (let i = 0; i < 6; i++) sporran.push(cyl((i - 2.5) * 0.028, 0.77, 0.33, 0.008, 0.008, 0.16, BLACK));
-  figure.add(meshOf(sporran));
+  // the sporran hangs from the belt on its own pivot so a gust can flip it up with the kilt
+  const sporranG = new THREE.Group(); sporranG.position.set(0, 1.04, 0.28);
+  { const sm1 = meshOf(sporran); sm1.position.set(0, -1.04, -0.28); sporranG.add(sm1); }
+  figure.add(sporranG);
   figure.add(meshOf([cyl(0, 1.06, 0, 0.262, 0.262, 0.06, BLACK, 0, 0, 0, 24), box(0, 1.06, 0.262, 0.07, 0.06, 0.02, GOLD)]));
 
   // ---------------------------------------------------------------- upper body (rocks about the hips)
@@ -108,7 +111,7 @@ function makeFigure(X, figure) {
   // left hand on the chanter (lower), a static fist
   upper.add(meshOf([ball(0.17, 0.86 - U0, 0.41, 0.036, SKIN), ball(0.17, 0.79 - U0, 0.41, 0.03, SKIN)]));
   figure.traverse((o) => { o.matrixAutoUpdate = true; });
-  return { upper, head, ch, bagG, armL, armR, footR, drones, kilt, kiltTop, place };
+  return { upper, head, ch, bagG, armL, armR, footR, drones, kilt, kiltTop, sporranG, place };
 }
 
 export function buildPiper(H) {
@@ -176,14 +179,13 @@ export function buildGiantPiper(H) {
   const { at } = K, gy = X.groundY;
   const S_CORNER = 1460, SCALE = 11;
 
-  // ---- placement: well outside the hairpin, facing the road (and a little toward oncoming karts)
-  const a = at(S_CORNER, -(wallDist + 30));
-  const toRoad = new THREE.Vector3(a.rx, 0, a.rz).normalize(), back = new THREE.Vector3(-Math.sin(a.h), 0, -Math.cos(a.h));
-  const face = toRoad.clone().multiplyScalar(0.8).add(back.clone().multiplyScalar(0.55));
+  // ---- placement: on the island inside the hairpin, facing back up the straight at the oncoming karts (the kilt gusts up toward them)
+  const a = { x: PIPER.x, z: PIPER.z };
+  const face = new THREE.Vector3(0.92, 0, 0.38).normalize();
   const yaw = Math.atan2(face.x, face.z), baseY = gy(a.x, a.z) - 0.2;
   const root = new THREE.Group(); root.position.set(a.x, baseY, a.z); root.rotation.y = yaw; root.name = "giant-piper";
   const figure = new THREE.Group(); figure.scale.setScalar(SCALE); root.add(figure);
-  const { upper, head, ch, bagG, armL, armR, footR, drones, kilt, kiltTop, place } = makeFigure(X, figure);
+  const { upper, head, ch, bagG, armL, armR, footR, drones, kilt, kiltTop, sporranG, place } = makeFigure(X, figure);
   figure.children[0].visible = false;     // no rug under a colossus
   kilt.visible = false; kiltTop.visible = false;   // replaced by the wind-driven kilt below
   const SKIN = 0xe9b896;
@@ -242,6 +244,7 @@ export function buildGiantPiper(H) {
     const breeze = 0.16 + 0.1 * Math.sin(time * 1.3) + 0.06 * Math.sin(time * 3.1);
     shapeKilt(time, breeze, gust);
     cmat.opacity = sm(0.5, 0.72, frontLift);
+    sporranG.rotation.x = -(frontLift * 2.5 + 0.12 * Math.sin(time * 6.3) * frontLift);   // the sporran is flung up and out with the kilt
     const beat = (time / BEAT) * TAU;
     upper.rotation.z = Math.sin(beat / 2) * 0.06; upper.rotation.x = 0.05 + Math.sin(beat) * 0.015 - gust * 0.06; upper.rotation.y = Math.sin(beat / 4) * 0.08;
     head.rotation.z = -upper.rotation.z * 0.8; head.rotation.y = Math.sin(beat / 6) * 0.2;

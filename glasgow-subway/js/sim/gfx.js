@@ -118,7 +118,36 @@ export function wrapText(g, text, x, y, maxW, lh) {
   return y + lh;
 }
 
-export function infoPanelTexture(THREE, title, body, style) {
+/** Greedy word wrap into lines no wider than maxW at the context's current font. */
+export function wrapLines(g, text, maxW) {
+  const lines = []; let line = '';
+  for (const w of text.split(/\s+/)) {
+    const t = line ? line + ' ' + w : w;
+    if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t;
+  }
+  if (line) lines.push(line); return lines;
+}
+
+/**
+ * Station info poster. Portrait 512x640 by default (concourse boards); `{ landscape: true }` gives the 1024x600 wall poster for the platform halls:
+ * big header with the roundel and title, and body text sized to fill the sheet (the largest size whose wrapped lines fit).
+ */
+export function infoPanelTexture(THREE, title, body, style, opts = {}) {
+  if (opts.landscape) return canvasTex(THREE, 1024, 600, (g, w, h) => {
+    g.fillStyle = '#f4efe3'; g.fillRect(0, 0, w, h);
+    g.fillStyle = style.dado; g.fillRect(0, 0, w, 124);
+    drawRoundel(g, 76, 62, 38, style.accent);
+    g.fillStyle = '#fff'; g.textBaseline = 'middle';
+    let ts = 58; g.font = `700 ${ts}px Arial`; while (g.measureText(title).width > w - 170 && ts > 28) { ts -= 2; g.font = `700 ${ts}px Arial`; }
+    g.fillText(title, 138, 66);
+    g.fillStyle = '#1a1a1a'; g.textBaseline = 'alphabetic';
+    const top = 172, bottom = h - 46, maxW = w - 88;
+    let size = 56, lines = [];
+    for (; size >= 26; size -= 2) { g.font = `${size}px Georgia, serif`; lines = wrapLines(g, body, maxW); if (lines.length * size * 1.28 <= bottom - top) break; }
+    const lh = size * 1.28; g.font = `${size}px Georgia, serif`;
+    lines.forEach((l, i) => g.fillText(l, 44, top + size * 0.82 + i * lh));
+    g.fillStyle = style.trim; g.fillRect(0, h - 22, w, 22);
+  });
   return canvasTex(THREE, 512, 640, (g, w, h) => {
     g.fillStyle = '#f4efe3'; g.fillRect(0, 0, w, h);
     g.fillStyle = style.dado; g.fillRect(0, 0, w, 86);

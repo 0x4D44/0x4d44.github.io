@@ -95,6 +95,98 @@ export function fixHallSigns(tpl, info) {
 }
 
 /**
+ * Where the hall's side walls really are (hall-frame x), measured on the loaded shell. info.hallHalfWidth is the nominal half-width (island halls
+ * 4.25) but the walls are built further out (5.02), which left the wall posters hanging ~0.8 m in front of the wall. Casts a ray along +-x at height y
+ * for several z and takes the outermost shell surface hit (median over z). Returns { l, r } (l < 0 < r) or null.
+ */
+export function measureHallWalls(tpl, y = 1.8, zs = [-17, -9, 3.3, 9, 17]) {
+  const shell = tpl && tpl.getObjectByName('hall_shell'); if (!shell) return null;
+  tpl.updateMatrixWorld(true);
+  const outL = zs.map(() => 0), outR = zs.map(() => 0), P = new Array(9);
+  shell.traverse((m) => {
+    if (!m.isMesh || !m.geometry || !m.geometry.attributes.position) return;
+    const pos = m.geometry.attributes.position, idx = m.geometry.index, e = m.matrixWorld.elements, nT = idx ? idx.count / 3 : pos.count / 3;
+    for (let t = 0; t < nT; t++) {
+      for (let k = 0; k < 3; k++) {
+        const vi = idx ? idx.getX(t * 3 + k) : t * 3 + k, px = pos.getX(vi), py = pos.getY(vi), pz = pos.getZ(vi);
+        P[k * 3] = e[0] * px + e[4] * py + e[8] * pz + e[12]; P[k * 3 + 1] = e[1] * px + e[5] * py + e[9] * pz + e[13]; P[k * 3 + 2] = e[2] * px + e[6] * py + e[10] * pz + e[14];
+      }
+      if (y < Math.min(P[1], P[4], P[7]) || y > Math.max(P[1], P[4], P[7])) continue;
+      const zlo = Math.min(P[2], P[5], P[8]), zhi = Math.max(P[2], P[5], P[8]);
+      const d1y = P[4] - P[1], d1z = P[5] - P[2], d2y = P[7] - P[1], d2z = P[8] - P[2], det = d1y * d2z - d2y * d1z; if (Math.abs(det) < 1e-9) continue;
+      for (let j = 0; j < zs.length; j++) {
+        const z = zs[j]; if (z < zlo || z > zhi) continue;
+        const ry = y - P[1], rz = z - P[2], s = (ry * d2z - d2y * rz) / det, u = (d1y * rz - ry * d1z) / det;     // barycentric in the (y, z) plane
+        if (s < -1e-6 || u < -1e-6 || s + u > 1 + 1e-6) continue;
+        const x = P[0] + s * (P[3] - P[0]) + u * (P[6] - P[0]);
+        if (x < 0) { if (x < outL[j]) outL[j] = x; } else if (x > outR[j]) outR[j] = x;
+      }
+    }
+  });
+  const med = (a) => { a = a.filter((v) => v !== 0).sort((p, q) => Math.abs(p) - Math.abs(q)); return a.length ? a[a.length >> 1] : 0; };
+  const l = med(outL), r = med(outR);
+  return l < -1 && r > 1 ? { l, r } : null;
+}
+
+/**
+ * z-intervals (hall frame) of the wall already taken inside the height band [y0, y1]: adverts, murals, route strips, wall clocks and boxes.
+ * side -1 = the hall's left wall, +1 = the right wall; wallX = that wall's |x|. Anything within `reach` of the wall surface counts. Merged, ascending.
+ */
+export function hallWallClutter(tpl, side, wallX, y0, y1, reach = 0.35) {
+  const out = []; if (!tpl) return out; tpl.updateMatrixWorld(true);
+  for (const nm of ['hall_signs', 'hall_art', 'hall_furniture']) {
+    const node = tpl.getObjectByName(nm); if (!node) continue;
+    node.traverse((m) => {
+      if (!m.isMesh || !m.geometry || !m.geometry.attributes.position) return;
+      const pos = m.geometry.attributes.position, idx = m.geometry.index, e = m.matrixWorld.elements, nT = idx ? idx.count / 3 : pos.count / 3;
+      for (let t = 0; t < nT; t++) {
+        let xmin = 1e9, xmax = -1e9, ymin = 1e9, ymax = -1e9, zmin = 1e9, zmax = -1e9;
+        for (let k = 0; k < 3; k++) {
+          const vi = idx ? idx.getX(t * 3 + k) : t * 3 + k, px = pos.getX(vi), py = pos.getY(vi), pz = pos.getZ(vi);
+          const x = side * (e[0] * px + e[4] * py + e[8] * pz + e[12]), yy = e[1] * px + e[5] * py + e[9] * pz + e[13], z = e[2] * px + e[6] * py + e[10] * pz + e[14];
+          xmin = Math.min(xmin, x); xmax = Math.max(xmax, x); ymin = Math.min(ymin, yy); ymax = Math.max(ymax, yy); zmin = Math.min(zmin, z); zmax = Math.max(zmax, z);
+        }
+        if (xmin < wallX - reach || xmax > wallX + 0.05 || ymax < y0 || ymin > y1) continue;
+        out.push([zmin, zmax]);
+      }
+    });
+  }
+  out.sort((a, b) => a[0] - b[0]);
+  const merged = []; for (const [a, b] of out) { const l = merged[merged.length - 1]; if (l && a <= l[1] + 0.02) l[1] = Math.max(l[1], b); else merged.push([a, b]); }
+  return merged;
+}
+
+/**
+ * Island platforms are only 3.2 m wide, so they get no benches or bins (a seat plus a bin leaves ~1.2 m to walk past). The hall GLB bakes all its
+ * furniture into one mesh: drop the triangles of the seats (timber + orange frame) and bins (dark steel) standing on the deck of an island platform
+ * (a platform with a track on both sides). Wall clocks, speaker boxes and the glass screens are untouched. Applied once to the loaded template.
+ * Returns the number of triangles removed.
+ */
+export function stripIslandFurniture(THREE, tpl, info) {
+  if (!tpl || !info || tpl.userData.islandStripped) return 0; tpl.userData.islandStripped = true;
+  const tx = info.trackX; if (!tx || tx.length < 2) return 0;
+  const isl = (info.platforms || []).map(([a, b]) => [Math.min(a, b), Math.max(a, b)]).filter(([a, b]) => a > tx[0] + 0.5 && b < tx[1] - 0.5);
+  const node = tpl.getObjectByName('hall_furniture'); if (!isl.length || !node) return 0;
+  tpl.updateMatrixWorld(true);
+  const py = info.platformTopY != null ? info.platformTopY : 0.695, y0 = py - 0.03, y1 = py + 1.8; let dropped = 0;
+  node.traverse((m) => {
+    if (!m.isMesh || !m.geometry || !m.geometry.index || !m.material || !/^(wood_bench|sign_orange|steel_dark)/.test(m.material.name || '')) return;
+    const g = m.geometry, pos = g.attributes.position, idx = g.index, e = m.matrixWorld.elements, nT = idx.count / 3, keep = [];
+    for (let t = 0; t < nT; t++) {
+      const a = idx.getX(t * 3), b = idx.getX(t * 3 + 1), c = idx.getX(t * 3 + 2); let xmin = 1e9, xmax = -1e9, ymin = 1e9, ymax = -1e9;
+      for (const vi of [a, b, c]) {
+        const px = pos.getX(vi), pyy = pos.getY(vi), pz = pos.getZ(vi), x = e[0] * px + e[4] * pyy + e[8] * pz + e[12], yy = e[1] * px + e[5] * pyy + e[9] * pz + e[13];
+        xmin = Math.min(xmin, x); xmax = Math.max(xmax, x); ymin = Math.min(ymin, yy); ymax = Math.max(ymax, yy);
+      }
+      if (ymin >= y0 && ymax <= y1 && isl.some(([pa, pb]) => xmin >= pa - 0.03 && xmax <= pb + 0.03)) dropped++; else keep.push(a, b, c);
+    }
+    if (keep.length === idx.count) return;
+    g.setIndex(new THREE.BufferAttribute(pos.count > 65535 ? new Uint32Array(keep) : new Uint16Array(keep), 1));
+  });
+  return dropped;
+}
+
+/**
  * Logos and lettering are baked as ONE quad on a double-sided material, so walking round behind a sign (entrance pylon roundel, fascia boards,
  * wall bands, train-side roundels) showed the texture mirror-imaged. Draw only the face that reads correctly (the generator reverses U, so that is
  * the quad's BACK face, i.e. THREE.BackSide): the sign is simply absent from behind instead of mirrored. (Verified per triangle across every shipped GLB:
