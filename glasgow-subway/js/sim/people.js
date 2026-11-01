@@ -38,11 +38,13 @@ export class Crowd {
     return p;
   }
   _colour(i) { if (this.vMeshes) return; const p = this.people[i]; this.bodyMesh.setColorAt(i, this._c.set(p.body)); this.headMesh.setColorAt(i, this._c.set(p.skin)); if (this.bodyMesh.instanceColor) { this.bodyMesh.instanceColor.needsUpdate = true; this.headMesh.instanceColor.needsUpdate = true; } }
+  /** (the animated crowd clamps stream endpoints onto the platform slab; this plain fallback has no floor model) */
+  _toFloor(x, z) { return { x, z }; }
   /** stream of people from a to b that vanish at b (boarding) or fade after reaching (alighting) */
-  stream(from, to, n, y0, y1, spread = 0.4) {
+  stream(from, to, n, y0, y1, spread = 0.4, delay0 = 0) {
     for (let i = 0; i < n && this.people.length < this.max; i++) {
       const f0 = this._toFloor(from.x + (this.rng() - 0.5) * spread, from.z + (this.rng() - 0.5) * spread), f1 = this._toFloor(to.x + (this.rng() - 0.5) * spread, to.z + (this.rng() - 0.5) * spread);
-      const p = this.add({ x: f0.x, z: f0.z, y: y0, yaw: 0, mode: 'go', tx: f1.x, tz: f1.z, ty: y1, speed: 1.1 + this.rng() * 0.5, delay: i * 0.45 + this.rng() * 0.3 });
+      const p = this.add({ x: f0.x, z: f0.z, y: y0, yaw: 0, mode: 'go', tx: f1.x, tz: f1.z, ty: y1, speed: 1.1 + this.rng() * 0.5, delay: delay0 + i * 0.45 + this.rng() * 0.3 });
       p.hidden = true;
     }
   }
@@ -114,6 +116,8 @@ const catOf = (n) => {   // shared A3 clip names (rev 7) -> behaviour category
   return null;
 };
 const dflt = (a, b) => (a != null ? a : b);
+const angDiff = (a, b) => { let d = b - a; d -= Math.PI * 2 * Math.round(d / (Math.PI * 2)); return d; };   // signed shortest turn a -> b
+const SIDESTEPS = [0, 0.55, -0.55, 1.1, -1.1];   // headings tried (rad off the straight line to the goal): straight on, then veering to the person's preferred side first. Never backwards - a person who can only retreat is boxed in and stops
 export class AnimCrowd {
   constructor(THREE, SkeletonUtils, gltf, max = 40, quality = 'high', lodGltf = null) {
     this.THREE = THREE; this.SU = SkeletonUtils; this.max = max; this.quality = quality; this.people = []; this.rng = mulberry32(99);
@@ -139,6 +143,7 @@ export class AnimCrowd {
     for (const k of Object.keys(shared)) shared[k] = shared[k];
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
+    this.reserve = Math.min(10, Math.floor(max * 0.3));   // places kept free for passengers streaming on / off (a full platform must not starve the train doors)
   }
   /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
    *  band at the midriff. Find the top's centred lower hem loop and extrude it straight down (same skin weights) so it tucks inside the skirt. Patches the shared geometry once. */
@@ -230,7 +235,7 @@ export class AnimCrowd {
     if (!this.hasAnim || this.people.length >= this.max) return p;
     const ch = p.char || this._pick(filter); if (!ch) return p; p.char = ch;
     const obj = this._clone(ch, !!ch.lodNode && !p.static); p.lod = !!ch.lodNode && !p.static; obj.traverse((o) => { if (o.isMesh) o.frustumCulled = false; });
-    p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode;
+    p.scale = 1; p.ttl = p.ttl ?? Infinity; p.state = p.state || p.mode; if (p.yawT == null) p.yawT = p.yaw; p.vx = p.vx || 0; p.vz = p.vz || 0;
     p.mixer = new this.THREE.AnimationMixer(obj); p.act = new Map(); p.cur = null; p.yOff = null; p.nextT = 1 + this.rng() * 6;
     p.parent = parent || this.group; p.obj = obj; p.parent.add(obj);
     this._enter(p, p.state, 0);
@@ -312,33 +317,37 @@ export class AnimCrowd {
     for (const f of F) { const cx = Math.min(f.x1 - m, Math.max(f.x0 + m, x)), cz = Math.min(f.z1 - m, Math.max(f.z0 + m, z)), d = (cx - x) ** 2 + (cz - z) ** 2; if (d < bd) { bd = d; best = { x: cx, z: cz }; } }
     return best;
   }
-  /** people are solid: push overlapping pairs apart (never off the floor) */
+  /** Safety net only - steering (`_step`) keeps people apart. Bodies that genuinely overlap are eased apart slowly and in small amounts. R is below the 0.45 m
+   *  clearance the steering keeps, so the two never fight, and the push is capped so nobody is ever visibly shoved or made to glide. */
   _separate(dt) {
-    const P = this.people, R = 0.5, k = Math.min(1, dt * 10);
+    const P = this.people, R = 0.38, k = Math.min(1, dt * 8), cap = 0.45 * dt;
     for (let i = 0; i < P.length; i++) {
       const a = P[i]; if (a.static || a.hidden || !a.obj || (a.delay > 0)) continue;
       for (let j = i + 1; j < P.length; j++) {
         const b = P[j]; if (b.static || b.hidden || !b.obj || (b.delay > 0)) continue;
         let dx = b.x - a.x, dz = b.z - a.z; const d2 = dx * dx + dz * dz; if (d2 >= R * R) continue;
         let d = Math.sqrt(d2); if (d < 1e-4) { dx = Math.cos(i * 2.4); dz = Math.sin(i * 2.4); d = 1; }
-        const push = (R - d) * 0.5 * k, ux = dx / d * push, uz = dz / d * push;
-        if (this._onFloor(a.x - ux, a.z - uz)) { a.x -= ux; a.z -= uz; }
-        if (this._onFloor(b.x + ux, b.z + uz)) { b.x += ux; b.z += uz; }
+        const push = Math.min((R - d) * 0.5 * k, cap), ux = dx / d * push, uz = dz / d * push;
+        if (this._onFloor(a.x - ux, a.z - uz, 0.12)) { a.x -= ux; a.z -= uz; }
+        if (this._onFloor(b.x + ux, b.z + uz, 0.12)) { b.x += ux; b.z += uz; }
       }
     }
   }
   populate(n, rect, y, avoid = []) {
     this.avoid = avoid;
-    for (let i = 0; i < n && this.people.length < this.max; i++) {
+    for (let i = 0; i < n && this.people.length < this.max - this.reserve; i++) {
       let x, z, tries = 0;
       do { x = rect.x0 + this.rng() * (rect.x1 - rect.x0); z = rect.z0 + this.rng() * (rect.z1 - rect.z0); } while (tries++ < 40 && (!this._free(x, z, 0.3) || this._nearWalker(x, z, 2.5, 3.6)));
       if (tries > 40) continue;
       this.add({ x, z, y, yaw: this.rng() * 6.28, mode: this.rng() < 0.4 ? 'walk' : 'stand', rect, speed: 0.9 + this.rng() * 0.35, wait: 0 });
     }
   }
-  stream(from, to, n, y0, y1, spread = 0.4) {
+  /** Passengers who step off a train / come down the stairs and vanish at the far end. Both ends are clamped onto the platform slab (the stairs and the train are
+   *  off it), and `delay0 + i * 0.5` staggers the batch so it never appears stacked on one spot. */
+  stream(from, to, n, y0, y1, spread = 0.4, delay0 = 0) {
     for (let i = 0; i < n && this.people.length < this.max; i++) {
-      const p = this.add({ x: from.x + (this.rng() - 0.5) * spread, z: from.z + (this.rng() - 0.5) * spread, y: y0, yaw: 0, mode: 'go', tx: to.x + (this.rng() - 0.5) * spread, tz: to.z + (this.rng() - 0.5) * spread, ty: y1, speed: 1.1 + this.rng() * 0.3, delay: i * 0.5 + this.rng() * 0.6 });
+      const f0 = this._toFloor(from.x + (this.rng() - 0.5) * spread, from.z + (this.rng() - 0.5) * spread), f1 = this._toFloor(to.x + (this.rng() - 0.5) * spread, to.z + (this.rng() - 0.5) * spread);
+      const p = this.add({ x: f0.x, z: f0.z, y: y0, yaw: Math.atan2(-(f1.x - f0.x), -(f1.z - f0.z)), mode: 'go', tx: f1.x, tz: f1.z, ty: y1, speed: 1.1 + this.rng() * 0.3, delay: delay0 + i * 0.5 + this.rng() * 0.6 });
       if (p.obj) { p.hidden = true; p.obj.visible = false; }
     }
   }
@@ -346,10 +355,19 @@ export class AnimCrowd {
   queue(n, slots) {
     const cand = this.people.filter((q) => !q.static && q.obj && q.mode !== 'go' && q.mode !== 'queue'); const used = [];
     for (const s of slots) { if (used.length >= n) break; let best = null, bd = 1e9; for (const q of cand) { if (used.includes(q)) continue; const d = Math.hypot(q.x - s.x, q.z - s.z); if (d < bd) { bd = d; best = q; } } if (!best) break;
-      used.push(best); best.mode = 'queue'; best.tx = s.x; best.tz = s.z; best.qyaw = s.yaw; best.speed = Math.max(best.speed || 1, 1); best.wait = 0; this._enter(best, 'walk'); }
+      const f = this._toFloor(s.x, s.z, 0.3);
+      used.push(best); best.revert = null; best.mode = 'queue'; best.tx = f.x; best.tz = f.z; best.qyaw = s.yaw; best.slot = { x: f.x, z: f.z, yaw: s.yaw }; best.speed = Math.max(best.speed || 1, 1); best.wait = 0; best.blockT = 0; best.bestD = 1e9; best.stuckT = 0; this._enter(best, 'walk'); }
     return used.length;
   }
-  board(door, delayStep = 0.35) { let i = 0; for (const q of this.people) if (q.mode === 'queue') { q.mode = 'go'; q.delay = i++ * delayStep + this.rng() * 0.3; { const d = this._toFloor(door(q).x, door(q).z, 0.25); q.tx = d.x; q.tz = d.z; } q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; this._enter(q, 'go', 0.2); } return i; }
+  /** the doors are open: everyone in the queue steps in, one after another (they keep idling in the line until their turn, then walk) */
+  board(door, delayStep = 0.35) {
+    let i = 0;
+    for (const q of this.people) if (q.mode === 'queue') {
+      q.mode = 'go'; q.revert = null; q.delay = i++ * delayStep + this.rng() * 0.3; { const d = this._toFloor(door(q).x, door(q).z, 0.25); q.tx = d.x; q.tz = d.z; }
+      q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; q.goStarted = false;
+    }
+    return i;
+  }
   /** seated / standing passengers riding in a car: slots in the parent's (car group) frame: seated {x,y,z,yaw,seatY,mode:'sit'} (x,z = pelvis position),
    *  standing {x,y,z,yaw,mode:'stand'|'pole', maxH} (maxH = tallest allowed person: headroom(x) - 0.08) */
   seat(parent, slots) {
@@ -381,26 +399,45 @@ export class AnimCrowd {
       p.stateT += dt;
       if (!p.static) {
         if (p.mode === 'walk') {
-          if (p.wait > 0) { p.wait -= dt; if (p.wait <= 0) this._enter(p, 'walk'); }
+          if (p.wait > 0) { p.wait -= dt; p.vx = p.vz = 0; if (p.wait <= 0) this._enter(p, 'walk'); }
           else {
             if (p.tx == null || Math.hypot(p.tx - p.x, p.tz - p.z) < 0.3) {
-              let tx, tz, k = 0; do { tx = p.rect.x0 + this.rng() * (p.rect.x1 - p.rect.x0); tz = p.rect.z0 + this.rng() * (p.rect.z1 - p.rect.z0); } while (k++ < 12 && !this._free(tx, tz, 0.3, p));
-              p.tx = tx; p.tz = tz; if (this.rng() < 0.45) { p.wait = 2 + this.rng() * 7; this._enter(p, 'stand'); }
+              if (p.revert) this._settle(p);   // finished stepping out of the user's way: back to standing / the queue
+              else {
+                let tx, tz, k = 0; do { tx = p.rect.x0 + this.rng() * (p.rect.x1 - p.rect.x0); tz = p.rect.z0 + this.rng() * (p.rect.z1 - p.rect.z0); } while (k++ < 12 && !this._free(tx, tz, 0.3, p));
+                p.tx = tx; p.tz = tz; p.bestD = 1e9; p.stuckT = 0; if (this.rng() < 0.45) { p.wait = 2 + this.rng() * 7; p.vx = p.vz = 0; this._enter(p, 'stand'); }
+              }
             }
-            if (!(p.wait > 0)) { if (!this._step(p, dt, p.speed * 0.85)) { p.tx = null; p.wait = 0.5 + this.rng(); this._enter(p, 'stand'); } }
+            if (p.mode === 'walk' && !(p.wait > 0)) {
+              const moved = this._step(p, dt, p.speed * 0.85), dd = Math.hypot(p.tx - p.x, p.tz - p.z);
+              if (moved && dd < (p.bestD ?? 1e9) - 0.05) { p.bestD = dd; p.stuckT = 0; } else p.stuckT = (p.stuckT || 0) + dt;
+              if (!moved || p.stuckT > 1.6) { p.tx = null; p.wait = 0.5 + this.rng(); p.vx = p.vz = 0; p.stuckT = 0; this._enter(p, 'stand'); }   // boxed in / going nowhere: stop and think again, never shuffle on the spot
+            }
           }
         } else if (p.mode === 'queue') {
-          if (Math.hypot(p.tx - p.x, p.tz - p.z) > 0.12) { if (!this._step(p, dt, p.speed * 0.9)) { p.x += (this.rng() - 0.5) * 0.1; p.z += (this.rng() - 0.5) * 0.1; } }
-          else if (p.state === 'walk') { p.yaw = p.qyaw; this._enter(p, 'stand'); }
+          const dq = Math.hypot(p.tx - p.x, p.tz - p.z);
+          if (dq > 0.12) {
+            const moved = this._step(p, dt, p.speed * 0.9);
+            if (moved && dq < (p.bestD ?? 1e9) - 0.05) { p.bestD = dq; p.stuckT = 0; } else p.stuckT = (p.stuckT || 0) + dt;
+            if (moved) { p.blockT = 0; if (p.state !== 'walk') this._enter(p, 'walk'); }
+            else { p.blockT = (p.blockT || 0) + dt; if (p.state === 'walk' && p.blockT > 0.3) this._enter(p, 'stand'); }   // boxed in: wait quietly
+            if (p.stuckT > 2.5) { p.tx = p.x; p.tz = p.z; p.stuckT = 0; p.yawT = p.qyaw; p.vx = p.vz = 0; this._enter(p, 'stand'); }   // no way through to its place: wait where it stands
+          } else if (p.state === 'walk') { p.yawT = p.qyaw; p.vx = p.vz = 0; this._enter(p, 'stand'); }
         } else if (p.mode === 'go') {
-          if (p.delay > 0) { p.delay -= dt; continue; }
-          if (p.hidden) { p.hidden = false; p.obj.visible = true; this._enter(p, 'go', 0); }
-          const moved = this._step(p, dt, p.speed, true); if (yAt) p.y = yAt(p.x, p.z, p.y); p.stuckT = moved ? 0 : (p.stuckT || 0) + dt;
-          if (Math.hypot(p.tx - p.x, p.tz - p.z) < 0.35 || p.stuckT > 2.5) { this._drop(p); this.people.splice(i, 1); continue; }
+          if (p.delay > 0) { p.delay -= dt; if (p.hidden) continue; }   // streamers stay invisible until their turn; queued boarders idle in the line
+          else {
+            if (!p.goStarted) { p.goStarted = true; p.bestD = 1e9; p.stuckT = 0; p.blockT = 0; p.vx = p.vz = 0; if (p.hidden) { p.hidden = false; p.obj.visible = true; } this._enter(p, 'go', 0.2); }
+            const moved = this._step(p, dt, p.speed, p.blockT > 0.8 ? 2 : 1);   // walks round people and furniture; only a person truly boxed in for a moment goes through
+            p.blockT = moved ? 0 : p.blockT + dt; if (yAt) p.y = yAt(p.x, p.z, p.y);
+            const dd = Math.hypot(p.tx - p.x, p.tz - p.z);   // progress-based watchdog: sliding along a wall without getting closer is being stuck too
+            if (dd < p.bestD - 0.03) { p.bestD = dd; p.stuckT = 0; } else p.stuckT += dt;
+            if (dd < 0.35 || p.stuckT > 2.5) { this._drop(p); this.people.splice(i, 1); continue; }
+          }
         }
       }
-      // soft avoidance: step away from the user's body instead of standing in their face
-      if (!p.static && this.walker && p.mode !== 'go') { const dx = p.x - this.walker.x, dz = p.z - this.walker.z, d = Math.hypot(dx, dz); if (d < 1.25 && d > 1e-4) { const k = Math.min(1.25 - d, 1.4 * dt); p.x += (dx / d) * k; p.z += (dz / d) * k; if (p.rect) { p.x = Math.min(p.rect.x1, Math.max(p.rect.x0, p.x)); p.z = Math.min(p.rect.z1, Math.max(p.rect.z0, p.z)); } } }
+      // someone standing within arm's reach of the user takes a few real steps aside (legs moving) instead of gliding away in their idle pose
+      if (!p.static && this.walker && p.mode !== 'go' && p.state !== 'walk' && !p.revert) { const dx = p.x - this.walker.x, dz = p.z - this.walker.z, d = Math.hypot(dx, dz); if (d < 1.0 && !this._makeWay(p, d > 1e-4 ? dx / d : 1, d > 1e-4 ? dz / d : 0) && d > 1e-4) { const k = Math.min(1.0 - d, 1.0 * dt); const nx = p.x + (dx / d) * k, nz = p.z + (dz / d) * k; if (this._onFloor(nx, nz, 0.12)) { p.x = nx; p.z = nz; } } }
+      if (!p.static) this._turn(p, dt);
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
       this._pace(p, dt);
@@ -422,17 +459,71 @@ export class AnimCrowd {
     p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
     if ((p.state === 'walk' || p.state === 'go') && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
   }
-  _step(p, dt, sp, ghost) {
-    sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching below handles the rest)
-    const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz) || 1, k = Math.min(d, sp * dt) / d, nx = p.x + dx * k, nz = p.z + dz * k;
-    if (!ghost && !this._free(nx, nz, 0.22, p)) return false;   // would walk into furniture / another person / off the slab
-    if (ghost && !this._onFloor(nx, nz, 0.12)) {   // streaming passengers slide along walls and the platform edge instead of crossing them
-      const sx = p.x + dx * k, sz = p.z + dz * k;
-      if (this._onFloor(sx, p.z, 0.12)) { p.x = sx; p.yaw = Math.atan2(-dx, -dz); return true; }
-      if (this._onFloor(p.x, sz, 0.12)) { p.z = sz; p.yaw = Math.atan2(-dx, -dz); return true; }
+  /** may this person stand at (nx,nz)? On the slab (inset m), clear of furniture, the user and every other person - except that stepping AWAY from something already too close is always allowed */
+  _freeStep(p, nx, nz, m = 0.22) {
+    if (!this._onFloor(nx, nz, m)) return false;
+    const w = this.walker; if (w) { const dn = Math.hypot(nx - w.x, nz - w.z); if (dn < 0.86 && dn < Math.hypot(p.x - w.x, p.z - w.z)) return false; }
+    for (const a of this.avoid) if (nx > a.x0 - 0.22 && nx < a.x1 + 0.22 && nz > a.z0 - 0.22 && nz < a.z1 + 0.22) return false;
+    for (const q of this.people) {
+      if (q === p || q.hidden || !q.obj || q.static) continue;
+      const dn2 = (q.x - nx) ** 2 + (q.z - nz) ** 2; if (dn2 >= 0.45 * 0.45) continue;
+      if (dn2 > (q.x - p.x) ** 2 + (q.z - p.z) ** 2) continue;   // already inside each other's space: moving apart is fine
       return false;
     }
-    p.x = nx; p.z = nz; p.yaw = Math.atan2(-dx, -dz); return true;
+    return true;
+  }
+  /** One steering step toward (tx,tz). The straight line is tried first, then wider and wider veers (to the person's preferred side first, so two people meeting head-on pass on
+   *  opposite sides); the chosen direction feeds a low-passed velocity, so the path and the body heading are smooth - no snapping, no crab-walking, no jitter.
+   *  lvl 0: normal wanderer / queuer (slab inset 0.22); 1: passenger going for a door / the stairs (inset 0.12, still walks round people); 2: boxed-in passenger (floor only).
+   *  Returns false when there is no way forward (the person then faces the goal and stands still - never a random shuffle). */
+  _step(p, dt, sp, lvl = 0) {
+    sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching handles the rest)
+    const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz); if (d < 1e-4) return true;
+    const ok = (x, z) => (lvl === 2 ? this._onFloor(x, z, 0.12) : this._freeStep(p, x, z, lvl === 1 ? 0.12 : 0.22));
+    const h0 = Math.atan2(dz, dx), side = p.side || 1, want = p.mode === 'go' ? sp : sp * Math.min(1, 0.3 + d / 0.7), near = Math.min(d, 0.4), far = Math.min(d, 0.85);
+    if (p.sideT > 0) p.sideT -= dt;
+    // pick a heading: straight on if it is clear well ahead, else the smallest veer that is (preferred side first, and once a side is chosen the person COMMITS to it for a
+    // second - flipping sides every frame in front of an obstacle is the dithering this prevents); pass 1 settles for "clear just ahead", pass 2 may swap sides
+    let pick = null;
+    for (let pass = 0; pass < 3 && !pick; pass++) for (const off of SIDESTEPS) {
+      if (pass < 2 && p.sideT > 0 && off * side < 0) continue;
+      const h = h0 + off * side, ux = Math.cos(h), uz = Math.sin(h);
+      if (!ok(p.x + ux * near, p.z + uz * near)) continue;
+      if (pass === 0 && !ok(p.x + ux * far, p.z + uz * far)) continue;
+      pick = { ux, uz, off }; break;
+    }
+    if (!pick) { p.vx = p.vz = 0; p.yawT = Math.atan2(-dx, -dz); return false; }
+    const cx = pick.ux, cz = pick.uz;
+    if (pick.off * side < 0) { p.side = -side; p.sideT = 1.0; } else if (pick.off !== 0) p.sideT = Math.max(p.sideT || 0, 0.8);
+    const a = 1 - Math.exp(-dt * 8);
+    p.vx = (p.vx || 0) + (cx * want - (p.vx || 0)) * a; p.vz = (p.vz || 0) + (cz * want - (p.vz || 0)) * a;
+    let sx = p.vx * dt, sz = p.vz * dt; const sm = Math.hypot(sx, sz); if (sm > d) { sx *= d / sm; sz *= d / sm; }
+    if (!ok(p.x + sx, p.z + sz)) { const s1 = Math.min(want * dt, d) * 0.6; sx = cx * s1; sz = cz * s1; p.vx = cx * want * 0.6; p.vz = cz * want * 0.6; }   // the smoothed step would clip something: ease along the checked heading
+    p.x += sx; p.z += sz;
+    if (Math.hypot(p.vx, p.vz) > 0.1) p.yawT = Math.atan2(-p.vx, -p.vz);
+    return true;
+  }
+  /** body heading follows the direction of travel through a low-pass (never a snap); people standing still turn on the spot a little slower */
+  _turn(p, dt) {
+    if (p.yawT == null) return; const d = angDiff(p.yaw, p.yawT); if (Math.abs(d) < 1e-3) return;
+    p.yaw += d * (1 - Math.exp(-dt * (p.state === 'walk' || p.state === 'go' ? 9 : 5)));
+  }
+  /** someone standing too close to the user: walk a couple of metres clear (legs moving), then go back to standing / the queue slot. false: nowhere to go */
+  _makeWay(p, ux, uz) {
+    const a0 = Math.atan2(uz, ux);
+    for (const dist of [1.8, 1.2]) for (const off of [0, 0.8, -0.8, 1.6, -1.6, 2.4]) {
+      const tx = p.x + Math.cos(a0 + off) * dist, tz = p.z + Math.sin(a0 + off) * dist;
+      if (!this._free(tx, tz, 0.3, p)) continue;
+      if (p.mode !== 'walk') { p.revert = p.mode; p.mode = 'walk'; }
+      p.tx = tx; p.tz = tz; p.wait = 0; p.vx = p.vz = 0; p.bestD = 1e9; p.stuckT = 0; this._enter(p, 'walk'); return true;
+    }
+    return false;
+  }
+  /** back from stepping aside: queue people return to their place in the line, everyone else just stands where they are */
+  _settle(p) {
+    const m = p.revert; p.revert = null; p.vx = p.vz = 0;
+    if (m === 'queue' && p.slot) { p.mode = 'queue'; p.tx = p.slot.x; p.tz = p.slot.z; p.qyaw = p.slot.yaw; p.blockT = 0; p.bestD = 1e9; p.stuckT = 0; return; }
+    p.mode = m || 'stand'; p.tx = null; this._enter(p, 'stand');
   }
   // ------------------------------------------------------------------ audit (regression tests)
   /** Real skinned-vertex metrics of every person, in the frame of `refMatrixInv` (default: the person's parent). Returns {id,state,foot,head,x,z,verts:[[x,y,z]...]} */

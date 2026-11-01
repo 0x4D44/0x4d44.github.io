@@ -412,6 +412,18 @@ class Sim {
     const svc = this.svc, st = svc.stop;
     return -(svc.train.s - this.trainLen / 2 - (svc.targetU - st.cabOff));
   }
+  /** train centre (station-local z) once it stands on its stop mark. The queue forms where the doors WILL be: `_trainCentreZl()` while the train is still
+   *  approaching is 200 m up the line, and people sent there just pile up against the end of the platform. */
+  _stopCentreZl() { return this.trainLen / 2 - this.svc.stop.cabOff; }
+  /** where passengers leave and enter the platform: the stair portals on the platform the train stands at (halls), else the ramp axis at the platform end */
+  _exitPoints(v) {
+    const inf = v.info, A = v.anchors || {}, pl = v.ownPlat, out = [];
+    if (inf.hall && A.portals && A.portals.length) {
+      const on = pl ? A.portals.filter((q) => q.x > pl.x0 - 0.8 && q.x < pl.x1 + 0.8) : [];
+      for (const q of (on.length ? on : A.portals)) out.push({ x: q.x, z: q.z });
+    }
+    return out.length ? out : [{ x: inf.rc, z: inf.zE - 0.5 }];
+  }
   _nearestDoorZ() {
     const wz = this.walker.z - (this.ctxKind === 'station' ? this._trainCentreZl() : 0);
     let best = this.doorZ[1], bd = 1e9;
@@ -616,7 +628,7 @@ class Sim {
     const edge = 1.0; const lo = Math.min(inf.xe, inf.xo), hi = Math.max(inf.xe, inf.xo);
     v.crowdRect.x0 = inf.S > 0 ? inf.xe + edge : inf.xo + 0.4; v.crowdRect.x1 = inf.S > 0 ? inf.xo - 0.4 : inf.xe - edge;
     v.crowdN = Math.round(n * (v.info.hall && this.looks ? lookHints(this.looks.get(v.station.id)).crowd : 1));
-    if (v.info.hall) { const pl = v.anchors.hallPlat.find((q) => q.x0 === Math.min(inf.xe, inf.xo) || Math.abs((inf.S > 0 ? q.x0 : q.x1) - inf.xe) < 0.05) || v.anchors.hallPlat[0]; v.crowdRect = { x0: pl.x0 + 0.6, x1: pl.x1 - 0.6, z0: -20, z1: 20 }; if (inf.S > 0) v.crowdRect.x0 = pl.x0 + 1.0; else v.crowdRect.x1 = pl.x1 - 1.0; }
+    if (v.info.hall) { const pl = v.anchors.hallPlat.find((q) => q.x0 === Math.min(inf.xe, inf.xo) || Math.abs((inf.S > 0 ? q.x0 : q.x1) - inf.xe) < 0.05) || v.anchors.hallPlat[0]; v.ownPlat = pl; v.crowdRect = { x0: pl.x0 + 0.6, x1: pl.x1 - 0.6, z0: -20, z1: 20 }; if (inf.S > 0) v.crowdRect.x0 = pl.x0 + 1.0; else v.crowdRect.x1 = pl.x1 - 1.0; }
     // kit pieces (benches etc.) are procedural; kit used for the signal head
   }
 
@@ -940,8 +952,8 @@ class Sim {
       }
     }
     // platform people queue at the doors while the train arrives, then board when the doors open
-    if (sh.state === 'arriving' && !sh.queued && this.activeStation && this.crowd.queue) {
-      sh.queued = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl(), slots = [];
+    if (sh.state === 'arriving' && !sh.queued && this.activeStation && this.crowdFor && this.crowd.queue) {   // (crowdFor: the platform is populated - a queue of nobody would still use up this train)
+      sh.queued = true; const v = this.activeStation, inf = v.info, zc = this._stopCentreZl(), slots = [];
       for (let i = 0; i < this.doorZ.length; i++) for (const o of [-0.55, 0.55]) slots.push({ x: inf.xe + inf.S * (0.75 + 0.1 * (i % 2)), z: zc + this.doorZ[i] + o, yaw: inf.S > 0 ? Math.PI / 2 : -Math.PI / 2 });
       this.crowd.queue(Math.min(8, Math.round(v.crowdN * 0.3)), slots);
     }
@@ -949,11 +961,18 @@ class Sim {
     // passenger streams during dwell
     if (sh.state === 'dwell' && svc.doorsOpen && !sh.streamed && this.activeStation) {
       sh.streamed = true; const v = this.activeStation, inf = v.info, zc = this._trainCentreZl();
-      const door = this.doorZ.slice(); const ramp = { x: inf.rc, z: inf.zE - 0.5 };
+      const door = this.doorZ.slice(), exits = this._exitPoints(v);   // exits: the stairs (hall) / ramp - passengers walk to and from THEM, never through the end wall
       const nAl = Math.min(10, Math.round(svc.pax.onboard * 0.12)), nBo0 = Math.min(10, Math.round(v.crowdN * 0.35));
       const boarded = this.crowd.board ? this.crowd.board((q) => { let bi = 0, bd = 1e9; this.doorZ.forEach((dz, k) => { const d = Math.abs(zc + dz - q.z); if (d < bd) { bd = d; bi = k; } }); return { x: inf.xe + inf.S * 0.15, z: zc + this.doorZ[bi] }; }) : 0, nBo = Math.max(0, nBo0 - boarded);
-      for (let i = 0; i < nAl; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.xe + inf.S * 0.4, z: zc + dz }, { x: inf.rc, z: inf.zE - 0.5 }, 1, inf.PY, inf.PY, 0.4); }
-      for (let i = 0; i < nBo; i++) { const dz = door[i % door.length]; this.crowd.stream({ x: inf.rc, z: zc + dz + (Math.random() - 0.5) * 3 }, { x: inf.xe + inf.S * 0.3, z: zc + dz }, 1, inf.PY, inf.PY, 0.6); }
+      const nearest = (pts, z) => pts.reduce((b, q) => (Math.abs(q.z - z) < Math.abs(b.z - z) ? q : b), pts[0]);
+      for (let i = 0; i < nAl; i++) {   // step off the train one after another (a batch stacked on one spot would shove itself apart) and head for the nearest stairs
+        const from = { x: inf.xe + inf.S * 0.4, z: zc + door[i % door.length] };
+        this.crowd.stream(from, nearest(exits, from.z), 1, inf.PY, inf.PY, 0.3, i * 0.9 + Math.random() * 0.4);
+      }
+      for (let i = 0; i < nBo; i++) {   // come down the stairs spread over the dwell, and make for one of the two doors nearest the stairs they used
+        const ex = exits[i % exits.length], doors = door.slice().sort((a, b) => Math.abs(zc + a - ex.z) - Math.abs(zc + b - ex.z));
+        this.crowd.stream(ex, { x: inf.xe + inf.S * 0.3, z: zc + doors[i % 2] }, 1, inf.PY, inf.PY, 0.4, 0.5 + i * 0.8 + Math.random() * 0.4);
+      }
     }
     if (sh.state !== 'dwell') sh.streamed = false;
   }
