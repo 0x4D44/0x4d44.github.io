@@ -14,7 +14,7 @@ import { SimAudio } from './audio.js';
 import { Tms } from './tms.js';
 import { Hud, HELP_HTML } from './hud.js';
 import { buildStreet } from './street.js';
-import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, HALL_FULL } from './hall.js';
+import { layoutFor, loadGLB, disposeTemplate, lookHints, fixHallSigns, frontFaceSigns, stripIslandFurniture, measureHallWalls, HALL_FULL } from './hall.js';
 import { peopleVariants } from './kit.js';
 
 export function simAvailable() {
@@ -575,7 +575,7 @@ class Sim {
     if (this.halls.has(id)) return Promise.resolve(this.halls.get(id).tpl);
     if (this.hallFailed.has(id) || !this.hallIndex || !this.hallIndex.stations[id]) return Promise.resolve(null);
     if (this.hallLoading.has(id)) return this.hallLoading.get(id);
-    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { fixHallSigns(tpl, this.hallIndex.stations[id]); frontFaceSigns(tpl, /^route_map_panel$/); } catch (e) { console.warn('[sim] hall sign fix', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
+    const p = loadGLB(this.THREE, this.GLTFLoader, this.url('models/' + this.hallIndex.stations[id].hall)).then((tpl) => { try { const hi = this.hallIndex.stations[id]; fixHallSigns(tpl, hi); frontFaceSigns(tpl, /^route_map_panel$/); stripIslandFurniture(this.THREE, tpl, hi); tpl.userData.wallX = measureHallWalls(tpl); } catch (e) { console.warn('[sim] hall prepare', e); } this.halls.set(id, { tpl, t: this.time }); this.hallLoading.delete(id); this._evictHalls(id); return tpl; })
       .catch((e) => { console.warn('[sim] hall load failed', id, e && e.message); this.hallFailed.add(id); this.hallLoading.delete(id); return null; });
     this.hallLoading.set(id, p); return p;
   }
@@ -866,7 +866,7 @@ class Sim {
       if (!this.context && Math.hypot(w.x - a.x, w.z - a.z) < 2.2 && w.y > a.y - 0.6) { this.context = { kind: 'street' }; msg = '<kbd>E</kbd> Go outside to the street'; }
       if (!this.context) {
         // facts caption
-        for (const p of (v.anchors.panels || [])) if (Math.abs(w.z - p.z) < 3.2 && Math.abs(w.x - p.x) < 4 && w.y < inf.PY + 0.5) { msg = `<b>${p.title}</b> ${p.body.slice(0, 160)}`; break; }
+        for (const p of (v.anchors.panels || [])) if (Math.abs(w.z - p.z) < 3.2 && Math.abs(w.x - p.x) < 7 && w.y < inf.PY + 0.5) { msg = `<b>${p.title}</b> ${p.body.slice(0, 160)}`; break; }
         if (!msg) for (const p of (v.anchors.conPanels || [])) if (w.y > inf.Hc - 0.5 && Math.abs(w.z - (p.z + 4.8)) < 3.5 && w.x > inf.rc + 4) { msg = p.body.slice(0, 160); break; }
       }
       if (v.info.hall && v.anchors.hallPlat && v.anchors.hallPlat.length > 1 && !this.context && w.y < inf.PY + 0.5) msg = (msg ? msg + '  ' : '') + '<kbd>X</kbd> Cross to the other platform';
