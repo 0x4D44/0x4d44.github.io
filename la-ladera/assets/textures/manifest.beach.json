@@ -1,0 +1,3383 @@
+{
+  "version": 1,
+  "complete": true,
+  "runtime": false,
+  "library": "beach",
+  "license": "CC0-1.0",
+  "budgets": {
+    "maxBytes": 8000000,
+    "maxGpuBytes": 167772160
+  },
+  "generator": {
+    "script": "tools/textures/beach_build.py",
+    "sources": "OpenAI built-in image generator",
+    "normalNote": "Luminance-derived artistic approximations; not measured PBR scans.",
+    "rawSources": "Source PNGs not shipped; exact prompts and raw SHA-256 recorded per texture."
+  },
+  "textures": {
+    "sand_dry": {
+      "map": "beach/sand_dry.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": 2.5,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Warm pale-gold sand, fine grains, tiny shell fragments, mineral flecks and subtle wind ripples.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: game material albedo, one seamless square photographic texture. Create sand_dry: warm pale-gold fine beach sand, tiny scattered broken white shells and dark mineral flecks, very subtle low wind ripples. Real-world patch 2.5 m by 2.5 m. Strict orthographic top-down, uniform flat even diffuse daylight, no cast shadows, no directional highlights, no vignette, no horizon, no objects, no labels, no border. Fully fill the square. Matching natural opposite edges for seamless repeating. Original natural surface, no brands. Target texture 1024x1024.",
+        "sourceSha256": "3062f9e5fa05d8d0243e2b30aaf39e73a6842b5b2a29169999cfbdd099271825",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/sand_dry_n.png",
+      "rough": "beach/sand_dry_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.87,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "sand_wet": {
+      "map": "beach/sand_wet.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": 2.5,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Darker wet tan sand, faint sheen, bubble holes and small worm casts.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: sand_wet. Subject: Smooth soaked beach sand, darker tan-brown than pale dry gold sand, very faint satin wet sheen with no specular hotspots, tiny bubble holes, a few short worm casts and scattered tiny broken shells. Physical scale: this entire image represents 2.5 metres by 2.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 1024 by 1024 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "e26091135ff5ba6bcc8dd7184681256c0c2d003317090499f1d6cd8bb454bdd2",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/sand_wet_n.png",
+      "rough": "beach/sand_wet_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.31,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "seabed_sand": {
+      "map": "beach/seabed_sand.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": 3,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Pale grey-gold lagoon sand with parallel ripple ridges and a few shell fragments.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: seabed_sand. Subject: Clean submerged pale grey-gold sand with gentle parallel ripple ridges of plausible shallow lagoon sand, a few tiny shell bits. No water surface, no baked caustics, no blue colour cast. The ripple lines run consistently horizontally across the square. Physical scale: this entire image represents 3 metres by 3 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 1024 by 1024 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "bc997b2d6a22d7b0a5fdd43f66d437ad0f33b944ebcfae95a39957ac6642180b",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/seabed_sand_n.png",
+      "rough": "beach/seabed_sand_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.72,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "seabed_rock": {
+      "map": "beach/seabed_rock.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 3,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Rounded dark stones in sand, green algae film and barnacles.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: seabed_rock. Subject: Rounded dark volcanic stones embedded in pale gritty seabed sand, a fine muted green algae film on stones and a few small white barnacles. Small plausible mixed sizes, natural dense distributed texture. Physical scale: this entire image represents 3 metres by 3 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "e0d19df9ef3b517dba9983d2d9e679d682231bcec7630d3bd31da1eda64fbd2e",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/seabed_rock_n.png",
+      "rough": "beach/seabed_rock_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.73,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "rock_sea": {
+      "map": "beach/rock_sea.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "tile": 2,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Grey-brown granite breakwater boulders with salt crust and barnacle patches.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: rock_sea. Subject: Angular grey-brown granite breakwater boulder surfaces with natural mineral grains, white salt crust, scattered black wet patches, sparse small white barnacle clusters arranged in tidal bands. Fill the entire square with the rough granite surface, no isolated object silhouette. Physical scale: this entire image represents 2 metres by 2 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 1024 by 1024 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "d978576f5152bd9f65abfa45b8b58c743ea538b81e561e882d41814e62731d08",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/rock_sea_n.png",
+      "rough": "beach/rock_sea_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.82,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "seawall_concrete": {
+      "map": "beach/seawall_concrete.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 2,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Pale poured concrete, formwork lines, salt staining and restrained rust streaks.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: seawall_concrete. Subject: Poured pale grey concrete seawall surface, faint horizontal formwork lines, subtle white salt efflorescence staining, a few narrow aged orange-brown rust streaks from small rebar marks. Believable salt weathering and concrete pores. Physical scale: this entire image represents 2 metres by 2 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "ef521537d3df853be30382d6a76f5e90a37992d47c7ade3dd8f5d96987c24fc0",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/seawall_concrete_n.png",
+      "rough": "beach/seawall_concrete_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.83,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "promenade_pavers": {
+      "map": "beach/promenade_pavers.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 2.4,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Six by six 40 cm sand-coloured pavers; sand in thin joints and a few cracks.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: promenade_pavers. Subject: An EXACT six columns by six rows square grid of 36 sand-coloured concrete promenade pavers. Each paver is 40 cm square. Orthographic view, square pavers equal dimensions and aligned perfectly with image axes, narrow sand-filled joints. Small natural variation and occasional fine hairline cracks. Image edges run along the centres of boundary joints so opposite edges tile naturally. No staggered brick pattern. Physical scale: this entire image represents 2.4 metres by 2.4 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "b6a5d2da09d8232de65bc4415d54b6107509857ab896c49dce0ad990aea233f5",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/promenade_pavers_n.png",
+      "rough": "beach/promenade_pavers_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.78,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "jetty_planks": {
+      "map": "beach/jetty_planks.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 2,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Silver-grey weathered hardwood pier planks, dark nail heads and salt bleaching.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: jetty_planks. Subject: Weathered silver-grey hardwood pier deck planks with fine vertical lengthwise wood grain, dark nail heads in plausible pairs, narrow black gaps, salt bleaching and modest chipped edges. Parallel planks running from top to bottom, no perspective, no water visible between boards. Physical scale: this entire image represents 2 metres by 2 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "01637bcb9803a61a0d583c9ff4494af5f5c09fa49d6c0eaf90fccd07d055a806",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/jetty_planks_n.png",
+      "rough": "beach/jetty_planks_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.75,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "pile_wood": {
+      "map": "beach/pile_wood.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 1.5,
+      "uv": "tile",
+      "tileAxes": [
+        "x"
+      ],
+      "alpha": false,
+      "description": "Creosoted vertical wood grain with green slime and barnacles at the base; horizontal repeat only.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: pile_wood. Subject: A close flat unwrapped rectangular surface of creosote-dark brown timber pile. Strong fine vertical wood grain. Lower quarter carries muted green tidal slime, scattered tiny white barnacles and a few small dark mussels, upper part is mostly weathered dark timber. This is a surface swatch, not a cylindrical pile photographed in space. Physical scale: this entire image represents 1.5 metres by 1.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile horizontally left-to-right only; top is dark timber and bottom is tidal growth, do not repeat vertically. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "2075b3a39f2f5f64de5c4f2961544c4864873fc7c9574df4ea79b0bf12274692",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/pile_wood_n.png",
+      "rough": "beach/pile_wood_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.78,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "rope_hemp": {
+      "map": "beach/rope_hemp.png",
+      "size": [
+        256,
+        256
+      ],
+      "tile": 0.5,
+      "uv": "tile",
+      "tileAxes": [
+        "y"
+      ],
+      "alpha": false,
+      "description": "Twisted tan hemp fibres; repeats along its vertical length.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: rope_hemp. Subject: A dense surface of thick twisted tan hemp ropes laid tightly side by side, all running vertically from top to bottom. Fine fibrous strands, alternating natural helical twists, neutral tan, no knots, no loose ends, no frame. Fill the full square with ropes. Physical scale: this entire image represents 0.5 metres by 0.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile along rope length vertically top-to-bottom; preserve continuous twisted strands at the top and bottom edges. Target final texture size 256 by 256 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "6032f1414714680ccf702071718402a7026b404e64565aa4c7efcb0c272e220e",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/rope_hemp_n.png",
+      "rough": "beach/rope_hemp_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.93,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "thatch_palm": {
+      "map": "beach/thatch_palm.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 1.5,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Overlapping dry golden and silver palm fronds.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: thatch_palm. Subject: Dense overlapping dry palm-leaf thatch, individual narrow fronds and fibrous leaf edges, golden-brown mixed with bleached silver-grey, organic layered roof surface. No roof structure or sky, only thatch fills the square. Physical scale: this entire image represents 1.5 metres by 1.5 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "eb40a088ffa6ca4cf0276fb8846e00f369969489641daaa9da0eb98578a42b7b",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/thatch_palm_n.png",
+      "rough": "beach/thatch_palm_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.92,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "canvas_stripe": {
+      "map": "beach/canvas_stripe.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 1,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Neutral white and grey vertical canvas bands with cotton weave; tintable.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: canvas_stripe. Subject: Thick cotton umbrella canvas with a faint visible weave and equally spaced vertical bands of OFF-WHITE and NEUTRAL MEDIUM GREY. This is an entirely grayscale tintable albedo map, no coloured pigments whatsoever, no saturated colour. Four grey bands alternating with four white bands, very slight cloth wear, no folds or creases. Physical scale: this entire image represents 1 metres by 1 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile seamlessly on both axes. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "9791f8f3d6b12394685f8bfebb06560a249a1818105d47301f2513b013f1f7d1",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/canvas_stripe_n.png",
+      "rough": "beach/canvas_stripe_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.92,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear",
+      "tint": true
+    },
+    "boat_hull_paint": {
+      "map": "beach/boat_hull_paint.png",
+      "size": [
+        512,
+        512
+      ],
+      "tile": 3,
+      "uv": "tile",
+      "tileAxes": [
+        "x"
+      ],
+      "alpha": false,
+      "description": "Scuffed fibreglass, white above cobalt blue below a thin red waterline; horizontal repeat preserves the waterline.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: original game material albedo texture, one square photographic surface swatch. Material: boat_hull_paint. Subject: Flat scuffed fibreglass fishing-boat hull paint. Upper 56 percent white/off-white paint; thin red waterline stripe across the middle at 56 to 62 percent height; lower 38 percent cobalt blue paint. Small rope scars and superficial paint scuffs, faint dirty waterline. Straight horizontal continuous bands. No boat silhouette, no letters or badges, no rivets. Physical scale: this entire image represents 3 metres by 3 metres. Composition: strictly orthographic straight-on/top-down flattened surface, zero perspective; surface fills every pixel. Lighting: flat even diffuse daylight, albedo-like with no directional highlight, no cast shadows, no vignette and no lens blur. No horizon, no scene, no objects, no label, no watermark, no border, no real brand or logo. Edge continuity: the material must tile horizontally left-to-right only; preserve white above red stripe above cobalt blue below. Target final texture size 512 by 512 pixels. Photographic fine surface detail, natural believable Colombian beach material.",
+        "sourceSha256": "3987fc8191564d87fbe175a5ff9454dd2e0f04ba5e229eaf10f8b128643ecd28",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "normal": "beach/boat_hull_paint_n.png",
+      "rough": "beach/boat_hull_paint_r.png",
+      "normalScale": 1,
+      "normalConvention": "OpenGL +Y",
+      "roughness": 0.48,
+      "mapColorSpace": "srgb",
+      "dataColorSpace": "linear"
+    },
+    "water_ripple_n": {
+      "map": "beach/water_ripple_n.png",
+      "size": [
+        256,
+        256
+      ],
+      "tile": 6,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Soft overlapping ripple normal map, original generated normals normalized to +Z hemisphere.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: scientific-educational. Asset type: seamless tangent-space OpenGL +Y normal map for a realistic calm sea shader. Create one SQUARE water_ripple_n normal texture, final256x256. Soft overlapping small-water ripples and elongated rounded capillary cells of varied scale, no dominant direction, typical purple-blue normal-map colors, average (128,128,255), blue positive everywhere, variations in red/green encode surface slope. Orthographic mathematical surface normals, not a lit photograph, no albedo,no shadows,no light source, no black holes,no text,border,legend,objects. Perfectly seamless on all edges, continuous coherent natural ripples. Original. Full square coverage.",
+        "sourceSha256": "c4db48493833f8ef3870474439a27b5b5830dfe96e66681bd290af34c1c95d26",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "mapColorSpace": "linear"
+    },
+    "foam_noise": {
+      "map": "beach/foam_noise.png",
+      "size": [
+        256,
+        256
+      ],
+      "tile": 6,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": true,
+      "description": "White sea-foam lace with genuine transparent open-water holes.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: one seamless square white sea-foam texture with real TRANSPARENT background, final 256x256. Fine white bubbles and gently connected lace tendrils of foam, irregular organic interconnected holes of varied sizes, foam occupies about half of surface. White foam with soft antialiased partially transparent edges and COMPLETELY transparent open water holes; no colored ocean or ground. Flat even orthographic, no cast shadow, no perspective, no text, no border, no margin. Delicate natural seafoam microstructure in a square matching repeat at all edges. Original, no logos.",
+        "sourceSha256": "f21214c902d3995d8d2fa8ee3af0f26550b0eb0512de04fdf77d085e1bf0e820",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "mapColorSpace": "linear"
+    },
+    "caustic_tile": {
+      "map": "beach/caustic_tile.png",
+      "size": [
+        256,
+        256
+      ],
+      "tile": 4,
+      "uv": "tile",
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "alpha": false,
+      "description": "Soft white caustic cell lines on black, linear mask.",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: one seamless square caustic light mask final256x256 for underwater shader. Pure BLACK full-square background crossed by softly glowing thin WHITE interconnected irregular rounded cellular lines, bright focused underwater sunlight caustic network as from a clear shallow lagoon. Line widths varied, organic rounded cells moderately large, no filled white areas; black interiors, high contrast, soft edges. Perfectly orthographic, no sand, no objects,no blue tint,no color, no perspective, no text,no border; seamless repeated matching all opposite edges. Original caustic pattern.",
+        "sourceSha256": "1bac2b5a85f9584206229d6ab21921e0ad61bede9f30aad7c43981c7b7115904",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "mapColorSpace": "linear"
+    },
+    "sails_kites": {
+      "map": "beach/sails_kites.png",
+      "size": [
+        1024,
+        512
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": false,
+      "cells": [
+        {
+          "id": "sail_01",
+          "rect": [
+            0,
+            0,
+            171,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.1669921875,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            17,
+            6,
+            137,
+            244
+          ]
+        },
+        {
+          "id": "sail_02",
+          "rect": [
+            171,
+            0,
+            170,
+            256
+          ],
+          "uv": [
+            0.1669921875,
+            0.0,
+            0.3330078125,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            187,
+            6,
+            137,
+            244
+          ]
+        },
+        {
+          "id": "sail_03",
+          "rect": [
+            341,
+            0,
+            171,
+            256
+          ],
+          "uv": [
+            0.3330078125,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            358,
+            6,
+            137,
+            244
+          ]
+        },
+        {
+          "id": "sail_04",
+          "rect": [
+            512,
+            0,
+            171,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            0.6669921875,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            529,
+            6,
+            137,
+            244
+          ]
+        },
+        {
+          "id": "sail_05",
+          "rect": [
+            683,
+            0,
+            170,
+            256
+          ],
+          "uv": [
+            0.6669921875,
+            0.0,
+            0.8330078125,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            699,
+            6,
+            137,
+            244
+          ]
+        },
+        {
+          "id": "sail_06",
+          "rect": [
+            853,
+            0,
+            171,
+            256
+          ],
+          "uv": [
+            0.8330078125,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            870,
+            6,
+            137,
+            244
+          ]
+        },
+        {
+          "id": "kite_01",
+          "rect": [
+            0,
+            256,
+            171,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.1669921875,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            287,
+            159,
+            194
+          ]
+        },
+        {
+          "id": "kite_02",
+          "rect": [
+            171,
+            256,
+            170,
+            256
+          ],
+          "uv": [
+            0.1669921875,
+            0.5,
+            0.3330078125,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            177,
+            287,
+            158,
+            193
+          ]
+        },
+        {
+          "id": "kite_03",
+          "rect": [
+            341,
+            256,
+            171,
+            256
+          ],
+          "uv": [
+            0.3330078125,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            347,
+            287,
+            159,
+            194
+          ]
+        },
+        {
+          "id": "kite_04",
+          "rect": [
+            512,
+            256,
+            171,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            0.6669921875,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            518,
+            287,
+            159,
+            194
+          ]
+        },
+        {
+          "id": "kite_05",
+          "rect": [
+            683,
+            256,
+            170,
+            256
+          ],
+          "uv": [
+            0.6669921875,
+            0.5,
+            0.8330078125,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            689,
+            287,
+            158,
+            193
+          ]
+        },
+        {
+          "id": "kite_06",
+          "rect": [
+            853,
+            256,
+            171,
+            256
+          ],
+          "uv": [
+            0.8330078125,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            859,
+            287,
+            159,
+            194
+          ]
+        }
+      ],
+      "description": "Six numbered windsurf sails with windows; six original striped kite wings.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: game texture atlas. Create one landscape image exactly 2:1 aspect, target 1024x512 pixels. A precise contact atlas of TWELVE original beach-sports fabric panels, in a strict regular grid of SIX columns and TWO rows; each cell identical size, pale neutral cream background, each object fully inside its cell with 8 percent clear padding, no overlap, no borders, no labels. TOP ROW: six separate windsurf sails, straight-on orthographic view, upright triangular sail silhouette, detailed cloth panel seams, one clear translucent inspection window in EACH sail, printed bold race numbers 01, 02, 03, 04, 05, 06 respectively, varied colourways ochre/teal, coral/navy, cobalt/cream, mint/white, vermilion/yellow, turquoise/cream. BOTTOM ROW: six separate inflated kitesurf kite wings, each front view with broad curved wing shape and striped panels, white seams; colourways corresponding to the sail above. No boards, people, poles, strings or landscape. Realistic photographic fabric texture, even flat diffuse daylight, shadowless, no highlights or vignette. Original designs, no real brands, no logos. Keep strict six-column two-row geometry and readable numbers.",
+        "sourceSha256": "e2a798757f9ccdeac166312013bc88afe5d2128d5c2b3fb07aa0e4d83d6ce9f1",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    },
+    "board_decks": {
+      "map": "beach/board_decks.png",
+      "size": [
+        1024,
+        512
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": false,
+      "cells": [
+        {
+          "id": "sup_teal_ochre_wave",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.25,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            6,
+            244,
+            244
+          ]
+        },
+        {
+          "id": "windsurf_coral_navy",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.25,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            6,
+            243,
+            244
+          ]
+        },
+        {
+          "id": "sup_blue_sunburst",
+          "rect": [
+            512,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            0.75,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            518,
+            6,
+            243,
+            244
+          ]
+        },
+        {
+          "id": "twintip_mint_red",
+          "rect": [
+            768,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.75,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            774,
+            6,
+            244,
+            244
+          ]
+        },
+        {
+          "id": "twintip_navy_ochre",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.25,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            262,
+            244,
+            243
+          ]
+        },
+        {
+          "id": "windsurf_turquoise",
+          "rect": [
+            256,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.25,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            262,
+            244,
+            244
+          ]
+        },
+        {
+          "id": "sup_cream_green_leaf",
+          "rect": [
+            512,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            0.75,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            518,
+            262,
+            244,
+            244
+          ]
+        },
+        {
+          "id": "twintip_red_cream",
+          "rect": [
+            768,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.75,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            774,
+            262,
+            244,
+            243
+          ]
+        }
+      ],
+      "description": "Eight original board-deck designs, pads and bold graphics without brands.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: beach game texture atlas. Create a landscape 2:1 aspect image, target 1024x512. EXACT strict grid of FOUR equal-width columns and TWO equal-height rows, eight separate surf/SUP/windsurf/kite board deck designs. Each cell independently contains ONE complete board photographed strictly orthographic top-down, nose upward, tail downward, no fins visible, no perspective. Whole design must fit within the central 80 percent of its cell, no crossing row or column midlines. Pale warm neutral background. Row1 four boards: long rounded SUP ochre/teal wave pattern and dark diamond deck pad; windsurf coral/navy geometric diagonal; SUP cobalt/cream sunburst with ribbed pad; twin-tip short rectangular mint/vermillion stripes. Row2: twin-tip navy/saffron chevrons; windsurf turquoise/white flowing curves; SUP off-white/sea-green leaf geometry and ribbed pad; twin-tip red/cream geometric blocks. Distinct original graphics, modest salt scuffs, realistic fibreglass and rubber texture. Flat even diffuse daylight with no cast shadows. No letters, logos, branding, watermark, people, text or captions. All eight boards isolated with generous gaps and matching consistent photographic detail.",
+        "sourceSha256": "4785b3fb67b17c2ff3fa13f2c2c185835994c2f281d8b3dbbde347003113e45f",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    },
+    "towels_bags": {
+      "map": "beach/towels_bags.png",
+      "size": [
+        512,
+        512
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": false,
+      "cells": [
+        {
+          "id": "towel_01",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.25,
+            0.25
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            6,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_02",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.25,
+            0.0,
+            0.5,
+            0.25
+          ],
+          "gutter": 6,
+          "contentRect": [
+            134,
+            6,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_03",
+          "rect": [
+            256,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            0.75,
+            0.25
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            6,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_04",
+          "rect": [
+            384,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.75,
+            0.0,
+            1.0,
+            0.25
+          ],
+          "gutter": 6,
+          "contentRect": [
+            390,
+            6,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_05",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.25,
+            0.25,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            134,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_06",
+          "rect": [
+            128,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.25,
+            0.25,
+            0.5,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            134,
+            134,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_07",
+          "rect": [
+            256,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.25,
+            0.75,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            134,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_08",
+          "rect": [
+            384,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.75,
+            0.25,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            390,
+            134,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_09",
+          "rect": [
+            0,
+            256,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.25,
+            0.75
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            262,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_10",
+          "rect": [
+            128,
+            256,
+            128,
+            128
+          ],
+          "uv": [
+            0.25,
+            0.5,
+            0.5,
+            0.75
+          ],
+          "gutter": 6,
+          "contentRect": [
+            134,
+            262,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_11",
+          "rect": [
+            256,
+            256,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            0.75,
+            0.75
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            262,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "towel_12",
+          "rect": [
+            384,
+            256,
+            128,
+            128
+          ],
+          "uv": [
+            0.75,
+            0.5,
+            1.0,
+            0.75
+          ],
+          "gutter": 6,
+          "contentRect": [
+            390,
+            262,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "bag_01",
+          "rect": [
+            0,
+            384,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.75,
+            0.25,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            390,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "bag_02",
+          "rect": [
+            128,
+            384,
+            128,
+            128
+          ],
+          "uv": [
+            0.25,
+            0.75,
+            0.5,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            134,
+            390,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "bag_03",
+          "rect": [
+            256,
+            384,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.75,
+            0.75,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            390,
+            116,
+            116
+          ]
+        },
+        {
+          "id": "bag_04",
+          "rect": [
+            384,
+            384,
+            128,
+            128
+          ],
+          "uv": [
+            0.75,
+            0.75,
+            1.0,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            390,
+            390,
+            116,
+            116
+          ]
+        }
+      ],
+      "description": "Twelve striped or printed towels and four canvas bag tops.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: game textile atlas. Make one SQUARE image, target512x512, with EXACT FOUR columns and FOUR rows of equal square cells. Sixteen independent flattened textile designs photographed straight overhead, shadowless flat diffuse daylight, pale neutral cream background, each design fully contained with generous 8 percent blank padding. First THREE rows: TWELVE beach towels, each a complete rectangular towel nose-to-tail aligned vertically, terry cotton with subtle fringe, different original patterns: Row1 teal-white stripes, red-white stripes, saffron-navy stripes, cobalt-cream zigzag. Row2 coral-and-turquoise blocks, ochre sunburst, green tropical leaf, navy small white fish silhouettes. Row3 cream-red diamonds, pale-blue wave pattern, pastel broad stripes, tan-and-white fine stripes. Fourth row: FOUR separate flat CANVAS BAG TOP panels (not entire upright bags), top-down views of rectangular zipped fabric tops with folded handles lying flat on each side; colours natural beige, faded blue, ochre, pale green. Realistic weave and weathering, no text, brands, logos or watermarks. No hanging textiles, no perspective, no objects overlapping cell boundaries. Strict4x4 regular packing.",
+        "sourceSha256": "fbce1aa9a193674994fe664cc6d9adf2b54d6e741de374c8959d81707fe303b6",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    },
+    "signs_menus": {
+      "map": "beach/signs_menus.png",
+      "size": [
+        1024,
+        512
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": false,
+      "cells": [
+        {
+          "id": "zona_bano",
+          "rect": [
+            0,
+            0,
+            205,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.2001953125,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            7,
+            193,
+            241
+          ],
+          "text": "Zona de baño"
+        },
+        {
+          "id": "bandera_roja",
+          "rect": [
+            205,
+            0,
+            205,
+            256
+          ],
+          "uv": [
+            0.2001953125,
+            0.0,
+            0.400390625,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            211,
+            7,
+            193,
+            241
+          ],
+          "text": "Bandera roja"
+        },
+        {
+          "id": "prohibido_paso",
+          "rect": [
+            410,
+            0,
+            204,
+            256
+          ],
+          "uv": [
+            0.400390625,
+            0.0,
+            0.599609375,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            416,
+            7,
+            192,
+            241
+          ],
+          "text": "Prohibido el paso"
+        },
+        {
+          "id": "cocadas",
+          "rect": [
+            614,
+            0,
+            205,
+            256
+          ],
+          "uv": [
+            0.599609375,
+            0.0,
+            0.7998046875,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            620,
+            7,
+            193,
+            241
+          ],
+          "text": "Cocadas"
+        },
+        {
+          "id": "ceviche",
+          "rect": [
+            819,
+            0,
+            205,
+            256
+          ],
+          "uv": [
+            0.7998046875,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            825,
+            7,
+            193,
+            241
+          ],
+          "text": "Ceviche"
+        },
+        {
+          "id": "jugos",
+          "rect": [
+            0,
+            256,
+            205,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.2001953125,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            263,
+            193,
+            241
+          ],
+          "text": "Jugos naturales"
+        },
+        {
+          "id": "helados",
+          "rect": [
+            205,
+            256,
+            205,
+            256
+          ],
+          "uv": [
+            0.2001953125,
+            0.5,
+            0.400390625,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            211,
+            263,
+            193,
+            241
+          ],
+          "text": "Helados"
+        },
+        {
+          "id": "alquiler",
+          "rect": [
+            410,
+            256,
+            204,
+            256
+          ],
+          "uv": [
+            0.400390625,
+            0.5,
+            0.599609375,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            416,
+            264,
+            192,
+            240
+          ],
+          "text": "Alquiler de tablas"
+        },
+        {
+          "id": "cooperativa",
+          "rect": [
+            614,
+            256,
+            205,
+            256
+          ],
+          "uv": [
+            0.599609375,
+            0.5,
+            0.7998046875,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            620,
+            263,
+            193,
+            241
+          ],
+          "text": "Cooperativa de pescadores"
+        },
+        {
+          "id": "salvavidas",
+          "rect": [
+            819,
+            256,
+            205,
+            256
+          ],
+          "uv": [
+            0.7998046875,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            825,
+            263,
+            193,
+            241
+          ],
+          "text": "Salvavidas"
+        }
+      ],
+      "description": "Original Spanish hand-painted signs on weathered wooden boards.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: game sign texture atlas, readable Spanish typography. Create a landscape image EXACT 2:1 aspect, target1024x512, strict grid FIVE equal columns by TWO equal rows. Ten separate flat rectangular weathered wooden signboards, front-on orthographic, with 8 percent pale background padding around each. All signs centered inside their own cell, no overlapping. Hand-painted crisp high-contrast lettering, lightly weathered boards, restrained teal, ochre, red, cream and dark navy colours. Flat even diffuse daylight, NO cast shadows. Exactly these phrases in reading order, case exactly as written: TOP ROW cell1 'Zona de baño' with lowercase ñ including clear tilde; cell2 'Bandera roja'; cell3 'Prohibido el paso'; cell4 'Cocadas'; cell5 'Ceviche'. BOTTOM ROW cell1 'Jugos naturales'; cell2 'Helados'; cell3 'Alquiler de tablas'; cell4 'Cooperativa de pescadores'; cell5 'Salvavidas'. Wrap longer phrases into two or three centered lines to maximize letter size. SPELLING: baño is b-a-ñ-o, a clear tilde above the n, never bano. Cooperativa is C-o-o-p-e-r-a-t-i-v-a; pescadores is p-e-s-c-a-d-o-r-e-s. Do not invent any other words, prices, illustrations, brand logos, captions or watermark. Every text must be clean, completely visible, legible and spelled correctly.",
+        "sourceSha256": "5e3d9e4bd3f33045891255a22a63bfc2f1aee702fa529adb536e45f007266db6",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    },
+    "boat_names": {
+      "map": "beach/boat_names.png",
+      "size": [
+        512,
+        256
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": true,
+      "cells": [
+        {
+          "id": "maria_del_mar",
+          "rect": [
+            0,
+            0,
+            256,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            25,
+            244,
+            78
+          ],
+          "text": "Maria del Mar"
+        },
+        {
+          "id": "la_esperanza",
+          "rect": [
+            256,
+            0,
+            256,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            23,
+            244,
+            82
+          ],
+          "text": "La Esperanza"
+        },
+        {
+          "id": "san_pedro",
+          "rect": [
+            0,
+            128,
+            256,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            139,
+            244,
+            105
+          ],
+          "text": "San Pedro"
+        },
+        {
+          "id": "brisa",
+          "rect": [
+            256,
+            128,
+            256,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            137,
+            244,
+            109
+          ],
+          "text": "Brisa"
+        }
+      ],
+      "description": "Cream/red hand-painted names on transparent decals, spelling preserved verbatim.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: transparent boat-name decal atlas. Create landscape2:1 aspect target512x256, EXACT regular TWO columns by TWO rows, four equal cells. ONLY hand-painted boat-name LETTERING, fully transparent background with real alpha, no boards, no transom, no paper, no outlines/shadows behind letters, no opaque rectangles, no checkerboard baked into pixels. Four complete original cream and muted red painted name decals, subtle paint-brush grain, nautical hand-lettering, readable at small scale. Top-left EXACT text 'Maria del Mar'; top-right EXACT text 'La Esperanza'; bottom-left EXACT text 'San Pedro'; bottom-right EXACT text 'Brisa'. Maria deliberately has NO accent. Text must match exactly and be fully contained in central80percent of each cell. Slightly arched lettering is fine but use clean strong strokes, cream and red alternating small flourishes. No extra text, brands, logos, watermark, setting or cast shadows. Four separate names evenly spaced. Transparent background.",
+        "sourceSha256": "00e299fe358c27ec8c7d0659a73dd653a13e247c7b756525da8fcff9af2c05b6",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    },
+    "gull_sprites": {
+      "map": "beach/gull_sprites.png",
+      "size": [
+        1024,
+        256
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": true,
+      "cells": [
+        {
+          "id": "flap_up",
+          "rect": [
+            0,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.125,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            17,
+            28,
+            100,
+            146
+          ],
+          "pivot": [
+            0.7858435922643503,
+            0.5644010814062683
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "flap",
+            "anchor": "eye",
+            "anchorPx": [
+              100.58797980983684,
+              144.4866768400047
+            ],
+            "sourceAnchorPx": [
+              219.43,
+              414.0
+            ],
+            "scale": 0.41475916578628164
+          },
+          "animation": "flap",
+          "frame": 0
+        },
+        {
+          "id": "flap_rising",
+          "rect": [
+            128,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.125,
+            0.0,
+            0.25,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            145,
+            59,
+            101,
+            115
+          ],
+          "pivot": [
+            0.7858435922643503,
+            0.5644010814062683
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "flap",
+            "anchor": "eye",
+            "anchorPx": [
+              100.58797980983684,
+              144.4866768400047
+            ],
+            "sourceAnchorPx": [
+              481.5,
+              412.83
+            ],
+            "scale": 0.41475916578628164
+          },
+          "animation": "flap",
+          "frame": 1
+        },
+        {
+          "id": "flap_level",
+          "rect": [
+            256,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.25,
+            0.0,
+            0.375,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            267,
+            138,
+            105,
+            36
+          ],
+          "pivot": [
+            0.7858435922643503,
+            0.5644010814062683
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "flap",
+            "anchor": "eye",
+            "anchorPx": [
+              100.58797980983684,
+              144.4866768400047
+            ],
+            "sourceAnchorPx": [
+              766.0,
+              409.62
+            ],
+            "scale": 0.41475916578628164
+          },
+          "animation": "flap",
+          "frame": 2
+        },
+        {
+          "id": "flap_down",
+          "rect": [
+            384,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.375,
+            0.0,
+            0.5,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            399,
+            139,
+            102,
+            90
+          ],
+          "pivot": [
+            0.7858435922643503,
+            0.5644010814062683
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "flap",
+            "anchor": "eye",
+            "anchorPx": [
+              100.58797980983684,
+              144.4866768400047
+            ],
+            "sourceAnchorPx": [
+              1035.33,
+              406.5
+            ],
+            "scale": 0.41475916578628164
+          },
+          "animation": "flap",
+          "frame": 3
+        },
+        {
+          "id": "standing",
+          "rect": [
+            512,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            0.625,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            518,
+            75,
+            116,
+            105
+          ],
+          "pivot": [
+            0.5,
+            0.703125
+          ],
+          "facing": "+X",
+          "animation": "standing"
+        },
+        {
+          "id": "walk_left",
+          "rect": [
+            640,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.625,
+            0.0,
+            0.75,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            652,
+            85,
+            105,
+            86
+          ],
+          "pivot": [
+            0.7819298135080648,
+            0.35295772429435485
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "walk",
+            "anchor": "eye",
+            "anchorPx": [
+              100.08701612903229,
+              90.35717741935484
+            ],
+            "sourceAnchorPx": [
+              1568,
+              387.5
+            ],
+            "scale": 0.4274193548387097
+          },
+          "animation": "walk",
+          "frame": 0
+        },
+        {
+          "id": "walk_right",
+          "rect": [
+            768,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.75,
+            0.0,
+            0.875,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            779,
+            84,
+            106,
+            88
+          ],
+          "pivot": [
+            0.7819298135080648,
+            0.35295772429435485
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "walk",
+            "anchor": "eye",
+            "anchorPx": [
+              100.08701612903229,
+              90.35717741935484
+            ],
+            "sourceAnchorPx": [
+              1836.43,
+              387.43
+            ],
+            "scale": 0.4274193548387097
+          },
+          "animation": "walk",
+          "frame": 1
+        },
+        {
+          "id": "cleaning",
+          "rect": [
+            896,
+            0,
+            128,
+            256
+          ],
+          "uv": [
+            0.875,
+            0.0,
+            1.0,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            902,
+            77,
+            116,
+            102
+          ],
+          "pivot": [
+            0.5,
+            0.69921875
+          ],
+          "facing": "+X",
+          "animation": "cleaning"
+        }
+      ],
+      "description": "Right-facing gull: four flap frames, standing, two walking frames and cleaning.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: transparent game animation sprite sheet. Create one VERY WIDE 4:1 aspect image, target1024x256, EXACTLY EIGHT evenly spaced equal-width columns in ONE ROW. No second row. Eight separate photorealistic side-view cutout sprites of the SAME adult gull with white head/body, light grey wings with black tips, yellow beak/legs, facing RIGHT in every cell. Real alpha fully transparent background everywhere around birds; no scenery, no ground, no cast shadows, no baked checkerboard. Frame1 flying wing fully UP; frame2 flying wing diagonal UP; frame3 flying wings level outward in a narrow side silhouette; frame4 flying wings fully DOWN. Frame5 standing upright. Frame6 walking, left foot forward. Frame7 walking, right foot forward. Frame8 cleaning/preening chest with beak lowered. Four flying bodies share same central body position; four ground poses share common feet baseline. Entire bird including wing tips stays inside its own narrow cell, at least10percent clear margins. Matched size, identical plumage, natural believable poses and anatomy; four distinct flap silhouettes. Flat even diffuse daylight, feather detail, NO text, numbers, captions, logos or borders. Strict eight columns across with gaps.",
+        "sourceSha256": "23604ed63d0e547722fa2d9388980e7b3d243970a2aacf9be3bfbcd5d3c4a188",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "animations": {
+        "flap": {
+          "frames": [
+            0,
+            1,
+            2,
+            3,
+            2,
+            1
+          ],
+          "fps": 8
+        },
+        "walk": {
+          "frames": [
+            5,
+            6
+          ],
+          "fps": 4
+        }
+      },
+      "registrationNotes": "Eye-centred pivots for moving groups; foot-centred static pivots. Common scale within each group. Generated silhouettes are not identical 3D projections."
+    },
+    "fish_sprites": {
+      "map": "beach/fish_sprites.png",
+      "size": [
+        512,
+        256
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": true,
+      "cells": [
+        {
+          "id": "jack_tail_a",
+          "rect": [
+            0,
+            0,
+            171,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.333984375,
+            0.5
+          ],
+          "gutter": 11,
+          "contentRect": [
+            15,
+            26,
+            145,
+            76
+          ],
+          "pivot": [
+            0.848765311774385,
+            0.5280228243454318
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "jack",
+            "anchor": "eye",
+            "anchorPx": [
+              145.13886831341983,
+              67.58692151621527
+            ],
+            "sourceAnchorPx": [
+              574.06,
+              249.6
+            ],
+            "scale": 0.23992786061640523
+          },
+          "animation": "jack",
+          "frame": 0
+        },
+        {
+          "id": "grunt_tail_a",
+          "rect": [
+            171,
+            0,
+            170,
+            128
+          ],
+          "uv": [
+            0.333984375,
+            0.0,
+            0.666015625,
+            0.5
+          ],
+          "gutter": 11,
+          "contentRect": [
+            187,
+            26,
+            143,
+            76
+          ],
+          "pivot": [
+            0.8462679505966086,
+            0.492716859430605
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "grunt",
+            "anchor": "eye",
+            "anchorPx": [
+              143.86555160142348,
+              63.06775800711744
+            ],
+            "sourceAnchorPx": [
+              1142.61,
+              257.05
+            ],
+            "scale": 0.26334519572953735
+          },
+          "animation": "grunt",
+          "frame": 0
+        },
+        {
+          "id": "tang_tail_a",
+          "rect": [
+            341,
+            0,
+            171,
+            128
+          ],
+          "uv": [
+            0.666015625,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 11,
+          "contentRect": [
+            362,
+            22,
+            139,
+            85
+          ],
+          "pivot": [
+            0.8280219495430936,
+            0.4170353143063584
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "tang",
+            "anchor": "eye",
+            "anchorPx": [
+              141.591753371869,
+              53.38052023121387
+            ],
+            "sourceAnchorPx": [
+              1691.89,
+              222.01
+            ],
+            "scale": 0.28709055876685935
+          },
+          "animation": "tang",
+          "frame": 0
+        },
+        {
+          "id": "jack_tail_b",
+          "rect": [
+            0,
+            128,
+            171,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.333984375,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            11,
+            154,
+            149,
+            76
+          ],
+          "pivot": [
+            0.848765311774385,
+            0.5280228243454318
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "jack",
+            "anchor": "eye",
+            "anchorPx": [
+              145.13886831341983,
+              67.58692151621527
+            ],
+            "sourceAnchorPx": [
+              576.08,
+              644.95
+            ],
+            "scale": 0.23992786061640523
+          },
+          "animation": "jack",
+          "frame": 1
+        },
+        {
+          "id": "grunt_tail_b",
+          "rect": [
+            171,
+            128,
+            170,
+            128
+          ],
+          "uv": [
+            0.333984375,
+            0.5,
+            0.666015625,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            182,
+            154,
+            149,
+            76
+          ],
+          "pivot": [
+            0.8462679505966086,
+            0.492716859430605
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "grunt",
+            "anchor": "eye",
+            "anchorPx": [
+              143.86555160142348,
+              63.06775800711744
+            ],
+            "sourceAnchorPx": [
+              1144.53,
+              651.87
+            ],
+            "scale": 0.26334519572953735
+          },
+          "animation": "grunt",
+          "frame": 1
+        },
+        {
+          "id": "tang_tail_b",
+          "rect": [
+            341,
+            128,
+            171,
+            128
+          ],
+          "uv": [
+            0.666015625,
+            0.5,
+            1.0,
+            1.0
+          ],
+          "gutter": 11,
+          "contentRect": [
+            352,
+            148,
+            150,
+            88
+          ],
+          "pivot": [
+            0.8280219495430936,
+            0.4170353143063584
+          ],
+          "facing": "+X",
+          "registration": {
+            "group": "tang",
+            "anchor": "eye",
+            "anchorPx": [
+              141.591753371869,
+              53.38052023121387
+            ],
+            "sourceAnchorPx": [
+              1691.88,
+              618.01
+            ],
+            "scale": 0.28709055876685935
+          },
+          "animation": "tang",
+          "frame": 1
+        }
+      ],
+      "description": "Silver jack, yellow-striped grunt and blue tang, two tail poses each.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: transparent game fish animation atlas. Create landscape2:1 aspect, target512x256, EXACT THREE equal columns by TWO equal rows. Six independent realistic reef-fish cutouts, strict SIDE PROFILE all facing RIGHT, fully transparent background with real alpha and no underwater scene. Each whole fish completely contained within central80percent of cell with clear margin, no overlap. Column1 is a silver jack with silver scales, forked tail, subtle blue back. Column2 is a yellow-striped grunt with silver body and clear multiple thin yellow horizontal stripes. Column3 is a blue tang with vivid cobalt-blue body, black palette-shaped markings, bright yellow tail. TOP row shows each species with tail swept slightly toward viewer; BOTTOM row repeats SAME species, matching same body/head position, scale, markings, and facing right, but tail swept away for a two-frame swim cycle. Preserve each silhouette and visible fins. Flat uniform diffuse daylight, no cast shadows, no sparkle glare, finely detailed photographic scales. No numbers, text, captions, logos, watermarks, bubbles, plants or borders. Transparent outside all6fish.",
+        "sourceSha256": "fe22e9838ed59120d2b556dca2fb8864b6b25de1ace734f9a4470ebfcdcd93c7",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      },
+      "animations": {
+        "jack": {
+          "frames": [
+            0,
+            3
+          ],
+          "fps": 4
+        },
+        "grunt": {
+          "frames": [
+            1,
+            4
+          ],
+          "fps": 4
+        },
+        "tang": {
+          "frames": [
+            2,
+            5
+          ],
+          "fps": 4
+        }
+      },
+      "registrationNotes": "Eye-centred matched pair pivots and one scale per species."
+    },
+    "crab_shells": {
+      "map": "beach/crab_shells.png",
+      "size": [
+        256,
+        256
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": true,
+      "cells": [
+        {
+          "id": "ghost_crab",
+          "rect": [
+            0,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            15,
+            116,
+            98
+          ]
+        },
+        {
+          "id": "conch",
+          "rect": [
+            128,
+            0,
+            128,
+            128
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            134,
+            21,
+            116,
+            85
+          ]
+        },
+        {
+          "id": "scallop",
+          "rect": [
+            0,
+            128,
+            128,
+            128
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            139,
+            116,
+            105
+          ]
+        }
+      ],
+      "description": "Pale ghost crab top-down, conch and scallop; fourth cell intentionally unused.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: transparent coastal game sprite atlas. Create a SQUARE image target256x256 in EXACT TWO columns and TWO rows equal cells. THREE separate natural coastal objects; bottom-right cell MUST BE EMPTY TRANSPARENT. Top-left cell: a pale sand-coloured ghost crab viewed exactly TOP-DOWN with anatomically correct two claws, eight walking legs, stalk eyes, soft natural ivory shell, complete intact limbs. Top-right cell: one conch shell viewed in clear side/three-quarter profile, weathered cream/pink ridges and visible opening. Bottom-left cell: one pale peach scallop shell in top-down view, fan-shaped radiating ridges. Bottom-right NOTHING. Each of three objects fully contained within central75percent of its own cell with at least12percent transparent padding. No sand, rocks, scenery, ground plane, cast shadows, labels, borders, letters, logos or watermark. Fully transparent background with actual alpha, no baked checkerboard. Photographic fine detail, flat even diffuse daylight, neutral colour and natural imperfections.",
+        "sourceSha256": "416460d891ebc3b9c9d3062f0e20fe547edb1dc210ed104db8fc3bb14af460d6",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    },
+    "seagrass_coral": {
+      "map": "beach/seagrass_coral.png",
+      "size": [
+        512,
+        512
+      ],
+      "uv": "unit",
+      "tileAxes": [],
+      "alpha": true,
+      "cells": [
+        {
+          "id": "turtle_grass",
+          "rect": [
+            0,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.0,
+            0.5,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            13,
+            6,
+            229,
+            244
+          ]
+        },
+        {
+          "id": "branching_coral",
+          "rect": [
+            256,
+            0,
+            256,
+            256
+          ],
+          "uv": [
+            0.5,
+            0.0,
+            1.0,
+            0.5
+          ],
+          "gutter": 6,
+          "contentRect": [
+            262,
+            29,
+            244,
+            198
+          ]
+        },
+        {
+          "id": "brain_coral",
+          "rect": [
+            0,
+            256,
+            256,
+            256
+          ],
+          "uv": [
+            0.0,
+            0.5,
+            0.5,
+            1.0
+          ],
+          "gutter": 6,
+          "contentRect": [
+            6,
+            290,
+            244,
+            188
+          ]
+        }
+      ],
+      "description": "Three upright cutout cards; fourth cell intentionally unused.",
+      "mapColorSpace": "srgb",
+      "provenance": {
+        "method": "OpenAI built-in image generator",
+        "prompt": "Use case: photorealistic-natural. Asset type: transparent game underwater vegetation cutout atlas for vertical cards. Create a SQUARE image target512x512, exact TWO columns and TWO rows of equal cells. THREE independent realistic cutout subjects, bottom-right cell completely empty transparent. Top-left: a lush tuft of turtle grass (Thalassia), long ribbon-like green leaves rising from one small base with several arched blades, clear individual leaves. Top-right: a compact branching coral head, original natural tan/pale-peach antler-like branches, intricate polyps, complete silhouette. Bottom-left: a rounded brain coral head, realistic olive-gold labyrinth grooves, wider than tall, complete silhouette. Bottom-right EMPTY. Straight front orthographic view for vertical game cards, each entire subject fits central76percent of cell with generous transparent margin, nothing touches neighbouring cells. Fully transparent background actual alpha, no seafloor, water, aquarium, bubbles, rocks, opaque bounding box, ground or cast shadows. Photographic organic detail, flat uniform diffuse daylight without dramatic lighting. No text, labels, logos, grid lines or watermark.",
+        "sourceSha256": "9535c23c2369c59b362a2f8ad9516e0dafe4a182fca655213b166845d8b25cca",
+        "license": "CC0-1.0",
+        "notes": "Original generated artwork, no external source images, brands or logos. Exact selected prompt and source hash retained; generated source is not deterministic. Resampled, seam-corrected where declared, and palette-encoded by beach_build.py; normal/roughness maps are luminance-derived approximations, not measured scans."
+      }
+    }
+  },
+  "files": [
+    {
+      "path": "beach/sand_dry.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 910586,
+      "sha256": "9209e1cd06ad5e9d469d98382dc07fbe4c176cea553fdc07ebda58c297cbac84",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/sand_dry_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57768,
+      "sha256": "2c3809e15ca1d3b655c6d00f0cae2b052ba9fb6b586fd8ae968808b9ead2f31a",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/sand_dry_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 759,
+      "sha256": "840f4f173f5de0fa5238e7ce5e7ea5aecf9570d6a63c47f48cd77374dd08242c",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/sand_wet.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 913311,
+      "sha256": "9bd6726d24dbca581fa8c96e2042f454fda24f1b27d45329aad91f66963567d5",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/sand_wet_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57667,
+      "sha256": "68ad0f464fb870d99730ba28936e088e58e278067e878a39ee08d4c8bcbf8ebe",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/sand_wet_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 370,
+      "sha256": "c25527a7c5b9c5e340bcace0fa312bc7020d40640bca401dd6c9b2e0ecf19223",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seabed_sand.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 898708,
+      "sha256": "fa1337e3d9c397f85d08c1f4658483c2f05e3c2300372e04df5fcfc589f621fc",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seabed_sand_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57070,
+      "sha256": "209a717fafd0e2575afee7a9774616b52a74e2a60d1398fba4ae940b115e6f8b",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seabed_sand_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 387,
+      "sha256": "d0cf66c5cb4e1fe0acf1b5490e0c69098925f0aae30049bfa067632c6859d9dc",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seabed_rock.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 226281,
+      "sha256": "e45a2ffcd34c618c185c24161bb6a6eedc5c77753fe151886bead522b5d9efbf",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seabed_rock_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57626,
+      "sha256": "245b8e99395018da21cb4d0f1be26eee6a6eb01e247e11a3f72f29d3a9d82b35",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seabed_rock_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 4548,
+      "sha256": "87c6981a243963f23136560c174f04aae300b81149349c4a1d04fc3ababebea5",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/rock_sea.png",
+      "width": 1024,
+      "height": 1024,
+      "bytes": 898665,
+      "sha256": "cdf76865613030a9e5857b13b62214dfbd06d1d9094c17a1683dcc741cf55550",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/rock_sea_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57854,
+      "sha256": "01a21583851cd5591a16089abb0d64401420390f4f6ece57a98ccc8850148f2c",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/rock_sea_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 4934,
+      "sha256": "c109818871db474524ea7e972590fb11b79b15271b1a1e5ec75b4c4dc60aa5f1",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seawall_concrete.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 226977,
+      "sha256": "ad09103410748a0efa92d78af12861593b56cd0e0497c3356dbad8422f940b22",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seawall_concrete_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57393,
+      "sha256": "c12da206b77ed2be641a7f0b92a1f3cdca8bcb0bc65e29651e32296999702488",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/seawall_concrete_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 4491,
+      "sha256": "d6f57c0af3f22b608052371c8c822fc9f6fed7284349e957ba5e7cd63c4c791c",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/promenade_pavers.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 227006,
+      "sha256": "b08b45aeddd746216de8230fc6855fccd5b6eb19f75a816a0c5baac76c9e1b97",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/promenade_pavers_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 54825,
+      "sha256": "2881953f7098c762c6a189421d6e2330078684db43bba3c9940f3c0067ca86ba",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/promenade_pavers_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 1049,
+      "sha256": "8c570787eb8a5390c483225fc8718bf0063e0a19ecfd67358b1e6cf0157aa8b5",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/jetty_planks.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 223590,
+      "sha256": "3c38560833dba422313193f87a1bdb34340aeb2f7b1557ceaa0c6329e7ba443d",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/jetty_planks_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 55537,
+      "sha256": "9e760da3c94783e39d82486d839aba26b34b10f53ba80d782c43034a2b925119",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/jetty_planks_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 2637,
+      "sha256": "22c513c1d319f61bdd3ff33d019d71df94cf2fccf03cb48b424176c738be29bd",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/pile_wood.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 212678,
+      "sha256": "72cdc92e066df4c51639af83a9987e27f12ec9d4bdda6db5a0153b9d1ea354d7",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/pile_wood_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 56003,
+      "sha256": "915833e4716dd7ea631733dd44ac9e3c3b255cf39ff4d10d470dd0d41563627f",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/pile_wood_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 1717,
+      "sha256": "be7d79fc3b9d385ff1c9126e105017677c9811cbf93b3ebd42035b179f437ec5",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/rope_hemp.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57816,
+      "sha256": "19f17ea91a7e93d69dd8d2476b2e9a8b3dc79b333cf145d2e89e0c8970918d89",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/rope_hemp_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57043,
+      "sha256": "1e24641abb7c218f65621913ecacfd4bead01dbb6793e927bebcfa4fb185fdb8",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/rope_hemp_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 4475,
+      "sha256": "0cd15673a8294d833791c1010847d82b24657f7f8d6764cb53ac90aed5274a45",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/thatch_palm.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 226284,
+      "sha256": "254955de7113e52a112e23424a3d5aa5a57791b4fd1f5457e6d224a85725e2d7",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/thatch_palm_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 57681,
+      "sha256": "a6466231583c24fae5d7869e2c5411acfdd298f34a4a47af892bf243e5849be1",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/thatch_palm_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 4396,
+      "sha256": "bf4ba8c3c17259a575eda3dbb7709a36136b6f3dd32b578ed09e31b413ecff77",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/canvas_stripe.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 214785,
+      "sha256": "7cb2e71036f614ff42daa31fbf5ae04f60aadcefac29e95fed1aad2936b3fe12",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/canvas_stripe_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 50532,
+      "sha256": "af1ba5ae29d78444721bf6696998fc50501782246a990b057febc7ee3ae8d6b7",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/canvas_stripe_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 1226,
+      "sha256": "19bf1c075858e8c5895972c9fde928d42539d4433cf6d1f085776a408f078773",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/boat_hull_paint.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 173511,
+      "sha256": "4d6932818d7e5d0de0343a7bdd22edf0f8c53414ead3ac13a3cb9bfd050e12db",
+      "role": "albedo",
+      "alpha": false,
+      "tileAxes": [
+        "x"
+      ],
+      "colorSpace": "srgb",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/boat_hull_paint_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 49221,
+      "sha256": "8b770b3c5131442fee9340838f76e5ed88df77776ee941c9c7a19f852a223c36",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/boat_hull_paint_r.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 2031,
+      "sha256": "4263e2173c2a9dc7f11fa37775779f55db959bbb4898d6ec4b2615c2c41a02aa",
+      "role": "roughness",
+      "alpha": false,
+      "tileAxes": [
+        "x"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/water_ripple_n.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 49585,
+      "sha256": "4f5b90f7d8dfdd2add57e66829a040bdf28dfad4dd46965227b81dbf34dc7d2d",
+      "role": "normal",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/foam_noise.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 11803,
+      "sha256": "9c1911b3be9ddeae9e10050c8094affe9add83e3c3d03437e194d4704778ea29",
+      "role": "effect",
+      "alpha": true,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/caustic_tile.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 36990,
+      "sha256": "71e8417270c5e35958621efefd70ebea1ac2ffb06b9b38a7361b47b0191803ad",
+      "role": "effect",
+      "alpha": false,
+      "tileAxes": [
+        "x",
+        "y"
+      ],
+      "colorSpace": "linear",
+      "edgeTolerance": {
+        "max": 0,
+        "mean": 0
+      }
+    },
+    {
+      "path": "beach/sails_kites.png",
+      "width": 1024,
+      "height": 512,
+      "bytes": 186408,
+      "sha256": "0efd47ebb29901034089830c79ac0d3fab577d6ac184e8d5f15776c410f9f206",
+      "role": "sprite",
+      "alpha": false,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/board_decks.png",
+      "width": 1024,
+      "height": 512,
+      "bytes": 256952,
+      "sha256": "fe05446cc29cb9fe0db2c5c9ba4eeeca9a2ed1abe6c45c0d4ea8b76efa667dd3",
+      "role": "sprite",
+      "alpha": false,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/towels_bags.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 145933,
+      "sha256": "10f7a26110e95b39a16155ee0be7464f2cfd1e45c4bb96964ab1e228f7664a44",
+      "role": "sprite",
+      "alpha": false,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/signs_menus.png",
+      "width": 1024,
+      "height": 512,
+      "bytes": 312265,
+      "sha256": "89760c005efde1f140b96ce40cabaad241bc857ddcf054866d8a43bcabb096f1",
+      "role": "sprite",
+      "alpha": false,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/boat_names.png",
+      "width": 512,
+      "height": 256,
+      "bytes": 36638,
+      "sha256": "e8defa233f7136f8f717572ea10ede7426b21a9a660997f8f804845396497dd4",
+      "role": "sprite",
+      "alpha": true,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/gull_sprites.png",
+      "width": 1024,
+      "height": 256,
+      "bytes": 22548,
+      "sha256": "34939bf6fd73c09937591b41fc03e1661862515da86c723be8c94d2c93470114",
+      "role": "sprite",
+      "alpha": true,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/fish_sprites.png",
+      "width": 512,
+      "height": 256,
+      "bytes": 29238,
+      "sha256": "33a1315b1397870016fbe2750dafcffe03a27245db89e93a2781467051374379",
+      "role": "sprite",
+      "alpha": true,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/crab_shells.png",
+      "width": 256,
+      "height": 256,
+      "bytes": 17124,
+      "sha256": "b87d223bef8d7e0d1998bd8f80164daa7cbb418e2c8ffdd9f82e961268764838",
+      "role": "sprite",
+      "alpha": true,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    },
+    {
+      "path": "beach/seagrass_coral.png",
+      "width": 512,
+      "height": 512,
+      "bytes": 72890,
+      "sha256": "c22925ebf1a7af22e365f4c93b5aecf85cf2c2a401a4427998620dcb67fdd05c",
+      "role": "sprite",
+      "alpha": true,
+      "tileAxes": [],
+      "colorSpace": "srgb"
+    }
+  ],
+  "imageBytes": 7347812,
+  "gpuBytes": 58370684,
+  "inputs": [
+    {
+      "path": "tools/textures/beach.catalog.json",
+      "sha256": "a15243003b69ee989c6b9f6026a06172433ae97bd68b134b9bdffb30ae83b8af",
+      "normalization": "lf"
+    },
+    {
+      "path": "tools/textures/beach.sources.json",
+      "sha256": "edc9d6f4ac6ab808180a49c853b2e6b2cdec65ab9f2c58b591f35c4da69df316",
+      "normalization": "lf"
+    },
+    {
+      "path": "tools/textures/beach_build.py",
+      "sha256": "2e7514c9fa8c4b1341e837a21a8427855139ab5e792446968fecd5cfca27676c",
+      "normalization": "lf"
+    },
+    {
+      "path": "tools/textures/post.py",
+      "sha256": "30ec1ba22da2c8a038ff6a7528f601a1813cae2b28008cb6b85207ca66cd8a0a",
+      "normalization": "lf"
+    }
+  ],
+  "review": {
+    "signs": {
+      "verified": true,
+      "proof": "dev/beach-textures/signs-proof.png",
+      "sha256": "a3ce7ac85f4838380e368d118a41493f57bc3167946e0602b9dc1557c40d6b06",
+      "notes": "Visually inspected final exported PNG and enlarged contact sheet: all ten requested Spanish phrases, clear ñ in baño, no missing or substituted letters. No automated OCR claim."
+    }
+  }
+}

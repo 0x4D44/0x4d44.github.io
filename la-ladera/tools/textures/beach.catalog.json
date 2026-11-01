@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "library": "beach",
+  "license": "CC0-1.0",
+  "budgets": {"maxBytes": 8000000, "maxGpuBytes": 167772160},
+  "normalConvention": "OpenGL tangent space, +Y; linear data; normalized after filtering",
+  "uvConvention": "Atlas rects are integer top-left pixel x,y,width,height; uv is top-origin u0,v0,u1,v1. Convert v for bottom-origin consumers.",
+  "materials": [
+    {"id":"sand_dry","size":1024,"tile":2.5,"axes":["x","y"],"roughness":0.87,"slope":0.14,"desc":"Warm pale-gold sand, fine grains, tiny shell fragments, mineral flecks and subtle wind ripples."},
+    {"id":"sand_wet","size":1024,"tile":2.5,"axes":["x","y"],"roughness":0.31,"slope":0.08,"desc":"Darker wet tan sand, faint sheen, bubble holes and small worm casts."},
+    {"id":"seabed_sand","size":1024,"tile":3,"axes":["x","y"],"roughness":0.72,"slope":0.16,"desc":"Pale grey-gold lagoon sand with parallel ripple ridges and a few shell fragments."},
+    {"id":"seabed_rock","size":512,"tile":3,"axes":["x","y"],"roughness":0.73,"slope":0.30,"desc":"Rounded dark stones in sand, green algae film and barnacles."},
+    {"id":"rock_sea","size":1024,"tile":2,"axes":["x","y"],"roughness":0.82,"slope":0.30,"desc":"Grey-brown granite breakwater boulders with salt crust and barnacle patches."},
+    {"id":"seawall_concrete","size":512,"tile":2,"axes":["x","y"],"roughness":0.83,"slope":0.13,"desc":"Pale poured concrete, formwork lines, salt staining and restrained rust streaks."},
+    {"id":"promenade_pavers","size":512,"tile":2.4,"axes":["x","y"],"roughness":0.78,"slope":0.20,"desc":"Six by six 40 cm sand-coloured pavers; sand in thin joints and a few cracks."},
+    {"id":"jetty_planks","size":512,"tile":2,"axes":["x","y"],"roughness":0.75,"slope":0.23,"desc":"Silver-grey weathered hardwood pier planks, dark nail heads and salt bleaching."},
+    {"id":"pile_wood","size":512,"tile":1.5,"axes":["x"],"roughness":0.78,"slope":0.22,"desc":"Creosoted vertical wood grain with green slime and barnacles at the base; horizontal repeat only."},
+    {"id":"rope_hemp","size":256,"tile":0.5,"axes":["y"],"roughness":0.93,"slope":0.25,"desc":"Twisted tan hemp fibres; repeats along its vertical length."},
+    {"id":"thatch_palm","size":512,"tile":1.5,"axes":["x","y"],"roughness":0.92,"slope":0.23,"desc":"Overlapping dry golden and silver palm fronds."},
+    {"id":"canvas_stripe","size":512,"tile":1,"axes":["x","y"],"roughness":0.92,"slope":0.07,"tint":true,"desc":"Neutral white and grey vertical canvas bands with cotton weave; tintable."},
+    {"id":"boat_hull_paint","size":512,"tile":3,"axes":["x"],"roughness":0.48,"slope":0.10,"desc":"Scuffed fibreglass, white above cobalt blue below a thin red waterline; horizontal repeat preserves the waterline."}
+  ],
+  "effects": [
+    {"id":"water_ripple_n","size":256,"tile":6,"axes":["x","y"],"role":"normal","alpha":false,"desc":"Soft overlapping ripple normal map, original generated normals normalized to +Z hemisphere."},
+    {"id":"foam_noise","size":256,"tile":6,"axes":["x","y"],"role":"effect","alpha":true,"desc":"White sea-foam lace with genuine transparent open-water holes."},
+    {"id":"caustic_tile","size":256,"tile":4,"axes":["x","y"],"role":"effect","alpha":false,"desc":"Soft white caustic cell lines on black, linear mask."}
+  ],
+  "atlases": [
+    {"id":"sails_kites","size":[1024,512],"grid":[6,2],"alpha":false,"sourceRows":[0,0.595,1],"cells":["sail_01","sail_02","sail_03","sail_04","sail_05","sail_06","kite_01","kite_02","kite_03","kite_04","kite_05","kite_06"],"desc":"Six numbered windsurf sails with windows; six original striped kite wings."},
+    {"id":"board_decks","size":[1024,512],"grid":[4,2],"alpha":false,"cells":["sup_teal_ochre_wave","windsurf_coral_navy","sup_blue_sunburst","twintip_mint_red","twintip_navy_ochre","windsurf_turquoise","sup_cream_green_leaf","twintip_red_cream"],"desc":"Eight original board-deck designs, pads and bold graphics without brands."},
+    {"id":"towels_bags","size":[512,512],"grid":[4,4],"alpha":false,"cells":["towel_01","towel_02","towel_03","towel_04","towel_05","towel_06","towel_07","towel_08","towel_09","towel_10","towel_11","towel_12","bag_01","bag_02","bag_03","bag_04"],"desc":"Twelve striped or printed towels and four canvas bag tops."},
+    {"id":"signs_menus","size":[1024,512],"grid":[5,2],"alpha":false,"cells":["zona_bano","bandera_roja","prohibido_paso","cocadas","ceviche","jugos","helados","alquiler","cooperativa","salvavidas"],"texts":["Zona de baño","Bandera roja","Prohibido el paso","Cocadas","Ceviche","Jugos naturales","Helados","Alquiler de tablas","Cooperativa de pescadores","Salvavidas"],"desc":"Original Spanish hand-painted signs on weathered wooden boards."},
+    {"id":"boat_names","size":[512,256],"grid":[2,2],"alpha":true,"cells":["maria_del_mar","la_esperanza","san_pedro","brisa"],"texts":["Maria del Mar","La Esperanza","San Pedro","Brisa"],"desc":"Cream/red hand-painted names on transparent decals, spelling preserved verbatim."},
+    {"id":"gull_sprites","size":[1024,256],"grid":[8,1],"alpha":true,"cells":["flap_up","flap_rising","flap_level","flap_down","standing","walk_left","walk_right","cleaning"],"desc":"Right-facing gull: four flap frames, standing, two walking frames and cleaning."},
+    {"id":"fish_sprites","size":[512,256],"grid":[3,2],"alpha":true,"cells":["jack_tail_a","grunt_tail_a","tang_tail_a","jack_tail_b","grunt_tail_b","tang_tail_b"],"desc":"Silver jack, yellow-striped grunt and blue tang, two tail poses each."},
+    {"id":"crab_shells","size":[256,256],"grid":[2,2],"alpha":true,"cells":["ghost_crab","conch","scallop"],"desc":"Pale ghost crab top-down, conch and scallop; fourth cell intentionally unused."},
+    {"id":"seagrass_coral","size":[512,512],"grid":[2,2],"alpha":true,"cells":["turtle_grass","branching_coral","brain_coral"],"desc":"Three upright cutout cards; fourth cell intentionally unused."}
+  ]
+}
