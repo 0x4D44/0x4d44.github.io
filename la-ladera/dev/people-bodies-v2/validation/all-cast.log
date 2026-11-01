@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "baseline": false,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "ids": 30,
+  "clips": 32,
+  "posedVertexChecks": 374592,
+  "sheets": [
+    "people-near.png",
+    "people-far.png"
+  ],
+  "boot": [],
+  "failures": []
+}

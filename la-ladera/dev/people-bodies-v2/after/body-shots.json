@@ -1,0 +1,3404 @@
+{
+  "label": "after",
+  "checkedAt": "2026-11-01T06:23:51.557Z",
+  "cameraDefinition": "Horizontal camera-to-character-root distance is 1.600 m. Full-body camera height 1.000 m, aim [0,0.900,0], vertical FOV 74 degrees. Identical framing, lighting, metre scale and animation phase before/after; no automatic fitting.",
+  "assetHashes": {
+    "people.glb": {
+      "bytes": 6989112,
+      "sha256": "16006782aac014475115fcd749441e15f5954f585896fe0463eb99a34e265ef9"
+    },
+    "people_albedo.jpg": {
+      "bytes": 440913,
+      "sha256": "8354b8510453cf6029db8881a641df0c180aa4e98e627fe4a6402ca3f528fc95",
+      "width": 2048,
+      "height": 2048,
+      "estimatedGpuBytesWithMipmaps": 22369621.333333332
+    },
+    "people_lod.glb": {
+      "bytes": 1909016,
+      "sha256": "0a4818fcc4dd353beacd5b0752e65d19fcbbc04dd9ebdadf0f4def934283d214"
+    },
+    "people_meta.json": {
+      "bytes": 42675,
+      "sha256": "da5ec4d89b08a4cb9b3f451e73a21a7e60287b4dc70d4026d9299ae4ac8fc867"
+    },
+    "people_normal.jpg": {
+      "bytes": 452251,
+      "sha256": "81e4205d37d9b0f5a703b942210d5e1f0d3037fc8bf7ce3f0a07a5fa8bfefb5e",
+      "width": 2048,
+      "height": 2048,
+      "estimatedGpuBytesWithMipmaps": 22369621.333333332
+    },
+    "people_orm.jpg": {
+      "bytes": 75810,
+      "sha256": "20aa8d4f9acc7ea48d0ed14fc92f5244b4652d57c5856512539e785c3877120c",
+      "width": 1024,
+      "height": 1024,
+      "estimatedGpuBytesWithMipmaps": 5592405.333333333
+    }
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "assets": {
+    "ids": [
+      "m_tendero",
+      "m_don",
+      "m_elder",
+      "m_abuelo",
+      "w_elder",
+      "m_panadero",
+      "m_afro",
+      "w_ama"
+    ],
+    "loadedIds": [
+      "m_tendero",
+      "m_obrero",
+      "w_tendera",
+      "w_ama",
+      "w_elder",
+      "m_elder",
+      "b_boy",
+      "g_girl",
+      "t_boy",
+      "t_girl",
+      "m_afro",
+      "w_afro",
+      "m_panadero",
+      "w_cocinera",
+      "m_carnicero",
+      "w_peluquera",
+      "m_mecanico",
+      "w_farmaceutica",
+      "w_maestra",
+      "m_mototaxi",
+      "m_vendedor",
+      "m_abuelo",
+      "w_beata",
+      "b_escolar",
+      "g_escolar",
+      "m_joven",
+      "w_vecina",
+      "m_don",
+      "w_joven",
+      "m_rapado"
+    ],
+    "clipNames": [
+      "idle_a",
+      "idle_b",
+      "walk",
+      "walk_fast",
+      "walk_bag",
+      "walk_step",
+      "phone_stand",
+      "phone_call",
+      "talk",
+      "wave",
+      "point",
+      "sit_idle",
+      "sit_phone",
+      "sit_look",
+      "sit_cross_legs",
+      "stand_hold_pole",
+      "stand_hold_rail",
+      "turn_left",
+      "turn_right",
+      "kid_bounce",
+      "kid_fidget",
+      "talk_b",
+      "sweep",
+      "cook",
+      "sell",
+      "walk_carry",
+      "carry_stand",
+      "lean_wall",
+      "laundry",
+      "pray",
+      "sit_talk",
+      "run"
+    ],
+    "quiet": true
+  },
+  "sheets": [
+    {
+      "path": "near-front.png",
+      "bytes": 558906,
+      "sha256": "15d604897528d32fc6ad16303b6d3e1ec15c70013fc20c78a79a712fefb5434d",
+      "width": 1920,
+      "height": 1660,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "yawDegrees": 0,
+      "portrait": false,
+      "torso": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11734,
+            "minNdc": [
+              -0.3878145657619302,
+              -0.8420520720747092,
+              0.9608103195534081
+            ],
+            "maxNdc": [
+              0.3816087188540302,
+              0.6936488873823728,
+              0.9686556948246664
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 43983,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                147,
+                54
+              ],
+              "max": [
+                330,
+                580
+              ]
+            },
+            "componentAreasPixels": [
+              43983
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 0,
+          "triangles": 7665,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11394,
+            "minNdc": [
+              -0.4027066720833845,
+              -0.8393697139140892,
+              0.9608986087590882
+            ],
+            "maxNdc": [
+              0.3970328195223959,
+              0.6628851854216011,
+              0.9686317210492262
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 45777,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                144,
+                55
+              ],
+              "max": [
+                334,
+                567
+              ]
+            },
+            "componentAreasPixels": [
+              45775,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 0,
+          "triangles": 7720,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12352,
+            "minNdc": [
+              -0.36239279735608804,
+              -0.8350179465225325,
+              0.9597592338359583
+            ],
+            "maxNdc": [
+              0.35543630926957515,
+              0.6079265884356968,
+              0.9685667326939916
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 41359,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                153,
+                57
+              ],
+              "max": [
+                324,
+                550
+              ]
+            },
+            "componentAreasPixels": [
+              41359
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12192,
+            "minNdc": [
+              -0.3703270677582598,
+              -0.8333239216756618,
+              0.9576681496428908
+            ],
+            "maxNdc": [
+              0.3641867156188375,
+              0.6405400769597691,
+              0.968741639040645
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 47484,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                151,
+                57
+              ],
+              "max": [
+                326,
+                562
+              ]
+            },
+            "componentAreasPixels": [
+              47483,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 0,
+          "triangles": 6732,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11655,
+            "minNdc": [
+              -0.31512013662031924,
+              -0.8265448859843025,
+              0.961111975728874
+            ],
+            "maxNdc": [
+              0.30651314937646473,
+              0.5424704736788737,
+              0.9692299839881167
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 37712,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                164,
+                60
+              ],
+              "max": [
+                312,
+                528
+              ]
+            },
+            "componentAreasPixels": [
+              37712
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 0,
+          "triangles": 7744,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12865,
+            "minNdc": [
+              -0.3925295284079895,
+              -0.8413432310301753,
+              0.959562016133403
+            ],
+            "maxNdc": [
+              0.38639723808356646,
+              0.8116335139527755,
+              0.9686499986739157
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 50114,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                146,
+                55
+              ],
+              "max": [
+                331,
+                620
+              ]
+            },
+            "componentAreasPixels": [
+              50113,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 13527,
+            "minNdc": [
+              -0.4079686558392687,
+              -0.8524389313702595,
+              0.9603133960542485
+            ],
+            "maxNdc": [
+              0.40248611331823997,
+              0.7827288039994797,
+              0.9687573602945186
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 49283,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                142,
+                51
+              ],
+              "max": [
+                335,
+                610
+              ]
+            },
+            "componentAreasPixels": [
+              49278,
+              4,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 0,
+          "triangles": 7718,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11485,
+            "minNdc": [
+              -0.3321671179276577,
+              -0.8342998980255373,
+              0.9611724559760486
+            ],
+            "maxNdc": [
+              0.3240589195776482,
+              0.580474656248076,
+              0.9685226526918921
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 34935,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                160,
+                57
+              ],
+              "max": [
+                316,
+                541
+              ]
+            },
+            "componentAreasPixels": [
+              34935
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "near-threequarter.png",
+      "bytes": 554562,
+      "sha256": "14f101bd3ea43dfe9e024220f9ddef4bbf053d40b00ff5dc0b3ca96bdbeef346",
+      "width": 1920,
+      "height": 1660,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "yawDegrees": 28,
+      "portrait": false,
+      "torso": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11734,
+            "minNdc": [
+              -0.3463449518560553,
+              -0.8807615572494966,
+              0.9589795793797093
+            ],
+            "maxNdc": [
+              0.31392728503490097,
+              0.6918832502491413,
+              0.969335718203735
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 42994,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                157,
+                41
+              ],
+              "max": [
+                314,
+                579
+              ]
+            },
+            "componentAreasPixels": [
+              42994
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 0,
+          "triangles": 7665,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11394,
+            "minNdc": [
+              -0.35698587793762415,
+              -0.8841881434968182,
+              0.9588066090296784
+            ],
+            "maxNdc": [
+              0.33031469699828303,
+              0.6593020567613546,
+              0.9694850841420483
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 44306,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                155,
+                40
+              ],
+              "max": [
+                318,
+                567
+              ]
+            },
+            "componentAreasPixels": [
+              44304,
+              2
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 0,
+          "triangles": 7720,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12352,
+            "minNdc": [
+              -0.32587781653670983,
+              -0.8698013105089436,
+              0.959513167595829
+            ],
+            "maxNdc": [
+              0.2902825077540451,
+              0.6058886273045246,
+              0.9691818106721578
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 40084,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                162,
+                45
+              ],
+              "max": [
+                308,
+                550
+              ]
+            },
+            "componentAreasPixels": [
+              40084
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12192,
+            "minNdc": [
+              -0.3218249023968085,
+              -0.867505180530703,
+              0.9579996471426405
+            ],
+            "maxNdc": [
+              0.35747729199992584,
+              0.6378370732289298,
+              0.969712889914117
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 45771,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                163,
+                46
+              ],
+              "max": [
+                325,
+                561
+              ]
+            },
+            "componentAreasPixels": [
+              45771
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 0,
+          "triangles": 6732,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11655,
+            "minNdc": [
+              -0.28848031628923965,
+              -0.8613274080765293,
+              0.9599259278745355
+            ],
+            "maxNdc": [
+              0.2529586743855606,
+              0.5419861217567753,
+              0.9694861481998974
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 35510,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                171,
+                48
+              ],
+              "max": [
+                300,
+                528
+              ]
+            },
+            "componentAreasPixels": [
+              35510
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 0,
+          "triangles": 7744,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12865,
+            "minNdc": [
+              -0.34970023123770283,
+              -0.8818164675664829,
+              0.9589390079610496
+            ],
+            "maxNdc": [
+              0.3189617419368018,
+              0.8086074082174264,
+              0.9693792759784743
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 48970,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                156,
+                41
+              ],
+              "max": [
+                315,
+                619
+              ]
+            },
+            "componentAreasPixels": [
+              48970
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 13527,
+            "minNdc": [
+              -0.36271364799048467,
+              -0.8936793299789333,
+              0.9583873808463036
+            ],
+            "maxNdc": [
+              0.33237907086221585,
+              0.7798177868804633,
+              0.9694614014188749
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 48228,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                153,
+                37
+              ],
+              "max": [
+                319,
+                609
+              ]
+            },
+            "componentAreasPixels": [
+              48228
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 0,
+          "triangles": 7718,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              0.7511545004574254,
+              1,
+              1.4127161485742832
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11485,
+            "minNdc": [
+              -0.3026549328307756,
+              -0.8722059424679866,
+              0.9594034403784614
+            ],
+            "maxNdc": [
+              0.26013963125084955,
+              0.5792747082265699,
+              0.9692627648012552
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 33999,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                168,
+                44
+              ],
+              "max": [
+                301,
+                541
+              ]
+            },
+            "componentAreasPixels": [
+              33999
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "near-back.png",
+      "bytes": 480232,
+      "sha256": "cc11726c6f619330ded730166c932b047c7e6f36529ae86e7c6cae24a1e2afdb",
+      "width": 1920,
+      "height": 1660,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "yawDegrees": 180,
+      "portrait": false,
+      "torso": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11734,
+            "minNdc": [
+              -0.3384686924035016,
+              -0.7630789815110067,
+              0.9618450655270502
+            ],
+            "maxNdc": [
+              0.3680068328217473,
+              0.683833436432873,
+              0.9712241310008114
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 41583,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                159,
+                81
+              ],
+              "max": [
+                327,
+                576
+              ]
+            },
+            "componentAreasPixels": [
+              41583
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 0,
+          "triangles": 7665,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11394,
+            "minNdc": [
+              -0.35270922384110454,
+              -0.7631516552561947,
+              0.9619454135197636
+            ],
+            "maxNdc": [
+              0.38230949316109536,
+              0.6559203056801671,
+              0.9711726889666135
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 43466,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                156,
+                81
+              ],
+              "max": [
+                331,
+                567
+              ]
+            },
+            "componentAreasPixels": [
+              43466
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 0,
+          "triangles": 7720,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12352,
+            "minNdc": [
+              -0.3168508547396606,
+              -0.760580284443065,
+              0.9623192303464762
+            ],
+            "maxNdc": [
+              0.34439655299606925,
+              0.5952504818549474,
+              0.9710269693120867
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 38848,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                164,
+                82
+              ],
+              "max": [
+                321,
+                546
+              ]
+            },
+            "componentAreasPixels": [
+              38846,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12192,
+            "minNdc": [
+              -0.36617573056143016,
+              -0.7600308002805559,
+              0.9594349220059836
+            ],
+            "maxNdc": [
+              0.36953903966776824,
+              0.6217052531354662,
+              0.9709795538614989
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 44723,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                152,
+                82
+              ],
+              "max": [
+                328,
+                555
+              ]
+            },
+            "componentAreasPixels": [
+              44722,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 0,
+          "triangles": 6732,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11655,
+            "minNdc": [
+              -0.2748449094722115,
+              -0.7577935007888322,
+              0.9626769636646636
+            ],
+            "maxNdc": [
+              0.3004248566523784,
+              0.5545185168704263,
+              0.9707967818617056
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 35914,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                174,
+                83
+              ],
+              "max": [
+                311,
+                532
+              ]
+            },
+            "componentAreasPixels": [
+              35914
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 0,
+          "triangles": 7744,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12865,
+            "minNdc": [
+              -0.34285794172008094,
+              -0.7631270309727505,
+              0.9601255195103485
+            ],
+            "maxNdc": [
+              0.37249123265273837,
+              0.8061448679563697,
+              0.9712111034929596
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 46793,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                158,
+                81
+              ],
+              "max": [
+                328,
+                618
+              ]
+            },
+            "componentAreasPixels": [
+              46793
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 13527,
+            "minNdc": [
+              -0.3551485242141664,
+              -0.7657586232332979,
+              0.9608424607140481
+            ],
+            "maxNdc": [
+              0.3863721297847358,
+              0.780188221218386,
+              0.9714959789120491
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 46770,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                155,
+                81
+              ],
+              "max": [
+                332,
+                609
+              ]
+            },
+            "componentAreasPixels": [
+              46770
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 0,
+          "triangles": 7718,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              1.9594348786357652e-16,
+              1,
+              -1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11485,
+            "minNdc": [
+              -0.2893105595521146,
+              -0.7599155977557863,
+              0.9608873421123575
+            ],
+            "maxNdc": [
+              0.3160524606065699,
+              0.5793165484847881,
+              0.9710177006947077
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 32822,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                171,
+                83
+              ],
+              "max": [
+                315,
+                541
+              ]
+            },
+            "componentAreasPixels": [
+              32822
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "near-walk.png",
+      "bytes": 563909,
+      "sha256": "cb0dd0e6a6b75a2b6772e5f2fe10d1cf960b1af38f121ae313640388125bb093",
+      "width": 1920,
+      "height": 1660,
+      "lod": 0,
+      "clip": "walk",
+      "phase": 0.19,
+      "yawDegrees": 0,
+      "portrait": false,
+      "torso": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11734,
+            "minNdc": [
+              -0.4871038054842896,
+              -0.8918327309263725,
+              0.9569465936933317
+            ],
+            "maxNdc": [
+              0.35204058595755344,
+              0.6927406501468005,
+              0.9728270721843887
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 42868,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                124,
+                37
+              ],
+              "max": [
+                323,
+                579
+              ]
+            },
+            "componentAreasPixels": [
+              42868
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 0,
+          "triangles": 7665,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11394,
+            "minNdc": [
+              -0.5023851675861388,
+              -0.8873224489756943,
+              0.957151606046814
+            ],
+            "maxNdc": [
+              0.3667310061300931,
+              0.663386258931902,
+              0.9727454080938799
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 44683,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                120,
+                39
+              ],
+              "max": [
+                327,
+                567
+              ]
+            },
+            "componentAreasPixels": [
+              44682,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 0,
+          "triangles": 7720,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12352,
+            "minNdc": [
+              -0.4515568422325066,
+              -0.8813104739813393,
+              0.9575577471233412
+            ],
+            "maxNdc": [
+              0.32939560137314317,
+              0.6088388755063819,
+              0.9725755970113498
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 40389,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                132,
+                41
+              ],
+              "max": [
+                318,
+                550
+              ]
+            },
+            "componentAreasPixels": [
+              40387,
+              2
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12192,
+            "minNdc": [
+              -0.44437670395937545,
+              -0.8787716487904021,
+              0.9576526035286482
+            ],
+            "maxNdc": [
+              0.36484023681410344,
+              0.6415404169279763,
+              0.972514835348618
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 46684,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                134,
+                42
+              ],
+              "max": [
+                326,
+                562
+              ]
+            },
+            "componentAreasPixels": [
+              46684
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 0,
+          "triangles": 6732,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11655,
+            "minNdc": [
+              -0.39175291780370625,
+              -0.8674476468090848,
+              0.9581624111328513
+            ],
+            "maxNdc": [
+              0.28537756758517957,
+              0.5408638652199567,
+              0.9721894135145515
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 36650,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                146,
+                46
+              ],
+              "max": [
+                307,
+                527
+              ]
+            },
+            "componentAreasPixels": [
+              36650
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 0,
+          "triangles": 7744,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12865,
+            "minNdc": [
+              -0.49198607141871886,
+              -0.8906331346549653,
+              0.9569991701643524
+            ],
+            "maxNdc": [
+              0.3565689843354019,
+              0.8119811962231156,
+              0.9728062571220365
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 48786,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                122,
+                38
+              ],
+              "max": [
+                324,
+                620
+              ]
+            },
+            "componentAreasPixels": [
+              48786
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 13527,
+            "minNdc": [
+              -0.5170735483602821,
+              -0.9062398128500038,
+              0.9563456451220945
+            ],
+            "maxNdc": [
+              0.36968816439373015,
+              0.7812037249090243,
+              0.973075978523274
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 48154,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                116,
+                32
+              ],
+              "max": [
+                327,
+                610
+              ]
+            },
+            "componentAreasPixels": [
+              48154
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 0,
+          "triangles": 7718,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11485,
+            "minNdc": [
+              -0.41530713686755993,
+              -0.8776597840255601,
+              0.9577428720754627
+            ],
+            "maxNdc": [
+              0.30073583078150473,
+              0.5797404224932711,
+              0.9723769435340787
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 34072,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                141,
+                42
+              ],
+              "max": [
+                311,
+                541
+              ]
+            },
+            "componentAreasPixels": [
+              34072
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "far-front.png",
+      "bytes": 521214,
+      "sha256": "c1c167579df5cdbae4621879dcd6921df9b62abe99d8046d2cd6443c9930c8d5",
+      "width": 1920,
+      "height": 1660,
+      "lod": 1,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "yawDegrees": 0,
+      "portrait": false,
+      "torso": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 1,
+          "triangles": 1418,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2713,
+            "minNdc": [
+              -0.3821737474871003,
+              -0.8397810520185293,
+              0.9608104407637154
+            ],
+            "maxNdc": [
+              0.37575753433512027,
+              0.6936340561676383,
+              0.968656208971359
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 42843,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                149,
+                55
+              ],
+              "max": [
+                328,
+                580
+              ]
+            },
+            "componentAreasPixels": [
+              42832,
+              2,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 1,
+          "triangles": 1418,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2701,
+            "minNdc": [
+              -0.39725604617489274,
+              -0.8371311918775032,
+              0.9608987233385822
+            ],
+            "maxNdc": [
+              0.3911799191257887,
+              0.6628665181983893,
+              0.968631357880412
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 44661,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                145,
+                56
+              ],
+              "max": [
+                331,
+                568
+              ]
+            },
+            "componentAreasPixels": [
+              44649,
+              3,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 1,
+          "triangles": 1423,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2925,
+            "minNdc": [
+              -0.35723936122656147,
+              -0.8328865646977449,
+              0.9597589338186221
+            ],
+            "maxNdc": [
+              0.3500850649213576,
+              0.6079586328586412,
+              0.9685663983603545
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 40123,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                155,
+                57
+              ],
+              "max": [
+                322,
+                550
+              ]
+            },
+            "componentAreasPixels": [
+              40111,
+              3,
+              3,
+              2,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 1,
+          "triangles": 1419,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2948,
+            "minNdc": [
+              -0.3705756858840343,
+              -0.8312335371930581,
+              0.9577469821404442
+            ],
+            "maxNdc": [
+              0.3660674541378823,
+              0.642169677342692,
+              0.9687499201505678
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 46275,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                151,
+                58
+              ],
+              "max": [
+                327,
+                562
+              ]
+            },
+            "componentAreasPixels": [
+              46262,
+              3,
+              3,
+              2,
+              2,
+              2,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 1,
+          "triangles": 1423,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2957,
+            "minNdc": [
+              -0.31045218778660233,
+              -0.8245527821687119,
+              0.9611254430972155
+            ],
+            "maxNdc": [
+              0.30182644696351757,
+              0.542072162028474,
+              0.9692289518800944
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 36964,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                166,
+                60
+              ],
+              "max": [
+                310,
+                528
+              ]
+            },
+            "componentAreasPixels": [
+              36955,
+              3,
+              2,
+              2,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 1,
+          "triangles": 1423,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2999,
+            "minNdc": [
+              -0.38688325145993324,
+              -0.8390709475341452,
+              0.959527372634649
+            ],
+            "maxNdc": [
+              0.3806194645243242,
+              0.8116258269718142,
+              0.9686503872426874
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 48928,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                148,
+                55
+              ],
+              "max": [
+                329,
+                620
+              ]
+            },
+            "componentAreasPixels": [
+              48913,
+              3,
+              2,
+              2,
+              2,
+              2,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 1,
+          "triangles": 1423,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 3005,
+            "minNdc": [
+              -0.40200069671828437,
+              -0.8500462585686885,
+              0.9603128704169983
+            ],
+            "maxNdc": [
+              0.3962318938925417,
+              0.7640006255347296,
+              0.9687563573034468
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 47345,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                144,
+                52
+              ],
+              "max": [
+                333,
+                604
+              ]
+            },
+            "componentAreasPixels": [
+              47332,
+              3,
+              2,
+              2,
+              2,
+              2,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 1,
+          "triangles": 1423,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              0,
+              1,
+              1.6
+            ],
+            "targetM": [
+              0,
+              0.9,
+              0
+            ],
+            "horizontalDistanceM": 1.6,
+            "verticalFovDegrees": 74,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 2628,
+            "minNdc": [
+              -0.327367041350796,
+              -0.8322186927536397,
+              0.9611720558621699
+            ],
+            "maxNdc": [
+              0.3189320126096742,
+              0.5806244248531238,
+              0.9685238002756976
+            ],
+            "clippedVertices": 0,
+            "fullBodyFramingChecked": true
+          },
+          "mask": {
+            "foregroundPixels": 33942,
+            "edgePixels": 0,
+            "boundsPixels": {
+              "min": [
+                162,
+                58
+              ],
+              "max": [
+                314,
+                541
+              ]
+            },
+            "componentAreasPixels": [
+              33930,
+              3,
+              3,
+              2,
+              2,
+              2
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "torso-hands.png",
+      "bytes": 1670339,
+      "sha256": "83cfc11dc64a18483a4e85767c636334395461cb63591fc0dcdf0d66f8c7aab4",
+      "width": 1920,
+      "height": 1660,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "yawDegrees": 8,
+      "portrait": false,
+      "torso": true,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              1.05288,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              1.05288,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11734,
+            "minNdc": [
+              -0.8996812208525967,
+              -2.3886824842987986,
+              0.9582933697606819
+            ],
+            "maxNdc": [
+              0.8597625617467596,
+              1.266184241462281,
+              0.9680753673415824
+            ],
+            "clippedVertices": 4411,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 170949,
+            "edgePixels": 503,
+            "boundsPixels": {
+              "min": [
+                24,
+                0
+              ],
+              "max": [
+                445,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              170945,
+              4
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 0,
+          "triangles": 7665,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              1.04058,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              1.04058,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11394,
+            "minNdc": [
+              -0.9322980167455724,
+              -2.3579071852806477,
+              0.9583080628208054
+            ],
+            "maxNdc": [
+              0.8984209649107592,
+              1.2211469819389391,
+              0.9683059665350646
+            ],
+            "clippedVertices": 3374,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 184351,
+            "edgePixels": 561,
+            "boundsPixels": {
+              "min": [
+                16,
+                0
+              ],
+              "max": [
+                454,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              184307,
+              44
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 0,
+          "triangles": 7720,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              0.9999899999999999,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              0.9999899999999999,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12352,
+            "minNdc": [
+              -0.8436989093388979,
+              -2.24676354596124,
+              0.9587367422134584
+            ],
+            "maxNdc": [
+              0.8003165522152479,
+              1.1832881613976334,
+              0.9682335987497559
+            ],
+            "clippedVertices": 3232,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 168072,
+            "edgePixels": 521,
+            "boundsPixels": {
+              "min": [
+                38,
+                0
+              ],
+              "max": [
+                431,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              168066,
+              6
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              0.9876900000000001,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              0.9876900000000001,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12192,
+            "minNdc": [
+              -0.8442926296899903,
+              -2.214196277304412,
+              0.9587943717622047
+            ],
+            "maxNdc": [
+              0.862019692170091,
+              1.280581441747836,
+              0.9694072057231055
+            ],
+            "clippedVertices": 3306,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 193282,
+            "edgePixels": 800,
+            "boundsPixels": {
+              "min": [
+                37,
+                0
+              ],
+              "max": [
+                446,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              193274,
+              4,
+              1,
+              1,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 0,
+          "triangles": 6732,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              0.92127,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              0.92127,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11655,
+            "minNdc": [
+              -0.7387878184801278,
+              -2.048599222847262,
+              0.9591742747142954
+            ],
+            "maxNdc": [
+              0.6867085861633391,
+              1.1898126006645549,
+              0.9686131421398031
+            ],
+            "clippedVertices": 2678,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 160675,
+            "edgePixels": 738,
+            "boundsPixels": {
+              "min": [
+                63,
+                0
+              ],
+              "max": [
+                404,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              160675
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 0,
+          "triangles": 7744,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              1.05042,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              1.05042,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12865,
+            "minNdc": [
+              -0.910025523477449,
+              -2.3824774040541015,
+              0.9582941713019097
+            ],
+            "maxNdc": [
+              0.8718003467736215,
+              1.520579385740686,
+              0.9686760708557218
+            ],
+            "clippedVertices": 4350,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 181105,
+            "edgePixels": 653,
+            "boundsPixels": {
+              "min": [
+                22,
+                0
+              ],
+              "max": [
+                448,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              181105
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              1.10331,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              1.10331,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 13527,
+            "minNdc": [
+              -0.9438122466592946,
+              -2.5360289878142908,
+              0.9577044983499438
+            ],
+            "maxNdc": [
+              0.9066964641702773,
+              1.3603033115359728,
+              0.9682228494849945
+            ],
+            "clippedVertices": 6277,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 184396,
+            "edgePixels": 520,
+            "boundsPixels": {
+              "min": [
+                14,
+                0
+              ],
+              "max": [
+                456,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              184396
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 0,
+          "triangles": 7718,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              0.22267696153610472,
+              0.95817,
+              1.5844289099865128
+            ],
+            "targetM": [
+              0,
+              0.95817,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 36,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11485,
+            "minNdc": [
+              -0.7768146046602538,
+              -2.152554715311662,
+              0.9587101293628694
+            ],
+            "maxNdc": [
+              0.7262781444215977,
+              1.2047590944097168,
+              0.9685745419819222
+            ],
+            "clippedVertices": 3672,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 143329,
+            "edgePixels": 428,
+            "boundsPixels": {
+              "min": [
+                54,
+                0
+              ],
+              "max": [
+                413,
+                685
+              ]
+            },
+            "componentAreasPixels": [
+              143329
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "path": "head-neck.png",
+      "bytes": 1333977,
+      "sha256": "e00360d71b1195d773650cf9f2facad184f91f173d7f5654291515dea79bfe79",
+      "width": 1920,
+      "height": 1660,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "yawDegrees": 12,
+      "portrait": true,
+      "torso": false,
+      "rows": [
+        {
+          "id": "m_tendero",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.693,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.55,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.55,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11734,
+            "minNdc": [
+              -1.5584264980665359,
+              -6.229887123976058,
+              0.9579541098094002
+            ],
+            "maxNdc": [
+              1.4706596640247258,
+              0.4937728175944774,
+              0.9681157832944783
+            ],
+            "clippedVertices": 6472,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 121034,
+            "edgePixels": 1343,
+            "boundsPixels": {
+              "min": [
+                0,
+                0
+              ],
+              "max": [
+                479,
+                511
+              ]
+            },
+            "componentAreasPixels": [
+              121034
+            ]
+          }
+        },
+        {
+          "id": "m_don",
+          "lod": 0,
+          "triangles": 7665,
+          "heightM": 1.659,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.5310000000000001,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.5310000000000001,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11394,
+            "minNdc": [
+              -1.6130601063808567,
+              -6.153715082384037,
+              0.957925503439367
+            ],
+            "maxNdc": [
+              1.5390300655891862,
+              0.4351932507419772,
+              0.968351048105906
+            ],
+            "clippedVertices": 6559,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 123739,
+            "edgePixels": 1377,
+            "boundsPixels": {
+              "min": [
+                0,
+                0
+              ],
+              "max": [
+                479,
+                491
+              ]
+            },
+            "componentAreasPixels": [
+              123737,
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "id": "m_elder",
+          "lod": 0,
+          "triangles": 7720,
+          "heightM": 1.595,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.4700000000000002,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.4700000000000002,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12352,
+            "minNdc": [
+              -1.4629701158684048,
+              -5.846608277857431,
+              0.9584301791147463
+            ],
+            "maxNdc": [
+              1.3682025901908015,
+              0.4310238009459223,
+              0.9682798201811743
+            ],
+            "clippedVertices": 6861,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 126238,
+            "edgePixels": 1384,
+            "boundsPixels": {
+              "min": [
+                0,
+                0
+              ],
+              "max": [
+                479,
+                490
+              ]
+            },
+            "componentAreasPixels": [
+              126238
+            ]
+          }
+        },
+        {
+          "id": "m_abuelo",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.606,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.4520000000000002,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.4520000000000002,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12192,
+            "minNdc": [
+              -1.4507841706604245,
+              -5.761405767078815,
+              0.9585358958631348
+            ],
+            "maxNdc": [
+              1.518018779746115,
+              0.5525677669142288,
+              0.9693912551413963
+            ],
+            "clippedVertices": 6338,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 151770,
+            "edgePixels": 1535,
+            "boundsPixels": {
+              "min": [
+                0,
+                0
+              ],
+              "max": [
+                479,
+                531
+              ]
+            },
+            "componentAreasPixels": [
+              151769,
+              1
+            ]
+          }
+        },
+        {
+          "id": "w_elder",
+          "lod": 0,
+          "triangles": 6732,
+          "heightM": 1.544,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.381,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.381,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11655,
+            "minNdc": [
+              -1.2844257860485204,
+              -5.43665650764408,
+              0.95887238294174
+            ],
+            "maxNdc": [
+              1.170713621183673,
+              0.5451167912191286,
+              0.968645326133206
+            ],
+            "clippedVertices": 5826,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 118805,
+            "edgePixels": 907,
+            "boundsPixels": {
+              "min": [
+                9,
+                0
+              ],
+              "max": [
+                462,
+                529
+              ]
+            },
+            "componentAreasPixels": [
+              118805
+            ]
+          }
+        },
+        {
+          "id": "m_panadero",
+          "lod": 0,
+          "triangles": 7744,
+          "heightM": 1.771,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.5450000000000002,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.5450000000000002,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 12865,
+            "minNdc": [
+              -1.575785999021653,
+              -6.210359411770686,
+              0.9579424662598679
+            ],
+            "maxNdc": [
+              1.491549354289021,
+              0.8278428171401614,
+              0.9686704707440218
+            ],
+            "clippedVertices": 7026,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 164418,
+            "edgePixels": 1352,
+            "boundsPixels": {
+              "min": [
+                0,
+                0
+              ],
+              "max": [
+                479,
+                626
+              ]
+            },
+            "componentAreasPixels": [
+              164418
+            ]
+          }
+        },
+        {
+          "id": "m_afro",
+          "lod": 0,
+          "triangles": 7781,
+          "heightM": 1.804,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.625,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.625,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 13527,
+            "minNdc": [
+              -1.6337317310600337,
+              -6.620117413528277,
+              0.9573411796170497
+            ],
+            "maxNdc": [
+              1.550536322992378,
+              0.6060267569383843,
+              0.9682414944424415
+            ],
+            "clippedVertices": 6815,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 128946,
+            "edgePixels": 1305,
+            "boundsPixels": {
+              "min": [
+                0,
+                0
+              ],
+              "max": [
+                479,
+                550
+              ]
+            },
+            "componentAreasPixels": [
+              128946
+            ]
+          }
+        },
+        {
+          "id": "w_ama",
+          "lod": 0,
+          "triangles": 7718,
+          "heightM": 1.572,
+          "camera": {
+            "positionM": [
+              0.33265870530841496,
+              1.437,
+              1.5650361611740893
+            ],
+            "targetM": [
+              0,
+              1.437,
+              0
+            ],
+            "horizontalDistanceM": 1.6000000000000003,
+            "verticalFovDegrees": 21,
+            "aspect": 0.6997084548104956,
+            "nearM": 0.03,
+            "farM": 20
+          },
+          "projection": {
+            "vertices": 11485,
+            "minNdc": [
+              -1.3495477503869309,
+              -5.719240875636524,
+              0.9583813702544695
+            ],
+            "maxNdc": [
+              1.2386619626843205,
+              0.463188693004283,
+              0.9685628127229305
+            ],
+            "clippedVertices": 5789,
+            "fullBodyFramingChecked": false
+          },
+          "mask": {
+            "foregroundPixels": 118012,
+            "edgePixels": 912,
+            "boundsPixels": {
+              "min": [
+                7,
+                0
+              ],
+              "max": [
+                462,
+                501
+              ]
+            },
+            "componentAreasPixels": [
+              118012
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "failures": [],
+  "diagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after",
+      "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after",
+      "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after",
+      "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after"
+    ]
+  },
+  "readbackWarnings": [
+    "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after",
+    "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after",
+    "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after",
+    "[warning] [.WebGL-0xabc00c46a00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:41197/la-ladera/tests/people-bodies-gallery.html?label=after"
+  ],
+  "ok": true
+}

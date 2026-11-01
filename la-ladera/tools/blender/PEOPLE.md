@@ -2,7 +2,7 @@
 
 The generator produces **30 residents**, one skinned mesh each, with the existing
 21 bone names, metre scale, garment recolour slots and **32 original clips**.
-Near meshes target 6,200 triangles; far meshes target 1,450. The hard validation
+Near meshes target at most 7,800 triangles; far meshes target 1,450. The hard validation
 limits are 8,000 / 1,500. The scene keeps its existing 32/38 metre LOD hysteresis.
 
 ## Regenerate
@@ -93,8 +93,9 @@ The generator is Codex's, with the round 2-4 recipes re-applied on top of it:
   12-sided palms and 8-sided fingers, the thigh-circle hem ring and the hair
   `vertex_shade`. The lid and glasses recipes remain in the `--procedural` branch only
   (the MakeHuman head carries real lids and Codex's fitted rims).
-- **Beard**: the old ring lofts sank into the MakeHuman chin and flared into two wings,
-  so `m_afro` now gets a shell sampled from the real jaw surface (`skull_y`).
+- **Beard at that merge**: the old ring lofts sank into the MakeHuman chin and flared
+  into two wings, so the merged version sampled a shell from the jaw surface. The
+  body v2 pass below replaces that shell with a continuous skin-surface tint.
 - **ORM page at 1024 px**: three 2048 px pages cost 64 MB of GPU texture memory and
   broke the 220 MB gate of `tests/payload.mjs`; roughness and metal are low-frequency,
   so only that page is halved (UVs are normalised, nothing else changes).
@@ -117,3 +118,53 @@ missing**. Its isolated people stage records the failure and the explorable worl
 still boots, with zero NPCs. The headless missing-file check reports this honestly.
 Restoring visible residents automatically requires a loader change, which is
 outside this branch's no-game-code-change constraint.
+
+## Body rebuild v2
+
+The body work starts at `8f93ade042cdb4bfc1a796b889bbe39786241ebf` and preserves
+the same resident IDs, bone recipes, bind pose, animation bank, recolour slots,
+file names and material. The existing 8,000/1,500 triangle gates are unchanged.
+
+`people_body.py` builds a fitted torso and a continuous branching trouser
+surface. The trouser rise shares its crotch seam with both legs; it has no pelvis
+cap or overlapping thigh caps. Fully covered upper trouser surfaces are omitted
+under untucked garments. The existing rig's two thigh influences blend across
+the shared rise and separate below the crotch. Pockets, seams, printed motifs
+and shirt hems share the torso's surface calculation.
+
+`people_body_limbs.py` builds the shoulder/arm profiles, turned sleeve edges,
+formed palms, separated curved fingers, opposed thumbs and shaped footwear.
+Its far recipes deliberately omit nails, laces and small trim. They retain the
+same exact sole minimum as the original recipe, so normalization does not move
+the skeleton. Final budgeting also preserves the anatomical head's already
+reduced lip and jaw geometry in the near asset, and the cloth/skin cuff boundary
+in the far asset. Beard coverage blends continuously across skin vertices instead
+of adding a separate shell or hard triangle-shaped colour regions.
+
+The textile atlas keeps the original 8×8 layout. Existing cells 0–61 retain
+their indices; previously unused cells 62–63 hold recolourable stripes and
+checks. Cotton, denim, suit cloth, wool, jersey and knit have generated yarn
+relief and roughness. The external pages remain 2048² albedo, 2048² normal and
+1024² ORM: **48 MiB RGBA8 including mipmaps**, with no texture allocation growth.
+`people_cast.py` records each resident's fabric, tint, contrasting trim and wear.
+
+The new body surfaces, garment details, botanical motifs and fabric generators
+are original procedural work released as **CC0-1.0**. No downloaded body,
+garment, texture or branded design was added. The existing vendored MakeHuman
+head source retains its documented CC0 provenance in `vendor/MAKEHUMAN_SOURCE.md`.
+
+The additional review runner captures eight residents at exactly 1.600 m
+horizontal camera distance, with identical before/after lighting, pose and
+lenses. It records asset hashes, texture headers, triangle counts, pixel masks
+and projected bounds; full-body frames must contain every posed vertex.
+
+```sh
+LADERA_PRIO=idle node la-ladera/tests/people-bodies-shots.mjs \
+  --label after --out la-ladera/dev/people-bodies-v2/after
+```
+
+It uses the existing headless, muted, low-priority Chrome wrapper. Set
+`CHROME_PATH` when required. The full-body sheets use a 74° vertical lens; the
+clearly labelled torso/hand and head/neck crops use 36° and 21° lenses at the
+same distance. The comparison assets and acceptance outputs are under
+`dev/people-bodies-v2/`.

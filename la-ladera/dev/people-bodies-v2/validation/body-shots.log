@@ -1,0 +1,33 @@
+after near-front.png: 8 residents, 1.600 m, 0 clipped vertices; nonblank silhouettes
+after near-threequarter.png: 8 residents, 1.600 m, 0 clipped vertices; nonblank silhouettes
+after near-back.png: 8 residents, 1.600 m, 0 clipped vertices; nonblank silhouettes
+after near-walk.png: 8 residents, 1.600 m, 0 clipped vertices; nonblank silhouettes
+after far-front.png: 8 residents, 1.600 m, 0 clipped vertices; nonblank silhouettes
+after torso-hands.png: 8 residents, 1.600 m, labelled detail crop
+after head-neck.png: 8 residents, 1.600 m, labelled detail crop
+{
+  "ok": true,
+  "label": "after",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "residents": [
+    "m_tendero",
+    "m_don",
+    "m_elder",
+    "m_abuelo",
+    "w_elder",
+    "m_panadero",
+    "m_afro",
+    "w_ama"
+  ],
+  "clips": 32,
+  "sheets": [
+    "near-front.png",
+    "near-threequarter.png",
+    "near-back.png",
+    "near-walk.png",
+    "far-front.png",
+    "torso-hands.png",
+    "head-neck.png"
+  ],
+  "failures": []
+}

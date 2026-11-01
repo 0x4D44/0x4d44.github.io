@@ -1,0 +1,65 @@
+{
+  "base": "8f93ade042cdb4bfc1a796b889bbe39786241ebf",
+  "branch": "codex/la-ladera-bodies-v2",
+  "checkedAt": "2026-11-01T06:28:10.499208+00:00",
+  "acceptance": [
+    {
+      "command": "node la-ladera/tools/blender/people_validate.mjs --complete",
+      "exitCode": 0,
+      "output": "validation/people-validate.log"
+    },
+    {
+      "command": "node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/people-assets.test.mjs la-ladera/tests/people-art.test.mjs la-ladera/tests/people-legs.test.mjs",
+      "exitCode": 0,
+      "output": "validation/people-tests.log"
+    },
+    {
+      "command": "node la-ladera/tests/payload.mjs",
+      "exitCode": 0,
+      "output": "validation/payload.log"
+    }
+  ],
+  "testEnvironment": {
+    "priority": "LADERA_PRIO=idle; nice -n 19",
+    "browser": "headless, muted, quiet input hooks",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "assetHashes": {
+    "people.glb": {
+      "bytes": 6989112,
+      "sha256": "16006782aac014475115fcd749441e15f5954f585896fe0463eb99a34e265ef9"
+    },
+    "people_albedo.jpg": {
+      "bytes": 440913,
+      "sha256": "8354b8510453cf6029db8881a641df0c180aa4e98e627fe4a6402ca3f528fc95",
+      "width": 2048,
+      "height": 2048,
+      "estimatedGpuBytesWithMipmaps": 22369621.333333332
+    },
+    "people_lod.glb": {
+      "bytes": 1909016,
+      "sha256": "0a4818fcc4dd353beacd5b0752e65d19fcbbc04dd9ebdadf0f4def934283d214"
+    },
+    "people_meta.json": {
+      "bytes": 42675,
+      "sha256": "da5ec4d89b08a4cb9b3f451e73a21a7e60287b4dc70d4026d9299ae4ac8fc867"
+    },
+    "people_normal.jpg": {
+      "bytes": 452251,
+      "sha256": "81e4205d37d9b0f5a703b942210d5e1f0d3037fc8bf7ce3f0a07a5fa8bfefb5e",
+      "width": 2048,
+      "height": 2048,
+      "estimatedGpuBytesWithMipmaps": 22369621.333333332
+    },
+    "people_orm.jpg": {
+      "bytes": 75810,
+      "sha256": "20aa8d4f9acc7ea48d0ed14fc92f5244b4652d57c5856512539e785c3877120c",
+      "width": 1024,
+      "height": 1024,
+      "estimatedGpuBytesWithMipmaps": 5592405.333333333
+    }
+  },
+  "allCastPosedVertexChecks": 374592,
+  "originalAcceptanceAndLimitsUnchanged": true,
+  "gpuTextureGrowthBytes": 0
+}

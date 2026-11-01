@@ -43,6 +43,46 @@ LOOKS = {
 }
 
 
+# Original practical wardrobes, generated with the geometry/texture builder and
+# released as CC0-1.0. No club crests, brand marks or copied textile prints.
+# The garment silhouette and each resident's trade remain the established cast.
+# top_secondary is a contrasting cloth colour for cuffs/yokes; top_print requests
+# an original small motif on the garment surface. Patterns live in the two spare
+# atlas cells, so their per-person tints still use the existing recolour slots.
+WARDROBES = {
+    'm_tendero': dict(top='#d8c7a5', bot='#3e4b56', top_fabric='check_cotton', top_tucked=True, cloth_wear=.16),
+    'm_obrero': dict(top='#ba8a61', bot='#536878', overalls='#536878', top_fabric='jersey', cloth_wear=.65),
+    'w_tendera': dict(top='#6b907c', bot='#364d51', top_fabric='knit', top_secondary='#526c5d', cloth_wear=.22),
+    'w_ama': dict(top='#ba7480', bot='#363c49', top_fabric='stripe_cotton', cloth_wear=.18),
+    'w_elder': dict(top='#786b83', inner='#d8cbbd', bot='#38363d', top_fabric='wool_coat', cloth_wear=.28),
+    'm_elder': dict(top='#707a80', inner='#d6c9b5', bot='#4c5155', top_fabric='suit', cloth_wear=.30),
+    'b_boy': dict(top='#d9b85b', bot='#394c69', top_fabric='jersey', shirt_trim='#eee2bd', cloth_wear=.18),
+    'g_girl': dict(top='#588b96', bot='#588b96', top_fabric='cotton', top_secondary='#d9d1ae', top_print='flower', cloth_wear=.12),
+    't_boy': dict(top='#36516b', bot='#3c475c', top_fabric='jersey', top_secondary='#98635c', cloth_wear=.24),
+    't_girl': dict(top='#bb7d86', bot='#414650', top_fabric='jersey', top_secondary='#dfc9b2', cloth_wear=.15),
+    'm_afro': dict(top='#c99b50', bot='#3e4c60', top_fabric='jersey', shirt_trim='#e7d6b3', cloth_wear=.26),
+    'w_afro': dict(top='#b56f55', bot='#b56f55', top_fabric='cotton', top_secondary='#e1c39b', top_print='leaf', cloth_wear=.16),
+    'm_panadero': dict(top='#688797', bot='#b9b1a0', apron='#e5dfce', top_fabric='cotton', top_tucked=True, cloth_wear=.35),
+    'w_cocinera': dict(top='#ba7c65', bot='#526477', apron='#dfd4b9', top_fabric='check_cotton', cloth_wear=.38),
+    'm_carnicero': dict(top='#deddd4', bot='#68717a', apron='#bdc6cb', top_fabric='cotton', top_tucked=True, cloth_wear=.28),
+    'w_peluquera': dict(top='#ac9caf', bot='#61758d', top_fabric='stripe_cotton', cloth_wear=.18),
+    'm_mecanico': dict(top='#b8ae96', bot='#596c7a', overalls='#596c7a', top_fabric='cotton', top_tucked=True, cloth_wear=.72),
+    'w_farmaceutica': dict(top='#e5e4dc', inner='#6f9b98', bot='#7d8c98', top_fabric='cotton', cloth_wear=.07),
+    'w_maestra': dict(top='#9a829f', bot='#62656c', top_fabric='knit', top_secondary='#77667d', cloth_wear=.18),
+    'm_mototaxi': dict(top='#8b8d87', bot='#5c7292', vest='#df8e36', top_fabric='jersey', cloth_wear=.42),
+    'm_vendedor': dict(top='#bac6b2', bot='#8c7960', top_fabric='check_cotton', top_tucked=True, cloth_wear=.32),
+    'm_abuelo': dict(top='#c9c0a9', bot='#666b6f', ruana='#8b684a', ruana_trim='#c4a878', top_fabric='stripe_cotton', top_tucked=True, cloth_wear=.32),
+    'w_beata': dict(top='#716875', inner='#d5ccbb', bot='#34343a', top_fabric='wool_coat', cloth_wear=.28),
+    'b_escolar': dict(top='#e4e4da', bot='#647b9b', top_fabric='cotton', top_tucked=True, cloth_wear=.08),
+    'g_escolar': dict(top='#e5e4d8', bot='#647b9b', top_fabric='cotton', top_tucked=True, cloth_wear=.08),
+    'm_joven': dict(top='#4b826d', bot='#43546c', top_fabric='jersey', shirt_trim='#dbd9c1', cloth_wear=.20),
+    'w_vecina': dict(top='#92936b', bot='#4f6379', top_fabric='knit', top_secondary='#697454', cloth_wear=.30),
+    'm_don': dict(top='#9bafb9', bot='#585962', top_fabric='stripe_cotton', top_tucked=True, cloth_wear=.20),
+    'w_joven': dict(top='#d1ae64', bot='#4f6c8a', top_fabric='jersey', top_secondary='#557e77', top_print='leaf', cloth_wear=.17),
+    'm_rapado': dict(top='#ae6355', bot='#353a43', top_fabric='jersey', shirt_trim='#d9d2b8', cloth_wear=.23),
+}
+
+
 def customize_cast(people):
     """Apply distinct, deterministic art settings without changing any IDs/tags/rigs."""
     for i, p in enumerate(people):
@@ -65,8 +105,9 @@ def customize_cast(people):
             p.update(top='#6e737d', inner='#d9c9af', church=True)
         elif p['id'] == 'w_beata':
             p.update(top='#69616e', inner='#d8d0bf', church=True)
+        p.update(WARDROBES[p['id']])
         if p['top_style'] == 'football':
-            p['shirt_trim'] = '#d8c695' if p['id'] == 'm_afro' else '#e4dfd2'
+            p.setdefault('shirt_trim', '#d8c695' if p['id'] == 'm_afro' else '#e4dfd2')
         if 'student' in p.get('tags', []):
             p['school_trim'] = '#263d64'
         if age >= 60:
