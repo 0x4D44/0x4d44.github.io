@@ -20,7 +20,7 @@ Run from the repository root, with Node and Blender 4.5 LTS or newer available:
 node la-ladera/tests/memgate.mjs 6 300
 node la-ladera/tools/nice.mjs blender --background --factory-startup --threads 2 --python-exit-code 1 --python la-ladera/tools/blender/garments_build.py --
 node la-ladera/tools/nice.mjs node la-ladera/tools/blender/garments_validate.mjs --complete
-node la-ladera/tools/nice.mjs node --test --test-isolation=none --test-concurrency=1 la-ladera/tests/garments.test.mjs
+node la-ladera/tools/nice.mjs node --test --test-concurrency=1 la-ladera/tests/garments.test.mjs
 ```
 
 Set `CHROME_PATH` to a headless-capable Chrome executable, then capture all
@@ -83,3 +83,31 @@ Part B is gated: this base has the older 25-figure / 32-clip people set, and the
 new-figure work has not landed. The object library must be reviewed before a
 later adult-only wearable pass. See the committed verification report under
 `dev/garments/` for actual tests, byte counts, screenshots and performance limits.
+
+
+## Current adult, child and teen libraries
+
+The adult contract above describes the original library. Its asset bytes,
+manifest, palette and recipes remain unchanged. The child extension and teen
+port sit beside it in separate six-pack directories and are registered through
+the generated garment data and loader. Each library has explicit size metadata:
+
+| Size tag | Catalogue and documentation | Packs | Count |
+| --- | --- | --- | --- |
+| `adult` | `garments.catalog.json`; this document | `garments/` | 23 styles, 67 poses plus LODs |
+| `child` | `garments-child.catalog.json`; [child contract](GARMENTS-CHILD.md) | `garments-child/` | 20 designs, 57 poses plus LODs |
+| `teen` | `garments_teen.catalog.json`; [teen contract](GARMENTS-TEEN.md) | `garments-teen/` | 29 styles × small/big, 162 poses plus LODs |
+
+`node la-ladera/tools/blender/garments_validate.mjs --complete` now validates all
+three libraries in one run; `--all --complete` is an alias. Use `--adult`,
+`--child` or `--teen` to restrict an isolated build check. Rebuild only the
+intended library, then regenerate `js/interiors/garments_data.js` with
+`tools/garments_data.mjs`. Never hand-edit generated runtime records.
+
+The portable Node 22.16 test invocation omits `--test-isolation=none`, which
+that version rejects. Mutation subprocesses run the selected real tests under
+Node's ordinary test isolation and verify the intended failure output.
+
+See [teen room/locker guidance](../../dev/garments/TEEN-PLACEMENT.md) and
+[child room/locker guidance](../../dev/garments/CHILD-PLACEMENT.md). The teen port
+adds selection data and loader bindings; it does not add renderer placements.

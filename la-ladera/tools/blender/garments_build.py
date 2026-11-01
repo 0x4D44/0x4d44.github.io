@@ -513,29 +513,6 @@ def png(path,palette):
     path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',size,size,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b''))
 
 
-def preserve_teen(out,stage):
-    """Stage the teen library before the adult garments/ directory is replaced.
-
-    The teen GLB and its fabric textures live inside garments/ but belong to
-    garments_teen_build.py; replacing the directory must not discard them. A partial
-    set is an error. The returned files are charged to the teen byte gate, not the
-    adult one.
-    """
-    paths=('garments/garments_teen.glb','manifest.garments_teen.json','garments/teen')
-    sources=[out/rel for rel in paths]
-    if not any(path.exists() for path in sources): return set()
-    if not (sources[0].is_file() and sources[1].is_file() and sources[2].is_dir()):
-        raise ValueError('Existing teen library is incomplete; repair its GLB, manifest and fabric textures (garments_teen_build.py) before regenerating adult assets')
-    kept=set()
-    for rel,source in zip(paths,sources):
-        target=stage/rel; target.parent.mkdir(parents=True,exist_ok=True)
-        if source.is_dir():
-            shutil.copytree(source,target); kept.update(path for path in target.rglob('*') if path.is_file())
-        else:
-            shutil.copy2(source,target); kept.add(target)
-    return kept
-
-
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--out',type=Path,default=MODELS)
@@ -562,7 +539,6 @@ def main():
     with tempfile.TemporaryDirectory(prefix='.garments-stage-',dir=out.parent) as tmp:
         stage=Path(tmp); dest=stage/'garments'; dest.mkdir()
         for name in ('palette.json','assortments.json'): shutil.copy2(source/name,dest/name)
-        teen=preserve_teen(out,stage)
         png(dest/'prints.png',palette)
         for state in STATES:
             if not any(state in item['states'] for item in items): continue
@@ -602,7 +578,7 @@ def main():
             F.export_glb(str(dest/f'garments_{state}_lod.glb'))
             manifest['files'].append({'glb':glb,'sha256':hashlib.sha256((stage/glb).read_bytes()).hexdigest(),'assets':assets})
         (stage/'manifest.garments.json').write_text(json.dumps(manifest,indent=2)+'\n')
-        total=sum(p.stat().st_size for p in dest.iterdir() if p.is_file() and p not in teen)+(stage/'manifest.garments.json').stat().st_size
+        total=sum(p.stat().st_size for p in dest.iterdir())+(stage/'manifest.garments.json').stat().st_size
         if total>2000000: raise ValueError(f'Runtime payload {total} exceeds 2,000,000 bytes')
         node=shutil.which('node')
         if not node: raise ValueError('Node is required for independent validation before installation')

@@ -34,12 +34,10 @@ const fmt = (n) => n.toFixed(2);
 // ---------------------------------------------------------------- the library's files
 const manifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments.json'), 'utf8'));
 const childManifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments-child.json'), 'utf8'));
-const teenManifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments_teen.json'), 'utf8'));
 const childCatalogue = JSON.parse(readFileSync(join(ROOT, 'tools', 'blender', 'garments-child.catalog.json'), 'utf8'));
-// `id` is the garment's id in the data module: a teen size is a design of its own (<style>_<small|big>), so its key stays garment_<id>_<state> like the others'.
-const assetRows = (man, sizeTag) => man.files.flatMap((f) => Object.entries(f.assets).map(([key, a]) => ({ key, a, file: f.glb, sizeTag, id: a.sizeClass ? `${a.garment}_${a.sizeClass}` : a.garment })));
-const adultAssets = assetRows(manifest, 'adult'), childAssets = assetRows(childManifest, 'child'), teenAssets = assetRows(teenManifest, 'teen');
-const assets = [...adultAssets, ...childAssets, ...teenAssets];
+const assetRows = (man, sizeTag) => man.files.flatMap((f) => Object.entries(f.assets).map(([key, a]) => ({ key, a, file: f.glb, sizeTag })));
+const adultAssets = assetRows(manifest, 'adult'), childAssets = assetRows(childManifest, 'child');
+const assets = [...adultAssets, ...childAssets];
 const isGarmentFile = (path) => /^(?:garments|garments-child)\//.test(path);
 const CHILD_IDS = [
   'child_school_shirt', 'child_school_polo', 'child_pinafore', 'child_school_trousers', 'child_school_shorts',
@@ -53,14 +51,13 @@ test('the committed data module is what the generator makes of the manifests (th
   assert.equal(have, garmentsDataModule(MODELS), 'js/interiors/garments_data.js is out of date: run `node la-ladera/tools/garments_data.mjs > la-ladera/js/interiors/garments_data.js`');
   const problems = [];
   assert.equal(GARMENT_KEYS.length, assets.length, `${GARMENT_KEYS.length} keys in the data module, ${assets.length} assets in the manifest`);
-  for (const { key, a, sizeTag, id } of assets) {
-    const g = GARMENTS[id]?.[a.state];
+  for (const { key, a, sizeTag } of assets) {
+    const g = GARMENTS[a.garment]?.[a.state];
     if (!g) { problems.push(`${key}: not in the data module`); continue; }
-    if (GARMENTS[id].sizeTag !== sizeTag) problems.push(`${key}: generated size tag is ${GARMENTS[id].sizeTag}, expected ${sizeTag}`);
-    if (GARMENTS[id].sizeClass !== a.sizeClass) problems.push(`${key}: generated size class is ${GARMENTS[id].sizeClass}, the manifest says ${a.sizeClass}`);
+    if (GARMENTS[a.garment].sizeTag !== sizeTag) problems.push(`${key}: generated size tag is ${GARMENTS[a.garment].sizeTag}, expected ${sizeTag}`);
     if (a.lod.glb !== lodFile(a.state, sizeTag) || a.lod.node !== key + '_lod') problems.push(`${key}: the manifest's LOD is ${a.lod.glb}#${a.lod.node}, the loader asks for ${lodFile(a.state, sizeTag)}#${key}_lod`);
     if (g[3] !== a.lod.triangles) problems.push(`${key}: ${g[3]} LOD triangles in the data module, ${a.lod.triangles} in the manifest`);
-    if (key !== garmentKey(id, a.state)) problems.push(`${key}: not the key garmentKey() makes (${garmentKey(id, a.state)})`);
+    if (key !== garmentKey(a.garment, a.state)) problems.push(`${key}: not the key garmentKey() makes (${garmentKey(a.garment, a.state)})`);
     for (const v of a.variants) if (!(v in VARIANTS)) problems.push(`${key}: variant ${v} has no colour`);
   }
   report(problems, 'data module / manifest mismatches');
@@ -543,7 +540,7 @@ test('the two loads are apart: the furniture load asks for no garment file and k
   assert.deepEqual([...ctx.interiorGlb].sort(), furniture, 'the page entry\'s furniture set is not what the furniture load alone makes');
   assert.deepEqual([...ctx.garmentGlb].sort(), [...GARMENT_KEYS].sort(), 'the page entry did not load the clothes');
   await boot(true, ['clothes']);
-  assert.deepEqual(garmentFiles().sort(), [...new Set(assets.map(({ a }) => a.lod.glb))].sort(), 'the clothes load asks for the six adult/child LOD files, the one teen file and nothing else');
+  assert.deepEqual(garmentFiles().sort(), [...new Set(assets.map(({ a }) => a.lod.glb))].sort(), 'the clothes load asks for all six adult/child LOD files and nothing else');
   assert.deepEqual([...ctx.garmentGlb].sort(), [...GARMENT_KEYS].sort(), 'every garment key, and only those, loaded');
   ctx.assets.loaded.clear(); ctx.assets.load = (path) => Promise.reject(new Error('404 ' + path));      // a retry is a fresh load: files that are gone now leave their keys on the stand-ins
   const warn = console.warn; console.warn = () => {};

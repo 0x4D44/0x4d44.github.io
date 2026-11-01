@@ -1,0 +1,93 @@
+tshirt_cream_folded: 191/78 high/LOD
+tshirt_teal_folded: 191/78 high/LOD
+tshirt_sun_folded: 191/78 high/LOD
+shorts_chino_folded: 191/72 high/LOD
+crop_top_rib_folded: 192/78 high/LOD
+crop_top_boxy_folded: 192/78 high/LOD
+lycra_shorts_folded: 192/72 high/LOD
+lycra_trousers_folded: 102/48 high/LOD
+denim_shorts_folded: 191/72 high/LOD
+denim_jeans_folded: 102/48 high/LOD
+dress_short_folded: 192/48 high/LOD
+dress_knee_folded: 191/48 high/LOD
+dress_midi_folded: 192/48 high/LOD
+dress_maxi_folded: 192/48 high/LOD
+hoodie_folded: 232/78 high/LOD
+joggers_folded: 102/48 high/LOD
+school_jumper_folded: 192/78 high/LOD
+school_polo_folded: 192/78 high/LOD
+school_trousers_folded: 102/48 high/LOD
+school_skirt_folded: 192/48 high/LOD
+socks_pair_folded: 191/48 high/LOD
+light_jacket_folded: 231/78 high/LOD
+underwear_briefs_folded: 192/48 high/LOD
+underwear_boxers_folded: 192/72 high/LOD
+swim_onepiece_folded: 192/78 high/LOD
+swim_shorts_folded: 192/72 high/LOD
+INFO Draco mesh compression is available, use library at /tmp/blender-4.5.15-linux-x64/4.5/scripts/addons_core/io_scene_gltf2/libextern_draco.so
+
+
+tshirt_cream_hung: 116/52 high/LOD
+tshirt_teal_hung: 116/52 high/LOD
+tshirt_sun_hung: 116/52 high/LOD
+shorts_chino_hung: 98/40 high/LOD
+crop_top_rib_hung: 104/40 high/LOD
+crop_top_boxy_hung: 116/52 high/LOD
+lycra_shorts_hung: 92/40 high/LOD
+lycra_trousers_hung: 92/40 high/LOD
+denim_shorts_hung: 104/40 high/LOD
+denim_jeans_hung: 104/40 high/LOD
+dress_short_hung: 108/48 high/LOD
+dress_knee_hung: 110/44 high/LOD
+dress_midi_hung: 110/44 high/LOD
+dress_maxi_hung: 110/44 high/LOD
+hoodie_hung: 160/72 high/LOD
+joggers_hung: 92/40 high/LOD
+school_jumper_hung: 128/56 high/LOD
+school_polo_hung: 118/52 high/LOD
+school_trousers_hung: 98/40 high/LOD
+school_skirt_hung: 88/18 high/LOD
+cap_hung: 192/96 high/LOD
+light_jacket_hung: 134/56 high/LOD
+underwear_briefs_hung: 78/30 high/LOD
+underwear_boxers_hung: 92/40 high/LOD
+swim_onepiece_hung: 116/60 high/LOD
+swim_shorts_hung: 92/40 high/LOD
+
+
+tshirt_cream_flat: 116/52 high/LOD
+tshirt_teal_flat: 116/52 high/LOD
+tshirt_sun_flat: 116/52 high/LOD
+shorts_chino_flat: 98/40 high/LOD
+crop_top_rib_flat: 104/40 high/LOD
+crop_top_boxy_flat: 116/52 high/LOD
+lycra_shorts_flat: 92/40 high/LOD
+lycra_trousers_flat: 92/40 high/LOD
+denim_shorts_flat: 104/40 high/LOD
+denim_jeans_flat: 104/40 high/LOD
+dress_short_flat: 108/48 high/LOD
+dress_knee_flat: 110/44 high/LOD
+dress_midi_flat: 110/44 high/LOD
+dress_maxi_flat: 110/44 high/LOD
+hoodie_flat: 160/72 high/LOD
+joggers_flat: 92/40 high/LOD
+school_jumper_flat: 128/56 high/LOD
+school_polo_flat: 118/52 high/LOD
+school_trousers_flat: 98/40 high/LOD
+school_skirt_flat: 88/18 high/LOD
+socks_pair_flat: 176/84 high/LOD
+cap_flat: 191/96 high/LOD
+light_jacket_flat: 134/56 high/LOD
+underwear_briefs_flat: 78/30 high/LOD
+underwear_boxers_flat: 92/40 high/LOD
+swim_onepiece_flat: 116/60 high/LOD
+swim_shorts_flat: 92/40 high/LOD
+school_shoes_pair_flat: 232/80 high/LOD
+sandals_pair_flat: 200/68 high/LOD
+
+
+
+EXPORTED teen: 29 styles, 162 states + LODs, 759920/3500000 bytes; six pose packs.
+Blender 4.5.15 LTS (hash 5afeabba6097 built 2026-10-22 01:33:47)
+
+Blender quit

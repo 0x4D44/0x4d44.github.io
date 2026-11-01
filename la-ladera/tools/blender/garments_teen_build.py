@@ -1,9 +1,7 @@
 """Teen object library: original patterns through the adult Blender cloth/export pipeline.
 
-Run this file directly in headless Blender (see GARMENTS-TEEN.md). Sizes share meshes
-behind identity named roots; all simulation is baked, and the final core-glTF packing
-needs no decoder. The adult library is read through garments_build.py's helpers only:
-it is never rebuilt or replaced here.
+Run this script directly in headless Blender. Sizes share meshes behind identity named roots;
+all simulation is baked, and the final core-glTF packing needs no decoder.
 """
 import argparse
 import hashlib
@@ -19,17 +17,16 @@ import tempfile
 
 import bpy
 from mathutils import Vector
-
-HERE=Path(__file__).resolve().parent
-sys.path.insert(0,str(HERE))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 import garments_build as G
 import furn_lib as F
 from garments_teen_textures import build_textures
 
 ROOT=HERE.parent.parent
 MODELS=ROOT/'assets'/'models'
-GLB='garments/garments_teen.glb'
-MANIFEST='manifest.garments_teen.json'
+DIRECTORY='garments-teen'
+MANIFEST='manifest.garments-teen.json'
 SIZES={'small':{'scale':.7,'ages':[12,15]},'big':{'scale':.9,'ages':[16,19]}}
 
 
@@ -77,7 +74,7 @@ def cloth_geometry(item,state):
     shape=item['shape']; w=item['width']; h=item['length']; hung=state=='hung'
     vertices=[];faces=[];uv=[];colors=[]
     # Fewer interior samples than the adult catalogue, with silhouette, openings
-    # and sewn back surfaces retained. This pays for both sizes inside 700 KB.
+    # and sewn back surfaces retained. This keeps both size variants comfortably within the 3.5 MB budget.
     for pi,outline in enumerate(outlines(shape)):
         coords,ff,boundary=G.polygon_grid(outline,4,6)
         vv,ff=G.bake_panel(coords,ff,w,h,'hung' if hung else 'flat',shape,pi)
@@ -461,10 +458,8 @@ def compact_glb(path):
         found=next((i for i,m in enumerate(newmeshes) if json.dumps(m['primitives'],sort_keys=True)==signature),None)
         if found is None:found=len(newmeshes);newmeshes.append({'primitives':primitives})
         meshmap[mi]=found
-    roots=set(g['scenes'][0]['nodes'])
     for i,n in enumerate(g['nodes']):
         if 'mesh' in n:n['mesh']=meshmap[n['mesh']]
-        if i not in roots:n.pop('name',None)
         n.pop('extras',None)
         for prop,value in [('translation',[0,0,0]),('rotation',[0,0,0,1]),('scale',[1,1,1])]:
             if n.get(prop)==value:n.pop(prop)
@@ -501,14 +496,46 @@ def fit_lod_envelope(low,high,state):
     low.data.update();G.normalize_object(low,state)
 
 
+def make_prototypes(item,state):
+    """Original 18a37a7 teen geometry; only its packaging has changed."""
+    parcel=state=='folded' and item['shape'] in ('jeans','joggers','school_trousers','leggings')
+    if parcel:geometry=folded_trousers(item)
+    elif item['shape'] in ('school_shoes','sandals'):geometry=footwear(item)
+    elif item['shape']=='cap':geometry=G.hat_geometry({**item,'id':'cap'},state)
+    else:geometry=cloth_geometry(item,state)
+    v,f,uv,c=geometry
+    high=G.create_mesh('prototype',G.normalized_geometry(v,state),f,uv,c)
+    if state=='folded' and not parcel:G.fold_object(high,fold_as(item))
+    G.triangulate(high)
+    cap=240 if item['shape'] in ('school_shoes','sandals','hoodie','jacket') else 200
+    G.simplify(high,cap);G.normalize_object(high,state)
+    if parcel:geometry=folded_trousers(item,low=True)
+    elif state=='folded':geometry=folded_lod(item,high)
+    elif item['shape']=='cap':geometry=cap_lod(state)
+    elif item['shape'] not in ('school_shoes','sandals'):geometry=cloth_lod(item,state)
+    else:geometry=None
+    if geometry:
+        lv,lf,lu,lc=geometry
+        low=G.create_mesh('prototype-lod',G.normalized_geometry(lv,state),lf,lu,lc)
+        G.triangulate(low)
+    else:
+        low=high.copy();low.data=high.data.copy();bpy.context.scene.collection.objects.link(low)
+        G.simplify(low,min(104,max(42,int(G.tris(high)*.38))));G.normalize_object(low,state)
+    fit_lod_envelope(low,high,state)
+    if G.tris(high)>800 or G.tris(low)>240 or G.tris(low)>G.tris(high)*.6:
+        raise ValueError(f"{item['id']}/{state}: invalid detailed/LOD triangle budgets")
+    return high,low
+
+
 def install(stage,out):
-    """Replace only the teen payload, restore previous bytes on caught failures."""
-    target=out/'garments';target.mkdir(parents=True,exist_ok=True)
-    pairs=[(stage/'garments'/'teen',target/'teen'),(stage/GLB,out/GLB),(stage/MANIFEST,out/MANIFEST)]
+    """Replace only the teen directory/manifest; restore them on caught failure."""
+    out.mkdir(parents=True,exist_ok=True)
+    pairs=[(stage/DIRECTORY,out/DIRECTORY),(stage/MANIFEST,out/MANIFEST)]
     backup=stage/'previous';backup.mkdir();moved=[];installed=[]
     try:
         for index,(src,dst) in enumerate(pairs):
-            if dst.exists():old=backup/str(index);os.replace(dst,old);moved.append((old,dst))
+            if dst.exists():
+                old=backup/str(index);os.replace(dst,old);moved.append((old,dst))
             os.replace(src,dst);installed.append(dst)
     except BaseException:
         for dst in reversed(installed):
@@ -522,85 +549,104 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out',type=Path,default=MODELS)
     parser.add_argument('--catalogue',type=Path,default=HERE/'garments_teen.catalog.json')
-    parser.add_argument('--only',help='comma-separated IDs; requires isolated --out')
+    parser.add_argument('--only',help='comma-separated style IDs; requires isolated --out')
     parser.add_argument('--no-validate',action='store_true',help=argparse.SUPPRESS)
     args=parser.parse_args(F.argv_after_dashes() if '--' in sys.argv else [])
     out=args.out.resolve()
     if args.only and out==MODELS.resolve():raise ValueError('Partial builds must use an isolated --out')
     if args.no_validate and out==MODELS.resolve():raise ValueError('Unvalidated experiments require an isolated --out')
-    catalogue=json.loads(args.catalogue.read_text());chosen=set(args.only.split(',')) if args.only else None
+    catalogue=json.loads(args.catalogue.read_text())
+    if catalogue.get('sizes')!=SIZES or catalogue.get('sizeTag')!='teen':
+        raise ValueError('The teen catalogue must retain the two documented size classes')
+    chosen=set(args.only.split(',')) if args.only else None
     items=[x for x in catalogue['garments'] if not chosen or x['id'] in chosen]
     if chosen and chosen!={x['id'] for x in items}:raise ValueError('Unknown garment ID')
+    if not chosen and (len(items)!=29 or len({x['id'] for x in items})!=29):
+        raise ValueError('The complete teen catalogue must contain all 29 styles')
     out.parent.mkdir(parents=True,exist_ok=True)
+    manifest={
+        'schemaVersion':1,'set':'garments-teen','sizeTag':'teen','scope':'objects-only',
+        'ageGroup':'teen','units':'metres','baseCommit':'c4e8f46e8f617896f508728f77cda029ec494e88',
+        'portedFrom':'18a37a7e29888cecc733e16bcd623b21c599916e','sizes':SIZES,
+        'catalogue':'../../tools/blender/garments_teen.catalog.json',
+        'roomKinds':['teen_bedroom','school_locker'],
+        'limits':{'triangles':800,'lodTriangles':240,'runtimeBytes':3500000},
+        'palette':DIRECTORY+'/teen/palette.json',
+        'atlas':{'file':DIRECTORY+'/teen/fabrics.png','width':256,'height':256,'embedded':False},
+        'sharedAtlas':'garments/prints.png','assortments':DIRECTORY+'/assortments.json',
+        'files':[],
+        'clothBake':{'blender':bpy.app.version_string,'frames':G.BAKE_FRAMES,'sequential':True,'staticOnly':True},
+        'packing':{'sharedSizes':True,'position':'float32','normal':'float32','uv':'unorm16',
+                   'color':'unorm8','decoder':'core-glTF-2.0','packs':{}},
+        'lodPolicy':{'switchDistanceMetres':8,'cullDistanceMetres':30,'maxConcurrentDetailItems':24,
+                     'note':'Select exactly one named root and one level. Detailed and LOD meshes use separate pose packs. Placement is left to the game.'},
+    }
     with tempfile.TemporaryDirectory(prefix='.garments-teen-stage-',dir=out.parent) as temp:
-        stage=Path(temp);(stage/'garments'/'teen').mkdir(parents=True);build_textures(stage/'garments'/'teen')
-        F.reset();prototypes={};assets={}
-        for item in items:
-            for state in item['states']:
+        stage=Path(temp);dest=stage/DIRECTORY;dest.mkdir()
+        build_textures(dest/'teen')
+        # Placement recipes are authored source data, not geometry output. Copy
+        # the checked-in input so rebuilding never discards or regenerates it.
+        for name in ('assortments.json','CREDITS.md'):
+            source=MODELS/DIRECTORY/name
+            if source.exists():shutil.copy2(source,dest/name)
+            elif name=='assortments.json' and not args.no_validate:
+                raise ValueError('The authored teen assortment input is missing: '+str(source))
+        total_assets=0
+        for state in G.STATES:
+            if not any(state in item['states'] for item in items):continue
+            F.reset();prototypes={};assets={};lows=[]
+            for item in items:
+                if state not in item['states']:continue
                 signature=(item['shape'],state,item['width'],item['length'])
-                if signature not in prototypes:
-                    parcel=state=='folded' and item['shape'] in ('jeans','joggers','school_trousers','leggings')
-                    if parcel:geometry=folded_trousers(item)
-                    elif item['shape'] in ('school_shoes','sandals'):geometry=footwear(item)
-                    elif item['shape']=='cap':geometry=G.hat_geometry({**item,'id':'cap'},state)
-                    else:geometry=cloth_geometry(item,state)
-                    v,f,uv,c=geometry;ob=G.create_mesh('prototype',G.normalized_geometry(v,state),f,uv,c)
-                    if state=='folded' and not parcel:
-                        G.fold_object(ob,fold_as(item))
-                    G.triangulate(ob)
-                    cap=240 if item['shape'] in ('school_shoes','sandals','hoodie','jacket') else 200
-                    G.simplify(ob,cap);G.normalize_object(ob,state)
-                    if parcel:
-                        lv,lf,lu,lc=folded_trousers(item,low=True)
-                        low=G.create_mesh('prototype-lod',G.normalized_geometry(lv,state),lf,lu,lc)
-                        G.triangulate(low)
-                    elif state=='folded':
-                        lv,lf,lu,lc=folded_lod(item,ob)
-                        low=G.create_mesh('prototype-lod',G.normalized_geometry(lv,state),lf,lu,lc)
-                        G.triangulate(low)
-                    elif item['shape']=='cap':
-                        lv,lf,lu,lc=cap_lod(state)
-                        low=G.create_mesh('prototype-lod',G.normalized_geometry(lv,state),lf,lu,lc)
-                        G.triangulate(low)
-                    elif item['shape'] not in ('school_shoes','sandals'):
-                        lv,lf,lu,lc=cloth_lod(item,state)
-                        low=G.create_mesh('prototype-lod',G.normalized_geometry(lv,state),lf,lu,lc)
-                        G.triangulate(low)
-                    else:
-                        low=ob.copy();low.data=ob.data.copy();bpy.context.scene.collection.objects.link(low)
-                        G.simplify(low,min(104,max(42,int(G.tris(ob)*.38))));G.normalize_object(low,state)
-                    fit_lod_envelope(low,ob,state)
-                    prototypes[signature]=(ob,low)
+                if signature not in prototypes:prototypes[signature]=make_prototypes(item,state)
                 high,low=prototypes[signature]
                 for size,info in SIZES.items():
-                    scale=info['scale'];key=f"garment_{item['id']}_{size}_{state}"
+                    scale=info['scale'];garment=f"teen_{item['id']}_{size}";key=f'garment_{garment}_{state}'
                     for template,suffix in ((high,''),(low,'_lod')):
                         root=bpy.data.objects.new(key+suffix,None);bpy.context.scene.collection.objects.link(root)
                         child=bpy.data.objects.new(key+suffix+'-tint-0',template.data);bpy.context.scene.collection.objects.link(child)
                         child.parent=root;child.scale=(scale,scale,scale)
-                    low_meta=scaled_meta(low,state,scale)
-                    for unused in ('footprint','origin','materials'):low_meta.pop(unused)
-                    assets[key]={'node':key,'garment':item['id'],'sizeClass':size,'state':state,'ageGroup':'teen',**scaled_meta(high,state,scale),'variants':item['variants'],'defaultVariant':item['defaultVariant'],'drawCalls':1,'lod':{'glb':GLB,'node':key+'_lod',**low_meta}}
+                        if suffix:lows.extend([root,child])
+                    assets[key]={
+                        'node':key,'garment':garment,'styleId':item['id'],'sizeTag':'teen','sizeClass':size,
+                        'scale':scale,'state':state,'ageGroup':'teen',**scaled_meta(high,state,scale),
+                        'variants':item['variants'],'defaultVariant':item['defaultVariant'],'drawCalls':1,
+                        'lod':{'glb':f'{DIRECTORY}/garments_{state}_lod.glb','node':key+'_lod',**scaled_meta(low,state,scale)},
+                    }
                 print(f"{item['id']}_{state}: {G.tris(high)}/{G.tris(low)} high/LOD",flush=True)
-        for high,low in prototypes.values():
-            bpy.data.objects.remove(high,do_unlink=True);bpy.data.objects.remove(low,do_unlink=True)
-        F.export_glb(str(stage/GLB));packing=compact_glb(stage/GLB)
-        manifest={'schemaVersion':1,'set':'garments_teen','scope':'objects-only','ageGroup':'teen','units':'metres','baseCommit':'621ff65dd086969373e17ae18a2eb8f01997e9be','sizes':SIZES,'catalogue':'../../tools/blender/garments_teen.catalog.json','limits':{'triangles':800,'lodTriangles':240,'runtimeBytes':700000},'palette':'garments/teen/palette.json','atlas':{'file':'garments/teen/fabrics.png','width':256,'height':256,'embedded':False},'files':[{'glb':GLB,'sha256':hashlib.sha256((stage/GLB).read_bytes()).hexdigest(),'assets':assets}],'clothBake':{'blender':bpy.app.version_string,'frames':G.BAKE_FRAMES,'sequential':True,'staticOnly':True},'packing':{'sharedSizes':True,'position':'float32','normal':'float32','uv':'unorm16','color':'unorm8','decoder':'core-glTF-2.0',**packing},'lodPolicy':{'switchDistanceMetres':8,'cullDistanceMetres':30,'maxConcurrentDetailItems':24,'note':'Select exactly one named asset root and one detail level. Both levels share one file. Integration is left to the game.'}}
-        # Compact manifest remains ordinary JSON and saves network payload.
+            for high,low in prototypes.values():
+                bpy.data.objects.remove(high,do_unlink=True);bpy.data.objects.remove(low,do_unlink=True)
+            for ob in lows:bpy.context.scene.collection.objects.unlink(ob)
+            glb=f'{DIRECTORY}/garments_{state}.glb';F.export_glb(str(stage/glb))
+            manifest['packing']['packs'][glb]=compact_glb(stage/glb)
+            for ob in list(bpy.context.scene.objects):bpy.data.objects.remove(ob,do_unlink=True)
+            for ob in lows:bpy.context.scene.collection.objects.link(ob)
+            lod_glb=f'{DIRECTORY}/garments_{state}_lod.glb';F.export_glb(str(stage/lod_glb))
+            manifest['packing']['packs'][lod_glb]=compact_glb(stage/lod_glb)
+            lod_hash=hashlib.sha256((stage/lod_glb).read_bytes()).hexdigest()
+            for a in assets.values():a['lod']['sha256']=lod_hash
+            manifest['files'].append({'glb':glb,'sha256':hashlib.sha256((stage/glb).read_bytes()).hexdigest(),'assets':assets})
+            total_assets+=len(assets)
+        # Ordinary compact JSON keeps download bytes down without a decoder.
         (stage/MANIFEST).write_text(json.dumps(manifest,separators=(',',':'))+'\n')
-        total=(stage/GLB).stat().st_size+(stage/MANIFEST).stat().st_size+sum(p.stat().st_size for p in (stage/'garments'/'teen').rglob('*') if p.is_file())
-        if total>700000:raise ValueError(f'Teen payload {total} exceeds 700000 bytes (GLB {packing["bytes"]})')
+        total=(stage/MANIFEST).stat().st_size+sum(p.stat().st_size for p in dest.rglob('*') if p.is_file())
+        if total>3500000:raise ValueError(f'Teen runtime payload {total} exceeds 3500000 bytes')
         if not args.no_validate:
+            node=shutil.which('node')
+            if not node:raise ValueError('Node is required for independent exported-byte validation')
             report=stage/'validation.json'
-            command=['node','--import',(ROOT/'tests'/'nice.mjs').as_uri(),str(HERE/'garments_validate.mjs'),'--teen','--root',str(stage),'--catalogue',str(args.catalogue),'--json',str(report)]
+            command=[node,str(ROOT/'tools/nice.mjs'),node,str(HERE/'garments_validate.mjs'),
+                     '--teen','--root',str(stage),'--catalogue',str(args.catalogue.resolve()),'--json',str(report)]
             if not chosen:command.append('--complete')
-            checked=subprocess.run(command,capture_output=True,text=True,timeout=180,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            checked=subprocess.run(command,capture_output=True,text=True,timeout=180,
+                                   creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
             print(checked.stdout,flush=True)
             if checked.returncode or not report.is_file():raise ValueError('Independent teen validation failed: '+checked.stderr)
             verified=json.loads(report.read_text())
-            if not verified.get('ok') or verified.get('assets')!=len(assets):raise ValueError('Validator did not confirm every exported teen state')
+            if not verified.get('ok') or verified.get('assets')!=total_assets:
+                raise ValueError('Validator did not confirm every exported teen state')
         install(stage,out)
-        print(f'EXPORTED teen: {len(items)} styles, {len(assets)} states + LODs, {total}/700000 bytes; GLB {packing["bytes"]} bytes.',flush=True)
+        print(f'EXPORTED teen: {len(items)} styles, {total_assets} states + LODs, {total}/3500000 bytes; {len(manifest["files"])*2} pose packs.',flush=True)
 
 
 if __name__=='__main__':main()

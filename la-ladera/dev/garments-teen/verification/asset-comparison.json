@@ -1,0 +1,29 @@
+{
+  "poses": 162,
+  "lods": 162,
+  "maxHigh": 232,
+  "maxLOD": 96,
+  "minReduction": 0.48275862068965514,
+  "largestEnvelopeDifference": 4.827976098908948e-7,
+  "largestPriorDimensionDifference": 0,
+  "changedTriangles": [],
+  "texturesUnchanged": true,
+  "tintChildNames": true,
+  "packs": [
+    {
+      "file": "garments-teen/garments_folded.glb",
+      "roots": 52,
+      "lodRoots": 52
+    },
+    {
+      "file": "garments-teen/garments_hung.glb",
+      "roots": 52,
+      "lodRoots": 52
+    },
+    {
+      "file": "garments-teen/garments_flat.glb",
+      "roots": 58,
+      "lodRoots": 58
+    }
+  ]
+}

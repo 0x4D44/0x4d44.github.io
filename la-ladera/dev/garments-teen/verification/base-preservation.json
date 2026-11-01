@@ -1,0 +1,1318 @@
+{
+  "ok": true,
+  "base": "c4e8f46e8f617896f508728f77cda029ec494e88",
+  "verifiedFiles": 187,
+  "verifiedTests": 164,
+  "allOriginalAssetsManifestsCataloguesBuildersAndTestsUnchanged": true,
+  "files": [
+    {
+      "path": "la-ladera/assets/models/garments-child/CREDITS.md",
+      "baseBlob": "5f8f5fc7ce156801daf611ce4093b5e465b77c20",
+      "currentBlob": "5f8f5fc7ce156801daf611ce4093b5e465b77c20",
+      "bytes": 380,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/assortments.json",
+      "baseBlob": "2b0716b8a3eb955b48efe2c4aaad922484734c47",
+      "currentBlob": "2b0716b8a3eb955b48efe2c4aaad922484734c47",
+      "bytes": 7434,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/garments_flat.glb",
+      "baseBlob": "d35257cec7d869ff9744f31f56c804fd6c7f7051",
+      "currentBlob": "d35257cec7d869ff9744f31f56c804fd6c7f7051",
+      "bytes": 258112,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/garments_flat_lod.glb",
+      "baseBlob": "97f1af47b0e3af7dab384dc32f1ebdb1d4435af3",
+      "currentBlob": "97f1af47b0e3af7dab384dc32f1ebdb1d4435af3",
+      "bytes": 124692,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/garments_folded.glb",
+      "baseBlob": "a88d47ae1df3e5e1bedd36a1dfa57e6e1edb3c1c",
+      "currentBlob": "a88d47ae1df3e5e1bedd36a1dfa57e6e1edb3c1c",
+      "bytes": 489336,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/garments_folded_lod.glb",
+      "baseBlob": "4581219bc28d098931eb14d693d44d9f7221afbb",
+      "currentBlob": "4581219bc28d098931eb14d693d44d9f7221afbb",
+      "bytes": 274012,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/garments_hung.glb",
+      "baseBlob": "a73f3f7f9fbc1585a8225eb9ff25df495657a6a9",
+      "currentBlob": "a73f3f7f9fbc1585a8225eb9ff25df495657a6a9",
+      "bytes": 258152,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments-child/garments_hung_lod.glb",
+      "baseBlob": "48ed3e40817b05b1e12a498dbe3d73a49ff55045",
+      "currentBlob": "48ed3e40817b05b1e12a498dbe3d73a49ff55045",
+      "bytes": 106708,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/assortments.json",
+      "baseBlob": "959b65a08a5c79353f5d7228663d962bd277bff9",
+      "currentBlob": "959b65a08a5c79353f5d7228663d962bd277bff9",
+      "bytes": 9238,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_flat.glb",
+      "baseBlob": "a34c802c413d2c457788854aa87c00f043d2f37d",
+      "currentBlob": "a34c802c413d2c457788854aa87c00f043d2f37d",
+      "bytes": 362052,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_flat_lod.glb",
+      "baseBlob": "52e87f7102aab78035de01f95e48a6b0e72818a0",
+      "currentBlob": "52e87f7102aab78035de01f95e48a6b0e72818a0",
+      "bytes": 141128,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_folded.glb",
+      "baseBlob": "a3ea180b77b14cedb745c965036753113cc9fb8b",
+      "currentBlob": "a3ea180b77b14cedb745c965036753113cc9fb8b",
+      "bytes": 537044,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_folded_lod.glb",
+      "baseBlob": "218b9667361a73134a3080bf52d3934c3b723a65",
+      "currentBlob": "218b9667361a73134a3080bf52d3934c3b723a65",
+      "bytes": 188400,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_hung.glb",
+      "baseBlob": "528d653f6d9b2876e0bd44186e48b955b4b980b8",
+      "currentBlob": "528d653f6d9b2876e0bd44186e48b955b4b980b8",
+      "bytes": 362084,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_hung_lod.glb",
+      "baseBlob": "f2f2e70d39260930bdf63b99a2dea1b2e4b8f8cd",
+      "currentBlob": "f2f2e70d39260930bdf63b99a2dea1b2e4b8f8cd",
+      "bytes": 117652,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/palette.json",
+      "baseBlob": "e1f6b5b4ae4f997f1c66607f958f604c9dbf99a7",
+      "currentBlob": "e1f6b5b4ae4f997f1c66607f958f604c9dbf99a7",
+      "bytes": 3038,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/garments/prints.png",
+      "baseBlob": "8f436b1bdd7b6ad97410ff07a95e1b0289b86337",
+      "currentBlob": "8f436b1bdd7b6ad97410ff07a95e1b0289b86337",
+      "bytes": 7605,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/manifest.garments-child.json",
+      "baseBlob": "a677bd7023c4151fc18acb734595b9bd9c659740",
+      "currentBlob": "a677bd7023c4151fc18acb734595b9bd9c659740",
+      "bytes": 99383,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/assets/models/manifest.garments.json",
+      "baseBlob": "d4f5d5ac6def908ffa98741abc1909353e6a3cf6",
+      "currentBlob": "d4f5d5ac6def908ffa98741abc1909353e6a3cf6",
+      "bytes": 111818,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/animals-assets.test.mjs",
+      "baseBlob": "607c2b88d2eba7ced67d4f1b6f11c297aedd687d",
+      "currentBlob": "607c2b88d2eba7ced67d4f1b6f11c297aedd687d",
+      "bytes": 12424,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/animals-habitat.test.mjs",
+      "baseBlob": "709b8efbbdfe6a3d11150eef5547ce426f54c4f4",
+      "currentBlob": "709b8efbbdfe6a3d11150eef5547ce426f54c4f4",
+      "bytes": 17036,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/animals-runtime.test.mjs",
+      "baseBlob": "7f8d314a06e47b6b00cd12ee65134f7032f6a3e0",
+      "currentBlob": "7f8d314a06e47b6b00cd12ee65134f7032f6a3e0",
+      "bytes": 13945,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/animals-shots.mjs",
+      "baseBlob": "b5c8e5b2e420db87172adabdd6178c1a6fe495bb",
+      "currentBlob": "b5c8e5b2e420db87172adabdd6178c1a6fe495bb",
+      "bytes": 6078,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/animals-world.mjs",
+      "baseBlob": "9390471cf9b6f8b5c879e5ec1d5546c5017190b1",
+      "currentBlob": "9390471cf9b6f8b5c879e5ec1d5546c5017190b1",
+      "bytes": 3240,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-build.test.mjs",
+      "baseBlob": "a4bf0f6ff53847d54ea6d4fcb86c226cc9e1eca5",
+      "currentBlob": "a4bf0f6ff53847d54ea6d4fcb86c226cc9e1eca5",
+      "bytes": 12748,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-chapel.test.mjs",
+      "baseBlob": "ba7f415b75873831e4aadf1f0ea2700dc89aba79",
+      "currentBlob": "ba7f415b75873831e4aadf1f0ea2700dc89aba79",
+      "bytes": 21894,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-diet.test.mjs",
+      "baseBlob": "389e2e3395b0d078e0844990b8e284af75a39bf4",
+      "currentBlob": "389e2e3395b0d078e0844990b8e284af75a39bf4",
+      "bytes": 13778,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-doors.test.mjs",
+      "baseBlob": "9bc351ba5fba460ef5bd07231edbb14044bfecff",
+      "currentBlob": "9bc351ba5fba460ef5bd07231edbb14044bfecff",
+      "bytes": 30890,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-dressing.test.mjs",
+      "baseBlob": "3e5aa844f57fa9f052e6d787fc34822d749b7a72",
+      "currentBlob": "3e5aa844f57fa9f052e6d787fc34822d749b7a72",
+      "bytes": 10781,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-entrances.test.mjs",
+      "baseBlob": "14291e12a1ef6848a0602de338e0b49f6eeb7365",
+      "currentBlob": "14291e12a1ef6848a0602de338e0b49f6eeb7365",
+      "bytes": 13922,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-extras.test.mjs",
+      "baseBlob": "c390148c010c70dfc7465603fcd60a9ec5b6e312",
+      "currentBlob": "c390148c010c70dfc7465603fcd60a9ec5b6e312",
+      "bytes": 21219,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-facade.test.mjs",
+      "baseBlob": "69e84d46f0af7bca4dac4e76174d5eb057f2d5a8",
+      "currentBlob": "69e84d46f0af7bca4dac4e76174d5eb057f2d5a8",
+      "bytes": 10969,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-lib.mjs",
+      "baseBlob": "1993dd5102f506ad6dcc509501875954c567f26e",
+      "currentBlob": "1993dd5102f506ad6dcc509501875954c567f26e",
+      "bytes": 20007,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-plan.test.mjs",
+      "baseBlob": "721618e74b4056494fce9cc3d8357b6415ebe85d",
+      "currentBlob": "721618e74b4056494fce9cc3d8357b6415ebe85d",
+      "bytes": 12542,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-rowhouse.test.mjs",
+      "baseBlob": "63433be95f7e9b982a820839f74645a76307c640",
+      "currentBlob": "63433be95f7e9b982a820839f74645a76307c640",
+      "bytes": 11958,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-shopfront.test.mjs",
+      "baseBlob": "6d7afa6803a068956162c0efd3e2587c67cf8d20",
+      "currentBlob": "6d7afa6803a068956162c0efd3e2587c67cf8d20",
+      "bytes": 16140,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-special.test.mjs",
+      "baseBlob": "ee07502c894eeded052117d5b943bcf2527fa4d7",
+      "currentBlob": "ee07502c894eeded052117d5b943bcf2527fa4d7",
+      "bytes": 24921,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-stairwin.test.mjs",
+      "baseBlob": "412e6bbffe1461b31e19878756c9a27e630d8e31",
+      "currentBlob": "412e6bbffe1461b31e19878756c9a27e630d8e31",
+      "bytes": 5413,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-units.test.mjs",
+      "baseBlob": "ac28cbe1753105de8e0e5d0e74b514be94b1436a",
+      "currentBlob": "ac28cbe1753105de8e0e5d0e74b514be94b1436a",
+      "bytes": 17186,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-walk.test.mjs",
+      "baseBlob": "746f18dbd8e48c7087fd55f6b8244daf3f262530",
+      "currentBlob": "746f18dbd8e48c7087fd55f6b8244daf3f262530",
+      "bytes": 11128,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/arch-weather.test.mjs",
+      "baseBlob": "e379d395bb33ddd83c37f0297b9755b7ba5c857a",
+      "currentBlob": "e379d395bb33ddd83c37f0297b9755b7ba5c857a",
+      "bytes": 30673,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/audio-dsp.test.mjs",
+      "baseBlob": "54850c3190e0a75a20391556667a38bf53bef6e3",
+      "currentBlob": "54850c3190e0a75a20391556667a38bf53bef6e3",
+      "bytes": 15102,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/audio-engine.test.mjs",
+      "baseBlob": "878621abc473240e9fd52f528a91c0482f47c6d0",
+      "currentBlob": "878621abc473240e9fd52f528a91c0482f47c6d0",
+      "bytes": 31858,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/audio-lib.mjs",
+      "baseBlob": "dab4535adee6aa2e1d6624718bfb17ac18ca11e5",
+      "currentBlob": "dab4535adee6aa2e1d6624718bfb17ac18ca11e5",
+      "bytes": 7520,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/audio-library.test.mjs",
+      "baseBlob": "0de75d038968d6c1d844bf608ff18af2916b299b",
+      "currentBlob": "0de75d038968d6c1d844bf608ff18af2916b299b",
+      "bytes": 23000,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/audio-mix.test.mjs",
+      "baseBlob": "576c09f6379948b4fb7714e6340c3ace7ead7537",
+      "currentBlob": "576c09f6379948b4fb7714e6340c3ace7ead7537",
+      "bytes": 14726,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/audio-steps.test.mjs",
+      "baseBlob": "5adde6b2f1ce34fa00bad8ca0e5f2898fa2ab8ef",
+      "currentBlob": "5adde6b2f1ce34fa00bad8ca0e5f2898fa2ab8ef",
+      "bytes": 8808,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/chrome.mjs",
+      "baseBlob": "e2bcb8ab4198c05f67b1e1f5ba6a536b336d12e8",
+      "currentBlob": "e2bcb8ab4198c05f67b1e1f5ba6a536b336d12e8",
+      "bytes": 14321,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/clutter-assets.test.mjs",
+      "baseBlob": "f929c20b10c9b7653967b268b036e5b1b97b156d",
+      "currentBlob": "f929c20b10c9b7653967b268b036e5b1b97b156d",
+      "bytes": 12275,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/clutter-gallery.mjs",
+      "baseBlob": "f093caadbca327a52ba71f41e3b52110274a6f56",
+      "currentBlob": "f093caadbca327a52ba71f41e3b52110274a6f56",
+      "bytes": 3082,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/clutter-shots.mjs",
+      "baseBlob": "42bdc16f5408c8f0c10ab6a0ea2854c0ed80928f",
+      "currentBlob": "42bdc16f5408c8f0c10ab6a0ea2854c0ed80928f",
+      "bytes": 3752,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/core-discover.test.mjs",
+      "baseBlob": "b6dddcfef959f07f8d42176fafb1dd377c97c97a",
+      "currentBlob": "b6dddcfef959f07f8d42176fafb1dd377c97c97a",
+      "bytes": 5346,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/core-interact.test.mjs",
+      "baseBlob": "212b6be97e2991b5992ea378ebac172261d9d445",
+      "currentBlob": "212b6be97e2991b5992ea378ebac172261d9d445",
+      "bytes": 41534,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/core-matlib.test.mjs",
+      "baseBlob": "833269bc3491e4824b7f21b3bccfc7d6f880404d",
+      "currentBlob": "833269bc3491e4824b7f21b3bccfc7d6f880404d",
+      "bytes": 6669,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/core-merge.test.mjs",
+      "baseBlob": "5717973c28fd9fc2ff64c8e14396831aa3518488",
+      "currentBlob": "5717973c28fd9fc2ff64c8e14396831aa3518488",
+      "bytes": 13423,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/core-mesh.test.mjs",
+      "baseBlob": "06689afe89eac772e08a6ddcbf6bdaa81c795468",
+      "currentBlob": "06689afe89eac772e08a6ddcbf6bdaa81c795468",
+      "bytes": 2019,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/core-shadowpolicy.test.mjs",
+      "baseBlob": "f28fac78a5c839bb60ab8c96f24e01e0e3a07d05",
+      "currentBlob": "f28fac78a5c839bb60ab8c96f24e01e0e3a07d05",
+      "bytes": 7849,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-bootbar.test.mjs",
+      "baseBlob": "eb68ac5c3f608454690d9e7ea1c12f1eeb97400c",
+      "currentBlob": "eb68ac5c3f608454690d9e7ea1c12f1eeb97400c",
+      "bytes": 11093,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-bootcard.test.mjs",
+      "baseBlob": "7e7b0cab3ef448700ec94fe242a754a4397d5138",
+      "currentBlob": "7e7b0cab3ef448700ec94fe242a754a4397d5138",
+      "bytes": 10021,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-heap.test.mjs",
+      "baseBlob": "3554f633714dd8c4e97d4dd8aee033a2aa3ee73f",
+      "currentBlob": "3554f633714dd8c4e97d4dd8aee033a2aa3ee73f",
+      "bytes": 3189,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-input.test.mjs",
+      "baseBlob": "8b845832c8ea2a9c08654c5095a50349b5b715c8",
+      "currentBlob": "8b845832c8ea2a9c08654c5095a50349b5b715c8",
+      "bytes": 2912,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-lights.test.mjs",
+      "baseBlob": "c61601e68518933580bfbc49a8f656d0eeb53709",
+      "currentBlob": "c61601e68518933580bfbc49a8f656d0eeb53709",
+      "bytes": 12637,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-look.test.mjs",
+      "baseBlob": "7f754ad032b830a7f23db1b347c46d6b4da22a5f",
+      "currentBlob": "7f754ad032b830a7f23db1b347c46d6b4da22a5f",
+      "bytes": 8467,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-physics.test.mjs",
+      "baseBlob": "4520bb2c10632a2b890944244d0bd115503b3962",
+      "currentBlob": "4520bb2c10632a2b890944244d0bd115503b3962",
+      "bytes": 24605,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-render.test.mjs",
+      "baseBlob": "8ac345aa008c33406d53681e03c975df4fe09982",
+      "currentBlob": "8ac345aa008c33406d53681e03c975df4fe09982",
+      "bytes": 11208,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-stall.test.mjs",
+      "baseBlob": "5de17013bbc9c429b329b140a70731b21550c39f",
+      "currentBlob": "5de17013bbc9c429b329b140a70731b21550c39f",
+      "bytes": 14728,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-triplanar-shader.test.mjs",
+      "baseBlob": "91297785a920836a0d61eda2dab3fc644ce25617",
+      "currentBlob": "91297785a920836a0d61eda2dab3fc644ce25617",
+      "bytes": 5675,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-triplanar.test.mjs",
+      "baseBlob": "d2328800e2267ec3dd2c10e56bfcd579b61eaaef",
+      "currentBlob": "d2328800e2267ec3dd2c10e56bfcd579b61eaaef",
+      "bytes": 12103,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-visibility.test.mjs",
+      "baseBlob": "c4c96659da76af739b8d18efd617d0f5544c43e1",
+      "currentBlob": "c4c96659da76af739b8d18efd617d0f5544c43e1",
+      "bytes": 11262,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/engine-warm.test.mjs",
+      "baseBlob": "14c1d6786a9c8a274042e1e48731d4ca2e6c5d06",
+      "currentBlob": "14c1d6786a9c8a274042e1e48731d4ca2e6c5d06",
+      "bytes": 12569,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/furniture-pipeline.test.mjs",
+      "baseBlob": "260f761f6727d2bfe322f88e128cdd026f1439e6",
+      "currentBlob": "260f761f6727d2bfe322f88e128cdd026f1439e6",
+      "bytes": 6620,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/furniture-runtime.test.mjs",
+      "baseBlob": "6f7b9a669f43c6844f4f6f328fc072c1ba44d653",
+      "currentBlob": "6f7b9a669f43c6844f4f6f328fc072c1ba44d653",
+      "bytes": 12370,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/furniture-visual.mjs",
+      "baseBlob": "70e9a745e1276f1cd25f5d5219aa2074eea9539b",
+      "currentBlob": "70e9a745e1276f1cd25f5d5219aa2074eea9539b",
+      "bytes": 14284,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/furniture-world.test.mjs",
+      "baseBlob": "2d17adf2ae433d3e66aa27b936427db191d00321",
+      "currentBlob": "2d17adf2ae433d3e66aa27b936427db191d00321",
+      "bytes": 6203,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/garments-child-visual.mjs",
+      "baseBlob": "64d12c7ced839eccc4d6c1f7573bd5d69f32fabd",
+      "currentBlob": "64d12c7ced839eccc4d6c1f7573bd5d69f32fabd",
+      "bytes": 4937,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/garments-fallback.mjs",
+      "baseBlob": "0c387f09a1945ade69b4f11f75413900feac44a7",
+      "currentBlob": "0c387f09a1945ade69b4f11f75413900feac44a7",
+      "bytes": 5787,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/garments-visual.mjs",
+      "baseBlob": "4b25827cf9d3288ba83488b26e919558397a4946",
+      "currentBlob": "4b25827cf9d3288ba83488b26e919558397a4946",
+      "bytes": 11775,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/garments.test.mjs",
+      "baseBlob": "1ef4021de9104943b172a2de40caab071257519b",
+      "currentBlob": "1ef4021de9104943b172a2de40caab071257519b",
+      "bytes": 15347,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/glow-city.test.mjs",
+      "baseBlob": "a65c19bd0343b1692c4387c45f807f4680be1ebb",
+      "currentBlob": "a65c19bd0343b1692c4387c45f807f4680be1ebb",
+      "bytes": 5981,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/glow.test.mjs",
+      "baseBlob": "9c59025129136157297776d5b1ff04dbf277de61",
+      "currentBlob": "9c59025129136157297776d5b1ff04dbf277de61",
+      "bytes": 12396,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/goods-assets.test.mjs",
+      "baseBlob": "4809f46cc99585d354aa1c39703ba84a45967172",
+      "currentBlob": "4809f46cc99585d354aa1c39703ba84a45967172",
+      "bytes": 14330,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/goods-budget.mjs",
+      "baseBlob": "b6c72b9dd19128b2e17e63cedd0a160fd5e239b2",
+      "currentBlob": "b6c72b9dd19128b2e17e63cedd0a160fd5e239b2",
+      "bytes": 9645,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/goods-data.test.mjs",
+      "baseBlob": "6e4b0049bcc703dbdfd7d4fb474dc3edc1120260",
+      "currentBlob": "6e4b0049bcc703dbdfd7d4fb474dc3edc1120260",
+      "bytes": 11149,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/goods-shots.mjs",
+      "baseBlob": "e2dd8dd8c1ae457be4350c4d2f1114272a68383f",
+      "currentBlob": "e2dd8dd8c1ae457be4350c4d2f1114272a68383f",
+      "bytes": 6004,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/headless.mjs",
+      "baseBlob": "33032d4effadfa530abad443cdec3309ea91a7c6",
+      "currentBlob": "33032d4effadfa530abad443cdec3309ea91a7c6",
+      "bytes": 3973,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/hooks.mjs",
+      "baseBlob": "8e6ae9664cb0831efc21a6839955cab39e928b9a",
+      "currentBlob": "8e6ae9664cb0831efc21a6839955cab39e928b9a",
+      "bytes": 966,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/inspect-shots.mjs",
+      "baseBlob": "70750abdd2835ea5a22749ad01a4239d6d237497",
+      "currentBlob": "70750abdd2835ea5a22749ad01a4239d6d237497",
+      "bytes": 6292,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interact-people.test.mjs",
+      "baseBlob": "673c3cf4495ddb874c59a510c33aefcb7ec2e9f8",
+      "currentBlob": "673c3cf4495ddb874c59a510c33aefcb7ec2e9f8",
+      "bytes": 7558,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-build.test.mjs",
+      "baseBlob": "a60e4f584063ec84a09b74238ac14da49c806e24",
+      "currentBlob": "a60e4f584063ec84a09b74238ac14da49c806e24",
+      "bytes": 6556,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-catalog.test.mjs",
+      "baseBlob": "afe3f7d4b17efb649312fc6a59f6c660da275fa4",
+      "currentBlob": "afe3f7d4b17efb649312fc6a59f6c660da275fa4",
+      "bytes": 18461,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-containers.test.mjs",
+      "baseBlob": "636a344fc022aed98f6eaa8c0e4e590a68429dda",
+      "currentBlob": "636a344fc022aed98f6eaa8c0e4e590a68429dda",
+      "bytes": 44147,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-content.test.mjs",
+      "baseBlob": "c71349ca21b9c1ab46da5f280bc5629775788056",
+      "currentBlob": "c71349ca21b9c1ab46da5f280bc5629775788056",
+      "bytes": 20642,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-contents.test.mjs",
+      "baseBlob": "bd537d9ae8e814bbb1f321a515d2584aefe0b21f",
+      "currentBlob": "bd537d9ae8e814bbb1f321a515d2584aefe0b21f",
+      "bytes": 7649,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-data.test.mjs",
+      "baseBlob": "07042938533bbd51341f0692111ea040f4554653",
+      "currentBlob": "07042938533bbd51341f0692111ea040f4554653",
+      "bytes": 14352,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-deadends.test.mjs",
+      "baseBlob": "b1248e2799376061b69403902de436f531845e6e",
+      "currentBlob": "b1248e2799376061b69403902de436f531845e6e",
+      "bytes": 18955,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-decor.test.mjs",
+      "baseBlob": "82f3711032070eae639751081991553e189a060a",
+      "currentBlob": "82f3711032070eae639751081991553e189a060a",
+      "bytes": 10951,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-fixtures.test.mjs",
+      "baseBlob": "0a47b891ff914cfe4b4f150c9dbc8746102d4ebc",
+      "currentBlob": "0a47b891ff914cfe4b4f150c9dbc8746102d4ebc",
+      "bytes": 38189,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-fold.test.mjs",
+      "baseBlob": "de6dadff1e8f2258aa860f8c1ccec97a51ff7ed7",
+      "currentBlob": "de6dadff1e8f2258aa860f8c1ccec97a51ff7ed7",
+      "bytes": 8108,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-garments.test.mjs",
+      "baseBlob": "3119634e47f706026e1f47ae4106e242f44645ab",
+      "currentBlob": "3119634e47f706026e1f47ae4106e242f44645ab",
+      "bytes": 46946,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-goods.test.mjs",
+      "baseBlob": "8a3c00beae074406e694df94fd353490446e161a",
+      "currentBlob": "8a3c00beae074406e694df94fd353490446e161a",
+      "bytes": 31805,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-inspect-wiring.test.mjs",
+      "baseBlob": "4666b2ba66cc68802953bb968956aec70deb3611",
+      "currentBlob": "4666b2ba66cc68802953bb968956aec70deb3611",
+      "bytes": 18755,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-inspect.test.mjs",
+      "baseBlob": "2a490e76f10bf84f0a5a514c168be7812c6b735f",
+      "currentBlob": "2a490e76f10bf84f0a5a514c168be7812c6b735f",
+      "bytes": 16300,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-lib.mjs",
+      "baseBlob": "e91c153c1ca661cfcd9a5e2bf4cc187278017492",
+      "currentBlob": "e91c153c1ca661cfcd9a5e2bf4cc187278017492",
+      "bytes": 16618,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-page.test.mjs",
+      "baseBlob": "45498eac4901f9cf3436c3717e70030f0ce69527",
+      "currentBlob": "45498eac4901f9cf3436c3717e70030f0ce69527",
+      "bytes": 27347,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-plans.mjs",
+      "baseBlob": "8c5d0df56e7c557d768a72fb53fa9bd8c72feaac",
+      "currentBlob": "8c5d0df56e7c557d768a72fb53fa9bd8c72feaac",
+      "bytes": 19702,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-pockets.test.mjs",
+      "baseBlob": "4cba927394a95da6190a810bd97e3c91fd87af4b",
+      "currentBlob": "4cba927394a95da6190a810bd97e3c91fd87af4b",
+      "bytes": 5520,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-reach.test.mjs",
+      "baseBlob": "eb26d9c21aa6195b4a7a0977366749b79bcc552b",
+      "currentBlob": "eb26d9c21aa6195b4a7a0977366749b79bcc552b",
+      "bytes": 4343,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-school.test.mjs",
+      "baseBlob": "6dbb7b7b6843a84005d921d31a2b078ba7525e94",
+      "currentBlob": "6dbb7b7b6843a84005d921d31a2b078ba7525e94",
+      "bytes": 11303,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-shots.mjs",
+      "baseBlob": "bf75895275a8d7c17c3993485acf3d7d32841d7a",
+      "currentBlob": "bf75895275a8d7c17c3993485acf3d7d32841d7a",
+      "bytes": 12852,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-stairs.test.mjs",
+      "baseBlob": "9497f9edb3ad67895dd73427458cf7d1c4f6e615",
+      "currentBlob": "9497f9edb3ad67895dd73427458cf7d1c4f6e615",
+      "bytes": 7904,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/interiors-stories.test.mjs",
+      "baseBlob": "b7ec6ce5ccd672e045ab76cada30496cc25592fd",
+      "currentBlob": "b7ec6ce5ccd672e045ab76cada30496cc25592fd",
+      "bytes": 23351,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/live-paths.mjs",
+      "baseBlob": "0ff5ccde0e968145275ef2f11a76892bf11a2917",
+      "currentBlob": "0ff5ccde0e968145275ef2f11a76892bf11a2917",
+      "bytes": 2925,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/live-paths.test.mjs",
+      "baseBlob": "902d847fc6cf42bc210aa6aac2a2450709f1705c",
+      "currentBlob": "902d847fc6cf42bc210aa6aac2a2450709f1705c",
+      "bytes": 9249,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/memgate.mjs",
+      "baseBlob": "2a9caba2827127540288ce43e9d1ecbdb433d9da",
+      "currentBlob": "2a9caba2827127540288ce43e9d1ecbdb433d9da",
+      "bytes": 2241,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/metrics.mjs",
+      "baseBlob": "1a4861b206c91685ca4a26b7a5026290f6ce8446",
+      "currentBlob": "1a4861b206c91685ca4a26b7a5026290f6ce8446",
+      "bytes": 21982,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/nice.mjs",
+      "baseBlob": "6ebe96e38795d0bfa9e929c9139e535dea57c27b",
+      "currentBlob": "6ebe96e38795d0bfa9e929c9139e535dea57c27b",
+      "bytes": 1495,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/nice.test.mjs",
+      "baseBlob": "47fc1ac6e2adb285cf0570543f038d8002e7cffb",
+      "currentBlob": "47fc1ac6e2adb285cf0570543f038d8002e7cffb",
+      "bytes": 4181,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/payload.mjs",
+      "baseBlob": "071310cbf8b79fb231d0c89b214c04aa047a3401",
+      "currentBlob": "071310cbf8b79fb231d0c89b214c04aa047a3401",
+      "bytes": 4397,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-arrival.test.mjs",
+      "baseBlob": "cdfb85a8ccb1cbff84776463d5a509fe6b299218",
+      "currentBlob": "cdfb85a8ccb1cbff84776463d5a509fe6b299218",
+      "bytes": 11140,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-art.test.mjs",
+      "baseBlob": "56fc24593f20b6d26259214099b7367f9c307305",
+      "currentBlob": "56fc24593f20b6d26259214099b7367f9c307305",
+      "bytes": 5965,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-assets.test.mjs",
+      "baseBlob": "afa12bd6b0cd1534d77c38b57b31e65451140cef",
+      "currentBlob": "afa12bd6b0cd1534d77c38b57b31e65451140cef",
+      "bytes": 12121,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-bank.test.mjs",
+      "baseBlob": "0259df2b92f626c8a2d4d651b0c30c976f80f2bd",
+      "currentBlob": "0259df2b92f626c8a2d4d651b0c30c976f80f2bd",
+      "bytes": 20334,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-clones.test.mjs",
+      "baseBlob": "629c3117b31595333a19e5399ba8b97454e6107a",
+      "currentBlob": "629c3117b31595333a19e5399ba8b97454e6107a",
+      "bytes": 25225,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-counts.mjs",
+      "baseBlob": "aa9c3f6e223a671c1024847de1749bc675108370",
+      "currentBlob": "aa9c3f6e223a671c1024847de1749bc675108370",
+      "bytes": 4248,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-dialogue.test.mjs",
+      "baseBlob": "17db4f926eb8c672cb90989794d0ffe20c484a2a",
+      "currentBlob": "17db4f926eb8c672cb90989794d0ffe20c484a2a",
+      "bytes": 27609,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-gallery.html",
+      "baseBlob": "86bfcf28c31b4b77639b646b6c7a523fcec7d1a2",
+      "currentBlob": "86bfcf28c31b4b77639b646b6c7a523fcec7d1a2",
+      "bytes": 1757,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-gallery.mjs",
+      "baseBlob": "9321cfb146a8b9949a3ef17edaeca15f81efee27",
+      "currentBlob": "9321cfb146a8b9949a3ef17edaeca15f81efee27",
+      "bytes": 13929,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-guards.test.mjs",
+      "baseBlob": "572b6794e2a1288bbd9a295913c975a443e66b42",
+      "currentBlob": "572b6794e2a1288bbd9a295913c975a443e66b42",
+      "bytes": 16196,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-homelife.test.mjs",
+      "baseBlob": "0fb2b80c87c6f1dad92d930153d32b52a0c370dd",
+      "currentBlob": "0fb2b80c87c6f1dad92d930153d32b52a0c370dd",
+      "bytes": 56692,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-households.test.mjs",
+      "baseBlob": "75d26453dc77cf90c627cd80920f00c494f527b9",
+      "currentBlob": "75d26453dc77cf90c627cd80920f00c494f527b9",
+      "bytes": 24383,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-legs.test.mjs",
+      "baseBlob": "c8568af4702dde72c3e8ea79b6b460bacae7d5b0",
+      "currentBlob": "c8568af4702dde72c3e8ea79b6b460bacae7d5b0",
+      "bytes": 13830,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-look.mjs",
+      "baseBlob": "f0c9a52e0af52f89a9dda3ffa242e6010a6a451a",
+      "currentBlob": "f0c9a52e0af52f89a9dda3ffa242e6010a6a451a",
+      "bytes": 5444,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-lookpose-clear.test.mjs",
+      "baseBlob": "26b527a7abb7ef058ee09f810e5d9da1be8bd1eb",
+      "currentBlob": "26b527a7abb7ef058ee09f810e5d9da1be8bd1eb",
+      "bytes": 7275,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-names.test.mjs",
+      "baseBlob": "fe9c527829cdaeeb1aff2031b230617eb75d06a7",
+      "currentBlob": "fe9c527829cdaeeb1aff2031b230617eb75d06a7",
+      "bytes": 10663,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-props.test.mjs",
+      "baseBlob": "227001f1f79beb9b9034fdecd9dd286daefd9b0c",
+      "currentBlob": "227001f1f79beb9b9034fdecd9dd286daefd9b0c",
+      "bytes": 9723,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-react.mjs",
+      "baseBlob": "77a27aadd7cbf03b1060471a1437a409b39e1a53",
+      "currentBlob": "77a27aadd7cbf03b1060471a1437a409b39e1a53",
+      "bytes": 5324,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-react.test.mjs",
+      "baseBlob": "9004c82cb146b90f6975725a0e41b32307c3bbb7",
+      "currentBlob": "9004c82cb146b90f6975725a0e41b32307c3bbb7",
+      "bytes": 23042,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-repeat.test.mjs",
+      "baseBlob": "b290c6554de6a0de410a10d825c871e646d57fb0",
+      "currentBlob": "b290c6554de6a0de410a10d825c871e646d57fb0",
+      "bytes": 13121,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-school.test.mjs",
+      "baseBlob": "fc5247a8cbb0e9a9a9282d09619a5067b9b3a7c9",
+      "currentBlob": "fc5247a8cbb0e9a9a9282d09619a5067b9b3a7c9",
+      "bytes": 7634,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-seats.mjs",
+      "baseBlob": "34055bf3cd4eca6e1aab518495fa840d67587ce2",
+      "currentBlob": "34055bf3cd4eca6e1aab518495fa840d67587ce2",
+      "bytes": 9534,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-shots.mjs",
+      "baseBlob": "b39857b07ecc8ad3147df7af0a125221dca13a11",
+      "currentBlob": "b39857b07ecc8ad3147df7af0a125221dca13a11",
+      "bytes": 7981,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-sim.test.mjs",
+      "baseBlob": "a0edc85874c4256a024fccba6c11cb162c811085",
+      "currentBlob": "a0edc85874c4256a024fccba6c11cb162c811085",
+      "bytes": 36814,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-speech.test.mjs",
+      "baseBlob": "ae605fad6b8623e1eded8d6825bb717ea1e7dc25",
+      "currentBlob": "ae605fad6b8623e1eded8d6825bb717ea1e7dc25",
+      "bytes": 11513,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-spots.test.mjs",
+      "baseBlob": "e37c3355678c7ba2a4e5248d47b5e935b87cfe9e",
+      "currentBlob": "e37c3355678c7ba2a4e5248d47b5e935b87cfe9e",
+      "bytes": 20421,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-talk.test.mjs",
+      "baseBlob": "601ccd596c6d0a5dfa2c2843c02d243b460073d7",
+      "currentBlob": "601ccd596c6d0a5dfa2c2843c02d243b460073d7",
+      "bytes": 11249,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/people-tips.test.mjs",
+      "baseBlob": "59b73c02abee720f069faf4366014e8ce5a9980a",
+      "currentBlob": "59b73c02abee720f069faf4366014e8ce5a9980a",
+      "bytes": 5755,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/physics.test.mjs",
+      "baseBlob": "7096c0ed5c1140c3e1d7dc0c1f70c40d8084d1eb",
+      "currentBlob": "7096c0ed5c1140c3e1d7dc0c1f70c40d8084d1eb",
+      "bytes": 5474,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/plan-oracle.mjs",
+      "baseBlob": "cefdd688c39f371ed13f414efb3c04804627cc50",
+      "currentBlob": "cefdd688c39f371ed13f414efb3c04804627cc50",
+      "bytes": 19117,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/plan-oracle.test.mjs",
+      "baseBlob": "78f3fd6811b47116415f544e08af700f4c631739",
+      "currentBlob": "78f3fd6811b47116415f544e08af700f4c631739",
+      "bytes": 8995,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/quiet-init.js",
+      "baseBlob": "fa1e4ca99a1f9ff476effb453fc443d49d50049a",
+      "currentBlob": "fa1e4ca99a1f9ff476effb453fc443d49d50049a",
+      "bytes": 4330,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/quiet-page.test.mjs",
+      "baseBlob": "d692edcfaf7e259fe28a211bb8307732c84734c7",
+      "currentBlob": "d692edcfaf7e259fe28a211bb8307732c84734c7",
+      "bytes": 5074,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/register.mjs",
+      "baseBlob": "d28c877d7014de3772610f1448c7a33bc22daec3",
+      "currentBlob": "d28c877d7014de3772610f1448c7a33bc22daec3",
+      "bytes": 373,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/shot.mjs",
+      "baseBlob": "db42ec9157390002ebbe811ee36912fb847245f8",
+      "currentBlob": "db42ec9157390002ebbe811ee36912fb847245f8",
+      "bytes": 2341,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/slownet.mjs",
+      "baseBlob": "a9d3a73e76ca43acfc53949ee3cc6dca3d46bac2",
+      "currentBlob": "a9d3a73e76ca43acfc53949ee3cc6dca3d46bac2",
+      "bytes": 2747,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/smoke.data.test.mjs",
+      "baseBlob": "b08c327fa381b5ec8e0e5cf04fd388c3a867d6b1",
+      "currentBlob": "b08c327fa381b5ec8e0e5cf04fd388c3a867d6b1",
+      "bytes": 770,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/stuck-lib.mjs",
+      "baseBlob": "1da6b44bb7ce5ea0df01fe49c861124cacfaf42b",
+      "currentBlob": "1da6b44bb7ce5ea0df01fe49c861124cacfaf42b",
+      "bytes": 13359,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/stuck.mjs",
+      "baseBlob": "b24710425ea8559c7b9695e2d9edce431902ca67",
+      "currentBlob": "b24710425ea8559c7b9695e2d9edce431902ca67",
+      "bytes": 2558,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/stuck.test.mjs",
+      "baseBlob": "71a03c6ffd26031c4e152cde8bc09e39876d5453",
+      "currentBlob": "71a03c6ffd26031c4e152cde8bc09e39876d5453",
+      "bytes": 11340,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/tour.mjs",
+      "baseBlob": "b8df15d053bd01723658af7cbe46a8d0af813a7e",
+      "currentBlob": "b8df15d053bd01723658af7cbe46a8d0af813a7e",
+      "bytes": 9311,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/trapcheck.mjs",
+      "baseBlob": "9bca742e98ebcb782144da912769c20c47710c68",
+      "currentBlob": "9bca742e98ebcb782144da912769c20c47710c68",
+      "bytes": 4615,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/ui-flow.test.mjs",
+      "baseBlob": "07dbaafc6af97dcabd04ac7489c884f910ddae5b",
+      "currentBlob": "07dbaafc6af97dcabd04ac7489c884f910ddae5b",
+      "bytes": 47233,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/ui-journal-map.test.mjs",
+      "baseBlob": "d726d0c0bff15eebb12c7de2416feea76e2f9522",
+      "currentBlob": "d726d0c0bff15eebb12c7de2416feea76e2f9522",
+      "bytes": 17272,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/ui-reader-model.test.mjs",
+      "baseBlob": "4bcd613895c17eb8a8c0e0fd7f0699492086ffc6",
+      "currentBlob": "4bcd613895c17eb8a8c0e0fd7f0699492086ffc6",
+      "bytes": 11987,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/ui-reader.test.mjs",
+      "baseBlob": "71ebc7034b2decd562eb166621b137d0a9a85f54",
+      "currentBlob": "71ebc7034b2decd562eb166621b137d0a9a85f54",
+      "bytes": 38256,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/ui-touch.test.mjs",
+      "baseBlob": "5d0a56945230f6d38f67bc5ed65d3244da3d9e55",
+      "currentBlob": "5d0a56945230f6d38f67bc5ed65d3244da3d9e55",
+      "bytes": 9705,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/vista-shots.mjs",
+      "baseBlob": "1bcdf22db02e63bebf96a4ec05791fa7d82282c9",
+      "currentBlob": "1bcdf22db02e63bebf96a4ec05791fa7d82282c9",
+      "bytes": 4126,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-aprons.test.mjs",
+      "baseBlob": "efd2aacffce75e6b8432c0140c86609091c75b6c",
+      "currentBlob": "efd2aacffce75e6b8432c0140c86609091c75b6c",
+      "bytes": 14826,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-bark.test.mjs",
+      "baseBlob": "ea53f9039c8db1ca8606897e7ab101b7e7454e21",
+      "currentBlob": "ea53f9039c8db1ca8606897e7ab101b7e7454e21",
+      "bytes": 9713,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-cables.test.mjs",
+      "baseBlob": "51049fe15ab22b090999c23453fc6baa5f046fbf",
+      "currentBlob": "51049fe15ab22b090999c23453fc6baa5f046fbf",
+      "bytes": 16229,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-canopy-page.test.mjs",
+      "baseBlob": "1d849963d5c3765ae22a3a54fee0b67028c11ae0",
+      "currentBlob": "1d849963d5c3765ae22a3a54fee0b67028c11ae0",
+      "bytes": 4254,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-canopy.test.mjs",
+      "baseBlob": "bd9429ff1a3c746f234ed14946609e11e2dc1159",
+      "currentBlob": "bd9429ff1a3c746f234ed14946609e11e2dc1159",
+      "bytes": 23644,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-clutter.test.mjs",
+      "baseBlob": "35bb9ce0d844ba4f53a2fdc9e56100d3f538c88a",
+      "currentBlob": "35bb9ce0d844ba4f53a2fdc9e56100d3f538c88a",
+      "bytes": 11104,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-court.test.mjs",
+      "baseBlob": "c4429a62c7be324aa53d33f748cd01e095a5cc78",
+      "currentBlob": "c4429a62c7be324aa53d33f748cd01e095a5cc78",
+      "bytes": 28780,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-lib.mjs",
+      "baseBlob": "083a032b1bed4c5781f3c5a850effb334a6c3a82",
+      "currentBlob": "083a032b1bed4c5781f3c5a850effb334a6c3a82",
+      "bytes": 21091,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-mesh.test.mjs",
+      "baseBlob": "7e465e06b1b3eff703ce529d0ddac35ba60d1d87",
+      "currentBlob": "7e465e06b1b3eff703ce529d0ddac35ba60d1d87",
+      "bytes": 112664,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-nav.test.mjs",
+      "baseBlob": "41445e778894b127fc3ca8d2d775d50638f0766d",
+      "currentBlob": "41445e778894b127fc3ca8d2d775d50638f0766d",
+      "bytes": 3345,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-plan.test.mjs",
+      "baseBlob": "572782a2b26da5e75413866965b6aca36dd161d3",
+      "currentBlob": "572782a2b26da5e75413866965b6aca36dd161d3",
+      "bytes": 11089,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-signs.test.mjs",
+      "baseBlob": "04a9808699ae3300821695a5a2620f8b51af3451",
+      "currentBlob": "04a9808699ae3300821695a5a2620f8b51af3451",
+      "bytes": 19248,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-sprites.test.mjs",
+      "baseBlob": "59f565e5a42bc1e2a99a26805fd119d7398d26da",
+      "currentBlob": "59f565e5a42bc1e2a99a26805fd119d7398d26da",
+      "bytes": 8459,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-terrace.test.mjs",
+      "baseBlob": "8565eb135b5b630c1c4f92fae3c6e33e98c35d2e",
+      "currentBlob": "8565eb135b5b630c1c4f92fae3c6e33e98c35d2e",
+      "bytes": 20165,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-vista-assets.test.mjs",
+      "baseBlob": "455af91aa0dbe881367a254bbe62c7fdab1c15dc",
+      "currentBlob": "455af91aa0dbe881367a254bbe62c7fdab1c15dc",
+      "bytes": 12609,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-vista-kit.test.mjs",
+      "baseBlob": "93f2a253f753fbacbd58dc9dc7064aab4cf96559",
+      "currentBlob": "93f2a253f753fbacbd58dc9dc7064aab4cf96559",
+      "bytes": 10184,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tests/world-vista.test.mjs",
+      "baseBlob": "07a667744e623a8fcfdf07fa0b40fccedd793b44",
+      "currentBlob": "07a667744e623a8fcfdf07fa0b40fccedd793b44",
+      "bytes": 19274,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tools/blender/garments-child.catalog.json",
+      "baseBlob": "757de2db847a6ab38e2318d67724bf830c4213e4",
+      "currentBlob": "757de2db847a6ab38e2318d67724bf830c4213e4",
+      "bytes": 8556,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tools/blender/garments.catalog.json",
+      "baseBlob": "46c35a876539ead08b17c55d115ebd62b5f80eec",
+      "currentBlob": "46c35a876539ead08b17c55d115ebd62b5f80eec",
+      "bytes": 7391,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tools/blender/garments_build.py",
+      "baseBlob": "22a27ba952a926ea11e1e763c538291b9d93bc56",
+      "currentBlob": "22a27ba952a926ea11e1e763c538291b9d93bc56",
+      "bytes": 32037,
+      "unchanged": true
+    },
+    {
+      "path": "la-ladera/tools/blender/garments_child_build.py",
+      "baseBlob": "8cdbc1f72c70da97283e909f37d699338b6671d5",
+      "currentBlob": "8cdbc1f72c70da97283e909f37d699338b6671d5",
+      "bytes": 22855,
+      "unchanged": true
+    }
+  ]
+}

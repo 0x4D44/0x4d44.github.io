@@ -1,0 +1,11 @@
+KILLED registry size class: registry keeps 29 styles and both sizes without aliases (exit 1)
+KILLED palette tint: colours preserve both source palettes (exit 1)
+KILLED loader size propagation: loader and catalogue retain sizes and resolve every LOD node (exit 1)
+KILLED catalogue size propagation: loader and catalogue retain sizes and resolve every LOD node (exit 1)
+KILLED explicit teen preload: loader and catalogue retain sizes and resolve every LOD node (exit 1)
+KILLED stale teen mesh cleanup: loader and catalogue retain sizes and resolve every LOD node (exit 1)
+KILLED manifest size guard: generator rejects wrong size metadata and aliases (exit 1)
+KILLED asset size guard: generator rejects wrong size metadata and aliases (exit 1)
+KILLED size class guard: generator rejects wrong size metadata and aliases (exit 1)
+KILLED palette collision guard: generator rejects palette name collisions (exit 1)
+PASS teen integration mutation proof: 10/10 mutants killed across all 5 tests; original files unchanged

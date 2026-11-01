@@ -136,7 +136,7 @@ def build_textures(out_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out', type=Path, default=Path(__file__).resolve().parents[2] / 'assets/models/garments/teen')
+    parser.add_argument('--out', type=Path, default=Path(__file__).resolve().parents[2] / 'assets/models/garments-teen/teen')
     args = parser.parse_args()
     build_textures(args.out)
     print('Teen fabric textures:', ', '.join(f'{p.name}={p.stat().st_size} bytes' for p in sorted(args.out.iterdir()) if p.is_file()))
