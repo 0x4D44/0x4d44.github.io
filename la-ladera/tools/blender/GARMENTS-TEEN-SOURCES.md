@@ -1,30 +1,36 @@
-# Teen garment object provenance
+# Teen garment sources and original artwork
 
-All teen meshes, seams, trim, pockets, hoods, straps, shoes and the cap are original
-procedural work created for La Ladera. The fabric atlas and the sun motif are original
-generated artwork. No third-party model, sewing pattern, logo, badge, school insignia,
-image, photograph, rig or animation was imported. The garments are ordinary everyday
-objects, stored without a wearer; the two sizes are game-prop scales of an
-adult-reference pattern, not a sizing standard.
+| Source ID | Source and provenance |
+| --- | --- |
+| `original-teen-patterns` | Original procedural clothing geometry and fabric artwork from commit `18a37a7e29888cecc733e16bcd623b21c599916e`; no downloaded model or copied print. |
 
-| Source ID | Source | Use |
-| --- | --- | --- |
-| `original-teen-patterns` | `garments_teen_build.py`, with the cloth bake, folding, export and material helpers of `garments_build.py`; the catalogue is `garments_teen.catalog.json` | Original generic silhouettes (tops, bottoms, dresses, hoodie, jacket, school wear, socks, cap, plain underwear and swimwear, shoes and sandals), relaxed empty cloth, hand-arranged folded parcels, seams, collars, pockets, hood, zip and straps. |
-| `original-teen-fabrics` | `garments_teen_textures.py` and `assets/models/garments/teen/palette.json` | One 256 × 256 atlas of 16 deterministic fabric tiles (jersey, rib, stretch, denim, fleece, piqué, knit, twill, weave, matte, canvas and a geometric sun) drawn with the Python standard library; nothing is embedded in the GLB. |
+## `original-teen-patterns`
 
-The set follows the age brief `small` (about 12 to 15) and `big` (about 16 to 19) as a
-uniform 0.70 and 0.90 scale of one adult-reference pattern per style. The age labels
-are art direction. School clothes are plain white, grey and navy without a crest and
-make no claim to represent a particular school's uniform. Colours are art choices, not
-a regional uniform specification.
+The 29 teen style outlines, sewn details, closed school shoes and strap sandals
+were authored procedurally in `garments_teen_build.py` on teen branch commit
+`18a37a7e29888cecc733e16bcd623b21c599916e`. This port retains those designs and the
+catalogue, replacing the old single-file packaging with the six-pack convention
+from child-library commit `c4e8f46e8f617896f508728f77cda029ec494e88`.
 
-The generated files are `assets/models/garments/garments_teen.glb`,
-`assets/models/garments/teen/` and `assets/models/manifest.garments_teen.json`. They
-reuse the library's single `laundry` material and carry no third-party content, so no
-third-party licence applies to them. This document makes no further licence claim for
-the generated files.
+The builder reuses the adult library's original outline, sequential cloth-bake,
+fold, material and export helpers. `garments_teen_textures.py` generates the
+original 256×256 fabric atlas: sixteen fabric/colour tiles, including a simple
+geometric sun motif. No product photograph, downloaded garment mesh, copied
+print, real brand, school crest or logo is included. School colours are generic
+art choices, not a representation of one school's uniform.
 
-Room use is explicit and not yet wired (see `dev/garments/TEEN-PLACEMENT.md`):
-`teen_bedroom` drawers and wardrobes and `school_locker` storage. The two plain
-underwear styles and the swimwear are everyday stored clothing for those rooms, not an
-adult-intimate range and not a claim that the barrio has a pool.
+The source ID `original-teen-patterns` remains attached to all catalogue styles.
+The plain clothing is stored as empty objects; there are no people, bodies,
+skins, animations or wearable fittings in this library.
+
+## Reuse terms
+
+The original teen geometry, atlas artwork, palette and catalogue are dedicated
+to CC0 1.0, consistently with the original garment library. This dedication
+covers the original generated artwork; it does not change source-code licensing.
+The adult and child asset files are retained byte-for-byte; this port does not
+alter their provenance or licensing.
+
+Reference: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).
+See [the teen asset contract](GARMENTS-TEEN.md) and
+[placement guidance](../../dev/garments/TEEN-PLACEMENT.md) for the current layout.

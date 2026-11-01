@@ -1,0 +1,18 @@
+ok   textures                                                12.0 / 24 MB
+ok   models                                                  23.7 / 32 MB
+ok   models/people                                            8.9 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       38.5 / 150 MB
+ok   estimated GPU texture memory                           246.7 / 800 MB
+largest files:
+  6.01 MB  assets/models/people/people.glb
+  2.28 MB  assets/textures/foliage_cards.png
+  2.13 MB  assets/models/furniture/furn_shop.glb
+  1.89 MB  assets/models/people/people_lod.glb
+  1.08 MB  assets/models/furniture/furn_details.glb
+  1.03 MB  assets/models/furniture/furn_living.glb
+  0.92 MB  assets/models/furniture/furn_home.glb
+  0.88 MB  assets/models/goods/goods.glb
+PAYLOAD OK

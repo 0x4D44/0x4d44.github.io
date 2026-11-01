@@ -625,5 +625,15 @@
         "hung": "Footwear is supplied as one resting pair."
       }
     }
-  ]
+  ],
+  "sizeTag": "teen",
+  "roomKinds": [
+    "teen_bedroom",
+    "school_locker"
+  ],
+  "limits": {
+    "triangles": 800,
+    "lodTriangles": 240,
+    "runtimeBytes": 3500000
+  }
 }

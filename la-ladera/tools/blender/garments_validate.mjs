@@ -1,6 +1,5 @@
-// Independent checks of the bytes exported by garments_build.py (adult), garments_child_build.py (--child) and garments_teen_build.py (--teen). No Blender or three.js dependency.
+// Independent checks of the bytes exported by garments_build.py. No Blender or three.js dependency.
 //   node la-ladera/tools/nice.mjs node la-ladera/tools/blender/garments_validate.mjs --complete
-//   node la-ladera/tools/nice.mjs node la-ladera/tools/blender/garments_validate.mjs --all --complete        (the three libraries, each against its own caps)
 // Partial runs still validate every supplied asset; --complete additionally requires the whole catalogue,
 // every assortment binding, and no unlisted GLBs/nodes. Budgets count high + low LODs, data and the print atlas.
 import { readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
@@ -444,15 +443,10 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath, co
     }
   }
   const allFiles = attempt('garment directory', () => filesBelow(join(modelsDir, directory))) ?? [];
-  const separateTeenLibrary = !child && declaresTeenLibrary(modelsDir);
   for (const path of allFiles) {
-    const rel = relative(modelsDir, path).split(sep).join('/');
-    // The teen library sits inside garments/ (one GLB and its fabric textures) but is a library of its own, held to its own byte gate by validateTeenGarments. Only a teen manifest that
-    // identifies that exact library exempts its files: anything else in there still counts toward the adult budget, and an unlisted GLB still fails.
-    if (separateTeenLibrary && (rel === TEEN_GLB || rel.startsWith(`${TEEN_DIRECTORY}/`))) continue;
     runtimeFiles.add(realpathSync(path));
     if (child) check(!/\.(?:png|webp|jpe?g|ktx2?)$/i.test(path), 'child garments must reuse the one shared adult atlas; no duplicate child textures');
-    if (complete && path.endsWith('.glb')) check(glbs.has(rel), `unlisted GLB '${relative(modelsDir, path)}'`);
+    if (complete && path.endsWith('.glb')) check(glbs.has(relative(modelsDir, path).split(sep).join('/')), `unlisted GLB '${relative(modelsDir, path)}'`);
   }
   let runtimeBytes = 0;
   for (const path of runtimeFiles) runtimeBytes += statSync(path).size;
@@ -465,32 +459,16 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath, co
     maxLodTriangles: Math.max(0, ...measurements.map((m) => m.lodTriangles ?? 0)), measurements };
 }
 
-// ---------------------------------------------------------------- the teen library (garments_teen_build.py)
-// The teen set is one GLB (every detailed root and every LOD root of 29 styles in two sizes), its own palette and fabric atlas, and a manifest, with caps of their own. It lives inside
-// garments/ but the adult scan above leaves it to this function once its manifest declares the library.
-const TEEN_MANIFEST = 'manifest.garments_teen.json';
-const TEEN_DIRECTORY = 'garments/teen';
-const TEEN_GLB = 'garments/garments_teen.glb';
-const DEFAULT_TEEN_CATALOGUE = join(HERE, 'garments_teen.catalog.json');
-const DEFAULT_TEEN_SOURCES = join(HERE, 'GARMENTS-TEEN-SOURCES.md');
-function declaresTeenLibrary(modelsDir) {
-  try {
-    const m = JSON.parse(readFileSync(checkedFile(modelsDir, TEEN_MANIFEST), 'utf8'));
-    return m.schemaVersion === 1 && m.set === 'garments_teen' && m.scope === 'objects-only' &&
-      m.ageGroup === 'teen' && m.adultOnly !== true && Array.isArray(m.files) && m.files.length === 1 &&
-      m.files[0]?.glb === TEEN_GLB && m.files[0]?.assets && typeof m.files[0].assets === 'object' &&
-      !Array.isArray(m.files[0].assets) && Object.keys(m.files[0].assets).length > 0;
-  } catch { return false; }
-}
-
-// Teen dimensions are an independently maintained contract in metres. These adult-reference dimensions are multiplied by 0.7 or 0.9; they are not read
-// from mutable manifest/catalogue bounds. Folded ranges describe the parcel, whereas hung/flat ranges describe the laid-out garment. This is game-prop
+// Teen dimensions are an independently maintained contract in metres. These
+// adult-reference dimensions are multiplied by 0.7 or 0.9; they are not read
+// from mutable manifest/catalogue bounds. Folded ranges describe the parcel,
+// whereas hung/flat ranges describe the laid-out garment. This is game-prop
 // sizing requested for the set, not a claim that age predicts body dimensions.
 export const TEEN_SIZE_CLASSES = Object.freeze({
   small: Object.freeze({ scale: 0.7, ages: Object.freeze([12, 15]) }),
   big: Object.freeze({ scale: 0.9, ages: Object.freeze([16, 19]) }),
 });
-export const TEEN_LIMITS = Object.freeze({ triangles: 800, lodTriangles: 240, runtimeBytes: 700_000 });
+export const TEEN_LIMITS = Object.freeze({ triangles: 800, lodTriangles: 240, runtimeBytes: 3_500_000 });
 const teenDimension = (width, length, states = STATES, folded) => {
   const longest = Math.max(width, length);
   demand(!states.includes('folded') || (finiteVector(folded, 2) && folded[0] > 0 && folded[1] > folded[0]),
@@ -531,6 +509,10 @@ export const TEEN_DIMENSIONS = Object.freeze({
   sandals_pair: teenDimension(0.25, 0.29, ['flat']),
 });
 export const REQUIRED_TEEN_GARMENTS = Object.freeze(Object.keys(TEEN_DIMENSIONS));
+const DEFAULT_TEEN_CATALOGUE = join(HERE, 'garments_teen.catalog.json');
+const TEEN_DIRECTORY = 'garments-teen';
+const teenPack = (state, lod = false) => `${TEEN_DIRECTORY}/garments_${state}${lod ? '_lod' : ''}.glb`;
+const TEEN_MANIFEST = 'manifest.garments-teen.json';
 export function teenLongestRange(id, sizeClass, state) {
   const expected = TEEN_DIMENSIONS[id], scale = TEEN_SIZE_CLASSES[sizeClass]?.scale;
   demand(expected && scale && expected.states.includes(state), `unknown teen garment/size/state '${id}/${sizeClass}/${state}'`);
@@ -539,22 +521,32 @@ export function teenLongestRange(id, sizeClass, state) {
 }
 export function requiredTeenKeys() {
   return REQUIRED_TEEN_GARMENTS.flatMap((id) => Object.keys(TEEN_SIZE_CLASSES).flatMap((size) =>
-    TEEN_DIMENSIONS[id].states.map((state) => `garment_${id}_${size}_${state}`)));
+    TEEN_DIMENSIONS[id].states.map((state) => `garment_teen_${id}_${size}_${state}`)));
 }
 
-/** Teen library: the same strict GLB reader and geometry measurement, against the fixed ranges above and the library's own caps. */
-export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = DEFAULT_TEEN_CATALOGUE, complete = false, sourcesPath = DEFAULT_TEEN_SOURCES } = {}) {
-  const errors = [], warnings = [], measurements = [], runtimeFiles = new Set();
+/** Teen companion set, using the same strict binary reader as adult and child. */
+export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = DEFAULT_TEEN_CATALOGUE, complete = false } = {}) {
+  const errors = [], warnings = [], measurements = [], runtimeFiles = new Set(), glbs = new Map(), expectedRoots = new Map();
   const check = (condition, message) => { if (!condition) errors.push(message); return !!condition; };
   const attempt = (label, fn) => { try { return fn(); } catch (e) { errors.push(`${label}: ${e.message}`); return null; } };
   const load = (rel) => attempt(rel, () => { const p = checkedFile(modelsDir, rel); runtimeFiles.add(p); return readFileSync(p); });
   const readJSON = (rel) => { const b = load(rel); return b && attempt(rel, () => JSON.parse(b)); };
+  const readGLB = (rel) => {
+    if (glbs.has(rel)) return glbs.get(rel);
+    const bytes = load(rel), glb = bytes && attempt(rel, () => parseGLB(bytes, rel));
+    glbs.set(rel, glb); return glb;
+  };
+  const expect = (file, node) => {
+    if (!expectedRoots.has(file)) expectedRoots.set(file, new Set());
+    check(!expectedRoots.get(file).has(node), `duplicate teen scene binding '${file}:${node}'`);
+    expectedRoots.get(file).add(node);
+  };
   const manifest = readJSON(TEEN_MANIFEST);
   const catalogue = attempt('teen catalogue', () => JSON.parse(readFileSync(cataloguePath, 'utf8')));
-  const sourceText = complete ? attempt('teen sources', () => readFileSync(sourcesPath, 'utf8')) : null;
-  const citedIds = new Set(sourceText ? [...sourceText.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1]) : []);
-  const cats = new Map(), assets = new Map(), expectedRoots = new Set(), measured = new Map();
+  const cats = new Map(), assets = new Map(), measured = new Map();
   check(!!worldMaterials.laundry && worldMaterials.laundry.vertexColors !== false, 'laundry must remain a registered vertex-colour library material');
+  const sourceText = complete ? attempt('teen sources', () => readFileSync(join(HERE, 'GARMENTS-TEEN-SOURCES.md'), 'utf8')) : null;
+  const citedIds = new Set(sourceText ? [...sourceText.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1]) : []);
   const checkSizes = (sizes, label) => {
     check(sameSet(Object.keys(sizes ?? {}), Object.keys(TEEN_SIZE_CLASSES)), `${label}: exactly small and big sizes are required`);
     for (const [size, expected] of Object.entries(TEEN_SIZE_CLASSES)) {
@@ -563,12 +555,12 @@ export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath
     }
   };
   if (catalogue) {
-    check(catalogue.schemaVersion === 1 && catalogue.ageGroup === 'teen' && catalogue.adultOnly !== true,
-      'teen catalogue must be schemaVersion 1 and ageGroup teen');
+    check(catalogue.schemaVersion === 1 && catalogue.sizeTag === 'teen' && catalogue.ageGroup === 'teen' && catalogue.adultOnly !== true,
+      'teen catalogue must be schemaVersion 1, sizeTag teen and ageGroup teen');
     checkSizes(catalogue.sizes, 'teen catalogue');
     check(Array.isArray(catalogue.garments), 'teen catalogue.garments must be an array');
     for (const c of Array.isArray(catalogue.garments) ? catalogue.garments : []) {
-      if (!check(c && typeof c.id === 'string' && TEEN_DIMENSIONS[c.id], 'unknown teen catalogue garment id')) continue;
+      if (!check(c && typeof c.id === 'string' && has(TEEN_DIMENSIONS, c.id), 'unknown teen catalogue garment id')) continue;
       check(!cats.has(c.id), `duplicate teen catalogue garment '${c.id}'`); cats.set(c.id, c);
       const expected = TEEN_DIMENSIONS[c.id];
       check(typeof c.label === 'string' && c.label.length > 0, `${c.id}: missing teen garment label`);
@@ -578,39 +570,43 @@ export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath
       check(Array.isArray(c.variants) && c.variants.length > 0 && new Set(c.variants).size === c.variants.length, `${c.id}: invalid teen variants`);
       check(Array.isArray(c.variants) && c.variants.includes(c.defaultVariant), `${c.id}: defaultVariant must name an allowed variant`);
       if (complete) {
-        for (const state of STATES) if (!expected.states.includes(state)) check(typeof c.notApplicable?.[state] === 'string' && c.notApplicable[state].trim().length > 10,
-          `${c.id}: the omitted ${state} state needs a physical reason`);
-        check(Array.isArray(c.sourceIds) && c.sourceIds.length > 0 && c.sourceIds.every((id) => citedIds.has(id)),
-          `${c.id}: sourceIds must resolve to the provenance document`);
+        check(Array.isArray(c.sourceIds) && c.sourceIds.length > 0 && c.sourceIds.every((id) => citedIds.has(id)), `${c.id}: teen sourceIds must resolve to the provenance document`);
+        for (const state of STATES.filter((s) => !expected.states.includes(s))) check(typeof c.notApplicable?.[state] === 'string' && c.notApplicable[state].trim().length > 10,
+          `${c.id}: ${state} omission needs a physical reason`);
       }
     }
     if (complete) check(sameSet([...cats.keys()], REQUIRED_TEEN_GARMENTS),
       `complete teen catalogue must cover exactly the ${REQUIRED_TEEN_GARMENTS.length} requested garment styles`);
   }
-  let glb, palette;
+  let palette, gpuTextureBytes = 0;
   if (manifest) {
-    check(manifest.schemaVersion === 1 && manifest.set === 'garments_teen' && manifest.scope === 'objects-only' && manifest.ageGroup === 'teen' && manifest.adultOnly !== true,
-      'teen manifest must declare schemaVersion 1, garments_teen, objects-only and ageGroup teen');
+    check(manifest.schemaVersion === 1 && manifest.set === 'garments-teen' && manifest.scope === 'objects-only' &&
+      manifest.sizeTag === 'teen' && manifest.ageGroup === 'teen' && manifest.adultOnly !== true,
+      'teen manifest must declare schemaVersion 1, garments-teen, objects-only, sizeTag teen and ageGroup teen');
     checkSizes(manifest.sizes, 'teen manifest');
+    check(sameSet(manifest.roomKinds, ['teen_bedroom', 'school_locker']), 'teen manifest must target teen_bedroom and school_locker');
     for (const [name, cap] of Object.entries(TEEN_LIMITS)) {
       check(Number.isInteger(manifest.limits?.[name]) && manifest.limits[name] > 0 && manifest.limits[name] <= cap,
         `teen manifest limit '${name}' is missing or exceeds ${cap}`);
     }
-    check(manifest.palette === `${TEEN_DIRECTORY}/palette.json`, `teen palette must be ${TEEN_DIRECTORY}/palette.json`);
+    check(manifest.palette === 'garments-teen/teen/palette.json', 'teen palette must be garments-teen/teen/palette.json');
     palette = readJSON(manifest.palette);
-    check(manifest.atlas?.file === `${TEEN_DIRECTORY}/fabrics.png` && manifest.atlas?.embedded === false, `teen atlas must be the external ${TEEN_DIRECTORY}/fabrics.png`);
+    check(manifest.atlas?.file === 'garments-teen/teen/fabrics.png' && manifest.atlas?.embedded === false,
+      'teen atlas must remain the existing external garments-teen/teen/fabrics.png tile');
     const atlas = load(manifest.atlas?.file);
     if (atlas) {
       const size = attempt('teen atlas', () => pngSize(atlas));
-      if (size) check(closeVector(size, [256, 256], 0) && manifest.atlas.width === 256 && manifest.atlas.height === 256,
-        'teen atlas must match its declared 256 x 256 dimensions');
+      if (size) {
+        check(closeVector(size, [256, 256], 0) && manifest.atlas.width === 256 && manifest.atlas.height === 256,
+          'teen atlas must match its declared 256 x 256 dimensions');
+        for (let w = size[0], h = size[1]; ; w = Math.max(1, w >> 1), h = Math.max(1, h >> 1)) {
+          gpuTextureBytes += w * h * 4;
+          if (w === 1 && h === 1) break;
+        }
+      }
     }
-    if (manifest.textures !== undefined) check(Array.isArray(manifest.textures), 'teen textures must be an array');
-    for (const texture of Array.isArray(manifest.textures) ? manifest.textures : []) {
-      if (!check(texture && /^garments\/teen\/[a-z0-9_-]+\.png$/.test(texture.file), 'teen texture must be a PNG inside garments/teen/')) continue;
-      const bytes = load(texture.file), size = bytes && attempt(texture.file, () => pngSize(bytes));
-      if (size) check(closeVector(size, [texture.width, texture.height], 0), `${texture.file}: texture dimensions differ from declaration`);
-    }
+    if (manifest.textures !== undefined) check(Array.isArray(manifest.textures) && manifest.textures.every((t) => t?.file === manifest.atlas?.file),
+      'teen textures may only reference the existing fabrics tile; no additional texture pages');
     if (palette) {
       check(palette.schemaVersion === 1 && palette.material === 'laundry', 'teen palette must use schemaVersion 1 and laundry');
       check(closeVector(palette.atlas?.size, [256, 256], 0) && closeVector(palette.atlas?.grid, [4, 4], 0),
@@ -627,13 +623,11 @@ export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath
         check(has(palette.variants, variant), `${c.id}: unknown teen variant '${variant}'`);
       }
     }
-    check(Array.isArray(manifest.files) && manifest.files.length === 1 && manifest.files[0]?.glb === TEEN_GLB,
-      `teen manifest must list exactly ${TEEN_GLB}`);
-    const bytes = load(TEEN_GLB);
-    if (bytes) {
-      glb = attempt(TEEN_GLB, () => parseGLB(bytes, TEEN_GLB));
-      check(createHash('sha256').update(bytes).digest('hex') === manifest.files?.[0]?.sha256, `${TEEN_GLB}: SHA-256 differs from the manifest`);
-    }
+    check(Array.isArray(manifest.files) && manifest.files.length > 0 &&
+      manifest.files.every((f) => STATES.some((state) => f?.glb === teenPack(state))) &&
+      new Set(manifest.files.map((f) => f?.glb)).size === manifest.files.length &&
+      (!complete || sameSet(manifest.files.map((f) => f?.glb), STATES.map((state) => teenPack(state)))),
+      'teen manifest must list unique pose packs; complete mode requires exactly flat, folded and hung');
     const checkOrigin = (key, state, actual) => {
       const { min, max } = actual.bounds;
       if (state === 'hung') {
@@ -642,7 +636,8 @@ export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath
       } else check(Math.abs(min[1]) <= EPS && Math.abs(min[0] + max[0]) <= EPS * 2 && Math.abs(min[2] + max[2]) <= EPS * 2,
         `${key}: floor geometry must sit at y=0 and be centred in x/z`);
     };
-    const measure = (key, a, descriptor, lod = false) => {
+    const measure = (file, key, a, descriptor, lod = false) => {
+      const glb = readGLB(file);
       if (!glb) return null;
       const actual = attempt(key, () => inspectAsset(glb, a.node));
       if (!actual) return null;
@@ -653,44 +648,50 @@ export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath
       check(actual.size.every((x) => x > 0), `${key}: geometry has zero extent`);
       check(closeVector(a.size, actual.size), `${key}: size differs from GLB`);
       check(closeVector(a.bounds?.min, actual.bounds.min) && closeVector(a.bounds?.max, actual.bounds.max), `${key}: bounds differ from GLB`);
-      const range = attempt(key, () => teenLongestRange(descriptor.garment, descriptor.sizeClass, descriptor.state));
+      const range = attempt(key, () => teenLongestRange(descriptor.styleId, descriptor.sizeClass, descriptor.state));
       const longest = Math.max(...actual.size);
       if (range) check(longest >= range[0] - EPS && longest <= range[1] + EPS,
         `${key}: longest side ${longest.toFixed(6)} m is outside expected ${range[0].toFixed(6)}–${range[1].toFixed(6)} m`);
-      if (!lod) {
-        check(closeVector(a.footprint, [actual.size[0], actual.size[2]]), `${key}: footprint differs from GLB`);
-        check(sameSet(a.materials ?? [], actual.materials), `${key}: material metadata differs from GLB`);
-        if (a.drawCalls !== undefined) check(a.drawCalls === actual.parts, `${key}: drawCalls differ from primitive count`);
-      }
+      check(closeVector(a.footprint, [actual.size[0], actual.size[2]]), `${key}: footprint differs from GLB`);
+      check(sameSet(a.materials ?? [], actual.materials), `${key}: material metadata differs from GLB`);
+      check(a.origin === (descriptor.state === 'hung' ? 'hang-point' : 'floor-centre'), `${key}: wrong origin convention`);
+      if (!lod) check(a.drawCalls === actual.parts, `${key}: drawCalls differ from primitive count`);
       checkOrigin(key, descriptor.state, actual);
       return { ...actual, longestSide: longest, expectedLongestRange: range };
     };
     for (const f of Array.isArray(manifest.files) ? manifest.files : []) {
-      if (!check(f && f.assets && typeof f.assets === 'object' && !Array.isArray(f.assets), 'teen assets must be an object')) continue;
+      if (!check(f && f.assets && typeof f.assets === 'object' && !Array.isArray(f.assets) && Object.keys(f.assets).length > 0,
+        'teen assets must be a nonempty object')) continue;
+      const bytes = load(f.glb);
+      if (bytes) check(createHash('sha256').update(bytes).digest('hex') === f.sha256, `${f.glb}: SHA-256 differs from the teen manifest`);
       for (const [key, a] of Object.entries(f.assets)) {
         if (!check(a && typeof a === 'object', `${key}: invalid teen asset record`)) continue;
         check(!assets.has(key), `duplicate teen asset '${key}'`); assets.set(key, a);
-        const c = cats.get(a.garment), expected = TEEN_DIMENSIONS[a.garment];
+        const c = cats.get(a.styleId), expected = TEEN_DIMENSIONS[a.styleId];
         check(!!c && !!expected?.states.includes(a.state) && has(TEEN_SIZE_CLASSES, a.sizeClass), `${key}: not a required teen garment/size/state`);
-        check(key === `garment_${a.garment}_${a.sizeClass}_${a.state}` && a.node === key,
-          `${key}: key/node must follow garment_<id>_<small|big>_<state>`);
-        check(a.ageGroup === 'teen' && a.adultOnly !== true, `${key}: ageGroup must be teen`);
+        check(a.garment === `teen_${a.styleId}_${a.sizeClass}` && key === `garment_${a.garment}_${a.state}` && a.node === key,
+          `${key}: key/node must follow garment_teen_<id>_<small|big>_<state>`);
+        check(a.sizeTag === 'teen' && a.ageGroup === 'teen' && a.adultOnly !== true && a.scale === TEEN_SIZE_CLASSES[a.sizeClass]?.scale,
+          `${key}: sizeTag, ageGroup and scale must match the teen size class`);
         check(sameSet(a.variants ?? [], c?.variants ?? []), `${key}: variants differ from teen catalogue`);
         check(a.defaultVariant === c?.defaultVariant && Array.isArray(a.variants) && a.variants.includes(a.defaultVariant), `${key}: wrong defaultVariant`);
-        check(a.origin === (a.state === 'hung' ? 'hang-point' : 'floor-centre'), `${key}: wrong origin convention`);
-        check(!expectedRoots.has(a.node), `duplicate teen scene binding '${a.node}'`); expectedRoots.add(a.node);
-        const actual = measure(key, a, a);
+        check(f.glb === teenPack(a.state), `${key}: high-detail model must use its separate pose pack`);
+        expect(f.glb, a.node);
+        const actual = measure(f.glb, key, a, a);
         if (check(a.lod && typeof a.lod === 'object', `${key}: missing LOD`)) {
-          check(a.lod.glb === TEEN_GLB && a.lod.node === `${key}_lod`, `${key}: LOD must be a matching _lod root in the teen GLB`);
-          check(!expectedRoots.has(a.lod.node), `duplicate teen scene binding '${a.lod.node}'`); expectedRoots.add(a.lod.node);
-          const low = measure(`${key} LOD`, a.lod, a, true);
+          check(a.lod.glb === teenPack(a.state, true) && a.lod.glb !== f.glb && a.lod.node === `${key}_lod`,
+            `${key}: LOD must use the matching node in its separate pose LOD pack`);
+          expect(a.lod.glb, a.lod.node);
+          const lodBytes = load(a.lod.glb);
+          if (lodBytes) check(createHash('sha256').update(lodBytes).digest('hex') === a.lod.sha256, `${a.lod.glb}: SHA-256 differs from the teen LOD manifest`);
+          const low = measure(a.lod.glb, `${key} LOD`, a.lod, a, true);
           if (actual && low) {
             check(low.triangles <= actual.triangles * 0.6, `${key}: LOD must remove at least 40% of triangles`);
             check(low.size.every((v, i) => Math.abs(v - actual.size[i]) <= Math.max(0.002, actual.size[i] * 0.05)),
               `${key}: LOD dimensions must stay within 5% or 2 mm of the high-detail shape`);
           }
           if (actual) {
-            const m = { key, garment: a.garment, sizeClass: a.sizeClass, state: a.state, ...actual,
+            const m = { key, garment: a.garment, styleId: a.styleId, sizeClass: a.sizeClass, state: a.state, ...actual,
               lodTriangles: low?.triangles ?? null, lodSize: low?.size ?? null, lodLongestSide: low?.longestSide ?? null };
             measurements.push(m); measured.set(key, m);
           }
@@ -701,61 +702,108 @@ export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath
       const keys = requiredTeenKeys();
       for (const key of keys) check(assets.has(key), `missing required teen state ${key}`);
       check(sameSet([...assets.keys()], keys), 'teen asset keys must exactly match independent required garment/size/state coverage');
-      if (glb) check(sameSet(glb.roots.map((i) => glb.json.nodes[i].name), [...expectedRoots]), `${TEEN_GLB}: unlisted or missing scene roots`);
+      for (const [file, roots] of expectedRoots) {
+        const glb = glbs.get(file);
+        if (glb) check(sameSet(glb.roots.map((i) => glb.json.nodes[i].name), [...roots]), `${file}: unlisted or missing teen scene roots`);
+      }
     }
     for (const id of REQUIRED_TEEN_GARMENTS) for (const state of TEEN_DIMENSIONS[id].states) {
-      const small = measured.get(`garment_${id}_small_${state}`), big = measured.get(`garment_${id}_big_${state}`);
+      const small = measured.get(`garment_teen_${id}_small_${state}`), big = measured.get(`garment_teen_${id}_big_${state}`);
       if (!small || !big) continue;
       for (const [label, low, high] of [['high', small.size, big.size], ['LOD', small.lodSize, big.lodSize]]) {
         if (low && high) check(closeVector(low.map((v) => v * 9 / 7), high, EPS),
-          `garment_${id}_${state} ${label}: small/big dimensions must preserve the 0.7/0.9 size ratio`);
+          `garment_teen_${id}_${state} ${label}: small/big dimensions must preserve the 0.7/0.9 size ratio`);
+      }
+    }
+    check(manifest.assortments === 'garments-teen/assortments.json', 'teen manifest must bind its separate assortments');
+    const assortments = readJSON(manifest.assortments);
+    if (assortments) {
+      check(assortments.schemaVersion === 1 && assortments.sizeTag === 'teen' && assortments.adultOnly !== true && Array.isArray(assortments.bindings),
+        'teen assortments must be schemaVersion 1, sizeTag teen and contain bindings');
+      check(sameSet(assortments.roomKinds, ['teen_bedroom', 'school_locker']), 'teen assortments must target teen_bedroom and school_locker');
+      const bindingIds = new Set(), assigned = new Set(), contexts = new Set();
+      for (const b of Array.isArray(assortments.bindings) ? assortments.bindings : []) {
+        if (!check(b && typeof b === 'object', 'invalid teen assortment binding')) continue;
+        check(typeof b.id === 'string' && b.id.length > 0 && !bindingIds.has(b.id), `duplicate or invalid teen assortment '${b.id}'`); bindingIds.add(b.id);
+        check(['drawer', 'wardrobe'].includes(b.kind), `${b.id}: invalid teen assortment kind`);
+        check(b.sizeTag === 'teen' && has(TEEN_SIZE_CLASSES, b.sizeClass) && b.adultOnly !== true, `${b.id}: requires a teen size class`);
+        check(Array.isArray(b.catalogueKeys) && b.catalogueKeys.length > 0 && b.catalogueKeys.every((k) => Object.hasOwn(CATALOG, k)),
+          `${b.id}: teen catalogueKeys must name existing furniture entries`);
+        check(Array.isArray(b.roomKinds) && b.roomKinds.length > 0 && b.roomKinds.every((r) => ['teen_bedroom', 'school_locker'].includes(r)), `${b.id}: missing teen room context`);
+        if (b.roomKinds?.includes('teen_bedroom')) contexts.add(`${b.sizeClass}:${b.kind}`);
+        if (b.roomKinds?.includes('school_locker') && b.catalogueKeys?.includes('locker_pair')) contexts.add(`${b.sizeClass}:locker`);
+        check(Array.isArray(b.items) && b.items.length > 0, `${b.id}: teen assortment needs items`);
+        for (const item of Array.isArray(b.items) ? b.items : []) {
+          if (!check(item && typeof item === 'object', `${b.id}: invalid teen assortment item`)) continue;
+          check(Number.isInteger(item.count) && item.count > 0, `${b.id}: teen item count must be a positive integer`);
+          const a = assets.get(item.asset);
+          if (!a) { if (complete) check(false, `${b.id}: unknown teen asset '${item.asset}'`); continue; }
+          assigned.add(a.garment);
+          check(item.sizeTag === 'teen' && item.sizeClass === b.sizeClass && a.sizeClass === b.sizeClass && item.adultOnly !== true, `${b.id}: mixed or non-teen size assignment`);
+          check(has(palette?.variants, item.variant) && Array.isArray(a.variants) && a.variants.includes(item.variant), `${b.id}: invalid teen variant '${item.variant}' for ${item.asset}`);
+          const c = cats.get(a.styleId), allowed = b.kind === 'drawer' ? a.state === 'folded' : ['folded', 'hung'].includes(a.state) ||
+            (a.state === 'flat' && (c?.id === 'cap' || ['hat', 'footwear'].includes(c?.category)) && item.support === 'shelf');
+          check(allowed, `${b.id}: ${item.asset} state is incompatible with ${b.kind}`);
+        }
+      }
+      if (complete) {
+        for (const size of Object.keys(TEEN_SIZE_CLASSES)) {
+          for (const kind of ['drawer', 'wardrobe', 'locker']) check(contexts.has(`${size}:${kind}`), `complete teen assortments require ${size} ${kind} recipe`);
+          for (const id of cats.keys()) check(assigned.has(`teen_${id}_${size}`), `teen garment '${id}/${size}' is absent from all assortments`);
+        }
       }
     }
   }
-  // Count the entire owned directory, including unreferenced accidental data. The adult and child libraries are not part of this independent 700,000-byte set.
+  // Include unreferenced accidental files in the budget; permit exactly one
+  // pre-existing fabrics tile, alongside the shared adult/child atlas elsewhere.
   for (const path of attempt('teen directory', () => filesBelow(join(modelsDir, TEEN_DIRECTORY))) ?? []) {
     runtimeFiles.add(realpathSync(path));
-    if (complete && path.endsWith('.glb')) check(false, `unlisted teen GLB '${relative(modelsDir, path)}'`);
+    const rel = relative(modelsDir, path).split(sep).join('/');
+    if (complete && path.endsWith('.glb')) check(glbs.has(rel), `unlisted teen GLB '${rel}'`);
+    if (/\.(?:png|webp|jpe?g|ktx2?)$/i.test(path)) check(rel === 'garments-teen/teen/fabrics.png', `additional teen texture page '${rel}'`);
   }
   let runtimeBytes = 0;
   for (const path of runtimeFiles) runtimeBytes += statSync(path).size;
   const cap = Math.min(manifest?.limits?.runtimeBytes ?? TEEN_LIMITS.runtimeBytes, TEEN_LIMITS.runtimeBytes);
   check(runtimeBytes <= cap, `teen runtime library is ${runtimeBytes} bytes, exceeding ${cap}`);
-  return { ok: errors.length === 0, set: 'garments_teen', mode: complete ? 'complete' : 'partial', errors, warnings,
-    assets: assets.size, catalogueGarments: cats.size, sizeClasses: 2, runtimeBytes, runtimeBudgetBytes: cap, files: runtimeFiles.size,
+  return { ok: errors.length === 0, set: 'garments-teen', sizeTag: 'teen', mode: complete ? 'complete' : 'partial', errors, warnings,
+    assets: assets.size, catalogueGarments: cats.size, sizeClasses: 2, runtimeBytes, runtimeBudgetBytes: cap, files: runtimeFiles.size, gpuTextureBytes,
     maxTriangles: Math.max(0, ...measurements.map((m) => m.triangles)),
     maxLodTriangles: Math.max(0, ...measurements.map((m) => m.lodTriangles ?? 0)), measurements };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), options = {}; let jsonPath, target = 'adult';
+  const args = process.argv.slice(2), options = {}, selectors = new Set(); let jsonPath;
   try {
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--complete') options.complete = true;
-      else if (['--child', '--teen', '--all'].includes(args[i])) {
-        demand(target === 'adult', '--child, --teen and --all may be given once and are mutually exclusive');
-        target = args[i].slice(2);
-      } else if (['--root', '--catalogue', '--json'].includes(args[i])) {
+      else if (['--adult', '--child', '--teen', '--all'].includes(args[i])) selectors.add(args[i].slice(2));
+      else if (['--root', '--catalogue', '--json'].includes(args[i])) {
         demand(args[i + 1] && !args[i + 1].startsWith('--'), `${args[i]} requires a path`);
         const flag = args[i++], value = args[i];
         if (flag === '--root') options.modelsDir = resolve(value);
         else if (flag === '--catalogue') options.cataloguePath = resolve(value);
         else jsonPath = value;
       } else if (args[i] === '--help') {
-        console.log('usage: garments_validate.mjs [--child|--teen|--all] [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]'); process.exit(0);
+        console.log('usage: garments_validate.mjs [--adult | --child | --teen | --all] [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]');
+        console.log('Without a size selector, all three libraries are checked; a legacy --catalogue-only call selects adult.');
+        process.exit(0);
       } else fail(`unknown option '${args[i]}'`);
     }
-    demand(!options.cataloguePath || target !== 'all', '--catalogue names one library\'s catalogue; --all uses each library\'s own');
-    const runs = { adult: () => validateGarments(options), child: () => validateGarments({ ...options, child: true }), teen: () => validateTeenGarments(options) };
-    const names = target === 'all' ? Object.keys(runs) : [target];
-    const reports = names.map((name) => runs[name]());
-    const report = target === 'all' ? { ok: reports.every((r) => r.ok), ...Object.fromEntries(names.map((name, i) => [name, reports[i]])) } : reports[0];
-    if (jsonPath) writeFileSync(jsonPath, JSON.stringify(report, null, 2) + '\n');
-    for (const r of reports) {
-      for (const error of r.errors) console.error('ERROR ' + error);
-      console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.set ?? (r.sizeTag === 'child' ? 'garments-child' : 'garments')} (${r.mode}): ${r.assets} states, ${r.catalogueGarments} garments, ` +
-        `${r.runtimeBytes}/${r.runtimeBudgetBytes} bytes, max ${r.maxTriangles}/${r.maxLodTriangles} high/LOD triangles`);
+    demand(selectors.size <= 1, '--adult, --child, --teen and --all are mutually exclusive');
+    // The unchanged adult builder supplies --catalogue without a selector.
+    const selection = [...selectors][0] ?? (options.cataloguePath ? 'adult' : 'all');
+    demand(!(selection === 'all' && options.cataloguePath), '--all cannot be combined with --catalogue; select a single size');
+    const reports = [];
+    if (['all', 'adult'].includes(selection)) reports.push({ set: 'garments', ...validateGarments(options) });
+    if (['all', 'child'].includes(selection)) reports.push({ set: 'garments-child', ...validateGarments({ ...options, child: true }) });
+    if (['all', 'teen'].includes(selection)) reports.push(validateTeenGarments(options));
+    if (jsonPath) writeFileSync(jsonPath, JSON.stringify(selection === 'all' ? { ok: reports.every((r) => r.ok), reports } : reports[0], null, 2) + '\n');
+    for (const report of reports) {
+      for (const error of report.errors) console.error('ERROR ' + error);
+      console.log(`${report.ok ? 'PASS' : 'FAIL'} ${report.set} (${report.mode}): ${report.assets} states, ${report.catalogueGarments} garments, ` +
+        `${report.runtimeBytes}/${report.runtimeBudgetBytes} bytes, max ${report.maxTriangles}/${report.maxLodTriangles} high/LOD triangles`);
     }
-    process.exitCode = report.ok ? 0 : 1;
+    process.exitCode = reports.every((r) => r.ok) ? 0 : 1;
   } catch (e) { console.error('ERROR ' + e.message); process.exitCode = 1; }
 }
