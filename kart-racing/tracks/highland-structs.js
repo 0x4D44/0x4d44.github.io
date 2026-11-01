@@ -1,7 +1,7 @@
-// Highland Fling - built structures: ruined castle (gatehouse on the road), humpback stone bridge over the burn,
-// Glenfinnan-style rail viaduct (road passes under the big arch; a little steam train crosses), cottages, distillery, standing stones, flags.
+// Highland Fling - built structures: ruined castle (gatehouse on the road), the high stone road viaduct (the road crosses OVER the railway,
+// then leaps the burn), the Glenfinnan-style rail viaduct (a little steam train crosses), cottages, distillery, standing stones, flags.
 import * as THREE from "three";
-import { TAU, LOCH, S, BURN, VIADUCT, lochR, burnQuery, vnoise } from "./highland-geo.js";
+import { TAU, LOCH, S, BURN, VIADUCT, PIPER, lochR, burnQuery, vnoise } from "./highland-geo.js";
 import { stoneCanvas, toTexture, saltireCanvas, lionCanvas } from "./highland-tex.js";
 
 const S3 = 3;   // stone texture tile (m)
@@ -151,86 +151,98 @@ export function buildStructs(H) {
     instanced(new THREE.DodecahedronGeometry(1, 0), lam({ flatShading: true }), rub, "rubble");
   }
 
-  // ================================================================= HUMPBACK BRIDGE over the burn
+  // ================================================================= ROAD VIADUCT: the road climbs onto high stone arches, sails OVER the railway and leaps the burn
   {
-    const s0 = S.bridge, c0 = track.sample(s0), cx = c0.pos.x, cz = c0.pos.z, tx = c0.tangent.x, tz = c0.tangent.z, rx = c0.right.x, rz = c0.right.z;
-    const HL = 19, Wd = wallDist + 0.6;
-    const bed = gy(cx, cz);
-    const roadY = (t) => track.sample(s0 + t).pos.y;
-    const ys = []; for (let t = -HL; t <= HL; t += 2) ys.push([t, roadY(t) - 0.12]);
-    const minRoad = Math.min(...ys.map((p) => p[1]));
-    const bot = bed - 2.2, SPR = bed + 0.6, crown = Math.min(SPR + 4.8, minRoad - 1.4), AWd = 5.4;
-    const pts = [[-HL, bot], [-AWd, bot], [-AWd, SPR], ...arcPts(0, SPR, AWd, crown - SPR, Math.PI, 0, 20).slice(1, -1), [AWd, SPR], [AWd, bot], [HL, bot]];
-    for (let i = ys.length - 1; i >= 0; i--) pts.push(ys[i]);
-    const g = extrude(pts, 2 * Wd); g.translate(0, 0, -Wd);
-    // basis: x -> tangent, y -> up, z -> right
-    const B = new THREE.Matrix4().makeBasis(new THREE.Vector3(tx, 0, tz), new THREE.Vector3(0, 1, 0), new THREE.Vector3(rx, 0, rz)); B.setPosition(cx, 0, cz);
-    g.applyMatrix4(B);
-    const m = new THREE.Mesh(own(g), own(new THREE.MeshLambertMaterial({ map: stoneTex, color: 0xc9c4b4, side: THREE.DoubleSide }))); m.name = "humpback-bridge"; group.add(m);
-    // skirts hide the gap between the road edge and the gully-lowered terrain just beyond the stonework
-    const sk = new X.Strips(C);
-    for (const [from, len] of [[s0 - 56, 56 - HL], [s0 + HL, 56 - HL]]) {
-      const i0 = Math.round(from / C.ds), n = Math.round(len / C.ds);
-      for (const sg of [-1, 1]) sk.add({ profile: [[sg * (wallDist + 0.55), -0.65, 0.2], [sg * (wallDist + 0.55), -4.2, 0.8]], from: ((i0 % C.N) + C.N) % C.N, count: n, tile: 6, color: () => [0.22, 0.2, 0.16] });
+    const WS = wallDist, PWr = 3.6, OV = 0.35;                           // masonry half-width (a little inside the concrete deck's edge), pier thickness, overlap into the pier
+    const piers = [1818, 1834.3, 1850.7, 1867, 1895, 1914.5, 1934, 1962, 1976.5, 1991];   // arclength of each pier; 1867..1895 is the big span over the railway, 1934..1962 spans the burn
+    const kinds = ["std", "std", "std", "rail", "std", "std", "burn", "std", "std"];
+    const P = (s) => { const q = track.sample(s), l = Math.hypot(q.tangent.x, q.tangent.z) || 1; return { x: q.pos.x, y: q.pos.y, z: q.pos.z, tx: q.tangent.x / l, tz: q.tangent.z / l }; };
+    const gLow = (x, z, tx, tz) => { let m = 1e9; for (const l of [-1, -0.5, 0, 0.5, 1]) m = Math.min(m, gy(x - tz * l * WS, z + tx * l * WS)); return m; };   // lowest ground across the road width
+    const spans = [];
+    for (let i = 0; i < piers.length - 1; i++) {
+      const sa = piers[i], sb = piers[i + 1], kind = kinds[i], A = P(sa), B = P(sb);
+      const c = Math.hypot(B.x - A.x, B.z - A.z), k = (sb - sa) / c, dx = (B.x - A.x) / c, dz = (B.z - A.z) / c, mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, hs = (c - PWr) / 2;
+      const topAt = (u) => P(sa + (u + c / 2) * k).y - 1.3;                // underside of the concrete deck at distance u from the span's middle
+      const ry = hs * (kind === "rail" ? 0.58 : kind === "burn" ? 0.47 : 0.95);
+      let crown = topAt(0) - 1.25;
+      for (let u = -hs; u <= hs; u += 1) { const h = crown - ry + ry * Math.sqrt(Math.max(0, 1 - (u / hs) ** 2)); const over = h - (topAt(u) - 0.8); if (over > 0) crown -= over; }
+      const spr = crown - ry, open = kind !== "std" || crown - gLow(mx, mz, dx, dz) > 3.0;   // a plain span whose arch would be buried in the hillside is left solid
+      spans.push({ sa, sb, kind, c, k, dx, dz, mx, mz, hs, topAt, crown, spr, open });
     }
-    const sm = new THREE.Mesh(own(sk.geometry()), own(new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }))); group.add(sm);
-    // parapet coping stones on the wall tops along the bridge
-    const cop = [];
-    for (let t = -HL + 1; t <= HL - 1; t += 2.4) for (const sg of [-1, 1]) { const p = c0.pos, y = roadY(t) + 1.15; cop.push(sbox(2.2, 0.5, 0.95, mat(p.x + tx * t + rx * sg * (wallDist + 0.28), y, p.z + tz * t + rz * sg * (wallDist + 0.28), 1, 1, 1, 0, Math.atan2(tx, tz), 0), tint())); }
-    group.add(new THREE.Mesh(own(bake(cop)), stoneMat));
-    H.bridge = { s: s0, bed, crown, x: cx, z: cz };
+    const roadStone = [];
+    for (const d of spans) {
+      const u0 = -d.c / 2 - OV, u1 = d.c / 2 + OV, n = Math.ceil((u1 - u0) / 1.5), topPts = [];
+      for (let j = n; j >= 0; j--) { const u = u0 + (u1 - u0) * j / n; topPts.push([u, d.topAt(u)]); }   // right -> left along the deck underside
+      let pts;
+      if (d.open) pts = [[u0, d.spr], [-d.hs, d.spr], ...arcPts(0, d.spr, d.hs, d.crown - d.spr, Math.PI, 0, 28).slice(1, -1), [d.hs, d.spr], [u1, d.spr], ...topPts];
+      else { let lo = 1e9; for (let u = -d.c / 2; u <= d.c / 2; u += 2) lo = Math.min(lo, gLow(d.mx + d.dx * u, d.mz + d.dz * u, d.dx, d.dz)); pts = [[u0, lo - 2], [u1, lo - 2], ...topPts]; }
+      const g = extrude(pts, 2 * WS); g.translate(0, 0, -WS);
+      const Bm = new THREE.Matrix4().makeBasis(new THREE.Vector3(d.dx, 0, d.dz), new THREE.Vector3(0, 1, 0), new THREE.Vector3(-d.dz, 0, d.dx)); Bm.setPosition(d.mx, 0, d.mz);
+      roadStone.push({ g, m: Bm, c: new THREE.Color(0xd6d2c6) });
+    }
+    for (let i = 0; i < piers.length; i++) {   // the piers under the arches, from below the lowest ground up to the higher of the two springs
+      const sp = [spans[i - 1], spans[i]].filter((q) => q && q.open).map((q) => q.spr);
+      if (!sp.length) continue;
+      const p = P(piers[i]), foot = gLow(p.x, p.z, p.tx, p.tz) - 2.2, h = Math.max(...sp) + 0.5 - foot;
+      if (h > 0.5) roadStone.push(sbox(2 * (WS - 0.05), h, PWr, mat(p.x, foot + h / 2, p.z, 1, 1, 1, 0, Math.atan2(p.tx, p.tz), 0), tint()));
+    }
+    const stoneDS = own(new THREE.MeshLambertMaterial({ map: stoneTex, vertexColors: true, side: THREE.DoubleSide }));
+    const vm = new THREE.Mesh(own(bake(roadStone)), stoneDS); vm.name = "road-viaduct"; group.add(vm);
+    // stone fascia + cornice wrapped round the engine's concrete deck slab wherever the road stands proud of the ground
+    const fas = new X.Strips(C), Wc = wallDist + 0.6, sIn = Math.floor(1772 / C.ds) - 2, sCount = Math.ceil((1994 - 1772) / C.ds) + 4;
+    for (const sg of [-1, 1]) fas.add({ profile: [[sg * (Wc - 0.1), 0.04, 0], [sg * (Wc + 0.4), 0.04, 0.15], [sg * (Wc + 0.4), -0.42, 0.29], [sg * (Wc + 0.07), -0.42, 0.4], [sg * (Wc + 0.07), -1.46, 0.75]], from: sIn, count: sCount, tile: S3, mask: (i) => C.py[i] - gy(C.px[i], C.pz[i]) > 0.8, color: () => [0.88, 0.85, 0.8] });
+    const fm = new THREE.Mesh(own(fas.geometry()), stoneDS); fm.name = "road-viaduct-fascia"; group.add(fm);
+    const bs = track.sample(S.bridge);
+    H.bridge = { s: S.bridge, bed: gy(bs.pos.x, bs.pos.z), crown: spans[6].crown, x: bs.pos.x, z: bs.pos.z };
   }
 
-  // ================================================================= RAIL VIADUCT
+  // ================================================================= RAIL VIADUCT (Glenfinnan-style; the road now sails over it on the stone arches above; a little steam train crosses)
   {
-    const zv = VIADUCT.z, cxv = VIADUCT.cx;
-    const rs = track.locate({ x: cxv, y: undefined, z: zv }); const roadY = rs.y;
-    const deck = roadY + 13.6, DW = 8.4, PW = 3.5;
-    const piers = [cxv - 21.6, cxv + 21.6]; for (let k = 1; k <= 3; k++) piers.unshift(piers[0] - 18.6); for (let k = 1; k <= 2; k++) piers.push(piers[piers.length - 1] + 18.6);
-    piers.sort((p, q) => p - q);
+    const zv = VIADUCT.z, cxv = VIADUCT.cx, deck = VIADUCT.deck, DW = 8.4, PW = 3.5;
+    const piers = [VIADUCT.vx0]; for (let k = 1; k <= 3; k++) piers.push(VIADUCT.vx0 + 18.6 * k);   // 98.6 117.2 135.8 154.4
+    piers.push(cxv + 21.6, VIADUCT.vx1);                                                              // 197.6 216.2 (the big arch spans 154.4 .. 197.6 across the glen)
     const stoneP = [], plain = [];
     for (let i = 0; i < piers.length - 1; i++) {
       const x0 = piers[i], x1 = piers[i + 1], span = x1 - x0, cxm = (x0 + x1) / 2, big = Math.abs(cxm - cxv) < 1;
       const gmid = Math.max(gy(cxm, zv), gy(x0, zv), gy(x1, zv)), bot = Math.min(gy(cxm, zv), gy(x0, zv), gy(x1, zv)) - 2.2;
       const hw2 = span / 2 - PW / 2, crown = big ? deck - 3.4 : deck - 3.6;
-      const spr = big ? roadY + 1.6 : crown - hw2 * 0.95;
+      const spr = big ? VIADUCT.floor + 1.6 : crown - hw2 * 0.95;
       const top = deck - 1.0;
       let pts;
       if (gmid > spr + 0.5 && !big) pts = [[x0, bot], [x1, bot], [x1, top], [x0, top]];
       else { pts = [[x0, bot], [x0 + PW / 2, bot], [x0 + PW / 2, spr], ...arcPts(cxm, spr, hw2, crown - spr, Math.PI, 0, 24).slice(1, -1), [x1 - PW / 2, spr], [x1 - PW / 2, bot], [x1, bot], [x1, top], [x0, top]]; }
       const g = extrude(pts, DW - 1.4); g.translate(0, 0, zv - (DW - 1.4) / 2);   // x along viaduct, z across
       stoneP.push({ g, m: new THREE.Matrix4(), c: new THREE.Color(0xd4d0c4) });
-      if (big) { track.addObstacle(x0, zv, 2.6, roadY - 4, deck); track.addObstacle(x1, zv, 2.6, roadY - 4, deck); }
     }
     const vx0 = piers[0], vx1 = piers[piers.length - 1];
-    // the line runs on past the last arches over solid embankments and into a tunnel portal at each end,
+    // the line runs on past the last arches through a rock cutting (the terrain is carved to match, see highland.js carve) and into a stone-faced tunnel portal at each end,
     // so the train enters and leaves the hillside instead of vanishing in mid-air
-    const scan = (from, dir) => { let x = from; for (let k = 0; k < 80; k++, x += dir) if (gy(x, zv) >= deck + 6.5) return x; return from + dir * 14; };   // portal sits where the hillside has risen above the line
-    const x0 = scan(vx0, -1), x1 = scan(vx1, 1), len = x1 - x0, mid = (x0 + x1) / 2;
-    stoneP.push(sbox(len, 1.2, DW, mat(mid, deck - 0.4, zv), 0xc2beb2));                       // deck slab
+    const x0 = VIADUCT.pw, x1 = VIADUCT.pe, len = x1 - x0, mid = (x0 + x1) / 2, TUN = 5, dlen = len + 2 * TUN;   // x0/x1 = the headwall fronts; trackbed runs TUN m on into each bore
+    stoneP.push(sbox(dlen, 1.2, DW, mat(mid, deck - 0.4, zv), 0xc2beb2));                       // deck slab
     stoneP.push(sbox(len, 0.9, 0.7, mat(mid, deck + 0.65, zv - DW / 2 + 0.35), 0xd0ccc0), sbox(len, 0.9, 0.7, mat(mid, deck + 0.65, zv + DW / 2 - 0.35), 0xd0ccc0));  // parapets
-    for (let x = x0; x <= x1; x += 4.65) stoneP.push(sbox(0.8, 0.5, 0.95, mat(x, deck + 1.28, zv - DW / 2 + 0.35), 0xe0dcd0), sbox(0.8, 0.5, 0.95, mat(x, deck + 1.28, zv + DW / 2 - 0.35), 0xe0dcd0));
-    plain.push(part(new THREE.BoxGeometry(len, 0.35, DW - 1.6), mat(mid, deck + 0.38, zv), 0x4a4640));          // ballast
-    for (const dz of [-0.72, 0.72]) plain.push(part(new THREE.BoxGeometry(len, 0.16, 0.12), mat(mid, deck + 0.7, zv + dz), 0x7a6a5a));   // rails
-    for (let x = x0 + 0.4; x < x1; x += 0.95) plain.push(part(new THREE.BoxGeometry(0.28, 0.12, 2.0), mat(x, deck + 0.6, zv), 0x3a2a1c));  // sleepers
-    // embankment fill under the extended approaches, down below the lowest ground
+    for (let x = x0 + 2; x <= x1 - 2; x += 4.65) stoneP.push(sbox(0.8, 0.5, 0.95, mat(x, deck + 1.28, zv - DW / 2 + 0.35), 0xe0dcd0), sbox(0.8, 0.5, 0.95, mat(x, deck + 1.28, zv + DW / 2 - 0.35), 0xe0dcd0));
+    plain.push(part(new THREE.BoxGeometry(dlen, 0.35, DW - 1.6), mat(mid, deck + 0.38, zv), 0x4a4640));          // ballast
+    for (const dz of [-0.72, 0.72]) plain.push(part(new THREE.BoxGeometry(dlen, 0.16, 0.12), mat(mid, deck + 0.7, zv + dz), 0x7a6a5a));   // rails
+    for (let x = x0 - TUN + 0.4; x < x1 + TUN; x += 0.95) plain.push(part(new THREE.BoxGeometry(0.28, 0.12, 2.0), mat(x, deck + 0.6, zv), 0x3a2a1c));  // sleepers
+    // embankment fill under the cutting approaches, down below the lowest ground
     for (const [ea, eb] of [[x0, vx0], [vx1, x1]]) {
       let lo = 1e9; for (let x = ea; x <= eb; x += 6) lo = Math.min(lo, gy(x, zv));
       const hgt = deck - 0.8 - (lo - 3);
       stoneP.push(sbox(eb - ea, hgt, DW - 1.4, mat((ea + eb) / 2, deck - 0.8 - hgt / 2, zv), 0xb8b4a8));
     }
-    // tunnel portals: stone facade with a dark bore, backed by a block of hillside
+    // tunnel portals: a masonry headwall (piers + lintel + a stepped coping) with a dark bore behind, set into the steep end wall of the cutting
     for (const dir of [-1, 1]) {
       const xe = dir < 0 ? x0 : x1, PWID = 18, PH = 8.4, OW = 5.6, OH = 6.6, base = deck - 1.0;
       const pierW = (PWID - OW) / 2, fx = xe + dir * 1.5;
       stoneP.push(sbox(3, PH, pierW, mat(fx, base + PH / 2, zv - OW / 2 - pierW / 2), 0xcfcbbf), sbox(3, PH, pierW, mat(fx, base + PH / 2, zv + OW / 2 + pierW / 2), 0xcfcbbf));
       stoneP.push(sbox(3, PH - OH - 1, OW, mat(fx, base + 1 + OH + (PH - OH - 1) / 2, zv), 0xd8d4c8));   // lintel
-      plain.push(part(new THREE.BoxGeometry(8, OH + 0.2, OW), mat(xe + dir * 4, base + 1 + OH / 2, zv), 0x08080a));   // dark bore running into the hill
+      stoneP.push(sbox(3.5, 0.5, PWID + 1.0, mat(xe + dir * 1.75, base + PH + 0.25, zv), 0xe0dcd0));       // coping slab across the top of the headwall
+      plain.push(part(new THREE.BoxGeometry(TUN + 0.4, OH + 0.2, OW), mat(xe + dir * (TUN + 0.4) / 2, base + 1 + OH / 2, zv), 0x08080a));   // dark bore running into the hill
     }
     group.add(new THREE.Mesh(own(bake(stoneP)), stoneMat)); group.add(new THREE.Mesh(own(bake(plain)), plainMat));
     H.viaduct = { deck, x0: vx0, x1: vx1 };
     // steam train (green engine + maroon coaches) crossing west -> east
-    const train = new THREE.Group(), tp = [], coachGeo = [];
+    const train = new THREE.Group(), tp = [];
     const loco = [
       part(new THREE.CylinderGeometry(1.0, 1.0, 5.2, 12), mat(0, 1.9, 0, 1, 1, 1, 0, 0, Math.PI / 2), 0x1f4d36),
       part(new THREE.BoxGeometry(2.4, 2.6, 2.5), mat(-3.4, 2.4, 0), 0x1f4d36), part(new THREE.BoxGeometry(2.7, 0.2, 2.8), mat(-3.4, 3.8, 0), 0x2a2a2e),
@@ -248,7 +260,7 @@ export function buildStructs(H) {
     const trainMat = own(new THREE.MeshLambertMaterial({ vertexColors: true, clippingPlanes: [new THREE.Plane(new THREE.Vector3(1, 0, 0), -(x0 + 0.5)), new THREE.Plane(new THREE.Vector3(-1, 0, 0), x1 - 0.5)] }));
     const trainMesh = new THREE.Mesh(own(bake(tp)), trainMat); trainMesh.frustumCulled = false; trainMesh.onBeforeRender = (r) => { r.localClippingEnabled = true; };
     train.add(trainMesh); train.name = "steam-train"; group.add(train);
-    // steam puffs
+    // steam puffs (kept low and flat: the road deck passes close overhead where it crosses the line)
     const puffG = own(new THREE.SphereGeometry(1, 7, 5)), puffM = own(new THREE.MeshBasicMaterial({ color: 0xf2f2f2, transparent: true, opacity: 0.6, depthWrite: false }));
     const puffs = new THREE.InstancedMesh(puffG, puffM, 18); puffs.frustumCulled = false; group.add(puffs);
     const dm = new THREE.Matrix4(), PER = 44;
@@ -256,7 +268,7 @@ export function buildStructs(H) {
       const ph = (t % PER) / PER, px = x0 - 80 + ph * (len + 220);   // front of the loco
       train.position.set(px, deck + 0.6, zv); train.rotation.y = 0; train.scale.x = 1;
       train.visible = px > x0 && px - 52 < x1;
-      for (let i = 0; i < 18; i++) { const age = ((t * 0.8 + i / 18) % 1); const sc = 0.5 + age * 2.4; dm.makeScale(sc, sc, sc); dm.setPosition(px + 2 - age * 14, deck + 5 + age * 6, zv + Math.sin(i * 7.1) * 0.6); puffs.setMatrixAt(i, dm); }
+      for (let i = 0; i < 18; i++) { const age = ((t * 0.8 + i / 18) % 1); const sc = 0.5 + age * 1.9; dm.makeScale(sc, sc, sc); dm.setPosition(px + 2 - age * 15, deck + 5 + age * 2.6, zv + Math.sin(i * 7.1) * 0.6); puffs.setMatrixAt(i, dm); }
       puffs.visible = train.visible; puffs.instanceMatrix.needsUpdate = true;
     });
   }
@@ -274,7 +286,7 @@ export function buildStructs(H) {
       part(new THREE.BoxGeometry(2.4, 1.1, 1.0), mat(4.8, 0.55, 1.2), 0x4a3426),   // peat stack
     ];
     const cgeo = bake(cp), cots = [];
-    const spots = scatterSpots(14, 17, 60, (x, z) => lochR(x, z) > 1.3 && burnQuery(x, z).d > 14 && !(Math.abs(z - VIADUCT.z) < 22 && x > 60 && x < 260) && !(z > 360 && x > 180 && x < 430) && gyOK(x, z));
+    const spots = scatterSpots(14, 17, 60, (x, z) => lochR(x, z) > 1.3 && burnQuery(x, z).d > 14 && !(Math.abs(z - VIADUCT.z) < 22 && x > 60 && x < 260) && !(z > 360 && x > 180 && x < 430) && !(x > 90 && x < 255 && z > 180 && z < 312) && Math.hypot(x - PIPER.x, z - PIPER.z) > 30 && gyOK(x, z));
     for (const p of spots) { const l = track.locate({ x: p.x, z: p.z }), sp = track.sample(l.s); cots.push({ x: p.x, z: p.z, ry: Math.atan2(sp.tangent.x, sp.tangent.z) + (l.lateral > 0 ? -Math.PI / 2 : Math.PI / 2) + R(-0.25, 0.25), sx: R(0.95, 1.15), c: pick([0xffffff, 0xf4f0e6, 0xece6d6]) }); }
     instanced(cgeo, lam({ vertexColors: true }), cots, "cottages"); blobShadows(cots, 4.5);
     for (const c of cots) track.addObstacle(c.x, c.z, 4.0, -50, 200);
