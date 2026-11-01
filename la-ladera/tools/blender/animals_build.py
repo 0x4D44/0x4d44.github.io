@@ -29,16 +29,37 @@ def eyes(a, y, z, x, size, iris=0x623D20, bird=False):
             a.egg((s * (x + size * 0.50), y + size * 0.27, z + size * 0.37), (size * 0.12,) * 3, 0xF7F5E9, 'head', n=4, rings=3)
 
 
+def sm(lo, hi, x):
+    """Smoothstep from lo to hi (either order), clamped to 0..1."""
+    t = max(0.0, min(1.0, (x - lo) / (hi - lo)))
+    return t * t * (3 - 2 * t)
+
+
+def quad_clips(a, cat=False, mule=False):
+    idle = {'head': lambda t: (0.025 * S(t), 0.10 * S(t), 0.018 * S(t * 2)),
+            'tail': lambda t: (0, (0.10 if cat else 0.22) * S(t * 2), 0.025 * S(t))}
+    walk = {'head': lambda t: (0.035 * S(t * 2), 0.02 * S(t), 0), 'tail': lambda t: (0, 0.20 * S(t), 0)}
+    for i, (position, side) in enumerate((('front', 'l'), ('front', 'r'), ('rear', 'l'), ('rear', 'r'))):
+        phase = 0 if i in (0, 3) else math.pi
+        amp = 0.28 if mule else 0.36
+        # A mule's knee folds the hoof back and up; its hock folds it forward and up.
+        bend = (0.42 if mule else 0.30) * (-1 if mule and position == 'rear' else 1)
+        walk[f'{position}_{side}'] = lambda t, p=phase, m=amp: (m * S(t + p), 0, 0)
+        walk[f'{position}_{side}_lower'] = lambda t, p=phase, k=bend: (k * max(0, -S(t + p)), 0, 0)
+    # Long neck/head reach is authored in the rest mesh: feeding needs no root motion
+    # or sinking feet. Small looping jaw/head dips keep the muzzle near the ground.
+    neck_dip = 2.0 if mule else 1.70
+    head_dip = -0.20 if mule else 0.03
+    eat = {'neck': lambda t: (neck_dip + 0.04 * S(t * 2), 0, 0),
+           'head': lambda t: (head_dip + 0.055 * S(t * 2), 0.025 * S(t), 0),
+           'tail': lambda t: (0, 0.07 * S(t), 0)}
+    clip(a, 'idle', 2.4, idle); clip(a, 'walk', 1.2 if mule else 1.0, walk); clip(a, 'eat', 1.6, eat)
+
+
 def quadruped(key, far=False):
     a = Animal(key, far)
-    cat, mule = key == 'cat', key == 'mule'
-    if mule:
-        coat, dark, light = 0x7F7363, 0x312D2A, 0xC8BD9F
-        cy, cz, rx, ry, length = 1.13, -0.06, 0.29, 0.35, 1.28
-        head = (0, 1.80, 0.88); hs = (0.15, 0.20, 0.26)
-        hip, front, rear, knee = 1.10, 0.43, -0.48, 0.50
-        legx, legw, paw = 0.22, 0.082, (0.085, 0.07, 0.12)
-    elif cat:
+    cat = key == 'cat'
+    if cat:
         coat, dark, light = 0xB16F36, 0x683C24, 0xEEE0C5
         cy, cz, rx, ry, length = 0.36, -0.015, 0.105, 0.135, 0.57
         head = (0, 0.52, 0.38); hs = (0.105, 0.10, 0.105)
@@ -70,9 +91,9 @@ def quadruped(key, far=False):
     a.emit(loft(profile, 5 if far else 12), coat, colour_fn=coat_colour)
     a.tube([(0, cy + ry * 0.40, front - 0.025), (0, head[1] - hs[1] * 0.55, head[2] - hs[2] * 0.40)],
            [rx * 0.70, hs[0] * 0.84], coat, 'neck')
-    a.egg(head, hs, coat, 'head', colour_fn=lambda p: dark if p[1] > head[1] + hs[1] * 0.7 and not mule else coat)
-    # Long, sloping mule muzzle; compact double feline muzzle; tapered dog snout.
-    nose_y = head[1] - hs[1] * (0.6 if mule else 0.35)
+    a.egg(head, hs, coat, 'head', colour_fn=lambda p: dark if p[1] > head[1] + hs[1] * 0.7 else coat)
+    # Compact double feline muzzle; tapered dog snout.
+    nose_y = head[1] - hs[1] * 0.35
     nose_z = head[2] + hs[2] * (1.1 if cat else 1.5)
     if cat:
         for s in (-1, 1):
@@ -82,21 +103,11 @@ def quadruped(key, far=False):
         a.tube([(0, head[1] - hs[1] * 0.22, head[2] + hs[2] * 0.48), (0, nose_y, nose_z)],
                [hs[0] * 0.74, hs[0] * 0.55], light, 'head', n=6 if far else 9)
         a.egg((0, nose_y + hs[1] * 0.03, nose_z + hs[2] * 0.07), (hs[0] * 0.53, hs[1] * 0.25, hs[2] * 0.16),
-              dark if mule else 0x24201E, 'head', n=5 if far else 8, rings=3 if far else 4)
+              0x24201E, 'head', n=5 if far else 8, rings=3 if far else 4)
     eyes(a, head[1] + hs[1] * 0.21, head[2] + hs[2] * 0.36, hs[0] * 0.87, hs[1] * 0.15,
          0xB9A151 if cat else 0x80633F)
     for s in (-1, 1):
-        if mule:
-            base = (s * 0.105, head[1] + 0.12, head[2] - 0.08)
-            tip = (s * 0.14, head[1] + 0.49, head[2] - 0.11)
-            if far:
-                a.fin((base, tip), 0.064, dark, 'head')
-            else:
-                center = tuple((base[k] + tip[k]) / 2 for k in range(3))
-                a.egg(center, (0.057, 0.195, 0.027), dark, 'head', n=8, rings=5, rot=(0, 0, -s * 0.095))
-                a.egg((center[0], center[1] + 0.007, center[2] + 0.024), (0.036, 0.145, 0.007), 0xB28F7B,
-                      'head', n=6, rings=4, rot=(0, 0, -s * 0.095))
-        elif cat:
+        if cat:
             a.fin(((s * 0.068, head[1] + 0.055, head[2] - 0.025), (s * 0.083, head[1] + 0.18, head[2] - 0.015)), 0.044, coat, 'head')
             if not far:
                 a.fin(((s * 0.069, head[1] + 0.09, head[2] + 0.007), (s * 0.083, head[1] + 0.16, head[2] + 0.004)), 0.026, 0xCF9B84, 'head')
@@ -111,7 +122,7 @@ def quadruped(key, far=False):
         for s, side in ((-1, 'l'), (1, 'r')):
             upper, lower = f'{position}_{side}', f'{position}_{side}_lower'
             a.bone(upper, (s * legx, hip, z), 'body')
-            kz = z + (0.025 if position == 'front' else -0.05) * (1.8 if mule else 1)
+            kz = z + (0.025 if position == 'front' else -0.05)
             a.bone(lower, (s * legx, knee, kz), upper)
             if far:
                 a.tube([(s * legx, hip, z), (s * legx, knee, kz)], [legw * (1.7 if position == 'rear' else 1.28), legw * 0.77], coat, upper)
@@ -122,38 +133,106 @@ def quadruped(key, far=False):
                        [legw * 1.1, legw * (1.4 if position == 'rear' else 1.15), legw * 0.77], coat, upper, n=9)
             foot_z = z + (0.035 if position == 'front' else 0.025)
             a.tube([(s * legx, knee + 0.014, kz), (s * legx, paw[1] * 1.2, foot_z)],
-                   [legw * 0.8, legw * 0.58], coat if mule else light, lower)
-            a.egg((s * legx, paw[1], foot_z + paw[2] * 0.3), paw, dark if mule else light, lower, n=5 if far else 7, rings=3 if far else 4)
+                   [legw * 0.8, legw * 0.58], light, lower)
+            a.egg((s * legx, paw[1], foot_z + paw[2] * 0.3), paw, light, lower, n=5 if far else 7, rings=3 if far else 4)
     if cat:
         tail = [(0, cy + 0.06, rear - 0.06), (0.01, 0.59, -0.34), (0.025, 0.81, -0.35), (0.07, 0.87, -0.28), (0.10, 0.82, -0.22)]
         a.tube(tail, [0.032, 0.028, 0.023, 0.020, 0.010], coat, 'tail', n=4 if far else 7,
                colour_fn=lambda p: dark if p[0] > 0.045 and p[1] > 0.79 else coat)
-    elif mule:
-        tail = [(0, 1.30, -0.67), (0, 1.02, -0.78), (0, 0.73, -0.79), (0, 0.55, -0.78)]
-        a.tube(tail, [0.048, 0.035, 0.034, 0.011], dark, 'tail')
-        a.egg((0, 0.65, -0.79), (0.06, 0.17, 0.06), dark, 'tail', n=5 if far else 8, rings=4)
-        a.tube([(0, 1.41, 0.30), (0, 1.62, 0.48), (0, 1.79, 0.66)], [0.045, 0.052, 0.034], dark, 'neck', n=4)
     else:
         a.tube([(0, cy + 0.08, -0.44), (0, 0.77, -0.56), (0, 0.91, -0.65), (0, 0.93, -0.80)],
                [0.045, 0.036, 0.026, 0.012], coat, 'tail')
         if not far:
             a.tube([(0, 0.91, -0.65), (0, 0.93, -0.80)], [0.027, 0.012], light, 'tail')
-    idle = {'head': lambda t: (0.025 * S(t), 0.10 * S(t), 0.018 * S(t * 2)),
-            'tail': lambda t: (0, (0.10 if cat else 0.22) * S(t * 2), 0.025 * S(t))}
-    walk = {'head': lambda t: (0.035 * S(t * 2), 0.02 * S(t), 0), 'tail': lambda t: (0, 0.20 * S(t), 0)}
-    for i, (position, side) in enumerate((('front', 'l'), ('front', 'r'), ('rear', 'l'), ('rear', 'r'))):
-        phase = 0 if i in (0, 3) else math.pi
-        amp = 0.28 if mule else 0.36
-        walk[f'{position}_{side}'] = lambda t, p=phase, m=amp: (m * S(t + p), 0, 0)
-        walk[f'{position}_{side}_lower'] = lambda t, p=phase: (0.30 * max(0, -S(t + p)), 0, 0)
-    # Long neck/head reach is authored in the rest mesh: feeding needs no root motion
-    # or sinking feet. Small looping jaw/head dips keep the muzzle near the ground.
-    neck_dip = 2.0 if mule else 1.70
-    head_dip = -0.20 if mule else 0.03
-    eat = {'neck': lambda t: (neck_dip + 0.04 * S(t * 2), 0, 0),
-           'head': lambda t: (head_dip + 0.055 * S(t * 2), 0.025 * S(t), 0),
-           'tail': lambda t: (0, 0.07 * S(t), 0)}
-    clip(a, 'idle', 2.4, idle); clip(a, 'walk', 1.2 if mule else 1.0, walk); clip(a, 'eat', 1.6, eat)
+    quad_clips(a, cat)
+    return a
+
+
+MULE_TRUNK = [(-0.76, 1.33, 1.13, 0.10), (-0.72, 1.43, 1.04, 0.20), (-0.62, 1.49, 0.98, 0.275), (-0.42, 1.50, 0.92, 0.29),
+              (-0.18, 1.47, 0.87, 0.265), (0.06, 1.455, 0.83, 0.285), (0.28, 1.50, 0.82, 0.29), (0.46, 1.49, 0.85, 0.27),
+              (0.60, 1.42, 0.89, 0.215), (0.68, 1.35, 0.97, 0.12)]                                       # z, back, belly, half width
+MULE_HEAD = [(0.66, 1.835, 0.09, 0.12), (0.74, 1.80, 0.125, 0.19), (0.88, 1.77, 0.132, 0.19), (1.02, 1.75, 0.108, 0.135),
+             (1.12, 1.715, 0.092, 0.105), (1.24, 1.67, 0.082, 0.09), (1.315, 1.64, 0.076, 0.078)]       # z, centre, half width, half height
+
+
+def mule(key, far=False):
+    """Long-faced, long-eared pack mule. Rigid parts on the shared skeleton: leg segments overlap at knee/hock and fetlock so the joints read."""
+    a = Animal(key, far)
+    coat, dark, light = 0x76675A, 0x2E2A27, 0xBDAF93
+    sock, mealy = F.mixc(coat, dark, 0.25), F.mixc(coat, light, 0.55)
+    hip, front, rear = 1.10, 0.43, -0.48
+    a.bone('body', (0, 1.17, 0))
+    a.bone('neck', (0, 1.21, front), 'body')
+    a.bone('head', (0, 1.69, 0.763), 'neck')
+    a.bone('tail', (0, 1.38, -0.68), 'body')
+    trunk = [(z, (top + belly) / 2, w, (top - belly) / 2) for z, top, belly, w in (MULE_TRUNK[0:9:2] + MULE_TRUNK[-1:] if far else MULE_TRUNK)]
+
+    def trunk_colour(p):
+        # Dark spine, brown flanks, pale underside.
+        z, yc, _, ry = min(trunk, key=lambda r: abs(r[0] - p[2]))
+        t = (yc - p[1]) / ry
+        return F.mixc(F.mixc(coat, dark, 0.35 * sm(-0.50, -0.95, t)), light, 0.80 * sm(0.55, 0.95, t))
+    a.emit(loft(trunk, 5 if far else 12), coat, colour_fn=trunk_colour)
+    # Neck: a gentle crest, paler under the throat; short dark mane along the top.
+    neck = [(0, 1.28, 0.38), (0, 1.53, 0.54), (0, 1.71, 0.70), (0, 1.78, 0.77)]
+    under = lambda p: (p[1] - 1.28) * 0.62 - (p[2] - 0.38) * 0.79
+    a.tube(neck[::3] if far else neck, [0.20, 0.115] if far else [0.20, 0.158, 0.125, 0.115], coat, 'neck', n=5 if far else 10,
+           colour_fn=lambda p: F.mixc(coat, mealy, 0.6 * sm(-0.05, -0.12, under(p))))
+    if not far:
+        a.tube([(0, 1.40, 0.24), (0, 1.64, 0.41), (0, 1.80, 0.59), (0, 1.87, 0.70)], [0.034, 0.045, 0.045, 0.034], dark, 'neck', n=5)
+    # Head: deep cheek, long flat face tapering to a blunt muzzle; mealy muzzle, dark nose.
+    head_colour = lambda p: F.mixc(F.mixc(coat, mealy, 0.85 * sm(1.0, 1.2, p[2])), 0x2E2926, 0.9 * sm(1.27, 1.315, p[2]))
+    a.emit(loft(MULE_HEAD[::2] if far else MULE_HEAD, 5 if far else 10), coat, 'head', colour_fn=head_colour)
+    if not far:
+        a.egg((0, 1.645, 1.315), (0.077, 0.063, 0.052), 0x3A3330, 'head', n=8, rings=4)
+        for s in (-1, 1):
+            a.egg((s * 0.04, 1.655, 1.352), (0.019, 0.013, 0.013), 0x14110F, 'head', n=5, rings=3)
+        a.egg((0, 1.99, 0.80), (0.042, 0.05, 0.06), dark, 'head', n=6, rings=4)
+        eyes(a, 1.835, 0.93, 0.114, 0.034, 0x80633F)
+    # Ears: long, leaf-shaped, up and out, tips a little forward.
+    for s in (-1, 1):
+        root, d = (s * 0.078, 1.975, 0.72), (s * 0.4226, 0.897, 0.126)
+        if far:
+            a.fin((root, tuple(root[k] + 0.30 * d[k] for k in range(3))), 0.068, dark, 'head')
+        else:
+            mid = tuple(root[k] + 0.15 * d[k] for k in range(3))
+            a.egg(mid, (0.060, 0.15, 0.025), dark, 'head', n=8, rings=5, rot=(0.14, 0, -s * 0.44),
+                  colour_fn=lambda p: F.mixc(F.mixc(coat, dark, 0.45), dark, sm(2.02, 2.22, p[1])))
+            a.egg((mid[0], mid[1] + 0.004, mid[2] + 0.019), (0.038, 0.115, 0.008), 0xB59A86, 'head', n=6, rings=4, rot=(0.14, 0, -s * 0.44))
+    # Legs: forearm/gaskin, knee or hock, cannon, fetlock, pastern, hoof. Lower legs are darker.
+    leg_colour = lambda p: F.mixc(coat, sock, sm(0.85, 0.50, p[1]))
+    for position, z, x0, knee, kz, fz in (('front', front, 0.185, 0.52, 0.475, 0.49), ('rear', rear, 0.205, 0.56, -0.57, -0.525)):
+        rear_leg = position == 'rear'
+        for s, side in ((-1, 'l'), (1, 'r')):
+            x = s * x0
+            upper, lower = f'{position}_{side}', f'{position}_{side}_lower'
+            a.bone(upper, (x, hip, z), 'body'); a.bone(lower, (x, knee, kz), upper)
+            if far:
+                a.tube([(x * 0.6, 1.20, z), (x, knee, kz)], [0.10 if rear_leg else 0.09, 0.055], coat, upper, n=4, colour_fn=leg_colour)
+                a.tube([(x, knee, kz), (x, 0.0, fz + 0.085)], [0.046, 0.058], sock, lower, n=4)
+                continue
+            # The upper tube leans in at its top so its cap stays inside the trunk.
+            if rear_leg:
+                a.egg((s * 0.20, 1.10, -0.50), (0.10, 0.24, 0.20), coat, upper, colour_fn=trunk_colour)
+                a.tube([(x * 0.6, 1.24, -0.48), (x, 1.00, -0.50), (x, 0.78, -0.545), (x, knee + 0.02, kz + 0.005)], [0.08, 0.112, 0.088, 0.058],
+                       coat, upper, n=8, colour_fn=leg_colour)
+                a.egg((x, knee, kz - 0.008), (0.060, 0.086, 0.074), sock, lower, n=8, rings=4)
+            else:
+                a.tube([(x * 0.55, 1.28, z), (x, 1.02, z + 0.005), (x, 0.80, z + 0.018), (x, knee + 0.03, kz)], [0.075, 0.105, 0.088, 0.058],
+                       coat, upper, n=8, colour_fn=leg_colour)
+                a.egg((x, knee, kz + 0.008), (0.060, 0.066, 0.072), sock, lower, n=8, rings=4)
+            a.tube([(x, knee - 0.02, kz), (x, 0.20, fz)], [0.050, 0.043], sock, lower, n=7)
+            a.egg((x, 0.17, fz), (0.052, 0.056, 0.062), sock, lower, n=7, rings=4)
+            a.tube([(x, 0.17, fz), (x, 0.085, fz + 0.05)], [0.042, 0.048], sock, lower, n=6)
+            a.tube([(x, 0.10, fz + 0.05), (x, 0.0, fz + 0.085)], [0.054, 0.066], dark, lower, n=8)
+    # Tail: thin dock, long dark switch.
+    tail = [(0, 1.39, -0.70), (0, 1.31, -0.77), (0, 1.10, -0.83), (0, 0.90, -0.85), (0, 0.62, -0.85)]
+    if far:
+        a.tube([tail[0], tail[2], tail[4]], [0.045, 0.04, 0.055], dark, 'tail', n=4)
+    else:
+        a.tube(tail, [0.044, 0.038, 0.037, 0.04, 0.014], dark, 'tail', n=6)
+        a.egg((0, 0.68, -0.85), (0.064, 0.22, 0.058), dark, 'tail', n=8, rings=5)
+    quad_clips(a, mule=True)
     return a
 
 
@@ -312,7 +391,7 @@ def build(out):
                 'units': 'metres', 'forward': '+Z', 'up': '+Y', 'budgetBytes': 2000000,
                 'animals': {}, 'files': []}
     for key, metadata in SPECIES.items():
-        factory = quadruped if key in ('dog', 'cat', 'mule') else bird
+        factory = mule if key == 'mule' else quadruped if key in ('dog', 'cat') else bird
         near, far = factory(key), factory(key, True)
         far.key = key + '_lod'
         near.floor(); far.floor()

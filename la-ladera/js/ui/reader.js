@@ -106,23 +106,24 @@ export function createReader(ctx) {
   const hintNodes = (mode) => {
     const w = word('hint', mode);
     const line = [h('kbd', {}, 'E'), w.next, h('kbd', {}, '←'), h('kbd', {}, '→'), w.pages, h('span', { class: 'rd-esc' }, h('kbd', {}, 'Esc'), w.close)];
-    return mode === 'both' ? [...line, ' ', h('small', {}, 'next · pages · close')] : line;
+    return mode === 'both' ? [...line, ' ', h('small', { lang: 'en' }, 'next · pages · close')] : line;
   };
   /** Fill the sheet for the current page. */
   const paint = (flip) => {
     const u = S.ui, d = S.doc; if (!u || !d) return;
     const mode = lang(), v = pageView(d, S.i, mode), n = d.pages.length, last = S.i >= n - 1, kind = KINDS[d.kind];
     u.root.dataset.cover = u.paper.dataset.cover = d.cover; u.root.dataset.kind = u.paper.dataset.kind = d.kind;     // the look (css) hangs on the paper itself
+    u.root.lang = mode === 'en' ? 'en' : 'es';                                                                     // the page is English (index.html): the sheet's words and buttons are Spanish, the small English lines say lang="en"
     // replaceChildren turns a null into the TEXT 'null' (R2c-011: an English-only sheet has no Spanish block, a page may have no date): only nodes go in
     u.paper.replaceChildren(...[
-      h('p', { class: 'rd-kind' }, h('span', {}, mode === 'en' ? kind[1] : kind[0]), mode === 'both' ? [' ', h('small', {}, kind[1])] : null, d.who ? h('span', { class: 'rd-who' }, ' · ', d.who) : null),
-      h('h3', { class: 'rd-title', lang: mode === 'en' ? 'en' : 'es' }, v.title, v.titleEn ? h('small', {}, ' ', v.titleEn) : null),
+      h('p', { class: 'rd-kind' }, h('span', {}, mode === 'en' ? kind[1] : kind[0]), mode === 'both' ? [' ', h('small', { lang: 'en' }, kind[1])] : null, d.who ? h('span', { class: 'rd-who' }, ' · ', d.who) : null),
+      h('h3', { class: 'rd-title', lang: mode === 'en' ? 'en' : 'es' }, v.title, v.titleEn ? h('small', { lang: 'en' }, ' ', v.titleEn) : null),
       v.when ? h('p', { class: 'rd-when' }, v.when) : null,
       v.es ? h('div', { class: 'rd-text es', lang: 'es' }, v.es.map((t) => h('p', {}, t))) : null,
       v.en ? h('div', { class: 'rd-text en', lang: 'en' }, v.en.map((t) => h('p', {}, t))) : null,
     ].filter(Boolean));
     u.paper.scrollTop = 0;
-    u.count.replaceChildren(...(mode === 'both' ? [word('count', 'es', S.i + 1, n), ' ', h('small', {}, word('count', 'en', S.i + 1, n))] : [word('count', mode, S.i + 1, n)]));
+    u.count.replaceChildren(...(mode === 'both' ? [word('count', 'es', S.i + 1, n), ' ', h('small', { lang: 'en' }, word('count', 'en', S.i + 1, n))] : [word('count', mode, S.i + 1, n)]));
     u.dots.replaceChildren(...d.pages.map((_, k) => h('i', { class: k === S.i ? 'on' : k < S.i ? 'past' : '' })));
     u.prev.disabled = S.i <= 0;
     u.prev.replaceChildren(word('prev', mode)); u.prev.setAttribute('aria-label', word('prevAria', mode));

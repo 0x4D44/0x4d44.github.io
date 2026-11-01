@@ -35,6 +35,25 @@ export function requestLateMaterials(ctx) {
   return n;
 }
 
+/**
+ * Upload every texture the library has made (and every tiled variant of one) to the GPU now; returns how many uploads that caused. The warm-up frame uploads what has landed by then. On a slow
+ * link the textures are held until the people are in (core/matlib.js hold()) and come down WHILE that frame runs, so the last of them land after it: left alone they would be uploaded in the first
+ * frames of the game, the hitch the warm-up exists to prevent. A texture whose image has not landed (a request that failed, or one still on its way) is skipped by three (version 0).
+ * Slices of a few uploads with a yield between, so the card and the bar stay alive.
+ */
+export async function uploadTextures(ctx, slice = 6) {
+  const lib = ctx.matlib, r = ctx.renderer;
+  if (!lib?.tex || !r?.initTexture || ctx.contextLost) return 0;
+  const list = [...lib.tex.values(), ...(lib.vcache?.values() ?? [])], before = r.info.memory.textures;
+  let done = 0;
+  for (const t of list) {
+    if (!t.image || r.properties?.get(t)?.__version === t.version) continue;          // not landed (three would skip it too), or already on the GPU (the warm-up frame took it)
+    try { r.initTexture(t); } catch (e) { (ctx.errors ??= []).push({ stage: 'textures', message: 'upload: ' + String(e?.message ?? e) }); }
+    if (++done % slice === 0) await ctx.yield?.();
+  }
+  return r.info.memory.textures - before;
+}
+
 /** One tiny triangle per late material, set up as a drawer's meshes are (interiors/containers.js `meshOf`: they receive shadow and cast none); null when there are none. */
 function lateStubs(ctx, keys) {
   if (!keys.length) return null;

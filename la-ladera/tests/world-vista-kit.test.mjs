@@ -77,7 +77,7 @@ test('no far house overlaps a kit terrace, and without `taken` many would (TEETH
 test('the lit windows of both the far houses and the kit houses reach the glow registry', () => {
   const lights = kitLights(plan, planned);
   assert.equal(W.vistaKit.lights, lights.length);
-  assert.equal(glowLog.list.length, W.vista.lights + W.vistaKit.lights, 'every vista light and every kit light is in ctx.glow');
+  assert.equal(glowLog.list.filter((g) => g.src !== 'edgewall').length, W.vista.lights + W.vistaKit.lights, 'every vista light and every kit light is in ctx.glow');      // the lit windows of the rim's houses (edgewall.js) are not theirs
   assert.ok(lights.length >= planned.houses.length * 0.5 && lights.length <= planned.houses.length * 2, `${lights.length} lit windows for ${planned.houses.length} kit houses`);
   const byHouse = new Map(planned.houses.map((h) => [h.id, h]));
   for (const l of lights) {

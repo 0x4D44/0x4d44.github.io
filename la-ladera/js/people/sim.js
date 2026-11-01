@@ -17,7 +17,7 @@ import { Reactions } from './reactions.js';
 import { Classroom } from './classroom.js';
 import { Homelife } from './homelife.js';
 import { pickArrivals } from './arrival.js';
-import { blockAt } from './schedule.js';
+import { blockAt, keeperBedH } from './schedule.js';
 import { householdsOf } from '../interiors/household.js';
 import { makeRng } from '../core/rng.js';
 
@@ -159,7 +159,8 @@ export class PeopleSim {
     npc.idleVariant = r.chance(0.5) ? 'idle_a' : 'idle_b';
     const shop = !!shopLot;
     npc.riseH = (shop ? 5.8 : age === 'kid' ? 6.4 : 5.0) + r.next() * 1.3;
-    npc.bedH = (shop ? 20.3 : age === 'kid' ? 20.6 : age === 'teen' ? 22.8 : age === 'elder' ? 21.4 : 21.8) + r.next() * (shop ? 1.3 : 1.6);
+    const u = r.next();
+    npc.bedH = shop ? keeperBedH(npc, u) : (age === 'kid' ? 20.6 : age === 'teen' ? 22.8 : age === 'elder' ? 21.4 : 21.8) + u * 1.6;
     npc.mixAcc = 0;
     return npc;
   }

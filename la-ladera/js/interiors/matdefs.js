@@ -98,6 +98,9 @@ export default {
   tv_screen_a: { color: 0x1a2230, emissive: 0x6fa0ff, emissiveIntensity: 0.9, rough: 0.2, tex: false, vertexColors: false },
   tv_screen_b: { color: 0x1a2230, emissive: 0xffb070, emissiveIntensity: 0.8, rough: 0.2, tex: false, vertexColors: false },
   tv_screen_c: { color: 0x1a2230, emissive: 0x80e0a0, emissiveIntensity: 0.7, rough: 0.2, tex: false, vertexColors: false },
+  // the tube set's own pair (D28: its glass is the front of a sphere, a flat colour read as a white octagon): the same two tones, a picture of their own (interiors/anim.js makeTvScreens)
+  tv_screen_crt_a: { color: 0x141b24, emissive: 0x6fa0ff, emissiveIntensity: 0.9, rough: 0.12, tex: false, vertexColors: false },
+  tv_screen_crt_b: { color: 0x141b24, emissive: 0xffb070, emissiveIntensity: 0.8, rough: 0.12, tex: false, vertexColors: false },
   tv_off: { color: 0x0c0e12, rough: 0.12, tex: false, vertexColors: false },
   candle_flame: { color: 0xffc060, emissive: 0xffa640, emissiveIntensity: 3, tex: false, vertexColors: false },
   led_red: { color: 0xff3020, emissive: 0xff2010, emissiveIntensity: 2, tex: false, vertexColors: false },

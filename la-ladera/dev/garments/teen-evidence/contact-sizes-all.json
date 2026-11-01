@@ -1,0 +1,547 @@
+{
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "threeRevision": "180",
+  "pxPerMetre": 200,
+  "cells": [
+    {
+      "row": "T-shirt",
+      "column": "Child",
+      "id": "child_tshirt",
+      "key": "garment_child_tshirt_flat",
+      "measuredCm": [
+        50.5,
+        41.8
+      ],
+      "dataCm": [
+        50.6,
+        41.8
+      ],
+      "triangles": 96
+    },
+    {
+      "row": "T-shirt",
+      "column": "Teen, small",
+      "id": "tshirt_cream_small",
+      "key": "garment_tshirt_cream_small_flat",
+      "measuredCm": [
+        58.8,
+        48.7
+      ],
+      "dataCm": [
+        58.8,
+        48.7
+      ],
+      "triangles": 52
+    },
+    {
+      "row": "T-shirt",
+      "column": "Teen, big",
+      "id": "tshirt_cream_big",
+      "key": "garment_tshirt_cream_big_flat",
+      "measuredCm": [
+        75.6,
+        62.6
+      ],
+      "dataCm": [
+        75.6,
+        62.6
+      ],
+      "triangles": 52
+    },
+    {
+      "row": "T-shirt",
+      "column": "Adult",
+      "id": "tshirt",
+      "key": "garment_tshirt_flat",
+      "measuredCm": [
+        84.2,
+        69.7
+      ],
+      "dataCm": [
+        84.3,
+        69.7
+      ],
+      "triangles": 119
+    },
+    {
+      "row": "Shorts",
+      "column": "Child",
+      "id": "child_school_shorts",
+      "key": "garment_child_school_shorts_flat",
+      "measuredCm": [
+        31.7,
+        25.7
+      ],
+      "dataCm": [
+        31.9,
+        25.8
+      ],
+      "triangles": 108
+    },
+    {
+      "row": "Shorts",
+      "column": "Teen, small",
+      "id": "shorts_chino_small",
+      "key": "garment_shorts_chino_small_flat",
+      "measuredCm": [
+        37.1,
+        30.1
+      ],
+      "dataCm": [
+        37.1,
+        30.1
+      ],
+      "triangles": 40
+    },
+    {
+      "row": "Shorts",
+      "column": "Teen, big",
+      "id": "shorts_chino_big",
+      "key": "garment_shorts_chino_big_flat",
+      "measuredCm": [
+        47.6,
+        38.7
+      ],
+      "dataCm": [
+        47.6,
+        38.7
+      ],
+      "triangles": 40
+    },
+    {
+      "row": "Shorts",
+      "column": "Adult",
+      "id": "shorts",
+      "key": "garment_shorts_flat",
+      "measuredCm": [
+        53.2,
+        43
+      ],
+      "dataCm": [
+        53.2,
+        43
+      ],
+      "triangles": 159
+    },
+    {
+      "row": "Swim shorts",
+      "column": "Child",
+      "id": "child_swim_trunks",
+      "key": "garment_child_swim_trunks_flat",
+      "measuredCm": [
+        29.4,
+        25.7
+      ],
+      "dataCm": [
+        29.6,
+        25.8
+      ],
+      "triangles": 104
+    },
+    {
+      "row": "Swim shorts",
+      "column": "Teen, small",
+      "id": "swim_shorts_small",
+      "key": "garment_swim_shorts_small_flat",
+      "measuredCm": [
+        34.3,
+        30.1
+      ],
+      "dataCm": [
+        34.3,
+        30.1
+      ],
+      "triangles": 40
+    },
+    {
+      "row": "Swim shorts",
+      "column": "Teen, big",
+      "id": "swim_shorts_big",
+      "key": "garment_swim_shorts_big_flat",
+      "measuredCm": [
+        44.1,
+        38.7
+      ],
+      "dataCm": [
+        44.1,
+        38.7
+      ],
+      "triangles": 40
+    },
+    {
+      "row": "Swim shorts",
+      "column": "Adult",
+      "id": "swim_trunks",
+      "key": "garment_swim_trunks_flat",
+      "measuredCm": [
+        49.2,
+        42.9
+      ],
+      "dataCm": [
+        49.3,
+        42.9
+      ],
+      "triangles": 157
+    },
+    {
+      "row": "One-piece swimsuit",
+      "column": "Child",
+      "id": "child_swimsuit_onepiece",
+      "key": "garment_child_swimsuit_onepiece_flat",
+      "measuredCm": [
+        27.7,
+        45.5
+      ],
+      "dataCm": [
+        27.8,
+        45.7
+      ],
+      "triangles": 102
+    },
+    {
+      "row": "One-piece swimsuit",
+      "column": "Teen, small",
+      "id": "swim_onepiece_small",
+      "key": "garment_swim_onepiece_small_flat",
+      "measuredCm": [
+        32.3,
+        53.2
+      ],
+      "dataCm": [
+        32.3,
+        53.2
+      ],
+      "triangles": 60
+    },
+    {
+      "row": "One-piece swimsuit",
+      "column": "Teen, big",
+      "id": "swim_onepiece_big",
+      "key": "garment_swim_onepiece_big_flat",
+      "measuredCm": [
+        41.6,
+        68.4
+      ],
+      "dataCm": [
+        41.6,
+        68.4
+      ],
+      "triangles": 60
+    },
+    {
+      "row": "One-piece swimsuit",
+      "column": "Adult",
+      "id": "swimsuit_onepiece",
+      "key": "garment_swimsuit_onepiece_flat",
+      "measuredCm": [
+        46.3,
+        76
+      ],
+      "dataCm": [
+        46.4,
+        76.1
+      ],
+      "triangles": 136
+    },
+    {
+      "row": "Socks (pair)",
+      "column": "Child",
+      "id": "child_socks_pair",
+      "key": "garment_child_socks_pair_flat",
+      "measuredCm": [
+        18.5,
+        22.6
+      ],
+      "dataCm": [
+        18.6,
+        22.8
+      ],
+      "triangles": 112
+    },
+    {
+      "row": "Socks (pair)",
+      "column": "Teen, small",
+      "id": "socks_pair_small",
+      "key": "garment_socks_pair_small_flat",
+      "measuredCm": [
+        21.6,
+        26.4
+      ],
+      "dataCm": [
+        21.6,
+        26.4
+      ],
+      "triangles": 84
+    },
+    {
+      "row": "Socks (pair)",
+      "column": "Teen, big",
+      "id": "socks_pair_big",
+      "key": "garment_socks_pair_big_flat",
+      "measuredCm": [
+        27.8,
+        33.9
+      ],
+      "dataCm": [
+        27.8,
+        33.9
+      ],
+      "triangles": 84
+    },
+    {
+      "row": "Socks (pair)",
+      "column": "Adult",
+      "id": "socks_pair",
+      "key": "garment_socks_pair_flat",
+      "measuredCm": [
+        30.9,
+        37.7
+      ],
+      "dataCm": [
+        31,
+        37.9
+      ],
+      "triangles": 130
+    },
+    {
+      "row": "Cap",
+      "column": "Child",
+      "id": "child_cap",
+      "key": "garment_child_cap_flat",
+      "measuredCm": [
+        14.2,
+        19
+      ],
+      "dataCm": [
+        14.2,
+        19
+      ],
+      "triangles": 88
+    },
+    {
+      "row": "Cap",
+      "column": "Teen, small",
+      "id": "cap_small",
+      "key": "garment_cap_small_flat",
+      "measuredCm": [
+        16.5,
+        22.1
+      ],
+      "dataCm": [
+        16.5,
+        22.1
+      ],
+      "triangles": 96
+    },
+    {
+      "row": "Cap",
+      "column": "Teen, big",
+      "id": "cap_big",
+      "key": "garment_cap_big_flat",
+      "measuredCm": [
+        21.2,
+        28.5
+      ],
+      "dataCm": [
+        21.2,
+        28.5
+      ],
+      "triangles": 96
+    },
+    {
+      "row": "Cap",
+      "column": "Adult",
+      "id": "cap",
+      "key": "garment_cap_flat",
+      "measuredCm": [
+        23.6,
+        31.6
+      ],
+      "dataCm": [
+        23.6,
+        31.6
+      ],
+      "triangles": 89
+    },
+    {
+      "row": "Jeans",
+      "column": "Child",
+      "id": "child_jeans",
+      "key": "garment_child_jeans_flat",
+      "measuredCm": [
+        31.9,
+        58.1
+      ],
+      "dataCm": [
+        32,
+        58.3
+      ],
+      "triangles": 111
+    },
+    {
+      "row": "Jeans",
+      "column": "Teen, small",
+      "id": "denim_jeans_small",
+      "key": "garment_denim_jeans_small_flat",
+      "measuredCm": [
+        35.7,
+        71.4
+      ],
+      "dataCm": [
+        35.7,
+        71.4
+      ],
+      "triangles": 40
+    },
+    {
+      "row": "Jeans",
+      "column": "Teen, big",
+      "id": "denim_jeans_big",
+      "key": "garment_denim_jeans_big_flat",
+      "measuredCm": [
+        45.9,
+        91.8
+      ],
+      "dataCm": [
+        45.9,
+        91.8
+      ],
+      "triangles": 40
+    },
+    {
+      "row": "Dress",
+      "column": "Child",
+      "id": "child_dress",
+      "key": "garment_child_dress_flat",
+      "measuredCm": [
+        48.1,
+        58.3
+      ],
+      "dataCm": [
+        48.1,
+        58.3
+      ],
+      "triangles": 107
+    },
+    {
+      "row": "Dress",
+      "column": "Teen, small",
+      "id": "dress_midi_small",
+      "key": "garment_dress_midi_small_flat",
+      "measuredCm": [
+        53.2,
+        81.7
+      ],
+      "dataCm": [
+        53.2,
+        81.7
+      ],
+      "triangles": 44
+    },
+    {
+      "row": "Dress",
+      "column": "Teen, big",
+      "id": "dress_midi_big",
+      "key": "garment_dress_midi_big_flat",
+      "measuredCm": [
+        68.4,
+        105.1
+      ],
+      "dataCm": [
+        68.4,
+        105.1
+      ],
+      "triangles": 44
+    },
+    {
+      "row": "Hoodie",
+      "column": "Child",
+      "id": "child_hoodie",
+      "key": "garment_child_hoodie_flat",
+      "measuredCm": [
+        67.4,
+        53
+      ],
+      "dataCm": [
+        67.5,
+        53
+      ],
+      "triangles": 112
+    },
+    {
+      "row": "Hoodie",
+      "column": "Teen, small",
+      "id": "hoodie_small",
+      "key": "garment_hoodie_small_flat",
+      "measuredCm": [
+        78.6,
+        58.6
+      ],
+      "dataCm": [
+        78.6,
+        58.6
+      ],
+      "triangles": 72
+    },
+    {
+      "row": "Hoodie",
+      "column": "Teen, big",
+      "id": "hoodie_big",
+      "key": "garment_hoodie_big_flat",
+      "measuredCm": [
+        101,
+        75.3
+      ],
+      "dataCm": [
+        101,
+        75.3
+      ],
+      "triangles": 72
+    },
+    {
+      "row": "Shoes (pair)",
+      "column": "Child",
+      "id": "child_shoes",
+      "key": "garment_child_shoes_flat",
+      "measuredCm": [
+        16.9,
+        17.5
+      ],
+      "dataCm": [
+        17.2,
+        18
+      ],
+      "triangles": 92
+    },
+    {
+      "row": "Shoes (pair)",
+      "column": "Teen, small",
+      "id": "school_shoes_pair_small",
+      "key": "garment_school_shoes_pair_small_flat",
+      "measuredCm": [
+        16,
+        20.3
+      ],
+      "dataCm": [
+        16,
+        20.3
+      ],
+      "triangles": 80
+    },
+    {
+      "row": "Shoes (pair)",
+      "column": "Teen, big",
+      "id": "school_shoes_pair_big",
+      "key": "garment_school_shoes_pair_big_flat",
+      "measuredCm": [
+        20.6,
+        26.1
+      ],
+      "dataCm": [
+        20.6,
+        26.1
+      ],
+      "triangles": 80
+    }
+  ]
+}

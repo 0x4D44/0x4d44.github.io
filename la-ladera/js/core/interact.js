@@ -23,6 +23,8 @@
 //                  thousands of registered slots cost nothing per frame.
 //   group: 'key'   ctx.interact.unregisterGroup('key') drops all of them at once (a container closing, a building left behind).
 //
+// A shaped item's x, y, z is the THING (its centre; a seat's is its cushion), never the spot a person stands on to use it: whoever aims at an item's point must be aiming at the item (R4-205: a
+// probe that looked at a seat's old "use point", chest high in front of the chair, found 13 of 59 seats untargetable).
 // SEATS (R2a-004/-005) and DOORS. A seat is a shaped item of kind 'sit', and a shaped hit ranks `SEAT_BONUS` (0.3 m) nearer than it is, like a person: the stool
 // under a price list, the armchair behind the coffee table's pad, are not lost to the thing in front by the width of a pad. And a POINT target the aim cone
 // refuses (cos < aim) is still offered when it is within 0.7 m (a door you stand in front of, whichever way you look): not while the crosshair is ON a shaped

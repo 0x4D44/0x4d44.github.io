@@ -50,7 +50,7 @@ function install(ctx) {
     }
     if (A.tvs) {                                                                           // TV screens: shared materials, so every set in the barrio shows the same programme
       const c = ctx.matlib?.cache;
-      for (const [k, key] of [['tv_screen_a', 0], ['tv_screen_b', 1]]) {
+      for (const [k, key] of [['tv_screen_a', 0], ['tv_screen_b', 1], ['tv_screen_crt_a', 0], ['tv_screen_crt_b', 1]]) {
         const m = c?.get(k); if (!m) continue;
         const ph = A.t + key * 2.1, tone = TV_TONES[Math.floor(ph / 3.7) % TV_TONES.length][key];
         m.emissive.setHex(tone); m.emissiveIntensity = 0.85 * (0.78 + 0.32 * (0.5 + 0.5 * noise(ph * 1.7)));
@@ -114,6 +114,50 @@ export function setFan(ctx, recId, on) {
   const k = ctx.interiorAnim?.byId.get(recId); if (!k) return null;
   k.want = (on ?? !k.want) ? k.base : 0;
   return !!k.want;
+}
+
+/**
+ * The picture on the TV screens (D28: the screen was one flat emissive colour, a white octagon): a football match from the stand, painted in greys, which the screen's emissive tone
+ * (the programme's colour, driven above) tints. `crt` = the glass of a tube set, a cap of a sphere, so the picture fades to black round an ellipse and the polygon of its rim never shows;
+ * a flat panel shows a whole rectangle. The screens' UVs are planar over the glass (build.js glbParts). Browser only.
+ */
+export function paintTvPicture(crt) {
+  const W = 256, H = 192, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), grey = (v, a = 1) => `rgba(${Math.round(255 * v)},${Math.round(255 * v)},${Math.round(255 * v)},${a})`;
+  let s = crt ? 7 : 11; const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);       // (the same picture every time)
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  g.fillStyle = grey(0.42); g.fillRect(0, 0, W, H * 0.2);                                              // the stand: a crowd of specks
+  for (let i = 0; i < 380; i++) { g.fillStyle = grey(0.28 + 0.5 * rnd()); g.fillRect(rnd() * W, rnd() * H * 0.2, 2 + rnd() * 2, 2 + rnd() * 3); }
+  for (let i = 0; i < 9; i++) { g.fillStyle = grey(i % 2 ? 0.68 : 0.8); g.fillRect(0, H * (0.2 + 0.088 * i), W, H * 0.088 + 1); }       // the mown stripes of the pitch
+  g.strokeStyle = grey(0.97); g.lineWidth = 3;                                                         // its lines: halfway, the centre circle, both penalty areas
+  g.beginPath(); g.moveTo(W / 2, H * 0.2); g.lineTo(W / 2, H); g.stroke();
+  g.beginPath(); g.ellipse(W / 2, H * 0.62, W * 0.13, H * 0.2, 0, 0, Math.PI * 2); g.stroke();
+  g.strokeRect(-4, H * 0.38, W * 0.2, H * 0.52); g.strokeRect(W * 0.8, H * 0.38, W * 0.2 + 4, H * 0.52);
+  for (let i = 0; i < 9; i++) {                                                                        // players, one side dark, the other light
+    const x = W * (0.12 + 0.76 * rnd()), y = H * (0.42 + 0.5 * rnd()), light = i % 2 === 0;
+    g.fillStyle = grey(light ? 0.98 : 0.18); g.beginPath(); g.ellipse(x, y, 4, 9, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = grey(0.85); g.beginPath(); g.arc(x, y - 11, 2.4, 0, Math.PI * 2); g.fill();
+  }
+  g.fillStyle = grey(0.97); g.beginPath(); g.arc(W * 0.57, H * 0.7, 3.2, 0, Math.PI * 2); g.fill();     // the ball
+  g.fillStyle = grey(0.92); g.fillRect(W * 0.07, H * 0.07, W * 0.24, H * 0.08);                        // the scoreboard, with its two scores
+  g.fillStyle = grey(0.12); g.fillRect(W * 0.09, H * 0.095, W * 0.08, H * 0.03); g.fillRect(W * 0.2, H * 0.095, W * 0.08, H * 0.03);
+  for (let y = 0; y < H; y += 3) { g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(0, y, W, 1); }          // scanlines
+  g.save(); g.translate(W / 2, H / 2); g.scale(W / 2, H / 2); g.translate(-W / 2, -H / 2);             // the glass: bright in the middle, dark toward its rim (an ellipse as wide as the picture)
+  const gr = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, crt ? 1 : 1.4);
+  if (crt) { gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.6, 'rgba(0,0,0,0)'); gr.addColorStop(0.97, 'rgba(0,0,0,1)'); }
+  else { gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.57, 'rgba(0,0,0,0.08)'); gr.addColorStop(1, 'rgba(0,0,0,0.6)'); }
+  g.fillStyle = gr; g.fillRect(0, 0, W, H); g.restore();
+  if (!crt) { g.fillStyle = '#000'; g.fillRect(0, 0, W, 3); g.fillRect(0, H - 3, W, 3); g.fillRect(0, 0, 3, H); g.fillRect(W - 3, 0, 3, H); }
+  return cv;
+}
+
+/** Give the screens their picture: the emissive map of the two flat-panel tones and of the tube set's own two (seeds nothing new into the cache: the materials are made as the matlib makes any). */
+export function makeTvScreens(ctx) {
+  if (typeof document === 'undefined' || !ctx.matlib?.get) return null;
+  const flat = new THREE.CanvasTexture(paintTvPicture(false)), tube = new THREE.CanvasTexture(paintTvPicture(true));
+  for (const t of [flat, tube]) { t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.anisotropy = 4; }
+  for (const [k, t] of [['tv_screen_a', flat], ['tv_screen_b', flat], ['tv_screen_crt_a', tube], ['tv_screen_crt_b', tube]]) { const m = ctx.matlib.get(k); m.emissiveMap = t; m.needsUpdate = true; }
+  return { flat, tube };
 }
 
 /** The soft radial texture + material of the TV glow (browser only). Seeds `tv_glow` into the material cache. */

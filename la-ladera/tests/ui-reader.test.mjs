@@ -171,11 +171,12 @@ test('while a paper is open M, J and H do nothing; a second paper replaces the f
 
 test('language: both = Spanish with the English below; es and en alone; a change of setting repaints the open sheet', async () => {
   await open(DOC);
-  let s = await S(); assert.ok(s.es && s.en, 'both');
+  const sheetLang = () => page.eval(`document.querySelector('#panel .reader')?.getAttribute('lang')`);      // the page is English (index.html): the sheet says which language it is in, for a screen reader
+  let s = await S(); assert.ok(s.es && s.en, 'both'); assert.equal(await sheetLang(), 'es', 'both: the sheet is Spanish with the English small');
   await page.eval(`__ladera.ctx.settings.set('subLang', 'es')`); await tick();
-  s = await S(); assert.ok(s.es && s.en === null, 'es only'); assert.equal(s.ptitle, 'Diario de Camila');
+  s = await S(); assert.ok(s.es && s.en === null, 'es only'); assert.equal(s.ptitle, 'Diario de Camila'); assert.equal(await sheetLang(), 'es');
   await page.eval(`__ladera.ctx.settings.set('subLang', 'en')`); await tick();
-  s = await S(); assert.ok(s.es === null && s.en.startsWith('Today mum let me go'), 'en only'); assert.equal(s.ptitle, "Camila's diary", 'the header follows the language');
+  s = await S(); assert.ok(s.es === null && s.en.startsWith('Today mum let me go'), 'en only'); assert.equal(s.ptitle, "Camila's diary", 'the header follows the language'); assert.equal(await sheetLang(), 'en', 'en only: the sheet is English');
   assert.equal(await page.eval(`document.querySelector('#panel .rd-title').textContent`), "Camila's diary");
   await page.eval(`__ladera.ctx.settings.set('subLang', 'both')`); await tick();
   s = await S(); assert.ok(s.es && s.en); assert.match(await page.eval(`document.querySelector('#panel .rd-title').textContent`), /Diario de Camila.*Camila's diary/);

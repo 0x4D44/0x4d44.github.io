@@ -103,13 +103,23 @@ test('the street animals lie on the pavement, not in the carriageway; a fence th
     assert.ok(Math.abs(p.position.x - 40) >= 2.2, `${p.id} is in the mouth of the side street that crosses at x 40 (x ${p.position.x.toFixed(2)})`);
   }
   const f = barrio({ doors: false, squares: false, roof: false });
-  f.ph.addWalls(wallsRect(55, 1.5, 100, 0.2, 0, -1, 2.5)); f.ph.addWalls(wallsRect(55, -1.5, 100, 0.2, 0, -1, 2.5));             // a fence along both kerbs: only the strip between them is the graph's side
+  f.ph.addWalls(wallsRect(55, 1.5, 130, 0.2, 0, -1, 2.5)); f.ph.addWalls(wallsRect(55, -1.5, 130, 0.2, 0, -1, 2.5));             // a fence along both kerbs, the whole 110 m of the street and a little over (it was 100 m: the far dogs of the second ten stood past its end): only the strip between them is the graph's side
   const placed = plan(f); assert.equal(placed.length, ROLES.length);
   for (const p of placed.filter((q) => !q.meta.caged)) {                                                                              // (a cage on its stand does not walk)
     const n = f.world.nav.nodes[p.node];
     assert.ok(n && !f.ph.segmentBlocked(p.position.x, p.position.z, n.x, n.z, p.position.y, 0.8), `${p.id} is cut off from the graph by the fence`);
     assert.ok(Math.abs(p.position.z) < 1.4, `${p.id} is on the far side of the fence`);
   }
+});
+
+test('the barrio keeps twenty animals, and the second ten are out in the barrio, not bunched at the arrival (R3: ten in a barrio of a hundred houses were too few) (TEETH: the first ten alone fall short)', () => {
+  assert.ok(ROLES.length >= 20, `${ROLES.length} roles`);
+  const placed = plan(barrio()), index = (p) => +p.id.split(':')[2], farOf = (list) => list.filter((p) => Math.hypot(p.position.x, p.position.z) >= 60);
+  assert.equal(placed.length, ROLES.length);
+  assert.ok(farOf(placed).length >= 6, `${farOf(placed).length} of ${placed.length} animals are 60 m or more from the arrival`);
+  assert.ok(farOf(placed.filter((p) => index(p) < 10)).length < 6, 'TEETH: the first ten alone put fewer than six that far out');
+  const kinds = new Set(placed.filter((p) => index(p) >= 10).map((p) => p.key));
+  assert.ok(['dog', 'cat', 'hen', 'pigeon', 'parrot_caged', 'canary_caged'].every((k) => kinds.has(k)), 'the second ten are dogs, cats, hens, pigeons and both cages: ' + [...kinds]);
 });
 
 test('a short street holds only as many animals as fit, never two closer than 4 m', () => {
@@ -139,7 +149,7 @@ test('the same barrio and seed give the same animals, and the placement draws fr
   const f = barrio(), seed = f.ctx.rng.s; plan(f); assert.equal(f.ctx.rng.s, seed, 'placement must not draw from the world\'s stream');
 });
 
-test('a barrio without doors, squares or terraces still gets its ten animals, on the street; with no ground under the graph, or no walkable graph, it gets none', () => {
+test('a barrio without doors, squares or terraces still gets all its animals, on the street; with no ground under the graph, or no walkable graph, it gets none', () => {
   const placed = plan(barrio({ doors: false, squares: false, roof: false }));
   assert.equal(placed.length, ROLES.length); assert.ok(placed.every((p) => ['street', 'alley'].includes(p.habitat)), JSON.stringify(placed.map((p) => p.habitat)));
   assert.ok(placed.every((p) => !p.fixed || p.meta.caged), 'no roof without a roof');

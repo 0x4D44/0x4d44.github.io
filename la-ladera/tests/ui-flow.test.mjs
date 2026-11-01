@@ -50,6 +50,25 @@ test('boots to the title card: enabled start button, live view behind it, no err
   assert.equal(await page.eval('__ladera.ctx.errors.length'), 0);
 });
 
+test('the page keeps Chrome from offering to translate it (Arthur: the translate bar): <html lang="en" translate="no"> and <meta name="google" content="notranslate">; the Spanish the game shows says lang="es", its English lines lang="en"', async () => {
+  const m = JSON.parse(await page.eval(`(() => {
+    const c = __ladera.ctx, u = c.people._world.ui, q = (s) => document.querySelector(s), r = {};
+    const l = (s) => q(s)?.closest('[lang]')?.getAttribute('lang') ?? null;                       // the language that applies to the element: its own lang or the nearest ancestor's
+    r.html = [document.documentElement.getAttribute('lang'), document.documentElement.getAttribute('translate'), q('meta[name="google"]')?.getAttribute('content') ?? null];
+    c.ui.subtitle({ who: 'Marta', es: 'Buenas tardes, vecino.', en: 'Good afternoon, neighbour.' }); r.subtitle = [l('#subtitle .es'), l('#subtitle .en')]; c.ui.subtitle(null);
+    c.ui.toast({ tag: 'Hallazgo', title: 'La olla', sub: 'The pot' }, 50); r.toast = [l('#toast b'), l('#toast span')];
+    u.show({ name: 'Marta', role: 'tendera' }, {}); u.setChoices([{ id: 'a', es: 'Buenas tardes.', en: 'Good afternoon.' }]); r.dialogue = [l('#dlg'), l('#dlg .es'), l('#dlg .en')]; u.hide();
+    r.cards = ['#title .card', '#pause .card', '#nogl .card', '#fatal .card', '#gl'].map(l);
+    return JSON.stringify(r); })()`));
+  assert.deepEqual(m, {
+    html: ['en', 'no', 'notranslate'],                     // <html lang translate> and the meta: the document says it is English, not to be translated, and says so to Chrome
+    subtitle: ['es', 'en'],                                // a subtitle: the Spanish line, the English line
+    toast: ['es', 'en'],                                   // a discovery toast: the Spanish title, the English line
+    dialogue: ['es', 'es', 'en'],                          // the conversation card, its answers (Spanish) and the English small under them
+    cards: ['es', 'es', 'es', 'es', 'es'],                 // the title, pause, no-WebGL and error cards, and the view (its aria-label)
+  });
+});
+
 test('the title card lists every key the game uses (Espacio, C, Esc, J, 1-4 included) and the strip wraps inside a phone screen with the start button in view', async () => {
   const kbds = await page.eval('[...document.querySelectorAll("#title .keys kbd")].map((k) => k.textContent)');
   for (const k of ['W', 'A', 'S', 'D', 'Shift', 'Espacio', 'C', 'E', '1', '2', '3', '4', 'M', 'J', 'H', 'Esc']) assert.ok(kbds.includes(k), `the key strip lists ${k}: ${kbds}`);

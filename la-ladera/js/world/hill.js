@@ -21,7 +21,7 @@ const ICO = (() => {
 })();
 
 /** A lumpy low-poly boulder (20 faces, flat bottom sunk into the ground). */
-function rock(K, x, z, r, rng, grey = 1) {
+export function rock(K, x, z, r, rng, grey = 1) {
   const b = K.b('rocks', x, z), gy = K.H(x, z);
   const sx = r * rng.range(0.9, 1.35), sy = r * rng.range(0.55, 0.95), sz = r * rng.range(0.9, 1.35), rot = rng.range(0, 6.2832), cs = Math.cos(rot), sn = Math.sin(rot);
   const base = [0.62, 0.59, 0.54].map((c) => c * grey * rng.range(0.9, 1.08));

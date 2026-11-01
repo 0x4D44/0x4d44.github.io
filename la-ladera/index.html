@@ -1,20 +1,31 @@
 <!doctype html>
-<html lang="es">
+<html lang="en" translate="no">
 <head>
 <meta charset="utf-8">
 <title>La Ladera</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="google" content="notranslate">
 <meta name="description" content="Walk a hillside barrio in first person: steep streets, stairways, alleys, courtyards, shops and homes you can enter, and neighbours who answer in Spanish.">
 <meta name="theme-color" content="#1b1410">
 <link rel="stylesheet" href="css/ladera.css">
 <script type="importmap">
 { "imports": { "three": "./vendor/three/build/three.module.min.js", "three/addons/": "./vendor/three/examples/jsm/" } }
 </script>
+<script>
+// The manifests the boot reads first are small, and reading them in a chain (the textures', the models' list, then every manifest that list names) left the connection idle for about a second
+// after the last module had landed (review R2e-001). They are asked for now, while the modules come down; js/core/matlib.js and js/core/assets.js take the answers from window.__laderaPre.
+(function () {
+  var pre = window.__laderaPre = {};
+  function get(url) { return (pre[url] = fetch(url, { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; })); }
+  get('assets/textures/manifest.json');
+  get('assets/models/manifest.json').then(function (root) { ((root && root.files) || []).forEach(function (f) { get('assets/models/' + f); }); });
+})();
+</script>
 </head>
 <body>
-<canvas id="gl" aria-label="Vista en primera persona de La Ladera. Haz clic para mirar, W A S D para caminar, E para interactuar." tabindex="-1"></canvas>
+<canvas id="gl" lang="es" aria-label="Vista en primera persona de La Ladera. Haz clic para mirar, W A S D para caminar, E para interactuar." tabindex="-1"></canvas>
 
-<div id="hud" aria-live="polite">
+<div id="hud" lang="es" aria-live="polite">
   <div id="crosshair"></div>
   <div id="prompt"></div>
   <div id="subtitle"></div>
@@ -23,11 +34,11 @@
   <button id="menubtn" class="hidden" type="button" aria-label="Menú">&#9776;</button>
 </div>
 
-<div id="title" class="overlay">
+<div id="title" class="overlay" lang="es">
   <div class="card">
-    <p class="kicker">Un paseo a pie &middot; <i>a walk on foot</i></p>
+    <p class="kicker">Un paseo a pie &middot; <i lang="en">a walk on foot</i></p>
     <h1>La Ladera</h1>
-    <p class="sub">Un barrio en la ladera &middot; <i>a hillside barrio</i></p>
+    <p class="sub">Un barrio en la ladera &middot; <i lang="en">a hillside barrio</i></p>
     <p class="blurb">Calles empinadas, escaleras, callejones y patios. Todas las puertas se abren. Saluda a los vecinos: contestan en espa&ntilde;ol.</p>
     <button id="start" type="button" disabled>Cargando&hellip;</button>
     <div id="loadbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i></i></div>
@@ -42,9 +53,9 @@
   </div>
 </div>
 
-<div id="pause" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Pausa">
+<div id="pause" class="overlay hidden" lang="es" role="dialog" aria-modal="true" aria-label="Pausa">
   <div class="card">
-    <h2>Pausa <small>paused</small></h2>
+    <h2>Pausa <small lang="en">paused</small></h2>
     <div class="menu">
       <button type="button" id="resume">Continuar</button>
       <button type="button" data-open="map">Mapa <kbd>M</kbd></button>
@@ -63,16 +74,36 @@
   </div>
 </div>
 
-<div id="nogl" class="overlay hidden" role="alert">
+<div id="nogl" class="overlay hidden" lang="es" role="alert">
   <div class="card">
     <h2>No se pudo iniciar WebGL</h2>
     <p>La Ladera necesita gr&aacute;ficos 3D (WebGL 2) y tu navegador no los pudo activar. Prueba con una versi&oacute;n reciente de Chrome, Edge o Firefox y activa la aceleraci&oacute;n por hardware en sus ajustes.</p>
-    <p class="en"><i>La Ladera needs WebGL 2 and your browser could not start it. Try a recent Chrome, Edge or Firefox and turn on hardware acceleration in its settings.</i></p>
+    <p class="en" lang="en"><i>La Ladera needs WebGL 2 and your browser could not start it. Try a recent Chrome, Edge or Firefox and turn on hardware acceleration in its settings.</i></p>
   </div>
 </div>
 
-<div id="fatal" class="overlay hidden"><div class="card"><h2>Algo sali&oacute; mal <small>something went wrong</small></h2><pre></pre></div></div>
+<div id="fatal" class="overlay hidden" lang="es"><div class="card"><h2>Algo sali&oacute; mal <small lang="en">something went wrong</small></h2><pre></pre></div></div>
 
+<script>
+// The bar moves as soon as bytes arrive. The ~200 module files are the first 6-8 s of a boot at 8 Mbit/s and 120 ms, and js/main.js cannot run before the last of them: the bar stood at 0
+// all that time (review R2e-001). This counts the module files that have come in and fills the 'load' stage's share of the bar (MAX, in %: js/core/bootbar.js STAGES); main.js takes over from there
+// and the bar never goes back (tests/engine-bootbar.test.mjs).
+(function () {
+  var bar = document.getElementById('loadbar'), fill = bar && bar.firstElementChild;
+  if (!fill || !window.PerformanceObserver) return;
+  var FILES = 200, MAX = 8, n = 0;
+  try {
+    var obs = new PerformanceObserver(function (list) {
+      if (window.__ladera && window.__ladera.ctx) { obs.disconnect(); return; }               // main.js is running: the bar is its own from here
+      list.getEntries().forEach(function (e) { if (/\.m?js(\?|$)/.test(e.name)) n++; });
+      var pct = Math.round(MAX * Math.min(1, n / FILES) * 10) / 10;
+      if (pct <= (parseFloat(fill.style.width) || 0)) return;
+      fill.style.width = pct + '%'; bar.setAttribute('aria-valuenow', String(Math.floor(pct)));
+    });
+    obs.observe({ type: 'resource', buffered: true });
+  } catch (e) { /* an old browser: the bar waits for main.js, as it always did */ }
+})();
+</script>
 <script type="module" src="js/main.js"></script>
 <script defer src="/almanac-back.js"></script>
 </body>

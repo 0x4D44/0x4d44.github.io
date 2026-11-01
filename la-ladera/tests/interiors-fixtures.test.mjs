@@ -220,8 +220,8 @@ function census(bps) {
       if (kind === 'unfinished' && (L.room.outdoor || L.room.floor > 0)) continue;          // the building site is furnished with cement sacks on purpose
       const t = L.room.type;
       if (t === 'bathroom') {
-        if (!has(L, /^toilet$/)) note('wc', bp, rid, L);
-        if (!has(L, /^basin_/)) note('basin', bp, rid, L);
+        if (L.room.tag !== 'wash' && !has(L, /^toilet$/)) note('wc', bp, rid, L);          // a school's lavatory block (R4-204): the toilets are in its cubicles (tag 'wc'), the basins in its passage (tag 'wash'); interiors-school.test.mjs holds each half to account
+        if (L.room.tag !== 'wc' && !has(L, /^basin_/)) note('basin', bp, rid, L);
         if (kind !== 'school') {                                                              // a school's lavatory has no shower (interiors-school.test.mjs asserts the inverse: toilets, basins, a mirror, no shower)
           if (!has(L, SHOWER)) note('shower', bp, rid, L); else if (!has(L, /^shower_head_electric$/)) note('showerhead', bp, rid, L);
         }

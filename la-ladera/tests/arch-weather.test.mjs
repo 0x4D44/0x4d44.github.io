@@ -143,11 +143,13 @@ test('weathering follows the seed of the lot: one id always wears the same marks
 });
 
 // ---- the atlas ------------------------------------------------------------------------------------------------------------------------------------
+/** What `createImageData(w, h)` gives (a painter that writes pixels, like the peeling one, fills this and hands it to `putImageData`, which the recording stand-ins log). */
+const imageData = (w, h) => ({ width: w, height: h, data: new Uint8ClampedArray(w * h * 4) });
 /** A recording stand-in for the 2D context: every call is a no-op that is logged, except what `bad(method, args)` says should throw. Returns { g, log }. */
 function fakeG(bad = () => false) {
   const log = [];
   const g = new Proxy({}, {
-    get: (_, k) => (k === 'measureText' ? () => ({ width: 100 }) : k === 'createLinearGradient' || k === 'createRadialGradient' ? () => ({ addColorStop() {} })
+    get: (_, k) => (k === 'measureText' ? () => ({ width: 100 }) : k === 'createLinearGradient' || k === 'createRadialGradient' ? () => ({ addColorStop() {} }) : k === 'createImageData' ? imageData : k === 'getTransform' ? () => ({ e: 0, f: 0 })
       : (...a) => { log.push([k, a]); if (bad(k, a)) throw new Error('boom'); }),
     set: () => true,
   });
@@ -180,7 +182,7 @@ test('the decal atlas paints every item (each painter draws something) at its ow
     assert.ok(a.x1 + 2 <= b.x0 || b.x1 + 2 <= a.x0 || a.y1 + 2 <= b.y0 || b.y1 + 2 <= a.y0, `${want[i]} touches ${want[j]}`);
   }
   // each painter ran inside its own clip and drew: split the log at the clip that the atlas itself sets (`rect` then `clip` then `translate`; a painter may clip to its own shapes)
-  const draws = new Set(['fill', 'stroke', 'fillRect', 'fillText', 'strokeText']), per = [];
+  const draws = new Set(['fill', 'stroke', 'fillRect', 'fillText', 'strokeText', 'putImageData']), per = [];
   log.forEach(([m], k) => { if (m === 'clip' && log[k - 1]?.[0] === 'rect' && log[k + 1]?.[0] === 'translate') per.push(0); else if (draws.has(m) && per.length) per[per.length - 1]++; });
   assert.equal(per.length, want.length, 'one clip a painter');
   assert.ok(per.every((n) => n > 0), `a painter drew nothing: ${per.map((n, i) => (n ? '' : want.slice().sort((a, b) => ITEMS[b.split(':')[0]].h - ITEMS[a.split(':')[0]].h)[i])).filter(Boolean)}`);
@@ -275,7 +277,7 @@ test('bills: no blank poster anywhere: every design is printed with lettering or
 function recG() {
   const log = [], sets = [], stops = [];
   const g = new Proxy({}, {
-    get: (_, k) => (k === 'measureText' ? () => ({ width: 100 }) : k === 'createLinearGradient' || k === 'createRadialGradient' ? () => ({ addColorStop: (_o, c) => stops.push(c) }) : (...a) => { log.push([k, a]); }),
+    get: (_, k) => (k === 'measureText' ? () => ({ width: 100 }) : k === 'createLinearGradient' || k === 'createRadialGradient' ? () => ({ addColorStop: (_o, c) => stops.push(c) }) : k === 'createImageData' ? imageData : k === 'getTransform' ? () => ({ e: 0, f: 0 }) : (...a) => { log.push([k, a]); }),
     set: (_, k, v) => { sets.push([k, v]); return true; },
   });
   return { g, log, sets, stops };
@@ -307,15 +309,36 @@ test('no stickers: damp is only ever darkening (no pale line or speck anywhere i
   assert.deepEqual(problems, []);
 });
 
-test('no stickers: peeling shows an old coat in a second colour, and the bare ground in a third, inside a dark rim, with chips beside it', () => {
+/** The picture a painter handed to `putImageData` (one is expected): { width, height, data } or null. */
+const pictureOf = (L) => { const put = L.log.filter(([m]) => m === 'putImageData'); return put.length === 1 ? put[0][1][0] : null; };
+
+test('no stickers (R1-D22): peeling is torn out of noise, never drawn: no outline, no colour of its own, no pale fleck, the wall comes through the old coat, and the edge is ragged, not round', () => {
   const problems = [];
   for (let i = 0; i < ITEMS.peel.n; i++) {
-    const L = runPainter('peel', i), fills = L.sets.filter(([k, v]) => k === 'fillStyle' && typeof v === 'string' && /^rgba?\(/.test(v)).map(([, v]) => v);
-    const solids = new Set(fills.filter((c) => rgbaOf(c).a >= 0.9).map((c) => { const q = rgbaOf(c); return `${q.r},${q.g},${q.b}`; }));
-    if (solids.size < 2) problems.push(`peel:${i} paints ${solids.size} opaque colours, want the old coat and the bare ground`);
-    const rims = L.sets.filter(([k, v]) => k === 'strokeStyle' && typeof v === 'string' && rgbaOf(v) && rgbaOf(v).r < 80 && rgbaOf(v).a >= 0.15).length;
-    if (rims < 20) problems.push(`peel:${i} has ${rims} dark rim segments`);
-    if (L.log.filter(([m]) => m === 'clip').length < 2) problems.push(`peel:${i} does not layer (clip to the hole, clip to the bare ground)`);
+    const L = runPainter('peel', i), pic = pictureOf(L);
+    if (!pic) { problems.push(`peel:${i} does not write one picture`); continue; }
+    const strokes = L.sets.filter(([k, v]) => k === 'strokeStyle' && typeof v === 'string').length;
+    if (strokes) problems.push(`peel:${i} strokes ${strokes} coloured lines: an outline (only the runs of water, which are gradients, may be stroked)`);
+    const { width: w, height: h, data } = pic, mask = new Uint8Array(w * h);
+    let firm = 0, thin = 0, solid = 0, tinted = 0, pale = 0;
+    for (let k = 0; k < w * h; k++) {
+      const a = data[4 * k + 3] / 255, r = data[4 * k], g = data[4 * k + 1], b = data[4 * k + 2];
+      if (a < 0.2) continue;
+      mask[k] = 1; firm++;
+      if (a <= 0.75) thin++;
+      if (a >= 0.9) solid++;
+      if (Math.max(r, g, b) - Math.min(r, g, b) > 60) tinted++;                       // a colour of its own: yellow, green, blue, pink (a sticker on any wall that is not that colour)
+      if (a >= 0.3 && Math.min(r, g, b) >= 200) pale++;                               // a pale rim or fleck
+    }
+    if (firm < 0.1 * w * h) problems.push(`peel:${i} marks only ${firm} of its ${w * h} pixels`);
+    if (tinted) problems.push(`peel:${i}: ${tinted} pixels with a colour of their own`);
+    if (pale) problems.push(`peel:${i}: ${pale} pale pixels`);
+    if (thin < 0.4 * firm) problems.push(`peel:${i}: only ${(100 * thin / firm).toFixed(0)}% of it lets the wall through (an old coat a third to a half as strong as paint is most of it)`);
+    if (solid > 0.3 * firm) problems.push(`peel:${i}: ${(100 * solid / firm).toFixed(0)}% of it is opaque`);
+    let edges = 0;                                                                     // unit edges between the marked and the unmarked, over the circumference of a circle of the same area: a clean disc scores 1.3, a torn patch 2.2 and more
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (mask[y * w + x]) edges += (x === 0 || !mask[y * w + x - 1]) + (x === w - 1 || !mask[y * w + x + 1]) + (y === 0 || !mask[(y - 1) * w + x]) + (y === h - 1 || !mask[(y + 1) * w + x]);
+    const torn = edges / (2 * Math.sqrt(Math.PI * firm));
+    if (torn < 2.2) problems.push(`peel:${i}: an edge scoring ${torn.toFixed(2)}, want a torn one (2.2 and more; a clean disc scores 1.3)`);
   }
   assert.deepEqual(problems, []);
 });

@@ -1226,3 +1226,54 @@ export function drawStandin(b, rec, c) {
   (STANDINS[c.arch] ?? generic)(P, c, tintFor(c, rec.tint), rec);
   return P.n;
 }
+
+// ------------------------------------------------------------------ add-ons: what hangs on a LIBRARY model that carries none of it
+/** The library's rail of hooks (meat_hooks, measured on the model: seven hooks, the lowest point of each at 0.385 over its base) is a bare chrome rail; the butcher's cuts hang from it as stand-in boxes
+ *  and ellipsoids, none deeper than the 0.1 m of the rail, so nothing reaches into the wall behind (R4-203: bare meat hooks in L04 and L58). */
+const HOOK_X = [-0.8, -0.535, -0.265, 0, 0.265, 0.535, 0.8], HOOK_TIP = 0.385, CORD = 0xd8c9a4, CUTS = ['chicken', 'sausages', 'ham', 'ribs', 'chicken', 'bacon', 'ham'];
+const CUT = {
+  chicken: (P, x, top, u) => {                                                      // plucked, hung by the feet
+    const skin = mix(0xe6c490, 0xf1dcb4, u);
+    for (const s of [-1, 1]) P.flat(x + s * 0.022, top - 0.075, 0, 0.012, 0.075, 0.012, 0xd9a86a);
+    P.sphere(FLAT, x, top - 0.165, 0, 0.062, 0.088, 0.045, skin, 6);
+    for (const s of [-1, 1]) P.sphere(FLAT, x + s * 0.058, top - 0.15, 0, 0.022, 0.04, 0.02, mul(skin, 0.94), 5);
+    P.cyl(FLAT, x, top - 0.31, 0, 0.012, 0.055, 5, 0xd9a07a);
+  },
+  sausages: (P, x, top, u) => {                                                     // a string of links
+    const red = mix(0x93362c, 0xa8473a, u);
+    P.flat(x, top - 0.06, 0, 0.006, 0.06, 0.006, CORD);
+    for (let i = 0; i < 4; i++) P.cyl(FLAT, x + (i % 2 ? 0.014 : -0.014), top - 0.06 - (i + 1) * 0.075, 0, 0.022, 0.07, 6, mul(red, i % 2 ? 1 : 0.9));
+  },
+  ham: (P, x, top, u) => {                                                          // a cured leg: the hock bone in the hook, the fat cap over the meat
+    const rind = mix(0xa9503f, 0xc0654f, u);
+    P.flat(x, top - 0.1, 0, 0.012, 0.1, 0.012, 0xeee6d2);
+    P.sphere(FLAT, x, top - 0.25, 0, 0.075, 0.115, 0.05, rind, 7);
+    P.sphere(FLAT, x, top - 0.15, 0, 0.052, 0.03, 0.04, 0xeadfc8, 6);
+  },
+  ribs: (P, x, top, u) => {                                                         // a slab of ribs
+    P.flat(x, top - 0.06, 0, 0.006, 0.06, 0.006, CORD);
+    P.flat(x, top - 0.36, -0.005, 0.16, 0.3, 0.03, mix(0xa63d37, 0xb94c42, u));
+    for (let i = 0; i < 4; i++) P.flat(x - 0.054 + i * 0.036, top - 0.35, 0, 0.008, 0.26, 0.036, 0xeadcc0);
+  },
+  bacon: (P, x, top, u) => {                                                        // two strips with their fat
+    const lean = mix(0xc4605a, 0xd0706a, u);
+    P.flat(x, top - 0.06, 0, 0.006, 0.06, 0.006, CORD);
+    for (const s of [-1, 1]) { P.flat(x + s * 0.034, top - 0.32, 0, 0.05, 0.26, 0.012, lean); P.flat(x + s * 0.034, top - 0.32, 0, 0.012, 0.26, 0.0135, 0xf0e4d0); }
+  },
+};
+export const ADDONS = {
+  meat_hooks: (P, c) => {
+    const k = P.W / c.size[0];                                                      // a rail stretched to a wall (drawGlb scales it) takes its hooks with it
+    HOOK_X.forEach((hx, j) => {
+      if (u01(P.id, 70 + j) < 0.14) return;                                         // an empty hook now and then
+      CUT[pick(CUTS, P.id, 80 + j)](P, hx * k, HOOK_TIP + 0.01, u01(P.id, 90 + j));
+    });
+  },
+};
+/** Draw what hangs on a library model of this record (build.js, after drawGlb), or nothing. Returns the number of primitives drawn. */
+export function drawAddon(b, rec, c) {
+  const f = ADDONS[rec.name]; if (!f) return 0;
+  const P = new Pen(b, rec, c);
+  f(P, c, rec);
+  return P.n;
+}

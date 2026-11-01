@@ -11,6 +11,17 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-01 - core.autocrlf=true makes every checkout and git archive hold text as CRLF: pin text files by those bytes (la-ladera/assets/models/manifest.people.json: people_meta.json)
+  A hand-normalised LF working file hashes differently from the blob a clean export holds, so a re-pin made from it passed in the worktree and failed the decoded-asset gate on the frozen export.
+  Hash and pin what `git archive` writes (CRLF here), and check the pin on an export. A patch authored on a CRLF tree needs `git apply --ignore-whitespace` and then leaves mixed endings: strip the stray CRs.
+
+- 2026-11-01 - Page-load timeouts in the serial suite mean a loaded box, not a red test (la-ladera/tests/chrome.mjs:Page.goto "document.readyState === complete")
+  With another project running browser end-to-end tests, 99 of 1,493 tests failed on that one wait, in 14 files. Rerun just those files serially on a quiet box before reading anything into them; kill a test child that has hung for tens of minutes.
+
+- 2026-11-01 - A fixed-band pixel count is sensitive to every tall object placed in view (la-ladera/tests/glow.test.mjs, la-ladera/js/world/pockets.js, flora.js)
+  The far-city lights test counts lit pixels in one band: a garden tree and two rim palms cost it 2,993 against 3,000. Flora species are rolled by placement count, so moving one tree re-rolls the later ones.
+  Bisect with the patch pieces reverted one at a time, and fix the occluder; never lower the threshold.
+
 - 2026-11-01 - A stability assist can steer against the driver: audit core/physics.mjs counter-steer and yaw governor first
   Held key at 60 km/h asked for 13.8 deg of lock and the wheels sat at 1.7 deg: counter-steer fired on normal 5-15 deg gravel slip
   and the yaw governor nulled the rest. Two reviewers found it independently; more grip would not have. Gate assists on real overrotation,

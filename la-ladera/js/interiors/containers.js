@@ -21,10 +21,13 @@ import { standSpots } from './reach.js';
 import { Pen, tintFor } from './standins.js';
 import { makeContents, drawContent, examineLine, readDoc, findInfo, planBuilding, householdOf, TOTALS } from './contents.js';
 import { inspectParts } from './inspect.js';
+import { FINDS } from './finds.js';
+import { makeGlints, pulseGlints, GLINT } from './glint.js';
+import { createHoldUp } from './holdup.js';
 
 export const DUR = 0.3, DOOR_ANGLE = (100 * Math.PI) / 180, LID_ANGLE = (82 * Math.PI) / 180;   // a chest stands against a wall and its lid hinges at the back: past 90 degrees the lid is IN the wall (R4-112: at 105 it was 12 cm in)
 export const ACTIVATE = 10, DEACTIVATE = 16, SCAN = 0.25;       // metres from a building's nearest front; seconds between scans
-const RADIUS = 2.8;
+const RADIUS = 2.8, FIND_BONUS = 0.12;
 /** A slot's target is its front inflated by PAD on every side and reaching SLAB_OUT in front of the front plane (tests/interiors-containers.test.mjs reads both: what stands behind a neighbour's slab is offered as the neighbour). */
 export const PAD = 0.025, SLAB_OUT = 0.04;
 const Y = new THREE.Vector3(0, 1, 0);
@@ -36,13 +39,14 @@ const mulc = (hex, k) => (hex == null ? undefined : ((Math.min(255, ((hex >> 16)
 export function installContainers(ctx) {
   if (ctx.containers) return ctx.containers;
   const C = ctx.containers = {
-    ctx, slots: new Map(), byBuilding: new Map(), pending: new Map(), anim: new Set(), opened: 0, targets: 0, acc: 0, activations: 0,
+    ctx, slots: new Map(), byBuilding: new Map(), pending: new Map(), anim: new Set(), glintSlots: new Set(), clock: 0, opened: 0, targets: 0, acc: 0, activations: 0,
     open: (id) => openSlot(C, C.slots.get(id)), close: (id, instant) => closeSlot(C, C.slots.get(id), instant), toggle: (id) => toggleSlot(C, C.slots.get(id)),
     closeBuilding: (bid, instant = true) => closeBuilding(C, bid, instant), step: (dt) => step(C, dt),
     activate: (bid) => activate(C, C.pending.get(bid)), deactivate: (bid) => deactivate(C, C.pending.get(bid)), scan: () => scan(C),
     openSlots: () => [...C.slots.values()].filter((s) => s.state !== 'closed'),
   };
   ctx.collection ??= makeCollection();
+  ctx.holdup ??= createHoldUp(ctx);                                                      // E on a find holds it up to the eyes (holdup.js); nothing is made until the first one
   ctx.addSystem?.('interiors-containers', (dt) => step(C, dt), 36);
   ctx.events?.on?.('player:exit', (e) => closeBuilding(C, e?.buildingId, true));
   return C;
@@ -87,8 +91,8 @@ function deactivate(C, e) {
   for (const S of list) {
     if (S.target) C.targets--;
     for (const lf of S.leaves) if (lf.ghost) { lf.ghost.group.removeFromParent(); lf.ghost.group.traverse((o) => o.geometry?.dispose?.()); }
-    if (S.contentGroup && S.slot.kind !== 'drawer') { S.contentGroup.removeFromParent(); S.contentGroup.traverse((o) => o.geometry?.dispose?.()); }
-    C.slots.delete(S.id); C.anim.delete(S);
+    if (S.contentGroup && S.slot.kind !== 'drawer') { S.contentGroup.removeFromParent(); S.contentGroup.traverse((o) => { if (!o.isSprite) o.geometry?.dispose?.(); }); }       // (every sprite shares three's one quad: the glints)
+    C.slots.delete(S.id); C.anim.delete(S); C.glintSlots.delete(S);
   }
   C.byBuilding.delete(e.bp.id); e.active = false;
   return true;
@@ -134,6 +138,11 @@ export function registerFronts(ctx, bp, group, log) {
   const made = list.length;
   for (let i = list.length - 1; i >= 0; i--) if (!list[i].reachable) { C.slots.delete(list[i].id); list.splice(i, 1); }
   list.decor = made - list.length;
+  // R2e-002: the lockers of one classroom held the same lunchbox, bottle and coat. The slots of one pool in one room take a rank among their neighbours (the plan's order, which is stable),
+  // and makeContents leans each of them toward a different share of the pool's things
+  const sibs = new Map();
+  for (const S of list) { const key = `${S.rec.room}|${S.slot.pool}`; (sibs.get(key) ?? sibs.set(key, []).get(key)).push(S); }
+  for (const [key, g] of sibs) g.forEach((S, k) => { S.sib = { k, n: g.length, key }; });
   C.byBuilding.set(bp.id, list);
   planBuilding(ctx, bp, list);                                                       // which paper and which find sit in which slot (pinned now, drawn on the first open)
   for (const S of list) registerSlotTarget(C, S, list);
@@ -283,6 +292,7 @@ function emit(C, type, S) {
 /** Advances the slots that are moving (the set is empty almost all the time). */
 function step(C, dt) {
   C.acc += dt; if (C.acc >= SCAN) { C.acc = 0; scan(C); }
+  if (C.glintSlots.size) { C.clock += dt; for (const S of C.glintSlots) if (S.state !== 'closed') pulseGlints(S.glints, C.clock); }
   for (const S of C.anim) {
     S.t += (S.want ? 1 : -1) * dt / DUR;
     if (S.want && S.t >= 1) { S.t = 1; S.state = 'open'; C.anim.delete(S); apply(S); registerContentTargets(C, S); }
@@ -339,7 +349,9 @@ function registerContentTargets(C, S) {
     const [x, y, z] = worldPoint(S, o.x, o.y + o.h / 2, o.z + dz), hit = S.objHits[k];
     let said = null;                                                                       // a find you have already picked up tells you its name on the prompt
     S.targets.push(ctx.interact.register({
-      id: `cont:${S.id}:${k}`, kind: 'object', x, y, z, radius: RADIUS, building: S.bid, group: `cont:${S.id}`, lead: D, pri: 2,
+      // `firm` (R4-208, R4-206): a lamp's switch, a door or a neighbour's point nearer than the thing and near the crosshair never takes the aim from a thing that is under it (a coin in a nightstand
+      // cupboard was lost to the lamp on the nightstand); `bonus` ranks a find as if it were that much nearer, so a neighbour a hand's breadth in front does not hide it
+      id: `cont:${S.id}:${k}`, kind: 'object', x, y, z, radius: RADIUS, building: S.bid, group: `cont:${S.id}`, lead: D, pri: 2, firm: true, ...(o.find ? { bonus: FIND_BONUS } : {}),
       // the kernel's sweep stops `lead` short of the thing ALONG THE RAY, so a steep look down at a paper on a cupboard floor shortens the lead on the floor by cos(pitch) and the sweep
       // ends inside the cupboard's own outline (the stand's flat papers were offered from no spot at all): `lead` is the carcass depth ON THE FLOOR, so the hit sets it for this ray
       enabled: (c) => S.state === 'open' && !readerBusy(c), hit: (c, it, eye, dir) => { const t = hit(c, it, eye, dir); if (t >= 0) it.lead = floorLead(D, dir); return t; },
@@ -377,6 +389,13 @@ function useObject(C, S, o, hh, ctx = C.ctx) {
   if (disc?.mark) disc.mark(d);
   else if (disc && !disc.found.has(d.id)) { disc.items.set(d.id, d); disc.found.add(d.id); ctx.events?.emit?.('discover', d); }
   if (!S.foundEmitted) { S.foundEmitted = true; ctx.events?.emit?.('find', { id: f.id, name: f.es, en: f.en, kind: f.kind, collection: f.collection, rarity: f.rarity, building: S.bid, x, y, z }); }
+  // (R4-206) and the find is picked up and held to the eyes, large and turning, until Esc puts it back (holdup.js). Only a find with a model of the library is held: the rest keep the glint and the toast.
+  // The HUD, and the toast with it, is hidden while it is held, so the caption says what the toast says: the shelf with its count, and the name with the place it was found.
+  const n = col.counts().byCollection[f.collection], m = FINDS.reduce((k, x) => k + (x.collection === f.collectionId ? 1 : 0), 0), has = n != null && m > 0;
+  ctx.holdup?.open?.({
+    id: f.id, name: { es: d.name, en: f.en }, react: f.react, rarity: f.rarity, model: o.model ?? null,
+    tag: [`Hallazgo · ${f.collection}${has ? ` ${n} de ${m}` : ''}`, `Find · ${f.collectionEn ?? f.collection}${has ? ` ${n} of ${m}` : ''}`],
+  });
 }
 
 // ------------------------------------------------------------------ the things inside
@@ -391,6 +410,9 @@ function buildContents(C, S) {
   for (const p of builderGeometries(mb, origin)) g.add(meshOf(ctx, p.key, p.geometry));
   if (kind === 'drawer') f0.group.add(g); else { g.position.copy(origin); S.group.obj.add(g); }
   S.contentGroup = g;
+  // (R4-206) a treasure or a tiny find glints over its top: in the group's own frame (the drawer's pivot, or the piece's origin), so the star opens, slides and hides with the things
+  S.glints = makeGlints(S.objs.filter((o) => o.glint), (o) => { const [x, y, z] = worldPoint(S, o.x, o.y + o.h + GLINT.LIFT, o.z); return [x - origin.x, y - origin.y, z - origin.z]; }, g);
+  if (S.glints.length) { C.glintSlots.add(S); pulseGlints(S.glints, C.clock); }
   // the view tests of the things inside, at their OPEN pose (a drawer's contents have slid out by `travel`)
   const dz = kind === 'drawer' ? S.slot.travel : 0;
   S.objHits = S.objs.map((o) => boxHit(S, o.x - o.w / 2 - PAD, o.x + o.w / 2 + PAD, o.y - 0.015, o.y + o.h + PAD, o.z - o.d / 2 - PAD + dz, o.z + o.d / 2 + PAD + dz));

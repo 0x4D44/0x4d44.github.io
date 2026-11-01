@@ -1,0 +1,197 @@
+{
+  "base": "017eab90a749d317f181872aa620b5facaea06f8",
+  "rows": [
+    {
+      "id": "spawn",
+      "poseMatches": true,
+      "beforeTris": 2232627,
+      "afterTris": 2124851,
+      "deltaTris": -107776,
+      "beforeCalls": 1094,
+      "afterCalls": 1112,
+      "deltaCalls": 18
+    },
+    {
+      "id": "ridge-looking-south",
+      "poseMatches": true,
+      "beforeTris": 1663235,
+      "afterTris": 1562723,
+      "deltaTris": -100512,
+      "beforeCalls": 827,
+      "afterCalls": 833,
+      "deltaCalls": 6
+    },
+    {
+      "id": "valley-looking-north",
+      "poseMatches": true,
+      "beforeTris": 1914758,
+      "afterTris": 1807394,
+      "deltaTris": -107364,
+      "beforeCalls": 902,
+      "afterCalls": 927,
+      "deltaCalls": 25
+    },
+    {
+      "id": "street-n0",
+      "poseMatches": true,
+      "beforeTris": 1914758,
+      "afterTris": 1807394,
+      "deltaTris": -107364,
+      "beforeCalls": 902,
+      "afterCalls": 927,
+      "deltaCalls": 25
+    },
+    {
+      "id": "street-n74",
+      "poseMatches": true,
+      "beforeTris": 1933915,
+      "afterTris": 1826459,
+      "deltaTris": -107456,
+      "beforeCalls": 953,
+      "afterCalls": 957,
+      "deltaCalls": 4
+    },
+    {
+      "id": "street-n148",
+      "poseMatches": true,
+      "beforeTris": 1699253,
+      "afterTris": 1640639,
+      "deltaTris": -58614,
+      "beforeCalls": 832,
+      "afterCalls": 861,
+      "deltaCalls": 29
+    },
+    {
+      "id": "street-n222",
+      "poseMatches": true,
+      "beforeTris": 1928666,
+      "afterTris": 1833026,
+      "deltaTris": -95640,
+      "beforeCalls": 820,
+      "afterCalls": 823,
+      "deltaCalls": 3
+    },
+    {
+      "id": "street-n296",
+      "poseMatches": true,
+      "beforeTris": 1768814,
+      "afterTris": 1691014,
+      "deltaTris": -77800,
+      "beforeCalls": 815,
+      "afterCalls": 836,
+      "deltaCalls": 21
+    },
+    {
+      "id": "street-n370",
+      "poseMatches": true,
+      "beforeTris": 1576880,
+      "afterTris": 1514678,
+      "deltaTris": -62202,
+      "beforeCalls": 732,
+      "afterCalls": 752,
+      "deltaCalls": 20
+    },
+    {
+      "id": "street-n444",
+      "poseMatches": true,
+      "beforeTris": 974851,
+      "afterTris": 896013,
+      "deltaTris": -78838,
+      "beforeCalls": 395,
+      "afterCalls": 378,
+      "deltaCalls": -17
+    },
+    {
+      "id": "street-n518",
+      "poseMatches": true,
+      "beforeTris": 1888821,
+      "afterTris": 1805201,
+      "deltaTris": -83620,
+      "beforeCalls": 986,
+      "afterCalls": 1016,
+      "deltaCalls": 30
+    },
+    {
+      "id": "street-n592",
+      "poseMatches": true,
+      "beforeTris": 2175669,
+      "afterTris": 2058973,
+      "deltaTris": -116696,
+      "beforeCalls": 1049,
+      "afterCalls": 1063,
+      "deltaCalls": 14
+    },
+    {
+      "id": "plaza-P1",
+      "poseMatches": true,
+      "beforeTris": 1966489,
+      "afterTris": 1871333,
+      "deltaTris": -95156,
+      "beforeCalls": 871,
+      "afterCalls": 881,
+      "deltaCalls": 10
+    },
+    {
+      "id": "plaza-P2",
+      "poseMatches": true,
+      "beforeTris": 2138233,
+      "afterTris": 2029977,
+      "deltaTris": -108256,
+      "beforeCalls": 1046,
+      "afterCalls": 1049,
+      "deltaCalls": 3
+    },
+    {
+      "id": "plaza-P4",
+      "poseMatches": true,
+      "beforeTris": 1792901,
+      "afterTris": 1698891,
+      "deltaTris": -94010,
+      "beforeCalls": 945,
+      "afterCalls": 958,
+      "deltaCalls": 13
+    },
+    {
+      "id": "landmark-mirador",
+      "poseMatches": true,
+      "beforeTris": 714927,
+      "afterTris": 672119,
+      "deltaTris": -42808,
+      "beforeCalls": 307,
+      "afterCalls": 297,
+      "deltaCalls": -10
+    }
+  ],
+  "afterBootSeconds": 44.2,
+  "afterFailures": [
+    "boot 44.2 s > 25 s",
+    "console warnings: 4"
+  ],
+  "afterConsole": {
+    "errors": 0,
+    "warnings": 4,
+    "pageErrors": 0,
+    "net404": 0
+  },
+  "afterSoak": {
+    "simSeconds": 22.5,
+    "targets": 1,
+    "legs": 22,
+    "unreachable": 0,
+    "stuck": [],
+    "nan": 0,
+    "fell": 0,
+    "doorsUsed": 0,
+    "renders": 15,
+    "maxY": 2.7,
+    "minY": 0.22,
+    "console": {
+      "errors": 0,
+      "warnings": 0,
+      "net404": 0,
+      "sample": []
+    }
+  },
+  "maxAfterTriangles": 2124851,
+  "maxAfterCalls": 1112
+}

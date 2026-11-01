@@ -4,7 +4,8 @@
 //
 // Registry light: { x,y,z, color, intensity (candela), distance, kind:'ceiling'|'lamp'|'window'|'street'|'candle'|'tv', building?, room?, flicker?, on? }
 //  - street / window lights follow the night (ctx.night); ceiling / lamp / candle / tv are on at night and whenever the player is in their building
-//  - indoors only that building's lights (plus street/window spill within 12 m) are considered, same floor only (+-3.2 m), so light never leaks through slabs
+//  - indoors only that building's lights (plus street/window spill within 12 m) are considered, on the player's floor only (from 0.25 m under the feet to 3.1 m above them,
+//    or the room's height + 0.4 in a tall room), so light never leaks through slabs; the lights of the player's own room come first
 import * as THREE from 'three';
 
 const NIGHT_KINDS = new Set(['street', 'window']);
@@ -36,7 +37,12 @@ export class LightPool {
   _select() {
     const ctx = this.ctx, p = ctx.player, list = ctx.lights.list, out = this.cands; out.length = 0;
     if (!p || !list.length) return out;
-    const px = p.s.x, py = p.s.y, pz = p.s.z, bId = p.building, indoors = !!p.indoors, room = p.room;
+    const px = p.s.x, py = p.s.y, pz = p.s.z, bId = p.building, indoors = !!p.indoors, roomId = p.room?.id ?? null;
+    // This floor's band, measured up from the feet: every light of the barrio sits 0.8 to 4.6 m above the floor of its own room (ceiling lamps 2.15 and up, a table or floor
+    // lamp about 1, a tv 0.8, a candle 1), so a light under the player's floor is on the storey below (its ceiling lamp is 0.5 m under the slab) and one above 3.1 m, or above
+    // the room's own ceiling in a tall room, is on the storey above. R4-202: with the old band (-3.2 .. +5.2 m) the lamps of the storey below took six of the eight places,
+    // the room's own ceiling lamp got none, and a first-floor room stood in the dark (or in the blue of a television) while the room under it was lit.
+    const top = Math.max(3.1, (p.room?.h ?? 0) + 0.4);
     for (let i = 0; i < list.length; i++) {
       const l = list[i];
       if (l.on === false || !(l.intensity > 0)) continue;
@@ -47,8 +53,8 @@ export class LightPool {
       if (indoors) {
         const mine = l.building === bId;
         if (!mine && !(NIGHT_KINDS.has(l.kind) && d < 12)) continue;
-        if (mine && Math.abs(dy - 1.0) > 3.2 + 1.0) continue;               // other floor
-        if (mine && room && l.room === room) score -= 6;
+        if (mine && (dy < -0.25 || dy > top)) continue;                     // another floor: the slab is between, and the pool has eight places
+        if (mine && roomId && l.room === roomId) score -= 6;                // (the player's room is an object: this compared it to an id and never matched)
       } else {
         if (l.building && !NIGHT_KINDS.has(l.kind)) continue;               // house interiors: seen as lit windows, not as real lights
         if (d > (l.distance ?? 9) + 45) continue;

@@ -7,6 +7,7 @@
 // Nothing is drawn while nobody is near, so the barrio's cost does not change (at most MAX_DRAWN people indoors at once, each within LIVE_R metres of the player's building).
 // PURE (no THREE, no DOM): `PeopleSim.step` calls `update()`; the world draws whoever is not `away` and lays down the one who `lieH` says is in bed.
 import { awake, blockAt, homeActs } from './schedule.js';
+import { kneeReachM } from './seatmodel.js';
 import { isTwin, TWIN_R } from './twins.js';
 
 const EVERY = 0.25;                  // seconds between two looks at who is where
@@ -18,6 +19,9 @@ const SHOWN_DOWN = 1.2, SHOWN_UP = 4.2;   // the player in the street sees throu
 const WALK_IN = 3.5;                 // seconds after coming through the door in which somebody walks on to their place (not later: they were hidden a while)
 const RETRY = 4;                     // seconds before a person with no place is looked at again
 const STAIRS = 5;                    // seconds a person upstairs takes to come down and out once their stay is over and the player in the street has seen them go from the window
+const UPHOLSTERED = new Set(['sofa', 'armchair']);      // tags of the pieces whose body fills the footprint from the floor to the cushion (the seat anchor is 0.12 m behind their middle)
+const KNEE_CLEAR = 0.05;             // metres the knee of a sitter on one is beyond its front face (a calf hangs 5 cm behind its knee)
+const HIP_EDGE = 0.15;               // and the hip joint stays at least this far back from the front face (a child slides to the edge of the cushion, not off it)
 
 const DINING = new Set(['dining', 'kitchen']), LIVING = new Set(['living', 'dining', 'hall']), BEDS = new Set(['bedroom']);
 const NO_SIT = new Set(['terrace', 'patio', 'balcony', 'bathroom', 'shop', 'stairwell', 'landing', 'corridor', 'entry', 'backroom', 'garage']);
@@ -105,8 +109,8 @@ export class Homelife {
 
   // ---- what each does where ------------------------------------------------------------------------------------------------------------------
   /**
-   * The scenes (and their weights) of somebody indoors for `why` in a building of this kind at `hour`. A shopkeeper's night begins when the shop closes, long before bed time: until then
-   * (and from getting up until the shop opens) the household is up and about the flat upstairs like any other.
+   * The scenes (and their weights) of somebody indoors for `why` in a building of this kind at `hour`. A shopkeeper is upstairs once the shop has shut: 'home' while up and about (supper, the
+   * television) and 'sleep' from bed time (the brain's `tick` turns one into the other); from getting up until the shop opens the household is up and about the flat like any other.
    */
   actsFor(n, lot, why, hour) {
     const kind = this.w.lots?.byId?.get(lot)?.kind;
@@ -149,7 +153,7 @@ export class Homelife {
     return pickSeeded(bag, seed + ':' + kind);
   }
 
-  /** The scene for `n` in building `lot`: { lot, why, kind, spot, act, ry, sit, lie, prop } or null when the building has no place for what they would do. */
+  /** The scene for `n` in building `lot`: { lot, why, kind, spot, act, ry, sit, slide, lie, prop } or null when the building has no place for what they would do. */
   choose(n, lot, why, hour) {
     const bucket = Math.floor(hour * 2), seed = `${n.id}|${lot}|${why}|${bucket}`, bag = this.actsFor(n, lot, why, hour).slice();
     let k = 0;
@@ -165,7 +169,22 @@ export class Homelife {
   sceneOf(n, lot, why, kind, spot, seed) {
     let d = DOING[kind];
     if (kind === 'play' && n.age !== 'kid') d = { act: 'idle' };
-    return { lot, why, kind, spot, act: d.act, ry: spot.ry, sit: d.sit ? (spot.seatH ?? 0.45) : null, lie: d.lie ? (spot.seatH ?? 0.5) : null, prop: d.prop ?? null, variant: frac(seed + ':v') < 0.3 ? 1 : 0, arrived: false };
+    const sit = d.sit ? (spot.seatH ?? 0.45) : null;
+    return { lot, why, kind, spot, act: d.act, ry: spot.ry, sit, slide: sit != null ? this.slideOf(n, spot, sit) : 0, lie: d.lie ? (spot.seatH ?? 0.5) : null, prop: d.prop ?? null, variant: frac(seed + ':v') < 0.3 ? 1 : 0, arrived: false };
+  }
+
+  /**
+   * How far forward along the way the seat faces `n` sits on `spot`, m (R3-026; 0 for every seat but a sofa or an armchair). The anchor of one is 0.12 m behind the middle of the piece, and the piece
+   * fills its whole footprint up to the front face, so the knee of the sit clips (the hip joint plus `kneeReachM`: 0.15 m for a child, 0.35 to 0.4 m for an adult) came to rest 0.1 to 0.4 m inside it,
+   * and the shin hung in the cushion. The sitter slides forward until the knee is KNEE_CLEAR beyond the front face, and no further than leaves the hip joint HIP_EDGE short of it (a child ends on the
+   * edge of the cushion with the feet dangling, as a child does on a sofa). A chair, a stool, a bench or a pew is open under the seat: the shin hangs in the air, nothing to clear.
+   */
+  slideOf(n, spot, sitH) {
+    const bp = this.w.ctx.buildings?.get?.(spot.building), rec = spot.item != null ? bp?.furniture?.find((r) => r.id === spot.item) : null;
+    if (!rec?.tags?.some((t) => UPHOLSTERED.has(t)) || !bp.frame?.toWorld || !(rec.d > 0) || !n.meta?.hipHeightM) return 0;
+    const [cx, , cz] = bp.frame.toWorld(rec.x, 0, rec.z), hip = (spot.x - cx) * Math.sin(spot.ry) + (spot.z - cz) * Math.cos(spot.ry), front = rec.d / 2;      // along the facing, from the middle of the piece
+    const need = front + KNEE_CLEAR - (hip + kneeReachM(n.meta, sitH));
+    return need > 0 ? Math.min(need, Math.max(0, front - HIP_EDGE - hip)) : 0;
   }
 
   // ---- drawing and hiding --------------------------------------------------------------------------------------------------------------------
@@ -241,11 +260,11 @@ export class Homelife {
     return this.floorNear(s, sc.lie != null ? 0.9 : 0.3, sc.lie != null ? 1.5 : 1.4, reach);
   }
 
-  /** On the place: seated, lying, or at work there, until the stay is over or the player goes away. */
+  /** On the place (a sitter on a deep seat forward of the anchor by the scene's `slide`): seated, lying, or at work there, until the stay is over or the player goes away. */
   begin(n) {
     const W = this.w, sc = n.scene; if (!sc) return;
     sc.arrived = true; n.sitH = sc.sit; n.lieH = sc.lie; n.prop = sc.prop; n.talkVariant = sc.variant;
-    n.st.x = sc.spot.x; n.st.z = sc.spot.z; n.lastX = n.st.x; n.lastZ = n.st.z; n.ry = n.targetRy = sc.ry;
+    n.st.x = sc.spot.x + Math.sin(sc.ry) * (sc.slide ?? 0); n.st.z = sc.spot.z + Math.cos(sc.ry) * (sc.slide ?? 0); n.lastX = n.st.x; n.lastZ = n.st.z; n.ry = n.targetRy = sc.ry;
     n.stand(W, sc.act, 1e9, sc.ry);
   }
 

@@ -2,7 +2,8 @@
 // (not furniture records): a rod and folded cloth panels made of a few quads each, tinted with vertex colours, so every dressed window costs
 // ~60 triangles and no extra material beyond `curtain_fabric` (double sided, textured in the library) and `metal_dark` (rod).
 import { hashStr } from '../core/rng.js';
-import { sideOf } from './layout.js';
+import { sideOf, mkObb, obbDist } from './layout.js';
+import { CATALOG } from './catalog.js';
 
 const u01 = (s, i = 0) => ((hashStr(s + '#' + i) >>> 0) % 100003) / 100003;
 const pick = (arr, s, i = 0) => arr[Math.floor(u01(s, i) * arr.length) % arr.length];
@@ -22,19 +23,42 @@ function wallFrame(wall, r) {
   }
 }
 
-/** A gathered panel from u0 to u1, hanging y1 -> y0, in `nf` zig-zag folds (alternate strips tilt differently so the light breaks up). */
-function panel(b, P, u0, u1, y0, y1, d0, col, nf) {
+/** A gathered panel from u0 to u1, hanging y1 -> y0, in `nf` zig-zag folds (alternate strips tilt differently so the light breaks up). `hem(ua, ub)`, when given, is the lowest each fold may hang
+ *  (the cloth falls behind a piece of furniture, and its hem steps up where the piece begins); a fold left shorter than a hand's length is not drawn. */
+function panel(b, P, u0, u1, y0, y1, d0, col, nf, hem) {
   const du = (u1 - u0) / nf;
   for (let i = 0; i < nf; i++) {
-    const ua = u0 + i * du, ub = ua + du, odd = i % 2 === 1;
+    const ua = u0 + i * du, ub = ua + du, odd = i % 2 === 1, yl = hem ? hem(ua, ub, y0) : y0;
+    if (y1 - yl < 0.15) continue;
     const da = d0 + (odd ? 0.05 : 0), db = d0 + (odd ? 0 : 0.05);
-    b.quad('curtain_fabric', P(ua, y0, da), P(ub, y0, db), P(ub, y1, db), P(ua, y1, da), { col: mulc(col, odd ? 0.86 : 1) });
+    b.quad('curtain_fabric', P(ua, yl, da), P(ub, yl, db), P(ub, y1, db), P(ua, y1, da), { col: mulc(col, odd ? 0.86 : 1) });
   }
 }
 
-/** Dress every window of the building that belongs to a lived-in room. Returns the number of windows dressed. */
+/** (R4-207) The floor pieces of each room a curtain could hang through: footprint and top. Low clutter (a box, a pair of shoes) does not count: the hem passes over it. */
+function blockersOf(bp) {
+  const by = new Map();
+  for (const f of bp.furniture ?? []) {
+    const c = CATALOG[f.name];
+    if (!c || f.decal || f.parent || f.kind === 'wall' || f.kind === 'ceil' || c.size[1] < 0.3) continue;
+    (by.get(f.room) ?? by.set(f.room, []).get(f.room)).push({ ob: mkObb(f.x, f.z, f.w ?? c.size[0], f.d ?? c.size[2], f.ry ?? 0), top: f.y + c.size[1] });
+  }
+  return by;
+}
+/** How high the highest piece reaches that stands in the cloth's footprint (u0..u1 along the wall, the 0.14 m the folds swing in), or -Infinity. */
+function reach(list, P, u0, u1, fy) {
+  let top = -Infinity;
+  for (const k of list) {
+    if (k.top <= top) continue;
+    hit: for (let u = u0 - 0.02; u <= u1 + 0.02 + 1e-6; u += 0.04) for (const d of [0.03, 0.08, 0.13]) { const [x, , z] = P(u, fy, d); if (obbDist(k.ob, x, z) < 0.02) { top = k.top; break hit; } }
+  }
+  return top;
+}
+
+/** Dress every window of the building that belongs to a lived-in room. Returns the number of windows dressed. A curtain does not hang through the furniture that stands under it (R4-207: a floor-length curtain
+ *  ran through a dresser): where a piece stands in the cloth's way, the hem stops a hand above its top, and cloth that would be left shorter than a span of the hand is not drawn. */
 export function dressWindows(b, bp) {
-  const rooms = new Map((bp.rooms ?? []).map((r) => [r.id, r]));
+  const rooms = new Map((bp.rooms ?? []).map((r) => [r.id, r])), blockers = blockersOf(bp);
   let n = 0;
   for (const w of bp.windows ?? []) {
     const room = rooms.get(w.room);
@@ -46,8 +70,10 @@ export function dressWindows(b, bp) {
     const fy = room.y ?? 0, sill = fy + (w.y ?? 0.9), head = sill + wh, ceil = fy + (room.h ?? 2.6);
     const style = room.type === 'office' ? 'blind' : room.type === 'kitchen' ? (u01(seed, 1) < 0.6 ? 'cafe' : 'none') : (u01(seed, 1) < 0.9 ? 'drapes' : 'none');
     if (style === 'none') continue;
+    const blk = blockers.get(w.room) ?? [], hem = (u0, u1, lo) => Math.max(lo, reach(blk, P, u0, u1, fy) + 0.04);        // the lowest the cloth over u0..u1 may hang
     if (style === 'blind') {                                                                // roller blind: flat cloth + bottom bar, partly drawn
-      const col = pick(BLINDS, seed, 2), y1 = Math.min(head + 0.05, ceil - 0.08), y0 = y1 - (wh + 0.05) * (0.5 + 0.3 * u01(seed, 3));
+      const col = pick(BLINDS, seed, 2), y1 = Math.min(head + 0.05, ceil - 0.08), y0 = hem(u - ww / 2 - 0.04, u + ww / 2 + 0.04, y1 - (wh + 0.05) * (0.5 + 0.3 * u01(seed, 3)));
+      if (y1 - y0 < 0.25) continue;                                                         // (a bookcase stands in front of it: no blind)
       b.quad('curtain_fabric', P(u + ww / 2 + 0.04, y0, 0.05), P(u - ww / 2 - 0.04, y0, 0.05), P(u - ww / 2 - 0.04, y1, 0.05), P(u + ww / 2 + 0.04, y1, 0.05), { col });
       const bar = P(u, y0 + 0.01, 0.055);
       b.box('metal_dark', bar[0], bar[1], bar[2], along ? ww + 0.08 : 0.02, 0.02, along ? 0.02 : ww + 0.08, { col: 0x8a8a84 });
@@ -61,9 +87,9 @@ export function dressWindows(b, bp) {
     const closed = style === 'drapes' && u01(seed, 5) < 0.28;
     const pw = closed ? span / 2 - 0.01 : Math.max(0.3, span * 0.22);
     const nf = Math.max(4, Math.round(pw / 0.075));
-    panel(b, P, u - span / 2, u - span / 2 + pw, yLow, yTop, 0.055, col, nf);
-    panel(b, P, u + span / 2 - pw, u + span / 2, yLow, yTop, 0.055, col, nf);
-    if (style === 'cafe') panel(b, P, u - span / 2 + pw, u + span / 2 - pw, sill + 0.04, sill + 0.04 + wh * 0.3, 0.05, mulc(col, 1.04), Math.round(nf * 1.4));
+    panel(b, P, u - span / 2, u - span / 2 + pw, yLow, yTop, 0.055, col, nf, hem);        // (the hem of each fold stays above the furniture it falls behind: a wardrobe in the way leaves the fold out)
+    panel(b, P, u + span / 2 - pw, u + span / 2, yLow, yTop, 0.055, col, nf, hem);
+    if (style === 'cafe') panel(b, P, u - span / 2 + pw, u + span / 2 - pw, sill + 0.04, sill + 0.04 + wh * 0.3, 0.05, mulc(col, 1.04), Math.round(nf * 1.4), hem);
     const rc = pick([0x3a2a1c, 0x8a8478, 0x2a2a2c], seed, 6), rl = span + 0.12, rp = P(u, yTop + 0.02, 0.07);   // rod + finials
     b.box('metal_dark', rp[0], rp[1], rp[2], along ? rl : 0.025, 0.025, along ? 0.025 : rl, { col: rc });
     for (const sg of [-1, 1]) { const f = P(u + sg * (rl / 2), yTop + 0.02, 0.07); b.box('metal_dark', f[0], f[1], f[2], 0.045, 0.045, 0.045, { col: rc }); }

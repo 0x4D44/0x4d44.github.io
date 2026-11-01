@@ -56,11 +56,54 @@ test('in a big building the lights of the player\'s own room come first, then th
   const list = [];
   for (let i = 0; i < 6; i++) list.push({ x: 1 + i * 0.3, y: 2.4, z: 0, color: 0xffd9a0, intensity: CEIL, distance: 6.5, kind: 'ceiling', building: 'B1', room: 'next' });  // 1..2.5 m away, behind a wall
   for (let i = 0; i < 6; i++) list.push({ x: -3 - i * 0.3, y: 2.4, z: 0, color: 0xffd9a0, intensity: CEIL, distance: 6.5, kind: 'ceiling', building: 'B1', room: 'mine' }); // 3..4.5 m away
-  const ctx = { scene: { add() {} }, night: 0, lights: { list }, player: { s: { x: 0, y: 0, z: 0 }, indoors: true, building: 'B1', room: 'mine' } };
+  const ctx = { scene: { add() {} }, night: 0, lights: { list }, player: { s: { x: 0, y: 0, z: 0 }, indoors: true, building: 'B1', room: { id: 'mine', h: 2.62 } } };   // (the real Player's room is a Room object)
   const pool = new LightPool(ctx, 8);
   pool.update(0, true);
   const rooms = lit(pool).map((s) => s.src.room).sort();
   assert.deepEqual(rooms, ['mine', 'mine', 'mine', 'mine', 'mine', 'mine', 'next', 'next'], 'all six of the room, then the two nearest next door');
+});
+
+// R4-202: upstairs in a block of flats the room's own ceiling lamp was not lit. The lamps of the storey below hang 0.5 m under the slab, nearer the player (3-D distance) than
+// the lamp 2.2 m overhead, and they filled the pool; the 'own room first' bonus compared a Room object with an id, so it never applied.
+/** a storey is 2.8 m: lamps at floor + 2.2 (ceiling) and + 0.9 (lamp), a tv at + 0.8; `flats` flats per storey, the player in flat 0 of storey 1 (feet at 2.8) */
+function block({ flats = 4, storeys = 3 } = {}) {
+  const list = [];
+  for (let s = 0; s < storeys; s++) for (let f = 0; f < flats; f++) {
+    const x = f * 3.2, room = `B1.f${s}.r${f}`, y0 = s * 2.8;
+    list.push({ x, y: y0 + 2.2, z: 0, color: 0xffd9a0, intensity: CEIL, distance: 6.5, kind: 'ceiling', building: 'B1', room });
+    list.push({ x: x + 1, y: y0 + 0.9, z: 1, color: 0xffcf90, intensity: 2, distance: 3.8, kind: 'lamp', building: 'B1', room });
+    list.push({ x: x + 0.5, y: y0 + 0.8, z: -1, color: 0x9fb8ff, intensity: 1, distance: 3.5, kind: 'tv', building: 'B1', room });
+  }
+  const player = { s: { x: 0.6, y: 2.8, z: 0.4 }, indoors: true, building: 'B1', floor: 1, room: { id: 'B1.f1.r0', h: 2.62 } };
+  const ctx = { scene: { add() {} }, night: 0, lights: { list }, player };
+  return { ctx, pool: new LightPool(ctx, 8), player, list };
+}
+
+test('upstairs, the room\'s own ceiling lamp is lit, and no light from the storey below or above takes a place', () => {
+  const { pool, player } = block();
+  pool.update(0, true);
+  const src = lit(pool).map((s) => s.src);
+  assert.ok(src.some((l) => l.kind === 'ceiling' && l.room === 'B1.f1.r0'), `the ceiling lamp of the player's room is among the lit: ${src.map((l) => `${l.room}:${l.kind}`)}`);
+  assert.ok(src.every((l) => l.room.startsWith('B1.f1.')), `only storey 1 is lit: ${src.map((l) => l.room)}`);
+  const own = src.filter((l) => l.room === 'B1.f1.r0');
+  assert.equal(own.length, 3, 'all three lights of the room (ceiling lamp, lamp, tv) come before the neighbouring flats\'');
+  player.s.y = 0; player.floor = 0; player.room = { id: 'B1.f0.r0', h: 2.62 }; pool.update(0, true);
+  assert.ok(lit(pool).every((s) => s.src.room.startsWith('B1.f0.')), 'and on the ground floor only the ground floor\'s');
+  player.s.y = 5.6; player.floor = 2; player.room = { id: 'B1.f2.r0', h: 2.62 }; pool.update(0, true);
+  assert.ok(lit(pool).every((s) => s.src.room.startsWith('B1.f2.')), 'and on the top floor only the top floor\'s');
+});
+
+test('a tall room (a nave, 4.9 m) keeps its high lamps; a light a hand under the floor does not shine up through it', () => {
+  const list = [
+    { x: 0, y: 4.6, z: 0, color: 0xffd9a0, intensity: CEIL, distance: 8, kind: 'ceiling', building: 'B1', room: 'nave' },    // 4.6 m up in a 4.9 m nave
+    { x: 1, y: 0.8, z: 0, color: 0xffd9a0, intensity: 1, distance: 3.5, kind: 'tv', building: 'B1', room: 'nave' },
+    { x: 2, y: -0.4, z: 0, color: 0xffd9a0, intensity: CEIL, distance: 6.5, kind: 'ceiling', building: 'B1', room: 'crypt' },      // under the floor
+  ];
+  const ctx = { scene: { add() {} }, night: 0, lights: { list }, player: { s: { x: 0, y: 0, z: 0 }, indoors: true, building: 'B1', room: { id: 'nave', h: 4.9 } } };
+  const pool = new LightPool(ctx, 8); pool.update(0, true);
+  assert.deepEqual(lit(pool).map((s) => s.src.room).sort(), ['nave', 'nave']);
+  ctx.player.room = { id: 'x', h: 2.62 }; pool.update(0, true);
+  assert.deepEqual(lit(pool).map((s) => s.src.kind), ['tv'], 'in a low room the 4.6 m lamp is the next storey\'s');
 });
 
 test('a candle and a tv flicker, a ceiling light does not, and a light with no colour or range gets the defaults of its kind', () => {
@@ -93,6 +136,17 @@ test('a light on another floor of the same building does not shine through the s
   ctx.player.s.y = 6.0;                                                    // two floors up: the 6.1 m light is this floor's, the 2.4 m ones are not
   pool.update(0, true);
   assert.deepEqual(lit(pool).map((s) => s.light.position.y), [6.1]);
+});
+
+test('the ceiling light of the storey below (under the player\'s feet) takes no slot of the pool: the pool serves this floor (R4-202: the upper floors read black)', () => {
+  const { ctx, pool, list } = setup({ night: 0 });
+  list.splice(list.findIndex((l) => l.y === 6.1), 1);                                                                                      // (a building of two floors: not the 6.1 m light of the shared registry)
+  list.push({ x: 51, y: 5.2, z: 10, color: 0xffd9a0, intensity: CEIL, distance: 6.5, kind: 'ceiling', building: 'B1', room: 'B1.r5' });     // the ceiling light of the first floor, 2.8 m up
+  goInside(ctx); ctx.player.s.y = 2.8; ctx.player.room = 'B1.r5';                                                                          // standing on the first floor: the three 2.4 m lights are the ground floor's, 0.4 m under the feet
+  pool.update(0, true);
+  assert.deepEqual(lit(pool).map((s) => s.light.position.y), [5.2], 'only the light of the floor the player stands on');
+  ctx.player.s.y = 0; ctx.player.room = 'B1.r0'; pool.update(0, true);
+  assert.deepEqual(lit(pool).map((s) => s.light.position.y).sort(), [2.4, 2.4, 2.4], 'on the ground floor the ceiling lights of that floor, and not the one 5.2 m up');
 });
 
 test('a teleport from a lamp-lit street into a shop at night shows the shop at once', () => {

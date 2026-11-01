@@ -35,6 +35,16 @@ test('the patch lands in three\'s standard vertex and fragment shaders: every an
   assert.ok(!/\bif\s*\(/.test(TRI_FRAGMENT), 'a texture read inside a divergent branch would have undefined derivatives');
 });
 
+test('R1-D24: the steepness reads the triangle\'s own normal (screen derivatives of the world position) as well as the smoothed vertex normal, and a degenerate face falls back to the vertex normal', () => {
+  assert.equal(count(TRI_FRAGMENT, 'dFdx( vLadW )'), 1, 'the face normal comes from the derivatives of the world position');
+  assert.equal(count(TRI_FRAGMENT, 'dFdy( vLadW )'), 1);
+  assert.ok(/ladSteep = 1\.0 - smoothstep\( 0\.55, 0\.88, max\( abs\( ladN\.y \), ladFy \) \)/.test(TRI_FRAGMENT), 'a flat face is flat whatever its corners say: the larger of the two |y| decides');
+  assert.ok(/max\( length\( ladC \), 1\.0e-9 \)/.test(TRI_FRAGMENT), 'a zero cross product (a sliver) divides by a floor, not by 0: no NaN pixel');
+  // TEETH: the old fragment (steepness from the interpolated vertex normal alone) has none of it
+  const old = TRI_FRAGMENT.replace(/\tvec3 ladC[^\n]*\n\tfloat ladFy[^\n]*\n/, '').replace('max( abs( ladN.y ), ladFy )', 'abs( ladN.y )');
+  assert.ok(old !== TRI_FRAGMENT && !/dFdx/.test(old) && !/ladFy/.test(old), 'TEETH: the first version is the fragment without the face normal');
+});
+
 test('the uniform is the map\'s own repeat (a later change to the repeat reaches the shader) and the look uniforms still arrive', () => {
   const { m, map, shader } = patched();
   assert.equal(shader.uniforms.ladRep.value, map.repeat, 'the same Vector2, not a copy');

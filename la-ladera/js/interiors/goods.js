@@ -3,7 +3,7 @@
 import { CATALOG } from './catalog.js';
 import { GOODS_CATALOG } from './goods-catalog.js';
 import { GOODS_ASSORTMENTS, GOODS_FIXTURES } from './goods-assortments.js';
-import { hashStr } from '../core/rng.js';
+import { hashStr, makeRng } from '../core/rng.js';
 
 export const GOODS_LOD = Object.freeze({ near: 8, cull: 22 });
 const EPS = 1e-7;
@@ -70,7 +70,7 @@ export function planGoodsForFixture(fixture, shopType, obstacles = [], catalog =
   const seed = hashStr(String(fixture.id) + ':' + shopType) >>> 0, gap = spec.gap ?? 0.014;
   const limit = spec.maxItems ?? 36, angle = fixture.ry ?? 0, cs = Math.cos(angle), sn = Math.sin(angle);
   for (let si = 0; si < surfaces.length && out.length < limit; si++) {
-    const s = surfaces[si];
+    const s = surfaces[si], first = out.length, room = () => out.length < limit && out.length - first < (spec.perSurface ?? Infinity);
     if (!(s.w > 0 && s.d > 0 && s.h > 0)) continue;
     const rows = spec.rows ?? 1, rowDepth = s.d / rows, usableDepth = rowDepth - (rows > 1 ? gap : 0);
     const fits = pool.flatMap((key) => {
@@ -82,13 +82,21 @@ export function planGoodsForFixture(fixture, shopType, obstacles = [], catalog =
       return [];
     });
     if (!fits.length) continue;
-    let serial = 0;
-    for (let row = 0; row < rows && out.length < limit; row++) {
+    // The order of the stock along a shelf is seeded, so a shop is always stocked the same way, but it is not a cycle through the assortment (R4-210: one medicine box design across the whole
+    // pharmacy shelf, the same jar and bottle set on every tienda shelf): a product stands once to three times in a row, then another one, never the one just shown when there is a choice.
+    const rng = makeRng((seed + Math.imul(si + 1, 0x9e3779b1)) >>> 0);
+    let run = 0, runAt = 0, last = null;
+    for (let row = 0; row < rows && room(); row++) {
       let left = s.x - s.w / 2;
       const z = s.z + s.d / 2 - rowDepth * (row + 0.5);
-      for (let tries = 0; tries < 240 && left < s.x + s.w / 2 && out.length < limit; tries++) {
-        let placed = false;
-        const start = (seed + si * 7 + row * 3 + serial) % fits.length;
+      for (let tries = 0; tries < 240 && left < s.x + s.w / 2 && room(); tries++) {
+        let placed = false, start = runAt;
+        if (run > 0) run--;
+        else {
+          start = rng.int(0, fits.length - 1);
+          for (let t = 0; t < 6 && fits.length > 1 && fits[start].key === last; t++) start = rng.int(0, fits.length - 1);
+          runAt = start; run = rng.int(0, 2);
+        }
         for (let ki = 0; ki < fits.length; ki++) {
           const { key, w, d, h, turn } = fits[(start + ki) % fits.length];
           const x = left + w / 2;
@@ -101,7 +109,7 @@ export function planGoodsForFixture(fixture, shopType, obstacles = [], catalog =
             ry: angle + turn, w, h, d, block: false, surface: si, local: [round(x), round(s.y), round(z)], localRotation: turn,
           };
           out.push(record); obstaclesLocal.push({ x, y: s.y, z, w, h, d });
-          left += w + gap; serial++; placed = true; break;
+          left += w + gap; last = key; placed = true; break;
         }
         if (!placed) left += 0.025; // scan past a till/basket without squeezing or moving it
       }

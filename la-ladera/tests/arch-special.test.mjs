@@ -186,13 +186,15 @@ test('a school is the standard plan: street door, entrance hall, the hall to a 1
     assert.ok(bp.doors.some((d) => d.kind === 'arch' && d.rooms.includes(hall.id) && d.rooms.includes(yard.id)), `${bp.id}: the entrance hall does not open onto the yard`);
 
     // the staff room is off the hall (a school without a stair has it where the stair would be); the toilets are off a corridor or the yard, never off an office or a classroom
+    // (the block of cubicles: its passage is off the corridor and each cubicle opens onto the passage alone; the block's own test is below)
     const staff = ground.find((r) => r.type === 'office' && r.name === 'Sala de profesores');
     assert.ok(staff && neighbours(bp, staff).includes(hall), `${bp.id}: the staff room does not open off the entrance hall`);
     const baths = ground.filter((r) => r.type === 'bathroom');
     assert.ok(baths.length >= 2, `${bp.id}: ${baths.length} toilets on the ground floor`);
     for (const t of baths) {
       assert.ok(t.doors.length >= 1, `${t.id}: no door`);
-      for (const q of neighbours(bp, t)) assert.ok(q.type === 'corridor' || q.type === 'patio', `${t.id} (${t.name}) opens off a ${q.type} (${q.name}), not a corridor or the yard`);
+      const onto = t.tag === 'wc' ? ['wash'] : t.tag === 'wash' ? ['corridor', 'wc'] : ['corridor', 'patio'];
+      for (const q of neighbours(bp, t)) assert.ok(onto.includes(q.tag ?? q.type), `${t.id} (${t.name}) opens off a ${q.type} (${q.name}), not ${onto.join(' or ')}`);
     }
 
     // the classrooms: rectangles of one size, each with one door, onto a corridor, the leaf swinging in; none is a way through to anything else
@@ -230,6 +232,33 @@ test('a school is the standard plan: street door, entrance hall, the hall to a 1
       const cors = bp.rooms.filter((r) => r.floor === k && r.type === 'corridor');
       assert.equal(cors.length, 3, `${bp.id} floor ${k}: ${cors.length} corridors`);
       assert.ok(cors.every((c) => walked[k].has(c.id)), `${bp.id} floor ${k}: a corridor is not reached from the landing`);
+    }
+  }
+});
+
+test('the school lavatories are a block of cubicles on every storey of a school plan (R4-204): a passage off the corridor, a cubicle with its own door for every toilet, big enough to step into', () => {
+  for (const bp of schoolPlans) for (let k = 0; k < bp.shell.F; k++) {
+    const where = `${bp.id} floor ${k}`, wc = bp.rooms.filter((r) => r.floor === k && r.tag === 'wc'), wash = bp.rooms.filter((r) => r.floor === k && r.tag === 'wash');
+    assert.equal(wash.length, 1, `${where}: ${wash.length} washroom passages`);
+    assert.ok(wc.length >= 2, `${where}: ${wc.length} cubicles`);
+    const pass = wash[0], [ps, pl] = flat(pass.rect), onto = neighbours(bp, pass);
+    assert.ok(ps >= 1.0 - 1e-9 && pl >= 2 * 1.45, `${where}: a ${ps.toFixed(2)} x ${pl.toFixed(2)} m passage`);
+    assert.equal(onto.filter((q) => q.type === 'corridor').length, 1, `${where}: the passage opens off ${onto.filter((q) => q.type === 'corridor').length} corridors`);
+    assert.equal(onto.filter((q) => q.tag === 'wc').length, wc.length, `${where}: a cubicle does not open onto the passage`);
+    assert.equal(onto.length, wc.length + 1, `${where}: the passage opens onto something besides the corridor and its cubicles`);
+    for (const c of wc) {
+      const [cs, cl] = flat(c.rect), q = c.rect;
+      assert.ok(cs >= 1.1 && cl >= 1.45 - 1e-9, `${c.id}: a ${cs.toFixed(2)} x ${cl.toFixed(2)} m cubicle (a toilet is 0.7 m deep and a walker needs 0.75 m in front of it)`);
+      assert.equal(c.doors.length, 1, `${c.id}: ${c.doors.length} doors`);
+      const d = doorsOf(bp, c)[0];
+      assert.deepEqual(d.rooms, [c.id, pass.id], `${d.id}: the cubicle's door opens onto the passage`);
+      assert.equal(d.swing, 1, `${d.id}: the leaf swings out into the passage (rooms[1])`);
+      assert.ok(d.w >= 0.85 - 1e-9 && d.z - d.w / 2 >= q.z0 + 0.1 - 1e-9 && d.z + d.w / 2 <= q.z1 - 0.1 + 1e-9, `${d.id}: a ${d.w} m door at z ${d.z} sits wholly in the cubicle's wall (z ${q.z0.toFixed(2)}..${q.z1.toFixed(2)})`);
+      assert.ok(d.z < (q.z0 + q.z1) / 2, `${d.id}: the door is not at the cubicle's end nearer the strip (the toilet stands at the far end)`);
+    }
+    if (k === 0) {                                                                             // downstairs: the boys' cubicles and the girls', as many of each
+      const boys = wc.filter((r) => /niños/.test(r.name)).length, girls = wc.filter((r) => /niñas/.test(r.name)).length;
+      assert.ok(boys >= 2 && boys === girls, `${where}: ${boys} boys' and ${girls} girls' cubicles`);
     }
   }
 });

@@ -166,7 +166,10 @@ function fridgeBox(c) {
   const main = [leaf(-W / 2, W / 2, K, split, hinge, { hy: two ? split - 0.36 : H * 0.5 - 0.12, hh: 0.3, glass: n === 'fridge_drinks' })];
   const pool = n === 'fridge_drinks' ? 'drinks' : n === 'fridge_meds' ? 'fridge_meds' : 'fridge';
   const nm = n === 'fridge_drinks' ? ['la nevera de bebidas', 'La nevera de bebidas'] : n === 'fridge_meds' ? ['la nevera de medicinas', 'La nevera de medicinas'] : ['la nevera', 'La nevera'];
-  slots.push({ i: 0, kind: 'doors', group: 'fridge', leaves: main, rect: unite(main), cav: cm, surf: surfaces(cm, shm), prompt: [`Abrir ${nm[0]}`, 'Cerrar la nevera'], who: nm[1], pool, cap: [3, 6] });
+  // The shop's drinks cooler shows its stock through the glass (goods-assortments.js `fridge_drinks`: two rows of bottles on every shelf, from the back to 0.2 m behind the door): what a person takes out
+  // of it lies in the strip in front of that stock, so the bottles of the shelf and the things of the plan never stand in each other (R4-201: the glass coolers read as empty lit cabinets).
+  const strip = n === 'fridge_drinks' ? { ...cm, z0: cm.z1 - 0.15 } : cm;
+  slots.push({ i: 0, kind: 'doors', group: 'fridge', leaves: main, rect: unite(main), cav: cm, surf: surfaces(strip, shm), prompt: [`Abrir ${nm[0]}`, 'Cerrar la nevera'], who: nm[1], pool, cap: [3, 6] });
   if (two) {
     panels.push(panel(-W / 2 + T, W / 2 - T, split - T / 2, split + T / 2, cm.z0, cm.z1, 'body', 0.95));
     const cf = cavity(W, D, split + T / 2, H - T), shf = shelfAt(cf, [split + 0.3]);

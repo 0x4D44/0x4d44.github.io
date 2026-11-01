@@ -1,0 +1,27 @@
+{
+  "base": "017eab90a749d317f181872aa620b5facaea06f8",
+  "status": "shortened after completed spawn sample",
+  "reason": "software-rendered spawn sample was 3453.72ms; remaining timed views stopped to avoid repeating minutes of software rendering",
+  "browser": "Chrome for Testing 131.0.6778.204",
+  "size": [
+    960,
+    540
+  ],
+  "bootSeconds": 44.5,
+  "timedViews": [
+    {
+      "id": "spawn",
+      "triangles": 2232627,
+      "drawCalls": 1094,
+      "uncappedCostMs": 3453.72
+    }
+  ],
+  "gates": {
+    "costMs": 12,
+    "drawCalls": 1800,
+    "triangles": 2500000,
+    "bootSeconds": 25
+  },
+  "sourceLog": "before-metrics-attempt.log",
+  "screenshot": "../before/metrics-spawn.jpg"
+}

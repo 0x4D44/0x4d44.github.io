@@ -5,10 +5,10 @@ import * as THREE from 'three';
 import { makeRng } from '../core/rng.js';
 import { makeAnimalWalker } from './path.js';
 import { loadAnimalLibrary, instantiateAnimal } from './library.js';
-import { planAnimals, restsAt, roostsAt } from './habitat.js';
+import { planAnimals, restsAt, roostsAt, ROLES } from './habitat.js';
 
 export { planAnimals };
-export const ANIMAL_LIMITS = Object.freeze({ near: 18, far: 72, maxNear: 6, count: 10 });
+export const ANIMAL_LIMITS = Object.freeze({ near: 18, far: 72, maxNear: 6, count: ROLES.length });
 const ROAM = { dog: 16, cat: 10, pigeon: 5, hen: 5, mule: 12 };
 const SHY = 1.15;      // metres: somebody this close to an animal at rest makes it get up and move off. Nothing in the barrio is solid to an animal and nobody steps round one, so it is the animal that yields
 const SEEN = 25;       // metres: an animal that is due to roost, this close and in view, waits until it is out of sight (nothing vanishes in front of the player)

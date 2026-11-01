@@ -1,7 +1,17 @@
 """Procedural PBR texture pages for people.glb (numpy + PIL only).
-Three 2048x2048 pages built from 256 px cells: ALBEDO (sRGB, multiplied in-engine by per-vertex colour = garment tint x baked AO), NORMAL (tangent space), ORM (G = roughness, B = metallic).
+Three maps share the original 8x8 atlas: 2048px ALBEDO and NORMAL, 1024px ORM
+(the builder downsamples the assembled ORM). ALBEDO is multiplied in-engine by
+per-vertex garment tint and baked AO; NORMAL is tangent-space; ORM stores
+roughness in G and metallic in B.
 Fabric cells are grey-scale detail (tinted by vertex colour) except tartans / faces / eyes which carry their own colour.  All fabric tiles are seamless (periodic).
-Also builds the hair-card sheet (RGBA, alpha tested)."""
+Also builds the hair-card sheet (RGBA, alpha tested).
+
+Bodies-v2 textile designs are original deterministic mathematical constructions,
+released as CC0-1.0 with the generated assets. No sampled photographs, commercial
+fabric designs, brand marks or downloaded texture assets are incorporated.
+Existing cells 0..61 retain their meanings; the two formerly unused cells 62/63
+hold yarn-dyed stripe/check cloth. No page, material or draw call is added.
+"""
 import math, zlib
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
@@ -47,49 +57,92 @@ def f_skin(seed=1):
     h = 0.35 * n1 * 0.2 - 0.40 * pit
     return tile_out(alb, h, 0.62 + 0.06 * fnoise(CELL, 1.0, seed + 2), 0.0, 0.9)
 
+def woven_fields(seed, twill=False):
+    """Rounded crossing yarns, not a checkerboard height discontinuity.
+
+    Four pixels form a yarn pair; the low contrast survives minification without
+    making dark cloth sparkle. Every analytic frequency divides the 256px cell.
+    """
+    wx = (0.5 + 0.5 * np.cos(2 * np.pi * (XX + .5) / 4)) ** 1.6
+    wy = (0.5 + 0.5 * np.cos(2 * np.pi * (YY + .5) / 4)) ** 1.6
+    over = ((XX // 2 + YY // 2) % (4 if twill else 2)) < (3 if twill else 1)
+    yarn = np.where(over, .74 * wx + .26 * wy, .26 * wx + .74 * wy)
+    slub = .016 * fnoise(CELL, .9, seed, (1, 9))
+    fuzz = .008 * fnoise(CELL, .15, seed + 1)
+    return yarn, slub, fuzz
+
+
 def f_denim():
-    warp = ((XX // 2) % 2).astype(np.float32); weft = ((YY // 2) % 2).astype(np.float32)
-    tw = (((XX + YY) // 2) % 4 < 2).astype(np.float32)           # diagonal twill
-    thread = 0.55 + 0.30 * tw
-    streak = fnoise(CELL, 0.9, 3, (1.0, 6.0))
-    fade = fnoise(CELL, 1.6, 4)
-    alb = np.clip(thread * (0.82 + 0.06 * streak + 0.05 * fade) + 0.05 * warp, 0, 1)
-    h = 0.5 * tw + 0.15 * ((XX + YY) % 2) + 0.1 * streak
-    return tile_out(alb, h, 0.88 - 0.05 * fade, 0.0, 2.0)
+    yarn, slub, fuzz = woven_fields(3, twill=True)
+    # The light weft is exposed at twill crests. Broad knee/seat fading belongs to
+    # the geometry colour bake, so the atlas does not repeat large stains.
+    crest = np.maximum(0, np.cos(2 * np.pi * (XX + YY) / 8)) ** 2
+    wear = .018 * fnoise(CELL, 1.5, 5)
+    alb = .77 + .10 * yarn + .045 * crest + slub + wear + fuzz
+    h = .23 * yarn + .12 * crest + .65 * slub + .35 * fuzz
+    return tile_out(alb, h, .87 - .035 * crest + .018 * fnoise(CELL, 1, 6), 0.0, 1.35)
 
 def f_cotton():
-    wv = (((XX // 2) + (YY // 2)) % 2).astype(np.float32)
-    n = fnoise(CELL, 0.8, 5)
-    alb = 0.86 + 0.06 * wv + 0.03 * n
-    return tile_out(alb, 0.5 * wv + 0.1 * n, 0.82, 0.0, 1.4)
+    yarn, slub, fuzz = woven_fields(7)
+    alb = .86 + .065 * yarn + .55 * slub + fuzz
+    return tile_out(alb, .22 * yarn + .55 * slub, .84 + .012 * fnoise(CELL, .8, 9), 0.0, 1.1)
 
 def f_suit():
-    tw = (((XX + YY) // 2) % 3 == 0).astype(np.float32)
-    n = fnoise(CELL, 1.0, 6)
-    alb = 0.80 + 0.05 * tw + 0.05 * n
-    return tile_out(alb, 0.4 * tw + 0.15 * n, 0.86, 0.0, 1.8)
+    # Subtle broken twill appropriate to everyday trousers and older jackets.
+    yarn, slub, fuzz = woven_fields(11, twill=True)
+    diagonal = np.cos(2 * np.pi * (YY + np.abs((XX % 32) - 16)) / 8)
+    alb = .84 + .035 * diagonal + .035 * yarn + .65 * slub + fuzz
+    return tile_out(alb, .16 * yarn + .065 * diagonal + .4 * slub, .89 + .012 * fnoise(CELL, 1, 13), 0.0, 1.1)
 
 def f_wool_coat():
-    n1 = fnoise(CELL, 1.0, 7); n2 = fnoise(CELL, 0.1, 8)
-    alb = 0.82 + 0.035 * n1 + 0.02 * n2
-    return tile_out(alb, 0.30 * n1 + 0.20 * n2, 0.95, 0.0, 0.6)
+    nap = fnoise(CELL, .7, 14, (2.0, 1.0)); fuzz = fnoise(CELL, .1, 15)
+    alb = .86 + .020 * nap + .010 * fuzz
+    return tile_out(alb, .12 * nap + .045 * fuzz, .94 + .012 * nap, 0.0, .55)
 
 def f_knit():
-    # stitch cells 8 px wide, 10 px tall; each stitch is a V of two slanted ridges
-    cx = (XX % 8) - 3.5; cy = (YY % 12) - 5.5
-    rid1 = np.exp(-((cx - 0.55 * cy) ** 2) / 2.2) * (np.abs(cy) < 5.5)
-    rid2 = np.exp(-((cx + 0.55 * cy) ** 2) / 2.2) * (np.abs(cy) < 5.5)
-    h = np.maximum(rid1 * (cy < 0.5), rid2 * (cy > -0.5)) * 1.0 + 0.3 * np.maximum(rid1, rid2)
-    n = fnoise(CELL, 0.6, 9)
-    alb = 0.55 + 0.38 * h + 0.04 * n
-    return tile_out(alb, h + 0.05 * n, 0.97, 0.0, 4.5)
+    # Stockinette loops: two soft inclined yarns meet at a V and tuck under the
+    # next row. An 8x16px repeat closes exactly at both atlas cell borders.
+    x = (XX % 8) - 3.5; y = (YY % 16) / 16
+    ridge = np.exp(-((np.abs(x) - (1.1 + 2.1 * y)) / .85) ** 2)
+    tuck = .5 + .5 * np.cos(2 * np.pi * y)
+    yarn = ridge * (.8 + .2 * tuck)
+    fuzz = fnoise(CELL, .35, 17)
+    alb = .77 + .12 * yarn + .016 * fuzz
+    return tile_out(alb, .52 * yarn + .025 * fuzz, .95 + .012 * fuzz, 0.0, 1.65)
 
 def f_jersey():
-    cx = (XX % 4) - 1.5; cy = (YY % 5) - 2
-    h = np.exp(-((cx - 0.4 * cy) ** 2) / 1.2)
-    n = fnoise(CELL, 0.5, 10)
-    alb = 0.78 + 0.12 * h + 0.03 * n
-    return tile_out(alb, h + 0.05 * n, 0.9, 0.0, 1.5)
+    x = (XX % 4) - 1.5; y = (YY % 8) / 8
+    stitch = np.exp(-((np.abs(x) - (.6 + .9 * y)) / .58) ** 2)
+    n = fnoise(CELL, .55, 19)
+    alb = .85 + .05 * stitch + .012 * n
+    return tile_out(alb, .18 * stitch + .025 * n, .90 + .012 * n, 0.0, 1.2)
+
+
+def f_stripe_cotton():
+    """Unbranded yarn-dyed double stripe; recolourable through the top slot."""
+    yarn, slub, fuzz = woven_fields(101)
+    y = YY % 64
+    broad = (y >= 13) & (y < 29)
+    fine = (y >= 36) & (y < 39)
+    # Soft thread margins, slight pale fibres through the dyed band. No painted
+    # normal ridge at a colour change: stripe cloth is still flat woven cloth.
+    pigment = np.where(broad, .65, np.where(fine, .76, .94))
+    alb = pigment * (.95 + .055 * yarn + .45 * slub + fuzz)
+    return tile_out(alb, .22 * yarn + .55 * slub, .86 + .012 * fuzz, 0.0, 1.1)
+
+
+def f_check_cotton():
+    """An original small windowpane check with warp/weft colour mixing."""
+    yarn, slub, fuzz = woven_fields(105)
+    x, y = XX % 64, YY % 64
+    warp = np.where((x >= 14) & (x < 27), .74, .96)
+    weft = np.where((y >= 14) & (y < 27), .74, .96)
+    fine_x = (x >= 36) & (x < 39); fine_y = (y >= 36) & (y < 39)
+    over = ((XX // 2 + YY // 2) % 2) == 0
+    pigment = .5 * (warp + weft) + .13 * np.where(over, warp - weft, weft - warp)
+    pigment *= np.where(fine_x | fine_y, .78, 1.0)
+    alb = pigment * (.94 + .055 * yarn + .45 * slub + fuzz)
+    return tile_out(alb, .22 * yarn + .55 * slub, .86 + .012 * fuzz, 0.0, 1.1)
 
 def f_puffer():
     per = 128
@@ -184,13 +237,14 @@ FABRICS = {'skin': (f_skin, 0.45), 'denim': (f_denim, 0.12), 'cotton': (f_cotton
            'knit': (f_knit, 0.19), 'jersey': (f_jersey, 0.10), 'puffer': (f_puffer, 0.20), 'leather': (f_leather, 0.10), 'rubber': (f_rubber, 0.2),
            'mesh': (f_mesh, 0.06), 'nylon': (f_nylon, 0.1), 'reflective': (f_reflective, 0.05), 'metal': (f_metal, 0.1), 'plastic': (f_plastic, 0.1),
            'hair': (f_hair, 0.16),
-           'tartan0': (lambda: f_tartan(0), 0.15), 'tartan1': (lambda: f_tartan(1), 0.15), 'tartan2': (lambda: f_tartan(2), 0.15), 'tartan3': (lambda: f_tartan(3), 0.15)}
+           'tartan0': (lambda: f_tartan(0), 0.15), 'tartan1': (lambda: f_tartan(1), 0.15), 'tartan2': (lambda: f_tartan(2), 0.15), 'tartan3': (lambda: f_tartan(3), 0.15),
+           'stripe_cotton': (f_stripe_cotton, .32), 'check_cotton': (f_check_cotton, .32)}
 FABRIC_ORDER = list(FABRICS.keys())
 EYE_COLORS = ['#4a6b8a', '#5a4630', '#6a8a9a', '#2a1a10', '#5a7a6a', '#4a3020', '#3a2a1a', '#6a4a2a', '#5a7a9a', '#7a8a95', '#4a3a28', '#5a3a20']      # 12 tiles: cells 30..41 (a 13th would land on fabric cell 42)
 
 # ---------------------------------------------------------------- cells
 def cell_index(kind, i):
-    """face tiles 0..29, eye tiles 30..41, fabric tiles 42..61"""
+    """face tiles 0..29, eye tiles 30..41, original fabrics 42..61, stripes/checks 62/63"""
     return {'face': i, 'eye': 30 + i, 'fab': 42 + i}[kind]
 
 def cell_rc(idx): return idx // NCOL, idx % NCOL
@@ -361,7 +415,7 @@ def build_pages(people, SKIN, HAIR):
     for i, pd in enumerate(people):
         place(cell_index('face', i), paint_face2(pd, SKIN, HAIR, 100 + i * 7))
     for i, c in enumerate(EYE_COLORS): place(cell_index('eye', i), eye_tile(c, i))
-    assert len(people) <= 30 and len(FABRIC_ORDER) <= 20
+    assert len(people) <= 30 and 42 + len(FABRIC_ORDER) <= NCOL * NCOL
     for i, name in enumerate(FABRIC_ORDER): place(cell_index('fab', i), FABRICS[name][0]())
     return A, N, O
 

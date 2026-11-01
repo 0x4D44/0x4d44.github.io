@@ -14,6 +14,7 @@ import { generatePlan } from '../js/world/plan.js';
 import { buildWorld } from '../js/world/terrain.js';
 import { buildProps } from '../js/world/props.js';
 import { Clutter } from '../js/world/clutter.js';
+import { VehicleLibrary, vehicleNames } from '../js/world/vehicle-library.js';
 import { planBuilding } from '../js/arch/index.js';
 import { furnishBuilding } from '../js/interiors/index.js';
 
@@ -38,6 +39,21 @@ export async function loadClutterFromDisk(ctx) {
   return ctx.clutter;
 }
 
+/** Parse the same complete near/far vehicle library that the browser loads; retain fallback when disabled. */
+export async function loadVehiclesFromDisk(ctx) {
+  const paths = new Set(vehicleNames(ctx).flatMap((key) => {
+    const meta = ctx.assets.meta(key), low = ctx.assets.meta(meta.lod1);
+    return [meta.glb, ...(low ? [low.glb] : [])];
+  }));
+  for (const path of paths) {
+    const b = await readFile(resolve(ROOT, 'assets/models', path));
+    const gl = await ctx.assets.loader.parseAsync(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), '');
+    gl.scene.updateMatrixWorld(true); ctx.assets.loaded.set(path, gl);
+  }
+  ctx.vehicleLibrary = new VehicleLibrary(ctx);
+  return ctx.vehicleLibrary;
+}
+
 /**
  * Returns { ctx, plan, buildings }. `ctx` is a real context (physics, rng, registries, assets manifest) without a renderer.
  * Options: { seed, lots:[ids], furnish:true, colliders:true, world:false, clutter:true }
@@ -57,6 +73,7 @@ export async function buildData(o = {}) {
   if (o.furnish !== false) for (const bp of ctx.buildings.values()) furnishBuilding(ctx, bp);
   if (o.colliders !== false) for (const bp of ctx.buildings.values()) ctx.physics.add(bp.colliders ?? {});
   if (o.world && o.clutter !== false && process.env.LADERA_CLUTTER !== '0') await loadClutterFromDisk(ctx);
+  if (o.world && o.vehicles !== false && process.env.LADERA_VEHICLES !== '0') await loadVehiclesFromDisk(ctx);
   if (o.world) await buildProps(ctx);
   return { ctx, plan: ctx.plan, buildings: [...ctx.buildings.values()] };
 }

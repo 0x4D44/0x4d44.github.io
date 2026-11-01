@@ -1,0 +1,5 @@
+contact-hung.jpg: 20 actual GLBs, 1.92 m common camera width
+contact-flat.jpg: 20 actual GLBs, 1.92 m common camera width
+contact-folded.jpg: 17 actual GLBs, 1.92 m common camera width
+contact-hung-lod.jpg: 20 actual GLBs, 1.92 m common camera width
+PASS: 77 state renders; measured child/adult tee ratio 0.600; no browser errors.

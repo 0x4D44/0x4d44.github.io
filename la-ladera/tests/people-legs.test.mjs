@@ -8,7 +8,9 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { readAssetJson, buildData } from './headless.mjs';
 import { PeopleSim, SEAT_TOP as SIM_SEAT_TOP } from '../js/people/sim.js';
-import { LEG, SEAT_TOP, SEAT_HIP, SIT_THIGH, SLOPE_ADULT, SLOPE_CHILD, CHILD_M, FLOAT_OK, maxSlope, minThigh, seatFloatM, plantedFloatM, floatBudget, plantFeet } from '../js/people/legs.js';
+import { LEG, SEAT_TOP, SEAT_HIP, SIT_THIGH, SLOPE_ADULT, SLOPE_CHILD, CHILD_M, FLOAT_OK, maxSlope, minThigh, seatFloatM, plantedFloatM, kneeReachM, floatBudget, plantFeet } from '../js/people/legs.js';
+import * as MODEL from '../js/people/seatmodel.js';
+import * as legsModule from '../js/people/legs.js';
 
 const META = await readAssetJson('people/people_meta.json');
 const BY = new Map(META.people.map((m) => [m.id, m]));
@@ -68,6 +70,26 @@ test('plantedFloatM: every character on every seat the brain uses has the soles 
   }
   assert.ok(plantedFloatM(person('w_elder'), 0.49) < FLOAT_OK, 'the elder reaches the floor on the bench');
   assert.ok(plantedFloatM(person('g_girl'), 0.49) > 0.05, 'a six-year-old on an adult bench cannot reach: her legs dangle (the model says so, it does not hide it)');
+});
+
+test('kneeReachM (R3-026): the knee is 16 to 18 cm in front of a child\'s hip joint and 30 to 40 cm in front of an adult\'s, and the planted skeleton has it there to 2 mm', () => {
+  for (const m of META.people) for (const h of [0.42, SEAT_TOP, 0.46, 0.49, 0.55]) {
+    const r = rig(m); sit(r, h); plantFeet(r.lib, r.inst, 0);
+    const b = r.inst.bones, hip = b.thigh_l.getWorldPosition(new THREE.Vector3()), knee = b.shin_l.getWorldPosition(new THREE.Vector3()), reach = Math.hypot(knee.x - hip.x, knee.z - hip.z);      // (the horizontal reach: whichever way the rig faces)
+    assert.ok(near(reach, kneeReachM(m, h), 0.002), `${m.id} on a ${h} m seat: the planted skeleton has the knee ${reach.toFixed(3)} m forward, the model ${kneeReachM(m, h).toFixed(3)} m`);
+  }
+  for (const m of META.people) {
+    const k = kneeReachM(m, SEAT_TOP);
+    if (m.heightM < CHILD_M) assert.ok(k > 0.155 && k < 0.18, `${m.id} (${m.heightM} m): ${k.toFixed(3)} m`); else assert.ok(k > 0.29 && k < 0.41, `${m.id} (${m.heightM} m): ${k.toFixed(3)} m`);
+  }
+  assert.ok(near(kneeReachM(person('w_joven'), SEAT_TOP), 0.353, 0.002) && near(kneeReachM(person('g_girl'), SEAT_TOP), 0.162, 0.002), 'the woman of the sofa of L94 and the girl of L04');
+  assert.ok(kneeReachM(person('g_girl'), 0.55) === kneeReachM(person('g_girl'), 0.49), 'a child on a seat too high for her has the thigh at its limit: the same on any higher seat');
+  assert.ok(kneeReachM(person('m_afro'), 0.49) < kneeReachM(person('m_afro'), SEAT_TOP), 'on the higher seat the thigh slopes down and the knee is nearer');
+});
+
+test('legs.js still exports every name of the model (seatmodel.js is the pure half, for the sim and homelife.js)', () => {
+  for (const k of Object.keys(MODEL)) assert.ok(k in legsModule, `legs.js exports ${k}`);
+  assert.equal(legsModule.kneeReachM, MODEL.kneeReachM); assert.equal(legsModule.LEG, MODEL.LEG); assert.equal(typeof legsModule.plantFeet, 'function');
 });
 
 test('plantFeet: the elder\'s soles come down onto the floor of the bench; the pelvis, the shins and the feet keep their place and orientation', () => {

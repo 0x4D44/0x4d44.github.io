@@ -25,6 +25,9 @@ export const GOODS_FIXTURES = {
   pharmacy_counter: { layout: 'case', maxItems: 20, rows: 2 },
   bread_case_glass: { maxItems: 16, stockParts: { 3: 'plastic_solid' }, surfaces: [{ x: 0, z: 0.1, y: 0.514, w: 1.46, d: 0.36, h: 0.6 }] },       // the hero's glass case: floor 0.514, glass to 1.174
   fridge_meat: { maxItems: 14, stockParts: { 3: 'plastic_solid' }, surfaces: [{ x: 0, z: 0.1, y: 0.514, w: 1.66, d: 0.46, h: 0.6 }] },
+  // The shop's glass-door drinks cooler (a piece that opens: carcass.js fridgeBox, stand-in): four glass shelves at 0.048 / 0.512 / 0.962 / 1.412, the bottles two rows deep in the back 0.2 m of each
+  // (the 0.15 m in front of them is where what a person takes out lies: carcass.js `strip`), at most `perSurface` on a shelf so the whole cooler costs about 56 bottles.
+  fridge_drinks: { maxItems: 56, rows: 2, gap: 0.012, perSurface: 14, surfaces: [0.048, 0.512, 0.962, 1.412].map((y) => ({ x: 0, z: 0.04, y, w: 0.72, d: 0.2, h: 0.42 })) },
   cafe_counter: { layout: 'top', maxItems: 14, rows: 2 },
   shop_counter_wood: { layout: 'top', maxItems: 12, rows: 2 },
   shop_counter_short: { layout: 'top', maxItems: 8, rows: 2 },
@@ -50,9 +53,11 @@ export const GOODS_ASSORTMENTS = {
     chips_rack: ['goods_chips_bag'],
     shop_counter_glass: ['goods_cheese_wedge', 'goods_cheese_wheel', 'goods_preserves_jar', 'goods_fish_tin', 'goods_toy_car', 'goods_wooden_blocks'],
     shop_counter_short: ['goods_soda_bottle', 'goods_chips_bag', 'goods_potted_flower'],
+    fridge_drinks: ['goods_soda_bottle', 'goods_juice_bottle', 'goods_milk_bottle', 'goods_soda_bottle'],
   },
   panaderia: {
     shelf_cafe: ['goods_round_loaf', 'goods_bread_roll', 'goods_baguette', 'goods_croissant', 'goods_flour_bag', 'goods_preserves_jar'],
+    fridge_drinks: ['goods_milk_bottle', 'goods_juice_bottle', 'goods_soda_bottle'],
     bread_rack: ['goods_baguette', 'goods_round_loaf', 'goods_bread_roll', 'goods_croissant'],
     bread_case_glass: ['goods_croissant', 'goods_bread_roll', 'goods_round_loaf', 'goods_baguette', 'goods_cheese_wedge'],
     dough_table: ['goods_flour_bag', 'goods_bread_roll', 'goods_round_loaf'],
@@ -69,6 +74,7 @@ export const GOODS_ASSORTMENTS = {
   carniceria: {
     fridge_meat: ['goods_steak', 'goods_sausages', 'goods_chicken'],
     butcher_block: ['goods_steak', 'goods_sausages', 'goods_chicken'],
+    fridge_drinks: ['goods_soda_bottle', 'goods_juice_bottle', 'goods_milk_bottle'],
   },
   peluqueria: {
     barber_station: ['goods_tonic_bottle', 'goods_sugar_jar'],
@@ -79,17 +85,19 @@ export const GOODS_ASSORTMENTS = {
     shop_counter_wood: ['goods_hammer', 'goods_pliers', 'goods_rope_coil', 'goods_paint_tin'],
   },
   drogueria: {
-    shelf_pharma: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle', 'goods_remedy_box'],
+    shelf_pharma: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle', 'goods_remedy_box', 'goods_milk_bottle', 'goods_sugar_jar'],      // (formula milk and a jar of ointment: three products on a pharmacy shelf are a pattern, five are a stock)
     pharmacy_counter: ['goods_remedy_box', 'goods_bandage_box', 'goods_tonic_bottle'],
   },
   cafe: {
     shelf_cafe: ['goods_cup_saucer', 'goods_coffee_bag', 'goods_sugar_jar', 'goods_takeaway_cup', 'goods_coffee_sack', 'goods_milk_bottle'],
     cafe_counter: ['goods_cup_saucer', 'goods_croissant', 'goods_takeaway_cup', 'goods_sugar_jar'],
     table_cafe_round: ['goods_cup_saucer', 'goods_croissant', 'goods_takeaway_cup'],
+    fridge_drinks: ['goods_juice_bottle', 'goods_milk_bottle', 'goods_soda_bottle'],
   },
   restaurante: {
     shelf_cafe: ['goods_cup_saucer', 'goods_oil_bottle', 'goods_rice_sack', 'goods_beans_sack', 'goods_preserves_jar'],
     cafe_counter: ['goods_cup_saucer', 'goods_soda_bottle', 'goods_sugar_jar', 'goods_bread_roll'],
+    fridge_drinks: ['goods_soda_bottle', 'goods_juice_bottle', 'goods_milk_bottle', 'goods_soda_bottle'],
   },
   papeleria: {
     shelf_papel: ['goods_exercise_book', 'goods_pencil_bundle', 'goods_newspaper', 'goods_wooden_blocks', 'goods_toy_car', 'goods_toy_bear', 'goods_toy_ball'],

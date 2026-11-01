@@ -72,6 +72,7 @@ export function buildOccupancy(plan, buildings) {
 
   // circles already taken by solid props (4 m spatial hash)
   const taken = new Map(), HC = 4, hk = (a, b) => (a + 256) * 512 + (b + 256);
+  let maxTakenRadius = 3;
   const occ = {
     bits,
     /** bit mask at a point (out of the plot = everything). */
@@ -104,11 +105,11 @@ export function buildOccupancy(plan, buildings) {
     take(x, z, r, tag = null) {
       if (occ.overlaps(x, z, r)) return false;
       const k = hk(Math.floor(x / HC), Math.floor(z / HC)); let a = taken.get(k); if (!a) taken.set(k, a = []);
-      a.push([x, z, r, tag]); return true;
+      a.push([x, z, r, tag]); maxTakenRadius = Math.max(maxTakenRadius, r); return true;
     },
     /** true when a disc of radius r at (x, z) touches one already taken; discs taken with the tag `skip` do not count. */
     overlaps(x, z, r, skip = null) {
-      const a0 = Math.floor((x - r - 3) / HC), a1 = Math.floor((x + r + 3) / HC), b0 = Math.floor((z - r - 3) / HC), b1 = Math.floor((z + r + 3) / HC);
+      const a0 = Math.floor((x - r - maxTakenRadius) / HC), a1 = Math.floor((x + r + maxTakenRadius) / HC), b0 = Math.floor((z - r - maxTakenRadius) / HC), b1 = Math.floor((z + r + maxTakenRadius) / HC);
       for (let a = a0; a <= a1; a++) for (let b = b0; b <= b1; b++) {
         const arr = taken.get(hk(a, b)); if (!arr) continue;
         for (const [tx, tz, tr, tag] of arr) if (Math.hypot(x - tx, z - tz) < r + tr && (skip == null || tag !== skip)) return true;

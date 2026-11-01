@@ -164,8 +164,16 @@ export class Player {
       const baseY = fr?.y ?? bp.lot?.y ?? 0, ly = s.y - baseY, roofY = bp.roof?.y ?? hit.y1 - 1.5;
       if (fr?.toLocal && bp.rooms?.length) {
         const [lx, , lz] = fr.toLocal(s.x, s.y, s.z);
-        room = bp.rooms.find((r) => r.rect && lx >= r.rect.x0 - 0.06 && lx <= r.rect.x1 + 0.06 && lz >= r.rect.z0 - 0.06 && lz <= r.rect.z1 + 0.06
-          && ly >= (r.y ?? 0) - 0.45 && ly < (r.y ?? 0) + (r.h ?? 2.8) + 0.3) ?? null;
+        // The height test of a room is wide (from 0.45 m below its floor to 0.3 m above its ceiling), so the rooms of two storeys overlap by a hand's breadth and a player
+        // standing on the first floor (ly 2.8) is inside the ground-floor room's test too, which `find` met first. The room is the one whose floor is highest under the feet.
+        // (R4-202: every one of the 1001 upstairs rooms of the barrio reported the room below, and 196 of 200 upstairs terraces counted as indoors. The light pool, the footstep
+        // surface and the indoor blend of the light all read this.)
+        room = null;
+        for (const r of bp.rooms) {
+          if (!r.rect || lx < r.rect.x0 - 0.06 || lx > r.rect.x1 + 0.06 || lz < r.rect.z0 - 0.06 || lz > r.rect.z1 + 0.06) continue;
+          const y = r.y ?? 0;
+          if (ly >= y - 0.45 && ly < y + (r.h ?? 2.8) + 0.3 && (!room || y > (room.y ?? 0))) room = r;
+        }
         indoors = room ? !room.outdoor : s.y < roofY - 0.6;       // between rooms (wall thickness, stairwell, threshold) still counts as inside
       } else indoors = s.y < roofY - 0.6;
       const fl = bp.floors;

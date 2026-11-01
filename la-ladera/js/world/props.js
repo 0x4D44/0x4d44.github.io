@@ -12,6 +12,9 @@ import { buildDiscoveries } from './discover.js';
 import { buildBoundary } from './periphery.js';
 import { buildVista } from './vista.js';
 import { buildVistaKit } from './vista-kit.js';
+import { buildOutskirts } from './outskirts.js';
+import { buildRimWalk } from './rimwalk.js';
+import { buildPockets } from './pockets.js';
 import { makeSignAtlas, buildSigns, planMurals, claimMurals } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
@@ -62,12 +65,15 @@ export async function buildProps(ctx) {
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
   await step('vistakit', () => buildVistaKit(ctx));  // the modelled hillside kit (Codex GLBs, instanced, LOD): terraces on the far land. First, so the far houses below leave its ground alone; an absent or failed kit changes nothing
   await step('vista', () => buildVista(K));          // the city beyond the rim: far houses, a church, towers, the TV mast, and their lit windows (ctx.glow)
+  await step('outskirts', () => buildOutskirts(K));  // the streets, alleys, trees and landmarks the kit's terraces and the far rows stand among, and the belt of tall trees beyond the plot's wall (R1-D20, D21)
   await step('poles', () => buildPoles(K));          // before the flora: poles and lamps claim their ground first
   await step('vehicles', () => buildVehicles(K));
   await step('dress', () => buildDress(K));          // before the flora too: benches, the shrine and the shelter keep their ground
   await step('signs', () => buildSigns(K));          // murals, arch boards, street plaques, hopscotch: they claim their spots before the trees do
   await step('hill', () => buildHill(K));            // the huerta, the roadside cross, boulders, a yard clothes line
+  await step('rimwalk', () => buildRimWalk(K));      // the footpath along the foot of the wall, its treads, weeds and vines, the rebar and chain-link on the crest (R1-D21): it takes its ground before the flora does
   await step('flora', () => buildFlora(K));
+  await step('pockets', () => buildPockets(K));      // the wedges of bare slope between houses at the street edge: flowers, grass, bushes, agaves, boulders and a small tree (R1-D23)
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
   await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks
   await step('clutter', () => buildClutterDress(K));  // after the old features claim their spots; leave every door and nav route clear

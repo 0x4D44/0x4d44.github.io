@@ -1,0 +1,43 @@
+{
+  "viewport": [
+    1280,
+    720
+  ],
+  "query": "autostart&manual&hour=17.2&quality=high&audio=0",
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "views": [
+    {
+      "id": "calle-del-sol",
+      "street": "Calle del Sol",
+      "trianglesBefore": 1923762,
+      "trianglesAfter": 1829932,
+      "triangleDelta": -93830,
+      "drawCallsBefore": 818,
+      "drawCallsAfter": 835,
+      "libraryTriangles": 46076,
+      "libraryDrawCalls": 50
+    },
+    {
+      "id": "calle-del-comercio",
+      "street": "Calle del Comercio",
+      "trianglesBefore": 1506967,
+      "trianglesAfter": 1438895,
+      "triangleDelta": -68072,
+      "drawCallsBefore": 626,
+      "drawCallsAfter": 630,
+      "libraryTriangles": 31776,
+      "libraryDrawCalls": 30
+    },
+    {
+      "id": "calle-de-los-almendros",
+      "street": "Calle de los Almendros",
+      "trianglesBefore": 1921700,
+      "trianglesAfter": 1806978,
+      "triangleDelta": -114722,
+      "drawCallsBefore": 869,
+      "drawCallsAfter": 872,
+      "libraryTriangles": 25318,
+      "libraryDrawCalls": 39
+    }
+  ]
+}

@@ -196,21 +196,92 @@ export function shrub(K, x, z, o = {}) {
   if (o.flowers) canopy(K, b, TILE.FLOWERS, [x, gy + s * 0.8, z], s * 0.5, s * 0.2, s * 0.5, 3, s * 0.8, r, rgb(0xffffff), { inner: 0.5, mat: 'foliage_low' });
 }
 
-/** An agave rosette of real blades: three rings (upright heart, a middle ring, a drooping outer ring), each a pointed lance with a widest middle, grey-green at the foot and blue-grey at the tip. */
+const AGAVE_ROWS = 4;                                                     // rows along a leaf: a spine of four straight pieces, each turned a little more than the last
+
+/**
+ * One agave leaf: a fleshy lance, in section a lens (the top is hollowed into a channel, the keel under the midrib is thick, the margins are thin), on a spine that rises from the heart and
+ * arches over: `tilt` = its angle from the vertical at the foot, `bend` = how much further it has turned by the tip (an old outer leaf droops below the horizontal). The blade is clasping at
+ * the foot, widest a third of the way up and drawn out to a point; its colour runs from the grey-green of the foot to the blue-grey of the tip (`foot` -> `tip`), lighter at the margins and
+ * darker in the channel. Both faces carry smooth normals, so it shades as a rounded leaf and not as a folded card. `teeth` triangles stand along each margin (hooked a little back toward the
+ * foot, olive brown at the point) and the tip ends in a dark spine.
+ */
+function agaveLeaf(b, p0, a, tilt, bend, L, W, foot, tip, teeth, tl, r) {
+  const acc = b._acc('plaster_a'), sd = [-Math.sin(a), 0, Math.cos(a)], v0 = r.range(0, 4);
+  const dirAt = (t) => [Math.sin(t) * Math.cos(a), Math.cos(t), Math.sin(t) * Math.sin(a)];
+  const prof = (u) => (u < 0.3 ? 0.55 + 0.45 * Math.sin((u / 0.3) * Math.PI / 2) : Math.pow(Math.max(0, 1 - (u - 0.3) / 0.7), 0.8));
+  const rows = [];
+  let c = p0, tPrev = tilt;
+  for (let j = 0; j <= AGAVE_ROWS; j++) {
+    const u = j / AGAVE_ROWS, t = tilt + bend * Math.pow(u, 1.5);
+    if (j > 0) c = V.add(c, V.mul(dirAt((t + tPrev) / 2), L / AGAVE_ROWS));
+    tPrev = t;
+    const f = dirAt(t);
+    rows.push({ u, c, f, n: V.nrm(V.cross(sd, f)), w: Math.max(0.012, W * prof(u)) });
+  }
+  const rise = (q, u) => q.w * (0.18 + 0.2 * (1 - u)), keel = (q, u) => q.w * 0.5 * (1 - 0.45 * u);
+  const base = acc.pos.length / 3, colAt = (u) => lerpc(foot, tip, ss(0.05, 0.85, u));
+  for (const q of rows) {
+    const { u, c: m, n, w } = q, up = rise(q, u), col = colAt(u), vv = u * L + v0;
+    b.vert(acc, V.add(V.sub(m, V.mul(sd, w)), V.mul(n, up)), V.nrm(V.add(V.mul(sd, -0.85), V.mul(n, 0.35))), -w, vv, scale(col, 1.12));      // left margin
+    b.vert(acc, m, n, 0, vv, scale(col, 0.86));                                                                                              // the midrib, in the channel
+    b.vert(acc, V.add(V.add(m, V.mul(sd, w)), V.mul(n, up)), V.nrm(V.add(V.mul(sd, 0.85), V.mul(n, 0.35))), w, vv, scale(col, 1.12));        // right margin
+    b.vert(acc, V.sub(m, V.mul(n, keel(q, u))), V.mul(n, -1), 0, vv, scale(col, 0.62));                                                      // the keel
+  }
+  for (let j = 0; j < AGAVE_ROWS; j++) {
+    const A = base + 4 * j, B = A + 4;                                      // this row's four vertices (left margin, midrib, right margin, keel); B is the next row's first
+    acc.idx.push(A, A + 1, B, A + 1, B + 1, B,                              // the channel, left half
+      A + 1, A + 2, B + 1, A + 2, B + 2, B + 1,                              // and right half
+      A, B, A + 3, A + 3, B, B + 3,                                          // the underside, margin to keel on the left (wound the other way: it faces down)
+      A + 3, B + 3, A + 2, A + 2, B + 3, B + 2);                             // and on the right
+    b.tris += 8;
+  }
+  const tri = (p, q, s, cp, cq, cs) => {                                    // a small flat triangle, drawn from both sides
+    const nn = V.nrm(V.cross(V.sub(q, p), V.sub(s, p)));
+    for (const flip of [false, true]) {
+      const P = flip ? [p, s, q] : [p, q, s], C = flip ? [cp, cs, cq] : [cp, cq, cs], nrm = flip ? V.mul(nn, -1) : nn;
+      const i0 = b.vert(acc, P[0], nrm, 0, 0, C[0]);
+      b.vert(acc, P[1], nrm, 1, 0, C[1]); b.vert(acc, P[2], nrm, 0.5, 1, C[2]);
+      acc.idx.push(i0, i0 + 1, i0 + 2);
+    }
+    b.tris += 2;
+  };
+  const rowAt = (u) => {                                                    // the frame between two rows
+    const x = Math.min(AGAVE_ROWS - 1e-6, u * AGAVE_ROWS), j = Math.floor(x), t = x - j, p = rows[j], q = rows[j + 1];
+    const mix = (s, e) => [s[0] + (e[0] - s[0]) * t, s[1] + (e[1] - s[1]) * t, s[2] + (e[2] - s[2]) * t];
+    return { c: mix(p.c, q.c), f: V.nrm(mix(p.f, q.f)), n: V.nrm(mix(p.n, q.n)), w: p.w + (q.w - p.w) * t };
+  };
+  const edge = (u, side) => { const q = rowAt(u); return V.add(V.add(q.c, V.mul(sd, side * q.w)), V.mul(q.n, rise(q, u))); };
+  const brown = [0.32, 0.3, 0.2];
+  for (const side of [-1, 1]) {
+    for (let k = 0; k < teeth; k++) {
+      const u = 0.3 + (0.62 * (k + r.range(0, 0.4))) / teeth, du = 0.05, q = rowAt(u), cu = scale(colAt(u), 1.12);
+      const p = edge(u, side), e = edge(u + du, side), mid = V.mul(V.add(p, e), 0.5);
+      const point = V.add(V.add(mid, V.mul(sd, side * tl)), V.add(V.mul(q.f, -tl * 0.35), V.mul(q.n, -tl * 0.1)));
+      tri(p, e, point, cu, cu, brown);
+    }
+  }
+  const last = rows[AGAVE_ROWS], spine = V.add(last.c, V.mul(last.f, 0.07 * L)), cs = scale(colAt(1), 1.1);                                   // the terminal spine
+  tri(V.sub(last.c, V.mul(sd, last.w)), V.add(last.c, V.mul(sd, last.w)), spine, cs, cs, [0.26, 0.2, 0.15]);
+}
+
+/**
+ * An agave rosette of real leaves (R1-D25: the first was three crossed cards, the second flat triangles that folded like paper): 18 fleshy, channelled, toothed leaves on golden-angle
+ * azimuths, the youngest upright in the heart, the oldest arching out and drooping, each built by `agaveLeaf`. The leaves draw from a fork and the 54 numbers the flat blades used to take
+ * from the flora stream are taken and thrown away, so nothing placed after an agave moves.
+ */
 export function agave(K, x, z, o = {}) {
   const r = o.rng, b = K.b('floralow', x, z, { cast: false }), gy = K.H(x, z), s = o.size ?? r.range(1.1, 1.6), rot = r.range(0, 6.28);
-  const lo = scale([0.3, 0.46, 0.34], r.range(0.85, 1.1)), hi = scale([0.5, 0.68, 0.66], r.range(0.9, 1.1));
-  for (const [n, tilt, len, wid] of [[4, 0.14, 0.62, 0.075], [6, 0.62, 0.86, 0.1], [8, 1.12, 0.98, 0.11]]) {
-    for (let i = 0; i < n; i++) {
-      const a = rot + (i / n) * Math.PI * 2 + r.range(-0.25, 0.25) + tilt, t = tilt * r.range(0.85, 1.15), L = s * len * r.range(0.85, 1.1), w = s * wid;
-      const dir = [Math.sin(t) * Math.cos(a), Math.cos(t), Math.sin(t) * Math.sin(a)], side = [-Math.sin(a), 0, Math.cos(a)];
-      const p0 = [x + dir[0] * 0.05, gy + 0.02, z + dir[2] * 0.05], pm = V.add(p0, V.mul(dir, L * 0.45)), tip = V.add(V.add(p0, V.mul(dir, L)), [0, -0.1 * L * Math.min(1.2, t), 0]);
-      const bl = V.sub(p0, V.mul(side, w * 0.55)), br = V.add(p0, V.mul(side, w * 0.55)), ml = V.sub(pm, V.mul(side, w)), mr = V.add(pm, V.mul(side, w));
-      for (const flip of [false, true]) {                                      // both faces: the rosette is seen from above and from the side
-        const T = (p, q, u, c) => (flip ? b.tri('plaster_a', p, u, q, { col: c }) : b.tri('plaster_a', p, q, u, { col: c }));
-        T(bl, br, mr, lo); T(bl, mr, ml, lo); T(ml, mr, tip, hi);
-      }
-    }
+  const foot = scale([0.22, 0.4, 0.3], r.range(0.85, 1.1)), tip = scale([0.34, 0.56, 0.56], r.range(0.9, 1.1));
+  const q = r.fork('agave');
+  for (let i = 0; i < 54; i++) r.next();
+  const N = 18;
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1), a = rot + i * 2.39996 + q.range(-0.1, 0.1);                       // t: 0 the youngest leaf in the heart ... 1 the oldest, outside
+    const tilt = 0.05 + 1.2 * Math.pow(t, 0.85) + q.range(-0.07, 0.07);
+    const L = s * (0.5 + 0.5 * Math.sin(Math.min(1, t * 1.3) * Math.PI / 2)) * q.range(0.92, 1.06), bend = (0.08 + 0.7 * t) * q.range(0.85, 1.15);
+    const W = s * 0.11 * (0.7 + 0.3 * t), ring = 0.04 * s, p0 = [x + Math.cos(a) * ring, gy + 0.03 + 0.12 * s * (1 - t), z + Math.sin(a) * ring];
+    const age = q.range(0.9, 1.08);
+    agaveLeaf(b, p0, a, tilt, bend, L, W, scale(foot, age), scale(tip, age), i >= 8 ? 3 : 0, 0.045 * s * q.range(0.8, 1.2), q);
   }
 }
 
@@ -349,14 +420,14 @@ export function buildFlora(K) {
     for (let s = -96; s < 96; s += 3.6) {
       const [x, z] = at(s + rr.range(0, 2.4), rr.range(2.2, 6.5)), r = rr.fork('t' + sp.n);
       if (occ.slope(x, z) > 0.55 || (side === 's' && z > EDGE - 2)) continue;
-      const hedge = at(s + rr.range(0, 2.4), rr.range(0.9, 1.7));
+      const hedge = at(s + rr.range(0, 2.4), rr.range(2.4, 3.2));       // (the footpath of rimwalk.js runs between the wall and the hedge)
       if (free(hedge[0], hedge[1], 0.8)) { shrub(K, hedge[0], hedge[1], { rng: r.fork('h'), size: r.range(1.0, 1.6), flowers: r.chance(0.45) }); sp.shrub++; sp.rim++; }
       if (inView(x, z)) { if (free(x, z, 1.2)) { agave(K, x, z, { rng: r }); sp.agave++; sp.rim++; sp.n++; } continue; }
       const k = r.next();
       if (side === 'n') { if (!free(x, z, 2.4)) continue; if (k < 0.55) eucalyptus(K, x, z, { rng: r }), sp.euca++; else cypress(K, x, z, { rng: r }), sp.cypress++; }
       else if (side === 'e') { if (!free(x, z, 2.0)) continue; if (k < 0.4) banana(K, x, z, { rng: r }), sp.banana++; else if (k < 0.6) eucalyptus(K, x, z, { rng: r }), sp.euca++; else broadTree(K, x, z, { rng: r }), sp.broad++; }
       else if (side === 'w') { if (!free(x, z, 1.8)) continue; if (k < 0.3) agave(K, x, z, { rng: r }), sp.agave++; else if (k < 0.45) cypress(K, x, z, { rng: r }), sp.cypress++; else broadTree(K, x, z, { rng: r, h: r.range(4.8, 7) }), sp.broad++; }
-      else { if (!free(x, z, 2.0)) continue; if (k < 0.4) cypress(K, x, z, { rng: r }), sp.cypress++; else if (k < 0.75) broadTree(K, x, z, { rng: r }), sp.broad++; else palm(K, x, z, { rng: r }), sp.palm++; }
+      else { if (!free(x, z, 2.0)) continue; if (k < 0.4) cypress(K, x, z, { rng: r }), sp.cypress++; else if (k < 0.75) broadTree(K, x, z, { rng: r }), sp.broad++; else palm(K, x, z, { rng: r, h: r.range(6.5, 8.5) }), sp.palm++; }      // (a palm here is a young one: a tall one stands in front of the far hillside's lights)
       sp.rim++; sp.n++;
     }
   }
@@ -377,7 +448,7 @@ export function buildFlora(K) {
   const tr = R.fork('tufts');
   for (let i = 0; i < 6500; i++) {
     const x = tr.range(-99, 99), z = tr.range(-99, 99);
-    if (!occ.clear(x, z, 0.4, BLOCK) || occ.slope(x, z) > 0.6) continue;
+    if (!occ.clear(x, z, 0.4, BLOCK) || occ.slope(x, z) > 0.6 || K.rimNear?.(x, z, 0.5)) continue;       // (nor on the rim path: it is bare earth)
     if (dirt) { const gi = Math.round((x + 100) / 0.5), gj = Math.round((z + 100) / 0.5); if (dirt[gj * 401 + gi] > 0.5) continue; }
     tuft(K, x, z, tr, 0.9 + 0.5 * Math.max(ss(58, 90, Math.abs(x)), ss(-66, -90, z)));
     sp.tuft++;

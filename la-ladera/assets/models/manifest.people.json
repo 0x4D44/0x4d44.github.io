@@ -2,33 +2,33 @@
   "files": [
     {
       "path": "people/people.glb",
-      "bytes": 6302176,
-      "sha256": "e65905df1afdbf37b65c0d220fed2b15201c97c1b9837b0a5b72c2d4d3bb9f24"
+      "bytes": 6923652,
+      "sha256": "b4af02dba31dafb3d27125775585d54e389b130a62ea693ee78b079786971b5f"
     },
     {
       "path": "people/people_albedo.jpg",
-      "bytes": 467313,
-      "sha256": "74c7e6b817344589c403bd2ea0cc014ac95a66e99c6e6529ca9bba02fe4aba31"
+      "bytes": 441035,
+      "sha256": "32aeb5983bf14a23dcd50f8d6fba0f86a994b995234cfab77a4efbb25857867c"
     },
     {
       "path": "people/people_lod.glb",
-      "bytes": 1977764,
-      "sha256": "e0e544408a2aa05d098a82aefa102588daabac55c6d08a7a5de64b3c0d9cc94f"
+      "bytes": 1904076,
+      "sha256": "f72038d9f7032485c900a76f8ece7ddcae7a2b90a2e89b798027f095fd658e03"
     },
     {
       "path": "people/people_meta.json",
-      "bytes": 45175,
-      "sha256": "80cf721af2a0fb9f37a1849f32bcdd4377d02df6dfd36b77e6241a7233da64f6"
+      "bytes": 45255,
+      "sha256": "fd9da061ebec41127c1bcf6bf3a642a3634bf1e6090fc5e49e9df87bb153bbe7"
     },
     {
       "path": "people/people_normal.jpg",
-      "bytes": 515037,
-      "sha256": "5a5d51612fef4dd6aef153c3057eb8f78eb0efd71c99eeb338f250e50469828a"
+      "bytes": 452543,
+      "sha256": "4b4e5a348bdd89052e79fc75ff24890f9849cfc4af25dec710bb5fed2ae9f2b1"
     },
     {
       "path": "people/people_orm.jpg",
-      "bytes": 75170,
-      "sha256": "08c1b3bd79d4bd699ba2144988c343ee1d81a8ea027e021295df8cee8556e291"
+      "bytes": 75852,
+      "sha256": "741c40ea9db55fbd97756060fef3332d72b730079e5e00019e2bfcd29387c810"
     }
   ],
   "people": {

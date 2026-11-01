@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 import { buildData, readAssetJson } from './headless.mjs';
 import { PeopleSim } from '../js/people/sim.js';
 import { Talk } from '../js/people/talk.js';
-import { MAX_DRAWN, WANT, flatOf } from '../js/people/homelife.js';
+import { Homelife, MAX_DRAWN, WANT, flatOf } from '../js/people/homelife.js';
+import { kneeReachM } from '../js/people/seatmodel.js';
 import { isTwin, TWIN_R } from '../js/people/twins.js';
 import { awake, blockAt, freeChoices, homeActs, homeWeight, visitWeight, HALL_MEETING } from '../js/people/schedule.js';
 import { BANK } from '../js/people/lines/index.js';
@@ -43,6 +44,15 @@ const enter = (sim, lot) => {
   const ok = sim.lotAt(x, z) === lot; sim.setPlayer(ok ? x : e.inside.x, e.inside.y, ok ? z : e.inside.z, 0); return e;
 };
 const residents = (sim, lot) => sim.npcs.filter((n) => n.homeLotId === lot);
+/** Where somebody stands or sits on scene `sc`: the anchor, and a sitter on a sofa or an armchair a `slide` forward of it along the way it faces (R3-026). */
+const atPlace = (n, sc, tol = 0.05) => Math.hypot(n.x - (sc.spot.x + Math.sin(sc.ry) * (sc.slide ?? 0)), n.z - (sc.spot.z + Math.cos(sc.ry) * (sc.slide ?? 0))) < tol;
+/** The piece of furniture an anchor was made for, with the anchor's distance `hip` from the middle of it and the front face's `front`, both along the way it faces; `soft`: a sofa or an armchair. */
+function pieceOf(spot) {
+  const bp = ctx.buildings.get(spot.building), rec = spot.item != null ? bp?.furniture?.find((r) => r.id === spot.item) : null;
+  if (!rec) return null;
+  const [cx, , cz] = bp.frame.toWorld(rec.x, 0, rec.z);
+  return { rec, cx, cz, hip: (spot.x - cx) * Math.sin(spot.ry) + (spot.z - cz) * Math.cos(spot.ry), front: rec.d / 2, soft: rec.tags.includes('sofa') || rec.tags.includes('armchair') };
+}
 
 /** What each scene may stand on (anchor kinds) and in (room types): written from the spec, not read from the code. */
 const FIT = {
@@ -162,7 +172,7 @@ test('looking in at a home: the people who are there are drawn on the place the 
       lookAt(sim, sc.spot); run(sim, 0.6);
       assert.equal(n.away, false, `${n.id} is drawn at ${hour}`);
       assert.equal(n.scene.kind, sc.kind, 'and does what the scene chose'); assert.equal(fits(n.scene), null);
-      assert.ok(Math.hypot(n.x - sc.spot.x, n.z - sc.spot.z) < 0.05 && sim.lotAt(n.x, n.z) === lot, `${n.id} is at the anchor, inside`);
+      assert.ok(atPlace(n, sc) && sim.lotAt(n.x, n.z) === lot, `${n.id} is at the anchor (a sitter on a sofa or an armchair forward of it by ${sc.slide.toFixed(2)} m), inside`);
       assert.equal(n.act, sc.act, `${n.id} acts "${sc.act}"`);
       if (sc.sit != null) assert.ok(n.sitH != null && Math.abs(n.sitH - sc.sit) < 1e-6, `${sc.kind}: seated`); else assert.equal(n.sitH, null, `${sc.kind}: standing`);
       if (sc.kind === 'sweep') assert.equal(n.prop, 'broom', 'sweeping with a broom');
@@ -385,13 +395,14 @@ test('a block of flats: every resident has a place to be at home, in the flat or
   assert.ok(flats >= 8, `${flats} people live in blocks of flats`);
 });
 
-test('a shopkeeper\'s household is up in the evening and in the morning, in bed in the night: the sleep block begins when the shop shuts, bed time is later', () => {
+test('a shopkeeper\'s household is up in the evening and in the morning, in bed in the night: once the shop has shut they are up and about upstairs until bed time (R3-028), which is later', () => {
   const sim = fresh(12), keepers = sim.npcs.filter((n) => n.routine === 'shopkeeper' && n.homeLotId && lotKind(n.homeLotId) !== 'kiosk');
   assert.ok(keepers.length >= 15, `${keepers.length} shopkeepers live above the shop`);
   let up = 0, down = 0;
   for (const n of keepers) {
     const lot = n.homeLotId, before = sim.homelife.actsFor(n, lot, 'sleep', n.bedH - 0.4), after = sim.homelife.actsFor(n, lot, 'sleep', n.bedH + 0.4), morning = sim.homelife.actsFor(n, lot, 'sleep', n.riseH + 0.3);
     assert.ok(awake(n, n.bedH - 0.4) && !awake(n, n.bedH + 0.4), 'bed time is bed time');
+    assert.equal(blockAt(n, n.bedH - 0.4), 'free', `${n.id} (${n.bank}) is not in the sleep block before bed time, the shop being shut`); assert.equal(blockAt(n, n.bedH + 0.4), 'sleep', `${n.id} is after it`);
     assert.ok(!before.some(([k]) => k === 'sleep'), `${n.id} is up before bed time`); up++;
     assert.deepEqual(after, [['sleep', 1]], `${n.id} sleeps after it`); down++;
     assert.ok(!morning.some(([k]) => k === 'sleep'), `${n.id} is up again when the day starts`);
@@ -418,7 +429,7 @@ test('the clinic with the player inside: somebody who comes in through the door 
   }
   assert.ok(first, 'they were seen coming in: drawn on the way, not on the chair at once');
   assert.ok(first.d < 1, `at the door (${first.d.toFixed(1)} m)`); assert.deepEqual([...lots], [clinic], 'the walk to the seat is inside the building');
-  assert.ok(sat && who.sitH != null && who.scene.kind === 'wait' && who.spot === sc.spot && Math.hypot(who.x - sc.spot.x, who.z - sc.spot.z) < 0.05, `sat down on the seat they were going to (${who.scene?.kind}, arrived ${who.scene?.arrived})`);
+  assert.ok(sat && who.sitH != null && who.scene.kind === 'wait' && who.spot === sc.spot && atPlace(who, who.scene), `sat down on the seat they were going to (${who.scene?.kind}, arrived ${who.scene?.arrived})`);
   run(sim, 5); assert.equal(who.act, 'sit'); assert.equal(sim.spots.claimOf(who), sc.spot);
   who.stayUntil = sim.t - 1;                                                                                       // the doctor has seen them
   run(sim, 4);
@@ -459,7 +470,7 @@ function seatedOn(sim, lot, spot, kind, why, used) {
   sim.homelife.choose = () => sc; who.stayUntil = sim.t + 1e9;
   const drawn = sim.homelife.draw(who, lot, sim.hour, true);
   delete sim.homelife.choose;                                                                                       // (the override is for this one person)
-  assert.ok(drawn && sim.homelife.drawn.has(who) && who.sitH != null && Math.hypot(who.x - spot.x, who.z - spot.z) < 0.05, `${who.id} sits on ${spot.id} (drawn ${drawn}, seated ${who.sitH})`);
+  assert.ok(drawn && sim.homelife.drawn.has(who) && who.sitH != null && atPlace(who, who.scene), `${who.id} sits on ${spot.id} (drawn ${drawn}, seated ${who.sitH})`);
   return who;
 }
 
@@ -510,7 +521,7 @@ test('somebody upstairs whose stay is over, with the player up there too, does n
   assert.equal(sim.lotAt(sim.player.x, sim.player.z), clinic, 'the player is in the clinic');
   up.stayUntil = sim.t - 1; run(sim, 6);
   assert.ok(sim.homelife.drawn.has(up) && !up.away && up.scene?.spot === spot, 'their time is up and they are still there with the player');
-  assert.ok(Math.hypot(up.x - spot.x, up.z - spot.z) < 0.1, 'not moved an inch');
+  assert.ok(atPlace(up, up.scene, 0.1), 'not moved an inch');
   elsewhere(sim); run(sim, 1);
   assert.ok(up.away && up.inLot === clinic && !sim.homelife.drawn.has(up), 'when the player goes they are out of sight');
   run(sim, 40);
@@ -660,4 +671,74 @@ test('soak: a player going in and out of twenty homes for eight minutes - nobody
   });
   assert.ok(peak <= MAX_DRAWN, `${peak} drawn at once (cap ${MAX_DRAWN})`); assert.ok(drawnTotal > 0, 'and somebody was seen');
   assert.equal(sim.faults.length, 0, `faults: ${JSON.stringify(sim.faults.slice(0, 2))}`); assert.deepEqual(ctx.errors, [], 'no console errors');
+});
+
+// ---- the seat: sofas and armchairs (R3-026) -------------------------------------------------------------------------------------------------------------------
+/** A world of one building with one piece, for the arithmetic of slideOf: the building's frame shifts everything by (100, 50), the piece is a sofa `d` m deep with its middle at (3, 2) in it, and the anchor is `off` m from the middle along `ry`. */
+function lone(tags = ['seat', 'sofa', 'vinyl'], d = 0.9) {
+  const rec = { id: 'f1', name: 'sofa_3_vinyl', tags, x: 3, z: 2, ry: 0, w: 2, d };
+  const H = new Homelife({ ctx: { buildings: new Map([['L1', { frame: { toWorld: (x, y, z) => [x + 100, y, z + 50] }, furniture: [rec] }]]) } });
+  return { H, anchor: (ry, off = -0.12, item = 'f1') => ({ id: 'a', kind: 'tv', building: 'L1', item, seatH: 0.45, ry, x: 103 + Math.sin(ry) * off, z: 52 + Math.cos(ry) * off }) };
+}
+
+test('slideOf: on a sofa 0.9 m deep with the anchor 0.12 m behind its middle an adult slides until the knee is 5 cm past the front and a child as far as 15 cm short of it, whichever way it faces', () => {
+  const { H, anchor } = lone(), woman = METAS.get('w_joven'), girl = METAS.get('g_girl');
+  for (const ry of [0, Math.PI / 2, Math.PI, -Math.PI / 2, 0.6]) {
+    const a = anchor(ry), sw = H.slideOf({ meta: woman }, a, 0.45), sg = H.slideOf({ meta: girl }, a, 0.45);
+    assert.ok(Math.abs(sw - 0.267) < 0.003, `the woman (knee 0.353 m from the hip) slides 0.267 m facing ${ry.toFixed(2)}, not ${sw.toFixed(3)}`);
+    assert.ok(Math.abs(sg - 0.42) < 1e-9, `the girl (knee 0.162 m) would need 0.458 m: held at 0.42 m, the hip joint 0.15 m short of the front, not ${sg.toFixed(3)}`);
+  }
+  const deep = lone(['seat', 'armchair', 'fabric'], 1.2), a = deep.anchor(0);
+  assert.ok(Math.abs(deep.H.slideOf({ meta: woman }, a, 0.45) - (0.6 + 0.05 + 0.12 - 0.353)) < 0.003, 'a deeper piece: the front is further, the slide longer');
+});
+
+test('slideOf: nothing to slide for on a chair, an anchor of nothing, a piece it does not know, a person without legs, or a seat that already has the knee past the front', () => {
+  const { H, anchor } = lone(), woman = METAS.get('w_joven'), girl = METAS.get('g_girl'), a = anchor(0);
+  const open = lone(['seat', 'chair', 'wood']);
+  assert.equal(open.H.slideOf({ meta: woman }, open.anchor(0), 0.45), 0, 'a chair is open under the seat: the shin hangs in the air');
+  assert.equal(H.slideOf({ meta: woman }, anchor(0, -0.12, 'nope'), 0.45), 0, 'a piece the building does not have');
+  assert.equal(H.slideOf({ meta: woman }, { ...a, item: null }, 0.45), 0, 'an anchor with no piece');
+  assert.equal(H.slideOf({ meta: woman }, { ...a, building: 'L9' }, 0.45), 0, 'a building with no furniture');
+  assert.equal(H.slideOf({ meta: null }, a, 0.45), 0, 'a person with no meta'); assert.equal(H.slideOf({}, a, 0.45), 0, 'and none');
+  assert.equal(H.slideOf({ meta: woman }, anchor(0, 0.30), 0.45), 0, 'an anchor so far forward that her knee is past the front already (0.65 against 0.5)');
+  assert.equal(H.slideOf({ meta: girl }, anchor(0, 0.32), 0.45), 0, 'one so far forward that the cushion is gone: the clamp never slides backwards (needs 0.018 m, has -0.02 m)');
+  assert.equal(new Homelife({ ctx: {} }).slideOf({ meta: woman }, a, 0.45), 0, 'a world with no buildings');
+});
+
+test('R3-026: on every sofa and armchair of the barrio, whoever sits there has the knee past the front of the piece and the hip joint on the cushion; every other seat is left where it is', () => {
+  const sim = fresh(13), H = sim.homelife; let soft = 0, slid = 0, open = 0;
+  for (const s of sim.spots.all) {
+    if (s.src !== 'anchor' || !['sit', 'tv'].includes(s.kind)) continue;
+    const p = pieceOf(s); if (!p) continue;
+    for (const m of META.people) {
+      const sitH = s.seatH ?? 0.45, slide = H.slideOf({ meta: m }, s, sitH), hip = p.hip + slide, knee = hip + kneeReachM(m, sitH);
+      if (!p.soft) { assert.equal(slide, 0, `${m.id} on ${p.rec.name} (${s.id}) is not moved`); open++; continue; }
+      soft++; if (slide > 0) slid++;
+      assert.ok(slide >= 0 && slide < p.rec.d / 2 + 0.2, `${m.id} on ${p.rec.name} (${s.id}) slides ${slide.toFixed(3)} m`);
+      assert.ok(knee >= p.front + 0.01, `${m.id} on ${p.rec.name} (${s.id}): the knee is ${knee.toFixed(3)} m from the middle, the front face ${p.front.toFixed(3)} (anchor ${p.hip.toFixed(3)}, slide ${slide.toFixed(3)}): the shin hangs in the cushion`);
+      assert.ok(p.front - hip >= 0.149, `${m.id} on ${p.rec.name} (${s.id}): the hip joint is ${(p.front - hip).toFixed(3)} m short of the front: off the cushion`);
+    }
+  }
+  assert.ok(soft >= 300 * META.people.length && open >= 200 * META.people.length, `${soft} sofa and armchair seatings, ${open} others`);
+  assert.ok(slid > 0, 'the seats of the barrio need the slide (the anchor is behind the middle of the piece)');
+});
+
+test('R3-026, the report: n40 of L94 in front of the television at one o\'clock sat with her shins in the sofa; drawn on each sofa and armchair of her home she sits forward of the anchor with the knee past the front of the piece', () => {
+  const sim = fresh(13), lot = 'L94', who = sim.npcs.find((m) => m.id === 'n40');
+  assert.equal(who.homeLotId, lot, 'n40 lives in L94');
+  const soft = sim.homelife.info(lot).anchors.filter((a) => (a.kind === 'tv' || a.kind === 'sit') && pieceOf(a)?.soft);
+  assert.ok(soft.length >= 1, `a sofa or an armchair in her home (${soft.length})`);
+  for (const s of soft) {
+    sim.brain.finish(who); sim.brain.hideAway(who, lot, 'home'); who.stayUntil = sim.t + 1e9;
+    const sc = sim.homelife.sceneOf(who, lot, 'home', s.kind === 'tv' ? 'tv' : 'sit', s, 'n40:' + s.id);
+    sim.homelife.choose = () => sc;
+    const drawn = sim.homelife.draw(who, lot, 13, true); delete sim.homelife.choose;
+    const p = pieceOf(s), hip = (who.x - p.cx) * Math.sin(s.ry) + (who.z - p.cz) * Math.cos(s.ry), knee = hip + kneeReachM(who.meta, who.sitH);
+    assert.ok(drawn && who.sitH === 0.45 && who.spot === s, `she sits on ${s.id} (${p.rec.name})`);
+    assert.ok(sc.slide > 0.2 && sc.slide < 0.43 && atPlace(who, sc, 1e-6), `forward of the anchor by the scene's slide, ${sc.slide.toFixed(3)} m (she is ${Math.hypot(who.x - s.x, who.z - s.z).toFixed(3)} m from it)`);
+    assert.ok(Math.abs(hip - (p.hip + sc.slide)) < 1e-6 && knee >= p.front + 0.04, `${p.rec.name}: her knee is ${knee.toFixed(3)} m from the middle of the piece, the front face is at ${p.front.toFixed(3)} (hip ${hip.toFixed(3)}; the anchor had it at ${p.hip.toFixed(3)})`);
+    assert.equal(sim.lotAt(who.x, who.z), lot, 'still inside her home');
+    sim.homelife.drawn.delete(who); sim.brain.finish(who);
+  }
+  assert.equal(sim.faults.length, 0, 'no faults');
 });

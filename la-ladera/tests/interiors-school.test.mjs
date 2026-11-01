@@ -58,15 +58,49 @@ test('every classroom has a board, its desks face it, and the teacher\'s desk; a
   assert.ok(odd >= 20 && oddSeated / odd >= 0.75, `${oddSeated} of ${odd} small odd classrooms seat anybody (a shallow room starts its rows just past the teacher's desk)`);
 });
 
-test('every lavatory has toilets, a basin and a mirror, and no shower or towel rail', () => {
+test('every lavatory has toilets, a basin and a mirror, and no shower or towel rail (a block of cubicles: a toilet to a cubicle, the basins and mirrors in its washroom passage)', () => {
   const bad = [];
+  let cubicles = 0, passages = 0;
   for (const { bp, rm, rs } of inSchools((rm) => rm.type === 'bathroom')) {
     const wc = count(rs, 'toilet'), basins = count(rs, 'basin_pedestal', 'basin_vanity'), mirrors = count(rs, 'mirror_bath', 'mirror_wall'), wet = count(rs, 'shower_tray', 'shower_small', 'shower_head_electric', 'towel_rail');
-    if (wc < (area(rm) >= 5 ? 2 : 1)) bad.push(`${where(bp, rm)}: ${wc} toilets`);
-    if (!basins) bad.push(`${where(bp, rm)}: no basin`);
-    if (!mirrors) bad.push(`${where(bp, rm)}: no mirror`);
+    if (rm.tag === 'wc') {                                                                      // a cubicle (A2's lavatory block, R4-204): one toilet, and no basin: the basins are in the passage
+      cubicles++;
+      if (wc !== 1) bad.push(`${where(bp, rm)}: ${wc} toilets in a cubicle`);
+      if (basins) bad.push(`${where(bp, rm)}: a basin in a cubicle`);
+    } else if (rm.tag === 'wash') {                                                             // the passage the cubicles open onto: the basins under mirrors, no toilet
+      passages++;
+      if (wc) bad.push(`${where(bp, rm)}: ${wc} toilets in the washroom passage`);
+      if (!basins) bad.push(`${where(bp, rm)}: no basin`);
+      if (!mirrors) bad.push(`${where(bp, rm)}: no mirror`);
+    } else {                                                                                    // a whole lavatory in one room: a lot too small for the block
+      if (wc < (area(rm) >= 5 ? 2 : 1)) bad.push(`${where(bp, rm)}: ${wc} toilets`);
+      if (!basins) bad.push(`${where(bp, rm)}: no basin`);
+      if (!mirrors) bad.push(`${where(bp, rm)}: no mirror`);
+    }
     if (wet) bad.push(`${where(bp, rm)}: ${wet} shower fittings or towel rails in a school lavatory`);
   }
+  assert.ok(cubicles >= 20 && passages >= 8, `${cubicles} cubicles and ${passages} washroom passages to look at`);
+  assert.deepEqual(bad, []);
+});
+
+test('a cubicle can be used: the toilet stands at the end away from the door, a walker stands in front of it, and the door opens onto free floor (R4-204)', () => {
+  const bad = [], R = 0.3;
+  let seen = 0;
+  for (const { bp, rm, rs } of inSchools((rm) => rm.type === 'bathroom' && rm.tag === 'wc')) {
+    seen++;
+    const wc = rs.find((r) => r.name === 'toilet'), door = bp.doors.find((d) => d.rooms.includes(rm.id));
+    if (!wc || !door) { bad.push(`${where(bp, rm)}: ${wc ? 'no door' : 'no toilet'}`); continue; }
+    const [fx, fz] = facing(wc), alongX = Math.abs(fx) > 0.5, q = rm.rect, size = catalogOf(wc).size;                // (the plan is axis-aligned: a toilet faces north, south, east or west)
+    const front = [wc.x + fx * size[2] / 2, wc.z + fz * size[2] / 2];                     // the middle of the toilet's front edge
+    const far = alongX ? (fx > 0 ? q.x1 - front[0] : front[0] - q.x0) : (fz > 0 ? q.z1 - front[1] : front[1] - q.z0);          // the floor in front of it, to the wall it faces
+    if (far < 2 * R + 0.1) bad.push(`${where(bp, rm)}: ${far.toFixed(2)} m of floor in front of the toilet (a walker needs ${(2 * R + 0.1).toFixed(2)})`);
+    // the door's landing: a point 0.45 m in from the middle of the opening (the door's normal points into rooms[1]), where a walker stands to open it; the toilet's footprint is at least R from it
+    const into = door.rooms[0] === rm.id ? -1 : 1, lx = door.x + into * door.nx * 0.45, lz = door.z + into * door.nz * 0.45;
+    const hw = alongX ? size[2] / 2 : size[0] / 2, hd = alongX ? size[0] / 2 : size[2] / 2;                          // half extents along x and z
+    const dx = Math.max(Math.abs(lx - wc.x) - hw, 0), dz = Math.max(Math.abs(lz - wc.z) - hd, 0);
+    if (Math.hypot(dx, dz) < R - 1e-6) bad.push(`${where(bp, rm)}: the toilet is ${Math.hypot(dx, dz).toFixed(2)} m from where one stands to open the door`);
+  }
+  assert.ok(seen >= 20, `${seen} cubicles to look at`);
   assert.deepEqual(bad, []);
 });
 

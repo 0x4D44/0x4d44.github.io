@@ -36,6 +36,7 @@ export class Brain {
   start(npc, near = null) {
     const W = this.w, blk = blockAt(npc, W.hour); npc.block = blk;
     if (blk === 'sleep') return this.hideAway(npc, npc.homeLotId, 'sleep');
+    if (npc.routine === 'shopkeeper' && blk === 'free') return this.hideAway(npc, npc.homeLotId, 'home');       // the shop is shut: upstairs, up and about
     if (blk === 'school') return this.hideAway(npc, W.lots.school, 'school');
     if (blk === 'work' && this.startWork(npc, { instant: true, near })) return true;
     return this.leisure(npc, { instant: true, near });
@@ -48,7 +49,8 @@ export class Brain {
     this.finish(npc);
     if (npc.away) return;
     const blk = blockAt(npc, W.hour); npc.block = blk;
-    if (blk === 'sleep') { if (npc.routine === 'shopkeeper') return this.closeShop(npc); return this.goHome(npc); }
+    if (npc.routine === 'shopkeeper' && blk !== 'work') return this.closeShop(npc);
+    if (blk === 'sleep') return this.goHome(npc);
     if (blk === 'school') return this.goIn(npc, W.lots.school, 'school');
     if (blk === 'work') return this.work(npc);
     return this.leisure(npc);
@@ -282,6 +284,7 @@ export class Brain {
     if (c && c.a === npc.id && W.t >= c.turnAt) this.turn(c);
     if (npc.away) {
       if (npc.awayWhy === 'home' && blk === 'sleep') { npc.awayWhy = 'sleep'; npc.block = 'sleep'; return; }       // bedtime comes while they are home: they stay, in bed
+      if (npc.awayWhy === 'sleep' && npc.routine === 'shopkeeper' && blk === 'free') { npc.awayWhy = 'home'; npc.block = 'free'; return; }       // a keeper is up (the morning, or the clock put back to the evening): up and about upstairs
       if (!npc.emerging && W.t >= npc.downAt && this.stayOver(npc, blk)) { npc.emerging = true; this.emerge(npc, blk); }
       return;
     }
@@ -296,14 +299,15 @@ export class Brain {
    * reasons (asleep, at school, on duty) end with their block. `why` is what the person is indoors for (homelife.js asks it of somebody who is drawn inside).
    */
   stayOver(npc, blk, why = npc.awayWhy) {
+    if (npc.routine === 'shopkeeper' && (why === 'home' || why === 'sleep')) return blk === 'work';             // a keeper is upstairs (up or in bed: `tick` keeps the label) until the shop opens
     if (why === 'home' || why === 'visit') return this.w.t >= npc.stayUntil || blk === 'school' || blk === 'work' || (why === 'visit' && blk === 'sleep');
     return blk !== why;
   }
 
   changeBlock(npc, blk) {
     const W = this.w, prev = npc.block;
+    if (npc.routine === 'shopkeeper' && blk !== 'work') { npc.block = blk; this.closeShop(npc); return; }       // the shop shuts: upstairs, up and about until bed time, then in bed
     if (blk === 'free') { npc.block = blk; return; }                       // off duty: finish what they are doing, `next` picks leisure
-    if (npc.routine === 'shopkeeper' && blk === 'sleep') { npc.block = blk; this.closeShop(npc); return; }
     if (prev === 'work' && blk === 'school') { npc.block = blk; return; }
     npc.block = blk; this.beginBlock(npc, blk);
   }
@@ -523,12 +527,13 @@ export class Brain {
     return this.backToPost(npc);
   }
 
+  /** The shop shuts (or the keeper's day is over): up the stairs, hidden in the building. 'home' while they are up and about, 'sleep' from bed time (`tick` turns one into the other). */
   closeShop(npc) {
-    const W = this.w, shop = W.shops.get(npc.shopLotId); npc.block = 'sleep';
+    const W = this.w, shop = W.shops.get(npc.shopLotId), why = blockAt(npc, W.hour) === 'sleep' ? 'sleep' : 'home'; npc.block = why === 'sleep' ? 'sleep' : 'free';
     if (shop) { shop.open = false; shop.keeper = null; if (shop.ent) W.doors.keepOpen(shop.ent.doorId, false); }
     const inside = shop && dist2d(npc, shop.post) < 4.5 && Math.abs(npc.y - shop.post.y) < 1.2;
-    if (inside || W.canSnap(npc)) return this.hideAway(npc, npc.shopLotId, 'sleep');
-    return this.goHome(npc);
+    if (inside || W.canSnap(npc)) return this.hideAway(npc, npc.shopLotId, why);
+    return this.goIn(npc, npc.homeLotId, why);
   }
 
   /** At the counter: sell, idle, look at the phone; now and then step out for a minute. */

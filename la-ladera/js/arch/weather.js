@@ -68,37 +68,31 @@ function fadeRound(g, w, h, from = 0.5) {
   g.fillStyle = gr; g.fillRect(-1, -1, 2, 2); g.restore();
 }
 
-// Second coat and bare ground under the top coat: [the old paint that shows round the hole, what shows where that went too]. (A decal cannot know the wall it lies on: the
-// colours are fixed per variant, so the mix on a street is as mixed as the paint jobs of a barrio.)
-const PEEL = [
-  [[216, 208, 188], [150, 148, 140]],      // old cream over cement
-  [[214, 192, 132], [172, 148, 120]],      // old yellow over plaster
-  [[158, 184, 160], [142, 138, 130]],      // old green over cement
-  [[156, 178, 196], [182, 168, 150]],      // faded blue over plaster
-  [[204, 152, 134], [156, 90, 68]],        // old pink over brick
-  [[188, 182, 172], [156, 92, 68]],        // grey wash over brick
-];
+// What shows where the top coat has gone: [the old coat, the bare ground under it]. (A decal cannot know the wall it lies on, and a cream or yellow patch of its own on a blue wall is a
+// sticker, R1-D22.) So neither is a colour from another palette: the old coat is a chalky grey laid on the wall at a third to a half of full strength, so the wall's own colour comes
+// through it and the patch is that wall, faded and dulled (on a blue wall and on a white one alike), and the ground is a dull plaster-and-cement brown-grey that no paint job owns.
+const PEEL_COAT = [[176, 168, 154], [164, 168, 170], [182, 170, 142], [160, 156, 150], [188, 180, 168], [168, 160, 148]];
+const PEEL_BARE = [[142, 130, 116], [128, 126, 124], [152, 134, 112], [134, 124, 110], [144, 132, 120], [120, 114, 106]];
 const TAGNAMES = ['LOBO', 'ZETA', 'KIKE', 'RIKO', 'SOL', 'NK', 'TITO', 'MAYA'];
 
-/** A periodic smooth noise round a circle: K random lattice values, eased between them; f(angle) is in -1..1. */
-function periodic(r, K) {
-  const v = Array.from({ length: K }, () => r() * 2 - 1);
-  return (a) => { const t = ((((a / 6.2832) % 1) + 1) % 1) * K, k = Math.floor(t), f = t - k, s = f * f * (3 - 2 * f); return v[k] * (1 - s) + v[(k + 1) % K] * s; };
-}
-/**
- * The outline of a flake of paint that has come away round (cx, cy): straight edges meeting at angles, uneven spacing (long runs and short teeth), a notch here and there, wide lobes
- * underneath. It reaches about 1.2 R at most; `sq` squashes it. Smooth blobs read as stickers; shards read as paint.
- */
-function shardPts(cx, cy, R, r, sq = 0.92, N = 34) {
-  const f1 = periodic(r, 5), f2 = periodic(r, 11), pts = [];
-  for (let k = 0; k < N; k++) {
-    const a = ((k + (r() - 0.5) * 0.7) / N) * 6.2832;
-    let rr = R * (0.82 + 0.2 * f1(a) + 0.1 * f2(a) + 0.2 * (r() - 0.5));
-    if (r() < 0.14) rr *= 0.7 + 0.2 * r();
-    pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * sq]);
+/** Smooth 2-D value noise over a w x h grid, rms about 0.3 per unit of amplitude (octaves: amplitude, lattice step in pixels). */
+function fbm2(r, w, h, oct) {
+  const out = new Float32Array(w * h);
+  for (const [a, st] of oct) {
+    const nx = Math.ceil(w / st) + 3, lat = Float32Array.from({ length: nx * (Math.ceil(h / st) + 3) }, () => r() * 2 - 1);
+    for (let y = 0; y < h; y++) {
+      const ty = y / st, j = Math.floor(ty), fy = ty - j, sy = fy * fy * (3 - 2 * fy);
+      for (let x = 0; x < w; x++) {
+        const tx = x / st, i = Math.floor(tx), fx = tx - i, sx = fx * fx * (3 - 2 * fx), k = j * nx + i;
+        out[y * w + x] += a * ((lat[k] * (1 - sx) + lat[k + 1] * sx) * (1 - sy) + (lat[k + nx] * (1 - sx) + lat[k + nx + 1] * sx) * sy);
+      }
+    }
   }
-  return pts;
+  return out;
 }
+const sstep = (a, b, v) => { const t = clamp((v - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+/** The half-axes (fractions of the width and the height) of the old coat's envelope, by variant: round, tall (a run down the wall), wide, a cluster, large, a low wedge. */
+const PEEL_SHAPE = [[0.3, 0.3], [0.2, 0.38], [0.38, 0.22], [0.31, 0.27], [0.38, 0.36], [0.33, 0.21]];
 /** A soft round blot: `a0` opaque in the middle, nothing at the rim. */
 function soft(g, x, y, rad, col, a0) {
   const gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, rgba(col, a0)); gr.addColorStop(1, rgba(col, 0));
@@ -149,36 +143,45 @@ const PAINT = {
     fade(g, w, h, [0.08, 0.08, 0, 0.12]);
   },
   peel(g, w, h, i, r) {
-    // Paint that has come away in layers: the top coat is gone from a torn patch and the old coat shows (a second colour), and where that went too, the bare ground. Each edge has
-    // a little thickness (a broken dark rim, shade just inside it), a few chips have gone beside the main hole, and nothing is outlined in white.
-    const [c2, c3] = PEEL[i % PEEL.length], cx = w / 2 + (r() - 0.5) * 8, cy = h / 2 + (r() - 0.5) * 8, R = Math.min(w, h) * 0.4;
-    const outer = shardPts(cx, cy, R, r, 0.72 + 0.4 * r());
-    g.lineJoin = 'round'; g.lineCap = 'round';
-    for (let k = 0; k < 2; k++) {                                                                                                                           // water that ran from the hole, down the wall
-      const x = cx + (r() - 0.5) * R * 1.2, y0 = cy + R * 0.5, L = 14 + r() * 26, gr = g.createLinearGradient(0, y0, 0, y0 + L);
-      gr.addColorStop(0, 'rgba(40,30,20,0.16)'); gr.addColorStop(1, 'rgba(40,30,20,0)'); g.strokeStyle = gr; g.lineWidth = 2 + r() * 3; g.beginPath(); g.moveTo(x, y0); g.lineTo(x + (r() - 0.5) * 6, y0 + L); g.stroke();
+    // Paint that has come away, and nothing like a sticker (R1-D22: a pale outline, a ring of flecks, a colour of its own). Painted pixel by pixel from noise, so that its shape is
+    // torn, not drawn: the old coat is where one field is high, the bare ground where another is, islands of paint stand in the old coat, and every edge is a step a pixel or two wide
+    // with no line along it. The old coat is chalky and a third to a half as strong as paint (PEEL_COAT), so the wall's own colour comes through it, on a blue wall and on a white
+    // one alike; the bare ground is the dull brown-grey of plaster and cement (PEEL_BARE). Where the top coat stands over the hole its lip shades the edge inside, up and to the left;
+    // round the whole of it the plaster is wet and a little darker, and a few scraps lift beside it. A few thin runs of water leave the hole.
+    const coat = PEEL_COAT[i % PEEL_COAT.length], bare = PEEL_BARE[i % PEEL_BARE.length], [ax, ay] = PEEL_SHAPE[i % PEEL_SHAPE.length], rx = ax * w, ry = ay * h;
+    const cx = w / 2 + (r() - 0.5) * 0.08 * w, cy = h / 2 + (r() - 0.5) * 0.08 * h;
+    const bx = cx + (r() - 0.5) * rx * 0.7, by = cy + (r() - 0.35) * ry * 0.6, brx = rx * (0.4 + 0.2 * r()), bry = ry * (0.4 + 0.2 * r());
+    const n1 = fbm2(r, w, h, [[1, 52], [0.6, 24], [0.36, 10], [0.2, 4.5]]), n2 = fbm2(r, w, h, [[1, 40], [0.6, 17], [0.36, 7], [0.2, 3.5]]);       // the two outlines
+    const mot = fbm2(r, w, h, [[1, 18], [0.6, 6], [0.5, 2]]), isl = fbm2(r, w, h, [[1, 15], [0.5, 6]]), sp = fbm2(r, w, h, [[1, 12], [0.5, 4.5]]), fl = fbm2(r, w, h, [[1, 5], [0.6, 2.5]]);   // mottle, islands of paint, spots of bare ground, flecks
+    const tA = 0.2, tB = 0.12, E = 0.04;
+    const at = (x, y) => clamp(Math.round(y), 0, h - 1) * w + clamp(Math.round(x), 0, w - 1);
+    const sA = (x, y) => { const ex = (x - cx) / rx, ey = (y - cy) / ry; return 1 - ex * ex - ey * ey + 0.45 * n1[at(x, y)]; };                         // > tA: the old coat shows
+    const sB = (x, y) => { const ex = (x - bx) / brx, ey = (y - by) / bry; return 1 - ex * ex - ey * ey + 0.5 * n2[at(x, y)]; };                          // > tB (and inside the old coat): bare
+    const bareAt = (x, y) => Math.max(sstep(tB - E, tB + E, sB(x, y)), sstep(0.3, 0.36, sp[at(x, y)])) * sstep(tA + 0.04, tA + 0.14, sA(x, y));        // 1 where the ground is bare: a core, and spots about it
+    const img = g.createImageData(w, h), px = img.data;
+    let al = 0, cr = 0, cg = 0, cb = 0;
+    const over = (c, f, a) => { a *= f; if (a < 0.003) return; const na = a + al * (1 - a); cr = (c[0] * a + cr * al * (1 - a)) / na; cg = (c[1] * a + cg * al * (1 - a)) / na; cb = (c[2] * a + cb * al * (1 - a)) / na; al = na; };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const k = y * w + x, a = sA(x, y), m = mot[k];
+      al = 0; cr = coat[0]; cg = coat[1]; cb = coat[2];
+      const inA = sstep(tA - E, tA + E, a), inB = bareAt(x, y);
+      over([58, 44, 30], 0.13 * sstep(tA - 0.9, tA, a), 0.8 + 0.4 * m);                                                                       // the wet round it
+      const pocket = sstep(0.5, 0.58, isl[k]) * sstep(tA + 0.12, tA + 0.4, a);                                                                 // a stand of paint left in the old coat
+      over([coat[0] * (1 + 0.12 * m), coat[1] * (1 + 0.12 * m), coat[2] * (1 + 0.12 * m)], inA * (1 - pocket), 0.46 * (0.9 + 0.2 * m));          // the old coat
+      over([bare[0] * (1 + 0.12 * fl[k]), bare[1] * (1 + 0.12 * fl[k]), bare[2] * (1 + 0.12 * fl[k])], inB, 0.82 * (0.92 + 0.16 * m));         // the bare ground
+      over([30, 22, 14], inA * (1 - sstep(tA - E, tA + E, sA(x - 3, y - 3.5))), 0.3);                                                          // the lip of the top coat shades the old coat
+      over([24, 18, 12], inB * (1 - bareAt(x - 3.5, y - 5)), 0.4);                                                                             // and the old coat shades the bare ground
+      over(coat, sstep(0.52, 0.6, fl[k]) * sstep(tA - 0.42, tA - 0.1, a) * (1 - inA), 0.4);                                                    // scraps lifting beside it
+      const p = k * 4; px[p] = cr; px[p + 1] = cg; px[p + 2] = cb; px[p + 3] = Math.round(al * 255);
     }
-    g.strokeStyle = 'rgba(40,30,20,0.035)'; for (const lw of [22, 14, 7]) { g.lineWidth = lw; trace(g, outer); g.stroke(); }                                  // damp round the hole
-    trace(g, outer); g.fillStyle = rgba(c2, 1); g.fill();                                                                                                   // the old coat
-    g.save(); trace(g, outer); g.clip();
-    for (let k = 0; k < 16; k++) soft(g, cx + (r() - 0.5) * R * 1.7, cy + (r() - 0.5) * R * 1.4, 7 + r() * 18, r() < 0.6 ? [64, 50, 34] : [255, 250, 238], 0.06 + r() * 0.1);   // mottled with dirt
-    const gv = g.createLinearGradient(0, cy - R, 0, cy + R); gv.addColorStop(0, 'rgba(60,46,30,0)'); gv.addColorStop(1, 'rgba(60,46,30,0.2)'); g.fillStyle = gv; g.fillRect(0, 0, w, h);   // dirtier toward the bottom
-    g.save(); g.translate(3, 4); g.strokeStyle = 'rgba(30,22,14,0.3)'; g.lineWidth = 7; trace(g, outer); g.stroke(); g.lineWidth = 3.5; g.stroke(); g.restore();   // the lip above and to the left shades what lies below it
-    const inner = shardPts(cx + (r() - 0.5) * R * 0.5, cy + (r() - 0.5) * R * 0.4, R * (0.34 + 0.2 * r()), r, 0.7 + 0.3 * r(), 26);
-    trace(g, inner); g.fillStyle = rgba(c3, 1); g.fill();                                                                                                   // the bare ground
-    g.save(); trace(g, inner); g.clip();
-    grain(g, cx - R * 1.2, cy - R * 1.2, cx + R * 1.2, cy + R * 1.2, 90, r, [[40, 30, 22], [226, 220, 206], [40, 30, 22]], 0.08, 0.22, 2.2);
-    g.save(); g.translate(2.5, 3.5); g.strokeStyle = 'rgba(30,22,14,0.3)'; g.lineWidth = 6; trace(g, inner); g.stroke(); g.restore();
-    g.strokeStyle = 'rgba(34,24,14,0.3)'; g.lineWidth = 1; for (let k = 0; k < 3; k++) { g.beginPath(); let x = cx + (r() - 0.5) * R, y = cy + (r() - 0.5) * R * 0.7; g.moveTo(x, y); for (let s = 0; s < 4; s++) { x += (r() - 0.5) * 16; y += (r() - 0.25) * 12; g.lineTo(x, y); } g.stroke(); }
-    g.restore();
-    rim(g, inner, r, 0.18, 0.3);
-    g.restore();
-    rim(g, outer, r, 0.25, 0.4);
-    for (let k = 0; k < 5; k++) {                                                                                                                           // chips beside the hole
-      const a = r() * 6.283, d = R * (1.02 + 0.22 * r()), x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d * 0.85, rr = 3 + r() * 6;
-      if (x < 14 || x > w - 14 || y < 14 || y > h - 14) continue;
-      const chip = shardPts(x, y, rr, r, 0.8, 9); trace(g, chip); g.fillStyle = rgba(c2, 0.96); g.fill(); rim(g, chip, r, 0.3, 0.3);
+    const tr = g.getTransform ? g.getTransform() : null;
+    g.putImageData(img, tr ? tr.e : 0, tr ? tr.f : 0);
+    g.lineCap = 'round';
+    for (let k = 0; k < 2; k++) {                                                                                     // water that ran from the hole, down the wall
+      const x = bx + (r() - 0.5) * brx, y0 = by + bry * 0.5, L = 14 + r() * 26, gr = g.createLinearGradient(0, y0, 0, y0 + L);
+      gr.addColorStop(0, 'rgba(40,30,20,0.14)'); gr.addColorStop(1, 'rgba(40,30,20,0)'); g.strokeStyle = gr; g.lineWidth = 2 + r() * 3; g.beginPath(); g.moveTo(x, y0); g.lineTo(x + (r() - 0.5) * 6, y0 + L); g.stroke();
     }
+    fadeRound(g, w, h, 0.8);                                                                                          // and the quad's own edge is clear
   },
   patch(g, w, h, i, r) {
     // Four kinds of mend. 0 and 1 are near white: the vertex tint paints them in the wall's own colour, a shade off. 2 and 3 carry their own colours and are fixed on with nails, so they
