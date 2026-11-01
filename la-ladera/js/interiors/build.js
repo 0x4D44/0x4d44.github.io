@@ -57,7 +57,7 @@ export async function loadInteriorAssets(ctx) {
 }
 
 /**
- * The clothes (garments.js). Their models are a library of their own (assets/models/garments, manifest.garments.json; assets/models/manifest.json does not list it), so they are registered
+ * The clothes (garments.js). The adult and child packs have their own manifests (manifest.garments.json and manifest.garments-child.json; assets/models/manifest.json does not list them), so they are registered
  * here, each key pointed at its LOD file, and loaded into a set of their own, `ctx.garmentGlb`: `ctx.interiorGlb` stays the furniture's, one entry per key of the furniture catalogue
  * (the furniture tests hold it to that). A record whose key is in either set draws from its model; anything else keeps its stand-in (a patch of cloth), so a file that is missing or
  * broken costs the look of the clothes and never the room. Nothing is requested when the clothes are switched off (`?garments=0`: there are no records to draw).

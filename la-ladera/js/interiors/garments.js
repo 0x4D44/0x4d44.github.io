@@ -4,13 +4,13 @@
 //                  more on the floor). A pure function of the building id, the room id and the household, so a house looks the same on every load. The household sets how
 //                  messy it tends to be (`hh.tidy`, shifted by who lives there: students more, the elders much less); the room's own hash draws the rest. Shops, the clinic, the
 //                  school, the chapel and the hall are always neat; a kitchen or a living room is at most lived-in; an elder's own room is never worse than lived-in; a child's room
-//                  (a role of kids, child or teen, or a bedroom with a bunk or a baby's crib) is not touched at all (the garment library is adult clothing).
+//                  (a role of kids, child or teen, or a bedroom with a bunk or a baby's crib) is not touched by this adult assortment pass. The child library has separate size tags.
 //   * dressRooms   the pass that places the clothes (after every room of the building is furnished): garments go on the bed, on a seat, on a wall hook or on the floor, never
 //                  inside a piece of furniture and never on the lanes people walk (walkLanes). Its own random streams (forks of the building's), so no other piece moves.
 //   * the assets   the garment GLBs are loaded through the interiors' catalogue path (build.js: `registerGarmentAssets` points each `garment_<id>_<state>` key at the LOD model);
 //                  without them a record draws as a flat cloth patch in its own colour (standins.js).
 // Pure data (no THREE, no DOM), so node and the page share the file.
-import { GARMENTS, VARIANTS, STATES, ASSORTMENTS } from './garments_data.js';
+import { GARMENTS, GARMENT_FILES, VARIANTS, STATES, ASSORTMENTS } from './garments_data.js';
 import { mkObb, obbOverlap, obbCorners } from './layout.js';
 import { usePoint } from './reach.js';
 import { hashStr } from '../core/rng.js';
@@ -23,11 +23,12 @@ export const uOf = (...parts) => (hashStr(parts.join('|')) >>> 0) / 4294967296;
 
 // ------------------------------------------------------------------ the models
 export const garmentKey = (id, state) => `garment_${id}_${state}`;
-/** Every catalogue key of the library (23 garments, 67 states). */
+/** Every applicable catalogue key in both garment sizes. */
 export const GARMENT_KEYS = Object.entries(GARMENTS).flatMap(([id, g]) => STATES.filter((s) => g[s]).map((s) => garmentKey(id, s)));
-export const lodFile = (state) => `garments/garments_${state}_lod.glb`;
-/** `garments_<state>_lod.glb` holds the LOD of every garment in that state, each as the node `<key>_lod` (manifest.garments.json `lod`). Interiors are merged per building: no per-object
- *  switching, so every garment is drawn from its LOD (<= 240 triangles, 157 on average; the 800-triangle models stay unloaded). */
+/** The generated manifest paths keep adult and child packs separate. One-argument calls retain the adult path. */
+export const lodFile = (state, sizeTag = 'adult') => GARMENT_FILES[sizeTag]?.[state];
+/** Each size's `garments_<state>_lod.glb` holds its garments in that state, as nodes `<key>_lod` (the garment manifests' `lod`). Interiors are merged per building: no per-object
+ *  switching, so every garment is drawn from its LOD (<= 240 triangles; the detailed models stay unloaded). */
 export function registerGarmentAssets(ctx) {
   const a = ctx?.assets;
   if (!a?.entries) return 0;
@@ -35,7 +36,7 @@ export function registerGarmentAssets(ctx) {
   for (const [id, g] of Object.entries(GARMENTS)) for (const state of STATES) {
     if (!g[state]) continue;
     const key = garmentKey(id, state);
-    a.entries.set(key, { ...a.entries.get(key), name: key, glb: lodFile(state), node: key + '_lod', tags: ['garment'] });
+    a.entries.set(key, { ...a.entries.get(key), name: key, glb: lodFile(state, g.sizeTag), node: key + '_lod', sizeTag: g.sizeTag, tags: ['garment', g.sizeTag] });
     n++;
   }
   return n;
@@ -68,8 +69,8 @@ export function classOf(bp, room, L) {
   return HOME_CLASS[room.type] ?? null;
 }
 /**
- * A child's room: a role of the household (kids, child, teen), or a bedroom that holds a child's bed (a bunk, a baby's crib). The garment library is adult clothing, so such a room is
- * left alone: no clothes, and its beds keep whatever the room furnisher drew. (A toy pile or a school bag alone does not make a parents' room a child's: the family's things lie
+ * A child's room: a role of the household (kids, child, teen), or a bedroom that holds a child's bed (a bunk, a baby's crib). This pass uses adult assortments, so such a room is
+ * left alone: no loose clothes, and its beds keep whatever the room furnisher drew. Child assets are registered separately for explicit size-aware placements. (A toy pile or a school bag alone does not make a parents' room a child's: the family's things lie
  * about the whole house.)
  */
 export const isChildRoom = (L, cls = 'bedroom') => CHILD_ROLES.has(L.role) || (cls === 'bedroom' && L.items.some((i) => CHILD_ITEM.test(i.name)));

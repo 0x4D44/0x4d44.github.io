@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { CATALOG } from '../../js/interiors/catalog.js';
 import worldMaterials from '../../js/world/matdefs.js';
 
@@ -14,8 +15,13 @@ const DEFAULT_CATALOGUE = join(HERE, 'garments.catalog.json');
 export const REQUIRED_GARMENTS = Object.freeze(['swimsuit_onepiece', 'swim_trunks', 'bikini_top', 'bikini_bottom',
   'crop_top', 'tshirt', 'shorts', 'leggings', 'sun_hat', 'straw_hat', 'cap', 'bra', 'underwear', 'panties', 'thong',
   'knickers', 'high_leg_knickers', 'briefs', 'boxers', 'sock_single', 'socks_pair', 'tights', 'nightdress']);
+export const REQUIRED_CHILD_GARMENTS = Object.freeze(['child_school_shirt', 'child_school_polo', 'child_pinafore',
+  'child_school_trousers', 'child_school_shorts', 'child_tshirt', 'child_hoodie', 'child_jeans', 'child_skirt',
+  'child_dress', 'child_pyjama_top', 'child_pyjama_bottoms', 'child_cardigan', 'child_socks_pair', 'child_shoes',
+  'child_cap', 'child_backpack', 'child_swim_trunks', 'child_swimsuit_onepiece', 'child_rash_vest']);
 const STATES = ['folded', 'hung', 'flat'];
 const LIMITS = Object.freeze({ triangles: 800, lodTriangles: 240, runtimeBytes: 2_000_000 });
+const CHILD_LIMITS = Object.freeze({ triangles: 900, lodTriangles: 240, runtimeBytes: 2_500_000, gpuTextureBytes: 6_000_000 });
 const I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 const EPS = 0.001; // one millimetre, including exporter float round-off
 const finiteVector = (a, n) => Array.isArray(a) && a.length === n && a.every(Number.isFinite);
@@ -229,31 +235,45 @@ function pngSize(bytes) {
 }
 
 /** Returns a reviewable report; malformed inputs are errors, not silent omissions. */
-export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = DEFAULT_CATALOGUE, complete = false } = {}) {
+export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath, complete = false, child = false } = {}) {
+  cataloguePath ??= child ? join(HERE, 'garments-child.catalog.json') : DEFAULT_CATALOGUE;
+  const limits = child ? CHILD_LIMITS : LIMITS;
+  const directory = child ? 'garments-child' : 'garments';
+  const manifestName = child ? 'manifest.garments-child.json' : 'manifest.garments.json';
   const errors = [], warnings = [], measurements = [], runtimeFiles = new Set(), glbs = new Map(), expectedNodes = new Map();
   const check = (condition, message) => { if (!condition) errors.push(message); return !!condition; };
   const attempt = (label, fn) => { try { return fn(); } catch (e) { errors.push(`${label}: ${e.message}`); return null; } };
   const load = (rel) => attempt(rel, () => { const p = checkedFile(modelsDir, rel); runtimeFiles.add(p); return readFileSync(p); });
   const readJSON = (rel) => { const b = load(rel); return b && attempt(rel, () => JSON.parse(b)); };
-  const manifest = readJSON('manifest.garments.json');
+  const manifest = readJSON(manifestName);
   const catalogue = attempt('catalogue', () => JSON.parse(readFileSync(cataloguePath, 'utf8')));
   check(!!worldMaterials.laundry && worldMaterials.laundry.vertexColors !== false, 'laundry must remain a registered vertex-colour library material');
-  const sourceText = complete ? attempt('sources', () => readFileSync(join(HERE, 'GARMENTS-SOURCES.md'), 'utf8')) : null;
+  const sourceText = complete ? attempt('sources', () => readFileSync(join(HERE, child ? 'GARMENTS-CHILD-SOURCES.md' : 'GARMENTS-SOURCES.md'), 'utf8')) : null;
   const citedIds = new Set(sourceText ? [...sourceText.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((m) => m[1]) : []);
   const assets = new Map(), cats = new Map();
   if (catalogue) {
-    check(catalogue.schemaVersion === 1 && catalogue.adultOnly === true, 'catalogue must be schemaVersion 1 and adultOnly');
+    check(catalogue.schemaVersion === 1 && (child ? catalogue.sizeTag === 'child' && catalogue.adultOnly !== true : catalogue.adultOnly === true),
+      child ? 'child catalogue must be schemaVersion 1 and sizeTag child' : 'catalogue must be schemaVersion 1 and adultOnly');
+    if (child) {
+      check(closeVector(catalogue.ageRange, [6, 10], 0) && catalogue.scale === 0.6, 'child catalogue must declare ages 6–10 and scale 0.6');
+      check(sameSet(catalogue.roomKinds ?? [], ['child_bedroom', 'school_locker']), 'child catalogue must target child_bedroom and school_locker');
+    }
     check(Array.isArray(catalogue.garments), 'catalogue.garments must be an array');
     for (const c of Array.isArray(catalogue.garments) ? catalogue.garments : []) {
       if (!check(c && typeof c.id === 'string' && /^[a-z][a-z0-9_]*$/.test(c.id), 'invalid catalogue garment id')) continue;
       check(!cats.has(c.id), `duplicate catalogue garment '${c.id}'`); cats.set(c.id, c);
-      check(c.adultOnly !== false && (!c.ageGroup || c.ageGroup === 'adult'), `${c.id}: catalogue must be adult-only`);
+      if (child) {
+        check(c.id.startsWith('child_') && c.sizeTag === 'child' && c.adultOnly !== true && c.scale === 0.6, `${c.id}: catalogue must declare child size and scale 0.6`);
+        check(Number.isFinite(c.adultReferenceLength) && c.adultReferenceLength > 0 && Math.abs(c.length - c.adultReferenceLength * 0.6) < 1e-8,
+          `${c.id}: nominal child length must be 60% of its adult reference`);
+      } else check(c.adultOnly !== false && (!c.ageGroup || c.ageGroup === 'adult'), `${c.id}: catalogue must be adult-only`);
       check(typeof c.label === 'string' && c.label.length > 0, `${c.id}: missing garment label`);
-      check(Number.isFinite(c.width) && c.width > 0 && Number.isFinite(c.length) && c.length > 0, `${c.id}: invalid adult dimensions`);
+      check(Number.isFinite(c.width) && c.width > 0 && Number.isFinite(c.length) && c.length > 0, `${c.id}: invalid ${child ? 'child' : 'adult'} dimensions`);
       check(Array.isArray(c.states) && c.states.length > 0 && new Set(c.states).size === c.states.length && c.states.every((s) => STATES.includes(s)), `${c.id}: invalid states`);
       check(Array.isArray(c.variants) && c.variants.length > 0 && new Set(c.variants).size === c.variants.length, `${c.id}: invalid variants`);
       if (complete) {
-        const wanted = ['cap', 'straw_hat'].includes(c.id) ? ['hung', 'flat'] : STATES;
+        const rigid = child ? ['child_cap', 'child_shoes', 'child_backpack'] : ['cap', 'straw_hat'];
+        const wanted = rigid.includes(c.id) ? ['hung', 'flat'] : STATES;
         check(sameSet(c.states ?? [], wanted), `${c.id}: complete mode requires ${wanted.join(', ')} states`);
         if (wanted.length < STATES.length) check(typeof c.notApplicable?.folded === 'string' && c.notApplicable.folded.trim().length > 10,
           `${c.id}: folded omission needs a physical reason`);
@@ -261,13 +281,21 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
           `${c.id}: sourceIds must resolve to the provenance document`);
       }
     }
-    if (complete) check(sameSet([...cats.keys()], REQUIRED_GARMENTS), 'complete catalogue must cover exactly the 23 requested adult garments');
+    if (complete) check(sameSet([...cats.keys()], child ? REQUIRED_CHILD_GARMENTS : REQUIRED_GARMENTS),
+      child ? 'complete catalogue must cover exactly the 20 requested child garments' : 'complete catalogue must cover exactly the 23 requested adult garments');
   }
-  let palette, assortments;
+  let palette, assortments, gpuTextureBytes = 0;
   if (manifest) {
-    check(manifest.schemaVersion === 1 && manifest.set === 'garments' && manifest.scope === 'objects-only' && manifest.adultOnly === true,
-      'manifest must declare schemaVersion 1, garments, objects-only and adultOnly');
-    for (const [name, cap] of Object.entries(LIMITS)) {
+    check(manifest.schemaVersion === 1 && manifest.set === directory && manifest.scope === 'objects-only' &&
+      (child ? manifest.sizeTag === 'child' && manifest.adultOnly !== true : manifest.adultOnly === true),
+      child ? 'manifest must declare schemaVersion 1, garments-child, objects-only and sizeTag child' : 'manifest must declare schemaVersion 1, garments, objects-only and adultOnly');
+    if (child) {
+      check(closeVector(manifest.ageRange, [6, 10], 0) && manifest.scale === 0.6, 'child manifest must declare ages 6–10 and scale 0.6');
+      check(sameSet(manifest.roomKinds ?? [], ['child_bedroom', 'school_locker']), 'child manifest must target child_bedroom and school_locker');
+      check(manifest.palette === 'garments/palette.json' && manifest.atlas?.file === 'garments/prints.png' && manifest.atlas?.embedded === false,
+        'child garments must share the existing external adult palette and single print atlas');
+    }
+    for (const [name, cap] of Object.entries(limits)) {
       check(Number.isInteger(manifest.limits?.[name]) && manifest.limits[name] > 0 && manifest.limits[name] <= cap,
         `manifest limit '${name}' is missing or exceeds ${cap}`);
     }
@@ -278,6 +306,12 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
       const size = attempt('print atlas', () => pngSize(atlas));
       if (size) check(size[0] === manifest.atlas?.width && size[1] === manifest.atlas?.height && size[0] === 256 && size[1] === 256,
         'print atlas must match its declared 256 x 256 dimensions');
+      if (size) for (let w = size[0], h = size[1]; ; w = Math.max(1, w >> 1), h = Math.max(1, h >> 1)) {
+        gpuTextureBytes += w * h * 4;
+        if (w === 1 && h === 1) break;
+      }
+      if (child) check(gpuTextureBytes <= Math.min(CHILD_LIMITS.gpuTextureBytes, manifest.limits?.gpuTextureBytes ?? Infinity),
+        `child atlas uses ${gpuTextureBytes} GPU bytes including RGBA8 mipmaps, exceeding the 6 MB budget`);
     }
     if (palette) {
       check(palette.schemaVersion === 1 && palette.material === 'laundry', 'palette must use schemaVersion 1 and the laundry library material');
@@ -308,7 +342,7 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
       if (!g) return null;
       const actual = attempt(key, () => inspectAsset(g, a.node));
       if (!actual) return null;
-      const cap = Math.min(lod ? LIMITS.lodTriangles : LIMITS.triangles, manifest.limits?.[lod ? 'lodTriangles' : 'triangles'] ?? Infinity);
+      const cap = Math.min(lod ? limits.lodTriangles : limits.triangles, manifest.limits?.[lod ? 'lodTriangles' : 'triangles'] ?? Infinity);
       check(actual.triangles <= cap, `${key}: ${actual.triangles} triangles exceed ${cap}`);
       check(a.triangles === actual.triangles, `${key}: declared triangle count differs from GLB (${actual.triangles})`);
       check(actual.size.every((v) => v > 0), `${key}: geometry has zero extent`);
@@ -336,6 +370,7 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
     for (const f of Array.isArray(manifest.files) ? manifest.files : []) {
       if (!check(f && typeof f === 'object', 'invalid manifest file record')) continue;
       const g = readGLB(f.glb);
+      if (child && g) check(createHash('sha256').update(readFileSync(checkedFile(modelsDir, f.glb))).digest('hex') === f.sha256, `${f.glb}: SHA-256 differs from the manifest`);
       check(f.assets && typeof f.assets === 'object' && !Array.isArray(f.assets) && Object.keys(f.assets).length > 0, `${f.glb}: assets must be a nonempty object`);
       for (const [key, a] of Object.entries(f.assets ?? {})) {
         if (!check(a && typeof a === 'object', `${key}: invalid asset record`)) continue;
@@ -343,7 +378,10 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
         const c = cats.get(a.garment);
         check(!!c && c.states?.includes(a.state), `${key}: not a catalogue garment/state`);
         check(key === `garment_${a.garment}_${a.state}` && a.node === key, `${key}: key/node must follow garment_<id>_<state>`);
-        check(a.adultOnly === true && (!a.ageGroup || a.ageGroup === 'adult'), `${key}: adultOnly must be true`);
+        if (child) {
+          check(a.sizeTag === 'child' && a.adultOnly !== true && a.scale === 0.6 && a.adultReferenceLength === c?.adultReferenceLength,
+            `${key}: child size/scale metadata differs from its catalogue`);
+        } else check(a.adultOnly === true && (!a.ageGroup || a.ageGroup === 'adult'), `${key}: adultOnly must be true`);
         check(sameSet(a.variants ?? [], c?.variants ?? []), `${key}: variant list differs from catalogue`);
         expect(f.glb, a.node);
         const actual = compareGeometry(key, a, g);
@@ -368,8 +406,8 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
       }
     }
     if (assortments) {
-      check(assortments.schemaVersion === 1 && assortments.adultOnly === true && Array.isArray(assortments.bindings),
-        'assortments must be schemaVersion 1, adultOnly and contain bindings');
+      check(assortments.schemaVersion === 1 && (child ? assortments.sizeTag === 'child' && assortments.adultOnly !== true : assortments.adultOnly === true) && Array.isArray(assortments.bindings),
+        child ? 'assortments must be schemaVersion 1, sizeTag child and contain bindings' : 'assortments must be schemaVersion 1, adultOnly and contain bindings');
       const bindingIds = new Set(), kinds = new Set(), assigned = new Set();
       for (const b of Array.isArray(assortments.bindings) ? assortments.bindings : []) {
         if (!check(b && typeof b === 'object', 'invalid assortment binding')) continue;
@@ -377,7 +415,9 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
         check(['drawer', 'wardrobe', 'washing_line', 'shop_shelf'].includes(b.kind), `${b.id}: invalid assortment kind`); kinds.add(b.kind);
         check(Array.isArray(b.catalogueKeys) && b.catalogueKeys.length > 0 && b.catalogueKeys.every((key) => Object.hasOwn(CATALOG, key)),
           `${b.id}: catalogueKeys must name existing furniture catalogue entries`);
-        check(b.adultOnly !== false && Array.isArray(b.items) && b.items.length > 0, `${b.id}: requires adult items`);
+        check((child ? b.sizeTag === 'child' && b.adultOnly !== true : b.adultOnly !== false) && Array.isArray(b.items) && b.items.length > 0,
+          `${b.id}: requires ${child ? 'child' : 'adult'} items`);
+        if (child) check(Array.isArray(b.roomKinds) && b.roomKinds.length > 0 && b.roomKinds.every((r) => ['child_bedroom', 'school_locker'].includes(r)), `${b.id}: missing child room context`);
         for (const item of Array.isArray(b.items) ? b.items : []) {
           if (!check(item && typeof item === 'object', `${b.id}: invalid assortment item`)) continue;
           check(Number.isInteger(item.count) && item.count > 0, `${b.id}: item count must be a positive integer`);
@@ -387,28 +427,34 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
           check(has(palette?.variants, item.variant) && a.variants?.includes(item.variant), `${b.id}: invalid variant '${item.variant}' for ${item.asset}`);
           const allowed = b.kind === 'drawer' ? a.state === 'folded' : b.kind === 'washing_line' ? a.state === 'hung' :
             b.kind === 'shop_shelf' ? ['folded', 'flat'].includes(a.state) : ['folded', 'hung'].includes(a.state) ||
-              (a.state === 'flat' && cat?.category === 'hat' && item.support === 'shelf');
+              (a.state === 'flat' && (child ? ['hat', 'footwear', 'bag'].includes(cat?.category) : cat?.category === 'hat') && item.support === 'shelf');
           check(allowed, `${b.id}: ${item.asset} state is incompatible with ${b.kind}`);
-          check(item.adultOnly !== false && (!item.ageGroup || item.ageGroup === 'adult'), `${b.id}: non-adult assignment`);
+          check(child ? item.sizeTag === 'child' && item.adultOnly !== true : item.adultOnly !== false && (!item.ageGroup || item.ageGroup === 'adult'),
+            child ? `${b.id}: non-child assignment` : `${b.id}: non-adult assignment`);
         }
       }
       if (complete) {
-        check(sameSet([...kinds], ['drawer', 'wardrobe', 'washing_line', 'shop_shelf']), 'complete assortments require drawer, wardrobe, washing_line and shop_shelf');
+        check(sameSet([...kinds], child ? ['drawer', 'wardrobe'] : ['drawer', 'wardrobe', 'washing_line', 'shop_shelf']),
+          child ? 'complete child assortments require drawer and wardrobe recipes' : 'complete assortments require drawer, wardrobe, washing_line and shop_shelf');
+        if (child) check(assortments.bindings.some((b) => b.roomKinds?.includes('school_locker') && b.catalogueKeys?.includes('locker_pair')),
+          'child assortments must include a school locker recipe');
         for (const id of cats.keys()) check(assigned.has(id), `garment '${id}' is absent from all assortments`);
       }
     }
   }
-  const allFiles = attempt('garment directory', () => filesBelow(join(modelsDir, 'garments'))) ?? [];
+  const allFiles = attempt('garment directory', () => filesBelow(join(modelsDir, directory))) ?? [];
   for (const path of allFiles) {
     runtimeFiles.add(realpathSync(path));
+    if (child) check(!/\.(?:png|webp|jpe?g|ktx2?)$/i.test(path), 'child garments must reuse the one shared adult atlas; no duplicate child textures');
     if (complete && path.endsWith('.glb')) check(glbs.has(relative(modelsDir, path).split(sep).join('/')), `unlisted GLB '${relative(modelsDir, path)}'`);
   }
   let runtimeBytes = 0;
   for (const path of runtimeFiles) runtimeBytes += statSync(path).size;
-  const cap = Math.min(manifest?.limits?.runtimeBytes ?? LIMITS.runtimeBytes, LIMITS.runtimeBytes);
+  const cap = Math.min(manifest?.limits?.runtimeBytes ?? limits.runtimeBytes, limits.runtimeBytes);
   check(runtimeBytes <= cap, `runtime library is ${runtimeBytes} bytes, exceeding ${cap}`);
   return { ok: errors.length === 0, mode: complete ? 'complete' : 'partial', errors, warnings, assets: assets.size,
     catalogueGarments: cats.size, runtimeBytes, runtimeBudgetBytes: cap, files: runtimeFiles.size,
+    ...(child ? { sizeTag: 'child', gpuTextureBytes, gpuTextureBudgetBytes: CHILD_LIMITS.gpuTextureBytes } : {}),
     maxTriangles: Math.max(0, ...measurements.map((m) => m.triangles)),
     maxLodTriangles: Math.max(0, ...measurements.map((m) => m.lodTriangles ?? 0)), measurements };
 }
@@ -418,6 +464,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--complete') options.complete = true;
+      else if (args[i] === '--child') options.child = true;
       else if (['--root', '--catalogue', '--json'].includes(args[i])) {
         demand(args[i + 1] && !args[i + 1].startsWith('--'), `${args[i]} requires a path`);
         const flag = args[i++], value = args[i];
@@ -425,7 +472,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         else if (flag === '--catalogue') options.cataloguePath = resolve(value);
         else jsonPath = value;
       } else if (args[i] === '--help') {
-        console.log('usage: garments_validate.mjs [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]'); process.exit(0);
+        console.log('usage: garments_validate.mjs [--child] [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]'); process.exit(0);
       } else fail(`unknown option '${args[i]}'`);
     }
     const report = validateGarments(options);

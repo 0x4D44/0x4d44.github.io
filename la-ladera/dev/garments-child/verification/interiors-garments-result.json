@@ -1,0 +1,54 @@
+{
+  "command": [
+    "node",
+    "--import",
+    "./la-ladera/tests/register.mjs",
+    "--test",
+    "--test-isolation=none",
+    "--test-concurrency=1",
+    "--test-reporter=tap",
+    "la-ladera/tests/interiors-garments.test.mjs"
+  ],
+  "environment": {
+    "LADERA_PRIO": "idle"
+  },
+  "launcherNice": 19,
+  "exitCode": 0,
+  "summary": [
+    "# tests 23",
+    "# pass 23",
+    "# fail 0",
+    "# cancelled 0",
+    "# skipped 0",
+    "# duration_ms 30149.137751"
+  ],
+  "sha256": {
+    "la-ladera/assets/models/garments/assortments.json": "670a2b3d9aca725750c4910618cca94b57021a436017a837d23671a4659c7464",
+    "la-ladera/assets/models/garments/garments_flat.glb": "c746334409f06244b8ac429ac23865515d7e52c47faa90787c6a6cb6b5c45580",
+    "la-ladera/assets/models/garments/garments_flat_lod.glb": "775484694bc57d6c8601d1bc933f067f83bd42fd74844b47abefede74d29a6dc",
+    "la-ladera/assets/models/garments/garments_folded.glb": "df127642c10af9d1a9b2491381c1ee38d9b54d22398247123a3cc80a33f97bd9",
+    "la-ladera/assets/models/garments/garments_folded_lod.glb": "b61a66966f7b5e66784843b4273b08aa1a55d368a4bb8466400f9b33e8f0c180",
+    "la-ladera/assets/models/garments/garments_hung.glb": "f272909d6f3c0e7b9d2b28d561cd3c738763df600f3dc7d466a0889b48db4cbb",
+    "la-ladera/assets/models/garments/garments_hung_lod.glb": "b7c16f1a3d64f3c6084a52426a762ce51487dcc98a7d875d8cd8bcd24d00d453",
+    "la-ladera/assets/models/garments/palette.json": "b10e6788aa16b6b8fdbef279aa471a6903478f6fee3f8b523b4abfae88c30213",
+    "la-ladera/assets/models/garments/prints.png": "505f2f691eba28343aa00afc5a89836aedf98713b42e68f8400928b014935827",
+    "la-ladera/assets/models/garments-child/assortments.json": "bcc0d59811ec5da018ce7eb030fd737bb9a03cea2c6d72cb991f1e365d76318b",
+    "la-ladera/assets/models/garments-child/garments_flat.glb": "796ff1de98fa983bd733c7b65d924125fff3dff6a359d824581ecffb9547f784",
+    "la-ladera/assets/models/garments-child/garments_flat_lod.glb": "54a18242e390e7037ed154b0dc28615f8dbbd27d9d6e971b8126884f129c7664",
+    "la-ladera/assets/models/garments-child/garments_folded.glb": "56be5769f6a84377009218bfe12ee2bb3c26b444b8b04df258498a91f55d347b",
+    "la-ladera/assets/models/garments-child/garments_folded_lod.glb": "ffc6dfbf24e1da1ac1aed3fec9cb9f81264879a40f09b497c982a007672ff0e9",
+    "la-ladera/assets/models/garments-child/garments_hung.glb": "f22e969bf603703d982340554caf08516b346fbd6bc99cbda4c5b69526221bf7",
+    "la-ladera/assets/models/garments-child/garments_hung_lod.glb": "e0320fa338cf28a8e532c8764703d43620619960aa9488381d7f767d1d50cc7d",
+    "la-ladera/assets/models/manifest.garments-child.json": "fb706cfa38f650aef677912ed1e3239fd4dd0ae50866642b1785eef1247be3e3",
+    "la-ladera/assets/models/manifest.garments.json": "e747b9385eba8be601bb937a18e3db8ed887c65d1b115e6af3babdc4af7852f2",
+    "la-ladera/js/interiors/catalog.js": "f304067f36bf4575b34b87998a98ed3298f81e53ea015c19a073e5e96ec721bc",
+    "la-ladera/js/interiors/garments.js": "53fd736b8dc7f8560253aa6eb5c46a1366e751a9c4bccbf92815ce292b430c6b",
+    "la-ladera/js/interiors/garments_data.js": "74ef303c6961f3f9cc8997c740bb74578f772a7f0d2169717b0fae713e36a1de",
+    "la-ladera/tests/interiors-garments.test.mjs": "60ea3adc6c199a2238383d787f1b8f61c6a78f83800e985b9e689b3a7615fe7e",
+    "la-ladera/tools/blender/garments-child.catalog.json": "303076a3d77927ac5898d058838c96779b7c924ef009117e9b8212bb17952397",
+    "la-ladera/tools/blender/garments_validate.mjs": "8cf1638f35d1a0591aaa8f520acf351ebe08fcab041915052baa3a81d7710a2e",
+    "la-ladera/tools/garments_data.mjs": "39610f8071bba5fb5a95324d7d24771c3dd92457165e15754c1af29fead147ea"
+  },
+  "inputsUnchangedDuringRun": true,
+  "changedInputs": []
+}
