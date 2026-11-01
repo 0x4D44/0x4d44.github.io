@@ -1,7 +1,8 @@
 // INTERIORS (A3): what is inside the containers. Three layers, all deterministic (a reload shows the same drawers):
-//   1. planContents(ctx)        ONE plan for the whole barrio, made from the lots and their households alone (householdsOf replays furnishing's rng, so it does not
-//                               matter which buildings are furnished yet): every building gets 1-2 papers from papers.js (no paper in more than 2 homes), the special
-//                               finds of finds.js are spread so each type lands between its `min` and `max`, at most 3 per building.
+//   1. planContents(ctx)        ONE plan for the whole barrio, made from the lots, their households and (kindsByHousehold) the slots a FURNISHED household has to lay things in: every
+//                               building gets 1-2 papers from papers.js (no paper in more than 2 homes), the special finds of finds.js are spread so each type lands between its `min`
+//                               and `max`, at most 3 per building, and no household is planned more papers, or more finds, than it has slots of the right kinds to hold (`holds`).
+//                               A building that is not furnished when the plan is made is planned without that limit, so make the plan once every building is furnished.
 //   2. planBuilding(ctx,bp,list) when a building's interior is built: its share of the plan is pinned to concrete slots (a diary to a nightstand, a coin to a dresser
 //                               drawer ...) by the container kinds each paper / find asks for (`where`) and a hash. Whatever has no fitting slot is logged as an orphan.
 //   3. makeContents(ctx, S)     on the FIRST OPEN of a slot: its paper and find, plus ordinary things from props.js picked by the slot's pool and the household
@@ -61,20 +62,35 @@ function matchPapers(units, cands) {
   return left.filter((l) => l.got >= 0).map((l) => ({ pi: l.got, ui: l.edges.get(l.got) }));
 }
 
-/** The container kinds each household of a FURNISHED building has (the `group` of its pieces' slots): an item is only planned where it has a place to lie. null = not furnished yet.
+/** The container kind of every slot each household of a FURNISHED building has (the `group` of its pieces' slots, one entry per slot: two dressers list `dresser` twice): an item is only planned where it
+ *  has a place to lie, and a slot holds one paper and one find. null = not furnished yet (no limit is known).
  *  A front nobody can stand in front of is decoration (containers.js registerFronts, R4-118), so it does not count: a nightstand between the bed and the wall is no place for a diary. */
 function kindsByHousehold(bp) {
   const I = bp.interior; if (!I?.hh?.length || !bp.furniture) return null;
-  const out = new Map(I.hh.map((h) => [h.id, new Set()])), conns = new Map();
+  const out = new Map(I.hh.map((h) => [h.id, []])), conns = new Map();
   for (const r of bp.furniture) {
     const lay = layoutOf(CATALOG[r.name]); if (!lay) continue;
-    const set = out.get(I.rooms?.[r.room]?.hh) ?? out.get(I.hh[0].id), L = I.layouts?.get(r.room);
+    const mine = out.get(I.rooms?.[r.room]?.hh) ?? out.get(I.hh[0].id), L = I.layouts?.get(r.room);
     const conn = L && (conns.get(L) ?? conns.set(L, L.connectivity()).get(L));
-    for (const s of lay.slots) if (!L || standSpots(bp, r, s, conn).length) set.add(s.group);
+    for (const s of lay.slots) if (!L || standSpots(bp, r, s, conn).length) mine.push(s.group);
   }
   return out;
 }
-const fits = (item, u) => !u.kinds || item.where.some((k) => u.kinds.has(k));
+const fits = (item, u) => !u.kinds || item.where.some((k) => u.kinds.includes(k));
+/** Do all of `items` lie in the household's slots at once, each in a slot of a kind it asks for, a slot holding one? (A paper and a find lie side by side in a slot: ask for the papers and for the finds
+ *  apart.) Augmenting paths over a handful of items: an item whose slots are taken moves the one in its way on. A household with nothing known (`kinds` null) holds anything. */
+function holds(u, items) {
+  if (!u.kinds) return true;
+  const at = [], seat = (i, seen) => {
+    for (let s = 0; s < u.kinds.length; s++) {
+      if (seen[s] || !items[i].where.includes(u.kinds[s])) continue;
+      seen[s] = true;
+      if (at[s] === undefined || seat(at[s], seen)) { at[s] = i; return true; }
+    }
+    return false;
+  };
+  return items.every((_, i) => seat(i, []));
+}
 
 /** Plan the whole barrio. Cached on ctx; recomputed only when the set of buildings changes. */
 export function planContents(ctx) {
@@ -93,8 +109,12 @@ export function planContents(ctx) {
   for (const ui of units.map((_, i) => i).sort((a, b) => hv(units[a].hh.id, 'p2') - hv(units[b].hh.id, 'p2'))) {      // a second paper wherever capacity is left
     const u = units[ui], mine = held.get(u.bid);
     if (!mine || u.papers.length >= 2) continue;
+    const have = u.papers.map((id) => paperById.get(id));
     let best = -1, bs = Infinity;
-    for (const pi of cands[ui]) { if (use[pi] >= PAPER_CAP || mine.has(PAPERS[pi].id)) continue; const s = use[pi] + hv(u.hh.id, PAPERS[pi].id); if (s < bs) { bs = s; best = pi; } }
+    for (const pi of cands[ui]) {
+      if (use[pi] >= PAPER_CAP || mine.has(PAPERS[pi].id)) continue;
+      const s = use[pi] + hv(u.hh.id, PAPERS[pi].id); if (s < bs && holds(u, [...have, PAPERS[pi]])) { bs = s; best = pi; }                 // and only where it still has a slot of its own
+    }
     if (best >= 0) give(ui, best);
   }
   // finds: the most constrained types first (the special lots), each placed `min` times (plus a few extras up to `max`), in the least loaded building that fits
@@ -109,7 +129,7 @@ export function planContents(ctx) {
       for (const ui of el) {
         const u = units[ui], l = loads.get(u.bid) ?? 0;
         if (used.has(u.bid) || l >= FINDS_PER_BUILDING) continue;
-        const s = l + hv(f.id, u.hh.id, k); if (s < bs) { bs = s; best = ui; }
+        const s = l + hv(f.id, u.hh.id, k); if (s < bs && holds(u, [...u.finds.map((id) => findById.get(id)), f])) { bs = s; best = ui; }          // a household has as many finds as slots to hold them, no more
       }
       if (best < 0) { if (k < f.min) missing.push({ id: f.id, wanted: f.min, placed: k }); break; }
       const u = units[best]; u.finds.push(f.id); used.add(u.bid); loads.set(u.bid, (loads.get(u.bid) ?? 0) + 1);
@@ -128,12 +148,22 @@ export function planBuilding(ctx, bp, list) {
   for (const u of plan.byBuilding.get(bp.id) ?? []) {
     const mine = list.filter((S) => S.hh?.id === u.hh.id);
     const put = (item, field, bag) => {
-      const c = mine.filter((S) => !S.plan[field] && S.kinds.some((k) => item.where.includes(k)));
-      if (!c.length) { out.orphans.push({ id: item.id, what: field, hh: u.hh.id }); return; }
-      c.sort((a, b) => (a.reachable === false) - (b.reachable === false)                          // a slot nobody can stand in front of comes last
-        || (!showsFloor(a.slot)) - (!showsFloor(b.slot))                                            // and so does a drawer too high to look into
-        || (load.get(a.rec.id) ?? 0) * 2 + hv(item.id, a.id) - ((load.get(b.rec.id) ?? 0) * 2 + hv(item.id, b.id)));
-      const S = c[0]; S.plan[field] = item.id; load.set(S.rec.id, (load.get(S.rec.id) ?? 0) + 1); out[bag]++;
+      const byItem = field === 'paper' ? paperById : findById;
+      const seat = (it, seen) => {                                                                 // the best free slot it fits; none free: a slot whose holder can move on to another (augmenting path)
+        const c = mine.filter((S) => !seen.has(S) && S.kinds.some((k) => it.where.includes(k)));
+        c.sort((a, b) => (!!a.plan[field]) - (!!b.plan[field])                                      // a free slot first: a holder is only moved to make room
+          || (a.reachable === false) - (b.reachable === false)                                      // a slot nobody can stand in front of comes last
+          || (!showsFloor(a.slot)) - (!showsFloor(b.slot))                                            // and so does a drawer too high to look into
+          || (load.get(a.rec.id) ?? 0) * 2 + hv(it.id, a.id) - ((load.get(b.rec.id) ?? 0) * 2 + hv(it.id, b.id)));
+        for (const S of c) {
+          seen.add(S); const held = S.plan[field];
+          if (held && !seat(byItem.get(held), seen)) continue;
+          S.plan[field] = it.id; if (!held) load.set(S.rec.id, (load.get(S.rec.id) ?? 0) + 1);      // a move on leaves this slot as full as it was
+          return true;
+        }
+        return false;
+      };
+      if (seat(item, new Set())) out[bag]++; else out.orphans.push({ id: item.id, what: field, hh: u.hh.id });
     };
     for (const id of u.papers) put(paperById.get(id), 'paper', 'papers');
     for (const id of u.finds) put(findById.get(id), 'find', 'finds');
