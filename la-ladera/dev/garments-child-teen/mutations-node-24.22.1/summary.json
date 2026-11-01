@@ -1,0 +1,298 @@
+{
+  "node": "v24.22.1",
+  "total": 32,
+  "killed": 32,
+  "survived": 0,
+  "childTests": 17,
+  "teenTests": 15,
+  "results": [
+    {
+      "suite": "child",
+      "test": "every required everyday garment key exists in both sizes and every applicable state",
+      "mutation": "Remove one required child state from the manifest.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "01-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "every piece stays inside its independent real dimension range in metres, including LOD",
+      "mutation": "Multiply real geometry below an identity GLB root by ten.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "02-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "every piece stays inside its actual 800-triangle or 240-triangle LOD budget",
+      "mutation": "Append real triangle batches beyond the 800-triangle limit.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "03-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "the generated child GLB and child manifest together stay within 700000 bytes",
+      "mutation": "Add valid GLB extras exceeding the payload limit.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "04-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "small and big assets carry the declared age bands and approximately 55/75 percent sizing",
+      "mutation": "Mislabel one child asset as adult.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "05-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "the child set reuses the adult fabric palette and atlas without embedded textures",
+      "mutation": "Point the manifest at a different print atlas.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "06-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "the child library remains an object-only companion registered exactly once in the main manifest",
+      "mutation": "Remove the child companion registration.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "07-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "the checked-in child library passes the complete validator with actual generated files",
+      "mutation": "Raise the manifest triangle limit beyond the immutable cap.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "08-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "an oversized binary mesh fails the real-size gate even after its metadata is refreshed",
+      "mutation": "Neutralize the oversized-geometry mutation.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "09-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "an undersized binary mesh fails the lower real-size bound with accurate metadata",
+      "mutation": "Neutralize the undersized-geometry mutation.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "10-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "an extra valid high-detail triangle batch fails the 800-triangle gate",
+      "mutation": "Do not append high-detail triangles.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "11-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "an extra valid LOD triangle batch fails the 240-triangle gate",
+      "mutation": "Do not append LOD triangles.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "12-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "a missing required key fails independently of the remaining GLB geometry",
+      "mutation": "Keep the required key in the negative fixture.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "13-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "valid extra GLB payload fails the combined file-size gate",
+      "mutation": "Do not add the over-budget payload.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "14-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "child budget limits cannot be relaxed by editing manifest data",
+      "mutation": "Keep the valid manifest budget limits.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "15-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "declared child scale and age bands cannot contradict the fixed size contract",
+      "mutation": "Keep the valid scale and age-band declarations.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "16-child.tap"
+    },
+    {
+      "suite": "child",
+      "test": "adult validation accepts its exact child companion but rejects an extra child-prefixed GLB",
+      "mutation": "Do not create the unlisted GLB.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "17-child.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "teen acceptance: every required key and LOD exists in the generated GLB",
+      "mutation": "Remove one required teen state from the manifest.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "18-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "teen acceptance: every piece is inside its real dimension range",
+      "mutation": "Multiply real geometry below an identity GLB root by ten.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "19-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "teen acceptance: every piece stays within its high and LOD triangle budgets",
+      "mutation": "Append real triangle batches beyond the 800-triangle limit.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "20-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "teen acceptance: complete generated payload stays under 700000 bytes",
+      "mutation": "Add an unbudgeted payload file.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "21-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "the checked-in teen library satisfies the extended independent validator",
+      "mutation": "Raise the manifest triangle limit beyond the immutable cap.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "22-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit",
+      "mutation": "Make the knee dress shorter than the short dress.",
+      "kind": "damaged input",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "23-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "removing a real key makes the key acceptance test fail",
+      "mutation": "Keep the required key in the negative fixture.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "24-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "oversize real high piece makes the size acceptance test fail",
+      "mutation": "Neutralize the high geometry scaling.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "25-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "oversize real LOD piece makes the size acceptance test fail",
+      "mutation": "Neutralize the LOD geometry scaling.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "26-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "extra real high triangle batches make the triangle acceptance test fail",
+      "mutation": "Do not append high triangle batches.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "27-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "extra real LOD triangle batches make the triangle acceptance test fail",
+      "mutation": "Do not append LOD triangle batches.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "28-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "extra payload makes the same byte-budget acceptance test fail",
+      "mutation": "Replace the excess payload with an empty file.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "29-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "mutable catalogue and manifest cannot relax independent dimensions or budgets",
+      "mutation": "Keep the original dimensions and budgets.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "30-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "unlisted teen GLBs are rejected instead of hiding inside the payload budget",
+      "mutation": "Do not create the unlisted teen GLB.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "31-teen.tap"
+    },
+    {
+      "suite": "teen",
+      "test": "malformed variant lists are reported without aborting validation",
+      "mutation": "Keep the valid catalogue and manifest variant lists.",
+      "kind": "disabled input corruption",
+      "exit": 1,
+      "failedTests": 1,
+      "log": "32-teen.tap"
+    }
+  ]
+}

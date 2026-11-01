@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: an undersized binary mesh fails the lower real-size bound with accurate metadata
+not ok 1 - an undersized binary mesh fails the lower real-size bound with accurate metadata
+  ---
+  duration_ms: 173.505302
+  type: 'test'
+  location: '<isolated-fixture>/9/garments-child.test.mjs:291:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    damaged exported bytes must be rejected
+
+    true !== false
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: false
+  actual: true
+  operator: 'strictEqual'
+  stack: |-
+    rejects (file://<isolated-fixture>/9/garments-child.test.mjs:43:10)
+    TestContext.<anonymous> (file://<isolated-fixture>/9/garments-child.test.mjs:293:27)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 271.631034

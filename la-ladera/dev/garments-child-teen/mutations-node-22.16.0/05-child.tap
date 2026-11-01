@@ -1,0 +1,36 @@
+TAP version 13
+# Subtest: small and big assets carry the declared age bands and approximately 55/75 percent sizing
+not ok 1 - small and big assets carry the declared age bands and approximately 55/75 percent sizing
+  ---
+  duration_ms: 44.219668
+  type: 'test'
+  location: '<la-ladera>/tests/garments-child.test.mjs:236:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+
+    'adult' !== 'child'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'child'
+  actual: 'adult'
+  operator: 'strictEqual'
+  stack: |-
+    file://<la-ladera>/tests/garments-child.test.mjs:243:47
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (file://<la-ladera>/tests/garments-child.test.mjs:241:28)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 144.243889

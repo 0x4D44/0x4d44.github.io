@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "operation": "Regenerate the two adult cap states into an isolated model tree already containing the complete child library",
+  "childAndSharedHashesPreserved": {
+    "garments/garments_child.glb": "1c6c3c7c30cff154cc73f450e9efb25f2af279f2f2fd871fc619267d3ff1dfb2",
+    "manifest.garments_child.json": "7fb41efca5a233702342ce71609db8294b3769354098e27f397d5a8dd5fbfc8d",
+    "garments/palette.json": "b10e6788aa16b6b8fdbef279aa471a6903478f6fee3f8b523b4abfae88c30213",
+    "garments/prints.png": "505f2f691eba28343aa00afc5a89836aedf98713b42e68f8400928b014935827",
+    "manifest.json": "5f8018002254f1e45cd162a535fededf7932af315aafa8b08c51e52b952e9ae3"
+  },
+  "childValidationAfterAdultBuild": "PASS garments_child (complete): 90 states, 17 garments, 614128/700000 bytes, max 414/160 high/LOD triangles"
+}

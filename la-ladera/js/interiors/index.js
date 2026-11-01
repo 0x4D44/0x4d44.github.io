@@ -16,9 +16,10 @@ import { buildInterior as buildMeshes, loadInteriorAssets as preload, loadGarmen
 import { loadInspectAssets } from './inspect.js';
 import { planShopGoods } from './goods.js';
 import { loadGoodsAssets } from './goods-render.js';
+import { loadSizedGarmentAssets } from './garments-sized.js';
 
-/** The page's entry: the furniture's models, the clothes', the close-inspection things' and the shop stock's come down together (four sets, build.js, inspect.js and goods-render.js: the furniture tests call `preload` alone and see only the furniture). */
-export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx), loadInspectAssets(ctx), loadGoodsAssets(ctx)]); };
+/** The page's entry: the furniture's models, the clothes', the close-inspection things' and the shop stock's come down together (separate sets, build.js, garments-sized.js, inspect.js and goods-render.js: the furniture tests call `preload` alone and see only the furniture). */
+export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx), loadInspectAssets(ctx), loadGoodsAssets(ctx), loadSizedGarmentAssets(ctx)]); };
 export const buildInterior = (ctx, bp) => buildMeshes(ctx, bp);
 
 const PI = Math.PI;

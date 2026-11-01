@@ -1,4 +1,6 @@
-"""Original adult garment objects. Run Blender --background through tools/nice.mjs.
+"""Original garment objects. Run Blender --background through tools/nice.mjs.
+
+Use -- --child or -- --teen for the separate two-size companion exports.
 
 Reuses furn_lib's coordinate, material and GLB export conventions. Cloth is baked
 offline; no simulation, armature, image or external dependency enters a GLB.
@@ -375,8 +377,8 @@ def cloth_geometry(item,state):
     return vertices,faces,uv,colors
 
 
-def hat_geometry(item,state):
-    ident=item['id']; n=24
+def hat_geometry(item,state,segments=24,include_seams=True):
+    ident=item['id']; n=segments
     v,f,uv,c=[],[],[],[]
     # Full-size adult head opening; soft bucket, indented straw crown, six-panel cap.
     if ident=='cap': profile=[(.001,.135),(.047,.125),(.078,.099),(.097,.060),(.102,.008)]
@@ -396,7 +398,7 @@ def hat_geometry(item,state):
                 f.extend([(a0,b0,b1),(a0,b1,a1)])
     if ident=='cap':
         # The visor extends from the front half of the crown, not a circular brim.
-        start=len(v); segments=12
+        start=len(v); segments=max(6,n//2)
         for ring in range(3):
             for i in range(segments+1):
                 a=math.pi*i/segments
@@ -407,7 +409,7 @@ def hat_geometry(item,state):
                 if ring and i:
                     p=start+(ring-1)*(segments+1)+i-1;q=p+segments+1
                     f.extend([(p,q,p+1),(p+1,q,q+1)])
-        for i in range(0,n,4):
+        for i in (range(0,n,max(1,n//6)) if include_seams else []):
             points=[(v[j*n+i],uv[j*n+i]) for j in range(len(profile))]
             add_ribbon(v,f,uv,c,points,.66,.0015)
     else:
@@ -513,12 +515,46 @@ def png(path,palette):
     path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',size,size,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(raw,9))+chunk(b'IEND',b''))
 
 
+def preserve_companions(out, stage):
+    """Stage complete companion sets before an adult directory replacement.
+
+    Read only the selected output tree. A partial set is an error, so adult
+    regeneration cannot silently discard an orphan GLB or teen texture tree.
+    Returned paths are charged to their companion budgets, not the adult gate.
+    """
+    preserved = set()
+    for age, paths in (
+        ('child', ('garments/garments_child.glb', 'manifest.garments_child.json')),
+        ('teen', ('garments/garments_teen.glb', 'manifest.garments_teen.json', 'garments/teen')),
+    ):
+        sources = [out / rel for rel in paths]
+        if not any(path.exists() for path in sources):
+            continue
+        if not all(path.is_dir() if rel == 'garments/teen' else path.is_file()
+                   for rel, path in zip(paths, sources)):
+            raise ValueError(f'Existing {age} library is incomplete; repair its GLB, manifest and any texture directory before regenerating adult assets')
+        for rel, source in zip(paths, sources):
+            target = stage / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                shutil.copytree(source, target)
+                preserved.update(path for path in target.rglob('*') if path.is_file())
+            else:
+                shutil.copy2(source, target)
+                preserved.add(target)
+    return preserved
+
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--out',type=Path,default=MODELS)
     parser.add_argument('--catalogue',type=Path,default=HERE/'garments.catalog.json')
     parser.add_argument('--only',help='comma-separated garment IDs; requires isolated --out')
+    parser.add_argument('--child',action='store_true',help='build the separate everyday child clothing library')
     args=parser.parse_args(F.argv_after_dashes() if '--' in sys.argv else [])
+    if args.child:
+        import garments_child
+        return garments_child.build(args)
     out=args.out.resolve()
     if args.only and out==MODELS.resolve(): raise ValueError('Partial builds must use an isolated --out')
     catalogue=json.loads(args.catalogue.read_text())
@@ -539,6 +575,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='.garments-stage-',dir=out.parent) as tmp:
         stage=Path(tmp); dest=stage/'garments'; dest.mkdir()
         for name in ('palette.json','assortments.json'): shutil.copy2(source/name,dest/name)
+        companions = preserve_companions(out, stage)
         png(dest/'prints.png',palette)
         for state in STATES:
             if not any(state in item['states'] for item in items): continue
@@ -578,12 +615,12 @@ def main():
             F.export_glb(str(dest/f'garments_{state}_lod.glb'))
             manifest['files'].append({'glb':glb,'sha256':hashlib.sha256((stage/glb).read_bytes()).hexdigest(),'assets':assets})
         (stage/'manifest.garments.json').write_text(json.dumps(manifest,indent=2)+'\n')
-        total=sum(p.stat().st_size for p in dest.iterdir())+(stage/'manifest.garments.json').stat().st_size
+        total=sum(p.stat().st_size for p in dest.rglob('*') if p.is_file() and p not in companions)+(stage/'manifest.garments.json').stat().st_size
         if total>2000000: raise ValueError(f'Runtime payload {total} exceeds 2,000,000 bytes')
         node=shutil.which('node')
         if not node: raise ValueError('Node is required for independent validation before installation')
         validation=stage/'validation.json'
-        command=[node,str(ROOT/'tools'/'nice.mjs'),node,str(HERE/'garments_validate.mjs'),'--root',str(stage),'--catalogue',str(args.catalogue.resolve()),'--json',str(validation)]
+        command=[node,'--import',(ROOT/'tests'/'nice.mjs').as_uri(),str(HERE/'garments_validate.mjs'),'--root',str(stage),'--catalogue',str(args.catalogue.resolve()),'--json',str(validation)]
         if not chosen: command.append('--complete')
         checked=subprocess.run(command,capture_output=True,text=True,timeout=180,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         print(checked.stdout,flush=True)
@@ -608,4 +645,12 @@ def main():
         print(f'EXPORTED {sum(len(f["assets"]) for f in manifest["files"])} garment states; {total} runtime bytes. Run garments_validate.mjs{mode}.',flush=True)
 
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    if '--child' in sys.argv and '--teen' in sys.argv:
+        raise ValueError('--child and --teen are mutually exclusive; build each companion separately')
+    if '--teen' in sys.argv:
+        sys.argv.remove('--teen')
+        import garments_teen_build
+        garments_teen_build.main()
+    else:
+        main()

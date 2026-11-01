@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: every required everyday garment key exists in both sizes and every applicable state
+ok 1 - every required everyday garment key exists in both sizes and every applicable state
+  ---
+  duration_ms: 40.461154
+  type: 'test'
+  ...
+# Subtest: every piece stays inside its independent real dimension range in metres, including LOD
+ok 2 - every piece stays inside its independent real dimension range in metres, including LOD
+  ---
+  duration_ms: 61.021419
+  type: 'test'
+  ...
+# Subtest: every piece stays inside its actual 800-triangle or 240-triangle LOD budget
+ok 3 - every piece stays inside its actual 800-triangle or 240-triangle LOD budget
+  ---
+  duration_ms: 23.719961
+  type: 'test'
+  ...
+# Subtest: the generated child GLB and child manifest together stay within 700000 bytes
+ok 4 - the generated child GLB and child manifest together stay within 700000 bytes
+  ---
+  duration_ms: 47.627968
+  type: 'test'
+  ...
+# Subtest: small and big assets carry the declared age bands and approximately 55/75 percent sizing
+ok 5 - small and big assets carry the declared age bands and approximately 55/75 percent sizing
+  ---
+  duration_ms: 29.015245
+  type: 'test'
+  ...
+# Subtest: the child set reuses the adult fabric palette and atlas without embedded textures
+ok 6 - the child set reuses the adult fabric palette and atlas without embedded textures
+  ---
+  duration_ms: 34.499675
+  type: 'test'
+  ...
+# Subtest: the child library remains an object-only companion registered exactly once in the main manifest
+ok 7 - the child library remains an object-only companion registered exactly once in the main manifest
+  ---
+  duration_ms: 42.528595
+  type: 'test'
+  ...
+# Subtest: the checked-in child library passes the complete validator with actual generated files
+ok 8 - the checked-in child library passes the complete validator with actual generated files
+  ---
+  duration_ms: 32.284105
+  type: 'test'
+  ...
+# Subtest: an oversized binary mesh fails the real-size gate even after its metadata is refreshed
+ok 9 - an oversized binary mesh fails the real-size gate even after its metadata is refreshed
+  ---
+  duration_ms: 379.948319
+  type: 'test'
+  ...
+# reject-oversize: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: an undersized binary mesh fails the lower real-size bound with accurate metadata
+ok 10 - an undersized binary mesh fails the lower real-size bound with accurate metadata
+  ---
+  duration_ms: 255.415927
+  type: 'test'
+  ...
+# reject-undersize: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: an extra valid high-detail triangle batch fails the 800-triangle gate
+ok 11 - an extra valid high-detail triangle batch fails the 800-triangle gate
+  ---
+  duration_ms: 385.445502
+  type: 'test'
+  ...
+# reject-high-triangles: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: an extra valid LOD triangle batch fails the 240-triangle gate
+ok 12 - an extra valid LOD triangle batch fails the 240-triangle gate
+  ---
+  duration_ms: 369.766407
+  type: 'test'
+  ...
+# reject-lod-triangles: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: a missing required key fails independently of the remaining GLB geometry
+ok 13 - a missing required key fails independently of the remaining GLB geometry
+  ---
+  duration_ms: 249.961977
+  type: 'test'
+  ...
+# reject-missing-key: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: valid extra GLB payload fails the combined file-size gate
+ok 14 - valid extra GLB payload fails the combined file-size gate
+  ---
+  duration_ms: 416.070183
+  type: 'test'
+  ...
+# reject-payload-budget: the ordinary acceptance test failed as expected (exit 1; TAP fail 1).
+# Subtest: child budget limits cannot be relaxed by editing manifest data
+ok 15 - child budget limits cannot be relaxed by editing manifest data
+  ---
+  duration_ms: 60.818031
+  type: 'test'
+  ...
+# Subtest: declared child scale and age bands cannot contradict the fixed size contract
+ok 16 - declared child scale and age bands cannot contradict the fixed size contract
+  ---
+  duration_ms: 48.773017
+  type: 'test'
+  ...
+# Subtest: adult validation accepts its exact child companion but rejects an extra child-prefixed GLB
+ok 17 - adult validation accepts its exact child companion but rejects an extra child-prefixed GLB
+  ---
+  duration_ms: 189.11288
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2783.401317

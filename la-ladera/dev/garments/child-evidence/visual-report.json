@@ -1,0 +1,5844 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-31T18:36:32.907Z",
+  "manifest": "la-ladera/assets/models/manifest.garments_child.json",
+  "sourceHashes": {
+    "la-ladera/assets/models/garments/garments_child.glb": "1c6c3c7c30cff154cc73f450e9efb25f2af279f2f2fd871fc619267d3ff1dfb2",
+    "la-ladera/assets/models/garments/palette.json": "b10e6788aa16b6b8fdbef279aa471a6903478f6fee3f8b523b4abfae88c30213",
+    "la-ladera/assets/models/garments/prints.png": "505f2f691eba28343aa00afc5a89836aedf98713b42e68f8400928b014935827",
+    "la-ladera/assets/models/manifest.garments_child.json": "7fb41efca5a233702342ce71609db8294b3769354098e27f397d5a8dd5fbfc8d"
+  },
+  "previewOnly": true,
+  "sharedScaleWithinComparison": true,
+  "items": [
+    {
+      "key": "garment_tshirt_teal_small_folded",
+      "garment": "tshirt_teal",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 256,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.015258,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.015258,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_big_folded",
+      "garment": "tshirt_teal",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 256,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.020807,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.020807,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_small_folded",
+      "garment": "tshirt_coral",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 256,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.015258,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.015258,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_big_folded",
+      "garment": "tshirt_coral",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 256,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.020807,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.020807,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_small_folded",
+      "garment": "tshirt_motif",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 296,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.015277,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.015277,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_big_folded",
+      "garment": "tshirt_motif",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 296,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.020832,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.020832,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_small_folded",
+      "garment": "shorts",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_shorts_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 210,
+      "meshes": 1,
+      "size": [
+        0.1595,
+        0.014289,
+        0.132
+      ],
+      "bounds": {
+        "min": [
+          -0.07975,
+          0,
+          -0.066
+        ],
+        "max": [
+          0.07975,
+          0.014289,
+          0.066
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_big_folded",
+      "garment": "shorts",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_shorts_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 210,
+      "meshes": 1,
+      "size": [
+        0.2175,
+        0.019485,
+        0.18
+      ],
+      "bounds": {
+        "min": [
+          -0.10875,
+          0,
+          -0.09
+        ],
+        "max": [
+          0.10875,
+          0.019485,
+          0.09
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_small_folded",
+      "garment": "cotton_dress",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 256,
+      "meshes": 1,
+      "size": [
+        0.209,
+        0.015258,
+        0.199925
+      ],
+      "bounds": {
+        "min": [
+          -0.1045,
+          0,
+          -0.099963
+        ],
+        "max": [
+          0.1045,
+          0.015258,
+          0.099963
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_big_folded",
+      "garment": "cotton_dress",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 256,
+      "meshes": 1,
+      "size": [
+        0.285,
+        0.020807,
+        0.272625
+      ],
+      "bounds": {
+        "min": [
+          -0.1425,
+          0,
+          -0.136312
+        ],
+        "max": [
+          0.1425,
+          0.020807,
+          0.136312
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_small_folded",
+      "garment": "hoodie",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 264,
+      "meshes": 1,
+      "size": [
+        0.2585,
+        0.015258,
+        0.205425
+      ],
+      "bounds": {
+        "min": [
+          -0.12925,
+          0,
+          -0.102712
+        ],
+        "max": [
+          0.12925,
+          0.015258,
+          0.102712
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_big_folded",
+      "garment": "hoodie",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 264,
+      "meshes": 1,
+      "size": [
+        0.3525,
+        0.020807,
+        0.280125
+      ],
+      "bounds": {
+        "min": [
+          -0.17625,
+          0,
+          -0.140062
+        ],
+        "max": [
+          0.17625,
+          0.020807,
+          0.140062
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_small_folded",
+      "garment": "joggers",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 212,
+      "meshes": 1,
+      "size": [
+        0.198,
+        0.014289,
+        0.187
+      ],
+      "bounds": {
+        "min": [
+          -0.099,
+          0,
+          -0.0935
+        ],
+        "max": [
+          0.099,
+          0.014289,
+          0.0935
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_big_folded",
+      "garment": "joggers",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 212,
+      "meshes": 1,
+      "size": [
+        0.27,
+        0.019485,
+        0.255
+      ],
+      "bounds": {
+        "min": [
+          -0.135,
+          0,
+          -0.1275
+        ],
+        "max": [
+          0.135,
+          0.019485,
+          0.1275
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_small_folded",
+      "garment": "school_jumper",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 260,
+      "meshes": 1,
+      "size": [
+        0.242,
+        0.015258,
+        0.205425
+      ],
+      "bounds": {
+        "min": [
+          -0.121,
+          0,
+          -0.102712
+        ],
+        "max": [
+          0.121,
+          0.015258,
+          0.102712
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_big_folded",
+      "garment": "school_jumper",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 260,
+      "meshes": 1,
+      "size": [
+        0.33,
+        0.020807,
+        0.280125
+      ],
+      "bounds": {
+        "min": [
+          -0.165,
+          0,
+          -0.140062
+        ],
+        "max": [
+          0.165,
+          0.020807,
+          0.140062
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_small_folded",
+      "garment": "school_polo",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 266,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.015258,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.015258,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_big_folded",
+      "garment": "school_polo",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 266,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.020807,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.020807,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_small_folded",
+      "garment": "school_trousers",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 212,
+      "meshes": 1,
+      "size": [
+        0.198,
+        0.014289,
+        0.187
+      ],
+      "bounds": {
+        "min": [
+          -0.099,
+          0,
+          -0.0935
+        ],
+        "max": [
+          0.099,
+          0.014289,
+          0.0935
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_big_folded",
+      "garment": "school_trousers",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 212,
+      "meshes": 1,
+      "size": [
+        0.27,
+        0.019485,
+        0.255
+      ],
+      "bounds": {
+        "min": [
+          -0.135,
+          0,
+          -0.1275
+        ],
+        "max": [
+          0.135,
+          0.019485,
+          0.1275
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_small_folded",
+      "garment": "school_skirt",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 222,
+      "meshes": 1,
+      "size": [
+        0.198,
+        0.014289,
+        0.1705
+      ],
+      "bounds": {
+        "min": [
+          -0.099,
+          0,
+          -0.08525
+        ],
+        "max": [
+          0.099,
+          0.014289,
+          0.08525
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_big_folded",
+      "garment": "school_skirt",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 222,
+      "meshes": 1,
+      "size": [
+        0.27,
+        0.019485,
+        0.2325
+      ],
+      "bounds": {
+        "min": [
+          -0.135,
+          0,
+          -0.11625
+        ],
+        "max": [
+          0.135,
+          0.019485,
+          0.11625
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_small_folded",
+      "garment": "school_tie",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 204,
+      "meshes": 1,
+      "size": [
+        0.1045,
+        0.014289,
+        0.04125
+      ],
+      "bounds": {
+        "min": [
+          -0.05225,
+          0,
+          -0.020625
+        ],
+        "max": [
+          0.05225,
+          0.014289,
+          0.020625
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_big_folded",
+      "garment": "school_tie",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 204,
+      "meshes": 1,
+      "size": [
+        0.1425,
+        0.019485,
+        0.05625
+      ],
+      "bounds": {
+        "min": [
+          -0.07125,
+          0,
+          -0.028125
+        ],
+        "max": [
+          0.07125,
+          0.019485,
+          0.028125
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_small_folded",
+      "garment": "socks_pair",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 224,
+      "meshes": 1,
+      "size": [
+        0.109725,
+        0.020168,
+        0.078334
+      ],
+      "bounds": {
+        "min": [
+          -0.054863,
+          0,
+          -0.039167
+        ],
+        "max": [
+          0.054863,
+          0.020168,
+          0.039167
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_big_folded",
+      "garment": "socks_pair",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 224,
+      "meshes": 1,
+      "size": [
+        0.149625,
+        0.027502,
+        0.106819
+      ],
+      "bounds": {
+        "min": [
+          -0.074813,
+          0,
+          -0.053409
+        ],
+        "max": [
+          0.074813,
+          0.027502,
+          0.053409
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_small_folded",
+      "garment": "light_jacket",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_small_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 268,
+      "meshes": 1,
+      "size": [
+        0.2585,
+        0.015258,
+        0.205425
+      ],
+      "bounds": {
+        "min": [
+          -0.12925,
+          0,
+          -0.102712
+        ],
+        "max": [
+          0.12925,
+          0.015258,
+          0.102712
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_big_folded",
+      "garment": "light_jacket",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_big_folded",
+      "glb": "garments/garments_child.glb",
+      "triangles": 268,
+      "meshes": 1,
+      "size": [
+        0.3525,
+        0.020807,
+        0.280125
+      ],
+      "bounds": {
+        "min": [
+          -0.17625,
+          0,
+          -0.140062
+        ],
+        "max": [
+          0.17625,
+          0.020807,
+          0.140062
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_small_hung",
+      "garment": "tshirt_teal",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.011423
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005712
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005712
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_big_hung",
+      "garment": "tshirt_teal",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.015577
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007789
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007789
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_small_hung",
+      "garment": "tshirt_coral",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.011423
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005712
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005712
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_big_hung",
+      "garment": "tshirt_coral",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.015577
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007789
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007789
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_small_hung",
+      "garment": "tshirt_motif",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 238,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.011423
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005712
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005712
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_big_hung",
+      "garment": "tshirt_motif",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 238,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.015577
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007789
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007789
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_small_hung",
+      "garment": "shorts",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_shorts_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 216,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.2365,
+        0.011573
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          -0.2365,
+          -0.005786
+        ],
+        "max": [
+          0.14553,
+          0,
+          0.005786
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_big_hung",
+      "garment": "shorts",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_shorts_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 216,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.3225,
+        0.015781
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          -0.3225,
+          -0.00789
+        ],
+        "max": [
+          0.19845,
+          0,
+          0.00789
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_small_hung",
+      "garment": "cotton_dress",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 240,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.523949,
+        0.011739
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          -0.523949,
+          -0.00587
+        ],
+        "max": [
+          0.187,
+          0,
+          0.00587
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_big_hung",
+      "garment": "cotton_dress",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 240,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.714476,
+        0.016008
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          -0.714476,
+          -0.008004
+        ],
+        "max": [
+          0.255,
+          0,
+          0.008004
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_small_hung",
+      "garment": "hoodie",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 346,
+      "meshes": 1,
+      "size": [
+        0.561,
+        0.51832,
+        0.014979
+      ],
+      "bounds": {
+        "min": [
+          -0.2805,
+          -0.51832,
+          -0.00749
+        ],
+        "max": [
+          0.2805,
+          0,
+          0.00749
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_big_hung",
+      "garment": "hoodie",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 346,
+      "meshes": 1,
+      "size": [
+        0.765,
+        0.7068,
+        0.020426
+      ],
+      "bounds": {
+        "min": [
+          -0.3825,
+          -0.7068,
+          -0.010213
+        ],
+        "max": [
+          0.3825,
+          0,
+          0.010213
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_small_hung",
+      "garment": "joggers",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.55,
+        0.011573
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          -0.55,
+          -0.005786
+        ],
+        "max": [
+          0.14553,
+          0,
+          0.005786
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_big_hung",
+      "garment": "joggers",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.75,
+        0.015781
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          -0.75,
+          -0.00789
+        ],
+        "max": [
+          0.19845,
+          0,
+          0.00789
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_small_hung",
+      "garment": "school_jumper",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 226,
+      "meshes": 1,
+      "size": [
+        0.539,
+        0.389317,
+        0.011423
+      ],
+      "bounds": {
+        "min": [
+          -0.2695,
+          -0.389317,
+          -0.005712
+        ],
+        "max": [
+          0.2695,
+          0,
+          0.005712
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_big_hung",
+      "garment": "school_jumper",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 226,
+      "meshes": 1,
+      "size": [
+        0.735,
+        0.530887,
+        0.015577
+      ],
+      "bounds": {
+        "min": [
+          -0.3675,
+          -0.530887,
+          -0.007789
+        ],
+        "max": [
+          0.3675,
+          0,
+          0.007789
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_small_hung",
+      "garment": "school_polo",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 210,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.011423
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005712
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005712
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_big_hung",
+      "garment": "school_polo",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 210,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.015577
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007789
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007789
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_small_hung",
+      "garment": "school_trousers",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.28028,
+        0.561,
+        0.011573
+      ],
+      "bounds": {
+        "min": [
+          -0.14014,
+          -0.561,
+          -0.005786
+        ],
+        "max": [
+          0.14014,
+          0,
+          0.005786
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_big_hung",
+      "garment": "school_trousers",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.3822,
+        0.765,
+        0.015781
+      ],
+      "bounds": {
+        "min": [
+          -0.1911,
+          -0.765,
+          -0.00789
+        ],
+        "max": [
+          0.1911,
+          0,
+          0.00789
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_small_hung",
+      "garment": "school_skirt",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 414,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.3355,
+        0.020602
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          -0.3355,
+          -0.010301
+        ],
+        "max": [
+          0.187,
+          0,
+          0.010301
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_big_hung",
+      "garment": "school_skirt",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 414,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.4575,
+        0.028093
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          -0.4575,
+          -0.014047
+        ],
+        "max": [
+          0.255,
+          0,
+          0.014047
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_small_hung",
+      "garment": "school_tie",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 174,
+      "meshes": 1,
+      "size": [
+        0.08624,
+        0.2805,
+        0.011512
+      ],
+      "bounds": {
+        "min": [
+          -0.04312,
+          -0.2805,
+          -0.005756
+        ],
+        "max": [
+          0.04312,
+          0,
+          0.005756
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_big_hung",
+      "garment": "school_tie",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 174,
+      "meshes": 1,
+      "size": [
+        0.1176,
+        0.3825,
+        0.015698
+      ],
+      "bounds": {
+        "min": [
+          -0.0588,
+          -0.3825,
+          -0.007849
+        ],
+        "max": [
+          0.0588,
+          0,
+          0.007849
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_small_hung",
+      "garment": "cap",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_cap_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 288,
+      "meshes": 1,
+      "size": [
+        0.1298,
+        0.174042,
+        0.08789
+      ],
+      "bounds": {
+        "min": [
+          -0.0649,
+          -0.174042,
+          -0.043945
+        ],
+        "max": [
+          0.0649,
+          0,
+          0.043945
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_big_hung",
+      "garment": "cap",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_cap_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 288,
+      "meshes": 1,
+      "size": [
+        0.177,
+        0.23733,
+        0.11985
+      ],
+      "bounds": {
+        "min": [
+          -0.0885,
+          -0.23733,
+          -0.059925
+        ],
+        "max": [
+          0.0885,
+          0,
+          0.059925
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_small_hung",
+      "garment": "light_jacket",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_small_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 254,
+      "meshes": 1,
+      "size": [
+        0.572,
+        0.416267,
+        0.011423
+      ],
+      "bounds": {
+        "min": [
+          -0.286,
+          -0.416267,
+          -0.005712
+        ],
+        "max": [
+          0.286,
+          0,
+          0.005712
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_big_hung",
+      "garment": "light_jacket",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_big_hung",
+      "glb": "garments/garments_child.glb",
+      "triangles": 254,
+      "meshes": 1,
+      "size": [
+        0.78,
+        0.567637,
+        0.015577
+      ],
+      "bounds": {
+        "min": [
+          -0.39,
+          -0.567637,
+          -0.007789
+        ],
+        "max": [
+          0.39,
+          0,
+          0.007789
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_small_flat",
+      "garment": "tshirt_teal",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.009846,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.009846,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_big_flat",
+      "garment": "tshirt_teal",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.013426,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.013426,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_small_flat",
+      "garment": "tshirt_coral",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.009846,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.009846,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_big_flat",
+      "garment": "tshirt_coral",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 198,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.013426,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.013426,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_small_flat",
+      "garment": "tshirt_motif",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 238,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.009846,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.009846,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_big_flat",
+      "garment": "tshirt_motif",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 238,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.013426,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.013426,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_small_flat",
+      "garment": "shorts",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_shorts_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 216,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.010119,
+        0.2365
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          0,
+          -0.11825
+        ],
+        "max": [
+          0.14553,
+          0.010119,
+          0.11825
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_big_flat",
+      "garment": "shorts",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_shorts_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 216,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.013799,
+        0.3225
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          0,
+          -0.16125
+        ],
+        "max": [
+          0.19845,
+          0.013799,
+          0.16125
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_small_flat",
+      "garment": "cotton_dress",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 240,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.009971,
+        0.523949
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          0,
+          -0.261975
+        ],
+        "max": [
+          0.187,
+          0.009971,
+          0.261975
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_big_flat",
+      "garment": "cotton_dress",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 240,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.013596,
+        0.714476
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          0,
+          -0.357238
+        ],
+        "max": [
+          0.255,
+          0.013596,
+          0.357238
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_small_flat",
+      "garment": "hoodie",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 346,
+      "meshes": 1,
+      "size": [
+        0.561,
+        0.016726,
+        0.51832
+      ],
+      "bounds": {
+        "min": [
+          -0.2805,
+          0,
+          -0.25916
+        ],
+        "max": [
+          0.2805,
+          0.016726,
+          0.25916
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_big_flat",
+      "garment": "hoodie",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 346,
+      "meshes": 1,
+      "size": [
+        0.765,
+        0.022808,
+        0.7068
+      ],
+      "bounds": {
+        "min": [
+          -0.3825,
+          0,
+          -0.3534
+        ],
+        "max": [
+          0.3825,
+          0.022808,
+          0.3534
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_small_flat",
+      "garment": "joggers",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.010305,
+        0.55
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          0,
+          -0.275
+        ],
+        "max": [
+          0.14553,
+          0.010305,
+          0.275
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_big_flat",
+      "garment": "joggers",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.014053,
+        0.75
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          0,
+          -0.375
+        ],
+        "max": [
+          0.19845,
+          0.014053,
+          0.375
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_small_flat",
+      "garment": "school_jumper",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 226,
+      "meshes": 1,
+      "size": [
+        0.539,
+        0.010136,
+        0.389317
+      ],
+      "bounds": {
+        "min": [
+          -0.2695,
+          0,
+          -0.194658
+        ],
+        "max": [
+          0.2695,
+          0.010136,
+          0.194658
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_big_flat",
+      "garment": "school_jumper",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 226,
+      "meshes": 1,
+      "size": [
+        0.735,
+        0.013821,
+        0.530887
+      ],
+      "bounds": {
+        "min": [
+          -0.3675,
+          0,
+          -0.265443
+        ],
+        "max": [
+          0.3675,
+          0.013821,
+          0.265443
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_small_flat",
+      "garment": "school_polo",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 210,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.010022,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.010022,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_big_flat",
+      "garment": "school_polo",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 210,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.013666,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.013666,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_small_flat",
+      "garment": "school_trousers",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.28028,
+        0.010305,
+        0.561
+      ],
+      "bounds": {
+        "min": [
+          -0.14014,
+          0,
+          -0.2805
+        ],
+        "max": [
+          0.14014,
+          0.010305,
+          0.2805
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_big_flat",
+      "garment": "school_trousers",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 220,
+      "meshes": 1,
+      "size": [
+        0.3822,
+        0.014053,
+        0.765
+      ],
+      "bounds": {
+        "min": [
+          -0.1911,
+          0,
+          -0.3825
+        ],
+        "max": [
+          0.1911,
+          0.014053,
+          0.3825
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_small_flat",
+      "garment": "school_skirt",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 414,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.017794,
+        0.3355
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          0,
+          -0.16775
+        ],
+        "max": [
+          0.187,
+          0.017794,
+          0.16775
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_big_flat",
+      "garment": "school_skirt",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 414,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.024264,
+        0.4575
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          0,
+          -0.22875
+        ],
+        "max": [
+          0.255,
+          0.024264,
+          0.22875
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_small_flat",
+      "garment": "school_tie",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 174,
+      "meshes": 1,
+      "size": [
+        0.08624,
+        0.010103,
+        0.2805
+      ],
+      "bounds": {
+        "min": [
+          -0.04312,
+          0,
+          -0.14025
+        ],
+        "max": [
+          0.04312,
+          0.010103,
+          0.14025
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_big_flat",
+      "garment": "school_tie",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 174,
+      "meshes": 1,
+      "size": [
+        0.1176,
+        0.013776,
+        0.3825
+      ],
+      "bounds": {
+        "min": [
+          -0.0588,
+          0,
+          -0.19125
+        ],
+        "max": [
+          0.0588,
+          0.013776,
+          0.19125
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_small_flat",
+      "garment": "socks_pair",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 212,
+      "meshes": 1,
+      "size": [
+        0.227976,
+        0.014915,
+        0.201168
+      ],
+      "bounds": {
+        "min": [
+          -0.113988,
+          0,
+          -0.100584
+        ],
+        "max": [
+          0.113988,
+          0.014915,
+          0.100584
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_big_flat",
+      "garment": "socks_pair",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 212,
+      "meshes": 1,
+      "size": [
+        0.310876,
+        0.020339,
+        0.27432
+      ],
+      "bounds": {
+        "min": [
+          -0.155438,
+          0,
+          -0.13716
+        ],
+        "max": [
+          0.155438,
+          0.020339,
+          0.13716
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_small_flat",
+      "garment": "cap",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_cap_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 288,
+      "meshes": 1,
+      "size": [
+        0.1298,
+        0.08789,
+        0.174042
+      ],
+      "bounds": {
+        "min": [
+          -0.0649,
+          0,
+          -0.087021
+        ],
+        "max": [
+          0.0649,
+          0.08789,
+          0.087021
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_big_flat",
+      "garment": "cap",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_teal",
+      "node": "garment_cap_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 288,
+      "meshes": 1,
+      "size": [
+        0.177,
+        0.11985,
+        0.23733
+      ],
+      "bounds": {
+        "min": [
+          -0.0885,
+          0,
+          -0.118665
+        ],
+        "max": [
+          0.0885,
+          0.11985,
+          0.118665
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_small_flat",
+      "garment": "light_jacket",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 254,
+      "meshes": 1,
+      "size": [
+        0.572,
+        0.010388,
+        0.416267
+      ],
+      "bounds": {
+        "min": [
+          -0.286,
+          0,
+          -0.208133
+        ],
+        "max": [
+          0.286,
+          0.010388,
+          0.208133
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_big_flat",
+      "garment": "light_jacket",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 254,
+      "meshes": 1,
+      "size": [
+        0.78,
+        0.014165,
+        0.567637
+      ],
+      "bounds": {
+        "min": [
+          -0.39,
+          0,
+          -0.283818
+        ],
+        "max": [
+          0.39,
+          0.014165,
+          0.283818
+        ]
+      }
+    },
+    {
+      "key": "garment_school_shoes_small_flat",
+      "garment": "school_shoes",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_shoes_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 396,
+      "meshes": 1,
+      "size": [
+        0.12705,
+        0.04455,
+        0.1705
+      ],
+      "bounds": {
+        "min": [
+          -0.063525,
+          0,
+          -0.08525
+        ],
+        "max": [
+          0.063525,
+          0.04455,
+          0.08525
+        ]
+      }
+    },
+    {
+      "key": "garment_school_shoes_big_flat",
+      "garment": "school_shoes",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_charcoal",
+      "node": "garment_school_shoes_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 396,
+      "meshes": 1,
+      "size": [
+        0.17325,
+        0.06075,
+        0.2325
+      ],
+      "bounds": {
+        "min": [
+          -0.086625,
+          0,
+          -0.11625
+        ],
+        "max": [
+          0.086625,
+          0.06075,
+          0.11625
+        ]
+      }
+    },
+    {
+      "key": "garment_sandals_small_flat",
+      "garment": "sandals",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_sandals_small_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 384,
+      "meshes": 1,
+      "size": [
+        0.12705,
+        0.037306,
+        0.1705
+      ],
+      "bounds": {
+        "min": [
+          -0.063525,
+          0,
+          -0.08525
+        ],
+        "max": [
+          0.063525,
+          0.037306,
+          0.08525
+        ]
+      }
+    },
+    {
+      "key": "garment_sandals_big_flat",
+      "garment": "sandals",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": false,
+      "variant": "plain_navy",
+      "node": "garment_sandals_big_flat",
+      "glb": "garments/garments_child.glb",
+      "triangles": 384,
+      "meshes": 1,
+      "size": [
+        0.17325,
+        0.050872,
+        0.2325
+      ],
+      "bounds": {
+        "min": [
+          -0.086625,
+          0,
+          -0.11625
+        ],
+        "max": [
+          0.086625,
+          0.050872,
+          0.11625
+        ]
+      }
+    }
+  ],
+  "lodItems": [
+    {
+      "key": "garment_tshirt_teal_small_folded",
+      "garment": "tshirt_teal",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 88,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.014431,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.014431,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_big_folded",
+      "garment": "tshirt_teal",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 88,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.019678,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.019678,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_small_folded",
+      "garment": "tshirt_coral",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 88,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.014431,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.014431,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_big_folded",
+      "garment": "tshirt_coral",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 88,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.019678,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.019678,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_small_folded",
+      "garment": "tshirt_motif",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 128,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.014431,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.014431,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_big_folded",
+      "garment": "tshirt_motif",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 128,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.019678,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.019678,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_small_folded",
+      "garment": "shorts",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_shorts_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 58,
+      "meshes": 1,
+      "size": [
+        0.1595,
+        0.013028,
+        0.132
+      ],
+      "bounds": {
+        "min": [
+          -0.07975,
+          0,
+          -0.066
+        ],
+        "max": [
+          0.07975,
+          0.013028,
+          0.066
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_big_folded",
+      "garment": "shorts",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_shorts_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 58,
+      "meshes": 1,
+      "size": [
+        0.2175,
+        0.017765,
+        0.18
+      ],
+      "bounds": {
+        "min": [
+          -0.10875,
+          0,
+          -0.09
+        ],
+        "max": [
+          0.10875,
+          0.017765,
+          0.09
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_small_folded",
+      "garment": "cotton_dress",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 88,
+      "meshes": 1,
+      "size": [
+        0.209,
+        0.014431,
+        0.199925
+      ],
+      "bounds": {
+        "min": [
+          -0.1045,
+          0,
+          -0.099963
+        ],
+        "max": [
+          0.1045,
+          0.014431,
+          0.099963
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_big_folded",
+      "garment": "cotton_dress",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 88,
+      "meshes": 1,
+      "size": [
+        0.285,
+        0.019678,
+        0.272625
+      ],
+      "bounds": {
+        "min": [
+          -0.1425,
+          0,
+          -0.136312
+        ],
+        "max": [
+          0.1425,
+          0.019678,
+          0.136312
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_small_folded",
+      "garment": "hoodie",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.2585,
+        0.014431,
+        0.205425
+      ],
+      "bounds": {
+        "min": [
+          -0.12925,
+          0,
+          -0.102712
+        ],
+        "max": [
+          0.12925,
+          0.014431,
+          0.102712
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_big_folded",
+      "garment": "hoodie",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.3525,
+        0.019678,
+        0.280125
+      ],
+      "bounds": {
+        "min": [
+          -0.17625,
+          0,
+          -0.140062
+        ],
+        "max": [
+          0.17625,
+          0.019678,
+          0.140062
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_small_folded",
+      "garment": "joggers",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 60,
+      "meshes": 1,
+      "size": [
+        0.198,
+        0.013028,
+        0.187
+      ],
+      "bounds": {
+        "min": [
+          -0.099,
+          0,
+          -0.0935
+        ],
+        "max": [
+          0.099,
+          0.013028,
+          0.0935
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_big_folded",
+      "garment": "joggers",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 60,
+      "meshes": 1,
+      "size": [
+        0.27,
+        0.017765,
+        0.255
+      ],
+      "bounds": {
+        "min": [
+          -0.135,
+          0,
+          -0.1275
+        ],
+        "max": [
+          0.135,
+          0.017765,
+          0.1275
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_small_folded",
+      "garment": "school_jumper",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 92,
+      "meshes": 1,
+      "size": [
+        0.242,
+        0.014431,
+        0.205425
+      ],
+      "bounds": {
+        "min": [
+          -0.121,
+          0,
+          -0.102712
+        ],
+        "max": [
+          0.121,
+          0.014431,
+          0.102712
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_big_folded",
+      "garment": "school_jumper",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 92,
+      "meshes": 1,
+      "size": [
+        0.33,
+        0.019678,
+        0.280125
+      ],
+      "bounds": {
+        "min": [
+          -0.165,
+          0,
+          -0.140062
+        ],
+        "max": [
+          0.165,
+          0.019678,
+          0.140062
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_small_folded",
+      "garment": "school_polo",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 94,
+      "meshes": 1,
+      "size": [
+        0.231,
+        0.014431,
+        0.188925
+      ],
+      "bounds": {
+        "min": [
+          -0.1155,
+          0,
+          -0.094462
+        ],
+        "max": [
+          0.1155,
+          0.014431,
+          0.094462
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_big_folded",
+      "garment": "school_polo",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 94,
+      "meshes": 1,
+      "size": [
+        0.315,
+        0.019678,
+        0.257625
+      ],
+      "bounds": {
+        "min": [
+          -0.1575,
+          0,
+          -0.128812
+        ],
+        "max": [
+          0.1575,
+          0.019678,
+          0.128812
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_small_folded",
+      "garment": "school_trousers",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 60,
+      "meshes": 1,
+      "size": [
+        0.198,
+        0.013028,
+        0.187
+      ],
+      "bounds": {
+        "min": [
+          -0.099,
+          0,
+          -0.0935
+        ],
+        "max": [
+          0.099,
+          0.013028,
+          0.0935
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_big_folded",
+      "garment": "school_trousers",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 60,
+      "meshes": 1,
+      "size": [
+        0.27,
+        0.017765,
+        0.255
+      ],
+      "bounds": {
+        "min": [
+          -0.135,
+          0,
+          -0.1275
+        ],
+        "max": [
+          0.135,
+          0.017765,
+          0.1275
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_small_folded",
+      "garment": "school_skirt",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 68,
+      "meshes": 1,
+      "size": [
+        0.198,
+        0.013651,
+        0.1705
+      ],
+      "bounds": {
+        "min": [
+          -0.099,
+          0,
+          -0.08525
+        ],
+        "max": [
+          0.099,
+          0.013651,
+          0.08525
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_big_folded",
+      "garment": "school_skirt",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 68,
+      "meshes": 1,
+      "size": [
+        0.27,
+        0.018615,
+        0.2325
+      ],
+      "bounds": {
+        "min": [
+          -0.135,
+          0,
+          -0.11625
+        ],
+        "max": [
+          0.135,
+          0.018615,
+          0.11625
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_small_folded",
+      "garment": "school_tie",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 56,
+      "meshes": 1,
+      "size": [
+        0.1045,
+        0.013028,
+        0.04125
+      ],
+      "bounds": {
+        "min": [
+          -0.05225,
+          0,
+          -0.020625
+        ],
+        "max": [
+          0.05225,
+          0.013028,
+          0.020625
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_big_folded",
+      "garment": "school_tie",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 56,
+      "meshes": 1,
+      "size": [
+        0.1425,
+        0.017765,
+        0.05625
+      ],
+      "bounds": {
+        "min": [
+          -0.07125,
+          0,
+          -0.028125
+        ],
+        "max": [
+          0.07125,
+          0.017765,
+          0.028125
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_small_folded",
+      "garment": "socks_pair",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 92,
+      "meshes": 1,
+      "size": [
+        0.109725,
+        0.019968,
+        0.078334
+      ],
+      "bounds": {
+        "min": [
+          -0.054863,
+          0,
+          -0.039167
+        ],
+        "max": [
+          0.054863,
+          0.019968,
+          0.039167
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_big_folded",
+      "garment": "socks_pair",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 92,
+      "meshes": 1,
+      "size": [
+        0.149625,
+        0.027229,
+        0.106819
+      ],
+      "bounds": {
+        "min": [
+          -0.074813,
+          0,
+          -0.053409
+        ],
+        "max": [
+          0.074813,
+          0.027229,
+          0.053409
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_small_folded",
+      "garment": "light_jacket",
+      "sizeClass": "small",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_small_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.2585,
+        0.014431,
+        0.205425
+      ],
+      "bounds": {
+        "min": [
+          -0.12925,
+          0,
+          -0.102712
+        ],
+        "max": [
+          0.12925,
+          0.014431,
+          0.102712
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_big_folded",
+      "garment": "light_jacket",
+      "sizeClass": "big",
+      "state": "folded",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_big_folded_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.3525,
+        0.019678,
+        0.280125
+      ],
+      "bounds": {
+        "min": [
+          -0.17625,
+          0,
+          -0.140062
+        ],
+        "max": [
+          0.17625,
+          0.019678,
+          0.140062
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_small_hung",
+      "garment": "tshirt_teal",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.010449
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005225
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005225
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_big_hung",
+      "garment": "tshirt_teal",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.014249
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007125
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007125
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_small_hung",
+      "garment": "tshirt_coral",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.010449
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005225
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005225
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_big_hung",
+      "garment": "tshirt_coral",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.014249
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007125
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007125
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_small_hung",
+      "garment": "tshirt_motif",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 136,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.011177
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005589
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005589
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_big_hung",
+      "garment": "tshirt_motif",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 136,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.015241
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007621
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007621
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_small_hung",
+      "garment": "shorts",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_shorts_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.2365,
+        0.010873
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          -0.2365,
+          -0.005437
+        ],
+        "max": [
+          0.14553,
+          0,
+          0.005437
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_big_hung",
+      "garment": "shorts",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_shorts_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.3225,
+        0.014827
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          -0.3225,
+          -0.007414
+        ],
+        "max": [
+          0.19845,
+          0,
+          0.007414
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_small_hung",
+      "garment": "cotton_dress",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 104,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.523949,
+        0.010929
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          -0.523949,
+          -0.005464
+        ],
+        "max": [
+          0.187,
+          0,
+          0.005464
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_big_hung",
+      "garment": "cotton_dress",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 104,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.714476,
+        0.014903
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          -0.714476,
+          -0.007451
+        ],
+        "max": [
+          0.255,
+          0,
+          0.007451
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_small_hung",
+      "garment": "hoodie",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 158,
+      "meshes": 1,
+      "size": [
+        0.561,
+        0.51832,
+        0.014979
+      ],
+      "bounds": {
+        "min": [
+          -0.2805,
+          -0.51832,
+          -0.00749
+        ],
+        "max": [
+          0.2805,
+          0,
+          0.00749
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_big_hung",
+      "garment": "hoodie",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 158,
+      "meshes": 1,
+      "size": [
+        0.765,
+        0.7068,
+        0.020426
+      ],
+      "bounds": {
+        "min": [
+          -0.3825,
+          -0.7068,
+          -0.010213
+        ],
+        "max": [
+          0.3825,
+          0,
+          0.010213
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_small_hung",
+      "garment": "joggers",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.55,
+        0.010873
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          -0.55,
+          -0.005437
+        ],
+        "max": [
+          0.14553,
+          0,
+          0.005437
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_big_hung",
+      "garment": "joggers",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.75,
+        0.014827
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          -0.75,
+          -0.007414
+        ],
+        "max": [
+          0.19845,
+          0,
+          0.007414
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_small_hung",
+      "garment": "school_jumper",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 98,
+      "meshes": 1,
+      "size": [
+        0.539,
+        0.389317,
+        0.010508
+      ],
+      "bounds": {
+        "min": [
+          -0.2695,
+          -0.389317,
+          -0.005254
+        ],
+        "max": [
+          0.2695,
+          0,
+          0.005254
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_big_hung",
+      "garment": "school_jumper",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 98,
+      "meshes": 1,
+      "size": [
+        0.735,
+        0.530887,
+        0.014329
+      ],
+      "bounds": {
+        "min": [
+          -0.3675,
+          -0.530887,
+          -0.007165
+        ],
+        "max": [
+          0.3675,
+          0,
+          0.007165
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_small_hung",
+      "garment": "school_polo",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 102,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.383919,
+        0.010449
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          -0.383919,
+          -0.005225
+        ],
+        "max": [
+          0.231,
+          0,
+          0.005225
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_big_hung",
+      "garment": "school_polo",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 102,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.523526,
+        0.014249
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          -0.523526,
+          -0.007125
+        ],
+        "max": [
+          0.315,
+          0,
+          0.007125
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_small_hung",
+      "garment": "school_trousers",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.28028,
+        0.561,
+        0.010873
+      ],
+      "bounds": {
+        "min": [
+          -0.14014,
+          -0.561,
+          -0.005437
+        ],
+        "max": [
+          0.14014,
+          0,
+          0.005437
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_big_hung",
+      "garment": "school_trousers",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.3822,
+        0.765,
+        0.014827
+      ],
+      "bounds": {
+        "min": [
+          -0.1911,
+          -0.765,
+          -0.007414
+        ],
+        "max": [
+          0.1911,
+          0,
+          0.007414
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_small_hung",
+      "garment": "school_skirt",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 78,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.3355,
+        0.018086
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          -0.3355,
+          -0.009043
+        ],
+        "max": [
+          0.187,
+          0,
+          0.009043
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_big_hung",
+      "garment": "school_skirt",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 78,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.4575,
+        0.024663
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          -0.4575,
+          -0.012331
+        ],
+        "max": [
+          0.255,
+          0,
+          0.012331
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_small_hung",
+      "garment": "school_tie",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 62,
+      "meshes": 1,
+      "size": [
+        0.08624,
+        0.2805,
+        0.011072
+      ],
+      "bounds": {
+        "min": [
+          -0.04312,
+          -0.2805,
+          -0.005536
+        ],
+        "max": [
+          0.04312,
+          0,
+          0.005536
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_big_hung",
+      "garment": "school_tie",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 62,
+      "meshes": 1,
+      "size": [
+        0.1176,
+        0.3825,
+        0.015098
+      ],
+      "bounds": {
+        "min": [
+          -0.0588,
+          -0.3825,
+          -0.007549
+        ],
+        "max": [
+          0.0588,
+          0,
+          0.007549
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_small_hung",
+      "garment": "cap",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_cap_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 120,
+      "meshes": 1,
+      "size": [
+        0.1298,
+        0.174042,
+        0.08745
+      ],
+      "bounds": {
+        "min": [
+          -0.0649,
+          -0.174042,
+          -0.043725
+        ],
+        "max": [
+          0.0649,
+          0,
+          0.043725
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_big_hung",
+      "garment": "cap",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_cap_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 120,
+      "meshes": 1,
+      "size": [
+        0.177,
+        0.23733,
+        0.11925
+      ],
+      "bounds": {
+        "min": [
+          -0.0885,
+          -0.23733,
+          -0.059625
+        ],
+        "max": [
+          0.0885,
+          0,
+          0.059625
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_small_hung",
+      "garment": "light_jacket",
+      "sizeClass": "small",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_small_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 112,
+      "meshes": 1,
+      "size": [
+        0.572,
+        0.416267,
+        0.010611
+      ],
+      "bounds": {
+        "min": [
+          -0.286,
+          -0.416267,
+          -0.005306
+        ],
+        "max": [
+          0.286,
+          0,
+          0.005306
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_big_hung",
+      "garment": "light_jacket",
+      "sizeClass": "big",
+      "state": "hung",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_big_hung_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 112,
+      "meshes": 1,
+      "size": [
+        0.78,
+        0.567637,
+        0.01447
+      ],
+      "bounds": {
+        "min": [
+          -0.39,
+          -0.567637,
+          -0.007235
+        ],
+        "max": [
+          0.39,
+          0,
+          0.007235
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_small_flat",
+      "garment": "tshirt_teal",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.008962,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.008962,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_teal_big_flat",
+      "garment": "tshirt_teal",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_tshirt_teal_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.012221,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.012221,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_small_flat",
+      "garment": "tshirt_coral",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.008962,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.008962,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_coral_big_flat",
+      "garment": "tshirt_coral",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_tshirt_coral_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 96,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.012221,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.012221,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_small_flat",
+      "garment": "tshirt_motif",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 136,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.009464,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.009464,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_tshirt_motif_big_flat",
+      "garment": "tshirt_motif",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_tshirt_motif_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 136,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.012905,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.012905,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_small_flat",
+      "garment": "shorts",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_shorts_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.0084,
+        0.2365
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          0,
+          -0.11825
+        ],
+        "max": [
+          0.14553,
+          0.0084,
+          0.11825
+        ]
+      }
+    },
+    {
+      "key": "garment_shorts_big_flat",
+      "garment": "shorts",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_shorts_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.011455,
+        0.3225
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          0,
+          -0.16125
+        ],
+        "max": [
+          0.19845,
+          0.011455,
+          0.16125
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_small_flat",
+      "garment": "cotton_dress",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 104,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.008257,
+        0.523949
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          0,
+          -0.261975
+        ],
+        "max": [
+          0.187,
+          0.008257,
+          0.261975
+        ]
+      }
+    },
+    {
+      "key": "garment_cotton_dress_big_flat",
+      "garment": "cotton_dress",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_cotton_dress_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 104,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.011259,
+        0.714476
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          0,
+          -0.357238
+        ],
+        "max": [
+          0.255,
+          0.011259,
+          0.357238
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_small_flat",
+      "garment": "hoodie",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 158,
+      "meshes": 1,
+      "size": [
+        0.561,
+        0.01608,
+        0.51832
+      ],
+      "bounds": {
+        "min": [
+          -0.2805,
+          0,
+          -0.25916
+        ],
+        "max": [
+          0.2805,
+          0.01608,
+          0.25916
+        ]
+      }
+    },
+    {
+      "key": "garment_hoodie_big_flat",
+      "garment": "hoodie",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_lavender",
+      "node": "garment_hoodie_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 158,
+      "meshes": 1,
+      "size": [
+        0.765,
+        0.021927,
+        0.7068
+      ],
+      "bounds": {
+        "min": [
+          -0.3825,
+          0,
+          -0.3534
+        ],
+        "max": [
+          0.3825,
+          0.021927,
+          0.3534
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_small_flat",
+      "garment": "joggers",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.29106,
+        0.009271,
+        0.55
+      ],
+      "bounds": {
+        "min": [
+          -0.14553,
+          0,
+          -0.275
+        ],
+        "max": [
+          0.14553,
+          0.009271,
+          0.275
+        ]
+      }
+    },
+    {
+      "key": "garment_joggers_big_flat",
+      "garment": "joggers",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_joggers_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.3969,
+        0.012642,
+        0.75
+      ],
+      "bounds": {
+        "min": [
+          -0.19845,
+          0,
+          -0.375
+        ],
+        "max": [
+          0.19845,
+          0.012642,
+          0.375
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_small_flat",
+      "garment": "school_jumper",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 98,
+      "meshes": 1,
+      "size": [
+        0.539,
+        0.008721,
+        0.389317
+      ],
+      "bounds": {
+        "min": [
+          -0.2695,
+          0,
+          -0.194658
+        ],
+        "max": [
+          0.2695,
+          0.008721,
+          0.194658
+        ]
+      }
+    },
+    {
+      "key": "garment_school_jumper_big_flat",
+      "garment": "school_jumper",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_jumper_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 98,
+      "meshes": 1,
+      "size": [
+        0.735,
+        0.011892,
+        0.530887
+      ],
+      "bounds": {
+        "min": [
+          -0.3675,
+          0,
+          -0.265443
+        ],
+        "max": [
+          0.3675,
+          0.011892,
+          0.265443
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_small_flat",
+      "garment": "school_polo",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 102,
+      "meshes": 1,
+      "size": [
+        0.462,
+        0.009127,
+        0.383919
+      ],
+      "bounds": {
+        "min": [
+          -0.231,
+          0,
+          -0.19196
+        ],
+        "max": [
+          0.231,
+          0.009127,
+          0.19196
+        ]
+      }
+    },
+    {
+      "key": "garment_school_polo_big_flat",
+      "garment": "school_polo",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_school_polo_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 102,
+      "meshes": 1,
+      "size": [
+        0.63,
+        0.012445,
+        0.523526
+      ],
+      "bounds": {
+        "min": [
+          -0.315,
+          0,
+          -0.261763
+        ],
+        "max": [
+          0.315,
+          0.012445,
+          0.261763
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_small_flat",
+      "garment": "school_trousers",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.28028,
+        0.009271,
+        0.561
+      ],
+      "bounds": {
+        "min": [
+          -0.14014,
+          0,
+          -0.2805
+        ],
+        "max": [
+          0.14014,
+          0.009271,
+          0.2805
+        ]
+      }
+    },
+    {
+      "key": "garment_school_trousers_big_flat",
+      "garment": "school_trousers",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_trousers_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 80,
+      "meshes": 1,
+      "size": [
+        0.3822,
+        0.012642,
+        0.765
+      ],
+      "bounds": {
+        "min": [
+          -0.1911,
+          0,
+          -0.3825
+        ],
+        "max": [
+          0.1911,
+          0.012642,
+          0.3825
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_small_flat",
+      "garment": "school_skirt",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 78,
+      "meshes": 1,
+      "size": [
+        0.374,
+        0.017944,
+        0.3355
+      ],
+      "bounds": {
+        "min": [
+          -0.187,
+          0,
+          -0.16775
+        ],
+        "max": [
+          0.187,
+          0.017944,
+          0.16775
+        ]
+      }
+    },
+    {
+      "key": "garment_school_skirt_big_flat",
+      "garment": "school_skirt",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_skirt_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 78,
+      "meshes": 1,
+      "size": [
+        0.51,
+        0.024469,
+        0.4575
+      ],
+      "bounds": {
+        "min": [
+          -0.255,
+          0,
+          -0.22875
+        ],
+        "max": [
+          0.255,
+          0.024469,
+          0.22875
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_small_flat",
+      "garment": "school_tie",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 62,
+      "meshes": 1,
+      "size": [
+        0.08624,
+        0.008474,
+        0.2805
+      ],
+      "bounds": {
+        "min": [
+          -0.04312,
+          0,
+          -0.14025
+        ],
+        "max": [
+          0.04312,
+          0.008474,
+          0.14025
+        ]
+      }
+    },
+    {
+      "key": "garment_school_tie_big_flat",
+      "garment": "school_tie",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_school_tie_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 62,
+      "meshes": 1,
+      "size": [
+        0.1176,
+        0.011555,
+        0.3825
+      ],
+      "bounds": {
+        "min": [
+          -0.0588,
+          0,
+          -0.19125
+        ],
+        "max": [
+          0.0588,
+          0.011555,
+          0.19125
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_small_flat",
+      "garment": "socks_pair",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 120,
+      "meshes": 1,
+      "size": [
+        0.227976,
+        0.013803,
+        0.201168
+      ],
+      "bounds": {
+        "min": [
+          -0.113988,
+          0,
+          -0.100584
+        ],
+        "max": [
+          0.113988,
+          0.013803,
+          0.100584
+        ]
+      }
+    },
+    {
+      "key": "garment_socks_pair_big_flat",
+      "garment": "socks_pair",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_cream",
+      "node": "garment_socks_pair_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 120,
+      "meshes": 1,
+      "size": [
+        0.310876,
+        0.018822,
+        0.27432
+      ],
+      "bounds": {
+        "min": [
+          -0.155438,
+          0,
+          -0.13716
+        ],
+        "max": [
+          0.155438,
+          0.018822,
+          0.13716
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_small_flat",
+      "garment": "cap",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_cap_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 120,
+      "meshes": 1,
+      "size": [
+        0.1298,
+        0.08745,
+        0.174042
+      ],
+      "bounds": {
+        "min": [
+          -0.0649,
+          0,
+          -0.087021
+        ],
+        "max": [
+          0.0649,
+          0.08745,
+          0.087021
+        ]
+      }
+    },
+    {
+      "key": "garment_cap_big_flat",
+      "garment": "cap",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_teal",
+      "node": "garment_cap_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 120,
+      "meshes": 1,
+      "size": [
+        0.177,
+        0.11925,
+        0.23733
+      ],
+      "bounds": {
+        "min": [
+          -0.0885,
+          0,
+          -0.118665
+        ],
+        "max": [
+          0.0885,
+          0.11925,
+          0.118665
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_small_flat",
+      "garment": "light_jacket",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 112,
+      "meshes": 1,
+      "size": [
+        0.572,
+        0.008794,
+        0.416267
+      ],
+      "bounds": {
+        "min": [
+          -0.286,
+          0,
+          -0.208133
+        ],
+        "max": [
+          0.286,
+          0.008794,
+          0.208133
+        ]
+      }
+    },
+    {
+      "key": "garment_light_jacket_big_flat",
+      "garment": "light_jacket",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_coral",
+      "node": "garment_light_jacket_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 112,
+      "meshes": 1,
+      "size": [
+        0.78,
+        0.011992,
+        0.567637
+      ],
+      "bounds": {
+        "min": [
+          -0.39,
+          0,
+          -0.283818
+        ],
+        "max": [
+          0.39,
+          0.011992,
+          0.283818
+        ]
+      }
+    },
+    {
+      "key": "garment_school_shoes_small_flat",
+      "garment": "school_shoes",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_shoes_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 160,
+      "meshes": 1,
+      "size": [
+        0.12705,
+        0.04455,
+        0.1705
+      ],
+      "bounds": {
+        "min": [
+          -0.063525,
+          0,
+          -0.08525
+        ],
+        "max": [
+          0.063525,
+          0.04455,
+          0.08525
+        ]
+      }
+    },
+    {
+      "key": "garment_school_shoes_big_flat",
+      "garment": "school_shoes",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_charcoal",
+      "node": "garment_school_shoes_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 160,
+      "meshes": 1,
+      "size": [
+        0.17325,
+        0.06075,
+        0.2325
+      ],
+      "bounds": {
+        "min": [
+          -0.086625,
+          0,
+          -0.11625
+        ],
+        "max": [
+          0.086625,
+          0.06075,
+          0.11625
+        ]
+      }
+    },
+    {
+      "key": "garment_sandals_small_flat",
+      "garment": "sandals",
+      "sizeClass": "small",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_sandals_small_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 160,
+      "meshes": 1,
+      "size": [
+        0.12705,
+        0.035419,
+        0.1705
+      ],
+      "bounds": {
+        "min": [
+          -0.063525,
+          0,
+          -0.08525
+        ],
+        "max": [
+          0.063525,
+          0.035419,
+          0.08525
+        ]
+      }
+    },
+    {
+      "key": "garment_sandals_big_flat",
+      "garment": "sandals",
+      "sizeClass": "big",
+      "state": "flat",
+      "lod": true,
+      "variant": "plain_navy",
+      "node": "garment_sandals_big_flat_lod",
+      "glb": "garments/garments_child.glb",
+      "triangles": 160,
+      "meshes": 1,
+      "size": [
+        0.17325,
+        0.048299,
+        0.2325
+      ],
+      "bounds": {
+        "min": [
+          -0.086625,
+          0,
+          -0.11625
+        ],
+        "max": [
+          0.086625,
+          0.048299,
+          0.11625
+        ]
+      }
+    }
+  ],
+  "contacts": [
+    {
+      "state": "folded",
+      "count": 14,
+      "screenshot": "contact-folded.jpg"
+    },
+    {
+      "state": "hung",
+      "count": 14,
+      "screenshot": "contact-hung.jpg"
+    },
+    {
+      "state": "flat",
+      "count": 17,
+      "screenshot": "contact-flat.jpg"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "contact-folded.jpg",
+      "bytes": 334856,
+      "sha256": "03c5c84bc5fb5454db339ffbb849e74d20c7cea3f9c2c5678196e5eaed32fcbe",
+      "width": 1470,
+      "height": 2200
+    },
+    {
+      "file": "contact-hung.jpg",
+      "bytes": 331255,
+      "sha256": "f367e8a37188516864dbe44538d72c2444a4df924411e9c576d257f71b957a6d",
+      "width": 1470,
+      "height": 2200
+    },
+    {
+      "file": "contact-flat.jpg",
+      "bytes": 390155,
+      "sha256": "6bb80b37598e88374c747c409beb3cf189b8d17ae3769d48bb758039da483285",
+      "width": 1470,
+      "height": 2606
+    },
+    {
+      "file": "contact-lod.jpg",
+      "bytes": 397111,
+      "sha256": "bc2f71a8d8def631eaed40f9fdf30b5af0731be1b446d17cb11b2ece0f46765e",
+      "width": 1470,
+      "height": 2606
+    }
+  ],
+  "initial": {
+    "entries": [
+      {
+        "key": "garment_tshirt_teal_small_folded",
+        "garment": "tshirt_teal",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_teal_big_folded",
+        "garment": "tshirt_teal",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_teal_small_hung",
+        "garment": "tshirt_teal",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_teal_big_hung",
+        "garment": "tshirt_teal",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_teal_small_flat",
+        "garment": "tshirt_teal",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_teal_big_flat",
+        "garment": "tshirt_teal",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_coral_small_folded",
+        "garment": "tshirt_coral",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_coral_big_folded",
+        "garment": "tshirt_coral",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_coral_small_hung",
+        "garment": "tshirt_coral",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_coral_big_hung",
+        "garment": "tshirt_coral",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_coral_small_flat",
+        "garment": "tshirt_coral",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_coral_big_flat",
+        "garment": "tshirt_coral",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_motif_small_folded",
+        "garment": "tshirt_motif",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_motif_big_folded",
+        "garment": "tshirt_motif",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_motif_small_hung",
+        "garment": "tshirt_motif",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_motif_big_hung",
+        "garment": "tshirt_motif",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_tshirt_motif_small_flat",
+        "garment": "tshirt_motif",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_tshirt_motif_big_flat",
+        "garment": "tshirt_motif",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_shorts_small_folded",
+        "garment": "shorts",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_shorts_big_folded",
+        "garment": "shorts",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_shorts_small_hung",
+        "garment": "shorts",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_shorts_big_hung",
+        "garment": "shorts",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_shorts_small_flat",
+        "garment": "shorts",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_shorts_big_flat",
+        "garment": "shorts",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_cotton_dress_small_folded",
+        "garment": "cotton_dress",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_cotton_dress_big_folded",
+        "garment": "cotton_dress",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_cotton_dress_small_hung",
+        "garment": "cotton_dress",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_cotton_dress_big_hung",
+        "garment": "cotton_dress",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_cotton_dress_small_flat",
+        "garment": "cotton_dress",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_cotton_dress_big_flat",
+        "garment": "cotton_dress",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_hoodie_small_folded",
+        "garment": "hoodie",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_hoodie_big_folded",
+        "garment": "hoodie",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_hoodie_small_hung",
+        "garment": "hoodie",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_hoodie_big_hung",
+        "garment": "hoodie",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_hoodie_small_flat",
+        "garment": "hoodie",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_hoodie_big_flat",
+        "garment": "hoodie",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_joggers_small_folded",
+        "garment": "joggers",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_joggers_big_folded",
+        "garment": "joggers",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_joggers_small_hung",
+        "garment": "joggers",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_joggers_big_hung",
+        "garment": "joggers",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_joggers_small_flat",
+        "garment": "joggers",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_joggers_big_flat",
+        "garment": "joggers",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_jumper_small_folded",
+        "garment": "school_jumper",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_jumper_big_folded",
+        "garment": "school_jumper",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_jumper_small_hung",
+        "garment": "school_jumper",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_jumper_big_hung",
+        "garment": "school_jumper",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_jumper_small_flat",
+        "garment": "school_jumper",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_jumper_big_flat",
+        "garment": "school_jumper",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_polo_small_folded",
+        "garment": "school_polo",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_polo_big_folded",
+        "garment": "school_polo",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_polo_small_hung",
+        "garment": "school_polo",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_polo_big_hung",
+        "garment": "school_polo",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_polo_small_flat",
+        "garment": "school_polo",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_polo_big_flat",
+        "garment": "school_polo",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_trousers_small_folded",
+        "garment": "school_trousers",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_trousers_big_folded",
+        "garment": "school_trousers",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_trousers_small_hung",
+        "garment": "school_trousers",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_trousers_big_hung",
+        "garment": "school_trousers",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_trousers_small_flat",
+        "garment": "school_trousers",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_trousers_big_flat",
+        "garment": "school_trousers",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_skirt_small_folded",
+        "garment": "school_skirt",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_skirt_big_folded",
+        "garment": "school_skirt",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_skirt_small_hung",
+        "garment": "school_skirt",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_skirt_big_hung",
+        "garment": "school_skirt",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_skirt_small_flat",
+        "garment": "school_skirt",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_skirt_big_flat",
+        "garment": "school_skirt",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_tie_small_folded",
+        "garment": "school_tie",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_tie_big_folded",
+        "garment": "school_tie",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_tie_small_hung",
+        "garment": "school_tie",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_tie_big_hung",
+        "garment": "school_tie",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_tie_small_flat",
+        "garment": "school_tie",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_tie_big_flat",
+        "garment": "school_tie",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_socks_pair_small_folded",
+        "garment": "socks_pair",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_socks_pair_big_folded",
+        "garment": "socks_pair",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_socks_pair_small_flat",
+        "garment": "socks_pair",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_socks_pair_big_flat",
+        "garment": "socks_pair",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_cap_small_hung",
+        "garment": "cap",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_cap_big_hung",
+        "garment": "cap",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_cap_small_flat",
+        "garment": "cap",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_cap_big_flat",
+        "garment": "cap",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_light_jacket_small_folded",
+        "garment": "light_jacket",
+        "state": "folded",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_light_jacket_big_folded",
+        "garment": "light_jacket",
+        "state": "folded",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_light_jacket_small_hung",
+        "garment": "light_jacket",
+        "state": "hung",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_light_jacket_big_hung",
+        "garment": "light_jacket",
+        "state": "hung",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_light_jacket_small_flat",
+        "garment": "light_jacket",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_light_jacket_big_flat",
+        "garment": "light_jacket",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_school_shoes_small_flat",
+        "garment": "school_shoes",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_school_shoes_big_flat",
+        "garment": "school_shoes",
+        "state": "flat",
+        "sizeClass": "big"
+      },
+      {
+        "key": "garment_sandals_small_flat",
+        "garment": "sandals",
+        "state": "flat",
+        "sizeClass": "small"
+      },
+      {
+        "key": "garment_sandals_big_flat",
+        "garment": "sandals",
+        "state": "flat",
+        "sizeClass": "big"
+      }
+    ],
+    "atlasLoaded": true,
+    "material": "laundry",
+    "revision": "180",
+    "manifest": "/la-ladera/assets/models/manifest.garments_child.json"
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "loadedFiles": [
+    "http://127.0.0.1:38157/la-ladera/assets/models/garments/garments_child.glb"
+  ],
+  "browser": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "pass": true,
+  "complete": true
+}

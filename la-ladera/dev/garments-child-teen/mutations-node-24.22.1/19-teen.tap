@@ -1,0 +1,30 @@
+TAP version 13
+# Subtest: teen acceptance: every piece is inside its real dimension range
+not ok 1 - teen acceptance: every piece is inside its real dimension range
+  ---
+  duration_ms: 67.786873
+  type: 'test'
+  location: '<la-ladera>/tests/garments-teen.test.mjs:53:1'
+  failureType: 'testCodeFailure'
+  error: 'garment_tshirt_cream_small_flat: longest side 5.880457 m outside expected 0.529200–0.646800 m'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file://<la-ladera>/tests/garments-teen.test.mjs:59:14)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1402:25)
+    Test.start (node:internal/test_runner/test:1262:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 200.7252

@@ -1,0 +1,66 @@
+{
+  "builder": "la-ladera/tools/blender/garments_build.py",
+  "builderSha256": "538568b65dc77a79c88647b2ac93f0093666c9267e3434e83431f33aaa9b6ffa",
+  "tests": 8,
+  "passed": 8,
+  "mutationsKilled": 8,
+  "mutationsSurvived": 0,
+  "results": [
+    {
+      "test": "complete child and teen sets retain exact bytes across adult directory replacement",
+      "baseline": "PASS",
+      "mutation": "omit regular-file companion copies",
+      "mutant": "KILLED",
+      "reason": "[Errno 2] No such file or directory: '<isolated-fixture>/mutant-0/stage/garments/garments_child.glb'"
+    },
+    {
+      "test": "absent companion sets are valid for a first adult build",
+      "baseline": "PASS",
+      "mutation": "reject absent sets",
+      "mutant": "KILLED",
+      "reason": "mutation: absent sets rejected"
+    },
+    {
+      "test": "incomplete set is rejected without data loss: garments/garments_child.glb",
+      "baseline": "PASS",
+      "mutation": "allow incomplete companion set",
+      "mutant": "KILLED",
+      "reason": "missing garments/garments_child.glb must block adult regeneration"
+    },
+    {
+      "test": "incomplete set is rejected without data loss: manifest.garments_child.json",
+      "baseline": "PASS",
+      "mutation": "allow incomplete companion set",
+      "mutant": "KILLED",
+      "reason": "missing manifest.garments_child.json must block adult regeneration"
+    },
+    {
+      "test": "incomplete set is rejected without data loss: garments/garments_teen.glb",
+      "baseline": "PASS",
+      "mutation": "allow incomplete companion set",
+      "mutant": "KILLED",
+      "reason": "missing garments/garments_teen.glb must block adult regeneration"
+    },
+    {
+      "test": "incomplete set is rejected without data loss: manifest.garments_teen.json",
+      "baseline": "PASS",
+      "mutation": "allow incomplete companion set",
+      "mutant": "KILLED",
+      "reason": "missing manifest.garments_teen.json must block adult regeneration"
+    },
+    {
+      "test": "incomplete set is rejected without data loss: garments/teen",
+      "baseline": "PASS",
+      "mutation": "allow incomplete companion set",
+      "mutant": "KILLED",
+      "reason": "missing garments/teen must block adult regeneration"
+    },
+    {
+      "test": "companions are read from the selected output tree only",
+      "baseline": "PASS",
+      "mutation": "read global MODELS instead of selected output",
+      "mutant": "KILLED",
+      "reason": "read a different output tree for garments/garments_child.glb"
+    }
+  ]
+}

@@ -1,0 +1,5608 @@
+{
+  "ok": true,
+  "adult": {
+    "ok": true,
+    "mode": "complete",
+    "errors": [],
+    "warnings": [],
+    "assets": 67,
+    "catalogueGarments": 23,
+    "runtimeBytes": 1840059,
+    "runtimeBudgetBytes": 2000000,
+    "files": 10,
+    "maxTriangles": 772,
+    "maxLodTriangles": 212,
+    "measurements": [
+      {
+        "key": "garment_swimsuit_onepiece_folded",
+        "node": "garment_swimsuit_onepiece_folded",
+        "triangles": 771,
+        "parts": 1,
+        "vertices": 507,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14969611167907715,
+            0,
+            -0.20523950457572937
+          ],
+          "max": [
+            0.14969611167907715,
+            0.04853925108909607,
+            0.20523950457572937
+          ]
+        },
+        "size": [
+          0.2993922233581543,
+          0.04853925108909607,
+          0.41047900915145874
+        ],
+        "lodTriangles": 211
+      },
+      {
+        "key": "garment_swim_trunks_folded",
+        "node": "garment_swim_trunks_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 502,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.16221120953559875,
+            0,
+            -0.11735169589519501
+          ],
+          "max": [
+            0.16221120953559875,
+            0.04826335608959198,
+            0.11735169589519501
+          ]
+        },
+        "size": [
+          0.3244224190711975,
+          0.04826335608959198,
+          0.23470339179039001
+        ],
+        "lodTriangles": 211
+      },
+      {
+        "key": "garment_bikini_top_folded",
+        "node": "garment_bikini_top_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 582,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.12526027858257294,
+            0,
+            -0.09215616434812546
+          ],
+          "max": [
+            0.12526027858257294,
+            0.06113849952816963,
+            0.09215616434812546
+          ]
+        },
+        "size": [
+          0.2505205571651459,
+          0.06113849952816963,
+          0.18431232869625092
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_bikini_bottom_folded",
+        "node": "garment_bikini_bottom_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 505,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.12790220975875854,
+            0,
+            -0.07740270346403122
+          ],
+          "max": [
+            0.12790220975875854,
+            0.039431456476449966,
+            0.07740270346403122
+          ]
+        },
+        "size": [
+          0.2558044195175171,
+          0.039431456476449966,
+          0.15480540692806244
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_crop_top_folded",
+        "node": "garment_crop_top_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 516,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2148074209690094,
+            0,
+            -0.10337671637535095
+          ],
+          "max": [
+            0.2148074209690094,
+            0.04881016165018082,
+            0.10337671637535095
+          ]
+        },
+        "size": [
+          0.4296148419380188,
+          0.04881016165018082,
+          0.2067534327507019
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_tshirt_folded",
+        "node": "garment_tshirt_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 496,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.21721553802490234,
+            0,
+            -0.18846198916435242
+          ],
+          "max": [
+            0.21721553802490234,
+            0.04761456698179245,
+            0.18846198916435242
+          ]
+        },
+        "size": [
+          0.4344310760498047,
+          0.04761456698179245,
+          0.37692397832870483
+        ],
+        "lodTriangles": 211
+      },
+      {
+        "key": "garment_shorts_folded",
+        "node": "garment_shorts_folded",
+        "triangles": 771,
+        "parts": 1,
+        "vertices": 505,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14221632480621338,
+            0,
+            -0.11753503978252411
+          ],
+          "max": [
+            0.14221632480621338,
+            0.0484197735786438,
+            0.11753503978252411
+          ]
+        },
+        "size": [
+          0.28443264961242676,
+          0.0484197735786438,
+          0.23507007956504822
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_leggings_folded",
+        "node": "garment_leggings_folded",
+        "triangles": 770,
+        "parts": 1,
+        "vertices": 501,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.10285492986440659,
+            0,
+            -0.16250379383563995
+          ],
+          "max": [
+            0.10285492986440659,
+            0.054348453879356384,
+            0.16250379383563995
+          ]
+        },
+        "size": [
+          0.20570985972881317,
+          0.054348453879356384,
+          0.3250075876712799
+        ],
+        "lodTriangles": 211
+      },
+      {
+        "key": "garment_sun_hat_folded",
+        "node": "garment_sun_hat_folded",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 240,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1309799998998642,
+            0,
+            -0.16503480076789856
+          ],
+          "max": [
+            0.1309799998998642,
+            0.07082970440387726,
+            0.16503480076789856
+          ]
+        },
+        "size": [
+          0.2619599997997284,
+          0.07082970440387726,
+          0.3300696015357971
+        ],
+        "lodTriangles": 89
+      },
+      {
+        "key": "garment_bra_folded",
+        "node": "garment_bra_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 594,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14890047907829285,
+            0,
+            -0.07224830985069275
+          ],
+          "max": [
+            0.14890047907829285,
+            0.06119060888886452,
+            0.07224830985069275
+          ]
+        },
+        "size": [
+          0.2978009581565857,
+          0.06119060888886452,
+          0.1444966197013855
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_underwear_folded",
+        "node": "garment_underwear_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 504,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13410890102386475,
+            0,
+            -0.08547797054052353
+          ],
+          "max": [
+            0.13410890102386475,
+            0.03942644223570824,
+            0.08547797054052353
+          ]
+        },
+        "size": [
+          0.2682178020477295,
+          0.03942644223570824,
+          0.17095594108104706
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_panties_folded",
+        "node": "garment_panties_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 505,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.12480134516954422,
+            0,
+            -0.06404096633195877
+          ],
+          "max": [
+            0.12480134516954422,
+            0.03860965371131897,
+            0.06404096633195877
+          ]
+        },
+        "size": [
+          0.24960269033908844,
+          0.03860965371131897,
+          0.12808193266391754
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_thong_folded",
+        "node": "garment_thong_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 511,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.11860001087188721,
+            0,
+            -0.06891253590583801
+          ],
+          "max": [
+            0.11860001087188721,
+            0.03936829790472984,
+            0.06891253590583801
+          ]
+        },
+        "size": [
+          0.23720002174377441,
+          0.03936829790472984,
+          0.13782507181167603
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_knickers_folded",
+        "node": "garment_knickers_folded",
+        "triangles": 771,
+        "parts": 1,
+        "vertices": 504,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13410231471061707,
+            0,
+            -0.08013669401407242
+          ],
+          "max": [
+            0.13410231471061707,
+            0.03919366002082825,
+            0.08013669401407242
+          ]
+        },
+        "size": [
+          0.26820462942123413,
+          0.03919366002082825,
+          0.16027338802814484
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_high_leg_knickers_folded",
+        "node": "garment_high_leg_knickers_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 507,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13099999725818634,
+            0,
+            -0.08809217065572739
+          ],
+          "max": [
+            0.13099999725818634,
+            0.04320678114891052,
+            0.08809217065572739
+          ]
+        },
+        "size": [
+          0.2619999945163727,
+          0.04320678114891052,
+          0.17618434131145477
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_briefs_folded",
+        "node": "garment_briefs_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 515,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13720642030239105,
+            0,
+            -0.08280551433563232
+          ],
+          "max": [
+            0.13720642030239105,
+            0.0393284410238266,
+            0.08280551433563232
+          ]
+        },
+        "size": [
+          0.2744128406047821,
+          0.0393284410238266,
+          0.16561102867126465
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_boxers_folded",
+        "node": "garment_boxers_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 501,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13222354650497437,
+            0,
+            -0.09627584367990494
+          ],
+          "max": [
+            0.13222354650497437,
+            0.048582326620817184,
+            0.09627584367990494
+          ]
+        },
+        "size": [
+          0.26444709300994873,
+          0.048582326620817184,
+          0.19255168735980988
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_sock_single_folded",
+        "node": "garment_sock_single_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 459,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.0845552384853363,
+            0,
+            -0.099151611328125
+          ],
+          "max": [
+            0.0845552384853363,
+            0.04553857445716858,
+            0.099151611328125
+          ]
+        },
+        "size": [
+          0.1691104769706726,
+          0.04553857445716858,
+          0.19830322265625
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_socks_pair_folded",
+        "node": "garment_socks_pair_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 498,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.08462171256542206,
+            0,
+            -0.10437799990177155
+          ],
+          "max": [
+            0.08462171256542206,
+            0.05384250730276108,
+            0.10437799990177155
+          ]
+        },
+        "size": [
+          0.16924342513084412,
+          0.05384250730276108,
+          0.2087559998035431
+        ],
+        "lodTriangles": 211
+      },
+      {
+        "key": "garment_tights_folded",
+        "node": "garment_tights_folded",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 521,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.09458878636360168,
+            0,
+            -0.17524786293506622
+          ],
+          "max": [
+            0.09458878636360168,
+            0.05531433969736099,
+            0.17524786293506622
+          ]
+        },
+        "size": [
+          0.18917757272720337,
+          0.05531433969736099,
+          0.35049572587013245
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_nightdress_folded",
+        "node": "garment_nightdress_folded",
+        "triangles": 771,
+        "parts": 1,
+        "vertices": 529,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.17218056321144104,
+            0,
+            -0.16405856609344482
+          ],
+          "max": [
+            0.17218056321144104,
+            0.05534408986568451,
+            0.16405856609344482
+          ]
+        },
+        "size": [
+          0.3443611264228821,
+          0.05534408986568451,
+          0.32811713218688965
+        ],
+        "lodTriangles": 211
+      },
+      {
+        "key": "garment_swimsuit_onepiece_hung",
+        "node": "garment_swimsuit_onepiece_hung",
+        "triangles": 426,
+        "parts": 1,
+        "vertices": 308,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2297057807445526,
+            -0.7631275653839111,
+            -0.021249571815133095
+          ],
+          "max": [
+            0.2297057807445526,
+            0,
+            0.021249571815133095
+          ]
+        },
+        "size": [
+          0.4594115614891052,
+          0.7631275653839111,
+          0.04249914363026619
+        ],
+        "lodTriangles": 136
+      },
+      {
+        "key": "garment_swim_trunks_hung",
+        "node": "garment_swim_trunks_hung",
+        "triangles": 488,
+        "parts": 1,
+        "vertices": 318,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2462492436170578,
+            -0.433390736579895,
+            -0.01876741461455822
+          ],
+          "max": [
+            0.2462492436170578,
+            0,
+            0.01876741461455822
+          ]
+        },
+        "size": [
+          0.4924984872341156,
+          0.433390736579895,
+          0.03753482922911644
+        ],
+        "lodTriangles": 156
+      },
+      {
+        "key": "garment_bikini_top_hung",
+        "node": "garment_bikini_top_hung",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 498,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.24107089638710022,
+            -0.2470206320285797,
+            -0.026647863909602165
+          ],
+          "max": [
+            0.24107089638710022,
+            0,
+            0.026647863909602165
+          ]
+        },
+        "size": [
+          0.48214179277420044,
+          0.2470206320285797,
+          0.05329572781920433
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_bikini_bottom_hung",
+        "node": "garment_bikini_bottom_hung",
+        "triangles": 366,
+        "parts": 1,
+        "vertices": 260,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19580397009849548,
+            -0.28299468755722046,
+            -0.01935514435172081
+          ],
+          "max": [
+            0.19580397009849548,
+            0,
+            0.01935514435172081
+          ]
+        },
+        "size": [
+          0.39160794019699097,
+          0.28299468755722046,
+          0.03871028870344162
+        ],
+        "lodTriangles": 115
+      },
+      {
+        "key": "garment_crop_top_hung",
+        "node": "garment_crop_top_hung",
+        "triangles": 472,
+        "parts": 1,
+        "vertices": 330,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.31527984142303467,
+            -0.3795812427997589,
+            -0.020033156499266624
+          ],
+          "max": [
+            0.31527984142303467,
+            0,
+            0.020033156499266624
+          ]
+        },
+        "size": [
+          0.6305596828460693,
+          0.3795812427997589,
+          0.04006631299853325
+        ],
+        "lodTriangles": 152
+      },
+      {
+        "key": "garment_tshirt_hung",
+        "node": "garment_tshirt_hung",
+        "triangles": 376,
+        "parts": 1,
+        "vertices": 274,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.4174288809299469,
+            -0.6991557478904724,
+            -0.02467699535191059
+          ],
+          "max": [
+            0.4174288809299469,
+            0,
+            0.02467699535191059
+          ]
+        },
+        "size": [
+          0.8348577618598938,
+          0.6991557478904724,
+          0.04935399070382118
+        ],
+        "lodTriangles": 119
+      },
+      {
+        "key": "garment_shorts_hung",
+        "node": "garment_shorts_hung",
+        "triangles": 494,
+        "parts": 1,
+        "vertices": 330,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.26584500074386597,
+            -0.4334052801132202,
+            -0.01889992319047451
+          ],
+          "max": [
+            0.26584500074386597,
+            0,
+            0.01889992319047451
+          ]
+        },
+        "size": [
+          0.5316900014877319,
+          0.4334052801132202,
+          0.03779984638094902
+        ],
+        "lodTriangles": 158
+      },
+      {
+        "key": "garment_leggings_hung",
+        "node": "garment_leggings_hung",
+        "triangles": 476,
+        "parts": 1,
+        "vertices": 312,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18727660179138184,
+            -0.9730160236358643,
+            -0.019865229725837708
+          ],
+          "max": [
+            0.18727660179138184,
+            0,
+            0.019865229725837708
+          ]
+        },
+        "size": [
+          0.37455320358276367,
+          0.9730160236358643,
+          0.039730459451675415
+        ],
+        "lodTriangles": 152
+      },
+      {
+        "key": "garment_sun_hat_hung",
+        "node": "garment_sun_hat_hung",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 240,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1770000010728836,
+            -0.3929400146007538,
+            -0.08979901671409607
+          ],
+          "max": [
+            0.1770000010728836,
+            0,
+            0.08979901671409607
+          ]
+        },
+        "size": [
+          0.3540000021457672,
+          0.3929400146007538,
+          0.17959803342819214
+        ],
+        "lodTriangles": 89
+      },
+      {
+        "key": "garment_straw_hat_hung",
+        "node": "garment_straw_hat_hung",
+        "triangles": 336,
+        "parts": 1,
+        "vertices": 264,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.20499999821186066,
+            -0.45509999990463257,
+            -0.07208333164453506
+          ],
+          "max": [
+            0.20499999821186066,
+            0,
+            0.07208333164453506
+          ]
+        },
+        "size": [
+          0.4099999964237213,
+          0.45509999990463257,
+          0.14416666328907013
+        ],
+        "lodTriangles": 106
+      },
+      {
+        "key": "garment_cap_hung",
+        "node": "garment_cap_hung",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 255,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.11800000071525574,
+            -0.31643998622894287,
+            -0.07990000396966934
+          ],
+          "max": [
+            0.11800000071525574,
+            0,
+            0.07990000396966934
+          ]
+        },
+        "size": [
+          0.23600000143051147,
+          0.31643998622894287,
+          0.15980000793933868
+        ],
+        "lodTriangles": 88
+      },
+      {
+        "key": "garment_bra_hung",
+        "node": "garment_bra_hung",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 516,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2860492467880249,
+            -0.2183525413274765,
+            -0.041060734540224075
+          ],
+          "max": [
+            0.2860492467880249,
+            0,
+            0.041060734540224075
+          ]
+        },
+        "size": [
+          0.5720984935760498,
+          0.2183525413274765,
+          0.08212146908044815
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_underwear_hung",
+        "node": "garment_underwear_hung",
+        "triangles": 394,
+        "parts": 1,
+        "vertices": 276,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.20511990785598755,
+            -0.3134779930114746,
+            -0.020692264661192894
+          ],
+          "max": [
+            0.20511990785598755,
+            0,
+            0.020692264661192894
+          ]
+        },
+        "size": [
+          0.4102398157119751,
+          0.3134779930114746,
+          0.04138452932238579
+        ],
+        "lodTriangles": 125
+      },
+      {
+        "key": "garment_panties_hung",
+        "node": "garment_panties_hung",
+        "triangles": 366,
+        "parts": 1,
+        "vertices": 260,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19075588881969452,
+            -0.23303091526031494,
+            -0.019332697615027428
+          ],
+          "max": [
+            0.19075588881969452,
+            0,
+            0.019332697615027428
+          ]
+        },
+        "size": [
+          0.38151177763938904,
+          0.23303091526031494,
+          0.038665395230054855
+        ],
+        "lodTriangles": 115
+      },
+      {
+        "key": "garment_thong_hung",
+        "node": "garment_thong_hung",
+        "triangles": 362,
+        "parts": 1,
+        "vertices": 264,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18054072558879852,
+            -0.2530846893787384,
+            -0.019350191578269005
+          ],
+          "max": [
+            0.18054072558879852,
+            0,
+            0.019350191578269005
+          ]
+        },
+        "size": [
+          0.36108145117759705,
+          0.2530846893787384,
+          0.03870038315653801
+        ],
+        "lodTriangles": 115
+      },
+      {
+        "key": "garment_knickers_hung",
+        "node": "garment_knickers_hung",
+        "triangles": 378,
+        "parts": 1,
+        "vertices": 268,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.20363949239253998,
+            -0.29319703578948975,
+            -0.020689962431788445
+          ],
+          "max": [
+            0.20363949239253998,
+            0,
+            0.020689962431788445
+          ]
+        },
+        "size": [
+          0.40727898478507996,
+          0.29319703578948975,
+          0.04137992486357689
+        ],
+        "lodTriangles": 120
+      },
+      {
+        "key": "garment_high_leg_knickers_hung",
+        "node": "garment_high_leg_knickers_hung",
+        "triangles": 370,
+        "parts": 1,
+        "vertices": 264,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2001299262046814,
+            -0.3228142261505127,
+            -0.01932639442384243
+          ],
+          "max": [
+            0.2001299262046814,
+            0,
+            0.01932639442384243
+          ]
+        },
+        "size": [
+          0.4002598524093628,
+          0.3228142261505127,
+          0.03865278884768486
+        ],
+        "lodTriangles": 116
+      },
+      {
+        "key": "garment_briefs_hung",
+        "node": "garment_briefs_hung",
+        "triangles": 390,
+        "parts": 1,
+        "vertices": 280,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2107536941766739,
+            -0.30321431159973145,
+            -0.019115010276436806
+          ],
+          "max": [
+            0.2107536941766739,
+            0,
+            0.019115010276436806
+          ]
+        },
+        "size": [
+          0.4215073883533478,
+          0.30321431159973145,
+          0.03823002055287361
+        ],
+        "lodTriangles": 124
+      },
+      {
+        "key": "garment_boxers_hung",
+        "node": "garment_boxers_hung",
+        "triangles": 490,
+        "parts": 1,
+        "vertices": 322,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.25262296199798584,
+            -0.3536016047000885,
+            -0.01942247338593006
+          ],
+          "max": [
+            0.25262296199798584,
+            0,
+            0.01942247338593006
+          ]
+        },
+        "size": [
+          0.5052459239959717,
+          0.3536016047000885,
+          0.03884494677186012
+        ],
+        "lodTriangles": 158
+      },
+      {
+        "key": "garment_sock_single_hung",
+        "node": "garment_sock_single_hung",
+        "triangles": 362,
+        "parts": 1,
+        "vertices": 232,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.10631038248538971,
+            -0.3586505949497223,
+            -0.021014459431171417
+          ],
+          "max": [
+            0.10631038248538971,
+            0,
+            0.021014459431171417
+          ]
+        },
+        "size": [
+          0.21262076497077942,
+          0.3586505949497223,
+          0.042028918862342834
+        ],
+        "lodTriangles": 115
+      },
+      {
+        "key": "garment_socks_pair_hung",
+        "node": "garment_socks_pair_hung",
+        "triangles": 408,
+        "parts": 1,
+        "vertices": 288,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14923708140850067,
+            -0.3778785765171051,
+            -0.029954558238387108
+          ],
+          "max": [
+            0.14923708140850067,
+            0,
+            0.029954558238387108
+          ]
+        },
+        "size": [
+          0.29847416281700134,
+          0.3778785765171051,
+          0.059909116476774216
+        ],
+        "lodTriangles": 130
+      },
+      {
+        "key": "garment_tights_hung",
+        "node": "garment_tights_hung",
+        "triangles": 470,
+        "parts": 1,
+        "vertices": 320,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1781407594680786,
+            -1.0526067018508911,
+            -0.019188102334737778
+          ],
+          "max": [
+            0.1781407594680786,
+            0,
+            0.019188102334737778
+          ]
+        },
+        "size": [
+          0.3562815189361572,
+          1.0526067018508911,
+          0.038376204669475555
+        ],
+        "lodTriangles": 150
+      },
+      {
+        "key": "garment_nightdress_hung",
+        "node": "garment_nightdress_hung",
+        "triangles": 442,
+        "parts": 1,
+        "vertices": 318,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3309556245803833,
+            -0.973482072353363,
+            -0.021335406228899956
+          ],
+          "max": [
+            0.3309556245803833,
+            0,
+            0.021335406228899956
+          ]
+        },
+        "size": [
+          0.6619112491607666,
+          0.973482072353363,
+          0.04267081245779991
+        ],
+        "lodTriangles": 141
+      },
+      {
+        "key": "garment_swimsuit_onepiece_flat",
+        "node": "garment_swimsuit_onepiece_flat",
+        "triangles": 426,
+        "parts": 1,
+        "vertices": 308,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.23177166283130646,
+            0,
+            -0.38058096170425415
+          ],
+          "max": [
+            0.23177166283130646,
+            0.027197180315852165,
+            0.38058096170425415
+          ]
+        },
+        "size": [
+          0.4635433256626129,
+          0.027197180315852165,
+          0.7611619234085083
+        ],
+        "lodTriangles": 136
+      },
+      {
+        "key": "garment_swim_trunks_flat",
+        "node": "garment_swim_trunks_flat",
+        "triangles": 488,
+        "parts": 1,
+        "vertices": 318,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.24650272727012634,
+            0,
+            -0.21452400088310242
+          ],
+          "max": [
+            0.24650272727012634,
+            0.027296219021081924,
+            0.21452400088310242
+          ]
+        },
+        "size": [
+          0.4930054545402527,
+          0.027296219021081924,
+          0.42904800176620483
+        ],
+        "lodTriangles": 157
+      },
+      {
+        "key": "garment_bikini_top_flat",
+        "node": "garment_bikini_top_flat",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 498,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.24108484387397766,
+            0,
+            -0.1225215345621109
+          ],
+          "max": [
+            0.24108484387397766,
+            0.02839054726064205,
+            0.1225215345621109
+          ]
+        },
+        "size": [
+          0.4821696877479553,
+          0.02839054726064205,
+          0.2450430691242218
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_bikini_bottom_flat",
+        "node": "garment_bikini_bottom_flat",
+        "triangles": 366,
+        "parts": 1,
+        "vertices": 260,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19645997881889343,
+            0,
+            -0.1393919289112091
+          ],
+          "max": [
+            0.19645997881889343,
+            0.027246849611401558,
+            0.1393919289112091
+          ]
+        },
+        "size": [
+          0.39291995763778687,
+          0.027246849611401558,
+          0.2787838578224182
+        ],
+        "lodTriangles": 116
+      },
+      {
+        "key": "garment_crop_top_flat",
+        "node": "garment_crop_top_flat",
+        "triangles": 472,
+        "parts": 1,
+        "vertices": 330,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3159705400466919,
+            0,
+            -0.1881793737411499
+          ],
+          "max": [
+            0.3159705400466919,
+            0.026866190135478973,
+            0.1881793737411499
+          ]
+        },
+        "size": [
+          0.6319410800933838,
+          0.026866190135478973,
+          0.3763587474822998
+        ],
+        "lodTriangles": 152
+      },
+      {
+        "key": "garment_tshirt_flat",
+        "node": "garment_tshirt_flat",
+        "triangles": 376,
+        "parts": 1,
+        "vertices": 274,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.4213114380836487,
+            0,
+            -0.3485742211341858
+          ],
+          "max": [
+            0.4213114380836487,
+            0.026418572291731834,
+            0.3485742211341858
+          ]
+        },
+        "size": [
+          0.8426228761672974,
+          0.026418572291731834,
+          0.6971484422683716
+        ],
+        "lodTriangles": 119
+      },
+      {
+        "key": "garment_shorts_flat",
+        "node": "garment_shorts_flat",
+        "triangles": 494,
+        "parts": 1,
+        "vertices": 330,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2661415934562683,
+            0,
+            -0.21489882469177246
+          ],
+          "max": [
+            0.2661415934562683,
+            0.025136761367321014,
+            0.21489882469177246
+          ]
+        },
+        "size": [
+          0.5322831869125366,
+          0.025136761367321014,
+          0.4297976493835449
+        ],
+        "lodTriangles": 159
+      },
+      {
+        "key": "garment_leggings_flat",
+        "node": "garment_leggings_flat",
+        "triangles": 476,
+        "parts": 1,
+        "vertices": 312,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18828454613685608,
+            0,
+            -0.48547500371932983
+          ],
+          "max": [
+            0.18828454613685608,
+            0.02502600848674774,
+            0.48547500371932983
+          ]
+        },
+        "size": [
+          0.37656909227371216,
+          0.02502600848674774,
+          0.9709500074386597
+        ],
+        "lodTriangles": 152
+      },
+      {
+        "key": "garment_sun_hat_flat",
+        "node": "garment_sun_hat_flat",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 240,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1770000010728836,
+            0,
+            -0.1964700073003769
+          ],
+          "max": [
+            0.1770000010728836,
+            0.17959803342819214,
+            0.1964700073003769
+          ]
+        },
+        "size": [
+          0.3540000021457672,
+          0.17959803342819214,
+          0.3929400146007538
+        ],
+        "lodTriangles": 89
+      },
+      {
+        "key": "garment_straw_hat_flat",
+        "node": "garment_straw_hat_flat",
+        "triangles": 336,
+        "parts": 1,
+        "vertices": 264,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.20499999821186066,
+            0,
+            -0.22754999995231628
+          ],
+          "max": [
+            0.20499999821186066,
+            0.14416666328907013,
+            0.22754999995231628
+          ]
+        },
+        "size": [
+          0.4099999964237213,
+          0.14416666328907013,
+          0.45509999990463257
+        ],
+        "lodTriangles": 106
+      },
+      {
+        "key": "garment_cap_flat",
+        "node": "garment_cap_flat",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 255,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.11800000071525574,
+            0,
+            -0.15821999311447144
+          ],
+          "max": [
+            0.11800000071525574,
+            0.15980000793933868,
+            0.15821999311447144
+          ]
+        },
+        "size": [
+          0.23600000143051147,
+          0.15980000793933868,
+          0.31643998622894287
+        ],
+        "lodTriangles": 89
+      },
+      {
+        "key": "garment_bra_flat",
+        "node": "garment_bra_flat",
+        "triangles": 772,
+        "parts": 1,
+        "vertices": 516,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.28606319427490234,
+            0,
+            -0.10809465497732162
+          ],
+          "max": [
+            0.28606319427490234,
+            0.03186733275651932,
+            0.10809465497732162
+          ]
+        },
+        "size": [
+          0.5721263885498047,
+          0.03186733275651932,
+          0.21618930995464325
+        ],
+        "lodTriangles": 212
+      },
+      {
+        "key": "garment_underwear_flat",
+        "node": "garment_underwear_flat",
+        "triangles": 394,
+        "parts": 1,
+        "vertices": 276,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.20646315813064575,
+            0,
+            -0.15460288524627686
+          ],
+          "max": [
+            0.20646315813064575,
+            0.02712368592619896,
+            0.15460288524627686
+          ]
+        },
+        "size": [
+          0.4129263162612915,
+          0.02712368592619896,
+          0.3092057704925537
+        ],
+        "lodTriangles": 125
+      },
+      {
+        "key": "garment_panties_flat",
+        "node": "garment_panties_flat",
+        "triangles": 366,
+        "parts": 1,
+        "vertices": 260,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19150209426879883,
+            0,
+            -0.11417874693870544
+          ],
+          "max": [
+            0.19150209426879883,
+            0.027137387543916702,
+            0.11417874693870544
+          ]
+        },
+        "size": [
+          0.38300418853759766,
+          0.027137387543916702,
+          0.2283574938774109
+        ],
+        "lodTriangles": 116
+      },
+      {
+        "key": "garment_thong_flat",
+        "node": "garment_thong_flat",
+        "triangles": 362,
+        "parts": 1,
+        "vertices": 264,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1811734437942505,
+            0,
+            -0.12332506477832794
+          ],
+          "max": [
+            0.1811734437942505,
+            0.02745700813829899,
+            0.12332506477832794
+          ]
+        },
+        "size": [
+          0.362346887588501,
+          0.02745700813829899,
+          0.24665012955665588
+        ],
+        "lodTriangles": 115
+      },
+      {
+        "key": "garment_knickers_flat",
+        "node": "garment_knickers_flat",
+        "triangles": 378,
+        "parts": 1,
+        "vertices": 268,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2023354172706604,
+            0,
+            -0.14453987777233124
+          ],
+          "max": [
+            0.2023354172706604,
+            0.040766965597867966,
+            0.14453987777233124
+          ]
+        },
+        "size": [
+          0.4046708345413208,
+          0.040766965597867966,
+          0.2890797555446625
+        ],
+        "lodTriangles": 120
+      },
+      {
+        "key": "garment_high_leg_knickers_flat",
+        "node": "garment_high_leg_knickers_flat",
+        "triangles": 370,
+        "parts": 1,
+        "vertices": 264,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19642126560211182,
+            0,
+            -0.15955854952335358
+          ],
+          "max": [
+            0.19642126560211182,
+            0.0448010116815567,
+            0.15955854952335358
+          ]
+        },
+        "size": [
+          0.39284253120422363,
+          0.0448010116815567,
+          0.31911709904670715
+        ],
+        "lodTriangles": 117
+      },
+      {
+        "key": "garment_briefs_flat",
+        "node": "garment_briefs_flat",
+        "triangles": 390,
+        "parts": 1,
+        "vertices": 280,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2112872153520584,
+            0,
+            -0.14957942068576813
+          ],
+          "max": [
+            0.2112872153520584,
+            0.026552438735961914,
+            0.14957942068576813
+          ]
+        },
+        "size": [
+          0.4225744307041168,
+          0.026552438735961914,
+          0.29915884137153625
+        ],
+        "lodTriangles": 124
+      },
+      {
+        "key": "garment_boxers_flat",
+        "node": "garment_boxers_flat",
+        "triangles": 490,
+        "parts": 1,
+        "vertices": 322,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.25030893087387085,
+            0,
+            -0.17478109896183014
+          ],
+          "max": [
+            0.25030893087387085,
+            0.025519685819745064,
+            0.17478109896183014
+          ]
+        },
+        "size": [
+          0.5006178617477417,
+          0.025519685819745064,
+          0.3495621979236603
+        ],
+        "lodTriangles": 158
+      },
+      {
+        "key": "garment_sock_single_flat",
+        "node": "garment_sock_single_flat",
+        "triangles": 362,
+        "parts": 1,
+        "vertices": 232,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.11589611321687698,
+            0,
+            -0.17979837954044342
+          ],
+          "max": [
+            0.11589611321687698,
+            0.02555777318775654,
+            0.17979837954044342
+          ]
+        },
+        "size": [
+          0.23179222643375397,
+          0.02555777318775654,
+          0.35959675908088684
+        ],
+        "lodTriangles": 115
+      },
+      {
+        "key": "garment_socks_pair_flat",
+        "node": "garment_socks_pair_flat",
+        "triangles": 408,
+        "parts": 1,
+        "vertices": 288,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1552126705646515,
+            0,
+            -0.18965165317058563
+          ],
+          "max": [
+            0.1552126705646515,
+            0.031527984887361526,
+            0.18965165317058563
+          ]
+        },
+        "size": [
+          0.310425341129303,
+          0.031527984887361526,
+          0.37930330634117126
+        ],
+        "lodTriangles": 130
+      },
+      {
+        "key": "garment_tights_flat",
+        "node": "garment_tights_flat",
+        "triangles": 470,
+        "parts": 1,
+        "vertices": 320,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.17754080891609192,
+            0,
+            -0.5262029767036438
+          ],
+          "max": [
+            0.17754080891609192,
+            0.025780927389860153,
+            0.5262029767036438
+          ]
+        },
+        "size": [
+          0.35508161783218384,
+          0.025780927389860153,
+          1.0524059534072876
+        ],
+        "lodTriangles": 151
+      },
+      {
+        "key": "garment_nightdress_flat",
+        "node": "garment_nightdress_flat",
+        "triangles": 442,
+        "parts": 1,
+        "vertices": 318,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3311392664909363,
+            0,
+            -0.48583027720451355
+          ],
+          "max": [
+            0.3311392664909363,
+            0.026488132774829865,
+            0.48583027720451355
+          ]
+        },
+        "size": [
+          0.6622785329818726,
+          0.026488132774829865,
+          0.9716605544090271
+        ],
+        "lodTriangles": 142
+      }
+    ]
+  },
+  "child": {
+    "ok": true,
+    "mode": "complete",
+    "set": "garments_child",
+    "errors": [],
+    "warnings": [],
+    "assets": 90,
+    "catalogueGarments": 17,
+    "sizes": 2,
+    "runtimeBytes": 614128,
+    "runtimeBudgetBytes": 700000,
+    "sharedBytes": 10643,
+    "files": 2,
+    "fileSizes": {
+      "manifest.garments_child.json": 73916,
+      "garments/garments_child.glb": 540212,
+      "garments/palette.json": 3038,
+      "garments/prints.png": 7605
+    },
+    "maxTriangles": 414,
+    "maxLodTriangles": 160,
+    "measurements": [
+      {
+        "key": "garment_tshirt_teal_small_folded",
+        "garment": "tshirt_teal",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_tshirt_teal_small_folded",
+        "triangles": 256,
+        "parts": 1,
+        "vertices": 190,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.115499998897314,
+            0,
+            -0.09446249883472913
+          ],
+          "max": [
+            0.115499998897314,
+            0.015258278749046617,
+            0.09446249883472913
+          ]
+        },
+        "size": [
+          0.230999997794628,
+          0.015258278749046617,
+          0.18892499766945825
+        ],
+        "longestSide": 0.230999997794628,
+        "expectedLongestSide": [
+          0.187,
+          0.2695
+        ],
+        "lodTriangles": 88,
+        "lodSize": [
+          0.230999997794628,
+          0.014430877785986174,
+          0.18892499766945825
+        ]
+      },
+      {
+        "key": "garment_tshirt_teal_big_folded",
+        "garment": "tshirt_teal",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_tshirt_teal_big_folded",
+        "triangles": 256,
+        "parts": 1,
+        "vertices": 190,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1574999950826168,
+            0,
+            -0.1288124956190586
+          ],
+          "max": [
+            0.1574999950826168,
+            0.020806743297725916,
+            0.1288124956190586
+          ]
+        },
+        "size": [
+          0.3149999901652336,
+          0.020806743297725916,
+          0.2576249912381172
+        ],
+        "longestSide": 0.3149999901652336,
+        "expectedLongestSide": [
+          0.255,
+          0.3675
+        ],
+        "lodTriangles": 88,
+        "lodSize": [
+          0.3149999901652336,
+          0.01967846928164363,
+          0.2576249912381172
+        ]
+      },
+      {
+        "key": "garment_tshirt_teal_small_hung",
+        "garment": "tshirt_teal",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_tshirt_teal_small_hung",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            -0.3839193576340101,
+            -0.0057115985852894124
+          ],
+          "max": [
+            0.230999997794628,
+            0,
+            0.0057115985852894124
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.011423197170578825
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.5115
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.010449343214914864
+        ]
+      },
+      {
+        "key": "garment_tshirt_teal_big_hung",
+        "garment": "tshirt_teal",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_tshirt_teal_big_hung",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            -0.5235263854265213,
+            -0.007788543356582522
+          ],
+          "max": [
+            0.3149999901652336,
+            0,
+            0.007788543356582522
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.015577086713165045
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.6975
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.0142491040751338
+        ]
+      },
+      {
+        "key": "garment_tshirt_teal_small_flat",
+        "garment": "tshirt_teal",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_tshirt_teal_small_flat",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            0,
+            -0.19195967881700504
+          ],
+          "max": [
+            0.230999997794628,
+            0.009845900376458605,
+            0.19195967881700504
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.009845900376458605,
+          0.3839193576340101
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.5115
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.461999995589256,
+          0.008961967945629201,
+          0.3839193576340101
+        ]
+      },
+      {
+        "key": "garment_tshirt_teal_big_flat",
+        "garment": "tshirt_teal",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_tshirt_teal_big_flat",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            0,
+            -0.26176319271326065
+          ],
+          "max": [
+            0.3149999901652336,
+            0.013426227495074272,
+            0.26176319271326065
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.013426227495074272,
+          0.5235263854265213
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.6975
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.6299999803304672,
+          0.012220865115523338,
+          0.5235263854265213
+        ]
+      },
+      {
+        "key": "garment_tshirt_coral_small_folded",
+        "garment": "tshirt_coral",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_tshirt_coral_small_folded",
+        "triangles": 256,
+        "parts": 1,
+        "vertices": 190,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.115499998897314,
+            0,
+            -0.09446249883472913
+          ],
+          "max": [
+            0.115499998897314,
+            0.015258278749046617,
+            0.09446249883472913
+          ]
+        },
+        "size": [
+          0.230999997794628,
+          0.015258278749046617,
+          0.18892499766945825
+        ],
+        "longestSide": 0.230999997794628,
+        "expectedLongestSide": [
+          0.187,
+          0.2695
+        ],
+        "lodTriangles": 88,
+        "lodSize": [
+          0.230999997794628,
+          0.014430877785986174,
+          0.18892499766945825
+        ]
+      },
+      {
+        "key": "garment_tshirt_coral_big_folded",
+        "garment": "tshirt_coral",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_tshirt_coral_big_folded",
+        "triangles": 256,
+        "parts": 1,
+        "vertices": 190,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1574999950826168,
+            0,
+            -0.1288124956190586
+          ],
+          "max": [
+            0.1574999950826168,
+            0.020806743297725916,
+            0.1288124956190586
+          ]
+        },
+        "size": [
+          0.3149999901652336,
+          0.020806743297725916,
+          0.2576249912381172
+        ],
+        "longestSide": 0.3149999901652336,
+        "expectedLongestSide": [
+          0.255,
+          0.3675
+        ],
+        "lodTriangles": 88,
+        "lodSize": [
+          0.3149999901652336,
+          0.01967846928164363,
+          0.2576249912381172
+        ]
+      },
+      {
+        "key": "garment_tshirt_coral_small_hung",
+        "garment": "tshirt_coral",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_tshirt_coral_small_hung",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            -0.3839193576340101,
+            -0.0057115985852894124
+          ],
+          "max": [
+            0.230999997794628,
+            0,
+            0.0057115985852894124
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.011423197170578825
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.5115
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.010449343214914864
+        ]
+      },
+      {
+        "key": "garment_tshirt_coral_big_hung",
+        "garment": "tshirt_coral",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_tshirt_coral_big_hung",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            -0.5235263854265213,
+            -0.007788543356582522
+          ],
+          "max": [
+            0.3149999901652336,
+            0,
+            0.007788543356582522
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.015577086713165045
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.6975
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.0142491040751338
+        ]
+      },
+      {
+        "key": "garment_tshirt_coral_small_flat",
+        "garment": "tshirt_coral",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_tshirt_coral_small_flat",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            0,
+            -0.19195967881700504
+          ],
+          "max": [
+            0.230999997794628,
+            0.009845900376458605,
+            0.19195967881700504
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.009845900376458605,
+          0.3839193576340101
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.5115
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.461999995589256,
+          0.008961967945629201,
+          0.3839193576340101
+        ]
+      },
+      {
+        "key": "garment_tshirt_coral_big_flat",
+        "garment": "tshirt_coral",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_tshirt_coral_big_flat",
+        "triangles": 198,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            0,
+            -0.26176319271326065
+          ],
+          "max": [
+            0.3149999901652336,
+            0.013426227495074272,
+            0.26176319271326065
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.013426227495074272,
+          0.5235263854265213
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.6975
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.6299999803304672,
+          0.012220865115523338,
+          0.5235263854265213
+        ]
+      },
+      {
+        "key": "garment_tshirt_motif_small_folded",
+        "garment": "tshirt_motif",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_tshirt_motif_small_folded",
+        "triangles": 296,
+        "parts": 1,
+        "vertices": 221,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.115499998897314,
+            0,
+            -0.09446249883472913
+          ],
+          "max": [
+            0.115499998897314,
+            0.015276836748731926,
+            0.09446249883472913
+          ]
+        },
+        "size": [
+          0.230999997794628,
+          0.015276836748731926,
+          0.18892499766945825
+        ],
+        "longestSide": 0.230999997794628,
+        "expectedLongestSide": [
+          0.187,
+          0.2695
+        ],
+        "lodTriangles": 128,
+        "lodSize": [
+          0.230999997794628,
+          0.014430877785986174,
+          0.18892499766945825
+        ]
+      },
+      {
+        "key": "garment_tshirt_motif_big_folded",
+        "garment": "tshirt_motif",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_tshirt_motif_big_folded",
+        "triangles": 296,
+        "parts": 1,
+        "vertices": 221,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1574999950826168,
+            0,
+            -0.1288124956190586
+          ],
+          "max": [
+            0.1574999950826168,
+            0.020832049660384655,
+            0.1288124956190586
+          ]
+        },
+        "size": [
+          0.3149999901652336,
+          0.020832049660384655,
+          0.2576249912381172
+        ],
+        "longestSide": 0.3149999901652336,
+        "expectedLongestSide": [
+          0.255,
+          0.3675
+        ],
+        "lodTriangles": 128,
+        "lodSize": [
+          0.3149999901652336,
+          0.01967846928164363,
+          0.2576249912381172
+        ]
+      },
+      {
+        "key": "garment_tshirt_motif_small_hung",
+        "garment": "tshirt_motif",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_tshirt_motif_small_hung",
+        "triangles": 238,
+        "parts": 1,
+        "vertices": 183,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            -0.3839193576340101,
+            -0.0057115985852894124
+          ],
+          "max": [
+            0.230999997794628,
+            0,
+            0.0057115985852894124
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.011423197170578825
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.5115
+        ],
+        "lodTriangles": 136,
+        "lodSize": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.011177029889188672
+        ]
+      },
+      {
+        "key": "garment_tshirt_motif_big_hung",
+        "garment": "tshirt_motif",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_tshirt_motif_big_hung",
+        "triangles": 238,
+        "parts": 1,
+        "vertices": 183,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            -0.5235263854265213,
+            -0.007788543356582522
+          ],
+          "max": [
+            0.3149999901652336,
+            0,
+            0.007788543356582522
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.015577086713165045
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.6975
+        ],
+        "lodTriangles": 136,
+        "lodSize": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.015241404063999653
+        ]
+      },
+      {
+        "key": "garment_tshirt_motif_small_flat",
+        "garment": "tshirt_motif",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_tshirt_motif_small_flat",
+        "triangles": 238,
+        "parts": 1,
+        "vertices": 183,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            0,
+            -0.19195967881700504
+          ],
+          "max": [
+            0.230999997794628,
+            0.009845900376458605,
+            0.19195967881700504
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.009845900376458605,
+          0.3839193576340101
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.5115
+        ],
+        "lodTriangles": 136,
+        "lodSize": [
+          0.461999995589256,
+          0.009463625047583468,
+          0.3839193576340101
+        ]
+      },
+      {
+        "key": "garment_tshirt_motif_big_flat",
+        "garment": "tshirt_motif",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_tshirt_motif_big_flat",
+        "triangles": 238,
+        "parts": 1,
+        "vertices": 183,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            0,
+            -0.26176319271326065
+          ],
+          "max": [
+            0.3149999901652336,
+            0.013426227495074272,
+            0.26176319271326065
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.013426227495074272,
+          0.5235263854265213
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.6975
+        ],
+        "lodTriangles": 136,
+        "lodSize": [
+          0.6299999803304672,
+          0.012904942966997623,
+          0.5235263854265213
+        ]
+      },
+      {
+        "key": "garment_shorts_small_folded",
+        "garment": "shorts",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_shorts_small_folded",
+        "triangles": 210,
+        "parts": 1,
+        "vertices": 128,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.07974999943375582,
+            0,
+            -0.06599999995529648
+          ],
+          "max": [
+            0.07974999943375582,
+            0.014289213095371567,
+            0.06599999995529648
+          ]
+        },
+        "size": [
+          0.15949999886751165,
+          0.014289213095371567,
+          0.13199999991059297
+        ],
+        "longestSide": 0.15949999886751165,
+        "expectedLongestSide": [
+          0.1265,
+          0.187
+        ],
+        "lodTriangles": 58,
+        "lodSize": [
+          0.15949999886751165,
+          0.013028000577536503,
+          0.13199999991059297
+        ]
+      },
+      {
+        "key": "garment_shorts_big_folded",
+        "garment": "shorts",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_shorts_big_folded",
+        "triangles": 210,
+        "parts": 1,
+        "vertices": 128,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.10874999687075615,
+            0,
+            -0.08999999798834324
+          ],
+          "max": [
+            0.10874999687075615,
+            0.0194852901622653,
+            0.08999999798834324
+          ]
+        },
+        "size": [
+          0.2174999937415123,
+          0.0194852901622653,
+          0.17999999597668648
+        ],
+        "longestSide": 0.2174999937415123,
+        "expectedLongestSide": [
+          0.1725,
+          0.255
+        ],
+        "lodTriangles": 58,
+        "lodSize": [
+          0.2174999937415123,
+          0.017765454947948456,
+          0.17999999597668648
+        ]
+      },
+      {
+        "key": "garment_shorts_small_hung",
+        "garment": "shorts",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_shorts_small_hung",
+        "triangles": 216,
+        "parts": 1,
+        "vertices": 164,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1455300079536439,
+            -0.2365000090599061,
+            -0.00578634998264177
+          ],
+          "max": [
+            0.1455300079536439,
+            0,
+            0.00578634998264177
+          ]
+        },
+        "size": [
+          0.2910600159072878,
+          0.2365000090599061,
+          0.01157269996528354
+        ],
+        "longestSide": 0.2910600159072878,
+        "expectedLongestSide": [
+          0.2475,
+          0.3355
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.2910600159072878,
+          0.2365000090599061,
+          0.010873228826606351
+        ]
+      },
+      {
+        "key": "garment_shorts_big_hung",
+        "garment": "shorts",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_shorts_big_hung",
+        "triangles": 216,
+        "parts": 1,
+        "vertices": 164,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19845000654459,
+            -0.32250000536441803,
+            -0.007890477078035474
+          ],
+          "max": [
+            0.19845000654459,
+            0,
+            0.007890477078035474
+          ]
+        },
+        "size": [
+          0.39690001308918,
+          0.32250000536441803,
+          0.015780954156070948
+        ],
+        "longestSide": 0.39690001308918,
+        "expectedLongestSide": [
+          0.3375,
+          0.4575
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.39690001308918,
+          0.32250000536441803,
+          0.014827129896730185
+        ]
+      },
+      {
+        "key": "garment_shorts_small_flat",
+        "garment": "shorts",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_shorts_small_flat",
+        "triangles": 216,
+        "parts": 1,
+        "vertices": 164,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1455300079536439,
+            0,
+            -0.11825000452995305
+          ],
+          "max": [
+            0.1455300079536439,
+            0.010118946279860541,
+            0.11825000452995305
+          ]
+        },
+        "size": [
+          0.2910600159072878,
+          0.010118946279860541,
+          0.2365000090599061
+        ],
+        "longestSide": 0.2910600159072878,
+        "expectedLongestSide": [
+          0.2475,
+          0.3355
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.2910600159072878,
+          0.008400041652370127,
+          0.2365000090599061
+        ]
+      },
+      {
+        "key": "garment_shorts_big_flat",
+        "garment": "shorts",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_shorts_big_flat",
+        "triangles": 216,
+        "parts": 1,
+        "vertices": 164,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19845000654459,
+            0,
+            -0.16125000268220901
+          ],
+          "max": [
+            0.19845000654459,
+            0.013798562809824944,
+            0.16125000268220901
+          ]
+        },
+        "size": [
+          0.39690001308918,
+          0.013798562809824944,
+          0.32250000536441803
+        ],
+        "longestSide": 0.39690001308918,
+        "expectedLongestSide": [
+          0.3375,
+          0.4575
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.39690001308918,
+          0.01145460200496018,
+          0.32250000536441803
+        ]
+      },
+      {
+        "key": "garment_cotton_dress_small_folded",
+        "garment": "cotton_dress",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_cotton_dress_small_folded",
+        "triangles": 256,
+        "parts": 1,
+        "vertices": 190,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.10450000095367429,
+            0,
+            -0.0999625019043684
+          ],
+          "max": [
+            0.10450000095367429,
+            0.015258278749046617,
+            0.0999625019043684
+          ]
+        },
+        "size": [
+          0.20900000190734858,
+          0.015258278749046617,
+          0.1999250038087368
+        ],
+        "longestSide": 0.20900000190734858,
+        "expectedLongestSide": [
+          0.165,
+          0.264
+        ],
+        "lodTriangles": 88,
+        "lodSize": [
+          0.20900000190734858,
+          0.014430877785986174,
+          0.1999250038087368
+        ]
+      },
+      {
+        "key": "garment_cotton_dress_big_folded",
+        "garment": "cotton_dress",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_cotton_dress_big_folded",
+        "triangles": 256,
+        "parts": 1,
+        "vertices": 190,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14249999821186066,
+            0,
+            -0.13631249964237213
+          ],
+          "max": [
+            0.14249999821186066,
+            0.020806743297725916,
+            0.13631249964237213
+          ]
+        },
+        "size": [
+          0.2849999964237213,
+          0.020806743297725916,
+          0.27262499928474426
+        ],
+        "longestSide": 0.2849999964237213,
+        "expectedLongestSide": [
+          0.225,
+          0.36
+        ],
+        "lodTriangles": 88,
+        "lodSize": [
+          0.2849999964237213,
+          0.01967846928164363,
+          0.27262499928474426
+        ]
+      },
+      {
+        "key": "garment_cotton_dress_small_hung",
+        "garment": "cotton_dress",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_cotton_dress_small_hung",
+        "triangles": 240,
+        "parts": 1,
+        "vertices": 192,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18700000602006916,
+            -0.5239490264968225,
+            -0.005869604355284663
+          ],
+          "max": [
+            0.18700000602006916,
+            0,
+            0.005869604355284663
+          ]
+        },
+        "size": [
+          0.37400001204013833,
+          0.5239490264968225,
+          0.011739208710569327
+        ],
+        "longestSide": 0.5239490264968225,
+        "expectedLongestSide": [
+          0.451,
+          0.594
+        ],
+        "lodTriangles": 104,
+        "lodSize": [
+          0.37400001204013833,
+          0.5239490264968225,
+          0.010928602660389974
+        ]
+      },
+      {
+        "key": "garment_cotton_dress_big_hung",
+        "garment": "cotton_dress",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_cotton_dress_big_hung",
+        "triangles": 240,
+        "parts": 1,
+        "vertices": 192,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.255000002682209,
+            -0.7144759297370911,
+            -0.008004005765542388
+          ],
+          "max": [
+            0.255000002682209,
+            0,
+            0.008004005765542388
+          ]
+        },
+        "size": [
+          0.510000005364418,
+          0.7144759297370911,
+          0.016008011531084776
+        ],
+        "longestSide": 0.7144759297370911,
+        "expectedLongestSide": [
+          0.615,
+          0.81
+        ],
+        "lodTriangles": 104,
+        "lodSize": [
+          0.510000005364418,
+          0.7144759297370911,
+          0.014902639668434858
+        ]
+      },
+      {
+        "key": "garment_cotton_dress_small_flat",
+        "garment": "cotton_dress",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_cotton_dress_small_flat",
+        "triangles": 240,
+        "parts": 1,
+        "vertices": 192,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18700000602006916,
+            0,
+            -0.26197451324841126
+          ],
+          "max": [
+            0.18700000602006916,
+            0.009970726102633387,
+            0.26197451324841126
+          ]
+        },
+        "size": [
+          0.37400001204013833,
+          0.009970726102633387,
+          0.5239490264968225
+        ],
+        "longestSide": 0.5239490264968225,
+        "expectedLongestSide": [
+          0.451,
+          0.594
+        ],
+        "lodTriangles": 104,
+        "lodSize": [
+          0.37400001204013833,
+          0.008256914040223606,
+          0.5239490264968225
+        ]
+      },
+      {
+        "key": "garment_cotton_dress_big_flat",
+        "garment": "cotton_dress",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_cotton_dress_big_flat",
+        "triangles": 240,
+        "parts": 1,
+        "vertices": 192,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.255000002682209,
+            0,
+            -0.35723796486854553
+          ],
+          "max": [
+            0.255000002682209,
+            0.013596444390714169,
+            0.35723796486854553
+          ]
+        },
+        "size": [
+          0.510000005364418,
+          0.013596444390714169,
+          0.7144759297370911
+        ],
+        "longestSide": 0.7144759297370911,
+        "expectedLongestSide": [
+          0.615,
+          0.81
+        ],
+        "lodTriangles": 104,
+        "lodSize": [
+          0.510000005364418,
+          0.011259427992627025,
+          0.7144759297370911
+        ]
+      },
+      {
+        "key": "garment_hoodie_small_folded",
+        "garment": "hoodie",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_hoodie_small_folded",
+        "triangles": 264,
+        "parts": 1,
+        "vertices": 204,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.12925000247359275,
+            0,
+            -0.10271249934136861
+          ],
+          "max": [
+            0.12925000247359275,
+            0.015258278749046617,
+            0.10271249934136861
+          ]
+        },
+        "size": [
+          0.2585000049471855,
+          0.015258278749046617,
+          0.20542499868273723
+        ],
+        "longestSide": 0.2585000049471855,
+        "expectedLongestSide": [
+          0.198,
+          0.308
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.2585000049471855,
+          0.014430877785986174,
+          0.20542499868273723
+        ]
+      },
+      {
+        "key": "garment_hoodie_big_folded",
+        "garment": "hoodie",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_hoodie_big_folded",
+        "triangles": 264,
+        "parts": 1,
+        "vertices": 204,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.17624999955296516,
+            0,
+            -0.14006249606609344
+          ],
+          "max": [
+            0.17624999955296516,
+            0.020806743297725916,
+            0.14006249606609344
+          ]
+        },
+        "size": [
+          0.35249999910593033,
+          0.020806743297725916,
+          0.2801249921321869
+        ],
+        "longestSide": 0.35249999910593033,
+        "expectedLongestSide": [
+          0.27,
+          0.42
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.35249999910593033,
+          0.01967846928164363,
+          0.2801249921321869
+        ]
+      },
+      {
+        "key": "garment_hoodie_small_hung",
+        "garment": "hoodie",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_hoodie_small_hung",
+        "triangles": 346,
+        "parts": 1,
+        "vertices": 306,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2805000008344649,
+            -0.5183199994850156,
+            -0.007489701336534482
+          ],
+          "max": [
+            0.2805000008344649,
+            0,
+            0.007489701336534482
+          ]
+        },
+        "size": [
+          0.5610000016689298,
+          0.5183199994850156,
+          0.014979402673068964
+        ],
+        "longestSide": 0.5610000016689298,
+        "expectedLongestSide": [
+          0.4675,
+          0.6325
+        ],
+        "lodTriangles": 158,
+        "lodSize": [
+          0.5610000016689298,
+          0.5183199994850156,
+          0.014979402673068964
+        ]
+      },
+      {
+        "key": "garment_hoodie_big_hung",
+        "garment": "hoodie",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_hoodie_big_hung",
+        "triangles": 346,
+        "parts": 1,
+        "vertices": 306,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3824999928474426,
+            -0.7067999839782715,
+            -0.01021322887390852
+          ],
+          "max": [
+            0.3824999928474426,
+            0,
+            0.01021322887390852
+          ]
+        },
+        "size": [
+          0.7649999856948853,
+          0.7067999839782715,
+          0.02042645774781704
+        ],
+        "longestSide": 0.7649999856948853,
+        "expectedLongestSide": [
+          0.6375,
+          0.8625
+        ],
+        "lodTriangles": 158,
+        "lodSize": [
+          0.7649999856948853,
+          0.7067999839782715,
+          0.02042645774781704
+        ]
+      },
+      {
+        "key": "garment_hoodie_small_flat",
+        "garment": "hoodie",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_hoodie_small_flat",
+        "triangles": 346,
+        "parts": 1,
+        "vertices": 306,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.2805000008344649,
+            0,
+            -0.2591599997425078
+          ],
+          "max": [
+            0.2805000008344649,
+            0.01672563412156991,
+            0.2591599997425078
+          ]
+        },
+        "size": [
+          0.5610000016689298,
+          0.01672563412156991,
+          0.5183199994850156
+        ],
+        "longestSide": 0.5610000016689298,
+        "expectedLongestSide": [
+          0.4675,
+          0.6325
+        ],
+        "lodTriangles": 158,
+        "lodSize": [
+          0.5610000016689298,
+          0.016079630306192527,
+          0.5183199994850156
+        ]
+      },
+      {
+        "key": "garment_hoodie_big_flat",
+        "garment": "hoodie",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_hoodie_big_flat",
+        "triangles": 346,
+        "parts": 1,
+        "vertices": 306,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3824999928474426,
+            0,
+            -0.35339999198913574
+          ],
+          "max": [
+            0.3824999928474426,
+            0.022807682398706675,
+            0.35339999198913574
+          ]
+        },
+        "size": [
+          0.7649999856948853,
+          0.022807682398706675,
+          0.7067999839782715
+        ],
+        "longestSide": 0.7649999856948853,
+        "expectedLongestSide": [
+          0.6375,
+          0.8625
+        ],
+        "lodTriangles": 158,
+        "lodSize": [
+          0.7649999856948853,
+          0.021926768124103546,
+          0.7067999839782715
+        ]
+      },
+      {
+        "key": "garment_joggers_small_folded",
+        "garment": "joggers",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_joggers_small_folded",
+        "triangles": 212,
+        "parts": 1,
+        "vertices": 132,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.09900000607967385,
+            0,
+            -0.09350000301003458
+          ],
+          "max": [
+            0.09900000607967385,
+            0.014289213095371567,
+            0.09350000301003458
+          ]
+        },
+        "size": [
+          0.1980000121593477,
+          0.014289213095371567,
+          0.18700000602006916
+        ],
+        "longestSide": 0.1980000121593477,
+        "expectedLongestSide": [
+          0.1595,
+          0.231
+        ],
+        "lodTriangles": 60,
+        "lodSize": [
+          0.1980000121593477,
+          0.013028000577536503,
+          0.18700000602006916
+        ]
+      },
+      {
+        "key": "garment_joggers_big_folded",
+        "garment": "joggers",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_joggers_big_folded",
+        "triangles": 212,
+        "parts": 1,
+        "vertices": 132,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13500000536441803,
+            0,
+            -0.1275000013411045
+          ],
+          "max": [
+            0.13500000536441803,
+            0.0194852901622653,
+            0.1275000013411045
+          ]
+        },
+        "size": [
+          0.27000001072883606,
+          0.0194852901622653,
+          0.255000002682209
+        ],
+        "longestSide": 0.27000001072883606,
+        "expectedLongestSide": [
+          0.2175,
+          0.315
+        ],
+        "lodTriangles": 60,
+        "lodSize": [
+          0.27000001072883606,
+          0.017765454947948456,
+          0.255000002682209
+        ]
+      },
+      {
+        "key": "garment_joggers_small_hung",
+        "garment": "joggers",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_joggers_small_hung",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1455300079536439,
+            -0.550000011920929,
+            -0.00578634998264177
+          ],
+          "max": [
+            0.1455300079536439,
+            0,
+            0.00578634998264177
+          ]
+        },
+        "size": [
+          0.2910600159072878,
+          0.550000011920929,
+          0.01157269996528354
+        ],
+        "longestSide": 0.550000011920929,
+        "expectedLongestSide": [
+          0.484,
+          0.605
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.2910600159072878,
+          0.550000011920929,
+          0.010873228826606351
+        ]
+      },
+      {
+        "key": "garment_joggers_big_hung",
+        "garment": "joggers",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_joggers_big_hung",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19845000654459,
+            -0.75,
+            -0.007890477078035474
+          ],
+          "max": [
+            0.19845000654459,
+            0,
+            0.007890477078035474
+          ]
+        },
+        "size": [
+          0.39690001308918,
+          0.75,
+          0.015780954156070948
+        ],
+        "longestSide": 0.75,
+        "expectedLongestSide": [
+          0.66,
+          0.825
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.39690001308918,
+          0.75,
+          0.014827129896730185
+        ]
+      },
+      {
+        "key": "garment_joggers_small_flat",
+        "garment": "joggers",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_joggers_small_flat",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1455300079536439,
+            0,
+            -0.2750000059604645
+          ],
+          "max": [
+            0.1455300079536439,
+            0.0103052843733058,
+            0.2750000059604645
+          ]
+        },
+        "size": [
+          0.2910600159072878,
+          0.0103052843733058,
+          0.550000011920929
+        ],
+        "longestSide": 0.550000011920929,
+        "expectedLongestSide": [
+          0.484,
+          0.605
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.2910600159072878,
+          0.009270883086844095,
+          0.550000011920929
+        ]
+      },
+      {
+        "key": "garment_joggers_big_flat",
+        "garment": "joggers",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_joggers_big_flat",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19845000654459,
+            0,
+            -0.375
+          ],
+          "max": [
+            0.19845000654459,
+            0.014052660204470158,
+            0.375
+          ]
+        },
+        "size": [
+          0.39690001308918,
+          0.014052660204470158,
+          0.75
+        ],
+        "longestSide": 0.75,
+        "expectedLongestSide": [
+          0.66,
+          0.825
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.39690001308918,
+          0.012642113026231527,
+          0.75
+        ]
+      },
+      {
+        "key": "garment_school_jumper_small_folded",
+        "garment": "school_jumper",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_school_jumper_small_folded",
+        "triangles": 260,
+        "parts": 1,
+        "vertices": 198,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.12100000196695326,
+            0,
+            -0.10271249934136861
+          ],
+          "max": [
+            0.12100000196695326,
+            0.015258278749046617,
+            0.10271249934136861
+          ]
+        },
+        "size": [
+          0.24200000393390653,
+          0.015258278749046617,
+          0.20542499868273723
+        ],
+        "longestSide": 0.24200000393390653,
+        "expectedLongestSide": [
+          0.187,
+          0.286
+        ],
+        "lodTriangles": 92,
+        "lodSize": [
+          0.24200000393390653,
+          0.014430877785986174,
+          0.20542499868273723
+        ]
+      },
+      {
+        "key": "garment_school_jumper_big_folded",
+        "garment": "school_jumper",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_school_jumper_big_folded",
+        "triangles": 260,
+        "parts": 1,
+        "vertices": 198,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.16499999910593033,
+            0,
+            -0.14006249606609344
+          ],
+          "max": [
+            0.16499999910593033,
+            0.020806743297725916,
+            0.14006249606609344
+          ]
+        },
+        "size": [
+          0.32999999821186066,
+          0.020806743297725916,
+          0.2801249921321869
+        ],
+        "longestSide": 0.32999999821186066,
+        "expectedLongestSide": [
+          0.255,
+          0.39
+        ],
+        "lodTriangles": 92,
+        "lodSize": [
+          0.32999999821186066,
+          0.01967846928164363,
+          0.2801249921321869
+        ]
+      },
+      {
+        "key": "garment_school_jumper_small_hung",
+        "garment": "school_jumper",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_school_jumper_small_hung",
+        "triangles": 226,
+        "parts": 1,
+        "vertices": 202,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.26950001108646404,
+            -0.38931680867491636,
+            -0.0057115985852894124
+          ],
+          "max": [
+            0.26950001108646404,
+            0,
+            0.0057115985852894124
+          ]
+        },
+        "size": [
+          0.5390000221729281,
+          0.38931680867491636,
+          0.011423197170578825
+        ],
+        "longestSide": 0.5390000221729281,
+        "expectedLongestSide": [
+          0.429,
+          0.583
+        ],
+        "lodTriangles": 98,
+        "lodSize": [
+          0.5390000221729281,
+          0.38931680867491636,
+          0.010507934861395785
+        ]
+      },
+      {
+        "key": "garment_school_jumper_big_hung",
+        "garment": "school_jumper",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_school_jumper_big_hung",
+        "triangles": 226,
+        "parts": 1,
+        "vertices": 202,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3675000071525574,
+            -0.5308865457773209,
+            -0.007788543356582522
+          ],
+          "max": [
+            0.3675000071525574,
+            0,
+            0.007788543356582522
+          ]
+        },
+        "size": [
+          0.7350000143051147,
+          0.5308865457773209,
+          0.015577086713165045
+        ],
+        "longestSide": 0.7350000143051147,
+        "expectedLongestSide": [
+          0.585,
+          0.795
+        ],
+        "lodTriangles": 98,
+        "lodSize": [
+          0.7350000143051147,
+          0.5308865457773209,
+          0.014329001773148775
+        ]
+      },
+      {
+        "key": "garment_school_jumper_small_flat",
+        "garment": "school_jumper",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_school_jumper_small_flat",
+        "triangles": 226,
+        "parts": 1,
+        "vertices": 202,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.26950001108646404,
+            0,
+            -0.19465840433745818
+          ],
+          "max": [
+            0.26950001108646404,
+            0.010135622355978535,
+            0.19465840433745818
+          ]
+        },
+        "size": [
+          0.5390000221729281,
+          0.010135622355978535,
+          0.38931680867491636
+        ],
+        "longestSide": 0.5390000221729281,
+        "expectedLongestSide": [
+          0.429,
+          0.583
+        ],
+        "lodTriangles": 98,
+        "lodSize": [
+          0.5390000221729281,
+          0.008721159587581795,
+          0.38931680867491636
+        ]
+      },
+      {
+        "key": "garment_school_jumper_big_flat",
+        "garment": "school_jumper",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_school_jumper_big_flat",
+        "triangles": 226,
+        "parts": 1,
+        "vertices": 202,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3675000071525574,
+            0,
+            -0.26544327288866043
+          ],
+          "max": [
+            0.3675000071525574,
+            0.01382130291312933,
+            0.26544327288866043
+          ]
+        },
+        "size": [
+          0.7350000143051147,
+          0.01382130291312933,
+          0.5308865457773209
+        ],
+        "longestSide": 0.7350000143051147,
+        "expectedLongestSide": [
+          0.585,
+          0.795
+        ],
+        "lodTriangles": 98,
+        "lodSize": [
+          0.7350000143051147,
+          0.011892490088939667,
+          0.5308865457773209
+        ]
+      },
+      {
+        "key": "garment_school_polo_small_folded",
+        "garment": "school_polo",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_school_polo_small_folded",
+        "triangles": 266,
+        "parts": 1,
+        "vertices": 210,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.115499998897314,
+            0,
+            -0.09446249883472913
+          ],
+          "max": [
+            0.115499998897314,
+            0.015258278749046617,
+            0.09446249883472913
+          ]
+        },
+        "size": [
+          0.230999997794628,
+          0.015258278749046617,
+          0.18892499766945825
+        ],
+        "longestSide": 0.230999997794628,
+        "expectedLongestSide": [
+          0.187,
+          0.2695
+        ],
+        "lodTriangles": 94,
+        "lodSize": [
+          0.230999997794628,
+          0.014430877785986174,
+          0.18892499766945825
+        ]
+      },
+      {
+        "key": "garment_school_polo_big_folded",
+        "garment": "school_polo",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_school_polo_big_folded",
+        "triangles": 266,
+        "parts": 1,
+        "vertices": 210,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1574999950826168,
+            0,
+            -0.1288124956190586
+          ],
+          "max": [
+            0.1574999950826168,
+            0.020806743297725916,
+            0.1288124956190586
+          ]
+        },
+        "size": [
+          0.3149999901652336,
+          0.020806743297725916,
+          0.2576249912381172
+        ],
+        "longestSide": 0.3149999901652336,
+        "expectedLongestSide": [
+          0.255,
+          0.3675
+        ],
+        "lodTriangles": 94,
+        "lodSize": [
+          0.3149999901652336,
+          0.01967846928164363,
+          0.2576249912381172
+        ]
+      },
+      {
+        "key": "garment_school_polo_small_hung",
+        "garment": "school_polo",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_school_polo_small_hung",
+        "triangles": 210,
+        "parts": 1,
+        "vertices": 176,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            -0.3839193576340101,
+            -0.0057115985852894124
+          ],
+          "max": [
+            0.230999997794628,
+            0,
+            0.0057115985852894124
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.011423197170578825
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.528
+        ],
+        "lodTriangles": 102,
+        "lodSize": [
+          0.461999995589256,
+          0.3839193576340101,
+          0.010449343214914864
+        ]
+      },
+      {
+        "key": "garment_school_polo_big_hung",
+        "garment": "school_polo",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_school_polo_big_hung",
+        "triangles": 210,
+        "parts": 1,
+        "vertices": 176,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            -0.5235263854265213,
+            -0.007788543356582522
+          ],
+          "max": [
+            0.3149999901652336,
+            0,
+            0.007788543356582522
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.015577086713165045
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.72
+        ],
+        "lodTriangles": 102,
+        "lodSize": [
+          0.6299999803304672,
+          0.5235263854265213,
+          0.0142491040751338
+        ]
+      },
+      {
+        "key": "garment_school_polo_small_flat",
+        "garment": "school_polo",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_school_polo_small_flat",
+        "triangles": 210,
+        "parts": 1,
+        "vertices": 176,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.230999997794628,
+            0,
+            -0.19195967881700504
+          ],
+          "max": [
+            0.230999997794628,
+            0.010021994945815904,
+            0.19195967881700504
+          ]
+        },
+        "size": [
+          0.461999995589256,
+          0.010021994945815904,
+          0.3839193576340101
+        ],
+        "longestSide": 0.461999995589256,
+        "expectedLongestSide": [
+          0.396,
+          0.528
+        ],
+        "lodTriangles": 102,
+        "lodSize": [
+          0.461999995589256,
+          0.009126617305354467,
+          0.3839193576340101
+        ]
+      },
+      {
+        "key": "garment_school_polo_big_flat",
+        "garment": "school_polo",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_school_polo_big_flat",
+        "triangles": 210,
+        "parts": 1,
+        "vertices": 176,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.3149999901652336,
+            0,
+            -0.26176319271326065
+          ],
+          "max": [
+            0.3149999901652336,
+            0.013666356448084116,
+            0.26176319271326065
+          ]
+        },
+        "size": [
+          0.6299999803304672,
+          0.013666356448084116,
+          0.5235263854265213
+        ],
+        "longestSide": 0.6299999803304672,
+        "expectedLongestSide": [
+          0.54,
+          0.72
+        ],
+        "lodTriangles": 102,
+        "lodSize": [
+          0.6299999803304672,
+          0.012445386964827776,
+          0.5235263854265213
+        ]
+      },
+      {
+        "key": "garment_school_trousers_small_folded",
+        "garment": "school_trousers",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_school_trousers_small_folded",
+        "triangles": 212,
+        "parts": 1,
+        "vertices": 132,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.09900000607967385,
+            0,
+            -0.09350000301003458
+          ],
+          "max": [
+            0.09900000607967385,
+            0.014289213095371567,
+            0.09350000301003458
+          ]
+        },
+        "size": [
+          0.1980000121593477,
+          0.014289213095371567,
+          0.18700000602006916
+        ],
+        "longestSide": 0.1980000121593477,
+        "expectedLongestSide": [
+          0.1595,
+          0.231
+        ],
+        "lodTriangles": 60,
+        "lodSize": [
+          0.1980000121593477,
+          0.013028000577536503,
+          0.18700000602006916
+        ]
+      },
+      {
+        "key": "garment_school_trousers_big_folded",
+        "garment": "school_trousers",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_school_trousers_big_folded",
+        "triangles": 212,
+        "parts": 1,
+        "vertices": 132,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13500000536441803,
+            0,
+            -0.1275000013411045
+          ],
+          "max": [
+            0.13500000536441803,
+            0.0194852901622653,
+            0.1275000013411045
+          ]
+        },
+        "size": [
+          0.27000001072883606,
+          0.0194852901622653,
+          0.255000002682209
+        ],
+        "longestSide": 0.27000001072883606,
+        "expectedLongestSide": [
+          0.2175,
+          0.315
+        ],
+        "lodTriangles": 60,
+        "lodSize": [
+          0.27000001072883606,
+          0.017765454947948456,
+          0.255000002682209
+        ]
+      },
+      {
+        "key": "garment_school_trousers_small_hung",
+        "garment": "school_trousers",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_school_trousers_small_hung",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14013999855279913,
+            -0.5610000016689298,
+            -0.00578634998264177
+          ],
+          "max": [
+            0.14013999855279913,
+            0,
+            0.00578634998264177
+          ]
+        },
+        "size": [
+          0.28027999710559826,
+          0.5610000016689298,
+          0.01157269996528354
+        ],
+        "longestSide": 0.5610000016689298,
+        "expectedLongestSide": [
+          0.484,
+          0.605
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.28027999710559826,
+          0.5610000016689298,
+          0.010873228826606351
+        ]
+      },
+      {
+        "key": "garment_school_trousers_big_hung",
+        "garment": "school_trousers",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_school_trousers_big_hung",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19109999388456345,
+            -0.7649999856948853,
+            -0.007890477078035474
+          ],
+          "max": [
+            0.19109999388456345,
+            0,
+            0.007890477078035474
+          ]
+        },
+        "size": [
+          0.3821999877691269,
+          0.7649999856948853,
+          0.015780954156070948
+        ],
+        "longestSide": 0.7649999856948853,
+        "expectedLongestSide": [
+          0.66,
+          0.825
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.3821999877691269,
+          0.7649999856948853,
+          0.014827129896730185
+        ]
+      },
+      {
+        "key": "garment_school_trousers_small_flat",
+        "garment": "school_trousers",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_school_trousers_small_flat",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.14013999855279913,
+            0,
+            -0.2805000008344649
+          ],
+          "max": [
+            0.14013999855279913,
+            0.0103052843733058,
+            0.2805000008344649
+          ]
+        },
+        "size": [
+          0.28027999710559826,
+          0.0103052843733058,
+          0.5610000016689298
+        ],
+        "longestSide": 0.5610000016689298,
+        "expectedLongestSide": [
+          0.484,
+          0.605
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.28027999710559826,
+          0.009270883086844095,
+          0.5610000016689298
+        ]
+      },
+      {
+        "key": "garment_school_trousers_big_flat",
+        "garment": "school_trousers",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_school_trousers_big_flat",
+        "triangles": 220,
+        "parts": 1,
+        "vertices": 172,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.19109999388456345,
+            0,
+            -0.3824999928474426
+          ],
+          "max": [
+            0.19109999388456345,
+            0.014052660204470158,
+            0.3824999928474426
+          ]
+        },
+        "size": [
+          0.3821999877691269,
+          0.014052660204470158,
+          0.7649999856948853
+        ],
+        "longestSide": 0.7649999856948853,
+        "expectedLongestSide": [
+          0.66,
+          0.825
+        ],
+        "lodTriangles": 80,
+        "lodSize": [
+          0.3821999877691269,
+          0.012642113026231527,
+          0.7649999856948853
+        ]
+      },
+      {
+        "key": "garment_school_skirt_small_folded",
+        "garment": "school_skirt",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_school_skirt_small_folded",
+        "triangles": 222,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.09900000607967385,
+            0,
+            -0.0852500025033951
+          ],
+          "max": [
+            0.09900000607967385,
+            0.014289213095371567,
+            0.0852500025033951
+          ]
+        },
+        "size": [
+          0.1980000121593477,
+          0.014289213095371567,
+          0.1705000050067902
+        ],
+        "longestSide": 0.1980000121593477,
+        "expectedLongestSide": [
+          0.1485,
+          0.231
+        ],
+        "lodTriangles": 68,
+        "lodSize": [
+          0.1980000121593477,
+          0.013650975672244492,
+          0.1705000050067902
+        ]
+      },
+      {
+        "key": "garment_school_skirt_big_folded",
+        "garment": "school_skirt",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_school_skirt_big_folded",
+        "triangles": 222,
+        "parts": 1,
+        "vertices": 152,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.13500000536441803,
+            0,
+            -0.11625000089406967
+          ],
+          "max": [
+            0.13500000536441803,
+            0.0194852901622653,
+            0.11625000089406967
+          ]
+        },
+        "size": [
+          0.27000001072883606,
+          0.0194852901622653,
+          0.23250000178813934
+        ],
+        "longestSide": 0.27000001072883606,
+        "expectedLongestSide": [
+          0.2025,
+          0.315
+        ],
+        "lodTriangles": 68,
+        "lodSize": [
+          0.27000001072883606,
+          0.018614966422319412,
+          0.23250000178813934
+        ]
+      },
+      {
+        "key": "garment_school_skirt_small_hung",
+        "garment": "school_skirt",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_school_skirt_small_hung",
+        "triangles": 414,
+        "parts": 1,
+        "vertices": 358,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18700000602006916,
+            -0.33550001513957994,
+            -0.0103007736985824
+          ],
+          "max": [
+            0.18700000602006916,
+            0,
+            0.0103007736985824
+          ]
+        },
+        "size": [
+          0.37400001204013833,
+          0.33550001513957994,
+          0.0206015473971648
+        ],
+        "longestSide": 0.37400001204013833,
+        "expectedLongestSide": [
+          0.286,
+          0.418
+        ],
+        "lodTriangles": 78,
+        "lodSize": [
+          0.37400001204013833,
+          0.33550001513957994,
+          0.0180858530298873
+        ]
+      },
+      {
+        "key": "garment_school_skirt_big_hung",
+        "garment": "school_skirt",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_school_skirt_big_hung",
+        "triangles": 414,
+        "parts": 1,
+        "vertices": 358,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.255000002682209,
+            -0.45750001072883606,
+            -0.01404650928452611
+          ],
+          "max": [
+            0.255000002682209,
+            0,
+            0.01404650928452611
+          ]
+        },
+        "size": [
+          0.510000005364418,
+          0.45750001072883606,
+          0.02809301856905222
+        ],
+        "longestSide": 0.510000005364418,
+        "expectedLongestSide": [
+          0.39,
+          0.57
+        ],
+        "lodTriangles": 78,
+        "lodSize": [
+          0.510000005364418,
+          0.45750001072883606,
+          0.024662526324391365
+        ]
+      },
+      {
+        "key": "garment_school_skirt_small_flat",
+        "garment": "school_skirt",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_school_skirt_small_flat",
+        "triangles": 414,
+        "parts": 1,
+        "vertices": 358,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.18700000602006916,
+            0,
+            -0.16775000756978997
+          ],
+          "max": [
+            0.18700000602006916,
+            0.017793914130062705,
+            0.16775000756978997
+          ]
+        },
+        "size": [
+          0.37400001204013833,
+          0.017793914130062705,
+          0.33550001513957994
+        ],
+        "longestSide": 0.37400001204013833,
+        "expectedLongestSide": [
+          0.286,
+          0.418
+        ],
+        "lodTriangles": 78,
+        "lodSize": [
+          0.37400001204013833,
+          0.017943580837544104,
+          0.33550001513957994
+        ]
+      },
+      {
+        "key": "garment_school_skirt_big_flat",
+        "garment": "school_skirt",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_school_skirt_big_flat",
+        "triangles": 414,
+        "parts": 1,
+        "vertices": 358,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.255000002682209,
+            0,
+            -0.22875000536441803
+          ],
+          "max": [
+            0.255000002682209,
+            0.024264427833259106,
+            0.22875000536441803
+          ]
+        },
+        "size": [
+          0.510000005364418,
+          0.024264427833259106,
+          0.45750001072883606
+        ],
+        "longestSide": 0.510000005364418,
+        "expectedLongestSide": [
+          0.39,
+          0.57
+        ],
+        "lodTriangles": 78,
+        "lodSize": [
+          0.510000005364418,
+          0.024468518793582916,
+          0.45750001072883606
+        ]
+      },
+      {
+        "key": "garment_school_tie_small_folded",
+        "garment": "school_tie",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_school_tie_small_folded",
+        "triangles": 204,
+        "parts": 1,
+        "vertices": 116,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.052250000476837144,
+            0,
+            -0.02062500126659872
+          ],
+          "max": [
+            0.052250000476837144,
+            0.014289213095371567,
+            0.02062500126659872
+          ]
+        },
+        "size": [
+          0.10450000095367429,
+          0.014289213095371567,
+          0.04125000253319744
+        ],
+        "longestSide": 0.10450000095367429,
+        "expectedLongestSide": [
+          0.0715,
+          0.132
+        ],
+        "lodTriangles": 56,
+        "lodSize": [
+          0.10450000095367429,
+          0.013028000577536503,
+          0.04125000253319744
+        ]
+      },
+      {
+        "key": "garment_school_tie_big_folded",
+        "garment": "school_tie",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_school_tie_big_folded",
+        "triangles": 204,
+        "parts": 1,
+        "vertices": 116,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.07124999910593033,
+            0,
+            -0.02812500111758709
+          ],
+          "max": [
+            0.07124999910593033,
+            0.0194852901622653,
+            0.02812500111758709
+          ]
+        },
+        "size": [
+          0.14249999821186066,
+          0.0194852901622653,
+          0.05625000223517418
+        ],
+        "longestSide": 0.14249999821186066,
+        "expectedLongestSide": [
+          0.0975,
+          0.18
+        ],
+        "lodTriangles": 56,
+        "lodSize": [
+          0.14249999821186066,
+          0.017765454947948456,
+          0.05625000223517418
+        ]
+      },
+      {
+        "key": "garment_school_tie_small_hung",
+        "garment": "school_tie",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_school_tie_small_hung",
+        "triangles": 174,
+        "parts": 1,
+        "vertices": 110,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.04312000144600869,
+            -0.2805000008344649,
+            -0.005755971310620334
+          ],
+          "max": [
+            0.04312000144600869,
+            0,
+            0.005755971310620334
+          ]
+        },
+        "size": [
+          0.08624000289201739,
+          0.2805000008344649,
+          0.011511942621240667
+        ],
+        "longestSide": 0.2805000008344649,
+        "expectedLongestSide": [
+          0.209,
+          0.352
+        ],
+        "lodTriangles": 62,
+        "lodSize": [
+          0.08624000289201739,
+          0.2805000008344649,
+          0.01107215747021073
+        ]
+      },
+      {
+        "key": "garment_school_tie_big_hung",
+        "garment": "school_tie",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_school_tie_big_hung",
+        "triangles": 174,
+        "parts": 1,
+        "vertices": 110,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.058800000697374344,
+            -0.3824999928474426,
+            -0.007849051617085934
+          ],
+          "max": [
+            0.058800000697374344,
+            0,
+            0.007849051617085934
+          ]
+        },
+        "size": [
+          0.11760000139474869,
+          0.3824999928474426,
+          0.015698103234171867
+        ],
+        "longestSide": 0.3824999928474426,
+        "expectedLongestSide": [
+          0.285,
+          0.48
+        ],
+        "lodTriangles": 62,
+        "lodSize": [
+          0.11760000139474869,
+          0.3824999928474426,
+          0.015098396223038435
+        ]
+      },
+      {
+        "key": "garment_school_tie_small_flat",
+        "garment": "school_tie",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_school_tie_small_flat",
+        "triangles": 174,
+        "parts": 1,
+        "vertices": 110,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.04312000144600869,
+            0,
+            -0.14025000041723246
+          ],
+          "max": [
+            0.04312000144600869,
+            0.01010255090437262,
+            0.14025000041723246
+          ]
+        },
+        "size": [
+          0.08624000289201739,
+          0.01010255090437262,
+          0.2805000008344649
+        ],
+        "longestSide": 0.2805000008344649,
+        "expectedLongestSide": [
+          0.209,
+          0.352
+        ],
+        "lodTriangles": 62,
+        "lodSize": [
+          0.08624000289201739,
+          0.008473825964340043,
+          0.2805000008344649
+        ]
+      },
+      {
+        "key": "garment_school_tie_big_flat",
+        "garment": "school_tie",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_school_tie_big_flat",
+        "triangles": 174,
+        "parts": 1,
+        "vertices": 110,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.058800000697374344,
+            0,
+            -0.1912499964237213
+          ],
+          "max": [
+            0.058800000697374344,
+            0.013776205480098724,
+            0.1912499964237213
+          ]
+        },
+        "size": [
+          0.11760000139474869,
+          0.013776205480098724,
+          0.3824999928474426
+        ],
+        "longestSide": 0.3824999928474426,
+        "expectedLongestSide": [
+          0.285,
+          0.48
+        ],
+        "lodTriangles": 62,
+        "lodSize": [
+          0.11760000139474869,
+          0.011555216973647475,
+          0.3824999928474426
+        ]
+      },
+      {
+        "key": "garment_socks_pair_small_folded",
+        "garment": "socks_pair",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_socks_pair_small_folded",
+        "triangles": 224,
+        "parts": 1,
+        "vertices": 128,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.054862503778934535,
+            0,
+            -0.039166871934682046
+          ],
+          "max": [
+            0.054862503778934535,
+            0.020168127184144513,
+            0.039166871934682046
+          ]
+        },
+        "size": [
+          0.10972500755786907,
+          0.020168127184144513,
+          0.07833374386936409
+        ],
+        "longestSide": 0.10972500755786907,
+        "expectedLongestSide": [
+          0.088,
+          0.1375
+        ],
+        "lodTriangles": 92,
+        "lodSize": [
+          0.10972500755786907,
+          0.019967899531784905,
+          0.07833374386936409
+        ]
+      },
+      {
+        "key": "garment_socks_pair_big_folded",
+        "garment": "socks_pair",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_socks_pair_big_folded",
+        "triangles": 224,
+        "parts": 1,
+        "vertices": 128,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.0748125035315752,
+            0,
+            -0.05340936966240406
+          ],
+          "max": [
+            0.0748125035315752,
+            0.027501991018652916,
+            0.05340936966240406
+          ]
+        },
+        "size": [
+          0.1496250070631504,
+          0.027501991018652916,
+          0.10681873932480812
+        ],
+        "longestSide": 0.1496250070631504,
+        "expectedLongestSide": [
+          0.12,
+          0.1875
+        ],
+        "lodTriangles": 92,
+        "lodSize": [
+          0.1496250070631504,
+          0.027228953316807747,
+          0.10681873932480812
+        ]
+      },
+      {
+        "key": "garment_socks_pair_small_flat",
+        "garment": "socks_pair",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_socks_pair_small_flat",
+        "triangles": 212,
+        "parts": 1,
+        "vertices": 124,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.11398777240217317,
+            0,
+            -0.10058400178408622
+          ],
+          "max": [
+            0.11398777240217317,
+            0.014915443907606463,
+            0.10058400178408622
+          ]
+        },
+        "size": [
+          0.22797554480434634,
+          0.014915443907606463,
+          0.20116800356817244
+        ],
+        "longestSide": 0.22797554480434634,
+        "expectedLongestSide": [
+          0.165,
+          0.242
+        ],
+        "lodTriangles": 120,
+        "lodSize": [
+          0.22797554480434634,
+          0.013802688216069892,
+          0.20116800356817244
+        ]
+      },
+      {
+        "key": "garment_socks_pair_big_flat",
+        "garment": "socks_pair",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_socks_pair_big_flat",
+        "triangles": 212,
+        "parts": 1,
+        "vertices": 124,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.1554378680884838,
+            0,
+            -0.13715999945998192
+          ],
+          "max": [
+            0.1554378680884838,
+            0.02033924125134945,
+            0.13715999945998192
+          ]
+        },
+        "size": [
+          0.3108757361769676,
+          0.02033924125134945,
+          0.27431999891996384
+        ],
+        "longestSide": 0.3108757361769676,
+        "expectedLongestSide": [
+          0.225,
+          0.33
+        ],
+        "lodTriangles": 120,
+        "lodSize": [
+          0.3108757361769676,
+          0.018821847159415483,
+          0.27431999891996384
+        ]
+      },
+      {
+        "key": "garment_cap_small_hung",
+        "garment": "cap",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_cap_small_hung",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 255,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.06490000180006028,
+            -0.17404199619817717,
+            -0.04394500313580041
+          ],
+          "max": [
+            0.06490000180006028,
+            0,
+            0.04394500313580041
+          ]
+        },
+        "size": [
+          0.12980000360012056,
+          0.17404199619817717,
+          0.08789000627160082
+        ],
+        "longestSide": 0.17404199619817717,
+        "expectedLongestSide": [
+          0.1485,
+          0.198
+        ],
+        "lodTriangles": 120,
+        "lodSize": [
+          0.12980000360012056,
+          0.17404199619817717,
+          0.0874499988138675
+        ]
+      },
+      {
+        "key": "garment_cap_big_hung",
+        "garment": "cap",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_cap_big_hung",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 255,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.0885000005364418,
+            -0.23732998967170715,
+            -0.05992500297725201
+          ],
+          "max": [
+            0.0885000005364418,
+            0,
+            0.05992500297725201
+          ]
+        },
+        "size": [
+          0.1770000010728836,
+          0.23732998967170715,
+          0.11985000595450401
+        ],
+        "longestSide": 0.23732998967170715,
+        "expectedLongestSide": [
+          0.2025,
+          0.27
+        ],
+        "lodTriangles": 120,
+        "lodSize": [
+          0.1770000010728836,
+          0.23732998967170715,
+          0.11924999579787254
+        ]
+      },
+      {
+        "key": "garment_cap_small_flat",
+        "garment": "cap",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_cap_small_flat",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 255,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.06490000180006028,
+            0,
+            -0.08702099809908859
+          ],
+          "max": [
+            0.06490000180006028,
+            0.08789000627160082,
+            0.08702099809908859
+          ]
+        },
+        "size": [
+          0.12980000360012056,
+          0.08789000627160082,
+          0.17404199619817717
+        ],
+        "longestSide": 0.17404199619817717,
+        "expectedLongestSide": [
+          0.1485,
+          0.198
+        ],
+        "lodTriangles": 120,
+        "lodSize": [
+          0.12980000360012056,
+          0.0874499988138675,
+          0.17404199619817717
+        ]
+      },
+      {
+        "key": "garment_cap_big_flat",
+        "garment": "cap",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_cap_big_flat",
+        "triangles": 288,
+        "parts": 1,
+        "vertices": 255,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.0885000005364418,
+            0,
+            -0.11866499483585358
+          ],
+          "max": [
+            0.0885000005364418,
+            0.11985000595450401,
+            0.11866499483585358
+          ]
+        },
+        "size": [
+          0.1770000010728836,
+          0.11985000595450401,
+          0.23732998967170715
+        ],
+        "longestSide": 0.23732998967170715,
+        "expectedLongestSide": [
+          0.2025,
+          0.27
+        ],
+        "lodTriangles": 120,
+        "lodSize": [
+          0.1770000010728836,
+          0.11924999579787254,
+          0.23732998967170715
+        ]
+      },
+      {
+        "key": "garment_light_jacket_small_folded",
+        "garment": "light_jacket",
+        "sizeClass": "small",
+        "state": "folded",
+        "node": "garment_light_jacket_small_folded",
+        "triangles": 268,
+        "parts": 1,
+        "vertices": 214,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.12925000247359275,
+            0,
+            -0.10271249934136861
+          ],
+          "max": [
+            0.12925000247359275,
+            0.015258278749046617,
+            0.10271249934136861
+          ]
+        },
+        "size": [
+          0.2585000049471855,
+          0.015258278749046617,
+          0.20542499868273723
+        ],
+        "longestSide": 0.2585000049471855,
+        "expectedLongestSide": [
+          0.198,
+          0.308
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.2585000049471855,
+          0.014430877785986174,
+          0.20542499868273723
+        ]
+      },
+      {
+        "key": "garment_light_jacket_big_folded",
+        "garment": "light_jacket",
+        "sizeClass": "big",
+        "state": "folded",
+        "node": "garment_light_jacket_big_folded",
+        "triangles": 268,
+        "parts": 1,
+        "vertices": 214,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.17624999955296516,
+            0,
+            -0.14006249606609344
+          ],
+          "max": [
+            0.17624999955296516,
+            0.020806743297725916,
+            0.14006249606609344
+          ]
+        },
+        "size": [
+          0.35249999910593033,
+          0.020806743297725916,
+          0.2801249921321869
+        ],
+        "longestSide": 0.35249999910593033,
+        "expectedLongestSide": [
+          0.27,
+          0.42
+        ],
+        "lodTriangles": 96,
+        "lodSize": [
+          0.35249999910593033,
+          0.01967846928164363,
+          0.2801249921321869
+        ]
+      },
+      {
+        "key": "garment_light_jacket_small_hung",
+        "garment": "light_jacket",
+        "sizeClass": "small",
+        "state": "hung",
+        "node": "garment_light_jacket_small_hung",
+        "triangles": 254,
+        "parts": 1,
+        "vertices": 258,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.28599999570846535,
+            -0.4162668228965849,
+            -0.0057115985852894124
+          ],
+          "max": [
+            0.28599999570846535,
+            0,
+            0.0057115985852894124
+          ]
+        },
+        "size": [
+          0.5719999914169307,
+          0.4162668228965849,
+          0.011423197170578825
+        ],
+        "longestSide": 0.5719999914169307,
+        "expectedLongestSide": [
+          0.4675,
+          0.6325
+        ],
+        "lodTriangles": 112,
+        "lodSize": [
+          0.5719999914169307,
+          0.4162668228965849,
+          0.010611406850587923
+        ]
+      },
+      {
+        "key": "garment_light_jacket_big_hung",
+        "garment": "light_jacket",
+        "sizeClass": "big",
+        "state": "hung",
+        "node": "garment_light_jacket_big_hung",
+        "triangles": 254,
+        "parts": 1,
+        "vertices": 258,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.38999998569488525,
+            -0.56763656437397,
+            -0.007788543356582522
+          ],
+          "max": [
+            0.38999998569488525,
+            0,
+            0.007788543356582522
+          ]
+        },
+        "size": [
+          0.7799999713897705,
+          0.56763656437397,
+          0.015577086713165045
+        ],
+        "longestSide": 0.7799999713897705,
+        "expectedLongestSide": [
+          0.6375,
+          0.8625
+        ],
+        "lodTriangles": 112,
+        "lodSize": [
+          0.7799999713897705,
+          0.56763656437397,
+          0.014470099937170744
+        ]
+      },
+      {
+        "key": "garment_light_jacket_small_flat",
+        "garment": "light_jacket",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_light_jacket_small_flat",
+        "triangles": 254,
+        "parts": 1,
+        "vertices": 258,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.28599999570846535,
+            0,
+            -0.20813341144829245
+          ],
+          "max": [
+            0.28599999570846535,
+            0.010387766306988566,
+            0.20813341144829245
+          ]
+        },
+        "size": [
+          0.5719999914169307,
+          0.010387766306988566,
+          0.4162668228965849
+        ],
+        "longestSide": 0.5719999914169307,
+        "expectedLongestSide": [
+          0.4675,
+          0.6325
+        ],
+        "lodTriangles": 112,
+        "lodSize": [
+          0.5719999914169307,
+          0.008793799583479478,
+          0.4162668228965849
+        ]
+      },
+      {
+        "key": "garment_light_jacket_big_flat",
+        "garment": "light_jacket",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_light_jacket_big_flat",
+        "triangles": 254,
+        "parts": 1,
+        "vertices": 258,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.38999998569488525,
+            0,
+            -0.283818282186985
+          ],
+          "max": [
+            0.38999998569488525,
+            0.014165135566145182,
+            0.283818282186985
+          ]
+        },
+        "size": [
+          0.7799999713897705,
+          0.014165135566145182,
+          0.56763656437397
+        ],
+        "longestSide": 0.7799999713897705,
+        "expectedLongestSide": [
+          0.6375,
+          0.8625
+        ],
+        "lodTriangles": 112,
+        "lodSize": [
+          0.7799999713897705,
+          0.011991544626653194,
+          0.56763656437397
+        ]
+      },
+      {
+        "key": "garment_school_shoes_small_flat",
+        "garment": "school_shoes",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_school_shoes_small_flat",
+        "triangles": 396,
+        "parts": 1,
+        "vertices": 260,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.06352500308156017,
+            0,
+            -0.0852500025033951
+          ],
+          "max": [
+            0.06352500308156017,
+            0.04455000109672547,
+            0.0852500025033951
+          ]
+        },
+        "size": [
+          0.12705000616312034,
+          0.04455000109672547,
+          0.1705000050067902
+        ],
+        "longestSide": 0.1705000050067902,
+        "expectedLongestSide": [
+          0.143,
+          0.198
+        ],
+        "lodTriangles": 160,
+        "lodSize": [
+          0.12705000616312034,
+          0.04455000109672547,
+          0.1705000050067902
+        ]
+      },
+      {
+        "key": "garment_school_shoes_big_flat",
+        "garment": "school_shoes",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_school_shoes_big_flat",
+        "triangles": 396,
+        "parts": 1,
+        "vertices": 260,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.08662500232458115,
+            0,
+            -0.11625000089406967
+          ],
+          "max": [
+            0.08662500232458115,
+            0.060750000178813934,
+            0.11625000089406967
+          ]
+        },
+        "size": [
+          0.1732500046491623,
+          0.060750000178813934,
+          0.23250000178813934
+        ],
+        "longestSide": 0.23250000178813934,
+        "expectedLongestSide": [
+          0.195,
+          0.27
+        ],
+        "lodTriangles": 160,
+        "lodSize": [
+          0.1732500046491623,
+          0.060750000178813934,
+          0.23250000178813934
+        ]
+      },
+      {
+        "key": "garment_sandals_small_flat",
+        "garment": "sandals",
+        "sizeClass": "small",
+        "state": "flat",
+        "node": "garment_sandals_small_flat",
+        "triangles": 384,
+        "parts": 1,
+        "vertices": 208,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.06352500308156017,
+            0,
+            -0.0852500025033951
+          ],
+          "max": [
+            0.06352500308156017,
+            0.03730603164826807,
+            0.0852500025033951
+          ]
+        },
+        "size": [
+          0.12705000616312034,
+          0.03730603164826807,
+          0.1705000050067902
+        ],
+        "longestSide": 0.1705000050067902,
+        "expectedLongestSide": [
+          0.143,
+          0.198
+        ],
+        "lodTriangles": 160,
+        "lodSize": [
+          0.12705000616312034,
+          0.035419075958708746,
+          0.1705000050067902
+        ]
+      },
+      {
+        "key": "garment_sandals_big_flat",
+        "garment": "sandals",
+        "sizeClass": "big",
+        "state": "flat",
+        "node": "garment_sandals_big_flat",
+        "triangles": 384,
+        "parts": 1,
+        "vertices": 208,
+        "materials": [
+          "laundry"
+        ],
+        "bounds": {
+          "min": [
+            -0.08662500232458115,
+            0,
+            -0.11625000089406967
+          ],
+          "max": [
+            0.08662500232458115,
+            0.05087186023592949,
+            0.11625000089406967
+          ]
+        },
+        "size": [
+          0.1732500046491623,
+          0.05087186023592949,
+          0.23250000178813934
+        ],
+        "longestSide": 0.23250000178813934,
+        "expectedLongestSide": [
+          0.195,
+          0.27
+        ],
+        "lodTriangles": 160,
+        "lodSize": [
+          0.1732500046491623,
+          0.04829873889684677,
+          0.23250000178813934
+        ]
+      }
+    ]
+  }
+}

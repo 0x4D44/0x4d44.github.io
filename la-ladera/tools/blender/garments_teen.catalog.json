@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 1,
+  "ageGroup": "teen",
+  "units": "metres",
+  "sizes": {
+    "small": {
+      "scale": 0.7,
+      "ages": [
+        12,
+        15
+      ]
+    },
+    "big": {
+      "scale": 0.9,
+      "ages": [
+        16,
+        19
+      ]
+    }
+  },
+  "dimensionBasis": "Width and length are original adult-reference dimensions before .7 or .9 uniform scaling. Garments are objects, not worn figure meshes. Age labels are art direction, not a sizing standard.",
+  "garments": [
+    {
+      "id": "tshirt_cream",
+      "label": "Plain cream T-shirt",
+      "shape": "tshirt",
+      "category": "everyday",
+      "width": 0.84,
+      "length": 0.71,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "jersey_cream"
+      ],
+      "defaultVariant": "jersey_cream",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "tshirt_teal",
+      "label": "Plain teal T-shirt",
+      "shape": "tshirt",
+      "category": "everyday",
+      "width": 0.84,
+      "length": 0.71,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "jersey_teal"
+      ],
+      "defaultVariant": "jersey_teal",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "tshirt_sun",
+      "label": "T-shirt with original sun print",
+      "shape": "tshirt",
+      "category": "everyday",
+      "width": 0.84,
+      "length": 0.71,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "sun_print"
+      ],
+      "defaultVariant": "sun_print",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "shorts_chino",
+      "label": "Everyday chino shorts",
+      "shape": "shorts",
+      "category": "everyday",
+      "width": 0.54,
+      "length": 0.43,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "canvas_sand",
+        "cotton_olive"
+      ],
+      "defaultVariant": "canvas_sand",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "crop_top_rib",
+      "label": "Ribbed sleeveless crop top",
+      "shape": "crop_top",
+      "category": "everyday",
+      "width": 0.67,
+      "length": 0.38,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "rib_coral"
+      ],
+      "defaultVariant": "rib_coral",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "crop_top_boxy",
+      "label": "Boxy short-sleeve crop top",
+      "shape": "boxy",
+      "category": "everyday",
+      "width": 0.84,
+      "length": 0.42,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "cotton_lavender"
+      ],
+      "defaultVariant": "cotton_lavender",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "lycra_shorts",
+      "label": "Stretch cycling shorts",
+      "shape": "cycle",
+      "category": "everyday",
+      "width": 0.38,
+      "length": 0.48,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "stretch_charcoal"
+      ],
+      "defaultVariant": "stretch_charcoal",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "lycra_trousers",
+      "label": "Stretch leggings",
+      "shape": "leggings",
+      "category": "everyday",
+      "width": 0.38,
+      "length": 0.97,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "stretch_charcoal"
+      ],
+      "defaultVariant": "stretch_charcoal",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "denim_shorts",
+      "label": "Denim shorts with stitched pockets",
+      "shape": "denim_shorts",
+      "category": "everyday",
+      "width": 0.54,
+      "length": 0.38,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "denim_indigo"
+      ],
+      "defaultVariant": "denim_indigo",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "denim_jeans",
+      "label": "Straight denim jeans",
+      "shape": "jeans",
+      "category": "everyday",
+      "width": 0.52,
+      "length": 1.02,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "denim_indigo"
+      ],
+      "defaultVariant": "denim_indigo",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "dress_short",
+      "label": "Short casual T-shirt dress",
+      "shape": "dress_short",
+      "category": "everyday",
+      "width": 0.7,
+      "length": 0.78,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "cotton_lavender",
+        "cotton_olive",
+        "cotton_rust"
+      ],
+      "defaultVariant": "cotton_lavender",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "dress_knee",
+      "label": "Knee-length everyday dress",
+      "shape": "dress_knee",
+      "category": "everyday",
+      "width": 0.72,
+      "length": 0.98,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "cotton_olive",
+        "cotton_lavender",
+        "cotton_rust"
+      ],
+      "defaultVariant": "cotton_olive",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "dress_midi",
+      "label": "Midi-length sleeveless dress",
+      "shape": "dress_midi",
+      "category": "everyday",
+      "width": 0.76,
+      "length": 1.18,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "cotton_rust",
+        "cotton_lavender",
+        "cotton_olive"
+      ],
+      "defaultVariant": "cotton_rust",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "dress_maxi",
+      "label": "Long casual sleeveless dress",
+      "shape": "dress_maxi",
+      "category": "everyday",
+      "width": 0.8,
+      "length": 1.38,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "jersey_teal",
+        "cotton_lavender",
+        "cotton_olive",
+        "cotton_rust"
+      ],
+      "defaultVariant": "jersey_teal",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "hoodie",
+      "label": "Hoodie with kangaroo pocket",
+      "shape": "hoodie",
+      "category": "everyday",
+      "width": 1.12,
+      "length": 0.76,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "fleece_navy",
+        "knit_grey"
+      ],
+      "defaultVariant": "fleece_navy",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "joggers",
+      "label": "Joggers with cuffed ankles",
+      "shape": "joggers",
+      "category": "everyday",
+      "width": 0.56,
+      "length": 1.02,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "knit_grey",
+        "fleece_navy"
+      ],
+      "defaultVariant": "knit_grey",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "school_jumper",
+      "label": "V-neck school jumper",
+      "shape": "jumper",
+      "category": "school",
+      "width": 1.08,
+      "length": 0.7,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "knit_grey",
+        "fleece_navy"
+      ],
+      "defaultVariant": "knit_grey",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "school_polo",
+      "label": "White school polo shirt",
+      "shape": "polo",
+      "category": "school",
+      "width": 0.84,
+      "length": 0.71,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "pique_white"
+      ],
+      "defaultVariant": "pique_white",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "school_trousers",
+      "label": "Navy school trousers",
+      "shape": "school_trousers",
+      "category": "school",
+      "width": 0.5,
+      "length": 1.02,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "twill_navy",
+        "knit_grey"
+      ],
+      "defaultVariant": "twill_navy",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "school_skirt",
+      "label": "Navy school skirt with pleats",
+      "shape": "skirt",
+      "category": "school",
+      "width": 0.68,
+      "length": 0.58,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "twill_navy",
+        "knit_grey"
+      ],
+      "defaultVariant": "twill_navy",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "socks_pair",
+      "label": "Pair of everyday socks",
+      "shape": "socks_pair",
+      "category": "everyday",
+      "width": 0.31,
+      "length": 0.4,
+      "states": [
+        "folded",
+        "flat"
+      ],
+      "variants": [
+        "jersey_cream"
+      ],
+      "defaultVariant": "jersey_cream",
+      "sourceIds": [
+        "original-teen-patterns"
+      ],
+      "notApplicable": {
+        "hung": "Only the requested folded pair and laid-flat pair are supplied."
+      }
+    },
+    {
+      "id": "cap",
+      "label": "Six-panel peaked cap",
+      "shape": "cap",
+      "category": "everyday",
+      "width": 0.22,
+      "length": 0.31,
+      "states": [
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "cotton_olive",
+        "canvas_sand"
+      ],
+      "defaultVariant": "cotton_olive",
+      "sourceIds": [
+        "original-teen-patterns"
+      ],
+      "notApplicable": {
+        "folded": "The structured crown and peaked visor retain their shape."
+      }
+    },
+    {
+      "id": "light_jacket",
+      "label": "Light jacket with centre zip",
+      "shape": "jacket",
+      "category": "everyday",
+      "width": 1.16,
+      "length": 0.76,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "cotton_olive",
+        "canvas_sand"
+      ],
+      "defaultVariant": "cotton_olive",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "underwear_briefs",
+      "label": "Plain full-coverage briefs",
+      "shape": "briefs",
+      "category": "everyday",
+      "width": 0.42,
+      "length": 0.3,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "jersey_cream"
+      ],
+      "defaultVariant": "jersey_cream",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "underwear_boxers",
+      "label": "Plain boxer shorts",
+      "shape": "boxers",
+      "category": "everyday",
+      "width": 0.5,
+      "length": 0.35,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "jersey_teal"
+      ],
+      "defaultVariant": "jersey_teal",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "swim_onepiece",
+      "label": "Plain one-piece swimsuit",
+      "shape": "swimsuit_onepiece",
+      "category": "everyday",
+      "width": 0.46,
+      "length": 0.76,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "swim_blue"
+      ],
+      "defaultVariant": "swim_blue",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "swim_shorts",
+      "label": "Plain swim shorts",
+      "shape": "swim_trunks",
+      "category": "everyday",
+      "width": 0.5,
+      "length": 0.43,
+      "states": [
+        "folded",
+        "hung",
+        "flat"
+      ],
+      "variants": [
+        "swim_blue"
+      ],
+      "defaultVariant": "swim_blue",
+      "sourceIds": [
+        "original-teen-patterns"
+      ]
+    },
+    {
+      "id": "school_shoes_pair",
+      "label": "Pair of plain closed school shoes",
+      "shape": "school_shoes",
+      "category": "footwear",
+      "width": 0.25,
+      "length": 0.29,
+      "states": [
+        "flat"
+      ],
+      "variants": [
+        "shoe_black"
+      ],
+      "defaultVariant": "shoe_black",
+      "sourceIds": [
+        "original-teen-patterns"
+      ],
+      "notApplicable": {
+        "folded": "Rigid soles do not fold.",
+        "hung": "Footwear is supplied as one resting pair."
+      }
+    },
+    {
+      "id": "sandals_pair",
+      "label": "Pair of everyday strap sandals",
+      "shape": "sandals",
+      "category": "footwear",
+      "width": 0.25,
+      "length": 0.29,
+      "states": [
+        "flat"
+      ],
+      "variants": [
+        "canvas_sand"
+      ],
+      "defaultVariant": "canvas_sand",
+      "sourceIds": [
+        "original-teen-patterns"
+      ],
+      "notApplicable": {
+        "folded": "Rigid soles do not fold.",
+        "hung": "Footwear is supplied as one resting pair."
+      }
+    }
+  ]
+}

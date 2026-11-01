@@ -1,0 +1,121 @@
+{
+  "base": "017eab90a749d317f181872aa620b5facaea06f8",
+  "adultProtectedFiles": 15,
+  "adultChangedFiles": 0,
+  "adultGeneratedPrefixUnchanged": true,
+  "adultFiles": [
+    {
+      "path": "la-ladera/assets/models/garments/assortments.json",
+      "unchanged": true,
+      "sha256": "670a2b3d9aca725750c4910618cca94b57021a436017a837d23671a4659c7464"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_flat.glb",
+      "unchanged": true,
+      "sha256": "c746334409f06244b8ac429ac23865515d7e52c47faa90787c6a6cb6b5c45580"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_flat_lod.glb",
+      "unchanged": true,
+      "sha256": "775484694bc57d6c8601d1bc933f067f83bd42fd74844b47abefede74d29a6dc"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_folded.glb",
+      "unchanged": true,
+      "sha256": "df127642c10af9d1a9b2491381c1ee38d9b54d22398247123a3cc80a33f97bd9"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_folded_lod.glb",
+      "unchanged": true,
+      "sha256": "b61a66966f7b5e66784843b4273b08aa1a55d368a4bb8466400f9b33e8f0c180"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_hung.glb",
+      "unchanged": true,
+      "sha256": "f272909d6f3c0e7b9d2b28d561cd3c738763df600f3dc7d466a0889b48db4cbb"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_hung_lod.glb",
+      "unchanged": true,
+      "sha256": "b7c16f1a3d64f3c6084a52426a762ce51487dcc98a7d875d8cd8bcd24d00d453"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/palette.json",
+      "unchanged": true,
+      "sha256": "b10e6788aa16b6b8fdbef279aa471a6903478f6fee3f8b523b4abfae88c30213"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/prints.png",
+      "unchanged": true,
+      "sha256": "505f2f691eba28343aa00afc5a89836aedf98713b42e68f8400928b014935827"
+    },
+    {
+      "path": "la-ladera/assets/models/manifest.garments.json",
+      "unchanged": true,
+      "sha256": "e747b9385eba8be601bb937a18e3db8ed887c65d1b115e6af3babdc4af7852f2"
+    },
+    {
+      "path": "la-ladera/tools/blender/garments.catalog.json",
+      "unchanged": true,
+      "sha256": "09b4cc2be009c9b9e06172654a93d315a402fee0b1d59fd55c88894d6465f845"
+    },
+    {
+      "path": "la-ladera/tests/garments.test.mjs",
+      "unchanged": true,
+      "sha256": "bcf487ae35c876637ee04a626049ea5066a07b5523efad76d2326958e2fbc338"
+    },
+    {
+      "path": "la-ladera/tests/interiors-garments.test.mjs",
+      "unchanged": true,
+      "sha256": "13422ee569ae805e1cc12691e9c06784d6651731c1ca48181da291cccf96e3d3"
+    },
+    {
+      "path": "la-ladera/tests/garments-visual.mjs",
+      "unchanged": true,
+      "sha256": "fb371e4c8a6f939bb4a77b8d492067ae70c2325ce1519fd9942de5b5826db433"
+    },
+    {
+      "path": "la-ladera/tests/garments-fallback.mjs",
+      "unchanged": true,
+      "sha256": "6f6547d4952e75b97c86ca04d8b70c5b9b9a790011709c973e17aa18c63182a5"
+    }
+  ],
+  "sourceAssets": [
+    {
+      "path": "la-ladera/assets/models/garments/garments_child.glb",
+      "sourceCommit": "f0f91d2567b28d7f9bf82bdd0ce82a0d90080ca2",
+      "unchanged": true,
+      "sha256": "1c6c3c7c30cff154cc73f450e9efb25f2af279f2f2fd871fc619267d3ff1dfb2"
+    },
+    {
+      "path": "la-ladera/assets/models/manifest.garments_child.json",
+      "sourceCommit": "f0f91d2567b28d7f9bf82bdd0ce82a0d90080ca2",
+      "unchanged": true,
+      "sha256": "7fb41efca5a233702342ce71609db8294b3769354098e27f397d5a8dd5fbfc8d"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/garments_teen.glb",
+      "sourceCommit": "18a37a7e29888cecc733e16bcd623b21c599916e",
+      "unchanged": true,
+      "sha256": "c081a8b821a187e97634ff0d07bc5faf6813bed9faf4771c10907a1c41726f35"
+    },
+    {
+      "path": "la-ladera/assets/models/manifest.garments_teen.json",
+      "sourceCommit": "18a37a7e29888cecc733e16bcd623b21c599916e",
+      "unchanged": true,
+      "sha256": "31479045fb49755317fffeb8809b662b4023ba2fd73435e5cc7fda8e55f725d6"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/teen/palette.json",
+      "sourceCommit": "18a37a7e29888cecc733e16bcd623b21c599916e",
+      "unchanged": true,
+      "sha256": "87fdd2580ac08732ec308056fa50207950ee3bde9ad1f0ca5553ee9d3fd3b5c2"
+    },
+    {
+      "path": "la-ladera/assets/models/garments/teen/fabrics.png",
+      "sourceCommit": "18a37a7e29888cecc733e16bcd623b21c599916e",
+      "unchanged": true,
+      "sha256": "ca247ef2b7c7db9e60aca366d1eaf900d3c5f1b46459810e27347799254c1c99"
+    }
+  ]
+}

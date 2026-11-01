@@ -1,0 +1,19 @@
+PASS + KILLED 1/6 healthy --all --complete reports all three complete libraries
+  PASS garments (complete): 67 states, 23 garments, 1840059/2000000 bytes, max 772/212 high/LOD triangles
+  PASS garments_child (complete): 90 states, 17 garments, 614128/700000 bytes, max 414/160 high/LOD triangles
+  PASS garments_teen (complete): 162 states, 29 garments, 679737/700000 bytes, max 232/96 high/LOD triangles
+PASS + KILLED 2/6 adult metadata damage fails only adult while all three results remain visible
+  FAIL garments (complete): 67 states, 23 garments, 1777039/2000000 bytes, max 772/212 high/LOD triangles
+  PASS garments_child (complete): 90 states, 17 garments, 614128/700000 bytes, max 414/160 high/LOD triangles
+  PASS garments_teen (complete): 162 states, 29 garments, 679737/700000 bytes, max 232/96 high/LOD triangles
+PASS + KILLED 3/6 child metadata damage fails only child while all three results remain visible
+  PASS garments (complete): 67 states, 23 garments, 1840059/2000000 bytes, max 772/212 high/LOD triangles
+  FAIL garments_child (complete): 90 states, 17 garments, 613624/700000 bytes, max 414/160 high/LOD triangles
+  PASS garments_teen (complete): 162 states, 29 garments, 679737/700000 bytes, max 232/96 high/LOD triangles
+PASS + KILLED 4/6 teen metadata damage fails only teen while all three results remain visible
+  PASS garments (complete): 67 states, 23 garments, 1840059/2000000 bytes, max 772/212 high/LOD triangles
+  PASS garments_child (complete): 90 states, 17 garments, 614128/700000 bytes, max 414/160 high/LOD triangles
+  FAIL garments_teen (complete): 162 states, 29 garments, 679089/700000 bytes, max 232/96 high/LOD triangles
+PASS + KILLED 5/6 conflicting or repeated target flags are rejected
+PASS + KILLED 6/6 --all rejects a single-set --catalogue override
+Validator CLI audit v24.22.1: 6/6 contracts passed; 6/6 mutations killed; source assets untouched.

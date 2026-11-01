@@ -1,0 +1,33 @@
+KILLED 01/32 child: every required everyday garment key exists in both sizes and every applicable state
+KILLED 02/32 child: every piece stays inside its independent real dimension range in metres, including LOD
+KILLED 03/32 child: every piece stays inside its actual 800-triangle or 240-triangle LOD budget
+KILLED 04/32 child: the generated child GLB and child manifest together stay within 700000 bytes
+KILLED 05/32 child: small and big assets carry the declared age bands and approximately 55/75 percent sizing
+KILLED 06/32 child: the child set reuses the adult fabric palette and atlas without embedded textures
+KILLED 07/32 child: the child library remains an object-only companion registered exactly once in the main manifest
+KILLED 08/32 child: the checked-in child library passes the complete validator with actual generated files
+KILLED 09/32 child: an oversized binary mesh fails the real-size gate even after its metadata is refreshed
+KILLED 10/32 child: an undersized binary mesh fails the lower real-size bound with accurate metadata
+KILLED 11/32 child: an extra valid high-detail triangle batch fails the 800-triangle gate
+KILLED 12/32 child: an extra valid LOD triangle batch fails the 240-triangle gate
+KILLED 13/32 child: a missing required key fails independently of the remaining GLB geometry
+KILLED 14/32 child: valid extra GLB payload fails the combined file-size gate
+KILLED 15/32 child: child budget limits cannot be relaxed by editing manifest data
+KILLED 16/32 child: declared child scale and age bands cannot contradict the fixed size contract
+KILLED 17/32 child: adult validation accepts its exact child companion but rejects an extra child-prefixed GLB
+KILLED 18/32 teen: teen acceptance: every required key and LOD exists in the generated GLB
+KILLED 19/32 teen: teen acceptance: every piece is inside its real dimension range
+KILLED 20/32 teen: teen acceptance: every piece stays within its high and LOD triangle budgets
+KILLED 21/32 teen: teen acceptance: complete generated payload stays under 700000 bytes
+KILLED 22/32 teen: the checked-in teen library satisfies the extended independent validator
+KILLED 23/32 teen: dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+KILLED 24/32 teen: removing a real key makes the key acceptance test fail
+KILLED 25/32 teen: oversize real high piece makes the size acceptance test fail
+KILLED 26/32 teen: oversize real LOD piece makes the size acceptance test fail
+KILLED 27/32 teen: extra real high triangle batches make the triangle acceptance test fail
+KILLED 28/32 teen: extra real LOD triangle batches make the triangle acceptance test fail
+KILLED 29/32 teen: extra payload makes the same byte-budget acceptance test fail
+KILLED 30/32 teen: mutable catalogue and manifest cannot relax independent dimensions or budgets
+KILLED 31/32 teen: unlisted teen GLBs are rejected instead of hiding inside the payload budget
+KILLED 32/32 teen: malformed variant lists are reported without aborting validation
+Mutation audit v24.22.1: 32/32 killed; 17 child + 15 teen; 0 survived.
