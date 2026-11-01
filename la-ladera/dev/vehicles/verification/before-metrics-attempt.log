@@ -1,0 +1,11 @@
+[metrics] launching headless Chrome
+[metrics] measuring blank-page cadence
+[metrics] booting game
+[metrics] boot complete: 44.5 s
+[metrics] view spawn: positioning and measuring
+[metrics] view spawn: simulation ready; sampling frame costs
+[metrics] view spawn: 2232627 triangles, 1094 calls, 3453.72 ms uncapped
+[metrics] view spawn: capturing page
+[metrics] view spawn: capture complete
+[metrics] view ridge-looking-south: positioning and measuring
+[metrics] view ridge-looking-south: simulation ready; sampling frame costs

@@ -1,0 +1,105 @@
+{
+  "models": [
+    {
+      "key": "vehicle_hatchback_a",
+      "triangles": 4878,
+      "far": 508,
+      "footprint": [
+        1.75,
+        3.9
+      ]
+    },
+    {
+      "key": "vehicle_hatchback_b",
+      "triangles": 4880,
+      "far": 508,
+      "footprint": [
+        1.75,
+        3.9
+      ]
+    },
+    {
+      "key": "vehicle_pickup",
+      "triangles": 3756,
+      "far": 530,
+      "footprint": [
+        1.86,
+        4.7
+      ]
+    },
+    {
+      "key": "vehicle_chiva",
+      "triangles": 5500,
+      "far": 600,
+      "footprint": [
+        2.2,
+        6.6
+      ]
+    },
+    {
+      "key": "vehicle_colectivo",
+      "triangles": 5188,
+      "far": 540,
+      "footprint": [
+        2.08,
+        5.8
+      ]
+    },
+    {
+      "key": "vehicle_motorbike",
+      "triangles": 4968,
+      "far": 464,
+      "footprint": [
+        0.72,
+        1.95
+      ]
+    },
+    {
+      "key": "vehicle_tricycle",
+      "triangles": 5106,
+      "far": 544,
+      "footprint": [
+        1.28,
+        2.5
+      ]
+    },
+    {
+      "key": "vehicle_handcart",
+      "triangles": 3332,
+      "far": 340,
+      "footprint": [
+        1.24,
+        2.1
+      ]
+    },
+    {
+      "key": "vehicle_bicycle",
+      "triangles": 3364,
+      "far": 332,
+      "footprint": [
+        0.54,
+        1.74
+      ]
+    },
+    {
+      "key": "vehicle_rubbish_cart",
+      "triangles": 1780,
+      "far": 264,
+      "footprint": [
+        1.18,
+        1.7
+      ]
+    }
+  ],
+  "diagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x2dc4000cea00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:40327/la-ladera/index.html?autostart&manual&quality=high&audio=0",
+      "[warning] [.WebGL-0x2dc4000cea00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:40327/la-ladera/index.html?autostart&manual&quality=high&audio=0",
+      "[warning] [.WebGL-0x2dc4000cea00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:40327/la-ladera/index.html?autostart&manual&quality=high&audio=0",
+      "[warning] [.WebGL-0x2dc401e25c00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:40327/la-ladera/index.html?autostart&manual&quality=high&audio=0"
+    ]
+  }
+}

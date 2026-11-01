@@ -1,0 +1,11 @@
+PASS vehicles: 10 designs + 10 far LODs; 2,501,472 / 3,000,000 bytes including atlas and manifest
+  vehicle_hatchback_a: 4878 / 508 triangles, 4 wheel pivots
+  vehicle_hatchback_b: 4880 / 508 triangles, 4 wheel pivots
+  vehicle_pickup: 3756 / 530 triangles, 4 wheel pivots
+  vehicle_chiva: 5500 / 600 triangles, 4 wheel pivots
+  vehicle_colectivo: 5188 / 540 triangles, 4 wheel pivots
+  vehicle_motorbike: 4968 / 464 triangles, 2 wheel pivots
+  vehicle_tricycle: 5106 / 544 triangles, 3 wheel pivots
+  vehicle_handcart: 3332 / 340 triangles, 2 wheel pivots
+  vehicle_bicycle: 3364 / 332 triangles, 2 wheel pivots
+  vehicle_rubbish_cart: 1780 / 264 triangles, 2 wheel pivots

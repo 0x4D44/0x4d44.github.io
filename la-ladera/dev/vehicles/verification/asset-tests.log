@@ -1,0 +1,24 @@
+✔ complete vehicle library ships ten distinct designs, separate wheels, real far LODs and one shared atlas below 3 MB (198.455805ms)
+✔ complete mode rejects empty metadata and missing generated GLBs (118.903775ms)
+✔ partial output cannot be relabelled as the complete requested catalogue (140.243607ms)
+✔ complete mode rejects a manifest that lost its actual far-LOD root (152.052097ms)
+✔ GLB parser rejects a truncated file even when its declared length is forged (2.092755ms)
+✔ actual binary NaN positions fail despite plausible metadata, hashes and accessor bounds (19.587866ms)
+✔ accessors may not read beyond their buffer view or index vertices that do not exist (55.795982ms)
+✔ forged POSITION min/max cannot conceal a displaced vertex outside the street footprint (33.829446ms)
+✔ library materials and texture-free GLB contract are enforced independently of file hashes (49.343243ms)
+✔ wheels cannot be merely names merged into the body or pivots at the ground (160.831356ms)
+✔ truthful metadata does not excuse a far LOD that exceeds 600 triangles (128.476413ms)
+✔ paint UVs must select one padded tile instead of bleeding across the atlas (26.253059ms)
+✔ a vertical atlas reversal cannot silently turn a catalogue paint into a different tile (112.332177ms)
+✔ paint PNG corruption and missing atlas bytes are detected (89.481211ms)
+✔ unregistered generated payload counts toward the strict whole-library budget (89.106258ms)
+✔ published library registration, byte hashes and catalogue hash cannot silently become stale (167.845329ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1561.588477

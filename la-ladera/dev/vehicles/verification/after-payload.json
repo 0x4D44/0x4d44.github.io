@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "failures": [],
+  "budgets": [
+    {
+      "name": "textures",
+      "mb": 12.41,
+      "max": 24
+    },
+    {
+      "name": "models",
+      "mb": 23.47,
+      "max": 32
+    },
+    {
+      "name": "models/people",
+      "mb": 8.95,
+      "max": 14
+    },
+    {
+      "name": "models/furniture",
+      "mb": 5.15,
+      "max": 10
+    },
+    {
+      "name": "models/world",
+      "mb": 0,
+      "max": 6
+    },
+    {
+      "name": "models/arch",
+      "mb": 0,
+      "max": 2
+    },
+    {
+      "name": "shipped total (excl. vendor,dev,labs,tests,tools)",
+      "mb": 38.65,
+      "max": 150
+    },
+    {
+      "name": "estimated GPU texture memory",
+      "mb": 251.67,
+      "max": 800
+    }
+  ],
+  "largest": [
+    "6.01 MB  assets/models/people/people.glb",
+    "2.28 MB  assets/textures/foliage_cards.png",
+    "2.13 MB  assets/models/furniture/furn_shop.glb",
+    "1.89 MB  assets/models/people/people_lod.glb",
+    "1.08 MB  assets/models/vehicles/vehicles_road.glb",
+    "1.08 MB  assets/models/furniture/furn_details.glb",
+    "1.03 MB  assets/models/furniture/furn_living.glb",
+    "0.92 MB  assets/models/furniture/furn_home.glb"
+  ],
+  "textureFiles": 104,
+  "modelFiles": 81,
+  "unreadableImageSizes": []
+}

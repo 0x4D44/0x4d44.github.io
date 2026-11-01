@@ -1,0 +1,923 @@
+{
+  "viewport": [
+    1280,
+    720
+  ],
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "views": [
+    {
+      "id": "calle-del-sol",
+      "street": "Calle del Sol",
+      "camera": [
+        44.72,
+        2.030506166219711,
+        83.3
+      ],
+      "triangles": 1829932,
+      "drawCalls": 835,
+      "libraryTriangles": 46076,
+      "libraryCalls": 50,
+      "quality": "high",
+      "vehicles": {
+        "placed": 51,
+        "near": 8,
+        "far": 34,
+        "culled": 9,
+        "triangles": 49270,
+        "batches": 149,
+        "byKey": {
+          "vehicle_hatchback_b": 4,
+          "vehicle_hatchback_a": 3,
+          "vehicle_chiva": 1,
+          "vehicle_pickup": 1,
+          "vehicle_colectivo": 1,
+          "vehicle_tricycle": 1,
+          "vehicle_handcart": 1,
+          "vehicle_rubbish_cart": 1,
+          "vehicle_motorbike": 31,
+          "vehicle_bicycle": 7
+        }
+      },
+      "image": "calle-del-sol.jpg"
+    },
+    {
+      "id": "calle-del-comercio",
+      "street": "Calle del Comercio",
+      "camera": [
+        7.7205934287980185,
+        1.9715808382679054,
+        87.2
+      ],
+      "triangles": 1438895,
+      "drawCalls": 630,
+      "libraryTriangles": 31776,
+      "libraryCalls": 30,
+      "quality": "high",
+      "vehicles": {
+        "placed": 51,
+        "near": 4,
+        "far": 40,
+        "culled": 7,
+        "triangles": 36250,
+        "batches": 149,
+        "byKey": {
+          "vehicle_hatchback_b": 4,
+          "vehicle_hatchback_a": 3,
+          "vehicle_chiva": 1,
+          "vehicle_pickup": 1,
+          "vehicle_colectivo": 1,
+          "vehicle_tricycle": 1,
+          "vehicle_handcart": 1,
+          "vehicle_rubbish_cart": 1,
+          "vehicle_motorbike": 31,
+          "vehicle_bicycle": 7
+        }
+      },
+      "image": "calle-del-comercio.jpg"
+    },
+    {
+      "id": "calle-de-los-almendros",
+      "street": "Calle de los Almendros",
+      "camera": [
+        8.801781434752044,
+        8.541690624735294,
+        39.296
+      ],
+      "triangles": 1806978,
+      "drawCalls": 872,
+      "libraryTriangles": 25318,
+      "libraryCalls": 39,
+      "quality": "high",
+      "vehicles": {
+        "placed": 51,
+        "near": 3,
+        "far": 48,
+        "culled": 0,
+        "triangles": 34990,
+        "batches": 149,
+        "byKey": {
+          "vehicle_hatchback_b": 4,
+          "vehicle_hatchback_a": 3,
+          "vehicle_chiva": 1,
+          "vehicle_pickup": 1,
+          "vehicle_colectivo": 1,
+          "vehicle_tricycle": 1,
+          "vehicle_handcart": 1,
+          "vehicle_rubbish_cart": 1,
+          "vehicle_motorbike": 31,
+          "vehicle_bicycle": 7
+        }
+      },
+      "image": "calle-de-los-almendros.jpg"
+    }
+  ],
+  "failures": [],
+  "query": "autostart&manual&hour=17.2&quality=high&audio=0",
+  "loaded": {
+    "files": 2,
+    "paths": [
+      "vehicles/vehicles_road.glb",
+      "vehicles/vehicles_street.glb"
+    ],
+    "failed": [],
+    "assets": 10,
+    "keys": [
+      "vehicle_hatchback_a",
+      "vehicle_hatchback_b",
+      "vehicle_pickup",
+      "vehicle_chiva",
+      "vehicle_colectivo",
+      "vehicle_motorbike",
+      "vehicle_tricycle",
+      "vehicle_handcart",
+      "vehicle_bicycle",
+      "vehicle_rubbish_cart"
+    ],
+    "rejected": {}
+  },
+  "placements": [
+    {
+      "key": "vehicle_hatchback_b",
+      "x": -0.9811597251247428,
+      "y": 20.83967424124996,
+      "z": -17.644729937652176,
+      "yaw": 1.3279519853263675,
+      "pitch": -0.04048903232532995,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 6,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_hatchback_a",
+      "x": -17.071614812318536,
+      "y": 27.578619972774252,
+      "z": -51.0257639790092,
+      "yaw": 1.716394368208597,
+      "pitch": 0.01730123137795545,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 6,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_hatchback_b",
+      "x": 19.35937270522288,
+      "y": 12.935946804434238,
+      "z": 12.683978231886186,
+      "yaw": 4.935094554598487,
+      "pitch": -0.06683265441905392,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 6,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_hatchback_b",
+      "x": 56.32379616711458,
+      "y": 16.541962955509803,
+      "z": -6.848862680460348,
+      "yaw": -2.556697589817153,
+      "pitch": 0.08153122256335686,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 2,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_hatchback_a",
+      "x": -13.50904856872574,
+      "y": 21.32869147410686,
+      "z": -20.23670693977652,
+      "yaw": 1.3822120787098584,
+      "pitch": -0.03563680574277489,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 6,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_hatchback_a",
+      "x": -4.246895508828577,
+      "y": 27.836959632980452,
+      "z": -53.16321719625753,
+      "yaw": 1.704931744489464,
+      "pitch": 0.021265577396602203,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 12,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_hatchback_b",
+      "x": 6.363487858304117,
+      "y": 12.00973414888867,
+      "z": 20.14153818381419,
+      "yaw": 1.8000553811868074,
+      "pitch": 0.060589004051064634,
+      "footprint": [
+        1.75,
+        3.9
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_chiva",
+      "x": 45.687321706180605,
+      "y": 0.5757620202132638,
+      "z": 74.63845878015617,
+      "yaw": -2.4834950155925464,
+      "pitch": 0.014264381516215008,
+      "footprint": [
+        2.2,
+        6.6
+      ],
+      "street": null,
+      "paint": 5,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_pickup",
+      "x": -54.83050811091962,
+      "y": 7.443387953041634,
+      "z": 36.15412431285823,
+      "yaw": 2.224503702069305,
+      "pitch": 0.14090918926777884,
+      "footprint": [
+        1.86,
+        4.7
+      ],
+      "street": "S1",
+      "paint": 13,
+      "source": "addition"
+    },
+    {
+      "key": "vehicle_colectivo",
+      "x": 48.28689696447608,
+      "y": 14.826341196490889,
+      "z": 5.133971279191052,
+      "yaw": 4.9812219027314155,
+      "pitch": -0.11485634724953342,
+      "footprint": [
+        2.08,
+        5.8
+      ],
+      "street": "S1",
+      "paint": 12,
+      "source": "addition"
+    },
+    {
+      "key": "vehicle_tricycle",
+      "x": -45.48860707040876,
+      "y": 0.3345784255276823,
+      "z": 89.54,
+      "yaw": 1.5707963267948966,
+      "pitch": 0.003933393624240919,
+      "footprint": [
+        1.28,
+        2.5
+      ],
+      "street": "S2",
+      "paint": 14,
+      "source": "addition"
+    },
+    {
+      "key": "vehicle_handcart",
+      "x": 3.32059342879802,
+      "y": 0.36828325168111353,
+      "z": 89.56,
+      "yaw": 1.5707963267948966,
+      "pitch": 0.0006612632747279157,
+      "footprint": [
+        1.24,
+        2.1
+      ],
+      "street": "S2",
+      "paint": 1,
+      "source": "addition"
+    },
+    {
+      "key": "vehicle_rubbish_cart",
+      "x": 37.6964434850961,
+      "y": 0.39801492543812117,
+      "z": 86.41,
+      "yaw": -1.5707963267948966,
+      "pitch": 0.008072946930479014,
+      "footprint": [
+        1.18,
+        1.7
+      ],
+      "street": "S2",
+      "paint": 12,
+      "source": "addition"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 49.8499906253917,
+      "y": 0.5453638524669157,
+      "z": 82.55215159340786,
+      "yaw": -0.26346310467826917,
+      "pitch": 0,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 7,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": 36.28532620914328,
+      "y": 0.4944639249998531,
+      "z": 90.34999260887183,
+      "yaw": -1.5142068413970131,
+      "pitch": 0,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -40.02017777030634,
+      "y": 23.096595336996767,
+      "z": -24.292117805417675,
+      "yaw": -1.8233816888013386,
+      "pitch": 0.09387895929510541,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 18.743015752079167,
+      "y": 1.186716544342665,
+      "z": 70.91807350701927,
+      "yaw": -1.8788029382649376,
+      "pitch": 0.026539638380363762,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": 7.94926200207343,
+      "y": 20.617178050764103,
+      "z": -21.515657870768447,
+      "yaw": 1.267840955861616,
+      "pitch": -0.03941771686401061,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 13,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": 50.698002058445944,
+      "y": 16.887669798078356,
+      "z": -4.865948751436786,
+      "yaw": -2.2221327992943,
+      "pitch": 0.17283873205391082,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 3,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 41.76433210367263,
+      "y": 0.640323590318673,
+      "z": 78.90989736910981,
+      "yaw": 0.3708996937955573,
+      "pitch": -0.009130875946674517,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 12,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -54.376519387481,
+      "y": 26.496625532819458,
+      "z": -42.926518802830344,
+      "yaw": 5.363616884236936,
+      "pitch": -0.1573655438095384,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": -10.88019969436325,
+      "y": 2.6595119260834617,
+      "z": 56.44450401657144,
+      "yaw": -1.8399418418008462,
+      "pitch": 0.05584104408050362,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 27.49804014154907,
+      "y": 0.9641619799639847,
+      "z": 73.06553231953075,
+      "yaw": 1.4423789656919894,
+      "pitch": -0.03277671432546469,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 13,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 42.5,
+      "y": 0.5177435802228932,
+      "z": 83.9379441037818,
+      "yaw": 3.0288322079652032,
+      "pitch": 0.04450558959478475,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 2,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 48.32459529506611,
+      "y": 17.308946768835956,
+      "z": -6.010705477506906,
+      "yaw": 1.1635479440430259,
+      "pitch": -0.11742839544044321,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 23.426955180761816,
+      "y": 1.0611363679141326,
+      "z": 72.06696431028104,
+      "yaw": -1.8832396394844673,
+      "pitch": 0.025726045087883426,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 13,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -61.75120568569824,
+      "y": 6.2501531486451105,
+      "z": 47.322684538369,
+      "yaw": -2.471549348732145,
+      "pitch": 0.07024135325090042,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 7,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 4.521779298522127,
+      "y": 1.7380314424453949,
+      "z": 67.42984569765622,
+      "yaw": 1.4449219989602957,
+      "pitch": -0.046815469815417746,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -3.1983185829779477,
+      "y": 2.221135084792188,
+      "z": 58.328739006156525,
+      "yaw": -1.6927609327148239,
+      "pitch": 0.04524857506759157,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -14.373524822539306,
+      "y": 2.8536135705906935,
+      "z": 55.587650683245215,
+      "yaw": 1.4046521269728829,
+      "pitch": -0.05606785059211116,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": 49.5,
+      "y": 0.45311973775693604,
+      "z": 87.13903583753444,
+      "yaw": 6.331183632743554,
+      "pitch": -0.014366547516347375,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 3,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -56.456846003616164,
+      "y": 24.69205675286284,
+      "z": -28.0427315455717,
+      "yaw": 1.1212305664098265,
+      "pitch": -0.07101882966416864,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -16.840430085416056,
+      "y": 10.911812794770778,
+      "z": 19.981654254023397,
+      "yaw": 1.8880597884734516,
+      "pitch": 0.05161487263185087,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -30.537219086661935,
+      "y": 0.4862300053390939,
+      "z": 90,
+      "yaw": 1.5630362714317183,
+      "pitch": 0.0023286234091015436,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -14.640579006634653,
+      "y": 0.48143469497717467,
+      "z": 90,
+      "yaw": -1.6272501482490938,
+      "pitch": -0.0052800834133808604,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 6,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 0.6650357050821185,
+      "y": 0.4657727236443344,
+      "z": 90,
+      "yaw": -1.672397944838975,
+      "pitch": -0.012039563891455253,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -39.43683983525261,
+      "y": 0.4622295682422811,
+      "z": 90,
+      "yaw": -1.5689661086772124,
+      "pitch": -0.003583010687704761,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 2,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -30.74840759811923,
+      "y": 0.48593458188055394,
+      "z": 86,
+      "yaw": -1.5393166802686196,
+      "pitch": -0.005181314482119118,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -57.50445383042097,
+      "y": 0.4081132289640048,
+      "z": 90,
+      "yaw": 1.6217419266563395,
+      "pitch": -0.005157535843287348,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 15,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": -48.32092951098457,
+      "y": 0.4272951216440394,
+      "z": 90,
+      "yaw": 1.6249509198453764,
+      "pitch": -0.0029628139873409923,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 1,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -19.194463741965592,
+      "y": 0.48683317206926957,
+      "z": 90,
+      "yaw": -1.4627256243352333,
+      "pitch": 0.013632744692805517,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 15,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 36.73794410272967,
+      "y": 6.874296192428526,
+      "z": 41.7,
+      "yaw": -1.4915358351964991,
+      "pitch": 0.0021429218631597515,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 4.001781434752047,
+      "y": 6.775453908739238,
+      "z": 41.7,
+      "yaw": -1.590427299295787,
+      "pitch": -0.04240173589713678,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 7,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_bicycle",
+      "x": 8.513903891318478,
+      "y": 6.917013537113666,
+      "z": 41.7,
+      "yaw": 1.6165700770404676,
+      "pitch": 0.022669944773219073,
+      "footprint": [
+        0.54,
+        1.74
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -27.548402333827827,
+      "y": 7.4700728792691375,
+      "z": 35.91867836735732,
+      "yaw": -1.842322049739094,
+      "pitch": 0.041800646363861924,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -16.731777155926235,
+      "y": 6.792168422612737,
+      "z": 41.05697975189695,
+      "yaw": 1.3167365466879966,
+      "pitch": -0.0893256809359805,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 2,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -34.74382479473348,
+      "y": 16.90625689239673,
+      "z": -4.266144857440349,
+      "yaw": -1.5481811000246135,
+      "pitch": 0.032336603451284536,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 2,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": 3.2958885057556886,
+      "y": 16.256703603995614,
+      "z": 0.7833344972508363,
+      "yaw": 1.5091723265203494,
+      "pitch": -0.008396591232579928,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 15,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -22.939729839371577,
+      "y": 16.58531542116491,
+      "z": -3.2824702778268606,
+      "yaw": -1.6658929214279676,
+      "pitch": 0.020534651279896805,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 2,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -25.116650849861866,
+      "y": 25.601185967488053,
+      "z": -41.75733160616314,
+      "yaw": 1.6198306576708918,
+      "pitch": -0.007740403465291529,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 4,
+      "source": "replacement"
+    },
+    {
+      "key": "vehicle_motorbike",
+      "x": -15.149945532187969,
+      "y": 25.55081817459821,
+      "z": -41.25899634027945,
+      "yaw": -1.616825214225651,
+      "pitch": 0.002733975783372974,
+      "footprint": [
+        0.72,
+        1.95
+      ],
+      "street": null,
+      "paint": 0,
+      "source": "replacement"
+    }
+  ],
+  "console": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": [
+      "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+      "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0"
+    ]
+  },
+  "buildErrors": [],
+  "captureWarnings": [
+    "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0",
+    "[warning] [.WebGL-0x5cc00b86200]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:44341/la-ladera/index.html?autostart&manual&hour=17.2&quality=high&audio=0"
+  ]
+}

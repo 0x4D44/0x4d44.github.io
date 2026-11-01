@@ -8,6 +8,7 @@
 //            ?skiphidden=0 (update the matrices of hidden interiors and unseen people too: debugging only; engine/visibility.js)
 //            ?castall (floors and terrain tiles cast into the sun's shadow map again, as before core/shadowpolicy.js: before / after only)
 //            ?clutter=0 (original procedural exterior props; useful for comparisons and the asset fallback check)
+//            ?vehicles=0 (original procedural parked vehicles, for fallback and before/after checks)
 //            ?skip=animals (the barrio without its dogs, cats, birds, hens and mule: js/animals/); skip=people leaves them out too, they follow the people's graph
 import { createContext } from './core/ctx.js';
 import { BootBar, STAGES, CREEP_TICK_MS } from './core/bootbar.js';
@@ -21,6 +22,7 @@ import { generatePlan } from './world/plan.js';
 import { buildWorld } from './world/terrain.js';
 import { buildProps } from './world/props.js';
 import { loadClutter } from './world/clutter.js';
+import { loadVehicles } from './world/vehicle-library.js';
 import { urbanDensity } from './world/periphery.js';
 import { planBuilding, buildBuilding } from './arch/index.js';
 import { loadInteriorAssets, furnishBuilding, buildInterior } from './interiors/index.js';
@@ -33,7 +35,7 @@ const opts = {
   seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
   debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'),
-  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0',
+  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0', vehicles: q.get('vehicles') !== '0',
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
@@ -129,7 +131,7 @@ async function boot() {
   try {
     await stage('engine', () => { initEngine(ctx); if (!ctx.renderer) throw new NoGL('no renderer'); });
     await stage('materials', () => ctx.matlib.init());
-    await stage('assets', async () => { await ctx.assets.init(); await loadClutter(ctx); });
+    await stage('assets', async () => { await ctx.assets.init(); await Promise.all([loadClutter(ctx), loadVehicles(ctx)]); });
     await stage('plan', () => {
       ctx.plan = generatePlan(ctx);
       ctx.physics.setTerrain(ctx.plan.heightAt);
@@ -151,6 +153,7 @@ async function boot() {
     await stage('props', () => buildProps(ctx));
     await stage('flush', () => {
       ctx.clutter?.finalize();
+      ctx.vehicleLibrary?.finalize();
       ctx.batch.flushAll();
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
     });
