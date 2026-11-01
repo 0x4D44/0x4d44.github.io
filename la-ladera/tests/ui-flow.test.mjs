@@ -135,6 +135,30 @@ test('losing the pointer lock (the browser handles Esc that way) pauses', async 
   assert.equal((await S()).mode, 'play');
 });
 
+// Arthur: when the mouse capture is lost, a left click over the window must take it back (it only worked on the Continuar button, and after three refused requests not at all).
+test('a click on the pause card\'s blank backdrop takes the pointer back; a click on one of its buttons does not resume', async (t) => {
+  t.after(backToPlay);
+  await page.eval('document.exitPointerLock()'); await tick(120);
+  assert.equal((await S()).mode, 'paused');
+  await page.eval('document.querySelector("#pause [data-open=map]").click()'); await tick();
+  assert.equal((await S()).mode, 'panel', 'the Mapa button opens its panel and does not resume');
+  await page.eval('__ladera.ctx.flow.closePanel()'); await tick();
+  assert.equal((await S()).mode, 'paused');
+  await page.eval('document.getElementById("pause").dispatchEvent(new MouseEvent("click", { bubbles: true }))'); await tick();
+  const s = await S();
+  assert.deepEqual([s.mode, s.running, s.pause, s.lock], ['play', true, false, 'gl'], 'the backdrop click is Continuar');
+});
+
+test('after three refused lock requests (drag-to-look fallback) a click on the view still asks for the pointer again', async () => {
+  const n = await page.eval(`(() => { const p = __ladera.ctx.player, c = document.getElementById('gl'), real = c.requestPointerLock; let asked = 0;
+    c.requestPointerLock = () => { asked++; };
+    Object.defineProperty(p, 'pointerLocked', { get: () => false, configurable: true });
+    p.dragOnly = true;
+    c.dispatchEvent(new MouseEvent('mousedown', { button: 0, bubbles: true }));
+    delete p.pointerLocked; c.requestPointerLock = real; p.dragOnly = false; return asked; })()`);
+  assert.equal(n >= 1, true, 'mousedown with dragOnly set requested the lock');
+});
+
 test('M / J / H open panels from play and the same key toggles back; Esc closes a panel to where it was opened from: the game over play (R2c-016), the pause menu over the pause menu; Esc in the game is the pause menu', async (t) => {
   t.after(backToPlay);
   for (const [code, title] of [['KeyM', 'Mapa del barrio'], ['KeyJ', 'Diario del barrio'], ['KeyH', 'Ayuda']]) {
