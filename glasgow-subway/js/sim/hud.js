@@ -13,7 +13,7 @@ const CSS = `
 .gs-btns{display:flex;gap:6px;pointer-events:none}.gs-btns button{pointer-events:auto}
 .gs-toast{position:absolute;top:64px;left:50%;transform:translateX(-50%);max-width:92vw;text-align:center;padding:8px 16px;border-radius:999px;background:rgba(10,14,22,.85);border:1px solid rgba(255,255,255,.2);font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none}
 .gs-toast.show{opacity:1}.gs-toast.warn{border-color:#ffb36b;color:#ffd89a}.gs-toast.bad{border-color:#ff5a4a;color:#ff9a8f;background:rgba(60,10,10,.88)}
-.gs-prompt{position:absolute;left:50%;bottom:26%;transform:translateX(-50%);padding:9px 18px;border-radius:10px;background:rgba(10,14,22,.82);border:1px solid #ffb36b;font-weight:600;display:none;pointer-events:auto;cursor:pointer;text-align:center;max-width:90vw}
+.gs-prompt{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);padding:9px 18px;border-radius:10px;background:rgba(10,14,22,.82);border:1px solid #ffb36b;font-weight:600;display:none;pointer-events:auto;cursor:pointer;text-align:center;max-width:90vw}
 .gs-prompt kbd,.gs-help kbd{background:#e8741a;color:#111;border-radius:4px;padding:1px 6px;font:600 12px monospace}
 .gs-dial{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);width:176px;height:176px;pointer-events:none}
 .gs-lever{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:3px;pointer-events:none;width:92px}
@@ -44,7 +44,7 @@ const CSS = `
 @media (max-width:640px){
  .gs-dial{width:132px;height:132px;bottom:6px}.gs-lever{width:76px;bottom:6px;right:6px}.gs-lever button{min-height:26px;padding:2px 5px;font-size:12px}
  .gs-doors{bottom:6px;left:6px;max-width:150px}.gs-doors button{padding:4px 6px;min-height:32px;font-size:12px}
- .gs-score{display:none}.gs-top{left:116px}.gs-card{padding:5px 9px}.gs-next b{font-size:14px}.gs-prompt{bottom:30%}
+ .gs-score{display:none}.gs-top{left:116px}.gs-card{padding:5px 9px}.gs-next b{font-size:14px}.gs-prompt{bottom:14px}
  .gs-log{width:70vw}.gs-toast{top:118px;font-size:12px}
 }
 `;
@@ -105,6 +105,7 @@ export class Hud {
     const drive = mode === 'drive';
     this.root.querySelectorAll('[data-g="drive"]').forEach((e) => { e.style.display = drive ? '' : 'none'; });
     this.dial.style.display = drive ? '' : 'none';
+    this.promptEl.style.marginBottom = drive ? (innerWidth < 700 ? '138px' : '184px') : '0';   // clear the speedo dial when driving
     this.q('.gs-cross').style.display = !drive && mode !== 'menu' ? 'block' : 'none';
     const walk = !drive;
     this.q('.gs-joy').style.display = walk && this.touch ? 'block' : 'none';

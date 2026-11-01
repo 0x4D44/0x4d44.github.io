@@ -41,7 +41,8 @@ export class Crowd {
   /** stream of people from a to b that vanish at b (boarding) or fade after reaching (alighting) */
   stream(from, to, n, y0, y1, spread = 0.4) {
     for (let i = 0; i < n && this.people.length < this.max; i++) {
-      const p = this.add({ x: from.x + (this.rng() - 0.5) * spread, z: from.z + (this.rng() - 0.5) * spread, y: y0, yaw: 0, mode: 'go', tx: to.x + (this.rng() - 0.5) * spread, tz: to.z + (this.rng() - 0.5) * spread, ty: y1, speed: 1.1 + this.rng() * 0.5, delay: i * 0.45 + this.rng() * 0.3 });
+      const f0 = this._toFloor(from.x + (this.rng() - 0.5) * spread, from.z + (this.rng() - 0.5) * spread), f1 = this._toFloor(to.x + (this.rng() - 0.5) * spread, to.z + (this.rng() - 0.5) * spread);
+      const p = this.add({ x: f0.x, z: f0.z, y: y0, yaw: 0, mode: 'go', tx: f1.x, tz: f1.z, ty: y1, speed: 1.1 + this.rng() * 0.5, delay: i * 0.45 + this.rng() * 0.3 });
       p.hidden = true;
     }
   }
@@ -130,6 +131,7 @@ export class AnimCrowd {
       const lodNode = lodGltf ? (lodGltf.scene.getObjectByName('person_' + m[1])) : null;
       this.chars.push({ id: m[1], node: n, lodNode, outfit: (mt && mt.outfit) || 'trousers', pools, kid, small: /small/.test(m[1]), staff: /staff/.test(m[1]), elder: /elder/.test(m[1]), metaH: mt && mt.heightM, walkSpeed: (mt && mt.walkSpeedMps) || 1.3 });
     }
+    for (const c of this.chars) if (/kilt|skirt|highland/.test(c.outfit) && !/trews/.test(c.outfit)) { this._extendHem(c.node); if (c.lodNode) this._extendHem(c.lodNode); }
     // the 21 rigs share bone names; GLTFLoader suffixed the duplicates (hips_5 ...). The shared clips address the plain names -> canonicalise per clone.
     this.boneNames = new Set(); { const f = this.chars[0]; if (f) f.node.traverse((o) => { if (o.isBone) this.boneNames.add(o.name); }); }   // first rig keeps the plain names (spine_01 ... are REAL names: never strip blindly)
     this.canon = (n) => (this.boneNames.has(n) ? n : (this.boneNames.has(n.replace(/_\d+$/, '')) ? n.replace(/_\d+$/, '') : n));
@@ -137,6 +139,36 @@ export class AnimCrowd {
     for (const k of Object.keys(shared)) shared[k] = shared[k];
     this.adults = this.chars.filter((c) => !c.kid && !c.staff); this.group = new THREE.Group(); this.group.name = 'crowd';
     this._v = new THREE.Vector3(); this.hasAnim = this.chars.length > 0; this._clock = 0; this.avoid = []; this.walker = null;
+  }
+  /** The baked tops (sweater / jacket / camisole) end above the waist and the skin under them is deleted, so with a separate kilt/skirt there is a see-through
+   *  band at the midriff. Find the top's centred lower hem loop and extrude it straight down (same skin weights) so it tucks inside the skirt. Patches the shared geometry once. */
+  _extendHem(root, drop = 0.13) {
+    const THREE = this.THREE;
+    root.traverse((o) => {
+      if (!o.isSkinnedMesh || !o.material || !/sweater|jacket|camisole|shirt-knit/i.test(o.material.name || '')) return;
+      const g = o.geometry; if (g.userData.hemExt) return; g.userData.hemExt = true;
+      const P = g.attributes.position, idx = g.index; if (!idx) return;
+      const key = (i) => Math.round(P.getX(i) * 2e3) + ',' + Math.round(P.getY(i) * 2e3) + ',' + Math.round(P.getZ(i) * 2e3);
+      const canon = new Map(), cid = new Int32Array(P.count); for (let i = 0; i < P.count; i++) { const k = key(i); let c = canon.get(k); if (c == null) { c = i; canon.set(k, c); } cid[i] = c; }
+      const ec = new Map(), dir = new Map();   // undirected edge use count, and its directed original
+      for (let t = 0; t < idx.count; t += 3) for (let e = 0; e < 3; e++) { const a = cid[idx.getX(t + e)], b = cid[idx.getX(t + (e + 1) % 3)]; if (a === b) continue; const k = a < b ? a + '_' + b : b + '_' + a; ec.set(k, (ec.get(k) || 0) + 1); dir.set(k, [a, b]); }
+      const adj = new Map(), edges = []; for (const [k, n] of ec) if (n === 1) { const [a, b] = dir.get(k); edges.push([a, b]); (adj.get(a) || adj.set(a, []).get(a)).push(b); (adj.get(b) || adj.set(b, []).get(b)).push(a); }
+      // connected loops of boundary vertices; the torso hem = the loop that encloses x = 0 (and z centre) with the lowest mean y
+      const seen = new Set(), loops = []; for (const v of adj.keys()) { if (seen.has(v)) continue; const comp = [], st = [v]; seen.add(v); while (st.length) { const u = st.pop(); comp.push(u); for (const w of adj.get(u)) if (!seen.has(w)) { seen.add(w); st.push(w); } } loops.push(comp); }
+      let best = null, bestY = 1e9;
+      for (const L of loops) { let x0 = 1e9, x1 = -1e9, y = 0; for (const v of L) { x0 = Math.min(x0, P.getX(v)); x1 = Math.max(x1, P.getX(v)); y += P.getY(v); } y /= L.length; if (x0 < -0.05 && x1 > 0.05 && L.length > 8 && y < bestY) { bestY = y; best = new Set(L); } }
+      if (!best) return;
+      const nv = new Map(), attrs = Object.keys(g.attributes), n0 = P.count; let add = 0;
+      for (const v of best) nv.set(v, n0 + add++);
+      for (const name of attrs) {   // glTF attributes can be interleaved (array is the shared buffer): read through stride/offset, write a plain packed copy
+        const A = g.attributes[name], it = A.itemSize, stride = A.isInterleavedBufferAttribute ? A.data.stride : it, off = A.isInterleavedBufferAttribute ? A.offset : 0, src = A.isInterleavedBufferAttribute ? A.data.array : A.array;
+        const arr = new src.constructor((n0 + add) * it); for (let i = 0; i < n0; i++) for (let c = 0; c < it; c++) arr[i * it + c] = src[i * stride + off + c];
+        for (const [v, w] of nv) { for (let c = 0; c < it; c++) arr[w * it + c] = src[v * stride + off + c]; if (name === 'position') arr[w * 3 + 1] -= drop; }
+        g.setAttribute(name, new THREE.BufferAttribute(arr, it, A.normalized));
+      }
+      const tri = []; for (const [a, b] of edges) if (best.has(a) && best.has(b)) { const a2 = nv.get(a), b2 = nv.get(b); tri.push(b, a, a2, b, a2, b2); }
+      const ni = new Uint32Array(idx.count + tri.length); for (let i = 0; i < idx.count; i++) ni[i] = idx.getX(i); ni.set(tri, idx.count); g.setIndex(new THREE.BufferAttribute(ni, 1));
+    });
   }
   _clone(ch, lod) { const o = this.SU.clone(lod && ch.lodNode ? ch.lodNode : ch.node); o.traverse((n) => { if (n.isBone) n.name = this.canon(n.name); }); return o; }
   // ------------------------------------------------------------------ measuring
@@ -228,7 +260,7 @@ export class AnimCrowd {
     if (state === 'walk' || state === 'go') cat = 'walk';
     else if (state === 'sit') cat = r() < 0.4 ? (ch.pools.sitphone ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
-    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : x < 0.3 && ch.pools.phone ? 'phone' : x < 0.5 && ch.pools.talk ? 'talk' : x < 0.54 && ch.pools.wave && !p.static ? 'wave' : 'idle'; }
+    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : 'idle'; }   // idle poses only: talk/wave/point and the phone clips (hands raised, no phone prop in the model) read as flailing arms
     let clip = this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9;
@@ -257,10 +289,43 @@ export class AnimCrowd {
     return false;
   }
   _free(x, z, r, self) {
+    if (!this._onFloor(x, z)) return false;
     if (this._nearWalker(x, z, 0.75 + r * 0.5, 0)) return false;
     for (const a of this.avoid) if (x > a.x0 - r && x < a.x1 + r && z > a.z0 - r && z < a.z1 + r) return false;
     for (const q of this.people) if (q !== self && !q.hidden && q.obj && !q.static && (q.x - x) ** 2 + (q.z - z) ** 2 < 0.45 * 0.45) return false;
     return true;
+  }
+  // ------------------------------------------------------------------ colliders
+  /** The station's floor footprint: people may only stand on the platform slabs (never over the tracks / bore / hall walls) and never inside obstacles. */
+  setWorld(zones, obstacles) { this.floor = (zones || []).filter((z) => z.name === 'platform'); this.solid = obstacles || []; }
+  _onFloor(x, z, m = 0.22) {
+    const F = this.floor; if (!F || !F.length) return true;
+    let ok = false; for (const f of F) if (x >= f.x0 + m && x <= f.x1 - m && z >= f.z0 + m && z <= f.z1 - m) { ok = true; break; }
+    if (!ok) return false;
+    for (const o of this.solid || []) { const cx = Math.min(o.x1, Math.max(o.x0, x)), cz = Math.min(o.z1, Math.max(o.z0, z)); if ((x - cx) ** 2 + (z - cz) ** 2 < 0.25 * 0.25) return false; }
+    return true;
+  }
+  /** nearest point on the platform slab (inset by m): where a streaming passenger heads for when its real destination (stairs, train door) is off the slab */
+  _toFloor(x, z, m = 0.3) {
+    const F = this.floor; if (!F || !F.length) return { x, z };
+    let best = null, bd = 1e9;
+    for (const f of F) { const cx = Math.min(f.x1 - m, Math.max(f.x0 + m, x)), cz = Math.min(f.z1 - m, Math.max(f.z0 + m, z)), d = (cx - x) ** 2 + (cz - z) ** 2; if (d < bd) { bd = d; best = { x: cx, z: cz }; } }
+    return best;
+  }
+  /** people are solid: push overlapping pairs apart (never off the floor) */
+  _separate(dt) {
+    const P = this.people, R = 0.5, k = Math.min(1, dt * 10);
+    for (let i = 0; i < P.length; i++) {
+      const a = P[i]; if (a.static || a.hidden || !a.obj || (a.delay > 0)) continue;
+      for (let j = i + 1; j < P.length; j++) {
+        const b = P[j]; if (b.static || b.hidden || !b.obj || (b.delay > 0)) continue;
+        let dx = b.x - a.x, dz = b.z - a.z; const d2 = dx * dx + dz * dz; if (d2 >= R * R) continue;
+        let d = Math.sqrt(d2); if (d < 1e-4) { dx = Math.cos(i * 2.4); dz = Math.sin(i * 2.4); d = 1; }
+        const push = (R - d) * 0.5 * k, ux = dx / d * push, uz = dz / d * push;
+        if (this._onFloor(a.x - ux, a.z - uz)) { a.x -= ux; a.z -= uz; }
+        if (this._onFloor(b.x + ux, b.z + uz)) { b.x += ux; b.z += uz; }
+      }
+    }
   }
   populate(n, rect, y, avoid = []) {
     this.avoid = avoid;
@@ -284,7 +349,7 @@ export class AnimCrowd {
       used.push(best); best.mode = 'queue'; best.tx = s.x; best.tz = s.z; best.qyaw = s.yaw; best.speed = Math.max(best.speed || 1, 1); best.wait = 0; this._enter(best, 'walk'); }
     return used.length;
   }
-  board(door, delayStep = 0.35) { let i = 0; for (const q of this.people) if (q.mode === 'queue') { q.mode = 'go'; q.delay = i++ * delayStep + this.rng() * 0.3; q.tx = door(q).x; q.tz = door(q).z; q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; this._enter(q, 'go', 0.2); } return i; }
+  board(door, delayStep = 0.35) { let i = 0; for (const q of this.people) if (q.mode === 'queue') { q.mode = 'go'; q.delay = i++ * delayStep + this.rng() * 0.3; { const d = this._toFloor(door(q).x, door(q).z, 0.25); q.tx = d.x; q.tz = d.z; } q.speed = 1.1 + this.rng() * 0.3; q.hidden = false; this._enter(q, 'go', 0.2); } return i; }
   /** seated / standing passengers riding in a car: slots in the parent's (car group) frame: seated {x,y,z,yaw,seatY,mode:'sit'} (x,z = pelvis position),
    *  standing {x,y,z,yaw,mode:'stand'|'pole', maxH} (maxH = tallest allowed person: headroom(x) - 0.08) */
   seat(parent, slots) {
@@ -310,6 +375,7 @@ export class AnimCrowd {
     const cam = camWorld || null, v = this._v; this._clock += dt; let swaps = 0;
     // LOD0 (~9.5k tris) only for the nearest few people within ~11 m; everyone else uses the ~2.2k-tri LOD1 model
     let hiSet = null; if (cam) { const arr = []; for (const q of this.people) { if (!q.obj || q.hidden) continue; q.obj.getWorldPosition(v); arr.push([v.distanceTo(cam) - (q.lod ? 0 : 2), q]); } arr.sort((a, b) => a[0] - b[0]); hiSet = new Set(); for (const [d, q] of arr) { if (hiSet.size >= this.maxHi || d > 11) break; hiSet.add(q); } }
+    this._separate(dt);
     for (let i = this.people.length - 1; i >= 0; i--) {
       const p = this.people[i]; if (!p.obj) continue;
       p.stateT += dt;
@@ -329,24 +395,43 @@ export class AnimCrowd {
         } else if (p.mode === 'go') {
           if (p.delay > 0) { p.delay -= dt; continue; }
           if (p.hidden) { p.hidden = false; p.obj.visible = true; this._enter(p, 'go', 0); }
-          const d = this._step(p, dt, p.speed, true); if (yAt) p.y = yAt(p.x, p.z, p.y);
-          if (Math.hypot(p.tx - p.x, p.tz - p.z) < 0.35) { this._drop(p); this.people.splice(i, 1); continue; }
+          const moved = this._step(p, dt, p.speed, true); if (yAt) p.y = yAt(p.x, p.z, p.y); p.stuckT = moved ? 0 : (p.stuckT || 0) + dt;
+          if (Math.hypot(p.tx - p.x, p.tz - p.z) < 0.35 || p.stuckT > 2.5) { this._drop(p); this.people.splice(i, 1); continue; }
         }
       }
       // soft avoidance: step away from the user's body instead of standing in their face
       if (!p.static && this.walker && p.mode !== 'go') { const dx = p.x - this.walker.x, dz = p.z - this.walker.z, d = Math.hypot(dx, dz); if (d < 1.25 && d > 1e-4) { const k = Math.min(1.25 - d, 1.4 * dt); p.x += (dx / d) * k; p.z += (dz / d) * k; if (p.rect) { p.x = Math.min(p.rect.x1, Math.max(p.rect.x0, p.x)); p.z = Math.min(p.rect.z1, Math.max(p.rect.z0, p.z)); } } }
       // idle-variant rotation (phone / talk / look / fidget ...)
       if (p.state !== 'walk' && p.state !== 'go' && p.stateT > p.nextT && p.obj.visible) this._enter(p, p.state);
+      this._pace(p, dt);
       this._place(p, false);
       let dist = 0; if (cam) { p.obj.getWorldPosition(v); dist = v.distanceTo(cam); }
       if (cam && hiSet && p.char.lodNode && swaps < 2 && !p.hidden) { const wantLod = !hiSet.has(p); if (wantLod !== !!p.lod) { this._swapLod(p, wantLod); swaps++; } }
       if (!p.hidden) p.obj.visible = dist < this.rVis;
-      if (dist < this.rAnim && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
+      if ((dist < this.rAnim || p.v > 0.2) && p.obj.visible) { p.mixer.update(dt); p.dirty = false; } else if (p.dirty) { p.mixer.update(this.crossfade + 0.05); p.dirty = false; }
     }
   }
+  /** ground speed (m/s) at which the walk cycle's planted foot does not slip: on the real skinned soles the mean contact-point speed over the stance is the asset's own
+   *  `walkSpeedMps` x ~1.07 (adults 1.02-1.10, children 1.06-1.09 across the rigs), so nothing needs measuring at run time */
+  _strideOf(ch) { return ch.walkSpeed * 1.07; }
+  /** stride matching: the walk cycle's playback rate follows the speed the person ACTUALLY moved this frame (steering, separation, the user's
+   *  body-avoidance shove and wall slides all included), so planted feet stay planted instead of skating. */
+  _pace(p, dt) {
+    if (p.px == null || !(dt > 0)) { p.px = p.x; p.pz = p.z; p.v = 0; return; }
+    const v = Math.hypot(p.x - p.px, p.z - p.pz) / dt; p.px = p.x; p.pz = p.z;
+    p.v = v > 4 ? 0 : p.v + (v - p.v) * Math.min(1, dt * 12);   // teleports are not walking
+    if ((p.state === 'walk' || p.state === 'go') && p.cur) p.cur.timeScale = Math.min(1.8, p.v / this._strideOf(p.char));
+  }
   _step(p, dt, sp, ghost) {
+    sp = Math.min(sp, (p.char ? p.char.walkSpeed : 1.3) * 1.3);   // never faster than the walk cycle can plausibly cover (stride matching below handles the rest)
     const dx = p.tx - p.x, dz = p.tz - p.z, d = Math.hypot(dx, dz) || 1, k = Math.min(d, sp * dt) / d, nx = p.x + dx * k, nz = p.z + dz * k;
-    if (!ghost && !this._free(nx, nz, 0.22, p)) return false;   // would walk into furniture / another person
+    if (!ghost && !this._free(nx, nz, 0.22, p)) return false;   // would walk into furniture / another person / off the slab
+    if (ghost && !this._onFloor(nx, nz, 0.12)) {   // streaming passengers slide along walls and the platform edge instead of crossing them
+      const sx = p.x + dx * k, sz = p.z + dz * k;
+      if (this._onFloor(sx, p.z, 0.12)) { p.x = sx; p.yaw = Math.atan2(-dx, -dz); return true; }
+      if (this._onFloor(p.x, sz, 0.12)) { p.z = sz; p.yaw = Math.atan2(-dx, -dz); return true; }
+      return false;
+    }
     p.x = nx; p.z = nz; p.yaw = Math.atan2(-dx, -dz); return true;
   }
   // ------------------------------------------------------------------ audit (regression tests)

@@ -4,23 +4,9 @@ import * as THREE from "three";
 import { TAU } from "./highland-geo.js";
 import { tartanCanvas, TARTAN_RED, toTexture } from "./highland-tex.js";
 
-export function buildPiper(H) {
-  const { track, X, K } = H;
-  const { group, bake, part, own, anim, wallDist } = X;
-  const { at } = K, gy = X.groundY;
-
-  // ---------------------------------------------------------------- placement beside the arch (opposite the grandstand)
-  const gs = X.grandstand, sideSign = -gs.side;
-  const sPos = 2.8, a = at(sPos, sideSign * (wallDist + 2.7));
-  const toRoad = new THREE.Vector3(-sideSign * a.rx, 0, -sideSign * a.rz), back = new THREE.Vector3(-Math.sin(a.h), 0, -Math.cos(a.h));
-  const face = toRoad.clone().multiplyScalar(0.8).add(back.clone().multiplyScalar(0.6));
-  const yaw = Math.atan2(face.x, face.z);
-  const baseY = Math.max(gy(a.x, a.z), a.y - 0.1);
-  const SCALE = 1.3;
-
-  const root = new THREE.Group(); root.position.set(a.x, baseY, a.z); root.rotation.y = yaw; root.name = "piper";
-  const figure = new THREE.Group(); figure.scale.setScalar(SCALE); root.add(figure);
-
+// The kilted piper figure (metres, feet at y=0, facing +z). Shared by the finish-line piper and the giant roadside one.
+function makeFigure(X, figure) {
+  const { bake, part, own } = X;
   // helpers (local coords, metres, facing +z)
   const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), V = new THREE.Vector3(), U = new THREE.Vector3(0, 1, 0), One = new THREE.Vector3(1, 1, 1);
   const place = (x, y, z, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
@@ -122,6 +108,27 @@ export function buildPiper(H) {
   // left hand on the chanter (lower), a static fist
   upper.add(meshOf([ball(0.17, 0.86 - U0, 0.41, 0.036, SKIN), ball(0.17, 0.79 - U0, 0.41, 0.03, SKIN)]));
   figure.traverse((o) => { o.matrixAutoUpdate = true; });
+  return { upper, head, ch, bagG, armL, armR, footR, drones, kilt, kiltTop, place };
+}
+
+export function buildPiper(H) {
+  const { track, X, K } = H;
+  const { group, bake, part, own, anim, wallDist } = X;
+  const { at } = K, gy = X.groundY;
+
+  // ---------------------------------------------------------------- placement beside the arch (opposite the grandstand)
+  const gs = X.grandstand, sideSign = -gs.side;
+  const sPos = 2.8, a = at(sPos, sideSign * (wallDist + 2.7));
+  const toRoad = new THREE.Vector3(-sideSign * a.rx, 0, -sideSign * a.rz), back = new THREE.Vector3(-Math.sin(a.h), 0, -Math.cos(a.h));
+  const face = toRoad.clone().multiplyScalar(0.8).add(back.clone().multiplyScalar(0.6));
+  const yaw = Math.atan2(face.x, face.z);
+  const baseY = Math.max(gy(a.x, a.z), a.y - 0.1);
+  const SCALE = 1.3;
+
+  const root = new THREE.Group(); root.position.set(a.x, baseY, a.z); root.rotation.y = yaw; root.name = "piper";
+  const figure = new THREE.Group(); figure.scale.setScalar(SCALE); root.add(figure);
+
+  const { upper, head, ch, bagG, armL, armR, footR, drones } = makeFigure(X, figure);
 
   root.visible = false; root.scale.setScalar(0.001);
   group.add(root);
@@ -158,4 +165,92 @@ export function buildPiper(H) {
     drones.rotation.z = k * Math.sin(beat / 2 + 1) * 0.03; drones.rotation.x = k * Math.sin(beat / 3) * 0.02;
     const puff = 1 + k * (0.28 + 0.2 * Math.sin((t / 2.2) * TAU + 1.2)); ch.scale.set(puff, puff, puff);
   });
+}
+
+// ====================================================================================================================
+// The GIANT piper: a colossus in a tartan kilt beside the outside of the hairpin up the brae. The wind catches the kilt:
+// a steady flutter, and every so often a gust whips it right up - at which point a blurred-out censor patch appears.
+export function buildGiantPiper(H) {
+  const { track, X, K } = H;
+  const { group, own, anim, wallDist } = X;
+  const { at } = K, gy = X.groundY;
+  const S_CORNER = 1460, SCALE = 11;
+
+  // ---- placement: well outside the hairpin, facing the road (and a little toward oncoming karts)
+  const a = at(S_CORNER, -(wallDist + 30));
+  const toRoad = new THREE.Vector3(a.rx, 0, a.rz).normalize(), back = new THREE.Vector3(-Math.sin(a.h), 0, -Math.cos(a.h));
+  const face = toRoad.clone().multiplyScalar(0.8).add(back.clone().multiplyScalar(0.55));
+  const yaw = Math.atan2(face.x, face.z), baseY = gy(a.x, a.z) - 0.2;
+  const root = new THREE.Group(); root.position.set(a.x, baseY, a.z); root.rotation.y = yaw; root.name = "giant-piper";
+  const figure = new THREE.Group(); figure.scale.setScalar(SCALE); root.add(figure);
+  const { upper, head, ch, bagG, armL, armR, footR, drones, kilt, kiltTop, place } = makeFigure(X, figure);
+  figure.children[0].visible = false;     // no rug under a colossus
+  kilt.visible = false; kiltTop.visible = false;   // replaced by the wind-driven kilt below
+  const SKIN = 0xe9b896;
+  // bare thighs + pelvis (only seen when the wind does its work)
+  const bare = [];
+  for (const sx of [-1, 1]) bare.push(X.part(new THREE.CylinderGeometry(0.095, 0.085, 0.5, 10), place(sx * 0.11, 0.84, 0), SKIN));
+  bare.push(X.part(new THREE.SphereGeometry(0.19, 12, 8), place(0, 1.02, 0, 1.15, 0.8, 0.85), SKIN));
+  figure.add(new THREE.Mesh(own(X.bake(bare)), own(new THREE.MeshLambertMaterial({ vertexColors: true }))));
+
+  // ---- wind-driven kilt: an open skirt of NA columns x NV rings, bent upward by a per-column lift
+  const NA = 36, NV = 8, Lk = 0.5, yw = 1.06, r0 = 0.255, phi0 = Math.atan2(0.34 - r0, Lk);
+  const tt = own(toTexture(tartanCanvas(128, TARTAN_RED))); tt.repeat.set(1, 1);
+  const kmat = own(new THREE.MeshLambertMaterial({ map: tt, side: THREE.DoubleSide }));
+  const kg = own(new THREE.BufferGeometry()), kpos = new Float32Array((NA + 1) * (NV + 1) * 3), kuv = new Float32Array((NA + 1) * (NV + 1) * 2), kidx = [];
+  for (let j = 0; j <= NA; j++) for (let i = 0; i <= NV; i++) { const o = j * (NV + 1) + i; kuv[o * 2] = (j / NA) * 6; kuv[o * 2 + 1] = (i / NV) * 1.4; }
+  for (let j = 0; j < NA; j++) for (let i = 0; i < NV; i++) { const o = j * (NV + 1) + i, o2 = (j + 1) * (NV + 1) + i; kidx.push(o, o2, o + 1, o + 1, o2, o2 + 1); }
+  kg.setAttribute("position", new THREE.BufferAttribute(kpos, 3)); kg.setAttribute("uv", new THREE.BufferAttribute(kuv, 2)); kg.setIndex(kidx);
+  const kiltMesh = new THREE.Mesh(kg, kmat); kiltMesh.frustumCulled = false; figure.add(kiltMesh);
+  const sm = (a0, b0, v) => { const t = Math.min(1, Math.max(0, (v - a0) / (b0 - a0))); return t * t * (3 - 2 * t); };
+  let frontLift = 0;
+  const shapeKilt = (t, breeze, gust) => {
+    const ds = Lk / NV, K_UP = 2.75;
+    for (let j = 0; j <= NA; j++) {
+      const ang = (j / NA) * TAU, c = Math.cos(ang), s = Math.sin(ang), front = Math.max(0, s);   // +z (front, toward the road) is ang = PI/2
+      const flut = 0.5 + 0.5 * Math.sin(ang * 3 + t * 5.5);
+      const f = Math.min(1, breeze * (0.6 + 0.4 * flut) + gust * (0.3 + 0.7 * front));
+      if (j === NA / 4) frontLift = f;
+      let x = r0 * c, y = yw, z = r0 * s;
+      kpos.set([x, y, z], (j * (NV + 1)) * 3);
+      for (let i = 0; i < NV; i++) {
+        const u = (i + 1) / NV, phi = phi0 + f * K_UP * Math.pow(u, 1.1), w = Math.sin(ang * 6 + t * 7 + i * 0.9) * 0.012 * (0.3 + f) * u;
+        x += (c * Math.sin(phi) - s * w * 2) * ds; y += -Math.cos(phi) * ds + w; z += (s * Math.sin(phi) + c * w * 2) * ds;
+        kpos.set([x, y, z], (j * (NV + 1) + i + 1) * 3);
+      }
+    }
+    kg.attributes.position.needsUpdate = true; kg.computeVertexNormals();
+  };
+
+  // ---- the censor patch: a camera-facing blurred mosaic, shown only while the kilt is blown up
+  const cv = document.createElement("canvas"); cv.width = cv.height = 64;
+  { const sm0 = document.createElement("canvas"); sm0.width = sm0.height = 7; const g0 = sm0.getContext("2d");
+    for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) { const v = 170 + ((x * 37 + y * 61) % 7) * 11; g0.fillStyle = `rgb(${v + 30},${v - 10},${v - 38})`; g0.fillRect(x, y, 1, 1); }
+    const g = cv.getContext("2d"); g.imageSmoothingEnabled = true; g.drawImage(sm0, 0, 0, 64, 64);
+    g.globalCompositeOperation = "destination-in"; const rg = g.createRadialGradient(32, 32, 14, 32, 32, 31); rg.addColorStop(0, "rgba(0,0,0,1)"); rg.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = rg; g.fillRect(0, 0, 64, 64); }
+  const cmat = own(new THREE.SpriteMaterial({ map: own(toTexture(cv, false)), transparent: true, opacity: 0, depthWrite: false }));
+  const censor = new THREE.Sprite(cmat); censor.position.set(0, 0.96, 0.17); censor.scale.set(0.5, 0.5, 1); censor.renderOrder = 6; figure.add(censor);
+
+  root.updateMatrixWorld(true);
+  group.add(root);
+  // solid feet so karts bounce off the colossus instead of driving through it
+  for (const sx of [-1, 1]) { const w = new THREE.Vector3(sx * 0.11 * SCALE, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw); track.addObstacle(a.x + w.x, a.z + w.z, 1.5, -50, 300); }
+
+  const BEAT = 0.534;
+  anim.push((dt, time) => {
+    const p = ((time + 6) % 21) / 21, gust = sm(0.45, 0.56, p) * (1 - sm(0.7, 0.8, p));   // a big gust every 21 s, lasting ~4 s
+    const breeze = 0.16 + 0.1 * Math.sin(time * 1.3) + 0.06 * Math.sin(time * 3.1);
+    shapeKilt(time, breeze, gust);
+    cmat.opacity = sm(0.5, 0.72, frontLift);
+    const beat = (time / BEAT) * TAU;
+    upper.rotation.z = Math.sin(beat / 2) * 0.06; upper.rotation.x = 0.05 + Math.sin(beat) * 0.015 - gust * 0.06; upper.rotation.y = Math.sin(beat / 4) * 0.08;
+    head.rotation.z = -upper.rotation.z * 0.8; head.rotation.y = Math.sin(beat / 6) * 0.2;
+    const sq = 0.5 + 0.5 * Math.sin((time / 2.2) * TAU), sq2 = sq * sq;
+    armL.rotation.z = -sq2 * 0.12; armL.rotation.x = sq2 * 0.06; bagG.scale.set(1 - sq2 * 0.12, 1 - sq2 * 0.14, 1 - sq2 * 0.06);
+    armR.rotation.x = Math.sin(beat * 2) * 0.03; armR.rotation.z = Math.sin(beat * 4 + 1) * 0.025;
+    footR.rotation.x = -Math.max(0, Math.sin(beat)) * 0.45;
+    drones.rotation.z = Math.sin(beat / 2 + 1) * 0.03; drones.rotation.x = Math.sin(beat / 3) * 0.02;
+    const puff = 1 + 0.28 + 0.2 * Math.sin((time / 2.2) * TAU + 1.2); ch.scale.set(puff, puff, puff);
+  });
+  H.giantPiper = { root, s: S_CORNER };
 }

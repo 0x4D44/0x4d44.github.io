@@ -264,8 +264,10 @@ class M:
         vs = [self.bm.verts.new(Vector(p)) for p in (p0, p1, p2, p3)]
         f = self.bm.faces.new(vs); self._tag([f], m); return f
     def quad_uv(self, p0, p1, p2, p3, m, rect=(0.0, 0.0, 1.0, 1.0)):
-        """Quad with UV across its corners p0=BL p1=BR p2=TR p3=TL (for runtime canvas textures / atlas cells).
-        rect=(u0,v0,u1,v1) selects a sub-rectangle (v=1 is the TOP of the image).  U is reversed internally so text reads correctly seen from the face front."""
+        """Quad with UV across its corners (for runtime canvas textures / atlas cells).
+        rect=(u0,v0,u1,v1) selects a sub-rectangle (v=1 is the TOP of the image).  U is reversed internally, so the image reads correctly from the quad's
+        BACK face (the side opposite its geometric normal, p0->p1->p2) - the face frontFaceSigns() draws as THREE.BackSide - and is MIRRORED from the front face.
+        Seen from the READING side the corners must therefore be p0=BR p1=BL p2=TL p3=TR (clockwise seen from there); seen from the front face that is BL, BR, TR, TL."""
         f = self.quad(p0, p1, p2, p3, m)
         uvl = self.bm.loops.layers.uv.verify()
         u0, v0, u1, v1 = rect

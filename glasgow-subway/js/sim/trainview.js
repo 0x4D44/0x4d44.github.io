@@ -3,6 +3,11 @@
 // Model conventions (models/train.glb): units metres, origin at train centre on the rail head,
 // front = -Z, +X = right when facing front, nodes: cab_eye, cab_screen, cab_speedo, door_L_n/door_R_n,
 // headlight_*, interior_light_n, car_0 (front car) / car_1 (rear car).
+/** Tail lamps: the baked `taillight` material is a hot emissive red, which ACES tone mapping bleaches to pink. Swap it for an unlit, un-tone-mapped LED red (a lamp is its own light). */
+export function ledTailLamps(THREE, root) {
+  const led = new THREE.MeshBasicMaterial({ color: 0xff0a00, toneMapped: false, side: THREE.DoubleSide }); led.name = 'taillight_led';
+  root.traverse((o) => { if (!o.isMesh) return; if (Array.isArray(o.material)) o.material = o.material.map((m) => (m && /^taillight$/.test(m.name || '') ? led : m)); else if (o.material && /^taillight$/.test(o.material.name || '')) o.material = led; });
+}
 export async function loadTrainTemplate(THREE, GLTFLoader, url) {
   try {
     const gltf = await new Promise((res, rej) => new GLTFLoader().load(url, res, undefined, rej));
@@ -192,7 +197,8 @@ export class TrainView {
     const THREE = this.THREE; if (this._destText === text) return; this._destText = text;
     const nodes = [this.byName.cab_dest, this.byName.cab_dest_rear].filter(Boolean); if (!nodes.length) return;
     if (!this._destCanvas) { const c = document.createElement('canvas'); c.width = 512; c.height = 68; this._destCanvas = c; this._destTex = new THREE.CanvasTexture(c); this._destTex.colorSpace = THREE.SRGBColorSpace; this._destTex.flipY = false;
-      for (const n of nodes) n.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.map = this._destTex; o.material.emissiveMap = this._destTex; o.material.emissive.set(0xffffff); o.material.needsUpdate = true; } }); }
+      for (const n of nodes) n.traverse((o) => { if (o.isMesh) { if (n === this.byName.cab_dest_rear) { o.geometry = o.geometry.clone(); const uv = o.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i)); uv.needsUpdate = true; }   /* the rear blind is the front quad seen from the other side: it read mirrored */
+        o.material = o.material.clone(); o.material.map = this._destTex; o.material.emissiveMap = this._destTex; o.material.emissive.set(0xffffff); o.material.needsUpdate = true; } }); }
     const g = this._destCanvas.getContext('2d'); g.fillStyle = '#120900'; g.fillRect(0, 0, 512, 68); g.fillStyle = '#ffb02e'; g.font = '700 40px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 256, 36); this._destTex.needsUpdate = true;
   }
   /** Drive mode swaps A3's cab shell for the procedural cab (see buildCab). */

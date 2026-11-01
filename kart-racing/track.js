@@ -609,8 +609,8 @@ function ensureObstacles(track) {
   if (track.addObstacle) return;
   const G = 16, map = new Map();
   track.obstacles = [];
-  track.addObstacle = (x, z, r, y0 = -1e9, y1 = 1e9) => {
-    const o = { x, z, r, y0, y1 }; track.obstacles.push(o);
+  track.addObstacle = (x, z, r, y0 = -1e9, y1 = 1e9, kind = null) => {
+    const o = { x, z, r, y0, y1, kind }; track.obstacles.push(o);
     const a = Math.floor((x - r) / G), b = Math.floor((x + r) / G), c = Math.floor((z - r) / G), d = Math.floor((z + r) / G);
     for (let i = a; i <= b; i++) for (let j = c; j <= d; j++) { const k = i * 100003 + j; let l = map.get(k); if (!l) map.set(k, (l = [])); l.push(o); }
   };
@@ -623,7 +623,7 @@ function ensureObstacles(track) {
       const dx = x - o.x, dz = z - o.z, rr = o.r + rad, d2 = dx * dx + dz * dz;
       if (d2 >= rr * rr) continue;
       const d = Math.sqrt(d2) || 1e-4, depth = rr - d;
-      if (depth > best) { best = depth; out.nx = dx / d; out.nz = dz / d; out.depth = depth; }
+      if (depth > best) { best = depth; out.nx = dx / d; out.nz = dz / d; out.depth = depth; out.kind = o.kind; }
     }
     return best > 0;
   };
@@ -882,7 +882,8 @@ function buildScenery(track) {
       const neon = def.theme === "neon";
       g.fillStyle = neon ? "#07070f" : "#ffd21f"; g.fillRect(0, 0, w, h);
       g.strokeStyle = neon ? "#ff2bd6" : "#111"; g.lineWidth = 16; g.lineJoin = "miter";
-      for (let k = 0; k < 2; k++) { g.beginPath(); const x = 28 + k * 48; if (right) { g.moveTo(x, 20); g.lineTo(x + 50, h / 2); g.lineTo(x, h - 20); } else { g.moveTo(w - x, 20); g.lineTo(w - x - 50, h / 2); g.lineTo(w - x, h - 20); } g.stroke(); }
+      // two chevrons, optically centred in the board (extent incl. caps/mitre is ~20..112 of 128)
+      for (let k = 0; k < 2; k++) { g.beginPath(); const x = 25 + k * 34; if (right) { g.moveTo(x, 20); g.lineTo(x + 40, h / 2); g.lineTo(x, h - 20); } else { g.moveTo(w - x, 20); g.lineTo(w - x - 40, h / 2); g.lineTo(w - x, h - 20); } g.stroke(); }
       g.strokeStyle = neon ? "#19e6ff" : "#111"; g.lineWidth = 6; g.strokeRect(3, 3, w - 6, h - 6);
     }, 128, 128);
     const boards = { left: [], right: [], posts: [] };
@@ -897,7 +898,7 @@ function buildScenery(track) {
       const nxv = -tx[i] * Math.cos(0.5) + (-side * -tz[i]) * Math.sin(0.5), nzv = -tz[i] * Math.cos(0.5) + (-side * tx[i]) * Math.sin(0.5);
       const ry = Math.atan2(nxv, nzv);
       boards[k > 0 ? "right" : "left"].push({ x, y: 2.5, z, ry });
-      boards.posts.push({ x, y: 1.3, z });
+      boards.posts.push({ x: x - Math.sin(ry) * 0.16, y: 1.3, z: z - Math.cos(ry) * 0.16 });   // pole stands behind the board face, not through it
       X.chevrons.push({ s: i * C.ds, turn: k > 0 ? "right" : "left", x, z, nx: nxv, nz: nzv });
     }
     const pg = new THREE.PlaneGeometry(3.2, 3.2);
