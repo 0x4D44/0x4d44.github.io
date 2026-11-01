@@ -228,7 +228,7 @@ export class AnimCrowd {
     if (state === 'walk' || state === 'go') cat = 'walk';
     else if (state === 'sit') cat = r() < 0.4 ? (ch.pools.sitphone ? 'sitphone' : ch.pools.sitalt ? 'sitalt' : 'sit') : (ch.pools.sitalt && r() < 0.35 ? 'sitalt' : 'sit');
     else if (state === 'pole') cat = ch.pools.pole ? 'pole' : 'idle';
-    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : x < 0.3 && ch.pools.phone ? 'phone' : x < 0.5 && ch.pools.talk ? 'talk' : x < 0.54 && ch.pools.wave && !p.static ? 'wave' : 'idle'; }
+    else { const x = r(); cat = ch.kid && ch.pools.fidget && x < 0.45 ? 'fidget' : x < 0.3 && ch.pools.phone ? 'phone' : 'idle'; }   // no talk/wave/point: gesturing at nobody looks like flailing arms
     let clip = this._clip(ch, cat) || this._clip(ch, state === 'sit' ? 'sit' : 'idle') || ch.pools.idle[0];
     this._play(p, clip, fade, cat === 'walk' ? (p.speed ? p.speed / ch.walkSpeed : 1) : 0.9 + r() * 0.2);
     p.stateT = 0; p.nextT = cat === 'walk' ? 1e9 : 3 + r() * 9;
