@@ -1,0 +1,7 @@
+contact-hung.webp: 52 actual teen GLBs, 26 adult+child reference pairs; 3.90 m common camera width
+contact-flat.webp: 58 actual teen GLBs, 29 adult+child reference pairs; 3.90 m common camera width
+contact-folded.webp: 52 actual teen GLBs, 26 adult+child reference pairs; 3.90 m common camera width
+contact-hung-lod.webp: 52 actual teen GLBs, 26 adult+child reference pairs; 3.90 m common camera width
+contact-flat-lod.webp: 58 actual teen GLBs, 29 adult+child reference pairs; 3.90 m common camera width
+contact-folded-lod.webp: 52 actual teen GLBs, 26 adult+child reference pairs; 3.90 m common camera width
+PASS: 324 teen state/LOD renders plus adult/child references; unchanged source hashes; no browser errors.

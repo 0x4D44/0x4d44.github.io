@@ -1,0 +1,70 @@
+garment_child_school_shirt_folded: 872 / 212 triangles
+garment_child_school_polo_folded: 872 / 212 triangles
+garment_child_pinafore_folded: 870 / 211 triangles
+garment_child_school_trousers_folded: 871 / 212 triangles
+garment_child_school_shorts_folded: 872 / 212 triangles
+garment_child_tshirt_folded: 872 / 211 triangles
+garment_child_hoodie_folded: 872 / 212 triangles
+garment_child_jeans_folded: 871 / 212 triangles
+garment_child_skirt_folded: 871 / 212 triangles
+garment_child_dress_folded: 871 / 212 triangles
+garment_child_pyjama_top_folded: 872 / 212 triangles
+garment_child_pyjama_bottoms_folded: 872 / 212 triangles
+garment_child_cardigan_folded: 872 / 212 triangles
+garment_child_socks_pair_folded: 872 / 211 triangles
+garment_child_swim_trunks_folded: 872 / 211 triangles
+garment_child_swimsuit_onepiece_folded: 872 / 212 triangles
+garment_child_rash_vest_folded: 872 / 212 triangles
+INFO Draco mesh compression is available, use library at /tmp/blender-4.5.15-linux-x64/4.5/scripts/addons_core/io_scene_gltf2/libextern_draco.so
+
+
+garment_child_school_shirt_hung: 360 / 113 triangles
+garment_child_school_polo_hung: 326 / 102 triangles
+garment_child_pinafore_hung: 308 / 96 triangles
+garment_child_school_trousers_hung: 344 / 108 triangles
+garment_child_school_shorts_hung: 344 / 108 triangles
+garment_child_tshirt_hung: 308 / 96 triangles
+garment_child_hoodie_hung: 358 / 112 triangles
+garment_child_jeans_hung: 352 / 111 triangles
+garment_child_skirt_hung: 304 / 95 triangles
+garment_child_dress_hung: 340 / 106 triangles
+garment_child_pyjama_top_hung: 376 / 118 triangles
+garment_child_pyjama_bottoms_hung: 332 / 104 triangles
+garment_child_cardigan_hung: 360 / 113 triangles
+garment_child_socks_pair_hung: 358 / 112 triangles
+garment_child_shoes_hung: 296 / 92 triangles
+garment_child_cap_hung: 288 / 88 triangles
+garment_child_backpack_hung: 154 / 44 triangles
+garment_child_swim_trunks_hung: 332 / 104 triangles
+garment_child_swimsuit_onepiece_hung: 326 / 102 triangles
+garment_child_rash_vest_hung: 308 / 96 triangles
+
+
+garment_child_school_shirt_flat: 360 / 114 triangles
+garment_child_school_polo_flat: 326 / 102 triangles
+garment_child_pinafore_flat: 308 / 96 triangles
+garment_child_school_trousers_flat: 344 / 108 triangles
+garment_child_school_shorts_flat: 344 / 108 triangles
+garment_child_tshirt_flat: 308 / 96 triangles
+garment_child_hoodie_flat: 358 / 112 triangles
+garment_child_jeans_flat: 352 / 111 triangles
+garment_child_skirt_flat: 304 / 95 triangles
+garment_child_dress_flat: 340 / 107 triangles
+garment_child_pyjama_top_flat: 376 / 119 triangles
+garment_child_pyjama_bottoms_flat: 332 / 104 triangles
+garment_child_cardigan_flat: 360 / 114 triangles
+garment_child_socks_pair_flat: 358 / 112 triangles
+garment_child_shoes_flat: 296 / 92 triangles
+garment_child_cap_flat: 288 / 88 triangles
+garment_child_backpack_flat: 154 / 44 triangles
+garment_child_swim_trunks_flat: 332 / 104 triangles
+garment_child_swimsuit_onepiece_flat: 326 / 102 triangles
+garment_child_rash_vest_flat: 308 / 96 triangles
+
+
+PASS garments (complete): 57 states, 20 garments, 1628852/2500000 bytes, max 872/212 high/LOD triangles
+
+EXPORTED 20 child garments / 57 states; 1628852 bytes including the shared atlas/palette.
+Blender 4.5.15 LTS (hash 5afeabba6097 built 2026-10-22 01:33:47)
+
+Blender quit

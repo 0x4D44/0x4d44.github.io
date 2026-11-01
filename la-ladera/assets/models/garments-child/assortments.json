@@ -1,0 +1,308 @@
+{
+  "schemaVersion": 1,
+  "sizeTag": "child",
+  "ageRange": [
+    6,
+    10
+  ],
+  "roomKinds": [
+    "child_bedroom",
+    "school_locker"
+  ],
+  "placementPolicy": {
+    "targetSize": "child",
+    "fit": "Use the measured state dimensions; reject garments that do not fit the container or support.",
+    "roomKinds": [
+      "child_bedroom",
+      "school_locker"
+    ],
+    "schoolLocker": "Use the child_school_locker recipe for school lockers/cubbies; no adult garment fallback.",
+    "childBedroom": "Use child drawers and wardrobes; a separate furnishing pass decides whether to place loose clothes on beds or floors."
+  },
+  "bindings": [
+    {
+      "id": "child_drawer_school",
+      "kind": "drawer",
+      "sizeTag": "child",
+      "roomKinds": [
+        "child_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_school_shirt_folded",
+          "variant": "plain_cream",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_school_polo_folded",
+          "variant": "plain_cream",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_school_trousers_folded",
+          "variant": "plain_charcoal",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_school_shorts_folded",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_socks_pair_folded",
+          "variant": "plain_cream",
+          "count": 1,
+          "sizeTag": "child"
+        }
+      ]
+    },
+    {
+      "id": "child_drawer_daily",
+      "kind": "drawer",
+      "sizeTag": "child",
+      "roomKinds": [
+        "child_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_tshirt_folded",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_hoodie_folded",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_jeans_folded",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_skirt_folded",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_cardigan_folded",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child"
+        }
+      ]
+    },
+    {
+      "id": "child_drawer_sleep",
+      "kind": "drawer",
+      "sizeTag": "child",
+      "roomKinds": [
+        "child_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_pyjama_top_folded",
+          "variant": "stripe_teal",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_pyjama_bottoms_folded",
+          "variant": "stripe_teal",
+          "count": 1,
+          "sizeTag": "child"
+        }
+      ]
+    },
+    {
+      "id": "child_drawer_swimwear",
+      "kind": "drawer",
+      "sizeTag": "child",
+      "roomKinds": [
+        "child_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_swim_trunks_folded",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_swimsuit_onepiece_folded",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_rash_vest_folded",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child"
+        }
+      ]
+    },
+    {
+      "id": "child_wardrobe_daily",
+      "kind": "wardrobe",
+      "sizeTag": "child",
+      "roomKinds": [
+        "child_bedroom"
+      ],
+      "catalogueKeys": [
+        "wardrobe_2",
+        "wardrobe_3",
+        "wardrobe_metal"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_school_shirt_hung",
+          "variant": "plain_cream",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_child_pinafore_hung",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_child_dress_hung",
+          "variant": "plain_coral",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_child_hoodie_hung",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_child_cardigan_hung",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "hanger"
+        }
+      ]
+    },
+    {
+      "id": "child_wardrobe_accessories",
+      "kind": "wardrobe",
+      "sizeTag": "child",
+      "roomKinds": [
+        "child_bedroom"
+      ],
+      "catalogueKeys": [
+        "wardrobe_2",
+        "wardrobe_3"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_cap_flat",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_child_shoes_flat",
+          "variant": "plain_charcoal",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_child_backpack_flat",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "child_school_locker",
+      "kind": "wardrobe",
+      "sizeTag": "child",
+      "roomKinds": [
+        "school_locker"
+      ],
+      "catalogueKeys": [
+        "locker_pair",
+        "cubby_shelf"
+      ],
+      "items": [
+        {
+          "asset": "garment_child_school_polo_folded",
+          "variant": "plain_cream",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_school_shorts_folded",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_socks_pair_folded",
+          "variant": "plain_cream",
+          "count": 1,
+          "sizeTag": "child"
+        },
+        {
+          "asset": "garment_child_backpack_flat",
+          "variant": "plain_teal",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_child_cap_flat",
+          "variant": "plain_navy",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_child_shoes_flat",
+          "variant": "plain_charcoal",
+          "count": 1,
+          "sizeTag": "child",
+          "support": "shelf"
+        }
+      ]
+    }
+  ]
+}

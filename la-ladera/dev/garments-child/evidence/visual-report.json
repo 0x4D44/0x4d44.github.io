@@ -1,0 +1,3142 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-01T06:06:23.599Z",
+  "sourceHashes": {
+    "la-ladera/assets/models/garments-child/garments_flat.glb": "796ff1de98fa983bd733c7b65d924125fff3dff6a359d824581ecffb9547f784",
+    "la-ladera/assets/models/garments-child/garments_flat_lod.glb": "54a18242e390e7037ed154b0dc28615f8dbbd27d9d6e971b8126884f129c7664",
+    "la-ladera/assets/models/garments-child/garments_folded.glb": "56be5769f6a84377009218bfe12ee2bb3c26b444b8b04df258498a91f55d347b",
+    "la-ladera/assets/models/garments-child/garments_folded_lod.glb": "ffc6dfbf24e1da1ac1aed3fec9cb9f81264879a40f09b497c982a007672ff0e9",
+    "la-ladera/assets/models/garments-child/garments_hung.glb": "f22e969bf603703d982340554caf08516b346fbd6bc99cbda4c5b69526221bf7",
+    "la-ladera/assets/models/garments-child/garments_hung_lod.glb": "e0320fa338cf28a8e532c8764703d43620619960aa9488381d7f767d1d50cc7d",
+    "la-ladera/assets/models/garments/garments_flat.glb": "c746334409f06244b8ac429ac23865515d7e52c47faa90787c6a6cb6b5c45580",
+    "la-ladera/assets/models/garments/garments_flat_lod.glb": "775484694bc57d6c8601d1bc933f067f83bd42fd74844b47abefede74d29a6dc",
+    "la-ladera/assets/models/garments/garments_folded.glb": "df127642c10af9d1a9b2491381c1ee38d9b54d22398247123a3cc80a33f97bd9",
+    "la-ladera/assets/models/garments/garments_folded_lod.glb": "b61a66966f7b5e66784843b4273b08aa1a55d368a4bb8466400f9b33e8f0c180",
+    "la-ladera/assets/models/garments/garments_hung.glb": "f272909d6f3c0e7b9d2b28d561cd3c738763df600f3dc7d466a0889b48db4cbb",
+    "la-ladera/assets/models/garments/garments_hung_lod.glb": "b7c16f1a3d64f3c6084a52426a762ce51487dcc98a7d875d8cd8bcd24d00d453",
+    "la-ladera/assets/models/garments/palette.json": "b10e6788aa16b6b8fdbef279aa471a6903478f6fee3f8b523b4abfae88c30213",
+    "la-ladera/assets/models/garments/prints.png": "505f2f691eba28343aa00afc5a89836aedf98713b42e68f8400928b014935827",
+    "la-ladera/assets/models/manifest.garments-child.json": "fb706cfa38f650aef677912ed1e3239fd4dd0ae50866642b1785eef1247be3e3",
+    "la-ladera/assets/models/manifest.garments.json": "e747b9385eba8be601bb937a18e3db8ed887c65d1b115e6af3babdc4af7852f2",
+    "la-ladera/dev/garments-child/preview.html": "3223a0181f64e60e9d51e10022d19f3c2fccb09d964663e2ea25e5fd505104a2",
+    "la-ladera/dev/garments-child/preview.js": "7e3eda19739b4110dad8ae4438f840311ff32148b20a6d679c121a8e3c29847a",
+    "la-ladera/tools/blender/garments-child.catalog.json": "303076a3d77927ac5898d058838c96779b7c924ef009117e9b8212bb17952397"
+  },
+  "actualGLBMeshes": true,
+  "fixedOrthographicScale": true,
+  "previewOnly": true,
+  "contacts": [
+    {
+      "state": "hung",
+      "lod": false,
+      "count": 20,
+      "width": 2800,
+      "height": 2046,
+      "worldWidth": 1.92,
+      "worldHeight": 1.2799999999999998,
+      "imageWidth": 540,
+      "imageHeight": 360,
+      "items": [
+        {
+          "key": "garment_child_school_shirt_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_school_shirt_hung",
+          "triangles": 360,
+          "size": [
+            0.504447,
+            0.419271,
+            0.024587
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.762733
+          },
+          "occupiedPixels": 904,
+          "occupancy": 0.055176,
+          "renderedTriangles": 1112,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_polo_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_school_polo_hung",
+          "triangles": 326,
+          "size": [
+            0.504447,
+            0.419271,
+            0.024587
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.762733
+          },
+          "occupiedPixels": 904,
+          "occupancy": 0.055176,
+          "renderedTriangles": 1078,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pinafore_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_pinafore_hung",
+          "triangles": 308,
+          "size": [
+            0.397078,
+            0.589764,
+            0.022396
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.706811
+          },
+          "occupiedPixels": 1002,
+          "occupancy": 0.061157,
+          "renderedTriangles": 1060,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_trousers_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_school_trousers_hung",
+          "triangles": 344,
+          "size": [
+            0.318637,
+            0.583602,
+            0.022229
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.665957
+          },
+          "occupiedPixels": 1005,
+          "occupancy": 0.06134,
+          "renderedTriangles": 1096,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_shorts_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_school_shorts_hung",
+          "triangles": 344,
+          "size": [
+            0.318703,
+            0.259825,
+            0.02268
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.665991
+          },
+          "occupiedPixels": 502,
+          "occupancy": 0.03064,
+          "renderedTriangles": 1096,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_tshirt_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_tshirt_hung",
+          "triangles": 308,
+          "size": [
+            0.504447,
+            0.419271,
+            0.023188
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.762733
+          },
+          "occupiedPixels": 897,
+          "occupancy": 0.054749,
+          "renderedTriangles": 1060,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_hoodie_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_hoodie_hung",
+          "triangles": 358,
+          "size": [
+            0.663684,
+            0.531164,
+            0.032285
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.845669
+          },
+          "occupiedPixels": 1425,
+          "occupancy": 0.086975,
+          "renderedTriangles": 1110,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_jeans_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_jeans_hung",
+          "triangles": 352,
+          "size": [
+            0.318637,
+            0.583602,
+            0.022229
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.665957
+          },
+          "occupiedPixels": 1005,
+          "occupancy": 0.06134,
+          "renderedTriangles": 1104,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_skirt_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_skirt_hung",
+          "triangles": 304,
+          "size": [
+            0.373161,
+            0.349699,
+            0.022401
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.694355
+          },
+          "occupiedPixels": 702,
+          "occupancy": 0.042847,
+          "renderedTriangles": 1056,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_dress_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "floral_cream",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_dress_hung",
+          "triangles": 340,
+          "size": [
+            0.481028,
+            0.583971,
+            0.023184
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.750535
+          },
+          "occupiedPixels": 1316,
+          "occupancy": 0.080322,
+          "renderedTriangles": 1092,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_top_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_pyjama_top_hung",
+          "triangles": 376,
+          "size": [
+            0.647524,
+            0.41956,
+            0.02437
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.837252
+          },
+          "occupiedPixels": 1154,
+          "occupancy": 0.070435,
+          "renderedTriangles": 1128,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_bottoms_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_pyjama_bottoms_hung",
+          "triangles": 332,
+          "size": [
+            0.330402,
+            0.559614,
+            0.0223
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.672084
+          },
+          "occupiedPixels": 1004,
+          "occupancy": 0.061279,
+          "renderedTriangles": 1084,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cardigan_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_lavender",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_cardigan_hung",
+          "triangles": 360,
+          "size": [
+            0.646953,
+            0.437106,
+            0.024818
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.836955
+          },
+          "occupiedPixels": 1193,
+          "occupancy": 0.072815,
+          "renderedTriangles": 1112,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_socks_pair_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_socks_pair_hung",
+          "triangles": 358,
+          "size": [
+            0.173578,
+            0.228402,
+            0.03722
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.590405
+          },
+          "occupiedPixels": 186,
+          "occupancy": 0.011353,
+          "renderedTriangles": 1110,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_shoes_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_shoes_hung",
+          "triangles": 296,
+          "size": [
+            0.1722,
+            0.18,
+            0.084
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.589688
+          },
+          "occupiedPixels": 176,
+          "occupancy": 0.010742,
+          "renderedTriangles": 1048,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cap_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_cap_hung",
+          "triangles": 288,
+          "size": [
+            0.1416,
+            0.189864,
+            0.09588
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.57375
+          },
+          "occupiedPixels": 136,
+          "occupancy": 0.008301,
+          "renderedTriangles": 1040,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_backpack_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_backpack_hung",
+          "triangles": 154,
+          "size": [
+            0.24,
+            0.3294,
+            0.126
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.625
+          },
+          "occupiedPixels": 478,
+          "occupancy": 0.029175,
+          "renderedTriangles": 906,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swim_trunks_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_swim_trunks_hung",
+          "triangles": 332,
+          "size": [
+            0.295102,
+            0.259807,
+            0.023231
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.653699
+          },
+          "occupiedPixels": 480,
+          "occupancy": 0.029297,
+          "renderedTriangles": 1084,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swimsuit_onepiece_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_swimsuit_onepiece_hung",
+          "triangles": 326,
+          "size": [
+            0.274496,
+            0.457837,
+            0.023049
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.642967
+          },
+          "occupiedPixels": 526,
+          "occupancy": 0.032104,
+          "renderedTriangles": 1078,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_rash_vest_hung",
+          "state": "hung",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung.glb",
+          "node": "garment_child_rash_vest_hung",
+          "triangles": 308,
+          "size": [
+            0.480429,
+            0.401629,
+            0.023134
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.750223
+          },
+          "occupiedPixels": 844,
+          "occupancy": 0.051514,
+          "renderedTriangles": 1060,
+          "drawCalls": 3
+        }
+      ],
+      "screenshot": "contact-hung.jpg"
+    },
+    {
+      "state": "flat",
+      "lod": false,
+      "count": 20,
+      "width": 2800,
+      "height": 2046,
+      "worldWidth": 1.92,
+      "worldHeight": 1.2799999999999998,
+      "imageWidth": 540,
+      "imageHeight": 360,
+      "items": [
+        {
+          "key": "garment_child_school_shirt_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_school_shirt_flat",
+          "triangles": 360,
+          "size": [
+            0.505694,
+            0.017053,
+            0.418264
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.763382
+          },
+          "occupiedPixels": 833,
+          "occupancy": 0.050842,
+          "renderedTriangles": 1112,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_polo_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_school_polo_flat",
+          "triangles": 326,
+          "size": [
+            0.505694,
+            0.017053,
+            0.418264
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.763382
+          },
+          "occupiedPixels": 833,
+          "occupancy": 0.050842,
+          "renderedTriangles": 1078,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pinafore_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_pinafore_flat",
+          "triangles": 308,
+          "size": [
+            0.397323,
+            0.01541,
+            0.589181
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.706939
+          },
+          "occupiedPixels": 918,
+          "occupancy": 0.05603,
+          "renderedTriangles": 1060,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_trousers_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_school_trousers_flat",
+          "triangles": 344,
+          "size": [
+            0.319526,
+            0.014586,
+            0.582771
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.66642
+          },
+          "occupiedPixels": 919,
+          "occupancy": 0.056091,
+          "renderedTriangles": 1096,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_shorts_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_school_shorts_flat",
+          "triangles": 344,
+          "size": [
+            0.319296,
+            0.014578,
+            0.258117
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.6663
+          },
+          "occupiedPixels": 449,
+          "occupancy": 0.027405,
+          "renderedTriangles": 1096,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_tshirt_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_tshirt_flat",
+          "triangles": 308,
+          "size": [
+            0.505694,
+            0.015133,
+            0.418264
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.763382
+          },
+          "occupiedPixels": 823,
+          "occupancy": 0.050232,
+          "renderedTriangles": 1060,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_hoodie_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_hoodie_flat",
+          "triangles": 358,
+          "size": [
+            0.674659,
+            0.013545,
+            0.52989
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.851385
+          },
+          "occupiedPixels": 1313,
+          "occupancy": 0.080139,
+          "renderedTriangles": 1110,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_jeans_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_jeans_flat",
+          "triangles": 352,
+          "size": [
+            0.319526,
+            0.014586,
+            0.582771
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.66642
+          },
+          "occupiedPixels": 919,
+          "occupancy": 0.056091,
+          "renderedTriangles": 1104,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_skirt_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_skirt_flat",
+          "triangles": 304,
+          "size": [
+            0.373339,
+            0.01518,
+            0.348437
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.694447
+          },
+          "occupiedPixels": 632,
+          "occupancy": 0.038574,
+          "renderedTriangles": 1056,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_dress_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "floral_cream",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_dress_flat",
+          "triangles": 340,
+          "size": [
+            0.481297,
+            0.01494,
+            0.58306
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.750676
+          },
+          "occupiedPixels": 1202,
+          "occupancy": 0.073364,
+          "renderedTriangles": 1092,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_top_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_pyjama_top_flat",
+          "triangles": 376,
+          "size": [
+            0.650123,
+            0.015276,
+            0.418537
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.838606
+          },
+          "occupiedPixels": 1062,
+          "occupancy": 0.064819,
+          "renderedTriangles": 1128,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_bottoms_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_pyjama_bottoms_flat",
+          "triangles": 332,
+          "size": [
+            0.331258,
+            0.014536,
+            0.55875
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.67253
+          },
+          "occupiedPixels": 929,
+          "occupancy": 0.056702,
+          "renderedTriangles": 1084,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cardigan_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_lavender",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_cardigan_flat",
+          "triangles": 360,
+          "size": [
+            0.649731,
+            0.015405,
+            0.436283
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.838401
+          },
+          "occupiedPixels": 1090,
+          "occupancy": 0.066528,
+          "renderedTriangles": 1112,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_socks_pair_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_socks_pair_flat",
+          "triangles": 358,
+          "size": [
+            0.18627,
+            0.020723,
+            0.227669
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.597015
+          },
+          "occupiedPixels": 180,
+          "occupancy": 0.010986,
+          "renderedTriangles": 1110,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_shoes_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_shoes_flat",
+          "triangles": 296,
+          "size": [
+            0.1722,
+            0.084,
+            0.18
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.589688
+          },
+          "occupiedPixels": 170,
+          "occupancy": 0.010376,
+          "renderedTriangles": 1048,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cap_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_cap_flat",
+          "triangles": 288,
+          "size": [
+            0.1416,
+            0.09588,
+            0.189864
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.57375
+          },
+          "occupiedPixels": 134,
+          "occupancy": 0.008179,
+          "renderedTriangles": 1040,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_backpack_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_backpack_flat",
+          "triangles": 154,
+          "size": [
+            0.24,
+            0.126,
+            0.3294
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.625
+          },
+          "occupiedPixels": 450,
+          "occupancy": 0.027466,
+          "renderedTriangles": 906,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swim_trunks_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_swim_trunks_flat",
+          "triangles": 332,
+          "size": [
+            0.295753,
+            0.014911,
+            0.25816
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.654038
+          },
+          "occupiedPixels": 427,
+          "occupancy": 0.026062,
+          "renderedTriangles": 1084,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swimsuit_onepiece_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_swimsuit_onepiece_flat",
+          "triangles": 326,
+          "size": [
+            0.277985,
+            0.015333,
+            0.456758
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.644784
+          },
+          "occupiedPixels": 484,
+          "occupancy": 0.029541,
+          "renderedTriangles": 1078,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_rash_vest_flat",
+          "state": "flat",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_flat.glb",
+          "node": "garment_child_rash_vest_flat",
+          "triangles": 308,
+          "size": [
+            0.48168,
+            0.015235,
+            0.400573
+          ],
+          "referenceKey": "garment_tshirt_flat",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.842623,
+            0.026419,
+            0.697148
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.918033,
+            "child": 0.750875
+          },
+          "occupiedPixels": 779,
+          "occupancy": 0.047546,
+          "renderedTriangles": 1060,
+          "drawCalls": 3
+        }
+      ],
+      "screenshot": "contact-flat.jpg"
+    },
+    {
+      "state": "folded",
+      "lod": false,
+      "count": 17,
+      "width": 2800,
+      "height": 2046,
+      "worldWidth": 1.92,
+      "worldHeight": 1.2799999999999998,
+      "imageWidth": 540,
+      "imageHeight": 360,
+      "items": [
+        {
+          "key": "garment_child_school_shirt_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_school_shirt_folded",
+          "triangles": 872,
+          "size": [
+            0.260402,
+            0.030573,
+            0.221877
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.635626
+          },
+          "occupiedPixels": 354,
+          "occupancy": 0.021606,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_polo_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_school_polo_folded",
+          "triangles": 872,
+          "size": [
+            0.260401,
+            0.030573,
+            0.221877
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.635626
+          },
+          "occupiedPixels": 354,
+          "occupancy": 0.021606,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pinafore_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_pinafore_folded",
+          "triangles": 870,
+          "size": [
+            0.206434,
+            0.031861,
+            0.196585
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.607518
+          },
+          "occupiedPixels": 255,
+          "occupancy": 0.015564,
+          "renderedTriangles": 2414,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_trousers_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_school_trousers_folded",
+          "triangles": 871,
+          "size": [
+            0.170761,
+            0.031749,
+            0.195016
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.588938
+          },
+          "occupiedPixels": 202,
+          "occupancy": 0.012329,
+          "renderedTriangles": 2415,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_shorts_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_school_shorts_folded",
+          "triangles": 872,
+          "size": [
+            0.170493,
+            0.028272,
+            0.140826
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.588799
+          },
+          "occupiedPixels": 160,
+          "occupancy": 0.009766,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_tshirt_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_tshirt_folded",
+          "triangles": 872,
+          "size": [
+            0.260401,
+            0.028653,
+            0.221877
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.635625
+          },
+          "occupiedPixels": 348,
+          "occupancy": 0.02124,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_hoodie_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_hoodie_folded",
+          "triangles": 872,
+          "size": [
+            0.344408,
+            0.027294,
+            0.318997
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.679379
+          },
+          "occupiedPixels": 592,
+          "occupancy": 0.036133,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_jeans_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_jeans_folded",
+          "triangles": 871,
+          "size": [
+            0.170761,
+            0.031749,
+            0.195016
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.588938
+          },
+          "occupiedPixels": 202,
+          "occupancy": 0.012329,
+          "renderedTriangles": 2415,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_skirt_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_skirt_folded",
+          "triangles": 871,
+          "size": [
+            0.194413,
+            0.02877,
+            0.18891
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.601257
+          },
+          "occupiedPixels": 234,
+          "occupancy": 0.014282,
+          "renderedTriangles": 2415,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_dress_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "floral_cream",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_dress_folded",
+          "triangles": 871,
+          "size": [
+            0.248427,
+            0.0315,
+            0.196578
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.629389
+          },
+          "occupiedPixels": 289,
+          "occupancy": 0.017639,
+          "renderedTriangles": 2415,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_top_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_pyjama_top_folded",
+          "triangles": 872,
+          "size": [
+            0.332405,
+            0.028937,
+            0.221865
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.673127
+          },
+          "occupiedPixels": 434,
+          "occupancy": 0.026489,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_bottoms_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_pyjama_bottoms_folded",
+          "triangles": 872,
+          "size": [
+            0.176791,
+            0.031585,
+            0.187333
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.592079
+          },
+          "occupiedPixels": 197,
+          "occupancy": 0.012024,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cardigan_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_lavender",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_cardigan_folded",
+          "triangles": 872,
+          "size": [
+            0.332407,
+            0.029059,
+            0.231087
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.673128
+          },
+          "occupiedPixels": 448,
+          "occupancy": 0.027344,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_socks_pair_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_socks_pair_folded",
+          "triangles": 872,
+          "size": [
+            0.10142,
+            0.032993,
+            0.132086
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.552823
+          },
+          "occupiedPixels": 67,
+          "occupancy": 0.004089,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swim_trunks_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_swim_trunks_folded",
+          "triangles": 872,
+          "size": [
+            0.15851,
+            0.028252,
+            0.140767
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.582557
+          },
+          "occupiedPixels": 134,
+          "occupancy": 0.008179,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swimsuit_onepiece_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_swimsuit_onepiece_folded",
+          "triangles": 872,
+          "size": [
+            0.146402,
+            0.029099,
+            0.246308
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.576251
+          },
+          "occupiedPixels": 202,
+          "occupancy": 0.012329,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_rash_vest_folded",
+          "state": "folded",
+          "lod": false,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_folded.glb",
+          "node": "garment_child_rash_vest_folded",
+          "triangles": 872,
+          "size": [
+            0.248401,
+            0.02862,
+            0.212741
+          ],
+          "referenceKey": "garment_tshirt_folded",
+          "referenceTriangles": 772,
+          "referenceSize": [
+            0.434431,
+            0.047615,
+            0.376924
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.705433,
+            "child": 0.629375
+          },
+          "occupiedPixels": 282,
+          "occupancy": 0.017212,
+          "renderedTriangles": 2416,
+          "drawCalls": 3
+        }
+      ],
+      "screenshot": "contact-folded.jpg"
+    },
+    {
+      "state": "hung",
+      "lod": true,
+      "count": 20,
+      "width": 2800,
+      "height": 2046,
+      "worldWidth": 1.92,
+      "worldHeight": 1.2799999999999998,
+      "imageWidth": 540,
+      "imageHeight": 360,
+      "items": [
+        {
+          "key": "garment_child_school_shirt_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_school_shirt_hung_lod",
+          "triangles": 113,
+          "size": [
+            0.503266,
+            0.41756,
+            0.022601
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.762118
+          },
+          "occupiedPixels": 902,
+          "occupancy": 0.055054,
+          "renderedTriangles": 865,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_polo_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_school_polo_hung_lod",
+          "triangles": 102,
+          "size": [
+            0.503266,
+            0.41756,
+            0.022601
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.762118
+          },
+          "occupiedPixels": 902,
+          "occupancy": 0.055054,
+          "renderedTriangles": 854,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pinafore_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_pinafore_hung_lod",
+          "triangles": 96,
+          "size": [
+            0.395806,
+            0.588447,
+            0.018795
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.706149
+          },
+          "occupiedPixels": 993,
+          "occupancy": 0.060608,
+          "renderedTriangles": 848,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_trousers_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_school_trousers_hung_lod",
+          "triangles": 108,
+          "size": [
+            0.317418,
+            0.582297,
+            0.01934
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.665322
+          },
+          "occupiedPixels": 989,
+          "occupancy": 0.060364,
+          "renderedTriangles": 860,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_school_shorts_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_school_shorts_hung_lod",
+          "triangles": 108,
+          "size": [
+            0.317436,
+            0.258465,
+            0.018519
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.665331
+          },
+          "occupiedPixels": 490,
+          "occupancy": 0.029907,
+          "renderedTriangles": 860,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_tshirt_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_tshirt_hung_lod",
+          "triangles": 96,
+          "size": [
+            0.503266,
+            0.41756,
+            0.020473
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.762118
+          },
+          "occupiedPixels": 896,
+          "occupancy": 0.054688,
+          "renderedTriangles": 848,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_hoodie_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_hoodie_hung_lod",
+          "triangles": 112,
+          "size": [
+            0.662462,
+            0.529857,
+            0.029656
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.845032
+          },
+          "occupiedPixels": 1410,
+          "occupancy": 0.08606,
+          "renderedTriangles": 864,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_jeans_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_navy",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_jeans_hung_lod",
+          "triangles": 111,
+          "size": [
+            0.317418,
+            0.582297,
+            0.01934
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.665322
+          },
+          "occupiedPixels": 989,
+          "occupancy": 0.060364,
+          "renderedTriangles": 863,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_skirt_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_skirt_hung_lod",
+          "triangles": 95,
+          "size": [
+            0.372053,
+            0.348325,
+            0.021009
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.693778
+          },
+          "occupiedPixels": 698,
+          "occupancy": 0.042603,
+          "renderedTriangles": 847,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_dress_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "floral_cream",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_dress_hung_lod",
+          "triangles": 106,
+          "size": [
+            0.479773,
+            0.58266,
+            0.023299
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.749882
+          },
+          "occupiedPixels": 1310,
+          "occupancy": 0.079956,
+          "renderedTriangles": 858,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_top_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_pyjama_top_hung_lod",
+          "triangles": 118,
+          "size": [
+            0.646315,
+            0.41825,
+            0.022981
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.836622
+          },
+          "occupiedPixels": 1144,
+          "occupancy": 0.069824,
+          "renderedTriangles": 870,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_pyjama_bottoms_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_pyjama_bottoms_hung_lod",
+          "triangles": 104,
+          "size": [
+            0.32918,
+            0.558307,
+            0.019388
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.671448
+          },
+          "occupiedPixels": 998,
+          "occupancy": 0.060913,
+          "renderedTriangles": 856,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cardigan_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_lavender",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_cardigan_hung_lod",
+          "triangles": 113,
+          "size": [
+            0.645735,
+            0.435794,
+            0.020876
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.83632
+          },
+          "occupiedPixels": 1178,
+          "occupancy": 0.071899,
+          "renderedTriangles": 865,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_socks_pair_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_cream",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_socks_pair_hung_lod",
+          "triangles": 112,
+          "size": [
+            0.170193,
+            0.22473,
+            0.029867
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.588642
+          },
+          "occupiedPixels": 183,
+          "occupancy": 0.011169,
+          "renderedTriangles": 864,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_shoes_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_charcoal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_shoes_hung_lod",
+          "triangles": 92,
+          "size": [
+            0.168643,
+            0.17452,
+            0.082356
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.587835
+          },
+          "occupiedPixels": 169,
+          "occupancy": 0.010315,
+          "renderedTriangles": 844,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_cap_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_cap_hung_lod",
+          "triangles": 88,
+          "size": [
+            0.141658,
+            0.189657,
+            0.095385
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.57378
+          },
+          "occupiedPixels": 136,
+          "occupancy": 0.008301,
+          "renderedTriangles": 840,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_backpack_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_backpack_hung_lod",
+          "triangles": 44,
+          "size": [
+            0.237,
+            0.322958,
+            0.117562
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.623438
+          },
+          "occupiedPixels": 458,
+          "occupancy": 0.027954,
+          "renderedTriangles": 796,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swim_trunks_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "stripe_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_swim_trunks_hung_lod",
+          "triangles": 104,
+          "size": [
+            0.29384,
+            0.258489,
+            0.019609
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.653041
+          },
+          "occupiedPixels": 470,
+          "occupancy": 0.028687,
+          "renderedTriangles": 856,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_swimsuit_onepiece_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_coral",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_swimsuit_onepiece_hung_lod",
+          "triangles": 102,
+          "size": [
+            0.273401,
+            0.456453,
+            0.020047
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.642396
+          },
+          "occupiedPixels": 520,
+          "occupancy": 0.031738,
+          "renderedTriangles": 854,
+          "drawCalls": 3
+        },
+        {
+          "key": "garment_child_rash_vest_hung",
+          "state": "hung",
+          "lod": true,
+          "variant": "plain_teal",
+          "glb": "garments-child/garments_hung_lod.glb",
+          "node": "garment_child_rash_vest_hung_lod",
+          "triangles": 96,
+          "size": [
+            0.479247,
+            0.399907,
+            0.020414
+          ],
+          "referenceKey": "garment_tshirt_hung",
+          "referenceTriangles": 376,
+          "referenceSize": [
+            0.834858,
+            0.699156,
+            0.049354
+          ],
+          "modelScale": [
+            1,
+            1,
+            1
+          ],
+          "referenceScale": [
+            1,
+            1,
+            1
+          ],
+          "cameraExtent": {
+            "adult": 0.913988,
+            "child": 0.749608
+          },
+          "occupiedPixels": 827,
+          "occupancy": 0.050476,
+          "renderedTriangles": 848,
+          "drawCalls": 3
+        }
+      ],
+      "screenshot": "contact-hung-lod.jpg"
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "contact-hung.jpg",
+      "bytes": 788108,
+      "sha256": "0c7501fe56d4b104c72000346288ad9466497ae65bead606b5dc148f4c957c4b"
+    },
+    {
+      "file": "contact-flat.jpg",
+      "bytes": 747600,
+      "sha256": "b61e47fd44f74d732e260af69c0d76fafb7b53fc06274ac6ff6de7826b2ceb22"
+    },
+    {
+      "file": "contact-folded.jpg",
+      "bytes": 623277,
+      "sha256": "18843ea97881d171042a1e457edba2a1d40f726567062585fe7d148a90e235f8"
+    },
+    {
+      "file": "contact-hung-lod.jpg",
+      "bytes": 783974,
+      "sha256": "6ab2a96b4f8e0796f08d942d05ceb0432e93131f0cc8575ccd9421dd13de7d01"
+    }
+  ],
+  "initial": {
+    "revision": "180",
+    "count": 20,
+    "states": {
+      "hung": 20,
+      "flat": 20,
+      "folded": 17
+    },
+    "atlas": {
+      "width": 256,
+      "height": 256
+    }
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "loadedFiles": [
+    "garments/garments_hung.glb",
+    "garments-child/garments_hung.glb",
+    "garments/garments_flat.glb",
+    "garments-child/garments_flat.glb",
+    "garments/garments_folded.glb",
+    "garments-child/garments_folded.glb",
+    "garments-child/garments_hung_lod.glb"
+  ],
+  "browser": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "teeMeasuredLengthRatio": 0.5996816161200076,
+  "pass": true
+}

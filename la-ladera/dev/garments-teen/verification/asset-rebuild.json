@@ -1,0 +1,84 @@
+{
+  "same": true,
+  "files": [
+    {
+      "file": "garments-teen/CREDITS.md",
+      "sha256": "abfc0238c5faafc47687f9643a4e76b3d908f94405c47c6e8bb49eda2f2645a4",
+      "rebuiltSha256": "abfc0238c5faafc47687f9643a4e76b3d908f94405c47c6e8bb49eda2f2645a4",
+      "same": true
+    },
+    {
+      "file": "garments-teen/assortments.json",
+      "sha256": "b2cf3375a8a33da12428f2af534bb2ce7cb47aac3c95ed7a188794c1aa831cfe",
+      "rebuiltSha256": "b2cf3375a8a33da12428f2af534bb2ce7cb47aac3c95ed7a188794c1aa831cfe",
+      "same": true
+    },
+    {
+      "file": "garments-teen/garments_flat.glb",
+      "sha256": "3e44e01e28ff1030b81e5d421c15311d30167cc7eec6678ee5c16597320348d6",
+      "rebuiltSha256": "3e44e01e28ff1030b81e5d421c15311d30167cc7eec6678ee5c16597320348d6",
+      "same": true
+    },
+    {
+      "file": "garments-teen/garments_flat_lod.glb",
+      "sha256": "c79a00e0eed8560044bb8f9f5fcabac1b42544e102531f7b448c5dc23b8197f8",
+      "rebuiltSha256": "c79a00e0eed8560044bb8f9f5fcabac1b42544e102531f7b448c5dc23b8197f8",
+      "same": true
+    },
+    {
+      "file": "garments-teen/garments_folded.glb",
+      "sha256": "8a39aac66c2ba0c969ef6ee645a06659614b6c4f174e31e855fd3ed2ce89a30a",
+      "rebuiltSha256": "8a39aac66c2ba0c969ef6ee645a06659614b6c4f174e31e855fd3ed2ce89a30a",
+      "same": true
+    },
+    {
+      "file": "garments-teen/garments_folded_lod.glb",
+      "sha256": "a3c6bdeb354d11aba0b3af05a0d49fbc469f1e2def6e012a9670707ac668977c",
+      "rebuiltSha256": "a3c6bdeb354d11aba0b3af05a0d49fbc469f1e2def6e012a9670707ac668977c",
+      "same": true
+    },
+    {
+      "file": "garments-teen/garments_hung.glb",
+      "sha256": "e4000d33e97d3b735c592b67857174be4a22b94f29e2d216aec1facc5a880251",
+      "rebuiltSha256": "e4000d33e97d3b735c592b67857174be4a22b94f29e2d216aec1facc5a880251",
+      "same": true
+    },
+    {
+      "file": "garments-teen/garments_hung_lod.glb",
+      "sha256": "97b5e742e8ecd83438db564038ec8940d3aee19f1b96ac36d6e5e9eae8be9ced",
+      "rebuiltSha256": "97b5e742e8ecd83438db564038ec8940d3aee19f1b96ac36d6e5e9eae8be9ced",
+      "same": true
+    },
+    {
+      "file": "garments-teen/teen/fabrics.png",
+      "sha256": "ca247ef2b7c7db9e60aca366d1eaf900d3c5f1b46459810e27347799254c1c99",
+      "rebuiltSha256": "ca247ef2b7c7db9e60aca366d1eaf900d3c5f1b46459810e27347799254c1c99",
+      "same": true
+    },
+    {
+      "file": "garments-teen/teen/palette.json",
+      "sha256": "87fdd2580ac08732ec308056fa50207950ee3bde9ad1f0ca5553ee9d3fd3b5c2",
+      "rebuiltSha256": "87fdd2580ac08732ec308056fa50207950ee3bde9ad1f0ca5553ee9d3fd3b5c2",
+      "same": true
+    },
+    {
+      "file": "manifest.garments-teen.json",
+      "sha256": "34ce6fbfe9fff17f17f14ab5c20bd4d42aea876d71c2af87831c1b02df917699",
+      "rebuiltSha256": "34ce6fbfe9fff17f17f14ab5c20bd4d42aea876d71c2af87831c1b02df917699",
+      "same": true
+    }
+  ],
+  "blender": "4.5.15 LTS",
+  "threads": 1,
+  "nice": 15,
+  "command": "blender --background --factory-startup --threads 1 --python la-ladera/tools/blender/garments_teen_build.py -- --out <isolated models directory>",
+  "independentValidationBeforeInstall": true,
+  "validatedRebuildIdentical": true,
+  "partialExportVerified": {
+    "style": "school_shoes_pair",
+    "states": 2,
+    "lods": 2,
+    "packs": 2,
+    "independentValidationBeforeInstall": true
+  }
+}
