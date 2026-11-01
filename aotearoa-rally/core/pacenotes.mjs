@@ -206,6 +206,16 @@ export function buildPacenotes(c, opts = {}) {
   }
   out.sort((a, b) => a.s - b.s);
 
+  // early warning: a hairpin with no call 150-400 m before it gets its own "hairpin ahead" call 170 m out
+  for (const h of out.filter((x) => x.kind === "hairpin")) {
+    const ws = h.s - 170;
+    if (ws < 40) continue;
+    if (out.some((x) => x !== h && x.s >= h.s - 400 && x.s <= h.s - 150 && x.kind !== "surface")) continue;
+    if (out.some((x) => Math.abs(x.s - ws) < 15)) continue;
+    out.push({ s: ws, kind: "caution", dir: null, severity: 6, length: 20, modifiers: ["caution"], _prio: 3, _warn: true });
+  }
+  out.sort((a, b) => a.s - b.s);
+
   // ---------------- chaining ("into")
   for (let k = 0; k < out.length - 1; k++) {
     const a = out[k], b = out[k + 1];
@@ -318,7 +328,7 @@ export function buildPacenotes(c, opts = {}) {
       case "ford": n.speak = "Caution, ford"; n.text = "FORD"; break;
       case "bridge": n.speak = "Caution, one lane bridge"; n.text = "BRIDGE narrow"; break;
       case "caution":
-        if (n._cave) { n.speak = "Caution, cave mouth, trees close in"; n.text = "CAVE narrows"; } else { n.speak = "Cattle grid"; n.text = "GRID"; }
+        if (n._warn) { n.speak = "Hairpin ahead"; n.text = "HAIRPIN ahead"; } else if (n._cave) { n.speak = "Caution, cave mouth, trees close in"; n.text = "CAVE narrows"; } else { n.speak = "Cattle grid"; n.text = "GRID"; }
         break;
       case "surface": {
         const to = SURF_NAME[n._to] ?? "gravel", from = SURF_NAME[n._from] ?? "gravel";
@@ -351,7 +361,7 @@ export function buildPacenotes(c, opts = {}) {
   }
   for (const n of out) {
     n.lead = makeLead(n.s);
-    delete n._prio; delete n._say; delete n._gIn; delete n._apex; delete n._grid; delete n._cave; delete n._from; delete n._to;
+    delete n._prio; delete n._say; delete n._gIn; delete n._apex; delete n._grid; delete n._cave; delete n._warn; delete n._from; delete n._to;
     if (!n.modifiers) n.modifiers = [];
   }
   return out;

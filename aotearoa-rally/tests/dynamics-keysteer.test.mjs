@@ -95,7 +95,7 @@ test("front-end grip: on loose ground a turned-in car corners harder than with t
     v.reset(st.startPose, 18, st);
     const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
     let best = 0;
-    for (let i = 0; i < 120 * 3; i++) { inp.steer = Math.min(1, i * DT * 1.2) * 0.5; inp.throttle = speedThrottle(v, 18); v.step(DT, inp, st); v.state.events.length = 0; if (i > 60) best = Math.max(best, Math.abs(v.state.yawRate) * v.state.speed / 9.81); }
+    for (let i = 0; i < 120 * 3; i++) { inp.steer = Math.min(1, i * DT * 1.2) * 0.5; inp.throttle = speedThrottle(v, 18); v.step(DT, inp, st); v.state.events.length = 0; if (i > 60 && i < 150) best = Math.max(best, Math.abs(v.state.yawRate) * v.state.speed / 9.81); } // turn-in window only: later the speed controller's throttle rebound spins the rear driven wheels (power-on rotation), which has nothing to do with the front axle
     return best;
   };
   for (const id of ["huia", "kea", "piwakawaka"]) {
@@ -135,20 +135,55 @@ test("pinned car: a head-on tree hit at 70 km/h with the throttle held raises st
   }
 });
 
-test("pinned car: Waitomo s=1300, Huia, 70 km/h into the bank and trees, then 3 s throttle with the wheel over: the car is flagged stuck and is moving again within 3 s of the flag", () => {
-  const st = buildStage("waitomo");
-  const sm = st.sample(1300, {});
-  const v = createVehicle(CARS.huia, { tyre: bestTyreFor(st) });
-  v.reset({ x: sm.x, y: st.heightAt(sm.x, sm.z) + 0.4, z: sm.z, yaw: Math.atan2(-sm.tx, -sm.tz) }, 70 / 3.6, st);
-  const inp = { steer: 0, throttle: 1, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
-  let kb = 0, tStuck = -1, maxAfter = 0;
-  for (let i = 0; i < 120 * 6; i++) {
-    const t = i * DT;
-    kb = shapeKeySteer(kb, t < 1.8 ? 1 : -1, v.state.speed, DT); inp.steer = kb;
-    v.step(DT, inp, st); v.state.events.length = 0;
-    if (v.state.stuck && tStuck < 0) tStuck = t;
-    if (tStuck >= 0 && t < tStuck + 3) maxAfter = Math.max(maxAfter, Math.abs(v.state.speedKmh));
+test("pinned car: nosed into a trunk from a standing start with the throttle held, the car is flagged stuck within PIN_AFTER + 1 s of contact and is eased 4+ m clear (or moving 8+ km/h) within 3 s of the flag", () => {
+  for (const id of CAR_IDS) {
+    // car 1.0 m short of a hard trunk, nose on, at rest: deterministic pin, no run-up
+    const tree = { x: 0, z: -4.2, r: 0.6, kind: "tree", hardness: 0.9, y0: 0, y1: 6 };
+    const st = makeTestStage({ length: 600, width: 12, boundary: 400, obstacles: [tree] });
+    const v = createVehicle(CARS[id], { tyre: "gravel" });
+    v.reset(st.startPose, 0, st);
+    const inp = { steer: 0, throttle: 1, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
+    let tFirst = -1, tStuck = -1, best = 0, bestV = 0;
+    for (let i = 0; i < 120 * 10; i++) {
+      const t = i * DT, s = v.state;
+      v.step(DT, inp, st); v.state.events.length = 0;
+      if (tFirst < 0 && s.collided < 0.05) tFirst = t;
+      if (s.stuck && tStuck < 0) tStuck = t;
+      if (tStuck >= 0 && t <= tStuck + 3) { best = Math.max(best, Math.hypot(s.x - tree.x, s.z - tree.z)); bestV = Math.max(bestV, s.speedKmh); }
+    }
+    assert.ok(tFirst >= 0, id + " never touched the trunk");
+    assert.ok(tStuck >= 0 && tStuck - tFirst <= 2.0, `${id}: stuck flag at ${tStuck.toFixed(2)} s, first contact ${tFirst.toFixed(2)} s`);
+    assert.ok(best >= 4 || bestV >= 8, `${id}: only ${best.toFixed(1)} m from the trunk, top ${bestV.toFixed(1)} km/h within 3 s of the flag`);
   }
-  assert.ok(tStuck >= 0, "state.stuck never raised in the grove");
-  assert.ok(maxAfter >= 8, `still crawling: ${maxAfter.toFixed(1)} km/h within 3 s of the stuck flag`);
+});
+
+// ---- round 6: turn-in must be easy on gravel ----
+test("turn-in on gravel: a held key keeps most of its lock at 0.5 s (the assist no longer eats it): >= 10 deg at 60 km/h, >= 5 deg at 80 km/h, every car", () => {
+  for (const id of CAR_IDS) for (const [kmh, minDeg] of [[60, 10], [80, 5]]) {
+    const r = keyRun(id, "GRAVEL", "gravel", kmh / 3.6, Infinity, 0.6);
+    const a = r.ang[Math.round(0.5 / DT)] * 57.3;
+    assert.ok(a >= minDeg, `${id} ${kmh} km/h: wheel angle ${a.toFixed(1)} deg at 0.5 s, wanted >= ${minDeg}`);
+  }
+});
+
+test("R40 gravel bend: every car holds at least 60 km/h round a 40 m radius bend (0.7 g) with a simple pursuit driver", () => {
+  const st = makeTestStage({ length: 600, width: 14, boundary: 400, surf: SURFACE.GRAVEL, curv: (s) => (s > 100 ? -1 / 40 : 0) });
+  for (const id of CAR_IDS) {
+    const U = 60 / 3.6;
+    const v = createVehicle(CARS[id], { tyre: "gravel" });
+    v.reset(st.startPose, U, st);
+    const inp = { steer: 0, throttle: 0, brake: 0, handbrake: 0, gearUp: false, gearDown: false };
+    let minV = 99, off = false;
+    for (let i = 0; i < 120 * 12; i++) {
+      const s = v.state;
+      inp.throttle = speedThrottle(v, U);
+      const sm = st.sample(Math.min(st.lengthM - 1, s.s + Math.max(6, s.speed * 0.5)), {});
+      const dx = sm.x - s.x, dz = sm.z - s.z, fx = -Math.sin(s.yaw), fz = -Math.cos(s.yaw), rx = Math.cos(s.yaw), rz = -Math.sin(s.yaw);
+      inp.steer = Math.max(-1, Math.min(1, 2 * Math.atan2(dx * rx + dz * rz, Math.max(0.1, dx * fx + dz * fz))));
+      v.step(DT, inp, st); v.state.events.length = 0;
+      if (s.s > 150) { minV = Math.min(minV, s.speed); if (!s.onRoad) off = true; }
+      if (s.s > 300) break;
+    }
+    assert.ok(!off && minV >= U * 0.8, `${id}: min speed ${(minV * 3.6).toFixed(0)} km/h, off road ${off}`);
+  }
 });
