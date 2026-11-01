@@ -8,13 +8,13 @@
 import * as THREE from 'three';
 import { CATALOG } from './catalog.js';
 import { decalDef } from './decals.js';
-import { drawStandin, setAtlas, tintFor, u01 } from './standins.js';
+import { drawStandin, drawAddon, setAtlas, tintFor, u01 } from './standins.js';
 import { layoutOf } from './carcass.js';
 import { foldMaterials } from './fold.js';
 import { deferContainers } from './containers.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
-import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
+import { buildRotors, buildTvGlow, makeTvGlowMaterial, makeTvScreens } from './anim.js';
 import { ALL_GARMENT_KEYS, garmentKeysFor, registerGarmentAssets, garmentsOff } from './garments.js';
 import { GOODS_FIXTURES } from './goods-assortments.js';
 import { buildGoods } from './goods-render.js';
@@ -48,6 +48,7 @@ export async function loadInteriorAssets(ctx) {
     const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
     if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
     makeTvGlowMaterial(ctx);
+    makeTvScreens(ctx);
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
   const a = ctx.assets;
   if (!a?.names) return;
@@ -72,6 +73,14 @@ export async function loadGarmentAssets(ctx, options = {}) {
 }
 
 const _tc = new THREE.Color();
+
+/** The glass of a TV: u along its width, v up its height over the part's own extent, so one picture covers it whatever the model's UVs are. */
+function screenUV(geometry) {
+  geometry.computeBoundingBox();
+  const { min, max } = geometry.boundingBox, pa = geometry.attributes.position, uv = new Float32Array(pa.count * 2), w = max.x - min.x || 1, h = max.y - min.y || 1;
+  for (let i = 0; i < pa.count; i++) { uv[i * 2] = (pa.getX(i) - min.x) / w; uv[i * 2 + 1] = (pa.getY(i) - min.y) / h; }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
 
 /** Reject a broken part before any vertices are appended to a building. Checked once per loaded asset. */
 function checkPart(geometry, name) {
@@ -116,7 +125,10 @@ export function glbParts(ctx, name) {
     try { node.traverse((o) => {
       if (!o.isMesh) return;
       const geometry = o.geometry.clone().applyMatrix4(mm.multiplyMatrices(inv, o.matrixWorld));
-      const matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      let matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      if (/^tv_screen_[ab]$/.test(matKey ?? '')) {                                  // (D28) a screen shows a picture: planar UVs over its glass; the tube set's glass, a cap of a sphere, has a pair of its own
+        screenUV(geometry); if (name === 'tv_crt') matKey = matKey.replace('screen_', 'screen_crt_');
+      }
       try {
         checkPart(geometry, o.name);
         if (!matKey || matKey === 'missing_asset' || (ctx.matlib?.has && !ctx.matlib.has(matKey))) throw new Error(`${o.name}: unknown material '${matKey}'`);
@@ -207,7 +219,7 @@ export function buildInterior(ctx, bp) {
           if (reported++ < MAX_REPORTED) (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, name: rec.name, message: 'model fallback: ' + String(e?.message ?? e) });
         }
       }
-      if (n) st.glb++; else { n = drawStandin(b, rec, c); st.standin++; }
+      if (n) { st.glb++; n += drawAddon(b, rec, c); } else { n = drawStandin(b, rec, c); st.standin++; }          // (a library model that carries none of what hangs on it: the butcher's rail of hooks)
       st.prims += n;
     } catch (e) {
       st.failed++;
