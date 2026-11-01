@@ -392,7 +392,7 @@ S.chair = (P, c, T, r) => {
   const { W, D } = P, H = c.size[1], sh = c.seat[0], n = r.name;
   if (n === 'office_chair') {
     const col = T ?? 0x2a2a2a;
-    P.cyl('metal_dark', 0, 0, 0, 0.03, sh - 0.12, 8);
+    P.cyl('metal_dark', 0, 0, 0, 0.03, sh - 0.09, 8);                 // runs 1 cm up into the seat slab (sh-0.1..sh), so the column carries the seat
     for (let i = 0; i < 3; i++) P.box('metal_dark', 0, 0.02, 0, 0.5, 0.03, 0.04, undefined, undefined, i * Math.PI / 3);
     P.flat(0, sh - 0.1, 0, W, 0.1, D, col);
     P.flat(0, sh, -D / 2 + 0.05, W - 0.06, H - sh, 0.08, col);

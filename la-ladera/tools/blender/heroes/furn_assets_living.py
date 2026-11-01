@@ -56,10 +56,10 @@ def chair_plastic(A, key, c):
         x = -W / 2 + 0.07 + k * (W - 0.14) / 3
         A.box(FLAT, x, sh + 0.02, -D / 2 + 0.05, 0.075, H - sh - 0.04, 0.025, None, True, r=0.008, rx=-0.16)
     A.box(FLAT, 0, H - 0.075, -D / 2 + 0.01, W - 0.01, 0.07, 0.03, None, True, r=0.012, rx=-0.16)            # top rail of the back
-    for sx in (-1, 1):
-        for sz in (-1, 1):
+    for sx in (-1, 1):                                                                   # four legs, splayed out at the foot and leaning in at the top: the top ring runs 1.1 cm up into the seat slab
+        for sz in (-1, 1):                                                               # (its open end hidden there) and stays inside the slab's footprint (tests/furniture-legs.test.mjs)
             x, z = sx * (W / 2 - 0.045), sz * (D / 2 - 0.05)
-            A.cyl(FLAT, x, 0, z, 0.017, sh - 0.07, 8, r1=0.024, col=shade(0.88), tint=True, caps=False, rz=-sx * 0.05, rx=sz * 0.04)
+            A.cyl(FLAT, x, 0, z, 0.017, sh - 0.023, 8, r1=0.024, col=shade(0.88), tint=True, caps=False, rz=sx * 0.05, rx=-sz * 0.04)
     if arms:
         for sx in (-1, 1):
             A.box(FLAT, sx * (W / 2 - 0.02), sh, 0.0, 0.04, 0.045, D * 0.7, None, True, r=0.016)
