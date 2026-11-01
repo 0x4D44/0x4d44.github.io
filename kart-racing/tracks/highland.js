@@ -1,11 +1,12 @@
 // Highland Fling: Scottish Highlands circuit - theme, terrain carving (loch, burn, glen), water, weather and the scenery orchestration.
 import * as THREE from "three";
-import { TAU, LOCH, S, BURN, VIADUCT, sm, vnoise, lochR, burnQuery, burnBed } from "./highland-geo.js";
+import { TAU, LOCH, LOCH2, GLEN_S, BURN, VIADUCT, sm, vnoise, lochR, burnQuery, burnBed } from "./highland-geo.js";
 import { tartanCanvas, TARTAN_RED, TARTAN_BLUE, TARTAN_GREEN, toTexture } from "./highland-tex.js";
 import { buildNature, silageBales } from "./highland-nature.js";
 import { buildStructs } from "./highland-structs.js";
 import { buildAds } from "./highland-ads.js";
 import { buildPiper, buildGiantPiper } from "./highland-piper.js";
+import { buildNessie } from "./highland-nessie.js";
 
 const theme = {
   shoulder: 4.0, kerb: [0xb3202a, 0x16365f], wallBase: "#e6e1d2", wallAccent: "#9b1c24", wallText: ["HIGHLAND FLING", "APEX KARTS", "WEE DRAM", "MIND THE COOS"],
@@ -19,32 +20,45 @@ const theme = {
   },
 };
 
-let _bridgeInfo = null;
-let _deckY = null;
 export default {
   id: "highland",
   theme,
   terrainAmp: 14,
 
-  // runs before the terrain is built: open a gully under the humpback bridge by releasing the road-following constraint there
+  // runs before the terrain is built: release the road-following constraint over the bridged glen + the humpback gully, so the terrain can fall away under the high road
   prepTerrain(track) {
-    const X = track._ctx, { N, ds } = X.C, L = track.length;
+    const X = track._ctx, { N, ds } = X.C;
     for (let i = 0; i < N; i++) {
-      let d = Math.abs(i * ds - S.bridge); d = Math.min(d, L - d);
-      const u = sm(20, 54, d); X.cor[i] = Math.min(X.cor[i], u);
+      const sx = i * ds, d = Math.max(0, GLEN_S.a - sx, sx - GLEN_S.b);
+      X.cor[i] = Math.min(X.cor[i], sm(0, 44, d));
     }
   },
 
   // extra terrain shaping applied to the background height (the road corridor is blended in afterwards)
   carve(track, x, z, h) {
-    // the glen the railway viaduct strides across
-    const dz = Math.abs(z - VIADUCT.z);
-    if (dz < 50 && x > 30 && x < 262) {
-      const w = (1 - sm(14, 50, dz)) * sm(30, 56, x) * (1 - sm(238, 262, x));
-      const target = 6.8 + 0.21 * Math.abs(x - VIADUCT.cx);
+    const V = VIADUCT, dz = Math.abs(z - V.z);
+    // the glen the railway viaduct strides across: a steep V-shaped trough (axis x = V.cx), closed off north and south so the high road bridge spans a pit
+    if (dz < 70 && x > 30 && x < 262) {
+      const w = (1 - sm(30, 66, dz)) * sm(30, 56, x) * (1 - sm(238, 262, x));
+      const target = V.floor + V.wall * Math.abs(x - V.cx);
       if (target < h) h += (target - h) * w;
     }
-    // the loch
+    // steep wooded knolls at each end of the viaduct, so the line runs into a hillside (tunnel portals) instead of ending in the open
+    // (raised before the lochs are cut, so the east one is trimmed into a cliff above the water)
+    if (dz < 60) {
+      const wz = 1 - sm(18, 52, dz);
+      const wl = sm(0, 1, (V.vx0 + 6 - x) / 18) * sm(V.vx0 - 70, V.vx0 - 35, x);
+      const wr = sm(0, 1, (x - (V.vx1 - 6)) / 18) * (1 - sm(V.vx1 + 14, V.vx1 + 40, x));
+      const top = wl >= wr ? V.deck + 13 : V.deck + 14, w = Math.max(wl, wr) * wz;
+      if (w > 0 && top > h) h += (top - h) * w;
+    }
+    // the railway runs between its two tunnel portals in a rock cutting: a floor just under the trackbed, sides sloping away at ~42 deg.
+    // (terrain nodes sit on a 6 m grid, V.z is midway between two rows and the portals on columns, so the trench and the headwalls come out square)
+    if (x >= V.pw - 0.01 && x <= V.pe + 0.01 && dz < 30) {
+      const cut = V.deck - 1.2 + 0.9 * Math.max(0, dz - 3);
+      if (cut < h) h = cut;
+    }
+    // the lochs
     const r = lochR(x, z);
     if (r < 1.4) {
       const w = 1 - sm(1.0, 1.4, r);
@@ -55,15 +69,7 @@ export default {
     const q = burnQuery(x, z);
     if (q.d < 40) {
       const hb = burnBed(q.t) + 0.5 * Math.max(0, q.d - 7.5);
-      if (hb < h) h += (hb - h) * sm(2, 40, q.t);
-    }
-    // steep wooded knolls at each end of the viaduct, so the line runs into a hillside (tunnel portals) instead of ending in the open
-    if (dz < 90) {
-      const V = VIADUCT, wz = 1 - sm(40, 90, dz);
-      if (_deckY == null) _deckY = track.locate({ x: V.cx, y: undefined, z: V.z }).y + V.rise;
-      const top = _deckY + 9;
-      const w = Math.max(sm(0, 1, (V.vx0 + 6 - x) / 18) * sm(V.vx0 - 70, V.vx0 - 35, x), sm(0, 1, (x - (V.vx1 - 6)) / 18) * (1 - sm(V.vx1 + 14, V.vx1 + 40, x))) * wz;
-      if (w > 0 && top > h) h += (top - h) * w;
+      if (hb < h) h += (hb - h) * sm(2, 40, q.t) * (1 - sm(26, 40, q.d));
     }
     return h;
   },
@@ -120,6 +126,8 @@ export default {
     const wtex = own(toTex(wc)); wtex.repeat.set(28, 28);
     const loch = new THREE.Mesh(own(new THREE.CircleGeometry(1, 56).rotateX(-Math.PI / 2)), own(new THREE.MeshStandardMaterial({ map: wtex, roughness: 0.18, metalness: 0.3, color: 0xc8d4de })));
     loch.scale.set(LOCH.rx * 1.3, 1, LOCH.rz * 1.3); loch.position.set(LOCH.x, waterY, LOCH.z); loch.name = "loch"; group.add(loch);
+    const loch2 = new THREE.Mesh(loch.geometry, loch.material);   // "Loch Ness", west of the hairpin
+    loch2.scale.set(LOCH2.rx * 1.3, 1, LOCH2.rz * 1.3); loch2.position.set(LOCH2.x, waterY, LOCH2.z); loch2.name = "loch-ness"; group.add(loch2);
     anim.push((dt) => { wtex.offset.x += dt * 0.003; wtex.offset.y += dt * 0.004; });
 
     // mist drifting over the loch
@@ -129,6 +137,8 @@ export default {
       const mt = own(toTex(c, { repeat: false })), mm = own(new THREE.MeshBasicMaterial({ map: mt, transparent: true, depthWrite: false, opacity: 0.45 }));
       const pg = own(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2)), mists = [];
       for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(pg, mm); const a = rng() * TAU, r = rng() * 0.8; m.position.set(LOCH.x + Math.cos(a) * LOCH.rx * r, waterY + 0.9 + rng() * 1.2, LOCH.z + Math.sin(a) * LOCH.rz * r); m.scale.set(60 + rng() * 60, 1, 40 + rng() * 40); m.renderOrder = 3; group.add(m); mists.push({ m, p: rng() * 6, x: m.position.x }); }
+      // a few wisps over Loch Ness, kept to its far (west) side so she rears up clear of them
+      for (let i = 0; i < 5; i++) { const m = new THREE.Mesh(pg, mm); const a = Math.PI * (0.62 + rng() * 0.76), r = 0.15 + rng() * 0.7; m.position.set(LOCH2.x + Math.cos(a) * LOCH2.rx * r, waterY + 0.8 + rng() * 1.0, LOCH2.z + Math.sin(a) * LOCH2.rz * r); m.scale.set(40 + rng() * 40, 1, 30 + rng() * 30); m.renderOrder = 3; group.add(m); mists.push({ m, p: rng() * 6, x: m.position.x }); }
       anim.push((dt, t) => { for (const k of mists) k.m.position.x = k.x + Math.sin(t * 0.05 + k.p) * 10; });
     }
 
@@ -141,7 +151,7 @@ export default {
       pts.forEach((p, i) => {
         const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
         let dx = b.x - a.x, dz = b.z - a.z; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
-        const y = burnBed(p.t) + 0.5; lastY = y; p.y = y;
+        const y = Math.max(X.groundY(p.x, p.z), burnBed(p.t) - 0.5) + 0.45; lastY = y; p.y = y;   // sits on the carved gully floor, wherever it ended up
         const wdt = 2.7 + 0.5 * Math.sin(p.t * 0.05);
         pos.push(p.x + dz * wdt, y, p.z - dz * 0 - dx * wdt, p.x - dz * wdt, y, p.z + dx * wdt);
         uv.push(0, p.t / 8, 1, p.t / 8);
@@ -155,63 +165,8 @@ export default {
       H.burnPts = pts;
     }
 
-    // Nessie
-    {
-      const g = new THREE.Group(), skin = own(new THREE.MeshLambertMaterial({ color: 0x40584a })), skin2 = own(new THREE.MeshLambertMaterial({ color: 0x4d6957 }));
-      const hump = (x, z, r, sy, ln) => { const m = new THREE.Mesh(own(new THREE.SphereGeometry(r, 12, 8, 0, TAU, 0, Math.PI / 2)), skin); m.scale.set(1, sy, ln); m.position.set(x, 0, z); g.add(m); return m; };
-      const h1 = hump(0, 0, 3.4, 0.8, 1.7), h2 = hump(0, 9, 2.8, 0.75, 1.5), h3 = hump(0, 17, 2.1, 0.7, 1.4);
-      const neck = new THREE.Group(); neck.position.set(0, 0, -6.5);
-      const segs = [[0, 0, 0, 0.0], [0, 2.2, -0.4, -0.25], [0, 4.4, -1.4, -0.5], [0, 6.2, -3.0, -0.95]];
-      segs.forEach(([x, y, z, tilt], i) => { const m = new THREE.Mesh(own(new THREE.CylinderGeometry(0.75 - i * 0.1, 0.95 - i * 0.1, 2.5, 8)), skin2); m.position.set(x, y + 1.0, z); m.rotation.x = tilt; neck.add(m); });
-      const head = new THREE.Mesh(own(new THREE.SphereGeometry(0.9, 9, 7)), skin2); head.scale.set(0.85, 0.8, 1.35); head.position.set(0, 8.1, -4.6); neck.add(head);
-      for (const sx of [-1, 1]) { const e = new THREE.Mesh(own(new THREE.SphereGeometry(0.17, 5, 4)), own(new THREE.MeshBasicMaterial({ color: 0xfff2a0 }))); e.position.set(sx * 0.5, 8.35, -5.2); neck.add(e); const o = new THREE.Mesh(own(new THREE.CylinderGeometry(0.07, 0.1, 0.7, 4)), skin); o.position.set(sx * 0.35, 9.0, -4.4); neck.add(o); }
-      g.add(neck);
-      const ring = own(new THREE.RingGeometry(0.975, 1, 48).rotateX(-Math.PI / 2)), rmat = own(new THREE.MeshBasicMaterial({ color: 0xdfe8ee, transparent: true, opacity: 0.35, depthWrite: false }));
-      const rings = [0, 1, 2].map((i) => { const m = new THREE.Mesh(ring, rmat.clone()); m.position.y = 0.05; g.add(m); return m; });
-      const NX = 372, NZ = 215, NS = 1.5;   // she surfaces off the east shore, rearing up toward the loch-side road
-      g.position.set(NX, waterY - 0.15, NZ); g.rotation.y = -Math.PI / 2; g.scale.setScalar(NS); g.name = "nessie"; group.add(g);
-      // ---- spray: a jet of water from her mouth arcs across the road and soaks it (slippery for a while)
-      const SPLASH_S = 620, SP = { N: 170, T: 2.5, G: 15 };
-      const mouth = new THREE.Vector3(NX + 11.1 * NS, waterY + 8.4 * NS, NZ);   // head (local z -11.1, y 8.1) after rotation.y = -PI/2
-      const tgt = track.sample(SPLASH_S).pos, azim = Math.atan2(tgt.z - mouth.z, tgt.x - mouth.x), range = Math.hypot(tgt.x - mouth.x, tgt.z - mouth.z);
-      const v0 = Math.sqrt(range * SP.G / Math.sin(2 * 0.78)), vh = v0 * Math.cos(0.78), vv = v0 * Math.sin(0.78);
-      const dropG = own(new THREE.SphereGeometry(0.5, 6, 4)), dropM = own(new THREE.MeshBasicMaterial({ color: 0xcfe6f4, transparent: true, opacity: 0.7, depthWrite: false }));
-      const drops = new THREE.InstancedMesh(dropG, dropM, SP.N); drops.frustumCulled = false; drops.visible = false; drops.name = "nessie-spray"; group.add(drops);
-      const dr = Array.from({ length: SP.N }, () => ({ ph: rng(), sv: 0.9 + rng() * 0.22, az: (rng() - 0.5) * 0.22, sz: 0.7 + rng() * 0.8, el: 0.9 + rng() * 0.2 }));
-      // wet sheen laid over the road where she soaks it (fades back out as it dries)
-      const sheenS = new X.Strips(X.C);
-      { const i0 = Math.round((SPLASH_S - 110) / X.C.ds), n = Math.round(220 / X.C.ds); sheenS.add({ profile: [[-X.hw, 0.045, 0], [X.hw, 0.045, 1]], from: ((i0 % X.C.N) + X.C.N) % X.C.N, count: n, tile: 8, color: () => [1, 1, 1] }); }
-      const sheenM = own(new THREE.MeshBasicMaterial({ color: 0x486f94, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, side: THREE.DoubleSide }));
-      const sheen = new THREE.Mesh(own(sheenS.geometry()), sheenM); sheen.renderOrder = 2; sheen.visible = false; group.add(sheen);
-      let wet = 0;
-      track.slickAt = (s) => {
-        if (wet < 0.01) return 1;
-        let d = Math.abs(s - SPLASH_S); d = Math.min(d, track.length - d);
-        return 1 - 0.8 * wet * (1 - sm(45, 100, d));
-      };
-      const dm = new THREE.Matrix4(), gy2 = X.groundY;
-      anim.push((dt, t) => {
-        const cyc = (t % 46) / 46, up = sm(0.52, 0.6, cyc) * (1 - sm(0.8, 0.88, cyc));
-        neck.scale.y = Math.max(0.001, up); neck.visible = up > 0.01; neck.position.y = -0.4 + 0.4 * up;
-        g.position.y = waterY - 0.15 + Math.sin(t * 0.7) * 0.18;
-        h1.position.y = Math.sin(t * 0.7 + 1) * 0.1; h2.position.y = Math.sin(t * 0.7 + 2) * 0.12 - 0.05; h3.position.y = Math.sin(t * 0.7 + 3) * 0.1 - 0.1;
-        rings.forEach((r, i) => { const f = ((t * 0.18 + i / 3) % 1); r.scale.set(5 + f * 16, 1, 7 + f * 22); r.position.z = 9; r.material.opacity = 0.4 * (1 - f) * Math.min(1, f * 6); });
-        // spray envelope: only while her head is fully up
-        const env = sm(0.585, 0.62, cyc) * (1 - sm(0.76, 0.8, cyc));
-        if (env > wet) wet = env; else wet = Math.max(0, wet - dt / 9);
-        drops.visible = env > 0.01;
-        if (drops.visible) {
-          for (let i = 0; i < SP.N; i++) {
-            const q = dr[i], age = ((t / SP.T + q.ph) % 1) * SP.T, h = vh * q.sv * age, a = azim + q.az;
-            const x = mouth.x + Math.cos(a) * h, z = mouth.z + Math.sin(a) * h, y = mouth.y + vv * q.sv * q.el * age - 0.5 * SP.G * age * age;
-            const s = y > gy2(x, z) + 0.1 ? q.sz * env : 0;
-            dm.makeScale(s, s, s); dm.setPosition(x, y, z); drops.setMatrixAt(i, dm);
-          }
-          drops.instanceMatrix.needsUpdate = true;
-        }
-        sheen.visible = wet > 0.02; sheenM.opacity = 0.42 * Math.min(1, wet * 1.3);
-      });
-    }
+    // Nessie: rears up in Loch Ness, dead ahead at the foot of the long downhill straight, and soaks the road with a jet of water
+    buildNessie(H, { waterY, sm });
 
     // ---- drop the engine's generic viaduct pillars (big stone blocks at the road edge by the humpback bridge); the bridge has its own stonework
     { const pl = X.group.getObjectByName("pillars"); if (pl) pl.visible = false; for (const o of track.obstacles) { o.y0 = 1e9; o.y1 = 1e9; } }

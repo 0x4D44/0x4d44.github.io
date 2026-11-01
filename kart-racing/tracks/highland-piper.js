@@ -1,7 +1,7 @@
 // Highland Fling - the kilted piper beside the start/finish arch. Appears (and plays) only on the player's FINAL lap.
 // Hook: track.onRaceStart(race, player, audio, game) is called by main.js when a race is created.
 import * as THREE from "three";
-import { TAU } from "./highland-geo.js";
+import { TAU, PIPER } from "./highland-geo.js";
 import { tartanCanvas, TARTAN_RED, toTexture } from "./highland-tex.js";
 
 // The kilted piper figure (metres, feet at y=0, facing +z). Shared by the finish-line piper and the giant roadside one.
@@ -179,10 +179,9 @@ export function buildGiantPiper(H) {
   const { at } = K, gy = X.groundY;
   const S_CORNER = 1460, SCALE = 11;
 
-  // ---- placement: well outside the hairpin, facing the road (and a little toward oncoming karts)
-  const a = at(S_CORNER, -(wallDist + 30));
-  const toRoad = new THREE.Vector3(a.rx, 0, a.rz).normalize(), back = new THREE.Vector3(-Math.sin(a.h), 0, -Math.cos(a.h));
-  const face = toRoad.clone().multiplyScalar(0.8).add(back.clone().multiplyScalar(0.55));
+  // ---- placement: on the island inside the hairpin, facing back up the straight at the oncoming karts (the kilt gusts up toward them)
+  const a = { x: PIPER.x, z: PIPER.z };
+  const face = new THREE.Vector3(0.92, 0, 0.38).normalize();
   const yaw = Math.atan2(face.x, face.z), baseY = gy(a.x, a.z) - 0.2;
   const root = new THREE.Group(); root.position.set(a.x, baseY, a.z); root.rotation.y = yaw; root.name = "giant-piper";
   const figure = new THREE.Group(); figure.scale.setScalar(SCALE); root.add(figure);
