@@ -1,5 +1,19 @@
 {
  "textures": {
+  "clutter_decal": {
+   "map": "clutter/decals.png",
+   "size": [1024, 512]
+  },
+  "inspect_paper_atlas": {
+   "map": "inspect_paper_atlas.png",
+   "size": 2048,
+   "avg": "#c3b58d"
+  },
+  "goods_labels": {
+   "map": "goods_labels.png",
+   "size": 1024,
+   "source": "authored: goods_atlas.py; invented Spanish brands"
+  },
   "brick_clay_hollow": {
    "map": "brick_clay_hollow.jpg",
    "normal": "brick_clay_hollow_n.jpg",
@@ -474,6 +488,12 @@
    "size": 512,
    "w": 512,
    "h": 512
+  },
+  "people_pbr": {
+   "map": "../models/people/people_albedo.jpg",
+   "normal": "../models/people/people_normal.jpg",
+   "rough": "../models/people/people_orm.jpg",
+   "size": 2048
   }
  },
  "version": 2,

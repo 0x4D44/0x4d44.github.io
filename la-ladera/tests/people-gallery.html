@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Ladera people asset contact sheet</title>
+<link rel="icon" href="data:,">
+<script type="importmap">
+{"imports":{"three":"../vendor/three/build/three.module.min.js","three/addons/":"../vendor/three/examples/jsm/"}}
+</script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#ebe7df;color:#302d28;font:15px system-ui,sans-serif}
+header{height:96px;padding:20px 28px;background:#262e2c;color:#f7f4eb;display:flex;align-items:center;justify-content:space-between}
+h1{margin:0;font:600 29px Georgia,serif}header p{margin:7px 0 0;color:#c6ccc2;font-size:13px}
+#status{font-variant-numeric:tabular-nums;text-align:right;white-space:pre-line}
+#sheet{position:relative;width:1920px;height:1600px}canvas{display:block;position:absolute;inset:0;width:100%;height:100%}
+#labels{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,320px);grid-auto-rows:320px;pointer-events:none}
+.label{padding:13px 16px;border-right:1px solid #d4d0c8;border-bottom:1px solid #d4d0c8;position:relative}
+.label strong{font-weight:650;font-size:14px}.detail{font-size:11px;color:#66665e;margin-top:5px}.foot{position:absolute;left:16px;bottom:10px;font-size:11px;color:#66665e}
+</style>
+</head>
+<body>
+<header><div><h1>La Ladera · Resident cast</h1><p id="description">Actual GLB assets · identical lighting, camera and metre scale · headless Three.js r180</p></div><div id="status">Loading…</div></header>
+<main id="sheet"><canvas id="gallery" aria-label="Contact sheet of all resident models"></canvas><div id="labels"></div></main>
+<script type="module" src="./people-gallery.mjs"></script>
+</body>
+</html>

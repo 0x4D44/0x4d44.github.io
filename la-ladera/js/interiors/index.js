@@ -1,5 +1,5 @@
 // INTERIORS (A3): entry points used by main.js.
-//   loadInteriorAssets(ctx)   preload the furniture GLBs and the clothes' (stand-in boxes and cloth patches are used for anything not loaded)
+//   loadInteriorAssets(ctx)   preload the furniture GLBs, the clothes' and the close-inspection things' (stand-in boxes, cloth patches and flat shapes are used for anything not loaded)
 //   furnishBuilding(ctx, bp)  PURE DATA: finishes, furniture list, blocker walls, anchors, lights, interactables, discoveries
 //   buildInterior(ctx, bp)    meshes into group `${bp.id}.int`
 import { Layout, resetUid } from './layout.js';
@@ -13,9 +13,12 @@ import { wallsRect } from '../core/physics.js';
 import { collectStories } from './stories.js';
 import { dressRooms } from './garments.js';
 import { buildInterior as buildMeshes, loadInteriorAssets as preload, loadGarmentAssets } from './build.js';
+import { loadInspectAssets } from './inspect.js';
+import { planShopGoods } from './goods.js';
+import { loadGoodsAssets } from './goods-render.js';
 
-/** The page's entry: the furniture's models and the clothes' come down together (two sets, build.js: the furniture tests call `preload` alone and see only the furniture). */
-export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx)]); };
+/** The page's entry: the furniture's models, the clothes', the close-inspection things' and the shop stock's come down together (four sets, build.js, inspect.js and goods-render.js: the furniture tests call `preload` alone and see only the furniture). */
+export const loadInteriorAssets = async (ctx) => { await Promise.all([preload(ctx), loadGarmentAssets(ctx), loadInspectAssets(ctx), loadGoodsAssets(ctx)]); };
 export const buildInterior = (ctx, bp) => buildMeshes(ctx, bp);
 
 const PI = Math.PI;
@@ -223,7 +226,7 @@ export function furnishBuilding(ctx, bp) {
     try { removed = removed.concat(L.curePockets({ protect: bedroll ? [bedroll] : [] })); }                    // no dead-end lane or niche between 0.55 and 0.85 m is left for a walker to wedge in (layout.js `pockets`)
     catch (e) { (ctx.errors ??= []).push({ stage: 'furnish', room: room.id, message: 'pockets ' + String(e?.message ?? e), stack: e?.stack }); console.error('[furnish]', room.id, e); }
     interior.layouts.set(room.id, L);
-    interior.rooms[room.id] = { type: room.type, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };
+    interior.rooms[room.id] = { type: room.type, shopType: E.shopType, hh: hh.id, role: L.role ?? null, removed: removed.map((r) => r.name) };         // shopType: set by shopRoom() for the rooms it fitted, null for the rest (goods.js stocks only those)
     built.push({ room, hh, L });
   }
   // a home whose kitchens are all too small for a fridge keeps it in the dining or living room (every room is furnished by now, so the lanes it must keep are known)
@@ -256,5 +259,6 @@ export function furnishBuilding(ctx, bp) {
   }
   interior.hh = [...E.hhs.values()];
   interior.shopType = E.shopType ?? lot.shop ?? null;
+  planShopGoods(bp);                                                                           // the stock of the shelves and counters: its own list (bp.goods), nothing in the layout, no collider
   collectStories(ctx, bp, E);
 }

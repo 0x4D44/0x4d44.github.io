@@ -1,0 +1,174 @@
+{
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "shots": [
+    "la-ladera/dev/vista-kit/after/east-edge-audit.jpg"
+  ],
+  "state": {
+    "pos": [
+      96,
+      44,
+      -40
+    ],
+    "yaw": -2.103,
+    "pitch": -0.268,
+    "onGround": false,
+    "blocked": false,
+    "hour": 17.200000000000003,
+    "building": null,
+    "indoors": false,
+    "floor": 0,
+    "room": null,
+    "surface": "dirt",
+    "fps": 0,
+    "frameMs": 0,
+    "drawCalls": 450,
+    "triangles": 779391,
+    "geometries": 956,
+    "textures": 149,
+    "programs": 38,
+    "quality": "high",
+    "qualityMode": "auto",
+    "night": 0,
+    "sunEl": 10.25,
+    "pool": {
+      "max": 8,
+      "active": 8,
+      "lit": 0
+    },
+    "glow": {
+      "street": 46,
+      "far": 2727,
+      "extra": 0,
+      "drawn": false,
+      "points": 2773
+    },
+    "visibility": {
+      "intGroups": 49,
+      "intShown": 0
+    },
+    "merge": {
+      "before": 3074,
+      "after": 1810,
+      "candidates": 1769,
+      "fused": 1506,
+      "removed": 1506,
+      "chunks": 242,
+      "tris": 658146,
+      "ms": 75.6
+    },
+    "post": {
+      "active": true,
+      "profile": "high"
+    },
+    "reversedZ": true,
+    "msaa": 4,
+    "buildings": 49,
+    "anchors": 1927,
+    "lights": 878,
+    "discoveries": [
+      0,
+      111
+    ],
+    "npcs": 73,
+    "errors": 0,
+    "timings": {
+      "engine": 30,
+      "materials": 15,
+      "assets": 20,
+      "plan": 144,
+      "worldParts": {
+        "terrain": 228,
+        "surfaces": 33,
+        "stairs": 16,
+        "retaining": 17,
+        "perimeter": 0
+      },
+      "world": 332,
+      "arch": 30,
+      "furnish": 1984,
+      "colliders": 5,
+      "build": 716,
+      "propParts": {
+        "occupancy": 47,
+        "atlas": 98,
+        "vista": 103,
+        "boundary": 5,
+        "poles": 25,
+        "vehicles": 29,
+        "dress": 8,
+        "signs": 5,
+        "hill": 8,
+        "flora": 32,
+        "planters": 1,
+        "life": 9,
+        "navfit": 12,
+        "discoveries": 5
+      },
+      "props": 395,
+      "flush": 100,
+      "glow": 13,
+      "peopleSpawn": 42,
+      "people": 289,
+      "start": 4522,
+      "total": 13669
+    },
+    "physics": {
+      "walls": 15093,
+      "floors": 814,
+      "cells": 1584,
+      "doors": 517
+    },
+    "audio": {
+      "mode": "idle",
+      "ctxState": null,
+      "sampleRate": null,
+      "volume": 0.8,
+      "modeScale": 1,
+      "indoor": 0,
+      "zone": null,
+      "alt": null,
+      "master": null,
+      "beds": {},
+      "bedCutoff": null,
+      "crowd": 0.3,
+      "voices": [],
+      "emitters": 0,
+      "activeShots": 0,
+      "stats": {
+        "steps": 0,
+        "lands": 0,
+        "jumps": 0,
+        "doors": 0,
+        "shots": 0,
+        "bells": 0,
+        "chimes": 0,
+        "ticks": 0,
+        "dropped": 0,
+        "blocked": 0
+      },
+      "samples": {
+        "ready": 0,
+        "pending": 0,
+        "requested": 0,
+        "ms": 0,
+        "via": null,
+        "errors": []
+      },
+      "bell": {
+        "clock": 0,
+        "next": 45,
+        "rung": 0
+      },
+      "errors": []
+    },
+    "target": null
+  },
+  "errors": [],
+  "netErrors": [],
+  "consoleErrors": [],
+  "consoleWarnings": [
+    "[warning] [.WebGL-0xabc001efa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44649/la-ladera/index.html?autostart&manual&dpr=1",
+    "[warning] [.WebGL-0xabc001efa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44649/la-ladera/index.html?autostart&manual&dpr=1",
+    "[warning] [.WebGL-0xabc001efa00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:44649/la-ladera/index.html?autostart&manual&dpr=1"
+  ]
+}

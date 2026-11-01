@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "failures": [],
+  "budgets": [
+    {
+      "name": "textures",
+      "mb": 9.13,
+      "max": 24
+    },
+    {
+      "name": "models",
+      "mb": 8.55,
+      "max": 32
+    },
+    {
+      "name": "models/people",
+      "mb": 7.25,
+      "max": 14
+    },
+    {
+      "name": "models/furniture",
+      "mb": 0,
+      "max": 10
+    },
+    {
+      "name": "models/world",
+      "mb": 0,
+      "max": 6
+    },
+    {
+      "name": "models/arch",
+      "mb": 0,
+      "max": 2
+    },
+    {
+      "name": "shipped total (excl. vendor,dev,labs,tests,tools)",
+      "mb": 19.14,
+      "max": 60
+    },
+    {
+      "name": "estimated GPU texture memory",
+      "mb": 174.67,
+      "max": 220
+    }
+  ],
+  "largest": [
+    "5.78 MB  assets/models/people/people.glb",
+    "1.44 MB  assets/models/people/people_lod.glb",
+    "0.45 MB  assets/textures/asphalt.jpg",
+    "0.41 MB  assets/textures/cobble_stone.jpg",
+    "0.35 MB  assets/textures/inspect_paper_atlas.png",
+    "0.30 MB  dev/inspect-previews/contact-front.jpg",
+    "0.29 MB  assets/textures/brick_clay_hollow.jpg",
+    "0.29 MB  dev/inspect-previews/contact-lod.jpg"
+  ],
+  "textureFiles": 97,
+  "modelFiles": 33,
+  "unreadableImageSizes": []
+}

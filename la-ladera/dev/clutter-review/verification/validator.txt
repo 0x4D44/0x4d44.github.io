@@ -1,0 +1,21 @@
+clutter: 19 base assets + 19 LOD1; 609,814 / 2,000,000 bytes (complete mode)
+  clutter_pole_concrete      616 triangles, 4 parts
+  clutter_pole_wood          616 triangles, 4 parts
+  clutter_tank_black         620 triangles, 2 parts
+  clutter_tank_blue          620 triangles, 2 parts
+  clutter_dish               316 triangles, 3 parts
+  clutter_washing_line       277 triangles, 4 parts
+  clutter_bin_wheelie        182 triangles, 4 parts
+  clutter_bin_metal          380 triangles, 1 parts
+  clutter_crate_wood         252 triangles, 2 parts
+  clutter_crate_plastic      300 triangles, 1 parts
+  clutter_tyre               400 triangles, 1 parts
+  clutter_cone               144 triangles, 2 parts
+  clutter_shrine             236 triangles, 4 parts
+  clutter_umbrella           220 triangles, 3 parts
+  clutter_chair              216 triangles, 1 parts
+  clutter_shutter            158 triangles, 3 parts
+  clutter_sign               114 triangles, 3 parts
+  clutter_gas_cylinder       348 triangles, 2 parts
+  clutter_helmet             282 triangles, 4 parts
+PASS: geometry, catalogue, material names, LODs, atlas and payload.

@@ -26,11 +26,16 @@ export default {
   bark_palm: { color: 0xffffff, rough: 0.9, tex: 'bark_dark' },
   trunk_banana: { color: 0xffffff, rough: 0.8, tex: 'trunk_banana' },
   pot_clay: { color: 0xffffff, rough: 0.9, tex: false },
+  // the vista kit (world/vista-kit.js): its GLBs carry every colour in their vertices and still name their one material `bark_trunk` (the neutral white that name was when they were built).
+  // The trunks have gone to a bark swatch since, so the kit draws with this twin; sharing `bark_trunk` multiplied the whole hillside into dark brown.
+  vista_matte: { color: 0xffffff, rough: 0.95, tex: false },
 
   // ---- painted signage: two atlases painted at boot by world/signs.js and bound in props.js: boards, plaques, chalk (world_sign) and the three wall murals (world_mural).
   // Alpha-tested so the chalk hopscotch and the ragged edge of a mural need no blending; A2's `sign_atlas` (shop fascias) is a different material with its own canvas.
   world_sign: { color: 0xffffff, rough: 0.78, alphaTest: 0.4, tex: false, env: 0.4 },
   world_mural: { color: 0xffffff, rough: 0.92, alphaTest: 0.4, tex: false, env: 0.15 },
+  // One external atlas for the Blender clutter's flyers, signs and original wall graffiti (never embedded in GLBs).
+  clutter_decal: { color: 0xffffff, rough: 0.92, uv: 'unit', alphaTest: 0.4, tex: 'clutter_decal', env: 0.3 },
   // animal parts and cloth for the living props (life.js): flat colours tinted per vertex
   fur: { color: 0xffffff, rough: 0.95, tex: false },
 

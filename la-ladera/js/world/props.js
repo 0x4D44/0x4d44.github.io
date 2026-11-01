@@ -11,10 +11,12 @@ import { buildDress, buildPlanters } from './dress.js';
 import { buildDiscoveries } from './discover.js';
 import { buildBoundary } from './periphery.js';
 import { buildVista } from './vista.js';
+import { buildVistaKit } from './vista-kit.js';
 import { makeSignAtlas, buildSigns, planMurals, claimMurals } from './signs.js';
 import { buildHill } from './hill.js';
 import { buildLife } from './life.js';
 import { fitNav } from './navfit.js';
+import { buildClutterDress } from './clutter-dress.js';
 
 export async function buildProps(ctx) {
   const plan = ctx.plan;
@@ -58,6 +60,7 @@ export async function buildProps(ctx) {
   await step('murals', () => claimMurals(K));        // the ground in front of the three murals, before anything is parked, planted or stood on it
   await step('arrival', () => { ctx.world.arrivalClaims = claimSpawnView(K); });   // the fan ahead of the spawn: no vehicle, bin or planter stands in the first frame
   await step('boundary', () => buildBoundary(K));    // the rim: walls, the welcome arch, the road that leaves the plot
+  await step('vistakit', () => buildVistaKit(ctx));  // the modelled hillside kit (Codex GLBs, instanced, LOD): terraces on the far land. First, so the far houses below leave its ground alone; an absent or failed kit changes nothing
   await step('vista', () => buildVista(K));          // the city beyond the rim: far houses, a church, towers, the TV mast, and their lit windows (ctx.glow)
   await step('poles', () => buildPoles(K));          // before the flora: poles and lamps claim their ground first
   await step('vehicles', () => buildVehicles(K));
@@ -67,6 +70,7 @@ export async function buildProps(ctx) {
   await step('flora', () => buildFlora(K));
   await step('planters', () => buildPlanters(K));    // after the flora: stone rings round the plaza trees, flower boxes
   await step('life', () => buildLife(K));            // pigeons, dogs, hens, crows, the swing (hangs from a plaza tree), kite, ball, welding sparks
+  await step('clutter', () => buildClutterDress(K));  // after the old features claim their spots; leave every door and nav route clear
   await step('navfit', () => { ctx.world.navFit = fitNav(ctx); });   // every collider exists now: drop the nav edges a prop blocks (people read plan.nav after this)
   await step('discoveries', () => buildDiscoveries(K));
 

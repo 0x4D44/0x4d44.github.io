@@ -326,6 +326,11 @@ I('collar_perro', 'chain', 0.12, 0.02, 0.12, 0xc83a2a, `Una correa y un collar c
 I('jaula_alpiste', 'bag', 0.12, 0.1, 0.07, 0xe8d088, `Una bolsita de alpiste para el canario, que canta por menos.`, `A little bag of birdseed for the canary, who sings for less.`, 'pantry:3 kitchen_upper:2 sideboard:1', 'canary');
 I('libro_recetas', 'book', 0.18, 0.03, 0.24, 0xc8a070, `Un cuaderno de recetas con manchas de aceite: «El sancocho de la abuela. No se mide, se siente».`, `A recipe notebook stained with oil: "Grandma's sancocho. You don't measure it, you feel it."`, 'kitchen_upper:3 sideboard:2 pantry:2 wallunit:1', 'cooking|elder');
 
+// ---- things the close-inspection library modelled (inspect.js draws them as their models; the shape here is the stand-in until the model has loaded, and in tests)
+I('carrito', 'box', 0.1, 0.05, 0.055, 0xe0674f, `Un carrito de hojalata con una rueda floja. Alguien lo empujó por toda la casa hasta que se le acabó la cuerda.`, `A tin toy car with a loose wheel. Someone pushed it all over the house until the spring ran down.`, 'dresser:1 chest:2 wardrobe:1 nightstand_door:1', 'kids');
+I('medalla_servicio', 'chain', 0.04, 0.012, 0.1, 0xd9ab3c, `Una medalla por treinta años de servicio al barrio. No dice a quién; en la casa todos lo saben.`, `A medal for thirty years of service to the barrio. It does not say whose; everyone in the house knows.`, 'dresser:1 chest:2 nightstand_drawer:1 vitrine:1', 'elder');
+I('relicario', 'chain', 0.065, 0.01, 0.08, 0xd9ab3c, `Un relicario ovalado con el retrato de una joven. Se abre con la uña, como se abren las cosas que importan.`, `An oval locket with a young woman's portrait inside. It opens with a fingernail, the way important things do.`, 'dresser:2 nightstand_drawer:1 chest:1 vitrine:1', 'elder');
+
 // ------------------------------------------------------------------ drawing: o = { id, x, y, z, w, h, d, col } in the piece's frame (x right, y up from its base, z front);
 // (x, z) = the centre of the object's footprint, y = its bottom. Every shape stays inside its w x h x d box (the aim box and the layout test rely on it).
 const SH = {
@@ -412,6 +417,7 @@ export function paperLook(cover, id) {
   }
 }
 function drawPaper(P, o) {
+  if (drawModel(P, o, o.y)) return;
   SH[o.sh](P, o);
   const top = o.y + o.h + 0.0008;
   if (o.cover === 'envelope') { FL(P, o.x + o.w * 0.36, top, o.z - o.d * 0.28, 0.025, 0.0015, 0.03, 0xb83a3a); FL(P, o.x - o.w * 0.05, top, o.z, o.w * 0.5, 0.0015, 0.004, 0x6a6a6a); }
@@ -475,7 +481,17 @@ function drawFind(P, o) {
   const f = o.fd, b = WRAP[f.wrap] ?? null;
   let y = o.y;
   if (b) { b.draw(P, o.x, y, o.z); y += b.h; }
-  (FIND[f.shape] ?? FIND.box)(P, o.x, y, o.z, f.size, f.tint);
+  if (!drawModel(P, o, y)) (FIND[f.shape] ?? FIND.box)(P, o.x, y, o.z, f.size, f.tint);              // the model on top of its base, or the stand-in
+}
+/** What a base takes on the shelf: { w, d, h } (inspect.js puts a model on it), or null for 'loose'. */
+export const wrapDims = (wrap) => { const b = WRAP[wrap]; return b ? { w: b.w, d: b.d, h: b.h } : null; };
+/** The library model of a thing (`o.model`, set by contents.js for a thing bound in inspect-bindings.json) resting at height `y`, when the Pen has its parts (containers.js hands them over once the
+ *  GLB has loaded); false = draw the stand-in. The model's footprint is the object's own w x d, so it stays inside the box the targets and the packer know. */
+function drawModel(P, o, y) {
+  const m = o.model, parts = m && P.parts?.(m.key);
+  if (!parts) return false;
+  P.model(parts, o.x, y + m.h / 2 + 0.0004, o.z, m.pose, m.s);
+  return true;
 }
 export const FIND_SHAPE_NAMES = Object.keys(FIND), WRAP_NAMES = Object.keys(WRAP), PROP_SHAPES = Object.keys(SH);
 
@@ -483,5 +499,5 @@ export const FIND_SHAPE_NAMES = Object.keys(FIND), WRAP_NAMES = Object.keys(WRAP
 export function drawProp(P, o) {
   if (o.fd) drawFind(P, o);
   else if (o.cover) drawPaper(P, o);
-  else (SH[o.sh] ?? SH.box)(P, o);
+  else if (!drawModel(P, o, o.y)) (SH[o.sh] ?? SH.box)(P, o);
 }

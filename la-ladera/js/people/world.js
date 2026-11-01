@@ -166,12 +166,21 @@ export class PeopleWorld extends PeopleSim {
     const P = this.player; P.x = pl.s.x; P.y = pl.s.y; P.z = pl.s.z; P.yaw = pl.yaw;
   }
 
+  /** Optional asset followers (js/animals/) share this world's clock, graph, physics and Npc path walker, and run once a frame after the people.
+   * They are not inhabitants: no casting, dialogue, schedule, collider or extra simulation system. Returns the function that removes `update`. */
+  addPathFollower(update) {
+    const followers = this._pathFollowers ??= new Set();
+    followers.add(update);
+    return () => followers.delete(update);
+  }
+
   update(dt) {
     const ctx = this.ctx, pl = ctx.player; if (!this.ready || !pl) return;
     this.syncPlayer();
     const cam = ctx.camera;
     cam.updateMatrixWorld(); this._pv.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse); this._frustum.setFromProjectionMatrix(this._pv);
     this.step(dt);
+    for (const follow of this._pathFollowers ?? []) { try { follow(dt, this); } catch (e) { this._fault(null, e); } }     // one bad follower must not stop the barrio (tests assert world.faults stays empty)
     this.talk.update(Math.min(dt, 0.1));
   }
 

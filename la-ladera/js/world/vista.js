@@ -2,6 +2,8 @@
 // four towers, a TV mast on the northern ridge, and a glow point for every lit window and every beacon (ctx.glow extras, one Points draw call in all).
 // vistaSites() / farHouses() / vistaLights() are pure functions of the plan: they run under node and are tested there. buildVista() only draws them.
 // Group world.vista: no shadows, a handful of draw calls (one per material).
+// The modelled vista kit (vista-kit.js + vista-plan.js, Codex's GLB terraces, instanced with distance LODs) is built BEFORE this file: where it stands, farHouses keeps off it (kitZones),
+// and where the kit is absent (headless, ?vista=0, a failed load) every row of this file is built as before.
 import { ss, vnoise, hash2, project, gapBetween } from './geom.js';
 import { HALF } from './field.js';
 import { urbanDensity, makeFarHeight } from './periphery.js';
@@ -55,7 +57,7 @@ const ROOFS = [['roof_tile_clay', [0.95, 0.80, 0.72]], ['corrugated_zinc', [0.80
 export const LANE = 4;                                              // the street in front of a row, m
 const REAR = 0.6;                                                   // the strip kept free behind a row, m
 const SEEDING = 0.62;                                               // how often a lattice cell of built-up land starts a stack of terraces (up to 2.4 times that within 40 m of the rim, where the eye lands)
-export function farHouses(plan, { cell = 15, reach = 700, max = 2600, margin = 12, roadClear = 16, density = urbanDensity } = {}) {
+export function farHouses(plan, { cell = 15, reach = 700, max = 2600, margin = 12, roadClear = 16, density = urbanDensity, taken = [] } = {}) {
   const far = farOf(plan), seed = plan.seed, sites = vistaSites(plan), keep = [sites.church, ...sites.towers], road = far.road, out = [], n = Math.ceil(reach / cell);
   const placed = new Map(), BK = 32, bk = (a, b) => a * 4096 + b;      // the ground each accepted house keeps for itself, in 32 m buckets
   const allowed = (x, z) => {
@@ -75,6 +77,10 @@ export function farHouses(plan, { cell = 15, reach = 700, max = 2600, margin = 1
     const key = bk(Math.floor(h.x / BK), Math.floor(h.z / BK)), list = placed.get(key) ?? placed.set(key, []).get(key);
     list.push(zone(h.x, h.z, h.w, h.d, Math.cos(h.ry), Math.sin(h.ry)));
   };
+  for (const q of taken) {                                            // ground that something else was built on first (the vista kit's terraces, see kitZones): no row of ours touches it
+    const cx = q.reduce((s, p) => s + p[0], 0) / q.length, cz = q.reduce((s, p) => s + p[1], 0) / q.length, key = bk(Math.floor(cx / BK), Math.floor(cz / BK));
+    (placed.get(key) ?? placed.set(key, []).get(key)).push(q);
+  }
   /** One row from (x0, z0), in the frame ry0 (null: the front looks downhill there) and the depth d0 (null: its own): its houses, or null when fewer than three would stand. (i, j) key its hashes. */
   const trace = (i, j, x0, z0, ry0, d0) => {
     const dens = density(plan, x0, z0), H0 = far(x0, z0), want = 3 + Math.floor(h01(i, j, seed + 112) * 8), depth = d0 ?? 6.5 + 2.5 * h01(i, j, seed + 113), base = 1 + h01(i, j, seed + 114) ** 1.6 * 3.6, row = [];
@@ -120,6 +126,17 @@ export function farHouses(plan, { cell = 15, reach = 700, max = 2600, margin = 1
     }
   }
   return out;
+}
+
+/**
+ * The ground the vista kit's terraces use (vista-plan.js planVista, drawn by vista-kit.js), as polygons for farHouses({ taken }): each kit house's footprint, 2 m of party wall either
+ * side (the end of a terrace has its stair there), the strip behind and the lane in front. The kit is built first, so the rows of this file only fill the land it leaves.
+ */
+export function kitZones(planned) {
+  return (planned?.houses ?? []).map((h) => {
+    const c = Math.cos(h.ry), s = Math.sin(h.ry), w = h.width / 2 + 2, d = h.depth / 2;
+    return [[-w, -d - REAR], [w, -d - REAR], [w, d + LANE], [-w, d + LANE]].map(([u, v]) => [h.x + u * c + v * s, h.z - u * s + v * c]);
+  });
 }
 
 // What a far house wears beyond its plain box (R1-D03: windowless boxes at 40 to 150 m): windows on all four faces, a door or a shop shutter, and a roof with a tank,
@@ -189,10 +206,11 @@ export function houseParts(plan, h, far = farOf(plan)) {
 const LIGHT = [0xffb45a, 0xffd9a0, 0xffe9c0, 0xcfe2ff];               // sodium, warm white, bulb, the blue of a television
 const pickLight = (r) => LIGHT[r < 0.35 ? 0 : r < 0.75 ? 1 : r < 0.9 ? 2 : 3];
 
-/** One glow point per lit window of the houses and the towers, the church's belfry and floodlight, and the red beacons of the mast. */
-export function vistaLights(plan, houses, sites) {
+const facade = (x, z, d, ry, u, y, o) => ({ x: x + Math.sin(ry) * (d / 2 + 0.35) + Math.cos(ry) * u, y, z: z + Math.cos(ry) * (d / 2 + 0.35) - Math.sin(ry) * u, ...o });
+
+/** One glow point per lit window of a list of houses { x, z, y, w, d, ry, floors, i, j } (the far rows here, and the vista kit's terraces through kitLights). */
+export function houseLights(plan, houses) {
   const seed = plan.seed, out = [];
-  const facade = (x, z, d, ry, u, y, o) => ({ x: x + Math.sin(ry) * (d / 2 + 0.35) + Math.cos(ry) * u, y, z: z + Math.cos(ry) * (d / 2 + 0.35) - Math.sin(ry) * u, ...o });
   for (const h of houses) {
     const nl = h01(h.i, h.j, seed + 120) < 0.7 ? (h01(h.i, h.j, seed + 121) < 0.45 ? 2 : 1) : 0;
     for (let k = 0; k < nl; k++) {
@@ -200,6 +218,12 @@ export function vistaLights(plan, houses, sites) {
       out.push(facade(h.x, h.z, h.d, h.ry, u, h.y + WIN.lift + fl * FLOOR + WIN.sill + WIN.h / 2, { color: pickLight(h01(h.i, h.j, seed + 150 + k)), size: 1.7 + 0.8 * h01(h.i, h.j, seed + 160 + k), intensity: 1.2 + 1.0 * h01(h.i, h.j, seed + 170 + k), on: 0.08 + 0.85 * h01(h.i, h.j, seed + 180 + k) }));
     }
   }
+  return out;
+}
+
+/** One glow point per lit window of the houses and the towers, the church's belfry and floodlight, and the red beacons of the mast. */
+export function vistaLights(plan, houses, sites) {
+  const seed = plan.seed, out = houseLights(plan, houses);
   sites.towers.forEach((t, ti) => {
     for (let f = 0; f < t.floors; f++) for (let c = 0; c < 6; c++) {
       const r = h01(ti * 100 + f, c, seed + 190);
@@ -224,7 +248,7 @@ function gable(b, cx, y, cz, w, d, rise, ry, roofMat, wallMat, roofCol, wallCol)
 }
 
 export function buildVista(K) {
-  const { ctx, plan } = K, b = ctx.batch.builder('world.vista', { cast: false }), sites = vistaSites(plan), houses = farHouses(plan), lights = vistaLights(plan, houses, sites);
+  const { ctx, plan } = K, b = ctx.batch.builder('world.vista', { cast: false }), sites = vistaSites(plan), taken = kitZones(ctx.world?.vistaKitPlan), houses = farHouses(plan, { taken }), lights = vistaLights(plan, houses, sites);
   const far = farOf(plan), seen = { windows: 0, doors: 0, boxes: 0, tanks: 0 };
   houses.forEach((h, hi) => {
     const dist = gap(h), mist = 0.4 * ss(120, 480, dist), haze = (v, k) => v + (k - v) * mist;                      // the far ones are lighter: more air between us and them
@@ -286,7 +310,7 @@ export function buildVista(K) {
   b.cyl('iron_black', m.x, m.y + m.h, m.z, 0.22, 14, 6, { r1: 0.06 });
   ctx.batch.flush('world.vista');
   for (const l of lights) ctx.glow?.add({ x: l.x, y: l.y, z: l.z, color: l.color, size: l.size, intensity: l.intensity, ...(l.blink ? { blink: l.blink, phase: l.phase } : { on: l.on }) });
-  const stats = { houses: houses.length, towers: sites.towers.length, church: 1, mast: sites.mast, lights: lights.length, beacons: lights.filter((l) => l.beacon).length, windows: seen.windows, doors: seen.doors, roofItems: seen.boxes + seen.tanks };
+  const stats = { houses: houses.length, towers: sites.towers.length, church: 1, mast: sites.mast, lights: lights.length, beacons: lights.filter((l) => l.beacon).length, windows: seen.windows, doors: seen.doors, roofItems: seen.boxes + seen.tanks, keptOffKit: taken.length };
   if (ctx.world) ctx.world.vista = stats;
   return stats;
 }

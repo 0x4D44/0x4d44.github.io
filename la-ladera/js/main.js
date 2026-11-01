@@ -7,21 +7,25 @@
 //            ?skip=merge (keep one mesh per group x material: debugging only)  ?mergespan=N (largest merged chunk in metres, default 128)
 //            ?skiphidden=0 (update the matrices of hidden interiors and unseen people too: debugging only; engine/visibility.js)
 //            ?castall (floors and terrain tiles cast into the sun's shadow map again, as before core/shadowpolicy.js: before / after only)
+//            ?clutter=0 (original procedural exterior props; useful for comparisons and the asset fallback check)
+//            ?skip=animals (the barrio without its dogs, cats, birds, hens and mule: js/animals/); skip=people leaves them out too, they follow the people's graph
 import { createContext } from './core/ctx.js';
 import { BootBar, STAGES, CREEP_TICK_MS } from './core/bootbar.js';
 import { paintFrame } from './core/util.js';
 import { initEngine, startEngine } from './engine/index.js';
-import { warmUp } from './engine/warm.js';
+import { warmUp, requestLateMaterials } from './engine/warm.js';
 import { createSettings } from './engine/settings.js';
 import { installUI, createFlow } from './ui/index.js';
 import { initAudio } from './audio/index.js';
 import { generatePlan } from './world/plan.js';
 import { buildWorld } from './world/terrain.js';
 import { buildProps } from './world/props.js';
+import { loadClutter } from './world/clutter.js';
 import { urbanDensity } from './world/periphery.js';
 import { planBuilding, buildBuilding } from './arch/index.js';
 import { loadInteriorAssets, furnishBuilding, buildInterior } from './interiors/index.js';
 import { loadPeople, spawnPeople } from './people/index.js';
+import { preloadAnimals, loadAnimals } from './animals/index.js';
 
 const q = new URLSearchParams(location.search);
 const num = (k) => (q.has(k) && q.get(k) !== '' && Number.isFinite(+q.get(k)) ? +q.get(k) : undefined);
@@ -29,7 +33,7 @@ const opts = {
   seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
   debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'),
-  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0',
+  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0',
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
@@ -116,13 +120,16 @@ async function boot() {
   // houses built, instead of after the houses with the connection idle in between. The 'people' stage waits for them. (Measured at 8 Mbit/s and 120 ms: they are in
   // ~2.7 s sooner; the whole boot is bound by the ~27 MB it downloads, so its end moved by less than the run-to-run noise.)
   let peopleLoad = null;
-  const startPeople = () => { if (!peopleLoad) { peopleLoad = loadPeople(ctx); peopleLoad.catch(() => {}); } return peopleLoad; };   // the stage's own await reports a failure
+  const startPeople = () => {
+    if (!peopleLoad) { peopleLoad = loadPeople(ctx); peopleLoad.catch(() => {}); preloadAnimals(ctx); }     // the animals' seven small models (0.6 MB) come down beside the people's; preloadAnimals never rejects
+    return peopleLoad;                                                                                       // the stage's own await reports a failure
+  };
 
   const t0 = performance.now();
   try {
     await stage('engine', () => { initEngine(ctx); if (!ctx.renderer) throw new NoGL('no renderer'); });
     await stage('materials', () => ctx.matlib.init());
-    await stage('assets', () => ctx.assets.init());
+    await stage('assets', async () => { await ctx.assets.init(); await loadClutter(ctx); });
     await stage('plan', () => {
       ctx.plan = generatePlan(ctx);
       ctx.physics.setTerrain(ctx.plan.heightAt);
@@ -132,6 +139,7 @@ async function boot() {
     await stage('arch', () => each(ctx.plan?.lots ?? [], (lot) => { ctx.buildings.set(lot.id, planBuilding(ctx, lot)); }, 'planBuilding'));
     await stage('furnish', async () => {
       await loadInteriorAssets(ctx);
+      requestLateMaterials(ctx);                                // the materials of what a drawer builds when it opens: their textures come down with the others, the warm-up draws them (engine/warm.js)
       if (!opts.skip.has('people')) startPeople();
       await each([...ctx.buildings.values()], (bp) => furnishBuilding(ctx, bp), 'furnishBuilding');
     });
@@ -142,12 +150,13 @@ async function boot() {
     }, 'buildBuilding'));
     await stage('props', () => buildProps(ctx));
     await stage('flush', () => {
+      ctx.clutter?.finalize();
       ctx.batch.flushAll();
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
     });
     // every lamp is registered by now: one sprite each, and the far city on the hillsides round the plot (engine/glow.js)
     await stage('glow', () => ctx.glow?.finalize({ far: ctx.plan?._far, density: (x, z) => urbanDensity(ctx.plan, x, z), seed: ctx.plan?.seed }));
-    await stage('people', async () => { await startPeople(); spawnPeople(ctx); });
+    await stage('people', async () => { await startPeople(); spawnPeople(ctx); await loadAnimals(ctx); });
     await stage('start', async () => {
       // Textures are requested as materials are made and download alongside the build. Draw the first frame only once they are in: on a slow link
       // the world would otherwise show flat colours and pop when the images land. Bounded, so one stuck request cannot hold the page forever.

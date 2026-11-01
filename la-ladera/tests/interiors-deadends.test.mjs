@@ -1,11 +1,12 @@
 // Dead ends: no furnished room leaves a lane or a niche of 0.55-0.85 m that a walker can squeeze into and cannot use, and every sleeper's anchor has floor to stand on within reach.
 // The stuck sweep (tests/stuck.mjs --cell 0.3) found four such pockets in A2's plans (L33, L45, L70, L89: a 0.6 m aisle between a bed and a wardrobe, a diagonal 0.6 m mouth between a bed and a wardrobe, a 0.6 m
 // slot between a box and a pile of sacks, a 0.77 m lane closed by a pot) and two beds (L04, L15) whose sleeper lies 1.3 m from any floor a body can stand on (the sweep wants a node within 1.4 m).
+// The sweep of the merged tree (68c8bee) found one more: the chapel's office L48.f0.r1, the visitor's chair beside the desk's own (see the section before "every plan").
 //   node --import ./la-ladera/tests/register.mjs --test la-ladera/tests/interiors-deadends.test.mjs
 //   A3_PLANS=real   also judges every room and bed of A2's real world (default: the six lots below and the synthetic batch)
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Layout, seriousPocket, obbDist } from '../js/interiors/layout.js';
+import { Layout, seriousPocket, obbDist, obbOverlap } from '../js/interiors/layout.js';
 import { SLEEP_REACH } from '../js/interiors/index.js';
 import { makeRng } from '../js/core/rng.js';
 import { buildData } from './headless.mjs';
@@ -158,6 +159,54 @@ test('kernel: the sweep\'s walker finds no trap in the four rooms and no sleep a
       for (const t of traps) bad.push(`${rid} @${ox},${oz}: trap of ${t.cells} nodes at ${t.at.join(',')} (y ${t.y.join('..')})`);
       for (const m of missing) bad.push(`${rid} @${ox},${oz}: ${m.what} ${m.id} at ${m.x},${m.z} has no node to return from`);
     }
+  }
+  assert.equal(bad.length, 0, `${bad.length} problems:\n  ` + bad.slice(0, 12).join('\n  '));
+});
+
+// ---------------------------------------------------------------- L48's office: the visitor's chair beside the desk's own
+// The page-world sweep (tests/stuck.mjs --cell 0.3 over the merged tree 68c8bee) found one trap cell, 0.1 m2 at (-0.5, -86), in the chapel's office L48.f0.r1: `office()` let the free search put the visitor's plastic chair
+// 0.65 m from the desk's tucked office chair, and the two with the desk behind them made a niche 0.57 m deep behind a 0.69 m mouth, over `seriousPocket`'s 0.66 m and under the 0.85 m of comfortable floor. The walker
+// jumps in at 5 m/s and the lattice's 0.3 m steps cannot thread the mouth out again. Where the lattice falls decides (16 offsets in 64 here), so the sweep of the tree before read the same room clean. `office()` now keeps
+// the visitor's chair 0.9 m off the desk's (`free(..., { clearOf })`); no other room of the world changed.
+const OFFICE = 'L48.f0.r1';
+const OFFICE_OFFSETS = [[0.0375, 0], [0.075, 0.075], [0.15, 0.0375], [0.2625, 0.225]];      // lattice offsets at which the old layout read as a trap (8 x 8 offsets 0.0375 m apart: the cell at (-0.5, -86) in 16 of them)
+let l48P;
+const l48 = () => (l48P ??= buildData({ lots: ['L48'], furnish: true }));
+
+test('free(): `clearOf` keeps a piece 0.9 m off the pieces it names (a visitor\'s chair does not stand beside the desk\'s own chair)', () => {
+  const W = 6.7, D = 2.71, rect = { x0: 0, z0: 0, x1: W, z1: D };
+  const room = { id: 'P.f0.r1', type: 'office', floor: 0, rect, y: 0, h: 2.6 };
+  const bp = { id: 'P', rooms: [room], windows: [], stairs: [], entrances: [], colliders: { walls: [], floors: [] }, doors: [{ id: 'P.d1', x: 0.6, z: D, w: 0.9, rooms: [room.id] }] };
+  const build = (opts = () => ({})) => {
+    const L = new Layout({ bp, room, rng: makeRng(1), hh: { tints: {} } });
+    const seat = L.at('office_chair', W / 2, D / 2, PI, { force: true, prio: 2 });        // the desk's own chair, in the middle of the room: where the free search starts
+    return { seat, vis: L.free('chair_plastic', { rad: 2.6, prio: 2, ...opts(seat) }) };
+  };
+  const plain = build(), none = build(() => ({ clearOf: [] })), apart = build((seat) => ({ clearOf: [seat] })), wide = build((seat) => ({ clearOf: [seat], clearBy: 1.4 }));
+  assert.ok(plain.vis && obbOverlap(plain.vis.ob, plain.seat.ob, 0.9), 'without the rule the nearest free spot is beside the chair (the old behaviour)');
+  assert.deepEqual([none.vis.x, none.vis.z], [plain.vis.x, plain.vis.z], 'an empty clearOf changes nothing');
+  assert.ok(apart.vis && !obbOverlap(apart.vis.ob, apart.seat.ob, 0.9), 'with it the chair stands 0.9 m off the desk chair');
+  assert.ok(wide.vis && !obbOverlap(wide.vis.ob, wide.seat.ob, 1.4), 'clearBy sets the distance');
+});
+
+test('L48 (the chapel office): the visitor\'s chair stands 0.9 m off the desk chair and leaves no niche between them', async () => {
+  const { buildings } = await l48();
+  const L = layoutIn(buildings, OFFICE);
+  assert.ok(L, `${OFFICE} is built`);
+  const seat = L.items.find((i) => i.name === 'office_chair'), vis = L.items.find((i) => i.name === 'chair_plastic');
+  assert.ok(seat && vis, 'the office has its desk chair and its visitor\'s chair');
+  assert.ok(!obbOverlap(vis.ob, seat.ob, 0.9), `the chairs stand ${Math.hypot(vis.x - seat.x, vis.z - seat.z).toFixed(2)} m apart (centre to centre)`);
+  const niche = L.pockets().filter((p) => p.by.includes(seat) && p.by.includes(vis));
+  assert.equal(niche.length, 0, `a niche between the chairs: ${niche.map(describe).join('; ')}`);
+});
+
+test('kernel: the sweep\'s walker finds no trap in the chapel office at the lattice offsets that caught the old layout', async () => {
+  const { ctx, buildings } = await l48();
+  const bp = buildings.find((b) => b.id === 'L48'), bad = [];
+  for (const [ox, oz] of OFFICE_OFFSETS) {
+    const { traps, missing } = sweep(ctx, bp, OFFICE, ox, oz);
+    for (const t of traps) bad.push(`${OFFICE} @${ox},${oz}: trap of ${t.cells} nodes at ${t.at.join(',')} (y ${t.y.join('..')})`);
+    for (const m of missing) bad.push(`${OFFICE} @${ox},${oz}: ${m.what} ${m.id} at ${m.x},${m.z} has no node to return from`);
   }
   assert.equal(bad.length, 0, `${bad.length} problems:\n  ` + bad.slice(0, 12).join('\n  '));
 });

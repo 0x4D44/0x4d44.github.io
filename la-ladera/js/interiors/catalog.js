@@ -15,6 +15,7 @@
 // What the clothes add (topAdd, the garment_* keys) is HIDDEN from the furniture pipeline's view of this object: see "the clothes" below.
 
 import { GARMENTS, STATES } from './garments_data.js';
+import { GOODS_CATALOG } from './goods-catalog.js';
 
 export const PAL = {
   wood: [0x8a5a3a, 0x6b4226, 0xa87445, 0x4e3524, 0xc89a62],
@@ -301,6 +302,13 @@ for (const [id, g] of Object.entries(GARMENTS)) for (const state of STATES) {
   add(key, w, h, d, 'garment', `garment clothes ${id} ${state}`, {
     cols: 'none', mat: 'laundry', block: false, garment: id, state, ...(state === 'hung' ? { wall: true, hang: true, y: Math.round((1.78 - h) * 1000) / 1000 } : {}),
   });
+  Object.defineProperty(CATALOG, key, { enumerable: false });
+}
+
+// One key per article of the shop-goods library (assets/models/goods, goods.js): sized as the library's model, `ware: true` (not `goods`: that is the stock a shelf piece's stand-in draws). Stock on a shelf or a counter, never furniture: the plan keeps it in
+// bp.goods (the layout never sees it, it blocks nothing) and its models are a library of their own, loaded apart (goods-render.js loadGoodsAssets), so like the clothes it is NON-ENUMERABLE here.
+for (const [key, g] of Object.entries(GOODS_CATALOG)) {
+  add(key, ...g.size, 'smallbox', g.tags.join(' '), { ...g, top: true, block: false, mat: 'goods_surface', cols: 'none', ware: true });
   Object.defineProperty(CATALOG, key, { enumerable: false });
 }
 

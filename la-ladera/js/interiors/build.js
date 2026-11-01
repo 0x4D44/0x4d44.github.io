@@ -16,6 +16,8 @@ import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
 import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
 import { GARMENT_KEYS, registerGarmentAssets, garmentsOff } from './garments.js';
+import { GOODS_FIXTURES } from './goods-assortments.js';
+import { buildGoods } from './goods-render.js';
 
 const M = new THREE.Matrix4(), S = new THREE.Matrix4();
 const MAX_REPORTED = 12;
@@ -49,7 +51,7 @@ export async function loadInteriorAssets(ctx) {
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
   const a = ctx.assets;
   if (!a?.names) return;
-  const names = a.names().filter((n) => CATALOG[n] && !CATALOG[n].garment);        // (a clothes key registered by an earlier loadGarmentAssets is not a furniture root)
+  const names = a.names().filter((n) => CATALOG[n] && !CATALOG[n].garment && !CATALOG[n].ware);        // (a clothes key registered by an earlier loadGarmentAssets, and the shop goods, are not furniture roots: goods-render.js loadGoodsAssets)
   if (!names.length) return;
   await preloadModels(ctx, names, ctx.interiorGlb);
 }
@@ -94,7 +96,10 @@ function checkPart(geometry, name) {
  *   tint            the part takes the record's tint (its vertex colours, if it has any, are shades that multiply the tint)
  *   made / unmade   drawn only for a made / an unmade bed (rec.flags.unmade)
  *   magnets         drawn only when the record asks for fridge magnets (rec.flags.magnets)
- *   p<a-z><k>       one of several alternatives of channel <a-z>: exactly one k is drawn, picked by the record id
+ *   stock           the stock baked into the model (bottles, loaves, shoes, fruit...): left out when the shop-goods library stocks the fixture (rec.flags.stockReplaced).
+ *                   Not a name flag: goods-assortments.js `stockParts` lists the part numbers and the material each one must have, so a model rebuilt with other numbers shows its
+ *                   old stock again (a test fails) and never loses a shelf board.
+ *   p<a-z><k>      one of several alternatives of channel <a-z>: exactly one k is drawn, picked by the record id
  * Anything else is always drawn. A part keeps its own library material (the glTF material name) and its own vertex colours.
  */
 export function glbParts(ctx, name) {
@@ -114,10 +119,11 @@ export function glbParts(ctx, name) {
         checkPart(geometry, o.name);
         if (!matKey || matKey === 'missing_asset' || (ctx.matlib?.has && !ctx.matlib.has(matKey))) throw new Error(`${o.name}: unknown material '${matKey}'`);
       } catch (e) { geometry.dispose(); throw e; }
-      const flags = o.name.split('-').slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
+      const bits = o.name.split('-'), flags = bits.slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
       parts.push({
         geometry, matKey, colored: !!geometry.attributes.color,
         tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
+        stock: !flags.length && GOODS_FIXTURES[name]?.stockParts?.[bits[bits.length - 1]] === matKey,
         ch: pick ? pick[1] : null, k: pick ? +pick[2] : 0, tinted: new Map(),
       });
     }); } catch (e) { for (const p of parts) p.geometry.dispose(); throw e; }
@@ -155,6 +161,7 @@ function drawGlb(ctx, b, rec, c) {
   const chosen = {};
   const draws = [];
   for (const p of parts) {
+    if (p.stock && rec.flags?.stockReplaced) continue;
     if (p.made && unmade) continue;
     if (p.unmade && !unmade) continue;
     if (p.magnets && !rec.flags?.magnets) continue;
@@ -180,10 +187,13 @@ export function buildInterior(ctx, bp) {
   b.setBasePose(lot.x ?? 0, lot.y ?? 0, lot.z ?? 0, lot.rotY ?? 0);
   b.fronts = undefined;                                                            // the closed fronts the carcass drawer logs for containers.js (one building per call)
   const st = { records: recs.length, glb: 0, standin: 0, prims: 0, failed: 0 };
+  const goods = buildGoods(ctx, bp, group);                                        // the shop stock first (goods.js plan, goods-render.js): a fixture it stocks is drawn without its own stock below
+  st.goods = goods.stats;
   let reported = 0;
-  for (const rec of recs) {
-    const c = rec.decal ? decalDef(rec.decal) : CATALOG[rec.name];
+  for (const original of recs) {
+    const c = original.decal ? decalDef(original.decal) : CATALOG[original.name];
     if (!c) { st.failed++; continue; }
+    const rec = goods.replaced.has(original.id) ? { ...original, flags: { ...original.flags, stockReplaced: true } } : original;       // (a copy: the plan stays pure data)
     try {
       let n = 0;
       const models = ctx.interiorGlb?.has(rec.name) ? ctx.interiorGlb : ctx.garmentGlb?.has(rec.name) ? ctx.garmentGlb : null;       // the furniture's loaded models, or the clothes'

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "derivedFrom": "report.json",
+  "contacts": [
+    {
+      "file": "contact-front.jpg",
+      "bytes": 314576,
+      "sha256": "dcae1200ac99e8afa47095d884cee149ffd2048d4907492c0e2dfad2d5cbcea5",
+      "sourceManifestSha256": "3ba8f0a9933d0dc59836caad60e4947fe840a108a9efc504dd24f9f5a4b5dd81"
+    },
+    {
+      "file": "contact-back.jpg",
+      "bytes": 281459,
+      "sha256": "a22f406bd0f6dd7f264d030ff9df214664214252fbb42cc5651ed5c589445463",
+      "sourceManifestSha256": "3ba8f0a9933d0dc59836caad60e4947fe840a108a9efc504dd24f9f5a4b5dd81"
+    },
+    {
+      "file": "contact-lod.jpg",
+      "bytes": 305626,
+      "sha256": "c43af9c92aacdb60fa331b9f228e7c12b6bf76b91231a1774f3b53c4b9d83bb2",
+      "sourceManifestSha256": "3ba8f0a9933d0dc59836caad60e4947fe840a108a9efc504dd24f9f5a4b5dd81"
+    }
+  ]
+}
