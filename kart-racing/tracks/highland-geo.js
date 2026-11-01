@@ -13,7 +13,7 @@ export const BURN = (() => {   // Catmull-Rom smoothed so the stream meanders
   }
   out.push(P[P.length - 1].slice()); return out;
 })();
-export const VIADUCT = { z: 236, x0: 91, x1: 229, cx: 176 };
+export const VIADUCT = { z: 236, x0: 91, x1: 229, cx: 176, vx0: 98.6, vx1: 234.8, rise: 13.6 };   // vx0/vx1 = first/last pier
 
 export const sm = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
 export const hash2 = (ix, iz) => { let h = Math.imul(ix, 374761393) ^ Math.imul(iz, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };

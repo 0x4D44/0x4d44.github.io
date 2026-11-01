@@ -20,6 +20,7 @@ const theme = {
 };
 
 let _bridgeInfo = null;
+let _deckY = null;
 export default {
   id: "highland",
   theme,
@@ -55,6 +56,14 @@ export default {
     if (q.d < 40) {
       const hb = burnBed(q.t) + 0.5 * Math.max(0, q.d - 7.5);
       if (hb < h) h += (hb - h) * sm(2, 40, q.t);
+    }
+    // steep wooded knolls at each end of the viaduct, so the line runs into a hillside (tunnel portals) instead of ending in the open
+    if (dz < 46) {
+      const V = VIADUCT, wz = 1 - sm(20, 46, dz);
+      if (_deckY == null) _deckY = track.locate({ x: V.cx, y: undefined, z: V.z }).y + V.rise;
+      const top = _deckY + 9;
+      const w = Math.max(sm(0, 1, (V.vx0 + 6 - x) / 18) * sm(V.vx0 - 70, V.vx0 - 35, x), sm(0, 1, (x - (V.vx1 - 6)) / 18) * (1 - sm(V.vx1 + 14, V.vx1 + 40, x))) * wz;
+      if (w > 0 && top > h) h += (top - h) * w;
     }
     return h;
   },
@@ -159,16 +168,53 @@ export default {
       g.add(neck);
       const ring = own(new THREE.RingGeometry(0.975, 1, 48).rotateX(-Math.PI / 2)), rmat = own(new THREE.MeshBasicMaterial({ color: 0xdfe8ee, transparent: true, opacity: 0.35, depthWrite: false }));
       const rings = [0, 1, 2].map((i) => { const m = new THREE.Mesh(ring, rmat.clone()); m.position.y = 0.05; g.add(m); return m; });
-      g.position.set(372, waterY - 0.15, 172); g.rotation.y = 2.4; g.name = "nessie"; group.add(g);
+      const NX = 372, NZ = 215, NS = 1.5;   // she surfaces off the east shore, rearing up toward the loch-side road
+      g.position.set(NX, waterY - 0.15, NZ); g.rotation.y = -Math.PI / 2; g.scale.setScalar(NS); g.name = "nessie"; group.add(g);
+      // ---- spray: a jet of water from her mouth arcs across the road and soaks it (slippery for a while)
+      const SPLASH_S = 620, SP = { N: 170, T: 2.5, G: 15 };
+      const mouth = new THREE.Vector3(NX + 11.1 * NS, waterY + 8.4 * NS, NZ);   // head (local z -11.1, y 8.1) after rotation.y = -PI/2
+      const tgt = track.sample(SPLASH_S).pos, azim = Math.atan2(tgt.z - mouth.z, tgt.x - mouth.x), range = Math.hypot(tgt.x - mouth.x, tgt.z - mouth.z);
+      const v0 = Math.sqrt(range * SP.G / Math.sin(2 * 0.78)), vh = v0 * Math.cos(0.78), vv = v0 * Math.sin(0.78);
+      const dropG = own(new THREE.SphereGeometry(0.5, 6, 4)), dropM = own(new THREE.MeshBasicMaterial({ color: 0xcfe6f4, transparent: true, opacity: 0.7, depthWrite: false }));
+      const drops = new THREE.InstancedMesh(dropG, dropM, SP.N); drops.frustumCulled = false; drops.visible = false; drops.name = "nessie-spray"; group.add(drops);
+      const dr = Array.from({ length: SP.N }, () => ({ ph: rng(), sv: 0.9 + rng() * 0.22, az: (rng() - 0.5) * 0.22, sz: 0.7 + rng() * 0.8, el: 0.9 + rng() * 0.2 }));
+      // wet sheen laid over the road where she soaks it (fades back out as it dries)
+      const sheenS = new X.Strips(X.C);
+      { const i0 = Math.round((SPLASH_S - 110) / X.C.ds), n = Math.round(220 / X.C.ds); sheenS.add({ profile: [[-X.hw, 0.045, 0], [X.hw, 0.045, 1]], from: ((i0 % X.C.N) + X.C.N) % X.C.N, count: n, tile: 8, color: () => [1, 1, 1] }); }
+      const sheenM = own(new THREE.MeshBasicMaterial({ color: 0x486f94, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, side: THREE.DoubleSide }));
+      const sheen = new THREE.Mesh(own(sheenS.geometry()), sheenM); sheen.renderOrder = 2; sheen.visible = false; group.add(sheen);
+      let wet = 0;
+      track.slickAt = (s) => {
+        if (wet < 0.01) return 1;
+        let d = Math.abs(s - SPLASH_S); d = Math.min(d, track.length - d);
+        return 1 - 0.8 * wet * (1 - sm(45, 100, d));
+      };
+      const dm = new THREE.Matrix4(), gy2 = X.groundY;
       anim.push((dt, t) => {
         const cyc = (t % 46) / 46, up = sm(0.52, 0.6, cyc) * (1 - sm(0.8, 0.88, cyc));
         neck.scale.y = Math.max(0.001, up); neck.visible = up > 0.01; neck.position.y = -0.4 + 0.4 * up;
         g.position.y = waterY - 0.15 + Math.sin(t * 0.7) * 0.18;
         h1.position.y = Math.sin(t * 0.7 + 1) * 0.1; h2.position.y = Math.sin(t * 0.7 + 2) * 0.12 - 0.05; h3.position.y = Math.sin(t * 0.7 + 3) * 0.1 - 0.1;
         rings.forEach((r, i) => { const f = ((t * 0.18 + i / 3) % 1); r.scale.set(5 + f * 16, 1, 7 + f * 22); r.position.z = 9; r.material.opacity = 0.4 * (1 - f) * Math.min(1, f * 6); });
-        
+        // spray envelope: only while her head is fully up
+        const env = sm(0.585, 0.62, cyc) * (1 - sm(0.76, 0.8, cyc));
+        if (env > wet) wet = env; else wet = Math.max(0, wet - dt / 9);
+        drops.visible = env > 0.01;
+        if (drops.visible) {
+          for (let i = 0; i < SP.N; i++) {
+            const q = dr[i], age = ((t / SP.T + q.ph) % 1) * SP.T, h = vh * q.sv * age, a = azim + q.az;
+            const x = mouth.x + Math.cos(a) * h, z = mouth.z + Math.sin(a) * h, y = mouth.y + vv * q.sv * q.el * age - 0.5 * SP.G * age * age;
+            const s = y > gy2(x, z) + 0.1 ? q.sz * env : 0;
+            dm.makeScale(s, s, s); dm.setPosition(x, y, z); drops.setMatrixAt(i, dm);
+          }
+          drops.instanceMatrix.needsUpdate = true;
+        }
+        sheen.visible = wet > 0.02; sheenM.opacity = 0.42 * Math.min(1, wet * 1.3);
       });
     }
+
+    // ---- drop the engine's generic viaduct pillars (big stone blocks at the road edge by the humpback bridge); the bridge has its own stonework
+    { const pl = X.group.getObjectByName("pillars"); if (pl) pl.visible = false; for (const o of track.obstacles) { o.y0 = 1e9; o.y1 = 1e9; } }
 
     // ---- everything else
     buildNature(H);
