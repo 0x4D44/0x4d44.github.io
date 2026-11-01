@@ -199,7 +199,7 @@ html, body { margin: 0; padding: 0; overflow: hidden; }
 .ak-hud.on { opacity: 1; }
 .ak-hud .pn { background: linear-gradient(180deg, rgba(10,16,44,.78), rgba(5,8,26,.78)); border: 1px solid rgba(255,255,255,.12); box-shadow: 0 4px 14px rgba(0,0,0,.35); }
 .h-pos { position: absolute; left: 14px; top: 54px; display: flex; align-items: baseline; padding: 4px 18px 6px 14px; line-height: 1; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); border-left: 5px solid var(--orange); }
-.h-pos .n { font-size: 64px; text-shadow: 0 3px 0 rgba(0,0,0,.5); background: linear-gradient(180deg, #fff 20%, #ffc66b); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.h-pos .n { display: inline-block; padding: .1em .16em .04em 0; margin: -.1em -.16em -.04em 0; font-size: 64px; text-shadow: 0 3px 0 rgba(0,0,0,.5); background: linear-gradient(180deg, #fff 20%, #ffc66b); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .h-pos .s { font-size: 24px; margin-left: 2px; color: var(--orange2); }
 .h-pos .o { font-size: 22px; margin-left: 8px; color: var(--mute); }
 .h-pos.p1 .n { background: linear-gradient(180deg, #fff 10%, #ffd24a 60%, #e89a00); -webkit-background-clip: text; background-clip: text; }

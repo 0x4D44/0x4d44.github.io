@@ -268,7 +268,7 @@ export class Kart {
     this._listeners = new Map();
     this._loc = null; this._hint = undefined; this._lastGoodS = 0;
     this._driftArm = 0; this._prevDrift = false; this._driftVis = 0; this._level = 0;
-    this._hop = -1; this._padLatch = false; this._wallCool = 0; this._wallTimer = 0;
+    this._hop = -1; this._padLatch = false; this._wallCool = 0; this._mooCool = 0; this._wallTimer = 0;
     this._spinDur = 1; this._spinVis = 0; this._wheelRot = 0; this._roll = 0; this._pitch = 0; this._prevVf = 0;
     this.placeAt(this.position, 0);
   }
@@ -345,6 +345,7 @@ export class Kart {
     if (this.shield > 0) this.shield = Math.max(0, this.shield - dt);
     if (this._driftArm > 0) this._driftArm -= dt;
     if (this._wallCool > 0) this._wallCool -= dt;
+    if (this._mooCool > 0) this._mooCool -= dt;
     if (this._wallTimer > 0) { this._wallTimer -= dt; if (this._wallTimer <= 0) this.onWall = false; }
     if (spinning) {
       this.spinTime -= dt;
@@ -466,6 +467,7 @@ export class Kart {
     // ---- lateral grip
     let grip = this.drifting ? T.driftGrip : this.grip;
     if (this.offRoad) grip *= T.grassGrip;
+    if (track.slickAt && this.grounded) grip *= track.slickAt(this.s);   // tracks may soak a stretch (e.g. Nessie's spray)
     if (spinning) grip = 3;
     const before = nvl;
     nvl *= Math.exp(-grip * dt);
@@ -546,6 +548,7 @@ export class Kart {
       v.x -= (1 + T.wallRestitution) * vn * o.nx; v.z -= (1 + T.wallRestitution) * vn * o.nz;
       v.x *= 0.85; v.z *= 0.85;
       if (-vn > 2.5 && this._wallCool <= 0) { this._wallCool = 0.25; this._emit("wall", -vn); }
+      if ((o.kind === "cow" || o.kind === "sheep") && -vn > 1.5 && this._mooCool <= 0) { this._mooCool = 1.2; this._emit(o.kind === "cow" ? "moo" : "baa", -vn); }
       if (this.drifting && -vn > 6) this._cancelDrift(false);
       this.speed = v.x * Math.sin(this.heading) + v.z * Math.cos(this.heading);
     }

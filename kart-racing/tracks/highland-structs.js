@@ -202,16 +202,33 @@ export function buildStructs(H) {
       stoneP.push({ g, m: new THREE.Matrix4(), c: new THREE.Color(0xd4d0c4) });
       if (big) { track.addObstacle(x0, zv, 2.6, roadY - 4, deck); track.addObstacle(x1, zv, 2.6, roadY - 4, deck); }
     }
-    const x0 = piers[0], x1 = piers[piers.length - 1], len = x1 - x0, mid = (x0 + x1) / 2;
+    const vx0 = piers[0], vx1 = piers[piers.length - 1];
+    // the line runs on past the last arches over solid embankments and into a tunnel portal at each end,
+    // so the train enters and leaves the hillside instead of vanishing in mid-air
+    const scan = (from, dir) => { let x = from; for (let k = 0; k < 80; k++, x += dir) if (gy(x, zv) >= deck + 6.5) return x; return from + dir * 14; };   // portal sits where the hillside has risen above the line
+    const x0 = scan(vx0, -1), x1 = scan(vx1, 1), len = x1 - x0, mid = (x0 + x1) / 2;
     stoneP.push(sbox(len, 1.2, DW, mat(mid, deck - 0.4, zv), 0xc2beb2));                       // deck slab
     stoneP.push(sbox(len, 0.9, 0.7, mat(mid, deck + 0.65, zv - DW / 2 + 0.35), 0xd0ccc0), sbox(len, 0.9, 0.7, mat(mid, deck + 0.65, zv + DW / 2 - 0.35), 0xd0ccc0));  // parapets
     for (let x = x0; x <= x1; x += 4.65) stoneP.push(sbox(0.8, 0.5, 0.95, mat(x, deck + 1.28, zv - DW / 2 + 0.35), 0xe0dcd0), sbox(0.8, 0.5, 0.95, mat(x, deck + 1.28, zv + DW / 2 - 0.35), 0xe0dcd0));
     plain.push(part(new THREE.BoxGeometry(len, 0.35, DW - 1.6), mat(mid, deck + 0.38, zv), 0x4a4640));          // ballast
     for (const dz of [-0.72, 0.72]) plain.push(part(new THREE.BoxGeometry(len, 0.16, 0.12), mat(mid, deck + 0.7, zv + dz), 0x7a6a5a));   // rails
     for (let x = x0 + 0.4; x < x1; x += 0.95) plain.push(part(new THREE.BoxGeometry(0.28, 0.12, 2.0), mat(x, deck + 0.6, zv), 0x3a2a1c));  // sleepers
-    // cutting mouths at each end (dark portal + embankment block)
+    // embankment fill under the extended approaches, down below the lowest ground
+    for (const [ea, eb] of [[x0, vx0], [vx1, x1]]) {
+      let lo = 1e9; for (let x = ea; x <= eb; x += 6) lo = Math.min(lo, gy(x, zv));
+      const hgt = deck - 0.8 - (lo - 3);
+      stoneP.push(sbox(eb - ea, hgt, DW - 1.4, mat((ea + eb) / 2, deck - 0.8 - hgt / 2, zv), 0xb8b4a8));
+    }
+    // tunnel portals: stone facade with a dark bore, backed by a block of hillside
+    for (const dir of [-1, 1]) {
+      const xe = dir < 0 ? x0 : x1, PWID = 18, PH = 8.4, OW = 5.6, OH = 6.6, base = deck - 1.0;
+      const pierW = (PWID - OW) / 2, fx = xe + dir * 1.5;
+      stoneP.push(sbox(3, PH, pierW, mat(fx, base + PH / 2, zv - OW / 2 - pierW / 2), 0xcfcbbf), sbox(3, PH, pierW, mat(fx, base + PH / 2, zv + OW / 2 + pierW / 2), 0xcfcbbf));
+      stoneP.push(sbox(3, PH - OH - 1, OW, mat(fx, base + 1 + OH + (PH - OH - 1) / 2, zv), 0xd8d4c8));   // lintel
+      plain.push(part(new THREE.BoxGeometry(8, OH + 0.2, OW), mat(xe + dir * 4, base + 1 + OH / 2, zv), 0x08080a));   // dark bore running into the hill
+    }
     group.add(new THREE.Mesh(own(bake(stoneP)), stoneMat)); group.add(new THREE.Mesh(own(bake(plain)), plainMat));
-    H.viaduct = { deck, x0, x1 };
+    H.viaduct = { deck, x0: vx0, x1: vx1 };
     // steam train (green engine + maroon coaches) crossing west -> east
     const train = new THREE.Group(), tp = [], coachGeo = [];
     const loco = [

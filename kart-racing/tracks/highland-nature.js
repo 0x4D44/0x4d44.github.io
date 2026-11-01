@@ -79,15 +79,7 @@ export function buildNature(H) {
   for (let i = 0; i < 140; i++) { const a = rng() * TAU, r = R(1.0, 1.1), x = LOCH.x + Math.cos(a) * LOCH.rx * r, z = LOCH.z + Math.sin(a) * LOCH.rz * r; if (nearest(x, z) < wallDist + 4) continue; peb.push({ x, z, y: -0.1, sx: R(0.3, 1.0), sy: R(0.2, 0.5), sz: R(0.3, 1.0), ry: rng() * 6, c: pick([0x8b8a84, 0x6f706a, 0xa09c90]) }); }
   instanced(pebG, lam({ flatShading: true }), peb, "pebbles");
 
-  // ---------- dry-stone dykes along parts of the verge (beyond the barrier)
-  const dykeG = new THREE.BoxGeometry(2.8, 1.15, 0.8); dykeG.translate(0, 0.57, 0);
-  const dykes = [];
-  const spans = [[150, 330, 1], [330, 470, -1], [1160, 1330, 1], [1560, 1700, -1], [2000, 2150, 1], [2200, 2330, -1], [60, 130, -1], [610, 740, -1]];
-  for (const [a0, a1, side] of spans) for (let s = a0; s < a1; s += 2.6) {
-    const a = onSide(s, side, 8.4); if (!treeOK(a.x, a.z, 6) || nearest(a.x, a.z) < wallDist + 7) continue;
-    dykes.push({ x: a.x, z: a.z, ry: a.h + R(-0.05, 0.05), sx: R(0.95, 1.1), sy: R(0.9, 1.2), c: pick([0x8d8b84, 0x7c7b74, 0x9a978b, 0x6f6e68]) });
-  }
-  instanced(dykeG, lam({ flatShading: true }), dykes, "dykes");
+  // (the roadside dry-stone dyke blocks were removed: they read as stray stone blocks, some overlapping the road)
 
   // ---------- Highland coos (shaggy orange cattle) and sheep
   const GING = 0xc4631f, DARK = 0x6a3a1a, CREAM = 0xf0e4c4;
@@ -114,8 +106,8 @@ export function buildNature(H) {
   vergeCoo.forEach(([s, side], i) => {
     const lat = side * (X.hw + 1.3 + 2.6), a = at(s, lat);
     coos.push({ x: a.x, z: a.z, y: a.y - gy(a.x, a.z) + 0.02, ry: a.h + (side > 0 ? -1 : 1) * R(1.1, 2.0) + (rng() < 0.5 ? Math.PI : 0), sx: R(0.95, 1.1), c: cooTints[i % cooTints.length], abs: false });
-    track.addObstacle(a.x, a.z, 1.15, a.y - 1.5, a.y + 2.4);
-    track.addObstacle(a.x + a.rx * 0.0 + Math.sin(a.h) * (rng() - 0.5) * 0.4, a.z + Math.cos(a.h) * 0.5, 0.9, a.y - 1.5, a.y + 2.4);
+    track.addObstacle(a.x, a.z, 1.15, a.y - 1.5, a.y + 2.4, "cow");
+    track.addObstacle(a.x + a.rx * 0.0 + Math.sin(a.h) * (rng() - 0.5) * 0.4, a.z + Math.cos(a.h) * 0.5, 0.9, a.y - 1.5, a.y + 2.4, "cow");
   });
   // field herds beyond the barrier
   for (let k = 0; k < 8; k++) {
@@ -145,7 +137,7 @@ export function buildNature(H) {
   // sheep that have wandered onto the verge
   [[330, 1], [1000, -1], [1700, 1], [2250, 1]].forEach(([s, side], i) => {
     const a = at(s, side * (X.hw + 1.3 + 2.4)); sheep.push({ x: a.x, z: a.z, y: a.y - gy(a.x, a.z) + 0.02, ry: a.h + R(0.5, 2.5), sx: 1.1, c: sheepTints[i % 3] });
-    track.addObstacle(a.x, a.z, 0.85, a.y - 1.5, a.y + 1.5);
+    track.addObstacle(a.x, a.z, 0.85, a.y - 1.5, a.y + 1.5, "sheep");
   });
   instanced(sheepGeo, lam({ vertexColors: true }), sheep, "sheep"); blobShadows(sheep, 0.9);
   H.counts = { pines: pines.length, firs: firs.length, birches: birches.length, heather: heather.length, coos: coos.length, sheep: sheep.length };
