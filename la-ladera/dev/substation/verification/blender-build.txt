@@ -1,0 +1,88 @@
+substation_grid_transformer: 5528 near / 1136 far triangles
+substation_distribution_transformer: 4508 near / 920 far triangles
+substation_oil_breaker_hv: 2404 near / 312 far triangles
+substation_oil_breaker_mv: 1900 near / 312 far triangles
+substation_breaker_truck: 674 near / 230 far triangles
+substation_portal_gantry: 2844 near / 664 far triangles
+substation_disconnector_centre: 1542 near / 218 far triangles
+substation_disconnector_pantograph: 882 near / 174 far triangles
+substation_current_transformer: 838 near / 154 far triangles
+substation_voltage_transformer: 838 near / 138 far triangles
+substation_surge_arrester: 838 near / 126 far triangles
+substation_post_insulator: 864 near / 88 far triangles
+substation_earth_switch: 538 near / 102 far triangles
+substation_busbar_tube: 144 near / 48 far triangles
+substation_busbar_wire_segment: 42 near / 12 far triangles
+substation_bushing: 640 near / 88 far triangles
+substation_insulator_disc: 56 near / 12 far triangles
+substation_insulator_string: 696 near / 48 far triangles
+substation_spacer: 312 near / 124 far triangles
+substation_radiator_fin: 34 near / 10 far triangles
+substation_switchboard_panel: 592 near / 54 far triangles
+substation_control_panel: 494 near / 32 far triangles
+substation_battery_bank: 1228 near / 104 far triangles
+substation_charger: 378 near / 32 far triangles
+substation_desk: 162 near / 62 far triangles
+substation_chair: 128 near / 44 far triangles
+substation_schematic_board: 338 near / 104 far triangles
+substation_trench_cover: 66 near / 10 far triangles
+substation_transformer_bund: 202 near / 58 far triangles
+substation_fire_wall: 64 near / 10 far triangles
+substation_oil_store: 696 near / 188 far triangles
+substation_station_service_transformer: 1458 near / 290 far triangles
+substation_floodlight_mast: 282 near / 58 far triangles
+substation_lightning_mast: 222 near / 42 far triangles
+substation_earth_marker: 118 near / 22 far triangles
+substation_hazard_board: 102 near / 34 far triangles
+substation_tag_holder: 108 near / 12 far triangles
+substation_gravel_tile: 190 near / 10 far triangles
+substation_concrete_tile: 70 near / 10 far triangles
+substation_dry_weeds: 384 near / 144 far triangles
+INFO Draco mesh compression is available, use library at /tmp/substation-tools/blender-5.0.1-linux-x64/5.0/scripts/addons_core/io_scene_gltf2/libextern_draco.so
+
+EXPORTED substation_shared.glb: 1456816 bytes
+{"decodedRoots":80,"bytes":1456816,"triangles":39640}
+
+substation_uk_tower_suspension: 2608 near / 478 far triangles
+substation_uk_tower_tension: 2752 near / 478 far triangles
+substation_uk_pole_mv: 1040 near / 126 far triangles
+substation_uk_pole_lv: 833 near / 99 far triangles
+substation_uk_fence_panel: 462 near / 118 far triangles
+substation_uk_fence_post: 148 near / 32 far triangles
+substation_uk_outrigger: 84 near / 22 far triangles
+substation_uk_gate: 860 near / 264 far triangles
+substation_uk_building_shell: 2604 near / 134 far triangles
+substation_uk_building_door: 290 near / 90 far triangles
+substation_uk_louvre: 150 near / 34 far triangles
+substation_uk_window: 70 near / 10 far triangles
+substation_uk_roof: 166 near / 10 far triangles
+
+EXPORTED substation_uk.glb: 658404 bytes
+{"decodedRoots":26,"bytes":658404,"triangles":13962}
+
+substation_co_tower_suspension: 2608 near / 478 far triangles
+substation_co_tower_tension: 2752 near / 478 far triangles
+substation_co_pole_mv: 1280 near / 126 far triangles
+substation_co_pole_lv: 953 near / 99 far triangles
+substation_co_fence_panel: 462 near / 114 far triangles
+substation_co_fence_post: 148 near / 32 far triangles
+substation_co_outrigger: 102 near / 22 far triangles
+substation_co_gate: 1044 near / 284 far triangles
+substation_co_building_shell: 392 near / 134 far triangles
+substation_co_building_door: 290 near / 90 far triangles
+substation_co_louvre: 150 near / 34 far triangles
+substation_co_window: 70 near / 10 far triangles
+substation_co_roof: 190 near / 10 far triangles
+
+EXPORTED substation_co.glb: 467800 bytes
+{"decodedRoots":26,"bytes":467800,"triangles":12352}
+
+Substation manifest: 66 designs, 2583020 GLB bytes, 39146836 GPU texture bytes
+
+PASS substation --complete variants=uk,co: 66 near + 66 far roots
+GLB 2583020/6000000 bytes; textures 2088644/8000000 bytes; RGBA8+mips 39146836/40000000 bytes; shared byte identity PASS
+
+Installed 66 substation assets and far LODs; 2583020 GLB bytes
+Blender 5.0.1 (hash a3db93c5b259 built 2025-12-16 01:30:59)
+
+Blender quit

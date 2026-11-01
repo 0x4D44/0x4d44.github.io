@@ -1,0 +1,9402 @@
+{
+  "schemaVersion": 1,
+  "units": "metres",
+  "axes": "+Y up; +Z front; rotations about Y in radians",
+  "origin": [
+    0,
+    0,
+    0
+  ],
+  "variant": "uk",
+  "variantProfile": {
+    "voltageKV": [
+      132,
+      33,
+      11
+    ],
+    "gridFrequencyHz": 50,
+    "signLanguage": "en",
+    "signAtlas": "../textures/substation/signs-uk.png",
+    "paint": "grey-green and light-grey; light damp streaks",
+    "insulators": [
+      "brown-porcelain",
+      "grey-porcelain"
+    ],
+    "fence": "green anti-climb palisade",
+    "building": "brick; shallow flat roof; louvred steel doors",
+    "vegetation": "sparse dry maintenance weeds; damp moss on concrete",
+    "equipmentTags": [
+      "T1 132/33 kV",
+      "CB 33-2",
+      "TX2"
+    ],
+    "lineRecipes": {
+      "hv": {
+        "voltageKV": 132,
+        "spanM": 90,
+        "sagM": 3.6,
+        "phaseSpacingM": 4.8,
+        "circuits": 2,
+        "conductorRadiusM": 0.018
+      },
+      "mv": {
+        "voltageKV": 33,
+        "spanM": 48,
+        "sagM": 1.4,
+        "phaseSpacingM": 2,
+        "circuits": 1,
+        "conductorRadiusM": 0.012
+      },
+      "lv": {
+        "voltageKV": 11,
+        "spanM": 36,
+        "sagM": 0.75,
+        "phaseSpacingM": 0.96,
+        "circuits": 1,
+        "conductorRadiusM": 0.009
+      }
+    },
+    "instanceMaterialOverrides": {
+      "grid-1": {
+        "substation_paint": {
+          "cell": "paint_uk"
+        }
+      },
+      "grid-2": {
+        "substation_paint": {
+          "cell": "paint_lightgrey"
+        }
+      },
+      "distribution-1": {
+        "substation_paint": {
+          "cell": "paint_lightgrey"
+        }
+      },
+      "distribution-2": {
+        "substation_paint": {
+          "cell": "paint_uk"
+        }
+      }
+    },
+    "resolvedSpans": [
+      {
+        "id": "incoming-double-circuit-c1p1",
+        "start": [
+          -5.21572892,
+          15.76657719,
+          -53
+        ],
+        "end": [
+          -4.37547291,
+          19.25564743,
+          -31.35924268
+        ],
+        "sagM": 0.866282547482494,
+        "conductorRadiusM": 0.018,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "incoming-double-circuit-c1p2",
+        "start": [
+          -5.52804556,
+          20.88546592,
+          -53
+        ],
+        "end": [
+          -4.7397209,
+          24.69441804,
+          -31.35924268
+        ],
+        "sagM": 0.8662044406745535,
+        "conductorRadiusM": 0.018,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "incoming-double-circuit-c1p3",
+        "start": [
+          -5.8403622,
+          25.6844241,
+          -53
+        ],
+        "end": [
+          -5.1039689,
+          29.79326549,
+          -31.35924268
+        ],
+        "sagM": 0.8661313087290341,
+        "conductorRadiusM": 0.018,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "incoming-double-circuit-c2p1",
+        "start": [
+          -14.82547164,
+          15.76657719,
+          -53
+        ],
+        "end": [
+          -15.58310356,
+          19.25564743,
+          -31.35924268
+        ],
+        "sagM": 0.8661606165226738,
+        "conductorRadiusM": 0.018,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "incoming-double-circuit-c2p2",
+        "start": [
+          -14.513155000000001,
+          20.88546592,
+          -53
+        ],
+        "end": [
+          -15.21885556,
+          24.69441804,
+          -31.35924268
+        ],
+        "sagM": 0.8660904254531558,
+        "conductorRadiusM": 0.018,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "incoming-double-circuit-c2p3",
+        "start": [
+          -14.200838359999999,
+          25.6844241,
+          -53
+        ],
+        "end": [
+          -14.854607569999999,
+          29.79326549,
+          -31.35924268
+        ],
+        "sagM": 0.866025211238636,
+        "conductorRadiusM": 0.018,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "medium-outgoing-1",
+        "start": [
+          16,
+          13,
+          -29
+        ],
+        "end": [
+          16,
+          11,
+          -70
+        ],
+        "sagM": 1.1958333333333333,
+        "conductorRadiusM": 0.012,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "medium-outgoing-2",
+        "start": [
+          18,
+          13,
+          -29
+        ],
+        "end": [
+          18,
+          11,
+          -70
+        ],
+        "sagM": 1.1958333333333333,
+        "conductorRadiusM": 0.012,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "medium-outgoing-3",
+        "start": [
+          20,
+          13,
+          -29
+        ],
+        "end": [
+          20,
+          11,
+          -70
+        ],
+        "sagM": 1.1958333333333333,
+        "conductorRadiusM": 0.012,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "low-outgoing-1",
+        "start": [
+          34,
+          10,
+          2.96
+        ],
+        "end": [
+          70,
+          9,
+          2.96
+        ],
+        "sagM": 0.75,
+        "conductorRadiusM": 0.009,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "low-outgoing-2",
+        "start": [
+          34,
+          10,
+          2
+        ],
+        "end": [
+          70,
+          9,
+          2
+        ],
+        "sagM": 0.75,
+        "conductorRadiusM": 0.009,
+        "maxSegmentLengthM": 0.6
+      },
+      {
+        "id": "low-outgoing-3",
+        "start": [
+          34,
+          10,
+          1.04
+        ],
+        "end": [
+          70,
+          9,
+          1.04
+        ],
+        "sagM": 0.75,
+        "conductorRadiusM": 0.009,
+        "maxSegmentLengthM": 0.6
+      }
+    ]
+  },
+  "purpose": "offline library yard data; deliberately not registered or loaded by the game",
+  "clearances": "Plausible visual clearances only; not engineering-certified. No real operating instructions.",
+  "audio": {
+    "humFrequencyHz": 100,
+    "enabledByDefault": false,
+    "note": "Both variants intentionally request a 100 Hz scene cue. UK mains are 50 Hz. Colombian mains are 60 Hz, for which twice-frequency magnetostriction would normally be 120 Hz; this asset cue is an artistic override, not a grid-frequency claim."
+  },
+  "compound": {
+    "size": [
+      55,
+      40
+    ],
+    "fencePolyline": [
+      [
+        -27.5,
+        -20
+      ],
+      [
+        27.5,
+        -20
+      ],
+      [
+        27.5,
+        20
+      ],
+      [
+        -15,
+        20
+      ],
+      [
+        -19,
+        20
+      ],
+      [
+        -27.5,
+        20
+      ],
+      [
+        -27.5,
+        -20
+      ]
+    ],
+    "gate": {
+      "id": "main-gate",
+      "centre": [
+        -17,
+        0,
+        20
+      ],
+      "widthM": 4,
+      "visitorGap": [
+        [
+          -19,
+          20
+        ],
+        [
+          -15,
+          20
+        ]
+      ],
+      "openingDegrees": 80
+    }
+  },
+  "controlBuilding": {
+    "id": "control-building",
+    "footprint": [
+      [
+        10,
+        8.5
+      ],
+      [
+        22,
+        8.5
+      ],
+      [
+        22,
+        15.5
+      ],
+      [
+        10,
+        15.5
+      ]
+    ],
+    "entrance": [
+      16,
+      0,
+      15.5
+    ]
+  },
+  "equipmentTypes": {
+    "grid_transformer": {
+      "variantBinding": {
+        "asset": "substation_grid_transformer",
+        "envelope": [
+          6.8,
+          6.4,
+          5.4
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "fan_0",
+            "position": [
+              -1.75,
+              1.52381,
+              2.42
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "fan_1",
+            "position": [
+              -0.6,
+              1.52381,
+              2.42
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "fan_2",
+            "position": [
+              0.6,
+              1.52381,
+              2.42
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "fan_3",
+            "position": [
+              1.75,
+              1.52381,
+              2.42
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "marshalling_door",
+            "position": [
+              2.03,
+              0.711111,
+              1.08
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "tapchanger_door",
+            "position": [
+              -2.65,
+              0.812698,
+              0.57
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        8.2,
+        6.4,
+        6.2
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": {
+          "name": "hum_100hz",
+          "position": [
+            0,
+            2.5,
+            0
+          ],
+          "frequencyHz": 100
+        },
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "marshalling_door",
+            "nodeSuffix": "marshalling_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "tapchanger_door",
+            "nodeSuffix": "tapchanger_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            5.8999999999999995
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -6.1,
+          -5.1
+        ],
+        [
+          6.1,
+          -5.1
+        ],
+        [
+          6.1,
+          5.1
+        ],
+        [
+          -6.1,
+          5.1
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "distribution_transformer": {
+      "variantBinding": {
+        "asset": "substation_distribution_transformer",
+        "envelope": [
+          4.8,
+          4.5,
+          3.6
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "fan_0",
+            "position": [
+              -1.235294,
+              1,
+              1.652222
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "fan_1",
+            "position": [
+              -0.423529,
+              1,
+              1.652222
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "fan_2",
+            "position": [
+              0.423529,
+              1,
+              1.652222
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "fan_3",
+            "position": [
+              1.235294,
+              1,
+              1.652222
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              6.283185
+            ]
+          },
+          {
+            "name": "marshalling_door",
+            "position": [
+              1.491765,
+              0.648148,
+              0.72
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "tapchanger_door",
+            "position": [
+              -1.929412,
+              0.740741,
+              0.38
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        5.2,
+        4.8,
+        4.5
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": {
+          "name": "hum_100hz",
+          "position": [
+            0,
+            2.4,
+            0
+          ],
+          "frequencyHz": 100
+        },
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "marshalling_door",
+            "nodeSuffix": "marshalling_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "tapchanger_door",
+            "nodeSuffix": "tapchanger_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            5.05
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -4.6,
+          -4.25
+        ],
+        [
+          4.6,
+          -4.25
+        ],
+        [
+          4.6,
+          4.25
+        ],
+        [
+          -4.6,
+          4.25
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "oil_breaker_hv": {
+      "variantBinding": {
+        "asset": "substation_oil_breaker_hv",
+        "envelope": [
+          3.6,
+          5,
+          2.7
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "mechanism_door",
+            "position": [
+              -0.35,
+              0.444915,
+              1.29308
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        5.4,
+        5,
+        2.7
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "mechanism_door",
+            "nodeSuffix": "mechanism_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            4.15
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -4.7,
+          -3.35
+        ],
+        [
+          4.7,
+          -3.35
+        ],
+        [
+          4.7,
+          3.35
+        ],
+        [
+          -4.7,
+          3.35
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "oil_breaker_mv": {
+      "variantBinding": {
+        "asset": "substation_oil_breaker_mv",
+        "envelope": [
+          2.4,
+          2.9,
+          1.8
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "mechanism_door",
+            "position": [
+              -0.233333,
+              0.409825,
+              0.839576
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        3.2,
+        3.5,
+        1.8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "mechanism_door",
+            "nodeSuffix": "mechanism_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.7
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -3.6,
+          -2.9
+        ],
+        [
+          3.6,
+          -2.9
+        ],
+        [
+          3.6,
+          2.9
+        ],
+        [
+          -3.6,
+          2.9
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "breaker_truck": {
+      "variantBinding": {
+        "asset": "substation_breaker_truck",
+        "envelope": [
+          0.68,
+          1.15,
+          1
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "truck_handle",
+            "position": [
+              -0.27,
+              0.7,
+              0.477778
+            ],
+            "axis": [
+              1,
+              0,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.8,
+        1.2,
+        1
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.5
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.6000000000000001,
+          -0.7
+        ],
+        [
+          0.6000000000000001,
+          -0.7
+        ],
+        [
+          0.6000000000000001,
+          0.7
+        ],
+        [
+          -0.6000000000000001,
+          0.7
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "portal_gantry": {
+      "variantBinding": {
+        "asset": "substation_portal_gantry",
+        "envelope": [
+          8,
+          8.6,
+          2
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        18,
+        9,
+        2
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.8
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -11,
+          -3
+        ],
+        [
+          11,
+          -3
+        ],
+        [
+          11,
+          3
+        ],
+        [
+          -11,
+          3
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "disconnector_centre": {
+      "variantBinding": {
+        "asset": "substation_disconnector_centre",
+        "envelope": [
+          3.4,
+          3.7,
+          1.3
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "blade_left",
+            "position": [
+              -1.2,
+              3.651284,
+              0
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "blade_right",
+            "position": [
+              1.2,
+              3.651284,
+              0
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              -1.570796,
+              0
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        4.5,
+        3.7,
+        1.8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.7
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -4.25,
+          -2.9
+        ],
+        [
+          4.25,
+          -2.9
+        ],
+        [
+          4.25,
+          2.9
+        ],
+        [
+          -4.25,
+          2.9
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "disconnector_pantograph": {
+      "variantBinding": {
+        "asset": "substation_disconnector_pantograph",
+        "envelope": [
+          2,
+          5.5,
+          1.5
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "pantograph_lower",
+            "position": [
+              -0.65,
+              3.24,
+              0
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "pantograph_upper",
+            "position": [
+              -0.65,
+              4.39,
+              0
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2.2,
+        5.5,
+        2.2
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.9000000000000004
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -3.1,
+          -3.1
+        ],
+        [
+          3.1,
+          -3.1
+        ],
+        [
+          3.1,
+          3.1
+        ],
+        [
+          -3.1,
+          3.1
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "current_transformer": {
+      "variantBinding": {
+        "asset": "substation_current_transformer",
+        "envelope": [
+          0.9,
+          3.8,
+          0.9
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.9,
+        3.8,
+        0.9
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.25
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.45,
+          -2.45
+        ],
+        [
+          2.45,
+          -2.45
+        ],
+        [
+          2.45,
+          2.45
+        ],
+        [
+          -2.45,
+          2.45
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "voltage_transformer": {
+      "variantBinding": {
+        "asset": "substation_voltage_transformer",
+        "envelope": [
+          0.85,
+          4,
+          0.85
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.1,
+        4.1,
+        1.1
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.3499999999999996
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.55,
+          -2.55
+        ],
+        [
+          2.55,
+          -2.55
+        ],
+        [
+          2.55,
+          2.55
+        ],
+        [
+          -2.55,
+          2.55
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "surge_arrester": {
+      "variantBinding": {
+        "asset": "substation_surge_arrester",
+        "envelope": [
+          0.55,
+          3.7,
+          0.55
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.8,
+        3.8,
+        0.8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.2
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.4,
+          -2.4
+        ],
+        [
+          2.4,
+          -2.4
+        ],
+        [
+          2.4,
+          2.4
+        ],
+        [
+          -2.4,
+          2.4
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "post_insulator": {
+      "variantBinding": {
+        "asset": "substation_post_insulator",
+        "envelope": [
+          0.4,
+          1.65,
+          0.4
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.6,
+        2,
+        0.6
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.0999999999999996
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.3,
+          -2.3
+        ],
+        [
+          2.3,
+          -2.3
+        ],
+        [
+          2.3,
+          2.3
+        ],
+        [
+          -2.3,
+          2.3
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "earth_switch": {
+      "variantBinding": {
+        "asset": "substation_earth_switch",
+        "envelope": [
+          1.1,
+          1.8,
+          0.75
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "earth_blade",
+            "position": [
+              -0.43,
+              0.219031,
+              0
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.8,
+        2.4,
+        1
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.3
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.9,
+          -2.5
+        ],
+        [
+          2.9,
+          -2.5
+        ],
+        [
+          2.9,
+          2.5
+        ],
+        [
+          -2.9,
+          2.5
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "busbar_tube": {
+      "variantBinding": {
+        "asset": "substation_busbar_tube",
+        "envelope": [
+          6,
+          0.16,
+          0.16
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        6,
+        0.16,
+        0.16
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            2.88
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -5,
+          -2.08
+        ],
+        [
+          5,
+          -2.08
+        ],
+        [
+          5,
+          2.08
+        ],
+        [
+          -5,
+          2.08
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "busbar_wire_segment": {
+      "variantBinding": {
+        "asset": "substation_busbar_wire_segment",
+        "envelope": [
+          0.04,
+          1,
+          0.04
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1,
+        1,
+        0.04
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            2.8200000000000003
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.5,
+          -2.02
+        ],
+        [
+          2.5,
+          -2.02
+        ],
+        [
+          2.5,
+          2.02
+        ],
+        [
+          -2.5,
+          2.02
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "bushing": {
+      "variantBinding": {
+        "asset": "substation_bushing",
+        "envelope": [
+          0.45,
+          1.6,
+          0.45
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.5,
+        2.3,
+        0.5
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.05
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.25,
+          -2.25
+        ],
+        [
+          2.25,
+          -2.25
+        ],
+        [
+          2.25,
+          2.25
+        ],
+        [
+          -2.25,
+          2.25
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "insulator_disc": {
+      "variantBinding": {
+        "asset": "substation_insulator_disc",
+        "envelope": [
+          0.34,
+          0.17,
+          0.34
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.34,
+        0.17,
+        0.34
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.17
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.37,
+          -0.37
+        ],
+        [
+          0.37,
+          -0.37
+        ],
+        [
+          0.37,
+          0.37
+        ],
+        [
+          -0.37,
+          0.37
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "insulator_string": {
+      "variantBinding": {
+        "asset": "substation_insulator_string",
+        "envelope": [
+          0.36,
+          2.4,
+          0.36
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.36,
+        2.4,
+        0.36
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            2.9800000000000004
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.18,
+          -2.18
+        ],
+        [
+          2.18,
+          -2.18
+        ],
+        [
+          2.18,
+          2.18
+        ],
+        [
+          -2.18,
+          2.18
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "spacer": {
+      "variantBinding": {
+        "asset": "substation_spacer",
+        "envelope": [
+          0.9,
+          0.14,
+          0.9
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.9,
+        0.55,
+        0.9
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.4500000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.65,
+          -0.65
+        ],
+        [
+          0.65,
+          -0.65
+        ],
+        [
+          0.65,
+          0.65
+        ],
+        [
+          -0.65,
+          0.65
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "radiator_fin": {
+      "variantBinding": {
+        "asset": "substation_radiator_fin",
+        "envelope": [
+          0.08,
+          1.9,
+          0.72
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.12,
+        2.6,
+        0.9
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.4500000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.26,
+          -0.65
+        ],
+        [
+          0.26,
+          -0.65
+        ],
+        [
+          0.26,
+          0.65
+        ],
+        [
+          -0.26,
+          0.65
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "switchboard_panel": {
+      "variantBinding": {
+        "asset": "substation_switchboard_panel",
+        "envelope": [
+          0.8,
+          2.3,
+          1.25
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "breaker_door",
+            "position": [
+              -0.375,
+              0.06,
+              0.570611
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "upper_door",
+            "position": [
+              -0.375,
+              1.265,
+              0.570611
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.8,
+        2.3,
+        1.3
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "upper_door",
+            "nodeSuffix": "upper_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "breaker_door",
+            "nodeSuffix": "breaker_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.6500000000000001
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.6000000000000001,
+          -0.8500000000000001
+        ],
+        [
+          0.6000000000000001,
+          -0.8500000000000001
+        ],
+        [
+          0.6000000000000001,
+          0.8500000000000001
+        ],
+        [
+          -0.6000000000000001,
+          0.8500000000000001
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "control_panel": {
+      "variantBinding": {
+        "asset": "substation_control_panel",
+        "envelope": [
+          1,
+          2.2,
+          0.6
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "panel_door",
+            "position": [
+              -0.475,
+              0.06,
+              0.249048
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1,
+        2.2,
+        0.65
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "panel_door",
+            "nodeSuffix": "panel_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.3250000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.7,
+          -0.525
+        ],
+        [
+          0.7,
+          -0.525
+        ],
+        [
+          0.7,
+          0.525
+        ],
+        [
+          -0.7,
+          0.525
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "battery_bank": {
+      "variantBinding": {
+        "asset": "substation_battery_bank",
+        "envelope": [
+          1.9,
+          1.3,
+          0.65
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2.5,
+        1.3,
+        0.7
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.35
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1.45,
+          -0.55
+        ],
+        [
+          1.45,
+          -0.55
+        ],
+        [
+          1.45,
+          0.55
+        ],
+        [
+          -1.45,
+          0.55
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "charger": {
+      "variantBinding": {
+        "asset": "substation_charger",
+        "envelope": [
+          0.7,
+          1.5,
+          0.65
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "charger_door",
+            "position": [
+              -0.32,
+              0.06,
+              0.273976
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.8,
+        1.5,
+        0.65
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": {
+          "name": "hum_100hz",
+          "position": [
+            0,
+            0.75,
+            0
+          ],
+          "frequencyHz": 100
+        },
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "charger_door",
+            "nodeSuffix": "charger_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.3250000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.6000000000000001,
+          -0.525
+        ],
+        [
+          0.6000000000000001,
+          -0.525
+        ],
+        [
+          0.6000000000000001,
+          0.525
+        ],
+        [
+          -0.6000000000000001,
+          0.525
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "desk": {
+      "variantBinding": {
+        "asset": "substation_desk",
+        "envelope": [
+          1.5,
+          0.76,
+          0.75
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "desk_drawer",
+            "position": [
+              -0.57,
+              0.46,
+              0.2625
+            ],
+            "axis": [
+              0,
+              0,
+              1
+            ],
+            "motion": "translation",
+            "range": [
+              0,
+              0.35
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.6,
+        0.76,
+        0.8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.4000000000000001
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1,
+          -0.6000000000000001
+        ],
+        [
+          1,
+          -0.6000000000000001
+        ],
+        [
+          1,
+          0.6000000000000001
+        ],
+        [
+          -1,
+          0.6000000000000001
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "chair": {
+      "variantBinding": {
+        "asset": "substation_chair",
+        "envelope": [
+          0.55,
+          0.9,
+          0.55
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.55,
+        0.95,
+        0.55
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.2750000000000001
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": {
+          "name": "seat",
+          "position": [
+            0,
+            0.47,
+            0
+          ],
+          "facingY": 0
+        }
+      },
+      "navKeepOut": [
+        [
+          -0.47500000000000003,
+          -0.47500000000000003
+        ],
+        [
+          0.47500000000000003,
+          -0.47500000000000003
+        ],
+        [
+          0.47500000000000003,
+          0.47500000000000003
+        ],
+        [
+          -0.47500000000000003,
+          0.47500000000000003
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "schematic_board": {
+      "variantBinding": {
+        "asset": "substation_schematic_board",
+        "envelope": [
+          1.8,
+          1.2,
+          0.08
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.8,
+        1.2,
+        0.08
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.04
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1.1,
+          -0.24000000000000002
+        ],
+        [
+          1.1,
+          -0.24000000000000002
+        ],
+        [
+          1.1,
+          0.24000000000000002
+        ],
+        [
+          -1.1,
+          0.24000000000000002
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "trench_cover": {
+      "variantBinding": {
+        "asset": "substation_trench_cover",
+        "envelope": [
+          1.2,
+          0.09,
+          0.7
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.2,
+        0.12,
+        0.7
+      ],
+      "traversable": true,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.35
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "transformer_bund": {
+      "variantBinding": {
+        "asset": "substation_transformer_bund",
+        "envelope": [
+          9,
+          0.6,
+          7.2
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        10,
+        0.6,
+        8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            5
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -5.2,
+          -4.2
+        ],
+        [
+          5.2,
+          -4.2
+        ],
+        [
+          5.2,
+          4.2
+        ],
+        [
+          -5.2,
+          4.2
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "fire_wall": {
+      "variantBinding": {
+        "asset": "substation_fire_wall",
+        "envelope": [
+          0.35,
+          6,
+          7
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.4,
+        6,
+        8.5
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            5.25
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.4,
+          -4.45
+        ],
+        [
+          0.4,
+          -4.45
+        ],
+        [
+          0.4,
+          4.45
+        ],
+        [
+          -0.4,
+          4.45
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "oil_store": {
+      "variantBinding": {
+        "asset": "substation_oil_store",
+        "envelope": [
+          3,
+          2.6,
+          2.4
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "oil_store_door",
+            "position": [
+              -1.42,
+              0.2,
+              1.143845
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        3.2,
+        2.6,
+        2.5
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "oil_store_door",
+            "nodeSuffix": "oil_store_door",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            2.25
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1.8,
+          -1.45
+        ],
+        [
+          1.8,
+          -1.45
+        ],
+        [
+          1.8,
+          1.45
+        ],
+        [
+          -1.8,
+          1.45
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "station_service_transformer": {
+      "variantBinding": {
+        "asset": "substation_station_service_transformer",
+        "envelope": [
+          2,
+          2.1,
+          1.8
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2,
+        2.1,
+        1.8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": {
+          "name": "hum_100hz",
+          "position": [
+            0,
+            1.05,
+            0
+          ],
+          "frequencyHz": 100
+        },
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.7
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -3,
+          -2.9
+        ],
+        [
+          3,
+          -2.9
+        ],
+        [
+          3,
+          2.9
+        ],
+        [
+          -3,
+          2.9
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "floodlight_mast": {
+      "variantBinding": {
+        "asset": "substation_floodlight_mast",
+        "envelope": [
+          2.4,
+          10,
+          0.65
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [
+          {
+            "name": "lamp_left",
+            "position": [
+              -0.9,
+              9.4,
+              0
+            ],
+            "axis": [
+              1,
+              0,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "lamp_right",
+            "position": [
+              0.9,
+              9.4,
+              0
+            ],
+            "axis": [
+              1,
+              0,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2.4,
+        10,
+        0.65
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [
+          {
+            "name": "lamp_left",
+            "position": [
+              -0.9,
+              9.4,
+              0
+            ],
+            "nodeSuffix": "lamp_left",
+            "direction": [
+              0,
+              -1,
+              0.3
+            ]
+          },
+          {
+            "name": "lamp_right",
+            "position": [
+              0.9,
+              9.4,
+              0
+            ],
+            "nodeSuffix": "lamp_right",
+            "direction": [
+              0,
+              -1,
+              0.3
+            ]
+          }
+        ],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.3250000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1.4,
+          -0.525
+        ],
+        [
+          1.4,
+          -0.525
+        ],
+        [
+          1.4,
+          0.525
+        ],
+        [
+          -1.4,
+          0.525
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "lightning_mast": {
+      "variantBinding": {
+        "asset": "substation_lightning_mast",
+        "envelope": [
+          0.6,
+          14,
+          0.6
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.8,
+        14,
+        0.8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.4000000000000001
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.6000000000000001,
+          -0.6000000000000001
+        ],
+        [
+          0.6000000000000001,
+          -0.6000000000000001
+        ],
+        [
+          0.6000000000000001,
+          0.6000000000000001
+        ],
+        [
+          -0.6000000000000001,
+          0.6000000000000001
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "earth_marker": {
+      "variantBinding": {
+        "asset": "substation_earth_marker",
+        "envelope": [
+          0.25,
+          0.3,
+          0.25
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.4,
+        0.5,
+        0.4
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.2000000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.4,
+          -0.4
+        ],
+        [
+          0.4,
+          -0.4
+        ],
+        [
+          0.4,
+          0.4
+        ],
+        [
+          -0.4,
+          0.4
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "hazard_board": {
+      "variantBinding": {
+        "asset": "substation_hazard_board",
+        "envelope": [
+          1.1,
+          2.3,
+          0.12
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.1,
+        2.3,
+        0.15
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.0750000000000002
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.75,
+          -0.275
+        ],
+        [
+          0.75,
+          -0.275
+        ],
+        [
+          0.75,
+          0.275
+        ],
+        [
+          -0.75,
+          0.275
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "tag_holder": {
+      "variantBinding": {
+        "asset": "substation_tag_holder",
+        "envelope": [
+          0.5,
+          0.36,
+          0.06
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.5,
+        0.36,
+        0.06
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.03
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.45,
+          -0.23
+        ],
+        [
+          0.45,
+          -0.23
+        ],
+        [
+          0.45,
+          0.23
+        ],
+        [
+          -0.45,
+          0.23
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "gravel_tile": {
+      "variantBinding": {
+        "asset": "substation_gravel_tile",
+        "envelope": [
+          2,
+          0.05,
+          2
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2,
+        0.05,
+        2
+      ],
+      "traversable": true,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            2
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "concrete_tile": {
+      "variantBinding": {
+        "asset": "substation_concrete_tile",
+        "envelope": [
+          2,
+          0.12,
+          2
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2,
+        0.12,
+        2
+      ],
+      "traversable": true,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            2
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "dry_weeds": {
+      "variantBinding": {
+        "asset": "substation_dry_weeds",
+        "envelope": [
+          0.5,
+          0.55,
+          0.5
+        ],
+        "sharedGeometry": true,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.5,
+        0.6,
+        0.5
+      ],
+      "traversable": true,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.25
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "tower_suspension": {
+      "variantBinding": {
+        "asset": "substation_uk_tower_suspension",
+        "envelope": [
+          10,
+          32,
+          6
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": [
+          {
+            "name": "line_c1_p1",
+            "circuit": 0,
+            "phase": 0,
+            "position": [
+              -4.78427108,
+              15.76657719,
+              0
+            ],
+            "sourcePivot": "insulator_string_0_-1"
+          },
+          {
+            "name": "line_c1_p2",
+            "circuit": 0,
+            "phase": 1,
+            "position": [
+              -4.47195444,
+              20.88546592,
+              0
+            ],
+            "sourcePivot": "insulator_string_1_-1"
+          },
+          {
+            "name": "line_c1_p3",
+            "circuit": 0,
+            "phase": 2,
+            "position": [
+              -4.1596378,
+              25.6844241,
+              0
+            ],
+            "sourcePivot": "insulator_string_2_-1"
+          },
+          {
+            "name": "line_c2_p1",
+            "circuit": 1,
+            "phase": 0,
+            "position": [
+              4.82547164,
+              15.76657719,
+              0
+            ],
+            "sourcePivot": "insulator_string_0_1"
+          },
+          {
+            "name": "line_c2_p2",
+            "circuit": 1,
+            "phase": 1,
+            "position": [
+              4.513155,
+              20.88546592,
+              0
+            ],
+            "sourcePivot": "insulator_string_1_1"
+          },
+          {
+            "name": "line_c2_p3",
+            "circuit": 1,
+            "phase": 2,
+            "position": [
+              4.20083836,
+              25.6844241,
+              0
+            ],
+            "sourcePivot": "insulator_string_2_1"
+          }
+        ]
+      },
+      "accessEnvelope": [
+        10,
+        32,
+        7
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            6.3
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -7,
+          -5.5
+        ],
+        [
+          7,
+          -5.5
+        ],
+        [
+          7,
+          5.5
+        ],
+        [
+          -7,
+          5.5
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "tower_tension": {
+      "variantBinding": {
+        "asset": "substation_uk_tower_tension",
+        "envelope": [
+          11.6,
+          34,
+          6.8
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": [
+          {
+            "name": "line_c1_p1",
+            "circuit": 0,
+            "phase": 0,
+            "position": [
+              -5.62452709,
+              19.25564743,
+              2.35924268
+            ],
+            "sourcePivot": "insulator_string_0_-1"
+          },
+          {
+            "name": "line_c1_p2",
+            "circuit": 0,
+            "phase": 1,
+            "position": [
+              -5.2602791,
+              24.69441804,
+              2.35924268
+            ],
+            "sourcePivot": "insulator_string_1_-1"
+          },
+          {
+            "name": "line_c1_p3",
+            "circuit": 0,
+            "phase": 2,
+            "position": [
+              -4.8960311,
+              29.79326549,
+              2.35924268
+            ],
+            "sourcePivot": "insulator_string_2_-1"
+          },
+          {
+            "name": "line_c2_p1",
+            "circuit": 1,
+            "phase": 0,
+            "position": [
+              5.58310356,
+              19.25564743,
+              2.35924268
+            ],
+            "sourcePivot": "insulator_string_0_1"
+          },
+          {
+            "name": "line_c2_p2",
+            "circuit": 1,
+            "phase": 1,
+            "position": [
+              5.21885556,
+              24.69441804,
+              2.35924268
+            ],
+            "sourcePivot": "insulator_string_1_1"
+          },
+          {
+            "name": "line_c2_p3",
+            "circuit": 1,
+            "phase": 2,
+            "position": [
+              4.85460757,
+              29.79326549,
+              2.35924268
+            ],
+            "sourcePivot": "insulator_string_2_1"
+          }
+        ]
+      },
+      "accessEnvelope": [
+        11.6,
+        34,
+        8
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            6.8
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -7.8,
+          -6
+        ],
+        [
+          7.8,
+          -6
+        ],
+        [
+          7.8,
+          6
+        ],
+        [
+          -7.8,
+          6
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "pole_mv": {
+      "variantBinding": {
+        "asset": "substation_uk_pole_mv",
+        "envelope": [
+          5,
+          13,
+          1.2
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": [
+          {
+            "name": "line_c1_p1",
+            "circuit": 0,
+            "phase": 0,
+            "position": [
+              -2,
+              13,
+              0
+            ],
+            "sourcePivot": "pin_insulator_0"
+          },
+          {
+            "name": "line_c1_p2",
+            "circuit": 0,
+            "phase": 1,
+            "position": [
+              0,
+              13,
+              0
+            ],
+            "sourcePivot": "pin_insulator_1"
+          },
+          {
+            "name": "line_c1_p3",
+            "circuit": 0,
+            "phase": 2,
+            "position": [
+              2,
+              13,
+              0
+            ],
+            "sourcePivot": "pin_insulator_2"
+          }
+        ]
+      },
+      "accessEnvelope": [
+        5.2,
+        14,
+        1.2
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.4000000000000004
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -4.6,
+          -2.6
+        ],
+        [
+          4.6,
+          -2.6
+        ],
+        [
+          4.6,
+          2.6
+        ],
+        [
+          -4.6,
+          2.6
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "pole_lv": {
+      "variantBinding": {
+        "asset": "substation_uk_pole_lv",
+        "envelope": [
+          2.4,
+          10,
+          0.65
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": [
+          {
+            "name": "line_c1_p1",
+            "circuit": 0,
+            "phase": 0,
+            "position": [
+              -0.96,
+              10,
+              0
+            ],
+            "sourcePivot": "pin_insulator_0"
+          },
+          {
+            "name": "line_c1_p2",
+            "circuit": 0,
+            "phase": 1,
+            "position": [
+              0,
+              10,
+              0
+            ],
+            "sourcePivot": "pin_insulator_1"
+          },
+          {
+            "name": "line_c1_p3",
+            "circuit": 0,
+            "phase": 2,
+            "position": [
+              0.96,
+              10,
+              0
+            ],
+            "sourcePivot": "pin_insulator_2"
+          }
+        ]
+      },
+      "accessEnvelope": [
+        2.4,
+        11.5,
+        0.65
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": true,
+        "exclusionMarginM": 2,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            3.125
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -3.2,
+          -2.325
+        ],
+        [
+          3.2,
+          -2.325
+        ],
+        [
+          3.2,
+          2.325
+        ],
+        [
+          -3.2,
+          2.325
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "fence_panel": {
+      "variantBinding": {
+        "asset": "substation_uk_fence_panel",
+        "envelope": [
+          2.5,
+          2.7,
+          0.18
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        2.5,
+        2.7,
+        0.3
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.15
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1.45,
+          -0.35
+        ],
+        [
+          1.45,
+          -0.35
+        ],
+        [
+          1.45,
+          0.35
+        ],
+        [
+          -1.45,
+          0.35
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "fence_post": {
+      "variantBinding": {
+        "asset": "substation_uk_fence_post",
+        "envelope": [
+          0.18,
+          2.9,
+          0.18
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.22,
+        2.9,
+        0.22
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.11
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.31,
+          -0.31
+        ],
+        [
+          0.31,
+          -0.31
+        ],
+        [
+          0.31,
+          0.31
+        ],
+        [
+          -0.31,
+          0.31
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "outrigger": {
+      "variantBinding": {
+        "asset": "substation_uk_outrigger",
+        "envelope": [
+          0.16,
+          0.65,
+          0.55
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        0.16,
+        0.7,
+        0.55
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.2750000000000001
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.28,
+          -0.47500000000000003
+        ],
+        [
+          0.28,
+          -0.47500000000000003
+        ],
+        [
+          0.28,
+          0.47500000000000003
+        ],
+        [
+          -0.28,
+          0.47500000000000003
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "gate": {
+      "variantBinding": {
+        "asset": "substation_uk_gate",
+        "envelope": [
+          4,
+          2.8,
+          0.28
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [
+          {
+            "name": "gate_leaf_left",
+            "position": [
+              -1.946472,
+              0,
+              -0.068372
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          },
+          {
+            "name": "gate_leaf_right",
+            "position": [
+              1.946472,
+              0,
+              -0.068372
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              -1.570796,
+              0
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        4,
+        2.8,
+        0.28
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "gate_leaf_left",
+            "nodeSuffix": "gate_leaf_left",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          },
+          {
+            "name": "gate_leaf_right",
+            "nodeSuffix": "gate_leaf_right",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.1400000000000001
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -2.2,
+          -0.34
+        ],
+        [
+          2.2,
+          -0.34
+        ],
+        [
+          2.2,
+          0.34
+        ],
+        [
+          -2.2,
+          0.34
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "building_shell": {
+      "variantBinding": {
+        "asset": "substation_uk_building_shell",
+        "envelope": [
+          12,
+          4,
+          7
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        12,
+        4,
+        7
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            4.3
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -6,
+          -3.5
+        ],
+        [
+          6,
+          -3.5
+        ],
+        [
+          6,
+          3.5
+        ],
+        [
+          -6,
+          3.5
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "building_door": {
+      "variantBinding": {
+        "asset": "substation_uk_building_door",
+        "envelope": [
+          1.5,
+          2.4,
+          0.12
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [
+          {
+            "name": "door_hinge",
+            "position": [
+              -0.715798,
+              0,
+              -0.025
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.5,
+        2.4,
+        0.12
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [
+          {
+            "name": "door_hinge",
+            "nodeSuffix": "door_hinge",
+            "axis": [
+              0,
+              1,
+              0
+            ]
+          }
+        ],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.06
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.95,
+          -0.26
+        ],
+        [
+          0.95,
+          -0.26
+        ],
+        [
+          0.95,
+          0.26
+        ],
+        [
+          -0.95,
+          0.26
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "louvre": {
+      "variantBinding": {
+        "asset": "substation_uk_louvre",
+        "envelope": [
+          1.4,
+          0.8,
+          0.12
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.4,
+        0.8,
+        0.12
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.06
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -0.8999999999999999,
+          -0.26
+        ],
+        [
+          0.8999999999999999,
+          -0.26
+        ],
+        [
+          0.8999999999999999,
+          0.26
+        ],
+        [
+          -0.8999999999999999,
+          0.26
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "window": {
+      "variantBinding": {
+        "asset": "substation_uk_window",
+        "envelope": [
+          1.6,
+          1.4,
+          0.12
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [
+          {
+            "name": "window_hinge",
+            "position": [
+              0,
+              1.4,
+              0
+            ],
+            "axis": [
+              0,
+              1,
+              0
+            ],
+            "motion": "rotation",
+            "range": [
+              0,
+              1.570796
+            ]
+          }
+        ],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        1.6,
+        1.4,
+        0.12
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            1.06
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -1,
+          -0.26
+        ],
+        [
+          1,
+          -0.26
+        ],
+        [
+          1,
+          0.26
+        ],
+        [
+          -1,
+          0.26
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    },
+    "roof": {
+      "variantBinding": {
+        "asset": "substation_uk_roof",
+        "envelope": [
+          12.4,
+          0.22,
+          7.4
+        ],
+        "sharedGeometry": false,
+        "pivotAnchors": [],
+        "lineAnchors": []
+      },
+      "accessEnvelope": [
+        12.4,
+        0.22,
+        7.4
+      ],
+      "traversable": false,
+      "liveParts": {
+        "energised": false,
+        "exclusionMarginM": 0,
+        "clearanceStatus": "visual-only-not-engineering-certified"
+      },
+      "anchors": {
+        "hum100Hz": null,
+        "lamps": [],
+        "doorHinges": [],
+        "standing": {
+          "name": "inspection_stand",
+          "position": [
+            0,
+            0,
+            4.7
+          ],
+          "facingY": 3.141592653589793
+        },
+        "seat": null
+      },
+      "navKeepOut": [
+        [
+          -6.4,
+          -3.9000000000000004
+        ],
+        [
+          6.4,
+          -3.9000000000000004
+        ],
+        [
+          6.4,
+          3.9000000000000004
+        ],
+        [
+          -6.4,
+          3.9000000000000004
+        ]
+      ],
+      "inspectionNote": {
+        "es": "",
+        "en": ""
+      }
+    }
+  },
+  "equipment": [
+    {
+      "id": "grid-1",
+      "type": "grid_transformer",
+      "position": [
+        -12,
+        0.12,
+        -1
+      ],
+      "rotationY": 0,
+      "bay": "grid-1",
+      "assembly": "grid-1",
+      "tagCells": [
+        "grid_rating",
+        "number01"
+      ]
+    },
+    {
+      "id": "bund-1",
+      "type": "transformer_bund",
+      "position": [
+        -12,
+        0,
+        -1
+      ],
+      "rotationY": 0,
+      "assembly": "grid-1"
+    },
+    {
+      "id": "grid-2",
+      "type": "grid_transformer",
+      "position": [
+        1,
+        0.12,
+        -1
+      ],
+      "rotationY": 0,
+      "bay": "grid-2",
+      "assembly": "grid-2",
+      "tagCells": [
+        "grid_rating",
+        "number02"
+      ]
+    },
+    {
+      "id": "bund-2",
+      "type": "transformer_bund",
+      "position": [
+        1,
+        0,
+        -1
+      ],
+      "rotationY": 0,
+      "assembly": "grid-2"
+    },
+    {
+      "id": "firewall",
+      "type": "fire_wall",
+      "position": [
+        -5.5,
+        0,
+        -1
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "distribution-1",
+      "type": "distribution_transformer",
+      "position": [
+        12,
+        0,
+        -1
+      ],
+      "rotationY": 0,
+      "bay": "distribution-1",
+      "tagCells": [
+        "dist_rating",
+        "number03"
+      ]
+    },
+    {
+      "id": "distribution-2",
+      "type": "distribution_transformer",
+      "position": [
+        21,
+        0,
+        -1
+      ],
+      "rotationY": 0,
+      "bay": "distribution-2",
+      "tagCells": [
+        "dist_rating",
+        "number04"
+      ]
+    },
+    {
+      "id": "gantry-incoming",
+      "type": "portal_gantry",
+      "position": [
+        -6,
+        0,
+        -17
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "breaker-high",
+      "type": "oil_breaker_hv",
+      "position": [
+        -12,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "breaker-medium",
+      "type": "oil_breaker_mv",
+      "position": [
+        7,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "distribution"
+    },
+    {
+      "id": "isolator-centre",
+      "type": "disconnector_centre",
+      "position": [
+        -1,
+        0,
+        -10
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "isolator-pantograph",
+      "type": "disconnector_pantograph",
+      "position": [
+        20,
+        0,
+        -12
+      ],
+      "rotationY": 0,
+      "bay": "distribution"
+    },
+    {
+      "id": "ct-1",
+      "type": "current_transformer",
+      "position": [
+        -16,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "ct-2",
+      "type": "current_transformer",
+      "position": [
+        -12,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "ct-3",
+      "type": "current_transformer",
+      "position": [
+        -8,
+        0,
+        -14
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "voltage-transformer",
+      "type": "voltage_transformer",
+      "position": [
+        3,
+        0,
+        -15
+      ],
+      "rotationY": 0,
+      "bay": "incoming"
+    },
+    {
+      "id": "arrester",
+      "type": "surge_arrester",
+      "position": [
+        9,
+        0,
+        -15
+      ],
+      "rotationY": 0,
+      "bay": "distribution"
+    },
+    {
+      "id": "post-insulator",
+      "type": "post_insulator",
+      "position": [
+        13,
+        0,
+        -15
+      ],
+      "rotationY": 0,
+      "bay": "distribution"
+    },
+    {
+      "id": "earth-switch",
+      "type": "earth_switch",
+      "position": [
+        16,
+        0,
+        -15
+      ],
+      "rotationY": 0,
+      "bay": "distribution"
+    },
+    {
+      "id": "bus-support-1",
+      "type": "post_insulator",
+      "position": [
+        5.5,
+        0,
+        -17.5
+      ],
+      "rotationY": 0,
+      "assembly": "buswork"
+    },
+    {
+      "id": "bus-support-2",
+      "type": "post_insulator",
+      "position": [
+        10.5,
+        0,
+        -17.5
+      ],
+      "rotationY": 0,
+      "assembly": "buswork"
+    },
+    {
+      "id": "busbar-tube",
+      "type": "busbar_tube",
+      "position": [
+        8,
+        1.646923077,
+        -17.5
+      ],
+      "rotationY": 0,
+      "assembly": "buswork",
+      "elevated": true
+    },
+    {
+      "id": "busbar-wire-segment",
+      "type": "busbar_wire_segment",
+      "position": [
+        -6,
+        4.827102661,
+        -17
+      ],
+      "rotationY": 0,
+      "assembly": "buswork",
+      "elevated": true
+    },
+    {
+      "id": "insulator-string",
+      "type": "insulator_string",
+      "position": [
+        23.4,
+        0,
+        7.2
+      ],
+      "rotationY": 0,
+      "spare": true
+    },
+    {
+      "id": "control-building",
+      "type": "building_shell",
+      "position": [
+        16,
+        0,
+        12
+      ],
+      "rotationY": 0,
+      "assembly": "control-building"
+    },
+    {
+      "id": "building-roof",
+      "type": "roof",
+      "position": [
+        16,
+        4,
+        12
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "elevated": true
+    },
+    {
+      "id": "building-door",
+      "type": "building_door",
+      "position": [
+        16,
+        0,
+        15.5
+      ],
+      "rotationY": 0,
+      "assembly": "control-building"
+    },
+    {
+      "id": "building-louvre",
+      "type": "louvre",
+      "position": [
+        16,
+        2.8,
+        15.52
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "elevated": true
+    },
+    {
+      "id": "building-window",
+      "type": "window",
+      "position": [
+        19.5,
+        1.2,
+        15.52
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "elevated": true
+    },
+    {
+      "id": "building-window-left",
+      "type": "window",
+      "position": [
+        12.5,
+        1.2,
+        15.52
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "elevated": true
+    },
+    {
+      "id": "board-01",
+      "type": "switchboard_panel",
+      "position": [
+        11.6,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 1
+    },
+    {
+      "id": "board-02",
+      "type": "switchboard_panel",
+      "position": [
+        12.4,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 2
+    },
+    {
+      "id": "board-03",
+      "type": "switchboard_panel",
+      "position": [
+        13.2,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 3
+    },
+    {
+      "id": "board-04",
+      "type": "switchboard_panel",
+      "position": [
+        14,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 4
+    },
+    {
+      "id": "board-05",
+      "type": "switchboard_panel",
+      "position": [
+        14.8,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 5
+    },
+    {
+      "id": "board-06",
+      "type": "switchboard_panel",
+      "position": [
+        15.6,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 6
+    },
+    {
+      "id": "board-07",
+      "type": "switchboard_panel",
+      "position": [
+        16.4,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 7
+    },
+    {
+      "id": "board-08",
+      "type": "switchboard_panel",
+      "position": [
+        17.2,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 8
+    },
+    {
+      "id": "board-09",
+      "type": "switchboard_panel",
+      "position": [
+        18,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 9
+    },
+    {
+      "id": "board-10",
+      "type": "switchboard_panel",
+      "position": [
+        18.8,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 10
+    },
+    {
+      "id": "board-11",
+      "type": "switchboard_panel",
+      "position": [
+        19.6,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 11
+    },
+    {
+      "id": "board-12",
+      "type": "switchboard_panel",
+      "position": [
+        20.4,
+        0,
+        9.4
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "panelNumber": 12
+    },
+    {
+      "id": "withdrawn-truck",
+      "type": "breaker_truck",
+      "position": [
+        12,
+        0,
+        11.2
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true
+    },
+    {
+      "id": "control-panel",
+      "type": "control_panel",
+      "position": [
+        21,
+        0,
+        12
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "control-building",
+      "indoor": true
+    },
+    {
+      "id": "battery-bank",
+      "type": "battery_bank",
+      "position": [
+        13,
+        0,
+        14.3
+      ],
+      "rotationY": 3.141592653589793,
+      "assembly": "control-building",
+      "indoor": true
+    },
+    {
+      "id": "charger",
+      "type": "charger",
+      "position": [
+        10.8,
+        0,
+        14.3
+      ],
+      "rotationY": 3.141592653589793,
+      "assembly": "control-building",
+      "indoor": true
+    },
+    {
+      "id": "desk",
+      "type": "desk",
+      "position": [
+        19,
+        0,
+        13.8
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true
+    },
+    {
+      "id": "chair",
+      "type": "chair",
+      "position": [
+        19,
+        0,
+        12.8
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true
+    },
+    {
+      "id": "wall-schematic",
+      "type": "schematic_board",
+      "position": [
+        16,
+        1.2,
+        8.53
+      ],
+      "rotationY": 0,
+      "assembly": "control-building",
+      "indoor": true,
+      "elevated": true
+    },
+    {
+      "id": "oil-store",
+      "type": "oil_store",
+      "position": [
+        23.8,
+        0,
+        5
+      ],
+      "rotationY": -1.5707963267948966
+    },
+    {
+      "id": "station-service",
+      "type": "station_service_transformer",
+      "position": [
+        6,
+        0,
+        5
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "spare-bushing",
+      "type": "bushing",
+      "position": [
+        24,
+        0,
+        7.2
+      ],
+      "rotationY": 0,
+      "spare": true
+    },
+    {
+      "id": "spare-disc",
+      "type": "insulator_disc",
+      "position": [
+        24.8,
+        0,
+        7.2
+      ],
+      "rotationY": 0,
+      "spare": true
+    },
+    {
+      "id": "spare-spacer",
+      "type": "spacer",
+      "position": [
+        25.4,
+        0,
+        7.2
+      ],
+      "rotationY": 0,
+      "spare": true
+    },
+    {
+      "id": "spare-radiator",
+      "type": "radiator_fin",
+      "position": [
+        22.4,
+        0,
+        6.2
+      ],
+      "rotationY": 0,
+      "spare": true
+    },
+    {
+      "id": "earth-grid-marker",
+      "type": "earth_marker",
+      "position": [
+        -20,
+        0,
+        14.5
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "hazard-board",
+      "type": "hazard_board",
+      "position": [
+        -14.3,
+        0,
+        18.4
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "equipment-tag",
+      "type": "tag_holder",
+      "position": [
+        -12,
+        1.8,
+        2.5
+      ],
+      "rotationY": 0,
+      "assembly": "grid-1",
+      "elevated": true
+    },
+    {
+      "id": "floodlight-1",
+      "type": "floodlight_mast",
+      "position": [
+        -25.5,
+        0,
+        -17.5
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "floodlight-2",
+      "type": "floodlight_mast",
+      "position": [
+        25.5,
+        0,
+        -17.5
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "floodlight-3",
+      "type": "floodlight_mast",
+      "position": [
+        -25.5,
+        0,
+        14
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "floodlight-4",
+      "type": "floodlight_mast",
+      "position": [
+        25.5,
+        0,
+        17.5
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "lightning-mast",
+      "type": "lightning_mast",
+      "position": [
+        24,
+        0,
+        -17
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "incoming-suspension",
+      "type": "tower_suspension",
+      "position": [
+        -10,
+        0,
+        -53
+      ],
+      "rotationY": 3.141592653589793,
+      "external": true
+    },
+    {
+      "id": "incoming-terminal",
+      "type": "tower_tension",
+      "position": [
+        -10,
+        0,
+        -29
+      ],
+      "rotationY": 3.141592653589793,
+      "external": true
+    },
+    {
+      "id": "outgoing-medium",
+      "type": "pole_mv",
+      "position": [
+        18,
+        0,
+        -29
+      ],
+      "rotationY": 0,
+      "external": true
+    },
+    {
+      "id": "outgoing-low",
+      "type": "pole_lv",
+      "position": [
+        34,
+        0,
+        2
+      ],
+      "rotationY": 1.5707963267948966,
+      "external": true
+    },
+    {
+      "id": "fence-panel-1",
+      "type": "fence_panel",
+      "position": [
+        -26.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-1",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-1",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-2",
+      "type": "fence_panel",
+      "position": [
+        -23.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-2",
+      "type": "fence_post",
+      "position": [
+        -25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-2",
+      "type": "outrigger",
+      "position": [
+        -25,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-3",
+      "type": "fence_panel",
+      "position": [
+        -21.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-3",
+      "type": "fence_post",
+      "position": [
+        -22.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-3",
+      "type": "outrigger",
+      "position": [
+        -22.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-4",
+      "type": "fence_panel",
+      "position": [
+        -18.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-4",
+      "type": "fence_post",
+      "position": [
+        -20,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-4",
+      "type": "outrigger",
+      "position": [
+        -20,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-5",
+      "type": "fence_panel",
+      "position": [
+        -16.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-5",
+      "type": "fence_post",
+      "position": [
+        -17.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-5",
+      "type": "outrigger",
+      "position": [
+        -17.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-6",
+      "type": "fence_panel",
+      "position": [
+        -13.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-6",
+      "type": "fence_post",
+      "position": [
+        -15,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-6",
+      "type": "outrigger",
+      "position": [
+        -15,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-7",
+      "type": "fence_panel",
+      "position": [
+        -11.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-7",
+      "type": "fence_post",
+      "position": [
+        -12.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-7",
+      "type": "outrigger",
+      "position": [
+        -12.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-8",
+      "type": "fence_panel",
+      "position": [
+        -8.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-8",
+      "type": "fence_post",
+      "position": [
+        -10,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-8",
+      "type": "outrigger",
+      "position": [
+        -10,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-9",
+      "type": "fence_panel",
+      "position": [
+        -6.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-9",
+      "type": "fence_post",
+      "position": [
+        -7.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-9",
+      "type": "outrigger",
+      "position": [
+        -7.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-10",
+      "type": "fence_panel",
+      "position": [
+        -3.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-10",
+      "type": "fence_post",
+      "position": [
+        -5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-10",
+      "type": "outrigger",
+      "position": [
+        -5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-11",
+      "type": "fence_panel",
+      "position": [
+        -1.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-11",
+      "type": "fence_post",
+      "position": [
+        -2.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-11",
+      "type": "outrigger",
+      "position": [
+        -2.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-12",
+      "type": "fence_panel",
+      "position": [
+        1.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-12",
+      "type": "fence_post",
+      "position": [
+        0,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-12",
+      "type": "outrigger",
+      "position": [
+        0,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-13",
+      "type": "fence_panel",
+      "position": [
+        3.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-13",
+      "type": "fence_post",
+      "position": [
+        2.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-13",
+      "type": "outrigger",
+      "position": [
+        2.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-14",
+      "type": "fence_panel",
+      "position": [
+        6.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-14",
+      "type": "fence_post",
+      "position": [
+        5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-14",
+      "type": "outrigger",
+      "position": [
+        5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-15",
+      "type": "fence_panel",
+      "position": [
+        8.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-15",
+      "type": "fence_post",
+      "position": [
+        7.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-15",
+      "type": "outrigger",
+      "position": [
+        7.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-16",
+      "type": "fence_panel",
+      "position": [
+        11.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-16",
+      "type": "fence_post",
+      "position": [
+        10,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-16",
+      "type": "outrigger",
+      "position": [
+        10,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-17",
+      "type": "fence_panel",
+      "position": [
+        13.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-17",
+      "type": "fence_post",
+      "position": [
+        12.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-17",
+      "type": "outrigger",
+      "position": [
+        12.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-18",
+      "type": "fence_panel",
+      "position": [
+        16.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-18",
+      "type": "fence_post",
+      "position": [
+        15,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-18",
+      "type": "outrigger",
+      "position": [
+        15,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-19",
+      "type": "fence_panel",
+      "position": [
+        18.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-19",
+      "type": "fence_post",
+      "position": [
+        17.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-19",
+      "type": "outrigger",
+      "position": [
+        17.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-20",
+      "type": "fence_panel",
+      "position": [
+        21.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-20",
+      "type": "fence_post",
+      "position": [
+        20,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-20",
+      "type": "outrigger",
+      "position": [
+        20,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-21",
+      "type": "fence_panel",
+      "position": [
+        23.75,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-21",
+      "type": "fence_post",
+      "position": [
+        22.5,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-21",
+      "type": "outrigger",
+      "position": [
+        22.5,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-22",
+      "type": "fence_panel",
+      "position": [
+        26.25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-22",
+      "type": "fence_post",
+      "position": [
+        25,
+        0,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-22",
+      "type": "outrigger",
+      "position": [
+        25,
+        2.3,
+        -20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-23",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -18.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-23",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -20
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-23",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -20
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-24",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -16.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-24",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -17.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-24",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -17.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-25",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -13.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-25",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -15
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-25",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -15
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-26",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -11.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-26",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -12.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-26",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -12.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-27",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -8.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-27",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -10
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-27",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -10
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-28",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -6.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-28",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-28",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-29",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -3.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-29",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-29",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-30",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        -1.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-30",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        -2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-30",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        -2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-31",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        1.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-31",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        0
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-31",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        0
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-32",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        3.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-32",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-32",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-33",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        6.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-33",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-33",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-34",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        8.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-34",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-34",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-35",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        11.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-35",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        10
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-35",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        10
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-36",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        13.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-36",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        12.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-36",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        12.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-37",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        16.25
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-37",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        15
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-37",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        15
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-38",
+      "type": "fence_panel",
+      "position": [
+        27.5,
+        0,
+        18.75
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-38",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        17.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-38",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        17.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-39",
+      "type": "fence_panel",
+      "position": [
+        26.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-39",
+      "type": "fence_post",
+      "position": [
+        27.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-39",
+      "type": "outrigger",
+      "position": [
+        27.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-40",
+      "type": "fence_panel",
+      "position": [
+        23.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-40",
+      "type": "fence_post",
+      "position": [
+        25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-40",
+      "type": "outrigger",
+      "position": [
+        25,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-41",
+      "type": "fence_panel",
+      "position": [
+        21.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-41",
+      "type": "fence_post",
+      "position": [
+        22.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-41",
+      "type": "outrigger",
+      "position": [
+        22.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-42",
+      "type": "fence_panel",
+      "position": [
+        18.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-42",
+      "type": "fence_post",
+      "position": [
+        20,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-42",
+      "type": "outrigger",
+      "position": [
+        20,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-43",
+      "type": "fence_panel",
+      "position": [
+        16.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-43",
+      "type": "fence_post",
+      "position": [
+        17.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-43",
+      "type": "outrigger",
+      "position": [
+        17.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-44",
+      "type": "fence_panel",
+      "position": [
+        13.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-44",
+      "type": "fence_post",
+      "position": [
+        15,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-44",
+      "type": "outrigger",
+      "position": [
+        15,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-45",
+      "type": "fence_panel",
+      "position": [
+        11.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-45",
+      "type": "fence_post",
+      "position": [
+        12.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-45",
+      "type": "outrigger",
+      "position": [
+        12.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-46",
+      "type": "fence_panel",
+      "position": [
+        8.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-46",
+      "type": "fence_post",
+      "position": [
+        10,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-46",
+      "type": "outrigger",
+      "position": [
+        10,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-47",
+      "type": "fence_panel",
+      "position": [
+        6.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-47",
+      "type": "fence_post",
+      "position": [
+        7.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-47",
+      "type": "outrigger",
+      "position": [
+        7.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-48",
+      "type": "fence_panel",
+      "position": [
+        3.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-48",
+      "type": "fence_post",
+      "position": [
+        5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-48",
+      "type": "outrigger",
+      "position": [
+        5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-49",
+      "type": "fence_panel",
+      "position": [
+        1.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-49",
+      "type": "fence_post",
+      "position": [
+        2.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-49",
+      "type": "outrigger",
+      "position": [
+        2.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-50",
+      "type": "fence_panel",
+      "position": [
+        -1.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-50",
+      "type": "fence_post",
+      "position": [
+        0,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-50",
+      "type": "outrigger",
+      "position": [
+        0,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-51",
+      "type": "fence_panel",
+      "position": [
+        -3.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-51",
+      "type": "fence_post",
+      "position": [
+        -2.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-51",
+      "type": "outrigger",
+      "position": [
+        -2.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-52",
+      "type": "fence_panel",
+      "position": [
+        -6.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-52",
+      "type": "fence_post",
+      "position": [
+        -5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-52",
+      "type": "outrigger",
+      "position": [
+        -5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-53",
+      "type": "fence_panel",
+      "position": [
+        -8.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-53",
+      "type": "fence_post",
+      "position": [
+        -7.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-53",
+      "type": "outrigger",
+      "position": [
+        -7.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-54",
+      "type": "fence_panel",
+      "position": [
+        -11.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-54",
+      "type": "fence_post",
+      "position": [
+        -10,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-54",
+      "type": "outrigger",
+      "position": [
+        -10,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-55",
+      "type": "fence_panel",
+      "position": [
+        -13.75,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-55",
+      "type": "fence_post",
+      "position": [
+        -12.5,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-55",
+      "type": "outrigger",
+      "position": [
+        -12.5,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-56",
+      "type": "fence_panel",
+      "position": [
+        -20.0625,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.125,
+      "scale": [
+        0.85,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-56",
+      "type": "fence_post",
+      "position": [
+        -19,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-56",
+      "type": "outrigger",
+      "position": [
+        -19,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-57",
+      "type": "fence_panel",
+      "position": [
+        -22.1875,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.125,
+      "scale": [
+        0.85,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-57",
+      "type": "fence_post",
+      "position": [
+        -21.125,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-57",
+      "type": "outrigger",
+      "position": [
+        -21.125,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-58",
+      "type": "fence_panel",
+      "position": [
+        -24.3125,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.125,
+      "scale": [
+        0.85,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-58",
+      "type": "fence_post",
+      "position": [
+        -23.25,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-58",
+      "type": "outrigger",
+      "position": [
+        -23.25,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-59",
+      "type": "fence_panel",
+      "position": [
+        -26.4375,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.125,
+      "scale": [
+        0.85,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-59",
+      "type": "fence_post",
+      "position": [
+        -25.375,
+        0,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-59",
+      "type": "outrigger",
+      "position": [
+        -25.375,
+        2.3,
+        20
+      ],
+      "rotationY": -3.141592653589793,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-60",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        18.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-60",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        20
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-60",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        20
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-61",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        16.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-61",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        17.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-61",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        17.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-62",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        13.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-62",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        15
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-62",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        15
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-63",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        11.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-63",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        12.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-63",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        12.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-64",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        8.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-64",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        10
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-64",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        10
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-65",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        6.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-65",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        7.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-65",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        7.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-66",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        3.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-66",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-66",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-67",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        1.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-67",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        2.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-67",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        2.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-68",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -1.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-68",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        0
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-68",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        0
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-69",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -3.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-69",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -2.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-69",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -2.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-70",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -6.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-70",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-70",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-71",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -8.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-71",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -7.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-71",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -7.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-72",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -11.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-72",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -10
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-72",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -10
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-73",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -13.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-73",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -12.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-73",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -12.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-74",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -16.25
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-74",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -15
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-74",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -15
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "fence-panel-75",
+      "type": "fence_panel",
+      "position": [
+        -27.5,
+        0,
+        -18.75
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "moduleLengthM": 2.5,
+      "scale": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "fence-post-75",
+      "type": "fence_post",
+      "position": [
+        -27.5,
+        0,
+        -17.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter"
+    },
+    {
+      "id": "outrigger-75",
+      "type": "outrigger",
+      "position": [
+        -27.5,
+        2.3,
+        -17.5
+      ],
+      "rotationY": 1.5707963267948966,
+      "assembly": "perimeter",
+      "elevated": true
+    },
+    {
+      "id": "main-gate",
+      "type": "gate",
+      "position": [
+        -17,
+        0,
+        20
+      ],
+      "rotationY": 0,
+      "assembly": "perimeter",
+      "pivotRotations": {
+        "gate_leaf_left": [
+          0,
+          1.3962634015954636,
+          0
+        ],
+        "gate_leaf_right": [
+          0,
+          -1.3962634015954636,
+          0
+        ]
+      }
+    },
+    {
+      "id": "trench-cover-1",
+      "type": "trench_cover",
+      "position": [
+        -11.410714285714286,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-2",
+      "type": "trench_cover",
+      "position": [
+        -10.232142857142858,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-3",
+      "type": "trench_cover",
+      "position": [
+        -9.053571428571429,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-4",
+      "type": "trench_cover",
+      "position": [
+        -7.875,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-5",
+      "type": "trench_cover",
+      "position": [
+        -6.696428571428571,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-6",
+      "type": "trench_cover",
+      "position": [
+        -5.517857142857143,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-7",
+      "type": "trench_cover",
+      "position": [
+        -4.339285714285714,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-8",
+      "type": "trench_cover",
+      "position": [
+        -3.1607142857142865,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-9",
+      "type": "trench_cover",
+      "position": [
+        -1.9821428571428577,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-10",
+      "type": "trench_cover",
+      "position": [
+        -0.8035714285714288,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-11",
+      "type": "trench_cover",
+      "position": [
+        0.375,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-12",
+      "type": "trench_cover",
+      "position": [
+        1.5535714285714288,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-13",
+      "type": "trench_cover",
+      "position": [
+        2.7321428571428577,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-14",
+      "type": "trench_cover",
+      "position": [
+        3.9107142857142865,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-15",
+      "type": "trench_cover",
+      "position": [
+        5.089285714285715,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-16",
+      "type": "trench_cover",
+      "position": [
+        6.267857142857142,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-17",
+      "type": "trench_cover",
+      "position": [
+        7.446428571428573,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-18",
+      "type": "trench_cover",
+      "position": [
+        8.625,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-19",
+      "type": "trench_cover",
+      "position": [
+        9.803571428571427,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-20",
+      "type": "trench_cover",
+      "position": [
+        10.982142857142858,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-21",
+      "type": "trench_cover",
+      "position": [
+        12.160714285714285,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-22",
+      "type": "trench_cover",
+      "position": [
+        13.339285714285715,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-23",
+      "type": "trench_cover",
+      "position": [
+        14.517857142857142,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-24",
+      "type": "trench_cover",
+      "position": [
+        15.696428571428573,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-25",
+      "type": "trench_cover",
+      "position": [
+        16.875,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-26",
+      "type": "trench_cover",
+      "position": [
+        18.053571428571427,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-27",
+      "type": "trench_cover",
+      "position": [
+        19.232142857142858,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-28",
+      "type": "trench_cover",
+      "position": [
+        20.410714285714285,
+        -0.1,
+        5
+      ],
+      "rotationY": 0,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1.1785714285714286,
+      "scale": [
+        0.9821428571428572,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-29",
+      "type": "trench_cover",
+      "position": [
+        21,
+        -0.1,
+        5.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-30",
+      "type": "trench_cover",
+      "position": [
+        21,
+        -0.1,
+        6.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-31",
+      "type": "trench_cover",
+      "position": [
+        21,
+        -0.1,
+        7.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-32",
+      "type": "trench_cover",
+      "position": [
+        21,
+        -0.1,
+        8.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-33",
+      "type": "trench_cover",
+      "position": [
+        -12,
+        -0.1,
+        0.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-34",
+      "type": "trench_cover",
+      "position": [
+        -12,
+        -0.1,
+        1.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-35",
+      "type": "trench_cover",
+      "position": [
+        -12,
+        -0.1,
+        2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-36",
+      "type": "trench_cover",
+      "position": [
+        -12,
+        -0.1,
+        3.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-37",
+      "type": "trench_cover",
+      "position": [
+        -12,
+        -0.1,
+        4.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-38",
+      "type": "trench_cover",
+      "position": [
+        1,
+        -0.1,
+        0.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-39",
+      "type": "trench_cover",
+      "position": [
+        1,
+        -0.1,
+        1.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-40",
+      "type": "trench_cover",
+      "position": [
+        1,
+        -0.1,
+        2.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-41",
+      "type": "trench_cover",
+      "position": [
+        1,
+        -0.1,
+        3.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "trench-cover-42",
+      "type": "trench_cover",
+      "position": [
+        1,
+        -0.1,
+        4.5
+      ],
+      "rotationY": -1.5707963267948966,
+      "assembly": "covered-trenches",
+      "moduleLengthM": 1,
+      "scale": [
+        0.8333333333333334,
+        1,
+        1
+      ]
+    },
+    {
+      "id": "gravel-sample",
+      "type": "gravel_tile",
+      "position": [
+        -25,
+        -0.06,
+        10
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "concrete-sample",
+      "type": "concrete_tile",
+      "position": [
+        -23,
+        -0.1,
+        17.5
+      ],
+      "rotationY": 0
+    },
+    {
+      "id": "gravel-weeds",
+      "type": "dry_weeds",
+      "position": [
+        23.5,
+        0,
+        -6
+      ],
+      "rotationY": 0
+    }
+  ],
+  "bays": [
+    {
+      "id": "incoming",
+      "polygon": [
+        [
+          -21,
+          -19
+        ],
+        [
+          23,
+          -19
+        ],
+        [
+          23,
+          -7
+        ],
+        [
+          -21,
+          -7
+        ]
+      ],
+      "level": "hv"
+    },
+    {
+      "id": "grid-1",
+      "polygon": [
+        [
+          -18,
+          -5.5
+        ],
+        [
+          -6,
+          -5.5
+        ],
+        [
+          -6,
+          4
+        ],
+        [
+          -18,
+          4
+        ]
+      ],
+      "level": "hv-mv"
+    },
+    {
+      "id": "grid-2",
+      "polygon": [
+        [
+          -5,
+          -5.5
+        ],
+        [
+          7,
+          -5.5
+        ],
+        [
+          7,
+          4
+        ],
+        [
+          -5,
+          4
+        ]
+      ],
+      "level": "hv-mv"
+    },
+    {
+      "id": "distribution",
+      "polygon": [
+        [
+          8,
+          -6
+        ],
+        [
+          26,
+          -6
+        ],
+        [
+          26,
+          3
+        ],
+        [
+          8,
+          3
+        ]
+      ],
+      "level": "mv-lv"
+    }
+  ],
+  "trenches": [
+    {
+      "id": "main",
+      "widthM": 0.6,
+      "depthM": 0.6,
+      "covered": true,
+      "polyline": [
+        [
+          -12,
+          5
+        ],
+        [
+          21,
+          5
+        ],
+        [
+          21,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "grid-1",
+      "widthM": 0.6,
+      "depthM": 0.6,
+      "covered": true,
+      "polyline": [
+        [
+          -12,
+          0
+        ],
+        [
+          -12,
+          5
+        ]
+      ]
+    },
+    {
+      "id": "grid-2",
+      "widthM": 0.6,
+      "depthM": 0.6,
+      "covered": true,
+      "polyline": [
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          5
+        ]
+      ]
+    }
+  ],
+  "surfacePatches": [
+    {
+      "id": "yard-gravel",
+      "type": "gravel_tile",
+      "polygon": [
+        [
+          -27.5,
+          -20
+        ],
+        [
+          27.5,
+          -20
+        ],
+        [
+          27.5,
+          20
+        ],
+        [
+          -27.5,
+          20
+        ]
+      ],
+      "tilePitchM": 2,
+      "y": -0.06
+    },
+    {
+      "id": "visitor-concrete",
+      "type": "concrete_tile",
+      "polygon": [
+        [
+          -25,
+          16
+        ],
+        [
+          23,
+          16
+        ],
+        [
+          23,
+          19
+        ],
+        [
+          -25,
+          19
+        ]
+      ],
+      "tilePitchM": 2,
+      "y": -0.1
+    }
+  ],
+  "visitorRoute": {
+    "eyeHeightM": 1.6,
+    "bodyHeightM": 1.8,
+    "radiusM": 0.35,
+    "comfortMarginM": 0.25,
+    "liveReachM": 1,
+    "entryGate": "main-gate",
+    "gateMustBeOpen": true,
+    "points": [
+      [
+        -17,
+        0,
+        20
+      ],
+      [
+        -17,
+        0,
+        17.5
+      ],
+      [
+        -23.5,
+        0,
+        17.5
+      ],
+      [
+        -23.5,
+        0,
+        8
+      ],
+      [
+        -23.5,
+        0,
+        -7
+      ],
+      [
+        -21.8,
+        0,
+        -7
+      ],
+      [
+        -23.5,
+        0,
+        -7
+      ],
+      [
+        -23.5,
+        0,
+        17.5
+      ],
+      [
+        16,
+        0,
+        17.5
+      ]
+    ],
+    "stops": [
+      {
+        "name": "grid-transformer-view",
+        "position": [
+          -23.5,
+          0,
+          1
+        ],
+        "facingY": 1.5707963267948966
+      },
+      {
+        "name": "incoming-bay-view",
+        "position": [
+          -21.8,
+          0,
+          -7
+        ],
+        "facingY": 0
+      },
+      {
+        "name": "control-room-front",
+        "position": [
+          16,
+          0,
+          17.5
+        ],
+        "facingY": 3.141592653589793
+      }
+    ]
+  },
+  "spans": [
+    {
+      "id": "incoming-double-circuit",
+      "from": "incoming-suspension",
+      "to": "incoming-terminal",
+      "level": "hv",
+      "circuits": 2,
+      "phasesPerCircuit": 3,
+      "recipe": "variantProfile.lineRecipes.hv",
+      "attachmentRecipe": "catalogue lineAnchors transformed by equipment pose; exact normalized insulator endpoints"
+    },
+    {
+      "id": "medium-outgoing",
+      "from": "outgoing-medium",
+      "toPoint": [
+        18,
+        11,
+        -70
+      ],
+      "level": "mv",
+      "circuits": 1,
+      "phasesPerCircuit": 3,
+      "recipe": "variantProfile.lineRecipes.mv"
+    },
+    {
+      "id": "low-outgoing",
+      "from": "outgoing-low",
+      "toPoint": [
+        70,
+        9,
+        2
+      ],
+      "level": "lv",
+      "circuits": 1,
+      "phasesPerCircuit": 3,
+      "recipe": "variantProfile.lineRecipes.lv"
+    }
+  ]
+}

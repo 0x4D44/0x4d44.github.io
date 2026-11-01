@@ -1,0 +1,3 @@
+PASS substation yard uk: 338 instances; 53 types; 8 visitor-route segments
+PASS substation yard co: 338 instances; 53 types; 8 visitor-route segments
+PASS yard parity: 338 matching equipment instances

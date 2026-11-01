@@ -1,0 +1,311 @@
+Clean git archive from staged tree 01fc8771abe4cca04b58c107252c2a665370dd06
+Source/asset tree tested before adding this evidence log and README link.
+
+$ node --version
+v22.16.0
+exit 0
+
+$ node la-ladera/tools/blender/substation_validate.mjs --complete --variant uk
+PASS substation --complete variants=uk: 66 near + 66 far roots
+GLB 2583020/6000000 bytes; textures 2088644/8000000 bytes; RGBA8+mips 39146836/40000000 bytes; shared byte identity PASS
+exit 0
+
+$ node la-ladera/tools/blender/substation_validate.mjs --complete --variant co
+PASS substation --complete variants=co: 66 near + 66 far roots
+GLB 2583020/6000000 bytes; textures 2088644/8000000 bytes; RGBA8+mips 39146836/40000000 bytes; shared byte identity PASS
+exit 0
+
+$ node la-ladera/tests/substation-assets.test.mjs
+TAP version 13
+# Subtest: substation: independent GLB decoding and complete inventory
+ok 1 - substation: independent GLB decoding and complete inventory
+  ---
+  duration_ms: 1177.818267
+  type: 'test'
+  ...
+# Subtest: substation: metre dimensions and base-centred origins
+ok 2 - substation: metre dimensions and base-centred origins
+  ---
+  duration_ms: 288.083494
+  type: 'test'
+  ...
+# Subtest: substation: every far LOD stays within forty percent
+ok 3 - substation: every far LOD stays within forty percent
+  ---
+  duration_ms: 83.178916
+  type: 'test'
+  ...
+# Subtest: substation: every moving hinge and rotor has a stable named pivot
+ok 4 - substation: every moving hinge and rotor has a stable named pivot
+  ---
+  duration_ms: 85.621358
+  type: 'test'
+  ...
+# Subtest: substation: both variants bind one byte-identical shared core
+ok 5 - substation: both variants bind one byte-identical shared core
+  ---
+  duration_ms: 5.118536
+  type: 'test'
+  ...
+# Subtest: substation: repeating equipment parts use real mesh instances
+ok 6 - substation: repeating equipment parts use real mesh instances
+  ---
+  duration_ms: 131.773226
+  type: 'test'
+  ...
+# Subtest: substation: texture pixels and full GPU mip chains fit the budgets
+ok 7 - substation: texture pixels and full GPU mip chains fit the budgets
+  ---
+  duration_ms: 374.854305
+  type: 'test'
+  ...
+# Subtest: substation: UK and Colombian atlases keep their own language
+ok 8 - substation: UK and Colombian atlases keep their own language
+  ---
+  duration_ms: 1.054655
+  type: 'test'
+  ...
+# Subtest: substation: OCR evidence remains bound to each actual atlas cell
+ok 9 - substation: OCR evidence remains bound to each actual atlas cell
+  ---
+  duration_ms: 210.316283
+  type: 'test'
+  ...
+# Subtest: substation: source pins use the same LF form in CRLF checkouts
+ok 10 - substation: source pins use the same LF form in CRLF checkouts
+  ---
+  duration_ms: 3.678189
+  type: 'test'
+  ...
+# Subtest: substation: library does not enter the game boot graph
+ok 11 - substation: library does not enter the game boot graph
+  ---
+  duration_ms: 1.706796
+  type: 'test'
+  ...
+# Subtest: substation: yard data pins refer to actual library designs
+ok 12 - substation: yard data pins refer to actual library designs
+  ---
+  duration_ms: 3.804559
+  type: 'test'
+  ...
+# Subtest: substation: all shipped library files are accounted for
+ok 13 - substation: all shipped library files are accounted for
+  ---
+  duration_ms: 1.101206
+  type: 'test'
+  ...
+# Subtest: substation: both material variants share five image sources and dispose safely
+ok 14 - substation: both material variants share five image sources and dispose safely
+  ---
+  duration_ms: 11.102541
+  type: 'test'
+  ...
+# Subtest: substation: uncoloured meshes render with atlas colour and correctly tiled UVs
+ok 15 - substation: uncoloured meshes render with atlas colour and correctly tiled UVs
+  ---
+  duration_ms: 2.25495
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2387.371068
+exit 0
+
+$ node la-ladera/tests/substation-catenary.test.mjs
+TAP version 13
+# Subtest: C01 exact symmetric catenary matches an independent analytic curve
+ok 1 - C01 exact symmetric catenary matches an independent analytic curve
+  ---
+  duration_ms: 1.095547
+  type: 'test'
+  ...
+# Subtest: C02 unequal endpoint heights match known cosh parameters and arc length
+ok 2 - C02 unequal endpoint heights match known cosh parameters and arc length
+  ---
+  duration_ms: 0.308744
+  type: 'test'
+  ...
+# Subtest: C03 arbitrary 3D span preserves endpoints and specified midpoint sag
+ok 3 - C03 arbitrary 3D span preserves endpoints and specified midpoint sag
+  ---
+  duration_ms: 0.624328
+  type: 'test'
+  ...
+# Subtest: C04 shallow and steep spans remain finite with equal arc samples
+ok 4 - C04 shallow and steep spans remain finite with equal arc samples
+  ---
+  duration_ms: 1.964213
+  type: 'test'
+  ...
+# Subtest: C05 instances are bounded short segments without gaps or disconnected endpoints
+ok 5 - C05 instances are bounded short segments without gaps or disconnected endpoints
+  ---
+  duration_ms: 1.008366
+  type: 'test'
+  ...
+# Subtest: C06 reversing endpoints yields the same geometric cable
+ok 6 - C06 reversing endpoints yields the same geometric cable
+  ---
+  duration_ms: 0.224037
+  type: 'test'
+  ...
+# Subtest: C07 malformed points and invalid sag parameters are rejected
+ok 7 - C07 malformed points and invalid sag parameters are rejected
+  ---
+  duration_ms: 0.552351
+  type: 'test'
+  ...
+# Subtest: C08 short-segment instance limits prevent unbounded allocation
+ok 8 - C08 short-segment instance limits prevent unbounded allocation
+  ---
+  duration_ms: 0.228894
+  type: 'test'
+  ...
+# Subtest: C09 Three adapter uses one reusable cylinder with correct instance transforms
+ok 9 - C09 Three adapter uses one reusable cylinder with correct instance transforms
+  ---
+  duration_ms: 3.492881
+  type: 'test'
+  ...
+# Subtest: C10 variant recipes preserve voltage levels and frozen span data
+ok 10 - C10 variant recipes preserve voltage levels and frozen span data
+  ---
+  duration_ms: 1.714368
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23.122191
+exit 0
+
+$ node la-ladera/tests/substation-yard.test.mjs
+TAP version 13
+# Subtest: Y01 both checked-in plans pass full metre and placement validation
+ok 1 - Y01 both checked-in plans pass full metre and placement validation
+  ---
+  duration_ms: 47.883727
+  type: 'test'
+  ...
+# Subtest: Y02 complete equipment inventory includes twins and twelve indoor panels
+ok 2 - Y02 complete equipment inventory includes twins and twelve indoor panels
+  ---
+  duration_ms: 2.18858
+  type: 'test'
+  ...
+# Subtest: Y03 parity permits explicit variant fields and rejects equipment drift
+ok 3 - Y03 parity permits explicit variant fields and rejects equipment drift
+  ---
+  duration_ms: 33.869162
+  type: 'test'
+  ...
+# Subtest: Y04 named future anchors and empty bilingual inspection slots are complete
+ok 4 - Y04 named future anchors and empty bilingual inspection slots are complete
+  ---
+  duration_ms: 14.530064
+  type: 'test'
+  ...
+# Subtest: Y05 complete route segments clear all conservative keep-outs and body radius
+ok 5 - Y05 complete route segments clear all conservative keep-outs and body radius
+  ---
+  duration_ms: 27.962928
+  type: 'test'
+  ...
+# Subtest: Y06 nav polygons enclose real envelopes and electrical exclusion margins
+ok 6 - Y06 nav polygons enclose real envelopes and electrical exclusion margins
+  ---
+  duration_ms: 21.003786
+  type: 'test'
+  ...
+# Subtest: Y07 route enters through the open gate with covered trenches and a building footprint
+ok 7 - Y07 route enters through the open gate with covered trenches and a building footprint
+  ---
+  duration_ms: 33.047072
+  type: 'test'
+  ...
+# Subtest: Y08 malformed schema, identity, bindings and placements are rejected
+ok 8 - Y08 malformed schema, identity, bindings and placements are rejected
+  ---
+  duration_ms: 84.626805
+  type: 'test'
+  ...
+# Subtest: Y09 exact segment polygon distance catches edge crossings and near misses
+ok 9 - Y09 exact segment polygon distance catches edge crossings and near misses
+  ---
+  duration_ms: 0.776367
+  type: 'test'
+  ...
+# Subtest: Y10 plan regeneration is deterministic from the catalogue across text line endings
+ok 10 - Y10 plan regeneration is deterministic from the catalogue across text line endings
+  ---
+  duration_ms: 31.763592
+  type: 'test'
+  ...
+# Subtest: Y11 line supports, catenary recipes and external anchors resolve for both yards
+ok 11 - Y11 line supports, catenary recipes and external anchors resolve for both yards
+  ---
+  duration_ms: 83.541253
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 472.433915
+exit 0
+
+$ node la-ladera/tools/substation_plan.mjs
+PASS substation yard uk: 338 instances; 53 types; 8 visitor-route segments
+PASS substation yard co: 338 instances; 53 types; 8 visitor-route segments
+PASS yard parity: 338 matching equipment instances
+exit 0
+
+$ node la-ladera/tests/payload.mjs
+ok   textures                                                14.4 / 24 MB
+ok   models                                                  28.9 / 32 MB
+ok   models/people                                            9.4 / 14 MB
+ok   models/furniture                                         5.2 / 10 MB
+ok   models/world                                             0.0 / 6 MB
+ok   models/arch                                              0.0 / 2 MB
+ok   shipped total (excl. vendor,dev,labs,tests,tools)       46.2 / 150 MB
+ok   estimated GPU texture memory                           289.3 / 800 MB
+largest files:
+  6.60 MB  assets/models/people/people.glb
+  2.28 MB  assets/textures/foliage_cards.png
+  2.13 MB  assets/models/furniture/furn_shop.glb
+  1.86 MB  dev/people-bodies-v2/before/torso-hands.png
+  1.82 MB  assets/models/people/people_lod.glb
+  1.59 MB  dev/people-bodies-v2/after/torso-hands.png
+  1.51 MB  dev/people-bodies-v2/before/head-neck.png
+  1.39 MB  assets/models/substation/substation_shared.glb
+PAYLOAD OK
+exit 0
+
+CRLF checkout simulation: converted catalogue, site catalogue, both plans, atlas metadata and manifest to CRLF in clean export only.
+$ node la-ladera/tools/blender/substation_validate.mjs --complete --variant uk
+PASS substation --complete variants=uk: 66 near + 66 far roots
+GLB 2583020/6000000 bytes; textures 2090869/8000000 bytes; RGBA8+mips 39146836/40000000 bytes; shared byte identity PASS
+exit 0
+
+$ node la-ladera/tools/blender/substation_validate.mjs --complete --variant co
+PASS substation --complete variants=co: 66 near + 66 far roots
+GLB 2583020/6000000 bytes; textures 2090869/8000000 bytes; RGBA8+mips 39146836/40000000 bytes; shared byte identity PASS
+exit 0
+
+CLEAN EXPORT AND CRLF PINS PASS
