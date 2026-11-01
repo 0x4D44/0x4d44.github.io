@@ -132,7 +132,7 @@ export class Player {
     });
     canvas.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || !ctx.running) return;
-      if (!this.pointerLocked && !this.locked && !ctx.opts.autostart && !this.dragOnly) this.lockPointer();    // not during a talk: a held pointer eats Esc (ui/flow.js)
+      if (!this.pointerLocked && !this.locked && !ctx.opts.autostart) this.lockPointer();    // not during a talk: a held pointer eats Esc (ui/flow.js); every click asks again, also after three refusals (dragOnly only adds look-by-dragging, it never blocks a new request)
       else if (this.pointerLocked && !this.locked) ctx.interact.use();
     });
   }

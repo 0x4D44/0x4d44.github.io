@@ -149,6 +149,8 @@ export function createFlow(ctx) {
   // ---- DOM wiring -------------------------------------------------------------------------------------------------------------
   el.start.addEventListener('click', flow.begin);
   el.resume.addEventListener('click', () => flow.resume());
+  // A click anywhere on the pause card's backdrop or blank space takes the pointer back (the lock is often lost without Esc: alt-tab, a notification, a refused re-lock); its buttons keep their own jobs.
+  el.pause.addEventListener('click', (e) => { if (flow.mode === 'paused' && !e.target.closest?.('button, a, input, select, textarea, [data-open]')) flow.resume(); });
   el.respawn.addEventListener('click', flow.respawn);
   el.pclose.addEventListener('click', () => flow.closePanel());
   el.menu.addEventListener('click', flow.pause);
