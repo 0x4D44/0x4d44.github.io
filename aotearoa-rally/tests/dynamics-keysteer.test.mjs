@@ -187,3 +187,13 @@ test("R40 gravel bend: every car holds at least 60 km/h round a 40 m radius bend
     assert.ok(!off && minV >= U * 0.8, `${id}: min speed ${(minV * 3.6).toFixed(0)} km/h, off road ${off}`);
   }
 });
+
+// ---- round 7: verge pull and brake pedal ----
+test("brake pedal: a full press reaches 90% brake within 70 ms (keyboard friendly)", () => {
+  const st = flatStage(SURFACE.TARMAC);
+  const v = createVehicle(CARS.huia, { tyre: "tarmac" });
+  v.reset(st.startPose, 100 / 3.6, st);
+  const inp = { steer: 0, throttle: 0, brake: 1, handbrake: 0, gearUp: false, gearDown: false };
+  for (let i = 0; i < Math.round(0.07 / DT); i++) { v.step(DT, inp, st); v.state.events.length = 0; }
+  assert.ok(v.state.brake >= 0.9, `brake ${v.state.brake.toFixed(2)} after 70 ms`);
+});

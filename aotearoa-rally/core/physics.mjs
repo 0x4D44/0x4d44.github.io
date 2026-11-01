@@ -554,7 +554,7 @@ export function createVehicle(spec, options = {}) {
     }
     // pedal ramps (digital friendly)
     D.thr += clamp(tThr - D.thr, -12 * dt, 6 * dt);
-    D.brk += clamp(tBrk - D.brk, -14 * dt, 10 * dt);
+    D.brk += clamp(tBrk - D.brk, -14 * dt, 16 * dt);
     D.hb += clamp(inHb - D.hb, -10 * dt, 14 * dt);
     if (tThr === 0 && D.thr < 0.003) D.thr = 0;
     thrEff = D.thr; brkEff = D.brk; hbEff = D.hb;
