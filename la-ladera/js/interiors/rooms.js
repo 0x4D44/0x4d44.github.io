@@ -673,10 +673,12 @@ function bedroomDress(L, E, hh, role, bed) {
   }
   if (area >= 8.5) any(() => L.wall('dresser_4', 'any', { prio: 2, awayDoors: true }));
   if (study && area >= 8) L.wall('bookshelf', 'any', { prio: 2 });
-  // a bedroom too small or too crowded for a wardrobe still has somewhere to keep clothes: a trunk, else a metal wardrobe, else pegs and a shelf on the wall (no bedroom of the barrio is bare of storage).
+  // a bedroom too small or too crowded for a wardrobe still has somewhere to keep clothes: a trunk, else a metal wardrobe, else a trunk with its 0.5 m front zone waived (a lid opens upward, and the room is
+  // still never cut in two: a 6 to 9 m2 room with a bed and two doors often has a free wall for it and no 0.5 m in front), else pegs and a shelf on the wall (no bedroom of the barrio is bare of storage).
   // It comes after the study corner: a child's desk is worth more than a trunk, and a trunk placed first took the desk's wall in the small study rooms (the barrio lost most of its study desks).
   const keeps = () => L.items.some((i) => /^(wardrobe|dresser|chest_trunk|coat_rack)/.test(i.name));
-  if (!keeps()) any(() => L.wall('chest_trunk', 'any', { prio: 1, awayDoors: true }), () => L.wall('chest_trunk', 'any', { prio: 1 }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }));
+  if (!keeps()) any(() => L.wall('chest_trunk', 'any', { prio: 1, awayDoors: true }), () => L.wall('chest_trunk', 'any', { prio: 1 }), () => L.wall('wardrobe_metal', 'any', { prio: 1 }),
+    () => L.wall('chest_trunk', 'any', { prio: 1, noClear: true, awayDoors: true }));
   if (!keeps()) { L.hang('coat_rack_wall', 'any', { y: 1.6 }); L.hang('shelf_wall', 'any', { y: 1.5 }); }
   if (role === 'kids' || role === 'child') { L.free('toy_pile', { rad: 3, prio: 2 }); if (rng.chance(0.7)) L.free('school_bag', { rad: 3, prio: 2 }); art(L, E, 'kids', 'any'); if (rng.chance(0.6)) art(L, E, 'kids', 'any'); }
   if (role === 'teen' || role === 'student') { if (hh.hobby === 'football' || rng.chance(0.4)) art(L, E, 'sport', 'any'); else art(L, E, 'music', 'any'); if (hh.hobby === 'music') L.wall('guitar_lean', 'any', { at: 'corner', prio: 2 }); }
