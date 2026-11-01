@@ -5,6 +5,7 @@
 import { readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { CATALOG } from '../../js/interiors/catalog.js';
 import worldMaterials from '../../js/world/matdefs.js';
 
@@ -16,6 +17,41 @@ export const REQUIRED_GARMENTS = Object.freeze(['swimsuit_onepiece', 'swim_trunk
   'knickers', 'high_leg_knickers', 'briefs', 'boxers', 'sock_single', 'socks_pair', 'tights', 'nightdress']);
 const STATES = ['folded', 'hung', 'flat'];
 const LIMITS = Object.freeze({ triangles: 800, lodTriangles: 240, runtimeBytes: 2_000_000 });
+// Child ranges are an independent authored contract, not values inferred from an export.
+// Entries below are metre ranges for the adult-reference longest side in each state;
+// scaling produces explicit small (ages approximately 4–7) and big (8–12) limits.
+export const CHILD_SIZES = Object.freeze({
+  small: Object.freeze({ scale: 0.55, ages: Object.freeze([4, 7]) }),
+  big: Object.freeze({ scale: 0.75, ages: Object.freeze([8, 12]) }),
+});
+export const CHILD_LIMITS = Object.freeze({ triangles: 800, lodTriangles: 240, runtimeBytes: 700_000 });
+const CHILD_MANIFEST = 'manifest.garments_child.json';
+const CHILD_GLB = 'garments/garments_child.glb';
+const childContract = (ranges) => Object.freeze({
+  states: Object.freeze(Object.keys(ranges)),
+  longestSide: Object.freeze(Object.fromEntries(Object.entries(CHILD_SIZES).map(([size, { scale }]) =>
+    [size, Object.freeze(Object.fromEntries(Object.entries(ranges).map(([state, range]) =>
+      [state, Object.freeze(range.map((m) => Math.round(m * scale * 1e6) / 1e6))])))]))),
+});
+export const CHILD_GARMENTS = Object.freeze({
+  tshirt_teal: childContract({ folded: [.34, .49], hung: [.72, .93], flat: [.72, .93] }),
+  tshirt_coral: childContract({ folded: [.34, .49], hung: [.72, .93], flat: [.72, .93] }),
+  tshirt_motif: childContract({ folded: [.34, .49], hung: [.72, .93], flat: [.72, .93] }),
+  shorts: childContract({ folded: [.23, .34], hung: [.45, .61], flat: [.45, .61] }),
+  cotton_dress: childContract({ folded: [.30, .48], hung: [.82, 1.08], flat: [.82, 1.08] }),
+  hoodie: childContract({ folded: [.36, .56], hung: [.85, 1.15], flat: [.85, 1.15] }),
+  joggers: childContract({ folded: [.29, .42], hung: [.88, 1.10], flat: [.88, 1.10] }),
+  school_jumper: childContract({ folded: [.34, .52], hung: [.78, 1.06], flat: [.78, 1.06] }),
+  school_polo: childContract({ folded: [.34, .49], hung: [.72, .96], flat: [.72, .96] }),
+  school_trousers: childContract({ folded: [.29, .42], hung: [.88, 1.10], flat: [.88, 1.10] }),
+  school_skirt: childContract({ folded: [.27, .42], hung: [.52, .76], flat: [.52, .76] }),
+  school_tie: childContract({ folded: [.13, .24], hung: [.38, .64], flat: [.38, .64] }),
+  socks_pair: childContract({ folded: [.16, .25], flat: [.30, .44] }),
+  cap: childContract({ hung: [.27, .36], flat: [.27, .36] }),
+  light_jacket: childContract({ folded: [.36, .56], hung: [.85, 1.15], flat: [.85, 1.15] }),
+  school_shoes: childContract({ flat: [.26, .36] }),
+  sandals: childContract({ flat: [.26, .36] }),
+});
 const I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
 const EPS = 0.001; // one millimetre, including exporter float round-off
 const finiteVector = (a, n) => Array.isArray(a) && a.length === n && a.every(Number.isFinite);
@@ -228,6 +264,202 @@ function pngSize(bytes) {
   return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 }
 
+// The sibling child GLB has its own byte gate. Do not exempt names by prefix:
+// a companion manifest must identify the exact separate library first.
+function declaresChildLibrary(modelsDir) {
+  try {
+    const m = JSON.parse(readFileSync(checkedFile(modelsDir, CHILD_MANIFEST), 'utf8'));
+    return m.schemaVersion === 1 && m.set === 'garments_child' && m.scope === 'objects-only' &&
+      m.childOnly === true && m.ageGroup === 'child' && Array.isArray(m.files) && m.files.length === 1 &&
+      m.files[0]?.glb === CHILD_GLB && m.files[0]?.assets && typeof m.files[0].assets === 'object' &&
+      !Array.isArray(m.files[0].assets) && Object.keys(m.files[0].assets).length > 0;
+  } catch { return false; }
+}
+
+/** Validate both sizes from the actual exported bytes against fixed metre ranges.
+ * Child completeness is unconditional: this small library has no partial-release mode.
+ * Shared adult palette/atlas bytes are verified but are not charged again to this add-on.
+ */
+export function validateChildGarments({ modelsDir = DEFAULT_MODELS } = {}) {
+  const errors = [], warnings = [], measurements = [], assets = new Map(), expectedNodes = new Set();
+  const fileSizes = {}, runtimeFiles = new Set(), sharedFiles = new Set();
+  const check = (condition, message) => { if (!condition) errors.push(message); return !!condition; };
+  const attempt = (label, fn) => { try { return fn(); } catch (e) { errors.push(`${label}: ${e.message}`); return null; } };
+  const load = (rel, shared = false) => attempt(rel, () => {
+    const path = checkedFile(modelsDir, rel), bytes = readFileSync(path);
+    fileSizes[rel] = bytes.length;
+    (shared ? sharedFiles : runtimeFiles).add(rel);
+    return bytes;
+  });
+  const readJSON = (rel, shared = false) => {
+    const bytes = load(rel, shared); return bytes && attempt(rel, () => JSON.parse(bytes));
+  };
+  const manifest = readJSON(CHILD_MANIFEST);
+  const glbBytes = load(CHILD_GLB);
+  const glb = glbBytes && attempt(CHILD_GLB, () => parseGLB(glbBytes, CHILD_GLB));
+  const palette = readJSON('garments/palette.json', true), atlas = load('garments/prints.png', true);
+  check(!!worldMaterials.laundry && worldMaterials.laundry.vertexColors !== false,
+    'laundry must remain a registered vertex-colour library material');
+  if (palette) {
+    check(palette.schemaVersion === 1 && palette.material === 'laundry',
+      'child palette must reuse the adult laundry material');
+    check(palette.atlas?.file === 'prints.png' && closeVector(palette.atlas?.size, [256, 256], 0) &&
+      closeVector(palette.atlas?.grid, [4, 4], 0), 'child palette must reuse the adult 256 x 256 print atlas');
+    check(palette.variants && typeof palette.variants === 'object' && !Array.isArray(palette.variants),
+      'child palette variants must be an object');
+    for (const [id, v] of Object.entries(palette.variants ?? {})) {
+      check(v && typeof v === 'object' && /^#[\da-f]{6}$/i.test(v.color), `${id}: invalid shared palette colour`);
+      check(finiteVector(v?.tile, 2) && v.tile.every((i) => Number.isInteger(i) && i >= 0 && i < 4),
+        `${id}: shared atlas tile outside 4 x 4 grid`);
+    }
+  }
+  if (atlas) {
+    const size = attempt('shared print atlas', () => pngSize(atlas));
+    if (size) check(closeVector(size, [256, 256], 0), 'child print atlas must remain 256 x 256');
+  }
+  const registration = attempt('production manifest', () =>
+    JSON.parse(readFileSync(checkedFile(modelsDir, 'manifest.json'), 'utf8')));
+  if (registration) {
+    check(!JSON.stringify(registration).includes('garments_child'),
+      'child garment manifest/GLB must not be registered in manifest.json');
+  }
+  const measuredByKey = new Map();
+  const expectedKeys = Object.entries(CHILD_GARMENTS).flatMap(([id, c]) =>
+    Object.keys(CHILD_SIZES).flatMap((size) => c.states.map((state) => `garment_${id}_${size}_${state}`)));
+  const checkOrigin = (key, state, actual) => {
+    const { min, max } = actual.bounds;
+    if (state === 'hung') {
+      check(Math.abs(max[1]) <= EPS && min[1] < 0, `${key}: hung geometry must descend from y=0`);
+      check(min[0] <= EPS && max[0] >= -EPS && min[2] <= EPS && max[2] >= -EPS,
+        `${key}: hang point is outside the footprint`);
+    } else {
+      check(Math.abs(min[1]) <= EPS && Math.abs(min[0] + max[0]) <= EPS * 2 && Math.abs(min[2] + max[2]) <= EPS * 2,
+        `${key}: floor geometry must sit at y=0 and be centred in x/z`);
+    }
+  };
+  const compareGeometry = (key, a, range, state, lod = false) => {
+    if (!glb || !a || typeof a.node !== 'string') return null;
+    const actual = attempt(key, () => inspectAsset(glb, a.node));
+    if (!actual) return null;
+    const limitName = lod ? 'lodTriangles' : 'triangles';
+    const cap = Math.min(CHILD_LIMITS[limitName], manifest?.limits?.[limitName] ?? Infinity);
+    check(actual.triangles <= cap, `${key}: ${actual.triangles} triangles exceed ${cap}`);
+    check(a.triangles === actual.triangles, `${key}: declared triangle count differs from GLB (${actual.triangles})`);
+    check(actual.size.every((v) => v > 0), `${key}: geometry has zero extent`);
+    check(closeVector(a.size, actual.size), `${key}: size differs from GLB`);
+    check(closeVector(a.bounds?.min, actual.bounds.min) && closeVector(a.bounds?.max, actual.bounds.max),
+      `${key}: bounds differ from GLB`);
+    checkOrigin(key, state, actual);
+    const longest = Math.max(...actual.size);
+    if (range) check(longest >= range[0] - 1e-6 && longest <= range[1] + 1e-6,
+      `${key}: longest side ${longest.toFixed(6)} outside ${range[0]}..${range[1]} metres`);
+    if (!lod) {
+      check(closeVector(a.footprint, [actual.size[0], actual.size[2]]), `${key}: footprint differs from GLB`);
+      check(sameSet(a.materials ?? [], actual.materials), `${key}: material metadata differs from GLB`);
+      check(a.drawCalls === actual.parts, `${key}: drawCalls differ from primitive count`);
+    }
+    return actual;
+  };
+  if (manifest) {
+    check(manifest.schemaVersion === 1 && manifest.set === 'garments_child' && manifest.scope === 'objects-only' &&
+      manifest.childOnly === true && manifest.ageGroup === 'child' && manifest.units === 'metres' && manifest.adultOnly !== true,
+      'child manifest must declare schemaVersion 1, garments_child, objects-only, childOnly, child ageGroup and metre units');
+    for (const [name, cap] of Object.entries(CHILD_LIMITS)) {
+      check(Number.isInteger(manifest.limits?.[name]) && manifest.limits[name] > 0 && manifest.limits[name] <= cap,
+        `child manifest limit '${name}' is missing or exceeds ${cap}`);
+    }
+    if (manifest.sizes !== undefined) {
+      check(manifest.sizes && typeof manifest.sizes === 'object' && !Array.isArray(manifest.sizes) &&
+        sameSet(Object.keys(manifest.sizes), Object.keys(CHILD_SIZES)), 'child size declarations must contain small and big only');
+      for (const [name, spec] of Object.entries(CHILD_SIZES)) check(manifest.sizes?.[name]?.scale === spec.scale &&
+        closeVector(manifest.sizes?.[name]?.ages, spec.ages, 0), `${name}: size declaration must match scale ${spec.scale} and age band ${spec.ages.join('..')}`);
+    }
+    check(manifest.palette === 'garments/palette.json' && manifest.atlas?.file === 'garments/prints.png' &&
+      manifest.atlas?.width === 256 && manifest.atlas?.height === 256,
+      'child manifest must reuse the adult palette and 256 x 256 print atlas');
+    check(Array.isArray(manifest.files) && manifest.files.length === 1 && manifest.files[0]?.glb === CHILD_GLB,
+      `child manifest.files must contain only ${CHILD_GLB}`);
+    for (const f of Array.isArray(manifest.files) ? manifest.files : []) {
+      if (!check(f && typeof f === 'object', 'invalid child manifest file record')) continue;
+      if (f.bytes !== undefined) check(f.bytes === glbBytes?.length, `${CHILD_GLB}: declared file size differs from GLB`);
+      if (f.sha256 !== undefined) check(typeof f.sha256 === 'string' && /^[a-f0-9]{64}$/.test(f.sha256) &&
+        glbBytes && f.sha256 === createHash('sha256').update(glbBytes).digest('hex'), `${CHILD_GLB}: SHA256 differs from GLB`);
+      check(f.assets && typeof f.assets === 'object' && !Array.isArray(f.assets) && Object.keys(f.assets).length > 0,
+        `${CHILD_GLB}: child assets must be a nonempty object`);
+      for (const [key, a] of Object.entries(f.assets ?? {})) {
+        if (!check(a && typeof a === 'object' && !Array.isArray(a), `${key}: invalid child asset record`)) continue;
+        check(!assets.has(key), `duplicate child asset '${key}'`); assets.set(key, a);
+        const c = has(CHILD_GARMENTS, a.garment) ? CHILD_GARMENTS[a.garment] : null;
+        const size = has(CHILD_SIZES, a.sizeClass) ? CHILD_SIZES[a.sizeClass] : null;
+        const range = c && size ? c.longestSide[a.sizeClass][a.state] : null;
+        check(!!c && !!size && c.states.includes(a.state), `${key}: not a required child garment/size/state`);
+        check(key === `garment_${a.garment}_${a.sizeClass}_${a.state}` && a.node === key,
+          `${key}: key/node must follow garment_<id>_<small|big>_<state>`);
+        check(a.childOnly === true && a.ageGroup === 'child' && a.adultOnly !== true, `${key}: childOnly and child ageGroup are required`);
+        if (a.ages !== undefined && size) check(closeVector(a.ages, size.ages, 0), `${key}: age band must match ${size.ages.join('..')}`);
+        check(Array.isArray(a.variants) && a.variants.length > 0 && new Set(a.variants).size === a.variants.length &&
+          a.variants.every((id) => has(palette?.variants, id)), `${key}: variants must name existing adult palette entries`);
+        check(typeof a.defaultVariant === 'string' && has(palette?.variants, a.defaultVariant) && Array.isArray(a.variants) && a.variants.includes(a.defaultVariant),
+          `${key}: defaultVariant must name an available adult palette variant`);
+        if (a.garment === 'tshirt_teal') check(a.defaultVariant === 'plain_teal', `${key}: plain teal T-shirt must use plain_teal`);
+        if (a.garment === 'tshirt_coral') check(a.defaultVariant === 'plain_coral', `${key}: plain coral T-shirt must use plain_coral`);
+        check(!expectedNodes.has(a.node), `duplicate child node '${a.node}'`); expectedNodes.add(a.node);
+        const actual = compareGeometry(key, a, range, a.state);
+        check(a.origin === (a.state === 'hung' ? 'hang-point' : 'floor-centre'), `${key}: wrong origin convention`);
+        let low = null;
+        if (check(a.lod && typeof a.lod === 'object' && !Array.isArray(a.lod), `${key}: missing LOD`)) {
+          check(a.lod.glb === CHILD_GLB, `${key}: child LOD must use ${CHILD_GLB}`);
+          check(a.lod.node === `${key}_lod`, `${key}: LOD node must append _lod`);
+          check(!expectedNodes.has(a.lod.node), `duplicate child node '${a.lod.node}'`); expectedNodes.add(a.lod.node);
+          low = compareGeometry(`${key} LOD`, a.lod, range, a.state, true);
+          if (actual && low) {
+            check(low.triangles <= actual.triangles * .6, `${key}: LOD must remove at least 40% of triangles`);
+            check(low.size.every((v, k) => Math.abs(v - actual.size[k]) <= Math.max(.004, actual.size[k] * .12)),
+              `${key}: LOD size must preserve the high-detail silhouette`);
+          }
+        }
+        if (actual) {
+          measuredByKey.set(key, actual);
+          measurements.push({ key, garment: a.garment, sizeClass: a.sizeClass, state: a.state, ...actual,
+            longestSide: Math.max(...actual.size), expectedLongestSide: range ?? null,
+            lodTriangles: low?.triangles ?? null, lodSize: low?.size ?? null });
+        }
+      }
+    }
+    for (const key of expectedKeys) check(assets.has(key), `missing required state ${key}`);
+    check(sameSet([...assets.keys()], expectedKeys), 'child library must contain exactly the 90 required garment/size/states');
+    if (glb) check(sameSet(glb.roots.map((i) => glb.json.nodes[i].name), [...expectedNodes]),
+      `${CHILD_GLB}: unlisted or missing scene roots`);
+    // Bounds may overlap between nearby nominal sizes, so also compare matching pairs.
+    // Five per cent permits modest drape variation while rejecting equal-sized copies.
+    const ratio = CHILD_SIZES.big.scale / CHILD_SIZES.small.scale;
+    for (const [id, c] of Object.entries(CHILD_GARMENTS)) for (const state of c.states) {
+      const small = measuredByKey.get(`garment_${id}_small_${state}`), big = measuredByKey.get(`garment_${id}_big_${state}`);
+      if (small && big) check(big.size.every((v, k) => Math.abs(v - small.size[k] * ratio) <= Math.max(.002, small.size[k] * ratio * .05)),
+        `${id} ${state}: big/small dimensions must follow the 0.75/0.55 scale ratio`);
+    }
+  }
+  // Exact file ownership matters when the two sets share one directory. Unexpected
+  // child-named payload is rejected and counted; adult files belong to the adult gate.
+  const siblings = attempt('garment directory', () => filesBelow(join(modelsDir, 'garments'))) ?? [];
+  for (const path of siblings) {
+    const rel = relative(modelsDir, path).split(sep).join('/');
+    if (rel !== CHILD_GLB && /(^|\/)garments_child(?:[._-]|$)/.test(rel)) {
+      check(false, `unlisted child payload '${rel}'`);
+      fileSizes[rel] = statSync(path).size; runtimeFiles.add(rel);
+    }
+  }
+  const runtimeBytes = [...runtimeFiles].reduce((sum, rel) => sum + fileSizes[rel], 0);
+  const sharedBytes = [...sharedFiles].reduce((sum, rel) => sum + fileSizes[rel], 0);
+  const cap = Math.min(manifest?.limits?.runtimeBytes ?? CHILD_LIMITS.runtimeBytes, CHILD_LIMITS.runtimeBytes);
+  check(runtimeBytes <= cap, `runtime child library is ${runtimeBytes} bytes, exceeding ${cap}`);
+  return { ok: errors.length === 0, mode: 'complete', set: 'garments_child', errors, warnings,
+    assets: assets.size, catalogueGarments: Object.keys(CHILD_GARMENTS).length, sizes: Object.keys(CHILD_SIZES).length,
+    runtimeBytes, runtimeBudgetBytes: cap, sharedBytes, files: runtimeFiles.size, fileSizes,
+    maxTriangles: Math.max(0, ...measurements.map((m) => m.triangles)),
+    maxLodTriangles: Math.max(0, ...measurements.map((m) => m.lodTriangles ?? 0)), measurements };
+}
+
 /** Returns a reviewable report; malformed inputs are errors, not silent omissions. */
 export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = DEFAULT_CATALOGUE, complete = false } = {}) {
   const errors = [], warnings = [], measurements = [], runtimeFiles = new Set(), glbs = new Map(), expectedNodes = new Map();
@@ -399,9 +631,12 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
     }
   }
   const allFiles = attempt('garment directory', () => filesBelow(join(modelsDir, 'garments'))) ?? [];
+  const separateChildLibrary = declaresChildLibrary(modelsDir);
   for (const path of allFiles) {
+    const rel = relative(modelsDir, path).split(sep).join('/');
+    if (separateChildLibrary && rel === CHILD_GLB) continue;
     runtimeFiles.add(realpathSync(path));
-    if (complete && path.endsWith('.glb')) check(glbs.has(relative(modelsDir, path).split(sep).join('/')), `unlisted GLB '${relative(modelsDir, path)}'`);
+    if (complete && path.endsWith('.glb')) check(glbs.has(rel), `unlisted GLB '${rel}'`);
   }
   let runtimeBytes = 0;
   for (const path of runtimeFiles) runtimeBytes += statSync(path).size;
@@ -414,10 +649,14 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), options = {}; let jsonPath;
+  const args = process.argv.slice(2), options = {}; let jsonPath, target = 'adult';
   try {
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--complete') options.complete = true;
+      else if (args[i] === '--child' || args[i] === '--all') {
+        demand(target === 'adult', '--child and --all may be supplied only once and are mutually exclusive');
+        target = args[i].slice(2);
+      }
       else if (['--root', '--catalogue', '--json'].includes(args[i])) {
         demand(args[i + 1] && !args[i + 1].startsWith('--'), `${args[i]} requires a path`);
         const flag = args[i++], value = args[i];
@@ -425,14 +664,18 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         else if (flag === '--catalogue') options.cataloguePath = resolve(value);
         else jsonPath = value;
       } else if (args[i] === '--help') {
-        console.log('usage: garments_validate.mjs [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]'); process.exit(0);
+        console.log('usage: garments_validate.mjs [--child|--all] [--complete] [--root assets/models] [--catalogue adult-file.json] [--json report.json]'); process.exit(0);
       } else fail(`unknown option '${args[i]}'`);
     }
-    const report = validateGarments(options);
+    const reports = target === 'all' ? [validateGarments(options), validateChildGarments(options)] :
+      [target === 'child' ? validateChildGarments(options) : validateGarments(options)];
+    const report = target === 'all' ? { ok: reports.every((r) => r.ok), adult: reports[0], child: reports[1] } : reports[0];
     if (jsonPath) writeFileSync(jsonPath, JSON.stringify(report, null, 2) + '\n');
-    for (const error of report.errors) console.error('ERROR ' + error);
-    console.log(`${report.ok ? 'PASS' : 'FAIL'} garments (${report.mode}): ${report.assets} states, ${report.catalogueGarments} garments, ` +
-      `${report.runtimeBytes}/${report.runtimeBudgetBytes} bytes, max ${report.maxTriangles}/${report.maxLodTriangles} high/LOD triangles`);
+    for (const r of reports) {
+      for (const error of r.errors) console.error('ERROR ' + error);
+      console.log(`${r.ok ? 'PASS' : 'FAIL'} ${r.set ?? 'garments'} (${r.mode}): ${r.assets} states, ${r.catalogueGarments} garments, ` +
+        `${r.runtimeBytes}/${r.runtimeBudgetBytes} bytes, max ${r.maxTriangles}/${r.maxLodTriangles} high/LOD triangles`);
+    }
     process.exitCode = report.ok ? 0 : 1;
   } catch (e) { console.error('ERROR ' + e.message); process.exitCode = 1; }
 }

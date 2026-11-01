@@ -375,8 +375,8 @@ def cloth_geometry(item,state):
     return vertices,faces,uv,colors
 
 
-def hat_geometry(item,state):
-    ident=item['id']; n=24
+def hat_geometry(item,state,segments=24,include_seams=True):
+    ident=item['id']; n=segments
     v,f,uv,c=[],[],[],[]
     # Full-size adult head opening; soft bucket, indented straw crown, six-panel cap.
     if ident=='cap': profile=[(.001,.135),(.047,.125),(.078,.099),(.097,.060),(.102,.008)]
@@ -396,7 +396,7 @@ def hat_geometry(item,state):
                 f.extend([(a0,b0,b1),(a0,b1,a1)])
     if ident=='cap':
         # The visor extends from the front half of the crown, not a circular brim.
-        start=len(v); segments=12
+        start=len(v); segments=max(6,n//2)
         for ring in range(3):
             for i in range(segments+1):
                 a=math.pi*i/segments
@@ -407,7 +407,7 @@ def hat_geometry(item,state):
                 if ring and i:
                     p=start+(ring-1)*(segments+1)+i-1;q=p+segments+1
                     f.extend([(p,q,p+1),(p+1,q,q+1)])
-        for i in range(0,n,4):
+        for i in (range(0,n,max(1,n//6)) if include_seams else []):
             points=[(v[j*n+i],uv[j*n+i]) for j in range(len(profile))]
             add_ribbon(v,f,uv,c,points,.66,.0015)
     else:
@@ -518,7 +518,11 @@ def main():
     parser.add_argument('--out',type=Path,default=MODELS)
     parser.add_argument('--catalogue',type=Path,default=HERE/'garments.catalog.json')
     parser.add_argument('--only',help='comma-separated garment IDs; requires isolated --out')
+    parser.add_argument('--child',action='store_true',help='build the separate everyday child clothing library')
     args=parser.parse_args(F.argv_after_dashes() if '--' in sys.argv else [])
+    if args.child:
+        import garments_child
+        return garments_child.build(args)
     out=args.out.resolve()
     if args.only and out==MODELS.resolve(): raise ValueError('Partial builds must use an isolated --out')
     catalogue=json.loads(args.catalogue.read_text())
@@ -539,6 +543,15 @@ def main():
     with tempfile.TemporaryDirectory(prefix='.garments-stage-',dir=out.parent) as tmp:
         stage=Path(tmp); dest=stage/'garments'; dest.mkdir()
         for name in ('palette.json','assortments.json'): shutil.copy2(source/name,dest/name)
+        # Adult regeneration preserves the independently generated child GLB.
+        # The child manifest lives outside this replaced directory and is unchanged.
+        child=out/'garments'/'garments_child.glb'
+        child_manifest=out/'manifest.garments_child.json'
+        if child.is_file()!=child_manifest.is_file():
+            raise ValueError('Existing child GLB/manifest pair is incomplete; repair it before regenerating adult assets')
+        if child.is_file() and child_manifest.is_file():
+            shutil.copy2(child,dest/child.name)
+            shutil.copy2(child_manifest,stage/child_manifest.name)
         png(dest/'prints.png',palette)
         for state in STATES:
             if not any(state in item['states'] for item in items): continue
@@ -578,7 +591,7 @@ def main():
             F.export_glb(str(dest/f'garments_{state}_lod.glb'))
             manifest['files'].append({'glb':glb,'sha256':hashlib.sha256((stage/glb).read_bytes()).hexdigest(),'assets':assets})
         (stage/'manifest.garments.json').write_text(json.dumps(manifest,indent=2)+'\n')
-        total=sum(p.stat().st_size for p in dest.iterdir())+(stage/'manifest.garments.json').stat().st_size
+        total=sum(p.stat().st_size for p in dest.iterdir() if p.name!='garments_child.glb')+(stage/'manifest.garments.json').stat().st_size
         if total>2000000: raise ValueError(f'Runtime payload {total} exceeds 2,000,000 bytes')
         node=shutil.which('node')
         if not node: raise ValueError('Node is required for independent validation before installation')
