@@ -54,10 +54,15 @@ function sampleTable(tb, rpm) {
 }
 
 /** Speed-sensitive steering lock factor (0.17..1). The bot uses the same curve to map angle -> input. */
-export function steerFactor(v) {
-  const vv = v / 12;
+// round 6: on loose ground the fall-off is softer (v0 16, floor 0.22 against 12 / 0.17) so the car turns in at 50-120 km/h.
+// `loose` (0..1) is the share of the wheels on loose surface; tarmac keeps the old curve.
+const STEER_V0 = 12, STEER_MIN = 0.17, STEER_V0_LOOSE = 16, STEER_MIN_LOOSE = 0.22;
+export function steerFactor(v, loose = 0) {
+  const k = 1 + loose * (STEER_V0_LOOSE / STEER_V0 - 1);
+  const vv = v / (STEER_V0 * k);
   const lf = 1 / (1 + 0.55 * vv * vv);
-  return lf < 0.17 ? 0.17 : lf;
+  const mn = STEER_MIN + loose * (STEER_MIN_LOOSE - STEER_MIN);
+  return lf < mn ? mn : lf;
 }
 
 function makeWheelState() {
@@ -95,7 +100,13 @@ const LAND_SOAK = 3.5;
 // walls (banks, verges): a little bounce and a slippery face so a hit leaves the car free to steer out; a pinned car is helped out
 const WALL_E = 0.22, WALL_MUT = 0.08;
 const PIN_SPEED = 1.5, PIN_AFTER = 1.0, PIN_THR = 0.25, PIN_PUSH = 8, PIN_SEP = 4;
-const FRONT_LOOSE = 1.08;
+const FRONT_LOOSE = 1.15;
+const REAR_LOOSE = 1.25; // round 6: rear axle grip on loose ground, so the stronger front end does not make lift-off snappy
+const CS_INTO = 0.1;
+/** One-line owner lever: scales tyre grip (front and rear) on loose surfaces only (gravel, dirt, mud, snow, pumice); tarmac untouched. 1 = as designed. */
+export const LOOSE_GRIP_SCALE = 1.0;
+const GOV_LOOSE = 0.4, GOV_CAP = 0.45;
+export const isLooseSurf = (id) => LOOSE_SURF[id] === 1;
 const LOOSE_SURF = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]; // by SURFACE id: gravel, dirt, (tarmac), mud, snow, pumice
 const LT_TAU = 0.1, LT_SUS = 0.03, LT_KICK = 24, LT_KCAP = 0.25, LT_SURF = 3;
 const SA0 = 0.12, SA1 = 0.3; // throttle feathering starts at a 7 deg body slip (it was 17 deg): a digital throttle cannot hold a power slide
@@ -154,6 +165,7 @@ export function createVehicle(spec, options = {}) {
   // lift-off rotation gain by drivetrain (FWD mild, AWD moderate, RWD strongest); spec.handling.liftRotate overrides
   // front-axle grip on loose ground only (gravel, dirt, mud, snow, pumice): keeps the nose biting for a keyboard driver; fades in with the steering angle so straight-line braking is unchanged; tarmac untouched
   const frontLoose = spec.handling && spec.handling.frontLoose !== undefined ? spec.handling.frontLoose : FRONT_LOOSE;
+  const rearLoose = spec.handling && spec.handling.rearLoose !== undefined ? spec.handling.rearLoose : REAR_LOOSE;
   const ltGain = spec.handling && spec.handling.liftRotate !== undefined ? spec.handling.liftRotate : (spec.drivetrain === "AWD" ? LT_GAIN_AWD : spec.drivetrain === "FWD" ? LT_GAIN_FWD : LT_GAIN_RWD);
 
   // box (for obstacle/wall collisions): z positive = back
@@ -742,7 +754,9 @@ export function createVehicle(spec, options = {}) {
         D.steerIn += clamp(dd, -rate * dt, rate * dt);
       }
       const lock = spec.steeringLockDeg * (Math.PI / 180) * lockScale * fxD.lockMul;
-      const lf = steerFactor(Math.abs(fs));
+      let lsf0 = 0;
+      for (let i = 0; i < 4; i++) lsf0 += LOOSE_SURF[W[i].surf] ? 0.25 : 0;
+      const lf = steerFactor(Math.abs(fs), lsf0);
       let delta = D.steerIn * lock * lf + fxD.pull;
       // self-aligning torque (caster): released wheels turn toward the direction the front axle is moving
       if (spd > 3) {
@@ -762,14 +776,20 @@ export function createVehicle(spec, options = {}) {
         const ab = Math.abs(beta);
         if (ab > 0.08 && fs >= 0) {
           const k = clamp((ab - 0.08) / 0.2, 0, 1);
-          delta += E * 0.75 * clamp(beta, -0.55, 0.55) * k;
+          // round 6: while the driver steers into the turn, the slip is the corner itself (5-15 deg on gravel): counter-steer only a real overrotation
+          const into = delta * D.wy < 0 && Math.abs(D.steerIn) > 0.15;
+          const kk2 = into ? clamp((ab - 0.08 - CS_INTO) / 0.2, 0, 1) * 0.6 : k;
+          delta += E * 0.75 * clamp(beta, -0.55, 0.55) * kk2;
         }
         // yaw-rate governor: sustainable rate ~ mu g / v
         let muE = 0;
         for (let i = 0; i < 4; i++) muE += SURFACE_INFO[W[i].surf].mu;
-        const rMax = (0.35 + 0.65 * (muE * 0.25)) * 1.05 * G / Math.max(spd, 8);
+        // round 6: on loose ground the limit is higher and the cut is capped, so the governor trims a wound-on wheel without
+        // taking the turn-in away (it used to null the steering of the lighter cars at 80+ km/h); tarmac is unchanged
+        const lsf = lsf0;
+        const rMax = (0.35 + 0.65 * (muE * 0.25)) * (1.05 + GOV_LOOSE * lsf) * G / Math.max(spd, 8);
         const ar = Math.abs(D.wy);
-        if (ar > rMax && delta * D.wy < 0) delta *= 1 - clamp((ar - rMax) / (0.3 * rMax), 0, 1) * E;
+        if (ar > rMax && delta * D.wy < 0) delta *= 1 - clamp((ar - rMax) / (0.3 * rMax), 0, 1) * E * (1 - GOV_CAP * lsf);
       }
       const maxD = lock * 1.5;
       delta = clamp(delta, -maxD, maxD);
@@ -907,7 +927,7 @@ export function createVehicle(spec, options = {}) {
       let fxT = 0, fyT = 0;
       w.dFx = 0; w.fxTyre = 0;
       if (fz > 1) {
-        const grip = tyreGrip[w.surf] * sgTab[w.surf] * (w.front ? spec.handling.gripFront * (LOOSE_SURF[w.surf] ? 1 + (frontLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) : 1) : spec.handling.gripRear) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
+        const grip = tyreGrip[w.surf] * sgTab[w.surf] * (LOOSE_SURF[w.surf] ? LOOSE_GRIP_SCALE : 1) * (w.front ? spec.handling.gripFront * (LOOSE_SURF[w.surf] ? 1 + (frontLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) : 1) : spec.handling.gripRear * (LOOSE_SURF[w.surf] ? 1 + (rearLoose - 1) * clamp(Math.abs(D.steerAng) / 0.06, 0, 1) * (1 - clamp(brkEff * 2, 0, 1)) : 1)) * fxD.gripMul[i] * (0.97 + 0.06 * Wtemp[i]);
         const o = tyreForce(fzT, vxw, vyw, Wom[i] * Rw, w.surf, grip, w.loadRef, Rw);
         fxT = o.fx; fyT = o.fy;
         // stiction safety: forces must not overshoot the slip velocity in one step

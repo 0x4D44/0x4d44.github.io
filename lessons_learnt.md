@@ -11,6 +11,19 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-01 - A stability assist can steer against the driver: audit core/physics.mjs counter-steer and yaw governor first
+  Held key at 60 km/h asked for 13.8 deg of lock and the wheels sat at 1.7 deg: counter-steer fired on normal 5-15 deg gravel slip
+  and the yaw governor nulled the rest. Two reviewers found it independently; more grip would not have. Gate assists on real overrotation,
+  not on body slip, and judge turn-in by path curvature, not yaw rate.
+
+- 2026-11-01 - Corner speed goes with sqrt(grip): core/physics.mjs LOOSE_GRIP_SCALE bought 4-6 km/h per +20% and broke five pins
+  A 40 m gravel bend is about 61 km/h at mu 0.72 whatever the steering. Grip +6% already failed the golden 5% pin and the 65-90 m gravel
+  braking floor. When a first stage feels impossible, ease the stage geometry (stagedefs.mjs) and announce hairpins early.
+
+- 2026-11-01 - speed/yawRate is not a corner radius in a slide: tests/dynamics-keysteer.test.mjs now measures path radius from positions
+  Yaw rate keeps rising while the path barely turns (95 m body radius against 171 m path radius). A radius test fed by yaw rate or taken
+  from the 0.2-0.6 s transient passes while the car ploughs. Measure from the car's positions at 0.3-0.8 s and 1.5-3 s.
+
 - 2026-10-31 - Measure key-tap latency, not just held-key radius: a slow wind-on felt like no steering (core/input.mjs:shapeKeySteer)
   Held-key radius was always near the grip limit, yet the owner said left did nothing: the key chain wound on at 1.8/s at
   speed and capped lock at 0.55, so a tap moved the wheels 2 degrees in 120 ms. Fast to half lock, slow after, fixed it

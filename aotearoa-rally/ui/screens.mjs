@@ -420,7 +420,7 @@ export function createScreens(root, ctx) {
       }
       const drivingTab = () => [
         row("Gearbox", sel("gearbox", [["auto", "Automatic"], ["manual", "Manual (Shift/Ctrl, Q/E)"]])),
-        row("Steering assist", range("steerAssist", 0, 1, 0.05, (v) => Math.round(v * 100) + "%"), "Reduces steering lock at high speed"),
+        row("Steering assist", range("steerAssist", 0, 1, 0.05, (v) => Math.round(v * 100) + "%"), "Scales the stability, traction and anti-lock aids that trim your steering and throttle. Full strength by about a third of the way up."),
         row("Default camera", sel("camera", [["chase", "Chase"], ["far", "Far chase"], ["bumper", "Bumper"], ["bonnet", "Bonnet"]])),
       ];
       const displayTab = () => [

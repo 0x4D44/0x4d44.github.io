@@ -10,7 +10,7 @@
 import { SURFACE_INFO } from "./surfaces.mjs";
 import { surfGripTable } from "./cars.mjs";
 import { TYRE_GRIP } from "./tyre.mjs";
-import { steerFactor } from "./physics.mjs";
+import { steerFactor, isLooseSurf } from "./physics.mjs";
 
 const G = 9.81;
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -248,7 +248,7 @@ export function createBot(stage, vehicle, opts = {}) {
     // damp slides: steer toward the velocity direction when the car is rotating past it
     const sl = st.slideAngle;
     if (Math.abs(sl) > 0.1 && v > 4) delta += clamp(sl * 0.8, -0.25, 0.25);
-    const maxAng = spec.steeringLockDeg * (Math.PI / 180) * steerFactor(Math.abs(v));
+    const maxAng = spec.steeringLockDeg * (Math.PI / 180) * steerFactor(Math.abs(v), isLooseSurf(stage.surf[Math.min(stage.N - 1, Math.max(0, Math.round(s / stage.ds)))]) ? 1 : 0);
     let sc = clamp(delta / maxAng, -1, 1);
     // light smoothing so the model's analogue path is exercised
     sc = lastSteer + (sc - lastSteer) * Math.min(1, dt * 25);

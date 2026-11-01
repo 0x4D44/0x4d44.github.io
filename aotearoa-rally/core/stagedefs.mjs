@@ -17,7 +17,7 @@ export const STAGE_DEFS = {
   waitomo: {
     id: "waitomo", number: 1, name: "Waitomo Ridge", region: "Waikato", island: "North",
     blurb: "Fast rolling pasture above the glowworm caves, where long crests hide the next corner and limestone bluffs crowd the road. Early mist lingers in the hollows as you chase the morning light across the farmland.",
-    lengthTarget: 3934, difficulty: 2, biome: "pasture",
+    lengthTarget: 4012, difficulty: 2, biome: "pasture",
     environment: {
       timeOfDay: 8.5, sunAzimuth: 1.75, sunElevation: 0.46, sunColor: hex(0xfff0d0), sunIntensity: 2.6,
       skyTop: hex(0x5f94d8), skyHorizon: hex(0xcfe3f0), fogColor: hex(0xd5e2e8),
@@ -32,7 +32,7 @@ export const STAGE_DEFS = {
   whakarewarewa: {
     id: "whakarewarewa", number: 2, name: "Whakarewarewa Redwoods", region: "Rotorua", island: "North",
     blurb: "A tight, twisting ribbon of pumice beneath towering redwoods, with steam drifting across the road from the thermal vents. The surface changes without warning and the forest swallows every sightline.",
-    lengthTarget: 3400, difficulty: 3, biome: "redwood",
+    lengthTarget: 3452, difficulty: 3, biome: "redwood",
     environment: {
       timeOfDay: 14, sunAzimuth: 0.4, sunElevation: 0.66, sunColor: hex(0xffe8c8), sunIntensity: 1.1,
       skyTop: hex(0x7d8a92), skyHorizon: hex(0xb4bcbc), fogColor: hex(0xaab4b0),
@@ -135,15 +135,20 @@ STAGE_DESIGNS.waitomo = {
   items: [
     H(96), mark("start"), S(110), camber(90, 2.4),
     ...W([
-      [100, 105, 40],
-      crest(2.0, 24), S(60),
-      [62, 115, 40],
-      [40, 100, 40],
-      [85, 40, 40],
-      [60, 22, 20],
+      // gentle introduction: wide sweepers and a long run-in, nothing tighter than R100 for the first 1.2 km
+      [94, 190, 60],
+      crest(2.0, 24), S(50),
+      [70, 170, 60],
+      [92, 160, 60],
+      [74, 150, 70],
+      [96, 140, 80],
+      [70, 130, 360],
+      // first real corner (R~42) arrives after ~1.3 km, after a long straight, called well ahead
+      [84, 42, 40],
+      [60, 24, 20],
       S(90), jump(2.4, 10), S(100),
       [210, 17, 40, "R"],
-      tunnel(120), S(150), [250, 90, 30],
+      tunnel(120), S(110), [250, 90, 30],
     ]),
     H(190), camber(70, 2.6), R(75, 60, 48), S(30), nocut(), L(32, 95), S(40),
     ...W([[75, 100, 100]]),
@@ -152,7 +157,6 @@ STAGE_DESIGNS.waitomo = {
       [50, 150, 100],
       crest(2.2, 28), S(70),
       [85, 95, 60],
-      [60, 85, 25], [95, 85, 25], [65, 85, 60],
     ]),
     H(74), camber(60, -1.4), R(60, 70, 40), S(80),
     ...W([[100, 100, 40]]),
@@ -161,12 +165,8 @@ STAGE_DESIGNS.waitomo = {
       [75, 100, 80],
       jump(2.4, 10), S(100),
       [105, 90, 50],
-      [70, 36, 40],
-      [115, 45, 60],
       [85, 105, 80],
       crest(2.0, 24), dip(1.4, 16), S(80),
-      [110, 130, 60],
-      [75, 70, 50],
       S(40), crest(1.0, 20), S(60),
       [105, 90, 40], [70, 50, 30], nocut(), [110, 24, 40], [85, 100, 60], [100, 150, 40],
     ]),
@@ -183,7 +183,7 @@ STAGE_DESIGNS.whakarewarewa = {
   items: [
     H(340), mark("start"), S(100), camber(70, 2.2),
     ...W([
-      [65, 55, 20], [120, 42, 25], [80, 36, 40], [135, 60, 60],
+      [65, 70, 20], [120, 80, 25], [80, 75, 40], [135, 70, 60],
       crest(0.9, 14), S(30),
       [70, 22, 15], [195, 14, 25], [60, 14, 25], [125, 24, 35],
     ]),
