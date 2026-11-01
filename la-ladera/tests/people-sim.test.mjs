@@ -311,6 +311,18 @@ test('nav: a person on the street below a plaza is given a street node, not the 
   assert.equal(g.nearest(1, 0), plaza, 'with no height given: the nearest on the map');
 });
 
+test('near: a person on another floor (2.2 m or more up or down) is no neighbour, so the nurse upstairs does not push the patient below her off the way to the seat; the player is judged the same way', () => {
+  const sim = Object.create(PeopleSim.prototype); sim._grid = new Map(); sim._near = []; sim._cs = 3;
+  const at = (id, x, y, z, extra = {}) => ({ id, away: false, st: { x, y, z }, ...extra });
+  const me = at('me', 0, 0.6, 0);
+  sim.npcs = [me, at('beside', 1, 0.6, 0), at('step', 0, 1.9, 1), at('above', 0.4, 3.6, 0.3), at('below', -0.5, -2.4, 0), at('far', 9, 0.6, 0), at('away', 0.5, 0.6, 0.5, { away: true })];
+  sim.player = { x: 0, y: 0.6, z: -1, isPlayer: true };
+  sim._rebuildGrid();
+  const ids = () => sim.near(me, 2).map((o) => o.isPlayer ? 'player' : o.id).sort();
+  assert.deepEqual(ids(), ['beside', 'player', 'step'], 'the person beside, the one on the stair 1.3 m up and the player; not the floor above (3 m), the floor below (3 m), the far one or the one indoors');
+  sim.player.y = 3.6; assert.deepEqual(ids(), ['beside', 'step'], 'the player on the floor above is no neighbour either');
+});
+
 test('indoor route: a corridor that runs along a door in its wall is not threaded through the door; a way through the doorway is', () => {
   // a narrow aisle between a long counter (x = -0.13) and the east wall (x = 0.6), z -6..8, one grid column wide (x = 0.2) and so entirely inside the zone of a door in the east wall
   // (the door at z 1.4..2.6 leads to a closet): a shop with a nook, as L58 of the plan. Walls are segments, a body of radius R overlaps a wall within R + t/2.

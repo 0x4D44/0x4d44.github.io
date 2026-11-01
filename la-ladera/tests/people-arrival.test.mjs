@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { buildData } from './headless.mjs';
 import { PeopleSim } from '../js/people/sim.js';
 import { Brain } from '../js/people/brain.js';
+import { NavGraph } from '../js/people/nav.js';
+import { makeRng } from '../js/core/rng.js';
 import { blockAt } from '../js/people/schedule.js';
 import { ARRIVAL, PARTS, ahead, arrivalNear, pickArrivals, viewDir } from '../js/people/arrival.js';
 import { inSpawnFan } from '../js/world/kit.js';
@@ -113,6 +115,19 @@ test('fanNodes: the two who talk get the near part of the fan, the walker the mi
   assert.equal(ids('chat', [there(0)]), '1', 'somebody stands on node 0: it is not offered'); assert.equal(ids('chat', [there(0, { away: true })]), '0,1', 'somebody who is indoors does not stand there');
   assert.equal(ids('chat', [there(0, { mode: 'walk', path: [{ x: 0, z: 0 }] })]), '1', 'somebody who has just been put on the node and is walking off is still there');
   assert.equal(ids('walk', [there(2)]), '0,1,3,4', 'the walker\'s band is taken: any other node of the fan, not the one with somebody on it');
+});
+
+test('the first frame never puts somebody on a stair (people/brain.js `stopNode`): fanNodes leaves the nodes of a flight out, and the walker who sets off does not end the walk on one', () => {
+  const g = new NavGraph(), onStair = (d) => (d >= 16 && d <= 24) || (d >= 52 && d <= 72);       // a street straight ahead of the player, a node every 4 m to 100 m, a flight in the walker's band and another where the walks end
+  for (let d = 0; d <= 100; d += 4) { const i = g.add(sp.x + view.x * d, 0, sp.z + view.z * d, onStair(d) ? 'stair' : 'path'); if (i) g.link(i - 1, i); }
+  const nearest = (p) => g.nodes.reduce((b, n) => (dist2(n, p) < dist2(b, p) ? n : b));
+  const me = (seed) => ({ id: 'm', charId: 'b', x: 0, z: 0, away: false, mode: 'idle', rng: makeRng(seed), speedBase: 1.3, age: 'adult', walk(w, pts) { this.heading = pts[pts.length - 1]; return true; } });
+  const world = (npc) => ({ npcs: [npc], nav: g, inMain: () => true, placeNpc(n, x, z) { n.x = x; n.z = z; }, waypoints: (n, idx) => idx.map((i) => g.nodes[i]) });
+  const first = me(1), W = world(first), fan = new Brain(W).fanNodes(first, near, 'walk');
+  assert.ok(fan.length > 0 && fan.every((n) => n.kind !== 'stair'), `the walker's band is all stairs: it is the rest of the fan, street nodes only (${fan.map((n) => n.kind)})`);
+  const ends = Array.from({ length: 40 }, (_, k) => { const npc = me(k + 1), w = world(npc); assert.equal(new Brain(w).arrive_walk(npc, { near }), true, `seed ${k + 1}: a walk was found`); return nearest(npc.heading).kind; });
+  assert.equal(ends.filter((k) => k === 'stair').length, 0, `${ends.filter((k) => k === 'stair').length} of 40 walkers set off to stop on a stair`);
+  assert.ok(ends.includes('path'), 'the street is still there to walk to');
 });
 
 test('the five who start in view are not the shopkeepers (the first five of the cast): the hero shot does not depend on who is posted at a shop', () => {

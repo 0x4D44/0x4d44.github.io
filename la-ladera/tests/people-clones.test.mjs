@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Brain } from '../js/people/brain.js';
+import { NavGraph } from '../js/people/nav.js';
 import { Spots } from '../js/people/spots.js';
 import { planCast, candidates } from '../js/people/cast.js';
 import { PERSONAS, COMMUNITY_PERSONAS } from '../js/people/personas.js';
@@ -207,6 +208,28 @@ test('do_wander: the first frame and the next stop of a walk are not beside a tw
   for (let seed = 1; seed <= 40; seed++) {
     assert.ok(dist(run(seed, true), { x: 0, z: 0 }) >= 4, `seed ${seed}: placed ${dist(run(seed, true), { x: 0, z: 0 }).toFixed(1)} m from a twin on the first frame`);
     assert.ok(dist(run(seed, false), { x: 0, z: 0 }) >= 4, `seed ${seed}: sent to a stop ${dist(run(seed, false), { x: 0, z: 0 }).toFixed(1)} m from a twin`);
+  }
+});
+
+// ---- a stair is no place to stop (people/brain.js `stopNode`): a stander on a flight leaves the next walker no way round, the separation steering pushes that walker into the rails and it stays there -----
+// (found by a soak in the page's world: the builders of the L40 site dwelt on the nodes of the flight beside it, and three walkers were pinned at its head, (-21.1, 1.42, 16.04), in four hours)
+test('where somebody stops: do_wander, the site and the moto stand never choose a node of a stair, on the first frame or on the way', () => {
+  const g = new NavGraph();                                     // a street along z, a node every 4 m: ten street nodes, a flight of five stair nodes (z 40 to 56), ten more street nodes
+  [...Array(10).fill('street'), ...Array(5).fill('stair'), ...Array(10).fill('street')].forEach((kind, k) => { const i = g.add(0, 0, k * 4, kind); if (k) g.link(i - 1, i); });
+  const kindAt = (p) => g.nodes.reduce((b, n) => (dist(n, p) < dist(b, p) ? n : b)).kind;
+  const stop = (persona, call, instant, seed, scene) => {
+    const me = person('me', 'm_afro', 0, 22, seed, { persona, siteLotId: 'S', speedBase: 1.3, age: 'adult', routine: 'neighbour', homeNode: 0, walk(w, pts) { this.heading = pts[pts.length - 1]; return true; } });
+    const W = world([me], scene); W.nav = g; W.waypoints = (n, idx) => idx.map((i) => g.nodes[i]);
+    assert.equal(new Brain(W)[call](me, instant ? { instant: true } : {}), true, `${call} seed ${seed}: a place was found`);
+    return kindAt(instant ? me : me.heading);
+  };
+  const site = { lots: [{ id: 'S', kind: 'unfinished', x: 0, y: 0, z: 48, entrance: { outside: [0, 0, 48] } }] }, stand = { landmarks: [{ id: 'busstop', x: 0, z: 38 }] };       // the site is the flight itself (five of its seven nodes within 13 m are stairs), the bus stop two street nodes and two stair nodes
+  for (const [persona, call, scene] of [['neighbour', 'do_wander', {}], ['obrero', 'siteWork', site], ['mototaxista', 'motoWait', stand]]) {
+    for (const instant of [true, false]) {
+      const kinds = Array.from({ length: 60 }, (_, k) => stop(persona, call, instant, k + 1, scene)), on = kinds.filter((k) => k === 'stair').length;
+      assert.equal(on, 0, `${call}${instant ? ' on the first frame' : ' on the way'}: ${on} of 60 people stop on a stair`);
+      assert.ok(kinds.includes('street'), `${call}${instant ? ' on the first frame' : ' on the way'}: the street is still there to stop on`);
+    }
   }
 });
 

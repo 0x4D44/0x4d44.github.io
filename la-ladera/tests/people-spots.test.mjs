@@ -6,6 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Spots, FIT, FIT_REACH } from '../js/people/spots.js';
 import { PeopleSim, standClear } from '../js/people/sim.js';
+import { WANT } from '../js/people/homelife.js';
 import { buildData, readAssetJson } from './headless.mjs';
 
 const poi = (id, kind, x, z, y = 0) => ({ id, kind, x, y, z, ry: 0 });
@@ -132,6 +133,33 @@ test('a three-hour soak in the page\'s world (dawn to the mid-morning): nobody i
   assert.equal(near.length, 0, `${near.length} of ${snags.length} snags of the soak were at the court (${[...new Set(near.map((e) => e.id))].join(', ')}): somebody was sent to a bench outside its fence`);
   assert.deepEqual(sim.faults, [], 'no exception in the frame loop');
 });
+
+// ---- the head of a stair (people/brain.js `stopNode`) and the waiting row of the clinic (people/sim.js `near`) ----------------------------------------------------------------------------------
+// The builders of the L40 site dwelt on the nodes of the flight beside it (a node within 13 m of the site was a place to stand): every walker who met one on the stair was pushed by the separation steering into the
+// rails at its head, (-21.1, 1.42, 16.04), and stayed there until `unstick` moved it: n54 at 8:33, n78 at 12:40 and n47 at 13:41, each in the four hours from its own start. A flight has no room for a stander.
+// The patients of the clinic (L09) stalled 0.7 m short of the seats a455 and a456 (5 of the 9 snags of the four hours from 8:00): the nurse at her post upstairs (a478, directly over the way to those seats) was a
+// neighbour of whoever walked below her, `near` having no height, and the walker was pushed off the way until `unstick` sat it down.
+for (const h0 of [8, 12, 16, 20]) {
+  test(`a four-hour soak in the page's world from ${h0}:00: nobody is pinned on a stair or at the waiting row of the clinic`, async () => {
+    const { ctx, plan } = await buildData({ furnish: true, colliders: true, world: true });
+    ctx.hour = h0;
+    const meta = await readAssetJson('people/people_meta.json');
+    const sim = new PeopleSim(ctx);
+    assert.ok(sim.build(new Map(meta.people.map((p) => [p.id, p]))), 'the people are built');
+    const sp = plan.spawn; sim.setPlayer(sp.x, sp.y ?? 0, sp.z, 0);
+    const stairs = sim.nav.nodes.filter((n) => n.kind === 'stair'), seats = sim.homelife.info(sim.lots.clinic).anchors.filter(WANT.wait), snags = [], orig = sim.brain.unstick.bind(sim.brain);
+    assert.ok(stairs.length >= 5, `the graph has stairs (${stairs.length} nodes)`);
+    assert.ok(seats.length >= 6, `the clinic has a waiting row (${seats.length} seats)`);
+    sim.brain.unstick = (npc, W) => { snags.push({ id: npc.id, x: npc.x, y: npc.y, z: npc.z, h: ctx.hour }); return orig(npc, W); };
+    for (let t = 0; t < 4 * 3600; t += 0.1) { ctx.hour = (h0 + t / 3600) % 24; sim.step(0.1); }
+    const list = (l) => l.map((e) => `${e.id} ${e.h.toFixed(2)} h (${e.x.toFixed(1)}, ${e.z.toFixed(1)}, ${e.y.toFixed(1)})`).join('; ');
+    const on = snags.filter((e) => stairs.some((n) => Math.hypot(e.x - n.x, e.z - n.z) < 2.5 && Math.abs(e.y - n.y) < 2));
+    assert.equal(on.length, 0, `${on.length} of ${snags.length} snags of the soak were on a stair: ${list(on)}`);
+    const row = snags.filter((e) => seats.some((a) => Math.hypot(e.x - a.x, e.z - a.z) < 1.6 && Math.abs(e.y - a.y) < 1.5));
+    assert.equal(row.length, 0, `${row.length} of ${snags.length} snags of the soak were at the waiting row of the clinic: ${list(row)}`);
+    assert.deepEqual(sim.faults, [], 'no exception in the frame loop');
+  });
+}
 
 // ---- the lane a walker keeps to ----------------------------------------------------------------------------------------------------------------------------------------------------
 // `waypoints` (people/sim.js) turns a path over the graph into the points a walker steers to, each moved 0.55 to 1.25 m to one side of its node (keep to your right).
