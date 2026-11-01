@@ -1,0 +1,161 @@
+TAP version 13
+# Subtest: W01 complete requested inventory has physical near and far assets within both byte budgets
+ok 1 - W01 complete requested inventory has physical near and far assets within both byte budgets
+  ---
+  duration_ms: 460.679449
+  type: 'test'
+  ...
+# Subtest: W02 positions are finite floats and accessor extrema match their actual binary
+ok 2 - W02 positions are finite floats and accessor extrema match their actual binary
+  ---
+  duration_ms: 86.900995
+  type: 'test'
+  ...
+# Subtest: W03 every accessor stays inside its own buffer view
+ok 3 - W03 every accessor stays inside its own buffer view
+  ---
+  duration_ms: 84.620034
+  type: 'test'
+  ...
+# Subtest: W04 actual exported UV coordinates stay inside the shared atlas
+ok 4 - W04 actual exported UV coordinates stay inside the shared atlas
+  ---
+  duration_ms: 51.133933
+  type: 'test'
+  ...
+# Subtest: W05 triangle indices address existing vertices and no faces collapse
+ok 5 - W05 triangle indices address existing vertices and no faces collapse
+  ---
+  duration_ms: 65.694052
+  type: 'test'
+  ...
+# Subtest: W06 named asset roots preserve metre scale and identity transforms
+ok 6 - W06 named asset roots preserve metre scale and identity transforms
+  ---
+  duration_ms: 65.232728
+  type: 'test'
+  ...
+# Subtest: W07 exported normals are unit vectors aligned with triangle winding
+ok 7 - W07 exported normals are unit vectors aligned with triangle winding
+  ---
+  duration_ms: 64.106605
+  type: 'test'
+  ...
+# Subtest: W08 every piece has an explicit far LOD at no more than forty percent
+ok 8 - W08 every piece has an explicit far LOD at no more than forty percent
+  ---
+  duration_ms: 305.208199
+  type: 'test'
+  ...
+# Subtest: W09 drawn-instance triangle counts obey tiny-prop and boat caps
+ok 9 - W09 drawn-instance triangle counts obey tiny-prop and boat caps
+  ---
+  duration_ms: 288.846432
+  type: 'test'
+  ...
+# Subtest: W10 moving parts remain drawable independent pivots at matching LOD positions
+ok 10 - W10 moving parts remain drawable independent pivots at matching LOD positions
+  ---
+  duration_ms: 328.346646
+  type: 'test'
+  ...
+# Subtest: W11 byte counts and SHA-256 pins match every physical GLB
+ok 11 - W11 byte counts and SHA-256 pins match every physical GLB
+  ---
+  duration_ms: 278.699456
+  type: 'test'
+  ...
+# Subtest: W12 shared PBR PNGs decode with valid CRCs dimensions and real alpha
+ok 12 - W12 shared PBR PNGs decode with valid CRCs dimensions and real alpha
+  ---
+  duration_ms: 73.393277
+  type: 'test'
+  ...
+# Subtest: W13 floor origins waterline drafts and motion numbers agree with real geometry
+ok 13 - W13 floor origins waterline drafts and motion numbers agree with real geometry
+  ---
+  duration_ms: 377.312524
+  type: 'test'
+  ...
+# Subtest: W14 rider climb standing and navigation anchors are complete finite and usable
+ok 14 - W14 rider climb standing and navigation anchors are complete finite and usable
+  ---
+  duration_ms: 272.612997
+  type: 'test'
+  ...
+# Subtest: W15 watersports remains absent from the game boot manifest
+ok 15 - W15 watersports remains absent from the game boot manifest
+  ---
+  duration_ms: 313.971474
+  type: 'test'
+  ...
+# Subtest: W16 repeated kit planks and swim floats reuse mesh data as actual instances
+ok 16 - W16 repeated kit planks and swim floats reuse mesh data as actual instances
+  ---
+  duration_ms: 228.269222
+  type: 'test'
+  ...
+# Subtest: W17 sail and kite variants each name six distinct shared-atlas colourways
+ok 17 - W17 sail and kite variants each name six distinct shared-atlas colourways
+  ---
+  duration_ms: 312.13967
+  type: 'test'
+  ...
+# Subtest: W18 text pins accept LF and CRLF checkouts but reject changed content
+ok 18 - W18 text pins accept LF and CRLF checkouts but reject changed content
+  ---
+  duration_ms: 355.904424
+  type: 'test'
+  ...
+# Subtest: W19 nearest exterior hull surfaces face outwards even when normals and winding agree
+ok 19 - W19 nearest exterior hull surfaces face outwards even when normals and winding agree
+  ---
+  duration_ms: 289.452312
+  type: 'test'
+  ...
+# Coplanar stern-cap negative control: generic binary checks passed; exterior overlap assertion rejected it.
+# Subtest: L01 catenary points and line segments preserve both unequal-height endpoints
+ok 20 - L01 catenary points and line segments preserve both unequal-height endpoints
+  ---
+  duration_ms: 36.624791
+  type: 'test'
+  ...
+# Subtest: L02 horizontal and sloping catenaries sag and preserve requested arc length
+ok 21 - L02 horizontal and sloping catenaries sag and preserve requested arc length
+  ---
+  duration_ms: 1.866076
+  type: 'test'
+  ...
+# Subtest: L03 taut vertical and coincident catenary limits remain finite and deterministic
+ok 22 - L03 taut vertical and coincident catenary limits remain finite and deterministic
+  ---
+  duration_ms: 1.373525
+  type: 'test'
+  ...
+# Subtest: L04 catenary input guards bound allocations and reject non-finite coordinates
+ok 23 - L04 catenary input guards bound allocations and reject non-finite coordinates
+  ---
+  duration_ms: 0.439671
+  type: 'test'
+  ...
+# Subtest: L05 runtime segment updates reuse their allocated buffer and refresh bounds
+ok 24 - L05 runtime segment updates reuse their allocated buffer and refresh bounds
+  ---
+  duration_ms: 1.974248
+  type: 'test'
+  ...
+# Subtest: V01 atlas variants clone affected geometry and preserve unrelated UVs and source instances
+ok 25 - V01 atlas variants clone affected geometry and preserve unrelated UVs and source instances
+  ---
+  duration_ms: 13.251753
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4365.286076
