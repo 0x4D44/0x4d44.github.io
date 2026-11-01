@@ -83,3 +83,13 @@ Part B is gated: this base has the older 25-figure / 32-clip people set, and the
 new-figure work has not landed. The object library must be reviewed before a
 later adult-only wearable pass. See the committed verification report under
 `dev/garments/` for actual tests, byte counts, screenshots and performance limits.
+
+## Teen companion catalogue
+
+A separate 29-style, two-size teen library now uses this same build entry point
+with `-- --teen`, and the same independent validator with `--teen --complete`.
+Use `--all --complete` to check adult and teen payloads together, each under its
+own byte cap. The adult rebuild preserves the teen payload. See
+[GARMENTS-TEEN.md](GARMENTS-TEEN.md) for the exact state/size contract, regeneration,
+external fabrics, damage tests and rendered evidence. Neither library is newly
+registered in `manifest.json` by this change, and no runtime `js/` file is edited.

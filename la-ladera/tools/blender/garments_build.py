@@ -1,4 +1,6 @@
-"""Original adult garment objects. Run Blender --background through tools/nice.mjs.
+"""Original garment objects. Run Blender --background through tools/nice.mjs.
+
+Use -- --teen for the separate teenager-sized catalogue and single-file export.
 
 Reuses furn_lib's coordinate, material and GLB export conventions. Cloth is baked
 offline; no simulation, armature, image or external dependency enters a GLB.
@@ -583,7 +585,7 @@ def main():
         node=shutil.which('node')
         if not node: raise ValueError('Node is required for independent validation before installation')
         validation=stage/'validation.json'
-        command=[node,str(ROOT/'tools'/'nice.mjs'),node,str(HERE/'garments_validate.mjs'),'--root',str(stage),'--catalogue',str(args.catalogue.resolve()),'--json',str(validation)]
+        command=[node,'--import',(ROOT/'tests'/'nice.mjs').as_uri(),str(HERE/'garments_validate.mjs'),'--root',str(stage),'--catalogue',str(args.catalogue.resolve()),'--json',str(validation)]
         if not chosen: command.append('--complete')
         checked=subprocess.run(command,capture_output=True,text=True,timeout=180,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
         print(checked.stdout,flush=True)
@@ -596,7 +598,14 @@ def main():
         out.mkdir(parents=True,exist_ok=True)
         target=out/'garments'; backup=stage/'previous-garments'
         had_previous=target.exists()
-        if had_previous: os.replace(target,backup)
+        if had_previous:
+            # Adult rebuilds replace only their own library. Preserve the
+            # independently built teen GLB and its external texture directory.
+            for name in ('garments_teen.glb', 'teen'):
+                previous = target / name
+                if previous.is_dir(): shutil.copytree(previous, dest / name)
+                elif previous.is_file(): shutil.copy2(previous, dest / name)
+            os.replace(target,backup)
         try:
             os.replace(dest,target)
             os.replace(stage/'manifest.garments.json',out/'manifest.garments.json')
@@ -608,4 +617,10 @@ def main():
         print(f'EXPORTED {sum(len(f["assets"]) for f in manifest["files"])} garment states; {total} runtime bytes. Run garments_validate.mjs{mode}.',flush=True)
 
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    if '--teen' in sys.argv:
+        sys.argv.remove('--teen')
+        import garments_teen_build
+        garments_teen_build.main()
+    else:
+        main()

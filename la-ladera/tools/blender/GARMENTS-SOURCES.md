@@ -39,3 +39,14 @@ The atlas is an optional external binding of the existing `laundry` material. Th
 The work starts at `origin/main` commit `8fa06a5498555afc5dc2b636c06754a4a6b5882c`. Verified furniture keys in `js/interiors/catalog.js` include `dresser_4`, `dresser_low`, `wardrobe_2`, `wardrobe_3`, `wardrobe_metal`, `clothesline`, `drying_rack`, `shelf_fabric`, `shelf_tienda`, `shop_counter_wood` and `cutting_table`. They are suitable container *types*, not exact placed instances.
 
 `dev/FEATURE-DRAWERS.md`, `js/interiors/contents.js` and `js/interiors/finds.js` are absent in this baseline. Consequently `assortments.json` records those bindings as deferred and leaves `findIds` empty. It does not fabricate discovery IDs or change game placement code. The object library does not imply that the conditional wearable Part B is implemented.
+
+## Teen companion: `original-teen-patterns`
+
+The teen companion's 29 style outlines, simple garment details, closed school
+shoes and strap sandals are original procedural work in
+`garments_teen_build.py`. It reuses the adult library's generic original outline,
+cloth-bake, fold, material and export helpers. No product photograph, trademark,
+school crest, logo, downloaded garment model or copied print is included.
+`garments_teen_textures.py` generates 16 original fabric/colour swatches and one
+simple geometric sun motif in a fresh external atlas. See GARMENTS-TEEN.md for
+the requested art sizes and the explicit separation from live game placement.

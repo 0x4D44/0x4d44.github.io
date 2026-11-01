@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "test": "Run actual adult --only cap regeneration into an isolated directory already containing the complete teen library",
+  "adultGenerated": true,
+  "teenPayloadUnchanged": true,
+  "teenSha256": {
+    "manifest.garments_teen.json": "31479045fb49755317fffeb8809b662b4023ba2fd73435e5cc7fda8e55f725d6",
+    "garments/garments_teen.glb": "c081a8b821a187e97634ff0d07bc5faf6813bed9faf4771c10907a1c41726f35",
+    "garments/teen/palette.json": "87fdd2580ac08732ec308056fa50207950ee3bde9ad1f0ca5553ee9d3fd3b5c2",
+    "garments/teen/fabrics.png": "ca247ef2b7c7db9e60aca366d1eaf900d3c5f1b46459810e27347799254c1c99"
+  },
+  "adultBuildOutput": "garment_cap_hung: 288 tris / LOD 88\nINFO Draco mesh compression is available, use library at /tmp/la-ladera-tools/blender-4.5.3-linux-x64/4.5/scripts/addons_core/io_scene_gltf2/libextern_draco.so\n19:54:20 | INFO: Starting glTF 2.0 export\n19:54:20 | INFO: Extracting primitive: garment_cap_hung-tint-0\n19:54:20 | INFO: Primitives created: 1\n19:54:20 | INFO: Finished glTF 2.0 export in 0.0031392574310302734 s\n\n19:54:20 | INFO: Starting glTF 2.0 export\n19:54:20 | INFO: Extracting primitive: garment_cap_hung-tint-0.001\n19:54:20 | INFO: Primitives created: 1\n19:54:20 | INFO: Finished glTF 2.0 export in 0.0026814937591552734 s\n\ngarment_cap_flat: 288 tris / LOD 89\n19:54:20 | INFO: Starting glTF 2.0 export\n19:54:20 | INFO: Extracting primitive: garment_cap_flat-tint-0\n19:54:20 | INFO: Primitives created: 1\n19:54:20 | INFO: Finished glTF 2.0 export in 0.0030100345611572266 s\n\n19:54:20 | INFO: Starting glTF 2.0 export\n19:54:20 | INFO: Extracting primitive: garment_cap_flat-tint-0.001\n19:54:20 | INFO: Primitives created: 1\n19:54:20 | INFO: Finished glTF 2.0 export in 0.0024900436401367188 s\n\nPASS garments (partial): 2 states, 23 garments, 60315/2000000 bytes, max 288/89 high/LOD triangles\n\nEXPORTED 2 garment states; 60315 runtime bytes. Run garments_validate.mjs.\nBlender 4.5.3 LTS (hash 67807e1800cc built 2025-09-09 01:38:15)\n\nBlender quit\n"
+}

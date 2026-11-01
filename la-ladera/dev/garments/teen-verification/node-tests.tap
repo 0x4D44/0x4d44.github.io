@@ -1,0 +1,256 @@
+TAP version 13
+# Subtest: teen acceptance: every required key and LOD exists in the generated GLB
+ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+  ---
+  duration_ms: 64.412017
+  type: 'test'
+  ...
+# Subtest: teen acceptance: every piece is inside its real dimension range
+ok 2 - teen acceptance: every piece is inside its real dimension range
+  ---
+  duration_ms: 51.321664
+  type: 'test'
+  ...
+# Subtest: teen acceptance: every piece stays within its high and LOD triangle budgets
+ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+  ---
+  duration_ms: 30.351978
+  type: 'test'
+  ...
+# Subtest: teen acceptance: complete generated payload stays under 700000 bytes
+ok 4 - teen acceptance: complete generated payload stays under 700000 bytes
+  ---
+  duration_ms: 0.480134
+  type: 'test'
+  ...
+# Subtest: the checked-in teen library satisfies the extended independent validator
+ok 5 - the checked-in teen library satisfies the extended independent validator
+  ---
+  duration_ms: 46.369555
+  type: 'test'
+  ...
+# Subtest: dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+ok 6 - dress lengths, size classes, sock pair states and single-state shoe pairs remain explicit
+  ---
+  duration_ms: 19.52001
+  type: 'test'
+  ...
+# Subtest: removing a real key makes the key acceptance test fail
+ok 7 - removing a real key makes the key acceptance test fail
+  ---
+  duration_ms: 249.606841
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 1 - teen acceptance: every required key and LOD exists in the generated GLB
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+# \# fail 2
+# Subtest: oversize real high piece makes the size acceptance test fail
+ok 8 - oversize real high piece makes the size acceptance test fail
+  ---
+  duration_ms: 253.25855
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+#   error: 'garment_tshirt_cream_small_flat: longest side 1.764137 m outside expected 0.529200–0.646800 m'
+# \# fail 1
+# Subtest: oversize real LOD piece makes the size acceptance test fail
+ok 9 - oversize real LOD piece makes the size acceptance test fail
+  ---
+  duration_ms: 397.741338
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 2 - teen acceptance: every piece is inside its real dimension range
+#   error: 'garment_tshirt_cream_small_flat LOD: longest side 1.764137 m outside expected 0.529200–0.646800 m'
+# \# fail 1
+# Subtest: extra real high triangle batches make the triangle acceptance test fail
+ok 10 - extra real high triangle batches make the triangle acceptance test fail
+  ---
+  duration_ms: 255.366869
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+#   error: 'garment_tshirt_cream_small_flat: 928 triangles exceed 800'
+# \# fail 1
+# Subtest: extra real LOD triangle batches make the triangle acceptance test fail
+ok 11 - extra real LOD triangle batches make the triangle acceptance test fail
+  ---
+  duration_ms: 253.025052
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 3 - teen acceptance: every piece stays within its high and LOD triangle budgets
+#   error: 'garment_tshirt_cream_small_flat LOD: 312 triangles exceed 240'
+# \# fail 1
+# Subtest: extra payload makes the same byte-budget acceptance test fail
+ok 12 - extra payload makes the same byte-budget acceptance test fail
+  ---
+  duration_ms: 248.366211
+  type: 'test'
+  ...
+# Deliberately damaged export: node:test exit 1
+# not ok 4 - teen acceptance: complete generated payload stays under 700000 bytes
+#   error: 'teen runtime payload 1379737 exceeds 700000 bytes'
+# \# fail 1
+# Subtest: mutable catalogue and manifest cannot relax independent dimensions or budgets
+ok 13 - mutable catalogue and manifest cannot relax independent dimensions or budgets
+  ---
+  duration_ms: 36.124518
+  type: 'test'
+  ...
+# Subtest: unlisted teen GLBs are rejected instead of hiding inside the payload budget
+ok 14 - unlisted teen GLBs are rejected instead of hiding inside the payload budget
+  ---
+  duration_ms: 33.427145
+  type: 'test'
+  ...
+# Subtest: malformed variant lists are reported without aborting validation
+ok 15 - malformed variant lists are reported without aborting validation
+  ---
+  duration_ms: 39.489694
+  type: 'test'
+  ...
+# Subtest: complete library requires all 23 adult garments and 67 applicable object states
+ok 16 - complete library requires all 23 adult garments and 67 applicable object states
+  ---
+  duration_ms: 13.85819
+  type: 'test'
+  ...
+# Subtest: partial mode validates a development subset but cannot masquerade as complete
+ok 17 - partial mode validates a development subset but cannot masquerade as complete
+  ---
+  duration_ms: 6.5513
+  type: 'test'
+  ...
+# Subtest: missing generated GLB fails, restoring its real bytes recovers the library
+ok 18 - missing generated GLB fails, restoring its real bytes recovers the library
+  ---
+  duration_ms: 9.723726
+  type: 'test'
+  ...
+# Subtest: missing a required state cannot be hidden by an otherwise valid manifest
+ok 19 - missing a required state cannot be hidden by an otherwise valid manifest
+  ---
+  duration_ms: 6.057816
+  type: 'test'
+  ...
+# Subtest: unlisted model files and unlisted scene roots fail complete mode
+ok 20 - unlisted model files and unlisted scene roots fail complete mode
+  ---
+  duration_ms: 7.591209
+  type: 'test'
+  ...
+# Subtest: recolouring metadata cannot silently name an unknown material
+ok 21 - recolouring metadata cannot silently name an unknown material
+  ---
+  duration_ms: 0.531191
+  type: 'test'
+  ...
+# Subtest: embedded textures, skins and animations are forbidden
+ok 22 - embedded textures, skins and animations are forbidden
+  ---
+  duration_ms: 0.57656
+  type: 'test'
+  ...
+# Subtest: binary corruption is read from accessor bytes, including NaN and invalid indices
+ok 23 - binary corruption is read from accessor bytes, including NaN and invalid indices
+  ---
+  duration_ms: 0.6697
+  type: 'test'
+  ...
+# Subtest: degenerate triangles and stale accessor bounds are rejected
+ok 24 - degenerate triangles and stale accessor bounds are rejected
+  ---
+  duration_ms: 0.533234
+  type: 'test'
+  ...
+# Subtest: missing normals, UVs and colours cannot become invisible bad exports
+ok 25 - missing normals, UVs and colours cannot become invisible bad exports
+  ---
+  duration_ms: 1.017385
+  type: 'test'
+  ...
+# Subtest: truncated files, buffer overreads and scene cycles fail cleanly
+ok 26 - truncated files, buffer overreads and scene cycles fail cleanly
+  ---
+  duration_ms: 0.785926
+  type: 'test'
+  ...
+# Subtest: measurement includes child transforms and rejects moved asset origins
+ok 27 - measurement includes child transforms and rejects moved asset origins
+  ---
+  duration_ms: 0.64292
+  type: 'test'
+  ...
+# Subtest: metadata bounds and footprint are independently compared with geometry
+ok 28 - metadata bounds and footprint are independently compared with geometry
+  ---
+  duration_ms: 13.817269
+  type: 'test'
+  ...
+# Subtest: LOD must be both under its cap and a meaningful simplification
+ok 29 - LOD must be both under its cap and a meaningful simplification
+  ---
+  duration_ms: 6.214773
+  type: 'test'
+  ...
+# Subtest: triangle limits cannot be raised in manifest data
+ok 30 - triangle limits cannot be raised in manifest data
+  ---
+  duration_ms: 5.328437
+  type: 'test'
+  ...
+# Subtest: all runtime files count towards the byte budget, including unreferenced data
+ok 31 - all runtime files count towards the byte budget, including unreferenced data
+  ---
+  duration_ms: 7.892423
+  type: 'test'
+  ...
+# Subtest: unsafe referenced paths cannot escape the model directory
+ok 32 - unsafe referenced paths cannot escape the model directory
+  ---
+  duration_ms: 4.728291
+  type: 'test'
+  ...
+# Subtest: adult scope and applicable state exceptions are required
+ok 33 - adult scope and applicable state exceptions are required
+  ---
+  duration_ms: 7.275068
+  type: 'test'
+  ...
+# Subtest: provenance IDs and furniture catalogue bindings must resolve to existing contracts
+ok 34 - provenance IDs and furniture catalogue bindings must resolve to existing contracts
+  ---
+  duration_ms: 6.072078
+  type: 'test'
+  ...
+# Subtest: assortments reject incompatible states and unknown palette variants
+ok 35 - assortments reject incompatible states and unknown palette variants
+  ---
+  duration_ms: 6.015924
+  type: 'test'
+  ...
+# Subtest: stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+ok 36 - stiff flat hats are allowed on a wardrobe shelf but other flat garments are not
+  ---
+  duration_ms: 9.237462
+  type: 'test'
+  ...
+# Subtest: the checked-in garment library satisfies the complete export contract
+ok 37 - the checked-in garment library satisfies the complete export contract
+  ---
+  duration_ms: 76.041025
+  type: 'test'
+  ...
+1..37
+# tests 37
+# suites 0
+# pass 37
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2215.655848

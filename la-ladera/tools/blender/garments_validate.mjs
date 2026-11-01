@@ -400,6 +400,11 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
   }
   const allFiles = attempt('garment directory', () => filesBelow(join(modelsDir, 'garments'))) ?? [];
   for (const path of allFiles) {
+    // The teen set has its own strict budget and validation entry point. These
+    // two explicit paths are its ownership boundary; other unlisted adult
+    // payloads still count and unexpected GLBs still fail complete mode.
+    const rel = relative(modelsDir, path).split(sep).join('/');
+    if (rel === 'garments/garments_teen.glb' || rel.startsWith('garments/teen/')) continue;
     runtimeFiles.add(realpathSync(path));
     if (complete && path.endsWith('.glb')) check(glbs.has(relative(modelsDir, path).split(sep).join('/')), `unlisted GLB '${relative(modelsDir, path)}'`);
   }
@@ -413,11 +418,252 @@ export function validateGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = D
     maxLodTriangles: Math.max(0, ...measurements.map((m) => m.lodTriangles ?? 0)), measurements };
 }
 
+// Teen dimensions are an independently maintained contract in metres. These
+// adult-reference dimensions are multiplied by 0.7 or 0.9; they are not read
+// from mutable manifest/catalogue bounds. Folded ranges describe the parcel,
+// whereas hung/flat ranges describe the laid-out garment. This is game-prop
+// sizing requested for the set, not a claim that age predicts body dimensions.
+export const TEEN_SIZE_CLASSES = Object.freeze({
+  small: Object.freeze({ scale: 0.7, ages: Object.freeze([12, 15]) }),
+  big: Object.freeze({ scale: 0.9, ages: Object.freeze([16, 19]) }),
+});
+export const TEEN_LIMITS = Object.freeze({ triangles: 800, lodTriangles: 240, runtimeBytes: 700_000 });
+const teenDimension = (width, length, states = STATES, folded) => {
+  const longest = Math.max(width, length);
+  demand(!states.includes('folded') || (finiteVector(folded, 2) && folded[0] > 0 && folded[1] > folded[0]),
+    'each foldable teen style requires an explicit physical parcel range');
+  return Object.freeze({ width, length, states: Object.freeze([...states]),
+    open: Object.freeze([longest * 0.90, longest * 1.10]),
+    folded: folded ? Object.freeze(folded) : null });
+};
+export const TEEN_DIMENSIONS = Object.freeze({
+  tshirt_cream: teenDimension(0.84, 0.71, STATES, [0.38, 0.49]),
+  tshirt_teal: teenDimension(0.84, 0.71, STATES, [0.38, 0.49]),
+  tshirt_sun: teenDimension(0.84, 0.71, STATES, [0.38, 0.49]),
+  shorts_chino: teenDimension(0.54, 0.43, STATES, [0.24, 0.33]),
+  crop_top_rib: teenDimension(0.67, 0.38, STATES, [0.37, 0.48]),
+  crop_top_boxy: teenDimension(0.84, 0.42, STATES, [0.38, 0.49]),
+  lycra_shorts: teenDimension(0.38, 0.48, STATES, [0.22, 0.30]),
+  lycra_trousers: teenDimension(0.38, 0.97, STATES, [0.28, 0.37]),
+  denim_shorts: teenDimension(0.54, 0.38, STATES, [0.24, 0.33]),
+  denim_jeans: teenDimension(0.52, 1.02, STATES, [0.29, 0.39]),
+  dress_short: teenDimension(0.70, 0.78, STATES, [0.31, 0.42]),
+  dress_knee: teenDimension(0.72, 0.98, STATES, [0.32, 0.43]),
+  dress_midi: teenDimension(0.76, 1.18, STATES, [0.34, 0.45]),
+  dress_maxi: teenDimension(0.80, 1.38, STATES, [0.39, 0.52]),
+  hoodie: teenDimension(1.12, 0.76, STATES, [0.49, 0.65]),
+  joggers: teenDimension(0.56, 1.02, STATES, [0.29, 0.39]),
+  school_jumper: teenDimension(1.08, 0.70, STATES, [0.48, 0.63]),
+  school_polo: teenDimension(0.84, 0.71, STATES, [0.38, 0.49]),
+  school_trousers: teenDimension(0.50, 1.02, STATES, [0.29, 0.39]),
+  school_skirt: teenDimension(0.68, 0.58, STATES, [0.37, 0.50]),
+  socks_pair: teenDimension(0.31, 0.40, ['folded', 'flat'], [0.17, 0.24]),
+  cap: teenDimension(0.22, 0.31, ['hung', 'flat']),
+  light_jacket: teenDimension(1.16, 0.76, STATES, [0.51, 0.68]),
+  underwear_briefs: teenDimension(0.42, 0.30, STATES, [0.23, 0.32]),
+  underwear_boxers: teenDimension(0.50, 0.35, STATES, [0.22, 0.31]),
+  swim_onepiece: teenDimension(0.46, 0.76, STATES, [0.35, 0.46]),
+  swim_shorts: teenDimension(0.50, 0.43, STATES, [0.22, 0.31]),
+  school_shoes_pair: teenDimension(0.25, 0.29, ['flat']),
+  sandals_pair: teenDimension(0.25, 0.29, ['flat']),
+});
+export const REQUIRED_TEEN_GARMENTS = Object.freeze(Object.keys(TEEN_DIMENSIONS));
+const DEFAULT_TEEN_CATALOGUE = join(HERE, 'garments_teen.catalog.json');
+const TEEN_GLB = 'garments/garments_teen.glb';
+const TEEN_MANIFEST = 'manifest.garments_teen.json';
+export function teenLongestRange(id, sizeClass, state) {
+  const expected = TEEN_DIMENSIONS[id], scale = TEEN_SIZE_CLASSES[sizeClass]?.scale;
+  demand(expected && scale && expected.states.includes(state), `unknown teen garment/size/state '${id}/${sizeClass}/${state}'`);
+  const range = state === 'folded' ? expected.folded : expected.open;
+  return range.map((v) => Math.round(v * scale * 1_000_000) / 1_000_000);
+}
+export function requiredTeenKeys() {
+  return REQUIRED_TEEN_GARMENTS.flatMap((id) => Object.keys(TEEN_SIZE_CLASSES).flatMap((size) =>
+    TEEN_DIMENSIONS[id].states.map((state) => `garment_${id}_${size}_${state}`)));
+}
+
+/** Teen companion set: the same strict GLB reader and geometry measurement. */
+export function validateTeenGarments({ modelsDir = DEFAULT_MODELS, cataloguePath = DEFAULT_TEEN_CATALOGUE, complete = false } = {}) {
+  const errors = [], warnings = [], measurements = [], runtimeFiles = new Set();
+  const check = (condition, message) => { if (!condition) errors.push(message); return !!condition; };
+  const attempt = (label, fn) => { try { return fn(); } catch (e) { errors.push(`${label}: ${e.message}`); return null; } };
+  const load = (rel) => attempt(rel, () => { const p = checkedFile(modelsDir, rel); runtimeFiles.add(p); return readFileSync(p); });
+  const readJSON = (rel) => { const b = load(rel); return b && attempt(rel, () => JSON.parse(b)); };
+  const manifest = readJSON(TEEN_MANIFEST);
+  const catalogue = attempt('teen catalogue', () => JSON.parse(readFileSync(cataloguePath, 'utf8')));
+  const cats = new Map(), assets = new Map(), expectedRoots = new Set(), measured = new Map();
+  check(!!worldMaterials.laundry && worldMaterials.laundry.vertexColors !== false, 'laundry must remain a registered vertex-colour library material');
+  const checkSizes = (sizes, label) => {
+    check(sameSet(Object.keys(sizes ?? {}), Object.keys(TEEN_SIZE_CLASSES)), `${label}: exactly small and big sizes are required`);
+    for (const [size, expected] of Object.entries(TEEN_SIZE_CLASSES)) {
+      check(sizes?.[size]?.scale === expected.scale && closeVector(sizes?.[size]?.ages, expected.ages, 0),
+        `${label}: ${size} must declare scale ${expected.scale} and ages ${expected.ages.join('–')}`);
+    }
+  };
+  if (catalogue) {
+    check(catalogue.schemaVersion === 1 && catalogue.ageGroup === 'teen' && catalogue.adultOnly !== true,
+      'teen catalogue must be schemaVersion 1 and ageGroup teen');
+    checkSizes(catalogue.sizes, 'teen catalogue');
+    check(Array.isArray(catalogue.garments), 'teen catalogue.garments must be an array');
+    for (const c of Array.isArray(catalogue.garments) ? catalogue.garments : []) {
+      if (!check(c && typeof c.id === 'string' && TEEN_DIMENSIONS[c.id], 'unknown teen catalogue garment id')) continue;
+      check(!cats.has(c.id), `duplicate teen catalogue garment '${c.id}'`); cats.set(c.id, c);
+      const expected = TEEN_DIMENSIONS[c.id];
+      check(typeof c.label === 'string' && c.label.length > 0, `${c.id}: missing teen garment label`);
+      check(Number.isFinite(c.width) && Number.isFinite(c.length) && Math.abs(c.width - expected.width) < 1e-6 && Math.abs(c.length - expected.length) < 1e-6,
+        `${c.id}: reference dimensions must be ${expected.width} x ${expected.length} metres`);
+      check(sameSet(c.states, expected.states), `${c.id}: required teen states are ${expected.states.join(', ')}`);
+      check(Array.isArray(c.variants) && c.variants.length > 0 && new Set(c.variants).size === c.variants.length, `${c.id}: invalid teen variants`);
+      check(Array.isArray(c.variants) && c.variants.includes(c.defaultVariant), `${c.id}: defaultVariant must name an allowed variant`);
+    }
+    if (complete) check(sameSet([...cats.keys()], REQUIRED_TEEN_GARMENTS),
+      `complete teen catalogue must cover exactly the ${REQUIRED_TEEN_GARMENTS.length} requested garment styles`);
+  }
+  let glb, palette;
+  if (manifest) {
+    check(manifest.schemaVersion === 1 && manifest.set === 'garments_teen' && manifest.scope === 'objects-only' && manifest.ageGroup === 'teen' && manifest.adultOnly !== true,
+      'teen manifest must declare schemaVersion 1, garments_teen, objects-only and ageGroup teen');
+    checkSizes(manifest.sizes, 'teen manifest');
+    for (const [name, cap] of Object.entries(TEEN_LIMITS)) {
+      check(Number.isInteger(manifest.limits?.[name]) && manifest.limits[name] > 0 && manifest.limits[name] <= cap,
+        `teen manifest limit '${name}' is missing or exceeds ${cap}`);
+    }
+    check(manifest.palette === 'garments/teen/palette.json', 'teen palette must be garments/teen/palette.json');
+    palette = readJSON(manifest.palette);
+    check(manifest.atlas?.file === 'garments/teen/fabrics.png', 'teen atlas must be garments/teen/fabrics.png');
+    const atlas = load(manifest.atlas?.file);
+    if (atlas) {
+      const size = attempt('teen atlas', () => pngSize(atlas));
+      if (size) check(closeVector(size, [256, 256], 0) && manifest.atlas.width === 256 && manifest.atlas.height === 256,
+        'teen atlas must match its declared 256 x 256 dimensions');
+    }
+    if (manifest.textures !== undefined) check(Array.isArray(manifest.textures), 'teen textures must be an array');
+    for (const texture of Array.isArray(manifest.textures) ? manifest.textures : []) {
+      if (!check(texture && /^garments\/teen\/[a-z0-9_-]+\.png$/.test(texture.file), 'teen texture must be a PNG inside garments/teen/')) continue;
+      const bytes = load(texture.file), size = bytes && attempt(texture.file, () => pngSize(bytes));
+      if (size) check(closeVector(size, [texture.width, texture.height], 0), `${texture.file}: texture dimensions differ from declaration`);
+    }
+    if (palette) {
+      check(palette.schemaVersion === 1 && palette.material === 'laundry', 'teen palette must use schemaVersion 1 and laundry');
+      check(closeVector(palette.atlas?.size, [256, 256], 0) && closeVector(palette.atlas?.grid, [4, 4], 0),
+        'teen palette atlas must be a 4 x 4 grid in 256 x 256 pixels');
+      check(palette.atlas?.file === 'fabrics.png', 'teen palette must point to fabrics.png');
+      check(palette.variants && typeof palette.variants === 'object' && !Array.isArray(palette.variants), 'teen palette variants must be an object');
+      for (const [id, variant] of Object.entries(palette.variants ?? {})) {
+        check(variant && /^#[\da-f]{6}$/i.test(variant.color), `${id}: invalid teen palette colour`);
+        check(typeof variant?.pattern === 'string' && variant.pattern.length > 0, `${id}: missing teen fabric pattern`);
+        check(finiteVector(variant?.tile, 2) && variant.tile.every((x) => Number.isInteger(x) && x >= 0 && x < 4), `${id}: teen atlas tile outside 4 x 4 grid`);
+        check(Number.isFinite(variant?.roughness) && variant.roughness >= 0 && variant.roughness <= 1, `${id}: invalid teen fabric roughness`);
+      }
+      for (const c of cats.values()) for (const variant of Array.isArray(c.variants) ? c.variants : []) {
+        check(has(palette.variants, variant), `${c.id}: unknown teen variant '${variant}'`);
+      }
+    }
+    check(Array.isArray(manifest.files) && manifest.files.length === 1 && manifest.files[0]?.glb === TEEN_GLB,
+      'teen manifest must list exactly garments/garments_teen.glb');
+    const bytes = load(TEEN_GLB);
+    if (bytes) glb = attempt(TEEN_GLB, () => parseGLB(bytes, TEEN_GLB));
+    const checkOrigin = (key, state, actual) => {
+      const { min, max } = actual.bounds;
+      if (state === 'hung') {
+        check(Math.abs(max[1]) <= EPS && min[1] < 0, `${key}: hung geometry must descend from y=0`);
+        check(min[0] <= EPS && max[0] >= -EPS && min[2] <= EPS && max[2] >= -EPS, `${key}: hang point is outside footprint`);
+      } else check(Math.abs(min[1]) <= EPS && Math.abs(min[0] + max[0]) <= EPS * 2 && Math.abs(min[2] + max[2]) <= EPS * 2,
+        `${key}: floor geometry must sit at y=0 and be centred in x/z`);
+    };
+    const measure = (key, a, descriptor, lod = false) => {
+      if (!glb) return null;
+      const actual = attempt(key, () => inspectAsset(glb, a.node));
+      if (!actual) return null;
+      const cap = Math.min(lod ? TEEN_LIMITS.lodTriangles : TEEN_LIMITS.triangles,
+        manifest.limits?.[lod ? 'lodTriangles' : 'triangles'] ?? Infinity);
+      check(actual.triangles <= cap, `${key}: ${actual.triangles} triangles exceed ${cap}`);
+      check(a.triangles === actual.triangles, `${key}: declared triangle count differs from GLB (${actual.triangles})`);
+      check(actual.size.every((x) => x > 0), `${key}: geometry has zero extent`);
+      check(closeVector(a.size, actual.size), `${key}: size differs from GLB`);
+      check(closeVector(a.bounds?.min, actual.bounds.min) && closeVector(a.bounds?.max, actual.bounds.max), `${key}: bounds differ from GLB`);
+      const range = attempt(key, () => teenLongestRange(descriptor.garment, descriptor.sizeClass, descriptor.state));
+      const longest = Math.max(...actual.size);
+      if (range) check(longest >= range[0] - EPS && longest <= range[1] + EPS,
+        `${key}: longest side ${longest.toFixed(6)} m is outside expected ${range[0].toFixed(6)}–${range[1].toFixed(6)} m`);
+      if (!lod) {
+        check(closeVector(a.footprint, [actual.size[0], actual.size[2]]), `${key}: footprint differs from GLB`);
+        check(sameSet(a.materials ?? [], actual.materials), `${key}: material metadata differs from GLB`);
+        if (a.drawCalls !== undefined) check(a.drawCalls === actual.parts, `${key}: drawCalls differ from primitive count`);
+      }
+      checkOrigin(key, descriptor.state, actual);
+      return { ...actual, longestSide: longest, expectedLongestRange: range };
+    };
+    for (const f of Array.isArray(manifest.files) ? manifest.files : []) {
+      if (!check(f && f.assets && typeof f.assets === 'object' && !Array.isArray(f.assets), 'teen assets must be an object')) continue;
+      for (const [key, a] of Object.entries(f.assets)) {
+        if (!check(a && typeof a === 'object', `${key}: invalid teen asset record`)) continue;
+        check(!assets.has(key), `duplicate teen asset '${key}'`); assets.set(key, a);
+        const c = cats.get(a.garment), expected = TEEN_DIMENSIONS[a.garment];
+        check(!!c && !!expected?.states.includes(a.state) && has(TEEN_SIZE_CLASSES, a.sizeClass), `${key}: not a required teen garment/size/state`);
+        check(key === `garment_${a.garment}_${a.sizeClass}_${a.state}` && a.node === key,
+          `${key}: key/node must follow garment_<id>_<small|big>_<state>`);
+        check(a.ageGroup === 'teen' && a.adultOnly !== true, `${key}: ageGroup must be teen`);
+        check(sameSet(a.variants ?? [], c?.variants ?? []), `${key}: variants differ from teen catalogue`);
+        check(a.defaultVariant === c?.defaultVariant && Array.isArray(a.variants) && a.variants.includes(a.defaultVariant), `${key}: wrong defaultVariant`);
+        check(a.origin === (a.state === 'hung' ? 'hang-point' : 'floor-centre'), `${key}: wrong origin convention`);
+        check(!expectedRoots.has(a.node), `duplicate teen scene binding '${a.node}'`); expectedRoots.add(a.node);
+        const actual = measure(key, a, a);
+        if (check(a.lod && typeof a.lod === 'object', `${key}: missing LOD`)) {
+          check(a.lod.glb === TEEN_GLB && a.lod.node === `${key}_lod`, `${key}: LOD must be a matching _lod root in the teen GLB`);
+          check(!expectedRoots.has(a.lod.node), `duplicate teen scene binding '${a.lod.node}'`); expectedRoots.add(a.lod.node);
+          const low = measure(`${key} LOD`, a.lod, a, true);
+          if (actual && low) {
+            check(low.triangles <= actual.triangles * 0.6, `${key}: LOD must remove at least 40% of triangles`);
+            check(low.size.every((v, i) => Math.abs(v - actual.size[i]) <= Math.max(0.002, actual.size[i] * 0.05)),
+              `${key}: LOD dimensions must stay within 5% or 2 mm of the high-detail shape`);
+          }
+          if (actual) {
+            const m = { key, garment: a.garment, sizeClass: a.sizeClass, state: a.state, ...actual,
+              lodTriangles: low?.triangles ?? null, lodSize: low?.size ?? null, lodLongestSide: low?.longestSide ?? null };
+            measurements.push(m); measured.set(key, m);
+          }
+        }
+      }
+    }
+    if (complete) {
+      const keys = requiredTeenKeys();
+      for (const key of keys) check(assets.has(key), `missing required teen state ${key}`);
+      check(sameSet([...assets.keys()], keys), 'teen asset keys must exactly match independent required garment/size/state coverage');
+      if (glb) check(sameSet(glb.roots.map((i) => glb.json.nodes[i].name), [...expectedRoots]), `${TEEN_GLB}: unlisted or missing scene roots`);
+    }
+    for (const id of REQUIRED_TEEN_GARMENTS) for (const state of TEEN_DIMENSIONS[id].states) {
+      const small = measured.get(`garment_${id}_small_${state}`), big = measured.get(`garment_${id}_big_${state}`);
+      if (!small || !big) continue;
+      for (const [label, low, high] of [['high', small.size, big.size], ['LOD', small.lodSize, big.lodSize]]) {
+        if (low && high) check(closeVector(low.map((v) => v * 9 / 7), high, EPS),
+          `garment_${id}_${state} ${label}: small/big dimensions must preserve the 0.7/0.9 size ratio`);
+      }
+    }
+  }
+  // Count the entire owned directory, including unreferenced accidental data.
+  // Adult GLBs/textures are not part of this independent 700,000-byte set.
+  for (const path of attempt('teen directory', () => filesBelow(join(modelsDir, 'garments/teen'))) ?? []) {
+    runtimeFiles.add(realpathSync(path));
+    if (complete && path.endsWith('.glb')) check(false, `unlisted teen GLB '${relative(modelsDir, path)}'`);
+  }
+  let runtimeBytes = 0;
+  for (const path of runtimeFiles) runtimeBytes += statSync(path).size;
+  const cap = Math.min(manifest?.limits?.runtimeBytes ?? TEEN_LIMITS.runtimeBytes, TEEN_LIMITS.runtimeBytes);
+  check(runtimeBytes <= cap, `teen runtime library is ${runtimeBytes} bytes, exceeding ${cap}`);
+  return { ok: errors.length === 0, set: 'garments_teen', mode: complete ? 'complete' : 'partial', errors, warnings,
+    assets: assets.size, catalogueGarments: cats.size, sizeClasses: 2, runtimeBytes, runtimeBudgetBytes: cap, files: runtimeFiles.size,
+    maxTriangles: Math.max(0, ...measurements.map((m) => m.triangles)),
+    maxLodTriangles: Math.max(0, ...measurements.map((m) => m.lodTriangles ?? 0)), measurements };
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const args = process.argv.slice(2), options = {}; let jsonPath;
+  const args = process.argv.slice(2), options = {}; let jsonPath, teen = false, all = false;
   try {
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--complete') options.complete = true;
+      else if (args[i] === '--teen') teen = true;
+      else if (args[i] === '--all') all = true;
       else if (['--root', '--catalogue', '--json'].includes(args[i])) {
         demand(args[i + 1] && !args[i + 1].startsWith('--'), `${args[i]} requires a path`);
         const flag = args[i++], value = args[i];
@@ -425,14 +671,18 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         else if (flag === '--catalogue') options.cataloguePath = resolve(value);
         else jsonPath = value;
       } else if (args[i] === '--help') {
-        console.log('usage: garments_validate.mjs [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]'); process.exit(0);
+        console.log('usage: garments_validate.mjs [--teen | --all] [--complete] [--root assets/models] [--catalogue file.json] [--json report.json]'); process.exit(0);
       } else fail(`unknown option '${args[i]}'`);
     }
-    const report = validateGarments(options);
-    if (jsonPath) writeFileSync(jsonPath, JSON.stringify(report, null, 2) + '\n');
-    for (const error of report.errors) console.error('ERROR ' + error);
-    console.log(`${report.ok ? 'PASS' : 'FAIL'} garments (${report.mode}): ${report.assets} states, ${report.catalogueGarments} garments, ` +
-      `${report.runtimeBytes}/${report.runtimeBudgetBytes} bytes, max ${report.maxTriangles}/${report.maxLodTriangles} high/LOD triangles`);
-    process.exitCode = report.ok ? 0 : 1;
+    demand(!(teen && all), '--teen and --all are mutually exclusive');
+    demand(!(all && options.cataloguePath), "--all uses each set's own catalogue; --catalogue requires a single set");
+    const reports = all ? [validateGarments(options), validateTeenGarments(options)] : [teen ? validateTeenGarments(options) : validateGarments(options)];
+    if (jsonPath) writeFileSync(jsonPath, JSON.stringify(all ? { ok: reports.every((r) => r.ok), reports } : reports[0], null, 2) + '\n');
+    for (const report of reports) {
+      for (const error of report.errors) console.error('ERROR ' + error);
+      console.log(`${report.ok ? 'PASS' : 'FAIL'} ${report.set ?? 'garments'} (${report.mode}): ${report.assets} states, ${report.catalogueGarments} garments, ` +
+        `${report.runtimeBytes}/${report.runtimeBudgetBytes} bytes, max ${report.maxTriangles}/${report.maxLodTriangles} high/LOD triangles`);
+    }
+    process.exitCode = reports.every((r) => r.ok) ? 0 : 1;
   } catch (e) { console.error('ERROR ' + e.message); process.exitCode = 1; }
 }
