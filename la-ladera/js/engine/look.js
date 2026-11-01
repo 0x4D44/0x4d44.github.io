@@ -53,14 +53,17 @@ const NUM = ['sunI', 'hemiI', 'envI', 'exp', 'fog', 'glow', 'cloud', 'stars', 'b
 const COL = ['sun', 'zen', 'hor', 'hemiS', 'hemiG'];
 
 // Morning and evening are not mirror images. The same sun height gives a different sky. After the cool night the valley air is still and damp:
-// pale blue-white mist, a whiter low sun (a thin gold, not orange), a clear blue zenith, a bluish but bright fill, softer contrast. At the end of
+// pale blue-white mist, a clear blue zenith, a gold low sun (not the evening's orange) that is a real direct light, and a cool fill that is weaker than
+// the plain row's, so the low sun throws long shadows with a cool, deep shade in them (R1-D26: at 07:30 the plaza was evenly lit, with no shadow to read and
+// the colour of noon; the old mood had softened the sun to 0.85 and raised the fill to 1.12, which is what flattened it). At the end of
 // the day the same height is warm and dusty: amber haze, an orange sun that glows wider through the dust, and a warm grey fill (a blue fill on
 // warm light turns cement and paving to ice). `col` entries are [target colour, how far the row moves toward it, 0..1]; `num` entries multiply.
+// `exp` makes up for the darker shade of the morning; `glow` is left alone so the evening's is the wider one.
 const col = (hex, k) => [new THREE.Color(hex), k];
 const MOOD = {
   morning: {
-    col: { sun: col(0xffe0b4, 0.55), zen: col(0x3f86d8, 0.45), hor: col(0xb9cfe8, 0.72), hemiS: col(0xa8c2ea, 0.40), hemiG: col(0x8a826c, 0.30) },
-    num: { sunI: 0.85, hemiI: 1.12, envI: 1.08, fog: 1.5, glow: 0.8, cloud: 1.15, sat: 0.95 },
+    col: { sun: col(0xffc88a, 0.60), zen: col(0x3f86d8, 0.45), hor: col(0xc4d0e0, 0.72), hemiS: col(0xb4c0da, 0.50), hemiG: col(0x8a7a5c, 0.40) },
+    num: { sunI: 1.25, hemiI: 0.70, envI: 0.66, exp: 1.07, fog: 1.5, cloud: 1.15 },
   },
   evening: {
     col: { sun: col(0xff8a3a, 0.45), zen: col(0x405a8a, 0.35), hor: col(0xe3a06b, 0.55), hemiS: col(0xb4a8b0, 0.55), hemiG: col(0x8f6a48, 0.40) },

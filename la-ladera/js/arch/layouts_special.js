@@ -240,6 +240,40 @@ function schoolDims(S) {
   return { g, hallMin, staffMin, wcMin, cw, Dm, Db, Df, hasCore, style };
 }
 
+// ---- the lavatories (R4-204): a passage with a row of cubicles down each side, a door apiece -----------------------------------------------------------
+//   | cubicles | passage | cubicles |     the passage opens onto the strip (a gallery) and its far end is the washroom: the basins
+//   | (boys')  | (washes) | (girls') |     each cubicle has its own walls and a door onto the passage: a toilet, nothing else
+// A zone of 3.1 m and more across takes two rows, 2.4 m one row (the passage then lies against the library); under that, or too shallow for two cubicles, the zone stays two rooms.
+// The cubicles are rooms of their own (tag 'wc') and the passage is the washroom (tag 'wash'): `interiors/special.js` `schoolFurnisher` furnishes each by its tag.
+// A cubicle is entered from the passage by a door at its north end; its toilet stands at the south end, back to the partition, with the length of the door's end to stand in.
+/** The least a cubicle measures along the passage: the toilet (0.7 m deep) and 0.75 m of floor in front of it, so that a walker (0.6 m across) can step in and stand at it. */
+const STALL_E = 1.45;
+/** The width of the zone upstairs, where one row of cubicles and the passage are cut from the south block (the library keeps the rest). */
+const STALL_ZONE1 = 2.45;
+/** How a zone `zw` across and `zd` deep is cut into a passage and `cols` rows of cubicles: { A, C, n, e, cols, zw } (the passage's width, a cubicle's depth across the row, the cubicles in a row and their extent along it), or null. */
+function stallPlan(zw, zd, cols) {
+  const A = clamp(zw - cols * (1.15 + ti), 1.0, 1.25), C = (zw - A - cols * ti) / cols, n = Math.floor((zd + ti) / (STALL_E + ti));
+  return C < 0.95 || n < 2 ? null : { A, C, n, e: (zd - (n - 1) * ti) / n, cols, zw };
+}
+/**
+ * The rooms of one block of lavatories in zone `zr` of floor `k` (unflipped; `room` mirrors it): the passage, joined to `strip`, and the cubicles down its side or sides,
+ * each with a door onto it, at the cubicle's end nearer the strip, that swings out into the passage and is hinged at its strip-side jamb. `names`: the cubicles' names, west row first.
+ */
+function stalls(S, room, k, zr, sp, strip, names) {
+  const { A, C, n, e, cols } = sp, x = zr.x0;
+  const west = cols === 2 ? [x, x + C] : null, pass = cols === 2 ? [x + C + ti, x + C + ti + A] : [x, x + A], east = [pass[1] + ti, zr.x1];
+  const passage = room(k, 'bathroom', R(pass[0], zr.z0, pass[1], zr.z1), { name: 'Baños', tag: 'wash' });
+  S.link(strip, passage, { w: 0.9 });
+  [west, east].forEach((sx, s) => {
+    if (!sx) return;
+    for (let i = 0; i < n; i++) {
+      const z0 = zr.z0 + i * (e + ti), c = room(k, 'bathroom', R(sx[0], z0, sx[1], z0 + e), { name: names[cols === 2 ? s : 0], tag: 'wc' });
+      S.link(c, passage, { w: 0.85, hinge: 'left', at: z0 + 0.15 + 0.85 / 2 });
+    }
+  });
+  return passage;
+}
+
 export function planSchool(S) {
   const dm = schoolDims(S);
   if (!dm) return false;
@@ -267,7 +301,11 @@ export function planSchool(S) {
   const Rs = R(sx0, fz0, x1, sz1);                                                            // the strip: a corridor along the south side of the yard
   const wcw = clamp((ew - 2 * ti - staffMin) / 2, wcMin, 1.9), staffW = ew - 2 * ti - 2 * wcw;
   const Rstaff = R(sx0, dz0, sx0 + staffW, z1), Rt1 = R(Rstaff.x1 + ti, dz0, Rstaff.x1 + ti + wcw, z1), Rt2 = R(Rt1.x1 + ti, dz0, x1, z1);
-  const upper = ew / Ds > 1.9 ? cutX(R(sx0, dz0, x1, z1), (sx0 + x1) / 2) : [R(sx0, dz0, x1, z1)];     // below the strip upstairs: one room, or two on a wide lot
+  const libR = R(sx0, dz0, x1 - STALL_ZONE1 - ti, z1), sp1 = S.F > 1 ? stallPlan(STALL_ZONE1, Ds, 1) : null, nUp0 = ew / Ds > 1.9 ? 2 : 1;
+  const nUpWc = sp1 ? [nUp0, 1].find((n) => (rw(libR) - (n - 1) * ti) / n >= 2.9 && rw(libR) * Ds >= 11) : undefined;               // upstairs the lavatories take the east end, if the rooms beside them keep 2.9 m across (one room, where two would not)
+  const wc1 = nUpWc ? R(x1 - STALL_ZONE1, dz0, x1, z1) : null, nUp = nUpWc ?? nUp0;
+  const southR = wc1 ? libR : R(sx0, dz0, x1, z1), upper = nUp === 2 ? cutX(southR, (southR.x0 + southR.x1) / 2) : [southR];        // below the strip upstairs: one room, or two on a wide lot
+  const zoneG = R(Rt1.x0, dz0, x1, z1), spG = stallPlan(rw(zoneG), rd(zoneG), 2);                                                  // downstairs: two rows of cubicles, boys' and girls', or the two rooms of old
 
   if (hasCore) { S.stairStyle = style; S.placeCore(M(coreR), 'z', true); S.addCoreRooms(); }  // the landing faces the corridor behind it and the entrance hall beside it
   const landingZ = fz0 + SD / 2;
@@ -280,7 +318,7 @@ export function planSchool(S) {
   const vest = room(0, 'hall', Rv, { name: 'Vestíbulo' }), strip = room(0, 'corridor', Rs);
   const slot = Rslot ? room(0, 'office', Rslot, { name: 'Sala de profesores' }) : null;
   const staff = room(0, 'office', Rstaff, { name: slot ? 'Secretaría' : 'Sala de profesores' });
-  const t1 = room(0, 'bathroom', Rt1, { name: 'Baño de niños' }), t2 = room(0, 'bathroom', Rt2, { name: 'Baño de niñas' });
+  const [t1, t2] = spG ? [] : [room(0, 'bathroom', Rt1, { name: 'Baño de niños' }), room(0, 'bathroom', Rt2, { name: 'Baño de niñas' })];
   S.extDoor(vest, 'front', u0, { entrance: 'main' });
   if (hasCore) { const stair = S.coreRooms[0]; S.link(vest, stair, { ...archW(1.4), atZ: landingZ }); linkBest(S, stair, [g1], { min: 1.0 }); }
   if (slot) S.link(vest, slot);
@@ -289,10 +327,10 @@ export function planSchool(S) {
   linkBest(S, vest, [pat], { link: archW(2.0) });
   linkBest(S, strip, [pat], { link: archW(2.0) });
   S.link(strip, g2, archW(1.4));
-  S.link(strip, t1); S.link(strip, t2);
+  if (spG) stalls(S, room, 0, zoneG, spG, strip, ['Baño de niños', 'Baño de niñas']); else { S.link(strip, t1); S.link(strip, t2); }
   for (const c of cl) S.arcade(c, M(Rp), { w: 1.3, sill: SILL, h: 1.15, grille: true });
 
-  // ---- upper floors: the stair lands in the upper hall; the corridors and the library are off it; the toilets stay on the ground floor ----
+  // ---- upper floors: the stair lands in the upper hall; the corridors and the library are off it; the lavatories lie at the east end, off the strip ----
   for (let k = 1; k < S.F; k++) {
     const gk1 = room(k, 'corridor', Rg1), gk2 = room(k, 'corridor', Rg2);
     const ck = [room(k, 'classroom', Rc1), room(k, 'classroom', Rc2)];
@@ -302,8 +340,9 @@ export function planSchool(S) {
     if (core) { linkBest(S, core, [gk1], { min: 1.0 }); S.link(core, hall, { ...archW(1.4), atZ: landingZ }); }
     S.link(hall, sk, archW(1.4));
     S.link(sk, gk2, archW(1.4));
-    const south = upper.map((r, i) => (Ds >= 4.6 && rw(r) >= 4.6 ? room(k, 'classroom', r) : room(k, 'office', r, { name: UPPER_ROOMS[(k - 1 + i) % UPPER_ROOMS.length] })));
+    const south = upper.map((r, i) => (Ds >= 4.6 && rw(r) >= 4.6 && !wc1 ? room(k, 'classroom', r) : room(k, 'office', r, { name: UPPER_ROOMS[(k - 1 + i + (nUp0 > nUp ? 1 : 0)) % UPPER_ROOMS.length] })));       // (a floor the lavatories leave one room instead of two takes the second name: the lots keep their mix of libraries, computer rooms and music rooms)
     south.forEach((r, i) => S.link(i === 0 ? hall : sk, r));
+    if (wc1) stalls(S, room, k, wc1, sp1, sk, ['Baño']);
     for (const gk of [gk1, gk2]) for (const z of bays) S.arcade(gk, M(Rp), { at: z, w: bayW, sill: SILL, h: ARCH_H - SILL });
     S.arcade(sk, M(Rp), { at: mx((Math.max(sx0, px0) + px1) / 2), w: bayW, sill: SILL, h: ARCH_H - SILL });
     for (const c of [...ck, hall]) S.arcade(c, M(Rp), { w: 1.3, sill: SILL, h: 1.15, grille: true });

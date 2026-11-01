@@ -24,6 +24,7 @@ import arch from '../arch/matdefs.js';
 import interiors from '../interiors/matdefs.js';
 import people from '../people/matdefs.js';
 import { triplanar } from '../engine/triplanar.js';
+import { takePrefetched } from './assets.js';
 
 export const ALL_DEFS = { ...engine, ...world, ...arch, ...interiors, ...people };
 export const DEF_OWNERS = Object.fromEntries([['engine', engine], ['world', world], ['arch', arch], ['interiors', interiors], ['people', people]]
@@ -33,8 +34,9 @@ export class MaterialLib {
   constructor(ctx) {
     this.ctx = ctx; this.defs = ALL_DEFS; this.cache = new Map(); this.tex = new Map();
     this.manifest = {}; this.pending = 0; this.missing = new Set(); this.loader = new THREE.TextureLoader();
-    this.waiters = [];
-    this.anisotropy = 8;                       // the engine raises it to the GPU maximum before any material is made
+    this.waiters = []; this.held = null;       // held: null, or the requests waiting for release()
+    this.arrival = new WeakMap();             // a texture's image source (shared by its variants) -> a promise that settles when that one file has loaded or failed (whenLoaded)
+    this.anisotropy = 8;                      // the engine raises it to the GPU maximum before any material is made
     this.variants = new Map();                 // base texture -> [clones with their own repeat]
     this.vcache = new Map();
     this.glowing = [];                         // materials whose emissiveIntensity follows ctx.night
@@ -42,6 +44,8 @@ export class MaterialLib {
 
   async init() {
     try {
+      const early = takePrefetched('./assets/textures/manifest.json');       // asked for by index.html while the modules came down (core/assets.js)
+      if (early) { const j = await early; if (j) this.manifest = j.textures ?? {}; return; }
       const r = await fetch('./assets/textures/manifest.json', { cache: 'no-cache' });
       if (r.ok) this.manifest = (await r.json()).textures ?? {};
     } catch { /* no textures yet: flat colours */ }
@@ -54,7 +58,14 @@ export class MaterialLib {
     let t = this.tex.get(k);
     if (t) return t;
     this.pending++;
-    t = this.loader.load('./assets/textures/' + file, () => { for (const v of this.variants.get(t) ?? []) v.needsUpdate = true; this._done(); }, undefined, () => { console.warn('[mat] texture failed', file); this._done(); });
+    let settle; const settled = new Promise((r) => { settle = r; });
+    const url = './assets/textures/' + file, landed = () => { for (const v of this.variants.get(t) ?? []) v.needsUpdate = true; settle(); this._done(); }, failed = () => { console.warn('[mat] texture failed', file); settle(); this._done(); };
+    if (this.held) {
+      // held (hold()): the texture exists and counts as pending, its request goes out at release(). three's loader makes its own texture, so the image is handed over when it lands.
+      t = new THREE.Texture();
+      this.held.push(() => this.loader.load(url, (loaded) => { t.image = loaded.image; t.needsUpdate = true; landed(); }, undefined, failed));
+    } else t = this.loader.load(url, landed, undefined, failed);
+    if (t?.source) this.arrival.set(t.source, settled);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     t.anisotropy = this.anisotropy;
@@ -77,9 +88,20 @@ export class MaterialLib {
     if (!base.image) v.version = 0;
     return v;
   }
+  /**
+   * The boot's connection is one pipe (8 Mbit/s in the slow-network review): the people models are 8 MB, and the textures asked for at the same time took two thirds of it, so the people arrived
+   * last and everything after them (the warm-up frame, ~7 s) waited for the end of the download. While held, a texture is made and counted as pending but its request is not sent; release()
+   * sends them all. whenReady() and whenLoaded() work as ever. main.js holds the textures while the models come down and releases them when the people are in (R2e-001).
+   */
+  hold() { this.held ??= []; }
+  release() { const q = this.held; this.held = null; if (q) for (const go of q) go(); }
+  /** How many requests are waiting for release(). */
+  get holding() { return this.held?.length ?? 0; }
   _done() { if (--this.pending <= 0) { const w = this.waiters.splice(0); w.forEach((f) => f()); } }
   /** Resolves when every texture requested so far has finished loading. */
   whenReady() { return this.pending <= 0 ? Promise.resolve() : new Promise((r) => this.waiters.push(r)); }
+  /** Resolves when this one texture (or any variant of it) has loaded or failed, whatever else is still on its way: whenReady() waits for the whole queue, which at the boot is most of 11 MB. */
+  whenLoaded(texture) { return (texture && this.arrival.get(texture.source)) || Promise.resolve(); }
 
   get(key) {
     let m = this.cache.get(key);

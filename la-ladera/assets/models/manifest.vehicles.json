@@ -1,0 +1,973 @@
+{
+  "version": 1,
+  "complete": true,
+  "license": "CC0-1.0",
+  "generator": {
+    "script": "tools/blender/vehicles_build.py",
+    "blender": "4.5.3 LTS",
+    "catalogSha256": "6735294566468c40191178c70f665c1f7c727d7d4dfd0641b3eb6697f55044e5"
+  },
+  "assetCount": 10,
+  "lodCount": 10,
+  "totalBytes": 2476933,
+  "atlas": {
+    "path": "../textures/vehicles/paint.png",
+    "width": 1024,
+    "height": 1024,
+    "material": "vehicle_paint",
+    "bytes": 412617,
+    "sha256": "c6450974f0a2d6982e853af191332cfed2cbd8f16f5f8712e14cc9dbf06aac46",
+    "gutter": 8,
+    "tiles": {
+      "faded_red": [
+        0.0078125,
+        0.0078125,
+        0.2421875,
+        0.2421875
+      ],
+      "faded_blue": [
+        0.2578125,
+        0.0078125,
+        0.4921875,
+        0.2421875
+      ],
+      "ochre": [
+        0.5078125,
+        0.0078125,
+        0.7421875,
+        0.2421875
+      ],
+      "dusty_cream": [
+        0.7578125,
+        0.0078125,
+        0.9921875,
+        0.2421875
+      ],
+      "green": [
+        0.0078125,
+        0.2578125,
+        0.2421875,
+        0.4921875
+      ],
+      "turquoise": [
+        0.2578125,
+        0.2578125,
+        0.4921875,
+        0.4921875
+      ],
+      "white_grey": [
+        0.5078125,
+        0.2578125,
+        0.7421875,
+        0.4921875
+      ],
+      "burgundy": [
+        0.7578125,
+        0.2578125,
+        0.9921875,
+        0.4921875
+      ],
+      "rust": [
+        0.0078125,
+        0.5078125,
+        0.2421875,
+        0.7421875
+      ],
+      "mud": [
+        0.2578125,
+        0.5078125,
+        0.4921875,
+        0.7421875
+      ],
+      "chiva_pattern": [
+        0.5078125,
+        0.5078125,
+        0.7421875,
+        0.7421875
+      ],
+      "route_plate": [
+        0.7578125,
+        0.5078125,
+        0.9921875,
+        0.7421875
+      ],
+      "blue_rust": [
+        0.0078125,
+        0.7578125,
+        0.2421875,
+        0.9921875
+      ],
+      "red_mud": [
+        0.2578125,
+        0.7578125,
+        0.4921875,
+        0.9921875
+      ],
+      "cream_aged": [
+        0.5078125,
+        0.7578125,
+        0.7421875,
+        0.9921875
+      ],
+      "green_worn": [
+        0.7578125,
+        0.7578125,
+        0.9921875,
+        0.9921875
+      ]
+    }
+  },
+  "files": [
+    {
+      "glb": "vehicles/vehicles_road.glb",
+      "bytes": 1134056,
+      "sha256": "1499a715dda64b8081e4b4776ce7af01584d5430f7f9f180932e13290cb9ac04",
+      "assets": {
+        "vehicle_hatchback_a": {
+          "node": "vehicle_hatchback_a",
+          "size": [
+            1.75,
+            1.53,
+            3.9
+          ],
+          "footprint": [
+            1.75,
+            3.9
+          ],
+          "tags": [
+            "vehicle",
+            "hatchback"
+          ],
+          "origin": "floor-centre",
+          "triangles": 4878,
+          "parts": 20,
+          "bounds": {
+            "min": [
+              -0.8725000023841858,
+              0,
+              -1.9474999904632568
+            ],
+            "max": [
+              0.8725000023841858,
+              1.5049999952316284,
+              1.9474999904632568
+            ]
+          },
+          "wheels": [
+            "vehicle_hatchback_a-wheel_fl",
+            "vehicle_hatchback_a-wheel_fr",
+            "vehicle_hatchback_a-wheel_rl",
+            "vehicle_hatchback_a-wheel_rr"
+          ],
+          "paintTile": 0,
+          "description": "Faded red early-1990s sloping-tail hatchback, dented door and muddy sills",
+          "lod1": "vehicle_hatchback_a_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_hatchback_a_lod1": {
+          "node": "vehicle_hatchback_a_lod1",
+          "size": [
+            1.75,
+            1.53,
+            3.9
+          ],
+          "footprint": [
+            1.75,
+            3.9
+          ],
+          "tags": [
+            "vehicle-lod",
+            "hatchback"
+          ],
+          "origin": "floor-centre",
+          "triangles": 508,
+          "parts": 13,
+          "bounds": {
+            "min": [
+              -0.8399999737739563,
+              0,
+              -1.9424999952316284
+            ],
+            "max": [
+              0.8399999737739563,
+              1.5049999952316284,
+              1.9424999952316284
+            ]
+          },
+          "wheels": [
+            "vehicle_hatchback_a_lod1-wheel_fl",
+            "vehicle_hatchback_a_lod1-wheel_fr",
+            "vehicle_hatchback_a_lod1-wheel_rl",
+            "vehicle_hatchback_a_lod1-wheel_rr"
+          ],
+          "paintTile": 0,
+          "description": "Faded red early-1990s sloping-tail hatchback, dented door and muddy sills",
+          "lod": 1
+        },
+        "vehicle_hatchback_b": {
+          "node": "vehicle_hatchback_b",
+          "size": [
+            1.75,
+            1.58,
+            3.9
+          ],
+          "footprint": [
+            1.75,
+            3.9
+          ],
+          "tags": [
+            "vehicle",
+            "hatchback"
+          ],
+          "origin": "floor-centre",
+          "triangles": 4880,
+          "parts": 20,
+          "bounds": {
+            "min": [
+              -0.8725000023841858,
+              0,
+              -1.9474999904632568
+            ],
+            "max": [
+              0.8725000023841858,
+              1.5549999475479126,
+              1.9474999904632568
+            ]
+          },
+          "wheels": [
+            "vehicle_hatchback_b-wheel_fl",
+            "vehicle_hatchback_b-wheel_fr",
+            "vehicle_hatchback_b-wheel_rl",
+            "vehicle_hatchback_b-wheel_rr"
+          ],
+          "paintTile": 12,
+          "description": "Blue square-tail late-1990s hatchback, rust patches and mismatched bonnet",
+          "lod1": "vehicle_hatchback_b_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_hatchback_b_lod1": {
+          "node": "vehicle_hatchback_b_lod1",
+          "size": [
+            1.75,
+            1.58,
+            3.9
+          ],
+          "footprint": [
+            1.75,
+            3.9
+          ],
+          "tags": [
+            "vehicle-lod",
+            "hatchback"
+          ],
+          "origin": "floor-centre",
+          "triangles": 508,
+          "parts": 13,
+          "bounds": {
+            "min": [
+              -0.8399999737739563,
+              0,
+              -1.9424999952316284
+            ],
+            "max": [
+              0.8399999737739563,
+              1.5549999475479126,
+              1.9424999952316284
+            ]
+          },
+          "wheels": [
+            "vehicle_hatchback_b_lod1-wheel_fl",
+            "vehicle_hatchback_b_lod1-wheel_fr",
+            "vehicle_hatchback_b_lod1-wheel_rl",
+            "vehicle_hatchback_b_lod1-wheel_rr"
+          ],
+          "paintTile": 12,
+          "description": "Blue square-tail late-1990s hatchback, rust patches and mismatched bonnet",
+          "lod": 1
+        },
+        "vehicle_pickup": {
+          "node": "vehicle_pickup",
+          "size": [
+            1.86,
+            1.82,
+            4.7
+          ],
+          "footprint": [
+            1.86,
+            4.7
+          ],
+          "tags": [
+            "vehicle",
+            "pickup"
+          ],
+          "origin": "floor-centre",
+          "triangles": 3756,
+          "parts": 21,
+          "bounds": {
+            "min": [
+              -0.9326000213623047,
+              0,
+              -2.3499999046325684
+            ],
+            "max": [
+              0.9326000213623047,
+              1.774999976158142,
+              2.3445000648498535
+            ]
+          },
+          "wheels": [
+            "vehicle_pickup-wheel_fl",
+            "vehicle_pickup-wheel_fr",
+            "vehicle_pickup-wheel_rl",
+            "vehicle_pickup-wheel_rr"
+          ],
+          "paintTile": 14,
+          "description": "Work pickup with hollow ribbed bed, stake rails, worn cream paint and dents",
+          "lod1": "vehicle_pickup_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_pickup_lod1": {
+          "node": "vehicle_pickup_lod1",
+          "size": [
+            1.86,
+            1.82,
+            4.7
+          ],
+          "footprint": [
+            1.86,
+            4.7
+          ],
+          "tags": [
+            "vehicle-lod",
+            "pickup"
+          ],
+          "origin": "floor-centre",
+          "triangles": 530,
+          "parts": 14,
+          "bounds": {
+            "min": [
+              -0.9084500223398209,
+              0,
+              -2.3399999141693115
+            ],
+            "max": [
+              0.9084500223398209,
+              1.774999976158142,
+              2.3399999141693115
+            ]
+          },
+          "wheels": [
+            "vehicle_pickup_lod1-wheel_fl",
+            "vehicle_pickup_lod1-wheel_fr",
+            "vehicle_pickup_lod1-wheel_rl",
+            "vehicle_pickup_lod1-wheel_rr"
+          ],
+          "paintTile": 14,
+          "description": "Work pickup with hollow ribbed bed, stake rails, worn cream paint and dents",
+          "lod": 1
+        },
+        "vehicle_chiva": {
+          "node": "vehicle_chiva",
+          "size": [
+            2.2,
+            3.15,
+            6.6
+          ],
+          "footprint": [
+            2.2,
+            6.6
+          ],
+          "tags": [
+            "vehicle",
+            "chiva"
+          ],
+          "origin": "floor-centre",
+          "triangles": 5500,
+          "parts": 22,
+          "bounds": {
+            "min": [
+              -1.0750000476837158,
+              0,
+              -3.2799999713897705
+            ],
+            "max": [
+              1.0750000476837158,
+              3.088407278060913,
+              3.2799999713897705
+            ]
+          },
+          "wheels": [
+            "vehicle_chiva-wheel_fl",
+            "vehicle_chiva-wheel_fr",
+            "vehicle_chiva-wheel_rl",
+            "vehicle_chiva-wheel_rr"
+          ],
+          "paintTile": 2,
+          "description": "Original colourful rural chiva with open slatted sides, benches and roof luggage rack",
+          "lod1": "vehicle_chiva_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_chiva_lod1": {
+          "node": "vehicle_chiva_lod1",
+          "size": [
+            2.2,
+            3.15,
+            6.6
+          ],
+          "footprint": [
+            2.2,
+            6.6
+          ],
+          "tags": [
+            "vehicle-lod",
+            "chiva"
+          ],
+          "origin": "floor-centre",
+          "triangles": 600,
+          "parts": 15,
+          "bounds": {
+            "min": [
+              -1.065000057220459,
+              0,
+              -3.2799999713897705
+            ],
+            "max": [
+              1.065000057220459,
+              3.069999933242798,
+              3.2799999713897705
+            ]
+          },
+          "wheels": [
+            "vehicle_chiva_lod1-wheel_fl",
+            "vehicle_chiva_lod1-wheel_fr",
+            "vehicle_chiva_lod1-wheel_rl",
+            "vehicle_chiva_lod1-wheel_rr"
+          ],
+          "paintTile": 2,
+          "description": "Original colourful rural chiva with open slatted sides, benches and roof luggage rack",
+          "lod": 1
+        },
+        "vehicle_colectivo": {
+          "node": "vehicle_colectivo",
+          "size": [
+            2.08,
+            2.64,
+            5.8
+          ],
+          "footprint": [
+            2.08,
+            5.8
+          ],
+          "tags": [
+            "vehicle",
+            "colectivo"
+          ],
+          "origin": "floor-centre",
+          "triangles": 5188,
+          "parts": 20,
+          "bounds": {
+            "min": [
+              -1.0399999618530273,
+              0,
+              -2.8980000019073486
+            ],
+            "max": [
+              1.0399999618530273,
+              2.6050000190734863,
+              2.890000104904175
+            ]
+          },
+          "wheels": [
+            "vehicle_colectivo-wheel_fl",
+            "vehicle_colectivo-wheel_fr",
+            "vehicle_colectivo-wheel_rl",
+            "vehicle_colectivo-wheel_rr"
+          ],
+          "paintTile": 5,
+          "description": "Neighbourhood colectivo minibus with inset windows, folding entry door and painted route panel",
+          "lod1": "vehicle_colectivo_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_colectivo_lod1": {
+          "node": "vehicle_colectivo_lod1",
+          "size": [
+            2.08,
+            2.64,
+            5.8
+          ],
+          "footprint": [
+            2.08,
+            5.8
+          ],
+          "tags": [
+            "vehicle-lod",
+            "colectivo"
+          ],
+          "origin": "floor-centre",
+          "triangles": 540,
+          "parts": 13,
+          "bounds": {
+            "min": [
+              -1.0069999694824219,
+              0,
+              -2.890000104904175
+            ],
+            "max": [
+              1.0069999694824219,
+              2.5250000953674316,
+              2.890000104904175
+            ]
+          },
+          "wheels": [
+            "vehicle_colectivo_lod1-wheel_fl",
+            "vehicle_colectivo_lod1-wheel_fr",
+            "vehicle_colectivo_lod1-wheel_rl",
+            "vehicle_colectivo_lod1-wheel_rr"
+          ],
+          "paintTile": 5,
+          "description": "Neighbourhood colectivo minibus with inset windows, folding entry door and painted route panel",
+          "lod": 1
+        }
+      }
+    },
+    {
+      "glb": "vehicles/vehicles_street.glb",
+      "bytes": 930260,
+      "sha256": "bf4257b21cb8f31c9adf4e5a3a33253074f9bc441ac410c05f7c03c498d4847f",
+      "assets": {
+        "vehicle_motorbike": {
+          "node": "vehicle_motorbike",
+          "size": [
+            0.72,
+            1.3,
+            1.95
+          ],
+          "footprint": [
+            0.72,
+            1.95
+          ],
+          "tags": [
+            "vehicle",
+            "motorbike"
+          ],
+          "origin": "floor-centre",
+          "triangles": 4968,
+          "parts": 11,
+          "bounds": {
+            "min": [
+              -0.3499999940395355,
+              0,
+              -0.9729741811752319
+            ],
+            "max": [
+              0.3499999940395355,
+              1.2949999570846558,
+              0.9671928286552429
+            ]
+          },
+          "wheels": [
+            "vehicle_motorbike-wheel_front",
+            "vehicle_motorbike-wheel_rear"
+          ],
+          "paintTile": 7,
+          "description": "Small commuter motorbike with spoked wheels, engine fins, telescopic forks and worn dual seat",
+          "lod1": "vehicle_motorbike_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ],
+          "seatRest": {
+            "y": 0.9125,
+            "z": -0.385,
+            "tilt": 0.045423
+          }
+        },
+        "vehicle_motorbike_lod1": {
+          "node": "vehicle_motorbike_lod1",
+          "size": [
+            0.72,
+            1.3,
+            1.95
+          ],
+          "footprint": [
+            0.72,
+            1.95
+          ],
+          "tags": [
+            "vehicle-lod",
+            "motorbike"
+          ],
+          "origin": "floor-centre",
+          "triangles": 464,
+          "parts": 9,
+          "bounds": {
+            "min": [
+              -0.33000001311302185,
+              0,
+              -0.9729741811752319
+            ],
+            "max": [
+              0.33000001311302185,
+              1.0771243572235107,
+              0.9671928286552429
+            ]
+          },
+          "wheels": [
+            "vehicle_motorbike_lod1-wheel_front",
+            "vehicle_motorbike_lod1-wheel_rear"
+          ],
+          "paintTile": 7,
+          "description": "Small commuter motorbike with spoked wheels, engine fins, telescopic forks and worn dual seat",
+          "lod": 1
+        },
+        "vehicle_tricycle": {
+          "node": "vehicle_tricycle",
+          "size": [
+            1.28,
+            1.3,
+            2.5
+          ],
+          "footprint": [
+            1.28,
+            2.5
+          ],
+          "tags": [
+            "vehicle",
+            "tricycle"
+          ],
+          "origin": "floor-centre",
+          "triangles": 5106,
+          "parts": 13,
+          "bounds": {
+            "min": [
+              -0.5849999785423279,
+              0,
+              -1.1050000190734863
+            ],
+            "max": [
+              0.5849999785423279,
+              1.1820000410079956,
+              1.219999998807907
+            ]
+          },
+          "wheels": [
+            "vehicle_tricycle-wheel_front",
+            "vehicle_tricycle-wheel_rl",
+            "vehicle_tricycle-wheel_rr"
+          ],
+          "paintTile": 4,
+          "description": "Pedal cargo tricycle with a slatted delivery box and a chain drive",
+          "lod1": "vehicle_tricycle_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_tricycle_lod1": {
+          "node": "vehicle_tricycle_lod1",
+          "size": [
+            1.28,
+            1.3,
+            2.5
+          ],
+          "footprint": [
+            1.28,
+            2.5
+          ],
+          "tags": [
+            "vehicle-lod",
+            "tricycle"
+          ],
+          "origin": "floor-centre",
+          "triangles": 544,
+          "parts": 11,
+          "bounds": {
+            "min": [
+              -0.5649999715387821,
+              0,
+              -1.1050000190734863
+            ],
+            "max": [
+              0.5649999715387821,
+              1.1799999475479126,
+              1.1811473667621613
+            ]
+          },
+          "wheels": [
+            "vehicle_tricycle_lod1-wheel_front",
+            "vehicle_tricycle_lod1-wheel_rl",
+            "vehicle_tricycle_lod1-wheel_rr"
+          ],
+          "paintTile": 4,
+          "description": "Pedal cargo tricycle with a slatted delivery box and a chain drive",
+          "lod": 1
+        },
+        "vehicle_handcart": {
+          "node": "vehicle_handcart",
+          "size": [
+            1.24,
+            1.2,
+            2.1
+          ],
+          "footprint": [
+            1.24,
+            2.1
+          ],
+          "tags": [
+            "vehicle",
+            "handcart"
+          ],
+          "origin": "floor-centre",
+          "triangles": 3332,
+          "parts": 9,
+          "bounds": {
+            "min": [
+              -0.5679826140403748,
+              0,
+              -0.925000011920929
+            ],
+            "max": [
+              0.5679826140403748,
+              1.1799999475479126,
+              1.0161994695663452
+            ]
+          },
+          "wheels": [
+            "vehicle_handcart-wheel_left",
+            "vehicle_handcart-wheel_right"
+          ],
+          "paintTile": 14,
+          "description": "Two-wheeled wooden handcart with uneven planks, iron fasteners and long push handles",
+          "lod1": "vehicle_handcart_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_handcart_lod1": {
+          "node": "vehicle_handcart_lod1",
+          "size": [
+            1.24,
+            1.2,
+            2.1
+          ],
+          "footprint": [
+            1.24,
+            2.1
+          ],
+          "tags": [
+            "vehicle-lod",
+            "handcart"
+          ],
+          "origin": "floor-centre",
+          "triangles": 340,
+          "parts": 7,
+          "bounds": {
+            "min": [
+              -0.5624999813735485,
+              0,
+              -0.925000011920929
+            ],
+            "max": [
+              0.5624999813735485,
+              1.1799999475479126,
+              1.015744924545288
+            ]
+          },
+          "wheels": [
+            "vehicle_handcart_lod1-wheel_left",
+            "vehicle_handcart_lod1-wheel_right"
+          ],
+          "paintTile": 14,
+          "description": "Two-wheeled wooden handcart with uneven planks, iron fasteners and long push handles",
+          "lod": 1
+        },
+        "vehicle_bicycle": {
+          "node": "vehicle_bicycle",
+          "size": [
+            0.54,
+            1.12,
+            1.74
+          ],
+          "footprint": [
+            0.54,
+            1.74
+          ],
+          "tags": [
+            "vehicle",
+            "bicycle"
+          ],
+          "origin": "floor-centre",
+          "triangles": 3364,
+          "parts": 10,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.8647190928459167
+            ],
+            "max": [
+              0.25,
+              1.090000033378601,
+              0.8647190928459167
+            ]
+          },
+          "wheels": [
+            "vehicle_bicycle-wheel_front",
+            "vehicle_bicycle-wheel_rear"
+          ],
+          "paintTile": 1,
+          "description": "Worn everyday bicycle with open spokes, diamond frame, chain, pedals and rear rack",
+          "lod1": "vehicle_bicycle_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_bicycle_lod1": {
+          "node": "vehicle_bicycle_lod1",
+          "size": [
+            0.54,
+            1.12,
+            1.74
+          ],
+          "footprint": [
+            0.54,
+            1.74
+          ],
+          "tags": [
+            "vehicle-lod",
+            "bicycle"
+          ],
+          "origin": "floor-centre",
+          "triangles": 332,
+          "parts": 7,
+          "bounds": {
+            "min": [
+              -0.25,
+              0,
+              -0.8647190928459167
+            ],
+            "max": [
+              0.25,
+              1.0562583208084106,
+              0.8084678947925568
+            ]
+          },
+          "wheels": [
+            "vehicle_bicycle_lod1-wheel_front",
+            "vehicle_bicycle_lod1-wheel_rear"
+          ],
+          "paintTile": 1,
+          "description": "Worn everyday bicycle with open spokes, diamond frame, chain, pedals and rear rack",
+          "lod": 1
+        },
+        "vehicle_rubbish_cart": {
+          "node": "vehicle_rubbish_cart",
+          "size": [
+            1.18,
+            1.58,
+            1.7
+          ],
+          "footprint": [
+            1.18,
+            1.7
+          ],
+          "tags": [
+            "vehicle",
+            "rubbish_cart"
+          ],
+          "origin": "floor-centre",
+          "triangles": 1780,
+          "parts": 13,
+          "bounds": {
+            "min": [
+              -0.5754000097513199,
+              0,
+              -0.5049999952316284
+            ],
+            "max": [
+              0.5754000097513199,
+              1.5396409034729004,
+              0.8360000252723694
+            ]
+          },
+          "wheels": [
+            "vehicle_rubbish_cart-wheel_left",
+            "vehicle_rubbish_cart-wheel_right"
+          ],
+          "paintTile": 15,
+          "description": "Dented municipal hand-pushed rubbish cart with a hollow hopper, tied sacks and a scraper",
+          "lod1": "vehicle_rubbish_cart_lod1",
+          "variants": [
+            "faded",
+            "rust",
+            "mud"
+          ]
+        },
+        "vehicle_rubbish_cart_lod1": {
+          "node": "vehicle_rubbish_cart_lod1",
+          "size": [
+            1.18,
+            1.58,
+            1.7
+          ],
+          "footprint": [
+            1.18,
+            1.7
+          ],
+          "tags": [
+            "vehicle-lod",
+            "rubbish_cart"
+          ],
+          "origin": "floor-centre",
+          "triangles": 264,
+          "parts": 9,
+          "bounds": {
+            "min": [
+              -0.5518000088632107,
+              0,
+              -0.5049999952316284
+            ],
+            "max": [
+              0.5518000088632107,
+              1.5099999904632568,
+              0.8258106112480164
+            ]
+          },
+          "wheels": [
+            "vehicle_rubbish_cart_lod1-wheel_left",
+            "vehicle_rubbish_cart_lod1-wheel_right"
+          ],
+          "paintTile": 15,
+          "description": "Dented municipal hand-pushed rubbish cart with a hollow hopper, tied sacks and a scraper",
+          "lod": 1
+        }
+      }
+    }
+  ]
+}

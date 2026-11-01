@@ -13,9 +13,10 @@ import { join, dirname, resolve, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { describe } from '../tools/blender/glb_info.mjs';
+import { inspectAsset, parseGLB, validateGarments } from '../tools/blender/garments_validate.mjs';
 import { furnishedBatch, obbOf, corners, penetration, rectOb, roomOf, catalogOf, landing } from './interiors-lib.mjs';
 import { CATALOG } from '../js/interiors/catalog.js';
-import { GARMENTS, VARIANTS, STATES, ASSORTMENTS } from '../js/interiors/garments_data.js';
+import { GARMENTS, VARIANTS, STATES, ASSORTMENTS, GARMENT_FILES } from '../js/interiors/garments_data.js';
 import { GARMENT_KEYS, garmentKey, lodFile, registerGarmentAssets, tidinessOf, classOf, isChildRoom, walkLanes, uOf, CLASS, NEAT_LOTS, CHILD_ROLES, LIMITS, STOCK_HOSTS, KIND_SHIFT, garmentsOff } from '../js/interiors/garments.js';
 import { mkObb } from '../js/interiors/layout.js';
 import { garmentsDataModule } from '../tools/garments_data.mjs';
@@ -32,19 +33,34 @@ const fmt = (n) => n.toFixed(2);
 
 // ---------------------------------------------------------------- the library's files
 const manifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments.json'), 'utf8'));
-const assets = manifest.files.flatMap((f) => Object.entries(f.assets).map(([key, a]) => ({ key, a, file: f.glb })));
+const childManifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments-child.json'), 'utf8'));
+const teenManifest = JSON.parse(readFileSync(join(MODELS, 'manifest.garments_teen.json'), 'utf8'));
+const childCatalogue = JSON.parse(readFileSync(join(ROOT, 'tools', 'blender', 'garments-child.catalog.json'), 'utf8'));
+// `id` is the garment's id in the data module: a teen size is a design of its own (<style>_<small|big>), so its key stays garment_<id>_<state> like the others'.
+const assetRows = (man, sizeTag) => man.files.flatMap((f) => Object.entries(f.assets).map(([key, a]) => ({ key, a, file: f.glb, sizeTag, id: a.sizeClass ? `${a.garment}_${a.sizeClass}` : a.garment })));
+const adultAssets = assetRows(manifest, 'adult'), childAssets = assetRows(childManifest, 'child'), teenAssets = assetRows(teenManifest, 'teen');
+const assets = [...adultAssets, ...childAssets, ...teenAssets];
+const isGarmentFile = (path) => /^(?:garments|garments-child)\//.test(path);
+const CHILD_IDS = [
+  'child_school_shirt', 'child_school_polo', 'child_pinafore', 'child_school_trousers', 'child_school_shorts',
+  'child_tshirt', 'child_hoodie', 'child_jeans', 'child_skirt', 'child_dress', 'child_pyjama_top', 'child_pyjama_bottoms',
+  'child_cardigan', 'child_socks_pair', 'child_shoes', 'child_cap', 'child_backpack', 'child_swim_trunks',
+  'child_swimsuit_onepiece', 'child_rash_vest',
+];
 
 test('the committed data module is what the generator makes of the manifests (the drift guard)', () => {
   const have = readFileSync(join(ROOT, 'js', 'interiors', 'garments_data.js'), 'utf8').replace(/\r\n/g, '\n');
   assert.equal(have, garmentsDataModule(MODELS), 'js/interiors/garments_data.js is out of date: run `node la-ladera/tools/garments_data.mjs > la-ladera/js/interiors/garments_data.js`');
   const problems = [];
   assert.equal(GARMENT_KEYS.length, assets.length, `${GARMENT_KEYS.length} keys in the data module, ${assets.length} assets in the manifest`);
-  for (const { key, a } of assets) {
-    const g = GARMENTS[a.garment]?.[a.state];
+  for (const { key, a, sizeTag, id } of assets) {
+    const g = GARMENTS[id]?.[a.state];
     if (!g) { problems.push(`${key}: not in the data module`); continue; }
-    if (a.lod.glb !== lodFile(a.state) || a.lod.node !== key + '_lod') problems.push(`${key}: the manifest's LOD is ${a.lod.glb}#${a.lod.node}, the loader asks for ${lodFile(a.state)}#${key}_lod`);
+    if (GARMENTS[id].sizeTag !== sizeTag) problems.push(`${key}: generated size tag is ${GARMENTS[id].sizeTag}, expected ${sizeTag}`);
+    if (GARMENTS[id].sizeClass !== a.sizeClass) problems.push(`${key}: generated size class is ${GARMENTS[id].sizeClass}, the manifest says ${a.sizeClass}`);
+    if (a.lod.glb !== lodFile(a.state, sizeTag) || a.lod.node !== key + '_lod') problems.push(`${key}: the manifest's LOD is ${a.lod.glb}#${a.lod.node}, the loader asks for ${lodFile(a.state, sizeTag)}#${key}_lod`);
     if (g[3] !== a.lod.triangles) problems.push(`${key}: ${g[3]} LOD triangles in the data module, ${a.lod.triangles} in the manifest`);
-    if (key !== garmentKey(a.garment, a.state)) problems.push(`${key}: not the key garmentKey() makes (${garmentKey(a.garment, a.state)})`);
+    if (key !== garmentKey(id, a.state)) problems.push(`${key}: not the key garmentKey() makes (${garmentKey(id, a.state)})`);
     for (const v of a.variants) if (!(v in VARIANTS)) problems.push(`${key}: variant ${v} has no colour`);
   }
   report(problems, 'data module / manifest mismatches');
@@ -52,11 +68,15 @@ test('the committed data module is what the generator makes of the manifests (th
 
 test('the LOD models exist in the files the loader names (exact case), one node per garment key', () => {
   const problems = [];
-  for (const state of STATES) {
-    const path = join(MODELS, lodFile(state));
-    if (!existsSync(path) || !readdirSync(dirname(path)).includes(basename(path))) { problems.push(`${lodFile(state)}: no such file (case counts on GitHub Pages)`); continue; }
+  for (const sizeTag of ['adult', 'child']) for (const state of STATES) {
+    const file = lodFile(state, sizeTag), path = join(MODELS, file);
+    if (!existsSync(path) || !readdirSync(dirname(path)).includes(basename(path))) { problems.push(`${file}: no such file (case counts on GitHub Pages)`); continue; }
     const info = describe(path);
-    for (const key of GARMENT_KEYS.filter((k) => CATALOG[k]?.state === state)) if (!info.assets.has(key + '_lod')) problems.push(`${lodFile(state)}: no node ${key}_lod`);
+    const keys = GARMENT_KEYS.filter((k) => CATALOG[k]?.state === state && CATALOG[k]?.sizeTag === sizeTag);
+    for (const key of keys) if (!info.assets.has(key + '_lod')) problems.push(`${file}: no node ${key}_lod`);
+    if (info.assets.size !== keys.length) problems.push(`${file}: ${info.assets.size} nodes, ${keys.length} expected garment keys`);
+    if (GARMENT_FILES[sizeTag]?.[state] !== file) problems.push(`${sizeTag}/${state}: the generated file map differs from the loader`);
+    if (sizeTag === 'adult' && lodFile(state) !== file) problems.push(`${state}: a one-argument lodFile call no longer uses the adult pack`);
   }
   report(problems, 'LOD files without their nodes');
 });
@@ -68,6 +88,7 @@ test('catalogue: every garment key is a flat, non-blocking piece of the library\
     const key = garmentKey(id, s), c = CATALOG[key];
     if (!c) { problems.push(`${key}: not in the catalogue`); continue; }
     if (c.arch !== 'garment' || c.block !== false || c.garment !== id || c.state !== s) problems.push(`${key}: arch ${c.arch} block ${c.block} garment ${c.garment} state ${c.state}`);
+    if (c.sizeTag !== g.sizeTag || !c.tags.includes(g.sizeTag)) problems.push(`${key}: catalogue size tag does not match ${g.sizeTag}`);
     if (c.size.some((v, i) => Math.abs(v - g[s][i]) > 1e-9)) problems.push(`${key}: size ${c.size} is not the library's ${g[s].slice(0, 3)}`);
     if (s === 'hung' && !(c.wall && c.hang)) problems.push(`${key}: a hung garment is a wall piece that hangs`);
     if (s !== 'hung' && (c.wall || c.hang)) problems.push(`${key}: a ${s} garment lies, it does not hang`);
@@ -79,14 +100,15 @@ test('assets: every key is pointed at its LOD file and node; a context without a
   const entries = new Map(), ctx = { assets: { entries } };
   assert.equal(registerGarmentAssets(ctx), GARMENT_KEYS.length);
   const problems = [];
-  for (const { key, a } of assets) {
+  for (const { key, a, sizeTag } of assets) {
     const e = entries.get(key);
     if (!e || e.glb !== a.lod.glb || e.node !== a.lod.node) problems.push(`${key}: ${JSON.stringify(e)} (the manifest says ${a.lod.glb}#${a.lod.node})`);
+    if (e?.sizeTag !== sizeTag || !e?.tags?.includes(sizeTag)) problems.push(`${key}: asset registration lost the ${sizeTag} size tag`);
   }
   report(problems, 'garment keys not pointed at their LOD');
   entries.set(GARMENT_KEYS[0], { glb: 'elsewhere.glb', node: 'x', footprint: [1, 1] });
   registerGarmentAssets(ctx);
-  assert.equal(entries.get(GARMENT_KEYS[0]).glb, lodFile(CATALOG[GARMENT_KEYS[0]].state), 'a manifest entry the lead registered later is still pointed at the LOD (the full-detail models are not drawn in a merged interior)');
+  assert.equal(entries.get(GARMENT_KEYS[0]).glb, lodFile(CATALOG[GARMENT_KEYS[0]].state, CATALOG[GARMENT_KEYS[0]].sizeTag), 'a manifest entry the lead registered later is still pointed at the LOD (the full-detail models are not drawn in a merged interior)');
   assert.equal(entries.get(GARMENT_KEYS[0]).footprint?.[0], 1, 'the rest of an existing entry is kept');
   assert.equal(registerGarmentAssets({}), 0);
   assert.equal(registerGarmentAssets(null), 0);
@@ -105,6 +127,97 @@ test('stand-ins: every garment draws a cloth patch inside its own box', () => {
     if (b.tris > 40) problems.push(`${key}: ${b.tris} triangles for a patch of cloth`);
   }
   report(problems, 'garment stand-ins');
+});
+
+test('child library: all 20 everyday designs and 57 applicable states are explicitly tagged for ages 6 to 10', () => {
+  assert.equal(childCatalogue.schemaVersion, 1);
+  assert.equal(childCatalogue.sizeTag, 'child');
+  assert.equal(childManifest.sizeTag, 'child');
+  assert.equal(childManifest.scope, 'objects-only');
+  assert.deepEqual(childCatalogue.ageRange, [6, 10]);
+  assert.deepEqual(childManifest.ageRange, [6, 10]);
+  assert.deepEqual(childCatalogue.roomKinds, ['child_bedroom', 'school_locker'], 'the intended room kinds must remain explicit source data');
+  assert.deepEqual(childCatalogue.garments.map((g) => g.id).sort(), [...CHILD_IDS].sort());
+  assert.deepEqual(Object.entries(GARMENTS).filter(([, g]) => g.sizeTag === 'child').map(([id]) => id).sort(), [...CHILD_IDS].sort());
+  assert.equal(childAssets.length, 57);
+  assert.equal(adultAssets.length, 67, 'all adult garment states remain available');
+  assert.equal(Object.values(GARMENTS).filter((g) => g.sizeTag === 'adult').length, 23, 'all 23 adult designs remain available');
+  assert.equal(new Set(assets.map(({ key }) => key)).size, assets.length, 'child and adult keys cannot collide');
+  const rigid = new Set(['child_shoes', 'child_cap', 'child_backpack']);
+  for (const g of childCatalogue.garments) {
+    assert.equal(g.sizeTag, 'child', g.id);
+    const expected = rigid.has(g.id) ? ['flat', 'hung'] : ['flat', 'folded', 'hung'];
+    assert.deepEqual([...g.states].sort(), expected, `${g.id}: applicable object states`);
+    if (rigid.has(g.id)) assert.ok(g.notApplicable?.folded?.trim().length > 10, `${g.id}: explain why folding is not applicable`);
+    assert.deepEqual(childAssets.filter(({ a }) => a.garment === g.id).map(({ a }) => a.state).sort(), expected, `${g.id}: manifest states`);
+    for (const { key, a } of childAssets.filter(({ a }) => a.garment === g.id)) {
+      assert.equal(a.sizeTag, 'child', key);
+      assert.ok(GARMENT_KEYS.includes(key) && CATALOG[key]?.sizeTag === 'child', `${key}: child catalogue binding`);
+    }
+  }
+});
+
+test('child library: independently decoded GLBs satisfy the complete 900-triangle contract and retain useful LODs', () => {
+  const r = validateGarments({ child: true, complete: true });
+  assert.deepEqual(r.errors, [], 'regenerate the child object library; manifest claims alone are insufficient');
+  assert.equal(r.ok, true);
+  assert.equal(r.catalogueGarments, 20);
+  assert.equal(r.assets, 57);
+  assert.ok(r.maxTriangles > 0 && r.maxTriangles <= 900, `child near maximum ${r.maxTriangles}, limit 900`);
+  assert.ok(r.maxLodTriangles > 0 && r.maxLodTriangles <= 240, `child LOD maximum ${r.maxLodTriangles}, limit 240`);
+  const decoded = new Map();
+  const get = (file) => {
+    if (!decoded.has(file)) decoded.set(file, parseGLB(readFileSync(join(MODELS, file)), file));
+    return decoded.get(file);
+  };
+  for (const { key, a, file } of childAssets) {
+    const near = inspectAsset(get(file), a.node), far = inspectAsset(get(a.lod.glb), a.lod.node);
+    assert.ok(near.triangles > 0 && near.triangles <= 900, `${key}: ${near.triangles} actual triangles`);
+    assert.ok(far.triangles > 0 && far.triangles <= 240, `${key}: ${far.triangles} actual LOD triangles`);
+    assert.ok(far.triangles <= near.triangles * 0.6, `${key}: LOD must remove at least 40% of triangles`);
+    assert.equal(near.triangles, a.triangles, `${key}: measured near triangles`);
+    assert.equal(far.triangles, GARMENTS[a.garment][a.state][3], `${key}: the runtime must count actual LOD triangles`);
+    assert.deepEqual(near.materials, ['laundry'], `${key}: same library material as the adult clothes`);
+    assert.deepEqual(far.materials, ['laundry'], `${key}: same LOD material as the adult clothes`);
+  }
+});
+
+test('child library: source dimensions are 60% adult length and actual exported tees keep that scale', () => {
+  assert.equal(childCatalogue.scale, 0.6);
+  assert.equal(childManifest.scale, 0.6);
+  for (const g of childCatalogue.garments) {
+    assert.equal(g.scale, 0.6, g.id);
+    assert.ok(Number.isFinite(g.adultReferenceLength) && g.adultReferenceLength > 0, `${g.id}: adult length reference`);
+    assert.ok(Math.abs(g.length - g.adultReferenceLength * 0.6) < 1e-8, `${g.id}: ${g.length} m is not 60% of ${g.adultReferenceLength} m`);
+  }
+  for (const [state, axis] of [['flat', 2], ['hung', 1]]) {
+    const adult = adultAssets.find(({ a }) => a.garment === 'tshirt' && a.state === state);
+    const child = childAssets.find(({ a }) => a.garment === 'child_tshirt' && a.state === state);
+    const measure = (row) => inspectAsset(parseGLB(readFileSync(join(MODELS, row.file)), row.file), row.a.node).size[axis];
+    const adultLength = measure(adult), childLength = measure(child), ratio = childLength / adultLength;
+    assert.ok(ratio >= 0.55 && ratio <= 0.65, `${state}: child tee ${childLength.toFixed(3)} m / adult tee ${adultLength.toFixed(3)} m = ${ratio.toFixed(3)} (target 0.60)`);
+  }
+});
+
+test('child library: one shared print atlas stays below six megabytes of GPU texture including mipmaps', () => {
+  assert.equal(childManifest.palette, manifest.palette, 'the child garments reuse the adult palette');
+  assert.equal(childManifest.atlas.file, manifest.atlas.file, 'the child garments reuse the adult atlas, with no second allocation');
+  const png = readFileSync(join(MODELS, childManifest.atlas.file));
+  assert.ok(png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), 'the shared atlas is a PNG');
+  assert.equal(png.toString('ascii', 12, 16), 'IHDR');
+  const width = png.readUInt32BE(16), height = png.readUInt32BE(20);
+  assert.equal(width, childManifest.atlas.width);
+  assert.equal(height, childManifest.atlas.height);
+  assert.ok(width > 0 && height > 0);
+  let w = width, h = height, gpuBytes = 0;
+  for (;;) {
+    gpuBytes += w * h * 4;                                                                     // conservative RGBA8 allocation, every mip level through 1 x 1
+    if (w === 1 && h === 1) break;
+    w = Math.max(1, Math.floor(w / 2)); h = Math.max(1, Math.floor(h / 2));
+  }
+  assert.ok(gpuBytes <= 6_000_000, `${width} x ${height} atlas needs ${gpuBytes} GPU bytes including mipmaps`);
+  assert.equal(readdirSync(join(MODELS, 'garments-child')).filter((name) => /\.(png|jpe?g|webp|ktx2?)$/i.test(name)).length, 0, 'child models must not quietly ship a duplicate or extra atlas');
+  console.log(`# child garments: one shared ${width}x${height} atlas, ${gpuBytes} bytes RGBA8 including all mip levels; no additional texture allocation`);
 });
 
 // ---------------------------------------------------------------- the world
@@ -339,7 +452,7 @@ async function boot(withGarments, steps = ['page']) {
   await ctx.assets.init((p) => JSON.parse(readFileSync(join(MODELS, p), 'utf8')));
   ctx.assets.load = (path) => new Promise((ok, no) => {
     requested.push(path);
-    if (!withGarments && path.startsWith('garments/')) return no(new Error('404 ' + path));      // the files are not there: what the page's fetch would say
+    if (!withGarments && isGarmentFile(path)) return no(new Error('404 ' + path));              // neither size set is there: what the page's fetch would say
     const b = readFileSync(join(MODELS, path));
     gltfs.parse(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), '', (g) => { g.scene.updateMatrixWorld(true); ctx.assets.loaded.set(path, g); ok(g); }, no);
   });
@@ -417,7 +530,7 @@ test('the clothes are invisible to the furniture pipeline: not in the keys it li
 });
 
 test('the two loads are apart: the furniture load asks for no garment file and keeps no garment key; the clothes load fills ctx.garmentGlb and leaves ctx.interiorGlb alone; ?garments=0 asks for nothing', async () => {
-  const garmentFiles = () => requested.filter((p) => p.startsWith('garments/'));
+  const garmentFiles = () => requested.filter(isGarmentFile);
   await boot(true, ['furniture']);
   assert.deepEqual(garmentFiles(), [], 'the furniture load asked for a garment file');
   assert.ok(ctx.interiorGlb.size > 20 && ctx.interiorGlb.has('bed_single'), 'the furniture models should load');
@@ -430,7 +543,7 @@ test('the two loads are apart: the furniture load asks for no garment file and k
   assert.deepEqual([...ctx.interiorGlb].sort(), furniture, 'the page entry\'s furniture set is not what the furniture load alone makes');
   assert.deepEqual([...ctx.garmentGlb].sort(), [...GARMENT_KEYS].sort(), 'the page entry did not load the clothes');
   await boot(true, ['clothes']);
-  assert.deepEqual(garmentFiles().sort(), STATES.map(lodFile).sort(), 'the clothes load asks for the three LOD files and nothing else');
+  assert.deepEqual(garmentFiles().sort(), [...new Set(assets.map(({ a }) => a.lod.glb))].sort(), 'the clothes load asks for the six adult/child LOD files, the one teen file and nothing else');
   assert.deepEqual([...ctx.garmentGlb].sort(), [...GARMENT_KEYS].sort(), 'every garment key, and only those, loaded');
   ctx.assets.loaded.clear(); ctx.assets.load = (path) => Promise.reject(new Error('404 ' + path));      // a retry is a fresh load: files that are gone now leave their keys on the stand-ins
   const warn = console.warn; console.warn = () => {};

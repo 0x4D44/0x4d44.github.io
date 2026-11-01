@@ -7,16 +7,19 @@
 // The bar never goes back, and a stage that ends always puts the bar exactly at the sum of the weights behind it.
 //
 // The weights are shares of the time an unthrottled boot spends in each stage (measured: furnish 3.8 s, warm 3.9 s, build 1.9 s, props 0.4 s, the rest well under a
-// second), with a little extra for the stages that wait on the network when the link is slow (people, start). They used to give the warm-up frame 3 of 110, so the
-// bar read 97 % for the longest freeze of the boot.
+// second), with a little extra for the stages that wait on the network when the link is slow (load, models, people, textures: at 8 Mbit/s and 120 ms they are 6-8 s,
+// 6-8 s, 6-8 s and 4-8 s, and nothing on a fast link). They used to give the warm-up frame 3 of 110, so the bar read 97 % for the longest freeze of the boot.
+// 'load' is the module graph, ~200 files: index.html moves the bar through it as the files come in, before any of main.js can run (R2e-001: it stood at 0 for 6-8 s).
+// 'textures' is what is left of the 11 MB of textures when the warm-up frame is done (they are held until the people are in and come down while that frame runs: main.js).
 
 /** [stage, weight of the bar, what the card says while it runs, blocks?]. `blocks` = the stage keeps the page busy for seconds in one call: main.js paints its label first. */
 export const STAGES = [
-  ['engine', 2, 'Encendiendo la luz…'], ['materials', 2, 'Mezclando pinturas y materiales…'], ['assets', 3, 'Trayendo muebles y vecinos…'],
+  ['load', 10, 'Abriendo La Ladera…'],
+  ['engine', 2, 'Encendiendo la luz…'], ['materials', 2, 'Mezclando pinturas y materiales…'], ['assets', 2, 'Leyendo el inventario…'],
   ['plan', 3, 'Trazando calles y escaleras…'], ['world', 5, 'Levantando el cerro…'], ['arch', 2, 'Pensando cada casa…'],
-  ['furnish', 24, 'Amueblando los cuartos…'], ['colliders', 1, 'Poniendo las paredes en su sitio…'], ['build', 16, 'Construyendo casas y tiendas…'],
+  ['furnish', 24, 'Amueblando los cuartos…'], ['models', 8, 'Trayendo muebles y vecinos…'], ['colliders', 1, 'Poniendo las paredes en su sitio…'], ['build', 16, 'Construyendo casas y tiendas…'],
   ['props', 4, 'Plantando árboles y postes…'], ['flush', 2, 'Juntándolo todo…'], ['glow', 1, 'Encendiendo las farolas…'], ['people', 12, 'Despertando a los vecinos…'],
-  ['start', 6, 'Casi listo…'], ['warm', 18, 'Calentando la primera vista… (tarda unos segundos)', true],
+  ['start', 2, 'Casi listo…'], ['warm', 18, 'Calentando la primera vista… (tarda unos segundos)', true], ['textures', 10, 'Cargando texturas…'],
 ];
 
 export const CREEP_AFTER_MS = 1200;   // silent this long: the stage starts to creep

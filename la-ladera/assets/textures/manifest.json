@@ -1,5 +1,10 @@
 {
  "textures": {
+  "vehicle_paint": {
+   "map": "vehicles/paint.png",
+   "size": [1024, 1024],
+   "source": "original procedural paint, rust, mud and unbranded chiva patterns; tools/blender/vehicles_atlas.py"
+  },
   "clutter_decal": {
    "map": "clutter/decals.png",
    "size": [1024, 512]

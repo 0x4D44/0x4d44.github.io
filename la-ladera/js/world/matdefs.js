@@ -52,6 +52,7 @@ export default {
   laundry: { color: 0xffffff, rough: 0.95, side: 'double', tex: false },
   // vehicles, carts, bins (flat colours, tinted per vertex)
   car_paint: { color: 0xffffff, rough: 0.32, metal: 0.35, tex: false, env: 1.0 },
+  vehicle_paint: { color: 0xffffff, rough: 0.66, metal: 0.22, uv: 'unit', tex: 'vehicle_paint', env: 0.7 },
   tyre: { color: 0x141416, rough: 0.9, tex: false },
   chrome: { color: 0xc8ccd0, rough: 0.25, metal: 0.9, tex: false, env: 1.2 },
   glass_dark: { color: 0x1b2630, rough: 0.12, metal: 0.4, tex: false, env: 1.3, vertexColors: false },

@@ -19,6 +19,7 @@ import './nice.mjs';
 import os from 'node:os';
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { createServer as createNet } from 'node:net';
 import { mkdtemp, readFile, rm, writeFile, mkdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -48,8 +49,10 @@ async function freePort() {
   return new Promise((res, rej) => { const s = createNet(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); }); s.on('error', rej); });
 }
 
-/** Static server over `root` (default: the repo root) on an OS-assigned port. */
-export async function serve(root = REPO) {
+/** Static server over `root` (default: the repo root) on an OS-assigned port. `gzip: true` compresses text (js, json, html, css, svg, wasm) for a client that accepts it, as GitHub Pages does: off by default,
+ *  so every number the tests have ever printed stays comparable; tests/slownet.mjs --gzip turns it on (the boot's text is ~4.5 MB of its ~37 MB, and ~1.3 MB compressed). */
+export async function serve(root = REPO, { gzip = false } = {}) {
+  const packed = new Map();
   const srv = createServer(async (req, res) => {
     try {
       const u = decodeURIComponent(new URL(req.url, 'http://x').pathname);
@@ -57,8 +60,13 @@ export async function serve(root = REPO) {
       if (!normalize(p).startsWith(normalize(root))) { res.writeHead(403).end(); return; }
       const st = await stat(p).catch(() => null);
       if (st?.isDirectory()) p = join(p, 'index.html');
-      const body = await readFile(p);
-      res.writeHead(200, { 'content-type': MIME[extname(p).toLowerCase()] ?? 'application/octet-stream', 'cache-control': 'no-store', 'content-length': body.length }).end(body);
+      let body = await readFile(p);
+      const type = MIME[extname(p).toLowerCase()] ?? 'application/octet-stream', head = { 'content-type': type, 'cache-control': 'no-store' };
+      if (gzip && body.length > 1024 && /^(text\/|application\/(json|wasm)|image\/svg)/.test(type) && /\bgzip\b/.test(req.headers['accept-encoding'] ?? '')) {
+        const key = `${p}:${st?.mtimeMs}`; let z = packed.get(key); if (!z) packed.set(key, z = gzipSync(body, { level: 6 }));
+        body = z; head['content-encoding'] = 'gzip'; head.vary = 'Accept-Encoding';
+      }
+      res.writeHead(200, { ...head, 'content-length': body.length }).end(body);
     } catch { res.writeHead(404, { 'content-type': 'text/plain' }).end('404'); }
   });
   await new Promise((r) => srv.listen(0, '127.0.0.1', r));
@@ -137,13 +145,13 @@ class Page {
 }
 
 /**
- * Start a static server + headless Chrome. Options: width, height, gpu ('auto' | 'swiftshader' | 'gpu'), root, args.
+ * Start a static server + headless Chrome. Options: width, height, gpu ('auto' | 'swiftshader' | 'gpu'), root, args, gzip (serve text compressed, as GitHub Pages does; see serve()).
  * Returns { open(path), page, close(), baseUrl, renderer }. There is no headed mode: `headless:false` throws.
  */
 export async function launch(o = {}) {
   if (o.headless === false) throw new Error('chrome.mjs is headless-only: a visible browser window steals the user\'s focus');
   if (o.memGate !== false) await memGate(o.minFreeGB ?? 5, 180);   // shared box: wait for commit headroom before another Chrome
-  const srv = await serve(o.root ?? REPO);
+  const srv = await serve(o.root ?? REPO, { gzip: !!o.gzip });
   const port = await freePort();
   const profile = await mkdtemp(join(tmpdir(), 'ladera-chrome-'));
   const gpu = o.gpu ?? 'auto';

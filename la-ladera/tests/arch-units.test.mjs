@@ -168,6 +168,26 @@ const SHOP_KINDS = ['shophouse', 'cornerstore', 'workshop'];
 const shopHomes = [...bps.map((bp) => ({ bp, ctx })), ...homeSet.bps.map((bp) => ({ bp, ctx: homeSet.ctx })), ...barrio.buildings.map((bp) => ({ bp, ctx: barrio.ctx }))].filter(({ bp }) => SHOP_KINDS.includes(bp.lot.kind) && bp.shell.F >= 2 && bp.shell.core);
 const FLAT_BED_AREA = 5.5, FLAT_BED_W = 1.9, FLAT_LIVING_AREA = 6.0;
 
+test('a flat\'s kitchen is at least as large as its bathroom (R4-209: 3.2 x 1.41 m galleys beside 3.2 x 1.7 m baths), with the living room 3.0 m and the bedroom 2.8 m deep at least, on the test lots and on the barrio', () => {
+  const problems = [], area = (r) => rw(r.rect) * rd(r.rect), fmt = (r) => `${rw(r.rect).toFixed(2)} x ${rd(r.rect).toFixed(2)}`;
+  let n = 0, across = 0;
+  for (const [set, list] of [['test', flats], ['barrio', barrio.buildings.filter((bp) => bp.lot.kind === 'apartments' && flatKind(bp) > 0)]]) {
+    for (const bp of list) for (const c of units(bp).dwellings) {
+      const g = (t) => c.rooms.find((r) => r.type === t), liv = g('living'), bed = g('bedroom'), kit = g('kitchen'), bath = g('bathroom'), name = `${set} ${bp.id} flat of floor ${c.floors[0]}`;
+      n++;
+      if (area(kit) < area(bath) - 1e-6) problems.push(`${name}: the kitchen (${fmt(kit)}) is smaller than the bath (${fmt(bath)})`);
+      if (rd(liv.rect) < 3.0 - 1e-6) problems.push(`${name}: a living room ${rd(liv.rect).toFixed(2)} m deep`);
+      if (rd(bed.rect) < 2.8 - 1e-6) problems.push(`${name}: a bedroom ${rd(bed.rect).toFixed(2)} m deep`);
+      if (Math.abs(rw(kit.rect) - rw(bath.rect)) < 1e-6) {                                  // the bath cut across the back of the kitchen band: the kitchen is the deeper of the two
+        across++;
+        if (rd(kit.rect) < 1.7 - 1e-6 || rd(kit.rect) <= rd(bath.rect)) problems.push(`${name}: a ${fmt(kit)} kitchen behind a ${fmt(bath)} bath is a galley`);
+      }
+    }
+  }
+  assert.ok(n >= 20 && across >= 8, `${n} flats, ${across} with the bath across the kitchen band: the lots no longer exercise the case (the barrio's L06 and L71)`);
+  assert.deepEqual(problems, []);
+});
+
 test('a home above a shop has a bedroom: a living room (or the bedroom is the studio), a kitchen, a bedroom and a bathroom upstairs, whatever the storeys, and the barrio has no shop home without one', () => {
   assert.ok(shopHomes.length >= 40, `${shopHomes.length} homes above a shop`);
   for (const { bp } of shopHomes) {

@@ -135,7 +135,7 @@ test('successful loading attaches one passive callback, keeps people/RNG/physics
   assert.deepEqual(api.list().filter((a) => a.caged).map(({ x, y, z }) => ({ x, y, z })), cages);
   assert.ok(api.stats().near <= ANIMAL_LIMITS.maxNear);
   assert.ok(api.stats().triangles <= api.stats().triangleCeiling);
-  assert.equal(api.stats().triangleCeiling, 19200);
+  assert.equal(api.stats().triangleCeiling, 6 * 2700 + 20 * 300, 'six near models and twenty far ones: 22 200 triangles at most');
   assert.equal(api.stats().drawCalls, api.stats().visible, 'one draw in each fixture LOD');
   f.world.player.x = 300; advance(f.world, 1);
   assert.equal(api.stats().visible, 0);
@@ -186,7 +186,7 @@ test('an animal at rest yields to somebody who steps up to it; at its hour of re
 test('at dusk the pigeons and hens go out of sight once nobody is looking, and come back at dawn', async () => {
   const f = fixture(); f.ctx.hour = 12;
   const api = await loadAnimals(f.ctx, f.options), roost = () => api.list().filter((a) => a.species === 'pigeon' || a.species === 'hen'), rest = () => api.list().filter((a) => a.species !== 'pigeon' && a.species !== 'hen');
-  advance(f.world, 1); assert.ok(roost().length === 3 && roost().every((a) => a.visible && !a.hidden));
+  advance(f.world, 1); assert.ok(roost().length === 6 && roost().every((a) => a.visible && !a.hidden), 'two pigeons and a hen in each ten roles');
   f.ctx.hour = 23; f.world._frustum = { containsPoint: () => true };                         // the player looks at the whole barrio: whoever is within 25 m waits, the rest are already in their loft
   advance(f.world, 1);
   for (const a of roost()) assert.equal(a.hidden, Math.hypot(a.x, a.y, a.z) >= 25, `${a.id} at ${Math.hypot(a.x, a.y, a.z).toFixed(1)} m`);

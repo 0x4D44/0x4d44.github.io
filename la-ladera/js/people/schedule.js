@@ -13,7 +13,7 @@
 // `homeWeight` / `visitWeight`-> how much a person wants to be at home / at the clinic or the hall now (the weight of 'home', 'clinic', 'hall' in freeChoices)
 // `homeActs(npc, hour)`       -> [[scene, weight], ...]  (what is done at home: cook eat wash laundry sweep tv read homework pray play phone sit)
 
-/** Opening hours of each shop type [open, close]. Shopkeepers live above the shop and sleep when it is closed. */
+/** Opening hours of each shop type [open, close]. Shopkeepers live above the shop: shut, they are upstairs, up and about until bed time (`keeperBedH`), in bed after it. */
 export const SHOP_HOURS = {
   tienda: [5.8, 21.2], panaderia: [4.8, 19.6], fruver: [6.4, 19.0], carniceria: [6.5, 18.6], peluqueria: [8.6, 19.2], papeleria: [7.0, 19.6], drogueria: [7.0, 21.6],
   taller: [7.6, 18.6], cafe: [6.0, 20.6], restaurante: [6.6, 20.2], minutos: [8.0, 22.2], zapateria: [8.0, 18.6], modista: [8.6, 18.0], ferreteria: [7.0, 18.2],
@@ -24,16 +24,26 @@ export const WORK = {
 };
 
 const inWin = (h, a, b) => h >= a && h < b;
-/** True when the shop of this shopkeeper is open at `h`. */
-export function shopOpen(npc, h) {
+/** When the shop of this shopkeeper opens and shuts today [open, close]: the type's hours, moved a little by the keeper's own offsets. */
+export function shopWindow(npc) {
   const t = SHOP_HOURS[npc.bank] ?? [7, 19]; const j = npc.jit ?? [0.5, 0.5, 0.5];
-  return inWin(h, t[0] + (j[0] - 0.5) * 0.5, t[1] + (j[1] - 0.5) * 0.7);
+  return [t[0] + (j[0] - 0.5) * 0.5, t[1] + (j[1] - 0.5) * 0.7];
 }
+/** True when the shop of this shopkeeper is open at `h`. */
+export function shopOpen(npc, h) { const [a, b] = shopWindow(npc); return inWin(h, a, b); }
 export const awake = (npc, h) => inWin(h, npc.riseH ?? 5.5, npc.bedH ?? 21.5);
+/**
+ * When a shopkeeper goes to bed (`u` in [0,1) is the keeper's own offset): half an hour after the shop has shut and not before 21:36, so the barrio is still awake at half past eight (R3-028,
+ * twenty of the eighty-six were in bed at 20:30, the keepers among them); the baker, who is up in the small hours, goes from 20:18. Never before the shop shuts (a keeper is not in bed behind an open shop).
+ */
+export function keeperBedH(npc, u) {
+  const baker = npc.bank === 'panaderia';
+  return Math.max(baker ? 20.3 : 21.6, shopWindow(npc)[1] + 0.5) + u * (baker ? 1.0 : 1.2);
+}
 
 export function blockAt(npc, h) {
   const j = npc.jit ?? [0.5, 0.5, 0.5], r = npc.routine;
-  if (r === 'shopkeeper') return shopOpen(npc, h) ? 'work' : 'sleep';
+  if (r === 'shopkeeper') return shopOpen(npc, h) ? 'work' : awake(npc, h) ? 'free' : 'sleep';       // shut: upstairs and up and about ('free') until bed time, like anybody else's evening
   if (!awake(npc, h)) return 'sleep';
   if (r === 'kid' || r === 'teen') return inWin(h, SCHOOL.start + (j[0] - 0.5) * 0.4, SCHOOL.end + (r === 'teen' ? 0.5 : 0) + (j[1] - 0.5) * 0.4) ? 'school' : 'free';
   const w = WORK[npc.persona];

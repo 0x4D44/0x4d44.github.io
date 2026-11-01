@@ -3,6 +3,8 @@
 import { tube, quadOut } from './mk.js';
 import { OCC } from './occupancy.js';
 import { pointAt, project } from './geom.js';
+import { vehicleMatrix } from './vehicle-library.js';
+import { buildParkedLibrary } from './vehicle-placement.js';
 
 /** footprints [width, length] of the placed things, the one source for their colliders and for the arrival-view test */
 export const SIZE = { car: [1.75, 3.9], buseta: [2.2, 7.5], moto: [0.62, 1.95], bike: [0.5, 1.7], cart: [1.5, 0.9], bin: [0.5, 0.6] };
@@ -82,6 +84,11 @@ function mudguard(b, y, z, R, hw, a0, a1, col, n = 6) {
 // ---------------------------------------------------------------------------------------------------- the vehicles
 /** A small hatchback / sedan seen all over Colombia (taxis are yellow). Lofted body, glasshouse with pillars, arches, lamps, yellow plates. */
 export function car(K, b, x, y, z, ry, pitch, o) {
+  const key = Math.abs(Math.round(x * 13 + z * 7)) % 2 ? 'vehicle_hatchback_a' : 'vehicle_hatchback_b';
+  if (K.ctx.vehicleLibrary?.place(key, x, y, z, ry, pitch, o)) {
+    if (o.taxi) posed(K, b, x, y, z, ry, pitch, () => b.box('light_roof', 0, K.ctx.vehicleLibrary.meta(key).size[1] + .06, -.16, .5, .12, .2, { col: WHITE }));
+    return key;
+  }
   const body = rgb(o.hex), dark = shade(body, 0.5), sill = [0.12, 0.12, 0.13];
   posed(K, b, x, y, z, ry, pitch, () => {
     // lower body: rear bumper -> boot -> doors -> scuttle -> bonnet -> nose
@@ -122,6 +129,10 @@ export function car(K, b, x, y, z, ry, pitch, o) {
 
 /** A 125-200 cc street bike: frame, tank, two-tone plastics, telescopic fork, bars with mirrors, lamp, exhaust, swingarm. `hex2` = side panels / fender. */
 export function moto(K, b, x, y, z, ry, pitch, o) {
+  if (K.ctx.vehicleLibrary?.place('vehicle_motorbike', x, y, z, ry, pitch, o)) {
+    recordMotoSeat(K, vehicleMatrix(x, y, z, ry, pitch), ry, pitch, K.ctx.vehicleLibrary.meta('vehicle_motorbike').seatRest);
+    return 'vehicle_motorbike';
+  }
   const c1 = rgb(o.hex), c2 = rgb(o.hex2 ?? 0x1c1c20), steel = [0.55, 0.57, 0.6];
   const pose = posed(K, b, x, y, z, ry, pitch, () => {
     wheel(b, 0, 0.3, 0.66, 0.3, 0.09, { spokes: true }); wheel(b, 0, 0.3, -0.66, 0.3, 0.12, { spokes: true });
@@ -177,12 +188,17 @@ export function moto(K, b, x, y, z, ry, pitch, o) {
   // A later helmet must sit on this exact transformed seat, including pitch and the body's lateral displacement.
   // Shop-front motos are level; kerb motos follow the road. Re-deriving either pose from rounded vehicle-list data floats helmets.
   // `pitch` is the helmet's own (the bike's less the seat's tilt: the dual seat rises to the tail, so a helmet laid flat on the bike would rock on it); `bikePitch` is the bike's.
-  const seat = new K.ctx.THREE.Vector3(0, MOTO_SEAT_REST.y, MOTO_SEAT_REST.z).applyMatrix4(pose);
+  recordMotoSeat(K, pose, ry, pitch);
+}
+
+function recordMotoSeat(K, pose, ry, pitch, rest = MOTO_SEAT_REST) {
+  const seat = new K.ctx.THREE.Vector3(0, rest.y, rest.z).applyMatrix4(pose);
   K.ctx.world ??= {};
-  (K.ctx.world.motoSeats ??= []).push({ x: seat.x, y: seat.y, z: seat.z, yaw: ry, pitch: pitch - MOTO_SEAT_REST.tilt, bikePitch: pitch });
+  (K.ctx.world.motoSeats ??= []).push({ x: seat.x, y: seat.y, z: seat.z, yaw: ry, pitch: pitch - rest.tilt, bikePitch: pitch });
 }
 
 export function bicycle(K, b, x, y, z, ry, pitch, o) {
+  if (K.ctx.vehicleLibrary?.place('vehicle_bicycle', x, y, z, ry, pitch, o)) return 'vehicle_bicycle';
   const body = rgb(o.hex);
   posed(K, b, x, y, z, ry, pitch, () => {
     wheel(b, 0, 0.33, 0.55, 0.33, 0.04, { spokes: true }); wheel(b, 0, 0.33, -0.55, 0.33, 0.04, { spokes: true });
@@ -200,6 +216,7 @@ export function bicycle(K, b, x, y, z, ry, pitch, o) {
 }
 
 export function buseta(K, b, x, y, z, ry, pitch, o) {
+  if (K.ctx.vehicleLibrary?.place('vehicle_chiva', x, y, z, ry, pitch, o)) return 'vehicle_chiva';
   const body = rgb(o.hex), stripe = rgb(o.stripe ?? 0xf2c230);
   posed(K, b, x, y, z, ry, pitch, () => {
     b.box('car_paint', 0, 1.05, 0, 2.15, 1.3, 7.4, { col: body });                      // lower body
@@ -319,7 +336,8 @@ export function buildVehicles(K) {
     return true;
   };
   const pitchOf = (x, z, ry) => { const dx = Math.sin(ry) * 1.6, dz = Math.cos(ry) * 1.6; return Math.atan2(H(x + dx, z + dz) - H(x - dx, z - dz), 3.2); };
-  const list = (ctx.world.vehicleList = []), rec = (kind, x, z, ry) => list.push({ kind, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(2) });
+  const list = (ctx.world.vehicleList = []), rec = (kind, x, z, ry, extra = {}) => list.push({ kind, x: +x.toFixed(2), z: +z.toFixed(2), ry: +ry.toFixed(2), ...extra });
+  const envelope = (key, fallback) => ctx.vehicleLibrary?.meta(key)?.footprint ?? fallback;
 
   // ---- cars along the kerbs of the road and the commerce street
   for (const st of plan.streets.filter((s) => s.kind === 'road')) {
@@ -331,8 +349,8 @@ export function buildVehicles(K) {
       const x = q.x - q.tz * lane * sd, z = q.z + q.tx * lane * sd, ry = Math.atan2(q.tx, q.tz) + (sd > 0 ? 0 : Math.PI) + rr.range(-0.04, 0.04);
       if (!okSpot(st, x, z, x, z, 1.9, 4.1, ry)) continue;
       const taxi = rr.chance(0.18), y = H(x, z) + 0.04, pitch = pitchOf(x, z, ry);
-      car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: taxi ? 0xf2c21b : rr.pick(carCols), taxi });
-      K.rect(x, z, ...SIZE.car, ry, 1.5, y, 0.05, true);                      // solid: no inside to be shut in (the taxi at (56.3, -6.8) held a walker)
+      const model = car(K, K.b('vehicles', x, z), x, y, z, ry, pitch, { hex: taxi ? 0xf2c21b : rr.pick(carCols), taxi });
+      K.rect(x, z, ...envelope(model, SIZE.car), ry, ctx.vehicleLibrary?.meta(model)?.size[1] ?? 1.5, y, 0.05, true); // solid: no inside to be shut in
       occ.take(x, z, 2.1); placed++; stats.cars++; if (taxi) stats.taxis++; rec(taxi ? 'taxi' : 'car', x, z, ry);
     }
   }
@@ -347,12 +365,15 @@ export function buildVehicles(K) {
           const q = pointAt(s1._d.pts, s1._d.cum, s), lane = s1.width / 2 - 0.9 - 1.0, x = q.x + q.tz * lane * sd, z = q.z - q.tx * lane * sd, ry = Math.atan2(q.tx, q.tz) + (sd > 0 ? Math.PI : 0);
           if (!okSpot(s1, x, z, x, z, 2.4, 7.8, ry, 0.4) || !occ.clear(x, z, 0.5, OCC.DOOR)) continue;
           const y = H(x, z) + 0.04;
-          buseta(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rr.pick([0x2a6ab0, 0xd8402a, 0x3a9a5a]), stripe: 0xf2c230 });
-          K.rect(x, z, ...SIZE.buseta, ry, 2.6, y, 0.05, true); occ.take(x, z, 4); stats.busetas++; rec('buseta', x, z, ry); done = true; break;
+          const model = buseta(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rr.pick([0x2a6ab0, 0xd8402a, 0x3a9a5a]), stripe: 0xf2c230 });
+          K.rect(x, z, ...envelope(model, SIZE.buseta), ry, ctx.vehicleLibrary?.meta(model)?.size[1] ?? 2.6, y, 0.05, true); occ.take(x, z, 4); stats.busetas++; rec('buseta', x, z, ry); done = true; break;
         }
       }
     }
   }
+  // Larger utility vehicles reserve their real footprints before the smaller bikes take the remaining kerb spaces.
+  const libraryParked = buildParkedLibrary(K, { pitchOf, rec });
+  if (libraryParked) stats.libraryParked = libraryParked;
   // ---- motorbikes and bicycles by the shop fronts and at the kerbs
   const rm = R.fork('motos');
   for (const lot of plan.lots) {
@@ -361,8 +382,8 @@ export function buildVehicles(K) {
     const x = lot.x + u * c + hd * s, z = lot.z - u * s + hd * c, ry = lot.rotY + Math.PI / 2 + rm.range(-0.5, 0.5);
     if (!occ.clear(x, z, 0.5, OCC.DOOR | OCC.STAIR | OCC.PLAZA | OCC.NAV | OCC.STEEP) || !occ.clear(x, z, 0, OCC.LOT) || occ.overlaps(x, z, 0.8)) continue;
     const y = H(x, z) + 0.02;
-    if (rm.chance(0.8)) { const [h1, h2] = rm.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: h1, hex2: h2 }); K.rect(x, z, ...SIZE.moto, ry, 1.0, y); stats.motos++; rec('moto', x, z, ry); }
-    else { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: rm.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, ...SIZE.bike, ry, 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
+    if (rm.chance(0.8)) { const [h1, h2] = rm.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: h1, hex2: h2 }); K.rect(x, z, ...envelope('vehicle_motorbike', SIZE.moto), ry, ctx.vehicleLibrary?.meta('vehicle_motorbike')?.size[1] ?? 1.0, y); stats.motos++; rec('moto', x, z, ry); }
+    else { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, 0, { hex: rm.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, ...envelope('vehicle_bicycle', SIZE.bike), ry, ctx.vehicleLibrary?.meta('vehicle_bicycle')?.size[1] ?? 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
     occ.take(x, z, 0.9);
   }
   // ... and parked along the edge of every street (on the pavement strip where there is one), pointing either way
@@ -374,8 +395,8 @@ export function buildVehicles(K) {
       const x = q.x - q.tz * off * sd, z = q.z + q.tx * off * sd, ry = Math.atan2(q.tx, q.tz) + (rk.chance(0.5) ? 0 : Math.PI) + rk.range(-0.12, 0.12);
       if (!okSpot(st, x, z, x, z, 0.8, 2.0, ry, 0.4) || !occ.clear(x, z, 0.5, OCC.DOOR | OCC.NAV)) continue;
       const y = H(x, z) + 0.02, bike = rk.chance(0.12);
-      if (bike) { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rk.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, ...SIZE.bike, ry, 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
-      else { const [h1, h2] = rk.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: h1, hex2: h2 }); K.rect(x, z, ...SIZE.moto, ry, 1.0, y); stats.motos++; rec('moto', x, z, ry); }
+      if (bike) { bicycle(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: rk.pick([0xb8222a, 0x2b4f7e, 0x3d6b4a, 0xd9cfa8]) }); K.rect(x, z, ...envelope('vehicle_bicycle', SIZE.bike), ry, ctx.vehicleLibrary?.meta('vehicle_bicycle')?.size[1] ?? 0.9, y); stats.bikes++; rec('bike', x, z, ry); }
+      else { const [h1, h2] = rk.pick(motoCols); moto(K, K.b('vehicles', x, z), x, y, z, ry, pitchOf(x, z, ry), { hex: h1, hex2: h2 }); K.rect(x, z, ...envelope('vehicle_motorbike', SIZE.moto), ry, ctx.vehicleLibrary?.meta('vehicle_motorbike')?.size[1] ?? 1.0, y); stats.motos++; rec('moto', x, z, ry); }
       occ.take(x, z, 1.1); placed++;
     }
   }

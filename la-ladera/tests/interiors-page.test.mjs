@@ -7,8 +7,10 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { launch } from './chrome.mjs';
-import { INSPECT } from '../js/interiors/inspect_data.js';
+import { INSPECT, BINDINGS } from '../js/interiors/inspect_data.js';
 import { GOODS_CATALOG } from '../js/interiors/goods-catalog.js';
+import { FINDS } from '../js/interiors/finds.js';
+import { GLINT } from '../js/interiors/glint.js';
 
 const TRIES = +(process.env.A3_TRIES || 24);
 let b, page;
@@ -174,7 +176,7 @@ test('a special find: E marks it (toast, discovery, shelf counter kept current B
     return { mark: m, prompt: __a3.prompt(), lot: m ? c.buildings.get(m.building)?.lot?.name ?? null : null, counts: JSON.parse(JSON.stringify(counts)), found: c.discover.count, total: c.discover.total, toast: t?.innerText ?? '', toastOn: t?.classList.contains('on'), hasFound: m ? c.discover.found.has(m.id) : false, finds: L.state().finds };`);
   assert.ok(r.mark, 'E on the find marked no discovery');
   assert.equal(r.mark.kind, 'hallazgo');
-  const word = (p) => String(p).replace(/^E\s+/, '');                                                       // the HUD shows the key, a line break, then the prompt
+  const word = (p) => String(p).replace(/^E(\s+|(?=[A-Z]))/, '');                                           // the HUD shows the key, a line break, then the prompt (no line break once E has held the find up: the HUD is hidden then)
   assert.equal(word(k.prompt), 'Examinar', 'before it is picked up the prompt does not give the find away');
   assert.ok(word(r.prompt).startsWith('Examinar · ') && word(r.prompt).length > 14, `once found, the prompt gives its name: ${JSON.stringify(r.prompt)}`);
   assert.ok(r.lot && r.mark.name.endsWith(` · ${r.lot}`), `the title of the find says where it was found: ${JSON.stringify(r.mark.name)} (lot ${JSON.stringify(r.lot)})`);       // eight houses hold a morrocota
@@ -276,4 +278,163 @@ test('a stocked shop: the goods library and its label atlas are loaded, every sh
   assert.equal(after.errors, 0);
   console.log(`# stocked shop ${f.bid} (${closed.goods} articles in ${closed.lods} LOD${closed.lods > 1 ? 's' : ''}): the crosshair finds ${f.target}, E ${after.opened ? 'opens the drawer' : 'makes the counter speak'}; draw calls ${closed.dc} -> ${after.dc}, triangles ${closed.tris}; whole world ${pre.goods} articles in ${pre.shops} shops`);
   await L(`C.close(S.id, true); L.step(2); return 1;`);
+});
+
+test('the TV screens show a picture (D28: the screen was one flat emissive colour, a white octagon): all four screen materials carry a match as their emissive map, the glass maps the whole picture, a tube set has its own', async () => {
+  const r = await kit(`
+    const c = __ladera.ctx, mats = {}, meshes = { flat: 0, tube: 0, bad: [] };
+    for (const k of ['tv_screen_a', 'tv_screen_b', 'tv_screen_crt_a', 'tv_screen_crt_b']) {
+      const m = c.matlib.cache.get(k), im = m?.emissiveMap?.image; let st = null;
+      if (im) {
+        const W = im.width, H = im.height, d = im.getContext('2d').getImageData(0, 0, W, H).data, lum = new Float32Array(W * H);
+        for (let i = 0; i < W * H; i++) lum[i] = (0.3 * d[i * 4] + 0.59 * d[i * 4 + 1] + 0.11 * d[i * 4 + 2]) / 255;
+        let sum = 0, rim = 0, rimN = 0, bright = 0, max = 0;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const v = lum[y * W + x]; sum += v; max = Math.max(max, v); if (v > 0.9) bright++; if (x < 6 || y < 6 || x >= W - 6 || y >= H - 6) { rim += v; rimN++; } }
+        const mean = sum / (W * H); let ss = 0; for (const v of lum) ss += (v - mean) ** 2;
+        st = { mean, sd: Math.sqrt(ss / (W * H)), max, bright: bright / (W * H), rim: rim / rimN };
+      }
+      mats[k] = { has: !!m, st };
+    }
+    c.scene.traverse((o) => {
+      if (!o.isMesh || !/^tv_screen/.test(o.userData?.matKey ?? '')) return;
+      const uv = o.geometry.attributes.uv; let u0 = 9, u1 = -9, v0 = 9, v1 = -9;
+      for (let i = 0; i < uv.count; i++) { u0 = Math.min(u0, uv.getX(i)); u1 = Math.max(u1, uv.getX(i)); v0 = Math.min(v0, uv.getY(i)); v1 = Math.max(v1, uv.getY(i)); }
+      meshes[/crt/.test(o.userData.matKey) ? 'tube' : 'flat']++;
+      if (!(u0 < 0.001 && u1 > 0.999 && v0 < 0.001 && v1 > 0.999)) meshes.bad.push(o.name + ' u ' + u0.toFixed(2) + '..' + u1.toFixed(2) + ' v ' + v0.toFixed(2) + '..' + v1.toFixed(2));
+    });
+    return { mats, meshes };`);
+  for (const [k, m] of Object.entries(r.mats)) {
+    assert.ok(m.has && m.st, `${k} has no picture (emissive map)`);
+    assert.ok(m.st.sd >= 0.15 && m.st.sd <= 0.45, `${k}: the picture is ${m.st.sd < 0.15 ? 'flat' : 'a slab of black and white'} (spread ${m.st.sd.toFixed(2)})`);
+    assert.ok(m.st.mean >= 0.2 && m.st.mean <= 0.6, `${k}: mean brightness ${m.st.mean.toFixed(2)}`);
+    assert.ok(m.st.bright < 0.1, `${k}: ${(100 * m.st.bright).toFixed(0)}% of the picture is white (it washes out to a white screen)`);
+    if (/crt/.test(k)) assert.ok(m.st.rim < 0.05, `${k}: the rim of the glass is ${m.st.rim.toFixed(2)} bright (the polygon of the glass shows)`);       // the tube's glass is a cap of a sphere: the picture fades to black round it
+  }
+  assert.ok(r.meshes.flat >= 30 && r.meshes.tube >= 10, `${r.meshes.flat} flat-panel and ${r.meshes.tube} tube screens in the barrio`);
+  assert.deepEqual(r.meshes.bad, [], 'a screen whose UVs do not cover the picture');
+  console.log(`# tv: ${r.meshes.flat} flat-panel and ${r.meshes.tube} tube screen meshes; ${Object.entries(r.mats).map(([k, m]) => `${k} mean ${m.st.mean.toFixed(2)} spread ${m.st.sd.toFixed(2)} white ${(100 * m.st.bright).toFixed(1)}% rim ${m.st.rim.toFixed(2)}`).join('; ')}`);
+});
+
+test('every find is under the crosshair from the first spot a person would stand at (R4-208, R4-206: of 162 finds 40 were not, 16 from no spot at all): the finds of the first buildings, looked at from the first of the slot\'s front spots', async () => {
+  const r = await kit(`
+    const L = __ladera, c = L.ctx, C = c.containers, { frontSpots } = await import('/la-ladera/js/interiors/containers.js'), out = []; let n = 0;
+    for (const bp of c.buildings.values()) {
+      if (!C.pending.has(bp.id)) continue;
+      if (n++ >= ${TRIES}) break;
+      L.enter(bp.id); L.step(70);
+      for (const S of C.byBuilding.get(bp.id) ?? []) {
+        if (!S.plan?.find) continue;
+        const room = S.bp.rooms.find((q) => q.id === S.rec.room), sps = frontSpots(S);
+        if (!sps.length) { out.push({ sid: S.id, name: S.rec.name, nospot: true }); continue; }
+        if (S.state === 'closed') C.open(S.id);
+        L.step(40);
+        const k = S.objs.findIndex((o) => o.find);
+        if (k < 0) { out.push({ sid: S.id, name: S.rec.name, nofind: true }); C.close(S.id, true); continue; }
+        const t = S.targets[k], [x, y, z] = S.bp.frame.toWorld(sps[0][0], room.y, sps[0][1]);
+        L.teleport(x, z, { y }); L.step(2); L.lookAt(t.x, t.y, t.z); L.step(2);
+        const got = __a3.look()?.id ?? null;
+        out.push({ sid: S.id, name: S.rec.name, kind: S.slot.kind, find: S.objs[k].find, ok: got === 'cont:' + S.id + ':' + k, got });
+        C.close(S.id, true); L.step(2);
+      }
+    }
+    return out;`);
+  const bad = r.filter((x) => !x.ok);
+  assert.ok(r.length >= 8, `only ${r.length} finds in the first ${TRIES} buildings`);
+  assert.deepEqual(bad.map((x) => `${x.sid} ${x.name} ${x.kind}: ${x.find ?? ''} ${x.nospot ? 'no front spot' : x.nofind ? 'the find is not inside' : `the crosshair is on ${x.got}`}`), [], 'a find that the first spot does not show');
+  console.log(`# finds seen from the first front spot: ${r.length - bad.length} of ${r.length} in ${TRIES} buildings`);
+});
+
+test('E on a find that has a model of the library holds it up to the eyes (R4-206: there was no close-up view): 42 cm in front of the camera, 20 cm long, drawn on the screen, the world waits; Esc puts it back and only that, E puts it back too', async () => {
+  await kit(`const c = __ladera.ctx; if (c.flow.mode === 'panel') c.flow.closePanel(); __ladera.step(2); return c.mode;`);              // whatever an earlier test left open
+  const f = await kit(`
+    const L = __ladera, c = L.ctx, C = c.containers, bound = ${JSON.stringify(Object.keys(BINDINGS))}; let n = 0;
+    for (const bp of c.buildings.values()) {
+      if (!C.pending.has(bp.id)) continue;
+      if (n++ >= ${TRIES}) break;
+      L.enter(bp.id); L.step(70);
+      for (const S of C.byBuilding.get(bp.id) ?? []) {
+        if (!S.reachable || !S.plan?.find || !bound.includes(S.plan.find)) continue;
+        C.open(S.id); L.step(40);
+        const k = S.objs.findIndex((o) => o.find && o.model);
+        if (k >= 0) { const t = S.targets[k], spot = await __a3.aim(S.id, 'cont:' + S.id + ':' + k, [t.x, t.y, t.z]); if (spot) return { bid: bp.id, sid: S.id, k, spot, find: S.objs[k].find, model: S.objs[k].model.key }; }
+        C.close(S.id, true); L.step(2);
+      }
+    }
+    return null;`);
+  assert.ok(f, `no slot with a find that has a model could be aimed at in ${TRIES} buildings`);
+  const L = (e) => kit(`const L = __ladera, c = L.ctx, C = c.containers, S = C.slots.get(${JSON.stringify(f.sid)}); ${e}`);
+  const pix = `const pix = async (w = 320, h = 180) => { const img = new Image(); img.src = L.shot({ w, h }); await img.decode(); const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const g = cv.getContext('2d'); g.drawImage(img, 0, 0); return g.getImageData(0, 0, w, h).data; };`;
+  await L(`${pix} L.step(3); window.__a3.pix0 = await pix(); return 1;`);
+  await page.key('KeyE'); await tick(120);
+  const h = await L(`${pix}
+    const g = c.holdup.group, cam = c.camera, fwd = cam.getWorldDirection(new c.THREE.Vector3()), to = g ? g.position.clone().sub(cam.position) : null, ndc = g ? g.position.clone().project(cam) : null;
+    const after = await pix(), before = window.__a3.pix0, W = 320, H = 180; let s = 0, n = 0;
+    for (let y = Math.round(H * 0.3); y < Math.round(H * 0.7); y++) for (let x = Math.round(W * 0.3); x < Math.round(W * 0.7); x++) { const i = (y * W + x) * 4; s += Math.abs(after[i] - before[i]) + Math.abs(after[i + 1] - before[i + 1]) + Math.abs(after[i + 2] - before[i + 2]); n += 3; }
+    const box = g ? new c.THREE.Box3().setFromObject(g, true).getSize(new c.THREE.Vector3()) : null, q = (sel) => document.querySelector(sel)?.textContent ?? '';
+    return { mode: c.mode, running: c.running, current: c.flow.current, open: c.holdup.isOpen, inScene: !!g && c.scene.children.includes(g), along: to ? to.dot(fwd) : null, dist: to?.length() ?? null, ndc: ndc && [ndc.x, ndc.y],
+      long: box ? Math.max(box.x, box.y, box.z) : null, diff: s / n, name: q('#panel .hd-name'), react: q('#panel .hd-react'), hint: q('#panel .hd-hint'), tag: q('#panel .hd-tag'), lot: S.bp.lot?.name ?? null, nameStyle: (() => { const e = document.querySelector('#panel .hd-name'), s = e && getComputedStyle(e); return s ? [s.fontSize, s.textTransform] : null; })(), state: S.state, found: c.discover.found.has('find:' + ${JSON.stringify(f.find)} + ':' + S.bid) };`);
+  const rec = FINDS.find((x) => x.id === f.find);
+  assert.equal(h.open, true, `E on the ${f.find} (model ${f.model}) did not hold it up: ${JSON.stringify({ mode: h.mode, current: h.current })}`);
+  assert.deepEqual([h.mode, h.running, h.current], ['panel', false, 'holdup'], 'the world should wait while it is held');
+  assert.ok(h.found, 'the find is found as before (the toast and the discovery are the old ones)');
+  assert.ok(h.inScene, 'the thing is in the scene');
+  assert.ok(Math.abs(h.along - 0.42) < 0.03 && h.dist > 0.38 && h.dist < 0.48, `it hangs ${h.along} m in front of the eyes (${h.dist} m away)`);
+  assert.ok(Math.abs(h.ndc[0]) < 0.12 && Math.abs(h.ndc[1]) < 0.12, `it is in the middle of the screen (${h.ndc})`);
+  assert.ok(h.long > 0.15 && h.long < 0.205, `it is ${h.long} m long to the eye`);
+  assert.ok(h.lot && h.name.startsWith(`${rec.name.es} · ${h.lot}`) && h.react.length > 3 && /Esc/.test(h.hint) && /^Hallazgo · .+ [1-9]\d* de [1-9]\d*$/.test(h.tag), `the caption says what the toast says (the HUD is hidden while it is held): ${JSON.stringify([h.tag, h.name, h.react, h.hint])}`);
+  assert.deepEqual(h.nameStyle, ['22px', 'none'], 'the name is set in the caption\'s own type (the panel\'s `#panelbody h3` rule would make it small pale capitals)');
+  console.log(`# ${f.find} (${f.model}) in ${f.sid}: held ${h.dist.toFixed(2)} m away, ${h.long.toFixed(3)} m long, the middle of the screen changed by ${h.diff.toFixed(1)} of 255; caption ${JSON.stringify(h.name + ' | ' + h.react)}`);
+  assert.ok(h.diff > 12, `the thing is not drawn: the middle of the screen changed by only ${h.diff.toFixed(1)} of 255`);
+  await page.key('Escape'); await tick(80);
+  const e1 = await L(`return { mode: c.mode, running: c.running, current: c.flow.current, open: c.holdup.isOpen, group: !!c.holdup.group, inScene: c.scene.children.some((q) => q.name === 'holdup'), state: S.state, pauseShown: !document.getElementById('pause').classList.contains('hidden'), panelShown: !document.getElementById('panel').classList.contains('hidden') };`);
+  assert.deepEqual([e1.mode, e1.current, e1.open, e1.group, e1.inScene, e1.pauseShown], ['play', null, false, false, false, false], 'Esc puts the thing back and gives the game back (no pause menu)');
+  assert.equal(e1.state, 'open', 'Esc closed only the hold-up: the drawer stays open');
+  await L(`L.step(3); return 1;`); await page.key('KeyE'); await tick(80);
+  const again = await L(`return { open: c.holdup.isOpen, mode: c.mode };`);
+  assert.deepEqual([again.open, again.mode], [true, 'panel'], 'E on the find again holds it up again');
+  await page.key('KeyE'); await tick(80);
+  const e2 = await L(`return { mode: c.mode, open: c.holdup.isOpen, inScene: c.scene.children.some((q) => q.name === 'holdup'), state: S.state, errors: L.state().errors };`);
+  assert.deepEqual([e2.mode, e2.open, e2.inScene, e2.state], ['play', false, false, 'open'], 'E, with it held, puts it back');
+  assert.ok(!e2.errors?.length, `errors ${JSON.stringify(e2.errors)}`);
+  await L(`C.close(S.id, true); L.step(2); return 1;`);
+});
+
+test('a treasure glints where it lies (R4-206: a speck of colour seen from 1.6 m above reads as nothing): the open slot has a star over the find, a finger above its top and nowhere else, it twinkles between its floor and its full size, and it goes with the slot when that closes', async () => {
+  const f = await kit(`
+    const L = __ladera, c = L.ctx, C = c.containers; let n = 0;
+    for (const bp of c.buildings.values()) {
+      if (!C.pending.has(bp.id)) continue;
+      if (n++ >= ${TRIES}) break;
+      L.enter(bp.id); L.step(70);
+      for (const S of C.byBuilding.get(bp.id) ?? []) {
+        if (!S.reachable || !S.plan?.find) continue;
+        C.open(S.id); L.step(40);
+        const k = S.objs.findIndex((o) => o.find && o.glint);
+        if (k >= 0) return { bid: bp.id, sid: S.id, k, find: S.objs[k].find };
+        C.close(S.id, true); L.step(2);
+      }
+    }
+    return null;`);
+  assert.ok(f, `no slot with a glinting find in ${TRIES} buildings`);
+  const r = await kit(`
+    const L = __ladera, c = L.ctx, C = c.containers, S = C.slots.get(${JSON.stringify(f.sid)}), o = S.objs[${f.k}], t = S.targets[${f.k}], v = new c.THREE.Vector3();
+    const sp = S.glints.find((g) => g.sprite.userData.glintOf === o.find)?.sprite;
+    if (!sp) return { has: false, n: S.glints.length };
+    const shownUp = (obj) => { for (let p = obj; p; p = p.parent) { if (p.visible === false) return false; if (p === c.scene) return true; } return false; };
+    const sizes = []; for (let i = 0; i < 120; i++) { L.step(1); sizes.push(sp.scale.x); }
+    sp.getWorldPosition(v);
+    const out = { has: true, n: S.glints.length, glintObjs: S.objs.filter((q) => q.glint).length, pos: [v.x - t.x, v.y - t.y, v.z - t.z], h: o.h, shown: shownUp(sp), lo: Math.min(...sizes), hi: Math.max(...sizes), additive: sp.material.blending === c.THREE.AdditiveBlending, depthTest: sp.material.depthTest, depthWrite: sp.material.depthWrite };
+    C.close(S.id, true); L.step(40); out.shownClosed = shownUp(sp);
+    return out;`);
+  assert.ok(r.has, `the ${f.find} lies in ${f.sid} with no star over it (${r.n} stars in the slot)`);
+  assert.equal(r.n, r.glintObjs, 'one star per glinting thing in the slot');
+  assert.ok(r.shown, 'the star is in the scene while the slot is open');
+  assert.ok(Math.abs(r.pos[0]) < 0.04 && Math.abs(r.pos[2]) < 0.04, `the star hangs over the find, not beside it: ${r.pos}`);
+  const lift = r.pos[1] - r.h / 2;
+  assert.ok(Math.abs(lift - GLINT.LIFT) < 0.01 && lift > 0.005 && lift < 0.06, `a finger over the top of the find (it is ${r.h} m tall): ${lift} m above its top`);
+  assert.ok(r.lo >= GLINT.SIZE * GLINT.FLOOR - 1e-6 && r.lo < GLINT.SIZE * 0.6 && r.hi <= GLINT.SIZE + 1e-6 && r.hi > GLINT.SIZE * 0.85, `it twinkles between ${r.lo} and ${r.hi} (floor ${GLINT.SIZE * GLINT.FLOOR}, full ${GLINT.SIZE})`);
+  assert.ok(r.hi >= 0.1 && r.hi <= 0.3, `a star of ${r.hi} m across: big enough to see from the height of the eyes (a coin is 4 cm), small enough to stay a glint`);
+  assert.ok(r.additive && r.depthTest && !r.depthWrite, 'a soft additive star, hidden behind what stands in front of it');
+  assert.equal(r.shownClosed, false, 'the star goes with the slot when it closes');
+  console.log(`# glint over ${f.find} in ${f.sid}: ${r.pos.map((x) => x.toFixed(3))} from its middle, size ${r.lo.toFixed(3)} to ${r.hi.toFixed(3)}, ${r.n} stars in the slot`);
 });

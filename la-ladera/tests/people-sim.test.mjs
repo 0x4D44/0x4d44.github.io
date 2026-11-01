@@ -13,7 +13,7 @@ import { Spots } from '../js/people/spots.js';
 import { Indoor } from '../js/people/indoor.js';
 import { NavGraph } from '../js/people/nav.js';
 import { BODY, Npc } from '../js/people/npc.js';
-import { blockAt, SCHOOL, SHOP_HOURS } from '../js/people/schedule.js';
+import { awake, blockAt, keeperBedH, SCHOOL, SHOP_HOURS, shopOpen, shopWindow } from '../js/people/schedule.js';
 import { makeVariant, slotRatio, skinShade } from '../js/people/look.js';
 import { makeRng } from '../js/core/rng.js';
 
@@ -92,13 +92,22 @@ test('Spots: releasing what is not held does nothing; a claim is released once a
   assert.equal(S.free(b1), true, 'claiming another spot frees the first'); assert.equal(S.free(b2), false);
 });
 
-test('the day: shops open and shut with their hours, children are at school in the morning and free in the afternoon, everybody sleeps at 3', () => {
-  for (const [bank, [open, close]] of Object.entries(SHOP_HOURS)) {
-    const keeper = { routine: 'shopkeeper', bank, jit: [0.5, 0.5, 0.5] };
-    assert.equal(blockAt(keeper, open + 1), 'work', `${bank} works an hour after it opens`);
-    assert.equal(blockAt(keeper, close + 1), 'sleep', `${bank} sleeps an hour after it closes`);
-    assert.equal(blockAt(keeper, 3), 'sleep', `${bank} sleeps at 3`);
+test('the day: shops open and shut with their hours, a keeper whose shop has shut is up until bed time and in bed after it, children are at school in the morning and free in the afternoon, everybody sleeps at 3', () => {
+  for (const [bank, [open]] of Object.entries(SHOP_HOURS)) {
+    for (const jit of [[0, 0, 0], [0.5, 0.5, 0.5], [0.999, 0.999, 0.999]]) for (const u of [0, 0.5, 0.999]) {
+      const keeper = { routine: 'shopkeeper', bank, jit, riseH: 6 }; keeper.bedH = keeperBedH(keeper, u);
+      const shut = shopWindow(keeper)[1], who = `${bank} (offsets ${jit[0]}, bed ${u})`;
+      assert.equal(blockAt(keeper, open + 1), 'work', `${who} works an hour after it opens`);
+      assert.equal(blockAt(keeper, shut + 0.2), 'free', `${who}: the shop has shut and the keeper is up and about, not asleep`);
+      assert.ok(keeper.bedH >= shut + 0.5, `${who} goes to bed (${keeper.bedH.toFixed(2)}) after the shop has shut (${shut.toFixed(2)})`);
+      assert.equal(blockAt(keeper, keeper.bedH + 0.05), 'sleep', `${who} sleeps once it is bed time`);
+      assert.equal(blockAt(keeper, 3), 'sleep', `${who} sleeps at 3`);
+      if (bank === 'panaderia') assert.ok(keeper.bedH < 21.5, `the baker gets up in the small hours and goes to bed early (${keeper.bedH.toFixed(2)})`);
+      else assert.ok(keeper.bedH >= 21.6, `${who}: nobody but the baker is in bed before half past nine (${keeper.bedH.toFixed(2)})`);
+    }
   }
+  const barber = { routine: 'shopkeeper', bank: 'peluqueria', jit: [0.5, 0.5, 0.5], riseH: 6, bedH: 22 };
+  assert.equal(blockAt(barber, 5), 'sleep', 'a keeper is in bed before getting up'); assert.equal(blockAt(barber, 7.5), 'free', 'up before the shop opens at 8:36');
   for (const routine of ['kid', 'teen']) {
     const c = { routine, persona: routine === 'kid' ? 'nino' : 'adolescente', jit: [0.5, 0.5, 0.5], riseH: 6, bedH: 21 };
     assert.equal(blockAt(c, 10), 'school', `${routine} at 10:00`);
@@ -147,7 +156,49 @@ test('shopkeepers: they open on the hour, go out to sweep or lean and come back,
   assert.ok(out.size >= 1, 'a keeper walks (a break at the door, back to the post)');
   const night = fresh(23); run(night, 5);
   assert.equal([...night.shops.values()].filter((s) => s.open).length, 0, 'no shop is open at 23:00');
-  assert.ok(night.npcs.filter((n) => n.routine === 'shopkeeper').every((n) => n.away), 'the keepers are indoors, asleep');
+  assert.ok(night.npcs.filter((n) => n.routine === 'shopkeeper').every((n) => ['sleep', 'home'].includes(indoors(n))), 'the keepers are indoors (in bed, or just not yet)');
+});
+
+/** Why somebody is indoors ('sleep' | 'home' | ...): hidden in the building, or (the player is near) drawn in a room of it; null when out of doors. */
+const indoors = (n) => (n.away ? n.awayWhy : n.scene && n.scene.lot === n.homeLotId ? n.scene.why : null);
+
+test('shopkeepers at half past eight: a keeper whose shop has shut is upstairs and up, not asleep; only the baker is in bed (R3-028)', () => {
+  const sim = fresh(20.5); run(sim, 5);
+  const keepers = sim.npcs.filter((n) => n.routine === 'shopkeeper'), shut = keepers.filter((k) => !shopOpen(k, 20.5)), open = keepers.filter((k) => shopOpen(k, 20.5));
+  assert.ok(shut.length >= 8 && open.length >= 2, `${shut.length} shops are shut and ${open.length} are open at 20:30`);
+  assert.deepEqual(sim.npcs.filter((n) => indoors(n) === 'sleep' && n.bank !== 'panaderia').map((n) => `${n.id}:${n.bank}`), [], 'nobody is asleep at 20:30 but the baker');
+  for (const k of shut) assert.equal(indoors(k), k.bank === 'panaderia' && !awake(k, 20.5) ? 'sleep' : 'home', `${k.id} (${k.bank}): in bed only if it is the baker past bed time, else upstairs and up`);
+  for (const k of open) { const shop = sim.shops.get(k.shopLotId); assert.ok(shop?.open && !k.away && dist2(k, shop.post) < 1.3, `${k.id} (${k.bank}) is at the counter of the open shop`); }
+});
+
+test('shopkeepers: the shops shut one after another in the evening and the keeper goes upstairs, up and about, not to bed (R3-028)', () => {
+  const sim = fresh(18.2); run(sim, 5);
+  const keepers = sim.npcs.filter((n) => n.routine === 'shopkeeper'), shuts = keepers.filter((k) => shopOpen(k, 18.2) && !shopOpen(k, 19.3));
+  assert.ok(shuts.length >= 6 && shuts.every((k) => !k.away), `${shuts.length} shops are open at 18:12 and shut by 19:18`);
+  ctx.hour = 19.3;
+  sim.brain.closeShop(shuts[0]);                                       // (the shop shuts: the keeper at the counter goes straight up, hidden as up and about at once, before any tick could set the label right)
+  assert.ok(shuts[0].away && shuts[0].awayWhy === 'home' && shuts[0].block === 'free', `up and about, not asleep: ${shuts[0].awayWhy}/${shuts[0].block}`);
+  run(sim, 3);                                                         // (the others are still at the counter, standing there: the clock sends each up at once)
+  assert.deepEqual(shuts.filter((k) => indoors(k) !== 'home').map((k) => `${k.id}:${indoors(k) ?? 'out'}`), [], 'the keepers are upstairs and up three seconds after the shops shut');
+  run(sim, 90);                                                        // (and they stay so)
+  for (const k of shuts) { assert.equal(indoors(k), 'home', `${k.id} (${k.bank}) is upstairs and up`); assert.ok(!sim.shops.get(k.shopLotId).open, `${k.id}: the shop is shut`); }
+  assert.deepEqual(sim.npcs.filter((n) => indoors(n) === 'sleep').map((n) => n.id), [], 'nobody is asleep at 19:18');
+});
+
+test('shopkeepers: bed time comes while they are upstairs, the clock put back gets them up again, and the shop opens in the morning (nobody is left indoors for ever)', () => {
+  const sim = fresh(19.6); run(sim, 5);
+  const keepers = sim.npcs.filter((n) => n.routine === 'shopkeeper');
+  assert.ok(keepers.some((k) => indoors(k) === 'home'), 'some keepers are upstairs and up at 19:36');
+  ctx.hour = 23.9; run(sim, 90);                                       // (whoever was out on an errand has time to walk home)
+  assert.ok(keepers.every((k) => indoors(k) === 'sleep'), `all are in bed at 23:54: ${keepers.filter((k) => indoors(k) !== 'sleep').map((k) => `${k.id}:${indoors(k) ?? 'out'}`)}`);
+  ctx.hour = 20.5; run(sim, 40);
+  for (const k of keepers) assert.equal(shopOpen(k, 20.5) ? (k.away ? 'away' : 'at the post') : indoors(k), shopOpen(k, 20.5) ? 'at the post' : k.bank === 'panaderia' && !awake(k, 20.5) ? 'sleep' : 'home', `${k.id} (${k.bank}) when the clock is put back to 20:30`);
+  for (const [h, label] of [[12, 'noon'], [23.9, 'the night'], [8.8, 'the morning']]) {
+    ctx.hour = h; run(sim, 40);                                        // (one drawn upstairs by the player's being near goes down the stairs first)
+    assert.deepEqual(keepers.filter((k) => k.away && k.emerging).map((k) => k.id), [], `nobody is left half out of the door at ${label}`);
+    if (h === 23.9) continue;
+    for (const k of keepers.filter((m) => shopOpen(m, h))) assert.ok(sim.shops.get(k.shopLotId)?.open && !k.away, `${k.id} (${k.bank}) is up and its shop is open at ${label}`);       // (at the counter, or out at the door for a minute)
+  }
 });
 
 // ---- children ---------------------------------------------------------------------------------------------------------------------------------------

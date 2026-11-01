@@ -1,0 +1,47 @@
+[
+  {
+    "id": "calle-del-sol",
+    "street": "S1",
+    "streetName": "Calle del Sol",
+    "x": 44.72,
+    "y": 0.39050616621971107,
+    "z": 83.3,
+    "yaw": -0.11121922650608862,
+    "pitch": 0.0006030543538000202,
+    "target": {
+      "key": "vehicle_chiva",
+      "x": 45.687321706180605,
+      "z": 74.63845878015617
+    }
+  },
+  {
+    "id": "calle-del-comercio",
+    "street": "S2",
+    "streetName": "Calle del Comercio",
+    "x": 7.7205934287980185,
+    "y": 0.3315808382679056,
+    "z": 87.2,
+    "yaw": 2.0631099163599833,
+    "pitch": -0.1546347095341906,
+    "target": {
+      "key": "vehicle_handcart",
+      "x": 3.32059342879802,
+      "z": 89.56
+    }
+  },
+  {
+    "id": "calle-de-los-almendros",
+    "street": "S5",
+    "streetName": "Calle de los Almendros",
+    "x": 8.801781434752044,
+    "y": 6.901690624735293,
+    "z": 39.296,
+    "yaw": 2.0351103802155306,
+    "pitch": -0.17266269846981072,
+    "target": {
+      "key": "vehicle_motorbike",
+      "x": 4.001781434752047,
+      "z": 41.7
+    }
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "units": "metres",
+  "axes": "+Y up, +Z front, wheel axles +X",
+  "assets": {
+    "vehicle_hatchback_a": { "family": "hatchback", "size": [1.75, 1.53, 3.9], "footprint": [1.75, 3.9], "wheels": ["fl", "fr", "rl", "rr"], "paintTile": 0, "description": "Faded red early-1990s sloping-tail hatchback, dented door and muddy sills" },
+    "vehicle_hatchback_b": { "family": "hatchback", "size": [1.75, 1.58, 3.9], "footprint": [1.75, 3.9], "wheels": ["fl", "fr", "rl", "rr"], "paintTile": 12, "description": "Blue square-tail late-1990s hatchback, rust patches and mismatched bonnet" },
+    "vehicle_pickup": { "family": "pickup", "size": [1.86, 1.82, 4.7], "footprint": [1.86, 4.7], "wheels": ["fl", "fr", "rl", "rr"], "paintTile": 14, "description": "Work pickup with hollow ribbed bed, stake rails, worn cream paint and dents" },
+    "vehicle_chiva": { "family": "chiva", "size": [2.2, 3.15, 6.6], "footprint": [2.2, 6.6], "wheels": ["fl", "fr", "rl", "rr"], "paintTile": 2, "description": "Original colourful rural chiva with open slatted sides, benches and roof luggage rack" },
+    "vehicle_colectivo": { "family": "colectivo", "size": [2.08, 2.64, 5.8], "footprint": [2.08, 5.8], "wheels": ["fl", "fr", "rl", "rr"], "paintTile": 5, "description": "Neighbourhood colectivo minibus with inset windows, folding entry door and painted route panel" },
+    "vehicle_motorbike": { "family": "motorbike", "size": [0.72, 1.3, 1.95], "footprint": [0.72, 1.95], "wheels": ["front", "rear"], "paintTile": 7, "seatRest": { "y": 0.9125, "z": -0.385, "tilt": 0.045423 }, "description": "Small commuter motorbike with spoked wheels, engine fins, telescopic forks and worn dual seat" },
+    "vehicle_tricycle": { "family": "tricycle", "size": [1.28, 1.3, 2.5], "footprint": [1.28, 2.5], "wheels": ["front", "rl", "rr"], "paintTile": 4, "description": "Pedal cargo tricycle with a slatted delivery box and a chain drive" },
+    "vehicle_handcart": { "family": "handcart", "size": [1.24, 1.2, 2.1], "footprint": [1.24, 2.1], "wheels": ["left", "right"], "paintTile": 14, "description": "Two-wheeled wooden handcart with uneven planks, iron fasteners and long push handles" },
+    "vehicle_bicycle": { "family": "bicycle", "size": [0.54, 1.12, 1.74], "footprint": [0.54, 1.74], "wheels": ["front", "rear"], "paintTile": 1, "description": "Worn everyday bicycle with open spokes, diamond frame, chain, pedals and rear rack" },
+    "vehicle_rubbish_cart": { "family": "rubbish_cart", "size": [1.18, 1.58, 1.7], "footprint": [1.18, 1.7], "wheels": ["left", "right"], "paintTile": 15, "description": "Dented municipal hand-pushed rubbish cart with a hollow hopper, tied sacks and a scraper" }
+  }
+}

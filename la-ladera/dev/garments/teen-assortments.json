@@ -1,0 +1,749 @@
+{
+  "schemaVersion": 1,
+  "sizeTag": "teen",
+  "sizeClasses": {
+    "small": {
+      "ages": [
+        12,
+        15
+      ]
+    },
+    "big": {
+      "ages": [
+        16,
+        19
+      ]
+    }
+  },
+  "roomKinds": [
+    "teen_bedroom",
+    "school_locker"
+  ],
+  "placementPolicy": {
+    "targetSize": "teen",
+    "sizeClass": "Pick small for a household member of about 12 to 15 and big for about 16 to 19; use the bindings of that size class only, never the other size or the adult or child sets.",
+    "fit": "Use the measured state dimensions (garments_data.js); reject garments that do not fit the container or support.",
+    "roomKinds": [
+      "teen_bedroom",
+      "school_locker"
+    ],
+    "schoolLocker": "Use the teen_school_locker_<size> recipe for school lockers and cubbies; no adult or child garment fallback.",
+    "teenBedroom": "Use the teen drawer and wardrobe recipes; a separate furnishing pass decides whether to place loose clothes on beds or floors. Not wired at this base."
+  },
+  "bindings": [
+    {
+      "id": "teen_drawer_tops_small",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_tshirt_cream_small_folded",
+          "variant": "jersey_cream",
+          "count": 2,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_tshirt_teal_small_folded",
+          "variant": "jersey_teal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_tshirt_sun_small_folded",
+          "variant": "sun_print",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_crop_top_rib_small_folded",
+          "variant": "rib_coral",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_crop_top_boxy_small_folded",
+          "variant": "cotton_lavender",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_tops_big",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_tshirt_cream_big_folded",
+          "variant": "jersey_cream",
+          "count": 2,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_tshirt_teal_big_folded",
+          "variant": "jersey_teal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_tshirt_sun_big_folded",
+          "variant": "sun_print",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_crop_top_rib_big_folded",
+          "variant": "rib_coral",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_crop_top_boxy_big_folded",
+          "variant": "cotton_lavender",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_bottoms_small",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_shorts_chino_small_folded",
+          "variant": "canvas_sand",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_denim_shorts_small_folded",
+          "variant": "denim_indigo",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_lycra_shorts_small_folded",
+          "variant": "stretch_charcoal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_lycra_trousers_small_folded",
+          "variant": "stretch_charcoal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_joggers_small_folded",
+          "variant": "knit_grey",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_denim_jeans_small_folded",
+          "variant": "denim_indigo",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_bottoms_big",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_shorts_chino_big_folded",
+          "variant": "canvas_sand",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_denim_shorts_big_folded",
+          "variant": "denim_indigo",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_lycra_shorts_big_folded",
+          "variant": "stretch_charcoal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_lycra_trousers_big_folded",
+          "variant": "stretch_charcoal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_joggers_big_folded",
+          "variant": "knit_grey",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_denim_jeans_big_folded",
+          "variant": "denim_indigo",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_underwear_small",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_underwear_briefs_small_folded",
+          "variant": "jersey_cream",
+          "count": 2,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_underwear_boxers_small_folded",
+          "variant": "jersey_teal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_socks_pair_small_folded",
+          "variant": "jersey_cream",
+          "count": 3,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_underwear_big",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_underwear_briefs_big_folded",
+          "variant": "jersey_cream",
+          "count": 2,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_underwear_boxers_big_folded",
+          "variant": "jersey_teal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_socks_pair_big_folded",
+          "variant": "jersey_cream",
+          "count": 3,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_swimwear_small",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_swim_onepiece_small_folded",
+          "variant": "swim_blue",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_swim_shorts_small_folded",
+          "variant": "swim_blue",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        }
+      ]
+    },
+    {
+      "id": "teen_drawer_swimwear_big",
+      "kind": "drawer",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "dresser_4",
+        "dresser_low"
+      ],
+      "items": [
+        {
+          "asset": "garment_swim_onepiece_big_folded",
+          "variant": "swim_blue",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_swim_shorts_big_folded",
+          "variant": "swim_blue",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        }
+      ]
+    },
+    {
+      "id": "teen_wardrobe_daily_small",
+      "kind": "wardrobe",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "wardrobe_2",
+        "wardrobe_3",
+        "wardrobe_metal"
+      ],
+      "items": [
+        {
+          "asset": "garment_tshirt_sun_small_hung",
+          "variant": "sun_print",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_hoodie_small_hung",
+          "variant": "fleece_navy",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_light_jacket_small_hung",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_short_small_hung",
+          "variant": "cotton_lavender",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_knee_small_hung",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_midi_small_hung",
+          "variant": "cotton_rust",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_maxi_small_hung",
+          "variant": "jersey_teal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_denim_jeans_small_hung",
+          "variant": "denim_indigo",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "hanger"
+        }
+      ]
+    },
+    {
+      "id": "teen_wardrobe_daily_big",
+      "kind": "wardrobe",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "wardrobe_2",
+        "wardrobe_3",
+        "wardrobe_metal"
+      ],
+      "items": [
+        {
+          "asset": "garment_tshirt_sun_big_hung",
+          "variant": "sun_print",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_hoodie_big_hung",
+          "variant": "fleece_navy",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_light_jacket_big_hung",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_short_big_hung",
+          "variant": "cotton_lavender",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_knee_big_hung",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_midi_big_hung",
+          "variant": "cotton_rust",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_dress_maxi_big_hung",
+          "variant": "jersey_teal",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        },
+        {
+          "asset": "garment_denim_jeans_big_hung",
+          "variant": "denim_indigo",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "hanger"
+        }
+      ]
+    },
+    {
+      "id": "teen_wardrobe_shelf_small",
+      "kind": "wardrobe",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "wardrobe_2",
+        "wardrobe_3"
+      ],
+      "items": [
+        {
+          "asset": "garment_cap_small_flat",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_sandals_pair_small_flat",
+          "variant": "canvas_sand",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_school_shoes_pair_small_flat",
+          "variant": "shoe_black",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "teen_wardrobe_shelf_big",
+      "kind": "wardrobe",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "teen_bedroom"
+      ],
+      "catalogueKeys": [
+        "wardrobe_2",
+        "wardrobe_3"
+      ],
+      "items": [
+        {
+          "asset": "garment_cap_big_flat",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_sandals_pair_big_flat",
+          "variant": "canvas_sand",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_school_shoes_pair_big_flat",
+          "variant": "shoe_black",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "teen_school_locker_small",
+      "kind": "wardrobe",
+      "sizeTag": "teen",
+      "sizeClass": "small",
+      "roomKinds": [
+        "school_locker"
+      ],
+      "catalogueKeys": [
+        "locker_pair",
+        "cubby_shelf"
+      ],
+      "items": [
+        {
+          "asset": "garment_school_polo_small_folded",
+          "variant": "pique_white",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_school_jumper_small_folded",
+          "variant": "knit_grey",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_school_trousers_small_folded",
+          "variant": "twill_navy",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_school_skirt_small_folded",
+          "variant": "twill_navy",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_socks_pair_small_folded",
+          "variant": "jersey_cream",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small"
+        },
+        {
+          "asset": "garment_school_shoes_pair_small_flat",
+          "variant": "shoe_black",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_cap_small_flat",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "small",
+          "support": "shelf"
+        }
+      ]
+    },
+    {
+      "id": "teen_school_locker_big",
+      "kind": "wardrobe",
+      "sizeTag": "teen",
+      "sizeClass": "big",
+      "roomKinds": [
+        "school_locker"
+      ],
+      "catalogueKeys": [
+        "locker_pair",
+        "cubby_shelf"
+      ],
+      "items": [
+        {
+          "asset": "garment_school_polo_big_folded",
+          "variant": "pique_white",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_school_jumper_big_folded",
+          "variant": "knit_grey",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_school_trousers_big_folded",
+          "variant": "twill_navy",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_school_skirt_big_folded",
+          "variant": "twill_navy",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_socks_pair_big_folded",
+          "variant": "jersey_cream",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big"
+        },
+        {
+          "asset": "garment_school_shoes_pair_big_flat",
+          "variant": "shoe_black",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "shelf"
+        },
+        {
+          "asset": "garment_cap_big_flat",
+          "variant": "cotton_olive",
+          "count": 1,
+          "sizeTag": "teen",
+          "sizeClass": "big",
+          "support": "shelf"
+        }
+      ]
+    }
+  ]
+}

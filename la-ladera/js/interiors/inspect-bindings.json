@@ -218,12 +218,22 @@
       "source": "js/interiors/finds.js",
       "export": "FINDS"
     },
+    "oro_cinco_pesos": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
     "oro_forro": {
       "asset": "inspect_gold_coin",
       "source": "js/interiors/finds.js",
       "export": "FINDS"
     },
     "oro_frasco": {
+      "asset": "inspect_gold_coin",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "oro_libra": {
       "asset": "inspect_gold_coin",
       "source": "js/interiors/finds.js",
       "export": "FINDS"
@@ -265,6 +275,11 @@
     },
     "reloj_bolsillo": {
       "asset": "inspect_pocket_watch",
+      "source": "js/interiors/finds.js",
+      "export": "FINDS"
+    },
+    "reloj_brillantes": {
+      "asset": "inspect_wristwatch",
       "source": "js/interiors/finds.js",
       "export": "FINDS"
     },

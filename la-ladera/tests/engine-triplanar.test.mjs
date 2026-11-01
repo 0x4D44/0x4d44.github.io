@@ -27,6 +27,7 @@ const RENDER = (deg, patched, yaw, shape = 'plane') => `(async () => {
   const geo = cyl ? new THREE.CylinderGeometry(1.2, 1.2, 3.6, 64, 1, true) : new THREE.PlaneGeometry(4, 4);
   if (!cyl) { geo.rotateX(-Math.PI / 2 + ${deg} * Math.PI / 180); geo.rotateY(${yaw} * Math.PI / 180); }       // 0 deg: lying flat (normal +y); 90 deg: standing (normal +z); then turned about the vertical axis
   const P = geo.attributes.position, UV = geo.attributes.uv; for (let i = 0; i < P.count; i++) UV.setXY(i, P.getX(i), P.getZ(i));      // the planar x-z projection of the terrain
+  if (${JSON.stringify(shape)} === 'toe') { const NA = geo.attributes.normal; for (let i = 0; i < NA.count; i++) NA.setXYZ(i, 0, 0.3, 0.954); }   // R1-D24: the lattice smooths its normals across a step, so the corners of a FLAT strip at the foot of a cut look steep
   const scene = new THREE.Scene(); scene.add(new THREE.Mesh(geo, mat)); scene.add(new THREE.AmbientLight(0xffffff, 2.2));
   const cam = new THREE.PerspectiveCamera(40, 1, 0.1, 100), t = ${deg} * Math.PI / 180, w = ${yaw} * Math.PI / 180, n = cyl ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(Math.sin(t) * Math.sin(w), Math.cos(t), Math.sin(t) * Math.cos(w)); cam.position.copy(n.clone().multiplyScalar(cyl ? 4.4 : 5.4)); cam.lookAt(0, 0, 0);
   const rt = new THREE.WebGLRenderTarget(N, N, { type: THREE.UnsignedByteType }), keep = [r.getRenderTarget(), r.toneMapping]; r.setRenderTarget(rt); r.toneMapping = THREE.NoToneMapping; r.clear(); r.render(scene, cam);
@@ -76,6 +77,13 @@ test('flat ground and a gentle slope are exactly what they were; a 70 degree ban
   const d45p = await shot(45, false), d45 = await shot(45, true), diff45 = maxDiff(d45p.lum, d45.lum);
   assert.ok(diff45 > 0.02, `45 degrees: the side projection is already part of the picture (largest difference ${(diff45 * 255).toFixed(0)} / 255)`);
   assert.ok(diff45 < maxDiff(d70p.lum, d70.lum) + 0.2, 'and it is a blend, not a hard switch: the picture still holds the top projection');
+});
+
+test('R1-D24: a flat strip whose corners carry a steep smoothed normal (the foot and the lip of a cut) is not side-projected: the side read of flat ground is one streak down it', async () => {
+  const plain = await shot(0, false, 0, 'toe'), tri = await shot(0, true, 0, 'toe');
+  assert.ok(plain.sdRow > 0.04 && plain.edgesRow >= 4 && plain.edgesCol >= 1, `the flat strip is a textured plane (sd ${plain.sdRow.toFixed(3)}, ${plain.edgesRow} edges across, ${plain.edgesCol} down)`);
+  assert.ok(tri.edgesRow >= 4 && tri.edgesCol >= 1, `the patched strip keeps its pattern across and down (${tri.edgesRow} / ${tri.edgesCol} edges): read from the side it is the same row all the way across`);
+  assert.ok(maxDiff(plain.lum, tri.lum) < 2.5 / 255, `and is the plain picture (largest difference ${(maxDiff(plain.lum, tri.lum) * 255).toFixed(1)} / 255)`);
 });
 
 test('A5\'s question: every mesh the terrain tiles, the earth banks and the far land draw with ground_dirt or grass_patchy carries the patched material, and no other material does', async () => {

@@ -1,0 +1,16 @@
+✔ large vehicle reservations remain visible to distant occupancy queries (539.363219ms)
+✔ all ten actual vehicles load with a cheaper real LOD; wheel/body parts share a material batch (141.049151ms)
+✔ metadata without a loaded GLB leaves the complete procedural vehicles intact (20.415681ms)
+✔ a missing low node or unknown material refuses only the affected replacement (102.062622ms)
+✔ disabled or failed library download uses fallback and records failed files (11.150983ms)
+✔ near -> far -> culled -> near teleports never draw both LODs; repainting does not add batches (64.393674ms)
+✔ generated motorbike replacements keep helmets on the exact pitched seat and do not draw fallback (70.243197ms)
+✔ the real world places every design; extra vehicles fit streets, keep nav/door clearances and use solid colliders (1712.903166ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2684.639851

@@ -1,0 +1,348 @@
+{
+ "size": [
+  960,
+  540
+ ],
+ "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+ "boot": {
+  "seconds": 42,
+  "stages": {
+   "engine": 22,
+   "materials": 6,
+   "assets": 107,
+   "plan": 318,
+   "worldParts": {
+    "walls": 29,
+    "terrain": 244,
+    "surfaces": 47,
+    "stairs": 19,
+    "retaining": 80,
+    "perimeter": 0
+   },
+   "world": 477,
+   "arch": 63,
+   "furnish": 8535,
+   "colliders": 14,
+   "build": 4459,
+   "propParts": {
+    "occupancy": 54,
+    "atlas": 237,
+    "murals": 0,
+    "arrival": 0,
+    "boundary": 13,
+    "vistakit": 121,
+    "vista": 178,
+    "poles": 55,
+    "vehicles": 64,
+    "dress": 19,
+    "signs": 7,
+    "hill": 10,
+    "flora": 58,
+    "planters": 4,
+    "life": 9,
+    "clutter": 8,
+    "navfit": 48,
+    "discoveries": 14
+   },
+   "props": 993,
+   "flush": 149,
+   "glow": 18,
+   "peopleSpawn": 170,
+   "people": 201,
+   "start": 3674,
+   "warm": 956,
+   "total": 41728
+  },
+  "errors": 0,
+  "console": {
+   "errors": 0,
+   "warnings": 4,
+   "pageErrors": 0,
+   "net404": 0
+  },
+  "consoleSample": [
+   "[warning] [.WebGL-0xf6c00acc700]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37337/la-ladera/index.html?autostart&manual",
+   "[warning] [.WebGL-0xf6c00acc700]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37337/la-ladera/index.html?autostart&manual",
+   "[warning] [.WebGL-0xf6c00acc700]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels http://127.0.0.1:37337/la-ladera/index.html?autostart&manual",
+   "[warning] [.WebGL-0xf6c00acc700]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) http://127.0.0.1:37337/la-ladera/index.html?autostart&manual"
+  ]
+ },
+ "views": [],
+ "soak": {
+  "simSeconds": 22.5,
+  "targets": 1,
+  "legs": 22,
+  "unreachable": 0,
+  "stuck": [],
+  "nan": 0,
+  "fell": 0,
+  "doorsUsed": 0,
+  "renders": 15,
+  "maxY": 2.7,
+  "minY": 0.22,
+  "console": {
+   "errors": 0,
+   "warnings": 0,
+   "net404": 0,
+   "sample": []
+  }
+ },
+ "counts": {
+  "buildings": 109,
+  "withEntrance": 109,
+  "kinds": 14,
+  "rooms": 1585,
+  "npcs": 86,
+  "discoveries": 149,
+  "anchors": 4121,
+  "lights": 1952,
+  "npcFields": [
+   "id",
+   "name",
+   "display",
+   "persona",
+   "bank",
+   "role",
+   "char",
+   "appearance",
+   "shop",
+   "age",
+   "gender",
+   "x",
+   "y",
+   "z"
+  ]
+ },
+ "failures": [
+  "boot 42 s > 25 s",
+  "console warnings: 4"
+ ],
+ "geometryViews": [
+  {
+   "id": "spawn",
+   "pos": [
+    -6.5,
+    0.22,
+    92.5
+   ],
+   "calls": 1094,
+   "tris": 2232627,
+   "geoms": 5415,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "ridge-looking-south",
+   "pos": [
+    26,
+    31.5,
+    -86
+   ],
+   "calls": 827,
+   "tris": 1663235,
+   "geoms": 5421,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "valley-looking-north",
+   "pos": [
+    46,
+    0.13,
+    99
+   ],
+   "calls": 902,
+   "tris": 1914758,
+   "geoms": 5421,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n0",
+   "pos": [
+    46,
+    0.13,
+    99
+   ],
+   "calls": 902,
+   "tris": 1914758,
+   "geoms": 5421,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n74",
+   "pos": [
+    6.05,
+    11.98,
+    18.06
+   ],
+   "calls": 953,
+   "tris": 1933915,
+   "geoms": 5424,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n148",
+   "pos": [
+    -34.72,
+    27.46,
+    -50.21
+   ],
+   "calls": 832,
+   "tris": 1699253,
+   "geoms": 5427,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n222",
+   "pos": [
+    -6.5,
+    6.48,
+    39.89
+   ],
+   "calls": 820,
+   "tris": 1928666,
+   "geoms": 5439,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n296",
+   "pos": [
+    46,
+    14.43,
+    13
+   ],
+   "calls": 815,
+   "tris": 1768814,
+   "geoms": 5439,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n370",
+   "pos": [
+    14.27,
+    25.2,
+    -37.93
+   ],
+   "calls": 732,
+   "tris": 1576880,
+   "geoms": 5440,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n444",
+   "pos": [
+    17.2,
+    31.5,
+    -93.8
+   ],
+   "calls": 395,
+   "tris": 974851,
+   "geoms": 5440,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n518",
+   "pos": [
+    -37.87,
+    27.63,
+    -53.13
+   ],
+   "calls": 986,
+   "tris": 1888821,
+   "geoms": 5440,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "street-n592",
+   "pos": [
+    -58,
+    1.21,
+    66.7
+   ],
+   "calls": 1049,
+   "tris": 2175669,
+   "geoms": 5462,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "plaza-P1",
+   "pos": [
+    -6.5,
+    6.48,
+    41.4
+   ],
+   "calls": 871,
+   "tris": 1966489,
+   "geoms": 5462,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "plaza-P2",
+   "pos": [
+    20,
+    6.95,
+    47.2
+   ],
+   "calls": 1046,
+   "tris": 2138233,
+   "geoms": 5466,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "plaza-P4",
+   "pos": [
+    4.25,
+    28,
+    -67.55
+   ],
+   "calls": 945,
+   "tris": 1792901,
+   "geoms": 5466,
+   "textures": 218,
+   "errors": 0
+  },
+  {
+   "id": "landmark-mirador",
+   "pos": [
+    24.35,
+    30.6,
+    -85.23
+   ],
+   "calls": 307,
+   "tris": 714927,
+   "geoms": 5466,
+   "textures": 218,
+   "errors": 0
+  }
+ ],
+ "evalTimeoutMs": 600000,
+ "baselineMedian": 16.7,
+ "summary": {
+  "boot_s": 42,
+  "views": 0,
+  "blank_page_frame_ms": 16.7,
+  "frame_ms_median_of_medians": null,
+  "worst_median": null,
+  "worst_cost_ms": null,
+  "worst_cost_min_ms": null,
+  "max_calls": null,
+  "max_tris": null
+ },
+ "geometrySummary": {
+  "views": 16,
+  "max_calls": 1094,
+  "max_tris": 2232627
+ }
+}

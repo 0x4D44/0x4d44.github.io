@@ -18,6 +18,7 @@ export async function loadGoodsAssets(ctx) {
   ctx.goodsAssets = { atlasReady: false, keys: [], missing: all, nearDistance: GOODS_LOD.near, cullDistance: GOODS_LOD.cull };
   const a = ctx.assets;
   if (!a?.has || !all.some((key) => a.has(key))) return ctx.goodsAssets;
+  if (ctx.matlib?.manifest?.goods_labels?.map) ctx.mat?.('goods_label');                 // the label atlas comes down beside the model, not after it (and prepareGoodsAssets then waits for this one file, not for every texture of the boot)
   try { await a.preload(all); } catch (e) { (ctx.errors ??= []).push({ stage: 'goods', message: 'preload ' + String(e?.message ?? e) }); }
   return prepareGoodsAssets(ctx);
 }
@@ -28,7 +29,7 @@ export async function prepareGoodsAssets(ctx) {
   let atlasReady = false;
   if (keys.length && ctx.matlib?.manifest?.goods_labels?.map) {
     const material = ctx.mat('goods_label');
-    await ctx.matlib.whenReady();
+    await (ctx.matlib.whenLoaded?.(material.map) ?? ctx.matlib.whenReady());
     const img = material.map?.image;
     atlasReady = !!(img && (img.naturalWidth ?? img.width) > 0 && (img.naturalHeight ?? img.height) > 0);
   }

@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "set": "garments_teen",
+  "ageGroup": "teen",
+  "material": "laundry",
+  "colourSpace": "srgb",
+  "atlas": {
+    "file": "fabrics.png",
+    "size": [
+      256,
+      256
+    ],
+    "grid": [
+      4,
+      4
+    ],
+    "tileOrder": "column,row from the image top-left",
+    "insetPixels": 2,
+    "embeddedInGlb": false,
+    "binding": "External colour atlas. Use a white material multiplier and preserve vertex colours. Remap unit UVs to the selected tile, inset by two pixels; flipY=false. Without the atlas, use the variant color."
+  },
+  "variants": {
+    "jersey_cream": {
+      "label": "Jersey crudo",
+      "color": "#e3ddcd",
+      "pattern": "jersey",
+      "tile": [
+        0,
+        0
+      ],
+      "roughness": 0.95
+    },
+    "jersey_teal": {
+      "label": "Jersey verde azulado",
+      "color": "#43817c",
+      "pattern": "jersey",
+      "tile": [
+        1,
+        0
+      ],
+      "roughness": 0.95
+    },
+    "sun_print": {
+      "label": "Jersey con sol geométrico",
+      "color": "#e5dfcf",
+      "pattern": "sun",
+      "tile": [
+        2,
+        0
+      ],
+      "roughness": 0.95,
+      "accent": "#c18042"
+    },
+    "rib_coral": {
+      "label": "Canalé coral",
+      "color": "#bd737b",
+      "pattern": "rib",
+      "tile": [
+        3,
+        0
+      ],
+      "roughness": 0.96
+    },
+    "stretch_charcoal": {
+      "label": "Punto elástico carbón",
+      "color": "#3e444f",
+      "pattern": "stretch",
+      "tile": [
+        0,
+        1
+      ],
+      "roughness": 0.84
+    },
+    "denim_indigo": {
+      "label": "Mezclilla índigo lavado",
+      "color": "#566a87",
+      "pattern": "denim",
+      "tile": [
+        1,
+        1
+      ],
+      "roughness": 0.96
+    },
+    "fleece_navy": {
+      "label": "Felpa azul marino",
+      "color": "#3c4b65",
+      "pattern": "fleece",
+      "tile": [
+        2,
+        1
+      ],
+      "roughness": 0.98
+    },
+    "pique_white": {
+      "label": "Piqué blanco",
+      "color": "#ebe8dd",
+      "pattern": "pique",
+      "tile": [
+        3,
+        1
+      ],
+      "roughness": 0.96
+    },
+    "knit_grey": {
+      "label": "Tejido gris escolar",
+      "color": "#82878b",
+      "pattern": "knit",
+      "tile": [
+        0,
+        2
+      ],
+      "roughness": 0.98
+    },
+    "twill_navy": {
+      "label": "Sarga azul marino",
+      "color": "#39465e",
+      "pattern": "twill",
+      "tile": [
+        1,
+        2
+      ],
+      "roughness": 0.95
+    },
+    "cotton_lavender": {
+      "label": "Algodón lavanda",
+      "color": "#aa98b5",
+      "pattern": "weave",
+      "tile": [
+        2,
+        2
+      ],
+      "roughness": 0.96
+    },
+    "cotton_olive": {
+      "label": "Algodón verde oliva",
+      "color": "#78816a",
+      "pattern": "weave",
+      "tile": [
+        3,
+        2
+      ],
+      "roughness": 0.96
+    },
+    "cotton_rust": {
+      "label": "Algodón terracota",
+      "color": "#b47765",
+      "pattern": "weave",
+      "tile": [
+        0,
+        3
+      ],
+      "roughness": 0.96
+    },
+    "shoe_black": {
+      "label": "Zapato negro mate",
+      "color": "#393c43",
+      "pattern": "matte",
+      "tile": [
+        1,
+        3
+      ],
+      "roughness": 0.82
+    },
+    "canvas_sand": {
+      "label": "Lona arena",
+      "color": "#b8a58a",
+      "pattern": "canvas",
+      "tile": [
+        2,
+        3
+      ],
+      "roughness": 0.97
+    },
+    "swim_blue": {
+      "label": "Tejido de baño azul",
+      "color": "#4a839b",
+      "pattern": "stretch",
+      "tile": [
+        3,
+        3
+      ],
+      "roughness": 0.78
+    }
+  },
+  "provenance": "Original procedural fabric textures and original geometric sun motif. No product photos, brand marks, logos, badges or copied print designs. Colours are art choices, not a regional uniform specification."
+}

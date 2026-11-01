@@ -106,3 +106,72 @@ test('an untextured material and a tint of a textured one never touch the loader
   assert.equal(l.loader.waiting.length, n, 'one request per file, however many tints and lookups');
   const flat = l.get('asphalt'); assert.equal(flat.map ?? null, null, 'no manifest entry: flat colour');
 });
+
+// ---- the boot's connection (R2e-001): hold() / release() and whenLoaded() -------------------------------------------------------------------------
+test('held: a texture is made and counted but not requested until release(); then the image lands in the texture the material already holds', () => {
+  const l = lib(); l.hold();
+  const m = l.get('plaster_a'), map = m.map, normal = m.normalMap;
+  assert.equal(l.loader.waiting.length, 0, 'nothing has been requested while held');
+  assert.equal(l.holding, 2, 'the map and the normal map wait for the release');
+  assert.equal(l.pending, 2, 'and they count as pending (whenReady waits for them)');
+  for (const [s, t] of slots(m)) { assert.equal(t.image ?? null, null, `${s}: no image yet`); assert.equal(t.version, 0, `${s}: not marked for upload`); }
+  assert.deepEqual(premature(l), []);
+  l.release();
+  assert.equal(l.loader.waiting.length, 2, 'both requests go out at the release');
+  assert.equal(l.holding, 0);
+  l.loader.arrive();
+  assert.equal(m.map, map, 'the material keeps its texture object'); assert.equal(m.normalMap, normal);
+  for (const [s, t] of slots(m)) { assert.ok(t.image, `${s}: the image arrived`); assert.ok(t.version > 0, `${s}: marked for upload`); }
+  assert.equal(m.map.source, l.tex.get('plaster_a.jpg:s').source, 'the tiled variant shares the base image');
+  assert.equal(l.pending, 0);
+  assert.deepEqual(premature(l), []);
+});
+
+test('held: whenReady() waits for the release and then for the images; a texture asked for after the release goes straight out; hold() twice and release() twice are harmless', async () => {
+  const l = lib(); l.hold(); l.hold();
+  l.get('brick_red_solid');
+  let done = false; l.whenReady().then(() => { done = true; });
+  await Promise.resolve(); await Promise.resolve();
+  assert.equal(done, false, 'held: not ready');
+  l.release(); l.release();
+  assert.equal(l.loader.waiting.length, 1, 'one request, however often release() is called');
+  l.get('plaster_a');
+  assert.equal(l.loader.waiting.length, 3, 'after the release a new texture is requested at once');
+  l.loader.arrive(); await Promise.resolve(); await Promise.resolve();
+  assert.equal(done, true);
+  assert.equal(l.pending, 0);
+});
+
+test('held: a download that fails after the release still counts as finished and is reported once', async () => {
+  const l = lib(), warn = console.warn; let warned = 0; console.warn = () => { warned++; };
+  try {
+    l.hold(); l.get('brick_red_solid'); l.release(); l.loader.fail();
+    await l.whenReady();
+    assert.equal(warned, 1); assert.equal(l.pending, 0);
+    assert.deepEqual(premature(l), []);
+  } finally { console.warn = warn; }
+});
+
+test('whenLoaded(texture) settles when that one file is in, however much else is still on its way (the goods atlas must not wait for the whole boot)', async () => {
+  const l = lib(), plaster = l.get('plaster_a'), brick = l.get('brick_red_solid');
+  let atlas = false, other = false;
+  l.whenLoaded(brick.map).then(() => { atlas = true; }); l.whenLoaded(plaster.map).then(() => { other = true; });
+  await Promise.resolve(); await Promise.resolve();
+  assert.deepEqual([atlas, other], [false, false]);
+  l.loader.arrive((u) => u.endsWith('brick_red_solid.jpg')); await Promise.resolve(); await Promise.resolve();
+  assert.deepEqual([atlas, other], [true, false], 'the one that landed is done, the other is not');
+  assert.ok(l.pending > 0, 'and the queue as a whole is not empty');
+  let late = false; l.whenLoaded(brick.map).then(() => { late = true; }); await Promise.resolve(); await Promise.resolve();
+  assert.equal(late, true, 'asking after it landed resolves at once');
+  await l.whenLoaded(null); await l.whenLoaded({ source: {} });                      // not made by the library: nothing to wait for
+});
+
+test('whenLoaded() works through a tiled variant and through a held texture', async () => {
+  const l = lib(); l.hold();
+  const m = l.get('plaster_a');
+  assert.notEqual(m.map, l.tex.get('plaster_a.jpg:s'), 'the map is a tiled variant');
+  let got = false; l.whenLoaded(m.map).then(() => { got = true; });
+  await Promise.resolve(); await Promise.resolve(); assert.equal(got, false, 'held');
+  l.release(); l.loader.arrive((u) => u.endsWith('plaster_a.jpg')); await Promise.resolve(); await Promise.resolve();
+  assert.equal(got, true, 'the variant waits on the base file and settles with it');
+});

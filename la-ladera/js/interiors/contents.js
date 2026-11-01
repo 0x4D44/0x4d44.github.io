@@ -13,7 +13,7 @@ import { FINDS, findById } from './finds.js';
 import { eligible, resolvePaper, resolveFind, fill, collectionLabel, rarityWeight, CONTAINER_KINDS } from './content.js';
 import { householdsOf } from './household.js';
 import { CATALOG } from './catalog.js';
-import { layoutOf, EYE_Y } from './carcass.js';
+import { layoutOf, EYE_Y, EYE_AT } from './carcass.js';
 import { standSpots } from './reach.js';
 import { ITEMS, whenOk, drawProp, findDims, wrapDims, paperLook, PAPER_PROMPT } from './props.js';
 import { modelFor } from './inspect.js';
@@ -167,9 +167,43 @@ const STAND_AT = 0.55;
  *  target with a pad of its own, and a line that only just clears the roof is offered the frame instead of the thing. */
 const ROOF_MARGIN = 0.04;
 
+/** The room a hung garment takes along its rail (its hanger and a hand's breadth of cloth: a full wardrobe looks like a wall of cloth from the front). */
+export const PITCH = 0.075;
+/** Where the hangers go on a rail: the middle first, then alternately to each side. The leaf of an open door hides the end of a rail (an apron hung at the end was behind it, and the rail looked bare: R4-211). */
+export function railSpots(r) {
+  const lo = r.x0 + 0.045, hi = r.x1 - 0.045; if (!(hi >= lo)) return [];
+  const mid = (lo + hi) / 2, out = [mid];
+  for (let k = 1; mid + k * PITCH <= hi + 1e-6 || mid - k * PITCH >= lo - 1e-6; k++) {
+    if (mid + k * PITCH <= hi + 1e-6) out.push(mid + k * PITCH);
+    if (mid - k * PITCH >= lo - 1e-6) out.push(mid - k * PITCH);
+  }
+  return out;
+}
+
+/** The eyes of a person who opens the slot, in the piece's frame (carcass.js EYE_AT, EYE_Y: 0.75 m from the carcass, 1.6 m up; the middle of the slot and a step to each side; a drawer's tray is
+ *  `travel` further out, so the eye is that much nearer to its things). `elev` = how high the piece's base hangs over the floor. */
+export function eyesFor(slot, elev = 0) {
+  const ez = (slot.zf ?? 0) + EYE_AT - (slot.kind === 'drawer' ? slot.travel ?? 0 : 0), ey = EYE_Y - elev, ex = (slot.rect.x0 + slot.rect.x1) / 2;
+  return [[ex, ey, ez], [ex - 0.25, ey, ez + 0.25], [ex + 0.25, ey, ez + 0.25]];
+}
+/** Does the sight line from `e` to `t` (piece-local points) pass through the box { x0, x1, y0, y1, z0, z1 } before it reaches `t`? A slab test along the segment. */
+export function crosses(e, t, b) {
+  let t0 = 0, t1 = 1;
+  for (const [o, d, lo, hi] of [[e[0], t[0] - e[0], b.x0, b.x1], [e[1], t[1] - e[1], b.y0, b.y1], [e[2], t[2] - e[2], b.z0, b.z1]]) {
+    if (Math.abs(d) < 1e-9) { if (o < lo || o > hi) return false; continue; }
+    let a = (lo - o) / d, c = (hi - o) / d; if (a > c) [a, c] = [c, a];
+    t0 = Math.max(t0, a); t1 = Math.min(t1, c); if (t0 > t1) return false;
+  }
+  return true;
+}
+/** The room round a thing's box that its target takes (containers.js PAD): a thing that only just clears the line to the find still takes the aim from it. */
+export const GUARD_PAD = 0.03;
+/** Does a find glint (glint.js: a small star over it while its drawer is open)? Every treasure, and every find so small (4 cm or less) that it is a speck from 1.6 m above (R4-206). */
+export const glints = (f) => f.kind === 'treasure' || (f.size ?? 0.04) <= 0.04;
+
 class Packer {
   constructor(slot, elev = 0) {
-    this.slot = slot; this.elev = elev; this.rail = slot.rail ? { ...slot.rail, x: slot.rail.x0 + 0.05 } : null;
+    this.slot = slot; this.elev = elev; this.guard = null; this.rail = slot.rail ? { ...slot.rail, next: 0, spots: railSpots(slot.rail) } : null;
     this.surfs = slot.surf.map((sf) => {
       const dz = sf.z1 - sf.z0, two = dz > (sf.panel === undefined ? 0.34 : 0.2), ld = two ? Math.min(0.22, dz / 2 - 0.02) : Math.max(0.04, dz - 0.04);
       const rear = sf.zr ?? sf.z0;                                                              // a drawer: the back wall of the tray (the part of it still inside the carcass is no place for a thing, but a deep one may reach back into it)
@@ -190,29 +224,44 @@ class Packer {
     const zc = Math.max(Math.min(ln.zc, sf.z1 - hiddenBehind(sf, it) - it.d / 2), sf.z0 + 0.35 * it.d);
     return zc - it.d / 2 >= ln.lo - 1e-6 && zc + it.d / 2 <= ln.hi + 1e-6 ? zc : null;
   }
+  /** (R4-206) A treasure nobody can see is none: once the find is down, `guard` = { eyes, t } (the eyes of a person in front of the slot, and the middle of the find) and nothing that goes down after it
+   *  may stand on a sight line to it. Would a thing `it` standing at (cx, y, cz) hide the find from any of the eyes? */
+  hides(cx, y, cz, it) {
+    const g = this.guard; if (!g) return false;
+    const b = { x0: cx - it.w / 2 - GUARD_PAD, x1: cx + it.w / 2 + GUARD_PAD, y0: y - 0.015, y1: y + it.h + GUARD_PAD, z0: cz - it.d / 2 - GUARD_PAD, z1: cz + it.d / 2 + GUARD_PAD };
+    return g.eyes.some((e) => crosses(e, g.t, b));
+  }
   /** Where `it` ({ w, h, d, hang }) goes, or null when it does not fit anywhere. `start` varies the shelf it tries first. */
   put(it, start = 0) {
     if (it.hang) {
       const r = this.rail, sf = this.slot.surf[0]; if (!r) return null;
-      const d = Math.min(it.w, (sf.z1 - sf.z0) - 0.05), y = r.y - it.h - 0.018, x = r.x;
-      if (y < sf.y - 0.001 || x + 0.06 > r.x1) return null;
-      r.x += 0.115;
-      return { x, y, z: (sf.z0 + sf.z1) / 2, w: 0.11, h: it.h, d };
+      const d = Math.min(it.w, (sf.z1 - sf.z0) - 0.05), y = r.y - it.h - 0.018, zc = (sf.z0 + sf.z1) / 2;
+      while (r.next < r.spots.length && this.hides(r.spots[r.next], y, zc, { w: PITCH, h: it.h, d })) r.next++;      // (a find on the shelf under the clothes is not hung over)
+      const x = r.spots[r.next];
+      if (x === undefined || y < sf.y - 0.001) return null;
+      r.next++;
+      return { x, y, z: zc, w: PITCH, h: it.h, d };
     }
     const n = this.surfs.length;
     for (let t = 0; t < n; t++) {
       const si = (start + t) % n, s = this.surfs[si], { sf } = s;
       if (sf.h < it.h + 0.004 || it.w > sf.x1 - sf.x0 - 0.03 || it.d > sf.z1 - (sf.zr ?? sf.z0) - 0.02) continue;
+      if (it.avoidRail && this.rail && sf.y + 0.05 < this.rail.y && sf.x1 > this.rail.x0 && sf.x0 < this.rail.x1) continue;      // (a find on the floor of the clothes' own space is hidden by what hangs over it)
       if (s.two && it.d > s.ld + 0.01) {                                                   // too deep for one lane: it takes both
-        const x = Math.max(s.lanes[0].x, s.lanes[1].x), z = this.zIn(s, { zc: (sf.z0 + sf.z1) / 2, lo: sf.zr ?? sf.z0, hi: sf.z1 }, it);
-        if (x + it.w > sf.x1 - 0.01 || z === null) continue;
+        let x = Math.max(s.lanes[0].x, s.lanes[1].x); const z = this.zIn(s, { zc: (sf.z0 + sf.z1) / 2, lo: sf.zr ?? sf.z0, hi: sf.z1 }, it);
+        if (z === null) continue;
+        while (x + it.w <= sf.x1 - 0.01 && this.hides(x + it.w / 2, sf.y, z, it)) x += 0.02;                // (not in the way of the find)
+        if (x + it.w > sf.x1 - 0.01) continue;
         s.lanes[0].x = s.lanes[1].x = x + it.w + 0.015;
         return { x: x + it.w / 2, y: sf.y, z, w: it.w, h: it.h, d: it.d, row: `${si}:both` };
       }
       for (const [li, ln] of s.lanes.entries()) {
         const z = this.zIn(s, ln, it);
-        if (ln.x + it.w > sf.x1 - 0.01 || z === null) continue;
-        const x = ln.x; ln.x += it.w + 0.015;
+        if (z === null) continue;
+        let x = ln.x;
+        while (x + it.w <= sf.x1 - 0.01 && this.hides(x + it.w / 2, sf.y, z, it)) x += 0.02;                // (not in the way of the find)
+        if (x + it.w > sf.x1 - 0.01) continue;
+        ln.x = x + it.w + 0.015;
         return { x: x + it.w / 2, y: sf.y, z, w: it.w, h: it.h, d: it.d, row: `${si}:${li}` };
       }
     }
@@ -222,12 +271,18 @@ class Packer {
 
 const tint = (it, hh) => (it.col === 'team' ? hh.team?.a ?? 0xc8302a : it.col);
 const vary = (c, id) => { const k = 0.9 + 0.2 * hv(id, 'tone'); const f = (s) => Math.max(0, Math.min(255, Math.round(((c >> s) & 255) * k))); return (f(16) << 16) | (f(8) << 8) | f(0); };
+/** The colours a household's everyday clothes come in (soft, a little faded). The uniform, the white coat, the team's shirt, the overalls, the suit and the coat keep the colour that makes them what they are. */
+const CLOTHES = [0xdfe6ee, 0x8fb3a0, 0xc59ab0, 0x7a4a2e, 0x9a4a3a, 0xe8d8b8, 0x4b8981, 0xa89cb8, 0xc87870, 0x344760, 0x6f7a52, 0x5a4a6a, 0xb59a5a];
+const OWN_COLOUR = new Set(['uniforme', 'bata_blanca', 'camiseta_equipo', 'overol', 'abrigo', 'traje']);
+const hangColour = (i, hh, key) => (OWN_COLOUR.has(i.id) || hv(key, 'pal') < 0.35 ? vary(tint(i, hh), key) : vary(CLOTHES[Math.floor(hv(key, 'col') * CLOTHES.length)], key));
 
 /** The objects of one slot, in the piece's frame: [{ id, k, sh, x, y, z, w, h, d, col, line, who, paper?, cover?, find?, fd? }]. */
 export function makeContents(ctx, S) {
   const hh = S.hh ?? householdOf(S) ?? FALLBACK_HH, slot = S.slot, rng = makeRng(hashStr(`${S.id}|${hh.seed ?? 0}`));
   const room = S.bp?.rooms?.find((r) => r.id === S.rec?.room), elev = Math.max(0, (S.loc?.y0 ?? 0) - (room?.y ?? 0));      // how high the piece hangs over the floor of its room (a wall cupboard)
   const pk = new Packer(slot, elev), out = [], [cmin, cmax] = slot.cap ?? [3, 5];
+  // the school's one household is its caretaker (an elder), but its lockers and desks are the pupils': what a child carries (a rucksack, exercise books, boots, the team shirt) belongs in them (R2e-002)
+  const who = S.bp?.lot?.kind === 'school' ? { ...hh, kind: 'students', kids: Math.max(hh.kids ?? 0, 30), teen: true } : hh;
   let k = 0;
   const add = (o, pos) => out.push({ ...o, ...pos, k: k++, id: `${S.id}:${k}`, who: o.who ?? slot.who });
   const start = Math.floor(rng.next() * 7);
@@ -252,29 +307,59 @@ export function makeContents(ctx, S) {
       let d;
       if (m) { const b = wrapDims(wrap); d = { w: Math.max(b ? b.w + 0.01 : 0, m.w), d: Math.max(b ? b.d + 0.01 : 0, m.d), h: (b?.h ?? 0) + m.h }; }          // the model rests on its base
       else d = findDims(f.shape, size * sc, wrap);
-      const pos = pk.put({ w: d.w, h: d.h, d: d.d }, start + 3);
+      const pos = pk.put({ w: d.w, h: d.h, d: d.d, avoidRail: true }, start + 3) ?? pk.put({ w: d.w, h: d.h, d: d.d }, start + 3);
       if (!pos) continue;
-      add({ sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: size * sc, tint: f.tint ?? 0xe3b53b, wrap }, ...(m ? { model: m } : {}), find: fid, who: 'Hallazgo', line: ['', ''] }, pos); break;
+      add({ sh: 'box', col: f.tint ?? 0xe3b53b, fd: { shape: f.shape, size: size * sc, tint: f.tint ?? 0xe3b53b, wrap }, ...(m ? { model: m } : {}), find: fid, who: 'Hallazgo', line: ['', ''], ...(glints(f) ? { glint: true } : {}) }, pos);
+      pk.guard = { eyes: eyesFor(slot, elev), t: [pos.x, pos.y + pos.h / 2, pos.z] };                // nothing that is put down after the find may stand on a sight line to its middle
+      break;
     }
   }
   // the ordinary things (a wide drawer holds more than a nightstand's: about one thing per 0.03 m2 of the tray that came out)
   const area = slot.surf.reduce((a, sf) => a + (sf.panel === undefined ? 0 : (sf.x1 - sf.x0) * (sf.z1 - sf.z0)), 0), more = Math.max(0, Math.min(3, Math.round(area / 0.03) - cmax));
   const want = Math.max(cmin + more - out.length, 1) + rng.int(0, Math.max(0, cmax - cmin));
-  const cands = ITEMS.filter((i) => i.pools.has(slot.pool) && whenOk(i.when, hh))
-    .map((i) => ({ i, k: -Math.log(1e-9 + rng.next()) / (i.pools.get(slot.pool) * (i.when ? 2 : 1)) })).sort((a, b) => a.k - b.k);
+  // (R2e-002) the neighbours of one pool in one room (three lockers, two nightstands, a row of cupboards) lean toward different shares of the pool: the things of the pool are dealt out among
+  // the n slots in an order the room fixes, a slot takes its own share three times as readily and the others' at a third, so no two of them hold the same lunchbox, bottle and coat
+  const sib = S.sib?.n > 1 ? S.sib : null, home = new Map();
+  if (sib) ITEMS.filter((i) => i.pools.has(slot.pool)).map((i) => ({ i, h: hv(sib.key, i.id, 'home') })).sort((a, b) => a.h - b.h).forEach(({ i }, r) => home.set(i.id, r % sib.n));
+  const lean = (i) => (sib ? (home.get(i.id) === sib.k ? 3 : 0.3) : 1);
+  const cands = ITEMS.filter((i) => i.pools.has(slot.pool) && whenOk(i.when, who))
+    .map((i) => ({ i, k: -Math.log(1e-9 + rng.next()) / (i.pools.get(slot.pool) * (i.when ? 2 : 1) * lean(i)) })).sort((a, b) => a.k - b.k);
+  // a hanging rail is never bare (R4-211, R2e-004: a third of the wardrobes opened to an empty rail): the clothes hang first, from half to nine tenths of the rail, the middle first,
+  // and a kind that already hangs there is much less likely to come again; the things of the shelves are picked as before
+  if (slot.rail && pk.rail.spots.length) {
+    const hangs = ITEMS.filter((i) => i.sh === 'hang' && i.pools.has(slot.pool) && whenOk(i.when, who)), room = pk.rail.spots.length, used = new Map();
+    if (hangs.length) {
+      const n = Math.max(Math.min(2, room), Math.round(room * (0.5 + 0.4 * rng.next())));
+      for (let h = 0; h < n; h++) {
+        const i = rng.weighted(hangs, (g) => (g.pools.get(slot.pool) * (g.when ? 2 : 1) * lean(g)) / (1 + 3 * (used.get(g.id) ?? 0)));
+        const pos = pk.put({ w: i.w, h: i.h, d: i.d, hang: true }, 0); if (!pos) continue;
+        used.set(i.id, (used.get(i.id) ?? 0) + 1);
+        add({ sh: 'hang', col: hangColour(i, hh, `${S.id}|${i.id}|${h}`), line: i.line, item: i.id }, pos);
+      }
+    }
+  }
   let got = 0;
   for (const { i } of cands) {
     if (got >= want) break;
+    if (i.sh === 'hang') continue;                                                                   // (the rail is dressed above; a hanger has no other place)
     const m = i.sh === 'hang' ? null : modelFor(i.id), at = m ? pk.put({ w: m.w, h: m.h, d: m.d }, start + got) : null;            // a bound thing: its model's footprint, else its own
     const pos = at ?? pk.put({ w: i.w, h: i.h, d: i.d, hang: i.sh === 'hang' }, start + got);
     if (!pos) continue;
     add({ sh: i.sh, col: vary(tint(i, hh), `${S.id}|${i.id}`), line: i.line, item: i.id, ...(at ? { model: m } : {}) }, pos); got++;
   }
-  // a drawer wider than what lies in it does not keep everything in one corner: each row of things slides along the free width by a random share of it
+  // a drawer wider than what lies in it does not keep everything in one corner: each row of things slides along the free width by a random share of it. The row with the find stays where the
+  // packer put it, and a slide that would put a thing on a sight line to the find is halved until it does not (R4-206: two finds of 164 were hidden by the slide, not by the packing)
   if (slot.kind === 'drawer' && !out.some((o) => o.row?.endsWith(':both'))) {
     const rows = new Map(), sf = slot.surf[0];
     for (const o of out) if (o.row) (rows.get(o.row) ?? rows.set(o.row, []).get(o.row)).push(o);
-    for (const row of rows.values()) { const free = sf.x1 - 0.01 - Math.max(...row.map((o) => o.x + o.w / 2)); if (free > 0.02) { const dx = rng.next() * free; for (const o of row) o.x += dx; } }
+    for (const row of rows.values()) {
+      const free = sf.x1 - 0.01 - Math.max(...row.map((o) => o.x + o.w / 2));
+      if (!(free > 0.02)) continue;
+      let dx = rng.next() * free;
+      if (row.some((o) => o.find)) dx = 0;
+      while (dx > 0.005 && row.some((o) => pk.hides(o.x + dx, o.y, o.z, o))) dx /= 2;
+      for (const o of row) o.x += dx > 0.005 ? dx : 0;
+    }
   }
   for (const o of out) delete o.row;
   return out;

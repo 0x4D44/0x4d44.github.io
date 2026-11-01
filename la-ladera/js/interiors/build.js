@@ -8,13 +8,13 @@
 import * as THREE from 'three';
 import { CATALOG } from './catalog.js';
 import { decalDef } from './decals.js';
-import { drawStandin, setAtlas, tintFor, u01 } from './standins.js';
+import { drawStandin, drawAddon, setAtlas, tintFor, u01 } from './standins.js';
 import { layoutOf } from './carcass.js';
 import { foldMaterials } from './fold.js';
 import { deferContainers } from './containers.js';
 import { paintDecalAtlas, atlasMaterial } from './atlas.js';
 import { dressWindows } from './windows.js';
-import { buildRotors, buildTvGlow, makeTvGlowMaterial } from './anim.js';
+import { buildRotors, buildTvGlow, makeTvGlowMaterial, makeTvScreens } from './anim.js';
 import { GARMENT_KEYS, registerGarmentAssets, garmentsOff } from './garments.js';
 import { GOODS_FIXTURES } from './goods-assortments.js';
 import { buildGoods } from './goods-render.js';
@@ -48,6 +48,7 @@ export async function loadInteriorAssets(ctx) {
     const atlas = ctx.matlib?.cache ? paintDecalAtlas() : null;
     if (atlas) { ctx.matlib.cache.set('decal_atlas', atlasMaterial(atlas)); setAtlas(atlas); ctx.interiorAtlas = atlas; }
     makeTvGlowMaterial(ctx);
+    makeTvScreens(ctx);
   } catch (e) { (ctx.errors ??= []).push({ stage: 'interiors', message: 'atlas ' + String(e?.message ?? e) }); }
   const a = ctx.assets;
   if (!a?.names) return;
@@ -57,7 +58,7 @@ export async function loadInteriorAssets(ctx) {
 }
 
 /**
- * The clothes (garments.js). Their models are a library of their own (assets/models/garments, manifest.garments.json; assets/models/manifest.json does not list it), so they are registered
+ * The clothes (garments.js). The adult, child and teen packs have their own manifests (manifest.garments.json, manifest.garments-child.json and manifest.garments_teen.json; assets/models/manifest.json lists none of them), so they are registered
  * here, each key pointed at its LOD file, and loaded into a set of their own, `ctx.garmentGlb`: `ctx.interiorGlb` stays the furniture's, one entry per key of the furniture catalogue
  * (the furniture tests hold it to that). A record whose key is in either set draws from its model; anything else keeps its stand-in (a patch of cloth), so a file that is missing or
  * broken costs the look of the clothes and never the room. Nothing is requested when the clothes are switched off (`?garments=0`: there are no records to draw).
@@ -70,6 +71,14 @@ export async function loadGarmentAssets(ctx) {
 }
 
 const _tc = new THREE.Color();
+
+/** The glass of a TV: u along its width, v up its height over the part's own extent, so one picture covers it whatever the model's UVs are. */
+function screenUV(geometry) {
+  geometry.computeBoundingBox();
+  const { min, max } = geometry.boundingBox, pa = geometry.attributes.position, uv = new Float32Array(pa.count * 2), w = max.x - min.x || 1, h = max.y - min.y || 1;
+  for (let i = 0; i < pa.count; i++) { uv[i * 2] = (pa.getX(i) - min.x) / w; uv[i * 2 + 1] = (pa.getY(i) - min.y) / h; }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
 
 /** Reject a broken part before any vertices are appended to a building. Checked once per loaded asset. */
 function checkPart(geometry, name) {
@@ -101,20 +110,24 @@ function checkPart(geometry, name) {
  *                   old stock again (a test fails) and never loses a shelf board.
  *   p<a-z><k>      one of several alternatives of channel <a-z>: exactly one k is drawn, picked by the record id
  * Anything else is always drawn. A part keeps its own library material (the glTF material name) and its own vertex colours.
+ * A garment is one cloth: its parts without a flag are tint parts (the teen library's two sizes share unnamed meshes behind scaled child nodes, so there is no name to carry the flag).
  */
 export function glbParts(ctx, name) {
   const cache = (ctx.interiorGlbParts ??= new Map());
   let parts = cache.get(name);
   if (parts) return parts;
   parts = [];
-  const e = ctx.assets.meta(name), gl = e && ctx.assets.loaded.get(e.glb), node = gl?.scene.getObjectByName(e.node);
+  const e = ctx.assets.meta(name), gl = e && ctx.assets.loaded.get(e.glb), node = gl?.scene.getObjectByName(e.node), garment = CATALOG[name]?.arch === 'garment';
   if (node) {
     node.updateWorldMatrix(true, true);
     const inv = new THREE.Matrix4().copy(node.matrixWorld).invert(), mm = new THREE.Matrix4();
     try { node.traverse((o) => {
       if (!o.isMesh) return;
       const geometry = o.geometry.clone().applyMatrix4(mm.multiplyMatrices(inv, o.matrixWorld));
-      const matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      let matKey = (Array.isArray(o.material) ? o.material[0] : o.material)?.name;
+      if (/^tv_screen_[ab]$/.test(matKey ?? '')) {                                  // (D28) a screen shows a picture: planar UVs over its glass; the tube set's glass, a cap of a sphere, has a pair of its own
+        screenUV(geometry); if (name === 'tv_crt') matKey = matKey.replace('screen_', 'screen_crt_');
+      }
       try {
         checkPart(geometry, o.name);
         if (!matKey || matKey === 'missing_asset' || (ctx.matlib?.has && !ctx.matlib.has(matKey))) throw new Error(`${o.name}: unknown material '${matKey}'`);
@@ -122,7 +135,7 @@ export function glbParts(ctx, name) {
       const bits = o.name.split('-'), flags = bits.slice(1, -1), pick = flags.map((f) => /^p([a-z])(\d+)$/.exec(f)).find(Boolean);
       parts.push({
         geometry, matKey, colored: !!geometry.attributes.color,
-        tint: flags.includes('tint'), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
+        tint: flags.includes('tint') || (garment && !flags.length), made: flags.includes('made'), unmade: flags.includes('unmade'), magnets: flags.includes('magnets'),
         stock: !flags.length && GOODS_FIXTURES[name]?.stockParts?.[bits[bits.length - 1]] === matKey,
         ch: pick ? pick[1] : null, k: pick ? +pick[2] : 0, tinted: new Map(),
       });
@@ -205,7 +218,7 @@ export function buildInterior(ctx, bp) {
           if (reported++ < MAX_REPORTED) (ctx.errors ??= []).push({ stage: 'interiors', building: bp.id, name: rec.name, message: 'model fallback: ' + String(e?.message ?? e) });
         }
       }
-      if (n) st.glb++; else { n = drawStandin(b, rec, c); st.standin++; }
+      if (n) { st.glb++; n += drawAddon(b, rec, c); } else { n = drawStandin(b, rec, c); st.standin++; }          // (a library model that carries none of what hangs on it: the butcher's rail of hooks)
       st.prims += n;
     } catch (e) {
       st.failed++;

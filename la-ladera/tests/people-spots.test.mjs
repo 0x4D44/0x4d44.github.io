@@ -226,3 +226,10 @@ test('_makeShops: a post that lies inside a piece of furniture moves to free flo
   assert.ok(sim.canReach(sim.shops.get(lot).ent, now), 'that the door reaches');
   for (const k of keys) if (k !== lot) assert.deepEqual([sim.shops.get(k).post.x, sim.shops.get(k).post.z], [was.get(k).x, was.get(k).z], `${k}'s post stays`);
 });
+
+test('an indoor anchor keeps the piece of furniture it was made for (homelife.slideOf finds the sofa by it); a spot of the plan has none', () => {
+  const spots = spotsOf([poi('P', 'bench', 0, 0)], [{ id: 'A', kind: 'tv', x: 1, y: 0, z: 1, ry: 0, building: 'L1', seatH: 0.45, item: 'f12' }, { id: 'B', kind: 'stand', x: 2, y: 0, z: 2, building: 'L1' }]);
+  assert.equal(at(spots, 'A').item, 'f12', 'the sofa of the television anchor');
+  assert.equal(at(spots, 'B').item, null, 'an anchor of nothing in particular');
+  assert.equal(at(spots, 'P').item, undefined, 'a corner of the plan is not furniture');
+});

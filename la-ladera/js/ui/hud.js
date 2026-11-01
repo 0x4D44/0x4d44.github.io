@@ -30,13 +30,13 @@ export function createHud(ctx) {
       if (S().subs === false) { sub.classList.remove('on'); return; }
       const lang = S().subLang ?? 'both';
       const showEs = lang !== 'en' || !o.en, showEn = (lang !== 'es' && !!o.en);
-      sub.innerHTML = `${o.who ? `<b>${esc(o.who)}</b>` : ''}${showEs ? `<span class="es">${esc(o.es)}</span>` : ''}${showEn ? `<span class="en">${esc(o.en)}</span>` : ''}`;
+      sub.innerHTML = `${o.who ? `<b>${esc(o.who)}</b>` : ''}${showEs ? `<span class="es" lang="es">${esc(o.es)}</span>` : ''}${showEn ? `<span class="en" lang="en">${esc(o.en)}</span>` : ''}`;   // lang: a screen reader speaks each line in its own language (the page is English, #hud Spanish)
       sub.classList.add('on');
       if (o.ms) subT = setTimeout(() => { if (subCur === o) api.subtitle(null); }, o.ms);
     },
     toast(txt, ms = 3200) {
       if (txt && typeof txt === 'object') {                         // rich toast (a discovery): small tag, Spanish title, English line
-        toast.innerHTML = `${txt.tag ? `<em>${esc(txt.tag)}</em>` : ''}<b>${esc(txt.title)}</b>${txt.sub ? `<span>${esc(txt.sub)}</span>` : ''}`;
+        toast.innerHTML = `${txt.tag ? `<em>${esc(txt.tag)}</em>` : ''}<b${txt.titleLang ? ` lang="${esc(txt.titleLang)}"` : ''}>${esc(txt.title)}</b>${txt.sub ? `<span lang="en">${esc(txt.sub)}</span>` : ''}`;   // titleLang: 'en' when the title is the English one (subtitles: English only)
         toast.classList.add('rich');
       } else { toast.textContent = txt ?? ''; toast.classList.remove('rich'); }
       toast.classList.add('on');
@@ -47,7 +47,7 @@ export function createHud(ctx) {
       if (key === placeKey) return;
       placeKey = key; place.classList.remove('on');
       if (!name) { place.textContent = ''; return; }
-      place.innerHTML = `${esc(name)}${en ? `<small>${esc(en)}</small>` : ''}`; void place.offsetWidth; place.classList.add('on');   // the CSS animation shows it for a few seconds
+      place.innerHTML = `${esc(name)}${en ? `<small lang="en">${esc(en)}</small>` : ''}`; void place.offsetWidth; place.classList.add('on');   // the CSS animation shows it for a few seconds
     },
     /** Hide / show the whole HUD (title screen, menus, cinematic shots). */
     show(on) { root.classList.toggle('off', !on); },

@@ -169,8 +169,8 @@ test('layout sweep: every layout plans at every plausible lot size (no throw, no
     const indoor = bp.rooms.filter((r) => !r.outdoor);
     for (const r of bp.rooms) if (!(r.rect.x1 - r.rect.x0 > 0.3 && r.rect.z1 - r.rect.z0 > 0.3)) fails.push(`${tag}: ${r.id} ${r.type} has a degenerate rect`);
     if (kind !== 'kiosk' && d >= 7) for (const r of indoor) if (!r.core) {
-      const m = Math.min(r.rect.x1 - r.rect.x0, r.rect.z1 - r.rect.z0);
-      if (m < 1.3) fails.push(`${tag}: ${r.id} ${r.type} is only ${m.toFixed(2)} m thin`);
+      const m = Math.min(r.rect.x1 - r.rect.x0, r.rect.z1 - r.rect.z0), least = r.tag === 'wc' ? 1.1 : r.tag === 'wash' ? 1.0 : 1.3;      // (a school's cubicle and the passage it opens onto are narrow by design, R4-204: arch-special.test.mjs holds the block to its own sizes)
+      if (m < least - 1e-9) fails.push(`${tag}: ${r.id} ${r.type} is only ${m.toFixed(2)} m thin`);
     }
     const byRoom = new Map(bp.rooms.map((r) => [r.id, r]));
     for (const dr of bp.doors) if (d >= 7 && dr.rooms[0] && dr.rooms[1]) {   // an interior door sits wholly inside the wall its two rooms share

@@ -18,7 +18,7 @@ import { towerPlan, TOWER } from '../js/world/tower.js';
 import { vistaSites, farHouses, houseParts, houseFaces, windowCorners, LANE } from '../js/world/vista.js';
 import { makeKit, SPAWN_FAN, inSpawnFan } from '../js/world/kit.js';
 import { MeshBuilder } from '../js/core/mesh.js';
-import { tube, card } from '../js/world/mk.js';
+import { tube, card, V } from '../js/world/mk.js';
 import { eucalyptus, agave, banana } from '../js/world/flora.js';
 import { moto, bicycle, rubbish, SIZE } from '../js/world/vehicles.js';
 import { lineQuad } from '../js/world/surfaces.js';
@@ -213,7 +213,7 @@ test('vista: the far land has its houses (clear of the rim and of the road that 
   }
   assert.deepEqual(bad.slice(0, 5), []);
   for (const s of [sites.church, ...sites.towers]) assert.equal(houses.filter((h) => Math.hypot(h.x - s.x, h.z - s.z) < s.r).length, 0, `the landmark at ${s.x.toFixed(0)},${s.z.toFixed(0)} keeps its ground`);
-  const lights = glowLog.list, beacons = lights.filter((g) => g.blink > 0);
+  const lights = glowLog.list.filter((g) => g.src !== 'edgewall'), beacons = lights.filter((g) => g.blink > 0);      // the lit windows of the rim's houses (edgewall.js) are not the vista's
   assert.equal(lights.length, V.lights, 'every light of the vista reached ctx.glow');
   assert.equal(beacons.length, 3);
   assert.ok(beacons.every((g) => g.color === 0xff2418 && g.size >= 8 && g.x === V.mast.x && g.z === V.mast.z) && new Set(beacons.map((g) => g.y)).size === 3, 'three red beacons up the mast');
@@ -892,7 +892,7 @@ test('the murals: 3 m and taller, on the tall street walls under the cap and in 
     const spot = W.extra.find((e) => e.id === m.id);
     assert.ok(spot && W.occ.overlaps(spot.x, spot.z, 0.3), `${m.id}: the viewer's spot lies inside the ground the painting claimed before the poles and trees came`);
   }
-  const good = trianglesOn(A, mat, [-1e3, 1e3, -1e3, 1e3])[0], own = list.find((m) => hangsRight(good, m.ox, m.oz));
+  const good = trianglesOn(A, mat, [-98, 98, -98, 98])[0], own = list.find((m) => hangsRight(good, m.ox, m.oz));      // inside the rim: the paintings on the rim's own houses (edgewall.js) face the plot, not a street
   assert.ok(own, 'a mural triangle hangs right on its mural');
   for (const bad of [{ ...good, uv: good.uv.map(([u, v]) => [1 - u, v]) }, { ...good, uv: good.uv.map(([u, v]) => [u, 1 - v]) }, { ...good, nx: -good.nx, nz: -good.nz }]) assert.equal(hangsRight(bad, own.ox, own.oz), false);
 });
@@ -1080,6 +1080,47 @@ test('an agave is a rosette of real blades and a banana a ringed pseudostem, cre
   const oldBanana = stemOf(pipe);
   assert.ok(oldAgave.tris < 100 && oldAgave.cards === 6, `TEETH: the crossed cards are ${oldAgave.tris} blade triangles and ${oldAgave.cards} cards`);
   assert.ok(oldBanana.levels < 7 && !(oldBanana.red[0] > oldBanana.red[1] + 0.08) && !(oldBanana.contrast < 0.5), `TEETH: the plain tube ${JSON.stringify(oldBanana)}`);
+});
+
+test('an agave leaf is curved, channelled and toothed, shaded smooth, and the rosette keeps the stream where it was (R1-D25) (TEETH: the round-4 agave, flat triangles of one normal each, has none of it)', () => {
+  const stub = (fn, i) => { const b = new MeshBuilder(), K = { b: () => b, H: () => 0, post() {}, occ: { take() {} }, atlas: null }; const rng = A.rng.fork('agave-r5:' + i); fn(K, 0, 0, { rng }); return { b, rng }; };
+  const measure = (b) => {
+    const acc = b.accs.get('plaster_a') ?? { pos: [], nor: [], col: [], idx: [] }, tris = acc.idx.length / 3, nd = (p, q) => acc.nor[3 * p] * acc.nor[3 * q] + acc.nor[3 * p + 1] * acc.nor[3 * q + 1] + acc.nor[3 * p + 2] * acc.nor[3 * q + 2];
+    let smooth = 0, points = 0, hi = 0, lo = Infinity;
+    for (let t = 0; t < tris; t++) {
+      const i = acc.idx[3 * t], j = acc.idx[3 * t + 1], k = acc.idx[3 * t + 2];
+      if (Math.min(nd(i, j), nd(j, k), nd(i, k)) < 0.999) smooth++;                                                  // the three corners do not share one normal: a rounded surface
+      if ([i, j, k].some((v) => acc.col[3 * v + 1] - acc.col[3 * v] < 0.04)) points++;                               // an olive-brown point (green hardly above red): a tooth or the spine at a leaf's tip
+    }
+    for (let v = 0; v < acc.pos.length / 3; v++) { hi = Math.max(hi, acc.pos[3 * v + 1]); lo = Math.min(lo, acc.pos[3 * v + 1]); }
+    return { tris, smooth: smooth / Math.max(1, tris), points, hi, lo };
+  };
+  for (let i = 0; i < 6; i++) {
+    const m = measure(stub(agave, i).b);
+    assert.ok(m.tris >= 600 && m.tris <= 900, `agave ${i}: ${m.tris} triangles in the blades (the flat ones had 108; the world's budget allows about 800)`);
+    assert.ok(m.smooth > 0.6, `agave ${i}: ${(m.smooth * 100).toFixed(0)}% of the triangles are smooth-shaded (a leaf is curved, not folded)`);
+    assert.ok(m.points >= 100, `agave ${i}: ${m.points} triangles with a dark point: the teeth along the margins and the spine at each tip`);
+    assert.ok(m.hi > 0.8 && m.lo < 0.02, `agave ${i}: the heart stands ${m.hi.toFixed(2)} m and the outer leaves droop to ${m.lo.toFixed(2)} m`);
+  }
+  // the flora stream: after an agave the generator stands where the flat blades left it (4 numbers of its own and 54 burnt), so the plants placed after one do not move
+  const probe = A.rng.fork('agave-r5:stream'), same = A.rng.fork('agave-r5:stream');
+  agave({ b: () => new MeshBuilder(), H: () => 0 }, 0, 0, { rng: probe });
+  for (let i = 0; i < 4 + 54; i++) same.next();
+  assert.equal(probe.s, same.s, 'an agave takes exactly 58 numbers from the stream, as the flat blades did');
+  // TEETH: the round-4 agave, rebuilt (three rings of flat triangles, one normal per triangle, no teeth), fails the same measures
+  const old = new MeshBuilder(), orng = A.rng.fork('agave-r5:old'), os = 1.3, orot = orng.range(0, 6.28);
+  const lo = [0.3, 0.46, 0.34], hi = [0.5, 0.68, 0.66];
+  for (const [n, tilt, len, wid] of [[4, 0.14, 0.62, 0.075], [6, 0.62, 0.86, 0.1], [8, 1.12, 0.98, 0.11]]) {
+    for (let i = 0; i < n; i++) {
+      const a = orot + (i / n) * Math.PI * 2 + tilt, t = tilt, L = os * len, w = os * wid;
+      const dir = [Math.sin(t) * Math.cos(a), Math.cos(t), Math.sin(t) * Math.sin(a)], side = [-Math.sin(a), 0, Math.cos(a)];
+      const p0 = [dir[0] * 0.05, 0.02, dir[2] * 0.05], pm = V.add(p0, V.mul(dir, L * 0.45)), tip = V.add(V.add(p0, V.mul(dir, L)), [0, -0.1 * L * Math.min(1.2, t), 0]);
+      const bl = V.sub(p0, V.mul(side, w * 0.55)), br = V.add(p0, V.mul(side, w * 0.55)), ml = V.sub(pm, V.mul(side, w)), mr = V.add(pm, V.mul(side, w));
+      for (const flip of [false, true]) { const T = (p, q, u, c) => (flip ? old.tri('plaster_a', p, u, q, { col: c }) : old.tri('plaster_a', p, q, u, { col: c })); T(bl, br, mr, lo); T(bl, mr, ml, lo); T(ml, mr, tip, hi); }
+    }
+  }
+  const was = measure(old);
+  assert.ok(was.tris < 600 && !(was.smooth > 0.6) && was.points < 100, `TEETH: the flat blades are ${was.tris} triangles, ${(was.smooth * 100).toFixed(0)}% smooth, ${was.points} with a point`);
 });
 
 test('the rim is planted (R1-D02): trees, a hedge and agaves stand 2 to 6.5 m inside the perimeter wall on all four sides, none on the road, none against the wall (TEETH: the belt is the cause of the count)', () => {

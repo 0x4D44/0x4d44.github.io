@@ -34,14 +34,14 @@ const I = (id, sh, w, h, d, col, es, en, pools, when = '') => {
 };
 
 // ---- clothes that hang (w = the garment's width; it hangs edge-on to the front like clothes on a rail)
-I('uniforme', 'hang', 0.38, 0.85, 0.05, 0x2f4f8a, `El uniforme del colegio, planchado para mañana. Un botón cuelga de un hilo distinto.`, `The school uniform, ironed for tomorrow. One button hangs on a different thread.`, 'wardrobe:3', 'kids');
+I('uniforme', 'hang', 0.38, 0.85, 0.05, 0x2f4f8a, `El uniforme del colegio, planchado para mañana. Un botón cuelga de un hilo distinto.`, `The school uniform, ironed for tomorrow. One button hangs on a different thread.`, 'wardrobe:3 locker:3', 'kids');
 I('vestido15', 'hang', 0.44, 1.15, 0.05, 0xe8a8c8, `Un vestido de quinceañera guardado en plástico. Nadie lo ha estrenado todavía.`, `A quinceañera dress in plastic. Nobody has worn it yet.`, 'wardrobe:3', 'teen');
 I('overol', 'hang', 0.4, 0.95, 0.05, 0x2f4a73, `Un overol de trabajo con manchas de pintura vieja y un metro en el bolsillo.`, `Work overalls with old paint stains and a tape measure in the pocket.`, 'wardrobe:2 locker:1');
 I('camisa_colgada', 'hang', 0.36, 0.72, 0.05, 0xdfe6ee, `Una camisa blanca de domingo, con el cuello almidonado.`, `A white Sunday shirt with a starched collar.`, 'wardrobe:3');
 I('vestido_domingo', 'hang', 0.42, 1.0, 0.05, 0x8fb3a0, `El vestido de los domingos. Huele a naftalina y a flores.`, `The Sunday dress. It smells of mothballs and flowers.`, 'wardrobe:3', '!students');
-I('ruana', 'hang', 0.5, 0.85, 0.06, 0x7a4a2e, `Una ruana de lana gruesa, de las que aguantan el frío del páramo.`, `A thick wool ruana, the kind that stands up to the páramo cold.`, 'wardrobe:3');
+I('ruana', 'hang', 0.5, 0.85, 0.06, 0x7a4a2e, `Una ruana de lana gruesa, de las que aguantan el frío del páramo.`, `A thick wool ruana, the kind that stands up to the páramo cold.`, 'wardrobe:3 locker:1');
 I('traje', 'hang', 0.44, 1.1, 0.06, 0x2a2f3a, `Un traje oscuro para matrimonios y entierros. Ha servido para las dos cosas.`, `A dark suit for weddings and funerals. It has served for both.`, 'wardrobe:2', '!students');
-I('camiseta_equipo', 'hang', 0.46, 0.7, 0.04, 'team', `La camiseta del equipo, sagrada: no se mete a la lavadora.`, `The team shirt, sacred: it never goes in the washing machine.`, 'wardrobe:4 dresser:2', 'football|teen|students');
+I('camiseta_equipo', 'hang', 0.46, 0.7, 0.04, 'team', `La camiseta del equipo, sagrada: no se mete a la lavadora.`, `The team shirt, sacred: it never goes in the washing machine.`, 'wardrobe:4 dresser:2 locker:3', 'football|teen|students');
 I('abrigo', 'hang', 0.5, 1.0, 0.07, 0x4a3f38, `Un abrigo pesado que casi nunca hace falta… menos en las noches de lluvia.`, `A heavy coat that is hardly ever needed… except on rainy nights.`, 'wardrobe:1', 'rich');
 I('bata', 'hang', 0.4, 0.9, 0.06, 0xc59ab0, `Una bata de franela con el bolsillo lleno de pañuelos.`, `A flannel dressing gown with its pocket full of handkerchiefs.`, 'wardrobe:2');
 I('delantal', 'hang', 0.36, 0.8, 0.04, 0xe8d8b8, `Un delantal de cocina con las manchas de mil sancochos.`, `A kitchen apron with the stains of a thousand sancochos.`, 'wardrobe:2 pantry:1 kitchen_upper:0.4');
@@ -331,6 +331,9 @@ I('carrito', 'box', 0.1, 0.05, 0.055, 0xe0674f, `Un carrito de hojalata con una 
 I('medalla_servicio', 'chain', 0.04, 0.012, 0.1, 0xd9ab3c, `Una medalla por treinta años de servicio al barrio. No dice a quién; en la casa todos lo saben.`, `A medal for thirty years of service to the barrio. It does not say whose; everyone in the house knows.`, 'dresser:1 chest:2 nightstand_drawer:1 vitrine:1', 'elder');
 I('relicario', 'chain', 0.065, 0.01, 0.08, 0xd9ab3c, `Un relicario ovalado con el retrato de una joven. Se abre con la uña, como se abren las cosas que importan.`, `An oval locket with a young woman's portrait inside. It opens with a fingernail, the way important things do.`, 'dresser:2 nightstand_drawer:1 chest:1 vitrine:1', 'elder');
 
+/** The cut of each hung garment (SH.hang): a shirt, a dress, an apron, overalls, a ruana; anything else is a coat or a gown. */
+const CUT = { camisa_colgada: 'shirt', camiseta_equipo: 'shirt', uniforme: 'shirt', vestido15: 'dress', vestido_domingo: 'dress', delantal: 'apron', overol: 'overall', ruana: 'poncho' };
+
 // ------------------------------------------------------------------ drawing: o = { id, x, y, z, w, h, d, col } in the piece's frame (x right, y up from its base, z front);
 // (x, z) = the centre of the object's footprint, y = its bottom. Every shape stays inside its w x h x d box (the aim box and the layout test rely on it).
 const SH = {
@@ -338,11 +341,33 @@ const SH = {
     const n = Math.max(1, Math.round(o.h / 0.045)), lh = o.h / n;
     for (let i = 0; i < n; i++) { const j = u01(o.id, i) - 0.5; FL(P, o.x + j * 0.012, o.y + i * lh, o.z, o.w * (0.97 + j * 0.04), lh * 0.95, o.d * 0.97, i % 2 ? shade(o.col, 0.92) : o.col, j * 0.04); }
   },
-  hang(P, o) {                                           // edge on to the front, like clothes on a rail: o.d is the garment's width, o.w the room it takes along the rail
-    CY(P, o.x, o.y + o.h - 0.012, o.z, 0.004, 0.03, 0x707070, 5);                                             // the hook over the rail
-    FL(P, o.x, o.y + o.h - 0.024, o.z, 0.014, 0.012, o.d, 0x8a6a40);                                         // the hanger's shoulder bar
-    FL(P, o.x, o.y, o.z, 0.05, o.h - 0.03, o.d * 0.94, o.col);                                               // the garment
-    FL(P, o.x, o.y, o.z + o.d * 0.47 - 0.02, 0.053, o.h * 0.55, 0.04, shade(o.col, 1.14));                  // its front panel, a shade lighter
+  hang(P, o) {                                           // edge on to the front, like clothes on a rail: o.d is the garment's width, o.w the room it takes along the rail (a hand's breadth)
+    // (R4-211) a plank in a colour read as nothing on a rail: each kind of garment has its own cut, so a full rail shows shoulders, sleeves, skirts and trouser legs of different lengths
+    const x = o.x, z = o.z, d = o.d, c = o.col, top = o.y + o.h - 0.03, body = top - o.y, t = 0.046, cut = CUT[o.item] ?? 'coat';
+    const sl = (zc, w, y0, h, col, th = t) => FL(P, x, y0, zc, th, h, w, col);                                // a slab of cloth: its thickness along the rail, its width across it
+    CY(P, x, o.y + o.h - 0.012, z, 0.004, 0.03, 0x707070, 5);                                                 // the hook over the rail
+    FL(P, x, o.y + o.h - 0.024, z, 0.014, 0.012, d * 0.9, 0x8a6a40);                                          // the hanger's shoulder bar
+    if (cut === 'shirt') {                                                                                    // shoulders, a narrower body, two sleeves, a lighter collar
+      sl(z, d * 0.9, top - body * 0.16, body * 0.16, c); sl(z, d * 0.64, o.y, body * 0.86, c);
+      for (const s of [-1, 1]) sl(z + s * d * 0.39, d * 0.15, top - body * 0.62, body * 0.6, shade(c, 0.92), t * 0.92);
+      sl(z, d * 0.22, top - 0.014, 0.016, shade(c, 1.2), t * 1.06);
+    } else if (cut === 'dress') {                                                                             // a bodice, a wider skirt, a sash
+      sl(z, d * 0.52, top - body * 0.42, body * 0.42, c); sl(z, d * 0.96, o.y, body * 0.62, shade(c, 0.95));
+      sl(z, d * 0.6, top - body * 0.42, 0.02, shade(c, 0.7), t * 1.04);
+    } else if (cut === 'apron') {                                                                             // a bib on a neck strap, the skirt, a darker band at the waist
+      sl(z, d * 0.4, top - body * 0.34, body * 0.34, c); sl(z, d * 0.92, o.y, body * 0.66, shade(c, 0.97));
+      sl(z, d * 0.94, top - body * 0.36, 0.022, shade(c, 0.72), t * 1.04);
+    } else if (cut === 'overall') {                                                                           // a bib, two trouser legs with a gap between
+      sl(z, d * 0.5, top - body * 0.34, body * 0.34, c);
+      for (const s of [-1, 1]) sl(z + s * d * 0.23, d * 0.42, o.y, body * 0.7, shade(c, s < 0 ? 1 : 0.92));
+      sl(z, d * 0.9, top - body * 0.36, 0.02, shade(c, 0.78), t * 1.04);
+    } else if (cut === 'poncho') {                                                                            // a ruana: a wide cloth with a stripe at the hem and a darker neck
+      sl(z, d * 0.96, o.y, body, c); sl(z, d * 0.97, o.y, 0.05, shade(c, 1.35), t * 1.04); sl(z, d * 0.22, top - 0.06, 0.06, shade(c, 0.7), t * 1.04);
+    } else {                                                                                                  // a coat or a gown: shoulders, the body, long sleeves at the sides, a lighter front
+      sl(z, d * 0.92, top - body * 0.14, body * 0.14, c); sl(z, d * 0.78, o.y, body * 0.88, c);
+      for (const s of [-1, 1]) sl(z + s * d * 0.42, d * 0.14, top - body * 0.78, body * 0.76, shade(c, 0.9), t * 0.92);
+      sl(z + d * 0.3, d * 0.07, o.y + body * 0.04, body * 0.72, shade(c, 1.15), t * 1.06);
+    }
   },
   box(P, o) {
     FL(P, o.x, o.y, o.z, o.w, o.h * 0.78, o.d, o.col);

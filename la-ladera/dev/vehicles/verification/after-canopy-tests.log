@@ -1,0 +1,37 @@
+✔ the booted material is the sheet: loaded 2048 x 1024, clamped with unit repeat, a 0.5 cut-out, two-sided, vertex-tinted (41970.633261ms)
+✔ the trees draw it: eucalyptus, cypress and broadleaf cards from cells 0, 1 and 4 and no other cell, in meshes that cast and receive shadow (0.312439ms)
+✖ the boot is clean with the sheet: no page error, no console error or warning, no 404 (0.965051ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 42415.309973
+
+✖ failing tests:
+
+test at la-ladera/tests/world-canopy-page.test.mjs:60:1
+✖ the boot is clean with the sheet: no page error, no console error or warning, no 404 (0.965051ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+    {
+      errors: 0,
+      net: 0,
+  +   warnings: 3
+  -   warnings: 0
+    }
+
+      at TestContext.<anonymous> (file:///workspace/scratch/89d754c96325/la-ladera-work/la-ladera/tests/world-canopy-page.test.mjs:61:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { errors: 0, warnings: 3, net: 0 },
+    expected: { errors: 0, warnings: 0, net: 0 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

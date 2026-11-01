@@ -218,8 +218,10 @@ function interactables(ctx, bp, E, rng) {
   if (I.stories) I.stories.unseen = unseen;
   for (const s of seats) {
     const a = s.a;
+    // x, y, z is the CUSHION, the centre of the thing like any shaped item's (core/interact.js): whoever aims at the item's point aims at the seat. It used to be the standing point in front of it at chest height
+    // (`stand` below still is): a probe that looked at that point looked at the air beside the chair, and one that stood 0.3 m under it for a seat's height started 0.95 m in the air, its head in the fan's box (R4-205, R2d-004)
     ctx.interact?.register({                                                  // a SHAPED target (core/interact.js): the seat is offered while the view ray enters ITS box, and the nearest thing entered wins (R4-009)
-      id: `int:${s.it.id}:sit${a.id ?? ''}`, kind: 'sit', x: s.t.x, y: s.t.y, z: s.t.z, radius: 2.4, reach: 2.0, static: true, pri: s.pri, lead: 0.5, building: bp.id,   // lead: the walls are tested up to 0.5 m short of the box (the body's own width and the pad)
+      id: `int:${s.it.id}:sit${a.id ?? ''}`, kind: 'sit', x: a.x, y: a.y + (a.seatH ?? 0.45), z: a.z, radius: 2.4, reach: 2.0, static: true, pri: s.pri, lead: 0.5, building: bp.id,   // lead: the walls are tested up to 0.5 m short of the box (the body's own width and the pad)
       hit: aimBox(bp, s.it, 0.2, seatLane(bp, s.it, a)), prompt: 'Sentarse', enabled: () => !isSitting(ctx),
       use: (c) => sitDown(c, { building: bp.id, seat: [a.x, a.y, a.z], seatH: a.seatH ?? 0.45, ry: a.ry, stand: [s.t.x, s.t.z] }),
     });
@@ -257,6 +259,7 @@ function lookAt(bp, it, pad) {
   const ax = a[0] - p[0], az = a[2] - p[2], bx = b[0] - p[0], bz = b[2] - p[2], hx = o.hx + pad, hz = o.hz + pad, cx = c[0], cy = c[1], cz = c[2];
   return (ctx) => {
     const e = ctx.player?.eye, v = ctx.player?._dir; if (!e || !v) return true;               // headless tools have no view
+    if (ceil && e.y > cy - hy) return false;                                        // a fan is looked at from BELOW it: an eye level with the blades (R4's probe stood 0.95 m up) is in its box, and the fan took every seat's E (R4-205)
     const dx = e.x - cx, dz = e.z - cz; if (dx * dx + dz * dz > 49) return true;
     return rayHitsBox(dx * ax + dz * az, e.y - cy, dx * bx + dz * bz, v.x * ax + v.z * az, v.y, v.x * bx + v.z * bz, hx, hy, hz);
   };

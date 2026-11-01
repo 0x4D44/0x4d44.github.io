@@ -33,6 +33,29 @@ test('the warm-up frame is flagged as blocking, and the bar does not read near 1
   assert.ok(share('warm') <= 24, 'but the warm-up does not take the bar over');
 });
 
+test('the bar has a stage for the module download and one for the textures that are left after the warm-up frame (R2e-001)', () => {
+  assert.equal(STAGES[0][0], 'load', "the module graph is the bar's first share: main.js begins it when the last module has run");
+  assert.ok(share('load') >= 5, `a boot at 8 Mbit/s spends 6-8 s of ~40 in it (${share('load')} of ${TOTAL})`);
+  const names = STAGES.map((s) => s[0]);
+  assert.ok(names.indexOf('textures') > names.indexOf('warm'), "the textures are waited for AFTER the warm-up frame: they come down while it runs (core/matlib.js hold())");
+  assert.ok(names.indexOf('models') > names.indexOf('furnish') && names.indexOf('models') < names.indexOf('build'), 'the wait for the models sits between the pure-data furnishing and the build that needs them');
+});
+
+test("index.html moves the bar while the modules come in, and never further than main.js's own first step (R2e-001: it stood at 0 for 6-8 s)", () => {
+  const m = HTML.match(/var FILES = (\d+), MAX = ([\d.]+)/);
+  assert.ok(m, 'the page script that counts the module files is in index.html');
+  const loadPct = 100 * share('load') / TOTAL;
+  assert.ok(+m[2] > 0 && +m[2] <= loadPct, `the page script fills up to ${m[2]} %, the load stage is ${loadPct.toFixed(1)} % of the bar: it must not stand ahead of main.js's first step`);
+  assert.ok(+m[2] >= loadPct - 1.5, `and not far short of it either, or the bar jumps when main.js takes over (${m[2]} % against ${loadPct.toFixed(1)} %)`);
+  assert.match(HTML, /PerformanceObserver[\s\S]*type: 'resource'[\s\S]*buffered: true/, 'it watches the resource timing entries, buffered: the ones that arrived before the script ran count too');
+  assert.match(HTML, /window\.__ladera && window\.__ladera\.ctx/, 'and lets go when main.js is running');
+});
+
+test('main.js keeps the bar monotonic at the last step as well, and begins the load stage before the engine', () => {
+  assert.match(MAIN, /if \(pct < shown\) return;/, 'setBar never writes a lower value than the one shown (the page script may stand ahead of the stage share by a fraction)');
+  assert.ok(MAIN.indexOf("await stage('load'") > 0 && MAIN.indexOf("await stage('load'") < MAIN.indexOf("await stage('engine'"), 'load is the first stage run');
+});
+
 // ---- the bar --------------------------------------------------------------------------------------------------------------------------------
 /** a whole boot: every stage begins, reports a few times, is silent for `quiet` ms between ticks, ends. Returns every fraction the bar showed. */
 function run(bar, { quiet = 0, reports = 2 } = {}) {

@@ -15,14 +15,23 @@ export function stack(S, k, rect, specs) {
   return out;
 }
 
-/** Carve a bathroom out of `room` (its rect shrinks); returns the new bathroom room. */
-export function carveBath(S, room, k, awaySide) {
-  const r = room.rect, bw = 1.55, bd = 1.7;
+/** The bath of a flat: 1.6 m deep (a bath 3 m wide is generous at that), and never more than half of a narrow kitchen (R4-209: kitchens 1.41 m deep beside baths 1.7 m deep). */
+export const FLAT_BATH = { d: 1.6, share: true };
+
+/** How a bathroom of the default 1.55 x 1.7 m (or `o.w` x `o.d`) is cut from a room `w` x `d` m: { beside, bw, bd }. `o.share` keeps the room at least as large as the bath on a narrow room. */
+export function bathCut(w, d, o = {}) {
+  const bd = o.d ?? 1.7, bw = o.share ? Math.min(o.w ?? 1.55, (w - ti) / 2 - 0.005) : (o.w ?? 1.55);
   // classic rule: beside the room when it is wide enough, else across its back wall; but never leave a sliver (< 1.4 m) behind:
   // when the classic choice does, take the other cut if that leaves more
-  const left = (beside) => (beside ? Math.min(rw(r) - bw - ti, rd(r)) : Math.min(rw(r), rd(r) - bd - ti));
-  let beside = rw(r) >= bw + ti + 1.9;
+  const left = (b) => (b ? Math.min(w - bw - ti, d) : Math.min(w, d - bd - ti));
+  let beside = w >= bw + ti + 1.9;
   if (left(beside) < 1.4 && left(!beside) > left(beside)) beside = !beside;
+  return { beside, bw, bd };
+}
+
+/** Carve a bathroom out of `room` (its rect shrinks); returns the new bathroom room. `o` as for `bathCut` (`FLAT_BATH` for a flat). */
+export function carveBath(S, room, k, awaySide, o = {}) {
+  const r = room.rect, { beside, bw, bd } = bathCut(rw(r), rd(r), o);
   if (beside) {
     const [a, b] = awaySide === 'east' ? cutEast(r, bw) : cutWest(r, bw);
     room.rect = awaySide === 'east' ? a : b;

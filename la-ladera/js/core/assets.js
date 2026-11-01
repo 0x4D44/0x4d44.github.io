@@ -10,6 +10,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+/** A manifest that index.html already asked for while the modules came down (window.__laderaPre: url without './' -> promise of the parsed JSON, or null); handed over once. */
+export function takePrefetched(url) {
+  const pre = globalThis.__laderaPre, key = String(url).replace(/^\.\//, ""), hit = pre?.[key];
+  if (hit) delete pre[key];
+  return hit ?? null;
+}
+
 export class Assets {
   constructor(ctx) {
     this.ctx = ctx; this.entries = new Map(); this.loader = new GLTFLoader();
@@ -23,16 +30,20 @@ export class Assets {
    * Node tests pass a reader that loads the same files from disk, so furnishing logic (which only needs the
    * manifest metadata - size, footprint, tags - never the GLB bytes) can be tested without a browser.
    */
-  async init(read = (p) => fetch(this.root + p, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)) {
+  async init(read = (p) => takePrefetched(this.root + p) ?? fetch(this.root + p, { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)) {
     const root = await read('manifest.json');
-    for (const f of root?.files ?? []) {
+    // The listed manifests are read together, not one after another: at 120 ms of latency twelve sequential reads were ~2 s of the boot with the connection idle (review R2e-001).
+    // They are merged in the listed order afterwards, so a name that two manifests declare still resolves to the later one, exactly as before.
+    const files = root?.files ?? [];
+    const read1 = async (f) => { try { return await read(f); } catch (e) { console.warn('[assets] manifest', f, e); return null; } };
+    const manifests = await Promise.all(files.map(read1));
+    files.forEach((f, i) => {
       try {
-        const m = await read(f);
-        for (const set of m?.files ?? []) {
+        for (const set of manifests[i]?.files ?? []) {
           for (const [name, meta] of Object.entries(set.assets ?? {})) this.entries.set(name, { name, glb: set.glb, node: meta.node ?? name, ...meta });
         }
       } catch (e) { console.warn('[assets] manifest', f, e); }
-    }
+    });
   }
 
   has(name) { return this.entries.has(name); }

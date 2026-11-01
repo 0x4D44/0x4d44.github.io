@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { planVista, placementErrors, VISTA_LIMITS } from './vista-plan.js';
 import { houseLights, vistaSites } from './vista.js';
+import { kitLook, averageColour } from './vista-look.js';
 
 const PLACEMENT = 'vista/placement.json';
 /**
@@ -49,6 +50,9 @@ export function instanceVista(ctx, planned, partsByName) {
   const root = new THREE.Group(); root.name = 'props.vista'; root.userData.noMerge = true;
   const tiles = new Map(), buckets = new Map(), records = [], matrix = new THREE.Matrix4(), quat = new THREE.Quaternion(), axis = new THREE.Vector3(0, 1, 0), pos = new THREE.Vector3(), scale = new THREE.Vector3();
   const lim = planned.limits;
+  // R1-D20: each house is drawn in its own paint, height and step off the row (vista-look.js); the plan itself, its layout and its piece ids, are as the planner made them
+  const averages = new Map(), baseOf = (p) => { if (!averages.has(p.far)) averages.set(p.far, averageColour(partsByName.get(p.far) ?? [])); return averages.get(p.far); };
+  const looks = kitLook(planned, baseOf, planned.seed ?? 0);
   let released = false;
   const releaseBuffers = () => {
     if (released) return;
@@ -64,8 +68,9 @@ export function instanceVista(ctx, planned, partsByName) {
       tile = new THREE.Group(); tile.name = `props.vista.${tx}.${tz}`; tile.position.set(tx * lim.tileSize, 0, tz * lim.tileSize);
       tiles.set(tileKey, tile); root.add(tile);
     }
-    matrix.compose(pos.set(p.x - tile.position.x, p.y, p.z - tile.position.z), quat.setFromAxisAngle(axis, p.ry), scale.fromArray(p.scale));
-    const record = { ...p, matrix: new Float32Array(matrix.elements), color: new THREE.Color(p.shade, p.shade, p.shade), nearBuckets: [], farBuckets: [] };
+    const L = looks[i];
+    matrix.compose(pos.set(p.x + L.dx - tile.position.x, L.y, p.z + L.dz - tile.position.z), quat.setFromAxisAngle(axis, p.ry + L.dry), scale.set(p.scale[0], p.scale[1] * L.sy, p.scale[2]));
+    const record = { ...p, matrix: new Float32Array(matrix.elements), color: new THREE.Color(L.color[0], L.color[1], L.color[2]), nearBuckets: [], farBuckets: [] };
     for (const mode of ['near', 'far']) {
       const parts = partsByName.get(p[mode]);
       if (!parts?.length) throw new Error(`vista geometry absent: ${p[mode]}`);

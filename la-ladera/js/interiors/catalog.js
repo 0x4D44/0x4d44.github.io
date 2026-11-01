@@ -293,14 +293,14 @@ const SHEET = { bed_single: 0.57, bed_single_metal: 0.59, bed_double: 0.57, bed_
 for (const [k, y] of Object.entries(SHEET)) hide(CATALOG[k], 'topAdd', y - CATALOG[k].size[1]);
 for (const c of Object.values(CATALOG)) if (c.seat && ['chair', 'stool', 'sofa', 'armchair', 'bench'].includes(c.arch) && c.topAdd == null) hide(c, 'topAdd', c.seat[0] - c.size[1]);
 
-// One key per garment model state (assets/models/garments, the adult clothing library): garment_<id>_<flat|folded|hung>, sized as the library's model. Flat and folded ones lie on a surface
-// or the floor (origin = the middle of the underside); a hung one is a wall item whose model hangs from its top edge (`hang`): the record's y is its bottom, build.js lifts the model by its
-// height. Never blocking, never a hiding place.
+// One key per garment model state (the adult, child and teen libraries): garment_<id>_<flat|folded|hung>, sized as the library's model (a teen id carries its size, `sizeClass`: small | big).
+// Flat and folded ones lie on a surface or the floor (origin = the middle of the underside); a hung one is a wall item whose model hangs from its top edge (`hang`): the record's y is its
+// bottom, build.js lifts the model by its height. Never blocking, never a hiding place.
 for (const [id, g] of Object.entries(GARMENTS)) for (const state of STATES) {
   if (!g[state]) continue;
   const [w, h, d] = g[state], key = `garment_${id}_${state}`;
-  add(key, w, h, d, 'garment', `garment clothes ${id} ${state}`, {
-    cols: 'none', mat: 'laundry', block: false, garment: id, state, ...(state === 'hung' ? { wall: true, hang: true, y: Math.round((1.78 - h) * 1000) / 1000 } : {}),
+  add(key, w, h, d, 'garment', `garment clothes ${g.sizeTag} ${id} ${state}`, {
+    cols: 'none', mat: 'laundry', block: false, garment: id, sizeTag: g.sizeTag, ...(g.sizeClass ? { sizeClass: g.sizeClass } : {}), state, ...(state === 'hung' ? { wall: true, hang: true, y: Math.round((1.78 - h) * 1000) / 1000 } : {}),
   });
   Object.defineProperty(CATALOG, key, { enumerable: false });
 }

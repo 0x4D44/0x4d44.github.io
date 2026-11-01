@@ -2,7 +2,7 @@
 import { T_INT, R, cutSouth, cutX, cutWest, cutEast, rw, rd, rcx, rcz, clamp, rectMinusRects } from './geom.js';
 import { coreGeo } from './coregeo.js';
 import { coreDims } from './stairs.js';
-import { stack, carveBath, entranceU, wallLen } from './layouthelp.js';
+import { stack, carveBath, bathCut, FLAT_BATH, entranceU, wallLen } from './layouthelp.js';
 import { planCourtyard, planTenement, planSchool, planClinic, planHall } from './layouts_special.js';
 import { NAVE_H, LOW_H, DAIS_H, DAIS_D, DAIS_HALF } from './chapel_interior.js';
 
@@ -234,6 +234,24 @@ export function layoutShopHouse(S) {
 
 /** Narrowest a flat may be when it has the floor to itself (beside the hall and stair column); two to a floor need 2.8 m each. */
 const FLAT_ALONE_MIN = 3.4;
+/** Shallowest a flat's living room (3.0) and bedroom (2.8) may be: the depth the kitchen and bath band may take from them. */
+const FLAT_LIVING_MIN = 3.0, FLAT_BEDROOM_MIN = 2.8;
+
+/**
+ * Depths of a flat's living room and bedroom on a lot `Di` deep, flat `Wf` wide. The kitchen/bath band is what is left; when the bath is cut across the back of a narrow flat the
+ * kitchen is the rest of it, so the band must hold the bath, a wall and a kitchen a hand deeper than the bath (R4-209: 3.2 x 1.41 m kitchens next to 3.2 x 1.7 m baths). A band that
+ * is short takes the difference from the living room first, then the bedroom, never below their minimums; when even that is not enough the depths stay as they were and the bath is
+ * cut beside the kitchen instead (`carveBath`; the bath takes no more than half the width).
+ */
+export function flatDepths(Di, Wf) {
+  let ds = clamp(0.34 * Di, FLAT_LIVING_MIN, 4.2), dd = clamp(0.3 * Di, FLAT_BEDROOM_MIN, 3.6);
+  const need = FLAT_BATH.d + ti + FLAT_BATH.d + 0.15, short = need - (Di - ds - dd - 2 * ti);
+  if (short > 1e-9 && !bathCut(Wf, need, FLAT_BATH).beside) {
+    const a = Math.min(short, ds - FLAT_LIVING_MIN), b = Math.min(short - a, dd - FLAT_BEDROOM_MIN);
+    if (a + b >= short - 1e-9) { ds -= a; dd -= b; }
+  }
+  return { ds, dd };
+}
 /** Who lives in a flat (interiors/household.js turns it into the household's kind): drawn per flat, weighted like the barrio's own mix of families, couples and students, and elders. */
 const FLAT_OCC = [['family', 4], ['young', 5], ['elder', 3]];
 
@@ -263,7 +281,7 @@ export function layoutApartments(S) {
   const df = Di - cd.along - ti;
   const [upper, hallRect] = cutSouth(mid, df);
   S.placeCore(upper, 'z', false); S.addCoreRooms();
-  const orng = S.rng.fork('flats'), ds = clamp(0.34 * Di, 3.0, 4.2), dd = clamp(0.3 * Di, 2.8, 3.6);
+  const orng = S.rng.fork('flats'), { ds, dd } = flatDepths(Di, rw(flats[0][0]));
   for (let k = 0; k < S.F; k++) {
     const hall = S.addRoom(k, k === 0 ? 'entry' : 'hall', hallRect);
     const core = S.coreRooms[k];
@@ -273,7 +291,7 @@ export function layoutApartments(S) {
       const o = { unit: 'ab'[ui], occupant: orng.weighted(FLAT_OCC, (t) => t[1])[0] };
       first ??= o;
       const [sala, dorm, cocina] = stack(S, k, u, [['living', ds, o], ['bedroom', dd, o], ['kitchen', null, o]]);
-      const bath = carveBath(S, cocina, k, away);
+      const bath = carveBath(S, cocina, k, away, FLAT_BATH);
       bath.unit = o.unit; bath.occupant = o.occupant;
       S.link(hall, sala, { atZ: sala.rect.z1 - 1.0 });
       S.link(sala, dorm); S.link(dorm, cocina); S.link(cocina, bath);

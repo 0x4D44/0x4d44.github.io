@@ -9,6 +9,7 @@ import { HALF } from './field.js';
 import { ribbon } from './mk.js';
 import { panel, PAPERS, TAGS } from './signs.js';
 import { drape } from './flora.js';
+import { dressEdge } from './edgewall.js';
 
 // Both the mesh builder and placement sampler use these exact cell grids.
 const FAR_TERRAIN_GRIDS = Object.freeze([
@@ -285,7 +286,9 @@ export function buildBoundary(K) {
         b.box(mat, p0[0], (lo - 0.4 + yt) / 2, p0[1], sd.axis === 'x' ? 0.34 : T + 0.22, yt - lo + 0.4, sd.axis === 'x' ? T + 0.22 : 0.34, { skip: ['ny'] });
       }
     }
+    dressEdge(K, sd, crests);                                                                                       // R1-D21: the east and west walls become the back of the barrio (edgewall.js); it takes the raised panels out of `crests`
     crests.forEach((cr, i) => drape(K, cr, dr.fork('vine' + i), { step: 4.5 }));                                  // bougainvillea hung over the crest on the plot's side, every few panels
+    (ctx.world.crests ??= {})[sd.id] = crests;                                                                    // and what rimwalk.js dresses the top with: the panels' tops, run by run
   }
   // ---- the welcome arch over the entry road, with the barrier lowered across it
   const g = ctx.batch.builder('props.boundary.gate'), gx = gate.x, gz = gate.z, y0 = H(gx, gz);

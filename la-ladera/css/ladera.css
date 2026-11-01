@@ -230,6 +230,10 @@ body.touch .rd-hint { display: none; }
 #touch .tbtn.use { right: 18px; bottom: 26px; width: 72px; height: 72px; background: rgba(233, 162, 59, .72); color: #2a1a0a; }
 #touch .tbtn.jump { right: 104px; bottom: 26px; }
 #touch .tbtn.crouch { right: 18px; bottom: 114px; }
+/* the small ones: the run toggle (above the jump button) and the map, beside the menu button at the top right (the look zone starts 64 px below the top, so neither sits on it) */
+#touch .tbtn.run, #touch .tbtn.map { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+#touch .tbtn.run { right: 108px; bottom: 108px; width: 56px; height: 56px; }
+#touch .tbtn.map { right: 66px; top: 12px; width: 44px; height: 44px; border-width: 1px; }
 
 /* a conversation on a phone: the stick, the buttons and the look hint step aside, the NPC's line drops to the bottom and the answers card sits just above it, smaller (people.css
    is attached after this file, so these selectors carry `body` to win) */

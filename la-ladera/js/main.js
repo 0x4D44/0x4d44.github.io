@@ -8,12 +8,13 @@
 //            ?skiphidden=0 (update the matrices of hidden interiors and unseen people too: debugging only; engine/visibility.js)
 //            ?castall (floors and terrain tiles cast into the sun's shadow map again, as before core/shadowpolicy.js: before / after only)
 //            ?clutter=0 (original procedural exterior props; useful for comparisons and the asset fallback check)
+//            ?vehicles=0 (original procedural parked vehicles, for fallback and before/after checks)
 //            ?skip=animals (the barrio without its dogs, cats, birds, hens and mule: js/animals/); skip=people leaves them out too, they follow the people's graph
 import { createContext } from './core/ctx.js';
 import { BootBar, STAGES, CREEP_TICK_MS } from './core/bootbar.js';
 import { paintFrame } from './core/util.js';
 import { initEngine, startEngine } from './engine/index.js';
-import { warmUp, requestLateMaterials } from './engine/warm.js';
+import { warmUp, requestLateMaterials, uploadTextures } from './engine/warm.js';
 import { createSettings } from './engine/settings.js';
 import { installUI, createFlow } from './ui/index.js';
 import { initAudio } from './audio/index.js';
@@ -21,6 +22,7 @@ import { generatePlan } from './world/plan.js';
 import { buildWorld } from './world/terrain.js';
 import { buildProps } from './world/props.js';
 import { loadClutter } from './world/clutter.js';
+import { loadVehicles } from './world/vehicle-library.js';
 import { urbanDensity } from './world/periphery.js';
 import { planBuilding, buildBuilding } from './arch/index.js';
 import { loadInteriorAssets, furnishBuilding, buildInterior } from './interiors/index.js';
@@ -33,7 +35,7 @@ const opts = {
   seed: num('seed'), hour: num('hour'), dpr: num('dpr'), timescale: num('timescale'), mergeSpan: num('mergespan'),
   quality: ['auto', 'low', 'medium', 'high'].includes(q.get('quality')) ? q.get('quality') : undefined,
   debug: q.has('debug'), touch: q.has('touch'), autostart: q.has('autostart'), manual: q.has('manual'), preserve: q.has('preserve'), castAll: q.has('castall'),
-  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0',
+  shadows: q.get('shadows') !== '0', aa: q.get('aa') !== '0', post: q.get('post') !== '0', rdb: q.get('rdb') !== '0', skipHidden: q.get('skiphidden') !== '0', clutter: q.get('clutter') !== '0', vehicles: q.get('vehicles') !== '0',
   lots: q.get('lots')?.split(',').filter(Boolean) ?? null,
   skip: new Set((q.get('skip') ?? '').split(',').filter(Boolean)),
 };
@@ -82,7 +84,13 @@ async function boot() {
   let hint = 0;
   const bar = $('loadbar'), fill = bar?.firstElementChild, msg = $('loadmsg'), hintEl = $('loadhint');
   const bb = new BootBar(STAGES);
-  const setBar = (frac = bb.fraction) => { const p = Math.max(0, Math.min(1, frac)); if (fill) fill.style.width = `${Math.round(p * 100)}%`; bar?.setAttribute('aria-valuenow', String(Math.round(p * 100))); };
+  // The bar never goes back, here at the last step as well: the page's own script (index.html) has been moving it while the ~200 modules came in, before this code could run, and it may stand a
+  // little ahead of or behind the 'load' stage's exact share. Whichever is higher stays.
+  let shown = Math.max(0, parseInt(fill?.style.width, 10) || 0);
+  const setBar = (frac = bb.fraction) => {
+    const pct = Math.round(Math.max(0, Math.min(1, frac)) * 100); if (pct < shown) return; shown = pct;
+    if (fill) fill.style.width = `${pct}%`; bar?.setAttribute('aria-valuenow', String(pct));
+  };
   const say = (label) => { if (msg && label) msg.textContent = label; };
   const nextHint = () => { if (hintEl) hintEl.textContent = HINTS[hint++ % HINTS.length]; };
   nextHint(); const hintTimer = setInterval(nextHint, 4200);
@@ -116,20 +124,36 @@ async function boot() {
       await ctx.yield();
     }
   };
-  // The two people models are the biggest download of the boot (9.5 MB): they start as soon as the furniture is in and come down while the rooms are furnished and the
-  // houses built, instead of after the houses with the connection idle in between. The 'people' stage waits for them. (Measured at 8 Mbit/s and 120 ms: they are in
-  // ~2.7 s sooner; the whole boot is bound by the ~27 MB it downloads, so its end moved by less than the run-to-run noise.)
-  let peopleLoad = null;
+  // THE DOWNLOADS (review R2e-001: 52-60 s at 8 Mbit/s and 120 ms, against a budget of 40). The boot is bound by what it downloads (~37 MB at 1 MB/s), and it used to download in a chain:
+  // each stage asked for its models only when it began, the shop goods' atlas waited for every texture of the boot, the people models began after the furniture was in. The connection sat
+  // idle for a third of the boot. Now every model is asked for as soon as the manifests say what there is, in the order the boot needs it:
+  //   1. the furniture, the clothes, the close-inspection things, the shop goods and the clutter (12 MB): the 'models' stage waits for them;
+  //   2. the people (9.5 MB) and the animals (0.6 MB), asked for when 1 has landed, so the goods' label atlas is never queued behind them: the 'people' stage waits for them;
+  //   3. the textures (11 MB), last: they are made as the materials are, but their requests are held (core/matlib.js hold()) until the people are in, or they take two thirds of the
+  //      connection from the people and everything after the people waits for the end of the download. They come down while the warm-up frame runs; the 'textures' stage waits for the rest.
+  // Furnishing is pure data (sizes and tags from the manifests, never a model), so it runs while the models come down.
+  const calm = (p) => { p.catch(() => {}); return p; };           // a load that fails is reported by the stage that awaits it, not as an unhandled rejection in the meantime
+  const free = () => ctx.matlib?.release();
+  let peopleLoad = null, interiorLoad = null, clutterLoad = null, vehicleLoad = null;
   const startPeople = () => {
-    if (!peopleLoad) { peopleLoad = loadPeople(ctx); peopleLoad.catch(() => {}); preloadAnimals(ctx); }     // the animals' seven small models (0.6 MB) come down beside the people's; preloadAnimals never rejects
-    return peopleLoad;                                                                                       // the stage's own await reports a failure
+    if (!peopleLoad) { peopleLoad = calm(loadPeople(ctx)); peopleLoad.then(free, free); preloadAnimals(ctx); }   // the animals' seven small models (0.6 MB) come down beside the people's; preloadAnimals never rejects
+    return peopleLoad;                                                                                    // the stage's own await reports a failure
+  };
+  const startModels = () => {
+    if (interiorLoad) return;
+    interiorLoad = calm(loadInteriorAssets(ctx));                                                         // (the shop goods' label atlas is asked for in here, before the hold below)
+    clutterLoad = calm(loadClutter(ctx));                                                                 // the roof kit's and the street props' files are among the furniture's: one more small request
+    vehicleLoad = calm(loadVehicles(ctx));                                                                // the parked vehicles' two files (2 MB); a failure leaves the procedural ones
+    ctx.matlib?.hold();
+    interiorLoad.then(() => {}, () => {}).then(opts.skip.has('people') ? free : startPeople);             // the people follow the interiors; with no people the textures do
   };
 
   const t0 = performance.now();
   try {
+    await stage('load', () => {});                                                                        // the modules are in (index.html moved the bar while they came): the bar stands at this stage's share
     await stage('engine', () => { initEngine(ctx); if (!ctx.renderer) throw new NoGL('no renderer'); });
     await stage('materials', () => ctx.matlib.init());
-    await stage('assets', async () => { await ctx.assets.init(); await loadClutter(ctx); });
+    await stage('assets', async () => { await ctx.assets.init(); startModels(); });
     await stage('plan', () => {
       ctx.plan = generatePlan(ctx);
       ctx.physics.setTerrain(ctx.plan.heightAt);
@@ -137,11 +161,16 @@ async function boot() {
     });
     await stage('world', () => buildWorld(ctx));
     await stage('arch', () => each(ctx.plan?.lots ?? [], (lot) => { ctx.buildings.set(lot.id, planBuilding(ctx, lot)); }, 'planBuilding'));
-    await stage('furnish', async () => {
-      await loadInteriorAssets(ctx);
+    await stage('furnish', () => each([...ctx.buildings.values()], (bp) => furnishBuilding(ctx, bp), 'furnishBuilding'));
+    await stage('models', async () => {
+      // the card says how many of the model files are in; the textures and the people's files are asked for too by now, so this counts what is in of ALL the files asked for so far
+      const a = ctx.assets, tick = setInterval(() => ctx.progress?.(a.loaded.size / Math.max(1, a.inflight.size)), 250);
+      try {
+        for (const r of await Promise.allSettled([interiorLoad, clutterLoad, vehicleLoad])) {
+          if (r.status === 'rejected') ctx.errors.push({ stage: 'models', message: String(r.reason?.message ?? r.reason), stack: r.reason?.stack });
+        }
+      } finally { clearInterval(tick); }
       requestLateMaterials(ctx);                                // the materials of what a drawer builds when it opens: their textures come down with the others, the warm-up draws them (engine/warm.js)
-      if (!opts.skip.has('people')) startPeople();
-      await each([...ctx.buildings.values()], (bp) => furnishBuilding(ctx, bp), 'furnishBuilding');
     });
     await stage('colliders', () => { for (const bp of ctx.buildings.values()) ctx.physics.add(bp.colliders ?? {}); });
     await stage('build', () => each([...ctx.buildings.values()], (bp) => {
@@ -151,25 +180,32 @@ async function boot() {
     await stage('props', () => buildProps(ctx));
     await stage('flush', () => {
       ctx.clutter?.finalize();
+      ctx.vehicleLibrary?.finalize();
       ctx.batch.flushAll();
       if (!opts.skip.has('merge')) ctx.batch.mergeStatic({ maxSpan: opts.mergeSpan });     // ~1300 meshes -> a few hundred draw calls (core/merge.js)
     });
     // every lamp is registered by now: one sprite each, and the far city on the hillsides round the plot (engine/glow.js)
     await stage('glow', () => ctx.glow?.finalize({ far: ctx.plan?._far, density: (x, z) => urbanDensity(ctx.plan, x, z), seed: ctx.plan?.seed }));
     await stage('people', async () => { await startPeople(); spawnPeople(ctx); await loadAnimals(ctx); });
-    await stage('start', async () => {
-      // Textures are requested as materials are made and download alongside the build. Draw the first frame only once they are in: on a slow link
-      // the world would otherwise show flat colours and pop when the images land. Bounded, so one stuck request cannot hold the page forever.
-      const lib = ctx.matlib, total = lib?.pending ?? 0;
-      if (total > 0) {
-        const tick = setInterval(() => ctx.progress?.(1 - lib.pending / total, `Cargando texturas (${lib.pending})…`), 200);
-        try { await Promise.race([lib.whenReady(), new Promise((r) => setTimeout(r, 25000))]); } finally { clearInterval(tick); }
-      }
+    await stage('start', () => {
+      free();                                                   // (whatever happened to the people, the textures go now)
       startEngine(ctx, { hold: true });                         // the player and the camera are in place; the animation frames wait for the warm-up (below)
     });
     // every program, texture and geometry the game will ever draw is made now, behind the title card, instead of in the frame where the player walks into a house
     // (engine/warm.js; ?skip=warm leaves it out)
     await stage('warm', () => { ctx.warm = warmUp(ctx); });
+    await stage('textures', async () => {
+      // The textures came down while the warm-up frame ran. Draw the first real frame only once they are in: on a slow link the world would otherwise show flat colours and pop when the
+      // images land. Bounded, so one stuck request cannot hold the page forever. Then they go to the GPU now: the warm-up frame could only upload what had landed by then, and the rest
+      // would go up in the first frames of the game (engine/warm.js uploadTextures).
+      const lib = ctx.matlib, total = lib?.pending ?? 0;
+      if (total > 0) {
+        const tick = setInterval(() => ctx.progress?.(1 - lib.pending / total, `Cargando texturas (${lib.pending})…`), 200);
+        try { await Promise.race([lib.whenReady(), new Promise((r) => setTimeout(r, 25000))]); } finally { clearInterval(tick); }
+      }
+      const up = await uploadTextures(ctx);
+      if (ctx.warm) { ctx.warm.textures += up; ctx.warm.lateTextures = up; }
+    });
     ctx.startLoop?.();                                          // the first animation frame comes after the warm-up frame, not before it (R2c-013: it was the longest freeze of the boot, drawn with the card unpainted)
   } finally { clearInterval(hintTimer); clearInterval(creepTimer); }
   say('Listo'); setBar(1);

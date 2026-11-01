@@ -2,14 +2,16 @@
 // (world x, z in metres): fine on a plateau, but a bank at 45 to 65 degrees (or a vertical cut) smears the texture along the slope into streaks, and on a vertical face
 // every texel is the same row. `triplanar(material)` patches a MeshStandardMaterial so that, by the surface normal, the colour map is also read from the SIDE:
 //
-//   steep = 1 - smoothstep(0.55, 0.88, |n.y|)       0 on a plateau (up to ~28 degrees: the image is exactly what it was), 1 from ~57 degrees to a vertical face
+//   steep = 1 - smoothstep(0.55, 0.88, max(|n.y|, |face.y|))   0 on a plateau (up to ~28 degrees: the image is exactly what it was), 1 from ~57 degrees to a vertical face
 //   side  = mix( map(x, y), map(z, y), wx )          wx = |n.x|^4 / (|n.x|^4 + |n.z|^4): a face that looks along z is read from (x, y), one that looks along x from (z, y)
 //   colour = mix( map(top uv), side, steep )
 //
 // The classic three-axis blend, with the top projection being the material's own uv. (The first version read the side from one coordinate along the face, dot(xz, tangent),
 // which is continuous on a plane but collapses where a bank curves: round a mound the tangent turns with the normal and the coordinate is 0 all the way round, so the face
 // drew as radial fans, the pattern the review saw at (-40, 10).) Three fetches in one pass, no branch (a texture read inside a divergent branch has undefined derivatives);
-// the world position and normal come from the vertex shader (`vLadW`, `vLadN`). The repeat is the map's own (metric UVs, `tile` metres per repeat), so a pixel of side texture
+// the world position and normal come from the vertex shader (`vLadW`, `vLadN`). `n` is the smoothed vertex normal and `face` the triangle's own (from the screen derivatives of the world
+// position): the terrain lattice smooths its normals across a step, so the flat triangles at the foot of a near-vertical cut (and along its lip) carried a steep interpolated normal, were read from
+// the side where the height hardly changes, and smeared into streaks 0.5 m wide (R1-D24, (-40, 10), a camera behind a retaining face); a flat face is never side-projected, whatever its corners say. The repeat is the map's own (metric UVs, `tile` metres per repeat), so a pixel of side texture
 // is as big as a pixel of top texture. The normal map keeps the top projection (it only shades; its tangent frame comes from the screen derivatives of the uv, so it stays
 // stable). Materials without a map are left as they are. Not for instanced or skinned meshes (terrain is neither).
 import * as THREE from 'three';
@@ -17,7 +19,9 @@ import * as THREE from 'three';
 /** The fragment replacement for `#include <map_fragment>`, exported so a test can read it. */
 export const TRI_FRAGMENT = `#ifdef USE_MAP
 	vec3 ladN = normalize( vLadN );
-	float ladSteep = 1.0 - smoothstep( 0.55, 0.88, abs( ladN.y ) );
+	vec3 ladC = cross( dFdx( vLadW ), dFdy( vLadW ) );
+	float ladFy = abs( ladC.y ) / max( length( ladC ), 1.0e-9 );
+	float ladSteep = 1.0 - smoothstep( 0.55, 0.88, max( abs( ladN.y ), ladFy ) );
 	vec2 ladB = pow( abs( ladN.xz ), vec2( 4.0 ) );
 	float ladX = ladB.x / ( ladB.x + ladB.y + 1.0e-6 );
 	vec4 ladSide = mix( texture2D( map, vec2( vLadW.x, vLadW.y ) * ladRep ), texture2D( map, vec2( vLadW.z, vLadW.y ) * ladRep ), ladX );

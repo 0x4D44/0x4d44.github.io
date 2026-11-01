@@ -15,7 +15,7 @@ export class Spots {
   constructor({ plan = null, anchors = [], buildings = new Map() } = {}) {
     this.byKind = new Map(); this.all = []; this.claims = new Map(); this.buildings = buildings; this.lots = new Map((plan?.lots ?? []).map((l) => [l.id, l]));
     for (const p of plan?.pois ?? []) this._add({ id: p.id, src: 'poi', kind: p.kind, x: p.x, y: p.y ?? 0, z: p.z, ry: p.ry ?? 0, tags: p.tags ?? [], building: p.building ?? null });
-    for (const a of anchors ?? []) this._add({ id: a.id, src: 'anchor', kind: a.kind, x: a.x, y: a.y ?? 0, z: a.z, ry: a.ry ?? 0, tags: a.tags ?? [], building: a.building ?? null, room: a.room ?? null, seatH: a.seatH });
+    for (const a of anchors ?? []) this._add({ id: a.id, src: 'anchor', kind: a.kind, x: a.x, y: a.y ?? 0, z: a.z, ry: a.ry ?? 0, tags: a.tags ?? [], building: a.building ?? null, room: a.room ?? null, seatH: a.seatH, item: a.item ?? null });
     this._ent = new Map();
   }
 

@@ -17,6 +17,7 @@ export class DialogueUI {
     if (this.el) return this.el;
     this.preload();
     const el = document.createElement('div'); el.id = 'dlg'; el.className = 'dlg'; el.hidden = true; el.setAttribute('role', 'dialog'); el.setAttribute('aria-live', 'polite');
+    el.lang = 'es';                                                    // the page is English (index.html); the conversation is Spanish, the small English line under each answer says lang="en" below
     const head = document.createElement('div'); head.className = 'dlg-head';
     this.nameEl = document.createElement('b'); this.nameEl.className = 'dlg-name';
     this.roleEl = document.createElement('span'); this.roleEl.className = 'dlg-role';
@@ -45,7 +46,7 @@ export class DialogueUI {
       const li = document.createElement('li'), b = document.createElement('button'); b.type = 'button'; b.dataset.id = c.id;
       const k = document.createElement('kbd'); k.textContent = String(i + 1);
       const es = document.createElement('span'); es.className = 'es'; es.textContent = c.es;
-      const en = document.createElement('span'); en.className = 'en'; en.textContent = c.en ?? '';
+      const en = document.createElement('span'); en.className = 'en'; en.lang = 'en'; en.textContent = c.en ?? '';
       b.append(k, es, en);
       b.addEventListener('click', (e) => { e.preventDefault(); this.cb?.onPick(c.id); b.blur(); });
       li.appendChild(b); this.list.appendChild(li);

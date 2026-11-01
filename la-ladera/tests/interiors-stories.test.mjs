@@ -123,6 +123,9 @@ test('interactables are on free floor in front of their object and can really be
       const room = bp.rooms.find((r) => lx >= r.rect.x0 - 0.01 && lx <= r.rect.x1 + 0.01 && lz >= r.rect.z0 - 0.01 && lz <= r.rect.z1 + 0.01 && ly >= (r.y ?? 0) - 0.05 && ly <= (r.y ?? 0) + (r.h ?? 2.6) + 0.05);
       if (!room) { problems.push(`${name} ${i.id}: outside every room of ${bp.id} at ${lx.toFixed(2)},${ly.toFixed(2)},${lz.toFixed(2)}`); continue; }
       const L = bp.interior.layouts.get(room.id), blockers = L.blockers();
+      // A SHAPED target (a seat: the view ray enters its own box, core/interact.js) has no point to stand in front of: its point is the cushion, inside its own outline by design (R4-205). What a seat
+      // needs, a free spot in front that sees the box and the targeting offering it from there, is asserted by 'targeting (R4-009)' below, and that the point is the seat by 'a seat's own point is the seat'.
+      if (typeof i.hit === 'function' && i.kind === 'sit') continue;
       for (const b of blockers) if (obbDist(b.ob, lx, lz) < 0.12) { problems.push(`${name} ${i.id}: target inside / touching ${b.name}`); break; }
       // some floor cell within the interaction radius sees the target (what the player needs to press E)
       let ph = phs.get(bp.id); if (!ph) phs.set(bp.id, ph = physicsFor(bp));
@@ -226,6 +229,50 @@ test('targeting (R4-009): 1 to 1.3 m in front of a seat, looking at it, E offers
   assert.ok(tried >= 20, `only ${tried} seats had a free spot in front (${skipped} skipped, ${walled} walled off by furniture)`);
   assert.ok(walled <= 0.1 * (tried + walled), `${walled} of ${tried + walled} seats cannot be seen from any free spot in front (desks between): the seat is not offered from the open side`);
   report(problems, `of ${tried} seats lose E to something else`);
+});
+
+test('a ceiling fan is looked at from below: an eye level with its blades is inside its box and must not offer it (R4-205: the fan took E from 13 of 59 seats)', () => {
+  let tried = 0; const problems = [];
+  for (const [name, w] of worlds) {
+    const byB = new Map(w.bps.map((b) => [b.id, b]));
+    for (const fan of ours(w).filter((i) => i.kind === 'object' && /ventilador/.test(promptOf(w, i))).slice(0, 60)) {
+      const bp = byB.get(fan.building), rec = bp.furniture.find((f) => 'int:' + f.id === fan.id), room = bp.rooms.find((r) => r.id === rec.room);
+      const at = (lx, ly, lz) => bp.frame.toWorld(lx, ly, lz), norm = (a, b) => { const d = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], l = Math.hypot(...d); return { x: d[0] / l, y: d[1] / l, z: d[2] / l }; };
+      const mid = at(rec.x, rec.y - rec.h / 2, rec.z), ictx = { player: null };
+      // level with the blades, 0.7 m to the side, looking straight at it: inside the padded box
+      const e1 = at(rec.x + 0.7, rec.y - rec.h / 2, rec.z); ictx.player = { eye: { x: e1[0], y: e1[1], z: e1[2] }, _dir: norm(e1, mid) };
+      const inside = fan.enabled(ictx, fan);
+      // standing on the floor 1.2 m away, looking up at it: offered
+      const floor = (room.y ?? 0) + bp.lot.y, e2 = at(rec.x + 1.2, (room.y ?? 0) + 1.64, rec.z); ictx.player = { eye: { x: e2[0], y: e2[1], z: e2[2] }, _dir: norm(e2, mid) };
+      const below = fan.enabled(ictx, fan); tried++;
+      if (inside !== false) problems.push(`${name} ${fan.id}: an eye level with the blades still offers the fan`);
+      if (below !== true) problems.push(`${name} ${fan.id}: standing on the floor and looking up at the fan does not offer it (enabled -> ${below}; floor ${floor})`);
+    }
+  }
+  assert.ok(tried >= 20, `only ${tried} fans checked`);
+  report(problems, `of ${tried} fans are offered (or refused) at the wrong eye height`);
+});
+
+test('a seat\'s own point is the seat (R4-205, R2d-004): its x, y, z is the cushion, inside its own aim box, so whoever aims at the item aims at the seat', () => {
+  // The review's sweeps (R4's probe2, R2d's s4) stand 1 to 1.5 m from a seat, look at the item's x, y, z and ask who wins E. The point used to be the standing spot in front of the seat at chest
+  // height: air beside the chair (13 of 59 seats "untargetable", the doors and the fan "stealing" what was never aimed at), and a probe that stood 0.3 m under it for a seat's height began 0.95 m
+  // in the air with its head in the fan's box. Whatever the crosshair is on, the point of a shaped item is the thing itself (core/interact.js); `stand` still says where a person stands.
+  const problems = []; let n = 0;
+  for (const [name, w] of worlds) {
+    const byB = new Map(w.bps.map((b) => [b.id, b]));
+    for (const seat of ours(w).filter((i) => i.kind === 'sit')) {
+      const bp = byB.get(seat.building), [, itemId, tail] = seat.id.split(':');
+      const a = bp.anchors.find((x) => x.item === itemId && 'sit' + (x.id ?? '') === tail);
+      if (!a) continue;
+      n++;
+      const cushion = a.y + (a.seatH ?? 0.45);
+      if (Math.hypot(seat.x - a.x, seat.z - a.z) > 1e-6 || Math.abs(seat.y - cushion) > 1e-6) problems.push(`${name} ${seat.id}: the point is (${seat.x}, ${seat.y}, ${seat.z}), the cushion is (${a.x}, ${cushion.toFixed(3)}, ${a.z})`);
+      const inside = seat.hit(null, seat, { x: seat.x, y: seat.y, z: seat.z }, { x: 1, y: 0, z: 0 });          // an eye AT the point is inside the box: the ray enters it at 0 m
+      if (inside !== 0) problems.push(`${name} ${seat.id}: its point is outside its own aim box (entry ${inside})`);
+    }
+  }
+  assert.ok(n >= 20, `only ${n} seats checked`);
+  report(problems, 'seats whose point is not the seat');
 });
 
 test('stories are deterministic: the same plan tells the same stories', async () => {

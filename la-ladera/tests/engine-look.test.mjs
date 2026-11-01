@@ -35,16 +35,30 @@ test('mood 0 is the plain palette, and a high sun or the deep night take no mood
   assert.ok(moodWeight(30) > 0.2 && moodWeight(30) < 0.6, `30 deg (08:30) ${moodWeight(30).toFixed(2)}: the mood is fading`);
 });
 
-test('07:00 and 17:12 differ clearly: a cool, misty, soft morning and a warm, dusty, glowing evening', () => {
+test('07:00 and 17:12 differ clearly: a pale, misty morning with a gold sun and a cool fill, and a warm, dusty, glowing evening', () => {
   const m = at(7, MORNING), e = at(17.2, EVENING);
   assert.ok(blueness(m.hor) > 0 && blueness(e.hor) < -0.1, `horizon: morning ${blueness(m.hor).toFixed(2)} (pale blue-white), evening ${blueness(e.hor).toFixed(2)} (amber)`);
   assert.ok(dist(m.hor, e.hor) > 0.25, `the horizon colour differs by ${dist(m.hor, e.hor).toFixed(2)} in linear RGB`);
-  assert.ok(m.sun.b / m.sun.r > e.sun.b / e.sun.r * 1.6, `the morning sun is the paler, whiter one: b/r ${(m.sun.b / m.sun.r).toFixed(2)} vs ${(e.sun.b / e.sun.r).toFixed(2)}`);
-  assert.ok(m.sunI < e.sunI * 0.9, `the mist softens the morning sun: ${m.sunI.toFixed(2)} vs ${e.sunI.toFixed(2)}`);
+  assert.ok(m.sun.b / m.sun.r > e.sun.b / e.sun.r * 1.6, `the morning sun is the paler, yellower one: b/r ${(m.sun.b / m.sun.r).toFixed(2)} vs ${(e.sun.b / e.sun.r).toFixed(2)}`);
+  assert.ok(m.sunI >= e.sunI, `R1-D26: the low morning sun is a real direct light, no weaker than the evening's (the mist used to take 15 % off it): ${m.sunI.toFixed(2)} vs ${e.sunI.toFixed(2)}`);
   assert.ok(m.fog > e.fog * 1.2, `valley mist: fog density ${m.fog.toFixed(4)} vs ${e.fog.toFixed(4)}`);
   assert.ok(e.glow > m.glow * 1.3, `the dusty evening glow is wider: ${e.glow.toFixed(2)} vs ${m.glow.toFixed(2)}`);
   assert.ok(blueness(m.hemiS) > blueness(e.hemiS) + 0.1, `the morning fill is bluer: ${blueness(m.hemiS).toFixed(2)} vs ${blueness(e.hemiS).toFixed(2)}`);
   assert.ok(m.zen.b > e.zen.b && m.zen.b / m.zen.r > e.zen.b / e.zen.r, 'a clearer, bluer zenith in the morning');
+});
+
+test('R1-D26 the morning has a direction: at 07:30 a gold sun against a weaker, cool fill, so the shadows are long and deep and the colour is not that of noon', () => {
+  const el = celestial(7.5).elDeg, plain = samplePalette(el), m = at(7.5, MORNING), noon = at(12.5, 0), ratio = (p) => p.sunI / p.hemiI, warmth = (c) => c.r / c.b;
+  assert.ok(el > 18 && el < 22, `07:30 is ${el.toFixed(1)} degrees`);
+  assert.ok(ratio(m) >= ratio(plain) * 1.5, `sun against fill ${ratio(m).toFixed(2)} at 07:30, ${ratio(plain).toFixed(2)} in the plain row: the fill was 1.2 against a sun of 2.95, an evenly lit plaza`);
+  assert.ok(m.hemiI <= plain.hemiI * 0.85 && m.envI <= plain.envI * 0.85, `the fill is down: sky ${m.hemiI.toFixed(2)} (plain ${plain.hemiI.toFixed(2)}), IBL ${m.envI.toFixed(2)} (plain ${plain.envI.toFixed(2)})`);
+  assert.ok(warmth(m.sun) > 3 && warmth(m.sun) > warmth(noon.sun) * 1.8, `the sun is gold, r/b ${warmth(m.sun).toFixed(1)} against ${warmth(noon.sun).toFixed(1)} at noon`);
+  assert.ok(blueness(m.hemiS) > 0.15, `the shade stays cool (fill blueness ${blueness(m.hemiS).toFixed(2)}): warm sun, cool shade`);
+  assert.ok(m.exp > plain.exp && m.exp < plain.exp * 1.1, `the exposure makes up for the darker shade without lifting the lit side: ${m.exp.toFixed(3)} (plain ${plain.exp.toFixed(3)})`);
+  // and it does not leak: from 09:30 (the mood is gone at 45 degrees) the palette is the plain one, and the evening's mood is as it was
+  assert.ok(sameRow(at(9.7, MORNING), at(9.7, 0)), 'no morning mood from 09:40');
+  const el17 = celestial(17.2).elDeg;
+  assert.ok(Math.abs(at(17.2, EVENING).sunI - samplePalette(el17).sunI * (1 + 0.05 * moodWeight(el17))) < 1e-9, 'the evening sun is the plain one times 1.05, as it was');
 });
 
 test('the evening fill does not turn warm light on cement into ice: it is far less blue than the plain golden-hour fill', () => {

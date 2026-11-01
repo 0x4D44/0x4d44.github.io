@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Ladera · Body rebuild evidence</title>
+<link rel="icon" href="data:,">
+<script type="importmap">
+{"imports":{"three":"../vendor/three/build/three.module.min.js","three/addons/":"../vendor/three/examples/jsm/"}}
+</script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;background:#e9e5dd;color:#282e2c;font:14px system-ui,sans-serif}
+header{height:100px;padding:19px 26px;background:#25342f;color:#fff;display:flex;justify-content:space-between;align-items:center}
+h1{margin:0;font:600 28px Georgia,serif}header p{margin:9px 0 0;font-size:12px;color:#cbd4ce}
+#status{text-align:right;white-space:pre-line;line-height:1.6;font-variant-numeric:tabular-nums}
+#sheet{position:relative;isolation:isolate;width:1920px;height:1560px}canvas{display:block;position:absolute;z-index:0;inset:0;width:100%;height:100%}
+#labels{position:absolute;z-index:2;inset:0;display:grid;grid-template-columns:repeat(4,480px);grid-auto-rows:780px;pointer-events:none}
+.label{position:relative;padding:16px 22px;border-right:1px solid #cfcac1;border-bottom:1px solid #cfcac1}
+.label strong{font-size:17px;font-weight:650}.detail{margin-top:6px;font-size:12px;color:#636a64}
+.foot{position:absolute;bottom:14px;left:22px;font-size:12px;color:#515b54;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<header><div><h1>La Ladera · Body rebuild</h1><p>Shipped GLB meshes and materials · Three.js r180 · matching lens, pose and lighting before / after</p></div><div id="status">Loading…</div></header>
+<main id="sheet"><canvas id="gallery" aria-label="Eight resident character comparison contact sheet"></canvas><div id="labels"></div></main>
+<script type="module" src="./people-bodies-gallery.mjs"></script>
+</body>
+</html>

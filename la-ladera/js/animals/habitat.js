@@ -10,7 +10,8 @@ const MIN_APART = 4, MIN_FROM_SPAWN = 6, MIN_FROM_LIFE = 6, MIN_FROM_DOOR = 1.0;
 const PARAPET_TOP = 1.4;        // the parapet or brick pretil round a walkable roof (arch/roof.js PARAPET_H and PRETIL_H are 1.2 m) and its coping: a roof animal is seen over this or not at all
 
 /**
- * The ten animals, nearest the arrival first so the first frames are alive. `habitat` is the kind of place it lives in (see `spots` below), `focus` what the distance `r` is measured from
+ * The twenty animals: the first ten, nearest the arrival first so the first frames are alive, then ten more further out (R3: ten animals in a barrio of a hundred houses were too few; the order is the
+ * placement order, and a role draws from its own fork keyed by its index, so the first ten stand where they always stood). `habitat` is the kind of place it lives in (see `spots` below), `focus` what the distance `r` is measured from
  * (the arrival point, the Virgin's shrine, the chapel's square) and `far` the distance from the arrival when the habitat is missing and the role falls back (a plan without lots, a test grid).
  */
 export const ROLES = Object.freeze([
@@ -24,6 +25,17 @@ export const ROLES = Object.freeze([
   { key: 'cat', habitat: 'chapel', focus: 'chapel', r: 4, far: 57 },                 // the square of the chapel
   { key: 'dog', habitat: 'roof', focus: 'spawn', r: 30, far: 66 },                   // a dog on a terrace, watching the street
   { key: 'pigeon', habitat: 'plaza', focus: 'spawn', r: 50, far: 75 },               // a square
+  // ten more, out toward the top of the barrio: more of the street dogs, doorstep cats, lane hens and square pigeons it already has, a second cage at a shop and at a house, a cat on a terrace
+  { key: 'dog', habitat: 'street', focus: 'spawn', r: 62, far: 81 },
+  { key: 'cat', habitat: 'doorstep', focus: 'spawn', r: 52, far: 84 },
+  { key: 'hen', habitat: 'alley', focus: 'spawn', r: 112, far: 87 },
+  { key: 'pigeon', habitat: 'plaza', focus: 'spawn', r: 82, far: 90 },
+  { key: 'parrot_caged', habitat: 'shopfront', focus: 'spawn', r: 78, far: 93 },
+  { key: 'dog', habitat: 'street', focus: 'spawn', r: 118, far: 96 },
+  { key: 'cat', habitat: 'roof', focus: 'spawn', r: 66, far: 99 },
+  { key: 'canary_caged', habitat: 'doorstep', focus: 'spawn', r: 138, far: 102 },
+  { key: 'pigeon', habitat: 'plaza', focus: 'spawn', r: 125, far: 105 },
+  { key: 'cat', habitat: 'doorstep', focus: 'spawn', r: 92, far: 108 },
 ]);
 const FALLBACK = {
   doorstep: ['doorstep', 'street'], shopfront: ['shopfront', 'doorstep', 'street'], street: ['street'], shrine: ['shrine', 'plaza', 'street'], alley: ['alley', 'street'],

@@ -30,13 +30,30 @@ export function createFlow(ctx) {
   const el = { title: $('title'), start: $('start'), pause: $('pause'), resume: $('resume'), respawn: $('respawn'), panel: $('panel'), ptitle: $('paneltitle'), pbody: $('panelbody'), pclose: $('panelclose'), menu: $('menubtn'), gl: $('gl') };
   const reader = createReader(ctx);
   const panels = { settings: settingsPanel(ctx), help: helpPanel(ctx), journal: journalPanel(ctx), map: mapPanel(ctx), reader: reader.panel };
-  const coarse = !!ctx.opts?.touch || !!window.matchMedia?.('(pointer: coarse)').matches;           // ?touch: the phone layout on a desktop (tests, screenshots)
+  const coarseQuery = window.matchMedia?.('(pointer: coarse)');
+  let coarse = !!ctx.opts?.touch || !!coarseQuery?.matches;                // ?touch: the phone layout on a desktop (tests, screenshots)
   const reduced = !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const flow = { mode: 'loading', coarse };
   let panel = null;                                              // { name, def, prev, opener, back } while a panel is open
+  let booted = false;                                            // flow.ready ran: the touch layer needs the finished page
   Object.defineProperty(flow, 'current', { get: () => panel?.name ?? null, enumerable: true });
   ctx.mode = 'loading'; ctx.flow = flow; ctx.discover.order = []; ctx.reader = reader.api;
-  if (coarse) document.body.classList.add('touch');
+  const canvasLabel = () => {                                    // the screen-reader name of the view follows the input
+    $('gl')?.setAttribute('aria-label', coarse ? 'Vista en primera persona de La Ladera. Arrastra a la derecha para mirar, la palanca de la izquierda para caminar, el botón E para interactuar.'
+      : 'Vista en primera persona de La Ladera. Haz clic para mirar, W A S D para caminar, E para interactuar.');
+  };
+  if (coarse) { document.body.classList.add('touch'); canvasLabel(); }
+  // A page can learn it is on a phone after it loaded: a tablet or a laptop with a touch screen, a browser whose touch emulation is switched on late (review R2d-001: the page booted into
+  // play and nothing answered). The first finger on the page, or a change of the primary pointer to a coarse one, turns the touch layer on there and then.
+  const goCoarse = () => {
+    if (coarse) return;
+    coarse = flow.coarse = true;
+    document.body.classList.add('touch'); canvasLabel();
+    if (booted) installTouch(ctx);
+    show(el.menu, flow.mode === 'play');
+  };
+  window.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch') goCoarse(); }, true);
+  coarseQuery?.addEventListener?.('change', (e) => { if (e.matches) goCoarse(); });
 
   // ---- mode -------------------------------------------------------------------------------------------------------------------
   const setMode = (m) => {
@@ -127,6 +144,7 @@ export function createFlow(ctx) {
     }
   };
   flow.togglePanel = (name) => (panel?.name === name ? flow.closePanel() : flow.openPanel(name));
+  flow.addPanel = (name, def) => { if (def && typeof def.render === 'function' && !panels[name]) panels[name] = def; };            // a module outside ui/ hands its own panel over (A3: interiors/holdup.js, the hold-up view of a find)
 
   // ---- DOM wiring -------------------------------------------------------------------------------------------------------------
   el.start.addEventListener('click', flow.begin);
@@ -197,7 +215,7 @@ export function createFlow(ctx) {
     const col = findCollection(d.collection), c = ctx.collection?.counts?.(), lang = ctx.settings?.v?.subLang ?? 'both';
     const n = c?.byCollection?.[col.es] ?? c?.byCollection?.[col.id], m = col.total;
     const tag = `Hallazgo · ${col.es}${n != null && m ? ` ${n} de ${m}` : ''}`, en = d.en && d.en !== d.name ? d.en : null;
-    ctx.ui.toast(lang === 'en' && en ? { tag, title: en } : { tag, title: d.name, sub: lang === 'es' ? null : en }, 6200);
+    ctx.ui.toast(lang === 'en' && en ? { tag, title: en, titleLang: 'en' } : { tag, title: d.name, sub: lang === 'es' ? null : en }, 6200);
     ctx.audio?.find?.({ collection: col.id, rarity: d.rarity ?? 1 });
   };
 
@@ -230,6 +248,7 @@ export function createFlow(ctx) {
   // ---- boot finished ----------------------------------------------------------------------------------------------------------
   flow.ready = () => {
     applyTts(ctx); refreshCount(); startPlaces();
+    booted = true;
     if (coarse) installTouch(ctx);
     if (ctx.opts.autostart) { setMode('play'); document.activeElement?.blur?.(); return; }
     setMode('title');

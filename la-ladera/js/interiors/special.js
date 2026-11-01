@@ -226,7 +226,7 @@ export function schoolFurnisher(room, area) {
   if (t === 'classroom' || t === 'living' || t === 'dining' || t === 'shop') return classroom;      // living, dining, shop: a lot too narrow for the school plan, planned as a house
   if (t === 'bedroom' && area > 24) return classroom;
   if (t === 'patio') return schoolyard;
-  if (t === 'bathroom') return schoolToilets;
+  if (t === 'bathroom') return room.tag === 'wc' ? schoolStall : room.tag === 'wash' ? schoolWash : schoolToilets;      // (A2's lavatory block, R4-204: a cubicle each, off a washroom passage; a lot too small for it keeps its one room of old)
   if (t === 'hall' || t === 'entry' || t === 'corridor') return schoolHall;
   if (t === 'office') return /profesor|docente|maestr/i.test(name) ? staffRoom : /bibliot/i.test(name) ? library : /computaci|inform[aá]tica|sistemas/i.test(name) ? computerRoom : /m[uú]sica/i.test(name) ? musicRoom : null;      // (the secretary's office, Secretaría, is an office: the desk, computer, telephone and files of the generic recipe)
   return null;
@@ -267,6 +267,37 @@ export function schoolToilets(L, E, hh) {
   centreLight(L, 'bulb', 0xffd9a0, 5.5, 6);
 }
 
+/**
+ * One cubicle of the lavatory block (A2's tag 'wc', about 1.15 x 1.5 to 1.9 m, its door on a long side near one end): a toilet at the end away from the door, back to the partition,
+ * the rest of the floor to stand on; a bin, a hook for a bag, a bulb. The toilet may stand in the door's keep-out when the cubicle is short: it is the toilet the door is for.
+ */
+export function schoolStall(L, E, hh) {
+  const ends = L.D >= L.W ? ['-z', '+z'] : ['-x', '+x'];
+  const wc = any(() => L.wall('toilet', ends, { at: 'center', prio: 0, awayDoors: true }), () => L.wall('toilet', ends, { at: 'center', prio: 0, awayDoors: true, ignoreKeep: true }),
+    () => L.wall('toilet', 'any', { at: 'center', prio: 0, awayDoors: true, ignoreKeep: true, noConn: true }));
+  L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
+  L.hang('coat_rack_wall', 'any', { y: 1.55, w: 0.5 });
+  centreLight(L, 'bulb', 0xffd9a0, 4.5, 4);
+}
+
+/**
+ * The passage of the lavatory block (A2's tag 'wash', 1 to 1.25 m wide, doors down both sides and the strip's at one end): the basins at the end wall with the door-less end, mirrors over
+ * them, a bin, a mop bucket, the cleaning rota and a bulb. It is the washroom for the cubicles on both sides of it.
+ */
+export function schoolWash(L, E, hh) {
+  const ends = L.D >= L.W ? ['-z', '+z'] : ['-x', '+x'], bare = ends.filter((w) => !L.obs[w].some((o) => o.kind === 'door')), end = bare.length ? bare : ends, basins = [];
+  for (const at of ['start', 'end']) {
+    const b = any(() => L.wall('basin_pedestal', end, { at, prio: 0 }), () => (basins.length ? null : L.wall('basin_pedestal', end, { at: 'center', prio: 0 })));
+    if (b) basins.push(b);
+  }
+  if (!basins.length) { const b = any(() => L.wall('basin_pedestal', 'any', { prio: 0 }), () => L.wall('basin_pedestal', 'any', { prio: 0, ignoreKeep: true })); if (b) basins.push(b); }
+  for (const b of basins) L.hang('mirror_bath', b.wallSide, { over: b, y: 1.25 });
+  L.wall('trash_bin', 'any', { at: 'corner', prio: 2 });
+  any(() => L.wall('mop_bucket', end, { at: 'corner', prio: 2 }), () => L.wall('mop_bucket', 'any', { at: 'corner', prio: 2 }));
+  art(L, E, ['chores'], 'any');                                                       // (the cleaning rota hangs in one lavatory of the school: decor.js hangs a notice once to a building)
+  centreLight(L, 'bulb', 0xffd9a0, 5.5, 6);
+}
+
 /** The staff room (Sala de profesores): a table with chairs round it, a tinto corner, pigeonholes, a timetable and the notices. */
 export function staffRoom(L, E, hh) {
   const area = L.W * L.D, wide = Math.min(L.W, L.D) >= 3.8;                          // a narrow staff room (2.1 to 3.5 m) has its table against a wall and the chairs on its open side
@@ -289,12 +320,26 @@ export function staffRoom(L, E, hh) {
 /** The library (Biblioteca): shelves round the walls, a reading table with chairs, a librarian's desk. */
 export function library(L, E, hh) {
   const area = L.W * L.D;
-  const librarian = () => { const d = any(() => L.wall('desk_wood', 'any', { prio: 1, awayDoors: true })); if (d) { L.top(d, 'books_stack', { at: 'right' }); L.at('chair_wood', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d }); } };
-  if (area >= 12) librarian();                                                                    // a library of any size has the desk and its chair first (the shelves and the reading table take what is left); a small one gives the table the floor first
-  for (let k = 0; k < Math.min(4, 1 + Math.floor(area / 4)); k++) any(() => L.wall(k % 2 ? 'bookshelf_low' : 'bookshelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('bookshelf', 'any', { prio: 1 }));
-  const t = any(() => L.free('table_wood_6', { rad: Math.max(L.W, L.D) / 2, prio: 1 }), () => L.free('table_formica_4', { rad: Math.max(L.W, L.D) / 2, prio: 1 }));
-  if (t) { chairsAround(L, t, 4, ['chair_wood', 'chair_plastic']); L.top(t, 'books_stack', { at: 'center' }); }
-  if (area < 12) librarian();
+  const librarian = () => {                                                                       // the desk on the first wall that has room for its chair too (a desk in a corner of a narrow library, which A2's R4-204 lavatories leave upstairs, has no place to sit); returns the chair
+    for (const w of ['any', '-z', '+z', '-x', '+x']) {
+      const d = any(() => L.wall('desk_wood', w, { prio: 1, awayDoors: true })); if (!d) continue;
+      L.top(d, 'books_stack', { at: 'right' });
+      const c = L.at('chair_wood', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.4), d.ry + PI, { prio: 2, tuck: d });
+      if (c) return c;
+      L.remove(d);
+    }
+    return null;
+  };
+  const deskFirst = area >= 12 && Math.min(L.W, L.D) >= 3.5;                                      // a library of 12 m2 and more, 3.5 m across, has the desk and its chair first (the shelves and the reading table take what is left); a small or narrow one gives the table the floor first
+  let seat = deskFirst ? librarian() : null;
+  const narrow = Math.min(L.W, L.D) < 3.5, rad = Math.max(L.W, L.D) / 2;
+  for (let k = 0; k < Math.min(narrow ? 3 : 4, 1 + Math.floor(area / (narrow ? 5 : 4))); k++) any(() => L.wall(k % 2 ? 'bookshelf_low' : 'bookshelf', 'any', { prio: 1, awayDoors: true }), () => L.wall('bookshelf', 'any', { prio: 1 }));          // (a narrow library has the shelves its walls can spare: the reading table, with room to sit at it, comes first)
+  const t = any(() => (narrow ? L.free('table_formica_4', { rad, prio: 1 }) : null), () => L.free('table_wood_6', { rad, prio: 1 }), () => L.free('table_formica_4', { rad, prio: 1 }));
+  if (t) {
+    const chairs = chairsAround(L, t, 4, ['chair_wood', 'chair_plastic']); L.top(t, 'books_stack', { at: 'center' });
+    if (seat) for (const c of chairs.sort((a, b) => Math.hypot(a.x - seat.x, a.z - seat.z) - Math.hypot(b.x - seat.x, b.z - seat.z))) { if (L._accessOk(seat, true)) break; L.remove(c); }          // (the reading chairs nearest the librarian's give way if they wall it in: nobody can walk up to a seat in a niche, and the room's last pass drops it)
+  }
+  if (!deskFirst) seat = librarian();
   art(L, E, ['poster_map'], 'any'); art(L, E, 'kids', 'any'); L.hang('clock_wall', 'any', {});          // (a school with two reading rooms hangs its map once)
   L.wall('plant_pot_clay', 'any', { at: 'corner', prio: 2 });
   ceilingFixture(L, E, hh, 'tube');
@@ -310,9 +355,9 @@ export function computerRoom(L, E, hh) {
   for (let k = 0; k < want; k++) {
     const d = any(() => L.wall('desk_student', 'any', { prio: 1, awayDoors: true }));
     if (!d) break;
-    first ??= d;
     L.top(d, 'pc_set', { at: 'right' });                                            // (over the knee-hole, where the chair is: the pedestal's end is left for the printer, and for the drawers)
-    L.at('chair_plastic', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.35), d.ry + PI, { prio: 2, tuck: d });
+    if (!L.at('chair_plastic', ...L.rel(d, KNEEHOLE, d.d / 2 + 0.35), d.ry + PI, { prio: 2, tuck: d })) { L.remove(d); break; }          // (a workstation with nowhere to sit is not one: the room is full)
+    first ??= d;
   }
   if (first) L.top(first, 'printer', { at: 'left' });
   any(() => L.wall('filing_cabinet', 'any', { at: 'corner', prio: 2 }));
