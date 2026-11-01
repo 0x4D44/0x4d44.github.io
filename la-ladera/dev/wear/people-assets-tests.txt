@@ -1,0 +1,22 @@
+✔ the asset contract freezes the original 30 IDs, 32 clips and 21-bone skin ABI (2.037823ms)
+✔ GLB parser rejects truncation, dishonest lengths and bufferViews beyond the binary (1.282377ms)
+✔ binary accessor reader honors stride and normalization and rejects overrun (0.487022ms)
+✔ all 672 original rotation tracks remain byte-exact after bone-name remapping (48.42519ms)
+✔ decoded geometry validation enforces actual triangle count and bounded indices (0.995606ms)
+✔ in-range UVs spanning the entire atlas are rejected instead of smearing its cells (0.313ms)
+✔ a tiny triangle straddling an atlas edge is rejected despite its small UV span (0.482114ms)
+✔ invalid weights, foreign joints and interpolated garment-slot alpha cannot pass (0.502716ms)
+✔ LOD swaps require the same joint ordinal, bind matrices and rest transforms (1.088937ms)
+✔ manifest inventory rejects missing files, stale content and files outside assets (1.914939ms)
+✔ explicit manifest regeneration preserves the loader block and unrelated metadata (2.392496ms)
+✔ a compressed mesh cannot fake its triangle budget through glTF accessor counts (73.765997ms)
+✔ normal validation tolerates absent GLBs; --complete requires both actual bundles (7.630731ms)
+✔ the installed bundles, when present, satisfy the complete decoded asset gate (1583.464981ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1740.885437

@@ -1,0 +1,2647 @@
+{
+  "schema": 1,
+  "authoringOnly": true,
+  "complete": false,
+  "ok": true,
+  "metadataSha256": "b0f1c71ea357ff99b7fd1813f623f21c0897ce36a4e03cf59d7205e32402f9a4",
+  "staticDisplacementLimitM": 0.08,
+  "runtimeDisplacementLimitM": 0.18,
+  "paddingM": 0.002,
+  "adults": 23,
+  "garmentDesigns": 23,
+  "fittedGarments": 529,
+  "gpuGeometryBytes": 10824802,
+  "atlasGpuBytes": 349526,
+  "gpuGrowthBytes": 11174328,
+  "poseTargetCpuBytes": 541284,
+  "compressedModelBytes": 5159318,
+  "maxNearTriangles": 1258,
+  "maxFarTriangles": 600,
+  "maximumStaticAuthoringDisplacementM": 0.07999899359312457,
+  "maximumSeatedBindDisplacementM": 0.17099904142063233,
+  "rawRestChecks": 358958,
+  "idleVertexChecks": 358958,
+  "idleFaceChecks": 2028988,
+  "solidAngleChecks": 5422229,
+  "vertexFailures": 0,
+  "faceFailures": 0,
+  "fits": [
+    {
+      "id": "m_abuelo",
+      "file": "wear/m_abuelo.glb.gz",
+      "sha256": "f241dc02e2e1c68488a8b6718aa03dabaccc636cd779b89cd358fe1866b88c58",
+      "rawInputSha256": "44daabf6ddc6bc3777534404cb708bccc9204c401b6285f80f3977d109bb0124",
+      "maximumStaticFromPristineRawM": 0.0474786363023046,
+      "maximumSeatedBindM": 0.10916268601055719,
+      "maximumSeatedPosedM": 0.09072616436235904,
+      "rawRestChecks": 17312,
+      "idleVertexChecks": 17312,
+      "idleFaceChecks": 97168,
+      "solidAngleChecks": 256814,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 31092,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 874,
+          "triangles": 1233,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08140307719086513,
+            "maxPosedM": 0.06755618717001075,
+            "vertexChecks": 874,
+            "vertexFailures": 0,
+            "faceChecks": 4932,
+            "faceFailures": 0,
+            "solidAngleChecks": 15117,
+            "targetCount": 199,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.1030870053777781,
+            "maxPosedM": 0.08534478697396443,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7010,
+            "targetCount": 120,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 847,
+          "triangles": 1199,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10916268601055719,
+            "maxPosedM": 0.09072616436235904,
+            "vertexChecks": 847,
+            "vertexFailures": 0,
+            "faceChecks": 4796,
+            "faceFailures": 0,
+            "solidAngleChecks": 16697,
+            "targetCount": 216,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 439,
+          "triangles": 568,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10707429952493407,
+            "maxPosedM": 0.08910162753146028,
+            "vertexChecks": 439,
+            "vertexFailures": 0,
+            "faceChecks": 2272,
+            "faceFailures": 0,
+            "solidAngleChecks": 7911,
+            "targetCount": 164,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_afro",
+      "file": "wear/m_afro.glb.gz",
+      "sha256": "53e7922feadf2a5d45a6dd7e3971d51e21a0193827a7649de2c2508e3186cbab",
+      "rawInputSha256": "85f0ea73cc7b2a31e7847b7776125cccd9af7a78276f238df4224bfcc39c0b16",
+      "maximumStaticFromPristineRawM": 0.05623612411118013,
+      "maximumSeatedBindM": 0.12551050570183378,
+      "maximumSeatedPosedM": 0.10393193107276157,
+      "rawRestChecks": 16499,
+      "idleVertexChecks": 16499,
+      "idleFaceChecks": 93824,
+      "solidAngleChecks": 246559,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 29448,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 807,
+          "triangles": 1164,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10158567789307076,
+            "maxPosedM": 0.08419816262205933,
+            "vertexChecks": 807,
+            "vertexFailures": 0,
+            "faceChecks": 4656,
+            "faceFailures": 0,
+            "solidAngleChecks": 14300,
+            "targetCount": 158,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 405,
+          "triangles": 532,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09359443283608554,
+            "maxPosedM": 0.07752058387823284,
+            "vertexChecks": 405,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 6562,
+            "targetCount": 89,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 833,
+          "triangles": 1199,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12551050570183378,
+            "maxPosedM": 0.10393193107276157,
+            "vertexChecks": 833,
+            "vertexFailures": 0,
+            "faceChecks": 4796,
+            "faceFailures": 0,
+            "solidAngleChecks": 16356,
+            "targetCount": 183,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 409,
+          "triangles": 536,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08552379878103997,
+            "maxPosedM": 0.07099079809380393,
+            "vertexChecks": 409,
+            "vertexFailures": 0,
+            "faceChecks": 2144,
+            "faceFailures": 0,
+            "solidAngleChecks": 7114,
+            "targetCount": 134,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_carnicero",
+      "file": "wear/m_carnicero.glb.gz",
+      "sha256": "74ebe6460c8754892bfe02360dd868ba1333ec9c816ef0343a4943bc8e050eb3",
+      "rawInputSha256": "60dafe3de2f4c2feaacab931ef3eb8169d22649407041fc8fc6375cb6907581a",
+      "maximumStaticFromPristineRawM": 0.07999899359312457,
+      "maximumSeatedBindM": 0.10001956725174117,
+      "maximumSeatedPosedM": 0.08378030883191268,
+      "rawRestChecks": 15415,
+      "idleVertexChecks": 15415,
+      "idleFaceChecks": 88444,
+      "solidAngleChecks": 244481,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 24732,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 718,
+          "triangles": 1080,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09465635322079902,
+            "maxPosedM": 0.07893395972616171,
+            "vertexChecks": 718,
+            "vertexFailures": 0,
+            "faceChecks": 4320,
+            "faceFailures": 0,
+            "solidAngleChecks": 12891,
+            "targetCount": 138,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 331,
+          "triangles": 452,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07353966673835854,
+            "maxPosedM": 0.061349555094777734,
+            "vertexChecks": 331,
+            "vertexFailures": 0,
+            "faceChecks": 1808,
+            "faceFailures": 0,
+            "solidAngleChecks": 5269,
+            "targetCount": 72,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 665,
+          "triangles": 1023,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10001956725174117,
+            "maxPosedM": 0.08378030883191268,
+            "vertexChecks": 665,
+            "vertexFailures": 0,
+            "faceChecks": 4092,
+            "faceFailures": 0,
+            "solidAngleChecks": 12764,
+            "targetCount": 162,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 347,
+          "triangles": 472,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09252408258583487,
+            "maxPosedM": 0.07795146483453624,
+            "vertexChecks": 347,
+            "vertexFailures": 0,
+            "faceChecks": 1888,
+            "faceFailures": 0,
+            "solidAngleChecks": 5838,
+            "targetCount": 105,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_don",
+      "file": "wear/m_don.glb.gz",
+      "sha256": "6327e7173e4e1142585cdbe5e87fe003a3e7463096eaf8a26dd52bbf55d15bae",
+      "rawInputSha256": "3b10593210f34240788ef35ce7e6c879c2c10a25e93fcd638543aadb8a955145",
+      "maximumStaticFromPristineRawM": 0.07639203847077845,
+      "maximumSeatedBindM": 0.11180838673799383,
+      "maximumSeatedPosedM": 0.09385773888962992,
+      "rawRestChecks": 15547,
+      "idleVertexChecks": 15547,
+      "idleFaceChecks": 89308,
+      "solidAngleChecks": 251650,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 25656,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 740,
+          "triangles": 1122,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10376446208346361,
+            "maxPosedM": 0.08655995943716054,
+            "vertexChecks": 740,
+            "vertexFailures": 0,
+            "faceChecks": 4488,
+            "faceFailures": 0,
+            "solidAngleChecks": 13553,
+            "targetCount": 171,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 343,
+          "triangles": 468,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06456818028921771,
+            "maxPosedM": 0.05363365315409708,
+            "vertexChecks": 343,
+            "vertexFailures": 0,
+            "faceChecks": 1872,
+            "faceFailures": 0,
+            "solidAngleChecks": 5468,
+            "targetCount": 83,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 708,
+          "triangles": 1093,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11180838673799383,
+            "maxPosedM": 0.09385773888962992,
+            "vertexChecks": 708,
+            "vertexFailures": 0,
+            "faceChecks": 4372,
+            "faceFailures": 0,
+            "solidAngleChecks": 13565,
+            "targetCount": 159,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 347,
+          "triangles": 472,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06731603686957374,
+            "maxPosedM": 0.056008294286734005,
+            "vertexChecks": 347,
+            "vertexFailures": 0,
+            "faceChecks": 1888,
+            "faceFailures": 0,
+            "solidAngleChecks": 5731,
+            "targetCount": 94,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_elder",
+      "file": "wear/m_elder.glb.gz",
+      "sha256": "3ae97ac6ae45644b57da9a66772e7e486d3ebb96067dabd8fed8c0f2db8ebcf2",
+      "rawInputSha256": "fd67847dd2973a44f34a26027160fff7486e710b0d4f61602decc0bef177e25e",
+      "maximumStaticFromPristineRawM": 0.04796711094650009,
+      "maximumSeatedBindM": 0.11019828858996424,
+      "maximumSeatedPosedM": 0.09159472626129483,
+      "rawRestChecks": 17007,
+      "idleVertexChecks": 17007,
+      "idleFaceChecks": 94988,
+      "solidAngleChecks": 254536,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 31116,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 874,
+          "triangles": 1233,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08645254674595669,
+            "maxPosedM": 0.07185468545989211,
+            "vertexChecks": 874,
+            "vertexFailures": 0,
+            "faceChecks": 4932,
+            "faceFailures": 0,
+            "solidAngleChecks": 15097,
+            "targetCount": 199,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09749091785073043,
+            "maxPosedM": 0.08080994524072088,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 6998,
+            "targetCount": 120,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 849,
+          "triangles": 1203,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11019828858996424,
+            "maxPosedM": 0.09159472626129483,
+            "vertexChecks": 849,
+            "vertexFailures": 0,
+            "faceChecks": 4812,
+            "faceFailures": 0,
+            "solidAngleChecks": 16795,
+            "targetCount": 215,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 439,
+          "triangles": 568,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10841534130806156,
+            "maxPosedM": 0.09023655969037243,
+            "vertexChecks": 439,
+            "vertexFailures": 0,
+            "faceChecks": 2272,
+            "faceFailures": 0,
+            "solidAngleChecks": 7919,
+            "targetCount": 162,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_joven",
+      "file": "wear/m_joven.glb.gz",
+      "sha256": "17aca134bdcedd5fbdc03604d88bc503aab4f06afd0a5d081a304852d377b187",
+      "rawInputSha256": "330df8ca8538b748b68da54fe7f7a1933fec06128be30983f9b2106ee6ad130d",
+      "maximumStaticFromPristineRawM": 0.05112258428153435,
+      "maximumSeatedBindM": 0.11756914227168096,
+      "maximumSeatedPosedM": 0.11756914585500439,
+      "rawRestChecks": 17164,
+      "idleVertexChecks": 17164,
+      "idleFaceChecks": 95760,
+      "solidAngleChecks": 249074,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 32076,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 887,
+          "triangles": 1258,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07376394333966367,
+            "maxPosedM": 0.07376394557869051,
+            "vertexChecks": 887,
+            "vertexFailures": 0,
+            "faceChecks": 5032,
+            "faceFailures": 0,
+            "solidAngleChecks": 15951,
+            "targetCount": 194,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 471,
+          "triangles": 600,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09982859726554977,
+            "maxPosedM": 0.09982850843871285,
+            "vertexChecks": 471,
+            "vertexFailures": 0,
+            "faceChecks": 2400,
+            "faceFailures": 0,
+            "solidAngleChecks": 7760,
+            "targetCount": 131,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 852,
+          "triangles": 1225,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11756914227168096,
+            "maxPosedM": 0.11756914585500439,
+            "vertexChecks": 852,
+            "vertexFailures": 0,
+            "faceChecks": 4900,
+            "faceFailures": 0,
+            "solidAngleChecks": 17310,
+            "targetCount": 240,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 463,
+          "triangles": 592,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06531314738631244,
+            "maxPosedM": 0.06531306925693971,
+            "vertexChecks": 463,
+            "vertexFailures": 0,
+            "faceChecks": 2368,
+            "faceFailures": 0,
+            "solidAngleChecks": 8424,
+            "targetCount": 178,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_mecanico",
+      "file": "wear/m_mecanico.glb.gz",
+      "sha256": "1aea094f441f93ee2155f56549877306c2fde15106d2c6573057c4272fd36e7b",
+      "rawInputSha256": "bd3a2d5c430331e8fb47b0cc061a8f150b59be9e468b3be059955cc913efd306",
+      "maximumStaticFromPristineRawM": 0.05584190516939145,
+      "maximumSeatedBindM": 0.09182224124355942,
+      "maximumSeatedPosedM": 0.07702646805865186,
+      "rawRestChecks": 15356,
+      "idleVertexChecks": 15356,
+      "idleFaceChecks": 87912,
+      "solidAngleChecks": 235081,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 24156,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 697,
+          "triangles": 1036,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09182224124355942,
+            "maxPosedM": 0.07639248676703064,
+            "vertexChecks": 697,
+            "vertexFailures": 0,
+            "faceChecks": 4144,
+            "faceFailures": 0,
+            "solidAngleChecks": 12028,
+            "targetCount": 124,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 331,
+          "triangles": 452,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07936315732560663,
+            "maxPosedM": 0.06657571832570369,
+            "vertexChecks": 331,
+            "vertexFailures": 0,
+            "faceChecks": 1808,
+            "faceFailures": 0,
+            "solidAngleChecks": 5184,
+            "targetCount": 64,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 650,
+          "triangles": 985,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09122649327718882,
+            "maxPosedM": 0.07702646805865186,
+            "vertexChecks": 650,
+            "vertexFailures": 0,
+            "faceChecks": 3940,
+            "faceFailures": 0,
+            "solidAngleChecks": 12359,
+            "targetCount": 122,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 335,
+          "triangles": 456,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07086081702610104,
+            "maxPosedM": 0.06723473554852538,
+            "vertexChecks": 335,
+            "vertexFailures": 0,
+            "faceChecks": 1824,
+            "faceFailures": 0,
+            "solidAngleChecks": 5643,
+            "targetCount": 107,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_mototaxi",
+      "file": "wear/m_mototaxi.glb.gz",
+      "sha256": "72a3928c2c83cf94adcb315e31d08bf2f7fe9545ca310dae5d12ba774cfa6264",
+      "rawInputSha256": "445ce208cc8a8fd15d658f6f910ba9994a3b9fb8cd07027e3236591e7ceeda5e",
+      "maximumStaticFromPristineRawM": 0.04955503768425473,
+      "maximumSeatedBindM": 0.09442398528293114,
+      "maximumSeatedPosedM": 0.07836695885201628,
+      "rawRestChecks": 16886,
+      "idleVertexChecks": 16886,
+      "idleFaceChecks": 94528,
+      "solidAngleChecks": 251052,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 30924,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 866,
+          "triangles": 1224,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06335682804731504,
+            "maxPosedM": 0.05454334338034652,
+            "vertexChecks": 866,
+            "vertexFailures": 0,
+            "faceChecks": 4896,
+            "faceFailures": 0,
+            "solidAngleChecks": 15082,
+            "targetCount": 204,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.058529775848065076,
+            "maxPosedM": 0.05107637297496896,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7053,
+            "targetCount": 117,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 849,
+          "triangles": 1203,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09442398528293114,
+            "maxPosedM": 0.07836695885201628,
+            "vertexChecks": 849,
+            "vertexFailures": 0,
+            "faceChecks": 4812,
+            "faceFailures": 0,
+            "solidAngleChecks": 16859,
+            "targetCount": 206,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06329124657471957,
+            "maxPosedM": 0.05248622715729938,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7829,
+            "targetCount": 168,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_obrero",
+      "file": "wear/m_obrero.glb.gz",
+      "sha256": "2e91f743c3a3dfc668668998d440b694a2420a4000a6f682dc975ad91057b8dc",
+      "rawInputSha256": "bc828d2121492456d2329323ca97be1214bf0fa314db3022a6cf0aa3c3260c3f",
+      "maximumStaticFromPristineRawM": 0.050477978425830836,
+      "maximumSeatedBindM": 0.09551647559661312,
+      "maximumSeatedPosedM": 0.07923613805074024,
+      "rawRestChecks": 16880,
+      "idleVertexChecks": 16880,
+      "idleFaceChecks": 94500,
+      "solidAngleChecks": 250828,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 30912,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 865,
+          "triangles": 1222,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0643986087547378,
+            "maxPosedM": 0.055467389781160274,
+            "vertexChecks": 865,
+            "vertexFailures": 0,
+            "faceChecks": 4888,
+            "faceFailures": 0,
+            "solidAngleChecks": 15074,
+            "targetCount": 203,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.060578286201503864,
+            "maxPosedM": 0.05258358274033893,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7055,
+            "targetCount": 117,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 849,
+          "triangles": 1203,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09551647559661312,
+            "maxPosedM": 0.07923613805074024,
+            "vertexChecks": 849,
+            "vertexFailures": 0,
+            "faceChecks": 4812,
+            "faceFailures": 0,
+            "solidAngleChecks": 16833,
+            "targetCount": 206,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0641187444416115,
+            "maxPosedM": 0.05316980409384752,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7803,
+            "targetCount": 163,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_panadero",
+      "file": "wear/m_panadero.glb.gz",
+      "sha256": "5bbbddca4c984491cdb982c73aff65da82b2e9eebf4f086652849f3d991645fa",
+      "rawInputSha256": "752deccb9860e0af9b8030057538458dfc3b0a517bab7ac8a7945fc5b2d7e1d0",
+      "maximumStaticFromPristineRawM": 0.06011260836121778,
+      "maximumSeatedBindM": 0.1019780399279443,
+      "maximumSeatedPosedM": 0.08621496817346883,
+      "rawRestChecks": 15637,
+      "idleVertexChecks": 15637,
+      "idleFaceChecks": 89992,
+      "solidAngleChecks": 237200,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 24072,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 686,
+          "triangles": 1024,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07900745390470987,
+            "maxPosedM": 0.06550842597536409,
+            "vertexChecks": 686,
+            "vertexFailures": 0,
+            "faceChecks": 4096,
+            "faceFailures": 0,
+            "solidAngleChecks": 11822,
+            "targetCount": 122,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 331,
+          "triangles": 452,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07513122955210243,
+            "maxPosedM": 0.06281032597552301,
+            "vertexChecks": 331,
+            "vertexFailures": 0,
+            "faceChecks": 1808,
+            "faceFailures": 0,
+            "solidAngleChecks": 5194,
+            "targetCount": 65,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 654,
+          "triangles": 993,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07847799832604449,
+            "maxPosedM": 0.06518034798875506,
+            "vertexChecks": 654,
+            "vertexFailures": 0,
+            "faceChecks": 3972,
+            "faceFailures": 0,
+            "solidAngleChecks": 12324,
+            "targetCount": 131,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 335,
+          "triangles": 456,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.1019780399279443,
+            "maxPosedM": 0.08621496817346883,
+            "vertexChecks": 335,
+            "vertexFailures": 0,
+            "faceChecks": 1824,
+            "faceFailures": 0,
+            "solidAngleChecks": 5600,
+            "targetCount": 106,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_tendero",
+      "file": "wear/m_tendero.glb.gz",
+      "sha256": "95e590c63b38096a257e70fbf24f41dda5030f3bfd9748b2f6a9d1a1a2896d75",
+      "rawInputSha256": "645f6de14ad4dbff085677319bde820e7296175ef2ee7684aeb7922733a52946",
+      "maximumStaticFromPristineRawM": 0.05515278146187627,
+      "maximumSeatedBindM": 0.12685184651577294,
+      "maximumSeatedPosedM": 0.1052538391074485,
+      "rawRestChecks": 16229,
+      "idleVertexChecks": 16229,
+      "idleFaceChecks": 91800,
+      "solidAngleChecks": 246174,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 29568,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 814,
+          "triangles": 1170,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12062031813615058,
+            "maxPosedM": 0.10030652320093408,
+            "vertexChecks": 814,
+            "vertexFailures": 0,
+            "faceChecks": 4680,
+            "faceFailures": 0,
+            "solidAngleChecks": 14390,
+            "targetCount": 166,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 405,
+          "triangles": 532,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09109849789924497,
+            "maxPosedM": 0.07546252348032381,
+            "vertexChecks": 405,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 6558,
+            "targetCount": 89,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 836,
+          "triangles": 1203,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12685184651577294,
+            "maxPosedM": 0.1052538391074485,
+            "vertexChecks": 836,
+            "vertexFailures": 0,
+            "faceChecks": 4812,
+            "faceFailures": 0,
+            "solidAngleChecks": 16442,
+            "targetCount": 194,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 409,
+          "triangles": 536,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08760178233853845,
+            "maxPosedM": 0.07257312660657769,
+            "vertexChecks": 409,
+            "vertexFailures": 0,
+            "faceChecks": 2144,
+            "faceFailures": 0,
+            "solidAngleChecks": 7126,
+            "targetCount": 131,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "m_vendedor",
+      "file": "wear/m_vendedor.glb.gz",
+      "sha256": "d245d50dfb36d8df6420b26be288e6e27d1340be3123632dee9007d2feea18fc",
+      "rawInputSha256": "f680ad905267b86fdb50e6e542f6d879e0f12503f07343520305311b160cd99f",
+      "maximumStaticFromPristineRawM": 0.051981401723340495,
+      "maximumSeatedBindM": 0.0927025438424518,
+      "maximumSeatedPosedM": 0.07695441594347562,
+      "rawRestChecks": 17186,
+      "idleVertexChecks": 17186,
+      "idleFaceChecks": 96688,
+      "solidAngleChecks": 252397,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 30924,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 866,
+          "triangles": 1224,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06282961113387274,
+            "maxPosedM": 0.054141661433164054,
+            "vertexChecks": 866,
+            "vertexFailures": 0,
+            "faceChecks": 4896,
+            "faceFailures": 0,
+            "solidAngleChecks": 15086,
+            "targetCount": 204,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.05792521687683355,
+            "maxPosedM": 0.05057133575304842,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7049,
+            "targetCount": 117,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 849,
+          "triangles": 1203,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0927025438424518,
+            "maxPosedM": 0.07695441594347562,
+            "vertexChecks": 849,
+            "vertexFailures": 0,
+            "faceChecks": 4812,
+            "faceFailures": 0,
+            "solidAngleChecks": 16831,
+            "targetCount": 206,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 431,
+          "triangles": 560,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06635141447261172,
+            "maxPosedM": 0.055408921130433136,
+            "vertexChecks": 431,
+            "vertexFailures": 0,
+            "faceChecks": 2240,
+            "faceFailures": 0,
+            "solidAngleChecks": 7785,
+            "targetCount": 162,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_afro",
+      "file": "wear/w_afro.glb.gz",
+      "sha256": "af65463d2460d0613cfa66c64bc2da87ad085b85e20b034c06aaae0e4af6ed55",
+      "rawInputSha256": "c919ce58c864acde7ebbee45ff59ed90fd4dae81b25f0b4e2e3b604b60ad4ab9",
+      "maximumStaticFromPristineRawM": 0.0469806729240359,
+      "maximumSeatedBindM": 0.12242941828539235,
+      "maximumSeatedPosedM": 0.10414501409426634,
+      "rawRestChecks": 13971,
+      "idleVertexChecks": 13971,
+      "idleFaceChecks": 78184,
+      "solidAngleChecks": 204727,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "leggings": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 9672,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 401,
+          "triangles": 532,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10414554768811674,
+            "maxPosedM": 0.10414501409426634,
+            "vertexChecks": 401,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 5409,
+            "targetCount": 99,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 401,
+          "triangles": 532,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10414554768811674,
+            "maxPosedM": 0.10414501409426634,
+            "vertexChecks": 401,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 5409,
+            "targetCount": 99,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 405,
+          "triangles": 536,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12242941828539235,
+            "maxPosedM": 0.09039357499653182,
+            "vertexChecks": 405,
+            "vertexFailures": 0,
+            "faceChecks": 2144,
+            "faceFailures": 0,
+            "solidAngleChecks": 6810,
+            "targetCount": 130,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 405,
+          "triangles": 536,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12242941828539235,
+            "maxPosedM": 0.09039357499653182,
+            "vertexChecks": 405,
+            "vertexFailures": 0,
+            "faceChecks": 2144,
+            "faceFailures": 0,
+            "solidAngleChecks": 6810,
+            "targetCount": 130,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_ama",
+      "file": "wear/w_ama.glb.gz",
+      "sha256": "7c33687fc5676f32ac027595b1539201192cb7201726db0acde4f8ba1caf6dd1",
+      "rawInputSha256": "41aeb9fc4d9081aa32d7531ba501ac360b0638b347f7e595a536c0ee59136541",
+      "maximumStaticFromPristineRawM": 0.04774665164001317,
+      "maximumSeatedBindM": 0.08925565305483127,
+      "maximumSeatedPosedM": 0.08923453841473447,
+      "rawRestChecks": 13914,
+      "idleVertexChecks": 13914,
+      "idleFaceChecks": 77928,
+      "solidAngleChecks": 214644,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "leggings": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 9384,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 383,
+          "triangles": 512,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0852942702359593,
+            "maxPosedM": 0.08527697555401946,
+            "vertexChecks": 383,
+            "vertexFailures": 0,
+            "faceChecks": 2048,
+            "faceFailures": 0,
+            "solidAngleChecks": 6200,
+            "targetCount": 108,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 383,
+          "triangles": 512,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0852942702359593,
+            "maxPosedM": 0.08527697555401946,
+            "vertexChecks": 383,
+            "vertexFailures": 0,
+            "faceChecks": 2048,
+            "faceFailures": 0,
+            "solidAngleChecks": 6200,
+            "targetCount": 108,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 399,
+          "triangles": 532,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08925565305483127,
+            "maxPosedM": 0.08923453841473447,
+            "vertexChecks": 399,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 7088,
+            "targetCount": 144,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 399,
+          "triangles": 532,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08925565305483127,
+            "maxPosedM": 0.08923453841473447,
+            "vertexChecks": 399,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 7088,
+            "targetCount": 144,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_beata",
+      "file": "wear/w_beata.glb.gz",
+      "sha256": "6fd062816c87a8d47e26e71dc02339409672a303ab8ae52689b90555f2d538fd",
+      "rawInputSha256": "d1407cba753983704c1bf59a90a3a5511302f956b7f36ee0bc5f83875a35e14c",
+      "maximumStaticFromPristineRawM": 0.046190549627166066,
+      "maximumSeatedBindM": 0.15916293435361997,
+      "maximumSeatedPosedM": 0.15516067610776338,
+      "rawRestChecks": 14177,
+      "idleVertexChecks": 14177,
+      "idleFaceChecks": 79768,
+      "solidAngleChecks": 218976,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 18120,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 375,
+          "triangles": 504,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10207697243613084,
+            "maxPosedM": 0.10207638797296137,
+            "vertexChecks": 375,
+            "vertexFailures": 0,
+            "faceChecks": 2016,
+            "faceFailures": 0,
+            "solidAngleChecks": 5991,
+            "targetCount": 91,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 375,
+          "triangles": 504,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10207697243613084,
+            "maxPosedM": 0.10207638797296137,
+            "vertexChecks": 375,
+            "vertexFailures": 0,
+            "faceChecks": 2016,
+            "faceFailures": 0,
+            "solidAngleChecks": 5991,
+            "targetCount": 91,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 740,
+          "triangles": 1097,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.13542065517534294,
+            "maxPosedM": 0.13541998434884986,
+            "vertexChecks": 740,
+            "vertexFailures": 0,
+            "faceChecks": 4388,
+            "faceFailures": 0,
+            "solidAngleChecks": 14507,
+            "targetCount": 185,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 395,
+          "triangles": 528,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.15916293435361997,
+            "maxPosedM": 0.15516067610776338,
+            "vertexChecks": 395,
+            "vertexFailures": 0,
+            "faceChecks": 2112,
+            "faceFailures": 0,
+            "solidAngleChecks": 6911,
+            "targetCount": 131,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_cocinera",
+      "file": "wear/w_cocinera.glb.gz",
+      "sha256": "526e39bbf6cd9304e07627a52a440c551b22737ce866b0a047e13111159f8d59",
+      "rawInputSha256": "6239b33f72417258c96169838dd5836cec00367de0e230375d09f04d2ea76fa8",
+      "maximumStaticFromPristineRawM": 0.05055739197974875,
+      "maximumSeatedBindM": 0.16899237257122962,
+      "maximumSeatedPosedM": 0.1254448927682484,
+      "rawRestChecks": 14263,
+      "idleVertexChecks": 14263,
+      "idleFaceChecks": 80272,
+      "solidAngleChecks": 223431,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 18204,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 384,
+          "triangles": 514,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11780096694739693,
+            "maxPosedM": 0.11780038093059265,
+            "vertexChecks": 384,
+            "vertexFailures": 0,
+            "faceChecks": 2056,
+            "faceFailures": 0,
+            "solidAngleChecks": 6180,
+            "targetCount": 95,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 384,
+          "triangles": 514,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11780096694739693,
+            "maxPosedM": 0.11780038093059265,
+            "vertexChecks": 384,
+            "vertexFailures": 0,
+            "faceChecks": 2056,
+            "faceFailures": 0,
+            "solidAngleChecks": 6180,
+            "targetCount": 95,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 734,
+          "triangles": 1090,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": {
+            "fraction": 0.05,
+            "accepted": true,
+            "maximumBaseChangeM": 0.008894330246195375,
+            "maximumFromPristineRawM": 0.008894330246195375,
+            "rest": {
+              "vertexChecks": 734,
+              "vertexFailures": 0,
+              "faceChecks": 0,
+              "faceFailures": 0,
+              "solidAngleChecks": 1928
+            },
+            "idle": {
+              "vertexChecks": 734,
+              "vertexFailures": 0,
+              "faceChecks": 4360,
+              "faceFailures": 0,
+              "solidAngleChecks": 13758
+            },
+            "runtime": {
+              "maxBindM": 0.16899237257122962,
+              "maxPosedM": 0.1254448927682484,
+              "vertexChecks": 734,
+              "vertexFailures": 0,
+              "faceChecks": 4360,
+              "faceFailures": 0,
+              "solidAngleChecks": 14488,
+              "targetCount": 176,
+              "finalPushCount": 0
+            }
+          },
+          "finalUpload": {
+            "maxBindM": 0.16899237257122962,
+            "maxPosedM": 0.1254448927682484,
+            "vertexChecks": 734,
+            "vertexFailures": 0,
+            "faceChecks": 4360,
+            "faceFailures": 0,
+            "solidAngleChecks": 14488,
+            "targetCount": 176,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 399,
+          "triangles": 532,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08762908552493773,
+            "maxPosedM": 0.08760820464371634,
+            "vertexChecks": 399,
+            "vertexFailures": 0,
+            "faceChecks": 2128,
+            "faceFailures": 0,
+            "solidAngleChecks": 7106,
+            "targetCount": 140,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_elder",
+      "file": "wear/w_elder.glb.gz",
+      "sha256": "234ff4c2312737c7589938b7ed33d99a4e14ad9ce8b37b744779d40882216ce5",
+      "rawInputSha256": "467e3c551ef698a9f85edf5515e6b1f12c92736388850831c2ebc9728cb81b16",
+      "maximumStaticFromPristineRawM": 0.04525813603230554,
+      "maximumSeatedBindM": 0.14053702956034134,
+      "maximumSeatedPosedM": 0.14053633092448528,
+      "rawRestChecks": 14415,
+      "idleVertexChecks": 14415,
+      "idleFaceChecks": 81644,
+      "solidAngleChecks": 215321,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 17568,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 375,
+          "triangles": 504,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07879854630356525,
+            "maxPosedM": 0.07877655686140186,
+            "vertexChecks": 375,
+            "vertexFailures": 0,
+            "faceChecks": 2016,
+            "faceFailures": 0,
+            "solidAngleChecks": 6017,
+            "targetCount": 90,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 375,
+          "triangles": 504,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.07879854630356525,
+            "maxPosedM": 0.07877655686140186,
+            "vertexChecks": 375,
+            "vertexFailures": 0,
+            "faceChecks": 2016,
+            "faceFailures": 0,
+            "solidAngleChecks": 6017,
+            "targetCount": 90,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 702,
+          "triangles": 1053,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.14053702956034134,
+            "maxPosedM": 0.14053633092448528,
+            "vertexChecks": 702,
+            "vertexFailures": 0,
+            "faceChecks": 4212,
+            "faceFailures": 0,
+            "solidAngleChecks": 13182,
+            "targetCount": 151,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 387,
+          "triangles": 516,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09361960837847165,
+            "maxPosedM": 0.0906305541764998,
+            "vertexChecks": 387,
+            "vertexFailures": 0,
+            "faceChecks": 2064,
+            "faceFailures": 0,
+            "solidAngleChecks": 6484,
+            "targetCount": 110,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_farmaceutica",
+      "file": "wear/w_farmaceutica.glb.gz",
+      "sha256": "9c03c49b497a5e5a29c5b640c8bad420bde6478c92880a9c00be90717bc71303",
+      "rawInputSha256": "75a1941b9356fff0652fded038cf0c02bc1ce301fe152d254404ab9c4d91ea15",
+      "maximumStaticFromPristineRawM": 0.04623716956036133,
+      "maximumSeatedBindM": 0.17099904142063233,
+      "maximumSeatedPosedM": 0.12534911890114073,
+      "rawRestChecks": 15763,
+      "idleVertexChecks": 15763,
+      "idleFaceChecks": 89912,
+      "solidAngleChecks": 231061,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        }
+      },
+      "poseTargetCpuBytes": 26952,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 743,
+          "triangles": 1095,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10910360357886767,
+            "maxPosedM": 0.08108814326488802,
+            "vertexChecks": 743,
+            "vertexFailures": 0,
+            "faceChecks": 4380,
+            "faceFailures": 0,
+            "solidAngleChecks": 11980,
+            "targetCount": 133,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 388,
+          "triangles": 518,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.06257032085164754,
+            "maxPosedM": 0.06256965661410095,
+            "vertexChecks": 388,
+            "vertexFailures": 0,
+            "faceChecks": 2072,
+            "faceFailures": 0,
+            "solidAngleChecks": 5704,
+            "targetCount": 97,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 710,
+          "triangles": 1054,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": {
+            "fraction": 0.05,
+            "accepted": true,
+            "maximumBaseChangeM": 0.008999963428405837,
+            "maximumFromPristineRawM": 0.008999963428405837,
+            "rest": {
+              "vertexChecks": 710,
+              "vertexFailures": 0,
+              "faceChecks": 0,
+              "faceFailures": 0,
+              "solidAngleChecks": 1703
+            },
+            "idle": {
+              "vertexChecks": 710,
+              "vertexFailures": 0,
+              "faceChecks": 4216,
+              "faceFailures": 0,
+              "solidAngleChecks": 12371
+            },
+            "runtime": {
+              "maxBindM": 0.17099904142063233,
+              "maxPosedM": 0.12534911890114073,
+              "vertexChecks": 710,
+              "vertexFailures": 0,
+              "faceChecks": 4216,
+              "faceFailures": 0,
+              "solidAngleChecks": 12922,
+              "targetCount": 134,
+              "finalPushCount": 0
+            }
+          },
+          "finalUpload": {
+            "maxBindM": 0.17099904142063233,
+            "maxPosedM": 0.12534911890114073,
+            "vertexChecks": 710,
+            "vertexFailures": 0,
+            "faceChecks": 4216,
+            "faceFailures": 0,
+            "solidAngleChecks": 12922,
+            "targetCount": 134,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 405,
+          "triangles": 536,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11704848819005009,
+            "maxPosedM": 0.09340304518867507,
+            "vertexChecks": 405,
+            "vertexFailures": 0,
+            "faceChecks": 2144,
+            "faceFailures": 0,
+            "solidAngleChecks": 6712,
+            "targetCount": 133,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_joven",
+      "file": "wear/w_joven.glb.gz",
+      "sha256": "ec9b7c639d1dd7feb106e90b6216e5f23df0e764365cf5386817742882ad7e45",
+      "rawInputSha256": "a9f4a7c7891edea09b35b78db252853bd553cc40be3e0cf0771533400806ac65",
+      "maximumStaticFromPristineRawM": 0.04232369257904879,
+      "maximumSeatedBindM": 0.0948271933780835,
+      "maximumSeatedPosedM": 0.09482690282424591,
+      "rawRestChecks": 15766,
+      "idleVertexChecks": 15766,
+      "idleFaceChecks": 89724,
+      "solidAngleChecks": 229286,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {},
+      "poseTargetCpuBytes": 26304,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 717,
+          "triangles": 1059,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0837771692261825,
+            "maxPosedM": 0.062340867666248155,
+            "vertexChecks": 717,
+            "vertexFailures": 0,
+            "faceChecks": 4236,
+            "faceFailures": 0,
+            "solidAngleChecks": 12374,
+            "targetCount": 155,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 379,
+          "triangles": 508,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.050221286936359084,
+            "maxPosedM": 0.050221145839384224,
+            "vertexChecks": 379,
+            "vertexFailures": 0,
+            "faceChecks": 2032,
+            "faceFailures": 0,
+            "solidAngleChecks": 5922,
+            "targetCount": 125,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 713,
+          "triangles": 1064,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0948271933780835,
+            "maxPosedM": 0.09482690282424591,
+            "vertexChecks": 713,
+            "vertexFailures": 0,
+            "faceChecks": 4256,
+            "faceFailures": 0,
+            "solidAngleChecks": 13138,
+            "targetCount": 153,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 383,
+          "triangles": 512,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08349538536385251,
+            "maxPosedM": 0.08349511210775128,
+            "vertexChecks": 383,
+            "vertexFailures": 0,
+            "faceChecks": 2048,
+            "faceFailures": 0,
+            "solidAngleChecks": 6188,
+            "targetCount": 135,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_maestra",
+      "file": "wear/w_maestra.glb.gz",
+      "sha256": "b3acfe3daceac7617c36ef3d88d0d609b1251676ae753aea66637fae6bc7b440",
+      "rawInputSha256": "0ae8e33575aeef7df20b0b23fe2800612c114d68b78ec704f8f7f1fac210e54c",
+      "maximumStaticFromPristineRawM": 0.04708951559233976,
+      "maximumSeatedBindM": 0.16489961018803256,
+      "maximumSeatedPosedM": 0.12099094063765947,
+      "rawRestChecks": 15537,
+      "idleVertexChecks": 15537,
+      "idleFaceChecks": 88004,
+      "solidAngleChecks": 230944,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        }
+      },
+      "poseTargetCpuBytes": 26796,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 727,
+          "triangles": 1075,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": {
+            "fraction": 0.05,
+            "accepted": true,
+            "maximumBaseChangeM": 0.008678940751966801,
+            "maximumFromPristineRawM": 0.008678940751966801,
+            "rest": {
+              "vertexChecks": 727,
+              "vertexFailures": 0,
+              "faceChecks": 0,
+              "faceFailures": 0,
+              "solidAngleChecks": 1464
+            },
+            "idle": {
+              "vertexChecks": 727,
+              "vertexFailures": 0,
+              "faceChecks": 4300,
+              "faceFailures": 0,
+              "solidAngleChecks": 10674
+            },
+            "runtime": {
+              "maxBindM": 0.16489961018803256,
+              "maxPosedM": 0.12099094063765947,
+              "vertexChecks": 727,
+              "vertexFailures": 0,
+              "faceChecks": 4300,
+              "faceFailures": 0,
+              "solidAngleChecks": 11634,
+              "targetCount": 122,
+              "finalPushCount": 0
+            }
+          },
+          "finalUpload": {
+            "maxBindM": 0.16489961018803256,
+            "maxPosedM": 0.12099094063765947,
+            "vertexChecks": 727,
+            "vertexFailures": 0,
+            "faceChecks": 4300,
+            "faceFailures": 0,
+            "solidAngleChecks": 11634,
+            "targetCount": 122,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 388,
+          "triangles": 518,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.05996629545705142,
+            "maxPosedM": 0.0599660807796553,
+            "vertexChecks": 388,
+            "vertexFailures": 0,
+            "faceChecks": 2072,
+            "faceFailures": 0,
+            "solidAngleChecks": 5702,
+            "targetCount": 98,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 713,
+          "triangles": 1060,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.11919738498237403,
+            "maxPosedM": 0.08754370688365583,
+            "vertexChecks": 713,
+            "vertexFailures": 0,
+            "faceChecks": 4240,
+            "faceFailures": 0,
+            "solidAngleChecks": 12974,
+            "targetCount": 139,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 405,
+          "triangles": 536,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.10905543787070325,
+            "maxPosedM": 0.0799182180291623,
+            "vertexChecks": 405,
+            "vertexFailures": 0,
+            "faceChecks": 2144,
+            "faceFailures": 0,
+            "solidAngleChecks": 6698,
+            "targetCount": 133,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_peluquera",
+      "file": "wear/w_peluquera.glb.gz",
+      "sha256": "89bb2c2a9ac09eb6353c7c1251b229b461a6756308e64bd185cc2add20dcaea4",
+      "rawInputSha256": "346c506c110ed49e15d7ea6aa71f80cce140521f7ea3aead0936b43119af1120",
+      "maximumStaticFromPristineRawM": 0.047448437419075375,
+      "maximumSeatedBindM": 0.0890357127255875,
+      "maximumSeatedPosedM": 0.06621328177058218,
+      "rawRestChecks": 15057,
+      "idleVertexChecks": 15057,
+      "idleFaceChecks": 84452,
+      "solidAngleChecks": 217230,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "leggings": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 9300,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 388,
+          "triangles": 518,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.05973545146926118,
+            "maxPosedM": 0.059735235702096774,
+            "vertexChecks": 388,
+            "vertexFailures": 0,
+            "faceChecks": 2072,
+            "faceFailures": 0,
+            "solidAngleChecks": 5690,
+            "targetCount": 102,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 388,
+          "triangles": 518,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.05973545146926118,
+            "maxPosedM": 0.059735235702096774,
+            "vertexChecks": 388,
+            "vertexFailures": 0,
+            "faceChecks": 2072,
+            "faceFailures": 0,
+            "solidAngleChecks": 5690,
+            "targetCount": 102,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 387,
+          "triangles": 516,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0890357127255875,
+            "maxPosedM": 0.06621328177058218,
+            "vertexChecks": 387,
+            "vertexFailures": 0,
+            "faceChecks": 2064,
+            "faceFailures": 0,
+            "solidAngleChecks": 6236,
+            "targetCount": 117,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 387,
+          "triangles": 516,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.0890357127255875,
+            "maxPosedM": 0.06621328177058218,
+            "vertexChecks": 387,
+            "vertexFailures": 0,
+            "faceChecks": 2064,
+            "faceFailures": 0,
+            "solidAngleChecks": 6236,
+            "targetCount": 117,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_tendera",
+      "file": "wear/w_tendera.glb.gz",
+      "sha256": "885a7ddc82f482bfddda60ff8ac60fb8a70b48ff96b5a66fb6d9379c02bb86a1",
+      "rawInputSha256": "d338597aadd0f4eb5c839ab53508e1b411a68c57069f0fdd927a5cb9b27b35bc",
+      "maximumStaticFromPristineRawM": 0.04733643751794794,
+      "maximumSeatedBindM": 0.17099902059010996,
+      "maximumSeatedPosedM": 0.13792259663054937,
+      "rawRestChecks": 14179,
+      "idleVertexChecks": 14179,
+      "idleFaceChecks": 79904,
+      "solidAngleChecks": 217454,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "shirt": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "jumper": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "application": "raw-build",
+          "reason": "The complete lower-detail sleeve cut preserves forearm coverage."
+        },
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "The complete lower-detail hip cut retains seated coverage."
+        }
+      },
+      "poseTargetCpuBytes": 18024,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 375,
+          "triangles": 504,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08086112445832445,
+            "maxPosedM": 0.08084581790753219,
+            "vertexChecks": 375,
+            "vertexFailures": 0,
+            "faceChecks": 2016,
+            "faceFailures": 0,
+            "solidAngleChecks": 5820,
+            "targetCount": 94,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 375,
+          "triangles": 504,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.08086112445832445,
+            "maxPosedM": 0.08084581790753219,
+            "vertexChecks": 375,
+            "vertexFailures": 0,
+            "faceChecks": 2016,
+            "faceFailures": 0,
+            "solidAngleChecks": 5820,
+            "targetCount": 94,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 736,
+          "triangles": 1094,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": {
+            "fraction": 0.05,
+            "accepted": true,
+            "maximumBaseChangeM": 0.00899996150202439,
+            "maximumFromPristineRawM": 0.00899996150202439,
+            "rest": {
+              "vertexChecks": 736,
+              "vertexFailures": 0,
+              "faceChecks": 0,
+              "faceFailures": 0,
+              "solidAngleChecks": 1899
+            },
+            "idle": {
+              "vertexChecks": 736,
+              "vertexFailures": 0,
+              "faceChecks": 4376,
+              "faceFailures": 0,
+              "solidAngleChecks": 13481
+            },
+            "runtime": {
+              "maxBindM": 0.17099902059010996,
+              "maxPosedM": 0.13792259663054937,
+              "vertexChecks": 736,
+              "vertexFailures": 0,
+              "faceChecks": 4376,
+              "faceFailures": 0,
+              "solidAngleChecks": 13895,
+              "targetCount": 187,
+              "finalPushCount": 0
+            }
+          },
+          "finalUpload": {
+            "maxBindM": 0.17099902059010996,
+            "maxPosedM": 0.13792259663054937,
+            "vertexChecks": 736,
+            "vertexFailures": 0,
+            "faceChecks": 4376,
+            "faceFailures": 0,
+            "solidAngleChecks": 13895,
+            "targetCount": 187,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 391,
+          "triangles": 524,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.09298450581419508,
+            "maxPosedM": 0.09298450865994733,
+            "vertexChecks": 391,
+            "vertexFailures": 0,
+            "faceChecks": 2096,
+            "faceFailures": 0,
+            "solidAngleChecks": 6705,
+            "targetCount": 126,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "w_vecina",
+      "file": "wear/w_vecina.glb.gz",
+      "sha256": "16b3272a031d605e9299f5df0f9a30cfc7cfa8b67f2e61024c6ac4451e1871c0",
+      "rawInputSha256": "a0fb08a430a261465e60cbee88fff681cfb6b477a9659b85ee0405456b144080",
+      "maximumStaticFromPristineRawM": 0.06124400672291935,
+      "maximumSeatedBindM": 0.1709990174856078,
+      "maximumSeatedPosedM": 0.12655598690527214,
+      "rawRestChecks": 14798,
+      "idleVertexChecks": 14798,
+      "idleFaceChecks": 84284,
+      "solidAngleChecks": 243309,
+      "vertexFailures": 0,
+      "faceFailures": 0,
+      "topologyChoices": {
+        "trousers": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "Complete hip coverage uses the proven full lower-detail cut."
+        },
+        "jeans": {
+          "nearCut": "complete-far-cut",
+          "sourceLod": 1,
+          "reason": "Complete hip coverage uses the proven full lower-detail cut."
+        }
+      },
+      "poseTargetCpuBytes": 16284,
+      "seatedTargets": [
+        {
+          "garment": "trousers",
+          "lod": 0,
+          "sourceLod": 1,
+          "vertices": 343,
+          "triangles": 468,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12549698642121726,
+            "maxPosedM": 0.10816545659733433,
+            "vertexChecks": 343,
+            "vertexFailures": 0,
+            "faceChecks": 1872,
+            "faceFailures": 0,
+            "solidAngleChecks": 5716,
+            "targetCount": 104,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "trousers",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 343,
+          "triangles": 468,
+          "reusedCompleteCutTarget": true,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12549698642121726,
+            "maxPosedM": 0.10816545659733433,
+            "vertexChecks": 343,
+            "vertexFailures": 0,
+            "faceChecks": 1872,
+            "faceFailures": 0,
+            "solidAngleChecks": 5716,
+            "targetCount": 104,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 0,
+          "sourceLod": 0,
+          "vertices": 663,
+          "triangles": 1008,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": {
+            "fraction": 0.05,
+            "accepted": true,
+            "maximumBaseChangeM": 0.008999960011941312,
+            "maximumFromPristineRawM": 0.015599018244631495,
+            "rest": {
+              "vertexChecks": 663,
+              "vertexFailures": 0,
+              "faceChecks": 0,
+              "faceFailures": 0,
+              "solidAngleChecks": 1808
+            },
+            "idle": {
+              "vertexChecks": 663,
+              "vertexFailures": 0,
+              "faceChecks": 4032,
+              "faceFailures": 0,
+              "solidAngleChecks": 12840
+            },
+            "runtime": {
+              "maxBindM": 0.1709990174856078,
+              "maxPosedM": 0.12655598690527214,
+              "vertexChecks": 663,
+              "vertexFailures": 0,
+              "faceChecks": 4032,
+              "faceFailures": 0,
+              "solidAngleChecks": 13176,
+              "targetCount": 159,
+              "finalPushCount": 0
+            }
+          },
+          "finalUpload": {
+            "maxBindM": 0.1709990174856078,
+            "maxPosedM": 0.12655598690527214,
+            "vertexChecks": 663,
+            "vertexFailures": 0,
+            "faceChecks": 4032,
+            "faceFailures": 0,
+            "solidAngleChecks": 13176,
+            "targetCount": 159,
+            "finalPushCount": 0
+          }
+        },
+        {
+          "garment": "leggings",
+          "lod": 1,
+          "sourceLod": 1,
+          "vertices": 351,
+          "triangles": 480,
+          "reusedCompleteCutTarget": false,
+          "baseMargin": null,
+          "finalUpload": {
+            "maxBindM": 0.12337829783706979,
+            "maxPosedM": 0.10338342724648905,
+            "vertexChecks": 351,
+            "vertexFailures": 0,
+            "faceChecks": 1920,
+            "faceFailures": 0,
+            "solidAngleChecks": 6132,
+            "targetCount": 112,
+            "finalPushCount": 0
+          }
+        }
+      ]
+    }
+  ],
+  "note": "Authoring-stage evidence only. The complete animation release gate is clearance.json."
+}

@@ -5,6 +5,10 @@ The generator produces **30 residents**, one skinned mesh each, with the existin
 Near meshes target 6,200 triangles; far meshes target 1,450. The hard validation
 limits are 8,000 / 1,500. The scene keeps its existing 32/38 metre LOD hysteresis.
 
+The optional adult wardrobe has a separate [wearable pipeline](PEOPLE-WEAR.md).
+It keeps this cast's original appearances as the default and reuses these same
+bones and clips when a caller explicitly installs an outfit.
+
 ## Regenerate
 
 Use Blender 4.5 LTS with Pillow available to its bundled Python. If Pillow is in a

@@ -1,0 +1,13 @@
+{
+  "baseCommit": "8f93ade042cdb4bfc1a796b889bbe39786241ebf",
+  "peopleAssets": {
+    "pass": 13,
+    "fail": 1,
+    "failure": "manifest.people.json: stale bytes/SHA-256 for people/people_meta.json"
+  },
+  "interiorsGarments": {
+    "pass": 19,
+    "fail": 0
+  },
+  "testInvocation": "node --import ./la-ladera/tests/register.mjs la-ladera/tests/<suite>.test.mjs"
+}

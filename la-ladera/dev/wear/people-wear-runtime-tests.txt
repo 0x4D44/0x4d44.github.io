@@ -1,0 +1,29 @@
+✔ lossless gzip loading preserves exact GLB bytes, resource roots and direct-GLB compatibility (77.158668ms)
+✔ CPU pose targets share packed data without GPU attributes and reject malformed input before registering a fit (340.64605ms)
+✔ generated sources reject invented reused designs and colours absent from the original design (9.550157ms)
+✔ default construction and all original resident instantiations make no wardrobe requests or appearance changes (14.533908ms)
+✔ actual seated targets prepare independent LOD uploads before the mixer returns and remain inactive while standing (458.440774ms)
+ℹ 3683 actual target vertices and 20572 face probes clear; source committed wearable assets
+✔ target displacement keeps the immutable total-bound origin and restores the original look on an activated violation (63.241247ms)
+✔ real generated garments preserve all 32 clips and clear the actual posed body in both LODs (4041.174802ms)
+ℹ 3584 unchanged-rig CPU/Three comparisons (max 6.760437950793154e-16 m); 257280 actual corrected vertices outside the body; 178 corrected frames
+✔ bad garment, colour, archetype, slot and context replacements leave a live outfit intact (59.415198ms)
+✔ children and teens cannot enter any wardrobe context, even with relabelled live metadata (22.696229ms)
+✔ original far-LOD custom appearance restores exactly; wearable layers change LOD together (79.756708ms)
+✔ replacing an active outfit keeps its current LOD and does not make a hidden resident visible (97.728275ms)
+✔ palette variants share one atlas Source and never rewrite source geometry or material colours (99.030081ms)
+✔ mixed geometry with and without COLOR_0 keeps correct materials through dressing and LOD swaps (103.610257ms)
+✔ the optional body preserves the resident skin shade, shares its cached tint and restores the original material (86.312078ms)
+✔ the existing mixer updates private correction streams before returning, without drift or borrowed-buffer disposal (226.207732ms)
+✔ finished callbacks can replace or restore outfits before the existing mixer returns (376.204406ms)
+✔ candidate geometry failures preserve the live outfit; later correction failures restore the original look (47.267357ms)
+✔ disposing a live library restores its residents and disposes only resources it owns (74.612585ms)
+✔ all generated garment entries can be inspected on each of the three adult body types (0.427373ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6314.272797

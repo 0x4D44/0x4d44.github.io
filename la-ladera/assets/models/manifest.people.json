@@ -17,8 +17,8 @@
     },
     {
       "path": "people/people_meta.json",
-      "bytes": 45175,
-      "sha256": "80cf721af2a0fb9f37a1849f32bcdd4377d02df6dfd36b77e6241a7233da64f6"
+      "bytes": 42600,
+      "sha256": "4fc44594b6cb7071b4a21820a8476e94928a2aadc22ff17ab59980780bc688ba"
     },
     {
       "path": "people/people_normal.jpg",

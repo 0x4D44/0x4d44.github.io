@@ -1,0 +1,3087 @@
+{
+  "checkedAt": "2026-11-01T11:30:56.212Z",
+  "assetHashes": {
+    "manifest.people-wear.json": {
+      "bytes": 1215290,
+      "sha256": "5da905cdc1799f2da9f1e24b172dc2907402ca051718896b6a606eae226136f3"
+    },
+    "people/people.glb": {
+      "bytes": 6302176,
+      "sha256": "e65905df1afdbf37b65c0d220fed2b15201c97c1b9837b0a5b72c2d4d3bb9f24"
+    },
+    "people/people_lod.glb": {
+      "bytes": 1977764,
+      "sha256": "e0e544408a2aa05d098a82aefa102588daabac55c6d08a7a5de64b3c0d9cc94f"
+    },
+    "people/people_meta.json": {
+      "bytes": 42600,
+      "sha256": "4fc44594b6cb7071b4a21820a8476e94928a2aadc22ff17ab59980780bc688ba"
+    },
+    "wear/m_abuelo.glb.gz": {
+      "bytes": 246429,
+      "sha256": "f241dc02e2e1c68488a8b6718aa03dabaccc636cd779b89cd358fe1866b88c58"
+    },
+    "wear/m_afro.glb.gz": {
+      "bytes": 237284,
+      "sha256": "53e7922feadf2a5d45a6dd7e3971d51e21a0193827a7649de2c2508e3186cbab"
+    },
+    "wear/m_carnicero.glb.gz": {
+      "bytes": 227127,
+      "sha256": "74ebe6460c8754892bfe02360dd868ba1333ec9c816ef0343a4943bc8e050eb3"
+    },
+    "wear/m_don.glb.gz": {
+      "bytes": 229651,
+      "sha256": "6327e7173e4e1142585cdbe5e87fe003a3e7463096eaf8a26dd52bbf55d15bae"
+    },
+    "wear/m_elder.glb.gz": {
+      "bytes": 247045,
+      "sha256": "3ae97ac6ae45644b57da9a66772e7e486d3ebb96067dabd8fed8c0f2db8ebcf2"
+    },
+    "wear/m_joven.glb.gz": {
+      "bytes": 248730,
+      "sha256": "17aca134bdcedd5fbdc03604d88bc503aab4f06afd0a5d081a304852d377b187"
+    },
+    "wear/m_mecanico.glb.gz": {
+      "bytes": 225734,
+      "sha256": "1aea094f441f93ee2155f56549877306c2fde15106d2c6573057c4272fd36e7b"
+    },
+    "wear/m_mototaxi.glb.gz": {
+      "bytes": 246270,
+      "sha256": "72a3928c2c83cf94adcb315e31d08bf2f7fe9545ca310dae5d12ba774cfa6264"
+    },
+    "wear/m_obrero.glb.gz": {
+      "bytes": 245306,
+      "sha256": "2e91f743c3a3dfc668668998d440b694a2420a4000a6f682dc975ad91057b8dc"
+    },
+    "wear/m_panadero.glb.gz": {
+      "bytes": 225110,
+      "sha256": "5bbbddca4c984491cdb982c73aff65da82b2e9eebf4f086652849f3d991645fa"
+    },
+    "wear/m_tendero.glb.gz": {
+      "bytes": 237869,
+      "sha256": "95e590c63b38096a257e70fbf24f41dda5030f3bfd9748b2f6a9d1a1a2896d75"
+    },
+    "wear/m_vendedor.glb.gz": {
+      "bytes": 243765,
+      "sha256": "d245d50dfb36d8df6420b26be288e6e27d1340be3123632dee9007d2feea18fc"
+    },
+    "wear/metadata.json": {
+      "bytes": 1195273,
+      "sha256": "b0f1c71ea357ff99b7fd1813f623f21c0897ce36a4e03cf59d7205e32402f9a4"
+    },
+    "wear/w_afro.glb.gz": {
+      "bytes": 187866,
+      "sha256": "af65463d2460d0613cfa66c64bc2da87ad085b85e20b034c06aaae0e4af6ed55"
+    },
+    "wear/w_ama.glb.gz": {
+      "bytes": 189258,
+      "sha256": "7c33687fc5676f32ac027595b1539201192cb7201726db0acde4f8ba1caf6dd1"
+    },
+    "wear/w_beata.glb.gz": {
+      "bytes": 198700,
+      "sha256": "6fd062816c87a8d47e26e71dc02339409672a303ab8ae52689b90555f2d538fd"
+    },
+    "wear/w_cocinera.glb.gz": {
+      "bytes": 202850,
+      "sha256": "526e39bbf6cd9304e07627a52a440c551b22737ce866b0a047e13111159f8d59"
+    },
+    "wear/w_elder.glb.gz": {
+      "bytes": 200175,
+      "sha256": "234ff4c2312737c7589938b7ed33d99a4e14ad9ce8b37b744779d40882216ce5"
+    },
+    "wear/w_farmaceutica.glb.gz": {
+      "bytes": 227487,
+      "sha256": "9c03c49b497a5e5a29c5b640c8bad420bde6478c92880a9c00be90717bc71303"
+    },
+    "wear/w_joven.glb.gz": {
+      "bytes": 230293,
+      "sha256": "ec9b7c639d1dd7feb106e90b6216e5f23df0e764365cf5386817742882ad7e45"
+    },
+    "wear/w_maestra.glb.gz": {
+      "bytes": 227988,
+      "sha256": "b3acfe3daceac7617c36ef3d88d0d609b1251676ae753aea66637fae6bc7b440"
+    },
+    "wear/w_peluquera.glb.gz": {
+      "bytes": 210879,
+      "sha256": "89bb2c2a9ac09eb6353c7c1251b229b461a6756308e64bd185cc2add20dcaea4"
+    },
+    "wear/w_tendera.glb.gz": {
+      "bytes": 201945,
+      "sha256": "885a7ddc82f482bfddda60ff8ac60fb8a70b48ff96b5a66fb6d9379c02bb86a1"
+    },
+    "wear/w_vecina.glb.gz": {
+      "bytes": 221557,
+      "sha256": "16b3272a031d605e9299f5df0f9a30cfc7cfa8b67f2e61024c6ac4451e1871c0"
+    },
+    "wear/wear_atlas.png": {
+      "bytes": 70197,
+      "sha256": "f4e76b4a9d0874a59faa0a0d4575003790fbff6d5b4887d9a03afe309c4f5246"
+    }
+  },
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "runtime": {
+    "fits": [
+      "w_joven",
+      "m_tendero",
+      "w_vecina"
+    ],
+    "clips": [
+      "idle_a",
+      "idle_b",
+      "walk",
+      "walk_fast",
+      "walk_bag",
+      "walk_step",
+      "phone_stand",
+      "phone_call",
+      "talk",
+      "wave",
+      "point",
+      "sit_idle",
+      "sit_phone",
+      "sit_look",
+      "sit_cross_legs",
+      "stand_hold_pole",
+      "stand_hold_rail",
+      "turn_left",
+      "turn_right",
+      "kid_bounce",
+      "kid_fidget",
+      "talk_b",
+      "sweep",
+      "cook",
+      "sell",
+      "walk_carry",
+      "carry_stand",
+      "lean_wall",
+      "laundry",
+      "pray",
+      "sit_talk",
+      "run"
+    ],
+    "checks": [
+      {
+        "id": "w_joven",
+        "restore": true,
+        "lods": [
+          0,
+          1
+        ],
+        "clips": 32
+      },
+      {
+        "id": "m_tendero",
+        "restore": true,
+        "lods": [
+          0,
+          1
+        ],
+        "clips": 32
+      },
+      {
+        "id": "w_vecina",
+        "restore": true,
+        "lods": [
+          0,
+          1
+        ],
+        "clips": 32
+      }
+    ],
+    "posedVertices": 63808
+  },
+  "sheets": [
+    {
+      "width": 2160,
+      "height": 2926,
+      "lod": 0,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "rows": [
+        {
+          "garment": "tshirt",
+          "selection": [
+            {
+              "id": "tshirt",
+              "variant": "stripe_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "shirt",
+          "selection": [
+            {
+              "id": "shirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6067
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6054
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6159
+            }
+          ]
+        },
+        {
+          "garment": "blouse",
+          "selection": [
+            {
+              "id": "blouse",
+              "variant": "floral_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5881
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5869
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6003
+            }
+          ]
+        },
+        {
+          "garment": "jumper",
+          "selection": [
+            {
+              "id": "jumper",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6035
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6014
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6144
+            }
+          ]
+        },
+        {
+          "garment": "trousers",
+          "selection": [
+            {
+              "id": "trousers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6328
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5838
+            }
+          ]
+        },
+        {
+          "garment": "jeans",
+          "selection": [
+            {
+              "id": "jeans",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6328
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5838
+            }
+          ]
+        },
+        {
+          "garment": "skirt",
+          "selection": [
+            {
+              "id": "skirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5589
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5566
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5690
+            }
+          ]
+        },
+        {
+          "garment": "dress",
+          "selection": [
+            {
+              "id": "dress",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 5582
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 5559
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 5613
+            }
+          ]
+        },
+        {
+          "garment": "shorts",
+          "selection": [
+            {
+              "id": "shorts",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "leggings",
+          "selection": [
+            {
+              "id": "leggings",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6333
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6449
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6378
+            }
+          ]
+        },
+        {
+          "garment": "cap",
+          "selection": [
+            {
+              "id": "cap",
+              "variant": "plain_coral"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6244
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6236
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6353
+            }
+          ]
+        },
+        {
+          "garment": "sun_hat",
+          "selection": [
+            {
+              "id": "sun_hat",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6292
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6284
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6401
+            }
+          ]
+        },
+        {
+          "garment": "straw_hat",
+          "selection": [
+            {
+              "id": "straw_hat",
+              "variant": "straw_natural"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6292
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6284
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6401
+            }
+          ]
+        },
+        {
+          "garment": "socks_pair",
+          "selection": [
+            {
+              "id": "socks_pair",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6424
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6533
+            }
+          ]
+        },
+        {
+          "garment": "shoes",
+          "selection": [
+            {
+              "id": "shoes",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6832
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6949
+            }
+          ]
+        },
+        {
+          "garment": "briefs",
+          "selection": [
+            {
+              "id": "briefs",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "boxers",
+          "selection": [
+            {
+              "id": "boxers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5233
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5267
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5335
+            }
+          ]
+        },
+        {
+          "garment": "bra",
+          "selection": [
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "bikini_top",
+          "selection": [
+            {
+              "id": "bikini_top",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "bikini_bottom",
+          "selection": [
+            {
+              "id": "bikini_bottom",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "swimsuit_onepiece",
+          "selection": [
+            {
+              "id": "swimsuit_onepiece",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 4851
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 4826
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 4944
+            }
+          ]
+        },
+        {
+          "garment": "swim_trunks",
+          "selection": [
+            {
+              "id": "swim_trunks",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "rash_vest",
+          "selection": [
+            {
+              "id": "rash_vest",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5918
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5996
+            }
+          ]
+        }
+      ],
+      "file": "contact-near.jpg"
+    },
+    {
+      "width": 2160,
+      "height": 2926,
+      "lod": 1,
+      "clip": "idle_a",
+      "phase": 0.27,
+      "rows": [
+        {
+          "garment": "tshirt",
+          "selection": [
+            {
+              "id": "tshirt",
+              "variant": "stripe_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4779
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4769
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4867
+            }
+          ]
+        },
+        {
+          "garment": "shirt",
+          "selection": [
+            {
+              "id": "shirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4795
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4782
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4889
+            }
+          ]
+        },
+        {
+          "garment": "blouse",
+          "selection": [
+            {
+              "id": "blouse",
+              "variant": "floral_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4790
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4781
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4882
+            }
+          ]
+        },
+        {
+          "garment": "jumper",
+          "selection": [
+            {
+              "id": "jumper",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4798
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4781
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4889
+            }
+          ]
+        },
+        {
+          "garment": "trousers",
+          "selection": [
+            {
+              "id": "trousers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4827
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4825
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4875
+            }
+          ]
+        },
+        {
+          "garment": "jeans",
+          "selection": [
+            {
+              "id": "jeans",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4827
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4825
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4875
+            }
+          ]
+        },
+        {
+          "garment": "skirt",
+          "selection": [
+            {
+              "id": "skirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4559
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4533
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4647
+            }
+          ]
+        },
+        {
+          "garment": "dress",
+          "selection": [
+            {
+              "id": "dress",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 4527
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 4494
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 4614
+            }
+          ]
+        },
+        {
+          "garment": "shorts",
+          "selection": [
+            {
+              "id": "shorts",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4779
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4769
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4867
+            }
+          ]
+        },
+        {
+          "garment": "leggings",
+          "selection": [
+            {
+              "id": "leggings",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4831
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4829
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4887
+            }
+          ]
+        },
+        {
+          "garment": "cap",
+          "selection": [
+            {
+              "id": "cap",
+              "variant": "plain_coral"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 4851
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 4841
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 4939
+            }
+          ]
+        },
+        {
+          "garment": "sun_hat",
+          "selection": [
+            {
+              "id": "sun_hat",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 4863
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 4853
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 4951
+            }
+          ]
+        },
+        {
+          "garment": "straw_hat",
+          "selection": [
+            {
+              "id": "straw_hat",
+              "variant": "straw_natural"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 4863
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 4853
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 4951
+            }
+          ]
+        },
+        {
+          "garment": "socks_pair",
+          "selection": [
+            {
+              "id": "socks_pair",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 5091
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 5081
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 5179
+            }
+          ]
+        },
+        {
+          "garment": "shoes",
+          "selection": [
+            {
+              "id": "shoes",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 5179
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 5169
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 5267
+            }
+          ]
+        },
+        {
+          "garment": "briefs",
+          "selection": [
+            {
+              "id": "briefs",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4228
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4203
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4316
+            }
+          ]
+        },
+        {
+          "garment": "boxers",
+          "selection": [
+            {
+              "id": "boxers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4528
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4545
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4610
+            }
+          ]
+        },
+        {
+          "garment": "bra",
+          "selection": [
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4228
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4203
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4316
+            }
+          ]
+        },
+        {
+          "garment": "bikini_top",
+          "selection": [
+            {
+              "id": "bikini_top",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4228
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4203
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4316
+            }
+          ]
+        },
+        {
+          "garment": "bikini_bottom",
+          "selection": [
+            {
+              "id": "bikini_bottom",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4228
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4203
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4316
+            }
+          ]
+        },
+        {
+          "garment": "swimsuit_onepiece",
+          "selection": [
+            {
+              "id": "swimsuit_onepiece",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 4348
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 4323
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 4436
+            }
+          ]
+        },
+        {
+          "garment": "swim_trunks",
+          "selection": [
+            {
+              "id": "swim_trunks",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4779
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4769
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4867
+            }
+          ]
+        },
+        {
+          "garment": "rash_vest",
+          "selection": [
+            {
+              "id": "rash_vest",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4974
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4941
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5038
+            }
+          ]
+        }
+      ],
+      "file": "contact-far.jpg"
+    },
+    {
+      "width": 2160,
+      "height": 2926,
+      "lod": 0,
+      "clip": "walk",
+      "phase": 0.19,
+      "rows": [
+        {
+          "garment": "tshirt",
+          "selection": [
+            {
+              "id": "tshirt",
+              "variant": "stripe_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "shirt",
+          "selection": [
+            {
+              "id": "shirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6067
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6054
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6159
+            }
+          ]
+        },
+        {
+          "garment": "blouse",
+          "selection": [
+            {
+              "id": "blouse",
+              "variant": "floral_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5881
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5869
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6003
+            }
+          ]
+        },
+        {
+          "garment": "jumper",
+          "selection": [
+            {
+              "id": "jumper",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6035
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6014
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6144
+            }
+          ]
+        },
+        {
+          "garment": "trousers",
+          "selection": [
+            {
+              "id": "trousers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6328
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5838
+            }
+          ]
+        },
+        {
+          "garment": "jeans",
+          "selection": [
+            {
+              "id": "jeans",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6328
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5838
+            }
+          ]
+        },
+        {
+          "garment": "skirt",
+          "selection": [
+            {
+              "id": "skirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5589
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5566
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5690
+            }
+          ]
+        },
+        {
+          "garment": "dress",
+          "selection": [
+            {
+              "id": "dress",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 5582
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 5559
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 5613
+            }
+          ]
+        },
+        {
+          "garment": "shorts",
+          "selection": [
+            {
+              "id": "shorts",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "leggings",
+          "selection": [
+            {
+              "id": "leggings",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6333
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6449
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6378
+            }
+          ]
+        },
+        {
+          "garment": "cap",
+          "selection": [
+            {
+              "id": "cap",
+              "variant": "plain_coral"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6244
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6236
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6353
+            }
+          ]
+        },
+        {
+          "garment": "sun_hat",
+          "selection": [
+            {
+              "id": "sun_hat",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6292
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6284
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6401
+            }
+          ]
+        },
+        {
+          "garment": "straw_hat",
+          "selection": [
+            {
+              "id": "straw_hat",
+              "variant": "straw_natural"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6292
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6284
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6401
+            }
+          ]
+        },
+        {
+          "garment": "socks_pair",
+          "selection": [
+            {
+              "id": "socks_pair",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6424
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6533
+            }
+          ]
+        },
+        {
+          "garment": "shoes",
+          "selection": [
+            {
+              "id": "shoes",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6832
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6949
+            }
+          ]
+        },
+        {
+          "garment": "briefs",
+          "selection": [
+            {
+              "id": "briefs",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "boxers",
+          "selection": [
+            {
+              "id": "boxers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5233
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5267
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5335
+            }
+          ]
+        },
+        {
+          "garment": "bra",
+          "selection": [
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "bikini_top",
+          "selection": [
+            {
+              "id": "bikini_top",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "bikini_bottom",
+          "selection": [
+            {
+              "id": "bikini_bottom",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "swimsuit_onepiece",
+          "selection": [
+            {
+              "id": "swimsuit_onepiece",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 4851
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 4826
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 4944
+            }
+          ]
+        },
+        {
+          "garment": "swim_trunks",
+          "selection": [
+            {
+              "id": "swim_trunks",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "rash_vest",
+          "selection": [
+            {
+              "id": "rash_vest",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5918
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5996
+            }
+          ]
+        }
+      ],
+      "file": "contact-walk.jpg"
+    },
+    {
+      "width": 2160,
+      "height": 2926,
+      "lod": 0,
+      "clip": "sit_idle",
+      "phase": 0.25,
+      "rows": [
+        {
+          "garment": "tshirt",
+          "selection": [
+            {
+              "id": "tshirt",
+              "variant": "stripe_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "shirt",
+          "selection": [
+            {
+              "id": "shirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6067
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6054
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6159
+            }
+          ]
+        },
+        {
+          "garment": "blouse",
+          "selection": [
+            {
+              "id": "blouse",
+              "variant": "floral_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5881
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5869
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6003
+            }
+          ]
+        },
+        {
+          "garment": "jumper",
+          "selection": [
+            {
+              "id": "jumper",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6035
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6014
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6144
+            }
+          ]
+        },
+        {
+          "garment": "trousers",
+          "selection": [
+            {
+              "id": "trousers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6328
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5838
+            }
+          ]
+        },
+        {
+          "garment": "jeans",
+          "selection": [
+            {
+              "id": "jeans",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6328
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5838
+            }
+          ]
+        },
+        {
+          "garment": "skirt",
+          "selection": [
+            {
+              "id": "skirt",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5589
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5566
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5690
+            }
+          ]
+        },
+        {
+          "garment": "dress",
+          "selection": [
+            {
+              "id": "dress",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 5582
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 5559
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 5613
+            }
+          ]
+        },
+        {
+          "garment": "shorts",
+          "selection": [
+            {
+              "id": "shorts",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "leggings",
+          "selection": [
+            {
+              "id": "leggings",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 6333
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 6449
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6378
+            }
+          ]
+        },
+        {
+          "garment": "cap",
+          "selection": [
+            {
+              "id": "cap",
+              "variant": "plain_coral"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6244
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6236
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6353
+            }
+          ]
+        },
+        {
+          "garment": "sun_hat",
+          "selection": [
+            {
+              "id": "sun_hat",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6292
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6284
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6401
+            }
+          ]
+        },
+        {
+          "garment": "straw_hat",
+          "selection": [
+            {
+              "id": "straw_hat",
+              "variant": "straw_natural"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6292
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6284
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6401
+            }
+          ]
+        },
+        {
+          "garment": "socks_pair",
+          "selection": [
+            {
+              "id": "socks_pair",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6424
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6416
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6533
+            }
+          ]
+        },
+        {
+          "garment": "shoes",
+          "selection": [
+            {
+              "id": "shoes",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 5,
+              "triangles": 6840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 5,
+              "triangles": 6832
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 5,
+              "triangles": 6949
+            }
+          ]
+        },
+        {
+          "garment": "briefs",
+          "selection": [
+            {
+              "id": "briefs",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "boxers",
+          "selection": [
+            {
+              "id": "boxers",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5233
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5267
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5335
+            }
+          ]
+        },
+        {
+          "garment": "bra",
+          "selection": [
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "bikini_top",
+          "selection": [
+            {
+              "id": "bikini_top",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "briefs",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "bikini_bottom",
+          "selection": [
+            {
+              "id": "bikini_bottom",
+              "variant": "floral_teal"
+            },
+            {
+              "id": "bra",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 4840
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 4815
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 4928
+            }
+          ]
+        },
+        {
+          "garment": "swimsuit_onepiece",
+          "selection": [
+            {
+              "id": "swimsuit_onepiece",
+              "variant": "floral_teal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 3,
+              "triangles": 4851
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 3,
+              "triangles": 4826
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 3,
+              "triangles": 4944
+            }
+          ]
+        },
+        {
+          "garment": "swim_trunks",
+          "selection": [
+            {
+              "id": "swim_trunks",
+              "variant": "plain_navy"
+            },
+            {
+              "id": "tshirt",
+              "variant": "plain_cream"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5896
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 6005
+            }
+          ]
+        },
+        {
+          "garment": "rash_vest",
+          "selection": [
+            {
+              "id": "rash_vest",
+              "variant": "plain_teal"
+            },
+            {
+              "id": "shorts",
+              "variant": "plain_charcoal"
+            }
+          ],
+          "fits": [
+            {
+              "id": "w_joven",
+              "visibleMeshes": 4,
+              "triangles": 5918
+            },
+            {
+              "id": "m_tendero",
+              "visibleMeshes": 4,
+              "triangles": 5888
+            },
+            {
+              "id": "w_vecina",
+              "visibleMeshes": 4,
+              "triangles": 5996
+            }
+          ]
+        }
+      ],
+      "file": "contact-seated.jpg"
+    }
+  ],
+  "failures": [],
+  "gpuSharing": {
+    "baselineTextures": 6,
+    "wardrobeTextures": 7,
+    "addedTextures": 1,
+    "variants": [
+      "plain_cream",
+      "plain_navy",
+      "plain_teal",
+      "stripe_navy",
+      "stripe_teal",
+      "football_blue_white",
+      "football_red_white",
+      "football_green_yellow",
+      "football_burgundy_navy",
+      "plain_coral",
+      "plain_lavender",
+      "floral_cream",
+      "plain_charcoal",
+      "floral_teal",
+      "straw_natural",
+      "straw_pale"
+    ],
+    "fits": [
+      "w_joven",
+      "m_tendero",
+      "w_vecina"
+    ]
+  },
+  "disposal": {
+    "baselineBuffers": 25,
+    "remainingBuffers": 25,
+    "leakedBuffers": 0,
+    "lostOriginalBuffers": 0,
+    "textures": 6,
+    "geometries": 4
+  },
+  "diagnostics": {
+    "errors": [],
+    "netErrors": [],
+    "consoleErrors": [],
+    "consoleWarnings": []
+  },
+  "ok": true
+}

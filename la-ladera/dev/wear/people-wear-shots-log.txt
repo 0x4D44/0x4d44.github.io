@@ -1,0 +1,118 @@
+{
+  "ok": true,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+  "runtime": {
+    "fits": [
+      "w_joven",
+      "m_tendero",
+      "w_vecina"
+    ],
+    "clips": [
+      "idle_a",
+      "idle_b",
+      "walk",
+      "walk_fast",
+      "walk_bag",
+      "walk_step",
+      "phone_stand",
+      "phone_call",
+      "talk",
+      "wave",
+      "point",
+      "sit_idle",
+      "sit_phone",
+      "sit_look",
+      "sit_cross_legs",
+      "stand_hold_pole",
+      "stand_hold_rail",
+      "turn_left",
+      "turn_right",
+      "kid_bounce",
+      "kid_fidget",
+      "talk_b",
+      "sweep",
+      "cook",
+      "sell",
+      "walk_carry",
+      "carry_stand",
+      "lean_wall",
+      "laundry",
+      "pray",
+      "sit_talk",
+      "run"
+    ],
+    "checks": [
+      {
+        "id": "w_joven",
+        "restore": true,
+        "lods": [
+          0,
+          1
+        ],
+        "clips": 32
+      },
+      {
+        "id": "m_tendero",
+        "restore": true,
+        "lods": [
+          0,
+          1
+        ],
+        "clips": 32
+      },
+      {
+        "id": "w_vecina",
+        "restore": true,
+        "lods": [
+          0,
+          1
+        ],
+        "clips": 32
+      }
+    ],
+    "posedVertices": 63808
+  },
+  "gpuSharing": {
+    "baselineTextures": 6,
+    "wardrobeTextures": 7,
+    "addedTextures": 1,
+    "variants": [
+      "plain_cream",
+      "plain_navy",
+      "plain_teal",
+      "stripe_navy",
+      "stripe_teal",
+      "football_blue_white",
+      "football_red_white",
+      "football_green_yellow",
+      "football_burgundy_navy",
+      "plain_coral",
+      "plain_lavender",
+      "floral_cream",
+      "plain_charcoal",
+      "floral_teal",
+      "straw_natural",
+      "straw_pale"
+    ],
+    "fits": [
+      "w_joven",
+      "m_tendero",
+      "w_vecina"
+    ]
+  },
+  "disposal": {
+    "baselineBuffers": 25,
+    "remainingBuffers": 25,
+    "leakedBuffers": 0,
+    "lostOriginalBuffers": 0,
+    "textures": 6,
+    "geometries": 4
+  },
+  "sheets": [
+    "contact-near.jpg",
+    "contact-far.jpg",
+    "contact-walk.jpg",
+    "contact-seated.jpg"
+  ],
+  "failures": []
+}
