@@ -1,0 +1,7284 @@
+{
+  "version": 1,
+  "complete": true,
+  "renderedItemCount": 97,
+  "expectedItemCount": 97,
+  "inputPins": {
+    "manifest": "3d8cbc65a2aec620451f4fd6b05551db8803d7a0c20d740676b50723668733b5",
+    "glbs": {
+      "beach_props/beach_leisure.glb": "f54c0e30601f6d88a0360783ca40e01b2c91c98a20970daec63752b87a2d04ef",
+      "beach_props/beach_civic.glb": "3f2f17e3ba4bbecf43e1a060924f38b14ccc05f81b137180868b62c9e07db790",
+      "beach_props/beach_shore.glb": "66540d35390e9d406765b54a662bf10415f3684b46122cd52b84d8017c5711c6"
+    },
+    "textures": {
+      "albedo": "14f2d421e30c29eb522ce465b159d9158f8fa4707a9917d991202795b702745d",
+      "normal": "86f430e35d096dccb414281ffc2ea62925f0b31425f91f6794c476a619087054",
+      "orm": "9f83ebccef64e677a147c9cef236393447df667695afa703076dbca0bde0060c"
+    },
+    "renderScript": "ddbd623f3e583e384e0df176b6090951693e12766a45d336e28538b7f7f789bf",
+    "samples": 12,
+    "resolution": [
+      512,
+      384
+    ],
+    "blender": "5.0.1",
+    "textHashNormalization": "LF"
+  },
+  "cameraEyeHeight": 1.6,
+  "referenceFigureHeight": 1.8,
+  "contactSheets": [
+    {
+      "path": "contact-01.png",
+      "bytes": 2397681,
+      "sha256": "40d00191bef2bd8ac7f04686805ef49e0e80ee8073d52ab4fb350807169e9331",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-02.png",
+      "bytes": 3318730,
+      "sha256": "ac6d1ad20b15f7039237eeb133286b5e4f29355d08971338b093541b48ffccb8",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-03.png",
+      "bytes": 3133307,
+      "sha256": "4b12762cb5e525c5ce772bf3773070535f474c8547b5551c7b2619384ebe802d",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-04.png",
+      "bytes": 3264581,
+      "sha256": "6c625842f35247f1aa2483fc3f2a83a3fed5d4fb515f37f9f59905ff1126daec",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-05.png",
+      "bytes": 3042372,
+      "sha256": "c5c65dd02677055dd737392444e2b75d410f39aacae08a310bf2737aaafebd9c",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-06.png",
+      "bytes": 3003442,
+      "sha256": "f05e7995abce75515bd6ba99f72d208bbde360866141cf3271b6672ad5d92893",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-07.png",
+      "bytes": 3399552,
+      "sha256": "8e1143a1f0077fd61cf6109d65b437832f0b57c59d3f25b622f646c72c9bf6e9",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-08.png",
+      "bytes": 3450938,
+      "sha256": "ad9334a875c19c29814d228008772cee429430ba24bd5664ec6f82d725f750b7",
+      "width": 3144,
+      "height": 2013
+    },
+    {
+      "path": "contact-09.png",
+      "bytes": 281631,
+      "sha256": "71906885e5de965fa31e5f99d45afda5fb4e525afbb019ea01a8d4ed5f83b345",
+      "width": 3144,
+      "height": 633
+    }
+  ],
+  "catalogue": {
+    "path": "catalogue.jpg",
+    "bytes": 3271253,
+    "sha256": "6abc1bcf60150a00a2d09f18923a0904c4a41a21acc6bae66c27aee25dd64c4a",
+    "width": 4096,
+    "height": 5672,
+    "format": "JPEG",
+    "quality": 95,
+    "chromaSubsampling": "4:4:4"
+  },
+  "items": [
+    {
+      "key": "beach_parasol_01_open",
+      "description": "Striped coastal parasol 1, open, steel pole",
+      "size": [
+        2.2,
+        2.35,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.100000023841858,
+          0,
+          -1.100000023841858
+        ],
+        "max": [
+          1.100000023841858,
+          2.3499999940395355,
+          1.100000023841858
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 26,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.39914321899414,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_01_open-detail.png",
+          "sha256": "b01c413fa896315caeb43f0f6c2804f12fde3411c4ca8a643d14462777f8ee17"
+        },
+        "scale": {
+          "position": [
+            2.52767014503479,
+            1.600000023841858,
+            4.0976762771606445
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 25.77082061767578,
+          "lookAt": [
+            0.4050000309944153,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_01_open-scale.png",
+          "sha256": "a32e10e5b0d97a5f6508dcda6e2b01b8dd05baf02fe2a66a8a856b8d25b877fa"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_01_furled",
+      "description": "Striped coastal parasol 1, furled, steel pole",
+      "size": [
+        0.36,
+        2.35,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.18000000715255737,
+          0,
+          -0.18000000715255737
+        ],
+        "max": [
+          0.18000000715255737,
+          2.3499999940395355,
+          0.18000000715255737
+        ]
+      },
+      "nearTriangles": 186,
+      "farTriangles": 58,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.124732971191406,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_01_furled-detail.png",
+          "sha256": "64a4ed9f871e93ebb6285c2c87a589cf1efa9d453551e1d7869219946d533168"
+        },
+        "scale": {
+          "position": [
+            2.0874500274658203,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.6502742767334,
+          "lookAt": [
+            0.4050000011920929,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_01_furled-scale.png",
+          "sha256": "9c7b4ba646133bde56a6c51a570cc8e5a36890ff530c9fdf96f2e267735d415c"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_02_open",
+      "description": "Striped coastal parasol 2, open, steel pole",
+      "size": [
+        2.2,
+        2.35,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.100000023841858,
+          0,
+          -1.100000023841858
+        ],
+        "max": [
+          1.100000023841858,
+          2.3499999940395355,
+          1.100000023841858
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 26,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.39914321899414,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_02_open-detail.png",
+          "sha256": "66f21129f0b47a57a6c0b2b5851a196985f2b34196ffa8a218a98f3abb23cf52"
+        },
+        "scale": {
+          "position": [
+            2.52767014503479,
+            1.600000023841858,
+            4.0976762771606445
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 25.77082061767578,
+          "lookAt": [
+            0.4050000309944153,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_02_open-scale.png",
+          "sha256": "b8c31670a10ea50dc07d76b37cfad64cfd9f3d893b86f4d80beaa9cf5fc43ac9"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_02_furled",
+      "description": "Striped coastal parasol 2, furled, steel pole",
+      "size": [
+        0.36,
+        2.35,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.18000000715255737,
+          0,
+          -0.18000000715255737
+        ],
+        "max": [
+          0.18000000715255737,
+          2.3499999940395355,
+          0.18000000715255737
+        ]
+      },
+      "nearTriangles": 186,
+      "farTriangles": 58,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.124732971191406,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_02_furled-detail.png",
+          "sha256": "cb65dbf5c1d13f342d3133fa8b9ff17f9a462e6242f6707f4778aecd235dd3f9"
+        },
+        "scale": {
+          "position": [
+            2.0874500274658203,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.6502742767334,
+          "lookAt": [
+            0.4050000011920929,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_02_furled-scale.png",
+          "sha256": "7e04de6f410e2d8bca21c27bb9e4051faac40453e7e2420620f319fb4f382ab0"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_03_open",
+      "description": "Striped coastal parasol 3, open, steel pole",
+      "size": [
+        2.2,
+        2.35,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.100000023841858,
+          0,
+          -1.100000023841858
+        ],
+        "max": [
+          1.100000023841858,
+          2.3499999940395355,
+          1.100000023841858
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 26,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.39914321899414,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_03_open-detail.png",
+          "sha256": "f46d0c601010e72e81a1807d6c5c6a92d0d601e2428f0654f6065f50cfca211d"
+        },
+        "scale": {
+          "position": [
+            2.52767014503479,
+            1.600000023841858,
+            4.0976762771606445
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 25.77082061767578,
+          "lookAt": [
+            0.4050000309944153,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_03_open-scale.png",
+          "sha256": "3baf6a0104f7c70aab11162f0bb8644cc6a8a0c6f933da213b7657cf945adba7"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_03_furled",
+      "description": "Striped coastal parasol 3, furled, steel pole",
+      "size": [
+        0.36,
+        2.35,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.18000000715255737,
+          0,
+          -0.18000000715255737
+        ],
+        "max": [
+          0.18000000715255737,
+          2.3499999940395355,
+          0.18000000715255737
+        ]
+      },
+      "nearTriangles": 186,
+      "farTriangles": 58,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.124732971191406,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_03_furled-detail.png",
+          "sha256": "6780b971f08a65b20b6a9c17cf558586f9a231a1d3b0134961f47059eb82f773"
+        },
+        "scale": {
+          "position": [
+            2.0874500274658203,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.6502742767334,
+          "lookAt": [
+            0.4050000011920929,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_03_furled-scale.png",
+          "sha256": "5f1b556679f2c4655d5c5a9aa24d014d2e37955c862d2e80f9f61f1f9c51a095"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_04_open",
+      "description": "Striped coastal parasol 4, open, wooden pole",
+      "size": [
+        2.2,
+        2.35,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.100000023841858,
+          0,
+          -1.100000023841858
+        ],
+        "max": [
+          1.100000023841858,
+          2.3499999940395355,
+          1.100000023841858
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 26,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.39914321899414,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_04_open-detail.png",
+          "sha256": "1f71ad12f1e5f9055e6093e02a76dac336ab64e50c5a17a4f9c19f2bfa8c14eb"
+        },
+        "scale": {
+          "position": [
+            2.52767014503479,
+            1.600000023841858,
+            4.0976762771606445
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 25.77082061767578,
+          "lookAt": [
+            0.4050000309944153,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_04_open-scale.png",
+          "sha256": "e998d36ae235ad0c4fd15c7d6548837466cefb6ab89776d4e015ebc2f95c6b23"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_04_furled",
+      "description": "Striped coastal parasol 4, furled, wooden pole",
+      "size": [
+        0.36,
+        2.35,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.18000000715255737,
+          0,
+          -0.18000000715255737
+        ],
+        "max": [
+          0.18000000715255737,
+          2.3499999940395355,
+          0.18000000715255737
+        ]
+      },
+      "nearTriangles": 186,
+      "farTriangles": 58,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.124732971191406,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_04_furled-detail.png",
+          "sha256": "98822a6ffdf205913b42ee6094fb4c0225d2109824026450377e7adef20aff47"
+        },
+        "scale": {
+          "position": [
+            2.0874500274658203,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.6502742767334,
+          "lookAt": [
+            0.4050000011920929,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_04_furled-scale.png",
+          "sha256": "be8ae83f2491e7d8aa1bc11be655ee95e08e428d5ca233564d311b51f0a0504c"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_05_open",
+      "description": "Striped coastal parasol 5, open, wooden pole",
+      "size": [
+        2.2,
+        2.35,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.100000023841858,
+          0,
+          -1.100000023841858
+        ],
+        "max": [
+          1.100000023841858,
+          2.3499999940395355,
+          1.100000023841858
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 26,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.39914321899414,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_05_open-detail.png",
+          "sha256": "8031f88763b9a03147cc21ee2318b457ccabfdb5bb4c13961abae2043d321ad2"
+        },
+        "scale": {
+          "position": [
+            2.52767014503479,
+            1.600000023841858,
+            4.0976762771606445
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 25.77082061767578,
+          "lookAt": [
+            0.4050000309944153,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_05_open-scale.png",
+          "sha256": "1a5000a9fc4850fc58ed0af2cf5a9300834b08cbf29abfe55513fa52d27b2d5c"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_05_furled",
+      "description": "Striped coastal parasol 5, furled, wooden pole",
+      "size": [
+        0.36,
+        2.35,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.18000000715255737,
+          0,
+          -0.18000000715255737
+        ],
+        "max": [
+          0.18000000715255737,
+          2.3499999940395355,
+          0.18000000715255737
+        ]
+      },
+      "nearTriangles": 186,
+      "farTriangles": 58,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.124732971191406,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_05_furled-detail.png",
+          "sha256": "bbb396577ed928c8dc743aa2b10cb32aeb8a6bdd3e7b0f6c3b44ec0ca47fe700"
+        },
+        "scale": {
+          "position": [
+            2.0874500274658203,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.6502742767334,
+          "lookAt": [
+            0.4050000011920929,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_05_furled-scale.png",
+          "sha256": "a0745c329f182688f74a395b867f9ccb65f02fb2c31a53bb25af42955f47f29f"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_06_open",
+      "description": "Striped coastal parasol 6, open, wooden pole",
+      "size": [
+        2.2,
+        2.35,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.100000023841858,
+          0,
+          -1.100000023841858
+        ],
+        "max": [
+          1.100000023841858,
+          2.3499999940395355,
+          1.100000023841858
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 26,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.39914321899414,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_06_open-detail.png",
+          "sha256": "813ca60b957d4b3c587588b32db65fa61fcc650f3ebd3585fab9b284a1bdd0ee"
+        },
+        "scale": {
+          "position": [
+            2.52767014503479,
+            1.600000023841858,
+            4.0976762771606445
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 25.77082061767578,
+          "lookAt": [
+            0.4050000309944153,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_06_open-scale.png",
+          "sha256": "7ebad3b11a2505162bed7551e3dcda08252ab935f07d6b413f3e12a092ba299e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_parasol_06_furled",
+      "description": "Striped coastal parasol 6, furled, wooden pole",
+      "size": [
+        0.36,
+        2.35,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.18000000715255737,
+          0,
+          -0.18000000715255737
+        ],
+        "max": [
+          0.18000000715255737,
+          2.3499999940395355,
+          0.18000000715255737
+        ]
+      },
+      "nearTriangles": 186,
+      "farTriangles": 58,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.6824499368667603,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.124732971191406,
+          "lookAt": [
+            0.0,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_parasol_06_furled-detail.png",
+          "sha256": "3b7cd228e68fa1d9edb8f6008b43b6adf47a74d37b9b4de92ed7d3776c8237b4"
+        },
+        "scale": {
+          "position": [
+            2.0874500274658203,
+            1.600000023841858,
+            3.2478599548339844
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.6502742767334,
+          "lookAt": [
+            0.4050000011920929,
+            1.1749999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_parasol_06_furled-scale.png",
+          "sha256": "e9682a1e9d0307054f9f919e01a59ec4456c045390639d739ed1bbff651d4cf9"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-01.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_lounger_plastic_blue",
+      "description": "Lounger plastic blue",
+      "size": [
+        0.7,
+        0.88,
+        1.95
+      ],
+      "bounds": {
+        "min": [
+          -0.32350000739097595,
+          0,
+          -0.8921560049057007
+        ],
+        "max": [
+          0.32350000739097595,
+          0.8671245574951172,
+          0.8970000147819519
+        ]
+      },
+      "nearTriangles": 368,
+      "farTriangles": 108,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.3083670139312744,
+            1.600000023841858,
+            2.528139114379883
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 34.512718200683594,
+          "lookAt": [
+            0.0,
+            0.4335622787475586,
+            0.0024220049381256104
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_lounger_plastic_blue-detail.png",
+          "sha256": "fc3a715134f23e0d0efc8d9ceb3481d72e556b143b8a06c60af2fe714ed9dd73"
+        },
+        "scale": {
+          "position": [
+            1.720599889755249,
+            1.600000023841858,
+            2.5421018600463867
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.97149085998535,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            0.0024220049381256104
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_lounger_plastic_blue-scale.png",
+          "sha256": "6204fcf5f3b4a8d2001c01aa18ecd9480144e5b805eeb6e134941b970719a83b"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_lounger_wood_canvas",
+      "description": "Lounger wood canvas",
+      "size": [
+        0.72,
+        0.9,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -0.3321000039577484,
+          0,
+          -0.9147406816482544
+        ],
+        "max": [
+          0.3321000039577484,
+          0.8870214819908142,
+          0.9200000166893005
+        ]
+      },
+      "nearTriangles": 368,
+      "farTriangles": 108,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.3387720584869385,
+            1.600000023841858,
+            2.5870416164398193
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 34.48578643798828,
+          "lookAt": [
+            0.0,
+            0.4435107409954071,
+            0.0026296675205230713
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_lounger_wood_canvas-detail.png",
+          "sha256": "217c65d088da9fd0c831cedc76ff1624f4c9ee32fd8f30beb799f25a475f31b7"
+        },
+        "scale": {
+          "position": [
+            1.743772029876709,
+            1.600000023841858,
+            2.5870416164398193
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 20.136388778686523,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            0.0026296675205230713
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_lounger_wood_canvas-scale.png",
+          "sha256": "4625145546542543a8c9445a8f090da19daced48c5c58580c33b856a017e741d"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_chair_plastic_coral",
+      "description": "Chair plastic coral",
+      "size": [
+        0.62,
+        0.92,
+        0.66
+      ],
+      "bounds": {
+        "min": [
+          -0.29910001158714294,
+          0.00975013431161642,
+          -0.30786406993865967
+        ],
+        "max": [
+          0.29910001158714294,
+          0.9042438864707947,
+          0.278325617313385
+        ]
+      },
+      "nearTriangles": 212,
+      "farTriangles": 44,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7116273641586304,
+            1.600000023841858,
+            1.3589808940887451
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 34.713951110839844,
+          "lookAt": [
+            0.0,
+            0.45699700713157654,
+            -0.014769226312637329
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_chair_plastic_coral-detail.png",
+          "sha256": "3614233fda468ee70d73d32f50572d30588a8f6cc00f603023d8e01d9e9fe849"
+        },
+        "scale": {
+          "position": [
+            1.7140965461730957,
+            1.600000023841858,
+            2.5123565196990967
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.27113151550293,
+          "lookAt": [
+            0.4049999713897705,
+            0.9048750400543213,
+            -0.014769226312637329
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_chair_plastic_coral-scale.png",
+          "sha256": "c2fdbdac6bfd2463b3981a2b59482e0a3e09261a9b988a3d0ab0a5a03a9aca9a"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_chair_wood_canvas",
+      "description": "Chair wood canvas",
+      "size": [
+        0.63,
+        0.94,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3254527449607849
+        ],
+        "max": [
+          0.3034000098705292,
+          0.924314558506012,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 212,
+      "farTriangles": 44,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7252899408340454,
+            1.600000023841858,
+            1.3843350410461426
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 33.78597640991211,
+          "lookAt": [
+            0.0,
+            0.46682584285736084,
+            -0.015789955854415894
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_chair_wood_canvas-detail.png",
+          "sha256": "c04e4d21fc3daeeacc5ee15d9b8cd32f0444612bcd9608c1d46b71d6a2fb806b"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.5118675231933594
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.985095977783203,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.015789955854415894
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_chair_wood_canvas-scale.png",
+          "sha256": "c6a63419510df65378c96554da1c73eaff21d36d1e4dc04aab39f7cc73915b48"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_chair_folding_steel",
+      "description": "Chair folding steel",
+      "size": [
+        0.62,
+        0.88,
+        0.65
+      ],
+      "bounds": {
+        "min": [
+          -0.29910001158714294,
+          0.00985976867377758,
+          -0.30341270565986633
+        ],
+        "max": [
+          0.29910001158714294,
+          0.8645549416542053,
+          0.2744414508342743
+        ]
+      },
+      "nearTriangles": 212,
+      "farTriangles": 44,
+      "family": "lounge",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.317514419555664
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 35.32497787475586,
+          "lookAt": [
+            0.0,
+            0.43720734119415283,
+            -0.01448562741279602
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_chair_folding_steel-detail.png",
+          "sha256": "fe6be1384c9001d5f19e29c8024237c8c14fd14cb57ce90fc48b532b5e8cebb6"
+        },
+        "scale": {
+          "position": [
+            1.714023470878601,
+            1.600000023841858,
+            2.5124988555908203
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.334796905517578,
+          "lookAt": [
+            0.4049999713897705,
+            0.9049298763275146,
+            -0.01448562741279602
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_chair_folding_steel-scale.png",
+          "sha256": "bcbb50ccc1bf63408b277bb0b343b3da4ffb23ca8160b6f0ecbe6b6498bb996e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_01_flat",
+      "description": "Beach towel print 01, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_01_flat-detail.png",
+          "sha256": "ba80857b2c7f128b1f637666e8f820afa1a988f1069e158c9a10ea628f4f21a2"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_01_flat-scale.png",
+          "sha256": "15c483616a4ea6b5b891f40fd9303e8b33287e2b7adbd77d4875df31fcf80ad0"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_01_draped",
+      "description": "Beach towel print 01, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_01_draped-detail.png",
+          "sha256": "e90d801c6df95eeaa548641620ece73e0101daa9bf59930cf469c3dd9221db26"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_01_draped-scale.png",
+          "sha256": "44fd626a44c426f0b6bf4783375bb26ac04870554611b5f04056ebe6b7c70038"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_02_flat",
+      "description": "Beach towel print 02, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_02_flat-detail.png",
+          "sha256": "954814bbeda9da96bc0a6291bcf4468db6b8cce54f6e1b94fd1d9a4830cc05bb"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_02_flat-scale.png",
+          "sha256": "1cbfd56f6ad034d0df24c309ccac0c7f56bc0a144e488b516d077003540c51fe"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_02_draped",
+      "description": "Beach towel print 02, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_02_draped-detail.png",
+          "sha256": "bc1705dc4b5dc9cefaa27fd18361264213f762987ec1a978a502e12547c3e8f4"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_02_draped-scale.png",
+          "sha256": "d4aef34afa632022d01130f35bcd4489a3b64f8807b6a57e2b478f1d3839a11f"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_03_flat",
+      "description": "Beach towel print 03, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_03_flat-detail.png",
+          "sha256": "59416850775741220eb1f08c5470fff2a7b3e6435b58a7486591202014b48e08"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_03_flat-scale.png",
+          "sha256": "decae95f5834065f1332bab66437e394ce128b267a568525ff114a66855a484e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_03_draped",
+      "description": "Beach towel print 03, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_03_draped-detail.png",
+          "sha256": "75e6cb196d66f3730f07a87b64ad26da3e5b8822fc1be92488c9c1675275494d"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_03_draped-scale.png",
+          "sha256": "a9d5ff913856d605e4dcf5f1889917155db1c8d7cfdcd8934187dea665760602"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_04_flat",
+      "description": "Beach towel print 04, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_04_flat-detail.png",
+          "sha256": "240cd0221c9ae038cd9ba40cf1b5034e100744231c7f77cc32e216d380f71367"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_04_flat-scale.png",
+          "sha256": "15713e1c516928d52182060ad65d24e341cbda10b26687639dd90fdcc0d5db58"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-02.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_04_draped",
+      "description": "Beach towel print 04, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_04_draped-detail.png",
+          "sha256": "e88535e53fc195c0d89e10b2249a827d5a3d5d2647d84de6d4951c781ad1c420"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_04_draped-scale.png",
+          "sha256": "c32dbf3094c6d22155c20802137b46adb27e317f89ef74504c623cfb74f68aa4"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_05_flat",
+      "description": "Beach towel print 05, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_05_flat-detail.png",
+          "sha256": "b7e3c43b9df54a2bdbdee246217a2e33e4b8fa05042e96eb779524a9a19e9546"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_05_flat-scale.png",
+          "sha256": "0e9976ec90ab1f72d569a42bbbdf86ed27d1110c2b8b75716f9c5a6759b29880"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_05_draped",
+      "description": "Beach towel print 05, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_05_draped-detail.png",
+          "sha256": "0d8f6c7d7704de38e1d28d10f5df5991a94ec74b9982d6276dacdfdb9b544f52"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_05_draped-scale.png",
+          "sha256": "97d8251345b2a926c4904dd9f08d194dfc5016ec0c8c5577d8b6990b833b0a20"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_06_flat",
+      "description": "Beach towel print 06, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_06_flat-detail.png",
+          "sha256": "c25e94bb9b2ebadc673ec577b39ce3bb7ca0836cf4b6b28375d19bdd7a947880"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_06_flat-scale.png",
+          "sha256": "1cc1de2f079ad7a4177f47a64d6b38c3c13bb1614f58fe8dc3f92ea9a1f7e4f5"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_06_draped",
+      "description": "Beach towel print 06, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_06_draped-detail.png",
+          "sha256": "e8fb4a3156524b92b9f57e3cb2c5c36c5cd5c20b86ba85ee181a0f74b2f4ad6a"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_06_draped-scale.png",
+          "sha256": "a78eae7beca48deeb3c4696d911ec3745e2b09209ae40d6d95258820a555872e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_07_flat",
+      "description": "Beach towel print 07, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_07_flat-detail.png",
+          "sha256": "c87c4af397b6fad47d0721c46d4a102bde0a8d4174110a43b5d9cc8a0802acf8"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_07_flat-scale.png",
+          "sha256": "c28419cb3d629e5c5b27a95a51459882cc47550cc8672fb0884d4934a400c164"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_07_draped",
+      "description": "Beach towel print 07, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_07_draped-detail.png",
+          "sha256": "36d21c28d4b331dad29a61f0b5f9ca01334feede7093a44f8f511c4f15384b35"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_07_draped-scale.png",
+          "sha256": "620cb2695e2c4b66cc4afaf56407e9c9542db0e7d39a8b213b770df4f8d13886"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_08_flat",
+      "description": "Beach towel print 08, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_08_flat-detail.png",
+          "sha256": "921c08a7d65152e57076af2a8573ea311c838ca9322b3176d22e9fadef947cec"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_08_flat-scale.png",
+          "sha256": "b97b8a9b0c0f51113db92d1bc9e6846a9f27af0a2eb2fbfe812dcdb379ac92de"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_08_draped",
+      "description": "Beach towel print 08, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_08_draped-detail.png",
+          "sha256": "31ec0a054c2ecd42bc66b44098fae6e0b55674a039c4099654eefe905c450566"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_08_draped-scale.png",
+          "sha256": "8f327ba04a2516fd19d9350cfe3c4fed31dc7587c1eabdb16663fa9d8160d57c"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_09_flat",
+      "description": "Beach towel print 09, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_09_flat-detail.png",
+          "sha256": "26e39c99d47dcfc2697635fc01e23cf1cc29a76ff49546cfa2e441e054bc6ac0"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_09_flat-scale.png",
+          "sha256": "e6b9d2c0e2577ab5c7db9af43bf0c9f28b5376c7cf0e1e5045ad2e55899d72f4"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_09_draped",
+      "description": "Beach towel print 09, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_09_draped-detail.png",
+          "sha256": "2405c11e2111f1af0c8ef55b66c73b68c6ea0143b9d00b35821649cf1615dd8b"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_09_draped-scale.png",
+          "sha256": "1d562fa8cda4ef448083dcd7d275a243156695e78d567aba4e00a17d93ec38f7"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_10_flat",
+      "description": "Beach towel print 10, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_10_flat-detail.png",
+          "sha256": "557b7a27f032f6188044fff14968684332cffc0c8f71165191ac3b2a4e2e7eec"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_10_flat-scale.png",
+          "sha256": "51e31afdddbe47147af445bdd0fd9cab477e645dc54e2e224a21c648f6aa8803"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-03.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_10_draped",
+      "description": "Beach towel print 10, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_10_draped-detail.png",
+          "sha256": "c1d0cbc15ab2f49081e63be368f4a936168b6f4d8fcd690ab76d7511529662f1"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_10_draped-scale.png",
+          "sha256": "4780fb576b943864c4869a8e68b717108f45fd46ebfdf409b00eac71c3709b5c"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_11_flat",
+      "description": "Beach towel print 11, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_11_flat-detail.png",
+          "sha256": "f76e9bee3a540b5954d9b578618d3bfbc8ec39713dceae767c645a51f0a4d817"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_11_flat-scale.png",
+          "sha256": "ae709ac0d3d10f8d904fb63c8f920b490a3e4bd113b75554f44e52b29b508ded"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_11_draped",
+      "description": "Beach towel print 11, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_11_draped-detail.png",
+          "sha256": "3750565b72bcb1a67e658afd8a4961c6f38afb66dc52f4639906213877a07e78"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_11_draped-scale.png",
+          "sha256": "9cc3521d057c687eac952d2c07ce39ab4f7d128bc6e2b7b5db51dc5e484da3b4"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_12_flat",
+      "description": "Beach towel print 12, flat with soft ripples and a stitched hem",
+      "size": [
+        0.9,
+        0.025,
+        1.8
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0.0038038475904613733,
+          -0.8999999761581421
+        ],
+        "max": [
+          0.45100000500679016,
+          0.02500000037252903,
+          0.8999999761581421
+        ]
+      },
+      "nearTriangles": 168,
+      "farTriangles": 2,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.316100001335144,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 49.81986999511719,
+          "lookAt": [
+            0.0005000084638595581,
+            0.01440192386507988,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_12_flat-detail.png",
+          "sha256": "1e2b2764d94bcc7d587a1a601c1a7449ecc0f4fbc1efda603cfe0fddd0c18354"
+        },
+        "scale": {
+          "position": [
+            1.7210999727249146,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.14971351623535,
+          "lookAt": [
+            0.40550002455711365,
+            0.90190190076828,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_12_flat-scale.png",
+          "sha256": "1b61626412f9b6eb6482e1636356436d7f048effb8c046b3c573bd96866957fd"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_towel_12_draped",
+      "description": "Beach towel print 12, draped over a wooden folding chair",
+      "size": [
+        0.63,
+        0.96,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.3034000098705292,
+          0.00933710765093565,
+          -0.3599616587162018
+        ],
+        "max": [
+          0.3034000098705292,
+          0.9534528255462646,
+          0.2938728332519531
+        ]
+      },
+      "nearTriangles": 284,
+      "farTriangles": 48,
+      "family": "towel",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7447251677513123,
+            1.600000023841858,
+            1.4045989513397217
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.93848419189453,
+          "lookAt": [
+            0.0,
+            0.4813949763774872,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_towel_12_draped-detail.png",
+          "sha256": "68156743c866f89c20ab7b63eeddd83dfa6e8084d6863be9677e418fe89d17c8"
+        },
+        "scale": {
+          "position": [
+            1.714372158050537,
+            1.600000023841858,
+            2.4946131706237793
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.72278594970703,
+          "lookAt": [
+            0.4049999713897705,
+            0.9046685099601746,
+            -0.03304441273212433
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_towel_12_draped-scale.png",
+          "sha256": "f9b6b1933fe411a60bbadbbfe237f9b74742918006908fd53aad51fa9c65587f"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_bag_01",
+      "description": "Open canvas beach tote 1 with stitched gussets and two loop handles",
+      "size": [
+        0.42,
+        0.48,
+        0.22
+      ],
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          0,
+          -0.10999999940395355
+        ],
+        "max": [
+          0.20999999344348907,
+          0.4794151186943054,
+          0.11100000143051147
+        ]
+      },
+      "nearTriangles": 148,
+      "farTriangles": 34,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3324999809265137
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 72.09351348876953,
+          "lookAt": [
+            0.0,
+            0.2397075593471527,
+            0.0005000010132789612
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bag_01-detail.png",
+          "sha256": "ce61382b5b21d1451314f25d7a142456bf1a5d10dd89ec80e4845693c90bfe34"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.512598037719727,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bag_01-scale.png",
+          "sha256": "c68a0e30a48ea0dc6f45935d8e1a67f70ad44ce77b06d4e61bd309daa805cf76"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_bag_02",
+      "description": "Open canvas beach tote 2 with stitched gussets and two loop handles",
+      "size": [
+        0.42,
+        0.48,
+        0.22
+      ],
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          0,
+          -0.10999999940395355
+        ],
+        "max": [
+          0.20999999344348907,
+          0.4794151186943054,
+          0.11100000143051147
+        ]
+      },
+      "nearTriangles": 148,
+      "farTriangles": 34,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3324999809265137
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 72.09351348876953,
+          "lookAt": [
+            0.0,
+            0.2397075593471527,
+            0.0005000010132789612
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bag_02-detail.png",
+          "sha256": "d0bddd7aaa091cb6e7c4a3cbd2e1285bffc52a742ce2a78ede09e15a85ed7981"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.512598037719727,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bag_02-scale.png",
+          "sha256": "92e23fe20ede2ba950347d3eb85ef62b4e94c255ea6b1e8fc761ebf1a5e8c03a"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_bag_03",
+      "description": "Open canvas beach tote 3 with stitched gussets and two loop handles",
+      "size": [
+        0.42,
+        0.48,
+        0.22
+      ],
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          0,
+          -0.10999999940395355
+        ],
+        "max": [
+          0.20999999344348907,
+          0.4794151186943054,
+          0.11100000143051147
+        ]
+      },
+      "nearTriangles": 148,
+      "farTriangles": 34,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3324999809265137
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 72.09351348876953,
+          "lookAt": [
+            0.0,
+            0.2397075593471527,
+            0.0005000010132789612
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bag_03-detail.png",
+          "sha256": "1c2454fe4a9e7fa5ad1981ffee91a584ceee4481e6dd280ddb07c6a67a02cc59"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.512598037719727,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bag_03-scale.png",
+          "sha256": "c611610be73c9fec3e96dfa0ce96ab0be4ebfbbc976f0e838ea098af88fd099e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_bag_04",
+      "description": "Open canvas beach tote 4 with stitched gussets and two loop handles",
+      "size": [
+        0.42,
+        0.48,
+        0.22
+      ],
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          0,
+          -0.10999999940395355
+        ],
+        "max": [
+          0.20999999344348907,
+          0.4794151186943054,
+          0.11100000143051147
+        ]
+      },
+      "nearTriangles": 148,
+      "farTriangles": 34,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3324999809265137
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 72.09351348876953,
+          "lookAt": [
+            0.0,
+            0.2397075593471527,
+            0.0005000010132789612
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bag_04-detail.png",
+          "sha256": "7e3c0896f9113090c0d9d88af9a1b0b78ef9668bd15cf4badc9fc4e673c13160"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.512598037719727,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bag_04-scale.png",
+          "sha256": "00cf6f007987755b26a9f63c514ffd856afad90d3fcc6d69752db5161a79a2fc"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_cool_box",
+      "description": "Blue insulated cool box with white hinged lid and carry handles",
+      "size": [
+        0.58,
+        0.4,
+        0.36
+      ],
+      "bounds": {
+        "min": [
+          -0.2905595004558563,
+          0.007322330493479967,
+          -0.18000000156462193
+        ],
+        "max": [
+          0.29100000858306885,
+          0.4000000134110451,
+          0.18299999833106995
+        ]
+      },
+      "nearTriangles": 272,
+      "farTriangles": 20,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6902202367782593,
+            1.600000023841858,
+            1.3335000276565552
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 63.18989562988281,
+          "lookAt": [
+            0.0002202540636062622,
+            0.20366117358207703,
+            0.0014999955892562866
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_cool_box-detail.png",
+          "sha256": "ed0b776dcac6cbf7aefa7744b1861634b0df46e00a70953985202cbef000305c"
+        },
+        "scale": {
+          "position": [
+            1.715936303138733,
+            1.600000023841858,
+            2.5302517414093018
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.8098201751709,
+          "lookAt": [
+            0.40522027015686035,
+            0.9036611318588257,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_cool_box-scale.png",
+          "sha256": "b5bcfd2ab009de5752347b0dbbad8ef4c7f92f0987ae17a6d10f45b2ab1dc116"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_thermos",
+      "description": "Brushed steel vacuum flask, moulded grip and a cup lid",
+      "size": [
+        0.13,
+        0.31,
+        0.13
+      ],
+      "bounds": {
+        "min": [
+          -0.06400000303983688,
+          0,
+          -0.06239538639783859
+        ],
+        "max": [
+          0.06400000303983688,
+          0.3100000023841858,
+          0.06239538639783859
+        ]
+      },
+      "nearTriangles": 154,
+      "farTriangles": 55,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 132.22616577148438,
+          "lookAt": [
+            0.0,
+            0.1550000011920929,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_thermos-detail.png",
+          "sha256": "5decef7a58d1c56c0713ae8ba02a4df0eafa701da951c11902089c3f28651d25"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.762168884277344,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_thermos-scale.png",
+          "sha256": "e3da2ac102d4dae4180cf424c7ed034529433456390f4104f1e370ec557f4252"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_flipflops_pair",
+      "description": "Pair of worn blue rubber flip-flops with Y straps",
+      "size": [
+        0.3,
+        0.055,
+        0.28
+      ],
+      "bounds": {
+        "min": [
+          -0.1420000046491623,
+          0,
+          -0.14000000059604645
+        ],
+        "max": [
+          0.1420000046491623,
+          0.055706340819597244,
+          0.14000000059604645
+        ]
+      },
+      "nearTriangles": 212,
+      "farTriangles": 40,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 145.9474334716797,
+          "lookAt": [
+            0.0,
+            0.027853170409798622,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_flipflops_pair-detail.png",
+          "sha256": "06b540633fc5d057f7b01165480a62b58b781f97d964707f3bbd64d128977618"
+        },
+        "scale": {
+          "position": [
+            1.720599889755249,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.08950424194336,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_flipflops_pair-scale.png",
+          "sha256": "d08855cfe7616efa806c6fd98cb0331a2d9fb3295868111e4687d51c595d3549"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-04.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_flipflop_left",
+      "description": "Single left blue rubber flip-flop",
+      "size": [
+        0.115,
+        0.055,
+        0.28
+      ],
+      "bounds": {
+        "min": [
+          -0.052000001072883606,
+          0,
+          -0.14000000059604645
+        ],
+        "max": [
+          0.052000001072883606,
+          0.055706340819597244,
+          0.14000000059604645
+        ]
+      },
+      "nearTriangles": 106,
+      "farTriangles": 20,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 183.01171875,
+          "lookAt": [
+            0.0,
+            0.027853170409798622,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_flipflop_left-detail.png",
+          "sha256": "62a2be226bb75c14542b729fea76976f92ee645ba61bd7528b786ce4fc63eceb"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.866708755493164,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_flipflop_left-scale.png",
+          "sha256": "dbc3104430ad5d8e2446f35a7b72db4ef278feac86e9c351ecc3888d6a02a235"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_flipflop_right",
+      "description": "Single right coral rubber flip-flop",
+      "size": [
+        0.115,
+        0.055,
+        0.28
+      ],
+      "bounds": {
+        "min": [
+          -0.052000001072883606,
+          0,
+          -0.14000000059604645
+        ],
+        "max": [
+          0.052000001072883606,
+          0.055706340819597244,
+          0.14000000059604645
+        ]
+      },
+      "nearTriangles": 106,
+      "farTriangles": 20,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 183.01171875,
+          "lookAt": [
+            0.0,
+            0.027853170409798622,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_flipflop_right-detail.png",
+          "sha256": "db7d611bc3fac9c67926d0ab94164ce2242ff8a4b9c4121b91670dec1fdef2fe"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.866708755493164,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_flipflop_right-scale.png",
+          "sha256": "df873124a91a7bf8c3378cc8e8ae7d88292a3c1d406a39d96a99c59b6c850cd4"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_bucket_spade",
+      "description": "Open yellow sand bucket, pivoted handle and separate short spade",
+      "size": [
+        0.42,
+        0.34,
+        0.24
+      ],
+      "bounds": {
+        "min": [
+          -0.1856602132320404,
+          0,
+          -0.10724207013845444
+        ],
+        "max": [
+          0.19605249166488647,
+          0.33605247735977173,
+          0.10724207013845444
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 92,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6951961517333984,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 91.87461853027344,
+          "lookAt": [
+            0.005196139216423035,
+            0.16802623867988586,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bucket_spade-detail.png",
+          "sha256": "261c8fc8b4dc27bc79c6879058819940c9c78449ed704b0c645443e5cbca9ca7"
+        },
+        "scale": {
+          "position": [
+            1.725796103477478,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.674121856689453,
+          "lookAt": [
+            0.41019612550735474,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bucket_spade-scale.png",
+          "sha256": "34c60a5502c3670a2acb0a088bbc4ab84b95148a989dbc97fbdbb56adccc4d25"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_sandcastle",
+      "description": "Hand-built sandcastle with four turrets, crenellations and a doorway",
+      "size": [
+        0.9,
+        0.42,
+        0.76
+      ],
+      "bounds": {
+        "min": [
+          -0.4399999976158142,
+          0.007322330493479967,
+          -0.3700000047683716
+        ],
+        "max": [
+          0.4399999976158142,
+          0.41999998688697815,
+          0.3700000047683716
+        ]
+      },
+      "nearTriangles": 309,
+      "farTriangles": 82,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7019599676132202,
+            1.600000023841858,
+            1.3550879955291748
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 39.255775451660156,
+          "lookAt": [
+            0.0,
+            0.21366116404533386,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sandcastle-detail.png",
+          "sha256": "d145839d717ddaad8aca93fdd96e976eaa82404758a3b2dad7d79e2b97757795"
+        },
+        "scale": {
+          "position": [
+            1.715716004371643,
+            1.600000023841858,
+            2.5302517414093018
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 26.04873275756836,
+          "lookAt": [
+            0.4050000011920929,
+            0.9036611318588257,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sandcastle-scale.png",
+          "sha256": "0eb20040a763385d73886f363d38295d8de8e405eafc0dbd20dd37c535343bee"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_ball_buried",
+      "description": "Striped beach ball half buried in a rim of sand",
+      "size": [
+        0.3,
+        0.18,
+        0.3
+      ],
+      "bounds": {
+        "min": [
+          -0.15000000596046448,
+          0,
+          -0.15000000596046448
+        ],
+        "max": [
+          0.15000000596046448,
+          0.18000000715255737,
+          0.15000000596046448
+        ]
+      },
+      "nearTriangles": 112,
+      "farTriangles": 18,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 109.69242858886719,
+          "lookAt": [
+            0.0,
+            0.09000000357627869,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_ball_buried-detail.png",
+          "sha256": "17f12325ef52ff8933791ef26dadea52e906bfa6d2d5787469e6a53512426656"
+        },
+        "scale": {
+          "position": [
+            1.720599889755249,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.021175384521484,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_ball_buried-scale.png",
+          "sha256": "82d469e878e547ef0f8876a1b85ec292049a96092521d0c31043b0c75d78d751"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_pool_ring_deflated",
+      "description": "Collapsed coral inflatable ring with folded seam and a valve",
+      "size": [
+        0.74,
+        0.075,
+        0.61
+      ],
+      "bounds": {
+        "min": [
+          -0.3700000047683716,
+          0.010287187062203884,
+          -0.3034000098705292
+        ],
+        "max": [
+          0.3700000047683716,
+          0.07500000298023224,
+          0.3034000098705292
+        ]
+      },
+      "nearTriangles": 308,
+      "farTriangles": 48,
+      "family": "beach",
+      "sourceGlb": "beach_props/beach_leisure.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 61.4046745300293,
+          "lookAt": [
+            0.0,
+            0.04264359548687935,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_pool_ring_deflated-detail.png",
+          "sha256": "f2b351377316a4daf7369b3c56f0c78c0c50b466c4706b37fbf279f603dd99b1"
+        },
+        "scale": {
+          "position": [
+            1.7137384414672852,
+            1.600000023841858,
+            2.5264341831207275
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.552255630493164,
+          "lookAt": [
+            0.4050000309944153,
+            0.9051435589790344,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_pool_ring_deflated-scale.png",
+          "sha256": "06f8c5108dcabaef48f62ff1f82341cefb5badc146495867b915bf5ad42fd98a"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_volleyball_court",
+      "description": "16 by 8 metre beach volleyball court with 12-triangle alpha net, padded posts and boundary rope",
+      "size": [
+        16.04,
+        2.5,
+        8.04
+      ],
+      "bounds": {
+        "min": [
+          -8.020000457763672,
+          0,
+          -4.039999961853027
+        ],
+        "max": [
+          8.020000457763672,
+          2.5,
+          4.039999961853027
+        ]
+      },
+      "nearTriangles": 236,
+      "farTriangles": 76,
+      "family": "sport",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            10.813680648803711,
+            1.600000023841858,
+            20.875104904174805
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 38.450439453125,
+          "lookAt": [
+            0.0,
+            1.25,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_volleyball_court-detail.png",
+          "sha256": "cdd0f78639bf3e9babb4fa51f8305ef3aafd6a91f78df396beeff7bebcc19f56"
+        },
+        "scale": {
+          "position": [
+            11.758950233459473,
+            1.600000023841858,
+            21.918060302734375
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 38.53304672241211,
+          "lookAt": [
+            0.4049997329711914,
+            1.25,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_volleyball_court-scale.png",
+          "sha256": "416a348a66bcd83ef6ac02d657b6be8fe38d12c61ff676fa8edd9559cc3e6bd0"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_volleyball_ball",
+      "description": "Stitched white, blue and yellow volleyball",
+      "size": [
+        0.215,
+        0.215,
+        0.215
+      ],
+      "bounds": {
+        "min": [
+          -0.10566950589418411,
+          0,
+          -0.10704131424427032
+        ],
+        "max": [
+          0.10749989002943039,
+          0.2150000035762787,
+          0.10704131424427032
+        ]
+      },
+      "nearTriangles": 238,
+      "farTriangles": 24,
+      "family": "sport",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6909151673316956,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 130.0965576171875,
+          "lookAt": [
+            0.0009151920676231384,
+            0.10750000178813934,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_volleyball_ball-detail.png",
+          "sha256": "123f972cb244bd957fc79aed58c2850e5fbc2a74879ce8cdf389b3abecd289c7"
+        },
+        "scale": {
+          "position": [
+            1.72151517868042,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.393457412719727,
+          "lookAt": [
+            0.40591520071029663,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_volleyball_ball-scale.png",
+          "sha256": "574a553239fffcf90954b8cfafa1ceeb7a822f513f7ad31590c6d1049c6a52f2"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_zona_bano",
+      "description": "Zona de baño — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_zona_bano-detail.png",
+          "sha256": "bfc0c6d04fb3142d079db40be8049a59095e5a6c93ad531075c44f631e8e5d1f"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_zona_bano-scale.png",
+          "sha256": "4feccc4fd3b7ee127a984cfacd248a1d366ef9bc8aeaa77b47594403e96f65af"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_bandera_roja",
+      "description": "Bandera roja — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_bandera_roja-detail.png",
+          "sha256": "e1c15c2a3355c282729d89b3f021025cc841a1442e40ff8a8770b319b41501b2"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_bandera_roja-scale.png",
+          "sha256": "ea143bc7b2e3e589eb16a596748bf3064e07c11c648579ade612e03912cd5bbf"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_prohibido_paso",
+      "description": "Prohibido el paso — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_prohibido_paso-detail.png",
+          "sha256": "78d963a7790d90790f3248dcbf66c8f71c5f0c6e6fa6f15486dd3b972b1821e8"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_prohibido_paso-scale.png",
+          "sha256": "3fb6ebe09f1d185020a4d321df2720664fe843db761e2e55c7a753354fc9ae51"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_cocadas",
+      "description": "Cocadas — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_cocadas-detail.png",
+          "sha256": "82d572e37ff0b8a86f20ae4f8cbd0d80ea66bfd397b9ec79cf06e291944f8ced"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_cocadas-scale.png",
+          "sha256": "4e61f5a51fb82e4bb6579b6cafcbd3ce5bc2bccc2b4c32071bd1cf37b155c007"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-05.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_ceviche",
+      "description": "Ceviche — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_ceviche-detail.png",
+          "sha256": "70b94a0e7281de052dbc6310f0d64cd01dcb988e8a8a8aa703322581c661ea80"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_ceviche-scale.png",
+          "sha256": "ec0195e3e2065e88f101e63461bc52057f0d327da68447c00cacd085c5749d53"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_jugos",
+      "description": "Jugos naturales — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_jugos-detail.png",
+          "sha256": "53db4514dc57d8726a39eb87529c95431c7d869df54ad975ee00347ba5e1b33e"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_jugos-scale.png",
+          "sha256": "5b709e786539767b2dd6e307fcb0c2f99fb3daffdf7e0099ca0b13ef1e8e353d"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_helados",
+      "description": "Helados — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_helados-detail.png",
+          "sha256": "56a7ba5e45d861b194f102a7fe399929e0073a76c49ddda41a21d92122b72033"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_helados-scale.png",
+          "sha256": "8936b386cc673a02a96044f58d3d369746c8db66c8ff90c6693a8f656546427a"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_alquiler_tablas",
+      "description": "Alquiler de tablas — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_alquiler_tablas-detail.png",
+          "sha256": "3170e434e49dbda304533c4f4d90c0d535eb5ae117b9793c461cbb463cf3396a"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_alquiler_tablas-scale.png",
+          "sha256": "1ba6938a0685eed60281e1adc94bead863028b496d54e87b4f322b4cd6d26062"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_cooperativa",
+      "description": "Cooperativa de pescadores — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_cooperativa-detail.png",
+          "sha256": "0e9403b00a51954a0be15267d0c48e2ac3addc56594befed3b8f001df22e5142"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_cooperativa-scale.png",
+          "sha256": "b2cfe85c330f619ad5d57dd8a5bb9682abab22e2fdebbcfdaf075d3df0f0739f"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_salvavidas",
+      "description": "Salvavidas — interchangeable hand-painted board",
+      "size": [
+        0.72,
+        0.48,
+        0.035
+      ],
+      "bounds": {
+        "min": [
+          -0.36000001430511475,
+          0,
+          -0.017500000074505806
+        ],
+        "max": [
+          0.36000001430511475,
+          0.47999998927116394,
+          0.017999999225139618
+        ]
+      },
+      "nearTriangles": 12,
+      "farTriangles": 2,
+      "family": "sign",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3322499990463257
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 73.82123565673828,
+          "lookAt": [
+            0.0,
+            0.23999999463558197,
+            0.000249999575316906
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_salvavidas-detail.png",
+          "sha256": "80fe327f0c4f4edb897bab94f8800daa80428bd19bb327bb7efb6f32878d4bc0"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.27033805847168,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_salvavidas-scale.png",
+          "sha256": "e1195ae87601402b829113e33288570b638e3772af4f172ca781980ed18bcfbf"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_kiosk",
+      "description": "Open-front palm-thatch beach kiosk; slatted half walls, service counter and framed menu slot",
+      "size": [
+        3.2,
+        3.0,
+        3.2
+      ],
+      "bounds": {
+        "min": [
+          -1.600000023841858,
+          0,
+          -1.600000023841858
+        ],
+        "max": [
+          1.6009999513626099,
+          3,
+          1.600000023841858
+        ]
+      },
+      "nearTriangles": 1194,
+      "farTriangles": 108,
+      "family": "vendor",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            2.2505669593811035,
+            1.600000023841858,
+            4.343607425689697
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 19.841909408569336,
+          "lookAt": [
+            0.0004999637603759766,
+            1.5,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_kiosk-detail.png",
+          "sha256": "fe0eab92112a2331398874dc30a996261121f3a3adfd8f3192e047101ec9fcae"
+        },
+        "scale": {
+          "position": [
+            3.1958365440368652,
+            1.600000023841858,
+            5.386563301086426
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 26.97736930847168,
+          "lookAt": [
+            0.4054998755455017,
+            1.5,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_kiosk-scale.png",
+          "sha256": "e1d40c6c5518e715f757c984d96d83287a04b26033f4eaa75cbef1bd8d5809f5"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_vendor_cart",
+      "description": "Hand-pushed juice and cocada cart with striped canopy, independent wheels, jars and serving shelf",
+      "size": [
+        1.6,
+        2.16,
+        2.0
+      ],
+      "bounds": {
+        "min": [
+          -0.800000011920929,
+          0,
+          -0.9717023372650146
+        ],
+        "max": [
+          0.800000011920929,
+          2.1600000858306885,
+          0.6700000166893005
+        ]
+      },
+      "nearTriangles": 1236,
+      "farTriangles": 248,
+      "family": "vendor",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.5557200908660889,
+            1.600000023841858,
+            2.852365016937256
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 22.442602157592773,
+          "lookAt": [
+            0.0,
+            1.0800000429153442,
+            -0.15085116028785706
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_vendor_cart-detail.png",
+          "sha256": "656fc6f414f3699d8a2b2b6b6dabd7b75c1853c4eee7bad5ae3b29d82e45d0d8"
+        },
+        "scale": {
+          "position": [
+            2.127470016479492,
+            1.600000023841858,
+            3.174264907836914
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 23.61349868774414,
+          "lookAt": [
+            0.4050000011920929,
+            1.0800000429153442,
+            -0.15085116028785706
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_vendor_cart-scale.png",
+          "sha256": "d01937856c87776bcf7a8307a0429beb63397e0df603194a85beb385cdd7fed2"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_cooler_stand",
+      "description": "Faded blue ice cooler on a weathered timber stand, with a separate hinged white lid",
+      "size": [
+        0.9,
+        1.16,
+        0.7
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0,
+          -0.3499999940395355
+        ],
+        "max": [
+          0.44999998807907104,
+          1.1600000225007534,
+          0.3499999940395355
+        ]
+      },
+      "nearTriangles": 350,
+      "farTriangles": 74,
+      "family": "vendor",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.8887199759483337,
+            1.600000023841858,
+            1.71561598777771
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.305702209472656,
+          "lookAt": [
+            0.0,
+            0.5799999833106995,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_cooler_stand-detail.png",
+          "sha256": "38533cf9da488bf2a8af96eef716e85fa0d57c80e66294498cd2e9a1737aef3d"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 26.30164909362793,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_cooler_stand-scale.png",
+          "sha256": "772bf721b7bc42cef585182d71b5726dc1c1b54493992e697a8046d662bb6642"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_sign_easel",
+      "description": "Small timber A-board easel with an inset illustrated menu panel and side chain",
+      "size": [
+        0.74,
+        1.2,
+        0.6
+      ],
+      "bounds": {
+        "min": [
+          -0.3700000047683716,
+          -0.010321520268917084,
+          -0.3160281777381897
+        ],
+        "max": [
+          0.3700000047683716,
+          1.2000000476837158,
+          0.31663423776626587
+        ]
+      },
+      "nearTriangles": 198,
+      "farTriangles": 78,
+      "family": "vendor",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.9222844839096069,
+            1.600000023841858,
+            1.7807130813598633
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.444839477539062,
+          "lookAt": [
+            0.0,
+            0.5948392748832703,
+            0.00030303001403808594
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_sign_easel-detail.png",
+          "sha256": "7024b3c946288ad1be5aef832c1fcc534e2aec938606838dc71175cf4e7e8fac"
+        },
+        "scale": {
+          "position": [
+            1.7274844646453857,
+            1.600000023841858,
+            2.5532729625701904
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.456693649291992,
+          "lookAt": [
+            0.4050000309944153,
+            0.8948392271995544,
+            0.00030303001403808594
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_sign_easel-scale.png",
+          "sha256": "215f0e719e8165060bcf82437cf4f3bb42811b931228cdafb34e80a234717419"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_lifeguard_tower",
+      "description": "Raised red-and-white lifeguard lookout, ladder, cross-bracing, observation windows, rear flap and mast",
+      "size": [
+        2.2,
+        3.6,
+        2.2
+      ],
+      "bounds": {
+        "min": [
+          -1.1024999618530273,
+          0,
+          -1.1024999618530273
+        ],
+        "max": [
+          1.1024999618530273,
+          3.5999999046325684,
+          1.1024999618530273
+        ]
+      },
+      "nearTriangles": 650,
+      "farTriangles": 252,
+      "family": "lifeguard",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            2.516199827194214,
+            1.600000023841858,
+            4.857359886169434
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 24.222198486328125,
+          "lookAt": [
+            0.0,
+            1.7999999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_lifeguard_tower-detail.png",
+          "sha256": "b8b080b765c34378f00c659a478a68a721e3b7103ea03eb3a561bb2a5602483d"
+        },
+        "scale": {
+          "position": [
+            2.9212000370025635,
+            1.600000023841858,
+            4.857359886169434
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 23.025556564331055,
+          "lookAt": [
+            0.4050000309944153,
+            1.7999999523162842,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_lifeguard_tower-scale.png",
+          "sha256": "e9cd68d7b2b7934ab51623029363022466d5b34bc8a8fecf08f4e293c7f5aabc"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_rescue_buoy",
+      "description": "Red rescue can with handhold recesses and a coiled tow line, laid on the sand",
+      "size": [
+        0.32,
+        0.13,
+        0.86
+      ],
+      "bounds": {
+        "min": [
+          -0.1599999964237213,
+          0,
+          -0.4300000071525574
+        ],
+        "max": [
+          0.1599999964237213,
+          0.12736374139785767,
+          0.4300000071525574
+        ]
+      },
+      "nearTriangles": 382,
+      "farTriangles": 70,
+      "family": "lifeguard",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 56.037353515625,
+          "lookAt": [
+            0.0,
+            0.06368187069892883,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_rescue_buoy-detail.png",
+          "sha256": "6c31a0153a9d0c27cadf680efb7afc684ccaefbcc324ef9ef1f9148cc2f272a1"
+        },
+        "scale": {
+          "position": [
+            1.720599889755249,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.334394454956055,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_rescue_buoy-scale.png",
+          "sha256": "08821615ed2246cc5b2756fcd5e814458dcc3efb636c2c41ec195018c3f7db41"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-06.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_first_aid",
+      "description": "Portable cream first-aid box with green cross, carrying handle, latch and hinged lid",
+      "size": [
+        0.42,
+        0.3,
+        0.28
+      ],
+      "bounds": {
+        "min": [
+          -0.20999999344348907,
+          0.005272077862173319,
+          -0.1589999943971634
+        ],
+        "max": [
+          0.20999999344348907,
+          0.30893050134181976,
+          0.15199999511241913
+        ]
+      },
+      "nearTriangles": 226,
+      "farTriangles": 22,
+      "family": "lifeguard",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3285000324249268
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 82.07927703857422,
+          "lookAt": [
+            0.0,
+            0.15710130333900452,
+            -0.0034999996423721313
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_first_aid-detail.png",
+          "sha256": "17aeaf9a0a1be5cc754e0d2d5cf626901c1af2e39754fa4792ed648147a36b43"
+        },
+        "scale": {
+          "position": [
+            1.7170835733413696,
+            1.600000023841858,
+            2.5328917503356934
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.493322372436523,
+          "lookAt": [
+            0.4050000011920929,
+            0.9026359915733337,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_first_aid-scale.png",
+          "sha256": "91ad1ffa20df6f4a996ce26afe4a90b8f083bc9a5afc0f16eee47aa9f4128115"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_red_flag",
+      "description": "Red swimming-warning flag with wind-shaped cloth on its own mast pivot",
+      "size": [
+        0.92,
+        2.02,
+        0.22
+      ],
+      "bounds": {
+        "min": [
+          -0.44999998807907104,
+          0,
+          -0.10999999940395355
+        ],
+        "max": [
+          0.429999977350235,
+          2.0199999809265137,
+          0.10999999940395355
+        ]
+      },
+      "nearTriangles": 70,
+      "farTriangles": 24,
+      "family": "lifeguard",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.452340006828308,
+            1.600000023841858,
+            2.8229520320892334
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 32.49409103393555,
+          "lookAt": [
+            -0.01000000536441803,
+            1.0099999904632568,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_red_flag-detail.png",
+          "sha256": "b0f75d50f0312ee676890051da263a7f08ec9299e1874f1a4fca221181c2c55b"
+        },
+        "scale": {
+          "position": [
+            1.8573399782180786,
+            1.600000023841858,
+            2.8229520320892334
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.887935638427734,
+          "lookAt": [
+            0.39500001072883606,
+            1.0099999904632568,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_red_flag-scale.png",
+          "sha256": "009846b4ec1cbb000bff359d213b8b46aecb56fc0c4cc2614c48a030636fcc2a"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_lamp",
+      "description": "Salt-weathered steel bollard lamp with warm diffuser and a shallow rain hood",
+      "size": [
+        0.32,
+        1.03,
+        0.32
+      ],
+      "bounds": {
+        "min": [
+          -0.1599999964237213,
+          0,
+          -0.1599999964237213
+        ],
+        "max": [
+          0.1599999964237213,
+          1.0299999713897705,
+          0.1599999964237213
+        ]
+      },
+      "nearTriangles": 104,
+      "farTriangles": 34,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.8020099997520447,
+            1.600000023841858,
+            1.5482279062271118
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 39.45744323730469,
+          "lookAt": [
+            0.0,
+            0.5149999856948853,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_lamp-detail.png",
+          "sha256": "be5f9b46acba0c859b39180fc8302b431a136db399b8ea0578fd3853fda8864e"
+        },
+        "scale": {
+          "position": [
+            1.720599889755249,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.93593978881836,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_lamp-scale.png",
+          "sha256": "43adb9d494c3e77ed05aebe1ac18156fc6d017b1e734a546a86d86d989f04709"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_bench",
+      "description": "Weathered hardwood slat bench on painted steel supports, with curved arms",
+      "size": [
+        1.85,
+        0.92,
+        0.66
+      ],
+      "bounds": {
+        "min": [
+          -0.925000011920929,
+          0,
+          -0.29750001430511475
+        ],
+        "max": [
+          0.925000011920929,
+          0.9200000166893005,
+          0.3050000071525574
+        ]
+      },
+      "nearTriangles": 804,
+      "farTriangles": 44,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.3489500284194946,
+            1.600000023841858,
+            2.6078100204467773
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 43.43357467651367,
+          "lookAt": [
+            0.0,
+            0.46000000834465027,
+            0.0037499964237213135
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bench-detail.png",
+          "sha256": "8018fb1ef365afc453b9fb181be4f0a859c14d358b52b4ec134bb147ea4f50c3"
+        },
+        "scale": {
+          "position": [
+            2.294219970703125,
+            1.600000023841858,
+            3.650766134262085
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 36.91307067871094,
+          "lookAt": [
+            0.4050000011920929,
+            0.8999999761581421,
+            0.0037499964237213135
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bench-scale.png",
+          "sha256": "506fb4cea9bc033f25ffc4fdf7e7c49a4b77c6804130efc415cfbc3d9b28b660"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_bin",
+      "description": "Lidded municipal beach bin with open front aperture and narrow timber battens",
+      "size": [
+        0.52,
+        0.96,
+        0.52
+      ],
+      "bounds": {
+        "min": [
+          -0.25999999046325684,
+          0,
+          -0.25999999046325684
+        ],
+        "max": [
+          0.25999999046325684,
+          0.9599999785423279,
+          0.25999999046325684
+        ]
+      },
+      "nearTriangles": 428,
+      "farTriangles": 34,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.7553200125694275,
+            1.600000023841858,
+            1.4580960273742676
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 36.68723678588867,
+          "lookAt": [
+            0.0,
+            0.47999998927116394,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bin-detail.png",
+          "sha256": "caad9cda50b825787ec946090e5d77b5b726624b4cc158bcab2d77f1b8e3bfb1"
+        },
+        "scale": {
+          "position": [
+            1.7206000089645386,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.141647338867188,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bin-scale.png",
+          "sha256": "f63b4702168c38b61625b4b5be4dc15e6103f6cc887ea1243cd0c1da827415a2"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_bike_rack",
+      "description": "Three inverted-U stainless bicycle parking hoops on two low fixing rails",
+      "size": [
+        1.8,
+        0.8,
+        0.55
+      ],
+      "bounds": {
+        "min": [
+          -0.8999999761581421,
+          0,
+          -0.2800000011920929
+        ],
+        "max": [
+          0.8999999761581421,
+          0.7959807515144348,
+          0.2800000011920929
+        ]
+      },
+      "nearTriangles": 416,
+      "farTriangles": 74,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.3155999183654785,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 44.47227478027344,
+          "lookAt": [
+            0.0,
+            0.3979903757572174,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_bike_rack-detail.png",
+          "sha256": "14bd4f760f0210e669bcbf81d6142e25167ed86b2418b22cdd8c606b0e60dfd3"
+        },
+        "scale": {
+          "position": [
+            2.2608702182769775,
+            1.600000023841858,
+            3.5826361179351807
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 36.610198974609375,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_bike_rack-scale.png",
+          "sha256": "d44f49e10d24ab792b6064c826c1faafe0db72df99f941b49359d1327b348ea8"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_fountain",
+      "description": "Accessible enamel drinking fountain with dished bowl, swan-neck tap and drain",
+      "size": [
+        0.5,
+        1.06,
+        0.54
+      ],
+      "bounds": {
+        "min": [
+          -0.25,
+          0.010251262225210667,
+          -0.25999999046325684
+        ],
+        "max": [
+          0.25,
+          1.0586247444152832,
+          0.2800000011920929
+        ]
+      },
+      "nearTriangles": 422,
+      "farTriangles": 34,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.8142650723457336,
+            1.600000023841858,
+            1.5818856954574585
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 35.60060501098633,
+          "lookAt": [
+            0.0,
+            0.5344380140304565,
+            0.01000000536441803
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_fountain-detail.png",
+          "sha256": "0c4e0990a33248b9d89f13887e26c4bd97ddb796ada08b5b4c77404868c38f5e"
+        },
+        "scale": {
+          "position": [
+            1.7137624025344849,
+            1.600000023841858,
+            2.53648042678833
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.023008346557617,
+          "lookAt": [
+            0.4050000309944153,
+            0.905125617980957,
+            0.01000000536441803
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_fountain-scale.png",
+          "sha256": "9abb6305bd84f3f258c92c594fa5592f7d33f1fae108dd65694f59b0b3be2726"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_railing",
+      "description": "Repeatable two-metre salt-painted sea-wall railing, with open pickets and a broad handrail",
+      "size": [
+        2.0,
+        0.95,
+        0.12
+      ],
+      "bounds": {
+        "min": [
+          -1,
+          0,
+          -0.05999999865889549
+        ],
+        "max": [
+          1,
+          0.949999988079071,
+          0.05999999865889549
+        ]
+      },
+      "nearTriangles": 364,
+      "farTriangles": 80,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.4490000009536743,
+            1.600000023841858,
+            2.7971999645233154
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 45.17839431762695,
+          "lookAt": [
+            0.0,
+            0.4749999940395355,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_railing-detail.png",
+          "sha256": "3c7e3aee3eb943b496478492f6623a30febb08ec25443e26b05f011755b67b2d"
+        },
+        "scale": {
+          "position": [
+            2.3942699432373047,
+            1.600000023841858,
+            3.840155839920044
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 40.279457092285156,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_railing-scale.png",
+          "sha256": "b91210a87d2a886edc5d65bc4f83db3c8f24ed4087c06d42c2659160bdcc896e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_steps_small",
+      "description": "Three concrete sea-wall treads, 154mm rise and 280mm going",
+      "size": [
+        1.2,
+        0.462,
+        0.84
+      ],
+      "bounds": {
+        "min": [
+          -0.6000000238418579,
+          0,
+          -0.41999998688697815
+        ],
+        "max": [
+          0.6000000238418579,
+          0.4659999907016754,
+          0.41999998688697815
+        ]
+      },
+      "nearTriangles": 174,
+      "farTriangles": 26,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.9154000282287598,
+            1.600000023841858,
+            1.7671200037002563
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 39.800132751464844,
+          "lookAt": [
+            0.0,
+            0.2329999953508377,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_steps_small-detail.png",
+          "sha256": "f58107fbacb0c4b53b65a2186b0698fef04a74b9cf2f126207a32c2032898659"
+        },
+        "scale": {
+          "position": [
+            1.8606702089309692,
+            1.600000023841858,
+            2.8100762367248535
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 27.385046005249023,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_steps_small-scale.png",
+          "sha256": "ac5432079d40cf38da5d0c85c76fb5a2da1b9242286d44735f17a4f93d0d309d"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_steps_medium",
+      "description": "Five concrete sea-wall treads, 154mm rise and 280mm going",
+      "size": [
+        2.0,
+        0.77,
+        1.4
+      ],
+      "bounds": {
+        "min": [
+          -1,
+          0,
+          -0.699999988079071
+        ],
+        "max": [
+          1,
+          0.7739999890327454,
+          0.699999988079071
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 42,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.4490000009536743,
+            1.600000023841858,
+            2.7971999645233154
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 36.991573333740234,
+          "lookAt": [
+            0.0,
+            0.3869999945163727,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_steps_medium-detail.png",
+          "sha256": "afdbf25b35fe205c905454af448a4282316cea8b5e9ea05d2341fd5f9995e47c"
+        },
+        "scale": {
+          "position": [
+            2.3942699432373047,
+            1.600000023841858,
+            3.840155839920044
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 33.21363067626953,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_steps_medium-scale.png",
+          "sha256": "51660a8a1ba045be6d947061c40babbcbee4abf79e0528400bda4a550c968896"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_steps_wide",
+      "description": "Wide five-tread concrete beach access with non-slip edge strips",
+      "size": [
+        3.0,
+        0.77,
+        1.4
+      ],
+      "bounds": {
+        "min": [
+          -1.5,
+          0,
+          -0.699999988079071
+        ],
+        "max": [
+          1.5,
+          0.7739999890327454,
+          0.699999988079071
+        ]
+      },
+      "nearTriangles": 290,
+      "farTriangles": 42,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            2.115999937057495,
+            1.600000023841858,
+            4.084799766540527
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 40.98789978027344,
+          "lookAt": [
+            0.0,
+            0.3869999945163727,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_steps_wide-detail.png",
+          "sha256": "eb47f0be44b404a926fb2fe7b4f05abbffb9e3108eb97d0dab23f4a5aebd3b63"
+        },
+        "scale": {
+          "position": [
+            3.061269998550415,
+            1.600000023841858,
+            5.127756118774414
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 39.99580383300781,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_steps_wide-scale.png",
+          "sha256": "79b6308f872e1fd4c09c99b2f4680edcba8c30611728fa2ba0fffb38fbad8e2e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_shower",
+      "description": "Beach rinse shower with bent galvanized riser, perforated head, push valve and draining footplate",
+      "size": [
+        0.44,
+        2.35,
+        0.76
+      ],
+      "bounds": {
+        "min": [
+          -0.2199999988079071,
+          0,
+          -0.3799999952316284
+        ],
+        "max": [
+          0.2199999988079071,
+          2.3404223918914795,
+          0.3799999952316284
+        ]
+      },
+      "nearTriangles": 390,
+      "farTriangles": 46,
+      "family": "promenade",
+      "sourceGlb": "beach_props/beach_civic.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.676061749458313,
+            1.600000023841858,
+            3.235527753829956
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.747238159179688,
+          "lookAt": [
+            0.0,
+            1.1702111959457397,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_shower-detail.png",
+          "sha256": "e4baac9f8371870eefcd32808803a196d86a66694a5faf53a6955d931c65d019"
+        },
+        "scale": {
+          "position": [
+            2.081061601638794,
+            1.600000023841858,
+            3.235527753829956
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.546302795410156,
+          "lookAt": [
+            0.4049999713897705,
+            1.1702111959457397,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_shower-scale.png",
+          "sha256": "503b87870f6eaaed530585c56e891109f5e93f0bb8493635a85611b0c83c7aae"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-07.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_groyne_rock_1",
+      "description": "Salt-stained angular groyne boulder variant 1",
+      "size": [
+        1.6,
+        0.95,
+        1.25
+      ],
+      "bounds": {
+        "min": [
+          -0.7337293028831482,
+          0,
+          -0.548835813999176
+        ],
+        "max": [
+          0.716155469417572,
+          0.949999988079071,
+          0.5908390879631042
+        ]
+      },
+      "nearTriangles": 61,
+      "farTriangles": 23,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.0732861757278442,
+            1.600000023841858,
+            2.1098732948303223
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.77574920654297,
+          "lookAt": [
+            -0.008786916732788086,
+            0.4749999940395355,
+            0.02100163698196411
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_groyne_rock_1-detail.png",
+          "sha256": "04aea22641da516b46b37ae09f061298c204383b2b42b3b1ab17df2b48f43275"
+        },
+        "scale": {
+          "position": [
+            2.0185563564300537,
+            1.600000023841858,
+            3.15282940864563
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.276811599731445,
+          "lookAt": [
+            0.3962130844593048,
+            0.8999999761581421,
+            0.02100163698196411
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_groyne_rock_1-scale.png",
+          "sha256": "a103cd94fdb6f8d4d4598003fce4811262097766bf48ae3ec7d78ad8d69c3ffe"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_groyne_rock_2",
+      "description": "Salt-stained angular groyne boulder variant 2",
+      "size": [
+        1.25,
+        1.1,
+        1.45
+      ],
+      "bounds": {
+        "min": [
+          -0.5300229787826538,
+          0,
+          -0.6517043113708496
+        ],
+        "max": [
+          0.5890478491783142,
+          1.100000023841858,
+          0.6710234880447388
+        ]
+      },
+      "nearTriangles": 61,
+      "farTriangles": 23,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.026771903038025,
+            1.600000023841858,
+            1.93480384349823
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 24.220918655395508,
+          "lookAt": [
+            0.0295124351978302,
+            0.550000011920929,
+            0.00965958833694458
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_groyne_rock_2-detail.png",
+          "sha256": "db6462c13bf106467cb9c87459b87bf05943aa3f2d04e2a015f6f7de02642b7f"
+        },
+        "scale": {
+          "position": [
+            1.836202621459961,
+            1.600000023841858,
+            2.71553111076355
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 23.214948654174805,
+          "lookAt": [
+            0.4345124363899231,
+            0.8999999761581421,
+            0.00965958833694458
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_groyne_rock_2-scale.png",
+          "sha256": "56add3e7c8b0f9a663106c7797c2d9c55b2e8e8722bd340e63ba9898e264cf9d"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 1,
+        "row": 0,
+        "pixelBounds": [
+          1060,
+          128,
+          2084,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_groyne_rock_3",
+      "description": "Salt-stained angular groyne boulder variant 3",
+      "size": [
+        1.85,
+        0.8,
+        1.15
+      ],
+      "bounds": {
+        "min": [
+          -0.8472841382026672,
+          0,
+          -0.5144354104995728
+        ],
+        "max": [
+          0.8452162146568298,
+          0.800000011920929,
+          0.5269390344619751
+        ]
+      },
+      "nearTriangles": 61,
+      "farTriangles": 23,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.2428637742996216,
+            1.600000023841858,
+            2.407515287399292
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 36.470035552978516,
+          "lookAt": [
+            -0.0010339617729187012,
+            0.4000000059604645,
+            0.006251811981201172
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_groyne_rock_3-detail.png",
+          "sha256": "bdac87fcf1f775347691caaf12d2e759c6d0f52ca000c78b733de581db4a52dd"
+        },
+        "scale": {
+          "position": [
+            2.188133716583252,
+            1.600000023841858,
+            3.4504711627960205
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.86487579345703,
+          "lookAt": [
+            0.4039660394191742,
+            0.8999999761581421,
+            0.006251811981201172
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_groyne_rock_3-scale.png",
+          "sha256": "dd1b3c09b30a3df532ff77747d6811b88b2bb59763f53d238a052d2c05f01334"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 2,
+        "row": 0,
+        "pixelBounds": [
+          2084,
+          128,
+          3108,
+          588
+        ]
+      }
+    },
+    {
+      "key": "beach_seawall_stones",
+      "description": "Mortared section of irregular salt-stained sea-wall blocks",
+      "size": [
+        1.8,
+        0.55,
+        0.65
+      ],
+      "bounds": {
+        "min": [
+          -0.9100000262260437,
+          0.009999999776482582,
+          -0.3149999976158142
+        ],
+        "max": [
+          0.9100000262260437,
+          0.5370000004768372,
+          0.3149999976158142
+        ]
+      },
+      "nearTriangles": 864,
+      "farTriangles": 10,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.3289400339126587,
+            1.600000023841858,
+            2.565432071685791
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 45.5855598449707,
+          "lookAt": [
+            0.0,
+            0.273499995470047,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_seawall_stones-detail.png",
+          "sha256": "dfa73b337e1d59992a518645bc9fc3320219f36558c8311636a0dc70cf0bb147"
+        },
+        "scale": {
+          "position": [
+            2.274209976196289,
+            1.600000023841858,
+            3.6083881855010986
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 36.5145149230957,
+          "lookAt": [
+            0.4050000011920929,
+            0.9049999713897705,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_seawall_stones-scale.png",
+          "sha256": "042bb61f2e7a792d0a86de6576e14845930b02c661bd7e428c82b0489907216b"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 0,
+        "row": 1,
+        "pixelBounds": [
+          36,
+          588,
+          1060,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_driftwood_1",
+      "description": "Silver driftwood branch variant 1, worn end grain and broken twigs",
+      "size": [
+        1.5,
+        0.22,
+        0.32
+      ],
+      "bounds": {
+        "min": [
+          -0.7566213607788086,
+          -0.010707391425967216,
+          -0.1383020132780075
+        ],
+        "max": [
+          0.7216991186141968,
+          0.2018732875585556,
+          0.15179453790187836
+        ]
+      },
+      "nearTriangles": 112,
+      "farTriangles": 44,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.0835785865783691,
+            1.600000023841858,
+            2.1322317123413086
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 52.9094352722168,
+          "lookAt": [
+            -0.017461121082305908,
+            0.09558294713497162,
+            0.006746262311935425
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_driftwood_1-detail.png",
+          "sha256": "d3fa530e2163a78ec6c424ca9a8abaa919db7ce13b45589f9ace36e5a51a326f"
+        },
+        "scale": {
+          "position": [
+            2.028848648071289,
+            1.600000023841858,
+            3.1684415340423584
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 33.73344421386719,
+          "lookAt": [
+            0.3875389099121094,
+            0.8946462869644165,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_driftwood_1-scale.png",
+          "sha256": "ae4fadf3c69a6ae09d5e1448405d2f6b04a61cc28ce21efd3d2511a5503b9789"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 1,
+        "row": 1,
+        "pixelBounds": [
+          1060,
+          588,
+          2084,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_driftwood_2",
+      "description": "Silver driftwood branch variant 2, worn end grain and broken twigs",
+      "size": [
+        1.1,
+        0.3,
+        0.45
+      ],
+      "bounds": {
+        "min": [
+          -0.5657147169113159,
+          -0.0025688500609248877,
+          -0.187891885638237
+        ],
+        "max": [
+          0.5311992168426514,
+          0.2816646993160248,
+          0.2098139226436615
+        ]
+      },
+      "nearTriangles": 112,
+      "farTriangles": 44,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.8293838500976562,
+            1.600000023841858,
+            1.6453473567962646
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 56.18701934814453,
+          "lookAt": [
+            -0.017257750034332275,
+            0.1395479291677475,
+            0.01096101850271225
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_driftwood_2-detail.png",
+          "sha256": "3bbfceab80126b0454847a942a2edc7ffb162ed562974edf49e863542b224a05"
+        },
+        "scale": {
+          "position": [
+            1.7746539115905762,
+            1.600000023841858,
+            2.6822493076324463
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 29.299715042114258,
+          "lookAt": [
+            0.387742280960083,
+            0.8987155556678772,
+            0.00490695983171463
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_driftwood_2-scale.png",
+          "sha256": "0d64ac51af4e2d0a83a9f456cf2fa3554ce4da06facd77601dfaf385b2e986e0"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 2,
+        "row": 1,
+        "pixelBounds": [
+          2084,
+          588,
+          3108,
+          1048
+        ]
+      }
+    },
+    {
+      "key": "beach_driftwood_3",
+      "description": "Silver driftwood branch variant 3, worn end grain and broken twigs",
+      "size": [
+        1.8,
+        0.34,
+        0.5
+      ],
+      "bounds": {
+        "min": [
+          -0.9118481278419495,
+          -0.0028418414294719696,
+          -0.20947222411632538
+        ],
+        "max": [
+          0.8661997318267822,
+          0.321765273809433,
+          0.23266065120697021
+        ]
+      },
+      "nearTriangles": 112,
+      "farTriangles": 44,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.2781336307525635,
+            1.600000023841858,
+            2.5230085849761963
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 48.21764373779297,
+          "lookAt": [
+            -0.022824198007583618,
+            0.15946172177791595,
+            0.011594213545322418
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_driftwood_3-detail.png",
+          "sha256": "02d8ee5b2a8be446baa323eb7127a0d6946a4a903962b70b69d5df0d9e484fec"
+        },
+        "scale": {
+          "position": [
+            2.2234039306640625,
+            1.600000023841858,
+            3.565964698791504
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 37.16899108886719,
+          "lookAt": [
+            0.38217583298683167,
+            0.8985790610313416,
+            0.011594213545322418
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_driftwood_3-scale.png",
+          "sha256": "1bae3b91b0a2d45082bf2222618a29ed99ba2e3de7195cb70de048fe8aa29d54"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 0,
+        "row": 2,
+        "pixelBounds": [
+          36,
+          1048,
+          1060,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_fishing_net",
+      "description": "Stranded folded fishing net with cork floats and a coiled headline",
+      "size": [
+        1.7,
+        0.14,
+        1.25
+      ],
+      "bounds": {
+        "min": [
+          -0.8500000238418579,
+          0,
+          -0.625
+        ],
+        "max": [
+          0.8500000238418579,
+          0.14000000059604645,
+          0.625
+        ]
+      },
+      "nearTriangles": 352,
+      "farTriangles": 98,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            1.248900055885315,
+            1.600000023841858,
+            2.4109201431274414
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 41.62733459472656,
+          "lookAt": [
+            0.0,
+            0.07000000029802322,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_fishing_net-detail.png",
+          "sha256": "6c69f690f1c3b1315377274d6262e3ee021a2f289a079a388a6438dff795b0f4"
+        },
+        "scale": {
+          "position": [
+            2.1941702365875244,
+            1.600000023841858,
+            3.453876256942749
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 30.544565200805664,
+          "lookAt": [
+            0.4050000309944153,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_fishing_net-scale.png",
+          "sha256": "517ab32040b4838ba52970220b68d564367670e9a94bc86c2f80dc69898a48b0"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 1,
+        "row": 2,
+        "pixelBounds": [
+          1060,
+          1048,
+          2084,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_seaweed",
+      "description": "Washed-up olive seaweed clump on alpha cutout cards",
+      "size": [
+        0.7,
+        0.22,
+        0.55
+      ],
+      "bounds": {
+        "min": [
+          -0.3499999940395355,
+          0,
+          -0.2681051790714264
+        ],
+        "max": [
+          0.3499999940395355,
+          0.2199999988079071,
+          0.2681051790714264
+        ]
+      },
+      "nearTriangles": 14,
+      "farTriangles": 4,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3320000171661377
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 58.81464385986328,
+          "lookAt": [
+            0.0,
+            0.10999999940395355,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_seaweed-detail.png",
+          "sha256": "3d1a6eda740b7d0f923cd14b281eef94ad80a251cb7462f7f6b0e3cd54835035"
+        },
+        "scale": {
+          "position": [
+            1.720599889755249,
+            1.600000023841858,
+            2.539680004119873
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 28.293806076049805,
+          "lookAt": [
+            0.4049999713897705,
+            0.8999999761581421,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_seaweed-scale.png",
+          "sha256": "ffabcafebae5449dc314ed859539f39bb37e237c38b50071f0278c303474dd7e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 2,
+        "row": 2,
+        "pixelBounds": [
+          2084,
+          1048,
+          3108,
+          1508
+        ]
+      }
+    },
+    {
+      "key": "beach_shell_conch",
+      "description": "Spiral conch with flared lip, inner aperture and raised ridges",
+      "size": [
+        0.27,
+        0.14,
+        0.12
+      ],
+      "bounds": {
+        "min": [
+          -0.13500000536441803,
+          0.009999999776482582,
+          -0.05343465134501457
+        ],
+        "max": [
+          0.125,
+          0.12999999523162842,
+          0.05334926024079323
+        ]
+      },
+      "nearTriangles": 796,
+      "farTriangles": 82,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6850000023841858,
+            1.600000023841858,
+            1.3319573402404785
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 197.06712341308594,
+          "lookAt": [
+            -0.005000002682209015,
+            0.07000000029802322,
+            -4.2695552110672e-05
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_shell_conch-detail.png",
+          "sha256": "8b6944f72e166462af1682c5da7dc50629a8fbbbfc0e494bb6a09c6912b7387b"
+        },
+        "scale": {
+          "position": [
+            1.7089300155639648,
+            1.600000023841858,
+            2.526803970336914
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.158254623413086,
+          "lookAt": [
+            0.4000000059604645,
+            0.9049999713897705,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_shell_conch-scale.png",
+          "sha256": "67c6da85af0863a0274d6688ac286471310751cefac2be9dc164e09662c3ae9a"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 0,
+        "row": 3,
+        "pixelBounds": [
+          36,
+          1508,
+          1060,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_shell_scallop",
+      "description": "Fan-shaped scallop valve with a fluted rim and radiating ribs",
+      "size": [
+        0.16,
+        0.045,
+        0.15
+      ],
+      "bounds": {
+        "min": [
+          -0.07998781651258469,
+          0.00902389083057642,
+          -0.05801762640476227
+        ],
+        "max": [
+          0.07998781651258469,
+          0.04297610744833946,
+          0.09300000220537186
+        ]
+      },
+      "nearTriangles": 234,
+      "farTriangles": 5,
+      "family": "shore",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            0.6899999976158142,
+            1.600000023841858,
+            1.3494912385940552
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 269.4866943359375,
+          "lookAt": [
+            0.0,
+            0.025999998673796654,
+            0.017491187900304794
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_shell_scallop-detail.png",
+          "sha256": "3e1091193f5a9dc52f14558b8d99c04829791b6c4302f6f5a0a70c783d0e3413"
+        },
+        "scale": {
+          "position": [
+            1.71458101272583,
+            1.600000023841858,
+            2.5280606746673584
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 31.594240188598633,
+          "lookAt": [
+            0.4050000011920929,
+            0.9045119285583496,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_shell_scallop-scale.png",
+          "sha256": "a3d82314e558518d2bfb3acf387c2d1e085009a3802f9d67478301e6f5292e4e"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 1,
+        "row": 3,
+        "pixelBounds": [
+          1060,
+          1508,
+          2084,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_palm_small",
+      "description": "Coconut palm small, ringed curved trunk and separate crown cards",
+      "size": [
+        3.1,
+        4.2,
+        3.1
+      ],
+      "bounds": {
+        "min": [
+          -1.555199384689331,
+          -0.015958495438098907,
+          -1.5114977359771729
+        ],
+        "max": [
+          1.555199384689331,
+          3.876186788082123,
+          1.5114977359771729
+        ]
+      },
+      "nearTriangles": 646,
+      "farTriangles": 74,
+      "family": "plant",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            2.7110610008239746,
+            1.600000023841858,
+            5.233526229858398
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 21.288551330566406,
+          "lookAt": [
+            0.0,
+            1.9301141500473022,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_palm_small-detail.png",
+          "sha256": "8ac8594844876a30c60d1f9bb6cefa6aebd3156de97d6509f7104a39e5afc74c"
+        },
+        "scale": {
+          "position": [
+            3.1349058151245117,
+            1.600000023841858,
+            5.2699055671691895
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 20.4086971282959,
+          "lookAt": [
+            0.4049999713897705,
+            1.9301141500473022,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_palm_small-scale.png",
+          "sha256": "b98013adbf194ccdc7e2adcf22d12a88bf1c2ece1708b54367711cfccd921add"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-08.png",
+        "column": 2,
+        "row": 3,
+        "pixelBounds": [
+          2084,
+          1508,
+          3108,
+          1968
+        ]
+      }
+    },
+    {
+      "key": "beach_palm_large",
+      "description": "Coconut palm large, ringed curved trunk and separate crown cards",
+      "size": [
+        4.5,
+        6.6,
+        4.5
+      ],
+      "bounds": {
+        "min": [
+          -2.2542686462402344,
+          -0.009452395141124725,
+          -2.1941096782684326
+        ],
+        "max": [
+          2.2542686462402344,
+          6.276186645030975,
+          2.1941096782684326
+        ]
+      },
+      "nearTriangles": 646,
+      "farTriangles": 74,
+      "family": "plant",
+      "sourceGlb": "beach_props/beach_shore.glb",
+      "views": {
+        "detail": {
+          "position": [
+            4.307520866394043,
+            1.600000023841858,
+            8.315388679504395
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 21.78094482421875,
+          "lookAt": [
+            0.0,
+            3.1333670616149902,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": null,
+          "file": "beach_palm_large-detail.png",
+          "sha256": "326c357b2801501bb47e290059c61f594eb26cc84dd4b82051e1ac923d708dc6"
+        },
+        "scale": {
+          "position": [
+            4.712521076202393,
+            1.600000023841858,
+            8.315388679504395
+          ],
+          "eyeHeight": 1.6,
+          "lensMm": 21.036415100097656,
+          "lookAt": [
+            0.4049999713897705,
+            3.1333670616149902,
+            -0.0
+          ],
+          "projection": "perspective",
+          "referenceHeight": 1.8,
+          "file": "beach_palm_large-scale.png",
+          "sha256": "4c2e67233b9d4371d1315964d19cd634fffd877f8dc40f01469dc55fc11c864c"
+        }
+      },
+      "contactSheet": {
+        "sheet": "contact-09.png",
+        "column": 0,
+        "row": 0,
+        "pixelBounds": [
+          36,
+          128,
+          1060,
+          588
+        ]
+      }
+    }
+  ]
+}
