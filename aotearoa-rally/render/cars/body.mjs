@@ -75,7 +75,7 @@ export function cabinRing(d, t) {
 export function ghStations(d) {
   const c = d.cabin;
   const bT = c.bt ?? c.rs + (c.re - c.rs) * 0.38;
-  const tG1 = c.re + (c.t1 - c.re) * ({ saloon: 0.3, hatch: 0.45, kit: 0.3, coupe: 0.35 }[d.S.kind] ?? 0.3);
+  const tG1 = c.re + (c.t1 - c.re) * (c.g1 ?? ({ saloon: 0.3, hatch: 0.45, kit: 0.3, coupe: 0.35 }[d.S.kind] ?? 0.3));
   const keys = [c.t0, c.t0 + 0.012, c.rs, c.re, tG1, c.t1 - 0.014, c.t1];
   if (c.bPillar) keys.push(bT - 0.014, bT + 0.014);
   const ts = keys.slice();
@@ -310,9 +310,9 @@ function buildDetails(THREE, spec, d, B, tub) {
       const a = a0 + (Math.PI - 2 * a0) * (j / steps);
       const dz = Math.cos(a) * rr, dy = Math.sin(a) * rr + w.r;
       const x = sideX(d, d.tAt(w.z + dz), dy);
-      pts.push([sd * (Math.abs(x) + 0.006), dy, w.z + dz]);
+      pts.push([sd * (Math.abs(x) + 0.006 + 0.012 * (S.flare ?? 0)), dy, w.z + dz]);
     }
-    trim.tubeR(pts, (u) => 0.0205 * Math.pow(Math.min(1, 5 * u, 5 * (1 - u)), 0.55) + 0.001, 0x0c0c0e, 8, true, 56);
+    trim.tubeR(pts, (u) => 0.0205 * (1 + 0.9 * (S.flare ?? 0)) * Math.pow(Math.min(1, 5 * u, 5 * (1 - u)), 0.55) + 0.001, 0x0c0c0e, 8, true, 56);
     const g = new THREE.CylinderGeometry(w.r + 0.045, w.r + 0.045, hw * 0.45, 22, 1, true, 0, Math.PI);
     trim.add(g, trim.mat(sd * (hw * 0.78), w.r, w.z, 0, 0, Math.PI / 2), 0x060607);
   }
@@ -442,7 +442,7 @@ function buildDetails(THREE, spec, d, B, tub) {
   if (S.wing === "gt") {
     // GT wing: one aerofoil on two swan-neck uprights with mounting pads, end plates outboard of the plane
     const wz2 = d.zAt(0.925), span = 0.62, ux = 0.3;
-    const deckY = surfTop(d, 0.925, ux), wy2 = deckY + 0.21;
+    const deckY = surfTop(d, 0.925, ux), wy2 = deckY + (S.wingH ?? 0.21);
     body.extrude(foil(0.27, 0.085, -0.04, 0.1, wz2, wy2), -span, span, 0xffffff);
     trim.box(span * 2 - 0.02, 0.012, 0.012, 0, wy2 + 0.045, wz2 + 0.12, BLK, 0.1); // gurney strip
     for (const sd of [-1, 1]) {
