@@ -11,6 +11,15 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-01 - Verge pull is one-sided ploughing drag, not terrain: core/physics.mjs ~947 swings a 90 km/h car 14 deg in 1 s
+  Two wheels on grass (drag 0.15; scree/sand/deep snow 0.3/0.4/0.6 in surfaces.mjs) yaw the car toward the verge. Verge height across the
+  road edge is within 0.5 m on Waitomo, Whakarewarewa and Coromandel. Capping or sharing the drag halved the swing but regressed the
+  keyboard replica (Waitomo Huia 1.6 to 4.5 % off-road) and failed bank-hit and lift-off tests: the same drag steadies slides on grass.
+
+- 2026-11-01 - Full brake locks all four wheels at once: straight-line ABS is off and golden pins cap stops at +-5 % (core/physics.mjs)
+  Huia brakes at 0.80 g on tarmac against a 1.0 g tyre peak, and steering is gone while locked. Gravel sliding grip (0.86) beats peak
+  (0.72), so ABS would lengthen gravel stops. Only the pedal ramp (now 16/s, 0.12 s to full) was free to change.
+
 - 2026-11-01 - core.autocrlf=true makes every checkout and git archive hold text as CRLF: pin text files by those bytes (la-ladera/assets/models/manifest.people.json: people_meta.json)
   A hand-normalised LF working file hashes differently from the blob a clean export holds, so a re-pin made from it passed in the worktree and failed the decoded-asset gate on the frozen export.
   Hash and pin what `git archive` writes (CRLF here), and check the pin on an export. A patch authored on a CRLF tree needs `git apply --ignore-whitespace` and then leaves mixed endings: strip the stray CRs.
