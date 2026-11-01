@@ -11,6 +11,14 @@ injects only the newest 30 nuggets (or 4 KiB), so entries past that stay here fo
 and cost a session nothing. Durable project facts belong in CLAUDE.md (repo) or
 ~/.claude/CLAUDE.md (global), not here. -->
 
+- 2026-11-01 - core/physics.mjs:PLOUGH_LOCAL: verge pull is yaw torque from per-wheel plough drag
+  Two wheels on grass at 90 km/h swung the heading 14 deg in 1 s. With no plough drag the swing is 0.5 deg; gravel rolling
+  resistance still gives 14, gravel grip 15, assist off 23. Applying the along-track drag at the centre of mass (10 % kept at
+  the wheel) gives 2.5 deg and keeps the stopping effect. Easing or capping the drag broke the lift-off test and the Waitomo
+  replica; supersedes the round-7 note above that only called it ploughing drag.
+- 2026-11-01 - tests/dynamics-*.test.mjs: flat-stage tests reach the grass verge in about a second
+  The one-sided drag was hiding in their numbers (downforce g ratio, handling fingerprint). When verge drag changes, expect
+  those to move; retune cars (`downforce`, `absTarmac`), never the test bands.
 - 2026-11-01 - Verge pull is one-sided ploughing drag, not terrain: core/physics.mjs ~947 swings a 90 km/h car 14 deg in 1 s
   Two wheels on grass (drag 0.15; scree/sand/deep snow 0.3/0.4/0.6 in surfaces.mjs) yaw the car toward the verge. Verge height across the
   road edge is within 0.5 m on Waitomo, Whakarewarewa and Coromandel. Capping or sharing the drag halved the swing but regressed the

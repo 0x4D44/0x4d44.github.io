@@ -107,8 +107,9 @@ const CS_INTO = 0.1;
 export const LOOSE_GRIP_SCALE = 1.0;
 const ABS_T_SLIP = 0.08, ABS_T_GAIN = 20;
 /** Extra tyre grip (fraction) reached at DF_V0 + DF_V1 m/s; nothing at or below DF_V0 (22 m/s = 79 km/h). */
-export const DOWNFORCE = 0.12;
-const DF_V0 = 22, DF_V1 = 22;
+export const DOWNFORCE = 0.2;
+const DF_V0 = 30, DF_V1 = 12;
+const PLOUGH_LOCAL = 0.1; // share of the along-track plough drag applied at the wheel (the rest acts at the centre of mass)
 const GOV_LOOSE = 0.4, GOV_CAP = 0.45;
 export const isLooseSurf = (id) => LOOSE_SURF[id] === 1;
 const LOOSE_SURF = [1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]; // by SURFACE id: gravel, dirt, (tarmac), mud, snow, pumice
@@ -171,6 +172,7 @@ export function createVehicle(spec, options = {}) {
   const frontLoose = spec.handling && spec.handling.frontLoose !== undefined ? spec.handling.frontLoose : FRONT_LOOSE;
   const rearLoose = spec.handling && spec.handling.rearLoose !== undefined ? spec.handling.rearLoose : REAR_LOOSE;
   const absTarmac = spec.handling && spec.handling.absTarmac !== undefined ? spec.handling.absTarmac : 1; // share of the straight-line tarmac ABS applied (1 = full)
+  const dfCar = spec.handling && spec.handling.downforce !== undefined ? spec.handling.downforce : DOWNFORCE; // grip gained at full speed (fraction)
   const ltGain = spec.handling && spec.handling.liftRotate !== undefined ? spec.handling.liftRotate : (spec.drivetrain === "AWD" ? LT_GAIN_AWD : spec.drivetrain === "FWD" ? LT_GAIN_FWD : LT_GAIN_RWD);
 
   // box (for obstacle/wall collisions): z positive = back
@@ -743,7 +745,7 @@ export function createVehicle(spec, options = {}) {
 
     processInput(dt, input, fs, stage);
     // round 7: speed-dependent downforce (arcade rally): tyre grip rises above DF_V0 so high-speed steering keeps authority; zero at and below the low-speed scenarios
-    const downF = 1 + DOWNFORCE * clamp((spd - DF_V0) / DF_V1, 0, 1) * (1 - clamp(D.brk * 2, 0, 1)); // not while braking: stopping distances stay as designed
+    const downF = 1 + dfCar * clamp((spd - DF_V0) / DF_V1, 0, 1) * (1 - clamp(D.brk * 2, 0, 1)); // not while braking: stopping distances stay as designed
 
     // ----- steering -----
     {
@@ -836,6 +838,7 @@ export function createVehicle(spec, options = {}) {
     }
     // ----- suspension forces (pass 2) + tyre forces -----
     let Fx = 0, Fy = -m * G, Fz = 0, Tx = 0, Ty = 0, Tz = 0;
+    let ploughX = 0, ploughY = 0, ploughZ = 0;
     const rho = RHO;
     // aero
     {
@@ -953,7 +956,13 @@ export function createVehicle(spec, options = {}) {
         fxT -= roll * th;
         const plough = si.drag * fz / G;
         const sp2 = Math.sqrt(vxw * vxw + vyw * vyw);
-        if (plough > 0 && sp2 > 0.01) { fxT -= plough * vxw; fyT -= plough * vyw; }
+        if (plough > 0 && sp2 > 0.01) {
+          // round 8: the along-track drag stops the car but must not twist it: all but PLOUGH_LOCAL of it acts at the centre of mass (no yaw moment),
+          // so one wheel on a verge slows the car without swinging the heading. The sideways part stays at the wheel (it damps slides).
+          const pl = plough * vxw;
+          fxT -= PLOUGH_LOCAL * pl; fyT -= plough * vyw;
+          ploughX += fwx * pl; ploughY += fwy * pl; ploughZ += fwz * pl;
+        }
         w.dFx = o.dFxdw;
         ws.slipRatio = o.kappa; ws.slipAngle = o.alpha; ws.skid = o.skid;
         w.skidS = o.skid;
@@ -980,6 +989,8 @@ export function createVehicle(spec, options = {}) {
       Tz += rxw * fyw - ryw * fxw;
       w.xcPrev = w.xc;
     }
+
+    Fx -= (1 - PLOUGH_LOCAL) * ploughX; Fy -= (1 - PLOUGH_LOCAL) * ploughY; Fz -= (1 - PLOUGH_LOCAL) * ploughZ;
 
     // ----- drivetrain -----
     let sumW = 0, nW = 0, wF = 0, wRr = 0;
