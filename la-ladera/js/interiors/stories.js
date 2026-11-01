@@ -346,11 +346,26 @@ function discoveries(ctx, bp, E, rng) {
 /** The interactable pass alone (tests re-run it after changing the walls of a building): registers what is left after the sight check, returns how many. */
 export const collectInteractables = (ctx, bp, rng) => interactables(ctx, bp, null, rng);
 
+const storyRng = (ctx, bp) => makeRng((hashStr('stories:' + bp.id) ^ ((ctx.seed ?? 0) >>> 0)) >>> 0);
+
+/** The two halves of `collectStories`, each from its own forked stream, so they can run apart (lazy interiors, js/interiors/lazy.js): the objects' prompts depend on this building alone and are
+ *  registered the moment it is furnished; the discoveries depend on how many buildings BEFORE it already tell each story (`ctx.interiorStoryUse`), so they must run in the order the buildings
+ *  are furnished in a full boot (the lazy runner commits them in that order, whenever each building happens to be furnished). */
+export function collectInteractableStories(ctx, bp, E) {
+  const I = bp.interior; if (!I?.layouts) return;
+  const st = I.stories ??= { interactables: 0, discoveries: 0 };
+  try { if (ctx.interact?.register) st.interactables = interactables(ctx, bp, E, storyRng(ctx, bp).fork('act')); } catch (e) { (ctx.errors ??= []).push({ stage: 'stories', building: bp.id, message: 'interactables ' + String(e?.message ?? e), stack: e?.stack }); }
+}
+export function collectDiscoveryStories(ctx, bp, E) {
+  const I = bp.interior; if (!I?.layouts) return;
+  const st = I.stories ??= { interactables: 0, discoveries: 0 };
+  try { st.discoveries = discoveries(ctx, bp, E, storyRng(ctx, bp).fork('disc')); } catch (e) { (ctx.errors ??= []).push({ stage: 'stories', building: bp.id, message: 'discoveries ' + String(e?.message ?? e), stack: e?.stack }); }
+}
+
 /** Entry point (called at the end of furnishBuilding). Safe without ctx.interact / ctx.discover (headless tools). */
 export function collectStories(ctx, bp, E) {
   const I = bp.interior; if (!I?.layouts) return;
-  const rng = makeRng((hashStr('stories:' + bp.id) ^ ((ctx.seed ?? 0) >>> 0)) >>> 0);
-  const st = I.stories = { interactables: 0, discoveries: 0 };
-  try { if (ctx.interact?.register) st.interactables = interactables(ctx, bp, E, rng.fork('act')); } catch (e) { (ctx.errors ??= []).push({ stage: 'stories', building: bp.id, message: 'interactables ' + String(e?.message ?? e), stack: e?.stack }); }
-  try { st.discoveries = discoveries(ctx, bp, E, rng.fork('disc')); } catch (e) { (ctx.errors ??= []).push({ stage: 'stories', building: bp.id, message: 'discoveries ' + String(e?.message ?? e), stack: e?.stack }); }
+  I.stories = { interactables: 0, discoveries: 0 };
+  collectInteractableStories(ctx, bp, E);
+  collectDiscoveryStories(ctx, bp, E);
 }

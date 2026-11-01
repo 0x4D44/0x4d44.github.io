@@ -205,5 +205,10 @@ export class Interact {
     return typeof t.prompt === 'function' ? t.prompt(this.ctx, t) : t.prompt;
   }
 
-  use() { const t = this.target; if (t?.use) t.use(this.ctx, t); return !!t; }
+  use() {
+    const t = this.target;
+    if (t?.kind === 'door' && this.ctx.interiors?.holdDoor?.(t)) return true;         // ?lazy=1: the building's interior is still being made: the door waits for it (interiors/lazy.js)
+    if (t?.use) t.use(this.ctx, t);
+    return !!t;
+  }
 }
