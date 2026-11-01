@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');      // .../la-ladera
@@ -131,14 +131,27 @@ test('css: every url() is exact-case and exists', () => {
 
 test('every file the asset manifests name is exact-case and exists', () => {
   const bad = []; let n = 0;
-  const leaves = (v, dir, out) => {                                            // string leaves with a file extension; an object's `dir` prefixes its siblings
+  // Three conventions meet in the manifests: a file is named relative to its manifest, except the build records `inputs`, `plans` and `review` (the generators' sources, plans and proofs),
+  // which are relative to la-ladera/; and a material binding's `atlas` is the bare name of the file the variant's `signAtlas` names (it must be that file).
+  const PROVENANCE = new Set(['inputs', 'plans', 'review']);
+  const leaves = (v, dir, out, bad, file) => {                                 // string leaves with a file extension; an object's `dir` prefixes its siblings
     if (typeof v === 'string') { if (FILE_EXT.test(v)) out.push(join(dir, v)); return; }
-    if (Array.isArray(v)) { for (const x of v) leaves(x, dir, out); return; }
-    if (v && typeof v === 'object') { const d = typeof v.dir === 'string' ? join(dir, v.dir) : dir; for (const [k, x] of Object.entries(v)) if (k !== 'dir') leaves(x, d, out); }
+    if (Array.isArray(v)) { for (const x of v) leaves(x, dir, out, bad, file); return; }
+    if (v && typeof v === 'object') {
+      const d = typeof v.dir === 'string' ? join(dir, v.dir) : dir;
+      for (const [k, x] of Object.entries(v)) {
+        if (k === 'dir') continue;
+        if (k === 'materialBindings' && typeof v.signAtlas === 'string') {
+          for (const [m, b] of Object.entries(x)) if (typeof b?.atlas === 'string' && b.atlas !== basename(v.signAtlas)) bad.push(`${relative(ROOT, file)}: ${m} binds atlas ${b.atlas}, its signAtlas is ${v.signAtlas}`);
+          continue;
+        }
+        leaves(x, PROVENANCE.has(k) ? ROOT : d, out, bad, file);
+      }
+    }
   };
   for (const file of walk(join(ROOT, 'assets'), ['.json'])) {
     if (!/manifest/.test(file)) continue;
-    const out = []; leaves(JSON.parse(readFileSync(file, 'utf8')), dirname(file), out);
+    const out = []; leaves(JSON.parse(readFileSync(file, 'utf8')), dirname(file), out, bad, file);
     for (const abs of out) { n++; if (!isFile(abs)) bad.push(`${relative(ROOT, file)}: ${relative(ROOT, abs)} does not exist`); else if (!exactCase(abs)) bad.push(`${relative(ROOT, file)}: ${relative(ROOT, abs)} exists only with another letter case`); }
   }
   assert.ok(n >= 30, `checked ${n} manifest files`);
