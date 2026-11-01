@@ -31,6 +31,11 @@ CEIL = A(RI, HEAD_DEG, 180 - HEAD_DEG)
 CEIL_FULL = A(RI, 0, 180)
 SECTION = [(RO, 0.62)] + OUT_FULL + [(-RO, 0.62)]         # closed outer outline
 
+AP_HW, AP_HEAD = 0.65, 0.05              # gangway aperture half-width; head sits this far below the ceiling lining
+def AP_HEAD_Y(x):
+    """Height of the gangway aperture head at lateral x: concentric with the ceiling arc, AP_HEAD below it (full height, ~2.52 m at the crown)."""
+    return CZ + math.sqrt((RI - AP_HEAD) ** 2 - x * x)
+
 def head_room(x):
     x = abs(x)
     return 0.0 if x > RI else CZ + math.sqrt(max(0.0, RI * RI - x * x)) - FLOOR if True else 0
@@ -130,8 +135,9 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     S(ext, ROOF_OUT, -HALF, ROOFEND, 'livery_white', away=AX)
     S(sal, CEIL, -HALF, CAB_Y, 'interior_ceiling', toward=AX)
     ext.box(P(0, (ROOFEND - HALF) / 2, 2.644), (0.5, ROOFEND + HALF - 0.4, 0.006), 'panel_ceiling')
-    # ---- end walls with an ARCHED gangway aperture (1.3 m wide), bellows, turn-plate
-    ap = [(0.65, FLOOR), (0.65, 1.45)] + [(0.65 * math.cos(math.radians(a)), 1.45 + 0.65 * math.sin(math.radians(a))) for a in range(15, 181, 15)] + [(-0.65, FLOOR)]
+    # ---- end walls with a narrow (1.3 m) FULL-HEIGHT gangway aperture (the saloon reads as one continuous space; no door arch), bellows, turn-plate.
+    # Straight jambs at x = +-0.65 from the floor, the head follows the ceiling arc (AP_HEAD below the lining) - see AP_HEAD_Y().
+    ap = [(AP_HW, FLOOR)] + [(AP_HW * math.cos(math.radians(a)), AP_HEAD_Y(AP_HW * math.cos(math.radians(a)))) for a in range(0, 181, 15)] + [(-AP_HW, FLOOR)]
     for e in ((-1,) if has_cab else (-1, 1)):
         bm = ext.bm
         yy = yc + s * e * (HALF - 0.03)
@@ -200,13 +206,20 @@ def build_car(idx, yc, s, root, L, DOORS, has_cab):
     for sg in (-1, 1):
         for d in DOORS:
             arc_panel_uv(sal, sg, RI - 0.006, 52, 64, d - 0.65, d + 0.65, 'route_map_panel')
-    # ---- exterior: side roundels
+    # ---- exterior: side roundels.  Each sits wholly on the white body panel, never across a door or its orange band: one near the car's outer
+    # end and one near the saloon end.  On a cab car the latter goes in the free white strip between the first door's orange band (0.45 m) and
+    # the cab door aperture (CAB_Y + 0.1), centred ~4.25 m, 0.5 m wide - it used to sit 0.95 m in from the partition, straddling the door edge.
+    # frontFaceSigns() draws sign_roundel as THREE.BackSide and quad_uv reverses U, so every quad is built from the OUTSIDE viewer's frame as
+    # BR, BL, TL, TR (clockwise seen from outside => geometric normal points inward, back face outward, U increases to the viewer's right).
+    # The outside viewer's right is world +y on the +x side and -y on the -x side, and car-local y runs along world y only for s=+1, so the
+    # corner order follows sg*s (building every car/side the same way left the +x side of cars 0/1, the -x side of cars 2/3 culled/mirrored).
+    ROUNDEL_YY = [-HALF + 1.0, ((DOORS[-1] + DOOR_W / 2 + 0.45) + (CAB_Y + 0.1)) / 2 if has_cab else CAB_Y - 0.95]
     for sg in (-1, 1):
-        for yy in (-HALF + 1.0, CAB_Y - 0.95):
+        for yy in ROUNDEL_YY:
             xo = sg * (RO + 0.003)
-            q = ext.quad_uv(P(xo, yy - 0.2, 0.92), P(xo, yy + 0.2, 0.92), P(xo, yy + 0.2, 1.32), P(xo, yy - 0.2, 1.32), 'sign_roundel')
+            yR, yL = yy + sg * s * 0.2, yy - sg * s * 0.2          # car-local y of the viewer's right / left edge
+            q = ext.quad_uv(P(xo, yR, 0.92), P(xo, yL, 0.92), P(xo, yL, 1.32), P(xo, yR, 1.32), 'sign_roundel')
             q[ext.fx] = 1
-            if q.normal.x * sg < 0: q.normal_flip()
     # ---- DOUBLE doors: each opening has two bi-parting curved leaves (a = nose side, b = rear side), each 0.64 m wide, own animatable node
     nodes = {}
     LW = 0.645; h = LW / 2
@@ -392,10 +405,13 @@ def build_cab(idx, yc, s, car, ext, cab, gls, P, HALF, CAB_Y, ysort):
     nm = 'headlight' if front else 'taillight'
     empty(f'{nm}_L', loc=P(-0.92 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.2)), parent=car)
     empty(f'{nm}_R', loc=P(0.92 * (1 if s > 0 else -1), NOSE_Y + 0.05, zs(1.2)), parent=car)
-    # roundel + "Subway" under the door glass (lower centre)
-    q = ext.quad_uv(P(-0.17, NOSE_Y + 0.012, zs(0.74)), P(0.17, NOSE_Y + 0.012, zs(0.74)), P(0.17, NOSE_Y + 0.012, zs(1.12)), P(-0.17, NOSE_Y + 0.012, zs(1.12)), 'sign_roundel')
+    # roundel + "Subway" under the door glass (lower centre).  Built from the OUTSIDE viewer's frame (see the side roundels): corners BR, BL, TL, TR,
+    # clockwise seen from outside => geometric normal points inward, so the BackSide pass of frontFaceSigns() shows it from outside with U
+    # increasing to the viewer's right.  The viewer's right at the nose is world -x for the front car (s=+1) and +x for the rear car (s=-1);
+    # the rear roundel used to be built like the front one and so was culled/mirrored.
+    xR, xL = -0.17 * s, 0.17 * s
+    q = ext.quad_uv(P(xR, NOSE_Y + 0.012, zs(0.74)), P(xL, NOSE_Y + 0.012, zs(0.74)), P(xL, NOSE_Y + 0.012, zs(1.12)), P(xR, NOSE_Y + 0.012, zs(1.12)), 'sign_roundel')
     q[ext.fx] = 1
-    if q.normal.y * s < 0: q.normal_flip()
     # destination display: separate node, dim by default, inside the top of the glass (optional / in-service strip)
     dsm = M(); wd = 0.30
     f = dsm.quad(P(-wd, NOSE_Y + 0.012, zs(2.40)), P(wd, NOSE_Y + 0.012, zs(2.40)), P(wd, NOSE_Y + 0.012, zs(2.47)), P(-wd, NOSE_Y + 0.012, zs(2.47)), 'dest_amber')
@@ -514,7 +530,7 @@ def build_train():
         aisleHalfWidth=0.62, aisleNote='benches occupy |x| in [0.62, 1.085] along benchZRanges; between benches (door vestibules, gangways) the walkable half-width is 0.62 m with poles at |x|=0.58 near doors, 1.085 m clear in door vestibules only below y=floor+1.4',
         headroomVsX=prof, headroomFormula='h(x) = 1.487 + sqrt(1.085^2 - x^2) - 0.695 for |x|<=1.085  (ceiling y minus floor)',
         minStandingHeadroom=1.75, minStandingNote='an adult of 1.75 m can only stand where headroomVsX >= 1.80 i.e. |x| <= 0.35; head-bump zone otherwise',
-        gangway=dict(width=1.3, archApexY=2.10, halfWidth=0.65),
+        gangway=dict(width=2 * AP_HW, archApexY=round(AP_HEAD_Y(0.0), 3), halfWidth=AP_HW, fullHeight=True),
         cab=dict(eyeFront=[-0.42, 1.845, round(-(total / 2 - 1.0), 3)], eyeRear=[0.42, 1.845, round(total / 2 - 1.0, 3)], eyeToGlassM=1.0, deskTopY=round(FLOOR + 0.80, 3), deskFrontToGlassM=0.30, driverSide='left of centre door (x=-0.42 front cab, +0.42 rear cab)', partitionDistanceFromNoseM=1.8, glazing='three bays (driver / centre evacuation door / right), glass y from 1.30 to 2.18, black frame, amber LED destination display node cab_dest'),
         doors=dict(type='double bi-parting', nodes='door_{L|R}_{n}_{a|b}, n=0..5 front->rear', centreZ=sorted(round(zz, 3) for c in cars_json for zz in c['doorZ']), openingWidth=DOOR_W, leafWidth=0.645, travelM=0.6,
                    a='nose-side leaf: open = translate -Z by 0.6 m (toward the nose)', b='rear-side leaf: open = translate +Z by 0.6 m (toward the rear)', leafNodeOrigin='leaf centre: x=+-1.12, y=0, z=door centre +-0.3225 (a: -0.3225 in three z, b: +0.3225)'),
